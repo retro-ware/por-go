@@ -59,7 +59,14 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false
 		p.battle.Draw(dst, v.Battle)
-		p.drawRows(dst, p.Classic.Frame(scr, note), engine.CombatRows, scale(dst))
+		frame, k := p.Classic.Frame(scr, note), scale(dst)
+		if v.Menu == nil { // typed input, "press a key": the original's two rows
+			p.battle.HideBar()
+			p.drawRows(dst, frame, engine.CombatRows, k)
+			return classic.Rect{}
+		}
+		p.drawRows(dst, frame, engine.CombatPanel, k)
+		p.battle.DrawBar(dst, note.Glyph, v.Menu, max(1, int(k)/2), dst.Bounds().Dy()-int(k)*10)
 		return classic.Rect{}
 	}
 	sc := p.scene(v)
@@ -200,6 +207,15 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 		}
 	}
 	return nil, true
+}
+
+// Click is the key a click at screen pixel (x, y) picks: an action bar button.
+func (p *Presenter) Click(x, y int) (uint16, bool) {
+	if !p.fight {
+		return 0, false
+	}
+	k, ok := p.battle.Click(x, y)
+	return uint16(k), ok
 }
 
 // Switched tells the presenter the window changed modes: a question still

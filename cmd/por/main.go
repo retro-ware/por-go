@@ -30,8 +30,8 @@ import (
 	"runtime"
 	"time"
 
-	"gpu"
 	"github.com/ebitengine/oto/v3"
+	"gpu"
 
 	"por/ega"
 	"por/engine"
@@ -183,6 +183,13 @@ func (g *game) keys() {
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
 func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
+	if g.remastered && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
+		if k, ok := g.remaster.Click(mx, my); ok { // an action bar button
+			g.scr.PushKey(k)
+			g.sent = true
+			return
+		}
+	}
 	cx, cy, in := g.cell(float64(mx), float64(my))
 	g.scr.SetMouse(cx, cy, in)
 	if in && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {

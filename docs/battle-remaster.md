@@ -19,6 +19,7 @@ engine            View.Battle: ground grid, tiles, units, cursor
 present/battle    3D view: camera (orbit), scene meshes, action bar
   scene.go        pure: map mesh (blocks in tile 3, the plain stone), boxes, matrices
   extrude.go      sprite -> Minecraft-style slab (copied from VoxelLib)
+  bar.go          the action bar: a button per menu item, clicks send its hotkey
 ```
 
 ## Milestones
@@ -28,4 +29,4 @@ present/battle    3D view: camera (orbit), scene meshes, action bar
 - [x] 3. 3D map: wall blocks with the original tiles, the floor
 - [x] 4. Figurines: extruded sprites on pedestals (blue for the party, red for enemies)
 - [x] 5. XCOM camera (orbit with [ and ], follows the active unit) and F10 switching
-- [ ] 6. Action bar of icons at the bottom centre (clicks send the menu hotkeys)
+- [x] 6. Action bar of icons at the bottom centre (clicks send the menu hotkeys)

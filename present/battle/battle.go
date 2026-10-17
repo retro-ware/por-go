@@ -25,6 +25,7 @@ type Presenter struct {
 	mesh   *gpu.Mesh
 	box    *gpu.Mesh
 	figs   map[image.Image]*figure // ponytail: never evicted; a few dozen icons a game
+	bar    bar
 
 	yaw, yawTo float64    // camera heading: 0 looks north, as the original's screen
 	at         [2]float64 // the square the camera looks at (eased)
