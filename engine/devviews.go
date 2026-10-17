@@ -51,8 +51,11 @@ func (e *Engine) DevScene(name string) func() {
 			e.Shop()
 			e.DrawMainScreen()
 		}
-	case "combat":
+	case "combat", "wildcombat":
 		return func() {
+			if name == "wildcombat" { // the overland's terrain, from the dungeon save
+				e.viewMode = 2
+			}
 			// Block 1 exists only in MON2CHA; take the first monster of
 			// the current set (DS:5376) so any save can start a fight.
 			idx := 1
