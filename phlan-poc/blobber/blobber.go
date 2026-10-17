@@ -1644,6 +1644,16 @@ func (g *Game) drawSky(dst *ebiten.Image, c cam) {
 	}
 }
 
+// markSeen marks the cells c sees, and the walls around them, for the maps.
+func markSeen(c cam) {
+	for cell := range visibleCells(c) {
+		seen[cell] = true
+		for _, d := range dirs { // and the walls around it
+			seen[[2]int{cell[0] + d[0], cell[1] + d[1]}] = true
+		}
+	}
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	defer maybeShot(screen)
 	if g.atlasView {
@@ -1651,12 +1661,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		return
 	}
 	c := g.camera()
-	for cell := range visibleCells(c) {
-		seen[cell] = true
-		for _, d := range dirs { // and the walls around it
-			seen[[2]int{cell[0] + d[0], cell[1] + d[1]}] = true
-		}
-	}
+	markSeen(c)
 	if g.mapView {
 		g.drawMap(screen, c)
 		return

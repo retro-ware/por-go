@@ -264,6 +264,25 @@ var winCanvas = ebiten.NewImage(cw*2, ch*2)
 // Window draws a framed text window. sel highlights a line (-1 for none). bottom puts it above the HUD
 // (top left during melee), otherwise it is centred.
 func Window(screen *ebiten.Image, title string, lines []string, sel int, bottom bool) {
+	drawWindow(screen, title, lines, sel, func(w, h, k int) (int, int) {
+		x, y := (blobber.W-w*k)/2, (blobber.H-h*k)/2
+		switch {
+		case bottom && blobber.Fighting(): // combat menus sit top left, clear of the monster in front
+			x, y = 8, 24
+		case bottom:
+			y = blobber.H - 8*k - h*k
+		}
+		return x, y
+	})
+}
+
+// WindowAt draws Window centred on cx with its top edge at top.
+func WindowAt(screen *ebiten.Image, title string, lines []string, sel int, cx, top int) {
+	drawWindow(screen, title, lines, sel, func(w, h, k int) (int, int) { return cx - w*k/2, top })
+}
+
+// drawWindow draws the window where at puts it (given its size and scale).
+func drawWindow(screen *ebiten.Image, title string, lines []string, sel int, at func(w, h, k int) (int, int)) {
 	w := font.Width(title) + 120
 	for _, l := range lines {
 		w = max(w, font.Width(l)+48)
@@ -288,13 +307,7 @@ func Window(screen *ebiten.Image, title string, lines []string, sel int, bottom 
 		}
 		Print(d, l, 24, y, light)
 	}
-	x, y := (blobber.W-w*k)/2, (blobber.H-h*k)/2
-	switch {
-	case bottom && blobber.Fighting(): // combat menus sit top left, clear of the monster in front
-		x, y = 8, 24
-	case bottom:
-		y = blobber.H - 8*k - h*k
-	}
+	x, y := at(w, h, k)
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(float64(k), float64(k))
 	op.GeoM.Translate(float64(x), float64(y))

@@ -40,6 +40,7 @@ type Presenter struct {
 	active bool                        // the last frame was drawn remastered
 	menu   bool                        // the vertical menu is open
 	sel    int                         // its highlighted item
+	asked  string                      // the question menu last opened by itself (menuID)
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -77,14 +78,23 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	if n := len(v.Party); n > 0 { // pop-ups go between the card columns
 		b.Min.X, b.Max.X = cardAt(dst)(0, n).Max.X, cardAt(dst)(n-1, n).Min.X
 	}
-	pic := engine.InnerWindow.Framed()
-	pk := min(k, max(1, float64(min(b.Dy()/2/pic.Pixels().Dy(), b.Dx()/ega.W)))) // the pop-ups fit their halves
-	cx := (b.Min.X + b.Max.X) / 2
+	// the picture at the top, the text in the middle, an answer's menu right under it
+	pic, txt := engine.InnerWindow.Framed(), engine.TextPane.Framed()
+	ph, th := float64(pic.Pixels().Dy()), float64(txt.Pixels().Dy())
+	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/ega.W))))
+	cx, cy := (b.Min.X+b.Max.X)/2, b.Dy()/2
 	if v.Window == engine.WinPicture {
-		drawBox(dst, frame, pic, pk, cx, b.Dy()/4)
+		drawBox(dst, frame, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
 	if v.TextShown {
-		drawBox(dst, frame, engine.TextPane.Framed(), pk, cx, b.Dy()*3/4)
+		drawBox(dst, frame, txt, pk, cx, cy)
+	}
+	if v.Menu != nil && !v.Command { // a question: its choices pop up at once
+		if id := menuID(v.Menu); id != p.asked {
+			p.asked, p.menu, p.sel = id, true, v.Menu.Sel
+		}
+	} else {
+		p.asked = ""
 	}
 	if v.Menu == nil { // typed input and "press a key" prompts: the original's line
 		p.menu = false
@@ -95,7 +105,11 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 			lines[i] = it.Text
 		}
 		p.sel = min(p.sel, len(lines)-1)
-		ui.Window(dst, v.Menu.Prompt, lines, p.sel, false)
+		if v.Command {
+			ui.Window(dst, v.Menu.Prompt, lines, p.sel, false)
+		} else {
+			ui.WindowAt(dst, v.Menu.Prompt, lines, p.sel, cx, cy+int(pk*th/2)+8)
+		}
 	}
 	return classic.Rect{}
 }
@@ -136,6 +150,9 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 		p.sel = (p.sel + 1) % n
 	case k == 13:
 		p.menu = false
+		if p.sel == m.Sel { // the game's own choice: Enter picks it (some prompts take nothing else)
+			return nil, false
+		}
 		return []uint16{uint16(m.Items[p.sel].Key)}, true
 	case k == 27:
 		p.menu = false
@@ -170,20 +187,29 @@ func (p *Presenter) Options() bool { return p.view != nil && p.view.OptionsOpen(
 // UpdateOptions runs the options page for one frame.
 func (p *Presenter) UpdateOptions() { p.view.UpdateOptions() }
 
+// menuID tells menus apart: prompt and items.
+func menuID(m *engine.Menu) string {
+	id := m.Prompt
+	for _, it := range m.Items {
+		id += "|" + it.Text
+	}
+	return id
+}
+
 // cardAt lays the party's cards along the window's edges: the first half
 // of the party down the left, the rest down the right, at the largest
 // whole scale where a column of four fits (eight with two NPCs).
 func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
 	const gap, rows = 8, 4
 	b := dst.Bounds()
-	k := max(1, min(ui.K(480, 360), b.Dy()/(rows*(ui.CardH+gap))))
+	k := max(1, min(ui.K(480, 360), (b.Dy()-blobber.MinimapRect().Dy())/(rows*(ui.CardH+gap))))
 	return func(i, n int) image.Rectangle {
 		left := (n + 1) / 2
 		col, row, per := 0, i, left
 		if i >= left {
 			col, row, per = 1, i-left, n-left
 		}
-		y := (b.Dy()-per*(ui.CardH+gap)*k)/2 + row*(ui.CardH+gap)*k
+		y := b.Dy() - (per-row)*(ui.CardH+gap)*k + ui.CardFoot*k // the bars end a gap above the bottom
 		x := gap * k
 		if col == 1 {
 			x = b.Dx() - gap*k - ui.CardW*k

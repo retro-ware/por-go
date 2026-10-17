@@ -52,6 +52,9 @@ var CardAt func(i, n int) image.Rectangle
 
 const CardW, CardH = cardW, cardH
 
+// CardFoot is the empty strip at the bottom of a card, under its bars.
+const CardFoot = 11
+
 // cardRect is where card i goes.
 func cardRect(i, n int) image.Rectangle {
 	if CardAt != nil {
