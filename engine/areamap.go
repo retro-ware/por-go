@@ -7,6 +7,7 @@ package engine
 // the DS:0C30 table (6 bytes each: x, y, icon) replace the tile, some only
 // while the area record flags say they are revealed.
 func (e *Engine) DrawAreaMap(x, y int) {
+	e.snap.win = WinAreaMap
 	var sy, sx byte // [bp-2], [bp-1]: screen row and column
 	for row := byte(0); row < 5; row++ {
 		sx = 0

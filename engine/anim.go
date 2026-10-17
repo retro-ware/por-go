@@ -66,6 +66,7 @@ func (e *Engine) drawPicAt(x, y int, overlay bool, im *dax.Image) {
 	if im == nil {
 		return
 	}
+	e.snap.win = WinPicture
 	if overlay {
 		e.drawPage(x-1, y-1, im, 0, true, false)
 		e.Flip() // 0034
@@ -86,6 +87,7 @@ func (e *Engine) DrawAnimFrame(frame int) {
 		return
 	}
 	im := e.pic.frames[frame-1].Image
+	e.snap.win = WinPicture
 	e.drawPage(im.X+2, im.Y+2, im, 0, true, false) // 0464:0D71 at (x+3-1, y+3-1)
 	e.Flip()
 }

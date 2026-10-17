@@ -1,0 +1,222 @@
+package engine
+
+import (
+	"image"
+	"image/color"
+	"strconv"
+	"sync/atomic"
+
+	"por/ega"
+)
+
+// The read-only seam for presenters other than the classic screen: a View
+// is the game as the player sees it, published by the engine each time it
+// waits for a key. Nothing in it points back into the engine's state.
+
+// Dir is a facing: N, E, S, W.
+type Dir int
+
+const (
+	North Dir = iota
+	East
+	South
+	West
+)
+
+// AreaID names the GEO block a 3D area is drawn from: GEO<Disk>.DAX block.
+type AreaID struct{ Disk, Block int }
+
+// Window is what the view window (cells ViewWindow) shows.
+type Window int
+
+const (
+	WinEmpty    Window = iota
+	WinThreeD          // the 3D view of Area at X, Y, Facing
+	WinOverhead        // the top-down map in place of the 3D view
+	WinAreaMap         // the wilderness or city map
+	WinPicture         // a picture, portrait or approaching sprite
+)
+
+// CellRect is a rectangle of 8x8 text cells, both corners included.
+type CellRect struct{ X1, Y1, X2, Y2 int }
+
+// Pixels is the rectangle in screen pixels.
+func (r CellRect) Pixels() image.Rectangle {
+	return image.Rect(r.X1*8, r.Y1*8, r.X2*8+8, r.Y2*8+8)
+}
+
+// The main screen's boxes (DrawMainFrame), borders included.
+var (
+	OuterBox    = CellRect{1, 1, 0x26, 0x16}
+	ViewWindow  = CellRect{1, 1, 0xF, 0xF}
+	InnerWindow = CellRect{3, 3, 0xD, 0xD} // the picture frame
+	TextPane    = CellRect{1, 0x11, 0x26, 0x16}
+	PromptRows  = CellRect{0, 0x17, 0x27, 0x18} // menus and prompts, under the frame
+)
+
+// Member is one party member as the party list shows them.
+type Member struct {
+	Name     string
+	HP       int
+	MaxHP    int
+	AC       int    // as displayed: 10 down to negative
+	Status   string // as the sheet names it ("Okay", "Unconscious" ...)
+	Selected bool
+	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
+}
+
+// View is one published snapshot.
+type View struct {
+	MainFrame bool // the main screen's frame is up (not combat, a sheet, a shop, the title)
+	Window    Window
+	Area      AreaID
+	X, Y      int
+	Facing    Dir
+	TextShown bool // the bottom text pane holds text
+	Party     []Member
+}
+
+// View returns the last published snapshot; safe from any goroutine.
+func (e *Engine) View() View {
+	if v := e.snap.view.Load(); v != nil {
+		return *v
+	}
+	return View{}
+}
+
+// snapState is the engine's side of the seam.
+type snapState struct {
+	view   atomic.Pointer[View]
+	win    Window                 // set by whatever drew into the view window last
+	frame  []byte                 // the frame's border pixels as DrawMainFrame left them
+	heads  map[string]image.Image // decoded HEAD blocks by file and id
+	border [][2]int               // pixel positions of frame
+}
+
+// frameDrawn remembers the frame's border pixels, so publish can tell it is
+// still up (anything full screen draws over it).
+func (e *Engine) frameDrawn() {
+	s := &e.snap
+	if s.border == nil {
+		s.border = frameBorder()
+	}
+	e.S.Lock()
+	s.frame = s.frame[:0]
+	for _, p := range s.border {
+		s.frame = append(s.frame, e.S.Pix[p[1]*ega.W+p[0]])
+	}
+	e.S.Unlock()
+}
+
+// frameBorder lists the pixels of the border cells of the view window and
+// the text pane (the outer box's right edge is not one: the party list's
+// lines are cleared up to it).
+func frameBorder() [][2]int {
+	cells := map[[2]int]bool{}
+	for _, r := range []CellRect{ViewWindow, TextPane} {
+		for x := r.X1; x <= r.X2; x++ {
+			cells[[2]int{x, r.Y1}], cells[[2]int{x, r.Y2}] = true, true
+		}
+		for y := r.Y1; y <= r.Y2; y++ {
+			cells[[2]int{r.X1, y}], cells[[2]int{r.X2, y}] = true, true
+		}
+	}
+	var out [][2]int
+	for y := 0; y < 25; y++ { // in a fixed order
+		for x := 0; x < 40; x++ {
+			if cells[[2]int{x, y}] {
+				for py := 0; py < 8; py++ {
+					for px := 0; px < 8; px++ {
+						out = append(out, [2]int{x*8 + px, y*8 + py})
+					}
+				}
+			}
+		}
+	}
+	return out
+}
+
+// publish builds a View from the engine's state (on the engine goroutine)
+// and makes it the current one.
+func (e *Engine) publish() {
+	s := &e.snap
+	v := &View{
+		Window: s.win,
+		Area:   AreaID{Disk: e.geoDisk(), Block: int(e.area.Geo)},
+		X:      e.posX, Y: e.posY,
+		Facing: Dir(e.viewFacing() / 2 & 3),
+	}
+	e.S.Lock()
+	v.MainFrame = len(s.frame) > 0
+	for i, p := range s.border {
+		if i < len(s.frame) && e.S.Pix[p[1]*ega.W+p[0]] != s.frame[i] {
+			v.MainFrame = false
+			break
+		}
+	}
+	in := TextPane.Pixels().Inset(8)
+	for y := in.Min.Y; y < in.Max.Y && !v.TextShown; y++ {
+		for x := in.Min.X; x < in.Max.X; x++ {
+			if e.S.Pix[y*ega.W+x] != 0 {
+				v.TextShown = true
+				break
+			}
+		}
+	}
+	e.S.Unlock()
+	for i, c := range e.party {
+		v.Party = append(v.Party, Member{
+			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
+			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == e.partySel,
+			Head: e.charHead(c),
+		})
+	}
+	s.view.Store(v)
+}
+
+// geoDisk is the digit of the GEO file in use (GEO<d>.DAX, like 8X8D<d>).
+func (e *Engine) geoDisk() int {
+	d, _ := strconv.Atoi(e.symDAX[4:])
+	return d
+}
+
+// charHead is the head the player chose for c, as the sheet shows it
+// (SheetPortrait), or nil without one.
+func (e *Engine) charHead(c *Character) image.Image {
+	if c.PortHead == 0 || int(c.PortHead) >= len(portraitHead) {
+		return nil
+	}
+	return e.head(int(portraitHead[c.PortHead]))
+}
+
+// head decodes HEAD block id in the EGA colours (cached; nil if missing).
+func (e *Engine) head(id int) image.Image {
+	key := e.symDAX[4:] + "/" + strconv.Itoa(id)
+	if im, ok := e.snap.heads[key]; ok {
+		return im
+	}
+	if e.snap.heads == nil {
+		e.snap.heads = map[string]image.Image{}
+	}
+	var out image.Image
+	if im := e.LoadPic("HEAD"+e.symDAX[4:], id); im != nil && im.Count > 0 {
+		w, h := im.Width*8, im.Height
+		d := im.Frame(0)
+		rgba := image.NewRGBA(image.Rect(0, 0, w, h))
+		for i, p := range d[:w*h] {
+			switch {
+			case p == 16:
+				p = 0
+				fallthrough
+			case p < 16:
+				c := ega.Palette[p]
+				rgba.SetRGBA(i%w, i/w, color.RGBA{c[0], c[1], c[2], 255})
+			case p >= ega.AmigaBase:
+				rgba.SetRGBA(i%w, i/w, e.S.RGBA(p))
+			} // 17..AmigaBase-1 stay transparent, as blit skips them
+		}
+		out = rgba
+	}
+	e.snap.heads[key] = out
+	return out
+}

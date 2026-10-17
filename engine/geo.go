@@ -168,9 +168,11 @@ func (e *Engine) drawWallPart(x, y int, wall byte, part int) {
 // to the left and to the right.
 func (e *Engine) Draw3DView(x, y, dir int) {
 	if e.gs.overhead {
+		e.snap.win = WinOverhead
 		e.DrawOverheadMap(x, y, dir)
 		return
 	}
+	e.snap.win = WinThreeD
 	e.S.Hold()
 	e.pageDraw = true
 	defer e.traceFlip()

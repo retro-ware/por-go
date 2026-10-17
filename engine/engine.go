@@ -93,6 +93,7 @@ type Engine struct {
 	port           portrait            // DS:6B00.. HEAD/BODY portrait
 	eclFile        string              // DS:547C
 	ext            extras              // convenience features (extras.go)
+	snap           snapState           // the View published for other presenters (snapshot.go)
 	ac             afterCombat         // ovr06 globals
 	camp           campState           // ovr16/ovr21 globals
 	purse          purse               // the party's money
@@ -292,6 +293,7 @@ func (e *Engine) KeyPressed() bool {
 		return e.tr.keyPressed(e)
 	}
 	e.walkFeed()
+	e.publish()
 	for len(e.ext.ahead) == 0 && e.S.KeyPressed() { // nav.go: translate as the key is seen
 		e.feed(e.S.ReadKey())
 	}
@@ -308,6 +310,7 @@ func (e *Engine) ReadKey() uint16 {
 		if e.ext.menu == 0 {
 			e.showHint()
 		}
+		e.publish()
 		e.feed(e.S.ReadKey())
 	}
 	k := e.ext.ahead[0]
