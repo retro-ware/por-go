@@ -77,7 +77,7 @@ AREAS["graveyard"] = dict(  # Valhingen Graveyard: ECL4 block 10
     chars={v: "abcdefghijklmno"[v - 1] for v in range(1, 16)},
     start=(0, 4, "e"), water_walls=set(), free_walls=set(),
     floor="phlan_dirt", ceiling="sky_phlan",
-    notrim={1, 4, 5, 6, 7, 9, 10, 14, 15}, water=set(), tile=set(), noseam={2, 3, 8, 11, 14},
+    notrim={1, 4, 5, 6, 7, 9, 10, 14, 15}, water=set(), tile=set(), noseam={2, 3, 8, 11},
     views=[(1, 0, "S"), (13, 11, "W"), (15, 7, "W"), (0, 7, "S"), (6, 9, "S"), (14, 12, "W"), (15, 11, "E"),
            (8, 14, "S"), (5, 2, "S"), (1, 1, "E"), (15, 10, "W"), (10, 7, "E"), (2, 6, "W"), (7, 15, "W"),
            (11, 8, "N"), (1, 6, "N"), (13, 7, "E"), (4, 7, "E")],  # random.Random(10), reachable squares
