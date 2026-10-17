@@ -1380,7 +1380,9 @@ func (g *Game) updateMenu() bool {
 			g.smooth = !g.smooth
 		case 1:
 			Settings.Fluid = !Settings.Fluid
-		case 2: // slider: Left slower, Right / Enter faster (Enter wraps round to the slowest)
+		case 2:
+			Settings.Haze = !Settings.Haze
+		case 3: // slider: Left slower, Right / Enter faster (Enter wraps round to the slowest)
 			sp := Settings.Speed + 0.25
 			if KeyJustPressed(ebiten.KeyLeft) {
 				sp = math.Max(minSpeed, Settings.Speed-0.25)
@@ -1391,17 +1393,17 @@ func (g *Game) updateMenu() bool {
 				}
 			}
 			Settings.Speed = sp
-		case 3:
-			Settings.SmoothMonsters = !Settings.SmoothMonsters
 		case 4:
-			g.dither = !g.dither
+			Settings.SmoothMonsters = !Settings.SmoothMonsters
 		case 5:
-			Settings.NormalMaps = !Settings.NormalMaps
+			g.dither = !g.dither
 		case 6:
-			Settings.LightMaps = !Settings.LightMaps
+			Settings.NormalMaps = !Settings.NormalMaps
 		case 7:
-			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
+			Settings.LightMaps = !Settings.LightMaps
 		case 8:
+			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
+		case 9:
 			ebiten.SetFullscreen(!ebiten.IsFullscreen())
 		}
 		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, ebiten.IsFullscreen(), g.torch
@@ -1416,7 +1418,7 @@ func (g *Game) updateMenu() bool {
 func (g *Game) menuItems() []string {
 	if g.options {
 		bar := int(math.Round((Settings.Speed - minSpeed) / 0.25))
-		return []string{"Smooth movement:   " + onOff(g.smooth), "Fluid movement:    " + onOff(Settings.Fluid),
+		return []string{"Smooth movement:   " + onOff(g.smooth), "Fluid movement:    " + onOff(Settings.Fluid), "Distance fog:      " + onOff(Settings.Haze),
 			"Walk speed:        " + strings.Repeat("#", bar+1) + strings.Repeat("-", int((maxSpeed-minSpeed)/0.25)-bar) + fmt.Sprintf(" %.2fx", Settings.Speed),
 			"Smooth monsters:   " + onOff(Settings.SmoothMonsters), "Dithered darkness: " + onOff(g.dither), "Normal mapping:    " + onOff(Settings.NormalMaps),
 			"Light maps:        " + onOff(Settings.LightMaps),
@@ -2297,9 +2299,9 @@ var (
 
 // Options are the settings on the Options page.
 type Options struct {
-	Smooth, Fluid, Dither, Fullscreen, SmoothMonsters, NormalMaps, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
-	Torch                                                                    float64
-	Speed                                                                    float64 // walk and turn speed, minSpeed to maxSpeed times the normal
+	Smooth, Fluid, Haze, Dither, Fullscreen, SmoothMonsters, NormalMaps, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
+	Torch                                                                          float64
+	Speed                                                                          float64 // walk and turn speed, minSpeed to maxSpeed times the normal
 }
 
 const minSpeed, maxSpeed = 0.5, 2.0
@@ -2307,7 +2309,7 @@ const minSpeed, maxSpeed = 0.5, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, SmoothMonsters: true, NormalMaps: true, LightMaps: true, Torch: 1, Speed: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, NormalMaps: true, LightMaps: true, Torch: 1, Speed: 1}
 	OnSettings func(Options)
 )
 

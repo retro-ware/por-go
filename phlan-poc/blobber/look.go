@@ -184,6 +184,17 @@ var T vec3        // the face's u and v directions and normal, in camera space (
 var B vec3
 var N vec3
 var Lamp vec3     // the moving light reaching this face most, in camera space
+var Haze float    // distance fog: cells to full haze (0 = none)
+var HazeCol vec3  // the sky's colour at the horizon
+
+// haze fades c toward the horizon's colour with distance: a little within the map, full Haze cells out.
+func haze(c vec3, p vec3) vec3 {
+	if Haze == 0 {
+		return c
+	}
+	h := clamp(length(p.xz)/Haze, 0, 1)
+	return mix(c, HazeCol, h*h)
+}
 
 func tex(uv vec2) vec4 { return imageSrc0At(imageSrc0Origin() + fract(uv)*imageSrc0Size()) }
 
@@ -230,7 +241,7 @@ func Fragment(dstPos vec4, srcPos vec2, color vec4, custom vec4) vec4 {
 		discard()
 	}
 	if Mode == 1 {
-		return c
+		return vec4(haze(c.rgb/c.a, vec3(0, 0, z))*c.a, c.a)
 	}
 	rgb := c.rgb / c.a
 	x := (dstPos.x - imageDstOrigin().x - Center.x) / Focal * z // dstPos counts from the atlas, not our image
@@ -254,7 +265,7 @@ func Fragment(dstPos vec4, srcPos vec2, color vec4, custom vec4) vec4 {
 	}
 	dark := (1 - torch(p, chk)) * (1 - 0.7*lit) * (1 - near)
 	out := shade(rgb*mix(Warm, vec3(1), max(lit, near)), dark, Inc*(1-lit)*(1-near)) + rgb*color.rgb*0.3
-	return vec4(out*c.a, c.a)
+	return vec4(haze(out, p)*c.a, c.a)
 }
 `
 
@@ -312,6 +323,17 @@ func lamp(c cam, f *face) []float32 {
 	return out
 }
 
+// hazeCells is how far the distance fog reaches full strength (phlan-poc: past the map, out to the horizon).
+const hazeCells = 128
+
+// hazeCol is the sky's colour just above the horizon, day or night.
+func hazeCol() []float32 {
+	if Night {
+		return []float32{10.0 / 255, 32.0 / 255, 70.0 / 255}
+	}
+	return []float32{165.0 / 255, 195.0 / 255, 220.0 / 255}
+}
+
 func btof(b bool) float64 {
 	if b {
 		return 1
@@ -332,7 +354,11 @@ func (g *Game) faceOptions(c cam, f *face) *ebiten.DrawTrianglesShaderOptions {
 	}
 	u := map[string]any{"Mode": float32(f.mode), "Dither": float32(btof(g.dither)), "Pow": float32(g.torchPow()), "Range": float32(g.torchRange()), "Inc": float32(f.inc),
 		"Torch": []float32{float32(tp[0]), float32(tp[1]), float32(tp[2])}, "Warm": warm,
+		"Haze": float32(0), "HazeCol": hazeCol(),
 		"Center": []float32{float32(W) / 2, float32(H) / 2}, "Focal": float32(focal), "Px": float32(math.Max(1, float64(W)/500))}
+	if openSky && Settings.Haze {
+		u["Haze"] = float32(hazeCells)
+	}
 	if m := f.m; m != nil && m.lit != nil && Settings.LightMaps {
 		op.Images[2], u["HasLit"] = m.lit, float32(1)
 	}
