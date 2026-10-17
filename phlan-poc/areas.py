@@ -17,6 +17,7 @@ Keys:
   tile        walls crossfaded at the edges instead of seamed
   noseam      walls a seam would cut through (objects, posts, gaps)
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
+  props       wall value -> billboard texture: trees drawn where their trunks stand, not as faces (make_props.py)
   doors       (x, y, side) fixes to the original's data: sides made passable (one-way doors)
   nomap       wall values left off the minimap (objects the party walks through, like graves)
   views       comparison shots (x, y, facing), reachable squares only"""
@@ -319,7 +320,7 @@ AREAS["valjevo6"] = dict(  # Valjevo Castle (ECL5 6): ECL5 block 6
 AREAS["valjevo7"] = dict(  # Valjevo Castle (ECL5 7): ECL5 block 7
     geo=(5, 7), walldefs=[(24, 1), (1, 3)], area_kind=7,
     chunks=['WALLDEF5-024-1', 'WALLDEF5-024-2', 'WALLDEF5-001-1'],
-    start=None, water_walls=set(), free_walls=set(),
+    start=(5, 7, "n"), water_walls=set(), free_walls=set(),  # entry: ECL5 5 opNewECL 7 at 5,7
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim=set(), water=set(), tile=set(), noseam=set(),
     views=[(12, 2, 'N'), (14, 5, 'W'), (6, 14, 'S'), (14, 1, 'S'), (9, 7, 'N'), (1, 3, 'S'), (10, 8, 'N'), (9, 9, 'S'), (13, 9, 'E'), (13, 11, 'E'), (0, 6, 'N'), (15, 6, 'W'), (4, 8, 'S'), (12, 0, 'N'), (1, 12, 'W'), (3, 10, 'S')],  # random, reachable squares,
@@ -359,7 +360,7 @@ AREAS["nomad"] = dict(  # Nomad Camp: ECL7 block 17
 AREAS["swamp"] = dict(  # Lizard Man swamp: ECL7 block 22
     geo=(7, 22), walldefs=[(1, 1), (3, 2)], area_kind=22,
     chunks=['WALLDEF7-001-1', 'WALLDEF7-003-1', None],
-    start=None, water_walls=set(), free_walls=set(),
+    start=(15, 7, "e"), water_walls=set(), free_walls=set(),  # entry: ECL7 23 opNewECL 22 at 15,7 E
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim=set(), water=set(), tile=set(), noseam=set(),
     views=[(14, 12, 'S'), (4, 11, 'E'), (11, 9, 'N'), (7, 11, 'N'), (13, 8, 'N'), (1, 12, 'S'), (7, 8, 'E'), (2, 8, 'S'), (2, 11, 'S'), (12, 14, 'W'), (3, 15, 'N'), (6, 14, 'E'), (11, 8, 'E'), (1, 14, 'E'), (11, 12, 'W'), (5, 15, 'S')],  # random, reachable squares,
@@ -369,7 +370,7 @@ AREAS["swamp"] = dict(  # Lizard Man swamp: ECL7 block 22
 AREAS["lizvillage"] = dict(  # Lizard Man village: ECL7 block 23
     geo=(7, 23), walldefs=[(1, 1), (3, 2)], area_kind=23,
     chunks=['WALLDEF7-001-1', 'WALLDEF7-003-1', None],
-    start=None, water_walls=set(), free_walls=set(),
+    start=(4, 15, "n"), water_walls=set(), free_walls=set(),  # entry: ECL7 22 opNewECL 23 at 4,15 N
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim=set(), water=set(), tile=set(), noseam=set(),
     views=[(5, 7, 'N'), (4, 7, 'W'), (1, 13, 'N'), (13, 11, 'W'), (10, 12, 'S'), (1, 11, 'N'), (15, 4, 'E'), (11, 2, 'S'), (3, 1, 'E'), (4, 2, 'N'), (0, 12, 'S'), (3, 3, 'N'), (3, 11, 'W'), (4, 8, 'N'), (12, 1, 'W'), (3, 14, 'E')],  # random, reachable squares,
@@ -379,7 +380,7 @@ AREAS["lizvillage"] = dict(  # Lizard Man village: ECL7 block 23
 AREAS["kobold"] = dict(  # Kobold Caves: ECL8 block 13
     geo=(8, 13), walldefs=[(17, 1), (18, 2)], area_kind=13,
     chunks=['WALLDEF8-017-1', 'WALLDEF8-018-1', None],
-    start=None, water_walls=set(), free_walls=set(),
+    start=(6, 15, "n"), water_walls=set(), free_walls=set(),  # entry: ECL8 27 opNewECL 13 at 6,15 N
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim=set(), water=set(), tile=set(), noseam=set(),
     views=[(4, 7, 'E'), (5, 2, 'N'), (15, 3, 'S'), (2, 9, 'E'), (1, 8, 'N'), (0, 10, 'E'), (9, 0, 'S'), (0, 5, 'W'), (7, 3, 'W'), (5, 4, 'S'), (15, 10, 'W'), (11, 3, 'S'), (3, 8, 'E'), (15, 12, 'W'), (11, 8, 'S'), (1, 12, 'W')],  # random, reachable squares,
@@ -571,10 +572,10 @@ NEW = {
     },
 }
 FLAGS = dict(  # texture flags of the new walls (by area)
-    stojanow=dict(noseam={12}), library=dict(noseam={8, 9, 11, 13}),
+    stojanow=dict(noseam={12}), library=dict(noseam={8, 9, 11, 13}, pond={11}),
     hobgoblin=dict(arch={12}), sokal=dict(noseam={2}), valjevo3=dict(noseam={1, 7, 8, 9}),
-    valjevo4=dict(), valjevo7=dict(noseam={6, 10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
-    nomad=dict(noseam={6, 7, 8}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
+    valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
+    nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
     pyramid=dict(noseam={14}), kuto=dict(arch={8}), kuto2=dict(noseam={2, 10}),
 )
 

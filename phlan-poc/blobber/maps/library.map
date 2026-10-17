@@ -548,7 +548,6 @@ face 3 10 2 wall_library_v13
 face 3 10 3 wall_library_v13
 face 4 10 0 wall_library_v13
 face 4 10 1 wall_library_v13
-face 4 10 2 wall_library_v11
 edge 4 10 2
 face 4 10 3 wall_library_v13
 face 5 10 0 wall_library_v13
@@ -588,7 +587,6 @@ face 2 11 1 wall_library_v13
 face 2 11 3 wall_library_v07
 edge 2 11 3
 face 3 11 0 wall_library_v13
-face 3 11 1 wall_library_v11
 edge 3 11 1
 face 3 11 2 wall_library_v13
 face 3 11 3 wall_library_v13
@@ -603,7 +601,6 @@ edge 4 11 3
 face 5 11 0 wall_library_v13
 face 5 11 1 wall_library_v13
 face 5 11 2 wall_library_v13
-face 5 11 3 wall_library_v11
 edge 5 11 3
 face 6 11 1 wall_phlan_v02
 edge 6 11 1
@@ -643,7 +640,6 @@ face 3 12 0 wall_library_v13
 face 3 12 1 wall_library_v13
 face 3 12 2 wall_library_v13
 face 3 12 3 wall_library_v13
-face 4 12 0 wall_library_v11
 edge 4 12 0
 face 4 12 1 wall_library_v13
 face 4 12 2 wall_library_v13
@@ -802,3 +798,4 @@ face 15 15 1 wall_stojanow_v12
 edge 15 15 1
 face 15 15 2 wall_stojanow_v12
 edge 15 15 2
+pond 4 11

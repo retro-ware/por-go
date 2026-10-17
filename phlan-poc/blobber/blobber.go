@@ -74,6 +74,7 @@ type Object struct {
 	X, Y int
 	Img  *ebiten.Image
 	Size float64
+	At   *[2]float64 // phlan-poc: an exact floor position (a tree on a square's edge or corner) instead of the cell's centre
 }
 
 // Objects is the host-maintained list of objects on the current map.
@@ -297,6 +298,9 @@ func blocked(x, y, dx, dy int) bool {
 
 // Water (phlan-poc) are the cells drawn as water instead of floor; so is everything off the map.
 var Water = map[[2]int]bool{}
+
+// Pond (phlan-poc) are cells drawn as water that are not sea: no water off the map for them.
+var Pond = map[[2]int]bool{}
 
 func inMap(x, y int) bool { return y >= 0 && y < len(level) && x >= 0 && x < len(level[y]) }
 
@@ -1603,7 +1607,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
 		var f *face
 		wx, wy := cx, cy
-		if Water[cell] || !inMap(cx, cy) && len(Water) > 0 { // phlan-poc: water, its ripples drifting
+		if Water[cell] || Pond[cell] || !inMap(cx, cy) && len(Water) > 0 { // phlan-poc: water, its ripples drifting
 			w := g.time * 0.02
 			f = q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
 		} else {
@@ -1673,10 +1677,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			vert{e.x + hx, e.y + e.size/2, e.z + hz, 1, 1, 0, 0, 0}, vert{e.x - hx, e.y + e.size/2, e.z - hz, 0, 1, 0, 0, 0}, e.tex, 1)
 	}
 	for _, o := range Objects { // props and floor items: static floor-standing billboards
-		if _, ok := visibleCells(c)[[2]int{o.X, o.Y}]; !ok || o.Img == nil {
+		if o.Img == nil {
 			continue
 		}
 		ox, oz := float64(o.X)+0.5+c.fwx*eyeBack, float64(o.Y)+0.5+c.fwz*eyeBack
+		if o.At != nil { // phlan-poc: stands where it stands, seen like a wall (no culling by cell)
+			ox, oz = o.At[0], o.At[1]
+		} else if _, ok := visibleCells(c)[[2]int{o.X, o.Y}]; !ok {
+			continue
+		}
 		b := o.Img.Bounds()
 		k := o.Size / math.Max(float64(b.Dx()), float64(b.Dy()))
 		wid, hgt := k*float64(b.Dx()), k*float64(b.Dy())

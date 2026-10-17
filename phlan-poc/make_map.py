@@ -22,6 +22,7 @@ HERE = Path(__file__).resolve().parent
 NAME = sys.argv[1] if sys.argv[1:] else "phlan"
 A = AREAS[NAME]
 g = (HERE / "geo{}_{}.bin".format(*A["geo"])).read_bytes()
+POND = {v for v in A["walls"] if (o := origin(NAME, v))[1] in AREAS[o[0]].get("pond", ())}  # drawn as water floor
 TEX = {v: "wall_{}_v{:02}".format(*origin(NAME, v)) for v in A["walls"]}  # reused walls: the first area's texture
 START = A["start"]
 
@@ -55,14 +56,47 @@ if START is None:  # no entry square pinned: a square of the largest walkable re
     START = max(((x, y) for y in range(16) for x in range(16)), key=lambda c: len(reach(c))) + ("n",)
 
 
+def trunks(v):
+    """Where the trees of wall v stand along its face (0 left .. 1 right, as seen from inside) and their height in
+    squares: from the original's art, the trunk columns in its bottom rows; a tree cut by an edge stands on it."""
+    import numpy as np
+    from PIL import Image
+    from areas import src, DUMP
+    a = np.asarray(Image.open(DUMP / f"{src(NAME, v)}.png").convert("RGBA"))[..., 3] > 0
+    h, w = a.shape
+    cols = a[int(h * 0.9):].any(axis=0)
+    out, x = [], 0
+    while x < w:
+        if cols[x]:
+            x0 = x
+            while x < w and cols[x]:
+                x += 1
+            out.append(0.0 if x0 == 0 else 1.0 if x == w else (x0 + x) / 2 / w)
+        x += 1
+    rows = np.nonzero(a.any(axis=1))[0]
+    return out, (rows.max() - rows.min() + 1) / h * 64 / 56
+
+
 def main():
     extra = []
+    props = {}  # (x, y) -> line: props on shared corners only once
+    ponds = set()  # the square beyond a pond wall is water floor; the wall itself is not drawn
     for y in range(16):
         for x in range(16):
             for d in range(4):
                 v, door = side(x, y, d)
-                if v:
+                if v in A.get("props", {}):  # billboards where the trunks stand; still blocks like the wall
+                    ends = [((x, y), (x + 1, y)), ((x + 1, y), (x + 1, y + 1)), ((x + 1, y + 1), (x, y + 1)),
+                            ((x, y + 1), (x, y))][d]
+                    ts, size = trunks(v)
+                    for t in ts:
+                        px, py = (round(ends[0][i] + (ends[1][i] - ends[0][i]) * t, 3) for i in (0, 1))
+                        props[px, py] = f"prop {A['props'][v]} {px} {py} {size:.3f}"
+                elif v in POND:
+                    ponds.add((x + STEP[d][0], y + STEP[d][1]))
+                elif v:
                     extra.append(f"face {x} {y} {d} {TEX.get(v, "?")}")
+                if v:
                     if not door:
                         extra.append(f"edge {x} {y} {d}")
                     if v in A.get("nomap", ()):
@@ -85,6 +119,8 @@ def main():
         water.add((x, y))
         todo += [(x + dx, y + dy) for d, (dx, dy) in enumerate(STEP) if not side(x, y, d)[0]]
     extra += [f"water {x} {y}" for x, y in sorted(water)]
+    extra += [f"pond {x} {y}" for x, y in sorted(ponds)]
+    extra += [props[k] for k in sorted(props)]
     lines = ["." * 16] * 16 + [f"floor {A['floor']}", f"ceiling {A['ceiling']}"] + extra
     (HERE / f"blobber/maps/{NAME}.map").write_text("\n".join(lines) + "\n")
 

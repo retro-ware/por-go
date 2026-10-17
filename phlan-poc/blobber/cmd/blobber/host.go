@@ -38,6 +38,7 @@ type world struct {
 	edges map[[3]int]bool
 	water map[[2]int]bool
 	nomap map[[3]int]bool
+	pond  map[[2]int]bool
 }
 
 // floorItem is loot hidden on a tile; as in World of Xeen items are never drawn in the world, F finds them.
@@ -76,7 +77,7 @@ func (c *console) enter(name string) (*world, error) {
 		}
 	}
 	c.m = name
-	blobber.Faces, blobber.Edges, blobber.Water, blobber.NoMap = w.faces, w.edges, w.water, w.nomap
+	blobber.Faces, blobber.Edges, blobber.Water, blobber.NoMap, blobber.Pond = w.faces, w.edges, w.water, w.nomap, w.pond
 	c.refresh()
 	return w, nil
 }
@@ -108,7 +109,7 @@ func (c *console) load(name string) (*world, error) {
 		old.pop = prev
 	}
 	w := &world{lvl: lvl, objs: map[string]*blobber.Object{},
-		faces: map[[3]int][]blobber.FacePart{}, edges: map[[3]int]bool{}, water: map[[2]int]bool{}, nomap: map[[3]int]bool{}}
+		faces: map[[3]int][]blobber.FacePart{}, edges: map[[3]int]bool{}, water: map[[2]int]bool{}, nomap: map[[3]int]bool{}, pond: map[[2]int]bool{}}
 	c.worlds[name] = w
 	for _, l := range extra {
 		if err := c.place(w, l); err != nil {
@@ -135,7 +136,7 @@ func (c *console) place(w *world, line string) error {
 		n, _ := strconv.Atoi(f[i])
 		return n
 	}
-	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "nomap": 4}[f[0]]
+	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "pond": 3, "nomap": 4, "prop": 5}[f[0]]
 	if need == 0 || len(f) < need {
 		return fmt.Errorf("want %d fields", need)
 	}
@@ -150,8 +151,19 @@ func (c *console) place(w *world, line string) error {
 		w.drop(party.NewItem(f[1], num(4)), num(2), num(3))
 	case "monster":
 		return c.spawn(f[1], num(2), num(3), -1)
+	case "prop": // phlan-poc: prop TEX X Y SIZE, a billboard at an exact floor position (X, Y in squares, floats)
+		var at [2]float64
+		var size float64
+		fmt.Sscan(strings.Join(f[2:5], " "), &at[0], &at[1], &size)
+		img := blobber.WallTexture(f[1])
+		if img == nil {
+			return fmt.Errorf("no texture %q", f[1])
+		}
+		w.objs[line] = &blobber.Object{X: int(at[0]), Y: int(at[1]), Img: img, Size: size, At: &at}
 	case "water": // phlan-poc: water X Y, see blobber.Water
 		w.water[[2]int{num(1), num(2)}] = true
+	case "pond": // phlan-poc: pond X Y, see blobber.Pond
+		w.pond[[2]int{num(1), num(2)}] = true
 	case "nomap": // phlan-poc: nomap X Y SIDE, a face left off the minimap, see blobber.NoMap
 		w.nomap[[3]int{num(1), num(2), num(3)}] = true
 	case "edge": // phlan-poc: edge X Y SIDE, a thin wall, see blobber.Edges

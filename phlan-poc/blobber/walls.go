@@ -114,3 +114,6 @@ func FlatTexture(kind, name string) *ebiten.Image {
 	}
 	return defCeil
 }
+
+// WallTexture returns a painted texture from assets/walls by name (nil if none); phlan-poc uses it for props.
+func WallTexture(name string) *ebiten.Image { return wallTexture(name) }

@@ -172,7 +172,6 @@ face 8 8 2 wall_valjevo3_v03
 edge 8 8 2
 face 1 9 3 wall_valjevo3_v03
 edge 1 9 3
-face 2 9 2 wall_valjevo7_v10
 edge 2 9 2
 face 4 9 1 wall_valjevo3_v03
 edge 4 9 1
@@ -185,7 +184,6 @@ face 8 9 0 wall_valjevo3_v03
 edge 8 9 0
 face 8 9 1 wall_valjevo3_v03
 edge 8 9 1
-face 1 10 1 wall_valjevo7_v10
 edge 1 10 1
 face 1 10 2 wall_valjevo3_v03
 edge 1 10 2
@@ -195,7 +193,6 @@ face 2 10 2 wall_valjevo3_v03
 edge 2 10 2
 face 3 10 2 wall_valjevo3_v03
 edge 3 10 2
-face 3 10 3 wall_valjevo7_v10
 edge 3 10 3
 face 4 10 1 wall_valjevo3_v03
 edge 4 10 1
@@ -209,7 +206,6 @@ face 1 11 2 wall_valjevo3_v03
 edge 1 11 2
 face 1 11 3 wall_valjevo3_v03
 edge 1 11 3
-face 2 11 0 wall_valjevo7_v10
 edge 2 11 0
 face 2 11 2 wall_valjevo3_v03
 edge 2 11 2
@@ -229,3 +225,4 @@ face 8 11 1 wall_valjevo3_v03
 edge 8 11 1
 face 8 11 2 wall_valjevo3_v03
 edge 8 11 2
+pond 2 10

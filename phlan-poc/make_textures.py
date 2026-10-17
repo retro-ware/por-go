@@ -33,7 +33,7 @@ NAME = ARGS.pop(0) if ARGS and ARGS[0] in AREAS else "phlan"
 A = AREAS[NAME]
 RAW = HERE / "raw" / NAME
 # wall value -> (viewdump name, description)
-WALLS = {v: (f"{A['chunks'][(v - 1) // 5]}-wall{(v - 1) % 5 + 1}", d) for v, d in A["walls"].items()}
+WALLS = {v: (f"{A['chunks'][(v - 1) // 5]}-wall{(v - 1) % 5 + 1}", d) for v, d in A["walls"].items() if v not in A.get("props", {})}  # props: make_props.py
 
 
 def seamless(im):
