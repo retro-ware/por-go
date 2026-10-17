@@ -16,13 +16,13 @@ GEO planes (engine/geo.go WallAt/DoorAt/MapCell): 0x000 north<<4|east,
 N E S W from bit 0)."""
 import sys
 from pathlib import Path
-from areas import AREAS
+from areas import AREAS, origin
 
 HERE = Path(__file__).resolve().parent
 NAME = sys.argv[1] if sys.argv[1:] else "phlan"
 A = AREAS[NAME]
 g = (HERE / "geo{}_{}.bin".format(*A["geo"])).read_bytes()
-CHARS = A["chars"]  # wall value -> map character (walls.txt rows written below)
+TEX = {v: "wall_{}_v{:02}".format(*origin(NAME, v)) for v in A["walls"]}  # reused walls: the first area's texture
 START = A["start"]
 
 
@@ -40,7 +40,7 @@ def main():
             for d in range(4):
                 v, door = side(x, y, d)
                 if v:
-                    extra.append(f"face {x} {y} {d} {CHARS[v]}")
+                    extra.append(f"face {x} {y} {d} {TEX.get(v, "?")}")
                     if not door:
                         extra.append(f"edge {x} {y} {d}")
                     if v in A.get("nomap", ()):
@@ -48,7 +48,7 @@ def main():
                     # stakes stand free: also seen from the far side (PoR stores them one-sided)
                     nx, ny = x + (0, 1, 0, -1)[d], y + (-1, 0, 1, 0)[d]
                     if v in A["free_walls"] and 0 <= nx < 16 and 0 <= ny < 16 and not side(nx, ny, d ^ 2)[0]:
-                        extra.append(f"face {nx} {ny} {d ^ 2} {CHARS[v]}")
+                        extra.append(f"face {nx} {ny} {d ^ 2} {TEX.get(v, "?")}")
     # land: the squares a party can walk to from the start (doors pass, a one-sided wall only blocks
     # from its own side). Water: the squares beyond a harbour wall (water_walls) the party can't reach,
     # and what joins them; off the map the engine draws water anyway.
@@ -75,11 +75,6 @@ def main():
     extra += [f"water {x} {y}" for x, y in sorted(water)]
     lines = ["." * 16] * 16 + [f"floor {A['floor']}", f"ceiling {A['ceiling']}"] + extra
     (HERE / f"blobber/maps/{NAME}.map").write_text("\n".join(lines) + "\n")
-
-    walls = HERE / "blobber/assets/walls/walls.txt"
-    rows = [l for l in walls.read_text().splitlines() if f"wall_{NAME}_" not in l]
-    rows += [f"{c} wall_{NAME}_v{v:02}" for v, c in CHARS.items() if v in A["walls"]]
-    walls.write_text("\n".join(rows) + "\n")
 
     if NAME != "phlan":  # the campaign starts in Phlan; other areas are reached with BLOBBER_OPEN
         return

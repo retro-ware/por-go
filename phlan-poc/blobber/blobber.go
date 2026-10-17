@@ -306,6 +306,20 @@ var texWater, texClouds *ebiten.Image
 type FacePart struct {
 	Mat            byte
 	T0, T1, U0, U1 float64
+	Tex            string // phlan-poc: a painted texture by name (assets/walls/TEX.png), instead of Mat
+}
+
+var texMats = map[string]*mat{} // phlan-poc: FacePart.Tex materials, loaded on first use
+
+func texMat(name string) *mat {
+	m, ok := texMats[name]
+	if !ok {
+		if t := wallTexture(name); t != nil {
+			m = &mat{img: t, lit: wallTexture(name + "_light")}
+		}
+		texMats[name] = m
+	}
+	return m
 }
 
 // WallChars lists every map character the renderer knows a texture for, for editor palettes.
@@ -1608,7 +1622,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				if !wall(cx+dirs[i][0], cy+dirs[i][1]) || !inMap(cx+dirs[i][0], cy+dirs[i][1]) { // phlan-poc: no wall around the map
 					continue
 				}
-				parts = []FacePart{{0, 0, 1, 0, 1}}
+				parts = []FacePart{{Mat: 0, T1: 1, U1: 1}}
 			}
 			if parts != nil && (c.x-s.ax)*s.nx+(c.z-s.az)*s.nz <= 0 {
 				continue // a thin wall seen from behind: one-sided, the cell beyond draws its own
@@ -1616,6 +1630,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			var m *mat
 			for _, p := range parts {
 				m = mats[p.Mat]
+				if p.Tex != "" {
+					m = texMat(p.Tex)
+				}
 				if m == nil {
 					m = material(cx+dirs[i][0], cy+dirs[i][1])
 				}

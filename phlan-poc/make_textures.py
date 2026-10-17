@@ -6,12 +6,12 @@ tools/remaster-walls.py (reference with key colour, OpenAI edit, key-out),
 then crossfades or seams the edges, and writes
 blobber/assets/walls/wall_AREA_vNN.png (512x512 RGBA). Raw model output and
 references go to raw/AREA/."""
-import hashlib, importlib.util, io, shutil, subprocess, sys
+import importlib.util, io, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageFilter
-from areas import AREAS
+from areas import AREAS, origin
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -169,36 +169,9 @@ def unwater(dump, src):
     return dump / "nowater"
 
 
-def key(src):
-    """A wall's identity: the pixels of its original art."""
-    return hashlib.sha1(np.asarray(Image.open(HERE / "viewdump" / f"{src}.png").convert("RGBA")).tobytes()).digest()
-
-
-def origin(v):
-    """(area, value) of the first area in areas.py with the same original art as wall v here; its model output
-    is reused, so a wall the game repeats in several areas is generated once and looks the same everywhere."""
-    k = key(WALLS[v][0])
-    for name, a in AREAS.items():
-        for w in a["walls"]:
-            if key(f"{a['chunks'][(w - 1) // 5]}-wall{(w - 1) % 5 + 1}") == k:
-                return name, w
-    return NAME, v
-
-
-def reuse(v):
-    """Copy the model output of wall v's origin into raw/NAME (no API call); False if v is its own origin."""
-    name, w = origin(v)
-    if (name, w) == (NAME, v):
-        return False
-    for kind in ("openai.png", "reference.png"):
-        shutil.copyfile(HERE / "raw" / name / f"v{w:02}_{kind}", RAW / f"v{v:02}_{kind}")
-    return f"{name} {w}"
-
-
 def job(dump, v, src, desc):
-    if r := reuse(v):
-        finish(v)
-        return f"wall {v}: reused {r}"
+    if (o := origin(NAME, v)) != (NAME, v):  # make_map points the faces at that texture
+        return f"wall {v}: reused {o[0]} {o[1]}"
     if v in WATER:
         dump = unwater(dump, src)
     if v in NOTRIM:
@@ -219,8 +192,8 @@ def job(dump, v, src, desc):
 def main():
     if ARGS[:1] == ["finish"]:  # re-cut every texture from raw/ only
         for v in WALLS:
-            reuse(v)
-            finish(v)
+            if origin(NAME, v) == (NAME, v):
+                finish(v)
         return
     RAW.mkdir(parents=True, exist_ok=True)
     dump = HERE / "viewdump"

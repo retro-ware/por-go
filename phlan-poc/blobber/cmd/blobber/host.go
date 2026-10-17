@@ -158,6 +158,9 @@ func (c *console) place(w *world, line string) error {
 		w.edges[[3]int{num(1), num(2), num(3)}] = true
 	case "face": // phlan-poc: face X Y SIDE CHAR [T0 T1 U0 U1], see blobber.Faces
 		p := blobber.FacePart{Mat: f[4][0], T1: 1, U1: 1}
+		if len(f[4]) > 1 { // a texture name instead of a map character
+			p.Mat, p.Tex = 0, f[4]
+		}
 		if len(f) >= 9 {
 			fmt.Sscan(strings.Join(f[5:9], " "), &p.T0, &p.T1, &p.U0, &p.U1)
 		}

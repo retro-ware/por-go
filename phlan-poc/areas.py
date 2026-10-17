@@ -7,7 +7,6 @@ Keys:
   walldefs    (block, slot) loads in the order the area's ECL does (opLoadFiles 37)
   area_kind   ECL block number, DS:84DC: 0 and 10 leave off-map squares empty, others wrap
   chunks      viewdump name of wall values 1-5, 6-10, 11-15 (WALLDEF<disk>-<block>-<chunk>)
-  chars       wall value -> map character (unique across all areas: walls.txt is shared)
   start       (x, y, facing) where the party enters
   water_walls wall values with the sea behind them (water cells are flooded from there)
   free_walls  free-standing walls stored one-sided in the GEO: also drawn from the far side
@@ -22,13 +21,36 @@ Keys:
   nomap       wall values left off the minimap (objects the party walks through, like graves)
   views       comparison shots (x, y, facing), reachable squares only"""
 
+import hashlib
+from pathlib import Path
+
 AREAS = {}
+DUMP = Path(__file__).resolve().parent / "viewdump"
+
+
+def src(name, v):
+    """viewdump name of wall value v of an area."""
+    return f"{AREAS[name]['chunks'][(v - 1) // 5]}-wall{(v - 1) % 5 + 1}"
+
+
+def _key(s):
+    from PIL import Image
+    return hashlib.sha1(Image.open(DUMP / f"{s}.png").convert("RGBA").tobytes()).digest()
+
+
+def origin(name, v):
+    """(area, value) of the first area here with the same original art as wall v of area name: its texture is
+    reused, so a wall the game repeats in several areas is generated once and looks the same everywhere."""
+    k = _key(src(name, v))
+    for n, a in AREAS.items():
+        for w in a["walls"]:
+            if _key(src(n, w)) == k:
+                return n, w
+    return name, v
 
 AREAS["phlan"] = dict(
     geo=(3, 0), walldefs=[(0, 1)], area_kind=11,
     chunks=["WALLDEF3-000-1", "WALLDEF3-000-2", "WALLDEF3-000-3"],
-    chars={1: "T", 3: "U", 5: "V", 7: "X", 9: "Y", 10: "Z", 2: "H", 4: "J", 6: "K", 8: "N", 11: "O", 12: "P",
-           13: "Q", 14: "R", 15: "S"},
     start=(7, 7, "n"), water_walls={14, 15}, free_walls={14},
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim={1, 2, 3, 6, 7, 8, 9, 10}, water={14, 15}, tile={15}, noseam={14, 15},
@@ -76,10 +98,9 @@ AREAS["phlan"] = dict(
 AREAS["graveyard"] = dict(  # Valhingen Graveyard: ECL4 block 10
     geo=(4, 10), walldefs=[(21, 1), (20, 3)], area_kind=10,  # the ECL also asks for 22, which is missing (21 fills slots 1-2)
     chunks=["WALLDEF4-021-1", "WALLDEF4-021-2", "WALLDEF4-020-1"],
-    chars={v: "abcdefghijklmno"[v - 1] for v in range(1, 16)},
-    start=(0, 4, "e"), water_walls=set(), free_walls=set(),
     doors={(5, 3, 3)},  # the cross between 5,3 and 4,3 is a door only from 4,3 in the original
     nomap={2, 3},  # crosses and headstones
+    start=(0, 4, "e"), water_walls=set(), free_walls=set(),
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim={1, 4, 5, 6, 7, 9, 10, 14, 15}, water=set(), tile=set(), noseam={2, 3, 8, 11},
     views=[(1, 0, "S"), (13, 11, "W"), (15, 7, "W"), (0, 7, "S"), (6, 9, "S"), (14, 12, "W"), (15, 11, "E"),
@@ -116,7 +137,6 @@ AREAS["graveyard"] = dict(  # Valhingen Graveyard: ECL4 block 10
 AREAS["slums"] = dict(  # the Slums of Phlan: ECL2 block 20
     geo=(2, 20), walldefs=[(2, 1), (4, 2), (1, 3)], area_kind=20,
     chunks=["WALLDEF2-002-1", "WALLDEF2-004-1", "WALLDEF2-001-1"],
-    chars={v: "pqrstuvwxyzBDILM"[v - 1] for v in range(1, 16)},
     start=(14, 10, "n"), water_walls=set(), free_walls=set(),
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim={2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15}, water=set(), tile=set(), noseam=set(), arch={13},
@@ -158,7 +178,6 @@ AREAS["slums"] = dict(  # the Slums of Phlan: ECL2 block 20
 AREAS["podol"] = dict(  # Podol Plaza: ECL1 block 18
     geo=(1, 18), walldefs=[(1, 1), (3, 2), (5, 3)], area_kind=18,
     chunks=["WALLDEF1-001-1", "WALLDEF1-003-1", "WALLDEF1-005-1"],
-    chars={v: "0123456789W+-=@"[v - 1] for v in range(1, 16)},
     start=(2, 10, "n"), water_walls=set(), free_walls=set(),
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim=set(range(1, 16)), water=set(), tile=set(), noseam=set(), arch={3, 8},
