@@ -36,7 +36,7 @@ type Presenter struct {
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
 	sc := p.scene(v)
-	if sc == nil || !v.MainFrame || v.Window != engine.WinThreeD {
+	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture) {
 		p.shown = "" // back from elsewhere: no tween from where the view was
 		return p.Classic.Draw(dst, scr, note)
 	}
@@ -50,7 +50,16 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	}
 	p.animate()
 	p.view.Draw(dst)
-	p.drawPrompt(dst, frame)
+	k := scale(dst)
+	b := dst.Bounds()
+	pk := min(k, max(1, float64(b.Dy()/2/engine.ViewWindow.Framed().Pixels().Dy()))) // the pop-ups fit their halves
+	if v.Window == engine.WinPicture {
+		drawBox(dst, frame, engine.ViewWindow.Framed(), pk, b.Dy()/4)
+	}
+	if v.TextShown {
+		drawBox(dst, frame, engine.TextPane.Framed(), pk, b.Dy()*3/4)
+	}
+	p.drawPrompt(dst, frame, k)
 	return classic.Rect{}
 }
 
@@ -99,12 +108,27 @@ func (p *Presenter) animate() {
 	}
 }
 
-// drawPrompt lays the original's menu and prompt rows along the bottom,
-// scaled by the largest whole factor that fits the width (pixels stay square).
-func (p *Presenter) drawPrompt(dst, frame *ebiten.Image) {
+// scale is the largest whole factor the classic screen fits dst at (at
+// least 1): pixels stay square.
+func scale(dst *ebiten.Image) float64 {
+	b := dst.Bounds()
+	return float64(max(1, min(b.Dx()/ega.W, b.Dy()/ega.H)))
+}
+
+// drawBox copies box r of the classic frame, border included, onto dst at
+// scale k, centred across and on the line cy.
+func drawBox(dst, frame *ebiten.Image, r engine.CellRect, k float64, cy int) {
+	px := r.Pixels()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate((float64(dst.Bounds().Dx())-k*float64(px.Dx()))/2, float64(cy)-k*float64(px.Dy())/2)
+	dst.DrawImage(frame.SubImage(px).(*ebiten.Image), op)
+}
+
+// drawPrompt lays the original's menu and prompt rows along the bottom.
+func (p *Presenter) drawPrompt(dst, frame *ebiten.Image, k float64) {
 	r := engine.PromptRows.Pixels()
 	b := dst.Bounds()
-	k := max(1, float64(int(float64(b.Dx())/ega.W)))
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy()))
