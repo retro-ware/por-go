@@ -1752,13 +1752,17 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 	for _, cell := range cells {
 		cx, cy := cell[0], cell[1]
 		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
+		// floor and ceiling tiles overlap their neighbours by a hair (texture coordinates grown to
+		// match): edges computed apart from each other round differently and let the sky through
+		const lap = 0.004
+		ox0, oz0, ox1, oz1 := x0-lap, z0-lap, x1+lap, z1+lap
 		var f *face
 		wx, wy := cx, cy
 		if Water[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting
 			w := g.time * 0.02
-			f = q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
+			f = q(vert{ox0, 0.5, oz0, ox0/2 + w, oz0 / 2, 0, 0, 0}, vert{ox1, 0.5, oz0, ox1/2 + w, oz0 / 2, 0, 0, 0}, vert{ox1, 0.5, oz1, ox1/2 + w, oz1 / 2, 0, 0, 0}, vert{ox0, 0.5, oz1, ox0/2 + w, oz1 / 2, 0, 0, 0}, texWater, 3)
 		} else {
-			f = q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, texFloor, 3)
+			f = q(vert{ox0, 0.5, oz0, -lap, -lap, 0, 0, 0}, vert{ox1, 0.5, oz0, 1 + lap, -lap, 0, 0, 0}, vert{ox1, 0.5, oz1, 1 + lap, 1 + lap, 0, 0, 0}, vert{ox0, 0.5, oz1, -lap, 1 + lap, 0, 0, 0}, texFloor, 3)
 		}
 		f.pass = 0
 		if m := pondMud(cell); m != nil { // phlan-poc: the muddy bank around a pond, fading into the floor
@@ -1793,7 +1797,7 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 			}
 		}
 		if !openSky {
-			f := q(vert{x0, -0.5, z0, 0, 0, 0, 0, 0}, vert{x1, -0.5, z0, 1, 0, 0, 0, 0}, vert{x1, -0.5, z1, 1, 1, 0, 0, 0}, vert{x0, -0.5, z1, 0, 1, 0, 0, 0}, texCeil, 3)
+			f := q(vert{ox0, -0.5, oz0, -lap, -lap, 0, 0, 0}, vert{ox1, -0.5, oz0, 1 + lap, -lap, 0, 0, 0}, vert{ox1, -0.5, oz1, 1 + lap, 1 + lap, 0, 0, 0}, vert{ox0, -0.5, oz1, -lap, 1 + lap, 0, 0, 0}, texCeil, 3)
 			f.pass = 0
 		}
 		// wall faces on the four sides of this floor cell, textured by how they face the camera

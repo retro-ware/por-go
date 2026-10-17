@@ -110,11 +110,11 @@ func (e *Engine) View() View {
 // snapState is the engine's side of the seam.
 type snapState struct {
 	view   atomic.Pointer[View]
-	win    Window                 // set by whatever drew into the view window last
-	frame  []byte                 // the frame's border pixels as DrawMainFrame left them
-	heads  map[string]image.Image // decoded HEAD blocks by file and id
-	border [][2]int               // pixel positions of frame
-	menu   *Menu                  // the innermost DisplayInput's menu (Sel unset)
+	win    Window              // set by whatever drew into the view window last
+	frame  []byte              // the frame's border pixels as DrawMainFrame left them
+	heads  map[int]image.Image // decoded HEAD blocks by id
+	border [][2]int            // pixel positions of frame
+	menu   *Menu               // the innermost DisplayInput's menu (Sel unset)
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is
@@ -167,9 +167,9 @@ func (e *Engine) publish() {
 		Window: s.win,
 		Area:   AreaID{Disk: e.geoDisk(), Block: int(e.area.Geo)},
 		X:      e.posX, Y: e.posY,
-		Facing: Dir(e.viewFacing() / 2 & 3),
-		Day:    e.isDay(),
-		Inside: e.MapCell(e.posX, e.posY) > 0x7F,
+		Facing:  Dir(e.viewFacing() / 2 & 3),
+		Day:     e.isDay(),
+		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,
 		Command: e.ext.inCommand,
 	}
 	if m := s.menu; m != nil {
@@ -221,16 +221,22 @@ func (e *Engine) charHead(c *Character) image.Image {
 }
 
 // head decodes HEAD block id in the EGA colours (cached; nil if missing).
+// Each disk's HEAD file holds only some of the player heads (HEAD3 all of
+// them, the same pictures), so the others are looked up after the current
+// disk's.
 func (e *Engine) head(id int) image.Image {
-	key := e.symDAX[4:] + "/" + strconv.Itoa(id)
-	if im, ok := e.snap.heads[key]; ok {
+	if im, ok := e.snap.heads[id]; ok {
 		return im
 	}
 	if e.snap.heads == nil {
-		e.snap.heads = map[string]image.Image{}
+		e.snap.heads = map[int]image.Image{}
 	}
 	var out image.Image
-	if im := e.LoadPic("HEAD"+e.symDAX[4:], id); im != nil && im.Count > 0 {
+	im := e.LoadPic("HEAD"+e.symDAX[4:], id)
+	for d := 1; d <= 8 && (im == nil || im.Count == 0); d++ {
+		im = e.LoadPic("HEAD"+strconv.Itoa(d), id)
+	}
+	if im != nil && im.Count > 0 {
 		w, h := im.Width*8, im.Height
 		d := im.Frame(0)
 		rgba := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -248,7 +254,7 @@ func (e *Engine) head(id int) image.Image {
 		}
 		out = rgba
 	}
-	e.snap.heads[key] = out
+	e.snap.heads[id] = out
 	return out
 }
 

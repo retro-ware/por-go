@@ -239,3 +239,5 @@ The rest of the seam stays as it is.
   - The copy's tween is the same as BlobberRPG's.
   - What looked jerky was `Follow`: every engine step braked to a stop, and a step arriving mid-tween restarted from the target.
   - Moves that come while one runs now queue (up to 8). The tween carries its speed into them and runs faster while they pile up (`TestViewFollowQueue`).
+- **Heads on other disks:** each disk's HEAD file holds only some of the player heads; HEAD3 has all of them, and they are the same pictures wherever they appear. `head` now tries the current disk's file first and then the others. Before, after the boat to Sokol Keep most cards fell back to Blobber's stock class portraits.
+- **Floor seams:** floor, water and ceiling tiles overlap their neighbours by 0.004 cells, with the texture coordinates grown to match. Edges computed separately rounded apart and let the sky show through as thin blue lines (Phlan 3,3 N: 290 blue floor pixels before, 0 after).
