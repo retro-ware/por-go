@@ -37,6 +37,7 @@ type world struct {
 	faces map[[3]int][]blobber.FacePart
 	edges map[[3]int]bool
 	water map[[2]int]bool
+	nomap map[[3]int]bool
 }
 
 // floorItem is loot hidden on a tile; as in World of Xeen items are never drawn in the world, F finds them.
@@ -75,7 +76,7 @@ func (c *console) enter(name string) (*world, error) {
 		}
 	}
 	c.m = name
-	blobber.Faces, blobber.Edges, blobber.Water = w.faces, w.edges, w.water
+	blobber.Faces, blobber.Edges, blobber.Water, blobber.NoMap = w.faces, w.edges, w.water, w.nomap
 	c.refresh()
 	return w, nil
 }
@@ -107,7 +108,7 @@ func (c *console) load(name string) (*world, error) {
 		old.pop = prev
 	}
 	w := &world{lvl: lvl, objs: map[string]*blobber.Object{},
-		faces: map[[3]int][]blobber.FacePart{}, edges: map[[3]int]bool{}, water: map[[2]int]bool{}}
+		faces: map[[3]int][]blobber.FacePart{}, edges: map[[3]int]bool{}, water: map[[2]int]bool{}, nomap: map[[3]int]bool{}}
 	c.worlds[name] = w
 	for _, l := range extra {
 		if err := c.place(w, l); err != nil {
@@ -134,7 +135,7 @@ func (c *console) place(w *world, line string) error {
 		n, _ := strconv.Atoi(f[i])
 		return n
 	}
-	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3}[f[0]]
+	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "nomap": 4}[f[0]]
 	if need == 0 || len(f) < need {
 		return fmt.Errorf("want %d fields", need)
 	}
@@ -151,6 +152,8 @@ func (c *console) place(w *world, line string) error {
 		return c.spawn(f[1], num(2), num(3), -1)
 	case "water": // phlan-poc: water X Y, see blobber.Water
 		w.water[[2]int{num(1), num(2)}] = true
+	case "nomap": // phlan-poc: nomap X Y SIDE, a face left off the minimap, see blobber.NoMap
+		w.nomap[[3]int{num(1), num(2), num(3)}] = true
 	case "edge": // phlan-poc: edge X Y SIDE, a thin wall, see blobber.Edges
 		w.edges[[3]int{num(1), num(2), num(3)}] = true
 	case "face": // phlan-poc: face X Y SIDE CHAR [T0 T1 U0 U1], see blobber.Faces

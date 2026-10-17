@@ -87,6 +87,10 @@ the slums p-z and B D I L M),
   squares no party can reach. Emits `water X Y`. Off the map is water too.
 - Writes `walls.txt` (`CHAR wall_<area>_vNN`); Phlan also sets the `start`
   line in `world.txt` (other areas are opened with `BLOBBER_OPEN`).
+- Fixes to the original's data go in `doors` (sides made passable, e.g. the
+  graveyard's one-way cross at 5,3 W). Wall values in `nomap` (graves) are
+  drawn in 3D but left off the minimap, which shows blocking walls grey and
+  doors brown.
 - Walls marked as doors are passable faces. In the graveyard every cross and
   headstone is a "door": the party walks through the grave rows.
 

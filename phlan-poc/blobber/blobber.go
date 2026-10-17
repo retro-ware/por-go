@@ -282,6 +282,9 @@ var Faces = map[[3]int][]FacePart{}
 // dirs[side]. With Faces they give a map edge walls of no thickness, one-sided like Pool of Radiance's.
 var Edges = map[[3]int]bool{}
 
+// NoMap (phlan-poc) are faces the minimap leaves out: objects the party walks through, like graves.
+var NoMap = map[[3]int]bool{}
+
 // blocked: a wall cell at x+dx, y+dy, or a thin wall on the way there.
 func blocked(x, y, dx, dy int) bool {
 	for i, d := range dirs {
@@ -1920,7 +1923,7 @@ func (g *Game) drawMinimap(screen *ebiten.Image, c cam) {
 		}
 	}
 	for k := range Faces { // phlan-poc: thin walls as lines on the cell's side; brown where the party can pass (doors)
-		if !seen[[2]int{k[0], k[1]}] {
+		if !seen[[2]int{k[0], k[1]}] || NoMap[k] {
 			continue
 		}
 		x0, y0 := ox+cs*float32(k[0]-g.x+r), oy+cs*float32(k[1]-g.y+r)

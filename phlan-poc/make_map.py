@@ -30,7 +30,7 @@ def side(x, y, d):
     """(wall value, door) on side d (0 N, 1 E, 2 S, 3 W) of square (x, y)."""
     i = y * 16 + x
     v = [g[i] >> 4, g[i] & 15, g[0x100 + i] >> 4, g[0x100 + i] & 15][d]
-    return v, v != 0 and (g[0x300 + i] >> (2 * d) & 3) != 0
+    return v, v != 0 and ((g[0x300 + i] >> (2 * d) & 3) != 0 or (x, y, d) in A.get("doors", ()))
 
 
 def main():
@@ -43,6 +43,8 @@ def main():
                     extra.append(f"face {x} {y} {d} {CHARS[v]}")
                     if not door:
                         extra.append(f"edge {x} {y} {d}")
+                    if v in A.get("nomap", ()):
+                        extra.append(f"nomap {x} {y} {d}")
                     # stakes stand free: also seen from the far side (PoR stores them one-sided)
                     nx, ny = x + (0, 1, 0, -1)[d], y + (-1, 0, 1, 0)[d]
                     if v in A["free_walls"] and 0 <= nx < 16 and 0 <= ny < 16 and not side(nx, ny, d ^ 2)[0]:

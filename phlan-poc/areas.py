@@ -18,6 +18,8 @@ Keys:
   tile        walls crossfaded at the edges instead of seamed
   noseam      walls a seam would cut through (objects, posts, gaps)
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
+  doors       (x, y, side) fixes to the original's data: sides made passable (one-way doors)
+  nomap       wall values left off the minimap (objects the party walks through, like graves)
   views       comparison shots (x, y, facing), reachable squares only"""
 
 AREAS = {}
@@ -76,6 +78,8 @@ AREAS["graveyard"] = dict(  # Valhingen Graveyard: ECL4 block 10
     chunks=["WALLDEF4-021-1", "WALLDEF4-021-2", "WALLDEF4-020-1"],
     chars={v: "abcdefghijklmno"[v - 1] for v in range(1, 16)},
     start=(0, 4, "e"), water_walls=set(), free_walls=set(),
+    doors={(5, 3, 3)},  # the cross between 5,3 and 4,3 is a door only from 4,3 in the original
+    nomap={2, 3},  # crosses and headstones
     floor="phlan_dirt", ceiling="sky_phlan",
     notrim={1, 4, 5, 6, 7, 9, 10, 14, 15}, water=set(), tile=set(), noseam={2, 3, 8, 11},
     views=[(1, 0, "S"), (13, 11, "W"), (15, 7, "W"), (0, 7, "S"), (6, 9, "S"), (14, 12, "W"), (15, 11, "E"),
