@@ -216,19 +216,18 @@ func menuID(m *engine.Menu) string {
 // of the party down the left, the rest down the right, at the largest
 // whole scale where a column of four fits (eight with two NPCs).
 func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
-	const gap, rows = 8, 4
 	b := dst.Bounds()
-	k := max(1, min(ui.K(480, 360), (b.Dy()-mapRect(dst).Max.Y-gap)/(rows*(ui.CardH+gap))))
+	k := cardScale(dst)
 	return func(i, n int) image.Rectangle {
 		left := (n + 1) / 2
 		col, row, per := 0, i, left
 		if i >= left {
 			col, row, per = 1, i-left, n-left
 		}
-		y := b.Dy() - (per-row)*(ui.CardH+gap)*k + ui.CardFoot*k // the bars end a gap above the bottom
-		x := gap * k
+		y := b.Dy() - (per-row)*(ui.CardH+cardGap)*k + ui.CardFoot*k // the bars end a gap above the bottom
+		x := cardGap * k
 		if col == 1 {
-			x = b.Dx() - gap*k - ui.CardW*k
+			x = b.Dx() - cardGap*k - ui.CardW*k
 		}
 		return image.Rect(x, y, x+ui.CardW*k, y+ui.CardH*k)
 	}
@@ -243,11 +242,23 @@ func mapRect(dst *ebiten.Image) image.Rectangle {
 	return image.Rect(b.Dx()-side, 0, b.Dx(), side)
 }
 
+const cardGap, cardRows = 8, 4
+
+// cardScale is the cards' whole scale: the largest where a column of four
+// fits under the map at its smallest.
+func cardScale(dst *ebiten.Image) int {
+	return max(1, min(ui.K(480, 360), (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(ui.CardH+cardGap))))
+}
+
 // mapSide is View.Map's side in pixels.
 const mapSide = 16 * engine.MapCell
 
-// mapScale is the map's whole scale: small, a minimap.
-func mapScale(dst *ebiten.Image) int { return max(1, dst.Bounds().Dy()/1000) }
+// mapScale is the map's whole scale: as large as leaves room for the card
+// columns (four cards each, two of them NPCs) under it.
+func mapScale(dst *ebiten.Image) int {
+	free := dst.Bounds().Dy() - cardRows*(ui.CardH+cardGap)*cardScale(dst) - cardGap - 2
+	return max(1, free/mapSide)
+}
 
 // drawMap shows the map as the full map draws it (View.Map) in mapRect.
 func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
