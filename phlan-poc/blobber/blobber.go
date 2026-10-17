@@ -1782,10 +1782,10 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 			f.pass, f.dist, f.grid, f.org, f.only = 0, 1e9, [2]int{int(w), int(h)}, lo, vis
 		}
 		if openSky { // under it, ground out to the horizon (the sea on a coast), so no sky shows below it
-			const span = 90.0
+			const span = 4000.0 // the plane's far edge sits under a pixel below the horizon
 			gx0, gz0, gx1, gz1 := math.Floor(c.x)-span, math.Floor(c.z)-span, math.Floor(c.x)+span, math.Floor(c.z)+span
 			t, k, wind := texFloor, 1.0, 0.0
-			if Sea {
+			if len(Water) > 0 || Sea {
 				t, k, wind = texWater, 0.5, g.time*0.02
 			}
 			f := q(vert{gx0, 0.5, gz0, gx0*k + wind, gz0 * k, 0, 0, 0}, vert{gx1, 0.5, gz0, gx1*k + wind, gz0 * k, 0, 0, 0},
