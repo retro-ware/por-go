@@ -1,0 +1,809 @@
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+floor phlan_dirt
+ceiling sky_phlan
+face 0 0 0 wall_phlan_v02
+edge 0 0 0
+face 0 0 3 wall_phlan_v02
+edge 0 0 3
+face 1 0 0 wall_phlan_v02
+edge 1 0 0
+face 1 0 1 wall_phlan_v02
+edge 1 0 1
+face 2 0 0 wall_phlan_v02
+edge 2 0 0
+face 2 0 2 wall_phlan_v02
+face 2 0 3 wall_phlan_v02
+edge 2 0 3
+face 3 0 0 wall_phlan_v02
+edge 3 0 0
+face 3 0 2 wall_phlan_v02
+edge 3 0 2
+face 4 0 0 wall_phlan_v02
+edge 4 0 0
+face 4 0 1 wall_slums_v15
+face 4 0 2 wall_slums_v15
+face 5 0 0 wall_phlan_v02
+edge 5 0 0
+face 5 0 3 wall_slums_v15
+face 6 0 0 wall_phlan_v02
+edge 6 0 0
+face 6 0 1 wall_phlan_v02
+edge 6 0 1
+face 7 0 0 wall_stojanow_v06
+face 7 0 3 wall_stojanow_v07
+edge 7 0 3
+face 8 0 0 wall_stojanow_v06
+face 8 0 1 wall_stojanow_v07
+edge 8 0 1
+face 9 0 0 wall_phlan_v02
+edge 9 0 0
+face 9 0 3 wall_phlan_v02
+edge 9 0 3
+face 10 0 0 wall_phlan_v02
+edge 10 0 0
+face 10 0 1 wall_slums_v15
+face 11 0 0 wall_phlan_v02
+edge 11 0 0
+face 11 0 2 wall_slums_v15
+face 11 0 3 wall_slums_v15
+face 12 0 0 wall_phlan_v02
+edge 12 0 0
+face 12 0 2 wall_phlan_v02
+edge 12 0 2
+face 13 0 0 wall_phlan_v02
+edge 13 0 0
+face 13 0 1 wall_slums_v15
+face 13 0 2 wall_slums_v15
+face 14 0 0 wall_phlan_v02
+edge 14 0 0
+face 14 0 3 wall_slums_v15
+face 15 0 0 wall_phlan_v02
+edge 15 0 0
+face 15 0 1 wall_phlan_v02
+edge 15 0 1
+face 0 1 2 wall_slums_v15
+face 0 1 3 wall_phlan_v02
+edge 0 1 3
+face 1 1 1 wall_phlan_v02
+edge 1 1 1
+face 1 1 2 wall_phlan_v02
+edge 1 1 2
+face 2 1 0 wall_stojanow_v09
+edge 2 1 0
+face 2 1 3 wall_stojanow_v07
+edge 2 1 3
+face 3 1 0 wall_stojanow_v09
+edge 3 1 0
+face 4 1 0 wall_sokal_v15
+face 4 1 1 wall_stojanow_v07
+edge 4 1 1
+face 5 1 2 wall_phlan_v02
+edge 5 1 2
+face 5 1 3 wall_phlan_v02
+edge 5 1 3
+face 6 1 1 wall_phlan_v02
+edge 6 1 1
+face 6 1 2 wall_phlan_v02
+edge 6 1 2
+face 7 1 3 wall_stojanow_v07
+edge 7 1 3
+face 8 1 1 wall_stojanow_v07
+edge 8 1 1
+face 9 1 2 wall_phlan_v02
+edge 9 1 2
+face 9 1 3 wall_phlan_v02
+edge 9 1 3
+face 10 1 1 wall_phlan_v02
+edge 10 1 1
+face 10 1 2 wall_phlan_v02
+edge 10 1 2
+face 11 1 0 wall_sokal_v15
+face 11 1 3 wall_stojanow_v07
+edge 11 1 3
+face 12 1 0 wall_stojanow_v09
+edge 12 1 0
+face 13 1 0 wall_sokal_v15
+face 13 1 1 wall_stojanow_v07
+edge 13 1 1
+face 14 1 2 wall_phlan_v02
+edge 14 1 2
+face 14 1 3 wall_phlan_v02
+edge 14 1 3
+face 15 1 1 wall_phlan_v02
+edge 15 1 1
+face 15 1 2 wall_slums_v15
+face 0 2 0 wall_slums_v15
+face 0 2 1 wall_phlan_v02
+edge 0 2 1
+face 0 2 3 wall_phlan_v02
+edge 0 2 3
+face 1 2 0 wall_stojanow_v07
+edge 1 2 0
+face 1 2 3 wall_stojanow_v09
+edge 1 2 3
+face 4 2 2 wall_slums_v04
+edge 4 2 2
+face 5 2 0 wall_stojanow_v07
+edge 5 2 0
+face 5 2 2 wall_slums_v05
+face 6 2 0 wall_stojanow_v07
+edge 6 2 0
+face 6 2 2 wall_slums_v04
+edge 6 2 2
+face 9 2 0 wall_stojanow_v07
+edge 9 2 0
+face 9 2 2 wall_slums_v04
+edge 9 2 2
+face 10 2 0 wall_stojanow_v07
+edge 10 2 0
+face 10 2 2 wall_slums_v05
+face 11 2 2 wall_slums_v04
+edge 11 2 2
+face 14 2 0 wall_stojanow_v07
+edge 14 2 0
+face 14 2 1 wall_stojanow_v09
+edge 14 2 1
+face 15 2 0 wall_slums_v15
+face 15 2 1 wall_phlan_v02
+edge 15 2 1
+face 15 2 3 wall_phlan_v02
+edge 15 2 3
+face 0 3 1 wall_phlan_v02
+edge 0 3 1
+face 0 3 3 wall_phlan_v02
+edge 0 3 3
+face 1 3 3 wall_stojanow_v09
+edge 1 3 3
+face 3 3 1 wall_slums_v04
+edge 3 3 1
+face 3 3 2 wall_slums_v04
+edge 3 3 2
+face 4 3 0 wall_slums_v04
+edge 4 3 0
+face 4 3 2 wall_slums_v04
+edge 4 3 2
+face 4 3 3 wall_slums_v04
+edge 4 3 3
+face 5 3 0 wall_slums_v05
+face 5 3 2 wall_slums_v05
+face 6 3 0 wall_slums_v04
+edge 6 3 0
+face 6 3 1 wall_slums_v04
+edge 6 3 1
+face 6 3 2 wall_slums_v04
+edge 6 3 2
+face 7 3 3 wall_slums_v04
+edge 7 3 3
+face 8 3 1 wall_slums_v04
+edge 8 3 1
+face 9 3 0 wall_slums_v04
+edge 9 3 0
+face 9 3 2 wall_slums_v04
+edge 9 3 2
+face 9 3 3 wall_slums_v04
+edge 9 3 3
+face 10 3 0 wall_slums_v05
+face 10 3 2 wall_slums_v05
+face 11 3 0 wall_slums_v04
+edge 11 3 0
+face 11 3 1 wall_slums_v04
+edge 11 3 1
+face 11 3 2 wall_slums_v04
+edge 11 3 2
+face 12 3 2 wall_slums_v04
+edge 12 3 2
+face 12 3 3 wall_slums_v04
+edge 12 3 3
+face 14 3 1 wall_stojanow_v09
+edge 14 3 1
+face 15 3 1 wall_phlan_v02
+edge 15 3 1
+face 15 3 3 wall_phlan_v02
+edge 15 3 3
+face 0 4 1 wall_phlan_v02
+edge 0 4 1
+face 0 4 3 wall_phlan_v02
+edge 0 4 3
+face 1 4 3 wall_stojanow_v09
+edge 1 4 3
+face 2 4 1 wall_slums_v04
+edge 2 4 1
+face 3 4 0 wall_slums_v04
+edge 3 4 0
+face 3 4 1 wall_slums_v04
+edge 3 4 1
+face 3 4 3 wall_slums_v04
+edge 3 4 3
+face 4 4 0 wall_slums_v04
+edge 4 4 0
+face 4 4 3 wall_slums_v04
+edge 4 4 3
+face 5 4 0 wall_slums_v05
+face 5 4 2 wall_stojanow_v09
+edge 5 4 2
+face 6 4 0 wall_slums_v04
+edge 6 4 0
+face 6 4 2 wall_stojanow_v09
+edge 6 4 2
+face 7 4 2 wall_stojanow_v06
+edge 7 4 2
+face 8 4 2 wall_stojanow_v06
+edge 8 4 2
+face 9 4 0 wall_slums_v04
+edge 9 4 0
+face 9 4 2 wall_stojanow_v09
+edge 9 4 2
+face 10 4 0 wall_slums_v05
+face 10 4 2 wall_stojanow_v09
+edge 10 4 2
+face 11 4 0 wall_slums_v04
+edge 11 4 0
+face 11 4 1 wall_slums_v04
+edge 11 4 1
+face 12 4 0 wall_slums_v04
+edge 12 4 0
+face 12 4 1 wall_slums_v05
+face 12 4 3 wall_slums_v04
+edge 12 4 3
+face 13 4 3 wall_slums_v05
+face 14 4 1 wall_stojanow_v09
+edge 14 4 1
+face 15 4 1 wall_phlan_v02
+edge 15 4 1
+face 15 4 3 wall_phlan_v02
+edge 15 4 3
+face 0 5 1 wall_slums_v15
+face 0 5 3 wall_phlan_v02
+edge 0 5 3
+face 1 5 3 wall_sokal_v15
+face 2 5 1 wall_slums_v05
+face 3 5 1 wall_slums_v05
+face 3 5 3 wall_slums_v05
+face 4 5 1 wall_stojanow_v09
+edge 4 5 1
+face 4 5 3 wall_slums_v05
+face 5 5 0 wall_stojanow_v09
+edge 5 5 0
+face 5 5 3 wall_stojanow_v09
+edge 5 5 3
+face 6 5 0 wall_stojanow_v09
+edge 6 5 0
+face 6 5 2 wall_slums_v04
+edge 6 5 2
+face 7 5 0 wall_stojanow_v06
+edge 7 5 0
+face 8 5 0 wall_stojanow_v06
+edge 8 5 0
+face 9 5 0 wall_stojanow_v09
+edge 9 5 0
+face 9 5 2 wall_slums_v04
+edge 9 5 2
+face 10 5 0 wall_stojanow_v09
+edge 10 5 0
+face 10 5 1 wall_stojanow_v09
+edge 10 5 1
+face 11 5 1 wall_slums_v04
+edge 11 5 1
+face 11 5 3 wall_stojanow_v09
+edge 11 5 3
+face 12 5 1 wall_slums_v04
+edge 12 5 1
+face 12 5 2 wall_slums_v04
+edge 12 5 2
+face 12 5 3 wall_slums_v04
+edge 12 5 3
+face 13 5 3 wall_slums_v04
+edge 13 5 3
+face 14 5 1 wall_sokal_v15
+face 15 5 1 wall_phlan_v02
+edge 15 5 1
+face 15 5 3 wall_slums_v15
+face 0 6 1 wall_phlan_v02
+edge 0 6 1
+face 0 6 3 wall_phlan_v02
+edge 0 6 3
+face 1 6 3 wall_stojanow_v09
+edge 1 6 3
+face 2 6 1 wall_slums_v04
+edge 2 6 1
+face 3 6 1 wall_slums_v04
+edge 3 6 1
+face 3 6 2 wall_slums_v04
+edge 3 6 2
+face 3 6 3 wall_slums_v04
+edge 3 6 3
+face 4 6 1 wall_stojanow_v09
+edge 4 6 1
+face 4 6 3 wall_slums_v04
+edge 4 6 3
+face 5 6 1 wall_slums_v04
+edge 5 6 1
+face 5 6 3 wall_stojanow_v09
+edge 5 6 3
+face 6 6 0 wall_phlan_v02
+edge 6 6 0
+face 6 6 1 wall_slums_v15
+face 6 6 2 wall_phlan_v02
+edge 6 6 2
+face 6 6 3 wall_phlan_v02
+edge 6 6 3
+face 7 6 3 wall_slums_v05
+face 8 6 1 wall_slums_v05
+face 9 6 0 wall_phlan_v02
+edge 9 6 0
+face 9 6 1 wall_phlan_v02
+edge 9 6 1
+face 9 6 2 wall_phlan_v02
+edge 9 6 2
+face 9 6 3 wall_slums_v15
+face 10 6 1 wall_stojanow_v09
+edge 10 6 1
+face 10 6 3 wall_slums_v04
+edge 10 6 3
+face 11 6 2 wall_stojanow_v09
+edge 11 6 2
+face 11 6 3 wall_stojanow_v09
+edge 11 6 3
+face 12 6 0 wall_slums_v04
+edge 12 6 0
+face 14 6 1 wall_stojanow_v09
+edge 14 6 1
+face 15 6 1 wall_phlan_v02
+edge 15 6 1
+face 15 6 3 wall_phlan_v02
+edge 15 6 3
+face 0 7 1 wall_phlan_v02
+edge 0 7 1
+face 0 7 3 wall_phlan_v02
+edge 0 7 3
+face 1 7 3 wall_stojanow_v09
+edge 1 7 3
+face 3 7 0 wall_slums_v04
+edge 3 7 0
+face 4 7 1 wall_stojanow_v09
+edge 4 7 1
+face 5 7 3 wall_stojanow_v09
+edge 5 7 3
+face 6 7 0 wall_slums_v04
+edge 6 7 0
+face 6 7 2 wall_slums_v05
+face 7 7 2 wall_slums_v04
+edge 7 7 2
+face 8 7 2 wall_slums_v04
+edge 8 7 2
+face 9 7 0 wall_slums_v04
+edge 9 7 0
+face 9 7 2 wall_slums_v05
+face 10 7 1 wall_stojanow_v09
+edge 10 7 1
+face 11 7 0 wall_phlan_v02
+edge 11 7 0
+face 11 7 1 wall_phlan_v02
+edge 11 7 1
+face 11 7 3 wall_phlan_v02
+edge 11 7 3
+face 12 7 3 wall_stojanow_v09
+edge 12 7 3
+face 14 7 1 wall_stojanow_v09
+edge 14 7 1
+face 15 7 1 wall_phlan_v02
+edge 15 7 1
+face 15 7 3 wall_phlan_v02
+edge 15 7 3
+face 0 8 1 wall_phlan_v02
+edge 0 8 1
+face 0 8 3 wall_phlan_v02
+edge 0 8 3
+face 1 8 3 wall_stojanow_v09
+edge 1 8 3
+face 4 8 1 wall_stojanow_v09
+edge 4 8 1
+face 5 8 1 wall_slums_v04
+edge 5 8 1
+face 5 8 3 wall_stojanow_v09
+edge 5 8 3
+face 6 8 0 wall_slums_v15
+face 6 8 3 wall_phlan_v02
+edge 6 8 3
+face 7 8 0 wall_phlan_v02
+edge 7 8 0
+face 7 8 1 wall_phlan_v02
+edge 7 8 1
+face 8 8 0 wall_phlan_v02
+edge 8 8 0
+face 8 8 3 wall_phlan_v02
+edge 8 8 3
+face 9 8 0 wall_slums_v15
+face 9 8 1 wall_phlan_v02
+edge 9 8 1
+face 10 8 1 wall_stojanow_v09
+edge 10 8 1
+face 10 8 3 wall_slums_v04
+edge 10 8 3
+face 11 8 1 wall_slums_v15
+face 11 8 3 wall_phlan_v02
+edge 11 8 3
+face 12 8 3 wall_sokal_v15
+face 14 8 1 wall_stojanow_v09
+edge 14 8 1
+face 15 8 1 wall_phlan_v02
+edge 15 8 1
+face 15 8 3 wall_phlan_v02
+edge 15 8 3
+face 0 9 1 wall_phlan_v02
+edge 0 9 1
+face 0 9 3 wall_phlan_v02
+edge 0 9 3
+face 1 9 3 wall_stojanow_v09
+edge 1 9 3
+face 3 9 2 wall_slums_v04
+edge 3 9 2
+face 4 9 1 wall_stojanow_v09
+edge 4 9 1
+face 5 9 1 wall_slums_v04
+edge 5 9 1
+face 5 9 3 wall_stojanow_v09
+edge 5 9 3
+face 6 9 3 wall_phlan_v02
+edge 6 9 3
+face 7 9 1 wall_phlan_v02
+edge 7 9 1
+face 8 9 3 wall_phlan_v02
+edge 8 9 3
+face 9 9 1 wall_phlan_v02
+edge 9 9 1
+face 10 9 1 wall_stojanow_v09
+edge 10 9 1
+face 10 9 3 wall_slums_v04
+edge 10 9 3
+face 11 9 1 wall_phlan_v02
+edge 11 9 1
+face 11 9 2 wall_phlan_v02
+edge 11 9 2
+face 11 9 3 wall_phlan_v02
+edge 11 9 3
+face 12 9 3 wall_stojanow_v09
+edge 12 9 3
+face 14 9 1 wall_stojanow_v09
+edge 14 9 1
+face 15 9 1 wall_phlan_v02
+edge 15 9 1
+face 15 9 3 wall_phlan_v02
+edge 15 9 3
+face 0 10 1 wall_slums_v15
+face 0 10 3 wall_phlan_v02
+edge 0 10 3
+face 1 10 3 wall_sokal_v15
+face 2 10 1 wall_slums_v04
+edge 2 10 1
+face 3 10 0 wall_slums_v04
+edge 3 10 0
+face 3 10 1 wall_slums_v04
+edge 3 10 1
+face 3 10 3 wall_slums_v04
+edge 3 10 3
+face 4 10 1 wall_stojanow_v09
+edge 4 10 1
+face 4 10 3 wall_slums_v04
+edge 4 10 3
+face 5 10 1 wall_slums_v04
+edge 5 10 1
+face 5 10 3 wall_stojanow_v09
+edge 5 10 3
+face 6 10 2 wall_phlan_v02
+edge 6 10 2
+face 6 10 3 wall_phlan_v02
+edge 6 10 3
+face 7 10 1 wall_phlan_v02
+edge 7 10 1
+face 7 10 2 wall_phlan_v02
+edge 7 10 2
+face 8 10 2 wall_phlan_v02
+edge 8 10 2
+face 8 10 3 wall_phlan_v02
+edge 8 10 3
+face 9 10 1 wall_phlan_v02
+edge 9 10 1
+face 9 10 2 wall_phlan_v02
+edge 9 10 2
+face 10 10 1 wall_stojanow_v09
+edge 10 10 1
+face 10 10 3 wall_slums_v04
+edge 10 10 3
+face 11 10 0 wall_stojanow_v09
+edge 11 10 0
+face 11 10 3 wall_stojanow_v09
+edge 11 10 3
+face 12 10 2 wall_slums_v04
+edge 12 10 2
+face 14 10 1 wall_sokal_v15
+face 15 10 1 wall_phlan_v02
+edge 15 10 1
+face 15 10 3 wall_slums_v15
+face 0 11 1 wall_phlan_v02
+edge 0 11 1
+face 0 11 3 wall_phlan_v02
+edge 0 11 3
+face 1 11 3 wall_stojanow_v09
+edge 1 11 3
+face 2 11 1 wall_slums_v05
+face 3 11 1 wall_slums_v05
+face 3 11 3 wall_slums_v05
+face 4 11 1 wall_stojanow_v09
+edge 4 11 1
+face 4 11 3 wall_slums_v05
+face 5 11 2 wall_stojanow_v09
+edge 5 11 2
+face 5 11 3 wall_stojanow_v09
+edge 5 11 3
+face 6 11 0 wall_slums_v04
+edge 6 11 0
+face 6 11 2 wall_stojanow_v09
+edge 6 11 2
+face 7 11 0 wall_slums_v04
+edge 7 11 0
+face 7 11 2 wall_stojanow_v09
+edge 7 11 2
+face 8 11 0 wall_slums_v04
+edge 8 11 0
+face 8 11 2 wall_stojanow_v09
+edge 8 11 2
+face 9 11 0 wall_slums_v04
+edge 9 11 0
+face 9 11 2 wall_stojanow_v09
+edge 9 11 2
+face 10 11 1 wall_stojanow_v09
+edge 10 11 1
+face 10 11 2 wall_stojanow_v09
+edge 10 11 2
+face 11 11 1 wall_slums_v04
+face 11 11 3 wall_stojanow_v09
+edge 11 11 3
+face 12 11 0 wall_slums_v04
+edge 12 11 0
+face 12 11 1 wall_slums_v05
+face 12 11 3 wall_slums_v04
+edge 12 11 3
+face 13 11 3 wall_slums_v05
+edge 13 11 3
+face 14 11 1 wall_stojanow_v09
+edge 14 11 1
+face 15 11 1 wall_phlan_v02
+edge 15 11 1
+face 15 11 3 wall_phlan_v02
+edge 15 11 3
+face 0 12 1 wall_phlan_v02
+edge 0 12 1
+face 0 12 3 wall_phlan_v02
+edge 0 12 3
+face 1 12 3 wall_stojanow_v09
+edge 1 12 3
+face 2 12 1 wall_slums_v04
+edge 2 12 1
+face 3 12 1 wall_slums_v04
+edge 3 12 1
+face 3 12 2 wall_slums_v04
+edge 3 12 2
+face 3 12 3 wall_slums_v04
+edge 3 12 3
+face 4 12 2 wall_slums_v04
+edge 4 12 2
+face 4 12 3 wall_slums_v04
+edge 4 12 3
+face 5 12 0 wall_stojanow_v09
+edge 5 12 0
+face 5 12 2 wall_slums_v05
+face 6 12 0 wall_stojanow_v09
+edge 6 12 0
+face 6 12 2 wall_slums_v04
+edge 6 12 2
+face 7 12 0 wall_stojanow_v09
+edge 7 12 0
+face 8 12 0 wall_stojanow_v09
+edge 8 12 0
+face 9 12 0 wall_stojanow_v09
+edge 9 12 0
+face 9 12 2 wall_slums_v04
+edge 9 12 2
+face 10 12 0 wall_stojanow_v09
+edge 10 12 0
+face 10 12 2 wall_slums_v05
+face 11 12 1 wall_slums_v04
+edge 11 12 1
+face 11 12 2 wall_slums_v04
+edge 11 12 2
+face 12 12 1 wall_slums_v04
+edge 12 12 1
+face 12 12 2 wall_slums_v04
+edge 12 12 2
+face 12 12 3 wall_slums_v04
+edge 12 12 3
+face 13 12 3 wall_slums_v04
+edge 13 12 3
+face 14 12 1 wall_stojanow_v09
+edge 14 12 1
+face 15 12 1 wall_phlan_v02
+edge 15 12 1
+face 15 12 3 wall_phlan_v02
+edge 15 12 3
+face 0 13 1 wall_phlan_v02
+edge 0 13 1
+face 0 13 2 wall_slums_v15
+face 0 13 3 wall_phlan_v02
+edge 0 13 3
+face 1 13 2 wall_stojanow_v07
+edge 1 13 2
+face 1 13 3 wall_stojanow_v09
+edge 1 13 3
+face 3 13 0 wall_slums_v04
+edge 3 13 0
+face 3 13 1 wall_slums_v04
+edge 3 13 1
+face 4 13 0 wall_slums_v04
+edge 4 13 0
+face 4 13 2 wall_slums_v04
+edge 4 13 2
+face 4 13 3 wall_slums_v04
+edge 4 13 3
+face 5 13 0 wall_slums_v05
+face 5 13 2 wall_slums_v05
+face 6 13 0 wall_slums_v04
+edge 6 13 0
+face 6 13 1 wall_slums_v04
+edge 6 13 1
+face 6 13 2 wall_slums_v04
+edge 6 13 2
+face 7 13 3 wall_slums_v04
+edge 7 13 3
+face 8 13 1 wall_slums_v04
+edge 8 13 1
+face 9 13 0 wall_slums_v04
+edge 9 13 0
+face 9 13 2 wall_slums_v04
+edge 9 13 2
+face 9 13 3 wall_slums_v04
+edge 9 13 3
+face 10 13 0 wall_slums_v05
+face 10 13 2 wall_slums_v05
+face 11 13 0 wall_slums_v04
+edge 11 13 0
+face 11 13 1 wall_slums_v04
+edge 11 13 1
+face 11 13 2 wall_slums_v04
+edge 11 13 2
+face 12 13 0 wall_slums_v04
+edge 12 13 0
+face 12 13 3 wall_slums_v04
+edge 12 13 3
+face 14 13 1 wall_stojanow_v09
+edge 14 13 1
+face 14 13 2 wall_stojanow_v07
+edge 14 13 2
+face 15 13 1 wall_phlan_v02
+edge 15 13 1
+face 15 13 2 wall_slums_v15
+face 15 13 3 wall_phlan_v02
+edge 15 13 3
+face 0 14 0 wall_slums_v15
+face 0 14 3 wall_phlan_v02
+edge 0 14 3
+face 1 14 0 wall_phlan_v02
+edge 1 14 0
+face 1 14 1 wall_phlan_v02
+edge 1 14 1
+face 2 14 2 wall_stojanow_v09
+edge 2 14 2
+face 2 14 3 wall_stojanow_v07
+edge 2 14 3
+face 3 14 2 wall_sokal_v15
+face 4 14 0 wall_slums_v04
+edge 4 14 0
+face 4 14 2 wall_stojanow_v09
+edge 4 14 2
+face 5 14 0 wall_slums_v05
+face 5 14 2 wall_stojanow_v09
+edge 5 14 2
+face 6 14 0 wall_slums_v04
+edge 6 14 0
+face 6 14 2 wall_stojanow_v09
+edge 6 14 2
+face 7 14 2 wall_sokal_v15
+face 8 14 2 wall_sokal_v15
+face 9 14 0 wall_slums_v04
+edge 9 14 0
+face 9 14 2 wall_stojanow_v09
+edge 9 14 2
+face 10 14 0 wall_slums_v05
+face 10 14 2 wall_stojanow_v09
+edge 10 14 2
+face 11 14 0 wall_slums_v04
+edge 11 14 0
+face 11 14 2 wall_stojanow_v09
+edge 11 14 2
+face 12 14 2 wall_sokal_v15
+face 13 14 1 wall_stojanow_v07
+edge 13 14 1
+face 13 14 2 wall_stojanow_v09
+edge 13 14 2
+face 14 14 0 wall_phlan_v02
+edge 14 14 0
+face 14 14 3 wall_phlan_v02
+edge 14 14 3
+face 15 14 0 wall_slums_v15
+face 15 14 1 wall_phlan_v02
+edge 15 14 1
+face 0 15 2 wall_phlan_v02
+edge 0 15 2
+face 0 15 3 wall_phlan_v02
+edge 0 15 3
+face 1 15 1 wall_slums_v15
+face 1 15 2 wall_phlan_v02
+edge 1 15 2
+face 2 15 0 wall_phlan_v02
+edge 2 15 0
+face 2 15 2 wall_phlan_v02
+edge 2 15 2
+face 2 15 3 wall_slums_v15
+face 3 15 0 wall_slums_v15
+face 3 15 2 wall_phlan_v02
+edge 3 15 2
+face 4 15 0 wall_phlan_v02
+edge 4 15 0
+face 4 15 2 wall_phlan_v02
+edge 4 15 2
+face 5 15 0 wall_phlan_v02
+edge 5 15 0
+face 5 15 2 wall_phlan_v02
+edge 5 15 2
+face 6 15 0 wall_phlan_v02
+edge 6 15 0
+face 6 15 2 wall_phlan_v02
+edge 6 15 2
+face 7 15 0 wall_slums_v15
+face 7 15 2 wall_phlan_v02
+edge 7 15 2
+face 8 15 0 wall_slums_v15
+face 8 15 2 wall_phlan_v02
+edge 8 15 2
+face 9 15 0 wall_phlan_v02
+edge 9 15 0
+face 9 15 2 wall_phlan_v02
+edge 9 15 2
+face 10 15 0 wall_phlan_v02
+edge 10 15 0
+face 10 15 2 wall_phlan_v02
+edge 10 15 2
+face 11 15 0 wall_phlan_v02
+edge 11 15 0
+face 11 15 2 wall_phlan_v02
+edge 11 15 2
+face 12 15 0 wall_slums_v15
+face 12 15 2 wall_phlan_v02
+edge 12 15 2
+face 13 15 0 wall_phlan_v02
+edge 13 15 0
+face 13 15 1 wall_slums_v15
+face 13 15 2 wall_phlan_v02
+edge 13 15 2
+face 14 15 2 wall_phlan_v02
+edge 14 15 2
+face 14 15 3 wall_slums_v15
+face 15 15 1 wall_phlan_v02
+edge 15 15 1
+face 15 15 2 wall_phlan_v02
+edge 15 15 2

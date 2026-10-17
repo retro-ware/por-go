@@ -33,6 +33,28 @@ def side(x, y, d):
     return v, v != 0 and ((g[0x300 + i] >> (2 * d) & 3) != 0 or (x, y, d) in A.get("doors", ()))
 
 
+STEP = ((0, -1), (1, 0), (0, 1), (-1, 0))
+
+
+def reach(start):
+    """The squares a party can walk to from start."""
+    land, todo = set(), [start]
+    while todo:
+        x, y = todo.pop()
+        if (x, y) in land or not (0 <= x < 16 and 0 <= y < 16):
+            continue
+        land.add((x, y))
+        for d, (dx, dy) in enumerate(STEP):
+            v, door = side(x, y, d)
+            if not v or door:
+                todo.append((x + dx, y + dy))
+    return land
+
+
+if START is None:  # no entry square pinned: a square of the largest walkable region
+    START = max(((x, y) for y in range(16) for x in range(16)), key=lambda c: len(reach(c))) + ("n",)
+
+
 def main():
     extra = []
     for y in range(16):
@@ -52,17 +74,7 @@ def main():
     # land: the squares a party can walk to from the start (doors pass, a one-sided wall only blocks
     # from its own side). Water: the squares beyond a harbour wall (water_walls) the party can't reach,
     # and what joins them; off the map the engine draws water anyway.
-    STEP = ((0, -1), (1, 0), (0, 1), (-1, 0))
-    land, todo = set(), [START[:2]]
-    while todo:
-        x, y = todo.pop()
-        if (x, y) in land or not (0 <= x < 16 and 0 <= y < 16):
-            continue
-        land.add((x, y))
-        for d, (dx, dy) in enumerate(STEP):
-            v, door = side(x, y, d)
-            if not v or door:
-                todo.append((x + dx, y + dy))
+    land = reach(START[:2])
     water = set()
     todo = [(x + STEP[d][0], y + STEP[d][1]) for y in range(16) for x in range(16) for d in range(4)
             if side(x, y, d)[0] in A["water_walls"]]

@@ -1,0 +1,231 @@
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+floor phlan_dirt
+ceiling sky_phlan
+face 1 4 0 wall_valjevo7_v06
+edge 1 4 0
+face 1 4 3 wall_valjevo7_v06
+edge 1 4 3
+face 2 4 0 wall_valjevo7_v06
+edge 2 4 0
+face 3 4 0 wall_valjevo7_v06
+edge 3 4 0
+face 3 4 1 wall_valjevo7_v06
+edge 3 4 1
+face 4 4 0 wall_valjevo3_v03
+edge 4 4 0
+face 4 4 3 wall_valjevo3_v03
+edge 4 4 3
+face 5 4 0 wall_valjevo3_v03
+edge 5 4 0
+face 5 4 2 wall_valjevo3_v02
+face 6 4 0 wall_valjevo3_v03
+edge 6 4 0
+face 6 4 1 wall_valjevo3_v03
+edge 6 4 1
+face 7 4 0 wall_valjevo3_v03
+edge 7 4 0
+face 7 4 3 wall_valjevo3_v03
+edge 7 4 3
+face 8 4 0 wall_valjevo3_v03
+edge 8 4 0
+face 8 4 1 wall_valjevo3_v03
+edge 8 4 1
+face 9 4 0 wall_valjevo3_v03
+edge 9 4 0
+face 9 4 2 wall_valjevo3_v03
+edge 9 4 2
+face 9 4 3 wall_valjevo3_v03
+edge 9 4 3
+face 10 4 0 wall_valjevo3_v03
+edge 10 4 0
+face 11 4 0 wall_valjevo3_v03
+edge 11 4 0
+face 12 4 0 wall_valjevo3_v03
+edge 12 4 0
+face 12 4 1 wall_valjevo3_v03
+edge 12 4 1
+face 1 5 2 wall_valjevo7_v06
+edge 1 5 2
+face 1 5 3 wall_valjevo7_v06
+edge 1 5 3
+face 2 5 2 wall_valjevo3_v04
+face 3 5 1 wall_valjevo7_v06
+edge 3 5 1
+face 3 5 2 wall_valjevo7_v06
+edge 3 5 2
+face 4 5 1 wall_valjevo3_v03
+edge 4 5 1
+face 4 5 3 wall_valjevo3_v03
+edge 4 5 3
+face 6 5 1 wall_valjevo3_v03
+edge 6 5 1
+face 6 5 3 wall_valjevo3_v03
+edge 6 5 3
+face 7 5 2 wall_valjevo3_v03
+edge 7 5 2
+face 7 5 3 wall_valjevo3_v03
+edge 7 5 3
+face 8 5 1 wall_valjevo3_v03
+edge 8 5 1
+face 8 5 2 wall_valjevo3_v04
+face 10 5 3 wall_valjevo3_v03
+edge 10 5 3
+face 12 5 1 wall_valjevo3_v03
+edge 12 5 1
+face 1 6 0 wall_valjevo3_v03
+edge 1 6 0
+face 1 6 3 wall_valjevo3_v03
+edge 1 6 3
+face 2 6 0 wall_valjevo3_v04
+face 2 6 1 wall_valjevo3_v04
+face 3 6 0 wall_valjevo3_v03
+edge 3 6 0
+face 3 6 2 wall_valjevo3_v02
+face 3 6 3 wall_valjevo3_v04
+face 4 6 1 wall_valjevo3_v03
+edge 4 6 1
+face 4 6 2 wall_valjevo3_v03
+edge 4 6 2
+face 5 6 0 wall_valjevo3_v02
+face 5 6 1 wall_valjevo3_v03
+edge 5 6 1
+face 5 6 2 wall_valjevo3_v04
+face 5 6 3 wall_valjevo3_v03
+edge 5 6 3
+face 6 6 2 wall_valjevo3_v03
+edge 6 6 2
+face 6 6 3 wall_valjevo3_v03
+edge 6 6 3
+face 7 6 0 wall_valjevo3_v03
+edge 7 6 0
+face 7 6 2 wall_valjevo3_v03
+edge 7 6 2
+face 8 6 0 wall_valjevo3_v04
+face 8 6 1 wall_valjevo3_v03
+edge 8 6 1
+face 8 6 2 wall_valjevo3_v04
+face 10 6 2 wall_valjevo3_v03
+edge 10 6 2
+face 10 6 3 wall_valjevo3_v03
+edge 10 6 3
+face 12 6 1 wall_valjevo3_v03
+edge 12 6 1
+face 1 7 2 wall_valjevo3_v03
+edge 1 7 2
+face 1 7 3 wall_valjevo3_v03
+edge 1 7 3
+face 2 7 1 wall_valjevo3_v03
+edge 2 7 1
+face 2 7 2 wall_valjevo3_v03
+edge 2 7 2
+face 5 7 0 wall_valjevo3_v03
+face 5 7 1 wall_valjevo3_v02
+face 5 7 2 wall_valjevo3_v03
+edge 5 7 2
+face 5 7 3 wall_valjevo3_v02
+face 7 7 0 wall_valjevo3_v03
+edge 7 7 0
+face 7 7 3 wall_valjevo3_v03
+edge 7 7 3
+face 8 7 0 wall_valjevo3_v04
+face 8 7 1 wall_valjevo3_v03
+edge 8 7 1
+face 11 7 2 wall_valjevo3_v03
+edge 11 7 2
+face 11 7 3 wall_valjevo3_v02
+face 12 7 1 wall_valjevo3_v03
+edge 12 7 1
+face 12 7 2 wall_valjevo3_v03
+edge 12 7 2
+face 1 8 0 wall_valjevo3_v03
+edge 1 8 0
+face 1 8 3 wall_valjevo3_v03
+edge 1 8 3
+face 2 8 0 wall_valjevo3_v03
+edge 2 8 0
+face 3 8 0 wall_valjevo3_v02
+face 4 8 0 wall_valjevo3_v03
+edge 4 8 0
+face 4 8 1 wall_valjevo3_v03
+edge 4 8 1
+face 7 8 2 wall_valjevo3_v04
+face 7 8 3 wall_valjevo3_v03
+edge 7 8 3
+face 8 8 1 wall_valjevo3_v03
+edge 8 8 1
+face 8 8 2 wall_valjevo3_v03
+edge 8 8 2
+face 1 9 3 wall_valjevo3_v03
+edge 1 9 3
+face 2 9 2 wall_valjevo7_v10
+edge 2 9 2
+face 4 9 1 wall_valjevo3_v03
+edge 4 9 1
+face 6 9 0 wall_valjevo3_v03
+edge 6 9 0
+face 6 9 3 wall_valjevo3_v03
+edge 6 9 3
+face 7 9 0 wall_valjevo3_v04
+face 8 9 0 wall_valjevo3_v03
+edge 8 9 0
+face 8 9 1 wall_valjevo3_v03
+edge 8 9 1
+face 1 10 1 wall_valjevo7_v10
+edge 1 10 1
+face 1 10 2 wall_valjevo3_v03
+edge 1 10 2
+face 1 10 3 wall_valjevo3_v03
+edge 1 10 3
+face 2 10 2 wall_valjevo3_v03
+edge 2 10 2
+face 3 10 2 wall_valjevo3_v03
+edge 3 10 2
+face 3 10 3 wall_valjevo7_v10
+edge 3 10 3
+face 4 10 1 wall_valjevo3_v03
+edge 4 10 1
+face 4 10 2 wall_valjevo3_v03
+edge 4 10 2
+face 6 10 3 wall_valjevo3_v03
+edge 6 10 3
+face 8 10 1 wall_valjevo3_v03
+edge 8 10 1
+face 1 11 2 wall_valjevo3_v03
+edge 1 11 2
+face 1 11 3 wall_valjevo3_v03
+edge 1 11 3
+face 2 11 0 wall_valjevo7_v10
+edge 2 11 0
+face 2 11 2 wall_valjevo3_v03
+edge 2 11 2
+face 3 11 2 wall_valjevo3_v03
+edge 3 11 2
+face 4 11 1 wall_valjevo3_v03
+edge 4 11 1
+face 4 11 2 wall_valjevo3_v03
+edge 4 11 2
+face 6 11 2 wall_valjevo3_v03
+edge 6 11 2
+face 6 11 3 wall_valjevo3_v03
+edge 6 11 3
+face 7 11 2 wall_valjevo3_v03
+edge 7 11 2
+face 8 11 1 wall_valjevo3_v03
+edge 8 11 1
+face 8 11 2 wall_valjevo3_v03
+edge 8 11 2
