@@ -31,11 +31,10 @@ type AreaID int
 type Window int
 
 const (
-	WinEmpty    Window = iota
-	WinThreeD          // the 3D view of Area at X, Y, Facing
-	WinOverhead        // the top-down map in place of the 3D view
-	WinAreaMap         // the wilderness or city map
-	WinPicture         // a picture, portrait or approaching sprite
+	WinEmpty   Window = iota
+	WinThreeD         // the 3D view of Area at X, Y, Facing
+	WinAreaMap        // the wilderness or city map
+	WinPicture        // a picture, portrait or approaching sprite
 )
 
 // CellRect is a rectangle of 8x8 text cells, both corners included. For a
@@ -84,7 +83,7 @@ type View struct {
 	Menu      *Menu
 	Command   bool // Menu is the adventuring command bar
 	Party     []Member
-	Map       image.Image // the original's overhead map around the party, 88x88 (nil outside 3D areas)
+	Map       image.Image // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 }
 
 // Menu is the menu bar waiting for a choice on the prompt line.
@@ -99,6 +98,11 @@ type MenuItem struct {
 	Text string
 	Key  byte
 }
+
+// MapCell is the size of a square in View.Map, in pixels.
+const MapCell = mapCell
+
+const mapCell = fmCell
 
 // View returns the last published snapshot; safe from any goroutine.
 func (e *Engine) View() View {
@@ -173,8 +177,8 @@ func (e *Engine) publish() {
 		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,
 		Command: e.ext.inCommand,
 	}
-	if s.win == WinThreeD || s.win == WinOverhead || s.win == WinPicture {
-		v.Map = e.overhead(e.posX, e.posY, e.viewFacing())
+	if s.win == WinThreeD || s.win == WinPicture {
+		v.Map = e.mapImage(mapCell)
 	}
 	if m := s.menu; m != nil {
 		c := *m
@@ -250,36 +254,6 @@ func (e *Engine) toRGBA(d []byte, w, h int, dst *image.RGBA, x, y int) *image.RG
 			dst.SetRGBA(x+i%w, y+i/w, e.S.RGBA(p))
 		}
 	}
-	return dst
-}
-
-// overhead is the original's overhead map (DrawOverheadMap) as an image:
-// the same 11x11 symbols around x, y and the party's arrow, drawn off
-// screen (nil without the symbols).
-func (e *Engine) overhead(x, y, dir int) image.Image {
-	set := e.sym[4]
-	if set == nil {
-		return nil
-	}
-	ox, oy := min(max(x-5, 0), 5), min(max(y-5, 0), 5)
-	dst := image.NewRGBA(image.Rect(0, 0, 11*8, 11*8))
-	put := func(col, row, id int) {
-		if f := id - symFix[4]; f >= 0 && f < set.Count {
-			e.toRGBA(set.Frame(f), 8, 8, dst, col*8, row*8)
-		}
-	}
-	for row := 0; row <= 10; row++ {
-		for col := 0; col <= 10; col++ {
-			id := 0x104
-			for bit, d := range [4]int{0, 2, 4, 6} {
-				if e.WallAt(ox+col, oy+row, d) > 0 {
-					id += 1 << bit
-				}
-			}
-			put(col, row, id)
-		}
-	}
-	put(x-ox, y-oy, 0x100+dir/2)
 	return dst
 }
 

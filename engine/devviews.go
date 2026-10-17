@@ -7,7 +7,7 @@ type DevView struct {
 }
 
 // DevViews returns the views of the loaded game worth checking: the 3D
-// view in all four directions and the overhead map.
+// view in all four directions.
 func (e *Engine) DevViews() []DevView {
 	var v []DevView
 	for _, d := range []int{0, 2, 4, 6} {
@@ -17,11 +17,6 @@ func (e *Engine) DevViews() []DevView {
 			e.Draw3DView(e.posX, e.posY, d)
 		}})
 	}
-	v = append(v, DevView{"overhead", func() {
-		e.gs.overhead = true
-		e.Draw3DView(e.posX, e.posY, e.facing)
-		e.gs.overhead = false
-	}})
 	return v
 }
 

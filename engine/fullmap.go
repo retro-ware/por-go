@@ -3,6 +3,7 @@ package engine
 import (
 	"bufio"
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"sort"
@@ -338,36 +339,9 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 		info += " " + l.text
 	}
 	e.DisplayString(1, 0x17, 0xB, cut(info, 0x26))
-	seen := e.ext.seen[e.areaKey()]
-	if seen == nil {
-		seen = &[256]uint8{}
-	}
 	e.S.Lock()
 	defer e.S.Unlock()
-	for y := 0; y < 16; y++ {
-		for x := 0; x < 16; x++ {
-			s := seen[y<<4|x]
-			px, py := fmX+x*fmCell, fmY+y*fmCell
-			switch s {
-			case seenSeen:
-				e.S.Fill(px, py, px+fmCell, py+fmCell, 8)
-			case seenVisited:
-				e.S.Fill(px, py, px+fmCell, py+fmCell, 1)
-			}
-			e.mapWalls(x, y, px, py, fmCell, s)
-			if l, ok := m[y<<4|x]; ok && (x != e.posX || y != e.posY) {
-				g, _ := e.glyph(letter[l.text], true)
-				for r := 0; r < 8; r++ {
-					for b := 0; b < 8; b++ {
-						if g[r]&(0x80>>b) != 0 {
-							e.S.Set(px+1+b, py+1+r, poiColour[l.kind])
-						}
-					}
-				}
-			}
-		}
-	}
-	e.mapParty(fmX, fmY, fmCell, 2)
+	e.drawMap(e.S, fmX, fmY, fmCell, m, letter)
 	px, py := fmX+cx*fmCell, fmY+cy*fmCell
 	e.S.Fill(px, py, px+fmCell, py+1, 14)
 	e.S.Fill(px, py+fmCell-1, px+fmCell, py+fmCell, 14)
@@ -380,10 +354,88 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 // against the white walls and the grey, black and blue floors.
 const doorColour = ega.AmigaBase + 16*ega.AmigaPortrait + 6
 
+// canvas is what drawMap draws on: the screen, or an off-screen picture.
+type canvas interface {
+	Fill(x0, y0, x1, y1 int, c uint8)
+}
+
+// drawMap is the one map renderer: the current map's 16x16 squares of
+// cell pixels at (ox, oy) on dst, seen squares grey, walked ones blue,
+// walls, doors, labelled squares (their legend letter when letter is set
+// and the cell fits it, else a dot) and the party.
+func (e *Engine) drawMap(dst canvas, ox, oy, cell int, labels map[int]mapLabel, letter map[string]byte) {
+	seen := e.ext.seen[e.areaKey()]
+	if seen == nil {
+		seen = &[256]uint8{}
+	}
+	for y := 0; y < 16; y++ {
+		for x := 0; x < 16; x++ {
+			s := seen[y<<4|x]
+			px, py := ox+x*cell, oy+y*cell
+			switch s {
+			case seenSeen:
+				dst.Fill(px, py, px+cell, py+cell, 8) // dark grey: seen
+			case seenVisited:
+				dst.Fill(px, py, px+cell, py+cell, 1) // blue: walked
+			}
+			e.mapWalls(dst, x, y, px, py, cell, s)
+			l, ok := labels[y<<4|x]
+			switch {
+			case !ok || x == e.posX && y == e.posY:
+			case letter != nil && cell >= 10:
+				g, _ := e.glyph(letter[l.text], true)
+				for r := 0; r < 8; r++ {
+					for b := 0; b < 8; b++ {
+						if g[r]&(0x80>>b) != 0 {
+							dst.Fill(px+1+b, py+1+r, px+2+b, py+2+r, poiColour[l.kind])
+						}
+					}
+				}
+			default:
+				a, b := cell*2/7, cell*5/7
+				dst.Fill(px+a, py+a, px+b, py+b, poiColour[l.kind])
+			}
+		}
+	}
+	e.mapParty(dst, ox, oy, cell, max(2, cell/5)) // a dot with a tick towards the facing
+}
+
+// pixels is an off-screen picture in screen colour indices, for drawMap.
+type pixels struct {
+	w, h int
+	pix  []uint8
+}
+
+func (p *pixels) Fill(x0, y0, x1, y1 int, c uint8) {
+	for y := max(y0, 0); y < min(y1, p.h); y++ {
+		for x := max(x0, 0); x < min(x1, p.w); x++ {
+			p.pix[y*p.w+x] = c
+		}
+	}
+}
+
+// mapImage is drawMap off screen, cell pixels a square, in the screen's
+// colours (nil where there is no map).
+func (e *Engine) mapImage(cell int) image.Image {
+	if !e.minimapAllowed() {
+		return nil
+	}
+	n := 16 * cell
+	p := &pixels{n, n, make([]uint8, n*n)}
+	m := e.labels()
+	_, letter, _ := legend(m)
+	e.drawMap(p, 0, 0, cell, m, letter)
+	out := image.NewRGBA(image.Rect(0, 0, n, n))
+	for i, c := range p.pix {
+		out.SetRGBA(i%n, i/n, e.S.RGBA(c))
+	}
+	return out
+}
+
 // mapWalls draws the walls of square (x, y) as lines at the edges of a
 // size-pixel cell at (px, py): doors and locked doors in their colours,
 // walls of squares not seen yet dim (s: the square's seen state).
-func (e *Engine) mapWalls(x, y, px, py, size int, s uint8) {
+func (e *Engine) mapWalls(dst canvas, x, y, px, py, size int, s uint8) {
 	for _, d := range [4]int{0, 2, 4, 6} {
 		if e.WallAt(x, y, d) == 0 {
 			continue
@@ -400,27 +452,27 @@ func (e *Engine) mapWalls(x, y, px, py, size int, s uint8) {
 		}
 		switch d {
 		case 0:
-			e.S.Fill(px, py, px+size, py+1, c)
+			dst.Fill(px, py, px+size, py+1, c)
 		case 2:
-			e.S.Fill(px+size-1, py, px+size, py+size, c)
+			dst.Fill(px+size-1, py, px+size, py+size, c)
 		case 4:
-			e.S.Fill(px, py+size-1, px+size, py+size, c)
+			dst.Fill(px, py+size-1, px+size, py+size, c)
 		case 6:
-			e.S.Fill(px, py, px+1, py+size, c)
+			dst.Fill(px, py, px+1, py+size, c)
 		}
 	}
 }
 
 // mapParty draws the party on a map at (ox, oy): a dot of 2r-1 pixels with
 // a tick towards the facing.
-func (e *Engine) mapParty(ox, oy, size, r int) {
+func (e *Engine) mapParty(dst canvas, ox, oy, size, r int) {
 	if !onMap(e.posX, e.posY) {
 		return
 	}
 	cx, cy := ox+e.posX*size+size/2, oy+e.posY*size+size/2
-	e.S.Fill(cx-r+1, cy-r+1, cx+r, cy+r, 12)
+	dst.Fill(cx-r+1, cy-r+1, cx+r, cy+r, 12)
 	for i := r + 1; i <= r+2; i++ {
 		tx, ty := cx+i*dirDX[e.viewFacing()], cy+i*dirDY[e.viewFacing()]
-		e.S.Fill(tx, ty, tx+1, ty+1, 14)
+		dst.Fill(tx, ty, tx+1, ty+1, 14)
 	}
 }

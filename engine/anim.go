@@ -144,10 +144,6 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 	frame := dist + 1
 	if flags[1] == 0 {
 		if flags[0] == 0 {
-			if e.gs.overhead {
-				e.gs.overhead = false
-				e.Redraw()
-			}
 			e.LoadAnimPic("SPRIT", sprite, true)
 			flags[0] = 1
 			e.es.f84E3 = 1

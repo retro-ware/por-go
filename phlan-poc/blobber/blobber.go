@@ -211,14 +211,11 @@ func (p *Prompt) draw(screen *ebiten.Image) {
 // DebugLines, if set, supplies the text of the debug panel toggled with P.
 // OnPromptAnswer, if set, supplies extra lines (the character list) for "who will" prompts;
 // hosts also use it as the signal that prompt UI is available.
-// TileMarks, if set, returns the special tiles of the current map for the minimap:
-// bit 1 = automatic event, bit 2 = use (searchable) event.
 var (
 	DebugLines     func() []string
 	HUD            func(screen *ebiten.Image) // drawn over the scene, under prompts and modals
 	OnClick        func(x, y int) bool        // left click / tap in screen pixels; true = handled, no walking
 	OnPromptAnswer func() []string
-	TileMarks      func() map[[2]int]int
 
 	// Skin hooks; nil keeps the plain built-in look.
 	Window      func(screen *ebiten.Image, title string, lines []string, sel int, bottom bool) // text window
@@ -1104,7 +1101,6 @@ type Game struct {
 	time    float64
 	// settings
 	dither, smooth, menu, options, atlasView, help bool
-	mapView                                        bool
 	debug                                          bool
 	follow                                         bool // driven by a View: moves come from the host, never the keyboard
 	torch                                          float64
@@ -1179,22 +1175,12 @@ func (g *Game) Update() error {
 		}
 	}
 	ctx := byte('x')
-	if !g.menu && prompt == nil && Modal == nil && !g.help && !g.mapView {
+	if !g.menu && prompt == nil && Modal == nil && !g.help {
 		ctx = 'w'
 	}
 	pollPads(ctx)
 	if KeyJustPressed(ebiten.KeyF12) {
 		g.atlasView = !g.atlasView
-	}
-	if g.mapView { // the map screen: any of M, Esc or a click closes it
-		if KeyJustPressed(ebiten.KeyM) || KeyJustPressed(ebiten.KeyEscape) || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			g.mapView = false
-		}
-		return nil
-	}
-	if KeyJustPressed(ebiten.KeyM) && prompt == nil && Modal == nil && !g.help {
-		g.mapView = true
-		return nil
 	}
 	if KeyJustPressed(ebiten.KeyP) {
 		g.debug = !g.debug
@@ -1662,10 +1648,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	c := g.camera()
 	markSeen(c)
-	if g.mapView {
-		g.drawMap(screen, c)
-		return
-	}
 	g.draw3D(screen, c)
 	if NoOverlay { // phlan-poc: comparison shots show the 3D view alone (HUD still runs: BLOBBER_OPEN hooks it)
 		if HUD != nil {
@@ -1673,7 +1655,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		return
 	}
-	g.drawMinimap(screen, c)
 	font.Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", ebiten.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
 	if HUD != nil {
 		HUD(screen)
@@ -2029,44 +2010,6 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 	}
 }
 
-// drawMap is the full map screen (M): every seen cell of the level, walls light, floor dark, the party as an arrow.
-func (g *Game) drawMap(screen *ebiten.Image, c cam) {
-	screen.Fill(color.RGBA{20, 18, 24, 255})
-	rows, cols := len(level), 0
-	for _, r := range level {
-		cols = max(cols, len(r))
-	}
-	cs := float32(min(W/(cols+2), H/(rows+4)))
-	ox, oy := (float32(W)-cs*float32(cols))/2, (float32(H)-cs*float32(rows))/2
-	for y := range rows {
-		for x := range cols {
-			if !seen[[2]int{x, y}] {
-				continue
-			}
-			col := color.RGBA{50, 48, 55, 255}
-			if wall(x, y) {
-				col = color.RGBA{170, 160, 150, 255}
-			}
-			vector.DrawFilledRect(screen, ox+cs*float32(x), oy+cs*float32(y), cs-1, cs-1, col, false)
-		}
-	}
-	if TileMarks != nil {
-		for t, bits := range TileMarks() {
-			if seen[t] && bits&2 != 0 {
-				vector.DrawFilledCircle(screen, ox+cs*(float32(t[0])+0.5), oy+cs*(float32(t[1])+0.5), cs/4, color.RGBA{80, 200, 255, 255}, true)
-			}
-		}
-	}
-	px, py := ox+cs*float32(c.x), oy+cs*float32(c.z)
-	fx, fy := float32(c.fwx)*cs/2, float32(c.fwz)*cs/2
-	rx, ry := float32(c.rtx)*cs*0.3, float32(c.rtz)*cs*0.3
-	yellow := color.RGBA{255, 220, 60, 255}
-	vector.StrokeLine(screen, px-fx, py-fy, px+fx, py+fy, cs/4, yellow, true)
-	vector.StrokeLine(screen, px+fx, py+fy, px-rx, py-ry, cs/4, yellow, true)
-	vector.StrokeLine(screen, px+fx, py+fy, px+rx, py+ry, cs/4, yellow, true)
-	font.Print(screen, fmt.Sprintf("Map  %d,%d   M or Esc closes", g.x, g.y), 4, 0)
-}
-
 // BLOBBER_SHOT=file.png saves the 30th frame and quits: a way to check the look without a person at the keys.
 var shotFrames int
 
@@ -2141,77 +2084,6 @@ func formation(n, i int) [2]float64 {
 		return [][2]float64{{-0.3, 0}, {0, 0.15}, {0.3, 0.02}}[min(i, 2)]
 	}
 	return [2]float64{}
-}
-
-// minimapLayout is the minimap's cell size and the margin around its cells, wide enough for Panel's frame.
-func minimapLayout() (cs, m float32) {
-	cs = float32(5 * ebiten.Monitor().DeviceScaleFactor())
-	m = 2 * cs
-	if PanelBorder != nil {
-		m = max(m, float32(PanelBorder())+cs/2)
-	}
-	return cs, m
-}
-
-// MinimapRect is the minimap's framed area on screen, in device pixels, in the top right corner.
-func MinimapRect() image.Rectangle {
-	const r = 7
-	cs, m := minimapLayout()
-	side := int(2*m + cs*(2*r+1))
-	return image.Rect(W-side, 0, W, side)
-}
-
-// drawMinimap: 15x15 cells around the player top-right, walls as squares, player as an arrow along the camera.
-func (g *Game) drawMinimap(screen *ebiten.Image, c cam) {
-	const r = 7 // half window
-	cs, m := minimapLayout()
-	mr := MinimapRect()
-	ox, oy := float32(mr.Min.X)+m, float32(mr.Min.Y)+m
-	if Panel != nil {
-		Panel(screen, MinimapRect())
-	} else {
-		vector.DrawFilledRect(screen, float32(mr.Min.X), float32(mr.Min.Y), float32(mr.Dx()), float32(mr.Dy()), color.RGBA{0, 0, 0, 160}, false)
-	}
-	for y := g.y - r; y <= g.y+r; y++ {
-		for x := g.x - r; x <= g.x+r; x++ {
-			if wall(x, y) && seen[[2]int{x, y}] {
-				vector.DrawFilledRect(screen, ox+cs*float32(x-g.x+r), oy+cs*float32(y-g.y+r), cs, cs, color.RGBA{170, 160, 150, 255}, false)
-			}
-		}
-	}
-	for k := range Faces { // phlan-poc: thin walls as lines on the cell's side; brown where the party can pass (doors)
-		if !seen[[2]int{k[0], k[1]}] || NoMap[k] {
-			continue
-		}
-		x0, y0 := ox+cs*float32(k[0]-g.x+r), oy+cs*float32(k[1]-g.y+r)
-		if x0 < ox || y0 < oy || x0 >= ox+cs*(2*r+1) || y0 >= oy+cs*(2*r+1) {
-			continue
-		}
-		col := color.RGBA{170, 160, 150, 255}
-		if !Edges[k] {
-			col = color.RGBA{150, 95, 45, 255}
-		}
-		ends := [4][4]float32{{0, 0, 1, 0}, {1, 0, 1, 1}, {0, 1, 1, 1}, {0, 0, 0, 1}}[k[2]]
-		vector.StrokeLine(screen, x0+cs*ends[0], y0+cs*ends[1], x0+cs*ends[2], y0+cs*ends[3], cs/4, col, false)
-	}
-	if TileMarks != nil {
-		for t, bits := range TileMarks() {
-			if dx, dy := t[0]-g.x+r, t[1]-g.y+r; dx >= 0 && dx <= 2*r && dy >= 0 && dy <= 2*r {
-				col := color.RGBA{255, 140, 40, 255} // automatic: orange
-				if bits&2 != 0 {
-					col = color.RGBA{80, 200, 255, 255} // searchable: cyan
-				}
-				vector.DrawFilledCircle(screen, ox+cs*(float32(dx)+0.5), oy+cs*(float32(dy)+0.5), cs/3, col, true)
-			}
-		}
-	}
-	px, py := ox+cs*float32(c.x-float64(g.x-r)), oy+cs*float32(c.z-float64(g.y-r))
-	fx, fy := float32(c.fwx)*cs, float32(c.fwz)*cs // forward
-	rx, ry := float32(c.rtx)*cs*0.6, float32(c.rtz)*cs*0.6
-	yellow := color.RGBA{255, 220, 60, 255}
-	vector.StrokeLine(screen, px-fx, py-fy, px+fx, py+fy, cs/3, yellow, true)
-	vector.StrokeLine(screen, px+fx, py+fy, px-rx, py-ry, cs/3, yellow, true)
-	vector.StrokeLine(screen, px+fx, py+fy, px+rx, py+ry, cs/3, yellow, true)
 }
 
 func (g *Game) Layout(ow, oh int) (int, int) {

@@ -221,26 +221,32 @@ func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
 	}
 }
 
-// mapRect is where the original's overhead map goes: the top right
-// corner, framed, at a whole scale (88x88 pixels at scale 1).
+// mapRect is where the map goes: the top right corner, framed, at a
+// whole scale (mapSide pixels at scale 1).
 func mapRect(dst *ebiten.Image) image.Rectangle {
 	b := dst.Bounds()
-	k := max(1, b.Dy()/720)
+	k := mapScale(dst)
 	bw := 0
 	if blobber.PanelBorder != nil {
 		bw = blobber.PanelBorder()
 	}
-	side := 88*k + 2*bw
+	side := mapSide*k + 2*bw
 	return image.Rect(b.Dx()-side, 0, b.Dx(), side)
 }
 
-// drawMap shows the original's overhead map (View.Map) in mapRect.
+// mapSide is View.Map's side in pixels.
+const mapSide = 16 * engine.MapCell
+
+// mapScale is the map's whole scale: small, a minimap.
+func mapScale(dst *ebiten.Image) int { return max(1, dst.Bounds().Dy()/1000) }
+
+// drawMap shows the map as the full map draws it (View.Map) in mapRect.
 func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
 	if m == nil {
 		return
 	}
 	if p.mapImg == nil {
-		p.mapImg = ebiten.NewImage(88, 88)
+		p.mapImg = ebiten.NewImage(mapSide, mapSide)
 	}
 	if m != p.mapSrc { // a new View: upload it once
 		p.mapImg.WritePixels(m.(*image.RGBA).Pix)
@@ -250,10 +256,10 @@ func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
 	if blobber.Panel != nil {
 		blobber.Panel(dst, r)
 	}
-	k := float64(max(1, dst.Bounds().Dy()/720))
+	k := float64(mapScale(dst))
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
-	op.GeoM.Translate(float64(r.Min.X)+(float64(r.Dx())-88*k)/2, float64(r.Min.Y)+(float64(r.Dy())-88*k)/2)
+	op.GeoM.Translate(float64(r.Min.X)+(float64(r.Dx())-mapSide*k)/2, float64(r.Min.Y)+(float64(r.Dy())-mapSide*k)/2)
 	dst.DrawImage(p.mapImg, op)
 }
 

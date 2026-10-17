@@ -25,7 +25,6 @@ type geoState struct {
 	geo      [0x400]byte          // DS:6A5C
 	walldef  [3 * walldefSet]byte // DS:6A58
 	sky      [4]byte              // DS:6A60..6A63: sky, horizon, band, ground
-	overhead bool                 // DS:6AAC: draw the top-down map instead
 	areaKind byte                 // DS:84DC: 0 or 0xA = map edges are solid
 }
 
@@ -167,11 +166,6 @@ func (e *Engine) drawWallPart(x, y int, wall byte, part int) {
 // ahead, then the party's own cell, each scanned outwards from the centre
 // to the left and to the right.
 func (e *Engine) Draw3DView(x, y, dir int) {
-	if e.gs.overhead {
-		e.snap.win = WinOverhead
-		e.DrawOverheadMap(x, y, dir)
-		return
-	}
 	e.snap.win = WinThreeD
 	e.S.Hold()
 	e.pageDraw = true
@@ -267,32 +261,6 @@ func (e *Engine) Draw3DView(x, y, dir int) {
 		cx += dirDX[back]
 		cy += dirDY[back]
 	}
-}
-
-// DrawOverheadMap = ovr30:0000 (x, y, dir): the 11x11 top-down map around
-// the party. Each cell is symbol 0x104 + walls (N 1, E 2, S 4, W 8); the
-// party is symbol 0x100 + dir/2.
-func (e *Engine) DrawOverheadMap(x, y, dir int) {
-	e.S.Hold()
-	e.pageDraw = true
-	defer e.traceFlip()
-	defer func() { e.pageDraw = false }()
-	defer e.S.Release() // 014C: near thunk to Flip
-	ox := min(max(x-5, 0), 5)
-	oy := min(max(y-5, 0), 5)
-	for row := 0; row <= 10; row++ {
-		for col := 0; col <= 10; col++ {
-			mx, my := ox+col, oy+row
-			id := 0x104
-			for bit, d := range [4]int{0, 2, 4, 6} {
-				if e.WallAt(mx, my, d) > 0 {
-					id += 1 << bit
-				}
-			}
-			e.Put8x8SymbolPage(col+viewX, row+viewY, id)
-		}
-	}
-	e.Put8x8SymbolPage(x-ox+viewX, y-oy+viewY, 0x100+dir/2)
 }
 
 // wallSlots = ovr30:0DE8 set {1,2,3}.

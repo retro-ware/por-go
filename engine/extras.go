@@ -209,30 +209,9 @@ const (
 // view it shows every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
 	e.ClearCells(0x11, 1, 0x26, 0xE)
-	m := e.ext.seen[e.areaKey()]
 	e.S.Lock()
 	defer e.S.Unlock()
-	if m == nil {
-		m = &[256]uint8{}
-	}
-	labels := e.labels()
-	for y := 0; y < 16; y++ {
-		for x := 0; x < 16; x++ {
-			s := m[y<<4|x]
-			px, py := mmX+x*mmCell, mmY+y*mmCell
-			switch s {
-			case seenSeen:
-				e.S.Fill(px, py, px+mmCell, py+mmCell, 8) // dark grey: seen
-			case seenVisited:
-				e.S.Fill(px, py, px+mmCell, py+mmCell, 1) // blue: walked
-			}
-			e.mapWalls(x, y, px, py, mmCell, s)
-			if l, ok := labels[y<<4|x]; ok { // labelled squares (fullmap.go): a dot
-				e.S.Fill(px+2, py+2, px+5, py+5, poiColour[l.kind])
-			}
-		}
-	}
-	e.mapParty(mmX, mmY, mmCell, 2) // the party: a dot with a tick towards the facing
+	e.drawMap(e.S, mmX, mmY, mmCell, e.labels(), nil)
 }
 
 // rosterPanel redraws the panel the minimap shares with the roster.

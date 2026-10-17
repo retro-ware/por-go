@@ -39,7 +39,6 @@ func main() {
 
 	blobber.DebugLines = pt.Summary
 	blobber.HUD = func(s *ebiten.Image) { ui.DrawParty(s, pt) }
-	blobber.TileMarks = func() map[[2]int]int { return host.vm.Marks(host.m) }
 	blobber.OnPromptAnswer = func() []string { // character list for "who will" prompts
 		var l []string
 		for i, c := range pt.Chars {

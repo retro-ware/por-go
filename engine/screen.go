@@ -54,9 +54,6 @@ func (e *Engine) Redraw() {
 			s[3] = skyGround(e.es.v6F68)
 		}
 		e.SetSkyColours(s[0], s[1], s[2], s[3])
-		if e.area.NoCoords != 0 {
-			e.gs.overhead = false
-		}
 		e.Draw3DView(e.posX, e.posY, e.viewFacing())
 		e.viewDrawn()
 	case mode >= 2 && mode <= 4:

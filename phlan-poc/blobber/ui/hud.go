@@ -64,10 +64,9 @@ func cardRect(i, n int) image.Rectangle {
 }
 
 // card is character i's rectangle on screen, in device pixels, for a party of n: a column at the
-// right edge below the minimap, two columns when one does not fit, then shrunk until they do.
+// right edge, two columns when one does not fit, then shrunk until they do.
 func card(i, n int) image.Rectangle {
-	mm := blobber.MinimapRect()
-	top, avail := mm.Max.Y+4, blobber.H-mm.Max.Y-8
+	top, avail := 4, blobber.H-8
 	k, cols := K(cw, ch), 1
 	for k > 1 || cols == 1 {
 		if rows := (n + cols - 1) / cols; rows*(cardH+rowGap)*k <= avail {
@@ -80,7 +79,7 @@ func card(i, n int) image.Rectangle {
 		}
 	}
 	w, h := (cardW+cardGap)*k, (cardH+rowGap)*k
-	right := mm.Max.X // flush with the minimap's right edge
+	right := blobber.W - 4
 	x := right - (cols-i%cols)*w + cardGap*k
 	y := top + i/cols*h
 	return image.Rect(x, y, x+cardW*k, y+cardH*k)

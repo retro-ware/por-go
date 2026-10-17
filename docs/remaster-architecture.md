@@ -58,7 +58,7 @@ type View struct {
 }
 ```
 
-- `PaneKind` comes from the state the engine already keeps (`beginFlag`, `viewMode`, `gs.overhead`, `e.pic`). It is not inferred from pixels.
+- `PaneKind` comes from the state the engine already keeps (`beginFlag`, `viewMode`, `e.pic`). It is not inferred from pixels.
 - Portrait heads: the engine adds `PortraitHead(id) image.Image`. It decodes the HEAD block, the same data `LoadPortrait` uses, and caches the result.
 
 ## 4. Mode switching (requirement 2)
@@ -135,7 +135,7 @@ The seam is `engine/snapshot.go`:
 - **When it is published:** `(*Engine).View()` returns the last snapshot. The engine publishes it each time it polls or waits for a key, on its own goroutine, through an atomic pointer.
 - **`MainFrame`:** `DrawMainFrame` records the border pixels of the view window and the text pane. The frame counts as up while those pixels are unchanged. Combat, sheets, shops and the title all draw over them.
   - Fixed in milestone 4: the `CellRect`s are box insides, as `DrawBorder` takes them, and the border is `Framed()`. The check now samples the real border cells.
-- **`Window`:** set by whatever drew into the view window last: `Draw3DView` (3D or overhead), `DrawAreaMap`, or the picture paths (`drawPicAt`, `DrawAnimFrame`).
+- **`Window`:** set by whatever drew into the view window last: `Draw3DView`, `DrawAreaMap`, or the picture paths (`drawPicAt`, `DrawAnimFrame`).
 - **`TextShown`:** any lit pixel inside the text pane's border.
 - **`Party`:** name, HP, AC as shown, status, selection, and `Head`. `Head` is the chosen paper-doll head (`portraitHead[PortHead]` from the HEAD files), 88x40 in EGA colours, decoded once per id.
 - **Fixed rectangles:** `ViewWindow`, `InnerWindow`, `TextPane` and `PromptRows`, as `CellRect`s.
@@ -202,7 +202,6 @@ Checks:
 - **Blobber changes:** `party.Character.Face` (an `image.Image`) overrides the portrait pool, and `ui.PartyRect(n)` gives the cards' area.
 - **Pop-ups:** they now centre in the space left of the cards, and their whole-number scale also fits that width.
 - **Check:** the 6-character GAME A party at the trainer and at the sign, at 1920x1440.
-- **Not shown:** the minimap. Its corner stays empty above the cards, because Blobber lays the cards out under it.
 
 ## 16. Milestone 7 (waiting)
 
@@ -247,7 +246,7 @@ The rest of the seam stays as it is.
   - This also fixed the wrong portraits after the boat to Sokol Keep: that disk's HEAD file lacks most player heads.
 - **Floor seams:** the floor (and the ceiling indoors) is one quad over the visible cells, cut into pieces per cell for the lighting and skipping cells no ray reaches. Pieces of one quad share their edge vertices exactly, so no sky shows between them; per-cell tiles computed their shared edges apart and showed thin blue lines (Phlan 3,3 N: 290 blue floor pixels before, 0 after). Water cells are laid over it (pass 1).
 - **Horizon:** where the sky is open, a ground plane reaches 4000 cells round the camera under the floor quad, so its far edge sits under a pixel below the horizon. It is water on any map with water (Phlan has water cells but no `sea` line), else the floor. At 90 cells and floor-textured it showed a brown strip with a light line above it (Phlan 4,0,N); now sky meets sea, day and night.
-- **Map and cards:** the remaster shows the original's own overhead map top right, framed: the engine draws the same 11x11 symbols as DrawOverheadMap into an image off screen and publishes it as `View.Map` (88x88), so both modes use one map renderer and the screen is never touched. Blobber's minimap is not drawn. The portrait cards sit as low as they go, the column scale chosen so four fit under the map.
+- **Map and cards:** the engine has one map renderer, `drawMap` in engine/fullmap.go (seen squares, walls, doors, labels, the party). The full map (M), the Tab panel's minimap and the remaster all use it: for the remaster, the engine draws it into an image off screen and publishes it as `View.Map` (16 squares of `MapCell` px), which the presenter frames top right. The original's overhead map (DrawOverheadMap) and Blobber's map screen and minimap are gone; DrawAreaMap (the overland tile map) stays. The portrait cards sit as low as they go, under the map.
 - **Question pop-ups:** a menu that is not the command bar (an answer the game waits for) opens as a vertical menu by itself, right under the text pane; the picture sits above the text, the text in the middle. Enter on the game's own highlighted item passes Enter through (prompts like "Press enter to continue" take nothing else); another item sends its hotkey. Esc closes the pop-up, Enter opens it again.
 - **Distance fog** (Blobber option, on by default; open skies only): the texture shader fades every pixel toward the sky's horizon colour (day or night) by its distance, squared, reaching full at 128 cells. Close by it is barely there; far out the sea melts into the sky.
 - **Fluid movement** (Blobber option, on by default): while a move key is held, the view asks the host for the next move (`View.Flow`) halfway through the current one, and if the game is slower it waits at the cell at full speed. Steps and turns flow into each other without slowing, as in BlobberRPG. cmd/por skips its typematic repeat for the arrows while the view paces them; with the option off they repeat as typed.
