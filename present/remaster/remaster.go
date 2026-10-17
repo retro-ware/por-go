@@ -41,6 +41,8 @@ type Presenter struct {
 	menu   bool                        // the vertical menu is open
 	sel    int                         // its highlighted item
 	asked  string                      // the question menu last opened by itself (menuID)
+	mapImg *ebiten.Image               // View.Map on the GPU
+	mapSrc image.Image                 // the View.Map it holds
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -72,6 +74,7 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	p.animate()
 	ui.CardAt = cardAt(dst)
 	p.view.Draw(dst)
+	p.drawMap(dst, v.Map)
 	p.drawParty(dst, v.Party)
 	k := scale(dst)
 	b := dst.Bounds()
@@ -202,7 +205,7 @@ func menuID(m *engine.Menu) string {
 func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
 	const gap, rows = 8, 4
 	b := dst.Bounds()
-	k := max(1, min(ui.K(480, 360), (b.Dy()-blobber.MinimapRect().Dy())/(rows*(ui.CardH+gap))))
+	k := max(1, min(ui.K(480, 360), (b.Dy()-mapRect(dst).Max.Y-gap)/(rows*(ui.CardH+gap))))
 	return func(i, n int) image.Rectangle {
 		left := (n + 1) / 2
 		col, row, per := 0, i, left
@@ -216,6 +219,42 @@ func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
 		}
 		return image.Rect(x, y, x+ui.CardW*k, y+ui.CardH*k)
 	}
+}
+
+// mapRect is where the original's overhead map goes: the top right
+// corner, framed, at a whole scale (88x88 pixels at scale 1).
+func mapRect(dst *ebiten.Image) image.Rectangle {
+	b := dst.Bounds()
+	k := max(1, b.Dy()/720)
+	bw := 0
+	if blobber.PanelBorder != nil {
+		bw = blobber.PanelBorder()
+	}
+	side := 88*k + 2*bw
+	return image.Rect(b.Dx()-side, 0, b.Dx(), side)
+}
+
+// drawMap shows the original's overhead map (View.Map) in mapRect.
+func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
+	if m == nil {
+		return
+	}
+	if p.mapImg == nil {
+		p.mapImg = ebiten.NewImage(88, 88)
+	}
+	if m != p.mapSrc { // a new View: upload it once
+		p.mapImg.WritePixels(m.(*image.RGBA).Pix)
+		p.mapSrc = m
+	}
+	r := mapRect(dst)
+	if blobber.Panel != nil {
+		blobber.Panel(dst, r)
+	}
+	k := float64(max(1, dst.Bounds().Dy()/720))
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate(float64(r.Min.X)+(float64(r.Dx())-88*k)/2, float64(r.Min.Y)+(float64(r.Dy())-88*k)/2)
+	dst.DrawImage(p.mapImg, op)
 }
 
 // scene is the remastered map of the area v shows, or nil.

@@ -84,6 +84,7 @@ type View struct {
 	Menu      *Menu
 	Command   bool // Menu is the adventuring command bar
 	Party     []Member
+	Map       image.Image // the original's overhead map around the party, 88x88 (nil outside 3D areas)
 }
 
 // Menu is the menu bar waiting for a choice on the prompt line.
@@ -172,6 +173,9 @@ func (e *Engine) publish() {
 		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,
 		Command: e.ext.inCommand,
 	}
+	if s.win == WinThreeD || s.win == WinOverhead || s.win == WinPicture {
+		v.Map = e.overhead(e.posX, e.posY, e.viewFacing())
+	}
 	if m := s.menu; m != nil {
 		c := *m
 		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
@@ -225,25 +229,58 @@ func (e *Engine) head(id int) image.Image {
 	var out image.Image
 	im := e.LoadPic("HEAD"+e.symDAX[4:], id)
 	if im != nil && im.Count > 0 {
-		w, h := im.Width*8, im.Height
-		d := im.Frame(0)
-		rgba := image.NewRGBA(image.Rect(0, 0, w, h))
-		for i, p := range d[:w*h] {
-			switch {
-			case p == 16:
-				p = 0
-				fallthrough
-			case p < 16:
-				c := ega.Palette[p]
-				rgba.SetRGBA(i%w, i/w, color.RGBA{c[0], c[1], c[2], 255})
-			case p >= ega.AmigaBase:
-				rgba.SetRGBA(i%w, i/w, e.S.RGBA(p))
-			} // 17..AmigaBase-1 stay transparent, as blit skips them
-		}
-		out = rgba
+		out = e.toRGBA(im.Frame(0), im.Width*8, im.Height, image.NewRGBA(image.Rect(0, 0, im.Width*8, im.Height)), 0, 0)
 	}
 	e.snap.heads[id] = out
 	return out
+}
+
+// toRGBA draws the w by h picture pixels d into dst at x, y in the EGA
+// colours (17..AmigaBase-1 stay transparent, as blit skips them) and returns dst.
+func (e *Engine) toRGBA(d []byte, w, h int, dst *image.RGBA, x, y int) *image.RGBA {
+	for i, p := range d[:w*h] {
+		switch {
+		case p == 16:
+			p = 0
+			fallthrough
+		case p < 16:
+			c := ega.Palette[p]
+			dst.SetRGBA(x+i%w, y+i/w, color.RGBA{c[0], c[1], c[2], 255})
+		case p >= ega.AmigaBase:
+			dst.SetRGBA(x+i%w, y+i/w, e.S.RGBA(p))
+		}
+	}
+	return dst
+}
+
+// overhead is the original's overhead map (DrawOverheadMap) as an image:
+// the same 11x11 symbols around x, y and the party's arrow, drawn off
+// screen (nil without the symbols).
+func (e *Engine) overhead(x, y, dir int) image.Image {
+	set := e.sym[4]
+	if set == nil {
+		return nil
+	}
+	ox, oy := min(max(x-5, 0), 5), min(max(y-5, 0), 5)
+	dst := image.NewRGBA(image.Rect(0, 0, 11*8, 11*8))
+	put := func(col, row, id int) {
+		if f := id - symFix[4]; f >= 0 && f < set.Count {
+			e.toRGBA(set.Frame(f), 8, 8, dst, col*8, row*8)
+		}
+	}
+	for row := 0; row <= 10; row++ {
+		for col := 0; col <= 10; col++ {
+			id := 0x104
+			for bit, d := range [4]int{0, 2, 4, 6} {
+				if e.WallAt(ox+col, oy+row, d) > 0 {
+					id += 1 << bit
+				}
+			}
+			put(col, row, id)
+		}
+	}
+	put(x-ox, y-oy, 0x100+dir/2)
+	return dst
 }
 
 // menuShown records the menu DisplayInput waits on, and returns the one

@@ -122,14 +122,11 @@ func (v *View) Update() {
 	v.g.tween()
 }
 
-// Draw draws the 3D view filling dst, with the minimap top right.
+// Draw draws the 3D view filling dst.
 func (v *View) Draw(dst *ebiten.Image) {
 	b := dst.Bounds()
 	v.g.resize(b.Dx(), b.Dy())
-	c := v.g.camera()
-	markSeen(c)
-	v.g.draw3D(dst, c)
-	v.g.drawMinimap(dst, c)
+	v.g.draw3D(dst, v.g.camera())
 	if v.g.menu {
 		v.g.drawMenu(dst)
 	}
