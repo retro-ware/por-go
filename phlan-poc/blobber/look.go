@@ -326,6 +326,9 @@ func (g *Game) faceOptions(c cam, f *face) *ebiten.DrawTrianglesShaderOptions {
 	tp, warm := g.torchPos(), []float32{1.08, 0.94, 0.78}
 	if openSky {
 		warm = []float32{1, 1, 1}
+		if Night && f.mode != modeUnlit { // phlan-poc: moonlight, dim and blue
+			warm = nightTint
+		}
 	}
 	u := map[string]any{"Mode": float32(f.mode), "Dither": float32(btof(g.dither)), "Pow": float32(g.torchPow()), "Range": float32(g.torchRange()), "Inc": float32(f.inc),
 		"Torch": []float32{float32(tp[0]), float32(tp[1]), float32(tp[2])}, "Warm": warm,

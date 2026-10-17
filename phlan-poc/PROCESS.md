@@ -120,6 +120,16 @@ All in `blobber/blobber.go` and `cmd/blobber/host.go`:
   off-map is plain ground, like PoR's empty off-map squares.
 - **Sky**: gradient plus a scrolling procedural cloud layer (moves with
   steps, turns and time, never mirrored).
+- **Night**: `T` switches day and night (PoR has a day/night cycle);
+  `BLOBBER_NIGHT=1` starts at night. Night sky and stars from `make_sky.py`,
+  the world lit by a dim blue moonlight (the shader's `Warm` tint).
+- **Ceilings**: `BLOBBER_CEILING=cave|dungeon|wood` closes any map's sky
+  (textures from `make_sky.py ceilings`); closed maps get torch light and fog.
+- **Props**: `prop TEX X Y SIZE` billboards at exact floor positions (Nomad
+  Camp trees: half-trees on face edges in PoR, placed from the trunks in the
+  original's art; `props` in `areas.py`, texture from `make_props.py`).
+- **Ponds**: `pond X Y` water floor without sea; a wall value in `pond` (a
+  pond painted on a wall) is not drawn, the square behind it becomes a pond.
 - **Minimap** draws edges as lines.
 - **Shots**: `BLOBBER_SHOT=file.png BLOBBER_OPEN=map:NAME:X:Y:DIR` saves
   frame 30 with no overlay (`BLOBBER_OVERLAY=1` keeps the position text,

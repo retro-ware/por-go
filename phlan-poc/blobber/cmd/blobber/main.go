@@ -86,6 +86,7 @@ func main() {
 	blobber.Keys[ebiten.KeyG] = toggleGod
 	blobber.Keys[ebiten.KeyK] = killAhead
 	blobber.Keys[ebiten.KeyN] = host.spawnMenu
+	blobber.Keys[ebiten.KeyT] = func() { blobber.Night = !blobber.Night } // phlan-poc: day / night
 	blobber.Keys[ebiten.KeyF5] = func() { report(host.saveGame(), "Game saved.") }
 	blobber.Keys[ebiten.KeyF9] = func() { report(host.loadGame(), "Game loaded.") }
 	blobber.Keys[ebiten.KeyI] = func() { blobber.Modal = ui.NewInventory(pt) }

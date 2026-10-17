@@ -1498,7 +1498,23 @@ func (g *Game) drawQuad(dst *ebiten.Image, c cam, f *face) {
 // drawSky fills the upper half with the ceiling texture as a panorama: the picture and its mirror
 // image side by side make one full turn, so there is no seam and the sky need not tile.
 // ponytail: roll is ignored, the horizon stays at H/2.
+// Night (phlan-poc): the open sky is the night sky and its stars, the world lit by moonlight; T switches it
+// (PoR has a day and night cycle). BLOBBER_NIGHT=1 starts at night.
+var Night = os.Getenv("BLOBBER_NIGHT") != ""
+
+var nightTint = []float32{0.42, 0.48, 0.72}
+
+// texNightSky, texStars (phlan-poc): ceiling_sky_night and ceiling_night_stars, loaded with texClouds.
+var texNightSky, texStars *ebiten.Image
+
 func (g *Game) drawSky(dst *ebiten.Image, c cam) {
+	if texClouds != nil && Night {
+		b := texNightSky.Bounds()
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(float64(W)/float64(b.Dx()), float64(H)/2/float64(b.Dy()))
+		dst.DrawImage(texNightSky, op)
+		return
+	}
 	if texClouds != nil { // phlan-poc: the ceiling texture is a gradient, stretched; the cloud layer moves
 		b := texCeil.Bounds()
 		op := &ebiten.DrawImageOptions{}
@@ -1585,6 +1601,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	if texWater == nil {
 		texWater, texClouds = FlatTexture("floor", "phlan_water"), FlatTexture("ceiling", "phlan_clouds")
+		texNightSky, texStars = FlatTexture("ceiling", "sky_night"), FlatTexture("ceiling", "night_stars")
+	}
+	clouds := texClouds
+	if Night {
+		clouds = texStars
 	}
 	if openSky { // phlan-poc: a cloud layer high above, so the sky moves with every step and turn
 		const hgt, span, size = -6.0, 90.0, 14.0 // height, half width and cloud tile size in cells
@@ -1592,7 +1613,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		x0, z0, x1, z1 := c.x-span, c.z-span, c.x+span, c.z+span
 		u := func(x float64) float64 { return x/size + wind }
 		f := q(vert{x0, hgt, z0, u(x0), z0 / size, 0, 0, 0}, vert{x1, hgt, z0, u(x1), z0 / size, 0, 0, 0},
-			vert{x1, hgt, z1, u(x1), z1 / size, 0, 0, 0}, vert{x0, hgt, z1, u(x0), z1 / size, 0, 0, 0}, texClouds, 24)
+			vert{x1, hgt, z1, u(x1), z1 / size, 0, 0, 0}, vert{x0, hgt, z1, u(x0), z1 / size, 0, 0, 0}, clouds, 24)
 		f.pass, f.mode = -1, modeUnlit
 	}
 	cells := make([][2]int, 0, len(visibleCells(c)))

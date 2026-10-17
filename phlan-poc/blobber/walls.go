@@ -6,6 +6,7 @@ import (
 	"embed"
 	"image"
 	"image/png"
+	"os"
 	"sort"
 	"strings"
 
@@ -95,6 +96,9 @@ var openSky bool
 // SetFlats makes floor and ceiling (names from Flats; "" = the default textures) the current
 // map's. Hosts call it on every map change; it holds across GenTextures.
 func SetFlats(floor, ceiling string) {
+	if c := os.Getenv("BLOBBER_CEILING"); c != "" { // phlan-poc: try a ceiling (e.g. cave) on any map
+		ceiling = c
+	}
 	flatNames = [2]string{floor, ceiling}
 	openSky = strings.HasPrefix(ceiling, "sky")
 	if defFloor != nil {
