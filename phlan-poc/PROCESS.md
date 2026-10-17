@@ -146,7 +146,7 @@ output goes to `raw/<area>/`.
    art is pixel-identical to a wall of an earlier area in `areas.py` takes
    that area's texture (`areas.origin()`): no API call and no copy, the map's
    faces name the first area's texture file directly. Only walls with new art
-   go to the model. Across all 26 maps the game has 132 wall values in use but
+   go to the model. Across all 26 maps the maps use 236 wall values but
    only 47 new arts after Podol Plaza.
 5. `tools/remaster-walls.py`: reference with a key colour -> OpenAI
    gpt-image edit -> key-out. Raw results go to `raw/`.
