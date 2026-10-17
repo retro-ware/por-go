@@ -1919,7 +1919,7 @@ func (g *Game) drawMinimap(screen *ebiten.Image, c cam) {
 			}
 		}
 	}
-	for k := range Edges { // phlan-poc: thin walls as lines on the cell's side
+	for k := range Faces { // phlan-poc: thin walls as lines on the cell's side; brown where the party can pass (doors)
 		if !seen[[2]int{k[0], k[1]}] {
 			continue
 		}
@@ -1927,19 +1927,12 @@ func (g *Game) drawMinimap(screen *ebiten.Image, c cam) {
 		if x0 < ox || y0 < oy || x0 >= ox+cs*(2*r+1) || y0 >= oy+cs*(2*r+1) {
 			continue
 		}
-		ends := [4][4]float32{{0, 0, 1, 0}, {1, 0, 1, 1}, {0, 1, 1, 1}, {0, 0, 0, 1}}[k[2]]
-		vector.StrokeLine(screen, x0+cs*ends[0], y0+cs*ends[1], x0+cs*ends[2], y0+cs*ends[3], cs/4, color.RGBA{170, 160, 150, 255}, false)
-	}
-	for k := range Edges { // phlan-poc: thin walls as lines on the cell's side
-		if !seen[[2]int{k[0], k[1]}] {
-			continue
-		}
-		x0, y0 := ox+cs*float32(k[0]-g.x+r), oy+cs*float32(k[1]-g.y+r)
-		if x0 < ox || y0 < oy || x0 >= ox+cs*(2*r+1) || y0 >= oy+cs*(2*r+1) {
-			continue
+		col := color.RGBA{170, 160, 150, 255}
+		if !Edges[k] {
+			col = color.RGBA{150, 95, 45, 255}
 		}
 		ends := [4][4]float32{{0, 0, 1, 0}, {1, 0, 1, 1}, {0, 1, 1, 1}, {0, 0, 0, 1}}[k[2]]
-		vector.StrokeLine(screen, x0+cs*ends[0], y0+cs*ends[1], x0+cs*ends[2], y0+cs*ends[3], cs/4, color.RGBA{170, 160, 150, 255}, false)
+		vector.StrokeLine(screen, x0+cs*ends[0], y0+cs*ends[1], x0+cs*ends[2], y0+cs*ends[3], cs/4, col, false)
 	}
 	if TileMarks != nil {
 		for t, bits := range TileMarks() {
