@@ -135,20 +135,26 @@ output goes to `raw/<area>/`.
      repeats on every tile.
    - `unwater()` removes painted sea (`WATER` walls); the engine draws real
      water behind them.
-4. `tools/remaster-walls.py`: reference with a key colour -> OpenAI
+4. **Reuse before generating.** The game repeats walls across areas (Podol
+   Plaza shares 6 of its 14 with Phlan and the Slums). A wall whose original
+   art is pixel-identical to a wall of an earlier area in `areas.py` takes
+   that area's model output (`origin()`/`reuse()`), with no API call, so it
+   is generated once and looks the same everywhere; `finish` keeps the copies
+   in sync. Only walls with new art go to the model.
+5. `tools/remaster-walls.py`: reference with a key colour -> OpenAI
    gpt-image edit -> key-out. Raw results go to `raw/`.
-5. `finish(v)`:
+6. `finish(v)`:
    - `TILE` walls (continuous, like the quay) are crossfaded at the edges.
    - Other walls get **seams** (dark joint + lit edge) at both sides, like
      the original's trim, so neighbours read as separate segments. `NOSEAM`
      for walls a joint would cut through (stakes, water).
    - `outline()` clears the rows the original leaves empty above the wall
      top, so adjacent walls are the same height.
-6. Re-cut everything from `raw/<area>/` without API calls:
+7. Re-cut everything from `raw/<area>/` without API calls:
    `python3 make_textures.py AREA finish`. Redo single walls with
    `python3 make_textures.py AREA 14`.
-7. Contact-sheet original vs texture (aspect ratio kept) before comparing.
-8. See-through openings (`arch`): the model tends to draw them thinner and
+8. Contact-sheet original vs texture (aspect ratio kept) before comparing.
+9. See-through openings (`arch`): the model tends to draw them thinner and
    narrower. `arch()` cuts the opening from the original's own shape, fills
    the stone above it from the same rows of the wall beside it, and darkens
    a rim around the cutout so it reads against walls seen through it.

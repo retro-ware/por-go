@@ -154,3 +154,45 @@ AREAS["slums"] = dict(  # the Slums of Phlan: ECL2 block 20
             "handle in the lower right.",
     },
 )
+
+AREAS["podol"] = dict(  # Podol Plaza: ECL1 block 18
+    geo=(1, 18), walldefs=[(1, 1), (3, 2), (5, 3)], area_kind=18,
+    chunks=["WALLDEF1-001-1", "WALLDEF1-003-1", "WALLDEF1-005-1"],
+    chars={v: "0123456789W+-=@"[v - 1] for v in range(1, 16)},
+    start=(2, 10, "n"), water_walls=set(), free_walls=set(),
+    floor="phlan_dirt", ceiling="sky_phlan",
+    notrim=set(range(1, 16)), water=set(), tile=set(), noseam=set(), arch={3, 8},
+    views=[(2, 14, "N"), (1, 15, "S"), (10, 9, "E"), (7, 2, "E"), (5, 5, "E"), (3, 13, "E"), (3, 2, "E"),
+           (15, 4, "S"), (7, 13, "E"), (10, 0, "W"), (7, 14, "E"), (7, 10, "S"), (4, 11, "S"), (7, 5, "N"),
+           (14, 4, "S"), (4, 3, "W"), (4, 0, "E"), (14, 7, "W")],  # random.Random(18), reachable squares
+    walls={
+        1: "a plain grey plastered stone wall with a wide dark round-arched tunnel opening in the middle, a "
+           "small wooden door far away at the end of the tunnel; the tunnel floor is empty.",
+        3: "a plain grey plastered stone wall with a tall open round-topped archway in the middle; the "
+           "archway is an empty opening, nothing is drawn inside it.",
+        4: "a plain smooth grey plastered stone town wall, even and unadorned.",
+        5: "a plain smooth grey plastered stone town wall with an arched wooden plank door with a metal "
+           "handle in the lower middle.",
+        6: "a wall of rough grey speckled granite blocks, fine dark and light grain over the whole face.",
+        7: "a wall of rough grey speckled granite with an arched wooden plank door with a metal handle in "
+           "the lower middle.",
+        8: "a wall of rough grey speckled granite with a tall open round-topped archway in the middle; the "
+           "archway is an empty opening, nothing is drawn inside it.",
+        9: "a grey plastered stone town wall overgrown with climbing ivy and green vines over most of its "
+           "face, thicker towards the bottom.",
+        10: "a grey plastered stone town wall overgrown with climbing ivy and green vines, with an arched "
+            "wooden plank door with a metal handle in the lower right.",
+        11: "the facade of a dark temple: a tall pointed gable of dark brown and maroon checkered brickwork "
+            "with a round window near its peak, flanked left and right by slender yellow-green stone towers "
+            "topped with small dark spires; at the bottom centre a pointed-arch doorway with a purple stone "
+            "frame and a dark wooden door of vertical planks.",
+        12: "the side wall of a dark temple: dark brown and maroon checkered brickwork between two slender "
+            "yellow-green stone towers topped with small dark spires.",
+        13: "the upper front of a dark temple: dark brown and maroon checkered brickwork with a pointed gothic "
+            "window holding a small purple sigil, a stone balcony with a purple ornamental railing across "
+            "the middle, slender yellow-green pilasters at both sides, a plain grey stone base at the bottom.",
+        14: "a low fence of vertical brown wooden planks across the lower half only, a dark gap along the "
+            "ground under it; above the fence nothing is drawn.",
+        15: "a wall of dark mottled stone, deep blue, dark red and black speckles over the whole face.",
+    },
+)

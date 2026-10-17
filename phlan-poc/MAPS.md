@@ -12,7 +12,7 @@ and compared (PROCESS.md).
 | [x] | New Phlan (civilized district, incl. City Hall) | 3/0, 3/8, 3/11 | 3/0 | 3: 0 |
 | [x] | Valhingen Graveyard | 4/10 | 4/10 | 4: 21, (22 missing), 20 |
 | [x] | Slums | 2/20 | 2/20 | 2: 2, 4, 1 |
-| [ ] | Podol Plaza | 1/18 | 1/18 | 1: 1, 3, 5 |
+| [x] | Podol Plaza | 1/18 | 1/18 | 1: 1, 3, 5 |
 | [ ] | Temple of Bane (orc hall, black hands) | 1/24 | 1/24, 1/31 | 1: 1, 3, 5 |
 | [ ] | Stojanow Gate (gate and towers) | 2/9 | 2/9 | 2: 1, 9, 23 |
 | [ ] | Mendor's Library | 2/15 | 2/15 | 2: 1, 19, 23 |
