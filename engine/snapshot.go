@@ -37,7 +37,9 @@ const (
 	WinPicture         // a picture, portrait or approaching sprite
 )
 
-// CellRect is a rectangle of 8x8 text cells, both corners included.
+// CellRect is a rectangle of 8x8 text cells, both corners included. For a
+// box it is the inside, as DrawBorder takes it: the border is the ring of
+// cells around it (Framed).
 type CellRect struct{ X1, Y1, X2, Y2 int }
 
 // Pixels is the rectangle in screen pixels.
@@ -45,13 +47,16 @@ func (r CellRect) Pixels() image.Rectangle {
 	return image.Rect(r.X1*8, r.Y1*8, r.X2*8+8, r.Y2*8+8)
 }
 
-// The main screen's boxes (DrawMainFrame), borders included.
+// Framed is the box with its border.
+func (r CellRect) Framed() CellRect { return CellRect{r.X1 - 1, r.Y1 - 1, r.X2 + 1, r.Y2 + 1} }
+
+// The insides of the main screen's boxes (DrawMainFrame).
 var (
 	OuterBox    = CellRect{1, 1, 0x26, 0x16}
 	ViewWindow  = CellRect{1, 1, 0xF, 0xF}
 	InnerWindow = CellRect{3, 3, 0xD, 0xD} // the picture frame
 	TextPane    = CellRect{1, 0x11, 0x26, 0x16}
-	PromptRows  = CellRect{0, 0x17, 0x27, 0x18} // menus and prompts, under the frame
+	PromptRows  = CellRect{0, 0x18, 0x27, 0x18} // the menu and prompt line, under the frame
 )
 
 // Member is one party member as the party list shows them.
@@ -109,11 +114,10 @@ func (e *Engine) frameDrawn() {
 }
 
 // frameBorder lists the pixels of the border cells of the view window and
-// the text pane (the outer box's right edge is not one: the party list's
-// lines are cleared up to it).
+// the text pane.
 func frameBorder() [][2]int {
 	cells := map[[2]int]bool{}
-	for _, r := range []CellRect{ViewWindow, TextPane} {
+	for _, r := range []CellRect{ViewWindow.Framed(), TextPane.Framed()} {
 		for x := r.X1; x <= r.X2; x++ {
 			cells[[2]int{x, r.Y1}], cells[[2]int{x, r.Y2}] = true, true
 		}
@@ -154,7 +158,7 @@ func (e *Engine) publish() {
 			break
 		}
 	}
-	in := TextPane.Pixels().Inset(8)
+	in := TextPane.Pixels()
 	for y := in.Min.Y; y < in.Max.Y && !v.TextShown; y++ {
 		for x := in.Min.X; x < in.Max.X; x++ {
 			if e.S.Pix[y*ega.W+x] != 0 {

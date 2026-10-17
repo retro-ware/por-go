@@ -10,7 +10,8 @@
 // Mouse: pointing at a menu item highlights it, a click picks it (and list
 // lines, party members, combat squares); the wheel moves the highlight and
 // the right button is Escape. "?" lists the keys; F1-F8 open the inventory
-// of party member 1-8.
+// of party member 1-8. F10 switches between the original screen and the
+// remastered one (present/remaster; POR_REMASTER=1 starts in it).
 //
 // DIR must hold the DOS game files (TITLE.DAX, 8X8D1.DAX, GAME data ...);
 // it defaults to $GOPLAY_DATA, else the parent of the executable's module
@@ -27,7 +28,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -37,12 +37,15 @@ import (
 	"por/ega"
 	"por/engine"
 	"por/present/classic"
+	"por/present/remaster"
 )
 
 type game struct {
-	scr  *ega.Screen
-	eng  *engine.Engine
-	view classic.Presenter
+	scr        *ega.Screen
+	eng        *engine.Engine
+	classic    classic.Presenter
+	remaster   remaster.Presenter // draws through classic where it has no remaster
+	remastered bool               // F10: the remastered screen instead of the original's
 
 	pads    []ebiten.GamepadID // input buffers, reused each tick
 	pressed []ebiten.Key
@@ -67,8 +70,12 @@ func (g *game) Update() error {
 	if shot != "" { // the user's input never reaches a capture, only the scripted keys
 		g.ticks++
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
-			g.push(uint16(shotKeys[k-1]))
-			g.settle()
+			if c := shotKeys[k-1]; c == shotF10 {
+				g.remastered = !g.remastered
+			} else {
+				g.push(c)
+				g.settle()
+			}
 		}
 		return nil
 	}
@@ -120,7 +127,9 @@ func (g *game) keys() {
 		}
 	}
 	for _, k := range inpututil.AppendJustPressedKeys(g.pressed[:0]) {
-		if code, ok := biosKey(k); ok {
+		if k == ebiten.KeyF10 { // never the game's: only how it is shown changes
+			g.remastered = !g.remastered
+		} else if code, ok := biosKey(k); ok {
 			g.push(code)
 		} else if k == ebiten.KeyF && ebiten.IsKeyPressed(ebiten.KeyControl) && ebiten.IsKeyPressed(ebiten.KeyShift) {
 			g.push(engine.KeyFontPrev) // Ctrl-F next font, Ctrl-Shift-F the one before
@@ -236,17 +245,39 @@ func (g *game) gamepad(id ebiten.GamepadID) {
 
 func (g *game) Draw(dst *ebiten.Image) {
 	text, at := g.eng.Note()
-	g.pic = g.view.Draw(dst, g.scr, classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph})
+	note := classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
+	if g.remastered {
+		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())
+	} else {
+		g.pic = g.classic.Draw(dst, g.scr, note)
+	}
 	if shot != "" && g.ticks > 30*(len(shotKeys)+4) {
 		saveShot(dst)
 	}
 }
 
-// POR_SHOT=FILE.png writes the window to FILE after the keys in POR_KEYS
-// ("\r" Enter, "\e" Escape), one every quarter second, and exits; for full
-// size checks of the presenters. The window opens unfocused and ignores the
-// user's input meanwhile.
-var shot, shotKeys = os.Getenv("POR_SHOT"), strings.NewReplacer(`\r`, "\r", `\e`, "\x1b").Replace(os.Getenv("POR_KEYS"))
+// POR_SHOT=FILE.png writes the window to FILE after the keys in POR_KEYS,
+// one every quarter second, and exits; for full size checks of the
+// presenters. The window opens unfocused and ignores the user's input
+// meanwhile. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
+// arrows, \T F10 (switch the presenter).
+var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
+
+const shotF10 = 0xFFFF // in shotKeys: not a key for the engine
+
+func scriptKeys(s string) []uint16 {
+	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00, 'T': shotF10}
+	var out []uint16
+	for i := 0; i < len(s); i++ {
+		if c, ok := esc[s[min(i+1, len(s)-1)]]; s[i] == '\\' && i+1 < len(s) && ok {
+			out = append(out, c)
+			i++
+		} else {
+			out = append(out, uint16(s[i]))
+		}
+	}
+	return out
+}
 
 func saveShot(dst *ebiten.Image) {
 	b := dst.Bounds()
@@ -353,7 +384,8 @@ func main() {
 	eng.Cfg.Param = flag.Arg(0)
 	go eng.Run()
 
-	g := &game{scr: scr, eng: eng, dsf: 1}
+	g := &game{scr: scr, eng: eng, dsf: 1, remastered: os.Getenv("POR_REMASTER") != ""}
+	g.remaster.Classic = &g.classic
 	ebiten.SetWindowSize(ega.W*(*scale), ega.H*(*scale)*6/5) // 4:3 like a CRT
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Pool of Radiance")

@@ -45,6 +45,26 @@ type Presenter struct {
 
 // Draw shows scr on dst and returns where its picture went.
 func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note Note) Rect {
+	p.Frame(scr, note)
+	dst.Fill(color.Black)
+
+	// The picture: as large as fits, 4:3 like a CRT.
+	b := dst.Bounds()
+	W, H := float64(b.Dx()), float64(b.Dy())
+	scale := math.Min(W/4, H/3)
+	pw, ph := scale*4, scale*3
+	pic := Rect{(W - pw) / 2, (H - ph) / 2, pw, ph}
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(pw/ega.W, ph/ega.H)
+	op.GeoM.Translate(pic.X, pic.Y)
+	dst.DrawImage(p.img, op)
+	p.drawOverlays(dst, pic)
+	return pic
+}
+
+// Frame converts scr into a 320x200 image (only when it changed) and
+// returns it; the remaster crops its windows from it. The image is reused.
+func (p *Presenter) Frame(scr *ega.Screen, note Note) *ebiten.Image {
 	if p.img == nil {
 		p.img, p.buf = ebiten.NewImage(ega.W, ega.H), make([]byte, ega.W*ega.H*4)
 	}
@@ -74,20 +94,13 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note Note) Rect {
 	if upload {
 		p.img.WritePixels(p.buf)
 	}
-	dst.Fill(color.Black)
+	return p.img
+}
 
-	// The picture: as large as fits, 4:3 like a CRT.
-	b := dst.Bounds()
-	W, H := float64(b.Dx()), float64(b.Dy())
-	scale := math.Min(W/4, H/3)
-	pw, ph := scale*4, scale*3
-	pic := Rect{(W - pw) / 2, (H - ph) / 2, pw, ph}
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(pw/ega.W, ph/ega.H)
-	op.GeoM.Translate(pic.X, pic.Y)
-	dst.DrawImage(p.img, op)
-
-	// Overlays (journal scans) at the window's own resolution.
+// drawOverlays draws the engine's overlays (journal scans) at the window's
+// own resolution over the picture at pic.
+func (p *Presenter) drawOverlays(dst *ebiten.Image, pic Rect) {
+	pw, ph := pic.W, pic.H
 	for img, im := range p.scans { // drop the copies of scans no longer shown
 		keep := false
 		for _, o := range p.overlays {
@@ -114,7 +127,6 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note Note) Rect {
 		op.GeoM.Translate(pic.X+float64(o.At.Min.X)*pw/ega.W, pic.Y+float64(o.At.Min.Y)*ph/ega.H)
 		dst.DrawImage(im, op)
 	}
-	return pic
 }
 
 // drawNote writes the note into the top of the picture, white on blue, over
