@@ -1,14 +1,12 @@
 package remaster
 
 import (
-	"image"
 	"image/color"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"por/ega"
-	"por/engine"
 )
 
 // drawMenu draws a vertical menu in the original's look: a box with the
@@ -71,25 +69,7 @@ func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte,
 	}
 	p.menuImg.WritePixels(p.menuBuf)
 
-	// the border: the text pane's own cells, corners and edges
-	f := engine.TextPane.Framed()
-	cell := func(cx, cy, x, y int) {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(x*8), float64(y*8))
-		p.menuImg.DrawImage(frame.SubImage(image.Rect(cx*8, cy*8, cx*8+8, cy*8+8)).(*ebiten.Image), op)
-	}
-	for x := 1; x < cw-1; x++ {
-		cell(f.X1+1, f.Y1, x, 0)
-		cell(f.X1+1, f.Y2, x, ch-1)
-	}
-	for y := 1; y < ch-1; y++ {
-		cell(f.X1, f.Y1+1, 0, y)
-		cell(f.X2, f.Y1+1, cw-1, y)
-	}
-	cell(f.X1, f.Y1, 0, 0)
-	cell(f.X2, f.Y1, cw-1, 0)
-	cell(f.X1, f.Y2, 0, ch-1)
-	cell(f.X2, f.Y2, cw-1, ch-1)
+	drawBorder(p.menuImg, frame, ebiten.GeoM{}, cw, ch)
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(k, k)

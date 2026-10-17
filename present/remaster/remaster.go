@@ -349,14 +349,42 @@ func scale(dst *ebiten.Image) float64 {
 	return float64(max(1, min(b.Dx()/ega.W, b.Dy()/ega.H)))
 }
 
-// drawBox copies box r of the classic frame, border included, onto dst at
-// scale k, centred on cx, cy.
+// drawBox copies box r of the classic frame onto dst at scale k, centred
+// on cx, cy: its inside, in a plain border (drawBorder).
 func drawBox(dst, frame *ebiten.Image, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(k, k)
-	op.GeoM.Translate(float64(cx)-k*float64(px.Dx())/2, float64(cy)-k*float64(px.Dy())/2)
-	dst.DrawImage(frame.SubImage(px).(*ebiten.Image), op)
+	var g ebiten.GeoM
+	g.Scale(k, k)
+	g.Translate(float64(cx)-k*float64(px.Dx())/2, float64(cy)-k*float64(px.Dy())/2)
+	op := &ebiten.DrawImageOptions{GeoM: g}
+	op.GeoM.Translate(8*k, 8*k)
+	dst.DrawImage(frame.SubImage(px.Inset(8)).(*ebiten.Image), op)
+	drawBorder(dst, frame, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
+}
+
+// drawBorder draws a cw by ch cell box's border at g from the text pane's
+// own cells: its corners and one plain ribbon cell along each edge (none of
+// the frame's junction tiles).
+func drawBorder(dst, frame *ebiten.Image, g ebiten.GeoM, cw, ch int) {
+	f := engine.TextPane.Framed()
+	cell := func(sx, sy, x, y int) {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(x*8), float64(y*8))
+		op.GeoM.Concat(g)
+		dst.DrawImage(frame.SubImage(image.Rect(sx*8, sy*8, sx*8+8, sy*8+8)).(*ebiten.Image), op)
+	}
+	for x := 1; x < cw-1; x++ {
+		cell(f.X1+1, f.Y1, x, 0)
+		cell(f.X1+1, f.Y2, x, ch-1)
+	}
+	for y := 1; y < ch-1; y++ {
+		cell(f.X1, f.Y1+1, 0, y)
+		cell(f.X2, f.Y1+1, cw-1, y)
+	}
+	cell(f.X1, f.Y1, 0, 0)
+	cell(f.X2, f.Y1, cw-1, 0)
+	cell(f.X1, f.Y2, 0, ch-1)
+	cell(f.X2, f.Y2, cw-1, ch-1)
 }
 
 // drawPrompt lays the original's menu and prompt rows along the bottom.
