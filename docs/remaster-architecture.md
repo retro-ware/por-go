@@ -137,7 +137,7 @@ The seam is `engine/snapshot.go`:
   - Fixed in milestone 4: the `CellRect`s are box insides, as `DrawBorder` takes them, and the border is `Framed()`. The check now samples the real border cells.
 - **`Window`:** set by whatever drew into the view window last: `Draw3DView` (3D or overhead), `DrawAreaMap`, or the picture paths (`drawPicAt`, `DrawAnimFrame`).
 - **`TextShown`:** any lit pixel inside the text pane's border.
-- **`Party`:** name, HP, AC as shown, status, selection, and `Head`. `Head` is the chosen paper-doll head (`portraitHead[PortHead]` from HEAD<d>.DAX), 88x40 in EGA colours, decoded once per id.
+- **`Party`:** name, HP, AC as shown, status, selection, and `Head`. `Head` is the chosen paper-doll head (`portraitHead[PortHead]` from the HEAD files), 88x40 in EGA colours, decoded once per id.
 - **Fixed rectangles:** `ViewWindow`, `InnerWindow`, `TextPane` and `PromptRows`, as `CellRect`s.
 - **Test:** `TestView` loads GAME A headless and checks the 3D view in the main frame, the party heads, turning right, and that the character sheet hides the frame and Esc brings it back. It is skipped without the game files.
 - **Known gap:** when the view window is only cleared, `Window` keeps the last picture. Add a case for it in milestone 5 if a pop-up shows up empty.
@@ -239,5 +239,10 @@ The rest of the seam stays as it is.
   - The copy's tween is the same as BlobberRPG's.
   - What looked jerky was `Follow`: every engine step braked to a stop, and a step arriving mid-tween restarted from the target.
   - Moves that come while one runs now queue (up to 8). The tween carries its speed into them and runs faster while they pile up (`TestViewFollowQueue`).
-- **Heads on other disks:** each disk's HEAD file holds only some of the player heads; HEAD3 has all of them, and they are the same pictures wherever they appear. `head` now tries the current disk's file first and then the others. Before, after the boat to Sokol Keep most cards fell back to Blobber's stock class portraits.
+- **No disks:** the game split one set of DAX blocks over eight disks (GEO1..8, ECL1..8, HEAD1..8 and so on). Across all of them a block id is the same data wherever it appears; only WALLDEF 23 and CPIC 24 and 152 differ between disks.
+  - `dax.Loader.Block` now looks for a block missing from the named file in the same archive on the other disks. Every read of the game's data goes through it, so all data is always available.
+  - The disk asked for still wins, which keeps the three differing blocks as the original had them.
+  - The engine keeps its disk digit (DS:5376) only as original game state; it is in the save files.
+  - `engine.AreaID` is now just the GEO block, and the generated area table has no disk.
+  - This also fixed the wrong portraits after the boat to Sokol Keep: that disk's HEAD file lacks most player heads.
 - **Floor seams:** the floor (and the ceiling indoors) is one quad over the visible cells, cut into pieces per cell for the lighting and skipping cells no ray reaches. Pieces of one quad share their edge vertices exactly, so no sky shows between them; per-cell tiles computed their shared edges apart and showed thin blue lines (Phlan 3,3 N: 290 blue floor pixels before, 0 after). Water cells are laid over it (pass 1).

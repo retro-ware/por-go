@@ -3,7 +3,6 @@ package engine
 import (
 	"image"
 	"image/color"
-	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -24,8 +23,9 @@ const (
 	West
 )
 
-// AreaID names the GEO block a 3D area is drawn from: GEO<Disk>.DAX block.
-type AreaID struct{ Disk, Block int }
+// AreaID is the GEO block a 3D area is drawn from (the same area in every
+// disk's GEO file that has it).
+type AreaID int
 
 // Window is what the view window (cells ViewWindow) shows.
 type Window int
@@ -165,7 +165,7 @@ func (e *Engine) publish() {
 	s := &e.snap
 	v := &View{
 		Window: s.win,
-		Area:   AreaID{Disk: e.geoDisk(), Block: int(e.area.Geo)},
+		Area:   AreaID(e.area.Geo),
 		X:      e.posX, Y: e.posY,
 		Facing:  Dir(e.viewFacing() / 2 & 3),
 		Day:     e.isDay(),
@@ -205,12 +205,6 @@ func (e *Engine) publish() {
 	s.view.Store(v)
 }
 
-// geoDisk is the digit of the GEO file in use (GEO<d>.DAX, like 8X8D<d>).
-func (e *Engine) geoDisk() int {
-	d, _ := strconv.Atoi(e.symDAX[4:])
-	return d
-}
-
 // charHead is the head the player chose for c, as the sheet shows it
 // (SheetPortrait), or nil without one.
 func (e *Engine) charHead(c *Character) image.Image {
@@ -221,9 +215,6 @@ func (e *Engine) charHead(c *Character) image.Image {
 }
 
 // head decodes HEAD block id in the EGA colours (cached; nil if missing).
-// Each disk's HEAD file holds only some of the player heads (HEAD3 all of
-// them, the same pictures), so the others are looked up after the current
-// disk's.
 func (e *Engine) head(id int) image.Image {
 	if im, ok := e.snap.heads[id]; ok {
 		return im
@@ -233,9 +224,6 @@ func (e *Engine) head(id int) image.Image {
 	}
 	var out image.Image
 	im := e.LoadPic("HEAD"+e.symDAX[4:], id)
-	for d := 1; d <= 8 && (im == nil || im.Count == 0); d++ {
-		im = e.LoadPic("HEAD"+strconv.Itoa(d), id)
-	}
 	if im != nil && im.Count > 0 {
 		w, h := im.Width*8, im.Height
 		d := im.Frame(0)

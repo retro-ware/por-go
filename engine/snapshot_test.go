@@ -51,9 +51,6 @@ func TestView(t *testing.T) {
 	if len(v.Party) == 0 || v.Party[0].Name == "" || v.Party[0].Head == nil || v.Party[0].MaxHP <= 0 {
 		t.Fatalf("party %+v: want named members with heads", v.Party)
 	}
-	if v.Area.Disk == 0 && v.Area.Block == 0 {
-		t.Errorf("area %+v unset", v.Area)
-	}
 	f := v.Facing
 	v = keys(0x4D00) // turn right
 	if v.Facing != (f+1)%4 || !v.MainFrame || v.Window != engine.WinThreeD {

@@ -201,11 +201,38 @@ func (l *Loader) Block(name string, id int) []byte {
 			return b
 		}
 	}
-	f := l.File(name)
-	if f == nil {
+	if f := l.File(name); f != nil {
+		if b := f.Block(id); b != nil {
+			return b
+		}
+	}
+	for _, n := range siblings(name) { // all data is always there: the block on another disk
+		if f := l.File(n); f != nil {
+			if b := f.Block(id); b != nil {
+				return b
+			}
+		}
+	}
+	return nil
+}
+
+// siblings are the same archive on the other disks: name with its disk
+// digit (the last digit, "GEO3", "MON3CHA", "8X8D3") as 1..8, in order.
+// The game split one set of blocks over its disks; only WALLDEF 23 and
+// CPIC 24 and 152 differ between disks, and for those the disk asked for
+// has its own.
+func siblings(name string) []string {
+	i := strings.LastIndexAny(name, "12345678")
+	if i < 0 {
 		return nil
 	}
-	return f.Block(id)
+	var out []string
+	for d := byte('1'); d <= '8'; d++ {
+		if d != name[i] {
+			out = append(out, name[:i]+string(d)+name[i+1:])
+		}
+	}
+	return out
 }
 
 // centre widens a one-frame DOS-layout picture to w cells, centred. The
