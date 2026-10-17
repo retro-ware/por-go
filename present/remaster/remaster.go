@@ -6,11 +6,13 @@ package remaster
 
 import (
 	"image"
+	"image/color"
 	"image/draw"
 	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	"blobber"
 	"blobber/maps"
@@ -89,10 +91,13 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	if v.Window == engine.WinPicture {
 		drawBox(dst, frame, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
-	if v.TextShown {
+	textOnly := v.TextShown && v.Window != engine.WinPicture && (v.Menu == nil || v.Command || noChoice(v))
+	if textOnly { // a message, no choice to make: along the bottom edge
+		drawBox(dst, frame, txt, pk, cx, b.Dy()-int(pk*th/2))
+	} else if v.TextShown {
 		drawBox(dst, frame, txt, pk, cx, cy)
 	}
-	if v.Menu != nil && !v.Command { // a question: its choices pop up at once
+	if v.Menu != nil && !v.Command && !noChoice(v) { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked {
 			p.asked, p.menu, p.sel = id, true, v.Menu.Sel
 		}
@@ -101,14 +106,16 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	}
 	if v.Menu == nil { // typed input and "press a key" prompts: the original's line
 		p.menu = false
-		p.drawPrompt(dst, frame, k)
+		if !textOnly { // the bar under a message has nothing to answer
+			p.drawPrompt(dst, frame, k)
+		}
 	} else if p.menu {
 		lines := make([]string, len(v.Menu.Items))
 		for i, it := range v.Menu.Items {
 			lines[i] = it.Text
 		}
 		p.sel = min(p.sel, len(lines)-1)
-		if v.Command {
+		if v.Command || noChoice(v) {
 			ui.Window(dst, v.Menu.Prompt, lines, p.sel, false)
 		} else {
 			ui.WindowAt(dst, v.Menu.Prompt, lines, p.sel, cx, cy+int(pk*th/2)+8)
@@ -132,6 +139,8 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	m := v.Menu
 	if !p.menu {
 		switch {
+		case k == 13 && noChoice(v): // "press enter to continue": nothing to pick
+			return nil, false
 		case k == 13 && m != nil:
 			p.menu, p.sel = true, m.Sel
 		case k == 27 && v.Command:
@@ -190,6 +199,10 @@ func (p *Presenter) Options() bool { return p.view != nil && p.view.OptionsOpen(
 // UpdateOptions runs the options page for one frame.
 func (p *Presenter) UpdateOptions() { p.view.UpdateOptions() }
 
+// noChoice reports a question with one answer ("press enter to continue"):
+// a message, not a choice.
+func noChoice(v engine.View) bool { return v.Menu != nil && !v.Command && len(v.Menu.Items) == 1 }
+
 // menuID tells menus apart: prompt and items.
 func menuID(m *engine.Menu) string {
 	id := m.Prompt
@@ -221,16 +234,12 @@ func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
 	}
 }
 
-// mapRect is where the map goes: the top right corner, framed, at a
+// mapRect is where the map goes: the top right corner, in a 1 px border, at a
 // whole scale (mapSide pixels at scale 1).
 func mapRect(dst *ebiten.Image) image.Rectangle {
 	b := dst.Bounds()
 	k := mapScale(dst)
-	bw := 0
-	if blobber.PanelBorder != nil {
-		bw = blobber.PanelBorder()
-	}
-	side := mapSide*k + 2*bw
+	side := mapSide*k + 2
 	return image.Rect(b.Dx()-side, 0, b.Dx(), side)
 }
 
@@ -253,9 +262,8 @@ func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
 		p.mapSrc = m
 	}
 	r := mapRect(dst)
-	if blobber.Panel != nil {
-		blobber.Panel(dst, r)
-	}
+	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.Gray{0x80}, false)
+	dst.SubImage(r.Inset(1)).(*ebiten.Image).Fill(color.Black)
 	k := float64(mapScale(dst))
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
