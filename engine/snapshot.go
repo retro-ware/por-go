@@ -83,6 +83,7 @@ type View struct {
 	Menu      *Menu
 	Command   bool // Menu is the adventuring command bar
 	Party     []Member
+	Battle    *Battle     // the combat map (nil outside combat)
 	Map       image.Image // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 }
 
@@ -114,12 +115,15 @@ func (e *Engine) View() View {
 
 // snapState is the engine's side of the seam.
 type snapState struct {
-	view   atomic.Pointer[View]
-	win    Window              // set by whatever drew into the view window last
-	frame  []byte              // the frame's border pixels as DrawMainFrame left them
-	heads  map[int]image.Image // decoded HEAD blocks by id
-	border [][2]int            // pixel positions of frame
-	menu   *Menu               // the innermost DisplayInput's menu (Sel unset)
+	view    atomic.Pointer[View]
+	win     Window                 // set by whatever drew into the view window last
+	frame   []byte                 // the frame's border pixels as DrawMainFrame left them
+	heads   map[int]image.Image    // decoded HEAD blocks by id
+	border  [][2]int               // pixel positions of frame
+	menu    *Menu                  // the innermost DisplayInput's menu (Sel unset)
+	cursor  image.Point            // drawCursor's last square
+	pics    map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
+	picsPal [16]uint8
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is
@@ -210,6 +214,7 @@ func (e *Engine) publish() {
 			Head: e.charHead(c),
 		})
 	}
+	v.Battle = e.battle()
 	s.view.Store(v)
 }
 

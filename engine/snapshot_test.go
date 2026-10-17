@@ -65,3 +65,69 @@ func TestView(t *testing.T) {
 		t.Errorf("back from the sheet: MainFrame not set")
 	}
 }
+
+func TestBattleView(t *testing.T) {
+	b := battleView(t).Battle
+	if b == nil {
+		t.Fatal("no Battle in combat")
+	}
+	party, foes, walls := 0, 0, 0
+	for _, u := range b.Units {
+		if u.Icon == nil {
+			t.Errorf("unit %+v has no icon", u)
+		}
+		if u.Party {
+			party++
+		} else {
+			foes++
+		}
+	}
+	for _, row := range b.Ground {
+		for _, s := range row {
+			if s.Wall {
+				walls++
+			}
+			if b.Tiles[s.Tile] == nil {
+				t.Fatalf("square tile %d missing from Tiles", s.Tile)
+			}
+		}
+	}
+	if party == 0 || foes == 0 || walls == 0 {
+		t.Errorf("party %d foes %d walls %d: want some of each", party, foes, walls)
+	}
+}
+
+// battleView loads GAME A and starts the dev combat scene.
+func battleView(t *testing.T) engine.View {
+	if _, err := os.Stat("../TITLE.DAX"); err != nil {
+		t.Skip("no game files")
+	}
+	scr := ega.New()
+	e, err := engine.New("..", scr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.DevAction = e.DevScene("combat")
+	e.Init()
+	go e.Play()
+	i := e.SlotIndex("GAME A")
+	if i < 0 {
+		t.Skip("no GAME A save")
+	}
+	ks := []uint16{'L'}
+	for ; i > 0; i-- {
+		ks = append(ks, 0x5000)
+	}
+	var v engine.View
+	for _, k := range append(ks, 13, ' ', ' ', ' ', ' ', ' ', ' ') {
+		for !scr.Idle() {
+			time.Sleep(10 * time.Millisecond)
+		}
+		if v = e.View(); v.Battle != nil {
+			break
+		}
+		scr.PushKey(k)
+		time.Sleep(50 * time.Millisecond)
+	}
+	return v
+}

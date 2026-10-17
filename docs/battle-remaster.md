@@ -23,7 +23,7 @@ present/battle    3D view: camera (orbit), scene meshes, action bar
 ## Milestones
 
 - [x] 1. Ebiten -> gpu (wgpu) swap, app-wide (por, Blobber, editor, web build)
-- [ ] 2. Engine seam: View.Battle plus a test
+- [x] 2. Engine seam: View.Battle plus a test
 - [ ] 3. 3D map: wall blocks with the original tiles, the floor
 - [ ] 4. Figurines: extruded sprites on pedestals (blue for the party, red for enemies)
 - [ ] 5. XCOM camera (orbit with [ and ], follows the active unit) and F10 switching
