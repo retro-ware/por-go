@@ -134,7 +134,24 @@ var repeatKeys = []ebiten.Key{
 
 // keys passes the keyboard to the engine.
 func (g *game) keys() {
-	for _, k := range repeatKeys {
+	paced := false
+	if g.remastered { // fluid movement: the view asks for the held move as the last one ends
+		var held uint16
+		for _, k := range repeatKeys[:8] {
+			if inpututil.KeyPressDuration(k) > 0 {
+				held, _ = biosKey(k)
+			}
+		}
+		var send bool
+		send, paced = g.remaster.Flow(held, g.scr.Idle())
+		if send {
+			g.push(held)
+		}
+	}
+	for i, k := range repeatKeys {
+		if i < 8 && paced {
+			continue
+		}
 		if d := inpututil.KeyPressDuration(k); d > 1 && repeats(d) && g.scr.Idle() {
 			code, _ := biosKey(k)
 			g.push(code)

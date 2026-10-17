@@ -49,3 +49,38 @@ func TestViewFollowQueue(t *testing.T) {
 		t.Fatalf("should end on 3,1: moving %v tx %v", g.moving, g.tx)
 	}
 }
+
+// A held key (fluid movement) asks for the next move halfway through one;
+// a move that arrives while the view waits at the cell keeps its speed,
+// for turns as for steps.
+func TestViewFlow(t *testing.T) {
+	Settings.Fluid = true
+	g := &Game{follow: true, smooth: true, t: 1}
+	game = g
+	v := &View{g}
+	v.Show(&Scene{Rows: []string{"######", "#....#", "######"}}, Camera{1, 1, 1})
+	for _, c := range []Camera{{2, 1, 1}, {2, 1, 2}} { // a step, then a turn
+		v.Follow(c)
+		asked := false
+		for i := 0; i < 600 && !asked; i++ {
+			v.Update()
+			asked = v.Flow(true, true)
+		}
+		if !asked {
+			t.Fatalf("%v: never asked for the next move", c)
+		}
+		for i := 0; i < 600 && g.t < 1; i++ { // the host is slow: the view reaches the cell
+			v.Update()
+		}
+		if !g.moving || g.v == 0 {
+			t.Fatalf("%v: stopped at the cell while held: moving %v v %v", c, g.moving, g.v)
+		}
+	}
+	v.Flow(false, true)
+	for i := 0; i < 600 && g.moving; i++ {
+		v.Update()
+	}
+	if g.moving {
+		t.Fatal("still moving after the key was let go")
+	}
+}

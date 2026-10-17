@@ -1094,6 +1094,7 @@ type Game struct {
 	moving                 bool
 	queued                 ebiten.Key
 	next                   []Camera // follow mode: the host's moves still to animate, in order
+	hold, asked            bool     // follow mode: the host's move key is held; its next move was asked for
 	// a step (not a turn) moves at speed v (steps per second) instead of easing, and flows into the
 	// next one while walkKey is held, so walking doesn't slow down at every cell
 	walk    bool
@@ -1309,9 +1310,9 @@ func (g *Game) tween() {
 		top = walkSpeed * sp
 	}
 	d := [2]int{int(math.Round(g.tx - g.fx)), int(math.Round(g.tz - g.fz))}
-	on := !g.follow && KeyPressed(g.walkKey) && prompt == nil && Modal == nil && (!g.walk || !Fighting() && !blocked(g.x, g.y, d[0], d[1]))
-	if g.follow { // the host's next move is known: flow into it, faster while they pile up
-		on = len(g.next) > 0
+	on := !g.follow && Settings.Fluid && KeyPressed(g.walkKey) && prompt == nil && Modal == nil && (!g.walk || !Fighting() && !blocked(g.x, g.y, d[0], d[1]))
+	if g.follow { // the host's next move is known (or, fluid, on its way): flow into it, faster while they pile up
+		on = len(g.next) > 0 || Settings.Fluid && g.hold && (!g.walk || !blocked(g.x, g.y, d[0], d[1]))
 		top *= float64(1 + len(g.next)/2)
 	}
 	if !on && g.v*g.v >= 2*acc*(1-g.t) { // brake: v²/2a is the distance braking takes
@@ -1326,6 +1327,10 @@ func (g *Game) tween() {
 	g.moving = false
 	if on { // straight on, carrying the overshoot and speed into the next step
 		over, v := g.t-1, g.v
+		if g.follow && len(g.next) == 0 { // held: wait at speed for the host's next move
+			g.t, g.moving = 1, true
+			return
+		}
 		if g.follow {
 			c := g.next[0]
 			g.next = g.next[1:]
@@ -1373,7 +1378,9 @@ func (g *Game) updateMenu() bool {
 		switch g.sel {
 		case 0:
 			g.smooth = !g.smooth
-		case 1: // slider: Left slower, Right / Enter faster (Enter wraps round to the slowest)
+		case 1:
+			Settings.Fluid = !Settings.Fluid
+		case 2: // slider: Left slower, Right / Enter faster (Enter wraps round to the slowest)
 			sp := Settings.Speed + 0.25
 			if KeyJustPressed(ebiten.KeyLeft) {
 				sp = math.Max(minSpeed, Settings.Speed-0.25)
@@ -1384,17 +1391,17 @@ func (g *Game) updateMenu() bool {
 				}
 			}
 			Settings.Speed = sp
-		case 2:
-			Settings.SmoothMonsters = !Settings.SmoothMonsters
 		case 3:
-			g.dither = !g.dither
+			Settings.SmoothMonsters = !Settings.SmoothMonsters
 		case 4:
-			Settings.NormalMaps = !Settings.NormalMaps
+			g.dither = !g.dither
 		case 5:
-			Settings.LightMaps = !Settings.LightMaps
+			Settings.NormalMaps = !Settings.NormalMaps
 		case 6:
-			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
+			Settings.LightMaps = !Settings.LightMaps
 		case 7:
+			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
+		case 8:
 			ebiten.SetFullscreen(!ebiten.IsFullscreen())
 		}
 		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, ebiten.IsFullscreen(), g.torch
@@ -1409,7 +1416,7 @@ func (g *Game) updateMenu() bool {
 func (g *Game) menuItems() []string {
 	if g.options {
 		bar := int(math.Round((Settings.Speed - minSpeed) / 0.25))
-		return []string{"Smooth movement:   " + onOff(g.smooth),
+		return []string{"Smooth movement:   " + onOff(g.smooth), "Fluid movement:    " + onOff(Settings.Fluid),
 			"Walk speed:        " + strings.Repeat("#", bar+1) + strings.Repeat("-", int((maxSpeed-minSpeed)/0.25)-bar) + fmt.Sprintf(" %.2fx", Settings.Speed),
 			"Smooth monsters:   " + onOff(Settings.SmoothMonsters), "Dithered darkness: " + onOff(g.dither), "Normal mapping:    " + onOff(Settings.NormalMaps),
 			"Light maps:        " + onOff(Settings.LightMaps),
@@ -1772,7 +1779,18 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 		w, h := x1-x0, z1-z0
 		plane := func(y float64, t *ebiten.Image) {
 			f := q(vert{x0, y, z0, 0, 0, 0, 0, 0}, vert{x1, y, z0, w, 0, 0, 0, 0}, vert{x1, y, z1, w, h, 0, 0, 0}, vert{x0, y, z1, 0, h, 0, 0, 0}, t, 3)
-			f.pass, f.dist, f.grid, f.org, f.only = 0, math.Inf(1), [2]int{int(w), int(h)}, lo, vis
+			f.pass, f.dist, f.grid, f.org, f.only = 0, 1e9, [2]int{int(w), int(h)}, lo, vis
+		}
+		if openSky { // under it, ground out to the horizon (the sea on a coast), so no sky shows below it
+			const span = 90.0
+			gx0, gz0, gx1, gz1 := math.Floor(c.x)-span, math.Floor(c.z)-span, math.Floor(c.x)+span, math.Floor(c.z)+span
+			t, k, wind := texFloor, 1.0, 0.0
+			if Sea {
+				t, k, wind = texWater, 0.5, g.time*0.02
+			}
+			f := q(vert{gx0, 0.5, gz0, gx0*k + wind, gz0 * k, 0, 0, 0}, vert{gx1, 0.5, gz0, gx1*k + wind, gz0 * k, 0, 0, 0},
+				vert{gx1, 0.5, gz1, gx1*k + wind, gz1 * k, 0, 0, 0}, vert{gx0, 0.5, gz1, gx0*k + wind, gz1 * k, 0, 0, 0}, t, 8)
+			f.pass, f.dist = 0, math.Inf(1)
 		}
 		plane(0.5, texFloor)
 		if !openSky {
@@ -2279,9 +2297,9 @@ var (
 
 // Options are the settings on the Options page.
 type Options struct {
-	Smooth, Dither, Fullscreen, SmoothMonsters, NormalMaps, LightMaps bool
-	Torch                                                             float64
-	Speed                                                             float64 // walk and turn speed, minSpeed to maxSpeed times the normal
+	Smooth, Fluid, Dither, Fullscreen, SmoothMonsters, NormalMaps, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
+	Torch                                                                    float64
+	Speed                                                                    float64 // walk and turn speed, minSpeed to maxSpeed times the normal
 }
 
 const minSpeed, maxSpeed = 0.5, 2.0
@@ -2289,7 +2307,7 @@ const minSpeed, maxSpeed = 0.5, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Dither: true, SmoothMonsters: true, NormalMaps: true, LightMaps: true, Torch: 1, Speed: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, SmoothMonsters: true, NormalMaps: true, LightMaps: true, Torch: 1, Speed: 1}
 	OnSettings func(Options)
 )
 

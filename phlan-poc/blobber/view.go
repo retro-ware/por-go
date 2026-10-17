@@ -44,6 +44,7 @@ func (v *View) Follow(c Camera) {
 	if c == last {
 		return
 	}
+	g.asked = false // the move asked for came
 	if g.moving && g.smooth && len(g.next) < 8 && oneMove(last, c) {
 		g.next = append(g.next, c)
 		return
@@ -74,6 +75,28 @@ func (g *Game) followStep(c Camera) {
 	}
 	g.startMove(c.X, c.Y, c.Dir, sway)
 }
+
+// Flow tells the view whether the host's move key is held and reports
+// whether to send the next move now: with fluid movement, once per move,
+// halfway through it, so the move arrives before this one ends and the
+// view flows on without slowing (walking and turning alike).
+// ready says the host can take the move now.
+func (v *View) Flow(held, ready bool) bool {
+	g := v.g
+	g.hold = held
+	if !held {
+		g.asked = false
+		return false
+	}
+	if !ready || !Settings.Fluid || !g.smooth || g.asked || len(g.next) > 0 || !g.moving || g.t < 0.5 {
+		return false
+	}
+	g.asked = true
+	return true
+}
+
+// Fluid reports whether held keys are paced by Flow.
+func (v *View) Fluid() bool { return Settings.Fluid && v.g.smooth }
 
 // OpenOptions shows Blobber's options page (smooth movement, speed, the
 // look); while OptionsOpen, UpdateOptions reads the keyboard for it.

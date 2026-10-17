@@ -150,6 +150,19 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	return nil, true
 }
 
+// Flow paces a held move key (code, 0 for none) with fluid movement: it
+// reports whether to send code now (ready: the game waits for a key), and
+// whether the view paces held keys at all (else they repeat as typed).
+func (p *Presenter) Flow(code uint16, ready bool) (send, paced bool) {
+	if !p.active || p.view == nil || p.menu || p.view.OptionsOpen() {
+		if p.view != nil {
+			p.view.Flow(false, false)
+		}
+		return false, false
+	}
+	return p.view.Flow(code != 0, ready), p.view.Fluid()
+}
+
 // Options reports whether the renderer's options page is up; while it is,
 // UpdateOptions reads the keyboard for it and the game gets no keys.
 func (p *Presenter) Options() bool { return p.view != nil && p.view.OptionsOpen() }
