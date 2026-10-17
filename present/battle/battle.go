@@ -113,8 +113,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		size := sq * .9
 		half := size * float32(ib.Dy()) / float32(max(ib.Dx(), ib.Dy())) / 2
 		op = sun
-		// ponytail: figurines turn to face the camera (a slab seen edge on reads as nothing)
-		op.Model = place(x, pedestal+half, z, float32(p.yaw), size, size, size)
+		op.Model = place(x, pedestal+half, z, 0, size, size, size) // fixed in the world, front to the south as the original shows them
 		dst.DrawMesh(f.mesh, f.tex, vp, &op)
 	}
 }
