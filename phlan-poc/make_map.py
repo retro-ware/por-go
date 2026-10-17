@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""New Phlan PoC: blobber/maps/phlan.map from Pool of Radiance GEO3 block 0
-(geo3_0.bin, the 0x400 bytes after the block's 2-byte header).
+"""Remaster pipeline: blobber/maps/AREA.map from a Pool of Radiance GEO block
+  python3 make_map.py [AREA]      (areas.py, default phlan)
+(geo<disk>_<block>.bin, the 0x400 bytes after the block's 2-byte header,
+written by `go run ./cmd/geodump DISK BLOCK OUT` from the repo root).
 
 PoR walls are thin edges between 16x16 squares, two-sided (each square keeps
 its own value per side). The map is 16x16 open floor, one cell per square,
@@ -12,15 +14,16 @@ stepping through it unless it is a door (PoR also checks only your own side).
 GEO planes (engine/geo.go WallAt/DoorAt/MapCell): 0x000 north<<4|east,
 0x100 south<<4|west, 0x200 the cell byte, 0x300 door bits (2 per side,
 N E S W from bit 0)."""
+import sys
 from pathlib import Path
+from areas import AREAS
 
 HERE = Path(__file__).resolve().parent
-g = (HERE / "geo3_0.bin").read_bytes()
-
-# wall value -> map character (walls.txt rows written below)
-CHARS = {1: "T", 3: "U", 5: "V", 7: "X", 9: "Y", 10: "Z", 2: "H", 4: "J", 6: "K", 8: "N", 11: "O", 12: "P",
-         13: "Q", 14: "R", 15: "S"}
-START = (7, 7, "n")  # the main north-south street
+NAME = sys.argv[1] if sys.argv[1:] else "phlan"
+A = AREAS[NAME]
+g = (HERE / "geo{}_{}.bin".format(*A["geo"])).read_bytes()
+CHARS = A["chars"]  # wall value -> map character (walls.txt rows written below)
+START = A["start"]
 
 
 def side(x, y, d):
@@ -42,10 +45,10 @@ def main():
                         extra.append(f"edge {x} {y} {d}")
                     # stakes stand free: also seen from the far side (PoR stores them one-sided)
                     nx, ny = x + (0, 1, 0, -1)[d], y + (-1, 0, 1, 0)[d]
-                    if v == 14 and 0 <= nx < 16 and 0 <= ny < 16 and not side(nx, ny, d ^ 2)[0]:
+                    if v in A["free_walls"] and 0 <= nx < 16 and 0 <= ny < 16 and not side(nx, ny, d ^ 2)[0]:
                         extra.append(f"face {nx} {ny} {d ^ 2} {CHARS[v]}")
     # land: the squares a party can walk to from the start (doors pass, a one-sided wall only blocks
-    # from its own side). Water: the squares beyond a harbour wall (14, 15) the party can't reach,
+    # from its own side). Water: the squares beyond a harbour wall (water_walls) the party can't reach,
     # and what joins them; off the map the engine draws water anyway.
     STEP = ((0, -1), (1, 0), (0, 1), (-1, 0))
     land, todo = set(), [START[:2]]
@@ -60,7 +63,7 @@ def main():
                 todo.append((x + dx, y + dy))
     water = set()
     todo = [(x + STEP[d][0], y + STEP[d][1]) for y in range(16) for x in range(16) for d in range(4)
-            if side(x, y, d)[0] in (14, 15)]
+            if side(x, y, d)[0] in A["water_walls"]]
     while todo:
         x, y = todo.pop()
         if (x, y) in water or (x, y) in land or not (0 <= x < 16 and 0 <= y < 16):
@@ -68,14 +71,16 @@ def main():
         water.add((x, y))
         todo += [(x + dx, y + dy) for d, (dx, dy) in enumerate(STEP) if not side(x, y, d)[0]]
     extra += [f"water {x} {y}" for x, y in sorted(water)]
-    lines = ["." * 16] * 16 + ["floor phlan_dirt", "ceiling sky_phlan"] + extra
-    (HERE / "blobber/maps/phlan.map").write_text("\n".join(lines) + "\n")
+    lines = ["." * 16] * 16 + [f"floor {A['floor']}", f"ceiling {A['ceiling']}"] + extra
+    (HERE / f"blobber/maps/{NAME}.map").write_text("\n".join(lines) + "\n")
 
     walls = HERE / "blobber/assets/walls/walls.txt"
-    rows = [l for l in walls.read_text().splitlines() if "wall_phlan_" not in l]
-    rows += [f"{c} wall_phlan_v{v:02}" for v, c in CHARS.items()]
+    rows = [l for l in walls.read_text().splitlines() if f"wall_{NAME}_" not in l]
+    rows += [f"{c} wall_{NAME}_v{v:02}" for v, c in CHARS.items() if v in A["walls"]]
     walls.write_text("\n".join(rows) + "\n")
 
+    if NAME != "phlan":  # the campaign starts in Phlan; other areas are reached with BLOBBER_OPEN
+        return
     world = HERE / "blobber/maps/world.txt"
     x, y, f = START
     world.write_text("".join(f"start phlan {x} {y} {f}\n" if l.startswith("start ") else l + "\n"

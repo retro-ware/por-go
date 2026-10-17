@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""New Phlan PoC: remastered wall textures for the BlobberRPG copy in blobber/.
-New Phlan is GEO3 block 0 with WALLDEF3 block 0 (15 walls in 3 chunks: wall
-value v = chunk (v-1)//5+1, wall (v-1)%5+1). Doors become Blobber doorways,
-so only the walls drawn as solid faces get a texture (WALLS below). Uses
+"""Remaster pipeline: wall textures of one area for the BlobberRPG copy in blobber/.
+  python3 make_textures.py [AREA] [finish | VALUE...]   (areas.py, default phlan)
+Wall value v is chunk (v-1)//5+1, wall (v-1)%5+1 (areas.py "chunks"). Uses
 tools/remaster-walls.py (reference with key colour, OpenAI edit, key-out),
-then crossfades the left and right edges so a wall tiles seamlessly along a
-street, and writes blobber/assets/walls/wall_phlan_vNN.png (512x512 RGBA)."""
+then crossfades or seams the edges, and writes
+blobber/assets/walls/wall_AREA_vNN.png (512x512 RGBA). Raw model output and
+references go to raw/AREA/."""
 import importlib.util, io, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
 from PIL import Image
+from areas import AREAS
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -19,7 +20,6 @@ rw = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rw)
 
 OUT = HERE / "blobber/assets/walls"
-RAW = HERE / "raw"
 SIZE = 512
 BAND = 0.12  # share of the width crossfaded into the opposite edge
 
@@ -28,45 +28,12 @@ TILING = (" No trim, pilaster or border strip at the left or right edge. IMPORTA
           "brick courses, mortar lines, stone rows, plant growth and heights), no border, pillar or "
           "frame closing off either side unless the reference shows one there.")
 
+ARGS = sys.argv[1:]
+NAME = ARGS.pop(0) if ARGS and ARGS[0] in AREAS else "phlan"
+A = AREAS[NAME]
+RAW = HERE / "raw" / NAME
 # wall value -> (viewdump name, description)
-WALLS = {
-    1: ("WALLDEF3-000-1-wall1", "a grey stone wall with a wide dark square tunnel opening in the middle "
-        "leading into darkness, a small lit blue doorway far away at the end of the tunnel; the tunnel "
-        "floor is empty."),
-    3: ("WALLDEF3-000-1-wall3", "a plain smooth grey plastered stone town wall with a sturdy arched "
-        "wooden door of vertical brown planks and a metal handle at the bottom centre."),
-    5: ("WALLDEF3-000-1-wall5", rw.WALLS["ivy_wall_door"][1]),
-    7: ("WALLDEF3-000-2-wall2", "a town house wall of white irregular fieldstones set in grey mortar "
-        "with a sturdy arched wooden door of vertical brown planks and a metal handle at the bottom "
-        "centre."),
-    9: ("WALLDEF3-000-2-wall4", "a shop front in a town house wall of white irregular fieldstones: a "
-        "red and white striped cloth awning across the whole width just above the middle, below it a "
-        "wooden plank door on the left and a large shop window of blue glass panes (two rows of four) to "
-        "its right."),
-    10: ("WALLDEF3-000-2-wall5", "a town house wall of white irregular fieldstones with a large window "
-         "of blue glass panes (two rows of four) on the left and an arched wooden plank door on the "
-         "right, both in the lower half."),
-    2: ("WALLDEF3-000-1-wall2", "a plain smooth grey plastered stone town wall, even and unadorned, the top row empty."),
-    4: ("WALLDEF3-000-1-wall4", "a grey stone town wall overgrown with climbing ivy and green vines, "
-        "dense near the bottom, thinner tendrils reaching up towards the top."),
-    6: ("WALLDEF3-000-2-wall1", "a town house wall of white irregular fieldstones set in grey mortar, "
-        "rounded flat stones in a dense even pattern over the whole face."),
-    8: ("WALLDEF3-000-2-wall3", "a town house wall of white irregular fieldstones set in grey mortar, "
-        "rounded flat stones in a dense even pattern over the whole face."),
-    11: ("WALLDEF3-000-3-wall1", "the front of a grand civic hall: red brick wall with four tall "
-         "pale cyan marble pilasters with capitals at the top, tall dark blue glass windows between "
-         "them in the lower half, and broad grey stone steps along the bottom."),
-    12: ("WALLDEF3-000-3-wall2", rw.WALLS["brick_building_stairs"][1]),
-    13: ("WALLDEF3-000-3-wall3", rw.WALLS["temple_gate"][1]),
-    14: ("WALLDEF3-000-3-wall4", "the edge of a harbour pier: a row of four tall, thick round wooden "
-         "mooring stakes (weathered dark brown and reddish timber, dark shadow on their right side) "
-         "standing in a row, a short stake stump between each pair at the bottom, and white hemp ropes "
-         "hanging in shallow sagging curves from stake to stake at mid height. The water behind the "
-         "stakes is not drawn: everything around and between the stakes and ropes is empty."),
-    15: ("WALLDEF3-000-3-wall5", "a low harbour quay wall: white irregular fieldstones set in grey "
-         "mortar across the bottom quarter only, its top a straight edge; above it nothing is drawn, the "
-         "water behind it is not part of the wall."),
-}
+WALLS = {v: (f"{A['chunks'][(v - 1) // 5]}-wall{(v - 1) % 5 + 1}", d) for v, d in A["walls"].items()}
 
 
 def seamless(im):
@@ -81,7 +48,7 @@ def seamless(im):
 
 
 TRIM = (0, 170, 170)  # EGA teal: the end trim of plain walls, repeated at every block when tiled
-NOTRIM = {1, 2, 3, 6, 7, 8, 9, 10}
+NOTRIM = A["notrim"]
 
 
 def untrim(dump, src):
@@ -99,8 +66,8 @@ def untrim(dump, src):
     return dump / "notrim"
 
 
-TILE = {15}  # continuous along a street (water): crossfaded, no seams
-NOSEAM = {14, 15}  # pillars and water: a seam would cut through them
+TILE = A["tile"]  # continuous along a street: crossfaded, no seams
+NOSEAM = A["noseam"]  # objects, posts, water: a seam would cut through them
 SEAM = 0.022  # seam width, share of the texture width
 
 
@@ -140,10 +107,10 @@ def finish(v):
     if v not in NOSEAM:
         im = seams(im)
     im = outline(im, WALLS[v][0])
-    im.save(OUT / f"wall_phlan_v{v:02}.png")
+    im.save(OUT / f"wall_{NAME}_v{v:02}.png")
 
 
-WATER = {14, 15}  # the sea behind them is drawn by the engine as a water surface now
+WATER = A["water"]  # the sea behind them is drawn by the engine as a water surface
 SEA = [(82, 82, 255), (0, 0, 173), (0, 173, 173), (82, 82, 82)]  # EGA water, speckle and its far edge
 
 
@@ -176,14 +143,14 @@ def job(dump, v, src, desc):
 
 
 def main():
-    if sys.argv[1:2] == ["finish"]:  # re-cut every texture from raw/ only
+    if ARGS[:1] == ["finish"]:  # re-cut every texture from raw/ only
         for v in WALLS:
             finish(v)
         return
-    RAW.mkdir(exist_ok=True)
+    RAW.mkdir(parents=True, exist_ok=True)
     dump = HERE / "viewdump"
     subprocess.run(["go", "run", "./cmd/viewdump", "-transparent", ".", str(dump)], cwd=ROOT, check=True)
-    only = {int(a) for a in sys.argv[1:]}
+    only = {int(a) for a in ARGS}
     with ThreadPoolExecutor(9) as ex:
         jobs = [ex.submit(job, dump, v, s, d) for v, (s, d) in WALLS.items() if not only or v in only]
         for j in jobs:

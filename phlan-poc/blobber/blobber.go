@@ -1527,7 +1527,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	dst.Fill(fogCol)
 	if openSky {
 		g.drawSky(dst, c)
-		if texWater != nil { // phlan-poc: the sea runs on to the horizon past the last cells drawn
+		if texWater != nil && len(Water) > 0 { // phlan-poc: the sea runs on to the horizon past the last cells drawn
 			vector.DrawFilledRect(dst, 0, float32(H)/2, float32(W), float32(H)/2, color.RGBA{40, 98, 160, 255}, false)
 		}
 	}
@@ -1586,7 +1586,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
 		var f *face
 		wx, wy := cx, cy
-		if Water[cell] || !inMap(cx, cy) { // phlan-poc: water, its ripples drifting
+		if Water[cell] || !inMap(cx, cy) && len(Water) > 0 { // phlan-poc: water, its ripples drifting
 			w := g.time * 0.02
 			f = q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
 		} else {

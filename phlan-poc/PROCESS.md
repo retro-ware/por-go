@@ -1,9 +1,19 @@
 # Remastering a Pool of Radiance map in the Blobber engine
 
-How New Phlan (GEO3 block 0 + WALLDEF3 block 0) was brought into the
-BlobberRPG copy in `phlan-poc/blobber/`, written as a recipe for every other
-map. Run everything from `phlan-poc/`. `~/Projects/BlobberRPG` is never
-touched; all engine changes live in the copy.
+How New Phlan (GEO3 block 0) and Valhingen Graveyard (GEO4 block 10) were
+brought into the BlobberRPG copy in `phlan-poc/blobber/`, written as a recipe
+for every other map. Run everything from `phlan-poc/`. `~/Projects/BlobberRPG`
+is never touched; all engine changes live in the copy.
+
+Every area is one entry in **`areas.py`** (GEO block, wall sets, area kind,
+start, wall descriptions, texture flags, comparison views). The scripts take
+the area name as their first argument:
+
+```bash
+python3 make_map.py graveyard
+python3 make_textures.py graveyard          # or: graveyard finish / graveyard 8 14
+python3 compare/compare.py graveyard        # -> compare/graveyard.jpg
+```
 
 ## 0. Rules that held the whole way
 
@@ -17,7 +27,24 @@ touched; all engine changes live in the copy.
 - **Screenshots block the keyboard.** Shot windows open unfocused and the
   game ignores input while `BLOBBER_SHOT` is set.
 
-## 1. Read the map data
+## 1. Find the area and read the map data
+
+Which GEO and wall sets an area uses is in its ECL script (`go run ./cmd/ecl
+DISK BLOCK` from `cmd/`): `21 opLoadFiles GEO 2 255` and `37 opLoadFiles A B
+C` (wall set blocks for slots 1-3). The ECL block number is the area kind.
+The entry square is in the `opSave` to `[C04B]` (x) / `[C04C]` (y).
+
+- A wall set block can hold several 5-wall chunks that fill consecutive
+  slots (graveyard: block 21 fills slots 1-2). A block the ECL asks for
+  that doesn't exist (graveyard: 22) is left out of `walldefs`: the
+  original engine pops up an error and waits for a key, which hangs the
+  comparison test.
+- `viewdump` names: `WALLDEF<disk>-<block>-<chunk>-wall<n>`; list the three
+  chunks for values 1-5, 6-10, 11-15 in `chunks`.
+- Extract the map: `go run ./cmd/geodump DISK BLOCK phlan-poc/geo<disk>_<block>.bin`
+  (repo root).
+- Contact-sheet the wall sets first (`viewdump/`) and pick textures by
+  looking at them.
 
 PoR GEO block (`geoN_M.bin`, the 0x400 bytes after the 2-byte header):
 
@@ -34,9 +61,11 @@ wall stored on one side only is invisible from the other.
 
 Wall value v maps to WALLDEF chunk `(v-1)//5+1`, wall `(v-1)%5+1`.
 
-## 2. Build the map (`make_map.py`)
+## 2. Build the map (`make_map.py AREA`)
 
-Adapt the GEO file, `CHARS` (wall value -> map char) and `START`.
+From `areas.py`: `geo`, `chars` (wall value -> map char, unique across areas
+because `walls.txt` is shared; Phlan uses capitals, the graveyard a-o),
+`start`, `water_walls`, `free_walls`.
 
 - 16 rows of `.` (all floor), plus `floor` / `ceiling` lines.
 - For every nonzero side: `face X Y SIDE CHAR` (drawn only from inside that
@@ -49,8 +78,10 @@ Adapt the GEO file, `CHARS` (wall value -> map char) and `START`.
 - **Land**: flood fill from START through open sides and doors.
 - **Water**: flood fill from beyond harbour walls (here values 14, 15) into
   squares no party can reach. Emits `water X Y`. Off the map is water too.
-- Writes `walls.txt` (`CHAR wall_<map>_vNN`) and the `start` line in
-  `world.txt`.
+- Writes `walls.txt` (`CHAR wall_<area>_vNN`); Phlan also sets the `start`
+  line in `world.txt` (other areas are opened with `BLOBBER_OPEN`).
+- Walls marked as doors are passable faces. In the graveyard every cross and
+  headstone is a "door": the party walks through the grave rows.
 
 ## 3. Engine features in the copy (already in place, reuse)
 
@@ -62,10 +93,14 @@ All in `blobber/blobber.go` and `cmd/blobber/host.go`:
 - **Thin walls**: `face` / `edge` map lines, `Faces`, `Edges`, `blocked()`
   for movement, back-face culling, deterministic (sorted) draw order, so no
   flicker or z-fighting.
-- **No wrapping.** PoR wraps off-map coordinates for towns; the PoC doesn't,
-  so the town is not repeated behind the sea. Rays run past the map edge.
-- **Water**: animated `floor_<map>_water` on water cells and off the map,
-  plus a sea fill to the horizon.
+- **Per-map thin walls**: each loaded map keeps its own faces, edges and
+  water; `enter` swaps them into `blobber.Faces/Edges/Water`.
+- **No wrapping.** PoR wraps off-map coordinates for towns (area kinds other
+  than 0 and 10); the PoC doesn't, so the town is not repeated behind the
+  sea. Rays run past the map edge.
+- **Water**: animated `floor_phlan_water` on water cells, plus off the map
+  and a sea fill to the horizon **only when the map has water**. Otherwise
+  off-map is plain ground, like PoR's empty off-map squares.
 - **Sky**: gradient plus a scrolling procedural cloud layer (moves with
   steps, turns and time, never mirrored).
 - **Minimap** draws edges as lines.
@@ -73,7 +108,10 @@ All in `blobber/blobber.go` and `cmd/blobber/host.go`:
   frame 30 with no overlay (`BLOBBER_OVERLAY=1` keeps the position text,
   useful to confirm the camera).
 
-## 4. Wall textures (`make_textures.py`)
+## 4. Wall textures (`make_textures.py AREA`)
+
+Flags in `areas.py`: `walls`, `notrim`, `water`, `tile`, `noseam`. Raw model
+output goes to `raw/<area>/`.
 
 1. Dump the original walls: `go run ./cmd/viewdump -transparent . viewdump`
    (from the repo root; the script does it).
@@ -95,9 +133,10 @@ All in `blobber/blobber.go` and `cmd/blobber/host.go`:
      for walls a joint would cut through (stakes, water).
    - `outline()` clears the rows the original leaves empty above the wall
      top, so adjacent walls are the same height.
-6. Re-cut everything from `raw/` without API calls:
-   `python3 make_textures.py finish`. Redo single walls with
-   `python3 make_textures.py 14`.
+6. Re-cut everything from `raw/<area>/` without API calls:
+   `python3 make_textures.py AREA finish`. Redo single walls with
+   `python3 make_textures.py AREA 14`.
+7. Contact-sheet original vs texture (aspect ratio kept) before comparing.
 
 Ground: `floor_<map>_dirt` (+ `_normal`) in warm brown, iterated until it
 matches the original's brown. Water: `make_water.py` (generate, grade onto
@@ -109,9 +148,13 @@ the harbour blues, tile with a half-shift blend; `tile` regrades from raw/).
 cd blobber && go build -o $SCRATCH/blobber-poc ./cmd/blobber
 ```
 
-## 6. Compare (`compare/compare.py`)
+## 6. Compare (`compare/compare.py AREA`)
 
-- `VIEWS` = list of `(x, y, facing)` in PoR squares.
+- `views` in `areas.py` = list of `(x, y, facing)` in PoR squares. For a
+  first pass take 15-20 random reachable squares and facings
+  (`random.Random(seed).sample(land, n)`), then add targeted views.
+- The test loads the area's GEO, wall sets and area kind from `areas.py`.
+  Each PoC shot has a 60 s timeout, so a hung window can't pile up.
 - Renders the original through a temporary engine test (written, run,
   deleted), shoots the PoC, crops symmetrically, writes
   `compare/comparison.jpg` with numbered labels.
@@ -139,13 +182,15 @@ cd blobber && go build -o $SCRATCH/blobber-poc ./cmd/blobber
 | far pier's stakes invisible | stakes stored one-sided | far-side face for free-standing walls |
 | all shots identical | overlay skip also skipped the teleport hook | HUD runs on a scratch image in shot mode |
 | "no monitor found" | display asleep | `caffeinate -u -t 1` before shooting |
+| comparison test hangs | a wall set the ECL names is missing; error box waits for a key | leave it out of `walldefs` |
+| second map shows the first map's walls | thin walls were global | per-world faces/edges/water |
+| sea around a land-locked area | off-map always water | off-map water only on maps with water |
 
 ## Checklist for a new map
 
-1. Copy `geoN_M.bin`; set `CHARS`, `START`, harbour/water values in
-   `make_map.py`; run it.
-2. Map the WALLDEF block in `make_textures.py`; write a description per wall
-   value; set `NOTRIM`, `WATER`, `TILE`, `NOSEAM`.
-3. Generate textures, then `finish`. Floor/water if the area needs them.
-4. Build, pick 10-30 reachable views, run `compare/compare.py`.
+1. Read the area's ECL (GEO, wall sets, start); `geodump` the GEO block.
+2. Add an `areas.py` entry: geo, walldefs, area_kind, chunks, chars, start,
+   water/free walls, a description per used wall value, texture flags.
+3. `make_map.py AREA`, `make_textures.py AREA`, contact-sheet the textures.
+4. Build, pick 15+ random reachable views, `compare/compare.py AREA`.
 5. Fix, recompare, drop matching views, repeat until the sheet is clean.

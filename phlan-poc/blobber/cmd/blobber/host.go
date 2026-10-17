@@ -33,6 +33,10 @@ type world struct {
 	floor []floorItem
 	pop   *blobber.Population
 	flats [2]string // painted floor and ceiling names ("" = default)
+	// phlan-poc: this map's thin walls and water, swapped into blobber.Faces/Edges/Water on enter
+	faces map[[3]int][]blobber.FacePart
+	edges map[[3]int]bool
+	water map[[2]int]bool
 }
 
 // floorItem is loot hidden on a tile; as in World of Xeen items are never drawn in the world, F finds them.
@@ -71,6 +75,7 @@ func (c *console) enter(name string) (*world, error) {
 		}
 	}
 	c.m = name
+	blobber.Faces, blobber.Edges, blobber.Water = w.faces, w.edges, w.water
 	c.refresh()
 	return w, nil
 }
@@ -101,7 +106,8 @@ func (c *console) load(name string) (*world, error) {
 	if old := c.worlds[c.m]; old != nil {
 		old.pop = prev
 	}
-	w := &world{lvl: lvl, objs: map[string]*blobber.Object{}}
+	w := &world{lvl: lvl, objs: map[string]*blobber.Object{},
+		faces: map[[3]int][]blobber.FacePart{}, edges: map[[3]int]bool{}, water: map[[2]int]bool{}}
 	c.worlds[name] = w
 	for _, l := range extra {
 		if err := c.place(w, l); err != nil {
@@ -144,16 +150,16 @@ func (c *console) place(w *world, line string) error {
 	case "monster":
 		return c.spawn(f[1], num(2), num(3), -1)
 	case "water": // phlan-poc: water X Y, see blobber.Water
-		blobber.Water[[2]int{num(1), num(2)}] = true
+		w.water[[2]int{num(1), num(2)}] = true
 	case "edge": // phlan-poc: edge X Y SIDE, a thin wall, see blobber.Edges
-		blobber.Edges[[3]int{num(1), num(2), num(3)}] = true
+		w.edges[[3]int{num(1), num(2), num(3)}] = true
 	case "face": // phlan-poc: face X Y SIDE CHAR [T0 T1 U0 U1], see blobber.Faces
 		p := blobber.FacePart{Mat: f[4][0], T1: 1, U1: 1}
 		if len(f) >= 9 {
 			fmt.Sscan(strings.Join(f[5:9], " "), &p.T0, &p.T1, &p.U0, &p.U1)
 		}
 		k := [3]int{num(1), num(2), num(3)}
-		blobber.Faces[k] = append(blobber.Faces[k], p)
+		w.faces[k] = append(w.faces[k], p)
 	case "floor":
 		w.flats[0] = f[1]
 	case "ceiling":
