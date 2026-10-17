@@ -189,6 +189,10 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	return nil, true
 }
 
+// Switched tells the presenter the window changed modes: a question still
+// waiting pops its menu up again (the classic mode never saw it opened).
+func (p *Presenter) Switched() { p.asked, p.menu = "", false }
+
 // Flow paces a held move key (code, 0 for none) with fluid movement: it
 // reports whether to send code now (ready: the game waits for a key), and
 // whether the view paces held keys at all (else they repeat as typed).

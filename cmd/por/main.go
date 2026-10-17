@@ -72,6 +72,7 @@ func (g *game) Update() error {
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
 			if c := shotKeys[k-1]; c == shotF10 {
 				g.remastered = !g.remastered
+				g.remaster.Switched()
 			} else {
 				g.push(c)
 				g.settle()
@@ -160,6 +161,7 @@ func (g *game) keys() {
 	for _, k := range inpututil.AppendJustPressedKeys(g.pressed[:0]) {
 		if k == ebiten.KeyF10 { // never the game's: only how it is shown changes
 			g.remastered = !g.remastered
+			g.remaster.Switched()
 		} else if code, ok := biosKey(k); ok {
 			g.push(code)
 		} else if k == ebiten.KeyF && ebiten.IsKeyPressed(ebiten.KeyControl) && ebiten.IsKeyPressed(ebiten.KeyShift) {
