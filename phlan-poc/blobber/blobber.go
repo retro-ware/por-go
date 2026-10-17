@@ -1705,8 +1705,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		if o.At != nil { // phlan-poc: stands where it stands, seen like a wall (no culling by cell)
 			ox, oz = o.At[0], o.At[1]
 			px, pz := math.Floor(c.x+c.fwx*eyeBack), math.Floor(c.z+c.fwz*eyeBack) // the party's cell
-			if ox == px+0.5 && oz == pz+0.5 { // standing on it (Kuto's well): in front, as PoR draws it
-				ox, oz = ox+c.fwx*0.5, oz+c.fwz*0.5
+			if ox == px+0.5 && oz == pz+0.5 { // standing on it (Kuto's well): in front, as PoR draws it, nearer
+				ox, oz = ox+c.fwx*0.3, oz+c.fwz*0.3 // than the wall (0.75) but far enough to show its foot
 			}
 		} else if _, ok := visibleCells(c)[[2]int{o.X, o.Y}]; !ok {
 			continue

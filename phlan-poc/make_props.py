@@ -26,8 +26,9 @@ TREE = ("Game sprite on a flat solid magenta (#FF00FF) background: one single ta
           "modern detail, faithful to the reference's shape and colours.")
 WELL = ("Game sprite on a flat solid magenta (#FF00FF) background: an old village well seen from the side at eye "
         "level, slightly from above: a low round rim of grey fieldstones around a black hole, and a rusty iron ladder "
-        "standing upright out of the hole, its rails and rungs going down into the darkness. The well is centred, its "
-        "rim touching the lower edge of the image; nothing else, no ground, no walls, no shadow, the magenta "
+        "standing upright out of the hole, its rails and rungs going down into the darkness. The whole well is visible and centred, "
+        "with a clear margin of empty magenta on every side: nothing touches or crosses the edges of the image, the "
+        "bottom of the rim and the top of the ladder included. Nothing else, no ground, no walls, no shadow, the magenta "
         "background is perfectly flat and fills everything around it. Painterly high-fantasy game art with modern "
         "detail, faithful to the reference's shape and colours.")
 # name -> (texture, area, wall value, share of the dump's rows the reference starts at, prompt)
@@ -42,6 +43,10 @@ def reference(area, v, top):
     side = max(tree.size)
     ref = Image.new("RGBA", (side, side), (255, 0, 255, 255))
     ref.paste(tree, ((side - tree.width) // 2, side - tree.height), tree)
+    if top:  # the well: a margin all round, so the model doesn't run it off the edges
+        big = Image.new("RGBA", (side * 5 // 4, side * 5 // 4), (255, 0, 255, 255))
+        big.paste(ref, (side // 8, side // 8))
+        ref = big
     b = io.BytesIO()
     ref.resize((1024, 1024), Image.NEAREST).convert("RGB").save(b, "PNG")
     return b.getvalue()
