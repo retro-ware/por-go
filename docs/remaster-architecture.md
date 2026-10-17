@@ -214,3 +214,28 @@ When a second game runs:
 - have `make_map.py` write each game's table.
 
 The rest of the seam stays as it is.
+
+## 17. Remaster polish (after milestone 6)
+
+- **Day and night:** `View.Day` is the engine's `isDay` (6:00–20:00, the same test that picks the day sky in the scripts). The remaster sets `blobber.Night` from it every frame.
+- **Ceiling:**
+  - `View.Inside` is set when the party's map cell is above 0x7F, which is when the original paints its red inside sky.
+  - Inside, the remaster swaps the open sky for Blobber's default ceiling.
+  - The Phlan start corridor is such an inside area in the original too.
+- **Menu:**
+  - `View.Menu` holds the prompt, items, hotkeys and highlight of the `DisplayInput` waiting for a choice. `View.Command` marks the adventuring command bar.
+  - In the remaster the bottom bar is gone. Enter opens the menu as a vertical Blobber window: arrows move, Enter sends the item's hotkey, Esc closes, and the hotkeys still work.
+  - The original prompt line is still drawn when no menu waits, for typed input and "press a key".
+- **Options:**
+  - Esc on the command bar opens Blobber's technical options page (`View.OpenOptions`). It covers smooth movement, walk speed, dithering, normal and light maps, torch and fullscreen.
+  - While the page is open it reads the keyboard itself and the game gets no keys.
+  - Settings aren't saved between runs yet.
+- **Portraits:**
+  - Cards run down both edges: the first half of the party on the left, the rest on the right (4 + 4 with two NPCs). They use the largest whole scale at which a column of four fits.
+  - Each head's lit pixels are centred in the card art.
+  - Pop-ups centre between the two columns.
+- **Picture pop-up:** only the inner picture with its own border (`InnerWindow.Framed()`), without the view window's outer frame.
+- **Movement:**
+  - The copy's tween is the same as BlobberRPG's.
+  - What looked jerky was `Follow`: every engine step braked to a stop, and a step arriving mid-tween restarted from the target.
+  - Moves that come while one runs now queue (up to 8). The tween carries its speed into them and runs faster while they pile up (`TestViewFollowQueue`).

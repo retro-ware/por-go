@@ -5,7 +5,7 @@ import "github.com/hajimehoshi/ebiten/v2"
 // View is the renderer for a host that owns the game loop and the rules
 // (the remastered Pool of Radiance): it draws a Scene from a Camera the host
 // moves, into the host's image, and animates each step and turn. Nothing
-// here reads the keyboard.
+// here reads the keyboard but the options page (UpdateOptions).
 //
 // ponytail: one View per process; the scene and camera live in package
 // state shared with Run's Game. Make them per-View when two views must
@@ -33,18 +33,39 @@ func (v *View) Show(s *Scene, c Camera) {
 }
 
 // Follow moves the camera to c: a step to a neighbouring cell or a turn is
-// animated like the player's own, anything further is a jump.
+// animated like the player's own (moves that come while one runs follow it
+// without stopping), anything further is a jump.
 func (v *View) Follow(c Camera) {
 	g := v.g
-	if c.X == g.x && c.Y == g.y && c.Dir == g.dir {
+	last := Camera{g.x, g.y, g.dir}
+	if n := len(g.next); n > 0 {
+		last = g.next[n-1]
+	}
+	if c == last {
 		return
 	}
-	dx, dy := c.X-g.x, c.Y-g.y
-	if dx*dx+dy*dy > 1 || dx*dx+dy*dy == 1 && c.Dir != g.dir {
+	if g.moving && g.smooth && len(g.next) < 8 && oneMove(last, c) {
+		g.next = append(g.next, c)
+		return
+	}
+	g.next = g.next[:0]
+	g.followStep(c)
+}
+
+// oneMove: c is one step or one turn from l.
+func oneMove(l, c Camera) bool {
+	dx, dy := c.X-l.X, c.Y-l.Y
+	return dx*dx+dy*dy == 1 && c.Dir == l.Dir || dx == 0 && dy == 0
+}
+
+// followStep animates the move to c, or jumps there when it is not one.
+func (g *Game) followStep(c Camera) {
+	if !oneMove(Camera{g.x, g.y, g.dir}, c) {
 		SetMap(level, c.X, c.Y)
 		Face(c.Dir)
 		return
 	}
+	dx, dy := c.X-g.x, c.Y-g.y
 	sway := 0.0 // a sidestep rolls the view, as the player's own does
 	if r := dirs[(g.dir+1)%4]; [2]int{dx, dy} == r {
 		sway = 1
@@ -52,6 +73,23 @@ func (v *View) Follow(c Camera) {
 		sway = -1
 	}
 	g.startMove(c.X, c.Y, c.Dir, sway)
+}
+
+// OpenOptions shows Blobber's options page (smooth movement, speed, the
+// look); while OptionsOpen, UpdateOptions reads the keyboard for it.
+func (v *View) OpenOptions() { v.g.menu, v.g.options, v.g.sel = true, true, 0 }
+
+// OptionsOpen reports whether the options page is up.
+func (v *View) OptionsOpen() bool { return v.g.menu }
+
+// UpdateOptions runs the options page for one frame: arrows and Enter
+// change settings, Esc closes it.
+func (v *View) UpdateOptions() {
+	if KeyJustPressed(ebiten.KeyEscape) {
+		v.g.menu = false
+		return
+	}
+	v.g.updateMenu()
 }
 
 // Update advances the animation by one tick (1/60 s).
@@ -66,4 +104,7 @@ func (v *View) Draw(dst *ebiten.Image) {
 	b := dst.Bounds()
 	v.g.resize(b.Dx(), b.Dy())
 	v.g.draw3D(dst, v.g.camera())
+	if v.g.menu {
+		v.g.drawMenu(dst)
+	}
 }

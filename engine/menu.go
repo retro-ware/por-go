@@ -163,6 +163,8 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 	allowEnter := normal != 0 || highlight != 0
 	start, end := menuItems(menu)
 	count := len(start) - 1
+	outer := e.menuShown(prompt, menu, start, end)
+	defer func() { e.snap.menu = outer }()
 	if e.menuSel > count || e.menuSel < 1 { // extra: never start with nothing highlighted
 		e.menuSel = 1
 	}

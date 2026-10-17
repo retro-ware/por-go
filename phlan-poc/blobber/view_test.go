@@ -27,3 +27,25 @@ func TestViewFollow(t *testing.T) {
 		t.Fatalf("jump: moving %v at %d facing %d", g.moving, g.x, g.dir)
 	}
 }
+
+// Moves that come while one is animating queue up and flow on without braking.
+func TestViewFollowQueue(t *testing.T) {
+	g := &Game{follow: true, smooth: true, t: 1}
+	game = g
+	v := &View{g}
+	v.Show(&Scene{Rows: []string{"######", "#....#", "######"}}, Camera{1, 1, 1})
+	v.Follow(Camera{2, 1, 1})
+	v.Follow(Camera{3, 1, 1}) // the engine took the next step already
+	if g.x != 2 || len(g.next) != 1 {
+		t.Fatalf("second step should queue: x %d queued %d", g.x, len(g.next))
+	}
+	for i := 0; i < 600 && (g.moving || len(g.next) > 0); i++ {
+		v.Update()
+		if g.x == 3 && g.t < 0.1 && g.v < 1 {
+			t.Fatalf("second step started from rest: v %v", g.v)
+		}
+	}
+	if g.moving || g.tx != 3.5 {
+		t.Fatalf("should end on 3,1: moving %v tx %v", g.moving, g.tx)
+	}
+}

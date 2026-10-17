@@ -46,6 +46,20 @@ func Hit(who, n int, kind string) {
 	}
 }
 
+// CardAt, if set, places character i's card for a party of n instead of
+// the column under the minimap; CardW and CardH are a card's size at scale 1.
+var CardAt func(i, n int) image.Rectangle
+
+const CardW, CardH = cardW, cardH
+
+// cardRect is where card i goes.
+func cardRect(i, n int) image.Rectangle {
+	if CardAt != nil {
+		return CardAt(i, n)
+	}
+	return card(i, n)
+}
+
 // card is character i's rectangle on screen, in device pixels, for a party of n: a column at the
 // right edge below the minimap, two columns when one does not fit, then shrunk until they do.
 func card(i, n int) image.Rectangle {
@@ -72,7 +86,7 @@ func card(i, n int) image.Rectangle {
 // PartyAt returns the 0-based character whose card contains screen point x,y, or -1.
 func PartyAt(p *party.Party, x, y int) int {
 	for i := range p.Chars {
-		if image.Pt(x, y).In(card(i, len(p.Chars))) {
+		if image.Pt(x, y).In(cardRect(i, len(p.Chars))) {
 			return i
 		}
 	}
@@ -83,7 +97,6 @@ func PartyAt(p *party.Party, x, y int) int {
 // and for a moment after a hit the damage-type icon and amount over the portrait.
 func DrawParty(screen *ebiten.Image, p *party.Party) {
 	frameNo++
-	k := K(cw, ch)
 	for len(cards) < len(p.Chars) {
 		cards = append(cards, ebiten.NewImage(cardW, cardH))
 	}
@@ -91,14 +104,15 @@ func DrawParty(screen *ebiten.Image, p *party.Party) {
 		d := cards[i]
 		d.Clear()
 		drawCard(d, i, c)
-		r := card(i, len(p.Chars))
+		r := cardRect(i, len(p.Chars))
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(float64(k), float64(k))
+		op.GeoM.Scale(float64(r.Dx())/cardW, float64(r.Dx())/cardW)
 		op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
 		screen.DrawImage(d, op)
 	}
 	drawSplats(screen, func(i int) (float64, float64, float64) {
-		r := card(i, len(p.Chars))
+		r := cardRect(i, len(p.Chars))
+		k := r.Dx() / cardW
 		return float64(r.Min.X + (portraitX+PortraitSize/2)*k), float64(r.Min.Y + (pY0+PortraitSize/2)*k), float64(k)
 	})
 }
@@ -173,7 +187,7 @@ func drawHit(d *ebiten.Image, h hitMark, age int) {
 func PartyRect(n int) image.Rectangle {
 	var r image.Rectangle
 	for i := range n {
-		r = r.Union(card(i, n))
+		r = r.Union(cardRect(i, n))
 	}
 	return r
 }

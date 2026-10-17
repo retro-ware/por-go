@@ -79,6 +79,10 @@ func (g *game) Update() error {
 		}
 		return nil
 	}
+	if g.remastered && g.remaster.Options() { // the renderer's options page has the keyboard
+		g.remaster.UpdateOptions()
+		return nil
+	}
 	g.keys()
 	for _, id := range ebiten.AppendGamepadIDs(g.pads[:0]) {
 		g.gamepad(id)
@@ -92,6 +96,16 @@ func (g *game) Update() error {
 
 // push sends a key to the engine.
 func (g *game) push(k uint16) {
+	if g.remastered {
+		ks, taken := g.remaster.Key(k, g.eng.View())
+		for _, k := range ks {
+			g.scr.PushKey(k)
+			g.sent = true
+		}
+		if taken {
+			return
+		}
+	}
 	g.scr.PushKey(k)
 	g.sent = true
 }

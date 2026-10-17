@@ -1093,6 +1093,7 @@ type Game struct {
 	t, sway                float64 // tween progress, roll direction
 	moving                 bool
 	queued                 ebiten.Key
+	next                   []Camera // follow mode: the host's moves still to animate, in order
 	// a step (not a turn) moves at speed v (steps per second) instead of easing, and flows into the
 	// next one while walkKey is held, so walking doesn't slow down at every cell
 	walk    bool
@@ -1309,6 +1310,10 @@ func (g *Game) tween() {
 	}
 	d := [2]int{int(math.Round(g.tx - g.fx)), int(math.Round(g.tz - g.fz))}
 	on := !g.follow && KeyPressed(g.walkKey) && prompt == nil && Modal == nil && (!g.walk || !Fighting() && !blocked(g.x, g.y, d[0], d[1]))
+	if g.follow { // the host's next move is known: flow into it, faster while they pile up
+		on = len(g.next) > 0
+		top *= float64(1 + len(g.next)/2)
+	}
 	if !on && g.v*g.v >= 2*acc*(1-g.t) { // brake: v²/2a is the distance braking takes
 		g.v = math.Max(0.5, g.v-acc*dt)
 	} else {
@@ -1321,7 +1326,13 @@ func (g *Game) tween() {
 	g.moving = false
 	if on { // straight on, carrying the overshoot and speed into the next step
 		over, v := g.t-1, g.v
-		g.act(g.walkKey)
+		if g.follow {
+			c := g.next[0]
+			g.next = g.next[1:]
+			g.followStep(c)
+		} else {
+			g.act(g.walkKey)
+		}
 		if g.moving {
 			g.t, g.v = over, v
 			return
@@ -2040,6 +2051,9 @@ func (g *Game) drawMenu(screen *ebiten.Image) {
 	items, title, hint := g.menuItems(), "MENU", "Enter picks, Esc closes"
 	if g.options {
 		title, hint = "OPTIONS", "Enter changes, Esc goes back"
+		if g.follow {
+			hint = "Enter changes, Esc closes"
+		}
 	}
 	if Window != nil {
 		Window(screen, title, append(items, "", hint), g.sel, false)

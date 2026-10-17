@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"strconv"
+	"strings"
 	"sync/atomic"
 
 	"por/ega"
@@ -78,7 +79,24 @@ type View struct {
 	X, Y      int
 	Facing    Dir
 	TextShown bool // the bottom text pane holds text
+	Day       bool // 6:00 to 20:00, when the scripts show the day sky
+	Inside    bool // the party stands on an inside square (the original's inside sky colour)
+	Menu      *Menu
+	Command   bool // Menu is the adventuring command bar
 	Party     []Member
+}
+
+// Menu is the menu bar waiting for a choice on the prompt line.
+type Menu struct {
+	Prompt string
+	Items  []MenuItem
+	Sel    int // index into Items of the highlighted item
+}
+
+// MenuItem is one choice: its word as the bar shows it and the key that picks it.
+type MenuItem struct {
+	Text string
+	Key  byte
 }
 
 // View returns the last published snapshot; safe from any goroutine.
@@ -96,6 +114,7 @@ type snapState struct {
 	frame  []byte                 // the frame's border pixels as DrawMainFrame left them
 	heads  map[string]image.Image // decoded HEAD blocks by file and id
 	border [][2]int               // pixel positions of frame
+	menu   *Menu                  // the innermost DisplayInput's menu (Sel unset)
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is
@@ -149,6 +168,14 @@ func (e *Engine) publish() {
 		Area:   AreaID{Disk: e.geoDisk(), Block: int(e.area.Geo)},
 		X:      e.posX, Y: e.posY,
 		Facing: Dir(e.viewFacing() / 2 & 3),
+		Day:    e.isDay(),
+		Inside: e.MapCell(e.posX, e.posY) > 0x7F,
+		Command: e.ext.inCommand,
+	}
+	if m := s.menu; m != nil {
+		c := *m
+		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
+		v.Menu = &c
 	}
 	e.S.Lock()
 	v.MainFrame = len(s.frame) > 0
@@ -223,4 +250,21 @@ func (e *Engine) head(id int) image.Image {
 	}
 	e.snap.heads[key] = out
 	return out
+}
+
+// menuShown records the menu DisplayInput waits on, and returns the one
+// it replaces (an outer DisplayInput's) for restoring.
+func (e *Engine) menuShown(prompt, menu string, start, end []int) *Menu {
+	old := e.snap.menu
+	m := &Menu{Prompt: strings.TrimSpace(prompt)}
+	for j := 1; j < len(start); j++ {
+		if a, b := itemSpan(menu, start, end, j); a > 0 {
+			m.Items = append(m.Items, MenuItem{Text: menu[a-1 : b], Key: menu[start[j]-1]})
+		}
+	}
+	if len(m.Items) == 0 {
+		m = nil
+	}
+	e.snap.menu = m
+	return old
 }
