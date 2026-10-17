@@ -4,6 +4,7 @@
 #
 #   ./build_n_run.sh            play in a window (scale 3)
 #   ./build_n_run.sh -scale 4   any extra flags go to the game
+#   ./build_n_run.sh remaster   start in the remastered view (F10 switches)
 #   ./build_n_run.sh snap OUT game A '^^<|'
 #                               headless: load save A, press keys, one PNG
 #                               per key in OUT (^ v < > arrows, { } Home / End, | Enter,
@@ -25,6 +26,10 @@ if [ "$1" = snap ]; then
 	mkdir -p "$1"
 	go build -o bin/snap ./cmd/snap
 	exec bin/snap "$root" "$@"
+fi
+if [ "$1" = remaster ]; then
+	shift
+	export POR_REMASTER=1
 fi
 go build -o bin/por ./cmd/por
 exec bin/por -data "$root" "$@"
