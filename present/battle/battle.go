@@ -345,7 +345,7 @@ func (p *Presenter) sync(b *engine.Battle) {
 				put(i, t)
 			}
 		}
-		put(wallSlot, stoneTexture(p.tiles[:engine.DungeonTiles]))
+		put(wallSlot, stoneTexture(p.tiles[:engine.DungeonTiles], b.Floor))
 		put(floorSlot, floorTile(b.Floor))
 		p.atlas.WritePixels(a.Pix)
 	}

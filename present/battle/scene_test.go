@@ -27,26 +27,18 @@ func TestMapMesh(t *testing.T) {
 }
 
 func TestStoneTexture(t *testing.T) {
-	stone := func(seed uint8) *image.RGBA {
-		im := image.NewRGBA(image.Rect(0, 0, tilePx, tilePx))
-		for i := range tilePx * tilePx {
-			im.SetRGBA(i%tilePx, i/tilePx, color.RGBA{uint8(i) * 7, 50, 60, 255})
-		}
-		return im
+	tile := image.NewRGBA(image.Rect(0, 0, tilePx, tilePx))
+	for i := range tilePx * tilePx {
+		tile.SetRGBA(i%tilePx, i/tilePx, color.RGBA{uint8(i), 50, 60, 255})
 	}
-	tiles := make([]image.Image, 6)
-	for i := range tiles {
-		tiles[i] = stone(0)
+	tile.SetRGBA(20, 1, color.RGBA{255, 255, 255, 255}) // in the bevel
+	tile.SetRGBA(5, 5, color.RGBA{})                    // mortar
+	mortar := color.RGBA{1, 2, 3, 255}
+	got := stoneTexture([]image.Image{nil, nil, nil, tile}, mortar)
+	if got.RGBAAt(20, 1) != tile.RGBAAt(1, 20) {
+		t.Errorf("bevel pixel %v, want the mirrored stone %v", got.RGBAAt(20, 1), tile.RGBAAt(1, 20))
 	}
-	bevel := tiles[3].(*image.RGBA)
-	bevel.SetRGBA(20, 1, color.RGBA{255, 255, 255, 255}) // tile 3's own bevel pixel
-	bevel.SetRGBA(0, 10, color.RGBA{})                    // a hole
-	want := stone(0)
-	got := stoneTexture(tiles)
-	if got.RGBAAt(20, 1) != want.RGBAAt(20, 1) {
-		t.Errorf("bevel pixel kept: %v", got.RGBAAt(20, 1))
-	}
-	if got.RGBAAt(0, 10).A != 255 {
-		t.Errorf("hole not filled")
+	if got.RGBAAt(5, 5) != mortar {
+		t.Errorf("mortar %v, want the ground colour", got.RGBAAt(5, 5))
 	}
 }

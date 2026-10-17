@@ -13,58 +13,31 @@ import (
 // The tabletop's own props: the stone texture, the bases, shadows, the
 // board's edge and the table under it.
 
-// stoneTexture is the dungeon wall's face. The game has no plain wall
-// tile: its wall pieces share one stone layer under their bevels, so each
-// pixel takes the colour most pieces like tile 3 agree on, and the few
-// holes take the darkest stone. Derived from the loaded tiles, so it works
-// for either platform's art.
-func stoneTexture(tiles []image.Image) *image.RGBA {
-	const base = 3
+// stoneTexture is the dungeon wall's face: wall tile 3, nearly plain
+// stone in both the DOS and the Amiga art, with its bevel (the triangle
+// from the diagonal x-y = 16 to the top right corner) replaced by the stone
+// mirrored across the main diagonal, from the clean bottom left. The
+// ground-coloured gaps between stones (transparent in the tiles) show the
+// ground's colour, as the original draws them.
+func stoneTexture(tiles []image.Image, mortar color.RGBA) *image.RGBA {
+	const base, bevel = 3, 16
 	im := image.NewRGBA(image.Rect(0, 0, tilePx, tilePx))
 	if len(tiles) <= base || tiles[base] == nil {
 		return im
 	}
-	at := func(t image.Image, x, y int) color.RGBA {
-		r, g, b, a := t.At(t.Bounds().Min.X+x, t.Bounds().Min.Y+y).RGBA()
-		return color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
-	}
-	var alike []image.Image
-	for _, t := range tiles {
-		if t == nil || t.Bounds().Dx() < tilePx || t.Bounds().Dy() < tilePx {
-			continue
-		}
-		same := 0
-		for i := range tilePx * tilePx {
-			if at(t, i%tilePx, i/tilePx) == at(tiles[base], i%tilePx, i/tilePx) {
-				same++
-			}
-		}
-		if same*4 > tilePx*tilePx*3 {
-			alike = append(alike, t)
-		}
-	}
-	dark := color.RGBA{255, 255, 255, 255}
+	t := tiles[base]
 	for y := range tilePx {
 		for x := range tilePx {
-			votes := map[color.RGBA]int{}
-			for _, t := range alike {
-				votes[at(t, x, y)]++
+			sx, sy := x, y
+			if x-y >= bevel {
+				sx, sy = y, x
 			}
-			c := at(tiles[base], x, y)
-			for v, n := range votes {
-				if n > votes[c] {
-					c = v
-				}
+			r, g, b, a := t.At(t.Bounds().Min.X+sx, t.Bounds().Min.Y+sy).RGBA()
+			c := color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), 255}
+			if a>>8 != 255 {
+				c = mortar
 			}
 			im.SetRGBA(x, y, c)
-			if c.A == 255 && int(c.R)+int(c.G)+int(c.B) < int(dark.R)+int(dark.G)+int(dark.B) {
-				dark = c
-			}
-		}
-	}
-	for i := 0; i < len(im.Pix); i += 4 {
-		if im.Pix[i+3] != 255 {
-			im.Pix[i], im.Pix[i+1], im.Pix[i+2], im.Pix[i+3] = dark.R, dark.G, dark.B, 255
 		}
 	}
 	return im

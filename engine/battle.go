@@ -59,7 +59,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: e.cmap.cursor != 0,
-		Marks: s.marks, Floor: e.S.RGBA(0), Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 	}
 	for part := 0; part <= 3; part++ {
 		if dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part); ok {
@@ -67,7 +67,7 @@ func (e *Engine) battle() *Battle {
 		}
 	}
 	for _, f := range s.effects {
-		b.Effects = append(b.Effects, Effect{float64(f.x) / 3, float64(f.y) / 3, e.picRGBA(f.im, f.frame, false, false)})
+		b.Effects = append(b.Effects, Effect{float64(f.x) / 3, float64(f.y) / 3, e.picRGBA(f.im, f.frame, false, -1)})
 	}
 	for y := range b.Ground {
 		for x := range b.Ground[y] {
@@ -75,10 +75,12 @@ func (e *Engine) battle() *Battle {
 			b.Ground[y][x] = Square{Tile: int(g[3]), Wall: g[0] == 0xFF, Height: int(g[2])}
 		}
 	}
+	ground := groundColour(e.sqrpaci[0])
+	b.Floor = e.S.RGBA(ground)
 	b.Tiles = make([]image.Image, 0x100)
 	for t, im := range e.sqrpaci {
 		for f := 0; im != nil && f < min(im.Count, 0x80); f++ {
-			b.Tiles[t*0x80+f] = e.picRGBA(im, f, false, true)
+			b.Tiles[t*0x80+f] = e.picRGBA(im, f, false, int(ground))
 		}
 	}
 	var active *Character
@@ -93,23 +95,39 @@ func (e *Engine) battle() *Battle {
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
 			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name()}
 		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
-			u.Icon = e.picRGBA(im, 0, u.Facing > 3, false)
+			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}
 		b.Units = append(b.Units, u)
 	}
 	return b
 }
 
+// groundColour is the pixel value the combat tiles paint the bare ground
+// in: their most common one (0 on DOS, a slot's grey on the Amiga).
+func groundColour(im *dax.Image) uint8 {
+	var n [256]int
+	for _, p := range im.Data {
+		n[p]++
+	}
+	best := 0
+	for c := range n {
+		if c != dax.Clear && n[c] > n[best] {
+			best = c
+		}
+	}
+	return uint8(best)
+}
+
 type picKey struct {
 	pix    string // the frame's pixels: frames change in place (the hit sprite, backpack icons)
 	w      int
 	flip   bool
-	ground bool // colour 0 transparent
+	ground int  // the ground's pixel value, transparent (-1: none)
 }
 
 // picRGBA converts a frame in the screen's current palette (combat swaps
 // colours 0 and 8), Clear pixels (and with ground, colour 0) transparent. Cached per picture and palette.
-func (e *Engine) picRGBA(im *dax.Image, f int, flip, ground bool) image.Image {
+func (e *Engine) picRGBA(im *dax.Image, f int, flip bool, ground int) image.Image {
 	s := &e.snap
 	if s.pics == nil || s.picsPal != e.S.Pal {
 		s.pics, s.picsPal = map[picKey]image.Image{}, e.S.Pal
@@ -125,7 +143,7 @@ func (e *Engine) picRGBA(im *dax.Image, f int, flip, ground bool) image.Image {
 		if flip {
 			x = w - 1 - x
 		}
-		if p == dax.Clear || ground && p == 0 {
+		if p == dax.Clear || int(p) == ground {
 			out.SetRGBA(x, i/w, color.RGBA{})
 			continue
 		}
