@@ -17,6 +17,9 @@ Keys:
   tile        walls crossfaded at the edges instead of seamed
   noseam      walls a seam would cut through (objects, posts, gaps)
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
+  clear       wall value -> boxes (x0, y0, x1, y1 in dump pixels) painted over with the wall colour in the
+              reference: things the PoC draws elsewhere (Kuto's well hole and ladder: a prop, see cellprops)
+  cellprops   (x, y) -> (texture, size): a billboard standing in the middle of that square (make_props.py)
   props       wall value -> billboard texture: trees drawn where their trunks stand, not as faces (make_props.py)
   doors       (x, y, side) fixes to the original's data: sides made passable (one-way doors)
   nomap       wall values left off the minimap (objects the party walks through, like graves)
@@ -473,8 +476,8 @@ NEW = {
     },
     "hobgoblin": {
         12: "a rough grey stone barracks wall with a dark blue and black checkered parapet along the top, a "
-            "wide open rectangular window opening in the upper half with a red glass potion flask standing "
-            "on its sill, and a few loose pale grey bricks showing in the plaster below; the window "
+            "wide open rectangular window opening in the upper half with a small dented metal well bucket of "
+            "riveted iron, rust-red inside, hanging by its curved handle from a short rope in the middle, and a few loose pale grey bricks showing in the plaster below; the window "
             "opening is empty, nothing is drawn inside it.",
     },
     "sokal": {
@@ -559,10 +562,11 @@ NEW = {
             "nothing is drawn.",
     },
     "kuto": {
-        8: "a rough grey stone wall with an open rectangular window opening in the upper half with a red "
-           "glass potion flask standing on its sill, loose pale grey bricks showing in the plaster, and in "
-           "the lower middle the stone rim of a well with an iron ladder going down into a black hole; the "
-           "window opening is empty, nothing is drawn inside it.",
+        8: "a rough grey stone wall with an open rectangular window opening in the upper half with a small "
+           "dented metal well bucket of riveted iron, partly filled with water and rust-red inside, hanging "
+           "by its curved handle from a short rope in the middle of the opening, and loose pale grey bricks "
+           "showing in the plaster below; the window opening is empty, nothing is drawn inside it besides "
+           "the bucket.",
     },
     "kuto2": {
         2: "a natural cave wall of dark red rock with a long iron ladder climbing straight up the middle "
@@ -576,7 +580,8 @@ FLAGS = dict(  # texture flags of the new walls (by area)
     hobgoblin=dict(arch={12}), sokal=dict(noseam={2}), valjevo3=dict(noseam={1, 7, 8, 9}),
     valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
     nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
-    pyramid=dict(noseam={14}), kuto=dict(arch={8}), kuto2=dict(noseam={2, 10}),
+    pyramid=dict(noseam={14}), kuto=dict(arch={8}, clear={8: [(72, 128, 150, 256), (30, 232, 194, 256)]},
+                     cellprops={(7, 7): ("prop_kuto_well", 0.8)}), kuto2=dict(noseam={2, 10}),
 )
 
 
