@@ -150,7 +150,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	for _, f := range b.Effects {
 		g := p.figure(f.Pic)
 		glows = append(glows, g)
-		light.Point = [4]float32{float32(f.X) + .5, 0.8, float32(f.Y) + .5, 3.5}
+		light.Point = [4]float32{float32(f.X) + .5, 1.1, float32(f.Y) + .5, 3.5}
 		light.PointColor = [4]float32{g.glow[0], g.glow[1], g.glow[2], 1.6}
 	}
 	opts := func(model gpu.Mat4, tint [4]float32, spec float32) *gpu.MeshOptions {
@@ -235,14 +235,14 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		sq := float32(max(ib.Dx(), ib.Dy())) / tilePx
 		x, z := float32(f.X)+float32(ib.Dx())/tilePx/2, float32(f.Y)+float32(ib.Dy())/tilePx/2
 		full := gpu.MeshOptions{Tint: [4]float32{1.3, 1.3, 1.3, 1}, Light: sunDir, Ambient: 1}
-		full.Model = place(x, 0.55, z, float32(p.yaw), sq*.9, sq*.9, sq*.9) // effects face the eye: they are light, not figurines
+		full.Model = place(x, 1.05, z, float32(p.yaw), sq*.9, sq*.9, sq*.9) // over the heads, facing the eye: light, not figurines
 		dst.DrawMesh(g.mesh, g.tex, vp, &full)
 		halo := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: [4]float32{g.glow[0], g.glow[1], g.glow[2], 0.5}}
 		halo.Model = place(x, 0.01, z, 0, 2.2, 1, 2.2)
 		dst.DrawMesh(p.flatQuad, p.shadow, vp, &halo) // a pool of light on the board
 		for range 2 {
 			p.sparks = append(p.sparks, spark{
-				p:   vec{float64(x) + rand.Float64()*.6 - .3, 0.3 + rand.Float64()*.4, float64(z) + rand.Float64()*.6 - .3},
+				p:   vec{float64(x) + rand.Float64()*.6 - .3, 0.8 + rand.Float64()*.4, float64(z) + rand.Float64()*.6 - .3},
 				v:   vec{rand.Float64()*.4 - .2, 0.5 + rand.Float64()*.6, rand.Float64()*.4 - .2},
 				max: 0.5 + rand.Float64()*.5, col: g.glow,
 			})

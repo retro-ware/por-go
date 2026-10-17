@@ -32,4 +32,4 @@ present/battle    3D view: camera (orbit), scene meshes, action bar
 - [x] 6. Action bar of icons at the bottom centre (clicks send the menu hotkeys)
 - [x] 7. Tabletop look: lit meshes (sun, sky, specular), the DungCom stone derived at runtime, floor grain and square edges, corner occlusion, blob shadows, a board on a wooden table
 - [x] 8. Feature parity: effects (hits, missiles, spells) with point lights and sparks, deaths, move/aim marks, the cursor, clicks on squares, zoom (- and =)
-- [ ] 9. Playtest every encounter type in both modes (dungeon, wilderness, random), Amiga assets
+- [x] 9. Playtest: dungeon and wilderness fights, DOS and Amiga art, aim, square clicks, effects, deaths, F10 mid-fight (seeded runs pixel-identical)
