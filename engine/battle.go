@@ -58,7 +58,7 @@ func (e *Engine) battle() *Battle {
 		return nil
 	}
 	b := &Battle{
-		Cursor: s.cursor, CursorOn: e.cmap.cursor != 0,
+		Cursor: s.cursor, CursorOn: s.cursorOn,
 		Marks: s.marks, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 	}
 	for part := 0; part <= 3; part++ {
@@ -122,7 +122,7 @@ type picKey struct {
 	pix    string // the frame's pixels: frames change in place (the hit sprite, backpack icons)
 	w      int
 	flip   bool
-	ground int  // the ground's pixel value, transparent (-1: none)
+	ground int // the ground's pixel value, transparent (-1: none)
 }
 
 // picRGBA converts a frame in the screen's current palette (combat swaps
@@ -163,6 +163,7 @@ func (e *Engine) cmapShown() {
 		return
 	}
 	e.S.Lock()
+	e.snap.cursorOn = false // a fresh page: drawCursor puts it back
 	e.snap.cmapRow = append(e.snap.cmapRow[:0], e.S.Pix[cmapRow*ega.W:(cmapRow+1)*ega.W]...)
 	e.S.Unlock()
 }
@@ -189,13 +190,13 @@ func (e *Engine) hideEffect(px, py int) {
 	e.snap.effects = slices.DeleteFunc(e.snap.effects, func(f effect) bool { return f.x == x && f.y == y })
 }
 
-// ClickSquare returns a left click for the combat page that lands on map
-// square (x, y), wherever the page has scrolled: the 3D view sees the
-// whole map.
-func (e *Engine) ClickSquare(x, y int) uint16 {
-	e.snap.click.Store(int32(y*50 + x + 1))
-	return MouseKey(MouseLeft, pageCol, 1)
-}
+// KeySquare + y*50+x is the key for a click on combat map square (x, y),
+// for views that show the map their own way; the game reads it as a click
+// on that square of its page.
+const KeySquare = 0xE800
+
+// SquareKey is the key that clicks combat map square (x, y).
+func SquareKey(x, y int) uint16 { return KeySquare + uint16(y*50+x) }
 
 // unitDrawn / unitHidden track what the page shows of combatant i.
 func (e *Engine) unitDrawn(i int, pose byte) {

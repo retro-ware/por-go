@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/ebitengine/oto/v3"
@@ -190,7 +191,7 @@ func (g *game) mouse() {
 			return
 		}
 		if x, y, ok := g.remaster.Square(mx, my); ok { // a square on the 3D map
-			g.scr.PushKey(g.eng.ClickSquare(x, y))
+			g.scr.PushKey(engine.SquareKey(x, y))
 			g.sent = true
 			return
 		}
@@ -434,6 +435,10 @@ func main() {
 	eng.Cfg.Param = flag.Arg(0)
 	if d := os.Getenv("POR_DEV"); d != "" { // POR_DEV=combat: a dev scene at the first prompt, for captures
 		eng.DevAction = eng.DevScene(d)
+	}
+	if n, err := strconv.ParseUint(os.Getenv("POR_SEED"), 10, 32); err == nil { // POR_SEED=1: the same dice every run, for comparing captures
+		seed := uint32(n)
+		eng.FixedSeed = &seed
 	}
 	go eng.Run()
 

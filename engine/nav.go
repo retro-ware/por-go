@@ -98,6 +98,11 @@ func (e *Engine) rawArrows(hint string) func() {
 // translate turns a key from the window into the key the game reads, or 0
 // when it was used up here.
 func (e *Engine) translate(k uint16) uint16 {
+	if k >= KeySquare && k < KeyMouse { // a square clicked on a remastered map: a click on the page that lands there
+		e.snap.click = int(k-KeySquare) + 1
+		defer func() { e.snap.click = 0 }()
+		k = MouseKey(MouseLeft, pageCol, 1)
+	}
 	if e.ext.modal > 0 { // help and overview: any key or click closes
 		switch {
 		case k >= KeyMouse:
@@ -278,7 +283,7 @@ func (e *Engine) rosterRegion() {
 // combatSquare is the combat map square shown at cell (cx, cy): the page
 // sits at cell (pageCol,1) and a square is 3x3 cells.
 func (e *Engine) combatSquare(cx, cy int) (x, y int, ok bool) {
-	if v := int(e.snap.click.Swap(0)); v > 0 { // ClickSquare
+	if v := e.snap.click; v > 0 { // SquareKey
 		return (v - 1) % 50, (v - 1) / 50, true
 	}
 	sx, sy := (cx-pageCol)/3, (cy-1)/3

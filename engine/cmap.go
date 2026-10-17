@@ -357,7 +357,7 @@ func (e *Engine) updateScreenPos() {
 // drawCursor = ovr32:0127 (x, y): the ground under the cursor, the cursor
 // icon and whoever stands there.
 func (e *Engine) drawCursor(x, y int) {
-	e.snap.cursor = image.Pt(x, y)
+	e.snap.cursor, e.snap.cursorOn = image.Pt(x, y), e.cmap.cursor != 0
 	sx, sy := x-e.cmap.viewX, y-e.cmap.viewY
 	for part := 0; part <= 3; part++ {
 		dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part)
@@ -386,6 +386,7 @@ func (e *Engine) drawOccupant(x, y int) {
 
 // eraseCursor = ovr32:02D5 (x, y).
 func (e *Engine) eraseCursor(x, y int) {
+	e.snap.cursorOn = false
 	e.combatClearIcon(x-e.cmap.viewX, y-e.cmap.viewY, 0)
 	e.drawOccupant(x, y)
 }
