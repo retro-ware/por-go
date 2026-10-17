@@ -126,6 +126,8 @@ func battleView(t *testing.T) (*engine.Engine, *ega.Screen, engine.View) {
 		t.Fatal(err)
 	}
 	e.DevAction = e.DevScene("combat")
+	seed := uint32(7) // the same fight every run
+	e.FixedSeed = &seed
 	e.Init()
 	go e.Play()
 	i := e.SlotIndex("GAME A")
