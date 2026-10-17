@@ -30,21 +30,23 @@ import (
 type Presenter struct {
 	Classic *classic.Presenter
 
-	view   *blobber.View
-	failed bool                        // the renderer could not start: classic from then on
-	scenes map[string]*blobber.Scene   // parsed maps by name
-	shown  string                      // the scene the view shows
-	last   time.Time                   // when the animation last advanced
-	ticks  float64                     // animation time not yet run, in 1/60 s ticks
-	party  party.Party                 // View.Party as Blobber's cards show it
-	faces  map[image.Image]image.Image // card art cropped from each paper-doll head
-	inside bool                        // the view has the inside ceiling
-	active bool                        // the last frame was drawn remastered
-	menu   bool                        // the vertical menu is open
-	sel    int                         // its highlighted item
-	asked  string                      // the question menu last opened by itself (menuID)
-	mapImg *ebiten.Image               // View.Map on the GPU
-	mapSrc image.Image                 // the View.Map it holds
+	view    *blobber.View
+	failed  bool                        // the renderer could not start: classic from then on
+	scenes  map[string]*blobber.Scene   // parsed maps by name
+	shown   string                      // the scene the view shows
+	last    time.Time                   // when the animation last advanced
+	ticks   float64                     // animation time not yet run, in 1/60 s ticks
+	party   party.Party                 // View.Party as Blobber's cards show it
+	faces   map[image.Image]image.Image // card art cropped from each paper-doll head
+	inside  bool                        // the view has the inside ceiling
+	active  bool                        // the last frame was drawn remastered
+	menu    bool                        // the vertical menu is open
+	sel     int                         // its highlighted item
+	asked   string                      // the question menu last opened by itself (menuID)
+	mapImg  *ebiten.Image               // View.Map on the GPU
+	mapSrc  image.Image                 // the View.Map it holds
+	menuImg *ebiten.Image               // the vertical menu, drawn at scale 1
+	menuBuf []byte                      // its pixels
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -115,11 +117,19 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 			lines[i] = it.Text
 		}
 		p.sel = min(p.sel, len(lines)-1)
+		top := cy + int(pk*th/2) + int(pk*8)
 		if v.Command || noChoice(v) {
-			ui.Window(dst, v.Menu.Prompt, lines, p.sel, false)
-		} else {
-			ui.WindowAt(dst, v.Menu.Prompt, lines, p.sel, cx, cy+int(pk*th/2)+8)
+			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
+		p.drawMenu(dst, frame, note.Glyph, v.Menu.Prompt, lines, p.sel, pk, cx, top)
+	}
+	if note.Show { // the toast (font name ...): the strip Frame wrote it into
+		n := min(len(note.Text)+2, 40) * 8
+		r := image.Rect((ega.W-n)/2, 4, (ega.W+n)/2, 12)
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(k, k)
+		op.GeoM.Translate(float64(dst.Bounds().Dx())/2-k*float64(n)/2, k*4)
+		dst.DrawImage(frame.SubImage(r).(*ebiten.Image), op)
 	}
 	return classic.Rect{}
 }
