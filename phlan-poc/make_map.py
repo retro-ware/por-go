@@ -137,6 +137,8 @@ def main():
                 for i in range(16):  # low tufts on a jittered 4x4 grid, spread over the whole square
                     px = round(x + 0.125 + 0.25 * (i % 4) + r.uniform(-0.09, 0.09), 3)
                     py = round(y + 0.125 + 0.25 * (i // 4) + r.uniform(-0.09, 0.09), 3)
+                    if any((px - a - 0.5) ** 2 + (py - b - 0.5) ** 2 < 0.47 ** 2 for a, b in ponds):
+                        continue  # not in the pool (the engine draws it 0.42 across the square's centre)
                     props[px, py] = f"prop {r.choice(BEDS[bed[0]])} {px} {py} {r.uniform(0.26, 0.36):.3f}"
     for (x, y), things in A.get("cellprops", {}).items():
         for i, (kind, tex, *nums) in enumerate(things):

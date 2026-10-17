@@ -1639,13 +1639,32 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
 		var f *face
 		wx, wy := cx, cy
-		if Water[cell] || Pond[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting
+		if Water[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting
 			w := g.time * 0.02
 			f = q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
 		} else {
 			f = q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, texFloor, 3)
 		}
 		f.pass = 0
+		if Pond[cell] { // phlan-poc: a round pool on the floor, joined to a neighbouring pond cell by a strip as wide
+			const pr, n = 0.42, 32
+			w := g.time * 0.02
+			wv := func(x, z float64) vert { return vert{x, 0.5, z, x/2 + w, z / 2, 0, 0, 0} }
+			mx, mz := x0+0.5, z0+0.5
+			for i := 0; i < n; i++ {
+				t0, t1 := 2*math.Pi*float64(i)/n, 2*math.Pi*float64(i+1)/n
+				f := q(wv(mx, mz), wv(mx+pr*math.Cos(t0), mz+pr*math.Sin(t0)), wv(mx+pr*math.Cos(t1), mz+pr*math.Sin(t1)), wv(mx, mz), texWater, 1)
+				f.pass = 1
+			}
+			for _, d := range [][2]int{{1, 0}, {0, 1}} { // each join once, from the west / north cell
+				if Pond[[2]int{cx + d[0], cy + d[1]}] {
+					ex, ez := float64(d[0]), float64(d[1])
+					px, pz := ez*pr, ex*pr
+					f := q(wv(mx-px, mz-pz), wv(mx+px, mz+pz), wv(mx+px+ex, mz+pz+ez), wv(mx-px+ex, mz-pz+ez), texWater, 1)
+					f.pass = 1
+				}
+			}
+		}
 		if !openSky {
 			f := q(vert{x0, -0.5, z0, 0, 0, 0, 0, 0}, vert{x1, -0.5, z0, 1, 0, 0, 0, 0}, vert{x1, -0.5, z1, 1, 1, 0, 0, 0}, vert{x0, -0.5, z1, 0, 1, 0, 0, 0}, texCeil, 3)
 			f.pass = 0
