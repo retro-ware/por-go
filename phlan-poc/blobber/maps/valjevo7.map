@@ -226,3 +226,17 @@ edge 8 11 1
 face 8 11 2 wall_valjevo3_v03
 edge 8 11 2
 pond 2 10
+prop prop_grass2 2.0 10.418 0.145
+prop prop_grass2 2.016 10.796 0.150
+prop prop_grass1 2.03 10.157 0.158
+prop prop_grass1 2.089 10.071 0.174
+prop prop_grass1 2.119 10.951 0.157
+prop prop_grass1 2.224 10.012 0.188
+prop prop_grass1 2.296 10.997 0.185
+prop prop_grass1 2.665 10.998 0.148
+prop prop_grass2 2.772 10.011 0.174
+prop prop_grass1 2.908 10.932 0.175
+prop prop_grass1 2.915 10.075 0.149
+prop prop_grass1 2.957 10.129 0.198
+prop prop_grass1 2.981 10.809 0.152
+prop prop_grass1 3.0 10.457 0.197

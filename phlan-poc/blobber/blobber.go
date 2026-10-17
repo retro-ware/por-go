@@ -314,7 +314,17 @@ var Sea bool
 // Pond (phlan-poc) are cells drawn as water that are not sea: no water off the map for them.
 var Pond = map[[2]int]bool{}
 
-const pondR, pondMudW = 0.42, 0.3 // phlan-poc: a pond's radius, the width of the mud bank around it
+// phlan-poc: a pond square's pool is a rounded square (a superellipse, as PoR paints it) of half width pondH,
+// joined to a neighbouring pond square by a neck of half width pondNeck; a damp bank pondMudW wide around it
+const pondH, pondNeck, pondMudW = 0.46, 0.36, 0.12
+
+// pondEdge is the point of the pool's outline at angle t, from the square's centre.
+func pondEdge(t float64) (float64, float64) {
+	c, s := math.Cos(t), math.Sin(t)
+	return pondH * math.Copysign(math.Sqrt(math.Abs(c)), c), pondH * math.Copysign(math.Sqrt(math.Abs(s)), s)
+}
+
+var texPondWater *ebiten.Image // the sea's water, lighter: PoR's ponds are a bright blue
 
 var mudFor map[[2]int]bool            // the Pond map mudTiles were made for
 var mudTiles map[[2]int]*ebiten.Image // phlan-poc: per cell, its share of the bank around the ponds
@@ -331,11 +341,11 @@ func pondMud(cell [2]int) *ebiten.Image {
 			d := math.Inf(1)
 			for p := range Pond {
 				cx, cz := float64(p[0])+0.5, float64(p[1])+0.5
-				d = math.Min(d, math.Hypot(x-cx, z-cz)-pondR)
+				d = math.Min(d, math.Pow(math.Pow(x-cx, 4)+math.Pow(z-cz, 4), 0.25)-pondH)
 				for _, s := range [][2]float64{{1, 0}, {0, 1}} {
-					if Pond[[2]int{p[0] + int(s[0]), p[1] + int(s[1])}] { // along a join: to its centre line
-						t := math.Max(0, math.Min(1, (x-cx)*s[0]+(z-cz)*s[1]))
-						d = math.Min(d, math.Hypot(x-cx-t*s[0], z-cz-t*s[1])-pondR)
+					if Pond[[2]int{p[0] + int(s[0]), p[1] + int(s[1])}] { // the neck: a box from centre to centre
+						a, b := (x-cx)*s[0]+(z-cz)*s[1], math.Abs((x-cx)*s[1]+(z-cz)*s[0])
+						d = math.Min(d, math.Hypot(math.Max(0, math.Max(-a, a-1)), math.Max(0, b-pondNeck))+math.Min(0, math.Max(math.Max(-a, a-1), b-pondNeck)))
 					}
 				}
 			}
@@ -354,7 +364,7 @@ func pondMud(cell [2]int) *ebiten.Image {
 						for i := 0; i < px; i++ {
 							d := dist(float64(c[0])+(float64(i)+0.5)/px, float64(c[1])+(float64(j)+0.5)/px)
 							t := math.Max(0, math.Min(1, d/pondMudW))
-							a := (1 - t*t*(3-2*t)) * 0.8 // dark wet mud at the water, a soft fade out (smoothstep)
+							a := (1 - t*t*(3-2*t)) * 0.45 // damp earth at the water, a soft fade out (smoothstep)
 							img.Set(i, j, color.RGBA{uint8(46 * a), uint8(30 * a), uint8(16 * a), uint8(255 * a)})
 						}
 					}
@@ -1703,22 +1713,29 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			f := q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, m, 3)
 			f.pass = 1
 		}
-		if Pond[cell] { // phlan-poc: a round pool on the floor, joined to a neighbouring pond cell by a strip as wide
-			const n = 32
+		if Pond[cell] { // phlan-poc: a pool on the floor (pondH), joined to a neighbouring pond cell by a neck
+			const n = 48
 			w := g.time * 0.02
 			wv := func(x, z float64) vert { return vert{x, 0.5, z, x/2 + w, z / 2, 0, 0, 0} }
 			mx, mz := x0+0.5, z0+0.5
+			if texPondWater == nil {
+				b := texWater.Bounds()
+				texPondWater = ebiten.NewImage(b.Dx(), b.Dy())
+				op := &ebiten.DrawImageOptions{}
+				op.ColorScale.Scale(1.25, 1.35, 1.7, 1)
+				texPondWater.DrawImage(texWater, op)
+			}
 			for i := 0; i < n; i++ {
-				t0, t1 := 2*math.Pi*float64(i)/n, 2*math.Pi*float64(i+1)/n
-				c0, s0, c1, s1 := math.Cos(t0), math.Sin(t0), math.Cos(t1), math.Sin(t1)
-				f := q(wv(mx, mz), wv(mx+pondR*c0, mz+pondR*s0), wv(mx+pondR*c1, mz+pondR*s1), wv(mx, mz), texWater, 1)
+				ax, az := pondEdge(2 * math.Pi * float64(i) / n)
+				bx, bz := pondEdge(2 * math.Pi * float64(i+1) / n)
+				f := q(wv(mx, mz), wv(mx+ax, mz+az), wv(mx+bx, mz+bz), wv(mx, mz), texPondWater, 1)
 				f.pass = 2
 			}
 			for _, d := range [][2]int{{1, 0}, {0, 1}} { // each join once, from the west / north cell
 				if Pond[[2]int{cx + d[0], cy + d[1]}] {
 					ex, ez := float64(d[0]), float64(d[1])
-					px, pz := ez*pondR, ex*pondR
-					f := q(wv(mx-px, mz-pz), wv(mx+px, mz+pz), wv(mx+px+ex, mz+pz+ez), wv(mx-px+ex, mz-pz+ez), texWater, 1)
+					px, pz := ez*pondNeck, ex*pondNeck
+					f := q(wv(mx-px, mz-pz), wv(mx+px, mz+pz), wv(mx+px+ex, mz+pz+ez), wv(mx-px+ex, mz-pz+ez), texPondWater, 1)
 					f.pass = 2
 				}
 			}

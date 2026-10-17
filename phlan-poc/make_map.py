@@ -137,9 +137,23 @@ def main():
                 for i in range(16):  # low tufts on a jittered 4x4 grid, spread over the whole square
                     px = round(x + 0.125 + 0.25 * (i % 4) + r.uniform(-0.09, 0.09), 3)
                     py = round(y + 0.125 + 0.25 * (i // 4) + r.uniform(-0.09, 0.09), 3)
-                    if any((px - a - 0.5) ** 2 + (py - b - 0.5) ** 2 < 0.47 ** 2 for a, b in ponds):
-                        continue  # not in the pool (the engine draws it 0.42 across the square's centre)
+                    if (int(px), int(py)) in ponds:
+                        continue  # not in the pool, the fringe below lines it
                     props[px, py] = f"prop {r.choice(BEDS[bed[0]])} {px} {py} {r.uniform(0.26, 0.36):.3f}"
+    # PoR draws its ponds with a fringe of grass along the bank: tufts around the engine's pool outline
+    # (blobber.go pondEdge, half width 0.46), none where the neck joins a neighbouring pond square
+    import math
+    for x, y in sorted(ponds):
+        r = random.Random(1000 + y * 16 + x)
+        for i in range(14):
+            t = 2 * math.pi * (i + r.uniform(-0.3, 0.3)) / 14
+            c, sn = math.cos(t), math.sin(t)
+            ex, ey = math.copysign(abs(c) ** 0.5, c) * 0.5, math.copysign(abs(sn) ** 0.5, sn) * 0.5
+            if any((x + dx, y + dy) in ponds and ex * dx + ey * dy > 0.3 and abs(ex * dy + ey * dx) < 0.45
+                   for dx, dy in STEP):
+                continue
+            px, py = round(x + 0.5 + ex, 3), round(y + 0.5 + ey, 3)
+            props[px, py] = f"prop prop_grass{r.randint(1, 2)} {px} {py} {r.uniform(0.14, 0.2):.3f}"
     for (x, y), things in A.get("cellprops", {}).items():
         for i, (kind, tex, *nums) in enumerate(things):
             props[x + 0.5, y + 0.5, i] = " ".join(map(str, [kind, tex, x + 0.5, y + 0.5, *nums]))
