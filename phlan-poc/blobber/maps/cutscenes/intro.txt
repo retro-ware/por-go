@@ -1,0 +1,14 @@
+# Played by `cutscene intro` in the lab. Pages are separated by blank lines; @name shows a sprite.
+@guardian
+Long ago, the guardians were set
+to watch over the deep halls.
+
+@portrait_sorcerer
+A young sorcerer found the lab
+and learned every word of its script.
+
+@key
+The brass key opens what is locked.
+The lever wakes what sleeps.
+
+Your story starts here.

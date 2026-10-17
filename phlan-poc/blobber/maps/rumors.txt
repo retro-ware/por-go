@@ -1,0 +1,5 @@
+# Tavern rumors, one per line; the barkeep picks one at random.
+They say the old lab hides a lever behind every wall.
+A hermit in the caves trades gems for gold.
+Never answer a voice in the dark without the password.
+The guardian sleeps until someone pulls the lever.

@@ -1,0 +1,51 @@
+event 1,1 n
+  text sign "Welcome to the demo dungeon." "Press F here for the opcode lab."
+
+event 1,1 any use
+  teleport lab 1 2
+
+  # searchable tile: press F to search
+
+event 3,5 any use
+  if mapflag searched goto done
+  whowill search "Who will search the rubble?"
+  give gold 10
+  set mapflag searched
+  sound coins
+  exit
+done:
+  text "Nothing here."
+
+  # locked door: say the word, then the door is gone for good
+
+event 21,6 any
+
+  teleport demo 4 8
+
+event 8,7 e
+  confirm "A voice asks for the password." "open" "sesame" goto ok
+  text "Nothing happens."
+  exit
+ok:
+  text "The door swings open."
+  remove
+
+
+  # stairs down to the cave
+
+event 26,11 any
+  text "A staircase leads down."
+
+event 26,11 any use
+  sound stairs
+  teleport cave 1 1
+
+
+  # stairs up to town
+
+event 2,1 any
+  text "Daylight falls down a stairway."
+
+event 2,1 any use
+  sound stairs
+  teleport town 23 10

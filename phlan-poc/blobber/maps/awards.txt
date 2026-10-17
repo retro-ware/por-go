@@ -1,0 +1,4 @@
+# Awards: id and the text shown in the journal (J). Scripts give them with `give award ID`.
+# Awards are the quest log, as in Might & Magic: an award for taking a quest, another for finishing it.
+lever    Pulled the lever in the cave
+password Learned the password of the voice in the dark

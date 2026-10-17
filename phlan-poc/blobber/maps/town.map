@@ -1,0 +1,25 @@
+FFFFFFFFFFFFFFFFFFFFFFFFF
+F.......................F
+F.CCC...CCC...EEE...CCC.F
+F.CGC...CGC...EGE...CGC.F
+F.......................F
+F.......................F
+F.......................F
+F.......................F
+F.CGC...CGC.....CGC.....F
+F.CCC...CCC.....CCC.....F
+F.......................F
+FFFFFFFFFFFFFFFFFFFFFFFFF
+floor town
+ceiling sky_town
+object fountain statue 12 5
+deco lantern 6 1
+deco lantern 18 1
+deco lantern 6 10
+deco lantern 18 10
+deco grass 1 4
+deco grass 23 7
+deco grass 12 1
+deco grass 1 10
+deco firefly 12 4
+deco firefly 13 6

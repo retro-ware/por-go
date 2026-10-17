@@ -1,0 +1,10 @@
+MMMMMMMMM
+M.......M
+M.MMM.M.M
+M.M...M.M
+M.M.MMM.M
+M.......M
+MMMMMMMMM
+object lever lever_up 1 5
+object lever_pulled lever_down -1 -1
+item potion 7 3

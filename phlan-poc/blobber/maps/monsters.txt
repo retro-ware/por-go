@@ -1,0 +1,19 @@
+# Monster table: id sprite hp ac dmg exp [spd [size]]  (spd: combat order, default 10;
+# size: tiles tall, floor to ceiling is 1; default 0.6. Painted monsters are all drawn at one pixel density)
+# id is what .map "monster" lines and the spawn opcode name; sprite is a debug sprite name or
+# cmd/blobber/assets/monsters/<sprite>.png. dmg is the top of a 1..dmg roll per hit.
+# ponytail: one attack, no resistances, no special attacks; add columns when a monster needs them.
+rat       zombie_rat 6  2 3 5
+bat       003 5  4 2 5
+goblin    007 12 4 5 15
+skeleton  012 16 5 6 25
+slime     020 10 1 4 10
+ghoul     035 24 6 8 50
+guardian ice_giant 40 8 10 200 10 0.98
+ice_giant ice_giant 30 6 8 80 10 0.95
+red_dragon red_dragon 60 9 14 300 10 0.85
+zombie_rat zombie_rat 10 3 4 12 10 0.45
+enchanted_tree_warrior enchanted_tree_warrior 20 5 6 50 10 0.92
+skeleton_warrior skeleton_warrior 18 6 7 40 9 0.75
+electrical_centipede electrical_centipede 20 5 6 50 10 0.7
+spear_skeleton spear_skeleton 16 5 8 35 11 0.75

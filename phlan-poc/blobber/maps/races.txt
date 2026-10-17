@@ -1,0 +1,6 @@
+# Race table: id might int pers end spd acc luck   (added to rolled stats at creation)
+human   0  0  0  0  0  0  0
+elf    -2  2  0 -1  1  1  0
+dwarf   2 -1 -1  2 -1  0  0
+gnome  -1  1  1 -1  0  0  2
+halforc 3 -2 -2  1  0  0 -1

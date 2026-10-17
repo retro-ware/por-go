@@ -1,0 +1,358 @@
+# The opcode lab: one alcove per wired opcode.
+# Walking into an alcove shows what it demonstrates; press F there to run it.
+# Top row alcoves are at y=1 (you face north), bottom row at y=3 (you face south).
+
+# ---------- top row ----------
+
+event 1,1 n
+  text sign "TELEPORT" "F: back to the demo map"
+event 1,1 any use
+  teleport demo 1 1
+
+event 3,1 n
+  text sign "TEXT" "F: text with a style and two lines"
+event 3,1 any use
+  text bottom "TEXT bottom: one opcode," "two lines of text."
+
+event 5,1 n
+  text sign "NPC ... CONFIRM" "F: a merchant asks yes or no"
+event 5,1 any use
+  npc merchant "Fresh from the alchemist, still warm. A potion for 5 gold?" confirm buy
+  text "Maybe later, then."
+  exit
+buy:
+  if gold < 5 goto poor
+  take gold 5
+  giveitem potion
+  text "Sold! (I: inventory)"
+  exit
+poor:
+  text "You cannot afford it."
+
+event 7,1 n
+  text sign "IF / GIVE / TAKE" "F: +10 gold, a toll above 40"
+event 7,1 any use
+  if gold >= 40 goto rich
+  give gold 10
+  text "GIVE: +10 gold"
+  exit
+rich:
+  take gold 30
+  text "IF gold >= 40, so TAKE 30 gold"
+
+event 9,1 n
+  text sign "SET / IF flag" "F: toggles a global flag"
+event 9,1 any use
+  if flag lab_bell goto rung
+  set flag lab_bell
+  text "You ring the bell." "(global flag set, P shows it)"
+  exit
+rung:
+  set flag lab_bell 0
+  text "The bell falls silent." "(flag cleared)"
+
+event 11,1 n
+  text sign "SETCHAR / DAMAGE" "F: 3 damage to the whole party"
+event 11,1 any use
+  setchar 0
+  damage 3 physical
+  text "DAMAGE: everyone takes 3 (P)"
+
+event 13,1 n
+  text sign "WHOWILL / RNDDAMAGE" "F: someone touches the orb"
+event 13,1 any use
+  whowill touch "The orb crackles."
+  rnddamage elec 6
+  text "RNDDAMAGE: 1-6 electric damage (P)"
+
+event 15,1 n
+  text sign "SELRNDCHAR" "F: a random member gains exp"
+event 15,1 any use
+  selrndchar
+  give exp 100
+  text "Someone got 100 exp (P)"
+
+event 17,1 n
+  text sign "GIVEITEM / ITEMTYPE" "F: an enchanted sword and a ring"
+event 17,1 any use
+  giveitem steel_sword 1
+  itemtype ring
+  text "You get a steel sword +1 and a ring (I)"
+
+event 19,1 n
+  text sign "GIVE key" "F: take the brass key"
+event 19,1 any use
+  if key brass goto has
+  give key brass
+  text "A brass key! (I, Msc tab)"
+  exit
+has:
+  text "You already carry the brass key."
+
+event 21,1 n
+  text sign "TAKE key / NOTHING" "F: open the chest with the key"
+event 21,1 any use
+  if key brass goto open
+  text "Locked. The key is next door."
+  exit
+open:
+  take key brass
+  giveitem chainmail
+  text "The chest held chainmail!" "(NOTHING: the chest is empty now)"
+  nothing
+
+event 23,1 n
+  text sign "TELEPORT ... CONTINUE" "F: jump, and the script goes on"
+event 23,1 any use
+  teleport lab 1 3 continue
+  text "...and the script kept running" "after the teleport."
+
+event 25,1 n
+  text sign "NOP / EXIT" "F: the line after EXIT never runs"
+event 25,1 any use
+  nop
+  text "EXIT: no 1000 gold for you."
+  exit
+  give gold 1000
+
+event 27,1 n
+  text sign "IF class / SET" "F: heal Ann if she is a knight"
+event 27,1 any use
+  setchar 1
+  if class knight goto knight
+  text "Ann is no knight?"
+  exit
+knight:
+  set hpfull
+  text "IF class knight: Ann is healed" "(SET hpfull)"
+
+# ---------- bottom row ----------
+
+event 1,3 s
+  text sign "FALL" "F: a trapdoor, 2 damage each"
+event 1,3 any use
+  fall lab 27 2 2
+
+event 3,3 s
+  text sign "SPAWN" "F: summon a guardian into the hall"
+event 3,3 any use
+  if mapflag spawned goto done
+  set mapflag spawned
+  spawn guardian 13 2
+  text "A guardian appears in the hall."
+  exit
+done:
+  text "One guardian is enough."
+
+event 5,3 s
+  text sign "ALTERCELL" "F: open the wooden panel"
+event 5,3 any use
+  if mapflag closet goto done
+  set mapflag closet
+  altercell 5 4 .
+  text "The panel slides away." "An amulet lies inside (F to take)."
+  exit
+done:
+  text "The closet stands open."
+
+event 7,3 s
+  text sign "MOVEOBJ" "F: slide the statue (turn around)"
+event 7,3 any use
+  if mapflag statue goto back
+  set mapflag statue
+  moveobj statue 9 2
+  text "The statue slides east."
+  exit
+back:
+  set mapflag statue 0
+  moveobj statue 6 2
+  text "The statue slides back west."
+
+event 9,3 s
+  text sign "EXCHOBJ" "F: pull the lever"
+event 9,3 any use
+  exchobj lever lever_pulled
+  text "Clunk. EXCHOBJ swapped the" "lever-up and lever-down sprites."
+
+event 11,3 s
+  text sign "MOVEWALL" "F: an idol appears or vanishes"
+event 11,3 any use
+  if mapflag idol goto hide
+  set mapflag idol
+  movewall idol 11 2
+  text "An idol rises from the floor."
+  exit
+hide:
+  set mapflag idol 0
+  movewall idol -1 -1
+  text "The idol sinks away."
+
+event 13,3 s
+  text sign "GOTO / GOTORANDOM" "F: flip a coin"
+event 13,3 any use
+  gotorandom heads tails
+heads:
+  text "Heads!"
+  goto end
+tails:
+  text "Tails!"
+end:
+  nop
+
+event 15,3 s
+  text sign "JUMPRND" "F: a 1 in 3 chance for a gem"
+event 15,3 any use
+  jumprnd 3 1 goto win
+  text "No luck this time."
+  exit
+win:
+  give gems 1
+  text "A gem! (1 in 3)"
+
+event 17,3 s
+  text sign "CHOOSE" "F: pick 1, 2 or 3"
+event 17,3 any use
+  choose food gold
+  text "Option 3: you take nothing."
+  exit
+food:
+  give food 5
+  text "Option 1: +5 food"
+  exit
+gold:
+  give gold 5
+  text "Option 2: +5 gold"
+
+event 19,3 s
+  text sign "CONFIRM" "F: speak the password"
+event 19,3 any use
+  confirm "Speak the password (hint: lab)" "lab" "laboratory" goto ok
+  text "Wrong word."
+  exit
+ok:
+  text "Correct!"
+
+event 21,3 s
+  text sign "CALL / RETURN" "F: run a subroutine"
+event 21,3 any use
+  call 28,0 any
+  text "CALL ran the subroutine at 28,0" "(+1 gold), RETURN came back."
+
+# subroutine on a wall tile: never triggered by walking
+event 28,0 any
+  give gold 1
+  return
+
+event 23,3 s
+  text sign "ALTER" "F: a gem, then the line becomes nop"
+event 23,3 any use
+  give gems 1
+  alter 0 nop
+  text "+1 gem. ALTER turned that line into nop." "Press F again: no more gems."
+
+event 25,3 s
+  text sign "REMOVE" "F: 3 gold, then this script is gone"
+event 25,3 any use
+  give gold 3
+  text "+3 gold. REMOVE deleted this event" "(its minimap dot is gone)."
+  remove
+
+event 27,3 s
+  text sign "HEAL" "F: restore everyone"
+event 27,3 any use
+  setchar 0
+  set hpfull
+  set spfull
+  text "Everyone is restored."
+
+# ---------- east wing: sound, music, cutscenes, towns, walls ----------
+
+event 29,1 n
+  text sign "SOUND" "F: a fanfare"
+event 29,1 any use
+  sound fanfare
+  text "SOUND fanfare. Also: coins door trap" "hit magic bell lever splash click"
+
+event 31,1 n
+  text sign "MUSIC" "F: start or stop the lab tune"
+event 31,1 any use
+  if mapflag tune goto off
+  set mapflag tune
+  music lab
+  text "MUSIC lab: it loops until stopped."
+  exit
+off:
+  set mapflag tune 0
+  music stop
+  text "MUSIC stop."
+
+event 33,1 n
+  text sign "CUTSCENE" "F: watch the intro"
+event 33,1 any use
+  cutscene intro
+  text "CUTSCENE intro came from" "maps/cutscenes/intro.txt"
+
+event 35,1 n
+  text sign "TOWN smith" "F: buy and sell gear"
+event 35,1 any use
+  npc smith "Steel for the brave, at fair prices. Have a look."
+  town smith
+
+event 37,1 n
+  text sign "TOWN guild" "F: potions and scrolls"
+event 37,1 any use
+  npc guildmage "The guild teaches those who can pay for wisdom."
+  town guild
+
+event 39,1 n
+  text sign "TOWN temple" "F: heal and raise the dead"
+event 39,1 any use
+  npc priest "Peace, travellers. The temple heals the wounded and lifts curses, for an offering."
+  town temple
+
+event 29,3 s
+  text sign "ALTERWALL" "F: open the iron wall south"
+event 29,3 any use
+  if mapflag vault goto close
+  set mapflag vault
+  sound door
+  alterwall 29 3 s open
+  text "The iron wall sinks. A gem waits beyond."
+  exit
+close:
+  set mapflag vault 0
+  sound door
+  alterwall 29 3 s iron
+  text "The iron wall rises again."
+
+event 31,3 s
+  text sign "SOUND + DAMAGE" "F: a trap goes off"
+event 31,3 any use
+  sound trap
+  setchar 0
+  damage 2 fire
+  text "Fire icons over every portrait."
+
+event 33,3 s
+  text sign "TOWN tavern" "F: food, rumours, rest"
+event 33,3 any use
+  npc innkeeper "Sit down, sit down! Food, drink and a warm bed."
+  town tavern
+
+event 35,3 s
+  text sign "TOWN trainer" "F: level up for gold and exp"
+event 35,3 any use
+  npc trainer "Experience means nothing without practice. Ready to train?"
+  town trainer
+
+event 37,3 s
+  text sign "TOWN bank" "F: deposit and withdraw"
+event 37,3 any use
+  npc banker "Your gold is safe with us. Mostly."
+  town bank
+
+event 39,3 s
+  text sign "MUSIC dungeon" "F: a different tune"
+event 39,3 any use
+  music dungeon
+  text "MUSIC dungeon. The station at" "31,1 stops it."

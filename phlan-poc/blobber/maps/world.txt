@@ -1,0 +1,18 @@
+# World file: the campaign's name, where a new game begins, and the default party.
+title Blobber Demo
+start phlan 7 7 n
+# hero NAME SEX RACE CLASS   (up to 6; stats are rolled like at the inn)
+hero Ann f human knight
+hero Bob m elf   monk
+hero Cyd m gnome robber
+gold 500
+food 6
+# item ID   (one line per copy; ids from party.Catalog)
+item bronze_dagger
+item chainmail
+item oak_shield
+item helmet
+item boots
+item ring
+item potion
+item potion

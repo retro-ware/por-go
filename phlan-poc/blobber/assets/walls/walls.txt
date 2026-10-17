@@ -1,0 +1,22 @@
+# Painted wall materials: map character, then the texture file in this folder (without .png).
+# tools/new-texture.py adds rows; '#' is always stone.png when present.
+A wall_ice_cave
+C wall_town_house
+E wall_town_temple
+F wall_town_wall
+G wall_stairs_up
+T wall_phlan_v01
+U wall_phlan_v03
+V wall_phlan_v05
+X wall_phlan_v07
+Y wall_phlan_v09
+Z wall_phlan_v10
+H wall_phlan_v02
+J wall_phlan_v04
+K wall_phlan_v06
+N wall_phlan_v08
+O wall_phlan_v11
+P wall_phlan_v12
+Q wall_phlan_v13
+R wall_phlan_v14
+S wall_phlan_v15

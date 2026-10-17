@@ -1,0 +1,26 @@
+#########################################
+#.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.#
+#.......................................#
+#.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.B.#
+#####W#######################I###########
+#####.#######################.###########
+#########################################
+object statue statue 6 2
+object idol statue -1 -1
+object lever lever_up 9 3
+object lever_pulled lever_down -1 -1
+item amulet 5 5
+item longbow 2 2
+item boots 4 2
+item wizard_hat 10 2
+item scroll 12 2
+item helmet 16 2
+item orichalcum_katana 18 2 2
+deco lantern 3 2
+deco lantern 9 2
+deco lantern 15 2
+deco lantern 21 2
+deco lantern 27 2
+item gem 29 5
+deco lantern 33 2
+deco lantern 39 2

@@ -1,0 +1,73 @@
+event 1,1 any
+  text sign "The cave. Press F to climb back up."
+
+event 1,1 any use
+  teleport demo 26 11
+
+event 7,5 any
+  text "Dead end. Something glitters."
+
+event 7,5 any use
+  if mapflag looted goto done
+  give gold 50
+  set mapflag looted
+  text "You found 50 gold!"
+  exit
+done:
+  text "Nothing here."
+
+# fire trap in the side passage
+event 3,3 any
+  if mapflag trap_sprung goto quiet
+  text "A jet of flame bursts from the wall!"
+  setchar 0
+  rnddamage fire 8
+  set mapflag trap_sprung
+  exit
+quiet:
+  text "Scorch marks cover the wall."
+
+# a hermit who trades gems for gold
+event 7,1 any
+  npc hermit "I found this in the deep. Give me 10 gold for a gem?" confirm deal
+  text "The hermit shrugs."
+  exit
+deal:
+  take gold 10
+  give gems 1
+  text "The hermit hands you a gem."
+
+# a fork in the passage: pick a character to drink
+event 5,5 any use
+  whowill drink "A spring bubbles here."
+  choose heal boost
+  text "You leave it alone."
+  exit
+heal:
+  set hpfull
+  text "Refreshing! Hit points restored."
+  exit
+boost:
+  give mighttmp 2
+  text "Your muscles tingle. Might +2."
+
+# lever: opens the wall at 3,2 and wakes a guardian; the lever prop flips by swapping two objects
+event 1,5 any use
+  if mapflag lever goto done
+  set mapflag lever
+  exchobj lever lever_pulled
+  altercell 3 2 .
+  spawn guardian 4 3
+  giveitem iron_dagger 2
+  text "The lever clanks down. A wall grinds open" "and a stone guardian wakes. You find an iron dagger."
+  exit
+done:
+  text "The lever is stuck."
+
+# a frozen shaft down to the ice cave
+event 5,5 any
+  text "Cold air rises from a shaft in the floor."
+
+event 5,5 any use
+  sound stairs
+  teleport icecave 1 1

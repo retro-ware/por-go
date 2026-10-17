@@ -28,3 +28,5 @@ decomp/emu/scratch/
 decomp/emu/out/
 .claude/settings.local.json
 .mcp.json
+/viewdump/
+/remaster/

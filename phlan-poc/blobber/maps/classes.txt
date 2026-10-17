@@ -1,0 +1,10 @@
+# Class table: id hp sp exp
+# hp and sp are gained per level (sp 0 = cannot cast); exp is the base of the level cost:
+# reaching level N+1 needs exp * N points. Curate freely; the ids are what scripts and the inn use.
+knight    10 0 100
+paladin   8  3 120
+archer    7  3 120
+cleric    6  5 110
+sorcerer  4  7 110
+robber    7  0 90
+monk      8  4 130

@@ -1,0 +1,44 @@
+#############################
+#..............##############
+#.##.###.#####.#............#
+#.#....#.#...#.#............#
+#.#.##.#.#...#.#..BBBM......#
+#...#....#...#.#.....MM.....#
+###.#.####.#.#.#......M.W...#
+#...#....#.#.........MM.W...#
+#.#...##.#.#.#.#............#
+#.####.#.....#.#............#
+#......#.###.#.#............#
+#.####.#.#...#.#............#
+#......#...#...##############
+#############################
+monster ice_giant 20 3
+monster red_dragon 22 8
+monster red_dragon 18 10
+monster ice_giant 24 5
+monster ice_giant 3 1
+monster red_dragon 10 7
+deco grass 10 3
+deco grass 11 4
+deco grass 12 3
+deco grass 11 3
+deco grass 8 7
+deco grass 1 10
+deco grass 3 10
+deco grass 1 7
+deco lantern 1 1
+deco lantern 8 12
+deco lantern 21 6
+deco firefly 10 4
+deco firefly 12 4
+deco firefly 11 5
+deco firefly 2 7
+deco firefly 4 10
+deco firefly 18 4
+deco firefly 25 9
+deco firefly 24 3
+item helmet 5 1
+item iron_shield 13 7
+monster electrical_centipede 8 11
+monster electrical_centipede 14 7
+monster electrical_centipede 1 12

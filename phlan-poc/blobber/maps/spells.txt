@@ -1,0 +1,9 @@
+# Spell table: id kind sp price power | Name | description
+# kind: heal (most wounded), healall (party), cure (clears every condition), light,
+# bolt (fast), fire (slow, wide). power is HP or damage.
+light     light   1  25   0  | Light      | brighter torch for a minute
+heal      heal    3  60  15  | Heal       | heals the most wounded 15 HP
+lightning bolt    4 120   8  | Lightning  | fast bolt, 8 damage
+cure      cure    4 100   0  | Cure       | cures poison, sleep and paralysis
+fireball  fire    6 200  14  | Fireball   | slow bolt, 14 damage
+healall   healall 8 300  10  | Mass Heal  | heals everyone 10 HP

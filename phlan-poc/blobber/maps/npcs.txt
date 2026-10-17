@@ -1,0 +1,11 @@
+# NPC registry: technical id, portrait id (from the shared portrait pool, ui/assets/portraits), display name.
+# Scripts refer to the id: npc merchant "A potion for 5 gold?"
+# ponytail: merchant..banker portraits are recoloured party portraits; replace with real art.
+merchant  merchant  Mara the Merchant
+hermit    hermit    Old Hermit
+priest    priest    Sister Alba
+smith     smith     Gorm the Smith
+innkeeper innkeeper Bess
+banker    banker    Master Coyne
+trainer   palman    Sir Aldric
+guildmage magelady  Archmage Vela

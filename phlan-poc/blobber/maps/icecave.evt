@@ -1,0 +1,24 @@
+event 1,1 any
+  text sign "The ice cave. Frost creeps over every wall. Press F to climb back up."
+
+event 1,1 any use
+  sound stairs
+  teleport cave 5 5
+
+# the giant's hoard, behind it in the inner chamber
+event 6,5 any
+  if mapflag hoard goto empty
+  text "A frozen chest sits in the ice."
+  exit
+empty:
+  text "The chest is empty."
+
+event 6,5 any use
+  if mapflag hoard goto empty
+  give gold 150
+  give gems 2
+  set mapflag hoard
+  text "You chip the chest free: 150 gold and 2 gems!"
+  exit
+empty:
+  text "The chest is empty."
