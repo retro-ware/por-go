@@ -19,8 +19,9 @@ Keys:
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
   clear       wall value -> boxes (x0, y0, x1, y1 in dump pixels) painted over with the wall colour in the
               reference: things the PoC draws elsewhere (Kuto's well hole and ladder: a prop, see cellprops)
-  cellprops   (x, y) -> [(prop|decal, texture, size, front)]: billboards (decal: lying on the floor) in the middle
-              of that square, or `front` ahead of its centre while the party stands on it (make_props.py)
+  cellprops   (x, y) -> [(kind, texture, numbers...)]: map lines placed in the middle of that square:
+              prop (size, front, sink) and well (half width, half depth, rim width, front), see host.go;
+              front: that far ahead of the centre while the party stands on it (make_props.py)
   props       wall value -> billboard texture: trees drawn where their trunks stand, not as faces (make_props.py)
   doors       (x, y, side) fixes to the original's data: sides made passable (one-way doors)
   nomap       wall values left off the minimap (objects the party walks through, like graves)
@@ -582,8 +583,8 @@ FLAGS = dict(  # texture flags of the new walls (by area)
     valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
     nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
     pyramid=dict(noseam={14}), kuto=dict(arch={8}, clear={8: [(72, 128, 150, 256), (30, 232, 194, 256)]},
-                     cellprops={(7, 7): [("decal", "floor_kuto_well", 0.4, 0.35),
-                                         ("prop", "prop_kuto_ladder", 0.5, 0.45)]}), kuto2=dict(noseam={2, 10}),
+                     cellprops={(7, 7): [("well", "floor_kuto_rim", 0.3, 0.12, 0.07, 0.37),
+                                         ("prop", "prop_kuto_ladder", 0.65, 0.42, 0.08)]}), kuto2=dict(noseam={2, 10}),
 )
 
 

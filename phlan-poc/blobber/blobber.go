@@ -76,11 +76,14 @@ type Object struct {
 	Size float64
 	At   *[2]float64 // phlan-poc: an exact floor position (a tree on a square's edge or corner) instead of the cell's centre
 	// phlan-poc: Front > 0: while the party stands on its square it stands this far in front of the square's
-	// centre, whichever way they face, as PoR paints a thing in its own square (Kuto's well); Flat: lies on
-	// the floor (a hole), Size its width
+	// centre, whichever way they face, as PoR paints a thing in its own square (Kuto's well)
 	Front float64
-	Flat  bool
+	Sink  float64     // phlan-poc: its foot this far below the floor (a ladder down a well)
+	Ring  *[3]float64 // phlan-poc: a hole in the floor: half width, half depth, rim width; Img is the rim's stones
 }
+
+// texBlack (phlan-poc) fills the opening of a Ring.
+var texBlack *ebiten.Image
 
 // Objects is the host-maintained list of objects on the current map.
 var Objects []*Object
@@ -1713,25 +1716,48 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			continue
 		}
 		b := o.Img.Bounds()
-		rx, rz, fx, fz := 1.0, 0.0, 0.0, 1.0 // flat: axis-aligned, unless it turns with us on our square
+		rx, rz, fx, fz := 1.0, 0.0, 0.0, 1.0 // a ring: axis-aligned, unless it turns with us on our square
 		if o.Front > 0 && o.At != nil {
 			px, pz := math.Floor(c.x+c.fwx*eyeBack), math.Floor(c.z+c.fwz*eyeBack) // the party's cell
 			if ox == px+0.5 && oz == pz+0.5 {
 				ox, oz, rx, rz, fx, fz = ox+c.fwx*o.Front, oz+c.fwz*o.Front, c.rtx, c.rtz, c.fwx, c.fwz
 			}
 		}
-		if o.Flat { // texture top towards the far side; width Size, depth by the texture's aspect
-			hw, hd := o.Size/2, o.Size*float64(b.Dy())/float64(b.Dx())/2
-			f := q(vert{ox - rx*hw + fx*hd, 0.5, oz - rz*hw + fz*hd, 0, 0, 0, 0, 0}, vert{ox + rx*hw + fx*hd, 0.5, oz + rz*hw + fz*hd, 1, 0, 0, 0, 0},
-				vert{ox + rx*hw - fx*hd, 0.5, oz + rz*hw - fz*hd, 1, 1, 0, 0, 0}, vert{ox - rx*hw - fx*hd, 0.5, oz - rz*hw - fz*hd, 0, 1, 0, 0, 0}, o.Img, 1)
-			f.pass = 1
+		if r := o.Ring; r != nil { // an oval hole: black inside, the rim's stones laid around it (tiled, not stretched)
+			if texBlack == nil {
+				texBlack = ebiten.NewImage(4, 4)
+				texBlack.Fill(color.Black)
+			}
+			const n = 36
+			at := func(i int, ext float64) (float64, float64) {
+				t := 2 * math.Pi * float64(i) / n
+				a, d := (r[0]-r[2]+ext)*math.Cos(t), (r[1]-r[2]+ext)*math.Sin(t)
+				return ox + rx*a + fx*d, oz + rz*a + fz*d
+			}
+			tile := r[2] * float64(b.Dx()) / float64(b.Dy()) // one strip's length along the rim at its aspect
+			u := 0.0
+			for i := 0; i < n; i++ {
+				x0, z0 := at(i, 0)
+				x1, z1 := at(i+1, 0)
+				X0, Z0 := at(i, r[2])
+				X1, Z1 := at(i+1, r[2])
+				f := q(vert{ox, 0.5, oz, 0, 0, 0, 0, 0}, vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z1, 0, 0, 0, 0, 0},
+					vert{ox, 0.5, oz, 0, 0, 0, 0, 0}, texBlack, 1)
+				f.pass, f.mode = 1, modeUnlit
+				du := math.Hypot((X1+x1-X0-x0)/2, (Z1+z1-Z0-z0)/2) / tile
+				f = q(vert{x0, 0.5, z0, u, 0, 0, 0, 0}, vert{x1, 0.5, z1, u + du, 0, 0, 0, 0},
+					vert{X1, 0.5, Z1, u + du, 1, 0, 0, 0}, vert{X0, 0.5, Z0, u, 1, 0, 0, 0}, o.Img, 1)
+				f.pass = 1
+				u += du
+			}
 			continue
 		}
 		k := o.Size / math.Max(float64(b.Dx()), float64(b.Dy()))
 		wid, hgt := k*float64(b.Dx()), k*float64(b.Dy())
 		hx, hz := c.rtx*wid/2, c.rtz*wid/2
-		q(vert{ox - hx, 0.5 - hgt, oz - hz, 0, 0, 0, 0, 0}, vert{ox + hx, 0.5 - hgt, oz + hz, 1, 0, 0, 0, 0},
-			vert{ox + hx, 0.5, oz + hz, 1, 1, 0, 0, 0}, vert{ox - hx, 0.5, oz - hz, 0, 1, 0, 0, 0}, o.Img, 1)
+		y := 0.5 + o.Sink
+		q(vert{ox - hx, y - hgt, oz - hz, 0, 0, 0, 0, 0}, vert{ox + hx, y - hgt, oz + hz, 1, 0, 0, 0, 0},
+			vert{ox + hx, y, oz + hz, 1, 1, 0, 0, 0}, vert{ox - hx, y, oz - hz, 0, 1, 0, 0, 0}, o.Img, 1)
 	}
 	// monsters paint over the side walls of their own cell (a wide one would vanish into them); against
 	// walls facing us they sort by true depth, so a corner in front of them hides them

@@ -817,5 +817,5 @@ face 15 15 1 wall_graveyard_v14
 edge 15 15 1
 face 15 15 2 wall_graveyard_v14
 edge 15 15 2
-decal floor_kuto_well 7.5 7.5 0.4 0.35
-prop prop_kuto_ladder 7.5 7.5 0.5 0.45
+well floor_kuto_rim 7.5 7.5 0.3 0.12 0.07 0.37
+prop prop_kuto_ladder 7.5 7.5 0.65 0.42 0.08

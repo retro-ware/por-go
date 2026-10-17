@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Remaster pipeline: free-standing props drawn as billboards instead of wall faces (see make_map.py "props").
-  python3 make_props.py [NAME...] [finish]   (NAME: tree, well; default all)
+  python3 make_props.py [NAME...] [finish]   (NAME: tree, ladder, rim; default all)
 Nomad Camp trees: PoR paints them onto walls (a tree at a face's left, or halves at its edges that join across
 faces); the PoC stands one tree sprite wherever a tree's trunk is. The reference is the original's one whole tree
 (WALLDEF7-007-2-wall1, nomad wall 6), cropped and centred; writes blobber/assets/walls/prop_nomad_tree.png.
 Kuto's Well: the well hole and its ladder, which PoR paints on every wall of the well room, stand once in the
-room (areas.py "cellprops"): the hole as a flat oval on the floor, the ladder upright at its far rim; references
-are parts of kuto wall 8."""
+room (areas.py "cellprops"): the hole is drawn by the engine (an oval opening with the rim's stones laid around
+it), the ladder stands down in it at the far side; references are parts of kuto wall 8."""
 import importlib.util, io, sys
 from pathlib import Path
 import numpy as np
@@ -25,19 +25,18 @@ TREE = ("Game sprite on a flat solid magenta (#FF00FF) background: one single ta
           "is centred and fills the image height; nothing else, no ground, no shadow, no grass, the magenta "
           "background is perfectly flat and fills everything around the tree. Painterly high-fantasy game art with "
           "modern detail, faithful to the reference's shape and colours.")
-HOLE = ("Game texture on a flat solid magenta (#FF00FF) background, seen straight down from directly above: the "
-        "opening of an old village well shaft in the ground, a very flat wide oval, about two and a half times as wide as it is tall, exactly the oval of the reference, a flat "
-        "ring of grey fieldstones set level with the ground around a pitch-black bottomless hole, and the top rungs "
-        "and rails of a rusty iron ladder at the top (far) side of the hole going down into the darkness. Strictly "
-        "top-down, no perspective, no walls, no shadow outside the ring; the oval fills the image width with a small "
-        "magenta margin all round. Painterly high-fantasy game art with modern detail, colours like the reference.")
 LADDER = ("Game sprite on a flat solid magenta (#FF00FF) background: one straight rusty iron ladder standing "
           "perfectly upright, seen from the front, two round rails and seven evenly spaced rungs, the bottom ends of "
           "the rails at the lower edge. Nothing else, no ground, no wall, no shadow, a small magenta margin at the "
           "top and the sides. Painterly high-fantasy game art with modern detail, colours like the reference.")
+RIM = ("Game texture on a flat solid magenta (#FF00FF) background: one single straight horizontal row of rounded grey "
+       "fieldstone blocks set side by side with dark mortar joints and a little moss, seen straight down from above, "
+       "like the stone rim of a well laid out straight. The row runs the full width of the image from the left edge "
+       "to the right edge and must tile seamlessly left to right; it is about a sixth of the image tall, centred "
+       "vertically, flat magenta above and below. Painterly high-fantasy game art with modern detail.")
 # name -> (texture, area, wall value, share of the dump's rows the reference starts at, prompt)
-PROPS = {"tree": ("prop_nomad_tree", "nomad", 6, 0.0, TREE), "hole": ("floor_kuto_well", "kuto", 8, 0.9, HOLE),
-         "ladder": ("prop_kuto_ladder", "kuto", 8, 0.5, LADDER)}
+PROPS = {"tree": ("prop_nomad_tree", "nomad", 6, 0.0, TREE), "ladder": ("prop_kuto_ladder", "kuto", 8, 0.5, LADDER),
+         "rim": ("floor_kuto_rim", "kuto", 8, 0.9, RIM)}
 
 
 def reference(area, v, top):
@@ -57,26 +56,20 @@ def reference(area, v, top):
     return b.getvalue()
 
 
-def oval():
-    """The hole's reference, drawn: the 2:1 oval it must have (the model draws a round one from the original's art)."""
-    from PIL import ImageDraw
-    ref = Image.new("RGB", (1536, 1024), (255, 0, 255))
-    d = ImageDraw.Draw(ref)
-    d.ellipse((88, 332, 1448, 692), fill=(140, 140, 140))  # 2.4:1, what fits the floor in front of the wall (the model still draws ~1.6:1)
-    d.ellipse((168, 372, 1368, 652), fill=(0, 0, 0))
-    for x in (700, 836):  # the ladder's rails at the far side
-        d.line((x, 366, x, 470), fill=(120, 70, 40), width=14)
-    for y in (392, 430, 466):
-        d.line((700, y, 836, y), fill=(120, 70, 40), width=10)
-    b = io.BytesIO()
-    ref.save(b, "PNG")
-    return b.getvalue()
-
-
 def finish(name):
     im = rw.key_out((RAW / f"{name}_openai.png").read_bytes(), "magenta")
+    if name == "rim":  # the well's rim, laid around the hole by the engine: the row, cut at two mortar joints
+        a = np.asarray(im)
+        rows = np.nonzero((a[..., 3] > 0).mean(axis=1) > 0.9)[0]
+        a = a[rows.min():rows.max() + 1]
+        lum = a[..., :3].mean(axis=(0, 2))
+        w = a.shape[1]
+        x0 = int(np.argmin(lum[: w // 4]))
+        x1 = w * 3 // 4 + int(np.argmin(lum[w * 3 // 4:]))
+        Image.fromarray(a[:, x0:x1]).save(OUT / f"{PROPS[name][0]}.png")
+        return
     a = np.asarray(im)
-    ys, xs = np.nonzero(a[..., 3] > 0)
+    ys, xs = np.nonzero(a[..., 3] > 30)  # key-out leaves a faint fringe that would pad the sprite
     im = im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))  # trunk on the bottom edge
     k = 512 / max(im.size)
     im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS).save(OUT / f"{PROPS[name][0]}.png")
@@ -88,7 +81,7 @@ if __name__ == "__main__":
     for n in names:
         if "finish" not in args:
             RAW.mkdir(parents=True, exist_ok=True)
-            ref = oval() if n == "hole" else reference(*PROPS[n][1:4])
+            ref = reference(*PROPS[n][1:4])
             (RAW / f"{n}_reference.png").write_bytes(ref)
-            (RAW / f"{n}_openai.png").write_bytes(rw.openai(PROPS[n][4], ref, "1536x1024" if n == "hole" else "1024x1024"))
+            (RAW / f"{n}_openai.png").write_bytes(rw.openai(PROPS[n][4], ref))
         finish(n)

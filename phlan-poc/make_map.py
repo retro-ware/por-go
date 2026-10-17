@@ -121,8 +121,8 @@ def main():
     extra += [f"water {x} {y}" for x, y in sorted(water)]
     extra += [f"pond {x} {y}" for x, y in sorted(ponds)]
     for (x, y), things in A.get("cellprops", {}).items():
-        for i, (kind, tex, size, front) in enumerate(things):
-            props[x + 0.5, y + 0.5, i] = f"{kind} {tex} {x + 0.5} {y + 0.5} {size} {front}"
+        for i, (kind, tex, *nums) in enumerate(things):
+            props[x + 0.5, y + 0.5, i] = " ".join(map(str, [kind, tex, x + 0.5, y + 0.5, *nums]))
     extra += [props[k] for k in sorted(props)]
     lines = ["." * 16] * 16 + [f"floor {A['floor']}", f"ceiling {A['ceiling']}"] + extra
     (HERE / f"blobber/maps/{NAME}.map").write_text("\n".join(lines) + "\n")
