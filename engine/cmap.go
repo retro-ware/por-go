@@ -320,8 +320,15 @@ func (e *Engine) hitColours(slot int) {
 
 // drawHitFrame / restoreHitFrame = 0464:0D71 with DS:6E36 (mode 5) and
 // DS:4A24 (mode 0).
-func (e *Engine) drawHitFrame(f, x, y int) { e.drawPage(x, y, e.spr, f, true, true) }
-func (e *Engine) restoreHitFrame(x, y int) { e.restoreUnder(x, y, e.spr) }
+func (e *Engine) drawHitFrame(f, x, y int) {
+	e.showEffect(x, y, f, e.spr)
+	e.drawPage(x, y, e.spr, f, true, true)
+}
+
+func (e *Engine) restoreHitFrame(x, y int) {
+	e.hideEffect(x, y)
+	e.restoreUnder(x, y, e.spr)
+}
 
 // combatViewEnter = ovr32:0105 / combatViewLeave = ovr32:00E3: the EGA
 // palette entries 0 and 8 swap for the combat screen (EGA only, DS:4A1E == 1).
@@ -372,6 +379,7 @@ func (e *Engine) drawOccupant(x, y int) {
 	}
 	c := e.combatant(idx)
 	if c != nil && e.combatOnScreen(c, false) {
+		e.unitDrawn(int(idx), 0)
 		e.drawIcon(int(e.combatScreenX[idx]), int(e.combatScreenY[idx]), c.Combat.Facing, 0, c.Order)
 	}
 }
@@ -385,6 +393,7 @@ func (e *Engine) eraseCursor(x, y int) {
 // combatRedrawMap = ovr32:03A0: rebuild the occupancy grid (DS:60DB).
 func (e *Engine) combatRedrawMap() {
 	e.occ = [25][50]byte{}
+	clear(e.snap.hidden)
 	for i := 1; i <= e.ncomb; i++ {
 		p := e.cpos[i]
 		if p.size == 0 {
@@ -516,6 +525,7 @@ func (e *Engine) combatCentre(x, y, r, dir int) {
 		for i := 1; i <= e.ncomb; i++ {
 			c := e.combatant(byte(i))
 			if c != nil && c.Okay != 0 && e.cpos[i].size > 0 && e.combatOnScreen(c, false) {
+				e.unitDrawn(i, 0)
 				e.drawIcon(int(e.combatScreenX[i]), int(e.combatScreenY[i]), c.Combat.Facing, 0, c.Order)
 			}
 		}
@@ -540,7 +550,11 @@ func (e *Engine) combatTurn(c *Character, dir, pose byte, hide bool) {
 		e.combatClearIcon(0, 0, idx)
 	}
 	c.Combat.Facing = dir
+	if hide {
+		e.unitHidden(idx)
+	}
 	if !hide && e.combatOnScreen(c, true) {
+		e.unitDrawn(idx, pose)
 		e.drawIcon(int(e.combatScreenX[idx]), int(e.combatScreenY[idx]), dir, pose, c.Order)
 		e.Flip()
 	}

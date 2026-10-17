@@ -49,6 +49,7 @@ type Presenter struct {
 	menuImg *gpu.Image                  // the vertical menu, drawn at scale 1
 	menuBuf []byte                      // its pixels
 	battle  battle.Presenter            // the combat map in 3D
+	mapBottom int // screen rows above this are the 3D map
 	fight   bool                        // the last frame was the 3D combat map
 }
 
@@ -60,6 +61,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		p.shown, p.active, p.menu = "", false, false
 		p.battle.Draw(dst, v.Battle)
 		frame, k := p.Classic.Frame(scr, note), scale(dst)
+		p.mapBottom = dst.Bounds().Dy() - int(k)*8*3 // the text rows under the map take clicks themselves
 		if v.Menu == nil { // typed input, "press a key": the original's two rows
 			p.battle.HideBar()
 			p.drawRows(dst, frame, engine.CombatRows, k)
@@ -216,6 +218,14 @@ func (p *Presenter) Click(x, y int) (uint16, bool) {
 	}
 	k, ok := p.battle.Click(x, y)
 	return uint16(k), ok
+}
+
+// Square is the combat map square a click at screen pixel (x, y) hits.
+func (p *Presenter) Square(x, y int) (int, int, bool) {
+	if !p.fight || y >= p.mapBottom {
+		return 0, 0, false
+	}
+	return p.battle.Pick(x, y)
 }
 
 // Switched tells the presenter the window changed modes: a question still

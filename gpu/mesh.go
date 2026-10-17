@@ -48,12 +48,27 @@ type Mat4 [16]float32
 // Ident is the identity matrix.
 var Ident = Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
 
+// MeshBlend is how a mesh meets what is drawn: opaque (alpha-tested,
+// lit), or blended unlit and without writing depth.
+type MeshBlend int
+
+const (
+	MeshOpaque MeshBlend = iota
+	MeshAlpha            // over what is there (shadows)
+	MeshAdd              // added to it (glows, sparks)
+)
+
 // MeshOptions are DrawMesh's options.
 type MeshOptions struct {
-	Model   Mat4       // zero means Ident
-	Light   [3]float32 // direction toward the light
-	Ambient float32    // light on faces turned away
-	Tint    [4]float32 // zero means white
+	Model      Mat4       // zero means Ident
+	Light      [3]float32 // direction toward the sun
+	Ambient    float32    // the sky's share of the light
+	Tint       [4]float32 // zero means white
+	Eye        [3]float32 // the camera, for highlights
+	Spec       float32    // highlight strength (0: matte)
+	Point      [4]float32 // a point light: position, radius (0: none)
+	PointColor [4]float32 // its colour, intensity
+	Blend      MeshBlend
 }
 
 // ClearDepth starts the image's depth buffer afresh for the next meshes.
@@ -89,8 +104,15 @@ func (i *Image) DrawMesh(m *Mesh, tex *Image, viewProj Mat4, op *MeshOptions) {
 	b = appendF32(b, op.Light[0], op.Light[1], op.Light[2], op.Ambient)
 	b = appendF32(b, tint[:]...)
 	b = appendF32(b, float32(tex.r.Min.X)/tw, float32(tex.r.Min.Y)/th, float32(tex.r.Dx())/tw, float32(tex.r.Dy())/th)
+	b = appendF32(b, op.Eye[0], op.Eye[1], op.Eye[2], op.Spec)
+	b = appendF32(b, op.Point[:]...)
+	b = appendF32(b, op.PointColor[:]...)
 	p := passOn(i.t, true)
-	p.SetPipeline(pipes.mesh)
+	if op.Blend == MeshOpaque {
+		p.SetPipeline(pipes.mesh)
+	} else {
+		p.SetPipeline(pipes.meshBlend[op.Blend])
+	}
 	p.SetViewport(gputypes.Viewport{X: float32(i.r.Min.X), Y: float32(i.r.Min.Y), Width: float32(i.r.Dx()), Height: float32(i.r.Dy()), MaxDepth: 1})
 	p.SetScissorRect(gputypes.ScissorRect{X: uint32(i.r.Min.X), Y: uint32(i.r.Min.Y), Width: uint32(i.r.Dx()), Height: uint32(i.r.Dy())})
 	bindUniforms(p, b)

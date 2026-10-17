@@ -1,6 +1,8 @@
 package battle
 
 import (
+	"image"
+	"image/color"
 	"math"
 
 	"gpu"
@@ -12,76 +14,142 @@ import (
 // rows, Y up. Walls are one square tall.
 
 const (
-	atlasCols = 16 // tiles per atlas row (256 tiles: 16 rows)
+	atlasCols = 16 // tiles per atlas row
+	atlasRows = 17 // the game's 256 tiles, then a row of our own
 	tilePx    = 24 // a tile's side in pixels
-	wallTile  = 3  // the plain stone wall (the others are pieces): every wall block's faces
-	lastPiece = 24 // tiles 1..lastPiece: the wall's sides as the original paints them in perspective
+	wallSlot  = 256
+	floorSlot = 257
 )
 
-// mapMesh builds the floor and the wall blocks, textured from the tile
-// atlas: floors show their square's own tile, blocks the plain stone wall
-// on every face (the original's wall pieces have its perspective drawn in;
-// a block is what they draw).
-func mapMesh(g *[25][50]engine.Square) []gpu.MeshVertex {
-	wall := func(x, z int) bool { return x >= 0 && z >= 0 && x < 50 && z < 25 && g[z][x].Wall }
-	floor := plainFloor(g)
+// kind is how a square stands in the world.
+type kind int
+
+const (
+	plain kind = iota // the floor alone
+	block             // a stone wall block
+	stand             // a tree, a cactus, a boulder: its tile extruded upright
+	flat              // water, a body, grass: its tile lying on the floor
+)
+
+// kindOf decides from the square and its tile set: dungeon walls are
+// blocks (their pieces only draw the block in the original's perspective,
+// so other dungeon squares are floor); outdoors, what blocks sight stands
+// up and the rest lies flat.
+func kindOf(s engine.Square, dungeon bool, empty func(int) bool) kind {
+	switch {
+	case dungeon && s.Tile < engine.DungeonTiles:
+		if s.Wall {
+			return block
+		}
+		return plain
+	case empty(s.Tile):
+		return plain
+	case s.Wall && s.Height > 0:
+		return stand
+	}
+	return flat
+}
+
+// mapMesh builds the whole map as one mesh over the atlas: the floor with
+// corner occlusion, the blocks, and the outdoor things.
+func mapMesh(g *[25][50]engine.Square, dungeon bool, empty func(int) bool, tiles []image.Image) []gpu.MeshVertex {
+	kinds := [25][50]kind{}
+	for z := range g {
+		for x := range g[z] {
+			kinds[z][x] = kindOf(g[z][x], dungeon, empty)
+		}
+	}
+	solid := func(x, z int) bool { return x >= 0 && z >= 0 && x < 50 && z < 25 && kinds[z][x] == block }
+	// occlusion of the floor corner at grid point (x, z): blocks among its four squares
+	ao := func(x, z int) float32 {
+		n := 0
+		for _, d := range [4][2]int{{-1, -1}, {0, -1}, {-1, 0}, {0, 0}} {
+			if solid(x+d[0], z+d[1]) {
+				n++
+			}
+		}
+		return 1 - 0.22*float32(n)
+	}
+	up := [3]float32{0, 1, 0}
 	var vs []gpu.MeshVertex
 	for z := range 25 {
 		for x := range 50 {
-			s := g[z][x]
 			fx, fz := float32(x), float32(z)
-			if !s.Wall {
-				t := s.Tile
-				if t <= lastPiece { // a painted wall side: the blocks show it now
-					t = floor
+			k := kinds[z][x]
+			if k != block {
+				vs = shade(quad(vs, [4][3]float32{{fx, 0, fz + 1}, {fx + 1, 0, fz + 1}, {fx + 1, 0, fz}, {fx, 0, fz}}, tileUV(floorSlot), up),
+					ao(x, z+1), ao(x+1, z+1), ao(x+1, z), ao(x, z))
+			}
+			switch k {
+			case flat:
+				const y = 0.005 // just over the floor
+				vs = quad(vs, [4][3]float32{{fx, y, fz + 1}, {fx + 1, y, fz + 1}, {fx + 1, y, fz}, {fx, y, fz}}, tileUV(g[z][x].Tile), up)
+			case stand:
+				uv := tileUV(g[z][x].Tile)
+				u0, v0, du, dv := uv[3][0], uv[3][1], uv[1][0]-uv[3][0], uv[1][1]-uv[3][1]
+				for _, v := range extrude(tiles[g[z][x].Tile]) {
+					v.X, v.Y, v.Z = v.X+fx+.5, v.Y+.5, v.Z+fz+.5
+					v.U, v.V = u0+v.U*du, v0+v.V*dv
+					vs = append(vs, v)
 				}
-				vs = quad(vs, [4][3]float32{{fx, 0, fz + 1}, {fx + 1, 0, fz + 1}, {fx + 1, 0, fz}, {fx, 0, fz}}, tileUV(t), [3]float32{0, 1, 0})
-				continue
-			}
-			side := tileUV(wallTile)
-			vs = quad(vs, [4][3]float32{{fx, 1, fz + 1}, {fx + 1, 1, fz + 1}, {fx + 1, 1, fz}, {fx, 1, fz}}, side, [3]float32{0, 1, 0})
-			if !wall(x, z+1) { // south
-				vs = quad(vs, [4][3]float32{{fx, 0, fz + 1}, {fx + 1, 0, fz + 1}, {fx + 1, 1, fz + 1}, {fx, 1, fz + 1}}, side, [3]float32{0, 0, 1})
-			}
-			if !wall(x, z-1) { // north
-				vs = quad(vs, [4][3]float32{{fx + 1, 0, fz}, {fx, 0, fz}, {fx, 1, fz}, {fx + 1, 1, fz}}, side, [3]float32{0, 0, -1})
-			}
-			if !wall(x+1, z) { // east
-				vs = quad(vs, [4][3]float32{{fx + 1, 0, fz + 1}, {fx + 1, 0, fz}, {fx + 1, 1, fz}, {fx + 1, 1, fz + 1}}, side, [3]float32{1, 0, 0})
-			}
-			if !wall(x-1, z) { // west
-				vs = quad(vs, [4][3]float32{{fx, 0, fz}, {fx, 0, fz + 1}, {fx, 1, fz + 1}, {fx, 1, fz}}, side, [3]float32{-1, 0, 0})
+			case block:
+				side := tileUV(wallSlot)
+				vs = quad(vs, [4][3]float32{{fx, 1, fz + 1}, {fx + 1, 1, fz + 1}, {fx + 1, 1, fz}, {fx, 1, fz}}, side, up)
+				// sides: darker toward the floor (occlusion where wall meets ground)
+				if !solid(x, z+1) {
+					vs = shade(quad(vs, [4][3]float32{{fx, 0, fz + 1}, {fx + 1, 0, fz + 1}, {fx + 1, 1, fz + 1}, {fx, 1, fz + 1}}, side, [3]float32{0, 0, 1}), .65, .65, 1, 1)
+				}
+				if !solid(x, z-1) {
+					vs = shade(quad(vs, [4][3]float32{{fx + 1, 0, fz}, {fx, 0, fz}, {fx, 1, fz}, {fx + 1, 1, fz}}, side, [3]float32{0, 0, -1}), .65, .65, 1, 1)
+				}
+				if !solid(x+1, z) {
+					vs = shade(quad(vs, [4][3]float32{{fx + 1, 0, fz + 1}, {fx + 1, 0, fz}, {fx + 1, 1, fz}, {fx + 1, 1, fz + 1}}, side, [3]float32{1, 0, 0}), .65, .65, 1, 1)
+				}
+				if !solid(x-1, z) {
+					vs = shade(quad(vs, [4][3]float32{{fx, 0, fz}, {fx, 0, fz + 1}, {fx, 1, fz + 1}, {fx, 1, fz}}, side, [3]float32{-1, 0, 0}), .65, .65, 1, 1)
+				}
 			}
 		}
 	}
 	return vs
 }
 
-// plainFloor is the map's most common walkable tile.
-func plainFloor(g *[25][50]engine.Square) int {
-	n := map[int]int{}
-	best := 0
-	for z := range g {
-		for _, s := range g[z] {
-			if !s.Wall {
-				if n[s.Tile]++; n[s.Tile] > n[best] {
-					best = s.Tile
-				}
-			}
-		}
+// shade darkens the last quad's corners (in quad order) by a, b, c, d.
+func shade(vs []gpu.MeshVertex, a, b, c, d float32) []gpu.MeshVertex {
+	q := vs[len(vs)-6:]
+	for i, k := range [6]float32{a, b, c, a, c, d} {
+		q[i].R, q[i].G, q[i].B = k, k, k
 	}
-	return best
+	return vs
 }
 
-// tileUV is tile t's corners in the atlas, in quad order: bottom left,
-// bottom right, top right, top left (half a texel in, so nearest sampling
-// never reaches the neighbour).
+// tileUV is atlas slot t's corners in quad order: bottom left, bottom
+// right, top right, top left (a hair inside, so nearest sampling never
+// reaches the neighbour).
 func tileUV(t int) [4][2]float32 {
-	const n = atlasCols * tilePx
-	const in = 0.5 / n
-	u0, v0 := float32(t%atlasCols*tilePx)/n+in, float32(t/atlasCols*tilePx)/n+in
-	u1, v1 := u0+tilePx/float32(n)-2*in, v0+tilePx/float32(n)-2*in
+	const w, h = atlasCols * tilePx, atlasRows * tilePx
+	const in = 0.01
+	u0, v0 := (float32(t%atlasCols*tilePx)+in)/w, (float32(t/atlasCols*tilePx)+in)/h
+	u1, v1 := u0+(tilePx-2*in)/w, v0+(tilePx-2*in)/h
 	return [4][2]float32{{u0, v1}, {u1, v1}, {u1, v0}, {u0, v0}}
+}
+
+// floorTile is the ground's texture: its colour with a little grain, and
+// a faint edge so the squares read (a pixel darker all round).
+func floorTile(c color.RGBA) *image.RGBA {
+	im := image.NewRGBA(image.Rect(0, 0, tilePx, tilePx))
+	for y := range tilePx {
+		for x := range tilePx {
+			h := uint32(x/2*73856093^y/2*19349663) % 97 // 2x2 grain, the same every square
+			k := 0.94 + float64(h)/97*0.1
+			if x == 0 || y == 0 || x == tilePx-1 || y == tilePx-1 {
+				k *= 0.82
+			}
+			f := func(v uint8) uint8 { return uint8(min(255, float64(v)*k)) }
+			im.SetRGBA(x, y, color.RGBA{f(c.R), f(c.G), f(c.B), 255})
+		}
+	}
+	return im
 }
 
 // box is a unit box: X and Z -0.5..0.5, Y 0..1.
@@ -121,19 +189,50 @@ func perspective(fovy, aspect, near, far float32) gpu.Mat4 {
 	return gpu.Mat4{f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, far / (near - far), -1, 0, 0, near * far / (near - far), 0}
 }
 
-// lookAt is the view from eye toward at, Y up.
-func lookAt(eye, at [3]float32) gpu.Mat4 {
-	sub := func(a, b [3]float32) [3]float32 { return [3]float32{a[0] - b[0], a[1] - b[1], a[2] - b[2]} }
-	cross := func(a, b [3]float32) [3]float32 {
-		return [3]float32{a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]}
+type vec [3]float64
+
+func (a vec) sub(b vec) vec     { return vec{a[0] - b[0], a[1] - b[1], a[2] - b[2]} }
+func (a vec) add(b vec) vec     { return vec{a[0] + b[0], a[1] + b[1], a[2] + b[2]} }
+func (a vec) mul(k float64) vec { return vec{a[0] * k, a[1] * k, a[2] * k} }
+func (a vec) dot(b vec) float64 { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2] }
+func (a vec) norm() vec         { return a.mul(1 / math.Sqrt(a.dot(a))) }
+func (a vec) cross(b vec) vec {
+	return vec{a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]}
+}
+
+// camera is a view of the map: where from, toward what, how wide.
+type camera struct {
+	eye, at vec
+	fovy    float64
+	aspect  float64
+}
+
+// basis is the camera's right, up and forward directions.
+func (c camera) basis() (r, u, f vec) {
+	f = c.at.sub(c.eye).norm()
+	r = f.cross(vec{0, 1, 0}).norm()
+	return r, r.cross(f), f
+}
+
+func (c camera) viewProj() gpu.Mat4 {
+	r, u, f := c.basis()
+	z := f.mul(-1)
+	e := c.eye
+	view := gpu.Mat4{float32(r[0]), float32(u[0]), float32(z[0]), 0, float32(r[1]), float32(u[1]), float32(z[1]), 0,
+		float32(r[2]), float32(u[2]), float32(z[2]), 0, float32(-r.dot(e)), float32(-u.dot(e)), float32(-z.dot(e)), 1}
+	return mul(perspective(float32(c.fovy), float32(c.aspect), 0.1, 200), view)
+}
+
+// pick is the map square under screen point (nx, ny) in -1..1 (y up), on
+// the floor; ok is false off the map.
+func (c camera) pick(nx, ny float64) (x, z int, ok bool) {
+	r, u, f := c.basis()
+	t := math.Tan(c.fovy / 2)
+	d := f.add(r.mul(nx * t * c.aspect)).add(u.mul(ny * t))
+	if d[1] >= 0 {
+		return 0, 0, false
 	}
-	dot := func(a, b [3]float32) float32 { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2] }
-	norm := func(a [3]float32) [3]float32 {
-		l := float32(math.Sqrt(float64(dot(a, a))))
-		return [3]float32{a[0] / l, a[1] / l, a[2] / l}
-	}
-	z := norm(sub(eye, at))
-	x := norm(cross([3]float32{0, 1, 0}, z))
-	y := cross(z, x)
-	return gpu.Mat4{x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot(x, eye), -dot(y, eye), -dot(z, eye), 1}
+	p := c.eye.add(d.mul(-c.eye[1] / d[1]))
+	x, z = int(math.Floor(p[0])), int(math.Floor(p[2]))
+	return x, z, x >= 0 && z >= 0 && x < 50 && z < 25
 }

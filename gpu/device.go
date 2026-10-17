@@ -72,7 +72,7 @@ func attachSurface(target wgpu.SurfaceTargetUnsafe) error {
 			}
 		}
 	}
-	pipes.blit, err = newPipeline(pipeSpec{"present", blitWGSL, []*wgpu.BindGroupLayout{dev.texLayout}, nil, nil, dev.format, false})
+	pipes.blit, err = newPipeline(pipeSpec{"present", blitWGSL, []*wgpu.BindGroupLayout{dev.texLayout}, nil, nil, dev.format, false, "", false})
 	return err
 }
 

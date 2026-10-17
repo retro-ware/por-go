@@ -1,7 +1,9 @@
-// Package battle draws the combat map as a 3D tabletop: wall blocks in the
-// original's tiles, figurines extruded from the combat icons on pedestals
-// (blue for the party, red for its enemies), under a camera that turns in
-// eighths like XCOM's. It only reads engine.Battle.
+// Package battle draws the combat map as a tabletop: the map is a board
+// on a wooden table, dungeon walls are stone blocks, outdoor things stand
+// or lie on it, and the combatants are figurines extruded from their combat
+// icons on round painted bases (blue for the party, red for its enemies).
+// The camera turns in eighths like XCOM's. It only reads engine.Battle:
+// what it shows is what the original shows, in 3D.
 package battle
 
 import (
@@ -9,6 +11,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"math/rand/v2"
 	"time"
 
 	"gpu"
@@ -18,104 +21,264 @@ import (
 
 // Presenter keeps the GPU side of one combat map.
 type Presenter struct {
-	white  *gpu.Image
-	atlas  *gpu.Image
-	tiles  [atlasCols * atlasCols]image.Image // the tiles the atlas holds
-	ground [25][50]engine.Square              // the squares the map mesh shows
-	mesh   *gpu.Mesh
-	box    *gpu.Mesh
-	figs   map[image.Image]*figure // ponytail: never evicted; a few dozen icons a game
-	bar    bar
+	white, atlas, shadow, wood *gpu.Image
+	tiles                      [256]image.Image // the tiles the atlas holds
+	empty                      [256]bool        // tiles with nothing on the ground
+	floor                      color.RGBA
+	ground                     [25][50]engine.Square // the squares the meshes show
+	dungeon                    bool
+	board, shadows, table      *gpu.Mesh
+	box, base, flatQuad        *gpu.Mesh
+	figs                       map[image.Image]*figure // ponytail: never evicted; a few dozen pictures a game
+	bar                        bar
 
-	yaw, yawTo float64    // camera heading: 0 looks north, as the original's screen
-	at         [2]float64 // the square the camera looks at (eased)
-	last       time.Time
+	yaw, yawTo   float64 // camera heading: 0 looks north, as the original's screen
+	dist, distTo float64 // camera distance in squares
+	at           vec     // what the camera looks at (eased)
+	cam          camera  // the last frame's camera, for picking
+	screen       image.Rectangle
+	units        map[int]*[2]float64 // each unit's shown position (eased between squares)
+	sparks       []spark
+	last         time.Time
+	clock        float64 // seconds shown, for pulses
 }
 
 type figure struct {
 	mesh *gpu.Mesh
 	tex  *gpu.Image
+	glow [3]float32 // its average colour, for an effect's light and sparks
 }
 
-// Camera framing.
+// spark is a particle rising from a spell or a hit.
+type spark struct {
+	p, v      vec
+	life, max float64
+	col       [3]float32
+}
+
+// Framing and look.
 const (
-	pitch    = 0.75 // radians above the ground
-	distance = 12.0 // squares from what it looks at
-	pedestal = 0.08 // a pedestal's height
+	pitch     = 0.82 // camera radians above the board
+	minDist   = 5.0
+	maxDist   = 24.0
+	pedestal  = 0.09 // a base's height
+	boardEdge = 0.25 // how far the board stands above the table
 )
 
 var (
-	partyColour = [4]float32{0.25, 0.45, 1, 1}
-	enemyColour = [4]float32{0.9, 0.2, 0.15, 1}
-	markColour  = [4]float32{1, 0.8, 0.2, 1}
-	sun         = gpu.MeshOptions{Light: [3]float32{0.4, 1, 0.7}, Ambient: 0.55}
+	partyColour = [4]float32{0.22, 0.42, 0.95, 1}
+	enemyColour = [4]float32{0.88, 0.2, 0.14, 1}
+	cursorGlow  = [4]float32{1, 0.78, 0.2, 1}
+	markGlow    = [4]float32{0.25, 0.8, 0.85, 1} // the original frames choices in light cyan
+	hoverGlow   = [4]float32{0.45, 0.45, 0.45, 1}
+	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
-// Key turns the camera with [ and ]; it reports whether k was taken.
+// Key turns the camera with [ and ], zooms with - and =; it
+// reports whether k was taken.
 func (p *Presenter) Key(k uint16) bool {
-	switch k {
-	case '[':
+	p.initCamera()
+	switch {
+	case k == '[':
 		p.yawTo -= math.Pi / 4
-	case ']':
+	case k == ']':
 		p.yawTo += math.Pi / 4
+	case k == '-':
+		p.distTo = min(maxDist, p.distTo*1.15)
+	case k == '=':
+		p.distTo = max(minDist, p.distTo/1.15)
 	default:
 		return false
 	}
 	return true
 }
 
+func (p *Presenter) initCamera() {
+	if p.distTo == 0 {
+		p.dist, p.distTo = 12, 12
+	}
+}
+
+// Pick is the map square under screen pixel (x, y), as last drawn.
+func (p *Presenter) Pick(x, y int) (int, int, bool) {
+	r := p.screen
+	if r.Empty() || !image.Pt(x, y).In(r) {
+		return 0, 0, false
+	}
+	return p.cam.pick(2*float64(x-r.Min.X)/float64(r.Dx())-1, 1-2*float64(y-r.Min.Y)/float64(r.Dy()))
+}
+
 // Draw shows b on dst.
 func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
+	p.initCamera()
 	p.sync(b)
-	focus := [2]float64{float64(b.View.X) + 6, float64(b.View.Y) + 3.5}
+	dt := p.tick()
+
+	// where the eye goes: an effect, else the cursor, else whose turn it is
+	focus := vec{float64(b.View.X) + 6, 0, float64(b.View.Y) + 3.5}
 	for _, u := range b.Units {
 		if u.Active {
-			focus = unitCentre(u)
+			c := unitCentre(u)
+			focus = vec{c[0], 0, c[1]}
 		}
 	}
-	p.ease(focus)
+	if b.CursorOn {
+		focus = vec{float64(b.Cursor.X) + .5, 0, float64(b.Cursor.Y) + .5}
+	}
+	if n := len(b.Effects); n > 0 {
+		f := b.Effects[n-1]
+		focus = vec{f.X + .5, 0, f.Y + .5}
+	}
+	k := 1 - math.Exp(-dt*8)
+	p.yaw += (p.yawTo - p.yaw) * k
+	p.dist += (p.distTo - p.dist) * k
+	p.at = p.at.add(focus.sub(p.at).mul(k))
 
 	r := dst.Bounds()
-	at := [3]float32{float32(p.at[0]), 0, float32(p.at[1])}
-	h, s, c := distance*math.Cos(pitch), math.Sin(p.yaw), math.Cos(p.yaw)
-	eye := [3]float32{at[0] + float32(h*s), float32(distance * math.Sin(pitch)), at[2] + float32(h*c)}
-	vp := mul(perspective(0.8, float32(r.Dx())/float32(r.Dy()), 0.1, 200), lookAt(eye, at))
+	h := p.dist * math.Cos(pitch)
+	p.cam = camera{
+		eye:  vec{p.at[0] + h*math.Sin(p.yaw), p.dist * math.Sin(pitch), p.at[2] + h*math.Cos(p.yaw)},
+		at:   p.at,
+		fovy: 0.8, aspect: float64(r.Dx()) / float64(r.Dy()),
+	}
+	p.screen = r
+	vp := p.cam.viewProj()
+	eye := [3]float32{float32(p.cam.eye[0]), float32(p.cam.eye[1]), float32(p.cam.eye[2])}
+	light := gpu.MeshOptions{Light: sunDir, Ambient: 0.5, Eye: eye}
+	// an effect lights its surroundings in its own colour
+	var glows []*figure
+	for _, f := range b.Effects {
+		g := p.figure(f.Pic)
+		glows = append(glows, g)
+		light.Point = [4]float32{float32(f.X) + .5, 0.8, float32(f.Y) + .5, 3.5}
+		light.PointColor = [4]float32{g.glow[0], g.glow[1], g.glow[2], 1.6}
+	}
+	opts := func(model gpu.Mat4, tint [4]float32, spec float32) *gpu.MeshOptions {
+		o := light
+		o.Model, o.Tint, o.Spec = model, tint, spec
+		return &o
+	}
 
-	dst.Fill(color.RGBA{0x10, 0x10, 0x18, 0xFF})
+	dst.Fill(color.RGBA{0x0C, 0x0B, 0x0A, 0xFF})
 	dst.ClearDepth()
-	dst.DrawMesh(p.mesh, p.atlas, vp, &sun)
-	plate := func(x, z, side float32, tint [4]float32) {
-		op := sun
-		op.Model, op.Tint = place(x, 0, z, 0, side, 0.02, side), tint
-		dst.DrawMesh(p.box, p.white, vp, &op)
-	}
-	if b.CursorOn {
-		plate(float32(b.Cursor.X)+.5, float32(b.Cursor.Y)+.5, 1, markColour)
-	}
+	dst.DrawMesh(p.table, p.wood, vp, opts(gpu.Ident, [4]float32{1, 1, 1, 1}, 0.1))
+	dst.DrawMesh(p.board, p.atlas, vp, opts(gpu.Ident, [4]float32{1, 1, 1, 1}, 0.04))
+
+	// shadows under what stands: the map's things, then the figurines
+	shade := gpu.MeshOptions{Blend: gpu.MeshAlpha, Tint: [4]float32{0, 0, 0, 0.7}}
+	dst.DrawMesh(p.shadows, p.shadow, vp, &shade)
+	shown := map[int]bool{}
 	for _, u := range b.Units {
 		if u.Icon == nil {
 			continue
 		}
-		ib := u.Icon.Bounds()
-		sq := float32(max(ib.Dx(), ib.Dy())) / tilePx // squares the icon spans
-		cen := unitCentre(u)
-		x, z := float32(cen[0]), float32(cen[1])
-		if u.Active {
-			plate(x, z, sq*.95, markColour)
-		}
-		op := sun
-		op.Model, op.Tint = place(x, 0, z, 0, sq*.7, pedestal, sq*.7), enemyColour
-		if u.Party {
-			op.Tint = partyColour
-		}
-		dst.DrawMesh(p.box, p.white, vp, &op)
-		f := p.figure(u.Icon)
-		size := sq * .9
-		half := size * float32(ib.Dy()) / float32(max(ib.Dx(), ib.Dy())) / 2
-		op = sun
-		op.Model = place(x, pedestal+half, z, 0, size, size, size) // fixed in the world, front to the south as the original shows them
-		dst.DrawMesh(f.mesh, f.tex, vp, &op)
+		shown[u.ID] = true
+		x, z, sq := p.unitAt(u, dt)
+		o := shade
+		o.Model = place(x+.12, 0.004, z+.1, 0, sq*1.05, 1, sq*1.05)
+		dst.DrawMesh(p.flatQuad, p.shadow, vp, &o)
 	}
+	for id := range p.units {
+		if !shown[id] {
+			delete(p.units, id)
+		}
+	}
+
+	// frames on the board: choices, the cursor, the square under the mouse
+	frame := func(x, z int, tint [4]float32, lift float32) {
+		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: tint}
+		fx, fz := float32(x), float32(z)
+		for _, bar := range [4][4]float32{{fx + .5, fz + .06, .9, .06}, {fx + .5, fz + .94, .9, .06}, {fx + .06, fz + .5, .06, .9}, {fx + .94, fz + .5, .06, .9}} {
+			o.Model = place(bar[0], 0.006+lift, bar[1], 0, bar[2], 0.01, bar[3])
+			dst.DrawMesh(p.box, p.white, vp, &o)
+		}
+	}
+	for _, m := range b.Marks {
+		frame(m.X, m.Y, markGlow, 0)
+	}
+	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok {
+		frame(mx, my, hoverGlow, 0)
+	}
+	pulse := float32(0.75 + 0.25*math.Sin(p.clock*5))
+	if b.CursorOn {
+		for _, c := range b.CursorAt {
+			frame(c.X, c.Y, [4]float32{cursorGlow[0] * pulse, cursorGlow[1] * pulse, cursorGlow[2] * pulse, 1}, 0.002)
+		}
+	}
+
+	// the figurines
+	for _, u := range b.Units {
+		if u.Icon == nil {
+			continue
+		}
+		x, z, sq := p.unitAt(u, dt)
+		tint := enemyColour
+		if u.Party {
+			tint = partyColour
+		}
+		dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.78, pedestal, sq*.78), tint, 0.7))
+		if u.Active { // whose turn: a gold ring round the base
+			dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.86, pedestal*.5, sq*.86),
+				[4]float32{0.95 * pulse, 0.72 * pulse, 0.2 * pulse, 1}, 0.9))
+		}
+		f := p.figure(u.Icon)
+		ib := u.Icon.Bounds()
+		size := sq * .92
+		half := size * float32(ib.Dy()) / float32(max(ib.Dx(), ib.Dy())) / 2
+		dst.DrawMesh(f.mesh, f.tex, vp, opts(place(x, pedestal+half, z, 0, size, size, size), [4]float32{1, 1, 1, 1}, 0.12))
+	}
+
+	// effects: the sprite hangs over its square, glowing, shedding sparks
+	for i, f := range b.Effects {
+		g := glows[i]
+		ib := f.Pic.Bounds()
+		sq := float32(max(ib.Dx(), ib.Dy())) / tilePx
+		x, z := float32(f.X)+float32(ib.Dx())/tilePx/2, float32(f.Y)+float32(ib.Dy())/tilePx/2
+		full := gpu.MeshOptions{Tint: [4]float32{1.3, 1.3, 1.3, 1}, Light: sunDir, Ambient: 1}
+		full.Model = place(x, 0.55, z, float32(p.yaw), sq*.9, sq*.9, sq*.9) // effects face the eye: they are light, not figurines
+		dst.DrawMesh(g.mesh, g.tex, vp, &full)
+		halo := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: [4]float32{g.glow[0], g.glow[1], g.glow[2], 0.5}}
+		halo.Model = place(x, 0.01, z, 0, 2.2, 1, 2.2)
+		dst.DrawMesh(p.flatQuad, p.shadow, vp, &halo) // a pool of light on the board
+		for range 2 {
+			p.sparks = append(p.sparks, spark{
+				p:   vec{float64(x) + rand.Float64()*.6 - .3, 0.3 + rand.Float64()*.4, float64(z) + rand.Float64()*.6 - .3},
+				v:   vec{rand.Float64()*.4 - .2, 0.5 + rand.Float64()*.6, rand.Float64()*.4 - .2},
+				max: 0.5 + rand.Float64()*.5, col: g.glow,
+			})
+		}
+	}
+	p.drawSparks(dst, vp, dt)
+}
+
+// drawSparks moves, fades and draws the particles.
+func (p *Presenter) drawSparks(dst *gpu.Image, vp gpu.Mat4, dt float64) {
+	live := p.sparks[:0]
+	for _, s := range p.sparks {
+		s.life += dt
+		if s.life >= s.max {
+			continue
+		}
+		s.p = s.p.add(s.v.mul(dt))
+		a := float32(1 - s.life/s.max)
+		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: [4]float32{s.col[0], s.col[1], s.col[2], a}}
+		o.Model = place(float32(s.p[0]), float32(s.p[1]), float32(s.p[2]), float32(p.yaw), .05, .05, .05)
+		dst.DrawMesh(p.box, p.white, vp, &o)
+		live = append(live, s)
+	}
+	p.sparks = live
+}
+
+// tick is the time since the last frame, at most a tenth of a second.
+func (p *Presenter) tick() float64 {
+	now := time.Now()
+	dt := 0.1
+	if !p.last.IsZero() {
+		dt = min(now.Sub(p.last).Seconds(), 0.1)
+	}
+	p.last = now
+	p.clock += dt
+	return dt
 }
 
 // unitCentre is the middle of the squares u's icon covers.
@@ -124,28 +287,42 @@ func unitCentre(u engine.Unit) [2]float64 {
 	return [2]float64{float64(u.X) + float64(ib.Dx())/tilePx/2, float64(u.Y) + float64(ib.Dy())/tilePx/2}
 }
 
-// ease moves the camera toward its heading and focus, framerate independent.
-func (p *Presenter) ease(focus [2]float64) {
-	now := time.Now()
-	k := 1.0
-	if !p.last.IsZero() {
-		k = 1 - math.Exp(-now.Sub(p.last).Seconds()*10)
+// unitAt is where u is shown (sliding to its square) and the squares its icon spans.
+func (p *Presenter) unitAt(u engine.Unit, dt float64) (x, z, sq float32) {
+	c := unitCentre(u)
+	if p.units == nil {
+		p.units = map[int]*[2]float64{}
 	}
-	p.last = now
-	p.yaw += (p.yawTo - p.yaw) * k
-	p.at[0] += (focus[0] - p.at[0]) * k
-	p.at[1] += (focus[1] - p.at[1]) * k
+	at, ok := p.units[u.ID]
+	if !ok {
+		at = &[2]float64{c[0], c[1]}
+		p.units[u.ID] = at
+	}
+	if math.Abs(at[0]-c[0])+math.Abs(at[1]-c[1]) > 3 { // a jump (placed, scrolled in): no slide
+		*at = c
+	}
+	k := 1 - math.Exp(-dt*7) // per call: Draw asks twice a frame (shadow, figurine), so half a step each
+	at[0] += (c[0] - at[0]) * k
+	at[1] += (c[1] - at[1]) * k
+	ib := u.Icon.Bounds()
+	return float32(at[0]), float32(at[1]), float32(max(ib.Dx(), ib.Dy())) / tilePx
 }
 
-// sync brings the atlas and the map mesh up to b.
+// sync brings the atlas and the board up to b.
 func (p *Presenter) sync(b *engine.Battle) {
 	if p.white == nil {
 		p.white = gpu.NewImage(1, 1)
 		p.white.Fill(color.White)
 		p.box = gpu.NewMesh(box())
-		p.atlas = gpu.NewImage(atlasCols*tilePx, atlasCols*tilePx)
+		p.base = gpu.NewMesh(disc(24))
+		p.flatQuad = gpu.NewMesh(quad(nil, [4][3]float32{{-.5, 0, .5}, {.5, 0, .5}, {.5, 0, -.5}, {-.5, 0, -.5}},
+			[4][2]float32{{0, 1}, {1, 1}, {1, 0}, {0, 0}}, [3]float32{0, 1, 0}))
+		p.atlas = gpu.NewImage(atlasCols*tilePx, atlasRows*tilePx)
+		p.shadow = gpu.NewImageFromImage(blob(32))
+		p.wood = gpu.NewImageFromImage(woodTexture(64))
+		p.table = gpu.NewMesh(tableMesh())
 	}
-	changed := false
+	changed := b.Floor != p.floor
 	for i := range p.tiles {
 		var t image.Image
 		if i < len(b.Tiles) {
@@ -153,36 +330,84 @@ func (p *Presenter) sync(b *engine.Battle) {
 		}
 		if t != p.tiles[i] {
 			p.tiles[i], changed = t, true
+			p.empty[i] = isEmpty(t)
 		}
 	}
 	if changed {
+		p.floor = b.Floor
 		a := image.NewRGBA(p.atlas.Bounds())
+		put := func(slot int, t image.Image) {
+			o := image.Pt(slot%atlasCols*tilePx, slot/atlasCols*tilePx)
+			draw.Draw(a, image.Rectangle{o, o.Add(t.Bounds().Size())}, t, t.Bounds().Min, draw.Src)
+		}
 		for i, t := range p.tiles {
 			if t != nil {
-				o := image.Pt(i%atlasCols*tilePx, i/atlasCols*tilePx)
-				draw.Draw(a, image.Rectangle{o, o.Add(t.Bounds().Size())}, t, t.Bounds().Min, draw.Src)
+				put(i, t)
 			}
 		}
+		put(wallSlot, stoneTexture(p.tiles[:engine.DungeonTiles]))
+		put(floorSlot, floorTile(b.Floor))
 		p.atlas.WritePixels(a.Pix)
 	}
-	if p.mesh == nil || b.Ground != p.ground {
-		p.ground = b.Ground
-		if p.mesh != nil {
-			p.mesh.Dispose()
+	if p.board == nil || changed || b.Ground != p.ground || b.Dungeon != p.dungeon {
+		p.ground, p.dungeon = b.Ground, b.Dungeon
+		for _, m := range []*gpu.Mesh{p.board, p.shadows} {
+			if m != nil {
+				m.Dispose()
+			}
 		}
-		p.mesh = gpu.NewMesh(mapMesh(&p.ground))
+		empty := func(t int) bool { return t < 0 || t >= len(p.empty) || p.empty[t] }
+		p.board = gpu.NewMesh(append(mapMesh(&p.ground, p.dungeon, empty, p.tiles[:]), boardSides()...))
+		p.shadows = gpu.NewMesh(standShadows(&p.ground, p.dungeon, empty))
 	}
 }
 
-// figure is the extruded figurine for an icon (cached).
-func (p *Presenter) figure(icon image.Image) *figure {
-	if f, ok := p.figs[icon]; ok {
+// figure is the extruded mesh for a picture (cached).
+func (p *Presenter) figure(pic image.Image) *figure {
+	if f, ok := p.figs[pic]; ok {
 		return f
 	}
 	if p.figs == nil {
 		p.figs = map[image.Image]*figure{}
 	}
-	f := &figure{gpu.NewMesh(extrude(icon)), gpu.NewImageFromImage(icon)}
-	p.figs[icon] = f
+	f := &figure{gpu.NewMesh(extrude(pic)), gpu.NewImageFromImage(pic), averageColour(pic)}
+	p.figs[pic] = f
 	return f
+}
+
+// isEmpty: no tile, or nothing on the ground.
+func isEmpty(t image.Image) bool {
+	if t == nil {
+		return true
+	}
+	b := t.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if _, _, _, a := t.At(x, y).RGBA(); a != 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// averageColour is a picture's mean opaque colour, brightened to a light's.
+func averageColour(t image.Image) [3]float32 {
+	var r, g, bl, n float64
+	b := t.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if cr, cg, cb, a := t.At(x, y).RGBA(); a > 0x8000 {
+				r, g, bl, n = r+float64(cr), g+float64(cg), bl+float64(cb), n+1
+			}
+		}
+	}
+	if n == 0 {
+		return [3]float32{1, 1, 1}
+	}
+	m := max(r, g, bl) / n / 0xFFFF
+	if m == 0 {
+		return [3]float32{1, 1, 1}
+	}
+	return [3]float32{float32(r / n / 0xFFFF / m), float32(g / n / 0xFFFF / m), float32(bl / n / 0xFFFF / m)}
 }

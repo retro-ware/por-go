@@ -3,6 +3,7 @@ package engine
 // The combat main loop and the player's command menus (ovr09).
 
 import (
+	"image"
 	"slices"
 	"strings"
 )
@@ -448,6 +449,12 @@ func (e *Engine) moveReach(c *Character) map[[2]int][]int {
 // markReach (extra) shows the reachable squares in view with a dotted
 // frame (on) or draws them plain again (off).
 func (e *Engine) markReach(reach map[[2]int][]int, on bool) {
+	e.snap.marks = nil
+	for k := range reach {
+		if on {
+			e.snap.marks = append(e.snap.marks, image.Pt(k[0], k[1]))
+		}
+	}
 	for k := range reach {
 		sx, sy := k[0]-e.cmap.viewX, k[1]-e.cmap.viewY
 		if !combatInView(sx, sy) {

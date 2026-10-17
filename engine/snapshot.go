@@ -126,7 +126,13 @@ type snapState struct {
 	cursor  image.Point            // drawCursor's last square
 	pics    map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
 	picsPal [16]uint8
-	cmapRow []byte // the frame row under the combat page as the map was drawn
+	cmapRow []byte
+	dungeon bool          // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
+	effects []effect      // sprites on the combat page
+	marks   []image.Point // squares markReach framed
+	hidden  map[int]bool  // combatants whose icon is off the page (falling, hiding)
+	poses   map[int]byte  // the pose each combatant was last drawn in
+	click   atomic.Int32  // ClickSquare's square + 1, for the next page click // the frame row under the combat page as the map was drawn
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is

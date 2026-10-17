@@ -98,7 +98,7 @@ func (s *Shader) pipe(b Blend) *wgpu.RenderPipeline {
 		}
 	}
 	if s.pipes[b], err = newPipeline(pipeSpec{"shader", s.src, []*wgpu.BindGroupLayout{dev.uniLayout, imagesLayout},
-		vertexLayout, blends[b], gputypes.TextureFormatRGBA8Unorm, false}); err != nil {
+		vertexLayout, blends[b], gputypes.TextureFormatRGBA8Unorm, false, "", false}); err != nil {
 		panic(err)
 	}
 	return s.pipes[b]

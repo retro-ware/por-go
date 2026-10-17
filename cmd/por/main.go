@@ -189,6 +189,11 @@ func (g *game) mouse() {
 			g.sent = true
 			return
 		}
+		if x, y, ok := g.remaster.Square(mx, my); ok { // a square on the 3D map
+			g.scr.PushKey(g.eng.ClickSquare(x, y))
+			g.sent = true
+			return
+		}
 	}
 	cx, cy, in := g.cell(float64(mx), float64(my))
 	g.scr.SetMouse(cx, cy, in)

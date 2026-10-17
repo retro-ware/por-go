@@ -2,6 +2,7 @@ package gpu
 
 import (
 	"encoding/binary"
+	"github.com/gogpu/naga"
 	"math"
 	"testing"
 )
@@ -20,5 +21,13 @@ fn Fragment(dstPos: vec4f, srcPos: vec2f, color: vec4f, custom: vec4f) -> vec4f 
 	}
 	if _, err := NewShader([]byte(`fn Fragment(dstPos: vec4f, srcPos: vec2f, color: vec4f, custom: vec4f) -> vec4f { return color; }`)); err != nil {
 		t.Fatal("no uniforms:", err)
+	}
+}
+
+func TestBuiltinShadersCompile(t *testing.T) {
+	for name, src := range map[string]string{"std": stdWGSL, "blit": blitWGSL, "mesh": meshWGSL} {
+		if _, err := naga.Compile(src); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
 	}
 }

@@ -11,6 +11,8 @@ var pipes struct {
 	std  [blendCount]*wgpu.RenderPipeline // textured triangles into images
 	blit *wgpu.RenderPipeline             // the screen into the window
 	mesh *wgpu.RenderPipeline             // depth-tested 3D triangles
+	// blended 3D triangles, depth tested but not written: MeshAlpha, MeshAdd
+	meshBlend [3]*wgpu.RenderPipeline
 }
 
 const vertexWGSL = `
@@ -57,30 +59,59 @@ const meshWGSL = `
 struct U {
 	viewProj: mat4x4f,
 	model: mat4x4f,
-	light: vec4f,  // direction toward the light, ambient
+	light: vec4f,      // direction toward the sun, ambient share
 	tint: vec4f,
-	uvRect: vec4f, // the texture's part: origin, size (0..1)
+	uvRect: vec4f,     // the texture's part: origin, size (0..1)
+	eye: vec4f,        // camera position, specular strength
+	point: vec4f,      // a point light: position, radius (0: none)
+	pointColor: vec4f, // its colour, intensity
 }
 @group(0) @binding(0) var<uniform> u: U;
 @group(1) @binding(0) var tex: texture_2d<f32>;
 @group(1) @binding(1) var samp: sampler;
 struct VIn { @location(0) pos: vec3f, @location(1) uv: vec2f, @location(2) normal: vec3f, @location(3) color: vec4f }
-struct VOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f, @location(1) color: vec4f }
+struct VOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f, @location(1) color: vec4f, @location(2) world: vec3f, @location(3) normal: vec3f }
 @vertex
 fn vs(v: VIn) -> VOut {
 	var o: VOut;
-	o.pos = u.viewProj * u.model * vec4f(v.pos, 1.0);
+	let w = u.model * vec4f(v.pos, 1.0);
+	o.pos = u.viewProj * w;
+	o.world = w.xyz;
 	o.uv = u.uvRect.xy + v.uv * u.uvRect.zw;
-	let n = normalize((u.model * vec4f(v.normal, 0.0)).xyz);
-	let l = u.light.w + (1.0 - u.light.w) * max(dot(n, normalize(u.light.xyz)), 0.0);
-	o.color = vec4f(v.color.rgb * l, v.color.a) * u.tint;
+	o.normal = (u.model * vec4f(v.normal, 0.0)).xyz;
+	o.color = v.color * u.tint;
 	return o;
+}
+// lit: a warm sun, a cool sky over a dim floor bounce, a point light, a highlight
+fn lit(base: vec3f, i: VOut) -> vec3f {
+	let n = normalize(i.normal);
+	let l = normalize(u.light.xyz);
+	let diff = max(dot(n, l), 0.0);
+	let sky = mix(vec3f(0.42, 0.40, 0.38), vec3f(0.82, 0.88, 1.0), n.y * 0.5 + 0.5);
+	var c = base * (u.light.w * sky + (1.0 - u.light.w) * diff * vec3f(1.0, 0.95, 0.86));
+	if (u.point.w > 0.0) {
+		let d = u.point.xyz - i.world;
+		let dist = length(d);
+		let att = clamp(1.0 - dist / u.point.w, 0.0, 1.0);
+		c += base * u.pointColor.rgb * u.pointColor.w * att * att * (0.4 + 0.6 * max(dot(n, d / max(dist, 0.001)), 0.0));
+	}
+	if (u.eye.w > 0.0 && diff > 0.0) {
+		let h = normalize(l + normalize(u.eye.xyz - i.world));
+		c += vec3f(1.0, 0.97, 0.9) * u.eye.w * pow(max(dot(n, h), 0.0), 28.0);
+	}
+	return c;
 }
 @fragment
 fn fs(i: VOut) -> @location(0) vec4f {
 	let c = textureSample(tex, samp, i.uv);
 	if (c.a < 0.5) { discard; }
-	return vec4f(c.rgb / c.a, 1.0) * i.color;
+	return vec4f(lit(c.rgb / c.a * i.color.rgb, i), 1.0);
+}
+// unlit and blended (shadows, glows): the texture is premultiplied
+@fragment
+fn fsBlend(i: VOut) -> @location(0) vec4f {
+	let c = textureSample(tex, samp, i.uv);
+	return vec4f(c.rgb * i.color.rgb * i.color.a, c.a * i.color.a);
 }
 `
 
@@ -117,6 +148,8 @@ type pipeSpec struct {
 	blend   *gputypes.BlendState
 	format  gputypes.TextureFormat
 	depth   bool
+	fs      string // fragment entry point ("fs" if empty)
+	noWrite bool   // depth tested, not written
 }
 
 func newPipeline(s pipeSpec) (*wgpu.RenderPipeline, error) {
@@ -130,7 +163,11 @@ func newPipeline(s pipeSpec) (*wgpu.RenderPipeline, error) {
 	}
 	var depth *wgpu.DepthStencilState
 	if s.depth {
-		depth = &wgpu.DepthStencilState{Format: gputypes.TextureFormatDepth32Float, DepthWriteEnabled: true, DepthCompare: gputypes.CompareFunctionLessEqual}
+		depth = &wgpu.DepthStencilState{Format: gputypes.TextureFormatDepth32Float, DepthWriteEnabled: !s.noWrite, DepthCompare: gputypes.CompareFunctionLessEqual}
+	}
+	fs := s.fs
+	if fs == "" {
+		fs = "fs"
 	}
 	p, err := dev.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:        s.label,
@@ -139,7 +176,7 @@ func newPipeline(s pipeSpec) (*wgpu.RenderPipeline, error) {
 		Primitive:    gputypes.PrimitiveState{Topology: gputypes.PrimitiveTopologyTriangleList, FrontFace: gputypes.FrontFaceCCW, CullMode: gputypes.CullModeNone},
 		DepthStencil: depth,
 		Multisample:  gputypes.MultisampleState{Count: 1, Mask: 0xFFFFFFFF},
-		Fragment: &wgpu.FragmentState{Module: mod, EntryPoint: "fs", Targets: []gputypes.ColorTargetState{
+		Fragment: &wgpu.FragmentState{Module: mod, EntryPoint: fs, Targets: []gputypes.ColorTargetState{
 			{Format: s.format, Blend: s.blend, WriteMask: gputypes.ColorWriteMaskAll}}},
 	})
 	if err != nil {
@@ -152,10 +189,18 @@ func initPipelines() error {
 	var err error
 	rgba := gputypes.TextureFormatRGBA8Unorm
 	for b := range pipes.std {
-		if pipes.std[b], err = newPipeline(pipeSpec{"triangles", stdWGSL, []*wgpu.BindGroupLayout{dev.texLayout}, vertexLayout, blends[b], rgba, false}); err != nil {
+		if pipes.std[b], err = newPipeline(pipeSpec{"triangles", stdWGSL, []*wgpu.BindGroupLayout{dev.texLayout}, vertexLayout, blends[b], rgba, false, "", false}); err != nil {
 			return err
 		}
 	}
-	pipes.mesh, err = newPipeline(pipeSpec{"mesh", meshWGSL, []*wgpu.BindGroupLayout{dev.uniLayout, dev.texLayout}, meshLayout, nil, rgba, true})
-	return err
+	groups := []*wgpu.BindGroupLayout{dev.uniLayout, dev.texLayout}
+	if pipes.mesh, err = newPipeline(pipeSpec{"mesh", meshWGSL, groups, meshLayout, nil, rgba, true, "", false}); err != nil {
+		return err
+	}
+	for b, bs := range map[MeshBlend]*gputypes.BlendState{MeshAlpha: blends[BlendSourceOver], MeshAdd: blends[BlendLighter]} {
+		if pipes.meshBlend[b], err = newPipeline(pipeSpec{"mesh blend", meshWGSL, groups, meshLayout, bs, rgba, true, "fsBlend", true}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

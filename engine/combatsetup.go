@@ -48,6 +48,7 @@ func (e *Engine) flushKey() {
 
 // combatMapSetup = ovr11:1244: the tile sets and the map.
 func (e *Engine) combatMapSetup() {
+	e.snap.dungeon = e.viewMode == 1
 	if e.viewMode == 1 {
 		e.LoadBackpacIcons("DungCom", 0, 0x18)
 	} else {
