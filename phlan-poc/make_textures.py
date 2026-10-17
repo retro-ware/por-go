@@ -116,16 +116,17 @@ def arch(im, src):
     solid = a[..., 3] > 0
     left = int(np.argmax(hole.any(axis=0)))  # first opening column; the wall left of it is solid
     x0, band = int(n * 0.02), max(8, left - int(n * 0.04))
-    # the stone above the opening, column by column from just under the wall top down to the opening:
+    # the stone above the opening, column by column from the wall top down to the opening:
     # the model's own (thinner) arch there is painted over
-    y0 = int(top * n / d.shape[0]) + int(n * 0.02)
+    y0 = int(top * n / d.shape[0])
     fill = np.zeros_like(hole)
     for x in np.nonzero(hole.any(axis=0))[0]:
         fill[y0:np.argmax(hole[:, x]), x] = True
     fill |= ~hole & ~solid
     fill[:y0] = False
     ys, xs = np.nonzero(fill)
-    a[ys, xs] = a[ys, x0 + (xs - x0) % band]
+    k = (xs - x0) % (2 * band)  # mirrored back and forth: no joins where the strip repeats
+    a[ys, xs] = a[ys, x0 + np.where(k < band, k, 2 * band - 1 - k)]
     a[hole, 3] = 0
     # distance to the opening in pixels, by growing it one pixel at a time
     r = int(n * RIM)
@@ -146,11 +147,11 @@ def finish(v):
     k = max(rw.KEYS_RGB, key=lambda n: (ref == rw.KEYS_RGB[n][1]).all(axis=2).sum())
     im = rw.key_out((RAW / f"v{v:02}_openai.png").read_bytes(), k)
     im = seamless(im) if v in TILE else im.resize((SIZE, SIZE), Image.LANCZOS)
+    im = outline(im, WALLS[v][0])
+    if v in ARCH:  # before the seams, so the stone it copies has no seam in it
+        im = arch(im, WALLS[v][0])
     if v not in NOSEAM:
         im = seams(im)
-    im = outline(im, WALLS[v][0])
-    if v in ARCH:
-        im = arch(im, WALLS[v][0])
     im.save(OUT / f"wall_{NAME}_v{v:02}.png")
 
 
