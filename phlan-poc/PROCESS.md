@@ -85,8 +85,14 @@ the slums p-z and B D I L M),
 - **Land**: flood fill from START through open sides and doors.
 - **Water**: flood fill from beyond harbour walls (here values 14, 15) into
   squares no party can reach. Emits `water X Y`. Off the map is water too.
-- Writes `walls.txt` (`CHAR wall_<area>_vNN`); Phlan also sets the `start`
-  line in `world.txt` (other areas are opened with `BLOBBER_OPEN`).
+- Faces name their texture (`face X Y SIDE wall_<area>_vNN`; map characters
+  ran out after four areas); a reused wall names its origin's texture. Phlan
+  also sets the `start` line in `world.txt` (other areas are opened with
+  `BLOBBER_OPEN`).
+- `start=None`: the entry square isn't pinned; a square of the largest
+  walkable region is used (for the land flood fill and the random views).
+- Walls of a new area: `NEW` (descriptions of new art only) and `FLAGS` at the
+  end of `areas.py`; every other value the GEO uses is filled in as a reuse.
 - Fixes to the original's data go in `doors` (sides made passable, e.g. the
   graveyard's one-way cross at 5,3 W). Wall values in `nomap` (graves) are
   drawn in 3D but left off the minimap, which shows blocking walls grey and
@@ -138,9 +144,10 @@ output goes to `raw/<area>/`.
 4. **Reuse before generating.** The game repeats walls across areas (Podol
    Plaza shares 6 of its 14 with Phlan and the Slums). A wall whose original
    art is pixel-identical to a wall of an earlier area in `areas.py` takes
-   that area's model output (`origin()`/`reuse()`), with no API call, so it
-   is generated once and looks the same everywhere; `finish` keeps the copies
-   in sync. Only walls with new art go to the model.
+   that area's texture (`areas.origin()`): no API call and no copy, the map's
+   faces name the first area's texture file directly. Only walls with new art
+   go to the model. Across all 26 maps the game has 132 wall values in use but
+   only 47 new arts after Podol Plaza.
 5. `tools/remaster-walls.py`: reference with a key colour -> OpenAI
    gpt-image edit -> key-out. Raw results go to `raw/`.
 6. `finish(v)`:
