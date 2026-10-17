@@ -24,6 +24,9 @@ python3 compare/compare.py graveyard        # -> compare/graveyard.jpg
   first, then change it.
 - **Compare, don't guess.** Every change is judged on the side-by-side sheet
   (step 6), original left, PoC right, numbered views.
+- **No map wrapping, anywhere.** PoR repeats a map past its edge for most
+  area kinds; that is nonsense in a remake and is cut for every map. Views
+  near an edge differ from the original because of it, by design.
 - **Screenshots block the keyboard.** Shot windows open unfocused and the
   game ignores input while `BLOBBER_SHOT` is set.
 
@@ -141,6 +144,10 @@ output goes to `raw/<area>/`.
    `python3 make_textures.py AREA finish`. Redo single walls with
    `python3 make_textures.py AREA 14`.
 7. Contact-sheet original vs texture (aspect ratio kept) before comparing.
+8. See-through openings (`arch`): the model tends to draw them thinner and
+   narrower. `arch()` cuts the opening from the original's own shape, fills
+   the stone above it from the same rows of the wall beside it, and darkens
+   a rim around the cutout so it reads against walls seen through it.
 
 Ground: `floor_<map>_dirt` (+ `_normal`) in warm brown, iterated until it
 matches the original's brown. Water: `make_water.py` (generate, grade onto

@@ -10,7 +10,7 @@ import importlib.util, io, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 from areas import AREAS
 
 HERE = Path(__file__).resolve().parent
@@ -98,6 +98,48 @@ def outline(im, src):
     return Image.fromarray(a, "RGBA")
 
 
+ARCH = A.get("arch", set())  # see-through openings: cut to the original's shape, edge darkened
+RIM = 0.045  # darkened rim around an opening, share of the texture width
+
+
+def arch(im, src):
+    """The opening of an arch exactly where the original has it (the image model draws it thinner), the stone
+    it fills taken from the same rows of the solid wall left of it, and a dark rim around the cutout so it
+    stands out against walls seen through it."""
+    d = np.asarray(Image.open(HERE / "viewdump" / f"{src}.png").convert("RGBA"))[..., 3] > 0
+    top = np.argmax(d.any(axis=1))
+    hole = ~d
+    hole[:top] = False  # the empty rows above the wall top are not the opening
+    hole = np.asarray(Image.fromarray(hole.astype(np.uint8) * 255).resize(im.size, Image.NEAREST)) > 0
+    a = np.asarray(im).copy()
+    n = a.shape[1]
+    solid = a[..., 3] > 0
+    left = int(np.argmax(hole.any(axis=0)))  # first opening column; the wall left of it is solid
+    x0, band = int(n * 0.02), max(8, left - int(n * 0.04))
+    # the stone above the opening, column by column from just under the wall top down to the opening:
+    # the model's own (thinner) arch there is painted over
+    y0 = int(top * n / d.shape[0]) + int(n * 0.02)
+    fill = np.zeros_like(hole)
+    for x in np.nonzero(hole.any(axis=0))[0]:
+        fill[y0:np.argmax(hole[:, x]), x] = True
+    fill |= ~hole & ~solid
+    fill[:y0] = False
+    ys, xs = np.nonzero(fill)
+    a[ys, xs] = a[ys, x0 + (xs - x0) % band]
+    a[hole, 3] = 0
+    # distance to the opening in pixels, by growing it one pixel at a time
+    r = int(n * RIM)
+    m = Image.fromarray(hole.astype(np.uint8) * 255)
+    dist = np.full(hole.shape, r, dtype=np.float32)
+    for i in range(r):
+        m = m.filter(ImageFilter.MaxFilter(3))
+        ring = (np.asarray(m) > 0) & (dist == r) & ~hole
+        dist[ring] = i
+    f = 0.3 + 0.7 * (dist / r) ** 0.7
+    a[..., :3] = (a[..., :3] * f[..., None]).astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
 def finish(v):
     """raw/vNN_openai.png -> the engine texture (no API call)."""
     ref = np.asarray(Image.open(RAW / f"v{v:02}_reference.png").convert("RGB"))
@@ -107,6 +149,8 @@ def finish(v):
     if v not in NOSEAM:
         im = seams(im)
     im = outline(im, WALLS[v][0])
+    if v in ARCH:
+        im = arch(im, WALLS[v][0])
     im.save(OUT / f"wall_{NAME}_v{v:02}.png")
 
 

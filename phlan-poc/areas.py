@@ -17,6 +17,7 @@ Keys:
   water       walls whose painted sea is removed from the reference
   tile        walls crossfaded at the edges instead of seamed
   noseam      walls a seam would cut through (objects, posts, gaps)
+  arch        see-through openings: cut to the original's shape, a dark rim around the cutout
   views       comparison shots (x, y, facing), reachable squares only"""
 
 AREAS = {}
@@ -114,7 +115,7 @@ AREAS["slums"] = dict(  # the Slums of Phlan: ECL2 block 20
     chars={v: "pqrstuvwxyzBDILM"[v - 1] for v in range(1, 16)},
     start=(14, 10, "n"), water_walls=set(), free_walls=set(),
     floor="phlan_dirt", ceiling="sky_phlan",
-    notrim={2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15}, water=set(), tile=set(), noseam=set(),
+    notrim={2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15}, water=set(), tile=set(), noseam=set(), arch={13},
     views=[(4, 13, "S"), (8, 5, "W"), (3, 3, "N"), (10, 7, "W"), (5, 6, "W"), (0, 13, "N"), (13, 2, "E"),
            (13, 0, "E"), (2, 6, "N"), (3, 4, "E"), (4, 0, "N"), (10, 3, "N"), (15, 2, "E"), (14, 6, "S"),
            (6, 10, "S"), (6, 6, "S"), (10, 2, "S"), (10, 11, "E")],  # random.Random(20), reachable squares
