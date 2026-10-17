@@ -168,3 +168,12 @@ func drawHit(d *ebiten.Image, h hitMark, age int) {
 		font.Print(d, fmt.Sprintf("-%d", h.n), portraitX+PortraitSize-14, pY0+PortraitSize-16)
 	}
 }
+
+// PartyRect is the area DrawParty's cards take for a party of n, in device pixels.
+func PartyRect(n int) image.Rectangle {
+	var r image.Rectangle
+	for i := range n {
+		r = r.Union(card(i, n))
+	}
+	return r
+}

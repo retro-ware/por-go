@@ -4,6 +4,7 @@ package party
 
 import (
 	"fmt"
+	"image"
 	"sort"
 	"strings"
 )
@@ -48,7 +49,8 @@ func (p *Party) Tick() {
 
 type Character struct {
 	Name, Sex, Race, Class string
-	Portrait               string // id in the portrait pool; "" picks one by class and sex
+	Portrait               string      // id in the portrait pool; "" picks one by class and sex
+	Face                   image.Image `json:"-"` // a host's own picture, PortraitSize square; overrides Portrait
 	HP, MaxHP, SP, MaxSP   int
 	AC, Level, Age, Exp    int
 	Num                    map[string]int  // stats, resistances and their tmp bonuses, actmp, leveltmp

@@ -5,6 +5,8 @@
 package remaster
 
 import (
+	"image"
+	"image/draw"
 	"log"
 	"time"
 
@@ -12,6 +14,8 @@ import (
 
 	"blobber"
 	"blobber/maps"
+	"blobber/party"
+	"blobber/ui"
 
 	"por/ega"
 	"por/engine"
@@ -25,11 +29,13 @@ type Presenter struct {
 	Classic *classic.Presenter
 
 	view   *blobber.View
-	failed bool                      // the renderer could not start: classic from then on
-	scenes map[string]*blobber.Scene // parsed maps by name
-	shown  string                    // the scene the view shows
-	last   time.Time                 // when the animation last advanced
-	ticks  float64                   // animation time not yet run, in 1/60 s ticks
+	failed bool                        // the renderer could not start: classic from then on
+	scenes map[string]*blobber.Scene   // parsed maps by name
+	shown  string                      // the scene the view shows
+	last   time.Time                   // when the animation last advanced
+	ticks  float64                     // animation time not yet run, in 1/60 s ticks
+	party  party.Party                 // View.Party as Blobber's cards show it
+	faces  map[image.Image]image.Image // card art cropped from each paper-doll head
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -50,14 +56,18 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	}
 	p.animate()
 	p.view.Draw(dst)
+	p.drawParty(dst, v.Party)
 	k := scale(dst)
 	b := dst.Bounds()
-	pk := min(k, max(1, float64(b.Dy()/2/engine.ViewWindow.Framed().Pixels().Dy()))) // the pop-ups fit their halves
+	if len(v.Party) > 0 { // pop-ups go left of the cards
+		b.Max.X = ui.PartyRect(len(v.Party)).Min.X
+	}
+	pk := min(k, max(1, float64(min(b.Dy()/2/engine.ViewWindow.Framed().Pixels().Dy(), b.Dx()/ega.W)))) // the pop-ups fit their halves
 	if v.Window == engine.WinPicture {
-		drawBox(dst, frame, engine.ViewWindow.Framed(), pk, b.Dy()/4)
+		drawBox(dst, frame, engine.ViewWindow.Framed(), pk, b.Dx()/2, b.Dy()/4)
 	}
 	if v.TextShown {
-		drawBox(dst, frame, engine.TextPane.Framed(), pk, b.Dy()*3/4)
+		drawBox(dst, frame, engine.TextPane.Framed(), pk, b.Dx()/2, b.Dy()*3/4)
 	}
 	p.drawPrompt(dst, frame, k)
 	return classic.Rect{}
@@ -116,12 +126,12 @@ func scale(dst *ebiten.Image) float64 {
 }
 
 // drawBox copies box r of the classic frame, border included, onto dst at
-// scale k, centred across and on the line cy.
-func drawBox(dst, frame *ebiten.Image, r engine.CellRect, k float64, cy int) {
+// scale k, centred on cx, cy.
+func drawBox(dst, frame *ebiten.Image, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
-	op.GeoM.Translate((float64(dst.Bounds().Dx())-k*float64(px.Dx()))/2, float64(cy)-k*float64(px.Dy())/2)
+	op.GeoM.Translate(float64(cx)-k*float64(px.Dx())/2, float64(cy)-k*float64(px.Dy())/2)
 	dst.DrawImage(frame.SubImage(px).(*ebiten.Image), op)
 }
 
@@ -133,4 +143,36 @@ func (p *Presenter) drawPrompt(dst, frame *ebiten.Image, k float64) {
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy()))
 	dst.DrawImage(frame.SubImage(r).(*ebiten.Image), op)
+}
+
+// drawParty shows the party as Blobber's portrait cards, each with the
+// character's paper-doll head.
+func (p *Presenter) drawParty(dst *ebiten.Image, ms []engine.Member) {
+	p.party.Chars = p.party.Chars[:0]
+	for _, m := range ms {
+		p.party.Chars = append(p.party.Chars, &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head)})
+	}
+	ui.DrawParty(dst, &p.party)
+}
+
+// face is the card art for a head: its middle PortraitSize columns, where
+// the face is, sitting on the bottom edge, unscaled (nil without a head).
+func (p *Presenter) face(head image.Image) image.Image {
+	if head == nil {
+		return nil
+	}
+	if f, ok := p.faces[head]; ok {
+		return f
+	}
+	const n = ui.PortraitSize
+	b := head.Bounds()
+	f := image.NewRGBA(image.Rect(0, 0, n, n))
+	draw.Draw(f, f.Bounds(), image.Black, image.Point{}, draw.Src)
+	at := image.Rect(0, max(0, n-b.Dy()), n, n)
+	draw.Draw(f, at, head, image.Pt(b.Min.X+(b.Dx()-n)/2, b.Max.Y-at.Dy()), draw.Over)
+	if p.faces == nil {
+		p.faces = map[image.Image]image.Image{}
+	}
+	p.faces[head] = f
+	return f
 }

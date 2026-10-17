@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
+	"image"
 	"image/png"
 	"io"
 	"strings"
@@ -30,6 +31,8 @@ var portraitArt = map[string]string{
 
 var portraits = map[string]*ebiten.Image{}
 
+var faces = map[image.Image]*ebiten.Image{} // GPU copies of Character.Face
+
 // PortraitID returns the portrait from the pool by id, or nil.
 func PortraitID(id string) *ebiten.Image {
 	if img, ok := portraits[id]; ok {
@@ -45,9 +48,17 @@ func PortraitID(id string) *ebiten.Image {
 	return img
 }
 
-// Portrait returns c's picture: c.Portrait if set and known, else by class (unknown classes look
+// Portrait returns c's picture: c.Face if set, else c.Portrait if set and known, else by class (unknown classes look
 // like paladins) and sex ("f" = lady).
 func Portrait(c *party.Character) *ebiten.Image {
+	if c.Face != nil {
+		img := faces[c.Face]
+		if img == nil {
+			img = ebiten.NewImageFromImage(c.Face)
+			faces[c.Face] = img
+		}
+		return img
+	}
 	if img := PortraitID(c.Portrait); img != nil {
 		return img
 	}
