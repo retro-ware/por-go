@@ -19,7 +19,8 @@ Keys:
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
   clear       wall value -> boxes (x0, y0, x1, y1 in dump pixels) painted over with the wall colour in the
               reference: things the PoC draws elsewhere (Kuto's well hole and ladder: a prop, see cellprops)
-  cellprops   (x, y) -> (texture, size): a billboard standing in the middle of that square (make_props.py)
+  cellprops   (x, y) -> [(prop|decal, texture, size, front)]: billboards (decal: lying on the floor) in the middle
+              of that square, or `front` ahead of its centre while the party stands on it (make_props.py)
   props       wall value -> billboard texture: trees drawn where their trunks stand, not as faces (make_props.py)
   doors       (x, y, side) fixes to the original's data: sides made passable (one-way doors)
   nomap       wall values left off the minimap (objects the party walks through, like graves)
@@ -566,7 +567,7 @@ NEW = {
            "dented metal well bucket of riveted iron, partly filled with water and rust-red inside, hanging "
            "by its curved handle from a short rope in the middle of the opening, and loose pale grey bricks "
            "showing in the plaster below; the window opening is empty, nothing is drawn inside it besides "
-           "the bucket.",
+           "the bucket: no bottle neck above it, no shelf, plank or sill under it.",
     },
     "kuto2": {
         2: "a natural cave wall of dark red rock with a long iron ladder climbing straight up the middle "
@@ -581,7 +582,8 @@ FLAGS = dict(  # texture flags of the new walls (by area)
     valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
     nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
     pyramid=dict(noseam={14}), kuto=dict(arch={8}, clear={8: [(72, 128, 150, 256), (30, 232, 194, 256)]},
-                     cellprops={(7, 7): ("prop_kuto_well", 0.8)}), kuto2=dict(noseam={2, 10}),
+                     cellprops={(7, 7): [("decal", "floor_kuto_well", 0.4, 0.35),
+                                         ("prop", "prop_kuto_ladder", 0.5, 0.45)]}), kuto2=dict(noseam={2, 10}),
 )
 
 

@@ -136,7 +136,7 @@ func (c *console) place(w *world, line string) error {
 		n, _ := strconv.Atoi(f[i])
 		return n
 	}
-	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "pond": 3, "nomap": 4, "prop": 5}[f[0]]
+	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "pond": 3, "nomap": 4, "prop": 5, "decal": 5}[f[0]]
 	if need == 0 || len(f) < need {
 		return fmt.Errorf("want %d fields", need)
 	}
@@ -151,15 +151,15 @@ func (c *console) place(w *world, line string) error {
 		w.drop(party.NewItem(f[1], num(4)), num(2), num(3))
 	case "monster":
 		return c.spawn(f[1], num(2), num(3), -1)
-	case "prop": // phlan-poc: prop TEX X Y SIZE, a billboard at an exact floor position (X, Y in squares, floats)
-		var at [2]float64
-		var size float64
-		fmt.Sscan(strings.Join(f[2:5], " "), &at[0], &at[1], &size)
+	case "prop", "decal": // phlan-poc: prop|decal TEX X Y SIZE [FRONT], a billboard (decal: lying on the floor)
+		var at [2]float64 // at an exact floor position (X, Y in squares, floats); FRONT see blobber.Object
+		var size, front float64
+		fmt.Sscan(strings.Join(f[2:], " "), &at[0], &at[1], &size, &front)
 		img := blobber.WallTexture(f[1])
 		if img == nil {
 			return fmt.Errorf("no texture %q", f[1])
 		}
-		w.objs[line] = &blobber.Object{X: int(at[0]), Y: int(at[1]), Img: img, Size: size, At: &at}
+		w.objs[line] = &blobber.Object{X: int(at[0]), Y: int(at[1]), Img: img, Size: size, At: &at, Front: front, Flat: f[0] == "decal"}
 	case "water": // phlan-poc: water X Y, see blobber.Water
 		w.water[[2]int{num(1), num(2)}] = true
 	case "pond": // phlan-poc: pond X Y, see blobber.Pond

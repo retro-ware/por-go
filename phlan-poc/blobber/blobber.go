@@ -75,6 +75,11 @@ type Object struct {
 	Img  *ebiten.Image
 	Size float64
 	At   *[2]float64 // phlan-poc: an exact floor position (a tree on a square's edge or corner) instead of the cell's centre
+	// phlan-poc: Front > 0: while the party stands on its square it stands this far in front of the square's
+	// centre, whichever way they face, as PoR paints a thing in its own square (Kuto's well); Flat: lies on
+	// the floor (a hole), Size its width
+	Front float64
+	Flat  bool
 }
 
 // Objects is the host-maintained list of objects on the current map.
@@ -1704,14 +1709,24 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		ox, oz := float64(o.X)+0.5+c.fwx*eyeBack, float64(o.Y)+0.5+c.fwz*eyeBack
 		if o.At != nil { // phlan-poc: stands where it stands, seen like a wall (no culling by cell)
 			ox, oz = o.At[0], o.At[1]
-			px, pz := math.Floor(c.x+c.fwx*eyeBack), math.Floor(c.z+c.fwz*eyeBack) // the party's cell
-			if ox == px+0.5 && oz == pz+0.5 { // standing on it (Kuto's well): in front, as PoR draws it, nearer
-				ox, oz = ox+c.fwx*0.3, oz+c.fwz*0.3 // than the wall (0.75) but far enough to show its foot
-			}
 		} else if _, ok := visibleCells(c)[[2]int{o.X, o.Y}]; !ok {
 			continue
 		}
 		b := o.Img.Bounds()
+		rx, rz, fx, fz := 1.0, 0.0, 0.0, 1.0 // flat: axis-aligned, unless it turns with us on our square
+		if o.Front > 0 && o.At != nil {
+			px, pz := math.Floor(c.x+c.fwx*eyeBack), math.Floor(c.z+c.fwz*eyeBack) // the party's cell
+			if ox == px+0.5 && oz == pz+0.5 {
+				ox, oz, rx, rz, fx, fz = ox+c.fwx*o.Front, oz+c.fwz*o.Front, c.rtx, c.rtz, c.fwx, c.fwz
+			}
+		}
+		if o.Flat { // texture top towards the far side; width Size, depth by the texture's aspect
+			hw, hd := o.Size/2, o.Size*float64(b.Dy())/float64(b.Dx())/2
+			f := q(vert{ox - rx*hw + fx*hd, 0.5, oz - rz*hw + fz*hd, 0, 0, 0, 0, 0}, vert{ox + rx*hw + fx*hd, 0.5, oz + rz*hw + fz*hd, 1, 0, 0, 0, 0},
+				vert{ox + rx*hw - fx*hd, 0.5, oz + rz*hw - fz*hd, 1, 1, 0, 0, 0}, vert{ox - rx*hw - fx*hd, 0.5, oz - rz*hw - fz*hd, 0, 1, 0, 0, 0}, o.Img, 1)
+			f.pass = 1
+			continue
+		}
 		k := o.Size / math.Max(float64(b.Dx()), float64(b.Dy()))
 		wid, hgt := k*float64(b.Dx()), k*float64(b.Dy())
 		hx, hz := c.rtx*wid/2, c.rtz*wid/2

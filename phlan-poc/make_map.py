@@ -120,8 +120,9 @@ def main():
         todo += [(x + dx, y + dy) for d, (dx, dy) in enumerate(STEP) if not side(x, y, d)[0]]
     extra += [f"water {x} {y}" for x, y in sorted(water)]
     extra += [f"pond {x} {y}" for x, y in sorted(ponds)]
-    for (x, y), (tex, size) in A.get("cellprops", {}).items():
-        props[x + 0.5, y + 0.5] = f"prop {tex} {x + 0.5} {y + 0.5} {size}"
+    for (x, y), things in A.get("cellprops", {}).items():
+        for i, (kind, tex, size, front) in enumerate(things):
+            props[x + 0.5, y + 0.5, i] = f"{kind} {tex} {x + 0.5} {y + 0.5} {size} {front}"
     extra += [props[k] for k in sorted(props)]
     lines = ["." * 16] * 16 + [f"floor {A['floor']}", f"ceiling {A['ceiling']}"] + extra
     (HERE / f"blobber/maps/{NAME}.map").write_text("\n".join(lines) + "\n")

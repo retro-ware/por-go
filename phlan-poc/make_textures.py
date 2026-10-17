@@ -124,7 +124,8 @@ def arch(im, src):
     if len(oy):
         py, px = (oy.max() - oy.min()) // 3 + 4, (ox.max() - ox.min()) // 3 + 4
         keep[max(oy.min() - py, 0):oy.max() + 3, max(ox.min() - px, 0):ox.max() + px] = True
-        keep &= inside & solid
+    box = keep & inside  # around the object: as the model drew it, no stone filled in where the original's was
+    keep &= inside & solid
     whole = hole.copy()  # the opening with the object, for where the stone above it ends
     hole &= ~keep
     left = int(np.argmax(whole.any(axis=0)))  # first opening column; the wall left of it is solid
@@ -137,7 +138,7 @@ def arch(im, src):
         fill[y0:np.argmax(whole[:, x]), x] = True
     fill |= ~whole & ~solid
     fill[:y0] = False
-    fill &= ~keep
+    fill &= ~box
     ys, xs = np.nonzero(fill)
     k = (xs - x0) % (2 * band)  # mirrored back and forth: no joins where the strip repeats
     a[ys, xs] = a[ys, x0 + np.where(k < band, k, 2 * band - 1 - k)]

@@ -115,10 +115,10 @@ def gemini(prompt, ref):
     return NM.generate((KEYS / "gemini_key").read_text().strip(), prompt, image=ref)[0]
 
 
-def openai(prompt, ref):
+def openai(prompt, ref, size="1024x1024"):
     key = (KEYS / "openai_key").read_text().strip()
     b = uuid.uuid4().hex
-    fields = {"model": OPENAI_MODEL, "prompt": prompt, "size": "1024x1024", "n": "1"}
+    fields = {"model": OPENAI_MODEL, "prompt": prompt, "size": size, "n": "1"}
     body = b"".join(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode()
                     for k, v in fields.items())
     body += (f'--{b}\r\nContent-Disposition: form-data; name="image[]"; filename="ref.png"\r\n'
