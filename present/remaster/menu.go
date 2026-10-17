@@ -3,6 +3,7 @@ package remaster
 import (
 	"image"
 	"image/color"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -11,12 +12,12 @@ import (
 )
 
 // drawMenu draws a vertical menu in the original's look: a box with the
-// text pane's red border, the items in the game's font, green on black, the
-// selected one on blue. It goes at scale k, centred on cx, its top at top.
-func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte, title string, items []string, sel int, k float64, cx, top int) {
-	rows := items
+// text pane's red border, the items in the game's font, green on black with
+// their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
+func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
+	rows, hot := items, keys
 	if title != "" {
-		rows = append([]string{title, ""}, items...)
+		rows, hot = append([]string{title, ""}, items...), append([]byte{0, 0}, keys...)
 		sel += 2
 	}
 	w := 0
@@ -31,7 +32,7 @@ func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte,
 		p.menuImg, p.menuBuf = ebiten.NewImage(cw*8, ch*8), make([]byte, cw*8*ch*8*4)
 	}
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
-	green, blue := rgb(10), rgb(1)
+	green, blue, white := rgb(10), rgb(1), rgb(15)
 	clear(p.menuBuf)
 	for i := 3; i < len(p.menuBuf); i += 4 {
 		p.menuBuf[i] = 255
@@ -49,12 +50,20 @@ func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte,
 				}
 			}
 		}
+		hk := -1 // the hotkey: white, as on the original's bar
+		if r < len(hot) && hot[r] != 0 {
+			hk = strings.IndexByte(strings.ToUpper(s), hot[r])
+		}
 		for i := 0; i < len(s); i++ {
 			g := glyph(s[i])
+			c := green
+			if i == hk {
+				c = white
+			}
 			for y := 0; y < 8; y++ {
 				for b := 0; b < 8; b++ {
 					if g[y]&(0x80>>b) != 0 {
-						set((i+2)*8+b, y0+y, green)
+						set((i+2)*8+b, y0+y, c)
 					}
 				}
 			}

@@ -112,16 +112,16 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 			p.drawPrompt(dst, frame, k)
 		}
 	} else if p.menu {
-		lines := make([]string, len(v.Menu.Items))
+		lines, keys := make([]string, len(v.Menu.Items)), make([]byte, len(v.Menu.Items))
 		for i, it := range v.Menu.Items {
-			lines[i] = it.Text
+			lines[i], keys[i] = it.Text, it.Key
 		}
 		p.sel = min(p.sel, len(lines)-1)
 		top := cy + int(pk*th/2) + int(pk*8)
 		if v.Command || noChoice(v) {
 			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
-		p.drawMenu(dst, frame, note.Glyph, v.Menu.Prompt, lines, p.sel, pk, cx, top)
+		p.drawMenu(dst, frame, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
 	if note.Show { // the toast (font name ...): the strip Frame wrote it into
 		n := min(len(note.Text)+2, 40) * 8
