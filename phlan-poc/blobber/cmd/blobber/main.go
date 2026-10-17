@@ -1,12 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"cmp"
-	"embed"
 	"fmt"
-	"image"
-	"image/png"
 	"io"
 	"log"
 	"os"
@@ -21,23 +17,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
-
-//go:embed assets/monsters
-var monsters embed.FS
-
-// loadMonster decodes assets/monsters/<name>.png.
-func loadMonster(name string) (image.Image, error) {
-	b, err := monsters.ReadFile("assets/monsters/" + name + ".png")
-	if err != nil {
-		return nil, err
-	}
-	return png.Decode(bytes.NewReader(b))
-}
-
-// loadSheet reads the animated monster in assets/monsters/<name>/ (sheet.png + manifest.json).
-func loadSheet(name string) (*blobber.Sheet, error) {
-	return blobber.LoadSheet(monsters, "assets/monsters/"+name)
-}
 
 func main() {
 	host := newConsole(party.New())

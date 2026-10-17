@@ -188,6 +188,8 @@ the harbour blues, tile with a half-shift blend; `tile` regrades from raw/).
 
 ## 5. Build
 
+assets/walls holds only the textures some PoR map uses. A texture a new map needs is generated again by make_textures.py or make_sky.py. There are no painted monster sprites: PoR fights in the classic engine.
+
 ```bash
 cd blobber && go build -o $SCRATCH/blobber-poc ./cmd/blobber
 ```

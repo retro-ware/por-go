@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/fs"
 	"maps"
 	"math/rand"
 	"slices"
@@ -17,7 +16,6 @@ import (
 	"blobber/sprites"
 	"blobber/ui"
 
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // kind is one row of maps/monsters.txt.
@@ -70,16 +68,11 @@ func (c *console) spawn(id string, x, y, hp int) error {
 	}
 	s, ok := sheets[k.Sprite]
 	if !ok {
-		if img := sprites.Get(k.Sprite); img != nil {
-			s = &blobber.Sheet{Idle: ebiten.NewImageFromImage(img)}
-		} else if s, _ = loadSheet(k.Sprite); s == nil {
-			img, err := loadMonster(k.Sprite)
-			if err != nil {
-				fmt.Println("  spawn failed:", err)
-				return err
-			}
-			s = &blobber.Sheet{Idle: ebiten.NewImageFromImage(img)}
+		img := sprites.Get(k.Sprite)
+		if img == nil { // the painted monster sprites are gone (PoR fights in the classic engine): a stand-in
+			img = sprites.Get("guardian")
 		}
+		s = &blobber.Sheet{Idle: img}
 		sheets[k.Sprite] = s
 	}
 	key := fmt.Sprintf("%s@%g", k.Sprite, k.Size) // ids sharing a sprite may differ in size
@@ -393,16 +386,11 @@ func killAhead() {
 	blobber.Message(fmt.Sprintf("Debug: killed %d monster(s).", n))
 }
 
-// complete reports whether monster id has usable stats and all three painted poses.
+// complete reports whether monster id has usable stats.
 func complete(id string) bool {
 	k := kinds[id]
 	if k.HP <= 0 || k.AC < 0 || k.Dmg <= 0 || k.Exp < 0 || k.Spd <= 0 || k.Size <= 0 {
 		return false
-	}
-	for _, pose := range []string{"idle", "attack", "hurt"} {
-		if _, err := fs.Stat(monsters, "assets/monsters/"+k.Sprite+"/"+pose+".png"); err != nil {
-			return false
-		}
 	}
 	return true
 }
