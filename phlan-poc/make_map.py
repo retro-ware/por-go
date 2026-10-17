@@ -126,7 +126,7 @@ def main():
     extra += [f"water {x} {y}" for x, y in sorted(water)] + ["sea edge"] * sea  # one word alone would read as a grid row
     extra += [f"pond {x} {y}" for x, y in sorted(ponds)]
     # garden beds: a square with a bed wall on three or four of its own sides is in the bed (one or two: it
-    # only looks at one); clumps of plants on a jittered 2x2 grid, the same every run
+    # only looks at one); tufts of grass on a jittered 4x4 grid, the same every run
     import random
     for y in range(16):
         for x in range(16):
@@ -134,10 +134,10 @@ def main():
             bed = [v for v in vs if v in BEDS]
             if len(bed) >= 3:
                 r = random.Random(y * 16 + x)
-                for i in range(4):
-                    px = round(x + 0.25 + 0.5 * (i % 2) + r.uniform(-0.15, 0.15), 3)
-                    py = round(y + 0.25 + 0.5 * (i // 2) + r.uniform(-0.15, 0.15), 3)
-                    props[px, py] = f"prop {r.choice(BEDS[bed[0]])} {px} {py} {r.uniform(0.3, 0.42):.3f}"
+                for i in range(16):  # low tufts on a jittered 4x4 grid, spread over the whole square
+                    px = round(x + 0.125 + 0.25 * (i % 4) + r.uniform(-0.09, 0.09), 3)
+                    py = round(y + 0.125 + 0.25 * (i // 4) + r.uniform(-0.09, 0.09), 3)
+                    props[px, py] = f"prop {r.choice(BEDS[bed[0]])} {px} {py} {r.uniform(0.26, 0.36):.3f}"
     for (x, y), things in A.get("cellprops", {}).items():
         for i, (kind, tex, *nums) in enumerate(things):
             props[x + 0.5, y + 0.5, i] = " ".join(map(str, [kind, tex, x + 0.5, y + 0.5, *nums]))

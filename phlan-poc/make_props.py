@@ -36,11 +36,11 @@ RIM = ("Game texture on a flat solid magenta (#FF00FF) background: one single st
        "like the stone rim of a well laid out straight. The row runs the full width of the image from the left edge "
        "to the right edge and must tile seamlessly left to right; it is about a sixth of the image tall, centred "
        "vertically, flat magenta above and below. Painterly high-fantasy game art with modern detail.")
-GRASS = ("Game sprite on a flat solid magenta (#FF00FF) background: one single clump of wild garden weeds and tall grass "
-         "growing out of the ground, seen from the side at eye level: long green blades and broad leaves, a few small "
-         "blue and white wildflowers on thin stems, the base of the clump touching the lower edge of the image. "
-         "Centred, nothing else, no soil mound, no ground, no shadow, a small magenta margin at the top and sides. "
-         "Painterly high-fantasy game art with modern detail, colours like the reference's weeds.")
+GRASS = ("Game sprite on a flat solid magenta (#FF00FF) background: one small low tuft of short wild grass seen from "
+         "the side at eye level, wider than tall: a fan of short bright green blades spreading outward, two or three "
+         "tiny blue flower specks, a couple of small grey pebbles at its base, the base touching the lower edge of the "
+         "image. Centred, nothing else, no soil mound, no ground, no shadow, a small magenta margin at the top and "
+         "sides. Painterly high-fantasy game art with modern detail, colours like the reference's weeds.")
 # name -> (texture, area, wall value, share of the dump's rows the reference starts at, prompt)
 PROPS = {"tree": ("prop_nomad_tree", "nomad", 6, 0.0, TREE), "ladder": ("prop_kuto_ladder", "kuto", 8, 0.5, LADDER),
          "rim": ("floor_kuto_rim", "kuto", 8, 0.9, RIM),
