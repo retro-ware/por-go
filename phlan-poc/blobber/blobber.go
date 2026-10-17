@@ -1433,7 +1433,10 @@ type face struct {
 	inc   float64 // constant extra fade toward the fog (look.go)
 	mode  int     // modeShaded, modeUnlit or modeGlow
 	tint  [3]float64
-	pass  int // 0 floor and ceiling, 1 light circles and mud on them, 2 pond water, 3 the rest, sorted far to near
+	grid  [2]int          // a plane over several cells: their count across and deep (sub pieces each)
+	org   [2]int          // its first cell
+	only  map[[2]int]bool // the cells of it to draw
+	pass  int             // 0 floor and ceiling, 1 light circles and mud on them, 2 pond water, 3 the rest, sorted far to near
 }
 
 func lerp(a, b vert, t float64) vert {
@@ -1525,10 +1528,16 @@ var white = genSolid(color.RGBA{255, 255, 255, 255})
 
 // drawQuad subdivides, lights, transforms, near-clips and projects one textured quad.
 func (g *Game) drawQuad(dst *ebiten.Image, c cam, f *face) {
-	n := f.sub
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			s0, s1, t0, t1 := float64(i)/float64(n), float64(i+1)/float64(n), float64(j)/float64(n), float64(j+1)/float64(n)
+	ni, nj := f.sub, f.sub
+	if f.only != nil {
+		ni, nj = f.grid[0]*f.sub, f.grid[1]*f.sub
+	}
+	for i := 0; i < ni; i++ {
+		for j := 0; j < nj; j++ {
+			if f.only != nil && !f.only[[2]int{f.org[0] + i/f.sub, f.org[1] + j/f.sub}] {
+				continue
+			}
+			s0, s1, t0, t1 := float64(i)/float64(ni), float64(i+1)/float64(ni), float64(j)/float64(nj), float64(j+1)/float64(nj)
 			bil := func(s, t float64) vert {
 				a, b := lerp(f.v[0], f.v[1], s), lerp(f.v[3], f.v[2], s)
 				v := lerp(a, b, t)
@@ -1749,22 +1758,36 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 	sort.Slice(cells, func(i, j int) bool { // phlan-poc: a fixed order, so equal depths sort the same every frame
 		return cells[i][1] < cells[j][1] || cells[i][1] == cells[j][1] && cells[i][0] < cells[j][0]
 	})
+	// One floor quad (and one ceiling quad) over the visible cells, cut into pieces per cell for the
+	// lighting: neighbouring pieces share their edges exactly, so nothing shows between them.
+	// Water and ponds are laid over it.
+	if len(cells) > 0 {
+		vis := visibleCells(c)
+		lo, hi := cells[0], cells[0]
+		for _, cl := range cells {
+			lo = [2]int{min(lo[0], cl[0]), min(lo[1], cl[1])}
+			hi = [2]int{max(hi[0], cl[0]), max(hi[1], cl[1])}
+		}
+		x0, z0, x1, z1 := float64(lo[0]), float64(lo[1]), float64(hi[0]+1), float64(hi[1]+1)
+		w, h := x1-x0, z1-z0
+		plane := func(y float64, t *ebiten.Image) {
+			f := q(vert{x0, y, z0, 0, 0, 0, 0, 0}, vert{x1, y, z0, w, 0, 0, 0, 0}, vert{x1, y, z1, w, h, 0, 0, 0}, vert{x0, y, z1, 0, h, 0, 0, 0}, t, 3)
+			f.pass, f.dist, f.grid, f.org, f.only = 0, math.Inf(1), [2]int{int(w), int(h)}, lo, vis
+		}
+		plane(0.5, texFloor)
+		if !openSky {
+			plane(-0.5, texCeil)
+		}
+	}
 	for _, cell := range cells {
 		cx, cy := cell[0], cell[1]
 		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
-		// floor and ceiling tiles overlap their neighbours by a hair (texture coordinates grown to
-		// match): edges computed apart from each other round differently and let the sky through
-		const lap = 0.004
-		ox0, oz0, ox1, oz1 := x0-lap, z0-lap, x1+lap, z1+lap
-		var f *face
 		wx, wy := cx, cy
-		if Water[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting
+		if Water[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting, laid over the floor
 			w := g.time * 0.02
-			f = q(vert{ox0, 0.5, oz0, ox0/2 + w, oz0 / 2, 0, 0, 0}, vert{ox1, 0.5, oz0, ox1/2 + w, oz0 / 2, 0, 0, 0}, vert{ox1, 0.5, oz1, ox1/2 + w, oz1 / 2, 0, 0, 0}, vert{ox0, 0.5, oz1, ox0/2 + w, oz1 / 2, 0, 0, 0}, texWater, 3)
-		} else {
-			f = q(vert{ox0, 0.5, oz0, -lap, -lap, 0, 0, 0}, vert{ox1, 0.5, oz0, 1 + lap, -lap, 0, 0, 0}, vert{ox1, 0.5, oz1, 1 + lap, 1 + lap, 0, 0, 0}, vert{ox0, 0.5, oz1, -lap, 1 + lap, 0, 0, 0}, texFloor, 3)
+			f := q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
+			f.pass = 1
 		}
-		f.pass = 0
 		if m := pondMud(cell); m != nil { // phlan-poc: the muddy bank around a pond, fading into the floor
 			f := q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, m, 3)
 			f.pass = 1
@@ -1795,10 +1818,6 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 					f.pass = 2
 				}
 			}
-		}
-		if !openSky {
-			f := q(vert{ox0, -0.5, oz0, -lap, -lap, 0, 0, 0}, vert{ox1, -0.5, oz0, 1 + lap, -lap, 0, 0, 0}, vert{ox1, -0.5, oz1, 1 + lap, 1 + lap, 0, 0, 0}, vert{ox0, -0.5, oz1, -lap, 1 + lap, 0, 0, 0}, texCeil, 3)
-			f.pass = 0
 		}
 		// wall faces on the four sides of this floor cell, textured by how they face the camera
 		type side struct{ ax, az, bx, bz, nx, nz float64 }
