@@ -22,12 +22,12 @@ package main
 import (
 	"flag"
 	"image"
-	"image/color"
+	"image/png"
 	"log"
-	"math"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -36,25 +36,13 @@ import (
 
 	"por/ega"
 	"por/engine"
+	"por/present/classic"
 )
 
 type game struct {
-	scr *ega.Screen
-	eng *engine.Engine
-	img *ebiten.Image
-	buf []byte
-
-	// the frame last converted into buf: an unchanged one is not converted
-	// or uploaded again
-	last    [ega.W * ega.H]uint8
-	lastPal [16]uint8
-	lastSat float64
-	lut     [256]color.RGBA // colour of each index under lastPal
-	drawn   bool
-	noted   bool // buf holds a note
-
-	overlays []ega.Overlay                 // the engine's, copied each frame
-	scans    map[image.Image]*ebiten.Image // their GPU copies
+	scr  *ega.Screen
+	eng  *engine.Engine
+	view classic.Presenter
 
 	pads    []ebiten.GamepadID // input buffers, reused each tick
 	pressed []ebiten.Key
@@ -63,13 +51,12 @@ type game struct {
 	stickDir  uint16 // left stick direction being held
 	stickHeld int    // ticks it has been held
 
-	dsf   float64 // device scale factor of the last Layout
-	pic   rect    // where the picture is drawn, in device pixels
-	wheel float64 // wheel movement not yet sent as a step
-	sent  bool    // input went to the engine this tick
+	dsf   float64      // device scale factor of the last Layout
+	pic   classic.Rect // where the picture is drawn, in device pixels
+	wheel float64      // wheel movement not yet sent as a step
+	sent  bool         // input went to the engine this tick
+	ticks int          // Update calls, counted only for POR_SHOT
 }
-
-type rect struct{ x, y, w, h float64 }
 
 // tps: Update runs 120 times a second, so a key waits at most ~8 ms before
 // the engine sees it.
@@ -77,6 +64,14 @@ const tps = 120
 
 func (g *game) Update() error {
 	g.sent = false
+	if shot != "" { // the user's input never reaches a capture, only the scripted keys
+		g.ticks++
+		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
+			g.push(uint16(shotKeys[k-1]))
+			g.settle()
+		}
+		return nil
+	}
 	g.keys()
 	for _, id := range ebiten.AppendGamepadIDs(g.pads[:0]) {
 		g.gamepad(id)
@@ -168,11 +163,11 @@ func (g *game) mouse() {
 // cell is the text cell (40x25) of the picture under device pixel (x, y).
 func (g *game) cell(x, y float64) (int, int, bool) {
 	p := g.pic
-	if p.w <= 0 || x < p.x || y < p.y || x >= p.x+p.w || y >= p.y+p.h {
+	if p.W <= 0 || x < p.X || y < p.Y || x >= p.X+p.W || y >= p.Y+p.H {
 		return 0, 0, false
 	}
-	px := int((x - p.x) * ega.W / p.w)
-	py := int((y - p.y) * ega.H / p.h)
+	px := int((x - p.X) * ega.W / p.W)
+	py := int((y - p.Y) * ega.H / p.H)
 	return px / 8, py / 8, true
 }
 
@@ -240,98 +235,32 @@ func (g *game) gamepad(id ebiten.GamepadID) {
 }
 
 func (g *game) Draw(dst *ebiten.Image) {
-	g.scr.Lock()
-	vis := g.scr.Visible()
-	note, at := g.eng.Note()
-	showNote := time.Since(at) < 2*time.Second
-	palChanged := g.scr.Pal != g.lastPal || ega.AmigaSaturation != g.lastSat
-	upload := !g.drawn || palChanged || showNote || g.noted || *vis != g.last
-	if upload {
-		if !g.drawn || palChanged {
-			g.lastPal, g.lastSat = g.scr.Pal, ega.AmigaSaturation
-			for i := range g.lut {
-				g.lut[i] = g.scr.RGBA(uint8(i))
-			}
-		}
-		g.last = *vis
-		for i, c := range vis {
-			rgb := g.lut[c]
-			g.buf[i*4], g.buf[i*4+1], g.buf[i*4+2], g.buf[i*4+3] = rgb.R, rgb.G, rgb.B, 255
-		}
-		if showNote {
-			g.drawNote(note)
-		}
-		g.drawn, g.noted = true, showNote
-	}
-	g.overlays = append(g.overlays[:0], g.scr.Overlays...)
-	g.scr.Unlock()
-	if upload {
-		g.img.WritePixels(g.buf)
-	}
-	dst.Fill(color.Black)
-
-	// The picture: as large as fits, 4:3 like a CRT.
-	b := dst.Bounds()
-	W, H := float64(b.Dx()), float64(b.Dy())
-	scale := math.Min(W/4, H/3)
-	pw, ph := scale*4, scale*3
-	g.pic = rect{(W - pw) / 2, (H - ph) / 2, pw, ph}
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(pw/ega.W, ph/ega.H)
-	op.GeoM.Translate(g.pic.x, g.pic.y)
-	dst.DrawImage(g.img, op)
-
-	// Overlays (journal scans) at the window's own resolution.
-	for img, im := range g.scans { // drop the copies of scans no longer shown
-		keep := false
-		for _, o := range g.overlays {
-			keep = keep || o.Img == img
-		}
-		if !keep {
-			im.Deallocate()
-			delete(g.scans, img)
-		}
-	}
-	for _, o := range g.overlays {
-		im := g.scans[o.Img]
-		if im == nil {
-			if g.scans == nil {
-				g.scans = map[image.Image]*ebiten.Image{}
-			}
-			im = ebiten.NewImageFromImage(o.Img)
-			g.scans[o.Img] = im
-		}
-		b := o.Part()
-		im = im.SubImage(b).(*ebiten.Image) // drawn from its own top left
-		op := &ebiten.DrawImageOptions{Filter: ebiten.FilterLinear}
-		op.GeoM.Scale(float64(o.At.Dx())*pw/ega.W/float64(b.Dx()), float64(o.At.Dy())*ph/ega.H/float64(b.Dy()))
-		op.GeoM.Translate(g.pic.x+float64(o.At.Min.X)*pw/ega.W, g.pic.y+float64(o.At.Min.Y)*ph/ega.H)
-		dst.DrawImage(im, op)
+	text, at := g.eng.Note()
+	g.pic = g.view.Draw(dst, g.scr, classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph})
+	if shot != "" && g.ticks > 30*(len(shotKeys)+4) {
+		saveShot(dst)
 	}
 }
 
-// drawNote writes s into the top of the picture, white on blue in the
-// current font, over what the game drew (the screen stays untouched).
-func (g *game) drawNote(s string) {
-	s = " " + s + " "
-	if len(s) > 40 {
-		s = s[:40]
+// POR_SHOT=FILE.png writes the window to FILE after the keys in POR_KEYS
+// ("\r" Enter, "\e" Escape), one every quarter second, and exits; for full
+// size checks of the presenters. The window opens unfocused and ignores the
+// user's input meanwhile.
+var shot, shotKeys = os.Getenv("POR_SHOT"), strings.NewReplacer(`\r`, "\r", `\e`, "\x1b").Replace(os.Getenv("POR_KEYS"))
+
+func saveShot(dst *ebiten.Image) {
+	b := dst.Bounds()
+	img := image.NewRGBA(b)
+	dst.ReadPixels(img.Pix)
+	f, err := os.Create(shot)
+	if err == nil {
+		err = png.Encode(f, img)
+		f.Close()
 	}
-	x0 := (40 - len(s)) * 4
-	bg, fg := g.lut[1], g.lut[15]
-	for i := 0; i < len(s); i++ {
-		gl := g.eng.Glyph(s[i])
-		for r := 0; r < 8; r++ {
-			for b := 0; b < 8; b++ {
-				c := bg
-				if gl[r]&(0x80>>b) != 0 {
-					c = fg
-				}
-				p := ((r+4)*ega.W + x0 + i*8 + b) * 4
-				g.buf[p], g.buf[p+1], g.buf[p+2] = c.R, c.G, c.B
-			}
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
+	os.Exit(0)
 }
 
 // Layout works in device pixels, so the picture fills the window exactly.
@@ -424,12 +353,15 @@ func main() {
 	eng.Cfg.Param = flag.Arg(0)
 	go eng.Run()
 
-	g := &game{scr: scr, eng: eng, img: ebiten.NewImage(ega.W, ega.H), buf: make([]byte, ega.W*ega.H*4), dsf: 1}
+	g := &game{scr: scr, eng: eng, dsf: 1}
 	ebiten.SetWindowSize(ega.W*(*scale), ega.H*(*scale)*6/5) // 4:3 like a CRT
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Pool of Radiance")
 	ebiten.SetTPS(tps)
-	if err := ebiten.RunGame(g); err != nil {
+	if shot != "" {
+		ebiten.SetRunnableOnUnfocused(true)
+	}
+	if err := ebiten.RunGameWithOptions(g, &ebiten.RunGameOptions{InitUnfocused: shot != ""}); err != nil {
 		log.Fatal(err)
 	}
 }
