@@ -51,8 +51,8 @@ func TestIceCave(t *testing.T) {
 	if x, y, _ := blobber.Pos(); x != 1 || y != 1 || h.m != "icecave" {
 		t.Fatalf("pos %d,%d map %s", x, y, h.m)
 	}
-	if h.worlds["icecave"].flats != [2]string{"ice_cave", "ice_cave"} {
-		t.Fatal("flats", h.worlds["icecave"].flats)
+	if sc := h.worlds["icecave"].scene; sc.Floor != "ice_cave" || sc.Ceiling != "ice_cave" {
+		t.Fatal("flats", sc.Floor, sc.Ceiling)
 	}
 	gold := h.Gold
 	use(h, 6, 5)
@@ -235,7 +235,7 @@ func TestCombatAndSave(t *testing.T) {
 
 func TestWorldRestAndEnd(t *testing.T) {
 	h := newTestHost(t, "demo", 2, 1)
-	if h.start.m != "town" || h.start.title != "Blobber Demo" || h.start.dir != 0 || len(h.start.heroes) != 3 || h.start.gold != 500 {
+	if h.start.m != "phlan" || h.start.title != "Blobber Demo" || h.start.dir != 0 || len(h.start.heroes) != 3 || h.start.gold != 500 {
 		t.Fatalf("world: %+v", h.start)
 	}
 	if pt := h.newParty(); len(pt.Chars) != 3 || pt.Chars[0].Name != "Ann" || pt.Chars[0].Class != "knight" || pt.Chars[0].MaxHP < 10 || pt.FindItem("chainmail") == nil {

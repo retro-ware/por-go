@@ -1,11 +1,15 @@
 package blobber
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
+	"bytes"
 	"image"
+	"image/color"
+	"image/png"
 	"math"
-	"os"
 	"testing"
+	"testing/fstest"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var testLevel = []string{
@@ -96,7 +100,15 @@ func TestDoorIsPassable(t *testing.T) {
 // hurt pose until that ends.
 func TestSheetAnimation(t *testing.T) {
 	defer SwapPopulation(SwapPopulation(nil))
-	s, err := LoadSheet(os.DirFS("cmd/blobber/assets/monsters"), "ice_giant")
+	poses := fstest.MapFS{}
+	for i, pose := range []string{"idle", "attack", "hurt"} { // three tiny poses of different colours
+		img := image.NewRGBA(image.Rect(0, 0, 4, 4))
+		img.Set(1, 1, color.RGBA{uint8(80 * i), 200, 0, 255})
+		var b bytes.Buffer
+		png.Encode(&b, img)
+		poses["m/"+pose+".png"] = &fstest.MapFile{Data: b.Bytes()}
+	}
+	s, err := LoadSheet(poses, "m")
 	if err != nil {
 		t.Fatal(err)
 	}

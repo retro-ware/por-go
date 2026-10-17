@@ -32,14 +32,7 @@ type world struct {
 	objs  map[string]*blobber.Object
 	floor []floorItem
 	pop   *blobber.Population
-	flats [2]string // painted floor and ceiling names ("" = default)
-	// phlan-poc: this map's thin walls and water, swapped into blobber.Faces/Edges/Water on enter
-	faces map[[3]int][]blobber.FacePart
-	edges map[[3]int]bool
-	water map[[2]int]bool
-	nomap map[[3]int]bool
-	pond  map[[2]int]bool
-	sea   bool
+	scene *blobber.Scene // what the map shows; lvl is its grid
 }
 
 // floorItem is loot hidden on a tile; as in World of Xeen items are never drawn in the world, F finds them.
@@ -78,7 +71,6 @@ func (c *console) enter(name string) (*world, error) {
 		}
 	}
 	c.m = name
-	blobber.Faces, blobber.Edges, blobber.Water, blobber.NoMap, blobber.Pond, blobber.Sea = w.faces, w.edges, w.water, w.nomap, w.pond, w.sea
 	c.refresh()
 	return w, nil
 }
@@ -90,9 +82,9 @@ func (c *console) load(name string) (*world, error) {
 		return nil, err
 	}
 	defer mf.Close()
-	lvl, extra, err := blobber.LoadMap(mf)
+	sc, extra, err := blobber.ParseScene(mf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("maps/%s.map: %v", name, err)
 	}
 	if !c.vm.Loaded(name) {
 		ef, err := maps.Open(name + ".evt")
@@ -109,8 +101,7 @@ func (c *console) load(name string) (*world, error) {
 	if old := c.worlds[c.m]; old != nil {
 		old.pop = prev
 	}
-	w := &world{lvl: lvl, objs: map[string]*blobber.Object{},
-		faces: map[[3]int][]blobber.FacePart{}, edges: map[[3]int]bool{}, water: map[[2]int]bool{}, nomap: map[[3]int]bool{}, pond: map[[2]int]bool{}}
+	w := &world{lvl: sc.Rows, objs: map[string]*blobber.Object{}, scene: sc}
 	c.worlds[name] = w
 	for _, l := range extra {
 		if err := c.place(w, l); err != nil {
@@ -126,8 +117,8 @@ func (c *console) load(name string) (*world, error) {
 //	item BASE X Y [BONUS]       item lying on the floor, taken with F
 //	monster SPRITE X Y          wandering monster
 //	deco grass|lantern|firefly X Y
-//	face X Y SIDE CHAR          phlan-poc: the face of floor cell X, Y towards SIDE (0 N .. 3 W) in material CHAR
-//	floor NAME / ceiling NAME   painted assets/walls/floor_NAME.png / ceiling_NAME.png
+//
+// The scene's lines (walls, water, props, floor and ceiling) are blobber.ParseScene's.
 func (c *console) place(w *world, line string) error {
 	f := strings.Fields(line)
 	num := func(i int) int {
@@ -137,7 +128,7 @@ func (c *console) place(w *world, line string) error {
 		n, _ := strconv.Atoi(f[i])
 		return n
 	}
-	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "pond": 3, "nomap": 4, "prop": 5, "well": 7, "sea": 1}[f[0]]
+	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4}[f[0]]
 	if need == 0 || len(f) < need {
 		return fmt.Errorf("want %d fields", need)
 	}
@@ -152,49 +143,6 @@ func (c *console) place(w *world, line string) error {
 		w.drop(party.NewItem(f[1], num(4)), num(2), num(3))
 	case "monster":
 		return c.spawn(f[1], num(2), num(3), -1)
-	case "prop": // phlan-poc: prop TEX X Y SIZE [FRONT [SINK]], a billboard
-		var at [2]float64 // at an exact floor position (X, Y in squares, floats); FRONT, SINK see blobber.Object
-		var size, front, sink float64
-		fmt.Sscan(strings.Join(f[2:], " "), &at[0], &at[1], &size, &front, &sink)
-		img := blobber.WallTexture(f[1])
-		if img == nil {
-			return fmt.Errorf("no texture %q", f[1])
-		}
-		w.objs[line] = &blobber.Object{X: int(at[0]), Y: int(at[1]), Img: img, Size: size, At: &at, Front: front, Sink: sink}
-	case "well": // phlan-poc: well RIMTEX X Y HALFWIDTH HALFDEPTH RIMWIDTH [FRONT], an oval hole in the floor
-		var at [2]float64
-		var ring [3]float64
-		var front float64
-		fmt.Sscan(strings.Join(f[2:], " "), &at[0], &at[1], &ring[0], &ring[1], &ring[2], &front)
-		img := blobber.WallTexture(f[1])
-		if img == nil {
-			return fmt.Errorf("no texture %q", f[1])
-		}
-		w.objs[line] = &blobber.Object{X: int(at[0]), Y: int(at[1]), Img: img, At: &at, Front: front, Ring: &ring}
-	case "water": // phlan-poc: water X Y, see blobber.Water
-		w.water[[2]int{num(1), num(2)}] = true
-	case "sea": // phlan-poc: sea edge, water off the map, see blobber.Sea
-		w.sea = true
-	case "pond": // phlan-poc: pond X Y, see blobber.Pond
-		w.pond[[2]int{num(1), num(2)}] = true
-	case "nomap": // phlan-poc: nomap X Y SIDE, a face left off the minimap, see blobber.NoMap
-		w.nomap[[3]int{num(1), num(2), num(3)}] = true
-	case "edge": // phlan-poc: edge X Y SIDE, a thin wall, see blobber.Edges
-		w.edges[[3]int{num(1), num(2), num(3)}] = true
-	case "face": // phlan-poc: face X Y SIDE CHAR [T0 T1 U0 U1], see blobber.Faces
-		p := blobber.FacePart{Mat: f[4][0], T1: 1, U1: 1}
-		if len(f[4]) > 1 { // a texture name instead of a map character
-			p.Mat, p.Tex = 0, f[4]
-		}
-		if len(f) >= 9 {
-			fmt.Sscan(strings.Join(f[5:9], " "), &p.T0, &p.T1, &p.U0, &p.U1)
-		}
-		k := [3]int{num(1), num(2), num(3)}
-		w.faces[k] = append(w.faces[k], p)
-	case "floor":
-		w.flats[0] = f[1]
-	case "ceiling":
-		w.flats[1] = f[1]
 	case "deco":
 		k, ok := map[string]int{"grass": blobber.Grass, "lantern": blobber.Lantern, "firefly": blobber.Firefly}[f[1]]
 		if !ok {
@@ -212,11 +160,11 @@ func (w *world) drop(it *party.Item, x, y int) {
 // refresh publishes the current world's props to the engine.
 func (c *console) refresh() {
 	w := c.worlds[c.m]
-	blobber.SetFlats(w.flats[0], w.flats[1])
-	blobber.Objects = blobber.Objects[:0]
+	var objs []*blobber.Object
 	for _, o := range w.objs {
-		blobber.Objects = append(blobber.Objects, o)
+		objs = append(objs, o)
 	}
+	w.scene.Show(objs...)
 }
 
 // TakeFloor picks up every item lying at (x, y) and reports what was taken.

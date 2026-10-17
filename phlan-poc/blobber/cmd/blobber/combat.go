@@ -15,7 +15,6 @@ import (
 	"blobber/party"
 	"blobber/sprites"
 	"blobber/ui"
-
 )
 
 // kind is one row of maps/monsters.txt.

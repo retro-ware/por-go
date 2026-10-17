@@ -1104,6 +1104,7 @@ type Game struct {
 	dither, smooth, menu, options, atlasView, help bool
 	mapView                                        bool
 	debug                                          bool
+	follow                                         bool // driven by a View: moves come from the host, never the keyboard
 	torch                                          float64
 	sel                                            int
 	scene                                          *ebiten.Image
@@ -1307,7 +1308,7 @@ func (g *Game) tween() {
 		top = walkSpeed * sp
 	}
 	d := [2]int{int(math.Round(g.tx - g.fx)), int(math.Round(g.tz - g.fz))}
-	on := KeyPressed(g.walkKey) && prompt == nil && Modal == nil && (!g.walk || !Fighting() && !blocked(g.x, g.y, d[0], d[1]))
+	on := !g.follow && KeyPressed(g.walkKey) && prompt == nil && Modal == nil && (!g.walk || !Fighting() && !blocked(g.x, g.y, d[0], d[1]))
 	if !on && g.v*g.v >= 2*acc*(1-g.t) { // brake: v²/2a is the distance braking takes
 		g.v = math.Max(0.5, g.v-acc*dt)
 	} else {
@@ -1631,6 +1632,46 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.drawMap(screen, c)
 		return
 	}
+	g.draw3D(screen, c)
+	if NoOverlay { // phlan-poc: comparison shots show the 3D view alone (HUD still runs: BLOBBER_OPEN hooks it)
+		if HUD != nil {
+			HUD(ebiten.NewImage(W, H))
+		}
+		return
+	}
+	g.drawMinimap(screen, c)
+	font.Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", ebiten.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
+	if HUD != nil {
+		HUD(screen)
+	}
+	if g.time < msgUntil {
+		font.Print(screen, msg, (W-font.Width(msg))/2, 16)
+	}
+	if g.menu {
+		g.drawMenu(screen)
+	}
+	if prompt != nil {
+		prompt.draw(screen)
+	}
+	if Modal != nil {
+		Modal.Draw(screen)
+	}
+	if g.help {
+		Help.Draw(screen)
+	}
+	if g.debug && DebugLines != nil && Window != nil {
+		Window(screen, "PARTY", DebugLines(), -1, false)
+	} else if g.debug && DebugLines != nil {
+		lines := DebugLines()
+		vector.DrawFilledRect(screen, 0, 20, float32(W), float32(16*len(lines)+8), color.RGBA{0, 0, 0, 180}, false)
+		for i, l := range lines {
+			font.Print(screen, l, 6, 24+i*16)
+		}
+	}
+}
+
+// draw3D draws the scene from camera c: the 3D view alone, at the size W, H.
+func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 	dst := screen
 	if g.dither {
 		dst = g.scene
@@ -1927,41 +1968,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.Images[0] = g.scene
 		screen.DrawRectShader(W, H, g.shader, op)
 	}
-	if NoOverlay { // phlan-poc: comparison shots show the 3D view alone (HUD still runs: BLOBBER_OPEN hooks it)
-		if HUD != nil {
-			HUD(ebiten.NewImage(W, H))
-		}
-		return
-	}
-	g.drawMinimap(screen, c)
-	font.Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", ebiten.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
-	if HUD != nil {
-		HUD(screen)
-	}
-	if g.time < msgUntil {
-		font.Print(screen, msg, (W-font.Width(msg))/2, 16)
-	}
-	if g.menu {
-		g.drawMenu(screen)
-	}
-	if prompt != nil {
-		prompt.draw(screen)
-	}
-	if Modal != nil {
-		Modal.Draw(screen)
-	}
-	if g.help {
-		Help.Draw(screen)
-	}
-	if g.debug && DebugLines != nil && Window != nil {
-		Window(screen, "PARTY", DebugLines(), -1, false)
-	} else if g.debug && DebugLines != nil {
-		lines := DebugLines()
-		vector.DrawFilledRect(screen, 0, 20, float32(W), float32(16*len(lines)+8), color.RGBA{0, 0, 0, 180}, false)
-		for i, l := range lines {
-			font.Print(screen, l, 6, 24+i*16)
-		}
-	}
 }
 
 // drawMap is the full map screen (M): every seen cell of the level, walls light, floor dark, the party as an arrow.
@@ -2148,11 +2154,16 @@ func (g *Game) drawMinimap(screen *ebiten.Image, c cam) {
 
 func (g *Game) Layout(ow, oh int) (int, int) {
 	sc := ebiten.Monitor().DeviceScaleFactor()
-	if w, h := int(float64(ow)*sc), int(float64(oh)*sc); w != W || h != H {
+	g.resize(int(float64(ow)*sc), int(float64(oh)*sc))
+	return W, H
+}
+
+// resize makes the view w by h pixels.
+func (g *Game) resize(w, h int) {
+	if w != W || h != H {
 		W, H, focal = w, h, float64(w)*focalW
 		g.scene = ebiten.NewImage(W, H)
 	}
-	return W, H
 }
 
 // Ordered 4x4 Bayer dither with 8 brightness levels: retro darkness without smooth gradients.
@@ -2246,6 +2257,25 @@ var (
 )
 
 func Run(lvl []string, x, y, dir int) error {
+	g, err := newGame(dir)
+	if err != nil {
+		return err
+	}
+	SetMap(lvl, x, y)
+	if Settings.Fullscreen {
+		ebiten.SetFullscreen(true)
+	}
+	ebiten.SetWindowSize(W, H)
+	ebiten.SetWindowTitle("Blobber")
+	if os.Getenv("BLOBBER_SHOT") != "" { // phlan-poc: shots never take focus, so the keyboard stays with the user
+		ebiten.SetRunnableOnUnfocused(true)
+		return ebiten.RunGameWithOptions(g, &ebiten.RunGameOptions{InitUnfocused: true})
+	}
+	return ebiten.RunGame(g)
+}
+
+// newGame makes the textures and shaders and the one Game, facing dir.
+func newGame(dir int) (*Game, error) {
 	genTextures()
 	for _, e := range ents {
 		switch e.kind {
@@ -2259,27 +2289,17 @@ func Run(lvl []string, x, y, dir int) error {
 	}
 	tsh, err := ebiten.NewShader([]byte(texSrc))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sh, err := ebiten.NewShader([]byte(ditherSrc))
 	if err != nil {
-		return err
-	}
-	if Settings.Fullscreen {
-		ebiten.SetFullscreen(true)
+		return nil, err
 	}
 	g := &Game{dither: Settings.Dither, smooth: Settings.Smooth, torch: Settings.Torch, scene: ebiten.NewImage(W, H), shader: sh, texShader: tsh}
 	game = g
 	g.ta = float64(dir) * math.Pi / 2
 	g.dir = dir
-	SetMap(lvl, x, y)
-	ebiten.SetWindowSize(W, H)
-	ebiten.SetWindowTitle("Blobber")
-	if os.Getenv("BLOBBER_SHOT") != "" { // phlan-poc: shots never take focus, so the keyboard stays with the user
-		ebiten.SetRunnableOnUnfocused(true)
-		return ebiten.RunGameWithOptions(g, &ebiten.RunGameOptions{InitUnfocused: true})
-	}
-	return ebiten.RunGame(g)
+	return g, nil
 }
 
 func inputChars() []rune { // phlan-poc: none while shooting
