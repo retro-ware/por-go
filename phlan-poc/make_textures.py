@@ -199,11 +199,29 @@ def unclear(dump, src, boxes):
     return dump / "clear"
 
 
+CUT = A.get("cut", {})
+RIVER = [(82, 82, 255), (0, 0, 173)]  # EGA water and its speckle (not the grey: railings use it too)
+
+
+def cut(dump, src, boxes):
+    """The dump with boxes and the water seen between posts made transparent, in dump/nowater (outline reads it)."""
+    a = np.asarray(Image.open(dump / f"{src}.png").convert("RGBA")).copy()
+    for x0, y0, x1, y1 in boxes:
+        a[y0:y1, x0:x1, 3] = 0
+    for c in RIVER:
+        a[(a[..., :3] == c).all(axis=2), 3] = 0
+    (dump / "nowater").mkdir(exist_ok=True)
+    Image.fromarray(a, "RGBA").save(dump / "nowater" / f"{src}.png")
+    return dump / "nowater"
+
+
 def job(dump, v, src, desc):
     if (o := origin(NAME, v)) != (NAME, v):  # make_map points the faces at that texture
         return f"wall {v}: reused {o[0]} {o[1]}"
     if v in CLEAR:
         dump = unclear(dump, src, CLEAR[v])
+    if v in CUT:
+        dump = cut(dump, src, CUT[v])
     if v in WATER:
         dump = unwater(dump, src)
     if v in NOTRIM:

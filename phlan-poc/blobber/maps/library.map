@@ -488,13 +488,10 @@ face 2 9 3 wall_library_v07
 edge 2 9 3
 face 3 9 0 wall_phlan_v02
 edge 3 9 0
-face 3 9 2 wall_library_v13
 face 4 9 0 wall_phlan_v02
 edge 4 9 0
-face 4 9 2 wall_library_v13
 face 5 9 0 wall_phlan_v02
 edge 5 9 0
-face 5 9 2 wall_library_v13
 face 6 9 0 wall_phlan_v02
 edge 6 9 0
 face 6 9 1 wall_slums_v15
@@ -539,24 +536,11 @@ face 0 10 3 wall_phlan_v02
 edge 0 10 3
 face 1 10 1 wall_library_v07
 edge 1 10 1
-face 2 10 1 wall_library_v13
 face 2 10 3 wall_library_v07
 edge 2 10 3
-face 3 10 0 wall_library_v13
-face 3 10 1 wall_library_v13
-face 3 10 2 wall_library_v13
-face 3 10 3 wall_library_v13
-face 4 10 0 wall_library_v13
-face 4 10 1 wall_library_v13
 edge 4 10 2
-face 4 10 3 wall_library_v13
-face 5 10 0 wall_library_v13
-face 5 10 1 wall_library_v13
-face 5 10 2 wall_library_v13
-face 5 10 3 wall_library_v13
 face 6 10 1 wall_phlan_v02
 edge 6 10 1
-face 6 10 3 wall_library_v13
 face 7 10 0 wall_phlan_v02
 edge 7 10 0
 face 7 10 2 wall_phlan_v02
@@ -583,28 +567,16 @@ edge 15 10 3
 face 0 11 3 wall_slums_v11
 face 1 11 1 wall_library_v07
 edge 1 11 1
-face 2 11 1 wall_library_v13
 face 2 11 3 wall_library_v07
 edge 2 11 3
-face 3 11 0 wall_library_v13
 edge 3 11 1
-face 3 11 2 wall_library_v13
-face 3 11 3 wall_library_v13
-face 4 11 0 wall_library_v13
 edge 4 11 0
-face 4 11 1 wall_library_v13
 edge 4 11 1
-face 4 11 2 wall_library_v13
 edge 4 11 2
-face 4 11 3 wall_library_v13
 edge 4 11 3
-face 5 11 0 wall_library_v13
-face 5 11 1 wall_library_v13
-face 5 11 2 wall_library_v13
 edge 5 11 3
 face 6 11 1 wall_phlan_v02
 edge 6 11 1
-face 6 11 3 wall_library_v13
 face 7 11 0 wall_phlan_v02
 edge 7 11 0
 face 7 11 3 wall_phlan_v02
@@ -633,24 +605,11 @@ face 0 12 3 wall_phlan_v02
 edge 0 12 3
 face 1 12 1 wall_library_v07
 edge 1 12 1
-face 2 12 1 wall_library_v13
 face 2 12 3 wall_library_v07
 edge 2 12 3
-face 3 12 0 wall_library_v13
-face 3 12 1 wall_library_v13
-face 3 12 2 wall_library_v13
-face 3 12 3 wall_library_v13
 edge 4 12 0
-face 4 12 1 wall_library_v13
-face 4 12 2 wall_library_v13
-face 4 12 3 wall_library_v13
-face 5 12 0 wall_library_v13
-face 5 12 1 wall_library_v13
-face 5 12 2 wall_library_v13
-face 5 12 3 wall_library_v13
 face 6 12 1 wall_phlan_v02
 edge 6 12 1
-face 6 12 3 wall_library_v13
 face 7 12 3 wall_phlan_v02
 edge 7 12 3
 face 8 12 1 wall_phlan_v02
@@ -682,13 +641,10 @@ face 2 13 2 wall_library_v07
 edge 2 13 2
 face 2 13 3 wall_library_v07
 edge 2 13 3
-face 3 13 0 wall_library_v13
 face 3 13 2 wall_library_v07
 edge 3 13 2
-face 4 13 0 wall_library_v13
 face 4 13 2 wall_library_v07
 edge 4 13 2
-face 5 13 0 wall_library_v13
 face 5 13 2 wall_library_v07
 edge 5 13 2
 face 6 13 1 wall_phlan_v02
@@ -798,4 +754,41 @@ face 15 15 1 wall_stojanow_v12
 edge 15 15 1
 face 15 15 2 wall_stojanow_v12
 edge 15 15 2
+sea edge
 pond 4 11
+prop prop_grass1 3.262 10.237 0.359
+prop prop_grass1 3.279 12.113 0.408
+prop prop_grass2 3.313 12.785 0.403
+prop prop_grass1 3.342 11.676 0.336
+prop prop_grass1 3.349 10.642 0.383
+prop prop_grass1 3.37 11.159 0.307
+prop prop_grass2 3.671 12.765 0.393
+prop prop_grass1 3.702 10.618 0.356
+prop prop_grass1 3.755 11.233 0.370
+prop prop_grass1 3.764 11.819 0.340
+prop prop_grass1 3.855 12.163 0.377
+prop prop_grass2 3.869 10.185 0.325
+prop prop_grass1 4.102 11.609 0.313
+prop prop_grass2 4.129 10.19 0.356
+prop prop_grass2 4.143 11.302 0.315
+prop prop_grass1 4.295 12.313 0.395
+prop prop_grass1 4.347 12.813 0.361
+prop prop_grass1 4.348 10.776 0.401
+prop prop_grass2 4.655 11.722 0.379
+prop prop_grass2 4.663 12.227 0.396
+prop prop_grass2 4.695 10.633 0.372
+prop prop_grass1 4.752 11.174 0.316
+prop prop_grass2 4.78 12.899 0.373
+prop prop_grass2 4.782 10.136 0.348
+prop prop_grass2 5.105 10.389 0.309
+prop prop_grass1 5.237 11.851 0.327
+prop prop_grass1 5.262 12.14 0.383
+prop prop_grass2 5.274 11.132 0.412
+prop prop_grass1 5.341 10.617 0.381
+prop prop_grass2 5.381 12.887 0.397
+prop prop_grass2 5.607 11.885 0.344
+prop prop_grass2 5.67 10.153 0.370
+prop prop_grass2 5.775 12.112 0.355
+prop prop_grass2 5.802 12.651 0.350
+prop prop_grass2 5.839 10.638 0.306
+prop prop_grass2 5.851 11.326 0.328

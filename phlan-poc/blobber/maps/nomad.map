@@ -285,6 +285,27 @@ edge 14 14 0
 edge 14 14 3
 face 11 15 1 wall_stojanow_v12
 edge 11 15 1
+water 11 2
+water 12 0
+water 12 1
+water 12 2
+water 12 3
+water 13 0
+water 13 1
+water 13 2
+water 13 3
+water 13 11
+water 14 2
+water 14 3
+water 14 4
+water 14 5
+water 14 10
+water 15 4
+water 15 5
+water 15 6
+water 15 7
+water 15 8
+water 15 9
 prop prop_nomad_tree 1.0 5.0 1.089
 prop prop_nomad_tree 1.0 7.0 1.089
 prop prop_nomad_tree 1.0 12.0 1.089

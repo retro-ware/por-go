@@ -39,6 +39,7 @@ type world struct {
 	water map[[2]int]bool
 	nomap map[[3]int]bool
 	pond  map[[2]int]bool
+	sea   bool
 }
 
 // floorItem is loot hidden on a tile; as in World of Xeen items are never drawn in the world, F finds them.
@@ -77,7 +78,7 @@ func (c *console) enter(name string) (*world, error) {
 		}
 	}
 	c.m = name
-	blobber.Faces, blobber.Edges, blobber.Water, blobber.NoMap, blobber.Pond = w.faces, w.edges, w.water, w.nomap, w.pond
+	blobber.Faces, blobber.Edges, blobber.Water, blobber.NoMap, blobber.Pond, blobber.Sea = w.faces, w.edges, w.water, w.nomap, w.pond, w.sea
 	c.refresh()
 	return w, nil
 }
@@ -136,7 +137,7 @@ func (c *console) place(w *world, line string) error {
 		n, _ := strconv.Atoi(f[i])
 		return n
 	}
-	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "pond": 3, "nomap": 4, "prop": 5, "well": 7}[f[0]]
+	need := map[string]int{"object": 5, "item": 4, "monster": 4, "deco": 4, "floor": 2, "ceiling": 2, "face": 5, "edge": 4, "water": 3, "pond": 3, "nomap": 4, "prop": 5, "well": 7, "sea": 1}[f[0]]
 	if need == 0 || len(f) < need {
 		return fmt.Errorf("want %d fields", need)
 	}
@@ -172,6 +173,8 @@ func (c *console) place(w *world, line string) error {
 		w.objs[line] = &blobber.Object{X: int(at[0]), Y: int(at[1]), Img: img, At: &at, Front: front, Ring: &ring}
 	case "water": // phlan-poc: water X Y, see blobber.Water
 		w.water[[2]int{num(1), num(2)}] = true
+	case "sea": // phlan-poc: sea edge, water off the map, see blobber.Sea
+		w.sea = true
 	case "pond": // phlan-poc: pond X Y, see blobber.Pond
 		w.pond[[2]int{num(1), num(2)}] = true
 	case "nomap": // phlan-poc: nomap X Y SIDE, a face left off the minimap, see blobber.NoMap

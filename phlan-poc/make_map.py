@@ -23,6 +23,8 @@ NAME = sys.argv[1] if sys.argv[1:] else "phlan"
 A = AREAS[NAME]
 g = (HERE / "geo{}_{}.bin".format(*A["geo"])).read_bytes()
 POND = {v for v in A["walls"] if (o := origin(NAME, v))[1] in AREAS[o[0]].get("pond", ())}  # drawn as water floor
+BEDS = {v: AREAS[o[0]]["beds"][o[1]] for v in A["walls"]
+        if (o := origin(NAME, v))[1] in AREAS[o[0]].get("beds", {})}  # garden beds: plants instead
 TEX = {v: "wall_{}_v{:02}".format(*origin(NAME, v)) for v in A["walls"]}  # reused walls: the first area's texture
 START = A["start"]
 
@@ -92,6 +94,8 @@ def main():
                     for t in ts:
                         px, py = (round(ends[0][i] + (ends[1][i] - ends[0][i]) * t, 3) for i in (0, 1))
                         props[px, py] = f"prop {A['props'][v]} {px} {py} {size:.3f}"
+                elif v in BEDS:  # plants over the bed's squares instead, see below
+                    pass
                 elif v in POND:
                     ponds.add((x + STEP[d][0], y + STEP[d][1]))
                 elif v:
@@ -112,14 +116,28 @@ def main():
     water = set()
     todo = [(x + STEP[d][0], y + STEP[d][1]) for y in range(16) for x in range(16) for d in range(4)
             if side(x, y, d)[0] in A["water_walls"]]
+    sea = any(not (0 <= x < 16 and 0 <= y < 16) for x, y in todo)  # water beyond the map's edge
     while todo:
         x, y = todo.pop()
         if (x, y) in water or (x, y) in land or not (0 <= x < 16 and 0 <= y < 16):
             continue
         water.add((x, y))
         todo += [(x + dx, y + dy) for d, (dx, dy) in enumerate(STEP) if not side(x, y, d)[0]]
-    extra += [f"water {x} {y}" for x, y in sorted(water)]
+    extra += [f"water {x} {y}" for x, y in sorted(water)] + ["sea edge"] * sea  # one word alone would read as a grid row
     extra += [f"pond {x} {y}" for x, y in sorted(ponds)]
+    # garden beds: a square with a bed wall on three or four of its own sides is in the bed (one or two: it
+    # only looks at one); clumps of plants on a jittered 2x2 grid, the same every run
+    import random
+    for y in range(16):
+        for x in range(16):
+            vs = [side(x, y, d)[0] for d in range(4)]
+            bed = [v for v in vs if v in BEDS]
+            if len(bed) >= 3:
+                r = random.Random(y * 16 + x)
+                for i in range(4):
+                    px = round(x + 0.25 + 0.5 * (i % 2) + r.uniform(-0.15, 0.15), 3)
+                    py = round(y + 0.25 + 0.5 * (i // 2) + r.uniform(-0.15, 0.15), 3)
+                    props[px, py] = f"prop {r.choice(BEDS[bed[0]])} {px} {py} {r.uniform(0.3, 0.42):.3f}"
     for (x, y), things in A.get("cellprops", {}).items():
         for i, (kind, tex, *nums) in enumerate(things):
             props[x + 0.5, y + 0.5, i] = " ".join(map(str, [kind, tex, x + 0.5, y + 0.5, *nums]))

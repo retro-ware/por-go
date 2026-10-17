@@ -130,6 +130,12 @@ All in `blobber/blobber.go` and `cmd/blobber/host.go`:
   original's art; `props` in `areas.py`, texture from `make_props.py`).
 - **Ponds**: `pond X Y` water floor without sea; a wall value in `pond` (a
   pond painted on a wall) is not drawn, the square behind it becomes a pond.
+- **Sea edge**: `sea edge` (written when a `water_walls` wall faces off the map) draws water past
+  the map's edge; railings (`cut` boxes strip the painted river) show it through their gaps.
+- **Beds**: a wall value in `beds` is not drawn; a square with three or four bed sides gets four
+  jittered plant billboards (prop_grass1/2, make_props.py), seeded by square.
+- **Cell props**: `cellprops` in areas.py places `prop`/`well` lines on a square (Kuto's well:
+  `well RIMTEX X Y HALFW HALFD RIMW` an oval hole with a tiled rim, `prop ... FRONT SINK`).
 - **Minimap** draws edges as lines.
 - **Shots**: `BLOBBER_SHOT=file.png BLOBBER_OPEN=map:NAME:X:Y:DIR` saves
   frame 30 with no overlay (`BLOBBER_OVERLAY=1` keeps the position text,

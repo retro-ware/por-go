@@ -80,17 +80,12 @@ face 5 1 2 wall_stojanow_v09
 edge 5 1 2
 face 6 1 0 wall_graveyard_v11
 face 7 1 0 wall_graveyard_v11
-face 7 1 2 wall_library_v13
 face 8 1 0 wall_graveyard_v14
 edge 8 1 0
-face 8 1 2 wall_library_v13
 face 9 1 0 wall_graveyard_v11
-face 9 1 2 wall_library_v13
 face 10 1 0 wall_graveyard_v14
 edge 10 1 0
-face 10 1 2 wall_library_v13
 face 11 1 0 wall_graveyard_v11
-face 11 1 2 wall_library_v13
 face 12 1 0 wall_graveyard_v14
 edge 12 1 0
 face 13 1 0 wall_graveyard_v11
@@ -124,32 +119,10 @@ face 5 2 1 wall_stojanow_v09
 edge 5 2 1
 face 5 2 2 wall_graveyard_v11
 face 5 2 3 wall_graveyard_v11
-face 6 2 1 wall_library_v13
 face 6 2 3 wall_stojanow_v09
 edge 6 2 3
-face 7 2 0 wall_library_v13
-face 7 2 1 wall_library_v13
-face 7 2 2 wall_library_v13
-face 7 2 3 wall_library_v13
-face 8 2 0 wall_library_v13
-face 8 2 1 wall_library_v13
-face 8 2 2 wall_library_v13
-face 8 2 3 wall_library_v13
-face 9 2 0 wall_library_v13
-face 9 2 1 wall_library_v13
-face 9 2 2 wall_library_v13
-face 9 2 3 wall_library_v13
-face 10 2 0 wall_library_v13
-face 10 2 1 wall_library_v13
-face 10 2 2 wall_library_v13
-face 10 2 3 wall_library_v13
-face 11 2 0 wall_library_v13
-face 11 2 1 wall_library_v13
-face 11 2 2 wall_library_v13
-face 11 2 3 wall_library_v13
 face 12 2 2 wall_graveyard_v14
 edge 12 2 2
-face 12 2 3 wall_library_v13
 face 14 2 1 wall_stojanow_v09
 edge 14 2 1
 face 1 3 3 wall_graveyard_v14
@@ -174,29 +147,10 @@ edge 5 3 2
 face 5 3 3 wall_graveyard_v11
 face 6 3 3 wall_stojanow_v09
 edge 6 3 3
-face 7 3 0 wall_library_v13
-face 7 3 1 wall_library_v13
-face 8 3 0 wall_library_v13
-face 8 3 1 wall_library_v13
-face 8 3 2 wall_library_v13
-face 8 3 3 wall_library_v13
-face 9 3 0 wall_library_v13
-face 9 3 1 wall_library_v13
-face 9 3 2 wall_library_v13
-face 9 3 3 wall_library_v13
-face 10 3 0 wall_library_v13
-face 10 3 1 wall_library_v13
-face 10 3 2 wall_library_v13
-face 10 3 3 wall_library_v13
-face 11 3 0 wall_library_v13
-face 11 3 1 wall_library_v13
-face 11 3 2 wall_library_v13
-face 11 3 3 wall_library_v13
 face 12 3 0 wall_graveyard_v14
 edge 12 3 0
 face 12 3 1 wall_stojanow_v09
 edge 12 3 1
-face 12 3 3 wall_library_v13
 face 13 3 3 wall_stojanow_v09
 edge 13 3 3
 face 14 3 1 wall_graveyard_v14
@@ -208,25 +162,10 @@ edge 3 4 0
 face 4 4 0 wall_graveyard_v15
 face 5 4 0 wall_graveyard_v14
 edge 5 4 0
-face 8 4 0 wall_library_v13
-face 8 4 1 wall_library_v13
-face 9 4 0 wall_library_v13
-face 9 4 1 wall_library_v13
-face 9 4 2 wall_library_v13
-face 9 4 3 wall_library_v13
-face 10 4 0 wall_library_v13
-face 10 4 1 wall_library_v13
-face 10 4 2 wall_library_v13
-face 10 4 3 wall_library_v13
-face 11 4 0 wall_library_v13
-face 11 4 1 wall_library_v13
-face 11 4 2 wall_library_v13
-face 11 4 3 wall_library_v13
 face 12 4 1 wall_graveyard_v14
 edge 12 4 1
 face 12 4 2 wall_graveyard_v14
 edge 12 4 2
-face 12 4 3 wall_library_v13
 face 13 4 3 wall_graveyard_v14
 edge 13 4 3
 face 14 4 1 wall_graveyard_v11
@@ -248,18 +187,9 @@ face 6 5 2 wall_graveyard_v14
 edge 6 5 2
 face 7 5 2 wall_graveyard_v11
 face 8 5 2 wall_graveyard_v11
-face 9 5 0 wall_library_v13
 face 9 5 2 wall_graveyard_v11
-face 10 5 0 wall_library_v13
-face 10 5 1 wall_library_v13
-face 11 5 0 wall_library_v13
-face 11 5 1 wall_library_v13
-face 11 5 2 wall_library_v13
-face 11 5 3 wall_library_v13
 face 12 5 0 wall_graveyard_v14
 edge 12 5 0
-face 12 5 2 wall_library_v13
-face 12 5 3 wall_library_v13
 face 14 5 1 wall_graveyard_v14
 edge 14 5 1
 face 0 6 0 wall_stojanow_v09
@@ -306,17 +236,7 @@ face 9 6 1 wall_graveyard_v11
 face 9 6 2 wall_graveyard_v14
 edge 9 6 2
 face 9 6 3 wall_graveyard_v11
-face 10 6 1 wall_library_v13
 face 10 6 3 wall_graveyard_v11
-face 11 6 0 wall_library_v13
-face 11 6 1 wall_library_v13
-face 11 6 2 wall_library_v13
-face 11 6 3 wall_library_v13
-face 12 6 0 wall_library_v13
-face 12 6 1 wall_library_v13
-face 12 6 2 wall_library_v13
-face 12 6 3 wall_library_v13
-face 13 6 3 wall_library_v13
 face 14 6 1 wall_graveyard_v14
 edge 14 6 1
 face 0 7 0 wall_graveyard_v11
@@ -355,13 +275,6 @@ face 8 7 2 wall_graveyard_v11
 face 8 7 3 wall_graveyard_v11
 face 10 7 3 wall_graveyard_v14
 edge 10 7 3
-face 11 7 0 wall_library_v13
-face 11 7 1 wall_library_v13
-face 12 7 0 wall_library_v13
-face 12 7 1 wall_library_v13
-face 12 7 2 wall_library_v13
-face 12 7 3 wall_library_v13
-face 13 7 3 wall_library_v13
 face 14 7 1 wall_graveyard_v11
 face 15 7 0 wall_stojanow_v09
 edge 15 7 0
@@ -399,7 +312,6 @@ face 9 8 1 wall_graveyard_v11
 face 9 8 2 wall_graveyard_v11
 face 9 8 3 wall_graveyard_v11
 face 10 8 3 wall_graveyard_v11
-face 12 8 0 wall_library_v13
 face 14 8 1 wall_graveyard_v11
 face 15 8 0 wall_graveyard_v11
 face 15 8 1 wall_graveyard_v14
@@ -454,7 +366,6 @@ edge 3 10 2
 face 3 10 3 wall_graveyard_v11
 face 4 10 3 wall_graveyard_v14
 edge 4 10 3
-face 5 10 2 wall_library_v13
 face 6 10 0 wall_graveyard_v11
 face 7 10 0 wall_graveyard_v11
 face 8 10 0 wall_graveyard_v11
@@ -474,19 +385,8 @@ face 0 11 3 wall_graveyard_v14
 edge 0 11 3
 face 1 11 3 wall_graveyard_v11
 face 2 11 0 wall_graveyard_v11
-face 2 11 2 wall_library_v13
 face 3 11 0 wall_graveyard_v14
 edge 3 11 0
-face 3 11 2 wall_library_v13
-face 4 11 1 wall_library_v13
-face 4 11 2 wall_library_v13
-face 5 11 0 wall_library_v13
-face 5 11 1 wall_library_v13
-face 5 11 2 wall_library_v13
-face 5 11 3 wall_library_v13
-face 6 11 2 wall_library_v13
-face 6 11 3 wall_library_v13
-face 7 11 2 wall_library_v13
 face 10 11 1 wall_graveyard_v11
 face 11 11 0 wall_graveyard_v11
 face 11 11 3 wall_graveyard_v11
@@ -501,34 +401,8 @@ face 14 11 1 wall_stojanow_v09
 edge 14 11 1
 face 14 11 3 wall_stojanow_v09
 edge 14 11 3
-face 1 12 1 wall_library_v13
 face 1 12 3 wall_graveyard_v14
 edge 1 12 3
-face 2 12 0 wall_library_v13
-face 2 12 1 wall_library_v13
-face 2 12 2 wall_library_v13
-face 2 12 3 wall_library_v13
-face 3 12 0 wall_library_v13
-face 3 12 1 wall_library_v13
-face 3 12 2 wall_library_v13
-face 3 12 3 wall_library_v13
-face 4 12 0 wall_library_v13
-face 4 12 1 wall_library_v13
-face 4 12 2 wall_library_v13
-face 4 12 3 wall_library_v13
-face 5 12 0 wall_library_v13
-face 5 12 1 wall_library_v13
-face 5 12 2 wall_library_v13
-face 5 12 3 wall_library_v13
-face 6 12 0 wall_library_v13
-face 6 12 1 wall_library_v13
-face 6 12 2 wall_library_v13
-face 6 12 3 wall_library_v13
-face 7 12 0 wall_library_v13
-face 7 12 1 wall_library_v13
-face 7 12 2 wall_library_v13
-face 7 12 3 wall_library_v13
-face 8 12 3 wall_library_v13
 face 10 12 1 wall_graveyard_v11
 face 11 12 3 wall_graveyard_v11
 face 12 12 1 wall_graveyard_v15
@@ -541,26 +415,6 @@ face 14 12 3 wall_stojanow_v09
 edge 14 12 3
 face 1 13 3 wall_graveyard_v14
 edge 1 13 3
-face 2 13 0 wall_library_v13
-face 2 13 1 wall_library_v13
-face 3 13 0 wall_library_v13
-face 3 13 1 wall_library_v13
-face 3 13 2 wall_library_v13
-face 3 13 3 wall_library_v13
-face 4 13 0 wall_library_v13
-face 4 13 1 wall_library_v13
-face 4 13 2 wall_library_v13
-face 4 13 3 wall_library_v13
-face 5 13 0 wall_library_v13
-face 5 13 1 wall_library_v13
-face 5 13 2 wall_library_v13
-face 5 13 3 wall_library_v13
-face 6 13 0 wall_library_v13
-face 6 13 1 wall_library_v13
-face 6 13 2 wall_library_v13
-face 6 13 3 wall_library_v13
-face 7 13 0 wall_library_v13
-face 7 13 3 wall_library_v13
 face 10 13 1 wall_graveyard_v11
 face 11 13 2 wall_graveyard_v11
 face 11 13 3 wall_graveyard_v11
@@ -581,22 +435,17 @@ edge 14 13 3
 face 0 14 0 wall_graveyard_v14
 edge 0 14 0
 face 0 14 1 wall_graveyard_v11
-face 0 14 2 wall_library_v13
 face 0 14 3 wall_pyramid_v14
 face 1 14 2 wall_graveyard_v11
 face 1 14 3 wall_graveyard_v11
 face 2 14 2 wall_graveyard_v14
 edge 2 14 2
-face 3 14 0 wall_library_v13
 face 3 14 2 wall_stojanow_v09
 edge 3 14 2
-face 4 14 0 wall_library_v13
 face 4 14 2 wall_stojanow_v09
 edge 4 14 2
-face 5 14 0 wall_library_v13
 face 5 14 2 wall_stojanow_v09
 edge 5 14 2
-face 6 14 0 wall_library_v13
 face 6 14 2 wall_stojanow_v09
 edge 6 14 2
 face 7 14 2 wall_stojanow_v07
@@ -621,7 +470,6 @@ edge 14 14 1
 face 14 14 2 wall_graveyard_v14
 edge 14 14 2
 face 14 14 3 wall_graveyard_v11
-face 0 15 0 wall_library_v13
 face 0 15 1 wall_graveyard_v11
 face 0 15 2 wall_pyramid_v14
 edge 0 15 2
@@ -656,3 +504,111 @@ edge 13 15 1
 face 13 15 2 wall_pyramid_v14
 face 13 15 3 wall_graveyard_v14
 edge 13 15 3
+prop prop_grass1 2.344 12.12 0.342
+prop prop_grass2 2.371 12.764 0.345
+prop prop_grass2 2.791 12.79 0.315
+prop prop_grass2 2.843 12.322 0.389
+prop prop_grass1 3.269 13.322 0.338
+prop prop_grass2 3.275 13.793 0.385
+prop prop_grass1 3.279 12.113 0.408
+prop prop_grass2 3.313 12.785 0.403
+prop prop_grass2 3.671 12.765 0.393
+prop prop_grass1 3.779 13.846 0.344
+prop prop_grass1 3.855 12.163 0.377
+prop prop_grass2 3.877 13.264 0.368
+prop prop_grass1 4.219 13.395 0.336
+prop prop_grass1 4.295 12.313 0.395
+prop prop_grass1 4.347 12.813 0.361
+prop prop_grass1 4.396 13.757 0.393
+prop prop_grass2 4.639 13.378 0.399
+prop prop_grass2 4.663 12.227 0.396
+prop prop_grass2 4.727 13.716 0.393
+prop prop_grass2 4.78 12.899 0.373
+prop prop_grass1 5.146 13.166 0.323
+prop prop_grass1 5.237 11.851 0.327
+prop prop_grass2 5.256 13.666 0.412
+prop prop_grass1 5.262 12.14 0.383
+prop prop_grass2 5.274 11.132 0.412
+prop prop_grass2 5.381 12.887 0.397
+prop prop_grass2 5.607 11.885 0.344
+prop prop_grass1 5.739 13.815 0.397
+prop prop_grass1 5.763 13.374 0.342
+prop prop_grass2 5.775 12.112 0.355
+prop prop_grass2 5.802 12.651 0.350
+prop prop_grass2 5.851 11.326 0.328
+prop prop_grass1 6.116 12.313 0.380
+prop prop_grass1 6.155 12.715 0.372
+prop prop_grass1 6.163 13.874 0.381
+prop prop_grass2 6.255 13.207 0.377
+prop prop_grass1 6.682 13.765 0.390
+prop prop_grass2 6.76 12.774 0.330
+prop prop_grass2 6.832 13.373 0.305
+prop prop_grass2 6.896 12.237 0.324
+prop prop_grass1 7.163 2.216 0.326
+prop prop_grass2 7.203 12.218 0.380
+prop prop_grass1 7.313 2.888 0.335
+prop prop_grass2 7.33 12.702 0.303
+prop prop_grass2 7.693 12.243 0.331
+prop prop_grass2 7.772 12.803 0.359
+prop prop_grass2 7.819 2.102 0.381
+prop prop_grass1 7.865 2.622 0.313
+prop prop_grass2 8.128 3.785 0.377
+prop prop_grass2 8.205 2.864 0.398
+prop prop_grass1 8.238 2.363 0.329
+prop prop_grass2 8.39 3.268 0.378
+prop prop_grass2 8.69 3.263 0.385
+prop prop_grass1 8.758 2.821 0.377
+prop prop_grass1 8.799 2.291 0.315
+prop prop_grass1 8.898 3.662 0.307
+prop prop_grass1 9.107 4.723 0.350
+prop prop_grass1 9.113 3.277 0.327
+prop prop_grass1 9.184 4.251 0.355
+prop prop_grass1 9.214 2.169 0.408
+prop prop_grass1 9.215 2.819 0.394
+prop prop_grass1 9.365 3.606 0.362
+prop prop_grass2 9.696 3.243 0.376
+prop prop_grass2 9.716 2.369 0.366
+prop prop_grass2 9.767 4.749 0.322
+prop prop_grass1 9.776 4.246 0.354
+prop prop_grass1 9.781 3.713 0.379
+prop prop_grass2 9.798 2.852 0.414
+prop prop_grass1 10.11 2.628 0.361
+prop prop_grass2 10.178 3.735 0.334
+prop prop_grass2 10.232 4.737 0.354
+prop prop_grass1 10.274 3.162 0.305
+prop prop_grass2 10.292 2.108 0.329
+prop prop_grass1 10.358 4.255 0.338
+prop prop_grass2 10.608 2.66 0.326
+prop prop_grass1 10.642 2.131 0.371
+prop prop_grass1 10.694 4.751 0.383
+prop prop_grass2 10.735 3.206 0.397
+prop prop_grass1 10.774 3.604 0.356
+prop prop_grass1 10.84 4.155 0.342
+prop prop_grass1 11.112 2.309 0.415
+prop prop_grass1 11.125 5.152 0.348
+prop prop_grass2 11.167 3.38 0.303
+prop prop_grass2 11.174 6.274 0.358
+prop prop_grass1 11.235 4.231 0.387
+prop prop_grass2 11.245 3.745 0.391
+prop prop_grass2 11.249 2.606 0.369
+prop prop_grass2 11.278 6.813 0.401
+prop prop_grass2 11.304 4.854 0.312
+prop prop_grass2 11.348 5.673 0.396
+prop prop_grass1 11.657 6.872 0.411
+prop prop_grass2 11.665 5.837 0.391
+prop prop_grass1 11.693 6.141 0.330
+prop prop_grass1 11.711 2.31 0.354
+prop prop_grass2 11.738 5.335 0.356
+prop prop_grass2 11.754 4.356 0.409
+prop prop_grass2 11.787 2.884 0.347
+prop prop_grass2 11.808 4.878 0.333
+prop prop_grass1 11.819 3.702 0.416
+prop prop_grass1 11.854 3.314 0.411
+prop prop_grass2 12.139 6.345 0.387
+prop prop_grass2 12.15 7.89 0.303
+prop prop_grass1 12.161 6.856 0.313
+prop prop_grass1 12.388 7.264 0.414
+prop prop_grass2 12.618 7.184 0.304
+prop prop_grass2 12.625 6.768 0.312
+prop prop_grass2 12.713 6.391 0.326
+prop prop_grass1 12.742 7.728 0.326

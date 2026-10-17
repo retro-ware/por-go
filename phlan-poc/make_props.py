@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Remaster pipeline: free-standing props drawn as billboards instead of wall faces (see make_map.py "props").
-  python3 make_props.py [NAME...] [finish]   (NAME: tree, ladder, rim; default all)
+  python3 make_props.py [NAME...] [finish]   (NAME: tree, ladder, rim, grass1, grass2; default all)
 Nomad Camp trees: PoR paints them onto walls (a tree at a face's left, or halves at its edges that join across
 faces); the PoC stands one tree sprite wherever a tree's trunk is. The reference is the original's one whole tree
 (WALLDEF7-007-2-wall1, nomad wall 6), cropped and centred; writes blobber/assets/walls/prop_nomad_tree.png.
 Kuto's Well: the well hole and its ladder, which PoR paints on every wall of the well room, stand once in the
 room (areas.py "cellprops"): the hole is drawn by the engine (an oval opening with the rim's stones laid around
-it), the ladder stands down in it at the far side; references are parts of kuto wall 8."""
+it), the ladder stands down in it at the far side; references are parts of kuto wall 8.
+Garden beds (library wall 13, reused in the pyramid): PoR paints weeds on mounds on every side of a bed; the PoC
+plants grass clumps (two variants) over the bed's squares (areas.py "beds")."""
 import importlib.util, io, sys
 from pathlib import Path
 import numpy as np
@@ -34,9 +36,15 @@ RIM = ("Game texture on a flat solid magenta (#FF00FF) background: one single st
        "like the stone rim of a well laid out straight. The row runs the full width of the image from the left edge "
        "to the right edge and must tile seamlessly left to right; it is about a sixth of the image tall, centred "
        "vertically, flat magenta above and below. Painterly high-fantasy game art with modern detail.")
+GRASS = ("Game sprite on a flat solid magenta (#FF00FF) background: one single clump of wild garden weeds and tall grass "
+         "growing out of the ground, seen from the side at eye level: long green blades and broad leaves, a few small "
+         "blue and white wildflowers on thin stems, the base of the clump touching the lower edge of the image. "
+         "Centred, nothing else, no soil mound, no ground, no shadow, a small magenta margin at the top and sides. "
+         "Painterly high-fantasy game art with modern detail, colours like the reference's weeds.")
 # name -> (texture, area, wall value, share of the dump's rows the reference starts at, prompt)
 PROPS = {"tree": ("prop_nomad_tree", "nomad", 6, 0.0, TREE), "ladder": ("prop_kuto_ladder", "kuto", 8, 0.5, LADDER),
-         "rim": ("floor_kuto_rim", "kuto", 8, 0.9, RIM)}
+         "rim": ("floor_kuto_rim", "kuto", 8, 0.9, RIM),
+         "grass1": ("prop_grass1", "library", 13, 0.6, GRASS), "grass2": ("prop_grass2", "library", 13, 0.6, GRASS)}
 
 
 def reference(area, v, top):

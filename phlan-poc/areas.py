@@ -19,6 +19,9 @@ Keys:
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
   clear       wall value -> boxes (x0, y0, x1, y1 in dump pixels) painted over with the wall colour in the
               reference: things the PoC draws elsewhere (Kuto's well hole and ladder: a prop, see cellprops)
+  beds        wall value -> plant textures: a garden bed's wall, not drawn; plants stand over the bed's squares
+  cut         wall value -> boxes (dump pixels) made transparent in the reference: water painted on the wall that
+              the engine draws behind it instead (Stojanow's river railing: bank and river cut, railing kept)
   cellprops   (x, y) -> [(kind, texture, numbers...)]: map lines placed in the middle of that square:
               prop (size, front, sink) and well (half width, half depth, rim width, front), see host.go;
               front: that far ahead of the centre while the party stands on it (make_props.py)
@@ -455,9 +458,9 @@ NEW = {
         8: GATE + "a tall dark opening in the middle with grey stone steps rising inside it towards a small "
            "double wooden door far away at the top.",
         9: GATE + "plain smooth grey plastered stone, even and unadorned.",
-        12: "a low wooden bridge railing across the lower half only: a brown top beam, below it a band of "
-            "deep blue rippling river water seen between the beams, and a row of short square brown wooden "
-            "posts along the bottom; above the railing nothing is drawn.",
+        12: "a low wooden bridge railing across the bottom quarter only: a brown top beam and a row of short "
+            "square brown wooden posts with open gaps between them; the gaps are empty, and above the railing "
+            "nothing is drawn (the river behind is drawn by the game).",
     },
     "library": {
         6: "the front of a stately red brick library: a stepped brick gable at the top with a small grey vent, "
@@ -578,10 +581,11 @@ NEW = {
     },
 }
 FLAGS = dict(  # texture flags of the new walls (by area)
-    stojanow=dict(noseam={12}), library=dict(noseam={8, 9, 11, 13}, pond={11}),
+    stojanow=dict(noseam={12}, water_walls={12}, cut={12: [(0, 0, 224, 192)]}), library=dict(noseam={8, 9, 11, 13}, pond={11}, water_walls={12},
+                                                          beds={13: ["prop_grass1", "prop_grass2"]}),
     hobgoblin=dict(arch={12}), sokal=dict(noseam={2}), valjevo3=dict(noseam={1, 7, 8, 9}),
     valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
-    nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
+    nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}, water_walls={12}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
     pyramid=dict(noseam={14}), kuto=dict(arch={8}, clear={8: [(72, 128, 150, 256), (30, 232, 194, 256)]},
                      cellprops={(7, 7): [("well", "floor_kuto_rim", 0.3, 0.12, 0.07, 0.37),
                                          ("prop", "prop_kuto_ladder", 0.65, 0.42, 0.08)]}), kuto2=dict(noseam={2, 10}),

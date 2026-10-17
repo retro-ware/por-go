@@ -307,6 +307,9 @@ func blocked(x, y, dx, dy int) bool {
 // Water (phlan-poc) are the cells drawn as water instead of floor; so is everything off the map.
 var Water = map[[2]int]bool{}
 
+// Sea (phlan-poc): water off the map even without water squares on it (a river along the map's edge).
+var Sea bool
+
 // Pond (phlan-poc) are cells drawn as water that are not sea: no water off the map for them.
 var Pond = map[[2]int]bool{}
 
@@ -1572,7 +1575,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	dst.Fill(fogCol)
 	if openSky {
 		g.drawSky(dst, c)
-		if texWater != nil && len(Water) > 0 { // phlan-poc: the sea runs on to the horizon past the last cells drawn
+		if texWater != nil && (len(Water) > 0 || Sea) { // phlan-poc: the sea runs on to the horizon past the last cells drawn
 			vector.DrawFilledRect(dst, 0, float32(H)/2, float32(W), float32(H)/2, color.RGBA{40, 98, 160, 255}, false)
 		}
 	}
@@ -1636,7 +1639,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
 		var f *face
 		wx, wy := cx, cy
-		if Water[cell] || Pond[cell] || !inMap(cx, cy) && len(Water) > 0 { // phlan-poc: water, its ripples drifting
+		if Water[cell] || Pond[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting
 			w := g.time * 0.02
 			f = q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
 		} else {
