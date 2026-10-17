@@ -14,8 +14,7 @@ package blobber
 //	Back / Start         M: map, Esc: menu
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 	"os"
 )
 
@@ -23,20 +22,20 @@ import (
 // counts only when the physical button goes down: a button held across a change of context (A
 // opening a window that A then confirms in) must not fire again.
 var (
-	padHeld, padJust = map[ebiten.Key]bool{}, map[ebiten.Key]bool{}
+	padHeld, padJust = map[gpu.Key]bool{}, map[gpu.Key]bool{}
 	padWas           = map[[2]int]bool{}    // gamepad id, button (or stick direction 100+) held last frame
-	padDur           = map[ebiten.Key]int{} // frames each pad key has been held
+	padDur           = map[gpu.Key]int{} // frames each pad key has been held
 )
 
 // pollPads works out which keys the pads hold this frame; context is where input goes:
 // 'w' the dungeon, anything else a menu, window or prompt.
 func pollPads(context byte) {
-	padHeld, padJust = map[ebiten.Key]bool{}, map[ebiten.Key]bool{}
+	padHeld, padJust = map[gpu.Key]bool{}, map[gpu.Key]bool{}
 	was := padWas
 	padWas = map[[2]int]bool{}
-	var id ebiten.GamepadID
+	var id gpu.GamepadID
 	// src names the physical input behind the next hold, for the down-this-frame test
-	hold := func(src int, on bool, ks ...ebiten.Key) {
+	hold := func(src int, on bool, ks ...gpu.Key) {
 		if !on {
 			return
 		}
@@ -49,40 +48,40 @@ func pollPads(context byte) {
 			}
 		}
 	}
-	for _, id = range ebiten.AppendGamepadIDs(nil) {
-		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
+	for _, id = range gpu.AppendGamepadIDs(nil) {
+		if !gpu.IsStandardGamepadLayoutAvailable(id) {
 			continue
 		}
-		b := func(s ebiten.StandardGamepadButton, ks ...ebiten.Key) {
-			hold(int(s), ebiten.IsStandardGamepadButtonPressed(id, s), ks...)
+		b := func(s gpu.StandardGamepadButton, ks ...gpu.Key) {
+			hold(int(s), gpu.IsStandardGamepadButtonPressed(id, s), ks...)
 		}
-		x := ebiten.StandardGamepadAxisValue(id, ebiten.StandardGamepadAxisLeftStickHorizontal)
-		y := ebiten.StandardGamepadAxisValue(id, ebiten.StandardGamepadAxisLeftStickVertical)
-		b(ebiten.StandardGamepadButtonLeftTop, ebiten.KeyUp)
-		b(ebiten.StandardGamepadButtonLeftBottom, ebiten.KeyDown)
-		b(ebiten.StandardGamepadButtonLeftLeft, ebiten.KeyLeft)
-		b(ebiten.StandardGamepadButtonLeftRight, ebiten.KeyRight)
-		hold(100, y < -0.5, ebiten.KeyUp)
-		hold(101, y > 0.5, ebiten.KeyDown)
-		hold(102, x < -0.5, ebiten.KeyLeft)
-		hold(103, x > 0.5, ebiten.KeyRight)
-		b(ebiten.StandardGamepadButtonCenterRight, ebiten.KeyEscape)
+		x := gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisLeftStickHorizontal)
+		y := gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisLeftStickVertical)
+		b(gpu.StandardGamepadButtonLeftTop, gpu.KeyUp)
+		b(gpu.StandardGamepadButtonLeftBottom, gpu.KeyDown)
+		b(gpu.StandardGamepadButtonLeftLeft, gpu.KeyLeft)
+		b(gpu.StandardGamepadButtonLeftRight, gpu.KeyRight)
+		hold(100, y < -0.5, gpu.KeyUp)
+		hold(101, y > 0.5, gpu.KeyDown)
+		hold(102, x < -0.5, gpu.KeyLeft)
+		hold(103, x > 0.5, gpu.KeyRight)
+		b(gpu.StandardGamepadButtonCenterRight, gpu.KeyEscape)
 		switch context {
 		case 'w':
-			b(ebiten.StandardGamepadButtonFrontTopLeft, ebiten.KeyA)
-			b(ebiten.StandardGamepadButtonFrontTopRight, ebiten.KeyD)
-			b(ebiten.StandardGamepadButtonRightBottom, ebiten.KeyF)
-			b(ebiten.StandardGamepadButtonRightLeft, ebiten.KeySpace)
-			b(ebiten.StandardGamepadButtonRightTop, ebiten.KeyI)
-			b(ebiten.StandardGamepadButtonFrontBottomLeft, ebiten.KeyC)
-			b(ebiten.StandardGamepadButtonFrontBottomRight, ebiten.KeyJ)
-			b(ebiten.StandardGamepadButtonCenterLeft, ebiten.KeyM)
+			b(gpu.StandardGamepadButtonFrontTopLeft, gpu.KeyA)
+			b(gpu.StandardGamepadButtonFrontTopRight, gpu.KeyD)
+			b(gpu.StandardGamepadButtonRightBottom, gpu.KeyF)
+			b(gpu.StandardGamepadButtonRightLeft, gpu.KeySpace)
+			b(gpu.StandardGamepadButtonRightTop, gpu.KeyI)
+			b(gpu.StandardGamepadButtonFrontBottomLeft, gpu.KeyC)
+			b(gpu.StandardGamepadButtonFrontBottomRight, gpu.KeyJ)
+			b(gpu.StandardGamepadButtonCenterLeft, gpu.KeyM)
 		default:
-			b(ebiten.StandardGamepadButtonRightBottom, ebiten.KeyEnter, ebiten.KeySpace)
-			b(ebiten.StandardGamepadButtonRightRight, ebiten.KeyEscape)
-			b(ebiten.StandardGamepadButtonCenterLeft, ebiten.KeyM) // closes the map
-			b(ebiten.StandardGamepadButtonFrontTopLeft, ebiten.KeyPageUp)
-			b(ebiten.StandardGamepadButtonFrontTopRight, ebiten.KeyPageDown)
+			b(gpu.StandardGamepadButtonRightBottom, gpu.KeyEnter, gpu.KeySpace)
+			b(gpu.StandardGamepadButtonRightRight, gpu.KeyEscape)
+			b(gpu.StandardGamepadButtonCenterLeft, gpu.KeyM) // closes the map
+			b(gpu.StandardGamepadButtonFrontTopLeft, gpu.KeyPageUp)
+			b(gpu.StandardGamepadButtonFrontTopRight, gpu.KeyPageDown)
 		}
 	}
 	for k := range padDur {
@@ -98,15 +97,15 @@ func pollPads(context byte) {
 // KeyJustPressed reports a key pressed this frame on the keyboard or a gamepad.
 var shooting = os.Getenv("BLOBBER_SHOT") != "" // phlan-poc: screenshots ignore the keyboard
 
-func KeyJustPressed(k ebiten.Key) bool {
-	return !shooting && inpututil.IsKeyJustPressed(k) || padJust[k]
+func KeyJustPressed(k gpu.Key) bool {
+	return !shooting && gpu.IsKeyJustPressed(k) || padJust[k]
 }
 
 // KeyRepeated is KeyJustPressed with auto-repeat while held, for moving through lists.
-func KeyRepeated(k ebiten.Key) bool {
+func KeyRepeated(k gpu.Key) bool {
 	rep := func(d int) bool { return d > 20 && d%4 == 0 }
-	return KeyJustPressed(k) || rep(inpututil.KeyPressDuration(k)) || rep(padDur[k])
+	return KeyJustPressed(k) || rep(gpu.KeyPressDuration(k)) || rep(padDur[k])
 }
 
 // KeyPressed reports a key held on the keyboard or a gamepad.
-func KeyPressed(k ebiten.Key) bool { return !shooting && ebiten.IsKeyPressed(k) || padHeld[k] }
+func KeyPressed(k gpu.Key) bool { return !shooting && gpu.IsKeyPressed(k) || padHeld[k] }

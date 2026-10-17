@@ -7,8 +7,7 @@ import (
 
 	"blobber/font"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 )
 
 // Talk is an NPC speaking: portrait, name and wrapped text, with Continue or, when Ask, Yes / No.
@@ -63,14 +62,14 @@ func (t *Talk) Update() bool {
 	p := blobber.KeyJustPressed
 	ask := t.Ask && t.last()
 	labels, boxes := t.buttons()
-	if p(ebiten.KeyLeft) || p(ebiten.KeyUp) || p(ebiten.KeyRight) || p(ebiten.KeyDown) {
+	if p(gpu.KeyLeft) || p(gpu.KeyUp) || p(gpu.KeyRight) || p(gpu.KeyDown) {
 		t.sel = (t.sel + 1) % len(labels)
 	}
 	t.sel %= len(labels)
 	switch {
-	case p(ebiten.KeyEnter) || p(ebiten.KeySpace):
+	case p(gpu.KeyEnter) || p(gpu.KeySpace):
 		return t.answer(labels[t.sel] != "No")
-	case p(ebiten.KeyEscape):
+	case p(gpu.KeyEscape):
 		return t.answer(!ask)
 	}
 	x, y := t.mouse()
@@ -78,7 +77,7 @@ func (t *Talk) Update() bool {
 	for i, b := range boxes {
 		if in(x, y, b) {
 			t.hover, t.sel = i, i
-			if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+			if gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 				return t.answer(labels[i] != "No")
 			}
 		}
@@ -86,7 +85,7 @@ func (t *Talk) Update() bool {
 	return true
 }
 
-func (t *Talk) Draw(screen *ebiten.Image) {
+func (t *Talk) Draw(screen *gpu.Image) {
 	d := t.begin()
 	Frame(d, talkBox)
 	npc, ok := NPCs[t.Who]
@@ -95,7 +94,7 @@ func (t *Talk) Draw(screen *ebiten.Image) {
 	}
 	DarkFrame(d, rc(32, 166, 2*PortraitSize+16, 2*PortraitSize+16)) // 8 px border
 	if img := PortraitID(npc.Portrait); img != nil {
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(2, 2)
 		op.GeoM.Translate(40, 174)
 		d.DrawImage(img, op)

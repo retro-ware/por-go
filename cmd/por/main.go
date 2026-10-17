@@ -30,9 +30,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/audio"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
+	"github.com/ebitengine/oto/v3"
 
 	"por/ega"
 	"por/engine"
@@ -47,8 +46,8 @@ type game struct {
 	remaster   remaster.Presenter // draws through classic where it has no remaster
 	remastered bool               // F10: the remastered screen instead of the original's
 
-	pads    []ebiten.GamepadID // input buffers, reused each tick
-	pressed []ebiten.Key
+	pads    []gpu.GamepadID // input buffers, reused each tick
+	pressed []gpu.Key
 	chars   []rune
 
 	stickDir  uint16 // left stick direction being held
@@ -85,7 +84,7 @@ func (g *game) Update() error {
 		return nil
 	}
 	g.keys()
-	for _, id := range ebiten.AppendGamepadIDs(g.pads[:0]) {
+	for _, id := range gpu.AppendGamepadIDs(g.pads[:0]) {
 		g.gamepad(id)
 	}
 	g.mouse()
@@ -127,10 +126,10 @@ func (g *game) settle() {
 
 // Held arrow keys repeat like the PC keyboard did (typematic), but only
 // while the engine waits for input, so walking stops when the key is let go.
-var repeatKeys = []ebiten.Key{
-	ebiten.KeyArrowUp, ebiten.KeyArrowDown, ebiten.KeyArrowLeft, ebiten.KeyArrowRight,
-	ebiten.KeyKP8, ebiten.KeyKP2, ebiten.KeyKP4, ebiten.KeyKP6,
-	ebiten.KeyPageUp, ebiten.KeyPageDown,
+var repeatKeys = []gpu.Key{
+	gpu.KeyArrowUp, gpu.KeyArrowDown, gpu.KeyArrowLeft, gpu.KeyArrowRight,
+	gpu.KeyKP8, gpu.KeyKP2, gpu.KeyKP4, gpu.KeyKP6,
+	gpu.KeyPageUp, gpu.KeyPageDown,
 }
 
 // keys passes the keyboard to the engine.
@@ -139,7 +138,7 @@ func (g *game) keys() {
 	if g.remastered { // fluid movement: the view asks for the held move as the last one ends
 		var held uint16
 		for _, k := range repeatKeys[:8] {
-			if inpututil.KeyPressDuration(k) > 0 {
+			if gpu.KeyPressDuration(k) > 0 {
 				held, _ = biosKey(k)
 			}
 		}
@@ -153,28 +152,28 @@ func (g *game) keys() {
 		if i < 8 && paced {
 			continue
 		}
-		if d := inpututil.KeyPressDuration(k); d > 1 && repeats(d) && g.scr.Idle() {
+		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) && g.scr.Idle() {
 			code, _ := biosKey(k)
 			g.push(code)
 		}
 	}
-	for _, k := range inpututil.AppendJustPressedKeys(g.pressed[:0]) {
-		if k == ebiten.KeyF10 { // never the game's: only how it is shown changes
+	for _, k := range gpu.AppendJustPressedKeys(g.pressed[:0]) {
+		if k == gpu.KeyF10 { // never the game's: only how it is shown changes
 			g.remastered = !g.remastered
 			g.remaster.Switched()
 		} else if code, ok := biosKey(k); ok {
 			g.push(code)
-		} else if k == ebiten.KeyF && ebiten.IsKeyPressed(ebiten.KeyControl) && ebiten.IsKeyPressed(ebiten.KeyShift) {
+		} else if k == gpu.KeyF && gpu.IsKeyPressed(gpu.KeyControl) && gpu.IsKeyPressed(gpu.KeyShift) {
 			g.push(engine.KeyFontPrev) // Ctrl-F next font, Ctrl-Shift-F the one before
-		} else if k >= ebiten.KeyA && k <= ebiten.KeyZ && ebiten.IsKeyPressed(ebiten.KeyControl) {
-			g.push(uint16(k-ebiten.KeyA) + 1) // Ctrl-letter: ASCII 1..26 (Ctrl-S sound toggle, Ctrl-C quit)
+		} else if k >= gpu.KeyA && k <= gpu.KeyZ && gpu.IsKeyPressed(gpu.KeyControl) {
+			g.push(uint16(k-gpu.KeyA) + 1) // Ctrl-letter: ASCII 1..26 (Ctrl-S sound toggle, Ctrl-C quit)
 		}
 	}
 	// a Ctrl combination types no letter of its own (Ctrl+Alt is AltGr: it does)
-	if ebiten.IsKeyPressed(ebiten.KeyControl) && !ebiten.IsKeyPressed(ebiten.KeyAlt) {
+	if gpu.IsKeyPressed(gpu.KeyControl) && !gpu.IsKeyPressed(gpu.KeyAlt) {
 		return
 	}
-	for _, r := range ebiten.AppendInputChars(g.chars[:0]) {
+	for _, r := range gpu.AppendInputChars(g.chars[:0]) {
 		if r < 128 {
 			g.push(uint16(r))
 		}
@@ -183,16 +182,16 @@ func (g *game) keys() {
 
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
 func (g *game) mouse() {
-	mx, my := ebiten.CursorPosition()
+	mx, my := gpu.CursorPosition()
 	cx, cy, in := g.cell(float64(mx), float64(my))
 	g.scr.SetMouse(cx, cy, in)
-	if in && inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+	if in && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		g.push(engine.MouseKey(engine.MouseLeft, cx, cy))
 	}
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+	if gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) {
 		g.push(engine.MouseKey(engine.MouseRight, 0, 0))
 	}
-	_, dy := ebiten.Wheel()
+	_, dy := gpu.Wheel()
 	g.wheel += dy
 	for ; g.wheel >= 1; g.wheel-- {
 		g.push(engine.MouseKey(engine.MouseWheelUp, 0, 0))
@@ -216,24 +215,24 @@ func (g *game) cell(x, y float64) (int, int, bool) {
 // padButtons maps standard-layout gamepad buttons to BIOS key codes (and
 // the engine's virtual gamepad keys).
 var padButtons = []struct {
-	b      ebiten.StandardGamepadButton
+	b      gpu.StandardGamepadButton
 	key    uint16
 	repeat bool
 }{
-	{ebiten.StandardGamepadButtonLeftTop, engine.KeyPadUp, true},
-	{ebiten.StandardGamepadButtonLeftBottom, engine.KeyPadDown, true},
-	{ebiten.StandardGamepadButtonLeftLeft, engine.KeyPadLeft, true},
-	{ebiten.StandardGamepadButtonLeftRight, engine.KeyPadRight, true},
-	{ebiten.StandardGamepadButtonRightBottom, engine.KeyPadSelect, false},
-	{ebiten.StandardGamepadButtonRightRight, 27, false},
-	{ebiten.StandardGamepadButtonRightLeft, engine.KeyPadOverview, false},
-	{ebiten.StandardGamepadButtonRightTop, engine.KeyPadMinimap, false},
-	{ebiten.StandardGamepadButtonFrontTopLeft, ',', true},
-	{ebiten.StandardGamepadButtonFrontTopRight, '.', true},
-	{ebiten.StandardGamepadButtonFrontBottomLeft, 0x4700, true},
-	{ebiten.StandardGamepadButtonFrontBottomRight, 0x4F00, true},
-	{ebiten.StandardGamepadButtonCenterRight, 13, false},
-	{ebiten.StandardGamepadButtonCenterLeft, 27, false},
+	{gpu.StandardGamepadButtonLeftTop, engine.KeyPadUp, true},
+	{gpu.StandardGamepadButtonLeftBottom, engine.KeyPadDown, true},
+	{gpu.StandardGamepadButtonLeftLeft, engine.KeyPadLeft, true},
+	{gpu.StandardGamepadButtonLeftRight, engine.KeyPadRight, true},
+	{gpu.StandardGamepadButtonRightBottom, engine.KeyPadSelect, false},
+	{gpu.StandardGamepadButtonRightRight, 27, false},
+	{gpu.StandardGamepadButtonRightLeft, engine.KeyPadOverview, false},
+	{gpu.StandardGamepadButtonRightTop, engine.KeyPadMinimap, false},
+	{gpu.StandardGamepadButtonFrontTopLeft, ',', true},
+	{gpu.StandardGamepadButtonFrontTopRight, '.', true},
+	{gpu.StandardGamepadButtonFrontBottomLeft, 0x4700, true},
+	{gpu.StandardGamepadButtonFrontBottomRight, 0x4F00, true},
+	{gpu.StandardGamepadButtonCenterRight, 13, false},
+	{gpu.StandardGamepadButtonCenterLeft, 27, false},
 }
 
 // Held buttons repeat after padDelay ticks (1/tps s), every padRate ticks.
@@ -241,19 +240,19 @@ const padDelay, padRate = tps / 3, tps * 3 / 20
 
 func repeats(d int) bool { return d == 1 || d >= padDelay && (d-padDelay)%padRate == 0 }
 
-func (g *game) gamepad(id ebiten.GamepadID) {
-	if !ebiten.IsStandardGamepadLayoutAvailable(id) {
+func (g *game) gamepad(id gpu.GamepadID) {
+	if !gpu.IsStandardGamepadLayoutAvailable(id) {
 		return
 	}
 	for _, p := range padButtons {
-		d := inpututil.StandardGamepadButtonPressDuration(id, p.b)
+		d := gpu.StandardGamepadButtonPressDuration(id, p.b)
 		if d == 1 || p.repeat && d > 1 && repeats(d) {
 			g.push(p.key)
 		}
 	}
 	// Left stick as a D-pad.
-	x := ebiten.StandardGamepadAxisValue(id, ebiten.StandardGamepadAxisLeftStickHorizontal)
-	y := ebiten.StandardGamepadAxisValue(id, ebiten.StandardGamepadAxisLeftStickVertical)
+	x := gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisLeftStickHorizontal)
+	y := gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisLeftStickVertical)
 	dir := uint16(0)
 	switch {
 	case y < -0.6:
@@ -276,7 +275,7 @@ func (g *game) gamepad(id ebiten.GamepadID) {
 	}
 }
 
-func (g *game) Draw(dst *ebiten.Image) {
+func (g *game) Draw(dst *gpu.Image) {
 	text, at := g.eng.Note()
 	note := classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
 	if g.remastered {
@@ -292,7 +291,8 @@ func (g *game) Draw(dst *ebiten.Image) {
 // POR_SHOT=FILE.png writes the window to FILE after the keys in POR_KEYS,
 // one every quarter second, and exits; for full size checks of the
 // presenters. The window opens unfocused and ignores the user's input
-// meanwhile. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
+// meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
+// first adventuring prompt. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
 // arrows, \T F10 (switch the presenter).
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
 
@@ -312,7 +312,7 @@ func scriptKeys(s string) []uint16 {
 	return out
 }
 
-func saveShot(dst *ebiten.Image) {
+func saveShot(dst *gpu.Image) {
 	b := dst.Bounds()
 	img := image.NewRGBA(b)
 	dst.ReadPixels(img.Pix)
@@ -329,47 +329,49 @@ func saveShot(dst *ebiten.Image) {
 
 // Layout works in device pixels, so the picture fills the window exactly.
 func (g *game) Layout(w, h int) (int, int) {
-	g.dsf = ebiten.Monitor().DeviceScaleFactor()
+	g.dsf = gpu.Monitor().DeviceScaleFactor()
 	return int(float64(w) * g.dsf), int(float64(h) * g.dsf)
 }
 
 // biosKey maps keys the DOS game read as non-ASCII (scan code in the high
 // byte, zero low byte) exactly like INT 16h returned them.
-func biosKey(k ebiten.Key) (uint16, bool) {
+func biosKey(k gpu.Key) (uint16, bool) {
 	switch k {
-	case ebiten.KeyEnter, ebiten.KeyKPEnter:
+	case gpu.KeyEnter, gpu.KeyKPEnter:
 		return 13, true
-	case ebiten.KeyEscape:
+	case gpu.KeyEscape:
 		return 27, true
-	case ebiten.KeyBackspace:
+	case gpu.KeyBackspace:
 		return 8, true
-	case ebiten.KeyTab:
+	case gpu.KeyTab:
 		return 9, true
-	case ebiten.KeyF1, ebiten.KeyF2, ebiten.KeyF3, ebiten.KeyF4, ebiten.KeyF5, ebiten.KeyF6, ebiten.KeyF7, ebiten.KeyF8:
-		return engine.KeyF1 + uint16(k-ebiten.KeyF1)<<8, true
-	case ebiten.KeyF9:
+	case gpu.KeyF1, gpu.KeyF2, gpu.KeyF3, gpu.KeyF4, gpu.KeyF5, gpu.KeyF6, gpu.KeyF7, gpu.KeyF8:
+		return engine.KeyF1 + uint16(k-gpu.KeyF1)<<8, true
+	case gpu.KeyF9:
 		return engine.KeyF9, true
-	case ebiten.KeyArrowUp, ebiten.KeyKP8:
+	case gpu.KeyArrowUp, gpu.KeyKP8:
 		return 0x4800, true
-	case ebiten.KeyArrowDown, ebiten.KeyKP2:
+	case gpu.KeyArrowDown, gpu.KeyKP2:
 		return 0x5000, true
-	case ebiten.KeyArrowLeft, ebiten.KeyKP4:
+	case gpu.KeyArrowLeft, gpu.KeyKP4:
 		return 0x4B00, true
-	case ebiten.KeyArrowRight, ebiten.KeyKP6:
+	case gpu.KeyArrowRight, gpu.KeyKP6:
 		return 0x4D00, true
-	case ebiten.KeyHome, ebiten.KeyKP7:
+	case gpu.KeyHome, gpu.KeyKP7:
 		return 0x4700, true
-	case ebiten.KeyEnd, ebiten.KeyKP1:
+	case gpu.KeyEnd, gpu.KeyKP1:
 		return 0x4F00, true
-	case ebiten.KeyPageUp, ebiten.KeyKP9:
+	case gpu.KeyPageUp, gpu.KeyKP9:
 		return 0x4900, true
-	case ebiten.KeyPageDown, ebiten.KeyKP3:
+	case gpu.KeyPageDown, gpu.KeyKP3:
 		return 0x5100, true
-	case ebiten.KeyKP5:
+	case gpu.KeyKP5:
 		return 0x4C00, true
 	}
 	return 0, false
 }
+
+var speaker *oto.Player // kept from the garbage collector
 
 func main() {
 	dir := flag.String("data", os.Getenv("GOPLAY_DATA"), "directory with the original game files")
@@ -407,26 +409,32 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	actx := audio.NewContext(44100)
-	if pl, err := actx.NewPlayer(eng.SoundReader()); err == nil {
-		// at least the 2048 frames (46 ms) a browser pulls at once, or the
-		// rest of each pull plays as silence (goplay)
-		pl.SetBufferSize(50 * time.Millisecond)
-		pl.Play()
+	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {
+		go func() {
+			<-ready // in the browser: after the first click or key
+			speaker = actx.NewPlayer(eng.SoundReader())
+			// at least the 2048 frames (46 ms) a browser pulls at once, or the
+			// rest of each pull plays as silence (goplay)
+			speaker.SetBufferSize(44100 * 4 / 20) // 50 ms of 16-bit stereo
+			speaker.Play()
+		}()
 	}
 	eng.Cfg.Param = flag.Arg(0)
+	if d := os.Getenv("POR_DEV"); d != "" { // POR_DEV=combat: a dev scene at the first prompt, for captures
+		eng.DevAction = eng.DevScene(d)
+	}
 	go eng.Run()
 
 	g := &game{scr: scr, eng: eng, dsf: 1, remastered: os.Getenv("POR_REMASTER") != ""}
 	g.remaster.Classic = &g.classic
-	ebiten.SetWindowSize(ega.W*(*scale), ega.H*(*scale)*6/5) // 4:3 like a CRT
-	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetWindowTitle("Pool of Radiance")
-	ebiten.SetTPS(tps)
+	gpu.SetWindowSize(ega.W*(*scale), ega.H*(*scale)*6/5) // 4:3 like a CRT
+	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
+	gpu.SetWindowTitle("Pool of Radiance")
+	gpu.SetTPS(tps)
 	if shot != "" {
-		ebiten.SetRunnableOnUnfocused(true)
+		gpu.SetRunnableOnUnfocused(true)
 	}
-	if err := ebiten.RunGameWithOptions(g, &ebiten.RunGameOptions{InitUnfocused: shot != ""}); err != nil {
+	if err := gpu.RunGameWithOptions(g, &gpu.RunGameOptions{InitUnfocused: shot != ""}); err != nil {
 		log.Fatal(err)
 	}
 }

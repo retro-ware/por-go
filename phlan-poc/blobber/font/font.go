@@ -11,7 +11,7 @@ import (
 	"image/color"
 	"strconv"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 //go:embed thickone.json
@@ -28,7 +28,7 @@ const (
 type glyph struct {
 	rows    [cell]uint16
 	advance int
-	img     *ebiten.Image // built on first use
+	img     *gpu.Image // built on first use
 }
 
 var glyphs = func() map[rune]*glyph {
@@ -80,7 +80,7 @@ func Width(s string) int {
 	return max(0, w-track)
 }
 
-func (g *glyph) image() *ebiten.Image {
+func (g *glyph) image() *gpu.Image {
 	if g.img == nil {
 		img := image.NewAlpha(image.Rect(0, 0, cell, cell))
 		for y, r := range g.rows {
@@ -90,17 +90,17 @@ func (g *glyph) image() *ebiten.Image {
 				}
 			}
 		}
-		g.img = ebiten.NewImageFromImage(img)
+		g.img = gpu.NewImageFromImage(img)
 	}
 	return g.img
 }
 
 // Draw writes s with its cell top-left at x,y in colour col. Ink sits roughly from y+3 to y+12,
 // descenders to y+14, like ebiten's debug font.
-func Draw(dst *ebiten.Image, s string, x, y int, col color.Color) {
+func Draw(dst *gpu.Image, s string, x, y int, col color.Color) {
 	for _, r := range s {
 		if r != ' ' {
-			op := &ebiten.DrawImageOptions{}
+			op := &gpu.DrawImageOptions{}
 			op.GeoM.Translate(float64(x-left), float64(y))
 			op.ColorScale.ScaleWithColor(col)
 			dst.DrawImage(get(r).image(), op)
@@ -110,7 +110,7 @@ func Draw(dst *ebiten.Image, s string, x, y int, col color.Color) {
 }
 
 // Print draws white text with a 1 px dark shadow, for text over the 3D view.
-func Print(dst *ebiten.Image, s string, x, y int) {
+func Print(dst *gpu.Image, s string, x, y int) {
 	Draw(dst, s, x+1, y+1, color.RGBA{0, 0, 0, 200})
 	Draw(dst, s, x, y, color.White)
 }

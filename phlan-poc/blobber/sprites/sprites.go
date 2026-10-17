@@ -7,7 +7,7 @@ import (
 	"image/color"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 var palette = map[byte]color.RGBA{
@@ -325,10 +325,10 @@ var art = map[string]string{
 .....kk`,
 }
 
-var cache = map[string]*ebiten.Image{}
+var cache = map[string]*gpu.Image{}
 
 // Get returns the named sprite, or nil if there is none.
-func Get(name string) *ebiten.Image {
+func Get(name string) *gpu.Image {
 	if img, ok := cache[name]; ok {
 		return img
 	}
@@ -336,7 +336,7 @@ func Get(name string) *ebiten.Image {
 	if !ok {
 		return nil
 	}
-	img := ebiten.NewImageFromImage(Decode(src))
+	img := gpu.NewImageFromImage(Decode(src))
 	cache[name] = img
 	return img
 }

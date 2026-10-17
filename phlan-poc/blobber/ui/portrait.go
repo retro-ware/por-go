@@ -11,7 +11,7 @@ import (
 
 	"blobber/party"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 // One pool of portraits for party members and NPCs alike: assets/portraits/<id>.png.
@@ -29,19 +29,19 @@ var portraitArt = map[string]string{
 	"robber": "ranger", "archer": "ranger", "ranger": "ranger",
 }
 
-var portraits = map[string]*ebiten.Image{}
+var portraits = map[string]*gpu.Image{}
 
-var faces = map[image.Image]*ebiten.Image{} // GPU copies of Character.Face
+var faces = map[image.Image]*gpu.Image{} // GPU copies of Character.Face
 
 // PortraitID returns the portrait from the pool by id, or nil.
-func PortraitID(id string) *ebiten.Image {
+func PortraitID(id string) *gpu.Image {
 	if img, ok := portraits[id]; ok {
 		return img
 	}
-	var img *ebiten.Image
+	var img *gpu.Image
 	if b, err := portraitFS.ReadFile("assets/portraits/" + id + ".png"); err == nil {
 		if m, err := png.Decode(bytes.NewReader(b)); err == nil {
-			img = ebiten.NewImageFromImage(m)
+			img = gpu.NewImageFromImage(m)
 		}
 	}
 	portraits[id] = img
@@ -50,11 +50,11 @@ func PortraitID(id string) *ebiten.Image {
 
 // Portrait returns c's picture: c.Face if set, else c.Portrait if set and known, else by class (unknown classes look
 // like paladins) and sex ("f" = lady).
-func Portrait(c *party.Character) *ebiten.Image {
+func Portrait(c *party.Character) *gpu.Image {
 	if c.Face != nil {
 		img := faces[c.Face]
 		if img == nil {
-			img = ebiten.NewImageFromImage(c.Face)
+			img = gpu.NewImageFromImage(c.Face)
 			faces[c.Face] = img
 		}
 		return img

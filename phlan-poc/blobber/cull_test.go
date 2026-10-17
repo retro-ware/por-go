@@ -9,7 +9,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 var testLevel = []string{
@@ -154,7 +154,7 @@ func TestMeleeAndFlee(t *testing.T) {
 	if len(Melee()) != 1 {
 		t.Fatal("a monster in melee should stay")
 	}
-	game.act(ebiten.KeyD) // east: blocked in melee
+	game.act(gpu.KeyD) // east: blocked in melee
 	if x, y, _ := Pos(); x != 1 || y != 1 {
 		t.Fatal("stepped out of melee")
 	}

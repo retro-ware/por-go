@@ -14,8 +14,7 @@ import (
 	"blobber/font"
 	"blobber/party"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 )
 
 // Offer is one line in a shop. Do runs it after the cost has been paid and returns a message.
@@ -321,39 +320,39 @@ func shopRow(r int) image.Rectangle { return rc(22, 54+r*rowH, cw-44, rowH) }
 
 func (s *Shop) Update() bool {
 	p := blobber.KeyJustPressed
-	if p(ebiten.KeyEscape) {
+	if p(gpu.KeyEscape) {
 		return false
 	}
 	for i := range min(6, len(s.P.Chars)) {
-		if p(ebiten.KeyF1 + ebiten.Key(i)) {
+		if p(gpu.KeyF1 + gpu.Key(i)) {
 			s.Char = i
 		}
 	}
-	if nc := len(s.P.Chars); p(ebiten.KeyPageDown) || p(ebiten.KeyTab) {
+	if nc := len(s.P.Chars); p(gpu.KeyPageDown) || p(gpu.KeyTab) {
 		s.Char = (s.Char + 1) % nc
-	} else if p(ebiten.KeyPageUp) {
+	} else if p(gpu.KeyPageUp) {
 		s.Char = (s.Char + nc - 1) % nc
 	}
-	if cx, cy := ebiten.CursorPosition(); inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+	if cx, cy := gpu.CursorPosition(); gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		if i := PartyAt(s.P, cx, cy); i >= 0 {
 			s.Char = i
 		}
 	}
 	n := len(s.Offers())
 	switch {
-	case blobber.KeyRepeated(ebiten.KeyUp):
+	case blobber.KeyRepeated(gpu.KeyUp):
 		s.sel--
-	case blobber.KeyRepeated(ebiten.KeyDown):
+	case blobber.KeyRepeated(gpu.KeyDown):
 		s.sel++
-	case p(ebiten.KeyEnter) || p(ebiten.KeySpace):
+	case p(gpu.KeyEnter) || p(gpu.KeySpace):
 		s.Choose(s.sel)
 	}
-	if _, wy := ebiten.Wheel(); wy != 0 {
+	if _, wy := gpu.Wheel(); wy != 0 {
 		s.sel -= int(wy)
 	}
 	s.sel = max(0, min(s.sel, n-1))
 	x, y := s.mouse()
-	left := inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
+	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft)
 	s.hoverBtn = ""
 	switch {
 	case in(x, y, closeBox) || in(x, y, leaveBox):
@@ -381,7 +380,7 @@ func (s *Shop) Update() bool {
 // top is the first visible row, keeping the selection on screen.
 func (s *Shop) top() int { return max(0, s.sel-shopRows+1) }
 
-func (s *Shop) Draw(screen *ebiten.Image) {
+func (s *Shop) Draw(screen *gpu.Image) {
 	d := s.begin()
 	Frame(d, rc(0, 0, cw, ch))
 	Icon(d, CloseIcon, closeBox.Min.X, closeBox.Min.Y)

@@ -9,8 +9,7 @@ import (
 	"blobber/font"
 	"blobber/party"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 )
 
 // Spellbook lists the caster's spells; picking one casts it and closes the book so the effect shows.
@@ -72,34 +71,34 @@ func (b *Spellbook) cast(i int) bool {
 
 func (b *Spellbook) Update() bool {
 	p := blobber.KeyJustPressed
-	if p(ebiten.KeyEscape) || p(ebiten.KeyC) {
+	if p(gpu.KeyEscape) || p(gpu.KeyC) {
 		return false
 	}
-	if p(ebiten.KeyTab) || p(ebiten.KeyRight) || p(ebiten.KeyPageDown) {
+	if p(gpu.KeyTab) || p(gpu.KeyRight) || p(gpu.KeyPageDown) {
 		b.char, b.sel = (b.char+1)%len(b.P.Chars), 0
 	}
-	if p(ebiten.KeyLeft) || p(ebiten.KeyPageUp) {
+	if p(gpu.KeyLeft) || p(gpu.KeyPageUp) {
 		b.char, b.sel = (b.char+len(b.P.Chars)-1)%len(b.P.Chars), 0
 	}
 	if n := len(b.known(b.P.Chars[b.char])); n > 0 { // up/down pick, Enter casts
-		if blobber.KeyRepeated(ebiten.KeyUp) {
+		if blobber.KeyRepeated(gpu.KeyUp) {
 			b.sel = (b.sel + n - 1) % n
 		}
-		if blobber.KeyRepeated(ebiten.KeyDown) {
+		if blobber.KeyRepeated(gpu.KeyDown) {
 			b.sel = (b.sel + 1) % n
 		}
-		if p(ebiten.KeyEnter) || p(ebiten.KeySpace) {
+		if p(gpu.KeyEnter) || p(gpu.KeySpace) {
 			return b.cast(b.sel % n)
 		}
 	}
 	for i := range 9 {
-		if p(ebiten.KeyF1+ebiten.Key(i)) && i < len(b.P.Chars) {
+		if p(gpu.KeyF1+gpu.Key(i)) && i < len(b.P.Chars) {
 			b.char = i
 		}
 	}
 	x, y := b.mouse()
-	sx, sy := ebiten.CursorPosition()
-	left := inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
+	sx, sy := gpu.CursorPosition()
+	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft)
 	if i := PartyAt(b.P, sx, sy); i >= 0 && left {
 		b.char, b.msg = i, ""
 	}
@@ -126,7 +125,7 @@ func (b *Spellbook) Update() bool {
 	return true
 }
 
-func (b *Spellbook) Draw(screen *ebiten.Image) {
+func (b *Spellbook) Draw(screen *gpu.Image) {
 	d := b.begin()
 	Frame(d, spellBox)
 	c := b.P.Chars[b.char]

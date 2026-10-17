@@ -19,10 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
+	"gpu"
+	"gpu/vector"
 )
 
 var (
@@ -73,7 +71,7 @@ func LoadMap(r io.Reader) (rows, extra []string, err error) {
 // Size is its longest side in tiles. Objects outside the map are hidden.
 type Object struct {
 	X, Y int
-	Img  *ebiten.Image
+	Img  *gpu.Image
 	Size float64
 	At   *[2]float64 // phlan-poc: an exact floor position (a tree on a square's edge or corner) instead of the cell's centre
 	// phlan-poc: Front > 0: while the party stands on its square it stands this far in front of the square's
@@ -84,7 +82,7 @@ type Object struct {
 }
 
 // texBlack (phlan-poc) fills the opening of a Ring.
-var texBlack *ebiten.Image
+var texBlack *gpu.Image
 
 // Objects is the host-maintained list of objects on the current map.
 var Objects []*Object
@@ -93,7 +91,7 @@ var Objects []*Object
 // While one is open the party cannot move; tweens still finish.
 type Overlay interface {
 	Update() bool
-	Draw(screen *ebiten.Image)
+	Draw(screen *gpu.Image)
 }
 
 var Modal Overlay
@@ -102,7 +100,7 @@ var Modal Overlay
 var Help Overlay
 
 // Keys binds extra keys to host actions; checked while no prompt or modal is open.
-var Keys = map[ebiten.Key]func(){}
+var Keys = map[gpu.Key]func(){}
 
 // Prompt is a modal question: a menu of options picked with up/down and Enter, or free text
 // with Enter. Escape answers "". Movement is blocked while one is up; signs and tweens are untouched.
@@ -151,39 +149,39 @@ func ShowPrompt(lines []string, text bool, on func(string)) {
 
 func (p *Prompt) update() {
 	done := func(a string) { prompt = nil; p.on(a) }
-	if KeyJustPressed(ebiten.KeyEscape) {
+	if KeyJustPressed(gpu.KeyEscape) {
 		done("")
 		return
 	}
 	if p.Text {
 		p.input += string(inputChars())
-		if KeyJustPressed(ebiten.KeyBackspace) && len(p.input) > 0 {
+		if KeyJustPressed(gpu.KeyBackspace) && len(p.input) > 0 {
 			p.input = p.input[:len(p.input)-1]
 		}
-		if KeyJustPressed(ebiten.KeyEnter) {
+		if KeyJustPressed(gpu.KeyEnter) {
 			done(p.input)
 		}
 		return
 	}
 	opts := p.options()
 	if len(opts) == 0 { // a notice: any confirm closes it
-		if KeyJustPressed(ebiten.KeyEnter) || KeyJustPressed(ebiten.KeySpace) {
+		if KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace) {
 			done("")
 		}
 		return
 	}
-	if KeyRepeated(ebiten.KeyUp) {
+	if KeyRepeated(gpu.KeyUp) {
 		p.sel = (p.sel + len(opts) - 1) % len(opts)
 	}
-	if KeyRepeated(ebiten.KeyDown) {
+	if KeyRepeated(gpu.KeyDown) {
 		p.sel = (p.sel + 1) % len(opts)
 	}
-	if KeyJustPressed(ebiten.KeyEnter) || KeyJustPressed(ebiten.KeySpace) {
+	if KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace) {
 		done(opts[p.sel%len(opts)].value)
 	}
 }
 
-func (p *Prompt) draw(screen *ebiten.Image) {
+func (p *Prompt) draw(screen *gpu.Image) {
 	lines := append([]string{}, p.Lines...)
 	sel := -1
 	for i, o := range p.options() {
@@ -213,15 +211,15 @@ func (p *Prompt) draw(screen *ebiten.Image) {
 // hosts also use it as the signal that prompt UI is available.
 var (
 	DebugLines     func() []string
-	HUD            func(screen *ebiten.Image) // drawn over the scene, under prompts and modals
+	HUD            func(screen *gpu.Image) // drawn over the scene, under prompts and modals
 	OnClick        func(x, y int) bool        // left click / tap in screen pixels; true = handled, no walking
 	OnPromptAnswer func() []string
 
 	// Skin hooks; nil keeps the plain built-in look.
-	Window      func(screen *ebiten.Image, title string, lines []string, sel int, bottom bool) // text window
-	SignImage   func(lines []string) *ebiten.Image                                             // world text plaque
-	BoardImage  func(lines []string) *ebiten.Image                                             // shop sign board (ShowSignAbove)
-	Panel       func(screen *ebiten.Image, r image.Rectangle)                                  // backdrop, e.g. the minimap
+	Window      func(screen *gpu.Image, title string, lines []string, sel int, bottom bool) // text window
+	SignImage   func(lines []string) *gpu.Image                                             // world text plaque
+	BoardImage  func(lines []string) *gpu.Image                                             // shop sign board (ShowSignAbove)
+	Panel       func(screen *gpu.Image, r image.Rectangle)                                  // backdrop, e.g. the minimap
 	PanelBorder func() int                                                                     // device px Panel's frame covers on each side
 )
 
@@ -236,7 +234,7 @@ var OnTeleportMenu func()
 var sign struct {
 	top       bool // on the wall, top of the cell (shop sign) rather than mid-cell at eye height
 	x, y, dir int
-	tex       *ebiten.Image
+	tex       *gpu.Image
 }
 
 // ShowSign puts lines of text into the world at cell (x, y), on the dir side. ClearSign removes it.
@@ -249,7 +247,7 @@ func ShowSign(x, y, dir int, lines []string) {
 	for _, l := range lines {
 		w = max(w, font.Width(l)+8)
 	}
-	img := ebiten.NewImage(w, 16*len(lines)+8)
+	img := gpu.NewImage(w, 16*len(lines)+8)
 	for i, l := range lines {
 		font.Print(img, l, 4, 4+16*i)
 	}
@@ -321,19 +319,19 @@ func pondEdge(t float64) (float64, float64) {
 	return pondH * math.Copysign(math.Sqrt(math.Abs(c)), c), pondH * math.Copysign(math.Sqrt(math.Abs(s)), s)
 }
 
-var texPondWater *ebiten.Image // the sea's water, lighter: PoR's ponds are a bright blue
+var texPondWater *gpu.Image // the sea's water, lighter: PoR's ponds are a bright blue
 
 var mudFor map[[2]int]bool            // the Pond map mudTiles were made for
-var mudTiles map[[2]int]*ebiten.Image // phlan-poc: per cell, its share of the bank around the ponds
+var mudTiles map[[2]int]*gpu.Image // phlan-poc: per cell, its share of the bank around the ponds
 
 // pondMud is cell's share of the mud bank around the map's ponds: alpha from the distance to the whole
 // outline (discs on the pond cells, joined by strips as wide), so a pond over several cells gets one bank.
-func pondMud(cell [2]int) *ebiten.Image {
+func pondMud(cell [2]int) *gpu.Image {
 	if len(Pond) == 0 {
 		return nil
 	}
 	if mudTiles == nil || reflect.ValueOf(mudFor).Pointer() != reflect.ValueOf(Pond).Pointer() {
-		mudFor, mudTiles = Pond, map[[2]int]*ebiten.Image{}
+		mudFor, mudTiles = Pond, map[[2]int]*gpu.Image{}
 		dist := func(x, z float64) float64 { // to the outline, <0 inside
 			d := math.Inf(1)
 			for p := range Pond {
@@ -365,7 +363,7 @@ func pondMud(cell [2]int) *ebiten.Image {
 							img.Set(i, j, color.RGBA{uint8(46 * a), uint8(30 * a), uint8(16 * a), uint8(255 * a)})
 						}
 					}
-					mudTiles[c] = ebiten.NewImageFromImage(img)
+					mudTiles[c] = gpu.NewImageFromImage(img)
 				}
 			}
 		}
@@ -376,7 +374,7 @@ func pondMud(cell [2]int) *ebiten.Image {
 func inMap(x, y int) bool { return y >= 0 && y < len(level) && x >= 0 && x < len(level[y]) }
 
 // texWater, texClouds (phlan-poc): floor_phlan_water and ceiling_phlan_clouds, loaded on first use.
-var texWater, texClouds *ebiten.Image
+var texWater, texClouds *gpu.Image
 
 type FacePart struct {
 	Mat            byte
@@ -426,7 +424,7 @@ var (
 
 // genStone bakes a heightmap of blocks into a lit texture. lx,ly is the baked light direction,
 // so a side-facing wall gets its grooves shaded as if seen from the corridor.
-func genStone(bw, bh int, offset bool, base, mortar [3]float64, lx, ly float64) *ebiten.Image {
+func genStone(bw, bh int, offset bool, base, mortar [3]float64, lx, ly float64) *gpu.Image {
 	h := make([]float64, tex*tex)
 	noise := make([]float64, tex*tex)
 	for y := 0; y < tex; y++ {
@@ -441,9 +439,8 @@ func genStone(bw, bh int, offset bool, base, mortar [3]float64, lx, ly float64) 
 			noise[y*tex+x] = 0.85 + 0.3*rng.Float64()
 		}
 	}
-	img := ebiten.NewImage(tex, tex)
+	px := image.NewRGBA(image.Rect(0, 0, tex, tex))
 	at := func(x, y int) float64 { return h[((y+tex)%tex)*tex+(x+tex)%tex] }
-	defer addSlopes(img, tex, tex, func(x, y int) float64 { return h[y*tex+x] })
 	for y := 0; y < tex; y++ {
 		for x := 0; x < tex; x++ {
 			gx, gy := at(x+1, y)-at(x-1, y), at(x, y+1)-at(x, y-1)
@@ -453,16 +450,18 @@ func genStone(bw, bh int, offset bool, base, mortar [3]float64, lx, ly float64) 
 				c = mortar
 			}
 			n := noise[y*tex+x]
-			img.Set(x, y, color.RGBA{u8(c[0] * n * shade), u8(c[1] * n * shade), u8(c[2] * n * shade), 255})
+			px.Set(x, y, color.RGBA{u8(c[0] * n * shade), u8(c[1] * n * shade), u8(c[2] * n * shade), 255})
 		}
 	}
+	img := gpu.NewImageFromImage(px)
+	addSlopes(img, tex, tex, func(x, y int) float64 { return h[y*tex+x] })
 	return img
 }
 
 func u8(v float64) uint8 { return uint8(math.Max(0, math.Min(255, v))) }
 
-func genGrass() *ebiten.Image {
-	img := ebiten.NewImage(tex, tex)
+func genGrass() *gpu.Image {
+	img := image.NewRGBA(image.Rect(0, 0, tex, tex))
 	for i := 0; i < 40; i++ {
 		x0, lean, hgt := 4+rng.Float64()*56, rng.Float64()*16-8, 20+rng.Float64()*36
 		g := color.RGBA{uint8(40 + rng.Intn(60)), uint8(120 + rng.Intn(100)), uint8(30 + rng.Intn(40)), 255}
@@ -470,22 +469,22 @@ func genGrass() *ebiten.Image {
 			img.Set(int(x0+lean*t*t/(hgt*hgt)), tex-1-int(t), g)
 		}
 	}
-	return img
+	return gpu.NewImageFromImage(img)
 }
 
-func genSolid(c color.RGBA) *ebiten.Image { i := ebiten.NewImage(8, 8); i.Fill(c); return i }
+func genSolid(c color.RGBA) *gpu.Image { i := gpu.NewImage(8, 8); i.Fill(c); return i }
 
 var (
 	stone                                         = [3]float64{150, 130, 110}
 	mortarC                                       = [3]float64{80, 72, 70}
-	texFloor, texCeil                             *ebiten.Image
-	defFloor, defCeil                             *ebiten.Image // before a map picks its own
-	texGrass, texLantern, texFirefly, texFireball *ebiten.Image
-	texGlow                                       *ebiten.Image // 64x64 white radial falloff, premultiplied
-	texBolt                                       *ebiten.Image
+	texFloor, texCeil                             *gpu.Image
+	defFloor, defCeil                             *gpu.Image // before a map picks its own
+	texGrass, texLantern, texFirefly, texFireball *gpu.Image
+	texGlow                                       *gpu.Image // 64x64 white radial falloff, premultiplied
+	texBolt                                       *gpu.Image
 	atlas                                         []struct {
 		name string
-		img  *ebiten.Image
+		img  *gpu.Image
 	}
 )
 
@@ -502,7 +501,7 @@ var MatColors = map[byte][2][3]float64{
 var mats = map[byte]*mat{}
 
 // Material returns the generated front texture of a wall character (nil if unknown). Call GenTextures first.
-func Material(ch byte) *ebiten.Image {
+func Material(ch byte) *gpu.Image {
 	if m := mats[ch]; m != nil {
 		return m.img
 	}
@@ -547,21 +546,22 @@ func genTextures() {
 	defFloor, defCeil = texFloor, texCeil
 	SetFlats(flatNames[0], flatNames[1])
 	texGrass = genGrass()
-	texGlow = ebiten.NewImage(64, 64)
+	glow := image.NewRGBA(image.Rect(0, 0, 64, 64))
 	for y := 0; y < 64; y++ {
 		for x := 0; x < 64; x++ {
 			d := math.Hypot(float64(x)-31.5, float64(y)-31.5) / 32
 			k := uint8(255 * math.Pow(math.Max(0, 1-d), 2))
-			texGlow.Set(x, y, color.RGBA{k, k, k, k})
+			glow.Set(x, y, color.RGBA{k, k, k, k})
 		}
 	}
+	texGlow = gpu.NewImageFromImage(glow)
 	texLantern = genSolid(color.RGBA{255, 220, 150, 255})
 	texFirefly = genSolid(color.RGBA{200, 255, 180, 255})
 	texFireball = genSolid(color.RGBA{255, 90, 30, 255})
 	texBolt = genSolid(color.RGBA{170, 210, 255, 255})
 	for _, e := range []struct {
 		name string
-		img  *ebiten.Image
+		img  *gpu.Image
 	}{{"stone", mats['#'].img}, {"floor", texFloor}, {"ceil", texCeil}, {"grass", texGrass}} {
 		atlas = append(atlas, e)
 	}
@@ -569,7 +569,7 @@ func genTextures() {
 		if ch != '#' {
 			atlas = append(atlas, struct {
 				name string
-				img  *ebiten.Image
+				img  *gpu.Image
 			}{string(ch), m.img})
 		}
 	}
@@ -594,7 +594,7 @@ type ent struct {
 	dmg         int     // Fireball only: damage to the monster it hits
 	size, light float64
 	lr, lg, lb  float64
-	tex         *ebiten.Image
+	tex         *gpu.Image
 }
 
 var ents []*ent
@@ -741,21 +741,21 @@ type Actor struct {
 	fx, fz, tx, tz, t float64 // tween from/to and progress
 	hp                int
 	sheet             *Sheet
-	pose              *ebiten.Image // attack or hurt, shown for poseLeft seconds
+	pose              *gpu.Image // attack or hurt, shown for poseLeft seconds
 	poseLeft          float64
 	dying             bool // showing its last hurt pose; gone when it ends
 }
 
 // play shows the attack or hurt pose for PoseTime, if the monster has it.
 func (a *Actor) play(name string) {
-	p := map[string]*ebiten.Image{"attack": a.sheet.Attack, "hurt": a.sheet.Hurt}[name]
+	p := map[string]*gpu.Image{"attack": a.sheet.Attack, "hurt": a.sheet.Hurt}[name]
 	if p != nil {
 		a.pose, a.poseLeft = p, PoseTime
 	}
 }
 
 // img is the picture to draw this frame.
-func (a *Actor) img() *ebiten.Image {
+func (a *Actor) img() *gpu.Image {
 	if a.poseLeft > 0 {
 		return a.pose
 	}
@@ -841,7 +841,7 @@ func SwapPopulation(next *Population) *Population {
 
 // SpawnActor places monster name, drawn with img (e.g. a decoded PNG), at cell (x, y) with hp hit points.
 func SpawnActor(name string, img image.Image, x, y, hp int) {
-	spawnActor(&Actor{name: name, x: x, y: y, t: 1, sheet: &Sheet{Idle: ebiten.NewImageFromImage(img)}, hp: hp})
+	spawnActor(&Actor{name: name, x: x, y: y, t: 1, sheet: &Sheet{Idle: gpu.NewImageFromImage(img)}, hp: hp})
 }
 
 // SpawnSheet places an animated monster.
@@ -1089,14 +1089,14 @@ type Game struct {
 	fx, fz, fa, tx, tz, ta float64 // from/to pos & angle
 	t, sway                float64 // tween progress, roll direction
 	moving                 bool
-	queued                 ebiten.Key
+	queued                 gpu.Key
 	next                   []Camera // follow mode: the host's moves still to animate, in order
 	hold, asked            bool     // follow mode: the host's move key is held; its next move was asked for
 	// a step (not a turn) moves at speed v (steps per second) instead of easing, and flows into the
 	// next one while walkKey is held, so walking doesn't slow down at every cell
 	walk    bool
 	v       float64
-	walkKey ebiten.Key
+	walkKey gpu.Key
 	cool    float64 // without smooth movement: seconds until a held key moves again
 	time    float64
 	// settings
@@ -1105,8 +1105,8 @@ type Game struct {
 	follow                                         bool // driven by a View: moves come from the host, never the keyboard
 	torch                                          float64
 	sel                                            int
-	scene                                          *ebiten.Image
-	shader, texShader                              *ebiten.Shader
+	scene                                          *gpu.Image
+	shader, texShader                              *gpu.Shader
 }
 
 var dirs = [4][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
@@ -1129,7 +1129,7 @@ func (g *Game) startMove(nx, ny, ndir int, sway float64) {
 	}
 }
 
-func (g *Game) act(k ebiten.Key) {
+func (g *Game) act(k gpu.Key) {
 	if g.moving {
 		g.queued = k // ponytail: one-slot input queue, ring buffer if players mash keys
 		return
@@ -1146,18 +1146,18 @@ func (g *Game) act(k ebiten.Key) {
 		}
 	}
 	switch k {
-	case ebiten.KeyW, ebiten.KeyUp:
+	case gpu.KeyW, gpu.KeyUp:
 		step(f[0], f[1], 0)
-	case ebiten.KeyS, ebiten.KeyDown:
+	case gpu.KeyS, gpu.KeyDown:
 		step(-f[0], -f[1], 0)
-	case ebiten.KeyA:
+	case gpu.KeyA:
 		step(-r[0], -r[1], -1)
-	case ebiten.KeyD:
+	case gpu.KeyD:
 		step(r[0], r[1], 1)
-	case ebiten.KeyQ, ebiten.KeyLeft:
+	case gpu.KeyQ, gpu.KeyLeft:
 		g.startMove(g.x, g.y, (g.dir+3)%4, 0)
 		g.walkKey = k
-	case ebiten.KeyE, ebiten.KeyRight:
+	case gpu.KeyE, gpu.KeyRight:
 		g.startMove(g.x, g.y, (g.dir+1)%4, 0)
 		g.walkKey = k
 	}
@@ -1179,10 +1179,10 @@ func (g *Game) Update() error {
 		ctx = 'w'
 	}
 	pollPads(ctx)
-	if KeyJustPressed(ebiten.KeyF12) {
+	if KeyJustPressed(gpu.KeyF12) {
 		g.atlasView = !g.atlasView
 	}
-	if KeyJustPressed(ebiten.KeyP) {
+	if KeyJustPressed(gpu.KeyP) {
 		g.debug = !g.debug
 	}
 	// "?" toggles the help screen over everything, except while typing an answer
@@ -1201,7 +1201,7 @@ func (g *Game) Update() error {
 	}
 	if prompt != nil {
 		if Fighting() { // a combat round is asking: turning is still allowed
-			for _, k := range []ebiten.Key{ebiten.KeyQ, ebiten.KeyE, ebiten.KeyLeft, ebiten.KeyRight} {
+			for _, k := range []gpu.Key{gpu.KeyQ, gpu.KeyE, gpu.KeyLeft, gpu.KeyRight} {
 				if KeyJustPressed(k) {
 					g.act(k)
 				}
@@ -1223,7 +1223,7 @@ func (g *Game) Update() error {
 			f()
 		}
 	}
-	if KeyJustPressed(ebiten.KeyEscape) || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+	if KeyJustPressed(gpu.KeyEscape) || gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) {
 		if g.options { // Esc in Options goes back to the menu
 			g.options, g.sel = false, 0
 		} else {
@@ -1232,27 +1232,27 @@ func (g *Game) Update() error {
 	}
 	if g.menu {
 		if g.updateMenu() {
-			return ebiten.Termination
+			return gpu.Termination
 		}
 	} else {
-		if KeyJustPressed(ebiten.KeySpace) && !g.moving && !Fighting() { // wait a turn
+		if KeyJustPressed(gpu.KeySpace) && !g.moving && !Fighting() { // wait a turn
 			g.endTurn()
 		}
-		if KeyJustPressed(ebiten.KeyF) && !g.moving && OnUse != nil {
+		if KeyJustPressed(gpu.KeyF) && !g.moving && OnUse != nil {
 			OnUse(g.x, g.y, g.dir)
 		}
-		for _, k := range []ebiten.Key{ebiten.KeyW, ebiten.KeyS, ebiten.KeyA, ebiten.KeyD, ebiten.KeyQ, ebiten.KeyE, ebiten.KeyUp, ebiten.KeyDown, ebiten.KeyLeft, ebiten.KeyRight} {
+		for _, k := range []gpu.Key{gpu.KeyW, gpu.KeyS, gpu.KeyA, gpu.KeyD, gpu.KeyQ, gpu.KeyE, gpu.KeyUp, gpu.KeyDown, gpu.KeyLeft, gpu.KeyRight} {
 			if KeyJustPressed(k) || (!g.moving && g.cool <= 0 && KeyPressed(k)) { // held key = continuous
 				g.act(k)
 			}
 		}
 		// mouse / touch: middle third walks, sides turn
 		px, py := -1, -1
-		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			px, py = ebiten.CursorPosition()
+		if gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
+			px, py = gpu.CursorPosition()
 		}
-		for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
-			px, py = ebiten.TouchPosition(id)
+		for _, id := range gpu.AppendJustPressedTouchIDs(nil) {
+			px, py = gpu.TouchPosition(id)
 		}
 		if px >= 0 && OnClick != nil && OnClick(px, py) {
 			px = -1
@@ -1260,11 +1260,11 @@ func (g *Game) Update() error {
 		switch {
 		case px < 0:
 		case px < W/3:
-			g.act(ebiten.KeyQ)
+			g.act(gpu.KeyQ)
 		case px > 2*W/3:
-			g.act(ebiten.KeyE)
+			g.act(gpu.KeyE)
 		default:
-			g.act(ebiten.KeyW)
+			g.act(gpu.KeyW)
 		}
 	}
 	g.tween()
@@ -1340,13 +1340,13 @@ func (g *Game) tween() {
 // updateMenu reports true when Quit was chosen.
 func (g *Game) updateMenu() bool {
 	n := len(g.menuItems())
-	if KeyRepeated(ebiten.KeyUp) {
+	if KeyRepeated(gpu.KeyUp) {
 		g.sel = (g.sel + n - 1) % n
 	}
-	if KeyRepeated(ebiten.KeyDown) {
+	if KeyRepeated(gpu.KeyDown) {
 		g.sel = (g.sel + 1) % n
 	}
-	pick := KeyJustPressed(ebiten.KeyEnter) || KeyJustPressed(ebiten.KeySpace)
+	pick := KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace)
 	if !g.options {
 		switch {
 		case !pick:
@@ -1360,7 +1360,7 @@ func (g *Game) updateMenu() bool {
 		}
 		return false
 	}
-	if pick || KeyJustPressed(ebiten.KeyLeft) || KeyJustPressed(ebiten.KeyRight) {
+	if pick || KeyJustPressed(gpu.KeyLeft) || KeyJustPressed(gpu.KeyRight) {
 		switch g.sel {
 		case 0:
 			g.smooth = !g.smooth
@@ -1370,11 +1370,11 @@ func (g *Game) updateMenu() bool {
 			Settings.Haze = !Settings.Haze
 		case 3: // slider: Left slower, Right / Enter faster (Enter wraps round to the slowest)
 			sp := Settings.Speed + 0.25
-			if KeyJustPressed(ebiten.KeyLeft) {
+			if KeyJustPressed(gpu.KeyLeft) {
 				sp = math.Max(minSpeed, Settings.Speed-0.25)
 			} else if sp > maxSpeed {
 				sp = minSpeed
-				if KeyJustPressed(ebiten.KeyRight) {
+				if KeyJustPressed(gpu.KeyRight) {
 					sp = maxSpeed
 				}
 			}
@@ -1390,9 +1390,9 @@ func (g *Game) updateMenu() bool {
 		case 8:
 			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
 		case 9:
-			ebiten.SetFullscreen(!ebiten.IsFullscreen())
+			gpu.SetFullscreen(!gpu.IsFullscreen())
 		}
-		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, ebiten.IsFullscreen(), g.torch
+		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, gpu.IsFullscreen(), g.torch
 		if OnSettings != nil {
 			OnSettings(Settings)
 		}
@@ -1408,7 +1408,7 @@ func (g *Game) menuItems() []string {
 			"Walk speed:        " + strings.Repeat("#", bar+1) + strings.Repeat("-", int((maxSpeed-minSpeed)/0.25)-bar) + fmt.Sprintf(" %.2fx", Settings.Speed),
 			"Smooth monsters:   " + onOff(Settings.SmoothMonsters), "Dithered darkness: " + onOff(g.dither), "Normal mapping:    " + onOff(Settings.NormalMaps),
 			"Light maps:        " + onOff(Settings.LightMaps),
-			fmt.Sprintf("Torch intensity:   %.1f", g.torch), "Fullscreen:        " + onOff(ebiten.IsFullscreen())}
+			fmt.Sprintf("Torch intensity:   %.1f", g.torch), "Fullscreen:        " + onOff(gpu.IsFullscreen())}
 	}
 	return []string{"Options", "Teleport to level", "Quit game"}
 }
@@ -1419,7 +1419,7 @@ type vert struct{ x, y, z, u, v, r, g, b float64 } // world pos, uv, light
 
 type face struct {
 	v     [4]vert
-	tex   *ebiten.Image
+	tex   *gpu.Image
 	dist  float64
 	raw   float64 // dist without the monsters' bias
 	sub   int
@@ -1522,7 +1522,7 @@ func (g *Game) light(v *vert) {
 var white = genSolid(color.RGBA{255, 255, 255, 255})
 
 // drawQuad subdivides, lights, transforms, near-clips and projects one textured quad.
-func (g *Game) drawQuad(dst *ebiten.Image, c cam, f *face) {
+func (g *Game) drawQuad(dst *gpu.Image, c cam, f *face) {
 	ni, nj := f.sub, f.sub
 	if f.only != nil {
 		ni, nj = f.grid[0]*f.sub, f.grid[1]*f.sub
@@ -1563,7 +1563,7 @@ func (g *Game) drawQuad(dst *ebiten.Image, c cam, f *face) {
 				continue
 			}
 			cr, sr := math.Cos(c.roll), math.Sin(c.roll)
-			vs := make([]ebiten.Vertex, len(out))
+			vs := make([]gpu.Vertex, len(out))
 			for k, v := range out {
 				iz := 1 / v.z
 				px, py := v.x*focal*iz, v.y*focal*iz
@@ -1572,7 +1572,7 @@ func (g *Game) drawQuad(dst *ebiten.Image, c cam, f *face) {
 				if f.mode == modeGlow {
 					a = 0
 				}
-				vs[k] = ebiten.Vertex{DstX: float32(float64(W)/2 + px*cr - py*sr), DstY: float32(float64(H)/2 + px*sr + py*cr),
+				vs[k] = gpu.Vertex{DstX: float32(float64(W)/2 + px*cr - py*sr), DstY: float32(float64(H)/2 + px*sr + py*cr),
 					ColorR: float32(v.r), ColorG: float32(v.g), ColorB: float32(v.b), ColorA: a,
 					Custom0: float32(v.u * iz), Custom1: float32(v.v * iz), Custom2: float32(iz), Custom3: float32(v.y * iz)}
 			}
@@ -1595,19 +1595,19 @@ var Night = os.Getenv("BLOBBER_NIGHT") != ""
 var nightTint = []float32{0.42, 0.48, 0.72}
 
 // texNightSky, texStars (phlan-poc): ceiling_sky_night and ceiling_night_stars, loaded with texClouds.
-var texNightSky, texStars *ebiten.Image
+var texNightSky, texStars *gpu.Image
 
-func (g *Game) drawSky(dst *ebiten.Image, c cam) {
+func (g *Game) drawSky(dst *gpu.Image, c cam) {
 	if texClouds != nil && Night {
 		b := texNightSky.Bounds()
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(float64(W)/float64(b.Dx()), float64(H)/2/float64(b.Dy()))
 		dst.DrawImage(texNightSky, op)
 		return
 	}
 	if texClouds != nil { // phlan-poc: the ceiling texture is a gradient, stretched; the cloud layer moves
 		b := texCeil.Bounds()
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(float64(W)/float64(b.Dx()), float64(H)/2/float64(b.Dy()))
 		dst.DrawImage(texCeil, op)
 		return
@@ -1618,7 +1618,7 @@ func (g *Game) drawSky(dst *ebiten.Image, c cam) {
 	turn := math.Mod(c.ang/(2*math.Pi)+1, 1) // 0..1 around the compass
 	x := -turn * 2 * tw
 	for i := 0; x < float64(W); i, x = i+1, x+tw {
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		if i%2 == 1 {
 			op.GeoM.Scale(-s, s)
 			op.GeoM.Translate(tw, 0)
@@ -1640,7 +1640,7 @@ func markSeen(c cam) {
 	}
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
+func (g *Game) Draw(screen *gpu.Image) {
 	defer maybeShot(screen)
 	if g.atlasView {
 		g.drawAtlas(screen)
@@ -1651,11 +1651,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.draw3D(screen, c)
 	if NoOverlay { // phlan-poc: comparison shots show the 3D view alone (HUD still runs: BLOBBER_OPEN hooks it)
 		if HUD != nil {
-			HUD(ebiten.NewImage(W, H))
+			HUD(gpu.NewImage(W, H))
 		}
 		return
 	}
-	font.Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", ebiten.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
+	font.Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", gpu.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
 	if HUD != nil {
 		HUD(screen)
 	}
@@ -1686,7 +1686,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 // draw3D draws the scene from camera c: the 3D view alone, at the size W, H.
-func (g *Game) draw3D(screen *ebiten.Image, c cam) {
+func (g *Game) draw3D(screen *gpu.Image, c cam) {
 	dst := screen
 	if g.dither {
 		dst = g.scene
@@ -1701,7 +1701,7 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 
 	var faces []*face
 	var bias float64 // sorts faces this much nearer than their centre
-	q := func(a, b, cc, d vert, t *ebiten.Image, sub int) *face {
+	q := func(a, b, cc, d vert, t *gpu.Image, sub int) *face {
 		f := &face{v: [4]vert{a, b, cc, d}, tex: t, sub: sub, pass: 3}
 		mx, mz := (a.x+cc.x)/2-c.x, (a.z+cc.z)/2-c.z
 		f.raw = mx*c.fwx + mz*c.fwz
@@ -1765,7 +1765,7 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 		}
 		x0, z0, x1, z1 := float64(lo[0]), float64(lo[1]), float64(hi[0]+1), float64(hi[1]+1)
 		w, h := x1-x0, z1-z0
-		plane := func(y float64, t *ebiten.Image) {
+		plane := func(y float64, t *gpu.Image) {
 			f := q(vert{x0, y, z0, 0, 0, 0, 0, 0}, vert{x1, y, z0, w, 0, 0, 0, 0}, vert{x1, y, z1, w, h, 0, 0, 0}, vert{x0, y, z1, 0, h, 0, 0, 0}, t, 3)
 			f.pass, f.dist, f.grid, f.org, f.only = 0, 1e9, [2]int{int(w), int(h)}, lo, vis
 		}
@@ -1805,8 +1805,8 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 			mx, mz := x0+0.5, z0+0.5
 			if texPondWater == nil {
 				b := texWater.Bounds()
-				texPondWater = ebiten.NewImage(b.Dx(), b.Dy())
-				op := &ebiten.DrawImageOptions{}
+				texPondWater = gpu.NewImage(b.Dx(), b.Dy())
+				op := &gpu.DrawImageOptions{}
 				op.ColorScale.Scale(1.25, 1.35, 1.7, 1)
 				texPondWater.DrawImage(texWater, op)
 			}
@@ -1903,7 +1903,7 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 		}
 		if r := o.Ring; r != nil { // an oval hole: black inside, the rim's stones laid around it (tiled, not stretched)
 			if texBlack == nil {
-				texBlack = ebiten.NewImage(4, 4)
+				texBlack = gpu.NewImage(4, 4)
 				texBlack.Fill(color.Black)
 			}
 			const n = 36
@@ -2004,7 +2004,7 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 		g.drawQuad(dst, c, f)
 	}
 	if g.dither {
-		op := &ebiten.DrawRectShaderOptions{}
+		op := &gpu.DrawRectShaderOptions{}
 		op.Images[0] = g.scene
 		screen.DrawRectShader(W, H, g.shader, op)
 	}
@@ -2013,7 +2013,7 @@ func (g *Game) draw3D(screen *ebiten.Image, c cam) {
 // BLOBBER_SHOT=file.png saves the 30th frame and quits: a way to check the look without a person at the keys.
 var shotFrames int
 
-func maybeShot(screen *ebiten.Image) {
+func maybeShot(screen *gpu.Image) {
 	path := os.Getenv("BLOBBER_SHOT")
 	if path == "" {
 		return
@@ -2038,7 +2038,7 @@ func onOff(b bool) string {
 	return "OFF"
 }
 
-func (g *Game) drawMenu(screen *ebiten.Image) {
+func (g *Game) drawMenu(screen *gpu.Image) {
 	items, title, hint := g.menuItems(), "MENU", "Enter picks, Esc closes"
 	if g.options {
 		title, hint = "OPTIONS", "Enter changes, Esc goes back"
@@ -2050,7 +2050,7 @@ func (g *Game) drawMenu(screen *ebiten.Image) {
 		Window(screen, title, append(items, "", hint), g.sel, false)
 		return
 	}
-	ebitenutil.DrawRect(screen, float64(W/2-130), float64(H/2-60), 260, 152, color.RGBA{0, 0, 0, 200})
+	vector.DrawFilledRect(screen, float32(W/2-130), float32(H/2-60), 260, 152, color.RGBA{0, 0, 0, 200}, false)
 	font.Print(screen, title+"  ("+hint+")", W/2-120, H/2-50)
 	for i, s := range items {
 		cur := "  "
@@ -2061,11 +2061,11 @@ func (g *Game) drawMenu(screen *ebiten.Image) {
 	}
 }
 
-func (g *Game) drawAtlas(screen *ebiten.Image) {
+func (g *Game) drawAtlas(screen *gpu.Image) {
 	screen.Fill(color.RGBA{30, 30, 40, 255})
 	font.Print(screen, "Texture atlas (F12 to return). Bump details baked from the heightmap per facing.", 4, 0)
 	for i, a := range atlas {
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(2, 2)
 		op.GeoM.Translate(float64(20+i*140%560), float64(40+(i*140/560)*170))
 		screen.DrawImage(a.img, op)
@@ -2087,7 +2087,7 @@ func formation(n, i int) [2]float64 {
 }
 
 func (g *Game) Layout(ow, oh int) (int, int) {
-	sc := ebiten.Monitor().DeviceScaleFactor()
+	sc := gpu.Monitor().DeviceScaleFactor()
 	g.resize(int(float64(ow)*sc), int(float64(oh)*sc))
 	return W, H
 }
@@ -2096,23 +2096,22 @@ func (g *Game) Layout(ow, oh int) (int, int) {
 func (g *Game) resize(w, h int) {
 	if w != W || h != H {
 		W, H, focal = w, h, float64(w)*focalW
-		g.scene = ebiten.NewImage(W, H)
+		g.scene = gpu.NewImage(W, H)
 	}
 }
 
 // Ordered 4x4 Bayer dither with 8 brightness levels: retro darkness without smooth gradients.
-const ditherSrc = `//kage:unit pixels
-package main
+const ditherSrc = `
+fn bayer2(x: f32, y: f32) -> f32 { return 2.0 * x + 3.0 * y - 4.0 * x * y; }
 
-func bayer2(x, y float) float { return 2*x + 3*y - 4*x*y }
-
-func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
-	c := imageSrc0At(srcPos)
-	x, y := floor(dstPos.x), floor(dstPos.y)
-	b := 4*bayer2(mod(x, 2), mod(y, 2)) + bayer2(mod(floor(x/2), 2), mod(floor(y/2), 2))
-	t := (b + 0.5) / 16
-	levels := 8.0
-	return vec4(floor(c.rgb*levels+t)/levels, 1)
+fn Fragment(dstPos: vec4f, srcPos: vec2f, color: vec4f, custom: vec4f) -> vec4f {
+	let c = imageSrc0At(srcPos);
+	let x = floor(dstPos.x);
+	let y = floor(dstPos.y);
+	let b = 4.0 * bayer2(x % 2.0, y % 2.0) + bayer2(floor(x / 2.0) % 2.0, floor(y / 2.0) % 2.0);
+	let t = (b + 0.5) / 16.0;
+	let levels = 8.0;
+	return vec4f(floor(c.rgb * levels + t) / levels, 1.0);
 }
 `
 
@@ -2197,15 +2196,15 @@ func Run(lvl []string, x, y, dir int) error {
 	}
 	SetMap(lvl, x, y)
 	if Settings.Fullscreen {
-		ebiten.SetFullscreen(true)
+		gpu.SetFullscreen(true)
 	}
-	ebiten.SetWindowSize(W, H)
-	ebiten.SetWindowTitle("Blobber")
+	gpu.SetWindowSize(W, H)
+	gpu.SetWindowTitle("Blobber")
 	if os.Getenv("BLOBBER_SHOT") != "" { // phlan-poc: shots never take focus, so the keyboard stays with the user
-		ebiten.SetRunnableOnUnfocused(true)
-		return ebiten.RunGameWithOptions(g, &ebiten.RunGameOptions{InitUnfocused: true})
+		gpu.SetRunnableOnUnfocused(true)
+		return gpu.RunGameWithOptions(g, &gpu.RunGameOptions{InitUnfocused: true})
 	}
-	return ebiten.RunGame(g)
+	return gpu.RunGame(g)
 }
 
 // newGame makes the textures and shaders and the one Game, facing dir.
@@ -2221,15 +2220,15 @@ func newGame(dir int) (*Game, error) {
 			e.tex = texFirefly
 		}
 	}
-	tsh, err := ebiten.NewShader([]byte(texSrc))
+	tsh, err := gpu.NewShader([]byte(texSrc))
 	if err != nil {
 		return nil, err
 	}
-	sh, err := ebiten.NewShader([]byte(ditherSrc))
+	sh, err := gpu.NewShader([]byte(ditherSrc))
 	if err != nil {
 		return nil, err
 	}
-	g := &Game{dither: Settings.Dither, smooth: Settings.Smooth, torch: Settings.Torch, scene: ebiten.NewImage(W, H), shader: sh, texShader: tsh}
+	g := &Game{dither: Settings.Dither, smooth: Settings.Smooth, torch: Settings.Torch, scene: gpu.NewImage(W, H), shader: sh, texShader: tsh}
 	game = g
 	g.ta = float64(dir) * math.Pi / 2
 	g.dir = dir
@@ -2240,5 +2239,5 @@ func inputChars() []rune { // phlan-poc: none while shooting
 	if shooting {
 		return nil
 	}
-	return ebiten.AppendInputChars(nil)
+	return gpu.AppendInputChars(nil)
 }

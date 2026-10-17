@@ -14,6 +14,7 @@ import (
 	"bufio"
 	"fmt"
 	"image/color"
+	"image/png"
 	"log"
 	"os"
 	"sort"
@@ -23,12 +24,11 @@ import (
 	"blobber"
 	"blobber/events"
 	"blobber/party"
+	"blobber/font"
 	"blobber/sprites"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
+	"gpu"
+	"gpu/vector"
 )
 
 const (
@@ -70,9 +70,9 @@ type editor struct {
 	col      int
 	focus    bool // keyboard goes to the script
 	status   string
-	swatch   map[byte]*ebiten.Image
+	swatch   map[byte]*gpu.Image
 	extra    []string                 // object/item/monster/deco lines of the .map file, kept verbatim
-	mons     map[string]*ebiten.Image // monster thumbnails by name
+	mons     map[string]*gpu.Image // monster thumbnails by name
 	monList  []string
 	mon      string      // monster brush; "" paints walls
 	flatList [][2]string // floor/ceiling swatches: kind, name ("" = default)
@@ -83,7 +83,7 @@ const monsterDir = "cmd/blobber/assets/monsters"
 // loadMonsters lists every monster id in maps/monsters.txt with its sprite's thumbnail, plus every
 // picture and sheet folder in monsterDir that no row uses (the game gives those stock stats).
 func (e *editor) loadMonsters() {
-	pics := map[string]*ebiten.Image{}
+	pics := map[string]*gpu.Image{}
 	entries, _ := os.ReadDir(monsterDir)
 	for _, d := range entries {
 		name := strings.TrimSuffix(d.Name(), ".png")
@@ -92,12 +92,15 @@ func (e *editor) loadMonsters() {
 				pics[name] = s.Idle
 			}
 		} else if strings.HasSuffix(d.Name(), ".png") {
-			if img, _, err := ebitenutil.NewImageFromFile(monsterDir + "/" + d.Name()); err == nil {
-				pics[name] = img
+			if f, err := os.Open(monsterDir + "/" + d.Name()); err == nil {
+				if img, err := png.Decode(f); err == nil {
+					pics[name] = gpu.NewImageFromImage(img)
+				}
+				f.Close()
 			}
 		}
 	}
-	e.mons = map[string]*ebiten.Image{}
+	e.mons = map[string]*gpu.Image{}
 	used := map[string]bool{}
 	if b, err := os.ReadFile("maps/monsters.txt"); err == nil {
 		for _, l := range strings.Split(string(b), "\n") {
@@ -148,8 +151,8 @@ func (e *editor) setFlat(kind, name string) {
 	}
 }
 
-func drawSwatch(screen, img *ebiten.Image, x, y float32) {
-	op := &ebiten.DrawImageOptions{}
+func drawSwatch(screen, img *gpu.Image, x, y float32) {
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(32/float64(img.Bounds().Dx()), 32/float64(img.Bounds().Dy()))
 	op.GeoM.Translate(float64(x), float64(y))
 	screen.DrawImage(img, op)
@@ -270,9 +273,9 @@ func (e *editor) save() {
 // ---------- update ----------
 
 func (e *editor) Update() error {
-	mx, my := ebiten.CursorPosition()
-	ctrl, shift := ebiten.IsKeyPressed(ebiten.KeyControl) || ebiten.IsKeyPressed(ebiten.KeyMeta), ebiten.IsKeyPressed(ebiten.KeyShift)
-	if ctrl && inpututil.IsKeyJustPressed(ebiten.KeyS) {
+	mx, my := gpu.CursorPosition()
+	ctrl, shift := gpu.IsKeyPressed(gpu.KeyControl) || gpu.IsKeyPressed(gpu.KeyMeta), gpu.IsKeyPressed(gpu.KeyShift)
+	if ctrl && gpu.IsKeyJustPressed(gpu.KeyS) {
 		e.save()
 		return nil
 	}
@@ -281,16 +284,16 @@ func (e *editor) Update() error {
 	}
 	gx, gy := mx/cell, my/cell
 	onGrid := mx >= 0 && my >= 0 && mx < panelX && gy < len(e.grid) && gx < len(e.grid[gy])
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+	if gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		e.focus = false
 		e.click(mx, my)
 	}
-	if onGrid && e.mon != "" && inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+	if onGrid && e.mon != "" && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		e.placeMonster(gx, gy)
-	} else if onGrid && e.mon == "" && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) && mx < panelX {
+	} else if onGrid && e.mon == "" && gpu.IsMouseButtonPressed(gpu.MouseButtonLeft) && mx < panelX {
 		e.grid[gy][gx] = e.brush
 	}
-	if onGrid && inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+	if onGrid && gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) {
 		e.selX, e.selY, e.cur, e.focus = gx, gy, nil, false
 		for _, ev := range e.evs {
 			if ev.x == gx && ev.y == gy {
@@ -305,22 +308,22 @@ func (e *editor) Update() error {
 		return nil
 	}
 	switch {
-	case inpututil.IsKeyJustPressed(ebiten.KeyN):
+	case gpu.IsKeyJustPressed(gpu.KeyN):
 		e.cur = &event{x: e.selX, y: e.selY, facing: 4, body: []string{`text "..."`}}
 		e.evs = append(e.evs, e.cur)
 		e.line, e.col = 0, 0
-	case e.cur != nil && inpututil.IsKeyJustPressed(ebiten.KeyF):
+	case e.cur != nil && gpu.IsKeyJustPressed(gpu.KeyF):
 		e.cur.facing = (e.cur.facing + 1) % len(facings)
-	case e.cur != nil && inpututil.IsKeyJustPressed(ebiten.KeyU):
+	case e.cur != nil && gpu.IsKeyJustPressed(gpu.KeyU):
 		e.cur.use = !e.cur.use
-	case e.cur != nil && inpututil.IsKeyJustPressed(ebiten.KeyDelete):
+	case e.cur != nil && gpu.IsKeyJustPressed(gpu.KeyDelete):
 		for i, ev := range e.evs {
 			if ev == e.cur {
 				e.evs = append(e.evs[:i], e.evs[i+1:]...)
 			}
 		}
 		e.cur = nil
-	case inpututil.IsKeyJustPressed(ebiten.KeyTab):
+	case gpu.IsKeyJustPressed(gpu.KeyTab):
 		here := e.tileEvents()
 		for i, ev := range here {
 			if ev == e.cur {
@@ -336,17 +339,17 @@ func (e *editor) Update() error {
 func (e *editor) resize(shrink bool) {
 	w := len(e.grid[0])
 	switch {
-	case inpututil.IsKeyJustPressed(ebiten.KeyRight) && !shrink:
+	case gpu.IsKeyJustPressed(gpu.KeyRight) && !shrink:
 		for y := range e.grid {
 			e.grid[y] = append(e.grid[y], '#')
 		}
-	case inpututil.IsKeyJustPressed(ebiten.KeyLeft) && shrink && w > 3:
+	case gpu.IsKeyJustPressed(gpu.KeyLeft) && shrink && w > 3:
 		for y := range e.grid {
 			e.grid[y] = e.grid[y][:w-1]
 		}
-	case inpututil.IsKeyJustPressed(ebiten.KeyDown) && !shrink:
+	case gpu.IsKeyJustPressed(gpu.KeyDown) && !shrink:
 		e.grid = append(e.grid, []byte(strings.Repeat("#", w)))
-	case inpututil.IsKeyJustPressed(ebiten.KeyUp) && shrink && len(e.grid) > 3:
+	case gpu.IsKeyJustPressed(gpu.KeyUp) && shrink && len(e.grid) > 3:
 		e.grid = e.grid[:len(e.grid)-1]
 	}
 }
@@ -423,16 +426,16 @@ func (e *editor) editScript() {
 		*b = []string{""}
 	}
 	l := &(*b)[e.line]
-	for _, r := range ebiten.AppendInputChars(nil) {
+	for _, r := range gpu.AppendInputChars(nil) {
 		*l = (*l)[:e.col] + string(r) + (*l)[e.col:]
 		e.col++
 	}
-	rep := func(k ebiten.Key) bool { // key repeat
-		d := inpututil.KeyPressDuration(k)
+	rep := func(k gpu.Key) bool { // key repeat
+		d := gpu.KeyPressDuration(k)
 		return d == 1 || d > 20 && d%3 == 0
 	}
 	switch {
-	case rep(ebiten.KeyBackspace):
+	case rep(gpu.KeyBackspace):
 		if e.col > 0 {
 			*l = (*l)[:e.col-1] + (*l)[e.col:]
 			e.col--
@@ -442,21 +445,21 @@ func (e *editor) editScript() {
 			*b = append((*b)[:e.line], (*b)[e.line+1:]...)
 			e.line--
 		}
-	case inpututil.IsKeyJustPressed(ebiten.KeyEnter):
+	case gpu.IsKeyJustPressed(gpu.KeyEnter):
 		rest := (*l)[e.col:]
 		*l = (*l)[:e.col]
 		*b = append((*b)[:e.line+1], append([]string{rest}, (*b)[e.line+1:]...)...)
 		e.line++
 		e.col = 0
-	case rep(ebiten.KeyLeft) && e.col > 0:
+	case rep(gpu.KeyLeft) && e.col > 0:
 		e.col--
-	case rep(ebiten.KeyRight) && e.col < len(*l):
+	case rep(gpu.KeyRight) && e.col < len(*l):
 		e.col++
-	case rep(ebiten.KeyUp) && e.line > 0:
+	case rep(gpu.KeyUp) && e.line > 0:
 		e.line--
-	case rep(ebiten.KeyDown) && e.line < len(*b)-1:
+	case rep(gpu.KeyDown) && e.line < len(*b)-1:
 		e.line++
-	case inpututil.IsKeyJustPressed(ebiten.KeyEscape):
+	case gpu.IsKeyJustPressed(gpu.KeyEscape):
 		e.focus = false
 	}
 	e.col = min(e.col, len((*b)[e.line]))
@@ -464,14 +467,14 @@ func (e *editor) editScript() {
 
 // ---------- draw ----------
 
-func (e *editor) Draw(screen *ebiten.Image) {
+func (e *editor) Draw(screen *gpu.Image) {
 	screen.Fill(color.RGBA{30, 30, 34, 255})
 	for y, row := range e.grid {
 		for x, ch := range row {
 			if ch == '.' {
 				vector.DrawFilledRect(screen, float32(x*cell), float32(y*cell), cell-1, cell-1, color.RGBA{60, 58, 55, 255}, false)
 			} else if sw := e.swatch[ch]; sw != nil {
-				op := &ebiten.DrawImageOptions{}
+				op := &gpu.DrawImageOptions{}
 				op.GeoM.Scale(float64(cell-1)/float64(sw.Bounds().Dx()), float64(cell-1)/float64(sw.Bounds().Dy()))
 				op.GeoM.Translate(float64(x*cell), float64(y*cell))
 				screen.DrawImage(sw, op)
@@ -516,7 +519,7 @@ func (e *editor) Draw(screen *ebiten.Image) {
 			img = sprites.Get(name)
 		}
 		if img != nil && x >= 0 && y >= 0 {
-			op := &ebiten.DrawImageOptions{}
+			op := &gpu.DrawImageOptions{}
 			op.GeoM.Scale(float64(cell-4)/float64(img.Bounds().Dy()), float64(cell-4)/float64(img.Bounds().Dy()))
 			op.GeoM.Translate(float64(x*cell+2), float64(y*cell+2))
 			screen.DrawImage(img, op)
@@ -537,7 +540,7 @@ func (e *editor) Draw(screen *ebiten.Image) {
 		if ch == e.brush && e.mon == "" {
 			vector.StrokeRect(screen, x-1, palY-1, 34, 34, 2, color.RGBA{255, 255, 255, 255}, false)
 		}
-		ebitenutil.DebugPrintAt(screen, string(ch), int(x)+12, palY+32)
+		font.Print(screen, string(ch), int(x)+12, palY+32)
 	}
 	for i, fl := range e.flatList { // floor swatches, then ceiling swatches; the map's own are outlined
 		x, y := px+float32(i%monRow*36), float32(flatY+i/monRow*36)
@@ -545,12 +548,12 @@ func (e *editor) Draw(screen *ebiten.Image) {
 		if e.flat(fl[0]) == fl[1] {
 			vector.StrokeRect(screen, x-1, y-1, 34, 34, 2, color.RGBA{255, 255, 255, 255}, false)
 		}
-		ebitenutil.DebugPrintAt(screen, strings.ToUpper(fl[0][:1]), int(x)+1, int(y)+18)
+		font.Print(screen, strings.ToUpper(fl[0][:1]), int(x)+1, int(y)+18)
 	}
 	for i, n := range e.monList {
 		x, y := px+float32(i%monRow*36), float32(monY+i/monRow*36)
 		img := e.mons[n]
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(32/float64(img.Bounds().Dx()), 32/float64(img.Bounds().Dy()))
 		op.GeoM.Translate(float64(x), float64(y))
 		screen.DrawImage(img, op)
@@ -559,12 +562,12 @@ func (e *editor) Draw(screen *ebiten.Image) {
 		}
 	}
 	if e.mon != "" {
-		ebitenutil.DebugPrintAt(screen, "monster brush: "+e.mon+" (click a tile to place, again to remove)", panelX, monY+72)
+		font.Print(screen, "monster brush: "+e.mon+" (click a tile to place, again to remove)", panelX, monY+72)
 	}
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("map %s  %dx%d   Ctrl+S save   Shift+Arrows grow, Ctrl+Shift+Arrows shrink", e.name, len(e.grid[0]), len(e.grid)), panelX, monY-20)
+	font.Print(screen, fmt.Sprintf("map %s  %dx%d   Ctrl+S save   Shift+Arrows grow, Ctrl+Shift+Arrows shrink", e.name, len(e.grid[0]), len(e.grid)), panelX, monY-20)
 
 	here := e.tileEvents()
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("tile %d,%d: %d event(s)   N new  F facing  U use  Tab next  Del remove", e.selX, e.selY, len(here)), panelX, evY)
+	font.Print(screen, fmt.Sprintf("tile %d,%d: %d event(s)   N new  F facing  U use  Tab next  Del remove", e.selX, e.selY, len(here)), panelX, evY)
 	for i, ev := range here {
 		s := fmt.Sprintf("  event %d,%d %s", ev.x, ev.y, facings[ev.facing])
 		if ev.use {
@@ -573,7 +576,7 @@ func (e *editor) Draw(screen *ebiten.Image) {
 		if ev == e.cur {
 			s = ">" + s[1:]
 		}
-		ebitenutil.DebugPrintAt(screen, s, panelX, evY+16+i*16)
+		font.Print(screen, s, panelX, evY+16+i*16)
 	}
 	if e.cur != nil {
 		bg := color.RGBA{35, 35, 45, 255}
@@ -582,24 +585,24 @@ func (e *editor) Draw(screen *ebiten.Image) {
 		}
 		vector.DrawFilledRect(screen, px, scriptY, winW-px, scriptH, bg, false)
 		for i, l := range e.cur.body {
-			ebitenutil.DebugPrintAt(screen, l, panelX, scriptY+i*16)
+			font.Print(screen, l, panelX, scriptY+i*16)
 		}
 		if e.focus {
 			vector.DrawFilledRect(screen, px+float32(e.col*6), float32(scriptY+e.line*16), 2, 16, color.RGBA{255, 255, 255, 255}, false)
 		}
-		ebitenutil.DebugPrintAt(screen, "click a keyword to insert it after the cursor line, Esc leaves the script:", panelX, tmplY-18)
+		font.Print(screen, "click a keyword to insert it after the cursor line, Esc leaves the script:", panelX, tmplY-18)
 		rows := (winH - tmplY) / 16
 		for i, t := range templates {
-			ebitenutil.DebugPrintAt(screen, t, panelX+(i/rows)*220, tmplY+(i%rows)*16)
+			font.Print(screen, t, panelX+(i/rows)*220, tmplY+(i%rows)*16)
 		}
 	}
-	ebitenutil.DebugPrintAt(screen, e.status, 4, winH-18)
+	font.Print(screen, e.status, 4, winH-18)
 }
 
 func (e *editor) Layout(int, int) (int, int) { return winW, winH }
 
 func main() {
-	e := &editor{name: "demo", brush: '#', swatch: map[byte]*ebiten.Image{}}
+	e := &editor{name: "demo", brush: '#', swatch: map[byte]*gpu.Image{}}
 	if len(os.Args) > 1 {
 		e.name = os.Args[1]
 	}
@@ -618,9 +621,9 @@ func main() {
 			e.flatList = append(e.flatList, [2]string{kind, n})
 		}
 	}
-	ebiten.SetWindowSize(winW, winH)
-	ebiten.SetWindowTitle("Blobber map editor: " + e.name)
-	if err := ebiten.RunGame(e); err != nil {
+	gpu.SetWindowSize(winW, winH)
+	gpu.SetWindowTitle("Blobber map editor: " + e.name)
+	if err := gpu.RunGame(e); err != nil {
 		log.Fatal(err)
 	}
 }

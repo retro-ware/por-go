@@ -27,10 +27,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
+      - name: wgpu fork (go.mod replaces github.com/gogpu/wgpu with ../gogpu-wgpu)
+        run: git clone --depth 1 https://github.com/memmaker/wgpu.git ../gogpu-wgpu
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Linux libraries (Ebiten)
+      - name: Linux libraries (GLFW, audio)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config
       - name: Build

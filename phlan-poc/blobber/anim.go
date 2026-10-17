@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"path"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 	"golang.org/x/image/draw"
 )
 
@@ -19,7 +19,7 @@ const PxPerTile = 1024
 // Size is how tall it stands in tiles (0 = 0.6). A sheet from Scaled is drawn at PxPerTile instead,
 // as wide as its pictures are; other sheets (debug sprites) are squeezed to at most max(1, Size) wide.
 type Sheet struct {
-	Idle, Attack, Hurt *ebiten.Image
+	Idle, Attack, Hurt *gpu.Image
 	Size               float64
 	src                [3]image.Image // decoded idle, attack, hurt, for Scaled
 	density            bool           // drawn at PxPerTile
@@ -48,13 +48,13 @@ func (s *Sheet) Scaled(size float64) *Sheet {
 	}
 	f := size * PxPerTile / float64(box.Dy())
 	w, h := max(1, int(float64(box.Dx())*f+0.5)), max(1, int(float64(box.Dy())*f+0.5))
-	for i, dst := range []**ebiten.Image{&out.Idle, &out.Attack, &out.Hurt} {
+	for i, dst := range []**gpu.Image{&out.Idle, &out.Attack, &out.Hurt} {
 		if img := s.src[i]; img != nil {
 			pad := image.NewRGBA(image.Rect(0, 0, box.Dx(), box.Dy())) // the pose placed in the shared box
 			draw.Draw(pad, pad.Bounds(), img, box.Min.Add(at(img)), draw.Src)
 			rgba := image.NewRGBA(image.Rect(0, 0, w, h))
 			draw.CatmullRom.Scale(rgba, rgba.Bounds(), pad, pad.Bounds(), draw.Src, nil)
-			*dst = ebiten.NewImageFromImage(rgba)
+			*dst = gpu.NewImageFromImage(rgba)
 		}
 	}
 	out.density = true
@@ -83,7 +83,7 @@ const PoseTime = 0.45
 // LoadSheet reads dir/idle.png and the optional dir/attack.png and dir/hurt.png from fsys.
 func LoadSheet(fsys fs.FS, dir string) (*Sheet, error) {
 	var src [3]image.Image
-	load := func(i int, name string) (*ebiten.Image, error) {
+	load := func(i int, name string) (*gpu.Image, error) {
 		f, err := fsys.Open(path.Join(dir, name+".png"))
 		if err != nil {
 			return nil, err
@@ -94,7 +94,7 @@ func LoadSheet(fsys fs.FS, dir string) (*Sheet, error) {
 			return nil, fmt.Errorf("%s/%s.png: %v", dir, name, err)
 		}
 		src[i] = img
-		return ebiten.NewImageFromImage(img), nil
+		return gpu.NewImageFromImage(img), nil
 	}
 	idle, err := load(0, "idle")
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 	"blobber/party"
 	"blobber/sprites"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 const (
@@ -30,7 +30,7 @@ type hitMark struct {
 var (
 	frameNo int
 	hits    = map[int]hitMark{} // 0-based character -> last hit
-	cards   []*ebiten.Image
+	cards   []*gpu.Image
 )
 
 // Active is the character whose combat action is being asked for; its frame is outlined in gold
@@ -97,17 +97,17 @@ func PartyAt(p *party.Party, x, y int) int {
 
 // DrawParty draws one framed card per character down the right edge: portrait, HP and SP bars below it,
 // and for a moment after a hit the damage-type icon and amount over the portrait.
-func DrawParty(screen *ebiten.Image, p *party.Party) {
+func DrawParty(screen *gpu.Image, p *party.Party) {
 	frameNo++
 	for len(cards) < len(p.Chars) {
-		cards = append(cards, ebiten.NewImage(cardW, cardH))
+		cards = append(cards, gpu.NewImage(cardW, cardH))
 	}
 	for i, c := range p.Chars {
 		d := cards[i]
 		d.Clear()
 		drawCard(d, i, c)
 		r := cardRect(i, len(p.Chars))
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(float64(r.Dx())/cardW, float64(r.Dx())/cardW)
 		op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
 		screen.DrawImage(d, op)
@@ -119,14 +119,14 @@ func DrawParty(screen *ebiten.Image, p *party.Party) {
 	})
 }
 
-func drawCard(d *ebiten.Image, i int, c *party.Character) {
+func drawCard(d *gpu.Image, i int, c *party.Character) {
 	if c == Active && blobber.Fighting() {
 		GoldFrame(d, rc(0, 0, cardW, frameH))
 	} else {
 		DarkFrame(d, rc(0, 0, cardW, frameH))
 	}
 	img := Portrait(c)
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(portraitX, pY0)
 	dead := c.HP <= 0 || c.Has["condition:dead"]
 	if dead {
@@ -167,13 +167,13 @@ func drawCard(d *ebiten.Image, i int, c *party.Character) {
 }
 
 // drawHit puts the kind's icon over the portrait, rising and fading out at the end.
-func drawHit(d *ebiten.Image, h hitMark, age int) {
+func drawHit(d *gpu.Image, h hitMark, age int) {
 	ic := sprites.Get("hit_" + h.kind)
 	if ic == nil {
 		ic = sprites.Get("hit_physical")
 	}
 	b := ic.Bounds()
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(2, 2)
 	op.GeoM.Translate(float64(portraitX+PortraitSize/2-b.Dx()), float64(pY0+PortraitSize/2-b.Dy()-age/12))
 	if fade := hitFrames - age; fade < 20 {

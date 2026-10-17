@@ -8,7 +8,7 @@ import (
 
 	"blobber"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 // The blood splatter of physical hits (assets/blood.png, generated with Gemini, 64 px pixel art).
@@ -16,12 +16,12 @@ import (
 //go:embed assets/blood.png
 var bloodPNG []byte
 
-var blood = func() *ebiten.Image {
+var blood = func() *gpu.Image {
 	img, err := png.Decode(bytes.NewReader(bloodPNG))
 	if err != nil {
 		panic(err)
 	}
-	return ebiten.NewImageFromImage(img)
+	return gpu.NewImageFromImage(img)
 }()
 
 const splatFrames = 40 // how long a splatter stays, fading over the last half
@@ -47,7 +47,7 @@ func splatScale(dmg int, max float64) float64 {
 }
 
 // drawSplats draws the live splatters on screen; portrait is card i's portrait centre and scale.
-func drawSplats(screen *ebiten.Image, portrait func(i int) (x, y, k float64)) {
+func drawSplats(screen *gpu.Image, portrait func(i int) (x, y, k float64)) {
 	live := splats[:0]
 	for _, s := range splats {
 		age := frameNo - s.at
@@ -66,7 +66,7 @@ func drawSplats(screen *ebiten.Image, portrait func(i int) (x, y, k float64)) {
 		}
 		sc = max(1, float64(int(sc))) // whole multiples: crisp pixels
 		b := blood.Bounds()
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(-float64(b.Dx())/2, -float64(b.Dy())/2)
 		fx, fy := 1.0, 1.0
 		if s.flipX {
@@ -80,7 +80,7 @@ func drawSplats(screen *ebiten.Image, portrait func(i int) (x, y, k float64)) {
 		if fade := splatFrames - age; fade < splatFrames/2 {
 			op.ColorScale.ScaleAlpha(float32(fade) / (splatFrames / 2))
 		}
-		op.Filter = ebiten.FilterNearest
+		op.Filter = gpu.FilterNearest
 		screen.DrawImage(blood, op)
 	}
 	splats = live

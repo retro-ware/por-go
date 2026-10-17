@@ -10,7 +10,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/ebitengine/oto/v3"
 )
 
 const rate = 44100
@@ -51,20 +51,44 @@ var Tracks = map[string]struct {
 }
 
 var (
-	ctx   *audio.Context
-	music *audio.Player
+	ctx   *oto.Context
+	music *oto.Player
 	cur   string
 )
 
 // Init opens the audio device. Call it once from the game; without it Play and Music do nothing.
-func Init() { ctx = audio.NewContext(rate) }
+func Init() {
+	c, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: rate, ChannelCount: 2, Format: oto.FormatFloat32LE})
+	if err != nil {
+		fmt.Println("sfx:", err)
+		return
+	}
+	<-ready
+	ctx = c
+}
+
+// loop reads b over and over.
+type loop struct {
+	b []byte
+	i int
+}
+
+func (l *loop) Read(p []byte) (int, error) {
+	n := 0
+	for n < len(p) {
+		c := copy(p[n:], l.b[l.i:])
+		n += c
+		l.i = (l.i + c) % len(l.b)
+	}
+	return n, nil
+}
 
 // Play plays a named sound effect.
 func Play(name string) {
 	if ctx == nil {
 		return
 	}
-	ctx.NewPlayerF32FromBytes(pcm(Render(name))).Play()
+	ctx.NewPlayer(bytes.NewReader(pcm(Render(name)))).Play()
 }
 
 // Music switches to a named looping track; "stop", "" or an unknown name stops the music.
@@ -85,11 +109,7 @@ func Music(name string) {
 		return
 	}
 	b := pcm(s)
-	p, err := ctx.NewPlayerF32(audio.NewInfiniteLoopF32(bytes.NewReader(b), int64(len(b))))
-	if err != nil {
-		fmt.Println("sfx:", err)
-		return
-	}
+	p := ctx.NewPlayer(&loop{b: b})
 	p.SetVolume(0.35)
 	p.Play()
 	music, cur = p, name

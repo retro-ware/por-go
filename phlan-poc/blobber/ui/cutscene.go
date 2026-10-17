@@ -10,8 +10,7 @@ import (
 	"blobber/font"
 	"blobber/sprites"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 )
 
 // Page is one screen of a cutscene: an optional big sprite and some lines of text.
@@ -57,9 +56,9 @@ func ParseCutscene(r io.Reader) []Page {
 
 func (c *Cutscene) Update() bool {
 	p := blobber.KeyJustPressed
-	if p(ebiten.KeyEscape) {
+	if p(gpu.KeyEscape) {
 		c.i = len(c.Pages)
-	} else if p(ebiten.KeySpace) || p(ebiten.KeyEnter) || p(ebiten.KeyF) || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+	} else if p(gpu.KeySpace) || p(gpu.KeyEnter) || p(gpu.KeyF) || gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		c.i++
 	}
 	if c.i >= len(c.Pages) {
@@ -71,7 +70,7 @@ func (c *Cutscene) Update() bool {
 	return true
 }
 
-func (c *Cutscene) Draw(screen *ebiten.Image) {
+func (c *Cutscene) Draw(screen *gpu.Image) {
 	screen.Fill(ink)
 	if c.i >= len(c.Pages) {
 		return
@@ -83,7 +82,7 @@ func (c *Cutscene) Draw(screen *ebiten.Image) {
 	if img := sprites.Get(pg.Picture); img != nil {
 		k := 96 / max(img.Bounds().Dx(), img.Bounds().Dy())
 		b := img.Bounds()
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(float64(k), float64(k))
 		op.GeoM.Translate(float64((cw-b.Dx()*k)/2), 44)
 		d.DrawImage(img, op)

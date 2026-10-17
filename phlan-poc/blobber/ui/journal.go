@@ -9,8 +9,7 @@ import (
 	"blobber"
 	"blobber/party"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 )
 
 // Awards maps an award id to its journal text (maps/awards.txt).
@@ -30,11 +29,11 @@ func LoadAwards(r io.Reader) {
 type Journal struct{ P *party.Party }
 
 func (j *Journal) Update() bool {
-	return !blobber.KeyJustPressed(ebiten.KeyEscape) && !blobber.KeyJustPressed(ebiten.KeyJ) &&
-		!inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
+	return !blobber.KeyJustPressed(gpu.KeyEscape) && !blobber.KeyJustPressed(gpu.KeyJ) &&
+		!gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft)
 }
 
-func (j *Journal) Draw(screen *ebiten.Image) {
+func (j *Journal) Draw(screen *gpu.Image) {
 	seen := map[string]bool{}
 	var lines []string
 	for _, c := range j.P.Chars {

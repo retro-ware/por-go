@@ -8,7 +8,7 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 
 	"por/ega"
 )
@@ -27,7 +27,7 @@ type Note struct {
 // Presenter converts the screen to an image (only when it changed) and
 // draws it. Its zero value is ready.
 type Presenter struct {
-	img *ebiten.Image
+	img *gpu.Image
 	buf []byte
 
 	// the frame last converted into buf: an unchanged one is not converted
@@ -40,11 +40,11 @@ type Presenter struct {
 	noted   bool // buf holds a note
 
 	overlays []ega.Overlay                 // the engine's, copied each frame
-	scans    map[image.Image]*ebiten.Image // their GPU copies
+	scans    map[image.Image]*gpu.Image // their GPU copies
 }
 
 // Draw shows scr on dst and returns where its picture went.
-func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note Note) Rect {
+func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note Note) Rect {
 	p.Frame(scr, note)
 	dst.Fill(color.Black)
 
@@ -54,7 +54,7 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note Note) Rect {
 	scale := math.Min(W/4, H/3)
 	pw, ph := scale*4, scale*3
 	pic := Rect{(W - pw) / 2, (H - ph) / 2, pw, ph}
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(pw/ega.W, ph/ega.H)
 	op.GeoM.Translate(pic.X, pic.Y)
 	dst.DrawImage(p.img, op)
@@ -64,9 +64,9 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note Note) Rect {
 
 // Frame converts scr into a 320x200 image (only when it changed) and
 // returns it; the remaster crops its windows from it. The image is reused.
-func (p *Presenter) Frame(scr *ega.Screen, note Note) *ebiten.Image {
+func (p *Presenter) Frame(scr *ega.Screen, note Note) *gpu.Image {
 	if p.img == nil {
-		p.img, p.buf = ebiten.NewImage(ega.W, ega.H), make([]byte, ega.W*ega.H*4)
+		p.img, p.buf = gpu.NewImage(ega.W, ega.H), make([]byte, ega.W*ega.H*4)
 	}
 	scr.Lock()
 	vis := scr.Visible()
@@ -99,7 +99,7 @@ func (p *Presenter) Frame(scr *ega.Screen, note Note) *ebiten.Image {
 
 // drawOverlays draws the engine's overlays (journal scans) at the window's
 // own resolution over the picture at pic.
-func (p *Presenter) drawOverlays(dst *ebiten.Image, pic Rect) {
+func (p *Presenter) drawOverlays(dst *gpu.Image, pic Rect) {
 	pw, ph := pic.W, pic.H
 	for img, im := range p.scans { // drop the copies of scans no longer shown
 		keep := false
@@ -115,14 +115,14 @@ func (p *Presenter) drawOverlays(dst *ebiten.Image, pic Rect) {
 		im := p.scans[o.Img]
 		if im == nil {
 			if p.scans == nil {
-				p.scans = map[image.Image]*ebiten.Image{}
+				p.scans = map[image.Image]*gpu.Image{}
 			}
-			im = ebiten.NewImageFromImage(o.Img)
+			im = gpu.NewImageFromImage(o.Img)
 			p.scans[o.Img] = im
 		}
 		b := o.Part()
-		im = im.SubImage(b).(*ebiten.Image) // drawn from its own top left
-		op := &ebiten.DrawImageOptions{Filter: ebiten.FilterLinear}
+		im = im.SubImage(b).(*gpu.Image) // drawn from its own top left
+		op := &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
 		op.GeoM.Scale(float64(o.At.Dx())*pw/ega.W/float64(b.Dx()), float64(o.At.Dy())*ph/ega.H/float64(b.Dy()))
 		op.GeoM.Translate(pic.X+float64(o.At.Min.X)*pw/ega.W, pic.Y+float64(o.At.Min.Y)*ph/ega.H)
 		dst.DrawImage(im, op)

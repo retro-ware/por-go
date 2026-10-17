@@ -10,13 +10,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 //go:embed assets/walls/*.png assets/walls/walls.txt
 var wallFS embed.FS
 
-var wallCache = map[string]*ebiten.Image{}
+var wallCache = map[string]*gpu.Image{}
 
 func decodeWall(name string) image.Image {
 	b, err := wallFS.ReadFile("assets/walls/" + name + ".png")
@@ -33,7 +33,7 @@ func decodeWall(name string) image.Image {
 // wallTexture loads assets/walls/<name>.png (once), or nil when there is none; a painted texture
 // replaces the generated one for its material character. Its relief comes from NAME_normal.png
 // when there is one (OpenGL convention, green up), else from its brightness.
-func wallTexture(name string) *ebiten.Image {
+func wallTexture(name string) *gpu.Image {
 	if t, ok := wallCache[name]; ok {
 		return t
 	}
@@ -42,7 +42,7 @@ func wallTexture(name string) *ebiten.Image {
 		wallCache[name] = nil
 		return nil
 	}
-	t := ebiten.NewImageFromImage(img)
+	t := gpu.NewImageFromImage(img)
 	wallCache[name] = t
 	if nm := decodeWall(name + "_normal"); nm != nil && nm.Bounds().Size() == img.Bounds().Size() {
 		normalSlopes(t, nm)
@@ -107,7 +107,7 @@ func SetFlats(floor, ceiling string) {
 }
 
 // FlatTexture returns the floor or ceiling texture NAME, or the default one for "" or an unknown name.
-func FlatTexture(kind, name string) *ebiten.Image {
+func FlatTexture(kind, name string) *gpu.Image {
 	if name != "" {
 		if t := wallTexture(kind + "_" + name); t != nil {
 			return t
@@ -120,4 +120,4 @@ func FlatTexture(kind, name string) *ebiten.Image {
 }
 
 // WallTexture returns a painted texture from assets/walls by name (nil if none); phlan-poc uses it for props.
-func WallTexture(name string) *ebiten.Image { return wallTexture(name) }
+func WallTexture(name string) *gpu.Image { return wallTexture(name) }

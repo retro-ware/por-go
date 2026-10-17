@@ -10,17 +10,17 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 var fogCol = color.RGBA{0x16, 0x10, 0x23, 255}
 
 // slopes holds each wall, floor and ceiling texture's slope map for the normal mapping: red and
 // green are the height's slope along u and v, 0.5 flat.
-var slopes = map[*ebiten.Image]*ebiten.Image{}
+var slopes = map[*gpu.Image]*gpu.Image{}
 
 // addSlopes makes img's slope map from its w×h height field (wrapping, like the texture).
-func addSlopes(img *ebiten.Image, w, h int, height func(x, y int) float64) {
+func addSlopes(img *gpu.Image, w, h int, height func(x, y int) float64) {
 	at := func(x, y int) float64 { return height((x+w)%w, (y+h)%h) }
 	pix := make([]byte, 4*w*h)
 	for y := range h {
@@ -31,14 +31,14 @@ func addSlopes(img *ebiten.Image, w, h int, height func(x, y int) float64) {
 			pix[i+3] = 255
 		}
 	}
-	s := ebiten.NewImage(w, h)
+	s := gpu.NewImage(w, h)
 	s.WritePixels(pix)
 	slopes[img] = s
 }
 
 // normalSlopes makes img's slope map from normal map nm: a normal (x, y up, z) leans the height by
 // -x/z along u and y/z along v (v runs down), halved to the scale addSlopes' height differences have.
-func normalSlopes(img *ebiten.Image, nm image.Image) {
+func normalSlopes(img *gpu.Image, nm image.Image) {
 	b := nm.Bounds()
 	w, h := b.Dx(), b.Dy()
 	pix := make([]byte, 4*w*h)
@@ -52,7 +52,7 @@ func normalSlopes(img *ebiten.Image, nm image.Image) {
 			pix[i+3] = 255
 		}
 	}
-	s := ebiten.NewImage(w, h)
+	s := gpu.NewImage(w, h)
 	s.WritePixels(pix)
 	slopes[img] = s
 }
@@ -60,7 +60,7 @@ func normalSlopes(img *ebiten.Image, nm image.Image) {
 // mat is a wall material: its front texture, the generated ones' left and right lit variants
 // (nil for painted textures, which use img on every face), and an optional light map.
 type mat struct {
-	img, right, left, lit *ebiten.Image
+	img, right, left, lit *gpu.Image
 	loaded                bool
 	// light map summary (TextureAtlas): average colour weighted by brightness, the glow's height
 	// (1 top) and strength (1 when 3% of the texture is lit)
@@ -69,7 +69,7 @@ type mat struct {
 }
 
 // face picks the texture for a face whose normal's lateral component in camera space is nx.
-func (m *mat) face(nx float64) *ebiten.Image {
+func (m *mat) face(nx float64) *gpu.Image {
 	if nx > 0.5 && m.right != nil {
 		return m.right
 	} else if nx < -0.5 && m.left != nil {
@@ -164,108 +164,107 @@ const (
 
 // texSrc: perspective-correct texturing (custom = u/z, v/z, 1/z, y/z), lit by the flickering torch
 // (banded with Dither) and faded to Deepnight's fog tint.
-const texSrc = `//kage:unit pixels
-package main
-
-var Mode float
-var Pow float     // torch intensity (flicker included)
-var Range float   // torch falloff range
-var Torch vec3    // torch position in camera space
-var Warm vec3     // torch colour (white in daylight)
-var Inc float     // constant extra fade toward the fog: 0.3 sides, 0.4 floors, 0 fronts
-var HasLit float  // 1 when image 2 is a light map
-var Dither float  // 1: checker dither and hard darkness bands; 0: smooth darkness
-var Center vec2   // screen centre
-var Focal float
-var Px float      // screen pixels per view pixel of theirs (500 wide), for the checker dither
-var HasBump float // 1 when image 1 is a slope map
-var Bump float    // normal mapping strength
-var T vec3        // the face's u and v directions and normal, in camera space (x right, y down, z ahead)
-var B vec3
-var N vec3
-var Lamp vec3     // the moving light reaching this face most, in camera space
-var Haze float    // distance fog: cells to full haze (0 = none)
-var HazeCol vec3  // the sky's colour at the horizon
-
-// haze fades c toward the horizon's colour with distance: a little within the map, full Haze cells out.
-func haze(c vec3, p vec3) vec3 {
-	if Haze == 0 {
-		return c
-	}
-	h := clamp(length(p.xz)/Haze, 0, 1)
-	return mix(c, HazeCol, h*h)
+const texSrc = `
+struct Uniforms {
+	Mode: f32,
+	Pow: f32,     // torch intensity (flicker included)
+	Range: f32,   // torch falloff range
+	Torch: vec3f, // torch position in camera space
+	Warm: vec3f,  // torch colour (white in daylight)
+	Inc: f32,     // constant extra fade toward the fog: 0.3 sides, 0.4 floors, 0 fronts
+	HasLit: f32,  // 1 when image 2 is a light map
+	Dither: f32,  // 1: checker dither and hard darkness bands; 0: smooth darkness
+	Center: vec2f, // screen centre
+	Focal: f32,
+	Px: f32,      // screen pixels per view pixel of theirs (500 wide), for the checker dither
+	HasBump: f32, // 1 when image 1 is a slope map
+	Bump: f32,    // normal mapping strength
+	T: vec3f,     // the face's u and v directions and normal, in camera space (x right, y down, z ahead)
+	B: vec3f,
+	N: vec3f,
+	Lamp: vec3f,  // the moving light reaching this face most, in camera space
+	Haze: f32,    // distance fog: cells to full haze (0 = none)
+	HazeCol: vec3f, // the sky's colour at the horizon
 }
 
-func tex(uv vec2) vec4 { return imageSrc0At(imageSrc0Origin() + fract(uv)*imageSrc0Size()) }
+// haze fades c toward the horizon's colour with distance: a little within the map, full Haze cells out.
+fn haze(c: vec3f, p: vec3f) -> vec3f {
+	if (u.Haze == 0.0) {
+		return c;
+	}
+	let h = clamp(length(p.xz) / u.Haze, 0.0, 1.0);
+	return mix(c, u.HazeCol, h * h);
+}
+
+fn tex(uv: vec2f) -> vec4f { return imageSrc0At(imageSrc0Origin() + fract(uv) * imageSrc0Size()); }
 
 // torch is the light reaching camera-space point p: inverse-square falloff by distance only, so the
 // floor, ceiling and walls at one distance get the same light (no angle term: with the torch at the eye
 // it would leave floor and ceiling always darker). In 7 hard bands with Dither.
-func torch(p vec3, chk float) float {
-	lv := Torch - p
-	d := length(lv)
-	l := Pow / (1 + d*d/(Range*Range))
-	if Dither == 0 {
-		return clamp(l, 0, 1)
+fn torch(p: vec3f, chk: f32) -> f32 {
+	let d = length(u.Torch - p);
+	let l = u.Pow / (1.0 + d * d / (u.Range * u.Range));
+	if (u.Dither == 0.0) {
+		return clamp(l, 0.0, 1.0);
 	}
-	return clamp(ceil(l*7-chk*0.5)/7, 0, 1)
+	return clamp(ceil(l * 7.0 - chk * 0.5) / 7.0, 0.0, 1.0);
 }
 
-func shade(c vec3, dark, inc float) vec3 {
-	fog := vec3(0x16, 0x10, 0x23) / 255
-	r := clamp(dark/0.6, 0, 1)
-	l := dot(c, vec3(0.299, 0.587, 0.114))
-	t := fog
-	if l*2 > r {
-		t = vec3(0x25, 0x1f, 0x32) / 255
-	} else if l*4 > r {
-		t = vec3(0x1e, 0x18, 0x2b) / 255
+fn shade(c0: vec3f, dark: f32, inc: f32) -> vec3f {
+	let fog = vec3f(22.0, 16.0, 35.0) / 255.0;
+	let r = clamp(dark / 0.6, 0.0, 1.0);
+	let l = dot(c0, vec3f(0.299, 0.587, 0.114));
+	var t = fog;
+	if (l * 2.0 > r) {
+		t = vec3f(37.0, 31.0, 50.0) / 255.0;
+	} else if (l * 4.0 > r) {
+		t = vec3f(30.0, 24.0, 43.0) / 255.0;
 	}
-	c = mix(c, t, r)
-	return mix(c, fog, clamp(clamp((dark-0.7)/0.3, 0, 1)*0.6+inc, 0, 1))
+	let c = mix(c0, t, r);
+	return mix(c, fog, clamp(clamp((dark - 0.7) / 0.3, 0.0, 1.0) * 0.6 + inc, 0.0, 1.0));
 }
 
 // relief is how much slopes s turn the surface toward light direction l, relative to the flat face.
-func relief(s vec2, l vec3) float {
-	return (s.x*dot(l, T) + s.y*dot(l, B)) / max(dot(N, l), 0.3)
+fn relief(s: vec2f, l: vec3f) -> f32 {
+	return (s.x * dot(l, u.T) + s.y * dot(l, u.B)) / max(dot(u.N, l), 0.3);
 }
 
-func Fragment(dstPos vec4, srcPos vec2, color vec4, custom vec4) vec4 {
-	z := 1 / custom.z
-	uv := custom.xy * z
-	if Mode == 2 {
-		return tex(uv) * color
+fn Fragment(dstPos: vec4f, srcPos: vec2f, color: vec4f, custom: vec4f) -> vec4f {
+	let z = 1.0 / custom.z;
+	let uv = custom.xy * z;
+	let c = tex(uv);
+	if (u.Mode == 2.0) {
+		return c * color;
 	}
-	c := tex(uv)
-	if c.a == 0 {
-		discard()
+	if (c.a == 0.0) {
+		discard;
 	}
-	if Mode == 1 {
-		return vec4(haze(c.rgb/c.a, vec3(0, 0, z))*c.a, c.a)
+	if (u.Mode == 1.0) {
+		return vec4f(haze(c.rgb / c.a, vec3f(0.0, 0.0, z)) * c.a, c.a);
 	}
-	rgb := c.rgb / c.a
-	x := (dstPos.x - imageDstOrigin().x - Center.x) / Focal * z // dstPos counts from the atlas, not our image
-	p := vec3(x, custom.w*z, z)
-	q := floor(dstPos.xy / Px)
-	chk := mod(q.x+q.y, 2) * Dither
-	lit := 0.0
-	if HasLit > 0 {
-		lit = imageSrc2At(imageSrc0Origin() + fract(uv)*imageSrc0Size()).r
+	var rgb = c.rgb / c.a;
+	let x = (dstPos.x - imageDstOrigin().x - u.Center.x) / u.Focal * z;
+	let p = vec3f(x, custom.w * z, z);
+	let q = floor(dstPos.xy / u.Px);
+	let chk = ((q.x + q.y) % 2.0) * u.Dither;
+	var lit = 0.0;
+	if (u.HasLit > 0.0) {
+		lit = imageSrc2At(imageSrc0Origin() + fract(uv) * imageSrc0Size()).r;
 	}
 	// the moving lights (vertex colour) push the darkness back and tint what they reach
-	near := clamp(max(color.r, max(color.g, color.b)), 0, 1)
-	if HasBump > 0 {
+	let near = clamp(max(color.r, max(color.g, color.b)), 0.0, 1.0);
+	if (u.HasBump > 0.0) {
 		// normal mapping, lit by the torch at the eye: a slope facing the light brightens, one facing
 		// away darkens, by how far the tilt turns the surface toward the light relative to the flat face
 		// (linear in the slope, so on average the surface keeps its brightness)
-		s := imageSrc1At(imageSrc0Origin()+fract(uv)*imageSrc0Size()).rg*2 - 1
+		let s = imageSrc1At(imageSrc0Origin() + fract(uv) * imageSrc0Size()).rg * 2.0 - 1.0;
 		// the torch, and where a lantern reaches, that lantern
-		r := mix(relief(s, normalize(Torch-p)), relief(s, normalize(Lamp-p)), near)
-		rgb *= clamp(1+Bump*r, 0.4, 1.6)
+		let r = mix(relief(s, normalize(u.Torch - p)), relief(s, normalize(u.Lamp - p)), near);
+		rgb *= clamp(1.0 + u.Bump * r, 0.4, 1.6);
 	}
-	dark := (1 - torch(p, chk)) * (1 - 0.7*lit) * (1 - near)
-	out := shade(rgb*mix(Warm, vec3(1), max(lit, near)), dark, Inc*(1-lit)*(1-near)) + rgb*color.rgb*0.3
-	return vec4(haze(out, p)*c.a, c.a)
+	let dark = (1.0 - torch(p, chk)) * (1.0 - 0.7 * lit) * (1.0 - near);
+	let o = shade(rgb * mix(u.Warm, vec3f(1.0), max(lit, near)), dark, u.Inc * (1.0 - lit) * (1.0 - near)) + rgb * color.rgb * 0.3;
+	return vec4f(haze(o, p) * c.a, c.a);
 }
 `
 
@@ -342,8 +341,8 @@ func btof(b bool) float64 {
 }
 
 // faceOptions sets the texture shader's images and uniforms for face f seen from c.
-func (g *Game) faceOptions(c cam, f *face) *ebiten.DrawTrianglesShaderOptions {
-	op := &ebiten.DrawTrianglesShaderOptions{}
+func (g *Game) faceOptions(c cam, f *face) *gpu.DrawTrianglesShaderOptions {
+	op := &gpu.DrawTrianglesShaderOptions{}
 	op.Images[0], op.Images[1], op.Images[2] = f.tex, f.tex, f.tex
 	tp, warm := g.torchPos(), []float32{1.08, 0.94, 0.78}
 	if openSky {
@@ -371,7 +370,7 @@ func (g *Game) faceOptions(c cam, f *face) *ebiten.DrawTrianglesShaderOptions {
 		}
 	}
 	if f.mode == modeGlow {
-		op.Blend = ebiten.BlendLighter
+		op.Blend = gpu.BlendLighter
 	}
 	op.Uniforms = u
 	return op

@@ -11,8 +11,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
+	"gpu"
+	"gpu/vector"
 
 	"blobber"
 	"blobber/maps"
@@ -43,15 +43,15 @@ type Presenter struct {
 	menu    bool                        // the vertical menu is open
 	sel     int                         // its highlighted item
 	asked   string                      // the question menu last opened by itself (menuID)
-	mapImg  *ebiten.Image               // View.Map on the GPU
+	mapImg  *gpu.Image               // View.Map on the GPU
 	mapSrc  image.Image                 // the View.Map it holds
-	menuImg *ebiten.Image               // the vertical menu, drawn at scale 1
+	menuImg *gpu.Image               // the vertical menu, drawn at scale 1
 	menuBuf []byte                      // its pixels
 }
 
 // Draw shows the game on dst and returns where the classic picture went
 // (zero when it is not on screen: the mouse then points at nothing).
-func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
+func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture) {
 		p.shown, p.active, p.menu = "", false, false // back from elsewhere: no tween from where the view was
@@ -126,10 +126,10 @@ func (p *Presenter) Draw(dst *ebiten.Image, scr *ega.Screen, note classic.Note, 
 	if note.Show { // the toast (font name ...): the strip Frame wrote it into
 		n := min(len(note.Text)+2, 40) * 8
 		r := image.Rect((ega.W-n)/2, 4, (ega.W+n)/2, 12)
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(k, k)
 		op.GeoM.Translate(float64(dst.Bounds().Dx())/2-k*float64(n)/2, k*4)
-		dst.DrawImage(frame.SubImage(r).(*ebiten.Image), op)
+		dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
 	}
 	return classic.Rect{}
 }
@@ -229,7 +229,7 @@ func menuID(m *engine.Menu) string {
 // cardAt lays the party's cards along the window's edges: the first half
 // of the party down the left, the rest down the right, at the largest
 // whole scale where a column of four fits (eight with two NPCs).
-func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
+func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
 	b := dst.Bounds()
 	k := cardScale(dst)
 	return func(i, n int) image.Rectangle {
@@ -249,7 +249,7 @@ func cardAt(dst *ebiten.Image) func(i, n int) image.Rectangle {
 
 // mapRect is where the map goes: the top right corner, in a 1 px border, at a
 // whole scale (mapSide pixels at scale 1).
-func mapRect(dst *ebiten.Image) image.Rectangle {
+func mapRect(dst *gpu.Image) image.Rectangle {
 	b := dst.Bounds()
 	k := mapScale(dst)
 	side := mapSide*k + 2
@@ -260,7 +260,7 @@ const cardGap, cardRows = 8, 4
 
 // cardScale is the cards' whole scale: the largest where a column of four
 // fits under the map at its smallest.
-func cardScale(dst *ebiten.Image) int {
+func cardScale(dst *gpu.Image) int {
 	return max(1, min(ui.K(480, 360), (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(ui.CardH+cardGap))))
 }
 
@@ -269,18 +269,18 @@ const mapSide = 16 * engine.MapCell
 
 // mapScale is the map's whole scale: as large as leaves room for the card
 // columns (four cards each, two of them NPCs) under it.
-func mapScale(dst *ebiten.Image) int {
+func mapScale(dst *gpu.Image) int {
 	free := dst.Bounds().Dy() - cardRows*(ui.CardH+cardGap)*cardScale(dst) - cardGap - 2
 	return max(1, free/mapSide)
 }
 
 // drawMap shows the map as the full map draws it (View.Map) in mapRect.
-func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
+func (p *Presenter) drawMap(dst *gpu.Image, m image.Image) {
 	if m == nil {
 		return
 	}
 	if p.mapImg == nil {
-		p.mapImg = ebiten.NewImage(mapSide, mapSide)
+		p.mapImg = gpu.NewImage(mapSide, mapSide)
 	}
 	if m != p.mapSrc { // a new View: upload it once
 		p.mapImg.WritePixels(m.(*image.RGBA).Pix)
@@ -288,9 +288,9 @@ func (p *Presenter) drawMap(dst *ebiten.Image, m image.Image) {
 	}
 	r := mapRect(dst)
 	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.Gray{0x80}, false)
-	dst.SubImage(r.Inset(1)).(*ebiten.Image).Fill(color.Black)
+	dst.SubImage(r.Inset(1)).(*gpu.Image).Fill(color.Black)
 	k := float64(mapScale(dst))
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(float64(r.Min.X)+(float64(r.Dx())-mapSide*k)/2, float64(r.Min.Y)+(float64(r.Dy())-mapSide*k)/2)
 	dst.DrawImage(p.mapImg, op)
@@ -344,34 +344,34 @@ func (p *Presenter) animate() {
 
 // scale is the largest whole factor the classic screen fits dst at (at
 // least 1): pixels stay square.
-func scale(dst *ebiten.Image) float64 {
+func scale(dst *gpu.Image) float64 {
 	b := dst.Bounds()
 	return float64(max(1, min(b.Dx()/ega.W, b.Dy()/ega.H)))
 }
 
 // drawBox copies box r of the classic frame onto dst at scale k, centred
 // on cx, cy: its inside, in a plain border (drawBorder).
-func drawBox(dst, frame *ebiten.Image, r engine.CellRect, k float64, cx, cy int) {
+func drawBox(dst, frame *gpu.Image, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
-	var g ebiten.GeoM
+	var g gpu.GeoM
 	g.Scale(k, k)
 	g.Translate(float64(cx)-k*float64(px.Dx())/2, float64(cy)-k*float64(px.Dy())/2)
-	op := &ebiten.DrawImageOptions{GeoM: g}
+	op := &gpu.DrawImageOptions{GeoM: g}
 	op.GeoM.Translate(8*k, 8*k)
-	dst.DrawImage(frame.SubImage(px.Inset(8)).(*ebiten.Image), op)
+	dst.DrawImage(frame.SubImage(px.Inset(8)).(*gpu.Image), op)
 	drawBorder(dst, frame, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
 }
 
 // drawBorder draws a cw by ch cell box's border at g from the text pane's
 // own cells: its corners and one plain ribbon cell along each edge (none of
 // the frame's junction tiles).
-func drawBorder(dst, frame *ebiten.Image, g ebiten.GeoM, cw, ch int) {
+func drawBorder(dst, frame *gpu.Image, g gpu.GeoM, cw, ch int) {
 	f := engine.TextPane.Framed()
 	cell := func(sx, sy, x, y int) {
-		op := &ebiten.DrawImageOptions{}
+		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(x*8), float64(y*8))
 		op.GeoM.Concat(g)
-		dst.DrawImage(frame.SubImage(image.Rect(sx*8, sy*8, sx*8+8, sy*8+8)).(*ebiten.Image), op)
+		dst.DrawImage(frame.SubImage(image.Rect(sx*8, sy*8, sx*8+8, sy*8+8)).(*gpu.Image), op)
 	}
 	for x := 1; x < cw-1; x++ {
 		cell(f.X1+1, f.Y1, x, 0)
@@ -388,18 +388,18 @@ func drawBorder(dst, frame *ebiten.Image, g ebiten.GeoM, cw, ch int) {
 }
 
 // drawPrompt lays the original's menu and prompt rows along the bottom.
-func (p *Presenter) drawPrompt(dst, frame *ebiten.Image, k float64) {
+func (p *Presenter) drawPrompt(dst, frame *gpu.Image, k float64) {
 	r := engine.PromptRows.Pixels()
 	b := dst.Bounds()
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy()))
-	dst.DrawImage(frame.SubImage(r).(*ebiten.Image), op)
+	dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
 }
 
 // drawParty shows the party as Blobber's portrait cards, each with the
 // character's paper-doll head.
-func (p *Presenter) drawParty(dst *ebiten.Image, ms []engine.Member) {
+func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member) {
 	p.party.Chars = p.party.Chars[:0]
 	for _, m := range ms {
 		p.party.Chars = append(p.party.Chars, &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head)})

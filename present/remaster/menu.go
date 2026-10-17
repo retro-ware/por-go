@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 
 	"por/ega"
 )
@@ -12,7 +12,7 @@ import (
 // drawMenu draws a vertical menu in the original's look: a box with the
 // text pane's red border, the items in the game's font, green on black with
 // their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
-func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
+func (p *Presenter) drawMenu(dst, frame *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
 	rows, hot := items, keys
 	if title != "" {
 		rows, hot = append([]string{title, ""}, items...), append([]byte{0, 0}, keys...)
@@ -27,7 +27,7 @@ func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte,
 		if p.menuImg != nil {
 			p.menuImg.Deallocate()
 		}
-		p.menuImg, p.menuBuf = ebiten.NewImage(cw*8, ch*8), make([]byte, cw*8*ch*8*4)
+		p.menuImg, p.menuBuf = gpu.NewImage(cw*8, ch*8), make([]byte, cw*8*ch*8*4)
 	}
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	green, blue, white := rgb(10), rgb(1), rgb(15)
@@ -69,9 +69,9 @@ func (p *Presenter) drawMenu(dst, frame *ebiten.Image, glyph func(byte) [8]byte,
 	}
 	p.menuImg.WritePixels(p.menuBuf)
 
-	drawBorder(p.menuImg, frame, ebiten.GeoM{}, cw, ch)
+	drawBorder(p.menuImg, frame, gpu.GeoM{}, cw, ch)
 
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(float64(cx)-k*float64(cw*8)/2, float64(top))
 	dst.DrawImage(p.menuImg, op)

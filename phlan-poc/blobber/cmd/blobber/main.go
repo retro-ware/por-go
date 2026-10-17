@@ -15,7 +15,7 @@ import (
 	"blobber/sfx"
 	"blobber/ui"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	}
 
 	blobber.DebugLines = pt.Summary
-	blobber.HUD = func(s *ebiten.Image) { ui.DrawParty(s, pt) }
+	blobber.HUD = func(s *gpu.Image) { ui.DrawParty(s, pt) }
 	blobber.OnPromptAnswer = func() []string { // character list for "who will" prompts
 		var l []string
 		for i, c := range pt.Chars {
@@ -59,24 +59,24 @@ func main() {
 		}
 		pump(host.vm, host.vm.Use(host.m, x, y, events.Facing(dir)))
 	}
-	blobber.Keys[ebiten.KeyJ] = func() { blobber.Modal = &ui.Journal{P: pt} }
-	blobber.Keys[ebiten.KeyR] = host.rest
-	blobber.Keys[ebiten.KeyG] = toggleGod
-	blobber.Keys[ebiten.KeyK] = killAhead
-	blobber.Keys[ebiten.KeyN] = host.spawnMenu
-	blobber.Keys[ebiten.KeyT] = func() { blobber.Night = !blobber.Night } // phlan-poc: day / night
-	blobber.Keys[ebiten.KeyF5] = func() { report(host.saveGame(), "Game saved.") }
-	blobber.Keys[ebiten.KeyF9] = func() { report(host.loadGame(), "Game loaded.") }
-	blobber.Keys[ebiten.KeyI] = func() { blobber.Modal = ui.NewInventory(pt) }
+	blobber.Keys[gpu.KeyJ] = func() { blobber.Modal = &ui.Journal{P: pt} }
+	blobber.Keys[gpu.KeyR] = host.rest
+	blobber.Keys[gpu.KeyG] = toggleGod
+	blobber.Keys[gpu.KeyK] = killAhead
+	blobber.Keys[gpu.KeyN] = host.spawnMenu
+	blobber.Keys[gpu.KeyT] = func() { blobber.Night = !blobber.Night } // phlan-poc: day / night
+	blobber.Keys[gpu.KeyF5] = func() { report(host.saveGame(), "Game saved.") }
+	blobber.Keys[gpu.KeyF9] = func() { report(host.loadGame(), "Game loaded.") }
+	blobber.Keys[gpu.KeyI] = func() { blobber.Modal = ui.NewInventory(pt) }
 	for i := range pt.Chars { // F1-F6: that character's inventory
-		blobber.Keys[ebiten.KeyF1+ebiten.Key(i)] = func() {
+		blobber.Keys[gpu.KeyF1+gpu.Key(i)] = func() {
 			inv := ui.NewInventory(pt)
 			inv.Select(i)
 			blobber.Modal = inv
 		}
 	}
 	sfx.Init()
-	blobber.Keys[ebiten.KeyC] = func() { blobber.Modal = ui.NewSpellbook(pt) }
+	blobber.Keys[gpu.KeyC] = func() { blobber.Modal = ui.NewSpellbook(pt) }
 	pt.OnCast = func(s party.Spell) {
 		sfx.Play("magic")
 		if blobber.Fighting() { // a melee round: the round passes the turn and aims the bolts
@@ -156,7 +156,7 @@ func devOpen(host *console) {
 			var x, y, d int
 			fmt.Sscanf(strings.ReplaceAll(arg, ":", " "), "%s %d %d %d", &m, &x, &y, &d)
 			hud := blobber.HUD
-			blobber.HUD = func(s *ebiten.Image) {
+			blobber.HUD = func(s *gpu.Image) {
 				blobber.HUD = hud
 				host.Teleport(m, x, y)
 				blobber.Face(d)
@@ -179,7 +179,7 @@ func devOpen(host *console) {
 			blobber.ShowPrompt([]string{"Who will search the rubble?", "  F1  Ann", "  F2  Bob", "  F3  Cyd"}, false, func(string) {})
 		case "sign": // after the first frame: Run clears signs
 			hud := blobber.HUD
-			blobber.HUD = func(s *ebiten.Image) {
+			blobber.HUD = func(s *gpu.Image) {
 				blobber.ShowSign(1, 1, 1, []string{"Welcome to the demo dungeon.", "Press F here for the opcode lab."})
 				blobber.HUD = hud
 				hud(s)

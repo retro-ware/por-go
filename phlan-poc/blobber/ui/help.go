@@ -4,8 +4,7 @@ import (
 	"blobber"
 	"blobber/font"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"gpu"
 )
 
 // HelpScreen is the "?" overlay: a short introduction and every hotkey, grouped.
@@ -30,10 +29,10 @@ var helpKeys = [2][]struct {
 
 func (h *HelpScreen) Update() bool {
 	p := blobber.KeyJustPressed
-	return !(p(ebiten.KeyEscape) || p(ebiten.KeyEnter) || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft))
+	return !(p(gpu.KeyEscape) || p(gpu.KeyEnter) || gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft))
 }
 
-func (h *HelpScreen) Draw(screen *ebiten.Image) {
+func (h *HelpScreen) Draw(screen *gpu.Image) {
 	d := h.begin()
 	Frame(d, rc(0, 0, cw, ch))
 	Title(d, "HELP", cw/2, 14)

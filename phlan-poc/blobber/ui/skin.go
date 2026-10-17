@@ -15,18 +15,18 @@ import (
 	"blobber"
 	"blobber/font"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"gpu"
 )
 
 //go:embed assets/darkages.png
 var sheetPNG []byte
 
-var sheet = func() *ebiten.Image {
+var sheet = func() *gpu.Image {
 	img, err := png.Decode(bytes.NewReader(sheetPNG))
 	if err != nil {
 		panic(err)
 	}
-	return ebiten.NewImageFromImage(img)
+	return gpu.NewImageFromImage(img)
 }()
 
 // Palette from the pack's README.
@@ -52,18 +52,18 @@ const (
 func rc(x, y, w, h int) image.Rectangle { return image.Rect(x, y, x+w, y+h) }
 
 // blit draws sheet region src stretched onto dst region d.
-func blit(dst *ebiten.Image, src, d image.Rectangle) {
+func blit(dst *gpu.Image, src, d image.Rectangle) {
 	if src.Empty() || d.Empty() {
 		return
 	}
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(float64(d.Dx())/float64(src.Dx()), float64(d.Dy())/float64(src.Dy()))
 	op.GeoM.Translate(float64(d.Min.X), float64(d.Min.Y))
-	dst.DrawImage(sheet.SubImage(src).(*ebiten.Image), op)
+	dst.DrawImage(sheet.SubImage(src).(*gpu.Image), op)
 }
 
 // tile repeats src across d (clipping the last copy) instead of stretching it.
-func tile(dst *ebiten.Image, src, d image.Rectangle) {
+func tile(dst *gpu.Image, src, d image.Rectangle) {
 	for y := d.Min.Y; y < d.Max.Y; y += src.Dy() {
 		for x := d.Min.X; x < d.Max.X; x += src.Dx() {
 			w, h := min(src.Dx(), d.Max.X-x), min(src.Dy(), d.Max.Y-y)
@@ -73,7 +73,7 @@ func tile(dst *ebiten.Image, src, d image.Rectangle) {
 }
 
 // nine draws src as a nine-slice with border b onto d: fixed corners, tiled edges, stretched middle.
-func nine(dst *ebiten.Image, src image.Rectangle, b int, d image.Rectangle) {
+func nine(dst *gpu.Image, src image.Rectangle, b int, d image.Rectangle) {
 	sx := [4]int{src.Min.X, src.Min.X + b, src.Max.X - b, src.Max.X}
 	sy := [4]int{src.Min.Y, src.Min.Y + b, src.Max.Y - b, src.Max.Y}
 	dx := [4]int{d.Min.X, d.Min.X + b, d.Max.X - b, d.Max.X}
@@ -92,7 +92,7 @@ func nine(dst *ebiten.Image, src image.Rectangle, b int, d image.Rectangle) {
 
 // hslice stretches src to width w keeping caps of width cap at each end, and, if mid > 0,
 // a fixed-width centre piece (a crown) that must not be stretched.
-func hslice(dst *ebiten.Image, src image.Rectangle, cap, mid, x, y, w int) {
+func hslice(dst *gpu.Image, src image.Rectangle, cap, mid, x, y, w int) {
 	h := src.Dy()
 	sy := src.Min.Y
 	blit(dst, rc(src.Min.X, sy, cap, h), rc(x, y, cap, h))
@@ -110,20 +110,20 @@ func hslice(dst *ebiten.Image, src image.Rectangle, cap, mid, x, y, w int) {
 // ---------- pieces ----------
 
 // Frame is the ornate gold window frame.
-func Frame(dst *ebiten.Image, d image.Rectangle) { nine(dst, rc(0, 0, 96, 96), 32, d) }
+func Frame(dst *gpu.Image, d image.Rectangle) { nine(dst, rc(0, 0, 96, 96), 32, d) }
 
 // DarkFrame is the plain dark knotwork frame, for panels inside windows and the HUD.
-func DarkFrame(dst *ebiten.Image, d image.Rectangle) { nine(dst, rc(210, 18, 60, 60), 14, d) }
+func DarkFrame(dst *gpu.Image, d image.Rectangle) { nine(dst, rc(210, 18, 60, 60), 14, d) }
 
 // GoldFrame is the gold twin of DarkFrame (the big gold knotwork panel), for highlighting.
-func GoldFrame(dst *ebiten.Image, d image.Rectangle) { nine(dst, rc(2, 2, 92, 92), 16, d) }
+func GoldFrame(dst *gpu.Image, d image.Rectangle) { nine(dst, rc(2, 2, 92, 92), 16, d) }
 
 // Parchment is the scroll paper used for signs and cutscenes; text on it is ink coloured.
-func Parchment(dst *ebiten.Image, d image.Rectangle) { nine(dst, rc(96, 0, 96, 96), 16, d) }
+func Parchment(dst *gpu.Image, d image.Rectangle) { nine(dst, rc(96, 0, 96, 96), 16, d) }
 
 // Button draws a button of width w whose 19 px body starts at y (the crown of a Hover button rises 8 px above it)
 // and centres label on it.
-func Button(dst *ebiten.Image, x, y, w int, label string, state int) {
+func Button(dst *gpu.Image, x, y, w int, label string, state int) {
 	mid := 0
 	if state == Hover {
 		mid = 28
@@ -137,7 +137,7 @@ func Button(dst *ebiten.Image, x, y, w int, label string, state int) {
 }
 
 // Tab draws a tab of width w whose 15 px body starts at y.
-func Tab(dst *ebiten.Image, x, y, w int, label string, state int) {
+func Tab(dst *gpu.Image, x, y, w int, label string, state int) {
 	mid := 0
 	if state == Hover {
 		mid = 16
@@ -151,7 +151,7 @@ func Tab(dst *ebiten.Image, x, y, w int, label string, state int) {
 }
 
 // Slot draws a 32x32 item slot cell at x,y.
-func Slot(dst *ebiten.Image, x, y, state int) {
+func Slot(dst *gpu.Image, x, y, state int) {
 	blit(dst, rc([]int{192, 256, 224}[state], 96, 32, 32), rc(x, y, 32, 32))
 }
 
@@ -164,7 +164,7 @@ var (
 
 // StatBar draws the crowned bar frame, width w, with its top-left tile corner at x,y, filled to v/maxV.
 // The visible bar body runs from y+7 to y+22.
-func StatBar(dst *ebiten.Image, x, y, w, v, maxV int, fill image.Rectangle) {
+func StatBar(dst *gpu.Image, x, y, w, v, maxV int, fill image.Rectangle) {
 	hslice(dst, rc(192, 128, 96, 32), 10, 32, x, y, w)
 	if maxV > 0 && v > 0 {
 		fw := (w - 14) * min(v, maxV) / maxV
@@ -180,12 +180,12 @@ var (
 	RightIcon = rc(96, 256, 32, 32)
 )
 
-func Icon(dst *ebiten.Image, src image.Rectangle, x, y int) {
+func Icon(dst *gpu.Image, src image.Rectangle, x, y int) {
 	blit(dst, src, rc(x, y, src.Dx(), src.Dy()))
 }
 
 // Title prints s centred at y between two flourishes, like the pack's window headers.
-func Title(dst *ebiten.Image, s string, cx, y int) {
+func Title(dst *gpu.Image, s string, cx, y int) {
 	blit(dst, rc(288, 256, 96, 32), rc(cx-96, y-10, 192, 32)) // divider with diamond, stretched wide
 	Print(dst, s, cx-3*len(s), y+12, gold)
 }
@@ -193,29 +193,29 @@ func Title(dst *ebiten.Image, s string, cx, y int) {
 // ---------- text ----------
 
 // Print draws text in the game font.
-func Print(dst *ebiten.Image, s string, x, y int, col color.Color) { font.Draw(dst, s, x, y, col) }
+func Print(dst *gpu.Image, s string, x, y int, col color.Color) { font.Draw(dst, s, x, y, col) }
 
 // ---------- canvas ----------
 
 // canvas is a window's offscreen cw x ch image, shown centred at the largest whole scale that fits.
 type canvas struct {
-	img       *ebiten.Image
+	img       *gpu.Image
 	k, ox, oy int
 }
 
 // begin returns the cleared canvas.
-func (c *canvas) begin() *ebiten.Image {
+func (c *canvas) begin() *gpu.Image {
 	if c.img == nil {
-		c.img = ebiten.NewImage(cw, ch)
+		c.img = gpu.NewImage(cw, ch)
 	}
 	c.img.Clear()
 	return c.img
 }
 
-func (c *canvas) present(screen *ebiten.Image) {
+func (c *canvas) present(screen *gpu.Image) {
 	c.k = K(cw, ch)
 	c.ox, c.oy = (blobber.W-cw*c.k)/2, max(0, (blobber.H-ch*c.k)/2)
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(float64(c.k), float64(c.k))
 	op.GeoM.Translate(float64(c.ox), float64(c.oy))
 	screen.DrawImage(c.img, op)
@@ -226,7 +226,7 @@ func (c *canvas) mouse() (int, int) {
 	if c.k == 0 {
 		return -1, -1
 	}
-	x, y := ebiten.CursorPosition()
+	x, y := gpu.CursorPosition()
 	return (x - c.ox) / c.k, (y - c.oy) / c.k
 }
 
@@ -236,7 +236,7 @@ func K(w, h int) int { return max(1, min(blobber.W/w, blobber.H/h)) }
 func in(x, y int, r image.Rectangle) bool { return image.Pt(x, y).In(r) }
 
 // Bar is a StatBar without the crown, 12 px tall, for tight spots like the HUD.
-func Bar(dst *ebiten.Image, x, y, w, v, maxV int, fill image.Rectangle) {
+func Bar(dst *gpu.Image, x, y, w, v, maxV int, fill image.Rectangle) {
 	const sy, h = 141, 11 // rows below the crown
 	blit(dst, rc(192, sy, 10, h), rc(x, y, 10, h))
 	blit(dst, rc(278, sy, 10, h), rc(x+w-10, y, 10, h))
@@ -259,11 +259,11 @@ func Install() {
 	blobber.Help = &HelpScreen{}
 }
 
-var winCanvas = ebiten.NewImage(cw*2, ch*2)
+var winCanvas = gpu.NewImage(cw*2, ch*2)
 
 // Window draws a framed text window. sel highlights a line (-1 for none). bottom puts it above the HUD
 // (top left during melee), otherwise it is centred.
-func Window(screen *ebiten.Image, title string, lines []string, sel int, bottom bool) {
+func Window(screen *gpu.Image, title string, lines []string, sel int, bottom bool) {
 	drawWindow(screen, title, lines, sel, func(w, h, k int) (int, int) {
 		x, y := (blobber.W-w*k)/2, (blobber.H-h*k)/2
 		switch {
@@ -277,12 +277,12 @@ func Window(screen *ebiten.Image, title string, lines []string, sel int, bottom 
 }
 
 // WindowAt draws Window centred on cx with its top edge at top.
-func WindowAt(screen *ebiten.Image, title string, lines []string, sel int, cx, top int) {
+func WindowAt(screen *gpu.Image, title string, lines []string, sel int, cx, top int) {
 	drawWindow(screen, title, lines, sel, func(w, h, k int) (int, int) { return cx - w*k/2, top })
 }
 
 // drawWindow draws the window where at puts it (given its size and scale).
-func drawWindow(screen *ebiten.Image, title string, lines []string, sel int, at func(w, h, k int) (int, int)) {
+func drawWindow(screen *gpu.Image, title string, lines []string, sel int, at func(w, h, k int) (int, int)) {
 	w := font.Width(title) + 120
 	for _, l := range lines {
 		w = max(w, font.Width(l)+48)
@@ -294,7 +294,7 @@ func drawWindow(screen *ebiten.Image, title string, lines []string, sel int, at 
 	h := top + 16*len(lines) + 24
 	k := K(cw, ch)
 	w, h = min(w, blobber.W/k), min(h, blobber.H/k)
-	d := winCanvas.SubImage(rc(0, 0, w, h)).(*ebiten.Image)
+	d := winCanvas.SubImage(rc(0, 0, w, h)).(*gpu.Image)
 	d.Clear()
 	Frame(d, rc(0, 0, w, h))
 	if title != "" {
@@ -308,20 +308,20 @@ func drawWindow(screen *ebiten.Image, title string, lines []string, sel int, at 
 		Print(d, l, 24, y, light)
 	}
 	x, y := at(w, h, k)
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(float64(k), float64(k))
 	op.GeoM.Translate(float64(x), float64(y))
 	screen.DrawImage(d, op)
 }
 
 // BoardImage renders a shop sign: pale letters on a dark oak board with a carved rim.
-func BoardImage(lines []string) *ebiten.Image {
+func BoardImage(lines []string) *gpu.Image {
 	w := 64
 	for _, l := range lines {
 		w = max(w, font.Width(l)+40)
 	}
 	h := max(40, 16*len(lines)+24)
-	img := ebiten.NewImage(w, h)
+	img := gpu.NewImage(w, h)
 	oak, grain, rim, edge := color.RGBA{0x5e, 0x3c, 0x1e, 255}, color.RGBA{0x4c, 0x2f, 0x16, 255}, color.RGBA{0x2e, 0x1b, 0x0c, 255}, color.RGBA{0x8a, 0x5e, 0x32, 255}
 	img.Fill(oak)
 	for y := 5; y < h-4; y += 6 { // plank grain
@@ -340,13 +340,13 @@ func BoardImage(lines []string) *ebiten.Image {
 }
 
 // SignImage renders world text as ink on a parchment plaque.
-func SignImage(lines []string) *ebiten.Image {
+func SignImage(lines []string) *gpu.Image {
 	w := 48
 	for _, l := range lines {
 		w = max(w, font.Width(l)+32)
 	}
 	h := max(48, 16*len(lines)+28)
-	img := ebiten.NewImage(w, h)
+	img := gpu.NewImage(w, h)
 	Parchment(img, rc(0, 0, w, h))
 	for i, l := range lines {
 		Print(img, l, (w-font.Width(l))/2, 14+16*i, ink)
@@ -354,16 +354,16 @@ func SignImage(lines []string) *ebiten.Image {
 	return img
 }
 
-var panelCanvas = ebiten.NewImage(512, 512)
+var panelCanvas = gpu.NewImage(512, 512)
 
 // Panel draws a dark framed backdrop over screen rectangle r (device pixels), e.g. behind the minimap.
-func Panel(screen *ebiten.Image, r image.Rectangle) {
+func Panel(screen *gpu.Image, r image.Rectangle) {
 	k := K(cw, ch)
 	w, h := max(32, r.Dx()/k), max(32, r.Dy()/k)
-	d := panelCanvas.SubImage(rc(0, 0, w, h)).(*ebiten.Image)
+	d := panelCanvas.SubImage(rc(0, 0, w, h)).(*gpu.Image)
 	d.Clear()
 	DarkFrame(d, rc(0, 0, w, h))
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(float64(k), float64(k))
 	op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
 	screen.DrawImage(d, op)

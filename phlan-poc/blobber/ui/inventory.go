@@ -18,9 +18,8 @@ import (
 	"blobber/party"
 	"blobber/sprites"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
+	"gpu"
+	"gpu/vector"
 )
 
 // Layout in canvas pixels.
@@ -50,8 +49,8 @@ var slotLabels = map[party.Slot]string{
 
 var buttons = []struct {
 	label string
-	key   ebiten.Key
-}{{"Use", ebiten.KeyU}, {"Remove", ebiten.KeyR}, {"Discard", ebiten.KeyD}, {"Exit", ebiten.KeyEscape}}
+	key   gpu.Key
+}{{"Use", gpu.KeyU}, {"Remove", gpu.KeyR}, {"Discard", gpu.KeyD}, {"Exit", gpu.KeyEscape}}
 
 func btnBox(i int) image.Rectangle {
 	x0 := (cw - len(buttons)*(btnW+4) + 4) / 2
@@ -199,10 +198,10 @@ func (v *Inventory) clampSel() {
 // Update handles input; false closes the window.
 func (v *Inventory) Update() bool {
 	pressed := blobber.KeyJustPressed
-	if pressed(ebiten.KeyI) {
+	if pressed(gpu.KeyI) {
 		return false
 	}
-	if pressed(ebiten.KeyEscape) && v.slot >= 0 { // Esc first lets go of the slot
+	if pressed(gpu.KeyEscape) && v.slot >= 0 { // Esc first lets go of the slot
 		v.slot, v.inSlots = -1, false
 	} else {
 		for _, b := range buttons {
@@ -213,20 +212,20 @@ func (v *Inventory) Update() bool {
 	}
 	step := 0
 	switch {
-	case blobber.KeyRepeated(ebiten.KeyUp):
+	case blobber.KeyRepeated(gpu.KeyUp):
 		step = -1
-	case blobber.KeyRepeated(ebiten.KeyDown):
+	case blobber.KeyRepeated(gpu.KeyDown):
 		step = 1
-	case pressed(ebiten.KeyLeft):
+	case pressed(gpu.KeyLeft):
 		v.inSlots = false
-	case pressed(ebiten.KeyRight):
+	case pressed(gpu.KeyRight):
 		v.inSlots = true
 		v.slot = max(v.slot, 0)
-	case pressed(ebiten.KeyTab) || pressed(ebiten.KeyPageDown): // next character (RB)
+	case pressed(gpu.KeyTab) || pressed(gpu.KeyPageDown): // next character (RB)
 		v.char = (v.char + 1) % len(v.P.Chars)
-	case pressed(ebiten.KeyPageUp): // previous character (LB)
+	case pressed(gpu.KeyPageUp): // previous character (LB)
 		v.char = (v.char + len(v.P.Chars) - 1) % len(v.P.Chars)
-	case pressed(ebiten.KeyEnter) || pressed(ebiten.KeySpace):
+	case pressed(gpu.KeyEnter) || pressed(gpu.KeySpace):
 		if v.inSlots {
 			v.inSlots = false // on to the list to choose what goes there
 		} else if it := v.selected(); it != nil {
@@ -239,7 +238,7 @@ func (v *Inventory) Update() bool {
 		v.sel += step
 	}
 	for i := range min(6, len(v.P.Chars)) {
-		if pressed(ebiten.KeyF1 + ebiten.Key(i)) {
+		if pressed(gpu.KeyF1 + gpu.Key(i)) {
 			v.char = i
 		}
 	}
@@ -252,10 +251,10 @@ func slotRow(i int) image.Rectangle { return rc(slotX-4, slotY+i*rowH-1, slotW+8
 // mouse handles hover, clicks and the wheel; false closes the window.
 func (v *Inventory) mouse() bool {
 	x, y := v.canvas.mouse()
-	sx, sy := ebiten.CursorPosition()
-	left := inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
-	right := inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight)
-	if _, wy := ebiten.Wheel(); wy != 0 {
+	sx, sy := gpu.CursorPosition()
+	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft)
+	right := gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight)
+	if _, wy := gpu.Wheel(); wy != 0 {
 		v.scroll = max(0, min(v.scroll-int(wy), len(v.stacks())-rows))
 	}
 	v.hoverRow, v.hoverBt, v.hoverSlot = -1, -1, -1
@@ -295,7 +294,7 @@ func (v *Inventory) mouse() bool {
 	return true
 }
 
-func (v *Inventory) Draw(screen *ebiten.Image) {
+func (v *Inventory) Draw(screen *gpu.Image) {
 	d := v.begin()
 	Frame(d, rc(0, 0, cw, ch))
 	c := v.cur()
@@ -387,17 +386,17 @@ func (v *Inventory) Draw(screen *ebiten.Image) {
 //go:embed assets/items/*.png
 var itemFS embed.FS
 
-var itemIcons = map[string]*ebiten.Image{}
+var itemIcons = map[string]*gpu.Image{}
 
 // itemIcon returns the icon for an item's Icon name, or nil.
-func itemIcon(name string) *ebiten.Image {
+func itemIcon(name string) *gpu.Image {
 	if img, ok := itemIcons[name]; ok {
 		return img
 	}
-	var img *ebiten.Image
+	var img *gpu.Image
 	if b, err := itemFS.ReadFile("assets/items/" + name + ".png"); err == nil {
 		if m, err := png.Decode(bytes.NewReader(b)); err == nil {
-			img = ebiten.NewImageFromImage(m)
+			img = gpu.NewImageFromImage(m)
 		}
 	}
 	itemIcons[name] = img
@@ -405,7 +404,7 @@ func itemIcon(name string) *ebiten.Image {
 }
 
 // icon draws an item's 16x16 icon, or else the 16x16 sprite of that name.
-func icon(dst *ebiten.Image, name string, x, y int, scale float64) {
+func icon(dst *gpu.Image, name string, x, y int, scale float64) {
 	img := sprites.Get(name)
 	if it := itemIcon(name); it != nil {
 		img = it
@@ -413,12 +412,12 @@ func icon(dst *ebiten.Image, name string, x, y int, scale float64) {
 	if img == nil {
 		return
 	}
-	op := &ebiten.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(scale, scale)
 	op.GeoM.Translate(float64(x), float64(y))
 	dst.DrawImage(img, op)
 }
 
-func fillRect(dst *ebiten.Image, r image.Rectangle, c color.Color) {
+func fillRect(dst *gpu.Image, r image.Rectangle, c color.Color) {
 	vector.DrawFilledRect(dst, float32(r.Min.X), float32(r.Min.Y), float32(r.Dx()), float32(r.Dy()), c, false)
 }

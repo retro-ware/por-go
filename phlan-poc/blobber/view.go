@@ -1,6 +1,6 @@
 package blobber
 
-import "github.com/hajimehoshi/ebiten/v2"
+import "gpu"
 
 // View is the renderer for a host that owns the game loop and the rules
 // (the remastered Pool of Radiance): it draws a Scene from a Camera the host
@@ -108,7 +108,7 @@ func (v *View) OptionsOpen() bool { return v.g.menu }
 // UpdateOptions runs the options page for one frame: arrows and Enter
 // change settings, Esc closes it.
 func (v *View) UpdateOptions() {
-	if KeyJustPressed(ebiten.KeyEscape) {
+	if KeyJustPressed(gpu.KeyEscape) {
 		v.g.menu = false
 		return
 	}
@@ -123,7 +123,7 @@ func (v *View) Update() {
 }
 
 // Draw draws the 3D view filling dst.
-func (v *View) Draw(dst *ebiten.Image) {
+func (v *View) Draw(dst *gpu.Image) {
 	b := dst.Bounds()
 	v.g.resize(b.Dx(), b.Dy())
 	v.g.draw3D(dst, v.g.camera())
