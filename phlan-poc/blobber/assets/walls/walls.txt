@@ -33,3 +33,16 @@ j wall_graveyard_v10
 k wall_graveyard_v11
 n wall_graveyard_v14
 o wall_graveyard_v15
+q wall_slums_v02
+r wall_slums_v03
+s wall_slums_v04
+t wall_slums_v05
+u wall_slums_v06
+v wall_slums_v07
+w wall_slums_v08
+x wall_slums_v09
+y wall_slums_v10
+z wall_slums_v11
+D wall_slums_v13
+I wall_slums_v14
+L wall_slums_v15

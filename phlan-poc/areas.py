@@ -107,3 +107,45 @@ AREAS["graveyard"] = dict(  # Valhingen Graveyard: ECL4 block 10
             "door of vertical brown planks in the lower middle; above the broken top nothing is drawn.",
     },
 )
+
+AREAS["slums"] = dict(  # the Slums of Phlan: ECL2 block 20
+    geo=(2, 20), walldefs=[(2, 1), (4, 2), (1, 3)], area_kind=20,
+    chunks=["WALLDEF2-002-1", "WALLDEF2-004-1", "WALLDEF2-001-1"],
+    chars={v: "pqrstuvwxyzBDILM"[v - 1] for v in range(1, 16)},
+    start=(14, 10, "n"), water_walls=set(), free_walls=set(),
+    floor="phlan_dirt", ceiling="sky_phlan",
+    notrim={2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15}, water=set(), tile=set(), noseam=set(),
+    views=[(4, 13, "S"), (8, 5, "W"), (3, 3, "N"), (10, 7, "W"), (5, 6, "W"), (0, 13, "N"), (13, 2, "E"),
+           (13, 0, "E"), (2, 6, "N"), (3, 4, "E"), (4, 0, "N"), (10, 3, "N"), (15, 2, "E"), (14, 6, "S"),
+           (6, 10, "S"), (6, 6, "S"), (10, 2, "S"), (10, 11, "E")],  # random.Random(20), reachable squares
+    walls={
+        2: "a shabby slum house wall of weathered vertical brown wooden planks with an arched wooden plank "
+           "door with a metal handle on the left and a window of blue glass panes (two rows of four) on the "
+           "right.",
+        3: "a shabby slum house wall of weathered vertical brown wooden planks with a horizontal wooden beam "
+           "across the upper part, a window of blue glass panes (two rows of four) on the left and an arched "
+           "wooden plank door with a metal handle on the right.",
+        4: "a plain shabby slum house wall of weathered vertical brown wooden planks, dark gaps between the "
+           "boards.",
+        5: "a shabby slum house wall of weathered vertical brown wooden planks with an arched wooden plank "
+           "door with a metal handle in the lower middle.",
+        6: "a small shop front in a wall of white irregular fieldstones: a red and white striped cloth awning "
+           "across the whole width above the middle, below it a wooden plank door on the left and a window "
+           "of blue glass panes (two rows of four) on the right.",
+        7: "a town house wall of white irregular fieldstones set in grey mortar, rounded flat stones in a "
+           "dense even pattern over the whole face.",
+        8: "a town house wall of white irregular fieldstones with a window of blue glass panes (two rows of "
+           "four) on the left and an arched wooden plank door with a metal handle on the right.",
+        9: "a town house wall of white irregular fieldstones set in grey mortar, rounded flat stones in a "
+           "dense even pattern over the whole face.",
+        10: "a town house wall of white irregular fieldstones with an arched wooden plank door with a metal "
+            "handle in the lower middle.",
+        11: "a plain grey plastered stone wall with a wide dark round-arched tunnel opening in the middle, a "
+            "small wooden door far away at the end of the tunnel; the tunnel floor is empty.",
+        13: "a plain grey plastered stone wall with a tall open round-topped archway in the middle; the "
+            "archway is an empty opening, nothing is drawn inside it.",
+        14: "a plain smooth grey plastered stone town wall, even and unadorned.",
+        15: "a plain smooth grey plastered stone town wall with an arched wooden plank door with a metal "
+            "handle in the lower right.",
+    },
+)

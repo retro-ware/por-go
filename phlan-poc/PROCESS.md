@@ -29,6 +29,9 @@ python3 compare/compare.py graveyard        # -> compare/graveyard.jpg
 
 ## 1. Find the area and read the map data
 
+`MAPS.md` lists every 3D map with its ECL, GEO and wall sets; take the next
+unticked one and tick it when its comparison sheet is done.
+
 Which GEO and wall sets an area uses is in its ECL script (`go run ./cmd/ecl
 DISK BLOCK` from `cmd/`): `21 opLoadFiles GEO 2 255` and `37 opLoadFiles A B
 C` (wall set blocks for slots 1-3). The ECL block number is the area kind.
@@ -64,7 +67,8 @@ Wall value v maps to WALLDEF chunk `(v-1)//5+1`, wall `(v-1)%5+1`.
 ## 2. Build the map (`make_map.py AREA`)
 
 From `areas.py`: `geo`, `chars` (wall value -> map char, unique across areas
-because `walls.txt` is shared; Phlan uses capitals, the graveyard a-o),
+because `walls.txt` is shared; Phlan uses capitals, the graveyard a-o,
+the slums p-z and B D I L M),
 `start`, `water_walls`, `free_walls`.
 
 - 16 rows of `.` (all floor), plus `floor` / `ceiling` lines.

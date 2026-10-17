@@ -1,0 +1,945 @@
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+floor phlan_dirt
+ceiling sky_phlan
+face 0 0 0 I
+edge 0 0 0
+face 0 0 1 L
+face 0 0 2 I
+edge 0 0 2
+face 0 0 3 I
+edge 0 0 3
+face 1 0 0 x
+edge 1 0 0
+face 1 0 3 v
+face 2 0 0 v
+edge 2 0 0
+face 2 0 2 y
+face 3 0 0 x
+edge 3 0 0
+face 3 0 1 x
+edge 3 0 1
+face 3 0 2 y
+face 4 0 0 s
+edge 4 0 0
+face 4 0 3 s
+edge 4 0 3
+face 5 0 0 s
+edge 5 0 0
+face 6 0 0 s
+edge 6 0 0
+face 6 0 1 t
+face 7 0 0 s
+edge 7 0 0
+face 7 0 3 t
+face 8 0 0 s
+edge 8 0 0
+face 8 0 1 s
+edge 8 0 1
+face 9 0 0 I
+edge 9 0 0
+face 9 0 3 I
+edge 9 0 3
+face 10 0 0 I
+edge 10 0 0
+face 10 0 1 I
+edge 10 0 1
+face 11 0 0 I
+edge 11 0 0
+face 11 0 3 I
+edge 11 0 3
+face 12 0 0 I
+edge 12 0 0
+face 13 0 0 I
+edge 13 0 0
+face 13 0 1 I
+edge 13 0 1
+face 14 0 0 I
+edge 14 0 0
+face 14 0 3 I
+edge 14 0 3
+face 15 0 0 I
+edge 15 0 0
+face 15 0 1 I
+edge 15 0 1
+face 0 1 0 x
+edge 0 1 0
+face 0 1 2 y
+face 0 1 3 v
+edge 0 1 3
+face 1 1 1 x
+edge 1 1 1
+face 1 1 2 v
+edge 1 1 2
+face 2 1 0 y
+face 2 1 1 x
+edge 2 1 1
+face 2 1 3 v
+edge 2 1 3
+face 3 1 0 y
+face 3 1 1 x
+edge 3 1 1
+face 3 1 2 x
+edge 3 1 2
+face 3 1 3 x
+edge 3 1 3
+face 4 1 3 s
+edge 4 1 3
+face 5 1 2 s
+edge 5 1 2
+face 6 1 1 s
+edge 6 1 1
+face 6 1 2 s
+edge 6 1 2
+face 7 1 2 s
+edge 7 1 2
+face 7 1 3 s
+edge 7 1 3
+face 8 1 1 s
+edge 8 1 1
+face 8 1 2 s
+edge 8 1 2
+face 9 1 2 I
+edge 9 1 2
+face 9 1 3 I
+edge 9 1 3
+face 10 1 1 I
+edge 10 1 1
+face 10 1 2 L
+face 11 1 2 I
+edge 11 1 2
+face 11 1 3 I
+edge 11 1 3
+face 12 1 2 I
+edge 12 1 2
+face 13 1 1 L
+face 13 1 2 I
+edge 13 1 2
+face 14 1 3 L
+face 15 1 1 I
+edge 15 1 1
+face 0 2 0 y
+face 0 2 1 v
+edge 0 2 1
+face 0 2 3 x
+edge 0 2 3
+face 1 2 0 x
+edge 1 2 0
+face 1 2 3 v
+edge 1 2 3
+face 2 2 2 x
+edge 2 2 2
+face 3 2 0 x
+edge 3 2 0
+face 3 2 2 v
+edge 3 2 2
+face 4 2 1 r
+face 4 2 2 t
+face 5 2 0 s
+edge 5 2 0
+face 5 2 2 s
+edge 5 2 2
+face 5 2 3 q
+face 6 2 0 s
+edge 6 2 0
+face 6 2 1 s
+edge 6 2 1
+face 6 2 2 t
+face 7 2 0 s
+edge 7 2 0
+face 7 2 3 s
+edge 7 2 3
+face 8 2 0 s
+edge 8 2 0
+face 8 2 1 t
+face 9 2 0 I
+edge 9 2 0
+face 9 2 2 I
+edge 9 2 2
+face 9 2 3 L
+face 10 2 0 L
+face 10 2 1 L
+face 10 2 2 L
+face 11 2 0 I
+edge 11 2 0
+face 11 2 2 I
+edge 11 2 2
+face 11 2 3 L
+face 12 2 0 I
+edge 12 2 0
+face 12 2 2 I
+edge 12 2 2
+face 13 2 0 I
+edge 13 2 0
+face 13 2 1 L
+face 14 2 3 L
+face 15 2 1 I
+edge 15 2 1
+face 0 3 1 x
+edge 0 3 1
+face 0 3 2 x
+edge 0 3 2
+face 0 3 3 v
+edge 0 3 3
+face 1 3 1 x
+edge 1 3 1
+face 1 3 3 x
+edge 1 3 3
+face 2 3 0 x
+edge 2 3 0
+face 2 3 2 v
+edge 2 3 2
+face 2 3 3 x
+edge 2 3 3
+face 3 3 0 x
+edge 3 3 0
+face 3 3 1 v
+edge 3 3 1
+face 3 3 2 y
+face 4 3 0 y
+face 4 3 1 s
+edge 4 3 1
+face 4 3 3 x
+edge 4 3 3
+face 5 3 0 s
+edge 5 3 0
+face 5 3 3 s
+edge 5 3 3
+face 6 3 0 t
+face 6 3 1 t
+face 7 3 3 t
+face 8 3 1 s
+edge 8 3 1
+face 9 3 0 I
+edge 9 3 0
+face 9 3 3 I
+edge 9 3 3
+face 10 3 0 L
+face 11 3 0 I
+edge 11 3 0
+face 12 3 0 I
+edge 12 3 0
+face 12 3 1 I
+edge 12 3 1
+face 13 3 1 I
+edge 13 3 1
+face 13 3 3 I
+edge 13 3 3
+face 14 3 2 I
+edge 14 3 2
+face 14 3 3 I
+edge 14 3 3
+face 15 3 1 I
+edge 15 3 1
+face 15 3 2 I
+edge 15 3 2
+face 0 4 0 v
+edge 0 4 0
+face 0 4 2 x
+edge 0 4 2
+face 0 4 3 z
+face 1 4 2 x
+edge 1 4 2
+face 2 4 0 x
+edge 2 4 0
+face 2 4 1 v
+edge 2 4 1
+face 3 4 0 y
+face 3 4 2 u
+face 3 4 3 x
+edge 3 4 3
+face 4 4 1 t
+face 5 4 2 s
+edge 5 4 2
+face 5 4 3 t
+face 6 4 1 s
+edge 6 4 1
+face 6 4 2 s
+edge 6 4 2
+face 7 4 2 s
+edge 7 4 2
+face 7 4 3 s
+edge 7 4 3
+face 8 4 1 s
+edge 8 4 1
+face 8 4 2 t
+face 9 4 2 L
+face 9 4 3 I
+edge 9 4 3
+face 10 4 2 I
+edge 10 4 2
+face 11 4 2 I
+edge 11 4 2
+face 12 4 1 I
+edge 12 4 1
+face 12 4 2 I
+edge 12 4 2
+face 13 4 1 I
+edge 13 4 1
+face 13 4 2 L
+face 13 4 3 I
+edge 13 4 3
+face 14 4 0 I
+edge 14 4 0
+face 14 4 2 L
+face 14 4 3 I
+edge 14 4 3
+face 15 4 0 I
+edge 15 4 0
+face 15 4 1 z
+face 15 4 2 I
+edge 15 4 2
+face 0 5 0 I
+edge 0 5 0
+face 0 5 1 L
+face 0 5 3 I
+edge 0 5 3
+face 1 5 0 I
+edge 1 5 0
+face 1 5 1 I
+edge 1 5 1
+face 1 5 2 I
+edge 1 5 2
+face 1 5 3 L
+face 2 5 1 v
+edge 2 5 1
+face 2 5 3 x
+edge 2 5 3
+face 3 5 0 w
+face 3 5 1 x
+edge 3 5 1
+face 3 5 2 x
+edge 3 5 2
+face 3 5 3 x
+edge 3 5 3
+face 4 5 3 x
+edge 4 5 3
+face 5 5 0 s
+edge 5 5 0
+face 6 5 0 s
+edge 6 5 0
+face 6 5 2 x
+edge 6 5 2
+face 7 5 0 s
+edge 7 5 0
+face 7 5 1 x
+edge 7 5 1
+face 7 5 2 v
+edge 7 5 2
+face 8 5 0 t
+face 8 5 1 x
+edge 8 5 1
+face 8 5 3 v
+edge 8 5 3
+face 9 5 0 y
+face 9 5 3 v
+edge 9 5 3
+face 10 5 0 x
+edge 10 5 0
+face 10 5 1 x
+edge 10 5 1
+face 11 5 0 x
+edge 11 5 0
+face 11 5 3 x
+edge 11 5 3
+face 12 5 0 v
+edge 12 5 0
+face 13 5 0 y
+face 13 5 1 x
+edge 13 5 1
+face 14 5 0 y
+face 14 5 3 x
+edge 14 5 3
+face 15 5 0 x
+edge 15 5 0
+face 15 5 1 I
+edge 15 5 1
+face 0 6 1 I
+edge 0 6 1
+face 0 6 3 I
+edge 0 6 3
+face 1 6 0 v
+edge 1 6 0
+face 1 6 2 I
+edge 1 6 2
+face 1 6 3 I
+edge 1 6 3
+face 2 6 1 y
+face 2 6 2 L
+face 3 6 0 x
+edge 3 6 0
+face 3 6 2 I
+edge 3 6 2
+face 3 6 3 L
+face 4 6 2 I
+edge 4 6 2
+face 5 6 1 v
+edge 5 6 1
+face 5 6 2 v
+edge 5 6 2
+face 6 6 0 s
+edge 6 6 0
+face 6 6 3 s
+edge 6 6 3
+face 7 6 0 s
+edge 7 6 0
+face 7 6 1 s
+edge 7 6 1
+face 8 6 1 x
+edge 8 6 1
+face 8 6 3 v
+edge 8 6 3
+face 9 6 3 x
+edge 9 6 3
+face 10 6 1 v
+edge 10 6 1
+face 11 6 3 v
+edge 11 6 3
+face 13 6 1 v
+edge 13 6 1
+face 14 6 3 x
+edge 14 6 3
+face 15 6 1 I
+edge 15 6 1
+face 0 7 1 I
+edge 0 7 1
+face 0 7 2 L
+face 0 7 3 I
+edge 0 7 3
+face 1 7 0 I
+edge 1 7 0
+face 1 7 3 I
+edge 1 7 3
+face 2 7 0 L
+face 3 7 0 I
+edge 3 7 0
+face 3 7 1 I
+edge 3 7 1
+face 4 7 0 I
+edge 4 7 0
+face 4 7 3 I
+edge 4 7 3
+face 5 7 0 I
+edge 5 7 0
+face 5 7 1 t
+face 6 7 2 s
+edge 6 7 2
+face 6 7 3 t
+face 7 7 1 t
+face 8 7 1 v
+edge 8 7 1
+face 8 7 2 x
+edge 8 7 2
+face 8 7 3 t
+face 9 7 2 y
+face 9 7 3 x
+edge 9 7 3
+face 10 7 1 x
+edge 10 7 1
+face 10 7 2 x
+edge 10 7 2
+face 11 7 2 I
+edge 11 7 2
+face 11 7 3 x
+edge 11 7 3
+face 12 7 2 I
+edge 12 7 2
+face 13 7 1 D
+face 13 7 2 I
+edge 13 7 2
+face 14 7 2 I
+edge 14 7 2
+face 14 7 3 D
+face 15 7 1 I
+edge 15 7 1
+face 15 7 2 I
+edge 15 7 2
+face 0 8 0 L
+face 0 8 1 L
+face 0 8 3 I
+edge 0 8 3
+face 1 8 3 L
+face 3 8 1 L
+face 4 8 2 I
+edge 4 8 2
+face 4 8 3 L
+face 5 8 2 I
+edge 5 8 2
+face 6 8 0 x
+edge 6 8 0
+face 6 8 1 x
+edge 6 8 1
+face 7 8 1 s
+edge 7 8 1
+face 7 8 2 s
+edge 7 8 2
+face 7 8 3 s
+edge 7 8 3
+face 8 8 0 x
+edge 8 8 0
+face 8 8 1 x
+edge 8 8 1
+face 8 8 3 x
+edge 8 8 3
+face 9 8 0 y
+face 9 8 3 v
+edge 9 8 3
+face 10 8 0 x
+edge 10 8 0
+face 11 8 0 I
+edge 11 8 0
+face 11 8 2 v
+edge 11 8 2
+face 12 8 0 I
+edge 12 8 0
+face 12 8 2 x
+edge 12 8 2
+face 13 8 0 I
+edge 13 8 0
+face 13 8 2 v
+edge 13 8 2
+face 14 8 0 I
+edge 14 8 0
+face 15 8 0 I
+edge 15 8 0
+face 15 8 1 I
+edge 15 8 1
+face 0 9 1 I
+edge 0 9 1
+face 0 9 3 I
+edge 0 9 3
+face 1 9 2 I
+edge 1 9 2
+face 1 9 3 I
+edge 1 9 3
+face 2 9 2 L
+face 3 9 1 I
+edge 3 9 1
+face 3 9 2 I
+edge 3 9 2
+face 4 9 0 s
+edge 4 9 0
+face 4 9 3 s
+edge 4 9 3
+face 5 9 0 s
+edge 5 9 0
+face 5 9 1 s
+edge 5 9 1
+face 6 9 3 x
+edge 6 9 3
+face 7 9 0 x
+edge 7 9 0
+face 8 9 1 x
+edge 8 9 1
+face 9 9 3 x
+edge 9 9 3
+face 10 9 1 x
+edge 10 9 1
+face 11 9 0 s
+edge 11 9 0
+face 11 9 3 s
+edge 11 9 3
+face 12 9 0 s
+edge 12 9 0
+face 13 9 0 s
+edge 13 9 0
+face 13 9 1 s
+edge 13 9 1
+face 14 9 3 v
+edge 14 9 3
+face 15 9 1 I
+edge 15 9 1
+face 0 10 3 I
+edge 0 10 3
+face 1 10 0 I
+edge 1 10 0
+face 2 10 0 L
+face 2 10 1 I
+edge 2 10 1
+face 3 10 0 I
+edge 3 10 0
+face 3 10 1 t
+face 3 10 3 I
+edge 3 10 3
+face 4 10 3 t
+face 5 10 1 s
+edge 5 10 1
+face 6 10 2 t
+face 6 10 3 x
+edge 6 10 3
+face 7 10 2 s
+edge 7 10 2
+face 8 10 1 x
+edge 8 10 1
+face 8 10 2 s
+edge 8 10 2
+face 9 10 2 x
+edge 9 10 2
+face 9 10 3 v
+edge 9 10 3
+face 10 10 1 x
+edge 10 10 1
+face 10 10 2 v
+edge 10 10 2
+face 11 10 2 s
+edge 11 10 2
+face 11 10 3 s
+edge 11 10 3
+face 12 10 2 s
+edge 12 10 2
+face 13 10 1 t
+face 13 10 2 s
+edge 13 10 2
+face 14 10 2 v
+edge 14 10 2
+face 14 10 3 y
+face 15 10 1 I
+edge 15 10 1
+face 15 10 2 x
+edge 15 10 2
+face 0 11 2 I
+edge 0 11 2
+face 0 11 3 z
+face 1 11 2 I
+edge 1 11 2
+face 2 11 1 L
+face 2 11 2 I
+edge 2 11 2
+face 3 11 1 s
+edge 3 11 1
+face 3 11 2 I
+edge 3 11 2
+face 3 11 3 L
+face 4 11 2 s
+edge 4 11 2
+face 4 11 3 s
+edge 4 11 3
+face 5 11 1 s
+edge 5 11 1
+face 5 11 2 s
+edge 5 11 2
+face 6 11 0 t
+face 6 11 3 I
+edge 6 11 3
+face 7 11 0 I
+edge 7 11 0
+face 7 11 1 I
+edge 7 11 1
+face 7 11 2 I
+edge 7 11 2
+face 8 11 0 I
+edge 8 11 0
+face 8 11 2 I
+edge 8 11 2
+face 8 11 3 I
+edge 8 11 3
+face 9 11 0 I
+edge 9 11 0
+face 9 11 2 I
+edge 9 11 2
+face 10 11 0 I
+edge 10 11 0
+face 10 11 2 I
+edge 10 11 2
+face 11 11 0 I
+edge 11 11 0
+face 11 11 1 I
+edge 11 11 1
+face 12 11 0 I
+edge 12 11 0
+face 12 11 2 D
+face 12 11 3 I
+edge 12 11 3
+face 13 11 0 I
+edge 13 11 0
+face 13 11 2 D
+face 14 11 0 I
+edge 14 11 0
+face 14 11 2 D
+face 15 11 0 I
+edge 15 11 0
+face 15 11 1 I
+edge 15 11 1
+face 15 11 2 I
+edge 15 11 2
+face 0 12 0 I
+edge 0 12 0
+face 0 12 2 I
+edge 0 12 2
+face 0 12 3 I
+edge 0 12 3
+face 1 12 0 I
+edge 1 12 0
+face 1 12 1 I
+edge 1 12 1
+face 2 12 0 I
+edge 2 12 0
+face 2 12 3 I
+edge 2 12 3
+face 3 12 0 I
+edge 3 12 0
+face 3 12 2 I
+edge 3 12 2
+face 4 12 0 I
+edge 4 12 0
+face 4 12 2 I
+edge 4 12 2
+face 5 12 0 I
+edge 5 12 0
+face 5 12 2 I
+edge 5 12 2
+face 6 12 1 I
+edge 6 12 1
+face 7 12 0 I
+edge 7 12 0
+face 7 12 3 I
+edge 7 12 3
+face 8 12 0 I
+edge 8 12 0
+face 9 12 0 I
+edge 9 12 0
+face 9 12 1 I
+edge 9 12 1
+face 9 12 2 D
+face 10 12 0 I
+edge 10 12 0
+face 10 12 1 D
+face 10 12 3 I
+edge 10 12 3
+face 11 12 1 D
+face 11 12 2 I
+edge 11 12 2
+face 11 12 3 D
+face 12 12 0 D
+face 12 12 1 I
+edge 12 12 1
+face 12 12 3 D
+face 13 12 0 D
+face 13 12 1 I
+edge 13 12 1
+face 13 12 3 I
+edge 13 12 3
+face 14 12 0 D
+face 14 12 1 u
+face 14 12 3 I
+edge 14 12 3
+face 15 12 0 x
+edge 15 12 0
+face 15 12 1 x
+edge 15 12 1
+face 15 12 2 x
+edge 15 12 2
+face 15 12 3 w
+face 0 13 0 I
+edge 0 13 0
+face 0 13 1 I
+edge 0 13 1
+face 0 13 3 I
+edge 0 13 3
+face 1 13 1 I
+edge 1 13 1
+face 1 13 2 D
+face 1 13 3 I
+edge 1 13 3
+face 2 13 1 I
+edge 2 13 1
+face 2 13 2 D
+face 2 13 3 I
+edge 2 13 3
+face 3 13 0 I
+edge 3 13 0
+face 3 13 2 D
+face 3 13 3 I
+edge 3 13 3
+face 4 13 0 I
+edge 4 13 0
+face 5 13 0 I
+edge 5 13 0
+face 5 13 1 I
+edge 5 13 1
+face 5 13 2 D
+face 6 13 1 I
+edge 6 13 1
+face 6 13 3 I
+edge 6 13 3
+face 7 13 2 I
+edge 7 13 2
+face 7 13 3 I
+edge 7 13 3
+face 8 13 1 I
+edge 8 13 1
+face 8 13 2 D
+face 9 13 0 D
+face 9 13 1 I
+edge 9 13 1
+face 9 13 2 D
+face 9 13 3 I
+edge 9 13 3
+face 10 13 1 D
+face 10 13 3 I
+edge 10 13 3
+face 11 13 0 I
+edge 11 13 0
+face 11 13 1 I
+edge 11 13 1
+face 11 13 2 I
+edge 11 13 2
+face 11 13 3 D
+face 12 13 1 I
+edge 12 13 1
+face 12 13 3 I
+edge 12 13 3
+face 13 13 1 D
+face 13 13 3 I
+edge 13 13 3
+face 14 13 3 D
+face 15 13 0 I
+edge 15 13 0
+face 15 13 1 I
+edge 15 13 1
+face 0 14 1 I
+edge 0 14 1
+face 0 14 2 D
+face 0 14 3 I
+edge 0 14 3
+face 1 14 0 D
+face 1 14 3 I
+edge 1 14 3
+face 2 14 0 D
+face 2 14 2 I
+edge 2 14 2
+face 3 14 0 D
+face 3 14 1 I
+edge 3 14 1
+face 3 14 2 D
+face 4 14 1 I
+edge 4 14 1
+face 4 14 3 I
+edge 4 14 3
+face 5 14 0 D
+face 5 14 2 I
+edge 5 14 2
+face 5 14 3 I
+edge 5 14 3
+face 6 14 2 I
+edge 6 14 2
+face 7 14 0 I
+edge 7 14 0
+face 7 14 2 I
+edge 7 14 2
+face 8 14 0 D
+face 8 14 1 I
+edge 8 14 1
+face 8 14 2 D
+face 9 14 0 D
+face 9 14 2 I
+edge 9 14 2
+face 9 14 3 I
+edge 9 14 3
+face 10 14 2 I
+edge 10 14 2
+face 11 14 0 I
+edge 11 14 0
+face 11 14 1 I
+edge 11 14 1
+face 11 14 2 D
+face 12 14 1 D
+face 12 14 3 I
+edge 12 14 3
+face 13 14 1 I
+edge 13 14 1
+face 13 14 3 D
+face 14 14 2 I
+edge 14 14 2
+face 14 14 3 I
+edge 14 14 3
+face 15 14 1 I
+edge 15 14 1
+face 15 14 2 I
+edge 15 14 2
+face 0 15 0 D
+face 0 15 2 I
+edge 0 15 2
+face 0 15 3 I
+edge 0 15 3
+face 1 15 1 I
+edge 1 15 1
+face 1 15 2 I
+edge 1 15 2
+face 2 15 0 I
+edge 2 15 0
+face 2 15 2 I
+edge 2 15 2
+face 2 15 3 I
+edge 2 15 3
+face 3 15 0 D
+face 3 15 2 I
+edge 3 15 2
+face 4 15 2 I
+edge 4 15 2
+face 5 15 0 I
+edge 5 15 0
+face 5 15 2 I
+edge 5 15 2
+face 6 15 0 I
+edge 6 15 0
+face 6 15 1 I
+edge 6 15 1
+face 6 15 2 I
+edge 6 15 2
+face 7 15 0 I
+edge 7 15 0
+face 7 15 2 I
+edge 7 15 2
+face 7 15 3 I
+edge 7 15 3
+face 8 15 0 D
+face 8 15 1 I
+edge 8 15 1
+face 8 15 2 I
+edge 8 15 2
+face 9 15 0 I
+edge 9 15 0
+face 9 15 2 I
+edge 9 15 2
+face 9 15 3 I
+edge 9 15 3
+face 10 15 0 I
+edge 10 15 0
+face 10 15 2 I
+edge 10 15 2
+face 11 15 0 D
+face 11 15 2 I
+edge 11 15 2
+face 12 15 1 I
+edge 12 15 1
+face 12 15 2 I
+edge 12 15 2
+face 13 15 2 I
+edge 13 15 2
+face 13 15 3 I
+edge 13 15 3
+face 14 15 0 I
+edge 14 15 0
+face 14 15 2 I
+edge 14 15 2
+face 15 15 0 I
+edge 15 15 0
+face 15 15 1 I
+edge 15 15 1
+face 15 15 2 I
+edge 15 15 2
