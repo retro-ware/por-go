@@ -13,6 +13,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"reflect"
 	"regexp"
 	"slices"
 	"sort"
@@ -312,6 +313,58 @@ var Sea bool
 
 // Pond (phlan-poc) are cells drawn as water that are not sea: no water off the map for them.
 var Pond = map[[2]int]bool{}
+
+const pondR, pondMudW = 0.42, 0.3 // phlan-poc: a pond's radius, the width of the mud bank around it
+
+var mudFor map[[2]int]bool            // the Pond map mudTiles were made for
+var mudTiles map[[2]int]*ebiten.Image // phlan-poc: per cell, its share of the bank around the ponds
+
+// pondMud is cell's share of the mud bank around the map's ponds: alpha from the distance to the whole
+// outline (discs on the pond cells, joined by strips as wide), so a pond over several cells gets one bank.
+func pondMud(cell [2]int) *ebiten.Image {
+	if len(Pond) == 0 {
+		return nil
+	}
+	if mudTiles == nil || reflect.ValueOf(mudFor).Pointer() != reflect.ValueOf(Pond).Pointer() {
+		mudFor, mudTiles = Pond, map[[2]int]*ebiten.Image{}
+		dist := func(x, z float64) float64 { // to the outline, <0 inside
+			d := math.Inf(1)
+			for p := range Pond {
+				cx, cz := float64(p[0])+0.5, float64(p[1])+0.5
+				d = math.Min(d, math.Hypot(x-cx, z-cz)-pondR)
+				for _, s := range [][2]float64{{1, 0}, {0, 1}} {
+					if Pond[[2]int{p[0] + int(s[0]), p[1] + int(s[1])}] { // along a join: to its centre line
+						t := math.Max(0, math.Min(1, (x-cx)*s[0]+(z-cz)*s[1]))
+						d = math.Min(d, math.Hypot(x-cx-t*s[0], z-cz-t*s[1])-pondR)
+					}
+				}
+			}
+			return d
+		}
+		const px = 32
+		for p := range Pond {
+			for dz := -1; dz <= 1; dz++ {
+				for dx := -1; dx <= 1; dx++ {
+					c := [2]int{p[0] + dx, p[1] + dz}
+					if _, done := mudTiles[c]; done {
+						continue
+					}
+					img := image.NewRGBA(image.Rect(0, 0, px, px))
+					for j := 0; j < px; j++ {
+						for i := 0; i < px; i++ {
+							d := dist(float64(c[0])+(float64(i)+0.5)/px, float64(c[1])+(float64(j)+0.5)/px)
+							t := math.Max(0, math.Min(1, d/pondMudW))
+							a := (1 - t*t*(3-2*t)) * 0.8 // dark wet mud at the water, a soft fade out (smoothstep)
+							img.Set(i, j, color.RGBA{uint8(46 * a), uint8(30 * a), uint8(16 * a), uint8(255 * a)})
+						}
+					}
+					mudTiles[c] = ebiten.NewImageFromImage(img)
+				}
+			}
+		}
+	}
+	return mudTiles[cell]
+}
 
 func inMap(x, y int) bool { return y >= 0 && y < len(level) && x >= 0 && x < len(level[y]) }
 
@@ -1358,7 +1411,7 @@ type face struct {
 	inc   float64 // constant extra fade toward the fog (look.go)
 	mode  int     // modeShaded, modeUnlit or modeGlow
 	tint  [3]float64
-	pass  int // 0 floor and ceiling, 1 light circles on them, 2 the rest, sorted far to near
+	pass  int // 0 floor and ceiling, 1 light circles and mud on them, 2 pond water, 3 the rest, sorted far to near
 }
 
 func lerp(a, b vert, t float64) vert {
@@ -1583,7 +1636,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	var faces []*face
 	var bias float64 // sorts faces this much nearer than their centre
 	q := func(a, b, cc, d vert, t *ebiten.Image, sub int) *face {
-		f := &face{v: [4]vert{a, b, cc, d}, tex: t, sub: sub, pass: 2}
+		f := &face{v: [4]vert{a, b, cc, d}, tex: t, sub: sub, pass: 3}
 		mx, mz := (a.x+cc.x)/2-c.x, (a.z+cc.z)/2-c.z
 		f.raw = mx*c.fwx + mz*c.fwz
 		f.dist = f.raw - bias
@@ -1646,22 +1699,27 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			f = q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, texFloor, 3)
 		}
 		f.pass = 0
+		if m := pondMud(cell); m != nil { // phlan-poc: the muddy bank around a pond, fading into the floor
+			f := q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, m, 3)
+			f.pass = 1
+		}
 		if Pond[cell] { // phlan-poc: a round pool on the floor, joined to a neighbouring pond cell by a strip as wide
-			const pr, n = 0.42, 32
+			const n = 32
 			w := g.time * 0.02
 			wv := func(x, z float64) vert { return vert{x, 0.5, z, x/2 + w, z / 2, 0, 0, 0} }
 			mx, mz := x0+0.5, z0+0.5
 			for i := 0; i < n; i++ {
 				t0, t1 := 2*math.Pi*float64(i)/n, 2*math.Pi*float64(i+1)/n
-				f := q(wv(mx, mz), wv(mx+pr*math.Cos(t0), mz+pr*math.Sin(t0)), wv(mx+pr*math.Cos(t1), mz+pr*math.Sin(t1)), wv(mx, mz), texWater, 1)
-				f.pass = 1
+				c0, s0, c1, s1 := math.Cos(t0), math.Sin(t0), math.Cos(t1), math.Sin(t1)
+				f := q(wv(mx, mz), wv(mx+pondR*c0, mz+pondR*s0), wv(mx+pondR*c1, mz+pondR*s1), wv(mx, mz), texWater, 1)
+				f.pass = 2
 			}
 			for _, d := range [][2]int{{1, 0}, {0, 1}} { // each join once, from the west / north cell
 				if Pond[[2]int{cx + d[0], cy + d[1]}] {
 					ex, ez := float64(d[0]), float64(d[1])
-					px, pz := ez*pr, ex*pr
+					px, pz := ez*pondR, ex*pondR
 					f := q(wv(mx-px, mz-pz), wv(mx+px, mz+pz), wv(mx+px+ex, mz+pz+ez), wv(mx-px+ex, mz-pz+ez), texWater, 1)
-					f.pass = 1
+					f.pass = 2
 				}
 			}
 		}

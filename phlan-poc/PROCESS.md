@@ -128,7 +128,7 @@ All in `blobber/blobber.go` and `cmd/blobber/host.go`:
 - **Props**: `prop TEX X Y SIZE` billboards at exact floor positions (Nomad
   Camp trees: half-trees on face edges in PoR, placed from the trunks in the
   original's art; `props` in `areas.py`, texture from `make_props.py`).
-- **Ponds**: `pond X Y` a round pool (0.42 radius, joined to neighbouring pond cells by a strip) on the floor, no sea; a wall value in `pond` (a
+- **Ponds**: `pond X Y` a round pool (0.42 radius, joined to neighbouring pond cells by a strip) on the floor with a mud bank fading out from the whole outline (blobber.go pondMud), no sea; a wall value in `pond` (a
   pond painted on a wall) is not drawn, the square behind it becomes a pond.
 - **Sea edge**: `sea edge` (written when a `water_walls` wall faces off the map) draws water past
   the map's edge; railings (`cut` boxes strip the painted river) show it through their gaps.
