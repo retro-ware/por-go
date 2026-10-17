@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"por/dax"
+	"por/ega"
 )
 
 // Battle is the combat map as the remaster's 3D view needs it.
@@ -37,10 +38,10 @@ type Unit struct {
 
 // battle builds the snapshot's Battle (nil outside combat).
 func (e *Engine) battle() *Battle {
-	if e.beginFlag != 5 || e.sqrpaci[0] == nil {
+	s := &e.snap
+	if e.beginFlag != 5 || e.sqrpaci[0] == nil || !e.cmapUp() {
 		return nil
 	}
-	s := &e.snap
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: e.cmap.cursor != 0, CursorSize: int(e.cmap.cursorSize),
 		View: image.Pt(e.cmap.viewX, e.cmap.viewY),
@@ -108,4 +109,24 @@ func (e *Engine) picRGBA(im *dax.Image, f int, flip bool) image.Image {
 	}
 	s.pics[k] = out
 	return out
+}
+
+// cmapRow is the pixel row under the combat page: the frame's bottom ribbon.
+const cmapRow = 8 + viewH*24 + 2
+
+// cmapShown remembers the frame row under the combat page as the map is
+// drawn, so publish can tell the map is still up (sheets draw over it).
+func (e *Engine) cmapShown() {
+	if e.S == nil { // unit tests without a screen
+		return
+	}
+	e.S.Lock()
+	e.snap.cmapRow = append(e.snap.cmapRow[:0], e.S.Pix[cmapRow*ega.W:(cmapRow+1)*ega.W]...)
+	e.S.Unlock()
+}
+
+func (e *Engine) cmapUp() bool {
+	e.S.Lock()
+	defer e.S.Unlock()
+	return len(e.snap.cmapRow) > 0 && string(e.S.Pix[cmapRow*ega.W:(cmapRow+1)*ega.W]) == string(e.snap.cmapRow)
 }

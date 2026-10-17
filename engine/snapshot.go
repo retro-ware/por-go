@@ -57,6 +57,7 @@ var (
 	InnerWindow = CellRect{3, 3, 0xD, 0xD} // the picture frame
 	TextPane    = CellRect{1, 0x11, 0x26, 0x16}
 	PromptRows  = CellRect{0, 0x18, 0x27, 0x18} // the menu and prompt line, under the frame
+	CombatRows  = CellRect{0, 0x17, 0x27, 0x18} // combat's panel and menu line, under its frame
 )
 
 // Member is one party member as the party list shows them.
@@ -124,6 +125,7 @@ type snapState struct {
 	cursor  image.Point            // drawCursor's last square
 	pics    map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
 	picsPal [16]uint8
+	cmapRow []byte // the frame row under the combat page as the map was drawn
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is

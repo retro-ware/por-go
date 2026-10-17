@@ -39,7 +39,7 @@ type Presenter struct {
 	drawn   bool
 	noted   bool // buf holds a note
 
-	overlays []ega.Overlay                 // the engine's, copied each frame
+	overlays []ega.Overlay              // the engine's, copied each frame
 	scans    map[image.Image]*gpu.Image // their GPU copies
 }
 

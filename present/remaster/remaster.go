@@ -21,6 +21,7 @@ import (
 
 	"por/ega"
 	"por/engine"
+	"por/present/battle"
 	"por/present/classic"
 )
 
@@ -43,15 +44,24 @@ type Presenter struct {
 	menu    bool                        // the vertical menu is open
 	sel     int                         // its highlighted item
 	asked   string                      // the question menu last opened by itself (menuID)
-	mapImg  *gpu.Image               // View.Map on the GPU
+	mapImg  *gpu.Image                  // View.Map on the GPU
 	mapSrc  image.Image                 // the View.Map it holds
-	menuImg *gpu.Image               // the vertical menu, drawn at scale 1
+	menuImg *gpu.Image                  // the vertical menu, drawn at scale 1
 	menuBuf []byte                      // its pixels
+	battle  battle.Presenter            // the combat map in 3D
+	fight   bool                        // the last frame was the 3D combat map
 }
 
 // Draw shows the game on dst and returns where the classic picture went
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
+	p.fight = v.Battle != nil && !p.failed
+	if p.fight {
+		p.shown, p.active, p.menu = "", false, false
+		p.battle.Draw(dst, v.Battle)
+		p.drawRows(dst, p.Classic.Frame(scr, note), engine.CombatRows, scale(dst))
+		return classic.Rect{}
+	}
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture) {
 		p.shown, p.active, p.menu = "", false, false // back from elsewhere: no tween from where the view was
@@ -109,7 +119,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	if v.Menu == nil { // typed input and "press a key" prompts: the original's line
 		p.menu = false
 		if !textOnly { // the bar under a message has nothing to answer
-			p.drawPrompt(dst, frame, k)
+			p.drawRows(dst, frame, engine.PromptRows, k)
 		}
 	} else if p.menu {
 		lines, keys := make([]string, len(v.Menu.Items)), make([]byte, len(v.Menu.Items))
@@ -139,6 +149,9 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 // opens the renderer's options. It returns the keys to send instead and
 // whether k was taken.
 func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
+	if p.fight {
+		return nil, p.battle.Key(k)
+	}
 	if !p.active || p.view == nil {
 		p.menu = false
 		return nil, false
@@ -387,9 +400,9 @@ func drawBorder(dst, frame *gpu.Image, g gpu.GeoM, cw, ch int) {
 	cell(f.X2, f.Y2, cw-1, ch-1)
 }
 
-// drawPrompt lays the original's menu and prompt rows along the bottom.
-func (p *Presenter) drawPrompt(dst, frame *gpu.Image, k float64) {
-	r := engine.PromptRows.Pixels()
+// drawRows lays rows of the original's screen along the bottom.
+func (p *Presenter) drawRows(dst, frame *gpu.Image, rows engine.CellRect, k float64) {
+	r := rows.Pixels()
 	b := dst.Bounds()
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)

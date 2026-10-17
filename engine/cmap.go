@@ -503,6 +503,7 @@ func (e *Engine) recentre(x, y, r int) bool {
 		}
 		e.drawEdges(row)
 	}
+	e.cmapShown()
 	e.updateScreenPos()
 	return true
 }

@@ -67,7 +67,8 @@ func TestView(t *testing.T) {
 }
 
 func TestBattleView(t *testing.T) {
-	b := battleView(t).Battle
+	e, scr, v := battleView(t)
+	b := v.Battle
 	if b == nil {
 		t.Fatal("no Battle in combat")
 	}
@@ -95,10 +96,26 @@ func TestBattleView(t *testing.T) {
 	if party == 0 || foes == 0 || walls == 0 {
 		t.Errorf("party %d foes %d walls %d: want some of each", party, foes, walls)
 	}
+	if v := keyWait(e, scr, 'V'); v.Battle != nil {
+		t.Errorf("character sheet: Battle still set")
+	}
+	if v := keyWait(e, scr, 27); v.Battle == nil {
+		t.Errorf("back from the sheet: no Battle")
+	}
+}
+
+func keyWait(e *engine.Engine, scr *ega.Screen, k uint16) engine.View {
+	scr.PushKey(k)
+	time.Sleep(50 * time.Millisecond)
+	for !scr.Idle() {
+		time.Sleep(10 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
+	return e.View()
 }
 
 // battleView loads GAME A and starts the dev combat scene.
-func battleView(t *testing.T) engine.View {
+func battleView(t *testing.T) (*engine.Engine, *ega.Screen, engine.View) {
 	if _, err := os.Stat("../TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
@@ -129,5 +146,5 @@ func battleView(t *testing.T) engine.View {
 		scr.PushKey(k)
 		time.Sleep(50 * time.Millisecond)
 	}
-	return v
+	return e, scr, v
 }
