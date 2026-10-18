@@ -41,7 +41,11 @@ type barItem struct {
 var hotkeys = map[string]struct {
 	key   uint16
 	label string
-}{"Guard": {'g', "G"}, "End": {8, "BS"}, "Wait": {'p', "P"}, "Cast": {'c', "C"}, "Quick": {'u', "U"}, "Items": {'i', "I"}}
+}{"Attack": {'f', "F"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
+	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}} // Cancel: Esc, unshown
+
+// leftArrow is the glyph drawn for "\x1b" (Backspace): the game's font has none.
+var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
 
 // hotkey is the keys of the button whose hotkey is k (nil: none).
 func (b *bar) hotkey(k uint16) []uint16 {
@@ -213,6 +217,9 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, ho
 	text := func(s string, x, y, scale int, c color.RGBA) {
 		for i := 0; i < len(s); i++ {
 			g := glyph(s[i])
+			if s[i] == 0x1b {
+				g = leftArrow
+			}
 			for gy := range 8 {
 				for gx := range 8 {
 					if g[gy]&(0x80>>gx) == 0 {
