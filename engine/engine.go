@@ -131,7 +131,6 @@ type Engine struct {
 	clouds               []*cloud                     // DS:6DBB lingering spell areas
 	magicOn, combatRound byte                         // DS:6E30/6DE3
 	thrownCopy           *Item                        // DS:5D9A
-	noContinue           byte                         // DS:49F4
 	debugShow            byte                         // DS:49F7 debug display (never set)
 
 	// combat overlays (ovr10/13/14/23)

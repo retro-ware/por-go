@@ -25,6 +25,9 @@ func (e *Engine) Combat() {
 		e.game.Surprise = 0
 		for c := e.nextActor(); c != nil; c = e.nextActor() {
 			e.takeTurn(c)
+			if e.countSides(); e.rv.side[0] == 0 || e.rv.side[1] == 0 { // extra: the last one down ends the battle at once
+				break
+			}
 		}
 		done = e.endRound()
 	}
@@ -370,11 +373,7 @@ func (e *Engine) endRound() (done bool) {
 	if e.rv.side[0] == 0 || e.rv.side[1] == 0 {
 		done = true
 	}
-	if e.rv.side[0] > 0 && e.rv.side[1] == 0 && e.noContinue == 0 {
-		if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Continue Battle:") == 'Y' {
-			done = false
-		}
-	}
+	// extra: no "Continue Battle:" once the foes are gone (nothing to gain by it)
 	return
 }
 
