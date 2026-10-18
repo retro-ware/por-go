@@ -11,8 +11,7 @@ import (
 )
 
 // The action bar, XCOM style: one button per menu item along the bottom
-// centre, its hotkey big on the button and its word under it.
-// ponytail: the hotkey letter is the icon; draw real icon art when there is some.
+// centre, its icon (else its hotkey, big) on the button and its word under it.
 const (
 	button  = 32 // a button's side at scale 1
 	slot    = 64 // the width each item takes: the longest word (7 letters) and a gap
@@ -21,10 +20,10 @@ const (
 )
 
 type bar struct {
-	img   *gpu.Image
-	id    string            // what img shows
-	rects []image.Rectangle // the buttons on screen, as last drawn
-	items []barItem
+	img, keys *gpu.Image        // the bar; the number keys, drawn over the icons
+	id        string            // what img shows
+	rects     []image.Rectangle // the buttons on screen, as last drawn
+	items     []barItem
 }
 
 // barItem is one button: its letter, its word, the keys it sends.
@@ -123,13 +122,15 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	}
 	if b.img == nil || b.img.Bounds().Dx() != w {
 		if b.img != nil {
+			b.keys.Deallocate()
 			b.img.Deallocate()
 		}
-		b.img, b.id = gpu.NewImage(w, h), ""
+		b.img, b.keys, b.id = gpu.NewImage(w, h), gpu.NewImage(w, h), ""
 	}
 	if id != b.id {
 		b.id = id
-		b.img.WritePixels(barPixels(glyph, prompt, items, sel, w, h).Pix)
+		b.img.WritePixels(barPixels(glyph, prompt, items, sel, w, h, false).Pix)
+		b.keys.WritePixels(barPixels(glyph, prompt, items, sel, w, h, true).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w*k/2, bottom-h*k
 	op := &gpu.DrawImageOptions{}
@@ -140,7 +141,19 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	for i := range items {
 		r := buttonRect(w, len(items), i)
 		b.rects = append(b.rects, image.Rectangle{r.Min.Mul(k), r.Max.Mul(k)}.Add(image.Pt(x0, y0)))
+		if ic := icon(items[i].Text); ic != nil { // fitted into the button's face, square as drawn
+			in := b.rects[i].Inset(3 * k)
+			s := float64(in.Dx()) / float64(ic.Bounds().Dx())
+			o := &gpu.DrawImageOptions{}
+			if s != float64(int(s)) {
+				o.Filter = gpu.FilterLinear
+			}
+			o.GeoM.Scale(s, s)
+			o.GeoM.Translate(float64(in.Min.X), float64(in.Min.Y))
+			dst.DrawImage(ic, o)
+		}
 	}
+	dst.DrawImage(b.keys, op)
 }
 
 // buttonRect is button i of n on a bar image w wide.
@@ -162,7 +175,8 @@ func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 // HideBar forgets the buttons (no bar on screen: clicks hit nothing).
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
-func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w, h int) *image.RGBA {
+// barPixels is the bar's picture, or with keys only the buttons' number keys.
+func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w, h int, keys bool) *image.RGBA {
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	text := func(s string, x, y, scale int, c color.RGBA) {
@@ -187,7 +201,7 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w,
 			}
 		}
 	}
-	if prompt != "" {
+	if prompt != "" && !keys {
 		x := max(0, (w-len(prompt)*8)/2)
 		fill(image.Rect(x-4, 0, x+len(prompt)*8+4, 10).Intersect(im.Bounds()), color.RGBA{0, 0, 0, 0xB0}) // translucent black: the text reads over any wall
 		text(prompt, x, 1, 1, rgb(15))
@@ -195,15 +209,20 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w,
 	x1 := (w - len(items)*slot) / 2
 	for i, it := range items {
 		r := buttonRect(w, len(items), i)
+		if keys {
+			if i < 10 {
+				text(string(rune('0'+(i+1)%10)), r.Min.X+3, r.Min.Y+3, 1, rgb(7)) // its number key
+			}
+			continue
+		}
 		edge := rgb(8)
 		if i == sel {
 			edge = color.RGBA{0xFF, 0xCC, 0x33, 0xFF}
 		}
 		fill(r, edge)
 		fill(r.Inset(2), color.RGBA{0x18, 0x20, 0x38, 0xFF})
-		text(string(it.Key), r.Min.X+(button-16)/2, r.Min.Y+(button-16)/2, 2, rgb(15))
-		if i < 10 {
-			text(string(rune('0'+(i+1)%10)), r.Min.X+3, r.Min.Y+3, 1, rgb(7)) // its number key
+		if iconPath(it.Text) == "" {
+			text(string(it.Key), r.Min.X+(button-16)/2, r.Min.Y+(button-16)/2, 2, rgb(15))
 		}
 		word := it.Text
 		if len(word) > slot/8-1 {
