@@ -150,6 +150,13 @@ func sameStack(p, it *Item) bool {
 // BottomMessage = 00BA:1693: the string on row 24 for the message delay.
 func (e *Engine) BottomMessage(s string) {
 	s = cut(s, textCols)
+	if e.beginFlag == 5 && e.cmap != nil { // extra: in combat on the status row; the menu row stays, the text until the panel comes back
+		e.ClearCells(0, messageRow, lastCol, messageRow)
+		e.DisplayString(0, messageRow, colLightGreen, s)
+		e.MsgDelay()
+		e.MsgDelay()
+		return
+	}
 	e.ClearCells(0, promptRow, lastCol, promptRow)
 	e.DisplayString(0, promptRow, colLightGreen, s)
 	e.MsgDelay()
