@@ -674,12 +674,23 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 			}
 		}
 		e.ext.aimMarks = map[[2]int][]int{}
+		if showRange != 0 { // extra: a weapon's: the foes it can hit, with the chance, for views that draw targets
+			e.snap.targets, e.snap.hits = nil, map[int]int{}
+		}
 		for _, n := range list {
 			if f := e.combatant(n.index); skipAlly && f != nil && f.Side != c.Side && e.mayActAgainst(c, f) &&
 				(!hitOnly || e.canTarget(c, f, int(rng), showRange)) {
 				e.ext.aimMarks[[2]int{e.combatX(f), e.combatY(f)}] = nil
+				if hitOnly {
+					e.snap.targets = append(e.snap.targets, int(n.index))
+					e.snap.hits[int(n.index)] = e.hitChance(c, f)
+				}
 			}
 		}
+	}
+	if showRange != 0 {
+		targets, hits := e.snap.targets, e.snap.hits // the main menu's, back after the aim
+		defer func() { e.snap.targets, e.snap.hits = targets, hits }()
 	}
 	defer func() { e.markReach(e.ext.aimMarks, false); e.ext.aimMarks = nil }()
 	step := func(by byte, show bool) *Character { // ovr14:3389

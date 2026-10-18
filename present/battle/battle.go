@@ -164,6 +164,16 @@ func hint(b *engine.Battle, sq image.Point) string {
 	return ""
 }
 
+// targetAt: a foe a click attacks stands on sq.
+func targetAt(b *engine.Battle, sq image.Point) bool {
+	for _, u := range b.Units {
+		if n := max(1, u.Size); slices.Contains(b.Targets, u.ID) && sq.In(image.Rect(u.X, u.Y, u.X+n, u.Y+n)) {
+			return true
+		}
+	}
+	return false
+}
+
 // pan moves the camera's centre by the held W A S D, relative to its heading.
 func (p *Presenter) pan(dt float64) {
 	var f, r float64
@@ -303,7 +313,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		marks = areaGlow
 	}
 	for _, m := range b.Marks {
-		frame(m.X, m.Y, marks, 0)
+		if !targetAt(b, m) { // a target's red frame stands alone
+			frame(m.X, m.Y, marks, 0)
+		}
 	}
 	for _, a := range b.AreaAt { // the ground a spell's area covers: an orange wash
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: areaFill, Model: place(float32(a.X)+.5, 0.0035, float32(a.Y)+.5, 0, .96, .005, .96)}

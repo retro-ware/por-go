@@ -145,3 +145,4 @@ original. Ticked items are ported and checked in a headless run
 - [x] Battle remaster camera: the aim cursor no longer pulls the camera (spells, attacks, pointing); it watches whose turn it is and effects, and the player pans to the aim by hand; Tab / Shift-Tab are the exception: the camera jumps to the target they cycle to at once
 - [x] Remastered 3D view: a click on a party member's portrait card opens their View page (engine.KeyViewMember + n, taken on the command bar only)
 - [x] Mouse aiming: a left click on any target (not only the aimed one) casts / attacks at once: the aim jumps there and is taken (ext.aimTake)
+- [x] Battle remaster weapon aim (Aim, Throw): the foes it can hit are the red targets of the main menu (no cyan frame under them), and their hover text gives the chance to hit (playerAim fills Battle.Targets and Unit.Hit)

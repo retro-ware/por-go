@@ -683,9 +683,7 @@ func (e *Engine) throwItem(c *Character) (done bool) {
 	if it.Readied != 0 {
 		var aim aimTarget
 		e.ext.enemiesOnly = true
-		e.snap.targets = e.throwTargets(c, it) // framed for views that draw targets
 		e.playerAim(c, 0xFF, 1, 0, &done, &aim)
-		e.snap.targets = nil
 		e.ext.enemiesOnly = false
 		if slices.Contains(c.Items, it) && it.Readied != 0 {
 			e.readyItem(it)
