@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// Character file I/O, ported from ovr18. Record layouts are kept raw so the
-// original SAVE files load and save byte for byte.
+// Character file I/O, ported from ovr18. The records are typed structs in
+// the DOS file layout, so the original SAVE files load and save byte for byte.
 
 const (
 	itemRecSize   = 0x3F
@@ -213,18 +213,26 @@ func (e *Engine) SaveCharacter(c *Character, name string) {
 	if err := os.WriteFile(path, c.record(), 0o644); err != nil {
 		e.fileError("write", path)
 	}
-	os.Remove(e.savePath(base + ".itm"))
-	if len(c.Items) > 0 {
-		os.WriteFile(e.savePath(base+".itm"), writeRecords(c.Items), 0o644)
-	}
-	os.Remove(e.savePath(base + ".spc"))
-	if len(c.Affects) > 0 {
-		var recs []*affectRecord
-		for _, a := range c.Affects {
-			recs = append(recs, &a.affectRecord)
+	for _, f := range []struct {
+		ext string
+		b   []byte
+	}{{".itm", writeRecords(c.Items)}, {".spc", writeRecords(affectRecords(c.Affects))}} {
+		p := e.savePath(base + f.ext)
+		os.Remove(p)
+		if len(f.b) > 0 {
+			if err := os.WriteFile(p, f.b, 0o644); err != nil {
+				e.fileError("write", p)
+			}
 		}
-		os.WriteFile(e.savePath(base+".spc"), writeRecords(recs), 0o644)
 	}
+}
+
+func affectRecords(list []*Affect) []*affectRecord {
+	var recs []*affectRecord
+	for _, a := range list {
+		recs = append(recs, &a.affectRecord)
+	}
+	return recs
 }
 
 // LoadCharacter = ovr18:0AEC (name, c, useSav). Returns false when the file
@@ -411,42 +419,36 @@ func (e *Engine) oldWalls() { e.viewAnim = e.fileWallsB[2] }
 func (e *Engine) loadSlot(key byte) bool {
 	path := e.savePath("savgam" + string(key) + ".dat")
 	b, err := os.ReadFile(path)
-	if err != nil || len(b) < 0x3351 {
+	var f saveFile
+	n := 0
+	if err == nil {
+		n, err = binary.Decode(b, binary.LittleEndian, &f)
+	}
+	if err != nil {
 		e.fileError("read", path)
 		return false
 	}
 	e.ClearRow24()
 	e.DisplayString(0, 24, 0xA, "Loading...Please Wait")
-	p := 0
-	rd := func(n int) []byte { s := b[p : p+n]; p += n; return s }
-	e.set = Set(rd(1)[0])
-	setWords(e.area.words()[:], rd(0x800))
+	e.set = Set(f.Set)
+	e.area = f.Area
 	wallsA, wallsB := e.area.WallsA, e.area.WallsB
 	e.area.WallsA, e.area.WallsB = [3]uint16{}, [3]uint16{}
 	e.fileWallsA, e.fileWallsB = wallsA, wallsB
-	setWords(e.game.words()[:], rd(0x800))
-	setWords(e.aux[:], rd(0x400))
-	copy(e.ecl, rd(0x1E00))
-	pos := rd(5)
-	e.posX, e.posY, e.facing = int(pos[0]), int(pos[1]), int(pos[2])
-	e.pos3, e.pos4 = pos[3], pos[4]
-	e.viewMode = int(rd(1)[0])
-	e.beginFlag = rd(1)[0]
-	count := int(rd(1)[0])
-	names := rd(0x148)
+	e.game, e.aux = f.Game, f.Aux
+	copy(e.ecl, f.ECL[:])
+	e.posX, e.posY, e.facing = int(f.X), int(f.Y), int(f.Facing)
+	e.pos3, e.pos4 = f.Pos3, f.Pos4
+	e.viewMode = int(f.ViewMode)
+	e.beginFlag = f.BeginFlag
 	w := e.area.ViewFlags
 	e.viewBit1, e.viewBit0 = byte(w>>1), byte(w&1)
 	e.msgDelay = byte(e.area.MsgDelay)
 	e.setPartyCount(0)
 	e.party, e.partySel = nil, 0
-	e.purse = readPurse(b[p:])
-	for i := 0; i < count && i < 8; i++ {
-		ps := names[i*0x29:]
-		n := int(ps[0])
-		if n > 40 {
-			n = 40
-		}
-		nm := makeFileName(removeSubstr(string(ps[1:1+n]), "."))
+	e.purse = readPurse(b[n:])
+	for i := 0; i < int(f.Count) && i < len(f.Names); i++ {
+		nm := makeFileName(removeSubstr(f.Names[i].String(), "."))
 		if e.fileExists(e.savePath(nm + ".sav")) {
 			c := &Character{}
 			if e.LoadCharacter(nm, c, true) {
@@ -507,26 +509,22 @@ func (e *Engine) saveSlot(key byte) {
 	e.area.MsgDelay = uint16(e.msgDelay)
 	e.area.ViewFlags = uint16(e.viewBit1)*2 + uint16(e.viewBit0)
 	e.game.SymbolSet = uint16(e.set)
-	b := []byte{byte(e.set)}
-	area := e.area
+	f := saveFile{Set: byte(e.set), Area: e.area, Game: e.game, Aux: e.aux}
 	for i := range 3 {
-		area.WallsA[i] = uint16(e.mapPairA[i])
-		area.WallsB[i] = uint16(e.mapPairB[i])
+		f.Area.WallsA[i] = uint16(e.mapPairA[i])
+		f.Area.WallsB[i] = uint16(e.mapPairB[i])
 	}
-	e.fileWallsA, e.fileWallsB = area.WallsA, area.WallsB
-	b = append(b, wordsBytes(area.words()[:])...)
-	b = append(b, wordsBytes(e.game.words()[:])...)
-	b = append(b, wordsBytes(e.aux[:])...)
-	b = append(b, e.ecl...)
-	b = append(b, byte(e.posX), byte(e.posY), byte(e.facing), e.pos3, e.pos4)
-	b = append(b, byte(e.viewMode), e.beginFlag, byte(len(e.party)))
-	names := make([]byte, 0x148)
+	e.fileWallsA, e.fileWallsB = f.Area.WallsA, f.Area.WallsB
+	copy(f.ECL[:], e.ecl)
+	f.X, f.Y, f.Facing, f.Pos3, f.Pos4 = byte(e.posX), byte(e.posY), byte(e.facing), e.pos3, e.pos4
+	f.ViewMode, f.BeginFlag, f.Count = byte(e.viewMode), e.beginFlag, byte(len(e.party))
 	for i := range e.party {
-		s := "CHRDAT" + string(key) + strconv.Itoa(i+1)
-		names[i*0x29] = byte(len(s))
-		copy(names[i*0x29+1:], s)
+		f.Names[i].Set("CHRDAT" + string(key) + strconv.Itoa(i+1))
 	}
-	b = append(b, names...)
+	b, err := binary.Append(nil, binary.LittleEndian, &f)
+	if err != nil {
+		panic(err)
+	}
 	b = appendPurse(b, e.purse)
 	os.MkdirAll(e.Cfg.SaveDir, 0o755)
 	path := e.savePath("savgam" + string(key) + ".dat")

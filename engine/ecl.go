@@ -6,9 +6,32 @@ import (
 )
 
 // ECL virtual-machine support, ported from ovr08. Addresses are ECL
-// addresses; the code image is loaded at base 0x9900 (DS:49DE buffer).
+// addresses (ovr08:06FB): words of the three script variable records
+// (vars.go), the code image (loaded at eclBase, the DS:49DE buffer) and
+// special addresses above it.
+const (
+	areaVarBase = 0x4900 // area record word 0 (to 0x4CFF)
+	gameVarBase = 0x6B00 // game record (to 0x6EFF); word 0 is the selected character's name
+	auxVarBase  = 0x9700 // aux record (to 0x98FF)
+	eclBase     = 0x9900 // the code image (to 0xB6FF)
 
-const eclBase = 0x9900
+	eclPicHead, eclPicBody = 0x49FD, 0x49FE // area words: writing one redraws the portrait
+	eclAreaScratch         = 0x4A00         // area words 0x4A00..0x4A1F, cleared by a fresh area
+	eclGameScratch         = 0x6E79         // game words 0x6E79..0x6E82, likewise
+	eclSpecialLow          = 0xBF68         // write-only specials eclSpecialLow+0xE3.. (position, facing, shades)
+	eclSpecialHigh         = 0xC04B         // read-only specials: x, y, facing/2, wall ahead, cell
+)
+
+// varSpace is what an ECL address refers to (addrKind).
+type varSpace int
+
+const (
+	spaceArea varSpace = iota
+	spaceGame
+	spaceAux
+	spaceCode
+	spaceSpecial
+)
 
 // eclState mirrors the DS globals used by the interpreter.
 type eclState struct {
@@ -46,30 +69,31 @@ type eclState struct {
 	picHead, picBody                   byte       // DS:49FD/49FE
 }
 
-func (e *Engine) eclByte(a int) byte       { return e.ecl[(a+0x6700)&0xFFFF] }
-func (e *Engine) setEclByte(a int, v byte) { e.ecl[(a+0x6700)&0xFFFF] = v }
+// eclByte / setEclByte read and write the code image at ECL address a.
+func (e *Engine) eclByte(a int) byte       { return e.ecl[uint16(a-eclBase)] }
+func (e *Engine) setEclByte(a int, v byte) { e.ecl[uint16(a-eclBase)] = v }
 
 // addrKind = ovr08:06FB.
-func addrKind(a int) int {
+func addrKind(a int) varSpace {
 	switch {
-	case a >= 0x4900 && a <= 0x4CFF:
-		return 0
-	case a >= 0x6B00 && a <= 0x6EFF:
-		return 1
-	case a >= 0x9700 && a <= 0x98FF:
-		return 2
-	case a >= 0x9900 && a <= 0xB6FF:
-		return 3
+	case a >= areaVarBase && a <= 0x4CFF:
+		return spaceArea
+	case a >= gameVarBase && a <= 0x6EFF:
+		return spaceGame
+	case a >= auxVarBase && a <= 0x98FF:
+		return spaceAux
+	case a >= eclBase && a <= 0xB6FF:
+		return spaceCode
 	}
-	return 4
+	return spaceSpecial
 }
 
-func (e *Engine) areaVar(a int) uint16         { return e.area.words()[a-0x4900] }
-func (e *Engine) setAreaVar(a int, v uint16)   { e.area.words()[a-0x4900] = v }
-func (e *Engine) globalVar(a int) uint16       { return e.game.words()[a-0x6B00] }
-func (e *Engine) setGlobalVar(a int, v uint16) { e.game.words()[a-0x6B00] = v }
-func (e *Engine) blk3Var(a int) uint16         { return e.aux[a-0x9700] }
-func (e *Engine) setBlk3Var(a int, v uint16)   { e.aux[a-0x9700] = v }
+func (e *Engine) areaVar(a int) uint16         { return *e.area.word(a - areaVarBase) }
+func (e *Engine) setAreaVar(a int, v uint16)   { *e.area.word(a - areaVarBase) = v }
+func (e *Engine) globalVar(a int) uint16       { return *e.game.word(a - gameVarBase) }
+func (e *Engine) setGlobalVar(a int, v uint16) { *e.game.word(a - gameVarBase) = v }
+func (e *Engine) blk3Var(a int) uint16         { return e.aux[a-auxVarBase] }
+func (e *Engine) setBlk3Var(a int, v uint16)   { e.aux[a-auxVarBase] = v }
 
 func (e *Engine) selected() *Character {
 	if len(e.party) == 0 {
@@ -90,7 +114,7 @@ func (e *Engine) partyIndex(c *Character) int { // ovr08:0756
 // readSpecialGlobal = ovr08:07BC.
 func (e *Engine) readSpecialGlobal(a int) (uint16, bool) {
 	c := e.selected()
-	switch off := a - 0x6B00; off {
+	switch off := a - gameVarBase; off {
 	case 0x18:
 		return uint16(c.Stats[statCon]), true
 	case 0x9B:
@@ -175,7 +199,7 @@ func (e *Engine) readSpecialGlobal(a int) (uint16, bool) {
 // writeSpecialGlobal = ovr08:0A74.
 func (e *Engine) writeSpecialGlobal(a int, v uint16) {
 	c := e.selected()
-	off := a - 0x6B00
+	off := a - gameVarBase
 	switch {
 	case off == 0:
 		if v == 0 {
@@ -233,20 +257,20 @@ func (e *Engine) writeSpecialGlobal(a int, v uint16) {
 // WriteVar = ovr08:0C77.
 func (e *Engine) WriteVar(a int, v uint16) {
 	switch addrKind(a) {
-	case 0:
+	case spaceArea:
 		e.setAreaVar(a, v)
-		if a == 0x49FD || a == 0x49FE {
+		if a == eclPicHead || a == eclPicBody {
 			e.es.portraitChanged = 1
 		}
-	case 1:
+	case spaceGame:
 		e.setGlobalVar(a, v)
 		e.writeSpecialGlobal(a, v)
-	case 2:
+	case spaceAux:
 		e.setBlk3Var(a, v)
-	case 3:
+	case spaceCode:
 		e.setEclByte(a, byte(v))
-	case 4:
-		if a < 0xBF68 {
+	case spaceSpecial:
+		if a < eclSpecialLow {
 			switch a {
 			case 0x3DE:
 				e.es.soundVar = v
@@ -257,7 +281,7 @@ func (e *Engine) WriteVar(a int, v uint16) {
 			}
 			return
 		}
-		switch a - 0xBF68 {
+		switch a - eclSpecialLow {
 		case 0xE3:
 			e.es.posChanged = 1
 			e.posX = int(v)
@@ -281,19 +305,19 @@ func (e *Engine) WriteVar(a int, v uint16) {
 // ReadVar = ovr08:0E0C.
 func (e *Engine) ReadVar(a int) uint16 {
 	switch addrKind(a) {
-	case 0:
+	case spaceArea:
 		return e.areaVar(a)
-	case 1:
+	case spaceGame:
 		if r, ok := e.readSpecialGlobal(a); ok {
 			return r
 		}
 		return e.globalVar(a)
-	case 2:
+	case spaceAux:
 		return e.blk3Var(a)
-	case 3:
+	case spaceCode:
 		return uint16(e.eclByte(a))
 	}
-	if a < 0xC04B {
+	if a < eclSpecialHigh {
 		switch a {
 		case 0xB1:
 			return e.es.specialB1
@@ -306,7 +330,7 @@ func (e *Engine) ReadVar(a int) uint16 {
 		}
 		return 0
 	}
-	switch a - 0xC04B {
+	switch a - eclSpecialHigh {
 	case 0:
 		return uint16(int16(int8(e.posX)))
 	case 1:
@@ -323,7 +347,7 @@ func (e *Engine) ReadVar(a int) uint16 {
 
 // WriteStringVar = ovr08:0F53.
 func (e *Engine) WriteStringVar(a int, s string) {
-	if addrKind(a) == 1 && a == 0x6B00 {
+	if addrKind(a) == spaceGame && a == gameVarBase {
 		e.selected().SetName(s)
 		return
 	}
@@ -333,13 +357,13 @@ func (e *Engine) WriteStringVar(a int, s string) {
 			v = uint16(s[i])
 		}
 		switch addrKind(a) {
-		case 0:
+		case spaceArea:
 			e.setAreaVar(a+i, v)
-		case 1:
+		case spaceGame:
 			e.setGlobalVar(a+i, v)
-		case 2:
+		case spaceAux:
 			e.setBlk3Var(a+i, v)
-		case 3:
+		case spaceCode:
 			e.setEclByte(a+i, byte(v))
 		}
 	}
@@ -347,20 +371,20 @@ func (e *Engine) WriteStringVar(a int, s string) {
 
 // readStringVar = ovr08:12FB.
 func (e *Engine) readStringVar(a int) string {
-	if addrKind(a) == 1 && a == 0x6B00 {
+	if addrKind(a) == spaceGame && a == gameVarBase {
 		return e.selected().Name()
 	}
 	var b []byte
 	for i := 0; i < 255; i++ {
 		var v uint16
 		switch addrKind(a) {
-		case 0:
+		case spaceArea:
 			v = e.areaVar(a + i)
-		case 1:
+		case spaceGame:
 			v = e.globalVar(a + i)
-		case 2:
+		case spaceAux:
 			v = e.blk3Var(a + i)
-		case 3:
+		case spaceCode:
 			v = uint16(e.eclByte(a + i))
 		}
 		if v == 0 {
@@ -481,10 +505,10 @@ func (e *Engine) InitAreaScript() {
 	e.area.In3D = 1
 	if !e.loadedGame {
 		for i := 1; i <= 0x20; i++ {
-			e.setAreaVar(0x49FF+i, 0)
+			e.setAreaVar(eclAreaScratch-1+i, 0)
 		}
 		for i := 0; i <= 9; i++ {
-			e.setGlobalVar(0x6E79+i, 0)
+			e.setGlobalVar(eclGameScratch+i, 0)
 		}
 	} else {
 		e.loadedGame = false
@@ -546,33 +570,13 @@ func (e *Engine) Gosub(i int) {
 	e.eclPC = e.ArgAddr(i)
 }
 
-// StepForward = ovr08:19DB.
+// StepForward = ovr08:19DB: one square ahead. The maps never wrap: at the
+// edge the party stays put, as in checkEdge (the original wrapped to the
+// far side).
 func (e *Engine) StepForward() {
-	switch e.facing {
-	case 0:
-		if e.posY > 0 {
-			e.posY--
-		} else {
-			e.posY = 15
-		}
-	case 2:
-		if e.posX < 15 {
-			e.posX++
-		} else {
-			e.posX = 0
-		}
-	case 4:
-		if e.posY < 15 {
-			e.posY++
-		} else {
-			e.posY = 0
-		}
-	case 6:
-		if e.posX > 0 {
-			e.posX--
-		} else {
-			e.posX = 15
-		}
+	x, y := e.posX+dirDX[e.facing], e.posY+dirDY[e.facing]
+	if x >= 0 && x <= 15 && y >= 0 && y <= 15 {
+		e.posX, e.posY = x, y
 	}
 	e.es.cell = e.MapCell(e.posX, e.posY)
 	e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing)

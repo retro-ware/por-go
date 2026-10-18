@@ -2,7 +2,8 @@ package engine
 
 import (
 	"encoding/binary"
-	"unsafe"
+	"fmt"
+	"reflect"
 )
 
 // The script variable records (DS:49D2 area, DS:49D6 game, DS:49DA aux).
@@ -100,26 +101,37 @@ type gameVars struct {
 // auxVars = the aux record (es:[DS:49DA]), script words only.
 type auxVars [0x200]uint16
 
-var (
-	_ [0x800]byte = [unsafe.Sizeof(areaVars{})]byte{}
-	_ [0x800]byte = [unsafe.Sizeof(gameVars{})]byte{}
-)
+// word is script word i of the record: the fields are walked in order,
+// a uint16 counting one word and a [n]uint16 n (ecl.go). The record sizes
+// (0x800 bytes each) are checked by TestVarOffsets.
+func (a *areaVars) word(i int) *uint16 { return recordWord(a, i) }
+func (g *gameVars) word(i int) *uint16 { return recordWord(g, i) }
 
-// words views a record as the script addresses it (ecl.go).
-func (a *areaVars) words() *[0x400]uint16 { return (*[0x400]uint16)(unsafe.Pointer(a)) }
-func (g *gameVars) words() *[0x400]uint16 { return (*[0x400]uint16)(unsafe.Pointer(g)) }
-
-// wordsBytes / setWords convert a record to and from its file layout.
-func wordsBytes(w []uint16) []byte {
-	b := make([]byte, 2*len(w))
-	for i, v := range w {
-		binary.LittleEndian.PutUint16(b[2*i:], v)
+func recordWord(rec any, i int) *uint16 {
+	v := reflect.ValueOf(rec).Elem()
+	for f := range v.NumField() {
+		fv := v.Field(f)
+		n := 1
+		if fv.Kind() == reflect.Array {
+			n = fv.Len()
+		}
+		if i < n {
+			if fv.Kind() == reflect.Array {
+				fv = fv.Index(i)
+			}
+			return fv.Addr().Interface().(*uint16)
+		}
+		i -= n
 	}
-	return b
+	panic(fmt.Sprintf("%T has no script word %d", rec, i))
 }
 
-func setWords(w []uint16, b []byte) {
-	for i := range w {
-		w[i] = binary.LittleEndian.Uint16(b[2*i:])
+// recordBytes is a record (a pointer to areaVars, gameVars or auxVars) in
+// its file layout, little-endian word for word (saves use saveFile).
+func recordBytes(rec any) []byte {
+	b, err := binary.Append(nil, binary.LittleEndian, rec)
+	if err != nil {
+		panic(err)
 	}
+	return b
 }

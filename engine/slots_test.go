@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-	"unsafe"
 )
 
 func TestSlotName(t *testing.T) {
@@ -59,25 +58,31 @@ func TestSaveToKeepsArea(t *testing.T) {
 	}
 }
 
-// The named words sit at the offsets the listings use.
+// The named words sit at the offsets the listings use, as the scripts
+// reach them (word i = byte offset 2i), and each record is 0x800 bytes.
 func TestVarOffsets(t *testing.T) {
 	var a areaVars
 	var g gameVars
-	for _, c := range []struct{ got, want uintptr }{
-		{unsafe.Offsetof(a.MapX), 0x186}, {unsafe.Offsetof(a.Clock), 0x18C}, {unsafe.Offsetof(a.NoMagic), 0x1CA},
-		{unsafe.Offsetof(a.PrevX), 0x1E0}, {unsafe.Offsetof(a.NoCoords), 0x1F6}, {unsafe.Offsetof(a.MarkFlags4), 0x2F8},
-		{unsafe.Offsetof(a.Mark3), 0x318}, {unsafe.Offsetof(a.Mark4Off), 0x33E}, {unsafe.Offsetof(a.RiverOpen), 0x344},
-		{unsafe.Offsetof(a.Boss), 0x366}, {unsafe.Offsetof(a.Mark4), 0x3A4}, {unsafe.Offsetof(a.WallsA), 0x3F4},
-		{unsafe.Offsetof(a.WallsB), 0x3FA}, {unsafe.Offsetof(a.V4B00), 0x400},
-		{unsafe.Offsetof(g.PartyExp), 0x550}, {unsafe.Offsetof(g.MaxDist), 0x580}, {unsafe.Offsetof(g.Morale), 0x58C},
-		{unsafe.Offsetof(g.RestEvery), 0x5A4}, {unsafe.Offsetof(g.LeftMap), 0x5AA}, {unsafe.Offsetof(g.Portrait), 0x5C2},
-		{unsafe.Offsetof(g.Duel), 0x5CC}, {unsafe.Offsetof(g.SymbolSet), 0x624}, {unsafe.Offsetof(g.AttackedAlly), 0x666},
-		{unsafe.Offsetof(g.PartyCount), 0x67C}, {unsafe.Offsetof(g.Shop), 0x6D8}, {unsafe.Offsetof(g.MonsterHit), 0x6E0},
-		{unsafe.Offsetof(g.PartyMove), 0x6E4},
+	for off, f := range map[int]*uint16{
+		0x186: &a.MapX, 0x18C: &a.Clock[0], 0x1CA: &a.NoMagic, 0x1E0: &a.PrevX, 0x1F6: &a.NoCoords,
+		0x2F8: &a.MarkFlags4, 0x318: &a.Mark3, 0x33E: &a.Mark4Off, 0x344: &a.RiverOpen, 0x366: &a.Boss,
+		0x3A4: &a.Mark4, 0x3F4: &a.WallsA[0], 0x3FA: &a.WallsB[0], 0x400: &a.V4B00[0],
 	} {
-		if c.got != c.want {
-			t.Errorf("field at %#x, want %#x", c.got, c.want)
+		if a.word(off/2) != f {
+			t.Errorf("area word at %#x is not the named field", off)
 		}
+	}
+	for off, f := range map[int]*uint16{
+		0x550: &g.PartyExp, 0x580: &g.MaxDist, 0x58C: &g.Morale, 0x5A4: &g.RestEvery, 0x5AA: &g.LeftMap,
+		0x5C2: &g.Portrait, 0x5CC: &g.Duel, 0x624: &g.SymbolSet, 0x666: &g.AttackedAlly,
+		0x67C: &g.PartyCount, 0x6D8: &g.Shop, 0x6E0: &g.MonsterHit, 0x6E4: &g.PartyMove,
+	} {
+		if g.word(off/2) != f {
+			t.Errorf("game word at %#x is not the named field", off)
+		}
+	}
+	if n, m, k := len(recordBytes(&a)), len(recordBytes(&g)), len(recordBytes(&auxVars{})); n != 0x800 || m != 0x800 || k != 0x400 {
+		t.Errorf("record sizes %#x %#x %#x, want 0x800 0x800 0x400", n, m, k)
 	}
 }
 

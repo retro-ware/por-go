@@ -135,8 +135,8 @@ func (e *Engine) TraceState() map[string]string {
 	area.WallsA, area.WallsB = e.fileWallsA, e.fileWallsB
 	area.WallsB[2] = e.viewAnim
 	m := map[string]string{
-		"game": hex.EncodeToString(wordsBytes(e.game.words()[:])), "area": hex.EncodeToString(wordsBytes(area.words()[:])),
-		"aux": hex.EncodeToString(wordsBytes(e.aux[:])), "ecl": hex.EncodeToString(e.ecl),
+		"game": hex.EncodeToString(recordBytes(&e.game)), "area": hex.EncodeToString(recordBytes(&area)),
+		"aux": hex.EncodeToString(recordBytes(&e.aux)), "ecl": hex.EncodeToString(e.ecl),
 	}
 	i := 0
 	for _, c := range e.party {
