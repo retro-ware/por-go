@@ -21,7 +21,7 @@ type Battle struct {
 	CursorAt []image.Point          // the squares the cursor covers (a large combatant's footprint)
 	Marks    []image.Point          // squares framed for a choice (reach of a move, an area of effect)
 	Reach    []image.Point          // squares a click walks to from the main menu (the active unit's move)
-	Paths    map[image.Point][]Step // the walk to each Reach square, the start left out
+	Paths    map[image.Point][]Step // the walk to each Reach square, from the unit's own square
 	Targets  []int                  // units (by ID) a click attacks from the main menu
 	Actions  []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
 	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
@@ -37,7 +37,7 @@ type Effect struct {
 	Pic  image.Image // in combat's colours
 }
 
-// Step is one square of a walk; Free: stepping onto it lets an enemy take a free attack.
+// Step is one square of a walk; Free: leaving it lets an enemy take a free attack.
 type Step struct {
 	image.Point
 	Free bool

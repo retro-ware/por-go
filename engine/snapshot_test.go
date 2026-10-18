@@ -195,7 +195,7 @@ func TestSquareKey(t *testing.T) {
 	if !slices.Contains(v.Battle.Reach, to) {
 		t.Fatalf("(%d,%d) next to the active unit is not in Reach", to.X, to.Y)
 	}
-	if p := v.Battle.Paths[to]; len(p) != 1 || p[0].Point != to {
+	if p := v.Battle.Paths[to]; len(p) != 2 || p[0].Point != image.Pt(u.X, u.Y) || p[1].Point != to {
 		t.Fatalf("path to (%d,%d) next to the active unit: %v", to.X, to.Y, p)
 	}
 	v = keyWait(e, scr, engine.SquareKey(to.X, to.Y)) // at the main menu: walks there and hands back

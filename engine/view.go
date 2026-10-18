@@ -424,7 +424,12 @@ func (e *Engine) ItemsMenu() bool {
 					}
 				}
 			case 'T':
-				if it.Readied == 0 && e.throwableItem(it) {
+				switch {
+				case it.Readied != 0 || !e.throwableItem(it):
+				case e.beginFlag == 5 && len(e.throwTargets(c, it)) == 0: // extra: nobody to throw it at
+					e.BottomMessage("No target in range")
+					key = ' '
+				default:
 					e.ext.throwing = it
 					key = 'E'
 				}

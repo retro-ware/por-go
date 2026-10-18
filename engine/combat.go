@@ -550,15 +550,15 @@ func (e *Engine) moveReach(c *Character) map[[2]int][]int {
 	return out
 }
 
-// walkSteps (extra) are the squares path walks c through, each marked
-// when stepping onto it lets an enemy take a free attack.
+// walkSteps (extra) are the squares path walks c through, its own first,
+// each marked when leaving it lets an enemy take a free attack.
 func (e *Engine) walkSteps(c *Character, path []int) []Step {
 	at := [2]int{e.combatX(c), e.combatY(c)}
-	var out []Step
+	out := []Step{{Point: image.Pt(at[0], at[1])}}
 	for _, d := range path {
-		free := e.provokes(c, at, d)
+		out[len(out)-1].Free = e.provokes(c, at, d)
 		at = [2]int{at[0] + dirDX[d], at[1] + dirDY[d]}
-		out = append(out, Step{image.Pt(at[0], at[1]), free})
+		out = append(out, Step{Point: image.Pt(at[0], at[1])})
 	}
 	return out
 }
@@ -683,7 +683,9 @@ func (e *Engine) throwItem(c *Character) (done bool) {
 	if it.Readied != 0 {
 		var aim aimTarget
 		e.ext.enemiesOnly = true
+		e.snap.targets = e.throwTargets(c, it) // framed for views that draw targets
 		e.playerAim(c, 0xFF, 1, 0, &done, &aim)
+		e.snap.targets = nil
 		e.ext.enemiesOnly = false
 		if slices.Contains(c.Items, it) && it.Readied != 0 {
 			e.readyItem(it)
@@ -993,4 +995,20 @@ func (e *Engine) foeInSight(c *Character) bool {
 		}
 	}
 	return false
+}
+
+// throwTargets (extra) are the foes in sight c could throw it at, as Aim's
+// cycle would offer them with it readied.
+func (e *Engine) throwTargets(c *Character, it *Item) (out []int) {
+	w, saved := c.Slots[slotWeapon], e.near
+	defer func() { c.Slots[slotWeapon], e.near = w, saved }()
+	c.Slots[slotWeapon] = it
+	rng := max(int(e.base(it.Type).Range)-1, 1)
+	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c))
+	for _, n := range e.near {
+		if f := e.combatant(n.index); f != nil && f.Side != c.Side && f.Okay != 0 && e.mayActAgainst(c, f) && e.canTarget(c, f, rng, 1) {
+			out = append(out, int(n.index))
+		}
+	}
+	return out
 }
