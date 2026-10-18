@@ -227,7 +227,8 @@ func (e *Engine) drawIcon(x, y int, dir, pose, slot byte) {
 }
 
 // LoadBackpacIcons = ovr33:0022 (name, first, n): block 1 of the DAX file
-// copied into the tile set from tile first on.
+// copied into the tile set from tile first on, frames 0..n (the Amiga's
+// RANDCOM has two more, which would land on the tiles after it).
 func (e *Engine) LoadBackpacIcons(name string, first, n int) {
 	if first > 0x7F {
 		return // the original stops with a fatal error
@@ -238,7 +239,7 @@ func (e *Engine) LoadBackpacIcons(name string, first, n int) {
 	if im == nil || t == nil {
 		return
 	}
-	for f := 0; f < im.Count && first+f < t.Count && im.BPP == t.BPP; f++ {
+	for f := 0; f <= n && f < im.Count && first+f < t.Count && im.BPP == t.BPP; f++ {
 		copy(t.Frame(first+f), im.Frame(f))
 	}
 }
