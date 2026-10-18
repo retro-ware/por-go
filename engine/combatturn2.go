@@ -502,9 +502,18 @@ func (e *Engine) showWhy(why string) {
 // the status row, and leaves it there.
 func (e *Engine) aimRefused(why string) {
 	e.ClearCells(0, messageRow, lastCol, messageRow)
-	e.MsgDelay()
+	e.statusDelay()
 	e.showWhy(why)
+	e.statusDelay()
+}
+
+// statusDelay (extra): the message delay for text on the combat status row;
+// views are told the menu row is stale meanwhile (no menu is up), so they
+// show the status row alone and never flash the old menu under it.
+func (e *Engine) statusDelay() {
+	e.snap.statusOnly = true
 	e.MsgDelay()
+	e.snap.statusOnly = false
 }
 
 // aimConfirm = ovr14:2C3D (c, cand, mode, var found, var t): take cand as

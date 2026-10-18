@@ -70,12 +70,16 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		p.battle.Draw(dst, v.Battle)
 		frame, k := p.Classic.Frame(scr, note), scale(dst)
 		p.mapBottom = dst.Bounds().Dy() - int(k)*8*3 // the text rows under the map take clicks themselves
-		if v.Menu == nil {                           // typed input, "press a key": the original's two rows
+		if v.Menu == nil && !v.Battle.StatusOnly {   // typed input, "press a key": the original's two rows
 			p.battle.HideBar()
 			p.drawRows(dst, frame, engine.CombatRows, k)
 			return classic.Rect{}
 		}
 		p.drawRows(dst, frame, engine.CombatPanel, k)
+		if v.Menu == nil { // a status row message waits: no menu to show (the row under it is stale)
+			p.battle.HideBar()
+			return classic.Rect{}
+		}
 		for _, m := range v.Party { // whose turn: the portrait card, bottom left
 			if m.Selected {
 				ck := max(1, int(k)/2) // as the bar (ui.K knows only the dungeon view's screen)

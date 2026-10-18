@@ -11,25 +11,26 @@ import (
 
 // Battle is the combat map as the remaster's 3D view needs it.
 type Battle struct {
-	Ground   [25][50]Square
-	Tiles    []image.Image // the tile set by tile number, in combat's colours
-	Floor    color.RGBA    // the ground's colour
-	Dungeon  bool          // tiles 0..DungeonTiles-1 are stone wall pieces (else outdoor things: trees, water ...)
-	Units    []Unit
-	Cursor   image.Point            // the square the cursor was last drawn on
-	CursorOn bool                   // the cursor icon is up (aiming, looking)
-	CursorAt []image.Point          // the squares the cursor covers (a large combatant's footprint)
-	Marks    []image.Point          // squares framed for a choice (reach of a move, an area of effect)
-	Reach    []image.Point          // squares a click walks to from the main menu (the active unit's move)
-	Paths    map[image.Point][]Step // the walk to each Reach square, from the unit's own square
-	Targets  []int                  // units (by ID) a click attacks from the main menu
-	Actions  []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
-	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
-	AreaAt   []image.Point          // the squares a spell's area covers round the aimed square
-	AimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
-	Effects  []Effect               // sprites over the map: a missile, a hit, a fall
-	View     image.Point            // top left square the original shows
-	Strike   Strike                 // the last weapon attack
+	Ground     [25][50]Square
+	Tiles      []image.Image // the tile set by tile number, in combat's colours
+	Floor      color.RGBA    // the ground's colour
+	Dungeon    bool          // tiles 0..DungeonTiles-1 are stone wall pieces (else outdoor things: trees, water ...)
+	Units      []Unit
+	Cursor     image.Point            // the square the cursor was last drawn on
+	CursorOn   bool                   // the cursor icon is up (aiming, looking)
+	CursorAt   []image.Point          // the squares the cursor covers (a large combatant's footprint)
+	Marks      []image.Point          // squares framed for a choice (reach of a move, an area of effect)
+	Reach      []image.Point          // squares a click walks to from the main menu (the active unit's move)
+	Paths      map[image.Point][]Step // the walk to each Reach square, from the unit's own square
+	Targets    []int                  // units (by ID) a click attacks from the main menu
+	Actions    []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
+	Area       bool                   // Marks are a spell's area (else a move's reach or a choice)
+	AreaAt     []image.Point          // the squares a spell's area covers round the aimed square
+	AimWhy     string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
+	StatusOnly bool                   // a message on the status row is being read: the menu row under it is stale, draw the status row alone
+	Effects    []Effect               // sprites over the map: a missile, a hit, a fall
+	View       image.Point            // top left square the original shows
+	Strike     Strike                 // the last weapon attack
 }
 
 // Effect is a sprite the original draws over the map for a moment.
@@ -92,7 +93,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, AimWhy: s.aimWhy, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, AimWhy: s.aimWhy, StatusOnly: s.statusOnly, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {
