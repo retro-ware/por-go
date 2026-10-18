@@ -204,7 +204,8 @@ func GetTime() float64                           { return js.Global().Get("perfo
 // arrive and handed to the callbacks in PollEvents, the way GLFW does it.
 type Window struct {
 	canvas      js.Value
-	w, h        int
+	w, h        int // CSS pixels, as the mouse events count them
+	fw, fh      int // the drawing buffer: device pixels, as GLFW's framebuffer on a Retina Mac
 	cx, cy      float64
 	keys        map[Key]bool
 	buttons     map[MouseButton]bool
@@ -367,14 +368,17 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 	return w, nil
 }
 
-// fit sizes the drawing buffer to the canvas's on-page size (def while it has none).
+// fit sizes the window to the canvas's on-page size (def while it has none) and
+// its drawing buffer to that in device pixels, so a HiDPI screen gets them all.
 func (w *Window) fit(defW, defH int) {
 	w.w, w.h = w.canvas.Get("clientWidth").Int(), w.canvas.Get("clientHeight").Int()
 	if w.w == 0 || w.h == 0 {
 		w.w, w.h = defW, defH
 	}
-	w.canvas.Set("width", w.w)
-	w.canvas.Set("height", w.h)
+	r := max(js.Global().Get("devicePixelRatio").Float(), 1)
+	w.fw, w.fh = int(float64(w.w)*r+0.5), int(float64(w.h)*r+0.5)
+	w.canvas.Set("width", w.fw)
+	w.canvas.Set("height", w.fh)
 }
 
 func (w *Window) moveTo(x, y float64) {
@@ -425,7 +429,7 @@ func (w *Window) SwapBuffers() {
 func (w *Window) ShouldClose() bool                            { return w.shouldClose }
 func (w *Window) SetShouldClose(v bool)                        { w.shouldClose = v }
 func (w *Window) GetSize() (int, int)                          { return w.w, w.h }
-func (w *Window) GetFramebufferSize() (int, int)               { return w.w, w.h }
+func (w *Window) GetFramebufferSize() (int, int)               { return w.fw, w.fh }
 func (w *Window) SetSize(int, int)                             {}
 func (w *Window) GetPos() (int, int)                           { return 0, 0 }
 func (w *Window) SetPos(int, int)                              {}
