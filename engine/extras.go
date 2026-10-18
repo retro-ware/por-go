@@ -106,6 +106,7 @@ type extras struct {
 	aimGround     bool                    // playerAim: an empty square may be aimed at (area spells)
 	aimRefused    string                  // aiming: a click on a square it cannot take, why (said once the key is read)
 	castCancelled bool                    // CastSpell: the player cancelled the aim (the turn goes on)
+	aimEsc        bool                    // aimManual ended on Esc / Exit
 	autoPath      []int                   // the main combat menu's clicked square: moveAttack walks there, then hands back
 	autoAim       *Character              // the main combat menu's clicked foe: aim at it, attack it if it can be
 	aimAfterWalk  *Character              // the clicked foe autoPath walks up to: attacked when the menu comes back

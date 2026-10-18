@@ -619,7 +619,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 			pick := func(sx, sy int, click bool) uint16 {
 				if sx == int(x) && sy == int(y) {
 					if click && ok {
-						return 'T'
+						return 'A' // the menu's Attack (T, the original's Target, is no longer on it)
 					}
 					if click { // extra: say why instead of doing nothing
 						e.ext.aimRefused = why
@@ -704,6 +704,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		case 0x47:
 			dir = 7
 		case 0, 0x45:
+			e.ext.aimEsc = true
 			e.eraseCursor(int(x), int(y))
 			*t = aimTarget{}
 			*found = false
@@ -835,7 +836,12 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		case 'P':
 			by, showBy = 0xFF, 0xFF
 		case 'M':
+			pointed := e.ext.jump != nil // extra: opened by pointing: Esc there leaves the aim, not just the cursor
 			e.aimManual(c, cand, int(rng), showRange, allowGround, found, t)
+			if pointed && !*found && e.ext.aimEsc {
+				key = 'E'
+			}
+			e.ext.aimEsc = false
 			e.iconToSprite(0x19, 0, 0, false)
 			rebuild()
 			showBy = 0
