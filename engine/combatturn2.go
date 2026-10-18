@@ -372,7 +372,25 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		e.ext.jump = &[2]int8{int8(sx), int8(sy)}
 		return 'N'
 	}})
-	key, _ := e.combatInput("Aim:", menu, false)
+	var key byte
+	switch t := e.ext.autoAim; { // extra: the main menu's clicked foe
+	case t == nil:
+		key, _ = e.combatInput("Aim:", menu, false)
+	case t == cand:
+		e.ext.autoAim = nil
+		if menu[0] == 'A' {
+			key = 'A'
+		} else {
+			key, _ = e.combatInput("Aim:", menu, false)
+		}
+	case !e.ext.autoJumped:
+		e.ext.autoJumped = true
+		e.ext.jump = &[2]int8{int8(e.combatX(t)), int8(e.combatY(t))}
+		key = 'N'
+	default: // not among the candidates: aim as usual
+		e.ext.autoAim = nil
+		key, _ = e.combatInput("Aim:", menu, false)
+	}
 	e.regionCut(mark)
 	undo()
 	if key == 'A' {

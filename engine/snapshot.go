@@ -131,6 +131,7 @@ type snapState struct {
 	dungeon  bool          // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
 	effects  []effect      // sprites on the combat page
 	marks    []image.Point // squares markReach framed
+	reach    []image.Point // squares a click on the main combat menu walks to
 	hidden   map[int]bool  // combatants whose icon is off the page (falling, hiding)
 	poses    map[int]byte  // the pose each combatant was last drawn in
 	click    int           // the square (+1) a SquareKey being translated clicks

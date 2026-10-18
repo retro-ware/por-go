@@ -143,6 +143,7 @@ func (e *Engine) playerTurn(c *Character) {
 			e.ext.enemiesOnly = true // extra: Next/Prev pass over allies
 			e.o14_3558(c, 0xFF, 1, 0, &ok, &aim)
 			e.ext.enemiesOnly = false
+			e.ext.autoAim = nil
 			done = ok
 		case 'I':
 			done = e.ItemsMenu() // ovr20:0EF8 (var done)
@@ -233,6 +234,36 @@ func (e *Engine) combatMenu(c *Character) byte {
 		m += "Turn "
 	}
 	m += "Quick Done" // extra: L still opens the Log
+	// extra: click a foe to aim at it (and attack it if it can be), a square in reach to walk there
+	reach := map[[2]int][]int{}
+	if ci.Moves > 0 {
+		reach = e.moveReach(c)
+		delete(reach, [2]int{e.combatX(c), e.combatY(c)})
+	}
+	for sq := range reach {
+		e.snap.reach = append(e.snap.reach, image.Pt(sq[0], sq[1]))
+	}
+	defer func() { e.snap.reach = nil }()
+	mark := e.regionMark()
+	defer e.regionCut(mark)
+	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
+		sx, sy, in := e.combatSquare(cx, cy)
+		if !in {
+			return 0
+		}
+		if who := e.occ[sy][sx]; who > 0 {
+			if t := e.combatant(who); t != nil && t.Side != c.Side {
+				e.ext.autoAim, e.ext.autoJumped = t, false
+				return 'A'
+			}
+			return 0
+		}
+		if p, ok := reach[[2]int{sx, sy}]; ok {
+			e.ext.autoPath = append([]int(nil), p...)
+			return 'M'
+		}
+		return 0
+	}})
 	for {
 		e.ext.hiddenKeys = "L" // extra: the Log, off the bar
 		key, extra := e.DisplayInput("", m, 0xD, 0xA, 0xF, true, false)
@@ -291,8 +322,10 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 	mark := e.regionMark()
 	defer e.regionCut(mark)
 	var reach map[[2]int][]int
-	var path []int // extra: the steps to a clicked square, taken one by one
-	{              // extra (nav.go): a click on a square next to the character steps there, on a farther reachable one walks there
+	var path []int                // extra: the steps to a clicked square, taken one by one
+	auto := e.ext.autoPath != nil // extra: sent from the main menu: walk there and hand back
+	path, e.ext.autoPath = e.ext.autoPath, nil
+	{ // extra (nav.go): a click on a square next to the character steps there, on a farther reachable one walks there
 		e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
 			sx, sy, in := e.combatSquare(cx, cy)
 			dx, dy := sx-e.combatX(c), sy-e.combatY(c)
@@ -327,6 +360,8 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 			}
 			key = stepLetters[d]
 			e.Delay(0x32)
+		} else if auto {
+			break
 		} else {
 			reach = e.moveReach(c)
 			e.markReach(reach, true)

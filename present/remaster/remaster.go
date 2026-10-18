@@ -167,11 +167,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 // whether k was taken.
 func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	if p.fight {
-		send, taken := p.battle.Key(k)
-		if send != 0 {
-			return []uint16{send}, true
-		}
-		return nil, taken
+		return p.battle.Key(k)
 	}
 	if !p.active || p.view == nil {
 		p.menu = false

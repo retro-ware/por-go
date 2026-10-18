@@ -3,6 +3,7 @@ package engine_test
 import (
 	"image"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -191,12 +192,15 @@ func TestSquareKey(t *testing.T) {
 	if to.X < 0 {
 		t.Skip("active unit boxed in")
 	}
-	if v := keyWait(e, scr, engine.SquareKey(to.X, to.Y)); active(v).X != u.X || active(v).Y != u.Y {
-		t.Fatalf("a square clicked at the menu moved the unit")
+	if !slices.Contains(v.Battle.Reach, to) {
+		t.Fatalf("(%d,%d) next to the active unit is not in Reach", to.X, to.Y)
 	}
-	keyWait(e, scr, 'M')
-	if got := active(keyWait(e, scr, engine.SquareKey(to.X, to.Y))); got.X != to.X || got.Y != to.Y {
+	v = keyWait(e, scr, engine.SquareKey(to.X, to.Y)) // at the main menu: walks there and hands back
+	if got := active(v); got.X != to.X || got.Y != to.Y {
 		t.Errorf("clicked square (%d,%d): unit at (%d,%d)", to.X, to.Y, got.X, got.Y)
+	}
+	if v.Menu == nil {
+		t.Errorf("after the walk: no menu (still in Move?)")
 	}
 }
 
@@ -249,5 +253,36 @@ func TestBattleFight(t *testing.T) {
 	}
 	if !fewer {
 		t.Errorf("nobody fell in the whole fight")
+	}
+}
+
+// TestClickFoe: a foe clicked at the main menu is aimed at (the cursor on
+// it), or attacked at once when it can be (the turn moves on).
+func TestClickFoe(t *testing.T) {
+	e, scr, v := battleView(t)
+	var me, foe engine.Unit
+	for _, u := range v.Battle.Units {
+		if u.Active {
+			me = u
+		} else if !u.Party && foe.Name == "" {
+			foe = u
+		}
+	}
+	if foe.Name == "" {
+		t.Skip("no foe")
+	}
+	v = keyWait(e, scr, engine.SquareKey(foe.X, foe.Y))
+	if v.Battle == nil {
+		return // the fight moved off the map (a sheet, the end): the click did something
+	}
+	aimed := v.Battle.CursorOn && v.Battle.Cursor == image.Pt(foe.X, foe.Y)
+	moved := false
+	for _, u := range v.Battle.Units {
+		if u.Active && u.ID != me.ID {
+			moved = true
+		}
+	}
+	if !aimed && !moved {
+		t.Errorf("clicked foe at (%d,%d): neither aimed at nor attacked (cursor %v on %v)", foe.X, foe.Y, v.Battle.Cursor, v.Battle.CursorOn)
 	}
 }

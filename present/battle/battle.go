@@ -12,6 +12,8 @@ import (
 	"image/draw"
 	"math"
 	"math/rand/v2"
+	"slices"
+	"strconv"
 	"time"
 
 	"gpu"
@@ -32,6 +34,7 @@ type Presenter struct {
 	figs                       map[image.Image]*figure // ponytail: never evicted; a few dozen pictures a game
 	bar                        bar
 
+	hint          string  // what the square under the mouse holds, for the bar's prompt line
 	focus, offset vec     // what the camera watches; the W A S D pan from it
 	yaw, yawTo    float64 // camera heading: 0 looks north, as the original's screen
 	dist, distTo  float64 // camera distance in squares
@@ -72,43 +75,74 @@ var (
 	cursorGlow  = [4]float32{1, 0.78, 0.2, 1}
 	markGlow    = [4]float32{0.25, 0.8, 0.85, 1} // the original frames choices in light cyan
 	hoverGlow   = [4]float32{0.45, 0.45, 0.45, 1}
+	reachGlow   = [4]float32{0.015, 0.05, 0.13, 1}
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
-// Key is the XCOM scheme: W A S D pan (held: see pan), Q and E (or [ and ])
-// turn the camera, the wheel (or - and =) zooms, 1..9 and 0 pick the bar's
-// buttons and Backspace ends the turn (Done). It returns the key to send
-// instead (0: none) and whether k was taken.
-func (p *Presenter) Key(k uint16) (uint16, bool) {
+// Key is the XCOM 2 scheme: W A S D pan (held: see pan), Q and E turn,
+// the wheel zooms, Home brings the camera back, 1..9 and 0 pick the bar's
+// buttons, Tab and Shift-Tab cycle the targets, Enter attacks the aimed
+// one and Backspace ends the turn. It returns the keys to send instead and
+// whether k was taken.
+func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 	p.initCamera()
 	if k < 128 && k >= 'A' && k <= 'Z' {
 		k += 'a' - 'A'
 	}
+	shown := len(p.bar.rects) > 0
 	switch {
-	case k == 'q' || k == '[':
+	case k == 'q':
 		p.yawTo -= math.Pi / 4
-	case k == 'e' || k == ']':
+	case k == 'e':
 		p.yawTo += math.Pi / 4
-	case k == '-' || k == engine.MouseKey(engine.MouseWheelDown, 0, 0):
+	case k == engine.MouseKey(engine.MouseWheelDown, 0, 0):
 		p.distTo = min(maxDist, p.distTo*1.15)
-	case k == '=' || k == engine.MouseKey(engine.MouseWheelUp, 0, 0):
+	case k == engine.MouseKey(engine.MouseWheelUp, 0, 0):
 		p.distTo = max(minDist, p.distTo/1.15)
 	case k == 'w' || k == 'a' || k == 's' || k == 'd':
+	case k == 0x4700 && shown: // without the bar (Move's steps) Home is keypad 7
+		p.offset = vec{}
 	case k >= '0' && k <= '9':
 		i := (int(k) - '0' + 9) % 10 // 1 is the first button, 0 the tenth
 		if i < len(p.bar.rects) {
-			return uint16(p.bar.keys[i]), true
+			return []uint16{uint16(p.bar.keys[i])}, true
 		}
 	case k == 8:
-		for i := range p.bar.rects {
-			if p.bar.keys[i] == 'D' {
-				return 'D', true
-			}
+		switch {
+		case p.bar.has("Quit") != 0: // the Done menu
+			return []uint16{uint16(p.bar.has("Quit"))}, true
+		case p.bar.has("Done") != 0:
+			return []uint16{uint16(p.bar.has("Done")), 'Q'}, true
 		}
+	case k == 9 && p.bar.has("Next") != 0:
+		if gpu.IsKeyPressed(gpu.KeyShift) {
+			return []uint16{uint16(p.bar.has("Prev"))}, true
+		}
+		return []uint16{uint16(p.bar.has("Next"))}, true
+	case k == 13 && p.bar.has("Attack") != 0:
+		return []uint16{uint16(p.bar.has("Attack"))}, true
 	default:
-		return 0, false
+		return nil, false
 	}
-	return 0, true
+	return nil, true
+}
+
+// hint says what is on square sq and what a click there does.
+func hint(b *engine.Battle, sq image.Point) string {
+	for _, u := range b.Units {
+		if sq.X < u.X || sq.Y < u.Y || sq.X >= u.X+max(1, u.Size) || sq.Y >= u.Y+max(1, u.Size) {
+			continue
+		}
+		s := u.Name + "  HP " + strconv.Itoa(u.HP) + "  AC " + strconv.Itoa(u.AC)
+		if !u.Party && b.Reach != nil {
+			s = "Attack " + s
+		}
+		return s
+	}
+	if slices.Contains(b.Reach, sq) {
+		return "Move here"
+	}
+	return ""
 }
 
 // pan moves the camera's centre by the held W A S D, relative to its heading.
@@ -235,8 +269,14 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	for _, m := range b.Marks {
 		frame(m.X, m.Y, markGlow, 0)
 	}
-	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok {
+	for _, r := range b.Reach { // where a click walks: XCOM's blue
+		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: reachGlow, Model: place(float32(r.X)+.5, 0.003, float32(r.Y)+.5, 0, .96, .005, .96)}
+		dst.DrawMesh(p.box, p.white, vp, &o)
+	}
+	p.hint = ""
+	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
+		p.hint = hint(b, image.Pt(mx, my))
 	}
 	pulse := float32(0.75 + 0.25*math.Sin(p.clock*5))
 	if b.CursorOn {

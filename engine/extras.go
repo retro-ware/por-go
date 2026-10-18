@@ -101,6 +101,9 @@ type extras struct {
 	regions     []region                // clickable parts of the screen
 	mouseAt     int                     // cell under the pointer + 1 at the last poll
 	jump        *[2]int8                // aimManual: a clicked square for the cursor
+	autoPath    []int                   // the main combat menu's clicked square: moveAttack walks there, then hands back
+	autoAim     *Character              // the main combat menu's clicked foe: aim at it, attack it if it can be
+	autoJumped  bool                    // autoAim's jump to it was tried
 	raw         string                  // the screen reads the arrows itself; its hint line
 	typing      bool                    // InputString is waiting
 	modal       int                     // help or overview shown: any key closes

@@ -20,6 +20,7 @@ type Battle struct {
 	CursorOn bool          // the cursor icon is up (aiming, looking)
 	CursorAt []image.Point // the squares the cursor covers (a large combatant's footprint)
 	Marks    []image.Point // squares framed for a choice (reach of a move, an area of effect)
+	Reach    []image.Point // squares a click walks to from the main menu (the active unit's move)
 	Effects  []Effect      // sprites over the map: a missile, a hit, a fall
 	View     image.Point   // top left square the original shows
 }
@@ -49,6 +50,7 @@ type Unit struct {
 	Icon       image.Image // the combat icon, facing and pose (striking) as the original draws it
 	Active     bool        // whose turn it is
 	Name       string
+	HP, AC     int
 }
 
 // battle builds the snapshot's Battle (nil outside combat).
@@ -59,7 +61,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 	}
 	for part := 0; part <= 3; part++ {
 		if dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part); ok {
@@ -93,7 +95,7 @@ func (e *Engine) battle() *Battle {
 			continue
 		}
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
-			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name()}
+			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), AC: 60 - int(c.AC[0])}
 		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
 			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}
