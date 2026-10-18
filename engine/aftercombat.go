@@ -422,7 +422,7 @@ func (e *Engine) AfterCombat() {
 		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "The END!")
 		e.msgCol, e.msgRow = 2, 6
 		e.DisplayTextBlock(2, 5, 0x25, 0x16, 0xA, true, "The monsters rejoice for the party has been destroyed")
-		e.MessageRow24b(0xD, "Press any key to continue")
+		e.PromptRow24(0xD, "Press any key to continue")
 	}
 	e.slowText = true
 	g := &e.game

@@ -214,16 +214,17 @@ func (e *Engine) isHardier(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// saveBonusClass258 = ovr13:0377: the selected character's class 2/5/8: save +2, to-hit -2.
-func (e *Engine) saveBonusClass258(c *Character, a *Affect, flag byte) {
+// protFromEvil = ovr13:0377: against an evil attacker (the selected
+// character's alignment 2/5/8, alignmentNames), save +2, its to-hit -2.
+func (e *Engine) protFromEvil(c *Character, a *Affect, flag byte) {
 	if v := e.selected().Alignment; v == 2 || v == 5 || v == 8 {
 		e.rv.save += 2
 		e.rv.hitRoll -= 2
 	}
 }
 
-// saveBonusClass036 = ovr13:03AC: the same for 0/3/6.
-func (e *Engine) saveBonusClass036(c *Character, a *Affect, flag byte) {
+// protFromGood = ovr13:03AC: the same against a good one (0/3/6).
+func (e *Engine) protFromGood(c *Character, a *Affect, flag byte) {
 	if v := e.selected().Alignment; v == 0 || v == 3 || v == 6 {
 		e.rv.save += 2
 		e.rv.hitRoll -= 2
@@ -388,7 +389,7 @@ func (e *Engine) hitBonusVsTargetNames(c *Character, a *Affect, flag byte) {
 // mirrorImage = ovr13:09C0: mirror image: an attack may hit an image instead.
 func (e *Engine) mirrorImage(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, int(a.Data)+1) > 1 && e.curSpell > 0 && e.spellOwnTargets == 0 {
-		e.blockAffect(0)
+		e.blockAffect(affAny)
 		e.CharMessage(c, "lost an image", 0xA, true)
 		a.Data--
 		if a.Data == 0 {
@@ -667,7 +668,7 @@ func (e *Engine) resistFirePerDie(c *Character, a *Affect, flag byte) {
 	}
 	e.rv.save += 4
 	if e.rv.dmgType&8 == 0 {
-		e.blockAffect(0)
+		e.blockAffect(affAny)
 	}
 }
 

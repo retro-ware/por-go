@@ -154,5 +154,5 @@ func (e *Engine) lookItem(it *Item) {
 			e.DisplayString(3, y1+3+i, 0xA, s)
 		}
 	}
-	e.MessageRow24b(0xD, "Press any key")
+	e.PromptRow24(0xD, "Press any key")
 }

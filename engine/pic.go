@@ -17,7 +17,7 @@ func (e *Engine) LoadSymbolSet(set, block int) {
 	}
 	e.sym[set] = e.LoadPicMasked(e.set.file("8X8D"), block, 0xD)
 	if e.sym[set] == nil {
-		e.MessageRow24b(0xF, "Unable to load "+e.set.file("8x8D")+"-"+strconv.Itoa(block))
+		e.PromptRow24(0xF, "Unable to load "+e.set.file("8x8D")+"-"+strconv.Itoa(block))
 		e.Exit()
 	}
 }

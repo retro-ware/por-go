@@ -53,7 +53,7 @@ func (e *Engine) opTreasure() {
 	case v < 0x80:
 		b := e.L.Block(e.set.file("ITEM"), v)
 		if len(b) == 0 {
-			e.MessageRow24b(0xF, "Unable to find item file")
+			e.PromptRow24(0xF, "Unable to find item file")
 			e.Exit()
 		}
 		add := readRecords[Item](b, itemRecSize)
@@ -445,7 +445,7 @@ func (e *Engine) opDamage() {
 		e.Delay(3000)
 	}
 	e.partySel = sel
-	e.MessageRow24b(0xF, "press <enter>/<return> to continue")
+	e.PromptRow24(0xF, "press <enter>/<return> to continue")
 }
 
 // opRedrawView = ovr04:2AA2.

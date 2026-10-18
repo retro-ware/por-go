@@ -446,7 +446,7 @@ func (e *Engine) CreateCharacter() {
 					if i == 0 && best[0] == 1800 {
 						msg = "STR 18/xx is for fighters only, max 18"
 					}
-					e.MessageRow24b(0xE, cut(msg, 0x28))
+					e.PromptRow24(0xE, cut(msg, 0x28))
 					tries = 0
 				}
 			}

@@ -65,7 +65,6 @@ type eclState struct {
 	portraitChanged                    byte       // DS:84E8
 	inEncounterMenu                    byte       // DS:84E9
 	shownFace                          byte       // DS:84EA
-	unused70C6                         byte       // DS:70C6
 	picHead, picBody                   byte       // DS:49FD/49FE
 }
 
@@ -491,7 +490,6 @@ func (e *Engine) InitAreaScript() {
 	s.encounterShown = [2]byte{}
 	s.cloneIcon = 8
 	e.eclPC = eclBase
-	s.unused70C6 = 0
 	s.retStack = nil
 	s.flags = [6]bool{}
 	e.game.Portrait = 0xFF
@@ -711,7 +709,7 @@ func (e *Engine) HitMessage(c *Character, dmg int) {
 	if e.msgRow > 0x16 {
 		e.msgRow = 0x11
 		clear = true
-		e.MessageRow24b(0xF, "press <enter>/<return> to continue")
+		e.PromptRow24(0xF, "press <enter>/<return> to continue")
 	}
 	e.msgCol = 0x26
 	e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xF, clear, msg)

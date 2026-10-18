@@ -195,7 +195,7 @@ func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s stri
 			}
 			if e.msgRow > y2 && i < n {
 				e.msgCol, e.msgRow = x1, y1
-				e.MessageRow24b(0xD, "Press any key to continue")
+				e.PromptRow24(0xD, "Press any key to continue")
 				e.ClearKeyboard()
 				e.ClearBox(x1, y1, x2, y2)
 				printSeg(j)

@@ -19,8 +19,8 @@ func (e *Engine) setupAffectHandlers() {
 		affStudyingManual:        (*Engine).startsToTrain,
 		affBonusByTargetRace:     (*Engine).bonusByTargetRace,
 		affTrainingManual:        (*Engine).isHardier,
-		affProtEvil:              (*Engine).saveBonusClass258,
-		affProtGood:              (*Engine).saveBonusClass036,
+		affProtEvil:              (*Engine).protFromEvil,
+		affProtGood:              (*Engine).protFromGood,
 		affResistCold:            (*Engine).resistColdHalf,
 		affCharmed:               (*Engine).charmSide,
 		affEnlarged:              (*Engine).bestStrength,
@@ -51,8 +51,8 @@ func (e *Engine) setupAffectHandlers() {
 		affSlow:                  (*Engine).halveAttacks,
 		affWeakened:              (*Engine).isWeakened,
 		affSick:                  (*Engine).sickDamage,
-		affProtEvilRadius:        (*Engine).saveBonusClass258,
-		affProtGoodRadius:        (*Engine).saveBonusClass036,
+		affProtEvilRadius:        (*Engine).protFromEvil,
+		affProtGoodRadius:        (*Engine).protFromGood,
 		affMinus4VsNames:         (*Engine).minus4VsNames,
 		affMinus4VsBugbearGnoll:  (*Engine).minus4VsBugbearGnoll,
 		affPrayer:                (*Engine).prayerSide,
@@ -111,7 +111,7 @@ func (e *Engine) setupAffectHandlers() {
 		affBlockSleepCharm:       (*Engine).blockSleepCharm,
 		affBlockHold:             (*Engine).block34,
 		affBlockCold:             (*Engine).blockCold,
-		affBlockPoisonHold:       (*Engine).block37And34,
+		affBlockPoisonHold:       (*Engine).blockPoisonHold,
 		affBlockFire:             (*Engine).blockFire,
 		affResistFireLessPerDie:  (*Engine).resistFireLessPerDie,
 		affHalveElectric:         (*Engine).halveElectric,
@@ -168,7 +168,7 @@ func (e *Engine) stoneGaze(c *Character, a *Affect, flag byte) {
 	e.CharMessage(c, "gazes...", 0xA, false)
 	e.hitColours(0x12)
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 4, 0x2D)
-	if e.FindAffect(c, 0x7F) != nil {
+	if e.FindAffect(c, affReflectableGaze) != nil {
 		reflected := false
 		for _, p := range t.Items {
 			if reflected {
@@ -204,9 +204,9 @@ func (e *Engine) charmGaze(c *Character, a *Affect, flag byte) {
 	e.curSpell = 0xA
 	data := byte(int(int8(c.Side))<<7 + 0xC)
 	saved := e.SavingThrow(t, 4, 0xFE)
-	e.AddAffectMsg(t, 0xB, 0, data, 1, 1, saved, "is charmed")
-	if x := e.FindAffect(t, 0xB); x != nil {
-		e.callAffect(0xB, t, x, 0)
+	e.AddAffectMsg(t, affCharmed, 0, data, 1, 1, saved, "is charmed")
+	if x := e.FindAffect(t, affCharmed); x != nil {
+		e.callAffect(affCharmed, t, x, 0)
 	}
 }
 
@@ -300,9 +300,9 @@ func (e *Engine) drainTwoLevels(c *Character, a *Affect, flag byte) {
 // the wasting affect 0x39.
 func (e *Engine) disease(c *Character, a *Affect, flag byte) {
 	t := c.Combat.Target
-	if e.FindAffect(t, 0x32) == nil {
-		e.AddAffect(t, 0x32, 0x3840, 0xFF, 1)
-		e.AddAffect(t, 0x39, 0xA8C0, byte(e.Dice(1, 6)<<4+0xF), 1)
+	if e.FindAffect(t, affMummyDisease) == nil {
+		e.AddAffect(t, affMummyDisease, 0x3840, 0xFF, 1)
+		e.AddAffect(t, affRotting, 0xA8C0, byte(e.Dice(1, 6)<<4+0xF), 1)
 		e.CharMessage(t, "is Diseased", 0xA, true)
 	}
 }
@@ -348,10 +348,10 @@ func (e *Engine) saveBonusVsType0(c *Character, a *Affect, flag byte) {
 // otherwise only drops the affect being added.
 func (e *Engine) resistFireElectric(c *Character, a *Affect, flag byte) {
 	if e.curSpell == 0xF {
-		e.blockAffect(0)
+		e.blockAffect(affAny)
 		e.CharMessage(c, "is unaffected", 0xA, true)
 	} else if e.rv.dmgType&4 != 0 {
-		e.blockAffect(0)
+		e.blockAffect(affAny)
 	}
 }
 
@@ -414,9 +414,9 @@ func (e *Engine) standUpBleeding(c *Character, a *Affect, flag byte) {
 		n = 6
 	}
 	if n > 0 && e.Revive(c, n) {
-		e.AddAffect(c, 0x5F, e.Dice(1, 4)+1, 0xFF, 1)
+		e.AddAffect(c, affFallsDead, e.Dice(1, 4)+1, 0xFF, 1)
 		a.Call = 0
-		e.RemoveAffect(c, 0x63, a)
+		e.RemoveAffect(c, affStandUpBleeding, a)
 	}
 }
 
@@ -424,21 +424,21 @@ func (e *Engine) standUpBleeding(c *Character, a *Affect, flag byte) {
 // starts affect 0x66 for 3d6.
 func (e *Engine) regenUnlessFireAcid(c *Character, a *Affect, flag byte) {
 	if e.rv.dmgType&1 == 0 && e.rv.dmgType&0x10 == 0 {
-		e.AddAffect(c, 0x66, e.Dice(3, 6), 0xFF, 1)
+		e.AddAffect(c, affReviveFull, e.Dice(3, 6), 0xFF, 1)
 	}
 }
 
 // addAffect3B = ovr13:2814 (c, a, flag): adds 0x3B for 3 rounds unless 0x62 or 0x3B is there.
 func (e *Engine) addAffect3B(c *Character, a *Affect, flag byte) {
-	if e.FindAffect(c, 0x62) == nil && e.FindAffect(c, 0x3B) == nil {
-		e.AddAffect(c, 0x3B, 3, 0xFF, 1)
+	if e.FindAffect(c, affHeal3) == nil && e.FindAffect(c, affRegenerating) == nil {
+		e.AddAffect(c, affRegenerating, 3, 0xFF, 1)
 	}
 }
 
 // reviveFull = ovr13:2866 (c, a, flag): back up at full hit points, else re-add 0x66.
 func (e *Engine) reviveFull(c *Character, a *Affect, flag byte) {
 	if !e.Revive(c, c.MaxHP) {
-		e.addAffectNow(c, 0x66, a.Data, 1)
+		e.addAffectNow(c, affReviveFull, a.Data, 1)
 	}
 }
 
@@ -459,7 +459,7 @@ func (e *Engine) resistRoll(base byte) {
 	thr := byte(int(base) - 5*(0xB-lvl))
 	if e.rv.affVal != 0 || e.rv.dmgType&8 != 0 {
 		if byte(e.Dice(1, 100)) <= thr {
-			e.blockAffect(0)
+			e.blockAffect(affAny)
 		}
 	}
 }
@@ -473,15 +473,15 @@ func (e *Engine) resist15(c *Character, a *Affect, flag byte) { e.resistRoll(0xF
 // block90 = ovr13:2992 (c, a, flag): 90%: blocks 0x35 and 0xB.
 func (e *Engine) block90(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, 100) <= 0x5A {
-		e.blockAffect(0x35)
-		e.blockAffect(0xB)
+		e.blockAffect(affAsleep)
+		e.blockAffect(affCharmed)
 	}
 }
 
 // blockSleepCharm = ovr13:29B6 (c, a, flag): blocks 0xB and 0x35.
 func (e *Engine) blockSleepCharm(c *Character, a *Affect, flag byte) {
-	e.blockAffect(0xB)
-	e.blockAffect(0x35)
+	e.blockAffect(affCharmed)
+	e.blockAffect(affAsleep)
 }
 
 // block34 = ovr13:29CB (c, a, flag): blocks 0x34.
@@ -490,14 +490,14 @@ func (e *Engine) block34(c *Character, a *Affect, flag byte) { e.blockAffect(0x3
 // blockCold = ovr13:29D9 (c, a, flag): cold damage (bit 1) is blocked.
 func (e *Engine) blockCold(c *Character, a *Affect, flag byte) {
 	if e.rv.dmgType&2 != 0 {
-		e.blockAffect(0)
+		e.blockAffect(affAny)
 	}
 }
 
-// block37And34 = ovr13:29F0 (c, a, flag): blocks 0x37 and 0x34; saves of type 0 always pass.
-func (e *Engine) block37And34(c *Character, a *Affect, flag byte) {
-	e.blockAffect(0x37)
-	e.blockAffect(0x34)
+// blockPoisonHold = ovr13:29F0 (c, a, flag): blocks poison and Hold Person; saves of type 0 always pass.
+func (e *Engine) blockPoisonHold(c *Character, a *Affect, flag byte) {
+	e.blockAffect(affPoisoned)
+	e.blockAffect(affHeld)
 	if e.rv.saveType == 0 {
 		e.rv.save = 0x64
 	}
@@ -506,7 +506,7 @@ func (e *Engine) block37And34(c *Character, a *Affect, flag byte) {
 // blockFire = ovr13:2A11 (c, a, flag): fire damage (bit 0) is blocked.
 func (e *Engine) blockFire(c *Character, a *Affect, flag byte) {
 	if e.rv.dmgType&1 != 0 {
-		e.blockAffect(0)
+		e.blockAffect(affAny)
 	}
 }
 
@@ -595,8 +595,8 @@ func (e *Engine) spitAcid(c *Character, a *Affect, flag byte) {
 	dmg := e.RollDice(8, 4)
 	saved := e.SavingThrow(t, 3, 0)
 	e.Damage(t, dmg, saveHalf, saved)
-	e.RemoveAffect(c, 0x79, a)
-	e.RemoveAffect(c, 0x50, nil)
+	e.RemoveAffect(c, affSpitAcid, a)
+	e.RemoveAffect(c, affAcidDamage, nil)
 }
 
 // damage3d8Item56 = ovr13:2D38 (c, a, flag): the selected character's readied item of type 0x56
@@ -627,17 +627,17 @@ func (e *Engine) halveOrCancelUnmagic(c *Character, a *Affect, flag byte) {
 // block30 = ovr13:2DE4 (c, a, flag): 30%: blocks 0xB and 0x35.
 func (e *Engine) block30(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, 100) <= 0x1E {
-		e.blockAffect(0xB)
-		e.blockAffect(0x35)
+		e.blockAffect(affCharmed)
+		e.blockAffect(affAsleep)
 	}
 }
 
 // blockMind = ovr13:2E08 (c, a, flag): blocks 0xB, 0x35, 0x34 and 0x37; saves of type 0 pass.
 func (e *Engine) blockMind(c *Character, a *Affect, flag byte) {
-	e.blockAffect(0xB)
-	e.blockAffect(0x35)
-	e.blockAffect(0x34)
-	e.blockAffect(0x37)
+	e.blockAffect(affCharmed)
+	e.blockAffect(affAsleep)
+	e.blockAffect(affHeld)
+	e.blockAffect(affPoisoned)
 	if e.rv.saveType == 0 {
 		e.rv.save = 0x64
 	}
@@ -688,7 +688,7 @@ func (e *Engine) giantStrengthGirdle(c *Character, a *Affect, flag byte) {
 				str, str00 := strDecode(p)
 				// p.Raw[0] is the type byte (the original compares the first byte, not the data)
 				if giant && p.Type < 0x80 || str == 0x12 && str00 == 0x64 && !giant {
-					e.RemoveAffect(c, 0x26, p)
+					e.RemoveAffect(c, affStrength, p)
 					found = true
 				}
 			}
@@ -706,7 +706,7 @@ func (e *Engine) giantStrengthGirdle(c *Character, a *Affect, flag byte) {
 		}
 	}
 	e.itemsRedraw = true // DS:6821
-	e.AddAffect(c, 0x26, 0, out, 1)
+	e.AddAffect(c, affStrength, 0, out, 1)
 }
 
 // cursedAlignment = ovr13:30A5 (c, a, flag): cursed item (a stands in as the item): with the
@@ -740,7 +740,7 @@ func (e *Engine) needsGiantStrength(c *Character, a *Affect, flag byte) {
 // removeEnds17 = ovr13:317A (c, a, flag): removing it ends affect 0x17.
 func (e *Engine) removeEnds17(c *Character, a *Affect, flag byte) {
 	if flag != 0 {
-		e.RemoveAffect(c, 0x17, nil)
+		e.RemoveAffect(c, affSpiritualHammer, nil)
 	}
 }
 
@@ -758,6 +758,6 @@ func (e *Engine) debugValues(msg string, a, b, c int) {
 	}
 	e.ClearBox(0, 0, 0x27, 0)
 	e.DisplayString(0, 0, 0xE, fmt.Sprintf("%d , %d , %d", a, b, c))
-	e.MessageRow24b(0xE, msg)
+	e.PromptRow24(0xE, msg)
 	e.ClearBox(0, 0, 0x27, 0)
 }

@@ -39,7 +39,7 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 		if detect {
 			break
 		}
-		if e.FindAffect(p, 5) != nil {
+		if e.FindAffect(p, affDetectMagic) != nil {
 			detect = true
 		}
 	}
@@ -110,7 +110,7 @@ func (e *Engine) itemStats(typ byte) string {
 // RemoveItem = 00BA:1509 (char, item): unlinks the item and frees it.
 func (e *Engine) RemoveItem(c *Character, it *Item) {
 	if it == nil {
-		e.MessageRow24b(0xE, "Nil Item pointer...")
+		e.PromptRow24(0xE, "Nil Item pointer...")
 		return
 	}
 	for i, x := range c.Items {
@@ -119,7 +119,7 @@ func (e *Engine) RemoveItem(c *Character, it *Item) {
 			return
 		}
 	}
-	e.MessageRow24b(0xE, "Tried to Lose item & couldn't find it!")
+	e.PromptRow24(0xE, "Tried to Lose item & couldn't find it!")
 }
 
 // AddItemCopy = 00BA:15F7 (char, item): a copy of the item at the end of

@@ -6,6 +6,7 @@ package engine
 type affectType byte
 
 const (
+	affAny                   affectType = 0x00 // blockAffect: whatever affect is being added
 	affBless                 affectType = 0x01
 	affCurse                 affectType = 0x02
 	affBonusVsRace4          affectType = 0x03

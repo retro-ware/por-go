@@ -135,11 +135,11 @@ func (e *Engine) fileError(verb, path string) {
 	if len(s) > 40 {
 		s = s[:40]
 	}
-	e.MessageRow24b(0xE, s)
+	e.PromptRow24(0xE, s)
 }
 
-// MessageRow24b = 0709:0BF5: clear row 24, show, wait for a key.
-func (e *Engine) MessageRow24b(colour int, s string) byte {
+// PromptRow24 = 0709:0BF5: clear row 24, show, wait for a key.
+func (e *Engine) PromptRow24(colour int, s string) byte {
 	if e.Trace != nil {
 		e.Trace("0709:0BF5", "MessageRow24b", colour, s)
 	}
@@ -265,7 +265,7 @@ func (e *Engine) LoadCharacter(name string, c *Character, useSav bool) bool {
 func (e *Engine) LoadMonster(index int, c *Character) bool {
 	b := e.L.Block(e.set.file("MON")+"CHA", index)
 	if b == nil {
-		e.MessageRow24b(0xF, "Unable to load monster")
+		e.PromptRow24(0xF, "Unable to load monster")
 		e.Exit()
 		return false
 	}

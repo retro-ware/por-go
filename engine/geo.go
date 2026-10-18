@@ -277,7 +277,7 @@ func (e *Engine) LoadWalldef(block, slot int) {
 	}
 	b := e.L.Block(e.set.file("WALLDEF"), block)
 	if len(b) == 0 || slot+len(b)/walldefSet > 4 {
-		e.MessageRow24b(0xF, "Unable to load wallset in LoadWallSet.")
+		e.PromptRow24(0xF, "Unable to load wallset in LoadWallSet.")
 		return
 	}
 	reloc := byte(symFix[slot] - symFix[1])
@@ -318,7 +318,7 @@ func (e *Engine) LoadWalldef(block, slot int) {
 func (e *Engine) LoadGeo(n int) {
 	b := e.L.Block(e.set.file("GEO"), n)
 	if len(b) != 0 && len(b) != geoSize {
-		e.MessageRow24b(0xF, "Unable to load geo in Load3DMap.")
+		e.PromptRow24(0xF, "Unable to load geo in Load3DMap.")
 	}
 	if len(b) >= geoSize {
 		copy(e.gs.geo[:], b[2:geoSize])

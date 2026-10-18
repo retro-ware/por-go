@@ -359,7 +359,7 @@ func (e *Engine) PartyOverview() {
 		e.S.Unlock()
 		y += 2
 	}
-	e.MessageRow24b(0xF, "press any key to continue")
+	e.PromptRow24(0xF, "press any key to continue")
 	e.ClearRow24()
 	e.DrawMainScreen()
 }

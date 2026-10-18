@@ -80,7 +80,7 @@ func (e *Engine) drawPicAt(x, y int, overlay bool, im *dax.Image) {
 // own cell offset inside the view window.
 func (e *Engine) DrawAnimFrame(frame int) {
 	if frame < 1 || frame > 3 {
-		e.MessageRow24b(0xF, "Illegal range in Show3DSprite.")
+		e.PromptRow24(0xF, "Illegal range in Show3DSprite.")
 		e.Exit()
 		return
 	}
