@@ -91,6 +91,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture) {
 		p.shown, p.active, p.menu = "", false, false // back from elsewhere: no tween from where the view was
+		p.asked = ""                                 // and a question still waiting on return (View from the loot menu) pops up again
 		return p.Classic.Draw(dst, scr, note)
 	}
 	p.active = true
