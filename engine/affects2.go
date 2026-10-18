@@ -9,144 +9,137 @@ import "fmt"
 // original stores overlay thunk addresses; here the slots get the Go methods.
 // Unlisted numbers keep no handler.
 func (e *Engine) setupAffectHandlers() {
-	affectHandlers[0x01] = (*Engine).hitBonusUp
-	affectHandlers[0x02] = (*Engine).hitBonusDown
-	affectHandlers[0x03] = (*Engine).bonusVsRace4
-	affectHandlers[0x04] = (*Engine).startsToTrain
-	affectHandlers[0x05] = (*Engine).affectNop319B
-	affectHandlers[0x06] = (*Engine).bonusByTargetRace
-	affectHandlers[0x07] = (*Engine).isHardier
-	affectHandlers[0x08] = (*Engine).saveBonusClass258
-	affectHandlers[0x09] = (*Engine).saveBonusClass036
-	affectHandlers[0x0A] = (*Engine).resistColdHalf
-	affectHandlers[0x0B] = (*Engine).charmSide
-	affectHandlers[0x0C] = (*Engine).bestStrength
-	affectHandlers[0x0D] = (*Engine).affectNop319B
-	affectHandlers[0x0E] = (*Engine).setCharisma
-	affectHandlers[0x0F] = (*Engine).poisonDamage
-	affectHandlers[0x10] = (*Engine).affectNop0647
-	affectHandlers[0x11] = (*Engine).armourAtLeast
-	affectHandlers[0x12] = (*Engine).hitBonusVsNames
-	affectHandlers[0x13] = (*Engine).affectNop319B
-	affectHandlers[0x14] = (*Engine).resistFireHalf
-	affectHandlers[0x15] = (*Engine).isSilenced
-	affectHandlers[0x16] = (*Engine).poisonEnds
-	affectHandlers[0x17] = (*Engine).cursedItemToggle
-	affectHandlers[0x18] = (*Engine).affectNop319B
-	affectHandlers[0x19] = (*Engine).blindedToHit
-	affectHandlers[0x1A] = (*Engine).hitBonusVsTargetNames
-	affectHandlers[0x1B] = (*Engine).affectNop319B
-	affectHandlers[0x1C] = (*Engine).mirrorImage
-	affectHandlers[0x1D] = (*Engine).damageLessQuarter
-	affectHandlers[0x1E] = (*Engine).coughingEnds
-	affectHandlers[0x1F] = (*Engine).clearCombatBlock
-	affectHandlers[0x20] = (*Engine).collapses
-	affectHandlers[0x21] = (*Engine).minus4All
-	affectHandlers[0x22] = (*Engine).weakAndSick
-	affectHandlers[0x23] = (*Engine).plusOneSaveHit
-	affectHandlers[0x24] = (*Engine).minus4HitSave
-	affectHandlers[0x25] = (*Engine).alwaysMissDelayed
-	affectHandlers[0x26] = (*Engine).bestStrength
-	affectHandlers[0x27] = (*Engine).agesOnce
-	affectHandlers[0x28] = (*Engine).clearStinkingCloud
-	affectHandlers[0x29] = (*Engine).avoidUnmagicWeapon
-	affectHandlers[0x2A] = (*Engine).halveAttacks
-	affectHandlers[0x2B] = (*Engine).isWeakened
-	affectHandlers[0x2C] = (*Engine).sickDamage
-	affectHandlers[0x2D] = (*Engine).saveBonusClass258
-	affectHandlers[0x2E] = (*Engine).saveBonusClass036
-	affectHandlers[0x2F] = (*Engine).minus4VsNames
-	affectHandlers[0x30] = (*Engine).minus4VsBugbearGnoll
-	affectHandlers[0x31] = (*Engine).prayerSide
-	affectHandlers[0x32] = (*Engine).healOverTime
-	affectHandlers[0x33] = (*Engine).clearCombatBlock
-	affectHandlers[0x34] = (*Engine).clearCombatBlock
-	affectHandlers[0x35] = (*Engine).clearCombatBlock
-	affectHandlers[0x36] = (*Engine).affectNop1355
-	affectHandlers[0x37] = (*Engine).affectNop135C
-	affectHandlers[0x38] = (*Engine).turnInvisible
-	affectHandlers[0x39] = (*Engine).rots
-	affectHandlers[0x3A] = (*Engine).heldNoMoves
-	affectHandlers[0x3B] = (*Engine).addAffect62
-	affectHandlers[0x3C] = (*Engine).affectNop319B
-	affectHandlers[0x3D] = (*Engine).resistFirePerDie
-	affectHandlers[0x3E] = (*Engine).regenerate
-	affectHandlers[0x3F] = (*Engine).affectNop319B
-	affectHandlers[0x40] = (*Engine).poisonBite
-	affectHandlers[0x41] = (*Engine).poisonBite4
-	affectHandlers[0x42] = (*Engine).poisonBite2
-	affectHandlers[0x43] = (*Engine).paralyse2d8
-	affectHandlers[0x44] = (*Engine).paralyseNotElf
-	affectHandlers[0x45] = (*Engine).paralyse1d9
-	affectHandlers[0x46] = (*Engine).poisonBiteMinus2
-	affectHandlers[0x47] = (*Engine).missMinus4
-	affectHandlers[0x48] = (*Engine).mostlyInvisible
-	affectHandlers[0x49] = (*Engine).rake
-	affectHandlers[0x4A] = (*Engine).strikeTied
-	affectHandlers[0x4B] = (*Engine).bloodDrain
-	affectHandlers[0x4C] = (*Engine).holdTarget
-	affectHandlers[0x4D] = (*Engine).holdWeakTarget
-	affectHandlers[0x4E] = (*Engine).getUpOrWait
-	affectHandlers[0x4F] = (*Engine).magicDamage2d10
-	affectHandlers[0x50] = (*Engine).acidDamage1d4
-	affectHandlers[0x51] = (*Engine).fear
-	affectHandlers[0x52] = (*Engine).fearLifted
-	affectHandlers[0x53] = (*Engine).stoneGaze
-	affectHandlers[0x54] = (*Engine).charmGaze
-	affectHandlers[0x55] = (*Engine).drainOneLevel
-	affectHandlers[0x56] = (*Engine).drainTwoLevels
-	affectHandlers[0x57] = (*Engine).disease
-	affectHandlers[0x59] = (*Engine).firstHitMark
-	affectHandlers[0x5A] = (*Engine).saveBonusVsType0
-	affectHandlers[0x5B] = (*Engine).resistFireElectric
-	affectHandlers[0x5C] = (*Engine).affectNop319B
-	affectHandlers[0x5D] = (*Engine).halveFire
-	affectHandlers[0x5E] = (*Engine).halveVsWeaponFlags
-	affectHandlers[0x5F] = (*Engine).fallsDead
-	affectHandlers[0x60] = (*Engine).onlyMagicWeapons
-	affectHandlers[0x61] = (*Engine).saveBonusVsType42
-	affectHandlers[0x62] = (*Engine).heal3
-	affectHandlers[0x63] = (*Engine).standUpBleeding
-	affectHandlers[0x64] = (*Engine).regenUnlessFireAcid
-	affectHandlers[0x65] = (*Engine).addAffect3B
-	affectHandlers[0x66] = (*Engine).reviveFull
-	affectHandlers[0x67] = (*Engine).gaseousEscape
-	affectHandlers[0x68] = (*Engine).avoidDistant3C
-	affectHandlers[0x69] = (*Engine).resist50
-	affectHandlers[0x6A] = (*Engine).resist15
-	affectHandlers[0x6B] = (*Engine).block90
-	affectHandlers[0x6C] = (*Engine).blockSleepCharm
-	affectHandlers[0x6D] = (*Engine).block34
-	affectHandlers[0x6E] = (*Engine).blockCold
-	affectHandlers[0x6F] = (*Engine).block37And34
-	affectHandlers[0x70] = (*Engine).blockFire
-	affectHandlers[0x71] = (*Engine).resistFireLessPerDie
-	affectHandlers[0x72] = (*Engine).halveElectric
-	affectHandlers[0x73] = (*Engine).halveUnlessPlainWeapon
-	affectHandlers[0x74] = (*Engine).halveVsMagicWeapon
-	affectHandlers[0x75] = (*Engine).damage1d6Item55
-	affectHandlers[0x76] = (*Engine).halveCold
-	affectHandlers[0x77] = (*Engine).onlyMagicOrStrong
-	affectHandlers[0x78] = (*Engine).avoidItem57
-	affectHandlers[0x79] = (*Engine).spitAcid
-	affectHandlers[0x7A] = (*Engine).damage3d8Item56
-	affectHandlers[0x7B] = (*Engine).halveOrCancelUnmagic
-	affectHandlers[0x7C] = (*Engine).block30
-	affectHandlers[0x7D] = (*Engine).blockMind
-	affectHandlers[0x7E] = (*Engine).gazeReflected
-	affectHandlers[0x7F] = (*Engine).affectNop319B
-	affectHandlers[0x80] = (*Engine).itemGrantsAffect
-	affectHandlers[0x81] = (*Engine).itemGrantsAffect
-	affectHandlers[0x82] = (*Engine).itemGrantsAffect
-	affectHandlers[0x83] = (*Engine).giantStrengthGirdle
-	affectHandlers[0x84] = (*Engine).cursedAlignment
-	affectHandlers[0x85] = (*Engine).itemGrantsAffect
-	affectHandlers[0x86] = (*Engine).itemGrantsAffect
-	affectHandlers[0x87] = (*Engine).needsGiantStrength
-	affectHandlers[0x88] = (*Engine).itemGrantsAffect
-	affectHandlers[0x89] = (*Engine).removeEnds17
-	affectHandlers[0x8A] = (*Engine).itemGrantsAffect
-	affectHandlers[0x8B] = (*Engine).itemGrantsAffect
+	for t, h := range map[affectType]AffectHandler{
+		affBless:                 (*Engine).hitBonusUp,
+		affCurse:                 (*Engine).hitBonusDown,
+		affBonusVsRace4:          (*Engine).bonusVsRace4,
+		affStudyingManual:        (*Engine).startsToTrain,
+		affBonusByTargetRace:     (*Engine).bonusByTargetRace,
+		affTrainingManual:        (*Engine).isHardier,
+		affProtEvil:              (*Engine).saveBonusClass258,
+		affProtGood:              (*Engine).saveBonusClass036,
+		affResistCold:            (*Engine).resistColdHalf,
+		affCharmed:               (*Engine).charmSide,
+		affEnlarged:              (*Engine).bestStrength,
+		affFriends:               (*Engine).setCharisma,
+		affPoisonDamage:          (*Engine).poisonDamage,
+		affShield:                (*Engine).armourAtLeast,
+		affHitBonusVsNames:       (*Engine).hitBonusVsNames,
+		affResistFire:            (*Engine).resistFireHalf,
+		affSilenced:              (*Engine).isSilenced,
+		affSlowPoison:            (*Engine).poisonEnds,
+		affSpiritualHammer:       (*Engine).cursedItemToggle,
+		affInvisible:             (*Engine).blindedToHit,
+		affHitBonusVsTargetNames: (*Engine).hitBonusVsTargetNames,
+		affMirrorImage:           (*Engine).mirrorImage,
+		affEnfeebled:             (*Engine).damageLessQuarter,
+		affCoughing:              (*Engine).coughingEnds,
+		affHelpless:              (*Engine).clearCombatBlock,
+		affAnimated:              (*Engine).collapses,
+		affBlind:                 (*Engine).minus4All,
+		affCauseDisease:          (*Engine).weakAndSick,
+		affPrayerBonus:           (*Engine).plusOneSaveHit,
+		affBestowCurse:           (*Engine).minus4HitSave,
+		affBlink:                 (*Engine).alwaysMissDelayed,
+		affStrength:              (*Engine).bestStrength,
+		affHaste:                 (*Engine).agesOnce,
+		affStinkingCloud:         (*Engine).clearStinkingCloud,
+		affProtMissiles:          (*Engine).avoidUnmagicWeapon,
+		affSlow:                  (*Engine).halveAttacks,
+		affWeakened:              (*Engine).isWeakened,
+		affSick:                  (*Engine).sickDamage,
+		affProtEvilRadius:        (*Engine).saveBonusClass258,
+		affProtGoodRadius:        (*Engine).saveBonusClass036,
+		affMinus4VsNames:         (*Engine).minus4VsNames,
+		affMinus4VsBugbearGnoll:  (*Engine).minus4VsBugbearGnoll,
+		affPrayer:                (*Engine).prayerSide,
+		affMummyDisease:          (*Engine).healOverTime,
+		affSnakeCharm:            (*Engine).clearCombatBlock,
+		affHeld:                  (*Engine).clearCombatBlock,
+		affAsleep:                (*Engine).clearCombatBlock,
+		affTurnInvisible:         (*Engine).turnInvisible,
+		affRotting:               (*Engine).rots,
+		affHeldFast:              (*Engine).heldNoMoves,
+		affRegenerating:          (*Engine).addAffect62,
+		affFireResistance:        (*Engine).resistFirePerDie,
+		affRegenerate:            (*Engine).regenerate,
+		affPoisonBite:            (*Engine).poisonBite,
+		affPoisonBite4:           (*Engine).poisonBite4,
+		affPoisonBite2:           (*Engine).poisonBite2,
+		affParalyse2d8:           (*Engine).paralyse2d8,
+		affParalyseNotElf:        (*Engine).paralyseNotElf,
+		affParalyse1d9:           (*Engine).paralyse1d9,
+		affPoisonBiteMinus2:      (*Engine).poisonBiteMinus2,
+		affMonsterInvisible:      (*Engine).missMinus4,
+		affCamouflaged:           (*Engine).mostlyInvisible,
+		affRake:                  (*Engine).rake,
+		affStrikeTied:            (*Engine).strikeTied,
+		affBloodDrain:            (*Engine).bloodDrain,
+		affHoldTarget:            (*Engine).holdTarget,
+		affHoldWeakTarget:        (*Engine).holdWeakTarget,
+		affGetUp:                 (*Engine).getUpOrWait,
+		affMagicDamage2d10:       (*Engine).magicDamage2d10,
+		affAcidDamage:            (*Engine).acidDamage1d4,
+		affFear:                  (*Engine).fear,
+		affFearLifted:            (*Engine).fearLifted,
+		affStoneGaze:             (*Engine).stoneGaze,
+		affCharmGaze:             (*Engine).charmGaze,
+		affDrainOneLevel:         (*Engine).drainOneLevel,
+		affDrainTwoLevels:        (*Engine).drainTwoLevels,
+		affDisease:               (*Engine).disease,
+		affDisplaced:             (*Engine).firstHitMark,
+		affSaveBonusVsType0:      (*Engine).saveBonusVsType0,
+		affResistFireElectric:    (*Engine).resistFireElectric,
+		affHalveFire:             (*Engine).halveFire,
+		affHalveVsWeaponFlags:    (*Engine).halveVsWeaponFlags,
+		affFallsDead:             (*Engine).fallsDead,
+		affOnlyMagicWeapons:      (*Engine).onlyMagicWeapons,
+		affSaveBonusVsType42:     (*Engine).saveBonusVsType42,
+		affHeal3:                 (*Engine).heal3,
+		affStandUpBleeding:       (*Engine).standUpBleeding,
+		affRegenUnlessFireAcid:   (*Engine).regenUnlessFireAcid,
+		affStartRegenerating:     (*Engine).addAffect3B,
+		affReviveFull:            (*Engine).reviveFull,
+		affGaseousEscape:         (*Engine).gaseousEscape,
+		affAvoidDistant:          (*Engine).avoidDistant3C,
+		affResist50:              (*Engine).resist50,
+		affResist15:              (*Engine).resist15,
+		affBlock90:               (*Engine).block90,
+		affBlockSleepCharm:       (*Engine).blockSleepCharm,
+		affBlockHold:             (*Engine).block34,
+		affBlockCold:             (*Engine).blockCold,
+		affBlockPoisonHold:       (*Engine).block37And34,
+		affBlockFire:             (*Engine).blockFire,
+		affResistFireLessPerDie:  (*Engine).resistFireLessPerDie,
+		affHalveElectric:         (*Engine).halveElectric,
+		affHalveUnlessPlain:      (*Engine).halveUnlessPlainWeapon,
+		affHalveVsMagicWeapon:    (*Engine).halveVsMagicWeapon,
+		affDamage1d6Item55:       (*Engine).damage1d6Item55,
+		affHalveCold:             (*Engine).halveCold,
+		affOnlyMagicOrStrong:     (*Engine).onlyMagicOrStrong,
+		affAvoidItem57:           (*Engine).avoidItem57,
+		affSpitAcid:              (*Engine).spitAcid,
+		affDamage3d8Item56:       (*Engine).damage3d8Item56,
+		affHalveOrCancelUnmagic:  (*Engine).halveOrCancelUnmagic,
+		affBlock30:               (*Engine).block30,
+		affBlockMind:             (*Engine).blockMind,
+		affGazeReflected:         (*Engine).gazeReflected,
+		affGiantStrengthGirdle:   (*Engine).giantStrengthGirdle,
+		affCursedAlignment:       (*Engine).cursedAlignment,
+		affNeedsGiantStrength:    (*Engine).needsGiantStrength,
+		affEndsSpiritualHammer:   (*Engine).removeEnds17,
+	} {
+		affectHandlers[t] = h
+	}
+	// Affects that only mark the character (the original's empty handlers).
+	for _, t := range []affectType{affDetectMagic, affReduced, affReadMagic, affFindTraps,
+		affDetectInvisible, affFeatherFall, affRepulsed, affPoisoned, 0x3C, 0x3F, 0x5C, affReflectableGaze} {
+		affectHandlers[t] = (*Engine).noEffect
+	}
+	// Items that grant the affect named in their record (+0x3D).
+	for _, t := range []affectType{0x80, 0x81, 0x82, 0x85, 0x86, 0x88, 0x8A, 0x8B} {
+		affectHandlers[t] = (*Engine).itemGrantsAffect
+	}
 }
 
 // itemBaseFlags is DS:5589 (+7 of the 16-byte base item record) for the item's type.
@@ -673,7 +666,7 @@ func (e *Engine) gazeReflected(c *Character, a *Affect, flag byte) {
 // itemGrantsAffect = ovr13:2EDA (c, a, flag): an item stands in for a; its +0x3D is the affect it
 // grants (added on use with call 0, then run once; removed with flag set).
 func (e *Engine) itemGrantsAffect(c *Character, a *Affect, flag byte) {
-	typ := affectItem(a).Spells[1]
+	typ := affectType(affectItem(a).Spells[1])
 	if flag != 0 {
 		e.RemoveAffect(c, typ, nil)
 		return
@@ -753,8 +746,8 @@ func (e *Engine) removeEnds17(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// affectNop319B = ovr13:319B (c, a, flag): empty handler.
-func (e *Engine) affectNop319B(c *Character, a *Affect, flag byte) {}
+// noEffect = ovr13:319B (c, a, flag): empty handler.
+func (e *Engine) noEffect(c *Character, a *Affect, flag byte) {}
 
 // debugValues = ovr34:0004 (msg, a, b, c): with DS:49F7 set, show the three
 // numbers on the top row and msg on row 24.

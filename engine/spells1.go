@@ -127,7 +127,7 @@ func (e *Engine) addSpellLine(spell byte) {
 func (e *Engine) addScrollSpells(all byte) {
 	sel := e.selected()
 	// 00BA:2199 (sel, 0x10, out): the character has the affect
-	if e.FindAffect(sel, 0x10) != nil || sel.Levels[clsCleric] > 0 && sel.Levels[clsCleric] < 0x80 && e.items[int(e.usedScroll.Type)<<4] == 0xC {
+	if e.FindAffect(sel, affReadMagic) != nil || sel.Levels[clsCleric] > 0 && sel.Levels[clsCleric] < 0x80 && e.items[int(e.usedScroll.Type)<<4] == 0xC {
 		e.usedScroll.Hidden = 0
 	}
 	if e.usedScroll.Hidden != 0 {
@@ -292,7 +292,7 @@ func (e *Engine) applySpell(spell, level, call, dmg, dmgType int, msg string) {
 			e.Damage(t, dmg, e.spellRec(s, 8), saved)
 		}
 		if e.spellRec(s, 0xA) > 0 {
-			e.AddAffectMsg(t, e.spellRec(s, 0xA), e.spellAmount(spell), lvl, byte(call), e.spellRec(s, 8), saved, msg)
+			e.AddAffectMsg(t, affectType(e.spellRec(s, 0xA)), e.spellAmount(spell), lvl, byte(call), e.spellRec(s, 8), saved, msg)
 		}
 	}
 	e.rv.dmgType = 0
@@ -444,7 +444,7 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 // affect, or else the curse of its first cursed item.
 func (e *Engine) spellRemoveCurse() {
 	t := e.spellTarget
-	if e.CureAffect(t, 0x24) {
+	if e.CureAffect(t, affBestowCurse) {
 		e.hitMessage(t, true, "is un-cursed")
 		return
 	}
@@ -493,7 +493,7 @@ func (e *Engine) fxFireball() {
 // removeAffectFromSide = ovr23:2764 (type, side, msg): the first casterLevel
 // targets of that side lose the affect; the others are dropped. A nil
 // target (garbage in the asm) is dropped as well.
-func (e *Engine) removeAffectFromSide(typ, side int, msg string) {
+func (e *Engine) removeAffectFromSide(typ affectType, side int, msg string) {
 	msg = cut(msg, 0x28)
 	e.spellOwnTargets = 1
 	lvl := byte(e.casterLevel(int(e.curSpell)))
@@ -501,7 +501,7 @@ func (e *Engine) removeAffectFromSide(typ, side int, msg string) {
 		t := e.tgt(i)
 		if t != nil && int(t.Side) == side && lvl > 0 {
 			lvl--
-			if e.CureAffect(t, byte(typ)) {
+			if e.CureAffect(t, typ) {
 				e.setTgt(i, nil)
 			}
 		} else {
@@ -517,7 +517,7 @@ func (e *Engine) removeAffectFromSide(typ, side int, msg string) {
 }
 
 // fxHaste = ovr23:2892: slow is removed from the caster's side.
-func (e *Engine) fxHaste() { e.removeAffectFromSide(0x2A, int(e.selected().Side), "is Hasted") }
+func (e *Engine) fxHaste() { e.removeAffectFromSide(affSlow, int(e.selected().Side), "is Hasted") }
 
 // strikeSquare = ovr23:28BC (x, y, dmg, saveType): whoever stands on the
 // square takes dmg (half on a save, DS:6819 = 0xC); true when the ground
@@ -622,7 +622,7 @@ func (e *Engine) fxLightning() {
 
 // fxSlow = ovr23:2C09.
 func (e *Engine) fxSlow() {
-	e.removeAffectFromSide(0x27, b2i(isParty(e.selected())), "is Slowed")
+	e.removeAffectFromSide(affHaste, b2i(isParty(e.selected())), "is Slowed")
 }
 
 // fxRestore = ovr23:2C43: gives back one drained level (the class that
@@ -665,7 +665,7 @@ func (e *Engine) fxRestore() {
 
 // fxSpeedy = ovr23:2E02.
 func (e *Engine) fxSpeedy() {
-	if !e.CureAffect(e.spellTarget, 0x2A) {
+	if !e.CureAffect(e.spellTarget, affSlow) {
 		e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is Speedy")
 	}
 }
@@ -674,9 +674,9 @@ func (e *Engine) fxSpeedy() {
 // that goes with it removed); otherwise a small heal.
 func (e *Engine) fxCureParalysis() {
 	t := e.spellTarget
-	if e.CureAffect(t, 0x37) {
+	if e.CureAffect(t, affPoisoned) {
 		e.rv.cure = 1
-		e.RemoveAffect(t, 0x16, nil)
+		e.RemoveAffect(t, affSlowPoison, nil)
 		e.rv.cure = 0
 		return
 	}
@@ -695,7 +695,7 @@ func (e *Engine) fxStronger() {
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
-	e.AddAffect(t, 0x26, e.spellAmount(int(e.curSpell)), out, 1)
+	e.AddAffect(t, affStrength, e.spellAmount(int(e.curSpell)), out, 1)
 }
 
 // fxBolt = ovr23:2F4D: Dice(1,6)+0x14 on the target square, then a fixed
@@ -756,7 +756,7 @@ func (e *Engine) breathWeapon(c *Character, a *Affect, flag int) {
 	if a.Data > 0xFD {
 		a.Data--
 	} else {
-		e.RemoveAffect(c, 0x58, a)
+		e.RemoveAffect(c, affBreathWeapon, a)
 	}
 	e.clearCombatInfo(c)
 }

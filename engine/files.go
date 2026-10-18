@@ -45,8 +45,8 @@ type Affect struct {
 
 // affectRecord is the 9-byte DOS affect node in its file layout.
 type affectRecord struct {
-	Type byte   // affect number, index into the ovr13 handler table
-	Time uint16 // remaining duration, 0 = permanent
+	Type affectType // index into the ovr13 handler table
+	Time uint16     // remaining duration, 0 = permanent
 	Data byte
 	Call byte    // non-zero: the handler runs when the affect is removed
 	_    [4]byte // next pointer

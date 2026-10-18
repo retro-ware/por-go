@@ -429,14 +429,14 @@ func (e *Engine) AfterCombat() {
 // harmfulAffect (extra) names affect t when it hurts its bearer: one a
 // hostile spell gives (spell table +7 is 0, as Aim reads it) or one of the
 // named harms; "" otherwise.
-func (e *Engine) harmfulAffect(t byte) string {
+func (e *Engine) harmfulAffect(t affectType) string {
 	switch t {
-	case 0x1F, 0x2C, 0x32, 0x36, 0x37:
+	case affHelpless, affSick, affMummyDisease, affRepulsed, affPoisoned:
 		return affectNames[t]
 	}
 	if listedAffect(t) {
 		for s := 1; s <= 0x38; s++ {
-			if spellTable[s][10] == t && spellTable[s][7] == 0 {
+			if affectType(spellTable[s][10]) == t && spellTable[s][7] == 0 {
 				return e.spellName(s)
 			}
 		}

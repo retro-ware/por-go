@@ -615,7 +615,7 @@ var footprintTable = [5][4][2]int8{
 }
 
 // affects tested by isHelpless ([0] unused) (DS:286B).
-var shieldAffects = [5]byte{0x01, 0x33, 0x34, 0x35, 0x1F}
+var helplessAffects = [5]affectType{affBless, affSnakeCharm, affHeld, affAsleep, affHelpless}
 
 // head picture of each portrait head (DS:286F).
 var portraitHead = [15]byte{0x1F, 0x00, 0x08, 0x09, 0x0D, 0x10, 0x12, 0x16, 0x22, 0x2D, 0x33, 0x35, 0x39, 0x43, 0x44}

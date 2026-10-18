@@ -307,7 +307,7 @@ func (e *Engine) statusName(c *Character) string {
 	if c.Status > 8 {
 		return ""
 	}
-	if c.Status == 6 && e.FindAffect(c, 0x37) != nil {
+	if c.Status == 6 && e.FindAffect(c, affPoisoned) != nil {
 		return "Poisoned"
 	}
 	return statusNames[c.Status]

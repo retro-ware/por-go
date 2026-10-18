@@ -42,13 +42,13 @@ func (e *Engine) templeCure(needed bool, notMsg, cure string, price uint16) bool
 // cureBlindness = ovr05:0249.
 func (e *Engine) cureBlindness() {
 	c := e.selected()
-	if e.templeCure(e.FindAffect(c, 0x21) != nil, "is not blind.", "Cure Blindness", 1000) {
-		e.RemoveAffect(c, 0x21, nil)
+	if e.templeCure(e.FindAffect(c, affBlind) != nil, "is not blind.", "Cure Blindness", 1000) {
+		e.RemoveAffect(c, affBlind, nil)
 	}
 }
 
 // diseases = DS:0114: the affects Cure Disease removes.
-var diseases = [6]byte{0x1F, 0x22, 0x2B, 0x2C, 0x32, 0x39}
+var diseases = [6]affectType{affHelpless, affCauseDisease, affWeakened, affSick, affMummyDisease, affRotting}
 
 // cureDisease = ovr05:02ED.
 func (e *Engine) cureDisease() {
@@ -90,11 +90,11 @@ func (e *Engine) cureWounds(kind int) {
 // neutralizePoison = ovr05:0751.
 func (e *Engine) neutralizePoison() {
 	c := e.selected()
-	if e.templeCure(e.FindAffect(c, 0x37) != nil, "is not poisoned.", "Neutralize Poison", 1000) {
+	if e.templeCure(e.FindAffect(c, affPoisoned) != nil, "is not poisoned.", "Neutralize Poison", 1000) {
 		e.rv.cure = 1
-		e.RemoveAffect(c, 0x37, nil)
-		e.RemoveAffect(c, 0x16, nil)
-		e.RemoveAffect(c, 0xF, nil)
+		e.RemoveAffect(c, affPoisoned, nil)
+		e.RemoveAffect(c, affSlowPoison, nil)
+		e.RemoveAffect(c, affPoisonDamage, nil)
 		e.rv.cure = 0
 	}
 }
@@ -108,8 +108,8 @@ func (e *Engine) raiseDead() {
 		return
 	}
 	e.rv.cure = 1
-	e.RemoveAffect(c, 0x20, nil)
-	e.RemoveAffect(c, 0x37, nil)
+	e.RemoveAffect(c, affAnimated, nil)
+	e.RemoveAffect(c, affPoisoned, nil)
 	e.rv.cure = 0
 	c.HP = 1
 	c.Status = 0
@@ -158,7 +158,7 @@ func (e *Engine) removeCurse() {
 			break
 		}
 	}
-	if !cursed && e.FindAffect(c, 0x24) != nil {
+	if !cursed && e.FindAffect(c, affBestowCurse) != nil {
 		cursed = true
 	}
 	if e.templeCure(cursed, "is not cursed.", "Remove Curse", 3500) {

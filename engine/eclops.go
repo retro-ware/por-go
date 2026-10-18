@@ -575,7 +575,7 @@ func (e *Engine) opCheckParty() {
 	} else {
 		what = e.ArgValue(1)
 	}
-	special := byte(e.ArgValue(2))
+	special := affectType(e.ArgValue(2))
 	var dst [7]int
 	for i := 3; i <= 6; i++ {
 		dst[i] = e.ArgAddr(i)

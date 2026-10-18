@@ -633,9 +633,9 @@ func (e *Engine) PartyHpRange() (hi, lo int) {
 	l8 := h8
 	for _, c := range e.party {
 		h := c.Move
-		if e.FindAffect(c, 0x27) != nil {
+		if e.FindAffect(c, affHaste) != nil {
 			h *= 2
-		} else if e.FindAffect(c, 0x2A) != nil {
+		} else if e.FindAffect(c, affSlow) != nil {
 			h /= 2
 		}
 		if h > h8 {

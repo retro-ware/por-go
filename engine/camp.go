@@ -382,7 +382,7 @@ func (e *Engine) castCures() {
 			}
 			var t *Character
 			for _, p := range e.party {
-				if healable(p) && p.HP < p.MaxHP && e.FindAffect(p, 0x32) == nil && (t == nil || int(p.MaxHP)-int(p.HP) > int(t.MaxHP)-int(t.HP)) {
+				if healable(p) && p.HP < p.MaxHP && e.FindAffect(p, affMummyDisease) == nil && (t == nil || int(p.MaxHP)-int(p.HP) > int(t.MaxHP)-int(t.HP)) {
 					t = p
 				}
 			}
@@ -422,7 +422,7 @@ func (e *Engine) isDay() bool {
 func (e *Engine) healMinutes() int {
 	days := 0
 	for _, c := range e.party {
-		if healable(c) && e.FindAffect(c, 0x32) == nil {
+		if healable(c) && e.FindAffect(c, affMummyDisease) == nil {
 			days = max(days, int(c.MaxHP)-int(c.HP))
 		}
 	}
@@ -623,35 +623,36 @@ func (e *Engine) scribeMenu() {
 
 // listedAffect = the affect types ovr16:0FBC names after the spell that
 // gives them (cs:0x1050 checks).
-func listedAffect(t byte) bool {
+func listedAffect(t affectType) bool {
 	switch {
-	case t == 1, t == 2, t == 5, t >= 8 && t <= 0xE, t == 0x10, t == 0x11,
-		t >= 0x13 && t <= 0x19, t == 0x1C, t == 0x1D, t >= 0x20 && t <= 0x22,
-		t >= 0x24 && t <= 0x27, t == 0x29, t == 0x2A, t == 0x2D, t == 0x2E,
-		t == 0x31, t >= 0x33 && t <= 0x35:
+	case t == affBless, t == affCurse, t == affDetectMagic, t >= affProtEvil && t <= affFriends,
+		t == affReadMagic, t == affShield, t >= affFindTraps && t <= affInvisible, t == affMirrorImage,
+		t == affEnfeebled, t >= affAnimated && t <= affCauseDisease, t >= affBestowCurse && t <= affHaste,
+		t == affProtMissiles, t == affSlow, t == affProtEvilRadius, t == affProtGoodRadius,
+		t == affPrayer, t >= affSnakeCharm && t <= affAsleep:
 		return true
 	}
 	return false
 }
 
 // affectNames = ovr16:0FBC's named affects that no spell list entry covers.
-var affectNames = map[byte]string{
-	0x04: "Studying Manual of Bodily Health",
-	0x07: "Training with Manual of Bodily Health",
-	0x1B: "Feather Fall",
-	0x1F: "Helpless",
-	0x23: "Prayer",
-	0x2C: "Cause Disease",
-	0x32: "Dreaded Mummy Disease",
-	0x36: "Repulsed",
-	0x37: "Poisoned",
-	0x3B: "Regenerating",
-	0x3D: "Fire Resistance",
-	0x47: "Invisible",
-	0x48: "Camouflaged",
-	0x59: "Displaced",
-	0x8C: "Laid on Hands today",     // affLaidOnHands
-	0x8D: "Cured Disease this week", // affCuredDisease
+var affectNames = map[affectType]string{
+	affStudyingManual:   "Studying Manual of Bodily Health",
+	affTrainingManual:   "Training with Manual of Bodily Health",
+	affFeatherFall:      "Feather Fall",
+	affHelpless:         "Helpless",
+	affPrayerBonus:      "Prayer",
+	affSick:             "Cause Disease",
+	affMummyDisease:     "Dreaded Mummy Disease",
+	affRepulsed:         "Repulsed",
+	affPoisoned:         "Poisoned",
+	affRegenerating:     "Regenerating",
+	affFireResistance:   "Fire Resistance",
+	affMonsterInvisible: "Invisible",
+	affCamouflaged:      "Camouflaged",
+	affDisplaced:        "Displaced",
+	affLaidOnHands:      "Laid on Hands today",
+	affCuredDisease:     "Cured Disease this week",
 }
 
 // affectList = the names ovr16:0FBC lists for c: its spell effects.
@@ -662,7 +663,7 @@ func (e *Engine) affectList(c *Character) []string {
 		name, known := "", true
 		if listedAffect(t) {
 			for s := 1; s <= 0x38 && name == ""; s++ {
-				if spellTable[s][10] == t {
+				if affectType(spellTable[s][10]) == t {
 					name = e.spellName(s)
 				}
 			}

@@ -2,7 +2,7 @@ package engine
 
 import "bytes"
 
-// Affect handlers of ovr13, offsets 0x0000..0x1C00. Each o13_XXXX is a
+// Affect handlers of ovr13, offsets 0x0000..0x1C00. Each handler is a
 // DS:6828 table entry: handler(char, affect, flag); flag 1 = removing.
 // The rule globals DS:6816.. are e.rv (fleeRoll and friends see rules.go).
 // DS:6826 (a far pointer scratch) is a Go local; where the original left
@@ -44,7 +44,7 @@ func (e *Engine) nameMatches(c *Character, names [][16]byte) int {
 
 // blockAffect = ovr13:0000 (type): the affect being added is refused when
 // type is 0 or the one being added; the damage goes with it.
-func (e *Engine) blockAffect(typ byte) {
+func (e *Engine) blockAffect(typ affectType) {
 	if typ == 0 || e.rv.affVal == typ {
 		e.rv.damage = 0
 		e.rv.affVal = 0
@@ -53,7 +53,7 @@ func (e *Engine) blockAffect(typ byte) {
 
 // addAffectNow = ovr13:001F (char, type, data, time): adds the affect with
 // the remove-call flag, false while the temple is curing.
-func (e *Engine) addAffectNow(c *Character, typ, data byte, time int) bool {
+func (e *Engine) addAffectNow(c *Character, typ affectType, data byte, time int) bool {
 	if e.rv.cure != 0 {
 		return false
 	}
@@ -116,7 +116,7 @@ func (e *Engine) poisonAttack(c *Character, bonus int) {
 	if !e.SavingThrow(t, 0, bonus) {
 		e.CharMessage(t, "is Poisoned", 0xA, false)
 		e.MsgDelay()
-		e.AddAffect(t, 0x37, 0, 0xFF, 0)
+		e.AddAffect(t, affPoisoned, 0, 0xFF, 0)
 		e.killWithMessage(t, 6, "dies from poison") // extra: the original says "is killed"
 	}
 }
@@ -127,7 +127,7 @@ func (e *Engine) paralyseTarget(c *Character, time int, extra byte) {
 	t := targetOf(c)
 	if !e.SavingThrow(t, 0, 0) {
 		e.hitMessage(t, true, "is Paralyzed")
-		e.AddAffect(t, 0x34, time, 0xC, 0)
+		e.AddAffect(t, affHeld, time, 0xC, 0)
 	}
 }
 
@@ -158,7 +158,7 @@ func (e *Engine) bonusVsRace4(c *Character, a *Affect, flag byte) {
 // startsToTrain = ovr13:017F: "starts to train".
 func (e *Engine) startsToTrain(c *Character, a *Affect, flag byte) {
 	e.CharMessage(c, "starts to train", 0xA, true)
-	e.AddAffect(c, 7, 0xA8C0, 0xFF, 1)
+	e.AddAffect(c, affTrainingManual, 0xA8C0, 0xFF, 1)
 }
 
 // bonusByTargetRace = ovr13:01C3: bonus by the target's race, fire-ish magic damage.
@@ -182,7 +182,7 @@ func (e *Engine) isHardier(c *Character, a *Affect, flag byte) {
 	e.CharMessage(c, "is hardier", 0xA, true)
 	c.Stats[statCon]++
 	if c.Stats[statCon] >= 0x14 {
-		e.AddAffect(c, 0x3E, 0x3C, 0xFF, 1)
+		e.AddAffect(c, affRegenerate, 0x3C, 0xFF, 1)
 		return
 	}
 	gain := c.MaxHP - c.HPRoll
@@ -269,7 +269,7 @@ func (e *Engine) bestStrength(c *Character, a *Affect, flag byte) {
 	var best *Affect
 	var bs, bs00 byte
 	for _, n := range c.Affects {
-		if (n.Type == 0xC || n.Type == 0x26) && n != a {
+		if (n.Type == affEnlarged || n.Type == affStrength) && n != a {
 			s, s00 := strDecode(n)
 			if s > bs || bs == 0x12 && s00 > bs00 {
 				bs, bs00, best = s, s00, n
@@ -287,7 +287,7 @@ func (e *Engine) setCharisma(c *Character, a *Affect, flag byte) { c.Stats[statC
 
 // poisonDamage = ovr13:05EB: poison: damage each round.
 func (e *Engine) poisonDamage(c *Character, a *Affect, flag byte) {
-	if e.addAffectNow(c, 0xF, a.Data, 0xA) && c.HP > 1 {
+	if e.addAffectNow(c, affPoisonDamage, a.Data, 0xA) && c.HP > 1 {
 		e.rv.dmgType = 0
 		e.Damage(c, 1, 0, false)
 		if e.beginFlag != 5 {
@@ -295,9 +295,6 @@ func (e *Engine) poisonDamage(c *Character, a *Affect, flag byte) {
 		}
 	}
 }
-
-// affectNop0647 = ovr13:0647: nothing.
-func (e *Engine) affectNop0647(c *Character, a *Affect, flag byte) {}
 
 // armourAtLeast = ovr13:064E: armour class at least 0x39, save +1.
 func (e *Engine) armourAtLeast(c *Character, a *Affect, flag byte) {
@@ -338,11 +335,11 @@ func (e *Engine) isSilenced(c *Character, a *Affect, flag byte) {
 
 // poisonEnds = ovr13:0775: poison ends; death by poison when the poison was still in.
 func (e *Engine) poisonEnds(c *Character, a *Affect, flag byte) {
-	if e.FindAffect(c, 0x37) != nil {
+	if e.FindAffect(c, affPoisoned) != nil {
 		e.killWithMessage(c, 6, "dies from poison")
 	}
 	e.rv.cure = 1
-	e.RemoveAffect(c, 0xF, nil)
+	e.RemoveAffect(c, affPoisonDamage, nil)
 	e.rv.cure = 0
 }
 
@@ -374,7 +371,7 @@ func (e *Engine) cursedItemToggle(c *Character, a *Affect, flag byte) {
 
 // blindedToHit = ovr13:0918: to-hit -4; DS:681E unless the selected one has affect 0x18.
 func (e *Engine) blindedToHit(c *Character, a *Affect, flag byte) {
-	if e.FindAffect(e.selected(), 0x18) == nil {
+	if e.FindAffect(e.selected(), affDetectInvisible) == nil {
 		e.affectVeto = 1
 	}
 	e.rv.hitRoll -= 4
@@ -395,7 +392,7 @@ func (e *Engine) mirrorImage(c *Character, a *Affect, flag byte) {
 		e.CharMessage(c, "lost an image", 0xA, true)
 		a.Data--
 		if a.Data == 0 {
-			e.RemoveAffect(c, 0x1C, nil)
+			e.RemoveAffect(c, affMirrorImage, nil)
 		}
 	}
 }
@@ -452,8 +449,8 @@ func (e *Engine) minus4All(c *Character, a *Affect, flag byte) {
 
 // weakAndSick = ovr13:0BCF: affects 0x2B and 0x2C together.
 func (e *Engine) weakAndSick(c *Character, a *Affect, flag byte) {
-	e.callAffect(0x2B, c, a, flag)
-	e.callAffect(0x2C, c, a, flag)
+	e.callAffect(affWeakened, c, a, flag)
+	e.callAffect(affSick, c, a, flag)
 }
 
 // plusOneSaveHit = ovr13:0C06: +1 save and to-hit.
@@ -553,20 +550,20 @@ func (e *Engine) halveAttacks(c *Character, a *Affect, flag byte) { e.turnValue 
 
 // isWeakened = ovr13:10DE: "is weakened": strength down while it lasts (affect 0x2B).
 func (e *Engine) isWeakened(c *Character, a *Affect, flag byte) {
-	if !e.addAffectNow(c, 0x2B, a.Data, 0x3C) {
+	if !e.addAffectNow(c, affWeakened, a.Data, 0x3C) {
 		return
 	}
 	if c.Stats[statStr] > 3 {
 		e.CharMessage(c, "is weakened", 0xA, true)
 		c.Stats[statStr]--
-	} else if e.FindAffect(c, 0x1F) == nil {
-		e.AddAffect(c, 0x1F, 0, 0xFF, 0)
+	} else if e.FindAffect(c, affHelpless) == nil {
+		e.AddAffect(c, affHelpless, 0, 0xFF, 0)
 	}
 }
 
 // sickDamage = ovr13:1168: affect 0x2C: damage while it lasts, or nausea at 1 hit point.
 func (e *Engine) sickDamage(c *Character, a *Affect, flag byte) {
-	if !e.addAffectNow(c, 0x2C, a.Data, 0xA) {
+	if !e.addAffectNow(c, affSick, a.Data, 0xA) {
 		return
 	}
 	if c.HP > 1 {
@@ -575,8 +572,8 @@ func (e *Engine) sickDamage(c *Character, a *Affect, flag byte) {
 		if e.beginFlag != 5 {
 			e.DisplayPartyList()
 		}
-	} else if e.FindAffect(c, 0x1F) == nil {
-		e.AddAffect(c, 0x1F, 0, 0xFF, 0)
+	} else if e.FindAffect(c, affHelpless) == nil {
+		e.AddAffect(c, affHelpless, 0, 0xFF, 0)
 	}
 }
 
@@ -609,7 +606,7 @@ func (e *Engine) prayerSide(c *Character, a *Affect, flag byte) {
 
 // healOverTime = ovr13:12FB: affect 0x32 and a point of healing.
 func (e *Engine) healOverTime(c *Character, a *Affect, flag byte) {
-	if e.addAffectNow(c, 0x32, a.Data, 0x3840) && e.Heal(c, 1, true) {
+	if e.addAffectNow(c, affMummyDisease, a.Data, 0x3840) && e.Heal(c, 1, true) {
 		e.healedMessage(c)
 	}
 }
@@ -617,12 +614,10 @@ func (e *Engine) healOverTime(c *Character, a *Affect, flag byte) {
 // clearCombatBlock = ovr13:133F: the combat block is cleared.
 func (e *Engine) clearCombatBlock(c *Character, a *Affect, flag byte) { e.clearCombatInfo(c) }
 
-// affectNop1355 = ovr13:1355, affectNop135C: nothing.
-func (e *Engine) affectNop1355(c *Character, a *Affect, flag byte) {}
-func (e *Engine) affectNop135C(c *Character, a *Affect, flag byte) {}
-
 // turnInvisible = ovr13:1363.
-func (e *Engine) turnInvisible(c *Character, a *Affect, flag byte) { e.AddAffect(c, 0x19, 1, 0xC, 0) }
+func (e *Engine) turnInvisible(c *Character, a *Affect, flag byte) {
+	e.AddAffect(c, affInvisible, 1, 0xC, 0)
+}
 
 // rots = ovr13:1399: "Rots...": charisma drops, then the affect or death.
 func (e *Engine) rots(c *Character, a *Affect, flag byte) {
@@ -640,7 +635,7 @@ func (e *Engine) rots(c *Character, a *Affect, flag byte) {
 	}
 	if a.Data>>4 > 1 {
 		a.Data -= 0x10
-		e.addAffectNow(c, 0x39, a.Data, 0xA8C0)
+		e.addAffectNow(c, affRotting, a.Data, 0xA8C0)
 	} else {
 		e.killWithMessage(c, 8, "Dies rots away")
 	}
@@ -655,7 +650,9 @@ func (e *Engine) heldNoMoves(c *Character, a *Affect, flag byte) {
 }
 
 // addAffect62 = ovr13:1472.
-func (e *Engine) addAffect62(c *Character, a *Affect, flag byte) { e.AddAffect(c, 0x62, 0, 0xFF, 0) }
+func (e *Engine) addAffect62(c *Character, a *Affect, flag byte) {
+	e.AddAffect(c, affHeal3, 0, 0xFF, 0)
+}
 
 // resistFirePerDie = ovr13:1490: fire damage is cut by 2 per die (not below one per die), save +4.
 func (e *Engine) resistFirePerDie(c *Character, a *Affect, flag byte) {
@@ -676,7 +673,7 @@ func (e *Engine) resistFirePerDie(c *Character, a *Affect, flag byte) {
 
 // regenerate = ovr13:14EB: affect 0x3E and a point of healing.
 func (e *Engine) regenerate(c *Character, a *Affect, flag byte) {
-	if e.addAffectNow(c, 0x3E, a.Data, 0x3C) && e.Heal(c, 1, true) {
+	if e.addAffectNow(c, affRegenerate, a.Data, 0x3C) && e.Heal(c, 1, true) {
 		e.healedMessage(c)
 	}
 }
@@ -715,7 +712,7 @@ func (e *Engine) missMinus4(c *Character, a *Affect, flag byte) {
 // mostlyInvisible = ovr13:1730: invisibility 95% of the time.
 func (e *Engine) mostlyInvisible(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, 100) <= 0x5F {
-		e.AddAffect(c, 0x19, 1, 0xC, 0)
+		e.AddAffect(c, affInvisible, 1, 0xC, 0)
 	}
 }
 
@@ -727,10 +724,10 @@ func (e *Engine) bloodDrain(c *Character, a *Affect, flag byte) {
 		t = &Character{}
 	}
 	if flag != 0 || c.Okay == 0 || t.Okay == 0 {
-		e.RemoveAffect(t, 0x3A, nil)
+		e.RemoveAffect(t, affHeldFast, nil)
 		if flag == 0 {
 			a.Call = 0
-			e.RemoveAffect(c, 0x4B, a)
+			e.RemoveAffect(c, affBloodDrain, a)
 		}
 		if c.Okay != 0 && t.Okay != 0 {
 			combatInfo(c).Turned = 1
@@ -747,25 +744,25 @@ func (e *Engine) bloodDrain(c *Character, a *Affect, flag byte) {
 		time -= dmg << 4
 		a.Time = uint16(time)
 	} else {
-		e.RemoveAffect(c, 0x4B, a)
+		e.RemoveAffect(c, affBloodDrain, a)
 	}
 }
 
 // holdTarget = ovr13:18B5: the target is held (affect 0x4B on c with the target's index).
 func (e *Engine) holdTarget(c *Character, a *Affect, flag byte) {
 	t := targetOf(c)
-	e.AddAffect(c, 0x4B, 0xCF, byte(e.combatIndex(t)), 1)
-	e.AddAffect(t, 0x3A, 0, 0xFF, 0)
-	e.callAffect(0x3A, t, nil, 0)
+	e.AddAffect(c, affBloodDrain, 0xCF, byte(e.combatIndex(t)), 1)
+	e.AddAffect(t, affHeldFast, 0, 0xFF, 0)
+	e.callAffect(affHeldFast, t, nil, 0)
 }
 
 // holdWeakTarget = ovr13:1935: hold: a target under 0x13 strength is held fast.
 func (e *Engine) holdWeakTarget(c *Character, a *Affect, flag byte) {
 	t := targetOf(c)
 	if t.Stats[statStr] < 0x13 {
-		e.AddAffect(c, 0x4A, 0, byte(e.combatIndex(t)), 1)
-		e.AddAffect(t, 0x3A, 0, 0xFF, 0)
-		e.callAffect(0x3A, t, nil, 0)
+		e.AddAffect(c, affStrikeTied, 0, byte(e.combatIndex(t)), 1)
+		e.AddAffect(t, affHeldFast, 0, 0xFF, 0)
+		e.callAffect(affHeldFast, t, nil, 0)
 		e.CharMessage(t, "is held fast", 0xA, true)
 	}
 }
@@ -773,7 +770,7 @@ func (e *Engine) holdWeakTarget(c *Character, a *Affect, flag byte) {
 // getUpOrWait = ovr13:19D9: back on its feet or affect 0x4E (the local result is unused).
 func (e *Engine) getUpOrWait(c *Character, a *Affect, flag byte) {
 	if !e.Revive(c, c.HP) {
-		e.addAffectNow(c, 0x4E, a.Data, 1)
+		e.addAffectNow(c, affGetUp, a.Data, 1)
 	}
 }
 
@@ -800,9 +797,9 @@ func (e *Engine) fear(c *Character, a *Affect, flag byte) {
 		saved := e.SavingThrow(p, 4, 0)
 		switch v := int8(p.MaxLevel); {
 		case v >= 0 && v <= 3:
-			e.AddAffectMsg(p, 0x34, 0, 0xC, 0, 1, saved, "is paralyzed with fear")
+			e.AddAffectMsg(p, affHeld, 0, 0xC, 0, 1, saved, "is paralyzed with fear")
 		case v == 4 || v == 5:
-			e.AddAffectMsg(p, 2, 0, 0xC, 0, 1, saved, "is weakened by fear")
+			e.AddAffectMsg(p, affCurse, 0, 0xC, 0, 1, saved, "is weakened by fear")
 		}
 	}
 }
@@ -811,7 +808,7 @@ func (e *Engine) fear(c *Character, a *Affect, flag byte) {
 // paralysed for 1d4 rounds.
 func (e *Engine) fearLifted(c *Character, a *Affect, flag byte) {
 	for _, p := range e.party {
-		e.RemoveAffect(p, 0x52, nil)
+		e.RemoveAffect(p, affFearLifted, nil)
 		if p.Okay == 0 || byte(b2i(isParty(c))) != p.Side {
 			continue
 		}
@@ -823,6 +820,6 @@ func (e *Engine) fearLifted(c *Character, a *Affect, flag byte) {
 			bonus += 2
 		}
 		saved := e.SavingThrow(p, 0, bonus)
-		e.AddAffectMsg(p, 0x34, e.Dice(1, 4), 0xC, 0, 1, saved, "is paralyzed with fear")
+		e.AddAffectMsg(p, affHeld, e.Dice(1, 4), 0xC, 0, 1, saved, "is paralyzed with fear")
 	}
 }

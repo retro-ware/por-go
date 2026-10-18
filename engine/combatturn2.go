@@ -89,7 +89,7 @@ func (e *Engine) chooseSpellTarget(spell, silent, allowGround int, t *aimTarget)
 			}
 			if e.isHelpless(tp) {
 				for i := 1; i <= 4; i++ {
-					if e.spellData(spell, 4) == shieldAffects[i] {
+					if affectType(e.spellData(spell, 4)) == helplessAffects[i] {
 						ok = false
 					}
 				}
@@ -796,10 +796,10 @@ func (e *Engine) rake(c *Character, a *Affect, flag byte) {
 func (e *Engine) strikeTied(c *Character, a *Affect, flag byte) {
 	e.tiedTarget = e.combatant(a.Data)
 	if flag != 0 || c.Okay == 0 || e.tiedTarget.Okay == 0 {
-		e.RemoveAffect(e.tiedTarget, 0x3A, nil)
+		e.RemoveAffect(e.tiedTarget, affHeldFast, nil)
 		if flag == 0 {
 			a.Call = 0
-			e.RemoveAffect(c, 0x4A, a)
+			e.RemoveAffect(c, affStrikeTied, a)
 		}
 		return
 	}
@@ -807,7 +807,7 @@ func (e *Engine) strikeTied(c *Character, a *Affect, flag byte) {
 	e.fullAttack(c, e.tiedTarget, 1, nil)
 	e.clearCombatInfo(c)
 	if e.tiedTarget.Okay == 0 {
-		e.RemoveAffect(c, 0x4A, a)
+		e.RemoveAffect(c, affStrikeTied, a)
 	}
 }
 

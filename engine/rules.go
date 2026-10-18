@@ -28,15 +28,15 @@ type CombatInfo struct {
 
 // Rule globals (DS:6816..682A).
 type ruleVars struct {
-	save     byte    // DS:6816 saving throw total
-	affVal   byte    // DS:6817 affect being added (0 = blocked)
-	damage   byte    // DS:6818
-	dmgType  byte    // DS:6819 1 fire 2 cold 4 electricity 8 magic 0x10 acid
-	diceN    byte    // DS:681C
-	hitRoll  int8    // DS:6822
-	saveType byte    // DS:682A
-	cure     byte    // DS:681F set while the temple removes affects
-	side     [2]int8 // DS:6814 standing members per side
+	save     byte       // DS:6816 saving throw total
+	affVal   affectType // DS:6817 affect being added (0 = blocked)
+	damage   byte       // DS:6818
+	dmgType  byte       // DS:6819 1 fire 2 cold 4 electricity 8 magic 0x10 acid
+	diceN    byte       // DS:681C
+	hitRoll  int8       // DS:6822
+	saveType byte       // DS:682A
+	cure     byte       // DS:681F set while the temple removes affects
+	side     [2]int8    // DS:6814 standing members per side
 }
 
 // AffectHandler is one entry of the DS:6828 table (filled by ovr13:31A2):
@@ -46,14 +46,14 @@ type AffectHandler func(e *Engine, c *Character, a *Affect, flag byte)
 var affectHandlers [0x8C]AffectHandler
 
 // callAffect = ovr25:0000 (type, char, affect, flag).
-func (e *Engine) callAffect(typ byte, c *Character, a *Affect, flag byte) {
+func (e *Engine) callAffect(typ affectType, c *Character, a *Affect, flag byte) {
 	if int(typ) < len(affectHandlers) && affectHandlers[typ] != nil {
 		affectHandlers[typ](e, c, a, flag)
 	}
 }
 
 // FindAffect = 00BA:2199 (out, type, char): first affect of the type.
-func (e *Engine) FindAffect(c *Character, typ byte) *Affect {
+func (e *Engine) FindAffect(c *Character, typ affectType) *Affect {
 	for _, a := range c.Affects {
 		if a.Type == typ {
 			return a
@@ -64,7 +64,7 @@ func (e *Engine) FindAffect(c *Character, typ byte) *Affect {
 
 // RemoveAffect = ovr25:0026 (char, type, affect): affect nil means the first
 // one of the type. Its handler runs first when the node asks for it.
-func (e *Engine) RemoveAffect(c *Character, typ byte, a *Affect) {
+func (e *Engine) RemoveAffect(c *Character, typ affectType, a *Affect) {
 	if a == nil {
 		a = e.FindAffect(c, typ)
 	}
@@ -83,19 +83,21 @@ func (e *Engine) RemoveAffect(c *Character, typ byte, a *Affect) {
 }
 
 // AddAffect = ovr25:0E52 (char, type, time, data, call): append a node.
-func (e *Engine) AddAffect(c *Character, typ byte, time int, data, call byte) {
+func (e *Engine) AddAffect(c *Character, typ affectType, time int, data, call byte) {
 	a := &Affect{affectRecord: affectRecord{Type: typ, Time: uint16(time), Data: data, Call: call}}
 	c.Affects = append(c.Affects, a)
 }
 
 // auraAffects = ovr25 cs:0140: affects that also work on everyone near the
 // one who has them (prayer, chant ...).
-func auraAffect(t byte) bool { return t == 0x15 || t == 0x2D || t == 0x2E || t == 0x31 }
+func auraAffect(t affectType) bool {
+	return t == affSilenced || t == affProtEvilRadius || t == affProtGoodRadius || t == affPrayer
+}
 
 // checkAffect = ovr25:0160 (char, type): run the handler (flag 0) when the
 // character has the affect, or for an aura affect when anyone in range
 // (anyone at all outside combat) has it.
-func (e *Engine) checkAffect(c *Character, typ byte) {
+func (e *Engine) checkAffect(c *Character, typ affectType) {
 	a := e.FindAffect(c, typ)
 	found := a != nil
 	if !found && auraAffect(typ) {
@@ -114,7 +116,7 @@ func (e *Engine) checkAffect(c *Character, typ byte) {
 				continue
 			}
 			r := 1
-			if typ == 0x31 {
+			if typ == affPrayer {
 				r = 6
 			}
 			e.nearCombatants(p, e.combatX(p), e.combatY(p), r)
@@ -134,27 +136,27 @@ func (e *Engine) checkAffect(c *Character, typ byte) {
 
 // affectGroups = the lists of ovr25:02FA: which affects take part in each
 // kind of check (the group number is the caller's).
-var affectGroups = [][]byte{
-	0x00: {0x7E},
-	0x01: {0x3F, 0x25, 0x19, 0x47},
-	0x02: {0x55, 0x56, 0x57, 0x44, 0x4F, 0x50, 0x4C, 0x49, 0x4D},
-	0x03: {0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x4F, 0x55, 0x56, 0x57},
-	0x04: {0x1D, 0x03, 0x06},
-	0x05: {0x1C, 0x29, 0x68, 0x78, 0x65, 0x73, 0x74, 0x77, 0x7B, 0x60, 0x5E, 0x3C, 0x7A, 0x75},
-	0x06: {0x71, 0x3D, 0x7A, 0x3C, 0x5B, 0x0A, 0x14, 0x69, 0x6A, 0x70, 0x72, 0x76, 0x11, 0x5D, 0x65, 0x1C},
-	0x07: {0x33, 0x34, 0x35, 0x1F},
-	0x08: {0x63, 0x51, 0x52, 0x59, 0x48, 0x38},
-	0x09: {0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x7C, 0x7D},
-	0x0A: {0x01, 0x02, 0x21, 0x24, 0x31, 0x03, 0x06, 0x12, 0x1A},
-	0x0B: {0x21, 0x11, 0x08, 0x09, 0x2D, 0x2E, 0x1E},
-	0x0C: {0x08, 0x09, 0x0A, 0x11, 0x14, 0x21, 0x24, 0x2D, 0x2E, 0x31, 0x3D, 0x6F, 0x7D, 0x5A, 0x61},
-	0x0D: {0x63, 0x64, 0x67, 0x4B, 0x4A},
-	0x0E: {0x53, 0x54, 0x58, 0x79},
-	0x0F: {0x15, 0x1E, 0x4A, 0x4B, 0x0B},
-	0x10: {0x19, 0x47, 0x25, 0x2F, 0x30, 0x59},
-	0x11: {0x01, 0x02, 0x0B},
-	0x12: {0x27, 0x2A, 0x3A},
-	0x13: {0x62, 0x17, 0x48, 0x38, 0x0B},
+var affectGroups = [][]affectType{
+	0x00: {affGazeReflected},
+	0x01: {0x3F, affBlink, affInvisible, affMonsterInvisible},
+	0x02: {affDrainOneLevel, affDrainTwoLevels, affDisease, affParalyseNotElf, affMagicDamage2d10, affAcidDamage, affHoldTarget, affRake, affHoldWeakTarget},
+	0x03: {affPoisonBite, affPoisonBite4, affPoisonBite2, affParalyse2d8, affParalyseNotElf, affParalyse1d9, affPoisonBiteMinus2, affMagicDamage2d10, affDrainOneLevel, affDrainTwoLevels, affDisease},
+	0x04: {affEnfeebled, affBonusVsRace4, affBonusByTargetRace},
+	0x05: {affMirrorImage, affProtMissiles, affAvoidDistant, affAvoidItem57, affStartRegenerating, affHalveUnlessPlain, affHalveVsMagicWeapon, affOnlyMagicOrStrong, affHalveOrCancelUnmagic, affOnlyMagicWeapons, affHalveVsWeaponFlags, 0x3C, affDamage3d8Item56, affDamage1d6Item55},
+	0x06: {affResistFireLessPerDie, affFireResistance, affDamage3d8Item56, 0x3C, affResistFireElectric, affResistCold, affResistFire, affResist50, affResist15, affBlockFire, affHalveElectric, affHalveCold, affShield, affHalveFire, affStartRegenerating, affMirrorImage},
+	0x07: {affSnakeCharm, affHeld, affAsleep, affHelpless},
+	0x08: {affStandUpBleeding, affFear, affFearLifted, affDisplaced, affCamouflaged, affTurnInvisible},
+	0x09: {affResist50, affResist15, affBlock90, affBlockSleepCharm, affBlockHold, affBlockCold, affBlockPoisonHold, affBlockFire, affBlock30, affBlockMind},
+	0x0A: {affBless, affCurse, affBlind, affBestowCurse, affPrayer, affBonusVsRace4, affBonusByTargetRace, affHitBonusVsNames, affHitBonusVsTargetNames},
+	0x0B: {affBlind, affShield, affProtEvil, affProtGood, affProtEvilRadius, affProtGoodRadius, affCoughing},
+	0x0C: {affProtEvil, affProtGood, affResistCold, affShield, affResistFire, affBlind, affBestowCurse, affProtEvilRadius, affProtGoodRadius, affPrayer, affFireResistance, affBlockPoisonHold, affBlockMind, affSaveBonusVsType0, affSaveBonusVsType42},
+	0x0D: {affStandUpBleeding, affRegenUnlessFireAcid, affGaseousEscape, affBloodDrain, affStrikeTied},
+	0x0E: {affStoneGaze, affCharmGaze, 0x58, affSpitAcid},
+	0x0F: {affSilenced, affCoughing, affStrikeTied, affBloodDrain, affCharmed},
+	0x10: {affInvisible, affMonsterInvisible, affBlink, affMinus4VsNames, affMinus4VsBugbearGnoll, affDisplaced},
+	0x11: {affBless, affCurse, affCharmed},
+	0x12: {affHaste, affSlow, affHeldFast},
+	0x13: {affHeal3, affSpiritualHammer, affCamouflaged, affTurnInvisible, affCharmed},
 }
 
 // Affect check groups by use.
@@ -186,18 +188,18 @@ func (e *Engine) stinkingCloud(c *Character) {
 	if ground != 0x1E {
 		return
 	}
-	for _, t := range []byte{0x1E, 0x1F, 0x20, 0x6F, 0x7D} {
+	for _, t := range []affectType{affCoughing, affHelpless, affAnimated, affBlockPoisonHold, affBlockMind} {
 		if e.FindAffect(c, t) != nil {
 			return
 		}
 	}
 	saved := e.SavingThrow(c, 0, 0)
-	var t byte
+	var t affectType
 	if saved {
-		t = 0x1E
+		t = affCoughing
 		e.AddAffectMsg(c, t, 1, 0xFF, 0, 0, saved, "starts to cough")
 	} else {
-		t = 0x1F
+		t = affHelpless
 		e.AddAffectMsg(c, t, e.Dice(1, 4)+1, 0xFF, 0, 0, saved, "chokes and gags from nausea")
 	}
 	// ovr25 passes the out pointer of its last FindAffect (0x7D), which is nil.
@@ -286,13 +288,13 @@ func (e *Engine) KillCharacter(c *Character, status byte, msg string) {
 
 // removeInvisibility = ovr25:0FD2.
 func (e *Engine) removeInvisibility(c *Character) {
-	for a := e.FindAffect(c, 0x19); a != nil; a = e.FindAffect(c, 0x19) {
-		e.RemoveAffect(c, 0x19, a)
+	for a := e.FindAffect(c, affInvisible); a != nil; a = e.FindAffect(c, affInvisible) {
+		e.RemoveAffect(c, affInvisible, a)
 	}
 }
 
 // combatAffects = DS:0C14: affects that end with the fight (or a death).
-var combatAffects = [16]byte{0x07, 0x0B, 0x1E, 0x1F, 0x20, 0x33, 0x34, 0x35, 0x36, 0x3A, 0x3B, 0x5F, 0x62, 0x89, 0x4A, 0x4B}
+var combatAffects = [16]affectType{affTrainingManual, affCharmed, affCoughing, affHelpless, affAnimated, affSnakeCharm, affHeld, affAsleep, affRepulsed, affHeldFast, affRegenerating, affFallsDead, affHeal3, affEndsSpiritualHammer, affStrikeTied, affBloodDrain}
 
 // removeCombatAffects = ovr25:100A.
 func (e *Engine) removeCombatAffects(c *Character) {
@@ -301,15 +303,15 @@ func (e *Engine) removeCombatAffects(c *Character) {
 	}
 }
 
-// removeAffects4A = ovr25:1041 (DS:0C24: 0x4A, 0x4B).
-func (e *Engine) removeAffects4A(c *Character) {
-	for _, t := range []byte{0x4A, 0x4B} {
+// removeTiedAffects = ovr25:1041 (DS:0C24): the tied-strike and blood-drain links end.
+func (e *Engine) removeTiedAffects(c *Character) {
+	for _, t := range []affectType{affStrikeTied, affBloodDrain} {
 		e.RemoveAffect(c, t, nil)
 	}
 }
 
 // CureAffect = ovr25:1081 (char, type): "is Cured" and the affect goes.
-func (e *Engine) CureAffect(c *Character, typ byte) bool {
+func (e *Engine) CureAffect(c *Character, typ affectType) bool {
 	a := e.FindAffect(c, typ)
 	if a == nil {
 		return false
@@ -350,7 +352,7 @@ func (e *Engine) SetStrength(c *Character, str, str00 byte) (byte, bool) {
 		if keep != nil {
 			break
 		}
-		if (a.Type == 0x0C || a.Type == 0x26) && a.Data < 0x80 {
+		if (a.Type == affEnlarged || a.Type == affStrength) && a.Data < 0x80 {
 			keep = a
 		}
 	}
@@ -443,7 +445,7 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 // AddAffectMsg = ovr25:1656 (char, type, time, data, call, saveMode, saved,
 // message): adds an affect unless something blocks it (or a save negates
 // it); a shorter or permanent copy is replaced.
-func (e *Engine) AddAffectMsg(c *Character, typ byte, time int, data, call, saveMode byte, saved bool, msg string) {
+func (e *Engine) AddAffectMsg(c *Character, typ affectType, time int, data, call, saveMode byte, saved bool, msg string) {
 	msg = cut(msg, 0x28)
 	e.rv.affVal = typ
 	e.affectGroup(c, grpAddAffect)
@@ -472,7 +474,7 @@ func (e *Engine) Heal(c *Character, amount int, magical bool) bool {
 		return false
 	}
 	if !(c.HP < c.MaxHP && magical) {
-		if e.FindAffect(c, 0x32) != nil || magical {
+		if e.FindAffect(c, affMummyDisease) != nil || magical {
 			return false
 		}
 	}
@@ -485,7 +487,7 @@ func (e *Engine) Heal(c *Character, amount int, magical bool) bool {
 			c.Status = 4
 		}
 		if c.Status == 4 && e.beginFlag != 5 {
-			e.callAffect(0x4E, c, nil, 1)
+			e.callAffect(affGetUp, c, nil, 1)
 		}
 	}
 	return true

@@ -222,8 +222,8 @@ func (e *Engine) aiCanStep(c *Character, i, dir int) (ok, blocked bool) {
 	}
 	cost = int(byte(cost * int(gc)))
 	if ground == 0x1E {
-		if e.FindAffect(c, 0x20) == nil && e.FindAffect(c, 0x1E) == nil &&
-			e.FindAffect(c, 0x6F) == nil && e.FindAffect(c, 0x7D) == nil {
+		if e.FindAffect(c, affAnimated) == nil && e.FindAffect(c, affCoughing) == nil &&
+			e.FindAffect(c, affBlockPoisonHold) == nil && e.FindAffect(c, affBlockMind) == nil {
 			cost = int(byte(ci.Moves + 1))
 		}
 	}
@@ -460,7 +460,7 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 	ci := c.Combat
 	r := false
 	ci.Fleeing = 0
-	e.removeAffects4A(c)
+	e.removeTiedAffects(c)
 	if ci.Turned != 0 {
 		ci.Fleeing = 1
 		e.CharMessage(c, "is forced to flee", 10, true)
@@ -487,8 +487,8 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 	a := e.fastestFoeMove(c)
 	if a <= e.moveRate(c)>>1 {
 		ci.Fleeing = 1
-		e.RemoveAffect(c, 0x4A, nil)
-		e.RemoveAffect(c, 0x4B, nil)
+		e.RemoveAffect(c, affStrikeTied, nil)
+		e.RemoveAffect(c, affBloodDrain, nil)
 		return r
 	}
 	if c.Stats[statInt] > 5 {

@@ -91,24 +91,24 @@ func (e *Engine) CreateCharacter() {
 	switch c.Race {
 	case 5:
 		c.IconSize = 1
-		e.AddAffect(c, 0x5A, 0, 0xFF, 0)
-		e.AddAffect(c, 0x61, 0, 0xFF, 0)
+		e.AddAffect(c, affSaveBonusVsType0, 0, 0xFF, 0)
+		e.AddAffect(c, affSaveBonusVsType42, 0, 0xFF, 0)
 	case 1:
 		c.IconSize = 1
-		for _, t := range []byte{0x5A, 0x61, 0x1A, 0x2F} {
+		for _, t := range []affectType{affSaveBonusVsType0, affSaveBonusVsType42, affHitBonusVsTargetNames, affMinus4VsNames} {
 			e.AddAffect(c, t, 0, 0xFF, 0)
 		}
 	case 3:
 		c.IconSize = 1
-		for _, t := range []byte{0x61, 0x12, 0x2F, 0x30} {
+		for _, t := range []affectType{affSaveBonusVsType42, affHitBonusVsNames, affMinus4VsNames, affMinus4VsBugbearGnoll} {
 			e.AddAffect(c, t, 0, 0xFF, 0)
 		}
 	case 2:
 		c.IconSize = 2
-		e.AddAffect(c, 0x6B, 0, 0xFF, 0)
+		e.AddAffect(c, affBlock90, 0, 0xFF, 0)
 	case 4:
 		c.IconSize = 2
-		e.AddAffect(c, 0x7C, 0, 0xFF, 0)
+		e.AddAffect(c, affBlock30, 0, 0xFF, 0)
 	default:
 		c.IconSize = 2
 	}
@@ -161,7 +161,7 @@ func (e *Engine) CreateCharacter() {
 		c.Levels[clsMage], c.Levels[clsThief] = 1, 1
 	}
 	if class == 3 {
-		e.AddAffect(c, 0x08, 0, 0xFF, 0) // CotAB: a paladin's lasting protection from evil
+		e.AddAffect(c, affProtEvil, 0, 0xFF, 0) // CotAB: a paladin's lasting protection from evil
 	}
 	if int8(c.Levels[clsThief]) > 0 {
 		e.thiefSkills(c) // ovr24:0329

@@ -62,8 +62,8 @@ func (e *Engine) spellCharmPerson() {
 	}
 	lvl := e.casterLevel(int(e.curSpell))
 	e.applySpell(int(e.curSpell), (int(e.selected().Side)<<7+lvl)&0xFF, 1, 0, 0, "is charmed")
-	if a := e.FindAffect(t, 0xB); a != nil {
-		e.callAffect(0xB, e.tgt(1), a, 0)
+	if a := e.FindAffect(t, affCharmed); a != nil {
+		e.callAffect(affCharmed, e.tgt(1), a, 0)
 	}
 }
 
@@ -90,14 +90,14 @@ func (e *Engine) spellStrengthPercent() {
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
-	e.AddAffect(t, 0xC, e.spellAmount(int(e.curSpell)), out, 1)
+	e.AddAffect(t, affEnlarged, e.spellAmount(int(e.curSpell)), out, 1)
 }
 
 // spellReduce = ovr23:136E: Reduce (undoes the strength affect 0x0C) unless the target saves.
 func (e *Engine) spellReduce() {
 	if e.nSpellTargets > 0 {
 		t := e.tgt(1)
-		if !e.SavingThrow(t, 4, 0) && e.CureAffect(t, 0xC) {
+		if !e.SavingThrow(t, 4, 0) && e.CureAffect(t, affEnlarged) {
 			e.CharMessage(t, "has been reduced", 0xA, true)
 		}
 	}
@@ -154,7 +154,7 @@ func (e *Engine) spellSleep() {
 		default:
 			e.spellValue2 = 0x14
 		}
-		if t.Status != 1 && e.FindAffect(t, 0x35) == nil && e.spellValue >= e.spellValue2 {
+		if t.Status != 1 && e.FindAffect(t, affAsleep) == nil && e.spellValue >= e.spellValue2 {
 			e.spellValue -= e.spellValue2
 		} else {
 			e.setTgt(i, nil)
@@ -195,7 +195,7 @@ func (e *Engine) spellHold() {
 		if t.Kind > 1 || t.Size > 1 {
 			saved = true
 		}
-		e.AddAffectMsg(t, e.spellTableByte(spell, 10), e.spellAmount(spell), byte(e.casterLevel(spell)), 0,
+		e.AddAffectMsg(t, affectType(e.spellTableByte(spell, 10)), e.spellAmount(spell), byte(e.casterLevel(spell)), 0,
 			e.spellTableByte(spell, 8), saved, "is held")
 	}
 }
@@ -214,15 +214,15 @@ func (e *Engine) spellRaiseDead() {
 		e.setTgt(1, nil)
 		return
 	}
-	if e.FindAffect(t, 0x37) == nil {
+	if e.FindAffect(t, affPoisoned) == nil {
 		return
 	}
 	if t.HP == 0 {
 		t.HP = 1
 	}
 	e.applySpell(int(e.curSpell), 0xFF, 1, 0, 0, "is affected")
-	e.callAffect(0x4E, t, nil, 1)
-	e.AddAffect(t, 0xF, 10, 0xFF, 1)
+	e.callAffect(affGetUp, t, nil, 1)
+	e.AddAffect(t, affPoisonDamage, 10, 0xFF, 1)
 }
 
 // spellUndeadTargets = ovr23:190F: the party members of kind 0xE whose hit points
@@ -243,7 +243,7 @@ func (e *Engine) spellUndeadTargets() {
 // spellApplyAnd17 = ovr23:19C3: applies the spell, then runs the affect 0x17 handler on the first target.
 func (e *Engine) spellApplyAnd17() {
 	e.applySpell(int(e.curSpell), 0, 1, 0, 0, "")
-	e.callAffect(0x17, e.tgt(1), nil, 0)
+	e.callAffect(affSpiritualHammer, e.tgt(1), nil, 0)
 }
 
 // spellInvisible = ovr23:1A16: "is invisible".
@@ -276,7 +276,7 @@ func (e *Engine) spellStinkingCloud() {
 	}
 	cl := &cloud{}
 	e.clouds = append(e.clouds, cl)
-	e.AddAffect(sel, 0x28, lvl, byte(lvl+n<<4), 1)
+	e.AddAffect(sel, affStinkingCloud, lvl, byte(lvl+n<<4), 1)
 	cl.Ptr00 = sel
 	cl.Num = byte(n)
 	cl.X = byte(e.tgtX)
@@ -365,7 +365,7 @@ func (e *Engine) spellEnlarge() {
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
-	e.AddAffect(t, 0x26, e.spellAmount(int(e.curSpell)), out, 1)
+	e.AddAffect(t, affStrength, e.spellAmount(int(e.curSpell)), out, 1)
 }
 
 // spellAnimateDead = ovr23:206F: Animate Dead. Corpses of the party list (status 6,
@@ -402,7 +402,7 @@ func (e *Engine) spellAnimateDead() {
 		}
 		lvl--
 		if e.Revive(p, p.MaxHP) {
-			e.AddAffectMsg(p, 0x20, 0, data, 1, 0, false, "is animated")
+			e.AddAffectMsg(p, affAnimated, 0, data, 1, 0, false, "is animated")
 			p.Status = 1
 		}
 	}
@@ -424,7 +424,7 @@ func (e *Engine) cureDiseaseAffects() bool {
 	cured := false
 	e.rv.cure = 1
 	t := e.tgt(1)
-	if e.CureAffect(t, 0x22) {
+	if e.CureAffect(t, affCauseDisease) {
 		cured = true
 	}
 	if e.CureAffect(e.tgt(1), 0x2B) {

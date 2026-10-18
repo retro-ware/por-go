@@ -134,10 +134,10 @@ func (e *Engine) showCombatStats() {
 	e.DisplayString(x, y, 0xF, "Encumbrance      ")
 	e.DisplayString(x+0xC, y, 0xA, itoa(int(c.Weight)))
 	m := c.Move
-	if e.FindAffect(c, 0x2A) != nil {
+	if e.FindAffect(c, affSlow) != nil { // sic: haste and slow swapped against PartyHpRange
 		m <<= 1
 	}
-	if e.FindAffect(c, 0x27) != nil {
+	if e.FindAffect(c, affHaste) != nil {
 		m >>= 1
 	}
 	e.DisplayString(x+3, y+1, 0xF, "Movement   ")
@@ -248,17 +248,13 @@ func (e *Engine) ViewCharacter() bool {
 	return quit
 }
 
-// Paladin powers from CotAB (ovr020). Two port-only affect types time them:
-// one heal a day, one cure disease a week (one is all a paladin of PoR's
-// level 8 cap gets).
-const (
-	affLaidOnHands  = 0x8C // CotAB paladinDailyHealCast
-	affCuredDisease = 0x8D // CotAB paladinDailyCureRefresh
-)
+// Paladin powers from CotAB (ovr020). Two port-only affect types time them
+// (affLaidOnHands, affCuredDisease): one heal a day, one cure disease a week
+// (one is all a paladin of PoR's level 8 cap gets).
 
 // paladinCan = CotAB CanCastHeal/CanCastCureDiseases: out of combat, okay,
 // and the power not used yet.
-func (e *Engine) paladinCan(c *Character, used byte) bool {
+func (e *Engine) paladinCan(c *Character, used affectType) bool {
 	return int8(c.Levels[clsPaladin]) > 0 && e.beginFlag != 5 && c.Status == 0 && e.FindAffect(c, used) == nil
 }
 
@@ -536,8 +532,8 @@ func (e *Engine) itemAffect(it *Item, c *Character, flag byte) {
 	a := &Affect{Item: it}
 	// the affect fields are the item's first bytes, as in the original
 	n := it.PName
-	a.Type, a.Time, a.Data, a.Call = n[0], uint16(n[1])|uint16(n[2])<<8, n[3], n[4]
-	e.callAffect(it.Spells[2], c, a, flag)
+	a.Type, a.Time, a.Data, a.Call = affectType(n[0]), uint16(n[1])|uint16(n[2])<<8, n[3], n[4]
+	e.callAffect(affectType(it.Spells[2]), c, a, flag)
 }
 
 // tradeItem = ovr20:1734 (item). extra: a stack asks how many (all by

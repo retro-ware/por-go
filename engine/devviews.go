@@ -69,10 +69,10 @@ func (e *Engine) DevScene(name string) func() {
 		}
 	case "effects":
 		return func() { // spell effects for the View page: many on member 1, one on member 2
-			for _, t := range []byte{1, 2, 0x47, 0x37, 0x3B, 0x3D} {
+			for _, t := range []affectType{affBless, affCurse, affMonsterInvisible, affPoisoned, affRegenerating, affFireResistance} {
 				e.addAffectNow(e.party[0], t, 0, 100)
 			}
-			e.addAffectNow(e.party[1], 0x47, 0, 100)
+			e.addAffectNow(e.party[1], affMonsterInvisible, 0, 100)
 			for i, t := range []byte{0x3F, 0x15, 0x49} { // and items for the inventory
 				e.AddItemCopy(e.party[i%2], e.RandomItem(t))
 			}

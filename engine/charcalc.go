@@ -477,7 +477,7 @@ func strCarry(c *Character) int16 {
 func (e *Engine) isHelpless(c *Character) bool {
 	found := false
 	for i := 1; i <= 4; i++ {
-		if e.FindAffect(c, shieldAffects[i]) != nil {
+		if e.FindAffect(c, helplessAffects[i]) != nil {
 			found = true
 		}
 	}

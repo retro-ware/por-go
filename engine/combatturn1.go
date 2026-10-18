@@ -226,7 +226,7 @@ func (e *Engine) freeAttacksOnLeave(c *Character, dir int) {
 		if e.isHelpless(t) || !e.mayActAgainst(t, c) {
 			continue
 		}
-		if e.FindAffect(t, 0x4B) != nil || e.FindAffect(t, 0x4A) != nil {
+		if e.FindAffect(t, affBloodDrain) != nil || e.FindAffect(t, affStrikeTied) != nil {
 			continue
 		}
 		attacked := false

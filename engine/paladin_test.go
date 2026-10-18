@@ -39,8 +39,8 @@ func TestPaladinCotabTransfer(t *testing.T) {
 	if len(b) != 0x11D || b[0x2F] != 3 || b[0x96+3] != 8 || b[0xA0] != 0 || b[0xAC] != 0x99 || b[0xAE] != 0x02 {
 		t.Fatalf("record % x", b[0x2F:0x30])
 	}
-	cotabKeeps := map[byte]bool{18: true, 26: true, 47: true, 48: true, 97: true, 107: true, 124: true} // ovr017 asc_49280
-	for _, typ := range []byte{0x08, affLaidOnHands, affCuredDisease} {
+	cotabKeeps := map[affectType]bool{18: true, 26: true, 47: true, 48: true, 97: true, 107: true, 124: true} // ovr017 asc_49280
+	for _, typ := range []affectType{affProtEvil, affLaidOnHands, affCuredDisease} {
 		if cotabKeeps[typ] {
 			t.Errorf("CotAB would import affect %#x", typ)
 		}
