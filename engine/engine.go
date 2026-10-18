@@ -189,8 +189,14 @@ func New(dir string, scr *ega.Screen) (*Engine, error) {
 				lines = append(lines, strings.TrimSpace(sc.Text()))
 			}
 			if len(lines) >= 5 {
-				e.Cfg.Graphics, e.Cfg.Sound = upper(lines[0][0]), upper(lines[1][0])
-				e.Cfg.FullIntro = upper(lines[4][0]) == 'F' // main 0x461F: cmp [484C],'F'
+				first := func(s string, def byte) byte { // a blank line keeps the default
+					if s == "" {
+						return def
+					}
+					return upper(s[0])
+				}
+				e.Cfg.Graphics, e.Cfg.Sound = first(lines[0], e.Cfg.Graphics), first(lines[1], e.Cfg.Sound)
+				e.Cfg.FullIntro = first(lines[4], 'F') == 'F' // main 0x461F: cmp [484C],'F'
 			}
 		}
 	}
@@ -339,7 +345,7 @@ func (e *Engine) release() {
 	}
 }
 
-// The original's drain loop is dead code: 0899:0104 jumps straight to its exit.
+// ClearKeyboard does nothing: the original's drain loop is dead code (0899:0104 jumps straight to its exit).
 func (e *Engine) ClearKeyboard() {}
 
 // WaitSeconds = ovr02:0000 — wait n seconds or until a key is pressed, then

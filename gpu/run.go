@@ -19,8 +19,8 @@ type Game interface {
 	Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int)
 }
 
-// Termination returned by Update ends RunGame without an error.
-var Termination = errors.New("gpu: termination")
+// ErrTermination returned by Update ends RunGame without an error.
+var ErrTermination = errors.New("gpu: termination")
 
 var win struct {
 	w        *glfw.Window
@@ -163,7 +163,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		for range n {
 			tickInput()
 			if err := g.Update(); err != nil {
-				if err == Termination {
+				if err == ErrTermination {
 					return nil
 				}
 				return err

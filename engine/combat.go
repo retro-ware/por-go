@@ -680,7 +680,7 @@ func (e *Engine) otherMenu(c *Character) (done bool) {
 		case 'Q':
 			done = e.clearCombatInfo(c)
 		case 'B':
-			done = e.bandage(true)
+			e.bandage(true)
 			done = e.clearCombatInfo(c)
 		case 'S':
 			e.speedMenu()

@@ -23,6 +23,9 @@ import (
 // per Ticks() call; a scripted key becomes visible to KeyPressed on the
 // poll after one that saw none; ReadKey with an empty script, or too many
 // idle polls, ends the run by panicking with TraceDone.
+
+// TraceFunc receives one trace record: the original's address, the
+// primitive's name and its arguments.
 type TraceFunc func(addr, name string, args ...any)
 
 // TraceDone is the panic value that ends a trace run; Reason says why.

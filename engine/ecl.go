@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
 )
@@ -33,7 +32,7 @@ type eclState struct {
 	cell                               byte       // DS:6AB1
 	encounterShown                     [2]byte    // DS:84C8
 	soundVar, scriptVarB8, scriptVarB9 uint16     // DS:84CC/84CE/84D0
-	memberDied, memberGone, duelMode   byte       // DS:84D2/84D3/84D4
+	memberDied, memberGone             byte       // DS:84D2/84D3 (DS:84D4 is run.duelMode)
 	picShown                           byte       // DS:84E0
 	picAnimating                       byte       // DS:84E1
 	textInView                         byte       // DS:84E2
@@ -49,9 +48,6 @@ type eclState struct {
 
 func (e *Engine) eclByte(a int) byte       { return e.ecl[(a+0x6700)&0xFFFF] }
 func (e *Engine) setEclByte(a int, v byte) { e.ecl[(a+0x6700)&0xFFFF] = v }
-
-func wordAt(b []byte, o int) uint16     { return binary.LittleEndian.Uint16(b[o:]) }
-func putWord(b []byte, o int, v uint16) { binary.LittleEndian.PutUint16(b[o:], v) }
 
 // addrKind = ovr08:06FB.
 func addrKind(a int) int {

@@ -33,7 +33,7 @@ func (e *Engine) computerTurn(c *Character) {
 		return
 	}
 	if e.aiCastFromItem(c) {
-		done = e.clearCombatInfo(c)
+		e.clearCombatInfo(c)
 		return
 	}
 	if ci.Spell > 0 {
@@ -42,7 +42,7 @@ func (e *Engine) computerTurn(c *Character) {
 		return
 	}
 	if e.aiTryCast(c) {
-		done = e.clearCombatInfo(c)
+		e.clearCombatInfo(c)
 		return
 	}
 	if e.aiCastKnown(c) {
@@ -303,12 +303,12 @@ func (e *Engine) aiMoveStep(c *Character) {
 	e.combatTurn(c, byte(d), 0, false)
 	e.freeAttacksOnLeave(c, int(ci.Facing))
 	if c.Okay == 0 {
-		done = e.clearCombatInfo(c)
+		e.clearCombatInfo(c)
 		return
 	}
 	e.stepSquare(c, int(ci.Facing))
 	if c.Okay == 0 {
-		done = e.clearCombatInfo(c)
+		e.clearCombatInfo(c)
 	}
 	e.stinkingCloud(c)
 }

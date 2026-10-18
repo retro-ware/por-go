@@ -834,6 +834,3 @@ func (e *Engine) stingCheat() bool {
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
 	return true
 }
-
-// initCombatOverlay = ovr14:3C6D: the overlay's initialisation, empty.
-func (e *Engine) initCombatOverlay() {}

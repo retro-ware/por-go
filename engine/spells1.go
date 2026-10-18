@@ -885,6 +885,3 @@ func (e *Engine) spellTableInit() {
 	e.spellFx[66] = e.fxNone
 	e.spellFx[67] = e.fxReading
 }
-
-// spellNop = ovr23:37B0: empty (entry 0).
-func (e *Engine) spellNop() {}

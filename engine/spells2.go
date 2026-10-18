@@ -457,7 +457,7 @@ func (e *Engine) spellDispel() {
 		hit := false
 		t := e.tgt(1)
 		for _, a := range append([]*Affect(nil), t.Affects...) {
-			if a.Data >= 0xFF {
+			if a.Data == 0xFF {
 				continue
 			}
 			e.spellValue2 = a.Data & 0xF

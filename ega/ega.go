@@ -91,14 +91,14 @@ func (s *Screen) SetState(st int32) {
 	}
 }
 
-// Settled: the engine has taken the keys sent and finished with them, or
+// Settled reports whether the engine has taken the keys sent and finished with them, or
 // pauses on purpose; the picture is worth drawing.
 func (s *Screen) Settled() bool {
 	st := s.state.Load()
 	return st == Pausing || st == Waiting && len(s.Keys) == 0
 }
 
-// Idle: the engine waits for input and none is queued (held keys repeat
+// Idle reports whether the engine waits for input and none is queued (held keys repeat
 // only then, so they never pile up).
 func (s *Screen) Idle() bool { return s.state.Load() == Waiting && len(s.Keys) == 0 }
 
@@ -140,7 +140,7 @@ func New() *Screen {
 	return s
 }
 
-// Lock/Unlock guard Pix for the renderer.
+// Lock guards Pix for the renderer; Unlock releases it.
 func (s *Screen) Lock()   { s.mu.Lock() }
 func (s *Screen) Unlock() { s.mu.Unlock() }
 

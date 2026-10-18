@@ -129,7 +129,7 @@ func (b *Spellbook) Draw(screen *gpu.Image) {
 	d := b.begin()
 	Frame(d, spellBox)
 	c := b.P.Chars[b.char]
-	Title(d, "Spells of "+c.Name+" the "+strings.Title(c.Class), cw/2, spellBox.Min.Y+14)
+	Title(d, "Spells of "+c.Name+" the "+capital(c.Class), cw/2, spellBox.Min.Y+14)
 	sp := fmt.Sprintf("SP %d / %d", c.SP, c.MaxSP)
 	Print(d, sp, spellBox.Max.X-24-font.Width(sp), spellY-20, gold)
 	ks := b.known(c)
@@ -159,4 +159,12 @@ func (b *Spellbook) Draw(screen *gpu.Image) {
 	}
 	Button(d, exitBtn.Min.X, exitBtn.Min.Y, exitBtn.Dx(), "Exit", s)
 	b.present(screen)
+}
+
+// capital upper-cases the first letter of an ASCII word ("fighter" -> "Fighter").
+func capital(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }

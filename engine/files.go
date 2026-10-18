@@ -361,22 +361,6 @@ func (e *Engine) AddToParty(c *Character) {
 	e.RecomputeCharacter(c) // ovr24:0000
 }
 
-// removeFromParty unlinks c (used by Remove/Drop); order values stay.
-func (e *Engine) removeFromParty(c *Character) {
-	for i, m := range e.party {
-		if m == c {
-			e.party = append(e.party[:i], e.party[i+1:]...)
-			break
-		}
-	}
-	if e.partySel >= len(e.party) {
-		e.partySel = len(e.party) - 1
-	}
-	if e.partySel < 0 {
-		e.partySel = 0
-	}
-}
-
 // eraseRosterCopies deletes <name>.cha/.itm/.spc (nested check as in LoadGame
 // when nested is true, independent checks as in SaveGame otherwise).
 func (e *Engine) eraseRosterCopies(c *Character, nested bool) {

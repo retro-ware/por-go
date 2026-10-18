@@ -98,7 +98,7 @@ func Music(name string) {
 		return
 	}
 	if music != nil {
-		music.Close()
+		music.Pause()
 		music, cur = nil, ""
 	}
 	s := Song(name)
@@ -159,6 +159,9 @@ func freq(n string) float64 {
 	}
 	if n[1] == '#' {
 		s, n = s+1, n[1:]
+	}
+	if len(n) < 2 {
+		return 0
 	}
 	oct := int(n[1] - '0')
 	return 440 * math.Pow(2, float64(s+12*(oct-4))/12)

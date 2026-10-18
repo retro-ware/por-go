@@ -331,7 +331,7 @@ func (v *Inventory) Draw(screen *gpu.Image) {
 
 	// the character's slots
 	DarkFrame(d, slotBox)
-	Print(d, c.Name+" the "+strings.Title(c.Class), slotX, 24, gold)
+	Print(d, c.Name+" the "+capital(c.Class), slotX, 24, gold)
 	for i, s := range party.Slots {
 		r := slotRow(i)
 		if i == v.slot || i == v.hoverSlot {

@@ -559,12 +559,10 @@ func genTextures() {
 	texFirefly = genSolid(color.RGBA{200, 255, 180, 255})
 	texFireball = genSolid(color.RGBA{255, 90, 30, 255})
 	texBolt = genSolid(color.RGBA{170, 210, 255, 255})
-	for _, e := range []struct {
+	atlas = append(atlas, []struct {
 		name string
 		img  *gpu.Image
-	}{{"stone", mats['#'].img}, {"floor", texFloor}, {"ceil", texCeil}, {"grass", texGrass}} {
-		atlas = append(atlas, e)
-	}
+	}{{"stone", mats['#'].img}, {"floor", texFloor}, {"ceil", texCeil}, {"grass", texGrass}}...)
 	for ch, m := range mats {
 		if ch != '#' {
 			atlas = append(atlas, struct {
@@ -697,9 +695,9 @@ func hit(a *Actor, dmg int) {
 	for i, b := range actors {
 		if b == a {
 			actors = append(actors[:i], actors[i+1:]...)
+			break
 		}
 	}
-	return
 }
 
 // MonsterAt names the monster standing in cell (x, y), or "".
@@ -1232,7 +1230,7 @@ func (g *Game) Update() error {
 	}
 	if g.menu {
 		if g.updateMenu() {
-			return gpu.Termination
+			return gpu.ErrTermination
 		}
 	} else {
 		if KeyJustPressed(gpu.KeySpace) && !g.moving && !Fighting() { // wait a turn
@@ -1518,8 +1516,6 @@ func (g *Game) light(v *vert) {
 	}
 	v.r, v.g, v.b = math.Min(1, v.r), math.Min(1, v.g), math.Min(1, v.b)
 }
-
-var white = genSolid(color.RGBA{255, 255, 255, 255})
 
 // drawQuad subdivides, lights, transforms, near-clips and projects one textured quad.
 func (g *Game) drawQuad(dst *gpu.Image, c cam, f *face) {

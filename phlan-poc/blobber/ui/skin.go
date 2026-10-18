@@ -36,7 +36,6 @@ var (
 	ink      = color.RGBA{0x15, 0x20, 0x2f, 255}
 	light    = color.RGBA{0xe8, 0xe0, 0xc8, 255}
 	charcoal = color.RGBA{0x2e, 0x32, 0x2a, 255}
-	shade    = color.RGBA{0, 0, 0, 255}
 )
 
 // Canvas size of every full window, in sheet pixels.
