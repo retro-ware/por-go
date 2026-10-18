@@ -45,8 +45,8 @@ func TestStoneTexture(t *testing.T) {
 
 func TestKeys(t *testing.T) {
 	p := &Presenter{}
-	m := &engine.Menu{Items: []engine.MenuItem{{Text: "Move", Key: 'M'}, {Text: "View", Key: 'V'}, {Text: "Aim", Key: 'A'}, {Text: "Quick", Key: 'Q'}, {Text: "Done", Key: 'D'}}}
-	p.bar.items, _ = shownItems(m, []engine.MenuItem{{Text: "Wait", Key: 'W'}})
+	m := &engine.Menu{Items: []engine.MenuItem{{Text: "View", Key: 'V'}, {Text: "Aim", Key: 'M'}, {Text: "Quick", Key: 'Q'}, {Text: "Done", Key: 'O'}}}
+	p.bar.items, _ = shownItems(m, []engine.MenuItem{{Text: "Wait", Key: 'D'}})
 	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
 	str := func(ks []uint16) string {
 		s := ""
@@ -55,12 +55,12 @@ func TestKeys(t *testing.T) {
 		}
 		return s
 	}
-	for k, want := range map[uint16]string{'1': "A", '2': "W", '3': "DQ", '4': "Q", '5': "", '0': "", 8: "DQ", 'w': "", 'Q': ""} { // Quick last
+	for k, want := range map[uint16]string{'1': "M", '2': "OD", '3': "OQ", '4': "Q", '5': "", '0': "", 8: "OQ", 'w': "", 'Q': ""} { // Quick last; Wait is Done's Delay
 		if got, taken := p.Key(k); str(got) != want || !taken {
 			t.Errorf("key %#x: %q %v, want %q taken", k, str(got), taken, want)
 		}
 	}
-	for k, want := range map[uint16]string{'u': "Q", 'p': "W", 'g': ""} { // the remaster's letters; no Guard on this bar
+	for k, want := range map[uint16]string{'u': "Q", 'p': "OD", 'g': ""} { // the remaster's letters; no Guard on this bar
 		if got, _ := p.Key(k); str(got) != want {
 			t.Errorf("hotkey %c: %q, want %q", k, str(got), want)
 		}

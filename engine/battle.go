@@ -255,6 +255,10 @@ func HoverKey(x, y int) uint16 { return KeyHover + uint16(y*50+x) }
 // (a portrait clicked in a remastered view); elsewhere it is dropped.
 const KeyViewMember = 0xC600
 
+// KeyPan + d (0 north, 1 east, 2 south, 3 west) scrolls the combat map a
+// square that way (the classic view's W A S D: the remaster pans its own camera).
+const KeyPan = 0xC800
+
 // unitDrawn / unitHidden track what the page shows of combatant i.
 func (e *Engine) unitDrawn(i int, pose byte) {
 	if e.snap.poses == nil {

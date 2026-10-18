@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ebitengine/oto/v3"
@@ -107,6 +108,9 @@ func (g *game) push(k uint16) {
 		if taken {
 			return
 		}
+	}
+	if d := strings.IndexByte("wdsaWDSA", byte(k)); k < 128 && d >= 0 && g.eng.View().Battle != nil { // classic combat: W A S D scroll the map, as the remaster pans
+		k = engine.KeyPan + uint16(d%4)
 	}
 	g.scr.PushKey(k)
 	g.sent = true

@@ -105,6 +105,13 @@ func (e *Engine) translate(k uint16) uint16 {
 		}
 		return 0
 	}
+	if k >= KeyPan && k < KeyPan+4 {
+		if e.beginFlag == 5 && e.cmapUp() && e.ext.modal == 0 {
+			d := int(k - KeyPan)
+			e.panView([4]int{0, 1, 0, -1}[d], [4]int{-1, 0, 1, 0}[d])
+		}
+		return 0
+	}
 	if k >= KeyViewMember && k < KeyViewMember+8 { // a portrait clicked: that member's View page, or the member a list or bar is for
 		n := int(k - KeyViewMember)
 		switch {

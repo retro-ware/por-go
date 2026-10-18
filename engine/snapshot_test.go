@@ -311,7 +311,8 @@ func TestCombatActions(t *testing.T) {
 		t.Errorf("a click on one's own figure: still on the map, not the sheet")
 	}
 	keyWait(e, scr, 'E') // leave the sheet
-	v = keyWait(e, scr, 'W')
+	keyWait(e, scr, 'O') // Wait is Done's Delay
+	v = keyWait(e, scr, 'D')
 	if v.Battle != nil {
 		for _, u := range v.Battle.Units {
 			if u.Active && u.ID == me.ID {
@@ -428,5 +429,29 @@ func TestViewMember(t *testing.T) {
 	}
 	if !v.Party[1].Selected {
 		t.Errorf("portrait click: member 2 not the one viewed")
+	}
+}
+
+// TestPan: the classic view's W A S D scroll the combat map a square, never past its edges.
+func TestPan(t *testing.T) {
+	e, scr, v := battleView(t)
+	moved := false
+	for d, step := range []image.Point{{0, -1}, {1, 0}, {0, 1}, {-1, 0}} {
+		from := v.Battle.View
+		v = keyWait(e, scr, engine.KeyPan+uint16(d))
+		if v.Battle == nil {
+			t.Fatal("panning left the map")
+		}
+		to := v.Battle.View
+		if to != from && to != from.Add(step) {
+			t.Errorf("pan %d: view %v -> %v", d, from, to)
+		}
+		if to.X < 0 || to.Y < 0 || to.X > 50-12 || to.Y > 25-7 {
+			t.Errorf("pan %d: view %v past the map's edge", d, to)
+		}
+		moved = moved || to != from
+	}
+	if !moved {
+		t.Error("no pan moved the view")
 	}
 }

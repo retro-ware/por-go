@@ -184,9 +184,6 @@ func (e *Engine) playerTurn(c *Character) {
 			done = e.otherMenu(c)
 		case 'G': // extra: the Done menu's, from the main menu (combatMenu offers them only when they apply)
 			done = e.guard(c)
-		case 'W':
-			c.Combat.Delay = 1
-			done = true
 		case 'B':
 			e.bandage(true)
 			done = e.clearCombatInfo(c)
@@ -323,8 +320,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 		hidden += "B"
 		e.snap.actions = append(e.snap.actions, MenuItem{"Bandage", 'B'})
 	}
-	hidden += "W"
-	e.snap.actions = append(e.snap.actions, MenuItem{"Wait", 'W'})
+	e.snap.actions = append(e.snap.actions, MenuItem{"Wait", 'D'}) // Done's Delay: views send Done first
 	e.snap.targets, e.snap.hits = nil, map[int]int{}
 	rng := 1
 	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
@@ -369,7 +365,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 			key = 'D'
 		}
 		switch key { // set cs:0646
-		case 0x10, 0x13, ' ', '-', '2', 'A', 'C', 'D', 'L', 'I', 'M', 'Q', 'T', 'V', 'G', 'W', 'B':
+		case 0x10, 0x13, ' ', '-', '2', 'A', 'C', 'D', 'L', 'I', 'M', 'Q', 'T', 'V', 'G', 'B':
 			return key
 		}
 	}

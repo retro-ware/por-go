@@ -131,7 +131,10 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 			continue
 		case kind == "main" && it.Text == "Done":
 			for _, a := range actions {
-				if a.Text != "Guard" {
+				switch {
+				case a.Text == "Wait": // Done's Delay
+					add(barItem{a.Key, a.Text, []uint16{uint16(it.Key), uint16(a.Key)}}, -1)
+				case a.Text != "Guard":
 					add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
 				}
 			}
