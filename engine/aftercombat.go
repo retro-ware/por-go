@@ -316,6 +316,9 @@ func (e *Engine) showResult(exp int32) {
 // lootList = ovr06:0B14 (var index, var item): the treasure in a "Loot" box.
 func (e *Engine) lootList(index *int, item **Item) byte {
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Loot")
+	if c := e.selected(); c != nil { // extra: who takes (F1-F8, a portrait change it)
+		e.displayName(c, 2, 2, false)
+	}
 	list := make([]*ListNode, len(e.run.treasure))
 	for i, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
@@ -323,7 +326,9 @@ func (e *Engine) lootList(index *int, item **Item) byte {
 	}
 	redraw := true
 	var sel *ListNode
+	e.ext.buying = true
 	key := e.ListMenu("Items: ", "Take", colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
+	e.ext.buying = false
 	*item = nil
 	for i, n := range list {
 		if n == sel {
@@ -339,6 +344,9 @@ func (e *Engine) lootTake() {
 	for len(e.run.treasure) > 0 {
 		var it *Item
 		key := e.lootList(&index, &it)
+		if key == keyRelist>>8 {
+			continue // F1-F8 picked another taker
+		}
 		if key != 'T' && key != 13 || it == nil {
 			break
 		}
@@ -376,7 +384,10 @@ func (e *Engine) lootMenu() {
 		if items {
 			menu = "View Take" + exit
 		}
-		key, _ := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, true) // ovr06:101F: anim
+		key, again := e.campInput("", menu) // ovr06:101F: anim; extra: F1-F8 pick the member too
+		if again {
+			continue
+		}
 		switch key {
 		case 'V':
 			e.ViewCharacter()
@@ -395,9 +406,6 @@ func (e *Engine) lootMenu() {
 				return
 			}
 			e.ClearBox(1, msgTop, winRight, winBottom)
-		case 'G', 'O':
-			e.partyKeypad(key)
-			e.DisplayPartyList()
 		}
 	}
 }

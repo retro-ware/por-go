@@ -239,7 +239,7 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 // button, or an item of the vertical menu.
 func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 	if !p.fight {
-		for i, r := range p.cards { // a portrait: that member's View page (taken on the command bar only)
+		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
 				return []uint16{engine.KeyViewMember + uint16(i)}, true
 			}
@@ -512,9 +512,13 @@ func (p *Presenter) Cell(x, y int) (int, int, bool) {
 // drawParty shows the party as Blobber's portrait cards, each with the
 // character's paper-doll head.
 func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member) {
-	p.party.Chars = p.party.Chars[:0]
+	p.party.Chars, ui.Selected = p.party.Chars[:0], nil
 	for _, m := range ms {
-		p.party.Chars = append(p.party.Chars, &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head)})
+		c := &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head)}
+		if m.Selected { // the selected member's card in gold
+			ui.Selected = c
+		}
+		p.party.Chars = append(p.party.Chars, c)
 	}
 	ui.DrawParty(dst, &p.party)
 }

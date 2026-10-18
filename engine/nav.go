@@ -105,10 +105,15 @@ func (e *Engine) translate(k uint16) uint16 {
 		}
 		return 0
 	}
-	if k >= KeyViewMember && k < KeyViewMember+8 { // a portrait clicked: that member's View page
-		if n := int(k - KeyViewMember); e.ext.inCommand && e.ext.modal == 0 && n < len(e.party) {
+	if k >= KeyViewMember && k < KeyViewMember+8 { // a portrait clicked: that member's View page, or the member a list or bar is for
+		n := int(k - KeyViewMember)
+		switch {
+		case e.ext.modal > 0 || n >= len(e.party):
+		case e.ext.inCommand:
 			e.partySel = n
 			return 'V'
+		case e.ext.campBar || e.ext.buying:
+			return e.viewKey(n)
 		}
 		return 0
 	}
@@ -380,7 +385,7 @@ func (e *Engine) hintText() string {
 			h += "|P=character|F1-F8=member"
 		}
 		if x.buying {
-			h += "|F1-F8=buyer"
+			h += "|F1-F8=who gets it"
 		}
 		if x.nav.exit {
 			h += "|Esc=back"

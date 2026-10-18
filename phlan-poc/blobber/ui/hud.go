@@ -37,6 +37,9 @@ var (
 // while a fight is on. The host sets it.
 var Active *party.Character
 
+// Selected is outlined in gold whether or not a fight is on: a host's chosen member.
+var Selected *party.Character
+
 // Hit shows a damage icon of the given kind over character who's (1-based) portrait.
 // It matches party.Party.OnHit.
 func Hit(who, n int, kind string) {
@@ -120,7 +123,7 @@ func DrawParty(screen *gpu.Image, p *party.Party) {
 }
 
 func drawCard(d *gpu.Image, i int, c *party.Character) {
-	if c == Active && blobber.Fighting() {
+	if c == Active && blobber.Fighting() || c == Selected {
 		GoldFrame(d, rc(0, 0, cardW, frameH))
 	} else {
 		DarkFrame(d, rc(0, 0, cardW, frameH))
