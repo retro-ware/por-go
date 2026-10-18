@@ -7,7 +7,10 @@ package engine
 // ponytail: Lightning Bolt (kind 8, a line) gets no preview; boltPath
 // would need a dry run.
 
-import "strconv"
+import (
+	"image"
+	"strconv"
+)
 
 // aoeMarks marks who the spell aimed at (x,y) would hit; the prompt says
 // how many on each side. undo takes the marks off again.
@@ -33,7 +36,16 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 			marks[[2]int{int(p.x), int(p.y)}] = nil
 		}
 	}
+	e.snap.area = nil // the squares buildNear's line test reaches round (x,y), for views that draw the area
+	for sy := max(0, y-e.ext.aoe+1); sy <= min(24, y+e.ext.aoe-1); sy++ {
+		for sx := max(0, x-e.ext.aoe+1); sx <= min(49, x+e.ext.aoe-1); sx++ {
+			r, ax, ay := e.ext.aoe-1, sx, sy
+			if e.lineOfSight(&r, &ax, &ay, x, y) {
+				e.snap.area = append(e.snap.area, image.Pt(sx, sy))
+			}
+		}
+	}
 	e.markReach(marks, true)
-	undo := func() { e.markReach(marks, false) }
+	undo := func() { e.markReach(marks, false); e.snap.area = nil }
 	return "Hits " + strconv.Itoa(foes) + " foe " + strconv.Itoa(friends) + " ally ", undo
 }

@@ -25,6 +25,7 @@ type Battle struct {
 	Targets  []int                  // units (by ID) a click attacks from the main menu
 	Actions  []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
 	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
+	AreaAt   []image.Point          // the squares a spell's area covers round the aimed square
 	Effects  []Effect               // sprites over the map: a missile, a hit, a fall
 	View     image.Point            // top left square the original shows
 	Strike   Strike                 // the last weapon attack
@@ -78,6 +79,7 @@ type Unit struct {
 	Active     bool        // whose turn it is
 	Name       string
 	HP, AC     int
+	Hit        int // the active member's chance in percent to hit it with one blow (0: not a target)
 }
 
 // battle builds the snapshot's Battle (nil outside combat).
@@ -88,7 +90,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, AreaAt: s.area, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {
@@ -132,7 +134,7 @@ func (e *Engine) battle() *Battle {
 			b.Strike.To = i
 		}
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
-			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), AC: 60 - int(c.AC[0])}
+			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), AC: 60 - int(c.AC[0]), Hit: s.hits[i]}
 		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
 			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}

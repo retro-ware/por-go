@@ -133,6 +133,8 @@ type snapState struct {
 	marks    []image.Point          // squares markReach framed
 	reach    []image.Point          // squares a click on the main combat menu walks to
 	paths    map[image.Point][]Step // the walk to each of them
+	hits     map[int]int            // each of targets' chance to be hit, in percent
+	area     []image.Point          // squares aoeMarks covers
 	actions  []MenuItem             // the main combat menu's keys off its bar (Guard, Wait, Bandage)
 	targets  []int                  // combatants a click on the main combat menu attacks
 	hidden   map[int]bool           // combatants whose icon is off the page (falling, hiding)

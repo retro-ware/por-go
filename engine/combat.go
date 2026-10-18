@@ -302,18 +302,30 @@ func (e *Engine) combatMenu(c *Character) byte {
 		hidden += "B"
 		e.snap.actions = append(e.snap.actions, MenuItem{"Bandage", 'B'})
 	}
-	e.snap.targets = nil
+	e.snap.targets, e.snap.hits = nil, map[int]int{}
 	rng := 1
 	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
 		rng = int(e.base(w.Type).Range) - 1
 	}
 	for i := 1; i <= e.ncomb; i++ {
-		if t := e.combatant(byte(i)); t != nil && t.Side != c.Side && t.Okay != 0 && e.cpos[i].size > 0 && e.mayActAgainst(c, t) &&
-			(e.canTarget(c, t, rng, 1) || e.pathNextTo(c, t, reach) != nil) {
-			e.snap.targets = append(e.snap.targets, i)
+		t := e.combatant(byte(i))
+		if t == nil || t.Side == c.Side || t.Okay == 0 || e.cpos[i].size == 0 || !e.mayActAgainst(c, t) {
+			continue
+		}
+		walk := e.pathNextTo(c, t, reach)
+		if !e.canTarget(c, t, rng, 1) && walk == nil {
+			continue
+		}
+		e.snap.targets = append(e.snap.targets, i)
+		e.snap.hits[i] = e.hitChance(c, t)
+		if walk != nil { // hovering the foe shows the walk up to it
+			steps, n := e.walkSteps(c, walk), e.combatSize(t)
+			for d := range n * n {
+				e.snap.paths[image.Pt(e.combatX(t)+d%n, e.combatY(t)+d/n)] = steps
+			}
 		}
 	}
-	defer func() { e.snap.actions, e.snap.targets = nil, nil }()
+	defer func() { e.snap.actions, e.snap.targets, e.snap.hits = nil, nil, nil }()
 	if t := e.ext.aimAfterWalk; t != nil { // extra: walked up to a clicked foe: now the attack
 		e.ext.aimAfterWalk = nil
 		if t.Okay != 0 && e.rangeTo(c, t) <= 1 {
@@ -570,6 +582,38 @@ func (e *Engine) provokes(c *Character, at [2]int, d int) bool {
 		}
 	}
 	return false
+}
+
+// hitChance (extra) is a's chance in percent to hit b with one blow of
+// the readied attack: attackSlots' number to reach and AttackHits' d20.
+// ponytail: the affects that change the roll (bless, prayer, ...) are left
+// out; a dry run of affect groups 0xB and the attacker/defender ones would add them.
+func (e *Engine) hitChance(a, b *Character) int {
+	if e.isHelpless(b) {
+		return 100
+	}
+	need := b.AC[0]
+	if e.rangedFacing(a, b) {
+		need = b.AC[1] - 2
+	}
+	bonus := int(need)
+	e.rangePenalty(a, b, &bonus)
+	need = byte(bonus)
+	adj := int(int8(byte(e.game.PartyHit)))
+	if a.Side != sideParty {
+		adj = int(int8(byte(e.game.MonsterHit)))
+	}
+	n := 0
+	for r := 2; r <= 20; r++ {
+		roll := r
+		if r == 20 {
+			roll = 100
+		}
+		if roll+int(a.THAC0)+adj >= int(need) {
+			n++
+		}
+	}
+	return n * 5
 }
 
 // markReach (extra) shows the reachable squares in view with a dotted

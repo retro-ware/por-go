@@ -82,6 +82,7 @@ var (
 	markGlow    = [4]float32{0.25, 0.8, 0.85, 1} // the original frames choices in light cyan
 	hoverGlow   = [4]float32{0.45, 0.45, 0.45, 1}
 	areaGlow    = [4]float32{1, 0.5, 0.1, 1}
+	areaFill    = [4]float32{0.22, 0.09, 0.01, 1}
 	targetGlow  = [4]float32{0.95, 0.12, 0.08, 1}
 	reachGlow   = [4]float32{0.015, 0.05, 0.13, 1}
 	pathGlow    = [4]float32{0.1, 0.35, 0.8, 1}
@@ -146,6 +147,9 @@ func hint(b *engine.Battle, sq image.Point) string {
 		s := u.Name + "  HP " + strconv.Itoa(u.HP) + "  AC " + strconv.Itoa(u.AC)
 		if slices.Contains(b.Targets, u.ID) {
 			s = "Attack " + s
+			if u.Hit > 0 {
+				s += "  " + strconv.Itoa(u.Hit) + "% to hit"
+			}
 		}
 		return s
 	}
@@ -286,6 +290,10 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	}
 	for _, m := range b.Marks {
 		frame(m.X, m.Y, marks, 0)
+	}
+	for _, a := range b.AreaAt { // the ground a spell's area covers: an orange wash
+		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: areaFill, Model: place(float32(a.X)+.5, 0.0035, float32(a.Y)+.5, 0, .96, .005, .96)}
+		dst.DrawMesh(p.box, p.white, vp, &o)
 	}
 	for _, u := range b.Units { // the foes a click attacks: red
 		if slices.Contains(b.Targets, u.ID) {

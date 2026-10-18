@@ -302,6 +302,11 @@ func TestCombatActions(t *testing.T) {
 	if len(v.Battle.Targets) == 0 {
 		t.Errorf("no Targets with foes about")
 	}
+	for _, u := range v.Battle.Units {
+		if slices.Contains(v.Battle.Targets, u.ID) && (u.Hit < 5 || u.Hit > 100) {
+			t.Errorf("target %s: hit chance %d%%, want 5..100", u.Name, u.Hit)
+		}
+	}
 	if v := keyWait(e, scr, engine.SquareKey(me.X, me.Y)); v.Battle != nil {
 		t.Errorf("a click on one's own figure: still on the map, not the sheet")
 	}
