@@ -139,6 +139,12 @@ func (e *Engine) glyph(ch byte, upcase bool) ([8]byte, bool) {
 	}
 	i := int(ch)
 	if upcase {
+		switch ch { // the game's font has no square brackets (those slots hold other symbols): its angle ones stand in
+		case '[':
+			ch = '<'
+		case ']':
+			ch = '>'
+		}
 		i = int(upper(ch)) % 0x40
 	}
 	if e.font == nil || i*8+8 > len(e.font) {

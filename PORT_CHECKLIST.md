@@ -92,7 +92,7 @@ original. Ticked items are ported and checked in a headless run
 - [x] Memorize list: each spell shows how many are chosen (xN); Clear (shown while any are chosen) drops the whole selection
 - [x] Rest menu "Heal Memorize Wait Night|Day Exit" replaces the days/hours/minutes editor: Heal works like the later games' Fix (clerics cast their Cure Light Wounds, memorize more in every first-level slot and rest to learn them while that helps, then relearn their own spells; natural rest, 1 HP a day, does the rest), Memorize the party's study time, Wait 1 hour (timed script events), Night/Day until 20:00/6:00
 - [x] Day sky from 6:00 to 20:00 (the scripts' own check is hour < 14; patched in opCompare)
-- [x] Item names end in Angband-style base stats: "(1d8)" weapon damage, "<7>" armour class given (the font has no square brackets) (shop names stop before the price)
+- [x] Item names end in Angband-style base stats: "(1d8)" weapon damage, "[7]" armour class given (the game's font has no square brackets: it draws them with its < and >; PC fonts show real ones) (shop names stop before the price)
 - [x] Shop Buy list names the buyer (top right; F1-F8 change it); a missing ITEMS file (imports made before it was copied) is reported at start: every item would be the wrong class
 - [x] Shop Buy list Look (L): a box with the item's rules stats (damage, vs large, range and shots, ammunition, AC, movement, who can use it) and what special items do (oil, holy water, mirror, holy symbol, silver, scrolls) (engine/itemlook.go)
 - [x] Map and minimap doors are light brown (Amiga palette 0xA84) instead of light cyan, which ran together with the white walls
