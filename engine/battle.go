@@ -72,6 +72,9 @@ func (e *Engine) battle() *Battle {
 		}
 	}
 	for _, f := range s.effects {
+		if f.cursor { // Battle.Cursor shows where it lands
+			continue
+		}
 		b.Effects = append(b.Effects, Effect{float64(f.x) / 3, float64(f.y) / 3, e.picRGBA(f.im, f.frame, false, -1)})
 	}
 	for y := range b.Ground {
@@ -183,11 +186,12 @@ func (e *Engine) cmapUp() bool {
 type effect struct {
 	x, y, frame int
 	im          *dax.Image
+	cursor      bool // the aim cursor in flight (views with their own cursor leave it out)
 }
 
 // showEffect / hideEffect record the hit sprite at page thirds (px, py).
 func (e *Engine) showEffect(px, py, frame int, im *dax.Image) {
-	e.snap.effects = append(e.snap.effects, effect{e.cmap.viewX*3 + px, e.cmap.viewY*3 + py, frame, im})
+	e.snap.effects = append(e.snap.effects, effect{e.cmap.viewX*3 + px, e.cmap.viewY*3 + py, frame, im, e.sprCursor})
 }
 
 func (e *Engine) hideEffect(px, py int) {

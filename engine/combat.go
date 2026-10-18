@@ -138,6 +138,11 @@ func (e *Engine) playerTurn(c *Character) {
 				done = e.throwItem(c)
 			}
 		case 'A':
+			if !e.foeInSight(c) { // extra: Next/Prev would cycle the party (the aimer too) with no foe to see
+				e.ext.autoAim = nil
+				e.BottomMessage("No foe in sight")
+				break
+			}
 			var aim aimTarget
 			var ok bool
 			e.ext.enemiesOnly = true // extra: Next/Prev pass over allies
@@ -892,4 +897,19 @@ func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
 		return nil
 	}
 	return append([]int(nil), best...)
+}
+
+// foeInSight (extra): is there a foe among the ones c's Aim cycles
+// through (o14_3558's list) that c may act against? Without one the
+// cycle runs over the party, the aimer too.
+func (e *Engine) foeInSight(c *Character) bool {
+	saved := e.near
+	defer func() { e.near = saved }()
+	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c))
+	for _, n := range e.near {
+		if f := e.combatant(n.index); f != nil && f.Side != c.Side && e.o14_1085(c, f) {
+			return true
+		}
+	}
+	return false
 }

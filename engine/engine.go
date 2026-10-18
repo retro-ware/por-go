@@ -89,6 +89,7 @@ type Engine struct {
 	gs             geoState            // ovr30 map, wall sets and view
 	run            eclRun              // ovr04 globals
 	pic            animPic             // DS:6ABE view-window picture
+	sprCursor      bool                // e.spr is the aim cursor's icon (iconToSprite slot 0x19)
 	port           portrait            // DS:6B00.. HEAD/BODY portrait
 	eclFile        string              // DS:547C
 	ext            extras              // convenience features (extras.go)

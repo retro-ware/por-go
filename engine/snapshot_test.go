@@ -312,3 +312,32 @@ func TestCombatActions(t *testing.T) {
 		}
 	}
 }
+
+// TestAimCycle: Next while aiming visits foes only, never the aimer, and
+// the cursor's flight between them is no effect in the view.
+func TestAimCycle(t *testing.T) {
+	e, scr, v := battleView(t)
+	var me engine.Unit
+	party := map[image.Point]bool{}
+	for _, u := range v.Battle.Units {
+		if u.Active {
+			me = u
+		}
+		if u.Party {
+			party[image.Pt(u.X, u.Y)] = true
+		}
+	}
+	v = keyWait(e, scr, 'A')
+	for i := range 6 {
+		if v.Battle == nil {
+			t.Fatalf("step %d: off the map", i)
+		}
+		if len(v.Battle.Effects) > 0 {
+			t.Errorf("step %d: %d effects while aiming", i, len(v.Battle.Effects))
+		}
+		if c := v.Battle.Cursor; v.Battle.CursorOn && party[c] {
+			t.Errorf("step %d: the cursor on a party member at %v (aimer %s at %d,%d)", i, c, me.Name, me.X, me.Y)
+		}
+		v = keyWait(e, scr, 'N')
+	}
+}

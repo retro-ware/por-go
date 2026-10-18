@@ -299,6 +299,7 @@ func (e *Engine) iconToSprite(slot, pose, frame int, flip bool) {
 	if im == nil {
 		return
 	}
+	e.sprCursor = slot == 0x19 // the aim cursor: Next/Prev fly it from target to target
 	if e.spr == nil || e.spr.BPP != im.BPP {
 		e.spr = dax.NewImage(4, im.Width, im.Height)
 	}
