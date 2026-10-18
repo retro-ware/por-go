@@ -47,6 +47,7 @@ type game struct {
 	classic    classic.Presenter
 	remaster   remaster.Presenter // draws through classic where it has no remaster
 	remastered bool               // F10: the remastered screen instead of the original's
+	queue      []uint16           // keys still to send, one each time the engine waits (sendKeys)
 
 	pads    []gpu.GamepadID // input buffers, reused each tick
 	pressed []gpu.Key
@@ -69,6 +70,10 @@ const tps = 120
 
 func (g *game) Update() error {
 	g.sent = false
+	if len(g.queue) > 0 && g.scr.Idle() {
+		g.scr.PushKey(g.queue[0])
+		g.queue, g.sent = g.queue[1:], true
+	}
 	if shot != "" { // the user's input never reaches a capture, only the scripted keys
 		g.ticks++
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
@@ -101,10 +106,7 @@ func (g *game) Update() error {
 func (g *game) push(k uint16) {
 	if g.remastered {
 		ks, taken := g.remaster.Key(k, g.eng.View())
-		for _, k := range ks {
-			g.scr.PushKey(k)
-			g.sent = true
-		}
+		g.sendKeys(ks)
 		if taken {
 			return
 		}
@@ -113,10 +115,23 @@ func (g *game) push(k uint16) {
 	if !g.remastered {
 		ks = classicCombatKey(k, g.eng.View())
 	}
-	for _, k := range ks {
-		g.scr.PushKey(k)
-		g.sent = true
+	g.sendKeys(ks)
+}
+
+// sendKeys sends ks to the engine: the first at once, the others one at a
+// time, each once the engine waits for a key again. It keeps only the last
+// of keys typed ahead (ReadKeyByte), so a button's Done then Delay sent
+// together would lose the Done.
+func (g *game) sendKeys(ks []uint16) {
+	if len(ks) == 0 {
+		return
 	}
+	if len(g.queue) > 0 { // after the keys still waiting
+		g.queue = append(g.queue, ks...)
+		return
+	}
+	g.scr.PushKey(ks[0])
+	g.queue, g.sent = append(g.queue, ks[1:]...), true
 }
 
 // classicCombatKey gives classic combat the remaster's controls (present/battle
@@ -231,10 +246,7 @@ func (g *game) mouse() {
 	}
 	if g.remastered && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		if ks, ok := g.remaster.Click(mx, my); ok { // an action bar button, a menu item
-			for _, k := range ks {
-				g.scr.PushKey(k)
-			}
-			g.sent = true
+			g.sendKeys(ks)
 			return
 		}
 		if x, y, ok := g.remaster.Square(mx, my); ok { // a square on the 3D map

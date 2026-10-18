@@ -60,14 +60,18 @@ func itemSpan(menu string, start, end []int, j int) (a, b int) {
 
 // menuGlyph (extra): how menu character i (1-based) is shown. A hotkey
 // inside a word reads lower case and the word's first letter upper case,
-// so "sWeep" shows as "Sweep" with the w lit.
+// so "sWeep" shows as "Sweep" with the w lit, "aiM" as "Aim".
 func menuGlyph(menu string, i int) byte {
 	c := menu[i-1]
 	lower := func(c byte) bool { return c >= 'a' && c <= 'z' }
+	word := menu[i-1:]
+	if n := strings.IndexByte(word, ' '); n >= 0 {
+		word = word[:n]
+	}
 	switch {
 	case isHotkey(c) && c >= 'A' && i > 1 && lower(menu[i-2]):
 		return c + 32
-	case lower(c) && (i == 1 || menu[i-2] == ' ') && i < len(menu) && menu[i] >= 'A' && menu[i] <= 'Z':
+	case lower(c) && (i == 1 || menu[i-2] == ' ') && strings.IndexFunc(word, func(r rune) bool { return r >= 'A' && r <= 'Z' }) >= 0:
 		return c - 32
 	}
 	return c
