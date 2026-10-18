@@ -546,6 +546,23 @@ func (e *Engine) strikeSquare(x, y, dmg, saveType int) bool {
 // reversed.
 func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 	e.hitColours(0x13)
+	if sel := e.selected(); e.combatX(sel) == e.tgtX && e.combatY(sel) == e.tgtY {
+		return
+	}
+	e.spellOwnTargets = 1
+	e.boltWalk(reach, bounce, nil, func(x0, y0, x, y int) bool {
+		e.flyMissile(x0, y0, x, y, 4, 0x32)
+		return e.strikeSquare(x, y, dmg, saveType)
+	})
+	e.spellOwnTargets = 0
+}
+
+// boltWalk is boltPath's line (split out, extra: the aim preview walks it
+// dry): from the target square away from the selected caster; step (if
+// any) sees each square crossed, strike each square a leg ends on (from
+// the leg's start) and says whether the ground there stops the bolt.
+// e.tgtX/tgtY move to where it turns, as in the original.
+func (e *Engine) boltWalk(reach, bounce int, step func(x, y int), strike func(x0, y0, x, y int) bool) {
 	prevWho, _ := e.mapAt(e.tgtX, e.tgtY)
 	dirSign := 1
 	sel := e.selected()
@@ -557,7 +574,6 @@ func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 	var who, ground byte // who is uninitialised in the asm until the first step
 	_, ground = e.mapAt(e.tgtX, e.tgtY)
 	r := byte(reach * 2)
-	e.spellOwnTargets = 1
 	for r > 0 {
 		x0, y0 := e.tgtX, e.tgtY
 		x1 := int(int16(e.tgtX + (e.tgtX-cx)*dirSign*int(r)))
@@ -569,6 +585,9 @@ func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 				for {
 					more := e.step(l)
 					who, ground = e.mapAt(int(byte(l.x)), int(byte(l.y)))
+					if more && step != nil {
+						step(int(byte(l.x)), int(byte(l.y)))
+					}
 					if !more {
 						break
 					}
@@ -587,8 +606,7 @@ func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 			if ground == 0 {
 				r = 0
 			}
-			e.flyMissile(int(lastX), int(lastY), int(byte(l.x)), int(byte(l.y)), 4, 0x32)
-			blocked := e.strikeSquare(int(byte(l.x)), int(byte(l.y)), dmg, saveType)
+			blocked := strike(int(lastX), int(lastY), int(byte(l.x)), int(byte(l.y)))
 			if blocked {
 				e.tgtX, e.tgtY = int(byte(l.x)), int(byte(l.y))
 				back := newLine(e.tgtX, e.tgtY, cx, cy)
@@ -611,7 +629,6 @@ func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 			}
 		}
 	}
-	e.spellOwnTargets = 0
 }
 
 // fxLightning = ovr23:2BB7: level d6 down the line, bouncing.

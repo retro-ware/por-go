@@ -90,7 +90,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, AreaAt: s.area, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {

@@ -93,7 +93,7 @@ type extras struct {
 	minStats  [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
 	guarded   bool                // slots.go: a load can unwind to adventure
 	inGame    bool                // slots.go: GameLoop has started: saving allowed
-	aoe       int                 // aoe.go: radius+1 of the spell being aimed, 0 none
+	aoe       int                 // aoe.go: radius+1 of the spell being aimed, aoeBolt a bolt's line, 0 none
 
 	// nav.go: keys and mouse
 	ahead        []uint16                // translated keys not yet read

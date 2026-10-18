@@ -141,8 +141,9 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 			fromNear(int(e.spellData(spell, 0)&0xF) >> 4) // always 0, as in the original
 		}
 	case kind >= 8 && kind <= 0xE:
+		e.ext.aoe = aoeBolt // extra: area preview (aoe.go)
 		if kind > 8 {
-			e.ext.aoe = int(kind&7) + 1 // extra: area preview (aoe.go)
+			e.ext.aoe = int(kind&7) + 1
 		}
 		picked := e.chooseSpellTarget(spell, silent, 1, &tmp)
 		e.ext.aoe = 0
