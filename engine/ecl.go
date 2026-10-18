@@ -568,11 +568,16 @@ func (e *Engine) Gosub(i int) {
 	e.eclPC = e.ArgAddr(i)
 }
 
-// StepForward = ovr08:19DB: one square ahead. The maps never wrap: at the
-// edge the party stays put, as in checkEdge (the original wrapped to the
-// far side).
+// StepForward = ovr08:19DB: one square ahead. Within a map it never wraps:
+// at the edge the party stays put. A step out through an open side
+// (checkEdge set LeftMap) lands on the far edge as in the original, since
+// that is the entry square the next area keeps (west out of Phlan, in at
+// the east edge).
 func (e *Engine) StepForward() {
 	x, y := e.posX+dirDX[e.facing], e.posY+dirDY[e.facing]
+	if e.game.LeftMap != 0 {
+		x, y = (x+16)%16, (y+16)%16
+	}
 	if x >= 0 && x <= 15 && y >= 0 && y <= 15 {
 		e.posX, e.posY = x, y
 	}
@@ -590,7 +595,7 @@ func (e *Engine) ItemSave(c *Character, pct int) {
 			} else {
 				pct = 0
 			}
-		} else if v > promptRow {
+		} else if v > 0x18 {
 			if pct > 0x32 {
 				pct -= 0x32
 			} else {
