@@ -296,12 +296,12 @@ func (e *Engine) combatMenu(c *Character) byte {
 		hidden += "G"
 		e.snap.actions = append(e.snap.actions, MenuItem{"Guard", 'G'})
 	}
-	hidden += "W"
-	e.snap.actions = append(e.snap.actions, MenuItem{"Wait", 'W'})
 	if e.bandage(false) {
 		hidden += "B"
 		e.snap.actions = append(e.snap.actions, MenuItem{"Bandage", 'B'})
 	}
+	hidden += "W"
+	e.snap.actions = append(e.snap.actions, MenuItem{"Wait", 'W'})
 	e.snap.targets, e.snap.hits = nil, map[int]int{}
 	rng := 1
 	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
