@@ -134,10 +134,11 @@ func (e *Engine) showCombatStats() {
 	e.DisplayString(x, y, 0xF, "Encumbrance      ")
 	e.DisplayString(x+0xC, y, 0xA, itoa(int(c.Weight)))
 	m := c.Move
-	if e.FindAffect(c, affSlow) != nil { // sic: haste and slow swapped against PartyHpRange
+	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
+	if e.FindAffect(c, affHaste) != nil {
 		m <<= 1
 	}
-	if e.FindAffect(c, affHaste) != nil {
+	if e.FindAffect(c, affSlow) != nil {
 		m >>= 1
 	}
 	e.DisplayString(x+3, y+1, 0xF, "Movement   ")
