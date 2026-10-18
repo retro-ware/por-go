@@ -86,6 +86,8 @@ var (
 	areaGlow    = [4]float32{1, 0.5, 0.1, 1}
 	areaFill    = [4]float32{0.22, 0.09, 0.01, 1}
 	targetGlow  = [4]float32{0.95, 0.12, 0.08, 1}
+	blockedGlow = [4]float32{1, 0.08, 0.05, 1} // an aim that cannot be taken: area, frames and cursor in red
+	blockedFill = [4]float32{0.26, 0.015, 0.01, 1}
 	reachGlow   = [4]float32{0.015, 0.05, 0.13, 1}
 	pathGlow    = [4]float32{0.1, 0.35, 0.8, 1}
 	freeGlow    = [4]float32{0.9, 0.1, 0.05, 1}
@@ -290,9 +292,12 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 			dst.DrawMesh(p.box, p.white, vp, &o)
 		}
 	}
-	marks := markGlow
+	marks, fill, cursor := markGlow, areaFill, cursorGlow
 	if b.Area { // a spell's area: XCOM's orange
 		marks = areaGlow
+	}
+	if b.AimWhy != "" { // the aimed square cannot be taken: say so in red
+		marks, fill, cursor = blockedGlow, blockedFill, blockedGlow
 	}
 	for _, m := range b.Marks {
 		if !targetAt(b, m) { // a target's red frame stands alone
@@ -300,7 +305,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		}
 	}
 	for _, a := range b.AreaAt { // the ground a spell's area covers: an orange wash
-		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: areaFill, Model: place(float32(a.X)+.5, 0.0035, float32(a.Y)+.5, 0, .96, .005, .96)}
+		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: fill, Model: place(float32(a.X)+.5, 0.0035, float32(a.Y)+.5, 0, .96, .005, .96)}
 		dst.DrawMesh(p.box, p.white, vp, &o)
 	}
 	for _, u := range b.Units { // the foes a click attacks: red
@@ -329,7 +334,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	pulse := float32(0.75 + 0.25*math.Sin(p.clock*5))
 	if b.CursorOn {
 		for _, c := range b.CursorAt {
-			frame(c.X, c.Y, [4]float32{cursorGlow[0] * pulse, cursorGlow[1] * pulse, cursorGlow[2] * pulse, 1}, 0.002)
+			frame(c.X, c.Y, [4]float32{cursor[0] * pulse, cursor[1] * pulse, cursor[2] * pulse, 1}, 0.002)
 		}
 	}
 

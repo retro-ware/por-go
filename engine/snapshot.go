@@ -135,6 +135,7 @@ type snapState struct {
 	paths    map[image.Point][]Step // the walk to each of them
 	hits     map[int]int            // each of targets' chance to be hit, in percent
 	area     []image.Point          // squares aoeMarks covers
+	aimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can)
 	actions  []MenuItem             // the main combat menu's keys off its bar (Guard, Wait, Bandage)
 	targets  []int                  // combatants a click on the main combat menu attacks
 	hidden   map[int]bool           // combatants whose icon is off the page (falling, hiding)

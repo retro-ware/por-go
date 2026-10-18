@@ -26,6 +26,7 @@ type Battle struct {
 	Actions  []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
 	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
 	AreaAt   []image.Point          // the squares a spell's area covers round the aimed square
+	AimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
 	Effects  []Effect               // sprites over the map: a missile, a hit, a fall
 	View     image.Point            // top left square the original shows
 	Strike   Strike                 // the last weapon attack
@@ -90,7 +91,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, AimWhy: s.aimWhy, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {

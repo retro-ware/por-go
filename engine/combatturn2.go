@@ -350,7 +350,10 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	if showRange != 0 {
 		e.DisplayString(0, messageRow, colLightGreen, "Range = "+strconv.Itoa(e.rangeTo(c, cand))+"  ")
 	}
-	can := e.canTarget(c, cand, rng, showRange)
+	why := e.targetWhy(c, cand, rng, showRange)
+	can := why == ""
+	e.snap.aimWhy = why // extra: views draw the preview red
+	defer func() { e.snap.aimWhy = "" }()
 	if can {
 		menu = "Attack " // extra: Target renamed
 	}
@@ -365,7 +368,11 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		who := e.occ[sy][sx]
 		switch {
 		case who > 0 && e.combatant(who) == cand:
-			if click && can {
+			if click && !can { // extra: say why instead of doing nothing
+				e.ext.aimRefused = why
+				return 'C'
+			}
+			if click {
 				return 'A'
 			}
 			return 0
@@ -410,6 +417,10 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	}
 	e.regionCut(mark)
 	undo()
+	if r := e.ext.aimRefused; r != "" && key == 'C' {
+		e.ext.aimRefused = ""
+		e.aimRefused(r)
+	}
 	if key == 'A' {
 		key = 'T'
 	}
@@ -432,21 +443,48 @@ func (e *Engine) combatInput(prompt, menu string, allowExtra bool) (byte, bool) 
 // In range, and with a missile weapon: ammunition, and no foe adjacent
 // unless the weapon is thrown.
 func (e *Engine) canTarget(c, cand *Character, rng, showRange int) bool {
+	return e.targetWhy(c, cand, rng, showRange) == ""
+}
+
+// targetWhy (extra) is canTarget's test with the reason it fails ("" when
+// it does not): in range, and with a missile weapon: ammunition, and no foe
+// adjacent unless the weapon is thrown.
+func (e *Engine) targetWhy(c, cand *Character, rng, showRange int) string {
 	if e.rangeTo(c, cand) > rng {
-		return false
+		return outOfRange(rng)
 	}
 	var tmp *Item
 	switch {
 	case showRange == 0:
-		return true
+		return ""
 	case cand == c:
-		return false
+		return "Not a target"
 	case !e.rangedWeapon(c):
-		return true
-	case e.ammoFor(c, &tmp):
-		return e.nearEnemies(c, 1) == 0 || e.throwable(c)
+		return ""
+	case !e.ammoFor(c, &tmp):
+		return "No ammunition"
+	case e.nearEnemies(c, 1) > 0 && !e.throwable(c):
+		return "A foe is too close to shoot"
 	}
-	return false
+	return ""
+}
+
+// outOfRange (extra): the refusal for a target farther than rng squares.
+func outOfRange(rng int) string {
+	if rng == 1 {
+		return "Out of range: 1 square at most"
+	}
+	return "Out of range: " + strconv.Itoa(rng) + " squares at most"
+}
+
+// aimRefused (extra): why the aimed square cannot be taken, in red on the
+// status row for a moment.
+func (e *Engine) aimRefused(why string) {
+	e.ClearCells(0, messageRow, lastCol, messageRow)
+	e.DisplayString(0, messageRow, colLightRed, cut(why, textCols))
+	e.MsgDelay()
+	e.MsgDelay()
+	e.ClearCells(0, messageRow, lastCol, messageRow)
 }
 
 // aimConfirm = ovr14:2C3D (c, cand, mode, var found, var t): take cand as
@@ -492,6 +530,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 	*found = false
 	e.cmap.cursor, e.cmap.cursorSize = 1, 1
 	defer e.rawArrows("arrows, point=move the cursor|Enter, click=target|C=center|Esc=back")()
+	defer func() { e.snap.aimWhy = "" }()
 	for !(key == 0 || key == 13 || key == 'E' || key == 'T') {
 		e.combatCentre(int(x), int(y), 3, dir)
 		x += int8(byte(dirDX[dir]))
@@ -499,7 +538,13 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		x, y = min(max(x, 0), 0x31), min(max(y, 0), 0x18)
 		who, ground := e.mapAt(int(x), int(y))
 		e.ClearKeyboard()
-		ok := false
+		ok, why := false, "Out of sight" // extra: why, for the refusal
+		fail := func(s string) {         // the first reason found is the one told
+			if ok {
+				why = s
+			}
+			ok = false
+		}
 		dist, tx, ty := 0xFF, int(x), int(y)
 		if e.lineOfSight(&dist, &tx, &ty, e.combatX(c), e.combatY(c)) {
 			ok = true
@@ -527,25 +572,30 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		} else {
 			e.ClearCells(0, messageRow, lastCol, messageRow)
 		}
-		if rng < dist || e.groundInfo(ground)[0] == 0xFF {
-			ok = false
+		if rng < dist {
+			fail(outOfRange(rng))
+		}
+		if e.groundInfo(ground)[0] == 0xFF {
+			fail("A wall is in the way")
 		}
 		if cand != nil {
 			if !e.mayActAgainst(c, cand) {
-				ok = false
+				fail("Cannot act against " + cand.Name())
 			}
 			if showRange == 1 {
 				if cand == c || (who == 0 && ground == 0x1F) {
-					ok = false
+					fail("Not a target")
 				} else if e.rangedWeapon(c) {
 					var tmp *Item
-					if !e.ammoFor(c, &tmp) || (e.nearEnemies(c, 1) > 0 && !e.throwable(c)) {
-						ok = false
+					if !e.ammoFor(c, &tmp) {
+						fail("No ammunition")
+					} else if e.nearEnemies(c, 1) > 0 && !e.throwable(c) {
+						fail("A foe is too close to shoot")
 					}
 				}
 			}
 		} else if allowGround == 0 {
-			ok = false
+			fail("No one there to target")
 		}
 		menu := "Center Exit"
 		if ok {
@@ -557,6 +607,10 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 				if sx == int(x) && sy == int(y) {
 					if click && ok {
 						return 'T'
+					}
+					if click { // extra: say why instead of doing nothing
+						e.ext.aimRefused = why
+						return 'C'
 					}
 					return 0
 				}
@@ -571,11 +625,18 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 			}, square: func(x, y int) uint16 { return pick(x, y, false) }})
 		}
 		e.markReach(e.ext.aimMarks, true) // the cursor's last square drew over its frame
+		e.snap.aimWhy = ""                // extra: views draw the preview red where it cannot be cast
+		if !ok {
+			e.snap.aimWhy = why
+		}
 		prompt, undo := e.aoeMarks(int(x), int(y), "(Use Cursor keys) ")
 		if take := e.ext.aimTake; take && ok { // a click away from the cursor: moved there, now the target
 			e.ext.aimTake = false
 			key = 'T'
 		} else {
+			if take {
+				e.aimRefused(why) // extra: clicked where it cannot go
+			}
 			e.ext.aimTake = false
 			key, _ = e.combatInput(prompt, menu, true)
 		}
@@ -584,6 +645,12 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 			key = 'T'
 		}
 		e.regionCut(mark)
+		if key == 13 || key == 'T' || key == 'C' && e.ext.aimRefused != "" {
+			if e.ext.aimRefused = ""; !ok { // extra: tell why and stay, instead of leaving the cursor
+				e.aimRefused(why)
+				key = ' '
+			}
+		}
 		if j := e.ext.jump; j != nil { // the clicked square; the step below is dir 8 (none)
 			e.ext.jump = nil
 			e.eraseCursor(int(x), int(y))
