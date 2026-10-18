@@ -375,7 +375,7 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		case who == 0 || !click && len(e.ext.aimMarks) > 0 && !e.aimStop(sx, sy):
 			return 0 // pointing at one Next would pass over: stay
 		}
-		e.ext.jump = &[2]int8{int8(sx), int8(sy)}
+		e.ext.jump, e.ext.aimTake = &[2]int8{int8(sx), int8(sy)}, click // a click casts / attacks once the aim is there
 		return 'N'
 	}
 	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
@@ -386,6 +386,11 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	}, square: func(x, y int) uint16 { return pick(x, y, false) }})
 	var key byte
 	switch t := e.ext.autoAim; { // extra: the main menu's clicked foe
+	case t == nil && e.ext.aimTake: // extra: clicked here: take it at once
+		e.ext.aimTake = false
+		if key = 'A'; !can {
+			key, _ = e.combatInput("Aim:", menu, false)
+		}
 	case t == nil:
 		key, _ = e.combatInput("Aim:", menu, false)
 	case t == cand:
