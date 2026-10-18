@@ -59,7 +59,8 @@ func (p *Presenter) overBar(x, y int) bool {
 // shownItems are the menu's items as the bar shows them, XCOM 2 style:
 // on the main combat menu Move and View go (a click on the map walks, on
 // one's own figure opens the sheet), Aim is Attack, the turn enders
-// (actions) sit before End turn (Done, Quit); aiming keeps Attack, Free
+// (actions) sit before End turn (Done, Quit) but Guard, second after
+// Attack, and Quick goes last; aiming keeps Attack, Free
 // aim and Cancel (Tab cycles the targets; the camera stays put).
 func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel int) {
 	kind := ""
@@ -89,9 +90,18 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 			continue
 		case kind == "main" && it.Text == "Aim":
 			b.Text = "Attack"
+			add(b, i)
+			for _, a := range actions { // Guard right after it
+				if a.Text == "Guard" {
+					add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
+				}
+			}
+			continue
 		case kind == "main" && it.Text == "Done":
 			for _, a := range actions {
-				add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
+				if a.Text != "Guard" {
+					add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
+				}
 			}
 			b.Text, b.Send = "End", []uint16{'D', 'Q'}
 		case kind == "aim" && (it.Text == "Next" || it.Text == "Prev" || it.Text == "Center"):
