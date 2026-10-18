@@ -84,6 +84,7 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 		s = "Attacks"
 	}
 	e.CharMessage(a, s, false)
+	e.struck(a, b, hit != 0, damage&0xFF)
 	s = ""
 	if kind == 1 {
 		s = "(from behind) "
@@ -539,7 +540,7 @@ func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 				e.slotShots[s]++
 				if e.AttackHits(a, b, int(need)) || e.isHelpless(b) {
 					e.slotHits[s]++
-					e.PlaySound(sndBump)
+					e.PlaySound(sndHit) // extra: the weapon-hit sound (the original's bump is barely audible)
 					any = true
 					e.damageRoll(a, b, s)
 					e.attackText(a, b, mode, int(e.rv.damage), int(e.rv.damage), 1)

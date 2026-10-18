@@ -26,12 +26,29 @@ type Battle struct {
 	Area     bool          // Marks are a spell's area (else a move's reach or a choice)
 	Effects  []Effect      // sprites over the map: a missile, a hit, a fall
 	View     image.Point   // top left square the original shows
+	Strike   Strike        // the last weapon attack
 }
 
 // Effect is a sprite the original draws over the map for a moment.
 type Effect struct {
 	X, Y float64     // its top left corner, in squares (missiles move in thirds)
 	Pic  image.Image // in combat's colours
+}
+
+// Strike is one weapon attack, for views that show it (the original only
+// prints it): Seq counts attacks, so a new one is a new Seq.
+type Strike struct {
+	Seq      int
+	From, To int // unit IDs (0: off the map)
+	Hit      bool
+	Damage   int
+}
+
+// struck records a weapon attack of a on b for the snapshot.
+func (e *Engine) struck(a, b *Character, hit bool, damage int) {
+	s := &e.snap
+	s.strike = Strike{Seq: s.strike.Seq + 1, Hit: hit, Damage: damage}
+	s.striker = [2]*Character{a, b}
 }
 
 // DungeonTiles is how many tiles DungCom puts at the start of the set.
@@ -65,6 +82,7 @@ func (e *Engine) battle() *Battle {
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
 		Marks: s.marks, Reach: s.reach, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {
 		if dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part); ok {
@@ -99,6 +117,12 @@ func (e *Engine) battle() *Battle {
 		p, c := e.cpos[i], e.combatant(byte(i))
 		if p.size == 0 || c == nil || c.Combat == nil || s.hidden[i] {
 			continue
+		}
+		switch c {
+		case s.striker[0]:
+			b.Strike.From = i
+		case s.striker[1]:
+			b.Strike.To = i
 		}
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
 			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), AC: 60 - int(c.AC[0])}

@@ -45,6 +45,9 @@ type Presenter struct {
 	screen        image.Rectangle
 	units         map[int]*[2]float64 // each unit's shown position (eased between squares)
 	sparks        []spark
+	strike        engine.Strike // the last attack shown
+	strikeT       float64       // seconds since it began
+	burst         bool          // its sparks are out
 	last          time.Time
 	clock         float64 // seconds shown, for pulses
 }
@@ -68,6 +71,7 @@ const (
 	minDist   = 5.0
 	maxDist   = 24.0
 	pedestal  = 0.09 // a base's height
+	lunge     = 0.35 // seconds an attack's lunge lasts
 	boardEdge = 0.25 // how far the board stands above the table
 )
 
@@ -185,6 +189,10 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	p.initCamera()
 	p.sync(b)
 	dt := p.tick()
+	if b.Strike.Seq != p.strike.Seq {
+		p.strike, p.strikeT, p.burst = b.Strike, 0, false
+	}
+	p.strikeT += dt
 
 	// where the eye goes: an effect, else the cursor, else whose turn it is
 	focus := vec{float64(b.View.X) + 6, 0, float64(b.View.Y) + 3.5}
@@ -319,9 +327,35 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		ib := u.Icon.Bounds()
 		size := sq * .92
 		half := size * float32(ib.Dy()) / float32(max(ib.Dx(), ib.Dy())) / 2
-		// turned to the eye and lit from its side: from any heading the painted front shows, never the dark back
-		o := opts(place(x, pedestal+half, z, float32(p.yaw), size, size, size), [4]float32{1, 1, 1, 1}, 0.12)
-		o.Light = [3]float32{float32(math.Sin(p.yaw)) * .6, 1, float32(math.Cos(p.yaw)) * .6}
+		// the attacker lunges at its target; the target flashes red and sheds sparks when hit, grey ones when missed
+		tint = [4]float32{1, 1, 1, 1}
+		if t := p.strikeT; t < lunge {
+			if to, ok := p.units[p.strike.To]; ok && u.ID == p.strike.From {
+				dx, dz := float32(to[0])-x, float32(to[1])-z
+				if n := float32(math.Hypot(float64(dx), float64(dz))); n > 0 {
+					d := float32(math.Sin(math.Pi*t/lunge)) * .35 / n
+					x, z = x+dx*d, z+dz*d
+				}
+			}
+			if u.ID == p.strike.To && t >= lunge/2 {
+				col, n := [3]float32{.6, .6, .6}, 6
+				if p.strike.Hit {
+					col, n = [3]float32{1, .15, .05}, 16
+					w := float32(4 * (1 - t/lunge)) // the flash, fading
+					tint = [4]float32{1 + w, 1 - w/4, 1 - w/4, 1}
+				}
+				for i := 0; !p.burst && i < n; i++ {
+					p.sparks = append(p.sparks, spark{
+						p:   vec{float64(x), pedestal + float64(half), float64(z)},
+						v:   vec{rand.Float64()*2 - 1, rand.Float64() * 1.5, rand.Float64()*2 - 1},
+						max: 0.3 + rand.Float64()*.3, col: col,
+					})
+				}
+				p.burst = true
+			}
+		}
+		o := opts(place(x, pedestal+half, z, 0, size, size, size), tint, 0.12)
+		o.Ambient = 0.85 // fixed facing, so its back is lit enough to read from any heading
 		dst.DrawMesh(f.mesh, f.tex, vp, o)
 	}
 

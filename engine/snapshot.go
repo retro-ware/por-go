@@ -137,6 +137,8 @@ type snapState struct {
 	hidden   map[int]bool  // combatants whose icon is off the page (falling, hiding)
 	poses    map[int]byte  // the pose each combatant was last drawn in
 	click    int           // the square (+1) a SquareKey being translated clicks
+	strike   Strike        // the last weapon attack (From/To filled in by battle)
+	striker  [2]*Character // its attacker and target
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is
