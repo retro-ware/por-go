@@ -252,11 +252,16 @@ func (e *Engine) combatMenu(c *Character) byte {
 			return 0
 		}
 		if who := e.occ[sy][sx]; who > 0 {
-			if t := e.combatant(who); t != nil && t.Side != c.Side {
-				e.ext.autoAim, e.ext.autoJumped = t, false
-				return 'A'
+			t := e.combatant(who)
+			if t == nil || t.Side == c.Side {
+				return 0
 			}
-			return 0
+			if p := e.pathNextTo(c, t, reach); p != nil { // a melee weapon out of reach: walk up, then attack
+				e.ext.autoPath, e.ext.aimAfterWalk = p, t
+				return 'M'
+			}
+			e.ext.autoAim, e.ext.autoJumped = t, false
+			return 'A'
 		}
 		if p, ok := reach[[2]int{sx, sy}]; ok {
 			e.ext.autoPath = append([]int(nil), p...)
@@ -264,6 +269,13 @@ func (e *Engine) combatMenu(c *Character) byte {
 		}
 		return 0
 	}})
+	if t := e.ext.aimAfterWalk; t != nil { // extra: walked up to a clicked foe: now the attack
+		e.ext.aimAfterWalk = nil
+		if t.Okay != 0 && e.rangeTo(c, t) <= 1 {
+			e.ext.autoAim, e.ext.autoJumped = t, false
+			return 'A'
+		}
+	}
 	for {
 		e.ext.hiddenKeys = "L" // extra: the Log, off the bar
 		key, extra := e.DisplayInput("", m, 0xD, 0xA, 0xF, true, false)
@@ -822,4 +834,25 @@ func (e *Engine) combatUseHook() {
 	e.DrawBoxTitled(1, 1, 0x26, 0x15, 0, 0, "")
 	e.ClearCells(0, 0x17, 0x27, 0x18)
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
+}
+
+// pathNextTo (extra) is the shortest walk in reach that brings c, armed
+// for melee, next to foe t (nil: t is in reach of its weapon already, c
+// shoots, or no square next to t can be reached).
+func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
+	if e.rangedWeapon(c) || e.rangeTo(c, t) <= 1 {
+		return nil
+	}
+	tx, ty, n := e.combatX(t), e.combatY(t), e.combatSize(t)
+	var best []int
+	found := false
+	for sq, p := range reach {
+		if sq[0] >= tx-1 && sq[0] <= tx+n && sq[1] >= ty-1 && sq[1] <= ty+n && (!found || len(p) < len(best)) {
+			best, found = p, true
+		}
+	}
+	if !found {
+		return nil
+	}
+	return append([]int(nil), best...)
 }

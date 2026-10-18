@@ -256,8 +256,8 @@ func TestBattleFight(t *testing.T) {
 	}
 }
 
-// TestClickFoe: a foe clicked at the main menu is aimed at (the cursor on
-// it), or attacked at once when it can be (the turn moves on).
+// TestClickFoe: a foe clicked at the main menu is attacked at once: the
+// turn moves on (walking up to it first when it stands out of reach).
 func TestClickFoe(t *testing.T) {
 	e, scr, v := battleView(t)
 	var me, foe engine.Unit
@@ -273,16 +273,11 @@ func TestClickFoe(t *testing.T) {
 	}
 	v = keyWait(e, scr, engine.SquareKey(foe.X, foe.Y))
 	if v.Battle == nil {
-		return // the fight moved off the map (a sheet, the end): the click did something
+		return // the fight moved off the map (the end): the click did something
 	}
-	aimed := v.Battle.CursorOn && v.Battle.Cursor == image.Pt(foe.X, foe.Y)
-	moved := false
 	for _, u := range v.Battle.Units {
-		if u.Active && u.ID != me.ID {
-			moved = true
+		if u.Active && u.ID == me.ID {
+			t.Fatalf("clicked foe %s at (%d,%d) from (%d,%d): still %s's turn (cursor on: %v, menu %+v)", foe.Name, foe.X, foe.Y, me.X, me.Y, me.Name, v.Battle.CursorOn, v.Menu)
 		}
-	}
-	if !aimed && !moved {
-		t.Errorf("clicked foe at (%d,%d): neither aimed at nor attacked (cursor %v on %v)", foe.X, foe.Y, v.Battle.Cursor, v.Battle.CursorOn)
 	}
 }

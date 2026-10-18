@@ -349,7 +349,8 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	if showRange != 0 {
 		e.DisplayString(0, 0x17, 0xA, "Range = "+itoa(e.rangeTo(c, cand))+"  ")
 	}
-	if e.canTarget(c, cand, rng, showRange) {
+	can := e.canTarget(c, cand, rng, showRange)
+	if can {
 		menu = "Attack " // extra: Target renamed
 	}
 	menu = cut("Next Prev Manual "+menu+"Center Exit", 0x28)
@@ -364,7 +365,7 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		case !in || e.occ[sy][sx] == 0:
 			return 0
 		case e.combatant(e.occ[sy][sx]) == cand:
-			if menu[0] == 'A' {
+			if can {
 				return 'A'
 			}
 			return 0
@@ -378,7 +379,7 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		key, _ = e.combatInput("Aim:", menu, false)
 	case t == cand:
 		e.ext.autoAim = nil
-		if menu[0] == 'A' {
+		if can {
 			key = 'A'
 		} else {
 			key, _ = e.combatInput("Aim:", menu, false)
