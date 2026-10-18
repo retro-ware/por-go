@@ -127,11 +127,11 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 		e.spellOwnTargets = 1
 	}
 	kind := e.spellData(spell, 0) & 0xF
-	e.ext.aoe, e.ext.bolt = 1, bolts[spell] // extra: area preview (aoe.go); one target: its own square
+	e.ext.aoe, e.ext.bolt, e.ext.aoeSpell = 1, bolts[spell], spell // extra: area preview (aoe.go); one target: its own square
 	if kind > 8 && kind <= 0xE {
 		e.ext.aoe = int(kind&7) + 1
 	}
-	defer func() { e.ext.aoe, e.ext.bolt = 0, [2]int{} }()
+	defer func() { e.ext.aoe, e.ext.bolt, e.ext.aoeSpell = 0, [2]int{}, 0 }()
 	switch {
 	case kind == 0:
 		e.setTgt(1, sel)

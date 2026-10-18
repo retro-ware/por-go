@@ -95,6 +95,7 @@ type extras struct {
 	inGame    bool                // slots.go: GameLoop has started: saving allowed
 	aoe       int                 // aoe.go: radius+1 of the spell being aimed, 0 none
 	bolt      [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
+	aoeSpell  int                 // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
 	ahead         []uint16                // translated keys not yet read

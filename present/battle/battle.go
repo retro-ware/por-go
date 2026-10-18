@@ -90,6 +90,7 @@ var (
 	blockedFill = [4]float32{0.26, 0.015, 0.01, 1}
 	reachGlow   = [4]float32{0.015, 0.05, 0.13, 1}
 	pathGlow    = [4]float32{0.1, 0.35, 0.8, 1}
+	skipGlow    = [4]float32{0.55, 0.55, 0.75, 1} // an ally in a spell's area the cast passes over (Bless: an enemy next to it)
 	freeGlow    = [4]float32{0.9, 0.1, 0.05, 1}
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
@@ -305,8 +306,14 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		}
 	}
 	for _, a := range b.AreaAt { // the ground a spell's area covers: an orange wash
+		if slices.Contains(b.Skipped, a) { // an ally the cast passes over: framed apart below
+			continue
+		}
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: fill, Model: place(float32(a.X)+.5, 0.0035, float32(a.Y)+.5, 0, .96, .005, .96)}
 		dst.DrawMesh(p.box, p.white, vp, &o)
+	}
+	for _, s := range b.Skipped {
+		frame(s.X, s.Y, skipGlow, 0.001)
 	}
 	for _, u := range b.Units { // the foes a click attacks: red
 		if slices.Contains(b.Targets, u.ID) {

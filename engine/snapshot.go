@@ -135,6 +135,7 @@ type snapState struct {
 	paths      map[image.Point][]Step // the walk to each of them
 	hits       map[int]int            // each of targets' chance to be hit, in percent
 	area       []image.Point          // squares aoeMarks covers
+	skipped    []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
 	aimWhy     string                 // aiming: why the aimed square cannot be taken ("" when it can)
 	statusOnly bool                   // a status row message waits out its delay (statusDelay)
 	actions    []MenuItem             // the main combat menu's keys off its bar (Guard, Wait, Bandage)

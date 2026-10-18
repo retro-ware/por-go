@@ -24,7 +24,7 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 		return prompt, func() {}
 	}
 	var hit []byte // combatant numbers
-	e.snap.area = nil
+	e.snap.area, e.snap.skipped = nil, nil
 	if b := e.ext.bolt; b[0] > 0 {
 		hit, e.snap.area = e.boltPreview(x, y, b[0], b[1])
 	} else {
@@ -50,6 +50,10 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 	for _, i := range hit {
 		p := e.cpos[i]
 		if c := e.combatant(i); c != nil && c.Side == e.selected().Side {
+			if e.passedOver(c) { // left out by the cast: shown apart, not counted
+				e.snap.skipped = append(e.snap.skipped, image.Pt(int(p.x), int(p.y)))
+				continue
+			}
 			friends++
 		} else {
 			foes++
@@ -59,8 +63,21 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 		}
 	}
 	e.markReach(marks, true)
-	undo := func() { e.markReach(marks, false); e.snap.area = nil }
+	undo := func() { e.markReach(marks, false); e.snap.area, e.snap.skipped = nil, nil }
 	return "Hits " + strconv.Itoa(foes) + " foe " + strconv.Itoa(friends) + " ally ", undo
+}
+
+// passedOver: applySpellToSide's test for an ally in the area the spell
+// aimed leaves out: Bless skips one with an enemy next to it. The near
+// and target lists are kept.
+func (e *Engine) passedOver(c *Character) bool {
+	if e.ext.aoeSpell != spBless {
+		return false
+	}
+	near, targets := e.near, e.targets
+	e.near = nil
+	defer func() { e.near, e.targets = near, targets }()
+	return e.nearEnemies(c, 1) > 0
 }
 
 // boltPreview walks a bolt from (x,y) as its cast would (the target

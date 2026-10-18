@@ -27,6 +27,7 @@ var (
 	reachTint   = [4]float32{0.03, 0.1, 0.28, 1}
 	pathTint    = [4]float32{0.1, 0.35, 0.8, 1}
 	freeTint    = [4]float32{0.9, 0.1, 0.05, 1}
+	skipTint    = [4]float32{0.55, 0.55, 0.75, 1}
 )
 
 var white *gpu.Image
@@ -73,7 +74,12 @@ func (p *Presenter) DrawBattle(dst *gpu.Image, pic Rect, b *engine.Battle, mx, m
 		area = blockedTint
 	}
 	for _, a := range b.AreaAt {
-		wash(a, area)
+		if !slices.Contains(b.Skipped, a) {
+			wash(a, area)
+		}
+	}
+	for _, s := range b.Skipped { // an ally the cast passes over (Bless: an enemy next to it)
+		frame(s, skipTint)
 	}
 	if b.AimWhy != "" && b.CursorOn {
 		for _, c := range b.CursorAt {

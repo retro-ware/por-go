@@ -26,6 +26,7 @@ type Battle struct {
 	Actions    []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
 	Area       bool                   // Marks are a spell's area (else a move's reach or a choice)
 	AreaAt     []image.Point          // the squares a spell's area covers round the aimed square
+	Skipped    []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
 	AimWhy     string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
 	StatusOnly bool                   // a message on the status row is being read: the menu row under it is stale, draw the status row alone
 	Effects    []Effect               // sprites over the map: a missile, a hit, a fall
@@ -93,7 +94,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, AimWhy: s.aimWhy, StatusOnly: s.statusOnly, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, Skipped: s.skipped, AimWhy: s.aimWhy, StatusOnly: s.statusOnly, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {
