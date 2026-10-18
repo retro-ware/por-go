@@ -844,7 +844,7 @@ func (e *Engine) combatItems(c *Character) bool {
 func (e *Engine) combatPanel(c *Character) {
 	e.ext.panel = c
 	e.ClearCells(0, messageRow, lastCol, messageRow)
-	x := 1
+	x := 0
 	e.displayName(c, x, messageRow, false)
 	x += len(c.Name()) + 2
 	e.DisplayString(x, messageRow, colWhite, "HP")
@@ -852,15 +852,15 @@ func (e *Engine) combatPanel(c *Character) {
 	x += 3 + len(strconv.Itoa(int(c.HP))) + 2
 	e.DisplayString(x, messageRow, colWhite, "AC")
 	e.displayAC(c, x+3, 0x17)
-	x += 8
+	x += 3 + len(strconv.Itoa(abs(int(c.AC[0])-60))) + b2i(c.AC[0] > 60) + 2 // as displayAC writes it
 	switch {
 	case c.Okay == 0:
 		e.DisplayString(x, messageRow, colWhite, cut(e.statusName(c), 0x27-x))
 	case e.isHelpless(c):
 		e.DisplayString(x, messageRow, colWhite, "(Helpless)")
 	default:
-		e.DisplayString(x, messageRow, colWhite, "Damage")
-		e.DisplayString(x+7, messageRow, colLightGreen, cut(damageText(c), 0x27-x-7))
+		e.DisplayString(x, messageRow, colWhite, "Dmg")
+		e.DisplayString(x+4, messageRow, colLightGreen, cut(damageText(c), 0x27-x-4))
 	}
 }
 
