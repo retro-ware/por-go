@@ -3,6 +3,8 @@ package battle
 import (
 	"image"
 	"image/color"
+	"image/draw"
+	"strconv"
 
 	"gpu"
 
@@ -11,19 +13,20 @@ import (
 )
 
 // The action bar, XCOM style: one button per menu item along the bottom
-// centre, its icon (else its hotkey, big) on the button and its word under it.
+// centre showing its icon (else its hotkey, big) at native size; the word
+// shows under the button the mouse is on. The bar is drawn in screen
+// pixels, its text at the bar's scale.
 const (
-	button  = 32 // a button's side at scale 1
-	slot    = 64 // the width each item takes: the longest word (7 letters) and a gap
-	barH    = button + 4 + 8 + 4
-	promptH = 12 // the prompt line over the buttons
+	face    = 64 // an icon's side: drawn 1:1
+	promptH = 12 // the prompt line over the buttons, at scale 1
+	labelH  = 14 // the hovered button's word under them, at scale 1
 )
 
 type bar struct {
-	img, keys *gpu.Image        // the bar; the number keys, drawn over the icons
-	id        string            // what img shows
-	rects     []image.Rectangle // the buttons on screen, as last drawn
-	items     []barItem
+	img   *gpu.Image
+	id    string            // what img shows
+	rects []image.Rectangle // the buttons on screen, as last drawn
+	items []barItem
 }
 
 // barItem is one button: its letter, its word, the keys it sends.
@@ -75,10 +78,14 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 		}
 		items = append(items, it)
 	}
+	quick, quickAt := barItem{}, -2 // the main menu's Quick goes last, rightmost
 	for i, it := range m.Items {
 		b := barItem{it.Key, it.Text, []uint16{uint16(it.Key)}}
 		switch {
 		case kind == "main" && (it.Text == "Move" || it.Text == "View"):
+			continue
+		case kind == "main" && it.Text == "Quick":
+			quick, quickAt = b, i
 			continue
 		case kind == "main" && it.Text == "Aim":
 			b.Text = "Attack"
@@ -96,6 +103,9 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 		}
 		add(b, i)
 	}
+	if quickAt != -2 {
+		add(quick, quickAt)
+	}
 	return items, sel
 }
 
@@ -112,54 +122,48 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	if p.hint != "" {
 		prompt = p.hint
 	}
-	w, h := max(len(items)*slot, len(prompt)*8), barH+promptH
-	id := prompt
+	hover := -1
+	cx, cy := gpu.CursorPosition()
+	for i, r := range b.rects {
+		if i < len(items) && image.Pt(cx, cy).In(r) {
+			hover = i
+		}
+	}
+	n, bw := len(items), face+4*k
+	w, h := max(n*(bw+4*k), len(prompt)*8*k+8*k, 7*8*k+bw), (promptH+labelH)*k+bw
+	id := prompt + "|" + strconv.Itoa(k) + "|" + strconv.Itoa(hover)
 	for i, it := range items {
 		id += "|" + it.Text
 		if i == sel {
 			id += "*"
 		}
 	}
-	if b.img == nil || b.img.Bounds().Dx() != w {
+	if b.img == nil || b.img.Bounds() != image.Rect(0, 0, w, h) {
 		if b.img != nil {
-			b.keys.Deallocate()
 			b.img.Deallocate()
 		}
-		b.img, b.keys, b.id = gpu.NewImage(w, h), gpu.NewImage(w, h), ""
+		b.img, b.id = gpu.NewImage(w, h), ""
 	}
 	if id != b.id {
 		b.id = id
-		b.img.WritePixels(barPixels(glyph, prompt, items, sel, w, h, false).Pix)
-		b.keys.WritePixels(barPixels(glyph, prompt, items, sel, w, h, true).Pix)
+		b.img.WritePixels(barPixels(glyph, prompt, items, sel, hover, w, h, k).Pix)
 	}
-	x0, y0 := dst.Bounds().Dx()/2-w*k/2, bottom-h*k
+	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
-	op.GeoM.Scale(float64(k), float64(k))
 	op.GeoM.Translate(float64(x0), float64(y0))
 	dst.DrawImage(b.img, op)
 	b.rects, b.items = b.rects[:0], items
 	for i := range items {
-		r := buttonRect(w, len(items), i)
-		b.rects = append(b.rects, image.Rectangle{r.Min.Mul(k), r.Max.Mul(k)}.Add(image.Pt(x0, y0)))
-		if ic := icon(items[i].Text); ic != nil { // fitted into the button's face, square as drawn
-			in := b.rects[i].Inset(3 * k)
-			s := float64(in.Dx()) / float64(ic.Bounds().Dx())
-			o := &gpu.DrawImageOptions{}
-			if s != float64(int(s)) {
-				o.Filter = gpu.FilterLinear
-			}
-			o.GeoM.Scale(s, s)
-			o.GeoM.Translate(float64(in.Min.X), float64(in.Min.Y))
-			dst.DrawImage(ic, o)
-		}
+		r := buttonRect(w, n, i, k)
+		b.rects = append(b.rects, r.Add(image.Pt(x0, y0)))
 	}
-	dst.DrawImage(b.keys, op)
 }
 
-// buttonRect is button i of n on a bar image w wide.
-func buttonRect(w, n, i int) image.Rectangle {
-	x := (w-n*slot)/2 + i*slot + (slot-button)/2
-	return image.Rect(x, promptH, x+button, promptH+button)
+// buttonRect is button i of n on a bar image w wide at scale k.
+func buttonRect(w, n, i, k int) image.Rectangle {
+	bw, gap := face+4*k, 4*k
+	x := (w-n*(bw+gap)+gap)/2 + i*(bw+gap)
+	return image.Rect(x, promptH*k, x+bw, promptH*k+bw)
 }
 
 // Click is the keys of the button at screen pixel (x, y), if any.
@@ -175,8 +179,8 @@ func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 // HideBar forgets the buttons (no bar on screen: clicks hit nothing).
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
-// barPixels is the bar's picture, or with keys only the buttons' number keys.
-func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w, h int, keys bool) *image.RGBA {
+// barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
+func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, hover, w, h, k int) *image.RGBA {
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	text := func(s string, x, y, scale int, c color.RGBA) {
@@ -201,36 +205,35 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w,
 			}
 		}
 	}
-	if prompt != "" && !keys {
-		x := max(0, (w-len(prompt)*8)/2)
-		fill(image.Rect(x-4, 0, x+len(prompt)*8+4, 10).Intersect(im.Bounds()), color.RGBA{0, 0, 0, 0xB0}) // translucent black: the text reads over any wall
-		text(prompt, x, 1, 1, rgb(15))
+	if prompt != "" {
+		x := max(0, (w-len(prompt)*8*k)/2)
+		fill(image.Rect(x-4*k, 0, x+(len(prompt)*8+4)*k, 10*k).Intersect(im.Bounds()), color.RGBA{0, 0, 0, 0xB0}) // translucent black: the text reads over any wall
+		text(prompt, x, k, k, rgb(15))
 	}
-	x1 := (w - len(items)*slot) / 2
 	for i, it := range items {
-		r := buttonRect(w, len(items), i)
-		if keys {
-			if i < 10 {
-				text(string(rune('0'+(i+1)%10)), r.Min.X+3, r.Min.Y+3, 1, rgb(7)) // its number key
-			}
-			continue
-		}
+		r := buttonRect(w, len(items), i, k)
 		edge := rgb(8)
-		if i == sel {
+		if i == sel || i == hover {
 			edge = color.RGBA{0xFF, 0xCC, 0x33, 0xFF}
 		}
 		fill(r, edge)
-		fill(r.Inset(2), color.RGBA{0x18, 0x20, 0x38, 0xFF})
-		if iconPath(it.Text) == "" {
-			text(string(it.Key), r.Min.X+(button-16)/2, r.Min.Y+(button-16)/2, 2, rgb(15))
+		in := r.Inset(2 * k) // face pixels square: the icon 1:1
+		fill(in, color.RGBA{0x18, 0x20, 0x38, 0xFF})
+		if ic := iconPicture(it.Text); ic != nil {
+			draw.Draw(im, in, ic, ic.Bounds().Min, draw.Over)
+		} else {
+			text(string(it.Key), in.Min.X+(in.Dx()-16*k)/2, in.Min.Y+(in.Dy()-16*k)/2, 2*k, rgb(15))
+		}
+		if i < 10 {
+			text(string(rune('0'+(i+1)%10)), in.Min.X+k, in.Min.Y+k, k, rgb(7)) // its number key
+		}
+		if i != hover {
+			continue
 		}
 		word := it.Text
-		if len(word) > slot/8-1 {
-			word = word[:slot/8-1]
-		}
-		wx := x1 + i*slot + (slot-len(word)*8)/2
-		fill(image.Rect(wx-3, r.Max.Y+3, wx+len(word)*8+3, r.Max.Y+13), color.RGBA{0, 0, 0, 0xB0}) // as the prompt's
-		text(word, wx, r.Max.Y+4, 1, rgb(10))
+		wx := min(max(0, r.Min.X+(r.Dx()-len(word)*8*k)/2), w-len(word)*8*k)
+		fill(image.Rect(wx-3*k, r.Max.Y+3*k, wx+(len(word)*8+3)*k, r.Max.Y+13*k).Intersect(im.Bounds()), color.RGBA{0, 0, 0, 0xB0}) // as the prompt's
+		text(word, wx, r.Max.Y+4*k, k, rgb(10))
 	}
 	return im
 }

@@ -55,7 +55,7 @@ func TestKeys(t *testing.T) {
 		}
 		return s
 	}
-	for k, want := range map[uint16]string{'1': "A", '3': "W", '4': "DQ", '5': "", '0': "", 8: "DQ", 'w': "", 'Q': ""} {
+	for k, want := range map[uint16]string{'1': "A", '2': "W", '3': "DQ", '4': "Q", '5': "", '0': "", 8: "DQ", 'w': "", 'Q': ""} { // Quick last
 		if got, taken := p.Key(k); str(got) != want || !taken {
 			t.Errorf("key %#x: %q %v, want %q taken", k, str(got), taken, want)
 		}
@@ -89,8 +89,8 @@ func TestKeys(t *testing.T) {
 }
 
 func TestButtonRects(t *testing.T) {
-	r := buttonRect(400, 3, 2) // a hint wider than the buttons centres them
-	if r.Dx() != button || r.Min.X != (400-3*slot)/2+2*slot+(slot-button)/2 {
+	r := buttonRect(400, 3, 2, 2) // a hint wider than the buttons centres them
+	if bw := face + 8; r.Dx() != bw || r.Min.X != (400-3*(bw+8)+8)/2+2*(bw+8) {
 		t.Errorf("button 2 of 3 on a 400 wide bar: %v", r)
 	}
 }
