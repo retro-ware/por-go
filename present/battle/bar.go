@@ -258,11 +258,12 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, ho
 		} else {
 			text(string(it.Key), in.Min.X+(in.Dx()-16*k)/2, in.Min.Y+(in.Dy()-16*k)/2, 2*k, rgb(15))
 		}
-		if h, ok := hotkeys[it.Text]; ok { // its hotkey, bottom right
-			lw := len(h.label) * 8 * k
-			at := image.Pt(in.Max.X-lw-2*k, in.Max.Y-10*k)
-			draw.Draw(im, image.Rect(at.X-k, at.Y-k, at.X+lw+k, at.Y+9*k), image.NewUniform(color.RGBA{0, 0, 0, 0xB0}), image.Point{}, draw.Over) // darkens the icon under it
-			text(h.label, at.X, at.Y, k, rgb(15))
+		if h, ok := hotkeys[it.Text]; ok { // its hotkey, bottom right, sized to the icon (1:1, so never k)
+			const s = 2 // pixels a font pixel: 16px letters on the 64px icon
+			lw := len(h.label) * 8 * s
+			at := image.Pt(in.Max.X-lw-2*s, in.Max.Y-10*s)
+			draw.Draw(im, image.Rect(at.X-s, at.Y-s, at.X+lw+s, at.Y+9*s), image.NewUniform(color.RGBA{0, 0, 0, 0xB0}), image.Point{}, draw.Over) // darkens the icon under it
+			text(h.label, at.X, at.Y, s, rgb(15))
 		}
 		if i != hover {
 			continue
