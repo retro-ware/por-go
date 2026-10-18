@@ -21,6 +21,9 @@ type Battle struct {
 	CursorAt []image.Point // the squares the cursor covers (a large combatant's footprint)
 	Marks    []image.Point // squares framed for a choice (reach of a move, an area of effect)
 	Reach    []image.Point // squares a click walks to from the main menu (the active unit's move)
+	Targets  []int         // units (by ID) a click attacks from the main menu
+	Actions  []MenuItem    // the main menu's turn enders off its bar (Guard, Wait, Bandage)
+	Area     bool          // Marks are a spell's area (else a move's reach or a choice)
 	Effects  []Effect      // sprites over the map: a missile, a hit, a fall
 	View     image.Point   // top left square the original shows
 }
@@ -61,7 +64,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 	}
 	for part := 0; part <= 3; part++ {
 		if dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part); ok {

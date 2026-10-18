@@ -24,18 +24,24 @@ type bar struct {
 	img   *gpu.Image
 	id    string            // what img shows
 	rects []image.Rectangle // the buttons on screen, as last drawn
-	keys  []byte
-	texts []string
+	items []barItem
 }
 
-// has is the key of the button named s (0: none).
-func (b *bar) has(s string) byte {
-	for i, t := range b.texts {
-		if t == s && i < len(b.rects) {
-			return b.keys[i]
+// barItem is one button: its letter, its word, the keys it sends.
+type barItem struct {
+	Key  byte
+	Text string
+	Send []uint16
+}
+
+// has is the keys of the button named s (nil: none).
+func (b *bar) has(s string) []uint16 {
+	for i, it := range b.items {
+		if it.Text == s && i < len(b.rects) {
+			return it.Send
 		}
 	}
-	return 0
+	return nil
 }
 
 // overBar tells whether screen pixel (x, y) is on the bar.
@@ -48,25 +54,48 @@ func (p *Presenter) overBar(x, y int) bool {
 	return false
 }
 
-// shownItems are the menu's items as the bar shows them: on the main
-// combat menu Move goes (a click on the map walks) and Aim is Attack.
-func shownItems(m *engine.Menu) (items []engine.MenuItem, sel int) {
-	main := false
+// shownItems are the menu's items as the bar shows them, XCOM 2 style:
+// on the main combat menu Move and View go (a click on the map walks, on
+// one's own figure opens the sheet), Aim is Attack, the turn enders
+// (actions) sit before End turn (Done, Quit); aiming keeps Attack, Free
+// aim and Cancel (Tab cycles the targets, the camera follows by itself).
+func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel int) {
+	kind := ""
 	for _, it := range m.Items {
-		main = main || it.Text == "Done"
+		switch it.Text {
+		case "Done":
+			kind = "main"
+		case "Next", "Center":
+			kind = "aim"
+		}
 	}
 	sel = -1
-	for i, it := range m.Items {
-		switch {
-		case main && it.Text == "Move":
-			continue
-		case main && it.Text == "Aim":
-			it.Text = "Attack"
-		}
+	add := func(it barItem, i int) {
 		if i == m.Sel {
 			sel = len(items)
 		}
 		items = append(items, it)
+	}
+	for i, it := range m.Items {
+		b := barItem{it.Key, it.Text, []uint16{uint16(it.Key)}}
+		switch {
+		case kind == "main" && (it.Text == "Move" || it.Text == "View"):
+			continue
+		case kind == "main" && it.Text == "Aim":
+			b.Text = "Attack"
+		case kind == "main" && it.Text == "Done":
+			for _, a := range actions {
+				add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
+			}
+			b.Text, b.Send = "End", []uint16{'D', 'Q'}
+		case kind == "aim" && (it.Text == "Next" || it.Text == "Prev" || it.Text == "Center"):
+			continue
+		case kind == "aim" && it.Text == "Manual":
+			b.Text = "Free"
+		case kind == "aim" && it.Text == "Exit":
+			b.Text = "Cancel"
+		}
+		add(b, i)
 	}
 	return items, sel
 }
@@ -75,9 +104,13 @@ func shownItems(m *engine.Menu) (items []engine.MenuItem, sel int) {
 // in the game's font (glyph).
 func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.Menu, k, bottom int) {
 	b := &p.bar
-	items, sel := shownItems(m)
+	items, sel := shownItems(m, p.actions)
+	p.aiming = false
+	for _, it := range m.Items {
+		p.aiming = p.aiming || it.Text == "Next" || it.Text == "Center"
+	}
 	prompt := m.Prompt
-	if prompt == "" {
+	if p.hint != "" {
 		prompt = p.hint
 	}
 	w, h := max(len(items)*slot, len(prompt)*8), barH+promptH
@@ -103,29 +136,33 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	op.GeoM.Scale(float64(k), float64(k))
 	op.GeoM.Translate(float64(x0), float64(y0))
 	dst.DrawImage(b.img, op)
-	b.rects, b.keys, b.texts = b.rects[:0], b.keys[:0], b.texts[:0]
-	x1 := (w - len(items)*slot) / 2
-	for i, it := range items {
-		r := image.Rect(x1+i*slot+(slot-button)/2, promptH, i*slot+(slot+button)/2, promptH+button)
+	b.rects, b.items = b.rects[:0], items
+	for i := range items {
+		r := buttonRect(w, len(items), i)
 		b.rects = append(b.rects, image.Rectangle{r.Min.Mul(k), r.Max.Mul(k)}.Add(image.Pt(x0, y0)))
-		b.keys, b.texts = append(b.keys, it.Key), append(b.texts, it.Text)
 	}
 }
 
-// Click is the hotkey of the button at screen pixel (x, y), if any.
-func (p *Presenter) Click(x, y int) (byte, bool) {
+// buttonRect is button i of n on a bar image w wide.
+func buttonRect(w, n, i int) image.Rectangle {
+	x := (w-n*slot)/2 + i*slot + (slot-button)/2
+	return image.Rect(x, promptH, x+button, promptH+button)
+}
+
+// Click is the keys of the button at screen pixel (x, y), if any.
+func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 	for i, r := range p.bar.rects {
 		if image.Pt(x, y).In(r) {
-			return p.bar.keys[i], true
+			return p.bar.items[i].Send, true
 		}
 	}
-	return 0, false
+	return nil, false
 }
 
 // HideBar forgets the buttons (no bar on screen: clicks hit nothing).
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
-func barPixels(glyph func(byte) [8]byte, prompt string, items []engine.MenuItem, sel, w, h int) *image.RGBA {
+func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w, h int) *image.RGBA {
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	text := func(s string, x, y, scale int, c color.RGBA) {
@@ -155,7 +192,7 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []engine.MenuItem,
 	}
 	x1 := (w - len(items)*slot) / 2
 	for i, it := range items {
-		r := image.Rect(x1+i*slot+(slot-button)/2, promptH, x1+i*slot+(slot+button)/2, promptH+button)
+		r := buttonRect(w, len(items), i)
 		edge := rgb(8)
 		if i == sel {
 			edge = color.RGBA{0xFF, 0xCC, 0x33, 0xFF}

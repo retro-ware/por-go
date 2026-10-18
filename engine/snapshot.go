@@ -132,6 +132,8 @@ type snapState struct {
 	effects  []effect      // sprites on the combat page
 	marks    []image.Point // squares markReach framed
 	reach    []image.Point // squares a click on the main combat menu walks to
+	actions  []MenuItem    // the main combat menu's keys off its bar (Guard, Wait, Bandage)
+	targets  []int         // combatants a click on the main combat menu attacks
 	hidden   map[int]bool  // combatants whose icon is off the page (falling, hiding)
 	poses    map[int]byte  // the pose each combatant was last drawn in
 	click    int           // the square (+1) a SquareKey being translated clicks

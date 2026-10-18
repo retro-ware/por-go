@@ -281,3 +281,34 @@ func TestClickFoe(t *testing.T) {
 		}
 	}
 }
+
+// TestCombatActions: the main menu publishes its turn enders and the foes
+// a click attacks; Wait ends the turn; a click on one's own figure opens
+// the sheet.
+func TestCombatActions(t *testing.T) {
+	e, scr, v := battleView(t)
+	var me engine.Unit
+	for _, u := range v.Battle.Units {
+		if u.Active {
+			me = u
+		}
+	}
+	if !slices.ContainsFunc(v.Battle.Actions, func(m engine.MenuItem) bool { return m.Text == "Wait" }) {
+		t.Errorf("Actions %+v: no Wait", v.Battle.Actions)
+	}
+	if len(v.Battle.Targets) == 0 {
+		t.Errorf("no Targets with foes about")
+	}
+	if v := keyWait(e, scr, engine.SquareKey(me.X, me.Y)); v.Battle != nil {
+		t.Errorf("a click on one's own figure: still on the map, not the sheet")
+	}
+	keyWait(e, scr, 'E') // leave the sheet
+	v = keyWait(e, scr, 'W')
+	if v.Battle != nil {
+		for _, u := range v.Battle.Units {
+			if u.Active && u.ID == me.ID {
+				t.Errorf("Wait: still %s's turn", me.Name)
+			}
+		}
+	}
+}

@@ -188,8 +188,10 @@ func (g *game) mouse() {
 		g.remaster.Hover(mx, my)
 	}
 	if g.remastered && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
-		if k, ok := g.remaster.Click(mx, my); ok { // an action bar button
-			g.scr.PushKey(k)
+		if ks, ok := g.remaster.Click(mx, my); ok { // an action bar button, a menu item
+			for _, k := range ks {
+				g.scr.PushKey(k)
+			}
 			g.sent = true
 			return
 		}

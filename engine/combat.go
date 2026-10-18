@@ -172,6 +172,14 @@ func (e *Engine) playerTurn(c *Character) {
 			e.o10_000F(c)
 		case 'D':
 			done = e.otherMenu(c)
+		case 'G': // extra: the Done menu's, from the main menu (combatMenu offers them only when they apply)
+			done = e.guard(c)
+		case 'W':
+			c.Combat.Delay = 1
+			done = true
+		case 'B':
+			e.bandage(true)
+			done = e.clearCombatInfo(c)
 		case '2':
 			e.v6E30 ^= 1
 			if e.v6E30 != 0 {
@@ -253,6 +261,9 @@ func (e *Engine) combatMenu(c *Character) byte {
 		}
 		if who := e.occ[sy][sx]; who > 0 {
 			t := e.combatant(who)
+			if t == c {
+				return 'V' // one's own figure: the sheet
+			}
 			if t == nil || t.Side == c.Side {
 				return 0
 			}
@@ -269,6 +280,32 @@ func (e *Engine) combatMenu(c *Character) byte {
 		}
 		return 0
 	}})
+	// extra: the Done menu's turn enders straight from here (keys off the bar), and
+	// the foes a click attacks now (in reach of the weapon, or a walk away from it)
+	hidden := "L"
+	e.snap.actions = nil // fresh: published views keep the old ones
+	if !e.rangedWeapon(c) || e.throwable(c) {
+		hidden += "G"
+		e.snap.actions = append(e.snap.actions, MenuItem{"Guard", 'G'})
+	}
+	hidden += "W"
+	e.snap.actions = append(e.snap.actions, MenuItem{"Wait", 'W'})
+	if e.bandage(false) {
+		hidden += "B"
+		e.snap.actions = append(e.snap.actions, MenuItem{"Bandage", 'B'})
+	}
+	e.snap.targets = nil
+	rng := 1
+	if w := c.Slots[0]; w != nil && e.baseItem(w.Type, 12) > 1 {
+		rng = int(e.baseItem(w.Type, 12)) - 1
+	}
+	for i := 1; i <= e.ncomb; i++ {
+		if t := e.combatant(byte(i)); t != nil && t.Side != c.Side && t.Okay != 0 && e.cpos[i].size > 0 && e.o14_1085(c, t) &&
+			(e.canTarget(c, t, rng, 1) || e.pathNextTo(c, t, reach) != nil) {
+			e.snap.targets = append(e.snap.targets, i)
+		}
+	}
+	defer func() { e.snap.actions, e.snap.targets = nil, nil }()
 	if t := e.ext.aimAfterWalk; t != nil { // extra: walked up to a clicked foe: now the attack
 		e.ext.aimAfterWalk = nil
 		if t.Okay != 0 && e.rangeTo(c, t) <= 1 {
@@ -277,14 +314,14 @@ func (e *Engine) combatMenu(c *Character) byte {
 		}
 	}
 	for {
-		e.ext.hiddenKeys = "L" // extra: the Log, off the bar
+		e.ext.hiddenKeys = hidden // extra: the Log, Guard, Wait, Bandage: off the bar
 		key, extra := e.DisplayInput("", m, 0xD, 0xA, 0xF, true, false)
 		e.ext.hiddenKeys = ""
 		if extra && !(key == 0x10 || key == 0x13 || key == '-' || key == '2') { // set cs:0626
 			key = 0
 		}
 		switch key { // set cs:0646
-		case 0x10, 0x13, ' ', '-', '2', 'A', 'C', 'D', 'L', 'I', 'M', 'Q', 'T', 'V':
+		case 0x10, 0x13, ' ', '-', '2', 'A', 'C', 'D', 'L', 'I', 'M', 'Q', 'T', 'V', 'G', 'W', 'B':
 			return key
 		}
 	}

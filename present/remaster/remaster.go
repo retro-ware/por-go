@@ -75,6 +75,16 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 			return classic.Rect{}
 		}
 		p.drawRows(dst, frame, engine.CombatPanel, k)
+		for _, m := range v.Party { // whose turn: the portrait card, bottom left
+			if m.Selected {
+				ck := max(1, int(k)/2) // as the bar (ui.K knows only the dungeon view's screen)
+				ui.CardAt = func(int, int) image.Rectangle {
+					y := p.mapBottom - (ui.CardH+cardGap)*ck + ui.CardFoot*ck
+					return image.Rect(cardGap*ck, y, cardGap*ck+ui.CardW*ck, y+ui.CardH*ck)
+				}
+				p.drawParty(dst, []engine.Member{m})
+			}
+		}
 		p.battle.DrawBar(dst, note.Glyph, v.Menu, max(1, int(k)/2), dst.Bounds().Dy()-int(k)*10)
 		return classic.Rect{}
 	}
@@ -219,26 +229,25 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	return nil, true
 }
 
-// Click is the key a click at screen pixel (x, y) picks: an action bar button.
-// or an item of the vertical menu.
-func (p *Presenter) Click(x, y int) (uint16, bool) {
+// Click is the keys a click at screen pixel (x, y) sends: an action bar
+// button, or an item of the vertical menu.
+func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 	if !p.fight {
 		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {
-			return 0, false
+			return nil, false
 		}
 		for i, r := range p.menuRects {
 			if image.Pt(x, y).In(r) {
 				p.menu = false
 				if i == p.menuSel { // the game's own choice: Enter picks it (some prompts take nothing else)
-					return 13, true
+					return []uint16{13}, true
 				}
-				return uint16(p.keys[i]), true
+				return []uint16{uint16(p.keys[i])}, true
 			}
 		}
-		return 0, false
+		return nil, false
 	}
-	k, ok := p.battle.Click(x, y)
-	return uint16(k), ok
+	return p.battle.Click(x, y)
 }
 
 // Hover moves the vertical menu's highlight to the item under screen pixel (x, y).

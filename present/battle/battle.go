@@ -34,12 +34,14 @@ type Presenter struct {
 	figs                       map[image.Image]*figure // ponytail: never evicted; a few dozen pictures a game
 	bar                        bar
 
-	hint          string  // what the square under the mouse holds, for the bar's prompt line
-	focus, offset vec     // what the camera watches; the W A S D pan from it
-	yaw, yawTo    float64 // camera heading: 0 looks north, as the original's screen
-	dist, distTo  float64 // camera distance in squares
-	at            vec     // what the camera looks at (eased)
-	cam           camera  // the last frame's camera, for picking
+	actions       []engine.MenuItem // the main menu's turn enders off its bar
+	aiming        bool              // the bar is Aim's (Tab cycles, Enter attacks)
+	hint          string            // what the square under the mouse holds, for the bar's prompt line
+	focus, offset vec               // what the camera watches; the W A S D pan from it
+	yaw, yawTo    float64           // camera heading: 0 looks north, as the original's screen
+	dist, distTo  float64           // camera distance in squares
+	at            vec               // what the camera looks at (eased)
+	cam           camera            // the last frame's camera, for picking
 	screen        image.Rectangle
 	units         map[int]*[2]float64 // each unit's shown position (eased between squares)
 	sparks        []spark
@@ -75,6 +77,8 @@ var (
 	cursorGlow  = [4]float32{1, 0.78, 0.2, 1}
 	markGlow    = [4]float32{0.25, 0.8, 0.85, 1} // the original frames choices in light cyan
 	hoverGlow   = [4]float32{0.45, 0.45, 0.45, 1}
+	areaGlow    = [4]float32{1, 0.5, 0.1, 1}
+	targetGlow  = [4]float32{0.95, 0.12, 0.08, 1}
 	reachGlow   = [4]float32{0.015, 0.05, 0.13, 1}
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
@@ -105,22 +109,22 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 	case k >= '0' && k <= '9':
 		i := (int(k) - '0' + 9) % 10 // 1 is the first button, 0 the tenth
 		if i < len(p.bar.rects) {
-			return []uint16{uint16(p.bar.keys[i])}, true
+			return p.bar.items[i].Send, true
 		}
 	case k == 8:
 		switch {
-		case p.bar.has("Quit") != 0: // the Done menu
-			return []uint16{uint16(p.bar.has("Quit"))}, true
-		case p.bar.has("Done") != 0:
-			return []uint16{uint16(p.bar.has("Done")), 'Q'}, true
+		case p.bar.has("Quit") != nil: // the Done menu
+			return p.bar.has("Quit"), true
+		case p.bar.has("End") != nil:
+			return p.bar.has("End"), true
 		}
-	case k == 9 && p.bar.has("Next") != 0:
+	case k == 9 && shown && p.aiming:
 		if gpu.IsKeyPressed(gpu.KeyShift) {
-			return []uint16{uint16(p.bar.has("Prev"))}, true
+			return []uint16{'P'}, true
 		}
-		return []uint16{uint16(p.bar.has("Next"))}, true
-	case k == 13 && p.bar.has("Attack") != 0:
-		return []uint16{uint16(p.bar.has("Attack"))}, true
+		return []uint16{'N'}, true
+	case k == 13 && p.bar.has("Attack") != nil && p.aiming:
+		return p.bar.has("Attack"), true
 	default:
 		return nil, false
 	}
@@ -134,7 +138,7 @@ func hint(b *engine.Battle, sq image.Point) string {
 			continue
 		}
 		s := u.Name + "  HP " + strconv.Itoa(u.HP) + "  AC " + strconv.Itoa(u.AC)
-		if !u.Party && b.Reach != nil {
+		if slices.Contains(b.Targets, u.ID) {
 			s = "Attack " + s
 		}
 		return s
@@ -266,14 +270,25 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 			dst.DrawMesh(p.box, p.white, vp, &o)
 		}
 	}
+	marks := markGlow
+	if b.Area { // a spell's area: XCOM's orange
+		marks = areaGlow
+	}
 	for _, m := range b.Marks {
-		frame(m.X, m.Y, markGlow, 0)
+		frame(m.X, m.Y, marks, 0)
+	}
+	for _, u := range b.Units { // the foes a click attacks: red
+		if slices.Contains(b.Targets, u.ID) {
+			for d := range max(1, u.Size) * max(1, u.Size) {
+				frame(u.X+d%max(1, u.Size), u.Y+d/max(1, u.Size), targetGlow, 0.001)
+			}
+		}
 	}
 	for _, r := range b.Reach { // where a click walks: XCOM's blue
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: reachGlow, Model: place(float32(r.X)+.5, 0.003, float32(r.Y)+.5, 0, .96, .005, .96)}
 		dst.DrawMesh(p.box, p.white, vp, &o)
 	}
-	p.hint = ""
+	p.hint, p.actions = "", b.Actions
 	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
 		p.hint = hint(b, image.Pt(mx, my))

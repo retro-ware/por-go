@@ -45,35 +45,52 @@ func TestStoneTexture(t *testing.T) {
 
 func TestKeys(t *testing.T) {
 	p := &Presenter{}
-	p.bar.rects = make([]image.Rectangle, 3)
-	p.bar.keys = []byte{'A', 'Q', 'D'}
-	p.bar.texts = []string{"Attack", "Quick", "Done"}
-	for k, want := range map[uint16]string{'1': "A", '3': "D", '4': "", '0': "", 8: "DQ", 'w': "", 'Q': "", 13: "A"} {
-		got, taken := p.Key(k)
+	m := &engine.Menu{Items: []engine.MenuItem{{Text: "Move", Key: 'M'}, {Text: "View", Key: 'V'}, {Text: "Aim", Key: 'A'}, {Text: "Quick", Key: 'Q'}, {Text: "Done", Key: 'D'}}}
+	p.bar.items, _ = shownItems(m, []engine.MenuItem{{Text: "Wait", Key: 'W'}})
+	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
+	str := func(ks []uint16) string {
 		s := ""
-		for _, k := range got {
+		for _, k := range ks {
 			s += string(rune(k))
 		}
-		if s != want || !taken {
-			t.Errorf("key %#x: %q %v, want %q taken", k, s, taken, want)
+		return s
+	}
+	for k, want := range map[uint16]string{'1': "A", '3': "W", '4': "DQ", '5': "", '0': "", 8: "DQ", 'w': "", 'Q': ""} {
+		if got, taken := p.Key(k); str(got) != want || !taken {
+			t.Errorf("key %#x: %q %v, want %q taken", k, str(got), taken, want)
 		}
 	}
 	if _, taken := p.Key(0x4800); taken {
 		t.Error("arrows belong to the game")
 	}
+	if _, taken := p.Key(13); taken {
+		t.Error("Enter off the aim bar belongs to the game")
+	}
 	if p.yawTo == 0 {
 		t.Error("Q did not turn the camera")
 	}
-	p.bar.texts[1] = "Quit" // the Done menu: Backspace is its Quit
-	if got, _ := p.Key(8); len(got) != 1 || got[0] != 'Q' {
-		t.Errorf("Backspace on the Done menu: %v", got)
+	aim := &engine.Menu{Prompt: "Aim:", Items: []engine.MenuItem{{Text: "Next", Key: 'N'}, {Text: "Prev", Key: 'P'}, {Text: "Manual", Key: 'M'}, {Text: "Attack", Key: 'A'}, {Text: "Center", Key: 'C'}, {Text: "Exit", Key: 'E'}}}
+	p.bar.items, _ = shownItems(aim, nil)
+	p.bar.rects, p.aiming = make([]image.Rectangle, len(p.bar.items)), true
+	if len(p.bar.items) != 3 || p.bar.items[0].Text != "Free" || p.bar.items[2].Text != "Cancel" {
+		t.Errorf("aim bar: %+v", p.bar.items)
+	}
+	if got, _ := p.Key(13); str(got) != "A" {
+		t.Errorf("Enter aiming: %q, want A", str(got))
+	}
+	if got, _ := p.Key(9); str(got) != "N" {
+		t.Errorf("Tab aiming: %q, want N", str(got))
+	}
+	p.bar.items = []barItem{{'Q', "Quit", []uint16{'Q'}}} // the Done menu: Backspace is its Quit
+	p.bar.rects = make([]image.Rectangle, 1)
+	if got, _ := p.Key(8); str(got) != "Q" {
+		t.Errorf("Backspace on the Done menu: %q", str(got))
 	}
 }
 
-func TestShownItems(t *testing.T) {
-	m := &engine.Menu{Sel: 0, Items: []engine.MenuItem{{Text: "Move", Key: 'M'}, {Text: "Aim", Key: 'A'}, {Text: "Done", Key: 'D'}}}
-	items, sel := shownItems(m)
-	if len(items) != 2 || items[0].Text != "Attack" || sel != -1 {
-		t.Errorf("main menu: %+v sel %d", items, sel)
+func TestButtonRects(t *testing.T) {
+	r := buttonRect(400, 3, 2) // a hint wider than the buttons centres them
+	if r.Dx() != button || r.Min.X != (400-3*slot)/2+2*slot+(slot-button)/2 {
+		t.Errorf("button 2 of 3 on a 400 wide bar: %v", r)
 	}
 }
