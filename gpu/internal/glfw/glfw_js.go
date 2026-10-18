@@ -252,12 +252,7 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 		body.Call("appendChild", c)
 	}
 	w := &Window{canvas: c, keys: map[Key]bool{}, buttons: map[MouseButton]bool{}, frame: make(chan struct{}, 1)}
-	w.w, w.h = c.Get("clientWidth").Int(), c.Get("clientHeight").Int()
-	if w.w == 0 || w.h == 0 {
-		w.w, w.h = width, height
-	}
-	c.Set("width", w.w)
-	c.Set("height", w.h)
+	w.fit(width, height)
 	w.raf = js.FuncOf(func(js.Value, []js.Value) any {
 		select {
 		case w.frame <- struct{}{}:
@@ -365,7 +360,21 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 			}
 		})
 	})
+	on(js.Global(), "resize", func(js.Value) {
+		// Resized between frames, so a half-drawn frame is never cleared.
+		w.queue = append(w.queue, func() { w.fit(w.w, w.h) })
+	})
 	return w, nil
+}
+
+// fit sizes the drawing buffer to the canvas's on-page size (def while it has none).
+func (w *Window) fit(defW, defH int) {
+	w.w, w.h = w.canvas.Get("clientWidth").Int(), w.canvas.Get("clientHeight").Int()
+	if w.w == 0 || w.h == 0 {
+		w.w, w.h = defW, defH
+	}
+	w.canvas.Set("width", w.w)
+	w.canvas.Set("height", w.h)
 }
 
 func (w *Window) moveTo(x, y float64) {
