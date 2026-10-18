@@ -337,13 +337,12 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		frame(mx, my, hoverGlow, 0)
 		p.hint = hint(b, image.Pt(mx, my))
 		free := false
-		for _, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; framed red where leaving lets a foe strike
+		for _, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike
+			tint := pathGlow
 			if s.Free {
-				frame(s.X, s.Y, freeGlow, 0.003)
-				free = true
-				continue
+				tint, free = freeGlow, true
 			}
-			o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: pathGlow, Model: place(float32(s.X)+.5, 0.004, float32(s.Y)+.5, 0, .5, .005, .5)}
+			o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: tint, Model: place(float32(s.X)+.5, 0.004, float32(s.Y)+.5, 0, .5, .005, .5)}
 			dst.DrawMesh(p.box, p.white, vp, &o)
 		}
 		if free {
