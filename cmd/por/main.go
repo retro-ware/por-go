@@ -311,6 +311,8 @@ func (g *game) Draw(dst *gpu.Image) {
 		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())
 	} else {
 		g.pic = g.classic.Draw(dst, g.scr, note)
+		mx, my := gpu.CursorPosition()
+		g.classic.DrawBattle(dst, g.pic, g.eng.View().Battle, mx, my) // the remaster's targeting previews over the map
 	}
 	if shot != "" && g.ticks > 30*(len(shotKeys)+4) {
 		saveShot(dst)
