@@ -6,6 +6,8 @@ import (
 	"image/draw"
 	"strconv"
 
+	xdraw "golang.org/x/image/draw"
+
 	"gpu"
 
 	"por/ega"
@@ -13,11 +15,12 @@ import (
 )
 
 // The action bar, XCOM style: one button per menu item along the bottom
-// centre showing its icon (else its hotkey, big) at native size; the word
+// centre showing its icon (else its hotkey, big) with its letter, scaled
+// as one picture with the bar (64px, its native size, at scale 2); the word
 // shows under the button the mouse is on. The bar is drawn in screen
 // pixels, its text at the bar's scale.
 const (
-	face    = 64 // an icon's side: drawn 1:1
+	face    = 64 // an icon's side, and the button face's at scale 2
 	promptH = 12 // the prompt line over the buttons, at scale 1
 	labelH  = 14 // the hovered button's word under them, at scale 1
 )
@@ -160,7 +163,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 			hover = i
 		}
 	}
-	n, bw := len(items), face+4*k
+	n, bw := len(items), face*k/2+4*k
 	w, h := max(n*(bw+4*k), len(prompt)*8*k+8*k, 7*8*k+bw), (promptH+labelH)*k+bw
 	id := prompt + "|" + strconv.Itoa(k) + "|" + strconv.Itoa(hover)
 	for i, it := range items {
@@ -192,7 +195,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 
 // buttonRect is button i of n on a bar image w wide at scale k.
 func buttonRect(w, n, i, k int) image.Rectangle {
-	bw, gap := face+4*k, 4*k
+	bw, gap := face*k/2+4*k, 4*k
 	x := (w-n*(bw+gap)+gap)/2 + i*(bw+gap)
 	return image.Rect(x, promptH*k, x+bw, promptH*k+bw)
 }
@@ -214,7 +217,7 @@ func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, hover, w, h, k int) *image.RGBA {
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
-	text := func(s string, x, y, scale int, c color.RGBA) {
+	textOn := func(im *image.RGBA, s string, x, y, scale int, c color.RGBA) {
 		for i := 0; i < len(s); i++ {
 			g := glyph(s[i])
 			if s[i] == 0x1b {
@@ -232,6 +235,7 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, ho
 			}
 		}
 	}
+	text := func(s string, x, y, scale int, c color.RGBA) { textOn(im, s, x, y, scale, c) }
 	fill := func(r image.Rectangle, c color.RGBA) {
 		for y := r.Min.Y; y < r.Max.Y; y++ {
 			for x := r.Min.X; x < r.Max.X; x++ {
@@ -251,20 +255,28 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, ho
 			edge = color.RGBA{0xFF, 0xCC, 0x33, 0xFF}
 		}
 		fill(r, edge)
-		in := r.Inset(2 * k) // face pixels square: the icon 1:1
-		fill(in, color.RGBA{0x18, 0x20, 0x38, 0xFF})
+		in := r.Inset(2 * k)
+		// the face at the icon's size: the icon 1:1, the letters on it in
+		// proportion; then scaled as one to the button (so their relation holds)
+		f := image.NewRGBA(image.Rect(0, 0, face, face))
+		draw.Draw(f, f.Bounds(), image.NewUniform(color.RGBA{0x18, 0x20, 0x38, 0xFF}), image.Point{}, draw.Src)
 		if ic := iconPicture(it.Text); ic != nil {
-			draw.Draw(im, in, ic, ic.Bounds().Min, draw.Over)
+			draw.Draw(f, f.Bounds(), ic, ic.Bounds().Min, draw.Over)
 		} else {
-			text(string(it.Key), in.Min.X+(in.Dx()-16*k)/2, in.Min.Y+(in.Dy()-16*k)/2, 2*k, rgb(15))
+			textOn(f, string(it.Key), (face-32)/2, (face-32)/2, 4, rgb(15))
 		}
-		if h, ok := hotkeys[it.Text]; ok { // its hotkey, bottom right, sized to the icon (1:1, so never k)
-			const s = 2 // pixels a font pixel: 16px letters on the 64px icon
+		if h, ok := hotkeys[it.Text]; ok { // its hotkey, bottom right
+			const s = 2 // 16px letters on the 64px face
 			lw := len(h.label) * 8 * s
-			at := image.Pt(in.Max.X-lw-2*s, in.Max.Y-10*s)
-			draw.Draw(im, image.Rect(at.X-s, at.Y-s, at.X+lw+s, at.Y+9*s), image.NewUniform(color.RGBA{0, 0, 0, 0xB0}), image.Point{}, draw.Over) // darkens the icon under it
-			text(h.label, at.X, at.Y, s, rgb(15))
+			at := image.Pt(face-lw-2*s, face-10*s)
+			draw.Draw(f, image.Rect(at.X-s, at.Y-s, at.X+lw+s, at.Y+9*s), image.NewUniform(color.RGBA{0, 0, 0, 0xB0}), image.Point{}, draw.Over) // darkens the icon under it
+			textOn(f, h.label, at.X, at.Y, s, rgb(15))
 		}
+		var sc xdraw.Scaler = xdraw.NearestNeighbor // pixel art stays crisp growing
+		if in.Dx() < face {
+			sc = xdraw.ApproxBiLinear
+		}
+		sc.Scale(im, in, f, f.Bounds(), draw.Src, nil)
 		if i != hover {
 			continue
 		}

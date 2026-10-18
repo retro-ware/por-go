@@ -80,7 +80,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 			if m.Selected {
 				ck := max(1, int(k)/2) // as the bar (ui.K knows only the dungeon view's screen)
 				ui.CardAt = func(int, int) image.Rectangle {
-					y := p.mapBottom - (ui.CardH+cardGap)*ck + ui.CardFoot*ck
+					y := dst.Bounds().Dy() - (ui.CardH+cardGap)*ck + ui.CardFoot*ck // the window's bottom left corner
 					return image.Rect(cardGap*ck, y, cardGap*ck+ui.CardW*ck, y+ui.CardH*ck)
 				}
 				p.drawParty(dst, []engine.Member{m})

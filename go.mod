@@ -10,7 +10,6 @@ require (
 	github.com/gogpu/gputypes v0.8.0 // indirect
 	github.com/gogpu/naga v0.19.0 // indirect
 	github.com/gogpu/wgpu v0.34.5 // indirect
-	golang.org/x/image v0.45.0 // indirect
 )
 
 require (
@@ -24,7 +23,10 @@ require (
 
 replace blobber => ./phlan-poc/blobber
 
-require gpu v0.0.0
+require (
+	golang.org/x/image v0.45.0
+	gpu v0.0.0
+)
 
 replace gpu => ./gpu
 
