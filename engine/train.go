@@ -3,6 +3,7 @@ package engine
 import (
 	"os"
 	"slices"
+	"strconv"
 
 	"por/dax"
 	"por/ega"
@@ -383,7 +384,7 @@ func (e *Engine) TrainCharacter() {
 			if y == 5 {
 				pre = "    a level "
 			}
-			e.DisplayString(6, y, 0xA, pre+itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
+			e.DisplayString(6, y, 0xA, pre+strconv.Itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
 		}
 	}
 	if e.YesNo(0xD, 0xA, 0xF, "Do you wish to train? ") != 'Y' {

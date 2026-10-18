@@ -6,6 +6,8 @@ package engine
 
 // ds2 reads the word at DS:ofs of the exe image.
 
+import "strconv"
+
 // turnSetup = ovr14:0000 (char): fill the combat block for a new round.
 func (e *Engine) turnSetup(c *Character) {
 	cb := c.Combat
@@ -92,7 +94,7 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 		if kind == 3 {
 			s = "with one cruel blow"
 		} else {
-			s += "Hitting for " + itoa(shown&0xFF)
+			s += "Hitting for " + strconv.Itoa(shown&0xFF)
 			if shown&0xFF == 1 {
 				s += " point "
 			} else {

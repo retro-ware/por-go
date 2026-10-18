@@ -403,7 +403,7 @@ func (e *Engine) CreateCharacter() {
 			stop := e.meetsMinStats(c)
 			if !stop && tries%100 == 0 {
 				e.ClearRow24()
-				e.DisplayString(0, 24, 0xE, "Rolling "+itoa(tries)+"... any key stops")
+				e.DisplayString(0, 24, 0xE, "Rolling "+strconv.Itoa(tries)+"... any key stops")
 				e.Delay(16) // let the window draw and see keys
 				if e.keyWaiting() {
 					e.ReadKeyByte()
@@ -438,7 +438,7 @@ func (e *Engine) CreateCharacter() {
 			tries = 1
 			for i, name := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
 				if e.ext.minStats[i] > best[i] {
-					max := itoa(best[i])
+					max := strconv.Itoa(best[i])
 					if i == 0 {
 						max = fmtStr(best[0])
 					}
@@ -523,7 +523,7 @@ func (e *Engine) meetsMinStats(c *Character) bool {
 func (e *Engine) askMinStats() {
 	for i, name := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
 		for {
-			cur := itoa(e.ext.minStats[i])
+			cur := strconv.Itoa(e.ext.minStats[i])
 			if i == 0 {
 				cur = fmtStr(e.ext.minStats[0])
 			}
@@ -543,21 +543,21 @@ func fmtMin(i, v int) string {
 	if i == 0 {
 		return fmtStr(v)
 	}
-	return itoa(v)
+	return strconv.Itoa(v)
 }
 
 func fmtStr(v int) string {
 	if v <= 1800 || v > 1900 {
-		return itoa(v / 100)
+		return strconv.Itoa(v / 100)
 	}
 	x := v - 1800
 	if x == 100 {
 		return "18/00"
 	}
 	if x < 10 {
-		return "18/0" + itoa(x)
+		return "18/0" + strconv.Itoa(x)
 	}
-	return "18/" + itoa(x)
+	return "18/" + strconv.Itoa(x)
 }
 
 func parseMinStat(s string, str bool) (int, bool) {

@@ -1,6 +1,9 @@
 package engine
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Affect handlers of GAME.OVR overlay 13 from 0x1C00 to the end, and the
 // ovr13:31A2 routine that fills the DS:6828 handler table.
@@ -230,7 +233,7 @@ func (e *Engine) drainLevels(c *Character, n int) {
 	}
 	msg := "a level"
 	if n > 1 {
-		msg = cut(itoa(n)+" levels", 0x28)
+		msg = cut(strconv.Itoa(n)+" levels", 0x28)
 	}
 	e.CharMessage(c, "is drained "+msg, 0xA, true)
 	if c.Status == 1 {

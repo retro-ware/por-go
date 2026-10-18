@@ -3,7 +3,10 @@ package engine
 // Rules: affects, to-hit rolls, saving throws, damage and healing, ported
 // from ovr25 and the START helpers it leans on (00BA:16EC ... 2637).
 
-import "slices"
+import (
+	"slices"
+	"strconv"
+)
 
 // CombatInfo is the 0x16-byte block at char+0x108 (allocated by ovr11).
 type CombatInfo struct {
@@ -388,7 +391,7 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 	}
 	var msg string
 	if e.rv.damage != 1 {
-		msg = "takes " + itoa(int(e.rv.damage)) + " points of damage "
+		msg = "takes " + strconv.Itoa(int(e.rv.damage)) + " points of damage "
 	} else {
 		msg = "takes 1 point of damage "
 	}

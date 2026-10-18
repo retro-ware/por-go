@@ -341,7 +341,7 @@ func (e *Engine) PartyOverview() {
 		case hp*2 < max:
 			hpc = 0xE
 		}
-		e.DisplayString(0x12, y, hpc, itoa(hp)+"/"+itoa(max))
+		e.DisplayString(0x12, y, hpc, strconv.Itoa(hp)+"/"+strconv.Itoa(max))
 		e.displayAC(c, 0x1A, y)
 		e.DisplayString(0x1E, y, 0xA, e.statusName(c))
 		// Hit point bar, 32 pixels wide, under the name.

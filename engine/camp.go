@@ -668,7 +668,7 @@ func (e *Engine) affectList(c *Character) []string {
 				}
 			}
 			if name == "" {
-				name = "Funky--" + itoa(int(t))
+				name = "Funky--" + strconv.Itoa(int(t))
 			}
 		} else if name, known = affectNames[t]; !known {
 			continue
@@ -850,7 +850,7 @@ func (e *Engine) dropMenu() {
 // campSpeedMenu = ovr16:1A97: the message delay (DS:49E2), 0 fastest.
 func (e *Engine) campSpeedMenu() {
 	for key := byte(' '); key != 0 && key != 'E'; {
-		e.DisplayString(1, 0x12, 0xA, "Game Speed = "+itoa(int(e.msgDelay))+" (0=fastest 9=slowest)")
+		e.DisplayString(1, 0x12, 0xA, "Game Speed = "+strconv.Itoa(int(e.msgDelay))+" (0=fastest 9=slowest)")
 		menu := ""
 		if e.msgDelay > 0 {
 			menu += " Faster"
@@ -1020,7 +1020,7 @@ func (e *Engine) normalizeRest() {
 
 // twoDigits = ovr21:0565.
 func twoDigits(n int) string {
-	s := itoa(n)
+	s := strconv.Itoa(n)
 	if n < 10 {
 		s = "0" + s
 	}

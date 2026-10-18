@@ -111,8 +111,10 @@ func (e *Engine) pageSet(x, y int, c uint8) {
 	}
 }
 
-// traceFlip = 0464:1B52 Flip: the hash of the drawing page.
-func (e *Engine) traceFlip() {
+// Flip = 0464:1B52: show the drawing page. The port draws straight to the
+// shown screen (Hold/Release frame the 3D view), so only a trace run does
+// anything: it records the hash of the drawing page.
+func (e *Engine) Flip() {
 	if e.Trace != nil {
 		e.flips++
 		s := md5.Sum(e.page[:])

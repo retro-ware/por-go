@@ -1,4 +1,6 @@
 *.log
 .DS_Store
 .claude/
-compare/*-check*
+compare/
+raw/
+blobber/art/monsters/.runs/

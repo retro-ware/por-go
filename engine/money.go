@@ -1,6 +1,9 @@
 package engine
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"strconv"
+)
 
 // The party's money. The original gave every character a purse of seven
 // coin kinds plus a treasure pool (ovr22); here the party shares one purse
@@ -9,6 +12,8 @@ import "encoding/binary"
 // purse is the party's money: gold pieces, copper (under 200, a gold piece),
 // and gems and jewelry to appraise.
 type purse struct{ gold, copper, gems, jewelry uint32 }
+
+func (e *Engine) clearLoot() { e.loot = purse{} } // DS:67F4
 
 func (p *purse) add(q purse) {
 	p.gold += q.gold
@@ -28,11 +33,11 @@ func (p *purse) addCopper(n uint32) {
 func moneyText(gold, copper uint32) string {
 	switch {
 	case copper == 0:
-		return itoa(int(gold)) + " gold"
+		return strconv.Itoa(int(gold)) + " gold"
 	case gold == 0:
-		return itoa(int(copper)) + " copper"
+		return strconv.Itoa(int(copper)) + " copper"
 	}
-	return itoa(int(gold)) + " gold and " + itoa(int(copper)) + " copper"
+	return strconv.Itoa(int(gold)) + " gold and " + strconv.Itoa(int(copper)) + " copper"
 }
 
 func (p purse) empty() bool { return p == purse{} }
@@ -129,7 +134,7 @@ func (e *Engine) showMoney() {
 			continue
 		}
 		e.DisplayString(0x14-len(l.name), y, 0xA, l.name)
-		e.DisplayString(0x15, y, 0xA, itoa(int(l.n)))
+		e.DisplayString(0x15, y, 0xA, strconv.Itoa(int(l.n)))
 		y++
 	}
 }

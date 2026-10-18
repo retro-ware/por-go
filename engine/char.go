@@ -158,13 +158,10 @@ func (c *Character) SetName(s string) {
 	copy(c.PName[1:], s)
 }
 
-// IntToStr = 00BA:1037.
-func itoa(n int) string { return strconv.Itoa(n) }
-
 // displayAC = 00BA:08EF (char, x, y): |ac60-60|, with "-" when ac60 > 60, colour 0xA.
 func (e *Engine) displayAC(c *Character, x, y int) {
 	v := int(c.AC[0])
-	s := itoa(abs(v - 60))
+	s := strconv.Itoa(abs(v - 60))
 	if v > 60 {
 		s = "-" + s
 	}
@@ -181,7 +178,7 @@ func (e *Engine) displayHP(c *Character, x, y int, flag bool) {
 	if flag {
 		col = 0xD
 	}
-	e.DisplayString(x, y, col, itoa(int(c.HP)))
+	e.DisplayString(x, y, col, strconv.Itoa(int(c.HP)))
 }
 
 // displayName = 00BA:1816 (char, x, y, possessive): red when not okay,

@@ -5,6 +5,7 @@ package engine
 import (
 	"image"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -420,7 +421,7 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 			reach = e.moveReach(c)
 			e.markReach(reach, true)
 			e.ClearCells(0x18, 0x18, 0x27, 0x18)
-			key, _ = e.DisplayInput("Move/Attack, Move Left = "+itoa(int(ci.Moves>>1))+" ", "", 0xA, 0xA, 0xF, true, false)
+			key, _ = e.DisplayInput("Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ", "", 0xA, 0xA, 0xF, true, false)
 			e.markReach(reach, false)
 		}
 		d := 8
@@ -726,7 +727,7 @@ func (e *Engine) speedMenu() {
 			m += "Faster "
 		}
 		m += "Exit"
-		key, _ = e.DisplayInput("GameSpeed ("+itoa(int(e.msgDelay))+") :", m, 0xD, 0xA, 0xF, false, false)
+		key, _ = e.DisplayInput("GameSpeed ("+strconv.Itoa(int(e.msgDelay))+") :", m, 0xD, 0xA, 0xF, false, false)
 		switch key {
 		case 'S':
 			e.msgDelay++
@@ -768,7 +769,7 @@ func (e *Engine) combatPanel(c *Character) {
 	x += len(c.Name()) + 2
 	e.DisplayString(x, 0x17, 0xF, "HP")
 	e.displayHP(c, x+3, 0x17, false)
-	x += 3 + len(itoa(int(c.HP))) + 2
+	x += 3 + len(strconv.Itoa(int(c.HP))) + 2
 	e.DisplayString(x, 0x17, 0xF, "AC")
 	e.displayAC(c, x+3, 0x17)
 	x += 8
@@ -785,11 +786,11 @@ func (e *Engine) combatPanel(c *Character) {
 
 // damageText is the damage of the readied attack, as the View page shows it.
 func damageText(c *Character) string {
-	d := itoa(int(c.Dice[0])) + "d" + itoa(int(c.Sides[0]))
+	d := strconv.Itoa(int(c.Dice[0])) + "d" + strconv.Itoa(int(c.Sides[0]))
 	if b := int8(c.Bonus[0]); b > 0 {
-		d += "+" + itoa(int(b))
+		d += "+" + strconv.Itoa(int(b))
 	} else if b < 0 {
-		d += "-" + itoa(-int(b)) // abs in 16 bits: -128 shows 128
+		d += "-" + strconv.Itoa(-int(b)) // abs in 16 bits: -128 shows 128
 	}
 	return d
 }

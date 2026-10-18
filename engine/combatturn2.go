@@ -2,6 +2,7 @@ package engine
 
 import (
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -347,7 +348,7 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	menu := ""
 	if showRange != 0 {
-		e.DisplayString(0, 0x17, 0xA, "Range = "+itoa(e.rangeTo(c, cand))+"  ")
+		e.DisplayString(0, 0x17, 0xA, "Range = "+strconv.Itoa(e.rangeTo(c, cand))+"  ")
 	}
 	can := e.canTarget(c, cand, rng, showRange)
 	if can {
@@ -478,7 +479,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		if e.lineOfSight(&dist, &tx, &ty, e.combatX(c), e.combatY(c)) {
 			ok = true
 			if showRange != 0 {
-				e.DisplayString(0, 0x17, 0xA, "Range = "+itoa(dist>>1)+"  ")
+				e.DisplayString(0, 0x17, 0xA, "Range = "+strconv.Itoa(dist>>1)+"  ")
 			}
 		} else if showRange != 0 {
 			e.ClearCells(0, 0x17, 0x27, 0x17)

@@ -1,6 +1,9 @@
 package engine
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // The shop, ported from ovr07. ECL COMBAT with the shop flag (game +0x6D8)
 // set runs Shop instead of a fight; the goods are the treasure list.
@@ -14,7 +17,7 @@ func (e *Engine) shopList(index *int, item **Item) byte {
 		if it.Price == 0 {
 			it.Price = 1
 		}
-		price := itoa(int(it.Price))
+		price := strconv.Itoa(int(it.Price))
 		if len(price) > 0x10 {
 			price = price[:0x10]
 		}
@@ -26,7 +29,7 @@ func (e *Engine) shopList(index *int, item **Item) byte {
 		list[i].Dim = !e.canUseItem(e.selected(), it) // extra: what the buyer cannot use is grey and passed over
 	}
 	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "Shop")
-	gold := itoa(int(e.purse.gold)) + "g" // extra: on the frame, the g under the prices' last digit
+	gold := strconv.Itoa(int(e.purse.gold)) + "g" // extra: on the frame, the g under the prices' last digit
 	e.DisplayString(0x26-len(gold), 0x17, 0xE, gold)
 	if c := e.selected(); len(e.party) > 0 { // extra: who is buying (F1-F8 change it)
 		e.displayName(c, 2, 2, false) // over the items; the class over the prices
@@ -206,7 +209,7 @@ func (e *Engine) identifyMenu() bool {
 			index = 1
 		}
 		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "Identify for 200g")
-		gold := itoa(int(e.purse.gold)) + "g" // as in the buy screen
+		gold := strconv.Itoa(int(e.purse.gold)) + "g" // as in the buy screen
 		e.DisplayString(0x26-len(gold), 0x17, 0xE, gold)
 		redraw := true
 		var sel *ListNode

@@ -39,15 +39,6 @@ func (e *Engine) spellDamage1d8() {
 	e.applySpell(int(e.curSpell), 0, 0, e.RollDice(1, 8), 8, "")
 }
 
-// spellAffected = ovr23:10E9: "is affected" (shared by several spells).
-func (e *Engine) spellAffected() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is affected") }
-
-// spellProtected = ovr23:1123: "is protected".
-func (e *Engine) spellProtected() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is protected") }
-
-// spellColdResist = ovr23:1162: "is cold-resistant".
-func (e *Engine) spellColdResist() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is cold-resistant") }
-
 // spellDamageLevel = ovr23:1190: damage equal to the caster level, type 9.
 func (e *Engine) spellDamageLevel() {
 	e.applySpell(int(e.curSpell), 0, 0, e.casterLevel(int(e.curSpell)), 9, "")
@@ -119,9 +110,6 @@ func (e *Engine) spellMagicMissile() {
 	lvl := e.casterLevel(int(e.curSpell))
 	e.applySpell(int(e.curSpell), 0, 0, (e.RollDice(lvl>>1, 4)+lvl>>1)&0xFF, 8, "")
 }
-
-// spellShield = ovr23:1499: "is shielded".
-func (e *Engine) spellShield() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is shielded") }
 
 // spellBurningHands = ovr23:14C7: caster level + 1d8 damage, type 0xC.
 func (e *Engine) spellBurningHands() {
@@ -200,12 +188,6 @@ func (e *Engine) spellHold() {
 	}
 }
 
-// spellFireResist = ovr23:17E9: "is fire resistant".
-func (e *Engine) spellFireResist() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is fire resistant") }
-
-// spellSilence = ovr23:1822: "is silenced".
-func (e *Engine) spellSilence() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is silenced") }
-
 // spellRaiseDead = ovr23:185B: Raise Dead style: a dead target is dropped from
 // the list; one with affect 0x37 is brought to 1 hit point and stunned (0x0F).
 func (e *Engine) spellRaiseDead() {
@@ -246,19 +228,10 @@ func (e *Engine) spellApplyAnd17() {
 	e.callAffect(affSpiritualHammer, e.tgt(1), nil, 0)
 }
 
-// spellInvisible = ovr23:1A16: "is invisible".
-func (e *Engine) spellInvisible() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is invisible") }
-
-// spellKnock = ovr23:1A4F: Knock.
-func (e *Engine) spellKnock() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "Knock-Knock") }
-
 // spellMirrorImage = ovr23:1A8A: Mirror Image, 1d4 images.
 func (e *Engine) spellMirrorImage() {
 	e.applySpell(int(e.curSpell), e.Dice(1, 4), 0, 0, 0, "is duplicated")
 }
-
-// spellWeaken = ovr23:1ACC: "is weakened".
-func (e *Engine) spellWeaken() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is weakened") }
 
 // spellStinkingCloud = ovr23:1B11: Stinking Cloud. A 0x13-byte cloud record (caster,
 // the four squares' old ground and flags, target square, number of the
@@ -415,9 +388,6 @@ func (e *Engine) spellCureBlind() {
 	}
 }
 
-// spellBlind = ovr23:225D: "is blind".
-func (e *Engine) spellBlind() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is blind") }
-
 // cureDiseaseAffects = ovr23:228A: with the cure flag (DS:681F) set, cures
 // affects 0x22, 0x2B (and 0x2C, 0x1F) and 0x32 (and 0x39) of the first target.
 func (e *Engine) cureDiseaseAffects() bool {
@@ -442,9 +412,6 @@ func (e *Engine) cureDiseaseAffects() bool {
 
 // spellCureDisease = ovr23:232F: Cure Blindness spell body (the result is unused).
 func (e *Engine) spellCureDisease() { e.cureDiseaseAffects() }
-
-// spellDisease = ovr23:234C: "is diseased".
-func (e *Engine) spellDisease() { e.applySpell(int(e.curSpell), 0, 1, 0, 0, "is diseased") }
 
 // spellDispel = ovr23:2385: Dispel Magic. Each pass walks the affects of the
 // first target (the loop variable only counts passes); every temporary

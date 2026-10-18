@@ -4,6 +4,7 @@ package glfw
 
 import (
 	"image"
+	"strconv"
 	"syscall/js"
 )
 
@@ -164,15 +165,8 @@ func init() {
 		keyByCode["Numpad"+string(rune('0'+i))] = KeyKP0 + Key(i)
 	}
 	for i := 1; i <= 12; i++ {
-		keyByCode["F"+itoa(i)] = KeyF1 + Key(i-1)
+		keyByCode["F"+strconv.Itoa(i)] = KeyF1 + Key(i-1)
 	}
-}
-
-func itoa(i int) string {
-	if i < 10 {
-		return string(rune('0' + i))
-	}
-	return "1" + string(rune('0'+i-10))
 }
 
 type Cursor struct{}
@@ -486,8 +480,8 @@ type GamepadState struct {
 	Axes    [6]float32
 }
 
-func (j Joystick) IsGamepad() bool                   { return false }
-func (j Joystick) GetGamepadState() *GamepadState    { return nil }
+func (j Joystick) IsGamepad() bool                      { return false }
+func (j Joystick) GetGamepadState() *GamepadState       { return nil }
 func (w *Window) SetCharCallback(f func(*Window, rune)) { w.charCb = f }
 func (w *Window) GetContentScale() (float32, float32) {
 	r := float32(js.Global().Get("devicePixelRatio").Float())

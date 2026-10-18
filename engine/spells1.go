@@ -463,11 +463,12 @@ func (e *Engine) spellRemoveCurse() {
 	}
 }
 
-// fxCursed = ovr23:2604.
-func (e *Engine) fxCursed() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "has been cursed!") }
-
-// fxBlinking = ovr23:263D.
-func (e *Engine) fxBlinking() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is blinking") }
+// affects is a spell whose whole effect is applySpell with its message:
+// ovr23:10E9 "is affected" and its siblings (the ovr23 address is on
+// each spellFx line).
+func (e *Engine) affects(level, call int, msg string) func() {
+	return func() { e.applySpell(int(e.curSpell), level, call, 0, 0, msg) }
+}
 
 // fxFireball = ovr23:266B: a burst of radius 2 round the target square,
 // level d6 of fire (spell 0x40 rolls its own level); the near list only
@@ -705,9 +706,6 @@ func (e *Engine) fxBolt() {
 	e.boltPath(3, 0x14, 4, 0)
 }
 
-// fxParalyzed = ovr23:2F99.
-func (e *Engine) fxParalyzed() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is paralyzed") }
-
 // fxHeal2d4 = ovr23:2FD0.
 func (e *Engine) fxHeal2d4() {
 	t := e.spellTarget
@@ -716,9 +714,6 @@ func (e *Engine) fxHeal2d4() {
 	}
 }
 
-// fxInvisible = ovr23:302A.
-func (e *Engine) fxInvisible() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is invisible") }
-
 // fxDamage2d4 = ovr23:3058: 2d4+2 of damage type 8.
 func (e *Engine) fxDamage2d4() {
 	e.applySpell(int(e.curSpell), 0, 0, e.RollDice(2, 4)+2, 8, "")
@@ -726,9 +721,6 @@ func (e *Engine) fxDamage2d4() {
 
 // fxNone = ovr23:3092: does nothing.
 func (e *Engine) fxNone() {}
-
-// fxReading = ovr23:30A2: level 0xFF, call 1.
-func (e *Engine) fxReading() { e.applySpell(int(e.curSpell), 0xFF, 1, 0, 0, "is Reading") }
 
 // breathWeapon = ovr23:30D9 (char, affect, flag): the breath weapon affect
 // (type 0x58). Half the time (when DS:6DE3 is set) nothing happens; the
@@ -821,67 +813,67 @@ func (e *Engine) spellTableInit() {
 	e.spellFx[2] = e.spellBane
 	e.spellFx[3] = e.spellCureLightWounds
 	e.spellFx[4] = e.spellDamage1d8
-	e.spellFx[5] = e.spellAffected
-	e.spellFx[6] = e.spellProtected
-	e.spellFx[7] = e.spellProtected
-	e.spellFx[8] = e.spellColdResist
+	e.spellFx[5] = e.affects(0, 0, "is affected")  // ovr23:10E9
+	e.spellFx[6] = e.affects(0, 0, "is protected") // ovr23:1123
+	e.spellFx[7] = e.affects(0, 0, "is protected")
+	e.spellFx[8] = e.affects(0, 0, "is cold-resistant") // ovr23:1162
 	e.spellFx[9] = e.spellDamageLevel
 	e.spellFx[10] = e.spellCharmPerson
-	e.spellFx[11] = e.spellAffected
+	e.spellFx[11] = e.affects(0, 0, "is affected")
 	e.spellFx[12] = e.spellStrengthPercent
 	e.spellFx[13] = e.spellReduce
 	e.spellFx[14] = e.spellFriends
 	e.spellFx[15] = e.spellMagicMissile
-	e.spellFx[16] = e.spellProtected
-	e.spellFx[17] = e.spellProtected
-	e.spellFx[18] = e.spellAffected
-	e.spellFx[19] = e.spellShield
+	e.spellFx[16] = e.affects(0, 0, "is protected")
+	e.spellFx[17] = e.affects(0, 0, "is protected")
+	e.spellFx[18] = e.affects(0, 0, "is affected")
+	e.spellFx[19] = e.affects(0, 0, "is shielded") // ovr23:1499
 	e.spellFx[20] = e.spellBurningHands
 	e.spellFx[21] = e.spellSleep
-	e.spellFx[22] = e.spellAffected
+	e.spellFx[22] = e.affects(0, 0, "is affected")
 	e.spellFx[23] = e.spellHold
-	e.spellFx[24] = e.spellFireResist
-	e.spellFx[25] = e.spellSilence
+	e.spellFx[24] = e.affects(0, 0, "is fire resistant") // ovr23:17E9
+	e.spellFx[25] = e.affects(0, 0, "is silenced")       // ovr23:1822
 	e.spellFx[26] = e.spellRaiseDead
 	e.spellFx[27] = e.spellUndeadTargets
 	e.spellFx[28] = e.spellApplyAnd17
-	e.spellFx[29] = e.spellAffected
-	e.spellFx[30] = e.spellInvisible
-	e.spellFx[31] = e.spellKnock
+	e.spellFx[29] = e.affects(0, 0, "is affected")
+	e.spellFx[30] = e.affects(0, 0, "is invisible") // ovr23:1A16
+	e.spellFx[31] = e.affects(0, 0, "Knock-Knock")  // ovr23:1A4F
 	e.spellFx[32] = e.spellMirrorImage
-	e.spellFx[33] = e.spellWeaken
+	e.spellFx[33] = e.affects(0, 0, "is weakened") // ovr23:1ACC
 	e.spellFx[34] = e.spellStinkingCloud
 	e.spellFx[35] = e.spellEnlarge
 	e.spellFx[36] = e.spellAnimateDead
 	e.spellFx[37] = e.spellCureBlind
-	e.spellFx[38] = e.spellBlind
+	e.spellFx[38] = e.affects(0, 0, "is blind") // ovr23:225D
 	e.spellFx[39] = e.spellCureDisease
-	e.spellFx[40] = e.spellDisease
+	e.spellFx[40] = e.affects(0, 1, "is diseased") // ovr23:234C
 	e.spellFx[41] = e.spellDispel
 	e.spellFx[42] = e.spellPrayer
 	e.spellFx[43] = e.spellRemoveCurse
-	e.spellFx[44] = e.fxCursed
-	e.spellFx[45] = e.fxBlinking
+	e.spellFx[44] = e.affects(0, 0, "has been cursed!") // ovr23:2604
+	e.spellFx[45] = e.affects(0, 0, "is blinking")      // ovr23:263D
 	e.spellFx[46] = e.spellDispel
 	e.spellFx[47] = e.fxFireball
 	e.spellFx[48] = e.fxHaste
 	e.spellFx[49] = e.spellHold
-	e.spellFx[50] = e.spellInvisible
+	e.spellFx[50] = e.affects(0, 0, "is invisible")
 	e.spellFx[51] = e.fxLightning
-	e.spellFx[52] = e.spellProtected
-	e.spellFx[53] = e.spellProtected
-	e.spellFx[54] = e.spellProtected
+	e.spellFx[52] = e.affects(0, 0, "is protected")
+	e.spellFx[53] = e.affects(0, 0, "is protected")
+	e.spellFx[54] = e.affects(0, 0, "is protected")
 	e.spellFx[55] = e.fxSlow
 	e.spellFx[56] = e.fxRestore
 	e.spellFx[57] = e.fxSpeedy
 	e.spellFx[58] = e.fxCureParalysis
 	e.spellFx[59] = e.fxStronger
 	e.spellFx[60] = e.fxBolt
-	e.spellFx[61] = e.fxParalyzed
+	e.spellFx[61] = e.affects(0, 0, "is paralyzed") // ovr23:2F99
 	e.spellFx[62] = e.fxHeal2d4
-	e.spellFx[63] = e.fxInvisible
+	e.spellFx[63] = e.affects(0, 0, "is invisible") // ovr23:302A
 	e.spellFx[64] = e.fxFireball
 	e.spellFx[65] = e.fxDamage2d4
 	e.spellFx[66] = e.fxNone
-	e.spellFx[67] = e.fxReading
+	e.spellFx[67] = e.affects(0xFF, 1, "is Reading") // ovr23:30A2
 }

@@ -11,10 +11,6 @@ type nearEntry struct{ index, dist, dir byte }
 // MsgDelay = 0709:0DBE: wait msgDelay*225 ms.
 func (e *Engine) MsgDelay() { e.Delay(int(e.msgDelay) * 225) }
 
-// Flip = 0464:1B52: show the drawing page. The port draws straight to the
-// shown screen (Hold/Release frame the 3D view), so there is nothing to do.
-func (e *Engine) Flip() { e.traceFlip() }
-
 // combatant = DS:65B9[i]: the combatant behind a near list index.
 func (e *Engine) combatant(i byte) *Character {
 	if int(i) < 1 || int(i) > len(e.combatants) {

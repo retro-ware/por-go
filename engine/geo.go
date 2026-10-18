@@ -169,7 +169,7 @@ func (e *Engine) Draw3DView(x, y, dir int) {
 	e.snap.win = WinThreeD
 	e.S.Hold()
 	e.pageDraw = true
-	defer e.traceFlip()
+	defer e.Flip()
 	defer func() { e.pageDraw = false }()
 	defer e.S.Release() // 0464:1B52 via the near thunk ovr30:05F3: show the finished frame
 	e.drawSky()

@@ -40,7 +40,7 @@ func (e *Engine) CharacterSheet() {
 	s = raceNames[int8(c.Race)]
 	e.DisplayString(x, 3, 0xF, s)
 	x += len(s) + 1
-	e.DisplayString(x, 3, 0xF, "Age "+itoa(int(c.Age)))
+	e.DisplayString(x, 3, 0xF, "Age "+strconv.Itoa(int(c.Age)))
 	e.DisplayString(1, 4, 0xF, alignmentNames[int8(c.Alignment)])
 	e.DisplayString(1, 5, 0xF, className(c.Class))
 	for i, l := range []string{"STR ", "INT ", "WIS ", "DEX ", "CON ", "CHA "} {
@@ -55,11 +55,11 @@ func (e *Engine) CharacterSheet() {
 			if s != "" {
 				s += "/"
 			}
-			s += itoa(int(l))
+			s += strconv.Itoa(int(l))
 		}
 	}
 	e.DisplayString(7, 0xF, 0xF, s)
-	e.DisplayString(0x11, 0xF, 0xF, "Exp "+itoa(int(int32(c.Exp))))
+	e.DisplayString(0x11, 0xF, 0xF, "Exp "+strconv.Itoa(int(int32(c.Exp))))
 	e.showCombatStats()
 	y := 0x14
 	if w := c.Slots[0]; w != nil {
@@ -99,9 +99,9 @@ func (e *Engine) effectsLine(c *Character) (string, bool) {
 		n++
 	}
 	if n == 0 {
-		return itoa(len(names)) + " spell effects", false
+		return strconv.Itoa(len(names)) + " spell effects", false
 	}
-	return strings.Join(names[:n], ", ") + ", +" + itoa(len(names)-n) + " more", false
+	return strings.Join(names[:n], ", ") + ", +" + strconv.Itoa(len(names)-n) + " more", false
 }
 
 func (e *Engine) effectsFit(c *Character) bool { _, ok := e.effectsLine(c); return ok }
@@ -126,13 +126,13 @@ func (e *Engine) showCombatStats() {
 	e.displayHP(c, 4, y+1, false)
 	x := 8
 	e.DisplayString(x+1, y, 0xF, "THAC0   ")
-	e.DisplayString(x+7, y, 0xA, itoa(int(byte(0x3C-c.THAC0))))
+	e.DisplayString(x+7, y, 0xA, strconv.Itoa(int(byte(0x3C-c.THAC0))))
 	d := cut(damageText(c), 0x28)
 	e.DisplayString(x, y+1, 0xF, "Damage        ")
 	e.DisplayString(x+7, y+1, 0xA, d)
 	x = 0x16
 	e.DisplayString(x, y, 0xF, "Encumbrance      ")
-	e.DisplayString(x+0xC, y, 0xA, itoa(int(c.Weight)))
+	e.DisplayString(x+0xC, y, 0xA, strconv.Itoa(int(c.Weight)))
 	m := c.Move
 	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
 	if e.FindAffect(c, affHaste) != nil {
@@ -142,7 +142,7 @@ func (e *Engine) showCombatStats() {
 		m >>= 1
 	}
 	e.DisplayString(x+3, y+1, 0xF, "Movement   ")
-	e.DisplayString(x+0xC, y+1, 0xA, itoa(int(m)))
+	e.DisplayString(x+0xC, y+1, 0xA, strconv.Itoa(int(m)))
 }
 
 // showStat = ovr20:0901 (stat, highlight): one ability score, with the
@@ -159,9 +159,9 @@ func (e *Engine) showStat(stat int, hi bool) {
 	if v < 10 {
 		x++
 	}
-	e.DisplayString(x, stat+7, col, itoa(int(v)))
+	e.DisplayString(x, stat+7, col, strconv.Itoa(int(v)))
 	if stat == 0 && v == 0x12 && c.Str00 > 0 {
-		s := itoa(int(c.Str00))
+		s := strconv.Itoa(int(c.Str00))
 		if c.Str00 < 10 {
 			s = "0" + s
 		}
@@ -542,7 +542,7 @@ func (e *Engine) itemAffect(it *Item, c *Character, flag byte) {
 func (e *Engine) tradeItem(it *Item) {
 	give := *it
 	if it.Count > 1 {
-		s := strings.TrimSpace(e.InputString("How many? ("+itoa(int(it.Count))+") ", 0xD, 3))
+		s := strings.TrimSpace(e.InputString("How many? ("+strconv.Itoa(int(it.Count))+") ", 0xD, 3))
 		n, err := strconv.Atoi(s)
 		switch {
 		case s == "":

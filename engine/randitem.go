@@ -1,5 +1,7 @@
 package engine
 
+import "strconv"
+
 // RandomItem = ovr22:1010 (type, var item): a new item of the given base
 // type with a random bonus, or a magic item from the DS:0970 table.
 func (e *Engine) RandomItem(typ byte) *Item {
@@ -242,9 +244,9 @@ func (e *Engine) Appraise() (any bool) {
 			case 0:
 				return ""
 			case 1:
-				return cut(itoa(n)+one, 0x28)
+				return cut(strconv.Itoa(n)+one, 0x28)
 			}
-			return cut(itoa(n)+many, 0x28)
+			return cut(strconv.Itoa(n)+many, 0x28)
 		}
 		gems := count(int(p.gems), " Gem", " Gems")
 		jewels := count(int(p.jewelry), " piece of Jewelry", " pieces of Jewelry")
@@ -283,7 +285,7 @@ func (e *Engine) Appraise() (any bool) {
 			default:
 				v = 5000
 			}
-			e.DisplayString(1, 0xC, 0xF, cut("The Gem is Valued at "+itoa(int(v))+" gp.", 0x28))
+			e.DisplayString(1, 0xC, 0xF, cut("The Gem is Valued at "+strconv.Itoa(int(v))+" gp.", 0x28))
 			e.sellOrKeep(c, v, 0x65)
 		case 'J':
 			if p.jewelry == 0 {
@@ -307,7 +309,7 @@ func (e *Engine) Appraise() (any bool) {
 			default:
 				v = uint16(e.Random(10000) + 2000)
 			}
-			e.DisplayString(1, 0xC, 0xF, cut("The Jewel is Valued at "+itoa(int(v))+" gp.", 0x28))
+			e.DisplayString(1, 0xC, 0xF, cut("The Jewel is Valued at "+strconv.Itoa(int(v))+" gp.", 0x28))
 			e.sellOrKeep(c, v, 0xD6)
 		case 'E', 0:
 			done = true

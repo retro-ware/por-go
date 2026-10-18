@@ -1,6 +1,9 @@
 package engine
 
-import "math"
+import (
+	"math"
+	"strconv"
+)
 
 // Native scripts (extra): stretches of the ECL scripts rewritten in Go,
 // where the script's own logic cannot follow the port (one party purse in
@@ -42,10 +45,10 @@ func (e *Engine) tavernGamble() {
 	}
 	for again := true; again; {
 		e.scriptText(true, "YOU HAVE ")
-		e.scriptText(false, itoa(int(e.purse.gold)))
+		e.scriptText(false, strconv.Itoa(int(e.purse.gold)))
 		e.scriptText(false, " GP.")
 		e.pressReturn()
-		e.scriptText(true, "HOW MANY GOLD PIECES WILL YOU WAGER? (HOUSE LIMIT IS "+itoa(tavernHouseLimit)+")")
+		e.scriptText(true, "HOW MANY GOLD PIECES WILL YOU WAGER? (HOUSE LIMIT IS "+strconv.Itoa(tavernHouseLimit)+")")
 		wager := uint32(e.InputNumber("", 0xA))
 		r := 0
 		if tavernWagerOK(e.purse.gold, wager) {

@@ -1,6 +1,9 @@
 package engine
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // After combat, ported from ovr06: the fight's outcome, experience, the
 // hired NPCs' share and the treasure screen. ECL COMBAT without monsters
@@ -273,7 +276,7 @@ func (e *Engine) showResult(exp int32) {
 	if e.duel() {
 		s = "The duelist receives "
 	}
-	e.DisplayString(1, 5, 0xA, cut(s+itoa(int(exp)), 0xFF))
+	e.DisplayString(1, 5, 0xA, cut(s+strconv.Itoa(int(exp)), 0xFF))
 	e.DisplayString(1, 7, 0xA, "experience points.")
 	if l := e.loot; !l.empty() {
 		var got []string
@@ -285,7 +288,7 @@ func (e *Engine) showResult(exp int32) {
 			name string
 		}{{l.gems, " gems"}, {l.jewelry, " jewelry"}} {
 			if p.n > 0 {
-				got = append(got, itoa(int(p.n))+p.name)
+				got = append(got, strconv.Itoa(int(p.n))+p.name)
 			}
 		}
 		e.DisplayTextBlock(1, 9, 0x26, 0x16, 0xA, true, "The party takes "+strings.Join(got, ", ")+".")

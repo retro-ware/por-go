@@ -1,6 +1,9 @@
 package engine
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // Item Look (extra): the shop's Look shows what an item does under the
 // game's rules, read from its base record (DS:5582 + 16*type) and the
@@ -15,12 +18,12 @@ func (e *Engine) itemLines(it *Item) []string {
 	typ := it.Type
 	b := e.base(typ)
 	dice := func(n, d byte, bonus int8) string {
-		s := itoa(int(n)) + "d" + itoa(int(d))
+		s := strconv.Itoa(int(n)) + "d" + strconv.Itoa(int(d))
 		if bonus > 0 {
 			s += "+"
 		}
 		if bonus != 0 {
-			s += itoa(int(bonus))
+			s += strconv.Itoa(int(bonus))
 		}
 		return s
 	}
@@ -39,14 +42,14 @@ func (e *Engine) itemLines(it *Item) []string {
 			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)))
 		}
 		if r := int(b.Range); r > 1 {
-			add("Range " + itoa(r-1) + ", worse past " + itoa((r-1)/3))
+			add("Range " + strconv.Itoa(r-1) + ", worse past " + strconv.Itoa((r-1)/3))
 			switch n := max(int(b.Speed), 2); {
 			case n == 2:
 				add("1 shot per round")
 			case n%2 == 0:
-				add(itoa(n/2) + " shots per round")
+				add(strconv.Itoa(n/2) + " shots per round")
 			default:
-				add(itoa(n) + " shots per 2 rounds")
+				add(strconv.Itoa(n) + " shots per 2 rounds")
 			}
 		}
 		switch {
@@ -71,7 +74,7 @@ func (e *Engine) itemLines(it *Item) []string {
 		v &= 0x7F
 		switch {
 		case slot == 2:
-			add("Armor, AC " + itoa(10-(v-50)))
+			add("Armor, AC " + strconv.Itoa(10-(v-50)))
 			switch w := it.Weight; {
 			case w > 0x18F:
 				add("Movement 6")
@@ -79,9 +82,9 @@ func (e *Engine) itemLines(it *Item) []string {
 				add("Movement 9")
 			}
 		case slot == 1:
-			add("Shield, AC " + itoa(v) + " better")
+			add("Shield, AC " + strconv.Itoa(v) + " better")
 		case v > 0:
-			add("AC " + itoa(v) + " better")
+			add("AC " + strconv.Itoa(v) + " better")
 		}
 	}
 	switch {
@@ -105,9 +108,9 @@ func (e *Engine) itemLines(it *Item) []string {
 		add("ignore plain weapons")
 	}
 	if it.Hidden == 0 && int8(it.Plus) > 0 && (b.Dice > 0 || b.Protection > 0x80) {
-		add("Magic +" + itoa(int(int8(it.Plus))))
+		add("Magic +" + strconv.Itoa(int(int8(it.Plus))))
 	}
-	add("Weight " + itoa(int(it.Weight)) + ", price " + itoa(int(it.Price)))
+	add("Weight " + strconv.Itoa(int(it.Weight)) + ", price " + strconv.Itoa(int(it.Price)))
 	if slot != 0xA || b.Hands != 0 {
 		var who []string
 		for k, m := range classBits {

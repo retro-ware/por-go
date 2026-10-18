@@ -3,6 +3,8 @@ package engine
 // The temple, ported from ovr05. ECL COMBAT with the temple flag (game
 // +0x5C4) set runs Temple instead of a fight.
 
+import "strconv"
+
 // templeNotNeeded = ovr05:0013 (message): "<name> is not ..." and the
 // question whether to pay anyway.
 func (e *Engine) templeNotNeeded(msg string) byte {
@@ -16,7 +18,7 @@ func (e *Engine) templeNotNeeded(msg string) byte {
 // 'Y' when paid.
 func (e *Engine) templePay(cure string, price uint16) byte {
 	e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true,
-		cut(cure+" will only cost "+itoa(int(price))+" gold pieces.", 0xFF))
+		cut(cure+" will only cost "+strconv.Itoa(int(price))+" gold pieces.", 0xFF))
 	k := e.YesNo(0xD, 0xF, 0xA, "pay for cure ")
 	if k == 'Y' {
 		if !e.pay(uint32(price)) {

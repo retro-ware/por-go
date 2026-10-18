@@ -7,6 +7,8 @@ package engine
 // ponytail: Lightning Bolt (kind 8, a line) gets no preview; boltPath
 // would need a dry run.
 
+import "strconv"
+
 // aoeMarks marks who the spell aimed at (x,y) would hit; the prompt says
 // how many on each side. undo takes the marks off again.
 func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
@@ -33,5 +35,5 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 	}
 	e.markReach(marks, true)
 	undo := func() { e.markReach(marks, false) }
-	return "Hits " + itoa(foes) + " foe " + itoa(friends) + " ally ", undo
+	return "Hits " + strconv.Itoa(foes) + " foe " + strconv.Itoa(friends) + " ally ", undo
 }

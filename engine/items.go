@@ -2,6 +2,8 @@ package engine
 
 // Items: names, lists and the START helpers around them.
 
+import "strconv"
+
 // itemWord = DS:10A7 + 0x15*n.
 func (e *Engine) itemWord(n byte) string { return itemWords[n] }
 
@@ -45,7 +47,7 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 		name = cut(name+"* ", 0x28)
 	}
 	if it.Count > 0 {
-		name = cut(name+itoa(int(it.Count))+" ", 0x28)
+		name = cut(name+strconv.Itoa(int(it.Count))+" ", 0x28)
 	}
 	mask := 0
 	for i := 1; i <= 3; i++ {
@@ -86,11 +88,11 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 func (e *Engine) itemStats(typ byte) string {
 	s := ""
 	if n, d := e.base(typ).Dice, e.base(typ).Sides; n > 0 && d > 0 {
-		s = "(" + itoa(int(n)) + "d" + itoa(int(d))
+		s = "(" + strconv.Itoa(int(n)) + "d" + strconv.Itoa(int(d))
 		if b := int8(e.base(typ).Bonus); b > 0 {
-			s += "+" + itoa(int(b))
+			s += "+" + strconv.Itoa(int(b))
 		} else if b < 0 {
-			s += itoa(int(b))
+			s += strconv.Itoa(int(b))
 		}
 		s += ") "
 	}
@@ -99,7 +101,7 @@ func (e *Engine) itemStats(typ byte) string {
 			v -= 50 // body armour counts up from AC 10 = 50
 		}
 		if v > 0 {
-			s += "[" + itoa(v) + "] "
+			s += "[" + strconv.Itoa(v) + "] "
 		}
 	}
 	return s

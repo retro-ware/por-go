@@ -3,6 +3,8 @@ package engine
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
+import "strconv"
+
 // computerTurn = ovr10:000F (char): one computer turn. Picks the facing of
 // the attack, then spells, then moves and attacks until the turn is used.
 func (e *Engine) computerTurn(c *Character) {
@@ -237,7 +239,7 @@ func (e *Engine) aiCanStep(c *Character, i, dir int) (ok, blocked bool) {
 // step towards the target (or a wandering direction when fleeing).
 func (e *Engine) aiMoveStep(c *Character) {
 	ci := c.Combat
-	e.DisplayString(0, 0x18, 0xA, "Move/Attack, Move Left = "+itoa(int(ci.Moves>>1))+" ")
+	e.DisplayString(0, 0x18, 0xA, "Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ")
 	if e.aiKeys(c) {
 		return
 	}
