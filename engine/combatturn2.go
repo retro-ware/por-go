@@ -360,6 +360,9 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	menu = cut("Next Prev Manual "+menu+"Center Exit", textCols)
 	e.combatRedrawChar(cand, 3, 1)
 	e.combatPanel(cand)
+	if !can {
+		e.showWhy(why) // extra: the reason over the panel line, while pointing there
+	}
 	_, undo := e.aoeMarks(e.combatX(cand), e.combatY(cand), "") // the menu leaves no room for the count
 	mark := e.regionMark()
 	// extra (nav.go): click a foe to aim at it, the aimed one again to attack; pointing at
@@ -477,14 +480,20 @@ func outOfRange(rng int) string {
 	return "Out of range: " + strconv.Itoa(rng) + " squares at most"
 }
 
-// aimRefused (extra): why the aimed square cannot be taken, in red on the
-// status row for a moment.
-func (e *Engine) aimRefused(why string) {
+// showWhy (extra): why the aimed square cannot be taken, in red on the
+// status row (the panel line).
+func (e *Engine) showWhy(why string) {
 	e.ClearCells(0, messageRow, lastCol, messageRow)
 	e.DisplayString(0, messageRow, colLightRed, cut(why, textCols))
-	e.MsgDelay()
-	e.MsgDelay()
+}
+
+// aimRefused (extra): a try where the aim cannot go flashes the reason on
+// the status row, and leaves it there.
+func (e *Engine) aimRefused(why string) {
 	e.ClearCells(0, messageRow, lastCol, messageRow)
+	e.MsgDelay()
+	e.showWhy(why)
+	e.MsgDelay()
 }
 
 // aimConfirm = ovr14:2C3D (c, cand, mode, var found, var t): take cand as
@@ -628,6 +637,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		e.snap.aimWhy = ""                // extra: views draw the preview red where it cannot be cast
 		if !ok {
 			e.snap.aimWhy = why
+			e.showWhy(why) // over the panel line, while the cursor is there
 		}
 		prompt, undo := e.aoeMarks(int(x), int(y), "(Use Cursor keys) ")
 		if take := e.ext.aimTake; take && ok { // a click away from the cursor: moved there, now the target
