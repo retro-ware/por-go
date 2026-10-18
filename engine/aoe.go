@@ -1,7 +1,7 @@
 package engine
 
 // Area of effect preview (extra): while the player aims a spell that hits
-// everyone round the target square (o14_20C3's kinds 9..E), the combatants
+// everyone round the target square (chooseSpellTargets's kinds 9..E), the combatants
 // it would hit get the dotted frame Move and Aim use (markReach) and counted in the prompt.
 // The test is the cast's own: buildNear round the square, radius kind&7.
 // ponytail: Lightning Bolt (kind 8, a line) gets no preview; boltPath

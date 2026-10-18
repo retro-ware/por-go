@@ -385,9 +385,9 @@ func (e *Engine) CreateCharacter() {
 			}
 		}
 		c.Coins[3] = uint16(int16(int(sum) * 10 / int(count)))
-		c.HPRoll = byte(e.o17_4235(c, 0xFF))
+		c.HPRoll = byte(e.rollHitDice(c, 0xFF))
 		c.MaxHP = c.HPRoll
-		adj := int(int8(e.o17_3F31(c)))
+		adj := int(int8(e.conHPBonus(c)))
 		if adj < 0 {
 			if int(c.MaxHP) > -adj+int(count) {
 				c.MaxHP = byte((int(c.MaxHP) + adj) / int(count))
@@ -470,8 +470,8 @@ func (e *Engine) CreateCharacter() {
 	}
 	undo = e.selectTemp(c)
 	if e.ext.quick == nil {
-		e.o17_33E7()
-		e.o17_382D()
+		e.choosePortrait()
+		e.iconEditor()
 	}
 	e.SaveCharacter(c, "") // ovr18:069E
 	undo()

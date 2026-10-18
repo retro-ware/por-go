@@ -7,10 +7,10 @@ import (
 // Story and housekeeping routines of ovr18, ovr19 and ovr34, and the duel
 // set-up of ovr08.
 
-// o18_23E0, o19_08F6 and o34_00F7 are empty routines (push bp / pop bp).
-func (e *Engine) o18_23E0() {}
-func (e *Engine) o19_08F6() {}
-func (e *Engine) o34_00F7() {}
+// nop23E0 = ovr18:23E0, nop08F6 and nop00F7 are empty routines (push bp / pop bp).
+func (e *Engine) nop23E0() {}
+func (e *Engine) nop08F6() {}
+func (e *Engine) nop00F7() {}
 
 // ProgramEight = ovr19:02A4: the Tyranthraxus finale. The FINAL pictures
 // are drawn on the page, then animated; the dragon dies, Tyranthraxus

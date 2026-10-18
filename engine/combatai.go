@@ -3,9 +3,9 @@ package engine
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
-// o10_000F = ovr10:000F (char): one computer turn. Picks the facing of
+// computerTurn = ovr10:000F (char): one computer turn. Picks the facing of
 // the attack, then spells, then moves and attacks until the turn is used.
-func (e *Engine) o10_000F(c *Character) {
+func (e *Engine) computerTurn(c *Character) {
 	done := e.aiKeys(c)
 	e.ClearRow24()
 	e.ClearMessageArea()
@@ -51,7 +51,7 @@ func (e *Engine) o10_000F(c *Character) {
 	e.aiPickWeapon(c)
 	done = e.aiKeys(c)
 	for !done {
-		if e.o14_37E4(c, 0xFF, 1, 0) && int8(ci.Delay) > 0 {
+		if e.pickTarget(c, 0xFF, 1, 0) && int8(ci.Delay) > 0 {
 			done = e.aiAttackLoop(c)
 		} else {
 			done = e.aiGiveUp(c)
@@ -60,14 +60,14 @@ func (e *Engine) o10_000F(c *Character) {
 }
 
 // aiTryCast = ovr10:0203 (char): a spell caster with a spell picked
-// (o14_1351) casts it.
+// (weakestUnturned) casts it.
 func (e *Engine) aiTryCast(c *Character) bool {
 	r := false // uninitialised in the original when the test fails: 0
 	if c.Combat.TurnUsed == 0 && int8(c.Levels[clsCleric]) > 0 {
 		var t *Character
-		if e.o14_1351(c, &t) {
+		if e.weakestUnturned(c, &t) {
 			r = true
-			e.o14_116A(c)
+			e.clericTurnUndead(c)
 		}
 	}
 	return r
@@ -86,11 +86,11 @@ func (e *Engine) canCast(c *Character, spell, level int) bool {
 	}
 	if spell == 3 {
 		var t *Character
-		if e.o14_1BF8(c, &t) {
+		if e.friendToHeal(c, &t) {
 			return true
 		}
 	}
-	n := e.nearEnemies(c, e.o23_0729(spell))
+	n := e.nearEnemies(c, e.spellDuration(spell))
 	if n == 0 {
 		return false
 	}
@@ -154,7 +154,7 @@ func (e *Engine) aiCastFromItem(c *Character) bool {
 
 // aiCastKnown = ovr10:0545 (char): pick a known spell (c+0x17..) the
 // computer may cast, trying lower levels each round; true when the spell
-// call (o14_2414) returned a non-empty string.
+// call (castSpell) returned a non-empty string.
 func (e *Engine) aiCastKnown(c *Character) bool {
 	var arr [21]byte // the original has 20 bytes: the 21st write lands on a spare local
 	n := 0
@@ -182,7 +182,7 @@ func (e *Engine) aiCastKnown(c *Character) bool {
 	}
 	if found > 0 {
 		var ok bool
-		e.o14_2414(found, 1, &ok)
+		e.castSpell(found, 1, &ok)
 		return ok
 	}
 	return false
@@ -247,7 +247,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 	}
 	var dir int
 	if ci.Fleeing == 0 {
-		dir = e.o14_263D(c, ci.Target)
+		dir = e.directionTo(c, ci.Target)
 	} else {
 		ci.Pattern = byte(e.Dice(1, 2))
 		f := int(e.facing)
@@ -266,7 +266,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 			break
 		}
 		if ci.Fleeing != 0 && blocked {
-			done = e.o14_0C6A(c)
+			done = e.tryFlee(c)
 		} else {
 			i++
 		}
@@ -286,7 +286,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 				if e.v443D > 2 {
 					ci.Moves = 0
 					done = true
-				} else if !e.o14_37E4(c, 0xFF, 1, 0) {
+				} else if !e.pickTarget(c, 0xFF, 1, 0) {
 					done = e.aiGiveUp(c)
 				}
 			}
@@ -301,12 +301,12 @@ func (e *Engine) aiMoveStep(c *Character) {
 		return
 	}
 	e.combatTurn(c, byte(d), 0, false)
-	e.o14_08B2(c, int(ci.Facing))
+	e.freeAttacksOnLeave(c, int(ci.Facing))
 	if c.Okay == 0 {
 		done = e.clearCombatInfo(c)
 		return
 	}
-	e.o14_0712(c, int(ci.Facing))
+	e.stepSquare(c, int(ci.Facing))
 	if c.Okay == 0 {
 		done = e.clearCombatInfo(c)
 	}
@@ -353,7 +353,7 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 		if tgt != nil && (tgt.Okay == 0 || tgt.Side == 0) {
 			tgt = nil
 		}
-		if tgt != nil && e.o14_1085(c, tgt) {
+		if tgt != nil && e.mayActAgainst(c, tgt) {
 			tx, ty := e.combatX(tgt), e.combatY(tgt)
 			r := rng
 			if e.lineOfSight(&r, &tx, &ty, e.combatX(c), e.combatY(c)) && r>>1 <= rng {
@@ -363,7 +363,7 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 		if !engaged {
 			n := e.nearEnemies(c, rng)
 			if n == 0 {
-				if e.o14_37E4(c, 0xFF, 0, 0) {
+				if e.pickTarget(c, 0xFF, 0, 0) {
 					e.aiMoveStep(c)
 				} else {
 					stop = e.aiGiveUp(c)
@@ -376,22 +376,22 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 					stop = true
 					continue
 				}
-				if e.rangeTo(c, tgt) == 1 || e.o14_1085(c, tgt) {
+				if e.rangeTo(c, tgt) == 1 || e.mayActAgainst(c, tgt) {
 					engaged = true
 				}
 			}
 		}
 		if engaged {
-			e.combatCentre(e.combatX(c), e.combatY(c), 2, e.o14_263D(c, tgt))
+			e.combatCentre(e.combatX(c), e.combatY(c), 2, e.directionTo(c, tgt))
 		}
 		if !engaged {
 			continue
 		}
-		if e.o14_0E82(c, tgt) {
+		if e.sweep(c, tgt) {
 			stop = e.clearCombatInfo(c)
 			continue
 		}
-		e.o14_17F6(c, tgt)
+		e.countAttackTurn(c, tgt)
 		var weapon *Item
 		if e.rangedWeapon(c) {
 			e.ammoFor(c, &weapon)
@@ -399,7 +399,7 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 				weapon = nil
 			}
 		}
-		stop = e.o14_1884(c, tgt, 0, weapon)
+		stop = e.fullAttack(c, tgt, 0, weapon)
 		if stop {
 			cont = false
 		} else if tgt.Okay == 0 {
@@ -420,7 +420,7 @@ func (e *Engine) aiGiveUp(c *Character) bool {
 }
 
 // aiKeys = ovr10:0FC1 (char): keys during the computer turn: '2' toggles
-// magic, space ends the turn of everyone not yet moved, '-' (o14_3B93).
+// magic, space ends the turn of everyone not yet moved, '-' (stingCheat).
 func (e *Engine) aiKeys(c *Character) bool {
 	r := false
 	if e.keyWaiting() {
@@ -447,7 +447,7 @@ func (e *Engine) aiKeys(c *Character) bool {
 				r = true
 			}
 		case 0x2D:
-			e.o14_3B93()
+			e.stingCheat()
 		}
 	}
 	e.ClearKeyboard()
@@ -484,8 +484,8 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 	if !(uint16(e.v6825) < t2 || e.v6825 == 0 || c.Side == 0) {
 		return r
 	}
-	a := e.o14_2908(c)
-	if a <= e.o14_0123(c)>>1 {
+	a := e.fastestFoeMove(c)
+	if a <= e.moveRate(c)>>1 {
 		ci.Fleeing = 1
 		e.RemoveAffect(c, 0x4A, nil)
 		e.RemoveAffect(c, 0x4B, nil)
@@ -614,7 +614,7 @@ func (e *Engine) aiPickWeapon(c *Character) {
 		done = true
 	}
 	e.ApplyItems(c)
-	e.o14_0D23(c)
+	e.setSpeed(c)
 	ok = true
 	if w := c.Slots[1]; w != nil && (w == best3 || w.Magic != 0) {
 		ok = false

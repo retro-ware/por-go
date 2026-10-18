@@ -11,22 +11,22 @@ func (e *Engine) spellTableByte(spell, ofs int) byte {
 	return spellTable[spell][ofs]
 }
 
-// o23_100F = ovr23:100F: Bless, "is Blessed" on the selected character's side.
-func (e *Engine) o23_100F() {
-	e.o23_0F4F(int(e.selected().Side), "is Blessed")
+// spellBless = ovr23:100F: Bless, "is Blessed" on the selected character's side.
+func (e *Engine) spellBless() {
+	e.applySpellToSide(int(e.selected().Side), "is Blessed")
 }
 
-// o23_1040 = ovr23:1040: Bane, "is Cursed".
-func (e *Engine) o23_1040() {
+// spellBane = ovr23:1040: Bane, "is Cursed".
+func (e *Engine) spellBane() {
 	side := 0
 	if isParty(e.selected()) {
 		side = 1
 	}
-	e.o23_0F4F(side, "is Cursed")
+	e.applySpellToSide(side, "is Cursed")
 }
 
-// o23_106B = ovr23:106B: Cure Light Wounds on the first target, 1d8.
-func (e *Engine) o23_106B() {
+// spellCureLightWounds = ovr23:106B: Cure Light Wounds on the first target, 1d8.
+func (e *Engine) spellCureLightWounds() {
 	if e.nSpellTargets != 0 {
 		if e.Heal(e.tgt(1), e.Dice(1, 8), false) {
 			e.healedMessage(e.tgt(1))
@@ -34,42 +34,42 @@ func (e *Engine) o23_106B() {
 	}
 }
 
-// o23_10A7 = ovr23:10A7: 1d8 magic damage.
-func (e *Engine) o23_10A7() {
-	e.o23_08C3(int(e.curSpell), 0, 0, e.RollDice(1, 8), 8, "")
+// spellDamage1d8 = ovr23:10A7: 1d8 magic damage.
+func (e *Engine) spellDamage1d8() {
+	e.applySpell(int(e.curSpell), 0, 0, e.RollDice(1, 8), 8, "")
 }
 
-// o23_10E9 = ovr23:10E9: "is affected" (shared by several spells).
-func (e *Engine) o23_10E9() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is affected") }
+// spellAffected = ovr23:10E9: "is affected" (shared by several spells).
+func (e *Engine) spellAffected() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is affected") }
 
-// o23_1123 = ovr23:1123: "is protected".
-func (e *Engine) o23_1123() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is protected") }
+// spellProtected = ovr23:1123: "is protected".
+func (e *Engine) spellProtected() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is protected") }
 
-// o23_1162 = ovr23:1162: "is cold-resistant".
-func (e *Engine) o23_1162() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is cold-resistant") }
+// spellColdResist = ovr23:1162: "is cold-resistant".
+func (e *Engine) spellColdResist() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is cold-resistant") }
 
-// o23_1190 = ovr23:1190: damage equal to the caster level, type 9.
-func (e *Engine) o23_1190() {
-	e.o23_08C3(int(e.curSpell), 0, 0, e.casterLevel(int(e.curSpell)), 9, "")
+// spellDamageLevel = ovr23:1190: damage equal to the caster level, type 9.
+func (e *Engine) spellDamageLevel() {
+	e.applySpell(int(e.curSpell), 0, 0, e.casterLevel(int(e.curSpell)), 9, "")
 }
 
-// o23_11DD = ovr23:11DD: Charm Person; large or strong targets are unaffected.
-func (e *Engine) o23_11DD() {
+// spellCharmPerson = ovr23:11DD: Charm Person; large or strong targets are unaffected.
+func (e *Engine) spellCharmPerson() {
 	t := e.tgt(1)
 	if t.Kind > 1 || t.Size > 1 {
 		e.CharMessage(t, "is unaffected", 0xA, true)
 		return
 	}
 	lvl := e.casterLevel(int(e.curSpell))
-	e.o23_08C3(int(e.curSpell), (int(e.selected().Side)<<7+lvl)&0xFF, 1, 0, 0, "is charmed")
+	e.applySpell(int(e.curSpell), (int(e.selected().Side)<<7+lvl)&0xFF, 1, 0, 0, "is charmed")
 	if a := e.FindAffect(t, 0xB); a != nil {
 		e.callAffect(0xB, e.tgt(1), a, 0)
 	}
 }
 
-// o23_12A5 = ovr23:12A5: Strength; the percentile comes from the caster
+// spellStrengthPercent = ovr23:12A5: Strength; the percentile comes from the caster
 // level (levels above 6 leave DS:4845 as it was).
-func (e *Engine) o23_12A5() {
+func (e *Engine) spellStrengthPercent() {
 	e.v4844 = 0x12
 	switch e.casterLevel(int(e.curSpell)) {
 	case 1:
@@ -90,11 +90,11 @@ func (e *Engine) o23_12A5() {
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
-	e.AddAffect(t, 0xC, e.o23_07D6(int(e.curSpell)), out, 1)
+	e.AddAffect(t, 0xC, e.spellAmount(int(e.curSpell)), out, 1)
 }
 
-// o23_136E = ovr23:136E: Reduce (undoes the strength affect 0x0C) unless the target saves.
-func (e *Engine) o23_136E() {
+// spellReduce = ovr23:136E: Reduce (undoes the strength affect 0x0C) unless the target saves.
+func (e *Engine) spellReduce() {
 	if e.nSpellTargets > 0 {
 		t := e.tgt(1)
 		if !e.SavingThrow(t, 4, 0) && e.CureAffect(t, 0xC) {
@@ -103,35 +103,35 @@ func (e *Engine) o23_136E() {
 	}
 }
 
-// o23_13D8 = ovr23:13D8: Friends, charisma +2d4 (at most 25).
-func (e *Engine) o23_13D8() {
+// spellFriends = ovr23:13D8: Friends, charisma +2d4 (at most 25).
+func (e *Engine) spellFriends() {
 	t := e.tgt(1)
 	old := t.Stats[statCha]
 	t.Stats[statCha] += byte(e.Dice(2, 4))
 	if t.Stats[statCha] > 0x19 {
 		t.Stats[statCha] = 0x19
 	}
-	e.o23_08C3(int(e.curSpell), int(old), 1, 0, 0, "is friendly")
+	e.applySpell(int(e.curSpell), int(old), 1, 0, 0, "is friendly")
 }
 
-// o23_1439 = ovr23:1439: magic damage of (level/2)d4 + level/2.
-func (e *Engine) o23_1439() {
+// spellMagicMissile = ovr23:1439: magic damage of (level/2)d4 + level/2.
+func (e *Engine) spellMagicMissile() {
 	lvl := e.casterLevel(int(e.curSpell))
-	e.o23_08C3(int(e.curSpell), 0, 0, (e.RollDice(lvl>>1, 4)+lvl>>1)&0xFF, 8, "")
+	e.applySpell(int(e.curSpell), 0, 0, (e.RollDice(lvl>>1, 4)+lvl>>1)&0xFF, 8, "")
 }
 
-// o23_1499 = ovr23:1499: "is shielded".
-func (e *Engine) o23_1499() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is shielded") }
+// spellShield = ovr23:1499: "is shielded".
+func (e *Engine) spellShield() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is shielded") }
 
-// o23_14C7 = ovr23:14C7: caster level + 1d8 damage, type 0xC.
-func (e *Engine) o23_14C7() {
+// spellBurningHands = ovr23:14C7: caster level + 1d8 damage, type 0xC.
+func (e *Engine) spellBurningHands() {
 	lvl := e.casterLevel(int(e.curSpell))
-	e.o23_08C3(int(e.curSpell), 0, 0, (lvl+e.RollDice(1, 8))&0xFF, 0xC, "")
+	e.applySpell(int(e.curSpell), 0, 0, (lvl+e.RollDice(1, 8))&0xFF, 0xC, "")
 }
 
-// o23_151B = ovr23:151B: Sleep. 4d4 hit dice of targets fall asleep, weakest
+// spellSleep = ovr23:151B: Sleep. 4d4 hit dice of targets fall asleep, weakest
 // first in list order; the others (and the already asleep) leave the list.
-func (e *Engine) o23_151B() {
+func (e *Engine) spellSleep() {
 	e.spellFlag6820 = 1
 	e.v4844 = byte(e.Dice(4, 4))
 	for i := 1; i <= e.nSpellTargets; i++ {
@@ -160,12 +160,12 @@ func (e *Engine) o23_151B() {
 			e.setTgt(i, nil)
 		}
 	}
-	e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "falls asleep")
+	e.applySpell(int(e.curSpell), 0, 0, 0, 0, "falls asleep")
 }
 
-// o23_1658 = ovr23:1658: Hold Person/Monster. The save bonus depends on the
+// spellHold = ovr23:1658: Hold Person/Monster. The save bonus depends on the
 // number of targets; each target gets a missile and the affect from the spell record.
-func (e *Engine) o23_1658() {
+func (e *Engine) spellHold() {
 	var bonus int8 // other counts leave the local unset (0)
 	switch e.nSpellTargets {
 	case 1:
@@ -195,20 +195,20 @@ func (e *Engine) o23_1658() {
 		if t.Kind > 1 || t.Size > 1 {
 			saved = true
 		}
-		e.AddAffectMsg(t, e.spellTableByte(spell, 10), e.o23_07D6(spell), byte(e.casterLevel(spell)), 0,
+		e.AddAffectMsg(t, e.spellTableByte(spell, 10), e.spellAmount(spell), byte(e.casterLevel(spell)), 0,
 			e.spellTableByte(spell, 8), saved, "is held")
 	}
 }
 
-// o23_17E9 = ovr23:17E9: "is fire resistant".
-func (e *Engine) o23_17E9() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is fire resistant") }
+// spellFireResist = ovr23:17E9: "is fire resistant".
+func (e *Engine) spellFireResist() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is fire resistant") }
 
-// o23_1822 = ovr23:1822: "is silenced".
-func (e *Engine) o23_1822() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is silenced") }
+// spellSilence = ovr23:1822: "is silenced".
+func (e *Engine) spellSilence() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is silenced") }
 
-// o23_185B = ovr23:185B: Raise Dead style: a dead target is dropped from
+// spellRaiseDead = ovr23:185B: Raise Dead style: a dead target is dropped from
 // the list; one with affect 0x37 is brought to 1 hit point and stunned (0x0F).
-func (e *Engine) o23_185B() {
+func (e *Engine) spellRaiseDead() {
 	t := e.tgt(1)
 	if t.Status == 1 {
 		e.setTgt(1, nil)
@@ -220,14 +220,14 @@ func (e *Engine) o23_185B() {
 	if t.HP == 0 {
 		t.HP = 1
 	}
-	e.o23_08C3(int(e.curSpell), 0xFF, 1, 0, 0, "is affected")
+	e.applySpell(int(e.curSpell), 0xFF, 1, 0, 0, "is affected")
 	e.callAffect(0x4E, t, nil, 1)
 	e.AddAffect(t, 0xF, 10, 0xFF, 1)
 }
 
-// o23_190F = ovr23:190F: the party members of kind 0xE whose hit points
+// spellUndeadTargets = ovr23:190F: the party members of kind 0xE whose hit points
 // fit in the caster's hit points become the targets.
-func (e *Engine) o23_190F() {
+func (e *Engine) spellUndeadTargets() {
 	e.v4844 = e.selected().HP
 	e.nSpellTargets = 0
 	for _, p := range e.party {
@@ -237,33 +237,33 @@ func (e *Engine) o23_190F() {
 			e.setTgt(e.nSpellTargets, p)
 		}
 	}
-	e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is charmed")
+	e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is charmed")
 }
 
-// o23_19C3 = ovr23:19C3: applies the spell, then runs the affect 0x17 handler on the first target.
-func (e *Engine) o23_19C3() {
-	e.o23_08C3(int(e.curSpell), 0, 1, 0, 0, "")
+// spellApplyAnd17 = ovr23:19C3: applies the spell, then runs the affect 0x17 handler on the first target.
+func (e *Engine) spellApplyAnd17() {
+	e.applySpell(int(e.curSpell), 0, 1, 0, 0, "")
 	e.callAffect(0x17, e.tgt(1), nil, 0)
 }
 
-// o23_1A16 = ovr23:1A16: "is invisible".
-func (e *Engine) o23_1A16() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is invisible") }
+// spellInvisible = ovr23:1A16: "is invisible".
+func (e *Engine) spellInvisible() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is invisible") }
 
-// o23_1A4F = ovr23:1A4F: Knock.
-func (e *Engine) o23_1A4F() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "Knock-Knock") }
+// spellKnock = ovr23:1A4F: Knock.
+func (e *Engine) spellKnock() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "Knock-Knock") }
 
-// o23_1A8A = ovr23:1A8A: Mirror Image, 1d4 images.
-func (e *Engine) o23_1A8A() {
-	e.o23_08C3(int(e.curSpell), e.Dice(1, 4), 0, 0, 0, "is duplicated")
+// spellMirrorImage = ovr23:1A8A: Mirror Image, 1d4 images.
+func (e *Engine) spellMirrorImage() {
+	e.applySpell(int(e.curSpell), e.Dice(1, 4), 0, 0, 0, "is duplicated")
 }
 
-// o23_1ACC = ovr23:1ACC: "is weakened".
-func (e *Engine) o23_1ACC() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is weakened") }
+// spellWeaken = ovr23:1ACC: "is weakened".
+func (e *Engine) spellWeaken() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is weakened") }
 
-// o23_1B11 = ovr23:1B11: Stinking Cloud. A 0x13-byte cloud record (caster,
+// spellStinkingCloud = ovr23:1B11: Stinking Cloud. A 0x13-byte cloud record (caster,
 // the four squares' old ground and flags, target square, number of the
 // caster's clouds) is added; its squares become ground 0x1E.
-func (e *Engine) o23_1B11() {
+func (e *Engine) spellStinkingCloud() {
 	e.spellFlag6820 = 1
 	sel := e.selected()
 	lvl := e.casterLevel(int(e.curSpell))
@@ -335,9 +335,9 @@ func (e *Engine) o23_1B11() {
 	}
 }
 
-// o23_1F41 = ovr23:1F41: Enlarge/Strength of the first target: 1d4/1d6/1d8
+// spellEnlarge = ovr23:1F41: Enlarge/Strength of the first target: 1d4/1d6/1d8
 // by its classes, added to its strength, exceptional strength above 18.
-func (e *Engine) o23_1F41() {
+func (e *Engine) spellEnlarge() {
 	var ext, add byte // add is an unset local when no class qualifies
 	t := e.tgt(1)
 	if int8(t.Levels[clsMage]) > 0 {
@@ -365,12 +365,12 @@ func (e *Engine) o23_1F41() {
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
-	e.AddAffect(t, 0x26, e.o23_07D6(int(e.curSpell)), out, 1)
+	e.AddAffect(t, 0x26, e.spellAmount(int(e.curSpell)), out, 1)
 }
 
-// o23_206F = ovr23:206F: Animate Dead. Corpses of the party list (status 6,
+// spellAnimateDead = ovr23:206F: Animate Dead. Corpses of the party list (status 6,
 // kind 0) are put back on their feet on the caster's side, one per caster level.
-func (e *Engine) o23_206F() {
+func (e *Engine) spellAnimateDead() {
 	e.spellFlag6820 = 1
 	lvl := e.casterLevel(int(e.curSpell))
 	e.nSpellTargets = 0
@@ -408,15 +408,15 @@ func (e *Engine) o23_206F() {
 	}
 }
 
-// o23_2217 = ovr23:2217: cures blindness (affect 0x21): "can see".
-func (e *Engine) o23_2217() {
+// spellCureBlind = ovr23:2217: cures blindness (affect 0x21): "can see".
+func (e *Engine) spellCureBlind() {
 	if e.CureAffect(e.tgt(1), 0x21) {
 		e.hitMessage(e.tgt(1), true, "can see")
 	}
 }
 
-// o23_225D = ovr23:225D: "is blind".
-func (e *Engine) o23_225D() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is blind") }
+// spellBlind = ovr23:225D: "is blind".
+func (e *Engine) spellBlind() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is blind") }
 
 // cureDiseaseAffects = ovr23:228A: with the cure flag (DS:681F) set, cures
 // affects 0x22, 0x2B (and 0x2C, 0x1F) and 0x32 (and 0x39) of the first target.
@@ -440,17 +440,17 @@ func (e *Engine) cureDiseaseAffects() bool {
 	return cured
 }
 
-// o23_232F = ovr23:232F: Cure Blindness spell body (the result is unused).
-func (e *Engine) o23_232F() { e.cureDiseaseAffects() }
+// spellCureDisease = ovr23:232F: Cure Blindness spell body (the result is unused).
+func (e *Engine) spellCureDisease() { e.cureDiseaseAffects() }
 
-// o23_234C = ovr23:234C: "is diseased".
-func (e *Engine) o23_234C() { e.o23_08C3(int(e.curSpell), 0, 1, 0, 0, "is diseased") }
+// spellDisease = ovr23:234C: "is diseased".
+func (e *Engine) spellDisease() { e.applySpell(int(e.curSpell), 0, 1, 0, 0, "is diseased") }
 
-// o23_2385 = ovr23:2385: Dispel Magic. Each pass walks the affects of the
+// spellDispel = ovr23:2385: Dispel Magic. Each pass walks the affects of the
 // first target (the loop variable only counts passes); every temporary
 // affect goes with a chance of 50% +5% per level above, -10% per level
 // below, the level of the affect being its data low nibble.
-func (e *Engine) o23_2385() {
+func (e *Engine) spellDispel() {
 	e.spellFlag6820 = 1
 	lvl := e.casterLevel(int(e.curSpell))
 	for i := 1; i <= e.nSpellTargets; i++ {
@@ -480,7 +480,7 @@ func (e *Engine) o23_2385() {
 	}
 }
 
-// o23_24D6 = ovr23:24D6: "is praying", cast at caster level with the side in the high nibble.
-func (e *Engine) o23_24D6() {
-	e.o23_08C3(int(e.curSpell), int(e.selected().Side)<<4+e.casterLevel(int(e.curSpell)), 0, 0, 0, "is praying")
+// spellPrayer = ovr23:24D6: "is praying", cast at caster level with the side in the high nibble.
+func (e *Engine) spellPrayer() {
+	e.applySpell(int(e.curSpell), int(e.selected().Side)<<4+e.casterLevel(int(e.curSpell)), 0, 0, 0, "is praying")
 }

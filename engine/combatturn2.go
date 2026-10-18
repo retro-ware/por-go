@@ -18,11 +18,11 @@ type aimTarget struct {
 // spellData returns byte k of the 16-byte spell record at DS:3200.
 func (e *Engine) spellData(spell, k int) byte { return spellTable[spell&0xFF][6+k] }
 
-// o14_1BF8 = ovr14:1BF8 (c, var who): the friend to heal around c: the most
+// friendToHeal = ovr14:1BF8 (c, var who): the friend to heal around c: the most
 // hurt of the same side on the nine squares round c (c itself only when
 // under half its hit points), or the first body lying there when no one
 // with fewer than 8 hit points is.
-func (e *Engine) o14_1BF8(c *Character, who **Character) bool {
+func (e *Engine) friendToHeal(c *Character, who **Character) bool {
 	var best *Character
 	bestHP, body := byte(0xFF), 0
 	for dir := 0; dir <= 8; dir++ {
@@ -63,19 +63,19 @@ func (e *Engine) chooseSpellTarget(spell, silent, allowGround int, t *aimTarget)
 	found := false
 	if silent == 0 {
 		e.ext.enemiesOnly = spellTable[spell&0xFF][7] == 0 // extra: a hostile spell cycles through foes only
-		e.o14_3558(sel, e.o23_0729(spell), 0, allowGround, &found, t)
+		e.playerAim(sel, e.spellDuration(spell), 0, allowGround, &found, t)
 		e.ext.enemiesOnly = false
 		sel.Combat.Target = t.c
 	} else if e.spellData(spell, 8) == 0 {
 		t.c = sel
-		if spell != 3 || e.o14_1BF8(sel, &t.c) {
+		if spell != 3 || e.friendToHeal(sel, &t.c) {
 			t.x, t.y = byte(e.combatX(t.c)), byte(e.combatY(t.c))
 			found = true
 		}
 	} else {
 		for tries := 0x14; tries > 0 && !found; tries-- {
 			ok := true
-			if !e.o14_37E4(sel, e.o23_0729(spell), 0, 1) {
+			if !e.pickTarget(sel, e.spellDuration(spell), 0, 1) {
 				continue
 			}
 			tp := sel.Combat.Target
@@ -109,9 +109,9 @@ func (e *Engine) chooseSpellTarget(spell, silent, allowGround int, t *aimTarget)
 	return found
 }
 
-// o14_20C3 = ovr14:20C3 (spell, silent, var ok): the targets of the spell
+// chooseSpellTargets = ovr14:20C3 (spell, silent, var ok): the targets of the spell
 // into DS:6C91+4i (count DS:6C94). ok is false when none was chosen.
-func (e *Engine) o14_20C3(spell, silent int) (ok bool) {
+func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 	var tmp aimTarget
 	ok = true
 	e.nSpellTargets = 0
@@ -184,10 +184,10 @@ func (e *Engine) o14_20C3(spell, silent int) (ok bool) {
 	return
 }
 
-// o14_2414 = ovr14:2414 (spell, a, var quit): the selected character picks
+// castSpell = ovr14:2414 (spell, a, var quit): the selected character picks
 // (spell 0: from his memorised spells) and casts a spell. Spells with a
 // casting time of 3 or more only begin and are cast in a later round.
-func (e *Engine) o14_2414(spell, a int, quit *bool) {
+func (e *Engine) castSpell(spell, a int, quit *bool) {
 	sel := e.selected()
 	have, idx := true, -1 // bp-6 = 1, bp-5 = 0xFFFF
 	*quit = false
@@ -236,12 +236,12 @@ func (e *Engine) rangedFacing(c, target *Character) bool {
 			flag = true
 		}
 	}
-	return flag && target.Combat.Attackers > 1 && byte(e.o14_263D(c, target)) == target.Combat.Facing
+	return flag && target.Combat.Attackers > 1 && byte(e.directionTo(c, target)) == target.Combat.Facing
 }
 
-// o14_263D = ovr14:263D (from, to): the direction 0..7 (8 when none fits)
+// directionTo = ovr14:263D (from, to): the direction 0..7 (8 when none fits)
 // from one combatant to the other.
-func (e *Engine) o14_263D(from, to *Character) int {
+func (e *Engine) directionTo(from, to *Character) int {
 	x1, y1 := e.combatX(from), e.combatY(from)
 	x2, y2 := e.combatX(to), e.combatY(to)
 	dir := 0
@@ -254,7 +254,7 @@ func (e *Engine) o14_263D(from, to *Character) int {
 // attackAnimation = ovr14:26B0 (from, to, weapon): the weapon's sprite
 // flies from one combatant to the other.
 func (e *Engine) attackAnimation(from, to *Character, weapon *Item) {
-	dir := e.o14_263D(from, to)
+	dir := e.directionTo(from, to)
 	frames, delay, base := 1, 0xA, 0xD
 	switch typ := weapon.Type; {
 	case typ == 9 || typ == 0x15 || typ == 0x1C || typ == 0x1F || typ == 0x49:
@@ -287,10 +287,10 @@ func (e *Engine) attackAnimation(from, to *Character, weapon *Item) {
 	e.soundWait(0xA)
 }
 
-// o14_2879 = ovr14:2879: DS:6E2F = the monsters' remaining hit points in
+// foesHealthPercent = ovr14:2879: DS:6E2F = the monsters' remaining hit points in
 // five percent steps (20 * hp / maximum, times 5; dead ones count in the
 // maximum).
-func (e *Engine) o14_2879() {
+func (e *Engine) foesHealthPercent() {
 	var hp, max uint16
 	for _, c := range e.party {
 		if c.Side == 1 {
@@ -305,13 +305,13 @@ func (e *Engine) o14_2879() {
 	}
 }
 
-// o14_2908 = ovr14:2908 (c): the highest o14_0123 / 2 over the living
+// fastestFoeMove = ovr14:2908 (c): the highest moveRate / 2 over the living
 // combatants on the other side.
-func (e *Engine) o14_2908(c *Character) int {
+func (e *Engine) fastestFoeMove(c *Character) int {
 	best := byte(0)
 	for _, t := range e.party {
 		if b2i(isParty(c)) == int(t.Side) && t.Okay != 0 {
-			if v := byte(e.o14_0123(t)) >> 1; v > best {
+			if v := byte(e.moveRate(t)) >> 1; v > best {
 				best = v
 			}
 		}
@@ -319,9 +319,9 @@ func (e *Engine) o14_2908(c *Character) int {
 	return int(best)
 }
 
-// o14_2998 = ovr14:2998 (c, target): may c attack the target? Attacking
+// mayAttack = ovr14:2998 (c, target): may c attack the target? Attacking
 // a friend asks first; yes turns every sane character of the party hostile.
-func (e *Engine) o14_2998(c, target *Character) bool {
+func (e *Engine) mayAttack(c, target *Character) bool {
 	if b2i(isParty(target)) == int(c.Side) || c.Auto != 0 {
 		return true
 	}
@@ -432,7 +432,7 @@ func (e *Engine) canTarget(c, cand *Character, rng, showRange int) bool {
 func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTarget) {
 	var res *Item
 	*found = true
-	if mode == 1 && !e.o14_2998(c, cand) {
+	if mode == 1 && !e.mayAttack(c, cand) {
 		*found = false
 	}
 	if !*found {
@@ -444,14 +444,14 @@ func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTar
 	e.cmap.cursor = 0
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 3, 8)
 	if mode == 1 {
-		if e.o14_0E82(c, cand) {
+		if e.sweep(c, cand) {
 			*found = e.clearCombatInfo(c)
 		} else {
-			e.o14_17F6(c, cand)
+			e.countAttackTurn(c, cand)
 			if e.rangedWeapon(c) && e.ammoFor(c, &res) && e.throwable(c) && e.rangeTo(c, cand) == 1 {
 				res = nil
 			}
-			*found = e.o14_1884(c, cand, 0, res)
+			*found = e.fullAttack(c, cand, 0, res)
 		}
 	}
 }
@@ -505,7 +505,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 			ok = false
 		}
 		if cand != nil {
-			if !e.o14_1085(c, cand) {
+			if !e.mayActAgainst(c, cand) {
 				ok = false
 			}
 			if showRange == 1 {
@@ -601,11 +601,11 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 	}
 }
 
-// o14_3558 = ovr14:3558 (c, rng, showRange, allowGround, var found, var t):
+// playerAim = ovr14:3558 (c, rng, showRange, allowGround, var found, var t):
 // the player aims for c. Candidates are walked through nearest first
 // (N next, P previous, M manual cursor, T take, C centre, Esc/E give up).
 // rng 0xFF takes the range of the readied weapon.
-func (e *Engine) o14_3558(c *Character, rangeArg, showRange, allowGround int, found *bool, t *aimTarget) {
+func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, found *bool, t *aimTarget) {
 	e.iconToSprite(0x19, 0, 0, false)
 	*t = aimTarget{}
 	*found = false
@@ -632,14 +632,14 @@ func (e *Engine) o14_3558(c *Character, rangeArg, showRange, allowGround int, fo
 		count = byte(len(list))
 		skipAlly, hitOnly = false, false
 		for _, n := range list {
-			if f := e.combatant(n.index); e.ext.enemiesOnly && f != nil && f.Side != c.Side && e.o14_1085(c, f) {
+			if f := e.combatant(n.index); e.ext.enemiesOnly && f != nil && f.Side != c.Side && e.mayActAgainst(c, f) {
 				skipAlly = true
 				hitOnly = hitOnly || showRange != 0 && e.canTarget(c, f, int(rng), showRange)
 			}
 		}
 		e.ext.aimMarks = map[[2]int][]int{}
 		for _, n := range list {
-			if f := e.combatant(n.index); skipAlly && f != nil && f.Side != c.Side && e.o14_1085(c, f) &&
+			if f := e.combatant(n.index); skipAlly && f != nil && f.Side != c.Side && e.mayActAgainst(c, f) &&
 				(!hitOnly || e.canTarget(c, f, int(rng), showRange)) {
 				e.ext.aimMarks[[2]int{e.combatX(f), e.combatY(f)}] = nil
 			}
@@ -684,7 +684,7 @@ func (e *Engine) o14_3558(c *Character, rangeArg, showRange, allowGround int, fo
 	by = 1
 	key := byte(' ')
 	for !*found && !(key == 0 || key == 'E') {
-		if !e.o14_1085(c, cand) || skipAlly && cand.Side == c.Side ||
+		if !e.mayActAgainst(c, cand) || skipAlly && cand.Side == c.Side ||
 			hitOnly && !e.canTarget(c, cand, int(rng), showRange) {
 			cand = step(by, false)
 			continue
@@ -728,13 +728,13 @@ func (e *Engine) o14_3558(c *Character, rangeArg, showRange, allowGround int, fo
 	}
 }
 
-// o14_37E4 = ovr14:37E4 (c, rng, a, b): a target for c's attack from the
+// pickTarget = ovr14:37E4 (c, rng, a, b): a target for c's attack from the
 // enemies within rng, kept in c's combat block. Up to two passes of 20
 // random picks; the second sees through walls (not with b set).
-func (e *Engine) o14_37E4(c *Character, rng, a, b int) bool {
+func (e *Engine) pickTarget(c *Character, rng, a, b int) bool {
 	first, found, second := false, false, false
 	tgt := c.Combat.Target
-	if b != 0 || tgt == nil || tgt.Side == c.Side || tgt.Okay == 0 || !e.o14_1085(c, tgt) {
+	if b != 0 || tgt == nil || tgt.Side == c.Side || tgt.Okay == 0 || !e.mayActAgainst(c, tgt) {
 		c.Combat.Target = nil
 	}
 	if c.Combat.Target != nil {
@@ -752,7 +752,7 @@ func (e *Engine) o14_37E4(c *Character, rng, a, b int) bool {
 			r := e.Dice(1, n)
 			if e.targets[r] > 0 {
 				cand := e.combatant(e.targets[r])
-				if (a != 0 && e.cmap.seeAll != 0) || e.o14_1085(c, cand) {
+				if (a != 0 && e.cmap.seeAll != 0) || e.mayActAgainst(c, cand) {
 					found = true
 					c.Combat.Target = cand
 				} else {
@@ -778,22 +778,22 @@ func (e *Engine) o14_37E4(c *Character, rng, a, b int) bool {
 	return found
 }
 
-// o14_39D2 = ovr14:39D2 (c, affect, flag): the affect handler of an
+// rake = ovr14:39D2 (c, affect, flag): the affect handler of an
 // attacker's rake: while DS:6823 is 2 and its victim is up, c rakes it.
-func (e *Engine) o14_39D2(c *Character, a *Affect, flag byte) {
+func (e *Engine) rake(c *Character, a *Affect, flag byte) {
 	if e.hits6822[1] == 2 && c.Combat.Target != nil && c.Combat.Target.Okay != 0 {
 		c.Combat.AttackSlot = 2
 		c.Attacks[1], c.Dice[1], c.Sides[1], c.Attacks[0] = 2, 2, 4, 0
 		e.CharMessage(c, "Rakes...", 0xA, true)
-		e.o14_1884(c, c.Combat.Target, 0, nil)
+		e.fullAttack(c, c.Combat.Target, 0, nil)
 		e.clearCombatInfo(c)
 	}
 }
 
-// o14_3A86 = ovr14:3A86 (c, affect, flag): the affect handler tying c to
+// strikeTied = ovr14:3A86 (c, affect, flag): the affect handler tying c to
 // the combatant a.Data (DS:6826): c strikes at it until one of them is
 // down or the affect is removed.
-func (e *Engine) o14_3A86(c *Character, a *Affect, flag byte) {
+func (e *Engine) strikeTied(c *Character, a *Affect, flag byte) {
 	e.v6826 = e.combatant(a.Data)
 	if flag != 0 || c.Okay == 0 || e.v6826.Okay == 0 {
 		e.RemoveAffect(e.v6826, 0x3A, nil)
@@ -804,16 +804,16 @@ func (e *Engine) o14_3A86(c *Character, a *Affect, flag byte) {
 		return
 	}
 	c.Attacks[0], c.Attacks[1], c.Dice[0], c.Sides[0] = 1, 0, 3, 4
-	e.o14_1884(c, e.v6826, 1, nil)
+	e.fullAttack(c, e.v6826, 1, nil)
 	e.clearCombatInfo(c)
 	if e.v6826.Okay == 0 {
 		e.RemoveAffect(c, 0x4A, a)
 	}
 }
 
-// o14_3B93 = ovr14:3B93: the command line word STING kills every monster
+// stingCheat = ovr14:3B93: the command line word STING kills every monster
 // ("The Gods intervene!"). True when it was given.
-func (e *Engine) o14_3B93() bool {
+func (e *Engine) stingCheat() bool {
 	// DOS upper-cased the command line, hence EqualFold
 	if len(os.Args) < 2 || !strings.EqualFold(os.Args[1], "STING") {
 		return false
@@ -835,5 +835,5 @@ func (e *Engine) o14_3B93() bool {
 	return true
 }
 
-// o14_3C6D = ovr14:3C6D: the overlay's initialisation, empty.
-func (e *Engine) o14_3C6D() {}
+// initCombatOverlay = ovr14:3C6D: the overlay's initialisation, empty.
+func (e *Engine) initCombatOverlay() {}

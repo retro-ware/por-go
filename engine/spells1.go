@@ -208,9 +208,9 @@ func (e *Engine) buildSpellList(kind int) bool {
 	return any
 }
 
-// o23_0729 = ovr23:0729 (spell): the duration of the spell in rounds (or
+// spellDuration = ovr23:0729 (spell): the duration of the spell in rounds (or
 // turns); never 0 when the record says so.
-func (e *Engine) o23_0729(spell int) int {
+func (e *Engine) spellDuration(spell int) int {
 	s := byte(spell)
 	var v byte
 	if !e.usingItem {
@@ -227,9 +227,9 @@ func (e *Engine) o23_0729(spell int) int {
 	return int(v)
 }
 
-// o23_07D6 = ovr23:07D6 (spell): the amount (damage or rounds) of the
+// spellAmount = ovr23:07D6 (spell): the amount (damage or rounds) of the
 // spell; a near procedure of the overlay.
-func (e *Engine) o23_07D6(spell int) int {
+func (e *Engine) spellAmount(spell int) int {
 	var v int
 	switch spell {
 	case 0x28:
@@ -252,11 +252,11 @@ func (e *Engine) o23_07D6(spell int) int {
 	return int(int16(v))
 }
 
-// o23_08C3 = ovr23:08C3 (spell, level, call, dmg, dmgType, msg): applies
+// applySpell = ovr23:08C3 (spell, level, call, dmg, dmgType, msg): applies
 // the spell record to every target: saving throw, damage and affect.
 // level 0 means the caster level; dmg is also the flag that sets the damage
 // type (DS:6819); dmg is cleared for the rest when an attack misses.
-func (e *Engine) o23_08C3(spell, level, call, dmg, dmgType int, msg string) {
+func (e *Engine) applySpell(spell, level, call, dmg, dmgType int, msg string) {
 	msg = cut(msg, 0x28)
 	if dmg == 0 {
 		e.rv.dmgType = 0
@@ -292,7 +292,7 @@ func (e *Engine) o23_08C3(spell, level, call, dmg, dmgType int, msg string) {
 			e.Damage(t, dmg, e.spellRec(s, 8), saved)
 		}
 		if e.spellRec(s, 0xA) > 0 {
-			e.AddAffectMsg(t, e.spellRec(s, 0xA), e.o23_07D6(spell), lvl, byte(call), e.spellRec(s, 8), saved, msg)
+			e.AddAffectMsg(t, e.spellRec(s, 0xA), e.spellAmount(spell), lvl, byte(call), e.spellRec(s, 8), saved, msg)
 		}
 	}
 	e.rv.dmgType = 0
@@ -301,7 +301,7 @@ func (e *Engine) o23_08C3(spell, level, call, dmg, dmgType int, msg string) {
 // spellTargetHook = lcall [DS:6B84].
 func (e *Engine) spellTargetHook(spell, mode int) bool {
 	if e.combatTargets {
-		return e.o14_20C3(spell, mode)
+		return e.chooseSpellTargets(spell, mode)
 	}
 	return e.spellTargetSetup(spell, mode)
 }
@@ -342,10 +342,10 @@ func (e *Engine) spellTargetSetup(spell, mode int) (ok bool) {
 	return
 }
 
-// o23_0F4F = ovr23:0F4F (side, msg): drops the targets of the other side
+// applySpellToSide = ovr23:0F4F (side, msg): drops the targets of the other side
 // (and, for spell 1 in combat, those with an enemy next to them), then
 // applies the spell record to the rest.
-func (e *Engine) o23_0F4F(side int, msg string) {
+func (e *Engine) applySpellToSide(side int, msg string) {
 	msg = cut(msg, 0x28)
 	e.spellFlag6820 = 1
 	for i := 1; i <= e.nSpellTargets; i++ {
@@ -355,7 +355,7 @@ func (e *Engine) o23_0F4F(side int, msg string) {
 			e.setTgt(i, nil)
 		}
 	}
-	e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, msg)
+	e.applySpell(int(e.curSpell), 0, 0, 0, 0, msg)
 }
 
 // CastSpell = ovr23:0C20 (spell, mode, b, var quit): casts the spell of
@@ -383,7 +383,7 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 		ok = false
 	}
 	if b != 0 && !e.usingItem {
-		e.o23_331A(caster, "casts", int(spell))
+		e.announceCast(caster, "casts", int(spell))
 	}
 	for ok {
 		*quit = e.spellTargetHook(int(spell), int(mode)) // the asm passes the caller's var
@@ -464,10 +464,10 @@ func (e *Engine) spellRemoveCurse() {
 }
 
 // fxCursed = ovr23:2604.
-func (e *Engine) fxCursed() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "has been cursed!") }
+func (e *Engine) fxCursed() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "has been cursed!") }
 
 // fxBlinking = ovr23:263D.
-func (e *Engine) fxBlinking() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is blinking") }
+func (e *Engine) fxBlinking() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is blinking") }
 
 // fxFireball = ovr23:266B: a burst of radius 2 round the target square,
 // level d6 of fire (spell 0x40 rolls its own level); the near list only
@@ -487,7 +487,7 @@ func (e *Engine) fxFireball() {
 		e.nSpellTargets = len(e.near)
 	}
 	e.combatCentre(e.tgtX, e.tgtY, 0, 8)
-	e.o23_08C3(int(e.curSpell), 0, 0, e.RollDice(lvl, 6), 9, "")
+	e.applySpell(int(e.curSpell), 0, 0, e.RollDice(lvl, 6), 9, "")
 }
 
 // removeAffectFromSide = ovr23:2764 (type, side, msg): the first casterLevel
@@ -508,7 +508,7 @@ func (e *Engine) removeAffectFromSide(typ, side int, msg string) {
 			e.setTgt(i, nil)
 		}
 	}
-	e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, msg)
+	e.applySpell(int(e.curSpell), 0, 0, 0, 0, msg)
 	for i := 1; i <= e.nSpellTargets; i++ {
 		if t := e.tgt(i); t != nil {
 			e.affectGroup(t, 0x12)
@@ -666,7 +666,7 @@ func (e *Engine) fxRestore() {
 // fxSpeedy = ovr23:2E02.
 func (e *Engine) fxSpeedy() {
 	if !e.CureAffect(e.spellTarget, 0x2A) {
-		e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is Speedy")
+		e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is Speedy")
 	}
 }
 
@@ -695,7 +695,7 @@ func (e *Engine) fxStronger() {
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
-	e.AddAffect(t, 0x26, e.o23_07D6(int(e.curSpell)), out, 1)
+	e.AddAffect(t, 0x26, e.spellAmount(int(e.curSpell)), out, 1)
 }
 
 // fxBolt = ovr23:2F4D: Dice(1,6)+0x14 on the target square, then a fixed
@@ -706,7 +706,7 @@ func (e *Engine) fxBolt() {
 }
 
 // fxParalyzed = ovr23:2F99.
-func (e *Engine) fxParalyzed() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is paralyzed") }
+func (e *Engine) fxParalyzed() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is paralyzed") }
 
 // fxHeal2d4 = ovr23:2FD0.
 func (e *Engine) fxHeal2d4() {
@@ -717,23 +717,23 @@ func (e *Engine) fxHeal2d4() {
 }
 
 // fxInvisible = ovr23:302A.
-func (e *Engine) fxInvisible() { e.o23_08C3(int(e.curSpell), 0, 0, 0, 0, "is invisible") }
+func (e *Engine) fxInvisible() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is invisible") }
 
 // fxDamage2d4 = ovr23:3058: 2d4+2 of damage type 8.
 func (e *Engine) fxDamage2d4() {
-	e.o23_08C3(int(e.curSpell), 0, 0, e.RollDice(2, 4)+2, 8, "")
+	e.applySpell(int(e.curSpell), 0, 0, e.RollDice(2, 4)+2, 8, "")
 }
 
 // fxNone = ovr23:3092: does nothing.
 func (e *Engine) fxNone() {}
 
 // fxReading = ovr23:30A2: level 0xFF, call 1.
-func (e *Engine) fxReading() { e.o23_08C3(int(e.curSpell), 0xFF, 1, 0, 0, "is Reading") }
+func (e *Engine) fxReading() { e.applySpell(int(e.curSpell), 0xFF, 1, 0, 0, "is Reading") }
 
-// o23_30D9 = ovr23:30D9 (char, affect, flag): the breath weapon affect
+// breathWeapon = ovr23:30D9 (char, affect, flag): the breath weapon affect
 // (type 0x58). Half the time (when DS:6DE3 is set) nothing happens; the
 // monster breathes at the target square with its hit points as damage.
-func (e *Engine) o23_30D9(c *Character, a *Affect, flag int) {
+func (e *Engine) breathWeapon(c *Character, a *Affect, flag int) {
 	if e.v6DE3 != 0 && e.Dice(1, 100) <= 0x32 {
 		return
 	}
@@ -790,9 +790,9 @@ func (e *Engine) scrollUsed(c *Character, it *Item, spell byte) {
 	}
 }
 
-// o23_331A = ovr23:331A (char, msg, spell): announces the cast, in the
+// announceCast = ovr23:331A (char, msg, spell): announces the cast, in the
 // side panel in combat, else in the message box.
-func (e *Engine) o23_331A(c *Character, msg string, spell int) {
+func (e *Engine) announceCast(c *Character, msg string, spell int) {
 	msg = cut(msg, 0x28)
 	if e.beginFlag == 5 {
 		e.CharMessage(c, "Casts a Spell", 0xA, true)
@@ -816,61 +816,61 @@ func (e *Engine) spellTableInit() {
 	e.usingItem = false
 	e.spellCaster = nil
 	e.itemsRedraw = true // DS:6821
-	affectHandlers[0x58] = func(e *Engine, c *Character, a *Affect, flag byte) { e.o23_30D9(c, a, int(flag)) }
-	e.spellFx[1] = e.o23_100F
-	e.spellFx[2] = e.o23_1040
-	e.spellFx[3] = e.o23_106B
-	e.spellFx[4] = e.o23_10A7
-	e.spellFx[5] = e.o23_10E9
-	e.spellFx[6] = e.o23_1123
-	e.spellFx[7] = e.o23_1123
-	e.spellFx[8] = e.o23_1162
-	e.spellFx[9] = e.o23_1190
-	e.spellFx[10] = e.o23_11DD
-	e.spellFx[11] = e.o23_10E9
-	e.spellFx[12] = e.o23_12A5
-	e.spellFx[13] = e.o23_136E
-	e.spellFx[14] = e.o23_13D8
-	e.spellFx[15] = e.o23_1439
-	e.spellFx[16] = e.o23_1123
-	e.spellFx[17] = e.o23_1123
-	e.spellFx[18] = e.o23_10E9
-	e.spellFx[19] = e.o23_1499
-	e.spellFx[20] = e.o23_14C7
-	e.spellFx[21] = e.o23_151B
-	e.spellFx[22] = e.o23_10E9
-	e.spellFx[23] = e.o23_1658
-	e.spellFx[24] = e.o23_17E9
-	e.spellFx[25] = e.o23_1822
-	e.spellFx[26] = e.o23_185B
-	e.spellFx[27] = e.o23_190F
-	e.spellFx[28] = e.o23_19C3
-	e.spellFx[29] = e.o23_10E9
-	e.spellFx[30] = e.o23_1A16
-	e.spellFx[31] = e.o23_1A4F
-	e.spellFx[32] = e.o23_1A8A
-	e.spellFx[33] = e.o23_1ACC
-	e.spellFx[34] = e.o23_1B11
-	e.spellFx[35] = e.o23_1F41
-	e.spellFx[36] = e.o23_206F
-	e.spellFx[37] = e.o23_2217
-	e.spellFx[38] = e.o23_225D
-	e.spellFx[39] = e.o23_232F
-	e.spellFx[40] = e.o23_234C
-	e.spellFx[41] = e.o23_2385
-	e.spellFx[42] = e.o23_24D6
+	affectHandlers[0x58] = func(e *Engine, c *Character, a *Affect, flag byte) { e.breathWeapon(c, a, int(flag)) }
+	e.spellFx[1] = e.spellBless
+	e.spellFx[2] = e.spellBane
+	e.spellFx[3] = e.spellCureLightWounds
+	e.spellFx[4] = e.spellDamage1d8
+	e.spellFx[5] = e.spellAffected
+	e.spellFx[6] = e.spellProtected
+	e.spellFx[7] = e.spellProtected
+	e.spellFx[8] = e.spellColdResist
+	e.spellFx[9] = e.spellDamageLevel
+	e.spellFx[10] = e.spellCharmPerson
+	e.spellFx[11] = e.spellAffected
+	e.spellFx[12] = e.spellStrengthPercent
+	e.spellFx[13] = e.spellReduce
+	e.spellFx[14] = e.spellFriends
+	e.spellFx[15] = e.spellMagicMissile
+	e.spellFx[16] = e.spellProtected
+	e.spellFx[17] = e.spellProtected
+	e.spellFx[18] = e.spellAffected
+	e.spellFx[19] = e.spellShield
+	e.spellFx[20] = e.spellBurningHands
+	e.spellFx[21] = e.spellSleep
+	e.spellFx[22] = e.spellAffected
+	e.spellFx[23] = e.spellHold
+	e.spellFx[24] = e.spellFireResist
+	e.spellFx[25] = e.spellSilence
+	e.spellFx[26] = e.spellRaiseDead
+	e.spellFx[27] = e.spellUndeadTargets
+	e.spellFx[28] = e.spellApplyAnd17
+	e.spellFx[29] = e.spellAffected
+	e.spellFx[30] = e.spellInvisible
+	e.spellFx[31] = e.spellKnock
+	e.spellFx[32] = e.spellMirrorImage
+	e.spellFx[33] = e.spellWeaken
+	e.spellFx[34] = e.spellStinkingCloud
+	e.spellFx[35] = e.spellEnlarge
+	e.spellFx[36] = e.spellAnimateDead
+	e.spellFx[37] = e.spellCureBlind
+	e.spellFx[38] = e.spellBlind
+	e.spellFx[39] = e.spellCureDisease
+	e.spellFx[40] = e.spellDisease
+	e.spellFx[41] = e.spellDispel
+	e.spellFx[42] = e.spellPrayer
 	e.spellFx[43] = e.spellRemoveCurse
 	e.spellFx[44] = e.fxCursed
 	e.spellFx[45] = e.fxBlinking
-	e.spellFx[46] = e.o23_2385
+	e.spellFx[46] = e.spellDispel
 	e.spellFx[47] = e.fxFireball
 	e.spellFx[48] = e.fxHaste
-	e.spellFx[49] = e.o23_1658
-	e.spellFx[50] = e.o23_1A16
+	e.spellFx[49] = e.spellHold
+	e.spellFx[50] = e.spellInvisible
 	e.spellFx[51] = e.fxLightning
-	e.spellFx[52] = e.o23_1123
-	e.spellFx[53] = e.o23_1123
-	e.spellFx[54] = e.o23_1123
+	e.spellFx[52] = e.spellProtected
+	e.spellFx[53] = e.spellProtected
+	e.spellFx[54] = e.spellProtected
 	e.spellFx[55] = e.fxSlow
 	e.spellFx[56] = e.fxRestore
 	e.spellFx[57] = e.fxSpeedy
@@ -886,5 +886,5 @@ func (e *Engine) spellTableInit() {
 	e.spellFx[67] = e.fxReading
 }
 
-// o23_37B0 = ovr23:37B0: empty (entry 0).
-func (e *Engine) o23_37B0() {}
+// spellNop = ovr23:37B0: empty (entry 0).
+func (e *Engine) spellNop() {}

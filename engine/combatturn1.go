@@ -7,14 +7,14 @@ package engine
 // ds2 reads the word at DS:ofs of the exe image.
 
 // turnSetup = ovr14:0000 (char): fill the combat block for a new round.
-func (e *Engine) o14_0000(c *Character) {
+func (e *Engine) turnSetup(c *Character) {
 	cb := c.Combat
 	cb.Spell, cb.CanCast, cb.CanUse, cb.Attacked, cb.AttackSlot = 0, 1, 1, 0, 2
-	e.o14_0D23(c)
+	e.setSpeed(c)
 	e.v681A = c.BaseAttack[1]
 	e.v681D = 0
 	e.affectGroup(c, 0x12)
-	c.Attacks[1] = byte(e.o14_0E52(e.v681A))
+	c.Attacks[1] = byte(e.halfRoundUp(e.v681A))
 	cb.Sweeps = c.FightLevel
 	if c.Okay != 0 {
 		cb.Delay = byte(int(dexMissile(c.Stats[statDex])) + e.Dice(1, 6))
@@ -30,12 +30,12 @@ func (e *Engine) o14_0000(c *Character) {
 	} else {
 		cb.Delay = 0
 	}
-	cb.Moves = byte(e.o14_0123(c))
+	cb.Moves = byte(e.moveRate(c))
 }
 
-// o14_0123 (char): movement rate of the turn (half of it is kept in +0x113
-// by o14_0D23); the affects of group 0x12 may change it.
-func (e *Engine) o14_0123(c *Character) int {
+// moveRate = ovr14:0123 (char): movement rate of the turn (half of it is kept in +0x113
+// by setSpeed); the affects of group 0x12 may change it.
+func (e *Engine) moveRate(c *Character) int {
 	v := c.Move
 	if c.Side == 0 {
 		v += byte(e.game.PartyMove)
@@ -50,10 +50,10 @@ func (e *Engine) o14_0123(c *Character) int {
 	return int(e.v681A)
 }
 
-// o14_0191 (att, vic, slot): damage roll of the attack slot (1 or 2),
+// damageRoll = ovr14:0191 (att, vic, slot): damage roll of the attack slot (1 or 2),
 // tripled-or-so for a backstab, then the
 // affects of groups 4 (attacker) and 5 (victim) may change DS:6818.
-func (e *Engine) o14_0191(a, b *Character, slot int) {
+func (e *Engine) damageRoll(a, b *Character, slot int) {
 	d := int(int8(a.Bonus[slot-1])) + e.RollDice(int(a.Dice[slot-1]), int(a.Sides[slot-1]))
 	e.rv.damage = byte(d)
 	// (the original compares the byte with 0 "above or equal": never clamps)
@@ -68,10 +68,10 @@ func (e *Engine) o14_0191(a, b *Character, slot int) {
 	e.affectGroup(b, 5)
 }
 
-// o14_02F9 (att, vic, kind, damage, shown, hit): the attack text. kind 1 is
+// attackText = ovr14:02F9 (att, vic, kind, damage, shown, hit): the attack text. kind 1 is
 // a plain hit, 2 a backstab, 3 a kill of a helpless target; damage is
 // applied, shown printed; hit 0 is a miss.
-func (e *Engine) o14_02F9(a, b *Character, kind, damage, shown, hit int) {
+func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 	var s string
 	switch kind {
 	case 2:
@@ -135,9 +135,9 @@ func (e *Engine) o14_02F9(a, b *Character, kind, damage, shown, hit int) {
 	e.ClearMessageArea()
 }
 
-// o14_0627 (char): the enemies next to a mover that were waiting (+7) lose
+// waitingFoesStrike = ovr14:0627 (char): the enemies next to a mover that were waiting (+7) lose
 // their reaction, turn to it and attack it.
-func (e *Engine) o14_0627(c *Character) {
+func (e *Engine) waitingFoesStrike(c *Character) {
 	n := e.nearEnemies(c, 1)
 	for i := 1; i <= n; i++ {
 		if c.Okay == 0 {
@@ -149,13 +149,13 @@ func (e *Engine) o14_0627(c *Character) {
 		}
 		e.combatCentre(e.combatX(c), e.combatY(c), 2, 8)
 		t.Combat.Guarding = 0
-		e.o14_17F6(t, c)
-		e.o14_1884(t, c, 0, nil)
+		e.countAttackTurn(t, c)
+		e.fullAttack(t, c, 0, nil)
 	}
 }
 
-// o14_0712 (dir, char): step one square (2 movement points, 3 diagonally).
-func (e *Engine) o14_0712(c *Character, dir int) {
+// stepSquare = ovr14:0712 (dir, char): step one square (2 movement points, 3 diagonally).
+func (e *Engine) stepSquare(c *Character, dir int) {
 	cb := c.Combat
 	cost := byte(2)
 	if dir&1 != 0 {
@@ -183,15 +183,15 @@ func (e *Engine) o14_0712(c *Character, dir int) {
 	e.combatCentre(int(nx), int(ny), margin, 8)
 	cb.Attackers, cb.Flank = 0, 0
 	e.PlaySound(sndStep)
-	e.o14_0627(c)
+	e.waitingFoesStrike(c)
 	if c.Okay == 0 || e.hasAffect286B(c) {
 		cb.Moves = 0
 	}
 }
 
-// o14_08B2 (dir, char): the mover steps (virtually) one square in dir; the
+// freeAttacksOnLeave = ovr14:08B2 (dir, char): the mover steps (virtually) one square in dir; the
 // enemies that were next to it and no longer are get a free attack.
-func (e *Engine) o14_08B2(c *Character, dir int) {
+func (e *Engine) freeAttacksOnLeave(c *Character, dir int) {
 	var lst [0x0D]byte // bp-0xD+i, i = 1..: the DS:6DE4 list before the move
 	idx := e.combatIndex(c)
 	n := e.nearEnemies(c, 1)
@@ -223,7 +223,7 @@ func (e *Engine) o14_08B2(c *Character, dir int) {
 			continue
 		}
 		t := e.combatant(lst[i])
-		if e.hasAffect286B(t) || !e.o14_1085(t, c) {
+		if e.hasAffect286B(t) || !e.mayActAgainst(t, c) {
 			continue
 		}
 		if e.FindAffect(t, 0x4B) != nil || e.FindAffect(t, 0x4A) != nil {
@@ -254,7 +254,7 @@ func (e *Engine) o14_08B2(c *Character, dir int) {
 			}
 			tcb.AttackSlot = byte(w)
 			saved := t.Combat.Target
-			e.o14_1884(t, c, 1, nil)
+			e.fullAttack(t, c, 1, nil)
 			attacked = true
 			t.Combat.Target = saved
 			if c.Okay != 0 {
@@ -264,14 +264,14 @@ func (e *Engine) o14_08B2(c *Character, dir int) {
 	}
 }
 
-// o14_0C6A (char) bool: try to run away; "Got Away" removes the character.
-func (e *Engine) o14_0C6A(c *Character) bool {
+// tryFlee = ovr14:0C6A (char) bool: try to run away; "Got Away" removes the character.
+func (e *Engine) tryFlee(c *Character) bool {
 	away := false
 	if e.nearEnemies(c, 0xFF) == 0 {
 		away = true
 	} else {
-		a := byte(e.o14_0123(c)) >> 1
-		b := byte(e.o14_2908(c))
+		a := byte(e.moveRate(c)) >> 1
+		b := byte(e.fastestFoeMove(c))
 		if b < a {
 			away = true
 		} else if b == a && e.Dice(1, 2) == 1 {
@@ -286,9 +286,9 @@ func (e *Engine) o14_0C6A(c *Character) bool {
 	return e.clearCombatInfo(c)
 }
 
-// o14_0D23 (char): the character's speed in +0x113 from its movement base
+// setSpeed = ovr14:0D23 (char): the character's speed in +0x113 from its movement base
 // (+0xA1) or the readied weapon's speed (DS:5582 record +5, at least 2).
-func (e *Engine) o14_0D23(c *Character) {
+func (e *Engine) setSpeed(c *Character) {
 	flag := false
 	old := c.Attacks[0]
 	c.Attacks[0] = c.BaseAttack[0]
@@ -308,7 +308,7 @@ func (e *Engine) o14_0D23(c *Character) {
 	}
 	e.v681D = 0
 	e.affectGroup(c, 0x12)
-	r := byte(e.o14_0E52(e.v681A))
+	r := byte(e.halfRoundUp(e.v681A))
 	if flag && it != nil {
 		w := byte(1)
 		if it.Count > w {
@@ -325,18 +325,18 @@ func (e *Engine) o14_0D23(c *Character) {
 	c.Attacks[0] = r
 }
 
-// o14_0E52 (v): half of v, rounded up when DS:6DE3 is odd.
-func (e *Engine) o14_0E52(v byte) int {
+// halfRoundUp = ovr14:0E52 (v): half of v, rounded up when DS:6DE3 is odd.
+func (e *Engine) halfRoundUp(v byte) int {
 	if e.v6DE3&1 != 0 {
 		v++
 	}
 	return int(v >> 1)
 }
 
-// o14_0E82 (att, vic) bool: a fighter with more attacks than... sweeps: the
+// sweep = ovr14:0E82 (att, vic) bool: a fighter with more attacks than... sweeps: the
 // attacker (fewer attacks than +5 allows, victim not a "big" target) hits
 // several adjacent weak enemies, one attack each.
-func (e *Engine) o14_0E82(a, b *Character) bool {
+func (e *Engine) sweep(a, b *Character) bool {
 	res := false
 	acb := a.Combat
 	if a.Attacks[0] < acb.Sweeps && b.MaxLevel == 0 && e.rangeTo(a, b) == 1 {
@@ -365,9 +365,9 @@ func (e *Engine) o14_0E82(a, b *Character) bool {
 				if cnt > 0 {
 					t := e.combatant(e.targets[i])
 					if t.MaxLevel == 0 {
-						e.o14_17F6(a, t)
+						e.countAttackTurn(a, t)
 						a.Attacks[0] = 1
-						e.o14_1884(a, t, 0, nil)
+						e.fullAttack(a, t, 0, nil)
 						cnt--
 					}
 				}
@@ -378,9 +378,9 @@ func (e *Engine) o14_0E82(a, b *Character) bool {
 	return res
 }
 
-// o14_1085 (t, c) bool: may t act against c? Affect group 1 of c can veto
+// mayActAgainst = ovr14:1085 (t, c) bool: may t act against c? Affect group 1 of c can veto
 // (DS:681E); then group 0 of t is run with c as its target.
-func (e *Engine) o14_1085(t, c *Character) bool {
+func (e *Engine) mayActAgainst(t, c *Character) bool {
 	if c == nil {
 		return false
 	}
@@ -398,8 +398,8 @@ func (e *Engine) o14_1085(t, c *Character) bool {
 	return e.v681E == 0
 }
 
-// o14_116A (char): a cleric turns undead (ovr14:116A).
-func (e *Engine) o14_116A(c *Character) {
+// clericTurnUndead = ovr14:116A (char): a cleric turns undead (ovr14:116A).
+func (e *Engine) clericTurnUndead(c *Character) {
 	e.CharMessage(c, "turns undead...", 0xA, false)
 	e.ClearRow24()
 	e.MsgDelay()
@@ -418,7 +418,7 @@ func (e *Engine) o14_116A(c *Character) {
 		cls = 10
 	}
 	var t *Character
-	for e.o14_1351(c, &t) && hd > 0 && !stop {
+	for e.weakestUnturned(c, &t) && hd > 0 && !stop {
 		x := int(turnUndead[t.Undead][cls])
 		ax := x
 		if ax < 0 {
@@ -457,9 +457,9 @@ func (e *Engine) o14_116A(c *Character) {
 	e.ClearMessageArea()
 }
 
-// o14_1351 (var out, char) bool: the weakest (lowest +0x76 > 0) enemy not
+// weakestUnturned = ovr14:1351 (var out, char) bool: the weakest (lowest +0x76 > 0) enemy not
 // yet turned, within reach.
-func (e *Engine) o14_1351(c *Character, out **Character) bool {
+func (e *Engine) weakestUnturned(c *Character, out **Character) bool {
 	best := int8(0xD)
 	*out = nil
 	n := e.nearEnemies(c, 0xFF)
@@ -475,9 +475,9 @@ func (e *Engine) o14_1351(c *Character, out **Character) bool {
 	return found
 }
 
-// o14_1406 (att, vic, w, var done): the attacker's attack slots against the
+// attackSlots = ovr14:1406 (att, vic, w, var done): the attacker's attack slots against the
 // victim; done is 1 when the attacker has used all its attacks.
-func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
+func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 	acb := a.Combat
 	done = false
 	e.hits6822[1], e.hits6822[2] = 0, 0
@@ -491,7 +491,7 @@ func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
 			acb.AttackSlot--
 		}
 		e.shots6E2C[acb.AttackSlot]++
-		e.o14_02F9(a, b, 3, (int(b.HP)+5)&0xFF, 1, 1)
+		e.attackText(a, b, 3, (int(b.HP)+5)&0xFF, 1, 1)
 		e.removeInvisibility(a)
 		for s := 1; s <= 2; s++ {
 			a.Attacks[s-1] = 0
@@ -512,7 +512,7 @@ func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
 		if e.rangedFacing(a, b) {
 			need = b.AC[1] - 2
 		} else {
-			if b.Combat.Attackers > 1 && byte(e.o14_263D(a, b)) == b.Combat.Facing && b.Combat.Flank > 4 {
+			if b.Combat.Attackers > 1 && byte(e.directionTo(a, b)) == b.Combat.Facing && b.Combat.Flank > 4 {
 				w = 1
 			}
 			if w != 0 {
@@ -521,7 +521,7 @@ func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
 			need = b.AC[hand]
 		}
 		bonus := int(need)
-		e.o14_1B1E(a, b, &bonus)
+		e.rangePenalty(a, b, &bonus)
 		need = byte(bonus)
 		mode := 0
 		if w != 0 {
@@ -539,8 +539,8 @@ func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
 					e.hits6822[s]++
 					e.PlaySound(sndBump)
 					any = true
-					e.o14_0191(a, b, s)
-					e.o14_02F9(a, b, mode, int(e.rv.damage), int(e.rv.damage), 1)
+					e.damageRoll(a, b, s)
+					e.attackText(a, b, mode, int(e.rv.damage), int(e.rv.damage), 1)
 					if b.Okay != 0 {
 						e.affectGroup(a, s+1)
 					}
@@ -552,7 +552,7 @@ func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
 		}
 		if !any {
 			e.PlaySound(sndMiss)
-			e.o14_02F9(a, b, mode, 0, 0, 0)
+			e.attackText(a, b, mode, 0, 0, 0)
 		}
 		done = true
 		for s := 1; s <= 2; s++ {
@@ -568,31 +568,31 @@ func (e *Engine) o14_1406(a, b *Character, w int) (done bool) {
 	return
 }
 
-// o14_17F6 (att, vic): the victim counts one more attack and turns towards
+// countAttackTurn = ovr14:17F6 (att, vic): the victim counts one more attack and turns towards
 // the attacker (the turned amount accumulates in +0x12).
-func (e *Engine) o14_17F6(att, vic *Character) {
+func (e *Engine) countAttackTurn(att, vic *Character) {
 	cb := vic.Combat
 	cb.Attackers++
-	d := (e.o14_263D(vic, att) - int(cb.Facing) + 8) % 8
+	d := (e.directionTo(vic, att) - int(cb.Facing) + 8) % 8
 	if d > 4 {
 		d = 8 - d
 	}
 	cb.Flank = byte((int(cb.Flank) + d) % 8)
 }
 
-// o14_1884 (att, vic, flag, item, var done): a full attack of att on vic
-// (turning both, then the slots of o14_1406). item is a thrown item that is
+// fullAttack = ovr14:1884 (att, vic, flag, item, var done): a full attack of att on vic
+// (turning both, then the slots of attackSlots). item is a thrown item that is
 // spent; done is set when the attacker's turn ends.
-func (e *Engine) o14_1884(a, b *Character, flag int, it *Item) (done bool) {
+func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 	if b.Combat.Attackers < 3 && flag == 0 {
-		dir := byte(e.o14_263D(b, a))
+		dir := byte(e.directionTo(b, a))
 		if e.combatOnScreen(b, false) {
 			e.combatTurn(b, dir, 0, false)
 		} else {
 			b.Combat.Facing = dir
 		}
 	}
-	dir := byte(e.o14_263D(a, b))
+	dir := byte(e.directionTo(a, b))
 	e.combatPanel(a)
 	e.combatTurn(a, dir, 1, false)
 	a.Combat.Target = b
@@ -611,7 +611,7 @@ func (e *Engine) o14_1884(a, b *Character, flag int, it *Item) (done bool) {
 				e.partySel = i
 			}
 		}
-		done = e.o14_1406(a, b, flag)
+		done = e.attackSlots(a, b, flag)
 		if it != nil {
 			if it.Count > 0 {
 				it.Count -= e.shots6E2C[1]
@@ -642,9 +642,9 @@ func (e *Engine) o14_1884(a, b *Character, flag int, it *Item) (done bool) {
 	return
 }
 
-// o14_1B1E (att, vic, var need): the attacker's range band: every full
+// rangePenalty = ovr14:1B1E (att, vic, var need): the attacker's range band: every full
 // weapon range band beyond the first adds 2, then 3, to the number to hit.
-func (e *Engine) o14_1B1E(a, b *Character, need *int) {
+func (e *Engine) rangePenalty(a, b *Character, need *int) {
 	d := e.rangeTo(a, b)
 	f := d
 	if e.rangedWeapon(a) {

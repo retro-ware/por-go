@@ -19,7 +19,7 @@ func (e *Engine) Combat() {
 	for !done {
 		e.countSides()
 		for _, c := range e.party {
-			e.o14_0000(c)
+			e.turnSetup(c)
 		}
 		e.game.Surprise = 0
 		for c := e.nextActor(); c != nil; c = e.nextActor() {
@@ -83,7 +83,7 @@ func (e *Engine) takeTurn(c *Character) {
 	e.affectGroup(c, 0xF)
 	if int8(ci.Delay) > 0 {
 		if c.Auto != 0 {
-			e.o10_000F(c)
+			e.computerTurn(c)
 		} else {
 			e.playerTurn(c)
 		}
@@ -130,7 +130,7 @@ func (e *Engine) playerTurn(c *Character) {
 			done = e.moveAttack(c)
 		case 'V':
 			done = e.ViewCharacter() // ovr20:0AB3 (var done): ItemsMenu sets it
-			e.o14_0D23(c)
+			e.setSpeed(c)
 			if !done {
 				e.combatUseHook()
 			}
@@ -146,13 +146,13 @@ func (e *Engine) playerTurn(c *Character) {
 			var aim aimTarget
 			var ok bool
 			e.ext.enemiesOnly = true // extra: Next/Prev pass over allies
-			e.o14_3558(c, 0xFF, 1, 0, &ok, &aim)
+			e.playerAim(c, 0xFF, 1, 0, &ok, &aim)
 			e.ext.enemiesOnly = false
 			e.ext.autoAim = nil
 			done = ok
 		case 'I':
 			done = e.ItemsMenu() // ovr20:0EF8 (var done)
-			e.o14_0D23(c)
+			e.setSpeed(c)
 			if !done {
 				e.combatUseHook()
 			}
@@ -161,12 +161,12 @@ func (e *Engine) playerTurn(c *Character) {
 			}
 		case 'C':
 			var ok bool
-			e.o14_2414(0, 0, &ok)
+			e.castSpell(0, 0, &ok)
 			done = ok
 		case 'L':
 			e.showBattleLog()
 		case 'T':
-			e.o14_116A(c)
+			e.clericTurnUndead(c)
 			done = e.clearCombatInfo(c)
 		case 'Q':
 			e.quickOne(c)
@@ -174,7 +174,7 @@ func (e *Engine) playerTurn(c *Character) {
 			e.ClearKeyboard()
 			e.Delay(200)
 			done = true
-			e.o10_000F(c)
+			e.computerTurn(c)
 		case 'D':
 			done = e.otherMenu(c)
 		case 'G': // extra: the Done menu's, from the main menu (combatMenu offers them only when they apply)
@@ -207,7 +207,7 @@ func (e *Engine) playerTurn(c *Character) {
 			e.Delay(200)
 			done = true
 		case '-':
-			if e.o14_3B93() {
+			if e.stingCheat() {
 				e.combatRedrawChar(c, 3, 0)
 				done = true
 			} else {
@@ -243,7 +243,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 		m += "Cast "
 	}
 	var undead *Character
-	if int8(c.Levels[clsCleric]) > 0 && ci.TurnUsed == 0 && e.o14_1351(c, &undead) { // extra: only with undead to turn
+	if int8(c.Levels[clsCleric]) > 0 && ci.TurnUsed == 0 && e.weakestUnturned(c, &undead) { // extra: only with undead to turn
 		m += "Turn "
 	}
 	m += "Quick Done" // extra: L still opens the Log
@@ -305,7 +305,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 		rng = int(e.baseItem(w.Type, 12)) - 1
 	}
 	for i := 1; i <= e.ncomb; i++ {
-		if t := e.combatant(byte(i)); t != nil && t.Side != c.Side && t.Okay != 0 && e.cpos[i].size > 0 && e.o14_1085(c, t) &&
+		if t := e.combatant(byte(i)); t != nil && t.Side != c.Side && t.Okay != 0 && e.cpos[i].size > 0 && e.mayActAgainst(c, t) &&
 			(e.canTarget(c, t, rng, 1) || e.pathNextTo(c, t, reach) != nil) {
 			e.snap.targets = append(e.snap.targets, i)
 		}
@@ -336,7 +336,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 func (e *Engine) endRound() (done bool) {
 	e.AdvanceClock(1, 1)
 	e.v6DE3++
-	e.o14_2879()
+	e.foesHealthPercent()
 	for _, c := range e.party {
 		e.affectGroup(c, 0x13)
 		e.stinkingCloud(c)
@@ -459,19 +459,19 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 		case g == 0:
 			switch e.YesNo(0xD, 0xA, 0xF, "Flee:") {
 			case 'Y':
-				done = e.o14_0C6A(c)
+				done = e.tryFlee(c)
 			case 'N':
 				done = false
 			}
 		case e.groundInfo(g)[0] > ci.Moves:
 			e.BottomMessage("Blocked")
 		default:
-			e.o14_08B2(c, d)
+			e.freeAttacksOnLeave(c, d)
 			if c.Okay == 0 {
 				done = e.clearCombatInfo(c)
 				continue
 			}
-			e.o14_0712(c, d)
+			e.stepSquare(c, d)
 			if c.Okay == 0 {
 				done = e.clearCombatInfo(c)
 			}
@@ -602,7 +602,7 @@ func (e *Engine) throwItem(c *Character) (done bool) {
 	if it.Readied != 0 {
 		var aim aimTarget
 		e.ext.enemiesOnly = true
-		e.o14_3558(c, 0xFF, 1, 0, &done, &aim)
+		e.playerAim(c, 0xFF, 1, 0, &done, &aim)
 		e.ext.enemiesOnly = false
 		if slices.Contains(c.Items, it) && it.Readied != 0 {
 			e.readyItem(it)
@@ -646,15 +646,15 @@ func (e *Engine) attackTarget(c, t *Character, done bool) bool {
 		e.BottomMessage("Not with that weapon")
 		return done
 	}
-	if !e.o14_2998(c, t) {
+	if !e.mayAttack(c, t) {
 		return done
 	}
 	c.Combat.Target = t
-	if e.o14_0E82(c, t) {
+	if e.sweep(c, t) {
 		return true
 	}
-	e.o14_17F6(c, t)
-	return e.o14_1884(c, t, 0, nil)
+	e.countAttackTurn(c, t)
+	return e.fullAttack(c, t, 0, nil)
 }
 
 // otherMenu = ovr09:0E45 (char, var done): Done's submenu.
@@ -900,14 +900,14 @@ func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
 }
 
 // foeInSight (extra): is there a foe among the ones c's Aim cycles
-// through (o14_3558's list) that c may act against? Without one the
+// through (playerAim's list) that c may act against? Without one the
 // cycle runs over the party, the aimer too.
 func (e *Engine) foeInSight(c *Character) bool {
 	saved := e.near
 	defer func() { e.near = saved }()
 	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c))
 	for _, n := range e.near {
-		if f := e.combatant(n.index); f != nil && f.Side != c.Side && e.o14_1085(c, f) {
+		if f := e.combatant(n.index); f != nil && f.Side != c.Side && e.mayActAgainst(c, f) {
 			return true
 		}
 	}

@@ -35,7 +35,7 @@ func (e *Engine) combatSetup() {
 	for _, c := range e.party {
 		e.affectGroup(c, 8)
 	}
-	e.o14_2879()
+	e.foesHealthPercent()
 	e.beginFlag = 5
 }
 

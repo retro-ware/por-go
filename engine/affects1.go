@@ -131,14 +131,14 @@ func (e *Engine) paralyseTarget(c *Character, time int, extra byte) {
 	}
 }
 
-// o13_010D: to-hit and DS:6825 up.
-func (e *Engine) o13_010D(c *Character, a *Affect, flag byte) {
+// hitBonusUp = ovr13:010D: to-hit and DS:6825 up.
+func (e *Engine) hitBonusUp(c *Character, a *Affect, flag byte) {
 	e.v6825 += 5
 	e.rv.hitRoll++
 }
 
-// o13_011D: the reverse.
-func (e *Engine) o13_011D(c *Character, a *Affect, flag byte) {
+// hitBonusDown = ovr13:011D: the reverse.
+func (e *Engine) hitBonusDown(c *Character, a *Affect, flag byte) {
 	if e.v6825 < 5 {
 		e.v6825 = 0
 	} else {
@@ -147,22 +147,22 @@ func (e *Engine) o13_011D(c *Character, a *Affect, flag byte) {
 	e.rv.hitRoll--
 }
 
-// o13_013B: +2 to hit and damage against a target of race 4.
-func (e *Engine) o13_013B(c *Character, a *Affect, flag byte) {
+// bonusVsRace4 = ovr13:013B: +2 to hit and damage against a target of race 4.
+func (e *Engine) bonusVsRace4(c *Character, a *Affect, flag byte) {
 	if targetOf(c).Kind == 4 {
 		e.rv.hitRoll += 2
 		e.rv.damage += 2
 	}
 }
 
-// o13_017F: "starts to train".
-func (e *Engine) o13_017F(c *Character, a *Affect, flag byte) {
+// startsToTrain = ovr13:017F: "starts to train".
+func (e *Engine) startsToTrain(c *Character, a *Affect, flag byte) {
 	e.CharMessage(c, "starts to train", 0xA, true)
 	e.AddAffect(c, 7, 0xA8C0, 0xFF, 1)
 }
 
-// o13_01C3: bonus by the target's race, fire-ish magic damage.
-func (e *Engine) o13_01C3(c *Character, a *Affect, flag byte) {
+// bonusByTargetRace = ovr13:01C3: bonus by the target's race, fire-ish magic damage.
+func (e *Engine) bonusByTargetRace(c *Character, a *Affect, flag byte) {
 	var k byte
 	switch targetOf(c).Kind {
 	case 0xA:
@@ -177,8 +177,8 @@ func (e *Engine) o13_01C3(c *Character, a *Affect, flag byte) {
 	e.rv.dmgType = 9
 }
 
-// o13_0233: "is hardier" (the trained Constitution grows).
-func (e *Engine) o13_0233(c *Character, a *Affect, flag byte) {
+// isHardier = ovr13:0233: "is hardier" (the trained Constitution grows).
+func (e *Engine) isHardier(c *Character, a *Affect, flag byte) {
 	e.CharMessage(c, "is hardier", 0xA, true)
 	c.Stats[statCon]++
 	if c.Stats[statCon] >= 0x14 {
@@ -214,32 +214,32 @@ func (e *Engine) o13_0233(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_0377: the selected character's class 2/5/8: save +2, to-hit -2.
-func (e *Engine) o13_0377(c *Character, a *Affect, flag byte) {
+// saveBonusClass258 = ovr13:0377: the selected character's class 2/5/8: save +2, to-hit -2.
+func (e *Engine) saveBonusClass258(c *Character, a *Affect, flag byte) {
 	if v := e.selected().Alignment; v == 2 || v == 5 || v == 8 {
 		e.rv.save += 2
 		e.rv.hitRoll -= 2
 	}
 }
 
-// o13_03AC: the same for 0/3/6.
-func (e *Engine) o13_03AC(c *Character, a *Affect, flag byte) {
+// saveBonusClass036 = ovr13:03AC: the same for 0/3/6.
+func (e *Engine) saveBonusClass036(c *Character, a *Affect, flag byte) {
 	if v := e.selected().Alignment; v == 0 || v == 3 || v == 6 {
 		e.rv.save += 2
 		e.rv.hitRoll -= 2
 	}
 }
 
-// o13_03E1: cold damage halved, save +3.
-func (e *Engine) o13_03E1(c *Character, a *Affect, flag byte) {
+// resistColdHalf = ovr13:03E1: cold damage halved, save +3.
+func (e *Engine) resistColdHalf(c *Character, a *Affect, flag byte) {
 	if e.rv.dmgType&2 != 0 {
 		e.rv.damage >>= 1
 		e.rv.save += 3
 	}
 }
 
-// o13_0400: charm: the side follows the affect.
-func (e *Engine) o13_0400(c *Character, a *Affect, flag byte) {
+// charmSide = ovr13:0400: charm: the side follows the affect.
+func (e *Engine) charmSide(c *Character, a *Affect, flag byte) {
 	if flag != 0 {
 		c.Side = (a.Data & 0x40) >> 6
 		if c.Control == 0xB3 {
@@ -260,8 +260,8 @@ func (e *Engine) o13_0400(c *Character, a *Affect, flag byte) {
 	e.v6825 = 0x64
 }
 
-// o13_04BA: strength affects (the best one counts).
-func (e *Engine) o13_04BA(c *Character, a *Affect, flag byte) {
+// bestStrength = ovr13:04BA: strength affects (the best one counts).
+func (e *Engine) bestStrength(c *Character, a *Affect, flag byte) {
 	if a.Data > 0x7F {
 		return
 	}
@@ -282,11 +282,11 @@ func (e *Engine) o13_04BA(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_05D6.
-func (e *Engine) o13_05D6(c *Character, a *Affect, flag byte) { c.Stats[statCha] = a.Data }
+// setCharisma = ovr13:05D6.
+func (e *Engine) setCharisma(c *Character, a *Affect, flag byte) { c.Stats[statCha] = a.Data }
 
-// o13_05EB: poison: damage each round.
-func (e *Engine) o13_05EB(c *Character, a *Affect, flag byte) {
+// poisonDamage = ovr13:05EB: poison: damage each round.
+func (e *Engine) poisonDamage(c *Character, a *Affect, flag byte) {
 	if e.addAffectNow(c, 0xF, a.Data, 0xA) && c.HP > 1 {
 		e.rv.dmgType = 0
 		e.Damage(c, 1, 0, false)
@@ -296,11 +296,11 @@ func (e *Engine) o13_05EB(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_0647: nothing.
-func (e *Engine) o13_0647(c *Character, a *Affect, flag byte) {}
+// affectNop0647 = ovr13:0647: nothing.
+func (e *Engine) affectNop0647(c *Character, a *Affect, flag byte) {}
 
-// o13_064E: armour class at least 0x39, save +1.
-func (e *Engine) o13_064E(c *Character, a *Affect, flag byte) {
+// armourAtLeast = ovr13:064E: armour class at least 0x39, save +1.
+func (e *Engine) armourAtLeast(c *Character, a *Affect, flag byte) {
 	if c.AC[0] < 0x39 {
 		c.AC[0] = 0x39
 	}
@@ -310,24 +310,24 @@ func (e *Engine) o13_064E(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_0679: +1 to hit per matching name in DS:0332 (race 1, class 1).
-func (e *Engine) o13_0679(c *Character, a *Affect, flag byte) {
+// hitBonusVsNames = ovr13:0679: +1 to hit per matching name in DS:0332 (race 1, class 1).
+func (e *Engine) hitBonusVsNames(c *Character, a *Affect, flag byte) {
 	t := targetOf(c)
 	if t.Kind == 1 && t.Size == 1 {
 		e.rv.hitRoll += int8(e.nameMatches(t, hitNames1[:]))
 	}
 }
 
-// o13_06E4: fire damage halved, save +3.
-func (e *Engine) o13_06E4(c *Character, a *Affect, flag byte) {
+// resistFireHalf = ovr13:06E4: fire damage halved, save +3.
+func (e *Engine) resistFireHalf(c *Character, a *Affect, flag byte) {
 	if e.rv.dmgType&1 != 0 {
 		e.rv.damage >>= 1
 		e.rv.save += 3
 	}
 }
 
-// o13_070F: "is silenced" (the spell being cast is lost).
-func (e *Engine) o13_070F(c *Character, a *Affect, flag byte) {
+// isSilenced = ovr13:070F: "is silenced" (the spell being cast is lost).
+func (e *Engine) isSilenced(c *Character, a *Affect, flag byte) {
 	ci := combatInfo(c)
 	if ci.CanUse != 0 {
 		e.CharMessage(c, "is silenced", 0xA, true)
@@ -336,8 +336,8 @@ func (e *Engine) o13_070F(c *Character, a *Affect, flag byte) {
 	ci.CanCast = 0
 }
 
-// o13_0775: poison ends; death by poison when the poison was still in.
-func (e *Engine) o13_0775(c *Character, a *Affect, flag byte) {
+// poisonEnds = ovr13:0775: poison ends; death by poison when the poison was still in.
+func (e *Engine) poisonEnds(c *Character, a *Affect, flag byte) {
 	if e.FindAffect(c, 0x37) != nil {
 		e.killWithMessage(c, 6, "dies from poison")
 	}
@@ -346,8 +346,8 @@ func (e *Engine) o13_0775(c *Character, a *Affect, flag byte) {
 	e.rv.cure = 0
 }
 
-// o13_07E0: the cursed item (type 0x14 / 0xF3) comes and goes.
-func (e *Engine) o13_07E0(c *Character, a *Affect, flag byte) {
+// cursedItemToggle = ovr13:07E0: the cursed item (type 0x14 / 0xF3) comes and goes.
+func (e *Engine) cursedItemToggle(c *Character, a *Affect, flag byte) {
 	var it *Item
 	for _, i := range c.Items {
 		if i.Type == 0x14 && i.Words[2] == 0xF3 {
@@ -372,24 +372,24 @@ func (e *Engine) o13_07E0(c *Character, a *Affect, flag byte) {
 	e.ApplyItems(c)
 }
 
-// o13_0918: to-hit -4; DS:681E unless the selected one has affect 0x18.
-func (e *Engine) o13_0918(c *Character, a *Affect, flag byte) {
+// blindedToHit = ovr13:0918: to-hit -4; DS:681E unless the selected one has affect 0x18.
+func (e *Engine) blindedToHit(c *Character, a *Affect, flag byte) {
 	if e.FindAffect(e.selected(), 0x18) == nil {
 		e.v681E = 1
 	}
 	e.rv.hitRoll -= 4
 }
 
-// o13_0947: +1 to hit per matching name in DS:0372 (target: race 1, class 1).
-func (e *Engine) o13_0947(c *Character, a *Affect, flag byte) {
+// hitBonusVsTargetNames = ovr13:0947: +1 to hit per matching name in DS:0372 (target: race 1, class 1).
+func (e *Engine) hitBonusVsTargetNames(c *Character, a *Affect, flag byte) {
 	t := targetOf(c)
 	if t.Kind == 1 && t.Size == 1 {
 		e.rv.hitRoll += int8(e.nameMatches(t, hitNames2[:]))
 	}
 }
 
-// o13_09C0: mirror image: an attack may hit an image instead.
-func (e *Engine) o13_09C0(c *Character, a *Affect, flag byte) {
+// mirrorImage = ovr13:09C0: mirror image: an attack may hit an image instead.
+func (e *Engine) mirrorImage(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, int(a.Data)+1) > 1 && e.curSpell > 0 && e.spellFlag6820 == 0 {
 		e.blockAffect(0)
 		e.CharMessage(c, "lost an image", 0xA, true)
@@ -400,13 +400,13 @@ func (e *Engine) o13_09C0(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_0A3D: damage down by a quarter.
-func (e *Engine) o13_0A3D(c *Character, a *Affect, flag byte) {
+// damageLessQuarter = ovr13:0A3D: damage down by a quarter.
+func (e *Engine) damageLessQuarter(c *Character, a *Affect, flag byte) {
 	e.rv.damage -= e.rv.damage >> 2
 }
 
-// o13_0A65: "is coughing" ends; armour class drops.
-func (e *Engine) o13_0A65(c *Character, a *Affect, flag byte) {
+// coughingEnds = ovr13:0A65: "is coughing" ends; armour class drops.
+func (e *Engine) coughingEnds(c *Character, a *Affect, flag byte) {
 	ci := combatInfo(c)
 	if ci.CanUse != 0 {
 		e.CharMessage(c, "is coughing", 0xA, true)
@@ -425,8 +425,8 @@ func (e *Engine) o13_0A65(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_0B1B: "collapses" (status 6) and the character is reset.
-func (e *Engine) o13_0B1B(c *Character, a *Affect, flag byte) {
+// collapses = ovr13:0B1B: "collapses" (status 6) and the character is reset.
+func (e *Engine) collapses(c *Character, a *Affect, flag byte) {
 	a.Call = 0
 	if e.rv.cure == 0 {
 		e.killWithMessage(c, 6, "collapses")
@@ -442,42 +442,42 @@ func (e *Engine) o13_0B1B(c *Character, a *Affect, flag byte) {
 	c.Kind = 0
 }
 
-// o13_0BAC: -4 to hit, armour and save.
-func (e *Engine) o13_0BAC(c *Character, a *Affect, flag byte) {
+// minus4All = ovr13:0BAC: -4 to hit, armour and save.
+func (e *Engine) minus4All(c *Character, a *Affect, flag byte) {
 	e.rv.hitRoll -= 4
 	c.AC[0] -= 4
 	c.AC[1] -= 4
 	e.rv.save -= 4
 }
 
-// o13_0BCF: affects 0x2B and 0x2C together.
-func (e *Engine) o13_0BCF(c *Character, a *Affect, flag byte) {
+// weakAndSick = ovr13:0BCF: affects 0x2B and 0x2C together.
+func (e *Engine) weakAndSick(c *Character, a *Affect, flag byte) {
 	e.callAffect(0x2B, c, a, flag)
 	e.callAffect(0x2C, c, a, flag)
 }
 
-// o13_0C06: +1 save and to-hit.
-func (e *Engine) o13_0C06(c *Character, a *Affect, flag byte) {
+// plusOneSaveHit = ovr13:0C06: +1 save and to-hit.
+func (e *Engine) plusOneSaveHit(c *Character, a *Affect, flag byte) {
 	e.rv.save++
 	e.rv.hitRoll++
 }
 
-// o13_0C15: -4 to hit and save.
-func (e *Engine) o13_0C15(c *Character, a *Affect, flag byte) {
+// minus4HitSave = ovr13:0C15: -4 to hit and save.
+func (e *Engine) minus4HitSave(c *Character, a *Affect, flag byte) {
 	e.rv.hitRoll -= 4
 	e.rv.save -= 4
 }
 
-// o13_0C26: DS:681E and the attack always misses.
-func (e *Engine) o13_0C26(c *Character, a *Affect, flag byte) {
+// alwaysMissDelayed = ovr13:0C26: DS:681E and the attack always misses.
+func (e *Engine) alwaysMissDelayed(c *Character, a *Affect, flag byte) {
 	if int8(combatInfo(c).Delay) > 0 {
 		e.v681E = 1
 		e.rv.hitRoll = -1
 	}
 }
 
-// o13_0C4B: "ages" once (age +1), DS:681A doubled.
-func (e *Engine) o13_0C4B(c *Character, a *Affect, flag byte) {
+// agesOnce = ovr13:0C4B: "ages" once (age +1), DS:681A doubled.
+func (e *Engine) agesOnce(c *Character, a *Affect, flag byte) {
 	if a.Data&0x10 == 0 {
 		a.Data += 0x10
 		e.CharMessage(c, "ages", 0xA, true)
@@ -486,10 +486,10 @@ func (e *Engine) o13_0C4B(c *Character, a *Affect, flag byte) {
 	e.v681A <<= 1
 }
 
-// o13_0CC3: the stinking cloud of this caster and side is cleared: its
+// clearStinkingCloud = ovr13:0CC3: the stinking cloud of this caster and side is cleared: its
 // squares get back their ground, the cloud is freed, the squares of the
 // other clouds are marked again.
-func (e *Engine) o13_0CC3(c *Character, a *Affect, flag byte) {
+func (e *Engine) clearStinkingCloud(c *Character, a *Affect, flag byte) {
 	side := a.Data >> 4
 	ci := -1
 	for i, cl := range e.clouds {
@@ -540,19 +540,19 @@ func (e *Engine) o13_0CC3(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_1086: the selected character with a weapon of strength 0 may avoid
+// avoidUnmagicWeapon = ovr13:1086: the selected character with a weapon of strength 0 may avoid
 // the attack.
-func (e *Engine) o13_1086(c *Character, a *Affect, flag byte) {
+func (e *Engine) avoidUnmagicWeapon(c *Character, a *Affect, flag byte) {
 	if w := e.readiedWeapon(e.selected()); w != nil && w.Plus == 0 {
 		e.avoidDistantAttack(c, 0x64)
 	}
 }
 
-// o13_10C1: DS:681A halved.
-func (e *Engine) o13_10C1(c *Character, a *Affect, flag byte) { e.v681A >>= 1 }
+// halveAttacks = ovr13:10C1: DS:681A halved.
+func (e *Engine) halveAttacks(c *Character, a *Affect, flag byte) { e.v681A >>= 1 }
 
-// o13_10DE: "is weakened": strength down while it lasts (affect 0x2B).
-func (e *Engine) o13_10DE(c *Character, a *Affect, flag byte) {
+// isWeakened = ovr13:10DE: "is weakened": strength down while it lasts (affect 0x2B).
+func (e *Engine) isWeakened(c *Character, a *Affect, flag byte) {
 	if !e.addAffectNow(c, 0x2B, a.Data, 0x3C) {
 		return
 	}
@@ -564,8 +564,8 @@ func (e *Engine) o13_10DE(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_1168: affect 0x2C: damage while it lasts, or nausea at 1 hit point.
-func (e *Engine) o13_1168(c *Character, a *Affect, flag byte) {
+// sickDamage = ovr13:1168: affect 0x2C: damage while it lasts, or nausea at 1 hit point.
+func (e *Engine) sickDamage(c *Character, a *Affect, flag byte) {
 	if !e.addAffectNow(c, 0x2C, a.Data, 0xA) {
 		return
 	}
@@ -580,16 +580,16 @@ func (e *Engine) o13_1168(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_11F9: -4 to hit against the names in DS:03F2 (selected: race 1, race bits 2).
-func (e *Engine) o13_11F9(c *Character, a *Affect, flag byte) {
+// minus4VsNames = ovr13:11F9: -4 to hit against the names in DS:03F2 (selected: race 1, race bits 2).
+func (e *Engine) minus4VsNames(c *Character, a *Affect, flag byte) {
 	sel := e.selected()
 	if sel.Kind == 1 && sel.Size&0x7F == 2 {
 		e.rv.hitRoll -= int8(4 * e.nameMatches(targetOf(c), hitNames3[:]))
 	}
 }
 
-// o13_1276: -4 to hit when the selected is a BUGBEAR or GNOLL of race 1.
-func (e *Engine) o13_1276(c *Character, a *Affect, flag byte) {
+// minus4VsBugbearGnoll = ovr13:1276: -4 to hit when the selected is a BUGBEAR or GNOLL of race 1.
+func (e *Engine) minus4VsBugbearGnoll(c *Character, a *Affect, flag byte) {
 	sel := e.selected()
 	if sel.Kind == 1 &&
 		(pascalIs(sel, []byte("\x07BUGBEAR")) || pascalIs(sel, []byte("\x05GNOLL"))) {
@@ -597,35 +597,35 @@ func (e *Engine) o13_1276(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_12B2: same side as the affect: o13_0C06, else -1 to hit and save.
-func (e *Engine) o13_12B2(c *Character, a *Affect, flag byte) {
+// prayerSide = ovr13:12B2: same side as the affect: plusOneSaveHit, else -1 to hit and save.
+func (e *Engine) prayerSide(c *Character, a *Affect, flag byte) {
 	if c.Side == (a.Data&0x10)>>4 {
-		e.o13_0C06(c, a, flag)
+		e.plusOneSaveHit(c, a, flag)
 	} else {
 		e.rv.hitRoll--
 		e.rv.save--
 	}
 }
 
-// o13_12FB: affect 0x32 and a point of healing.
-func (e *Engine) o13_12FB(c *Character, a *Affect, flag byte) {
+// healOverTime = ovr13:12FB: affect 0x32 and a point of healing.
+func (e *Engine) healOverTime(c *Character, a *Affect, flag byte) {
 	if e.addAffectNow(c, 0x32, a.Data, 0x3840) && e.Heal(c, 1, true) {
 		e.healedMessage(c)
 	}
 }
 
-// o13_133F: the combat block is cleared.
-func (e *Engine) o13_133F(c *Character, a *Affect, flag byte) { e.clearCombatInfo(c) }
+// clearCombatBlock = ovr13:133F: the combat block is cleared.
+func (e *Engine) clearCombatBlock(c *Character, a *Affect, flag byte) { e.clearCombatInfo(c) }
 
-// o13_1355, o13_135C: nothing.
-func (e *Engine) o13_1355(c *Character, a *Affect, flag byte) {}
-func (e *Engine) o13_135C(c *Character, a *Affect, flag byte) {}
+// affectNop1355 = ovr13:1355, affectNop135C: nothing.
+func (e *Engine) affectNop1355(c *Character, a *Affect, flag byte) {}
+func (e *Engine) affectNop135C(c *Character, a *Affect, flag byte) {}
 
-// o13_1363.
-func (e *Engine) o13_1363(c *Character, a *Affect, flag byte) { e.AddAffect(c, 0x19, 1, 0xC, 0) }
+// turnInvisible = ovr13:1363.
+func (e *Engine) turnInvisible(c *Character, a *Affect, flag byte) { e.AddAffect(c, 0x19, 1, 0xC, 0) }
 
-// o13_1399: "Rots...": charisma drops, then the affect or death.
-func (e *Engine) o13_1399(c *Character, a *Affect, flag byte) {
+// rots = ovr13:1399: "Rots...": charisma drops, then the affect or death.
+func (e *Engine) rots(c *Character, a *Affect, flag byte) {
 	if e.rv.cure != 0 {
 		return
 	}
@@ -646,19 +646,19 @@ func (e *Engine) o13_1399(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_1452: the combat block loses +6; DS:681A cleared when DS:681D is set.
-func (e *Engine) o13_1452(c *Character, a *Affect, flag byte) {
+// heldNoMoves = ovr13:1452: the combat block loses +6; DS:681A cleared when DS:681D is set.
+func (e *Engine) heldNoMoves(c *Character, a *Affect, flag byte) {
 	combatInfo(c).Moves = 0
 	if e.v681D != 0 {
 		e.v681A = 0
 	}
 }
 
-// o13_1472.
-func (e *Engine) o13_1472(c *Character, a *Affect, flag byte) { e.AddAffect(c, 0x62, 0, 0xFF, 0) }
+// addAffect62 = ovr13:1472.
+func (e *Engine) addAffect62(c *Character, a *Affect, flag byte) { e.AddAffect(c, 0x62, 0, 0xFF, 0) }
 
-// o13_1490: fire damage is cut by 2 per die (not below one per die), save +4.
-func (e *Engine) o13_1490(c *Character, a *Affect, flag byte) {
+// resistFirePerDie = ovr13:1490: fire damage is cut by 2 per die (not below one per die), save +4.
+func (e *Engine) resistFirePerDie(c *Character, a *Affect, flag byte) {
 	if e.rv.dmgType&1 == 0 {
 		return
 	}
@@ -674,54 +674,54 @@ func (e *Engine) o13_1490(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_14EB: affect 0x3E and a point of healing.
-func (e *Engine) o13_14EB(c *Character, a *Affect, flag byte) {
+// regenerate = ovr13:14EB: affect 0x3E and a point of healing.
+func (e *Engine) regenerate(c *Character, a *Affect, flag byte) {
 	if e.addAffectNow(c, 0x3E, a.Data, 0x3C) && e.Heal(c, 1, true) {
 		e.healedMessage(c)
 	}
 }
 
-// o13_165D, 1671, 1685: poison bites with save bonus 0, 4, 2.
-func (e *Engine) o13_165D(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 0) }
-func (e *Engine) o13_1671(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 4) }
-func (e *Engine) o13_1685(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 2) }
+// poisonBite = ovr13:165D, 1671, 1685: poison bites with save bonus 0, 4, 2.
+func (e *Engine) poisonBite(c *Character, a *Affect, flag byte)  { e.poisonAttack(c, 0) }
+func (e *Engine) poisonBite4(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 4) }
+func (e *Engine) poisonBite2(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 2) }
 
-// o13_1699: paralysis for 2d8.
-func (e *Engine) o13_1699(c *Character, a *Affect, flag byte) {
+// paralyse2d8 = ovr13:1699: paralysis for 2d8.
+func (e *Engine) paralyse2d8(c *Character, a *Affect, flag byte) {
 	e.paralyseTarget(c, e.Dice(2, 8), 0)
 }
 
-// o13_16BB: paralysis for 0x3F unless the target's byte +0x2E is 2.
-func (e *Engine) o13_16BB(c *Character, a *Affect, flag byte) {
+// paralyseNotElf = ovr13:16BB: paralysis for 0x3F unless the target's byte +0x2E is 2.
+func (e *Engine) paralyseNotElf(c *Character, a *Affect, flag byte) {
 	if targetOf(c).Race != 2 {
 		e.paralyseTarget(c, 0x3F, 0)
 	}
 }
 
-// o13_16E6: paralysis for 1d9+10.
-func (e *Engine) o13_16E6(c *Character, a *Affect, flag byte) {
+// paralyse1d9 = ovr13:16E6: paralysis for 1d9+10.
+func (e *Engine) paralyse1d9(c *Character, a *Affect, flag byte) {
 	e.paralyseTarget(c, e.Dice(1, 9)+10, 0xFE)
 }
 
-// o13_170B: poison with save bonus 0xFE (-2).
-func (e *Engine) o13_170B(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 0xFE) }
+// poisonBiteMinus2 = ovr13:170B: poison with save bonus 0xFE (-2).
+func (e *Engine) poisonBiteMinus2(c *Character, a *Affect, flag byte) { e.poisonAttack(c, 0xFE) }
 
-// o13_171F: DS:681E, to-hit -4.
-func (e *Engine) o13_171F(c *Character, a *Affect, flag byte) {
+// missMinus4 = ovr13:171F: DS:681E, to-hit -4.
+func (e *Engine) missMinus4(c *Character, a *Affect, flag byte) {
 	e.v681E = 1
 	e.rv.hitRoll -= 4
 }
 
-// o13_1730: invisibility 95% of the time.
-func (e *Engine) o13_1730(c *Character, a *Affect, flag byte) {
+// mostlyInvisible = ovr13:1730: invisibility 95% of the time.
+func (e *Engine) mostlyInvisible(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, 100) <= 0x5F {
 		e.AddAffect(c, 0x19, 1, 0xC, 0)
 	}
 }
 
-// o13_176F: blood drain (affect 0x4B on the drinker, 0x3A on the victim,
+// bloodDrain = ovr13:176F: blood drain (affect 0x4B on the drinker, 0x3A on the victim,
 // the victim is combatant a.Raw[3]).
-func (e *Engine) o13_176F(c *Character, a *Affect, flag byte) {
+func (e *Engine) bloodDrain(c *Character, a *Affect, flag byte) {
 	t := e.combatant(a.Data)
 	if t == nil {
 		t = &Character{}
@@ -751,16 +751,16 @@ func (e *Engine) o13_176F(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_18B5: the target is held (affect 0x4B on c with the target's index).
-func (e *Engine) o13_18B5(c *Character, a *Affect, flag byte) {
+// holdTarget = ovr13:18B5: the target is held (affect 0x4B on c with the target's index).
+func (e *Engine) holdTarget(c *Character, a *Affect, flag byte) {
 	t := targetOf(c)
 	e.AddAffect(c, 0x4B, 0xCF, byte(e.combatIndex(t)), 1)
 	e.AddAffect(t, 0x3A, 0, 0xFF, 0)
 	e.callAffect(0x3A, t, nil, 0)
 }
 
-// o13_1935: hold: a target under 0x13 strength is held fast.
-func (e *Engine) o13_1935(c *Character, a *Affect, flag byte) {
+// holdWeakTarget = ovr13:1935: hold: a target under 0x13 strength is held fast.
+func (e *Engine) holdWeakTarget(c *Character, a *Affect, flag byte) {
 	t := targetOf(c)
 	if t.Stats[statStr] < 0x13 {
 		e.AddAffect(c, 0x4A, 0, byte(e.combatIndex(t)), 1)
@@ -770,29 +770,29 @@ func (e *Engine) o13_1935(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_19D9: back on its feet or affect 0x4E (the local result is unused).
-func (e *Engine) o13_19D9(c *Character, a *Affect, flag byte) {
+// getUpOrWait = ovr13:19D9: back on its feet or affect 0x4E (the local result is unused).
+func (e *Engine) getUpOrWait(c *Character, a *Affect, flag byte) {
 	if !e.Revive(c, c.HP) {
 		e.addAffectNow(c, 0x4E, a.Data, 1)
 	}
 }
 
-// o13_1A19: 2d10 magic damage to the target.
-func (e *Engine) o13_1A19(c *Character, a *Affect, flag byte) {
+// magicDamage2d10 = ovr13:1A19: 2d10 magic damage to the target.
+func (e *Engine) magicDamage2d10(c *Character, a *Affect, flag byte) {
 	e.rv.dmgType = 9
 	t := targetOf(c)
 	e.Damage(t, e.RollDice(2, 10), 0, false)
 }
 
-// o13_1A4C: 1d4 acid damage to the target.
-func (e *Engine) o13_1A4C(c *Character, a *Affect, flag byte) {
+// acidDamage1d4 = ovr13:1A4C: 1d4 acid damage to the target.
+func (e *Engine) acidDamage1d4(c *Character, a *Affect, flag byte) {
 	e.rv.dmgType = 0x10
 	t := targetOf(c)
 	e.Damage(t, e.RollDice(1, 4), 0, false)
 }
 
-// o13_1AAA: fear: the enemies save or are paralysed / weakened (by +0x73).
-func (e *Engine) o13_1AAA(c *Character, a *Affect, flag byte) {
+// fear = ovr13:1AAA: fear: the enemies save or are paralysed / weakened (by +0x73).
+func (e *Engine) fear(c *Character, a *Affect, flag byte) {
 	for _, p := range e.party {
 		if p.Okay == 0 || byte(b2i(isParty(c))) != p.Side {
 			continue
@@ -807,9 +807,9 @@ func (e *Engine) o13_1AAA(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// o13_1BA8: the fear (0x52) is lifted from everyone and the enemies are
+// fearLifted = ovr13:1BA8: the fear (0x52) is lifted from everyone and the enemies are
 // paralysed for 1d4 rounds.
-func (e *Engine) o13_1BA8(c *Character, a *Affect, flag byte) {
+func (e *Engine) fearLifted(c *Character, a *Affect, flag byte) {
 	for _, p := range e.party {
 		e.RemoveAffect(p, 0x52, nil)
 		if p.Okay == 0 || byte(b2i(isParty(c))) != p.Side {

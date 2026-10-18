@@ -166,10 +166,10 @@ func (e *Engine) ModifyCharacter() {
 	}
 }
 
-// o17_3F31 = ovr17:3F31 (char): hit point bonus per class from
+// conHPBonus = ovr17:3F31 (char): hit point bonus per class from
 // constitution (DS:408E), plus one or two for a class 2 character with
 // constitution above 16 and 17. Returned as a signed byte.
-func (e *Engine) o17_3F31(c *Character) int {
+func (e *Engine) conHPBonus(c *Character) int {
 	var sum byte
 	for i := 0; i <= 7; i++ {
 		if int8(c.Levels[i]) <= 0 {
@@ -197,7 +197,7 @@ func (e *Engine) hitPointsFrom(c *Character, sum byte, count int) byte {
 	if count == 0 {
 		return 0
 	}
-	adj := e.o17_3F31(c)
+	adj := e.conHPBonus(c)
 	if adj < 0 {
 		if int(sum) > count+(-adj) {
 			return byte((int(sum) + adj) / count)
@@ -252,9 +252,9 @@ func (e *Engine) maxHitPoints(c *Character) byte {
 	return e.hitPointsFrom(e.selected(), sum, count) // the original reads the bonus of the selected character, not c
 }
 
-// o17_4235 = ovr17:4235 (char, mask): hit dice rolled for the classes in
+// rollHitDice = ovr17:4235 (char, mask): hit dice rolled for the classes in
 // mask (DS:5DE bits); a first level die is at least two thirds of the die.
-func (e *Engine) o17_4235(c *Character, mask int) int {
+func (e *Engine) rollHitDice(c *Character, mask int) int {
 	var total byte
 	for i := 0; i <= 7; i++ {
 		if int8(c.Levels[i]) <= 0 || hpClassMask[i]&byte(mask) == 0 {
@@ -423,13 +423,13 @@ func (e *Engine) TrainCharacter() {
 			c.SpellBook[spell-1] = 1
 		}
 	}
-	roll := e.o17_4235(c, int(mask))
+	roll := e.rollHitDice(c, int(mask))
 	per := roll / count
 	if per == 0 {
 		per = 1
 	}
 	c.HPRoll += byte(per)
-	per = (roll + e.o17_3F31(c)) / count
+	per = (roll + e.conHPBonus(c)) / count
 	if per < 1 {
 		per = 1
 	}
@@ -566,10 +566,10 @@ func (e *Engine) ForgetCharacter() {
 	e.ClearCells(1, 1, 0x26, 0x16)
 }
 
-// o17_33E7 = ovr17:33E7: choose the portrait: Head (1..14) and Body
+// choosePortrait = ovr17:33E7: choose the portrait: Head (1..14) and Body
 // (1..12) step through the pictures, Keep accepts. There is no way out
 // without Keep (Esc just asks again).
-func (e *Engine) o17_33E7() {
+func (e *Engine) choosePortrait() {
 	c := e.selected()
 	head, body := c.PortHead, c.PortBody
 	for {
@@ -684,12 +684,12 @@ func recolourIcon(im *dax.Image, to [16]byte) {
 // default icon and each step shows another Amiga colour.
 var amigaIconColour = [16]byte{0, 9, 10, 11, 6, 4, 5, 15, 12, 1, 2, 3, 7, 13, 8, 14}
 
-// o17_382D = ovr17:382D: the combat icon editor (called from the
+// iconEditor = ovr17:382D: the combat icon editor (called from the
 // character creation and the camp). States (menus DS:7BF + 0x29*state):
 // 1 Parts/color-1/color-2/Size/Exit, 2 Head/Weapon, 3 the part to colour,
 // 4 Size, 5 the Next/Prev/Keep/Exit stepping for the choice made before.
 // The old icon is shown above the new one; Is this icon ok? ends it.
-func (e *Engine) o17_382D() {
+func (e *Engine) iconEditor() {
 	c := e.selected()
 	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0, "")
 	e.combatViewLeave() // ovr32:00E3

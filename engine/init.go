@@ -37,9 +37,9 @@ func (e *Engine) Init() {
 	e.LoadIconPic("COMSPR", 0x19, 0x19)
 	e.items = e.readItems() // ITEMS file, 2-byte header then 0x810 bytes → DS:5582
 	e.ClearRow24()
-	e.Randomize()      // 0AF8:1247
-	e.spellTableInit() // ovr23:3413
-	e.o13_31A2()       // fills the affect handler table
+	e.Randomize()           // 0AF8:1247
+	e.spellTableInit()      // ovr23:3413
+	e.setupAffectHandlers() // fills the affect handler table
 }
 
 // readItems reads the base item table: skips the 2-byte count and takes up

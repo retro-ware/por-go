@@ -391,7 +391,7 @@ func (e *Engine) castCures() {
 			}
 			c.Memorized[i] = 0
 			e.spellCaster, e.spellTarget, e.nSpellTargets = c, t, 1
-			e.o23_106B()
+			e.spellCureLightWounds()
 		}
 	}
 	e.spellCaster = nil
@@ -893,7 +893,7 @@ func (e *Engine) alterMenu() {
 		case 'S':
 			e.campSpeedMenu()
 		case 'I':
-			e.o17_382D()
+			e.iconEditor()
 			e.DrawMainScreen()
 		case 'P':
 			for k := byte(' '); k != 0 && k != 'E'; {
@@ -1086,7 +1086,7 @@ func (e *Engine) memorizeOne(c *Character, check *bool) int {
 			e.setLearned(c, c.Memorized) // extra: the full set, to relearn (memorizeMenu)
 		}
 		e.showRest(0)
-		e.o23_331A(c, "has memorized", int(c.Memorized[i]))
+		e.announceCast(c, "has memorized", int(c.Memorized[i]))
 		*check = true
 	}
 	return found
@@ -1116,7 +1116,7 @@ func (e *Engine) scribeOne(c *Character, check *bool) int {
 			c.SpellBook[int(sp)-1] = 1
 			e.scrollUsed(c, it, sp)
 			e.showRest(0)
-			e.o23_331A(c, "has scribed", int(sp))
+			e.announceCast(c, "has scribed", int(sp))
 			*check = true
 		}
 	}
