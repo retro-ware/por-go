@@ -424,8 +424,9 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 		} else if e.beginFlag != 5 {
 			ok = false
 		} else {
-			if mode == 0 && e.YesNo(colYellow, colLightGreen, colWhite, "Abort Spell? ") != 'Y' {
-				continue
+			if mode == 0 { // extra: the player cancelled the aim (the original asked "Abort Spell?" and lost
+				e.ext.castCancelled = true // the spell and the turn): the spell is kept and the turn goes on
+				break
 			}
 			e.BottomMessage("Spell Aborted")
 			if !e.usingItem {

@@ -97,41 +97,42 @@ type extras struct {
 	bolt      [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
 
 	// nav.go: keys and mouse
-	ahead        []uint16                // translated keys not yet read
-	nav          navCtx                  // the waiting menu
-	regions      []region                // clickable parts of the screen
-	mouseAt      int                     // cell under the pointer + 1 at the last poll
-	jump         *[2]int8                // aimManual: a clicked square for the cursor
-	aimTake      bool                    // aimManual: jump came from a click: take the square once there
-	aimGround    bool                    // playerAim: an empty square may be aimed at (area spells)
-	aimRefused   string                  // aiming: a click on a square it cannot take, why (said once the key is read)
-	autoPath     []int                   // the main combat menu's clicked square: moveAttack walks there, then hands back
-	autoAim      *Character              // the main combat menu's clicked foe: aim at it, attack it if it can be
-	aimAfterWalk *Character              // the clicked foe autoPath walks up to: attacked when the menu comes back
-	autoJumped   bool                    // autoAim's jump to it was tried
-	raw          string                  // the screen reads the arrows itself; its hint line
-	typing       bool                    // InputString is waiting
-	modal        int                     // help or overview shown: any key closes
-	hiddenKeys   string                  // DisplayInput also takes these keys, not on the bar
-	aimMarks     map[[2]int][]int        // Aim: the squares of the foes Next/Prev stop on, framed as Move frames its reach
-	enemiesOnly  bool                    // aiming a weapon or hostile spell: Next/Prev skip allies (combatturn2.go)
-	learned      map[*Character][21]byte // the spells each caster held before using some (camp.go noteSpells)
-	picker       bool                    // the list has no menu words: a click picks (listmenu.go)
-	floor        int                     // regions below belong to the screen under the modal one
-	menuFloor    int                     // menu bars open under the modal screen
-	viewing      bool                    // the View page's own menu is waiting
-	items        bool                    // the inventory's item list is waiting
-	toItems      bool                    // the next View opens on the inventory (F1-F8)
-	toSheet      bool                    // P left the inventory for the View page
-	switchTo     bool                    // F1-F8 left the inventory for another member
-	throwing     *Item                   // combat: Throw left the inventory to aim this item
-	buying       bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
-	campBar      bool                    // a camp menu bar is waiting: F1-F8 change the member
-	later        []uint16                // keys handed to the game one at a time (Engine.ReadKey)
-	sels         map[string]int          // the highlighted item each menu was left with
-	listWord     map[string]byte         // a list menu's highlighted word, by its hot letter, kept across pages
-	selSet       bool                    // the caller set the highlight (YesNo): keep it
-	skip         bool                    // a key finished the text being printed: no more slow text until input is read
+	ahead         []uint16                // translated keys not yet read
+	nav           navCtx                  // the waiting menu
+	regions       []region                // clickable parts of the screen
+	mouseAt       int                     // cell under the pointer + 1 at the last poll
+	jump          *[2]int8                // aimManual: a clicked square for the cursor
+	aimTake       bool                    // aimManual: jump came from a click: take the square once there
+	aimGround     bool                    // playerAim: an empty square may be aimed at (area spells)
+	aimRefused    string                  // aiming: a click on a square it cannot take, why (said once the key is read)
+	castCancelled bool                    // CastSpell: the player cancelled the aim (the turn goes on)
+	autoPath      []int                   // the main combat menu's clicked square: moveAttack walks there, then hands back
+	autoAim       *Character              // the main combat menu's clicked foe: aim at it, attack it if it can be
+	aimAfterWalk  *Character              // the clicked foe autoPath walks up to: attacked when the menu comes back
+	autoJumped    bool                    // autoAim's jump to it was tried
+	raw           string                  // the screen reads the arrows itself; its hint line
+	typing        bool                    // InputString is waiting
+	modal         int                     // help or overview shown: any key closes
+	hiddenKeys    string                  // DisplayInput also takes these keys, not on the bar
+	aimMarks      map[[2]int][]int        // Aim: the squares of the foes Next/Prev stop on, framed as Move frames its reach
+	enemiesOnly   bool                    // aiming a weapon or hostile spell: Next/Prev skip allies (combatturn2.go)
+	learned       map[*Character][21]byte // the spells each caster held before using some (camp.go noteSpells)
+	picker        bool                    // the list has no menu words: a click picks (listmenu.go)
+	floor         int                     // regions below belong to the screen under the modal one
+	menuFloor     int                     // menu bars open under the modal screen
+	viewing       bool                    // the View page's own menu is waiting
+	items         bool                    // the inventory's item list is waiting
+	toItems       bool                    // the next View opens on the inventory (F1-F8)
+	toSheet       bool                    // P left the inventory for the View page
+	switchTo      bool                    // F1-F8 left the inventory for another member
+	throwing      *Item                   // combat: Throw left the inventory to aim this item
+	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
+	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
+	later         []uint16                // keys handed to the game one at a time (Engine.ReadKey)
+	sels          map[string]int          // the highlighted item each menu was left with
+	listWord      map[string]byte         // a list menu's highlighted word, by its hot letter, kept across pages
+	selSet        bool                    // the caller set the highlight (YesNo): keep it
+	skip          bool                    // a key finished the text being printed: no more slow text until input is read
 
 	// fullmap.go
 	labels  map[int]map[int]mapLabel // per area: square -> label

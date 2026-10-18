@@ -208,7 +208,11 @@ func (e *Engine) castSpell(spell, a int, quit *bool) {
 		delay := int(e.spellData(spell, 6)) / 3
 		if delay == 0 {
 			e.CastSpell(byte(spell), byte(a), 1, quit)
-			*quit = e.clearCombatInfo(sel)
+			if e.ext.castCancelled { // extra: the aim was cancelled: back to the menu, the turn (and its moves) go on
+				e.ext.castCancelled = false
+			} else {
+				*quit = e.clearCombatInfo(sel)
+			}
 		} else {
 			*quit = true
 			e.CharMessage(sel, "Begins Casting", true)
