@@ -325,6 +325,7 @@ func TestCombatActions(t *testing.T) {
 // the cursor's flight between them is no effect in the view.
 func TestAimCycle(t *testing.T) {
 	e, scr, v := battleView(t)
+	v = nextToFoe(t, e, scr, v)
 	var me engine.Unit
 	party := map[image.Point]bool{}
 	for _, u := range v.Battle.Units {
@@ -353,6 +354,7 @@ func TestAimCycle(t *testing.T) {
 // TestAimHover: pointing at another foe while aiming moves the aim to it.
 func TestAimHover(t *testing.T) {
 	e, scr, v := battleView(t)
+	v = nextToFoe(t, e, scr, v)
 	v = keyWait(e, scr, 'A')
 	if v.Battle == nil || !v.Battle.CursorOn {
 		t.Fatal("aiming: no cursor")
@@ -367,6 +369,33 @@ func TestAimHover(t *testing.T) {
 		}
 	}
 	t.Errorf("pointing at the other foes never moved the aim from %v", from)
+}
+
+// nextToFoe walks the active unit to a square next to a foe (Aim takes
+// only a foe in reach of the weapon): the dev fight starts out of reach.
+func nextToFoe(t *testing.T, e *engine.Engine, scr *ega.Screen, v engine.View) engine.View {
+	for _, u := range v.Battle.Units {
+		if u.Party {
+			continue
+		}
+		for d := range 9 {
+			sq := image.Pt(u.X+d%3-1, u.Y+d/3-1)
+			if slices.Contains(v.Battle.Reach, sq) {
+				return keyWait(e, scr, engine.SquareKey(sq.X, sq.Y))
+			}
+		}
+	}
+	t.Skip("no square next to a foe in reach")
+	return v
+}
+
+// TestAimOutOfReach: with no foe in reach of the weapon Aim is refused.
+func TestAimOutOfReach(t *testing.T) {
+	e, scr, _ := battleView(t)
+	v := keyWait(e, scr, 'A')
+	if v.Menu == nil || !slices.ContainsFunc(v.Menu.Items, func(m engine.MenuItem) bool { return m.Text == "Done" }) {
+		t.Errorf("aiming with every foe two squares off a melee fighter")
+	}
 }
 
 // TestViewMember: a portrait click (KeyViewMember) on the command bar opens

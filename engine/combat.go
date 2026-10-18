@@ -142,9 +142,9 @@ func (e *Engine) playerTurn(c *Character) {
 				done = e.throwItem(c)
 			}
 		case 'A':
-			if !e.foeInSight(c) { // extra: Next/Prev would cycle the party (the aimer too) with no foe to see
+			if !e.foeInReach(c) { // extra: no aiming with nothing to attack (with no foe in sight Next/Prev would cycle the party)
 				e.ext.autoAim = nil
-				e.BottomMessage("No foe in sight")
+				e.BottomMessage("No foe in reach")
 				break
 			}
 			var aim aimTarget
@@ -1023,4 +1023,22 @@ func (e *Engine) throwTargets(c *Character, it *Item) (out []int) {
 		}
 	}
 	return out
+}
+
+// foeInReach (extra): is there a foe c could attack from where it stands
+// with the readied weapon (the ones Aim's Attack takes)?
+func (e *Engine) foeInReach(c *Character) bool {
+	rng := 1 // as combatMenu's targets
+	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
+		rng = int(e.base(w.Type).Range) - 1
+	}
+	saved := e.near
+	defer func() { e.near = saved }()
+	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c))
+	for _, n := range e.near {
+		if f := e.combatant(n.index); f != nil && f.Side != c.Side && f.Okay != 0 && e.mayActAgainst(c, f) && e.canTarget(c, f, rng, 1) {
+			return true
+		}
+	}
+	return false
 }
