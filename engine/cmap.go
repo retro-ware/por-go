@@ -67,14 +67,17 @@ func (e *Engine) footprint(size, part int) (int, int, bool) {
 // view height, blocking height, tile.
 func (e *Engine) groundInfo(g byte) []byte { return groundTable[g][:] }
 
-// tileOf: the original indexes the 50-wide grid flat, so a square just off a
-// row reads its neighbour.
+// groundFloor is the ground both combat maps lay as bare floor.
+const groundFloor = 0x17
+
+// tileOf is the tile of map square (x, y). The original indexes the 50-wide
+// grid flat, so a square just off one edge showed the far edge's pieces; here
+// off the map is bare floor (ground 0 would be a wall piece).
 func (e *Engine) tileOf(x, y int) byte {
-	i := y*50 + x
-	if i < 0 || i >= 25*50 {
-		return e.groundInfo(0)[3]
+	if x < 0 || y < 0 || x >= 50 || y >= 25 { // off the map (the wide page shows past the edges): bare floor, never wrapped
+		return e.groundInfo(groundFloor)[3]
 	}
-	return e.groundInfo(e.cmap.ground[i/50][i%50])[3]
+	return e.groundInfo(e.cmap.ground[y][x])[3]
 }
 
 // drawPage draws a frame at page cell (x,y), clipped to the page. masked
@@ -127,10 +130,7 @@ func (e *Engine) drawEdges(row int) {
 	x0, pw := e.pageGeom()
 	for _, col := range []int{-1, viewW} {
 		mx, my := e.cmap.viewX+col, e.cmap.viewY+row
-		t := e.groundInfo(0)[3]
-		if mx >= 0 && mx < 50 {
-			t = e.tileOf(mx, my)
-		}
+		t := e.tileOf(mx, my) // off the map: bare floor
 		im, f := e.sqrpaci[0], int(t)
 		if t > 0x7F {
 			im, f = e.sqrpaci[1], int(t&0x7F)
