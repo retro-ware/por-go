@@ -113,10 +113,11 @@ func (e *Engine) thiefSkills(c *Character) {
 }
 
 // Readied-item slots at char+0xCC (13 far pointers). Slot numbers come
-// from the base item record; 9 and 10 are the two rings, 11 arrows
-// (type 0x49), 12 quarrels (type 0x1C).
+// from the base item record; 2 is body armour, 9 and 10 the two rings, 11
+// arrows, 12 quarrels.
 const (
 	slotWeapon = 0
+	slotArmor  = 2
 	slotRing1  = 9
 	slotRing2  = 10
 	slotArrows = 11
@@ -148,7 +149,7 @@ type itemBase struct {
 const itemTypes = 0x81
 
 // base is the base record of an item type (a blank one past the table).
-func (e *Engine) base(typ byte) *itemBase {
+func (e *Engine) base(typ itemType) *itemBase {
 	if int(typ) < len(e.items) {
 		return &e.items[typ]
 	}
@@ -190,10 +191,10 @@ func (e *Engine) ApplyItems(c *Character) {
 				c.Slots[slotRing2] = it
 			}
 		}
-		if typ == 0x49 {
+		if typ == itemArrow {
 			c.Slots[slotArrows] = it
 		}
-		if typ == 0x1C {
+		if typ == itemQuarrel {
 			c.Slots[slotBolts] = it
 		}
 		if it.Words[0] == 0xBA {
@@ -277,7 +278,7 @@ func (e *Engine) weaponStats(c *Character) {
 		plus += int8(c.Slots[slotArrows].Plus)
 	}
 	c.Bonus[0] += byte(plus)
-	if c.Race == 2 && (w.Type > 0x28 && w.Type < 0x2D || w.Type == 0x25 || w.Type == 0x24) {
+	if c.Race == raceElf && (w.Type >= itemCompositeLongBow && w.Type <= itemShortBow || w.Type == itemShortSword || w.Type == itemLongSword) {
 		plus++ // elves with bows and swords
 	}
 	c.THAC0 += byte(plus)
@@ -288,7 +289,7 @@ func (e *Engine) weaponStats(c *Character) {
 // armourMove = 00BA:01FB (char, item): body armour sets the movement by
 // its weight; magical armour moves 3 faster up to 9.
 func (e *Engine) armourMove(it *Item, c *Character) {
-	if e.base(it.Type).Slot != 2 {
+	if e.base(it.Type).Slot != slotArmor {
 		return
 	}
 	switch w := it.Weight; {
@@ -330,7 +331,7 @@ func (e *Engine) itemAC(c *Character, it *Item, ac *[5]int8) (ringOnly bool) {
 		c.SaveBonus += it.Plus2
 	case int(v)+int(plus) > int(ac[4]):
 		ac[4] = int8(v) + plus
-		if plus > 0 && slot == 2 {
+		if plus > 0 && slot == slotArmor {
 			ringOnly = true
 		}
 	}
@@ -515,20 +516,20 @@ func atRaceLimit(c *Character, class int) bool {
 	if lvl <= 0 {
 		return false
 	}
-	fighter := class == 2
+	fighter := class == clsFighter
 	switch c.Race {
-	case 1:
+	case raceDwarf:
 		return fighter && (lvl == 8 && str == 0x11 || lvl == 7 && str < 0x11)
-	case 2:
+	case raceElf:
 		return fighter && (lvl == 7 || lvl == 6 && str == 0x11 || lvl == 5 && str < 0x11)
-	case 3:
+	case raceGnome:
 		return fighter && (lvl == 6 || lvl == 5 && str < 0x12)
-	case 4:
-		if class == 0 {
+	case raceHalfElf:
+		if class == clsCleric {
 			return lvl == 5
 		}
 		return fighter && (lvl == 8 || lvl == 7 && str == 0x11 || lvl == 6 && str < 0x11)
-	case 5:
+	case raceHalfling:
 		return fighter && (lvl == 6 || lvl == 5 && str == 0x11 || lvl == 4 && str < 0x11)
 	}
 	return false

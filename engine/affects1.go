@@ -344,11 +344,11 @@ func (e *Engine) poisonEnds(c *Character, a *Affect, flag byte) {
 	e.rv.cure = 0
 }
 
-// cursedItemToggle = ovr13:07E0: the cursed item (type 0x14 / 0xF3) comes and goes.
-func (e *Engine) cursedItemToggle(c *Character, a *Affect, flag byte) {
+// spiritualHammerItem = ovr13:07E0: the Spiritual Hammer (a hammer with name word 0xF3) comes and goes.
+func (e *Engine) spiritualHammerItem(c *Character, a *Affect, flag byte) {
 	var it *Item
 	for _, i := range c.Items {
-		if i.Type == 0x14 && i.Words[2] == 0xF3 {
+		if i.Type == itemHammer && i.Words[2] == 0xF3 {
 			it = i
 			break
 		}
@@ -358,8 +358,8 @@ func (e *Engine) cursedItemToggle(c *Character, a *Affect, flag byte) {
 	}
 	if flag == 0 && it == nil && c.ItemCount < 0x10 {
 		n := &Item{}
-		n.Type = 0x14
-		n.Words[1] = 0x14
+		n.Type = itemHammer
+		n.Words[1] = byte(itemHammer)
 		n.Words[2] = 0xF3
 		n.Plus = 1
 		n.Spells[1] = 0x17
@@ -689,9 +689,9 @@ func (e *Engine) paralyse2d8(c *Character, a *Affect, flag byte) {
 	e.paralyseTarget(c, e.Dice(2, 8), 0)
 }
 
-// paralyseNotElf = ovr13:16BB: paralysis for 0x3F unless the target's byte +0x2E is 2.
+// paralyseNotElf = ovr13:16BB: paralysis for 0x3F unless the target is an elf.
 func (e *Engine) paralyseNotElf(c *Character, a *Affect, flag byte) {
-	if targetOf(c).Race != 2 {
+	if targetOf(c).Race != raceElf {
 		e.paralyseTarget(c, 0x3F, 0)
 	}
 }
@@ -817,7 +817,7 @@ func (e *Engine) fearLifted(c *Character, a *Affect, flag byte) {
 		if byte(e.rv.side[p.Side]) >= 6 {
 			bonus++
 		}
-		if p.Race == 7 {
+		if p.Race == raceHuman {
 			bonus += 2
 		}
 		saved := e.SavingThrow(p, 0, bonus)

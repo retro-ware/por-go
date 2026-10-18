@@ -109,7 +109,8 @@ func fighterKind(c *Character) bool {
 	return int8(c.Levels[clsFighter]) > 0 || int8(c.Levels[clsPaladin]) > 0 || int8(c.Levels[clsRanger]) > 0
 }
 
-// Levels indexes (the class order of the DS:0D38 names).
+// Class values (the order of the DS:0D38 names); the first eight are also
+// the Levels indexes.
 const (
 	clsCleric = iota
 	clsDruid
@@ -119,6 +120,27 @@ const (
 	clsMage
 	clsThief
 	clsMonk
+	clsClericFighter
+	clsClericFighterMage
+	clsClericRanger
+	clsClericMage
+	clsClericThief
+	clsFighterMage
+	clsFighterThief
+	clsFighterMageThief
+	clsMageThief
+)
+
+// Race values (the order of the DS:0F03 names).
+const (
+	raceMonster = iota
+	raceDwarf
+	raceElf
+	raceGnome
+	raceHalfElf
+	raceHalfling
+	raceHalfOrc
+	raceHuman
 )
 
 // setRecord reads a record in the DOS layout (short data leaves the rest zero).

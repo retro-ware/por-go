@@ -602,7 +602,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 	if it != nil {
 		e.attackAnimation(a, b, it)
 	}
-	if a.Slots[0] != nil && a.Slots[0].Type == 0x2F {
+	if a.Slots[slotWeapon] != nil && a.Slots[slotWeapon].Type == itemSling {
 		e.attackAnimation(a, b, a.Slots[0])
 	}
 	done = true

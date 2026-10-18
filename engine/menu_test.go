@@ -24,7 +24,7 @@ func TestItemStats(t *testing.T) {
 	e.items[2].Protection = 0x80 + 1                              // type 2: shield 1
 	e.items[3].Protection = 0x80 + 57                             // type 3: plate mail 7
 	for typ, want := range []string{"", "(2d4+1) ", "[1] ", "[7] "} {
-		if s := e.itemStats(byte(typ)); s != want {
+		if s := e.itemStats(itemType(typ)); s != want {
 			t.Errorf("type %d: %q, want %q", typ, s, want)
 		}
 	}

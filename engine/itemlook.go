@@ -61,7 +61,7 @@ func (e *Engine) itemLines(it *Item) []string {
 			add("Needs quarrels")
 		case flags&1 != 0 && flags&8 != 0:
 			add("Needs arrows")
-		case typ == 0x49 || typ == 0x1C:
+		case typ == itemArrow || typ == itemQuarrel:
 			add("Ammunition")
 		}
 		if flags&4 != 0 {
@@ -88,9 +88,9 @@ func (e *Engine) itemLines(it *Item) []string {
 		}
 	}
 	switch {
-	case typ == 0x55:
+	case typ == itemHolyWater:
 		add("Hurts undead: 1d6+1 a hit")
-	case typ == 0x56:
+	case typ == itemOil:
 		add("Burns some monsters: 3d8")
 	case words(0x76):
 		add("Readied: turns gaze attacks")

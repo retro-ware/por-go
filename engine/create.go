@@ -89,24 +89,24 @@ func (e *Engine) CreateCharacter() {
 	}
 	c.Race = byte(idx)
 	switch c.Race {
-	case 5:
+	case raceHalfling:
 		c.IconSize = 1
 		e.AddAffect(c, affSaveBonusVsType0, 0, 0xFF, 0)
 		e.AddAffect(c, affSaveBonusVsType42, 0, 0xFF, 0)
-	case 1:
+	case raceDwarf:
 		c.IconSize = 1
 		for _, t := range []affectType{affSaveBonusVsType0, affSaveBonusVsType42, affHitBonusVsTargetNames, affMinus4VsNames} {
 			e.AddAffect(c, t, 0, 0xFF, 0)
 		}
-	case 3:
+	case raceGnome:
 		c.IconSize = 1
 		for _, t := range []affectType{affSaveBonusVsType42, affHitBonusVsNames, affMinus4VsNames, affMinus4VsBugbearGnoll} {
 			e.AddAffect(c, t, 0, 0xFF, 0)
 		}
-	case 2:
+	case raceElf:
 		c.IconSize = 2
 		e.AddAffect(c, affBlock90, 0, 0xFF, 0)
-	case 4:
+	case raceHalfElf:
 		c.IconSize = 2
 		e.AddAffect(c, affBlock30, 0, 0xFF, 0)
 	default:

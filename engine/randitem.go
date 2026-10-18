@@ -4,7 +4,7 @@ import "strconv"
 
 // RandomItem = ovr22:1010 (type, var item): a new item of the given base
 // type with a random bonus, or a magic item from the DS:0970 table.
-func (e *Engine) RandomItem(typ byte) *Item {
+func (e *Engine) RandomItem(typ itemType) *Item {
 	it := &Item{}
 	k := 0 // DS:0970 record of a table item
 	it.Readied = 0
@@ -13,26 +13,26 @@ func (e *Engine) RandomItem(typ byte) *Item {
 	it.Type = typ
 	it.Weight = 0
 	switch {
-	case typ >= 1 && typ <= 0x3B, typ == 0x49, typ == 0x4D, typ == 0x5D:
+	case typ >= 1 && typ <= itemShield, typ == itemArrow, typ == itemBracers, typ == itemProtectionRing:
 		it.Plus = byte(e.randomItemClass())
 		bonus := it.Plus + 0xA1
 		switch {
-		case typ == 0x15:
+		case typ == itemJavelin:
 			if e.Dice(1, 5) == 5 {
 				k = 0x90 // (sic: one word before the 0x91 record)
 			}
-			it.Words[2], it.Words[1] = 0x15, bonus
-		case typ == 0x1C:
-			it.Words[2], it.Words[1] = 0x1C, bonus
-		case typ == 0x32, typ == 0x33:
-			it.Words[2], it.Words[1], it.Words[0], it.Hidden = typ, 0x31, bonus, 4
-		case typ == 0x34:
-			it.Words[2], it.Words[1], it.Words[0], it.Hidden = typ, 0x32, bonus, 4
-		case typ >= 0x35 && typ <= 0x3A:
-			it.Words[2], it.Words[1], it.Words[0], it.Hidden = typ, 0x30, bonus, 4
-		case typ == 0x49:
+			it.Words[2], it.Words[1] = byte(itemJavelin), bonus
+		case typ == itemQuarrel:
+			it.Words[2], it.Words[1] = byte(itemQuarrel), bonus
+		case typ == itemLeatherArmor, typ == itemPaddedArmor:
+			it.Words[2], it.Words[1], it.Words[0], it.Hidden = byte(typ), 0x31, bonus, 4
+		case typ == itemStuddedLeather:
+			it.Words[2], it.Words[1], it.Words[0], it.Hidden = byte(typ), 0x32, bonus, 4
+		case typ >= itemRingMail && typ <= itemPlateMail:
+			it.Words[2], it.Words[1], it.Words[0], it.Hidden = byte(typ), 0x30, bonus, 4
+		case typ == itemArrow:
 			it.Words[2], it.Words[1] = 0x3D, bonus
-		case typ == 0x4D:
+		case typ == itemBracers:
 			it.Words[2], it.Words[1] = 0x4F, 0xA7
 			it.Plus = it.Plus*2 + 2
 			switch it.Plus {
@@ -43,34 +43,34 @@ func (e *Engine) RandomItem(typ byte) *Item {
 			case 8:
 				it.Words[0] = 0xDC
 			}
-		case typ == 0x5D:
+		case typ == itemProtectionRing:
 			it.Words[2], it.Words[1], it.Words[0] = 0x42, 0xE0, bonus
 		default:
-			it.Words[2], it.Words[1] = typ, bonus
+			it.Words[2], it.Words[1] = byte(typ), bonus
 		}
 		it.Plus2 = 0
 		it.Count = 0
 		it.Weight = randomItemWeight(typ, it)
 		mul := uint16(2000)
 		switch typ {
-		case 0x3B:
+		case itemShield:
 			mul = 2500
-		case 0x49, 0x1C:
+		case itemArrow, itemQuarrel:
 			mul = 150
-		case 0x35, 0x36, 0x4D:
+		case itemRingMail, itemScaleMail, itemBracers:
 			mul = 3000
-		case 0x37, 0x38:
+		case itemChainMail, itemSplintMail:
 			mul = 3500
-		case 0x39:
+		case itemBandedMail:
 			mul = 4000
-		case 0x3A:
+		case itemPlateMail:
 			mul = 5000
 		}
 		it.Price = uint16(int16(int8(it.Plus))) * mul
-	case typ == 0x3D, typ == 0x3E:
-		// scrolls: 1-3 spells, clerical (0x3D) or magic-user
+	case typ == itemMageScroll, typ == itemClericScroll:
+		// scrolls: 1-3 spells, magic-user (0x3D) or clerical
 		n := e.Dice(1, 3)
-		if typ == 0x3D {
+		if typ == itemMageScroll {
 			it.Words[2] = 0xD1
 		} else {
 			it.Words[2] = 0xD0
@@ -84,7 +84,7 @@ func (e *Engine) RandomItem(typ byte) *Item {
 		for i := 1; i <= n; i++ {
 			lvl := e.Dice(1, 3)
 			var s int
-			if typ == 0x3D {
+			if typ == itemMageScroll {
 				switch lvl {
 				case 1:
 					s = e.Dice(1, 0xD) + 8
@@ -106,11 +106,11 @@ func (e *Engine) RandomItem(typ byte) *Item {
 			it.Spells[i-1] = byte(s)
 			it.Price = it.Price + uint16(lvl)*300
 		}
-	case typ == 0x3F:
+	case typ == itemGauntlets:
 		k = 0x49
-	case typ == 0x43:
+	case typ == itemCloak:
 		k = 0x91
-	case typ == 0x45:
+	case typ == itemRing:
 		switch d := e.Dice(1, 10); {
 		case d == 1:
 			k = 0x29
@@ -119,20 +119,20 @@ func (e *Engine) RandomItem(typ byte) *Item {
 		default:
 			k = 0x81
 		}
-	case typ == 0x4E:
+	case typ == itemWand:
 		switch e.Dice(1, 3) + 1 { // (sic: 1 can never come up, 4 gives nothing)
 		case 2:
 			k = 0x41
 		case 3:
 			k = 0x71
 		}
-	case typ == 0x4F:
+	case typ == itemWandOfMissiles:
 		k = 0x39
-	case typ == 0x54:
+	case typ == itemStrengthPotion:
 		k = 9
-	case typ == 0x5C:
+	case typ == itemCloakDisplacement:
 		k = 0x61
-	case typ == 0x47:
+	case typ == itemPotion:
 		switch d := e.Dice(1, 0xB); {
 		case d <= 5:
 			k = 0x11
@@ -143,7 +143,7 @@ func (e *Engine) RandomItem(typ byte) *Item {
 		case d == 10:
 			k = 0x51
 		}
-	case typ == 0x46:
+	case typ == itemValuable:
 		if e.Dice(1, 10) <= 7 {
 			k = 0x59
 		} else {
@@ -171,7 +171,7 @@ func (e *Engine) RandomItem(typ byte) *Item {
 
 // randomItemWeight = ovr22:1295..14A2: weight by base type (arrows and
 // darts also get a count).
-func randomItemWeight(typ byte, it *Item) uint16 {
+func randomItemWeight(typ itemType, it *Item) uint16 {
 	switch typ {
 	case 1, 0xD, 0xE, 0x23:
 		return 0x4B
@@ -331,7 +331,7 @@ func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
 	if key == 'K' && !sellOnly {
 		it := &Item{}
 		it.Words[2] = word
-		it.Type = 0x46
+		it.Type = itemValuable
 		it.Price = v
 		it.Weight = 1
 		it.Hidden = 0

@@ -134,7 +134,7 @@ func (e *Engine) spellSleep() {
 		case lvl == 4:
 			e.spellValue2 = 6
 		case lvl == 5:
-			if t.Race == 0 {
+			if t.Race == raceMonster {
 				e.spellValue2 = 0xA
 			} else {
 				e.spellValue2 = 0x14

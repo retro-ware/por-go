@@ -31,7 +31,7 @@ type eclRun struct {
 	treasure       []*Item                 // DS:6810 list
 	doorTry        [3]byte                 // DS:6DDE..6DE0: bash, pick, knock still allowed
 	effTick        [maxCombatants + 1]byte // DS:471D: member i has timed effects to run down
-	itemType       byte                    // TREASURE: last random item type
+	itemType       itemType                // TREASURE: last random item type
 	lineHasText    byte                    // DS:84DF
 }
 
@@ -632,7 +632,7 @@ func (e *Engine) opPartySurprise() {
 	e.FetchArgs(2)
 	var a byte
 	for _, c := range e.party {
-		if c.Class == 4 || c.Class == 0xA {
+		if c.Class == clsRanger || c.Class == clsClericRanger {
 			a = 1
 		}
 	}

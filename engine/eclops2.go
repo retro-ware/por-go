@@ -75,7 +75,7 @@ func (e *Engine) opTreasure() {
 
 // randomItemType = the d100 tables of ovr04:1B63. A second roll of 48 or
 // 49 leaves the previous type in place, as in the original.
-func (e *Engine) randomItemType(prev byte) byte {
+func (e *Engine) randomItemType(prev itemType) itemType {
 	t := prev
 	r := e.Dice(1, 100)
 	switch {
@@ -83,53 +83,53 @@ func (e *Engine) randomItemType(prev byte) byte {
 		r2 := e.Dice(1, 100)
 		switch {
 		case r2 >= 1 && r2 <= 0x2F, r2 >= 0x32 && r2 <= 0x3B:
-			t = byte(r2)
+			t = itemType(r2)
 			if r2 == 0x2D {
-				t = 0x3B
+				t = itemShield
 			}
 		case r2 >= 0x3C && r2 <= 0x5A:
 			switch d := e.Dice(1, 10); {
 			case d <= 4:
-				t = 0x24
+				t = itemLongSword
 			case d <= 7:
-				t = 0x23
+				t = itemBroadSword
 			case d == 8:
-				t = 0x22
+				t = itemBastardSword
 			case d == 9:
-				t = 0x25
+				t = itemShortSword
 			case d == 10:
-				t = 0x26
+				t = itemTwoHandedSword
 			}
 		case r2 >= 0x5B && r2 <= 0x5E:
-			t = 0x49
+			t = itemArrow
 		case r2 >= 0x5F && r2 <= 0x61:
-			t = 0x5D
+			t = itemProtectionRing
 		case r2 >= 0x62:
-			t = 0x4D
+			t = itemBracers
 		}
 	case r <= 0x55:
-		t = 0x3D
+		t = itemMageScroll
 	case r <= 0x5C:
-		t = 0x3E
+		t = itemClericScroll
 	case r <= 0x62:
 		switch d := e.Dice(1, 16); {
 		case d <= 7:
-			t = 0x47
+			t = itemPotion
 		case d <= 9:
-			t = 0x46
+			t = itemValuable
 		case d == 10:
-			t = 0x54
+			t = itemStrengthPotion
 		case d <= 12:
-			t = 0x4E
+			t = itemWand
 		case d <= 14:
-			t = 0x4F
+			t = itemWandOfMissiles
 		case d == 15:
-			t = 0x5C
+			t = itemCloakDisplacement
 		default:
-			t = 0x43
+			t = itemCloak
 		}
 	default:
-		t = 0x45
+		t = itemRing
 	}
 	return t
 }
@@ -460,7 +460,7 @@ func (e *Engine) opRedrawView() {
 // opFindItem = ovr04:266A (item): eq when someone carries it.
 func (e *Engine) opFindItem() {
 	e.FetchArgs(1)
-	v := byte(e.ArgValue(1))
+	v := itemType(e.ArgValue(1))
 	e.es.flags = [6]bool{}
 	e.es.flags[1] = true
 	for _, c := range e.party {

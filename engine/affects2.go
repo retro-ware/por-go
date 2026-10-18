@@ -31,7 +31,7 @@ func (e *Engine) setupAffectHandlers() {
 		affResistFire:            (*Engine).resistFireHalf,
 		affSilenced:              (*Engine).isSilenced,
 		affSlowPoison:            (*Engine).poisonEnds,
-		affSpiritualHammer:       (*Engine).cursedItemToggle,
+		affSpiritualHammer:       (*Engine).spiritualHammerItem,
 		affInvisible:             (*Engine).blindedToHit,
 		affHitBonusVsTargetNames: (*Engine).hitBonusVsTargetNames,
 		affMirrorImage:           (*Engine).mirrorImage,
@@ -109,7 +109,7 @@ func (e *Engine) setupAffectHandlers() {
 		affResist15:              (*Engine).resist15,
 		affBlock90:               (*Engine).block90,
 		affBlockSleepCharm:       (*Engine).blockSleepCharm,
-		affBlockHold:             (*Engine).block34,
+		affBlockHold:             (*Engine).blockHeld,
 		affBlockCold:             (*Engine).blockCold,
 		affBlockPoisonHold:       (*Engine).blockPoisonHold,
 		affBlockFire:             (*Engine).blockFire,
@@ -117,12 +117,12 @@ func (e *Engine) setupAffectHandlers() {
 		affHalveElectric:         (*Engine).halveElectric,
 		affHalveUnlessPlain:      (*Engine).halveUnlessPlainWeapon,
 		affHalveVsMagicWeapon:    (*Engine).halveVsMagicWeapon,
-		affDamage1d6Item55:       (*Engine).damage1d6Item55,
+		affHolyWaterDamage:       (*Engine).holyWaterDamage,
 		affHalveCold:             (*Engine).halveCold,
 		affOnlyMagicOrStrong:     (*Engine).onlyMagicOrStrong,
-		affAvoidItem57:           (*Engine).avoidItem57,
+		affDodgeBoulders:         (*Engine).dodgeBoulders,
 		affSpitAcid:              (*Engine).spitAcid,
-		affDamage3d8Item56:       (*Engine).damage3d8Item56,
+		affOilDamage:             (*Engine).oilDamage,
 		affHalveOrCancelUnmagic:  (*Engine).halveOrCancelUnmagic,
 		affBlock30:               (*Engine).block30,
 		affBlockMind:             (*Engine).blockMind,
@@ -484,8 +484,8 @@ func (e *Engine) blockSleepCharm(c *Character, a *Affect, flag byte) {
 	e.blockAffect(affAsleep)
 }
 
-// block34 = ovr13:29CB (c, a, flag): blocks 0x34.
-func (e *Engine) block34(c *Character, a *Affect, flag byte) { e.blockAffect(0x34) }
+// blockHeld = ovr13:29CB (c, a, flag): blocks Hold Person.
+func (e *Engine) blockHeld(c *Character, a *Affect, flag byte) { e.blockAffect(affHeld) }
 
 // blockCold = ovr13:29D9 (c, a, flag): cold damage (bit 1) is blocked.
 func (e *Engine) blockCold(c *Character, a *Affect, flag byte) {
@@ -546,10 +546,10 @@ func (e *Engine) halveVsMagicWeapon(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// damage1d6Item55 = ovr13:2B20 (c, a, flag): the selected character's first readied item of
-// type 0x55 makes the damage 1d6+1.
-func (e *Engine) damage1d6Item55(c *Character, a *Affect, flag byte) {
-	if w := e.selected().Slots[0]; w != nil && w.Type == 0x55 {
+// holyWaterDamage = ovr13:2B20 (c, a, flag): holy water readied by the
+// selected character makes the damage 1d6+1.
+func (e *Engine) holyWaterDamage(c *Character, a *Affect, flag byte) {
+	if w := e.selected().Slots[slotWeapon]; w != nil && w.Type == itemHolyWater {
 		e.rv.damage = byte(e.RollDice(1, 6) + 1)
 	}
 }
@@ -562,21 +562,21 @@ func (e *Engine) halveCold(c *Character, a *Affect, flag byte) {
 }
 
 // onlyMagicOrStrong = ovr13:2B7D (c, a, flag): damage is cancelled unless the weapon has +0x32
-// set, or the attacker has item type > 0 or level (+0x73) of 4 or more.
+// set, or the attacker is a monster (race 0) of level (+0x73) 4 or more.
 func (e *Engine) onlyMagicOrStrong(c *Character, a *Affect, flag byte) {
 	if w := e.readiedWeapon(e.selected()); w != nil && w.Plus != 0 {
 		return
 	}
 	s := e.selected()
-	if int8(s.Race) > 0 || int8(s.MaxLevel) < 4 {
+	if int8(s.Race) > raceMonster || int8(s.MaxLevel) < 4 {
 		e.rv.damage = 0
 	}
 }
 
-// avoidItem57 = ovr13:2BC8 (c, a, flag): the selected character's readied item of type
-// 0x57 or 0x58 triggers affect 0x32 handling.
-func (e *Engine) avoidItem57(c *Character, a *Affect, flag byte) {
-	if w := e.selected().Slots[0]; w != nil && (w.Type == 0x57 || w.Type == 0x58) {
+// dodgeBoulders = ovr13:2BC8 (c, a, flag): a boulder or giant boulder thrown
+// by the selected character may be avoided (50%) from afar.
+func (e *Engine) dodgeBoulders(c *Character, a *Affect, flag byte) {
+	if w := e.selected().Slots[slotWeapon]; w != nil && (w.Type == itemBoulder || w.Type == itemGiantBoulder) {
 		e.avoidDistantAttack(c, 0x32)
 	}
 }
@@ -599,10 +599,10 @@ func (e *Engine) spitAcid(c *Character, a *Affect, flag byte) {
 	e.RemoveAffect(c, affAcidDamage, nil)
 }
 
-// damage3d8Item56 = ovr13:2D38 (c, a, flag): the selected character's readied item of type 0x56
+// oilDamage = ovr13:2D38 (c, a, flag): oil readied by the selected character
 // makes the damage 3d8; fire or magic types (mask 9) add the dice count.
-func (e *Engine) damage3d8Item56(c *Character, a *Affect, flag byte) {
-	if w := e.selected().Slots[0]; w != nil && w.Type == 0x56 {
+func (e *Engine) oilDamage(c *Character, a *Affect, flag byte) {
+	if w := e.selected().Slots[slotWeapon]; w != nil && w.Type == itemOil {
 		e.rv.damage = byte(e.RollDice(3, 8))
 	}
 	if e.rv.dmgType&9 != 0 {
@@ -684,7 +684,7 @@ func (e *Engine) giantStrengthGirdle(c *Character, a *Affect, flag byte) {
 			if found {
 				break
 			}
-			if p.Type == 0x26 {
+			if p.Type == affStrength {
 				str, str00 := strDecode(p)
 				// p.Raw[0] is the type byte (the original compares the first byte, not the data)
 				if giant && p.Type < 0x80 || str == 0x12 && str00 == 0x64 && !giant {

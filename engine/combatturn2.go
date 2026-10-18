@@ -222,18 +222,18 @@ func (e *Engine) castSpell(spell, a int, quit *bool) {
 	}
 }
 
-// rangedFacing = ovr14:2574 (c, target): c holds a missile weapon (or none)
-// and ammunition fitting it, and c stands behind the target (the direction
-// from c to it is the one the target faces).
+// rangedFacing = ovr14:2574 (c, target): c may backstab the target: a thief
+// with no armour or leather, no weapon or a club, dagger or broad, long or
+// short sword, standing behind it (the direction from c to it is the one it faces).
 func (e *Engine) rangedFacing(c, target *Character) bool {
 	flag := false
-	w, ammo := c.Slots[0], c.Slots[2] // +0xCC, +0xD4
-	var wt byte                       // uninitialised in the original when there is no weapon
+	w, armor := c.Slots[slotWeapon], c.Slots[slotArmor] // +0xCC, +0xD4
+	var wt itemType                                     // uninitialised in the original when there is no weapon
 	if w != nil {
 		wt = w.Type
 	}
-	if int8(c.Levels[clsThief]) > 0 && (ammo == nil || ammo.Type == 0x32) {
-		if w == nil || wt == 7 || wt == 8 || (wt > 0x22 && wt < 0x26) {
+	if int8(c.Levels[clsThief]) > 0 && (armor == nil || armor.Type == itemLeatherArmor) {
+		if w == nil || wt == itemClub || wt == itemDagger || (wt >= itemBroadSword && wt <= itemShortSword) {
 			flag = true
 		}
 	}
@@ -258,7 +258,7 @@ func (e *Engine) attackAnimation(from, to *Character, weapon *Item) {
 	dir := e.directionTo(from, to)
 	frames, delay, base := 1, 0xA, 0xD
 	switch typ := weapon.Type; {
-	case typ == 9 || typ == 0x15 || typ == 0x1C || typ == 0x1F || typ == 0x49:
+	case typ == itemDart || typ == itemJavelin || typ == itemQuarrel || typ == itemSpear || typ == itemArrow:
 		switch {
 		case dir&1 == 1 && (dir == 3 || dir == 5):
 			e.iconToSprite(base+1, 1, 0, dir == 5)
@@ -267,14 +267,14 @@ func (e *Engine) attackAnimation(from, to *Character, weapon *Item) {
 		default:
 			e.iconToSprite(base+dir%4, dir>>2, 0, false)
 		}
-	case typ == 2 || typ == 7 || typ == 0x14:
+	case typ == itemHandAxe || typ == itemClub || typ == itemHammer:
 		e.hitColours(base + 3)
 		frames, delay = 4, 0x32
-	case typ == 0x55 || typ == 0x56:
+	case typ == itemHolyWater || typ == itemOil:
 		e.hitColours(base + 4)
 		frames, delay = 4, 0x32
 	default:
-		if typ == 0x2F {
+		if typ == itemSling {
 			base++
 		}
 		e.iconToSprite(base+7, 0, 0, false)

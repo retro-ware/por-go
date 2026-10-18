@@ -494,10 +494,10 @@ func (e *Engine) readyItem(it *Item) {
 			why = 2
 		}
 	}
-	if typ == 0x49 && c.Slots[slotArrows] != nil {
+	if typ == itemArrow && c.Slots[slotArrows] != nil {
 		why, slot = 2, slotArrows
 	}
-	if typ == 0x1C && c.Slots[slotBolts] != nil {
+	if typ == itemQuarrel && c.Slots[slotBolts] != nil {
 		why, slot = 2, slotBolts
 	}
 	if e.base(typ).Classes&c.ClassMask == 0 {

@@ -177,10 +177,10 @@ func (e *Engine) conHPBonus(c *Character) int {
 			continue
 		}
 		adj := conHP[c.Stats[statCon]]
-		if c.Stats[statCon] > 0x10 && c.Class >= 2 && c.Class <= 4 {
+		if c.Stats[statCon] > 0x10 && c.Class >= clsFighter && c.Class <= clsRanger {
 			adj++
 		}
-		if c.Stats[statCon] > 0x11 && c.Class >= 2 && c.Class <= 4 {
+		if c.Stats[statCon] > 0x11 && c.Class >= clsFighter && c.Class <= clsRanger {
 			adj++
 		}
 		if i == clsRanger && c.Levels[i] == 1 {

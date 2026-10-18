@@ -91,21 +91,21 @@ func (e *Engine) giveExp(exp int32) {
 		g := exp
 		prime := -1
 		switch c.Class {
-		case 0:
+		case clsCleric:
 			prime = statWis
-		case 2:
+		case clsFighter:
 			prime = statStr
-		case 5:
+		case clsMage:
 			prime = statInt
-		case 6:
+		case clsThief:
 			prime = statDex
-		case 3, 4: // CotAB: paladin str+wis, ranger str+int+wis over 15
-			if c.Stats[statStr] > 15 && c.Stats[statWis] > 15 && (c.Class == 3 || c.Stats[statInt] > 15) {
+		case clsPaladin, clsRanger: // CotAB: paladin str+wis, ranger str+int+wis over 15
+			if c.Stats[statStr] > 15 && c.Stats[statWis] > 15 && (c.Class == clsPaladin || c.Stats[statInt] > 15) {
 				g += g / 10
 			}
-		case 8, 10, 11, 12, 13, 14, 16:
+		case clsClericFighter, clsClericRanger, clsClericMage, clsClericThief, clsFighterMage, clsFighterThief, clsMageThief:
 			g = exp / 2
-		case 9, 15:
+		case clsClericFighterMage, clsFighterMageThief:
 			g = exp / 3
 		}
 		if prime >= 0 && c.Stats[prime] > 15 {

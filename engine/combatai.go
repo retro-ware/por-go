@@ -243,7 +243,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 	if e.aiKeys(c) {
 		return
 	}
-	if ci.Moves>>1 <= 0 || int8(ci.Delay) <= 0 || (ci.Fleeing == 0 && c.Class == 5) {
+	if ci.Moves>>1 <= 0 || int8(ci.Delay) <= 0 || (ci.Fleeing == 0 && c.Class == clsMage) {
 		e.aiGiveUp(c)
 		return
 	}
@@ -511,7 +511,7 @@ func (e *Engine) weaponScore(c *Character, it *Item) int {
 	if int8(t.Bonus) > 0 {
 		s += byte(int(int8(t.Bonus)) << 1)
 	}
-	if it.Type == 0x55 && c.Combat.Target != nil && int8(c.Combat.Target.Undead) > 0 {
+	if it.Type == itemHolyWater && c.Combat.Target != nil && int8(c.Combat.Target.Undead) > 0 {
 		s = 8
 	}
 	if t.Usage&8 != 0 {

@@ -27,7 +27,7 @@ func (e *Engine) DevScene(name string) func() {
 	case "shop":
 		return func() {
 			e.run.treasure = nil
-			for _, t := range []byte{0x3F, 0x15, 0x49, 0x3D, 0x32, 0x05} {
+			for _, t := range []itemType{itemGauntlets, itemJavelin, itemArrow, itemMageScroll, itemLeatherArmor, 0x05} {
 				e.run.treasure = append(e.run.treasure, e.RandomItem(t))
 			}
 			if len(e.party) > 2 { // unknown items for Id
@@ -73,7 +73,7 @@ func (e *Engine) DevScene(name string) func() {
 				e.addAffectNow(e.party[0], t, 0, 100)
 			}
 			e.addAffectNow(e.party[1], affMonsterInvisible, 0, 100)
-			for i, t := range []byte{0x3F, 0x15, 0x49} { // and items for the inventory
+			for i, t := range []itemType{itemGauntlets, itemJavelin, itemArrow} { // and items for the inventory
 				e.AddItemCopy(e.party[i%2], e.RandomItem(t))
 			}
 			e.ApplyItems(e.party[0])
@@ -90,7 +90,7 @@ func (e *Engine) DevScene(name string) func() {
 	case "loot":
 		return func() {
 			e.run.treasure = nil
-			for _, t := range []byte{0x3F, 0x15, 0x49} {
+			for _, t := range []itemType{itemGauntlets, itemJavelin, itemArrow} {
 				e.run.treasure = append(e.run.treasure, e.RandomItem(t))
 			}
 			e.loot = purse{gold: 156, gems: 7}

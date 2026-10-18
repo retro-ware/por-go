@@ -120,12 +120,12 @@ const (
 	affHalveElectric         affectType = 0x72
 	affHalveUnlessPlain      affectType = 0x73
 	affHalveVsMagicWeapon    affectType = 0x74
-	affDamage1d6Item55       affectType = 0x75
+	affHolyWaterDamage       affectType = 0x75
 	affHalveCold             affectType = 0x76
 	affOnlyMagicOrStrong     affectType = 0x77
-	affAvoidItem57           affectType = 0x78
+	affDodgeBoulders         affectType = 0x78
 	affSpitAcid              affectType = 0x79
-	affDamage3d8Item56       affectType = 0x7A
+	affOilDamage             affectType = 0x7A
 	affHalveOrCancelUnmagic  affectType = 0x7B
 	affBlock30               affectType = 0x7C // half-elves: sleep and charm
 	affBlockMind             affectType = 0x7D

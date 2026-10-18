@@ -24,7 +24,7 @@ type Item struct {
 	PName   [0x29]byte // 0x00 shown name, Pascal string (built by ItemName)
 	Pad29   byte       // 0x29
 	_       [4]byte    // 0x2A next pointer
-	Type    byte       // 0x2E base item type (index into the DS:5582 records)
+	Type    itemType   // 0x2E base item type (index into the DS:5582 records)
 	Words   [3]byte    // 0x2F name word ids into DS:10A7
 	Plus    byte       // 0x32 signed
 	Plus2   byte       // 0x33
@@ -272,9 +272,9 @@ func (e *Engine) LoadMonster(index int, c *Character) bool {
 	c.setRecord(b)
 	c.Items, c.Affects = nil, nil
 	switch c.Race {
-	case 1, 3, 5:
+	case raceDwarf, raceGnome, raceHalfling:
 		c.IconSize = 1
-	case 2, 4, 6, 7:
+	case raceElf, raceHalfElf, raceHalfOrc, raceHuman:
 		c.IconSize = 2
 	}
 	for i := 1; i <= 3; i++ {

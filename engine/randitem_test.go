@@ -8,7 +8,7 @@ func TestRandomItemAllTypes(t *testing.T) {
 	e := &Engine{}
 	for typ := 0; typ < 0x100; typ++ {
 		for range 50 {
-			e.RandomItem(byte(typ))
+			e.RandomItem(itemType(typ))
 		}
 	}
 	if it := e.RandomItem(0x43); it.Price != 6000 || it.Spells != [3]byte{0, 0x48, 0x86} {

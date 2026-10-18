@@ -66,10 +66,10 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 			typ := it.Type
 			switch {
 			case 1<<(i-1) == mask,
-				i == 1 && mask > 4 && typ != 0x56,
+				i == 1 && mask > 4 && typ != itemOil,
 				i == 2 && mask&1 == 0,
-				i == 3 && typ == 0x56,
-				(typ == 0x49 || typ == 0x1C) && it.Words[2] != 0xB1:
+				i == 3 && typ == itemOil,
+				(typ == itemArrow || typ == itemQuarrel) && it.Words[2] != 0xB1:
 				s = "s "
 				plural = true
 			}
@@ -85,7 +85,7 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 // itemStats (extra): Angband-style base stats after the name, "(1d8) "
 // for weapon damage, "<6> " for the armour class it gives (the font has
 // no square brackets); magic pluses stay in the name.
-func (e *Engine) itemStats(typ byte) string {
+func (e *Engine) itemStats(typ itemType) string {
 	s := ""
 	if n, d := e.base(typ).Dice, e.base(typ).Sides; n > 0 && d > 0 {
 		s = "(" + strconv.Itoa(int(n)) + "d" + strconv.Itoa(int(d))
