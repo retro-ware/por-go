@@ -549,9 +549,10 @@ func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTar
 func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, found *bool, t *aimTarget) {
 	*t = aimTarget{}
 	x, y := int8(e.combatX(cand)), int8(e.combatY(cand))
+	pointed := false               // extra: the cursor follows the mouse: the view stays put (the keyboard's cursor scrolls it)
 	if j := e.ext.jump; j != nil { // extra: the square aimPrompt was pointed at
 		e.ext.jump = nil
-		x, y = j[0], j[1]
+		x, y, pointed = j[0], j[1], true
 	}
 	key, dir := byte(0x20), 8
 	*found = false
@@ -559,7 +560,11 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 	defer e.rawArrows("arrows, point=move the cursor|Enter, click=target|C=center|Esc=back")()
 	defer func() { e.snap.aimWhy = "" }()
 	for !(key == 0 || key == 13 || key == 'E' || key == 'T') {
-		e.combatCentre(int(x), int(y), 3, dir)
+		margin := 3
+		if pointed { // any square in view is inside this margin
+			margin = viewW / 2
+		}
+		e.combatCentre(int(x), int(y), margin, dir)
 		x += int8(byte(dirDX[dir]))
 		y += int8(byte(dirDY[dir]))
 		x, y = min(max(x, 0), 0x31), min(max(y, 0), 0x18)
@@ -684,6 +689,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 				key = ' '
 			}
 		}
+		pointed = e.ext.jump != nil
 		if j := e.ext.jump; j != nil { // the clicked square; the step below is dir 8 (none)
 			e.ext.jump = nil
 			e.eraseCursor(int(x), int(y))
