@@ -188,6 +188,10 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 		k := e.ReadKeyByte()
 		if k == 0 {
 			k = e.ReadKeyByte()
+			if e.ext.acted { // extra: a click did its action itself (nav.go keyNone)
+				e.ext.acted = false
+				return byte(keyNone >> 8), false
+			}
 			if allowExtra {
 				e.menuExtra = true
 				return k, true

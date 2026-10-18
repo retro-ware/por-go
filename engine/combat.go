@@ -128,6 +128,7 @@ func (e *Engine) playerTurn(c *Character) {
 		return
 	}
 	done := false
+	why := "" // extra: a refusal, on the status row once the panel is back (no flashing)
 	for !done {
 		switch e.combatMenu(c) {
 		case 'M':
@@ -144,7 +145,7 @@ func (e *Engine) playerTurn(c *Character) {
 		case 'A':
 			if !e.foeInReach(c) { // extra: no aiming with nothing to attack (with no foe in sight Next/Prev would cycle the party)
 				e.ext.autoAim = nil
-				e.BottomMessage("No foe in reach")
+				why = "No foe in reach"
 				break
 			}
 			var aim aimTarget
@@ -221,6 +222,10 @@ func (e *Engine) playerTurn(c *Character) {
 		if !done {
 			e.combatRedrawChar(c, 2, 1)
 			e.combatPanel(c)
+			if why != "" {
+				e.showWhy(why)
+				why = ""
+			}
 		}
 	}
 }

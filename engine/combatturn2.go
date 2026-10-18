@@ -379,8 +379,9 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 				e.ext.aimRefused = why
 				return 'C'
 			}
-			if click {
-				return 'A'
+			if click { // extra: the cast / attack itself, not a menu key
+				e.ext.aimCast, e.ext.acted = true, true
+				return keyNone
 			}
 			return 0
 		case e.ext.aimGround:
@@ -399,6 +400,7 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		return 0
 	}, square: func(x, y int) uint16 { return pick(x, y, false) }})
 	var key byte
+	defer func() { e.ext.aimCast, e.ext.acted = false, false }()
 	switch t := e.ext.autoAim; { // extra: the main menu's clicked foe
 	case t == nil && e.ext.aimTake: // extra: clicked here: take it at once
 		e.ext.aimTake = false
@@ -424,6 +426,9 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	}
 	e.regionCut(mark)
 	undo()
+	if e.ext.aimCast { // the click took cand
+		key = 'A'
+	}
 	if r := e.ext.aimRefused; r != "" && key == 'C' {
 		e.ext.aimRefused = ""
 		e.aimRefused(r)
@@ -618,8 +623,9 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		{ // extra (nav.go): point at a square to put the cursor there, click to target it
 			pick := func(sx, sy int, click bool) uint16 {
 				if sx == int(x) && sy == int(y) {
-					if click && ok {
-						return 'A' // the menu's Attack (T, the original's Target, is no longer on it)
+					if click && ok { // extra: the take itself, not a menu key
+						e.ext.aimCast, e.ext.acted = true, true
+						return keyNone
 					}
 					if click { // extra: say why instead of doing nothing
 						e.ext.aimRefused = why
@@ -655,6 +661,10 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 			key, _ = e.combatInput(prompt, menu, true)
 		}
 		undo()
+		if e.ext.aimCast { // the click on the cursor took the square
+			e.ext.aimCast, e.ext.acted = false, false
+			key = 'T'
+		}
 		if key == 'A' {
 			key = 'T'
 		}
