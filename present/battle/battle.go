@@ -310,7 +310,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		if u.Party {
 			tint = partyColour
 		}
-		dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.78, pedestal, sq*.78), tint, 0.7))
+		dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.78, pedestal, sq*.78), tint, 0.25))
 		if u.Active { // whose turn: a gold ring round the base
 			dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.86, pedestal*.5, sq*.86),
 				[4]float32{0.95 * pulse, 0.72 * pulse, 0.2 * pulse, 1}, 0.9))
@@ -319,7 +319,10 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		ib := u.Icon.Bounds()
 		size := sq * .92
 		half := size * float32(ib.Dy()) / float32(max(ib.Dx(), ib.Dy())) / 2
-		dst.DrawMesh(f.mesh, f.tex, vp, opts(place(x, pedestal+half, z, 0, size, size, size), [4]float32{1, 1, 1, 1}, 0.12))
+		// turned to the eye and lit from its side: from any heading the painted front shows, never the dark back
+		o := opts(place(x, pedestal+half, z, float32(p.yaw), size, size, size), [4]float32{1, 1, 1, 1}, 0.12)
+		o.Light = [3]float32{float32(math.Sin(p.yaw)) * .6, 1, float32(math.Cos(p.yaw)) * .6}
+		dst.DrawMesh(f.mesh, f.tex, vp, o)
 	}
 
 	// effects: the sprite hangs over its square, glowing, shedding sparks

@@ -188,7 +188,9 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w,
 		}
 	}
 	if prompt != "" {
-		text(prompt, max(0, (w-len(prompt)*8)/2), 0, 1, rgb(15))
+		x := max(0, (w-len(prompt)*8)/2)
+		fill(image.Rect(x-4, 0, x+len(prompt)*8+4, 10).Intersect(im.Bounds()), color.RGBA{0, 0, 0, 0xB0}) // translucent black: the text reads over any wall
+		text(prompt, x, 1, 1, rgb(15))
 	}
 	x1 := (w - len(items)*slot) / 2
 	for i, it := range items {
