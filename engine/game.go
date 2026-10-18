@@ -71,7 +71,7 @@ func (e *Engine) GameLoop() {
 			if int(e.area.PrevX) != e.posX || int(e.area.PrevY) != e.posY {
 				e.PlaySound(sndStep)
 			}
-			e.es.f84E0, e.es.f84E1 = 0, 1
+			e.es.picShown, e.es.picAnimating = 0, 1
 			e.RunECL(e.es.events[1])
 			if r.areaChanged {
 				e.AreaChange()
@@ -220,9 +220,9 @@ func (e *Engine) CommandInput() byte {
 		}
 	}
 	e.prevViewMode = e.viewMode
-	if e.run.f84E4 == 0 {
+	if e.run.textCleared == 0 {
 		e.ClearCells(1, 0x11, 0x26, 0x16)
-		e.run.f84E4 = 1
+		e.run.textCleared = 1
 	}
 	return key
 }

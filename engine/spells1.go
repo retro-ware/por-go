@@ -347,7 +347,7 @@ func (e *Engine) spellTargetSetup(spell, mode int) (ok bool) {
 // applies the spell record to the rest.
 func (e *Engine) applySpellToSide(side int, msg string) {
 	msg = cut(msg, 0x28)
-	e.spellFlag6820 = 1
+	e.spellOwnTargets = 1
 	for i := 1; i <= e.nSpellTargets; i++ {
 		t := e.tgt(i)
 		if t == nil || int(t.Side) != side ||
@@ -420,7 +420,7 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 			e.curSpell = spell
 			e.spellFx[spell]()
 			e.curSpell = 0
-			e.spellFlag6820 = 0
+			e.spellOwnTargets = 0
 		} else if e.beginFlag != 5 {
 			ok = false
 		} else {
@@ -495,7 +495,7 @@ func (e *Engine) fxFireball() {
 // target (garbage in the asm) is dropped as well.
 func (e *Engine) removeAffectFromSide(typ, side int, msg string) {
 	msg = cut(msg, 0x28)
-	e.spellFlag6820 = 1
+	e.spellOwnTargets = 1
 	lvl := byte(e.casterLevel(int(e.curSpell)))
 	for i := 1; i <= e.nSpellTargets; i++ {
 		t := e.tgt(i)
@@ -556,7 +556,7 @@ func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 	var who, ground byte // who is uninitialised in the asm until the first step
 	_, ground = e.mapAt(e.tgtX, e.tgtY)
 	r := byte(reach * 2)
-	e.spellFlag6820 = 1
+	e.spellOwnTargets = 1
 	for r > 0 {
 		x0, y0 := e.tgtX, e.tgtY
 		x1 := int(int16(e.tgtX + (e.tgtX-cx)*dirSign*int(r)))
@@ -610,7 +610,7 @@ func (e *Engine) boltPath(reach, dmg, saveType, bounce int) {
 			}
 		}
 	}
-	e.spellFlag6820 = 0
+	e.spellOwnTargets = 0
 }
 
 // fxLightning = ovr23:2BB7: level d6 down the line, bouncing.
@@ -734,7 +734,7 @@ func (e *Engine) fxReading() { e.applySpell(int(e.curSpell), 0xFF, 1, 0, 0, "is 
 // (type 0x58). Half the time (when DS:6DE3 is set) nothing happens; the
 // monster breathes at the target square with its hit points as damage.
 func (e *Engine) breathWeapon(c *Character, a *Affect, flag int) {
-	if e.v6DE3 != 0 && e.Dice(1, 100) <= 0x32 {
+	if e.combatRound != 0 && e.Dice(1, 100) <= 0x32 {
 		return
 	}
 	cx, cy := e.combatX(c), e.combatY(c)

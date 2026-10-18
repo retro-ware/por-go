@@ -12,27 +12,27 @@ import (
 
 // eclRun holds the ovr04 globals that are not part of the ovr08 interpreter.
 type eclRun struct {
-	restoreSel  bool       // DS:4430: put DS:4436 back as the selected character
-	savedSel    *Character // DS:4436 (a pointer: survives the list changing)
-	scriptLoad  byte       // DS:4431
-	needFrame   byte       // DS:4432: main screen not drawn yet
-	walldefSet  byte       // DS:4433
-	geoSet      byte       // DS:4434
-	monCount    byte       // DS:4435: monsters appended to the party list
-	areaChanged bool       // DS:442F
-	quit        bool       // DS:49FF
-	searchSave  byte       // DS:84DD
-	f84DE       byte
-	f84E4       byte
-	f84E7       byte // monsters were loaded
-	f84D4       byte
-	sprite      int        // DS:6F81
-	closeup     int        // DS:6F82
-	treasure    []*Item    // DS:6810 list
-	doorTry     [3]byte    // DS:6DDE..6DE0: bash, pick, knock still allowed
-	effTick     [0x49]byte // DS:471D: member i has timed effects to run down
-	itemType    byte       // TREASURE: last random item type
-	f84DF       byte
+	restoreSel     bool       // DS:4430: put DS:4436 back as the selected character
+	savedSel       *Character // DS:4436 (a pointer: survives the list changing)
+	scriptLoad     byte       // DS:4431
+	needFrame      byte       // DS:4432: main screen not drawn yet
+	walldefSet     byte       // DS:4433
+	geoSet         byte       // DS:4434
+	monCount       byte       // DS:4435: monsters appended to the party list
+	areaChanged    bool       // DS:442F
+	quit           bool       // DS:49FF
+	searchSave     byte       // DS:84DD
+	textInBox      byte       // DS:84DE
+	textCleared    byte       // DS:84E4
+	monstersLoaded byte       // monsters were loaded; DS:84E7
+	duelMode       byte       // DS:84D4
+	sprite         int        // DS:6F81
+	closeup        int        // DS:6F82
+	treasure       []*Item    // DS:6810 list
+	doorTry        [3]byte    // DS:6DDE..6DE0: bash, pick, knock still allowed
+	effTick        [0x49]byte // DS:471D: member i has timed effects to run down
+	itemType       byte       // TREASURE: last random item type
+	lineHasText    byte       // DS:84DF
 }
 
 type eclOp func(e *Engine)
@@ -84,7 +84,7 @@ func (e *Engine) RunECL(addr int) {
 
 // opExit = ovr04:0001 (EXIT).
 func (e *Engine) opExit() {
-	if e.es.f84E2 != 0 {
+	if e.es.textInView != 0 {
 		e.DrawBoxTitled(1, 1, 0xF, 0xF, 0, 0xF, "")
 		if e.area.In3D != 0 {
 			e.DrawBoxTitled(3, 3, 0xD, 0xD, 0, 0xF, "")
@@ -94,13 +94,13 @@ func (e *Engine) opExit() {
 		e.selectChar(e.run.savedSel)
 		e.run.restoreSel = false
 	}
-	e.es.f84C8 = [2]byte{}
-	e.es.f84E0, e.es.f84E2 = 0, 0
+	e.es.encounterShown = [2]byte{}
+	e.es.picShown, e.es.textInView = 0, 0
 	e.es.stop = true
 	e.eclPC++
 	e.es.retStack = nil
 	e.msgRow, e.msgCol = 0x11, 1
-	e.run.f84DE = 0
+	e.run.textInBox = 0
 }
 
 // opGoto = ovr04:00F4.
@@ -187,13 +187,13 @@ func (e *Engine) opLoadCharacter() {
 	if n < len(e.party) {
 		e.partySel = n
 	}
-	if refresh && e.es.f84D2 != 0 && e.es.f84D3 != 0 {
+	if refresh && e.es.memberDied != 0 && e.es.memberGone != 0 {
 		if e.run.savedSel == e.selected() {
 			e.run.restoreSel = false
 		}
 		e.RemoveSelected(false, true) // ovr17:3291
 		e.DisplayPartyList()
-		e.es.f84D2, e.es.f84D3 = 0, 0
+		e.es.memberDied, e.es.memberGone = 0, 0
 	}
 }
 
@@ -214,12 +214,12 @@ func (e *Engine) addMonsters(idx, count, icon int) {
 	if count == 0 {
 		count = 1
 	}
-	e.LoadIconPic("CPIC", icon, int(e.es.v6F83)) // ovr33:01C8
+	e.LoadIconPic("CPIC", icon, int(e.es.cloneIcon)) // ovr33:01C8
 	// The template itself is the first monster (ovr04:055B); each clone is
 	// a byte copy of it, so its Slots still point at the template's items
 	// until ApplyItems, and its item and affect lists are copied in reverse
 	// (each new node is pushed onto the head, ovr04:063E..07E7).
-	tmpl.Order = e.es.v6F83
+	tmpl.Order = e.es.cloneIcon
 	e.party = append(e.party, tmpl)
 	e.run.monCount++
 	for i := 2; i <= count && e.run.monCount < 0x3F; i++ {
@@ -235,8 +235,8 @@ func (e *Engine) addMonsters(idx, count, icon int) {
 		e.party = append(e.party, c)
 		e.run.monCount++
 	}
-	e.es.v6F83++
-	e.run.f84E7 = 1
+	e.es.cloneIcon++
+	e.run.monstersLoaded = 1
 	e.partySel = sel
 }
 
@@ -250,14 +250,14 @@ func (e *Engine) opSetupMonster() {
 	if e.game.MaxDist < e.game.MonsterDist {
 		e.game.MonsterDist = e.game.MaxDist
 	}
-	e.ShowEncounter(e.run.sprite, e.run.closeup, int(byte(e.game.MonsterDist)), &e.es.f84C8)
+	e.ShowEncounter(e.run.sprite, e.run.closeup, int(byte(e.game.MonsterDist)), &e.es.encounterShown)
 }
 
 // opApproach = ovr04:0817: the monster comes one step closer.
 func (e *Engine) opApproach() {
 	if d := e.game.MonsterDist; d > 0 {
 		e.game.MonsterDist = d - 1
-		e.ShowEncounter(e.run.sprite, e.run.closeup, int(byte(e.game.MonsterDist)), &e.es.f84C8)
+		e.ShowEncounter(e.run.sprite, e.run.closeup, int(byte(e.game.MonsterDist)), &e.es.encounterShown)
 	}
 	e.eclPC++
 }
@@ -274,8 +274,8 @@ func (e *Engine) opPicture() {
 		if w := e.ext.walk; w != nil {
 			w.event = true // (extra, walk.go)
 		}
-		e.es.f84C8[1] = 1
-		e.es.f84E0 = 1
+		e.es.encounterShown[1] = 1
+		e.es.picShown = 1
 		if face := e.game.Portrait; face == 0xFF {
 			e.LoadAnimPic("PIC", v, false)
 			e.DrawAnimFirst()
@@ -285,13 +285,13 @@ func (e *Engine) opPicture() {
 		return
 	}
 	if e.prevViewMode > 1 || e.viewMode == 1 {
-		if e.es.f84E0 != 0 || e.es.f84E3 != 0 {
+		if e.es.picShown != 0 || e.es.spriteLoaded != 0 {
 			e.Redraw()
-			e.es.f84E0, e.es.f84E3 = 0, 0
-			e.es.f84E1 = 1
+			e.es.picShown, e.es.spriteLoaded = 0, 0
+			e.es.picAnimating = 1
 		}
 	}
-	e.es.f84C8 = [2]byte{}
+	e.es.encounterShown = [2]byte{}
 }
 
 // opInputNumber = ovr04:0951.
@@ -329,7 +329,7 @@ func (e *Engine) opPrint() {
 
 // scriptText is opPrint's text: clear starts the text window over.
 func (e *Engine) scriptText(clear bool, s string) {
-	e.run.f84E4 = 0
+	e.run.textCleared = 0
 	e.slowText = true
 	s = platinumPrices.Replace(s)
 	e.es.str[1] = s
@@ -370,7 +370,7 @@ func (e *Engine) opCompareAnd() {
 
 // opVMenu = ovr04:0F08 (result, prompt, count, items...): a vertical list.
 func (e *Engine) opVMenu() {
-	e.run.f84E4 = 0
+	e.run.textCleared = 0
 	redraw := true
 	index := 0
 	e.FetchArgs(3)
@@ -512,7 +512,7 @@ func (e *Engine) opHMenu() {
 			e.es.str[1] = "PRESS <ENTER>/<RETURN> TO CONTINUE"
 		}
 	}
-	anim := e.es.f84E0 != 0 && e.es.f84E1 != 0
+	anim := e.es.picShown != 0 && e.es.picAnimating != 0
 	menu := ""
 	for i := 1; i <= n-1; i++ {
 		menu = cut(menu+"~"+e.es.strAt(i)+" ", 0x32)
@@ -536,9 +536,9 @@ func cut(s string, n int) string {
 func (e *Engine) opClearMonsters() {
 	e.eclPC++
 	e.run.monCount = 0
-	e.run.f84E7 = 0
-	e.es.v6F83 = 8
-	e.clear67F4()
+	e.run.monstersLoaded = 0
+	e.es.cloneIcon = 8
+	e.clearLoot()
 	e.run.treasure = nil
 }
 
@@ -670,7 +670,7 @@ func (e *Engine) opSurprise() {
 // screen when no fight is pending).
 func (e *Engine) opCombat() {
 	e.eclPC++
-	if e.run.f84E7 == 0 && e.run.f84D4 == 0 {
+	if e.run.monstersLoaded == 0 && e.run.duelMode == 0 {
 		switch {
 		case e.game.Shop == 1:
 			e.game.Shop = 0
@@ -694,7 +694,7 @@ func (e *Engine) opCombat() {
 			e.LoadIconPic("ICON", 1, 0xA)
 			e.LoadIconPic("ICON", 2, 0xB)
 		}
-		e.run.f84D4 = 0
+		e.run.duelMode = 0
 	}
 	if e.viewMode == 1 {
 		e.beginFlag = 4
@@ -702,8 +702,8 @@ func (e *Engine) opCombat() {
 		e.beginFlag = 3
 	}
 	e.game.Search = e.game.Search & 1
-	e.es.f84C8 = [2]byte{}
-	e.es.f84E0 = 0
+	e.es.encounterShown = [2]byte{}
+	e.es.picShown = 0
 	e.DrawMainScreen()
 }
 

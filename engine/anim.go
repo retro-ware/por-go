@@ -127,8 +127,8 @@ func (e *Engine) DrawPortrait(x, y int, both bool) {
 
 // ShowPortrait = ovr08:0511 (head, body).
 func (e *Engine) ShowPortrait(head, body int) {
-	e.es.f84E1 = 0
-	e.es.f49FD, e.es.f49FE = byte(head), byte(body)
+	e.es.picAnimating = 0
+	e.es.picHead, e.es.picBody = byte(head), byte(body)
 	e.LoadPortrait(e.set, head, body)
 	e.DrawPortrait(3, 3, true)
 }
@@ -146,7 +146,7 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 		if flags[0] == 0 {
 			e.LoadAnimPic("SPRIT", sprite, true)
 			flags[0] = 1
-			e.es.f84E3 = 1
+			e.es.spriteLoaded = 1
 		}
 		if e.viewMode == 1 {
 			e.DrawAnimFrame(frame)
@@ -155,14 +155,14 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 		}
 	}
 	face := e.game.Portrait
-	if flags[1] != 0 && uint16(e.es.f84EA) == face {
+	if flags[1] != 0 && uint16(e.es.shownFace) == face {
 		return
 	}
-	if dist != 0 || e.viewMode != 1 || (e.es.f84E9 != 0 && e.flag49F6 == 0) {
+	if dist != 0 || e.viewMode != 1 || (e.es.inEncounterMenu != 0 && e.viewBit1 == 0) {
 		return
 	}
-	e.es.f84EA = byte(face)
-	e.es.f84E0 = 1
+	e.es.shownFace = byte(face)
+	e.es.picShown = 1
 	if face == 0xFF {
 		e.LoadAnimPic("PIC", pic, false)
 		flags[1] = 1
@@ -170,7 +170,7 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 	} else {
 		e.ShowPortrait(int(face), pic)
 		flags[1] = 1
-		e.es.f84E1 = 0
+		e.es.picAnimating = 0
 	}
 }
 

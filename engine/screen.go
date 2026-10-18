@@ -48,10 +48,10 @@ func (e *Engine) Redraw() {
 		}
 		s := e.gs.sky
 		s[0] = skyColour[sky]
-		if e.es.f84E5 != 0 {
-			s[1] = skyFg(e.es.v6F69)
-			s[2] = skyBand(e.es.v6F69)
-			s[3] = skyGround(e.es.v6F68)
+		if e.es.skyChanged != 0 {
+			s[1] = skyFg(e.es.skyShade)
+			s[2] = skyBand(e.es.skyShade)
+			s[3] = skyGround(e.es.groundShade)
 		}
 		e.SetSkyColours(s[0], s[1], s[2], s[3])
 		e.Draw3DView(e.posX, e.posY, e.viewFacing())
@@ -84,7 +84,7 @@ func (e *Engine) DrawMainScreen() {
 		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
 	case 1:
 		e.DrawMainFrame(true)
-		e.LoadPortrait(e.set, int(e.es.f49FD), int(e.es.f49FE))
+		e.LoadPortrait(e.set, int(e.es.picHead), int(e.es.picBody))
 		e.DrawPortrait(3, 3, true)
 	case 2:
 		e.DrawMainFrame(true)

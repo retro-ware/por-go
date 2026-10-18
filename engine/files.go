@@ -451,7 +451,7 @@ func (e *Engine) loadSlot(key byte) bool {
 	count := int(rd(1)[0])
 	names := rd(0x148)
 	w := e.area.ViewFlags
-	e.flag49F6, e.flag49F5 = byte(w>>1), byte(w&1)
+	e.viewBit1, e.viewBit0 = byte(w>>1), byte(w&1)
 	e.msgDelay = byte(e.area.MsgDelay)
 	e.setPartyCount(0)
 	e.party, e.partySel = nil, 0
@@ -521,7 +521,7 @@ func (e *Engine) saveSlot(key byte) {
 	e.ClearRow24()
 	e.DisplayString(0, 24, 0xA, "Saving...Please Wait")
 	e.area.MsgDelay = uint16(e.msgDelay)
-	e.area.ViewFlags = uint16(e.flag49F6)*2 + uint16(e.flag49F5)
+	e.area.ViewFlags = uint16(e.viewBit1)*2 + uint16(e.viewBit0)
 	e.game.SymbolSet = uint16(e.set)
 	b := []byte{byte(e.set)}
 	area := e.area

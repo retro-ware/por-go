@@ -87,7 +87,7 @@ func (e *Engine) chooseSpellTarget(spell, silent, allowGround int, t *aimTarget)
 					}
 				}
 			}
-			if e.hasAffect286B(tp) {
+			if e.isHelpless(tp) {
 				for i := 1; i <= 4; i++ {
 					if e.spellData(spell, 4) == shieldAffects[i] {
 						ok = false
@@ -115,7 +115,7 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 	var tmp aimTarget
 	ok = true
 	e.nSpellTargets = 0
-	e.spellFlag6820 = 0
+	e.spellOwnTargets = 0
 	e.tgtX, e.tgtY = e.combatX(e.selected()), e.combatY(e.selected())
 	sel := e.selected()
 	fromNear := func(rng int) {
@@ -124,7 +124,7 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 			e.setTgt(i+1, e.combatant(n.index))
 		}
 		e.nSpellTargets = len(e.near)
-		e.spellFlag6820 = 1
+		e.spellOwnTargets = 1
 	}
 	kind := e.spellData(spell, 0) & 0xF
 	switch {
@@ -301,7 +301,7 @@ func (e *Engine) foesHealthPercent() {
 		}
 	}
 	if max != 0 {
-		e.v6E2F = byte(20 * hp / max * 5) // the 16-bit product, dx cleared before the divide
+		e.foesHealth = byte(20 * hp / max * 5) // the 16-bit product, dx cleared before the divide
 	}
 }
 
@@ -328,7 +328,7 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 	if e.YesNo(0xD, 0xA, 0xF, "Attack Ally: ") != 'Y' {
 		return false
 	}
-	e.v6DE2 = 1
+	e.attackedAlly = 1
 	e.game.AttackedAlly = 1
 	for _, m := range e.party {
 		if m.Status == 0 && m.Control > 0x7F {
@@ -781,7 +781,7 @@ func (e *Engine) pickTarget(c *Character, rng, a, b int) bool {
 // rake = ovr14:39D2 (c, affect, flag): the affect handler of an
 // attacker's rake: while DS:6823 is 2 and its victim is up, c rakes it.
 func (e *Engine) rake(c *Character, a *Affect, flag byte) {
-	if e.hits6822[1] == 2 && c.Combat.Target != nil && c.Combat.Target.Okay != 0 {
+	if e.slotHits[1] == 2 && c.Combat.Target != nil && c.Combat.Target.Okay != 0 {
 		c.Combat.AttackSlot = 2
 		c.Attacks[1], c.Dice[1], c.Sides[1], c.Attacks[0] = 2, 2, 4, 0
 		e.CharMessage(c, "Rakes...", 0xA, true)
@@ -794,9 +794,9 @@ func (e *Engine) rake(c *Character, a *Affect, flag byte) {
 // the combatant a.Data (DS:6826): c strikes at it until one of them is
 // down or the affect is removed.
 func (e *Engine) strikeTied(c *Character, a *Affect, flag byte) {
-	e.v6826 = e.combatant(a.Data)
-	if flag != 0 || c.Okay == 0 || e.v6826.Okay == 0 {
-		e.RemoveAffect(e.v6826, 0x3A, nil)
+	e.tiedTarget = e.combatant(a.Data)
+	if flag != 0 || c.Okay == 0 || e.tiedTarget.Okay == 0 {
+		e.RemoveAffect(e.tiedTarget, 0x3A, nil)
 		if flag == 0 {
 			a.Call = 0
 			e.RemoveAffect(c, 0x4A, a)
@@ -804,9 +804,9 @@ func (e *Engine) strikeTied(c *Character, a *Affect, flag byte) {
 		return
 	}
 	c.Attacks[0], c.Attacks[1], c.Dice[0], c.Sides[0] = 1, 0, 3, 4
-	e.fullAttack(c, e.v6826, 1, nil)
+	e.fullAttack(c, e.tiedTarget, 1, nil)
 	e.clearCombatInfo(c)
-	if e.v6826.Okay == 0 {
+	if e.tiedTarget.Okay == 0 {
 		e.RemoveAffect(c, 0x4A, a)
 	}
 }

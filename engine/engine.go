@@ -70,7 +70,7 @@ type Engine struct {
 	sqrpaci            [2]*dax.Image
 	items              []byte // DS:5582: 16-byte base item records
 	pos3, pos4         byte   // DS:6AB0, 6AB1
-	flag49F5, flag49F6 byte
+	viewBit0, viewBit1 byte   // DS:49F5/49F6
 	mapPairA, mapPairB [3]int // DS:6AAE+4i / 6AB0+4i
 	// viewAnim = area+0x3FE: nonzero cycles the view picture on every poll
 	// (ovr26:03BD), cleared by displayInput (ovr26:06D8). No script sets it;
@@ -82,77 +82,77 @@ type Engine struct {
 	fileWallsA, fileWallsB [3]uint16
 	loadingMonster         bool // DS:557C
 
-	es             eclState            // ovr08/ovr04 interpreter state
-	msgRow, msgCol int                 // DS:5E25 / 5E24 text-block cursor
-	slowText       bool                // DS:4A00: DisplayTextBlock types out
-	listTop        int                 // DS:6B29 ovr26 list menu: first visible row
-	gs             geoState            // ovr30 map, wall sets and view
-	run            eclRun              // ovr04 globals
-	pic            animPic             // DS:6ABE view-window picture
-	sprCursor      bool                // e.spr is the aim cursor's icon (iconToSprite slot 0x19)
-	port           portrait            // DS:6B00.. HEAD/BODY portrait
-	eclFile        string              // DS:547C
-	ext            extras              // convenience features (extras.go)
-	snap           snapState           // the View published for other presenters (snapshot.go)
-	ac             afterCombat         // ovr06 globals
-	camp           campState           // ovr16/ovr21 globals
-	purse          purse               // the party's money
-	loot           purse               // DS:67F4 money found, taken after the fight
-	animInput      bool                // animate the view picture while waiting for a key
-	resting        byte                // DS:6DDA (ovr21 rest): messages skip the box border
-	view           viewState           // ovr20 View screen
-	itemsRedraw    bool                // DS:6821
-	usingItem      bool                // DS:6DBF
-	usedScroll     *Item               // DS:6B80
-	spellMenuKey   byte                // (extra) the key that closed the last spell menu
-	rv             ruleVars            // DS:6814..682A rule globals
-	near           []nearEntry         // DS:6716 combatants near a square
-	nearList       []nearEntry         // DS:671B copy kept by checkAffect
-	combatScreenX  [0x48]int8          // DS:604A
-	combatScreenY  [0x48]int8          // DS:6092
-	combatants     []*Character        // DS:65BD, combatant i (1-based) at [i-1]; filled by combat setup
-	targets        [0x48]byte          // DS:6DE4, near list indexes kept by nearEnemies
-	cmap           *combatMap          // DS:6716
-	cpos           [0x49]combatPos     // DS:5F27, combatant i at [i]
-	ncomb          int                 // DS:5F2A combatants on the map list
-	occ            [25][50]byte        // DS:60DB combatant index per square
-	bodies         [10]body            // DS:66D6, 1-based, count DS:6715
-	nbodies        int                 // DS:6715
-	v70C7          byte                // DS:70C7
-	icons          [0x48][2]*dax.Image // DS:5E5A, ready and action pose per slot
-	spr            *dax.Image          // DS:6E36, 4 frame missile/hit sprite
-	sprUnder       []byte              // DS:4A24, background saved by a sprite draw
-	place          placement           // DS:4440..4658 combat start formations
-	terrain        byte                // DS:465A wilderness square of the battle
-	clouds         []*cloud            // DS:6DBB lingering spell areas
-	v6E30, v6DE3   byte
-	v5D9A          *Item
-	v49F4          byte
-	v49F7          byte // DS:49F7 debug display (never set)
+	es                   eclState            // ovr08/ovr04 interpreter state
+	msgRow, msgCol       int                 // DS:5E25 / 5E24 text-block cursor
+	slowText             bool                // DS:4A00: DisplayTextBlock types out
+	listTop              int                 // DS:6B29 ovr26 list menu: first visible row
+	gs                   geoState            // ovr30 map, wall sets and view
+	run                  eclRun              // ovr04 globals
+	pic                  animPic             // DS:6ABE view-window picture
+	sprCursor            bool                // e.spr is the aim cursor's icon (iconToSprite slot 0x19)
+	port                 portrait            // DS:6B00.. HEAD/BODY portrait
+	eclFile              string              // DS:547C
+	ext                  extras              // convenience features (extras.go)
+	snap                 snapState           // the View published for other presenters (snapshot.go)
+	ac                   afterCombat         // ovr06 globals
+	camp                 campState           // ovr16/ovr21 globals
+	purse                purse               // the party's money
+	loot                 purse               // DS:67F4 money found, taken after the fight
+	animInput            bool                // animate the view picture while waiting for a key
+	resting              byte                // DS:6DDA (ovr21 rest): messages skip the box border
+	view                 viewState           // ovr20 View screen
+	itemsRedraw          bool                // DS:6821
+	usingItem            bool                // DS:6DBF
+	usedScroll           *Item               // DS:6B80
+	spellMenuKey         byte                // (extra) the key that closed the last spell menu
+	rv                   ruleVars            // DS:6814..682A rule globals
+	near                 []nearEntry         // DS:6716 combatants near a square
+	nearList             []nearEntry         // DS:671B copy kept by checkAffect
+	combatScreenX        [0x48]int8          // DS:604A
+	combatScreenY        [0x48]int8          // DS:6092
+	combatants           []*Character        // DS:65BD, combatant i (1-based) at [i-1]; filled by combat setup
+	targets              [0x48]byte          // DS:6DE4, near list indexes kept by nearEnemies
+	cmap                 *combatMap          // DS:6716
+	cpos                 [0x49]combatPos     // DS:5F27, combatant i at [i]
+	ncomb                int                 // DS:5F2A combatants on the map list
+	occ                  [25][50]byte        // DS:60DB combatant index per square
+	bodies               [10]body            // DS:66D6, 1-based, count DS:6715
+	nbodies              int                 // DS:6715
+	bodyIndex            byte                // DS:70C7
+	icons                [0x48][2]*dax.Image // DS:5E5A, ready and action pose per slot
+	spr                  *dax.Image          // DS:6E36, 4 frame missile/hit sprite
+	sprUnder             []byte              // DS:4A24, background saved by a sprite draw
+	place                placement           // DS:4440..4658 combat start formations
+	terrain              byte                // DS:465A wilderness square of the battle
+	clouds               []*cloud            // DS:6DBB lingering spell areas
+	magicOn, combatRound byte                // DS:6E30/6DE3
+	thrownCopy           *Item               // DS:5D9A
+	noContinue           byte                // DS:49F4
+	debugShow            byte                // DS:49F7 debug display (never set)
 
 	// combat overlays (ovr10/13/14/23)
-	spellTarget         *Character       // DS:6C95 target slot 1
-	spellList           []*ListNode      // DS:4766 spell menu lines (ovr23)
-	spellIDs            []byte           // DS:476A spell of each non-header line
-	spellItems          [0x31]*Item      // DS:477F scroll of each line
-	spellItemCount      int              // DS:4843
-	spellTargets        [0x49]*Character // DS:6C91+4i targets 2..; slot 1 is spellTarget
-	nSpellTargets       int              // DS:6C94
-	spellCaster         *Character       // DS:6DB5
-	curSpell            byte             // DS:681B spell being cast
-	spellFlag6820       byte             // DS:6820
-	tgtX, tgtY          int              // DS:6DB9/6DBA target square
-	combatTargets       bool             // DS:6B84 points at ovr14:20C3 (set by Combat), else ovr23:0A91
-	whoVar              bool             // SelectCharacter's who is DS:5D92 itself (opWho)
-	spellFx             [0x44]func()     // DS:6B84 spell effect table (slot 0 unused)
-	v4844, v4845        byte             // DS:4844/4845 spell scratch
-	v681A, v681D, v681E byte             // DS:681A speed value, 681D, 681E affect scratch
-	v6825               byte             // DS:6825 flee/surrender roll
-	hits6822, shots6E2C [3]byte          // DS:6822+i / 6E2C+i, i = 1..2 attack slots
-	v443C, v443D, v443E byte             // DS:443C..443E computer-turn movement state
-	v6DE2               byte             // DS:6DE2
-	v6826               *Character       // DS:6826 scratch target
-	v6E2F               byte             // DS:6E2F
+	spellTarget                     *Character       // DS:6C95 target slot 1
+	spellList                       []*ListNode      // DS:4766 spell menu lines (ovr23)
+	spellIDs                        []byte           // DS:476A spell of each non-header line
+	spellItems                      [0x31]*Item      // DS:477F scroll of each line
+	spellItemCount                  int              // DS:4843
+	spellTargets                    [0x49]*Character // DS:6C91+4i targets 2..; slot 1 is spellTarget
+	nSpellTargets                   int              // DS:6C94
+	spellCaster                     *Character       // DS:6DB5
+	curSpell                        byte             // DS:681B spell being cast
+	spellOwnTargets                 byte             // DS:6820
+	tgtX, tgtY                      int              // DS:6DB9/6DBA target square
+	combatTargets                   bool             // DS:6B84 points at ovr14:20C3 (set by Combat), else ovr23:0A91
+	whoVar                          bool             // SelectCharacter's who is DS:5D92 itself (opWho)
+	spellFx                         [0x44]func()     // DS:6B84 spell effect table (slot 0 unused)
+	spellValue, spellValue2         byte             // DS:4844/4845 spell scratch; DS:4845
+	turnValue, modMoves, affectVeto byte             // DS:681A speed value, 681D, 681E affect scratch; DS:681D/681E
+	fleeRoll                        byte             // DS:6825 flee/surrender roll
+	slotHits, slotShots             [3]byte          // DS:6822+i / 6E2C+i, i = 1..2 attack slots; DS:6E2C
+	aiLastDir, aiBlocked, aiState3  byte             // DS:443C..443E computer-turn movement state; DS:443D/443E
+	attackedAlly                    byte             // DS:6DE2
+	tiedTarget                      *Character       // DS:6826 scratch target
+	foesHealth                      byte             // DS:6E2F
 
 	// H
 	areaIconTick byte  // DS:6DDC area map party icon pose counter

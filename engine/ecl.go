@@ -13,30 +13,38 @@ const eclBase = 0x9900
 
 // eclState mirrors the DS globals used by the interpreter.
 type eclState struct {
-	argType                                                       [64]byte   // DS:7005
-	argLo                                                         [64]byte   // DS:7085
-	argHi                                                         [64]byte   // DS:7045
-	str                                                           [64]string // DS:6FC8 + 0x100*k (k = 1..)
-	retStack                                                      []int      // DS:6F70 chain
-	flags                                                         [6]bool    // DS:6F78..6F7D: eq ne lt gt le ge
-	op                                                            byte       // DS:6F7F
-	prevOp                                                        byte       // DS:6F7E
-	v6F68                                                         byte       // DS:6F68 (init 0x41)
-	v6F69                                                         byte       // DS:6F69 (init 9)
-	v6F6A                                                         uint16     // read-only specials 0xFB/0xFC/0xB1
-	v6F6C                                                         uint16
-	v6F6E                                                         uint16
-	v6F83                                                         byte   // CPIC id for ROLF clone (8)
-	stop                                                          bool   // DS:442E
-	events                                                        [5]int // DS:49E3,49E5,49E7,49E9,49EB
-	wallAhead                                                     byte   // DS:6AB0
-	cell                                                          byte   // DS:6AB1
-	f84C8                                                         [2]byte
-	f84CC, f84CE, f84D0                                           uint16
-	f84D2, f84D3, f84D4                                           byte
-	f84E0, f84E1, f84E2, f84E3, f84E5, f84E6, f84E8, f84E9, f84EA byte
-	f70C6                                                         byte
-	f49FD, f49FE                                                  byte
+	argType                            [64]byte   // DS:7005
+	argLo                              [64]byte   // DS:7085
+	argHi                              [64]byte   // DS:7045
+	str                                [64]string // DS:6FC8 + 0x100*k (k = 1..)
+	retStack                           []int      // DS:6F70 chain
+	flags                              [6]bool    // DS:6F78..6F7D: eq ne lt gt le ge
+	op                                 byte       // DS:6F7F
+	prevOp                             byte       // DS:6F7E
+	groundShade                        byte       // DS:6F68 (init 0x41)
+	skyShade                           byte       // DS:6F69 (init 9)
+	specialFB                          uint16     // read-only specials 0xFB/0xFC/0xB1; DS:6F6A
+	specialFC                          uint16     // DS:6F6C
+	specialB1                          uint16     // DS:6F6E
+	cloneIcon                          byte       // CPIC id for ROLF clone (8); DS:6F83
+	stop                               bool       // DS:442E
+	events                             [5]int     // DS:49E3,49E5,49E7,49E9,49EB
+	wallAhead                          byte       // DS:6AB0
+	cell                               byte       // DS:6AB1
+	encounterShown                     [2]byte    // DS:84C8
+	soundVar, scriptVarB8, scriptVarB9 uint16     // DS:84CC/84CE/84D0
+	memberDied, memberGone, duelMode   byte       // DS:84D2/84D3/84D4
+	picShown                           byte       // DS:84E0
+	picAnimating                       byte       // DS:84E1
+	textInView                         byte       // DS:84E2
+	spriteLoaded                       byte       // DS:84E3
+	skyChanged                         byte       // DS:84E5
+	posChanged                         byte       // DS:84E6
+	portraitChanged                    byte       // DS:84E8
+	inEncounterMenu                    byte       // DS:84E9
+	shownFace                          byte       // DS:84EA
+	unused70C6                         byte       // DS:70C6
+	picHead, picBody                   byte       // DS:49FD/49FE
 }
 
 func (e *Engine) eclByte(a int) byte       { return e.ecl[(a+0x6700)&0xFFFF] }
@@ -175,7 +183,7 @@ func (e *Engine) writeSpecialGlobal(a int, v uint16) {
 	switch {
 	case off == 0:
 		if v == 0 {
-			e.es.f84D3 = 1
+			e.es.memberGone = 1
 		}
 	case off >= 0x20 && off <= 0x70:
 		c.Memorized[(off - 0x1F)] = byte(v)
@@ -206,7 +214,7 @@ func (e *Engine) writeSpecialGlobal(a int, v uint16) {
 			c.Status = 7
 		}
 		if v == 0 {
-			e.es.f84D2 = 1
+			e.es.memberDied = 1
 		}
 	case off == 0x10C:
 		switch v {
@@ -232,7 +240,7 @@ func (e *Engine) WriteVar(a int, v uint16) {
 	case 0:
 		e.setAreaVar(a, v)
 		if a == 0x49FD || a == 0x49FE {
-			e.es.f84E8 = 1
+			e.es.portraitChanged = 1
 		}
 	case 1:
 		e.setGlobalVar(a, v)
@@ -245,31 +253,31 @@ func (e *Engine) WriteVar(a int, v uint16) {
 		if a < 0xBF68 {
 			switch a {
 			case 0x3DE:
-				e.es.f84CC = v
+				e.es.soundVar = v
 			case 0xB8:
-				e.es.f84CE = v
+				e.es.scriptVarB8 = v
 			case 0xB9:
-				e.es.f84D0 = v
+				e.es.scriptVarB9 = v
 			}
 			return
 		}
 		switch a - 0xBF68 {
 		case 0xE3:
-			e.es.f84E6 = 1
+			e.es.posChanged = 1
 			e.posX = int(v)
 		case 0xE4:
 			e.posY = int(v)
-			e.es.f84E6 = 1
+			e.es.posChanged = 1
 		case 0xE5:
 			e.facing = [4]int{0, 2, 4, 6}[v%4]
 			e.ext.back = false // the script chose the facing
-			e.es.f84E6 = 1
+			e.es.posChanged = 1
 		case 0xF1:
-			e.es.v6F68 = byte(v)
-			e.es.f84E5 = 1
+			e.es.groundShade = byte(v)
+			e.es.skyChanged = 1
 		case 0xF7:
-			e.es.v6F69 = byte(v)
-			e.es.f84E5 = 1
+			e.es.skyShade = byte(v)
+			e.es.skyChanged = 1
 		}
 	}
 }
@@ -292,11 +300,11 @@ func (e *Engine) ReadVar(a int) uint16 {
 	if a < 0xC04B {
 		switch a {
 		case 0xB1:
-			return e.es.v6F6E
+			return e.es.specialB1
 		case 0xFB:
-			return e.es.v6F6A
+			return e.es.specialFB
 		case 0xFC:
-			return e.es.v6F6C
+			return e.es.specialFC
 		case 0x33D:
 			return uint16(e.facing)
 		}
@@ -458,12 +466,12 @@ func (e *Engine) ArgValue(i int) uint16 {
 // InitAreaScript = ovr08:01B6.
 func (e *Engine) InitAreaScript() {
 	s := &e.es
-	s.f84E0, s.f84E2, s.f84D2, s.f84D3 = 0, 0, 0, 0
-	s.v6F68, s.v6F69, s.f84E5 = 0x41, 9, 1
-	s.f84C8 = [2]byte{}
-	s.v6F83 = 8
+	s.picShown, s.textInView, s.memberDied, s.memberGone = 0, 0, 0, 0
+	s.groundShade, s.skyShade, s.skyChanged = 0x41, 9, 1
+	s.encounterShown = [2]byte{}
+	s.cloneIcon = 8
 	e.eclPC = eclBase
-	s.f70C6 = 0
+	s.unused70C6 = 0
 	s.retStack = nil
 	s.flags = [6]bool{}
 	e.game.Portrait = 0xFF

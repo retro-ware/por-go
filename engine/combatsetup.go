@@ -11,10 +11,10 @@ func (e *Engine) combatSetup() {
 	e.MsgDelay()
 	e.DisplayString(0, 0x18, 0xA, "A battle begins...")
 	e.Music(2) // Amiga 0x364E2
-	e.v6E30, e.v6DE3, e.rv.hitRoll = 0, 0, 0
+	e.magicOn, e.combatRound, e.rv.hitRoll = 0, 0, 0
 	e.nbodies = 0
 	e.clouds = nil
-	e.v5D9A = nil
+	e.thrownCopy = nil
 	e.bodies = [10]body{}
 	e.game.AttackedAlly = 0
 	if e.game.Morale > 0x64 {
@@ -538,7 +538,7 @@ func (e *Engine) placeCombatants() {
 		if e.placeOne(idx) {
 			if c.Okay == 0 {
 				e.cpos[idx].size = 0
-				if e.run.f84D4 == 0 && c.Combat.Extra == 0 {
+				if e.run.duelMode == 0 && c.Combat.Extra == 0 {
 					x, y := e.cpos[idx].x, e.cpos[idx].y
 					e.nbodies++
 					e.bodies[e.nbodies] = body{c: c, x: x, y: y, ground: e.cmap.ground[y][x]}

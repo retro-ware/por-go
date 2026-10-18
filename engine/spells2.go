@@ -70,23 +70,23 @@ func (e *Engine) spellCharmPerson() {
 // spellStrengthPercent = ovr23:12A5: Strength; the percentile comes from the caster
 // level (levels above 6 leave DS:4845 as it was).
 func (e *Engine) spellStrengthPercent() {
-	e.v4844 = 0x12
+	e.spellValue = 0x12
 	switch e.casterLevel(int(e.curSpell)) {
 	case 1:
-		e.v4845 = 0
+		e.spellValue2 = 0
 	case 2:
-		e.v4845 = 1
+		e.spellValue2 = 1
 	case 3:
-		e.v4845 = 0x33
+		e.spellValue2 = 0x33
 	case 4:
-		e.v4845 = 0x4C
+		e.spellValue2 = 0x4C
 	case 5:
-		e.v4845 = 0x5B
+		e.spellValue2 = 0x5B
 	case 6:
-		e.v4845 = 0x64
+		e.spellValue2 = 0x64
 	}
 	t := e.tgt(1)
-	out, ok := e.SetStrength(t, e.v4844, e.v4845)
+	out, ok := e.SetStrength(t, e.spellValue, e.spellValue2)
 	if ok {
 		e.CharMessage(t, "is stronger", 0xA, true)
 	}
@@ -132,30 +132,30 @@ func (e *Engine) spellBurningHands() {
 // spellSleep = ovr23:151B: Sleep. 4d4 hit dice of targets fall asleep, weakest
 // first in list order; the others (and the already asleep) leave the list.
 func (e *Engine) spellSleep() {
-	e.spellFlag6820 = 1
-	e.v4844 = byte(e.Dice(4, 4))
+	e.spellOwnTargets = 1
+	e.spellValue = byte(e.Dice(4, 4))
 	for i := 1; i <= e.nSpellTargets; i++ {
 		t := e.tgt(i)
 		switch lvl := int8(t.MaxLevel); {
 		case lvl >= 0 && lvl <= 1:
-			e.v4845 = 1
+			e.spellValue2 = 1
 		case lvl == 2:
-			e.v4845 = 2
+			e.spellValue2 = 2
 		case lvl == 3:
-			e.v4845 = 4
+			e.spellValue2 = 4
 		case lvl == 4:
-			e.v4845 = 6
+			e.spellValue2 = 6
 		case lvl == 5:
 			if t.Race == 0 {
-				e.v4845 = 0xA
+				e.spellValue2 = 0xA
 			} else {
-				e.v4845 = 0x14
+				e.spellValue2 = 0x14
 			}
 		default:
-			e.v4845 = 0x14
+			e.spellValue2 = 0x14
 		}
-		if t.Status != 1 && e.FindAffect(t, 0x35) == nil && e.v4844 >= e.v4845 {
-			e.v4844 -= e.v4845
+		if t.Status != 1 && e.FindAffect(t, 0x35) == nil && e.spellValue >= e.spellValue2 {
+			e.spellValue -= e.spellValue2
 		} else {
 			e.setTgt(i, nil)
 		}
@@ -228,11 +228,11 @@ func (e *Engine) spellRaiseDead() {
 // spellUndeadTargets = ovr23:190F: the party members of kind 0xE whose hit points
 // fit in the caster's hit points become the targets.
 func (e *Engine) spellUndeadTargets() {
-	e.v4844 = e.selected().HP
+	e.spellValue = e.selected().HP
 	e.nSpellTargets = 0
 	for _, p := range e.party {
-		if p.Kind == 0xE && e.v4844 >= p.HP {
-			e.v4844 -= p.HP
+		if p.Kind == 0xE && e.spellValue >= p.HP {
+			e.spellValue -= p.HP
 			e.nSpellTargets++
 			e.setTgt(e.nSpellTargets, p)
 		}
@@ -264,7 +264,7 @@ func (e *Engine) spellWeaken() { e.applySpell(int(e.curSpell), 0, 0, 0, 0, "is w
 // the four squares' old ground and flags, target square, number of the
 // caster's clouds) is added; its squares become ground 0x1E.
 func (e *Engine) spellStinkingCloud() {
-	e.spellFlag6820 = 1
+	e.spellOwnTargets = 1
 	sel := e.selected()
 	lvl := e.casterLevel(int(e.curSpell))
 	n := 0
@@ -371,7 +371,7 @@ func (e *Engine) spellEnlarge() {
 // spellAnimateDead = ovr23:206F: Animate Dead. Corpses of the party list (status 6,
 // kind 0) are put back on their feet on the caster's side, one per caster level.
 func (e *Engine) spellAnimateDead() {
-	e.spellFlag6820 = 1
+	e.spellOwnTargets = 1
 	lvl := e.casterLevel(int(e.curSpell))
 	e.nSpellTargets = 0
 	sel := e.selected()
@@ -451,7 +451,7 @@ func (e *Engine) spellDisease() { e.applySpell(int(e.curSpell), 0, 1, 0, 0, "is 
 // affect goes with a chance of 50% +5% per level above, -10% per level
 // below, the level of the affect being its data low nibble.
 func (e *Engine) spellDispel() {
-	e.spellFlag6820 = 1
+	e.spellOwnTargets = 1
 	lvl := e.casterLevel(int(e.curSpell))
 	for i := 1; i <= e.nSpellTargets; i++ {
 		hit := false
@@ -460,16 +460,16 @@ func (e *Engine) spellDispel() {
 			if a.Data >= 0xFF {
 				continue
 			}
-			e.v4845 = a.Data & 0xF
+			e.spellValue2 = a.Data & 0xF
 			switch {
-			case byte(lvl) > e.v4845:
-				e.v4844 = byte((lvl-int(e.v4845))*5 + 0x32)
-			case byte(lvl) < e.v4845:
-				e.v4844 = byte(0x32 - (int(e.v4845)-lvl)*2)
+			case byte(lvl) > e.spellValue2:
+				e.spellValue = byte((lvl-int(e.spellValue2))*5 + 0x32)
+			case byte(lvl) < e.spellValue2:
+				e.spellValue = byte(0x32 - (int(e.spellValue2)-lvl)*2)
 			default:
-				e.v4844 = 0x32
+				e.spellValue = 0x32
 			}
-			if byte(e.Dice(1, 100)) <= e.v4844 {
+			if byte(e.Dice(1, 100)) <= e.spellValue {
 				e.RemoveAffect(t, a.Type, a)
 				hit = true
 			}

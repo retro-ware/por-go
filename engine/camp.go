@@ -898,19 +898,19 @@ func (e *Engine) alterMenu() {
 		case 'P':
 			for k := byte(' '); k != 0 && k != 'E'; {
 				menu := "Monsters off  "
-				if e.flag49F6 != 0 {
+				if e.viewBit1 != 0 {
 					menu = "Monsters on  "
 				}
-				if e.flag49F5 != 0 {
+				if e.viewBit0 != 0 {
 					menu += "Portraits on  "
 				} else {
 					menu += "Portraits off  "
 				}
 				k, _ = e.DisplayInput("", menu+"Exit", 0xD, 0xA, 0xF, false, true)
 				if k == 'M' {
-					e.flag49F6 ^= 1
+					e.viewBit1 ^= 1
 				} else if k == 'P' {
-					e.flag49F5 ^= 1
+					e.viewBit0 ^= 1
 				}
 			}
 		}

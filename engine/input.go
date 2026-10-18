@@ -36,7 +36,7 @@ func (e *Engine) ReadKeyByte() byte {
 	}
 	if e.Cfg.Param == "STING" {
 		if k == 4 {
-			e.v49F7 ^= 1
+			e.debugShow ^= 1
 		}
 		if k == 3 {
 			e.Exit() // 0899:0000

@@ -188,7 +188,7 @@ func (e *Engine) recolourSquare(from, to []byte, v byte, random bool) {
 // "ROLF" with the CPIC picture, is appended as the opponent and gets
 // copies of the member's items, in reverse order.
 func (e *Engine) DuelSetup(n int) {
-	e.run.f84D4 = 1
+	e.run.duelMode = 1
 	e.game.Duel = uint16(int16(int8(n)))
 	sel := e.selected()
 	if sel == nil {
@@ -202,14 +202,14 @@ func (e *Engine) DuelSetup(n int) {
 	if n == 0 {
 		return
 	}
-	e.LoadIconPic("CPIC", 0xB, int(e.es.v6F83))  // ovr33:01C8
-	cl := &Character{charRecord: sel.charRecord} // no affects, no items yet
+	e.LoadIconPic("CPIC", 0xB, int(e.es.cloneIcon)) // ovr33:01C8
+	cl := &Character{charRecord: sel.charRecord}    // no affects, no items yet
 	cl.Okay = 1
 	cl.SetName("ROLF")
 	cl.Auto = 1
 	cl.Side = 1
 	cl.Control = 0xB2
-	cl.Order = e.es.v6F83
+	cl.Order = e.es.cloneIcon
 	e.party = append(e.party, cl)
 	for _, it := range sel.Items {
 		c := *it

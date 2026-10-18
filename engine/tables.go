@@ -614,7 +614,7 @@ var footprintTable = [5][4][2]int8{
 	{{0, 0}, {1, 0}, {0, 1}, {1, 1}},
 }
 
-// affects tested by hasAffect286B ([0] unused) (DS:286B).
+// affects tested by isHelpless ([0] unused) (DS:286B).
 var shieldAffects = [5]byte{0x01, 0x33, 0x34, 0x35, 0x1F}
 
 // head picture of each portrait head (DS:286F).

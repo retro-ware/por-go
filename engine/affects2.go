@@ -319,7 +319,7 @@ func (e *Engine) disease(c *Character, a *Affect, flag byte) {
 // firstHitMark = ovr13:2490 (c, a, flag): marks the affect (bit 4 of its data) the first time
 // it is rolled with a hit roll set.
 func (e *Engine) firstHitMark(c *Character, a *Affect, flag byte) {
-	if e.v6DE3 == 0 && e.rv.hitRoll == 0 {
+	if e.combatRound == 0 && e.rv.hitRoll == 0 {
 		a.Data &= 0x0F
 	} else if a.Data&0x10 == 0 {
 		e.rv.hitRoll = -1
@@ -657,13 +657,13 @@ func (e *Engine) blockMind(c *Character, a *Affect, flag byte) {
 func (e *Engine) gazeReflected(c *Character, a *Affect, flag byte) {
 	t := c.Combat.Target
 	for _, p := range t.Items {
-		if e.v681E != 0 {
+		if e.affectVeto != 0 {
 			break
 		}
 		if p.Readied != 0 {
 			for k := 1; k <= 3; k++ {
 				if p.Words[k-1] == 0x98 && p.Words[2] == 0xFC || p.Words[k-1] == 0x76 {
-					e.v681E = 1
+					e.affectVeto = 1
 				}
 			}
 		}
@@ -762,7 +762,7 @@ func (e *Engine) debugValues(msg string, a, b, c int) {
 	if len(msg) > 0x28 {
 		msg = msg[:0x28]
 	}
-	if e.v49F7 == 0 {
+	if e.debugShow == 0 {
 		return
 	}
 	e.ClearBox(0, 0, 0x27, 0)

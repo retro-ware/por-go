@@ -15,7 +15,7 @@ type afterCombat struct {
 	won      bool  // DS:84DA
 }
 
-func (e *Engine) duel() bool { return e.run.f84D4 != 0 }
+func (e *Engine) duel() bool { return e.run.duelMode != 0 }
 
 // combatParty returns the party members before the first combat monster
 // (Combat +0x13 = 1).

@@ -4,7 +4,7 @@ import "bytes"
 
 // Affect handlers of ovr13, offsets 0x0000..0x1C00. Each o13_XXXX is a
 // DS:6828 table entry: handler(char, affect, flag); flag 1 = removing.
-// The rule globals DS:6816.. are e.rv (v6825 and friends see rules.go).
+// The rule globals DS:6816.. are e.rv (fleeRoll and friends see rules.go).
 // DS:6826 (a far pointer scratch) is a Go local; where the original left
 // it holding the target of the combat block, we use c.Combat.Target.
 
@@ -105,7 +105,7 @@ func (e *Engine) avoidDistantAttack(c *Character, pct byte) {
 		e.CharMessage(c, "Avoids it", 0xA, true)
 		e.rv.damage = 0
 		e.rv.hitRoll = -1
-		e.hits6822[1]--
+		e.slotHits[1]--
 	}
 }
 
@@ -133,16 +133,16 @@ func (e *Engine) paralyseTarget(c *Character, time int, extra byte) {
 
 // hitBonusUp = ovr13:010D: to-hit and DS:6825 up.
 func (e *Engine) hitBonusUp(c *Character, a *Affect, flag byte) {
-	e.v6825 += 5
+	e.fleeRoll += 5
 	e.rv.hitRoll++
 }
 
 // hitBonusDown = ovr13:011D: the reverse.
 func (e *Engine) hitBonusDown(c *Character, a *Affect, flag byte) {
-	if e.v6825 < 5 {
-		e.v6825 = 0
+	if e.fleeRoll < 5 {
+		e.fleeRoll = 0
 	} else {
-		e.v6825 -= 5
+		e.fleeRoll -= 5
 	}
 	e.rv.hitRoll--
 }
@@ -257,7 +257,7 @@ func (e *Engine) charmSide(c *Character, a *Affect, flag byte) {
 		combatInfo(c).Target = nil
 		e.countSides()
 	}
-	e.v6825 = 0x64
+	e.fleeRoll = 0x64
 }
 
 // bestStrength = ovr13:04BA: strength affects (the best one counts).
@@ -375,7 +375,7 @@ func (e *Engine) cursedItemToggle(c *Character, a *Affect, flag byte) {
 // blindedToHit = ovr13:0918: to-hit -4; DS:681E unless the selected one has affect 0x18.
 func (e *Engine) blindedToHit(c *Character, a *Affect, flag byte) {
 	if e.FindAffect(e.selected(), 0x18) == nil {
-		e.v681E = 1
+		e.affectVeto = 1
 	}
 	e.rv.hitRoll -= 4
 }
@@ -390,7 +390,7 @@ func (e *Engine) hitBonusVsTargetNames(c *Character, a *Affect, flag byte) {
 
 // mirrorImage = ovr13:09C0: mirror image: an attack may hit an image instead.
 func (e *Engine) mirrorImage(c *Character, a *Affect, flag byte) {
-	if e.Dice(1, int(a.Data)+1) > 1 && e.curSpell > 0 && e.spellFlag6820 == 0 {
+	if e.Dice(1, int(a.Data)+1) > 1 && e.curSpell > 0 && e.spellOwnTargets == 0 {
 		e.blockAffect(0)
 		e.CharMessage(c, "lost an image", 0xA, true)
 		a.Data--
@@ -471,7 +471,7 @@ func (e *Engine) minus4HitSave(c *Character, a *Affect, flag byte) {
 // alwaysMissDelayed = ovr13:0C26: DS:681E and the attack always misses.
 func (e *Engine) alwaysMissDelayed(c *Character, a *Affect, flag byte) {
 	if int8(combatInfo(c).Delay) > 0 {
-		e.v681E = 1
+		e.affectVeto = 1
 		e.rv.hitRoll = -1
 	}
 }
@@ -483,7 +483,7 @@ func (e *Engine) agesOnce(c *Character, a *Affect, flag byte) {
 		e.CharMessage(c, "ages", 0xA, true)
 		c.Age++
 	}
-	e.v681A <<= 1
+	e.turnValue <<= 1
 }
 
 // clearStinkingCloud = ovr13:0CC3: the stinking cloud of this caster and side is cleared: its
@@ -549,7 +549,7 @@ func (e *Engine) avoidUnmagicWeapon(c *Character, a *Affect, flag byte) {
 }
 
 // halveAttacks = ovr13:10C1: DS:681A halved.
-func (e *Engine) halveAttacks(c *Character, a *Affect, flag byte) { e.v681A >>= 1 }
+func (e *Engine) halveAttacks(c *Character, a *Affect, flag byte) { e.turnValue >>= 1 }
 
 // isWeakened = ovr13:10DE: "is weakened": strength down while it lasts (affect 0x2B).
 func (e *Engine) isWeakened(c *Character, a *Affect, flag byte) {
@@ -649,8 +649,8 @@ func (e *Engine) rots(c *Character, a *Affect, flag byte) {
 // heldNoMoves = ovr13:1452: the combat block loses +6; DS:681A cleared when DS:681D is set.
 func (e *Engine) heldNoMoves(c *Character, a *Affect, flag byte) {
 	combatInfo(c).Moves = 0
-	if e.v681D != 0 {
-		e.v681A = 0
+	if e.modMoves != 0 {
+		e.turnValue = 0
 	}
 }
 
@@ -708,7 +708,7 @@ func (e *Engine) poisonBiteMinus2(c *Character, a *Affect, flag byte) { e.poison
 
 // missMinus4 = ovr13:171F: DS:681E, to-hit -4.
 func (e *Engine) missMinus4(c *Character, a *Affect, flag byte) {
-	e.v681E = 1
+	e.affectVeto = 1
 	e.rv.hitRoll -= 4
 }
 

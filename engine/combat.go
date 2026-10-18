@@ -186,8 +186,8 @@ func (e *Engine) playerTurn(c *Character) {
 			e.bandage(true)
 			done = e.clearCombatInfo(c)
 		case '2':
-			e.v6E30 ^= 1
-			if e.v6E30 != 0 {
+			e.magicOn ^= 1
+			if e.magicOn != 0 {
 				e.BottomMessage("Magic On")
 			} else {
 				e.BottomMessage("Magic Off")
@@ -335,7 +335,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 // endRound = ovr09:0880 (var done): the clock, the dying, the end check.
 func (e *Engine) endRound() (done bool) {
 	e.AdvanceClock(1, 1)
-	e.v6DE3++
+	e.combatRound++
 	e.foesHealthPercent()
 	for _, c := range e.party {
 		e.affectGroup(c, 0x13)
@@ -355,7 +355,7 @@ func (e *Engine) endRound() (done bool) {
 	if e.rv.side[0] == 0 || e.rv.side[1] == 0 {
 		done = true
 	}
-	if e.rv.side[0] > 0 && e.rv.side[1] == 0 && e.v49F4 == 0 {
+	if e.rv.side[0] > 0 && e.rv.side[1] == 0 && e.noContinue == 0 {
 		if e.YesNo(0xD, 0xA, 0xF, "Continue Battle:") == 'Y' {
 			done = false
 		}
@@ -476,7 +476,7 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 				done = e.clearCombatInfo(c)
 			}
 			e.stinkingCloud(c)
-			if e.hasAffect286B(c) {
+			if e.isHelpless(c) {
 				done = e.clearCombatInfo(c)
 			}
 		}
@@ -775,7 +775,7 @@ func (e *Engine) combatPanel(c *Character) {
 	switch {
 	case c.Okay == 0:
 		e.DisplayString(x, 0x17, 0xF, cut(e.statusName(c), 0x27-x))
-	case e.hasAffect286B(c):
+	case e.isHelpless(c):
 		e.DisplayString(x, 0x17, 0xF, "(Helpless)")
 	default:
 		e.DisplayString(x, 0x17, 0xF, "Damage")

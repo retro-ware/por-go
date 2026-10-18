@@ -619,7 +619,7 @@ func (e *Engine) combatRemoveFromMap(c *Character) {
 		e.soundWait(0xA)
 		return
 	}
-	if int(e.v70C7) < len(e.bodies) && e.bodies[e.v70C7].c == c {
+	if int(e.bodyIndex) < len(e.bodies) && e.bodies[e.bodyIndex].c == c {
 		return // the original's search (DS:70C7, not its loop index)
 	}
 	idx := e.combatIndex(c)

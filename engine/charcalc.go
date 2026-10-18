@@ -473,8 +473,8 @@ func strCarry(c *Character) int16 {
 	return 0
 }
 
-// hasAffect286B = 00BA:0B73: any of the four affects in DS:286C.
-func (e *Engine) hasAffect286B(c *Character) bool {
+// isHelpless = 00BA:0B73: any of the four affects in DS:286C.
+func (e *Engine) isHelpless(c *Character) bool {
 	found := false
 	for i := 1; i <= 4; i++ {
 		if e.FindAffect(c, shieldAffects[i]) != nil {

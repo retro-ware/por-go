@@ -11,10 +11,10 @@ func (e *Engine) turnSetup(c *Character) {
 	cb := c.Combat
 	cb.Spell, cb.CanCast, cb.CanUse, cb.Attacked, cb.AttackSlot = 0, 1, 1, 0, 2
 	e.setSpeed(c)
-	e.v681A = c.BaseAttack[1]
-	e.v681D = 0
+	e.turnValue = c.BaseAttack[1]
+	e.modMoves = 0
 	e.affectGroup(c, 0x12)
-	c.Attacks[1] = byte(e.halfRoundUp(e.v681A))
+	c.Attacks[1] = byte(e.halfRoundUp(e.turnValue))
 	cb.Sweeps = c.FightLevel
 	if c.Okay != 0 {
 		cb.Delay = byte(int(dexMissile(c.Stats[statDex])) + e.Dice(1, 6))
@@ -40,14 +40,14 @@ func (e *Engine) moveRate(c *Character) int {
 	if c.Side == 0 {
 		v += byte(e.game.PartyMove)
 	}
-	e.v681D = 1
+	e.modMoves = 1
 	if v < 1 || v > 0x60 {
 		v = 1
 	}
-	e.v681A = v << 1
+	e.turnValue = v << 1
 	e.affectGroup(c, 0x12)
-	e.v681D = 0
-	return int(e.v681A)
+	e.modMoves = 0
+	return int(e.turnValue)
 }
 
 // damageRoll = ovr14:0191 (att, vic, slot): damage roll of the attack slot (1 or 2),
@@ -144,7 +144,7 @@ func (e *Engine) waitingFoesStrike(c *Character) {
 			continue
 		}
 		t := e.combatant(e.targets[i])
-		if t.Combat.Guarding == 0 || e.hasAffect286B(t) {
+		if t.Combat.Guarding == 0 || e.isHelpless(t) {
 			continue
 		}
 		e.combatCentre(e.combatX(c), e.combatY(c), 2, 8)
@@ -184,7 +184,7 @@ func (e *Engine) stepSquare(c *Character, dir int) {
 	cb.Attackers, cb.Flank = 0, 0
 	e.PlaySound(sndStep)
 	e.waitingFoesStrike(c)
-	if c.Okay == 0 || e.hasAffect286B(c) {
+	if c.Okay == 0 || e.isHelpless(c) {
 		cb.Moves = 0
 	}
 }
@@ -223,7 +223,7 @@ func (e *Engine) freeAttacksOnLeave(c *Character, dir int) {
 			continue
 		}
 		t := e.combatant(lst[i])
-		if e.hasAffect286B(t) || !e.mayActAgainst(t, c) {
+		if e.isHelpless(t) || !e.mayActAgainst(t, c) {
 			continue
 		}
 		if e.FindAffect(t, 0x4B) != nil || e.FindAffect(t, 0x4A) != nil {
@@ -302,13 +302,13 @@ func (e *Engine) setSpeed(c *Character) {
 		if v < 2 {
 			v = 2
 		}
-		e.v681A = v
+		e.turnValue = v
 	} else {
-		e.v681A = c.Attacks[0]
+		e.turnValue = c.Attacks[0]
 	}
-	e.v681D = 0
+	e.modMoves = 0
 	e.affectGroup(c, 0x12)
-	r := byte(e.halfRoundUp(e.v681A))
+	r := byte(e.halfRoundUp(e.turnValue))
 	if flag && it != nil {
 		w := byte(1)
 		if it.Count > w {
@@ -327,7 +327,7 @@ func (e *Engine) setSpeed(c *Character) {
 
 // halfRoundUp = ovr14:0E52 (v): half of v, rounded up when DS:6DE3 is odd.
 func (e *Engine) halfRoundUp(v byte) int {
-	if e.v6DE3&1 != 0 {
+	if e.combatRound&1 != 0 {
 		v++
 	}
 	return int(v >> 1)
@@ -387,15 +387,15 @@ func (e *Engine) mayActAgainst(t, c *Character) bool {
 	if t == c {
 		return true
 	}
-	e.v681E = 0
+	e.affectVeto = 0
 	e.affectGroup(c, 1)
-	if e.v681E == 0 {
+	if e.affectVeto == 0 {
 		saved := t.Combat.Target
 		t.Combat.Target = c
 		e.affectGroup(t, 0)
 		t.Combat.Target = saved
 	}
-	return e.v681E == 0
+	return e.affectVeto == 0
 }
 
 // clericTurnUndead = ovr14:116A (char): a cleric turns undead (ovr14:116A).
@@ -480,17 +480,17 @@ func (e *Engine) weakestUnturned(c *Character, out **Character) bool {
 func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 	acb := a.Combat
 	done = false
-	e.hits6822[1], e.hits6822[2] = 0, 0
-	e.shots6E2C[1], e.shots6E2C[2] = 0, 0
+	e.slotHits[1], e.slotHits[2] = 0, 0
+	e.slotShots[1], e.slotShots[2] = 0, 0
 	any, stop := false, false
 	e.rv.damage = 0
 	acb.Attacked = 1
-	if e.hasAffect286B(b) {
+	if e.isHelpless(b) {
 		e.PlaySound(sndBump)
 		for acb.AttackSlot > 0 && a.Attacks[acb.AttackSlot-1] == 0 {
 			acb.AttackSlot--
 		}
-		e.shots6E2C[acb.AttackSlot]++
+		e.slotShots[acb.AttackSlot]++
 		e.attackText(a, b, 3, (int(b.HP)+5)&0xFF, 1, 1)
 		e.removeInvisibility(a)
 		for s := 1; s <= 2; s++ {
@@ -534,9 +534,9 @@ func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 			for a.Attacks[s-1] != 0 && !stop {
 				a.Attacks[s-1]--
 				acb.AttackSlot = byte(s)
-				e.shots6E2C[s]++
-				if e.AttackHits(a, b, int(need)) || e.hasAffect286B(b) {
-					e.hits6822[s]++
+				e.slotShots[s]++
+				if e.AttackHits(a, b, int(need)) || e.isHelpless(b) {
+					e.slotHits[s]++
 					e.PlaySound(sndBump)
 					any = true
 					e.damageRoll(a, b, s)
@@ -614,7 +614,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 		done = e.attackSlots(a, b, flag)
 		if it != nil {
 			if it.Count > 0 {
-				it.Count -= e.shots6E2C[1]
+				it.Count -= e.slotShots[1]
 			}
 			if it.Count == 0 {
 				if e.throwable(a) && it.Spells[2] != 0x89 {
@@ -623,7 +623,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 					e.run.treasure = append([]*Item{n}, e.run.treasure...)
 					n.Readied = 0
 					e.RemoveItem(a, it)
-					e.v5D9A = n
+					e.thrownCopy = n
 				} else {
 					e.RemoveItem(a, it)
 				}

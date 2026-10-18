@@ -169,7 +169,7 @@ func (e *Engine) aiCastKnown(c *Character) bool {
 	found := 0
 	lvl := 7
 	rounds := e.Dice(1, 7)
-	if n > 0 && (c.Control > 0x7F || e.v6E30 != 0) && e.rv.side[b2i(isParty(c))] != 0 {
+	if n > 0 && (c.Control > 0x7F || e.magicOn != 0) && e.rv.side[b2i(isParty(c))] != 0 {
 		for it := 1; it <= rounds && found == 0; it++ {
 			for t := 1; t < 4 && found == 0; t++ {
 				sp := int(arr[e.Dice(1, n)-1])
@@ -278,12 +278,12 @@ func (e *Engine) aiMoveStep(c *Character) {
 		done = e.clearCombatInfo(c)
 	} else {
 		d = (int(aiStep(ci.Pattern, i)) + dir) % 8
-		if i == 6 || int(e.v443C) == (d+4)%8 {
-			e.v443D++
+		if i == 6 || int(e.aiLastDir) == (d+4)%8 {
+			e.aiBlocked++
 			ci.Pattern = byte(int(ci.Pattern)%6 + 1)
-			if e.v443D > 1 {
+			if e.aiBlocked > 1 {
 				ci.Target = nil
-				if e.v443D > 2 {
+				if e.aiBlocked > 2 {
 					ci.Moves = 0
 					done = true
 				} else if !e.pickTarget(c, 0xFF, 1, 0) {
@@ -292,7 +292,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 			}
 		}
 		if i < 6 {
-			e.v443C = byte(d)
+			e.aiLastDir = byte(d)
 		} else {
 			done = true
 		}
@@ -317,7 +317,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 // the turn is over; true when it is.
 func (e *Engine) aiAttackLoop(c *Character) bool {
 	ci := c.Combat
-	e.v443C, e.v443D, e.v443E = 8, 0, 0
+	e.aiLastDir, e.aiBlocked, e.aiState3 = 8, 0, 0
 	iter := 0
 	cont, stop := true, false
 	e.affectGroup(c, 0xE)
@@ -413,7 +413,7 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 // on is cleared, otherwise 00BA:2686 finishes it.
 func (e *Engine) aiGiveUp(c *Character) bool {
 	e.ClearMessageArea()
-	if e.hasAffect286B(c) || e.rangedWeapon(c) || c.Combat.Delay == 0 {
+	if e.isHelpless(c) || e.rangedWeapon(c) || c.Combat.Delay == 0 {
 		return e.clearCombatInfo(c)
 	}
 	return e.guard(c)
@@ -430,8 +430,8 @@ func (e *Engine) aiKeys(c *Character) bool {
 		}
 		switch k {
 		case 0x32:
-			e.v6E30 ^= 1
-			if e.v6E30 != 0 {
+			e.magicOn ^= 1
+			if e.magicOn != 0 {
 				e.BottomMessage("Magic On")
 			} else {
 				e.BottomMessage("Magic Off")
@@ -469,19 +469,19 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 	if c.Control <= 0x7F {
 		return r
 	}
-	e.v6825 = byte(int(c.Control&0x7F) * 2)
-	if e.v6825 > 0x66 {
-		e.v6825 = 0
+	e.fleeRoll = byte(int(c.Control&0x7F) * 2)
+	if e.fleeRoll > 0x66 {
+		e.fleeRoll = 0
 	}
 	e.affectGroup(c, 0x11)
 	t := 100 - int(c.HP)*100/int(c.MaxHP) // cdq clobbers dx: signed word divide
-	if !(int(e.v6825) < t || e.v6825 == 0) {
+	if !(int(e.fleeRoll) < t || e.fleeRoll == 0) {
 		return r
 	}
-	e.v6825 = e.v6E2F
+	e.fleeRoll = e.foesHealth
 	e.affectGroup(c, 0x11)
 	t2 := uint16(100 - e.game.Morale)
-	if !(uint16(e.v6825) < t2 || e.v6825 == 0 || c.Side == 0) {
+	if !(uint16(e.fleeRoll) < t2 || e.fleeRoll == 0 || c.Side == 0) {
 		return r
 	}
 	a := e.fastestFoeMove(c)

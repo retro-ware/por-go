@@ -159,8 +159,8 @@ func (e *Engine) opRob() {
 // reactions, 3 texts, flee threshold, monster strength): the approach
 // menu. result: 0 none, 1 combat, 2 party flees, 3 parlay.
 func (e *Engine) opEncounterMenu() {
-	e.es.f84E9 = 1
-	e.run.f84E4 = 0
+	e.es.inEncounterMenu = 1
+	e.run.textCleared = 0
 	e.slowText = true
 	hi, lo := e.PartyHpRange()
 	e.FetchArgs(14)
@@ -183,7 +183,7 @@ func (e *Engine) opEncounterMenu() {
 		e.game.MonsterDist = e.game.MaxDist
 	}
 	show := func() {
-		e.ShowEncounter(e.run.sprite, e.run.closeup, int(byte(e.game.MonsterDist)), &e.es.f84C8)
+		e.ShowEncounter(e.run.sprite, e.run.closeup, int(byte(e.game.MonsterDist)), &e.es.encounterShown)
 	}
 	show()
 	dist := func() uint16 { return e.game.MonsterDist }
@@ -205,7 +205,7 @@ func (e *Engine) opEncounterMenu() {
 	}
 	txt := ""
 	for again := true; again; {
-		anim := e.es.f84E0 != 0 && e.es.f84E1 != 0
+		anim := e.es.picShown != 0 && e.es.picAnimating != 0
 		clear := true
 		again = false
 		e.msgCol, e.msgRow = 1, 0x11
@@ -323,7 +323,7 @@ func (e *Engine) opEncounterMenu() {
 	}
 	e.ClearBox(0, 0x18, 0x27, 0x18)
 	e.slowText = false
-	e.es.f84E9 = 0
+	e.es.inEncounterMenu = 0
 }
 
 // opParlay = ovr04:25CB (5 results, dst): the talk-style menu.
@@ -348,17 +348,17 @@ func (e *Engine) opCall() {
 	case 0xAC91:
 		e.es.cell = e.MapCell(e.posX, e.posY)
 		s := &e.es
-		if e.run.scriptLoad != 0 && (s.f84E0 != 0 || s.f84E3 != 0 || s.f84E5 != 0 || s.f84E6 != 0 || s.f84E8 != 0) {
+		if e.run.scriptLoad != 0 && (s.picShown != 0 || s.spriteLoaded != 0 || s.skyChanged != 0 || s.posChanged != 0 || s.portraitChanged != 0) {
 			e.Redraw()
 			e.StatusLine()
-			s.f84E8, s.f84E5, s.f84E6, s.f84E0, s.f84E3 = 0, 0, 0, 0, 0
+			s.portraitChanged, s.skyChanged, s.posChanged, s.picShown, s.spriteLoaded = 0, 0, 0, 0, 0
 		}
 	case 1:
 		e.DuelSetup(1) // ovr08:1A6F
 	case 2:
 		e.DuelSetup(0)
 	case 0x3A04:
-		switch e.es.f84CC {
+		switch e.es.soundVar {
 		case 8:
 			e.PlaySound(sndStep)
 		case 0xA:
@@ -451,9 +451,9 @@ func (e *Engine) opDamage() {
 // opRedrawView = ovr04:2AA2.
 func (e *Engine) opRedrawView() {
 	e.eclPC++
-	if e.es.f84E3 != 0 {
+	if e.es.spriteLoaded != 0 {
 		e.Redraw()
-		e.es.f84E3, e.es.f84E0 = 0, 0
+		e.es.spriteLoaded, e.es.picShown = 0, 0
 	}
 }
 
@@ -478,7 +478,7 @@ func (e *Engine) opNewLine() {
 	e.eclPC++
 	e.msgCol = 1
 	e.msgRow++
-	e.run.f84DF = 0
+	e.run.lineHasText = 0
 }
 
 // opClock = ovr04:2AC1 (n): advance the clock n minutes. (The original
@@ -598,13 +598,13 @@ func (e *Engine) opSpell() {
 // variables from base on, each value+1 a symbol id, until one is <= 1.
 func (e *Engine) opProtection() {
 	e.FetchArgs(1)
-	e.es.f84C8 = [2]byte{}
-	e.es.f84E0 = 0
-	if e.run.f84DE != 0 && e.msgRow > 0xD {
+	e.es.encounterShown = [2]byte{}
+	e.es.picShown = 0
+	if e.run.textInBox != 0 && e.msgRow > 0xD {
 		e.msgCol, e.msgRow = 2, 5
-		e.es.f84E2 = 1
+		e.es.textInView = 1
 	}
-	e.run.f84DF = 1
+	e.run.lineHasText = 1
 	base := e.ArgAddr(1)
 	for i := 0; ; i++ {
 		v := byte(e.ReadVar(base+i) + 1)
@@ -621,5 +621,5 @@ func (e *Engine) opProtection() {
 func (e *Engine) opClearBox() {
 	e.eclPC++
 	e.ClearBox(1, 1, 0xF, 0xF)
-	e.run.f84DE = 1
+	e.run.textInBox = 1
 }

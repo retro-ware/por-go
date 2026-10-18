@@ -75,7 +75,7 @@ func (e *Engine) CharacterSheet() {
 	e.DisplayString(1, y, 0xF, "Status")
 	e.DisplayString(8, y, 0xA, e.statusName(c))
 	e.sheetEffects(c)
-	if e.flag49F5 != 0 { // the original: only while set 3 is loaded (its HEAD/BODY); extra: everywhere, from charArt
+	if e.viewBit0 != 0 { // the original: only while set 3 is loaded (its HEAD/BODY); extra: everywhere, from charArt
 		e.SheetPortrait()
 	}
 }
