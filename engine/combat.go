@@ -216,6 +216,7 @@ func (e *Engine) playerTurn(c *Character) {
 				e.combatRedrawChar(c, 3, 0)
 				done = true
 			} else {
+				e.ext.refusal = true
 				e.BottomMessage("That doesn't work")
 			}
 		}
@@ -502,6 +503,7 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 				done = false
 			}
 		case e.groundInfo(g)[0] > ci.Moves:
+			e.ext.refusal = true
 			e.BottomMessage("Blocked")
 		default:
 			e.freeAttacksOnLeave(c, d)
@@ -747,6 +749,7 @@ func (e *Engine) ammoFor(c *Character, it **Item) bool {
 // done passes through when no attack is made.
 func (e *Engine) attackTarget(c, t *Character, done bool) bool {
 	if e.rangedWeapon(c) && !e.throwable(c) {
+		e.ext.refusal = true
 		e.BottomMessage("Not with that weapon")
 		return done
 	}

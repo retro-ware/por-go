@@ -313,6 +313,7 @@ func (e *Engine) canLoseItem(it *Item) bool {
 	ok := false
 	switch {
 	case it.Readied != 0:
+		e.ext.refusal = true
 		e.BottomMessage("Must be unreadied")
 	case !e.isScroll(it):
 		ok = true
@@ -412,6 +413,7 @@ func (e *Engine) ItemsMenu() bool {
 				e.readyItem(it)
 			case 'U':
 				if it.Readied == 0 {
+					e.ext.refusal = true
 					e.BottomMessage("Must be Readied")
 					key = ' '
 				} else if e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80 {
@@ -427,6 +429,7 @@ func (e *Engine) ItemsMenu() bool {
 				switch {
 				case it.Readied != 0 || !e.throwableItem(it):
 				case e.beginFlag == 5 && len(e.throwTargets(c, it)) == 0: // extra: nobody to throw it at
+					e.ext.refusal = true
 					e.BottomMessage("No target in range")
 					key = ' '
 				default:
@@ -474,6 +477,7 @@ func (e *Engine) readyItem(it *Item) {
 	c := e.selected()
 	if it.Readied != 0 {
 		if it.Magic != 0 {
+			e.ext.refusal = true
 			e.BottomMessage("It's Cursed")
 			return
 		}
@@ -515,6 +519,7 @@ func (e *Engine) readyItem(it *Item) {
 			e.itemAffect(it, c, 0)
 		}
 	case 1:
+		e.ext.refusal = true
 		e.BottomMessage("Wrong Class")
 	case 2:
 		// slot 9 (ring 2 taken) names Slots[9], which may be empty: the
@@ -524,9 +529,11 @@ func (e *Engine) readyItem(it *Item) {
 			e.ItemName(c, o, 0, 0, false, false)
 			name = o.Name()
 		}
+		e.ext.refusal = true
 		e.BottomMessage("already using " + name)
 	case 3:
 		if !(e.beginFlag == 5 && c.Auto != 0) {
+			e.ext.refusal = true
 			e.BottomMessage("Your hands are full!")
 		}
 	}
@@ -577,6 +584,7 @@ func (e *Engine) tradeItem(it *Item) {
 	}
 	e.view.start = to
 	if e.overloaded(&give, to) {
+		e.ext.refusal = true
 		e.BottomMessage("Overloaded")
 		return
 	}

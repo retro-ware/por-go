@@ -733,6 +733,7 @@ func (e *Engine) cursedAlignment(c *Character, a *Affect, flag byte) {
 func (e *Engine) needsGiantStrength(c *Character, a *Affect, flag byte) {
 	if flag == 0 && c.Stats[statStr] < 0x13 {
 		affectItem(a).Readied = 0
+		e.ext.refusal = true
 		e.BottomMessage("Must have Giant Strength")
 	}
 }

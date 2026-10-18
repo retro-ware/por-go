@@ -171,6 +171,7 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 				e.setTgt(n, tmp.c)
 				left--
 			} else if silent == 0 {
+				e.ext.refusal = true
 				e.BottomMessage("Already been targeted")
 			} else {
 				left--
@@ -196,6 +197,7 @@ func (e *Engine) castSpell(spell, a int, quit *bool) {
 		spell = int(e.SpellList(0, 1, &idx, &have))
 	}
 	if spell > 0 && e.spellData(spell, 5) == 0 {
+		e.ext.refusal = true
 		e.BottomMessage("Camp Only Spell")
 		spell = 0
 	}
