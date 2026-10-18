@@ -105,10 +105,15 @@ func (e *Engine) translate(k uint16) uint16 {
 		}
 		return 0
 	}
-	if k >= KeyPan && k < KeyPan+4 {
+	if k >= KeyPan && k <= KeyPan+4 {
 		if e.beginFlag == 5 && e.cmapUp() && e.ext.modal == 0 {
-			d := int(k - KeyPan)
-			e.panView([4]int{0, 1, 0, -1}[d], [4]int{-1, 0, 1, 0}[d])
+			switch d := int(k - KeyPan); {
+			case d < 4:
+				e.panView(e.cmap.viewX+[4]int{0, 1, 0, -1}[d], e.cmap.viewY+[4]int{-1, 0, 1, 0}[d])
+			case e.partySel < len(e.party):
+				c := e.party[e.partySel]
+				e.panView(e.combatX(c)-viewW/2, e.combatY(c)-3)
+			}
 		}
 		return 0
 	}

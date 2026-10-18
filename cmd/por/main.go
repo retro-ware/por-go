@@ -109,11 +109,48 @@ func (g *game) push(k uint16) {
 			return
 		}
 	}
-	if d := strings.IndexByte("wdsaWDSA", byte(k)); k < 128 && d >= 0 && g.eng.View().Battle != nil { // classic combat: W A S D scroll the map, as the remaster pans
-		k = engine.KeyPan + uint16(d%4)
+	ks := []uint16{k}
+	if !g.remastered {
+		ks = classicCombatKey(k, g.eng.View())
 	}
-	g.scr.PushKey(k)
-	g.sent = true
+	for _, k := range ks {
+		g.scr.PushKey(k)
+		g.sent = true
+	}
+}
+
+// classicCombatKey gives classic combat the remaster's controls (present/battle
+// Key) where the original has none: W A S D scroll the map and Home brings
+// whose turn it is back to the middle; aiming, Tab and Shift-Tab cycle the
+// targets and Enter takes the aimed one. Other keys pass unchanged.
+func classicCombatKey(k uint16, v engine.View) []uint16 {
+	if v.Battle == nil {
+		return []uint16{k}
+	}
+	if d := strings.IndexByte("wdsaWDSA", byte(k)); k < 128 && d >= 0 {
+		return []uint16{engine.KeyPan + uint16(d%4)}
+	}
+	if v.Menu == nil { // Move's steps: Home is keypad 7
+		return []uint16{k}
+	}
+	aiming, take := false, uint16(0)
+	for _, it := range v.Menu.Items {
+		aiming = aiming || it.Text == "Next" || it.Text == "Center"
+		if it.Text == "Attack" {
+			take = uint16(it.Key)
+		}
+	}
+	switch {
+	case k == 0x4700:
+		return []uint16{engine.KeyPan + 4}
+	case k == 9 && aiming && gpu.IsKeyPressed(gpu.KeyShift):
+		return []uint16{'P'}
+	case k == 9 && aiming:
+		return []uint16{'N'}
+	case k == 13 && aiming && take != 0:
+		return []uint16{take}
+	}
+	return []uint16{k}
 }
 
 // settle gives the engine up to 8 ms to finish with the keys just sent, so

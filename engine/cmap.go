@@ -542,10 +542,9 @@ func (e *Engine) combatCentre(x, y, r, dir int) {
 	e.Flip()
 }
 
-// panView (extra): scroll the view a square by (dx,dy) within the map,
-// redrawing what stands there, the aim's frames and the cursor.
-func (e *Engine) panView(dx, dy int) {
-	x, y := e.cmap.viewX+dx, e.cmap.viewY+dy
+// panView (extra): scroll the view to top left square (x,y) within the
+// map, redrawing what stands there, the aim's frames and the cursor.
+func (e *Engine) panView(x, y int) {
 	if !e.recentre(x+viewW/2, y+3, 0xFF) { // the map's edge: recentre clamps
 		return
 	}

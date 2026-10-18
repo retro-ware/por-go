@@ -256,7 +256,8 @@ func HoverKey(x, y int) uint16 { return KeyHover + uint16(y*50+x) }
 const KeyViewMember = 0xC600
 
 // KeyPan + d (0 north, 1 east, 2 south, 3 west) scrolls the combat map a
-// square that way (the classic view's W A S D: the remaster pans its own camera).
+// square that way, KeyPan+4 brings whose turn it is back to the middle
+// (the classic view's W A S D and Home: the remaster pans its own camera).
 const KeyPan = 0xC800
 
 // unitDrawn / unitHidden track what the page shows of combatant i.

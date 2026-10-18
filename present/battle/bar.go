@@ -156,7 +156,7 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 // in the game's font (glyph).
 func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.Menu, k, bottom int) {
 	b := &p.bar
-	items, sel := shownItems(m, p.actions)
+	items, _ := shownItems(m, p.actions) // no keyboard selection shown: the edge follows the mouse
 	p.aiming = false
 	for _, it := range m.Items {
 		p.aiming = p.aiming || it.Text == "Next" || it.Text == "Center"
@@ -177,11 +177,8 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	n, bw := len(items), face*k/2+4*k
 	w, h := max(n*(bw+4*k), 7*8*k+bw), (promptH+labelH)*k+bw
 	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover)
-	for i, it := range items {
+	for _, it := range items {
 		id += "|" + it.Text
-		if i == sel {
-			id += "*"
-		}
 	}
 	if b.img == nil || b.img.Bounds() != image.Rect(0, 0, w, h) {
 		if b.img != nil {
@@ -191,7 +188,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	}
 	if id != b.id {
 		b.id = id
-		b.img.WritePixels(barPixels(glyph, items, sel, hover, w, h, k).Pix)
+		b.img.WritePixels(barPixels(glyph, items, hover, w, h, k).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
@@ -267,7 +264,7 @@ func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
 // barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
-func barPixels(glyph func(byte) [8]byte, items []barItem, sel, hover, w, h, k int) *image.RGBA {
+func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int) *image.RGBA {
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	textOn := func(im *image.RGBA, s string, x, y, scale int, c color.RGBA) {
@@ -299,7 +296,7 @@ func barPixels(glyph func(byte) [8]byte, items []barItem, sel, hover, w, h, k in
 	for i, it := range items {
 		r := buttonRect(w, len(items), i, k)
 		edge := rgb(8)
-		if i == sel || i == hover {
+		if i == hover {
 			edge = color.RGBA{0xFF, 0xCC, 0x33, 0xFF}
 		}
 		fill(r, edge)

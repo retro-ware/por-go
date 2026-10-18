@@ -454,4 +454,13 @@ func TestPan(t *testing.T) {
 	if !moved {
 		t.Error("no pan moved the view")
 	}
+	for range 6 { // away from whose turn it is, then Home
+		v = keyWait(e, scr, engine.KeyPan+1)
+	}
+	v = keyWait(e, scr, engine.KeyPan+4)
+	for _, u := range v.Battle.Units {
+		if u.Active && !image.Pt(u.X, u.Y).In(image.Rect(v.Battle.View.X, v.Battle.View.Y, v.Battle.View.X+12, v.Battle.View.Y+7)) {
+			t.Errorf("Home: %s at (%d,%d) not in the view at %v", u.Name, u.X, u.Y, v.Battle.View)
+		}
+	}
 }
