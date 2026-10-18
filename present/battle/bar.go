@@ -15,7 +15,7 @@ import (
 // ponytail: the hotkey letter is the icon; draw real icon art when there is some.
 const (
 	button  = 32 // a button's side at scale 1
-	slot    = 48 // the width each item takes
+	slot    = 64 // the width each item takes: the longest word (7 letters) and a gap
 	barH    = button + 4 + 8 + 4
 	promptH = 12 // the prompt line over the buttons
 )
@@ -206,10 +206,12 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, w,
 			text(string(rune('0'+(i+1)%10)), r.Min.X+3, r.Min.Y+3, 1, rgb(7)) // its number key
 		}
 		word := it.Text
-		if len(word) > slot/8 {
-			word = word[:slot/8]
+		if len(word) > slot/8-1 {
+			word = word[:slot/8-1]
 		}
-		text(word, x1+i*slot+(slot-len(word)*8)/2, r.Max.Y+4, 1, rgb(10))
+		wx := x1 + i*slot + (slot-len(word)*8)/2
+		fill(image.Rect(wx-3, r.Max.Y+3, wx+len(word)*8+3, r.Max.Y+13), color.RGBA{0, 0, 0, 0xB0}) // as the prompt's
+		text(word, wx, r.Max.Y+4, 1, rgb(10))
 	}
 	return im
 }
