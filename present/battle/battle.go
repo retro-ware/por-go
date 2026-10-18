@@ -36,6 +36,9 @@ type Presenter struct {
 
 	actions       []engine.MenuItem // the main menu's turn enders off its bar
 	aiming        bool              // the bar is Aim's (Tab cycles, Enter attacks)
+	cursor        image.Point       // the aim cursor's square in the last frame
+	tabFrom       *image.Point      // Tab was pressed with the aim here: the camera jumps to where it goes
+	tabTo         *vec              // the target Tab went to: watched while aiming
 	hint          string            // what the square under the mouse holds, for the bar's prompt line
 	focus, offset vec               // what the camera watches; the W A S D pan from it
 	yaw, yawTo    float64           // camera heading: 0 looks north, as the original's screen
@@ -126,6 +129,8 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 			return p.bar.has("End"), true
 		}
 	case k == 9 && shown && p.aiming:
+		c := p.cursor
+		p.tabFrom = &c
 		if gpu.IsKeyPressed(gpu.KeyShift) {
 			return []uint16{'P'}, true
 		}
@@ -200,14 +205,25 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	}
 	p.strikeT += dt
 
-	// where the eye goes: an effect, else whose turn it is (the aim cursor is
-	// the player's to follow: the camera pans by hand)
+	// where the eye goes: an effect, else the target Tab went to, else whose
+	// turn it is (the aim cursor otherwise is the player's to follow: the camera pans by hand)
+	if !b.CursorOn {
+		p.tabFrom, p.tabTo = nil, nil
+	}
+	if f := p.tabFrom; f != nil && b.Cursor != *f { // Tab moved the aim: look there at once
+		t := vec{float64(b.Cursor.X) + .5, 0, float64(b.Cursor.Y) + .5}
+		p.tabFrom, p.tabTo, p.at = nil, &t, t
+	}
+	p.cursor = b.Cursor
 	focus := vec{float64(b.View.X) + 6, 0, float64(b.View.Y) + 3.5}
 	for _, u := range b.Units {
 		if u.Active {
 			c := unitCentre(u)
 			focus = vec{c[0], 0, c[1]}
 		}
+	}
+	if p.tabTo != nil {
+		focus = *p.tabTo
 	}
 	if n := len(b.Effects); n > 0 {
 		f := b.Effects[n-1]
