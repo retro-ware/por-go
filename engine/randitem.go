@@ -244,26 +244,26 @@ func (e *Engine) Appraise() (any bool) {
 			case 0:
 				return ""
 			case 1:
-				return cut(strconv.Itoa(n)+one, 0x28)
+				return cut(strconv.Itoa(n)+one, textCols)
 			}
-			return cut(strconv.Itoa(n)+many, 0x28)
+			return cut(strconv.Itoa(n)+many, textCols)
 		}
 		gems := count(int(p.gems), " Gem", " Gems")
 		jewels := count(int(p.jewelry), " piece of Jewelry", " pieces of Jewelry")
-		e.ClearBox(1, 1, 0x26, 0x16)
+		e.ClearBox(1, 1, winRight, winBottom)
 		e.displayName(c, 1, 1, false) // 00BA:1816
-		e.DisplayString(1, 7, 0xF, "You have a fine collection of:")
-		e.DisplayString(1, 9, 0xF, gems)
-		e.DisplayString(1, 0xA, 0xF, jewels)
+		e.DisplayString(1, 7, colWhite, "You have a fine collection of:")
+		e.DisplayString(1, 9, colWhite, gems)
+		e.DisplayString(1, 10, colWhite, jewels)
 		menu := ""
 		if p.gems != 0 {
 			menu = "  Gems"
 		}
 		if p.jewelry != 0 {
-			menu = cut(menu+"  Jewelry", 0x28)
+			menu = cut(menu+"  Jewelry", textCols)
 		}
-		menu = cut(menu+" Exit", 0x28)
-		key, _ := e.DisplayInput("Appraise : ", menu, 0xD, 0xA, 0xF, true, false)
+		menu = cut(menu+" Exit", textCols)
+		key, _ := e.DisplayInput("Appraise : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 		switch key {
 		case 'G':
 			if p.gems == 0 {
@@ -285,7 +285,7 @@ func (e *Engine) Appraise() (any bool) {
 			default:
 				v = 5000
 			}
-			e.DisplayString(1, 0xC, 0xF, cut("The Gem is Valued at "+strconv.Itoa(int(v))+" gp.", 0x28))
+			e.DisplayString(1, 12, colWhite, cut("The Gem is Valued at "+strconv.Itoa(int(v))+" gp.", textCols))
 			e.sellOrKeep(c, v, 0x65)
 		case 'J':
 			if p.jewelry == 0 {
@@ -309,7 +309,7 @@ func (e *Engine) Appraise() (any bool) {
 			default:
 				v = uint16(e.Random(10000) + 2000)
 			}
-			e.DisplayString(1, 0xC, 0xF, cut("The Jewel is Valued at "+strconv.Itoa(int(v))+" gp.", 0x28))
+			e.DisplayString(1, 12, colWhite, cut("The Jewel is Valued at "+strconv.Itoa(int(v))+" gp.", textCols))
 			e.sellOrKeep(c, v, 0xD6)
 		case 'E', 0:
 			done = true
@@ -327,7 +327,7 @@ func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
 	if sellOnly {
 		menu = "Sell"
 	}
-	key, _ := e.DisplayInput("You can : ", menu, 0xD, 0xA, 0xF, true, false)
+	key, _ := e.DisplayInput("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 	if key == 'K' && !sellOnly {
 		it := &Item{}
 		it.Words[2] = word

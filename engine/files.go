@@ -135,7 +135,7 @@ func (e *Engine) fileError(verb, path string) {
 	if len(s) > 40 {
 		s = s[:40]
 	}
-	e.PromptRow24(0xE, s)
+	e.PromptRow24(colYellow, s)
 }
 
 // PromptRow24 = 0709:0BF5: clear row 24, show, wait for a key.
@@ -144,7 +144,7 @@ func (e *Engine) PromptRow24(colour int, s string) byte {
 		e.Trace("0709:0BF5", "MessageRow24b", colour, s)
 	}
 	e.ClearRow24()
-	e.DisplayString(0, 24, colour, s)
+	e.DisplayString(0, promptRow, colour, s)
 	return e.ReadKeyByte()
 }
 
@@ -265,7 +265,7 @@ func (e *Engine) LoadCharacter(name string, c *Character, useSav bool) bool {
 func (e *Engine) LoadMonster(index int, c *Character) bool {
 	b := e.L.Block(e.set.file("MON")+"CHA", index)
 	if b == nil {
-		e.PromptRow24(0xF, "Unable to load monster")
+		e.PromptRow24(colWhite, "Unable to load monster")
 		e.Exit()
 		return false
 	}
@@ -397,7 +397,7 @@ func (e *Engine) LoadGame() {
 	}
 	var key byte
 	for {
-		key, _ = e.DisplayInput("Load Which Game: ", menu, 0xD, 0xA, 0xF, false, false)
+		key, _ = e.DisplayInput("Load Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
 		if key >= 'A' && key <= 'J' && e.fileExists(e.savePath("savgam"+string(key)+".dat")) {
 			break
 		}
@@ -429,7 +429,7 @@ func (e *Engine) loadSlot(key byte) bool {
 		return false
 	}
 	e.ClearRow24()
-	e.DisplayString(0, 24, 0xA, "Loading...Please Wait")
+	e.DisplayString(0, promptRow, colLightGreen, "Loading...Please Wait")
 	e.set = Set(f.Set)
 	e.area = f.Area
 	wallsA, wallsB := e.area.WallsA, e.area.WallsB
@@ -490,7 +490,7 @@ func (e *Engine) loadSlot(key byte) bool {
 func (e *Engine) SaveGame() {
 	var key byte
 	for {
-		key, _ = e.DisplayInput("Save Which Game: ", "A B C D E F G H I J", 0xD, 0xA, 0xF, false, e.beginFlag == 2) // ovr18:1D8B
+		key, _ = e.DisplayInput("Save Which Game: ", "A B C D E F G H I J", colLightMagenta, colLightGreen, colWhite, false, e.beginFlag == 2) // ovr18:1D8B
 		if key == 0 || key >= 'A' && key <= 'J' {
 			break
 		}
@@ -505,7 +505,7 @@ func (e *Engine) SaveGame() {
 // saveSlot is SaveGame after the prompt.
 func (e *Engine) saveSlot(key byte) {
 	e.ClearRow24()
-	e.DisplayString(0, 24, 0xA, "Saving...Please Wait")
+	e.DisplayString(0, promptRow, colLightGreen, "Saving...Please Wait")
 	e.area.MsgDelay = uint16(e.msgDelay)
 	e.area.ViewFlags = uint16(e.viewBit1)*2 + uint16(e.viewBit0)
 	e.game.SymbolSet = uint16(e.set)

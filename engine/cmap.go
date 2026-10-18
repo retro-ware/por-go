@@ -416,7 +416,7 @@ func (e *Engine) combatRedrawMap() {
 
 // mapAt = ovr32:04BE (x, y, var who, var ground).
 func (e *Engine) mapAt(x, y int) (byte, byte) {
-	if x < 0 || x > 0x31 || y < 0 || y > 0x18 {
+	if x < 0 || x > 0x31 || y < 0 || y > promptRow {
 		return 0, 0
 	}
 	return e.occ[y][x], e.cmap.ground[y][x]
@@ -740,7 +740,7 @@ func (e *Engine) lineOfSight(rng *int, tx, ty *int, x, y int) bool {
 // inArc = ovr31:057B (x1, y1, x2, y2, dir): (x2,y2) lies in the quarter
 // facing dir from (x1,y1) (dir 8: anywhere).
 func (e *Engine) inArc(x1, y1, x2, y2, dir int) bool {
-	if x1 < 0 || x1 > 0x31 || y1 < 0 || y1 > 0x18 || x2 < 0 || x2 > 0x31 || y2 < 0 || y2 > 0x18 {
+	if x1 < 0 || x1 > 0x31 || y1 < 0 || y1 > promptRow || x2 < 0 || x2 > 0x31 || y2 < 0 || y2 > promptRow {
 		return false
 	}
 	if dir == 0xFF {

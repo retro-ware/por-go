@@ -321,7 +321,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 	}
 	for {
 		e.ext.hiddenKeys = hidden // extra: the Log, Guard, Wait, Bandage: off the bar
-		key, extra := e.DisplayInput("", m, 0xD, 0xA, 0xF, true, false)
+		key, extra := e.DisplayInput("", m, colLightMagenta, colLightGreen, colWhite, true, false)
 		e.ext.hiddenKeys = ""
 		if extra && !(key == 0x10 || key == 0x13 || key == '-' || key == '2') { // set cs:0626
 			key = 0
@@ -357,7 +357,7 @@ func (e *Engine) endRound() (done bool) {
 		done = true
 	}
 	if e.rv.side[0] > 0 && e.rv.side[1] == 0 && e.noContinue == 0 {
-		if e.YesNo(0xD, 0xA, 0xF, "Continue Battle:") == 'Y' {
+		if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Continue Battle:") == 'Y' {
 			done = false
 		}
 	}
@@ -420,8 +420,8 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 		} else {
 			reach = e.moveReach(c)
 			e.markReach(reach, true)
-			e.ClearCells(0x18, 0x18, 0x27, 0x18)
-			key, _ = e.DisplayInput("Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ", "", 0xA, 0xA, 0xF, true, false)
+			e.ClearCells(24, 24, lastCol, 24)
+			key, _ = e.DisplayInput("Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ", "", colLightGreen, colLightGreen, colWhite, true, false)
 			e.markReach(reach, false)
 		}
 		d := 8
@@ -458,7 +458,7 @@ func (e *Engine) moveAttack(c *Character) (done bool) {
 		case who > 0:
 			done = e.attackTarget(c, e.combatant(who), done)
 		case g == 0:
-			switch e.YesNo(0xD, 0xA, 0xF, "Flee:") {
+			switch e.YesNo(colLightMagenta, colLightGreen, colWhite, "Flee:") {
 			case 'Y':
 				done = e.tryFlee(c)
 			case 'N':
@@ -671,7 +671,7 @@ func (e *Engine) otherMenu(c *Character) (done bool) {
 	}
 	m += "Speed Exit"
 	for key := byte(0x20); key != 0 && key != 'E' && !done; {
-		key, _ = e.DisplayInput("", m, 0xD, 0xA, 0xF, false, false)
+		key, _ = e.DisplayInput("", m, colLightMagenta, colLightGreen, colWhite, false, false)
 		switch key {
 		case 'G':
 			done = e.guard(c)
@@ -708,7 +708,7 @@ func (e *Engine) bandage(doIt bool) bool {
 			if doIt {
 				c.Status = statusUnconscious
 				c.Combat.Dying = 0
-				e.CharMessage(c, "is bandaged", 0xA, true)
+				e.CharMessage(c, "is bandaged", true)
 				doIt = false
 			}
 		}
@@ -727,7 +727,7 @@ func (e *Engine) speedMenu() {
 			m += "Faster "
 		}
 		m += "Exit"
-		key, _ = e.DisplayInput("GameSpeed ("+strconv.Itoa(int(e.msgDelay))+") :", m, 0xD, 0xA, 0xF, false, false)
+		key, _ = e.DisplayInput("GameSpeed ("+strconv.Itoa(int(e.msgDelay))+") :", m, colLightMagenta, colLightGreen, colWhite, false, false)
 		switch key {
 		case 'S':
 			e.msgDelay++
@@ -763,24 +763,24 @@ func (e *Engine) combatItems(c *Character) bool {
 // side pane, gone for the full-width view).
 func (e *Engine) combatPanel(c *Character) {
 	e.ext.panel = c
-	e.ClearCells(0, 0x17, 0x27, 0x17)
+	e.ClearCells(0, messageRow, lastCol, messageRow)
 	x := 1
-	e.displayName(c, x, 0x17, false)
+	e.displayName(c, x, messageRow, false)
 	x += len(c.Name()) + 2
-	e.DisplayString(x, 0x17, 0xF, "HP")
+	e.DisplayString(x, messageRow, colWhite, "HP")
 	e.displayHP(c, x+3, 0x17, false)
 	x += 3 + len(strconv.Itoa(int(c.HP))) + 2
-	e.DisplayString(x, 0x17, 0xF, "AC")
+	e.DisplayString(x, messageRow, colWhite, "AC")
 	e.displayAC(c, x+3, 0x17)
 	x += 8
 	switch {
 	case c.Okay == 0:
-		e.DisplayString(x, 0x17, 0xF, cut(e.statusName(c), 0x27-x))
+		e.DisplayString(x, messageRow, colWhite, cut(e.statusName(c), 0x27-x))
 	case e.isHelpless(c):
-		e.DisplayString(x, 0x17, 0xF, "(Helpless)")
+		e.DisplayString(x, messageRow, colWhite, "(Helpless)")
 	default:
-		e.DisplayString(x, 0x17, 0xF, "Damage")
-		e.DisplayString(x+7, 0x17, 0xA, cut(damageText(c), 0x27-x-7))
+		e.DisplayString(x, messageRow, colWhite, "Damage")
+		e.DisplayString(x+7, messageRow, colLightGreen, cut(damageText(c), 0x27-x-7))
 	}
 }
 
@@ -800,7 +800,7 @@ func damageText(c *Character) string {
 // the current one; c (if any) is named first.
 func (e *Engine) combatSay(c *Character, msg string, fresh bool) {
 	if fresh || len(e.ext.battleLog) == 0 {
-		e.ClearCells(0, 0x17, 0x27, 0x18)
+		e.ClearCells(0, messageRow, lastCol, promptRow)
 		e.msgCol, e.msgRow = 0, 0x17
 		e.ext.battleLog = append(e.ext.battleLog, "")
 	} else {
@@ -814,7 +814,7 @@ func (e *Engine) combatSay(c *Character, msg string, fresh bool) {
 		*l += s
 	}
 	if c != nil {
-		if e.msgCol+len(c.Name()) > 0x27 {
+		if e.msgCol+len(c.Name()) > lastCol {
 			e.msgCol, e.msgRow = 0, e.msgRow+1
 		}
 		e.displayName(c, e.msgCol, e.msgRow, false)
@@ -822,7 +822,7 @@ func (e *Engine) combatSay(c *Character, msg string, fresh bool) {
 		add(c.Name())
 	}
 	if msg = strings.TrimSpace(msg); msg != "" {
-		e.DisplayTextBlock(0, 0x17, 0x27, 0x18, 0xA, false, msg)
+		e.DisplayTextBlock(0, messageRow, lastCol, promptRow, colLightGreen, false, msg)
 		add(msg)
 	}
 }
@@ -845,16 +845,16 @@ func (e *Engine) showBattleLog() {
 	const rows = 0x15
 	top := max(len(lines)-rows, 0)
 	for {
-		e.DrawBoxTitled(1, 1, 0x26, 0x17, 0, 0xF, "Battle Log")
-		e.ClearCells(2, 2, 0x25, 0x17)
+		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Battle Log")
+		e.ClearCells(2, 2, 37, 23)
 		for i := 0; i < rows && top+i < len(lines); i++ {
-			e.DisplayString(2, 2+i, 0xA, lines[top+i])
+			e.DisplayString(2, 2+i, colLightGreen, lines[top+i])
 		}
 		hint := "press a key"
 		if len(lines) > rows {
 			hint = "up/down: scroll, " + hint
 		}
-		e.DisplayString(0x25-len(hint), 0x17, 0xA, hint)
+		e.DisplayString(winRight-1-len(hint), messageRow, colLightGreen, hint)
 		switch k := e.ReadKey(); k {
 		case 0x4800:
 			top = max(top-1, 0)
@@ -874,8 +874,8 @@ func (e *Engine) showBattleLog() {
 // (extra: full width, no panel frame), rows 23-24 cleared, the map centred on the view.
 func (e *Engine) combatUseHook() {
 	e.combatViewLeave() // ovr32:00E3: the combat palette
-	e.DrawBoxTitled(1, 1, 0x26, 0x15, 0, 0, "")
-	e.ClearCells(0, 0x17, 0x27, 0x18)
+	e.DrawBoxTitled(1, 1, winRight, 21, 0, colBlack, "")
+	e.ClearCells(0, messageRow, lastCol, promptRow)
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
 }
 

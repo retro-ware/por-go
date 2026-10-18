@@ -27,7 +27,7 @@ func (e *Engine) Init() {
 
 	e.font = e.L.Block(e.set.file("8X8D"), 201) // 0709:017C
 	e.ClearRow24()
-	e.DisplayString(0, 24, 0xA, "Loading...Please Wait")
+	e.DisplayString(0, promptRow, colLightGreen, "Loading...Please Wait")
 	e.LoadSymbolSet(4, 202) // ovr35:003B
 	e.LoadSymbolSet(0, 203)
 	e.sqrpaci[0] = e.LoadPic("SQRPACI", 1) // 0464:0111 → DS:5E52

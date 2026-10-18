@@ -68,11 +68,11 @@ func (e *Engine) Redraw() {
 // DrawMainFrame = 00BA:272A (inner): the screen, text and view-window
 // frames, plus the inner picture frame when inner is set.
 func (e *Engine) DrawMainFrame(inner bool) {
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
-	e.DrawBoxTitled(1, 0x11, 0x26, 0x16, 0, 0xF, "")
-	e.DrawBoxTitled(1, 1, 0xF, 0xF, 0, 0xF, "")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
+	e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colWhite, "")
+	e.DrawBoxTitled(1, 1, 15, 15, 0, colWhite, "")
 	if inner {
-		e.DrawBoxTitled(3, 3, 0xD, 0xD, 0, 0xF, "")
+		e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
 	}
 	e.frameDrawn()
 }
@@ -81,7 +81,7 @@ func (e *Engine) DrawMainFrame(inner bool) {
 func (e *Engine) DrawMainScreen() {
 	switch e.beginFlag {
 	case 0:
-		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
+		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
 	case 1:
 		e.DrawMainFrame(true)
 		e.LoadPortrait(e.set, int(e.es.picHead), int(e.es.picBody))
@@ -150,8 +150,8 @@ func (e *Engine) StatusLine() {
 	if len(s) > 0x28 {
 		s = s[:0x28]
 	}
-	e.ClearCells(0x11, 0xF, 0x26, 0xF)
-	e.DisplayString(0x11, 0xF, 0xA, s)
+	e.ClearCells(17, 15, winRight, 15)
+	e.DisplayString(17, 15, colLightGreen, s)
 }
 
 // AreaMapScreen = 00BA:2B5E: switch to the area map.

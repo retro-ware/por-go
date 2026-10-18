@@ -34,7 +34,7 @@ func (e *Engine) modifyDraw(idx int, hi bool) {
 func (e *Engine) ModifyCharacter() {
 	c := e.selected()
 	if int32(c.Exp) > 0 {
-		e.DisplayMessageWait(0xE, c.Name()+" can't be modified.")
+		e.DisplayMessageWait(colYellow, c.Name()+" can't be modified.")
 		return
 	}
 	e.CharacterSheet() // ovr20:004A
@@ -109,7 +109,7 @@ func (e *Engine) ModifyCharacter() {
 		}
 		e.addRegion(region{x0: 0, y0: 7, x1: 0xB, y1: 12, click: func(_, cy int) uint16 { pick(cy - 7); return keyNone }})
 		e.addRegion(region{x0: 0, y0: 0x12, x1: 0xB, y1: 0x12, click: func(int, int) uint16 { pick(6); return keyNone }})
-		key, extra := e.DisplayInput("Modify character: ", "Keep Raise Lower Exit", 0xD, 0xA, 0xF, true, false)
+		key, extra := e.DisplayInput("Modify character: ", "Keep Raise Lower Exit", colLightMagenta, colLightGreen, colWhite, true, false)
 		e.regionCut(mark)
 		switch {
 		case !extra && key == 'R':
@@ -319,11 +319,11 @@ func levelReady(c *Character) bool {
 func (e *Engine) TrainCharacter() {
 	c := e.selected()
 	if c.Status != statusOkay && !e.debug {
-		e.DisplayMessageWait(0xE, "we only train conscious people")
+		e.DisplayMessageWait(colYellow, "we only train conscious people")
 		return
 	}
 	if e.purse.gold < 1000 && !e.debug {
-		e.DisplayMessageWait(0xE, "Training costs 1000 gp.")
+		e.DisplayMessageWait(colYellow, "Training costs 1000 gp.")
 		return
 	}
 	classMask := func(i int) byte { return hpClassMask[i] }
@@ -361,11 +361,11 @@ func (e *Engine) TrainCharacter() {
 	hall := e.partyExp()
 	if !e.debug {
 		if byte(int(have)&hall) == 0 {
-			e.DisplayMessageWait(0xE, "We don't train that class here")
+			e.DisplayMessageWait(colYellow, "We don't train that class here")
 			return
 		}
 		if byte(int(can)&hall) == 0 {
-			e.DisplayMessageWait(0xE, "Not Enough Experience")
+			e.DisplayMessageWait(colYellow, "Not Enough Experience")
 			return
 		}
 	}
@@ -373,10 +373,10 @@ func (e *Engine) TrainCharacter() {
 	if !e.debug {
 		mask = byte(int(can) & hall)
 	}
-	e.ClearCells(1, 1, 0x26, 0x16)
+	e.ClearCells(1, 1, winRight, winBottom)
 	y := 4
 	e.displayName(c, 4, y, false) // 00BA:1816
-	e.DisplayString(len(c.Name())+4, y, 0xA, " will become:")
+	e.DisplayString(len(c.Name())+4, y, colLightGreen, " will become:")
 	for i := 0; i <= 7; i++ {
 		if int8(c.Levels[i]) > 0 && classMask(i)&mask > 0 {
 			y++
@@ -384,10 +384,10 @@ func (e *Engine) TrainCharacter() {
 			if y == 5 {
 				pre = "    a level "
 			}
-			e.DisplayString(6, y, 0xA, pre+strconv.Itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
+			e.DisplayString(6, y, colLightGreen, pre+strconv.Itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
 		}
 	}
-	if e.YesNo(0xD, 0xA, 0xF, "Do you wish to train? ") != 'Y' {
+	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Do you wish to train? ") != 'Y' {
 		return
 	}
 	e.BottomMessage("Congratulations...")
@@ -443,7 +443,7 @@ func (e *Engine) TrainCharacter() {
 // and add them to the party (at most 6 characters and 8 with hired NPCs).
 // Chosen entries get a "* " in the list.
 func (e *Engine) AddCharacter() {
-	e.ClearCells(1, 1, 0x26, 0x16)
+	e.ClearCells(1, 1, winRight, winBottom)
 	names := e.BuildCharList() // ovr18:0010
 	if len(names) == 0 {
 		return
@@ -458,11 +458,11 @@ func (e *Engine) AddCharacter() {
 	count := 0 // uninitialised until the first add in the original
 	for {
 		// The show-exit argument is an uninitialised local; false here.
-		key := e.ListMenu("Add a character: ", "Add Exit", 0xD, 0xA, 0xF, 1, 2, 0x26, 0x16, list, false, &redraw, &index, &sel)
+		key := e.ListMenu("Add a character: ", "Add Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
 		if (key == 0xD || key == 'A') && sel != nil && (sel.Text == "" || sel.Text[0] != '*') {
 			c := &Character{}
 			if e.LoadCharacter(sel.Text, c, false) { // ovr18:0AEC
-				sel.Text = cut("* "+sel.Text, 0x28)
+				sel.Text = cut("* "+sel.Text, textCols)
 				count = 0
 				if len(e.party) == 0 {
 					e.game.PartyCount = 0
@@ -524,7 +524,7 @@ func (e *Engine) joinRefused(c *Character) bool {
 		msg = "too many rangers in party"
 	}
 	if msg != "" {
-		e.DisplayMessageWait(0xE, msg)
+		e.DisplayMessageWait(colYellow, msg)
 	}
 	return msg != ""
 }
@@ -532,7 +532,7 @@ func (e *Engine) joinRefused(c *Character) bool {
 // ForgetCharacter (extra): pick a saved character and delete its files and
 // its line in charlist.txt. Party members keep their copy in the party.
 func (e *Engine) ForgetCharacter() {
-	e.ClearCells(1, 1, 0x26, 0x16)
+	e.ClearCells(1, 1, winRight, winBottom)
 	names := e.BuildCharList()
 	list := make([]*ListNode, len(names))
 	for i, n := range names {
@@ -541,7 +541,7 @@ func (e *Engine) ForgetCharacter() {
 	index, redraw := 0, true
 	var sel *ListNode
 	for len(list) > 0 {
-		key := e.ListMenu("Forget a character: ", "Forget Exit", 0xD, 0xA, 0xF, 1, 2, 0x26, 0x16, list, false, &redraw, &index, &sel)
+		key := e.ListMenu("Forget a character: ", "Forget Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
 		if key == 'E' || key == 0 || key == 0x1B {
 			break
 		}
@@ -549,7 +549,7 @@ func (e *Engine) ForgetCharacter() {
 			continue
 		}
 		redraw = true
-		if e.YesNo(0xE, 0xA, 0xF, cut("Forget "+sel.Text+" forever? ", 0x28)) != 'Y' {
+		if e.YesNo(colYellow, colLightGreen, colWhite, cut("Forget "+sel.Text+" forever? ", textCols)) != 'Y' {
 			continue
 		}
 		base := makeFileName(removeSubstr(sel.Text, "."))
@@ -564,7 +564,7 @@ func (e *Engine) ForgetCharacter() {
 		}
 		e.WriteCharList(names)
 	}
-	e.ClearCells(1, 1, 0x26, 0x16)
+	e.ClearCells(1, 1, winRight, winBottom)
 }
 
 // choosePortrait = ovr17:33E7: choose the portrait: Head (1..14) and Body
@@ -575,7 +575,7 @@ func (e *Engine) choosePortrait() {
 	head, body := c.PortHead, c.PortBody
 	for {
 		e.SheetPortrait() // ovr29:04F9
-		key, extra := e.DisplayInput("", "Head Body Keep", 0, 0xF, 0xA, false, false)
+		key, extra := e.DisplayInput("", "Head Body Keep", colBlack, colWhite, colLightGreen, false, false)
 		if !extra {
 			switch key {
 			case 'H':
@@ -692,7 +692,7 @@ var amigaIconColour = [16]byte{0, 9, 10, 11, 6, 4, 5, 15, 12, 1, 2, 3, 7, 13, 8,
 // The old icon is shown above the new one; Is this icon ok? ends it.
 func (e *Engine) iconEditor() {
 	c := e.selected()
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0, "")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
 	e.combatViewLeave() // ovr32:00E3
 	menu3 := iconMenus[3]
 	var state, parent, part int // parent and part are uninitialised until set
@@ -710,10 +710,10 @@ func (e *Engine) iconEditor() {
 		head, weapon, size := c.IconHead, c.IconBody, c.IconSize
 		e.iconCopy(order, 0xC, true)
 		e.iconPane(1, 2)
-		e.DisplayString(8, 6, 0xF, "old")
-		e.DisplayString(3, 0xA, 0xF, "ready   action")
-		e.DisplayString(8, 0xC, 0xF, "new")
-		e.DisplayString(3, 0x10, 0xF, "ready   action")
+		e.DisplayString(8, 6, colWhite, "old")
+		e.DisplayString(3, 10, colWhite, "ready   action")
+		e.DisplayString(8, 12, colWhite, "new")
+		e.DisplayString(3, 16, colWhite, "ready   action")
 		for {
 			e.iconPane(1, 4)
 			sizeStr := ""
@@ -727,7 +727,7 @@ func (e *Engine) iconEditor() {
 			if state == 3 {
 				m = menu3
 			}
-			k, extra := e.DisplayInput("", sizeStr+m, 0xD, 0xA, 0xF, false, false)
+			k, extra := e.DisplayInput("", sizeStr+m, colLightMagenta, colLightGreen, colWhite, false, false)
 			key = k
 			if !extra {
 				done := key == 0 || key == 'E'
@@ -745,7 +745,7 @@ func (e *Engine) iconEditor() {
 						}
 						// Delete(s, 13, 4); Insert(label, s, 13) on DS:83A.
 						s := menu3[:12] + menu3[16:]
-						menu3 = cut(s[:12]+label+s[12:], 0x28)
+						menu3 = cut(s[:12]+label+s[12:], textCols)
 					case 'S':
 						state = 4
 					}
@@ -862,7 +862,7 @@ func (e *Engine) iconEditor() {
 			e.LoadIconPic("ICON", 0, 0xB)
 			e.LoadIconPic("ICON", 1, 0xC)
 		}
-		if e.YesNo(0xD, 0xA, 0xF, "Is this icon ok? ") == 'Y' {
+		if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is this icon ok? ") == 'Y' {
 			e.Music(3) // Amiga 0x2F33E
 			break
 		}

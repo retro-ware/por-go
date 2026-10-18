@@ -206,18 +206,18 @@ func (e *Engine) displayAC(c *Character, x, y int) {
 	if v > 60 {
 		s = "-" + s
 	}
-	e.DisplayString(x, y, 0xA, s)
+	e.DisplayString(x, y, colLightGreen, s)
 }
 
 // displayHP = 00BA:0973 (char, x, y, flag): yellow when below max, white
 // otherwise, magenta when flag set.
 func (e *Engine) displayHP(c *Character, x, y int, flag bool) {
-	col := 0xA
+	col := colLightGreen
 	if c.HP < c.MaxHP {
-		col = 0xE
+		col = colYellow
 	}
 	if flag {
-		col = 0xD
+		col = colLightMagenta
 	}
 	e.DisplayString(x, y, col, strconv.Itoa(int(c.HP)))
 }
@@ -225,11 +225,11 @@ func (e *Engine) displayHP(c *Character, x, y int, flag bool) {
 // displayName = 00BA:1816 (char, x, y, possessive): red when not okay,
 // yellow for NPCs, cyan otherwise; optional "'s" suffix.
 func (e *Engine) displayName(c *Character, x, y int, possessive bool) {
-	col := 0xC
+	col := colLightRed
 	if c.Okay != 0 {
-		col = 0xB
+		col = colLightCyan
 		if c.Side == sideMonsters {
-			col = 0xE
+			col = colYellow
 		}
 	}
 	e.DisplayString(x, y, col, c.Name())

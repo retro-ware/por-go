@@ -55,9 +55,9 @@ func (e *Engine) ProgramEight() {
 		im = e.LoadPic(final, block)
 		e.drawPage(x, y, im, 0, false, false)
 	}
-	say := func(y int, s string) { e.DisplayString(1, y, 0xA, s) }
+	say := func(y int, s string) { e.DisplayString(1, y, colLightGreen, s) }
 
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 	say(0x11, "Mortally wounded, the dragon roars!")
 	say(0x12, "The spirit of Tyranthraxus flares up")
 	say(0x13, "from the dragon's body.")
@@ -74,7 +74,7 @@ func (e *Engine) ProgramEight() {
 	if e.game.PartyCount > 3 {
 		page(6, 0, 9)
 	}
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 	say(0x11, "\"Fools, you have but slain the body")
 	say(0x12, "I possessed.  I cannot be defeated!\"")
 	say(0x13, "With the power of the pool of radiance")
@@ -82,7 +82,7 @@ func (e *Engine) ProgramEight() {
 	say(0x15, "I will still rule, by possessing one")
 	say(0x16, "of you!\"")
 	finalAnim(3, 1, 7, slow())
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 	say(0x11, "\"No Lord Bane!  I can still rule here!")
 	say(0x12, "I have not failed.  Do not call me back")
 	say(0x13, "through the pool!\"")

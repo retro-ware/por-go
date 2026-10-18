@@ -83,7 +83,7 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 	default:
 		s = "Attacks"
 	}
-	e.CharMessage(a, s, 0xA, false)
+	e.CharMessage(a, s, false)
 	s = ""
 	if kind == 1 {
 		s = "(from behind) "
@@ -109,7 +109,7 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 		b.Combat.CanCast = 0
 		if b.Combat.Spell > 0 {
 			e.MsgDelay()
-			e.CharMessage(b, "lost a spell", 0xC, true)
+			e.CharMessage(b, "lost a spell", true)
 			e.forgetSpell(b.Combat.Spell)
 			b.Combat.Spell = 0
 		} else {
@@ -119,12 +119,12 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 		e.MsgDelay()
 	}
 	if b.Okay == 0 {
-		e.CharMessage(b, "goes down", 0, false)
+		e.CharMessage(b, "goes down", false)
 		if b.Status == statusDying {
 			e.combatSay(nil, "and is Dying", false)
 		}
 		if st := b.Status; st >= statusDead && st <= statusGone { // set at CS:02CF
-			e.CharMessage(b, "is killed", 0, false)
+			e.CharMessage(b, "is killed", false)
 		}
 		e.removeCombatAffects(b)
 		e.affectGroup(b, 0xD)
@@ -358,7 +358,7 @@ func (e *Engine) sweep(a, b *Character) bool {
 			if byte(cnt) > acb.Sweeps {
 				cnt = int(acb.Sweeps)
 			}
-			e.CharMessage(a, "sweeps", 0xA, true)
+			e.CharMessage(a, "sweeps", true)
 			if e.combatant(e.targets[1]) != b {
 				e.targets[bi] = e.targets[1] // (bi 0 when b was not found: DS:6DE4)
 				e.targets[1] = byte(e.combatIndex(b))
@@ -402,7 +402,7 @@ func (e *Engine) mayActAgainst(t, c *Character) bool {
 
 // clericTurnUndead = ovr14:116A (char): a cleric turns undead (ovr14:116A).
 func (e *Engine) clericTurnUndead(c *Character) {
-	e.CharMessage(c, "turns undead...", 0xA, false)
+	e.CharMessage(c, "turns undead...", false)
 	e.ClearRow24()
 	e.MsgDelay()
 	any, stop := false, false
@@ -437,7 +437,7 @@ func (e *Engine) clericTurnUndead(c *Character) {
 			t.Combat.Turned = 1
 			e.hitMessage(t, true, "is turned")
 		} else {
-			e.CharMessage(t, "Is destroyed", 0xA, false)
+			e.CharMessage(t, "Is destroyed", false)
 			e.combatRemoveFromMap(t)
 			t.Status = statusGone
 			t.Okay = 0

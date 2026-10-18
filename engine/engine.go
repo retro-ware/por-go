@@ -237,7 +237,7 @@ func (e *Engine) Run() {
 // Play is the rest of main after the title: party menu, then adventure.
 func (e *Engine) Play() {
 	if !slices.ContainsFunc(e.items, func(b itemBase) bool { return b != itemBase{} }) {
-		e.PromptRow24(0xE, "ITEMS missing: import the game again") // extra (readItems): waits for a key
+		e.PromptRow24(colYellow, "ITEMS missing: import the game again") // extra (readItems): waits for a key
 	}
 	e.adventure()
 }

@@ -29,7 +29,7 @@ func (e *Engine) computerTurn(c *Character) {
 		done = e.aiFleeCheck(c)
 	}
 	if ci.Fleeing != 0 && ci.Turned == 0 {
-		e.CharMessage(c, "flees in panic", 10, true)
+		e.CharMessage(c, "flees in panic", true)
 	}
 	if done {
 		return
@@ -239,7 +239,7 @@ func (e *Engine) aiCanStep(c *Character, i, dir int) (ok, blocked bool) {
 // step towards the target (or a wandering direction when fleeing).
 func (e *Engine) aiMoveStep(c *Character) {
 	ci := c.Combat
-	e.DisplayString(0, 0x18, 0xA, "Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ")
+	e.DisplayString(0, promptRow, colLightGreen, "Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ")
 	if e.aiKeys(c) {
 		return
 	}
@@ -465,7 +465,7 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 	e.removeTiedAffects(c)
 	if ci.Turned != 0 {
 		ci.Fleeing = 1
-		e.CharMessage(c, "is forced to flee", 10, true)
+		e.CharMessage(c, "is forced to flee", true)
 		return r
 	}
 	if c.Control <= 0x7F {

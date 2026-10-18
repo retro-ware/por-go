@@ -16,7 +16,7 @@ func (it *Item) Name() string {
 }
 
 func (it *Item) setName(s string) {
-	s = cut(s, 0x28)
+	s = cut(s, textCols)
 	it.PName[0] = byte(len(s))
 	copy(it.PName[1:41], s)
 }
@@ -44,10 +44,10 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 		}
 	}
 	if detect && (int8(it.Plus) > 0 || int8(it.Plus2) > 0 || it.Magic != 0) {
-		name = cut(name+"* ", 0x28)
+		name = cut(name+"* ", textCols)
 	}
 	if it.Count > 0 {
-		name = cut(name+strconv.Itoa(int(it.Count))+" ", 0x28)
+		name = cut(name+strconv.Itoa(int(it.Count))+" ", textCols)
 	}
 	mask := 0
 	for i := 1; i <= 3; i++ {
@@ -60,7 +60,7 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 		if (mask>>(i-1))&1 == 0 {
 			continue
 		}
-		name = cut(name+e.itemWord(it.Words[i-1]), 0x28)
+		name = cut(name+e.itemWord(it.Words[i-1]), textCols)
 		s := " "
 		if it.Count >= 2 && !plural {
 			typ := it.Type
@@ -74,11 +74,11 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 				plural = true
 			}
 		}
-		name = cut(name+s, 0x28)
+		name = cut(name+s, textCols)
 	}
 	it.setName(name + e.itemStats(it.Type))
 	if display {
-		e.DisplayString(x, y, 0xA, it.Name())
+		e.DisplayString(x, y, colLightGreen, it.Name())
 	}
 }
 
@@ -110,7 +110,7 @@ func (e *Engine) itemStats(typ itemType) string {
 // RemoveItem = 00BA:1509 (char, item): unlinks the item and frees it.
 func (e *Engine) RemoveItem(c *Character, it *Item) {
 	if it == nil {
-		e.PromptRow24(0xE, "Nil Item pointer...")
+		e.PromptRow24(colYellow, "Nil Item pointer...")
 		return
 	}
 	for i, x := range c.Items {
@@ -119,7 +119,7 @@ func (e *Engine) RemoveItem(c *Character, it *Item) {
 			return
 		}
 	}
-	e.PromptRow24(0xE, "Tried to Lose item & couldn't find it!")
+	e.PromptRow24(colYellow, "Tried to Lose item & couldn't find it!")
 }
 
 // AddItemCopy = 00BA:15F7 (char, item): a copy of the item at the end of
@@ -149,10 +149,10 @@ func sameStack(p, it *Item) bool {
 
 // BottomMessage = 00BA:1693: the string on row 24 for the message delay.
 func (e *Engine) BottomMessage(s string) {
-	s = cut(s, 0x28)
-	e.ClearCells(0, 24, 0x27, 24)
-	e.DisplayString(0, 24, 0xA, s)
+	s = cut(s, textCols)
+	e.ClearCells(0, promptRow, lastCol, promptRow)
+	e.DisplayString(0, promptRow, colLightGreen, s)
 	e.MsgDelay()
 	e.MsgDelay() // port: shown twice as long as the original, too quick to read
-	e.ClearCells(0, 24, 0x27, 24)
+	e.ClearCells(0, promptRow, lastCol, promptRow)
 }

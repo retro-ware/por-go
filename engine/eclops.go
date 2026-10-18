@@ -85,9 +85,9 @@ func (e *Engine) RunECL(addr int) {
 // opExit = ovr04:0001 (EXIT).
 func (e *Engine) opExit() {
 	if e.es.textInView != 0 {
-		e.DrawBoxTitled(1, 1, 0xF, 0xF, 0, 0xF, "")
+		e.DrawBoxTitled(1, 1, 15, 15, 0, colWhite, "")
 		if e.area.In3D != 0 {
-			e.DrawBoxTitled(3, 3, 0xD, 0xD, 0, 0xF, "")
+			e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
 		}
 	}
 	if e.run.restoreSel {
@@ -268,7 +268,7 @@ func (e *Engine) opPicture() {
 	e.FetchArgs(1)
 	v := int(byte(e.ArgValue(1)))
 	if e.area.In3D == 0 && v != 0xFF {
-		e.DrawBoxTitled(3, 3, 0xD, 0xD, 0, 0xF, "")
+		e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
 	}
 	if v != 0xFF {
 		if w := e.ext.walk; w != nil {
@@ -298,14 +298,14 @@ func (e *Engine) opPicture() {
 func (e *Engine) opInputNumber() {
 	e.FetchArgs(2)
 	dst := e.ArgAddr(2)
-	e.WriteVar(dst, e.InputNumber("", 0xA))
+	e.WriteVar(dst, e.InputNumber("", colLightGreen))
 }
 
 // opInputString = ovr04:0994.
 func (e *Engine) opInputString() {
 	e.FetchArgs(2)
 	dst := e.ArgAddr(2)
-	s := e.InputString("", 0xA, 0x28)
+	s := e.InputString("", colLightGreen, 0x28)
 	if s == "" {
 		s = " "
 	}
@@ -339,7 +339,7 @@ func (e *Engine) scriptText(clear bool, s string) {
 	if clear {
 		e.msgRow, e.msgCol = 0x11, 1
 	}
-	e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, clear, s)
+	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, clear, s)
 	e.slowText = false
 	e.journalPrinted(s, clear)
 }
@@ -381,7 +381,7 @@ func (e *Engine) opVMenu() {
 	e.FetchArgs(n)
 	list := newList(n)
 	e.msgCol, e.msgRow = 1, 0x11
-	e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true, prompt)
+	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, prompt)
 	for i, p := range list {
 		s := e.es.strAt(i + 1)
 		if len(s) > 0x28 {
@@ -390,9 +390,9 @@ func (e *Engine) opVMenu() {
 		p.Text, p.Flag = s, 0
 	}
 	var sel *ListNode
-	e.ListMenu("", "", 0xD, 0xA, 0xF, 1, e.msgRow+1, 0x26, 0x16, list, false, &redraw, &index, &sel) // ovr08:1788
+	e.ListMenu("", "", colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel) // ovr08:1788
 	e.WriteVar(dst, uint16(index))
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 }
 
 // opIf = ovr04:0B52 (IF= IF<> IF< IF> IF<= IF>=): skip the next
@@ -505,7 +505,7 @@ func (e *Engine) opHMenu() {
 	e.eclPC--
 	e.FetchArgs(n)
 	allowEnter := false
-	hi, normal := 0xF, 0xA
+	hi, normal := colWhite, colLightGreen
 	if n == 1 {
 		allowEnter, normal = true, 0xF
 		if e.es.str[1] == "PRESS <RETURN> OR BUTTON TO CONTINUE" {
@@ -519,10 +519,10 @@ func (e *Engine) opHMenu() {
 	}
 	menu = cut(menu+"~"+e.es.strAt(n), 0x32)
 	e.animInput = anim
-	r := e.MenuInput(allowEnter, hi, normal, 0xD, menu, "")
+	r := e.MenuInput(allowEnter, hi, normal, colLightMagenta, menu, "")
 	e.animInput = false
 	e.WriteVar(dst, uint16(byte(r)))
-	e.ClearBox(0, 0x18, 0x27, 0x18)
+	e.ClearBox(0, promptRow, lastCol, promptRow)
 }
 
 func cut(s string, n int) string {

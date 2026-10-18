@@ -48,7 +48,7 @@ func (e *Engine) spellDamageLevel() {
 func (e *Engine) spellCharmPerson() {
 	t := e.tgt(1)
 	if t.Kind > 1 || t.Size > 1 {
-		e.CharMessage(t, "is unaffected", 0xA, true)
+		e.CharMessage(t, "is unaffected", true)
 		return
 	}
 	lvl := e.casterLevel(int(e.curSpell))
@@ -79,7 +79,7 @@ func (e *Engine) spellStrengthPercent() {
 	t := e.tgt(1)
 	out, ok := e.SetStrength(t, e.spellValue, e.spellValue2)
 	if ok {
-		e.CharMessage(t, "is stronger", 0xA, true)
+		e.CharMessage(t, "is stronger", true)
 	}
 	e.AddAffect(t, affEnlarged, e.spellAmount(int(e.curSpell)), out, 1)
 }
@@ -89,7 +89,7 @@ func (e *Engine) spellReduce() {
 	if e.nSpellTargets > 0 {
 		t := e.tgt(1)
 		if !e.SavingThrow(t, saveVsSpell, 0) && e.CureAffect(t, affEnlarged) {
-			e.CharMessage(t, "has been reduced", 0xA, true)
+			e.CharMessage(t, "has been reduced", true)
 		}
 	}
 }
@@ -297,7 +297,7 @@ func (e *Engine) spellStinkingCloud() {
 			e.cmap.ground[y][x] = 0x1E
 		}
 	}
-	e.CharMessage(sel, "Creates a noxious cloud", 0xA, false)
+	e.CharMessage(sel, "Creates a noxious cloud", false)
 	e.combatCentre(int(e.tgtX), int(e.tgtY), 0xFF, 8)
 	e.MsgDelay()
 	e.ClearMessageArea()
@@ -336,7 +336,7 @@ func (e *Engine) spellEnlarge() {
 	}
 	out, ok := e.SetStrength(t, str, ext)
 	if ok {
-		e.CharMessage(t, "is stronger", 0xA, true)
+		e.CharMessage(t, "is stronger", true)
 	}
 	e.AddAffect(t, affStrength, e.spellAmount(int(e.curSpell)), out, 1)
 }

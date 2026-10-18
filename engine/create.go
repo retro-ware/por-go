@@ -58,7 +58,7 @@ func (e *Engine) CreateCharacter() {
 		index, redraw := 1, true
 		var sel *ListNode
 		for {
-			k := e.ListMenu("", "", 0xD, 0xA, 0xF, 1, 2, 0x26, 0x16, list, true, &redraw, &index, &sel)
+			k := e.ListMenu("", "", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, true, &redraw, &index, &sel)
 			if k == 0 {
 				return 0, false
 			}
@@ -403,7 +403,7 @@ func (e *Engine) CreateCharacter() {
 			stop := e.meetsMinStats(c)
 			if !stop && tries%100 == 0 {
 				e.ClearRow24()
-				e.DisplayString(0, 24, 0xE, "Rolling "+strconv.Itoa(tries)+"... any key stops")
+				e.DisplayString(0, promptRow, colYellow, "Rolling "+strconv.Itoa(tries)+"... any key stops")
 				e.Delay(16) // let the window draw and see keys
 				if e.keyWaiting() {
 					e.ReadKeyByte()
@@ -429,7 +429,7 @@ func (e *Engine) CreateCharacter() {
 		}
 		e.menuSel = 2
 		e.ext.selSet = true
-		k, _ := e.DisplayInput("Keep this character? ", "Yes No Minimal", 0xD, 0xA, 0xF, false, false)
+		k, _ := e.DisplayInput("Keep this character? ", "Yes No Minimal", colLightMagenta, colLightGreen, colWhite, false, false)
 		if k == 'Y' {
 			break
 		}
@@ -446,7 +446,7 @@ func (e *Engine) CreateCharacter() {
 					if i == 0 && best[0] == 1800 {
 						msg = "STR 18/xx is for fighters only, max 18"
 					}
-					e.PromptRow24(0xE, cut(msg, 0x28))
+					e.PromptRow24(colYellow, cut(msg, textCols))
 					tries = 0
 				}
 			}
@@ -485,8 +485,8 @@ func (e *Engine) DropCharacter() {
 		return
 	}
 	c := e.selected()
-	if e.YesNo(0xE, 0xA, 0xF, "Drop "+c.Name()+" forever? ") == 'Y' &&
-		e.YesNo(0xE, 0xA, 0xF, "Are you sure? ") == 'Y' {
+	if e.YesNo(colYellow, colLightGreen, colWhite, "Drop "+c.Name()+" forever? ") == 'Y' &&
+		e.YesNo(colYellow, colLightGreen, colWhite, "Are you sure? ") == 'Y' {
 		if c.Okay == 0 {
 			e.BottomMessage("You dump " + c.Name() + " out back.")
 		} else {
@@ -527,7 +527,7 @@ func (e *Engine) askMinStats() {
 			if i == 0 {
 				cur = fmtStr(e.ext.minStats[0])
 			}
-			s := strings.TrimSpace(e.InputString("Minimum "+name+" ("+cur+"): ", 0xD, 6))
+			s := strings.TrimSpace(e.InputString("Minimum "+name+" ("+cur+"): ", colLightMagenta, 6))
 			if s == "" {
 				break
 			}

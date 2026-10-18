@@ -66,7 +66,7 @@ func (e *Engine) lmDrawRows(c *listMenuCtx, first int) {
 		}
 		e.DisplayString(c.x1, y, col, p.Text)
 		if len(p.Text) < c.width {
-			e.displayCharN(c.x1+len(p.Text), y, 0, c.width-len(p.Text), ' ', true) // 0709:01DF
+			e.displayCharN(c.x1+len(p.Text), y, colBlack, c.width-len(p.Text), ' ', true) // 0709:01DF
 		}
 		y++
 	}

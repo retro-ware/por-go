@@ -112,7 +112,7 @@ func (e *Engine) AreaChange() {
 			}
 		}
 		if e.prevViewMode > 1 && e.viewMode == 1 {
-			e.DrawBoxTitled(3, 3, 0xD, 0xD, 0, 0xA, "")
+			e.DrawBoxTitled(3, 3, 13, 13, 0, colLightGreen, "")
 		}
 		if (e.prevViewMode > 1 || e.viewMode == 1) && r.scriptLoad != 0 ||
 			e.prevViewMode == 1 && e.viewMode == 1 {
@@ -157,7 +157,7 @@ func (e *Engine) CommandInput() byte {
 				f()
 			}
 			e.ext.inCommand = true
-			k, extra := e.DisplayInput("", e.commandBar(e.commandBar3D()), 0xD, 0xA, 0xF, true, false)
+			k, extra := e.DisplayInput("", e.commandBar(e.commandBar3D()), colLightMagenta, colLightGreen, colWhite, true, false)
 			e.ext.inCommand = false
 			key = k
 			if !extra {
@@ -194,7 +194,7 @@ func (e *Engine) CommandInput() byte {
 		}
 		for done := false; !done; {
 			e.ext.inCommand = true
-			k, extra := e.DisplayInput("", e.commandBar("Cast Inv View Encamp sWeep Search"), 0xD, 0xA, 0xF, true, false)
+			k, extra := e.DisplayInput("", e.commandBar("Cast Inv View Encamp sWeep Search"), colLightMagenta, colLightGreen, colWhite, true, false)
 			e.ext.inCommand = false
 			key = k
 			if !extra {
@@ -221,7 +221,7 @@ func (e *Engine) CommandInput() byte {
 	}
 	e.prevViewMode = e.viewMode
 	if e.run.textCleared == 0 {
-		e.ClearCells(1, 0x11, 0x26, 0x16)
+		e.ClearCells(1, msgTop, winRight, winBottom)
 		e.run.textCleared = 1
 	}
 	return key
@@ -367,7 +367,7 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 		menu = "Bash"
 	}
 	if e.run.doorTry[1] != 0 && e.partyHasSkill(6) {
-		menu = cut(menu+" Pick", 0x28)
+		menu = cut(menu+" Pick", textCols)
 	}
 	knock := false
 	if wizard {
@@ -376,14 +376,14 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 		knock = e.findCaster(0x1F) != nil
 	}
 	if e.run.doorTry[2] != 0 && knock {
-		menu = cut(menu+" Knock", 0x28)
+		menu = cut(menu+" Knock", textCols)
 	}
-	menu = cut(menu+" Exit", 0x28)
+	menu = cut(menu+" Exit", textCols)
 	if menu == " Exit" {
 		e.setDoor(e.posX, e.posY, e.facing, 0)
 		return false
 	}
-	k, _ := e.DisplayInput("Locked. ", menu, 0xD, 0xA, 0xF, false, false)
+	k, _ := e.DisplayInput("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
 	switch k {
 	case 'B':
 		return e.bashDoor()
@@ -565,7 +565,7 @@ func (e *Engine) mapMove() {
 		return
 	case t >= 0x66 && t <= 0x6C, t == 0x72:
 		if e.area.RiverOpen == 0 {
-			e.DisplayMessageWait(0xE, "The river's stench drives you back.")
+			e.DisplayMessageWait(colYellow, "The river's stench drives you back.")
 			return
 		}
 	}

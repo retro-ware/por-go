@@ -128,7 +128,7 @@ func (e *Engine) canStudy(mode int) bool {
 	if msg == "" {
 		return true
 	}
-	e.CharMessage(c, msg, 0xA, true)
+	e.CharMessage(c, msg, true)
 	return false
 }
 
@@ -146,15 +146,16 @@ func (e *Engine) CastMenu() {
 		switch {
 		case spell != 0:
 			drew = true
-			e.DrawBorder(1, 0x11, 0x26, 0x16, 0)
-			e.ClearCells(1, 0x11, 0x26, 0x16)
+			e.DrawBorder(1, msgTop, winRight, winBottom, 0)
+			e.ClearCells(1, msgTop, winRight, winBottom)
 			var quit bool
 			e.CastSpell(spell, 0, 1, &quit)
 			index = -1
 		case any:
 			drew = true
 		default:
-			e.CharMessage(e.selected(), "has no spells memorized", 0xA, true)
+			c := e.selected()
+			e.CharMessage(c, "has no spells memorized", true)
 		}
 		if spell == 0 {
 			break
@@ -190,7 +191,7 @@ func (e *Engine) memorizeInfo() bool {
 	if !any {
 		return false
 	}
-	e.CharMessage(c, "can memorize:", 0xA, false)
+	e.CharMessage(c, "can memorize:", false)
 	row := 3
 	for cls := 0; cls <= 1; cls++ {
 		if !has[cls] {
@@ -200,10 +201,10 @@ func (e *Engine) memorizeInfo() bool {
 		if cls == 1 {
 			label = "Magic-User Spells:"
 		}
-		e.DisplayString(1, row+0x11, 0xA, label)
+		e.DisplayString(1, row+0x11, colLightGreen, label)
 		x := 0x14 // ovr16:0723: [bp-0x41]=0x13, passed +1
 		for lvl := 1; lvl <= 3; lvl++ {
-			e.DisplayString(x, row+0x11, 0xA, grid[cls][lvl])
+			e.DisplayString(x, row+0x11, colLightGreen, grid[cls][lvl])
 			x += 3
 		}
 		row++
@@ -220,7 +221,7 @@ func (e *Engine) restMenu() (interrupted bool) {
 		if !e.isDay() {
 			dayNight, until = "Day", 6*60
 		}
-		key, _ := e.DisplayInput("Rest: ", "Heal Memorize Wait "+dayNight+" Exit", 0xD, 0xA, 0xF, false, false)
+		key, _ := e.DisplayInput("Rest: ", "Heal Memorize Wait "+dayNight+" Exit", colLightMagenta, colLightGreen, colWhite, false, false)
 		switch key {
 		case 'H':
 			if e.healMinutes() == 0 {
@@ -472,7 +473,7 @@ func (e *Engine) relearnSpells(c *Character) {
 	if !slices.ContainsFunc(r[:], func(v byte) bool { return v > 0x7F }) {
 		return // nothing used
 	}
-	if e.YesNo(0xE, 0xA, 0xF, "Relearn the spells used? ") == 'Y' {
+	if e.YesNo(colYellow, colLightGreen, colWhite, "Relearn the spells used? ") == 'Y' {
 		c.Memorized = r
 		e.sortSpells()
 	}
@@ -490,7 +491,7 @@ func (e *Engine) memorizeMenu() {
 	e.SpellList(5, 0, &index, &any)
 	drew := true
 	if any {
-		if e.YesNo(0xE, 0xA, 0xF, "Memorize These Spells? ") == 'N' {
+		if e.YesNo(colYellow, colLightGreen, colWhite, "Memorize These Spells? ") == 'N' {
 			clearMemorize(e.selected())
 		} else {
 			done = true
@@ -502,7 +503,8 @@ func (e *Engine) memorizeMenu() {
 	for !done {
 		done = !e.memorizeInfo()
 		if done {
-			e.CharMessage(e.selected(), "cannot memorize any spells", 0xA, true)
+			c := e.selected()
+			e.CharMessage(c, "cannot memorize any spells", true)
 			continue
 		}
 		spell := e.SpellList(1, 2, &index, &any)
@@ -528,7 +530,7 @@ func (e *Engine) memorizeMenu() {
 	if index != -1 {
 		index = -1
 		e.SpellList(5, 0, &index, &any)
-		if any && e.YesNo(0xE, 0xA, 0xF, "Memorize these spells? ") == 'N' {
+		if any && e.YesNo(colYellow, colLightGreen, colWhite, "Memorize these spells? ") == 'N' {
 			clearMemorize(e.selected())
 		}
 	}
@@ -548,7 +550,7 @@ func (e *Engine) scribeMenu() {
 	e.SpellList(6, 0, &index, &any)
 	drew := true
 	if any {
-		if e.YesNo(0xE, 0xA, 0xF, "Scribe These Spells? ") == 'N' {
+		if e.YesNo(colYellow, colLightGreen, colWhite, "Scribe These Spells? ") == 'N' {
 			e.clearScribe(e.selected())
 		} else {
 			done = true
@@ -563,7 +565,7 @@ func (e *Engine) scribeMenu() {
 		if spell == 0 {
 			done = true
 			if !any {
-				e.CharMessage(c, "has no copyable scrolls", 0xA, true)
+				e.CharMessage(c, "has no copyable scrolls", true)
 			} else {
 				drew = true
 			}
@@ -612,7 +614,7 @@ func (e *Engine) scribeMenu() {
 	if index != -1 {
 		index = -1
 		e.SpellList(6, 0, &index, &any)
-		if any && e.YesNo(0xE, 0xA, 0xF, "Scribe these spells? ") == 'N' {
+		if any && e.YesNo(colYellow, colLightGreen, colWhite, "Scribe these spells? ") == 'N' {
 			e.clearScribe(e.selected())
 		}
 	}
@@ -687,7 +689,7 @@ func (e *Engine) displayAffects(title string, members []*Character) {
 		list = append(list, &ListNode{Text: c.Name(), Flag: 1})
 		names := e.affectList(c)
 		for _, name := range names {
-			list = append(list, &ListNode{Text: cut(" "+name, 0x28)})
+			list = append(list, &ListNode{Text: cut(" "+name, textCols)})
 		}
 		if len(names) == 0 {
 			list = append(list, &ListNode{Text: " <No Spell Effects>"})
@@ -697,8 +699,8 @@ func (e *Engine) displayAffects(title string, members []*Character) {
 	redraw := true
 	index := 0
 	var sel *ListNode
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, title)
-	e.ListMenu("", "", 0xB, 0xA, 0xF, 1, 4, 0x26, 0x16, list, true, &redraw, &index, &sel)
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, title)
+	e.ListMenu("", "", colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel)
 }
 
 // magicMenu = ovr16:13F1 (var interrupted).
@@ -726,7 +728,7 @@ func (e *Engine) magicMenu(interrupted *bool) {
 // the member the menu is for; again is set when the menu is to be rebuilt.
 func (e *Engine) campInput(prompt, menu string) (key byte, again bool) {
 	e.ext.campBar = true
-	key, extra := e.DisplayInput(prompt, menu, 0xD, 0xA, 0xF, true, true)
+	key, extra := e.DisplayInput(prompt, menu, colLightMagenta, colLightGreen, colWhite, true, true)
 	e.ext.campBar = false
 	if !extra {
 		return key, false
@@ -799,7 +801,7 @@ func (e *Engine) orderMenu() {
 			menu = "Place Exit"
 		}
 		var extra bool
-		key, extra = e.DisplayInput("Party Order: ", menu, 0xD, 0xA, 0xF, true, true)
+		key, extra = e.DisplayInput("Party Order: ", menu, colLightMagenta, colLightGreen, colWhite, true, true)
 		if extra {
 			if !placing {
 				e.partyKeypad(key)
@@ -814,7 +816,8 @@ func (e *Engine) orderMenu() {
 		if key == 13 || key == 'P' || key == 'S' {
 			placing = !placing
 			if placing {
-				e.CharMessage(e.selected(), "has been selected", 0xA, false)
+				c := e.selected()
+				e.CharMessage(c, "has been selected", false)
 			} else {
 				e.ClearMessageArea()
 			}
@@ -826,31 +829,31 @@ func (e *Engine) orderMenu() {
 func (e *Engine) dropMenu() {
 	c := e.selected()
 	if len(e.party) == 1 {
-		if e.YesNo(0xE, 0xA, 0xF, "quit TO DOS: ") == 'Y' {
+		if e.YesNo(colYellow, colLightGreen, colWhite, "quit TO DOS: ") == 'Y' {
 			e.RemoveSelected(false, true)
 			e.Exit()
 		}
 		return
 	}
-	e.CharMessage(c, "will be gone", 0xA, false)
-	if e.YesNo(0xE, 0xA, 0xF, "Drop from party? ") != 'Y' {
-		e.CharMessage(c, "Breathes A sigh of relief", 0xA, true)
+	e.CharMessage(c, "will be gone", false)
+	if e.YesNo(colYellow, colLightGreen, colWhite, "Drop from party? ") != 'Y' {
+		e.CharMessage(c, "Breathes A sigh of relief", true)
 		return
 	}
 	if c.Okay != 0 {
-		e.CharMessage(c, "bids you farewell", 0xA, true)
+		e.CharMessage(c, "bids you farewell", true)
 	} else {
-		e.CharMessage(c, "is dumped in a ditch", 0xA, true)
+		e.CharMessage(c, "is dumped in a ditch", true)
 	}
 	e.RemoveSelected(false, true)
-	e.ClearCells(0x11, 1, 0x26, 0xB)
+	e.ClearCells(17, 1, winRight, 11)
 	e.DisplayPartyList()
 }
 
 // campSpeedMenu = ovr16:1A97: the message delay (DS:49E2), 0 fastest.
 func (e *Engine) campSpeedMenu() {
 	for key := byte(' '); key != 0 && key != 'E'; {
-		e.DisplayString(1, 0x12, 0xA, "Game Speed = "+strconv.Itoa(int(e.msgDelay))+" (0=fastest 9=slowest)")
+		e.DisplayString(1, 18, colLightGreen, "Game Speed = "+strconv.Itoa(int(e.msgDelay))+" (0=fastest 9=slowest)")
 		menu := ""
 		if e.msgDelay > 0 {
 			menu += " Faster"
@@ -860,7 +863,7 @@ func (e *Engine) campSpeedMenu() {
 		}
 		menu += " Exit"
 		var extra bool
-		key, extra = e.DisplayInput("Game Speed:", menu, 0xD, 0xA, 0xF, true, true)
+		key, extra = e.DisplayInput("Game Speed:", menu, colLightMagenta, colLightGreen, colWhite, true, true)
 		if extra {
 			if key == 0x50 && e.msgDelay > 0 {
 				e.msgDelay--
@@ -880,7 +883,7 @@ func (e *Engine) campSpeedMenu() {
 func (e *Engine) alterMenu() {
 	for key := byte(' '); key != 0 && key != 'E'; {
 		var extra bool
-		key, extra = e.DisplayInput("Alter: ", "Order Drop Speed Icon Pics Exit", 0xD, 0xA, 0xF, true, true)
+		key, extra = e.DisplayInput("Alter: ", "Order Drop Speed Icon Pics Exit", colLightMagenta, colLightGreen, colWhite, true, true)
 		if extra {
 			e.partyKeypad(key)
 			e.DisplayPartyList()
@@ -907,7 +910,7 @@ func (e *Engine) alterMenu() {
 				} else {
 					menu += "Portraits off  "
 				}
-				k, _ = e.DisplayInput("", menu+"Exit", 0xD, 0xA, 0xF, false, true)
+				k, _ = e.DisplayInput("", menu+"Exit", colLightMagenta, colLightGreen, colWhite, false, true)
 				if k == 'M' {
 					e.viewBit1 ^= 1
 				} else if k == 'P' {
@@ -928,8 +931,8 @@ func (e *Engine) CampMenu() bool {
 	e.camp.heal = 0
 	e.camp.rest = [7]int{}
 	e.DrawMainScreen()
-	e.ClearCells(1, 0x11, 0x26, 0x16)
-	e.DisplayString(1, 0x12, 0xA, "The party makes camp...")
+	e.ClearCells(1, msgTop, winRight, winBottom)
+	e.DisplayString(1, 18, colLightGreen, "The party makes camp...")
 	e.clearStudy()
 	interrupted := false
 	for key := byte(' '); !interrupted && key != 0 && key != 'E'; {
@@ -950,7 +953,7 @@ func (e *Engine) CampMenu() bool {
 				break
 			}
 			e.SaveGame()
-			if e.YesNo(0xE, 0xA, 0xF, "Quit TO DOS ") == 'Y' {
+			if e.YesNo(colYellow, colLightGreen, colWhite, "Quit TO DOS ") == 'Y' {
 				e.Exit()
 			}
 		case 'V':
@@ -1036,14 +1039,14 @@ func (e *Engine) showRest(unit int) {
 	}
 	col[unit] = 0xF
 	r := &e.camp.rest
-	e.DisplayString(1, 0x11, 0xA, "Rest Time:")
+	e.DisplayString(1, 17, colLightGreen, "Rest Time:")
 	x := 0xB
 	for i := 4; i >= 3; i-- {
-		e.DisplayString(x+1, 0x11, col[i], twoDigits(r[i]))
-		e.DisplayString(x+3, 0x11, 0xA, ":")
+		e.DisplayString(x+1, 17, col[i], twoDigits(r[i]))
+		e.DisplayString(x+3, 17, colLightGreen, ":")
 		x += 3
 	}
-	e.DisplayString(x+1, 0x11, col[2], twoDigits(10*r[2]+r[1]))
+	e.DisplayString(x+1, 17, col[2], twoDigits(10*r[2]+r[1]))
 }
 
 // healTick = ovr21:0871: every 24 hours of rest everyone heals 1 HP.
@@ -1059,7 +1062,7 @@ func (e *Engine) healTick() {
 		}
 	}
 	e.showRest(0)
-	e.DisplayString(1, 0x13, 0xA, "The Whole Party Is Healed")
+	e.DisplayString(1, 19, colLightGreen, "The Whole Party Is Healed")
 	if healed {
 		e.DisplayPartyList()
 	}
@@ -1179,7 +1182,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 		e.run.effTick[i] = 1
 	}
 	hours, shown := 0, 0
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 	e.showRest(0)
 	e.resting = 1
 	done := false
@@ -1190,7 +1193,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 		}
 		if e.keyWaiting() {
 			e.showRest(0)
-			if e.YesNo(0xD, 0xA, 0xF, "Stop Resting? ") == 'Y' {
+			if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ") == 'Y' {
 				done = true
 			} else {
 				e.ClearRow24()
@@ -1215,7 +1218,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 				if e.Dice(1, 100) <= int(e.game.RestChance) {
 					e.ClearMessageArea()
 					e.showRest(0)
-					e.DisplayString(1, 0x13, 0xF, "The Party is rudely interrupted!")
+					e.DisplayString(1, 19, colWhite, "The Party is rudely interrupted!")
 					done = true
 					interrupted = true
 					e.MsgDelay()
@@ -1224,7 +1227,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 		}
 		e.idle() // let the window breathe; the DOS loop ran flat out
 	}
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 	e.resting = 0
 	return interrupted
 }

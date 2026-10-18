@@ -147,12 +147,12 @@ func (e *Engine) lookItem(it *Item) {
 	l := e.itemLines(it)
 	y1 := 4
 	y2 := min(y1+len(l)+3, 0x16)
-	e.DrawBoxTitled(1, y1, 0x26, y2, 0, 0xF, "")
-	e.DisplayString(3, y1+1, 0xB, cut(it.Name(), 0x22))
+	e.DrawBoxTitled(1, y1, winRight, y2, 0, colWhite, "")
+	e.DisplayString(3, y1+1, colLightCyan, cut(it.Name(), 0x22))
 	for i, s := range l {
 		if y1+3+i < y2 {
-			e.DisplayString(3, y1+3+i, 0xA, s)
+			e.DisplayString(3, y1+3+i, colLightGreen, s)
 		}
 	}
-	e.PromptRow24(0xD, "Press any key")
+	e.PromptRow24(colLightMagenta, "Press any key")
 }

@@ -49,7 +49,7 @@ func (e *Engine) tavernGamble() {
 		e.scriptText(false, " GP.")
 		e.pressReturn()
 		e.scriptText(true, "HOW MANY GOLD PIECES WILL YOU WAGER? (HOUSE LIMIT IS "+strconv.Itoa(tavernHouseLimit)+")")
-		wager := uint32(e.InputNumber("", 0xA))
+		wager := uint32(e.InputNumber("", colLightGreen))
 		r := 0
 		if tavernWagerOK(e.purse.gold, wager) {
 			r = e.Random(10)
@@ -66,14 +66,14 @@ func (e *Engine) tavernGamble() {
 
 // pressReturn is the scripts' one-item "PRESS <RETURN>" menu (opHMenu).
 func (e *Engine) pressReturn() {
-	e.MenuInput(true, 0xF, 0xF, 0xD, "~PRESS <ENTER>/<RETURN> TO CONTINUE", "")
-	e.ClearBox(0, 0x18, 0x27, 0x18)
+	e.MenuInput(true, colWhite, colWhite, colLightMagenta, "~PRESS <ENTER>/<RETURN> TO CONTINUE", "")
+	e.ClearBox(0, promptRow, lastCol, promptRow)
 }
 
 // scriptMenu is opHMenu's menu: the index of the choice.
 func (e *Engine) scriptMenu(menu string) int {
-	r := e.MenuInput(false, 0xF, 0xA, 0xD, menu, "")
-	e.ClearBox(0, 0x18, 0x27, 0x18)
+	r := e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, menu, "")
+	e.ClearBox(0, promptRow, lastCol, promptRow)
 	return int(byte(r))
 }
 

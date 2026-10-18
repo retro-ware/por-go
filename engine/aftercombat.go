@@ -241,43 +241,43 @@ func (e *Engine) hiredShare() {
 	for _, n := range []*uint32{&e.loot.gold, &e.loot.copper, &e.loot.gems, &e.loot.jewelry} {
 		*n -= *n / uint32(parts) * uint32(shares)
 	}
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
 	k := 0
 	for _, c := range e.party {
 		if c.Control > 0x7F && c.Status == statusOkay && c.Share > 0 {
-			e.DisplayTextBlock(5, 5+2*k, 0x22, 0x16, 0xA, true, c.Name()+" takes and hides his share.")
+			e.DisplayTextBlock(5, 5+2*k, 34, winBottom, colLightGreen, true, c.Name()+" takes and hides his share.")
 			k++
 		}
 	}
-	e.DisplayInput("", "press <enter>/<return> to continue", 0xF, 0xF, 0xF, true, false)
+	e.DisplayInput("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
 }
 
 // showResult = ovr06:0916 (exp).
 func (e *Engine) showResult(exp int32) {
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
 	switch {
 	case e.ac.monsters || e.duel():
 		switch {
 		case e.duel() && !e.ac.won:
-			e.DisplayString(1, 3, 0xA, "You have lost the duel.")
+			e.DisplayString(1, 3, colLightGreen, "You have lost the duel.")
 			exp = 0
 		case e.duel():
-			e.DisplayString(1, 3, 0xA, "You have won the duel.")
+			e.DisplayString(1, 3, colLightGreen, "You have won the duel.")
 		default:
-			e.DisplayString(1, 3, 0xA, "The party has won.")
+			e.DisplayString(1, 3, colLightGreen, "The party has won.")
 		}
 	case e.ac.fled:
-		e.DisplayString(1, 3, 0xA, "The party has fled.")
+		e.DisplayString(1, 3, colLightGreen, "The party has fled.")
 		exp = 0
 	default:
-		e.DisplayString(1, 3, 0xA, "The party has found Treasure!")
+		e.DisplayString(1, 3, colLightGreen, "The party has found Treasure!")
 	}
 	s := "Each character receives "
 	if e.duel() {
 		s = "The duelist receives "
 	}
-	e.DisplayString(1, 5, 0xA, cut(s+strconv.Itoa(int(exp)), 0xFF))
-	e.DisplayString(1, 7, 0xA, "experience points.")
+	e.DisplayString(1, 5, colLightGreen, cut(s+strconv.Itoa(int(exp)), 0xFF))
+	e.DisplayString(1, 7, colLightGreen, "experience points.")
 	if l := e.loot; !l.empty() {
 		var got []string
 		if l.gold > 0 || l.copper > 0 {
@@ -291,7 +291,7 @@ func (e *Engine) showResult(exp int32) {
 				got = append(got, strconv.Itoa(int(p.n))+p.name)
 			}
 		}
-		e.DisplayTextBlock(1, 9, 0x26, 0x16, 0xA, true, "The party takes "+strings.Join(got, ", ")+".")
+		e.DisplayTextBlock(1, 9, winRight, winBottom, colLightGreen, true, "The party takes "+strings.Join(got, ", ")+".")
 	}
 	y := 0xC // extra: who came out of the fight dead or worse, or with harmful effects on them
 	for _, c := range e.party {
@@ -305,17 +305,17 @@ func (e *Engine) showResult(exp int32) {
 			}
 		}
 		if len(what) > 0 && y <= 0x15 {
-			e.DisplayString(1, y, 0xB, cut(c.Name(), 15))
-			e.DisplayString(0x12, y, 0xC, cut(strings.Join(what, ", "), 0x26-0x12))
+			e.DisplayString(1, y, colLightCyan, cut(c.Name(), 15))
+			e.DisplayString(18, y, colLightRed, cut(strings.Join(what, ", "), winRight-18))
 			y++
 		}
 	}
-	e.DisplayInput("", "press <enter>/<return> to continue", 0xF, 0xF, 0xF, true, false)
+	e.DisplayInput("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
 }
 
 // lootList = ovr06:0B14 (var index, var item): the treasure in a "Loot" box.
 func (e *Engine) lootList(index *int, item **Item) byte {
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "Loot")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Loot")
 	list := make([]*ListNode, len(e.run.treasure))
 	for i, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
@@ -323,7 +323,7 @@ func (e *Engine) lootList(index *int, item **Item) byte {
 	}
 	redraw := true
 	var sel *ListNode
-	key := e.ListMenu("Items: ", "Take", 0xD, 0xA, 0xF, 1, 4, 0x26, 0x16, list, true, &redraw, index, &sel)
+	key := e.ListMenu("Items: ", "Take", colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
 	*item = nil
 	for i, n := range list {
 		if n == sel {
@@ -376,7 +376,7 @@ func (e *Engine) lootMenu() {
 		if items {
 			menu = "View Take" + exit
 		}
-		key, _ := e.DisplayInput("", menu, 0xD, 0xA, 0xF, true, true) // ovr06:101F: anim
+		key, _ := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, true) // ovr06:101F: anim
 		switch key {
 		case 'V':
 			e.ViewCharacter()
@@ -389,12 +389,12 @@ func (e *Engine) lootMenu() {
 			if len(e.run.treasure) == 0 {
 				return
 			}
-			e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true, "There is still treasure left.  ")
-			e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xF, false, "Do you want to go back and claim your treasure?")
-			if e.MenuInput(false, 0xF, 0xA, 0xD, "~Yes ~No", "") == 1 {
+			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "There is still treasure left.  ")
+			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colWhite, false, "Do you want to go back and claim your treasure?")
+			if e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~Yes ~No", "") == 1 {
 				return
 			}
-			e.ClearBox(1, 0x11, 0x26, 0x16)
+			e.ClearBox(1, msgTop, winRight, winBottom)
 		case 'G', 'O':
 			e.partyKeypad(key)
 			e.DisplayPartyList()
@@ -419,10 +419,10 @@ func (e *Engine) AfterCombat() {
 	} else {
 		e.game.CombatEnd = 0x80
 		e.Music(5) // Amiga 0x4602E
-		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "The END!")
+		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
 		e.msgCol, e.msgRow = 2, 6
-		e.DisplayTextBlock(2, 5, 0x25, 0x16, 0xA, true, "The monsters rejoice for the party has been destroyed")
-		e.PromptRow24(0xD, "Press any key to continue")
+		e.DisplayTextBlock(2, 5, 37, winBottom, colLightGreen, true, "The monsters rejoice for the party has been destroyed")
+		e.PromptRow24(colLightMagenta, "Press any key to continue")
 	}
 	e.slowText = true
 	g := &e.game

@@ -28,27 +28,27 @@ func (e *Engine) CharacterSheet() {
 	c := e.selected()
 	e.view.char = c
 	e.ClearScreen()
-	e.DrawBorder(1, 1, 0x26, 0x16, 0)
+	e.DrawBorder(1, 1, winRight, winBottom, 0)
 	e.displayName(c, 1, 1, false)
 	if c.Control > 0x7F {
-		e.DisplayString(len(c.Name())+3, 1, 0xA, "(NPC)")
+		e.DisplayString(len(c.Name())+3, 1, colLightGreen, "(NPC)")
 	}
 	x := 1
 	s := genderNames[c.Sex]
-	e.DisplayString(x, 3, 0xF, s)
+	e.DisplayString(x, 3, colWhite, s)
 	x += len(s) + 1
 	s = raceNames[int8(c.Race)]
-	e.DisplayString(x, 3, 0xF, s)
+	e.DisplayString(x, 3, colWhite, s)
 	x += len(s) + 1
-	e.DisplayString(x, 3, 0xF, "Age "+strconv.Itoa(int(c.Age)))
-	e.DisplayString(1, 4, 0xF, alignmentNames[int8(c.Alignment)])
-	e.DisplayString(1, 5, 0xF, className(c.Class))
+	e.DisplayString(x, 3, colWhite, "Age "+strconv.Itoa(int(c.Age)))
+	e.DisplayString(1, 4, colWhite, alignmentNames[int8(c.Alignment)])
+	e.DisplayString(1, 5, colWhite, className(c.Class))
 	for i, l := range []string{"STR ", "INT ", "WIS ", "DEX ", "CON ", "CHA "} {
-		e.DisplayString(1, i+7, 0xA, l)
+		e.DisplayString(1, i+7, colLightGreen, l)
 		e.showStat(i, false)
 	}
 	e.showMoney()
-	e.DisplayString(1, 0xF, 0xF, "Level")
+	e.DisplayString(1, 15, colWhite, "Level")
 	s = ""
 	for i := 0; i <= 7; i++ {
 		if l := int8(c.Levels[i]); l > 0 {
@@ -58,22 +58,22 @@ func (e *Engine) CharacterSheet() {
 			s += strconv.Itoa(int(l))
 		}
 	}
-	e.DisplayString(7, 0xF, 0xF, s)
-	e.DisplayString(0x11, 0xF, 0xF, "Exp "+strconv.Itoa(int(int32(c.Exp))))
+	e.DisplayString(7, 15, colWhite, s)
+	e.DisplayString(17, 15, colWhite, "Exp "+strconv.Itoa(int(int32(c.Exp))))
 	e.showCombatStats()
 	y := 0x14
 	if w := c.Slots[slotWeapon]; w != nil {
-		e.DisplayString(1, y, 0xF, "Weapon")
+		e.DisplayString(1, y, colWhite, "Weapon")
 		e.ItemName(c, w, 8, y, false, true)
 	}
 	y++
 	if a := c.Slots[slotArmor]; a != nil {
-		e.DisplayString(2, y, 0xF, "Armor")
+		e.DisplayString(2, y, colWhite, "Armor")
 		e.ItemName(c, a, 8, y, false, true)
 	}
 	y++
-	e.DisplayString(1, y, 0xF, "Status")
-	e.DisplayString(8, y, 0xA, e.statusName(c))
+	e.DisplayString(1, y, colWhite, "Status")
+	e.DisplayString(8, y, colLightGreen, e.statusName(c))
 	e.sheetEffects(c)
 	if e.viewBit0 != 0 { // the original: only while set 3 is loaded (its HEAD/BODY); extra: everywhere, from charArt
 		e.SheetPortrait()
@@ -91,11 +91,11 @@ func (e *Engine) effectsLine(c *Character) (string, bool) {
 		return "", true
 	}
 	s := strings.Join(names, ", ")
-	if len(s) <= 0x26-9 {
+	if len(s) <= winRight-9 {
 		return s, true
 	}
 	n := 0
-	for len(strings.Join(names[:n+1], ", "))+len(", +9 more") <= 0x26-9 {
+	for len(strings.Join(names[:n+1], ", "))+len(", +9 more") <= winRight-9 {
 		n++
 	}
 	if n == 0 {
@@ -111,8 +111,8 @@ func (e *Engine) sheetEffects(c *Character) {
 	if s == "" {
 		return
 	}
-	e.DisplayString(1, effectsRow, 0xF, "Effects")
-	e.DisplayString(9, effectsRow, 0xA, s)
+	e.DisplayString(1, effectsRow, colWhite, "Effects")
+	e.DisplayString(9, effectsRow, colLightGreen, s)
 }
 
 // showCombatStats = ovr20:0608: AC, HP, THAC0, damage, weight, movement.
@@ -120,19 +120,19 @@ func (e *Engine) showCombatStats() {
 	c := e.selected()
 	e.ApplyItems(c)
 	y := 0x11
-	e.DisplayString(1, y, 0xF, "AC    ")
+	e.DisplayString(1, y, colWhite, "AC    ")
 	e.displayAC(c, 4, y)
-	e.DisplayString(1, y+1, 0xF, "HP    ")
+	e.DisplayString(1, y+1, colWhite, "HP    ")
 	e.displayHP(c, 4, y+1, false)
 	x := 8
-	e.DisplayString(x+1, y, 0xF, "THAC0   ")
-	e.DisplayString(x+7, y, 0xA, strconv.Itoa(int(byte(0x3C-c.THAC0))))
-	d := cut(damageText(c), 0x28)
-	e.DisplayString(x, y+1, 0xF, "Damage        ")
-	e.DisplayString(x+7, y+1, 0xA, d)
+	e.DisplayString(x+1, y, colWhite, "THAC0   ")
+	e.DisplayString(x+7, y, colLightGreen, strconv.Itoa(int(byte(0x3C-c.THAC0))))
+	d := cut(damageText(c), textCols)
+	e.DisplayString(x, y+1, colWhite, "Damage        ")
+	e.DisplayString(x+7, y+1, colLightGreen, d)
 	x = 0x16
-	e.DisplayString(x, y, 0xF, "Encumbrance      ")
-	e.DisplayString(x+0xC, y, 0xA, strconv.Itoa(int(c.Weight)))
+	e.DisplayString(x, y, colWhite, "Encumbrance      ")
+	e.DisplayString(x+0xC, y, colLightGreen, strconv.Itoa(int(c.Weight)))
 	m := c.Move
 	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
 	if e.FindAffect(c, affHaste) != nil {
@@ -141,20 +141,20 @@ func (e *Engine) showCombatStats() {
 	if e.FindAffect(c, affSlow) != nil {
 		m >>= 1
 	}
-	e.DisplayString(x+3, y+1, 0xF, "Movement   ")
-	e.DisplayString(x+0xC, y+1, 0xA, strconv.Itoa(int(m)))
+	e.DisplayString(x+3, y+1, colWhite, "Movement   ")
+	e.DisplayString(x+0xC, y+1, colLightGreen, strconv.Itoa(int(m)))
 }
 
 // showStat = ovr20:0901 (stat, highlight): one ability score, with the
 // exceptional strength in brackets.
 func (e *Engine) showStat(stat int, hi bool) {
-	col := 0xA
+	col := colLightGreen
 	if hi {
-		col = 0xD
+		col = colLightMagenta
 	}
 	c := e.selected()
 	x := 5
-	e.ClearCells(5, stat+7, 0xB, stat+7)
+	e.ClearCells(5, stat+7, 11, stat+7)
 	v := c.Stats[stat]
 	if v < 10 {
 		x++
@@ -216,9 +216,9 @@ func (e *Engine) ViewCharacter() bool {
 		if e.paladinCan(c, affCuredDisease) {
 			menu += "Cure "
 		}
-		menu = cut(menu+"Exit", 0x28)
+		menu = cut(menu+"Exit", textCols)
 		e.ext.viewing = true // F1..F8 switch members (extras.go)
-		k, extra := e.DisplayInput("View:", menu, 0xD, 0xA, 0xF, false, false)
+		k, extra := e.DisplayInput("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false)
 		e.ext.viewing = false
 		key = k
 		_ = extra
@@ -266,9 +266,9 @@ func (e *Engine) paladinHeal(c *Character) {
 		return
 	}
 	if e.Heal(t, 2*int(c.Levels[clsPaladin]), true) {
-		e.DisplayMessageWait(0xA, t.Name()+" feels better")
+		e.DisplayMessageWait(colLightGreen, t.Name()+" feels better")
 	} else {
-		e.DisplayMessageWait(0xA, t.Name()+" is unaffected")
+		e.DisplayMessageWait(colLightGreen, t.Name()+" is unaffected")
 	}
 	e.AddAffect(c, affLaidOnHands, 1440, 0, 0)
 }
@@ -283,7 +283,7 @@ func (e *Engine) paladinCure(c *Character) {
 	for _, d := range diseases {
 		ill = ill || e.FindAffect(t, d) != nil
 	}
-	if !ill && e.YesNo(0xD, 0xA, 0xF, t.Name()+" is not diseased, cure anyway: ") != 'Y' {
+	if !ill && e.YesNo(colLightMagenta, colLightGreen, colWhite, t.Name()+" is not diseased, cure anyway: ") != 'Y' {
 		return
 	}
 	e.rv.cure = 1
@@ -292,7 +292,7 @@ func (e *Engine) paladinCure(c *Character) {
 	}
 	e.rv.cure = 0
 	e.AddAffect(c, affCuredDisease, 0x2760, 0, 0)
-	e.DisplayMessageWait(0xA, t.Name()+" is cured")
+	e.DisplayMessageWait(colLightGreen, t.Name()+" is cured")
 }
 
 // inventory runs ItemsMenu for ViewCharacter (extra:
@@ -318,14 +318,14 @@ func (e *Engine) canLoseItem(it *Item) bool {
 		ok = true
 	case it.Spells[0] > 0x7F || it.Spells[1] > 0x7F || it.Spells[2] > 0x7F:
 		c := e.selected()
-		e.displayName(c, 1, 0x15, false)
+		e.displayName(c, 1, 21, false)
 		e.msgCol, e.msgRow = len(c.Name())+2, 0x15
-		e.DisplayTextBlock(1, 0x15, 0x26, 0x16, 0xE, false, " was going to scribe from that scroll")
-		ok = e.YesNo(0xD, 0xA, 0xF, "is it Okay to lose it? ") == 'Y'
+		e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, false, " was going to scribe from that scroll")
+		ok = e.YesNo(colLightMagenta, colLightGreen, colWhite, "is it Okay to lose it? ") == 'Y'
 	default:
 		ok = true
 	}
-	e.ClearCells(1, 0x15, 0x26, 0x16)
+	e.ClearCells(1, 21, winRight, winBottom)
 	return ok
 }
 
@@ -336,7 +336,7 @@ func (e *Engine) SheetPortrait() {
 	if c.PortHead == 0 || c.PortBody == 0 {
 		return
 	}
-	e.DrawBoxTitled(0x1C, 1, 0x26, 0xB, 0, 0, "")
+	e.DrawBoxTitled(28, 1, winRight, 11, 0, colBlack, "")
 	e.LoadPortrait(charArt, int(portraitHead[c.PortHead]), int(portraitBody[c.PortBody]))
 	e.DrawPortrait(0x1C, 1, true)
 }
@@ -375,7 +375,7 @@ func (e *Engine) ItemsMenu() bool {
 			menu += " Sell"
 		}
 		menu += " Look" // extra: what the item does, as the shop's Look
-		menu = cut(menu, 0x28)
+		menu = cut(menu, textCols)
 		list := make([]*ListNode, len(c.Items))
 		for i, x := range c.Items {
 			e.ItemName(c, x, 0, 0, true, false)
@@ -389,16 +389,16 @@ func (e *Engine) ItemsMenu() bool {
 		}
 		if full || e.itemsRedraw {
 			e.ClearScreen()
-			e.DrawBorder(1, 1, 0x26, 0x16, 0)
+			e.DrawBorder(1, 1, winRight, winBottom, 0)
 			e.displayName(c, 1, 1, true)
-			e.DisplayString(len(c.Name())+4, 1, 0xA, "Items")
-			e.DrawBoxTitled(1, 3, 0x26, 0x16, 0, 0, "")
-			e.DisplayString(1, 3, 0xF, "Ready Item")
+			e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Items")
+			e.DrawBoxTitled(1, 3, winRight, winBottom, 0, colBlack, "")
+			e.DisplayString(1, 3, colWhite, "Ready Item")
 			redraw, full, e.itemsRedraw = true, false, false
 		}
 		var sel *ListNode
 		e.ext.items = true // P and F1-F8 (extras.go)
-		key = e.ListMenu("", menu, 0xD, 0xA, 0xF, 1, 5, 0x26, 0x16, list, true, &redraw, &index, &sel)
+		key = e.ListMenu("", menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, 22, list, true, &redraw, &index, &sel)
 		e.ext.items = false
 		it = nil
 		for i, n := range list {
@@ -437,12 +437,12 @@ func (e *Engine) ItemsMenu() bool {
 			case 'D':
 				if e.canLoseItem(it) {
 					e.ItemName(c, it, 0, 0, false, false)
-					e.DisplayTextBlock(1, 0x15, 0x26, 0x16, 0xE, true, "Your "+it.Name()+"will be gone forever")
-					if e.YesNo(0xD, 0xA, 0xF, "Drop It? ") == 'Y' {
+					e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "Your "+it.Name()+"will be gone forever")
+					if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Drop It? ") == 'Y' {
 						e.RemoveItem(e.selected(), it)
 						redraw = true
 					}
-					e.ClearCells(1, 0x15, 0x26, 0x16)
+					e.ClearCells(1, 21, winRight, winBottom)
 				} else {
 					key = ' '
 				}
@@ -542,7 +542,7 @@ func (e *Engine) itemAffect(it *Item, c *Character, flag byte) {
 func (e *Engine) tradeItem(it *Item) {
 	give := *it
 	if it.Count > 1 {
-		s := strings.TrimSpace(e.InputString("How many? ("+strconv.Itoa(int(it.Count))+") ", 0xD, 3))
+		s := strings.TrimSpace(e.InputString("How many? ("+strconv.Itoa(int(it.Count))+") ", colLightMagenta, 3))
 		n, err := strconv.Atoi(s)
 		switch {
 		case s == "":
@@ -631,9 +631,9 @@ func (e *Engine) useItem(it *Item) bool {
 		if spell > 0x38 {
 			spell -= 0x17
 		}
-		e.CharMessage(c, "uses an item", 0xA, false)
+		e.CharMessage(c, "uses an item", false)
 		if e.beginFlag == 5 {
-			e.DisplayString(0, 0x17, 0xA, "Item:")
+			e.DisplayString(0, messageRow, colLightGreen, "Item:")
 			e.ItemName(c, it, 5, 0x17, false, true)
 		} else {
 			e.ItemName(c, it, 1, 0x16, false, true)
@@ -679,31 +679,32 @@ func (e *Engine) sellItem(it *Item) {
 		v = uint32(it.Count) * v / 0x14
 	}
 	e.ItemName(e.viewChar(), it, 0, 0, false, false)
-	e.DisplayTextBlock(1, 0x15, 0x26, 0x16, 0xE, true,
+	e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true,
 		"I'll give you "+moneyText(v/200, v%200)+" for your "+it.Name())
-	if e.YesNo(0xD, 0xA, 0xF, "Is It a Deal? ") == 'Y' {
+
+	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") == 'Y' {
 		e.BottomMessage("Sold!")
 		e.RemoveItem(e.selected(), it)
 		e.purse.addCopper(v)
 	}
-	e.ClearCells(1, 0x15, 0x26, 0x16)
+	e.ClearCells(1, 21, winRight, winBottom)
 }
 
 // identifyItem = ovr20:1F52 (item, redraw): 200 gp shows the hidden words.
 func (e *Engine) identifyItem(c *Character, it *Item) (redraw bool) {
 	e.ItemName(c, it, 0, 0, false, false)
-	if e.YesNo(0xD, 0xA, 0xF, "Is It a Deal? ") == 'Y' && e.pay(200) {
+	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") == 'Y' && e.pay(200) {
 		if it.Hidden == 0 {
-			e.DisplayTextBlock(1, 0x15, 0x26, 0x16, 0xE, true, "I can't tell anything new about your "+it.Name())
+			e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "I can't tell anything new about your "+it.Name())
 		} else {
 			it.Hidden = 0
 			e.ItemName(c, it, 0, 0, false, false)
-			e.DisplayTextBlock(1, 0x15, 0x26, 0x16, 0xE, true, "It looks like some sort of "+it.Name())
+			e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "It looks like some sort of "+it.Name())
 			redraw = true
 		}
 		e.MsgDelay()
 	}
-	e.ClearCells(1, 0x15, 0x26, 0x16)
+	e.ClearCells(1, 21, winRight, winBottom)
 	return
 }
 
@@ -735,10 +736,10 @@ func (e *Engine) SpellList(kind, mode int, index *int, any *bool) byte {
 		return 0
 	}
 	if *index < 0 {
-		e.DrawBoxTitled(1, 1, 0x26, 1, 0, 0, "")
+		e.DrawBoxTitled(1, 1, winRight, 1, 0, colBlack, "")
 		c := e.selected()
 		e.displayName(c, 1, 1, true)
-		e.DisplayString(len(c.Name())+4, 1, 0xA, "Spells "+title)
+		e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells "+title)
 	}
 	return e.spellMenu(mode, index)
 }

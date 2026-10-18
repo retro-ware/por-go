@@ -155,17 +155,17 @@ func (e *Engine) showJournal(lines []string) {
 	pages := journalPages(lines)
 	draw := func(p, off int) (maxOff int) {
 		e.setOverlays(nil)
-		e.DrawBoxTitled(1, 1, 0x26, 0x17, 0, 0xF, "Adventurer's Journal")
-		e.ClearCells(2, 2, 0x25, 0x17)
+		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Adventurer's Journal")
+		e.ClearCells(2, 2, 37, 23)
 		page := pages[p]
 		for i, l := range page {
 			switch {
 			case strings.HasPrefix(l, "\x00"):
-				e.DisplayString(2, 2+i, 0xE, l[1:])
+				e.DisplayString(2, 2+i, colYellow, l[1:])
 			case strings.HasPrefix(l, "\x01"):
 				maxOff = max(maxOff, e.drawPicture(journalPicture(l[1:]), 2*8+jrWidth*4, (2+i)*8, pictureRows(page[i:])*8, off))
 			case l != "\x02":
-				e.DisplayString(2, 2+i, 0xF, l)
+				e.DisplayString(2, 2+i, colWhite, l)
 			}
 		}
 		more := "press a key"
@@ -175,7 +175,7 @@ func (e *Engine) showJournal(lines []string) {
 		if maxOff > 0 {
 			more = "up/down: scroll, " + more
 		}
-		e.DisplayString(0x25-len(more), 0x17, 0xA, more)
+		e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		return maxOff
 	}
 	for p := 0; p < len(pages); p++ {

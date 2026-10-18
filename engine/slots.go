@@ -243,26 +243,26 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		rows := len(list) + first
 		sel = min(max(sel, 0), max(rows-1, 0))
 		top = min(max(top, sel-slotRows+1), sel)
-		e.DrawBoxTitled(1, 1, 0x26, 0x17, 0, 0xF, "Saved Games")
-		e.ClearCells(2, 2, 0x25, 0x17)
+		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Saved Games")
+		e.ClearCells(2, 2, 37, 23)
 		if rows == 0 {
-			e.DisplayString(3, 3, 0xA, "No saved games yet")
+			e.DisplayString(3, 3, colLightGreen, "No saved games yet")
 		}
 		for i := top; i < rows && i < top+slotRows; i++ {
-			col := 0xA
+			col := colLightGreen
 			if i == sel {
-				col = 0xF
-				e.DisplayString(2, 3+i-top, 0xE, ">")
+				col = colWhite
+				e.DisplayString(2, 3+i-top, colYellow, ">")
 			}
 			if i < first {
 				e.DisplayString(3, 3+i-top, col, "New Slot")
 				continue
 			}
 			e.DisplayString(3, 3+i-top, col, cut(list[i-first].name, 0x15))
-			e.DisplayString(0x19, 3+i-top, 0x7, list[i-first].at.Format("Jan 02 15:04"))
+			e.DisplayString(25, 3+i-top, colLightGrey, list[i-first].at.Format("Jan 02 15:04"))
 		}
 		if !canSave && !loadOnly {
-			e.DisplayString(2, 0x15, 0xE, "No saving now")
+			e.DisplayString(2, 21, colYellow, "No saving now")
 		}
 		// extra (nav.go): a click selects a line, a second one is Enter; the
 		// keys in the footer are clicked by their words
@@ -284,7 +284,7 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		}
 		gap /= len(footer) - 1 // spread over the row inside the frame
 		for _, f := range footer {
-			e.DisplayString(x, 0x16, 0xE, f.label)
+			e.DisplayString(x, 22, colYellow, f.label)
 			e.addRegion(region{x0: x, y0: 0x16, x1: x + len(f.label) - 1, y1: 0x16, click: func(int, int) uint16 { return f.k }})
 			x += len(f.label) + gap
 		}
@@ -308,7 +308,7 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			}
 			// one slot per name in any case (the folders may not tell case apart)
 			if i := slices.IndexFunc(list, func(s slot) bool { return strings.EqualFold(s.name, name) }); i >= 0 {
-				if e.YesNo(0xE, 0xA, 0xF, cut("Overwrite "+list[i].name+"? ", 0x28)) != 'Y' {
+				if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+list[i].name+"? ", textCols)) != 'Y' {
 					continue
 				}
 				os.RemoveAll(filepath.Join(e.slotRoot(), list[i].name))
@@ -316,12 +316,12 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			e.saveTo(name)
 			sel = first
 		case k == 13 && canSave:
-			if e.YesNo(0xE, 0xA, 0xF, cut("Overwrite "+cur+"? ", 0x28)) == 'Y' {
+			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+cur+"? ", textCols)) == 'Y' {
 				e.saveTo(cur)
 				sel = first
 			}
 		case (k == 'd' || k == 'D') && cur != "":
-			if e.YesNo(0xE, 0xA, 0xF, cut("Delete "+cur+"? ", 0x28)) == 'Y' {
+			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Delete "+cur+"? ", textCols)) == 'Y' {
 				os.RemoveAll(filepath.Join(e.slotRoot(), cur))
 			}
 		case (k == 'l' || k == 'L' || k == 13 && loadOnly) && cur != "":

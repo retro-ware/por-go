@@ -28,13 +28,13 @@ func (e *Engine) shopList(index *int, item **Item) byte {
 		list[i] = &ListNode{Text: string(line)}
 		list[i].Dim = !e.canUseItem(e.selected(), it) // extra: what the buyer cannot use is grey and passed over
 	}
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "Shop")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Shop")
 	gold := strconv.Itoa(int(e.purse.gold)) + "g" // extra: on the frame, the g under the prices' last digit
-	e.DisplayString(0x26-len(gold), 0x17, 0xE, gold)
+	e.DisplayString(winRight-len(gold), messageRow, colYellow, gold)
 	if c := e.selected(); len(e.party) > 0 { // extra: who is buying (F1-F8 change it)
 		e.displayName(c, 2, 2, false) // over the items; the class over the prices
 		cls := cut(className(c.Class), 0x23-len(c.Name()))
-		e.DisplayString(0x26-len(cls), 2, 0xB, cls)
+		e.DisplayString(winRight-len(cls), 2, colLightCyan, cls)
 	}
 	redraw := true
 	var sel *ListNode
@@ -45,7 +45,7 @@ func (e *Engine) shopList(index *int, item **Item) byte {
 		*index %= len(list)
 	}
 	e.ext.buying = true
-	key := e.ListMenu("Items: ", "Buy Look Inv", 0xD, 0xA, 0xF, 2, 4, 0x26, 0x16, list, true, &redraw, index, &sel)
+	key := e.ListMenu("Items: ", "Buy Look Inv", colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 22, list, true, &redraw, index, &sel)
 	e.ext.buying = false
 	*item = nil
 	for i, n := range list {
@@ -137,7 +137,7 @@ func (e *Engine) Shop() {
 	e.ext.sels[menu] = 1 // extra: a new visit starts on Browse, not where the last one left
 	for leave := false; !leave; {
 		e.shopMoney()
-		key, _ := e.DisplayInput("", menu, 0xD, 0xA, 0xF, true, false)
+		key, _ := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 		appraised := false
 		switch key {
 		case 'B':
@@ -208,12 +208,12 @@ func (e *Engine) identifyMenu() bool {
 		if index == 0 || index >= len(list) || list[index].Flag != 0 {
 			index = 1
 		}
-		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "Identify for 200g")
+		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Identify for 200g")
 		gold := strconv.Itoa(int(e.purse.gold)) + "g" // as in the buy screen
-		e.DisplayString(0x26-len(gold), 0x17, 0xE, gold)
+		e.DisplayString(winRight-len(gold), messageRow, colYellow, gold)
 		redraw := true
 		var sel *ListNode
-		key := e.ListMenu("", "Id", 0xB, 0xA, 0xF, 2, 3, 0x26, 0x16, list, true, &redraw, &index, &sel)
+		key := e.ListMenu("", "Id", colLightCyan, colLightGreen, colWhite, 2, 3, 38, 22, list, true, &redraw, &index, &sel)
 		if key != 'I' && key != 13 || sel == nil {
 			return true
 		}

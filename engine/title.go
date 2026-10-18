@@ -38,8 +38,8 @@ func (e *Engine) Title() {
 
 // Credits = ovr02:0206.
 func (e *Engine) Credits() {
-	e.DrawBoxTitled(1, 1, 0x26, 3, 0, 0, "")
-	e.DrawBoxTitled(1, 5, 0x26, 0x17, 0, 0, "")
+	e.DrawBoxTitled(1, 1, winRight, 3, 0, colBlack, "")
+	e.DrawBoxTitled(1, 5, winRight, 23, 0, colBlack, "")
 	for _, t := range creditLines {
 		e.DisplayString(t.x, t.y, t.c, t.s)
 	}

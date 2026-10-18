@@ -10,7 +10,7 @@ import (
 // black (the EGA path writes every plane byte, so the cell is overwritten).
 // Glyph index = upcase(ch) mod 0x40 into 8X8D1 block 201.
 func (e *Engine) DisplayChar(x, y, colour int, ch byte, upcase bool) {
-	e.displayCharBg(x, y, colour, 0, ch, upcase)
+	e.displayCharBg(x, y, colour, colBlack, ch, upcase)
 }
 
 // displayCharBg is DisplayChar on a coloured background (the selection
@@ -23,12 +23,12 @@ func (e *Engine) displayCharBg(x, y, colour, bg int, ch byte, upcase bool) {
 }
 
 // displayCharN = 0709:01DF with a repeat count: ch drawn count times from x on.
-// ponytail: cells past column 0x27 are dropped; the original writes on into the next row's video memory.
+// ponytail: cells past lastCol are dropped; the original writes on into the next row's video memory.
 func (e *Engine) displayCharN(x, y, colour, count int, ch byte, upcase bool) {
 	if e.Trace != nil {
 		e.Trace("0709:01DF", "DisplayChar", x, y, colour, count, int(ch), b2i(upcase))
 	}
-	if x > 0x27 || y > 0x18 {
+	if x > lastCol || y > promptRow {
 		return
 	}
 	for i := 0; i < count; i++ {
@@ -37,7 +37,7 @@ func (e *Engine) displayCharN(x, y, colour, count int, ch byte, upcase bool) {
 }
 
 func (e *Engine) drawChar(x, y, colour, bg int, ch byte, upcase bool) {
-	if x > 0x27 || y > 0x18 || e.font == nil {
+	if x > lastCol || y > promptRow || e.font == nil {
 		return
 	}
 	e.S.Lock()
@@ -65,12 +65,12 @@ func (e *Engine) paintChar(x, y, colour, bg int, ch byte, upcase bool) {
 }
 
 // DisplayString = 0709:0626 displayString(x, y, colour, str): characters
-// are drawn left to right, each upcased, no wrapping (x stops at 0x27).
+// are drawn left to right, each upcased, no wrapping (x stops at lastCol).
 func (e *Engine) DisplayString(x, y, colour int, s string) {
 	if e.Trace != nil {
 		e.Trace("0709:0626", "DisplayString", x, y, colour, s)
 	}
-	if x > 0x27 || y > 0x27 {
+	if x > lastCol || y > lastCol {
 		return
 	}
 	for i := 0; i < len(s) && i < 255; i++ {
@@ -143,7 +143,7 @@ func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s stri
 	if e.Trace != nil {
 		e.Trace("0709:0768", "DisplayTextBlock", x1, y1, x2, y2, colour, b2i(clear), s)
 	}
-	if x1 > 0x27 || y1 > 0x18 || x2 > 0x27 || y2 > 0x27 {
+	if x1 > lastCol || y1 > promptRow || x2 > lastCol || y2 > lastCol {
 		return
 	}
 	if e.msgCol < x1 || e.msgCol > x2 || e.msgRow < y1 || e.msgRow > y2 {
@@ -195,7 +195,7 @@ func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s stri
 			}
 			if e.msgRow > y2 && i < n {
 				e.msgCol, e.msgRow = x1, y1
-				e.PromptRow24(0xD, "Press any key to continue")
+				e.PromptRow24(colLightMagenta, "Press any key to continue")
 				e.ClearKeyboard()
 				e.ClearBox(x1, y1, x2, y2)
 				printSeg(j)

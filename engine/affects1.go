@@ -64,8 +64,8 @@ func (e *Engine) addAffectNow(c *Character, typ affectType, data byte, time int)
 // killWithMessage = ovr13:0058 (char, status, message): the message, then
 // the character goes down with the status unless already dead.
 func (e *Engine) killWithMessage(c *Character, status byte, msg string) {
-	msg = cut(msg, 0x28)
-	e.CharMessage(c, msg, 0xA, false)
+	msg = cut(msg, textCols)
+	e.CharMessage(c, msg, false)
 	if s := c.Status; s == statusStoned || s == statusDead || s == statusGone {
 		return
 	}
@@ -102,7 +102,7 @@ func (e *Engine) readiedWeapon(c *Character) *Item {
 func (e *Engine) avoidDistantAttack(c *Character, pct byte) {
 	sel := e.selected()
 	if sel.Slots[slotWeapon] != nil && e.rangeTo(sel, c) > 1 && e.Dice(1, 100) <= int(pct) {
-		e.CharMessage(c, "Avoids it", 0xA, true)
+		e.CharMessage(c, "Avoids it", true)
 		e.rv.damage = 0
 		e.rv.hitRoll = -1
 		e.slotHits[1]--
@@ -114,7 +114,7 @@ func (e *Engine) avoidDistantAttack(c *Character, pct byte) {
 func (e *Engine) poisonAttack(c *Character, bonus int) {
 	t := targetOf(c)
 	if !e.SavingThrow(t, saveVsParalysis, bonus) {
-		e.CharMessage(t, "is Poisoned", 0xA, false)
+		e.CharMessage(t, "is Poisoned", false)
 		e.MsgDelay()
 		e.AddAffect(t, affPoisoned, 0, 0xFF, 0)
 		e.killWithMessage(t, statusDead, "dies from poison") // extra: the original says "is killed"
@@ -157,7 +157,7 @@ func (e *Engine) bonusVsRace4(c *Character, a *Affect, flag byte) {
 
 // startsToTrain = ovr13:017F: "starts to train".
 func (e *Engine) startsToTrain(c *Character, a *Affect, flag byte) {
-	e.CharMessage(c, "starts to train", 0xA, true)
+	e.CharMessage(c, "starts to train", true)
 	e.AddAffect(c, affTrainingManual, 0xA8C0, 0xFF, 1)
 }
 
@@ -179,7 +179,7 @@ func (e *Engine) bonusByTargetRace(c *Character, a *Affect, flag byte) {
 
 // isHardier = ovr13:0233: "is hardier" (the trained Constitution grows).
 func (e *Engine) isHardier(c *Character, a *Affect, flag byte) {
-	e.CharMessage(c, "is hardier", 0xA, true)
+	e.CharMessage(c, "is hardier", true)
 	c.Stats[statCon]++
 	if c.Stats[statCon] >= 0x14 {
 		e.AddAffect(c, affRegenerate, 0x3C, 0xFF, 1)
@@ -328,7 +328,7 @@ func (e *Engine) resistFireHalf(c *Character, a *Affect, flag byte) {
 func (e *Engine) isSilenced(c *Character, a *Affect, flag byte) {
 	ci := combatInfo(c)
 	if ci.CanUse != 0 {
-		e.CharMessage(c, "is silenced", 0xA, true)
+		e.CharMessage(c, "is silenced", true)
 	}
 	ci.CanUse = 0
 	ci.CanCast = 0
@@ -365,7 +365,7 @@ func (e *Engine) spiritualHammerItem(c *Character, a *Affect, flag byte) {
 		n.Spells[1] = 0x17
 		n.Spells[2] = 0x89
 		e.AddItemCopy(c, n)
-		e.CharMessage(c, "Gains an item", 0xA, true)
+		e.CharMessage(c, "Gains an item", true)
 	}
 	e.ApplyItems(c)
 }
@@ -390,7 +390,7 @@ func (e *Engine) hitBonusVsTargetNames(c *Character, a *Affect, flag byte) {
 func (e *Engine) mirrorImage(c *Character, a *Affect, flag byte) {
 	if e.Dice(1, int(a.Data)+1) > 1 && e.curSpell > 0 && e.spellOwnTargets == 0 {
 		e.blockAffect(affAny)
-		e.CharMessage(c, "lost an image", 0xA, true)
+		e.CharMessage(c, "lost an image", true)
 		a.Data--
 		if a.Data == 0 {
 			e.RemoveAffect(c, affMirrorImage, nil)
@@ -407,7 +407,7 @@ func (e *Engine) damageLessQuarter(c *Character, a *Affect, flag byte) {
 func (e *Engine) coughingEnds(c *Character, a *Affect, flag byte) {
 	ci := combatInfo(c)
 	if ci.CanUse != 0 {
-		e.CharMessage(c, "is coughing", 0xA, true)
+		e.CharMessage(c, "is coughing", true)
 	}
 	ci.CanUse = 0
 	ci.CanCast = 0
@@ -478,7 +478,7 @@ func (e *Engine) alwaysMissDelayed(c *Character, a *Affect, flag byte) {
 func (e *Engine) agesOnce(c *Character, a *Affect, flag byte) {
 	if a.Data&0x10 == 0 {
 		a.Data += 0x10
-		e.CharMessage(c, "ages", 0xA, true)
+		e.CharMessage(c, "ages", true)
 		c.Age++
 	}
 	e.turnValue <<= 1
@@ -555,7 +555,7 @@ func (e *Engine) isWeakened(c *Character, a *Affect, flag byte) {
 		return
 	}
 	if c.Stats[statStr] > 3 {
-		e.CharMessage(c, "is weakened", 0xA, true)
+		e.CharMessage(c, "is weakened", true)
 		c.Stats[statStr]--
 	} else if e.FindAffect(c, affHelpless) == nil {
 		e.AddAffect(c, affHelpless, 0, 0xFF, 0)
@@ -625,7 +625,7 @@ func (e *Engine) rots(c *Character, a *Affect, flag byte) {
 	if e.rv.cure != 0 {
 		return
 	}
-	e.CharMessage(c, "Rots...", 0xA, true)
+	e.CharMessage(c, "Rots...", true)
 	if c.Stats[statCha] > 2 {
 		c.Stats[statCha] -= 2
 	} else {
@@ -735,7 +735,7 @@ func (e *Engine) bloodDrain(c *Character, a *Affect, flag byte) {
 		}
 		return
 	}
-	e.CharMessage(c, "Sucks some Blood", 0xA, true)
+	e.CharMessage(c, "Sucks some Blood", true)
 	dmg := e.RollDice(1, 4)
 	e.rv.dmgType = 0
 	e.Damage(t, dmg, 0, false)
@@ -764,7 +764,7 @@ func (e *Engine) holdWeakTarget(c *Character, a *Affect, flag byte) {
 		e.AddAffect(c, affStrikeTied, 0, byte(e.combatIndex(t)), 1)
 		e.AddAffect(t, affHeldFast, 0, 0xFF, 0)
 		e.callAffect(affHeldFast, t, nil, 0)
-		e.CharMessage(t, "is held fast", 0xA, true)
+		e.CharMessage(t, "is held fast", true)
 	}
 }
 

@@ -19,8 +19,8 @@ func (e *Engine) drawPartyList() {
 		x = 0x11
 	}
 	y := 2
-	e.DisplayString(x, y, 0xF, "Name")
-	e.DisplayString(0x21, y, 0xF, "AC  HP")
+	e.DisplayString(x, y, colWhite, "Name")
+	e.DisplayString(33, y, colWhite, "AC  HP")
 	y += 2
 	hi := e.partySel
 	if e.rosterNone {
@@ -29,16 +29,16 @@ func (e *Engine) drawPartyList() {
 		hi = e.partyIndex(e.rosterHi)
 	}
 	for i, c := range e.party {
-		e.ClearCells(x, y, 0x26, y)
+		e.ClearCells(x, y, winRight, y)
 		if i == hi && e.ext.choosing {
 			// extra: the member being chosen gets the menu selection background
 			for j := 0; j < len(c.Name()); j++ {
-				e.displayCharBg(x+j, y, 0xF, selBg(0xB, 0xF), c.Name()[j], true)
+				e.displayCharBg(x+j, y, colWhite, selBg(0xB, 0xF), c.Name()[j], true)
 			}
 		} else if i == hi {
-			e.DisplayString(x, y, 0xF, c.Name())
+			e.DisplayString(x, y, colWhite, c.Name())
 		} else if c.Okay != 0 && c.Side == sideParty && levelReady(c) {
-			e.DisplayString(x, y, 0xD, c.Name()) // extra: ready for a level
+			e.DisplayString(x, y, colLightMagenta, c.Name()) // extra: ready for a level
 		} else {
 			e.displayName(c, x, y, false)
 		}
@@ -62,7 +62,7 @@ func (e *Engine) drawPartyList() {
 		e.displayHP(c, 0x24+dx, y, false)
 		y++
 	}
-	e.ClearCells(x, y, 0x26, y)
+	e.ClearCells(x, y, winRight, y)
 }
 
 // partyKeypad = ovr20:27DF (key): Home selects the previous character
@@ -122,7 +122,7 @@ func (e *Engine) PartyMenu() {
 	e.beginFlag = 0
 	for {
 		if redraw {
-			e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0, "")
+			e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
 			if len(e.party) > 0 {
 				e.DisplayPartyList()
 				enabled[mDrop], enabled[mModify] = true, true
@@ -158,23 +158,23 @@ func (e *Engine) PartyMenu() {
 				if !enabled[i] {
 					continue
 				}
-				bg := 0
+				bg := colBlack
 				if names[i][0] == hot {
 					bg = selBg(0xA, 0xF)
 				}
-				e.displayCharBg(2, 12+row, 0xF, bg, names[i][0], true)
+				e.displayCharBg(2, 12+row, colWhite, bg, names[i][0], true)
 				for j := 1; j < len(names[i]); j++ {
-					e.displayCharBg(2+j, 12+row, 0xA, bg, names[i][j], true)
+					e.displayCharBg(2+j, 12+row, colLightGreen, bg, names[i][j], true)
 				}
 				row++
 				if i == mCreate && quick {
-					bg = 0
+					bg = colBlack
 					if hot == 'Q' {
 						bg = selBg(0xA, 0xF)
 					}
-					e.displayCharBg(2, 12+row, 0xF, bg, 'Q', true)
+					e.displayCharBg(2, 12+row, colWhite, bg, 'Q', true)
 					for j, ch := range []byte("uickstart") {
-						e.displayCharBg(3+j, 12+row, 0xA, bg, ch, true)
+						e.displayCharBg(3+j, 12+row, colLightGreen, bg, ch, true)
 					}
 					row++
 				}
@@ -202,7 +202,7 @@ func (e *Engine) PartyMenu() {
 				e.rosterRegion()
 			}
 		}
-		k, extra := e.DisplayInput("Choose a function ", shown, 0xD, 0, 0, true, false)
+		k, extra := e.DisplayInput("Choose a function ", shown, colLightMagenta, colBlack, colBlack, true, false)
 		e.regionCut(mark)
 		e.ext.onSelect = nil
 		e.ClearRow24()
@@ -274,7 +274,7 @@ func (e *Engine) PartyMenu() {
 			}
 		case 'E':
 			if enabled[mExit] {
-				if e.YesNo(0xE, 0xA, 0xF, "Quit to DOS ") == 'Y' {
+				if e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ") == 'Y' {
 					for e.lettered() && !e.saved && len(e.party) > 0 {
 						e.SaveGame()
 					}
@@ -299,7 +299,7 @@ func (e *Engine) PartyMenu() {
 // with Next/Prev (keypad) and Select; Exit (offered when exit is set)
 // gives nil. The roster highlights the current choice.
 func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Character {
-	prompt = cut(prompt, 0x28)
+	prompt = cut(prompt, textCols)
 	menu := "Select"
 	if exit {
 		menu += " Exit"
@@ -335,7 +335,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 				return 0
 			}})
 		}
-		key, extra := e.DisplayInput(prompt+" ", menu, 0xD, 0xA, 0xF, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
+		key, extra := e.DisplayInput(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
 		e.regionCut(mark)
 		e.rosterHi, e.rosterNone = nil, false
 		// The exit set (DS 00BA:2C1F) is checked before the extra flag.

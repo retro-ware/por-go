@@ -210,7 +210,7 @@ func (e *Engine) castSpell(spell, a int, quit *bool) {
 			*quit = e.clearCombatInfo(sel)
 		} else {
 			*quit = true
-			e.CharMessage(sel, "Begins Casting", 0xA, true)
+			e.CharMessage(sel, "Begins Casting", true)
 			sel.Combat.Spell = byte(spell)
 			if int(int8(sel.Combat.Delay)) > delay {
 				sel.Combat.Delay -= byte(delay)
@@ -325,7 +325,7 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 	if b2i(isParty(target)) == int(c.Side) || c.Auto != 0 {
 		return true
 	}
-	if e.YesNo(0xD, 0xA, 0xF, "Attack Ally: ") != 'Y' {
+	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Attack Ally: ") != 'Y' {
 		return false
 	}
 	e.attackedAlly = 1
@@ -347,13 +347,13 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	menu := ""
 	if showRange != 0 {
-		e.DisplayString(0, 0x17, 0xA, "Range = "+strconv.Itoa(e.rangeTo(c, cand))+"  ")
+		e.DisplayString(0, messageRow, colLightGreen, "Range = "+strconv.Itoa(e.rangeTo(c, cand))+"  ")
 	}
 	can := e.canTarget(c, cand, rng, showRange)
 	if can {
 		menu = "Attack " // extra: Target renamed
 	}
-	menu = cut("Next Prev Manual "+menu+"Center Exit", 0x28)
+	menu = cut("Next Prev Manual "+menu+"Center Exit", textCols)
 	e.combatRedrawChar(cand, 3, 1)
 	e.combatPanel(cand)
 	_, undo := e.aoeMarks(e.combatX(cand), e.combatY(cand), "") // the menu leaves no room for the count
@@ -403,7 +403,7 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 // combatInput = ovr26:03BD with the picture not animated (prompt, menu,
 // allowExtra): the key, and the DS:6E31 flag is dropped.
 func (e *Engine) combatInput(prompt, menu string, allowExtra bool) (byte, bool) {
-	return e.DisplayInput(prompt, menu, 0xD, 0xA, 0xF, allowExtra, false)
+	return e.DisplayInput(prompt, menu, colLightMagenta, colLightGreen, colWhite, allowExtra, false)
 }
 
 // canTarget (aimPrompt's test, ovr14:2AA0): is Target offered for cand?
@@ -478,10 +478,10 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		if e.lineOfSight(&dist, &tx, &ty, e.combatX(c), e.combatY(c)) {
 			ok = true
 			if showRange != 0 {
-				e.DisplayString(0, 0x17, 0xA, "Range = "+strconv.Itoa(dist>>1)+"  ")
+				e.DisplayString(0, messageRow, colLightGreen, "Range = "+strconv.Itoa(dist>>1)+"  ")
 			}
 		} else if showRange != 0 {
-			e.ClearCells(0, 0x17, 0x27, 0x17)
+			e.ClearCells(0, messageRow, lastCol, messageRow)
 		}
 		dist >>= 1
 		cand = nil
@@ -499,7 +499,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		if cand != nil {
 			e.combatPanel(cand)
 		} else {
-			e.ClearCells(0, 0x17, 0x27, 0x17)
+			e.ClearCells(0, messageRow, lastCol, messageRow)
 		}
 		if rng < dist || e.groundInfo(ground)[0] == 0xFF {
 			ok = false
@@ -523,7 +523,7 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 		}
 		menu := "Center Exit"
 		if ok {
-			menu = cut("Attack "+menu, 0x28) // extra: Target renamed
+			menu = cut("Attack "+menu, textCols) // extra: Target renamed
 		}
 		mark := e.regionMark()
 		{ // extra (nav.go): click a square to put the cursor there, again to target
@@ -724,7 +724,7 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		cand = step(showBy, !*found && !(key == 0 || key == 'E'))
 	}
 	if showRange != 0 {
-		e.ClearCells(0, 0x17, 0x27, 0x17)
+		e.ClearCells(0, messageRow, lastCol, messageRow)
 	}
 }
 
@@ -784,7 +784,7 @@ func (e *Engine) rake(c *Character, a *Affect, flag byte) {
 	if e.slotHits[1] == 2 && c.Combat.Target != nil && c.Combat.Target.Okay != 0 {
 		c.Combat.AttackSlot = 2
 		c.Attacks[1], c.Dice[1], c.Sides[1], c.Attacks[0] = 2, 2, 4, 0
-		e.CharMessage(c, "Rakes...", 0xA, true)
+		e.CharMessage(c, "Rakes...", true)
 		e.fullAttack(c, c.Combat.Target, 0, nil)
 		e.clearCombatInfo(c)
 	}

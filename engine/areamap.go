@@ -79,9 +79,9 @@ func (e *Engine) drawAreaMapParty() {
 
 // areaMapInit = ovr28:0207: the three frames of the area map screen.
 func (e *Engine) areaMapInit() {
-	e.DrawBoxTitled(1, 1, 0xF, 0xF, 0, 0, "")
-	e.DrawBoxTitled(0x11, 1, 0x26, 0xF, 0, 0, "")
-	e.DrawBoxTitled(1, 0x11, 0x26, 0x16, 0, 0, "")
+	e.DrawBoxTitled(1, 1, 15, 15, 0, colBlack, "")
+	e.DrawBoxTitled(17, 1, winRight, 15, 0, colBlack, "")
+	e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colBlack, "")
 }
 
 // areaMapIcons = 00BA:2B5E: switch to the area map view and draw it.

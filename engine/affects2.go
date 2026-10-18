@@ -165,7 +165,7 @@ func (e *Engine) halveDamage() { e.rv.damage >>= 1 }
 // the original keeps in globals) is a local here.
 func (e *Engine) stoneGaze(c *Character, a *Affect, flag byte) {
 	t := c.Combat.Target
-	e.CharMessage(c, "gazes...", 0xA, false)
+	e.CharMessage(c, "gazes...", false)
 	e.hitColours(0x12)
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 4, 0x2D)
 	if e.FindAffect(c, affReflectableGaze) != nil {
@@ -175,7 +175,7 @@ func (e *Engine) stoneGaze(c *Character, a *Affect, flag byte) {
 				break
 			}
 			if p.Readied != 0 && (p.Words[0] == 0x76 || p.Words[1] == 0x76 || p.Words[2] == 0x76) {
-				e.CharMessage(t, "reflects it!", 0xC, false)
+				e.CharMessage(t, "reflects it!", false)
 				e.flyMissile(e.combatX(t), e.combatY(t), e.combatX(c), e.combatY(c), 4, 0x2D)
 				reflected = true
 				t = c
@@ -198,7 +198,7 @@ func (e *Engine) charmGaze(c *Character, a *Affect, flag byte) {
 	if !e.lineOfSight(&rng, &tx, &ty, e.combatX(c), e.combatY(c)) {
 		return
 	}
-	e.CharMessage(c, "Gazes...", 0xA, false)
+	e.CharMessage(c, "Gazes...", false)
 	e.hitColours(0x12)
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 4, 0x2D)
 	e.curSpell = 0xA
@@ -233,9 +233,9 @@ func (e *Engine) drainLevels(c *Character, n int) {
 	}
 	msg := "a level"
 	if n > 1 {
-		msg = cut(strconv.Itoa(n)+" levels", 0x28)
+		msg = cut(strconv.Itoa(n)+" levels", textCols)
 	}
-	e.CharMessage(c, "is drained "+msg, 0xA, true)
+	e.CharMessage(c, "is drained "+msg, true)
 	if c.Status == statusAnimated {
 		e.killWithMessage(c, statusGone, "is dead forever")
 		c.MaxHP = 0
@@ -303,7 +303,7 @@ func (e *Engine) disease(c *Character, a *Affect, flag byte) {
 	if e.FindAffect(t, affMummyDisease) == nil {
 		e.AddAffect(t, affMummyDisease, 0x3840, 0xFF, 1)
 		e.AddAffect(t, affRotting, 0xA8C0, byte(e.Dice(1, 6)<<4+0xF), 1)
-		e.CharMessage(t, "is Diseased", 0xA, true)
+		e.CharMessage(t, "is Diseased", true)
 	}
 }
 
@@ -349,7 +349,7 @@ func (e *Engine) saveBonusVsType0(c *Character, a *Affect, flag byte) {
 func (e *Engine) resistFireElectric(c *Character, a *Affect, flag byte) {
 	if e.curSpell == 0xF {
 		e.blockAffect(affAny)
-		e.CharMessage(c, "is unaffected", 0xA, true)
+		e.CharMessage(c, "is unaffected", true)
 	} else if e.rv.dmgType&dmgElectric != 0 {
 		e.blockAffect(affAny)
 	}
@@ -589,7 +589,7 @@ func (e *Engine) spitAcid(c *Character, a *Affect, flag byte) {
 		return
 	}
 	e.clearCombatInfo(c)
-	e.CharMessage(c, "Spits Acid", 0xA, true)
+	e.CharMessage(c, "Spits Acid", true)
 	e.hitColours(0x17)
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 1, 0x1E)
 	dmg := e.RollDice(8, 4)
@@ -699,10 +699,10 @@ func (e *Engine) giantStrengthGirdle(c *Character, a *Affect, flag byte) {
 	if ok {
 		if e.beginFlag == 5 {
 			e.beginFlag = 2
-			e.CharMessage(c, "is stronger", 0xA, true)
+			e.CharMessage(c, "is stronger", true)
 			e.beginFlag = 5
 		} else {
-			e.CharMessage(c, "is stronger", 0xA, true)
+			e.CharMessage(c, "is stronger", true)
 		}
 	}
 	e.itemsRedraw = true // DS:6821
@@ -756,8 +756,8 @@ func (e *Engine) debugValues(msg string, a, b, c int) {
 	if e.debugShow == 0 {
 		return
 	}
-	e.ClearBox(0, 0, 0x27, 0)
-	e.DisplayString(0, 0, 0xE, fmt.Sprintf("%d , %d , %d", a, b, c))
-	e.PromptRow24(0xE, msg)
-	e.ClearBox(0, 0, 0x27, 0)
+	e.ClearBox(0, 0, lastCol, 0)
+	e.DisplayString(0, 0, colYellow, fmt.Sprintf("%d , %d , %d", a, b, c))
+	e.PromptRow24(colYellow, msg)
+	e.ClearBox(0, 0, lastCol, 0)
 }

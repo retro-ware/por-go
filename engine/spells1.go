@@ -61,7 +61,7 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 	showExit := mode != 4
 	redraw := false
 	if *index < 0 {
-		e.DrawBoxTitled(1, 3, 0x26, y2, 0, 0, "")
+		e.DrawBoxTitled(1, 3, winRight, y2, 0, colBlack, "")
 		redraw = true
 		*index = 0
 	}
@@ -71,7 +71,7 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 	var sel *ListNode
 	var key byte
 	for {
-		key = e.ListMenu(title, menu, 0xD, 0xA, 0xF, 1, 5, 0x26, y2, e.spellList, showExit, &redraw, index, &sel)
+		key = e.ListMenu(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel)
 		// set {0, 13, 'C', 'E', 'L', 'M', 'S'} at cs:004A
 		if key == 0 || key == 13 || key == 'C' || key == 'E' || key == 'L' || key == 'M' || key == 'S' {
 			break
@@ -111,13 +111,13 @@ func (e *Engine) addSpellLine(spell byte) {
 		group = e.spellRec(e.spellIDs[n-1], 1)
 	}
 	if g := e.spellRec(spell&0x7F, 1); g != group {
-		e.spellList = append(e.spellList, &ListNode{Text: cut(spellGroups[g], 0x28), Flag: 1})
+		e.spellList = append(e.spellList, &ListNode{Text: cut(spellGroups[g], textCols), Flag: 1})
 	}
 	prefix := "  "
 	if spell > 0x7F {
 		prefix = " *"
 	}
-	e.spellList = append(e.spellList, &ListNode{Text: cut(prefix+e.spellName(int(spell&0x7F)), 0x28)})
+	e.spellList = append(e.spellList, &ListNode{Text: cut(prefix+e.spellName(int(spell&0x7F)), textCols)})
 	e.spellIDs = append(e.spellIDs, spell&0x7F)
 }
 
@@ -257,7 +257,7 @@ func (e *Engine) spellAmount(spell int) int {
 // level 0 means the caster level; dmg is also the flag that sets the damage
 // type (DS:6819); dmg is cleared for the rest when an attack misses.
 func (e *Engine) applySpell(spell, level, call, dmg, dmgType int, msg string) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	if dmg == 0 {
 		e.rv.dmgType = 0
 	} else {
@@ -346,7 +346,7 @@ func (e *Engine) spellTargetSetup(spell, mode int) (ok bool) {
 // (and, for spell 1 in combat, those with an enemy next to them), then
 // applies the spell record to the rest.
 func (e *Engine) applySpellToSide(side int, msg string) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	e.spellOwnTargets = 1
 	for i := 1; i <= e.nSpellTargets; i++ {
 		t := e.tgt(i)
@@ -367,15 +367,15 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 	ok := true
 	if e.beginFlag != 5 && e.spellRec(spell, 7) == 0 {
 		if !e.usingItem {
-			e.DisplayString(1, 0x13, 0xA, e.spellName(int(spell)))
-			e.DisplayString(1, 0x14, 0xA, "is a combat-only spell...")
-			if e.YesNo(0xD, 0xF, 0xA, "Lose it? ") == 'Y' {
+			e.DisplayString(1, 19, colLightGreen, e.spellName(int(spell)))
+			e.DisplayString(1, 20, colLightGreen, "is a combat-only spell...")
+			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Lose it? ") == 'Y' {
 				e.forgetSpell(spell)
 			}
 		} else {
-			e.DisplayString(1, 0x13, 0xA, "That Item")
-			e.DisplayString(1, 0x14, 0xA, "is a combat-only item...")
-			if e.YesNo(0xD, 0xF, 0xA, "Use it? ") == 'Y' {
+			e.DisplayString(1, 19, colLightGreen, "That Item")
+			e.DisplayString(1, 20, colLightGreen, "is a combat-only item...")
+			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Use it? ") == 'Y' {
 				*quit = true
 			}
 		}
@@ -424,7 +424,7 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 		} else if e.beginFlag != 5 {
 			ok = false
 		} else {
-			if mode == 0 && e.YesNo(0xE, 0xA, 0xF, "Abort Spell? ") != 'Y' {
+			if mode == 0 && e.YesNo(colYellow, colLightGreen, colWhite, "Abort Spell? ") != 'Y' {
 				continue
 			}
 			e.BottomMessage("Spell Aborted")
@@ -436,7 +436,7 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 	}
 	e.ClearMessageArea()
 	if e.beginFlag == 5 {
-		e.ClearCells(0, 0x17, 0x27, 0x17)
+		e.ClearCells(0, messageRow, lastCol, messageRow)
 	}
 }
 
@@ -495,7 +495,7 @@ func (e *Engine) fxFireball() {
 // targets of that side lose the affect; the others are dropped. A nil
 // target (garbage in the asm) is dropped as well.
 func (e *Engine) removeAffectFromSide(typ affectType, side int, msg string) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	e.spellOwnTargets = 1
 	lvl := byte(e.casterLevel(int(e.curSpell)))
 	for i := 1; i <= e.nSpellTargets; i++ {
@@ -661,7 +661,7 @@ func (e *Engine) fxRestore() {
 		t.Exp = uint32(bestXP)
 	}
 	e.RecomputeCharacter(t)
-	e.CharMessage(t, "is restored", 0xA, true)
+	e.CharMessage(t, "is restored", true)
 }
 
 // fxSpeedy = ovr23:2E02.
@@ -694,7 +694,7 @@ func (e *Engine) fxStronger() {
 	t := e.spellTarget
 	out, ok := e.SetStrength(t, 0x15, 0)
 	if ok {
-		e.CharMessage(t, "is stronger", 0xA, true)
+		e.CharMessage(t, "is stronger", true)
 	}
 	e.AddAffect(t, affStrength, e.spellAmount(int(e.curSpell)), out, 1)
 }
@@ -730,7 +730,7 @@ func (e *Engine) breathWeapon(c *Character, a *Affect, flag int) {
 		return
 	}
 	cx, cy := e.combatX(c), e.combatY(c)
-	e.CharMessage(c, "Breathes!", 0xA, true)
+	e.CharMessage(c, "Breathes!", true)
 	e.spellTargetHook(0x33, 1) // the result (DS:70C6) is not used
 	e.tgtX = cx + sign(e.tgtX-cx)
 	e.tgtY = cy + sign(e.tgtY-cy)
@@ -785,17 +785,17 @@ func (e *Engine) scrollUsed(c *Character, it *Item, spell byte) {
 // announceCast = ovr23:331A (char, msg, spell): announces the cast, in the
 // side panel in combat, else in the message box.
 func (e *Engine) announceCast(c *Character, msg string, spell int) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	if e.beginFlag == 5 {
-		e.CharMessage(c, "Casts a Spell", 0xA, true)
-		e.ClearCells(0, 0x17, 0x27, 0x17)
-		e.DisplayString(0, 0x17, 0xA, "Spell:"+e.spellName(spell))
+		e.CharMessage(c, "Casts a Spell", true)
+		e.ClearCells(0, messageRow, lastCol, messageRow)
+		e.DisplayString(0, messageRow, colLightGreen, "Spell:"+e.spellName(spell))
 		return
 	}
-	e.ClearCells(1, 0x12, 0x26, 0x16)
-	e.displayName(c, 1, 0x13, false)
-	e.DisplayString(len(c.Name())+2, 0x13, 0xA, msg)
-	e.DisplayString(1, 0x14, 0xA, e.spellName(spell))
+	e.ClearCells(1, 18, winRight, winBottom)
+	e.displayName(c, 1, 19, false)
+	e.DisplayString(len(c.Name())+2, 19, colLightGreen, msg)
+	e.DisplayString(1, 20, colLightGreen, e.spellName(spell))
 	e.MsgDelay()
 	e.ClearMessageArea()
 }

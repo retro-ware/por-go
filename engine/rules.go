@@ -270,13 +270,13 @@ func (e *Engine) RollDice(n, sides int) int {
 
 // KillCharacter = ovr25:0F06 (char, status, message).
 func (e *Engine) KillCharacter(c *Character, status byte, msg string) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	if c.Okay == 0 {
 		return
 	}
 	idx := e.combatIndex(c)
 	e.combatRedrawChar(c, 3, 0)
-	e.CharMessage(c, msg, 0xA, true)
+	e.CharMessage(c, msg, true)
 	c.Okay = 0
 	c.Status = status
 	if c.Status != statusRunning {
@@ -321,7 +321,7 @@ func (e *Engine) CureAffect(c *Character, typ affectType) bool {
 	if a == nil {
 		return false
 	}
-	e.CharMessage(c, "is Cured", 0xA, true)
+	e.CharMessage(c, "is Cured", true)
 	e.RemoveAffect(c, typ, a)
 	return true
 }
@@ -431,7 +431,7 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 	if e.beginFlag == 5 && c.Combat != nil {
 		c.Combat.CanCast = 0
 		if c.Combat.Spell > 0 {
-			e.CharMessage(c, "lost a spell", 0xC, true)
+			e.CharMessage(c, "lost a spell", true)
 			e.forgetSpell(c.Combat.Spell)
 			c.Combat.Spell = 0
 		}
@@ -444,7 +444,7 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 		if s := c.Status; s >= statusDead && s <= statusGone {
 			msg = "is killed"
 		}
-		e.CharMessage(c, msg, e.msgRow+1, false)
+		e.CharMessage(c, msg, false)
 		if e.beginFlag != 5 {
 			e.MsgDelay()
 		} else {
@@ -464,11 +464,11 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 // message): adds an affect unless something blocks it (or a save negates
 // it); a shorter or permanent copy is replaced.
 func (e *Engine) AddAffectMsg(c *Character, typ affectType, time int, data, call, saveMode byte, saved bool, msg string) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	e.rv.affVal = typ
 	e.affectGroup(c, grpAddAffect)
 	if e.rv.affVal == 0 || saved && saveMode == 1 {
-		e.CharMessage(c, "is Unaffected", 0xA, true)
+		e.CharMessage(c, "is Unaffected", true)
 		return
 	}
 	if a := e.FindAffect(c, typ); a != nil {
@@ -526,14 +526,14 @@ func (e *Engine) Revive(c *Character, hp byte) bool {
 	if c.Side == sideMonsters {
 		msg = "stands up and grins"
 	}
-	e.CharMessage(c, msg, 0xA, true)
+	e.CharMessage(c, msg, true)
 	e.countSides()
 	return true
 }
 
 // CharMessage = 00BA:16EC (char, message, row, wait): the name and a
 // message in the combat side panel, or in the box under the view.
-func (e *Engine) CharMessage(c *Character, msg string, row int, wait bool) {
+func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 	if e.beginFlag == 5 {
 		e.combatSay(c, msg, true) // extra: under the view, not in the side pane
 	} else {
@@ -541,11 +541,11 @@ func (e *Engine) CharMessage(c *Character, msg string, row int, wait bool) {
 		if e.resting != 0 {
 			r = 0x12
 		} else {
-			e.DrawBorder(1, r, 0x26, 0x16, 0)
+			e.DrawBorder(1, r, winRight, winBottom, 0)
 		}
-		e.ClearCells(1, r, 0x26, 0x16)
+		e.ClearCells(1, r, winRight, winBottom)
 		e.displayName(c, 1, r+1, false)
-		e.DisplayTextBlock(1, r+2, 0x26, 0x16, 0xA, true, msg)
+		e.DisplayTextBlock(1, r+2, winRight, winBottom, colLightGreen, true, msg)
 	}
 	if wait {
 		e.MsgDelay()
@@ -556,21 +556,21 @@ func (e *Engine) CharMessage(c *Character, msg string, row int, wait bool) {
 // ClearMessageArea = 00BA:17E3.
 func (e *Engine) ClearMessageArea() {
 	if e.beginFlag == 5 {
-		e.ClearCells(0, 0x17, 0x27, 0x18)
+		e.ClearCells(0, messageRow, lastCol, promptRow)
 		if p := e.ext.panel; p != nil {
 			e.combatPanel(p)
 		}
 	} else {
-		e.ClearCells(1, 0x12, 0x26, 0x16)
+		e.ClearCells(1, 18, winRight, winBottom)
 	}
 }
 
 // hitMessage = 00BA:1FEB (char, magical, message): in combat the target
 // flashes (once per message delay step for magic) with a sound.
 func (e *Engine) hitMessage(c *Character, magical bool, msg string) {
-	msg = cut(msg, 0x28)
+	msg = cut(msg, textCols)
 	if e.beginFlag != 5 {
-		e.CharMessage(c, msg, 0xA, true)
+		e.CharMessage(c, msg, true)
 		return
 	}
 	e.soundWait(0)
@@ -587,7 +587,7 @@ func (e *Engine) hitMessage(c *Character, magical bool, msg string) {
 	} else {
 		e.PlaySound(sndHit)
 	}
-	e.CharMessage(c, msg, 0xA, false)
+	e.CharMessage(c, msg, false)
 	n := 0
 	if magical {
 		n = int(e.msgDelay)
@@ -667,7 +667,7 @@ func (e *Engine) healedMessage(c *Character) {
 	if c.HP == c.MaxHP {
 		msg = "is fully healed"
 	}
-	e.CharMessage(c, msg, 0xA, true)
+	e.CharMessage(c, msg, true)
 	if e.beginFlag != 5 {
 		e.DisplayPartyList()
 	}

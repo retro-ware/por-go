@@ -520,7 +520,7 @@ func (e *Engine) LoadArea(areaID int) {
 	}
 	e.loadingMonster = false
 	e.ClearRow24()
-	e.DisplayString(0, 0x18, 0xF, "Loading...Please Wait")
+	e.DisplayString(0, promptRow, colWhite, "Loading...Please Wait")
 	b := e.L.Block(e.set.file("ECL"), areaID)
 	if len(b) >= 2 {
 		copy(e.ecl, b[2:])
@@ -590,7 +590,7 @@ func (e *Engine) ItemSave(c *Character, pct int) {
 			} else {
 				pct = 0
 			}
-		} else if v > 0x18 {
+		} else if v > promptRow {
 			if pct > 0x32 {
 				pct -= 0x32
 			} else {
@@ -709,11 +709,11 @@ func (e *Engine) HitMessage(c *Character, dmg int) {
 	if e.msgRow > 0x16 {
 		e.msgRow = 0x11
 		clear = true
-		e.PromptRow24(0xF, "press <enter>/<return> to continue")
+		e.PromptRow24(colWhite, "press <enter>/<return> to continue")
 	}
 	e.msgCol = 0x26
-	e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xF, clear, msg)
+	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colWhite, clear, msg)
 	e.ApplyDamage(c, dmg&0xFF) // 00BA:2228
-	e.ClearBox(0x11, 1, 0x26, 0xF)
+	e.ClearBox(17, 1, winRight, 15)
 	e.DisplayPartyList()
 }

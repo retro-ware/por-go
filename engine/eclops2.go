@@ -53,7 +53,7 @@ func (e *Engine) opTreasure() {
 	case v < 0x80:
 		b := e.L.Block(e.set.file("ITEM"), v)
 		if len(b) == 0 {
-			e.PromptRow24(0xF, "Unable to find item file")
+			e.PromptRow24(colWhite, "Unable to find item file")
 			e.Exit()
 		}
 		add := readRecords[Item](b, itemRecSize)
@@ -196,12 +196,12 @@ func (e *Engine) opEncounterMenu() {
 		return true
 	}
 	waitMsg := func() {
-		e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true, "Both sides wait.")
+		e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "Both sides wait.")
 	}
 	flee := func() {
 		e.WriteVar(dst, 0)
 		e.msgCol, e.msgRow = 1, 0x11
-		e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true, "The monsters flee.")
+		e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "The monsters flee.")
 	}
 	txt := ""
 	for again := true; again; {
@@ -238,14 +238,14 @@ func (e *Engine) opEncounterMenu() {
 		if txt == "" {
 			clear = false
 		}
-		e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, clear, txt)
+		e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, clear, txt)
 		parlay := dist() == 0 || e.area.In3D == 0
 		menu := "~COMBAT ~WAIT ~FLEE ~ADVANCE"
 		if parlay {
 			menu = "~COMBAT ~WAIT ~FLEE ~PARLAY"
 		}
 		e.animInput = anim
-		choice := e.MenuInput(false, 0xF, 0xA, 0xD, menu, "")
+		choice := e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, menu, "")
 		e.animInput = false
 		if parlay && choice == 3 {
 			choice = 4
@@ -321,7 +321,7 @@ func (e *Engine) opEncounterMenu() {
 			}
 		}
 	}
-	e.ClearBox(0, 0x18, 0x27, 0x18)
+	e.ClearBox(0, promptRow, lastCol, promptRow)
 	e.slowText = false
 	e.es.inEncounterMenu = 0
 }
@@ -334,7 +334,7 @@ func (e *Engine) opParlay() {
 		r[i] = byte(e.ArgValue(i + 1))
 	}
 	dst := e.ArgAddr(6)
-	choice := e.MenuInput(false, 0xF, 0xA, 0xD, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
+	choice := e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
 	if choice >= 0 && choice < 5 {
 		e.WriteVar(dst, uint16(r[choice]))
 	}
@@ -439,13 +439,13 @@ func (e *Engine) opDamage() {
 	}
 	if e.run.quit {
 		e.Music(5) // Amiga 0x416C2
-		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "The END!")
+		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
 		e.msgCol, e.msgRow = 2, 2
-		e.DisplayTextBlock(1, 1, 0x26, 0x16, 0xA, true, "The entire party is killed!")
+		e.DisplayTextBlock(1, 1, winRight, winBottom, colLightGreen, true, "The entire party is killed!")
 		e.Delay(3000)
 	}
 	e.partySel = sel
-	e.PromptRow24(0xF, "press <enter>/<return> to continue")
+	e.PromptRow24(colWhite, "press <enter>/<return> to continue")
 }
 
 // opRedrawView = ovr04:2AA2.
@@ -533,7 +533,7 @@ func (e *Engine) opProgram() {
 // opWho = ovr04:2B33 (prompt): choose a party member.
 func (e *Engine) opWho() {
 	e.FetchArgs(1)
-	e.ClearBox(1, 0x11, 0x26, 0x16)
+	e.ClearBox(1, msgTop, winRight, winBottom)
 	start := e.selected()
 	// extra: one party purse, so the first non-NPC pays (inn, ECL3 A1B4) or
 	// gambles (tavern, A501), an okay one if there is one
@@ -611,7 +611,7 @@ func (e *Engine) opProtection() {
 		if v <= 1 {
 			break
 		}
-		e.DisplayChar(e.msgCol, e.msgRow, 0xF, v, false)
+		e.DisplayChar(e.msgCol, e.msgRow, colWhite, v, false)
 		e.msgCol++
 	}
 	e.msgRow++
@@ -620,6 +620,6 @@ func (e *Engine) opProtection() {
 // opClearBox = ovr04:2B14: blank the view window for text.
 func (e *Engine) opClearBox() {
 	e.eclPC++
-	e.ClearBox(1, 1, 0xF, 0xF)
+	e.ClearBox(1, 1, 15, 15)
 	e.run.textInBox = 1
 }

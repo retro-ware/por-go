@@ -124,7 +124,7 @@ func readPurse(b []byte) purse {
 
 // showMoney = ovr20:050D: the party's purse on the character sheet.
 func (e *Engine) showMoney() {
-	e.ClearCells(0xC, 7, 0x1A, 0xE)
+	e.ClearCells(12, 7, 26, 14)
 	y := 7
 	for _, l := range []struct {
 		name string
@@ -133,16 +133,16 @@ func (e *Engine) showMoney() {
 		if l.n == 0 {
 			continue
 		}
-		e.DisplayString(0x14-len(l.name), y, 0xA, l.name)
-		e.DisplayString(0x15, y, 0xA, strconv.Itoa(int(l.n)))
+		e.DisplayString(0x14-len(l.name), y, colLightGreen, l.name)
+		e.DisplayString(21, y, colLightGreen, strconv.Itoa(int(l.n)))
 		y++
 	}
 }
 
 // shopMoney (extra) puts the party's gold under the shop's and temple's menus.
 func (e *Engine) shopMoney() {
-	e.ClearBox(1, 0x15, 0x26, 0x16)
-	e.DisplayString(1, 0x15, 0xE, e.moneyLine())
+	e.ClearBox(1, 21, winRight, winBottom)
+	e.DisplayString(1, 21, colYellow, e.moneyLine())
 }
 
 func (e *Engine) moneyLine() string { return "Party money " + moneyText(e.purse.gold, e.purse.copper) }

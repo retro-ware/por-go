@@ -57,14 +57,14 @@ func (e *Engine) DisplaySpaces(x, y, colour, count int) {
 	if e.Trace != nil {
 		e.Trace("0709:05EB", "DisplaySpaces", x, y, colour, count)
 	}
-	if x > 0x27 || y > 0x18 {
+	if x > lastCol || y > promptRow {
 		return
 	}
 	e.displayCharN(x, y, colour, count, ' ', true)
 }
 
 // ClearRow24 = ovr26:06FB: blank the message/menu row.
-func (e *Engine) ClearRow24() { e.DisplaySpaces(0, 24, 0, 40) }
+func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, 40) }
 
 // InputString = 0709:09E3 (prompt, colour, maxlen): line editor on row 24.
 // Characters 0x20..0x7A are accepted while len < maxlen and echoed in white
@@ -80,7 +80,7 @@ func (e *Engine) inputLine(prompt string, colour, maxlen int) string {
 		prompt = prompt[:40]
 	}
 	e.ClearRow24()
-	e.DisplayString(0, 24, colour, prompt)
+	e.DisplayString(0, promptRow, colour, prompt)
 	e.ext.typing = true // hint line and mouse (nav.go)
 	defer func() { e.ext.typing = false }()
 	x := len(prompt)
@@ -92,12 +92,12 @@ func (e *Engine) inputLine(prompt string, colour, maxlen int) string {
 			if len(s) < maxlen {
 				s = append(s, k)
 				x++
-				e.DisplayString(x, 24, 0xF, string(k))
+				e.DisplayString(x, promptRow, colWhite, string(k))
 			}
 		case k == 8:
 			if len(s) > 0 {
 				s = s[:len(s)-1]
-				e.DisplaySpaces(x, 24, 0, 1)
+				e.DisplaySpaces(x, promptRow, colBlack, 1)
 				x--
 			}
 		}
@@ -119,7 +119,7 @@ func (e *Engine) DisplayMessageWait(colour int, s string) {
 		s = s[:40]
 	}
 	e.ClearRow24()
-	e.DisplayString(0, 24, colour, s)
+	e.DisplayString(0, promptRow, colour, s)
 	e.Delay(int(e.msgDelay) * 225) // 0709:0DBE
 	e.ClearRow24()
 }

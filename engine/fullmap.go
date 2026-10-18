@@ -197,7 +197,7 @@ func (e *Engine) saveScreen() func() {
 // bar's key handling and puts the screen back as it was.
 func (e *Engine) FullMap() {
 	if !e.minimapAllowed() {
-		e.DisplayMessageWait(0xE, "Not Here")
+		e.DisplayMessageWait(colYellow, "Not Here")
 		return
 	}
 	restore := e.saveScreen()
@@ -238,7 +238,7 @@ func (e *Engine) FullMap() {
 	defer e.rawArrows("arrows, click=square|W=walk there|L=label|R=remove|M,Esc=back")()
 	for {
 		texts, firstSq = e.drawFullMap(m, cx, cy)
-		k, ext := e.DisplayInput("", "Walk Label Remove Exit", 0xD, 0xA, 0xF, true, false)
+		k, ext := e.DisplayInput("", "Walk Label Remove Exit", colLightMagenta, colLightGreen, colWhite, true, false)
 		if ext {
 			switch k {
 			case 0x48:
@@ -257,7 +257,7 @@ func (e *Engine) FullMap() {
 			if e.startWalk(cx, cy) {
 				return
 			}
-			e.DisplayMessageWait(0xE, "No known way there")
+			e.DisplayMessageWait(colYellow, "No known way there")
 		case 'L':
 			old := m[cy<<4|cx]
 			if s, ok := e.labelInput(old.text); ok {
@@ -291,8 +291,8 @@ func (e *Engine) labelInput(s string) (string, bool) {
 	b := []byte(s)
 	for {
 		e.ClearRow24()
-		e.DisplayString(0, 24, 0xD, prompt)
-		e.DisplayString(len(prompt), 24, 0xF, string(b)+"_")
+		e.DisplayString(0, promptRow, colLightMagenta, prompt)
+		e.DisplayString(len(prompt), promptRow, colWhite, string(b)+"_")
 		e.showHint()
 		k := e.ReadKey()
 		switch {
@@ -316,8 +316,8 @@ func (e *Engine) labelInput(s string) (string, bool) {
 // returns the legend's texts and the first square of each.
 func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[string]int) {
 	e.ClearScreen()
-	e.DisplayString(1, 0, 0xF, "Map")
-	e.DisplayString(fmLegend, 0, 0xF, "Labels")
+	e.DisplayString(1, 0, colWhite, "Map")
+	e.DisplayString(fmLegend, 0, colWhite, "Labels")
 	texts, letter, kind := legend(m)
 	first := map[string]int{}
 	for s := 0; s < 256; s++ {
@@ -332,13 +332,13 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 			break
 		}
 		e.DisplayString(fmLegend, 2+i, int(poiColour[kind[t]]), string(letter[t]))
-		e.DisplayString(fmLegend+2, 2+i, 0xA, cut(t, 0x28-fmLegend-2))
+		e.DisplayString(fmLegend+2, 2+i, colLightGreen, cut(t, 0x28-fmLegend-2))
 	}
 	info := fmt.Sprintf("%d,%d", cx, cy)
 	if l, ok := m[cy<<4|cx]; ok {
 		info += " " + l.text
 	}
-	e.DisplayString(1, 0x17, 0xB, cut(info, 0x26))
+	e.DisplayString(1, messageRow, colLightCyan, cut(info, 0x26))
 	e.S.Lock()
 	defer e.S.Unlock()
 	e.drawMap(e.S, fmX, fmY, fmCell, m, letter)

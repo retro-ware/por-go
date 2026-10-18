@@ -8,8 +8,9 @@ import "strconv"
 // templeNotNeeded = ovr05:0013 (message): "<name> is not ..." and the
 // question whether to pay anyway.
 func (e *Engine) templeNotNeeded(msg string) byte {
-	e.CharMessage(e.selected(), msg, 0, false)
-	k := e.YesNo(0xD, 0xA, 0xF, "cast cure anyway: ")
+	c := e.selected()
+	e.CharMessage(c, msg, false)
+	k := e.YesNo(colLightMagenta, colLightGreen, colWhite, "cast cure anyway: ")
 	e.ClearMessageArea()
 	return k
 }
@@ -17,9 +18,10 @@ func (e *Engine) templeNotNeeded(msg string) byte {
 // templePay = ovr05:00BF (cure, price): the price from the party's gold.
 // 'Y' when paid.
 func (e *Engine) templePay(cure string, price uint16) byte {
-	e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true,
+	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true,
 		cut(cure+" will only cost "+strconv.Itoa(int(price))+" gold pieces.", 0xFF))
-	k := e.YesNo(0xD, 0xF, 0xA, "pay for cure ")
+
+	k := e.YesNo(colLightMagenta, colWhite, colLightGreen, "pay for cure ")
 	if k == 'Y' {
 		if !e.pay(uint32(price)) {
 			k = 'N'
@@ -27,7 +29,8 @@ func (e *Engine) templePay(cure string, price uint16) byte {
 	}
 	if k == 'Y' {
 		e.ClearMessageArea()
-		e.CharMessage(e.selected(), "is cured.", 0, true)
+		c := e.selected()
+		e.CharMessage(c, "is cured.", true)
 	}
 	return k
 }
@@ -183,18 +186,18 @@ func (e *Engine) stoneToFlesh() {
 func (e *Engine) templeHeal() {
 	list := make([]*ListNode, 10)
 	for i := range list {
-		list[i] = &ListNode{Text: cut(templeServices[i+1], 0x28)}
+		list[i] = &ListNode{Text: cut(templeServices[i+1], textCols)}
 	}
-	e.ClearBox(0, 0x18, 0x27, 0x18)
+	e.ClearBox(0, promptRow, lastCol, promptRow)
 	redraw := true
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
-	e.DrawBoxTitled(1, 1, 0x26, 1, 0, 0xF, "")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
+	e.DrawBoxTitled(1, 1, winRight, 1, 0, colWhite, "")
 	index := 0
 	for done := false; !done; {
-		e.DisplayString(1, 1, 0xF, cut(e.selected().Name()+", how can we help you?", 0x28))
-		e.DrawBoxTitled(1, 0x11, 0x26, 0x16, 0, 0xF, "")
+		e.DisplayString(1, 1, colWhite, cut(e.selected().Name()+", how can we help you?", textCols))
+		e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colWhite, "")
 		var sel *ListNode
-		key := e.ListMenu("", "Heal Exit", 0xD, 0xA, 0xF, 2, 4, 0x26, 0xF, list, false, &redraw, &index, &sel)
+		key := e.ListMenu("", "Heal Exit", colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 15, list, false, &redraw, &index, &sel)
 		switch {
 		case key == 'H' || key == 13:
 			switch index {
@@ -219,7 +222,7 @@ func (e *Engine) templeHeal() {
 			done = true
 		}
 	}
-	e.ClearBox(0, 0, 0x27, 0x18) // ovr05:0C18
+	e.ClearBox(0, 0, lastCol, 24) // ovr05:0C18
 	e.DrawMainScreen()
 	e.DisplayPartyList()
 }
@@ -231,7 +234,7 @@ func (e *Engine) Temple() {
 	e.DisplayPartyList()
 	for leave := false; !leave; {
 		e.shopMoney()
-		key, extra := e.DisplayInput("", "Heal View Appraise Exit", 0xD, 0xA, 0xF, true, false)
+		key, extra := e.DisplayInput("", "Heal View Appraise Exit", colLightMagenta, colLightGreen, colWhite, true, false)
 		appraised := false
 		switch key {
 		case 'H':

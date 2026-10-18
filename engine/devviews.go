@@ -81,9 +81,9 @@ func (e *Engine) DevScene(name string) func() {
 		}
 	case "journal": // a text window naming journal entries, as ECL3 block 0 prints them
 		return func() {
-			e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, true, "YOU OVERHEAR TAVERN TALE ")
+			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "YOU OVERHEAR TAVERN TALE ")
 			e.journalPrinted("YOU OVERHEAR TAVERN TALE ", true)
-			e.DisplayTextBlock(1, 0x11, 0x26, 0x16, 0xA, false, "3")
+			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, false, "3")
 			e.journalPrinted("3", false)
 			e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true)
 		}

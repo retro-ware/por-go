@@ -100,15 +100,15 @@ func (e *Engine) drawMenu(prompt, menu string, start, end []int, sel, normal, hi
 			if isHotkey(c) {
 				col = highlight
 			}
-			e.displayCharBg(x0+i-1, 24, col, bg, g, true)
+			e.displayCharBg(x0+i-1, promptRow, col, bg, g, true)
 		case isHotkey(c):
-			e.DisplayChar(x0+i-1, 24, highlight, g, true)
+			e.DisplayChar(x0+i-1, promptRow, highlight, g, true)
 		default:
-			e.DisplayChar(x0+i-1, 24, normal, g, true)
+			e.DisplayChar(x0+i-1, promptRow, normal, g, true)
 		}
 	}
 	if x0+len(menu) < 0x27 {
-		e.displayCharN(x0+len(menu), 24, 0, 0x27-len(menu)-x0+1, ' ', true)
+		e.displayCharN(x0+len(menu), promptRow, colBlack, 0x27-len(menu)-x0+1, ' ', true)
 	}
 }
 
@@ -171,7 +171,7 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 	e.pic.last = e.Ticks() // 0432: [bp-57], the animation timer starts over in every call
 	e.Ticks()              // 043D: the unused timeout base
 	if len(prompt) > 0 {
-		e.DisplayString(0, 24, promptColour, prompt)
+		e.DisplayString(0, promptRow, promptColour, prompt)
 	}
 	extra := false
 	e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) // 048B; redrawn only on a move

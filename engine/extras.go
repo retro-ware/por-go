@@ -212,7 +212,7 @@ const (
 // DrawMinimap draws the current map with the party. Like the game's Area
 // view it shows every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
-	e.ClearCells(0x11, 1, 0x26, 0xE)
+	e.ClearCells(17, 1, winRight, 14)
 	e.S.Lock()
 	defer e.S.Unlock()
 	e.drawMap(e.S, mmX, mmY, mmCell, e.labels(), nil)
@@ -224,7 +224,7 @@ func (e *Engine) rosterPanel() {
 		e.DrawMinimap()
 		return
 	}
-	e.ClearCells(0x11, 1, 0x26, 0xE)
+	e.ClearCells(17, 1, winRight, 14)
 	e.drawPartyList()
 }
 
@@ -237,7 +237,7 @@ func (e *Engine) extraKey(k byte) bool {
 	switch k {
 	case 9: // Tab
 		if !e.minimapAllowed() {
-			e.DisplayMessageWait(0xE, "Not Here")
+			e.DisplayMessageWait(colYellow, "Not Here")
 			return true
 		}
 		e.ext.minimap = !e.ext.minimap
@@ -317,20 +317,20 @@ func (e *Engine) statusName(c *Character) string {
 // pressed, then puts the adventuring screen back.
 func (e *Engine) PartyOverview() {
 	defer e.modalOn()()
-	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "Party")
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Party")
 	y := 3
-	e.DisplayString(2, y, 0xF, "Name")
-	e.DisplayString(0x12, y, 0xF, "HP")
-	e.DisplayString(0x1A, y, 0xF, "AC")
-	e.DisplayString(0x1E, y, 0xF, "Status")
+	e.DisplayString(2, y, colWhite, "Name")
+	e.DisplayString(18, y, colWhite, "HP")
+	e.DisplayString(26, y, colWhite, "AC")
+	e.DisplayString(30, y, colWhite, "Status")
 	y += 2
 	for i, c := range e.party {
 		if y > 0x14 {
 			break
 		}
-		colour := 0xB
+		colour := colLightCyan
 		if i == e.partySel {
-			colour = 0xF
+			colour = colWhite
 		}
 		e.DisplayString(2, y, colour, cut(c.Name(), 15))
 		hp, max := int(c.HP), int(c.MaxHP)
@@ -341,9 +341,9 @@ func (e *Engine) PartyOverview() {
 		case hp*2 < max:
 			hpc = 0xE
 		}
-		e.DisplayString(0x12, y, hpc, strconv.Itoa(hp)+"/"+strconv.Itoa(max))
+		e.DisplayString(18, y, hpc, strconv.Itoa(hp)+"/"+strconv.Itoa(max))
 		e.displayAC(c, 0x1A, y)
-		e.DisplayString(0x1E, y, 0xA, e.statusName(c))
+		e.DisplayString(30, y, colLightGreen, e.statusName(c))
 		// Hit point bar, 32 pixels wide, under the name.
 		px, py := 2*8, (y+1)*8+2
 		w := 0
@@ -359,7 +359,7 @@ func (e *Engine) PartyOverview() {
 		e.S.Unlock()
 		y += 2
 	}
-	e.PromptRow24(0xF, "press any key to continue")
+	e.PromptRow24(colWhite, "press any key to continue")
 	e.ClearRow24()
 	e.DrawMainScreen()
 }
@@ -425,19 +425,19 @@ func (e *Engine) Help() {
 	restore := e.saveScreen()
 	pages := helpPages()
 	for p := 0; p < len(pages); {
-		e.DrawBoxTitled(1, 1, 0x26, 0x17, 0, 0xF, "Help")
-		e.ClearCells(2, 2, 0x25, 0x17)
+		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Help")
+		e.ClearCells(2, 2, 37, 23)
 		for i, l := range pages[p] {
 			if l[1] == "" {
-				e.DisplayString(2, 2+i, 0xF, l[0])
+				e.DisplayString(2, 2+i, colWhite, l[0])
 				continue
 			}
-			e.DisplayString(3, 2+i, 0xE, l[0])
-			e.DisplayString(helpCol, 2+i, 0xA, l[1])
+			e.DisplayString(3, 2+i, colYellow, l[0])
+			e.DisplayString(helpCol, 2+i, colLightGreen, l[1])
 		}
 		if len(pages) > 1 {
 			more := "page " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
-			e.DisplayString(0x25-len(more), 0x17, 0xA, more)
+			e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		}
 		switch e.ReadKey() {
 		case 27:
