@@ -62,12 +62,12 @@ func (e *Engine) CharacterSheet() {
 	e.DisplayString(0x11, 0xF, 0xF, "Exp "+strconv.Itoa(int(int32(c.Exp))))
 	e.showCombatStats()
 	y := 0x14
-	if w := c.Slots[0]; w != nil {
+	if w := c.Slots[slotWeapon]; w != nil {
 		e.DisplayString(1, y, 0xF, "Weapon")
 		e.ItemName(c, w, 8, y, false, true)
 	}
 	y++
-	if a := c.Slots[2]; a != nil {
+	if a := c.Slots[slotArmor]; a != nil {
 		e.DisplayString(2, y, 0xF, "Armor")
 		e.ItemName(c, a, 8, y, false, true)
 	}
@@ -256,7 +256,7 @@ func (e *Engine) ViewCharacter() bool {
 // paladinCan = CotAB CanCastHeal/CanCastCureDiseases: out of combat, okay,
 // and the power not used yet.
 func (e *Engine) paladinCan(c *Character, used affectType) bool {
-	return int8(c.Levels[clsPaladin]) > 0 && e.beginFlag != 5 && c.Status == 0 && e.FindAffect(c, used) == nil
+	return int8(c.Levels[clsPaladin]) > 0 && e.beginFlag != 5 && c.Status == statusOkay && e.FindAffect(c, used) == nil
 }
 
 // paladinHeal = CotAB PaladinHeal: lay on hands for 2 hp per level.
@@ -357,7 +357,7 @@ func (e *Engine) ItemsMenu() bool {
 		if len(c.Items) == 0 { // extra: a stale count with no items (the original spins here)
 			break
 		}
-		hired := c.Control >= 0x80 && c.Okay != 0 && c.Status != 1
+		hired := c.Control >= 0x80 && c.Okay != 0 && c.Status != statusAnimated
 		menu := "Ready"
 		if e.beginFlag == 5 && c.Okay != 0 {
 			menu += " Throw" // extra: an unreadied throwable item, aimed at once

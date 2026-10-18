@@ -500,9 +500,9 @@ func (e *Engine) opAddNPC() {
 	}
 	c.Control = byte(e.ArgValue(2))>>1 | 0x80
 	if v == 0x18 {
-		c.Side = 1
+		c.Side = sideMonsters
 	} else {
-		c.Side = 0
+		c.Side = sideParty
 	}
 	e.ApplyItems(c) // 00BA:0BB8
 	e.DisplayPartyList()

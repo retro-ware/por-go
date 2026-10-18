@@ -318,7 +318,7 @@ func levelReady(c *Character) bool {
 
 func (e *Engine) TrainCharacter() {
 	c := e.selected()
-	if c.Status != 0 && !e.debug {
+	if c.Status != statusOkay && !e.debug {
 		e.DisplayMessageWait(0xE, "we only train conscious people")
 		return
 	}

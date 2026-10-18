@@ -39,7 +39,7 @@ func (e *Engine) turnSetup(c *Character) {
 // by setSpeed); the affects of group 0x12 may change it.
 func (e *Engine) moveRate(c *Character) int {
 	v := c.Move
-	if c.Side == 0 {
+	if c.Side == sideParty {
 		v += byte(e.game.PartyMove)
 	}
 	e.modMoves = 1
@@ -120,10 +120,10 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 	}
 	if b.Okay == 0 {
 		e.CharMessage(b, "goes down", 0, false)
-		if b.Status == 5 {
+		if b.Status == statusDying {
 			e.combatSay(nil, "and is Dying", false)
 		}
-		if st := b.Status; st >= 6 && st <= 8 { // set at CS:02CF
+		if st := b.Status; st >= statusDead && st <= statusGone { // set at CS:02CF
 			e.CharMessage(b, "is killed", 0, false)
 		}
 		e.removeCombatAffects(b)
@@ -281,7 +281,7 @@ func (e *Engine) tryFlee(c *Character) bool {
 		}
 	}
 	if away {
-		e.KillCharacter(c, 3, "Got Away")
+		e.KillCharacter(c, statusRunning, "Got Away")
 	} else {
 		e.BottomMessage("Escape is blocked")
 	}
@@ -298,8 +298,8 @@ func (e *Engine) setSpeed(c *Character) {
 	if e.rangedWeapon(c) && e.ammoFor(c, &it) {
 		flag = true
 		v := byte(0) // (the original reads the item at +0xCC unchecked)
-		if c.Slots[0] != nil {
-			v = e.base(c.Slots[0].Type).Speed
+		if c.Slots[slotWeapon] != nil {
+			v = e.base(c.Slots[slotWeapon].Type).Speed
 		}
 		if v < 2 {
 			v = 2
@@ -439,7 +439,7 @@ func (e *Engine) clericTurnUndead(c *Character) {
 		} else {
 			e.CharMessage(t, "Is destroyed", 0xA, false)
 			e.combatRemoveFromMap(t)
-			t.Status = 8
+			t.Status = statusGone
 			t.Okay = 0
 		}
 		if limit > 0 {
@@ -501,8 +501,8 @@ func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 		any = true
 		done = true
 	} else {
-		if a.Slots[0] != nil && (b.Size > 0x80 || b.Size&7 > 1) {
-			typ := a.Slots[0].Type
+		if a.Slots[slotWeapon] != nil && (b.Size > 0x80 || b.Size&7 > 1) {
+			typ := a.Slots[slotWeapon].Type
 			a.Dice[0] = e.base(typ).LargeDice
 			a.Sides[0] = e.base(typ).LargeSides
 			a.Bonus[0] = byte(int(int8(a.Bonus[0])) - int(int8(e.base(typ).Bonus)) + int(int8(e.base(typ).LargeBonus)))
@@ -603,7 +603,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 		e.attackAnimation(a, b, it)
 	}
 	if a.Slots[slotWeapon] != nil && a.Slots[slotWeapon].Type == itemSling {
-		e.attackAnimation(a, b, a.Slots[0])
+		e.attackAnimation(a, b, a.Slots[slotWeapon])
 	}
 	done = true
 	if a.Attacks[0] > 0 || a.Attacks[1] > 0 {
@@ -650,7 +650,7 @@ func (e *Engine) rangePenalty(a, b *Character, need *int) {
 	d := e.rangeTo(a, b)
 	f := d
 	if e.rangedWeapon(a) {
-		f = (int(e.base(a.Slots[0].Type).Range) - 1) / 3
+		f = (int(e.base(a.Slots[slotWeapon].Type).Range) - 1) / 3
 	}
 	if d-f > 0 {
 		d -= f

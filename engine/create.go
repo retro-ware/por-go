@@ -42,7 +42,7 @@ func (e *Engine) CreateCharacter() {
 	}
 	c.BaseAC = 0x32
 	c.HitDice = 0x28
-	c.Status = 0
+	c.Status = statusOkay
 	c.Okay = 1
 	c.PortHead = 1
 	c.PortBody = 1
@@ -139,11 +139,11 @@ func (e *Engine) CreateCharacter() {
 	c.MaxLevel = 1
 	class := int(int8(c.Class))
 	switch {
-	case class >= 0 && class <= 7:
+	case class >= clsCleric && class <= clsMonk:
 		c.Levels[class] = 1
-	case class == 8:
+	case class == clsClericFighter:
 		c.Levels[clsCleric], c.Levels[clsFighter] = 1, 1
-	case class == 9:
+	case class == clsClericFighterMage:
 		c.Levels[clsCleric], c.Levels[clsFighter], c.Levels[clsMage] = 1, 1, 1
 	case class == 10:
 		c.Levels[clsCleric], c.Levels[clsRanger] = 1, 1
@@ -160,7 +160,7 @@ func (e *Engine) CreateCharacter() {
 	case class == 16:
 		c.Levels[clsMage], c.Levels[clsThief] = 1, 1
 	}
-	if class == 3 {
+	if class == clsPaladin {
 		e.AddAffect(c, affProtEvil, 0, 0xFF, 0) // CotAB: a paladin's lasting protection from evil
 	}
 	if int8(c.Levels[clsThief]) > 0 {
@@ -194,7 +194,7 @@ func (e *Engine) CreateCharacter() {
 	// maximum.
 	age := 0
 	ages := &startAge[race]
-	if class <= 7 {
+	if class <= clsMonk {
 		a := ages[class]
 		age = int(a.Base) + int(byte(e.Dice(int(a.Count), int(a.Sides))))
 	} else {
@@ -288,7 +288,7 @@ func (e *Engine) CreateCharacter() {
 	var best [6]int
 	for i := range best {
 		v := adjust(i, 18)
-		if i == 2 && v < 0xD && class >= 8 && class <= 0xC {
+		if i == statWis && v < 0xD && class >= clsClericFighter && class <= clsClericThief {
 			v = 0xD
 		}
 		best[i] = int(v)
@@ -349,7 +349,7 @@ func (e *Engine) CreateCharacter() {
 					}
 				}
 			}
-			if i == 2 && *st < 0xD && class >= 8 && class <= 0xC { // set [8..12] at cs:0525
+			if i == statWis && *st < 0xD && class >= clsClericFighter && class <= clsClericThief { // set [8..12] at cs:0525
 				*st = 0xD
 			}
 			if tries == 0 || tries%100 == 0 {

@@ -189,7 +189,7 @@ func (e *Engine) flyMissile(x1, y1, x2, y2, frames, delay int) {
 }
 
 // isParty = 00BA:23B7 (char): true for the party side.
-func isParty(c *Character) bool { return c.Side == 0 }
+func isParty(c *Character) bool { return c.Side == sideParty }
 
 // nearEnemies = 00BA:2433 (char, range): combatants of the other side
 // within range; the near list keeps only them, copied to DS:6DE4.

@@ -238,7 +238,7 @@ func (e *Engine) commandBar3D() string {
 func (e *Engine) command(k byte, view3D bool) bool {
 	switch k {
 	case 'C':
-		if !view3D || e.selected().Status == 0 {
+		if !view3D || e.selected().Status == statusOkay {
 			e.CastMenu() // ovr16:04A1
 		}
 	case 'I': // extra: straight to the inventory
@@ -494,7 +494,7 @@ func (e *Engine) pickLock() bool {
 		if ok {
 			break
 		}
-		if e.Dice(1, 100) <= int(c.Thief[1]) && c.Status == 0 {
+		if e.Dice(1, 100) <= int(c.Thief[1]) && c.Status == statusOkay {
 			ok = true
 		}
 	}

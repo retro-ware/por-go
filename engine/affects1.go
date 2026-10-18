@@ -66,7 +66,7 @@ func (e *Engine) addAffectNow(c *Character, typ affectType, data byte, time int)
 func (e *Engine) killWithMessage(c *Character, status byte, msg string) {
 	msg = cut(msg, 0x28)
 	e.CharMessage(c, msg, 0xA, false)
-	if s := c.Status; s == 7 || s == 6 || s == 8 {
+	if s := c.Status; s == statusStoned || s == statusDead || s == statusGone {
 		return
 	}
 	c.Status = status
@@ -88,10 +88,10 @@ func (e *Engine) killWithMessage(c *Character, status byte, msg string) {
 // the first readied item.
 func (e *Engine) readiedWeapon(c *Character) *Item {
 	var it *Item
-	if c.Slots[0] != nil {
+	if c.Slots[slotWeapon] != nil {
 		ok := e.ammoFor(c, &it)
 		if !ok || it == nil {
-			it = c.Slots[0]
+			it = c.Slots[slotWeapon]
 		}
 	}
 	return it
@@ -101,7 +101,7 @@ func (e *Engine) readiedWeapon(c *Character) *Item {
 // holding a ranged weapon may avoid an attack from afar.
 func (e *Engine) avoidDistantAttack(c *Character, pct byte) {
 	sel := e.selected()
-	if sel.Slots[0] != nil && e.rangeTo(sel, c) > 1 && e.Dice(1, 100) <= int(pct) {
+	if sel.Slots[slotWeapon] != nil && e.rangeTo(sel, c) > 1 && e.Dice(1, 100) <= int(pct) {
 		e.CharMessage(c, "Avoids it", 0xA, true)
 		e.rv.damage = 0
 		e.rv.hitRoll = -1
@@ -113,11 +113,11 @@ func (e *Engine) avoidDistantAttack(c *Character, pct byte) {
 // is poisoned unless it saves; no save means death.
 func (e *Engine) poisonAttack(c *Character, bonus int) {
 	t := targetOf(c)
-	if !e.SavingThrow(t, 0, bonus) {
+	if !e.SavingThrow(t, saveVsParalysis, bonus) {
 		e.CharMessage(t, "is Poisoned", 0xA, false)
 		e.MsgDelay()
 		e.AddAffect(t, affPoisoned, 0, 0xFF, 0)
-		e.killWithMessage(t, 6, "dies from poison") // extra: the original says "is killed"
+		e.killWithMessage(t, statusDead, "dies from poison") // extra: the original says "is killed"
 	}
 }
 
@@ -125,7 +125,7 @@ func (e *Engine) poisonAttack(c *Character, bonus int) {
 // unless it saves. extra (bp+6) is never used by the original.
 func (e *Engine) paralyseTarget(c *Character, time int, extra byte) {
 	t := targetOf(c)
-	if !e.SavingThrow(t, 0, 0) {
+	if !e.SavingThrow(t, saveVsParalysis, 0) {
 		e.hitMessage(t, true, "is Paralyzed")
 		e.AddAffect(t, affHeld, time, 0xC, 0)
 	}
@@ -174,7 +174,7 @@ func (e *Engine) bonusByTargetRace(c *Character, a *Affect, flag byte) {
 	}
 	e.rv.hitRoll += int8(k)
 	e.rv.damage += k
-	e.rv.dmgType = 9
+	e.rv.dmgType = dmgFire | dmgMagic
 }
 
 // isHardier = ovr13:0233: "is hardier" (the trained Constitution grows).
@@ -233,7 +233,7 @@ func (e *Engine) protFromGood(c *Character, a *Affect, flag byte) {
 
 // resistColdHalf = ovr13:03E1: cold damage halved, save +3.
 func (e *Engine) resistColdHalf(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&2 != 0 {
+	if e.rv.dmgType&dmgCold != 0 {
 		e.rv.damage >>= 1
 		e.rv.save += 3
 	}
@@ -318,7 +318,7 @@ func (e *Engine) hitBonusVsNames(c *Character, a *Affect, flag byte) {
 
 // resistFireHalf = ovr13:06E4: fire damage halved, save +3.
 func (e *Engine) resistFireHalf(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&1 != 0 {
+	if e.rv.dmgType&dmgFire != 0 {
 		e.rv.damage >>= 1
 		e.rv.save += 3
 	}
@@ -337,7 +337,7 @@ func (e *Engine) isSilenced(c *Character, a *Affect, flag byte) {
 // poisonEnds = ovr13:0775: poison ends; death by poison when the poison was still in.
 func (e *Engine) poisonEnds(c *Character, a *Affect, flag byte) {
 	if e.FindAffect(c, affPoisoned) != nil {
-		e.killWithMessage(c, 6, "dies from poison")
+		e.killWithMessage(c, statusDead, "dies from poison")
 	}
 	e.rv.cure = 1
 	e.RemoveAffect(c, affPoisonDamage, nil)
@@ -427,7 +427,7 @@ func (e *Engine) coughingEnds(c *Character, a *Affect, flag byte) {
 func (e *Engine) collapses(c *Character, a *Affect, flag byte) {
 	a.Call = 0
 	if e.rv.cure == 0 {
-		e.killWithMessage(c, 6, "collapses")
+		e.killWithMessage(c, statusDead, "collapses")
 	}
 	c.Side = a.Data >> 4
 	c.Auto = 1
@@ -638,7 +638,7 @@ func (e *Engine) rots(c *Character, a *Affect, flag byte) {
 		a.Data -= 0x10
 		e.addAffectNow(c, affRotting, a.Data, 0xA8C0)
 	} else {
-		e.killWithMessage(c, 8, "Dies rots away")
+		e.killWithMessage(c, statusGone, "Dies rots away")
 	}
 }
 
@@ -657,7 +657,7 @@ func (e *Engine) addAffect62(c *Character, a *Affect, flag byte) {
 
 // resistFirePerDie = ovr13:1490: fire damage is cut by 2 per die (not below one per die), save +4.
 func (e *Engine) resistFirePerDie(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&1 == 0 {
+	if e.rv.dmgType&dmgFire == 0 {
 		return
 	}
 	for i := byte(1); i <= e.rv.diceN; i++ {
@@ -667,7 +667,7 @@ func (e *Engine) resistFirePerDie(c *Character, a *Affect, flag byte) {
 		}
 	}
 	e.rv.save += 4
-	if e.rv.dmgType&8 == 0 {
+	if e.rv.dmgType&dmgMagic == 0 {
 		e.blockAffect(affAny)
 	}
 }
@@ -777,14 +777,14 @@ func (e *Engine) getUpOrWait(c *Character, a *Affect, flag byte) {
 
 // magicDamage2d10 = ovr13:1A19: 2d10 magic damage to the target.
 func (e *Engine) magicDamage2d10(c *Character, a *Affect, flag byte) {
-	e.rv.dmgType = 9
+	e.rv.dmgType = dmgFire | dmgMagic
 	t := targetOf(c)
 	e.Damage(t, e.RollDice(2, 10), 0, false)
 }
 
 // acidDamage1d4 = ovr13:1A4C: 1d4 acid damage to the target.
 func (e *Engine) acidDamage1d4(c *Character, a *Affect, flag byte) {
-	e.rv.dmgType = 0x10
+	e.rv.dmgType = dmgAcid
 	t := targetOf(c)
 	e.Damage(t, e.RollDice(1, 4), 0, false)
 }
@@ -795,7 +795,7 @@ func (e *Engine) fear(c *Character, a *Affect, flag byte) {
 		if p.Okay == 0 || byte(b2i(isParty(c))) != p.Side {
 			continue
 		}
-		saved := e.SavingThrow(p, 4, 0)
+		saved := e.SavingThrow(p, saveVsSpell, 0)
 		switch v := int8(p.MaxLevel); {
 		case v >= 0 && v <= 3:
 			e.AddAffectMsg(p, affHeld, 0, 0xC, 0, 1, saved, "is paralyzed with fear")
@@ -820,7 +820,7 @@ func (e *Engine) fearLifted(c *Character, a *Affect, flag byte) {
 		if p.Race == raceHuman {
 			bonus += 2
 		}
-		saved := e.SavingThrow(p, 0, bonus)
+		saved := e.SavingThrow(p, saveVsParalysis, bonus)
 		e.AddAffectMsg(p, affHeld, e.Dice(1, 4), 0xC, 0, 1, saved, "is paralyzed with fear")
 	}
 }

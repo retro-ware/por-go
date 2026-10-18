@@ -37,7 +37,7 @@ func (e *Engine) drawPartyList() {
 			}
 		} else if i == hi {
 			e.DisplayString(x, y, 0xF, c.Name())
-		} else if c.Okay != 0 && c.Side == 0 && levelReady(c) {
+		} else if c.Okay != 0 && c.Side == sideParty && levelReady(c) {
 			e.DisplayString(x, y, 0xD, c.Name()) // extra: ready for a level
 		} else {
 			e.displayName(c, x, y, false)

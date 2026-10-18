@@ -105,7 +105,7 @@ func (e *Engine) neutralizePoison() {
 // less; the constitution bonus to the maximum hit points shrinks with it.
 func (e *Engine) raiseDead() {
 	c := e.selected()
-	dead := c.Status == 6 || c.Status == 1
+	dead := c.Status == statusDead || c.Status == statusAnimated
 	if !e.templeCure(dead, "is not dead.", "Raise Dead", 5500) || !dead {
 		return
 	}
@@ -114,7 +114,7 @@ func (e *Engine) raiseDead() {
 	e.RemoveAffect(c, affPoisoned, nil)
 	e.rv.cure = 0
 	c.HP = 1
-	c.Status = 0
+	c.Status = statusOkay
 	c.Okay = 1
 	if c.Stats[statCon] > 0 {
 		c.Stats[statCon]--
@@ -172,8 +172,8 @@ func (e *Engine) removeCurse() {
 // stoneToFlesh = ovr05:0928.
 func (e *Engine) stoneToFlesh() {
 	c := e.selected()
-	if e.templeCure(c.Status == 7, "is not stoned.", "Stone to Flesh", 2000) && c.Status == 7 {
-		c.Status = 0
+	if e.templeCure(c.Status == statusStoned, "is not stoned.", "Stone to Flesh", 2000) && c.Status == statusStoned {
+		c.Status = statusOkay
 		c.Okay = 1
 		c.HP = 1
 	}

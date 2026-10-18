@@ -73,11 +73,11 @@ func (e *Engine) combatBlocks() {
 			c.Combat.Extra = 1
 		}
 		c.Combat.Facing = facingDir[e.facing/2]
-		if c.Side == 1 {
+		if c.Side == sideMonsters {
 			c.Combat.Facing = (c.Combat.Facing + 4) % 8
 		}
 		m := c.Control & 0x7F
-		if c.Side == 0 && c.Combat.Delay == 1 && (m == 0 || m > 0x66) {
+		if c.Side == sideParty && c.Combat.Delay == 1 && (m == 0 || m > 0x66) {
 			c.Control = byte(e.game.Morale + 0x80)
 		}
 	}

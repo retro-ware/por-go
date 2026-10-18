@@ -147,9 +147,9 @@ func (e *Engine) readSpecialGlobal(a int) (uint16, bool) {
 		return 0x80, true
 	case 0x10C:
 		switch {
-		case c.Side == 0 && c.Auto != 0:
+		case c.Side == sideParty && c.Auto != 0:
 			return 0x80, true
-		case c.Side == 1:
+		case c.Side == sideMonsters:
 			return 0x81, true
 		}
 		return 0, true
@@ -230,7 +230,7 @@ func (e *Engine) writeSpecialGlobal(a int, v uint16) {
 			c.Okay = 0
 		}
 		if v == 0x87 {
-			c.Status = 7
+			c.Status = statusStoned
 		}
 		if v == 0 {
 			e.es.memberDied = 1
@@ -696,7 +696,7 @@ func (e *Engine) MenuInput(allowEnter bool, c3, c2, c1 int, menu, prompt string)
 
 // HitMessage = ovr08:20CC (c, dmg).
 func (e *Engine) HitMessage(c *Character, dmg int) {
-	if c.Status == 6 {
+	if c.Status == statusDead {
 		return
 	}
 	var msg string

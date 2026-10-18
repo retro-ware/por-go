@@ -21,7 +21,7 @@ func (e *Engine) commandBar(bar string) string {
 // CastMenu, without their messages).
 func (e *Engine) canCastNow() bool {
 	c := e.selected()
-	if c == nil || e.area.NoMagic > 0 || c.Status != 0 || c.Okay == 0 {
+	if c == nil || e.area.NoMagic > 0 || c.Status != statusOkay || c.Okay == 0 {
 		return false
 	}
 	list, ids := e.spellList, e.spellIDs

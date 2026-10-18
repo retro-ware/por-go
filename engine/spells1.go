@@ -531,7 +531,7 @@ func (e *Engine) strikeSquare(x, y, dmg, saveType int) bool {
 	}
 	if who > 0 {
 		t := e.combatant(who)
-		e.rv.dmgType = 0xC
+		e.rv.dmgType = dmgElectric | dmgMagic
 		e.Damage(t, int(byte(dmg)), 2, e.SavingThrow(t, saveType, 0))
 		e.hitColours(0x13)
 		e.rv.dmgType = 0

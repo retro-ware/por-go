@@ -143,6 +143,25 @@ const (
 	raceHuman
 )
 
+// Status values (the order of the DS:1047 names).
+const (
+	statusOkay = iota
+	statusAnimated
+	statusTempGone
+	statusRunning
+	statusUnconscious
+	statusDying
+	statusDead
+	statusStoned
+	statusGone
+)
+
+// Side values.
+const (
+	sideParty    = 0
+	sideMonsters = 1
+)
+
 // setRecord reads a record in the DOS layout (short data leaves the rest zero).
 func (c *Character) setRecord(b []byte) {
 	buf := make([]byte, charRecSize)
@@ -209,7 +228,7 @@ func (e *Engine) displayName(c *Character, x, y int, possessive bool) {
 	col := 0xC
 	if c.Okay != 0 {
 		col = 0xB
-		if c.Side == 1 {
+		if c.Side == sideMonsters {
 			col = 0xE
 		}
 	}

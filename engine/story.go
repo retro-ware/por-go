@@ -202,7 +202,7 @@ func (e *Engine) DuelSetup(n int) {
 	cl.Okay = 1
 	cl.SetName("ROLF")
 	cl.Auto = 1
-	cl.Side = 1
+	cl.Side = sideMonsters
 	cl.Control = 0xB2
 	cl.Order = e.es.cloneIcon
 	e.party = append(e.party, cl)

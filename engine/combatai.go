@@ -254,7 +254,7 @@ func (e *Engine) aiMoveStep(c *Character) {
 		ci.Pattern = byte(e.Dice(1, 2))
 		f := int(e.facing)
 		dir = f - ((f+2)%4)>>1
-		if c.Side == 0 {
+		if c.Side == sideParty {
 			dir += 4
 		}
 		dir %= 8
@@ -345,14 +345,14 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 		}
 		engaged := false
 		rng := 1
-		if w := c.Slots[0]; w != nil {
+		if w := c.Slots[slotWeapon]; w != nil {
 			rng = int(e.base(w.Type).Range - 1)
 		}
 		if rng == 0 || rng == 0xFF {
 			rng = 1
 		}
 		tgt := ci.Target
-		if tgt != nil && (tgt.Okay == 0 || tgt.Side == 0) {
+		if tgt != nil && (tgt.Okay == 0 || tgt.Side == sideParty) {
 			tgt = nil
 		}
 		if tgt != nil && e.mayActAgainst(c, tgt) {
@@ -440,7 +440,7 @@ func (e *Engine) aiKeys(c *Character) bool {
 			}
 		case 0x20:
 			for _, p := range e.party {
-				if p.Control < 0x80 && p.Status != 1 {
+				if p.Control < 0x80 && p.Status != statusAnimated {
 					p.Auto = 0
 				}
 			}
@@ -483,7 +483,7 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 	e.fleeRoll = e.foesHealth
 	e.affectGroup(c, 0x11)
 	t2 := uint16(100 - e.game.Morale)
-	if !(uint16(e.fleeRoll) < t2 || e.fleeRoll == 0 || c.Side == 0) {
+	if !(uint16(e.fleeRoll) < t2 || e.fleeRoll == 0 || c.Side == sideParty) {
 		return r
 	}
 	a := e.fastestFoeMove(c)
@@ -494,7 +494,7 @@ func (e *Engine) aiFleeCheck(c *Character) bool {
 		return r
 	}
 	if c.Stats[statInt] > 5 {
-		e.KillCharacter(c, 4, "Surrenders")
+		e.KillCharacter(c, statusUnconscious, "Surrenders")
 		r = e.clearCombatInfo(c)
 	}
 	return r
@@ -539,10 +539,10 @@ func (e *Engine) weaponScore(c *Character, it *Item) int {
 // weapon, and the best second item, and ready them.
 func (e *Engine) aiPickWeapon(c *Character) {
 	b := func(it *Item) *itemBase { return e.base(it.Type) }
-	if w := c.Slots[0]; w != nil {
+	if w := c.Slots[slotWeapon]; w != nil {
 		c.Hands -= b(w).Hands
 	}
-	if w := c.Slots[1]; w != nil {
+	if w := c.Slots[slotShield]; w != nil {
 		c.Hands -= b(w).Hands
 	}
 	var best1, best2, best3 *Item
@@ -582,10 +582,10 @@ func (e *Engine) aiPickWeapon(c *Character) {
 		}
 		if f&8 != 0 {
 			if f&1 != 0 {
-				pend = c.Slots[11]
+				pend = c.Slots[slotArrows]
 			}
 			if f&0x80 != 0 {
-				pend = c.Slots[12]
+				pend = c.Slots[slotBolts]
 			}
 		}
 	}
@@ -596,15 +596,15 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	}
 	done := false
 	ok = true
-	if w := c.Slots[0]; w != nil && (w == chosen || w.Magic != 0) {
+	if w := c.Slots[slotWeapon]; w != nil && (w == chosen || w.Magic != 0) {
 		ok = false
 	}
 	if ok {
-		if c.Slots[0] != nil {
-			e.readyItem(c.Slots[0])
+		if c.Slots[slotWeapon] != nil {
+			e.readyItem(c.Slots[slotWeapon])
 		}
 		e.ApplyItems(c)
-		if w := c.Slots[1]; w != nil && w.Magic == 0 {
+		if w := c.Slots[slotShield]; w != nil && w.Magic == 0 {
 			c.Hands -= b(w).Hands
 		}
 		if chosen != nil {
@@ -615,12 +615,12 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	e.ApplyItems(c)
 	e.setSpeed(c)
 	ok = true
-	if w := c.Slots[1]; w != nil && (w == best3 || w.Magic != 0) {
+	if w := c.Slots[slotShield]; w != nil && (w == best3 || w.Magic != 0) {
 		ok = false
 	}
 	if c.Hands > 2 {
 		// the original passes chosen even when nil
-		if w := c.Slots[1]; w == nil || w.Magic != 0 {
+		if w := c.Slots[slotShield]; w == nil || w.Magic != 0 {
 			if chosen != nil {
 				e.readyItem(chosen)
 			}
@@ -629,8 +629,8 @@ func (e *Engine) aiPickWeapon(c *Character) {
 		}
 		done = true
 	} else if c.Hands < 2 && ok {
-		if c.Slots[1] != nil {
-			e.readyItem(c.Slots[1])
+		if c.Slots[slotShield] != nil {
+			e.readyItem(c.Slots[slotShield])
 		}
 		e.ApplyItems(c)
 		if best3 != nil {

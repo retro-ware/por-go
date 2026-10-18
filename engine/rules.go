@@ -198,7 +198,7 @@ func (e *Engine) stinkingCloud(c *Character) {
 			return
 		}
 	}
-	saved := e.SavingThrow(c, 0, 0)
+	saved := e.SavingThrow(c, saveVsParalysis, 0)
 	var t affectType
 	if saved {
 		t = affCoughing
@@ -239,7 +239,7 @@ func (e *Engine) AttackHits(att, def *Character, need int) bool {
 	e.affectGroup(att, grpAttacker)
 	e.affectGroup(def, grpDefender)
 	adj := int(int8(byte(e.game.PartyHit)))
-	if att.Side != 0 {
+	if att.Side != sideParty {
 		adj = int(int8(byte(e.game.MonsterHit)))
 	}
 	return e.rv.hitRoll >= 0 && int(e.rv.hitRoll)+int(att.THAC0)+adj >= int(byte(need))
@@ -279,7 +279,7 @@ func (e *Engine) KillCharacter(c *Character, status byte, msg string) {
 	e.CharMessage(c, msg, 0xA, true)
 	c.Okay = 0
 	c.Status = status
-	if c.Status != 3 {
+	if c.Status != statusRunning {
 		c.HP = 0
 	}
 	e.combatClearIcon(0, 0, idx)
@@ -367,6 +367,24 @@ func (e *Engine) SetStrength(c *Character, str, str00 byte) (byte, bool) {
 	return strValue(cur, cur00), true
 }
 
+// Saving throw types (the Saves order).
+const (
+	saveVsParalysis = iota // paralysis, poison, death magic
+	saveVsPetrify          // petrification, polymorph
+	saveVsWand             // rod, staff, wand
+	saveVsBreath
+	saveVsSpell
+)
+
+// Damage type bits (rv.dmgType).
+const (
+	dmgFire     = 0x01
+	dmgCold     = 0x02
+	dmgElectric = 0x04
+	dmgMagic    = 0x08
+	dmgAcid     = 0x10
+)
+
 // DamageMode values for Damage (what a successful save does).
 const (
 	saveNegate = 1
@@ -395,7 +413,7 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 	} else {
 		msg = "takes 1 point of damage "
 	}
-	switch e.rv.dmgType & 0xF7 {
+	switch e.rv.dmgType &^ dmgMagic {
 	case 1:
 		msg += "from Fire"
 	case 2:
@@ -405,7 +423,7 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 	case 0x10:
 		msg += "from Acid"
 	}
-	if e.rv.dmgType&8 == e.rv.dmgType {
+	if e.rv.dmgType&dmgMagic == e.rv.dmgType {
 		msg += "from Magic"
 	}
 	e.hitMessage(c, false, msg)
@@ -420,10 +438,10 @@ func (e *Engine) Damage(c *Character, dmg int, mode byte, saved bool) {
 	}
 	if c.Okay == 0 {
 		msg = "Goes Down"
-		if c.Status == 5 {
+		if c.Status == statusDying {
 			msg += ", and is Dying"
 		}
-		if s := c.Status; s >= 6 && s <= 8 {
+		if s := c.Status; s >= statusDead && s <= statusGone {
 			msg = "is killed"
 		}
 		e.CharMessage(c, msg, e.msgRow+1, false)
@@ -483,10 +501,10 @@ func (e *Engine) Heal(c *Character, amount int, magical bool) bool {
 		c.HP = c.MaxHP
 	}
 	if c.Okay == 0 {
-		if c.Status == 5 {
-			c.Status = 4
+		if c.Status == statusDying {
+			c.Status = statusUnconscious
 		}
-		if c.Status == 4 && e.beginFlag != 5 {
+		if c.Status == statusUnconscious && e.beginFlag != 5 {
 			e.callAffect(affGetUp, c, nil, 1)
 		}
 	}
@@ -498,14 +516,14 @@ func (e *Engine) Revive(c *Character, hp byte) bool {
 	if !e.combatSquareFree(c, e.combatX(c), e.combatY(c), true) {
 		return false
 	}
-	c.Status = 0
+	c.Status = statusOkay
 	c.Okay = 1
 	c.HP = hp
 	if e.beginFlag == 5 {
 		e.combatRedrawChar(c, 3, 0)
 	}
 	msg := "gets back up"
-	if c.Side == 1 {
+	if c.Side == sideMonsters {
 		msg = "stands up and grins"
 	}
 	e.CharMessage(c, msg, 0xA, true)
@@ -603,17 +621,17 @@ func (e *Engine) ApplyDamage(c *Character, dmg int) {
 	}
 	over &= 0xFF
 	switch {
-	case over > 9 || left == 0 && c.Status == 1:
-		c.Status = 6
+	case over > 9 || left == 0 && c.Status == statusAnimated:
+		c.Status = statusDead
 	case over > 0:
-		c.Status = 5
+		c.Status = statusDying
 		if e.beginFlag == 5 && c.Combat != nil {
 			c.Combat.Dying = byte(over)
 		}
 	case left == 0:
-		c.Status = 4
+		c.Status = statusUnconscious
 	}
-	if s := c.Status; s == 0 || s == 1 {
+	if s := c.Status; s == statusOkay || s == statusAnimated {
 		c.HP = byte(left)
 		return
 	}

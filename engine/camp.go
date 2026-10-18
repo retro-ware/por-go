@@ -114,7 +114,7 @@ func (e *Engine) canStudy(mode int) bool {
 	switch {
 	case mode == 1 && e.area.NoMagic > 0:
 		msg = "cannot cast spells in this area"
-	case c.Status == 1 || c.Okay == 0:
+	case c.Status == statusAnimated || c.Okay == 0:
 		msg = "is in no condition to "
 		switch mode {
 		case 1:
@@ -373,7 +373,7 @@ func (e *Engine) castCures() {
 		return
 	}
 	for _, c := range e.party {
-		if c.Status == 1 || c.Okay == 0 {
+		if c.Status == statusAnimated || c.Okay == 0 {
 			continue
 		}
 		for i, v := range c.Memorized {
@@ -742,7 +742,7 @@ func (e *Engine) campInput(prompt, menu string) (key byte, again bool) {
 // each followed by a space.
 func (e *Engine) magicCommands() string {
 	c := e.selected()
-	if c.Status == 1 || c.Okay == 0 {
+	if c.Status == statusAnimated || c.Okay == 0 {
 		return ""
 	}
 	m := ""

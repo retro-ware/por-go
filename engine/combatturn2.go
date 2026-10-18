@@ -41,8 +41,7 @@ func (e *Engine) friendToHeal(c *Character, who **Character) bool {
 		} else if ground == 0x1F {
 			for b := 1; b <= e.nbodies; b++ {
 				bd := e.bodies[b]
-				// ponytail: the set [6,7,8] is the dead, stoned and gone
-				if bd.c != nil && (bd.c.Status < 6 || bd.c.Status > 8) && bd.x == x && bd.y == y {
+				if bd.c != nil && (bd.c.Status < statusDead || bd.c.Status > statusGone) && bd.x == x && bd.y == y {
 					body = b
 				}
 			}
@@ -294,7 +293,7 @@ func (e *Engine) attackAnimation(from, to *Character, weapon *Item) {
 func (e *Engine) foesHealthPercent() {
 	var hp, max uint16
 	for _, c := range e.party {
-		if c.Side == 1 {
+		if c.Side == sideMonsters {
 			if c.Okay != 0 {
 				hp += uint16(c.HP)
 			}
@@ -332,8 +331,8 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 	e.attackedAlly = 1
 	e.game.AttackedAlly = 1
 	for _, m := range e.party {
-		if m.Status == 0 && m.Control > 0x7F {
-			m.Side = 1
+		if m.Status == statusOkay && m.Control > 0x7F {
+			m.Side = sideMonsters
 			if m.Combat != nil {
 				m.Combat.Target = nil
 			}
@@ -612,7 +611,7 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 	*found = false
 	rng := byte(rangeArg)
 	if rng == 0xFF {
-		if w := c.Slots[0]; w != nil {
+		if w := c.Slots[slotWeapon]; w != nil {
 			rng = e.base(w.Type).Range - 1
 		} else {
 			rng = 1
@@ -821,9 +820,9 @@ func (e *Engine) stingCheat() bool {
 	}
 	e.BottomMessage("The Gods intervene!")
 	for _, c := range e.party {
-		if c.Side == 1 {
+		if c.Side == sideMonsters {
 			c.Okay = 0
-			c.Status = 6
+			c.Status = statusDead
 			if i := e.combatIndex(c); i == 0 {
 				e.ncomb = 0 // DS:5F2A is slot 0's size byte
 			} else {

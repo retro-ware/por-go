@@ -88,7 +88,7 @@ func (e *Engine) spellStrengthPercent() {
 func (e *Engine) spellReduce() {
 	if e.nSpellTargets > 0 {
 		t := e.tgt(1)
-		if !e.SavingThrow(t, 4, 0) && e.CureAffect(t, affEnlarged) {
+		if !e.SavingThrow(t, saveVsSpell, 0) && e.CureAffect(t, affEnlarged) {
 			e.CharMessage(t, "has been reduced", 0xA, true)
 		}
 	}
@@ -142,7 +142,7 @@ func (e *Engine) spellSleep() {
 		default:
 			e.spellValue2 = 0x14
 		}
-		if t.Status != 1 && e.FindAffect(t, affAsleep) == nil && e.spellValue >= e.spellValue2 {
+		if t.Status != statusAnimated && e.FindAffect(t, affAsleep) == nil && e.spellValue >= e.spellValue2 {
 			e.spellValue -= e.spellValue2
 		} else {
 			e.setTgt(i, nil)
@@ -192,7 +192,7 @@ func (e *Engine) spellHold() {
 // the list; one with affect 0x37 is brought to 1 hit point and stunned (0x0F).
 func (e *Engine) spellRaiseDead() {
 	t := e.tgt(1)
-	if t.Status == 1 {
+	if t.Status == statusAnimated {
 		e.setTgt(1, nil)
 		return
 	}
@@ -352,7 +352,7 @@ func (e *Engine) spellAnimateDead() {
 		if lvl <= 0 {
 			break
 		}
-		if p.Status != 6 || p.Kind != 0 || !e.combatSquareFree(p, e.combatX(p), e.combatY(p), true) {
+		if p.Status != statusDead || p.Kind != 0 || !e.combatSquareFree(p, e.combatX(p), e.combatY(p), true) {
 			continue
 		}
 		data := byte(int(p.Side)<<4 + e.casterLevel(int(e.curSpell)))
@@ -376,7 +376,7 @@ func (e *Engine) spellAnimateDead() {
 		lvl--
 		if e.Revive(p, p.MaxHP) {
 			e.AddAffectMsg(p, affAnimated, 0, data, 1, 0, false, "is animated")
-			p.Status = 1
+			p.Status = statusAnimated
 		}
 	}
 }

@@ -304,10 +304,10 @@ func (e *Engine) sheetKey() uint16 {
 // statusName = DS:1047 + 0xD*n, the status words. extra: dead with the
 // poison still in (0x37, Slow Poison can still raise) reads "Poisoned".
 func (e *Engine) statusName(c *Character) string {
-	if c.Status > 8 {
+	if c.Status > statusGone {
 		return ""
 	}
-	if c.Status == 6 && e.FindAffect(c, affPoisoned) != nil {
+	if c.Status == statusDead && e.FindAffect(c, affPoisoned) != nil {
 		return "Poisoned"
 	}
 	return statusNames[c.Status]

@@ -182,8 +182,8 @@ func (e *Engine) stoneGaze(c *Character, a *Affect, flag byte) {
 			}
 		}
 	}
-	if !e.SavingThrow(t, 1, 0) {
-		e.killWithMessage(t, 7, "is Stoned")
+	if !e.SavingThrow(t, saveVsPetrify, 0) {
+		e.killWithMessage(t, statusStoned, "is Stoned")
 	}
 }
 
@@ -203,7 +203,7 @@ func (e *Engine) charmGaze(c *Character, a *Affect, flag byte) {
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 4, 0x2D)
 	e.curSpell = 0xA
 	data := byte(int(int8(c.Side))<<7 + 0xC)
-	saved := e.SavingThrow(t, 4, 0xFE)
+	saved := e.SavingThrow(t, saveVsSpell, 0xFE)
 	e.AddAffectMsg(t, affCharmed, 0, data, 1, 1, saved, "is charmed")
 	if x := e.FindAffect(t, affCharmed); x != nil {
 		e.callAffect(affCharmed, t, x, 0)
@@ -236,13 +236,13 @@ func (e *Engine) drainLevels(c *Character, n int) {
 		msg = cut(strconv.Itoa(n)+" levels", 0x28)
 	}
 	e.CharMessage(c, "is drained "+msg, 0xA, true)
-	if c.Status == 1 {
-		e.killWithMessage(c, 8, "is dead forever")
+	if c.Status == statusAnimated {
+		e.killWithMessage(c, statusGone, "is dead forever")
 		c.MaxHP = 0
 		return
 	}
 	for lv := 1; lv <= n; lv++ {
-		if c.Status == 8 {
+		if c.Status == statusGone {
 			continue
 		}
 		c.Drained++
@@ -268,7 +268,7 @@ func (e *Engine) drainLevels(c *Character, n int) {
 			c.DrainedHP++
 		}
 		if int8(c.MaxLevel) < 2 {
-			e.killWithMessage(c, 8, "is dead forever")
+			e.killWithMessage(c, statusGone, "is dead forever")
 			c.MaxHP = 0
 			if i := bestClass(); int8(c.Levels[i]) > 0 && n == 2 {
 				c.Levels[bestClass()] = 0
@@ -276,8 +276,8 @@ func (e *Engine) drainLevels(c *Character, n int) {
 			// jumps over RecomputeCharacter
 		} else {
 			c.Levels[bestClass()]--
-			if c.HP == 0 && c.Status != 6 {
-				e.killWithMessage(c, 6, "is killed")
+			if c.HP == 0 && c.Status != statusDead {
+				e.killWithMessage(c, statusDead, "is killed")
 			}
 			e.RecomputeCharacter(c)
 		}
@@ -339,7 +339,7 @@ func levelBonus(level byte) byte {
 
 // saveBonusVsType0 = ovr13:24D9 (c, a, flag): saving throw bonus by level for save type 0.
 func (e *Engine) saveBonusVsType0(c *Character, a *Affect, flag byte) {
-	if e.rv.saveType == 0 {
+	if e.rv.saveType == saveVsParalysis {
 		e.rv.save += levelBonus(c.Stats[statCon])
 	}
 }
@@ -350,14 +350,14 @@ func (e *Engine) resistFireElectric(c *Character, a *Affect, flag byte) {
 	if e.curSpell == 0xF {
 		e.blockAffect(affAny)
 		e.CharMessage(c, "is unaffected", 0xA, true)
-	} else if e.rv.dmgType&4 != 0 {
+	} else if e.rv.dmgType&dmgElectric != 0 {
 		e.blockAffect(affAny)
 	}
 }
 
 // halveFire = ovr13:25A2 (c, a, flag): fire damage (bit 0) is halved.
 func (e *Engine) halveFire(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&1 != 0 {
+	if e.rv.dmgType&dmgFire != 0 {
 		e.halveDamage()
 	}
 }
@@ -374,7 +374,7 @@ func (e *Engine) halveVsWeaponFlags(c *Character, a *Affect, flag byte) {
 func (e *Engine) fallsDead(c *Character, a *Affect, flag byte) {
 	a.Call = 0
 	if c.Okay != 0 {
-		e.killWithMessage(c, 6, "Falls dead")
+		e.killWithMessage(c, statusDead, "Falls dead")
 	}
 }
 
@@ -389,7 +389,7 @@ func (e *Engine) onlyMagicWeapons(c *Character, a *Affect, flag byte) {
 
 // saveBonusVsType42 = ovr13:268A (c, a, flag): like 24D9 for save types 4 and 2.
 func (e *Engine) saveBonusVsType42(c *Character, a *Affect, flag byte) {
-	if e.rv.saveType == 4 || e.rv.saveType == 2 {
+	if e.rv.saveType == saveVsSpell || e.rv.saveType == saveVsWand {
 		e.rv.save += levelBonus(c.Stats[statCon])
 	}
 }
@@ -407,10 +407,10 @@ func (e *Engine) heal3(c *Character, a *Affect, flag byte) {
 // for 1d4+1 and this affect (0x63) is removed.
 func (e *Engine) standUpBleeding(c *Character, a *Affect, flag byte) {
 	var n byte
-	if c.Status == 5 && c.Combat.Dying < 6 {
+	if c.Status == statusDying && c.Combat.Dying < 6 {
 		n = 6 - c.Combat.Dying
 	}
-	if c.Status == 4 {
+	if c.Status == statusUnconscious {
 		n = 6
 	}
 	if n > 0 && e.Revive(c, n) {
@@ -423,7 +423,7 @@ func (e *Engine) standUpBleeding(c *Character, a *Affect, flag byte) {
 // regenUnlessFireAcid = ovr13:27D9 (c, a, flag): damage that is neither fire (1) nor acid (0x10)
 // starts affect 0x66 for 3d6.
 func (e *Engine) regenUnlessFireAcid(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&1 == 0 && e.rv.dmgType&0x10 == 0 {
+	if e.rv.dmgType&dmgFire == 0 && e.rv.dmgType&dmgAcid == 0 {
 		e.AddAffect(c, affReviveFull, e.Dice(3, 6), 0xFF, 1)
 	}
 }
@@ -446,7 +446,7 @@ func (e *Engine) reviveFull(c *Character, a *Affect, flag byte) {
 func (e *Engine) gaseousEscape(c *Character, a *Affect, flag byte) {
 	a.Call = 0
 	e.combatRedrawChar(c, 3, 0)
-	e.KillCharacter(c, 3, "Turns gaseous and escapes")
+	e.KillCharacter(c, statusRunning, "Turns gaseous and escapes")
 }
 
 // avoidDistant3C = ovr13:2901 (c, a, flag).
@@ -457,7 +457,7 @@ func (e *Engine) avoidDistant3C(c *Character, a *Affect, flag byte) { e.avoidDis
 func (e *Engine) resistRoll(base byte) {
 	lvl := e.casterLevel(int(e.curSpell)) & 0xFF
 	thr := byte(int(base) - 5*(0xB-lvl))
-	if e.rv.affVal != 0 || e.rv.dmgType&8 != 0 {
+	if e.rv.affVal != 0 || e.rv.dmgType&dmgMagic != 0 {
 		if byte(e.Dice(1, 100)) <= thr {
 			e.blockAffect(affAny)
 		}
@@ -489,7 +489,7 @@ func (e *Engine) blockHeld(c *Character, a *Affect, flag byte) { e.blockAffect(a
 
 // blockCold = ovr13:29D9 (c, a, flag): cold damage (bit 1) is blocked.
 func (e *Engine) blockCold(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&2 != 0 {
+	if e.rv.dmgType&dmgCold != 0 {
 		e.blockAffect(affAny)
 	}
 }
@@ -498,21 +498,21 @@ func (e *Engine) blockCold(c *Character, a *Affect, flag byte) {
 func (e *Engine) blockPoisonHold(c *Character, a *Affect, flag byte) {
 	e.blockAffect(affPoisoned)
 	e.blockAffect(affHeld)
-	if e.rv.saveType == 0 {
+	if e.rv.saveType == saveVsParalysis {
 		e.rv.save = 0x64
 	}
 }
 
 // blockFire = ovr13:2A11 (c, a, flag): fire damage (bit 0) is blocked.
 func (e *Engine) blockFire(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&1 != 0 {
+	if e.rv.dmgType&dmgFire != 0 {
 		e.blockAffect(affAny)
 	}
 }
 
 // resistFireLessPerDie = ovr13:2A28 (c, a, flag): fire damage loses 1 per die, never below one per die.
 func (e *Engine) resistFireLessPerDie(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&1 != 0 {
+	if e.rv.dmgType&dmgFire != 0 {
 		for k := byte(1); k <= e.rv.diceN; k++ {
 			e.rv.damage--
 			if e.rv.damage < e.rv.diceN {
@@ -524,7 +524,7 @@ func (e *Engine) resistFireLessPerDie(c *Character, a *Affect, flag byte) {
 
 // halveElectric = ovr13:2A6D (c, a, flag): electricity damage (bit 2) is halved.
 func (e *Engine) halveElectric(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&4 != 0 {
+	if e.rv.dmgType&dmgElectric != 0 {
 		e.halveDamage()
 	}
 }
@@ -556,7 +556,7 @@ func (e *Engine) holyWaterDamage(c *Character, a *Affect, flag byte) {
 
 // halveCold = ovr13:2B63 (c, a, flag): cold damage (bit 1) is halved.
 func (e *Engine) halveCold(c *Character, a *Affect, flag byte) {
-	if e.rv.dmgType&2 != 0 {
+	if e.rv.dmgType&dmgCold != 0 {
 		e.halveDamage()
 	}
 }
@@ -593,7 +593,7 @@ func (e *Engine) spitAcid(c *Character, a *Affect, flag byte) {
 	e.hitColours(0x17)
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 1, 0x1E)
 	dmg := e.RollDice(8, 4)
-	saved := e.SavingThrow(t, 3, 0)
+	saved := e.SavingThrow(t, saveVsBreath, 0)
 	e.Damage(t, dmg, saveHalf, saved)
 	e.RemoveAffect(c, affSpitAcid, a)
 	e.RemoveAffect(c, affAcidDamage, nil)
@@ -605,7 +605,7 @@ func (e *Engine) oilDamage(c *Character, a *Affect, flag byte) {
 	if w := e.selected().Slots[slotWeapon]; w != nil && w.Type == itemOil {
 		e.rv.damage = byte(e.RollDice(3, 8))
 	}
-	if e.rv.dmgType&9 != 0 {
+	if e.rv.dmgType&(dmgFire|dmgMagic) != 0 {
 		e.rv.damage += e.rv.diceN
 	}
 }
@@ -638,7 +638,7 @@ func (e *Engine) blockMind(c *Character, a *Affect, flag byte) {
 	e.blockAffect(affAsleep)
 	e.blockAffect(affHeld)
 	e.blockAffect(affPoisoned)
-	if e.rv.saveType == 0 {
+	if e.rv.saveType == saveVsParalysis {
 		e.rv.save = 0x64
 	}
 }
@@ -720,7 +720,7 @@ func (e *Engine) cursedAlignment(c *Character, a *Affect, flag byte) {
 	if it.Spells[1]&0xF != c.Alignment {
 		it.Readied = 0
 		n := int(it.Spells[1] >> 4)
-		e.rv.dmgType = 8
+		e.rv.dmgType = dmgMagic
 		if e.beginFlag == 5 {
 			e.combatUseHook()
 		}

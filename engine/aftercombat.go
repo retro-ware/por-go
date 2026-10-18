@@ -42,7 +42,7 @@ func (e *Engine) computeExp() int32 {
 	var total int32
 	taken := 0
 	for _, c := range e.party {
-		if c.Side != 1 || c.Status == 3 {
+		if c.Side != sideMonsters || c.Status == statusRunning {
 			continue
 		}
 		e.ac.monsters = true
@@ -85,7 +85,7 @@ func (e *Engine) computeExp() int32 {
 // a tenth more for a high prime requisite; multi-class characters split it.
 func (e *Engine) giveExp(exp int32) {
 	for _, c := range e.party {
-		if c.Okay == 0 || c.Status == 1 {
+		if c.Okay == 0 || c.Status == statusAnimated {
 			continue
 		}
 		g := exp
@@ -122,7 +122,7 @@ func (e *Engine) combatResult() {
 	e.run.quit = true
 	e.ac.fled = false
 	for _, c := range e.combatParty() {
-		if c.Status == 3 {
+		if c.Status == statusRunning {
 			e.ac.fled = true
 		}
 	}
@@ -133,15 +133,15 @@ func (e *Engine) combatResult() {
 	if !e.duel() {
 		for _, c := range e.combatParty() {
 			st := c.Status
-			if (st == 3 || st == 1 || st == 0 || e.game.Duel == 1) &&
-				c.Side == 0 && c.Control < 0x80 {
+			if (st == statusRunning || st == statusAnimated || st == statusOkay || e.game.Duel == 1) &&
+				c.Side == sideParty && c.Control < 0x80 {
 				e.run.quit = false
 			}
-			if st == 1 || st == 0 {
+			if st == statusAnimated || st == statusOkay {
 				e.ac.won = true
 				e.ac.fled = false
 			}
-			if c.Okay == 0 || st == 1 {
+			if c.Okay == 0 || st == statusAnimated {
 				e.ac.idle++
 			}
 		}
@@ -153,20 +153,20 @@ func (e *Engine) combatResult() {
 			if !e.ac.fled {
 				for _, c := range e.combatParty() {
 					switch st := c.Status; {
-					case st == 3:
-						c.Status, c.Okay = 0, 1
-					case st == 5:
-						c.Status = 4
-					case st == 4 && c.HP > 0:
-						c.Status, c.Okay = 0, 1
+					case st == statusRunning:
+						c.Status, c.Okay = statusOkay, 1
+					case st == statusDying:
+						c.Status = statusUnconscious
+					case st == statusUnconscious && c.HP > 0:
+						c.Status, c.Okay = statusOkay, 1
 					}
 				}
 			} else {
 				e.game.CombatEnd = 0x81
 				for i := 0; i < len(e.combatParty()); {
 					c := e.party[i]
-					if c.Status == 3 {
-						c.Status, c.Okay = 0, 1
+					if c.Status == statusRunning {
+						c.Status, c.Okay = statusOkay, 1
 						i++
 						continue
 					}
@@ -184,7 +184,7 @@ func (e *Engine) combatResult() {
 		return
 	}
 	for _, c := range e.party {
-		if c.Okay == 1 && c.Status == 0 && c.Side != 1 {
+		if c.Okay == 1 && c.Status == statusOkay && c.Side != sideMonsters {
 			e.ac.won = true
 			e.ac.exp = e.computeExp()
 			e.giveExp(e.ac.exp)
@@ -192,10 +192,10 @@ func (e *Engine) combatResult() {
 	}
 	for _, c := range e.party {
 		switch c.Status {
-		case 0, 1:
+		case statusOkay, statusAnimated:
 			c.Okay = 1
-		case 5:
-			c.Status = 4
+		case statusDying:
+			c.Status = statusUnconscious
 		}
 	}
 }
@@ -208,7 +208,7 @@ func (e *Engine) cleanupCombatants() {
 	for i := 0; i < len(e.party); {
 		c := e.party[i]
 		monster := c.Combat != nil && c.Combat.Extra == 1
-		if monster || c.Side == 1 {
+		if monster || c.Side == sideMonsters {
 			if c.Okay != 1 {
 				e.game.Beaten = e.game.Beaten + 1
 			}
@@ -228,7 +228,7 @@ func (e *Engine) cleanupCombatants() {
 func (e *Engine) hiredShare() {
 	shares, parts := 0, 0
 	for _, c := range e.party {
-		if c.Control > 0x7F && c.Status == 0 {
+		if c.Control > 0x7F && c.Status == statusOkay {
 			shares += int(c.Share & 7)
 			parts += int(c.Share & 7)
 		} else {
@@ -244,7 +244,7 @@ func (e *Engine) hiredShare() {
 	e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
 	k := 0
 	for _, c := range e.party {
-		if c.Control > 0x7F && c.Status == 0 && c.Share > 0 {
+		if c.Control > 0x7F && c.Status == statusOkay && c.Share > 0 {
 			e.DisplayTextBlock(5, 5+2*k, 0x22, 0x16, 0xA, true, c.Name()+" takes and hides his share.")
 			k++
 		}
@@ -296,7 +296,7 @@ func (e *Engine) showResult(exp int32) {
 	y := 0xC // extra: who came out of the fight dead or worse, or with harmful effects on them
 	for _, c := range e.party {
 		var what []string
-		if st := e.statusName(c); c.Status != 0 && c.Status != 3 && st != "" {
+		if st := e.statusName(c); c.Status != statusOkay && c.Status != statusRunning && st != "" {
 			what = append(what, st)
 		}
 		for _, a := range c.Affects {

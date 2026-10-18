@@ -117,6 +117,7 @@ func (e *Engine) thiefSkills(c *Character) {
 // arrows, 12 quarrels.
 const (
 	slotWeapon = 0
+	slotShield = 1
 	slotArmor  = 2
 	slotRing1  = 9
 	slotRing2  = 10

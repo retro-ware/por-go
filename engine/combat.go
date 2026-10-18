@@ -302,7 +302,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 	}
 	e.snap.targets = nil
 	rng := 1
-	if w := c.Slots[0]; w != nil && e.base(w.Type).Range > 1 {
+	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
 		rng = int(e.base(w.Type).Range) - 1
 	}
 	for i := 1; i <= e.ncomb; i++ {
@@ -341,10 +341,10 @@ func (e *Engine) endRound() (done bool) {
 	for _, c := range e.party {
 		e.affectGroup(c, 0x13)
 		e.stinkingCloud(c)
-		if c.Status == 5 {
+		if c.Status == statusDying {
 			c.Combat.Dying++
 			if c.Combat.Dying > 9 {
-				c.Status = 6
+				c.Status = statusDead
 			}
 		}
 	}
@@ -563,14 +563,14 @@ func (e *Engine) markReach(reach map[[2]int][]int, on bool) {
 // rangedWeapon = 00BA:2E03 (char): the readied weapon shoots (base item
 // +0xC above 1).
 func (e *Engine) rangedWeapon(c *Character) bool {
-	w := c.Slots[0]
+	w := c.Slots[slotWeapon]
 	return w != nil && e.base(w.Type).Range > 1
 }
 
 // throwable = 00BA:2E46 (char): a ranged weapon that also works in melee
 // (base item flags 0x14).
 func (e *Engine) throwable(c *Character) bool {
-	return e.rangedWeapon(c) && e.base(c.Slots[0].Type).Usage&0x14 == 0x14
+	return e.rangedWeapon(c) && e.base(c.Slots[slotWeapon].Type).Usage&0x14 == 0x14
 }
 
 // throwableItem (extra): the item would be a throwable weapon if readied.
@@ -582,7 +582,7 @@ func (e *Engine) throwableItem(it *Item) bool {
 // the weapon, aims as Aim does, then readies the weapon again. Nothing
 // changes when the swap fails or the aim is given up.
 func (e *Engine) throwItem(c *Character) (done bool) {
-	it, w := e.ext.throwing, c.Slots[0]
+	it, w := e.ext.throwing, c.Slots[slotWeapon]
 	e.ext.throwing = nil
 	saved := e.partySel
 	for i, p := range e.party {
@@ -620,7 +620,7 @@ func (e *Engine) throwItem(c *Character) (done bool) {
 // (the weapon itself, the arrows in slot 11 or the bolts in slot 12); true
 // when there is one or the weapon needs none (flags 0x0A).
 func (e *Engine) ammoFor(c *Character, it **Item) bool {
-	w := c.Slots[0]
+	w := c.Slots[slotWeapon]
 	*it = nil
 	var f byte
 	if w != nil {
@@ -630,10 +630,10 @@ func (e *Engine) ammoFor(c *Character, it **Item) bool {
 		}
 		if f&8 != 0 {
 			if f&1 != 0 {
-				*it = c.Slots[11]
+				*it = c.Slots[slotArrows]
 			}
 			if f&0x80 != 0 {
-				*it = c.Slots[12]
+				*it = c.Slots[slotBolts]
 			}
 		}
 	}
@@ -703,10 +703,10 @@ func (e *Engine) guard(c *Character) bool {
 func (e *Engine) bandage(doIt bool) bool {
 	found := false
 	for _, c := range e.party {
-		if c.Combat.Extra == 0 && c.Side == 0 && c.Status == 5 {
+		if c.Combat.Extra == 0 && c.Side == sideParty && c.Status == statusDying {
 			found = true
 			if doIt {
-				c.Status = 4
+				c.Status = statusUnconscious
 				c.Combat.Dying = 0
 				e.CharMessage(c, "is bandaged", 0xA, true)
 				doIt = false
