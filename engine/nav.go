@@ -58,6 +58,7 @@ type region struct {
 	x0, y0, x1, y1 int
 	click          func(cx, cy int) uint16 // the key the click stands for (0: none)
 	hover          func()                  // optional: the pointer came onto it
+	square         func(x, y int) uint16   // optional (a combat map region): the key for the pointer coming onto square (x, y)
 }
 
 // modalOn opens a modal screen (help, overview, the F9 slots): any key or
@@ -98,6 +99,12 @@ func (e *Engine) rawArrows(hint string) func() {
 // translate turns a key from the window into the key the game reads, or 0
 // when it was used up here.
 func (e *Engine) translate(k uint16) uint16 {
+	if k >= KeyHover && k < KeyHover+50*25 { // the pointer came onto a square of the map
+		if r := e.regionAt(pageCol, 1); r != nil && r.square != nil && e.ext.modal == 0 {
+			return r.square(int(k-KeyHover)%50, int(k-KeyHover)/50)
+		}
+		return 0
+	}
 	if k >= KeySquare && k < KeyMouse { // a square clicked on a remastered map: a click on the page that lands there
 		e.snap.click = int(k-KeySquare) + 1
 		defer func() { e.snap.click = 0 }()
@@ -315,6 +322,11 @@ func (e *Engine) pollMouse() {
 	}
 	if r := e.regionAt(cx, cy); r != nil && r.hover != nil {
 		r.hover()
+	}
+	if r := e.regionAt(cx, cy); r != nil && r.square != nil {
+		if sx, sy, in := e.combatSquare(cx, cy); in {
+			e.S.PushKey(HoverKey(sx, sy)) // read as a key, so the waiting prompt hands back
+		}
 	}
 }
 

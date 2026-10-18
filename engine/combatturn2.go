@@ -359,21 +359,31 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 	e.combatPanel(cand)
 	_, undo := e.aoeMarks(e.combatX(cand), e.combatY(cand), "") // the menu leaves no room for the count
 	mark := e.regionMark()
-	// extra (nav.go): click a foe to aim at it, the aimed one again to attack
-	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
-		sx, sy, in := e.combatSquare(cx, cy)
+	// extra (nav.go): click a foe to aim at it, the aimed one again to attack; pointing at
+	// one aims there too. An area spell takes any square: the free cursor goes there.
+	pick := func(sx, sy int, click bool) uint16 {
+		who := e.occ[sy][sx]
 		switch {
-		case !in || e.occ[sy][sx] == 0:
-			return 0
-		case e.combatant(e.occ[sy][sx]) == cand:
-			if can {
+		case who > 0 && e.combatant(who) == cand:
+			if click && can {
 				return 'A'
 			}
 			return 0
+		case e.ext.aimGround:
+			e.ext.jump, e.ext.aimTake = &[2]int8{int8(sx), int8(sy)}, click
+			return 'M'
+		case who == 0 || !click && len(e.ext.aimMarks) > 0 && !e.aimStop(sx, sy):
+			return 0 // pointing at one Next would pass over: stay
 		}
 		e.ext.jump = &[2]int8{int8(sx), int8(sy)}
 		return 'N'
-	}})
+	}
+	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
+		if sx, sy, in := e.combatSquare(cx, cy); in {
+			return pick(sx, sy, true)
+		}
+		return 0
+	}, square: func(x, y int) uint16 { return pick(x, y, false) }})
 	var key byte
 	switch t := e.ext.autoAim; { // extra: the main menu's clicked foe
 	case t == nil:
@@ -399,6 +409,12 @@ func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
 		key = 'T'
 	}
 	return key
+}
+
+// aimStop (extra): is a foe Next stops on standing at (x, y)?
+func (e *Engine) aimStop(x, y int) bool {
+	_, ok := e.ext.aimMarks[[2]int{x, y}]
+	return ok
 }
 
 // combatInput = ovr26:03BD with the picture not animated (prompt, menu,
@@ -463,10 +479,14 @@ func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTar
 func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, found *bool, t *aimTarget) {
 	*t = aimTarget{}
 	x, y := int8(e.combatX(cand)), int8(e.combatY(cand))
+	if j := e.ext.jump; j != nil { // extra: the square aimPrompt was pointed at
+		e.ext.jump = nil
+		x, y = j[0], j[1]
+	}
 	key, dir := byte(0x20), 8
 	*found = false
 	e.cmap.cursor, e.cmap.cursorSize = 1, 1
-	defer e.rawArrows("arrows, click=move the cursor|Enter, click it again=target|C=center|Esc=back")()
+	defer e.rawArrows("arrows, point=move the cursor|Enter, click=target|C=center|Esc=back")()
 	for !(key == 0 || key == 13 || key == 'E' || key == 'T') {
 		e.combatCentre(int(x), int(y), 3, dir)
 		x += int8(byte(dirDX[dir]))
@@ -527,25 +547,33 @@ func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, 
 			menu = cut("Attack "+menu, textCols) // extra: Target renamed
 		}
 		mark := e.regionMark()
-		{ // extra (nav.go): click a square to put the cursor there, again to target
-			e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
-				sx, sy, in := e.combatSquare(cx, cy)
-				switch {
-				case !in:
-					return 0
-				case sx == int(x) && sy == int(y):
-					if ok {
+		{ // extra (nav.go): point at a square to put the cursor there, click to target it
+			pick := func(sx, sy int, click bool) uint16 {
+				if sx == int(x) && sy == int(y) {
+					if click && ok {
 						return 'T'
 					}
 					return 0
 				}
-				e.ext.jump = &[2]int8{int8(sx), int8(sy)}
+				e.ext.jump, e.ext.aimTake = &[2]int8{int8(sx), int8(sy)}, click
 				return keyNone
-			}})
+			}
+			e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
+				if sx, sy, in := e.combatSquare(cx, cy); in {
+					return pick(sx, sy, true)
+				}
+				return 0
+			}, square: func(x, y int) uint16 { return pick(x, y, false) }})
 		}
 		e.markReach(e.ext.aimMarks, true) // the cursor's last square drew over its frame
 		prompt, undo := e.aoeMarks(int(x), int(y), "(Use Cursor keys) ")
-		key, _ = e.combatInput(prompt, menu, true)
+		if take := e.ext.aimTake; take && ok { // a click away from the cursor: moved there, now the target
+			e.ext.aimTake = false
+			key = 'T'
+		} else {
+			e.ext.aimTake = false
+			key, _ = e.combatInput(prompt, menu, true)
+		}
 		undo()
 		if key == 'A' {
 			key = 'T'
@@ -621,6 +649,8 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 	if rng == 0 || rng == 0xFF {
 		rng = 1
 	}
+	e.ext.aimGround = allowGround != 0
+	defer func() { e.ext.aimGround = false }()
 	// nested ovr14:32E6 and ovr14:3389 work on the caller's locals
 	var list []nearEntry
 	var cur, count, prevX, prevY byte

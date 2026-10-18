@@ -102,6 +102,8 @@ type extras struct {
 	regions      []region                // clickable parts of the screen
 	mouseAt      int                     // cell under the pointer + 1 at the last poll
 	jump         *[2]int8                // aimManual: a clicked square for the cursor
+	aimTake      bool                    // aimManual: jump came from a click: take the square once there
+	aimGround    bool                    // playerAim: an empty square may be aimed at (area spells)
 	autoPath     []int                   // the main combat menu's clicked square: moveAttack walks there, then hands back
 	autoAim      *Character              // the main combat menu's clicked foe: aim at it, attack it if it can be
 	aimAfterWalk *Character              // the clicked foe autoPath walks up to: attacked when the menu comes back

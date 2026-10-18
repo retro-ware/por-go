@@ -240,6 +240,13 @@ const KeySquare = 0xE800
 // SquareKey is the key that clicks combat map square (x, y).
 func SquareKey(x, y int) uint16 { return KeySquare + uint16(y*50+x) }
 
+// KeyHover + y*50+x says the pointer came onto combat map square (x, y);
+// screens that preview a choice (aiming) move it there, others drop it.
+const KeyHover = 0xC000
+
+// HoverKey is the key that points at combat map square (x, y).
+func HoverKey(x, y int) uint16 { return KeyHover + uint16(y*50+x) }
+
 // unitDrawn / unitHidden track what the page shows of combatant i.
 func (e *Engine) unitDrawn(i int, pose byte) {
 	if e.snap.poses == nil {

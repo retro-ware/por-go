@@ -349,3 +349,22 @@ func TestAimCycle(t *testing.T) {
 		v = keyWait(e, scr, 'N')
 	}
 }
+
+// TestAimHover: pointing at another foe while aiming moves the aim to it.
+func TestAimHover(t *testing.T) {
+	e, scr, v := battleView(t)
+	v = keyWait(e, scr, 'A')
+	if v.Battle == nil || !v.Battle.CursorOn {
+		t.Fatal("aiming: no cursor")
+	}
+	from := v.Battle.Cursor
+	for _, u := range v.Battle.Units {
+		if u.Party || image.Pt(u.X, u.Y) == from {
+			continue
+		}
+		if v = keyWait(e, scr, engine.HoverKey(u.X, u.Y)); v.Battle != nil && v.Battle.Cursor == image.Pt(u.X, u.Y) {
+			return
+		}
+	}
+	t.Errorf("pointing at the other foes never moved the aim from %v", from)
+}
