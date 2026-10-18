@@ -135,7 +135,7 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 					add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
 				}
 			}
-			b.Text, b.Send = "End", []uint16{'D', 'Q'}
+			b.Text, b.Send = "End", []uint16{uint16(it.Key), 'Q'}
 		case kind == "aim" && (it.Text == "Next" || it.Text == "Prev" || it.Text == "Center" || it.Text == "Manual" || it.Text == "Attack"):
 			continue
 		case kind == "aim" && it.Text == "Exit":

@@ -214,7 +214,7 @@ func TestBattleFight(t *testing.T) {
 	if v.Battle == nil {
 		t.Fatal("no Battle in combat")
 	}
-	if v := keyWait(e, scr, 'A'); v.Battle == nil || !v.Battle.CursorOn || len(v.Battle.CursorAt) == 0 {
+	if v := keyWait(e, scr, 'M'); v.Battle == nil || !v.Battle.CursorOn || len(v.Battle.CursorAt) == 0 {
 		t.Errorf("aiming: no cursor in the view")
 	}
 	keyWait(e, scr, 27)
@@ -336,7 +336,7 @@ func TestAimCycle(t *testing.T) {
 			party[image.Pt(u.X, u.Y)] = true
 		}
 	}
-	v = keyWait(e, scr, 'A')
+	v = keyWait(e, scr, 'M')
 	for i := range 6 {
 		if v.Battle == nil {
 			t.Fatalf("step %d: off the map", i)
@@ -355,7 +355,7 @@ func TestAimCycle(t *testing.T) {
 func TestAimHover(t *testing.T) {
 	e, scr, v := battleView(t)
 	v = nextToFoe(t, e, scr, v)
-	v = keyWait(e, scr, 'A')
+	v = keyWait(e, scr, 'M')
 	if v.Battle == nil || !v.Battle.CursorOn {
 		t.Fatal("aiming: no cursor")
 	}
@@ -392,7 +392,7 @@ func nextToFoe(t *testing.T, e *engine.Engine, scr *ega.Screen, v engine.View) e
 // TestAimOutOfReach: with no foe in reach of the weapon Aim is refused.
 func TestAimOutOfReach(t *testing.T) {
 	e, scr, _ := battleView(t)
-	v := keyWait(e, scr, 'A')
+	v := keyWait(e, scr, 'M')
 	if v.Menu == nil || !slices.ContainsFunc(v.Menu.Items, func(m engine.MenuItem) bool { return m.Text == "Done" }) {
 		t.Errorf("aiming with every foe two squares off a melee fighter")
 	}

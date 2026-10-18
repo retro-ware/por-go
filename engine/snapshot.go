@@ -290,7 +290,11 @@ func (e *Engine) menuShown(prompt, menu string, start, end []int) *Menu {
 	m := &Menu{Prompt: strings.TrimSpace(prompt)}
 	for j := 1; j < len(start); j++ {
 		if a, b := itemSpan(menu, start, end, j); a > 0 {
-			m.Items = append(m.Items, MenuItem{Text: menu[a-1 : b], Key: menu[start[j]-1]})
+			text := make([]byte, 0, b-a+1)
+			for i := a; i <= b; i++ {
+				text = append(text, menuGlyph(menu, i)) // "aiM" reads "Aim"
+			}
+			m.Items = append(m.Items, MenuItem{Text: string(text), Key: menu[start[j]-1]})
 		}
 	}
 	if len(m.Items) == 0 {

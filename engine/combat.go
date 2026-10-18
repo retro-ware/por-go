@@ -234,11 +234,7 @@ func (e *Engine) playerTurn(c *Character) {
 func (e *Engine) combatMenu(c *Character) byte {
 	e.affectGroup(c, 0xF)
 	ci := c.Combat
-	m := ""
-	if ci.Moves > 0 {
-		m += "Move "
-	}
-	m += "View Aim "
+	m := "View aiM " // extra: no Move (a click on the map walks), Aim on M: W A S D stay free
 	if e.combatItems(c) {
 		m += "Items " // extra: Use renamed, and only with something to use or throw
 	}
@@ -255,7 +251,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 	if int8(c.Levels[clsCleric]) > 0 && ci.TurnUsed == 0 && e.weakestUnturned(c, &undead) { // extra: only with undead to turn
 		m += "Turn "
 	}
-	m += "Quick Done" // extra: L still opens the Log
+	m += "Quick dOne" // extra: L still opens the Log; Done on O
 	// extra: click a foe to aim at it (and attack it if it can be), a square in reach to walk there
 	reach := map[[2]int][]int{}
 	if ci.Moves > 0 {
@@ -288,7 +284,7 @@ func (e *Engine) combatMenu(c *Character) byte {
 				return 'M'
 			}
 			e.ext.autoAim, e.ext.autoJumped = t, false
-			return 'A'
+			return 'M' // aiM, with the foe set
 		}
 		if p, ok := reach[[2]int{sx, sy}]; ok {
 			e.ext.autoPath = append([]int(nil), p...)
@@ -366,6 +362,11 @@ func (e *Engine) combatMenu(c *Character) byte {
 		e.ext.hiddenKeys = ""
 		if extra && !(key == 0x10 || key == 0x13 || key == '-' || key == '2') { // set cs:0626
 			key = 0
+		}
+		if key == 'M' && e.ext.autoPath == nil { // extra: aiM (a click on the map walks with autoPath set)
+			key = 'A'
+		} else if key == 'O' { // extra: dOne
+			key = 'D'
 		}
 		switch key { // set cs:0646
 		case 0x10, 0x13, ' ', '-', '2', 'A', 'C', 'D', 'L', 'I', 'M', 'Q', 'T', 'V', 'G', 'W', 'B':
