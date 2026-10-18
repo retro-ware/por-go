@@ -105,6 +105,13 @@ func (e *Engine) translate(k uint16) uint16 {
 		}
 		return 0
 	}
+	if k >= KeyViewMember && k < KeyViewMember+8 { // a portrait clicked: that member's View page
+		if n := int(k - KeyViewMember); e.ext.inCommand && e.ext.modal == 0 && n < len(e.party) {
+			e.partySel = n
+			return 'V'
+		}
+		return 0
+	}
 	if k >= KeySquare && k < KeyMouse { // a square clicked on a remastered map: a click on the page that lands there
 		e.snap.click = int(k-KeySquare) + 1
 		defer func() { e.snap.click = 0 }()

@@ -247,6 +247,10 @@ const KeyHover = 0xC000
 // HoverKey is the key that points at combat map square (x, y).
 func HoverKey(x, y int) uint16 { return KeyHover + uint16(y*50+x) }
 
+// KeyViewMember + n opens party member n's View page from the command bar
+// (a portrait clicked in a remastered view); elsewhere it is dropped.
+const KeyViewMember = 0xC600
+
 // unitDrawn / unitHidden track what the page shows of combatant i.
 func (e *Engine) unitDrawn(i int, pose byte) {
 	if e.snap.poses == nil {

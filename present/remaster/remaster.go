@@ -38,6 +38,7 @@ type Presenter struct {
 	last      time.Time                   // when the animation last advanced
 	ticks     float64                     // animation time not yet run, in 1/60 s ticks
 	party     party.Party                 // View.Party as Blobber's cards show it
+	cards     []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
 	faces     map[image.Image]image.Image // card art cropped from each paper-doll head
 	inside    bool                        // the view has the inside ceiling
 	active    bool                        // the last frame was drawn remastered
@@ -90,8 +91,8 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	}
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture) {
-		p.shown, p.active, p.menu = "", false, false // back from elsewhere: no tween from where the view was
-		p.asked = ""                                 // and a question still waiting on return (View from the loot menu) pops up again
+		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
+		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		return p.Classic.Draw(dst, scr, note)
 	}
 	p.active = true
@@ -117,6 +118,10 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	p.view.Draw(dst)
 	p.drawMap(dst, v.Map)
 	p.drawParty(dst, v.Party)
+	p.cards = p.cards[:0]
+	for i := range v.Party {
+		p.cards = append(p.cards, ui.CardAt(i, len(v.Party)))
+	}
 	k := scale(dst)
 	b := dst.Bounds()
 	if n := len(v.Party); n > 0 { // pop-ups go between the card columns
@@ -234,6 +239,11 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 // button, or an item of the vertical menu.
 func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 	if !p.fight {
+		for i, r := range p.cards { // a portrait: that member's View page (taken on the command bar only)
+			if image.Pt(x, y).In(r) && p.active {
+				return []uint16{engine.KeyViewMember + uint16(i)}, true
+			}
+		}
 		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {
 			return nil, false
 		}

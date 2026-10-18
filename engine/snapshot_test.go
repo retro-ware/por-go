@@ -368,3 +368,36 @@ func TestAimHover(t *testing.T) {
 	}
 	t.Errorf("pointing at the other foes never moved the aim from %v", from)
 }
+
+// TestViewMember: a portrait click (KeyViewMember) on the command bar opens
+// that member's View page.
+func TestViewMember(t *testing.T) {
+	if _, err := os.Stat("../TITLE.DAX"); err != nil {
+		t.Skip("no game files")
+	}
+	scr := ega.New()
+	e, err := engine.New("..", scr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.Init()
+	go e.Play()
+	i := e.SlotIndex("GAME A")
+	if i < 0 {
+		t.Skip("no GAME A save")
+	}
+	keyWait(e, scr, 'L')
+	for ; i > 0; i-- {
+		keyWait(e, scr, 0x5000)
+	}
+	v := keyWait(e, scr, 13)
+	if len(v.Party) < 2 {
+		t.Skip("party of one")
+	}
+	if v = keyWait(e, scr, engine.KeyViewMember+1); v.MainFrame {
+		t.Fatal("portrait click: still on the main screen")
+	}
+	if !v.Party[1].Selected {
+		t.Errorf("portrait click: member 2 not the one viewed")
+	}
+}
