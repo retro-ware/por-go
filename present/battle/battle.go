@@ -153,7 +153,7 @@ func hint(b *engine.Battle, sq image.Point) string {
 		if slices.Contains(b.Targets, u.ID) {
 			s = "Attack " + s
 			if u.Hit > 0 {
-				s += "  " + strconv.Itoa(u.Hit) + "% to hit"
+				s += "  CtH " + strconv.Itoa(u.Hit)
 			}
 		}
 		return s
@@ -336,17 +336,13 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
 		p.hint = hint(b, image.Pt(mx, my))
-		free := false
 		for _, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike
 			tint := pathGlow
 			if s.Free {
-				tint, free = freeGlow, true
+				tint = freeGlow
 			}
 			o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: tint, Model: place(float32(s.X)+.5, 0.004, float32(s.Y)+.5, 0, .5, .005, .5)}
 			dst.DrawMesh(p.box, p.white, vp, &o)
-		}
-		if free {
-			p.hint += "  - leaving a red square gives a foe a free attack"
 		}
 	}
 	pulse := float32(0.75 + 0.25*math.Sin(p.clock*5))

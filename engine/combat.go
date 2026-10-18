@@ -959,19 +959,34 @@ func (e *Engine) combatUseHook() {
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
 }
 
-// pathNextTo (extra) is the shortest walk in reach that brings c, armed
-// for melee, next to foe t (nil: t is in reach of its weapon already, c
-// shoots, or no square next to t can be reached).
+// pathNextTo (extra) is the safest walk in reach that brings c, armed for
+// melee, next to foe t: fewest free attacks on the way, then fewest foes
+// next to where it ends, then fewest steps (nil: t is in reach of its
+// weapon already, c shoots, or no square next to t can be reached).
 func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
 	if e.rangedWeapon(c) || e.rangeTo(c, t) <= 1 {
 		return nil
 	}
 	tx, ty, n := e.combatX(t), e.combatY(t), e.combatSize(t)
+	idx := e.combatIndex(c)
+	ox, oy, near, targets := e.cpos[idx].x, e.cpos[idx].y, slices.Clone(e.near), e.targets
+	defer func() { e.cpos[idx].x, e.cpos[idx].y, e.near, e.targets = ox, oy, near, targets }()
 	var best []int
+	var bestKey [5]int
 	found := false
 	for sq, p := range reach {
-		if sq[0] >= tx-1 && sq[0] <= tx+n && sq[1] >= ty-1 && sq[1] <= ty+n && (!found || len(p) < len(best)) {
-			best, found = p, true
+		if sq[0] < tx-1 || sq[0] > tx+n || sq[1] < ty-1 || sq[1] > ty+n {
+			continue
+		}
+		free := 0
+		for _, s := range e.walkSteps(c, p) {
+			free += b2i(s.Free)
+		}
+		e.cpos[idx].x, e.cpos[idx].y = byte(sq[0]), byte(sq[1])
+		key := [5]int{free, e.nearEnemies(c, 1), len(p), sq[1], sq[0]} // the square last: map order is random
+		e.cpos[idx].x, e.cpos[idx].y = ox, oy
+		if !found || slices.Compare(key[:], bestKey[:]) < 0 {
+			best, bestKey, found = p, key, true
 		}
 	}
 	if !found {
