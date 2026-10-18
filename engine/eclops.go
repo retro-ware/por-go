@@ -12,27 +12,27 @@ import (
 
 // eclRun holds the ovr04 globals that are not part of the ovr08 interpreter.
 type eclRun struct {
-	restoreSel     bool       // DS:4430: put DS:4436 back as the selected character
-	savedSel       *Character // DS:4436 (a pointer: survives the list changing)
-	scriptLoad     byte       // DS:4431
-	needFrame      byte       // DS:4432: main screen not drawn yet
-	walldefSet     byte       // DS:4433
-	geoSet         byte       // DS:4434
-	monCount       byte       // DS:4435: monsters appended to the party list
-	areaChanged    bool       // DS:442F
-	quit           bool       // DS:49FF
-	searchSave     byte       // DS:84DD
-	textInBox      byte       // DS:84DE
-	textCleared    byte       // DS:84E4
-	monstersLoaded byte       // monsters were loaded; DS:84E7
-	duelMode       byte       // DS:84D4
-	sprite         int        // DS:6F81
-	closeup        int        // DS:6F82
-	treasure       []*Item    // DS:6810 list
-	doorTry        [3]byte    // DS:6DDE..6DE0: bash, pick, knock still allowed
-	effTick        [0x49]byte // DS:471D: member i has timed effects to run down
-	itemType       byte       // TREASURE: last random item type
-	lineHasText    byte       // DS:84DF
+	restoreSel     bool                    // DS:4430: put DS:4436 back as the selected character
+	savedSel       *Character              // DS:4436 (a pointer: survives the list changing)
+	scriptLoad     byte                    // DS:4431
+	needFrame      byte                    // DS:4432: main screen not drawn yet
+	walldefSet     byte                    // DS:4433
+	geoSet         byte                    // DS:4434
+	monCount       byte                    // DS:4435: monsters appended to the party list
+	areaChanged    bool                    // DS:442F
+	quit           bool                    // DS:49FF
+	searchSave     byte                    // DS:84DD
+	textInBox      byte                    // DS:84DE
+	textCleared    byte                    // DS:84E4
+	monstersLoaded byte                    // monsters were loaded; DS:84E7
+	duelMode       byte                    // DS:84D4
+	sprite         int                     // DS:6F81
+	closeup        int                     // DS:6F82
+	treasure       []*Item                 // DS:6810 list
+	doorTry        [3]byte                 // DS:6DDE..6DE0: bash, pick, knock still allowed
+	effTick        [maxCombatants + 1]byte // DS:471D: member i has timed effects to run down
+	itemType       byte                    // TREASURE: last random item type
+	lineHasText    byte                    // DS:84DF
 }
 
 type eclOp func(e *Engine)

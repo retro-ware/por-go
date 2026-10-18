@@ -11,10 +11,10 @@ import (
 
 // campState holds the ovr16/ovr21 globals.
 type campState struct {
-	rest     [7]int     // DS:6DC2: rest time left, clock units (DS:6DC4 mins, 6DC6 tens, 6DC8 hours, 6DCA days)
-	heal     int        // DS:6DD8: five-minute steps toward the daily healing
-	study    [0x49]byte // DS:6DCF: five-minute steps until member i's next spell is learned
-	interval int        // DS:49FB: steps since the last encounter roll
+	rest     [7]int                  // DS:6DC2: rest time left, clock units (DS:6DC4 mins, 6DC6 tens, 6DC8 hours, 6DCA days)
+	heal     int                     // DS:6DD8: five-minute steps toward the daily healing
+	study    [maxCombatants + 1]byte // DS:6DCF: five-minute steps until member i's next spell is learned
+	interval int                     // DS:49FB: steps since the last encounter roll
 }
 
 func (e *Engine) spellLevel(sp byte) byte { return spellTable[sp&0x7F][1] }

@@ -3,6 +3,8 @@ package engine
 // Rules: affects, to-hit rolls, saving throws, damage and healing, ported
 // from ovr25 and the START helpers it leans on (00BA:16EC ... 2637).
 
+import "slices"
+
 // CombatInfo is the 0x16-byte block at char+0x108 (allocated by ovr11).
 type CombatInfo struct {
 	Spell      byte       // +0x00 spell being cast (lost when hit)
@@ -347,16 +349,11 @@ func (e *Engine) SetStrength(c *Character, str, str00 byte) (byte, bool) {
 	if str < cur || str == 18 && str00 < cur00 {
 		return strValue(str, str00) + 0x80, false
 	}
-	var keep *Affect
-	for _, a := range c.Affects {
-		if keep != nil {
-			break
-		}
-		if (a.Type == affEnlarged || a.Type == affStrength) && a.Data < 0x80 {
-			keep = a
-		}
-	}
-	if keep != nil {
+	i := slices.IndexFunc(c.Affects, func(a *Affect) bool {
+		return (a.Type == affEnlarged || a.Type == affStrength) && a.Data < 0x80
+	})
+	if i >= 0 {
+		keep := c.Affects[i]
 		v := strValue(cur, cur00)
 		cur, cur00 = strDecode(keep)
 		keep.Data = v + 0x80

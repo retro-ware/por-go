@@ -493,8 +493,8 @@ type cloud struct {
 // placeCombatants = ovr11:19F5.
 func (e *Engine) placeCombatants() {
 	e.countSides()
-	e.cpos = [0x49]combatPos{}
-	e.combatants = make([]*Character, 0x48)
+	e.cpos = [maxCombatants + 1]combatPos{}
+	e.combatants = make([]*Character, maxCombatants)
 	e.ncomb = 0
 	e.combatRedrawMap()
 	p := &e.place
