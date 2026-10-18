@@ -289,52 +289,87 @@ func (p *Player) stopAll() {
 	p.wb(0x667d5, 0)
 }
 
-// musTick = 0x638c2. Labels are the original addresses.
+// musTick = 0x638c2: a song request at 0x638c0 (0 stop, 1-7 start), else
+// one tick of the four voices; 0x64048 clears the request.
 func (p *Player) musTick() {
+	for p.musStep() {
+	}
+	p.wb(0x638c0, 0xff)
+}
+
+// musStep runs musTick once; true when a song command (0xfe, 0xfc) changed
+// the request and the tick starts over (the original's branch to 0x638c2).
+func (p *Player) musStep() bool {
 	d, a := &p.d, &p.a
-	var save, sa [8]uint32
-	var v byte
-top:
 	p.movem(0x666c8)
 	setB(&d[0], p.rb(0x638c0))
 	if byte(d[0]) == 0 {
 		p.wb(0x667d5, 0)
 		p.stopVol()
-		goto L64048
+		return false
 	}
 	d[1] = 7
-	if byte(d[1]) < byte(d[0]) {
-		goto L639ac
+	if byte(d[1]) >= byte(d[0]) { // start song d0
+		d[0]--
+		setW(&d[0], uint16(d[0])<<4)
+		a[0] = 0x6697c + d[0]
+		for i := uint32(0); i < 16; i++ {
+			p.wb(0x6682c+i, p.rb(a[0]+i))
+		}
+		d[1] = 3
+		for {
+			a[0] = 0x66750 + d[1]
+			p.wb(a[0]+0x14, 0)
+			p.wb(a[0]+0x18, 0)
+			p.wb(a[0]+0xc, 0)
+			p.seq()
+			setW(&d[1], uint16(d[1])-1)
+			if uint16(d[1]) == 0xffff {
+				break
+			}
+		}
+		p.stopAll()
+		p.wb(0x667d5, 1)
+		p.wb(0x667e0, 0xf)
+		return false
 	}
-	d[0]--
-	setW(&d[0], uint16(d[0])<<4)
-	a[0] = 0x6697c + d[0]
-	for i := uint32(0); i < 16; i++ {
-		p.wb(0x6682c+i, p.rb(a[0]+i))
+	if p.rb(0x667d5) == 0 { // 0x639ac
+		return false
 	}
-	d[1] = 3
-	for {
-		a[0] = 0x66750 + d[1]
-		p.wb(a[0]+0x14, 0)
-		p.wb(a[0]+0x18, 0)
-		p.wb(a[0]+0xc, 0)
-		p.seq()
-		setW(&d[1], uint16(d[1])-1)
-		if uint16(d[1]) == 0xffff {
+	p.wb(0x667d4, 3)
+	for { // voices 3..0
+		if p.voiceTick() {
+			return true
+		}
+		p.volEnv()
+		v := p.rb(0x667d4) - 1
+		p.wb(0x667d4, v)
+		if int8(v) < 0 {
 			break
 		}
 	}
-	p.stopAll()
-	p.wb(0x667d5, 1)
-	p.wb(0x667e0, 0xf)
-	goto L64048
-
-L639ac:
-	if p.rb(0x667d5) == 0 {
-		goto L64048
+	p.musOut()
+	p.movem(0x666c8)
+	for c := uint32(0); c < 4; c++ {
+		p.hww(0xdff0a4+0x10*(3-c), p.rw(0x6680c+2*(3-c))>>1)
+		base := uint32(0x668b8)
+		if p.rb(0x667c8+3-c) != 0 {
+			base = 0x667fc
+		}
+		p.wl(0xdff0a0+0x10*(3-c), uint32(p.rw(0x66814+2*(3-c)))+p.rl(base+4*(3-c)))
 	}
-	p.wb(0x667d4, 3)
-L639be:
+	v := p.rb(0x667d7) - 1
+	p.wb(0x667d7, v)
+	if int8(v) < 0 {
+		p.wb(0x667d7, p.rb(0x667d6))
+	}
+	return false
+}
+
+// voiceTick = 0x639be: voice 0x667d4 counts its note down, reads the next
+// one when it ends, and runs its slide or effect; true as musStep.
+func (p *Player) voiceTick() bool {
+	d, a := &p.d, &p.a
 	a[0] = 0x66750
 	setB(&d[1], p.rb(0x667d4))
 	d[2] = d[1]
@@ -347,32 +382,37 @@ L639be:
 	p.wb(0x667dc, p.rb(a[0]))
 	if p.rb(0x667d7) != 0 {
 		if p.rb(a[0]+0x34) == 0 {
-			goto L63cb8
+			p.noteFx()
+			return false
 		}
 		p.wb(a[0]+0x34, 0)
 		p.wb(a[0]+8, p.rb(a[0]+8)-2)
-		goto L63a34
+		p.setPer()
+		return false
 	}
 	p.wb(a[0]+0x14, p.rb(a[0]+0x14)-1)
 	if p.rb(a[0]+0x70) == 0 && p.rb(a[0]+0x14) == 0 {
 		bset(p, 0x667e0, d[1])
 	} else if int8(p.rb(a[0]+0x14)) < 0 {
-		goto L63a58
+		return p.nextNote()
 	}
-	if p.rb(a[0]+0x2c) != 0 {
+	switch {
+	case p.rb(a[0]+0x2c) != 0:
 		p.wb(a[0]+8, p.rb(a[0]+8)-1)
-		goto L63a34
-	}
-	if p.rb(a[0]+0x30) != 0 {
+		p.setPer()
+	case p.rb(a[0]+0x30) != 0:
 		p.wb(a[0]+8, p.rb(a[0]+8)+1)
-		goto L63a34
+		p.setPer()
+	default:
+		p.noteFx()
 	}
-	goto L63cb8
-L63a34:
-	p.setPer()
-	goto L63f0e
+	return false
+}
 
-L63a58: // next note
+// nextNote = 0x63a58: read the voice's pattern up to its next note (0xff
+// ends the pattern: seq picks the next) and play it; true as musStep.
+func (p *Player) nextNote() bool {
+	d, a := &p.d, &p.a
 	if p.rb(a[0]+0x18) != 2 {
 		p.wb(a[0]+0x18, 0)
 		p.wb(a[0]+0x1c, 0)
@@ -383,7 +423,31 @@ L63a58: // next note
 	p.wb(a[0]+0x30, 0)
 	p.wb(a[0]+0x6c, 0)
 	p.wl(0x66840, p.rl(0x6681c+p.rl(0x6684c)))
-L63a92:
+	next := func() { // the byte after a command
+		setB(&d[0], p.rb(a[3]))
+		a[3]++
+		setB(&d[4], byte(d[4])+1)
+	}
+	for {
+		done, restart := p.patternNote(next)
+		if restart {
+			return true
+		}
+		if done {
+			break
+		}
+		p.seq() // 0x63ab6: the pattern ended
+		p.wb(0x667db, 0)
+	}
+	p.playNote()
+	return false
+}
+
+// patternNote = 0x63a92: the commands before a note; done with the note in
+// d0, else the pattern ended (d0 0); restart for a song command (0xfe stop,
+// 0xfc start the next byte's song), which sets the request.
+func (p *Player) patternNote(next func()) (done, restart bool) {
+	d, a := &p.d, &p.a
 	d[4], d[0] = 0, 0
 	setB(&d[4], p.rb(0x667db))
 	p.wb(0x667db, p.rb(0x667db)+1)
@@ -394,69 +458,59 @@ L63a92:
 	switch byte(d[0]) {
 	case 0xff:
 		d[0] = 0
-		goto L63ab6
+		return false, false
 	case 0xfe:
 		p.wb(0x638c0, 0)
-		goto top
+		return false, true
 	case 0xfc:
 		p.wb(0x638c0, p.rb(a[3]))
-		goto top
+		return false, true
 	}
 	if byte(d[0]) > 0xef { // tempo
 		setB(&d[0], byte(d[0])&0xf)
 		p.wb(0x667d6, byte(d[0]))
-		setB(&d[0], p.rb(a[3]))
-		a[3]++
-		setB(&d[4], byte(d[4])+1)
+		next()
 	}
 	if byte(d[0]) > 0xdf { // instrument
 		setB(&d[0], (byte(d[0])&0xf)<<3)
 		p.wb(a[0]+0x4c, byte(d[0]))
-		setB(&d[0], p.rb(a[3]))
-		a[3]++
-		setB(&d[4], byte(d[4])+1)
+		next()
 		if byte(d[0]) == 0xff {
 			d[0] = 0
-			goto L63ab6
+			return false, false
 		}
 	}
 	if byte(d[0]) > 0xbf { // envelope
 		setB(&d[0], (byte(d[0])&0x1f)<<3)
 		p.wb(a[0]+0x50, byte(d[0]))
-		setB(&d[0], p.rb(a[3]))
-		a[3]++
-		setB(&d[4], byte(d[4])+1)
+		next()
 		if byte(d[0]) == 0xff {
 			d[0] = 0
-			goto L63ab6
+			return false, false
 		}
 	}
 	if byte(d[0]) > 0x7f { // duration
 		setB(&d[0], byte(d[0])&0x3f)
 		p.wb(a[0]+0x10, byte(d[0]))
-		setB(&d[0], p.rb(a[3]))
-		a[3]++
-		setB(&d[4], byte(d[4])+1)
+		next()
 	}
 	if byte(d[0]) <= 0x5f {
-		goto L63bf8
+		return true, false
 	}
 	switch byte(d[0]) {
 	case 0x7f, 0x7e: // slide
 		p.wb(a[0]+0x2c, b2u(byte(d[0]) == 0x7f))
 		p.wb(a[0]+0x30, b2u(byte(d[0]) == 0x7e))
 		p.wb(a[0]+0x18, 1)
-		goto L63b76
+		next()
 	case 0x7d, 0x7c: // arpeggio
 		setB(&d[0], 0x7e-byte(d[0]))
 		p.wb(a[0]+0x18, byte(d[0]))
-		setB(&d[0], p.rb(a[3]))
-		a[3]++
-		setB(&d[4], byte(d[4])+1)
+		next()
 		p.wb(a[0]+0x1c, byte(d[0]))
 		p.wb(0x667da, byte(d[0]))
 		p.arp()
-		goto L63b76
+		next()
 	case 0x7b: // portamento
 		p.wb(a[0]+0x1c, 0)
 		p.wb(a[0]+0x18, 1)
@@ -467,25 +521,25 @@ L63a92:
 		p.wb(a[0]+0x28, p.rb(a[3]))
 		a[3]++
 		setB(&d[4], byte(d[4])+2)
-		goto L63b76
+		next()
 	case 0x7a:
 		p.wb(a[0]+0x44, p.rb(a[3]))
 		a[3]++
 		setB(&d[0], p.rb(a[3]))
 		d[4] += 2
 	}
-	goto L63bf8
-L63b76:
-	setB(&d[0], p.rb(a[3]))
-	a[3]++
-	setB(&d[4], byte(d[4])+1)
-L63bf8: // play the note
+	return true, false
+}
+
+// playNote = 0x63bf8: key the voice on with the note in d0.
+func (p *Player) playNote() {
+	d, a := &p.d, &p.a
 	bclr(p, 0x667e0, d[1])
 	setB(&d[5], p.rb(a[0]+0x64))
 	d[5] &= 0xff
 	p.hww(0xdff096, uint16(d[5]))
 	p.wb(0x667db, byte(d[4]))
-	save, sa = p.d, p.a
+	save, sa := p.d, p.a
 	p.instr()
 	p.env()
 	p.d, p.a = save, sa
@@ -508,28 +562,31 @@ L63bf8: // play the note
 	p.wb(a[0]+0x14, p.rb(a[0]+0x10))
 	p.wb(a[0]+0x48, p.rb(a[0]+0x44))
 	p.wb(a[0]+0x38, p.rb(a[0]+4)+1)
-	goto L63f0e
+}
 
-L63ab6:
-	p.seq()
-	p.wb(0x667db, 0)
-	goto L63a92
+// noteFx = 0x63cb8: a sounding note's arpeggio, portamento or vibrato.
+func (p *Player) noteFx() {
+	a := &p.a
+	switch {
+	case p.rb(a[0]+8) == 0:
+	case p.rb(a[0]+0x18) == 0 && p.rb(a[0]+0x68) != 0:
+		p.vibrato()
+	default:
+		if p.rb(a[0]+0x18) == 0 {
+			p.wb(a[0]+0x80, p.rb(a[0]+0x4e))
+		}
+		if p.rb(a[0]+0x1c) != 0 {
+			p.arpStep()
+		} else {
+			p.portaStep()
+		}
+	}
+}
 
-L63cb8:
-	if p.rb(a[0]+8) == 0 {
-		goto L63f0e
-	}
-	if p.rb(a[0]+0x18) != 0 {
-		goto L63dfa
-	}
-	if p.rb(a[0]+0x68) != 0 {
-		goto L63cd8
-	}
-	p.wb(a[0]+0x80, p.rb(a[0]+0x4e))
-	goto L63dfa
-
-L63cd8: // vibrato
-	save, sa = p.d, p.a
+// vibrato = 0x63cd8.
+func (p *Player) vibrato() {
+	d, a := &p.d, &p.a
+	save, sa := p.d, p.a
 	setB(&d[0], p.rb(a[0]+0x68))
 	p.wb(0x667d9, byte(d[0])&0xf)
 	setB(&d[0], byte(d[0])>>4)
@@ -547,25 +604,26 @@ L63cd8: // vibrato
 		}
 		p.ww(0x66844, p.rw(0x66844)>>1|1)
 	}
+	step := true
 	if int8(p.rb(a[0]+0x3c)) < 0 {
 		p.wb(a[0]+0x40, p.rb(a[0]+0x40)-1)
-		if p.rb(a[0]+0x40) != 0 {
-			goto L63d6c
-		}
-		v = p.rb(a[0]+0x3c) + 1
-		p.wb(a[0]+0x3c, v)
-		if int8(v) >= 0 {
-			goto L63d6c
+		if p.rb(a[0]+0x40) == 0 {
+			v := p.rb(a[0]+0x3c) + 1
+			p.wb(a[0]+0x3c, v)
+			step = int8(v) < 0
+		} else {
+			step = false
 		}
 	}
-	p.wb(a[0]+0x40, p.rb(a[0]+0x40)+1)
-	setB(&d[0], p.rb(a[0]+0x40))
-	d[0] &= 0xff
-	if byte(d[0]) > p.rb(0x667d8) {
-		p.wb(a[0]+0x3c, p.rb(a[0]+0x3c)-1)
+	if step {
+		p.wb(a[0]+0x40, p.rb(a[0]+0x40)+1)
+		setB(&d[0], p.rb(a[0]+0x40))
+		d[0] &= 0xff
+		if byte(d[0]) > p.rb(0x667d8) {
+			p.wb(a[0]+0x3c, p.rb(a[0]+0x3c)-1)
+		}
 	}
-L63d6c:
-	if p.rb(a[0]+0x48) != 0 {
+	if p.rb(a[0]+0x48) != 0 { // 0x63d6c
 		p.wb(a[0]+0x48, p.rb(a[0]+0x48)-1)
 	} else {
 		p.ww(0x66848, p.rw(0x667e2+p.rl(0x66850)))
@@ -587,13 +645,12 @@ L63d6c:
 		p.ww(0x66748+p.rl(0x66850), uint16(d[0]))
 	}
 	p.d, p.a = save, sa
-	goto L63f0e
+}
 
-L63dfa: // arpeggio
-	if p.rb(a[0]+0x1c) == 0 {
-		goto L63e5a
-	}
-	save, sa = p.d, p.a
+// arpStep = 0x63dfa: the next note of the arpeggio list.
+func (p *Player) arpStep() {
+	d, a := &p.d, &p.a
+	save, sa := p.d, p.a
 	for {
 		setB(&d[4], p.rb(a[0]+0x38))
 		d[4] &= 0xff
@@ -609,11 +666,14 @@ L63dfa: // arpeggio
 	p.ww(0x66748+p.rl(0x66850), uint16(d[0]))
 	p.wb(a[0]+0x38, p.rb(a[0]+0x38)+1)
 	p.d, p.a = save, sa
-	goto L63f0e
+}
 
-L63e5a: // portamento
+// portaStep = 0x63e5a: slide toward the target note inside its time
+// window, then vibrato when the voice has one (0x63f02).
+func (p *Player) portaStep() {
+	d, a := &p.d, &p.a
 	if p.rb(a[0]+0x24) == 0 {
-		goto L63f0e
+		return
 	}
 	p.wb(0x640f5, p.rb(a[0]+0x24)) // self-modified immediates
 	setB(&d[0], p.rb(a[0]+0x28)&0xf)
@@ -621,64 +681,65 @@ L63e5a: // portamento
 	p.wb(0x6417f, byte(d[0]))
 	setB(&d[0], p.rb(a[0]+0x28)>>4)
 	setB(&d[0], byte(d[0])+p.rb(a[0]+0x14))
-	if int8(d[0]) > int8(p.rb(a[0]+0x10)) {
-		goto L63f02
+	if int8(d[0]) <= int8(p.rb(a[0]+0x10)) {
+		setB(&d[0], byte(d[0])+p.rb(0x63e93))
+		if byte(d[0]) <= p.rb(a[0]+0x10) {
+			p.ww(0x667e2+p.rl(0x66850), p.rw(0x667ea+p.rl(0x66850)))
+		} else {
+			setB(&d[5], p.rb(a[0]+8))
+			save, sa := p.d, p.a
+			p.porta()
+			p.d, p.a = save, sa
+			a[1] = 0x667e2 + p.rl(0x66850)
+			setW(&d[0], p.rw(a[1]))
+			if p.rb(0x667de) != 0 {
+				setW(&d[0], uint16(d[0])-p.rw(0x667f2))
+			} else {
+				setW(&d[0], uint16(d[0])+p.rw(0x667f2))
+			}
+			p.ww(a[1], uint16(d[0]))
+			p.ww(0x66748+p.rl(0x66850), p.rw(a[1]))
+		}
 	}
-	setB(&d[0], byte(d[0])+p.rb(0x63e93))
-	if byte(d[0]) <= p.rb(a[0]+0x10) {
-		p.ww(0x667e2+p.rl(0x66850), p.rw(0x667ea+p.rl(0x66850)))
-		goto L63f02
-	}
-	setB(&d[5], p.rb(a[0]+8))
-	save, sa = p.d, p.a
-	p.porta()
-	p.d, p.a = save, sa
-	a[1] = 0x667e2 + p.rl(0x66850)
-	setW(&d[0], p.rw(a[1]))
-	if p.rb(0x667de) != 0 {
-		setW(&d[0], uint16(d[0])-p.rw(0x667f2))
-	} else {
-		setW(&d[0], uint16(d[0])+p.rw(0x667f2))
-	}
-	p.ww(a[1], uint16(d[0]))
-	p.ww(0x66748+p.rl(0x66850), p.rw(a[1]))
-L63f02:
 	if p.rb(a[0]+0x80) != 0 {
-		goto L63cd8
+		p.vibrato()
 	}
+}
 
-L63f0e: // volume envelope
+// volEnv = 0x63f0e: the voice's volume envelope (attack, then release
+// when the note ends).
+func (p *Player) volEnv() {
+	d, a := &p.d, &p.a
 	d[4], d[5], d[6] = 0, 0, 0
 	if p.rb(a[0]+0x14) == 0 {
-		goto L63f9c
+		return
 	}
-	if p.rb(a[0]+0x6c) != 0 {
-		goto L63f6e
+	release := p.rb(a[0]+0x6c) != 0
+	if !release {
+		setB(&d[6], p.rb(a[0]+0x14))
+		if p.rb(a[0]+0x70) == 0 {
+			p.wb(a[0]+0x6c, 1)
+			return
+		}
+		setB(&d[4], p.rb(a[0]+0x70))
+		if byte(d[4]) == 0xff {
+			return
+		}
+		setB(&d[5], p.rb(a[0]+0x10))
+		divu(&d[5], uint16(d[4]))
+		setB(&d[6], byte(d[6])-byte(d[5]))
+		release = byte(d[6]) == 0
 	}
-	setB(&d[6], p.rb(a[0]+0x14))
-	if p.rb(a[0]+0x70) == 0 {
-		p.wb(a[0]+0x6c, 1)
-		goto L63f9c
+	if !release {
+		setB(&d[0], p.rb(a[0]+0x60))
+		setB(&d[4], p.rb(a[0]+0x54))
+		if byte(d[4]) != byte(d[0]) {
+			setB(&d[0], byte(d[0])+p.rb(a[0]+0x58))
+			p.wb(a[0]+0x60, byte(d[0]))
+		}
+		return
 	}
-	setB(&d[4], p.rb(a[0]+0x70))
-	if byte(d[4]) == 0xff {
-		goto L63f9c
-	}
-	setB(&d[5], p.rb(a[0]+0x10))
-	divu(&d[5], uint16(d[4]))
-	setB(&d[6], byte(d[6])-byte(d[5]))
-	if byte(d[6]) == 0 {
-		goto L63f6e
-	}
-	setB(&d[0], p.rb(a[0]+0x60))
-	setB(&d[4], p.rb(a[0]+0x54))
-	if byte(d[4]) != byte(d[0]) {
-		setB(&d[0], byte(d[0])+p.rb(a[0]+0x58))
-		p.wb(a[0]+0x60, byte(d[0]))
-	}
-	goto L63f9c
-L63f6e:
-	p.wb(a[0]+0x6c, 1)
+	p.wb(a[0]+0x6c, 1) // 0x63f6e
 	d[0] = uint32(p.rb(a[0] + 0x60))
 	setB(&d[4], p.rb(a[0]+0x5c))
 	setB(&d[0], byte(d[0])-byte(d[4]))
@@ -688,29 +749,6 @@ L63f6e:
 		p.wb(a[0]+0x60, 0)
 		bset(p, 0x667e0, d[1])
 	}
-L63f9c:
-	v = p.rb(0x667d4) - 1
-	p.wb(0x667d4, v)
-	if int8(v) >= 0 {
-		goto L639be
-	}
-	p.musOut()
-	p.movem(0x666c8)
-	for c := uint32(0); c < 4; c++ {
-		p.hww(0xdff0a4+0x10*(3-c), p.rw(0x6680c+2*(3-c))>>1)
-		base := uint32(0x668b8)
-		if p.rb(0x667c8+3-c) != 0 {
-			base = 0x667fc
-		}
-		p.wl(0xdff0a0+0x10*(3-c), uint32(p.rw(0x66814+2*(3-c)))+p.rl(base+4*(3-c)))
-	}
-	v = p.rb(0x667d7) - 1
-	p.wb(0x667d7, v)
-	if int8(v) < 0 {
-		p.wb(0x667d7, p.rb(0x667d6))
-	}
-L64048:
-	p.wb(0x638c0, 0xff)
 }
 
 func b2u(b bool) byte {
