@@ -664,7 +664,7 @@ func (e *Engine) affectList(c *Character) []string {
 		t := a.Type
 		name, known := "", true
 		if listedAffect(t) {
-			for s := 1; s <= 0x38 && name == ""; s++ {
+			for s := 1; s <= lastSpell && name == ""; s++ {
 				if affectType(spellTable[s][10]) == t {
 					name = e.spellName(s)
 				}

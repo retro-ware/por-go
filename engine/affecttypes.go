@@ -68,6 +68,8 @@ const (
 	affRegenerating          affectType = 0x3B
 	affFireResistance        affectType = 0x3D
 	affRegenerate            affectType = 0x3E
+	affResistNormalWeapons   affectType = 0x3C // CotAB name
+	affMinorGlobe            affectType = 0x3F // CotAB minor_globe_of_invulnerability
 	affPoisonBite            affectType = 0x40
 	affPoisonBite4           affectType = 0x41
 	affPoisonBite2           affectType = 0x42
@@ -96,6 +98,7 @@ const (
 	affDisplaced             affectType = 0x59
 	affSaveBonusVsType0      affectType = 0x5A
 	affResistFireElectric    affectType = 0x5B
+	affUnknown5C             affectType = 0x5C // nothing adds it; unnamed in CotAB too
 	affHalveFire             affectType = 0x5D
 	affHalveVsWeaponFlags    affectType = 0x5E
 	affFallsDead             affectType = 0x5F
@@ -131,10 +134,19 @@ const (
 	affBlockMind             affectType = 0x7D
 	affGazeReflected         affectType = 0x7E
 	affReflectableGaze       affectType = 0x7F // a mirror turns the stone gaze back
-	affGiantStrengthGirdle   affectType = 0x83
-	affCursedAlignment       affectType = 0x84
-	affNeedsGiantStrength    affectType = 0x87
-	affEndsSpiritualHammer   affectType = 0x89
-	affLaidOnHands           affectType = 0x8C // CotAB paladinDailyHealCast
-	affCuredDisease          affectType = 0x8D // CotAB paladinDailyCureRefresh
+	// Markers of item powers named in the item's record (CotAB item_affect_N).
+	affItem0               affectType = 0x80
+	affItem1               affectType = 0x81
+	affItem2               affectType = 0x82
+	affItem5               affectType = 0x85
+	affItem6               affectType = 0x86
+	affItem8               affectType = 0x88
+	affItemA               affectType = 0x8A
+	affItemB               affectType = 0x8B
+	affGiantStrengthGirdle affectType = 0x83
+	affCursedAlignment     affectType = 0x84
+	affNeedsGiantStrength  affectType = 0x87
+	affEndsSpiritualHammer affectType = 0x89
+	affLaidOnHands         affectType = 0x8C // CotAB paladinDailyHealCast
+	affCuredDisease        affectType = 0x8D // CotAB paladinDailyCureRefresh
 )

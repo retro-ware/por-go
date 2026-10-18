@@ -83,10 +83,10 @@ func (e *Engine) canCast(c *Character, spell, level int) bool {
 	if int(tbl[0]) < level {
 		return false
 	}
-	if spell != 3 && tbl[1] == 0 {
+	if spell != spCureLightWounds && tbl[1] == 0 {
 		return true
 	}
-	if spell == 3 {
+	if spell == spCureLightWounds {
 		var t *Character
 		if e.friendToHeal(c, &t) {
 			return true
@@ -523,7 +523,7 @@ func (e *Engine) weaponScore(c *Character, it *Item) int {
 	if int(c.Hands)+int(t.Hands) > 3 {
 		s = 0
 	}
-	if it.Spells[2] == 0x84 && it.Spells[1]&0xF != c.Alignment {
+	if it.Spells[2] == byte(affCursedAlignment) && it.Spells[1]&0xF != c.Alignment {
 		s = 0
 	}
 	if it.Spells[1] == 0x53 {

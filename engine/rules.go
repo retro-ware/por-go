@@ -143,12 +143,12 @@ func (e *Engine) checkAffect(c *Character, typ affectType) {
 // kind of check (the group number is the caller's).
 var affectGroups = [][]affectType{
 	0x00: {affGazeReflected},
-	0x01: {0x3F, affBlink, affInvisible, affMonsterInvisible},
+	0x01: {affMinorGlobe, affBlink, affInvisible, affMonsterInvisible},
 	0x02: {affDrainOneLevel, affDrainTwoLevels, affDisease, affParalyseNotElf, affMagicDamage2d10, affAcidDamage, affHoldTarget, affRake, affHoldWeakTarget},
 	0x03: {affPoisonBite, affPoisonBite4, affPoisonBite2, affParalyse2d8, affParalyseNotElf, affParalyse1d9, affPoisonBiteMinus2, affMagicDamage2d10, affDrainOneLevel, affDrainTwoLevels, affDisease},
 	0x04: {affEnfeebled, affBonusVsRace4, affBonusByTargetRace},
-	0x05: {affMirrorImage, affProtMissiles, affAvoidDistant, affDodgeBoulders, affStartRegenerating, affHalveUnlessPlain, affHalveVsMagicWeapon, affOnlyMagicOrStrong, affHalveOrCancelUnmagic, affOnlyMagicWeapons, affHalveVsWeaponFlags, 0x3C, affOilDamage, affHolyWaterDamage},
-	0x06: {affResistFireLessPerDie, affFireResistance, affOilDamage, 0x3C, affResistFireElectric, affResistCold, affResistFire, affResist50, affResist15, affBlockFire, affHalveElectric, affHalveCold, affShield, affHalveFire, affStartRegenerating, affMirrorImage},
+	0x05: {affMirrorImage, affProtMissiles, affAvoidDistant, affDodgeBoulders, affStartRegenerating, affHalveUnlessPlain, affHalveVsMagicWeapon, affOnlyMagicOrStrong, affHalveOrCancelUnmagic, affOnlyMagicWeapons, affHalveVsWeaponFlags, affResistNormalWeapons, affOilDamage, affHolyWaterDamage},
+	0x06: {affResistFireLessPerDie, affFireResistance, affOilDamage, affResistNormalWeapons, affResistFireElectric, affResistCold, affResistFire, affResist50, affResist15, affBlockFire, affHalveElectric, affHalveCold, affShield, affHalveFire, affStartRegenerating, affMirrorImage},
 	0x07: {affSnakeCharm, affHeld, affAsleep, affHelpless},
 	0x08: {affStandUpBleeding, affFear, affFearLifted, affDisplaced, affCamouflaged, affTurnInvisible},
 	0x09: {affResist50, affResist15, affBlock90, affBlockSleepCharm, affBlockHold, affBlockCold, affBlockPoisonHold, affBlockFire, affBlock30, affBlockMind},

@@ -35,10 +35,10 @@ func TestRestoreSpells(t *testing.T) {
 func TestRelearnUsedSpells(t *testing.T) {
 	e := &Engine{}
 	c := &Character{}
-	c.Memorized[0], c.Memorized[1] = 3, 3 // two Cure Light Wounds
+	c.Memorized[0], c.Memorized[1] = spCureLightWounds, spCureLightWounds
 	e.party = []*Character{c}
-	e.forgetSpell(3)
-	if c.Memorized[0] != 0 || c.Memorized[1] != 3 {
+	e.forgetSpell(spCureLightWounds)
+	if c.Memorized[0] != 0 || c.Memorized[1] != spCureLightWounds {
 		t.Fatalf("cast: %v", c.Memorized[:2])
 	}
 	r := restoreSpells(e.ext.learned[c], c.Memorized)

@@ -619,7 +619,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 				it.Count -= e.slotShots[1]
 			}
 			if it.Count == 0 {
-				if e.throwable(a) && it.Spells[2] != 0x89 {
+				if e.throwable(a) && it.Spells[2] != byte(affEndsSpiritualHammer) {
 					cp := *it
 					n := &cp
 					e.run.treasure = append([]*Item{n}, e.run.treasure...)

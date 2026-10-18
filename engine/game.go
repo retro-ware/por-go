@@ -373,7 +373,7 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 	if wizard {
 		knock = e.partyHasSkill(5)
 	} else {
-		knock = e.findCaster(0x1F) != nil
+		knock = e.findCaster(spKnock) != nil
 	}
 	if e.run.doorTry[2] != 0 && knock {
 		menu = cut(menu+" Knock", textCols)
@@ -525,14 +525,14 @@ func (e *Engine) findCaster(spell byte) *Character {
 	return nil
 }
 
-// knock = ovr15:0648: use up a memorized Knock (spell 0x1F).
+// knock = ovr15:0648: use up a memorized Knock.
 func (e *Engine) knock() bool {
-	c := e.findCaster(0x1F)
+	c := e.findCaster(spKnock)
 	if c == nil {
 		return false
 	}
 	e.noteSpells(c)
-	c.Memorized[spellSlot(c, 0x1F)] = 0
+	c.Memorized[spellSlot(c, spKnock)] = 0
 	return true
 }
 

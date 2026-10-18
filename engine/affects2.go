@@ -136,11 +136,11 @@ func (e *Engine) setupAffectHandlers() {
 	}
 	// Affects that only mark the character (the original's empty handlers).
 	for _, t := range []affectType{affDetectMagic, affReduced, affReadMagic, affFindTraps,
-		affDetectInvisible, affFeatherFall, affRepulsed, affPoisoned, 0x3C, 0x3F, 0x5C, affReflectableGaze} {
+		affDetectInvisible, affFeatherFall, affRepulsed, affPoisoned, affResistNormalWeapons, affMinorGlobe, affUnknown5C, affReflectableGaze} {
 		affectHandlers[t] = (*Engine).noEffect
 	}
 	// Items that grant the affect named in their record (+0x3D).
-	for _, t := range []affectType{0x80, 0x81, 0x82, 0x85, 0x86, 0x88, 0x8A, 0x8B} {
+	for _, t := range []affectType{affItem0, affItem1, affItem2, affItem5, affItem6, affItem8, affItemA, affItemB} {
 		affectHandlers[t] = (*Engine).itemGrantsAffect
 	}
 }
@@ -201,7 +201,7 @@ func (e *Engine) charmGaze(c *Character, a *Affect, flag byte) {
 	e.CharMessage(c, "Gazes...", false)
 	e.hitColours(0x12)
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 4, 0x2D)
-	e.curSpell = 0xA
+	e.curSpell = spCharmPerson
 	data := byte(int(int8(c.Side))<<7 + 0xC)
 	saved := e.SavingThrow(t, saveVsSpell, 0xFE)
 	e.AddAffectMsg(t, affCharmed, 0, data, 1, 1, saved, "is charmed")
@@ -344,10 +344,10 @@ func (e *Engine) saveBonusVsType0(c *Character, a *Affect, flag byte) {
 	}
 }
 
-// resistFireElectric = ovr13:2556 (c, a, flag): fully resisted by source 0xF, fire/electric (4)
+// resistFireElectric = ovr13:2556 (c, a, flag): fully resisted by Magic Missile, fire/electric (4)
 // otherwise only drops the affect being added.
 func (e *Engine) resistFireElectric(c *Character, a *Affect, flag byte) {
-	if e.curSpell == 0xF {
+	if e.curSpell == spMagicMissile {
 		e.blockAffect(affAny)
 		e.CharMessage(c, "is unaffected", true)
 	} else if e.rv.dmgType&dmgElectric != 0 {

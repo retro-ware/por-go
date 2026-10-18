@@ -68,7 +68,7 @@ func (e *Engine) chooseSpellTarget(spell, silent, allowGround int, t *aimTarget)
 		sel.Combat.Target = t.c
 	} else if e.spellData(spell, 8) == 0 {
 		t.c = sel
-		if spell != 3 || e.friendToHeal(sel, &t.c) {
+		if spell != spCureLightWounds || e.friendToHeal(sel, &t.c) {
 			t.x, t.y = byte(e.combatX(t.c)), byte(e.combatY(t.c))
 			found = true
 		}
@@ -185,7 +185,7 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 }
 
 // castSpell = ovr14:2414 (spell, a, var quit): the selected character picks
-// (spell 0: from his memorised spells) and casts a spell. Spells with a
+// (spell 0: from their memorised spells) and casts a spell. Spells with a
 // casting time of 3 or more only begin and are cast in a later round.
 func (e *Engine) castSpell(spell, a int, quit *bool) {
 	sel := e.selected()

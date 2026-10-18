@@ -303,7 +303,7 @@ func (e *Engine) armourAtLeast(c *Character, a *Affect, flag byte) {
 		c.AC[0] = 0x39
 	}
 	e.rv.save++
-	if e.curSpell == 0xF {
+	if e.curSpell == spMagicMissile {
 		e.rv.damage = 0
 	}
 }
@@ -363,7 +363,7 @@ func (e *Engine) spiritualHammerItem(c *Character, a *Affect, flag byte) {
 		n.Words[2] = 0xF3
 		n.Plus = 1
 		n.Spells[1] = 0x17
-		n.Spells[2] = 0x89
+		n.Spells[2] = byte(affEndsSpiritualHammer)
 		e.AddItemCopy(c, n)
 		e.CharMessage(c, "Gains an item", true)
 	}

@@ -157,7 +157,7 @@ func (e *Engine) spellHold() {
 	var bonus int8 // other counts leave the local unset (0)
 	switch e.nSpellTargets {
 	case 1:
-		if e.curSpell == 0x17 {
+		if e.curSpell == spHoldPersonCl {
 			bonus = -2
 		} else {
 			bonus = -3

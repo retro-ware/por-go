@@ -364,7 +364,7 @@ func (e *Engine) lootMenu() {
 		if items {
 			if c := e.selected(); c != nil {
 				for i := 0; i <= 0x14; i++ {
-					if s := c.Memorized[i]; s == 5 || s == 0xB {
+					if s := c.Memorized[i]; s == spDetectMagicCl || s == spDetectMagicMU {
 						detect = s
 						exit = " Detect Exit"
 						break
@@ -438,7 +438,7 @@ func (e *Engine) harmfulAffect(t affectType) string {
 		return affectNames[t]
 	}
 	if listedAffect(t) {
-		for s := 1; s <= 0x38; s++ {
+		for s := 1; s <= lastSpell; s++ {
 			if affectType(spellTable[s][10]) == t && spellTable[s][7] == 0 {
 				return e.spellName(s)
 			}

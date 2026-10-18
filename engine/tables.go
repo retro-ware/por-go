@@ -626,6 +626,70 @@ var portraitBody = [16]byte{0x44, 0x01, 0x02, 0x03, 0x04, 0x07, 0x08, 0x12, 0x18
 // the four directions of a cloud's squares ([0] unused) (DS:290D).
 var cloudDirs = [5]byte{0x50, 0x08, 0x02, 0x03, 0x04}
 
+// Spell numbers, the index into spellNames, spellTable and spellFx. Names
+// the cleric and magic-user lists share carry a Cl/MU suffix.
+const (
+	spBless = iota + 1
+	spCurse
+	spCureLightWounds
+	spCauseLightWounds
+	spDetectMagicCl
+	spProtFromEvilCl
+	spProtFromGoodCl
+	spResistCold
+	spBurningHands
+	spCharmPerson
+	spDetectMagicMU
+	spEnlarge
+	spReduce
+	spFriends
+	spMagicMissile
+	spProtFromEvilMU
+	spProtFromGoodMU
+	spReadMagic
+	spShield
+	spShockingGrasp
+	spSleep
+	spFindTraps
+	spHoldPersonCl
+	spResistFire
+	spSilence
+	spSlowPoison
+	spSnakeCharm
+	spSpiritualHammer
+	spDetectInvisibility
+	spInvisibility
+	spKnock
+	spMirrorImage
+	spRayOfEnfeeblement
+	spStinkingCloud
+	spStrength
+	spAnimateDead
+	spCureBlindness
+	spCauseBlindness
+	spCureDisease
+	spCauseDisease
+	spDispelMagicCl
+	spPrayer
+	spRemoveCurse
+	spBestowCurse
+	spBlink
+	spDispelMagicMU
+	spFireball
+	spHaste
+	spHoldPersonMU
+	spInvisibility10
+	spLightningBolt
+	spProtFromEvil10
+	spProtFromGood10
+	spProtFromNormalMissiles
+	spSlow
+	spRestoration
+	lastSpell = spRestoration // the castable spells; 57–67 are item and monster powers
+
+	spFireballPower = 0x40 // a monster's fireball, rolling its own level
+)
+
 // spell names ([0] unused) (DS:28E9, 41 bytes each).
 var spellNames = [57]string{
 	"",

@@ -32,7 +32,7 @@ func (e *Engine) RecomputeCharacter(c *Character) {
 					c.SpellSlots[j-1] = clericSlots[lvl][j-1]
 				}
 				e.wisdomSlots(c)
-				for k := 1; k <= 0x38; k++ {
+				for k := 1; k <= lastSpell; k++ {
 					rec := spellTable[k][:2]
 					if rec[0] == 0 && c.spellSlot(0, int(int8(rec[1]))) > 0 {
 						c.SpellBook[k-1] = 1

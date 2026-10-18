@@ -375,7 +375,7 @@ func (e *Engine) CreateCharacter() {
 			count++
 			if k == 0 {
 				e.wisdomSlots(c) // ovr24:01AF
-				for s := 1; s <= 0x38; s++ {
+				for s := 1; s <= lastSpell; s++ {
 					if rec := spellTable[s][:2]; rec[0] == 0 && rec[1] == 1 {
 						c.SpellBook[s-1] = 1
 					}
