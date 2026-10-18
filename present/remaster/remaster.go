@@ -49,6 +49,8 @@ type Presenter struct {
 	menuRects []image.Rectangle           // the vertical menu's items on screen, as last drawn
 	menuSel   int                         // the game's own choice in it
 	keys      []byte                      // its items' hotkeys
+	noMenu    bool                        // nothing to pick: any click answers
+	rows      []shownRows                 // the original's rows on screen, as last drawn
 	pointer   image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
 	menuImg   *gpu.Image                  // the vertical menu, drawn at scale 1
 	menuBuf   []byte                      // its pixels
@@ -61,6 +63,7 @@ type Presenter struct {
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
 	p.fight = v.Battle != nil && !p.failed
+	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false
 		p.battle.Draw(dst, v.Battle)
@@ -469,6 +472,25 @@ func (p *Presenter) drawRows(dst, frame *gpu.Image, rows engine.CellRect, k floa
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy()))
 	dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
+	x0, y0 := (float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy())
+	p.rows = append(p.rows, shownRows{image.Rect(int(x0), int(y0), int(x0+k*float64(r.Dx())), int(y0+k*float64(r.Dy()))), r})
+}
+
+// shownRows is a strip of the original's screen (pix) where it shows (at).
+type shownRows struct{ at, pix image.Rectangle }
+
+// Cell is the original's text cell under screen pixel (x, y), on the rows
+// of its screen shown as they are (menu lines, prompts, the combat panel),
+// so its own mouse handling picks from them.
+func (p *Presenter) Cell(x, y int) (int, int, bool) {
+	for _, s := range p.rows {
+		if image.Pt(x, y).In(s.at) {
+			px := s.pix.Min.X + (x-s.at.Min.X)*s.pix.Dx()/s.at.Dx()
+			py := s.pix.Min.Y + (y-s.at.Min.Y)*s.pix.Dy()/s.at.Dy()
+			return px / 8, py / 8, true
+		}
+	}
+	return 0, 0, p.noMenu // "press a key": a click anywhere, as on the original's screen
 }
 
 // drawParty shows the party as Blobber's portrait cards, each with the

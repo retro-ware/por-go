@@ -220,6 +220,9 @@ func (g *game) mouse() {
 // cell is the text cell (40x25) of the picture under device pixel (x, y).
 func (g *game) cell(x, y float64) (int, int, bool) {
 	p := g.pic
+	if p.W <= 0 && g.remastered {
+		return g.remaster.Cell(int(x), int(y))
+	}
 	if p.W <= 0 || x < p.X || y < p.Y || x >= p.X+p.W || y >= p.Y+p.H {
 		return 0, 0, false
 	}
