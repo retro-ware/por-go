@@ -1270,7 +1270,7 @@ func (g *Game) Update() error {
 }
 
 // walking and turning: top speeds in steps / quarter turns per second, and acceleration / braking
-const walkSpeed, turnSpeed, walkAccel = 5.0, 3.5, 70.0
+const walkSpeed, turnSpeed, walkAccel = 5.0, 7.0, 70.0 // a turn (13 frames) a little quicker than a step (16)
 
 // snapRepeat is how often a held key moves without smooth movement, in seconds.
 const snapRepeat = 0.15
