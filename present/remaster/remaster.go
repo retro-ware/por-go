@@ -46,6 +46,10 @@ type Presenter struct {
 	asked     string                      // the question menu last opened by itself (menuID)
 	mapImg    *gpu.Image                  // View.Map on the GPU
 	mapSrc    image.Image                 // the View.Map it holds
+	menuRects []image.Rectangle           // the vertical menu's items on screen, as last drawn
+	menuSel   int                         // the game's own choice in it
+	keys      []byte                      // its items' hotkeys
+	pointer   image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
 	menuImg   *gpu.Image                  // the vertical menu, drawn at scale 1
 	menuBuf   []byte                      // its pixels
 	battle    battle.Presenter            // the combat map in 3D
@@ -140,6 +144,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		if v.Command || noChoice(v) {
 			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
+		p.menuSel, p.keys = v.Menu.Sel, keys
 		p.drawMenu(dst, frame, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
 	if note.Show { // the toast (font name ...): the strip Frame wrote it into
@@ -216,12 +221,38 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 }
 
 // Click is the key a click at screen pixel (x, y) picks: an action bar button.
+// or an item of the vertical menu.
 func (p *Presenter) Click(x, y int) (uint16, bool) {
 	if !p.fight {
+		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {
+			return 0, false
+		}
+		for i, r := range p.menuRects {
+			if image.Pt(x, y).In(r) {
+				p.menu = false
+				if i == p.menuSel { // the game's own choice: Enter picks it (some prompts take nothing else)
+					return 13, true
+				}
+				return uint16(p.keys[i]), true
+			}
+		}
 		return 0, false
 	}
 	k, ok := p.battle.Click(x, y)
 	return uint16(k), ok
+}
+
+// Hover moves the vertical menu's highlight to the item under screen pixel (x, y).
+func (p *Presenter) Hover(x, y int) {
+	if p.fight || !p.menu || image.Pt(x, y) == p.pointer {
+		return
+	}
+	p.pointer = image.Pt(x, y)
+	for i, r := range p.menuRects {
+		if p.pointer.In(r) {
+			p.sel = i
+		}
+	}
 }
 
 // Square is the combat map square a click at screen pixel (x, y) hits.

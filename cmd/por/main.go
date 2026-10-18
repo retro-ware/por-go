@@ -184,6 +184,9 @@ func (g *game) keys() {
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
 func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
+	if g.remastered {
+		g.remaster.Hover(mx, my)
+	}
 	if g.remastered && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		if k, ok := g.remaster.Click(mx, my); ok { // an action bar button
 			g.scr.PushKey(k)

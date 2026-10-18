@@ -1,6 +1,7 @@
 package remaster
 
 import (
+	"image"
 	"image/color"
 	"strings"
 
@@ -75,4 +76,9 @@ func (p *Presenter) drawMenu(dst, frame *gpu.Image, glyph func(byte) [8]byte, ti
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(float64(cx)-k*float64(cw*8)/2, float64(top))
 	dst.DrawImage(p.menuImg, op)
+	p.menuRects = p.menuRects[:0]
+	for r := len(rows) - len(items); r < len(rows); r++ {
+		x0, y0 := float64(cx)-k*float64(cw*8)/2, float64(top)+k*float64((r+1)*8)
+		p.menuRects = append(p.menuRects, image.Rect(int(x0+k*8), int(y0), int(x0+k*float64((cw-1)*8)), int(y0+k*8)))
+	}
 }
