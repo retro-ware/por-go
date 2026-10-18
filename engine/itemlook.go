@@ -13,7 +13,7 @@ var classBits = [8]byte{0x02, 0x10, 0x08, 0x40, 0x80, 0x01, 0x04, 0x20}
 // itemLines is the Look text for an item, at most 0x1E wide.
 func (e *Engine) itemLines(it *Item) []string {
 	typ := it.Type
-	b := func(k int) byte { return e.baseItem(typ, k) }
+	b := e.base(typ)
 	dice := func(n, d byte, bonus int8) string {
 		s := itoa(int(n)) + "d" + itoa(int(d))
 		if bonus > 0 {
@@ -26,21 +26,21 @@ func (e *Engine) itemLines(it *Item) []string {
 	}
 	var l []string
 	add := func(s string) { l = append(l, s) }
-	slot, flags := b(0), b(0xE)
+	slot, flags := b.Slot, b.Usage
 	words := func(w byte) bool { return it.Words[0] == w || it.Words[1] == w || it.Words[2] == w }
-	if b(9) > 0 && b(0xA) > 0 {
+	if b.Dice > 0 && b.Sides > 0 {
 		hands := "one hand"
-		if b(1) >= 2 {
+		if b.Hands >= 2 {
 			hands = "two hands"
 		}
 		add("Weapon, " + hands)
-		add("Damage " + dice(b(9), b(0xA), int8(b(0xB))))
-		if b(2) > 0 && (b(2) != b(9) || b(3) != b(0xA) || b(4) != b(0xB)) {
-			add(" vs large " + dice(b(2), b(3), int8(b(4))))
+		add("Damage " + dice(b.Dice, b.Sides, int8(b.Bonus)))
+		if b.LargeDice > 0 && (b.LargeDice != b.Dice || b.LargeSides != b.Sides || b.LargeBonus != b.Bonus) {
+			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)))
 		}
-		if r := int(b(0xC)); r > 1 {
+		if r := int(b.Range); r > 1 {
 			add("Range " + itoa(r-1) + ", worse past " + itoa((r-1)/3))
-			switch n := max(int(b(5)), 2); {
+			switch n := max(int(b.Speed), 2); {
 			case n == 2:
 				add("1 shot per round")
 			case n%2 == 0:
@@ -67,7 +67,7 @@ func (e *Engine) itemLines(it *Item) []string {
 			add("Dexterity adds to hit")
 		}
 	}
-	if v := int(b(6)); v > 0x80 {
+	if v := int(b.Protection); v > 0x80 {
 		v &= 0x7F
 		switch {
 		case slot == 2:
@@ -97,21 +97,21 @@ func (e *Engine) itemLines(it *Item) []string {
 	case slot > 0xA && slot < 0xE:
 		add("Scroll: read to cast its")
 		add("spells, once each")
-	case slot == 0xA && b(1) == 0:
+	case slot == 0xA && b.Hands == 0:
 		add("Treasure: worth selling")
 	}
-	if words(0xB1) && b(9) > 0 {
+	if words(0xB1) && b.Dice > 0 {
 		add("Silver: hurts monsters that")
 		add("ignore plain weapons")
 	}
-	if it.Hidden == 0 && int8(it.Plus) > 0 && (b(9) > 0 || b(6) > 0x80) {
+	if it.Hidden == 0 && int8(it.Plus) > 0 && (b.Dice > 0 || b.Protection > 0x80) {
 		add("Magic +" + itoa(int(int8(it.Plus))))
 	}
 	add("Weight " + itoa(int(it.Weight)) + ", price " + itoa(int(it.Price)))
-	if slot != 0xA || b(1) != 0 {
+	if slot != 0xA || b.Hands != 0 {
 		var who []string
 		for k, m := range classBits {
-			if b(0xD)&m != 0 {
+			if b.Classes&m != 0 {
 				who = append(who, strings.TrimSpace(classNames[k]))
 			}
 		}

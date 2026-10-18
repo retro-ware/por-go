@@ -297,7 +297,7 @@ func (e *Engine) setSpeed(c *Character) {
 		flag = true
 		v := byte(0) // (the original reads the item at +0xCC unchecked)
 		if c.Slots[0] != nil {
-			v = e.baseItem(c.Slots[0].Type, 5)
+			v = e.base(c.Slots[0].Type).Speed
 		}
 		if v < 2 {
 			v = 2
@@ -501,9 +501,9 @@ func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 	} else {
 		if a.Slots[0] != nil && (b.Size > 0x80 || b.Size&7 > 1) {
 			typ := a.Slots[0].Type
-			a.Dice[0] = e.baseItem(typ, 2)
-			a.Sides[0] = e.baseItem(typ, 3)
-			a.Bonus[0] = byte(int(int8(a.Bonus[0])) - int(int8(e.baseItem(typ, 0xB))) + int(int8(e.baseItem(typ, 4))))
+			a.Dice[0] = e.base(typ).LargeDice
+			a.Sides[0] = e.base(typ).LargeSides
+			a.Bonus[0] = byte(int(int8(a.Bonus[0])) - int(int8(e.base(typ).Bonus)) + int(int8(e.base(typ).LargeBonus)))
 		}
 		e.ApplyItems(b)
 		e.affectGroup(b, 0xB)
@@ -648,7 +648,7 @@ func (e *Engine) rangePenalty(a, b *Character, need *int) {
 	d := e.rangeTo(a, b)
 	f := d
 	if e.rangedWeapon(a) {
-		f = (int(e.baseItem(a.Slots[0].Type, 0xC)) - 1) / 3
+		f = (int(e.base(a.Slots[0].Type).Range) - 1) / 3
 	}
 	if d-f > 0 {
 		d -= f

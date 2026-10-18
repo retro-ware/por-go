@@ -68,10 +68,10 @@ type Engine struct {
 	viewMode           int      // DS:49FA (1 = 3D view)
 	prevViewMode       int      // DS:49F9
 	sqrpaci            [2]*dax.Image
-	items              []byte // DS:5582: 16-byte base item records
-	pos3, pos4         byte   // DS:6AB0, 6AB1
-	viewBit0, viewBit1 byte   // DS:49F5/49F6
-	mapPairA, mapPairB [3]int // DS:6AAE+4i / 6AB0+4i
+	items              []itemBase // DS:5582: base item records by type
+	pos3, pos4         byte       // DS:6AB0, 6AB1
+	viewBit0, viewBit1 byte       // DS:49F5/49F6
+	mapPairA, mapPairB [3]int     // DS:6AAE+4i / 6AB0+4i
 	// viewAnim = area+0x3FE: nonzero cycles the view picture on every poll
 	// (ovr26:03BD), cleared by displayInput (ovr26:06D8). No script sets it;
 	// in the original only save/load wrote it, packing the last wall slot
@@ -232,7 +232,7 @@ func (e *Engine) Run() {
 
 // Play is the rest of main after the title: party menu, then adventure.
 func (e *Engine) Play() {
-	if !slices.ContainsFunc(e.items, func(b byte) bool { return b != 0 }) {
+	if !slices.ContainsFunc(e.items, func(b itemBase) bool { return b != itemBase{} }) {
 		e.MessageRow24b(0xE, "ITEMS missing: import the game again") // extra (readItems): waits for a key
 	}
 	e.adventure()

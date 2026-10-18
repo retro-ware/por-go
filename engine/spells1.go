@@ -127,7 +127,7 @@ func (e *Engine) addSpellLine(spell byte) {
 func (e *Engine) addScrollSpells(all byte) {
 	sel := e.selected()
 	// 00BA:2199 (sel, 0x10, out): the character has the affect
-	if e.FindAffect(sel, affReadMagic) != nil || sel.Levels[clsCleric] > 0 && sel.Levels[clsCleric] < 0x80 && e.items[int(e.usedScroll.Type)<<4] == 0xC {
+	if e.FindAffect(sel, affReadMagic) != nil || sel.Levels[clsCleric] > 0 && sel.Levels[clsCleric] < 0x80 && e.base(e.usedScroll.Type).Slot == 0xC {
 		e.usedScroll.Hidden = 0
 	}
 	if e.usedScroll.Hidden != 0 {
@@ -766,7 +766,7 @@ func (e *Engine) isScroll(it *Item) bool {
 	if it == nil {
 		return false
 	}
-	t := e.items[int(it.Type)<<4]
+	t := e.base(it.Type).Slot
 	return t > 0xA && t < 0xE
 }
 

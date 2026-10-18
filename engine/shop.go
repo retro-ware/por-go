@@ -158,7 +158,7 @@ func (e *Engine) Shop() {
 // canUseItem (extra): the item's class mask lets c ready it (the Wrong
 // Class test of readyItem).
 func (e *Engine) canUseItem(c *Character, it *Item) bool {
-	return e.baseItem(it.Type, 0xD)&c.ClassMask != 0
+	return e.base(it.Type).Classes&c.ClassMask != 0
 }
 
 // unknown (extra): Id would reveal a word of the item's name.

@@ -480,10 +480,10 @@ func (e *Engine) readyItem(it *Item) {
 	}
 	why := 0
 	typ := it.Type
-	if int(e.baseItem(typ, 1))+int(c.Hands) > 2 {
+	if int(e.base(typ).Hands)+int(c.Hands) > 2 {
 		why = 3
 	}
-	slot := int(e.baseItem(typ, 0))
+	slot := int(e.base(typ).Slot)
 	switch {
 	case slot <= 8:
 		if c.Slots[slot] != nil {
@@ -500,7 +500,7 @@ func (e *Engine) readyItem(it *Item) {
 	if typ == 0x1C && c.Slots[slotBolts] != nil {
 		why, slot = 2, slotBolts
 	}
-	if e.baseItem(typ, 0xD)&c.ClassMask == 0 {
+	if e.base(typ).Classes&c.ClassMask == 0 {
 		why = 1
 	}
 	switch why {

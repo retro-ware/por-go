@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/binary"
 	"log"
 	"os"
 )
@@ -35,7 +36,7 @@ func (e *Engine) Init() {
 		e.LoadIconPic("COMSPR", i, i+0xD) // ovr33:01C8
 	}
 	e.LoadIconPic("COMSPR", 0x19, 0x19)
-	e.items = e.readItems() // ITEMS file, 2-byte header then 0x810 bytes → DS:5582
+	e.items = e.readItems() // ITEMS file, 2-byte header then the records → DS:5582
 	e.ClearRow24()
 	e.Randomize()           // 0AF8:1247
 	e.spellTableInit()      // ovr23:3413
@@ -43,18 +44,18 @@ func (e *Engine) Init() {
 }
 
 // readItems reads the base item table: skips the 2-byte count and takes up
-// to 0x810 bytes of 16-byte records.
-func (e *Engine) readItems() []byte {
-	p := e.L.Path("ITEMS")
-	b, err := os.ReadFile(p)
+// to itemTypes records (a short or missing file leaves blank ones).
+func (e *Engine) readItems() []itemBase {
+	items := make([]itemBase, itemTypes)
+	b, err := os.ReadFile(e.L.Path("ITEMS"))
 	if err != nil || len(b) < 2 {
 		// extra: without the table no class may use any item and nothing has stats
 		log.Println("ITEMS (the base item table) is missing from the game data: import the game again")
-		return make([]byte, 0x810)
+		return items
 	}
-	out := make([]byte, 0x810)
-	copy(out, b[2:])
-	return out
+	b = append(b[2:], make([]byte, itemTypes*16)...)
+	binary.Decode(b, binary.LittleEndian, items)
+	return items
 }
 
 // InitGraphics loads the font and symbol sets 4 and 0 the way Init does

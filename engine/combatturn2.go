@@ -612,7 +612,7 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 	rng := byte(rangeArg)
 	if rng == 0xFF {
 		if w := c.Slots[0]; w != nil {
-			rng = e.baseItem(w.Type, 12) - 1
+			rng = e.base(w.Type).Range - 1
 		} else {
 			rng = 1
 		}

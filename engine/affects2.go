@@ -142,13 +142,8 @@ func (e *Engine) setupAffectHandlers() {
 	}
 }
 
-// itemBaseFlags is DS:5589 (+7 of the 16-byte base item record) for the item's type.
-func (e *Engine) itemBaseFlags(it *Item) byte {
-	if i := int(it.Type)<<4 + 7; i < len(e.items) {
-		return e.items[i]
-	}
-	return 0
-}
+// itemBaseFlags is DS:5589, the base record's Material, for the item's type.
+func (e *Engine) itemBaseFlags(it *Item) byte { return e.base(it.Type).Material }
 
 // affectItem is the item standing in for the affect record (the original
 // reads the item's bytes through the affect pointer).

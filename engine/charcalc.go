@@ -123,12 +123,36 @@ const (
 	slotBolts  = 12
 )
 
-// baseItem returns byte k of the DS:5582 base record of an item type.
-func (e *Engine) baseItem(typ byte, k int) byte {
-	if o := int(typ)*16 + k; o < len(e.items) {
-		return e.items[o]
+// itemBase is the 16-byte base record of an item type (DS:5582 + 16*type,
+// from the ITEMS file).
+type itemBase struct {
+	Slot       byte // +0 readied slot (0 weapon ... 9 ring, 0xB..0xD scrolls)
+	Hands      byte // +1
+	LargeDice  byte // +2 damage against large targets
+	LargeSides byte // +3
+	LargeBonus byte // +4 signed
+	Speed      byte // +5 rate of fire / weapon speed
+	Protection byte // +6 0x80 + AC given
+	Material   byte // +7 flags the resistance handlers test (0x81, bit 0)
+	_          byte // +8
+	Dice       byte // +9
+	Sides      byte // +A
+	Bonus      byte // +B signed
+	Range      byte // +C squares + 1 (1 = melee)
+	Classes    byte // +D class bits that may use it (ClassMask)
+	Usage      byte // +E flags: 1 arrows, 2 missile, 4 strength bonus, 8 fires ammunition, 0x10 thrown, 0x80 bolts
+	_          byte // +F
+}
+
+// itemTypes is the size of the base item table (0x810 bytes).
+const itemTypes = 0x81
+
+// base is the base record of an item type (a blank one past the table).
+func (e *Engine) base(typ byte) *itemBase {
+	if int(typ) < len(e.items) {
+		return &e.items[typ]
 	}
-	return 0
+	return &itemBase{}
 }
 
 // readiedWeight = DS:4846.
@@ -156,7 +180,7 @@ func (e *Engine) ApplyItems(c *Character) {
 		}
 		readiedWeight += w
 		typ := it.Type
-		switch s := e.baseItem(typ, 0); {
+		switch s := e.base(typ).Slot; {
 		case s <= 8:
 			c.Slots[s] = it
 		case s == 9:
@@ -175,7 +199,7 @@ func (e *Engine) ApplyItems(c *Character) {
 		if it.Words[0] == 0xBA {
 			bag = true
 		}
-		c.Hands += e.baseItem(typ, 1)
+		c.Hands += e.base(typ).Hands
 	}
 	c.Dice, c.Sides, c.Bonus = c.BaseDice, c.BaseSides, c.BaseBonus
 	var ac [5]int8
@@ -235,12 +259,12 @@ func (e *Engine) weaponStats(c *Character) {
 		return
 	}
 	typ := w.Type
-	flags := e.baseItem(typ, 0xE)
+	flags := e.base(typ).Usage
 	c.THAC0 = c.HitDice
 	if flags&2 != 0 { // missile
 		c.THAC0 += byte(dexMissile(c.Stats[statDex]))
 	}
-	c.Bonus[0] = e.baseItem(typ, 0xB)
+	c.Bonus[0] = e.base(typ).Bonus
 	if flags&4 != 0 { // strength applies
 		c.THAC0 += byte(strHit(c))
 		c.Bonus[0] += byte(strDamage(c))
@@ -257,14 +281,14 @@ func (e *Engine) weaponStats(c *Character) {
 		plus++ // elves with bows and swords
 	}
 	c.THAC0 += byte(plus)
-	c.Dice[0] = e.baseItem(typ, 9)
-	c.Sides[0] = e.baseItem(typ, 0xA)
+	c.Dice[0] = e.base(typ).Dice
+	c.Sides[0] = e.base(typ).Sides
 }
 
 // armourMove = 00BA:01FB (char, item): body armour sets the movement by
 // its weight; magical armour moves 3 faster up to 9.
 func (e *Engine) armourMove(it *Item, c *Character) {
-	if e.baseItem(it.Type, 0) != 2 {
+	if e.base(it.Type).Slot != 2 {
 		return
 	}
 	switch w := it.Weight; {
@@ -285,12 +309,12 @@ func (e *Engine) armourMove(it *Item, c *Character) {
 // armour cancels rings.
 func (e *Engine) itemAC(c *Character, it *Item, ac *[5]int8) (ringOnly bool) {
 	typ := it.Type
-	v := e.baseItem(typ, 6)
+	v := e.base(typ).Protection
 	if v <= 0x7F {
 		return
 	}
 	v &= 0x7F
-	slot := e.baseItem(typ, 0)
+	slot := e.base(typ).Slot
 	plus := int8(it.Plus)
 	switch {
 	case slot == 1:

@@ -301,8 +301,8 @@ func (e *Engine) combatMenu(c *Character) byte {
 	}
 	e.snap.targets = nil
 	rng := 1
-	if w := c.Slots[0]; w != nil && e.baseItem(w.Type, 12) > 1 {
-		rng = int(e.baseItem(w.Type, 12)) - 1
+	if w := c.Slots[0]; w != nil && e.base(w.Type).Range > 1 {
+		rng = int(e.base(w.Type).Range) - 1
 	}
 	for i := 1; i <= e.ncomb; i++ {
 		if t := e.combatant(byte(i)); t != nil && t.Side != c.Side && t.Okay != 0 && e.cpos[i].size > 0 && e.mayActAgainst(c, t) &&
@@ -563,18 +563,18 @@ func (e *Engine) markReach(reach map[[2]int][]int, on bool) {
 // +0xC above 1).
 func (e *Engine) rangedWeapon(c *Character) bool {
 	w := c.Slots[0]
-	return w != nil && e.baseItem(w.Type, 0xC) > 1
+	return w != nil && e.base(w.Type).Range > 1
 }
 
 // throwable = 00BA:2E46 (char): a ranged weapon that also works in melee
 // (base item flags 0x14).
 func (e *Engine) throwable(c *Character) bool {
-	return e.rangedWeapon(c) && e.baseItem(c.Slots[0].Type, 0xE)&0x14 == 0x14
+	return e.rangedWeapon(c) && e.base(c.Slots[0].Type).Usage&0x14 == 0x14
 }
 
 // throwableItem (extra): the item would be a throwable weapon if readied.
 func (e *Engine) throwableItem(it *Item) bool {
-	return e.baseItem(it.Type, 0xC) > 1 && e.baseItem(it.Type, 0xE)&0x10 != 0 // thrown: also darts and javelins, used up
+	return e.base(it.Type).Range > 1 && e.base(it.Type).Usage&0x10 != 0 // thrown: also darts and javelins, used up
 }
 
 // throwItem (extra): Throw from the inventory readies the item in place of
@@ -623,7 +623,7 @@ func (e *Engine) ammoFor(c *Character, it **Item) bool {
 	*it = nil
 	var f byte
 	if w != nil {
-		f = e.baseItem(w.Type, 0xE)
+		f = e.base(w.Type).Usage
 		if f&0x10 != 0 {
 			*it = w
 		}
