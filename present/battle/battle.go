@@ -138,8 +138,8 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 			return []uint16{'P'}, true
 		}
 		return []uint16{'N'}, true
-	case k == 13 && p.bar.has("Attack") != nil && p.aiming:
-		return p.bar.has("Attack"), true
+	case k == 13 && p.bar.aimOK != nil && p.aiming && shown:
+		return p.bar.aimOK, true
 	default:
 		return nil, false
 	}
