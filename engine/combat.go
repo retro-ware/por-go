@@ -290,7 +290,26 @@ func (e *Engine) combatMenu(c *Character) byte {
 			return 'M'
 		}
 		return 0
+	}, square: func(x, y int) uint16 { // extra (remaster): the hovered unit's panel on the status row, a foe's name in red
+		t := c
+		if who := e.occ[y][x]; who > 0 {
+			if u := e.combatant(who); u != nil {
+				t = u
+			}
+		}
+		if t != e.ext.panel {
+			e.combatPanel(t)
+			if t.Side != c.Side {
+				e.DisplayString(0, messageRow, colLightRed, t.Name())
+			}
+		}
+		return keyNone
 	}})
+	defer func() {
+		if e.ext.panel != c {
+			e.combatPanel(c)
+		}
+	}()
 	// extra: the Done menu's turn enders straight from here (keys off the bar), and
 	// the foes a click attacks now (in reach of the weapon, or a walk away from it)
 	hidden := "L"

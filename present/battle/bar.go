@@ -18,8 +18,8 @@ import (
 // centre showing its icon (else its hotkey, big) with its letter, scaled
 // as one picture with the bar (64px, its native size, at scale 2); the word
 // shows under the button the mouse is on. The bar is drawn in screen
-// pixels, its text at the bar's scale. What the mouse points at and the
-// menu's question show on the bottom status row instead (DrawStatus).
+// pixels, its text at the bar's scale. A menu's question shows on the
+// bottom status row instead (DrawStatus).
 const (
 	face    = 64 // an icon's side, and the button face's at scale 2
 	promptH = 2  // a margin over the buttons, at scale 1
@@ -202,12 +202,9 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 }
 
 // Status is what the bottom status row shows over the combat panel: the
-// square under the mouse, else the menu's question ("": the panel; aiming's
-// prompt is the aimed foe's panel line again).
+// menu's question ("": the panel, which the engine fills with whoever the
+// mouse points at; aiming's prompt is the aimed foe's panel line again).
 func (p *Presenter) Status(m *engine.Menu) string {
-	if p.hint != "" {
-		return p.hint
-	}
 	if m == nil || p.aiming {
 		return ""
 	}

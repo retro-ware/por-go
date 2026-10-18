@@ -13,7 +13,6 @@ import (
 	"math"
 	"math/rand/v2"
 	"slices"
-	"strconv"
 	"time"
 
 	"gpu"
@@ -39,7 +38,6 @@ type Presenter struct {
 	cursor        image.Point       // the aim cursor's square in the last frame
 	tabFrom       *image.Point      // Tab was pressed with the aim here: the camera jumps to where it goes
 	tabTo         *vec              // the target Tab went to: watched while aiming
-	hint          string            // what the square under the mouse holds, for the status row
 	status        status            // the status row's line (DrawStatus)
 	focus, offset vec               // what the camera watches; the W A S D pan from it
 	yaw, yawTo    float64           // camera heading: 0 looks north, as the original's screen
@@ -145,27 +143,6 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 		return nil, false
 	}
 	return nil, true
-}
-
-// hint says what is on square sq and what a click there does.
-func hint(b *engine.Battle, sq image.Point) string {
-	for _, u := range b.Units {
-		if sq.X < u.X || sq.Y < u.Y || sq.X >= u.X+max(1, u.Size) || sq.Y >= u.Y+max(1, u.Size) {
-			continue
-		}
-		s := u.Name + "  HP " + strconv.Itoa(u.HP) + "  AC " + strconv.Itoa(u.AC)
-		if slices.Contains(b.Targets, u.ID) {
-			s = "Attack " + s
-			if u.Hit > 0 {
-				s += "  CtH " + strconv.Itoa(u.Hit)
-			}
-		}
-		return s
-	}
-	if slices.Contains(b.Reach, sq) {
-		return "Move here"
-	}
-	return ""
 }
 
 // targetAt: a foe a click attacks stands on sq.
@@ -337,10 +314,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: reachGlow, Model: place(float32(r.X)+.5, 0.003, float32(r.Y)+.5, 0, .96, .005, .96)}
 		dst.DrawMesh(p.box, p.white, vp, &o)
 	}
-	p.hint, p.actions = "", b.Actions
+	p.actions = b.Actions
 	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
-		p.hint = hint(b, image.Pt(mx, my))
 		for _, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike
 			tint := pathGlow
 			if s.Free {
