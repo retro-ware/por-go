@@ -243,6 +243,14 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 	doc := js.Global().Get("document")
 	doc.Set("title", title)
 	c := doc.Call("getElementById", "canvas")
+	if c.IsNull() { // a page without its own canvas (goplay's play.html): one filling the window, as Ebiten made
+		c = doc.Call("createElement", "canvas")
+		c.Set("id", "canvas")
+		c.Get("style").Set("cssText", "display:block;width:100vw;height:100vh")
+		body := doc.Get("body")
+		body.Get("style").Set("margin", "0")
+		body.Call("appendChild", c)
+	}
 	w := &Window{canvas: c, keys: map[Key]bool{}, buttons: map[MouseButton]bool{}, frame: make(chan struct{}, 1)}
 	w.w, w.h = c.Get("clientWidth").Int(), c.Get("clientHeight").Int()
 	if w.w == 0 || w.h == 0 {
