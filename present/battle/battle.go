@@ -322,7 +322,10 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	p.actions = b.Actions
 	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
-		for _, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike
+		for i, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike
+			if i == 0 { // the mover's own square
+				continue
+			}
 			tint := pathGlow
 			if s.Free {
 				tint = freeGlow

@@ -92,7 +92,10 @@ func (p *Presenter) DrawBattle(dst *gpu.Image, pic Rect, b *engine.Battle, mx, m
 	if px >= 0 && py >= 0 && px < viewW*squarePx && py < viewH*squarePx {
 		q := b.View.Add(image.Pt(int(px)/squarePx, int(py)/squarePx))
 		frame(q, hoverTint)
-		for _, s := range b.Paths[q] {
+		for i, s := range b.Paths[q] {
+			if i == 0 { // the mover's own square
+				continue
+			}
 			t := pathTint
 			if s.Free {
 				t = freeTint
