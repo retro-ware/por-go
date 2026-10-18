@@ -284,8 +284,7 @@ func (e *Engine) tryFlee(c *Character) bool {
 	if away {
 		e.KillCharacter(c, statusRunning, "Got Away")
 	} else {
-		e.ext.refusal = true
-		e.BottomMessage("Escape is blocked")
+		e.refuse("Escape is blocked")
 	}
 	return e.clearCombatInfo(c)
 }

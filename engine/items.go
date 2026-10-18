@@ -148,17 +148,20 @@ func sameStack(p, it *Item) bool {
 }
 
 // BottomMessage = 00BA:1693: the string on row 24 for the message delay.
-func (e *Engine) BottomMessage(s string) {
+func (e *Engine) BottomMessage(s string) { e.bottomMessage(s, colLightGreen) }
+
+// refuse (extra): BottomMessage for a refusal, the text red on the combat
+// status row; outside combat the original's green on row 24.
+func (e *Engine) refuse(s string) { e.bottomMessage(s, colLightRed) }
+
+// bottomMessage: BottomMessage with the colour of the combat status row.
+func (e *Engine) bottomMessage(s string, colour int) {
 	s = cut(s, textCols)
-	colour := colLightGreen
-	if e.ext.refusal { // extra: the caller marked it a refusal: red in combat
-		e.ext.refusal, colour = false, colLightRed
-	}
 	if e.beginFlag == 5 && e.cmap != nil { // extra: in combat on the status row; the menu row stays, the text until the panel comes back
 		e.ClearCells(0, messageRow, lastCol, messageRow)
 		e.DisplayString(0, messageRow, colour, s)
-		e.MsgDelay()
-		e.MsgDelay()
+		e.statusDelay()
+		e.statusDelay()
 		return
 	}
 	e.ClearCells(0, promptRow, lastCol, promptRow)
