@@ -18,10 +18,11 @@ import (
 // centre showing its icon (else its hotkey, big) with its letter, scaled
 // as one picture with the bar (64px, its native size, at scale 2); the word
 // shows under the button the mouse is on. The bar is drawn in screen
-// pixels, its text at the bar's scale.
+// pixels, its text at the bar's scale. What the mouse points at and the
+// menu's question show on the bottom status row instead (DrawStatus).
 const (
 	face    = 64 // an icon's side, and the button face's at scale 2
-	promptH = 12 // the prompt line over the buttons, at scale 1
+	promptH = 2  // a margin over the buttons, at scale 1
 	labelH  = 14 // the hovered button's word under them, at scale 1
 )
 
@@ -31,6 +32,12 @@ type bar struct {
 	rects []image.Rectangle // the buttons on screen, as last drawn
 	items []barItem
 	aimOK []uint16 // aiming: the keys that take the aimed target (Enter; nil: none to take)
+}
+
+// status is the bottom row's own line, as last drawn.
+type status struct {
+	img  *gpu.Image
+	text string
 }
 
 // barItem is one button: its letter, its word, the keys it sends.
@@ -157,10 +164,6 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 			b.aimOK = []uint16{uint16(it.Key)}
 		}
 	}
-	prompt := m.Prompt
-	if p.hint != "" {
-		prompt = p.hint
-	}
 	hover := -1
 	cx, cy := gpu.CursorPosition()
 	for i, r := range b.rects {
@@ -169,8 +172,8 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 		}
 	}
 	n, bw := len(items), face*k/2+4*k
-	w, h := max(n*(bw+4*k), len(prompt)*8*k+8*k, 7*8*k+bw), (promptH+labelH)*k+bw
-	id := prompt + "|" + strconv.Itoa(k) + "|" + strconv.Itoa(hover)
+	w, h := max(n*(bw+4*k), 7*8*k+bw), (promptH+labelH)*k+bw
+	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover)
 	for i, it := range items {
 		id += "|" + it.Text
 		if i == sel {
@@ -185,7 +188,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	}
 	if id != b.id {
 		b.id = id
-		b.img.WritePixels(barPixels(glyph, prompt, items, sel, hover, w, h, k).Pix)
+		b.img.WritePixels(barPixels(glyph, items, sel, hover, w, h, k).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
@@ -196,6 +199,51 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 		r := buttonRect(w, n, i, k)
 		b.rects = append(b.rects, r.Add(image.Pt(x0, y0)))
 	}
+}
+
+// Status is what the bottom status row shows over the combat panel: the
+// square under the mouse, else the menu's question ("": the panel; aiming's
+// prompt is the aimed foe's panel line again).
+func (p *Presenter) Status(m *engine.Menu) string {
+	if p.hint != "" {
+		return p.hint
+	}
+	if m == nil || p.aiming {
+		return ""
+	}
+	return m.Prompt
+}
+
+// DrawStatus writes s (Status) over the bottom status row, a row of the
+// original's 40 columns at scale k, in the game's font (glyph).
+func (p *Presenter) DrawStatus(dst *gpu.Image, glyph func(byte) [8]byte, s string, k float64) {
+	if s == "" {
+		return
+	}
+	st := &p.status
+	if st.img == nil {
+		st.img = gpu.NewImage(ega.W, 8)
+	}
+	if s != st.text {
+		st.text = s
+		im := image.NewRGBA(image.Rect(0, 0, ega.W, 8))
+		draw.Draw(im, im.Bounds(), image.Black, image.Point{}, draw.Src)
+		c := ega.Palette[15]
+		for i := 0; i < len(s) && i < ega.W/8; i++ {
+			g := glyph(s[i])
+			for d := range 64 {
+				if g[d/8]&(0x80>>(d%8)) != 0 {
+					im.SetRGBA(i*8+d%8, d/8, color.RGBA{c[0], c[1], c[2], 255})
+				}
+			}
+		}
+		st.img.WritePixels(im.Pix)
+	}
+	b := dst.Bounds()
+	op := &gpu.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate((float64(b.Dx())-k*ega.W)/2, float64(b.Dy())-k*8) // as drawRows lays the panel
+	dst.DrawImage(st.img, op)
 }
 
 // buttonRect is button i of n on a bar image w wide at scale k.
@@ -219,7 +267,7 @@ func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
 // barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
-func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, hover, w, h, k int) *image.RGBA {
+func barPixels(glyph func(byte) [8]byte, items []barItem, sel, hover, w, h, k int) *image.RGBA {
 	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	textOn := func(im *image.RGBA, s string, x, y, scale int, c color.RGBA) {
@@ -247,11 +295,6 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, ho
 				im.SetRGBA(x, y, c)
 			}
 		}
-	}
-	if prompt != "" {
-		x := max(0, (w-len(prompt)*8*k)/2)
-		fill(image.Rect(x-4*k, 0, x+(len(prompt)*8+4)*k, 10*k).Intersect(im.Bounds()), color.RGBA{0, 0, 0, 0xB0}) // translucent black: the text reads over any wall
-		text(prompt, x, k, k, rgb(15))
 	}
 	for i, it := range items {
 		r := buttonRect(w, len(items), i, k)

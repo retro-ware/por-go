@@ -39,7 +39,8 @@ type Presenter struct {
 	cursor        image.Point       // the aim cursor's square in the last frame
 	tabFrom       *image.Point      // Tab was pressed with the aim here: the camera jumps to where it goes
 	tabTo         *vec              // the target Tab went to: watched while aiming
-	hint          string            // what the square under the mouse holds, for the bar's prompt line
+	hint          string            // what the square under the mouse holds, for the status row
+	status        status            // the status row's line (DrawStatus)
 	focus, offset vec               // what the camera watches; the W A S D pan from it
 	yaw, yawTo    float64           // camera heading: 0 looks north, as the original's screen
 	dist, distTo  float64           // camera distance in squares

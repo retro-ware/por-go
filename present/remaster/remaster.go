@@ -87,6 +87,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 			}
 		}
 		p.battle.DrawBar(dst, note.Glyph, v.Menu, max(1, int(k)/2), dst.Bounds().Dy()-int(k)*10)
+		p.battle.DrawStatus(dst, note.Glyph, p.battle.Status(v.Menu), k) // the hovered square, a question: over the panel
 		return classic.Rect{}
 	}
 	sc := p.scene(v)
