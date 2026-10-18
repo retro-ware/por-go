@@ -83,7 +83,7 @@ func (e *Engine) labels() map[int]mapLabel {
 		e.ext.labels = map[int]map[int]mapLabel{}
 	}
 	m := map[int]mapLabel{}
-	if k == phlanKey && e.symDAX == "8X8D3" {
+	if k == phlanKey && e.set == 3 {
 		for s, l := range phlanLabels {
 			m[s] = l
 		}

@@ -282,7 +282,7 @@ func (e *Engine) LoadIconPic(name string, block, slot int) {
 			e.recolour(ic[1], &iconPaletteCF2)
 		}
 	default:
-		n := name + e.symDAX[4:] // DS:5376 digit
+		n := e.set.file(name)
 		ic[0], ic[1] = load(n, block), load(n, block+0x80)
 		e.recolour(ic[0], &iconPaletteCE2)
 		e.recolour(ic[1], &iconPaletteCE2)
@@ -837,7 +837,6 @@ func (e *Engine) nearCombatants(c *Character, x, y, r int) {
 // slot +0xBF; with recolour the six icon colour pairs (+0xC1..) replace
 // the DS:3CF5 colours. The original works on the selected character.
 func (e *Engine) BuildCharIcon(c *Character, recolour bool) {
-	e.symPrev, e.symDAX = e.symDAX, "8X8D3" // 0802:094A(3), restored by 0802:095D
 	size := string("?ST"[c.IconSize])
 	slot := int(c.Order)
 	e.LoadIconPic("CHEAD"+size, int(c.IconHead), 0xB)
@@ -876,6 +875,5 @@ func (e *Engine) BuildCharIcon(c *Character, recolour bool) {
 		}
 	}
 	e.freeIcon(0xB)
-	e.symDAX = e.symPrev
 	e.ClearKeyboard()
 }

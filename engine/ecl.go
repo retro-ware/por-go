@@ -3,7 +3,6 @@ package engine
 import (
 	"encoding/binary"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -162,7 +161,7 @@ func (e *Engine) readSpecialGlobal(a int) (uint16, bool) {
 		}
 		return 0, true
 	case 0x312:
-		return uint16(e.symDAX[4] - '0'), true
+		return uint16(e.set), true
 	case 0x33E:
 		return uint16(e.partyCount()), true
 	}
@@ -219,8 +218,7 @@ func (e *Engine) writeSpecialGlobal(a int, v uint16) {
 			c.Side, c.Auto = 1, 1
 		}
 	case off == 0x312:
-		e.symPrev = e.symDAX // 0802:094A
-		e.symDAX = "8X8D" + strconv.Itoa(int(byte(v)))
+		e.set = Set(v) // 0802:094A (it kept the old one in DS:5377, read nowhere here)
 	case off == 0x322, off == 0x324, off == 0x326:
 		if v > 0x80 {
 			e.LoadWalldef(int(v&0x7F), (off-0x322)/2+1)
@@ -497,7 +495,7 @@ func (e *Engine) LoadArea(areaID int) {
 	e.loadingMonster = false
 	e.ClearRow24()
 	e.DisplayString(0, 0x18, 0xF, "Loading...Please Wait")
-	b := e.L.Block("ECL"+e.symDAX[4:], areaID)
+	b := e.L.Block(e.set.file("ECL"), areaID)
 	if len(b) >= 2 {
 		copy(e.ecl, b[2:])
 	}

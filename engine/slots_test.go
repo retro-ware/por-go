@@ -44,7 +44,7 @@ func TestAdoptLettered(t *testing.T) {
 // An F9 save leaves the area block as it was: saveSlot packs the wall slots
 // into area+0x3F4.., and area+0x3FE is the view animation flag.
 func TestSaveToKeepsArea(t *testing.T) {
-	e := &Engine{ecl: make([]byte, 0x1E00), symDAX: "8X8D1"}
+	e := &Engine{ecl: make([]byte, 0x1E00), set: 1}
 	e.Cfg.SaveDir = t.TempDir()
 	e.mapPairB = [3]int{5, 6, 7}
 	e.saveTo("X")
@@ -84,7 +84,7 @@ func TestVarOffsets(t *testing.T) {
 // The explored squares go with the slot: a load brings back the save's, not
 // what was explored since.
 func TestSeenFollowsSlot(t *testing.T) {
-	e := &Engine{symDAX: "8X8D1"}
+	e := &Engine{set: 1}
 	e.Cfg.SaveDir = t.TempDir()
 	e.ext.seen = map[int]*[256]uint8{3: {5: seenVisited}}
 	e.saveTo("X")

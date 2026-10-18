@@ -17,8 +17,9 @@ type animPic struct {
 
 // portrait = DS:6B00..6B09: the cached HEAD and BODY pictures.
 type portrait struct {
-	headID, bodyID int // DS:6B00 / 6B05 (-1 = none)
-	head, body     *dax.Image
+	headID, bodyID   int // DS:6B00 / 6B05 (-1 = none)
+	headSet, bodySet Set // the sets they came from
+	head, body       *dax.Image
 }
 
 // LoadAnimPic = ovr29:00A2 (name, block, masked): load <name><gfx>.DAX
@@ -32,7 +33,7 @@ func (e *Engine) LoadAnimPic(name string, block int, masked bool) {
 	}
 	e.FreeAnimPic()
 	a.name, a.block = name, block
-	b := e.L.Block(name+e.symDAX[4:], block)
+	b := e.L.Block(e.set.file(name), block)
 	if b == nil {
 		return
 	}
@@ -100,18 +101,17 @@ func (e *Engine) DrawAnimFirst() {
 	}
 }
 
-// LoadPortrait = ovr29:05D9 (head, body): HEAD<gfx>/BODY<gfx> blocks, kept
-// while the ids do not change; 0xFF leaves that half alone.
-func (e *Engine) LoadPortrait(head, body int) {
+// LoadPortrait = ovr29:05D9 (head, body): set's HEAD/BODY blocks, kept
+// while they do not change; 0xFF leaves that half alone.
+func (e *Engine) LoadPortrait(set Set, head, body int) {
 	p := &e.port
-	d := e.symDAX[4:]
-	if head != 0xFF && (p.headID == 0xFF || p.headID != head) {
-		p.head = e.LoadPic("HEAD"+d, head)
-		p.headID = head
+	if head != 0xFF && (p.headID != head || p.headSet != set) {
+		p.head = e.LoadPic(set.file("HEAD"), head)
+		p.headID, p.headSet = head, set
 	}
-	if body != 0xFF && (p.bodyID == 0xFF || p.bodyID != body) {
-		p.body = e.LoadPic("BODY"+d, body)
-		p.bodyID = body
+	if body != 0xFF && (p.bodyID != body || p.bodySet != set) {
+		p.body = e.LoadPic(set.file("BODY"), body)
+		p.bodyID, p.bodySet = body, set
 	}
 	e.ClearKeyboard()
 }
@@ -129,7 +129,7 @@ func (e *Engine) DrawPortrait(x, y int, both bool) {
 func (e *Engine) ShowPortrait(head, body int) {
 	e.es.f84E1 = 0
 	e.es.f49FD, e.es.f49FE = byte(head), byte(body)
-	e.LoadPortrait(head, body)
+	e.LoadPortrait(e.set, head, body)
 	e.DrawPortrait(3, 3, true)
 }
 

@@ -255,8 +255,7 @@ func (e *Engine) LoadCharacter(name string, c *Character, useSav bool) bool {
 
 // LoadMonster = ovr18:0EC4 (index, c): MON<n>CHA/SPC/ITM.DAX block index.
 func (e *Engine) LoadMonster(index int, c *Character) bool {
-	n := strconv.Itoa(int(e.symDAX[4] - '0'))
-	b := e.L.Block("MON"+n+"CHA", index)
+	b := e.L.Block(e.set.file("MON")+"CHA", index)
 	if b == nil {
 		e.MessageRow24b(0xF, "Unable to load monster")
 		e.Exit()
@@ -280,10 +279,10 @@ func (e *Engine) LoadMonster(index int, c *Character) bool {
 		c.IconColour[i-1] = (r+8)<<4 | r
 	}
 	e.loadingMonster = true // DS:557C
-	if b := e.L.Block("MON"+n+"SPC", index); b != nil {
+	if b := e.L.Block(e.set.file("MON")+"SPC", index); b != nil {
 		c.Affects = readAffects(b)
 	}
-	if b := e.L.Block("MON"+n+"ITM", index); b != nil {
+	if b := e.L.Block(e.set.file("MON")+"ITM", index); b != nil {
 		c.Items = readRecords[Item](b, itemRecSize)
 	}
 	e.loadingMonster = false
@@ -436,7 +435,7 @@ func (e *Engine) loadSlot(key byte) bool {
 	e.DisplayString(0, 24, 0xA, "Loading...Please Wait")
 	p := 0
 	rd := func(n int) []byte { s := b[p : p+n]; p += n; return s }
-	e.symDAX = "8X8D" + string('0'+rd(1)[0])
+	e.set = Set(rd(1)[0])
 	setWords(e.area.words()[:], rd(0x800))
 	wallsA, wallsB := e.area.WallsA, e.area.WallsB
 	e.area.WallsA, e.area.WallsB = [3]uint16{}, [3]uint16{}
@@ -478,7 +477,7 @@ func (e *Engine) loadSlot(key byte) bool {
 		e.BuildCharIcon(c, true)
 	}
 	e.partySel = 0
-	e.symDAX = "8X8D" + string('0'+byte(e.game.SymbolSet))
+	e.set = Set(e.game.SymbolSet)
 	if e.viewMode < 2 {
 		e.LoadGeo(int(byte(e.area.Geo))) // ovr30:10C7
 	}
@@ -523,8 +522,8 @@ func (e *Engine) saveSlot(key byte) {
 	e.DisplayString(0, 24, 0xA, "Saving...Please Wait")
 	e.area.MsgDelay = uint16(e.msgDelay)
 	e.area.ViewFlags = uint16(e.flag49F6)*2 + uint16(e.flag49F5)
-	e.game.SymbolSet = uint16(e.symDAX[4] - '0')
-	b := []byte{e.symDAX[4] - '0'}
+	e.game.SymbolSet = uint16(e.set)
+	b := []byte{byte(e.set)}
 	area := e.area
 	for i := range 3 {
 		area.WallsA[i] = uint16(e.mapPairA[i])

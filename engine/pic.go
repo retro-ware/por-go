@@ -14,9 +14,9 @@ func (e *Engine) LoadSymbolSet(set, block int) {
 	if set < 0 || set > 4 {
 		return
 	}
-	e.sym[set] = e.LoadPicMasked(e.symDAX, block, 0xD)
+	e.sym[set] = e.LoadPicMasked(e.set.file("8X8D"), block, 0xD)
 	if e.sym[set] == nil {
-		e.MessageRow24b(0xF, "Unable to load 8x8D"+e.symDAX[4:]+"-"+itoa(block))
+		e.MessageRow24b(0xF, "Unable to load "+e.set.file("8x8D")+"-"+itoa(block))
 		e.Exit()
 	}
 }

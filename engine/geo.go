@@ -275,7 +275,7 @@ func (e *Engine) LoadWalldef(block, slot int) {
 	if slot < 1 || slot > 3 {
 		return
 	}
-	b := e.L.Block("WALLDEF"+e.symDAX[4:], block)
+	b := e.L.Block(e.set.file("WALLDEF"), block)
 	if len(b) == 0 || slot+len(b)/walldefSet > 4 {
 		e.MessageRow24b(0xF, "Unable to load wallset in LoadWallSet.")
 		return
@@ -316,7 +316,7 @@ func (e *Engine) LoadWalldef(block, slot int) {
 
 // LoadGeo = ovr30:10C7 (n): GEO<n>.DAX block n into the map planes.
 func (e *Engine) LoadGeo(n int) {
-	b := e.L.Block("GEO"+e.symDAX[4:], n)
+	b := e.L.Block(e.set.file("GEO"), n)
 	if len(b) != 0 && len(b) != geoSize {
 		e.MessageRow24b(0xF, "Unable to load geo in Load3DMap.")
 	}

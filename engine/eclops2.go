@@ -51,7 +51,7 @@ func (e *Engine) opTreasure() {
 	v := int(byte(e.ArgValue(8)))
 	switch {
 	case v < 0x80:
-		b := e.L.Block("ITEM"+e.symDAX[4:], v)
+		b := e.L.Block(e.set.file("ITEM"), v)
 		if len(b) == 0 {
 			e.MessageRow24b(0xF, "Unable to find item file")
 			e.Exit()

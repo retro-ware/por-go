@@ -14,7 +14,7 @@ func (e *Engine) Init() {
 	e.posX, e.posY, e.facing = 0xF, 1, 6                      // DS:6AAD/6AAE/6AAF
 	e.eclPC = 0x9900                                          // DS:49ED
 	e.msgDelay = 1                                            // DS:49E2
-	e.symDAX = "8X8D1"                                        // DS:5376 = 1
+	e.set = 1                                                 // DS:5376 = 1
 	e.viewMode, e.prevViewMode = 1, 1
 	e.saved = false
 	e.flag49F5, e.flag49F6 = 1, 1         // DS:49F5/49F6
@@ -23,9 +23,8 @@ func (e *Engine) Init() {
 	e.mapPairA[1], e.mapPairA[2] = -1, -1 // DS:6AAE+4i, i = 2..3
 	e.mapPairB[1], e.mapPairB[2] = -1, -1 // DS:6AB0+4i
 	e.es.v6F69, e.es.v6F68 = 0xE8, 0xDB   // DS:6F69/6F68
-	e.symPrev = e.symDAX                  // DS:5377
 
-	e.font = e.L.Block(e.symDAX, 201) // 0709:017C
+	e.font = e.L.Block(e.set.file("8X8D"), 201) // 0709:017C
 	e.ClearRow24()
 	e.DisplayString(0, 24, 0xA, "Loading...Please Wait")
 	e.LoadSymbolSet(4, 202) // ovr35:003B
@@ -61,7 +60,7 @@ func (e *Engine) readItems() []byte {
 // InitGraphics loads the font and symbol sets 4 and 0 the way Init does
 // (for tools that skip Init).
 func (e *Engine) InitGraphics() {
-	e.font = e.L.Block(e.symDAX, 201)
+	e.font = e.L.Block(e.set.file("8X8D"), 201)
 	e.LoadSymbolSet(4, 202)
 	e.LoadSymbolSet(0, 203)
 }

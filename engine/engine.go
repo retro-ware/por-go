@@ -39,10 +39,10 @@ type Engine struct {
 	Trace     TraceFunc              // nil in normal play; see trace.go
 	tr        *traceState            // trace mode clock and key script
 
-	font   []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph
-	sym    [5]*dax.Image // DS:5E3A symbol sets
-	symDAX string        // "8X8D" + DS:5376 digit
-	start  time.Time
+	font  []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph
+	sym   [5]*dax.Image // DS:5E3A symbol sets
+	set   Set           // DS:5376: the data set the current area reads
+	start time.Time
 
 	pendingScan byte // ReadKey: scan code waiting after a 0 byte
 	draining    bool // ReadKeyByte is dropping typed-ahead keys
@@ -83,7 +83,6 @@ type Engine struct {
 	loadingMonster         bool // DS:557C
 
 	es             eclState            // ovr08/ovr04 interpreter state
-	symPrev        string              // DS:5377
 	msgRow, msgCol int                 // DS:5E25 / 5E24 text-block cursor
 	slowText       bool                // DS:4A00: DisplayTextBlock types out
 	listTop        int                 // DS:6B29 ovr26 list menu: first visible row
@@ -177,7 +176,7 @@ func New(dir string, scr *ega.Screen) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{L: l, S: scr, symDAX: "8X8D1", start: time.Now()}
+	e := &Engine{L: l, S: scr, set: 1, start: time.Now()}
 	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: dir, SaveDir: filepath.Join(dir, "SAVE"), FullIntro: true}
 	if p := l.Path("POOL.CFG"); p != "" {
 		f, err := os.Open(p)

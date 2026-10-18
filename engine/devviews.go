@@ -59,7 +59,7 @@ func (e *Engine) DevScene(name string) func() {
 			// Block 1 exists only in MON2CHA; take the first monster of
 			// the current set (DS:5376) so any save can start a fight.
 			idx := 1
-			if f := e.L.File("MON" + e.symDAX[4:] + "CHA"); f != nil && len(f.Entries) > 0 {
+			if f := e.L.File(e.set.file("MON") + "CHA"); f != nil && len(f.Entries) > 0 {
 				idx = f.Entries[0].ID
 			}
 			e.addMonsters(idx, 3, 1)

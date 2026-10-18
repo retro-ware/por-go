@@ -84,7 +84,7 @@ func (e *Engine) DrawMainScreen() {
 		e.DrawBoxTitled(1, 1, 0x26, 0x16, 0, 0xF, "")
 	case 1:
 		e.DrawMainFrame(true)
-		e.LoadPortrait(int(e.es.f49FD), int(e.es.f49FE))
+		e.LoadPortrait(e.set, int(e.es.f49FD), int(e.es.f49FE))
 		e.DrawPortrait(3, 3, true)
 	case 2:
 		e.DrawMainFrame(true)

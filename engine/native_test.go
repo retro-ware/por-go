@@ -19,7 +19,7 @@ func TestTavernSpin(t *testing.T) {
 			t.Errorf("tavernSpin(%d, %d, %d) = %d, want %d", c.gold, c.wager, c.r, got, c.want)
 		}
 	}
-	if (&Engine{symDAX: "8X8D3"}).nativeScript() != nil {
+	if (&Engine{set: 3}).nativeScript() != nil {
 		t.Fatal("native script at pc 0")
 	}
 }

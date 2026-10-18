@@ -93,8 +93,8 @@ func (e *Engine) partyKeypad(k byte) {
 // PartyMenu = ovr17:0161. Returns when the player begins adventuring or
 // loads a game that starts play (beginFlag != 0).
 func (e *Engine) PartyMenu() {
-	e.Music(3)         // Amiga 0x2D35C
-	e.symDAX = "8X8D3" // DS:5376 = 3
+	e.Music(3) // Amiga 0x2D35C
+	e.set = 3  // DS:5376 = 3
 	var names []string
 	var enabled []bool
 	for i, m := range partyMenu {

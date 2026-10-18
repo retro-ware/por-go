@@ -410,7 +410,7 @@ func (e *Engine) opNewECL() {
 	e.area.AreaKind = uint16(e.gs.areaKind)
 	v := byte(e.ArgValue(1))
 	e.gs.areaKind = v
-	e.eclFile = "ECL" + e.symDAX[4:] + ".dax" // DS:547C
+	e.eclFile = e.set.file("ECL") + ".dax" // DS:547C
 	// ovr18:22D5 asked for another game disk when the file was missing; all
 	// files are in one folder here.
 	e.LoadArea(int(v))

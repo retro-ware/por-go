@@ -247,7 +247,7 @@ func (e *Engine) head(id int) image.Image {
 		e.snap.heads = map[int]image.Image{}
 	}
 	var out image.Image
-	im := e.LoadPic("HEAD"+e.symDAX[4:], id)
+	im := e.LoadPic(charArt.file("HEAD"), id)
 	if im != nil && im.Count > 0 {
 		out = e.toRGBA(im.Frame(0), im.Width*8, im.Height, image.NewRGBA(image.Rect(0, 0, im.Width*8, im.Height)), 0, 0)
 	}

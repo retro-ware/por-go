@@ -17,7 +17,7 @@ var nativeScripts = map[scriptAt]func(*Engine){
 }
 
 func (e *Engine) nativeScript() func(*Engine) {
-	return nativeScripts[scriptAt{e.symDAX[4] - '0', e.gs.areaKind, e.eclPC}]
+	return nativeScripts[scriptAt{byte(e.set), e.gs.areaKind, e.eclPC}]
 }
 
 // New Phlan's tavern game labels (ECL3 block 0).

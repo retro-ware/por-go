@@ -16,7 +16,7 @@ func (e *Engine) o34_00F7() {}
 // are drawn on the page, then animated; the dragon dies, Tyranthraxus
 // speaks, and the screen is rebuilt.
 func (e *Engine) ProgramEight() {
-	digit := e.symDAX[4:] // Str(DS:5376) -> DS:4713
+	final := e.set.file("FINAL") // Str(DS:5376) -> DS:4713
 	savedFlag := e.beginFlag
 	e.beginFlag = 7
 	var im *dax.Image // DS:470E, never freed
@@ -55,9 +55,9 @@ func (e *Engine) ProgramEight() {
 		e.FreeAnimPic()
 	}
 	slow := func() int { return (10 - int(e.msgDelay)) * 5 >> 1 }
-	// page draws FINAL<digit> block at page cell (x,y) (0464:0111, 0464:0D71 mode 0).
+	// page draws FINAL<set> block at page cell (x,y) (0464:0111, 0464:0D71 mode 0).
 	page := func(block, x, y int) {
-		im = e.LoadPic("FINAL"+digit, block)
+		im = e.LoadPic(final, block)
 		e.drawPage(x, y, im, 0, false, false)
 	}
 	say := func(y int, s string) { e.DisplayString(1, y, 0xA, s) }
