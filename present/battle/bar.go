@@ -36,6 +36,23 @@ type barItem struct {
 	Send []uint16
 }
 
+// hotkeys are the remaster's letters for the bar's buttons, by word, and
+// what the button shows for them (the number keys work too, unshown).
+var hotkeys = map[string]struct {
+	key   uint16
+	label string
+}{"Guard": {'g', "G"}, "End": {8, "BS"}, "Wait": {'p', "P"}, "Cast": {'c', "C"}, "Quick": {'u', "U"}, "Items": {'i', "I"}}
+
+// hotkey is the keys of the button whose hotkey is k (nil: none).
+func (b *bar) hotkey(k uint16) []uint16 {
+	for i, it := range b.items {
+		if h, ok := hotkeys[it.Text]; ok && h.key == k && i < len(b.rects) {
+			return it.Send
+		}
+	}
+	return nil
+}
+
 // has is the keys of the button named s (nil: none).
 func (b *bar) has(s string) []uint16 {
 	for i, it := range b.items {
@@ -234,8 +251,11 @@ func barPixels(glyph func(byte) [8]byte, prompt string, items []barItem, sel, ho
 		} else {
 			text(string(it.Key), in.Min.X+(in.Dx()-16*k)/2, in.Min.Y+(in.Dy()-16*k)/2, 2*k, rgb(15))
 		}
-		if i < 10 {
-			text(string(rune('0'+(i+1)%10)), in.Min.X+k, in.Min.Y+k, k, rgb(7)) // its number key
+		if h, ok := hotkeys[it.Text]; ok { // its hotkey, bottom right
+			lw := len(h.label) * 8 * k
+			at := image.Pt(in.Max.X-lw-2*k, in.Max.Y-10*k)
+			draw.Draw(im, image.Rect(at.X-k, at.Y-k, at.X+lw+k, at.Y+9*k), image.NewUniform(color.RGBA{0, 0, 0, 0xB0}), image.Point{}, draw.Over) // darkens the icon under it
+			text(h.label, at.X, at.Y, k, rgb(15))
 		}
 		if i != hover {
 			continue

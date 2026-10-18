@@ -60,9 +60,19 @@ func TestKeys(t *testing.T) {
 			t.Errorf("key %#x: %q %v, want %q taken", k, str(got), taken, want)
 		}
 	}
-	if _, taken := p.Key(0x4800); taken {
-		t.Error("arrows belong to the game")
+	for k, want := range map[uint16]string{'u': "Q", 'p': "W", 'g': ""} { // the remaster's letters; no Guard on this bar
+		if got, _ := p.Key(k); str(got) != want {
+			t.Errorf("hotkey %c: %q, want %q", k, str(got), want)
+		}
 	}
+	if got, taken := p.Key(0x4800); got != nil || !taken {
+		t.Error("arrows pan the camera with the bar up")
+	}
+	p.bar.rects = nil
+	if _, taken := p.Key(0x4800); taken {
+		t.Error("arrows step in Move (no bar)")
+	}
+	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
 	if _, taken := p.Key(13); taken {
 		t.Error("Enter off the aim bar belongs to the game")
 	}

@@ -93,9 +93,9 @@ var (
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
-// Key is the XCOM 2 scheme: W A S D pan (held: see pan), Q and E turn,
+// Key is the XCOM 2 scheme: W A S D and the arrows pan (held: see pan), Q and E turn,
 // the wheel zooms, Home brings the camera back, 1..9 and 0 pick the bar's
-// buttons, Tab and Shift-Tab cycle the targets, Enter attacks the aimed
+// buttons, the bar's letters (hotkeys) theirs, Tab and Shift-Tab cycle the targets, Enter attacks the aimed
 // one and Backspace ends the turn. It returns the keys to send instead and
 // whether k was taken.
 func (p *Presenter) Key(k uint16) ([]uint16, bool) {
@@ -114,6 +114,7 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 	case k == engine.MouseKey(engine.MouseWheelUp, 0, 0):
 		p.distTo = max(minDist, p.distTo/1.15)
 	case k == 'w' || k == 'a' || k == 's' || k == 'd':
+	case (k == 0x4800 || k == 0x5000 || k == 0x4B00 || k == 0x4D00) && shown: // the arrows pan, not the bar's cursor
 	case k == 0x4700 && shown: // without the bar (Move's steps) Home is keypad 7
 		p.offset = vec{}
 	case k >= '0' && k <= '9':
@@ -128,6 +129,8 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 		case p.bar.has("End") != nil:
 			return p.bar.has("End"), true
 		}
+	case shown && p.bar.hotkey(k) != nil:
+		return p.bar.hotkey(k), true
 	case k == 9 && shown && p.aiming:
 		c := p.cursor
 		p.tabFrom = &c
@@ -174,14 +177,15 @@ func targetAt(b *engine.Battle, sq image.Point) bool {
 	return false
 }
 
-// pan moves the camera's centre by the held W A S D, relative to its heading.
+// pan moves the camera's centre by the held W A S D or arrows, relative to its heading.
 func (p *Presenter) pan(dt float64) {
 	var f, r float64
-	for _, h := range [4]struct {
+	for _, h := range [8]struct {
 		k    gpu.Key
 		f, r float64
-	}{{gpu.KeyW, 1, 0}, {gpu.KeyS, -1, 0}, {gpu.KeyD, 0, 1}, {gpu.KeyA, 0, -1}} {
-		if gpu.IsKeyPressed(h.k) {
+	}{{gpu.KeyW, 1, 0}, {gpu.KeyS, -1, 0}, {gpu.KeyD, 0, 1}, {gpu.KeyA, 0, -1},
+		{gpu.KeyUp, 1, 0}, {gpu.KeyDown, -1, 0}, {gpu.KeyRight, 0, 1}, {gpu.KeyLeft, 0, -1}} {
+		if gpu.IsKeyPressed(h.k) && (h.k == gpu.KeyW || h.k == gpu.KeyS || h.k == gpu.KeyD || h.k == gpu.KeyA || len(p.bar.rects) > 0) { // the arrows step in Move (no bar)
 			f, r = f+h.f, r+h.r
 		}
 	}
