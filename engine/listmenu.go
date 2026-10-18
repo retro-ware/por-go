@@ -224,9 +224,8 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 	*index++
 	e.lmMoveCursor(c, false)
 	clicked := false // the 13 came from a click on the line
-	{                // extra (nav.go): a click moves the cursor to the line, a second one is
-		// Enter; a pure picker (no menu words) picks on the first click, and
-		// the line under the pointer is highlighted
+	{                // extra (nav.go): the line under the pointer is highlighted, so a
+		// click on it is Enter (the picked line, the highlighted menu word)
 		mark := e.regionMark()
 		defer e.regionCut(mark)
 		at := func(cy int) int {
@@ -254,12 +253,10 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 			move(i)
 			return keyNone
 		}}
-		if menu == "" {
-			r.hover = func() {
-				if cx, cy, ok := e.S.Mouse(); ok && cx >= x1 && cx <= x2 {
-					if i := at(cy); i >= 0 && i != *index {
-						move(i)
-					}
+		r.hover = func() {
+			if cx, cy, ok := e.S.Mouse(); ok && cx >= x1 && cx <= x2 {
+				if i := at(cy); i >= 0 && i != *index {
+					move(i)
 				}
 			}
 		}
