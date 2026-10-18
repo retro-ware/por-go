@@ -1,19 +1,21 @@
 package engine
 
-// Area of effect preview (extra): while the player aims a spell that hits
-// everyone round the target square (chooseSpellTargets's kinds 9..E), the combatants
-// it would hit get the dotted frame Move and Aim use (markReach) and counted in the prompt.
-// The test is the cast's own: buildNear round the square, radius kind&7.
-// Lightning Bolt (kind 8, a line) walks boltWalk dry: the squares it
-// crosses are the area, the ones it strikes the marks.
+// Area of effect preview (extra): while the player aims a spell, the
+// combatants it would hit get the dotted frame Move and Aim use (markReach)
+// and are counted in the prompt, its squares go to the snapshot (area).
+// The test is the cast's own: buildNear round the square, radius kind&7
+// for chooseSpellTargets's kinds 9..E, 0 (the square itself) for single
+// targets; a bolt (bolts) walks boltWalk dry: the squares it crosses are
+// the area, the ones it strikes the marks.
 
 import (
 	"image"
 	"strconv"
 )
 
-// aoeBolt in ext.aoe: the spell being aimed is Lightning Bolt's line.
-const aoeBolt = -1
+// bolts is the reach and bounce boltPath gets from each spell whose effect
+// is a bolt (fxLightning, fxBolt).
+var bolts = map[int][2]int{spLightningBolt: {8, 1}, 60: {3, 0}}
 
 // aoeMarks marks who the spell aimed at (x,y) would hit; the prompt says
 // how many on each side. undo takes the marks off again.
@@ -23,8 +25,8 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 	}
 	var hit []byte // combatant numbers
 	e.snap.area = nil
-	if e.ext.aoe == aoeBolt {
-		hit, e.snap.area = e.boltPreview(x, y)
+	if b := e.ext.bolt; b[0] > 0 {
+		hit, e.snap.area = e.boltPreview(x, y, b[0], b[1])
 	} else {
 		saved := e.near
 		e.near = nil
@@ -61,11 +63,11 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 	return "Hits " + strconv.Itoa(foes) + " foe " + strconv.Itoa(friends) + " ally ", undo
 }
 
-// boltPreview walks Lightning Bolt from (x,y) as fxLightning would (the
-// target square, then boltPath(8, ..., bounce 1)) without striking: who
-// it hits (each once) and the squares it crosses. ponytail: the occupants
-// stay put, so a foe the cast would kill still stops the line.
-func (e *Engine) boltPreview(x, y int) (hit []byte, line []image.Point) {
+// boltPreview walks a bolt from (x,y) as its cast would (the target
+// square, then boltPath(reach, ..., bounce)) without striking: who it hits
+// (each once) and the squares it crosses. ponytail: the occupants stay
+// put, so a foe the cast would kill still stops the line.
+func (e *Engine) boltPreview(x, y, reach, bounce int) (hit []byte, line []image.Point) {
 	tx, ty := e.tgtX, e.tgtY
 	defer func() { e.tgtX, e.tgtY = tx, ty }()
 	e.tgtX, e.tgtY = x, y
@@ -78,7 +80,7 @@ func (e *Engine) boltPreview(x, y int) (hit []byte, line []image.Point) {
 	}
 	strike(x, y)
 	line = append(line, image.Pt(x, y))
-	e.boltWalk(8, 1, func(x, y int) { line = append(line, image.Pt(x, y)) }, func(_, _, x, y int) bool {
+	e.boltWalk(reach, bounce, func(x, y int) { line = append(line, image.Pt(x, y)) }, func(_, _, x, y int) bool {
 		strike(x, y)
 		_, ground := e.mapAt(x, y)
 		return ground > 0 && groundTable[ground][0] == 0xFF

@@ -759,9 +759,11 @@ func (e *Engine) breathWeapon(c *Character, a *Affect, flag int) {
 	}
 	e.removeInvisibility(c)
 	e.hitColours(0x13)
+	_, e.snap.area = e.boltPreview(e.tgtX, e.tgtY, 0xA, 0) // extra: views wash the breath's line while it flies
 	e.flyMissile(cx, cy, e.tgtX, e.tgtY, 4, 0x32)
 	e.strikeSquare(e.tgtX, e.tgtY, int(c.MaxHP), 3)
 	e.boltPath(0xA, int(c.MaxHP), 3, 0)
+	e.snap.area = nil
 	if a.Data > 0xFD {
 		a.Data--
 	} else {

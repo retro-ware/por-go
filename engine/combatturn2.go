@@ -127,6 +127,11 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 		e.spellOwnTargets = 1
 	}
 	kind := e.spellData(spell, 0) & 0xF
+	e.ext.aoe, e.ext.bolt = 1, bolts[spell] // extra: area preview (aoe.go); one target: its own square
+	if kind > 8 && kind <= 0xE {
+		e.ext.aoe = int(kind&7) + 1
+	}
+	defer func() { e.ext.aoe, e.ext.bolt = 0, [2]int{} }()
 	switch {
 	case kind == 0:
 		e.setTgt(1, sel)
@@ -141,12 +146,7 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 			fromNear(int(e.spellData(spell, 0)&0xF) >> 4) // always 0, as in the original
 		}
 	case kind >= 8 && kind <= 0xE:
-		e.ext.aoe = aoeBolt // extra: area preview (aoe.go)
-		if kind > 8 {
-			e.ext.aoe = int(kind&7) + 1
-		}
 		picked := e.chooseSpellTarget(spell, silent, 1, &tmp)
-		e.ext.aoe = 0
 		if !picked {
 			ok = false
 		} else {
