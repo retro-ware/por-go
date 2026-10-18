@@ -58,7 +58,7 @@ func (p *Presenter) overBar(x, y int) bool {
 // on the main combat menu Move and View go (a click on the map walks, on
 // one's own figure opens the sheet), Aim is Attack, the turn enders
 // (actions) sit before End turn (Done, Quit); aiming keeps Attack, Free
-// aim and Cancel (Tab cycles the targets, the camera follows by itself).
+// aim and Cancel (Tab cycles the targets; the camera stays put).
 func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel int) {
 	kind := ""
 	for _, it := range m.Items {

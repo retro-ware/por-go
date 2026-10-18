@@ -200,16 +200,14 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	}
 	p.strikeT += dt
 
-	// where the eye goes: an effect, else the cursor, else whose turn it is
+	// where the eye goes: an effect, else whose turn it is (the aim cursor is
+	// the player's to follow: the camera pans by hand)
 	focus := vec{float64(b.View.X) + 6, 0, float64(b.View.Y) + 3.5}
 	for _, u := range b.Units {
 		if u.Active {
 			c := unitCentre(u)
 			focus = vec{c[0], 0, c[1]}
 		}
-	}
-	if b.CursorOn {
-		focus = vec{float64(b.Cursor.X) + .5, 0, float64(b.Cursor.Y) + .5}
 	}
 	if n := len(b.Effects); n > 0 {
 		f := b.Effects[n-1]
