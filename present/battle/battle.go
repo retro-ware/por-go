@@ -32,15 +32,16 @@ type Presenter struct {
 	figs                       map[image.Image]*figure // ponytail: never evicted; a few dozen pictures a game
 	bar                        bar
 
-	yaw, yawTo   float64 // camera heading: 0 looks north, as the original's screen
-	dist, distTo float64 // camera distance in squares
-	at           vec     // what the camera looks at (eased)
-	cam          camera  // the last frame's camera, for picking
-	screen       image.Rectangle
-	units        map[int]*[2]float64 // each unit's shown position (eased between squares)
-	sparks       []spark
-	last         time.Time
-	clock        float64 // seconds shown, for pulses
+	focus, offset vec     // what the camera watches; the W A S D pan from it
+	yaw, yawTo    float64 // camera heading: 0 looks north, as the original's screen
+	dist, distTo  float64 // camera distance in squares
+	at            vec     // what the camera looks at (eased)
+	cam           camera  // the last frame's camera, for picking
+	screen        image.Rectangle
+	units         map[int]*[2]float64 // each unit's shown position (eased between squares)
+	sparks        []spark
+	last          time.Time
+	clock         float64 // seconds shown, for pulses
 }
 
 type figure struct {
@@ -74,23 +75,56 @@ var (
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
-// Key turns the camera with [ and ], zooms with - and =; it
-// reports whether k was taken.
-func (p *Presenter) Key(k uint16) bool {
+// Key is the XCOM scheme: W A S D pan (held: see pan), Q and E (or [ and ])
+// turn the camera, the wheel (or - and =) zooms, 1..9 and 0 pick the bar's
+// buttons and Backspace ends the turn (Done). It returns the key to send
+// instead (0: none) and whether k was taken.
+func (p *Presenter) Key(k uint16) (uint16, bool) {
 	p.initCamera()
-	switch {
-	case k == '[':
-		p.yawTo -= math.Pi / 4
-	case k == ']':
-		p.yawTo += math.Pi / 4
-	case k == '-':
-		p.distTo = min(maxDist, p.distTo*1.15)
-	case k == '=':
-		p.distTo = max(minDist, p.distTo/1.15)
-	default:
-		return false
+	if k < 128 && k >= 'A' && k <= 'Z' {
+		k += 'a' - 'A'
 	}
-	return true
+	switch {
+	case k == 'q' || k == '[':
+		p.yawTo -= math.Pi / 4
+	case k == 'e' || k == ']':
+		p.yawTo += math.Pi / 4
+	case k == '-' || k == engine.MouseKey(engine.MouseWheelDown, 0, 0):
+		p.distTo = min(maxDist, p.distTo*1.15)
+	case k == '=' || k == engine.MouseKey(engine.MouseWheelUp, 0, 0):
+		p.distTo = max(minDist, p.distTo/1.15)
+	case k == 'w' || k == 'a' || k == 's' || k == 'd':
+	case k >= '0' && k <= '9':
+		i := (int(k) - '0' + 9) % 10 // 1 is the first button, 0 the tenth
+		if i < len(p.bar.rects) {
+			return uint16(p.bar.keys[i]), true
+		}
+	case k == 8:
+		for i := range p.bar.rects {
+			if p.bar.keys[i] == 'D' {
+				return 'D', true
+			}
+		}
+	default:
+		return 0, false
+	}
+	return 0, true
+}
+
+// pan moves the camera's centre by the held W A S D, relative to its heading.
+func (p *Presenter) pan(dt float64) {
+	var f, r float64
+	for _, h := range [4]struct {
+		k    gpu.Key
+		f, r float64
+	}{{gpu.KeyW, 1, 0}, {gpu.KeyS, -1, 0}, {gpu.KeyD, 0, 1}, {gpu.KeyA, 0, -1}} {
+		if gpu.IsKeyPressed(h.k) {
+			f, r = f+h.f, r+h.r
+		}
+	}
+	v := dt * p.dist * 1.2 // squares a second, faster zoomed out
+	sin, cos := math.Sin(p.yaw), math.Cos(p.yaw)
+	p.offset = p.offset.add(vec{-sin*f + cos*r, 0, -cos*f - sin*r}.mul(v))
 }
 
 func (p *Presenter) initCamera() {
@@ -129,6 +163,11 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		f := b.Effects[n-1]
 		focus = vec{f.X + .5, 0, f.Y + .5}
 	}
+	if focus != p.focus { // a new thing to watch: let go of the pan
+		p.focus, p.offset = focus, vec{}
+	}
+	p.pan(dt)
+	focus = focus.add(p.offset)
 	k := 1 - math.Exp(-dt*8)
 	p.yaw += (p.yawTo - p.yaw) * k
 	p.dist += (p.distTo - p.dist) * k

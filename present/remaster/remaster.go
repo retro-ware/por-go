@@ -31,26 +31,26 @@ import (
 type Presenter struct {
 	Classic *classic.Presenter
 
-	view    *blobber.View
-	failed  bool                        // the renderer could not start: classic from then on
-	scenes  map[string]*blobber.Scene   // parsed maps by name
-	shown   string                      // the scene the view shows
-	last    time.Time                   // when the animation last advanced
-	ticks   float64                     // animation time not yet run, in 1/60 s ticks
-	party   party.Party                 // View.Party as Blobber's cards show it
-	faces   map[image.Image]image.Image // card art cropped from each paper-doll head
-	inside  bool                        // the view has the inside ceiling
-	active  bool                        // the last frame was drawn remastered
-	menu    bool                        // the vertical menu is open
-	sel     int                         // its highlighted item
-	asked   string                      // the question menu last opened by itself (menuID)
-	mapImg  *gpu.Image                  // View.Map on the GPU
-	mapSrc  image.Image                 // the View.Map it holds
-	menuImg *gpu.Image                  // the vertical menu, drawn at scale 1
-	menuBuf []byte                      // its pixels
-	battle  battle.Presenter            // the combat map in 3D
-	mapBottom int // screen rows above this are the 3D map
-	fight   bool                        // the last frame was the 3D combat map
+	view      *blobber.View
+	failed    bool                        // the renderer could not start: classic from then on
+	scenes    map[string]*blobber.Scene   // parsed maps by name
+	shown     string                      // the scene the view shows
+	last      time.Time                   // when the animation last advanced
+	ticks     float64                     // animation time not yet run, in 1/60 s ticks
+	party     party.Party                 // View.Party as Blobber's cards show it
+	faces     map[image.Image]image.Image // card art cropped from each paper-doll head
+	inside    bool                        // the view has the inside ceiling
+	active    bool                        // the last frame was drawn remastered
+	menu      bool                        // the vertical menu is open
+	sel       int                         // its highlighted item
+	asked     string                      // the question menu last opened by itself (menuID)
+	mapImg    *gpu.Image                  // View.Map on the GPU
+	mapSrc    image.Image                 // the View.Map it holds
+	menuImg   *gpu.Image                  // the vertical menu, drawn at scale 1
+	menuBuf   []byte                      // its pixels
+	battle    battle.Presenter            // the combat map in 3D
+	mapBottom int                         // screen rows above this are the 3D map
+	fight     bool                        // the last frame was the 3D combat map
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -62,7 +62,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		p.battle.Draw(dst, v.Battle)
 		frame, k := p.Classic.Frame(scr, note), scale(dst)
 		p.mapBottom = dst.Bounds().Dy() - int(k)*8*3 // the text rows under the map take clicks themselves
-		if v.Menu == nil { // typed input, "press a key": the original's two rows
+		if v.Menu == nil {                           // typed input, "press a key": the original's two rows
 			p.battle.HideBar()
 			p.drawRows(dst, frame, engine.CombatRows, k)
 			return classic.Rect{}
@@ -159,7 +159,11 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 // whether k was taken.
 func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	if p.fight {
-		return nil, p.battle.Key(k)
+		send, taken := p.battle.Key(k)
+		if send != 0 {
+			return []uint16{send}, true
+		}
+		return nil, taken
 	}
 	if !p.active || p.view == nil {
 		p.menu = false

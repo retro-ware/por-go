@@ -42,3 +42,20 @@ func TestStoneTexture(t *testing.T) {
 		t.Errorf("mortar %v, want the ground colour", got.RGBAAt(5, 5))
 	}
 }
+
+func TestKeys(t *testing.T) {
+	p := &Presenter{}
+	p.bar.rects = make([]image.Rectangle, 3)
+	p.bar.keys = []byte{'M', 'A', 'D'}
+	for k, want := range map[uint16]uint16{'1': 'M', '3': 'D', '4': 0, '0': 0, 8: 'D', 'w': 0, 'Q': 0} {
+		if got, taken := p.Key(k); got != want || !taken {
+			t.Errorf("key %#x: %#x %v, want %#x taken", k, got, taken, want)
+		}
+	}
+	if _, taken := p.Key(0x4800); taken {
+		t.Error("arrows belong to the game")
+	}
+	if p.yawTo == 0 {
+		t.Error("Q did not turn the camera")
+	}
+}

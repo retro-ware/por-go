@@ -33,3 +33,4 @@ present/battle    3D view: camera (orbit), scene meshes, action bar
 - [x] 7. Tabletop look: lit meshes (sun, sky, specular), the DungCom stone derived at runtime, floor grain and square edges, corner occlusion, blob shadows, a board on a wooden table
 - [x] 8. Feature parity: effects (hits, missiles, spells) with point lights and sparks, deaths, move/aim marks, the cursor, clicks on squares, zoom (- and =)
 - [x] 9. Playtest: dungeon and wilderness fights, DOS and Amiga art, aim, square clicks, effects, deaths, F10 mid-fight (seeded runs pixel-identical)
+- [x] 10. XCOM controls: W A S D pan (held, relative to the heading; the pan lets go when the camera gets a new thing to watch), Q/E turn, the wheel zooms, 1..9 and 0 pick the bar buttons (numbered on them), Backspace ends the turn (Done); arrows stay with the game (move, aim)

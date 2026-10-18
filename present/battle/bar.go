@@ -112,6 +112,9 @@ func barPixels(glyph func(byte) [8]byte, m *engine.Menu, w, h int) *image.RGBA {
 		fill(r, edge)
 		fill(r.Inset(2), color.RGBA{0x18, 0x20, 0x38, 0xFF})
 		text(string(it.Key), r.Min.X+(button-16)/2, r.Min.Y+(button-16)/2, 2, rgb(15))
+		if i < 10 {
+			text(string(rune('0'+(i+1)%10)), r.Min.X+3, r.Min.Y+3, 1, rgb(7)) // its number key
+		}
 		word := it.Text
 		if len(word) > slot/8 {
 			word = word[:slot/8]
