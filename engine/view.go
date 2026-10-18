@@ -75,7 +75,7 @@ func (e *Engine) CharacterSheet() {
 	e.DisplayString(1, y, 0xF, "Status")
 	e.DisplayString(8, y, 0xA, e.statusName(c))
 	e.sheetEffects(c)
-	if e.flag49F5 != 0 && e.symDAX == "8X8D3" { // DS:5376 == 3
+	if e.flag49F5 != 0 && (e.symDAX == "8X8D3" || e.beginFlag == 5) { // DS:5376 == 3; extra: in combat too
 		e.SheetPortrait()
 	}
 }
@@ -340,6 +340,9 @@ func (e *Engine) SheetPortrait() {
 		return
 	}
 	e.DrawBoxTitled(0x1C, 1, 0x26, 0xB, 0, 0, "")
+	set := e.symDAX
+	e.symDAX = "8X8D3" // extra: the portraits are set 3's, whatever set is loaded (combat's)
+	defer func() { e.symDAX = set }()
 	e.LoadPortrait(int(portraitHead[c.PortHead]), int(portraitBody[c.PortBody]))
 	e.DrawPortrait(0x1C, 1, true)
 }
