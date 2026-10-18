@@ -339,6 +339,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	}
 
 	// the figurines
+	var heads []head // where each one's health bar goes (Shift)
 	for _, u := range b.Units {
 		if u.Icon == nil {
 			continue
@@ -387,6 +388,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		o := opts(place(x, pedestal+half, z, 0, size, size, size), tint, 0.12)
 		o.Ambient = 0.85 // fixed facing, so its back is lit enough to read from any heading
 		dst.DrawMesh(f.mesh, f.tex, vp, o)
+		heads = append(heads, head{u, vec{float64(x), float64(pedestal + 2*half + .1), float64(z)}})
 	}
 
 	// effects: the sprite hangs over its square, glowing, shedding sparks
@@ -410,6 +412,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		}
 	}
 	p.drawSparks(dst, vp, dt)
+	if gpu.IsKeyPressed(gpu.KeyShift) {
+		p.drawHealth(dst, vp, heads)
+	}
 }
 
 // drawSparks moves, fades and draws the particles.

@@ -80,6 +80,7 @@ type Unit struct {
 	Active     bool        // whose turn it is
 	Name       string
 	HP, AC     int
+	MaxHP      int
 	Hit        int // the active member's chance in percent to hit it with one blow (0: not a target)
 }
 
@@ -135,7 +136,7 @@ func (e *Engine) battle() *Battle {
 			b.Strike.To = i
 		}
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
-			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), AC: 60 - int(c.AC[0]), Hit: s.hits[i]}
+			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP), AC: 60 - int(c.AC[0]), Hit: s.hits[i]}
 		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
 			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}
