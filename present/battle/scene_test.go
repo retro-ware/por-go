@@ -82,7 +82,7 @@ func TestKeys(t *testing.T) {
 	aim := &engine.Menu{Prompt: "Aim:", Items: []engine.MenuItem{{Text: "Next", Key: 'N'}, {Text: "Prev", Key: 'P'}, {Text: "Manual", Key: 'M'}, {Text: "Attack", Key: 'A'}, {Text: "Center", Key: 'C'}, {Text: "Exit", Key: 'E'}}}
 	p.bar.items, _ = shownItems(aim, nil)
 	p.bar.rects, p.aiming = make([]image.Rectangle, len(p.bar.items)), true
-	if len(p.bar.items) != 3 || p.bar.items[0].Text != "Free" || p.bar.items[2].Text != "Cancel" {
+	if len(p.bar.items) != 2 || p.bar.items[0].Text != "Attack" || p.bar.items[1].Text != "Cancel" {
 		t.Errorf("aim bar: %+v", p.bar.items)
 	}
 	if got, _ := p.Key(13); str(got) != "A" {

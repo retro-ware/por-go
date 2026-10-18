@@ -84,8 +84,8 @@ func (p *Presenter) overBar(x, y int) bool {
 // on the main combat menu Move and View go (a click on the map walks, on
 // one's own figure opens the sheet), Aim is Attack, the turn enders
 // (actions) sit before End turn (Done, Quit) but Guard, second after
-// Attack, and Quick goes last; aiming keeps Attack, Free
-// aim and Cancel (Tab cycles the targets; the camera stays put).
+// Attack, and Quick goes last; aiming keeps Attack and Cancel (no free
+// aim: Tab cycles the targets, a click picks one; the camera stays put).
 func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel int) {
 	kind := ""
 	for _, it := range m.Items {
@@ -128,10 +128,8 @@ func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel
 				}
 			}
 			b.Text, b.Send = "End", []uint16{'D', 'Q'}
-		case kind == "aim" && (it.Text == "Next" || it.Text == "Prev" || it.Text == "Center"):
+		case kind == "aim" && (it.Text == "Next" || it.Text == "Prev" || it.Text == "Center" || it.Text == "Manual"):
 			continue
-		case kind == "aim" && it.Text == "Manual":
-			b.Text = "Free"
 		case kind == "aim" && it.Text == "Exit":
 			b.Text = "Cancel"
 		}
