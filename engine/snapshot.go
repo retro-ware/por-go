@@ -128,17 +128,18 @@ type snapState struct {
 	pics     map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
 	picsPal  [16]uint8
 	cmapRow  []byte
-	dungeon  bool          // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
-	effects  []effect      // sprites on the combat page
-	marks    []image.Point // squares markReach framed
-	reach    []image.Point // squares a click on the main combat menu walks to
-	actions  []MenuItem    // the main combat menu's keys off its bar (Guard, Wait, Bandage)
-	targets  []int         // combatants a click on the main combat menu attacks
-	hidden   map[int]bool  // combatants whose icon is off the page (falling, hiding)
-	poses    map[int]byte  // the pose each combatant was last drawn in
-	click    int           // the square (+1) a SquareKey being translated clicks
-	strike   Strike        // the last weapon attack (From/To filled in by battle)
-	striker  [2]*Character // its attacker and target
+	dungeon  bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
+	effects  []effect               // sprites on the combat page
+	marks    []image.Point          // squares markReach framed
+	reach    []image.Point          // squares a click on the main combat menu walks to
+	paths    map[image.Point][]Step // the walk to each of them
+	actions  []MenuItem             // the main combat menu's keys off its bar (Guard, Wait, Bandage)
+	targets  []int                  // combatants a click on the main combat menu attacks
+	hidden   map[int]bool           // combatants whose icon is off the page (falling, hiding)
+	poses    map[int]byte           // the pose each combatant was last drawn in
+	click    int                    // the square (+1) a SquareKey being translated clicks
+	strike   Strike                 // the last weapon attack (From/To filled in by battle)
+	striker  [2]*Character          // its attacker and target
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is

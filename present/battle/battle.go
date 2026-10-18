@@ -84,6 +84,8 @@ var (
 	areaGlow    = [4]float32{1, 0.5, 0.1, 1}
 	targetGlow  = [4]float32{0.95, 0.12, 0.08, 1}
 	reachGlow   = [4]float32{0.015, 0.05, 0.13, 1}
+	pathGlow    = [4]float32{0.1, 0.35, 0.8, 1}
+	freeGlow    = [4]float32{0.9, 0.1, 0.05, 1}
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
@@ -300,6 +302,14 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
 		p.hint = hint(b, image.Pt(mx, my))
+		for _, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where a foe gets a free attack
+			tint := pathGlow
+			if s.Free {
+				tint = freeGlow
+			}
+			o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: tint, Model: place(float32(s.X)+.5, 0.004, float32(s.Y)+.5, 0, .5, .005, .5)}
+			dst.DrawMesh(p.box, p.white, vp, &o)
+		}
 	}
 	pulse := float32(0.75 + 0.25*math.Sin(p.clock*5))
 	if b.CursorOn {

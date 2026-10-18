@@ -195,6 +195,9 @@ func TestSquareKey(t *testing.T) {
 	if !slices.Contains(v.Battle.Reach, to) {
 		t.Fatalf("(%d,%d) next to the active unit is not in Reach", to.X, to.Y)
 	}
+	if p := v.Battle.Paths[to]; len(p) != 1 || p[0].Point != to {
+		t.Fatalf("path to (%d,%d) next to the active unit: %v", to.X, to.Y, p)
+	}
 	v = keyWait(e, scr, engine.SquareKey(to.X, to.Y)) // at the main menu: walks there and hands back
 	if got := active(v); got.X != to.X || got.Y != to.Y {
 		t.Errorf("clicked square (%d,%d): unit at (%d,%d)", to.X, to.Y, got.X, got.Y)

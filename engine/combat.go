@@ -254,10 +254,12 @@ func (e *Engine) combatMenu(c *Character) byte {
 		reach = e.moveReach(c)
 		delete(reach, [2]int{e.combatX(c), e.combatY(c)})
 	}
-	for sq := range reach {
+	e.snap.paths = map[image.Point][]Step{}
+	for sq, p := range reach {
 		e.snap.reach = append(e.snap.reach, image.Pt(sq[0], sq[1]))
+		e.snap.paths[image.Pt(sq[0], sq[1])] = e.walkSteps(c, p)
 	}
-	defer func() { e.snap.reach = nil }()
+	defer func() { e.snap.reach, e.snap.paths = nil, nil }()
 	mark := e.regionMark()
 	defer e.regionCut(mark)
 	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
@@ -534,6 +536,40 @@ func (e *Engine) moveReach(c *Character) map[[2]int][]int {
 		}
 	}
 	return out
+}
+
+// walkSteps (extra) are the squares path walks c through, each marked
+// when stepping onto it lets an enemy take a free attack.
+func (e *Engine) walkSteps(c *Character, path []int) []Step {
+	at := [2]int{e.combatX(c), e.combatY(c)}
+	var out []Step
+	for _, d := range path {
+		free := e.provokes(c, at, d)
+		at = [2]int{at[0] + dirDX[d], at[1] + dirDY[d]}
+		out = append(out, Step{image.Pt(at[0], at[1]), free})
+	}
+	return out
+}
+
+// provokes (extra) is freeAttacksOnLeave's test without the attacks: does
+// c stepping from square at in direction d leave an enemy that may strike
+// it? Position, near list and targets are kept.
+func (e *Engine) provokes(c *Character, at [2]int, d int) bool {
+	idx := e.combatIndex(c)
+	ox, oy, near, targets := e.cpos[idx].x, e.cpos[idx].y, slices.Clone(e.near), e.targets
+	defer func() { e.cpos[idx].x, e.cpos[idx].y, e.near, e.targets = ox, oy, near, targets }()
+	e.cpos[idx].x, e.cpos[idx].y = byte(at[0]), byte(at[1])
+	before := slices.Clone(e.targets[1 : e.nearEnemies(c, 1)+1])
+	e.cpos[idx].x, e.cpos[idx].y = byte(at[0]+dirDX[d]), byte(at[1]+dirDY[d])
+	after := e.targets[1 : e.nearEnemies(c, 1)+1]
+	for _, i := range before {
+		t := e.combatant(i)
+		if !slices.Contains(after, i) && t != nil && !e.isHelpless(t) && e.mayActAgainst(t, c) &&
+			e.FindAffect(t, affBloodDrain) == nil && e.FindAffect(t, affStrikeTied) == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // markReach (extra) shows the reachable squares in view with a dotted

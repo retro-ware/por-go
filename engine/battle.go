@@ -16,23 +16,30 @@ type Battle struct {
 	Floor    color.RGBA    // the ground's colour
 	Dungeon  bool          // tiles 0..DungeonTiles-1 are stone wall pieces (else outdoor things: trees, water ...)
 	Units    []Unit
-	Cursor   image.Point   // the square the cursor was last drawn on
-	CursorOn bool          // the cursor icon is up (aiming, looking)
-	CursorAt []image.Point // the squares the cursor covers (a large combatant's footprint)
-	Marks    []image.Point // squares framed for a choice (reach of a move, an area of effect)
-	Reach    []image.Point // squares a click walks to from the main menu (the active unit's move)
-	Targets  []int         // units (by ID) a click attacks from the main menu
-	Actions  []MenuItem    // the main menu's turn enders off its bar (Guard, Wait, Bandage)
-	Area     bool          // Marks are a spell's area (else a move's reach or a choice)
-	Effects  []Effect      // sprites over the map: a missile, a hit, a fall
-	View     image.Point   // top left square the original shows
-	Strike   Strike        // the last weapon attack
+	Cursor   image.Point            // the square the cursor was last drawn on
+	CursorOn bool                   // the cursor icon is up (aiming, looking)
+	CursorAt []image.Point          // the squares the cursor covers (a large combatant's footprint)
+	Marks    []image.Point          // squares framed for a choice (reach of a move, an area of effect)
+	Reach    []image.Point          // squares a click walks to from the main menu (the active unit's move)
+	Paths    map[image.Point][]Step // the walk to each Reach square, the start left out
+	Targets  []int                  // units (by ID) a click attacks from the main menu
+	Actions  []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
+	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
+	Effects  []Effect               // sprites over the map: a missile, a hit, a fall
+	View     image.Point            // top left square the original shows
+	Strike   Strike                 // the last weapon attack
 }
 
 // Effect is a sprite the original draws over the map for a moment.
 type Effect struct {
 	X, Y float64     // its top left corner, in squares (missiles move in thirds)
 	Pic  image.Image // in combat's colours
+}
+
+// Step is one square of a walk; Free: stepping onto it lets an enemy take a free attack.
+type Step struct {
+	image.Point
+	Free bool
 }
 
 // Strike is one weapon attack, for views that show it (the original only
@@ -81,7 +88,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe > 0, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike,
 	}
 	for part := 0; part <= 3; part++ {
