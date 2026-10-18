@@ -74,30 +74,3 @@ func Load(path string) (*Image, error) {
 	copy(out[dst-i:dst], packed[:i])
 	return &Image{Mem: out, DS: 0xC7C0}, nil // DS = 0x0C7C, see decomp notes
 }
-
-// PString reads a Turbo Pascal string (length byte + chars) at DS:ofs.
-func (im *Image) PString(ofs int) string {
-	p := im.DS + ofs
-	if p >= len(im.Mem) {
-		return ""
-	}
-	n := int(im.Mem[p])
-	if p+1+n > len(im.Mem) {
-		return ""
-	}
-	return string(im.Mem[p+1 : p+1+n])
-}
-
-// Bytes returns n bytes at DS:ofs.
-func (im *Image) Bytes(ofs, n int) []byte {
-	p := im.DS + ofs
-	if p+n > len(im.Mem) {
-		return nil
-	}
-	return im.Mem[p : p+n]
-}
-
-// Long reads a little-endian 32-bit value at DS:ofs.
-func (im *Image) Long(ofs int) uint32 {
-	return binary.LittleEndian.Uint32(im.Mem[im.DS+ofs:])
-}
