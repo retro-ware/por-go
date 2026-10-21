@@ -92,6 +92,7 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 			lines = append(lines, "")
 		}
 		lines = append(lines, "\x00"+t)
+		e.speak(strings.ReplaceAll(t, " ", "_"))
 		for _, p := range paras {
 			switch {
 			case p == "":

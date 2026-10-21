@@ -89,6 +89,7 @@ type extras struct {
 	list      bool                // the menu belongs to a scrolling list
 	choosing  bool                // SelectCharacter is waiting: highlight the roster entry
 	seen      map[int]*[256]uint8 // per area: 1 seen, 2 visited
+	voiced    map[string]bool     // voice.go: the recordings this save has heard
 	quick     *quickPick          // CreateCharacter answers its own menus (quickstart)
 	minStats  [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
 	guarded   bool                // slots.go: a load can unwind to adventure

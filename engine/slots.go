@@ -178,6 +178,9 @@ func (e *Engine) LoadSlotNamed(name string) bool {
 // seenFile holds a slot's explored squares (extra: the original keeps none).
 const seenFile = "SEEN.GOB"
 
+// voicedFile holds the voice-over recordings a slot has heard (voice.go).
+const voicedFile = "VOICED.GOB"
+
 // loadFrom loads the slot and its explored squares (none for a slot saved
 // before they were kept).
 func (e *Engine) loadFrom(name string) (ok bool) {
@@ -185,9 +188,13 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if !ok {
 		return false
 	}
-	e.ext.seen = nil
+	e.ext.seen, e.ext.voiced = nil, nil
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
+		f.Close()
+	}
+	if f, err := os.Open(filepath.Join(e.slotRoot(), name, voicedFile)); err == nil {
+		gob.NewDecoder(f).Decode(&e.ext.voiced)
 		f.Close()
 	}
 	return true
@@ -201,6 +208,10 @@ func (e *Engine) saveTo(name string) {
 	e.inSlot(tmp, func() { e.saveSlot('A') })
 	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, seenFile)); err == nil {
 		gob.NewEncoder(f).Encode(e.ext.seen)
+		f.Close()
+	}
+	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, voicedFile)); err == nil {
+		gob.NewEncoder(f).Encode(e.ext.voiced)
 		f.Close()
 	}
 	if _, err := os.Stat(filepath.Join(e.slotRoot(), tmp, "SAVGAMA.DAT")); err != nil {

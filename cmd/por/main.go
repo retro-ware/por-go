@@ -455,7 +455,7 @@ func biosKey(k gpu.Key) (uint16, bool) {
 	return 0, false
 }
 
-var speaker *oto.Player // kept from the garbage collector
+var speaker, voice *oto.Player // kept from the garbage collector
 
 func main() {
 	dir := flag.String("data", os.Getenv("GOPLAY_DATA"), "directory with the original game files")
@@ -504,6 +504,9 @@ func main() {
 			// rest of each pull plays as silence (goplay)
 			speaker.SetBufferSize(44100 * 4 / 20) // 50 ms of 16-bit stereo
 			speaker.Play()
+			voice = actx.NewPlayer(eng.VoiceReader())
+			voice.SetBufferSize(44100 * 4 / 20)
+			voice.Play()
 		}()
 	}
 	eng.Cfg.Param = flag.Arg(0)

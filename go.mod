@@ -14,6 +14,7 @@ require (
 	github.com/gogpu/gputypes v0.8.0 // indirect
 	github.com/gogpu/naga v0.19.0 // indirect
 	github.com/gogpu/wgpu v0.34.5 // indirect
+	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.19.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.4.5 // indirect

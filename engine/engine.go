@@ -160,6 +160,7 @@ type Engine struct {
 	// H
 	areaIconTick byte  // DS:6DDC area map party icon pose counter
 	snd          sound // PC speaker driver (08AE)
+	vox          voice // voice.go: the voice-over
 
 	DevAction func() // run once at the next adventuring command prompt (cmd/snap)
 }
@@ -333,6 +334,9 @@ func (e *Engine) ReadKey() uint16 {
 // feed translates a key from the window (nav.go) into the keys the game
 // will read.
 func (e *Engine) feed(raw uint16) {
+	if b := raw & 0xFF; b == 13 || b == 27 { // Enter or Esc silences the voice-over
+		e.stopVoice()
+	}
 	if k := e.translate(raw); k != 0 {
 		e.ext.ahead = append(e.ext.ahead, k)
 	}

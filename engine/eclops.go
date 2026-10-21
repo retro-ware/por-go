@@ -341,6 +341,7 @@ func (e *Engine) scriptText(clear bool, s string) {
 	}
 	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, clear, s)
 	e.slowText = false
+	e.speak(voiceKey(s))
 	e.journalPrinted(s, clear)
 }
 
