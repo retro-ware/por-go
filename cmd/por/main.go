@@ -481,6 +481,9 @@ func main() {
 		}
 		return
 	}
+	if _, err := os.Stat(filepath.Join("data", "TITLE.DAX")); *dir == "" && err == nil {
+		*dir = "data" // goplay: started in games/por with no arguments
+	}
 	if *dir == "" {
 		exe, _ := os.Executable()
 		*dir = filepath.Dir(exe)

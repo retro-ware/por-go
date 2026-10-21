@@ -2,6 +2,7 @@ package gpu
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gogpu/gputypes"
 	"github.com/gogpu/wgpu"
@@ -54,6 +55,11 @@ fn vs(@builtin(vertex_index) id: u32) -> VOut {
 @fragment
 fn fs(i: VOut) -> @location(0) vec4f { return vec4f(textureSample(tex, samp, i.uv).rgb, 1.0); }
 `
+
+// blitSRGBWGSL is blitWGSL for an sRGB window: the colours go out linear, so the
+// window's encoding gives back the game's own.
+var blitSRGBWGSL = strings.Replace(blitWGSL, "return vec4f(textureSample(tex, samp, i.uv).rgb, 1.0);",
+	"let c = textureSample(tex, samp, i.uv).rgb; return vec4f(select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)), 1.0);", 1)
 
 const meshWGSL = `
 struct U {

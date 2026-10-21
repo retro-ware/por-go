@@ -13,9 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/retro-ware/gameimport"
 	"por/adf"
 	"por/amiga"
-	"por/cmd/por/internal/gameimport"
 	"por/dax"
 	"por/ega"
 )

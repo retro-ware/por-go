@@ -2,13 +2,11 @@ package gpu
 
 import (
 	"errors"
-	"runtime"
 	"time"
 
-	"gpu/internal/glfw"
+	"github.com/gogpu/gogpu"
+	_ "github.com/gogpu/wgpu/hal/allbackends" // the desktop GPU backends
 )
-
-func init() { runtime.LockOSThread() } // GLFW wants the main thread
 
 // Game is what RunGame runs, like ebiten.Game: Update runs TPS times a
 // second, Draw once a frame into a screen of the size Layout returns for the
@@ -23,14 +21,13 @@ type Game interface {
 var ErrTermination = errors.New("gpu: termination")
 
 var win struct {
-	w        *glfw.Window
+	app      *gogpu.App
 	ww, wh   int // requested size
 	title    string
 	tps      int
 	resize   bool
 	unfocus  bool // keep updating while unfocused (always on here)
 	full     bool
-	saved    [4]int // windowed position and size before fullscreen
 	fps      float64
 	frames   int
 	fpsStart time.Time
@@ -43,15 +40,15 @@ func init() { win.ww, win.wh, win.tps, win.title = 640, 480, 60, "" }
 
 func SetWindowSize(w, h int) {
 	win.ww, win.wh = w, h
-	if win.w != nil {
-		win.w.SetSize(w, h)
+	if win.app != nil {
+		win.app.RequestSize(w, h)
 	}
 }
 
 func SetWindowTitle(t string) {
 	win.title = t
-	if win.w != nil {
-		win.w.SetTitle(t)
+	if win.app != nil {
+		win.app.SetTitle(t)
 	}
 }
 
@@ -70,21 +67,9 @@ func ActualFPS() float64                         { return win.fps }
 func IsFullscreen() bool                         { return win.full }
 
 func SetFullscreen(on bool) {
-	if win.w == nil || on == win.full {
-		win.full = on && win.w == nil
-		return
-	}
 	win.full = on
-	if on {
-		x, y := win.w.GetPos()
-		w, h := win.w.GetSize()
-		win.saved = [4]int{x, y, w, h}
-		m := glfw.GetPrimaryMonitor()
-		v := m.GetVideoMode()
-		win.w.SetMonitor(m, 0, 0, v.Width, v.Height, v.RefreshRate)
-	} else {
-		s := win.saved
-		win.w.SetMonitor(nil, s[0], s[1], s[2], s[3], 0)
+	if win.app != nil {
+		win.app.SetFullscreen(on)
 	}
 }
 
@@ -96,20 +81,15 @@ func Monitor() *MonitorType { return &MonitorType{} }
 
 // DeviceScaleFactor is framebuffer pixels per window unit.
 func (*MonitorType) DeviceScaleFactor() float64 {
-	if win.w == nil {
+	if win.app == nil || win.app.ScaleFactor() == 0 {
 		return 1
 	}
-	fw, _ := win.w.GetFramebufferSize()
-	ww, _ := win.w.GetSize()
-	if ww == 0 {
-		return 1
-	}
-	return float64(fw) / float64(ww)
+	return win.app.ScaleFactor()
 }
 
 // RunGameOptions are RunGameWithOptions' options.
 type RunGameOptions struct {
-	InitUnfocused bool
+	InitUnfocused bool // ponytail: gogpu has no unfocused start; the window opens focused
 }
 
 func RunGame(g Game) error { return RunGameWithOptions(g, nil) }
@@ -117,38 +97,35 @@ func RunGame(g Game) error { return RunGameWithOptions(g, nil) }
 // RunGameWithOptions opens the window and runs g until the window closes or
 // Update returns an error.
 func RunGameWithOptions(g Game, o *RunGameOptions) error {
-	if o == nil {
-		o = &RunGameOptions{}
-	}
-	if err := glfw.Init(); err != nil {
-		return err
-	}
-	defer glfw.Terminate()
-	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	glfw.WindowHint(glfw.Resizable, b2i(win.resize))
-	if o.InitUnfocused {
-		glfw.WindowHint(glfw.FocusOnShow, glfw.False)
-		glfw.WindowHint(glfw.Focused, glfw.False)
-	}
-	w, err := glfw.CreateWindow(win.ww, win.wh, win.title, nil, nil)
-	if err != nil {
-		return err
-	}
-	win.w = w
-	attach(w)
-	initInput(w)
-	if err := attachSurface(surfaceTarget(w)); err != nil {
-		return err
-	}
+	cfg := gogpu.DefaultConfig().WithTitle(win.title).WithSize(win.ww, win.wh).
+		WithResizable(win.resize).WithContinuousRender(true)
 	if win.full {
-		win.full = false
-		SetFullscreen(true)
+		cfg = cfg.WithFullscreen()
 	}
-	var screen *Image
-	last, acc := time.Now(), 0.0
-	win.fpsStart = last
-	for !w.ShouldClose() {
-		glfw.PollEvents()
+	app := gogpu.NewApp(cfg)
+	win.app = app
+	initInput(app)
+	var (
+		screen *Image
+		last   time.Time
+		acc    float64
+		runErr error
+	)
+	app.OnDraw(func(dc *gogpu.Context) {
+		p := app.DeviceProvider()
+		view := dc.SurfaceView()
+		if p == nil || view == nil || runErr != nil {
+			return
+		}
+		if screen == nil && last.IsZero() {
+			if err := adoptDevice(p.Device(), p.Queue(), p.SurfaceFormat()); err != nil {
+				runErr = err
+				app.Quit()
+				return
+			}
+			last = time.Now()
+			win.fpsStart = last
+		}
 		now := time.Now()
 		acc += now.Sub(last).Seconds() * float64(win.tps)
 		last = now
@@ -163,17 +140,17 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		for range n {
 			tickInput()
 			if err := g.Update(); err != nil {
-				if err == ErrTermination {
-					return nil
+				if err != ErrTermination {
+					runErr = err
 				}
-				return err
+				app.Quit()
+				return
 			}
 		}
-		ww, wh := w.GetSize()
-		fw, fh := w.GetFramebufferSize()
-		if ww == 0 || wh == 0 { // minimised
-			yield(w)
-			continue
+		ww, wh := app.Size()
+		fw, fh := dc.FramebufferSize()
+		if ww == 0 || wh == 0 || fw == 0 || fh == 0 { // minimised
+			return
 		}
 		sw, sh := g.Layout(ww, wh)
 		sw, sh = max(sw, 1), max(sh, 1)
@@ -187,19 +164,14 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		g.Draw(screen)
 		win.k = min(float64(fw)/float64(sw), float64(fh)/float64(sh))
 		win.ox, win.oy = (float64(fw)-float64(sw)*win.k)/2, (float64(fh)-float64(sh)*win.k)/2
-		present(screen, fw, fh)
-		yield(w)
+		present(screen, view, fw, fh)
 		win.frames++
 		if d := now.Sub(win.fpsStart).Seconds(); d >= 1 {
 			win.fps, win.frames, win.fpsStart = float64(win.frames)/d, 0, now
 		}
+	})
+	if err := app.Run(); err != nil {
+		return err
 	}
-	return nil
-}
-
-func b2i(b bool) int {
-	if b {
-		return glfw.True
-	}
-	return glfw.False
+	return runErr
 }

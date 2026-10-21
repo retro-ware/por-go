@@ -1,5 +1,5 @@
 // Package gpu is the slice of Ebiten's API that por and Blobber use, built
-// on GLFW and gogpu/wgpu: a window, input, images drawn with batched
+// on gogpu and gogpu/wgpu (pure Go, no cgo): a window, input, images drawn with batched
 // triangles, WGSL shaders in the role of Kage, and depth-tested meshes for
 // the 3D views. The device code is copied from VoxelLib's wgpu backend.
 package gpu
@@ -20,13 +20,9 @@ import (
 // record into one command encoder, submitted at the end of each frame (or
 // earlier when pixels are written or read back).
 var dev struct {
-	instance *wgpu.Instance
-	adapter  *wgpu.Adapter
-	device   *wgpu.Device
-	queue    *wgpu.Queue
-	surface  *wgpu.Surface
-	format   gputypes.TextureFormat // the surface's
-	sw, sh   int                    // configured surface size
+	device *wgpu.Device // gogpu's while RunGame runs, else a headless one
+	queue  *wgpu.Queue
+	format gputypes.TextureFormat // the window's
 
 	enc  *wgpu.CommandEncoder
 	pass *wgpu.RenderPassEncoder
@@ -55,44 +51,53 @@ func needDevice() {
 	}
 }
 
-// attachSurface makes the window's surface the frame's target.
-func attachSurface(target wgpu.SurfaceTargetUnsafe) error {
-	needDevice()
-	var err error
-	if dev.surface, err = dev.instance.CreateSurfaceUnsafe(target); err != nil {
-		return fmt.Errorf("wgpu: surface: %w", err)
+// adoptDevice takes gogpu's device, which draws into the window: RunGame calls it at the
+// first frame, before anything is drawn (a headless device's images can't go there).
+func adoptDevice(d *wgpu.Device, q *wgpu.Queue, format gputypes.TextureFormat) error {
+	if dev.device != nil && dev.device != d {
+		return fmt.Errorf("gpu: images were made before RunGame opened the window")
 	}
-	dev.format = gputypes.TextureFormatBGRA8Unorm
-	if caps := dev.adapter.GetSurfaceCapabilities(dev.surface); caps != nil && len(caps.Formats) > 0 {
-		dev.format = caps.Formats[0]
-		for _, f := range caps.Formats {
-			if f == gputypes.TextureFormatBGRA8Unorm || f == gputypes.TextureFormatRGBA8Unorm {
-				dev.format = f // not sRGB: the game's colours are written as they are
-				break
-			}
+	dev.format = format
+	if dev.device == nil {
+		dev.device, dev.queue = d, q
+		if err := initShared(); err != nil {
+			return err
 		}
 	}
-	pipes.blit, err = newPipeline(pipeSpec{"present", blitWGSL, []*wgpu.BindGroupLayout{dev.texLayout}, nil, nil, dev.format, false, "", false})
+	// an sRGB window would brighten the game's colours: the blit undoes it
+	wgsl := blitWGSL
+	if format == gputypes.TextureFormatBGRA8UnormSrgb || format == gputypes.TextureFormatRGBA8UnormSrgb {
+		wgsl = blitSRGBWGSL
+	}
+	var err error
+	pipes.blit, err = newPipeline(pipeSpec{"present", wgsl, []*wgpu.BindGroupLayout{dev.texLayout}, nil, nil, format, false, "", false})
 	return err
 }
 
+// initDevice makes a device of its own, for images made outside RunGame (tools, tests).
 func initDevice() error {
 	inst, err := wgpu.CreateInstance(nil)
 	if err != nil {
 		return fmt.Errorf("wgpu: instance: %w", err)
 	}
-	dev.instance = inst
 	// ponytail: the adapter is picked without the surface; fine with one GPU,
 	// pass CompatibleSurface if a laptop's other GPU gets picked
-	if dev.adapter, err = inst.RequestAdapter(&wgpu.RequestAdapterOptions{
+	adapter, err := inst.RequestAdapter(&wgpu.RequestAdapterOptions{
 		PowerPreference: gputypes.PowerPreferenceHighPerformance,
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("wgpu: adapter: %w", err)
 	}
-	if dev.device, err = dev.adapter.RequestDevice(&wgpu.DeviceDescriptor{Label: "gpu", RequiredLimits: dev.adapter.Limits()}); err != nil {
+	if dev.device, err = adapter.RequestDevice(&wgpu.DeviceDescriptor{Label: "gpu", RequiredLimits: adapter.Limits()}); err != nil {
 		return fmt.Errorf("wgpu: device: %w", err)
 	}
 	dev.queue = dev.device.Queue()
+	return initShared()
+}
+
+// initShared makes the buffers, layouts, samplers and pipelines on dev.device.
+func initShared() error {
+	var err error
 	dev.uniforms = stream{usage: wgpu.BufferUsageUniform | wgpu.BufferUsageCopyDst, chunk: 4 << 20, align: 256, label: "uniforms"}
 	dev.vertices = stream{usage: wgpu.BufferUsageVertex | wgpu.BufferUsageCopyDst, chunk: 4 << 20, align: 16, label: "vertices"}
 	if dev.uniLayout, err = dev.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{Label: "uniform block",
@@ -152,6 +157,7 @@ func passOn(t *texture, depth bool) *wgpu.RenderPassEncoder {
 		return dev.pass
 	}
 	endPass()
+	t.ensure()
 	color := wgpu.RenderPassColorAttachment{View: t.view, LoadOp: gputypes.LoadOpLoad, StoreOp: gputypes.StoreOpStore}
 	if t.clear {
 		color.LoadOp, color.ClearValue, t.clear = gputypes.LoadOpClear, gputypes.Color{}, false
@@ -296,6 +302,7 @@ func bytesOf[T any](s []T) []byte {
 // readTexture copies the w x h pixels at x, y of t into px (RGBA, top-down).
 // It waits for the GPU: for screenshots and tests.
 func readTexture(t *texture, x, y, w, h int, px []byte) {
+	t.ensure()
 	submit()
 	row := (uint32(w)*4 + 255) &^ 255
 	size := uint64(row) * uint64(h)
@@ -326,39 +333,13 @@ func readTexture(t *texture, x, y, w, h int, px []byte) {
 	buf.Unmap()
 }
 
-// configure (re)creates the swap chain for w x h.
-func configure(w, h int) {
-	if w == dev.sw && h == dev.sh {
-		return
-	}
-	if err := dev.surface.Configure(dev.device, &wgpu.SurfaceConfiguration{
-		Width: uint32(w), Height: uint32(h), Format: dev.format,
-		Usage: gputypes.TextureUsageRenderAttachment, PresentMode: gputypes.PresentModeFifo,
-		AlphaMode: gputypes.CompositeAlphaModeOpaque,
-	}); err != nil {
-		panic(err)
-	}
-	dev.sw, dev.sh = w, h
-}
-
-// present draws screen into the window (w x h framebuffer pixels) at the
-// largest size that keeps its aspect ratio, and shows the frame.
-func present(screen *Image, w, h int) {
+// present draws screen into view, the window's frame (w x h framebuffer pixels), at the
+// largest size that keeps its aspect ratio; gogpu shows the frame.
+func present(screen *Image, view *wgpu.TextureView, w, h int) {
 	flushBatch()
 	if w <= 0 || h <= 0 {
 		submit()
 		return
-	}
-	configure(w, h)
-	st, _, err := dev.surface.GetCurrentTexture()
-	if err != nil || st == nil {
-		dev.sw = 0 // reconfigure next frame
-		submit()
-		return
-	}
-	view, err := st.CreateView(nil)
-	if err != nil {
-		panic(err)
 	}
 	endPass()
 	p, err := encoder().BeginRenderPass(&wgpu.RenderPassDescriptor{Label: "present",
@@ -382,8 +363,4 @@ func present(screen *Image, w, h int) {
 		panic(err)
 	}
 	submit()
-	if err := dev.surface.Present(st); err != nil {
-		dev.sw = 0
-	}
-	view.Release()
 }

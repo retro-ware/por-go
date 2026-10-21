@@ -146,6 +146,7 @@ func (s *Shader) group(ts [4]*texture) *wgpu.BindGroup {
 	}
 	es := []wgpu.BindGroupEntry{{Binding: 4, Sampler: dev.nearest}}
 	for j, t := range ts {
+		t.ensure()
 		es = append(es, wgpu.BindGroupEntry{Binding: uint32(j), TextureView: t.view})
 	}
 	g, err := dev.device.CreateBindGroup(&wgpu.BindGroupDescriptor{Label: "shader images", Layout: imagesLayout, Entries: es})

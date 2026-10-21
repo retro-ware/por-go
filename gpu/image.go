@@ -20,12 +20,30 @@ type texture struct {
 	dview      *wgpu.TextureView
 	clear      bool // the next pass into it clears it first (Clear)
 	clearDepth bool
+	px         []byte // its pixels until there is a device (images made before RunGame)
+	gone       bool   // deallocated
 }
 
 func newTexture(w, h int) *texture {
 	t := &texture{w: w, h: h} // WebGPU starts it transparent
-	t.make()
+	if dev.device != nil {
+		t.make()
+	}
 	return t
+}
+
+// ensure gives t its GPU texture, uploading the pixels it kept until then. A texture
+// used before RunGame adopts the window's device makes a headless device of its own.
+func (t *texture) ensure() {
+	if t.tex != nil || t.gone {
+		return
+	}
+	t.make()
+	if t.px != nil {
+		px := t.px
+		t.px = nil
+		(&Image{t, image.Rect(0, 0, t.w, t.h)}).WritePixels(px)
+	}
 }
 
 func (t *texture) make() {
@@ -52,6 +70,7 @@ func (t *texture) group(s *wgpu.Sampler) *wgpu.BindGroup {
 	if t.groups == nil {
 		t.groups = map[*wgpu.Sampler]*wgpu.BindGroup{}
 	}
+	t.ensure()
 	g, err := dev.device.CreateBindGroup(&wgpu.BindGroupDescriptor{Label: "image", Layout: dev.texLayout,
 		Entries: []wgpu.BindGroupEntry{{Binding: 0, TextureView: t.view}, {Binding: 1, Sampler: s}}})
 	if err != nil {
@@ -62,6 +81,7 @@ func (t *texture) group(s *wgpu.Sampler) *wgpu.BindGroup {
 }
 
 func (t *texture) depthView() *wgpu.TextureView {
+	t.ensure()
 	if t.depth == nil {
 		var err error
 		if t.depth, err = dev.device.CreateTexture(&wgpu.TextureDescriptor{
@@ -80,6 +100,7 @@ func (t *texture) depthView() *wgpu.TextureView {
 }
 
 func (t *texture) release() {
+	t.gone, t.px = true, nil
 	if t.tex == nil {
 		return
 	}
@@ -155,6 +176,18 @@ func (i *Image) WritePixels(px []byte) {
 	if i.r.Empty() {
 		return
 	}
+	if i.t.tex == nil && dev.device == nil { // no device yet: kept until there is one
+		t := i.t
+		if t.px == nil {
+			t.px = make([]byte, t.w*t.h*4)
+		}
+		w := i.r.Dx() * 4
+		for y := range i.r.Dy() {
+			copy(t.px[((i.r.Min.Y+y)*t.w+i.r.Min.X)*4:][:w], px[y*w:][:w])
+		}
+		return
+	}
+	i.t.ensure()
 	if i.t.clear {
 		passOn(i.t, false) // the pending Clear comes first
 	}
@@ -180,6 +213,14 @@ func (i *Image) Deallocate() { i.t.release() }
 // Fill replaces every pixel with c.
 func (i *Image) Fill(c color.Color) {
 	r, g, b, a := c.RGBA()
+	if i.t.tex == nil && dev.device == nil { // no device yet: filled in memory
+		px := make([]byte, i.r.Dx()*i.r.Dy()*4)
+		for k := 0; k < len(px); k += 4 {
+			px[k], px[k+1], px[k+2], px[k+3] = byte(r>>8), byte(g>>8), byte(b>>8), byte(a>>8)
+		}
+		i.WritePixels(px)
+		return
+	}
 	if i.r == image.Rect(0, 0, i.t.w, i.t.h) && a == 0 && dev.on != i.t && !pending(i.t) {
 		i.t.clear = true // the next pass clears it
 		return
