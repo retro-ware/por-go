@@ -292,7 +292,7 @@ func (e *Engine) Delay(ms int) {
 		e.tr.ms += int64(ms)
 		return
 	}
-	if e.beginFlag == 5 { // the 3D combat view animates with the page: moves, missiles, hits
+	if e.beginFlag == 5 || e.snap.win == WinThreeD { // the remastered 3D views animate with the page: combat's moves and hits, a script walking the party (the intro's tour)
 		e.publish()
 	}
 	e.S.SetState(ega.Pausing)
