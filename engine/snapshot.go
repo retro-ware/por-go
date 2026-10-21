@@ -35,6 +35,7 @@ const (
 	WinThreeD         // the 3D view of Area at X, Y, Facing
 	WinAreaMap        // the wilderness or city map
 	WinPicture        // a picture, portrait or approaching sprite
+	WinText           // text in the whole view window (opClearBox: the Sokal Keep scroll's runes)
 )
 
 // CellRect is a rectangle of 8x8 text cells, both corners included. For a
@@ -202,7 +203,7 @@ func (e *Engine) publish() {
 		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,
 		Command: e.ext.inCommand,
 	}
-	if s.win == WinThreeD || s.win == WinPicture {
+	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText {
 		v.Map = e.mapImage(mapCell)
 	}
 	if m := s.menu; m != nil {

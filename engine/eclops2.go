@@ -620,6 +620,7 @@ func (e *Engine) opProtection() {
 // opClearBox = ovr04:2B14: blank the view window for text.
 func (e *Engine) opClearBox() {
 	e.eclPC++
+	e.snap.win = WinText
 	e.ClearBox(1, 1, 15, 15)
 	e.run.textInBox = 1
 }

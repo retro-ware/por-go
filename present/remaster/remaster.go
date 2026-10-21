@@ -95,7 +95,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		return classic.Rect{}
 	}
 	sc := p.scene(v)
-	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture) {
+	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText) {
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		return p.Classic.Draw(dst, scr, note)
@@ -137,10 +137,13 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	ph, th := float64(pic.Pixels().Dy()), float64(txt.Pixels().Dy())
 	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/ega.W))))
 	cx, cy := (b.Min.X+b.Max.X)/2, b.Dy()/2
-	if v.Window == engine.WinPicture {
+	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
+		pic = engine.ViewWindow.Framed()
+	}
+	if v.Window == engine.WinPicture || v.Window == engine.WinText {
 		drawBox(dst, frame, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
-	textOnly := v.TextShown && v.Window != engine.WinPicture && (v.Menu == nil || v.Command || noChoice(v))
+	textOnly := v.TextShown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
 	if textOnly { // a message, no choice to make: along the bottom edge
 		drawBox(dst, frame, txt, pk, cx, b.Dy()-int(pk*th/2))
 	} else if v.TextShown {

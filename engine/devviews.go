@@ -87,6 +87,20 @@ func (e *Engine) DevScene(name string) func() {
 			e.journalPrinted("3", false)
 			e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true)
 		}
+	case "runes": // the Sokal Keep elf's scroll (ECL1 block 21, 9BD7): opClearBox, three opProtection lines
+		return func() {
+			e.snap.win = WinText // as opClearBox
+			e.ClearBox(1, 1, 15, 15)
+			e.run.textInBox = 1
+			e.msgCol, e.msgRow = 2, 5
+			for _, l := range [][]byte{{0x56, 0x57, 0x6b, 0x6c, 0x71, 0x72}, {0x67, 0x68, 0x40, 0x41, 0x58, 0x59, 0x5c, 0x5d, 0x67, 0x68, 0x6b, 0x6c, 0x46, 0x47}, {0x67, 0x68, 0x4e, 0x4f, 0x48, 0x49, 0x67, 0x68, 0x69, 0x6a, 0x5a, 0x5b, 0x50, 0x51}} {
+				for i, c := range l {
+					e.DisplayChar(e.msgCol+i, e.msgRow, colWhite, c+1, false)
+				}
+				e.msgRow++
+			}
+			e.ReadKey()
+		}
 	case "loot":
 		return func() {
 			e.run.treasure = nil
