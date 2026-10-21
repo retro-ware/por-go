@@ -15,7 +15,7 @@ import (
 
 // Voice-over (extra): story texts, journal texts and first visits are read
 // aloud from SPEECH/<key>.mp3 in the game folder (rendered by voice/render.py,
-// 44100 Hz). Opt-in from Alter > Voice; each text speaks once per save
+// 44100 Hz). Opt-in from the remastered view's Esc options; each text speaks once per save
 // (VOICED.GOB beside SEEN.GOB); Enter or Esc silences it.
 
 // voiceOnFile in the save folder marks the voice as switched on.
@@ -37,6 +37,14 @@ func voiceKey(s string) string {
 func (e *Engine) voiceOn() bool {
 	_, err := os.Stat(filepath.Join(e.Cfg.SaveDir, voiceOnFile))
 	return err == nil
+}
+
+// ToggleVoice switches the voice when toggle and reports whether it is on.
+func (e *Engine) ToggleVoice(toggle bool) bool {
+	if toggle {
+		e.setVoiceOn(!e.voiceOn())
+	}
+	return e.voiceOn()
 }
 
 func (e *Engine) setVoiceOn(on bool) {

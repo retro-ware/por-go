@@ -76,6 +76,7 @@ type Square struct {
 type Unit struct {
 	ID         int // its place on the combat list: the same unit from snapshot to snapshot
 	X, Y, Size int
+	Squares    []image.Point // the squares it stands on (a large combatant's footprint)
 	Party      bool
 	Facing     int         // 0..7
 	Icon       image.Image // the combat icon, facing and pose (striking) as the original draws it
@@ -139,6 +140,11 @@ func (e *Engine) battle() *Battle {
 		}
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
 			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP), AC: 60 - int(c.AC[0]), Hit: s.hits[i]}
+		for part := 0; part <= 3; part++ {
+			if dx, dy, ok := e.footprint(u.Size, part); ok {
+				u.Squares = append(u.Squares, image.Pt(u.X+dx, u.Y+dy))
+			}
+		}
 		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
 			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}

@@ -21,6 +21,7 @@
 package main
 
 import (
+	"blobber"
 	"flag"
 	"image"
 	"image/png"
@@ -496,6 +497,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	blobber.Voice = eng.ToggleVoice // the voice-over switch on the Esc options page
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {
 		go func() {
 			<-ready // in the browser: after the first click or key

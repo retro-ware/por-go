@@ -1389,6 +1389,8 @@ func (g *Game) updateMenu() bool {
 			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
 		case 9:
 			gpu.SetFullscreen(!gpu.IsFullscreen())
+		case 10:
+			Voice(true)
 		}
 		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, gpu.IsFullscreen(), g.torch
 		if OnSettings != nil {
@@ -1402,11 +1404,15 @@ func (g *Game) updateMenu() bool {
 func (g *Game) menuItems() []string {
 	if g.options {
 		bar := int(math.Round((Settings.Speed - minSpeed) / 0.25))
-		return []string{"Smooth movement:   " + onOff(g.smooth), "Fluid movement:    " + onOff(Settings.Fluid), "Distance fog:      " + onOff(Settings.Haze),
+		items := []string{"Smooth movement:   " + onOff(g.smooth), "Fluid movement:    " + onOff(Settings.Fluid), "Distance fog:      " + onOff(Settings.Haze),
 			"Walk speed:        " + strings.Repeat("#", bar+1) + strings.Repeat("-", int((maxSpeed-minSpeed)/0.25)-bar) + fmt.Sprintf(" %.2fx", Settings.Speed),
 			"Smooth monsters:   " + onOff(Settings.SmoothMonsters), "Dithered darkness: " + onOff(g.dither), "Normal mapping:    " + onOff(Settings.NormalMaps),
 			"Light maps:        " + onOff(Settings.LightMaps),
 			fmt.Sprintf("Torch intensity:   %.1f", g.torch), "Fullscreen:        " + onOff(gpu.IsFullscreen())}
+		if Voice != nil {
+			items = append(items, "Voice-over:        "+onOff(Voice(false)))
+		}
+		return items
 	}
 	return []string{"Options", "Teleport to level", "Quit game"}
 }
@@ -2183,6 +2189,9 @@ const minSpeed, maxSpeed = 0.5, 2.0
 var (
 	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, NormalMaps: true, LightMaps: true, Torch: 1, Speed: 1}
 	OnSettings func(Options)
+	// Voice, when set, adds a "Voice-over" line to the options: it toggles
+	// the voice first when toggle, then reports whether it is on.
+	Voice func(toggle bool) bool
 )
 
 func Run(lvl []string, x, y, dir int) error {

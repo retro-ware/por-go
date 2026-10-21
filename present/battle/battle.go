@@ -151,7 +151,7 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 // targetAt: a foe a click attacks stands on sq.
 func targetAt(b *engine.Battle, sq image.Point) bool {
 	for _, u := range b.Units {
-		if n := max(1, u.Size); slices.Contains(b.Targets, u.ID) && sq.In(image.Rect(u.X, u.Y, u.X+n, u.Y+n)) {
+		if slices.Contains(b.Targets, u.ID) && slices.Contains(u.Squares, sq) {
 			return true
 		}
 	}
@@ -317,8 +317,8 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	}
 	for _, u := range b.Units { // the foes a click attacks: red
 		if slices.Contains(b.Targets, u.ID) {
-			for d := range max(1, u.Size) * max(1, u.Size) {
-				frame(u.X+d%max(1, u.Size), u.Y+d/max(1, u.Size), targetGlow, 0.001)
+			for _, s := range u.Squares {
+				frame(s.X, s.Y, targetGlow, 0.001)
 			}
 		}
 	}
@@ -457,10 +457,17 @@ func (p *Presenter) tick() float64 {
 	return dt
 }
 
-// unitCentre is the middle of the squares u's icon covers.
+// unitCentre is the middle of the squares u stands on (its footprint).
 func unitCentre(u engine.Unit) [2]float64 {
-	ib := u.Icon.Bounds()
-	return [2]float64{float64(u.X) + float64(ib.Dx())/tilePx/2, float64(u.Y) + float64(ib.Dy())/tilePx/2}
+	if len(u.Squares) == 0 {
+		return [2]float64{float64(u.X) + .5, float64(u.Y) + .5}
+	}
+	var c [2]float64
+	for _, s := range u.Squares {
+		c[0] += float64(s.X) + .5
+		c[1] += float64(s.Y) + .5
+	}
+	return [2]float64{c[0] / float64(len(u.Squares)), c[1] / float64(len(u.Squares))}
 }
 
 // unitAt is where u is shown (sliding to its square) and the squares its icon spans.

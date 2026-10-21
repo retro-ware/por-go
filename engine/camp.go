@@ -883,7 +883,7 @@ func (e *Engine) campSpeedMenu() {
 func (e *Engine) alterMenu() {
 	for key := byte(' '); key != 0 && key != 'E'; {
 		var extra bool
-		key, extra = e.DisplayInput("Alter: ", "Order Drop Speed Icon Pics Voice Exit", colLightMagenta, colLightGreen, colWhite, true, true)
+		key, extra = e.DisplayInput("Alter: ", "Order Drop Speed Icon Pics Exit", colLightMagenta, colLightGreen, colWhite, true, true)
 		if extra {
 			e.partyKeypad(key)
 			e.DisplayPartyList()
@@ -915,16 +915,6 @@ func (e *Engine) alterMenu() {
 					e.viewBit1 ^= 1
 				} else if k == 'P' {
 					e.viewBit0 ^= 1
-				}
-			}
-		case 'V': // (extra) voice-over, voice.go
-			for k := byte(' '); k != 0 && k != 'E'; {
-				menu := "Voice off  "
-				if e.voiceOn() {
-					menu = "Voice on  "
-				}
-				if k, _ = e.DisplayInput("", menu+"Exit", colLightMagenta, colLightGreen, colWhite, false, true); k == 'V' {
-					e.setVoiceOn(!e.voiceOn())
 				}
 			}
 		}
