@@ -92,7 +92,6 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 			lines = append(lines, "")
 		}
 		lines = append(lines, "\x00"+t)
-		e.speak(strings.ReplaceAll(t, " ", "_"))
 		for _, p := range paras {
 			switch {
 			case p == "":
@@ -163,6 +162,7 @@ func (e *Engine) showJournal(lines []string) {
 			switch {
 			case strings.HasPrefix(l, "\x00"):
 				e.DisplayString(2, 2+i, colYellow, l[1:])
+				e.speak(strings.ReplaceAll(l[1:], " ", "_")) // per page: the Enter that turns it silences the last one
 			case strings.HasPrefix(l, "\x01"):
 				maxOff = max(maxOff, e.drawPicture(journalPicture(l[1:]), 2*8+jrWidth*4, (2+i)*8, pictureRows(page[i:])*8, off))
 			case l != "\x02":
