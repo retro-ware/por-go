@@ -527,6 +527,7 @@ func main() {
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
 	gpu.SetTPS(tps)
+	gpu.SetFullscreen(os.Getenv("GOPLAY_FULLSCREEN") == "1") // goplay starts games fullscreen
 	if shot != "" {
 		gpu.SetRunnableOnUnfocused(true)
 	}
