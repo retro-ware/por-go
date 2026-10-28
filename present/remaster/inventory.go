@@ -290,7 +290,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 		}
 		switch {
 		case it != nil && it.Index == in.Sel:
-			inv.outline(box, white)
+			inv.outline(box, col(14)) // yellow: the boxes are white-edged
 		case inv.hover.In(box) && !inv.busy:
 			inv.outline(box, cyan)
 		}
