@@ -4,6 +4,7 @@ import (
 	"image"
 	"os"
 	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -350,6 +351,35 @@ func TestAimCycle(t *testing.T) {
 		}
 		v = keyWait(e, scr, 'N')
 	}
+}
+
+// TestHoverHitChance: pointing at a foe a click attacks ends its panel on
+// the status row with the chance to hit it, past where the damage ends.
+func TestHoverHitChance(t *testing.T) {
+	e, scr, v := battleView(t)
+	for _, u := range v.Battle.Units {
+		if !slices.Contains(v.Battle.Targets, u.ID) {
+			continue
+		}
+		keyWait(e, scr, engine.HoverKey(u.X, u.Y))
+		lit := -1 // the rightmost text cell drawn on the status row
+		scr.Lock()
+		for col := range 40 {
+			for p := range 64 {
+				if scr.Get(col*8+p%8, 23*8+p/8) != scr.Get(39*8+7, 23*8+7) {
+					lit = col
+				}
+			}
+		}
+		scr.Unlock()
+		// name, HP, AC, then "Dmg" and the shortest damage ("1d2"), then "CtH" and a digit
+		min := len(u.Name) + 2 + 3 + len(strconv.Itoa(u.HP)) + 2 + 3 + len(strconv.Itoa(u.AC)) + 2 + 4 + 3 + 2 + 4
+		if lit < min {
+			t.Errorf("hovering %s: the status row ends at column %d, want CtH reaching %d", u.Name, lit, min)
+		}
+		return
+	}
+	t.Skip("no foe a click attacks")
 }
 
 // TestAimHover: pointing at another foe while aiming moves the aim to it.

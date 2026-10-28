@@ -878,9 +878,22 @@ func (e *Engine) combatPanel(c *Character) {
 		e.DisplayString(x, messageRow, colWhite, cut(e.statusName(c), 0x27-x))
 	case e.isHelpless(c):
 		e.DisplayString(x, messageRow, colWhite, "(Helpless)")
+		x += len("(Helpless)") + 2
 	default:
 		e.DisplayString(x, messageRow, colWhite, "Dmg")
 		e.DisplayString(x+4, messageRow, colLightGreen, cut(damageText(c), 0x27-x-4))
+		x += 4 + len(damageText(c)) + 2
+	}
+	// extra (remaster): a foe a click attacks now, with the chance to hit it
+	if h, ok := e.snap.hits[e.combatIndex(c)]; ok {
+		cth := strconv.Itoa(h)
+		if x+4+len(cth) > lastCol+1 { // a long name: one space before it
+			x--
+		}
+		if x+4+len(cth) <= lastCol+1 {
+			e.DisplayString(x, messageRow, colWhite, "CtH")
+			e.DisplayString(x+4, messageRow, colLightGreen, cth)
+		}
 	}
 }
 
