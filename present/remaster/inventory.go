@@ -456,7 +456,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) []
 
 	// the wheel: a line a step, at most one a pause; the rest of a fling is dropped
 	if inv.wheel += wheel; (inv.wheel >= 1 || inv.wheel <= -1) && time.Since(inv.wheeled) >= wheelPause {
-		if inv.wheel > 0 {
+		if inv.wheel < 0 { // the touchpad's natural direction
 			inv.top--
 		} else {
 			inv.top++
