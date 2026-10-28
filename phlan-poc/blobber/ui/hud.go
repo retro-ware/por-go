@@ -153,6 +153,9 @@ func drawCard(d *gpu.Image, i int, c *party.Character) {
 	if dead {
 		cond = "dead"
 	}
+	if c.Label != "" {
+		cond = c.Label
+	}
 	if cond != "" { // no room for the name: only a condition is spelled out, over the portrait
 		Print(d, cond, portraitX+1, pY0+PortraitSize-12, gold)
 	}

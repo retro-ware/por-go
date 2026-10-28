@@ -522,13 +522,26 @@ func (p *Presenter) Cell(x, y int) (int, int, bool) {
 func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member) {
 	p.party.Chars, ui.Selected = p.party.Chars[:0], nil
 	for _, m := range ms {
-		c := &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head)}
+		c := &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head), Label: cardLabels[m.Status]}
 		if m.Selected { // the selected member's card in gold
 			ui.Selected = c
 		}
 		p.party.Chars = append(p.party.Chars, c)
 	}
 	ui.DrawParty(dst, &p.party)
+}
+
+// cardLabels: the sheet's status as the card spells it over the portrait,
+// short enough to fit there (a member at 0 hit points is not always dead).
+var cardLabels = map[string]string{
+	"Animated":    "undead",
+	"Running":     "fled",
+	"Unconscious": "KO",
+	"Dying":       "dying",
+	"Dead":        "dead",
+	"Poisoned":    "poisoned", // dead of poison, as the sheet puts it
+	"Stoned":      "stone",
+	"Gone":        "gone",
 }
 
 // face is the card art for a head: its lit pixels (the face, hair and
