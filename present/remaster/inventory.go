@@ -260,10 +260,16 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 
 	// the member: name, portrait between the arrows, hit points
 	lx, lw := 8, (leftCells-2)*8
-	oy := max(0, (bottom-84-inv.doll.Bounds().Dy())/3) // the portrait and doll down the box, a little above its middle
+	oy := max(0, (bottom-84-inv.doll.Bounds().Dy())/3)
+	if len(v.Party) > in.Member && in.Member >= 0 {
+		oy = max(oy, 10*strings.Count(v.Party[in.Member].Class, "/")+12) // under the classes
+	} // the portrait and doll down the box, a little above its middle
 	if in.Member >= 0 && in.Member < len(v.Party) {
 		m := v.Party[in.Member]
 		inv.text(m.Name, lx+(lw-8*len(m.Name))/2, 8, white)
+		for i, cl := range strings.Split(m.Class, "/") { // a class a line: three don't fit one
+			inv.text(cl, lx+(lw-8*len(cl))/2, 18+10*i, green)
+		}
 		if f := p.face(m.Head); f != nil {
 			r := image.Rect(lx+(lw-ui.PortraitSize)/2, 20+oy, lx+(lw+ui.PortraitSize)/2, 20+oy+ui.PortraitSize)
 			draw.Draw(inv.px, r, f, f.Bounds().Min, draw.Src)

@@ -69,6 +69,7 @@ type Member struct {
 	MaxHP    int
 	AC       int    // as displayed: 10 down to negative
 	Status   string // as the sheet names it ("Okay", "Unconscious" ...)
+	Class    string // as the sheet names it ("Fighter/Thief" ...)
 	Selected bool
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
 }
@@ -241,7 +242,7 @@ func (e *Engine) publish() {
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
 			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == e.partySel,
-			Head: e.charHead(c),
+			Class: className(c.Class), Head: e.charHead(c),
 		})
 	}
 	v.Battle = e.battle()
