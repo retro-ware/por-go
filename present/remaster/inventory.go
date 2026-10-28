@@ -33,10 +33,6 @@ import (
 var (
 	//go:embed doll/doll.png
 	dollPNG []byte
-	//go:embed doll/arrow_prev.png
-	prevPNG []byte
-	//go:embed doll/arrow_next.png
-	nextPNG []byte
 	//go:embed items/atlas.png
 	atlasPNG []byte
 	//go:embed items/items.rec
@@ -94,7 +90,7 @@ var slotNames = [engine.DollSlots]string{"Weapon", "Shield", "Armour", "Gauntlet
 
 // inventory is the screen's state between frames.
 type inventory struct {
-	doll, prev, next, atlas image.Image
+	doll, atlas image.Image
 	icons                   map[string]int // items.rec: icon key → atlas cell
 	px                      *image.RGBA    // the canvas, drawn on the CPU
 	img, tip                *gpu.Image     // the canvas and the tooltip on the GPU
@@ -168,7 +164,7 @@ func (inv *inventory) load() {
 	if inv.doll != nil {
 		return
 	}
-	inv.doll, inv.prev, inv.next, inv.atlas = decodePNG(dollPNG), decodePNG(prevPNG), decodePNG(nextPNG), decodePNG(atlasPNG)
+	inv.doll, inv.atlas = decodePNG(dollPNG), decodePNG(atlasPNG)
 	inv.icons = readIcons(itemsRec)
 }
 
@@ -275,11 +271,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 		hp := "HP " + strconv.Itoa(m.HP) + "/" + strconv.Itoa(m.MaxHP)
 		inv.text(hp, lx+(lw-8*len(hp))/2, 70+oy, green)
 	}
-	ab := inv.prev.Bounds()
-	inv.arrows = [2]image.Rectangle{ab.Add(image.Pt(lx+4, 35+oy)), ab.Add(image.Pt(lx+lw-4-ab.Dx(), 35+oy))}
+	ab := image.Rect(-8, -8, 24, 16) // "<-" and "->" with room round them for the pointer
+	inv.arrows = [2]image.Rectangle{ab.Add(image.Pt(lx+4, 38+oy)), ab.Add(image.Pt(lx+lw-20, 38+oy))}
 	if inv.count > 1 {
-		draw.Draw(inv.px, inv.arrows[0], inv.prev, ab.Min, draw.Src)
-		draw.Draw(inv.px, inv.arrows[1], inv.next, ab.Min, draw.Src)
+		inv.text("<-", lx+4, 38+oy, green)
+		inv.text("->", lx+lw-20, 38+oy, green)
 	}
 
 	// the doll and the readied items
