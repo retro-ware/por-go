@@ -322,22 +322,22 @@ func (e *Engine) Appraise() (any bool) {
 // sellOrKeep is the shared tail of the gem and jewel branches of 19B2:
 // "Sell Keep" when the character can carry one more item, else only Sell.
 func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
-	sellOnly := c.ItemCount >= 0x10
+	it := &Item{}
+	it.Words[2] = word
+	it.Type = itemValuable
+	it.Price = v
+	it.Weight = 1
+	it.Hidden = 0
+	sellOnly := e.overloaded(it, c) // extra: room in the party inventory
 	menu := "Sell Keep"
 	if sellOnly {
 		menu = "Sell"
 	}
 	key, _ := e.DisplayInput("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 	if key == 'K' && !sellOnly {
-		it := &Item{}
-		it.Words[2] = word
-		it.Type = itemValuable
-		it.Price = v
-		it.Weight = 1
-		it.Hidden = 0
 		// extra: the original loses the gem when the item list is empty
 		// (it appends only to its local copy); the port always keeps it.
-		c.Items = append(c.Items, it)
+		e.AddItemCopy(c, it)
 		return
 	}
 	e.purse.gold += uint32(v)

@@ -347,7 +347,7 @@ func (e *Engine) poisonEnds(c *Character, a *Affect, flag byte) {
 // spiritualHammerItem = ovr13:07E0: the Spiritual Hammer (a hammer with name word 0xF3) comes and goes.
 func (e *Engine) spiritualHammerItem(c *Character, a *Affect, flag byte) {
 	var it *Item
-	for _, i := range c.Items {
+	for _, i := range e.carried(c) {
 		if i.Type == itemHammer && i.Words[2] == 0xF3 {
 			it = i
 			break

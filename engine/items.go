@@ -2,7 +2,10 @@ package engine
 
 // Items: names, lists and the START helpers around them.
 
-import "strconv"
+import (
+	"slices"
+	"strconv"
+)
 
 // itemWord = DS:10A7 + 0x15*n.
 func (e *Engine) itemWord(n byte) string { return itemWords[n] }
@@ -119,6 +122,10 @@ func (e *Engine) RemoveItem(c *Character, it *Item) {
 			return
 		}
 	}
+	if i := slices.Index(e.pool, it); i >= 0 && e.partyMember(c) { // extra: the party inventory
+		e.pool = slices.Delete(e.pool, i, i+1)
+		return
+	}
 	e.PromptRow24(colYellow, "Tried to Lose item & couldn't find it!")
 }
 
@@ -126,6 +133,9 @@ func (e *Engine) RemoveItem(c *Character, it *Item) {
 // the character's list.
 func (e *Engine) AddItemCopy(c *Character, it *Item) *Item {
 	n := *it
+	if n.Readied == 0 && e.partyMember(c) { // extra: into the party inventory
+		return e.addToPool(&n)
+	}
 	c.Items = append(c.Items, &n)
 	// extra: a stack joins the first like stack the character has, so no
 	// two exist below the 255 a stack holds (the byte count's limit)

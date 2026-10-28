@@ -127,6 +127,7 @@ type extras struct {
 	menuFloor     int                     // menu bars open under the modal screen
 	viewing       bool                    // the View page's own menu is waiting
 	items         bool                    // the inventory's item list is waiting
+	itemPick      int                     // KeyItem: the list line (+1) the inventory goes to
 	toItems       bool                    // the next View opens on the inventory (F1-F8)
 	toSheet       bool                    // P left the inventory for the View page
 	switchTo      bool                    // F1-F8 left the inventory for another member
@@ -305,7 +306,7 @@ func (e *Engine) sheetKey() uint16 {
 	case e.ext.items:
 		e.ext.toSheet = true
 		return 'E'
-	case len(e.selected().Items) > 0:
+	case len(e.carried(e.selected())) > 0:
 		return 'I'
 	}
 	return 0

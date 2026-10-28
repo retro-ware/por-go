@@ -1,0 +1,460 @@
+# Item icons: internal_name is the base item type in hex, or type:word for the
+# items of a type named by one of their words. icon is the cell of atlas.png
+# (32x32, 24 a row). Edit with: remapper 32 32 atlas.png items.rec
+
+internal_name: 01
+name: Battle Axe
+icon: 59
+
+internal_name: 02
+name: Hand Axe
+icon: 56
+
+internal_name: 03
+name: Bardiche
+icon: 249
+
+internal_name: 04
+name: Bec De Corbin
+icon: 590
+
+internal_name: 05
+name: Bill-Guisarme
+icon: 612
+
+internal_name: 06
+name: Bo Stick
+icon: 807
+
+internal_name: 07
+name: Club
+icon: 185
+
+internal_name: 08
+name: Dagger
+icon: 213
+
+internal_name: 09
+name: Dart
+icon: 221
+
+internal_name: 0A
+name: Fauchard
+icon: 280
+
+internal_name: 0B
+name: Fauchard-Fork
+icon: 360
+
+internal_name: 0C
+name: Flail
+icon: 292
+
+internal_name: 0D
+name: Military Fork
+icon: 649
+
+internal_name: 0E
+name: Glaive
+icon: 359
+
+internal_name: 0F
+name: Glaive-Guisarme
+icon: 612
+
+internal_name: 10
+name: Guisarme
+icon: 612
+
+internal_name: 11
+name: Guisarme-Voulge
+icon: 360
+
+internal_name: 12
+name: Halberd
+icon: 361
+
+internal_name: 13
+name: Lucern Hammer
+icon: 772
+
+internal_name: 14
+name: Hammer
+icon: 366
+
+internal_name: 15
+name: Javelin
+icon: 788
+
+internal_name: 16
+name: Jo Stick
+icon: 810
+
+internal_name: 17
+name: Mace
+icon: 496
+
+internal_name: 18
+name: Morning Star
+icon: 497
+
+internal_name: 19
+name: Partisan
+icon: 611
+
+internal_name: 1A
+name: Military Pick
+icon: 591
+
+internal_name: 1B
+name: Awl Pike
+icon: 358
+
+internal_name: 1C
+name: Quarrel
+icon: 633
+
+internal_name: 1D
+name: Ranseur
+icon: 52
+
+internal_name: 1E
+name: Scimitar
+icon: 698
+
+internal_name: 1F
+name: Spear
+icon: 787
+
+internal_name: 20
+name: Spetum
+icon: 649
+
+internal_name: 21
+name: Quarter Staff
+icon: 813
+
+internal_name: 22
+name: Bastard Sword
+icon: 487
+
+internal_name: 23
+name: Broad Sword
+icon: 770
+
+internal_name: 24
+name: Long Sword
+icon: 486
+
+internal_name: 25
+name: Short Sword
+icon: 744
+
+internal_name: 26
+name: Two-Handed Sword
+icon: 871
+
+internal_name: 27
+name: Trident
+icon: 52
+
+internal_name: 28
+name: Voulge
+icon: 249
+
+internal_name: 29
+name: Composite Long Bow
+icon: 116
+
+internal_name: 2A
+name: Composite Short Bow
+icon: 265
+
+internal_name: 2B
+name: Long Bow
+icon: 114
+
+internal_name: 2C
+name: Short Bow
+icon: 743
+
+internal_name: 2D
+name: Heavy Crossbow
+icon: 403
+
+internal_name: 2E
+name: Light Crossbow
+icon: 203
+
+internal_name: 2F
+name: Sling
+icon: 774
+
+internal_name: 32
+name: Leather Armor
+icon: 461
+
+internal_name: 33
+name: Padded Armor
+icon: 472
+
+internal_name: 34
+name: Studded Leather Armor
+icon: 462
+
+internal_name: 35
+name: Ring Mail
+icon: 655
+
+internal_name: 36
+name: Scale Mail
+icon: 707
+
+internal_name: 37
+name: Chain Mail
+icon: 159
+
+internal_name: 38
+name: Splint Mail
+icon: 67
+
+internal_name: 39
+name: Banded Mail
+icon: 68
+
+internal_name: 3A
+name: Plate Mail
+icon: 599
+
+internal_name: 3B
+name: Shield
+icon: 733
+
+internal_name: 3D
+name: Magic User Scroll
+icon: 715
+
+internal_name: 3E
+name: Clerical Scroll
+icon: 717
+
+internal_name: 3F
+name: Gauntlets of Ogre Power
+icon: 316
+
+internal_name: 43
+name: Cloak
+icon: 177
+
+internal_name: 43:Displacement
+name: Cloak of Displacement
+icon: 178
+
+internal_name: 44
+name: Dust Covered Boots
+icon: 112
+
+internal_name: 45
+name: Ring
+icon: 651
+
+internal_name: 46
+name: Valuable (generic)
+icon: 323
+
+internal_name: 46:Figurine
+name: Brass Dragon / Gold Lightning Figurine
+icon: 240
+
+internal_name: 46:Necklace
+name: Diamond/Pearl Necklace
+icon: 547
+
+internal_name: 46:Dust
+name: Dust of Disappearance
+icon: 505
+
+internal_name: 46:Decanter
+name: Electrum Decanter
+icon: 755
+
+internal_name: 46:Broach
+name: Emerald Broach / Silver Brooch
+icon: 527
+
+internal_name: 46:Pendant
+name: Fine Opal Pendant
+icon: 27
+
+internal_name: 46:Tapestry
+name: Fine/Huge Tapestry
+icon: 750
+
+internal_name: 46:Wand
+name: Gold Banded Wand
+icon: 887
+
+internal_name: 46:Chain
+name: Gold Chain
+icon: 434
+
+internal_name: 46:Scarab
+name: Gold/Silver Scarab
+icon: 829
+
+internal_name: 46:Statuette
+name: Gold/Silver Dragon Statuette
+icon: 817
+
+internal_name: 46:Incense
+name: Incense / Bag of Holding
+icon: 61
+
+internal_name: 46:Bowl
+name: Jewel Studded Bowl
+icon: 74
+
+internal_name: 46:Wings
+name: Jewelled Silver Wings
+icon: 608
+
+internal_name: 46:Manual
+name: Manual of Bodily Health
+icon: 0
+
+internal_name: 46:Potion
+name: Potion (in 46)
+icon: 615
+
+internal_name: 46:Sheet
+name: Sheet of Gold
+icon: 336
+
+internal_name: 46:Sphere
+name: Platinum Sphere
+icon: 833
+
+internal_name: 46:Ring
+name: Silver Ring
+icon: 760
+
+internal_name: 46:Holy Symbol
+name: Woods Holy Symbol
+icon: 392
+
+internal_name: 46:Ointment
+name: Keoghtum's Ointment
+icon: 702
+
+internal_name: 47
+name: Potion
+icon: 621
+
+internal_name: 47:Mirror
+name: Brass / Silver Mirror
+icon: 528
+
+internal_name: 47:Holy Symbol
+name: Holy Symbol (Tempus/Sune/Tyr/Wooden)
+icon: 388
+
+internal_name: 47:Javelin
+name: Javelin of Lightning
+icon: 788
+
+internal_name: 48
+name: Curio
+icon: 817
+
+internal_name: 48:Chain
+name: Chain of Bone
+icon: 255
+
+internal_name: 48:Brazier
+name: Copper Brazier
+icon: 344
+
+internal_name: 48:Tapestry
+name: (Fungus Covered) Tapestry
+icon: 750
+
+internal_name: 48:Saddle
+name: Rotting Leather Saddle
+icon: 398
+
+internal_name: 48:Rug
+name: Rotting Rug
+icon: 183
+
+internal_name: 48:Statuette
+name: Stone Statuette
+icon: 402
+
+internal_name: 49
+name: Arrow
+icon: 48
+
+internal_name: 4A
+name: Leather Holy Symbol
+icon: 389
+
+internal_name: 4B
+name: Brass Key
+icon: 126
+
+internal_name: 4C
+name: Cursed Necklace
+icon: 34
+
+internal_name: 4D
+name: Bracers
+icon: 122
+
+internal_name: 4E
+name: Wand
+icon: 884
+
+internal_name: 4F
+name: Wand of Magic Missiles
+icon: 885
+
+internal_name: 52
+name: Efreeti Bottle
+icon: 259
+
+internal_name: 54
+name: Potion of Giant Strength
+icon: 617
+
+internal_name: 55
+name: Holy Water vial
+icon: 175
+
+internal_name: 56
+name: Flask of Oil
+icon: 562
+
+internal_name: 57
+name: Boulder
+icon: 670
+
+internal_name: 58
+name: Giant Boulder
+icon: 672
+
+internal_name: 5A
+name: Ring of Feather Falling
+icon: 659
+
+internal_name: 5B
+name: Pass
+icon: 900
+
+internal_name: 5C
+name: Cloak of Displacement
+icon: 178
+
+internal_name: 5D
+name: Ring of Protection
+icon: 661
+

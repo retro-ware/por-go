@@ -464,7 +464,7 @@ func (e *Engine) opFindItem() {
 	e.es.flags = [6]bool{}
 	e.es.flags[1] = true
 	for _, c := range e.party {
-		for _, it := range c.Items {
+		for _, it := range e.carried(c) {
 			if it.Type == v {
 				e.es.flags[0], e.es.flags[1] = true, false
 				return

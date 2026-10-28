@@ -131,8 +131,8 @@ func (e *Engine) showCombatStats() {
 	e.DisplayString(x, y+1, colWhite, "Damage        ")
 	e.DisplayString(x+7, y+1, colLightGreen, d)
 	x = 0x16
-	e.DisplayString(x, y, colWhite, "Encumbrance      ")
-	e.DisplayString(x+0xC, y, colLightGreen, strconv.Itoa(int(c.Weight)))
+	e.DisplayString(x, y, colWhite, "Party items      ") // extra: the party inventory's slots for Encumbrance
+	e.DisplayString(x+0xC, y, colLightGreen, e.poolText())
 	m := c.Move
 	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
 	if e.FindAffect(c, affHaste) != nil {
@@ -183,7 +183,7 @@ func (e *Engine) ViewCharacter() bool {
 	e.view.start = e.selected()
 	direct := e.ext.toItems // F1-F8: start on the inventory (extras.go)
 	e.ext.toItems = false
-	if direct && len(e.selected().Items) > 0 {
+	if direct && len(e.carried(e.selected())) > 0 {
 		var leave bool
 		if quit, leave = e.inventory(direct); leave {
 			key = 'E'
@@ -201,7 +201,7 @@ func (e *Engine) ViewCharacter() bool {
 			}
 		}
 		menu := ""
-		if len(c.Items) > 0 {
+		if len(e.carried(c)) > 0 {
 			menu += "Items "
 		}
 		if spells {
@@ -352,9 +352,10 @@ func (e *Engine) ItemsMenu() bool {
 	index := 0
 	redraw, full := true, true
 	quit := false
-	for key != 0 && key != 'E' && !quit && c.ItemCount > 0 {
-		count := c.ItemCount
-		if len(c.Items) == 0 { // extra: a stale count with no items (the original spins here)
+	for key != 0 && key != 'E' && !quit {
+		items := e.carried(c) // extra: the readied items, then the party inventory
+		count := len(items)
+		if count == 0 {
 			break
 		}
 		hired := c.Control >= 0x80 && c.Okay != 0 && c.Status != statusAnimated
@@ -367,17 +368,14 @@ func (e *Engine) ItemsMenu() bool {
 				e.beginFlag == 5 && c.Combat != nil && c.Combat.CanUse != 0) {
 			menu += " Use"
 		}
-		if !hired && e.beginFlag != 5 {
-			menu += " Give" // extra: Trade renamed
-		}
-		menu += " Drop" // extra: no Halve or Join, Give takes an amount and stacks join on arrival
+		menu += " Drop" // extra: no Halve, Join or Trade: unreadied items are the party's
 		if !hired && e.beginFlag == 1 {
 			menu += " Sell"
 		}
 		menu += " Look" // extra: what the item does, as the shop's Look
 		menu = cut(menu, textCols)
-		list := make([]*ListNode, len(c.Items))
-		for i, x := range c.Items {
+		list := make([]*ListNode, len(items))
+		for i, x := range items {
 			e.ItemName(c, x, 0, 0, true, false)
 			list[i] = &ListNode{Text: x.Name()}
 			if !e.isScroll(x) && !(x.Spells[1] > 0 && x.Spells[2] < 0x80) {
@@ -386,7 +384,14 @@ func (e *Engine) ItemsMenu() bool {
 			if x.Readied != 0 || !e.throwableItem(x) {
 				list[i].Without = append(list[i].Without, "Throw")
 			}
+			if x.Readied == 0 && dollSlot(e, c, x) < 0 {
+				list[i].Without = append(list[i].Without, "Ready")
+			}
 		}
+		if i := e.ext.itemPick; i > 0 { // extra: the remastered inventory picked a line (KeyItem)
+			index, redraw, e.ext.itemPick = min(i-1, len(list)-1), true, 0
+		}
+		e.snap.inv, e.snap.invSel = e.inventoryView(c, items), &index
 		if full || e.itemsRedraw {
 			e.ClearScreen()
 			e.DrawBorder(1, 1, winRight, winBottom, 0)
@@ -403,7 +408,7 @@ func (e *Engine) ItemsMenu() bool {
 		it = nil
 		for i, n := range list {
 			if n == sel {
-				it = c.Items[i]
+				it = items[i]
 			}
 		}
 		if it != nil {
@@ -411,7 +416,7 @@ func (e *Engine) ItemsMenu() bool {
 			case 'R':
 				e.readyItem(it)
 			case 'U':
-				if it.Readied == 0 {
+				if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
 					e.refuse("Must be Readied")
 					key = ' '
 				} else if e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80 {
@@ -436,9 +441,6 @@ func (e *Engine) ItemsMenu() bool {
 			case 'L':
 				e.lookItem(it)
 				full = true
-			case 'G':
-				e.tradeItem(it)
-				full = true
 			case 'D':
 				if e.canLoseItem(it) {
 					e.ItemName(c, it, 0, 0, false, false)
@@ -459,11 +461,12 @@ func (e *Engine) ItemsMenu() bool {
 				}
 			}
 		}
-		e.ApplyItems(c) // 146F: also reached with nothing selected
-		if c.ItemCount != count {
+		e.ApplyItems(c)                               // 146F: also reached with nothing selected
+		if len(e.carried(c)) != count || key == 'R' { // extra: Ready moves the item between the lists
 			redraw = true
 		}
 	}
+	e.snap.inv = nil
 	return quit
 }
 
@@ -477,10 +480,18 @@ func (e *Engine) readyItem(it *Item) {
 			e.refuse("It's Cursed")
 			return
 		}
+		if e.partyMember(c) && e.poolFull(it) { // extra: it goes back into the party inventory
+			e.refuse("No room in the party items")
+			return
+		}
 		it.Readied = 0
 		if effect {
 			e.itemAffect(it, c, 1)
 		}
+		return
+	}
+	if dollSlot(e, c, it) < 0 { // extra: used straight from the party inventory
+		e.refuse("Nothing to ready")
 		return
 	}
 	why := 0
@@ -505,11 +516,21 @@ func (e *Engine) readyItem(it *Item) {
 	if typ == itemQuarrel && c.Slots[slotBolts] != nil {
 		why, slot = 2, slotBolts
 	}
+	if typ == itemBracers { // extra: the bracers have a doll slot of their own
+		for _, o := range c.Items {
+			if o != it && o.Type == itemBracers && o.Readied != 0 {
+				e.ItemName(c, o, 0, 0, false, false)
+				e.refuse("already using " + o.Name())
+				return
+			}
+		}
+	}
 	if e.base(typ).Classes&c.ClassMask == 0 {
 		why = 1
 	}
 	switch why {
 	case 0:
+		e.takeFromPool(c, it) // extra: out of the party inventory
 		it.Readied = 1
 		if effect {
 			e.itemAffect(it, c, 0)
@@ -540,53 +561,6 @@ func (e *Engine) itemAffect(it *Item, c *Character, flag byte) {
 	n := it.PName
 	a.Type, a.Time, a.Data, a.Call = affectType(n[0]), uint16(n[1])|uint16(n[2])<<8, n[3], n[4]
 	e.callAffect(affectType(it.Spells[2]), c, a, flag)
-}
-
-// tradeItem = ovr20:1734 (item). extra: a stack asks how many (all by
-// default); giving all of a readied item unreadies it first (curses hold).
-func (e *Engine) tradeItem(it *Item) {
-	give := *it
-	if it.Count > 1 {
-		s := strings.TrimSpace(e.InputString("How many? ("+strconv.Itoa(int(it.Count))+") ", colLightMagenta, 3))
-		n, err := strconv.Atoi(s)
-		switch {
-		case s == "":
-		case err != nil || n < 1:
-			return
-		case n < int(it.Count):
-			give.Count = byte(n)
-			give.Readied = 0
-		}
-	}
-	all := give.Count == it.Count
-	if all && it.Readied != 0 {
-		e.readyItem(it)
-		if it.Readied != 0 {
-			return
-		}
-		give.Readied = 0
-	}
-	if all && !e.canLoseItem(it) {
-		return
-	}
-	to := e.view.start
-	e.DrawMainScreen()
-	to = e.SelectCharacter("Give to Whom?", true, to)
-	if to == nil || to == e.selected() { // extra: to oneself would join and then drop the stack
-		return
-	}
-	e.view.start = to
-	if e.overloaded(&give, to) {
-		e.refuse("Overloaded")
-		return
-	}
-	e.AddItemCopy(to, &give)
-	if all {
-		e.RemoveItem(e.selected(), it)
-	} else {
-		it.Count -= give.Count
-	}
-	e.ApplyItems(to)
 }
 
 // joinItems = ovr20:189D (item): every matching stack joins it, up to 255
@@ -714,17 +688,14 @@ func (e *Engine) identifyItem(c *Character, it *Item) (redraw bool) {
 }
 
 // overloaded = ovr20:275B (item, char): no room for one more item.
+// extra: a party member takes it into the party inventory, which has a
+// slot count instead of the original's 16 items and weight allowance.
 func (e *Engine) overloaded(it *Item, c *Character) bool {
 	e.ApplyItems(c)
-	over := c.ItemCount > 0xF
-	w := it.Weight
-	if it.Count > 0 {
-		w *= uint16(it.Count)
+	if e.partyMember(c) {
+		return e.poolFull(it)
 	}
-	if int32(c.Weight+w) > int32(strCarry(c))+1500 {
-		over = true
-	}
-	return over
+	return c.ItemCount > 0xF
 }
 
 // SpellList = ovr20:299C (kind, mode, index, any): the list of spells of

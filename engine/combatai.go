@@ -551,7 +551,7 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	if int8(c.BaseBonus[0]) > 0 {
 		bs2 += byte(int(int8(c.BaseBonus[0])) << 1)
 	}
-	for _, p := range c.Items {
+	for _, p := range e.carried(c) {
 		if b(p).Slot == 0 && b(p).Classes&c.ClassMask != 0 {
 			sc := byte(e.weaponScore(c, p))
 			f := b(p).Usage

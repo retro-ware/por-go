@@ -849,7 +849,7 @@ func (e *Engine) quickOne(c *Character) {
 // combatItems (extra): c carries an item its items menu could Use (when
 // it may use items this round) or Throw.
 func (e *Engine) combatItems(c *Character) bool {
-	for _, it := range c.Items {
+	for _, it := range e.carried(c) {
 		if it.Readied == 0 && e.throwableItem(it) ||
 			c.Combat.CanUse != 0 && (e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80) {
 			return true

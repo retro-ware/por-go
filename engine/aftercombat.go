@@ -318,8 +318,8 @@ func (e *Engine) lootList(index *int, item **Item) byte {
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Loot")
 	if c := e.selected(); c != nil { // extra: who takes (F1-F8, a portrait change it)
 		e.displayName(c, 2, 2, false)
-		w := strconv.Itoa(int(c.Weight)) // extra: what they carry, against the window's right edge
-		e.DisplayString(winRight-len("Encumbrance "+w)+1, 2, colWhite, "Encumbrance ")
+		w := e.poolText() // extra: the party inventory's slots, against the window's right edge
+		e.DisplayString(winRight-len("Items "+w)+1, 2, colWhite, "Items ")
 		e.DisplayString(winRight-len(w)+1, 2, colLightGreen, w)
 	}
 	list := make([]*ListNode, len(e.run.treasure))

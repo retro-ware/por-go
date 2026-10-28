@@ -55,6 +55,7 @@ type Engine struct {
 	menuExtra   bool // DS:6B2C
 
 	party      []*Character // DS:5D96 list head ...
+	pool       []*Item      // extra: the party inventory (pool.go)
 	partySel   int          // DS:5D92 selected character
 	rosterHi   *Character   // SelectCharacter: 00BA:0767 highlights this one (nil: partySel)
 	rosterNone bool         // ... or no one (who = nil)

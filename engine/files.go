@@ -216,7 +216,7 @@ func (e *Engine) SaveCharacter(c *Character, name string) {
 	for _, f := range []struct {
 		ext string
 		b   []byte
-	}{{".itm", writeRecords(c.Items)}, {".spc", writeRecords(affectRecords(c.Affects))}} {
+	}{{".itm", writeRecords(e.savedItems(c, name))}, {".spc", writeRecords(affectRecords(c.Affects))}} {
 		p := e.savePath(base + f.ext)
 		os.Remove(p)
 		if len(f.b) > 0 {
@@ -367,6 +367,7 @@ func (e *Engine) AddToParty(c *Character) {
 	e.setPartyCount(e.partyCount() + 1)
 	e.takeRecordCoins(c)
 	e.RecomputeCharacter(c) // ovr24:0000
+	e.ApplyItems(c)         // extra: the unreadied items go into the party inventory
 }
 
 // eraseRosterCopies deletes <name>.cha/.itm/.spc (nested check as in LoadGame
@@ -445,7 +446,7 @@ func (e *Engine) loadSlot(key byte) bool {
 	e.viewBit1, e.viewBit0 = byte(w>>1), byte(w&1)
 	e.msgDelay = byte(e.area.MsgDelay)
 	e.setPartyCount(0)
-	e.party, e.partySel = nil, 0
+	e.party, e.partySel, e.pool = nil, 0, nil
 	e.purse = readPurse(b[n:])
 	for i := 0; i < int(f.Count) && i < len(f.Names); i++ {
 		nm := makeFileName(removeSubstr(f.Names[i].String(), "."))

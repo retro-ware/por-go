@@ -242,7 +242,7 @@ func (e *Engine) command(k byte, view3D bool) bool {
 			e.CastMenu() // ovr16:04A1
 		}
 	case 'I': // extra: straight to the inventory
-		if len(e.selected().Items) == 0 {
+		if len(e.carried(e.selected())) == 0 {
 			e.BottomMessage("No items")
 		} else {
 			e.ext.toItems = true

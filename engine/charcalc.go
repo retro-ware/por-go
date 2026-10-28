@@ -157,30 +157,22 @@ func (e *Engine) base(typ itemType) *itemBase {
 	return &itemBase{}
 }
 
-// readiedWeight = DS:4846.
-var readiedWeight uint16
-
 // ApplyItems = 00BA:0BB8: everything that follows from the items carried
 // and readied: slots, weight, hands, attack and damage, armour class,
 // movement and saving throw bonus.
 func (e *Engine) ApplyItems(c *Character) {
+	if e.partyMember(c) { // extra: unreadied items belong to the party inventory
+		e.stow(c)
+	}
 	c.Slots = [13]*Item{}
-	bag := false
 	c.ItemCount = 0
 	c.Hands = 0
-	c.Weight = 0
-	readiedWeight = 0
+	c.Weight = 0 // extra: items weigh nothing
 	for _, it := range c.Items {
 		c.ItemCount++
-		w := it.Weight
-		if it.Count > 0 {
-			w *= uint16(it.Count)
-		}
-		c.Weight = c.Weight + w
 		if it.Readied == 0 {
 			continue
 		}
-		readiedWeight += w
 		typ := it.Type
 		switch s := e.base(typ).Slot; {
 		case s <= 8:
@@ -197,9 +189,6 @@ func (e *Engine) ApplyItems(c *Character) {
 		}
 		if typ == itemQuarrel {
 			c.Slots[slotBolts] = it
-		}
-		if it.Words[0] == 0xBA {
-			bag = true
 		}
 		c.Hands += e.base(typ).Hands
 	}
@@ -228,17 +217,6 @@ func (e *Engine) ApplyItems(c *Character) {
 	if ringOnly {
 		ac[3] = 0
 	}
-	if bag {
-		if c.Weight < 5000 {
-			c.Weight = 0
-		} else {
-			c.Weight = c.Weight - 5000
-		}
-		if c.Weight < readiedWeight {
-			c.Weight = readiedWeight
-		}
-	}
-	e.encumbrance(c)
 	if int(ac[4]) < int(c.AC[0]) {
 		ac[4] = int8(c.AC[0])
 	}
@@ -337,26 +315,6 @@ func (e *Engine) itemAC(c *Character, it *Item, ac *[5]int8) (ringOnly bool) {
 		}
 	}
 	return
-}
-
-// encumbrance = 00BA:03A0: movement by the weight over the allowance.
-func (e *Engine) encumbrance(c *Character) {
-	over := int(int16(c.Weight - uint16(strCarry(c))))
-	if over < 0 {
-		over = 0
-	}
-	m := byte(3)
-	switch {
-	case over <= 0x200:
-		m = c.Move
-	case over <= 0x300:
-		m = 9
-	case over <= 0x400:
-		m = 6
-	}
-	if m < c.Move {
-		c.Move = m
-	}
 }
 
 // dexAC = 00BA:10E6.
@@ -468,33 +426,6 @@ func strDamage(c *Character) int8 {
 		return int8(i) - 0x11
 	case i == 0x1E:
 		return 0xE
-	}
-	return 0
-}
-
-// strCarry = 00BA:13AB: weight allowance change.
-func strCarry(c *Character) int16 {
-	switch i := int16(strIndex(c)); {
-	case i >= 1 && i <= 3:
-		return -350
-	case i >= 4 && i <= 5:
-		return -250
-	case i >= 6 && i <= 7:
-		return -150
-	case i >= 0xC && i <= 0xD:
-		return 100
-	case i >= 0xE && i <= 0xF:
-		return 200
-	case i == 0x10:
-		return 350
-	case i >= 0x11 && i <= 0x15:
-		return (i-0x11)*250 + 500
-	case i >= 0x16 && i <= 0x1A:
-		return (i-0x16)*1000 + 2000
-	case i == 0x1B:
-		return 7500
-	case i >= 0x1C && i <= 0x1E:
-		return (i-0x1C)*3000 + 9000
 	}
 	return 0
 }

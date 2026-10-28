@@ -105,6 +105,13 @@ func (e *Engine) translate(k uint16) uint16 {
 		}
 		return 0
 	}
+	if k >= KeyItem && k < KeyItem+0x100 { // the remastered inventory picked an item
+		if !e.ext.items {
+			return 0
+		}
+		e.ext.itemPick = int(k-KeyItem) + 1
+		return keyRelist
+	}
 	if k >= KeyPan && k <= KeyPan+4 {
 		if e.beginFlag == 5 && e.cmapUp() && e.ext.modal == 0 {
 			switch d := int(k - KeyPan); {
