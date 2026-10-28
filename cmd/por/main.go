@@ -242,6 +242,17 @@ func (g *game) keys() {
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
 func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
+	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game
+		_, dy := gpu.Wheel()
+		g.wheel += dy
+		steps := int(g.wheel)
+		g.wheel -= float64(steps)
+		g.sendKeys(g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft), steps))
+		if gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) {
+			g.push(engine.MouseKey(engine.MouseRight, 0, 0))
+		}
+		return
+	}
 	if g.remastered {
 		g.remaster.Hover(mx, my)
 	}
@@ -361,7 +372,9 @@ func (g *game) gamepad(id gpu.GamepadID) {
 func (g *game) Draw(dst *gpu.Image) {
 	text, at := g.eng.Note()
 	note := classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
-	if g.remastered {
+	if g.remaster.Inventory(dst, g.eng.View()) { // the inventory screen, in both modes
+		g.pic = classic.Rect{}
+	} else if g.remastered {
 		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())
 	} else {
 		g.pic = g.classic.Draw(dst, g.scr, note)

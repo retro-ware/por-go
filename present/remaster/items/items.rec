@@ -242,6 +242,18 @@ internal_name: 3F
 name: Gauntlets of Ogre Power
 icon: 316
 
+internal_name: 40
+name: Helm
+icon: 375
+
+internal_name: 41
+name: Belt
+icon: 356
+
+internal_name: 42
+name: Robe
+icon: 662
+
 internal_name: 43
 name: Cloak
 icon: 177

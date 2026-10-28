@@ -58,6 +58,7 @@ type Presenter struct {
 	battle    battle.Presenter            // the combat map in 3D
 	mapBottom int                         // screen rows above this are the 3D map
 	fight     bool                        // the last frame was the 3D combat map
+	inv       inventory                   // the inventory screen (inventory.go)
 }
 
 // Draw shows the game on dst and returns where the classic picture went
