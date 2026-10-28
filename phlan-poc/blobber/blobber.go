@@ -2187,7 +2187,7 @@ const minSpeed, maxSpeed = 0.5, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, NormalMaps: true, LightMaps: true, Torch: 1, Speed: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, LightMaps: true, Torch: 1, Speed: 1}
 	OnSettings func(Options)
 	// Voice, when set, adds a "Voice-over" line to the options: it toggles
 	// the voice first when toggle, then reports whether it is on.
