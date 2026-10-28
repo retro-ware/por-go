@@ -260,10 +260,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 
 	// the member: name, portrait between the arrows, hit points
 	lx, lw := 8, (leftCells-2)*8
-	oy := max(0, (bottom-84-inv.doll.Bounds().Dy())/3)
-	if len(v.Party) > in.Member && in.Member >= 0 {
-		oy = max(oy, 10*strings.Count(v.Party[in.Member].Class, "/")+12) // under the classes
-	} // the portrait and doll down the box, a little above its middle
+	oy := max(0, (bottom-84-inv.doll.Bounds().Dy())/3) // the portrait and doll down the box, a little above its middle
 	if in.Member >= 0 && in.Member < len(v.Party) {
 		m := v.Party[in.Member]
 		inv.text(m.Name, lx+(lw-8*len(m.Name))/2, 8, white)
