@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -420,7 +421,10 @@ func (e *Engine) ItemsMenu() bool {
 					e.refuse("Must be Readied")
 					key = ' '
 				} else if e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80 {
+					inv := e.snap.inv // extra: its targets and spells show on the game's own screens
+					e.snap.inv = nil
 					quit = e.useItem(it)
+					e.snap.inv = inv
 					if e.beginFlag != 5 {
 						quit = false
 					}
@@ -445,23 +449,31 @@ func (e *Engine) ItemsMenu() bool {
 				if e.canLoseItem(it) {
 					e.ItemName(c, it, 0, 0, false, false)
 					e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "Your "+it.Name()+"will be gone forever")
+					e.overlay(CellRect{1, 21, winRight, winBottom}.Framed())
 					if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Drop It? ") == 'Y' {
 						e.RemoveItem(e.selected(), it)
 						redraw = true
 					}
 					e.ClearCells(1, 21, winRight, winBottom)
+					e.overlay(CellRect{})
 				} else {
 					key = ' '
 				}
 			case 'S':
 				if e.canLoseItem(it) {
+					inv := e.snap.inv
+					e.snap.inv = nil
 					e.sellItem(it)
+					e.snap.inv = inv
 				} else {
 					key = ' '
 				}
 			}
 		}
-		e.ApplyItems(c)                               // 146F: also reached with nothing selected
+		e.ApplyItems(c) // 146F: also reached with nothing selected
+		if i := slices.Index(e.carried(c), it); i >= 0 && it != nil {
+			index = i // extra: the highlight stays on the item Ready moved between the lists
+		}
 		if len(e.carried(c)) != count || key == 'R' { // extra: Ready moves the item between the lists
 			redraw = true
 		}

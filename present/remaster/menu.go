@@ -8,6 +8,7 @@ import (
 	"gpu"
 
 	"por/ega"
+	"por/engine"
 )
 
 // drawMenu draws a vertical menu in the original's look: a box with the
@@ -70,7 +71,7 @@ func (p *Presenter) drawMenu(dst, frame *gpu.Image, glyph func(byte) [8]byte, ti
 	}
 	p.menuImg.WritePixels(p.menuBuf)
 
-	drawBorder(p.menuImg, frame, gpu.GeoM{}, cw, ch)
+	drawBorder(p.menuImg, frame, engine.TextPane.Framed(), gpu.GeoM{}, cw, ch)
 
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
