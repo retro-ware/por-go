@@ -186,6 +186,7 @@ type InvItem struct {
 	Words []string // the item's name words, known or not (for its icon)
 	Count int
 	Slot  bool // it has a doll slot (it can be readied)
+	Wrong bool // the member's class cannot ready it
 }
 
 // inventoryView builds the snapshot of the inventory screen.
@@ -193,7 +194,8 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 	v := &Inventory{Member: slices.Index(e.party, c), Cap: e.poolCap()}
 	for i, it := range items {
 		e.ItemName(c, it, 0, 0, false, false)
-		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0}
+		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
+			Wrong: dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0}
 		for _, w := range it.Words {
 			if w != 0 {
 				x.Words = append(x.Words, itemWords[w])

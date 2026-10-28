@@ -333,7 +333,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 			inv.outline(r, dark)
 		}
 		inv.drawIcon(it, image.Rect(rx, y, rx+rowH, y+rowH))
-		inv.text(upTo(it.Name, chars), rx+rowH+4, y+(rowH-8)/2, green)
+		tc := green
+		if it.Wrong {
+			tc = red
+		}
+		inv.text(upTo(it.Name, chars), rx+rowH+4, y+(rowH-8)/2, tc)
 		inv.lines = append(inv.lines, hit{r: r, item: *it, whole: len(strings.TrimSpace(it.Name)) <= chars})
 	}
 	if inv.n == 0 {
