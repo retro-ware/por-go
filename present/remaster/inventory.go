@@ -91,10 +91,10 @@ var slotNames = [engine.DollSlots]string{"Weapon", "Shield", "Armour", "Gauntlet
 // inventory is the screen's state between frames.
 type inventory struct {
 	doll, atlas image.Image
-	icons                   map[string]int // items.rec: icon key → atlas cell
-	px                      *image.RGBA    // the canvas, drawn on the CPU
-	img, tip                *gpu.Image     // the canvas and the tooltip on the GPU
-	glyph                   func(byte) [8]byte
+	icons       map[string]int // items.rec: icon key → atlas cell
+	px          *image.RGBA    // the canvas, drawn on the CPU
+	img, tip    *gpu.Image     // the canvas and the tooltip on the GPU
+	glyph       func(byte) [8]byte
 
 	shown  bool            // the last frame was the inventory
 	busy   bool            // the game asks something over it (no item menu)
