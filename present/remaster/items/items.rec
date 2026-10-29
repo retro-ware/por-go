@@ -16,7 +16,7 @@ icon: 249
 
 internal_name: 04
 name: Bec De Corbin
-icon: 590
+icon: 888
 
 internal_name: 05
 name: Bill-Guisarme
@@ -104,7 +104,7 @@ icon: 611
 
 internal_name: 1A
 name: Military Pick
-icon: 591
+icon: 888
 
 internal_name: 1B
 name: Awl Pike
@@ -428,7 +428,7 @@ icon: 884
 
 internal_name: 4F
 name: Wand of Magic Missiles
-icon: 885
+icon: 887
 
 internal_name: 52
 name: Efreeti Bottle
@@ -468,5 +468,5 @@ icon: 178
 
 internal_name: 5D
 name: Ring of Protection
-icon: 661
+icon: 658
 
