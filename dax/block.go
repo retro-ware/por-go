@@ -20,7 +20,7 @@ type Image struct {
 	Mask          int // Clear for a masked load, -1 = none
 }
 
-// Clear marks a masked-out pixel; ega.Screen.Set draws it as colour 0.
+// Clear marks a masked-out pixel; the page draws it as colour 0.
 const Clear = 16
 
 // NewImage allocates a blank image.

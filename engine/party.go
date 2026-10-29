@@ -187,7 +187,7 @@ func (e *Engine) PartyMenu() {
 			item := func(hot byte, w int) {
 				e.addRegion(region{x0: 2, y0: 12 + row, x1: 1 + w, y1: 12 + row,
 					click: func(int, int) uint16 { return uint16(hot) },
-					hover: func() { e.ext.nav.hot(hot) }})
+					hover: func(int, int) { e.ext.nav.hot(hot) }})
 				row++
 			}
 			for i := range names {

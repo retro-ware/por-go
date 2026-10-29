@@ -36,17 +36,14 @@ import (
 
 	"github.com/ebitengine/oto/v3"
 
-	"por/ega"
 	"por/engine"
 	"por/pal"
 	"por/present/remaster"
 )
 
 type game struct {
-	scr      *ega.Screen
 	eng      *engine.Engine
 	remaster remaster.Presenter
-	queue    []uint16 // keys still to send, one each time the engine waits (sendKeys)
 
 	pads    []gpu.GamepadID // input buffers, reused each tick
 	pressed []gpu.Key
@@ -68,10 +65,6 @@ const tps = 120
 
 func (g *game) Update() error {
 	g.sent = false
-	if len(g.queue) > 0 && g.eng.Idle() {
-		g.scr.PushKey(g.queue[0])
-		g.queue, g.sent = g.queue[1:], true
-	}
 	if shot != "" { // the user's input never reaches a capture, only the scripted keys
 		g.ticks++
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
@@ -97,14 +90,8 @@ func (g *game) Update() error {
 	return nil
 }
 
-// push sends a key to the engine.
-func (g *game) push(k uint16) {
-	ks, taken := g.remaster.Key(k, g.eng.View())
-	g.sendKeys(ks)
-	if !taken {
-		g.sendKeys([]uint16{k})
-	}
-}
+// push hands a window key to the presenter, which makes the actions.
+func (g *game) push(k uint16) { g.remaster.Key(k, g.eng.View()) }
 
 // act sends the screens' actions to the game.
 func (g *game) act() {
@@ -114,25 +101,8 @@ func (g *game) act() {
 	}
 }
 
-// sendKeys sends ks to the engine: the first at once, the others one at a
-// time, each once the engine waits for a key again. It keeps only the last
-// of keys typed ahead (ReadKeyByte), so a button's Done then Delay sent
-// together would lose the Done.
-func (g *game) sendKeys(ks []uint16) {
-	if len(ks) == 0 {
-		return
-	}
-	if len(g.queue) > 0 { // after the keys still waiting
-		g.queue = append(g.queue, ks...)
-		return
-	}
-	g.scr.PushKey(ks[0])
-	g.queue, g.sent = append(g.queue, ks[1:]...), true
-}
-
-// settle gives the engine up to 8 ms to finish with the keys just sent, so
-// the frame drawn next already shows their result (instead of one frame
-// later). Gosched, not Sleep: in the browser the engine shares the thread.
+// settle gives the engine a moment to take the actions sent, so the frame
+// shows their result.
 func (g *game) settle() {
 	t0 := time.Now()
 	for n := 0; !g.eng.Settled() && time.Since(t0) < 8*time.Millisecond; n++ {
@@ -180,7 +150,7 @@ func (g *game) keys() {
 		if code, ok := biosKey(k); ok {
 			g.push(code)
 		} else if k == gpu.KeyF && gpu.IsKeyPressed(gpu.KeyControl) && gpu.IsKeyPressed(gpu.KeyShift) {
-			g.push(engine.KeyFontPrev) // Ctrl-F next font, Ctrl-Shift-F the one before
+			g.push(remaster.KeyFontPrev) // Ctrl-F next font, Ctrl-Shift-F the one before
 		} else if k >= gpu.KeyA && k <= gpu.KeyZ && gpu.IsKeyPressed(gpu.KeyControl) {
 			g.push(uint16(k-gpu.KeyA) + 1) // Ctrl-letter: ASCII 1..26 (Ctrl-S sound toggle, Ctrl-C quit)
 		}
@@ -205,31 +175,18 @@ func (g *game) mouse() {
 		return
 	}
 	g.remaster.Hover(mx, my)
-	if gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
-		if ks, ok := g.remaster.Click(mx, my); ok { // an action bar button, a menu item, the combat map
-			g.sendKeys(ks)
-			return
-		}
+	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft)
+	if left && g.remaster.Click(mx, my) { // an action bar button, a menu item, the combat map
+		return
 	}
 	cx, cy, in := g.cell(float64(mx), float64(my))
-	g.scr.SetMouse(cx, cy, in)
-	if in && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
-		g.push(engine.MouseKey(engine.MouseLeft, cx, cy))
-	}
-	if gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) {
-		g.push(engine.MouseKey(engine.MouseRight, 0, 0))
-	}
 	_, dy := gpu.Wheel()
 	g.wheel += dy
-	for ; g.wheel >= 1; g.wheel-- {
-		g.push(engine.MouseKey(engine.MouseWheelUp, 0, 0))
-	}
-	for ; g.wheel <= -1; g.wheel++ {
-		g.push(engine.MouseKey(engine.MouseWheelDown, 0, 0))
-	}
+	steps := int(g.wheel)
+	g.wheel -= float64(steps)
+	g.remaster.Mouse(cx, cy, in, left, gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), steps, g.eng.View())
 }
 
-// cell is the text cell (40x25) of the picture under device pixel (x, y).
 func (g *game) cell(x, y float64) (int, int, bool) {
 	p := g.pic
 	if p.W <= 0 {
@@ -250,14 +207,14 @@ var padButtons = []struct {
 	key    uint16
 	repeat bool
 }{
-	{gpu.StandardGamepadButtonLeftTop, engine.KeyPadUp, true},
-	{gpu.StandardGamepadButtonLeftBottom, engine.KeyPadDown, true},
-	{gpu.StandardGamepadButtonLeftLeft, engine.KeyPadLeft, true},
-	{gpu.StandardGamepadButtonLeftRight, engine.KeyPadRight, true},
-	{gpu.StandardGamepadButtonRightBottom, engine.KeyPadSelect, false},
+	{gpu.StandardGamepadButtonLeftTop, 0x4800, true},
+	{gpu.StandardGamepadButtonLeftBottom, 0x5000, true},
+	{gpu.StandardGamepadButtonLeftLeft, 0x4B00, true},
+	{gpu.StandardGamepadButtonLeftRight, 0x4D00, true},
+	{gpu.StandardGamepadButtonRightBottom, remaster.KeyPadSelect, false},
 	{gpu.StandardGamepadButtonRightRight, 27, false},
-	{gpu.StandardGamepadButtonRightLeft, engine.KeyPadOverview, false},
-	{gpu.StandardGamepadButtonRightTop, engine.KeyPadMinimap, false},
+	{gpu.StandardGamepadButtonRightLeft, remaster.KeyPadOverview, false},
+	{gpu.StandardGamepadButtonRightTop, remaster.KeyPadMinimap, false},
 	{gpu.StandardGamepadButtonFrontTopLeft, ',', true},
 	{gpu.StandardGamepadButtonFrontTopRight, '.', true},
 	{gpu.StandardGamepadButtonFrontBottomLeft, 0x4700, true},
@@ -287,13 +244,13 @@ func (g *game) gamepad(id gpu.GamepadID) {
 	dir := uint16(0)
 	switch {
 	case y < -0.6:
-		dir = engine.KeyPadUp
+		dir = 0x4800
 	case y > 0.6:
-		dir = engine.KeyPadDown
+		dir = 0x5000
 	case x < -0.6:
-		dir = engine.KeyPadLeft
+		dir = 0x4B00
 	case x > 0.6:
-		dir = engine.KeyPadRight
+		dir = 0x4D00
 	}
 	if dir != g.stickDir {
 		g.stickDir, g.stickHeld = dir, 0
@@ -375,9 +332,9 @@ func biosKey(k gpu.Key) (uint16, bool) {
 	case gpu.KeyTab:
 		return 9, true
 	case gpu.KeyF1, gpu.KeyF2, gpu.KeyF3, gpu.KeyF4, gpu.KeyF5, gpu.KeyF6, gpu.KeyF7, gpu.KeyF8:
-		return engine.KeyF1 + uint16(k-gpu.KeyF1)<<8, true
+		return remaster.KeyF1 + uint16(k-gpu.KeyF1)<<8, true
 	case gpu.KeyF9:
-		return engine.KeyF9, true
+		return remaster.KeyF9, true
 	case gpu.KeyArrowUp, gpu.KeyKP8:
 		return 0x4800, true
 	case gpu.KeyArrowDown, gpu.KeyKP2:
@@ -438,8 +395,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "No Pool of Radiance data in %s.\nRun gameimport, or copy the DOS game files (TITLE.DAX, 8X8D1.DAX, ...) there yourself.\n", filepath.Join(wd, "data"))
 		os.Exit(1)
 	}
-	scr := ega.New()
-	eng, err := engine.New("data", scr)
+	eng, err := engine.New("data")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -467,7 +423,7 @@ func main() {
 	}
 	go eng.Run()
 
-	g := &game{scr: scr, eng: eng, dsf: 1}
+	g := &game{eng: eng, dsf: 1}
 	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale)*6/5) // 4:3 like a CRT
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")

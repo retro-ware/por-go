@@ -620,8 +620,8 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		inv.step(1)
 	case k == 13:
 		inv.do(engine.ActReady)
-	case k >= engine.KeyF1 && k <= engine.KeyF1+7<<8 && k&0xFF == 0:
-		if n := int(k-engine.KeyF1) >> 8; n < inv.count && inv.view.Switch {
+	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
+		if n := int(k-KeyF1) >> 8; n < inv.count && inv.view.Switch {
 			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActMember, N: n})
 		}
 	case k > ' ' && k < 128:

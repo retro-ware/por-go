@@ -35,13 +35,46 @@ const (
 	ActPoint           // combat, aiming: the pointer is on square X, Y (the preview follows)
 	ActYes             // combat: yes to Battle.Ask (ActClose: no)
 	ActFlee            // combat: step off the map's edge and try to run away (Turn offers it at the edge)
+	ActPick            // pick item N of View.Menu
+	ActSelect          // highlight item N of View.Menu
+	ActContinue        // Enter: the highlighted choice, or "press a key"
+	ActText            // the line being typed (View.Typing) now reads Text
+	ActMove            // a step or cursor move in direction N (Dir...)
+	ActInventory       // member N's items (F1-F8)
+	ActMinimap         // the minimap over the roster (Tab)
+	ActMap             // the full map (M)
+	ActOverview        // the party overview, on the View page the items (P)
+	ActHelp            // the help pages (?)
+	ActSlots           // the save slots (F9)
+	ActFont            // the next text font (N -1: the one before)
+	ActSound           // sound on or off (Ctrl-S)
+	ActSpot            // a click on View.Spots[N] at cell X, Y
+	ActHover           // the pointer came onto View.Spots[N] at cell X, Y
+)
+
+// Directions of ActMove.
+const (
+	DirUp     = iota // walk on, the line or item before
+	DirDown          // a step back, the next line or item
+	DirLeft          // turn left, the item before
+	DirRight         // turn right, the next item
+	DirHome          // the member or line before
+	DirEnd           // the next member or line
+	DirPgUp          // the page before
+	DirPgDn          // the next page
+	DirCentre        // keypad 5
+	DirBack          // the item before (,)
+	DirOn            // the next item (.)
+	DirWheelUp       // the wheel: the highlight, line or page before
+	DirWheelDown
 )
 
 // Action is one thing the player did on a remastered screen.
 type Action struct {
 	Kind ActKind
 	N    int
-	X, Y int // a combat map square
+	X, Y int    // a combat map square, a text cell (ActSpot)
+	Text string // ActText
 }
 
 // acts carries the presenter's actions to the engine goroutine.
@@ -49,7 +82,6 @@ type acts struct {
 	ch      chan Action
 	pending atomic.Int32 // sent and not yet done
 	taken   int32        // received by the engine goroutine, done once it waits again
-	waiting atomic.Bool  // a screen waits in act: actions sent meanwhile are its
 	state   atomic.Int32 // what the engine goroutine does (pace)
 }
 
@@ -68,18 +100,21 @@ func (e *Engine) pace(st int32) { e.acts.state.Store(st) }
 // and finished with them, or pauses on purpose; the picture is worth drawing.
 func (e *Engine) Settled() bool {
 	st := e.acts.state.Load()
-	return (st == pausing || st == waiting && !e.S.KeyPressed()) && !e.Busy()
+	return (st == pausing || st == waiting && len(e.acts.ch) == 0) && !e.Busy()
 }
 
 // Idle reports whether the engine waits for input and none is queued (held
 // keys repeat only then, so they never pile up).
-func (e *Engine) Idle() bool { return e.acts.state.Load() == waiting && !e.S.KeyPressed() }
+func (e *Engine) Idle() bool { return e.acts.state.Load() == waiting && len(e.acts.ch) == 0 }
 
-// readKey blocks for the next key from the window.
-func (e *Engine) readKey() uint16 {
+// nextAct publishes the View and blocks for the next action.
+func (e *Engine) nextAct() Action {
+	e.publish()
 	e.pace(waiting)
-	defer e.pace(working)
-	return <-e.S.Keys
+	a := <-e.acts.ch
+	e.pace(working)
+	e.acts.taken++
+	return a
 }
 
 // sleep pauses the engine goroutine for ms milliseconds.
@@ -97,9 +132,6 @@ func (e *Engine) actsDone() {
 
 // Act sends a to the screen waiting for it; safe from any goroutine.
 func (e *Engine) Act(a Action) {
-	if !e.acts.waiting.Load() { // made on a View the game has moved on from: dropped like a typed-ahead key
-		return
-	}
 	e.acts.pending.Add(1)
 	select {
 	case e.acts.ch <- a:
@@ -112,24 +144,14 @@ func (e *Engine) Act(a Action) {
 // result before drawing, as for a key).
 func (e *Engine) Busy() bool { return e.acts.pending.Load() > 0 }
 
-// act publishes the View and waits for the next action. Keys typed
-// meanwhile still reach the game's own handling (F9, Ctrl-F, ?), but no
-// screen sees them.
+// act publishes the View and waits for the next action. The extras (F9,
+// font, help) still act; the screen sees every other action.
 func (e *Engine) act() Action {
 	e.actsDone()
-	e.acts.waiting.Store(true)
-	defer e.acts.waiting.Store(false)
 	for {
-		e.publish()
-		e.pace(waiting)
-		select {
-		case a := <-e.acts.ch:
-			e.pace(working)
-			e.acts.taken++
+		a := e.nextAct()
+		if !e.extraAct(a) {
 			return a
-		case k := <-e.S.Keys:
-			e.pace(working)
-			e.translate(k) // the extras act; the key itself is no answer
 		}
 	}
 }

@@ -98,7 +98,7 @@ func (e *Engine) ModifyCharacter() {
 			hpToDraw()
 		}
 	}
-	defer e.rawArrows("↑↓, click=score|← →, Raise Lower=change|K, click=keep|Esc=cancel")()
+	defer e.rawArrows()()
 	for {
 		// extra (nav.go): a click on a score or the hit points selects it;
 		// Raise and Lower on the menu bar change it

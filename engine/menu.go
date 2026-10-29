@@ -159,10 +159,6 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 		e.ext.menu--
 		e.ext.nav = nav
 		e.regionCut(mark)
-		if e.ext.menu == 0 {
-			e.S.SetHint("")
-			e.ext.hint = ""
-		}
 	}()
 	allowEnter := normal != 0 || highlight != 0
 	start, end := menuItems(menu)
@@ -183,15 +179,13 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 	for {
 		// The input timeout DS:6B2E..6B32 is never set by the game.
 		e.animateWhileWaiting()
-		e.pollMouse()
-		e.showHint()
 		if !e.keyWaiting() { // 0566
 			e.idle()
 			continue
 		}
-		k := e.ReadKeyByte()
+		k := e.readKeyByte()
 		if k == 0 {
-			k = e.ReadKeyByte()
+			k = e.readKeyByte()
 			if e.ext.acted { // extra: a click did its action itself (nav.go keyNone)
 				e.ext.acted = false
 				return byte(keyNone >> 8), false
@@ -229,7 +223,7 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 		}
 		k = upper(k)
 		done := false
-		if k == ' ' || k != 0 && strings.IndexByte(e.ext.hiddenKeys, k) >= 0 {
+		if k == ' ' {
 			done = true
 		} else if isHotkey(k) {
 			for i := 1; i <= len(menu); i++ {
@@ -278,6 +272,9 @@ func (e *Engine) menuRegions(prompt, menu string, start, end []int, normal, high
 			}
 		}
 	}}
+	if e.ext.inCommand {
+		e.commandRegions()
+	}
 	for j := 1; j < len(start); j++ {
 		if start[j] < 1 {
 			continue
@@ -286,7 +283,7 @@ func (e *Engine) menuRegions(prompt, menu string, start, end []int, normal, high
 		a, b := itemSpan(menu, start, end, j)
 		e.addRegion(region{x0: len(prompt) + a - 1, y0: 24, x1: len(prompt) + b - 1, y1: 24,
 			click: func(int, int) uint16 { return uint16(hot) },
-			hover: func() { sel(j) }})
+			hover: func(int, int) { sel(j) }})
 	}
 }
 

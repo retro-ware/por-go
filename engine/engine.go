@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"por/dax"
-	"por/ega"
 	"por/pal"
 )
 
@@ -33,7 +32,6 @@ const maxCombatants = 0x48
 // Engine holds the global state the DOS program kept in its data segment.
 type Engine struct {
 	L         *dax.Loader
-	S         *ega.Screen
 	pal       pal.Regs // EGA palette registers (SetPaletteColor)
 	Cfg       Config
 	tempSel   *Character // selectTemp: selected but not in the party
@@ -45,8 +43,8 @@ type Engine struct {
 	set   Set           // DS:5376: the data set the current area reads
 	start time.Time
 
-	pendingScan byte // ReadKey: scan code waiting after a 0 byte
-	draining    bool // ReadKeyByte is dropping typed-ahead keys
+	pendingScan byte // readKey: scan code waiting after a 0 byte
+	draining    bool // readKeyByte is dropping typed-ahead keys
 	msgDelay    byte // DS:49E2, message delay factor (ovr12 sets 1)
 	menuSel     int  // DS:6B2B, DisplayInput selection
 	menuExtra   bool // DS:6B2C
@@ -175,13 +173,13 @@ func (e *Engine) Dice(n, sides int) int {
 }
 
 // New opens the data directory and reads POOL.CFG.
-func New(dir string, scr *ega.Screen) (*Engine, error) {
+func New(dir string) (*Engine, error) {
 	l, err := dax.NewLoader(dir)
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{L: l, S: scr, pal: pal.Identity, set: 1, start: time.Now()}
-	e.acts.ch = make(chan Action, 16)
+	e := &Engine{L: l, pal: pal.Identity, set: 1, start: time.Now()}
+	e.acts.ch = make(chan Action, 64)
 	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: dir, SaveDir: filepath.Join(dir, "SAVE"), FullIntro: true}
 	if p := l.Path("POOL.CFG"); p != "" {
 		f, err := os.Open(p)
@@ -280,45 +278,41 @@ func (e *Engine) Delay(ms int) {
 	e.pace(working)
 }
 
-// KeyPressed / ReadKey / ClearKeyboard = 0A40:02FD, BIOS read, 0899:0104.
+// KeyPressed / readKey / ClearKeyboard = 0A40:02FD, BIOS read, 0899:0104:
+// the keys are the original's, made from the presenter's actions (nav.go).
 func (e *Engine) KeyPressed() bool {
 	e.walkFeed()
 	e.publish()
-	for len(e.ext.ahead) == 0 && e.S.KeyPressed() { // nav.go: translate as the key is seen
-		e.feed(e.readKey())
+	for len(e.ext.ahead) == 0 && len(e.acts.ch) > 0 { // nav.go: an action becomes the game's key as it is seen
+		e.feed(e.nextAct())
 	}
 	e.release()
 	return len(e.ext.ahead) > 0
 }
 
-func (e *Engine) ReadKey() uint16 {
+func (e *Engine) readKey() uint16 {
 	e.ext.skip = false
 	e.actsDone()
 	for e.release(); len(e.ext.ahead) == 0; e.release() {
-		if e.ext.menu == 0 {
-			e.showHint()
-		}
-		e.publish()
-		e.feed(e.readKey())
+		e.feed(e.nextAct())
 	}
 	k := e.ext.ahead[0]
 	e.ext.ahead = e.ext.ahead[1:]
 	return k
 }
 
-// feed translates a key from the window (nav.go) into the keys the game
-// will read.
-func (e *Engine) feed(raw uint16) {
-	if b := raw & 0xFF; b == 13 || b == 27 { // Enter or Esc silences the voice-over
+// feed turns an action (nav.go) into the key the game will read.
+func (e *Engine) feed(a Action) {
+	if a.Kind == ActContinue || a.Kind == ActClose { // Enter or Esc silences the voice-over
 		e.stopVoice()
 	}
-	if k := e.translate(raw); k != 0 {
+	if k := e.actKey(a); k != 0 {
 		e.ext.ahead = append(e.ext.ahead, k)
 	}
 }
 
 // release hands the game the next of the keys a translated key left to
-// follow it, once the keys before are read. Not while ReadKeyByte drains
+// follow it, once the keys before are read. Not while readKeyByte drains
 // typed-ahead keys, which would keep only the last.
 func (e *Engine) release() {
 	if len(e.ext.ahead) == 0 && len(e.ext.later) > 0 && !e.draining {

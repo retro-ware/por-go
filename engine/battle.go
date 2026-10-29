@@ -254,10 +254,6 @@ func (e *Engine) hideEffect(px, py int) {
 	e.snap.effects = slices.DeleteFunc(e.snap.effects, func(f effect) bool { return f.x == x && f.y == y })
 }
 
-// KeyViewMember + n opens party member n's View page from the command bar
-// (a portrait clicked in a remastered view); elsewhere it is dropped.
-const KeyViewMember = 0xC600
-
 // unitDrawn / unitHidden track what the page shows of combatant i.
 func (e *Engine) unitDrawn(i int, pose byte) {
 	if e.snap.poses == nil {

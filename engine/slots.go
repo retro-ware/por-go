@@ -72,11 +72,11 @@ func (e *Engine) guardedRun(start func()) (reload bool) {
 func (e *Engine) unwindReset() {
 	x := &e.ext
 	x.inCommand, x.padHot, x.onSelect, x.menu, x.list, x.choosing = false, 0, nil, 0, false, false
-	x.quick, x.ahead, x.later, x.regions, x.raw = nil, nil, nil, nil, ""
+	x.quick, x.ahead, x.later, x.regions, x.raw = nil, nil, nil, nil, false
 	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
 	x.buying, x.campBar, x.selSet, x.skip, x.paging = false, false, false, false, false
 	x.fullMap, x.walk, x.back, x.aoe, x.picker, x.enemiesOnly = false, nil, false, 0, false, false
-	x.hiddenKeys, x.throwing, x.menuFloor, x.panel = "", nil, 0, nil
+	x.throwing, x.menuFloor, x.panel, e.snap.typing = nil, 0, nil, nil
 	e.partySel = 0 // a defer on the way out may have put back the old party's index
 	e.pendingScan, e.draining = 0, false
 	e.loadedGame = e.beginFlag != 0 // DS:49F8, as the party menu's Load
@@ -299,14 +299,22 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			e.addRegion(region{x0: x, y0: 0x16, x1: x + len(f.label) - 1, y1: 0x16, click: func(int, int) uint16 { return f.k }})
 			x += len(f.label) + gap
 		}
-		k := e.ReadKey()
+		outer := e.snap.menu // extra: the footer's letters as a menu (ActPick)
+		e.snap.menu, e.snap.own = &Menu{}, true
+		for _, f := range footer {
+			if f.k != 13 && f.k != 27 {
+				e.snap.menu.Items = append(e.snap.menu.Items, MenuItem{Text: f.label, Key: byte(f.k)})
+			}
+		}
+		k := e.readKey()
+		e.snap.menu, e.snap.own = outer, false
 		e.regionCut(mark)
 		cur := ""
 		if sel >= first && sel < rows {
 			cur = list[sel-first].name
 		}
 		switch {
-		case k == 27 || k == KeyF9:
+		case k == 27 || k == keyF9:
 			return false
 		case k == 0x4800:
 			sel--

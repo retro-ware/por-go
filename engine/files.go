@@ -142,7 +142,7 @@ func (e *Engine) fileError(verb, path string) {
 func (e *Engine) PromptRow24(colour int, s string) byte {
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colour, s)
-	return e.ReadKeyByte()
+	return e.readKeyByte()
 }
 
 // BuildCharList = ovr18:0010: names from charlist.txt, "* " for party members.

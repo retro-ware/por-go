@@ -96,8 +96,18 @@ var (
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
+// Zoom moves the camera in (wheel up) or out.
+func (p *Presenter) Zoom(in bool) {
+	p.initCamera()
+	if in {
+		p.distTo = max(minDist, p.distTo/1.15)
+	} else {
+		p.distTo = min(maxDist, p.distTo*1.15)
+	}
+}
+
 // Key is the XCOM 2 scheme: W A S D and the arrows pan (held: see pan), Q and E turn,
-// the wheel zooms, Home brings the camera back, 1..9 and 0 pick the bar's
+// Home brings the camera back, 1..9 and 0 pick the bar's
 // buttons, the bar's letters (hotkeys) theirs, Tab and Shift-Tab cycle the
 // targets while aiming, Enter takes the aimed one, Esc gives up and
 // Backspace ends the turn. It reports whether k was taken.
@@ -113,10 +123,6 @@ func (p *Presenter) Key(k uint16) bool {
 		p.yawTo -= math.Pi / 4
 	case k == 'e':
 		p.yawTo += math.Pi / 4
-	case k == engine.MouseKey(engine.MouseWheelDown, 0, 0):
-		p.distTo = min(maxDist, p.distTo*1.15)
-	case k == engine.MouseKey(engine.MouseWheelUp, 0, 0):
-		p.distTo = max(minDist, p.distTo/1.15)
 	case k == 'w' || k == 'a' || k == 's' || k == 'd':
 	case k == 0x4800 || k == 0x5000 || k == 0x4B00 || k == 0x4D00: // the arrows pan
 	case k == 0x4700:

@@ -36,9 +36,6 @@ var pcFonts = func() []pcFont {
 	return fs
 }()
 
-// KeyFontPrev is Ctrl-Shift-F from the window (Ctrl-F arrives as ASCII 6).
-const KeyFontPrev = 0xFD00
-
 // textCell is what drawChar last put into a cell, so a font change can
 // redraw the text still showing there.
 type textCell struct {

@@ -253,8 +253,8 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 			move(i)
 			return keyNone
 		}}
-		r.hover = func() {
-			if cx, cy, ok := e.S.Mouse(); ok && cx >= x1 && cx <= x2 {
+		r.hover = func(_, cy int) {
+			{
 				if i := at(cy); i >= 0 && i != *index {
 					move(i)
 				}

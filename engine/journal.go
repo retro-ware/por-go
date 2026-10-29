@@ -180,7 +180,7 @@ func (e *Engine) showJournal(lines []string) {
 	for p := 0; p < len(pages); p++ {
 		for off := 0; ; {
 			maxOff := draw(p, off)
-			k := e.ReadKey()
+			k := e.readKey()
 			if k == 27 {
 				p = len(pages)
 				break

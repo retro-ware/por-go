@@ -222,7 +222,7 @@ func (e *Engine) FullMap() {
 		}
 		return 0
 	}})
-	defer e.rawArrows("arrows, click=square|W=walk there|L=label|R=remove|M,Esc=back")()
+	defer e.rawArrows()()
 	for {
 		texts, firstSq = e.drawFullMap(m, cx, cy)
 		k, ext := e.DisplayInput("", "Walk Label Remove Exit", colLightMagenta, colLightGreen, colWhite, true, false)
@@ -272,31 +272,17 @@ func (e *Engine) FullMap() {
 
 // labelInput reads a label on row 24 in upper and lower case; Esc gives up.
 func (e *Engine) labelInput(s string) (string, bool) {
-	e.ext.typing = true
-	defer func() { e.ext.typing = false }()
 	const prompt, max = "Label: ", 0x20
-	b := []byte(s)
-	for {
+	t, ok := e.typed(s, max, func(c byte) bool { return c >= 0x20 && c < 0x7F }, func(t string) {
 		e.ClearRow24()
 		e.DisplayString(0, promptRow, colLightMagenta, prompt)
-		e.DisplayString(len(prompt), promptRow, colWhite, string(b)+"_")
-		e.showHint()
-		k := e.ReadKey()
-		switch {
-		case k == 13:
-			e.ClearRow24()
-			return strings.TrimSpace(string(b)), true
-		case k == 27:
-			e.ClearRow24()
-			return s, false
-		case k == 8:
-			if len(b) > 0 {
-				b = b[:len(b)-1]
-			}
-		case k >= 0x20 && k < 0x7F && len(b) < max:
-			b = append(b, byte(k))
-		}
+		e.DisplayString(len(prompt), promptRow, colWhite, t+"_")
+	})
+	e.ClearRow24()
+	if !ok {
+		return s, false
 	}
+	return strings.TrimSpace(t), true
 }
 
 // drawFullMap draws the map, the cursor at (cx, cy) and the legend; it

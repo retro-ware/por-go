@@ -51,7 +51,6 @@ type Presenter struct {
 	mapSrc    image.Image                 // the View.Map it holds
 	menuRects []image.Rectangle           // the vertical menu's items on screen, as last drawn
 	menuSel   int                         // the game's own choice in it
-	keys      []byte                      // its items' hotkeys
 	noMenu    bool                        // nothing to pick: any click answers
 	rows      []shownRows                 // the original's rows on screen, as last drawn
 	pointer   image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
@@ -64,6 +63,9 @@ type Presenter struct {
 	fightView *engine.Battle              // the combat map last drawn
 	fightLog  bool                        // the battle Log is up (fight.go)
 	rowsImg   *gpu.Image                  // the combat rows, drawn at scale 1
+	typing    bool                        // a line is being typed (input.go) ...
+	typed     string                      // ... and reads this
+	hovered   [3]int                      // the spot and cell the pointer was last on (Mouse)
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -156,7 +158,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if v.Command || noChoice(v) {
 			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
-		p.menuSel, p.keys = v.Menu.Sel, keys
+		p.menuSel = v.Menu.Sel
 		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
 	if note.Show { // the toast (font name ...): the strip pageImage wrote it into
@@ -170,41 +172,47 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	return Rect{}
 }
 
-// Key takes key k before the game when the remastered view is up: Enter
-// opens the vertical menu in place of the menu bar, Esc on the command bar
-// opens the renderer's options. It returns the keys to send instead and
-// whether k was taken.
-func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
+// Key turns window key k into actions (Actions hands them over). When the
+// remastered view is up, Enter opens the vertical menu in place of the
+// menu bar and Esc on the command bar the renderer's options.
+func (p *Presenter) Key(k uint16, v engine.View) {
+	if !p.key(k, v) {
+		p.keyAct(k, v)
+	}
+}
+
+// key takes k on the remastered screens; false leaves it to keyAct.
+func (p *Presenter) key(k uint16, v engine.View) bool {
 	if v.Inventory != nil && p.inv.view != nil {
-		return nil, p.inventoryKey(k)
+		return p.inventoryKey(k)
 	}
 	if p.fight {
-		return nil, p.fightKey(k)
+		return p.fightKey(k)
 	}
 	if !p.active || p.view == nil {
 		p.menu = false
-		return nil, false
+		return false
 	}
 	if p.view.OptionsOpen() {
-		return nil, true
+		return true
 	}
 	m := v.Menu
 	if !p.menu {
 		switch {
 		case k == 13 && noChoice(v): // "press enter to continue": nothing to pick
-			return nil, false
+			return false
 		case k == 13 && m != nil:
 			p.menu, p.sel = true, m.Sel
 		case k == 27 && v.Command:
 			p.view.OpenOptions()
 		default:
-			return nil, false
+			return false
 		}
-		return nil, true
+		return true
 	}
 	if m == nil {
 		p.menu = false
-		return nil, false
+		return false
 	}
 	n := len(m.Items)
 	switch {
@@ -215,46 +223,50 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 	case k == 13:
 		p.menu = false
 		if p.sel == m.Sel { // the game's own choice: Enter picks it (some prompts take nothing else)
-			return nil, false
+			return false
 		}
-		return []uint16{uint16(m.Items[p.sel].Key)}, true
+		p.send(engine.ActPick, p.sel)
 	case k == 27:
 		p.menu = false
 	default:
 		for _, it := range m.Items { // a hotkey still picks its item
 			if c := byte(k); k < 128 && (c == it.Key || c-'a'+'A' == it.Key) {
 				p.menu = false
-				return nil, false
+				return false
 			}
 		}
 	}
-	return nil, true
+	return true
 }
 
-// Click is the keys a click at screen pixel (x, y) sends: an action bar
-// button, or an item of the vertical menu.
-func (p *Presenter) Click(x, y int) ([]uint16, bool) {
+// Click takes a click at screen pixel (x, y) on the remastered screens: a
+// portrait, an action bar button, or an item of the vertical menu. It
+// reports whether it was taken.
+func (p *Presenter) Click(x, y int) bool {
 	if !p.fight {
 		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
-				return []uint16{engine.KeyViewMember + uint16(i)}, true
+				p.send(engine.ActMember, i)
+				return true
 			}
 		}
 		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {
-			return nil, false
+			return false
 		}
 		for i, r := range p.menuRects {
 			if image.Pt(x, y).In(r) {
 				p.menu = false
 				if i == p.menuSel { // the game's own choice: Enter picks it (some prompts take nothing else)
-					return []uint16{13}, true
+					p.send(engine.ActContinue, 0)
+				} else {
+					p.send(engine.ActPick, i)
 				}
-				return []uint16{uint16(p.keys[i])}, true
+				return true
 			}
 		}
-		return nil, false
+		return false
 	}
-	return nil, p.fightClick(x, y)
+	return p.fightClick(x, y)
 }
 
 // Hover moves the vertical menu's highlight to the item under screen pixel (x, y).

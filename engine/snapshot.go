@@ -91,6 +91,8 @@ type View struct {
 	Page      []Sprite       // the screen's pictures, symbols and fills, bottom first (page.go)
 	Text      [25][40]Cell   // the text cells, over Page
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
+	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
+	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
 
@@ -105,6 +107,12 @@ type Menu struct {
 type MenuItem struct {
 	Text string
 	Key  byte
+}
+
+// Typing is the line being typed and how long it may get.
+type Typing struct {
+	Text string
+	Max  int
 }
 
 // MapCell is the size of a square in View.Map, in pixels.
@@ -128,6 +136,8 @@ type snapState struct {
 	win      Window                 // set by whatever drew into the view window last
 	heads    map[int]image.Image    // decoded HEAD blocks by id
 	tiles    [3]image.Image         // View.Border, once decoded
+	typing   *Typing                // the line being typed (typed)
+	own      bool                   // menu is a modal screen's own (slots), not the one under it
 	menu     *Menu                  // the innermost DisplayInput's menu (Sel unset)
 	cursor   image.Point            // drawCursor's last square
 	cursorOn bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
@@ -178,11 +188,12 @@ func (e *Engine) publish() {
 		c := e.selected()
 		v.Inventory = e.inventoryView(c, e.carried(c))
 	}
-	if m := s.menu; m != nil {
+	if m := s.menu; m != nil && (e.ext.modal == 0 || e.ext.menu > e.ext.menuFloor || s.own) { // not the menu under help or the overview
 		c := *m
 		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
 		v.Menu = &c
 	}
+	v.Typing, v.Spots = s.typing, e.spots()
 	e.pageView(v)
 	for i, c := range e.party {
 		v.Party = append(v.Party, Member{

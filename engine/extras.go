@@ -31,54 +31,6 @@ import (
 // coloured background (the original only recolours its text, which is the
 // colour the hotkey letters already have).
 
-// Virtual keys sent by the gamepad (scan codes no PC keyboard produces).
-const (
-	KeyPadSelect   = 0xE000 // choose the highlighted menu item (Enter elsewhere)
-	KeyPadMinimap  = 0xE100 // as Tab
-	KeyPadOverview = 0xE200 // as P
-	KeyPadUp       = 0xE300 // d-pad: walk in the 3D view, move the selection in menus
-	KeyPadDown     = 0xE400
-	KeyPadLeft     = 0xE500
-	KeyPadRight    = 0xE600
-	KeyF1          = 0x3B00 // F1; F2..F8 follow at +0x100 (BIOS scan codes the original never reads)
-	KeyF9          = 0x4300 // save / load (slots.go)
-)
-
-// padArrow is the BIOS arrow key for each d-pad direction.
-var padArrow = map[uint16]uint16{KeyPadUp: 0x4800, KeyPadDown: 0x5000, KeyPadLeft: 0x4B00, KeyPadRight: 0x4D00}
-
-// padKey turns a virtual gamepad key into what the game reads, or 0 to
-// drop it.
-func (e *Engine) padKey(k uint16) uint16 {
-	switch k {
-	case KeyPadSelect:
-		if e.ext.padHot != 0 {
-			return uint16(e.ext.padHot)
-		}
-		return 13
-	case KeyPadMinimap:
-		e.extraKey(9)
-	case KeyPadOverview:
-		e.extraKey('P')
-	case KeyPadUp, KeyPadDown, KeyPadLeft, KeyPadRight:
-		back := k == KeyPadUp || k == KeyPadLeft
-		switch {
-		case e.ext.inCommand || e.ext.menu == 0:
-			return padArrow[k] // walking, or a screen that reads the arrows itself
-		case e.ext.list && (k == KeyPadUp || k == KeyPadDown):
-			if back {
-				return 0x4700 // Home: previous row
-			}
-			return 0x4F00 // End: next row
-		case back:
-			return ','
-		default:
-			return '.'
-		}
-	}
-	return 0
-}
-
 // extras holds the convenience-feature state.
 type extras struct {
 	inCommand bool                // the adventuring command bar is waiting
@@ -102,14 +54,12 @@ type extras struct {
 	ahead         []uint16                // translated keys not yet read
 	nav           navCtx                  // the waiting menu
 	regions       []region                // clickable parts of the screen
-	mouseAt       int                     // cell under the pointer + 1 at the last poll
 	castCancelled bool                    // CastSpell: the player cancelled the aim (the turn goes on)
 	acted         bool                    // a region's click acted itself: DisplayInput hands back (keyNone) to its caller
-	raw           string                  // the screen reads the arrows itself; its hint line
+	raw           bool                    // the screen reads the arrows itself
 	typing        bool                    // InputString is waiting
 	modal         int                     // help or overview shown: any key closes
 	enemiesOnly   bool                    // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
-	hiddenKeys    string                  // DisplayInput also takes these keys, not on the bar
 	learned       map[*Character][21]byte // the spells each caster held before using some (camp.go noteSpells)
 	picker        bool                    // the list has no menu words: a click picks (listmenu.go)
 	floor         int                     // regions below belong to the screen under the modal one
@@ -119,7 +69,7 @@ type extras struct {
 	throwing      *Item                   // combat: Throw left the inventory to aim this item
 	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
 	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
-	later         []uint16                // keys handed to the game one at a time (Engine.ReadKey)
+	later         []uint16                // keys handed to the game one at a time (Engine.readKey)
 	sels          map[string]int          // the highlighted item each menu was left with
 	listWord      map[string]byte         // a list menu's highlighted word, by its hot letter, kept across pages
 	selSet        bool                    // the caller set the highlight (YesNo): keep it
@@ -137,7 +87,6 @@ type extras struct {
 	cells  [25][40]textCell // the text drawn into each cell
 	note   string           // shown over the picture for a moment
 	noteAt time.Time
-	hint   string // the hint line last sent to the window
 
 	// journal.go
 	printed   string     // the text window's text since it was cleared
@@ -427,7 +376,7 @@ func (e *Engine) Help() {
 			more := "page " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
 			e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		}
-		switch e.ReadKey() {
+		switch e.readKey() {
 		case 27:
 			p = len(pages)
 		case 0x4800, 0x4900, 0x4B00: // Up, PgUp, Left

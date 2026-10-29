@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"por/ega"
 	"por/engine"
 )
 
@@ -17,8 +16,7 @@ func TestView(t *testing.T) {
 	if _, err := os.Stat("../TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
-	scr := ega.New()
-	e, err := engine.New("..", scr)
+	e, err := engine.New("..")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,12 +26,12 @@ func TestView(t *testing.T) {
 	if i < 0 {
 		t.Skip("no GAME A save")
 	}
-	keys := func(ks ...uint16) engine.View {
-		for _, k := range ks {
+	keys := func(as ...engine.Action) engine.View {
+		for _, a := range as {
 			for !e.Idle() {
 				time.Sleep(10 * time.Millisecond)
 			}
-			scr.PushKey(k)
+			e.Act(resolve(e, a))
 			time.Sleep(50 * time.Millisecond)
 		}
 		for !e.Idle() {
@@ -42,11 +40,11 @@ func TestView(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		return e.View()
 	}
-	load := []uint16{'L'}
+	load := []engine.Action{hot('L')}
 	for ; i > 0; i-- {
-		load = append(load, 0x5000)
+		load = append(load, down)
 	}
-	v := keys(append(load, 13)...)
+	v := keys(append(load, cont)...)
 	if !v.MainFrame || v.Window != engine.WinThreeD {
 		t.Fatalf("after loading: MainFrame %v Window %v, want the 3D view in the main frame", v.MainFrame, v.Window)
 	}
@@ -54,22 +52,22 @@ func TestView(t *testing.T) {
 		t.Fatalf("party %+v: want named members with heads", v.Party)
 	}
 	f := v.Facing
-	v = keys(0x4D00) // turn right
+	v = keys(engine.Action{Kind: engine.ActMove, N: engine.DirRight}) // turn right
 	if v.Facing != (f+1)%4 || !v.MainFrame || v.Window != engine.WinThreeD {
 		t.Errorf("after turning right from %v: %+v", f, v)
 	}
-	v = keys('V') // the character sheet covers the frame
+	v = keys(hot('V')) // the character sheet covers the frame
 	if v.MainFrame {
 		t.Errorf("character sheet: MainFrame still set")
 	}
-	v = keys(27)
+	v = keys(engine.Action{Kind: engine.ActClose})
 	if !v.MainFrame {
 		t.Errorf("back from the sheet: MainFrame not set")
 	}
 }
 
 func TestBattleView(t *testing.T) {
-	e, scr, v := battleView(t)
+	e, v := battleView(t)
 	b := v.Battle
 	if b == nil {
 		t.Fatal("no Battle in combat")
@@ -98,11 +96,35 @@ func TestBattleView(t *testing.T) {
 	if party == 0 || foes == 0 || walls == 0 {
 		t.Errorf("party %d foes %d walls %d: want some of each", party, foes, walls)
 	}
-	_, _ = e, scr
+	_ = e
 }
 
-func keyWait(e *engine.Engine, scr *ega.Screen, k uint16) engine.View {
-	scr.PushKey(k)
+// hot stands for the menu item with hotkey c (resolve finds its index).
+func hot(c byte) engine.Action { return engine.Action{Kind: engine.ActPick, N: -int(c)} }
+
+var down, cont = engine.Action{Kind: engine.ActMove, N: engine.DirDown}, engine.Action{Kind: engine.ActContinue}
+
+// resolve turns hot(c) into the pick of that item on the menu shown.
+func resolve(e *engine.Engine, a engine.Action) engine.Action {
+	if a.Kind != engine.ActPick || a.N >= 0 {
+		return a
+	}
+	if m := e.View().Menu; m != nil {
+		for i, it := range m.Items {
+			if it.Key == byte(-a.N) {
+				a.N = i
+				return a
+			}
+		}
+	}
+	return a
+}
+
+func keyWait(e *engine.Engine, a engine.Action) engine.View {
+	for !e.Idle() {
+		time.Sleep(10 * time.Millisecond)
+	}
+	e.Act(resolve(e, a))
 	time.Sleep(50 * time.Millisecond)
 	for !e.Idle() {
 		time.Sleep(10 * time.Millisecond)
@@ -112,12 +134,11 @@ func keyWait(e *engine.Engine, scr *ega.Screen, k uint16) engine.View {
 }
 
 // battleView loads GAME A and starts the dev combat scene.
-func battleView(t *testing.T) (*engine.Engine, *ega.Screen, engine.View) {
+func battleView(t *testing.T) (*engine.Engine, engine.View) {
 	if _, err := os.Stat("../TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
-	scr := ega.New()
-	e, err := engine.New("..", scr)
+	e, err := engine.New("..")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,28 +151,28 @@ func battleView(t *testing.T) (*engine.Engine, *ega.Screen, engine.View) {
 	if i < 0 {
 		t.Skip("no GAME A save")
 	}
-	ks := []uint16{'L'}
+	ks := []engine.Action{hot('L')}
 	for ; i > 0; i-- {
-		ks = append(ks, 0x5000)
+		ks = append(ks, down)
 	}
 	var v engine.View
-	for _, k := range append(ks, 13, ' ', ' ', ' ', ' ', ' ', ' ') {
+	for _, k := range append(ks, cont, cont, cont, cont, cont, cont, cont) {
 		for !e.Idle() {
 			time.Sleep(10 * time.Millisecond)
 		}
 		if v = e.View(); v.Battle != nil {
 			break
 		}
-		scr.PushKey(k)
+		e.Act(resolve(e, k))
 		time.Sleep(50 * time.Millisecond)
 	}
-	return e, scr, v
+	return e, v
 }
 
 // TestWalk: ActWalk to a square in Reach moves the active unit there and
 // the turn goes on.
 func TestWalk(t *testing.T) {
-	e, _, v := battleView(t)
+	e, v := battleView(t)
 	if v.Battle == nil || v.Battle.Turn == nil {
 		t.Fatal("no turn in combat")
 	}
@@ -205,7 +226,7 @@ func active(t *testing.T, v engine.View) engine.Unit {
 // TestBattleFight plays the dev fight out on Quick and watches the view:
 // blows show effects, the fallen leave the units.
 func TestBattleFight(t *testing.T) {
-	e, scr, v := battleView(t)
+	e, v := battleView(t)
 	if v.Battle == nil {
 		t.Fatal("no Battle in combat")
 	}
@@ -237,7 +258,7 @@ func TestBattleFight(t *testing.T) {
 		case v.Battle != nil && v.Battle.Turn != nil:
 			actWait(e, engine.Action{Kind: engine.ActQuick})
 		default:
-			keyWait(e, scr, 13)
+			keyWait(e, cont)
 		}
 	}
 	close(done)
@@ -252,7 +273,7 @@ func TestBattleFight(t *testing.T) {
 // TestAttackFoe: ActAttack on a target foe attacks it at once (walking
 // up to it first when it stands out of reach): the turn moves on.
 func TestAttackFoe(t *testing.T) {
-	e, _, v := battleView(t)
+	e, v := battleView(t)
 	me := active(t, v)
 	if len(v.Battle.Targets) == 0 {
 		t.Skip("no target")
@@ -271,7 +292,7 @@ func TestAttackFoe(t *testing.T) {
 // TestCombatActions: the turn offers Wait and the foes ActAttack takes,
 // with their chance to be hit; Wait ends the turn.
 func TestCombatActions(t *testing.T) {
-	e, _, v := battleView(t)
+	e, v := battleView(t)
 	me := active(t, v)
 	if !slices.Contains(v.Battle.Turn.Can, engine.ActWait) {
 		t.Errorf("Can %+v: no Wait", v.Battle.Turn.Can)
@@ -292,7 +313,7 @@ func TestCombatActions(t *testing.T) {
 
 // TestAimCycle: aiming a weapon cycles foes only, never the aimer.
 func TestAimCycle(t *testing.T) {
-	e, _, v := battleView(t)
+	e, v := battleView(t)
 	v = nextToFoe(t, e, v)
 	v = actWait(e, engine.Action{Kind: engine.ActAttack})
 	if v.Battle == nil || v.Battle.Turn == nil || !v.Battle.Turn.Aim {
@@ -310,7 +331,7 @@ func TestAimCycle(t *testing.T) {
 
 // TestAimHover: pointing at another square while aiming moves the aim there.
 func TestAimHover(t *testing.T) {
-	e, _, v := battleView(t)
+	e, v := battleView(t)
 	v = nextToFoe(t, e, v)
 	v = actWait(e, engine.Action{Kind: engine.ActAttack})
 	if v.Battle == nil || !v.Battle.CursorOn {
@@ -348,7 +369,7 @@ func nextToFoe(t *testing.T, e *engine.Engine, v engine.View) engine.View {
 
 // TestAimOutOfReach: with no foe in reach of the weapon Attack does not aim.
 func TestAimOutOfReach(t *testing.T) {
-	e, _, _ := battleView(t)
+	e, _ := battleView(t)
 	v := actWait(e, engine.Action{Kind: engine.ActAttack})
 	if v.Battle == nil || v.Battle.Turn == nil || v.Battle.Turn.Aim {
 		t.Errorf("aiming with every foe two squares off a melee fighter")
@@ -361,8 +382,7 @@ func TestViewMember(t *testing.T) {
 	if _, err := os.Stat("../TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
-	scr := ega.New()
-	e, err := engine.New("..", scr)
+	e, err := engine.New("..")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -372,15 +392,15 @@ func TestViewMember(t *testing.T) {
 	if i < 0 {
 		t.Skip("no GAME A save")
 	}
-	keyWait(e, scr, 'L')
+	keyWait(e, hot('L'))
 	for ; i > 0; i-- {
-		keyWait(e, scr, 0x5000)
+		keyWait(e, down)
 	}
-	v := keyWait(e, scr, 13)
+	v := keyWait(e, cont)
 	if len(v.Party) < 2 {
 		t.Skip("party of one")
 	}
-	if v = keyWait(e, scr, engine.KeyViewMember+1); v.MainFrame {
+	if v = keyWait(e, engine.Action{Kind: engine.ActMember, N: 1}); v.MainFrame {
 		t.Fatal("portrait click: still on the main screen")
 	}
 	if !v.Party[1].Selected {
