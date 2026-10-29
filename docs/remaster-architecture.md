@@ -138,7 +138,7 @@ The seam is `engine/snapshot.go`:
 - **`Window`:** set by whatever drew into the view window last: `Draw3DView`, `DrawAreaMap`, or the picture paths (`drawPicAt`, `DrawAnimFrame`).
 - **`TextShown`:** any lit pixel inside the text pane's border.
 - **`Party`:** name, HP, AC as shown, status, selection, and `Head`. `Head` is the chosen paper-doll head (`portraitHead[PortHead]` from the HEAD files), 88x40 in EGA colours, decoded once per id.
-- **Fixed rectangles:** `ViewWindow`, `InnerWindow`, `TextPane` and `PromptRows`, as `CellRect`s.
+- **Fixed rectangles:** `ViewWindow`, `InnerWindow` and `TextPane`, as `CellRect`s.
 - **Test:** `TestView` loads GAME A headless and checks the 3D view in the main frame, the party heads, turning right, and that the character sheet hides the frame and Esc brings it back. It is skipped without the game files.
 - **Known gap:** when the view window is only cleared, `Window` keeps the last picture. Add a case for it in milestone 5 if a pop-up shows up empty.
 
@@ -191,7 +191,7 @@ Checks:
 - **The 3D view stays behind pop-ups.** `present/remaster` also keeps it when the view window shows a picture (`WinPicture`).
 - **Picture pop-up:** the classic frame's `ViewWindow.Framed()` box, red border included, is drawn over the view, centred in the top half.
 - **Text pop-up:** when `TextShown` is set, `TextPane.Framed()` is drawn centred in the bottom half.
-- **Scale:** both pop-ups use the same whole factor, the largest at which the picture box fits half the window, so pixels stay square. The prompt row keeps the full classic factor.
+- **Scale:** both pop-ups use the same whole factor, the largest at which the picture box fits half the window, so pixels stay square.
 - **Checks:** at 1920x1440, the trainer picture with its question, and the Phlan sign text.
 - **Known quirk:** the text box's top border keeps the frame's T joint, where the view window's border meets it in the original.
 

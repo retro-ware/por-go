@@ -161,7 +161,6 @@ func (e *Engine) opRob() {
 func (e *Engine) opEncounterMenu() {
 	e.es.inEncounterMenu = 1
 	e.run.textCleared = 0
-	e.slowText = true
 	hi, lo := e.PartyHpRange()
 	e.FetchArgs(14)
 	e.run.sprite = int(byte(e.ArgValue(1)))
@@ -322,7 +321,6 @@ func (e *Engine) opEncounterMenu() {
 		}
 	}
 	e.ClearBox(0, promptRow, lastCol, promptRow)
-	e.slowText = false
 	e.es.inEncounterMenu = 0
 }
 

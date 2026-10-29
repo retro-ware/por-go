@@ -85,7 +85,6 @@ type Engine struct {
 
 	es                   eclState                     // ovr08/ovr04 interpreter state
 	msgRow, msgCol       int                          // DS:5E25 / 5E24 text-block cursor
-	slowText             bool                         // DS:4A00: DisplayTextBlock types out
 	listTop              int                          // DS:6B29 ovr26 list menu: first visible row
 	gs                   geoState                     // ovr30 map, wall sets and view
 	run                  eclRun                       // ovr04 globals
@@ -281,9 +280,7 @@ func (e *Engine) Ticks() int64 {
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
 func (e *Engine) Delay(ms int) {
 	if e.beginFlag == 5 || e.snap.win == WinThreeD { // the remastered 3D views animate with the page: combat's moves and hits, a script walking the party (the intro's tour)
-		e.snap.busy = true
 		e.publish()
-		e.snap.busy = false
 	}
 	e.pace(pausing)
 	sleep(ms)
@@ -305,7 +302,6 @@ func (e *Engine) WaitSeconds(n int) {
 
 // idle yields the CPU inside the original's busy-wait loops.
 func (e *Engine) idle() {
-	e.ext.skip = false
 	e.actsDone() // an action taken last is done too
 	e.pace(waiting)
 	sleep(1)

@@ -19,7 +19,6 @@ func (e *Engine) Init() {
 	e.viewMode, e.prevViewMode = 1, 1
 	e.saved = false
 	e.viewBit0, e.viewBit1 = 1, 1                // DS:49F5/49F6
-	e.slowText = true                            // DS:4A00
 	e.listTop = 1                                // DS:6B29
 	e.mapPairA[1], e.mapPairA[2] = -1, -1        // DS:6AAE+4i, i = 2..3
 	e.mapPairB[1], e.mapPairB[2] = -1, -1        // DS:6AB0+4i

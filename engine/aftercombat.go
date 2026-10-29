@@ -448,7 +448,6 @@ func (e *Engine) AfterCombat() {
 		e.DisplayTextBlock(2, 5, 37, winBottom, colLightGreen, true, "The monsters rejoice for the party has been destroyed")
 		e.PromptRow24(colLightMagenta, "Press any key to continue")
 	}
-	e.slowText = true
 	g := &e.game
 	g.MonsterHit, g.PartyHit, g.PartyMove, g.NoLoot, g.Duel = 0, 0, 0, 0, 0
 }

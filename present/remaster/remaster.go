@@ -189,11 +189,8 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.menu = false
 		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(v.Menu.Prompt)}, nil, -1, pk, cx, b.Dy()/2-int(pk*12))
 		p.menuRects = p.menuRects[:0]
-	} else if v.Menu == nil { // typed input and "press a key" prompts: the original's line
+	} else if v.Menu == nil { // typed input and "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
-		if !textOnly && !v.Busy { // the bar under a message has nothing to answer; a delay's View still shows the last menu's row
-			p.drawRows(dst, frame, engine.PromptRows, k)
-		}
 	} else if p.menu {
 		lines, keys := make([]string, len(v.Menu.Items)), make([]byte, len(v.Menu.Items))
 		for i, it := range v.Menu.Items {
@@ -578,18 +575,6 @@ func drawBorder(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int) {
 	for _, c := range [][2]int{{0, 0}, {cw - 1, 0}, {0, ch - 1}, {cw - 1, ch - 1}} {
 		cell(0, c[0], c[1])
 	}
-}
-
-// drawRows lays rows of the original's screen along the bottom.
-func (p *Presenter) drawRows(dst, frame *gpu.Image, rows engine.CellRect, k float64) {
-	r := rows.Pixels()
-	b := dst.Bounds()
-	op := &gpu.DrawImageOptions{}
-	op.GeoM.Scale(k, k)
-	op.GeoM.Translate((float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy()))
-	dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
-	x0, y0 := (float64(b.Dx())-k*float64(r.Dx()))/2, float64(b.Dy())-k*float64(r.Dy())
-	p.rows = append(p.rows, shownRows{image.Rect(int(x0), int(y0), int(x0+k*float64(r.Dx())), int(y0+k*float64(r.Dy()))), r})
 }
 
 // shownRows is a strip of the original's screen (pix) where it shows (at).

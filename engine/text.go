@@ -129,10 +129,7 @@ func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s stri
 	// printSeg = 0709:06A7: s[i..j] at the cursor, i = j+1.
 	printSeg := func(j int) {
 		for ; i <= j; i++ {
-			e.DisplayChar(e.msgCol, e.msgRow, colour, at(i), true)
-			if e.slowText && !e.skipText() {
-				e.Delay(int(e.msgDelay) * 10)
-			}
+			e.DisplayChar(e.msgCol, e.msgRow, colour, at(i), true) // at once: the original's slow typing (DS:4A00) is left out
 			e.msgCol++
 		}
 	}
@@ -191,20 +188,4 @@ func (e *Engine) InputNumber(prompt string, colour int) uint16 {
 			return uint16(n)
 		}
 	}
-}
-
-// skipText (extra): a key pressed while text is
-// printed slowly shows the rest at once; the key is used up.
-func (e *Engine) skipText() bool {
-	if e.msgDelay == 0 {
-		return false
-	}
-	if !e.ext.skip {
-		e.snap.busy = true // the poll publishes (View.Busy): text is typing, no input is waited for
-		if e.keyHit() {
-			e.ext.skip = true
-		}
-		e.snap.busy = false
-	}
-	return e.ext.skip
 }

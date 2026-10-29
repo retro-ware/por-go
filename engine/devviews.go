@@ -78,15 +78,15 @@ func (e *Engine) DevScene(name string) func() {
 					*f.id = df.Entries[0].ID
 				}
 			}
-			e.es.inEncounterMenu, e.slowText, e.game.Portrait = 1, true, 0xFF
+			e.es.inEncounterMenu, e.game.Portrait = 1, 0xFF
 			e.ShowEncounter(sprite, pic, 0, &e.es.encounterShown)
 			e.msgCol, e.msgRow = 1, 0x11
 			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "A band of kobolds blocks the way.")
-			for e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "") == 1 { // WAIT: slow text, then the menu again
+			for e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "") == 1 { // WAIT: a message, then the menu again
 				e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
 			}
 			e.ClearBox(0, promptRow, lastCol, promptRow)
-			e.slowText, e.es.inEncounterMenu = false, 0
+			e.es.inEncounterMenu = 0
 			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
 			e.DrawMainScreen()
 		}

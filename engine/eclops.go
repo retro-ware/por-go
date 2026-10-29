@@ -336,7 +336,6 @@ func (e *Engine) opPrint() {
 // scriptText is opPrint's text: clear starts the text window over.
 func (e *Engine) scriptText(clear bool, s string) {
 	e.run.textCleared = 0
-	e.slowText = true
 	s = platinumPrices.Replace(s)
 	e.es.str[1] = s
 	if w := e.ext.walk; w != nil && strings.TrimSpace(s) != "" {
@@ -346,7 +345,6 @@ func (e *Engine) scriptText(clear bool, s string) {
 		e.msgRow, e.msgCol = 0x11, 1
 	}
 	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, clear, s)
-	e.slowText = false
 	e.speak(voiceKey(s))
 	e.journalPrinted(s, clear)
 }

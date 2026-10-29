@@ -70,7 +70,6 @@ type extras struct {
 	sels          map[string]int          // the highlighted item each menu was left with
 	listWord      map[string]Choice       // a list menu's highlighted word, kept across pages
 	selSet        bool                    // the caller set the highlight (YesNo): keep it
-	skip          bool                    // a key finished the text being printed: no more slow text until input is read
 
 	// fullmap.go
 	labels  map[int]map[int]mapLabel // per area: square -> label

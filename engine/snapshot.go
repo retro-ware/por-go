@@ -56,7 +56,6 @@ var (
 	ViewWindow  = CellRect{1, 1, 0xF, 0xF}
 	InnerWindow = CellRect{3, 3, 0xD, 0xD} // the picture frame
 	TextPane    = CellRect{1, 0x11, 0x26, 0x16}
-	PromptRows  = CellRect{0, 0x18, 0x27, 0x18} // the menu and prompt line, under the frame
 )
 
 // Member is one party member as the party list shows them.
@@ -101,7 +100,6 @@ type View struct {
 	Slots     bool           // the page is the saved games (SlotMenu): the remaster stretches its box
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
-	Busy      bool           // published inside a Delay or slow text: no input is waited for, the prompt row may still show the last menu
 }
 
 // Menu is the menu bar waiting for a choice on the prompt line.
@@ -140,7 +138,6 @@ func (e *Engine) View() View {
 type snapState struct {
 	view         atomic.Pointer[View]
 	seq          uint64      // Views published
-	busy         bool        // publishing from inside a Delay or slow text (View.Busy)
 	invOn        bool        // ItemsMenu waits: View.Inventory is up
 	shop         bool        // ... as the shop's Browse: View.Inventory.Wares
 	main         []string    // PartyMenu waits: View.MainMenu
@@ -190,7 +187,6 @@ func (e *Engine) publish() {
 	s.seq++
 	v := &View{
 		Seq:    s.seq,
-		Busy:   s.busy,
 		Window: s.win,
 		Area:   AreaID(e.area.Geo),
 		X:      e.posX, Y: e.posY,
