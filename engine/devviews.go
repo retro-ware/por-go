@@ -51,10 +51,15 @@ func (e *Engine) DevScene(name string) func() {
 			e.Shop()
 			e.DrawMainScreen()
 		}
-	case "combat", "wildcombat":
+	case "combat", "wildcombat", "castfight": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight)
 		return func() {
 			if name == "wildcombat" { // the overland's terrain, from the dungeon save
 				e.viewMode = 2
+			}
+			if name == "castfight" {
+				for _, c := range e.party {
+					c.Memorized[0] = spCureLightWounds
+				}
 			}
 			// Block 1 exists only in MON2CHA; take the first monster of
 			// the current set (DS:5376) so any save can start a fight.

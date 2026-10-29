@@ -222,7 +222,7 @@ func (e *Engine) ViewCharacter() bool {
 				key = exit
 			}
 		case spellsIt:
-			e.power(c, ActSpells)
+			quit = e.power(c, ActSpells)
 		case magic:
 			e.power(c, ActMagic)
 		case heal:
@@ -358,8 +358,11 @@ func (e *Engine) ItemsMenu() bool {
 		case a.Kind >= ActSpells && a.Kind <= ActCure:
 			if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {
 				e.snap.invOn = false // they show on the game's own screens
-				e.power(c, a.Kind)
+				quit := e.power(c, a.Kind)
 				e.snap.invOn = true
+				if quit && e.beginFlag == 5 {
+					return true
+				}
 			}
 		case a.Kind == ActBuy && e.snap.shop: // N is a ware, not one of items
 			if a.N >= 0 && a.N < len(e.run.treasure) {
@@ -715,17 +718,28 @@ func (e *Engine) powers(c *Character) []Power {
 	return ps
 }
 
-// power carries out one of c's powers.
-func (e *Engine) power(c *Character, k ActKind) {
+// power carries out one of c's powers; quit is true when a cast in combat
+// used the turn.
+func (e *Engine) power(c *Character, k ActKind) (quit bool) {
 	switch k {
-	case ActSpells:
-		if e.beginFlag != 5 { // extra: outside combat the list casts (the original's View only shows it; its Cast command casts for the selected member)
+	case ActSpells: // extra: the list casts (the original's View only shows it; its Cast commands cast for the selected member)
+		if e.beginFlag != 5 {
 			e.selectMember(slices.Index(e.party, c))
 			e.CastMenu()
-			return
+			return false
+		}
+		if c.Combat == nil || c.Combat.CanCast == 0 || e.area.NoMagic != 0 { // the bar offers no Cast either
+			e.refuse("Cannot cast now")
+			return false
 		}
 		idx, any := -1, true
-		e.SpellList(0, 0, &idx, &any)
+		on := e.snap.sheetOn
+		e.snap.sheetOn = true // the list is a page over the map, as the sheet
+		spell := e.SpellList(0, 1, &idx, &any)
+		e.snap.sheetOn = on
+		if spell != 0 { // as the bar's Cast: aim, then the turn is over
+			e.castSpell(int(spell), 0, &quit)
+		}
 	case ActMagic:
 		e.displayAffects("Magic", []*Character{c})
 	case ActHeal:
@@ -733,4 +747,5 @@ func (e *Engine) power(c *Character, k ActKind) {
 	case ActCure:
 		e.paladinCure(c)
 	}
+	return quit
 }
