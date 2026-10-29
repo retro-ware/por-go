@@ -363,7 +363,7 @@ func (e *Engine) ItemsMenu() bool {
 			}
 		case it == nil:
 		case a.Kind == ActReady:
-			e.readyItem(it)
+			e.swapReady(c, it)
 		case a.Kind == ActUse && inv.Use && e.usable(it):
 			if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
 				e.refuse("Must be Readied")
@@ -413,6 +413,46 @@ func (e *Engine) ItemsMenu() bool {
 // usable: the item has a Use (a scroll, or a spell of its own).
 func (e *Engine) usable(it *Item) bool {
 	return e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80
+}
+
+// swapReady readies it in place of the item in its slot (extra: a swap,
+// not readyItem's "already using"), else readies or unreadies it.
+func (e *Engine) swapReady(c *Character, it *Item) {
+	if o := e.inTheWay(c, it); o != nil && e.base(it.Type).Classes&c.ClassMask != 0 {
+		e.readyItem(o)
+		if o.Readied != 0 { // cursed, or no room for it
+			return
+		}
+		e.ApplyItems(c) // the slot and hands free
+	}
+	e.readyItem(it)
+}
+
+// inTheWay is the readied item of c whose slot it would take (readyItem's
+// "already using"), nil for none.
+func (e *Engine) inTheWay(c *Character, it *Item) *Item {
+	if it.Readied != 0 {
+		return nil
+	}
+	slot := int(e.base(it.Type).Slot)
+	switch {
+	case it.Type == itemArrow:
+		slot = slotArrows
+	case it.Type == itemQuarrel:
+		slot = slotBolts
+	case it.Type == itemBracers:
+		for _, o := range c.Items {
+			if o != it && o.Type == itemBracers && o.Readied != 0 {
+				return o
+			}
+		}
+		return nil
+	case slot == 9:
+		slot = slotRing2
+	case slot > 8:
+		return nil
+	}
+	return c.Slots[slot]
 }
 
 // readyItem = ovr20:14D0 (item): ready or unready, with the reasons it
