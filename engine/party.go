@@ -22,12 +22,7 @@ func (e *Engine) drawPartyList() {
 	e.DisplayString(x, y, colWhite, "Name")
 	e.DisplayString(33, y, colWhite, "AC  HP")
 	y += 2
-	hi := e.partySel
-	if e.rosterNone {
-		hi = -1
-	} else if e.rosterHi != nil {
-		hi = e.partyIndex(e.rosterHi)
-	}
+	hi := e.rosterSel()
 	for i, c := range e.party {
 		e.ClearCells(x, y, winRight, y)
 		if i == hi && e.ext.choosing {
@@ -65,34 +60,50 @@ func (e *Engine) drawPartyList() {
 	e.ClearCells(x, y, winRight, y)
 }
 
+// rosterSel is the member the roster highlights: SelectCharacter's
+// candidate while it waits (-1: none), else the selected one.
+func (e *Engine) rosterSel() int {
+	switch {
+	case e.rosterNone:
+		return -1
+	case e.rosterHi != nil:
+		return e.partyIndex(e.rosterHi)
+	}
+	return e.partySel
+}
+
 // partyKeypad = ovr20:27DF (key): Home selects the previous character
 // (wrapping to the last), End the next (wrapping to the first: the original
 // leaves its walker on the head when there is no next), any other outcome
 // of the menu the first.
+// PickRelist (extra: a portrait, roster click or F1-F8 already chose the
+// member through selectMember) keeps the selection.
 func (e *Engine) partyKeypad(p Pick) {
-	if len(e.party) == 0 {
-		return
-	}
+	n := len(e.party)
 	switch {
+	case n == 0 || p.ID == PickRelist:
 	case p.ID == PickMove && p.Dir == DirHome:
-		if e.partySel == 0 {
-			e.partySel = len(e.party) - 1
-		} else {
-			e.partySel--
-		}
+		e.selectMember((e.partySel + n - 1) % n)
 	case p.ID == PickMove && p.Dir == DirEnd:
-		if e.partySel+1 < len(e.party) {
-			e.partySel++
-		} else {
-			e.partySel = 0
-		}
+		e.selectMember((e.partySel + 1) % n)
 	default:
-		e.partySel = 0
+		e.selectMember(0)
 	}
 }
 
-// homeEnd: the pick is Home or End (the keys that step the member).
-func homeEnd(p Pick) bool { return p.ID == PickMove && (p.Dir == DirHome || p.Dir == DirEnd) }
+// selectMember makes member n the selected (active) one. Every switch the
+// player makes goes through it: portraits, roster clicks, F1-F8, the keypad.
+func (e *Engine) selectMember(n int) {
+	if n >= 0 && n < len(e.party) {
+		e.partySel = n
+	}
+}
+
+// memberPick: the pick changes the selected member (Home, End, or a
+// member chosen directly: PickRelist).
+func memberPick(p Pick) bool {
+	return p.ID == PickRelist || p.ID == PickMove && (p.Dir == DirHome || p.Dir == DirEnd)
+}
 
 // PartyMenu = ovr17:0161. Returns when the player begins adventuring or
 // loads a game that starts play (beginFlag != 0).
@@ -213,7 +224,7 @@ func (e *Engine) PartyMenu() {
 		e.ext.onSelect = nil
 		e.ClearRow24()
 		if p.extra() {
-			if homeEnd(p) {
+			if memberPick(p) {
 				e.partyKeypad(p)
 				e.DisplayPartyList()
 			}
@@ -309,14 +320,6 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 	if exit {
 		menu = append(menu, Entry{"Exit", exitIt})
 	}
-	index := func(c *Character) int {
-		for i, p := range e.party {
-			if p == c {
-				return i
-			}
-		}
-		return -1
-	}
 	if who == nil && len(e.party) > 0 {
 		who = e.party[0]
 	}
@@ -331,17 +334,10 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 		e.rosterHi, e.rosterNone = who, who == nil
 		e.DisplayPartyList() // 00BA:0767 (who)
 		mark := e.regionMark()
-		{ // extra (nav.go): click a member to select it
-			e.addRegion(region{x0: 0, y0: 0, x1: 0x27, y1: 0x17, click: func(cx, cy int) Action {
-				if i := e.rosterRow(cx, cy); i >= 0 {
-					who = e.party[i]
-					return Action{Kind: actHotkey, N: 'S'}
-				}
-				return Action{}
-			}})
-		}
+		e.rosterRegion()                                                                                                            // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
 		p := e.DisplayInput(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
 		e.regionCut(mark)
+		who = e.rosterHi // a member picked directly (menuBar.member)
 		e.rosterHi, e.rosterNone = nil, false
 		// The exit set (DS 00BA:2C1F) is checked before the extra flag.
 		switch p.ID {
@@ -351,7 +347,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 			return nil
 		}
 		if p.extra() {
-			i := index(who)
+			i := e.partyIndex(who)
 			switch p.Dir {
 			case DirEnd, DirDown: // next, wrapping to the first (Down is an extra)
 				if who == nil {

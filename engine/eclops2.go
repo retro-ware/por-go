@@ -555,11 +555,7 @@ func (e *Engine) opWho() {
 	if who == nil { // Esc then Enter stores nil; the harness pins it to the op's start
 		who = start
 	}
-	for i, c := range e.party {
-		if c == who {
-			e.partySel = i
-		}
-	}
+	e.selectChar(who)
 }
 
 // opDelay = ovr04:271F.

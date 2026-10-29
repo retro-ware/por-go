@@ -64,10 +64,10 @@ type Member struct {
 	Name     string
 	HP       int
 	MaxHP    int
-	AC       int    // as displayed: 10 down to negative
-	Status   string // as the sheet names it ("Okay", "Unconscious" ...)
-	Class    string // as the sheet names it ("Fighter/Thief" ...)
-	Selected bool
+	AC       int         // as displayed: 10 down to negative
+	Status   string      // as the sheet names it ("Okay", "Unconscious" ...)
+	Class    string      // as the sheet names it ("Fighter/Thief" ...)
+	Selected bool        // the selected member, or the candidate while a member is picked (SelectCharacter)
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
 }
 
@@ -195,10 +195,11 @@ func (e *Engine) publish() {
 	}
 	v.Typing, v.Spots = s.typing, e.spots()
 	e.pageView(v)
+	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
-			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == e.partySel,
+			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,
 			Class: className(c.Class), Head: e.charHead(c),
 		})
 	}

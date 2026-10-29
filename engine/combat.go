@@ -97,13 +97,7 @@ func (e *Engine) takeTurn(c *Character) {
 }
 
 // selectChar makes c the selected member (DS:5D92).
-func (e *Engine) selectChar(c *Character) {
-	for i, p := range e.party {
-		if p == c {
-			e.partySel = i
-		}
-	}
-}
+func (e *Engine) selectChar(c *Character) { e.selectMember(e.partyIndex(c)) }
 
 func b2i(b bool) int {
 	if b {

@@ -352,8 +352,8 @@ func (e *Engine) ItemsMenu() bool {
 		case a.Kind == ActClose:
 			return false
 		case a.Kind == ActMember:
-			if a.N >= 0 && a.N < len(e.party) && e.beginFlag != 5 { // in combat the inventory is the fighter's
-				e.partySel = a.N
+			if e.beginFlag != 5 { // in combat the inventory is the fighter's
+				e.selectMember(a.N)
 			}
 		case a.Kind >= ActSpells && a.Kind <= ActCure:
 			if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {

@@ -150,8 +150,8 @@ func (e *Engine) Shop() {
 			redraw = e.identifyMenu()
 		case exit:
 			leave = true
-		case PickMove:
-			if homeEnd(p) {
+		case PickMove, PickRelist:
+			if memberPick(p) {
 				e.partyKeypad(p)
 			}
 		}

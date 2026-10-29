@@ -311,11 +311,14 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 	case ActMember: // a portrait: that member's View page, or the member a list or bar is for
 		switch n := a.N; {
 		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
-		case e.ext.inCommand:
-			e.partySel = n
-			return m.hotkey('V')
-		case e.ext.campBar || e.ext.buying:
+		case e.ext.choosing || e.ext.viewing || e.ext.campBar || e.ext.buying:
 			return m.member(n)
+		case e.ext.inCommand:
+			e.selectMember(n)
+			return m.hotkey('V')
+		case m.allowExtra && !e.ext.list && e.beginFlag != 5: // a menu stepping the member with Home/End
+			e.selectMember(n)
+			return m.outcome(Pick{ID: PickRelist})
 		}
 	case ActText:
 	default:
@@ -478,25 +481,31 @@ func (m *menuBar) move(d int) (Pick, bool) {
 // View again), staying on the page they were on. Not in combat, where View is the fighter's.
 func (m *menuBar) member(n int) (Pick, bool) {
 	e := m.e
-	if n < 0 || n >= len(e.party) || e.beginFlag == 5 {
+	if n < 0 || n >= len(e.party) {
 		return Pick{}, false
 	}
 	switch {
+	case e.ext.choosing: // SelectCharacter: member n is the pick
+		e.rosterHi = e.party[n]
+		return m.hotkey('S')
+	case e.beginFlag == 5:
+		return Pick{}, false
 	case e.ext.viewing:
 		if n == e.partySel {
 			return Pick{}, false
 		}
-		e.partySel = n // the View page for member n
+		e.selectMember(n) // the View page for member n
 		e.ext.held = Action{Kind: actHotkey, N: 'V'}
 		return m.hotkey('E')
 	case e.ext.campBar || e.ext.buying: // camp: F1-F8 pick the member the menu is for; the shop's Buy list: the buyer
 		if n == e.partySel {
 			return Pick{}, false
 		}
-		e.partySel = n
+		e.selectMember(n)
 		return m.outcome(Pick{ID: PickRelist})
 	case e.ext.inCommand || strings.Contains(m.menu, "View"):
-		e.partySel, e.ext.toItems = n, true
+		e.selectMember(n)
+		e.ext.toItems = true
 		return m.hotkey('V')
 	}
 	return Pick{}, false

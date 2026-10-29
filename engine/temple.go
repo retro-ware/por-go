@@ -243,8 +243,8 @@ func (e *Engine) Temple() {
 			}
 		case exit:
 			leave = true
-		case PickMove:
-			if homeEnd(p) {
+		case PickMove, PickRelist:
+			if memberPick(p) {
 				e.partyKeypad(p)
 			}
 		}

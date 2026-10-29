@@ -210,16 +210,12 @@ func (e *Engine) rosterRow(cx, cy int) int {
 	return i
 }
 
-// rosterClick selects the member clicked in the roster. It sets the one
-// before and moves to the next member (End), so the menu's own keypad
-// handling runs (partyKeypad, the redraw).
+// rosterClick: a click on a member in the roster is that member's portrait.
 func (e *Engine) rosterClick(cx, cy int) Action {
-	i := e.rosterRow(cx, cy)
-	if i < 0 {
-		return Action{}
+	if i := e.rosterRow(cx, cy); i >= 0 {
+		return Action{Kind: ActMember, N: i}
 	}
-	e.partySel = (i + len(e.party) - 1) % len(e.party)
-	return Action{Kind: ActMove, N: DirEnd}
+	return Action{}
 }
 
 // rosterRegion makes the roster clickable for a menu that takes the keypad.
