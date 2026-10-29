@@ -487,6 +487,13 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		x += 8 * (len(w.text) + 1)
 	}
 	x = (inv.w - x + 8) / 2
+	if shop && in.Member >= 0 && in.Member < len(v.Party) { // the shop: the choices left, the buyer right
+		x = 8
+		m := v.Party[in.Member]
+		s := m.Name + " " + m.Class
+		inv.text(m.Name, inv.w-8-8*len(s), rowY, white)
+		inv.text(m.Class, inv.w-8-8*len(m.Class), rowY, gray)
+	}
 	for i := range inv.words {
 		w := &inv.words[i]
 		w.r = image.Rect(x-4, rowY-2, x+8*len(w.text)+4, rowY+10)
