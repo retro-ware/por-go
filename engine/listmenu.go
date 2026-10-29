@@ -348,20 +348,3 @@ func (e *Engine) ListMenu(title string, menu Bar, promptColour, normal, hi, x1, 
 		}
 	}
 }
-
-// listKey (transitional): ListMenu for callers still switching on letters.
-func (e *Engine) listKey(title, menu string, promptColour, normal, hi, x1, y1, x2, y2 int,
-	list []*ListNode, showExit bool, redraw *bool, index *int, selected **ListNode) byte {
-	b := textBar(menu)
-	if menu == "" {
-		b = nil
-	}
-	for i := range b {
-		if b[i].Word == "Exit" {
-			b[i].ID = PickExit
-		}
-	}
-	p := e.ListMenu(title, b, promptColour, normal, hi, x1, y1, x2, y2, list, showExit, redraw, index, selected)
-	k, _ := legacyKey(menu, p)
-	return k
-}

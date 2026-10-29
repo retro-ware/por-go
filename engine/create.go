@@ -58,11 +58,10 @@ func (e *Engine) CreateCharacter() {
 		index, redraw := 1, true
 		var sel *ListNode
 		for {
-			k := e.listKey("", "", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, true, &redraw, &index, &sel)
-			if k == 0 {
+			switch e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, true, &redraw, &index, &sel).ID {
+			case NoPick:
 				return 0, false
-			}
-			if k == 0xD {
+			case PickEnter:
 				return index, true
 			}
 		}
@@ -428,11 +427,16 @@ func (e *Engine) CreateCharacter() {
 		}
 		e.menuSel = 2
 		e.ext.selSet = true
-		k, _ := e.displayKey("Keep this character? ", "Yes No Minimal", colLightMagenta, colLightGreen, colWhite, false, false)
-		if k == 'Y' {
+		const (
+			yes Choice = iota
+			no
+			minimal
+		)
+		k := e.DisplayInput("Keep this character? ", Bar{{"Yes", yes}, {"No", no}, {"Minimal", minimal}}, colLightMagenta, colLightGreen, colWhite, false, false).ID
+		if k == yes {
 			break
 		}
-		if k == 'M' { // extra: reroll until the minimums are met or a key stops it
+		if k == minimal { // extra: reroll until the minimums are met or a key stops it
 			e.askMinStats()
 			tries = 1
 			for i, name := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {

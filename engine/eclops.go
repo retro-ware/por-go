@@ -391,7 +391,7 @@ func (e *Engine) opVMenu() {
 		p.Text, p.Flag = s, 0
 	}
 	var sel *ListNode
-	e.listKey("", "", colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel) // ovr08:1788
+	e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel) // ovr08:1788
 	e.WriteVar(dst, uint16(index))
 	e.ClearBox(1, msgTop, winRight, winBottom)
 }

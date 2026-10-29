@@ -178,7 +178,16 @@ func (e *Engine) ViewCharacter() bool {
 		e.snap.sheetOn = true
 		defer func() { e.snap.sheetOn = false }()
 	}
-	key := byte(' ')
+	const (
+		items Choice = iota
+		spellsIt
+		magic
+		heal
+		cure
+		exit
+		sheet // (no item) the sheet is up
+	)
+	key := sheet
 	quit := false
 	e.view.start = e.selected()
 	direct := e.ext.toItems // F1-F8: start on the inventory (extras.go)
@@ -186,13 +195,13 @@ func (e *Engine) ViewCharacter() bool {
 	if direct && len(e.carried(e.selected())) > 0 {
 		var leave bool
 		if quit, leave = e.inventory(direct); leave {
-			key = 'E'
+			key = exit
 		}
 	}
-	if key != 'E' && !quit {
+	if key != exit && !quit {
 		e.CharacterSheet()
 	}
-	for key != 0 && key != 'E' && !quit {
+	for key != NoPick && key != exit && !quit {
 		c := e.viewChar()
 		spells := false
 		for i := 0; i <= 0x14; i++ {
@@ -200,45 +209,43 @@ func (e *Engine) ViewCharacter() bool {
 				spells = true
 			}
 		}
-		menu := ""
+		var menu Bar
 		if len(e.carried(c)) > 0 {
-			menu += "Items "
+			menu = append(menu, Entry{"Items", items})
 		}
 		if spells {
-			menu += "Spells "
+			menu = append(menu, Entry{"Spells", spellsIt})
 		}
 		if !e.effectsFit(c) {
-			menu += "Magic " // extra: all of the spell effects
+			menu = append(menu, Entry{"Magic", magic}) // extra: all of the spell effects
 		}
 		if e.paladinCan(c, affLaidOnHands) {
-			menu += "Heal "
+			menu = append(menu, Entry{"Heal", heal})
 		}
 		if e.paladinCan(c, affCuredDisease) {
-			menu += "Cure "
+			menu = append(menu, Entry{"Cure", cure})
 		}
-		menu = cut(menu+"Exit", textCols)
+		menu = append(menu, Entry{"Exit", exit})
 		e.ext.viewing = true // F1..F8 switch members (extras.go)
-		k, extra := e.displayKey("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false)
+		key = e.DisplayInput("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID
 		e.ext.viewing = false
-		key = k
-		_ = extra
 		switch key {
-		case 'I':
+		case items:
 			var leave bool
 			if quit, leave = e.inventory(direct); leave {
-				key = 'E'
+				key = exit
 			}
-		case 'S':
+		case spellsIt:
 			idx := -1
 			e.SpellList(0, 0, &idx, &spells)
-		case 'M':
+		case magic:
 			e.displayAffects("Magic", []*Character{c})
-		case 'H':
+		case heal:
 			e.paladinHeal(c)
-		case 'C':
+		case cure:
 			e.paladinCure(c)
 		}
-		if !quit && (key == 'I' || key == 'S' || key == 'M' || key == 'H' || key == 'C') {
+		if !quit && key >= items && key <= cure {
 			e.CharacterSheet()
 		}
 	}

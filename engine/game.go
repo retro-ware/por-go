@@ -34,13 +34,13 @@ func (e *Engine) GameLoop() {
 		e.Redraw()
 	}
 	e.area.AreaKind = uint16(e.gs.areaKind)
-	key := e.CommandInput()
+	encamp := e.CommandInput()
 	r.savedSel = e.selected()
 	for {
 		e.area.AreaKind = uint16(e.gs.areaKind)
 		// Look / encamp: repeat while the last command was one of them.
-		for (e.game.Search > 1 || upper(key) == 'E') && !r.quit {
-			if upper(key) == 'E' {
+		for (e.game.Search > 1 || encamp) && !r.quit {
+			if encamp {
 				e.Encamp()
 			} else {
 				r.searchSave = byte(e.game.Search & 1)
@@ -53,7 +53,7 @@ func (e *Engine) GameLoop() {
 				e.game.Search = uint16(r.searchSave)
 			}
 			if !r.quit {
-				key = e.CommandInput()
+				encamp = e.CommandInput()
 				r.savedSel = e.selected()
 			}
 		}
@@ -80,7 +80,7 @@ func (e *Engine) GameLoop() {
 		if r.quit {
 			break
 		}
-		key = e.CommandInput() // ovr04:34FC jumps back to 3395: the write follows the input
+		encamp = e.CommandInput() // ovr04:34FC jumps back to 3395: the write follows the input
 		r.savedSel = e.selected()
 	}
 	r.quit = false
@@ -143,12 +143,11 @@ func (e *Engine) Encamp() {
 	e.saved = false
 }
 
-// CommandInput = ovr15:0989: the adventuring command bar. Returns the
-// command that ends input: 'E' encamp, 'S' search here, or a movement key.
-func (e *Engine) CommandInput() byte {
+// CommandInput = ovr15:0989: the adventuring command bar, until a command
+// ends input (Encamp, Search here, a step). True for Encamp.
+func (e *Engine) CommandInput() (encamp bool) {
 	e.game.HoldMove = 0
 	e.unback() // a backward step the scripts ended
-	var key byte
 	switch {
 	case e.viewMode == 1:
 		for done := false; !done; {
@@ -157,29 +156,29 @@ func (e *Engine) CommandInput() byte {
 				f()
 			}
 			e.ext.inCommand = true
-			k, extra := e.displayKey("", e.commandBar(e.commandBar3D()), colLightMagenta, colLightGreen, colWhite, true, false)
+			p := e.DisplayInput("", e.commandBar(commandBar3D), colLightMagenta, colLightGreen, colWhite, true, false)
 			e.ext.inCommand = false
-			key = k
-			if !extra {
-				done = e.command(k, true)
+			encamp = p.ID == cmdEncamp
+			if !p.extra() {
+				done = e.command(p.ID, true)
 			} else {
-				switch k {
-				case 'H':
+				switch p.Dir {
+				case DirUp:
 					e.checkEdge()
 					done = true
-				case 'P':
+				case DirDown:
 					// (extra) Down steps backwards, facing kept (the original turns round): Move and the step scripts go the way back, the screen never shows it (viewFacing)
 					e.facing = (e.facing + 4) % 8
 					e.ext.back = true
 					e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing) // the step scripts read it (City Hall: 0xC04E 11 is the locked door)
 					e.checkEdge()
 					done = true
-				case 'K':
+				case DirLeft:
 					e.turn(6, true)
-				case 'M':
+				case DirRight:
 					e.turn(2, true)
 				default:
-					e.partyKeypadKey(k)
+					e.partyKeypad(p)
 					e.DisplayPartyList()
 				}
 			}
@@ -194,24 +193,24 @@ func (e *Engine) CommandInput() byte {
 		}
 		for done := false; !done; {
 			e.ext.inCommand = true
-			k, extra := e.displayKey("", e.commandBar("Cast Inv View Encamp sWeep Search"), colLightMagenta, colLightGreen, colWhite, true, false)
+			p := e.DisplayInput("", e.commandBar(commandBar3D), colLightMagenta, colLightGreen, colWhite, true, false)
 			e.ext.inCommand = false
-			key = k
-			if !extra {
-				done = e.command(k, false)
+			encamp = p.ID == cmdEncamp
+			if !p.extra() {
+				done = e.command(p.ID, false)
 			} else {
 				done = true
-				switch k {
-				case 'H':
+				switch p.Dir {
+				case DirUp:
 					e.facing = 0
-				case 'M':
+				case DirRight:
 					e.facing = 2
-				case 'P':
+				case DirDown:
 					e.facing = 4
-				case 'K':
+				case DirLeft:
 					e.facing = 6
 				default:
-					e.partyKeypadKey(k)
+					e.partyKeypad(p)
 					e.DisplayPartyList()
 					done = false
 				}
@@ -224,37 +223,45 @@ func (e *Engine) CommandInput() byte {
 		e.ClearCells(1, msgTop, winRight, winBottom)
 		e.run.textCleared = 1
 	}
-	return key
+	return encamp
 }
 
 // commandBar3D = the 3D view's command bar (DS:04B6) without Area: the
 // minimap (Tab, extras.go) shows all Area showed.
-func (e *Engine) commandBar3D() string {
-	return "Cast Inv View Encamp sWeep Search"
-}
+var commandBar3D = Bar{{"Cast", cmdCast}, {"Inv", cmdInv}, {"View", cmdView}, {"Encamp", cmdEncamp}, {"sWeep", cmdSweep}, {"Search", cmdSearch}}
 
-// command handles a letter from the command bar (the original's Area is
+// The commands of the command bar.
+const (
+	cmdCast Choice = iota
+	cmdInv
+	cmdView
+	cmdEncamp
+	cmdSweep
+	cmdSearch
+)
+
+// command carries out a command of the command bar (the original's Area is
 // replaced by the minimap, Tab). Returns true when input is over.
-func (e *Engine) command(k byte, view3D bool) bool {
+func (e *Engine) command(k Choice, view3D bool) bool {
 	switch k {
-	case 'C':
+	case cmdCast:
 		if !view3D || e.selected().Status == statusOkay {
 			e.CastMenu() // ovr16:04A1
 		}
-	case 'I': // extra: straight to the inventory
+	case cmdInv: // extra: straight to the inventory
 		if len(e.carried(e.selected())) == 0 {
 			e.BottomMessage("No items")
 		} else {
 			e.ext.toItems = true
 			e.ViewCharacter()
 		}
-	case 'V':
+	case cmdView:
 		e.ViewCharacter() // ovr20:0AB3
-	case 'E':
+	case cmdEncamp:
 		return true
-	case 'W': // Sweep (the original's Search): the slow, searching pace on or off
+	case cmdSweep: // Sweep (the original's Search): the slow, searching pace on or off
 		e.game.Search = e.game.Search ^ 1
-	case 'S': // Search (the original's Look): search this square once
+	case cmdSearch: // Search (the original's Look): search this square once
 		e.game.Search = e.game.Search | 2
 		e.AdvanceClock(3, 1) // extra: 3 minutes (the original took 10)
 		e.eclPC = e.es.events[1]
@@ -362,12 +369,18 @@ func (e *Engine) Move() {
 // lockedDoor = the door menu of ovr15:0D6D. A plain locked door (state 2)
 // offers Bash, Pick and Knock; a wizard-locked one (3) only lets Bash work.
 func (e *Engine) lockedDoor(wizard bool) bool {
-	menu := ""
+	const (
+		bash Choice = iota
+		pick
+		knockIt
+		exit
+	)
+	menu := Bar{{}} // without Bash the bar starts with a space (as in the original)
 	if e.run.doorTry[0] != 0 {
-		menu = "Bash"
+		menu[0] = Entry{"Bash", bash}
 	}
 	if e.run.doorTry[1] != 0 && e.partyHasSkill(6) {
-		menu = cut(menu+" Pick", textCols)
+		menu = append(menu, Entry{"Pick", pick})
 	}
 	knock := false
 	if wizard {
@@ -376,24 +389,23 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 		knock = e.findCaster(spKnock) != nil
 	}
 	if e.run.doorTry[2] != 0 && knock {
-		menu = cut(menu+" Knock", textCols)
+		menu = append(menu, Entry{"Knock", knockIt})
 	}
-	menu = cut(menu+" Exit", textCols)
-	if menu == " Exit" {
+	menu = append(menu, Entry{"Exit", exit})
+	if menu.String() == " Exit" {
 		e.setDoor(e.posX, e.posY, e.facing, 0)
 		return false
 	}
-	k, _ := e.displayKey("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
-	switch k {
-	case 'B':
+	switch e.DisplayInput("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID {
+	case bash:
 		return e.bashDoor()
-	case 'P':
+	case pick:
 		if wizard {
 			e.run.doorTry[1] = 0
 			return false
 		}
 		return e.pickLock()
-	case 'K':
+	case knockIt:
 		return e.knock()
 	}
 	return false

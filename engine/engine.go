@@ -22,7 +22,7 @@ type Config struct {
 	Graphics, Sound  byte
 	GameDir, SaveDir string
 	FullIntro        bool   // DS:49D1
-	Param            string // ParamStr(1): "STING" unlocks the 'J' debug key
+	Param            string // ParamStr(1): "STING" unlocked the original's 'J' debug key (not on the party menu's bar, so never picked)
 }
 
 // maxCombatants is the size of the original's combatant tables; tables
@@ -43,8 +43,8 @@ type Engine struct {
 	set   Set           // DS:5376: the data set the current area reads
 	start time.Time
 
-	msgDelay  byte // DS:49E2, message delay factor (ovr12 sets 1)
-	menuSel   int  // DS:6B2B, DisplayInput selection
+	msgDelay byte // DS:49E2, message delay factor (ovr12 sets 1)
+	menuSel  int  // DS:6B2B, DisplayInput selection
 
 	party      []*Character // DS:5D96 list head ...
 	pool       []*Item      // extra: the party inventory (pool.go)
@@ -103,7 +103,7 @@ type Engine struct {
 	itemsRedraw          bool                         // DS:6821
 	usingItem            bool                         // DS:6DBF
 	usedScroll           *Item                        // DS:6B80
-	spellMenuKey         byte                         // (extra) the key that closed the last spell menu
+	spellCleared         bool                         // (extra) the last spell menu closed on Clear
 	rv                   ruleVars                     // DS:6814..682A rule globals
 	near                 []nearEntry                  // DS:6716 combatants near a square
 	nearList             []nearEntry                  // DS:671B copy kept by checkAffect

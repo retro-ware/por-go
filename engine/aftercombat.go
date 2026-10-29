@@ -249,7 +249,7 @@ func (e *Engine) hiredShare() {
 			k++
 		}
 	}
-	e.displayKey("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
+	e.DisplayInput("", pressEnter, colWhite, colWhite, colWhite, true, false)
 }
 
 // showResult = ovr06:0916 (exp).
@@ -310,11 +310,14 @@ func (e *Engine) showResult(exp int32) {
 			y++
 		}
 	}
-	e.displayKey("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
+	e.DisplayInput("", pressEnter, colWhite, colWhite, colWhite, true, false)
 }
 
+// lootTakeItem is the Take of the loot list.
+const lootTakeItem Choice = 0
+
 // lootList = ovr06:0B14 (var index, var item): the treasure in a "Loot" box.
-func (e *Engine) lootList(index *int, item **Item) byte {
+func (e *Engine) lootList(index *int, item **Item) Pick {
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Loot")
 	if c := e.selected(); c != nil { // extra: who takes (F1-F8, a portrait change it)
 		e.displayName(c, 2, 2, false)
@@ -330,7 +333,7 @@ func (e *Engine) lootList(index *int, item **Item) byte {
 	redraw := true
 	var sel *ListNode
 	e.ext.buying = true
-	key := e.listKey("Items: ", "Take", colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
+	key := e.ListMenu("Items: ", Bar{{"Take", lootTakeItem}}, colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
 	e.ext.buying = false
 	*item = nil
 	for i, n := range list {
@@ -347,10 +350,10 @@ func (e *Engine) lootTake() {
 	for len(e.run.treasure) > 0 {
 		var it *Item
 		key := e.lootList(&index, &it)
-		if key == menuRelist {
+		if key.ID == PickRelist {
 			continue // F1-F8 picked another taker
 		}
-		if key != 'T' && key != 13 || it == nil {
+		if key.ID != lootTakeItem && key.ID != PickEnter || it == nil {
 			break
 		}
 		if !e.buyItem(it) {
@@ -370,36 +373,46 @@ func (e *Engine) lootMenu() {
 	e.DrawMainScreen()
 	for {
 		items := len(e.run.treasure) > 0
-		exit := " Exit"
+		const (
+			view Choice = iota
+			take
+			detectIt
+			exit
+		)
+		withDetect := false
 		detect := byte(0)
 		if items {
 			if c := e.selected(); c != nil {
 				for i := 0; i <= 0x14; i++ {
 					if s := c.Memorized[i]; s == spDetectMagicCl || s == spDetectMagicMU {
 						detect = s
-						exit = " Detect Exit"
+						withDetect = true
 						break
 					}
 				}
 			}
 		}
-		menu := "View Exit"
+		menu := Bar{{"View", view}}
 		if items {
-			menu = "View Take" + exit
+			menu = append(menu, Entry{"Take", take})
+			if withDetect {
+				menu = append(menu, Entry{"Detect", detectIt})
+			}
 		}
+		menu = append(menu, Entry{"Exit", exit})
 		key, again := e.campInput("", menu) // ovr06:101F: anim; extra: F1-F8 pick the member too
 		if again {
 			continue
 		}
 		switch key {
-		case 'V':
+		case view:
 			e.ViewCharacter()
-		case 'T':
+		case take:
 			e.lootTake()
-		case 'D':
+		case detectIt:
 			quit := false
 			e.CastSpell(detect, 0, 0, &quit)
-		case 'E', 0:
+		case exit, NoPick:
 			if len(e.run.treasure) == 0 {
 				return
 			}

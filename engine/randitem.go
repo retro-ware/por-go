@@ -255,17 +255,21 @@ func (e *Engine) Appraise() (any bool) {
 		e.DisplayString(1, 7, colWhite, "You have a fine collection of:")
 		e.DisplayString(1, 9, colWhite, gems)
 		e.DisplayString(1, 10, colWhite, jewels)
-		menu := ""
+		const (
+			gem Choice = iota
+			jewel
+			exit
+		)
+		menu := Bar{{}} // the original's spacing: "  Gems  Jewelry Exit"
 		if p.gems != 0 {
-			menu = "  Gems"
+			menu = append(menu, Entry{" Gems", gem})
 		}
 		if p.jewelry != 0 {
-			menu = cut(menu+"  Jewelry", textCols)
+			menu = append(menu, Entry{" Jewelry", jewel})
 		}
-		menu = cut(menu+" Exit", textCols)
-		key, _ := e.displayKey("Appraise : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
-		switch key {
-		case 'G':
+		menu = append(menu, Entry{"Exit", exit})
+		switch e.DisplayInput("Appraise : ", menu, colLightMagenta, colLightGreen, colWhite, true, false).ID {
+		case gem:
 			if p.gems == 0 {
 				break
 			}
@@ -287,7 +291,7 @@ func (e *Engine) Appraise() (any bool) {
 			}
 			e.DisplayString(1, 12, colWhite, cut("The Gem is Valued at "+strconv.Itoa(int(v))+" gp.", textCols))
 			e.sellOrKeep(c, v, 0x65)
-		case 'J':
+		case jewel:
 			if p.jewelry == 0 {
 				break
 			}
@@ -311,7 +315,7 @@ func (e *Engine) Appraise() (any bool) {
 			}
 			e.DisplayString(1, 12, colWhite, cut("The Jewel is Valued at "+strconv.Itoa(int(v))+" gp.", textCols))
 			e.sellOrKeep(c, v, 0xD6)
-		case 'E', 0:
+		case exit, NoPick:
 			done = true
 		}
 		e.ApplyItems(c)
@@ -329,12 +333,15 @@ func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
 	it.Weight = 1
 	it.Hidden = 0
 	sellOnly := e.overloaded(it, c) // extra: room in the party inventory
-	menu := "Sell Keep"
+	const (
+		sell Choice = iota
+		keep
+	)
+	menu := Bar{{"Sell", sell}, {"Keep", keep}}
 	if sellOnly {
-		menu = "Sell"
+		menu = menu[:1]
 	}
-	key, _ := e.displayKey("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
-	if key == 'K' && !sellOnly {
+	if e.DisplayInput("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false).ID == keep {
 		// extra: the original loses the gem when the item list is empty
 		// (it appends only to its local copy); the port always keeps it.
 		e.AddItemCopy(c, it)

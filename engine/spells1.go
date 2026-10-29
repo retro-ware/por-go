@@ -36,19 +36,23 @@ func (e *Engine) spellName(spell int) string { return spellNames[spell] }
 // buildSpellList (mode 1 cast, 2 memorize, 3 scribe, 4 learn) and returns
 // the chosen spell, 0 for none. For mode 3 DS:6B80 is the scroll chosen.
 func (e *Engine) spellMenu(mode int, index *int) byte {
-	menu := ""
+	const (
+		do Choice = iota // the mode's word
+		clearIt
+	)
+	var menu Bar
 	switch mode {
 	case 1:
-		menu = "Cast"
+		menu = Bar{{"Cast", do}}
 	case 2:
-		menu = "Memorize"
+		menu = Bar{{"Memorize", do}}
 		if hasPending(e.selected()) { // extra
-			menu += " Clear"
+			menu = append(menu, Entry{"Clear", clearIt})
 		}
 	case 3:
-		menu = "Scribe"
+		menu = Bar{{"Scribe", do}}
 	case 4:
-		menu = "Learn"
+		menu = Bar{{"Learn", do}}
 	}
 	title := ""
 	if mode >= 1 && mode <= 4 { // set {1,2,3,4} at cs:001B
@@ -69,11 +73,11 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 		redraw = true
 	}
 	var sel *ListNode
-	var key byte
+	var key Choice
 	for {
-		key = e.listKey(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel)
-		// set {0, 13, 'C', 'E', 'L', 'M', 'S'} at cs:004A
-		if key == 0 || key == 13 || key == 'C' || key == 'E' || key == 'L' || key == 'M' || key == 'S' {
+		key = e.ListMenu(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel).ID
+		// set {0, 13, 'C', 'E', 'L', 'M', 'S'} at cs:004A: none, Enter, the words
+		if key != PickRelist {
 			break
 		}
 	}
@@ -87,9 +91,9 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 			idx++
 		}
 	}
-	e.spellMenuKey = key
+	e.spellCleared = key == clearIt
 	var res byte
-	if key != 0 && key != 'E' { // set {0, 'E'} at cs:006A
+	if key != NoPick { // set {0, 'E'} at cs:006A
 		if idx < len(e.spellIDs) {
 			res = e.spellIDs[idx]
 		}

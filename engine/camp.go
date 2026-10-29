@@ -221,24 +221,30 @@ func (e *Engine) restMenu() (interrupted bool) {
 		if !e.isDay() {
 			dayNight, until = "Day", 6*60
 		}
-		key, _ := e.displayKey("Rest: ", "Heal Memorize Wait "+dayNight+" Exit", colLightMagenta, colLightGreen, colWhite, false, false)
-		switch key {
-		case 'H':
+		const (
+			heal Choice = iota
+			memorize
+			wait
+			untilIt
+			exit
+		)
+		switch e.DisplayInput("Rest: ", Bar{{"Heal", heal}, {"Memorize", memorize}, {"Wait", wait}, {dayNight, untilIt}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, false, false).ID {
+		case heal:
 			if e.healMinutes() == 0 {
 				e.BottomMessage("No one needs healing")
 				continue
 			}
 			return e.healParty()
-		case 'M':
+		case memorize:
 			most := e.partyStudy()
 			if most == 0 {
 				e.BottomMessage("No spells to memorize")
 				continue
 			}
 			return e.restFor(most, nil)
-		case 'W':
+		case wait:
 			return e.restFor(60, nil)
-		case 'N', 'D':
+		case untilIt:
 			return e.restFor(((until-e.clockMinutes())%(24*60)+24*60)%(24*60), nil)
 		}
 		return false
@@ -509,7 +515,7 @@ func (e *Engine) memorizeMenu() {
 		}
 		spell := e.SpellList(1, 2, &index, &any)
 		drew = true
-		if e.spellMenuKey == 'C' { // extra: Clear drops the chosen spells
+		if e.spellCleared { // extra: Clear drops the chosen spells
 			clearMemorize(e.selected())
 			continue
 		}
@@ -700,25 +706,25 @@ func (e *Engine) displayAffects(title string, members []*Character) {
 	index := 0
 	var sel *ListNode
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, title)
-	e.listKey("", "", colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel)
+	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel)
 }
 
 // magicMenu = ovr16:13F1 (var interrupted).
 func (e *Engine) magicMenu(interrupted *bool) {
-	for key := byte(' '); !*interrupted && key != 0 && key != 'E'; {
+	for key := magicRest; !*interrupted && key != NoPick && key != magicExit; {
 		// the original's Display is left out: the View page shows the spell effects
 		var again bool
-		if key, again = e.campInput("", e.magicCommands()+"Rest Exit"); again {
+		if key, again = e.campInput("", append(e.magicCommands(), Entry{"Rest", magicRest}, Entry{"Exit", magicExit})); again {
 			continue
 		}
 		switch key {
-		case 'C':
+		case magicCast:
 			e.CastMenu()
-		case 'M':
+		case magicMemorize:
 			e.memorizeMenu()
-		case 'S':
+		case magicScribe:
 			e.scribeMenu()
-		case 'R':
+		case magicRest:
 			*interrupted = e.restMenu()
 		}
 	}
@@ -726,30 +732,38 @@ func (e *Engine) magicMenu(interrupted *bool) {
 
 // campInput (extra) waits on a camp menu bar. The keypad and F1-F8 pick
 // the member the menu is for; again is set when the menu is to be rebuilt.
-func (e *Engine) campInput(prompt, menu string) (key byte, again bool) {
+func (e *Engine) campInput(prompt string, menu Bar) (key Choice, again bool) {
 	e.ext.campBar = true
-	key, extra := e.displayKey(prompt, menu, colLightMagenta, colLightGreen, colWhite, true, true)
+	p := e.DisplayInput(prompt, menu, colLightMagenta, colLightGreen, colWhite, true, true)
 	e.ext.campBar = false
-	if !extra {
-		return key, false
+	if !p.extra() {
+		return p.ID, false
 	}
-	if key != menuRelist {
-		e.partyKeypadKey(key)
+	if p.ID != PickRelist {
+		e.partyKeypad(p)
 	}
 	e.DisplayPartyList()
-	return key, true // non-zero: the menu loops go on
+	return p.ID, true // not an item: the menu loops go on
 }
 
-// magicCommands (extra): the Magic menu items the selected member can use,
-// each followed by a space.
-func (e *Engine) magicCommands() string {
+// The items of the Magic menu.
+const (
+	magicCast Choice = iota
+	magicMemorize
+	magicScribe
+	magicRest
+	magicExit
+)
+
+// magicCommands (extra): the Magic menu items the selected member can use.
+func (e *Engine) magicCommands() Bar {
 	c := e.selected()
 	if c.Status == statusAnimated || c.Okay == 0 {
-		return ""
+		return nil
 	}
-	m := ""
+	var m Bar
 	if e.area.NoMagic == 0 && slices.ContainsFunc(c.Memorized[:], func(v byte) bool { return v > 0 && v < 0x80 }) {
-		m += "Cast "
+		m = append(m, Entry{"Cast", magicCast})
 	}
 	caster, mu := false, false
 	for lvl := 1; lvl <= 3; lvl++ {
@@ -757,10 +771,10 @@ func (e *Engine) magicCommands() string {
 		mu = mu || c.spellSlot(1, lvl) > 0
 	}
 	if caster {
-		m += "Memorize "
+		m = append(m, Entry{"Memorize", magicMemorize})
 	}
 	if mu && slices.ContainsFunc(e.carried(c), e.isScroll) {
-		m += "Scribe "
+		m = append(m, Entry{"Scribe", magicScribe})
 	}
 	return m
 }
@@ -794,26 +808,31 @@ func (e *Engine) moveNext() {
 
 // orderMenu = ovr16:1780: Select a member, then Place it with Home/End.
 func (e *Engine) orderMenu() {
+	const (
+		selectIt Choice = iota // Select, or Place while placing
+		exit
+	)
 	placing := false
-	for key := byte(' '); key != 0 && key != 'E'; {
-		menu := "Select Exit"
+	for key := selectIt; key != NoPick && key != exit; {
+		menu := Bar{{"Select", selectIt}, {"Exit", exit}}
 		if placing {
-			menu = "Place Exit"
+			menu[0].Word = "Place"
 		}
-		var extra bool
-		key, extra = e.displayKey("Party Order: ", menu, colLightMagenta, colLightGreen, colWhite, true, true)
-		if extra {
-			if !placing {
-				e.partyKeypadKey(key)
-			} else if key == 'G' {
+		p := e.DisplayInput("Party Order: ", menu, colLightMagenta, colLightGreen, colWhite, true, true)
+		key = p.ID
+		if p.extra() {
+			switch {
+			case !placing:
+				e.partyKeypad(p)
+			case p.ID == PickMove && p.Dir == DirHome:
 				e.movePrev()
-			} else if key == 'O' {
+			case p.ID == PickMove && p.Dir == DirEnd:
 				e.moveNext()
 			}
 			e.DisplayPartyList()
 			continue
 		}
-		if key == 13 || key == 'P' || key == 'S' {
+		if key == PickEnter || key == selectIt {
 			placing = !placing
 			if placing {
 				c := e.selected()
@@ -852,27 +871,31 @@ func (e *Engine) dropMenu() {
 
 // campSpeedMenu = ovr16:1A97: the message delay (DS:49E2), 0 fastest.
 func (e *Engine) campSpeedMenu() {
-	for key := byte(' '); key != 0 && key != 'E'; {
+	const (
+		faster Choice = iota
+		slower
+		exit
+	)
+	for key := faster; key != NoPick && key != exit; {
 		e.DisplayString(1, 18, colLightGreen, "Game Speed = "+strconv.Itoa(int(e.msgDelay))+" (0=fastest 9=slowest)")
-		menu := ""
+		menu := Bar{{}} // the original's bar starts with a space
 		if e.msgDelay > 0 {
-			menu += " Faster"
+			menu = append(menu, Entry{"Faster", faster})
 		}
 		if e.msgDelay < 9 {
-			menu += " Slower"
+			menu = append(menu, Entry{"Slower", slower})
 		}
-		menu += " Exit"
-		var extra bool
-		key, extra = e.displayKey("Game Speed:", menu, colLightMagenta, colLightGreen, colWhite, true, true)
-		if extra {
-			if key == 0x50 && e.msgDelay > 0 {
-				e.msgDelay--
-			} else if key == 0x48 && e.msgDelay < 9 {
-				e.msgDelay++
-			}
-		} else if key == 'F' {
+		menu = append(menu, Entry{"Exit", exit})
+		p := e.DisplayInput("Game Speed:", menu, colLightMagenta, colLightGreen, colWhite, true, true)
+		key = p.ID
+		switch {
+		case p.ID == PickMove && p.Dir == DirDown && e.msgDelay > 0:
 			e.msgDelay--
-		} else if key == 'S' {
+		case p.ID == PickMove && p.Dir == DirUp && e.msgDelay < 9:
+			e.msgDelay++
+		case key == faster:
+			e.msgDelay--
+		case key == slower:
 			e.msgDelay++
 		}
 	}
@@ -881,39 +904,47 @@ func (e *Engine) campSpeedMenu() {
 
 // alterMenu = ovr16:1C59.
 func (e *Engine) alterMenu() {
-	for key := byte(' '); key != 0 && key != 'E'; {
-		var extra bool
-		key, extra = e.displayKey("Alter: ", "Order Drop Speed Icon Pics Exit", colLightMagenta, colLightGreen, colWhite, true, true)
-		if extra {
-			e.partyKeypadKey(key)
+	const (
+		order Choice = iota
+		drop
+		speed
+		icon
+		pics
+		exit
+		monsters
+		portraits
+	)
+	for key := order; key != NoPick && key != exit; {
+		p := e.DisplayInput("Alter: ", Bar{{"Order", order}, {"Drop", drop}, {"Speed", speed}, {"Icon", icon}, {"Pics", pics}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, true)
+		key = p.ID
+		if p.extra() {
+			e.partyKeypad(p)
 			e.DisplayPartyList()
 			continue
 		}
 		switch key {
-		case 'O':
+		case order:
 			e.orderMenu()
-		case 'D':
+		case drop:
 			e.dropMenu()
-		case 'S':
+		case speed:
 			e.campSpeedMenu()
-		case 'I':
+		case icon:
 			e.iconEditor()
 			e.DrawMainScreen()
-		case 'P':
-			for k := byte(' '); k != 0 && k != 'E'; {
-				menu := "Monsters off  "
+		case pics:
+			for k := pics; k != NoPick && k != exit; {
+				menu := Bar{{"Monsters off ", monsters}, {"Portraits off ", portraits}, {"Exit", exit}} // two spaces after each
 				if e.viewBit1 != 0 {
-					menu = "Monsters on  "
+					menu[0].Word = "Monsters on "
 				}
 				if e.viewBit0 != 0 {
-					menu += "Portraits on  "
-				} else {
-					menu += "Portraits off  "
+					menu[1].Word = "Portraits on "
 				}
-				k, _ = e.displayKey("", menu+"Exit", colLightMagenta, colLightGreen, colWhite, false, true)
-				if k == 'M' {
+				k = e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, false, true).ID
+				if k == monsters {
 					e.viewBit1 ^= 1
-				} else if k == 'P' {
+				} else if k == portraits {
 					e.viewBit0 ^= 1
 				}
 			}
@@ -935,34 +966,41 @@ func (e *Engine) CampMenu() bool {
 	e.DisplayString(1, 18, colLightGreen, "The party makes camp...")
 	e.clearStudy()
 	interrupted := false
-	for key := byte(' '); !interrupted && key != 0 && key != 'E'; {
-		menu := "Save View Magic Rest Alter Exit"
-		if e.magicCommands() == "" {
-			menu = "Save View Rest Alter Exit"
+	const (
+		save Choice = iota
+		view
+		magic
+		rest
+		alter
+		exit
+	)
+	for key := view; !interrupted && key != NoPick && key != exit; {
+		var menu Bar
+		if e.lettered() { // (extra) else no Save: F9 saves (slots.go)
+			menu = append(menu, Entry{"Save", save})
 		}
-		if !e.lettered() {
-			menu = menu[5:] // (extra) no Save: F9 saves (slots.go)
+		menu = append(menu, Entry{"View", view})
+		if len(e.magicCommands()) > 0 {
+			menu = append(menu, Entry{"Magic", magic})
 		}
+		menu = append(menu, Entry{"Rest", rest}, Entry{"Alter", alter}, Entry{"Exit", exit})
 		var again bool
 		if key, again = e.campInput("Camp: ", menu); again {
 			continue
 		}
 		switch key {
-		case 'S':
-			if !e.lettered() {
-				break
-			}
+		case save:
 			e.SaveGame()
 			if e.YesNo(colYellow, colLightGreen, colWhite, "Quit TO DOS ") {
 				e.Exit()
 			}
-		case 'V':
+		case view:
 			e.ViewCharacter()
-		case 'M':
+		case magic:
 			e.magicMenu(&interrupted)
-		case 'R':
+		case rest:
 			interrupted = e.restMenu()
-		case 'A':
+		case alter:
 			e.alterMenu()
 		}
 	}

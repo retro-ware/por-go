@@ -8,10 +8,17 @@ import (
 // The shop, ported from ovr07. ECL COMBAT with the shop flag (game +0x6D8)
 // set runs Shop instead of a fight; the goods are the treasure list.
 
+// The words of the shop's Buy list.
+const (
+	shopBuyIt Choice = iota
+	shopLook
+	shopInv
+)
+
 // shopList = ovr07:0030 (var index, var list, var item, var key): the goods
 // with their prices right-aligned in a 30-character field, in a "Shop" box.
 // extra: the field runs to the box's right edge, so longer names fit.
-func (e *Engine) shopList(index *int, item **Item) byte {
+func (e *Engine) shopList(index *int, item **Item) Pick {
 	list := make([]*ListNode, len(e.run.treasure))
 	for i, it := range e.run.treasure {
 		if it.Price == 0 {
@@ -45,7 +52,7 @@ func (e *Engine) shopList(index *int, item **Item) byte {
 		*index %= len(list)
 	}
 	e.ext.buying = true
-	key := e.listKey("Items: ", "Buy Look Inv", colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 22, list, true, &redraw, index, &sel)
+	key := e.ListMenu("Items: ", Bar{{"Buy", shopBuyIt}, {"Look", shopLook}, {"Inv", shopInv}}, colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 22, list, true, &redraw, index, &sel)
 	e.ext.buying = false
 	*item = nil
 	for i, n := range list {
@@ -82,14 +89,13 @@ func (e *Engine) shopBuy() {
 	for {
 		var it *Item
 		key := e.shopList(&index, &it)
-		if key == menuRelist {
+		switch key.ID {
+		case PickRelist:
 			continue // F1-F8 picked another buyer
-		}
-		if key == 'L' { // extra: what the item does
+		case shopLook: // extra: what the item does
 			e.lookItem(it)
 			continue
-		}
-		if key == 'I' { // extra: the buyer's own items
+		case shopInv: // extra: the buyer's own items
 			if len(e.carried(e.selected())) == 0 {
 				e.BottomMessage("No items")
 			} else {
@@ -99,7 +105,7 @@ func (e *Engine) shopBuy() {
 			}
 			continue
 		}
-		if key != 'B' && key != 13 || it == nil {
+		if key.ID != shopBuyIt && key.ID != PickEnter || it == nil {
 			return
 		}
 		price := uint32(it.Price)
@@ -119,28 +125,37 @@ func (e *Engine) Shop() {
 	for _, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
 	}
-	const menu = "Browse Appraise Identify Exit" // extra: Buy renamed Browse, no View, Id spelled out
+	const (
+		browse Choice = iota
+		appraise
+		identify
+		exit
+	)
+	menu := Bar{{"Browse", browse}, {"Appraise", appraise}, {"Identify", identify}, {"Exit", exit}} // extra: Buy renamed Browse, no View, Id spelled out
 	if e.ext.sels == nil {
 		e.ext.sels = map[string]int{}
 	}
-	e.ext.sels[menu] = 1 // extra: a new visit starts on Browse, not where the last one left
+	e.ext.sels[menu.String()] = 1 // extra: a new visit starts on Browse, not where the last one left
 	for leave := false; !leave; {
 		e.shopMoney()
-		key, _ := e.displayKey("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
-		appraised := false
-		switch key {
-		case 'B':
+		p := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
+		redraw := false
+		switch p.ID {
+		case browse:
 			e.shopBuy()
-		case 'A':
-			appraised = e.Appraise()
-		case 'I':
-			appraised = e.identifyMenu()
-		case 'E':
+			redraw = true
+		case appraise:
+			redraw = e.Appraise()
+		case identify:
+			redraw = e.identifyMenu()
+		case exit:
 			leave = true
-		case 'G', 'O':
-			e.partyKeypadKey(key)
+		case PickMove:
+			if homeEnd(p) {
+				e.partyKeypad(p)
+			}
 		}
-		if key == 'B' || (key == 'A' || key == 'I') && appraised {
+		if redraw {
 			e.DrawMainScreen()
 		}
 		e.DisplayPartyList()
@@ -206,8 +221,9 @@ func (e *Engine) identifyMenu() bool {
 		e.DisplayString(winRight-len(gold), messageRow, colYellow, gold)
 		redraw := true
 		var sel *ListNode
-		key := e.listKey("", "Id", colLightCyan, colLightGreen, colWhite, 2, 3, 38, 22, list, true, &redraw, &index, &sel)
-		if key != 'I' && key != 13 || sel == nil {
+		const id Choice = 0
+		key := e.ListMenu("", Bar{{"Id", id}}, colLightCyan, colLightGreen, colWhite, 2, 3, 38, 22, list, true, &redraw, &index, &sel).ID
+		if key != id && key != PickEnter || sel == nil {
 			return true
 		}
 		for i, n := range list {

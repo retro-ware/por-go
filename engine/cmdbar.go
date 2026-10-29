@@ -1,20 +1,18 @@
 package engine
 
-import "strings"
-
 // The context-sensitive command bar: Cast is
 // offered only when the selected member could cast a spell.
 
 // commandBar drops the commands of bar that cannot be used now.
-func (e *Engine) commandBar(bar string) string {
-	var keep []string
-	for _, w := range strings.Fields(bar) {
-		if w == "Cast" && !e.canCastNow() {
+func (e *Engine) commandBar(bar Bar) Bar {
+	var keep Bar
+	for _, it := range bar {
+		if it.ID == cmdCast && !e.canCastNow() {
 			continue
 		}
-		keep = append(keep, w)
+		keep = append(keep, it)
 	}
-	return strings.Join(keep, " ")
+	return keep
 }
 
 // canCastNow: Cast would offer a spell (the checks of canStudy and

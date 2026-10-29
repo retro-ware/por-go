@@ -16,21 +16,9 @@ import "strings"
 // Outcomes of a click (region.click) besides the presenter's actions.
 const (
 	actHotkey ActKind = -1 // pick the item of the waiting menu bar whose hotkey is N
-	actRedraw ActKind = -2 // the click moved a cursor itself: the waiting menu hands back (menuRedraw) to be drawn again
+	actRedraw ActKind = -2 // the click moved a cursor itself: the waiting menu hands back PickRedraw to be drawn again
+	actChoice ActKind = -3 // a word of the slot screen's footer: the one whose Choice is N
 )
-
-// What DisplayInput hands back besides the menu's hotkeys and the keypad's
-// scan letters (extra true).
-const (
-	menuRedraw byte = 0xFE // actRedraw
-	menuRelist byte = 0xFD // the caller rebuilds the list for another member (F1-F8)
-	menuSlots  byte = 0x43 // F9 on a menu bar of the slot screen (YesNo ignores it)
-)
-
-// dirScan is the scan letter DisplayInput hands back (extra) for each
-// ActMove direction the menu bar does not use itself.
-var dirScan = [...]byte{DirUp: 0x48, DirDown: 0x50, DirLeft: 0x4B, DirRight: 0x4D,
-	DirHome: 0x47, DirEnd: 0x4F, DirPgUp: 0x49, DirPgDn: 0x51, DirCentre: 0x4C}
 
 // navCtx describes the menu that is waiting (displayInput keeps one per call).
 type navCtx struct {

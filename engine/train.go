@@ -109,33 +109,39 @@ func (e *Engine) ModifyCharacter() {
 		}
 		e.addRegion(region{x0: 0, y0: 7, x1: 0xB, y1: 12, click: func(_, cy int) Action { pick(cy - 7); return Action{Kind: actRedraw} }})
 		e.addRegion(region{x0: 0, y0: 0x12, x1: 0xB, y1: 0x12, click: func(int, int) Action { pick(6); return Action{Kind: actRedraw} }})
-		key, extra := e.displayKey("Modify character: ", "Keep Raise Lower Exit", colLightMagenta, colLightGreen, colWhite, true, false)
+		const (
+			keep Choice = iota
+			raiseIt
+			lowerIt
+			exit
+		)
+		p := e.DisplayInput("Modify character: ", Bar{{"Keep", keep}, {"Raise", raiseIt}, {"Lower", lowerIt}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
 		e.regionCut(mark)
-		switch {
-		case !extra && key == 'R':
-			key, extra = 0x4D, true
-		case !extra && key == 'L':
-			key, extra = 0x4B, true
+		switch p.ID {
+		case raiseIt:
+			p = Pick{ID: PickMove, Dir: DirRight}
+		case lowerIt:
+			p = Pick{ID: PickMove, Dir: DirLeft}
 		}
 		e.modifyDraw(idx, false)
-		if !extra && (key == 'E' || key == 0) {
+		if p.ID == exit || p.ID == NoPick {
 			copy(c.Stats[:], saved[:])
 			c.Str00, c.MaxHP = savedStr00, savedHP
 			c.HP = c.MaxHP
 			e.ApplyItems(c) // 00BA:0BB8
 			return
 		}
-		if extra {
-			switch key {
-			case 0x50, 0x0D:
+		if p.ID == PickMove {
+			switch p.Dir {
+			case DirDown:
 				if idx++; idx > 6 {
 					idx = 0
 				}
-			case 0x48:
+			case DirUp:
 				if idx--; idx < 0 {
 					idx = 6
 				}
-			case 0x4B:
+			case DirLeft:
 				if idx < 6 {
 					lower(idx)
 				} else {
@@ -145,7 +151,7 @@ func (e *Engine) ModifyCharacter() {
 					}
 					c.HP = c.MaxHP
 				}
-			case 0x4D:
+			case DirRight:
 				if idx < 6 {
 					raise(idx)
 				} else {
@@ -160,7 +166,7 @@ func (e *Engine) ModifyCharacter() {
 		e.ApplyItems(c)
 		e.showCombatStats() // ovr20:0608
 		e.modifyDraw(idx, true)
-		if !extra && key == 'K' {
+		if p.ID == keep {
 			c.Share = 1
 			return
 		}
@@ -458,8 +464,9 @@ func (e *Engine) AddCharacter() {
 	count := 0 // uninitialised until the first add in the original
 	for {
 		// The show-exit argument is an uninitialised local; false here.
-		key := e.listKey("Add a character: ", "Add Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
-		if (key == 0xD || key == 'A') && sel != nil && (sel.Text == "" || sel.Text[0] != '*') {
+		const add Choice = 0
+		key := e.ListMenu("Add a character: ", Bar{{"Add", add}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel).ID
+		if (key == PickEnter || key == add) && sel != nil && (sel.Text == "" || sel.Text[0] != '*') {
 			c := &Character{}
 			if e.LoadCharacter(sel.Text, c, false) { // ovr18:0AEC
 				sel.Text = cut("* "+sel.Text, textCols)
@@ -494,7 +501,7 @@ func (e *Engine) AddCharacter() {
 				}
 			}
 		}
-		if key == 'E' || key == 0 || count > 5 || e.game.PartyCount > 7 {
+		if key == NoPick || count > 5 || e.game.PartyCount > 7 {
 			break
 		}
 	}
@@ -541,11 +548,12 @@ func (e *Engine) ForgetCharacter() {
 	index, redraw := 0, true
 	var sel *ListNode
 	for len(list) > 0 {
-		key := e.listKey("Forget a character: ", "Forget Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
-		if key == 'E' || key == 0 || key == 0x1B {
+		const forget Choice = 0
+		key := e.ListMenu("Forget a character: ", Bar{{"Forget", forget}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel).ID
+		if key == NoPick {
 			break
 		}
-		if (key != 0xD && key != 'F') || sel == nil {
+		if (key != PickEnter && key != forget) || sel == nil {
 			continue
 		}
 		redraw = true
@@ -575,26 +583,31 @@ func (e *Engine) choosePortrait() {
 	head, body := c.PortHead, c.PortBody
 	for {
 		e.SheetPortrait() // ovr29:04F9
-		key, extra := e.displayKey("", "Head Body Keep", colBlack, colWhite, colLightGreen, false, false)
-		if !extra {
+		const (
+			headIt Choice = iota
+			bodyIt
+			keep
+		)
+		key := e.DisplayInput("", Bar{{"Head", headIt}, {"Body", bodyIt}, {"Keep", keep}}, colBlack, colWhite, colLightGreen, false, false).ID
+		{
 			switch key {
-			case 'H':
+			case headIt:
 				if c.PortHead < 0xE {
 					c.PortHead++
 				} else {
 					c.PortHead = 1
 				}
-			case 'B':
+			case bodyIt:
 				if c.PortBody < 0xC {
 					c.PortBody++
 				} else {
 					c.PortBody = 1
 				}
-			case 'K':
+			case keep:
 				head, body = c.PortHead, c.PortBody
 			}
 		}
-		if key == 'K' {
+		if key == keep {
 			break
 		}
 	}
@@ -693,9 +706,9 @@ func (e *Engine) iconEditor() {
 	c := e.selected()
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
 	e.combatViewLeave() // ovr32:00E3
-	menu3 := iconMenus[3]
+	menu3 := slices.Clone(iconMenus[3])
 	var state, parent, part int // parent and part are uninitialised until set
-	var sub, key byte
+	var sub, key Choice
 	var face bool
 	for {
 		e.BuildCharIcon(c, false) // ovr18:0482
@@ -715,37 +728,35 @@ func (e *Engine) iconEditor() {
 		e.DisplayString(3, 16, colWhite, "ready   action")
 		for {
 			e.iconPane(1, 4)
-			sizeStr := ""
-			if state == 4 {
-				sizeStr = "Large"
+			m := iconMenus[state]
+			switch state {
+			case 3:
+				m = menu3
+			case 4:
+				m = slices.Clone(m)
+				m[0] = Entry{"Large", icLarge}
 				if c.IconSize == 2 {
-					sizeStr = "Small" // as in the original
+					m[0] = Entry{"Small", icSmall} // as in the original
 				}
 			}
-			m := iconMenus[state]
-			if state == 3 {
-				m = menu3
-			}
-			k, extra := e.displayKey("", sizeStr+m, colLightMagenta, colLightGreen, colWhite, false, false)
-			key = k
-			if !extra {
-				done := key == 0 || key == 'E'
+			key = e.DisplayInput("", m, colLightMagenta, colLightGreen, colWhite, false, false).ID
+			{
+				done := key == NoPick || key == icExit
 				switch state {
 				case 1:
 					parent = 1
 					switch key {
-					case 'P':
+					case icParts:
 						state = 2
-					case '1', '2':
-						state, face = 3, key == '2'
+					case icColour1, icColour2:
+						state, face = 3, key == icColour2
 						label := "Hair"
 						if face {
 							label = "Face"
 						}
 						// Delete(s, 13, 4); Insert(label, s, 13) on DS:83A.
-						s := menu3[:12] + menu3[16:]
-						menu3 = cut(s[:12]+label+s[12:], textCols)
-					case 'S':
+						menu3[2].Word = label
+					case icSize:
 						state = 4
 					}
 				case 2:
@@ -759,17 +770,17 @@ func (e *Engine) iconEditor() {
 					parent = 3
 					part = 1
 					switch key {
-					case 'W':
+					case icWeapon:
 						part = 6
-					case 'B':
+					case icBody:
 						part = 1
-					case 'H', 'F':
+					case icHairFace:
 						part = 4
-					case 'S':
+					case icShield:
 						part = 5
-					case 'A':
+					case icArm:
 						part = 2
-					case 'L':
+					case icLeg:
 						part = 3
 					}
 					if done {
@@ -779,17 +790,17 @@ func (e *Engine) iconEditor() {
 					}
 				case 4:
 					switch {
-					case key == 'L':
+					case key == icLarge:
 						c.IconSize = 2
 						e.BuildCharIcon(c, false)
-					case key == 'S':
+					case key == icSmall:
 						c.IconSize = 1
 						e.BuildCharIcon(c, false)
-					case key == 'K':
-						size, state, key = c.IconSize, 1, ' '
+					case key == icKeep:
+						size, state, key = c.IconSize, 1, icStay
 					case done:
 						c.IconSize = size
-						state, key = 1, ' '
+						state, key = 1, icStay
 					}
 					e.BuildCharIcon(c, false)
 				case 5:
@@ -797,37 +808,37 @@ func (e *Engine) iconEditor() {
 					case 2:
 						// Step head (0..13) or weapon (0..31) pictures.
 						pic, saved, top := &c.IconHead, &head, byte(0xD)
-						if sub == 'W' {
+						if sub == icWeapon {
 							pic, saved, top = &c.IconBody, &weapon, 0x1F
 						}
-						if sub == 'H' || sub == 'W' {
+						if sub == icHead || sub == icWeapon {
 							switch {
-							case key == 'P':
+							case key == icPrev:
 								if *pic > 0 {
 									*pic--
 								} else {
 									*pic = top
 								}
-							case key == 'N':
+							case key == icNext:
 								if *pic < top {
 									*pic++
 								} else {
 									*pic = 0
 								}
-							case key == 'K':
-								*saved, state, key = *pic, parent, ' '
+							case key == icKeep:
+								*saved, state, key = *pic, parent, icStay
 							case done:
 								*pic = *saved
-								state, key = parent, ' '
+								state, key = parent, icStay
 							}
 							e.BuildCharIcon(c, false)
 						}
 					case 3:
 						lo, hi := c.IconColour[part-1]&0xF, c.IconColour[part-1]>>4
 						switch {
-						case key == 'N', key == 'P':
+						case key == icNext, key == icPrev:
 							d := byte(1)
-							if key == 'P' {
+							if key == icPrev {
 								d = 0xF // (n-1) and 15
 							}
 							if face {
@@ -836,18 +847,18 @@ func (e *Engine) iconEditor() {
 								lo = (lo + d) & 0xF
 							}
 							c.IconColour[part-1] = hi<<4 + lo
-						case key == 'K':
+						case key == icKeep:
 							copy(colours[:], c.IconColour[:])
-							state, key = parent, ' '
+							state, key = parent, icStay
 						case done:
 							copy(c.IconColour[:], colours[:])
-							state, key = parent, ' '
+							state, key = parent, icStay
 						}
 					}
 				}
 			}
 			e.iconCopy(c.Order, 0xC, true)
-			if parent == 1 && (key == 0 || key == 'E') {
+			if parent == 1 && (key == NoPick || key == icExit) {
 				break
 			}
 		}

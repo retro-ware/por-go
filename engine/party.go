@@ -94,18 +94,6 @@ func (e *Engine) partyKeypad(p Pick) {
 // homeEnd: the pick is Home or End (the keys that step the member).
 func homeEnd(p Pick) bool { return p.ID == PickMove && (p.Dir == DirHome || p.Dir == DirEnd) }
 
-// partyKeypadKey (transitional): partyKeypad for a scan letter.
-func (e *Engine) partyKeypadKey(k byte) {
-	switch k {
-	case 'G':
-		e.partyKeypad(Pick{ID: PickMove, Dir: DirHome})
-	case 'O':
-		e.partyKeypad(Pick{ID: PickMove, Dir: DirEnd})
-	default:
-		e.partyKeypad(Pick{ID: NoPick})
-	}
-}
-
 // PartyMenu = ovr17:0161. Returns when the player begins adventuring or
 // loads a game that starts play (beginFlag != 0).
 func (e *Engine) PartyMenu() {
@@ -159,15 +147,17 @@ func (e *Engine) PartyMenu() {
 		// The menu bar is hidden here (colours 0); the selection indicator
 		// goes on the list instead, which only offers the enabled entries.
 		quick := len(e.party) == 0 // extra: the quickstart entry, listed under Create
-		shown := ""
+		const mQuick = mExit + 1
+		var shown Bar
 		for i := range names {
 			if enabled[i] {
-				shown += names[i][:1] + " "
+				shown = append(shown, Entry{names[i][:1], Choice(i)})
 				if i == mCreate && quick {
-					shown += "Q " // in list order, so the arrows step down the list
+					shown = append(shown, Entry{"Q", mQuick}) // in list order, so the arrows step down the list
 				}
 			}
 		}
+		shown = append(shown, Entry{}) // the original's trailing space
 		drawList := func(hot byte) {
 			row := 0
 			for i := range names {
@@ -218,55 +208,55 @@ func (e *Engine) PartyMenu() {
 				e.rosterRegion()
 			}
 		}
-		k, extra := e.displayKey("Choose a function ", shown, colLightMagenta, colBlack, colBlack, true, false)
+		p := e.DisplayInput("Choose a function ", shown, colLightMagenta, colBlack, colBlack, true, false)
 		e.regionCut(mark)
 		e.ext.onSelect = nil
 		e.ClearRow24()
-		if extra {
-			if k == 'G' || k == 'O' {
-				e.partyKeypadKey(k)
+		if p.extra() {
+			if homeEnd(p) {
+				e.partyKeypad(p)
 				e.DisplayPartyList()
 			}
 			continue
 		}
-		if k != 'E' && k != 'S' {
+		if p.ID != mExit && p.ID != mSave {
 			e.saved = false // DS:557D
 		}
-		switch k {
-		case 'C':
+		switch p.ID {
+		case mCreate:
 			if enabled[mCreate] {
 				e.CreateCharacter()
 			}
-		case 'D':
+		case mDrop:
 			if enabled[mDrop] {
 				e.DropCharacter()
 			}
-		case 'M':
+		case mModify:
 			if enabled[mModify] {
 				e.ModifyCharacter()
 			}
-		case 'T':
+		case mTrain:
 			if enabled[mTrain] {
 				e.TrainCharacter()
 			}
-		case 'V':
+		case mView:
 			if enabled[mView] {
 				e.ViewCharacter()
 			}
-		case 'A':
+		case mAdd:
 			if enabled[mAdd] {
 				e.AddCharacter()
 			}
-		case 'F':
+		case mForget:
 			if enabled[mForget] {
 				e.ForgetCharacter()
 			}
-		case 'R':
+		case mRemove:
 			if enabled[mRemove] && len(e.party) > 0 {
 				e.SaveCharacter(e.selected(), "")
 				e.RemoveSelected(false, true)
 			}
-		case 'L':
+		case mLoad:
 			if enabled[mLoad] {
 				if e.lettered() {
 					e.LoadGame()
@@ -278,17 +268,17 @@ func (e *Engine) PartyMenu() {
 					return
 				}
 			}
-		case 'S':
+		case mSave:
 			if enabled[mSave] && len(e.party) > 0 {
 				e.SaveGame()
 			}
-		case 'B':
+		case mBegin:
 			if enabled[mBegin] && len(e.party) > 0 {
 				e.beginFlag = 4
 				e.ClearRow24()
 				return
 			}
-		case 'E':
+		case mExit:
 			if enabled[mExit] {
 				if e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ") {
 					for e.lettered() && !e.saved && len(e.party) > 0 {
@@ -297,14 +287,9 @@ func (e *Engine) PartyMenu() {
 					e.Exit()
 				}
 			}
-		case 'Q':
+		case mQuick:
 			if len(e.party) == 0 {
 				e.QuickStart()
-			}
-		case 'J':
-			if e.Cfg.Param == "STING" {
-				e.debug = true
-				e.BottomMessage("I Understand, master...")
 			}
 		}
 		redraw = true
@@ -316,9 +301,13 @@ func (e *Engine) PartyMenu() {
 // gives nil. The roster highlights the current choice.
 func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Character {
 	prompt = cut(prompt, textCols)
-	menu := "Select"
+	const (
+		selectIt Choice = iota
+		exitIt
+	)
+	menu := Bar{{"Select", selectIt}}
 	if exit {
-		menu += " Exit"
+		menu = append(menu, Entry{"Exit", exitIt})
 	}
 	index := func(c *Character) int {
 		for i, p := range e.party {
@@ -351,23 +340,20 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 				return Action{}
 			}})
 		}
-		key, extra := e.displayKey(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
+		p := e.DisplayInput(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
 		e.regionCut(mark)
 		e.rosterHi, e.rosterNone = nil, false
 		// The exit set (DS 00BA:2C1F) is checked before the extra flag.
-		switch key {
-		case 13, 'S', 0x1B:
+		switch p.ID {
+		case PickEnter, selectIt:
 			return who
-		case 'E':
-			if !extra {
-				return nil
-			}
-			return who
+		case exitIt:
+			return nil
 		}
-		if extra {
+		if p.extra() {
 			i := index(who)
-			switch key {
-			case 'O', 'P': // next, wrapping to the first (P = cursor down, an extra)
+			switch p.Dir {
+			case DirEnd, DirDown: // next, wrapping to the first (Down is an extra)
 				if who == nil {
 					// nil^.next reads 0000:0104 (the INT 41h vector, garbage in
 					// the original); the harness pins it to nil, and nil wraps to
@@ -378,7 +364,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 				} else {
 					who = e.party[0]
 				}
-			case 'G', 'H': // previous, wrapping to the last (H = cursor up, an extra)
+			case DirHome, DirUp: // previous, wrapping to the last (Up is an extra)
 				if i > 0 {
 					who = e.party[i-1]
 				} else {
@@ -390,7 +376,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 			}
 			continue
 		}
-		if key == 0 { // (Esc) the original stores nil and keeps asking
+		if p.ID == NoPick { // (Esc) the original stores nil and keeps asking
 			who = nil
 		}
 	}

@@ -384,28 +384,31 @@ func (e *Engine) eraseRosterCopies(c *Character, nested bool) {
 
 // LoadGame = ovr18:1602.
 func (e *Engine) LoadGame() {
-	menu := ""
-	for L := byte('A'); L <= 'J'; L++ {
-		if e.fileExists(e.savePath("savgam" + string(L) + ".dat")) {
-			menu += string(L) + " "
+	var menu Bar
+	for i := range Choice(10) {
+		if e.fileExists(e.savePath("savgam" + string(slotLetter(i)) + ".dat")) {
+			menu = append(menu, Entry{string(slotLetter(i)), i})
 		}
 	}
-	if menu == "" {
+	if menu == nil {
 		return
 	}
-	var key byte
+	var key Choice
 	for {
-		key, _ = e.displayKey("Load Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
-		if key >= 'A' && key <= 'J' && e.fileExists(e.savePath("savgam"+string(key)+".dat")) {
+		key = e.DisplayInput("Load Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID
+		if key >= 0 && e.fileExists(e.savePath("savgam"+string(slotLetter(key))+".dat")) {
 			break
 		}
-		if key == 0 {
+		if key == NoPick {
 			return
 		}
 	}
-	e.loadSlot(key)
+	e.loadSlot(slotLetter(key))
 	e.oldWalls()
 }
+
+// slotLetter names the lettered save game i (A..J: savgamA.dat ...).
+func slotLetter(i Choice) byte { return 'A' + byte(i) }
 
 // oldWalls is the original's overlap, kept for the lettered saves of traced
 // runs: the last wall slot's word at area+0x3FE is also the view animation
@@ -486,17 +489,21 @@ func (e *Engine) loadSlot(key byte) bool {
 
 // SaveGame = ovr18:1D58.
 func (e *Engine) SaveGame() {
-	var key byte
+	var menu Bar
+	for i := range Choice(10) {
+		menu = append(menu, Entry{string(slotLetter(i)), i})
+	}
+	var key Choice
 	for {
-		key, _ = e.displayKey("Save Which Game: ", "A B C D E F G H I J", colLightMagenta, colLightGreen, colWhite, false, e.beginFlag == 2) // ovr18:1D8B
-		if key == 0 || key >= 'A' && key <= 'J' {
+		key = e.DisplayInput("Save Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, e.beginFlag == 2).ID // ovr18:1D8B
+		if key == NoPick || key >= 0 {
 			break
 		}
 	}
-	if key == 0 {
+	if key == NoPick {
 		return
 	}
-	e.saveSlot(key)
+	e.saveSlot(slotLetter(key))
 	e.oldWalls()
 }
 

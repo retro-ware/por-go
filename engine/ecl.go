@@ -674,20 +674,21 @@ func extractHotkeys(menu string) (hot, out string) {
 // of the chosen hotkey, 0 for Enter, 0xFF for unknown.
 func (e *Engine) MenuInput(allowEnter bool, c3, c2, c1 int, menu, prompt string) int {
 	hot, shown := extractHotkeys(menu)
+	bar := textBar(shown)
+	for i, it := range bar { // each word is the first choice with its letter
+		if j := strings.IndexFunc(it.Word, func(r rune) bool { return r < 0x80 && isHotkey(byte(r)) }); j >= 0 {
+			bar[i].ID = Choice(strings.IndexByte(hot, it.Word[j]))
+		}
+	}
 	for {
-		key, extra := e.displayKey(prompt, shown, c1, c2, c3, true, e.animInput) // ovr08:16DC: the anim parameter
-		if extra {
-			e.partyKeypadKey(key)
+		p := e.DisplayInput(prompt, bar, c1, c2, c3, true, e.animInput) // ovr08:16DC: the anim parameter
+		switch {
+		case p.extra():
+			e.partyKeypad(p)
 			e.DisplayPartyList()
-			key = 0
-		}
-		if isHotkey(key) {
-			if i := strings.IndexByte(hot, key); i >= 0 {
-				return i
-			}
-			return 0xFF
-		}
-		if key == 13 && allowEnter {
+		case p.ID >= 0:
+			return int(p.ID)
+		case p.ID == PickEnter && allowEnter:
 			return 0
 		}
 	}

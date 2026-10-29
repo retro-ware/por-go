@@ -239,15 +239,20 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 	sel, top := first, 0
 	type word struct {
 		label string
+		key   byte   // the letter that picks it (shown; 0: not a menu item)
 		a     Action // what a click on it does
 	}
-	load, del := Action{Kind: actHotkey, N: 'L'}, Action{Kind: actHotkey, N: 'D'}
-	footer := []word{{"L=load", load}, {"D=delete", del}, {"Esc=back", Action{Kind: ActClose}}}
+	const (
+		loadIt Choice = iota
+		deleteIt
+	)
+	load, del := Action{Kind: actChoice, N: int(loadIt)}, Action{Kind: actChoice, N: int(deleteIt)}
+	footer := []word{{"L=load", 'L', load}, {"D=delete", 'D', del}, {"Esc=back", 0, Action{Kind: ActClose}}}
 	switch {
 	case canSave:
-		footer = append([]word{{"Enter=save", Action{Kind: ActContinue}}}, footer...)
+		footer = append([]word{{"Enter=save", 0, Action{Kind: ActContinue}}}, footer...)
 	case loadOnly:
-		footer = append([]word{{"Enter=load", Action{Kind: ActContinue}}}, footer[1:]...)
+		footer = append([]word{{"Enter=load", 0, Action{Kind: ActContinue}}}, footer[1:]...)
 	}
 	for {
 		list := e.slots()
@@ -301,14 +306,16 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		}
 		outer := e.snap.menu // extra: the footer's letters as a menu (ActPick)
 		e.snap.menu, e.snap.own = &Menu{}, true
+		var picks []Action
 		for _, f := range footer {
-			if f.a.Kind == actHotkey {
-				e.snap.menu.Items = append(e.snap.menu.Items, MenuItem{Text: f.label, Key: byte(f.a.N)})
+			if f.key != 0 {
+				e.snap.menu.Items = append(e.snap.menu.Items, MenuItem{Text: f.label, Key: f.key})
+				picks = append(picks, f.a)
 			}
 		}
 		a := e.input()
-		if m := e.snap.menu; a.Kind == ActPick && a.N >= 0 && a.N < len(m.Items) {
-			a = Action{Kind: actHotkey, N: int(m.Items[a.N].Key)}
+		if a.Kind == ActPick && a.N >= 0 && a.N < len(picks) {
+			a = picks[a.N]
 		}
 		e.snap.menu, e.snap.own = outer, false
 		e.regionCut(mark)

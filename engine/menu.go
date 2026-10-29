@@ -142,6 +142,16 @@ type Pick struct {
 	Dir int // PickMove: Dir...
 }
 
+// extra: the pick is one of the original's extended keys (the keypad, or
+// an outcome of the remaster's own), not an item, Enter or nothing.
+func (p Pick) extra() bool {
+	switch p.ID {
+	case PickMove, PickRedraw, PickRelist, PickSlots:
+		return true
+	}
+	return false
+}
+
 // Entry is one word of a menu bar. Its [0-9A-Z] letter is the hotkey: shown
 // lit and typed to pick it; the decision is ID.
 type Entry struct {
@@ -176,6 +186,8 @@ func (b Bar) ids() []Choice {
 
 // textBar makes a bar of a menu that comes as text (a script's): each word
 // is a choice, numbered by its first hotkey's item.
+// ponytail: a word with two hotkeys gives both the first one's number; split
+// such words into entries if a script ever has one.
 func textBar(menu string) Bar {
 	var b Bar
 	n := 0
@@ -541,34 +553,5 @@ func (e *Engine) YesNo(c1, c2, c3 int, prompt string) bool {
 	}
 }
 
-// displayKey (transitional): DisplayInput for callers still switching on
-// letters: the item's hotkey, or the old scan letters (extra).
-func (e *Engine) displayKey(prompt, menu string, promptColour, normal, highlight int, allowExtra, anim bool) (byte, bool) {
-	p := e.DisplayInput(prompt, textBar(menu), promptColour, normal, highlight, allowExtra, anim)
-	return legacyKey(menu, p)
-}
-
-func legacyKey(menu string, p Pick) (byte, bool) {
-	switch p.ID {
-	case NoPick:
-		return 0, false
-	case PickEnter:
-		return 13, false
-	case PickMove:
-		if p.Dir == DirCentre {
-			return ' ', true
-		}
-		return dirScan[p.Dir], true
-	case PickRedraw:
-		return menuRedraw, true
-	case PickRelist:
-		return menuRelist, true
-	case PickSlots:
-		return menuSlots, true
-	}
-	start, _ := menuItems(menu)
-	if j := int(p.ID) + 1; j < len(start) && start[j] > 0 {
-		return menu[start[j]-1], false
-	}
-	return 0, false
-}
+// pressEnter is the bar with no item that waits for Enter.
+var pressEnter = Bar{{Word: "press <enter>/<return> to continue"}}
