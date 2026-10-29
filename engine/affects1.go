@@ -419,7 +419,7 @@ func (e *Engine) coughingEnds(c *Character, a *Affect, flag byte) {
 	}
 	c.AC[0] = c.AC[1]
 	if c == e.selected() {
-		e.combatPanel(c)
+		e.ext.panel = c
 	}
 }
 

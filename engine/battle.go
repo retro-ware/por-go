@@ -6,32 +6,48 @@ import (
 	"slices"
 
 	"por/dax"
-	"por/ega"
 )
 
 // Battle is the combat map as the remaster's 3D view needs it.
 type Battle struct {
-	Ground     [25][50]Square
-	Tiles      []image.Image // the tile set by tile number, in combat's colours
-	Floor      color.RGBA    // the ground's colour
-	Dungeon    bool          // tiles 0..DungeonTiles-1 are stone wall pieces (else outdoor things: trees, water ...)
-	Units      []Unit
-	Cursor     image.Point            // the square the cursor was last drawn on
-	CursorOn   bool                   // the cursor icon is up (aiming, looking)
-	CursorAt   []image.Point          // the squares the cursor covers (a large combatant's footprint)
-	Marks      []image.Point          // squares framed for a choice (reach of a move, an area of effect)
-	Reach      []image.Point          // squares a click walks to from the main menu (the active unit's move)
-	Paths      map[image.Point][]Step // the walk to each Reach square, from the unit's own square
-	Targets    []int                  // units (by ID) a click attacks from the main menu
-	Actions    []MenuItem             // the main menu's turn enders off its bar (Guard, Wait, Bandage)
-	Area       bool                   // Marks are a spell's area (else a move's reach or a choice)
-	AreaAt     []image.Point          // the squares a spell's area covers round the aimed square
-	Skipped    []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
-	AimWhy     string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
-	StatusOnly bool                   // a message on the status row is being read: the menu row under it is stale, draw the status row alone
-	Effects    []Effect               // sprites over the map: a missile, a hit, a fall
-	View       image.Point            // top left square the original shows
-	Strike     Strike                 // the last weapon attack
+	Ground   [25][50]Square
+	Tiles    []image.Image // the tile set by tile number, in combat's colours
+	Floor    color.RGBA    // the ground's colour
+	Dungeon  bool          // tiles 0..DungeonTiles-1 are stone wall pieces (else outdoor things: trees, water ...)
+	Units    []Unit
+	Cursor   image.Point            // the square the cursor was last drawn on
+	CursorOn bool                   // the cursor icon is up (aiming, looking)
+	CursorAt []image.Point          // the squares the cursor covers (a large combatant's footprint)
+	Marks    []image.Point          // squares framed for a choice (reach of a move, an area of effect)
+	Reach    []image.Point          // squares a click walks to from the main menu (the active unit's move)
+	Paths    map[image.Point][]Step // the walk to each Reach square, from the unit's own square
+	Targets  []int                  // units (by ID) ActAttack takes on the turn; aiming: the foes Tab cycles through
+	Turn     *Turn                  // the player's turn waits for an action (nil: no one to act for)
+	Ask      string                 // a yes/no question waits: ActYes or ActClose
+	Panel    int                    // the unit the status row shows (who acts, or is being hit)
+	Log      []string               // this battle's messages, oldest first
+	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
+	AreaAt   []image.Point          // the squares a spell's area covers round the aimed square
+	Skipped  []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
+	AimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
+	Effects  []Effect               // sprites over the map: a missile, a hit, a fall
+	View     image.Point            // top left square the original shows
+	Strike   Strike                 // the last weapon attack
+}
+
+// Turn is what the acting member may do (the original's combat menu).
+type Turn struct {
+	Unit   int       // whose turn
+	Can    []ActKind // the actions offered, in the menu's order
+	Spells []Spell   // what ActCast casts
+	Aim    bool      // aiming: ActAim takes a square, ActPoint previews one, ActClose gives up
+	Moves  int       // squares of move left
+}
+
+// Spell is one memorised spell ActCast can cast.
+type Spell struct {
+	ID   int
+	Name string
 }
 
 // Effect is a sprite the original draws over the map for a moment.
@@ -84,19 +100,21 @@ type Unit struct {
 	Name       string
 	HP, AC     int
 	MaxHP      int
-	Hit        int // the active member's chance in percent to hit it with one blow (0: not a target)
+	Hit        int    // the active member's chance in percent to hit it with one blow (0: not a target)
+	Dmg        string // the readied attack's damage ("1d8+1")
+	Status     string // "" when it can act, else why not ("Helpless", "Unconscious" ...)
 }
 
 // battle builds the snapshot's Battle (nil outside combat).
 func (e *Engine) battle() *Battle {
 	s := &e.snap
-	if e.beginFlag != 5 || e.sqrpaci[0] == nil || !e.cmapUp() {
+	if e.beginFlag != 5 || e.sqrpaci[0] == nil || e.cmap == nil || !s.cmapOn || s.sheetOn {
 		return nil
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Actions: s.actions, Area: e.ext.aoe != 0, AreaAt: s.area, Skipped: s.skipped, AimWhy: s.aimWhy, StatusOnly: s.statusOnly, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
-		Strike: s.strike,
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Turn: s.turn, Ask: s.ask, Area: e.ext.aoe != 0, AreaAt: s.area, Skipped: s.skipped, AimWhy: s.aimWhy, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Strike: s.strike, Log: slices.Clone(e.ext.battleLog[max(0, len(e.ext.battleLog)-100):]),
 	}
 	for part := 0; part <= 3; part++ {
 		if dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part); ok {
@@ -139,7 +157,16 @@ func (e *Engine) battle() *Battle {
 			b.Strike.To = i
 		}
 		u := Unit{ID: i, X: int(p.x), Y: int(p.y), Size: int(p.size), Party: isParty(c),
-			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP), AC: 60 - int(c.AC[0]), Hit: s.hits[i]}
+			Facing: int(c.Combat.Facing), Active: c == active, Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP), AC: 60 - int(c.AC[0]), Hit: s.hits[i], Dmg: damageText(c)}
+		switch {
+		case c.Okay == 0:
+			u.Status = e.statusName(c)
+		case e.isHelpless(c):
+			u.Status = "Helpless"
+		}
+		if c == e.ext.panel {
+			b.Panel = i
+		}
 		for part := 0; part <= 3; part++ {
 			if dx, dy, ok := e.footprint(u.Size, part); ok {
 				u.Squares = append(u.Squares, image.Pt(u.X+dx, u.Y+dy))
@@ -204,25 +231,10 @@ func (e *Engine) picRGBA(im *dax.Image, f int, flip bool, ground int) image.Imag
 	return out
 }
 
-// cmapRow is the pixel row under the combat page: the frame's bottom ribbon.
-const cmapRow = 8 + viewH*24 + 2
-
-// cmapShown remembers the frame row under the combat page as the map is
-// drawn, so publish can tell the map is still up (sheets draw over it).
+// cmapShown notes the combat map is drawn: the view shows it from then on.
 func (e *Engine) cmapShown() {
-	if e.S == nil { // unit tests without a screen
-		return
-	}
-	e.S.Lock()
 	e.snap.cursorOn = false // a fresh page: drawCursor puts it back
-	e.snap.cmapRow = append(e.snap.cmapRow[:0], e.S.Pix[cmapRow*ega.W:(cmapRow+1)*ega.W]...)
-	e.S.Unlock()
-}
-
-func (e *Engine) cmapUp() bool {
-	e.S.Lock()
-	defer e.S.Unlock()
-	return len(e.snap.cmapRow) > 0 && string(e.S.Pix[cmapRow*ega.W:(cmapRow+1)*ega.W]) == string(e.snap.cmapRow)
+	e.snap.cmapOn = true
 }
 
 // effect is a sprite on the combat page: x, y in thirds of a square on the map.
@@ -241,21 +253,6 @@ func (e *Engine) hideEffect(px, py int) {
 	x, y := e.cmap.viewX*3+px, e.cmap.viewY*3+py
 	e.snap.effects = slices.DeleteFunc(e.snap.effects, func(f effect) bool { return f.x == x && f.y == y })
 }
-
-// KeySquare + y*50+x is the key for a click on combat map square (x, y),
-// for views that show the map their own way; the game reads it as a click
-// on that square of its page.
-const KeySquare = 0xE800
-
-// SquareKey is the key that clicks combat map square (x, y).
-func SquareKey(x, y int) uint16 { return KeySquare + uint16(y*50+x) }
-
-// KeyHover + y*50+x says the pointer came onto combat map square (x, y);
-// screens that preview a choice (aiming) move it there, others drop it.
-const KeyHover = 0xC000
-
-// HoverKey is the key that points at combat map square (x, y).
-func HoverKey(x, y int) uint16 { return KeyHover + uint16(y*50+x) }
 
 // KeyViewMember + n opens party member n's View page from the command bar
 // (a portrait clicked in a remastered view); elsewhere it is dropped.

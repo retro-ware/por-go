@@ -555,12 +555,7 @@ func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 
 // ClearMessageArea = 00BA:17E3.
 func (e *Engine) ClearMessageArea() {
-	if e.beginFlag == 5 {
-		e.ClearCells(0, messageRow, lastCol, promptRow)
-		if p := e.ext.panel; p != nil {
-			e.combatPanel(p)
-		}
-	} else {
+	if e.beginFlag != 5 {
 		e.ClearCells(1, 18, winRight, winBottom)
 	}
 }

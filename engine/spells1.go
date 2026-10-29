@@ -436,9 +436,6 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 		}
 	}
 	e.ClearMessageArea()
-	if e.beginFlag == 5 {
-		e.ClearCells(0, messageRow, lastCol, messageRow)
-	}
 }
 
 // spellRemoveCurse = ovr23:2540: the target (DS:6C95) loses the curse
@@ -806,8 +803,7 @@ func (e *Engine) announceCast(c *Character, msg string, spell int) {
 	msg = cut(msg, textCols)
 	if e.beginFlag == 5 {
 		e.CharMessage(c, "Casts a Spell", true)
-		e.ClearCells(0, messageRow, lastCol, messageRow)
-		e.DisplayString(0, messageRow, colLightGreen, "Spell:"+e.spellName(spell))
+		e.combatSay(nil, "Spell: "+e.spellName(spell), true)
 		return
 	}
 	e.ClearCells(1, 18, winRight, winBottom)

@@ -3,13 +3,10 @@ package engine
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
-import "strconv"
-
 // computerTurn = ovr10:000F (char): one computer turn. Picks the facing of
 // the attack, then spells, then moves and attacks until the turn is used.
 func (e *Engine) computerTurn(c *Character) {
 	done := e.aiKeys(c)
-	e.ClearRow24()
 	e.ClearMessageArea()
 	if c.Okay == 0 {
 		done = e.clearCombatInfo(c)
@@ -239,7 +236,6 @@ func (e *Engine) aiCanStep(c *Character, i, dir int) (ok, blocked bool) {
 // step towards the target (or a wandering direction when fleeing).
 func (e *Engine) aiMoveStep(c *Character) {
 	ci := c.Combat
-	e.DisplayString(0, promptRow, colLightGreen, "Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ")
 	if e.aiKeys(c) {
 		return
 	}
@@ -421,40 +417,10 @@ func (e *Engine) aiGiveUp(c *Character) bool {
 	return e.guard(c)
 }
 
-// aiKeys = ovr10:0FC1 (char): keys during the computer turn: '2' toggles
-// magic, space ends the turn of everyone not yet moved, '-' (stingCheat).
-func (e *Engine) aiKeys(c *Character) bool {
-	r := false
-	if e.keyWaiting() {
-		k := e.ReadKeyByte()
-		if k == 0 {
-			k = e.ReadKeyByte()
-		}
-		switch k {
-		case 0x32:
-			e.magicOn ^= 1
-			if e.magicOn != 0 {
-				e.BottomMessage("Magic On")
-			} else {
-				e.BottomMessage("Magic Off")
-			}
-		case 0x20:
-			for _, p := range e.party {
-				if p.Control < 0x80 && p.Status != statusAnimated {
-					p.Auto = 0
-				}
-			}
-			if c.Auto == 0 {
-				c.Combat.Delay = 0x14
-				r = true
-			}
-		case 0x2D:
-			e.stingCheat()
-		}
-	}
-	e.ClearKeyboard()
-	return r
-}
+// aiKeys = ovr10:0FC1 (char): keys during the computer turn ('2' magic,
+// space stops Quick, '-'). extra: none: the remaster sends no keys, and
+// Quick lasts one battle.
+func (e *Engine) aiKeys(c *Character) bool { return false }
 
 // aiFleeCheck = ovr10:10D7 (char): a forced flee, or a morale check that
 // makes the combatant flee or surrender.
@@ -640,6 +606,6 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	}
 	e.ApplyItems(c)
 	if done {
-		e.combatPanel(c)
+		e.ext.panel = c
 	}
 }

@@ -21,11 +21,8 @@ func (e *Engine) combatSetup() {
 		e.game.Morale = 0x64
 	}
 	e.combatMapSetup()
-	e.flushKey()
 	e.combatBlocks()
-	e.flushKey()
 	e.placeCombatants()
-	e.flushKey()
 	e.spr = nil // 0464:248E (1, 4, 3, 0x18): iconToSprite sizes it
 	if len(e.party) > 0 {
 		e.cmap.viewX = e.combatX(e.party[0]) - 3
@@ -37,13 +34,6 @@ func (e *Engine) combatSetup() {
 	}
 	e.foesHealthPercent()
 	e.beginFlag = 5
-}
-
-// flushKey = 0899:0122: a waiting key is read and dropped.
-func (e *Engine) flushKey() {
-	if e.keyWaiting() {
-		e.ReadKeyByte()
-	}
 }
 
 // combatMapSetup = ovr11:1244: the tile sets and the map.
@@ -530,7 +520,6 @@ func (e *Engine) placeCombatants() {
 	e.cpos[0].size = 1 // original quirk: the absolute DS:5F2A is record 0's size, counted up per combatant
 	for i := 0; i < len(e.party); i++ {
 		c := e.party[i]
-		e.flushKey()
 		e.combatants[idx-1] = c
 		p.side = c.Side
 		e.cpos[idx].id = byte(idx)

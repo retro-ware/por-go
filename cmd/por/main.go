@@ -31,8 +31,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ebitengine/oto/v3"
 	"gpu"
+
+	"github.com/ebitengine/oto/v3"
 
 	"por/ega"
 	"por/engine"
@@ -58,7 +59,6 @@ type game struct {
 	pic   classic.Rect // where the picture is drawn, in device pixels
 	wheel float64      // wheel movement not yet sent as a step
 	sent  bool         // input went to the engine this tick
-	over  image.Point  // the 3D map square under the pointer +1 last sent (HoverKey)
 	ticks int          // Update calls, counted only for POR_SHOT
 }
 
@@ -206,21 +206,9 @@ func (g *game) mouse() {
 	}
 	g.remaster.Hover(mx, my)
 	if gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
-		if ks, ok := g.remaster.Click(mx, my); ok { // an action bar button, a menu item
+		if ks, ok := g.remaster.Click(mx, my); ok { // an action bar button, a menu item, the combat map
 			g.sendKeys(ks)
 			return
-		}
-		if x, y, ok := g.remaster.Square(mx, my); ok { // a square on the 3D map
-			g.scr.PushKey(engine.SquareKey(x, y))
-			g.sent = true
-			return
-		}
-	}
-	if g.scr.Idle() { // pointing at a square: aiming previews it
-		if x, y, ok := g.remaster.Square(mx, my); ok && image.Pt(x+1, y+1) != g.over {
-			g.over = image.Pt(x+1, y+1)
-			g.scr.PushKey(engine.HoverKey(x, y))
-			g.sent = true
 		}
 	}
 	cx, cy, in := g.cell(float64(mx), float64(my))

@@ -177,6 +177,8 @@ func (e *Engine) showStat(stat int, hi bool) {
 func (e *Engine) ViewCharacter() bool {
 	if e.beginFlag == 5 {
 		e.combatViewEnter() // ovr31 (seg 03E0) +2F
+		e.snap.sheetOn = true
+		defer func() { e.snap.sheetOn = false }()
 	}
 	key := byte(' ')
 	quit := false
@@ -402,7 +404,9 @@ func (e *Engine) ItemsMenu() bool {
 }
 
 // usable: the item has a Use (a scroll, or a spell of its own).
-func (e *Engine) usable(it *Item) bool { return e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80 }
+func (e *Engine) usable(it *Item) bool {
+	return e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80
+}
 
 // readyItem = ovr20:14D0 (item): ready or unready, with the reasons it
 // cannot be readied and the item's own effect (+0x3E > 0x7F).
@@ -546,8 +550,8 @@ func (e *Engine) useItem(it *Item) bool {
 		}
 		e.CharMessage(c, "uses an item", false)
 		if e.beginFlag == 5 {
-			e.DisplayString(0, messageRow, colLightGreen, "Item:")
-			e.ItemName(c, it, 5, 0x17, false, true)
+			e.ItemName(c, it, 0, 0, false, false)
+			e.combatSay(nil, "Item: "+it.Name(), false)
 		} else {
 			e.ItemName(c, it, 1, 0x16, false, true)
 		}

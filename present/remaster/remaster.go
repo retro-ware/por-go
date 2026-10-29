@@ -62,6 +62,9 @@ type Presenter struct {
 	mapBottom int                         // screen rows above this are the 3D map
 	fight     bool                        // the last frame was the 3D combat map
 	inv       inventory                   // the inventory screen (inventory.go)
+	fightView *engine.Battle              // the combat map last drawn
+	fightLog  bool                        // the battle Log is up (fight.go)
+	rowsImg   *gpu.Image                  // the combat rows, drawn at scale 1
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -72,30 +75,9 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false
+		p.fightView = v.Battle
 		p.battle.Draw(dst, v.Battle)
-		frame, k := p.Classic.Frame(scr, note), scale(dst)
-		p.mapBottom = dst.Bounds().Dy() - int(k)*8*3 // the text rows under the map take clicks themselves
-		if v.Menu == nil && !v.Battle.StatusOnly {   // typed input, "press a key": the original's two rows
-			p.battle.HideBar()
-			p.drawRows(dst, frame, engine.CombatRows, k)
-			return classic.Rect{}
-		}
-		p.drawRows(dst, frame, engine.CombatPanel, k)
-		if v.Menu == nil { // a status row message waits: no menu to show (the row under it is stale)
-			p.battle.HideBar()
-			return classic.Rect{}
-		}
-		for _, m := range v.Party { // whose turn: the portrait card, bottom left
-			if m.Selected {
-				ck := max(1, int(k)/2) // as the bar
-				p.drawParty(dst, []engine.Member{m}, func(int, int) image.Rectangle {
-					y := dst.Bounds().Dy() - int(k)*8 - (cardH+cardGap)*ck + cardFoot*ck // bottom left, over the status row
-					return image.Rect(cardGap*ck, y, cardGap*ck+cardW*ck, y+cardH*ck)
-				})
-			}
-		}
-		p.battle.DrawBar(dst, note.Glyph, v.Menu, max(1, int(k)/2), dst.Bounds().Dy()-int(k)*10)
-		p.battle.DrawStatus(dst, note.Glyph, p.battle.Status(v.Menu), k) // the hovered square, a question: over the panel
+		p.drawFight(dst, note.Glyph, v)
 		return classic.Rect{}
 	}
 	sc := p.scene(v)
@@ -198,7 +180,7 @@ func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
 		return nil, p.inventoryKey(k)
 	}
 	if p.fight {
-		return p.battle.Key(k)
+		return nil, p.fightKey(k)
 	}
 	if !p.active || p.view == nil {
 		p.menu = false
@@ -273,12 +255,23 @@ func (p *Presenter) Click(x, y int) ([]uint16, bool) {
 		}
 		return nil, false
 	}
-	return p.battle.Click(x, y)
+	return nil, p.fightClick(x, y)
 }
 
 // Hover moves the vertical menu's highlight to the item under screen pixel (x, y).
 func (p *Presenter) Hover(x, y int) {
-	if p.fight || !p.menu || image.Pt(x, y) == p.pointer {
+	if p.fight {
+		for i, r := range p.menuRects {
+			if p.battle.Picking && image.Pt(x, y).In(r) {
+				p.sel = i
+			}
+		}
+		if !p.battle.Picking && !p.fightLog {
+			p.battle.Point(x, y)
+		}
+		return
+	}
+	if !p.menu || image.Pt(x, y) == p.pointer {
 		return
 	}
 	p.pointer = image.Pt(x, y)
@@ -287,14 +280,6 @@ func (p *Presenter) Hover(x, y int) {
 			p.sel = i
 		}
 	}
-}
-
-// Square is the combat map square a click at screen pixel (x, y) hits.
-func (p *Presenter) Square(x, y int) (int, int, bool) {
-	if !p.fight || y >= p.mapBottom {
-		return 0, 0, false
-	}
-	return p.battle.Pick(x, y)
 }
 
 // Flow paces a held move key (code, 0 for none) with fluid movement: it

@@ -153,21 +153,6 @@ func (e *Engine) drawEdges(row int) {
 	}
 }
 
-// markSquare (extra) draws a dotted frame just inside screen square
-// (sx, sy), into the page too so sprites restore it.
-func (e *Engine) markSquare(sx, sy int, c uint8) {
-	x0, _ := e.pageGeom()
-	e.S.Lock()
-	defer e.S.Unlock()
-	for i := 2; i <= 21; i += 2 {
-		for _, p := range [4][2]int{{i, 2}, {i, 21}, {2, i}, {21, i}} {
-			px, py := sx*24+p[0], sy*24+p[1]
-			e.S.Set(x0+px, 8+py, c)
-			e.pageSet(px, py, c)
-		}
-	}
-}
-
 // restoreUnder = 0464:0D71 (DS:4A24, mode 0): put back what the last
 // sprite hid.
 func (e *Engine) restoreUnder(x, y int, im *dax.Image) {
@@ -235,7 +220,6 @@ func (e *Engine) LoadBackpacIcons(name string, first, n int) {
 	}
 	im := e.LoadPic(name, 1)
 	t := e.sqrpaci[0]
-	defer e.ClearKeyboard()
 	if im == nil || t == nil {
 		return
 	}
@@ -268,7 +252,6 @@ func (e *Engine) LoadIconPic(name string, block, slot int) {
 	up := strings.ToUpper(name)
 	load := func(n string, b int) *dax.Image { return e.LoadPicMasked(n, b, 0) }
 	ic := &e.icons[slot]
-	defer e.ClearKeyboard()
 	switch {
 	case strings.HasPrefix(up, "CHEAD") || strings.HasPrefix(up, "CBODY"):
 		if up[len(up)-1] == 'T' {
@@ -877,5 +860,4 @@ func (e *Engine) BuildCharIcon(c *Character, recolour bool) {
 		}
 	}
 	e.freeIcon(0xB)
-	e.ClearKeyboard()
 }

@@ -171,11 +171,9 @@ func (e *Engine) bottomMessage(s string, colour int) {
 		e.say(s)
 		return
 	}
-	if e.beginFlag == 5 && e.cmap != nil { // extra: in combat on the status row; the menu row stays, the text until the panel comes back
-		e.ClearCells(0, messageRow, lastCol, messageRow)
-		e.DisplayString(0, messageRow, colour, s)
-		e.statusDelay()
-		e.statusDelay()
+	if e.beginFlag == 5 && e.cmap != nil { // extra: in combat the View's Log
+		e.combatSay(nil, s, true)
+		e.MsgDelay()
 		return
 	}
 	e.ClearCells(0, promptRow, lastCol, promptRow)

@@ -374,6 +374,7 @@ func (e *Engine) WaitSeconds(n int) {
 func (e *Engine) idle() {
 	e.ext.skip = false
 	if e.tr == nil {
+		e.actsDone() // an action taken last is done too
 		e.S.SetState(ega.Waiting)
 		ega.Delay(1)
 	}

@@ -1,9 +1,9 @@
 package engine
 
 import (
-	"os"
+	"image"
+	"slices"
 	"strconv"
-	"strings"
 )
 
 // GAME.OVR overlay 14, second half (0x1BF8..0x3C72): choosing targets for
@@ -190,19 +190,13 @@ func (e *Engine) chooseSpellTargets(spell, silent int) (ok bool) {
 // casting time of 3 or more only begin and are cast in a later round.
 func (e *Engine) castSpell(spell, a int, quit *bool) {
 	sel := e.selected()
-	have, idx := true, -1 // bp-6 = 1, bp-5 = 0xFFFF
 	*quit = false
-	if spell == 0 {
-		spell = int(e.SpellList(0, 1, &idx, &have))
-	}
 	if spell > 0 && e.spellData(spell, 5) == 0 {
 		e.refuse("Camp Only Spell")
 		spell = 0
 	}
 	if a == 0 {
-		e.combatUseHook()
-		e.combatRedrawChar(sel, 3, 1)
-		e.combatPanel(sel)
+		e.ext.panel = sel
 	}
 	if spell > 0 {
 		delay := int(e.spellData(spell, 6)) / 3
@@ -330,7 +324,7 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 	if b2i(isParty(target)) == int(c.Side) || c.Auto != 0 {
 		return true
 	}
-	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Attack Ally: ") != 'Y' {
+	if !e.ask("Attack Ally?") {
 		return false
 	}
 	e.attackedAlly = 1
@@ -345,110 +339,6 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 	}
 	e.countSides()
 	return true
-}
-
-// aimPrompt = ovr14:2AA0 (c, cand, rng, showRange): shows how far the
-// candidate is and asks Next, Prev, Manual, Target, Center or Exit.
-func (e *Engine) aimPrompt(c, cand *Character, rng, showRange int) byte {
-	menu := ""
-	if showRange != 0 {
-		e.DisplayString(0, messageRow, colLightGreen, "Range = "+strconv.Itoa(e.rangeTo(c, cand))+"  ")
-	}
-	why := e.targetWhy(c, cand, rng, showRange)
-	can := why == ""
-	e.snap.aimWhy = why // extra: views draw the preview red
-	defer func() { e.snap.aimWhy = "" }()
-	if can {
-		menu = "Attack " // extra: Target renamed
-	}
-	menu = cut("Next Prev Manual "+menu+"Center Exit", textCols)
-	e.combatRedrawChar(cand, 3, 1)
-	e.combatPanel(cand)
-	if !can {
-		e.showWhy(why) // extra: the reason over the panel line, while pointing there
-	}
-	_, undo := e.aoeMarks(e.combatX(cand), e.combatY(cand), "") // the menu leaves no room for the count
-	mark := e.regionMark()
-	// extra (nav.go): click a foe to aim at it, the aimed one again to attack; pointing at
-	// one aims there too. An area spell takes any square: the free cursor goes there.
-	pick := func(sx, sy int, click bool) uint16 {
-		who := e.occ[sy][sx]
-		switch {
-		case who > 0 && e.combatant(who) == cand:
-			if click && !can { // extra: say why instead of doing nothing
-				e.ext.aimRefused = why
-				return 'C'
-			}
-			if click { // extra: the cast / attack itself, not a menu key
-				e.ext.aimCast, e.ext.acted = true, true
-				return keyNone
-			}
-			return 0
-		case e.ext.aimGround:
-			e.ext.jump, e.ext.aimTake = &[2]int8{int8(sx), int8(sy)}, click
-			return 'M'
-		case who == 0 || !click && len(e.ext.aimMarks) > 0 && !e.aimStop(sx, sy):
-			return 0 // pointing at one Next would pass over: stay
-		}
-		e.ext.jump, e.ext.aimTake = &[2]int8{int8(sx), int8(sy)}, click // a click casts / attacks once the aim is there
-		return 'N'
-	}
-	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
-		if sx, sy, in := e.combatSquare(cx, cy); in {
-			return pick(sx, sy, true)
-		}
-		return 0
-	}, square: func(x, y int) uint16 { return pick(x, y, false) }})
-	var key byte
-	defer func() { e.ext.aimCast, e.ext.acted = false, false }()
-	switch t := e.ext.autoAim; { // extra: the main menu's clicked foe
-	case t == nil && e.ext.aimTake: // extra: clicked here: take it at once
-		e.ext.aimTake = false
-		if key = 'A'; !can {
-			key, _ = e.combatInput("Aim:", menu, false)
-		}
-	case t == nil:
-		key, _ = e.combatInput("Aim:", menu, false)
-	case t == cand:
-		e.ext.autoAim = nil
-		if can {
-			key = 'A'
-		} else {
-			key, _ = e.combatInput("Aim:", menu, false)
-		}
-	case !e.ext.autoJumped:
-		e.ext.autoJumped = true
-		e.ext.jump = &[2]int8{int8(e.combatX(t)), int8(e.combatY(t))}
-		key = 'N'
-	default: // not among the candidates: aim as usual
-		e.ext.autoAim = nil
-		key, _ = e.combatInput("Aim:", menu, false)
-	}
-	e.regionCut(mark)
-	undo()
-	if e.ext.aimCast { // the click took cand
-		key = 'A'
-	}
-	if r := e.ext.aimRefused; r != "" && key == 'C' {
-		e.ext.aimRefused = ""
-		e.aimRefused(r)
-	}
-	if key == 'A' {
-		key = 'T'
-	}
-	return key
-}
-
-// aimStop (extra): is a foe Next stops on standing at (x, y)?
-func (e *Engine) aimStop(x, y int) bool {
-	_, ok := e.ext.aimMarks[[2]int{x, y}]
-	return ok
-}
-
-// combatInput = ovr26:03BD with the picture not animated (prompt, menu,
-// allowExtra): the key, and the DS:6E31 flag is dropped.
-func (e *Engine) combatInput(prompt, menu string, allowExtra bool) (byte, bool) {
-	return e.DisplayInput(prompt, menu, colLightMagenta, colLightGreen, colWhite, allowExtra, false)
 }
 
 // canTarget (aimPrompt's test, ovr14:2AA0): is Target offered for cand?
@@ -489,31 +379,6 @@ func outOfRange(rng int) string {
 	return "Out of range: " + strconv.Itoa(rng) + " squares at most"
 }
 
-// showWhy (extra): why the aimed square cannot be taken, in red on the
-// status row (the panel line).
-func (e *Engine) showWhy(why string) {
-	e.ClearCells(0, messageRow, lastCol, messageRow)
-	e.DisplayString(0, messageRow, colLightRed, cut(why, textCols))
-}
-
-// aimRefused (extra): a try where the aim cannot go flashes the reason on
-// the status row, and leaves it there.
-func (e *Engine) aimRefused(why string) {
-	e.ClearCells(0, messageRow, lastCol, messageRow)
-	e.statusDelay()
-	e.showWhy(why)
-	e.statusDelay()
-}
-
-// statusDelay (extra): the message delay for text on the combat status row;
-// views are told the menu row is stale meanwhile (no menu is up), so they
-// show the status row alone and never flash the old menu under it.
-func (e *Engine) statusDelay() {
-	e.snap.statusOnly = true
-	e.MsgDelay()
-	e.snap.statusOnly = false
-}
-
 // aimConfirm = ovr14:2C3D (c, cand, mode, var found, var t): take cand as
 // the target. With mode 1 (a missile attack) the attack is made at once.
 func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTarget) {
@@ -543,211 +408,13 @@ func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTar
 	}
 }
 
-// aimManual = ovr14:2DFA (c, cand, rng, showRange, allowGround, var found,
-// var t): move a cursor over the map with the arrow keys; Enter or T takes
-// the square (and who stands on it), Esc or E gives up.
-func (e *Engine) aimManual(c, cand *Character, rng, showRange, allowGround int, found *bool, t *aimTarget) {
-	*t = aimTarget{}
-	x, y := int8(e.combatX(cand)), int8(e.combatY(cand))
-	pointed := false               // extra: the cursor follows the mouse: the view stays put (the keyboard's cursor scrolls it)
-	if j := e.ext.jump; j != nil { // extra: the square aimPrompt was pointed at
-		e.ext.jump = nil
-		x, y, pointed = j[0], j[1], true
-	}
-	key, dir := byte(0x20), 8
-	*found = false
-	e.cmap.cursor, e.cmap.cursorSize = 1, 1
-	defer e.rawArrows("arrows, point=move the cursor|Enter, click=target|C=center|Esc=back")()
-	defer func() { e.snap.aimWhy = "" }()
-	for !(key == 0 || key == 13 || key == 'E' || key == 'T') {
-		margin := 3
-		if pointed { // any square in view is inside this margin
-			margin = viewW / 2
-		}
-		e.combatCentre(int(x), int(y), margin, dir)
-		x += int8(byte(dirDX[dir]))
-		y += int8(byte(dirDY[dir]))
-		x, y = min(max(x, 0), 0x31), min(max(y, 0), 0x18)
-		who, ground := e.mapAt(int(x), int(y))
-		e.ClearKeyboard()
-		ok, why := false, "Out of sight" // extra: why, for the refusal
-		fail := func(s string) {         // the first reason found is the one told
-			if ok {
-				why = s
-			}
-			ok = false
-		}
-		dist, tx, ty := 0xFF, int(x), int(y)
-		if e.lineOfSight(&dist, &tx, &ty, e.combatX(c), e.combatY(c)) {
-			ok = true
-			if showRange != 0 {
-				e.DisplayString(0, messageRow, colLightGreen, "Range = "+strconv.Itoa(dist>>1)+"  ")
-			}
-		} else if showRange != 0 {
-			e.ClearCells(0, messageRow, lastCol, messageRow)
-		}
-		dist >>= 1
-		cand = nil
-		if ok {
-			if who > 0 {
-				cand = e.combatant(who)
-			} else if ground == 0x1F {
-				for b := 1; b <= e.nbodies; b++ {
-					if int8(e.bodies[b].x) == x && int8(e.bodies[b].y) == y {
-						cand = e.bodies[b].c
-					}
-				}
-			}
-		}
-		if cand != nil {
-			e.combatPanel(cand)
-		} else {
-			e.ClearCells(0, messageRow, lastCol, messageRow)
-		}
-		if rng < dist {
-			fail(outOfRange(rng))
-		}
-		if e.groundInfo(ground)[0] == 0xFF {
-			fail("A wall is in the way")
-		}
-		if cand != nil {
-			if !e.mayActAgainst(c, cand) {
-				fail("Cannot act against " + cand.Name())
-			}
-			if showRange == 1 {
-				if cand == c || (who == 0 && ground == 0x1F) {
-					fail("Not a target")
-				} else if e.rangedWeapon(c) {
-					var tmp *Item
-					if !e.ammoFor(c, &tmp) {
-						fail("No ammunition")
-					} else if e.nearEnemies(c, 1) > 0 && !e.throwable(c) {
-						fail("A foe is too close to shoot")
-					}
-				}
-			}
-		} else if allowGround == 0 {
-			fail("No one there to target")
-		}
-		menu := "Center Exit"
-		if ok {
-			menu = cut("Attack "+menu, textCols) // extra: Target renamed
-		}
-		mark := e.regionMark()
-		{ // extra (nav.go): point at a square to put the cursor there, click to target it
-			pick := func(sx, sy int, click bool) uint16 {
-				if sx == int(x) && sy == int(y) {
-					if click && ok { // extra: the take itself, not a menu key
-						e.ext.aimCast, e.ext.acted = true, true
-						return keyNone
-					}
-					if click { // extra: say why instead of doing nothing
-						e.ext.aimRefused = why
-						return 'C'
-					}
-					return 0
-				}
-				e.ext.jump, e.ext.aimTake = &[2]int8{int8(sx), int8(sy)}, click
-				return keyNone
-			}
-			e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
-				if sx, sy, in := e.combatSquare(cx, cy); in {
-					return pick(sx, sy, true)
-				}
-				return 0
-			}, square: func(x, y int) uint16 { return pick(x, y, false) }})
-		}
-		e.markReach(e.ext.aimMarks, true) // the cursor's last square drew over its frame
-		e.snap.aimWhy = ""                // extra: views draw the preview red where it cannot be cast
-		if !ok {
-			e.snap.aimWhy = why
-			e.showWhy(why) // over the panel line, while the cursor is there
-		}
-		prompt, undo := e.aoeMarks(int(x), int(y), "(Use Cursor keys) ")
-		if take := e.ext.aimTake; take && ok { // a click away from the cursor: moved there, now the target
-			e.ext.aimTake = false
-			key = 'T'
-		} else {
-			if take {
-				e.aimRefused(why) // extra: clicked where it cannot go
-			}
-			e.ext.aimTake = false
-			key, _ = e.combatInput(prompt, menu, true)
-		}
-		undo()
-		if e.ext.aimCast { // the click on the cursor took the square
-			e.ext.aimCast, e.ext.acted = false, false
-			key = 'T'
-		}
-		if key == 'A' {
-			key = 'T'
-		}
-		e.regionCut(mark)
-		if key == 13 || key == 'T' || key == 'C' && e.ext.aimRefused != "" {
-			if e.ext.aimRefused = ""; !ok { // extra: tell why and stay, instead of leaving the cursor
-				e.aimRefused(why)
-				key = ' '
-			}
-		}
-		pointed = e.ext.jump != nil
-		if j := e.ext.jump; j != nil { // the clicked square; the step below is dir 8 (none)
-			e.ext.jump = nil
-			e.eraseCursor(int(x), int(y))
-			x, y = j[0], j[1]
-		}
-		switch key {
-		case 13, 'T':
-			e.cmap.cursor = 0
-			if ok {
-				t.x, t.y = byte(x), byte(y)
-				t.c = cand
-				if showRange == 1 {
-					e.aimConfirm(c, t.c, showRange, found, t)
-				} else {
-					*found = true
-				}
-			}
-			if !ok || !*found {
-				e.eraseCursor(int(x), int(y))
-				*found = false
-				*t = aimTarget{}
-			}
-		case 0x48:
-			dir = 0
-		case 0x49:
-			dir = 1
-		case 0x4D:
-			dir = 2
-		case 0x51:
-			dir = 3
-		case 0x50:
-			dir = 4
-		case 0x4F:
-			dir = 5
-		case 0x4B:
-			dir = 6
-		case 0x47:
-			dir = 7
-		case 0, 0x45:
-			e.ext.aimEsc = true
-			e.eraseCursor(int(x), int(y))
-			*t = aimTarget{}
-			*found = false
-		case 'C':
-			e.combatCentre(int(x), int(y), 0, 8)
-			dir = 8
-		default:
-			dir = 8
-		}
-	}
-}
-
 // playerAim = ovr14:3558 (c, rng, showRange, allowGround, var found, var t):
-// the player aims for c. Candidates are walked through nearest first
-// (N next, P previous, M manual cursor, T take, C centre, Esc/E give up).
-// rng 0xFF takes the range of the readied weapon.
+// the player aims for c. extra: through Act: ActPoint moves the aim (the
+// View shows why it cannot be taken, a spell's area), ActAim takes a
+// square, ActClose gives up. Battle.Targets are the foes to cycle through
+// (with a weapon: the ones it can hit, while there are any). rng 0xFF
+// takes the range of the readied weapon.
 func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, found *bool, t *aimTarget) {
-	e.iconToSprite(0x19, 0, 0, false)
 	*t = aimTarget{}
 	*found = false
 	rng := byte(rangeArg)
@@ -761,130 +428,130 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 	if rng == 0 || rng == 0xFF {
 		rng = 1
 	}
-	e.ext.aimGround = allowGround != 0
-	defer func() { e.ext.aimGround = false }()
-	// nested ovr14:32E6 and ovr14:3389 work on the caller's locals
-	var list []nearEntry
-	var cur, count, prevX, prevY byte
-	skipAlly := false   // extra: N/P pass over allies (hostile spells), while a foe can be aimed at
-	hitOnly := false    // extra: with a weapon, N/P pass over foes it cannot hit, while one can be
-	rebuild := func() { // ovr14:32E6
-		e.markReach(e.ext.aimMarks, false)
-		e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c))
-		list = append([]nearEntry(nil), e.near...)
-		count = byte(len(list))
-		skipAlly, hitOnly = false, false
-		for _, n := range list {
-			if f := e.combatant(n.index); e.ext.enemiesOnly && f != nil && f.Side != c.Side && e.mayActAgainst(c, f) {
-				skipAlly = true
-				hitOnly = hitOnly || showRange != 0 && e.canTarget(c, f, int(rng), showRange)
-			}
-		}
-		e.ext.aimMarks = map[[2]int][]int{}
-		if showRange != 0 { // extra: a weapon's: the foes it can hit, with the chance, for views that draw targets
-			e.snap.targets, e.snap.hits = nil, map[int]int{}
-		}
-		for _, n := range list {
-			if f := e.combatant(n.index); skipAlly && f != nil && f.Side != c.Side && e.mayActAgainst(c, f) &&
-				(!hitOnly || e.canTarget(c, f, int(rng), showRange)) {
-				e.ext.aimMarks[[2]int{e.combatX(f), e.combatY(f)}] = nil
-				if hitOnly {
-					e.snap.targets = append(e.snap.targets, int(n.index))
-					e.snap.hits[int(n.index)] = e.hitChance(c, f)
-				}
-			}
-		}
-	}
-	if showRange != 0 {
-		targets, hits := e.snap.targets, e.snap.hits // the main menu's, back after the aim
-		defer func() { e.snap.targets, e.snap.hits = targets, hits }()
-	}
-	defer func() { e.markReach(e.ext.aimMarks, false); e.ext.aimMarks = nil }()
-	step := func(by byte, show bool) *Character { // ovr14:3389
-		ent := func(i byte) nearEntry {
-			if int(i) < 1 || int(i) > len(list) {
-				return nearEntry{}
-			}
-			return list[i-1]
-		}
-		if show {
-			prevX, prevY = e.cpos[ent(cur).index].x, e.cpos[ent(cur).index].y
-		} else {
-			e.eraseCursor(int(prevX), int(prevY))
-		}
-		cur += by
-		if cur == 0 {
-			cur = count
-		}
-		if cur > count {
-			cur = 1
-		}
-		idx := ent(cur).index
-		res := e.combatant(idx)
-		nx, ny := e.cpos[idx].x, e.cpos[idx].y
-		if show {
-			e.flyMissile(int(prevX), int(prevY), int(nx), int(ny), 1, 0)
-			prevX, prevY = nx, ny
-		}
-		return res
-	}
-	rebuild()
-	if count == 0 { // extra: nobody to aim at (N/P would spin)
+	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c)) // ovr14:32E6
+	list := slices.Clone(e.near)
+	if len(list) == 0 { // extra: nobody to aim at
 		return
 	}
-	cur = 1
-	var by, showBy byte // showBy is uninitialised in the original until a key sets it
-	cand := step(by, true)
-	by = 1
-	key := byte(' ')
-	for !*found && !(key == 0 || key == 'E') {
-		if !e.mayActAgainst(c, cand) || skipAlly && cand.Side == c.Side ||
-			hitOnly && !e.canTarget(c, cand, int(rng), showRange) {
-			cand = step(by, false)
+	hitOnly := false // with a weapon, the foes it can hit, while one can be
+	foe := func(f *Character) bool { return f != nil && f.Side != c.Side && e.mayActAgainst(c, f) }
+	for _, n := range list {
+		if f := e.combatant(n.index); foe(f) && showRange != 0 && e.canTarget(c, f, int(rng), showRange) {
+			hitOnly = true
+		}
+	}
+	turn, targets, hits := e.snap.turn, e.snap.targets, e.snap.hits
+	defer func() { e.snap.turn, e.snap.targets, e.snap.hits, e.snap.aimWhy = turn, targets, hits, "" }()
+	e.snap.targets, e.snap.hits = nil, map[int]int{}
+	for _, n := range list {
+		f := e.combatant(n.index)
+		if f != nil && !e.ext.enemiesOnly || foe(f) && (!hitOnly || e.canTarget(c, f, int(rng), showRange)) {
+			e.snap.targets = append(e.snap.targets, int(n.index))
+			if hitOnly && foe(f) {
+				e.snap.hits[int(n.index)] = e.hitChance(c, f)
+			}
+		}
+	}
+	e.snap.turn = &Turn{Unit: e.combatIndex(c), Aim: true}
+	undo := func() {}
+	defer func() { undo(); e.cmap.cursor = 0; e.snap.cursorOn = false }()
+	point := func(x, y int) (*Character, string) {
+		undo()
+		cand, why := e.aimCheck(c, list, x, y, int(rng), showRange, allowGround)
+		e.cmap.cursor, e.cmap.cursorSize = 1, 1
+		e.snap.cursor, e.snap.cursorOn, e.snap.aimWhy = image.Pt(x, y), true, why
+		_, undo = e.aoeMarks(x, y, "")
+		return cand, why
+	}
+	at := c
+	if len(e.snap.targets) > 0 {
+		at = e.combatant(byte(e.snap.targets[0]))
+	}
+	point(e.combatX(at), e.combatY(at))
+	for {
+		a := e.act()
+		if a.Kind == ActClose {
+			return
+		}
+		if a.Kind != ActPoint && a.Kind != ActAim || a.X < 0 || a.Y < 0 || a.X > 0x31 || a.Y > 0x18 {
 			continue
 		}
-		e.markReach(e.ext.aimMarks, true)
-		key = e.aimPrompt(c, cand, int(rng), showRange)
-		switch key {
-		case 'N':
-			by, showBy = 1, 1
-			if j := e.ext.jump; j != nil { // extra: the clicked foe
-				e.ext.jump = nil
-				showBy = 0
-				for i, n := range list {
-					if n.index == e.occ[j[1]][j[0]] {
-						e.eraseCursor(e.combatX(cand), e.combatY(cand))
-						cur = byte(i + 1) // step(0) below lands on it
-					}
-				}
-			}
-		case 'P':
-			by, showBy = 0xFF, 0xFF
-		case 'M':
-			pointed := e.ext.jump != nil // extra: opened by pointing: Esc there leaves the aim, not just the cursor
-			e.aimManual(c, cand, int(rng), showRange, allowGround, found, t)
-			if pointed && !*found && e.ext.aimEsc {
-				key = 'E'
-			}
-			e.ext.aimEsc = false
-			e.iconToSprite(0x19, 0, 0, false)
-			rebuild()
-			showBy = 0
-		case 'T':
-			e.aimConfirm(c, cand, showRange, found, t)
-			e.iconToSprite(0x19, 0, 0, false)
-			rebuild()
-			showBy = 0
-		case 'C':
-			e.combatCentre(e.combatX(cand), e.combatY(cand), 0, 8)
-			showBy = 0
+		cand, why := point(a.X, a.Y)
+		if a.Kind == ActPoint {
+			continue
 		}
-		e.eraseCursor(e.combatX(cand), e.combatY(cand))
-		cand = step(showBy, !*found && !(key == 0 || key == 'E'))
+		if why != "" {
+			e.refuse(why)
+			continue
+		}
+		t.x, t.y, t.c = byte(a.X), byte(a.Y), cand
+		if showRange == 1 || cand != nil && e.occ[a.Y][a.X] > 0 {
+			e.aimConfirm(c, cand, showRange, found, t) // ovr14:2C3D: the target's own square; a weapon strikes
+		} else {
+			*found = true
+		}
+		if *found {
+			return
+		}
 	}
-	if showRange != 0 {
-		e.ClearCells(0, messageRow, lastCol, messageRow)
+}
+
+// aimCheck (extra) is aimPrompt's and aimManual's test of the square
+// (x, y) as the aim: who would be the target, and why it cannot be taken
+// ("" when it can). A combatant in sight (list) is tested as aimPrompt
+// does, any other square as aimManual's cursor.
+func (e *Engine) aimCheck(c *Character, list []nearEntry, x, y, rng, showRange, allowGround int) (*Character, string) {
+	who, ground := e.mapAt(x, y)
+	if who > 0 && slices.ContainsFunc(list, func(n nearEntry) bool { return n.index == who }) {
+		cand := e.combatant(who)
+		if why := e.targetWhy(c, cand, rng, showRange); why != "" {
+			return cand, why
+		}
+		if !e.mayActAgainst(c, cand) {
+			return cand, "Cannot act against " + cand.Name()
+		}
+		return cand, ""
 	}
+	dist, tx, ty := 0xFF, x, y
+	if !e.lineOfSight(&dist, &tx, &ty, e.combatX(c), e.combatY(c)) {
+		return nil, "Out of sight"
+	}
+	dist >>= 1
+	var cand *Character
+	if who > 0 {
+		cand = e.combatant(who)
+	} else if ground == 0x1F {
+		for b := 1; b <= e.nbodies; b++ {
+			if int(e.bodies[b].x) == x && int(e.bodies[b].y) == y {
+				cand = e.bodies[b].c
+			}
+		}
+	}
+	switch {
+	case rng < dist:
+		return cand, outOfRange(rng)
+	case e.groundInfo(ground)[0] == 0xFF:
+		return cand, "A wall is in the way"
+	case cand == nil && allowGround == 0:
+		return nil, "No one there to target"
+	case cand == nil:
+		return nil, ""
+	case !e.mayActAgainst(c, cand):
+		return cand, "Cannot act against " + cand.Name()
+	case showRange != 1:
+		return cand, ""
+	case cand == c || who == 0 && ground == 0x1F:
+		return cand, "Not a target"
+	}
+	if e.rangedWeapon(c) {
+		var tmp *Item
+		if !e.ammoFor(c, &tmp) {
+			return cand, "No ammunition"
+		} else if e.nearEnemies(c, 1) > 0 && !e.throwable(c) {
+			return cand, "A foe is too close to shoot"
+		}
+	}
+	return cand, ""
 }
 
 // pickTarget = ovr14:37E4 (c, rng, a, b): a target for c's attack from the
@@ -968,28 +635,4 @@ func (e *Engine) strikeTied(c *Character, a *Affect, flag byte) {
 	if e.tiedTarget.Okay == 0 {
 		e.RemoveAffect(c, affStrikeTied, a)
 	}
-}
-
-// stingCheat = ovr14:3B93: the command line word STING kills every monster
-// ("The Gods intervene!"). True when it was given.
-func (e *Engine) stingCheat() bool {
-	// DOS upper-cased the command line, hence EqualFold
-	if len(os.Args) < 2 || !strings.EqualFold(os.Args[1], "STING") {
-		return false
-	}
-	e.BottomMessage("The Gods intervene!")
-	for _, c := range e.party {
-		if c.Side == sideMonsters {
-			c.Okay = 0
-			c.Status = statusDead
-			if i := e.combatIndex(c); i == 0 {
-				e.ncomb = 0 // DS:5F2A is slot 0's size byte
-			} else {
-				e.cpos[i].size = 0
-			}
-		}
-		e.clearCombatInfo(c)
-	}
-	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
-	return true
 }

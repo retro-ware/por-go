@@ -62,8 +62,11 @@ func (e *Engine) aoeMarks(x, y int, prompt string) (string, func()) {
 			marks[[2]int{int(p.x), int(p.y)}] = nil
 		}
 	}
-	e.markReach(marks, true)
-	undo := func() { e.markReach(marks, false); e.snap.area, e.snap.skipped = nil, nil }
+	e.snap.marks = nil
+	for k := range marks {
+		e.snap.marks = append(e.snap.marks, image.Pt(k[0], k[1]))
+	}
+	undo := func() { e.snap.marks, e.snap.area, e.snap.skipped = nil, nil, nil }
 	return "Hits " + strconv.Itoa(foes) + " foe " + strconv.Itoa(friends) + " ally ", undo
 }
 

@@ -37,6 +37,7 @@ func (e *Engine) Combat() {
 // combatEnd = ovr09:0000: free the clouds, the map and the sprite.
 func (e *Engine) combatEnd() {
 	e.combatTargets = false // DS:6B84 = 0096:0034 (ovr23:0A91)
+	e.snap.cmapOn = false
 	e.clouds = nil
 	e.cmap = nil
 	e.spr = nil
@@ -83,7 +84,7 @@ func (e *Engine) takeTurn(c *Character) {
 	e.selectChar(c)
 	e.combatRedrawChar(c, 2, 1)
 	e.ApplyItems(c)
-	e.combatPanel(c)
+	e.ext.panel = c
 	e.affectGroup(c, 0xF)
 	if int8(ci.Delay) > 0 {
 		if c.Auto != 0 {
@@ -112,7 +113,8 @@ func b2i(b bool) int {
 }
 
 // playerTurn = ovr09:031A (char): a spell being cast goes off, otherwise
-// the combat menu until the turn is used.
+// the combat menu until the turn is used. extra: the menu is the View's
+// Turn; the player acts through Act.
 func (e *Engine) playerTurn(c *Character) {
 	if c.Okay == 0 {
 		e.clearCombatInfo(c)
@@ -127,248 +129,220 @@ func (e *Engine) playerTurn(c *Character) {
 		e.clearCombatInfo(c)
 		return
 	}
-	done := false
-	why := "" // extra: a refusal, on the status row once the panel is back (no flashing)
-	for !done {
-		switch e.combatMenu(c) {
-		case 'M':
-			done = e.moveAttack(c)
-		case 'V':
-			done = e.ViewCharacter() // ovr20:0AB3 (var done): ItemsMenu sets it
-			e.setSpeed(c)
-			if !done {
-				e.combatUseHook()
+	defer func() { e.snap.turn, e.snap.reach, e.snap.paths, e.snap.targets, e.snap.hits = nil, nil, nil, nil, nil }()
+	for done := false; !done; {
+		reach := e.turnChoices(c)
+		a := e.act()
+		turn := e.snap.turn
+		e.snap.turn = nil
+		if !slices.Contains(turn.Can, a.Kind) && a.Kind != ActWalk {
+			continue
+		}
+		switch a.Kind {
+		case ActWalk:
+			if p, ok := reach[[2]int{a.X, a.Y}]; ok {
+				done = e.walk(c, p)
 			}
-			if e.ext.throwing != nil {
-				done = e.throwItem(c)
-			}
-		case 'A':
-			if !e.foeInReach(c) { // extra: no aiming with nothing to attack (with no foe in sight Next/Prev would cycle the party)
-				e.ext.autoAim = nil
-				why = "No foe in reach"
-				break
-			}
-			var aim aimTarget
-			var ok bool
-			e.ext.enemiesOnly = true // extra: Next/Prev pass over allies
-			e.playerAim(c, 0xFF, 1, 0, &ok, &aim)
-			e.ext.enemiesOnly = false
-			e.ext.autoAim = nil
-			done = ok
-		case 'I':
+		case ActAttack:
+			done = e.attackUnit(c, a.N, reach)
+		case ActItems:
 			done = e.ItemsMenu() // ovr20:0EF8 (var done)
 			e.setSpeed(c)
-			if !done {
-				e.combatUseHook()
-			}
 			if e.ext.throwing != nil {
 				done = e.throwItem(c)
 			}
-		case 'C':
-			var ok bool
-			e.castSpell(0, 0, &ok)
-			done = ok
-		case 'L':
-			e.showBattleLog()
-		case 'T':
+		case ActCast:
+			if slices.ContainsFunc(turn.Spells, func(s Spell) bool { return s.ID == a.N }) {
+				var ok bool
+				e.castSpell(a.N, 0, &ok)
+				done = ok
+			}
+		case ActTurn:
 			e.clericTurnUndead(c)
 			done = e.clearCombatInfo(c)
-		case 'Q':
+		case ActQuick:
 			e.quickOne(c)
-			e.ClearRow24()
-			e.ClearKeyboard()
 			e.Delay(200)
 			done = true
 			e.computerTurn(c)
-		case 'D':
-			done = e.otherMenu(c)
-		case 'G': // extra: the Done menu's, from the main menu (combatMenu offers them only when they apply)
+		case ActGuard:
 			done = e.guard(c)
-		case 'B':
+		case ActBandage:
 			e.bandage(true)
 			done = e.clearCombatInfo(c)
-		case '2':
-			e.magicOn ^= 1
-			if e.magicOn != 0 {
-				e.BottomMessage("Magic On")
-			} else {
-				e.BottomMessage("Magic Off")
-			}
-		case ' ':
-			for _, p := range e.party {
-				if p.Control < 0x80 {
-					p.Auto = 0
-				}
-			}
-		case 0x10:
-			ci.Delay = 0x14
-			for _, p := range e.party {
-				e.quickOne(p)
-			}
-			e.ClearRow24()
-			e.Delay(200)
+		case ActWait: // Done's Delay
+			c.Combat.Delay = 1
 			done = true
-		case '-':
-			if e.stingCheat() {
-				e.combatRedrawChar(c, 3, 0)
-				done = true
-			} else {
-				e.refuse("That doesn't work")
-			}
-		}
-		if !done {
-			e.combatRedrawChar(c, 2, 1)
-			e.combatPanel(c)
-			if why != "" {
-				e.showWhy(why)
-				why = ""
-			}
+		case ActEnd: // Done's Quit
+			done = e.clearCombatInfo(c)
 		}
 	}
 }
 
-// combatMenu = ovr09:0666 (char, var key): the main combat menu.
-func (e *Engine) combatMenu(c *Character) byte {
+// turnChoices = ovr09:0666 (combatMenu)'s offer, published as the View's
+// Turn with the squares a walk reaches (returned, with their steps) and
+// the foes ActAttack takes (in reach of the weapon, or a walk away).
+func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	e.affectGroup(c, 0xF)
 	ci := c.Combat
-	m := "View aiM " // extra: no Move (a click on the map walks), Aim on M: W A S D stay free
+	t := &Turn{Unit: e.combatIndex(c), Moves: int(ci.Moves >> 1)}
+	can := func(k ActKind) { t.Can = append(t.Can, k) }
+	can(ActAttack)
+	if !e.rangedWeapon(c) || e.throwable(c) {
+		can(ActGuard) // Done's
+	}
 	if e.combatItems(c) {
-		m += "Items " // extra: Use renamed, and only with something to use or throw
+		can(ActItems)
 	}
-	spells := false
-	for i := 0; i <= 0x14; i++ {
-		if c.Memorized[i] > 0 {
-			spells = true
+	if ci.CanCast != 0 && e.area.NoMagic == 0 {
+		seen := map[byte]bool{}
+		for _, v := range c.Memorized[:0x15] {
+			if v > 0 && v < 0x80 && !seen[v] && e.spellData(int(v), 5) != 0 { // extra: no camp only spells
+				seen[v] = true
+				t.Spells = append(t.Spells, Spell{int(v), e.spellName(int(v))})
+			}
 		}
-	}
-	if spells && ci.CanCast != 0 && e.area.NoMagic == 0 {
-		m += "Cast "
+		if len(t.Spells) > 0 {
+			can(ActCast)
+		}
 	}
 	var undead *Character
 	if int8(c.Levels[clsCleric]) > 0 && ci.TurnUsed == 0 && e.weakestUnturned(c, &undead) { // extra: only with undead to turn
-		m += "Turn "
+		can(ActTurn)
 	}
-	m += "Quick dOne" // extra: L still opens the Log; Done on O
-	// extra: click a foe to aim at it (and attack it if it can be), a square in reach to walk there
+	if e.bandage(false) {
+		can(ActBandage)
+	}
+	can(ActWait)
+	can(ActEnd)
+	can(ActQuick)
 	reach := map[[2]int][]int{}
 	if ci.Moves > 0 {
 		reach = e.moveReach(c)
 		delete(reach, [2]int{e.combatX(c), e.combatY(c)})
 	}
-	e.snap.paths = map[image.Point][]Step{}
+	e.snap.reach, e.snap.paths = nil, map[image.Point][]Step{}
 	for sq, p := range reach {
 		e.snap.reach = append(e.snap.reach, image.Pt(sq[0], sq[1]))
 		e.snap.paths[image.Pt(sq[0], sq[1])] = e.walkSteps(c, p)
 	}
-	defer func() { e.snap.reach, e.snap.paths = nil, nil }()
-	mark := e.regionMark()
-	defer e.regionCut(mark)
-	e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
-		sx, sy, in := e.combatSquare(cx, cy)
-		if !in {
-			return 0
-		}
-		if who := e.occ[sy][sx]; who > 0 {
-			t := e.combatant(who)
-			if t == c {
-				return 'V' // one's own figure: the sheet
-			}
-			if t == nil || t.Side == c.Side {
-				return 0
-			}
-			if p := e.pathNextTo(c, t, reach); p != nil { // a melee weapon out of reach: walk up, then attack
-				e.ext.autoPath, e.ext.aimAfterWalk = p, t
-				return 'M'
-			}
-			e.ext.autoAim, e.ext.autoJumped = t, false
-			return 'M' // aiM, with the foe set
-		}
-		if p, ok := reach[[2]int{sx, sy}]; ok {
-			e.ext.autoPath = append([]int(nil), p...)
-			return 'M'
-		}
-		return 0
-	}, square: func(x, y int) uint16 { // extra (remaster): the hovered unit's panel on the status row, a foe's name in red
-		t := c
-		if who := e.occ[y][x]; who > 0 {
-			if u := e.combatant(who); u != nil {
-				t = u
-			}
-		}
-		if t != e.ext.panel {
-			e.combatPanel(t)
-			if t.Side != c.Side {
-				e.DisplayString(0, messageRow, colLightRed, t.Name())
-			}
-		}
-		return keyNone
-	}})
-	defer func() {
-		if e.ext.panel != c {
-			e.combatPanel(c)
-		}
-	}()
-	// extra: the Done menu's turn enders straight from here (keys off the bar), and
-	// the foes a click attacks now (in reach of the weapon, or a walk away from it)
-	hidden := "L"
-	e.snap.actions = nil // fresh: published views keep the old ones
-	if !e.rangedWeapon(c) || e.throwable(c) {
-		hidden += "G"
-		e.snap.actions = append(e.snap.actions, MenuItem{"Guard", 'G'})
-	}
-	if e.bandage(false) {
-		hidden += "B"
-		e.snap.actions = append(e.snap.actions, MenuItem{"Bandage", 'B'})
-	}
-	e.snap.actions = append(e.snap.actions, MenuItem{"Wait", 'D'}) // Done's Delay: views send Done first
 	e.snap.targets, e.snap.hits = nil, map[int]int{}
-	rng := 1
-	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
-		rng = int(e.base(w.Type).Range) - 1
-	}
 	for i := 1; i <= e.ncomb; i++ {
-		t := e.combatant(byte(i))
-		if t == nil || t.Side == c.Side || t.Okay == 0 || e.cpos[i].size == 0 || !e.mayActAgainst(c, t) {
+		f := e.combatant(byte(i))
+		if f == nil || f.Side == c.Side || f.Okay == 0 || e.cpos[i].size == 0 || !e.mayActAgainst(c, f) {
 			continue
 		}
-		walk := e.pathNextTo(c, t, reach)
-		if !e.canTarget(c, t, rng, 1) && walk == nil {
+		walk := e.pathNextTo(c, f, reach)
+		if !e.canTarget(c, f, e.weaponRange(c), 1) && walk == nil {
 			continue
 		}
 		e.snap.targets = append(e.snap.targets, i)
-		e.snap.hits[i] = e.hitChance(c, t)
+		e.snap.hits[i] = e.hitChance(c, f)
 		if walk != nil { // hovering the foe shows the walk up to it
-			steps, n := e.walkSteps(c, walk), e.combatSize(t)
+			steps, n := e.walkSteps(c, walk), e.combatSize(f)
 			for d := range n * n {
-				e.snap.paths[image.Pt(e.combatX(t)+d%n, e.combatY(t)+d/n)] = steps
+				e.snap.paths[image.Pt(e.combatX(f)+d%n, e.combatY(f)+d/n)] = steps
 			}
 		}
 	}
-	defer func() { e.snap.actions, e.snap.targets, e.snap.hits = nil, nil, nil }()
-	if t := e.ext.aimAfterWalk; t != nil { // extra: walked up to a clicked foe: now the attack
-		e.ext.aimAfterWalk = nil
-		if t.Okay != 0 && e.rangeTo(c, t) <= 1 {
-			e.ext.autoAim, e.ext.autoJumped = t, false
-			return 'A'
+	e.ext.panel = c
+	e.snap.turn = t
+	return reach
+}
+
+// weaponRange is the squares the readied weapon reaches (1: melee).
+func (e *Engine) weaponRange(c *Character) int {
+	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Range > 1 {
+		return int(e.base(w.Type).Range) - 1
+	}
+	return 1
+}
+
+// attackUnit (extra): ActAttack. Unit 0 aims first (combatMenu's Aim);
+// a foe of the turn's targets is attacked, a melee fighter walking up to
+// it first (pathNextTo) when it stands out of reach.
+func (e *Engine) attackUnit(c *Character, n int, reach map[[2]int][]int) bool {
+	var aim aimTarget
+	var ok bool
+	if n == 0 {
+		if !e.foeInReach(c) { // extra: no aiming with nothing to attack
+			e.refuse("No foe in reach")
+			return false
+		}
+		e.ext.enemiesOnly = true
+		e.playerAim(c, 0xFF, 1, 0, &ok, &aim)
+		e.ext.enemiesOnly = false
+		return ok
+	}
+	if !slices.Contains(e.snap.targets, n) {
+		return false
+	}
+	t := e.combatant(byte(n))
+	if p := e.pathNextTo(c, t, reach); p != nil {
+		if e.walk(c, p) {
+			return true
+		}
+		if t.Okay == 0 || e.rangeTo(c, t) > 1 { // stopped short: the turn goes on
+			return false
 		}
 	}
-	for {
-		e.ext.hiddenKeys = hidden // extra: the Log, Guard, Wait, Bandage: off the bar
-		key, extra := e.DisplayInput("", m, colLightMagenta, colLightGreen, colWhite, true, false)
-		e.ext.hiddenKeys = ""
-		if extra && !(key == 0x10 || key == 0x13 || key == '-' || key == '2') { // set cs:0626
-			key = 0
+	e.aimConfirm(c, t, 1, &ok, &aim)
+	return ok
+}
+
+// walk (extra) takes c along path as moveAttack's keypad steps would, one
+// step a message delay apart, while the next square is free. done: c is
+// out (fallen, helpless).
+func (e *Engine) walk(c *Character, path []int) (done bool) {
+	ci := c.Combat
+	for _, d := range path {
+		if ci.Moves <= 1 || done {
+			break
 		}
-		if key == 'M' && e.ext.autoPath == nil { // extra: aiM (a click on the map walks with autoPath set)
-			key = 'A'
-		} else if key == 'O' { // extra: dOne
-			key = 'D'
+		if who, g := e.groundAt(c, d); who > 0 || g == 0 || e.groundInfo(g)[0] > ci.Moves {
+			break
 		}
-		switch key { // set cs:0646
-		case 0x10, 0x13, ' ', '-', '2', 'A', 'C', 'D', 'L', 'I', 'M', 'Q', 'T', 'V', 'G', 'B':
-			return key
+		e.Delay(0x32)
+		e.combatTurn(c, byte(d), 0, false)
+		e.freeAttacksOnLeave(c, d)
+		if c.Okay == 0 {
+			return e.clearCombatInfo(c)
+		}
+		e.stepSquare(c, d)
+		if c.Okay == 0 {
+			done = e.clearCombatInfo(c)
+		}
+		e.stinkingCloud(c)
+		if e.isHelpless(c) {
+			done = e.clearCombatInfo(c)
 		}
 	}
+	if ci.Moves < 2 {
+		ci.Moves = 0
+	}
+	return
+}
+
+// combatSay (extra) keeps combat text for the View's Log: fresh starts a
+// new message, otherwise it goes on the current one; c (if any) is named first.
+func (e *Engine) combatSay(c *Character, msg string, fresh bool) {
+	if fresh || len(e.ext.battleLog) == 0 {
+		e.ext.battleLog = append(e.ext.battleLog, "")
+	}
+	l := &e.ext.battleLog[len(e.ext.battleLog)-1]
+	for _, s := range []string{name(c), strings.TrimSpace(msg)} {
+		if s != "" && *l != "" {
+			*l += " "
+		}
+		*l += s
+	}
+}
+
+func name(c *Character) string {
+	if c == nil {
+		return ""
+	}
+	return c.Name()
 }
 
 // endRound = ovr09:0880 (var done): the clock, the dying, the end check.
@@ -397,133 +371,6 @@ func (e *Engine) endRound() (done bool) {
 	// extra: no "Continue Battle:" once the foes are gone (nothing to gain by it)
 	return
 }
-
-// moveAttack = ovr09:09DF (char, var done): step around with the keypad;
-// stepping into someone attacks, off the map flees. Escape undoes the
-// moves of this menu.
-func (e *Engine) moveAttack(c *Character) (done bool) {
-	ci := c.Combat
-	moves, face := ci.Moves, ci.Facing
-	x, y := e.combatX(c), e.combatY(c)
-	key := byte(0x20)
-	done = false
-	defer e.rawArrows("keypad, arrows, click a square=step, attack, walk to a framed one|Enter, click self=done|Esc=undo the moves")()
-	mark := e.regionMark()
-	defer e.regionCut(mark)
-	var reach map[[2]int][]int
-	var path []int                // extra: the steps to a clicked square, taken one by one
-	auto := e.ext.autoPath != nil // extra: sent from the main menu: walk there and hand back
-	path, e.ext.autoPath = e.ext.autoPath, nil
-	{ // extra (nav.go): a click on a square next to the character steps there, on a farther reachable one walks there
-		e.addRegion(region{x0: pageCol, y0: 1, x1: pageCol + viewW*3 - 1, y1: 21, click: func(cx, cy int) uint16 {
-			sx, sy, in := e.combatSquare(cx, cy)
-			dx, dy := sx-e.combatX(c), sy-e.combatY(c)
-			if !in {
-				return 0
-			}
-			if dx == 0 && dy == 0 {
-				return 13
-			}
-			if dx < -1 || dx > 1 || dy < -1 || dy > 1 {
-				if p, ok := reach[[2]int{sx, sy}]; ok {
-					path = append([]int(nil), p...)
-					return keyNone
-				}
-				return 0
-			}
-			for d := 0; d < 8; d++ {
-				if dirDX[d] == dx && dirDY[d] == dy {
-					return stepKeys[d]
-				}
-			}
-			return 0
-		}})
-	}
-	for ci.Moves > 1 && key != 0 && key != 0xD {
-		if len(path) > 0 { // walking to a clicked square: the next step, while it is still free
-			d := path[0]
-			path = path[1:]
-			if who, g := e.groundAt(c, d); who > 0 || g == 0 || e.groundInfo(g)[0] > ci.Moves {
-				path = nil
-				continue
-			}
-			key = stepLetters[d]
-			e.Delay(0x32)
-		} else if auto {
-			break
-		} else {
-			reach = e.moveReach(c)
-			e.markReach(reach, true)
-			e.ClearCells(24, 24, lastCol, 24)
-			key, _ = e.DisplayInput("Move/Attack, Move Left = "+strconv.Itoa(int(ci.Moves>>1))+" ", "", colLightGreen, colLightGreen, colWhite, true, false)
-			e.markReach(reach, false)
-		}
-		d := 8
-		switch key {
-		case 0:
-			ci.Moves = moves
-			e.combatClearIcon(0, 0, e.combatIndex(c))
-			done = !e.combatSquareFree(c, x, y, false)
-			e.combatCentre(e.combatX(c), e.combatY(c), 0, 8)
-			ci.Facing = face
-		case 'H':
-			d = 0
-		case 'I':
-			d = 1
-		case 'M':
-			d = 2
-		case 'Q':
-			d = 3
-		case 'P':
-			d = 4
-		case 'O':
-			d = 5
-		case 'K':
-			d = 6
-		case 'G':
-			d = 7
-		}
-		if d >= 8 {
-			continue
-		}
-		e.combatTurn(c, byte(d), 0, false)
-		who, g := e.groundAt(c, d)
-		switch {
-		case who > 0:
-			done = e.attackTarget(c, e.combatant(who), done)
-		case g == 0:
-			switch e.YesNo(colLightMagenta, colLightGreen, colWhite, "Flee:") {
-			case 'Y':
-				done = e.tryFlee(c)
-			case 'N':
-				done = false
-			}
-		case e.groundInfo(g)[0] > ci.Moves:
-			e.refuse("Blocked")
-		default:
-			e.freeAttacksOnLeave(c, d)
-			if c.Okay == 0 {
-				done = e.clearCombatInfo(c)
-				continue
-			}
-			e.stepSquare(c, d)
-			if c.Okay == 0 {
-				done = e.clearCombatInfo(c)
-			}
-			e.stinkingCloud(c)
-			if e.isHelpless(c) {
-				done = e.clearCombatInfo(c)
-			}
-		}
-	}
-	if ci.Moves < 2 {
-		ci.Moves = 0
-	}
-	return
-}
-
-// stepLetters are the keypad letters moveAttack reads for the 8 directions.
-var stepLetters = [8]byte{'H', 'I', 'M', 'Q', 'P', 'O', 'K', 'G'}
 
 // moveReach (extra) finds the squares c can walk to with the moves it has
 // left, as moveAttack's steps allow them (2 a step, 3 diagonally, free
@@ -636,30 +483,6 @@ func (e *Engine) hitChance(a, b *Character) int {
 	return n * 5
 }
 
-// markReach (extra) shows the reachable squares in view with a dotted
-// frame (on) or draws them plain again (off).
-func (e *Engine) markReach(reach map[[2]int][]int, on bool) {
-	e.snap.marks = nil
-	for k := range reach {
-		if on {
-			e.snap.marks = append(e.snap.marks, image.Pt(k[0], k[1]))
-		}
-	}
-	for k := range reach {
-		sx, sy := k[0]-e.cmap.viewX, k[1]-e.cmap.viewY
-		if !combatInView(sx, sy) {
-			continue
-		}
-		if on {
-			e.markSquare(sx, sy, 0xB)
-		} else {
-			e.drawTile(sx*3, sy*3, e.tileOf(k[0], k[1]))
-			e.drawOccupant(k[0], k[1])
-		}
-	}
-	e.Flip()
-}
-
 // rangedWeapon = 00BA:2E03 (char): the readied weapon shoots (base item
 // +0xC above 1).
 func (e *Engine) rangedWeapon(c *Character) bool {
@@ -740,56 +563,6 @@ func (e *Engine) ammoFor(c *Character, it **Item) bool {
 	return *it != nil || f == 0xA
 }
 
-// attackTarget = ovr09:0D45 (char, target, var done).
-// done passes through when no attack is made.
-func (e *Engine) attackTarget(c, t *Character, done bool) bool {
-	if e.rangedWeapon(c) && !e.throwable(c) {
-		e.refuse("Not with that weapon")
-		return done
-	}
-	if !e.mayAttack(c, t) {
-		return done
-	}
-	c.Combat.Target = t
-	if e.sweep(c, t) {
-		return true
-	}
-	e.countAttackTurn(c, t)
-	return e.fullAttack(c, t, 0, nil)
-}
-
-// otherMenu = ovr09:0E45 (char, var done): Done's submenu.
-func (e *Engine) otherMenu(c *Character) (done bool) {
-	done = false
-	m := ""
-	if !e.rangedWeapon(c) || e.throwable(c) {
-		m += "Guard "
-	}
-	m += "Delay Quit "
-	if e.bandage(false) {
-		m += "Bandage "
-	}
-	m += "Speed Exit"
-	for key := byte(0x20); key != 0 && key != 'E' && !done; {
-		key, _ = e.DisplayInput("", m, colLightMagenta, colLightGreen, colWhite, false, false)
-		switch key {
-		case 'G':
-			done = e.guard(c)
-		case 'D':
-			c.Combat.Delay = 1
-			done = true
-		case 'Q':
-			done = e.clearCombatInfo(c)
-		case 'B':
-			e.bandage(true)
-			done = e.clearCombatInfo(c)
-		case 'S':
-			e.speedMenu()
-		}
-	}
-	return
-}
-
 // guard = 00BA:2686 (char): end the turn on guard.
 func (e *Engine) guard(c *Character) bool {
 	r := e.clearCombatInfo(c)
@@ -816,27 +589,6 @@ func (e *Engine) bandage(doIt bool) bool {
 	return found
 }
 
-// speedMenu = ovr09:10F6: the message delay.
-func (e *Engine) speedMenu() {
-	for key := byte(0x20); key != 0 && key != 'E'; {
-		m := " "
-		if e.msgDelay < 9 {
-			m += "Slower "
-		}
-		if e.msgDelay > 0 {
-			m += "Faster "
-		}
-		m += "Exit"
-		key, _ = e.DisplayInput("GameSpeed ("+strconv.Itoa(int(e.msgDelay))+") :", m, colLightMagenta, colLightGreen, colWhite, false, false)
-		switch key {
-		case 'S':
-			e.msgDelay++
-		case 'F':
-			e.msgDelay--
-		}
-	}
-}
-
 // quickOne = ovr09:122B (char): the computer fights for it; a target on
 // its own side is dropped.
 func (e *Engine) quickOne(c *Character) {
@@ -858,45 +610,6 @@ func (e *Engine) combatItems(c *Character) bool {
 	return false
 }
 
-// combatPanel = 00BA:09E3 (char): the combatant's name, hit points, AC and
-// damage (or its status) on one row under the view (extra: the original's
-// side pane, gone for the full-width view).
-func (e *Engine) combatPanel(c *Character) {
-	e.ext.panel = c
-	e.ClearCells(0, messageRow, lastCol, messageRow)
-	x := 0
-	e.displayName(c, x, messageRow, false)
-	x += len(c.Name()) + 2
-	e.DisplayString(x, messageRow, colWhite, "HP")
-	e.displayHP(c, x+3, 0x17, false)
-	x += 3 + len(strconv.Itoa(int(c.HP))) + 2
-	e.DisplayString(x, messageRow, colWhite, "AC")
-	e.displayAC(c, x+3, 0x17)
-	x += 3 + len(strconv.Itoa(abs(int(c.AC[0])-60))) + b2i(c.AC[0] > 60) + 2 // as displayAC writes it
-	switch {
-	case c.Okay == 0:
-		e.DisplayString(x, messageRow, colWhite, cut(e.statusName(c), 0x27-x))
-	case e.isHelpless(c):
-		e.DisplayString(x, messageRow, colWhite, "(Helpless)")
-		x += len("(Helpless)") + 2
-	default:
-		e.DisplayString(x, messageRow, colWhite, "Dmg")
-		e.DisplayString(x+4, messageRow, colLightGreen, cut(damageText(c), 0x27-x-4))
-		x += 4 + len(damageText(c)) + 2
-	}
-	// extra (remaster): a foe a click attacks now, with the chance to hit it
-	if h, ok := e.snap.hits[e.combatIndex(c)]; ok {
-		cth := strconv.Itoa(h)
-		if x+4+len(cth) > lastCol+1 { // a long name: one space before it
-			x--
-		}
-		if x+4+len(cth) <= lastCol+1 {
-			e.DisplayString(x, messageRow, colWhite, "CtH")
-			e.DisplayString(x+4, messageRow, colLightGreen, cth)
-		}
-	}
-}
-
 // damageText is the damage of the readied attack, as the View page shows it.
 func damageText(c *Character) string {
 	d := strconv.Itoa(int(c.Dice[0])) + "d" + strconv.Itoa(int(c.Sides[0]))
@@ -906,90 +619,6 @@ func damageText(c *Character) string {
 		d += "-" + strconv.Itoa(-int(b)) // abs in 16 bits: -128 shows 128
 	}
 	return d
-}
-
-// combatSay (extra) shows combat text on rows 23-24 under the view and
-// keeps it for the Log: fresh starts a new message, otherwise it goes on
-// the current one; c (if any) is named first.
-func (e *Engine) combatSay(c *Character, msg string, fresh bool) {
-	if fresh || len(e.ext.battleLog) == 0 {
-		e.ClearCells(0, messageRow, lastCol, promptRow)
-		e.msgCol, e.msgRow = 0, 0x17
-		e.ext.battleLog = append(e.ext.battleLog, "")
-	} else {
-		e.msgCol++
-	}
-	l := &e.ext.battleLog[len(e.ext.battleLog)-1]
-	add := func(s string) {
-		if *l != "" {
-			*l += " "
-		}
-		*l += s
-	}
-	if c != nil {
-		if e.msgCol+len(c.Name()) > lastCol {
-			e.msgCol, e.msgRow = 0, e.msgRow+1
-		}
-		e.displayName(c, e.msgCol, e.msgRow, false)
-		e.msgCol += len(c.Name()) + 1
-		add(c.Name())
-	}
-	if msg = strings.TrimSpace(msg); msg != "" {
-		e.DisplayTextBlock(0, messageRow, lastCol, promptRow, colLightGreen, false, msg)
-		add(msg)
-	}
-}
-
-// showBattleLog (extra, Log) lists this battle's messages, newest at the
-// bottom; Up/Down and the wheel scroll, any other key goes back.
-func (e *Engine) showBattleLog() {
-	off := e.modalOn()
-	e.ext.paging = true
-	defer func() { off(); e.ext.paging = false }()
-	restore := e.saveScreen()
-	defer restore()
-	var lines []string
-	for _, m := range e.ext.battleLog {
-		lines = append(lines, wrapText(m, 0x24)...)
-	}
-	if len(lines) == 0 {
-		lines = []string{"Nothing has happened yet."}
-	}
-	const rows = 0x15
-	top := max(len(lines)-rows, 0)
-	for {
-		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Battle Log")
-		e.ClearCells(2, 2, 37, 23)
-		for i := 0; i < rows && top+i < len(lines); i++ {
-			e.DisplayString(2, 2+i, colLightGreen, lines[top+i])
-		}
-		hint := "press a key"
-		if len(lines) > rows {
-			hint = "up/down: scroll, " + hint
-		}
-		e.DisplayString(winRight-1-len(hint), messageRow, colLightGreen, hint)
-		switch k := e.ReadKey(); k {
-		case 0x4800:
-			top = max(top-1, 0)
-		case 0x5000:
-			top = min(top+1, max(len(lines)-rows, 0))
-		case 0x4900:
-			top = max(top-rows, 0)
-		case 0x5100:
-			top = min(top+rows, max(len(lines)-rows, 0))
-		default:
-			return
-		}
-	}
-}
-
-// combatUseHook = 00BA:2B88: redraw the combat screen: the map frame
-// (extra: full width, no panel frame), rows 23-24 cleared, the map centred on the view.
-func (e *Engine) combatUseHook() {
-	e.combatViewLeave() // ovr32:00E3: the combat palette
-	e.DrawBoxTitled(1, 1, winRight, 21, 0, colBlack, "")
-	e.ClearCells(0, messageRow, lastCol, promptRow)
-	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
 }
 
 // pathNextTo (extra) is the safest walk in reach that brings c, armed for
@@ -1028,21 +657,6 @@ func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
 	return append([]int(nil), best...)
 }
 
-// foeInSight (extra): is there a foe among the ones c's Aim cycles
-// through (playerAim's list) that c may act against? Without one the
-// cycle runs over the party, the aimer too.
-func (e *Engine) foeInSight(c *Character) bool {
-	saved := e.near
-	defer func() { e.near = saved }()
-	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c))
-	for _, n := range e.near {
-		if f := e.combatant(n.index); f != nil && f.Side != c.Side && e.mayActAgainst(c, f) {
-			return true
-		}
-	}
-	return false
-}
-
 // throwTargets (extra) are the foes in sight c could throw it at, as Aim's
 // cycle would offer them with it readied.
 func (e *Engine) throwTargets(c *Character, it *Item) (out []int) {
@@ -1075,4 +689,11 @@ func (e *Engine) foeInReach(c *Character) bool {
 		}
 	}
 	return false
+}
+
+// combatUseHook = 00BA:2B88: back to the combat map: its palette, the map
+// centred on the view (extra: no frame drawn: views draw their own).
+func (e *Engine) combatUseHook() {
+	e.combatViewLeave() // ovr32:00E3: the combat palette
+	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
 }

@@ -4,7 +4,6 @@ import (
 	"image"
 	"os"
 	"slices"
-	"strconv"
 	"testing"
 	"time"
 
@@ -99,12 +98,7 @@ func TestBattleView(t *testing.T) {
 	if party == 0 || foes == 0 || walls == 0 {
 		t.Errorf("party %d foes %d walls %d: want some of each", party, foes, walls)
 	}
-	if v := keyWait(e, scr, 'V'); v.Battle != nil {
-		t.Errorf("character sheet: Battle still set")
-	}
-	if v := keyWait(e, scr, 27); v.Battle == nil {
-		t.Errorf("back from the sheet: no Battle")
-	}
+	_, _ = e, scr
 }
 
 func keyWait(e *engine.Engine, scr *ega.Screen, k uint16) engine.View {
@@ -154,24 +148,14 @@ func battleView(t *testing.T) (*engine.Engine, *ega.Screen, engine.View) {
 	return e, scr, v
 }
 
-// TestSquareKey: a square clicked on the remastered map moves the active
-// unit as a click on the original's page does, and does nothing where
-// the game takes no clicks on the map.
-func TestSquareKey(t *testing.T) {
-	e, scr, v := battleView(t)
-	if v.Battle == nil {
-		t.Fatal("no Battle in combat")
+// TestWalk: ActWalk to a square in Reach moves the active unit there and
+// the turn goes on.
+func TestWalk(t *testing.T) {
+	e, _, v := battleView(t)
+	if v.Battle == nil || v.Battle.Turn == nil {
+		t.Fatal("no turn in combat")
 	}
-	active := func(v engine.View) engine.Unit {
-		for _, u := range v.Battle.Units {
-			if u.Active {
-				return u
-			}
-		}
-		t.Fatal("no active unit")
-		return engine.Unit{}
-	}
-	u := active(v)
+	u := active(t, v)
 	free := func(x, y int) bool {
 		if x < 0 || y < 0 || x >= 50 || y >= 25 || v.Battle.Ground[y][x].Wall {
 			return false
@@ -199,26 +183,32 @@ func TestSquareKey(t *testing.T) {
 	if p := v.Battle.Paths[to]; len(p) != 2 || p[0].Point != image.Pt(u.X, u.Y) || p[1].Point != to {
 		t.Fatalf("path to (%d,%d) next to the active unit: %v", to.X, to.Y, p)
 	}
-	v = keyWait(e, scr, engine.SquareKey(to.X, to.Y)) // at the main menu: walks there and hands back
-	if got := active(v); got.X != to.X || got.Y != to.Y {
-		t.Errorf("clicked square (%d,%d): unit at (%d,%d)", to.X, to.Y, got.X, got.Y)
+	v = actWait(e, engine.Action{Kind: engine.ActWalk, X: to.X, Y: to.Y})
+	if got := active(t, v); got.X != to.X || got.Y != to.Y {
+		t.Errorf("walked to (%d,%d): unit at (%d,%d)", to.X, to.Y, got.X, got.Y)
 	}
-	if v.Menu == nil {
-		t.Errorf("after the walk: no menu (still in Move?)")
+	if v.Battle.Turn == nil {
+		t.Errorf("after the walk: no turn")
 	}
 }
 
+func active(t *testing.T, v engine.View) engine.Unit {
+	for _, u := range v.Battle.Units {
+		if u.Active {
+			return u
+		}
+	}
+	t.Fatal("no active unit")
+	return engine.Unit{}
+}
+
 // TestBattleFight plays the dev fight out on Quick and watches the view:
-// aiming shows the cursor, blows show effects, the fallen leave the units.
+// blows show effects, the fallen leave the units.
 func TestBattleFight(t *testing.T) {
 	e, scr, v := battleView(t)
 	if v.Battle == nil {
 		t.Fatal("no Battle in combat")
 	}
-	if v := keyWait(e, scr, 'M'); v.Battle == nil || !v.Battle.CursorOn || len(v.Battle.CursorAt) == 0 {
-		t.Errorf("aiming: no cursor in the view")
-	}
-	keyWait(e, scr, 27)
 	units := len(v.Battle.Units)
 	effects, fewer := false, false
 	done := make(chan bool)
@@ -241,15 +231,14 @@ func TestBattleFight(t *testing.T) {
 		if v.Battle == nil && v.MainFrame {
 			break // back to the main screen: the fight is over
 		}
-		k := uint16(13)
-		if v.Menu != nil {
-			for _, it := range v.Menu.Items {
-				if it.Key == 'Q' {
-					k = 'Q'
-				}
-			}
+		switch {
+		case v.Battle != nil && v.Battle.Ask != "":
+			actWait(e, engine.Action{Kind: engine.ActClose})
+		case v.Battle != nil && v.Battle.Turn != nil:
+			actWait(e, engine.Action{Kind: engine.ActQuick})
+		default:
+			keyWait(e, scr, 13)
 		}
-		keyWait(e, scr, k)
 	}
 	close(done)
 	if !effects {
@@ -260,45 +249,32 @@ func TestBattleFight(t *testing.T) {
 	}
 }
 
-// TestClickFoe: a foe clicked at the main menu is attacked at once: the
-// turn moves on (walking up to it first when it stands out of reach).
-func TestClickFoe(t *testing.T) {
-	e, scr, v := battleView(t)
-	var me, foe engine.Unit
-	for _, u := range v.Battle.Units {
-		if u.Active {
-			me = u
-		} else if !u.Party && foe.Name == "" {
-			foe = u
-		}
+// TestAttackFoe: ActAttack on a target foe attacks it at once (walking
+// up to it first when it stands out of reach): the turn moves on.
+func TestAttackFoe(t *testing.T) {
+	e, _, v := battleView(t)
+	me := active(t, v)
+	if len(v.Battle.Targets) == 0 {
+		t.Skip("no target")
 	}
-	if foe.Name == "" {
-		t.Skip("no foe")
-	}
-	v = keyWait(e, scr, engine.SquareKey(foe.X, foe.Y))
+	v = actWait(e, engine.Action{Kind: engine.ActAttack, N: v.Battle.Targets[0]})
 	if v.Battle == nil {
-		return // the fight moved off the map (the end): the click did something
+		return // the fight ended
 	}
 	for _, u := range v.Battle.Units {
-		if u.Active && u.ID == me.ID {
-			t.Fatalf("clicked foe %s at (%d,%d) from (%d,%d): still %s's turn (cursor on: %v, menu %+v)", foe.Name, foe.X, foe.Y, me.X, me.Y, me.Name, v.Battle.CursorOn, v.Menu)
+		if u.Active && u.ID == me.ID && v.Battle.Turn != nil && v.Battle.Turn.Unit == me.ID {
+			t.Fatalf("attacked: still %s's turn", me.Name)
 		}
 	}
 }
 
-// TestCombatActions: the main menu publishes its turn enders and the foes
-// a click attacks; Wait ends the turn; a click on one's own figure opens
-// the sheet.
+// TestCombatActions: the turn offers Wait and the foes ActAttack takes,
+// with their chance to be hit; Wait ends the turn.
 func TestCombatActions(t *testing.T) {
-	e, scr, v := battleView(t)
-	var me engine.Unit
-	for _, u := range v.Battle.Units {
-		if u.Active {
-			me = u
-		}
-	}
-	if !slices.ContainsFunc(v.Battle.Actions, func(m engine.MenuItem) bool { return m.Text == "Wait" }) {
-		t.Errorf("Actions %+v: no Wait", v.Battle.Actions)
+	e, _, v := battleView(t)
+	me := active(t, v)
+	if !slices.Contains(v.Battle.Turn.Can, engine.ActWait) {
+		t.Errorf("Can %+v: no Wait", v.Battle.Turn.Can)
 	}
 	if len(v.Battle.Targets) == 0 {
 		t.Errorf("no Targets with foes about")
@@ -308,103 +284,53 @@ func TestCombatActions(t *testing.T) {
 			t.Errorf("target %s: hit chance %d%%, want 5..100", u.Name, u.Hit)
 		}
 	}
-	if v := keyWait(e, scr, engine.SquareKey(me.X, me.Y)); v.Battle != nil {
-		t.Errorf("a click on one's own figure: still on the map, not the sheet")
-	}
-	keyWait(e, scr, 'E') // leave the sheet
-	keyWait(e, scr, 'O') // Wait is Done's Delay
-	v = keyWait(e, scr, 'D')
-	if v.Battle != nil {
-		for _, u := range v.Battle.Units {
-			if u.Active && u.ID == me.ID {
-				t.Errorf("Wait: still %s's turn", me.Name)
-			}
-		}
+	v = actWait(e, engine.Action{Kind: engine.ActWait})
+	if v.Battle != nil && v.Battle.Turn != nil && v.Battle.Turn.Unit == me.ID {
+		t.Errorf("Wait: still %s's turn", me.Name)
 	}
 }
 
-// TestAimCycle: Next while aiming visits foes only, never the aimer, and
-// the cursor's flight between them is no effect in the view.
+// TestAimCycle: aiming a weapon cycles foes only, never the aimer.
 func TestAimCycle(t *testing.T) {
-	e, scr, v := battleView(t)
-	v = nextToFoe(t, e, scr, v)
-	var me engine.Unit
-	party := map[image.Point]bool{}
+	e, _, v := battleView(t)
+	v = nextToFoe(t, e, v)
+	v = actWait(e, engine.Action{Kind: engine.ActAttack})
+	if v.Battle == nil || v.Battle.Turn == nil || !v.Battle.Turn.Aim {
+		t.Fatal("not aiming")
+	}
 	for _, u := range v.Battle.Units {
-		if u.Active {
-			me = u
-		}
-		if u.Party {
-			party[image.Pt(u.X, u.Y)] = true
+		if slices.Contains(v.Battle.Targets, u.ID) && u.Party {
+			t.Errorf("party member %s among the aim's targets", u.Name)
 		}
 	}
-	v = keyWait(e, scr, 'M')
-	for i := range 6 {
-		if v.Battle == nil {
-			t.Fatalf("step %d: off the map", i)
-		}
-		if len(v.Battle.Effects) > 0 {
-			t.Errorf("step %d: %d effects while aiming", i, len(v.Battle.Effects))
-		}
-		if c := v.Battle.Cursor; v.Battle.CursorOn && party[c] {
-			t.Errorf("step %d: the cursor on a party member at %v (aimer %s at %d,%d)", i, c, me.Name, me.X, me.Y)
-		}
-		v = keyWait(e, scr, 'N')
+	if c := v.Battle.Cursor; v.Battle.CursorOn && c == image.Pt(active(t, v).X, active(t, v).Y) {
+		t.Errorf("the cursor starts on the aimer")
 	}
 }
 
-// TestHoverHitChance: pointing at a foe a click attacks ends its panel on
-// the status row with the chance to hit it, past where the damage ends.
-func TestHoverHitChance(t *testing.T) {
-	e, scr, v := battleView(t)
-	for _, u := range v.Battle.Units {
-		if !slices.Contains(v.Battle.Targets, u.ID) {
-			continue
-		}
-		keyWait(e, scr, engine.HoverKey(u.X, u.Y))
-		lit := -1 // the rightmost text cell drawn on the status row
-		scr.Lock()
-		for col := range 40 {
-			for p := range 64 {
-				if scr.Get(col*8+p%8, 23*8+p/8) != scr.Get(39*8+7, 23*8+7) {
-					lit = col
-				}
-			}
-		}
-		scr.Unlock()
-		// name, HP, AC, then "Dmg" and the shortest damage ("1d2"), then "CtH" and a digit
-		min := len(u.Name) + 2 + 3 + len(strconv.Itoa(u.HP)) + 2 + 3 + len(strconv.Itoa(u.AC)) + 2 + 4 + 3 + 2 + 4
-		if lit < min {
-			t.Errorf("hovering %s: the status row ends at column %d, want CtH reaching %d", u.Name, lit, min)
-		}
-		return
-	}
-	t.Skip("no foe a click attacks")
-}
-
-// TestAimHover: pointing at another foe while aiming moves the aim to it.
+// TestAimHover: pointing at another square while aiming moves the aim there.
 func TestAimHover(t *testing.T) {
-	e, scr, v := battleView(t)
-	v = nextToFoe(t, e, scr, v)
-	v = keyWait(e, scr, 'M')
+	e, _, v := battleView(t)
+	v = nextToFoe(t, e, v)
+	v = actWait(e, engine.Action{Kind: engine.ActAttack})
 	if v.Battle == nil || !v.Battle.CursorOn {
 		t.Fatal("aiming: no cursor")
 	}
-	from := v.Battle.Cursor
 	for _, u := range v.Battle.Units {
-		if u.Party || image.Pt(u.X, u.Y) == from {
+		if u.Party || image.Pt(u.X, u.Y) == v.Battle.Cursor {
 			continue
 		}
-		if v = keyWait(e, scr, engine.HoverKey(u.X, u.Y)); v.Battle != nil && v.Battle.Cursor == image.Pt(u.X, u.Y) {
-			return
+		if v = actWait(e, engine.Action{Kind: engine.ActPoint, X: u.X, Y: u.Y}); v.Battle == nil || v.Battle.Cursor != image.Pt(u.X, u.Y) {
+			t.Errorf("pointing at %s: the aim stays at %v", u.Name, v.Battle.Cursor)
 		}
+		return
 	}
-	t.Errorf("pointing at the other foes never moved the aim from %v", from)
+	t.Skip("one foe")
 }
 
 // nextToFoe walks the active unit to a square next to a foe (Aim takes
 // only a foe in reach of the weapon): the dev fight starts out of reach.
-func nextToFoe(t *testing.T, e *engine.Engine, scr *ega.Screen, v engine.View) engine.View {
+func nextToFoe(t *testing.T, e *engine.Engine, v engine.View) engine.View {
 	for _, u := range v.Battle.Units {
 		if u.Party {
 			continue
@@ -412,7 +338,7 @@ func nextToFoe(t *testing.T, e *engine.Engine, scr *ega.Screen, v engine.View) e
 		for d := range 9 {
 			sq := image.Pt(u.X+d%3-1, u.Y+d/3-1)
 			if slices.Contains(v.Battle.Reach, sq) {
-				return keyWait(e, scr, engine.SquareKey(sq.X, sq.Y))
+				return actWait(e, engine.Action{Kind: engine.ActWalk, X: sq.X, Y: sq.Y})
 			}
 		}
 	}
@@ -420,11 +346,11 @@ func nextToFoe(t *testing.T, e *engine.Engine, scr *ega.Screen, v engine.View) e
 	return v
 }
 
-// TestAimOutOfReach: with no foe in reach of the weapon Aim is refused.
+// TestAimOutOfReach: with no foe in reach of the weapon Attack does not aim.
 func TestAimOutOfReach(t *testing.T) {
-	e, scr, _ := battleView(t)
-	v := keyWait(e, scr, 'M')
-	if v.Menu == nil || !slices.ContainsFunc(v.Menu.Items, func(m engine.MenuItem) bool { return m.Text == "Done" }) {
+	e, _, _ := battleView(t)
+	v := actWait(e, engine.Action{Kind: engine.ActAttack})
+	if v.Battle == nil || v.Battle.Turn == nil || v.Battle.Turn.Aim {
 		t.Errorf("aiming with every foe two squares off a melee fighter")
 	}
 }
@@ -462,35 +388,13 @@ func TestViewMember(t *testing.T) {
 	}
 }
 
-// TestPan: the classic view's W A S D scroll the combat map a square, never past its edges.
-func TestPan(t *testing.T) {
-	e, scr, v := battleView(t)
-	moved := false
-	for d, step := range []image.Point{{0, -1}, {1, 0}, {0, 1}, {-1, 0}} {
-		from := v.Battle.View
-		v = keyWait(e, scr, engine.KeyPan+uint16(d))
-		if v.Battle == nil {
-			t.Fatal("panning left the map")
-		}
-		to := v.Battle.View
-		if to != from && to != from.Add(step) {
-			t.Errorf("pan %d: view %v -> %v", d, from, to)
-		}
-		if to.X < 0 || to.Y < 0 || to.X > 50-12 || to.Y > 25-7 {
-			t.Errorf("pan %d: view %v past the map's edge", d, to)
-		}
-		moved = moved || to != from
+// actWait sends a and waits for the engine to take it.
+func actWait(e *engine.Engine, a engine.Action) engine.View {
+	e.Act(a)
+	time.Sleep(50 * time.Millisecond)
+	for e.Busy() {
+		time.Sleep(10 * time.Millisecond)
 	}
-	if !moved {
-		t.Error("no pan moved the view")
-	}
-	for range 6 { // away from whose turn it is, then Home
-		v = keyWait(e, scr, engine.KeyPan+1)
-	}
-	v = keyWait(e, scr, engine.KeyPan+4)
-	for _, u := range v.Battle.Units {
-		if u.Active && !image.Pt(u.X, u.Y).In(image.Rect(v.Battle.View.X, v.Battle.View.Y, v.Battle.View.X+12, v.Battle.View.Y+7)) {
-			t.Errorf("Home: %s at (%d,%d) not in the view at %v", u.Name, u.X, u.Y, v.Battle.View)
-		}
-	}
+	time.Sleep(100 * time.Millisecond)
+	return e.View()
 }

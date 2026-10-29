@@ -33,17 +33,18 @@ type Presenter struct {
 	figs                       map[image.Image]*figure // ponytail: never evicted; a few dozen pictures a game
 	bar                        bar
 
-	actions       []engine.MenuItem // the main menu's turn enders off its bar
-	aiming        bool              // the bar is Aim's (Tab cycles, Enter attacks)
-	cursor        image.Point       // the aim cursor's square in the last frame
-	tabFrom       *image.Point      // Tab was pressed with the aim here: the camera jumps to where it goes
-	tabTo         *vec              // the target Tab went to: watched while aiming
-	status        status            // the status row's line (DrawStatus)
-	focus, offset vec               // what the camera watches; the W A S D pan from it
-	yaw, yawTo    float64           // camera heading: 0 looks north, as the original's screen
-	dist, distTo  float64           // camera distance in squares
-	at            vec               // what the camera looks at (eased)
-	cam           camera            // the last frame's camera, for picking
+	b             *engine.Battle  // the last frame's
+	out           []engine.Action // queued for Actions
+	Picking       bool            // the spell list is up (Cast): the bar is off
+	pointed       image.Point     // the square the aim was last pointed at
+	cursor        image.Point     // the aim cursor's square in the last frame
+	tabFrom       *image.Point    // Tab was pressed with the aim here: the camera jumps to where it goes
+	tabTo         *vec            // the target Tab went to: watched while aiming
+	focus, offset vec             // what the camera watches; the W A S D pan from it
+	yaw, yawTo    float64         // camera heading: 0 looks north, as the original's screen
+	dist, distTo  float64         // camera distance in squares
+	at            vec             // what the camera looks at (eased)
+	cam           camera          // the last frame's camera, for picking
 	screen        image.Rectangle
 	units         map[int]*[2]float64 // each unit's shown position (eased between squares)
 	sparks        []spark
@@ -97,15 +98,16 @@ var (
 
 // Key is the XCOM 2 scheme: W A S D and the arrows pan (held: see pan), Q and E turn,
 // the wheel zooms, Home brings the camera back, 1..9 and 0 pick the bar's
-// buttons, the bar's letters (hotkeys) theirs, Tab and Shift-Tab cycle the targets, Enter attacks the aimed
-// one and Backspace ends the turn. It returns the keys to send instead and
-// whether k was taken.
-func (p *Presenter) Key(k uint16) ([]uint16, bool) {
+// buttons, the bar's letters (hotkeys) theirs, Tab and Shift-Tab cycle the
+// targets while aiming, Enter takes the aimed one, Esc gives up and
+// Backspace ends the turn. It reports whether k was taken.
+func (p *Presenter) Key(k uint16) bool {
 	p.initCamera()
 	if k < 128 && k >= 'A' && k <= 'Z' {
 		k += 'a' - 'A'
 	}
-	shown := len(p.bar.rects) > 0
+	b := p.b
+	aiming := b != nil && b.Turn != nil && b.Turn.Aim
 	switch {
 	case k == 'q':
 		p.yawTo -= math.Pi / 4
@@ -116,36 +118,42 @@ func (p *Presenter) Key(k uint16) ([]uint16, bool) {
 	case k == engine.MouseKey(engine.MouseWheelUp, 0, 0):
 		p.distTo = max(minDist, p.distTo/1.15)
 	case k == 'w' || k == 'a' || k == 's' || k == 'd':
-	case (k == 0x4800 || k == 0x5000 || k == 0x4B00 || k == 0x4D00) && shown: // the arrows pan, not the bar's cursor
-	case k == 0x4700 && shown: // without the bar (Move's steps) Home is keypad 7
+	case k == 0x4800 || k == 0x5000 || k == 0x4B00 || k == 0x4D00: // the arrows pan
+	case k == 0x4700:
 		p.offset = vec{}
 	case k >= '0' && k <= '9':
-		i := (int(k) - '0' + 9) % 10 // 1 is the first button, 0 the tenth
-		if i < len(p.bar.rects) {
-			return p.bar.items[i].Send, true
+		if i := (int(k) - '0' + 9) % 10; i < len(p.bar.rects) { // 1 is the first button, 0 the tenth
+			p.press(p.bar.items[i])
 		}
-	case k == 8:
-		switch {
-		case p.bar.has("Quit") != nil: // the Done menu
-			return p.bar.has("Quit"), true
-		case p.bar.has("End") != nil:
-			return p.bar.has("End"), true
+	case p.bar.hotkey(k) != nil:
+		p.press(*p.bar.hotkey(k))
+	case k == 9 && aiming && len(b.Targets) > 0:
+		i := 0
+		for j, id := range b.Targets {
+			for _, u := range b.Units {
+				if u.ID == id && u.X == b.Cursor.X && u.Y == b.Cursor.Y {
+					i = j + 1
+					if gpu.IsKeyPressed(gpu.KeyShift) {
+						i = j - 1 + len(b.Targets)
+					}
+				}
+			}
 		}
-	case shown && p.bar.hotkey(k) != nil:
-		return p.bar.hotkey(k), true
-	case k == 9 && shown && p.aiming:
-		c := p.cursor
-		p.tabFrom = &c
-		if gpu.IsKeyPressed(gpu.KeyShift) {
-			return []uint16{'P'}, true
+		for _, u := range b.Units {
+			if u.ID == b.Targets[i%len(b.Targets)] {
+				c := p.cursor
+				p.tabFrom = &c
+				p.act(engine.Action{Kind: engine.ActPoint, X: u.X, Y: u.Y})
+			}
 		}
-		return []uint16{'N'}, true
-	case k == 13 && p.bar.aimOK != nil && p.aiming && shown:
-		return p.bar.aimOK, true
+	case k == 13 && aiming:
+		p.act(engine.Action{Kind: engine.ActAim, X: b.Cursor.X, Y: b.Cursor.Y})
+	case k == 27 && (aiming || b != nil && b.Ask != ""):
+		p.act(engine.Action{Kind: engine.ActClose})
 	default:
-		return nil, false
+		return false
 	}
-	return nil, true
+	return true
 }
 
 // targetAt: a foe a click attacks stands on sq.
@@ -193,6 +201,10 @@ func (p *Presenter) Pick(x, y int) (int, int, bool) {
 // Draw shows b on dst.
 func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	p.initCamera()
+	p.b = b
+	if b.Turn == nil || b.Turn.Aim || !slices.Contains(b.Turn.Can, engine.ActCast) {
+		p.Picking = false
+	}
 	p.sync(b)
 	dt := p.tick()
 	if b.Strike.Seq != p.strike.Seq {
@@ -326,7 +338,6 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: reachGlow, Model: place(float32(r.X)+.5, 0.003, float32(r.Y)+.5, 0, .96, .005, .96)}
 		dst.DrawMesh(p.box, p.white, vp, &o)
 	}
-	p.actions = b.Actions
 	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
 		frame(mx, my, hoverGlow, 0)
 		for i, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike

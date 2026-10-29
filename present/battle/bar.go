@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"slices"
 	"strconv"
 
 	xdraw "golang.org/x/image/draw"
@@ -19,7 +20,7 @@ import (
 // as one picture with the bar (64px, its native size, at scale 2); the word
 // shows under the button the mouse is on. The bar is drawn in screen
 // pixels, its text at the bar's scale. A menu's question shows on the
-// bottom status row instead (DrawStatus).
+// bottom rows instead (remaster fight.go).
 const (
 	face    = 64 // an icon's side, and the button face's at scale 2
 	promptH = 2  // a margin over the buttons, at scale 1
@@ -31,20 +32,13 @@ type bar struct {
 	id    string            // what img shows
 	rects []image.Rectangle // the buttons on screen, as last drawn
 	items []barItem
-	aimOK []uint16 // aiming: the keys that take the aimed target (Enter; nil: none to take)
 }
 
-// status is the bottom row's own line, as last drawn.
-type status struct {
-	img  *gpu.Image
-	text string
-}
-
-// barItem is one button: its letter, its word, the keys it sends.
+// barItem is one button: its letter, its word, the action it takes.
 type barItem struct {
 	Key  byte
 	Text string
-	Send []uint16
+	Kind engine.ActKind
 }
 
 // hotkeys are the remaster's letters for the bar's buttons, by word, and
@@ -53,26 +47,20 @@ var hotkeys = map[string]struct {
 	key   uint16
 	label string
 }{"Attack": {'f', "F"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
-	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}} // Cancel: Esc, unshown
+	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Yes": {'y', "Y"}, "No": {'n', "N"}} // Cancel: Esc, unshown
 
 // leftArrow is the glyph drawn for "\x1b" (Backspace): the game's font has none.
 var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
 
-// hotkey is the keys of the button whose hotkey is k (nil: none).
-func (b *bar) hotkey(k uint16) []uint16 {
+// actWords are the bar's words for the turn's actions.
+var actWords = map[engine.ActKind]string{engine.ActAttack: "Attack", engine.ActGuard: "Guard", engine.ActItems: "Items",
+	engine.ActCast: "Cast", engine.ActTurn: "Turn", engine.ActBandage: "Bandage", engine.ActWait: "Wait", engine.ActEnd: "End", engine.ActQuick: "Quick"}
+
+// hotkey is the button whose hotkey is k (nil: none).
+func (b *bar) hotkey(k uint16) *barItem {
 	for i, it := range b.items {
 		if h, ok := hotkeys[it.Text]; ok && h.key == k && i < len(b.rects) {
-			return it.Send
-		}
-	}
-	return nil
-}
-
-// has is the keys of the button named s (nil: none).
-func (b *bar) has(s string) []uint16 {
-	for i, it := range b.items {
-		if it.Text == s && i < len(b.rects) {
-			return it.Send
+			return &b.items[i]
 		}
 	}
 	return nil
@@ -88,88 +76,38 @@ func (p *Presenter) overBar(x, y int) bool {
 	return false
 }
 
-// shownItems are the menu's items as the bar shows them, XCOM 2 style:
-// on the main combat menu Move and View go (a click on the map walks, on
-// one's own figure opens the sheet), Aim is Attack, the turn enders
-// (actions) sit before End turn (Done, Quit) but Guard, second after
-// Attack, and Quick goes last; aiming shows only Cancel (no free aim, no
-// Attack: Tab cycles the targets, a click or Enter takes one; the camera stays put).
-func shownItems(m *engine.Menu, actions []engine.MenuItem) (items []barItem, sel int) {
-	kind := ""
-	for _, it := range m.Items {
-		switch it.Text {
-		case "Done":
-			kind = "main"
-		case "Next", "Center":
-			kind = "aim"
+// shownItems are the buttons for b, XCOM 2 style: a question's Yes and
+// No; aiming only Cancel (Tab cycles the targets, a click or Enter takes
+// one); else the turn's actions in the menu's order (a click on the map
+// walks or attacks, Attack aims first).
+func shownItems(b *engine.Battle) (items []barItem) {
+	switch t := b.Turn; {
+	case b.Ask != "":
+		return []barItem{{'Y', "Yes", engine.ActYes}, {'N', "No", engine.ActClose}}
+	case t == nil:
+	case t.Aim:
+		return []barItem{{'E', "Cancel", engine.ActClose}}
+	default:
+		for _, k := range t.Can {
+			w := actWords[k]
+			items = append(items, barItem{w[0], w, k})
 		}
 	}
-	sel = -1
-	add := func(it barItem, i int) {
-		if i == m.Sel {
-			sel = len(items)
-		}
-		items = append(items, it)
-	}
-	quick, quickAt := barItem{}, -2 // the main menu's Quick goes last, rightmost
-	for i, it := range m.Items {
-		b := barItem{it.Key, it.Text, []uint16{uint16(it.Key)}}
-		switch {
-		case kind == "main" && (it.Text == "Move" || it.Text == "View"):
-			continue
-		case kind == "main" && it.Text == "Quick":
-			quick, quickAt = b, i
-			continue
-		case kind == "main" && it.Text == "Aim":
-			b.Text = "Attack"
-			add(b, i)
-			for _, a := range actions { // Guard right after it
-				if a.Text == "Guard" {
-					add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
-				}
-			}
-			continue
-		case kind == "main" && it.Text == "Done":
-			for _, a := range actions {
-				switch {
-				case a.Text == "Wait": // Done's Delay
-					add(barItem{a.Key, a.Text, []uint16{uint16(it.Key), uint16(a.Key)}}, -1)
-				case a.Text != "Guard":
-					add(barItem{a.Key, a.Text, []uint16{uint16(a.Key)}}, -1)
-				}
-			}
-			b.Text, b.Send = "End", []uint16{uint16(it.Key), 'Q'}
-		case kind == "aim" && (it.Text == "Next" || it.Text == "Prev" || it.Text == "Center" || it.Text == "Manual" || it.Text == "Attack"):
-			continue
-		case kind == "aim" && it.Text == "Exit":
-			b.Text = "Cancel"
-		}
-		add(b, i)
-	}
-	if quickAt != -2 {
-		add(quick, quickAt)
-	}
-	return items, sel
+	return items
 }
 
-// DrawBar draws menu m as the action bar at scale k, its bottom at bottom,
+// DrawBar draws b's buttons as the action bar at scale k, its bottom at bottom,
 // in the game's font (glyph).
-func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.Menu, k, bottom int) {
-	b := &p.bar
-	items, _ := shownItems(m, p.actions) // no keyboard selection shown: the edge follows the mouse
-	p.aiming = false
-	for _, it := range m.Items {
-		p.aiming = p.aiming || it.Text == "Next" || it.Text == "Center"
-	}
-	b.aimOK = nil
-	for _, it := range m.Items {
-		if p.aiming && it.Text == "Attack" {
-			b.aimOK = []uint16{uint16(it.Key)}
-		}
+func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.Battle, k, bottom int) {
+	br := &p.bar
+	items := shownItems(b)
+	if len(items) == 0 || p.Picking {
+		p.HideBar()
+		return
 	}
 	hover := -1
 	cx, cy := gpu.CursorPosition()
-	for i, r := range b.rects {
+	for i, r := range br.rects {
 		if i < len(items) && image.Pt(cx, cy).In(r) {
 			hover = i
 		}
@@ -180,67 +118,25 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, m *engine.
 	for _, it := range items {
 		id += "|" + it.Text
 	}
-	if b.img == nil || b.img.Bounds() != image.Rect(0, 0, w, h) {
-		if b.img != nil {
-			b.img.Deallocate()
+	if br.img == nil || br.img.Bounds() != image.Rect(0, 0, w, h) {
+		if br.img != nil {
+			br.img.Deallocate()
 		}
-		b.img, b.id = gpu.NewImage(w, h), ""
+		br.img, br.id = gpu.NewImage(w, h), ""
 	}
-	if id != b.id {
-		b.id = id
-		b.img.WritePixels(barPixels(glyph, items, hover, w, h, k).Pix)
+	if id != br.id {
+		br.id = id
+		br.img.WritePixels(barPixels(glyph, items, hover, w, h, k).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(float64(x0), float64(y0))
-	dst.DrawImage(b.img, op)
-	b.rects, b.items = b.rects[:0], items
+	dst.DrawImage(br.img, op)
+	br.rects, br.items = br.rects[:0], items
 	for i := range items {
 		r := buttonRect(w, n, i, k)
-		b.rects = append(b.rects, r.Add(image.Pt(x0, y0)))
+		br.rects = append(br.rects, r.Add(image.Pt(x0, y0)))
 	}
-}
-
-// Status is what the bottom status row shows over the combat panel: the
-// menu's question ("": the panel, which the engine fills with whoever the
-// mouse points at; aiming's prompt is the aimed foe's panel line again).
-func (p *Presenter) Status(m *engine.Menu) string {
-	if m == nil || p.aiming {
-		return ""
-	}
-	return m.Prompt
-}
-
-// DrawStatus writes s (Status) over the bottom status row, a row of the
-// original's 40 columns at scale k, in the game's font (glyph).
-func (p *Presenter) DrawStatus(dst *gpu.Image, glyph func(byte) [8]byte, s string, k float64) {
-	if s == "" {
-		return
-	}
-	st := &p.status
-	if st.img == nil {
-		st.img = gpu.NewImage(ega.W, 8)
-	}
-	if s != st.text {
-		st.text = s
-		im := image.NewRGBA(image.Rect(0, 0, ega.W, 8))
-		draw.Draw(im, im.Bounds(), image.Black, image.Point{}, draw.Src)
-		c := ega.Palette[15]
-		for i := 0; i < len(s) && i < ega.W/8; i++ {
-			g := glyph(s[i])
-			for d := range 64 {
-				if g[d/8]&(0x80>>(d%8)) != 0 {
-					im.SetRGBA(i*8+d%8, d/8, color.RGBA{c[0], c[1], c[2], 255})
-				}
-			}
-		}
-		st.img.WritePixels(im.Pix)
-	}
-	b := dst.Bounds()
-	op := &gpu.DrawImageOptions{}
-	op.GeoM.Scale(k, k)
-	op.GeoM.Translate((float64(b.Dx())-k*ega.W)/2, float64(b.Dy())-k*8) // as drawRows lays the panel
-	dst.DrawImage(st.img, op)
 }
 
 // buttonRect is button i of n on a bar image w wide at scale k.
@@ -250,14 +146,69 @@ func buttonRect(w, n, i, k int) image.Rectangle {
 	return image.Rect(x, promptH*k, x+bw, promptH*k+bw)
 }
 
-// Click is the keys of the button at screen pixel (x, y), if any.
-func (p *Presenter) Click(x, y int) ([]uint16, bool) {
+// Click takes a click at screen pixel (x, y): a button of the bar, else
+// a square of the map (aiming: the aim; a foe of the turn's targets: the
+// attack; a square in reach: the walk). It reports whether it was taken.
+func (p *Presenter) Click(x, y int) bool {
 	for i, r := range p.bar.rects {
 		if image.Pt(x, y).In(r) {
-			return p.bar.items[i].Send, true
+			p.press(p.bar.items[i])
+			return true
 		}
 	}
-	return nil, false
+	b := p.b
+	sx, sy, ok := p.Pick(x, y)
+	if b == nil || b.Turn == nil || b.Ask != "" || p.Picking || !ok {
+		return false
+	}
+	sq := image.Pt(sx, sy)
+	if b.Turn.Aim {
+		p.act(engine.Action{Kind: engine.ActAim, X: sx, Y: sy})
+		return true
+	}
+	for _, u := range b.Units {
+		if slices.Contains(b.Targets, u.ID) && slices.Contains(u.Squares, sq) {
+			p.act(engine.Action{Kind: engine.ActAttack, N: u.ID})
+			return true
+		}
+	}
+	if slices.Contains(b.Reach, sq) {
+		p.act(engine.Action{Kind: engine.ActWalk, X: sx, Y: sy})
+		return true
+	}
+	return false
+}
+
+// Point follows the pointer at screen pixel (x, y): aiming, the aim goes
+// to the square under it.
+func (p *Presenter) Point(x, y int) {
+	b := p.b
+	if b == nil || b.Turn == nil || !b.Turn.Aim || p.overBar(x, y) {
+		return
+	}
+	if sx, sy, ok := p.Pick(x, y); ok && image.Pt(sx, sy) != p.pointed {
+		p.pointed = image.Pt(sx, sy)
+		p.act(engine.Action{Kind: engine.ActPoint, X: sx, Y: sy})
+	}
+}
+
+// press takes button it: Cast opens the spell list, the others act.
+func (p *Presenter) press(it barItem) {
+	if it.Kind == engine.ActCast {
+		p.Picking = true
+		return
+	}
+	p.act(engine.Action{Kind: it.Kind})
+}
+
+// act queues a for Actions.
+func (p *Presenter) act(a engine.Action) { p.out = append(p.out, a) }
+
+// Actions hands over the actions queued since the last call.
+func (p *Presenter) Actions() []engine.Action {
+	a := p.out
+	p.out = nil
+	return a
 }
 
 // HideBar forgets the buttons (no bar on screen: clicks hit nothing).

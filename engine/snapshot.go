@@ -58,8 +58,6 @@ var (
 	InnerWindow = CellRect{3, 3, 0xD, 0xD} // the picture frame
 	TextPane    = CellRect{1, 0x11, 0x26, 0x16}
 	PromptRows  = CellRect{0, 0x18, 0x27, 0x18} // the menu and prompt line, under the frame
-	CombatRows  = CellRect{0, 0x17, 0x27, 0x18} // combat's panel and menu line, under its frame
-	CombatPanel = CellRect{0, 0x17, 0x27, 0x17} // the panel alone: who acts, HP, AC, damage
 )
 
 // Member is one party member as the party list shows them.
@@ -121,36 +119,36 @@ func (e *Engine) View() View {
 
 // snapState is the engine's side of the seam.
 type snapState struct {
-	view       atomic.Pointer[View]
-	invOn      bool                   // ItemsMenu waits: View.Inventory is up
-	win        Window                 // set by whatever drew into the view window last
-	frame      []byte                 // the frame's border pixels as DrawMainFrame left them
-	heads      map[int]image.Image    // decoded HEAD blocks by id
-	tiles      [3]image.Image         // View.Border, once decoded
-	border     [][2]int               // pixel positions of frame
-	menu       *Menu                  // the innermost DisplayInput's menu (Sel unset)
-	cursor     image.Point            // drawCursor's last square
-	cursorOn   bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
-	pics       map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
-	picsPal    [16]uint8
-	cmapRow    []byte
-	dungeon    bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
-	effects    []effect               // sprites on the combat page
-	marks      []image.Point          // squares markReach framed
-	reach      []image.Point          // squares a click on the main combat menu walks to
-	paths      map[image.Point][]Step // the walk to each of them
-	hits       map[int]int            // each of targets' chance to be hit, in percent
-	area       []image.Point          // squares aoeMarks covers
-	skipped    []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
-	aimWhy     string                 // aiming: why the aimed square cannot be taken ("" when it can)
-	statusOnly bool                   // a status row message waits out its delay (statusDelay)
-	actions    []MenuItem             // the main combat menu's keys off its bar (Guard, Wait, Bandage)
-	targets    []int                  // combatants a click on the main combat menu attacks
-	hidden     map[int]bool           // combatants whose icon is off the page (falling, hiding)
-	poses      map[int]byte           // the pose each combatant was last drawn in
-	click      int                    // the square (+1) a SquareKey being translated clicks
-	strike     Strike                 // the last weapon attack (From/To filled in by battle)
-	striker    [2]*Character          // its attacker and target
+	view     atomic.Pointer[View]
+	invOn    bool                   // ItemsMenu waits: View.Inventory is up
+	win      Window                 // set by whatever drew into the view window last
+	frame    []byte                 // the frame's border pixels as DrawMainFrame left them
+	heads    map[int]image.Image    // decoded HEAD blocks by id
+	tiles    [3]image.Image         // View.Border, once decoded
+	border   [][2]int               // pixel positions of frame
+	menu     *Menu                  // the innermost DisplayInput's menu (Sel unset)
+	cursor   image.Point            // drawCursor's last square
+	cursorOn bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
+	pics     map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
+	picsPal  [16]uint8
+	cmapOn   bool                   // the combat map is set up (cmapShown) and shown
+	sheetOn  bool                   // a character sheet is up over the combat map
+	dungeon  bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
+	effects  []effect               // sprites on the combat page
+	marks    []image.Point          // squares markReach framed
+	reach    []image.Point          // squares a click on the main combat menu walks to
+	paths    map[image.Point][]Step // the walk to each of them
+	hits     map[int]int            // each of targets' chance to be hit, in percent
+	area     []image.Point          // squares aoeMarks covers
+	skipped  []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
+	aimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can)
+	turn     *Turn                  // the player's turn waits in act
+	ask      string                 // a yes/no question waits in act (ask)
+	targets  []int                  // combatants ActAttack takes; aiming: the foes to cycle through
+	hidden   map[int]bool           // combatants whose icon is off the page (falling, hiding)
+	poses    map[int]byte           // the pose each combatant was last drawn in
+	strike   Strike                 // the last weapon attack (From/To filled in by battle)
+	striker  [2]*Character          // its attacker and target
 }
 
 // frameDrawn remembers the frame's border pixels, so publish can tell it is

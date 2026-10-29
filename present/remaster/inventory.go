@@ -541,7 +541,7 @@ func (p *Presenter) InventoryShown() bool { return p.inv.shown }
 
 // Actions hands over the actions the screens made since the last call.
 func (p *Presenter) Actions() []engine.Action {
-	a := p.inv.acts
+	a := append(p.inv.acts, p.battle.Actions()...)
 	p.inv.acts = nil
 	return a
 }

@@ -58,7 +58,6 @@ type region struct {
 	x0, y0, x1, y1 int
 	click          func(cx, cy int) uint16 // the key the click stands for (0: none)
 	hover          func()                  // optional: the pointer came onto it
-	square         func(x, y int) uint16   // optional (a combat map region): the key for the pointer coming onto square (x, y)
 }
 
 // modalOn opens a modal screen (help, overview, the F9 slots): any key or
@@ -99,12 +98,6 @@ func (e *Engine) rawArrows(hint string) func() {
 // translate turns a key from the window into the key the game reads, or 0
 // when it was used up here.
 func (e *Engine) translate(k uint16) uint16 {
-	if k >= KeyHover && k < KeyHover+50*25 { // the pointer came onto a square of the map
-		if r := e.regionAt(pageCol, 1); r != nil && r.square != nil && e.ext.modal == 0 {
-			return r.square(int(k-KeyHover)%50, int(k-KeyHover)/50)
-		}
-		return 0
-	}
 	if k >= KeyViewMember && k < KeyViewMember+8 { // a portrait clicked: that member's View page, or the member a list or bar is for
 		n := int(k - KeyViewMember)
 		switch {
@@ -116,11 +109,6 @@ func (e *Engine) translate(k uint16) uint16 {
 			return e.viewKey(n)
 		}
 		return 0
-	}
-	if k >= KeySquare && k < KeyMouse { // a square clicked on a remastered map: a click on the page that lands there
-		e.snap.click = int(k-KeySquare) + 1
-		defer func() { e.snap.click = 0 }()
-		k = MouseKey(MouseLeft, pageCol, 1)
 	}
 	if e.ext.modal > 0 { // help and overview: any key or click closes
 		switch {
@@ -299,22 +287,6 @@ func (e *Engine) rosterRegion() {
 	e.addRegion(region{x0: x, y0: 4, x1: 0x26, y1: 4 + len(e.party) - 1, click: e.rosterClick})
 }
 
-// combatSquare is the combat map square shown at cell (cx, cy): the page
-// sits at cell (pageCol,1) and a square is 3x3 cells.
-func (e *Engine) combatSquare(cx, cy int) (x, y int, ok bool) {
-	if v := e.snap.click; v > 0 { // SquareKey
-		return (v - 1) % 50, (v - 1) / 50, true
-	}
-	sx, sy := (cx-pageCol)/3, (cy-1)/3
-	if cx < pageCol || cy < 1 || !combatInView(sx, sy) {
-		return 0, 0, false
-	}
-	return e.cmap.viewX + sx, e.cmap.viewY + sy, true
-}
-
-// stepKeys are the keypad scan codes of the 8 directions (N, NE, E ... NW).
-var stepKeys = [8]uint16{0x4800, 0x4900, 0x4D00, 0x5100, 0x5000, 0x4F00, 0x4B00, 0x4700}
-
 // pollMouse runs the hover action of the region the pointer moved onto.
 func (e *Engine) pollMouse() {
 	if e.tr != nil { // no window
@@ -334,11 +306,6 @@ func (e *Engine) pollMouse() {
 	}
 	if r := e.regionAt(cx, cy); r != nil && r.hover != nil {
 		r.hover()
-	}
-	if r := e.regionAt(cx, cy); r != nil && r.square != nil {
-		if sx, sy, in := e.combatSquare(cx, cy); in {
-			e.S.PushKey(HoverKey(sx, sy)) // read as a key, so the waiting prompt hands back
-		}
 	}
 }
 

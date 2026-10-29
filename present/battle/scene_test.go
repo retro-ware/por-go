@@ -45,56 +45,38 @@ func TestStoneTexture(t *testing.T) {
 
 func TestKeys(t *testing.T) {
 	p := &Presenter{}
-	m := &engine.Menu{Items: []engine.MenuItem{{Text: "View", Key: 'V'}, {Text: "Aim", Key: 'M'}, {Text: "Quick", Key: 'Q'}, {Text: "Done", Key: 'O'}}}
-	p.bar.items, _ = shownItems(m, []engine.MenuItem{{Text: "Wait", Key: 'D'}})
+	b := &engine.Battle{Turn: &engine.Turn{Can: []engine.ActKind{engine.ActAttack, engine.ActWait, engine.ActEnd, engine.ActQuick}}}
+	p.b = b
+	p.bar.items = shownItems(b)
 	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
-	str := func(ks []uint16) string {
-		s := ""
-		for _, k := range ks {
-			s += string(rune(k))
-		}
-		return s
-	}
-	for k, want := range map[uint16]string{'1': "M", '2': "OD", '3': "OQ", '4': "Q", '5': "", '0': "", 8: "OQ", 'w': "", 'Q': ""} { // Quick last; Wait is Done's Delay
-		if got, taken := p.Key(k); str(got) != want || !taken {
-			t.Errorf("key %#x: %q %v, want %q taken", k, str(got), taken, want)
+	took := func(k uint16) []engine.Action { p.Key(k); return p.Actions() }
+	for k, want := range map[uint16]engine.ActKind{'1': engine.ActAttack, '2': engine.ActWait, 8: engine.ActEnd, 'u': engine.ActQuick, 'p': engine.ActWait} {
+		if got := took(k); len(got) != 1 || got[0].Kind != want {
+			t.Errorf("key %#x: %+v, want kind %d", k, got, want)
 		}
 	}
-	for k, want := range map[uint16]string{'u': "Q", 'p': "OD", 'g': ""} { // the remaster's letters; no Guard on this bar
-		if got, _ := p.Key(k); str(got) != want {
-			t.Errorf("hotkey %c: %q, want %q", k, str(got), want)
+	for _, k := range []uint16{'5', 'g', 'w', 'Q', 0x4800} {
+		if got := took(k); len(got) != 0 {
+			t.Errorf("key %#x: %+v, want nothing", k, got)
 		}
-	}
-	if got, taken := p.Key(0x4800); got != nil || !taken {
-		t.Error("arrows pan the camera with the bar up")
-	}
-	p.bar.rects = nil
-	if _, taken := p.Key(0x4800); taken {
-		t.Error("arrows step in Move (no bar)")
-	}
-	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
-	if _, taken := p.Key(13); taken {
-		t.Error("Enter off the aim bar belongs to the game")
 	}
 	if p.yawTo == 0 {
 		t.Error("Q did not turn the camera")
 	}
-	aim := &engine.Menu{Prompt: "Aim:", Items: []engine.MenuItem{{Text: "Next", Key: 'N'}, {Text: "Prev", Key: 'P'}, {Text: "Manual", Key: 'M'}, {Text: "Attack", Key: 'A'}, {Text: "Center", Key: 'C'}, {Text: "Exit", Key: 'E'}}}
-	p.bar.items, _ = shownItems(aim, nil)
-	p.bar.rects, p.aiming, p.bar.aimOK = make([]image.Rectangle, len(p.bar.items)), true, []uint16{'A'}
-	if len(p.bar.items) != 1 || p.bar.items[0].Text != "Cancel" { // a click or Enter takes the target
+	b.Turn = &engine.Turn{Aim: true}
+	b.Targets, b.Units, b.Cursor = []int{3, 5}, []engine.Unit{{ID: 3, X: 1, Y: 1}, {ID: 5, X: 4, Y: 2}}, image.Pt(1, 1)
+	p.bar.items = shownItems(b)
+	if len(p.bar.items) != 1 || p.bar.items[0].Text != "Cancel" {
 		t.Errorf("aim bar: %+v", p.bar.items)
 	}
-	if got, _ := p.Key(13); str(got) != "A" {
-		t.Errorf("Enter aiming: %q, want A", str(got))
+	if got := took(9); len(got) != 1 || got[0] != (engine.Action{Kind: engine.ActPoint, X: 4, Y: 2}) {
+		t.Errorf("Tab aiming: %+v, want the next target", got)
 	}
-	if got, _ := p.Key(9); str(got) != "N" {
-		t.Errorf("Tab aiming: %q, want N", str(got))
+	if got := took(13); len(got) != 1 || got[0] != (engine.Action{Kind: engine.ActAim, X: 1, Y: 1}) {
+		t.Errorf("Enter aiming: %+v", got)
 	}
-	p.bar.items = []barItem{{'Q', "Quit", []uint16{'Q'}}} // the Done menu: Backspace is its Quit
-	p.bar.rects = make([]image.Rectangle, 1)
-	if got, _ := p.Key(8); str(got) != "Q" {
-		t.Errorf("Backspace on the Done menu: %q", str(got))
+	if got := took(27); len(got) != 1 || got[0].Kind != engine.ActClose {
+		t.Errorf("Esc aiming: %+v", got)
 	}
 }
 

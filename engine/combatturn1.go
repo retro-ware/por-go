@@ -261,7 +261,7 @@ func (e *Engine) freeAttacksOnLeave(c *Character, dir int) {
 			attacked = true
 			t.Combat.Target = saved
 			if c.Okay != 0 {
-				e.combatPanel(c)
+				e.ext.panel = c
 			}
 		}
 	}
@@ -404,7 +404,6 @@ func (e *Engine) mayActAgainst(t, c *Character) bool {
 // clericTurnUndead = ovr14:116A (char): a cleric turns undead (ovr14:116A).
 func (e *Engine) clericTurnUndead(c *Character) {
 	e.CharMessage(c, "turns undead...", false)
-	e.ClearRow24()
 	e.MsgDelay()
 	any, stop := false, false
 	c.Combat.TurnUsed = 1
@@ -433,7 +432,7 @@ func (e *Engine) clericTurnUndead(c *Character) {
 		}
 		any = true
 		e.combatRedrawChar(t, 3, 0)
-		e.combatPanel(t)
+		e.ext.panel = t
 		if x > 0 {
 			t.Combat.Turned = 1
 			e.hitMessage(t, true, "is turned")
@@ -596,7 +595,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 		}
 	}
 	dir := byte(e.directionTo(a, b))
-	e.combatPanel(a)
+	e.ext.panel = a
 	e.combatTurn(a, dir, 1, false)
 	a.Combat.Target = b
 	e.Delay(0x64)
