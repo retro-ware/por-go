@@ -83,6 +83,10 @@ type Presenter struct {
 	typed       string                      // ... and reads this
 	hovered     [3]int                      // the spot and cell the pointer was last on (Mouse)
 	cardHover   int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
+	ctx         int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
+	ctxSel      int                         // its highlighted line (-1 none)
+	ctxActs     []engine.ActKind            // its lines' actions, for the member
+	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 }
@@ -91,6 +95,9 @@ type Presenter struct {
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
+	if !p.active {
+		p.ctx = 0
+	}
 	p.fight = v.Battle != nil && !p.failed
 	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
 	if p.fight {
@@ -248,6 +255,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.fight {
 		return p.fightKey(k)
 	}
+	if p.ctx > 0 && k == 27 {
+		p.ctx = 0
+		return true
+	}
 	if !p.active || p.view == nil {
 		p.menu = false
 		return false
@@ -308,6 +319,15 @@ func (p *Presenter) Click(x, y int) bool {
 		return p.mainClick(x, y)
 	}
 	if !p.fight {
+		if p.ctx > 0 { // the context menu: a line acts for its member; any click closes it
+			for j, r := range p.ctxRects {
+				if image.Pt(x, y).In(r) && p.active {
+					p.send(p.ctxActs[j], p.ctx-1)
+				}
+			}
+			p.ctx = 0
+			return true
+		}
 		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
 				p.send(engine.ActMember, i)
@@ -351,6 +371,9 @@ func (p *Presenter) Hover(x, y int) {
 		return
 	}
 	p.cardHover = 1 + cardUnder(p.cards, x, y)
+	if p.ctx > 0 {
+		p.ctxSel = slices.IndexFunc(p.ctxRects, func(r image.Rectangle) bool { return image.Pt(x, y).In(r) })
+	}
 	if !p.menu || image.Pt(x, y) == p.pointer {
 		return
 	}

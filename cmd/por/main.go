@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"gpu"
@@ -52,11 +53,13 @@ type game struct {
 	stickDir  uint16 // left stick direction being held
 	stickHeld int    // ticks it has been held
 
-	dsf   float64       // device scale factor of the last Layout
-	pic   remaster.Rect // where the picture is drawn, in device pixels
-	wheel float64       // wheel movement not yet sent as a step
-	sent  bool          // input went to the engine this tick
-	ticks int           // Update calls, counted only for POR_SHOT
+	dsf       float64       // device scale factor of the last Layout
+	pic       remaster.Rect // where the picture is drawn, in device pixels
+	wheel     float64       // wheel movement not yet sent as a step
+	sent      bool          // input went to the engine this tick
+	ticks     int           // Update calls, counted only for POR_SHOT
+	rightOnce bool          // POR_KEYS \M: the right button pressed this tick
+	leftOnce  bool          // POR_KEYS \C: the left button
 }
 
 // tps: Update runs 120 times a second, so a key waits at most ~8 ms before
@@ -68,9 +71,16 @@ func (g *game) Update() error {
 	if shot != "" { // the user's input never reaches a capture, only the scripted keys
 		g.ticks++
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
-			g.push(shotKeys[k-1])
-			g.act()
-			g.settle()
+			switch c := shotKeys[k-1]; c {
+			case shotRight, shotLeft: // \M, \C: a click at the pointer
+				g.rightOnce, g.leftOnce = c == shotRight, c == shotLeft
+			case shotNext: // \P: the pointer moves on to the next of POR_POINTER's x,y;x,y...
+				shotPointer++
+			default:
+				g.push(shotKeys[k-1])
+				g.act()
+				g.settle()
+			}
 		}
 		if os.Getenv("POR_POINTER") != "" {
 			g.mouse()
@@ -180,8 +190,8 @@ func (g *game) keys() {
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
 func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
-	if pt := os.Getenv("POR_POINTER"); shot != "" && pt != "" { // POR_SHOT: the pointer at x,y (screen pixels)
-		fmt.Sscanf(pt, "%d,%d", &mx, &my)
+	if pts := strings.Split(os.Getenv("POR_POINTER"), ";"); shot != "" && pts[0] != "" { // POR_SHOT: the pointer at x,y (screen pixels)
+		fmt.Sscanf(pts[min(shotPointer, len(pts)-1)], "%d,%d", &mx, &my)
 	}
 	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game
 		_, dy := gpu.Wheel()
@@ -189,7 +199,8 @@ func (g *game) mouse() {
 		return
 	}
 	g.remaster.Hover(mx, my)
-	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft)
+	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) || g.leftOnce
+	g.leftOnce = false
 	if left && g.remaster.Click(mx, my) { // an action bar button, a menu item, the combat map
 		return
 	}
@@ -198,7 +209,9 @@ func (g *game) mouse() {
 	g.wheel += dy
 	steps := int(g.wheel)
 	g.wheel -= float64(steps)
-	g.remaster.Mouse(cx, cy, in, left, gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), steps, g.eng.View())
+	right := gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) || g.rightOnce
+	g.rightOnce = false
+	g.remaster.Mouse(cx, cy, in, left, right, steps, g.eng.View())
 }
 
 func (g *game) cell(x, y float64) (int, int, bool) {
@@ -295,11 +308,16 @@ func (g *game) Draw(dst *gpu.Image) {
 // presenters. The window opens unfocused and ignores the user's input
 // meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
 // first adventuring prompt. POR_POINTER=x,y puts the pointer there. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
-// arrows, \1..\8 F1..F8.
+// arrows, \1..\8 F1..F8, \M and \C a right and a left click at the
+// pointer, \P the pointer on to the next of POR_POINTER's x,y;x,y... positions.
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
 
+const shotRight, shotLeft, shotNext = 0xFF01, 0xFF02, 0xFF03 // scriptKeys' codes for \M, \C, \P
+
+var shotPointer int // the position of POR_POINTER in use
+
 func scriptKeys(s string) []uint16 {
-	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00}
+	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00, 'M': shotRight, 'C': shotLeft, 'P': shotNext}
 	for n := range 8 { // \1..\8: F1..F8
 		esc['1'+byte(n)] = remaster.KeyF1 + uint16(n)<<8
 	}

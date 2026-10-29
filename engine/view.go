@@ -736,6 +736,19 @@ func (e *Engine) powers(c *Character) []Power {
 	return ps
 }
 
+// memberPowers (extra) is a card's context menu out of combat: View, Items
+// when c carries any, then powers.
+func (e *Engine) memberPowers(c *Character) []Power {
+	if e.beginFlag == 5 {
+		return nil
+	}
+	ps := []Power{{"View", ActMember}}
+	if len(e.carried(c)) > 0 {
+		ps = append(ps, Power{"Items", ActInventory})
+	}
+	return append(ps, e.powers(c)...)
+}
+
 // power carries out one of c's powers; quit is true when a cast in combat
 // used the turn.
 func (e *Engine) power(c *Character, k ActKind) (quit bool) {

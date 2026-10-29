@@ -239,6 +239,10 @@ const (
 	cmdEncamp
 	cmdSweep
 	cmdSearch
+	cmdSpells // extra: a card's context menu: the member's powers (ActSpells..ActCure, in that order)
+	cmdMagic
+	cmdHeal
+	cmdCure
 )
 
 // command carries out a command of the command bar (the original's Area is
@@ -256,6 +260,9 @@ func (e *Engine) command(k Choice, view3D bool) bool {
 		}
 	case cmdView:
 		e.ViewCharacter() // ovr20:0AB3
+	case cmdSpells, cmdMagic, cmdHeal, cmdCure: // extra: a card's context menu
+		e.power(e.selected(), ActSpells+ActKind(k-cmdSpells))
+		e.DrawMainScreen()
 	case cmdEncamp:
 		return true
 	case cmdSweep: // Sweep (the original's Search): the slow, searching pace on or off

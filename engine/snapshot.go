@@ -69,6 +69,7 @@ type Member struct {
 	Selected bool        // the selected member, or the candidate while a member is picked (SelectCharacter)
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
 	Portrait image.Image // extra: the PNG the player dropped on the sheet, in place of Head (nil: none)
+	Powers   []Power     // extra: what the member can do now out of combat (a card's context menu): View, Items, then powers'; Kind with the member's index acts
 }
 
 // View is one published snapshot.
@@ -228,7 +229,7 @@ func (e *Engine) publish() {
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
 			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,
-			Class: className(c.Class), Head: e.charHead(c), Portrait: c.Portrait,
+			Class: className(c.Class), Head: e.charHead(c), Portrait: c.Portrait, Powers: e.memberPowers(c),
 		})
 	}
 	v.Border = e.borderTiles()

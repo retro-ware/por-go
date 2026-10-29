@@ -1,6 +1,9 @@
 package engine
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Menu input, ported from ovr26.
 
@@ -331,6 +334,11 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 		switch a.Kind {
 		case ActInventory:
 			return m.member(a.N)
+		case ActSpells, ActMagic, ActHeal, ActCure: // a card's context menu (extra): member N's power, as a command
+			if n := a.N; e.ext.inCommand && n >= 0 && n < len(e.party) && slices.ContainsFunc(e.powers(e.party[n]), func(p Power) bool { return p.Kind == a.Kind }) {
+				e.selectMember(n)
+				return m.outcome(Pick{ID: cmdSpells + Choice(a.Kind-ActSpells)})
+			}
 		case ActOverview: // P: the overview, on the View page the items
 			switch {
 			case e.ext.viewing:

@@ -144,7 +144,13 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		}
 		p.send(engine.ActMove, d)
 	}
-	if right {
+	switch { // the right button: a card's context menu opens (drawCardTip) or closes, else Esc
+	case !right:
+	case p.ctx > 0:
+		p.ctx = 0
+	case p.cardHover > 0 && p.active && v.Command:
+		p.ctx, p.ctxSel = p.cardHover, -1
+	default:
 		p.send(engine.ActClose, 0)
 	}
 	if r := v.Portrait; left && in && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) { // Shift-click on the sheet's portrait: the next head
