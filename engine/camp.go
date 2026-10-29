@@ -145,7 +145,7 @@ func (e *Engine) restMenu() (interrupted bool) {
 			untilIt
 			exit
 		)
-		switch e.DisplayInput("Rest: ", Bar{{"Heal", heal}, {"Memorize", memorize}, {"Wait", wait}, {dayNight, untilIt}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, false, false).ID {
+		switch e.DisplayInput("Rest: ", Bar{{"Heal", heal}, {"Memorize", memorize}, {"Wait", wait}, {dayNight, untilIt}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, false, true).ID {
 		case heal:
 			if e.healMinutes() == 0 {
 				e.BottomMessage("No one needs healing")
