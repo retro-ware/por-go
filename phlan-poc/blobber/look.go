@@ -241,7 +241,7 @@ func (g *Game) faceOptions(c cam, f *face) *gpu.DrawTrianglesShaderOptions {
 	if openSky {
 		u["Haze"] = float32(hazeCells)
 	}
-	if m := f.m; m != nil && m.lit != nil && Settings.LightMaps {
+	if m := f.m; m != nil && m.lit != nil {
 		op.Images[2], u["HasLit"] = m.lit, float32(1)
 	}
 	if f.mode == modeGlow {

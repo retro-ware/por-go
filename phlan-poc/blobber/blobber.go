@@ -1441,7 +1441,6 @@ func (g *Game) menuOptions() []menuLine {
 		return []menuLine{
 			{"Fullscreen", func(*Game) string { return onOff(gpu.IsFullscreen()) }, func(*Game, int) { gpu.SetFullscreen(!gpu.IsFullscreen()) }},
 			{"Dithered darkness", func(g *Game) string { return onOff(g.dither) }, func(g *Game, _ int) { g.dither = !g.dither }},
-			{"Light maps", onOffOf(&Settings.LightMaps), flip(&Settings.LightMaps)},
 			{"Torch intensity", func(g *Game) string { return fmt.Sprintf("%.1f", g.torch) }, func(g *Game, d int) { g.torch = step(g.torch, 0.5, 1.5, 0.5, d) }},
 		}
 	case "Audio":
@@ -1970,7 +1969,7 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 				f := q(vert{ax, wallTop, az, p.U0, 0, 0, 0, 0}, vert{bx, wallTop, bz, p.U1, 0, 0, 0, 0}, vert{bx, 0.5, bz, p.U1, 1, 0, 0, 0}, vert{ax, 0.5, az, p.U0, 1, 0, 0, 0}, m.face(s.nx*c.rtx+s.nz*c.rtz), 3)
 				f.m, f.front = m, math.Abs(s.nx*c.rtx+s.nz*c.rtz) <= 0.5
 			}
-			if m.lightPow > 0 && Settings.LightMaps { // a flickering glow in front of a light-mapped face
+			if m.lightPow > 0 { // a flickering glow in front of a light-mapped face
 				d := dirs[i]
 				k := 0.5 + 0.1*m.lightPow
 				wx, wz := float64(cx+d[0])+0.5, float64(cy+d[1])+0.5
@@ -2295,11 +2294,11 @@ var (
 
 // Options are the settings on the Esc menu's pages.
 type Options struct {
-	Smooth, Fluid, Dither, Fullscreen, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
-	Torch                                        float64
-	Speed                                        float64 // walk and turn speed, minSpeed to maxSpeed times the normal
-	MapOff, MapSmall                             bool    // the host's minimap: hidden; half its size
-	MapAlpha                                     float64 // the minimap's opacity, minAlpha to 1
+	Smooth, Fluid, Dither, Fullscreen bool // Fluid: a held key walks or turns on without slowing at each cell
+	Torch                             float64
+	Speed                             float64 // walk and turn speed, minSpeed to maxSpeed times the normal
+	MapOff, MapSmall                  bool    // the host's minimap: hidden; half its size
+	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
 }
 
 const minAlpha = 0.2
@@ -2309,7 +2308,7 @@ const minSpeed, maxSpeed = 0.5, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, LightMaps: true, Torch: 1, Speed: 1, MapAlpha: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Torch: 1, Speed: 1, MapAlpha: 1}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
 	// the voice first when toggle, then reports whether it is on.
