@@ -1,26 +1,18 @@
 # build output
 /por
-bin/
 .DS_Store
 __pycache__/
 
-# original game data: never commit (read from the game folder at run time)
-*.DAX
-*.EXE
-*.OVR
-/CFG.C
-/ITEMS
-/POOL.BAT
-/POOL.CFG
-/FONTS/
-/SAVE/
-/__ Code Wheel __.pdf
+# game data in data/ and the unused originals in original/: never commit
+# (only the event scripts, data/assets/scripts)
+/data/*
+!/data/assets/
+/data/assets/*
+!/data/assets/scripts/
+/original/
 decomp/out/
 decomp/emu/saves/
 
-# written by the game at run time
-/FONT.CFG
-/MAPNOTES.TXT
 
 # local tooling
 decomp/emu/.venv/
@@ -30,4 +22,3 @@ decomp/emu/out/
 .mcp.json
 /viewdump/
 /remaster/
-/SPEECH/

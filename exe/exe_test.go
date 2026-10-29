@@ -3,7 +3,7 @@ package exe
 import "testing"
 
 func TestLoad(t *testing.T) {
-	im, err := Load("../START.EXE")
+	im, err := Load("../original/START.EXE")
 	if err != nil {
 		t.Fatal(err)
 	}

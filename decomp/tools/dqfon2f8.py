@@ -2,7 +2,7 @@
 """Convert The Dark Queen of Krynn's GAME.FON (96 glyphs of 8x12 for
 characters 0x20..0x7F, letters on rows 0-9) to a raw .f8 file (256 glyphs
 x 8 rows, bit 7 = left pixel) for the font cycle (engine/fonts.go loads
-FONTS/*.f8 from the game folder). Rows 2, 5, 7 and 11 are dropped: the
+data/assets/fonts/*.f8). Rows 2, 5, 7 and 11 are dropped: the
 letters keep 7 rows and a blank one, descenders land on row 7.
 
     dqfon2f8.py GAME.FON OUT.f8

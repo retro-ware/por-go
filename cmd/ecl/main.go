@@ -1,5 +1,5 @@
 // Command ecl lists one ECL script block: `ecl DISK BLOCK` reads block
-// BLOCK of ECL<DISK>.DAX from the repo root.
+// BLOCK of ECL<DISK>.DAX from data/dos; run it from the repo root.
 package main
 
 import (
@@ -18,7 +18,7 @@ func main() {
 	}
 	disk, _ := strconv.Atoi(os.Args[1])
 	block, _ := strconv.Atoi(os.Args[2])
-	l, err := dax.NewLoader("..")
+	l, err := dax.NewLoader("data/dos")
 	if err != nil {
 		log.Fatal(err)
 	}

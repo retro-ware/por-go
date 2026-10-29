@@ -17,7 +17,7 @@ import (
 // cursor (arrows, click) picks a square; Walk goes there (walk.go), Label
 // names it, Remove clears it.
 // New Phlan starts with its buildings labelled (phlanLabels); the labels of
-// every area the player changed are kept in MAPNOTES.TXT in the game folder.
+// every area the player changed are kept in data/save/MAPNOTES.TXT.
 
 // Label kinds, each with its colour on the maps.
 const (
@@ -94,7 +94,7 @@ func (e *Engine) labels() map[int]mapLabel {
 // loadNotes reads MAPNOTES.TXT: "area KEY" starts an area, then
 // "X Y KIND TEXT" per label.
 func (e *Engine) loadNotes() {
-	f, err := os.Open(filepath.Join(e.L.Dir, notesFile))
+	f, err := os.Open(filepath.Join(e.Cfg.SaveDir, notesFile))
 	if err != nil {
 		return
 	}
@@ -140,7 +140,7 @@ func (e *Engine) saveNotes() {
 			fmt.Fprintf(&b, "%d %d %d %s\n", s&15, s>>4, m[s].kind, m[s].text)
 		}
 	}
-	os.WriteFile(filepath.Join(e.L.Dir, notesFile), []byte(b.String()), 0o644)
+	os.WriteFile(filepath.Join(e.Cfg.SaveDir, notesFile), []byte(b.String()), 0o644)
 }
 
 // legend gives every label text a letter (in order of the texts).

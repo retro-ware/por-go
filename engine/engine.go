@@ -32,6 +32,7 @@ const maxCombatants = 0x48
 // Engine holds the global state the DOS program kept in its data segment.
 type Engine struct {
 	L         *dax.Loader
+	data      string   // New's data directory
 	pal       pal.Regs // EGA palette registers (SetPaletteColor)
 	Cfg       Config
 	tempSel   *Character // selectTemp: selected but not in the party
@@ -169,15 +170,24 @@ func (e *Engine) Dice(n, sides int) int {
 	return t
 }
 
+// The data directory (New's dir) holds one folder per kind of file.
+const (
+	DOSDir    = "dos"    // the DOS game files the engine reads (*.DAX, ITEMS, POOL.CFG)
+	AmigaDir  = "amiga"  // the Amiga graphics and sound, converted from its disks
+	AssetsDir = "assets" // generic assets: fonts/, speech/
+	SaveDir   = "save"   // what the game writes: the saves, FONT.CFG, MAPNOTES.TXT
+)
+
 // New opens the data directory and reads POOL.CFG.
 func New(dir string) (*Engine, error) {
-	l, err := dax.NewLoader(dir)
+	l, err := dax.NewLoader(filepath.Join(dir, DOSDir))
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{L: l, pal: pal.Identity, set: 1, start: time.Now()}
+	l.UseAmiga(filepath.Join(dir, AmigaDir))
+	e := &Engine{L: l, data: dir, pal: pal.Identity, set: 1, start: time.Now()}
 	e.acts.ch = make(chan Action, 64)
-	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: dir, SaveDir: filepath.Join(dir, "SAVE"), FullIntro: true}
+	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: l.Dir, SaveDir: filepath.Join(dir, SaveDir), FullIntro: true}
 	if p := l.Path("POOL.CFG"); p != "" {
 		f, err := os.Open(p)
 		if err == nil {
@@ -200,7 +210,7 @@ func New(dir string) (*Engine, error) {
 		}
 	}
 	if !l.Exists("TITLE.DAX") || !l.Exists("8X8D1.DAX") {
-		return nil, fmt.Errorf("%s: not a Pool of Radiance directory (TITLE.DAX / 8X8D1.DAX missing)", dir)
+		return nil, fmt.Errorf("%s: no Pool of Radiance game files (TITLE.DAX / 8X8D1.DAX missing)", l.Dir)
 	}
 	e.pic.block = -1
 	e.port = portrait{headID: 0xFF, bodyID: 0xFF}

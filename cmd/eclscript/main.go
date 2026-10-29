@@ -1,6 +1,6 @@
 // Command eclscript translates ECL byte code into readable scripts:
-// `eclscript DIR` writes every area script of the ECL<n>.DAX files (the
-// data files beside the working directory's parent, as cmd/ecl) to
+// `eclscript DIR` (DIR is data/assets/scripts) writes every area script of the ECL<n>.DAX files (in data/dos;
+// run it from the repo root, as cmd/ecl) to
 // DIR/area<BLOCK>.txt, one command and its operands per line, jump
 // targets as labels. A block found on several disks is written once.
 //
@@ -31,7 +31,7 @@ func main() {
 		log.Fatal("usage: eclscript DIR")
 	}
 	dir := os.Args[1]
-	l, err := dax.NewLoader("..")
+	l, err := dax.NewLoader("data/dos")
 	if err != nil {
 		log.Fatal(err)
 	}

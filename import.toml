@@ -6,8 +6,8 @@ name     = "Pool of Radiance (1988)"
 describe = "The SSI DOS release"
 markers  = ["TITLE.DAX", "8X8D1.DAX"]
 exclude  = ["SKY.DAX", "BIGPIC1.DAX"] # Curse of the Azure Bonds
-files    = ["*.DAX", "POOL.CFG", "ITEMS", "SAVE/*", "FONTS/*.F8"]
-dest     = "data"
+files    = ["*.DAX", "POOL.CFG", "ITEMS"]
+dest     = "data/dos"
 upper    = true
 run      = ["./por", "-cover"]
 

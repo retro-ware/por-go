@@ -14,7 +14,7 @@ import (
 // (fonts/, CC BY-SA 4.0, see fonts/LICENSE.txt), Ctrl-Shift-L goes back.
 // A PC font draws text in its real case (the game's font has capitals
 // only); the game's symbols (borders, cursors) keep its own glyphs. The
-// choice is kept in FONT.CFG in the game folder.
+// choice is kept in data/save/FONT.CFG.
 
 //go:embed fonts/*.f8
 var fontFS embed.FS
@@ -46,22 +46,22 @@ type textCell struct {
 
 const fontFile = "FONT.CFG"
 
-// loadFont reads the game folder's fonts and picks the one named in
+// loadFont reads the fonts in data/assets/fonts and picks the one named in
 // FONT.CFG.
 func (e *Engine) loadFont() {
 	e.ext.fonts = nil
-	ents, _ := os.ReadDir(filepath.Join(e.L.Dir, "FONTS"))
+	ents, _ := os.ReadDir(filepath.Join(e.data, AssetsDir, "fonts"))
 	for _, d := range ents {
 		if !strings.EqualFold(filepath.Ext(d.Name()), ".f8") {
 			continue
 		}
-		b, err := os.ReadFile(filepath.Join(e.L.Dir, "FONTS", d.Name()))
+		b, err := os.ReadFile(filepath.Join(e.data, AssetsDir, "fonts", d.Name()))
 		if err == nil && len(b) == 256*8 {
 			e.ext.fonts = append(e.ext.fonts, pcFont{strings.TrimSuffix(d.Name(), filepath.Ext(d.Name())), b})
 		}
 	}
 	e.ext.fonts = append(e.ext.fonts, pcFonts...)
-	b, err := os.ReadFile(filepath.Join(e.L.Dir, fontFile))
+	b, err := os.ReadFile(filepath.Join(e.Cfg.SaveDir, fontFile))
 	if err != nil {
 		return
 	}
@@ -92,7 +92,7 @@ func (e *Engine) cycleFont(step int) {
 	if e.ext.font > 0 {
 		name = e.ext.fonts[e.ext.font-1].name
 	}
-	os.WriteFile(filepath.Join(e.L.Dir, fontFile), []byte(name+"\n"), 0o644)
+	os.WriteFile(filepath.Join(e.Cfg.SaveDir, fontFile), []byte(name+"\n"), 0o644)
 }
 
 // FontName is the current font's name ("Pool of Radiance" for the game's).

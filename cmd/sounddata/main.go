@@ -2,7 +2,7 @@
 // driver (the PC speaker's and the Tandy's songs, their scripts and the vibrato
 // waveforms) as Go data, so the engine plays them without the exe.
 //
-//	go run ./cmd/sounddata START.EXE > engine/sounddata.go
+//	go run ./cmd/sounddata original/START.EXE > engine/sounddata.go
 //
 // It checks that the scripts use only what the engine's driver implements: no notes, no
 // channel resets, and none of the fields that drive the notes' envelope.

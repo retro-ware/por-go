@@ -11,7 +11,7 @@ import (
 	"por/amiga"
 )
 
-//go:generate sh -c "go run ../cmd/sounddata ../START.EXE > sounddata.go"
+//go:generate sh -c "go run ../cmd/sounddata ../original/START.EXE > sounddata.go"
 
 // The sound driver of START.EXE (its segment 08AE): a sequencer run from the timer
 // interrupt, reprogrammed to 236.7 Hz, that steps two sets of four channels every tick,
@@ -180,7 +180,7 @@ type sound struct {
 	tickLeft float64
 	tandy    bool // Tandy sound chip present (config 'T'): render the SN76489
 	sn       sn76489
-	am       *amiga.Player // DISK2/SOUND.BIN imported: the Amiga players instead
+	am       *amiga.Player // data/amiga/SOUND.BIN imported: the Amiga players instead
 	music    int           // the Amiga song Music started last
 }
 
@@ -341,7 +341,7 @@ func (e *Engine) SoundReader() *sound {
 	}
 	s.wait = 100 // soundWait(100) at start-up
 	s.on = true
-	if img, err := os.ReadFile(filepath.Join(e.L.Dir, "DISK2", "SOUND.BIN")); err == nil && len(img) == amiga.End-amiga.Base {
+	if img, err := os.ReadFile(filepath.Join(e.data, AmigaDir, "SOUND.BIN")); err == nil && len(img) == amiga.End-amiga.Base {
 		s.am = amiga.New(img)
 	}
 	return s

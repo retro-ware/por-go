@@ -35,7 +35,7 @@ func TestImportZipAndLoose(t *testing.T) {
 		// the cover needs a real TITLE.DAX, so only the file copy is checked
 		importGame(src, dst)
 		for _, n := range []string{"TITLE.DAX", "8X8D1.DAX", "ITEMS"} {
-			if _, err := os.Stat(filepath.Join(dst, n)); err != nil {
+			if _, err := os.Stat(filepath.Join(dst, "dos", n)); err != nil {
 				t.Errorf("%s: %v", name, err)
 			}
 		}

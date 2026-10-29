@@ -1,5 +1,5 @@
 // Command geodump writes block BLOCK of GEO<DISK>.DAX (without its 2-byte
-// header) to OUT: `geodump DISK BLOCK OUT`, run from the repo root.
+// header) to OUT: `geodump DISK BLOCK OUT`, run from the repo root (reads data/dos).
 package main
 
 import (
@@ -17,7 +17,7 @@ func main() {
 	}
 	disk, _ := strconv.Atoi(os.Args[1])
 	block, _ := strconv.Atoi(os.Args[2])
-	l, err := dax.NewLoader(".")
+	l, err := dax.NewLoader("data/dos")
 	if err != nil {
 		log.Fatal(err)
 	}

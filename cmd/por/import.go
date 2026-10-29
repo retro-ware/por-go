@@ -17,6 +17,7 @@ import (
 	"por/adf"
 	"por/amiga"
 	"por/dax"
+	"por/engine"
 	"por/pal"
 
 	"github.com/retro-ware/gameimport"
@@ -25,20 +26,21 @@ import (
 // importGame (-import, for goplay) finds a Pool of Radiance install
 // anywhere under src (the folder holding START.EXE and TITLE.DAX, but not
 // SKY.DAX or BIGPIC1.DAX: those are Curse of the Azure Bonds'), copies
-// the files the engine reads into dst, its SAVE and FONTS folders, and
-// writes dst/COVER.PNG from the title picture for the floppy label.
+// the files the engine reads into dst/dos, its SAVE folder into dst/save
+// and its FONTS into dst/assets/fonts, and writes dst/COVER.PNG from the
+// title picture for the floppy label.
 func importGame(src, dst string) error {
 	files, err := gameimport.Find(src, func(name string) bool {
 		base, dir := path.Base(name), strings.ToUpper(path.Base(path.Dir(name)))
 		ext := strings.ToUpper(path.Ext(base))
-		return ext == ".DAX" || strings.EqualFold(base, "START.EXE") || strings.EqualFold(base, "POOL.CFG") ||
+		return ext == ".DAX" || strings.EqualFold(base, "POOL.CFG") ||
 			strings.EqualFold(base, "ITEMS") || dir == "SAVE" || dir == "FONTS" && ext == ".F8"
 	})
 	if err != nil {
 		return err
 	}
 	// The game's folder: TITLE.DAX and 8X8D1.DAX, not SKY.DAX or BIGPIC1.DAX
-	// (Curse of the Azure Bonds'). START.EXE is not needed: the engine never reads it.
+	// (Curse of the Azure Bonds'). START.EXE is not copied: the engine never reads it.
 	// ponytail: a loose SAVE or FONTS folder is found by its name beside the game files.
 	has := func(dir, n string) bool {
 		for k := range files {
@@ -61,13 +63,15 @@ func importGame(src, dst string) error {
 		return errors.New("no Pool of Radiance found")
 	}
 	for k, b := range files {
-		out, base, d := dst, path.Base(k), path.Dir(k)
+		var out string
+		base, d := path.Base(k), path.Dir(k)
 		switch {
 		case d == dir:
+			out = filepath.Join(dst, engine.DOSDir)
 		case strings.EqualFold(path.Base(d), "SAVE") && path.Dir(d) == dir:
-			out = filepath.Join(dst, "SAVE")
+			out = filepath.Join(dst, engine.SaveDir)
 		case strings.EqualFold(path.Base(d), "FONTS") && path.Dir(d) == dir:
-			out = filepath.Join(dst, "FONTS")
+			out = filepath.Join(dst, engine.AssetsDir, "fonts")
 		default:
 			continue
 		}
@@ -83,7 +87,7 @@ func importGame(src, dst string) error {
 
 // writeCover renders TITLE.DAX block 2, the title picture.
 func writeCover(dst string) error {
-	l, err := dax.NewLoader(dst)
+	l, err := dax.NewLoader(filepath.Join(dst, engine.DOSDir))
 	if err != nil {
 		return err
 	}
@@ -132,10 +136,10 @@ var amigaGfx = map[string]struct {
 
 // importDisk2 (-import-disk2, goplay drive B) finds the Amiga Pool of
 // Radiance data disk among the .adf images under src (loose or zipped) and
-// writes its graphics, converted to DOS-layout archives, to dst/DISK2.
+// writes its graphics, converted to DOS-layout archives, to dst/amiga.
 func importDisk2(src, dst string) error {
 	var disk []adf.File
-	var snd []byte // disk 1's program: the Amiga sound players and samples
+	var snd []byte        // disk 1's program: the Amiga sound players and samples
 	var title image.Image // disk 1's intro: the painted title
 	look := func(img []byte) bool {
 		_, files, err := adf.Read(img)
@@ -194,7 +198,7 @@ func importDisk2(src, dst string) error {
 	if disk == nil && snd == nil {
 		return errors.New("no Amiga Pool of Radiance disk found")
 	}
-	out := filepath.Join(dst, "DISK2")
+	out := filepath.Join(dst, engine.AmigaDir)
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return err
 	}

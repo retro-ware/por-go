@@ -32,7 +32,7 @@ func (s *sets) String() string     { return strings.Join(*s, ",") }
 func (s *sets) Set(v string) error { *s = append(*s, v); return nil }
 
 func main() {
-	data := flag.String("data", "", "game directory (default: the nearest one above holding START.EXE, as cmd/trace)")
+	data := flag.String("data", "", "game directory (default: data/ in the nearest folder above holding data/dos/TITLE.DAX, as cmd/trace)")
 	out := flag.String("out", "", "fixture directory to write")
 	block := flag.Int("block", -1, "ECL block to enter (-1 keeps the saved area)")
 	x := flag.Int("x", -1, "party x")
@@ -51,23 +51,23 @@ func main() {
 	if root == "" {
 		wd, _ := os.Getwd()
 		for d := wd; d != filepath.Dir(d); d = filepath.Dir(d) {
-			if _, err := os.Stat(filepath.Join(d, "START.EXE")); err == nil {
-				root = d
+			if _, err := os.Stat(filepath.Join(d, "data", "dos", "TITLE.DAX")); err == nil {
+				root = filepath.Join(d, "data")
 				break
 			}
 		}
 	}
-	sv, err := os.ReadFile(filepath.Join(root, "SAVE", "SAVGAMA.DAT"))
+	sv, err := os.ReadFile(filepath.Join(root, engine.SaveDir, "SAVGAMA.DAT"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	s, err := engine.OpenSave(sv)
 	if err != nil {
-		log.Fatalf("SAVE/SAVGAMA.DAT: %v", err)
+		log.Fatalf("%s/SAVGAMA.DAT: %v", engine.SaveDir, err)
 	}
 
 	if *block >= 0 {
-		l, err := dax.NewLoader(root)
+		l, err := dax.NewLoader(filepath.Join(root, engine.DOSDir))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -118,7 +118,7 @@ func main() {
 	}
 	for _, name := range s.Party() {
 		for _, ext := range []string{".SAV", ".SPC", ".ITM"} {
-			b, err := os.ReadFile(filepath.Join(root, "SAVE", name+ext))
+			b, err := os.ReadFile(filepath.Join(root, engine.SaveDir, name+ext))
 			if err != nil {
 				continue
 			}

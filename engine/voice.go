@@ -14,7 +14,7 @@ import (
 )
 
 // Voice-over (extra): story texts, journal texts and first visits are read
-// aloud from SPEECH/<key>.mp3 in the game folder (rendered by voice/render.py,
+// aloud from data/assets/speech/<key>.mp3 (rendered by voice/render.py,
 // 44100 Hz). On unless switched off in the remastered view's Esc options; each text speaks once per save
 // (VOICED.GOB beside SEEN.GOB); Enter or Esc silences it.
 
@@ -64,7 +64,7 @@ func (e *Engine) speak(key string) {
 	if e.ext.voiced[key] || !e.voiceOn() {
 		return
 	}
-	b, err := os.ReadFile(filepath.Join(e.L.Dir, "SPEECH", key+".mp3"))
+	b, err := os.ReadFile(filepath.Join(e.data, AssetsDir, "speech", key+".mp3"))
 	if err != nil {
 		return
 	}

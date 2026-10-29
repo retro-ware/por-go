@@ -13,7 +13,10 @@ from unicorn.x86_const import *
 HERE = os.path.dirname(os.path.abspath(__file__))
 DECOMP = os.path.dirname(HERE)
 OUT = os.path.join(DECOMP, 'out')
-ROOT = os.path.abspath(os.path.join(DECOMP, '..'))   # repo root: START.EXE, *.DAX, SAVE/
+ROOT = os.path.abspath(os.path.join(DECOMP, '..'))   # repo root
+# the DOS install, split between the files the port reads and the rest
+GAME_DIRS = [os.path.join(ROOT, 'data', 'dos'), os.path.join(ROOT, 'original')]
+SAVES = os.path.join(ROOT, 'data', 'save')
 
 LOAD = 0x1000            # START.bin load segment (PSP = LOAD-0x10)
 PSP = LOAD - 0x10
@@ -89,10 +92,16 @@ class Machine:
     def setreg(self, r, v): self.mu.reg_write(r, v)
 
     def _prep_scratch(self):
-        # writes never touch the repo: SAVE/ is copied fresh for every run
+        # writes never touch the repo: SAVE/ is copied fresh for every run,
+        # and the game folder is put together from GAME_DIRS (links)
         if os.path.exists(self.scratch):
             shutil.rmtree(self.scratch)
-        shutil.copytree(os.path.join(ROOT, 'SAVE'), os.path.join(self.scratch, 'SAVE'))
+        shutil.copytree(SAVES, os.path.join(self.scratch, 'SAVE'), ignore=shutil.ignore_patterns('saves'))
+        self.game = os.path.join(self.scratch, 'game')
+        os.makedirs(self.game)
+        for d in GAME_DIRS:
+            for f in os.listdir(d):
+                os.symlink(os.path.join(d, f), os.path.join(self.game, f))
         fix = os.environ.get('POR_SAVES')  # scenario fixture: its files replace those of SAVE/
         if fix:
             for f in os.listdir(fix):
@@ -350,7 +359,7 @@ class Machine:
 
     # ---------------------------------------------------------------- DOS
     def _path(self, name, write=False):
-        """Map a DOS path onto the repo root; SAVE\\ and every write go to the scratch copy."""
+        """Map a DOS path onto the assembled game folder; SAVE\\ and every write go to the scratch copy."""
         n = name.replace('/', '\\')
         if len(n) > 1 and n[1] == ':':
             n = n[2:]
@@ -362,7 +371,7 @@ class Machine:
         elif write:
             base = self.scratch
         else:
-            base = ROOT
+            base = self.game
         d = base
         for i, p in enumerate(parts):
             hit = None

@@ -114,14 +114,14 @@ const (
 // (0x600) outline, the intro's credits palette entries 2 and 1.
 var subGold, subRed = color.RGBA{0xff, 0x99, 0, 0xff}, color.RGBA{0x66, 0, 0, 0xff}
 
-// titleBackdrop is the Amiga painted title (DISK2/TITLE.PNG, written by
+// titleBackdrop is the Amiga painted title (data/amiga/TITLE.PNG, written by
 // -import-disk2), nil without it.
 func (e *Engine) titleBackdrop() image.Image {
 	if e.snap.backdropRead {
 		return e.snap.backdrop
 	}
 	e.snap.backdropRead = true
-	if f, err := os.Open(filepath.Join(e.L.Dir, "DISK2", "TITLE.PNG")); err == nil {
+	if f, err := os.Open(filepath.Join(e.data, AmigaDir, "TITLE.PNG")); err == nil {
 		e.snap.backdrop, _ = png.Decode(f)
 		f.Close()
 	}

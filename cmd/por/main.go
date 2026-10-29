@@ -374,8 +374,8 @@ func main() {
 	dir := flag.String("data", "", "where -import and -import-disk2 write (goplay)")
 	scale := flag.Int("scale", 3, "window scale")
 	imp := flag.String("import", "", "copy the game found under this directory into -data, then exit (goplay)")
-	imp2 := flag.String("import-disk2", "", "convert the Amiga graphics from the .adf disks under this directory into -data/DISK2, then exit (goplay)")
-	cover := flag.Bool("cover", false, "write data/COVER.PNG from data/TITLE.DAX, then exit (gameimport)")
+	imp2 := flag.String("import-disk2", "", "convert the Amiga graphics from the .adf disks under this directory into -data/amiga, then exit (goplay)")
+	cover := flag.Bool("cover", false, "write data/COVER.PNG from data/dos/TITLE.DAX, then exit (gameimport)")
 	flag.Parse()
 	if *cover {
 		if err := writeCover("data"); err != nil {
@@ -401,9 +401,9 @@ func main() {
 		}
 		return
 	}
-	if _, err := os.Stat(filepath.Join("data", "TITLE.DAX")); err != nil {
+	if _, err := os.Stat(filepath.Join("data", engine.DOSDir, "TITLE.DAX")); err != nil {
 		wd, _ := os.Getwd()
-		fmt.Fprintf(os.Stderr, "No Pool of Radiance data in %s.\nRun gameimport, or copy the DOS game files (TITLE.DAX, 8X8D1.DAX, ...) there yourself.\n", filepath.Join(wd, "data"))
+		fmt.Fprintf(os.Stderr, "No Pool of Radiance data in %s.\nRun gameimport, or copy the DOS game files (TITLE.DAX, 8X8D1.DAX, ...) there yourself.\n", filepath.Join(wd, "data", engine.DOSDir))
 		os.Exit(1)
 	}
 	eng, err := engine.New("data")

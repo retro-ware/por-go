@@ -80,7 +80,7 @@ type extras struct {
 
 	// fonts.go
 	font   int              // 0: the game's font, else fonts[font-1]
-	fonts  []pcFont         // the game folder's fonts (FONTS/*.f8), then the PC fonts
+	fonts  []pcFont         // the fonts in data/assets/fonts (*.f8), then the PC fonts
 	cells  [25][40]textCell // the text drawn into each cell
 	note   string           // shown over the picture for a moment
 	noteAt time.Time

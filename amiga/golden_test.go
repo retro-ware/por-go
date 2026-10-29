@@ -13,7 +13,7 @@ import (
 var update = flag.Bool("update", false, "rewrite testdata/golden.txt")
 
 // TestGolden plays every song and effect of the game's sound image
-// (POR_SOUND = a DISK2/SOUND.BIN made by por -import-disk2) and compares a
+// (POR_SOUND = a data/amiga/SOUND.BIN made by por -import-disk2) and compares a
 // hash of the chip writes and the rendered audio with testdata/golden.txt.
 func TestGolden(t *testing.T) {
 	path := os.Getenv("POR_SOUND")

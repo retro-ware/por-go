@@ -1,7 +1,7 @@
 // Command amigasongs renders the Amiga music player's songs 1-7 to WAV
 // files for listening: `amigasongs SOUND.BIN OUTDIR [SECONDS]`, e.g.
 //
-//	go run ./cmd/amigasongs bin/amiga/DISK2/SOUND.BIN /tmp/songs 120
+//	go run ./cmd/amigasongs data/amiga/SOUND.BIN /tmp/songs 120
 //
 // Each song plays for SECONDS (default 120) from a fresh player; trailing
 // silence is cut, so a song that plays once ends where it stops.

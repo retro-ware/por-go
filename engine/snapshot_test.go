@@ -13,10 +13,10 @@ import (
 // TestView loads saved game A headless (needs the game files in the repo
 // root) and checks the published View as the party turns and opens a sheet.
 func TestView(t *testing.T) {
-	if _, err := os.Stat("../TITLE.DAX"); err != nil {
+	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
-	e, err := engine.New("..")
+	e, err := engine.New("../data")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,10 +135,10 @@ func keyWait(e *engine.Engine, a engine.Action) engine.View {
 
 // battleView loads GAME A and starts the dev combat scene.
 func battleView(t *testing.T) (*engine.Engine, engine.View) {
-	if _, err := os.Stat("../TITLE.DAX"); err != nil {
+	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
-	e, err := engine.New("..")
+	e, err := engine.New("../data")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,10 +379,10 @@ func TestAimOutOfReach(t *testing.T) {
 // TestViewMember: a portrait click (KeyViewMember) on the command bar opens
 // that member's View page.
 func TestViewMember(t *testing.T) {
-	if _, err := os.Stat("../TITLE.DAX"); err != nil {
+	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
-	e, err := engine.New("..")
+	e, err := engine.New("../data")
 	if err != nil {
 		t.Fatal(err)
 	}

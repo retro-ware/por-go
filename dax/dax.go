@@ -113,7 +113,7 @@ type Loader struct {
 	mu    sync.Mutex
 	files map[string]*File
 	names map[string]string   // lower-case name -> real file name
-	amiga *Loader             // DIR/DISK2: Amiga graphics by base name (PIC.DAX for PIC1..8)
+	amiga *Loader             // UseAmiga's: Amiga graphics by base name (PIC.DAX for PIC1..8)
 	memo  map[amigaKey][]byte // finished Amiga blocks (name munging and centre done once)
 }
 
@@ -131,11 +131,14 @@ func NewLoader(dir string) (*Loader, error) {
 	l := &Loader{Dir: dir, files: map[string]*File{}, names: map[string]string{}}
 	for _, e := range ents {
 		l.names[strings.ToLower(e.Name())] = e.Name()
-		if e.IsDir() && strings.EqualFold(e.Name(), "DISK2") {
-			l.amiga, _ = NewLoader(filepath.Join(dir, e.Name()))
-		}
 	}
 	return l, nil
+}
+
+// UseAmiga makes the Amiga archives in dir (cmd/por -import-disk2) stand in
+// for the DOS ones of the same base name; a missing dir changes nothing.
+func (l *Loader) UseAmiga(dir string) {
+	l.amiga, _ = NewLoader(dir)
 }
 
 // Path returns the real path for a case-insensitive file name, or "".
