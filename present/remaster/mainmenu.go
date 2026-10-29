@@ -105,6 +105,7 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
+	p.drawCardTip(dst, v)
 	if v.MainAsk && v.Menu != nil { // a question pops up over it (Quit to DOS)
 		var lines []string
 		var keys []byte
@@ -144,6 +145,7 @@ func (p *Presenter) mainClick(x, y int) bool {
 
 // mainHover highlights the function under the pointer when it moves.
 func (p *Presenter) mainHover(x, y int) {
+	p.cardHover = 1 + cardUnder(p.cards, x, y)
 	if image.Pt(x, y) == p.pointer {
 		return
 	}

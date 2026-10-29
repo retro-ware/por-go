@@ -79,6 +79,9 @@ type Presenter struct {
 	typing      bool                        // a line is being typed (input.go) ...
 	typed       string                      // ... and reads this
 	hovered     [3]int                      // the spot and cell the pointer was last on (Mouse)
+	cardHover   int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
+	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
+	tipBuf      []byte                      // its pixels
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -108,7 +111,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return p.drawSlots(dst, v, note)
 	}
 	sc := p.scene(v)
-	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText) {
+	if sc == nil || !v.Choosing && (!v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		return p.drawPage(dst, v, note)
@@ -140,6 +143,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
+	p.drawCardTip(dst, v)
 	k := scale(dst)
 	b := dst.Bounds()
 	if n := len(v.Party); n > 0 { // pop-ups go between the card columns
@@ -153,14 +157,14 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
-	if v.Window == engine.WinPicture || v.Window == engine.WinText {
+	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		drawBox(dst, frame, p.border.tiles, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
 	pane, asking := textPane(v), v.Menu != nil && !v.Command && !noChoice(v)
 	if asking {
 		p.answered = pane
 	}
-	shown := v.TextShown && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
+	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
 	textOnly := shown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
 	if textOnly { // a message, no choice to make: along the bottom edge
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, b.Dy()-int(pk*th/2))
@@ -186,7 +190,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.sel = min(p.sel, len(lines)-1)
 		top := cy + int(pk*th/2) + int(pk*8)
-		if v.Command || noChoice(v) {
+		if v.Command || noChoice(v) || v.Choosing { // a member pick: "Heal whom?" in the middle, the cards round it
 			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
 		p.menuSel = v.Menu.Sel
@@ -226,7 +230,7 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
-	if v.Inventory != nil && p.inv.view != nil {
+	if v.Inventory != nil && p.inv.view != nil && !v.Choosing {
 		return p.inventoryKey(k)
 	}
 	if p.fight {
@@ -257,11 +261,14 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		p.menu = false
 		return false
 	}
+	if v.Choosing && (k == 0x4800 || k == 0x5000 || k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0) { // a member pick: Up, Down and F1-F8 go to the portraits (keyAct)
+		return false
+	}
 	n := len(m.Items)
 	switch {
-	case k == 0x4800:
+	case k == 0x4800 || k == 0x4B00 && v.Choosing: // (a member pick: Left and Right step Select and Exit)
 		p.sel = (p.sel + n - 1) % n
-	case k == 0x5000:
+	case k == 0x5000 || k == 0x4D00 && v.Choosing:
 		p.sel = (p.sel + 1) % n
 	case k == 13:
 		p.menu = false
@@ -332,6 +339,7 @@ func (p *Presenter) Hover(x, y int) {
 		}
 		return
 	}
+	p.cardHover = 1 + cardUnder(p.cards, x, y)
 	if !p.menu || image.Pt(x, y) == p.pointer {
 		return
 	}
@@ -378,7 +386,19 @@ func (p *Presenter) OptionsMouse(x, y int, left, right bool, wheel float64) {
 
 // noChoice reports a question with one answer ("press enter to continue"):
 // a message, not a choice.
-func noChoice(v engine.View) bool { return v.Menu != nil && !v.Command && len(v.Menu.Items) == 1 }
+func noChoice(v engine.View) bool {
+	return v.Menu != nil && !v.Command && len(v.Menu.Items) == 1 && !v.Choosing // a member pick's lone Select is still a choice: whom
+}
+
+// cardUnder is the card at screen pixel (x, y), -1 for none.
+func cardUnder(cards []image.Rectangle, x, y int) int {
+	for i, r := range cards {
+		if image.Pt(x, y).In(r) {
+			return i
+		}
+	}
+	return -1
+}
 
 // menuID tells menus apart: prompt and items.
 func menuID(m *engine.Menu) string {

@@ -292,11 +292,14 @@ func (g *game) Draw(dst *gpu.Image) {
 // presenters. The window opens unfocused and ignores the user's input
 // meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
 // first adventuring prompt. POR_POINTER=x,y puts the pointer there. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
-// arrows.
+// arrows, \1..\8 F1..F8.
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
 
 func scriptKeys(s string) []uint16 {
 	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00}
+	for n := range 8 { // \1..\8: F1..F8
+		esc['1'+byte(n)] = remaster.KeyF1 + uint16(n)<<8
+	}
 	var out []uint16
 	for i := 0; i < len(s); i++ {
 		if c, ok := esc[s[min(i+1, len(s)-1)]]; s[i] == '\\' && i+1 < len(s) && ok {

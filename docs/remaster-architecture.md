@@ -180,7 +180,7 @@ Checks:
   - The menu and prompt line (row 0x18) is laid along the bottom, cropped from the classic frame and scaled by a whole factor.
 - **`classic.Presenter.Frame`** returns the converted 320x200 frame for those crops.
 - **F10** in `cmd/por` switches presenters and never reaches the engine. `POR_REMASTER=1` starts in remaster mode.
-- **POR_KEYS** gained `\U \D \L \R` (the arrows) and `\T` (F10).
+- **POR_KEYS** gained `\U \D \L \R` (the arrows) and `\T` (F10). Later `\1`..`\8` (F1..F8).
 - **Checks:**
   - Remastered Phlan from GAME A (7,0 E, and 6,0 S after walking) matches the classic view's geometry.
   - Switching three times mid-walk (`L\r\U\T\U\R\T\U\T`) ends on a frame byte-identical to the same walk without switching.

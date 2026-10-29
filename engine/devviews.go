@@ -67,6 +67,8 @@ func (e *Engine) DevScene(name string) func() {
 			e.AfterCombat()
 			e.DrawMainScreen()
 		}
+	case "who": // a member pick on the view, as a script's "Who will search?"
+		return func() { e.SelectCharacter("Who will search?", false, nil) }
 	case "effects":
 		return func() { // spell effects for the View page: many on member 1, one on member 2
 			for _, t := range []affectType{affBless, affCurse, affMonsterInvisible, affPoisoned, affRegenerating, affFireResistance} {

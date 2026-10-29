@@ -93,6 +93,7 @@ type View struct {
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
+	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActMove Up/Down steps, Enter takes the candidate
 	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
@@ -195,7 +196,7 @@ func (e *Engine) publish() {
 		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,
 		Command: e.ext.inCommand,
 	}
-	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText {
+	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.ext.choosing {
 		v.Map = e.mapImage(mapCell)
 	}
 	if s.invOn {
@@ -213,10 +214,13 @@ func (e *Engine) publish() {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots, v.Credits, v.Slots = s.typing, e.spots(), s.credits, s.slots
+	v.Typing, v.Spots, v.Credits, v.Slots, v.Choosing = s.typing, e.spots(), s.credits, s.slots, e.ext.choosing
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {
+		if !isParty(c) { // the monsters loaded for a fight sit on the same list: no cards for them
+			continue
+		}
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
 			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,

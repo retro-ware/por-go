@@ -123,6 +123,27 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 	}
 }
 
+// drawCardTip names the member whose card the pointer is on (cardHover):
+// name and class in a box beside the card, on the side away from the edge.
+func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
+	i := p.cardHover - 1
+	if i < 0 || i >= len(p.cards) || i >= len(v.Party) {
+		return
+	}
+	m, r, k := v.Party[i], p.cards[i], cardScale(dst)
+	lines := []string{m.Name, m.Class}
+	w := k * 8 * (max(len(m.Name), len(m.Class)) + 4) // the box: a border and a blank column each side
+	cx := r.Max.X + cardGap*k + w/2
+	if r.Min.X > dst.Bounds().Dx()/2 { // the right column: to the left of it
+		cx = r.Min.X - cardGap*k - w/2
+	}
+	rects := slices.Clone(p.menuRects)                                                  // not a menu: the question's clicks stay
+	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf // its own image: the menu's keeps its size
+	p.drawMenu(dst, p.glyph, "", lines, nil, -1, float64(k), cx, r.Min.Y)
+	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf
+	p.menuRects = rects
+}
+
 // bar draws a hit point bar w wide: the groove, filled v of maxV.
 func (p *Presenter) bar(dst *gpu.Image, x, y, w, v, maxV int, fill image.Rectangle) {
 	blit := func(src, d image.Rectangle) {
