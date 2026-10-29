@@ -107,7 +107,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	blobber.Night = !v.Day
 	p.animate()
 	p.view.Draw(dst)
-	p.drawMap(dst, v.Map)
+	p.drawMap(dst, v.Map, len(v.Party))
 	p.drawParty(dst, v.Party, cardAt(dst))
 	p.view.DrawMenu(dst) // over the map and cards
 	p.cards = p.cards[:0]
@@ -347,13 +347,18 @@ func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
 	}
 }
 
-// mapRect is where the map goes: the top right corner, in a 1 px border, at a
-// whole scale (mapSide pixels at scale 1).
-func mapRect(dst *gpu.Image) image.Rectangle {
+// mapRect is where the map goes: a square right-aligned with the cards'
+// right edge, a card gap below the top and above the right column's top
+// card (n cards in all).
+func mapRect(dst *gpu.Image, n int) image.Rectangle {
 	b := dst.Bounds()
-	k := mapScale(dst)
-	side := mapSide*k + 2
-	return image.Rect(b.Dx()-side, 0, b.Dx(), side)
+	k := cardScale(dst)
+	gap := cardGap * k
+	top := cardAt(dst)(n-1, max(n, 2)) // the right column's last card...
+	per := max(n, 2) - (max(n, 2)+1)/2
+	y := top.Min.Y - (per-1)*(cardH+cardGap)*k // ...up to its first
+	side := min(y-2*gap, b.Dx()/2)
+	return image.Rect(b.Dx()-gap-side, gap, b.Dx()-gap, gap+side)
 }
 
 const cardGap, cardRows = 8, 4
@@ -367,15 +372,8 @@ func cardScale(dst *gpu.Image) int {
 // mapSide is View.Map's side in pixels.
 const mapSide = 16 * engine.MapCell
 
-// mapScale is the map's whole scale: as large as leaves room for the card
-// columns (four cards each, two of them NPCs) under it.
-func mapScale(dst *gpu.Image) int {
-	free := dst.Bounds().Dy() - cardRows*(cardH+cardGap)*cardScale(dst) - cardGap - 2
-	return max(1, free/mapSide)
-}
-
 // drawMap shows the map as the full map draws it (View.Map) in mapRect.
-func (p *Presenter) drawMap(dst *gpu.Image, m image.Image) {
+func (p *Presenter) drawMap(dst *gpu.Image, m image.Image, n int) {
 	if m == nil {
 		return
 	}
@@ -386,10 +384,10 @@ func (p *Presenter) drawMap(dst *gpu.Image, m image.Image) {
 		p.mapImg.WritePixels(m.(*image.RGBA).Pix)
 		p.mapSrc = m
 	}
-	r := mapRect(dst)
+	r := mapRect(dst, n)
 	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.Gray{0x80}, false)
 	dst.SubImage(r.Inset(1)).(*gpu.Image).Fill(color.Black)
-	k := float64(mapScale(dst))
+	k := float64(r.Dx()-2) / mapSide // any scale: the square keeps the aspect
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(float64(r.Min.X)+(float64(r.Dx())-mapSide*k)/2, float64(r.Min.Y)+(float64(r.Dy())-mapSide*k)/2)

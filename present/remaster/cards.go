@@ -14,7 +14,7 @@ import (
 )
 
 // The party's portrait cards: each member's face in the game's window
-// border (grey for the selected member: whose turn, whose screen), the hit
+// border (in colour for the selected member: whose turn, whose screen; grey for the others), the hit
 // point bar under it, and the sheet's status over the face.
 
 // Card layout at scale 1.
@@ -89,7 +89,7 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 		d.Clear()
 		d.SubImage(image.Rect(8, 8, cardW-8, frameH-8)).(*gpu.Image).Fill(color.Black)
 		t := p.border.tiles
-		if m.Selected {
+		if !m.Selected {
 			t = p.border.grey
 		}
 		drawBorder(d, t, gpu.GeoM{}, cardW/8, frameH/8)
