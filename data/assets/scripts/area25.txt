@@ -9,7 +9,8 @@ on move {
 
 def EdgeNorth() {
     goto [BlockMove, BlockMove, EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeOk, BlockMove][FacingRaw]
-} # falls into EdgeWest
+    goto EdgeWest
+}
 
 EdgeWest:
     goto [EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeOk, BlockMove, BlockMove, BlockMove][FacingRaw]
@@ -20,7 +21,8 @@ BlockMove:
 
 def EdgeEast() {
     goto [EdgeOk, ExitToCity, ExitToCity, EdgeEastCorner, EdgeOk, EdgeOk, EdgeOk, EdgeOk][FacingRaw]
-} # falls into EdgeOk
+    goto EdgeOk
+}
 
 EdgeOk:
     return
@@ -54,7 +56,8 @@ def CheckTerrainAhead() {
 
 def ProbeNW() {
     ProbeX -= 1
-} # falls into ProbeN
+    goto ProbeN
+}
 
 ProbeN:
     ProbeY -= 1
@@ -62,7 +65,8 @@ ProbeN:
 
 def ProbeNE() {
     ProbeY -= 1
-} # falls into ProbeE
+    goto ProbeE
+}
 
 ProbeE:
     ProbeX += 1
@@ -70,7 +74,8 @@ ProbeE:
 
 def ProbeSE() {
     ProbeX += 1
-} # falls into ProbeS
+    goto ProbeS
+}
 
 ProbeS:
     ProbeY += 1
@@ -78,7 +83,8 @@ ProbeS:
 
 def ProbeSW() {
     ProbeY += 1
-} # falls into ProbeW
+    goto ProbeW
+}
 
 ProbeW:
     ProbeX -= 1
@@ -112,7 +118,8 @@ on step {
     Scratch1 = SiteKind[Scratch4]
     goto [SiteNone, DragonInDistance, DragonCaveEvent, AnkhegAmbush, SlaverCaravan, BuccaneerBaseSite,
         GuardsRideBy, OutpostRiders][Scratch1]
-} # falls into SiteNone
+    goto SiteNone
+}
 
 SiteNone:
     exit
@@ -570,7 +577,8 @@ def PickEncounter() {
     Scratch1 = Scratch1 / AuxCounter
     Scratch2 = Random(5)
     goto [GroupSizeLarge, GroupSizeMedium, GroupSizeMedium, GroupSizeMedium, SplitGroups][Scratch2]
-} # falls into GroupSizeLarge
+    goto GroupSizeLarge
+}
 
 GroupSizeLarge:
     Scratch1 = Scratch1 / 3

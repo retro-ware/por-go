@@ -54,7 +54,8 @@ def AddKills() {
 
 def TakeItMenu() {
     Print(" DO YOU TAKE IT?")
-} # falls into YesNoMenu
+    goto YesNoMenu
+}
 
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
@@ -108,7 +109,8 @@ on step {
 on camp {
     RestEvery = 0
     RestChance = 10
-} # falls into RedrawExit
+    goto RedrawExit
+}
 
 RedrawExit:
     RedrawView()

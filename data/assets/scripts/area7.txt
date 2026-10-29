@@ -36,12 +36,14 @@ on step {
     Scratch1 = Cell & ~Inside
     goto [RedrawExit, SecretDoorCheck, RedrawExit, RedrawExit, TrapDoorRoom, StatueRoom, BenchRoom,
         MerchantRoom, AudienceHall, RedrawExit, GenheerisLeaves][Scratch1]
-} # falls into event2
+    goto event2
+}
 
 on camp {
     RestEvery = 0
     RestChance = 10
-} # falls into event3
+    goto event3
+}
 
 on rest {
     exit

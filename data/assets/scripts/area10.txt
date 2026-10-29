@@ -109,7 +109,8 @@ on load {
     WightsTotal = WightCount
     if WightGroup > 4 { WightGroup = 4 }
     if RestChance == 255 { goto NoRestHere }
-} # falls into Done
+    goto Done
+}
 
 Done:
     exit
@@ -938,7 +939,8 @@ def ZombiesApproach() {
 
 def WightsApproach() {
     SetupMonster(Troll, distance=2, closeup=Troll)
-} # falls into ApproachTwice
+    goto ApproachTwice
+}
 
 ApproachTwice:
     Approach()

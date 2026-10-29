@@ -16,7 +16,8 @@ def YesNoMenu() {
 
 def FlashTeleport() {
     Print("AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH AND YOU SUDDENLY FIND YOURSELF ELSEWHERE.")
-} # falls into WaitReturnPressed
+    goto WaitReturnPressed
+}
 
 WaitReturnPressed:
     Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
@@ -26,7 +27,8 @@ WaitReturnPressed:
 def SearchSecretDoor() {
     if Scratch1 has SecretDoorsFound { goto SecretDoorFound }
     Scratch10 = 0
-} # falls into SearchMemberLoop
+    goto SearchMemberLoop
+}
 
 SearchMemberLoop:
     SelectMember(Scratch10)
@@ -93,7 +95,8 @@ on step {
 on camp {
     RestEvery = 0
     RestChance = 10
-} # falls into RedrawExit
+    goto RedrawExit
+}
 
 RedrawExit:
     RedrawView()
@@ -420,7 +423,8 @@ FightMage:
 
 def MarkFountainDone() {
     RoomsVisited |= Fountain
-} # falls into FlagBossAngry
+    goto FlagBossAngry
+}
 
 FlagBossAngry:
     if Boss != 255 { Boss = YarashBeaten }

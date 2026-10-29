@@ -4,7 +4,8 @@ on move {
     Text("DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?")
     YesNoMenu()
     goto [BoardBoat, StayAtKeep][Scratch1]
-} # falls into BoardBoat
+    goto BoardBoat
+}
 
 BoardBoat:
     if SkyColor21 == 8 { goto SailToPhlan }

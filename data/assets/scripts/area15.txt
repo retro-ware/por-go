@@ -67,7 +67,8 @@ on move {
     Combat()
     if CombatEnd == PartyFled { goto FleeFromBasilisk }
     LibraryEventFlags |= SpectreBeaten
-} # falls into RedrawExit
+    goto RedrawExit
+}
 
 RedrawExit:
     RedrawView()
@@ -92,7 +93,8 @@ on step {
 on camp {
     RestEvery = 0
     RestChance = 10
-} # falls into event3
+    goto event3
+}
 
 on rest {
     exit

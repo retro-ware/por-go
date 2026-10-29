@@ -42,7 +42,8 @@ on move {
     HoldMove = SkipMove
     NoCoords = 0
     goto [ExitNorth, ExitEast, ExitSouth, ExitWest][Facing]
-} # falls into ExitNorth
+    goto ExitNorth
+}
 
 ExitNorth:
     EnterArea(StojanowGate)
@@ -74,7 +75,8 @@ on step {
     Scratch1 = Cell & ~Inside
     goto [StreetSquare, AuctionStart, TavernEnter, ThePittSign, IlmaterTemple, BaneShrine, RobedOrc,
         AbandonedShop, DecayedBuilding, RememberBuilding, Done, Done][Scratch1]
-} # falls into StreetSquare
+    goto StreetSquare
+}
 
 StreetSquare:
     Scratch1 = Random(25)
@@ -255,7 +257,8 @@ def RollPatrol() {
     EncMonster = EncMonsterTable[EncType]
     goto [PatrolGoblins, PatrolGoblins, PatrolGoblins, PatrolGoblins, PatrolOrcs, PatrolOrcs,
         PatrolOrcs, PatrolHobgoblins, PatrolOgres][Scratch1]
-} # falls into PatrolGoblins
+    goto PatrolGoblins
+}
 
 PatrolGoblins:
     $AuxCounter = " GOBLINS"

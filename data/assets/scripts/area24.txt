@@ -26,7 +26,8 @@ on step {
     if Geo != TempleOutside { goto TempleSquare }
     goto [RandomEncounter, MansionRoom, MansionRoom, MansionEntry, MansionEntry, MansionEntry,
         OgreAndOrcs, GoblinSlaves, OutsideMansion, OrcGuardRoom, HayBeds, CellRoom, ScratchedMessage][Scratch7]
-} # falls into MansionEntry
+    goto MansionEntry
+}
 
 MansionEntry:
     if QuestEntryOrcs != 0 { goto MansionRoom }
@@ -401,7 +402,8 @@ DirtenFound:
 
 def SearchFindSecret() {
     AuxText = 0
-} # falls into CheckMemberFinds
+    goto CheckMemberFinds
+}
 
 CheckMemberFinds:
     SelectMember(AuxText)
@@ -578,7 +580,8 @@ def PickEncounter() {
     Scratch1 = Random(9)
     goto [PickPatrolOrcs, PickPatrolOrcs, PickPatrolOrcs, PickPatrolOrcs, PickOrcs, PickOrcs,
         PickGoblins, PickGoblins, PickHobgoblins, PickOgres][Scratch1]
-} # falls into PickGoblins
+    goto PickGoblins
+}
 
 PickGoblins:
     $AuxCounter = "GOBLINS"

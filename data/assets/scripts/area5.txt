@@ -40,7 +40,8 @@ def StartAlarm() {
 
 def AskTakeIt() {
     Print("DO YOU TAKE IT?")
-} # falls into YesNoMenu
+    goto YesNoMenu
+}
 
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
@@ -105,7 +106,8 @@ on step {
     if Scratch1 > 29 { NewECL(ValjevoCastle3) }
     if Scratch1 > 20 { exit }
     goto [Done, HarmlessMage, ArguingGiants, GateGiants, Done, ThroneRoom, TowerTrolls, Disorient][Scratch1]
-} # falls into event2
+    goto event2
+}
 
 on camp {
     RestEvery = 0
@@ -114,7 +116,8 @@ on camp {
     if Cell has Special { exit }
     RestEvery = 1
     RestChance = 17
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()
@@ -441,7 +444,8 @@ on rest {
         flee=Attack, advance=CloseIn, parlay=Attack, near="YOU SEE GIANT SNAKES.", escape=15,
         strength=15)
     goto [Done, FightSnakes, StepBack][Scratch10]
-} # falls into FightSnakes
+    goto FightSnakes
+}
 
 FightSnakes:
     Morale = 100

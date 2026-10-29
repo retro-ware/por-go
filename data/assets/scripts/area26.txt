@@ -3,7 +3,8 @@ on move {
     if MapY <= 2 { NorthEdgeHold() }
     goto [CheckBlockedMove, CheckEastEdge, CheckEastEdge, CheckEastEdge, CheckBlockedMove,
         CheckWestEdge, CheckWestEdge, CheckWestEdge][FacingRaw]
-} # falls into CheckEastEdge
+    goto CheckEastEdge
+}
 
 CheckEastEdge:
     if MapX == 15 { EastEdgeExit() }
@@ -18,7 +19,8 @@ CheckBlockedMove:
 
 def NorthEdgeHold() {
     goto [HoldMoving, HoldMoving, NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, HoldMoving][FacingRaw]
-} # falls into HoldMoving
+    goto HoldMoving
+}
 
 HoldMoving:
     HoldMove = SkipMove
@@ -27,7 +29,8 @@ HoldMoving:
 def EastEdgeExit() {
     goto [NoEdgeExit, ExitToArea27, ExitToArea27, EastEdgeRowCheck, NoEdgeExit, NoEdgeExit, NoEdgeExit,
         NoEdgeExit][FacingRaw]
-} # falls into NoEdgeExit
+    goto NoEdgeExit
+}
 
 NoEdgeExit:
     return
@@ -39,7 +42,8 @@ ExitToArea27:
 def WestEdgeExit() {
     goto [NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, WestEdgeRowCheck, ExitToArea25,
         ExitToArea25][FacingRaw]
-} # falls into ExitToArea25
+    goto ExitToArea25
+}
 
 ExitToArea25:
     MapX = 14
@@ -78,7 +82,8 @@ def ProbeAheadBlocked() {
 
 def ProbeNW() {
     ProbeX -= 1
-} # falls into ProbeN
+    goto ProbeN
+}
 
 ProbeN:
     ProbeY -= 1
@@ -86,7 +91,8 @@ ProbeN:
 
 def ProbeNE() {
     ProbeY -= 1
-} # falls into ProbeE
+    goto ProbeE
+}
 
 ProbeE:
     ProbeX += 1
@@ -94,7 +100,8 @@ ProbeE:
 
 def ProbeSE() {
     ProbeX += 1
-} # falls into ProbeS
+    goto ProbeS
+}
 
 ProbeS:
     ProbeY += 1
@@ -102,7 +109,8 @@ ProbeS:
 
 def ProbeSW() {
     ProbeY += 1
-} # falls into ProbeW
+    goto ProbeW
+}
 
 ProbeW:
     ProbeX -= 1
@@ -143,7 +151,8 @@ on step {
     Scratch1 = SiteKindTable[Scratch4]
     goto [AbandonedCamp, NomadCampEvent, CityNorthEdge, CityEastEdge, CityWestEdge, HiddenRowboat,
         PyramidFront, BoatHome][Scratch1]
-} # falls into AbandonedCamp
+    goto AbandonedCamp
+}
 
 AbandonedCamp:
     if CampFound != 0 { goto Done }
@@ -585,7 +594,8 @@ def PickEncounter() {
     Scratch1 = Scratch1 / AuxCounter
     Scratch2 = Random(5)
     goto [CountThird, CountHalf, CountHalf, CountHalf, CountLeaders][Scratch2]
-} # falls into CountThird
+    goto CountThird
+}
 
 CountThird:
     Scratch1 = Scratch1 / 3
@@ -677,7 +687,8 @@ def DrawRiver() {
     Scratch1 = 0
     Scratch2 = 0
     RiverTileIndex = 0
-} # falls into RiverDrawBegin
+    goto RiverDrawBegin
+}
 
 RiverDrawBegin:
     CallBeginDraw()
@@ -727,7 +738,8 @@ def RiverAnimFrame() {
     RiverFrameShow:
     CallEndDraw()
     if Scratch1 > 21 { goto RiverRowCheck29 }
-} # falls into RiverCallC003
+    goto RiverCallC003
+}
 
 RiverCallC003:
     CallUnknownC003()

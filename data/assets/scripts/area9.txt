@@ -24,7 +24,8 @@ def SetSkyByHour() {
 def PayMoney() {
     &Scratch2 = 0
     Scratch1 = 0
-} # falls into CheckMemberMoney
+    goto CheckMemberMoney
+}
 
 CheckMemberMoney:
     SelectMember(Scratch1)
@@ -81,7 +82,8 @@ def ScaleCost() {
 
 def TakeCoinKind() {
     Scratch1 = 0
-} # falls into TakeFromMember
+    goto TakeFromMember
+}
 
 TakeFromMember:
     SelectMember(Scratch1)
@@ -208,7 +210,8 @@ on step {
     goto [Done, MageGuardRoom, FighterGuardRoom, NearWall, StojanowGateEvent, GateEntrance, WallSquare,
         Done, BugbearsBehindGate, WagonTrader, GateTowerSquare, GateTowerSquare, Done,
         MonstersBehindWall][Scratch1]
-} # falls into L_9DB4
+    goto L_9DB4
+}
 
 on rest {
     L_9DB4:
@@ -293,7 +296,8 @@ on camp {
     if PartyY > 6 { exit }
     RestEvery = 1
     RestChance = 17
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()

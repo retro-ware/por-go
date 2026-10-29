@@ -18,7 +18,8 @@ on step {
         HearVoices, ThroneRoom, SearchNorthWall, KingInPit, BrassBottle, CrudeBarracks, FatimaRoom,
         PrisonCell, RubbleSlope, WyvernCharges, CrippledKobold, LivingAreas, KingsQuarters,
         RatLarder, MessTables, RuinedBallista, Done, Done, WyvernNest, KoboldHoard, AskLeave][Scratch1]
-} # falls into AskLeave
+    goto AskLeave
+}
 
 AskLeave:
     Text("DO YOU WANT TO LEAVE?")
@@ -587,7 +588,8 @@ def CheckTrap() {
     if Scratch1 == 1 { goto TrapFound }
     if Search != Searching { goto TrapNotDisarmed }
     AuxMember = 0
-} # falls into MemberFindsTrap
+    goto MemberFindsTrap
+}
 
 MemberFindsTrap:
     SelectMember(AuxMember)
@@ -673,7 +675,8 @@ def StepSouthY() {
 
 def StepWestX() {
     PartyX -= 1
-} # falls into GuideReturn
+    goto GuideReturn
+}
 
 GuideReturn:
     return
@@ -688,7 +691,8 @@ def BoulderLever() {
     Text("A BOULDER BLOCKS OFF THE PASSAGE. USING A LEVER, THE KOBOLD DISLODGES IT AND PROCEEDS. DO YOU?")
     Scratch8 = Menu("YES", "NO")
     goto [GuideReturn, KoboldGone][Scratch8]
-} # falls into KoboldGone
+    goto KoboldGone
+}
 
 KoboldGone:
     Text("THE KOBOLD DISAPPEARS BEYOND THE BOULDER.")
@@ -708,7 +712,8 @@ def ClamberDown() {
     WhatDoYouDo()
     Scratch8 = Menu("LET IT GO", "KILL IT")
     goto [Done, KillKobold][Scratch8]
-} # falls into GuideToKing
+    goto GuideToKing
+}
 
 GuideToKing:
     Scratch6 = 13
@@ -764,7 +769,8 @@ def ReachPrison() {
     FatimaJournal:
     FatimaMet = 1
     if CombatEnd < PartyDied { exit }
-} # falls into EscapeKobolds
+    goto EscapeKobolds
+}
 
 EscapeKobolds:
     Scratch1 = Random(5)

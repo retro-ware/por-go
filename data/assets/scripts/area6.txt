@@ -1,7 +1,8 @@
 def OfferDisguiseHelp() {
     Text("THE WOMAN SAYS 'TYRANTHRAXUS IS LEADING OUR MEN TO THEIR DEATHS. IF YOU INTEND TO KILL HIM WE WILL HELP. USE THESE CLOTHES AS A DISGUISE AND YOU WILL ESCAPE NOTICE.")
     PressToContinue()
-} # falls into AskUseDisguise
+    goto AskUseDisguise
+}
 
 AskUseDisguise:
     Text("WILL YOU USE THE CLOTHING AS A DISGUISE?")
@@ -51,7 +52,8 @@ def StartAlarm() {
 
 def AskTakeIt() {
     Print("DO YOU TAKE IT?")
-} # falls into YesNoMenu
+    goto YesNoMenu
+}
 
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
@@ -104,7 +106,8 @@ on step {
     DispatchCell:
     Scratch1 = Cell & 31
     goto [Done, LaundryEnter, SmithyEnter, Done, Smokehouse, BaneTempleEnter, Done, CoalStoreroom, AltarEnter][Scratch1]
-} # falls into event2
+    goto event2
+}
 
 on camp {
     RestEvery = 0
@@ -113,7 +116,8 @@ on camp {
     if Cell has Special { exit }
     RestEvery = 1
     RestChance = 17
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()

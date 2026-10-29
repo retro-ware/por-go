@@ -31,7 +31,8 @@ def CheckAlarm() {
 
 def DelayRaiseAlarm() {
     Delay()
-} # falls into RaiseAlarm
+    goto RaiseAlarm
+}
 
 RaiseAlarm:
     if AlarmEndHour == 0 { Text("AN ALARM STARTS RINGING!") }
@@ -43,7 +44,8 @@ RaiseAlarm:
 
 def TakeItMenu() {
     Print("DO YOU TAKE IT?")
-} # falls into YesNoMenu
+    goto YesNoMenu
+}
 
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
@@ -107,7 +109,8 @@ on camp {
     if Cell has Special { exit }
     RestEvery = 1
     RestChance = 17
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()
@@ -168,7 +171,8 @@ on rest {
 
     PatrolNoAlarm:
     if CastleFlags has Disguised { goto PatrolQuestions }
-} # falls into PatrolSeesYou
+    goto PatrolSeesYou
+}
 
 PatrolSeesYou:
     Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
@@ -226,7 +230,8 @@ def AskAuthority() {
     NewLine()
     $AuxInputText = InputString(12)
     Compare("TYRANTHRAXUS", $AuxInputText)
-} # falls into CheckAnswer
+    goto CheckAnswer
+}
 
 CheckAnswer:
     if (!=) { goto Imposters } # "TYRANTHRAXUS" != $AuxInputText

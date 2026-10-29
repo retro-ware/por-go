@@ -11,7 +11,8 @@ on move {
 
 on step {
     if AlarmLevel != 0 { goto AlarmCheck }
-} # falls into CellDispatch
+    goto CellDispatch
+}
 
 CellDispatch:
     Scratch7 = Cell & ~Inside
@@ -92,7 +93,8 @@ def StepSouth() {
 
 def StepWest() {
     PartyX -= 1
-} # falls into TourNothing
+    goto TourNothing
+}
 
 TourNothing:
     return
@@ -539,7 +541,8 @@ def WaitReturnPressed() {
 on camp {
     if QuestZhentilOutpost != 0 { goto RestCheckNight }
     if AttackedGuards == 0 { goto RestCheckNight }
-} # falls into RestAlarmed
+    goto RestAlarmed
+}
 
 RestAlarmed:
     RestChance = 100

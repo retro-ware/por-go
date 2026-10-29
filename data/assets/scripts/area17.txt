@@ -22,7 +22,8 @@ def GetCampState() {
     CampNotHostile:
     Scratch1 = 2
     if MarkFlags4 lacks FoughtTribe { goto CampFriendlyCheck }
-} # falls into CampDayCheck
+    goto CampDayCheck
+}
 
 CampDayCheck:
     if Hours < 18 { Scratch1 = 3 }
@@ -100,7 +101,8 @@ def RollNomadAllies() {
     Scratch10 = Random(6)
     Scratch10 += 1
     NomadAllies += Scratch10
-} # falls into SizeKoboldBand
+    goto SizeKoboldBand
+}
 
 SizeKoboldBand:
     CallLookAhead()
@@ -118,7 +120,8 @@ def RetreatOrFight() {
 
     FindRetreatZone:
     Scratch10 = 0
-} # falls into RetreatZoneLoop
+    goto RetreatZoneLoop
+}
 
 RetreatZoneLoop:
     Scratch9 = ZoneXMinTable[Scratch10]
@@ -147,7 +150,8 @@ RetreatZoneLoop:
 def HearWarCries() {
     Text("YOU HEAR WAR CRIES AND THE CLANG OF METAL ")
     gosub [CriesLeft, CriesBehind, CriesRight, CriesAhead][Facing]
-} # falls into FaceTheSound
+    goto FaceTheSound
+}
 
 FaceTheSound:
     if Facing == West { goto PressToContinue }
@@ -233,7 +237,8 @@ def SetSky() {
 def ShowNomads() {
     Portrait = NomadBeard
     SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
-} # falls into ApproachPause
+    goto ApproachPause
+}
 
 ApproachPause:
     Delay()
@@ -242,7 +247,8 @@ ApproachPause:
 
 def ApproachTwice() {
     ApproachPause()
-} # falls into ApproachHidePortrait
+    goto ApproachHidePortrait
+}
 
 ApproachHidePortrait:
     ApproachPause()
@@ -272,7 +278,8 @@ on step {
     if Scratch10 == 0 { goto RoomEvents }
     if Scratch1 == 1 { exit }
     if Scratch1 == 2 { exit }
-} # falls into RoomEvents
+    goto RoomEvents
+}
 
 RoomEvents:
     goto [Done, NomadsHostile, KoboldRaid, Done, CampOutskirts, Done, MorningGreeting, HeadmanAsks][Scratch1]
@@ -285,7 +292,8 @@ on rest {
 
 on camp {
     SetRestRules()
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()
@@ -371,7 +379,8 @@ TribeCombat:
 
 def CheckFled() {
     if CombatEnd != PartyFled { return }
-} # falls into LeaveCamp
+    goto LeaveCamp
+}
 
 LeaveCamp:
     Mark4 = 1

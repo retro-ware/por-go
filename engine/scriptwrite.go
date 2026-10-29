@@ -101,10 +101,9 @@ func WriteScript(s *Script, names *ScriptNames) (string, error) {
 		}
 		if _, ok := w.events[i]; ok || w.defs[i] {
 			if last := s.Code[end-1]; end < len(s.Code) && !(isTerminator(last.Op) && !(end > 1 && isIf(s.Code[end-2].Op))) {
-				fmt.Fprintf(&w.b, "} # falls into %s\n", s.At[end])
-			} else {
-				w.b.WriteString("}\n")
+				fmt.Fprintf(&w.b, "%sgoto %s\n", indent, s.At[end]) // the byte code falls through; the parser leaves this jump out
 			}
+			w.b.WriteString("}\n")
 		}
 		i = end
 	}

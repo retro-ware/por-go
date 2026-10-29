@@ -46,7 +46,8 @@ on rest {
     Text("YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?")
     Scratch1 = Menu("GO", "FIGHT")
     goto [ClearAndExit, FightWatch][Scratch1]
-} # falls into event4
+    goto event4
+}
 
 on load {
     LoadMap(NewPhlan, icons=Overland)
@@ -273,7 +274,8 @@ LeaveArea:
 def AfterWatchFight() {
     if CombatEnd > PartyDied { goto EjectParty }
     if WatchCombatDone11 > 0 { return }
-} # falls into ClearAndExit
+    goto ClearAndExit
+}
 
 ClearAndExit:
     Temp1 = 0

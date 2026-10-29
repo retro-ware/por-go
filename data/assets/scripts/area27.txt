@@ -4,7 +4,8 @@ on move {
     if MapX >= 15 { EdgeEast() }
     goto [CheckTerrain, CheckTerrain, CheckTerrain, CheckTerrain, CheckTerrain, CheckWestEdge,
         CheckWestEdge, CheckWestEdge][FacingRaw]
-} # falls into EdgeNorth
+    goto EdgeNorth
+}
 
 EdgeNorth:
     goto [BlockMove, BlockMove, EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeOk, BlockMove][FacingRaw]
@@ -15,7 +16,8 @@ BlockMove:
 
 def EdgeEast() {
     goto [EdgeOk, BlockMove, BlockMove, BlockMove, EdgeOk, EdgeOk, EdgeOk, EdgeOk][FacingRaw]
-} # falls into CheckWestEdge
+    goto CheckWestEdge
+}
 
 CheckWestEdge:
     if MapX == 2 { EdgeWest() }
@@ -26,7 +28,8 @@ CheckTerrain:
 
 def EdgeWest() {
     goto [EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeWestCorner, ExitToCity, ExitToCity][FacingRaw]
-} # falls into EdgeOk
+    goto EdgeOk
+}
 
 EdgeOk:
     return
@@ -62,7 +65,8 @@ def CheckTerrainAhead() {
 
 def ProbeNW() {
     ProbeX -= 1
-} # falls into ProbeN
+    goto ProbeN
+}
 
 ProbeN:
     ProbeY -= 1
@@ -70,7 +74,8 @@ ProbeN:
 
 def ProbeNE() {
     ProbeY -= 1
-} # falls into ProbeE
+    goto ProbeE
+}
 
 ProbeE:
     ProbeX += 1
@@ -78,7 +83,8 @@ ProbeE:
 
 def ProbeSE() {
     ProbeX += 1
-} # falls into ProbeS
+    goto ProbeS
+}
 
 ProbeS:
     ProbeY += 1
@@ -86,7 +92,8 @@ ProbeS:
 
 def ProbeSW() {
     ProbeY += 1
-} # falls into ProbeW
+    goto ProbeW
+}
 
 ProbeW:
     ProbeX -= 1
@@ -119,7 +126,8 @@ on step {
     SiteFound:
     Scratch1 = SiteKind[Scratch4]
     goto [RuinedCastle, KoboldHorde, TwoCaves, BoatDock][Scratch1]
-} # falls into RuinedCastle
+    goto RuinedCastle
+}
 
 RuinedCastle:
     MarkFlags57 = CastleFound | MarkFlags57
@@ -558,7 +566,8 @@ def PickEncounter() {
     Scratch1 = Scratch1 / AuxCounter
     Scratch2 = Random(5)
     goto [GroupSizeLarge, GroupSizeMedium, GroupSizeMedium, GroupSizeMedium, SplitGroups][Scratch2]
-} # falls into GroupSizeLarge
+    goto GroupSizeLarge
+}
 
 GroupSizeLarge:
     Scratch1 = Scratch1 / 3
@@ -674,7 +683,8 @@ def PatchMap() {
     Scratch1 = 0
     Scratch2 = 0
     CallBeginDraw()
-} # falls into PatchMapRow
+    goto PatchMapRow
+}
 
 PatchMapRow:
     if Scratch1 == 5 { goto PatchMapDone }

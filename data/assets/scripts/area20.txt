@@ -40,13 +40,15 @@ on step {
         FeedingKobolds, HempMarket, FortuneTeller, OrcHome, HobgoblinGold, StorageRoom, TreasureRoom,
         GuardsIntercept, LeadersMeeting, AlertedGuards, LargeEmptyRoom, RopeGuildEntry,
         InsideRopeGuild, PotionBooth, GrainSack][AuxCounter]
-} # falls into event2
+    goto event2
+}
 
 on camp {
     if FortuneTellerState == Murdered { goto RestDangerous }
     if QuestSlums >= RewardDue { goto RestSafe }
     if Scratch10 == 0 { goto RestDangerous }
-} # falls into RestSafe
+    goto RestSafe
+}
 
 RestSafe:
     RestEvery = 0

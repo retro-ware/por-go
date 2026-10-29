@@ -24,7 +24,8 @@ on move {
     Text("THE DOOR IS LOCKED.  DO YOU WANT TO BREAK IN?")
     YesNoMenu()
     goto [WatchResponds, StayOutside][Scratch1]
-} # falls into StayOutside
+    goto StayOutside
+}
 
 StayOutside:
     HoldMove = SkipMove
@@ -76,7 +77,8 @@ on rest {
     Text("YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?")
     Scratch1 = Menu("GO", "STAY")
     goto [ResetVisits, FightWatch][Scratch1]
-} # falls into event4
+    goto event4
+}
 
 on load {
     BoatDestination = 0
@@ -640,7 +642,8 @@ def EnterBuildingOnce() {
 def AfterWatchFight() {
     if CombatEnd > PartyDied { goto RunAway }
     if WatchCombatDone0 > 0 { return }
-} # falls into CheckPartySize
+    goto CheckPartySize
+}
 
 CheckPartySize:
     if PartyCount < 8 { return }
@@ -676,7 +679,8 @@ def WatchApproaches() {
 
 def FindMemberByName() {
     AuxMember = 0
-} # falls into FindMemberLoop
+    goto FindMemberLoop
+}
 
 FindMemberLoop:
     SelectMember(AuxMember)
@@ -746,7 +750,8 @@ def MoveToTourStop() {
     Sound = 8
     CallSound()
     Delay()
-} # falls into TourStopNone
+    goto TourStopNone
+}
 
 TourStopNone:
     return

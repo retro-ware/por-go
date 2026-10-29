@@ -21,7 +21,8 @@ def YesNoMenu() {
 
 def TeleportFlash() {
     Print("AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH, AND YOU SUDDENLY FIND YOURSELVES ELSEWHERE.")
-} # falls into WaitReturnPressed
+    goto WaitReturnPressed
+}
 
 WaitReturnPressed:
     Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
@@ -31,7 +32,8 @@ WaitReturnPressed:
 def SearchSecretDoor() {
     if Scratch1 has SecretDoorBits { goto SecretDoorFound }
     Scratch10 = 0
-} # falls into CheckMemberFinds
+    goto CheckMemberFinds
+}
 
 CheckMemberFinds:
     SelectMember(Scratch10)
@@ -104,7 +106,8 @@ on camp {
     if Scratch10 == 63 { exit }
     RestEvery = 2
     RestChance = 33
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()
@@ -354,7 +357,8 @@ def LoadGroupData() {
     goto [HumanFightersText, DisplacerBeastsText, DwarvenFightersText, LizardMenText, DridersText,
         GauntMenText, GroupTextDone, InsectsText, DridersText, BullMenText, ElvesText, KoboldsText,
         HumanFightersText][Scratch7]
-} # falls into HumanFightersText
+    goto HumanFightersText
+}
 
 HumanFightersText:
     $AuxTemp9 = " A BAND OF HUMAN FIGHTERS."

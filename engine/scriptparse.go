@@ -81,11 +81,12 @@ type parser struct {
 	depth  int     // in an if block: nothing but statements
 	// the returns' comparisons and the tests on called sections, matched
 	// by finish
-	section string  // the section a return belongs to: the def's or event's, else the last label's
-	inDef   bool    // in a def's or event's block
-	retOp   []retOp // the operator each return A op B shows (the if's for if A op B { return })
-	rets    []valueRet
-	calls   []*callTest
+	section    string  // the section a return belongs to: the def's or event's, else the last label's
+	inDef      bool    // in a def's or event's block
+	retOp      []retOp // the operator each return A op B shows (the if's for if A op B { return })
+	rets       []valueRet
+	calls      []*callTest
+	blockGotos []int // a def's or on block's last command when it is a goto
 }
 
 // fixup is a jump operand waiting for its label's command number.
@@ -255,11 +256,9 @@ func (p *parser) file() error {
 				return fmt.Errorf("no event %s (load, move, step, camp, rest)", name)
 			}
 			p.label(eventLabel(e))
-			p.inDef = true
-			if err := p.braces(); err != nil {
+			if err := p.defBlock(); err != nil {
 				return err
 			}
-			p.inDef = false
 		case t.k == tIdent && t.s == "def" && p.toks[p.pos+1].k == tIdent:
 			p.pos++
 			name, _ := p.ident()
@@ -270,11 +269,9 @@ func (p *parser) file() error {
 			if err := p.expect(")"); err != nil {
 				return err
 			}
-			p.inDef = true
-			if err := p.braces(); err != nil {
+			if err := p.defBlock(); err != nil {
 				return err
 			}
-			p.inDef = false
 		case t.k == tIdent && p.toks[p.pos+1].is("=") && p.toks[p.pos+2].is("["):
 			p.pos += 3
 			if err := p.table(t.s); err != nil {
@@ -286,6 +283,17 @@ func (p *parser) file() error {
 			}
 		}
 	}
+}
+
+// defBlock parses a def's or on block, noting a goto it ends in.
+func (p *parser) defBlock() error {
+	p.inDef = true
+	err := p.braces()
+	p.inDef = false
+	if l := len(p.s.Code) - 1; err == nil && l >= 0 && p.s.Code[l].Op == opGoto {
+		p.blockGotos = append(p.blockGotos, l)
+	}
+	return err
 }
 
 // braces parses { statements }.
@@ -1554,7 +1562,48 @@ func (p *parser) finish() error {
 		}
 		p.s.Events[i] = at
 	}
+	p.dropNextGotos()
 	return nil
+}
+
+// dropNextGotos leaves out a def's or on block's last goto when it goes
+// to the label right after the block: it says where the byte code falls
+// through to, and the byte code has no jump there.
+func (p *parser) dropNextGotos() {
+	s := p.s
+	index := make([]int, len(s.Code)+1)
+	var code []Instr
+	for i, in := range s.Code {
+		index[i] = len(code)
+		if slices.Contains(p.blockGotos, i) && len(in.Args) == 1 && in.Args[0].Label && in.Args[0].N == i+1 && !(i > 0 && isIf(s.Code[i-1].Op)) {
+			continue
+		}
+		code = append(code, in)
+	}
+	index[len(s.Code)] = len(code)
+	if len(code) == len(s.Code) {
+		return
+	}
+	for i := range code {
+		for k, a := range code[i].Args {
+			if a.Label {
+				code[i].Args[k].N = index[a.N]
+			}
+		}
+	}
+	for l, i := range s.Labels {
+		s.Labels[l] = index[i]
+	}
+	at := map[int]string{}
+	for i, l := range s.At {
+		if _, ok := at[index[i]]; !ok || strings.HasPrefix(at[index[i]], "event") && !strings.HasPrefix(l, "event") {
+			at[index[i]] = l
+		}
+	}
+	for i := range s.Events {
+		s.Events[i] = index[s.Events[i]]
+	}
+	s.Code, s.At = code, at
 }
 
 // callTests sets the operator of the Ifs on called sections' results,

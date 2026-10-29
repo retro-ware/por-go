@@ -31,7 +31,8 @@ def CheckAlarm() {
 
 def DelayRaiseAlarm() {
     Delay()
-} # falls into RaiseAlarm
+    goto RaiseAlarm
+}
 
 RaiseAlarm:
     if AlarmEndHour == 0 { Text("AN ALARM STARTS RINGING!") }
@@ -86,7 +87,8 @@ on step {
     Scratch1 = Cell & 31
     goto [Done, FighterBuilding, ArmedManAttacks, PigstyBarracks, PaperOnGround, Armory, Done, Kitchen,
         RecordsBuilding, ScribesHall][Scratch1]
-} # falls into event2
+    goto event2
+}
 
 on camp {
     RestEvery = 0
@@ -95,7 +97,8 @@ on camp {
     if Cell has Special { exit }
     RestEvery = 1
     RestChance = 17
-} # falls into Done
+    goto Done
+}
 
 Done:
     RedrawView()
@@ -154,7 +157,8 @@ on rest {
 
     PatrolNoAlarm:
     if CastleFlags has Disguised { goto PatrolQuestions }
-} # falls into PatrolSeesYou
+    goto PatrolSeesYou
+}
 
 PatrolSeesYou:
     Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
@@ -207,7 +211,8 @@ def AskPassword() {
 
 def AlertSorry() {
     Text("'I'M SORRY, SIR, THERE'S AN ALERT. ")
-} # falls into AskAuthority
+    goto AskAuthority
+}
 
 AskAuthority:
     Print("ON WHOSE AUTHORITY ARE YOU HERE?'")

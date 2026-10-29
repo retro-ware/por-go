@@ -604,7 +604,8 @@ def CouncilChambers() {
 
 def GuardPost() {
     CheckQuestOver()
-} # falls into CouncilGuard
+    goto CouncilGuard
+}
 
 CouncilGuard:
     if HallGuardsFought != 0 { exit }
@@ -675,7 +676,8 @@ def EscortStep() {
     Sound = 8
     CallSound()
     Delay()
-} # falls into ClearPicture
+    goto ClearPicture
+}
 
 ClearPicture:
     ShowPortrait(None, None)

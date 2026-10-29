@@ -6,7 +6,8 @@ on step {
     Picture(Cave)
     Scratch2 = DragonTalkFlags & DragonAttacked
     if Scratch2 != 1 { goto CheckCaveState }
-} # falls into EmptyCaveLeave
+    goto EmptyCaveLeave
+}
 
 EmptyCaveLeave:
     Text("YOU ENTER THE ENORMOUS CAVE, SEARCH IT AND FIND NOTHING OF INTREST.  YOU THEN LEAVE.")

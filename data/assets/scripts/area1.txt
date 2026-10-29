@@ -10,7 +10,8 @@ on move {
 on step {
     if BaseCaptured == Captured { goto Done }
     if QuestBivant >= RewardDue { goto GuardsHuntBoy }
-} # falls into CheckAnimals
+    goto CheckAnimals
+}
 
 CheckAnimals:
     if AnimalsLoose == 0 { goto DispatchCell }

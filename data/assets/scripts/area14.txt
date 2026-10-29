@@ -5,7 +5,8 @@ on move {
     SkyInside = 10
     if LeftMap == 0 { exit }
     goto [ExitNorthToSlums, ExitEastToSlums, ExitSouth, ExitWest][Facing]
-} # falls into ExitNorthToSlums
+    goto ExitNorthToSlums
+}
 
 ExitNorthToSlums:
     MapX = 13
@@ -29,7 +30,8 @@ on step {
     goto [Done, BackstabThief, BackstabThief, DoorTrapSquare, DoorTrapSquare, DoorTrapSquare,
         DoorTrapSquare, DoorTrapSquare, DoorTrapSquare, LootRoom, LootRoom, LootRoom, LootRoom,
         LootRoom, LootRoom, ThievesFlee, ThiefAmbush, FloorFiles, JailCell, SlateMazeNW, MapMazeNE][Scratch7]
-} # falls into DoorTrapSquare
+    goto DoorTrapSquare
+}
 
 DoorTrapSquare:
     Scratch9 = Scratch7 - 3
@@ -671,7 +673,8 @@ def CheckTrap() {
     Text("WHAT DO YOU WANT TO DO?")
     Scratch1 = Menu("AVOID TRAP", "DISARM TRAP")
     goto [AvoidTrap, DisarmTrap][Scratch1]
-} # falls into DisarmTrap
+    goto DisarmTrap
+}
 
 DisarmTrap:
     Who("WHO WILL DISARM THE TRAP?")

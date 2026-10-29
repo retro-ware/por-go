@@ -24,7 +24,8 @@ on move {
     CallStepForward()
     HoldMove = SkipMove
     goto [ExitNorth, ExitEast, Done, ExitWest][Facing]
-} # falls into ExitNorth
+    goto ExitNorth
+}
 
 ExitNorth:
     EnterArea(PodolPlaza)
@@ -45,7 +46,8 @@ on step {
         Nursery, CarvedWall, GraffitiRoom, Done, Done, Done, DarkObject, DeadHobgoblin, Kitchen,
         SmokingFire, Larder, SmallDarkRoom, GrishnakTemple, BloodRoom, SecretDoorHint, OgreChief,
         RandomEncounterRoll, DiaryPage, ThievesWell][Scratch10]
-} # falls into Done
+    goto Done
+}
 
 Done:
     exit

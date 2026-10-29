@@ -54,7 +54,8 @@ on step {
     goto [Done, RandomEncounterRoll, WellPlaza, KutosWellEvent, WellApproach, PlazaWander,
         SicklyKobolds, LizardPatrol, SeerWoman, NorthWallDoor, SouthWallDoor, HiddenCatacombs,
         CatacombSniper1, CatacombSniper2, BanditTreasure, NorrisBandits][AuxCounter]
-} # falls into KutosWellEvent
+    goto KutosWellEvent
+}
 
 KutosWellEvent:
     if InWell != 0 { goto WellSecretDoor }
@@ -282,7 +283,8 @@ CatacombSniper2:
 
 def ShowSniper() {
     SetupMonster(Kobold, distance=2, closeup=Kobold)
-} # falls into SniperArrow
+    goto SniperArrow
+}
 
 SniperArrow:
     Damage(1, 1, 6, 0, 39)
@@ -611,7 +613,8 @@ PlazaWander:
 
 def ShortPause() {
     AuxMember = 50
-} # falls into PauseLoop
+    goto PauseLoop
+}
 
 PauseLoop:
     AuxMember += 1
