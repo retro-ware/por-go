@@ -126,34 +126,21 @@ func (e *Engine) canStudy(mode int) bool {
 
 // CastMenu = ovr16:04A1: cast memorised spells until none is picked.
 func (e *Engine) CastMenu() {
-	drew := false
-	index := -1
 	e.spellCaster = nil // DS:6DB5
 	if !e.canStudy(1) {
 		return
 	}
-	for {
-		var any bool
-		spell := e.SpellList(0, 1, &index, &any)
-		switch {
-		case spell != 0:
-			drew = true
-			e.DrawBorder(1, msgTop, winRight, winBottom, 0)
-			e.ClearCells(1, msgTop, winRight, winBottom)
-			var quit bool
-			e.CastSpell(spell, 0, 1, &quit)
-			index = -1
-		case any:
-			drew = true
-		default:
-			c := e.selected()
-			e.CharMessage(c, "has no spells memorized", true)
-		}
-		if spell == 0 {
-			break
-		}
+	if !e.buildSpellList(0) {
+		e.CharMessage(e.selected(), "has no spells memorized", true)
+		return
 	}
-	if drew {
+	// extra: the pick list (View.SpellPick, as the combat's Cast) instead of the
+	// spell page, and one cast: the original lists again until Exit
+	if spell := e.pickSpell(); spell != 0 {
+		e.DrawBorder(1, msgTop, winRight, winBottom, 0)
+		e.ClearCells(1, msgTop, winRight, winBottom)
+		var quit bool
+		e.CastSpell(spell, 0, 1, &quit)
 		e.DrawMainScreen()
 	}
 }

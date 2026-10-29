@@ -162,7 +162,7 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	p.drawMenu(dst, p.glyph, "", lines, keys, sel, float64(k), cx, r.Min.Y)
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf
 	if p.ctx > 0 {
-		p.ctxRects = append(p.ctxRects[:0], p.menuRects...)
+		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], p.menuRects...), image.Pt(cx-w/2, r.Min.Y)
 	}
 	p.menuRects = rects
 }

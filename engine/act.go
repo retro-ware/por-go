@@ -16,6 +16,7 @@ const (
 	ActNone      ActKind = iota
 	ActClose             // leave the screen
 	ActMember            // show party member N
+	ActLead              // make party member N the selected one (the command bar's member): a card's left click, F1-F8
 	ActReady             // inventory: ready or unready item N
 	ActUse               // inventory: use item N
 	ActRanged            // combat: throw the Missiles slot's weapon (aims as Attack)
@@ -29,7 +30,7 @@ const (
 	ActEnd               // combat: Done's Quit: end the turn
 	ActQuick             // combat: the computer fights for the member
 	ActTurn              // combat: turn undead
-	ActCast              // combat: cast spell N (one of Turn.Spells)
+	ActCast              // cast spell N (one of Turn.Spells in combat, of View.SpellPick elsewhere)
 	ActItems             // combat: the inventory
 	ActAim               // combat, aiming: take square X, Y
 	ActPoint             // combat, aiming: the pointer is on square X, Y (the preview follows)

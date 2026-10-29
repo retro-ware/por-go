@@ -103,6 +103,7 @@ type View struct {
 	Slots     bool           // the page is the saved games (SlotMenu): the remaster stretches its box
 	TallRow   int            // the page fills a 4:3 window (30 rows) with this blank row repeated (0: the page is 25 rows); the sheet and the loot list
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
+	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
 
@@ -176,6 +177,7 @@ type snapState struct {
 	aimWhy       string                 // aiming: why the aimed square cannot be taken ("" when it can)
 	turn         *Turn                  // the player's turn waits in act
 	ask          string                 // a yes/no question waits in act (ask)
+	spellPick    []Spell                // a spell to cast waits in act (pickSpell)
 	targets      []int                  // combatants ActAttack takes; aiming: the foes to cycle through
 	hidden       map[int]bool           // combatants whose icon is off the page (falling, hiding)
 	poses        map[int]byte           // the pose each combatant was last drawn in
@@ -219,7 +221,7 @@ func (e *Engine) publish() {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.TallRow, v.Choosing = s.typing, e.spots(), s.portrait, s.credits, s.slots, s.tallRow, e.ext.choosing
+	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.TallRow, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, s.credits, s.slots, s.tallRow, e.ext.choosing, s.spellPick
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {

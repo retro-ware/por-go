@@ -1,13 +1,10 @@
 package remaster
 
 import (
-	"bytes"
 	"image"
 	"strconv"
 	"strings"
-	"unicode"
 
-	"blobber"
 	"gpu"
 
 	"por/engine"
@@ -58,13 +55,8 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 	p.drawFightRows(dst, glyph, b, k)
 	cx := dst.Bounds().Dx() / 2
 	switch {
-	case p.battle.Picking:
-		lines := make([]string, len(b.Turn.Spells))
-		for i, s := range b.Turn.Spells {
-			lines[i] = s.Name
-		}
-		p.sel = min(max(p.sel, 0), len(lines)-1)
-		p.drawMenu(dst, glyph, "Cast:", lines, blobber.Hotkeys(lines), p.sel, k, cx, int(k)*16)
+	case p.battle.Picking && b.Turn != nil && p.pick == nil: // the bar's Cast list (View.SpellPick is drawn by Draw)
+		p.drawPickList(dst, glyph, k, cx, int(k)*16)
 	case p.fightLog:
 		var lines []string
 		for _, m := range b.Log {
@@ -163,26 +155,7 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *e
 // fightKey takes key k on the combat screen: the spell list's, L for the
 // Log, else the 3D map's and bar's.
 func (p *Presenter) fightKey(k uint16) bool {
-	if p.battle.Picking {
-		n := len(p.lastBattle().Turn.Spells)
-		switch k {
-		case 0x4800:
-			p.sel = (p.sel + n - 1) % n
-		case 0x5000:
-			p.sel = (p.sel + 1) % n
-		case 13:
-			p.cast(p.sel)
-		case 27:
-			p.battle.Picking = false
-		default: // a spell's hotkey
-			var names []string
-			for _, s := range p.lastBattle().Turn.Spells {
-				names = append(names, s.Name)
-			}
-			if i := bytes.IndexByte(blobber.Hotkeys(names), byte(unicode.ToUpper(rune(k)))); k < 128 && i >= 0 {
-				p.cast(i)
-			}
-		}
+	if p.pickKey(k) {
 		return true
 	}
 	if k == 'l' || k == 'L' || p.fightLog && k == 27 {
@@ -198,24 +171,10 @@ func (p *Presenter) fightClick(x, y int) bool {
 		p.fightLog = false
 		return true
 	}
-	if p.battle.Picking {
-		p.battle.Picking = false
-		for i, r := range p.menuRects {
-			if image.Pt(x, y).In(r) {
-				p.cast(i)
-			}
-		}
+	if p.pickClick(x, y) {
 		return true
 	}
 	return p.battle.Click(x, y)
-}
-
-// cast casts spell i of the list.
-func (p *Presenter) cast(i int) {
-	p.battle.Picking = false
-	if b := p.lastBattle(); b != nil && b.Turn != nil && i >= 0 && i < len(b.Turn.Spells) {
-		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActCast, N: b.Turn.Spells[i].ID})
-	}
 }
 
 func (p *Presenter) lastBattle() *engine.Battle { return p.fightView }

@@ -5,6 +5,7 @@
 package remaster
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
@@ -13,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode"
 
 	"gpu"
 	"gpu/vector"
@@ -88,6 +90,10 @@ type Presenter struct {
 	ctxActs     []engine.ActKind            // its lines' actions, for the member
 	ctxKeys     []byte                      // its lines' hotkeys (the first letters)
 	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
+	ctxBox      image.Point                 // where its box went (left, top): the spell pick opens there
+	pick        []engine.Spell              // View.SpellPick as last drawn: a spell to cast is being picked on this screen
+	pickAt      image.Point                 // where the pick list goes (left, top; zero: the top middle)
+	command     bool                        // the command bar is up (View.Command), as last drawn
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 }
@@ -95,7 +101,100 @@ type Presenter struct {
 // Draw shows the game on dst and returns where the whole page went
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
+	r := p.draw(dst, note, v)
+	if p.pick = v.SpellPick; p.pick == nil {
+		p.pickAt = image.Point{}
+	} else { // the spell pick (the combat's Cast list) over whatever screen is up
+		k := scale(dst)
+		cx, top := dst.Bounds().Dx()/2, int(k)*16
+		if p.pickAt != (image.Point{}) { // from a card's context menu: where that was, its left edge kept
+			w := 0
+			for _, s := range p.pick {
+				w = max(w, int(k)*8*(len(s.Name)+4)) // as drawMenu's box: a border and a blank column each side
+			}
+			cx, top = min(p.pickAt.X+w/2, dst.Bounds().Dx()-w/2), p.pickAt.Y
+		}
+		p.drawPickList(dst, note.Glyph, k, cx, top)
+	}
+	return r
+}
+
+// pickList is the spell list up for a choice: View.SpellPick anywhere, else
+// the bar's Cast in combat (Picking); nil when none.
+func (p *Presenter) pickList() []engine.Spell {
+	switch {
+	case p.pick != nil:
+		return p.pick
+	case p.fight && p.battle.Picking && p.fightView != nil && p.fightView.Turn != nil:
+		return p.fightView.Turn.Spells
+	}
+	return nil
+}
+
+// drawPickList draws the spell list (pickList) as a menu with hotkeys, its
+// box centred on cx with its top at top.
+func (p *Presenter) drawPickList(dst *gpu.Image, glyph func(byte) [8]byte, k float64, cx, top int) {
+	lines := make([]string, len(p.pickList()))
+	for i, s := range p.pickList() {
+		lines[i] = s.Name
+	}
+	p.sel = min(max(p.sel, 0), len(lines)-1)
+	p.drawMenu(dst, glyph, "Cast:", lines, blobber.Hotkeys(lines), p.sel, k, cx, top)
+}
+
+// pickKey takes key k while a spell is picked: the arrows, Enter, a hotkey, Esc.
+func (p *Presenter) pickKey(k uint16) bool {
+	spells := p.pickList()
+	if spells == nil {
+		return false
+	}
+	n := len(spells)
+	switch k {
+	case 0x4800:
+		p.sel = (p.sel + n - 1) % n
+	case 0x5000:
+		p.sel = (p.sel + 1) % n
+	case 13:
+		p.cast(p.sel)
+	case 27:
+		p.cast(-1)
+	default: // a spell's hotkey
+		var names []string
+		for _, s := range spells {
+			names = append(names, s.Name)
+		}
+		if i := bytes.IndexByte(blobber.Hotkeys(names), byte(unicode.ToUpper(rune(k)))); k < 128 && i >= 0 {
+			p.cast(i)
+		}
+	}
+	return true
+}
+
+// pickClick takes a click while a spell is picked: a line casts, elsewhere gives up.
+func (p *Presenter) pickClick(x, y int) bool {
+	if p.pickList() == nil {
+		return false
+	}
+	p.cast(slices.IndexFunc(p.menuRects, func(r image.Rectangle) bool { return image.Pt(x, y).In(r) }))
+	return true
+}
+
+// cast casts spell i of the list (-1: none, giving up).
+func (p *Presenter) cast(i int) {
+	spells, fromBar := p.pickList(), p.pick == nil
+	p.battle.Picking = false
+	switch {
+	case i >= 0 && i < len(spells):
+		p.send(engine.ActCast, spells[i].ID)
+	case !fromBar: // the game waits for the pick: give it up
+		p.send(engine.ActClose, 0)
+	}
+}
+
+// draw shows the screen the View is: the page, the main menu, a tall page or the 3D view.
+func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
+	p.command = v.Command
 	if !p.active {
 		p.ctx = 0
 	}
@@ -250,6 +349,9 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
+	if p.pickKey(k) {
+		return true
+	}
 	if v.Inventory != nil && p.inv.view != nil && !v.Choosing {
 		return p.inventoryKey(k)
 	}
@@ -264,13 +366,11 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		case k == 0x5000:
 			p.ctxSel = (p.ctxSel + 1) % n
 		case k == 13 && p.ctxSel >= 0:
-			p.send(p.ctxActs[p.ctxSel], p.ctx-1)
-			p.ctx = 0
+			p.ctxSend(p.ctxSel)
 		case k == 27:
 			p.ctx = 0
 		case k < 128 && slices.Contains(p.ctxKeys, c&^0x20): // a letter's hotkey, either case
-			p.send(p.ctxActs[slices.Index(p.ctxKeys, c&^0x20)], p.ctx-1)
-			p.ctx = 0
+			p.ctxSend(slices.Index(p.ctxKeys, c&^0x20))
 		}
 		return true
 	}
@@ -333,19 +433,22 @@ func (p *Presenter) Click(x, y int) bool {
 	if p.main {
 		return p.mainClick(x, y)
 	}
+	if p.pickClick(x, y) {
+		return true
+	}
 	if !p.fight {
-		if p.ctx > 0 { // the context menu: a line acts for its member; any click closes it
+		if p.ctx > 0 { // the context menu: a line acts for its member; a click elsewhere closes it (on another card: that one's)
 			for j, r := range p.ctxRects {
 				if image.Pt(x, y).In(r) && p.active {
-					p.send(p.ctxActs[j], p.ctx-1)
+					p.ctxSend(j)
+					return true
 				}
 			}
 			p.ctx = 0
-			return true
 		}
-		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
+		for i, r := range p.cards { // a portrait: on the command bar the member is selected and its context menu opens, else it is the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
-				p.send(engine.ActMember, i)
+				p.selectCard(i)
 				return true
 			}
 		}
@@ -374,13 +477,16 @@ func (p *Presenter) Hover(x, y int) {
 		p.mainHover(x, y)
 		return
 	}
-	if p.fight {
+	if p.pickList() != nil {
 		for i, r := range p.menuRects {
-			if p.battle.Picking && image.Pt(x, y).In(r) {
+			if image.Pt(x, y).In(r) {
 				p.sel = i
 			}
 		}
-		if !p.battle.Picking && !p.fightLog {
+		return
+	}
+	if p.fight {
+		if !p.fightLog {
 			p.battle.Point(x, y)
 		}
 		return
@@ -702,4 +808,26 @@ func (p *Presenter) face(head image.Image) image.Image {
 	}
 	p.faces[head] = f
 	return f
+}
+
+// ctxSend acts line j of the context menu for its member and closes it; a
+// spell pick opens where the menu was.
+func (p *Presenter) ctxSend(j int) {
+	if p.ctxActs[j] == engine.ActSpells {
+		p.pickAt = p.ctxBox
+	}
+	p.send(p.ctxActs[j], p.ctx-1)
+	p.ctx = 0
+}
+
+// selectCard makes member i the selected one (ActLead: the command bar's
+// member) and opens its context menu, when the command bar is up; on other
+// screens it is the member the bar is for (ActMember).
+func (p *Presenter) selectCard(i int) {
+	if p.command {
+		p.send(engine.ActLead, i)
+		p.ctx, p.ctxSel = 1+i, -1
+		return
+	}
+	p.send(engine.ActMember, i)
 }

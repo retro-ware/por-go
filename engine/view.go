@@ -785,12 +785,7 @@ func (e *Engine) power(c *Character, k ActKind) (quit bool) {
 			e.refuse("Cannot cast now")
 			return false
 		}
-		idx, any := -1, true
-		on := e.snap.sheetOn
-		e.snap.sheetOn = true // the list is a page over the map, as the sheet
-		spell := e.SpellList(0, 1, &idx, &any)
-		e.snap.sheetOn = on
-		if spell != 0 { // as the bar's Cast: aim, then the turn is over
+		if spell := e.pickSpell(); spell != 0 { // as the bar's Cast: aim, then the turn is over
 			e.castSpell(int(spell), 0, &quit)
 		}
 	case ActMagic:
@@ -801,4 +796,28 @@ func (e *Engine) power(c *Character, k ActKind) (quit bool) {
 		e.paladinCure(c)
 	}
 	return quit
+}
+
+// pickSpell (extra) offers the selected member's memorized spells as
+// View.SpellPick (the combat's Cast list, on any screen) and waits for the
+// pick: the spell, or 0 for ActClose. The spell page (SpellList) is left to
+// memorizing and scribing.
+func (e *Engine) pickSpell() byte {
+	defer func() { e.snap.spellPick = nil }()
+	if !e.buildSpellList(0) {
+		return 0
+	}
+	for _, id := range e.spellIDs {
+		if !slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == int(id) }) { // memorized twice: once in the list
+			e.snap.spellPick = append(e.snap.spellPick, Spell{int(id), e.spellName(int(id))})
+		}
+	}
+	for {
+		switch a := e.act(); {
+		case a.Kind == ActCast && slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == a.N }):
+			return byte(a.N)
+		case a.Kind == ActClose:
+			return 0
+		}
+	}
 }

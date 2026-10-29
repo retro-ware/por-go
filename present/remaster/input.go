@@ -80,8 +80,12 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		p.send(engine.ActFont, -1)
 	case k == 0x13:
 		p.send(engine.ActSound, 0)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
-		p.send(engine.ActInventory, int(k-KeyF1)>>8)
+	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: as a click on the card (the command bar: select, the context menu), else the member's items
+		if n := int(k-KeyF1) >> 8; p.active && p.command && n < len(p.cards) {
+			p.selectCard(n)
+		} else {
+			p.send(engine.ActInventory, n)
+		}
 	case k == KeyF9:
 		p.send(engine.ActSlots, 0)
 	case k&0xFF == 0:
@@ -144,12 +148,13 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		}
 		p.send(engine.ActMove, d)
 	}
-	switch { // the right button: a card's context menu opens (drawCardTip) or closes, else Esc
+	switch { // the right button: on a card that member's inventory, else it closes the context menu, else Esc
 	case !right:
+	case p.cardHover > 0 && p.active && v.Command:
+		p.ctx = 0
+		p.send(engine.ActInventory, p.cardHover-1)
 	case p.ctx > 0:
 		p.ctx = 0
-	case p.cardHover > 0 && p.active && v.Command:
-		p.ctx, p.ctxSel = p.cardHover, -1
 	default:
 		p.send(engine.ActClose, 0)
 	}
