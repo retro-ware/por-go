@@ -329,7 +329,9 @@ func (e *Engine) SheetPortrait() {
 	e.DrawBoxTitled(box.X1, box.Y1, box.X2, box.Y2, 0, colBlack, "")
 	e.snap.portrait = box  // Shift-click and a dropped PNG land here
 	if c.Portrait != nil { // extra: the dropped PNG, fitted into the box at the window's resolution
-		e.pg.overlays = []Overlay{{Img: c.Portrait, At: fit(c.Portrait.Bounds(), box.Pixels().Inset(8))}}
+		r := box.Pixels().Inset(8)
+		r.Max.Y = box.Pixels().Max.Y // down to the box's foot: the remaster's rope runs outside the cells
+		e.pg.overlays = []Overlay{{Img: c.Portrait, At: fit(c.Portrait.Bounds(), r)}}
 		return
 	}
 	e.pg.overlays = nil
@@ -337,13 +339,14 @@ func (e *Engine) SheetPortrait() {
 	e.DrawPortrait(0x1C, 1, true)
 }
 
-// fit is the largest rectangle of b's shape inside r, centred.
+// fit is the largest rectangle of b's shape inside r, centred across and
+// on r's bottom edge (a portrait stands on its frame's foot).
 func fit(b, r image.Rectangle) image.Rectangle {
 	w, h := r.Dx(), b.Dy()*r.Dx()/max(b.Dx(), 1)
 	if h > r.Dy() {
 		w, h = b.Dx()*r.Dy()/max(b.Dy(), 1), r.Dy()
 	}
-	return image.Rect(0, 0, w, h).Add(r.Min.Add(image.Pt((r.Dx()-w)/2, (r.Dy()-h)/2)))
+	return image.Rect(0, 0, w, h).Add(r.Min.Add(image.Pt((r.Dx()-w)/2, r.Dy()-h)))
 }
 
 // ItemsMenu = ovr20:0EF8: the character's items with Ready, Use, Trade,

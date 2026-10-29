@@ -757,7 +757,7 @@ var cardLabels = map[string]string{
 }
 
 // portrait is m's card art: the PNG the player dropped on the sheet, fitted
-// into the PortraitSize square (cached), else the paper-doll head's face.
+// into the PortraitSize square, on its bottom edge (cached), else the paper-doll head's face.
 func (p *Presenter) portrait(m engine.Member) image.Image {
 	if m.Portrait == nil {
 		return p.face(m.Head)
@@ -772,7 +772,7 @@ func (p *Presenter) portrait(m engine.Member) image.Image {
 	if h > n {
 		w, h = b.Dx()*n/max(b.Dy(), 1), n
 	}
-	xdraw.CatmullRom.Scale(f, image.Rect((n-w)/2, (n-h)/2, (n-w)/2+w, (n-h)/2+h), m.Portrait, b, draw.Src, nil)
+	xdraw.CatmullRom.Scale(f, image.Rect((n-w)/2, n-h, (n-w)/2+w, n), m.Portrait, b, draw.Src, nil)
 	if p.faces == nil {
 		p.faces = map[image.Image]image.Image{}
 	}
