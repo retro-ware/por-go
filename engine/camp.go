@@ -136,9 +136,7 @@ func (e *Engine) CastMenu() {
 	}
 	// extra: the pick list (View.SpellPick, as the combat's Cast) instead of the
 	// spell page, and one cast: the original lists again until Exit
-	if spell := e.pickSpell(); spell != 0 {
-		e.DrawBorder(1, msgTop, winRight, winBottom, 0)
-		e.ClearCells(1, msgTop, winRight, winBottom)
+	if spell := e.pickSpell(); spell != 0 { // the main screen is still up: no message box to redraw (the original's spell page had replaced it)
 		var quit bool
 		e.CastSpell(spell, 0, 1, &quit)
 		e.DrawMainScreen()

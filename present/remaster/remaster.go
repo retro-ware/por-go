@@ -90,9 +90,9 @@ type Presenter struct {
 	ctxActs     []engine.ActKind            // its lines' actions, for the member
 	ctxKeys     []byte                      // its lines' hotkeys (the first letters)
 	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
-	ctxBox      image.Point                 // where its box went (left, top): the spell pick opens there
+	ctxBox      image.Rectangle             // where its box went: the spell pick opens there
 	pick        []engine.Spell              // View.SpellPick as last drawn: a spell to cast is being picked on this screen
-	pickAt      image.Point                 // where the pick list goes (left, top; zero: the top middle)
+	pickAt      image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
 	command     bool                        // the command bar is up (View.Command), as last drawn
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
@@ -103,16 +103,21 @@ type Presenter struct {
 func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	r := p.draw(dst, note, v)
 	if p.pick = v.SpellPick; p.pick == nil {
-		p.pickAt = image.Point{}
+		p.pickAt = image.Rectangle{}
 	} else { // the spell pick (the combat's Cast list) over whatever screen is up
 		k := scale(dst)
 		cx, top := dst.Bounds().Dx()/2, int(k)*16
-		if p.pickAt != (image.Point{}) { // from a card's context menu: where that was, its left edge kept
+		if at := p.pickAt; at != (image.Rectangle{}) { // from a card's context menu: in its place at its scale, the edge next to the card kept
+			k = float64(cardScale(dst))
 			w := 0
 			for _, s := range p.pick {
 				w = max(w, int(k)*8*(len(s.Name)+4)) // as drawMenu's box: a border and a blank column each side
 			}
-			cx, top = min(p.pickAt.X+w/2, dst.Bounds().Dx()-w/2), p.pickAt.Y
+			cx, top = at.Min.X+w/2, at.Min.Y
+			if at.Min.X > dst.Bounds().Dx()/2 { // the right column: the box grows to the left
+				cx = at.Max.X - w/2
+			}
+			cx = min(max(cx, w/2), dst.Bounds().Dx()-w/2)
 		}
 		p.drawPickList(dst, note.Glyph, k, cx, top)
 	}

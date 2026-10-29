@@ -166,6 +166,11 @@ func (e *Engine) DevScene(name string) func() {
 			} else {
 				c.Status, c.Okay = statusUnconscious, 0
 			}
+			for _, m := range e.party { // every able member: the right column's context menus too
+				if m.Status == statusOkay {
+					m.Memorized[0] = spCureLightWounds
+				}
+			}
 			c.Memorized[0] = spCureLightWounds
 			e.command(cmdCast, true)
 			e.DrawMainScreen()
