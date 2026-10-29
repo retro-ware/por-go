@@ -165,7 +165,7 @@ PatrolSeesYou:
 
 PatrolAdvances:
 	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" mid="" far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat PatrolFight
 
@@ -174,7 +174,7 @@ PatrolQuestions:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
@@ -255,7 +255,7 @@ FighterConfronts:
 	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
 	Portrait = BlondElder
 	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="" far="" escape=9 strength=9
+	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT ARE YOU DOING HERE?'" escape=9 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?', HE REPEATS."
@@ -300,7 +300,7 @@ FourGiantsCharge:
 	PrintClear "A GROUP OF FOUR GIANTS CHARGE OUT OF A NEARBY BUILDING."
 	Gosub PressToContinue
 	Picture None
-	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY COME RUNNING TOWARD YOU." mid="" far="" escape=12 strength=12
+	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY COME RUNNING TOWARD YOU." escape=12 strength=12
 	OnGoto Scratch10 Done GiantsFight FleeCombat
 
 GiantsFight:
@@ -325,7 +325,7 @@ PigstyBarracks:
 	if AlarmEndHour != 0: Goto ThemIntruders
 
 BarracksGiants:
-	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS LOOK UP AT YOU." mid="" far="" escape=12 strength=12
+	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS LOOK UP AT YOU." escape=12 strength=12
 	OnGoto Scratch10 Done GiantsFight FleeCombat
 	PrintClear "'WHAT YA DOIN' HERE?'"
 	Parlay 0 1 2 2 3 Scratch10
@@ -384,7 +384,7 @@ ThreatenUs:
 ThemIntruders:
 	PrintClear "'HEY LOOK! IT MUST BE THEM INTRUDERS.'"
 	Gosub PressToContinue
-	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="'GET EM!'" mid="" far="" escape=12 strength=12
+	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="'GET EM!'" escape=12 strength=12
 	OnGoto Scratch10 Done GiantsAdvance FleeCombat GiantsAdvance
 
 PaperOnGround:
@@ -477,13 +477,13 @@ ScribesHall:
 	Portrait = WhiteHaired
 	Scratch10 = CastleFlags & 1
 	if 0 != Scratch10: Goto OfficerAsks
-	EncounterMenu Mage distance=2 body=MailCloak result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="'YOU DON'T BELONG HERE!'" mid="" far="" escape=12 strength=12
+	EncounterMenu Mage distance=2 body=MailCloak result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="'YOU DON'T BELONG HERE!'" escape=12 strength=12
 	Portrait = None
 	Gosub RaiseAlarm
 	OnGoto Scratch10 Done OfficersAttack FleeCombat
 
 OfficerAsks:
-	EncounterMenu Mage distance=2 closeup=7 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="AN OFFICER LOOKS AT YOU, 'WHAT ARE YOU DOING HERE?'" mid="" far="" escape=12 strength=12
+	EncounterMenu Mage distance=2 body=MailCloak result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="AN OFFICER LOOKS AT YOU, 'WHAT ARE YOU DOING HERE?'" escape=12 strength=12
 	Portrait = None
 	OnGoto Scratch10 Done OfficersAttack FleeCombat OfficerParlay
 

@@ -2,8 +2,7 @@ event0:
 	Gosub SetSky
 	if LeftMap == 0: Goto EnterDone
 	PrintClear "DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 BoardBoat StayAtKeep
+	Ask YesNoMenu "YES" -> BoardBoat "NO" -> StayAtKeep
 
 BoardBoat:
 	if SkyColor21 == 8: Goto SailToPhlan
@@ -151,11 +150,10 @@ UndeadPatrol:
 	Approach
 	if PatrolPassword == 0: Goto PatrolMenu
 	PrintClear "AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 PatrolLeaves PatrolFight
+	Ask YesNoMenu "YES" -> PatrolLeaves "NO" -> PatrolFight
 
 PatrolMenu:
-	EncounterMenu Skeleton distance=0 closeup=Skeleton result=Scratch1 combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="A PACK OF UNDEAD SUDDENLY APPEARS." mid="" far="" escape=0 strength=0
+	EncounterMenu Skeleton distance=0 closeup=Skeleton result=Scratch1 combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="A PACK OF UNDEAD SUDDENLY APPEARS." escape=0 strength=0
 	OnGoto Scratch1 ClearExit PatrolFight RunAway PatrolParlay
 
 PatrolParlay:
@@ -214,7 +212,7 @@ SmithyFrogCheck:
 	Exit
 
 FrogsMenu:
-	EncounterMenu GiantFrog distance=2 closeup=GiantFrog result=Scratch1 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Talk near="THE CROAKING RISES IN VOLUME." mid="" far="" escape=0 strength=0
+	EncounterMenu GiantFrog distance=2 closeup=GiantFrog result=Scratch1 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Talk near="THE CROAKING RISES IN VOLUME." escape=0 strength=0
 	OnGoto Scratch1 ClearExit FrogsFight RunAway FrogsParlay
 
 FrogsParlay:
@@ -236,8 +234,7 @@ SmithyHammer:
 	if Search != 1: Exit
 	PrintClear "AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER."
 	Print " DO YOU TAKE IT?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TakeHammer ClearExit
+	Ask YesNoMenu "YES" -> TakeHammer "NO" -> ClearExit
 
 TakeHammer:
 	ClearMonsters
@@ -262,7 +259,7 @@ HauntsRise:
 	Gosub PressToContinue
 
 HauntsMenu:
-	EncounterMenu Spectre distance=2 closeup=Spectre result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL" mid="" far="" escape=0 strength=0
+	EncounterMenu Spectre distance=2 closeup=Spectre result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL" escape=0 strength=0
 	OnGoto Scratch1 ClearExit HauntsWail RunAway HauntsParlay
 
 HauntsWail:
@@ -300,8 +297,7 @@ DiaryGems:
 	PrintClear "BENEATH A FLOORBOARD YOU FIND SOME GEMS AND A FEW PAGES OF A DIARY.  YOU COPY THESE PAGES INTO YOUR JOURNAL AS ENTRY 3."
 	Gosub PressToContinue
 	PrintClear "DO YOU TAKE THE GEMS?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TakeGems ClearExit
+	Ask YesNoMenu "YES" -> TakeGems "NO" -> ClearExit
 
 TakeGems:
 	ClearMonsters
@@ -376,8 +372,7 @@ MagicGear:
 	if MagicGearTaken == 255: Exit
 	PrintClear "ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. "
 	Print "DO YOU TAKE IT?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TakeGear ClearExit
+	Ask YesNoMenu "YES" -> TakeGear "NO" -> ClearExit
 
 TakeGear:
 	ClearMonsters
@@ -401,7 +396,7 @@ Chapel:
 FerranSpirit:
 	if FerranFaded == 255: Exit
 	if FerranFreed == 255: Exit
-	EncounterMenu Spectre distance=0 closeup=19 result=Scratch1 combat=Attack wait=Approach flee=Mirror advance=Mirror parlay=Talk near="A PALE FORM RISES BEFORE YOU." mid="" far="" escape=0 strength=0
+	EncounterMenu Spectre distance=0 closeup=HoodedMan result=Scratch1 combat=Attack wait=Approach flee=Mirror advance=Mirror parlay=Talk near="A PALE FORM RISES BEFORE YOU." escape=0 strength=0
 	OnGoto Scratch1 ClearExit FerranFight RunAway FerranParlay
 
 FerranParlay:

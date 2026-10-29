@@ -172,7 +172,7 @@ PatrolEncounterMenu:
 	EncMenuMode = 2
 	if PatrolsBeaten >= 64: EncMenuMode = 0
 	Gosub SpotPatrol
-	EncounterMenu EncMonster distance=EncMenuMode closeup=EncMonster result=Scratch1 combat=Flee wait=Approach flee=Attack advance=Mirror parlay=Talk near="THE MONSTERS STAND READY" mid="THE MONSTERS PREPARE" far="" escape=EncDistance strength=EncDistance
+	EncounterMenu EncMonster distance=EncMenuMode closeup=EncMonster result=Scratch1 combat=Flee wait=Approach flee=Attack advance=Mirror parlay=Talk near="THE MONSTERS STAND READY" mid="THE MONSTERS PREPARE" escape=EncDistance strength=EncDistance
 	Morale = 100
 	OnGoto Scratch1 Done PatrolFight PartyFlees PatrolParlay
 

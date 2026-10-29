@@ -22,8 +22,7 @@ InsideTown:
 
 LockedDoor:
 	PrintClear "THE DOOR IS LOCKED.  DO YOU WANT TO BREAK IN?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 WatchResponds StayOutside
+	Ask YesNoMenu "YES" -> WatchResponds "NO" -> StayOutside
 
 StayOutside:
 	HoldMove = 255
@@ -172,8 +171,7 @@ AccompanyDirtenAsk:
 	Gosub PressReturn
 	PrintClear "'WILL YOU ACCOMPANY DIRTEN?'"
 	DirtenState = 128
-	Gosub YesNoMenu
-	OnGoto Scratch1 DirtenJoins DeclineDirten
+	Ask YesNoMenu "YES" -> DirtenJoins "NO" -> DeclineDirten
 
 DirtenJoins:
 	Gosub CheckPartySize
@@ -221,8 +219,7 @@ InnRest:
 	ShowPortrait CurlyHairedWoman GreyApron2
 	if FoughtWatch != 0: Goto RefuseService
 	PrintClear "'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 PayForRest MustLeave
+	Ask YesNoMenu "YES" -> PayForRest "NO" -> MustLeave
 
 PayForRest:
 	Gosub PayPlatinum
@@ -263,8 +260,7 @@ GeneralShop:
 	if FoughtWatch > 0: Goto RefuseService
 	ShowPortrait BlackBeard ShopkeeperApron
 	PrintClear "THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 GeneralShopBrowse ResetVisits
+	Ask YesNoMenu "YES" -> GeneralShopBrowse "NO" -> ResetVisits
 
 GeneralShopBrowse:
 	ClearMonsters
@@ -298,8 +294,7 @@ TavernEvent:
 	}
 	Picture None
 	PrintClear " DOES ANYONE WANT TO GAMBLE?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 GamblerGame TavernTale
+	Ask YesNoMenu "YES" -> GamblerGame "NO" -> TavernTale
 
 TavernTale:
 	PrintClear "YOU OVERHEAR TAVERN TALE "
@@ -348,8 +343,7 @@ WagerPrompt:
 GambleAgainAsk:
 	Gosub PressReturn
 	PrintClear "WILL YOU GO AGAIN?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 WagerPrompt
+	Ask YesNoMenu "YES" -> WagerPrompt "NO"
 	LoadCharacter GamblerIndex
 	&SelPlatinum = &GamblerPlatinum
 	Wager = 128 + GamblerIndex
@@ -413,8 +407,7 @@ ArmorShop:
 	ShowPortrait CurlyBlondYouth GreyApron3
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 ArmorShopBrowse ResetVisits
+	Ask YesNoMenu "YES" -> ArmorShopBrowse "NO" -> ResetVisits
 
 ArmorShopBrowse:
 	ClearMonsters
@@ -431,8 +424,7 @@ WeaponShop:
 	ShowPortrait BlackBeard ShopkeeperApron
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 WeaponShopBrowse ResetVisits
+	Ask YesNoMenu "YES" -> WeaponShopBrowse "NO" -> ResetVisits
 
 WeaponShopBrowse:
 	ClearMonsters
@@ -450,8 +442,7 @@ SilverShop:
 	ShowPortrait CurlyBlondYouth GreyApron3
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 SilverShopBrowse ResetVisits
+	Ask YesNoMenu "YES" -> SilverShopBrowse "NO" -> ResetVisits
 
 SilverShopBrowse:
 	ClearMonsters
@@ -472,8 +463,7 @@ HealerTemple:
 
 SeekHealingAsk:
 	Print "' DO YOU SEEK HEALING?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TempleHealing MustLeave
+	Ask YesNoMenu "YES" -> TempleHealing "NO" -> MustLeave
 
 MustLeave:
 	PrintClear "THEN YOU MUST LEAVE."
@@ -491,7 +481,7 @@ TempleHealing:
 	Exit
 
 WatchFightsBack:
-	SetupMonster Fighter16 distance=0 closeup=1
+	SetupMonster Fighter16 distance=0 body=PlateArmor
 	PrintClear "YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!"
 	Morale = 99
 	ClearMonsters

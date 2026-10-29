@@ -391,27 +391,27 @@ BloodthirstyMonsters:
 	if AuxMember < 1: Goto AvoidedBy
 	$AuxMonsterName = "YOU SEE SOME BLOODTHIRSTY "
 	$AuxNameCopy2 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
 	AuxEncTemp += 9
 	OnGoto AuxMember Done EncounterFight DropOff EncounterFight
 
 FaceToFace:
 	$AuxMonsterName = "YOU ARE SUDDENLY FACE TO FACE WITH ARMED "
 	$AuxNameCopy6 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=0 closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Attack advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=0 closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Attack advance=Mirror parlay=Talk near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
 	OnGoto AuxMember Done EncounterFight DropOff ParlayMonsters
 
 AvoidedBy:
 	$AuxMonsterName = "YOU ARE BEING AVOIDED BY SOME "
 	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
 	AuxEncTemp -= 10
 	OnGoto AuxMember Done EncounterFight DropOff ParlayMonsters
 
 SurprisedParty:
 	$AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
 	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
 	AuxEncTemp -= 20
 	OnGoto AuxMember Done FightSurprised Done ParlayMonsters
 
@@ -426,7 +426,7 @@ SicklyKobolds:
 	Approach
 	PrintClear "YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE."
 	Gosub PressToContinue
-	EncounterMenu Kobold distance=2 closeup=Kobold result=AuxMember combat=Attack wait=Flee flee=Flee advance=Flee parlay=Talk near="THE KOBOLDS ARE TRYING TO SNEAK OFF." mid="" far="" escape=0 strength=0
+	EncounterMenu Kobold distance=2 closeup=Kobold result=AuxMember combat=Attack wait=Flee flee=Flee advance=Flee parlay=Talk near="THE KOBOLDS ARE TRYING TO SNEAK OFF." escape=0 strength=0
 	OnGoto AuxMember Done SicklyKoboldsFight DropOff SicklyKoboldsParlay
 
 SicklyKoboldsFight:

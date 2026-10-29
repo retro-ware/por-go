@@ -192,7 +192,7 @@ SurpriseGiants:
 
 GiantsMenu:
 	Delay
-	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="THEY HOLD THEIR WEAPONS READY." mid="" far="" escape=12 strength=12
+	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="THEY HOLD THEIR WEAPONS READY." escape=12 strength=12
 	OnGoto Scratch10 Done FightGiants FledCombat
 	Parlay 0 1 1 1 0 Scratch10
 	OnGoto Scratch10 WhoSentYou
@@ -239,11 +239,11 @@ TowerTrolls:
 	OnGoto Surprise TrollsMenu TrollsCharge TrollsUnawareMenu
 
 TrollsMenu:
-	EncounterMenu GreenBrute distance=2 closeup=GreenBrute result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE A PACK OF TROLLS." mid="" far="" escape=12 strength=12
+	EncounterMenu GreenBrute distance=2 closeup=GreenBrute result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE A PACK OF TROLLS." escape=12 strength=12
 	OnGoto Scratch10 Done FightTrolls StepBack FightTrolls
 
 TrollsUnawareMenu:
-	EncounterMenu GreenBrute distance=2 closeup=GreenBrute result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU." mid="" far="" escape=10 strength=10
+	EncounterMenu GreenBrute distance=2 closeup=GreenBrute result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU." escape=10 strength=10
 	OnGoto Scratch10 Done FightTrolls StepBack FightTrolls
 
 TrollsCharge:
@@ -307,7 +307,7 @@ HarmlessMage:
 	Scratch10 = CastleFlags2 & 4
 	if 0 != Scratch10: Exit
 	Portrait = GoldCirclet
-	EncounterMenu Man12 distance=2 body=MerchantCoat result=Scratch10 combat=Flee wait=Talk flee=Mirror advance=Talk parlay=Talk near="YOU SEE A HARMLESS, MIDDLE AGED MAN." mid="" far="" escape=12 strength=12
+	EncounterMenu Man12 distance=2 body=MerchantCoat result=Scratch10 combat=Flee wait=Talk flee=Mirror advance=Talk parlay=Talk near="YOU SEE A HARMLESS, MIDDLE AGED MAN." escape=12 strength=12
 	Portrait = None
 	OnGoto Scratch10 MageFlees MageBegs StepBack
 
@@ -413,7 +413,7 @@ ThroneRoom:
 	PrintClear "'WHAT IS YOUR BUSINESS WITH TYRANTHRAXUS, LORD OF PHLAN?'"
 	Approach
 	Delay
-	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Mirror advance=Attack parlay=Talk near="" mid="" far="" escape=0 strength=0
+	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Mirror advance=Attack parlay=Talk escape=0 strength=0
 	Portrait = None
 	OnGoto Scratch10 Done FightImpostor FledCombat
 	Parlay 0 1 2 2 3 Scratch10
@@ -468,7 +468,7 @@ FightImpostor:
 
 event3:
 	Gosub RollSurprise
-	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="YOU SEE GIANT SNAKES." mid="" far="" escape=15 strength=15
+	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="YOU SEE GIANT SNAKES." escape=15 strength=15
 	OnGoto Scratch10 Done FightSnakes StepBack
 
 FightSnakes:

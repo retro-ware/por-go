@@ -118,6 +118,7 @@ scripts, kept on purpose).
 | `ClearBox` | blank the view window for text |
 | `D = Menu "A" "B"` | a one-line menu; D gets the answer, 0 for the first |
 | `D = Menu "A" -> L1 "B" -> L2` | the same, then go to the answer's label (`HMenu` + `OnGoto`) |
+| `Ask M "YES" -> L1 "NO" -> L2` | call menu section M (it only asks `D = Menu "YES" "NO"` and returns), then go to the answer's label; an answer without `->` goes on with the next line (`Gosub M` + `OnGoto D L1 L2`) |
 | `D = VMenu "PROMPT" "A" "B"` | a vertical list menu |
 | `Parlay a b c d e D` | the HAUGHTY/SLY/NICE/MEEK/ABUSIVE menu; D gets the operand of the chosen attitude |
 | `InputNumber N D`, `InputString N $D` | ask for a number or text into D (N is not used by the port) |
@@ -130,7 +131,7 @@ scripts, kept on purpose).
 |---------|------|
 | `Picture Name` | show a picture in the view; `Picture None` puts the 3D view back |
 | `ShowPortrait Head Body` | show a two-part portrait (`Portrait = Head` + `Picture Body`); `ShowPortrait None None` clears it |
-| `Portrait = Head` | while a head is set (not `None`), a `Picture` or an encounter's close-up is the BODY under that head |
+| `Portrait = Head` | while a head is set (not `None`), a `Picture` or an encounter's close-up is the BODY under that head (written `body=`; the head may have been set in a section that jumps here) |
 | `RedrawView` | redraw the 3D view after a picture or sprite |
 | `Sky = N`, `SkyInside = N` | the sky colours |
 | `LoadMap Map unused=X icons=Y` | load map (GEO block) Map; `Keep`/`Unchanged` keep the current one. `unused` is ignored, by the original too. `icons` not 255 loads the wilderness travel icons outdoors |
@@ -146,7 +147,7 @@ scripts, kept on purpose).
 | `AddNPC M Morale` | monster M joins the party |
 | `SetupMonster S distance=D closeup=P` | show sprite S coming at the party from up to D squares away (fewer if a wall is nearer), P the close-up picture once it is near; `body=P` when a portrait is up |
 | `Approach` | the monster comes one square closer |
-| `EncounterMenu S distance=D closeup=P result=R combat= wait= flee= advance= parlay= near= mid= far= escape=E strength=N` | the COMBAT/WAIT/FLEE/ADVANCE (PARLAY when near) approach menu for sprite S, coming from D squares like `SetupMonster`. R gets 0 nothing, 1 fight, 2 the party got away, 3 talk. `combat` .. `parlay` are how the monsters react to each choice (below). `near`/`mid`/`far` are the texts shown at distance 0/1/2 (an empty one falls back to the others). `escape`: against `Attack`, FLEE gets away when the party's weakest has at least E. `strength`: `Flee` monsters run even from COMBAT when N is above the party's best, else they fight |
+| `EncounterMenu S distance=D closeup=P result=R combat= wait= flee= advance= parlay= near= mid= far= escape=E strength=N` | the COMBAT/WAIT/FLEE/ADVANCE (PARLAY when near) approach menu for sprite S, coming from D squares like `SetupMonster`. R gets 0 nothing, 1 fight, 2 the party got away, 3 talk. `combat` .. `parlay` are how the monsters react to each choice (below). `near`/`mid`/`far` are the texts shown at distance 0/1/2; a text left out is empty and falls back to the others. `escape`: against `Attack`, FLEE gets away when the party's weakest has at least E. `strength`: `Flee` monsters run even from COMBAT when N is above the party's best, else they fight |
 
 Reactions (`EncounterMenu`):
 

@@ -106,12 +106,12 @@ func TestUnfoldAssign(t *testing.T) {
 	names := &ScriptNames{Vars: map[int]string{0x4A00: "A", 0x4A01: "B", 0x6E79: "Scratch1"}}
 	head := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"
 	got, err := ParseScript(head+"\talias Choice = Scratch1\n\tA = 3\n\tA += 1\n\tB = A - 2\n\tB = A & 7\n\tif 0 != B: Exit\n"+
-		"\tA = Tab[B]\n\tTab[B] = A\n\tA = Random 5\n\tChoice = Menu \"GO\" -> L1 \"NO\" -> L2\n\tOnGosub Choice L1 L2\nL1:\nL2:\n\tExit\nTab:\n\tData 1 2\n", names)
+		"\tA = Tab[B]\n\tTab[B] = A\n\tA = Random 5\n\tChoice = Menu \"GO\" -> L1 \"NO\" -> L2\n\tOnGosub Choice L1 L2\n\tAsk YN \"Y\" -> L1 \"N\"\n\tEncounterMenu 1 distance=2 closeup=3 result=A combat=0 wait=1 flee=2 advance=3 parlay=4 mid=\"HI\" escape=5 strength=6\nL1:\nL2:\n\tExit\nYN:\n\tScratch1 = Menu \"Y\" \"N\"\n\tReturn\nTab:\n\tData 1 2\n", names)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want, err := ParseScript(head+"\tSave 3 A\n\tAdd 1 A A\n\tSub 2 A B\n\tAnd A 7 B\n\tIfNe\n\tExit\n"+
-		"\tGetTable Tab B A\n\tSaveTable A Tab B\n\tRandom 5 A\n\tHMenu Scratch1 2 \"GO\" \"NO\"\n\tOnGoto Scratch1 2 L1 L2\n\tOnGosub Scratch1 2 L1 L2\nL1:\nL2:\n\tExit\nTab:\n\tData 1 2\n", names)
+		"\tGetTable Tab B A\n\tSaveTable A Tab B\n\tRandom 5 A\n\tHMenu Scratch1 2 \"GO\" \"NO\"\n\tOnGoto Scratch1 2 L1 L2\n\tOnGosub Scratch1 2 L1 L2\n\tGosub YN\n\tOnGoto Scratch1 1 L1\n\tEncounterMenu 1 2 3 A 0 1 2 3 4 \"\" \"HI\" \"\" 5 6\nL1:\nL2:\n\tExit\nYN:\n\tHMenu Scratch1 2 \"Y\" \"N\"\n\tReturn\nTab:\n\tData 1 2\n", names)
 	if err != nil {
 		t.Fatal(err)
 	}

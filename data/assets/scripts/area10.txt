@@ -135,7 +135,7 @@ SkeletonAmbush:
 	if SkeletonAmbushDone > 0: Exit
 	if SkeletonCount == 0: Exit
 	Scratch9 = 8
-	SetupMonster Skeleton distance=0 closeup=11
+	SetupMonster Skeleton distance=0 closeup=Tombstone
 	PrintClear "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
 	Gosub PressReturn
 	Scratch5 = 34
@@ -187,8 +187,7 @@ SkeletonTreasure:
 	if SkeletonTreasureTaken == 255: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND A MARBLE CHEST.  OPEN IT?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TakeSkeletonTreasure Done
+	Ask YesNoMenu "YES" -> TakeSkeletonTreasure "NO" -> Done
 
 TakeSkeletonTreasure:
 	ClearMonsters
@@ -255,8 +254,7 @@ GiantZombieLair:
 ZombieTreasure:
 	if ZombieTreasureTaken == 255: Exit
 	PrintClear "VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TakeZombieTreasure Done
+	Ask YesNoMenu "YES" -> TakeZombieTreasure "NO" -> Done
 
 TakeZombieTreasure:
 	ClearMonsters
@@ -297,8 +295,7 @@ WightBossWarning:
 	PrintClear "WARNING VOICES CRY FROM WITHIN.  'WE ARE THE SPIRITS OF THOSE WHO FOUGHT THE DRAGONS.  LEAVE US OR DIE.'"
 	Gosub PressReturn
 	PrintClear "DO YOU LEAVE?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 BackAwayFromWights WightBossApproach
+	Ask YesNoMenu "YES" -> BackAwayFromWights "NO" -> WightBossApproach
 
 BackAwayFromWights:
 	PartyX = 14
@@ -348,8 +345,7 @@ FightWightBoss:
 WightTreasure:
 	if WightTreasureTaken == 255: Exit
 	PrintClear "IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 StripWarriorBody Done
+	Ask YesNoMenu "YES" -> StripWarriorBody "NO" -> Done
 
 StripWarriorBody:
 	ClearMonsters
@@ -397,7 +393,7 @@ SkeletonLairEntry:
 	if SkeletonsGone == 0: Exit
 
 SkeletonMakerMenu:
-	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." mid="" far="" escape=0 strength=0
+	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." escape=0 strength=0
 	OnGoto Scratch1 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
 
 SkeletonMakerSurprised:
@@ -450,7 +446,7 @@ ZombieLairEntry:
 	if ZombiesGone == 0: Exit
 
 ZombieMakerMenu:
-	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." mid="" far="" escape=0 strength=0
+	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." escape=0 strength=0
 	OnGoto Scratch1 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
 
 ZombieMakerSurprised:
@@ -528,7 +524,7 @@ WightLairEntry:
 	if WightsGone == 0: Exit
 
 WightMakerMenu:
-	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." mid="" far="" escape=0 strength=0
+	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." escape=0 strength=0
 	OnGoto Scratch1 Done WightMakerSurprised FleeRandomly WightMakerNotices
 
 WightMakerSurprised:
@@ -633,8 +629,7 @@ BlackCrypt:
 	PrintClear "INSIDE THE RUINS OF A BLACK MARBLE CRYPT IS A COFFIN FILLED WITH DUST.  AMONG THE PILES OF DUST ARE SEVERAL BROKEN CROSSES, VIALS OF SPILLED HOLY WATER, AND A SCROLL."
 	Gosub PressReturn
 	PrintClear "DO YOU READ THE SCROLL?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 ScrollToJournal CoffinAsk
+	Ask YesNoMenu "YES" -> ScrollToJournal "NO" -> CoffinAsk
 
 ScrollToJournal:
 	PrintClear "THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43."
@@ -642,8 +637,7 @@ ScrollToJournal:
 
 CoffinAsk:
 	PrintClear "DO YOU WANT TO DO ANYTHING WITH THE COFFIN?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 CoffinMenu Done
+	Ask YesNoMenu "YES" -> CoffinMenu "NO" -> Done
 
 CoffinMenu:
 	alias Choice = Scratch1
@@ -702,8 +696,7 @@ ReloadVampire:
 PitStairs:
 	if VampireFought > 0: Exit
 	PrintClear "WOODEN STAIRS LEAD INTO A PIT.  DO YOU GO DOWN?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 DescendPit Done
+	Ask YesNoMenu "YES" -> DescendPit "NO" -> Done
 
 DescendPit:
 	PartyX = 14
@@ -749,8 +742,7 @@ VampireTreasure:
 	if VampireTreasureTaken == 255: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 TakeVampireTreasure Done
+	Ask YesNoMenu "YES" -> TakeVampireTreasure "NO" -> Done
 
 TakeVampireTreasure:
 	ClearMonsters
@@ -808,7 +800,7 @@ PartyConfronted:
 PartySneaksUp:
 	$AuxText = "YOU HAVE MANAGED TO SNEAK UP ON SOME "
 	$AuxNameCopy8 = $AuxMonsterName
-	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Attack flee=Flee advance=Approach parlay=Talk near=$AuxText mid="" far="" escape=0 strength=0
+	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Attack flee=Flee advance=Approach parlay=Talk near=$AuxText escape=0 strength=0
 	OnGoto Scratch1 Done StartFight FleeRandomly PartyNoticed
 
 PartyNoticed:
@@ -820,7 +812,7 @@ FindUndead:
 	PrintClear "YOU FIND SOME UNDEAD."
 
 EncounterChoice:
-	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="" mid="" far="" escape=Scratch4 strength=Scratch4
+	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk escape=Scratch4 strength=Scratch4
 	OnGoto Scratch1 Done StartFight FleeRandomly ParlayFails
 
 ParlayFails:

@@ -183,7 +183,7 @@ PriestRoom:
 PriestEncounter:
 	Scratch7 = 6
 	Gosub LoadGroupData
-	EncounterMenu AuxPartyStrength distance=MaxDist closeup=AuxCounter result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." mid="" far="" escape=9 strength=9
+	EncounterMenu AuxPartyStrength distance=MaxDist closeup=AuxCounter result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." escape=9 strength=9
 	Portrait = None
 	Scratch6 = 6
 	OnGoto Scratch10 Done FightGroup PriestFlee
@@ -324,11 +324,11 @@ FriendlyGroupMenu:
 	Goto EncounterOutcome
 
 HungryGroupMenu:
-	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="ONE LICKS ITS LIPS." mid="" far="" escape=AuxMenuChoice strength=AuxMenuChoice
+	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="ONE LICKS ITS LIPS." escape=AuxMenuChoice strength=AuxMenuChoice
 	Goto EncounterOutcome
 
 FlyingGroupMenu:
-	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="THEY FLY TOWARD YOU." mid="" far="" escape=AuxMenuChoice strength=AuxMenuChoice
+	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="THEY FLY TOWARD YOU." escape=AuxMenuChoice strength=AuxMenuChoice
 
 EncounterOutcome:
 	Portrait = None

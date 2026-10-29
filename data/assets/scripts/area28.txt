@@ -41,7 +41,7 @@ AlarmCheck:
 	}
 
 GuardsSpotYou:
-	SetupMonster Fighter16 distance=2 closeup=6
+	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	Gosub ApproachTwice
 	PrintClear "SOME GUARDS SPOT YOU AND ATTACK."
 	ClearMonsters
@@ -129,7 +129,7 @@ TourBarracks:
 	Return
 
 TourWatchTowers:
-	SetupMonster Fighter16 distance=1 closeup=6
+	SetupMonster Fighter16 distance=1 body=LeatherHarness
 	PrintClear "'HERE YOU SEE ONE OF OUR FINE WATCH TOWERS WHICH WERE BUILT BY THE FINEST STONE MASONS IN THE LAND.'"
 	Gosub PressReturn
 	PrintClear "'FROM HERE YOU CAN ALSO SEE OUR SOLIDLY BUILT OUTSIDE WALL.  THIS WALL HAS SURVIVED MANY ATTACKS, INCLUDING ONE FROM A DRAGON.'"
@@ -140,7 +140,7 @@ TourWatchTowers:
 	Return
 
 TourQuarters:
-	SetupMonster Fighter16 distance=1 closeup=6
+	SetupMonster Fighter16 distance=1 body=LeatherHarness
 	PrintClear "THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES."
 	RedrawView
 	Portrait = None
@@ -188,7 +188,7 @@ FleeStopped:
 
 SurrenderOrDie:
 	alias Choice = Scratch1
-	SetupMonster Fighter16 distance=2 closeup=6
+	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	PrintClear "MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?"
 	Choice = Menu "SURRENDER" -> Surrender "ATTACK" -> GuardWaveFight
 
@@ -233,7 +233,7 @@ DwarfAndCommandant:
 	if CombatEnd > 128: Goto RunForGate
 	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
 	Portrait = None
-	SetupMonster Fighter16 distance=2 closeup=50
+	SetupMonster Fighter16 distance=2 closeup=EyepatchMan
 	Gosub ApproachTwice
 	ClearMonsters
 	LoadMonster AlHyamDazid count=1 icon=AlHyamDazid
@@ -253,7 +253,7 @@ RunForGate:
 	Facing = 0
 	Call CallRedraw
 	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=2 body=11
+	SetupMonster Fighter16 distance=2 body=NoBody11
 	PrintClear "YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS."
 	ClearMonsters
 	LoadMonster Guard count=6 icon=11

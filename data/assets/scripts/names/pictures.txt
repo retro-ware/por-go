@@ -241,6 +241,7 @@ Body 0 6 LeatherHarness
 Body 0 7 MailCloak
 Body 0 8 RogueDagger
 Body 0 9 ShopkeeperApron
+Body 0 11 NoBody11
 Body 0 13 GreyApron
 Body 0 18 ScaleArmor
 Body 0 24 GreyApron2
@@ -260,3 +261,8 @@ Reaction 0 1 Mirror
 Reaction 0 2 Flee
 Reaction 0 3 Approach
 Reaction 0 4 Talk
+
+# Numbers the scripts use that no data file has (the game draws nothing)
+Picture 0 13 NoPicture13
+Picture 0 49 Blank
+Sprite 0 49 Blank

@@ -195,7 +195,7 @@ PatrolSeesYou:
 
 PatrolAdvances:
 	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" mid="" far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat PatrolFight
 
@@ -204,7 +204,7 @@ PatrolQuestions:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Delay
-	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
@@ -284,7 +284,7 @@ FighterConfronts:
 	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
 	Portrait = GoldCapBeard
 	Delay
-	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="" far="" escape=9 strength=9
+	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT ARE YOU DOING HERE?'" escape=9 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?' HE REPEATS."
@@ -333,7 +333,7 @@ GiantApartment:
 	PrintClear "AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM."
 	Call CallRedraw
 	Gosub PressToContinue
-	EncounterMenu HillGiant distance=1 closeup=HillGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." mid="THE GIANTS ARE WALKING TOWARD YOU." far="" escape=12 strength=12
+	EncounterMenu HillGiant distance=1 closeup=HillGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." mid="THE GIANTS ARE WALKING TOWARD YOU." escape=12 strength=12
 	OnGoto Scratch10 Done ApartmentFight FleeCombat
 	PrintClear "'HEY, WHAT DO YOU THINK YOU'RE DOING?'"
 	Parlay 0 0 0 1 0 Scratch10
@@ -388,7 +388,7 @@ BucketNoticed:
 	Surprise = 0
 
 BucketGiantsCharge:
-	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!" mid="" far="" escape=12 strength=12
+	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!" escape=12 strength=12
 	OnGoto Scratch10 Done SleepingGiantsFight FleeCombat
 
 SleepingGiants:
@@ -419,7 +419,7 @@ GiantQuarters:
 	IfGt
 	Goto WakingGiants
 	Surprise = 0
-	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR." mid="" far="" escape=12 strength=12
+	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR." escape=12 strength=12
 	OnGoto Scratch10 Done ArmoringGiants FleeCombat
 
 ArmoringGiants:
@@ -427,7 +427,7 @@ ArmoringGiants:
 	Goto QuartersFight
 
 WakingGiants:
-	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS STRUGGLING OUT OF BED." mid="" far="" escape=9 strength=9
+	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS STRUGGLING OUT OF BED." escape=9 strength=9
 	OnGoto Scratch10 Done WakingGiantsHit FleeCombat
 
 WakingGiantsHit:
@@ -542,7 +542,7 @@ DoorGiantsChallenge:
 	SetupMonster HillGiant distance=0 closeup=HillGiant
 	Scratch10 = BaneTempleFlags & 3
 	if 0 != Scratch10: Goto TempleThieves
-	EncounterMenu HillGiant distance=0 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT PASSWORD?'" mid="" far="" escape=12 strength=12
+	EncounterMenu HillGiant distance=0 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT PASSWORD?'" escape=12 strength=12
 	OnGoto Scratch10 Done DoorGiantsFight FleeCombat
 	Parlay 0 1 1 1 1 Scratch10
 	OnGoto Scratch10 WhoSentYou
@@ -713,7 +713,7 @@ GiantSnakes:
 	Scratch10 = CadornaQuartersFlags & 64
 	if 0 != Scratch10: Exit
 	Gosub RollSurprise
-	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE GIANT SNAKES." mid="" far="" escape=15 strength=15
+	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE GIANT SNAKES." escape=15 strength=15
 	OnGoto Scratch10 Done SnakesFight StepBack
 
 SnakesFight:

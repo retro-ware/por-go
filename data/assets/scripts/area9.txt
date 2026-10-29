@@ -239,13 +239,13 @@ event3:
 	if 0 != Scratch10: Goto PatrolMenu
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
 	Gosub PressReturn
-	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY ADVANCE, WEAPONS READY" mid="" far="" escape=9 strength=9
+	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=9 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done FightPatrol FledCombat FightPatrol
 
 PatrolMenu:
 	Gosub PressReturn
-	EncounterMenu Fighter16 distance=2 closeup=5 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done FightPatrol FledCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
@@ -381,7 +381,7 @@ MageAndEttins:
 	Portrait = BlondElder
 	PrintClear "YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'"
 	Gosub PressReturn
-	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." mid="" far="" escape=0 strength=0
+	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." escape=0 strength=0
 	Portrait = None
 	RedrawView
 	OnGoto Scratch10 Done FightMageGuards
@@ -416,7 +416,7 @@ FighterAndEttins:
 	Portrait = SandyHaired
 	PrintClear "YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'"
 	Gosub PressReturn
-	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." mid="" far="" escape=0 strength=0
+	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." escape=0 strength=0
 	Portrait = None
 	RedrawView
 	OnGoto Scratch10 Done FightFighterGuards
@@ -476,7 +476,7 @@ FarTowerCharges:
 TowerMonstersMenu:
 	Portrait = SandyHaired
 	Gosub PressReturn
-	EncounterMenu Mage distance=MaxDist body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=6
+	EncounterMenu Mage distance=MaxDist body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=6
 	Portrait = None
 	RedrawView
 	OnGoto Scratch10 Done FightTowerMonsters
@@ -674,7 +674,7 @@ BugbearsBehindGate:
 	Exit
 	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Exit
-	EncounterMenu Bugbear distance=1 closeup=Bugbear result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." mid="" far="" escape=9 strength=9
+	EncounterMenu Bugbear distance=1 closeup=Bugbear result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." escape=9 strength=9
 	OnGoto Scratch10 Done FightGateBugbears FleeToArea6
 
 FightGateBugbears:
@@ -706,7 +706,7 @@ WagonPasses:
 	Gosub PressReturn
 	WagonManMet = 1
 	Portrait = BrownHaired
-	EncounterMenu Man12 distance=0 body=ShopkeeperApron result=Choice combat=Attack wait=Approach flee=Approach advance=Approach parlay=Talk near="" mid="" far="" escape=0 strength=0
+	EncounterMenu Man12 distance=0 body=ShopkeeperApron result=Choice combat=Attack wait=Approach flee=Approach advance=Approach parlay=Talk escape=0 strength=0
 	Portrait = None
 	OnGoto Choice Done KillTrader Done
 	PrintClear "'WHY SURE I'LL SELL YOU MY WAGON. ALL IT'LL COST YOU IS 250 GOLD PIECES. HOW ABOUT IT?'"
@@ -749,7 +749,7 @@ MonstersBehindWall:
 	PrintClear "A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL"
 	Portrait = SandyHaired
 	Gosub PressReturn
-	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY RUSH TOWARD YOU" mid="" far="" escape=12 strength=12
+	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY RUSH TOWARD YOU" escape=12 strength=12
 	Portrait = None
 	RedrawView
 	OnGoto Scratch10 Done FightWallMonsters PushedBack

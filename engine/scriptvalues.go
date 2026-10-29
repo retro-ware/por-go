@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -48,6 +49,40 @@ var operandLabels = map[string][]string{
 	"LoadMap":      {"", "unused", "icons"},
 	"EncounterMenu": {"", "distance", "closeup|body", "result", "combat", "wait", "flee", "advance", "parlay",
 		"near", "mid", "far", "escape", "strength"},
+}
+
+// operandDefaults are the values of labelled operands a command may leave
+// out (EncounterMenu's empty texts).
+var operandDefaults = map[string]map[int]string{
+	"EncounterMenu": {9: `""`, 10: `""`, 11: `""`},
+}
+
+// withDefaults puts the left-out labelled operands of op back in.
+func withDefaults(op string, args []string) []string {
+	labels, defs := operandLabels[op], operandDefaults[op]
+	if defs == nil {
+		return args
+	}
+	var out []string
+	for _, a := range args {
+		l, _, ok := strings.Cut(a, "=")
+		if ok && !strings.HasPrefix(a, `"`) {
+			for j := len(out); j < len(labels) && !slices.Contains(strings.Split(labels[j], "|"), l); j++ {
+				d, ok := defs[j]
+				if !ok {
+					break // a wrong label, reported by the parser
+				}
+				out = append(out, labels[j]+"="+d)
+			}
+		}
+		out = append(out, a)
+	}
+	for j := len(out); j < len(labels); j++ {
+		if d, ok := defs[j]; ok {
+			out = append(out, labels[j]+"="+d)
+		}
+	}
+	return out
 }
 
 // ReadScriptValues adds the values of a values file, if there is one.

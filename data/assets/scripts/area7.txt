@@ -191,7 +191,7 @@ StatueRoom:
 MedusaMenu:
 	Scratch10 = SearchTowerFlags & 16
 	if 0 != Scratch10: Exit
-	EncounterMenu 49 distance=1 closeup=49 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="A MEDUSA COMES RUNNING TOWARD YOU." mid="" far="" escape=9 strength=9
+	EncounterMenu Blank distance=1 closeup=Blank result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="A MEDUSA COMES RUNNING TOWARD YOU." escape=9 strength=9
 	OnGoto Scratch10 RedrawExit MedusaFight RetreatFromMedusa
 
 MedusaFight:
@@ -226,7 +226,7 @@ MessengerThief:
 	Print " AS YOU COME IN HE NODS AT YOU."
 	Gosub PressToContinue
 	Portrait = ShortBeard
-	EncounterMenu Swordsman11 distance=2 body=RogueDagger result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Mirror near="HE STARES MOODILY AT HIS FEET." mid="" far="" escape=12 strength=12
+	EncounterMenu Swordsman11 distance=2 body=RogueDagger result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Mirror near="HE STARES MOODILY AT HIS FEET." escape=12 strength=12
 	Portrait = None
 	OnGoto Scratch10 RedrawExit ThiefFight RetreatFromThief
 	Parlay 1 1 1 1 0 Scratch10
@@ -272,7 +272,7 @@ GenheerisAtDesk:
 	Scratch10 = SearchTowerFlags & 32
 	if 0 != Scratch10: Goto GenheerisOffer
 	Portrait = GreyBeard
-	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="'SO WHAT MESSAGE FROM TYRANTHRAXUS REQUIRES ALL OF YOU TO DELIVER IT?'" mid="" far="" escape=0 strength=0
+	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="'SO WHAT MESSAGE FROM TYRANTHRAXUS REQUIRES ALL OF YOU TO DELIVER IT?'" escape=0 strength=0
 	Portrait = None
 	OnGoto Scratch10 RedrawExit GenheerisOffer RetreatFromThief
 	Parlay 0 0 1 1 0 Scratch10
@@ -358,7 +358,7 @@ HallGuards:
 	Scratch10 = GenheerisFlags & 4
 	if 0 != Scratch10: Goto DragonOffer
 	Portrait = GoldCapBeard
-	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="TWO GUARDS MOVE TO BAR YOUR PATH. THE DRAGON LOOKS AT YOU WITH MALEVOLENCE. 'GUARDS, KILL THESE PESTS.'" mid="" far="" escape=9 strength=9
+	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="TWO GUARDS MOVE TO BAR YOUR PATH. THE DRAGON LOOKS AT YOU WITH MALEVOLENCE. 'GUARDS, KILL THESE PESTS.'" escape=9 strength=9
 	Portrait = None
 	OnGoto Scratch10 RedrawExit GuardsFight
 

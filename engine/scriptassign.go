@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"regexp"
 	"slices"
 	"strconv"
@@ -20,6 +21,9 @@ import (
 //	D = Menu "A" -> L1 "B" -> L2   HMenu D 2 "A" "B", OnGoto D 2 L1 L2
 //	D = VMenu "P" "A" "B"  VMenu D "P" 2 "A" "B"
 //	OnGoto D L1 L2        OnGoto D 2 L1 L2 (the count from the labels), OnGosub too
+//	Ask M "YES" -> L1 "NO" -> L2   Gosub M, OnGoto D 2 L1 L2: M is a section
+//	                      that only asks D = Menu "YES" "NO" and returns (an
+//	                      answer without -> goes on with the next line)
 //
 // and the section aliases: "alias Choice = Scratch1" under a label names
 // the variable Choice up to the next label.
@@ -44,6 +48,17 @@ func expandAssign(c []string) [][]string {
 			return nil // the plain form
 		}
 		return [][]string{append([]string{c[0], c[1], n(len(c) - 2)}, c[2:]...)}
+	}
+	if c[0] == "Ask" && len(c) >= 2 {
+		var labels []string
+		for k := 2; k+2 < len(c); k++ {
+			if c[k+1] == "->" {
+				labels = append(labels, c[k+2])
+				k += 2
+			}
+		}
+		// askMenu: the answer's variable, from M's menu (resolveAsks)
+		return [][]string{{"Gosub", c[1]}, append([]string{"OnGoto", askMenu + c[1] + " " + strings.Join(c[2:], " "), n(len(labels))}, labels...)}
 	}
 	if len(c) < 3 || c[1] != "=" && c[1] != "+=" && c[1] != "-=" {
 		return nil
@@ -318,4 +333,80 @@ func unalias(toks []string, m map[string]string) {
 			toks[i] = tb + "[" + ix + "]"
 		}
 	}
+}
+
+// askMenu marks an Ask's OnGoto operand until resolveAsks knows it.
+const askMenu = "?ask:"
+
+// resolveAsks puts the answer variable of each Ask's menu section in.
+func resolveAsks(out []srcLine) error {
+	for i, sl := range out {
+		if sl.label || len(sl.toks) < 2 || !strings.HasPrefix(sl.toks[1], askMenu) {
+			continue
+		}
+		name, items, _ := strings.Cut(strings.TrimPrefix(sl.toks[1], askMenu), " ")
+		at := slices.IndexFunc(out, func(x srcLine) bool { return x.label && x.toks[0] == name })
+		for at >= 0 && at < len(out) && out[at].label {
+			at++
+		}
+		if at < 0 || at+1 >= len(out) || out[at].toks[0] != "HMenu" || out[at+1].toks[0] != "Return" {
+			return fmt.Errorf("%d: Ask %s: %s is not a menu section (D = Menu ...; Return)", sl.n, name, name)
+		}
+		var said []string
+		toks, _ := scriptTokens(items)
+		for k := 0; k < len(toks); k++ {
+			said = append(said, toks[k])
+			if k+2 < len(toks) && toks[k+1] == "->" {
+				k += 2
+			}
+		}
+		if !slices.Equal(said, out[at].toks[3:]) {
+			return fmt.Errorf("%d: Ask %s: its menu is %s", sl.n, name, strings.Join(out[at].toks[3:], " "))
+		}
+		out[i].toks[1] = out[at].toks[1]
+	}
+	return nil
+}
+
+// foldAsks writes Gosub M and OnGoto D on its answer as an Ask, when M
+// only asks D = Menu ... and returns.
+func foldAsks(lines []string) []string {
+	menus := map[string][]string{} // a menu section's D and items
+	for i := 0; i < len(lines); i++ {
+		if strings.HasPrefix(lines[i], "\t") || !strings.HasSuffix(lines[i], ":") {
+			continue
+		}
+		name := strings.TrimSuffix(lines[i], ":")
+		j := i + 1
+		for j < len(lines) && lines[j] != "" && !strings.HasPrefix(lines[j], "\t") {
+			j++ // more labels
+		}
+		if j+1 < len(lines) && lines[j+1] == "\tReturn" && commentAt(lines[j]) < 0 {
+			if t, _ := scriptTokens(lines[j]); len(t) >= 4 && t[1] == "=" && t[2] == "Menu" && !slices.Contains(t, "->") {
+				menus[name] = append([]string{t[0]}, t[3:]...)
+			}
+		}
+	}
+	var out []string
+	for i := 0; i < len(lines); i++ {
+		if i+1 < len(lines) && strings.HasPrefix(lines[i], "\tGosub ") && strings.HasPrefix(lines[i+1], "\tOnGoto ") && commentAt(lines[i+1]) < 0 {
+			g, _ := scriptTokens(lines[i])
+			o, _ := scriptTokens(lines[i+1])
+			if m := menus[g[1]]; len(g) == 2 && m != nil && len(o) >= 3 && o[1] == m[0] && len(o)-2 <= len(m)-1 &&
+				!slices.ContainsFunc(o, func(s string) bool { return s == ":" || s == ";" || s == "{" || s == "}" }) {
+				s := "\tAsk " + g[1]
+				for k, item := range m[1:] {
+					s += " " + item
+					if k+2 < len(o) {
+						s += " -> " + o[k+2]
+					}
+				}
+				out = append(out, s)
+				i++
+				continue
+			}
+		}
+		out = append(out, lines[i])
+	}
+	return out
 }

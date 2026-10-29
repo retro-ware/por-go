@@ -227,7 +227,7 @@ BuccaneerWaves:
 	LoadMonster RdLvlFighter count=1 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
-	SetupMonster Fighter16 distance=2 closeup=3
+	SetupMonster Fighter16 distance=2 body=BareChest
 	Delay
 	Approach
 	Delay
@@ -239,7 +239,7 @@ BuccaneerWaves:
 	LoadMonster Buccaneer count=50 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
-	SetupMonster Fighter16 distance=2 closeup=3
+	SetupMonster Fighter16 distance=2 body=BareChest
 	PrintClear "AFTER DEFEATING THE LAST, WAVE YOU SEE ANOTHER WAVE ATTACK FROM THE SOUTH OF THE COMPOUND."
 	Morale = 100
 	ClearMonsters

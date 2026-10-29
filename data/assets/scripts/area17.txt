@@ -1,10 +1,10 @@
 KoboldEncounterMenu:
-	EncounterMenu Kobold distance=MaxDist closeup=Kobold result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=6 strength=6
+	EncounterMenu Kobold distance=MaxDist closeup=Kobold result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=6 strength=6
 	Return
 
 NomadEncounterMenu:
 	Portrait = NomadBeard
-	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=12
+	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=12
 	Portrait = None
 	Return
 
@@ -346,7 +346,7 @@ HeadmanRallies:
 	PrintClear "THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE."
 	Gosub PressToContinue
 	Portrait = NomadElder
-	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=12
+	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=12
 	Portrait = None
 	OnGoto Scratch10 Done TribeFight ExitToWilderness
 
@@ -399,7 +399,7 @@ NomadsGather:
 	Gosub ApproachPause
 	PrintClear "YOU CAN SEE CHILDREN PEERING OUT OF THE TENT OPENINGS, ONLY TO BE PUSHED BACK INSIDE BY THEIR MOTHERS."
 	Gosub PressToContinue
-	EncounterMenu Swordsman11 distance=0 body=WhiteRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." mid="" far="" escape=12 strength=12
+	EncounterMenu Swordsman11 distance=0 body=WhiteRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." escape=12 strength=12
 	Portrait = None
 	OnGoto Scratch10 Done NomadFightNoSurprise ExitToWilderness
 	ShowPortrait NomadElder WhiteRobe
@@ -735,7 +735,7 @@ NomadBetrayal:
 	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 	PrintClear "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
 	Gosub PressToContinue
-	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=12
+	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=12
 	Portrait = None
 	OnGoto Scratch10 Done BetrayalFight
 	Gosub RetreatOrFight

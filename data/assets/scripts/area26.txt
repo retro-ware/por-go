@@ -296,25 +296,25 @@ StartEncounter:
 SpotGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=0 result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Talk near="" mid="" far="" escape=AuxEncTemp strength=AuxEncTemp
+	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Talk escape=AuxEncTemp strength=AuxEncTemp
 	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 PartySurprised:
 	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
 	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=0 result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Mirror near="" mid="" far="" escape=99 strength=99
+	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Mirror escape=99 strength=99
 	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 SurpriseThem:
 	PrintClear "YOU SURPRISE A GROUP OF "
 	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=0 result=Scratch1 combat=Mirror wait=Flee flee=Flee advance=Mirror parlay=Mirror near="" mid="" far="" escape=0 strength=0
+	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Flee flee=Flee advance=Mirror parlay=Mirror escape=0 strength=0
 	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 FaceToFace:
 	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
 	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=0 result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Mirror near="" mid="" far="" escape=0 strength=0
+	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Mirror escape=0 strength=0
 	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 EncounterFight:

@@ -310,7 +310,7 @@ BasiliskSeen:
 BasiliskMenu:
 	Surprise = 0
 	Gosub ShortPause
-	EncounterMenu Basilisk distance=MaxDist closeup=Basilisk result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="IT HISSES AT YOU." mid="" far="" escape=0 strength=0
+	EncounterMenu Basilisk distance=MaxDist closeup=Basilisk result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="IT HISSES AT YOU." escape=0 strength=0
 	PrintClear " "
 	OnGoto Scratch10 RedrawExit BasiliskFight FleeFromBasilisk BasiliskFight
 
@@ -390,7 +390,7 @@ WritingHall:
 MadFighter:
 	Scratch10 = LibraryEventFlags & 3
 	if 0 != Scratch10: Exit
-	SetupMonster ArmoredFighter distance=0 closeup=25
+	SetupMonster ArmoredFighter distance=0 closeup=MadMan
 	PrintClear "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
 
 MadFighterMenu:

@@ -397,7 +397,7 @@ GrishnakTemple:
 	if HobgoblinTempleState != 1: Exit
 	PrintClear "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
 	Gosub PressToContinue
-	SetupMonster Hobgoblin distance=0 closeup=9
+	SetupMonster Hobgoblin distance=0 closeup=Shaman
 	PrintClear "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
 	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
 	Morale = 100
@@ -459,7 +459,7 @@ OpenBox:
 
 HobgoblinEncounter:
 	Gosub PressToContinue
-	EncounterMenu Hobgoblin distance=2 closeup=Hobgoblin result=AuxMenuChoice combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="YOU ENCOUNTER HOBGOBLINS!" mid="" far="" escape=7 strength=7
+	EncounterMenu Hobgoblin distance=2 closeup=Hobgoblin result=AuxMenuChoice combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="YOU ENCOUNTER HOBGOBLINS!" escape=7 strength=7
 	if AuxMenuChoice == 1: Goto HobgoblinFight
 	if AuxMenuChoice == 2: Goto HobgoblinsChase
 	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"

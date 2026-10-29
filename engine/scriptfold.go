@@ -164,7 +164,7 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 	if inBlock {
 		return nil, fmt.Errorf("an if block without }")
 	}
-	return out, nil
+	return out, resolveAsks(out)
 }
 
 // The commands that stand for several (a guard guards each):
@@ -362,19 +362,19 @@ func foldScript(text string, names *ScriptNames) string {
 		}
 		i = j - 1
 	}
-	return strings.Join(aliasScratch(assignLines(foldMenus(nameValues(foldMacros(out, names.Areas), names)))), "\n") + "\n"
+	return strings.Join(aliasScratch(foldAsks(assignLines(foldMenus(nameValues(foldMacros(out, names.Areas), names))))), "\n") + "\n"
 }
 
 // nameValues writes the numbers of the commands' operands of a kind
 // (operandKinds) as their names, and a Treasure's items as a comment. A
-// Picture or close-up while a portrait head is set is a BODY picture; a
-// close-up otherwise is named only as its sprite's creature (a head may be
-// set elsewhere).
+// Picture or close-up while a portrait head may be set (headSet) is a
+// BODY picture.
 func nameValues(lines []string, names *ScriptNames) []string {
-	portrait := false
+	heads := headSet(lines)
+	portrait, certain := false, false // a head may be set; it is, set in this section
 	for i, l := range lines {
 		if !strings.HasPrefix(l, "\t") {
-			portrait = false // a label
+			portrait, certain = heads[i], false // a label
 			continue
 		}
 		code, comment := l, ""
@@ -386,16 +386,17 @@ func nameValues(lines []string, names *ScriptNames) []string {
 			continue
 		}
 		changed := false
+		picLabel := map[int]bool{} // close-ups named as pictures under a head
 		for k := 0; k < len(toks); k++ {
 			if k > 0 && !slices.Contains([]string{":", "{", ";"}, toks[k-1]) {
 				continue
 			}
 			c := toks[k]
 			if c == "Save" && k+2 < len(toks) && toks[k+2] == "Portrait" {
-				portrait = toks[k+1] != "255"
+				portrait, certain = toks[k+1] != "255", true
 			}
 			if c == "ShowPortrait" && k+1 < len(toks) {
-				portrait = toks[k+1] != "255" // it leaves the head set
+				portrait, certain = toks[k+1] != "255", true // it leaves the head set
 			}
 			if c == "Treasure" && k+8 < len(toks) && names.Treasure != nil && comment == "" {
 				switch v, err := strconv.Atoi(toks[k+8]); {
@@ -425,8 +426,14 @@ func nameValues(lines []string, names *ScriptNames) []string {
 					continue
 				}
 				n := valueName(names.Values, kind, names.Set, v)
-				if kind == "Picture" && c != "Picture" && n != toks[k+1] {
-					n = "" // a portrait may be up from elsewhere: named when it is the sprite's creature
+				if kind == "Body" {
+					// the sprite's own creature, or no such body: a picture after all
+					if p := valueName(names.Values, "Picture", names.Set, v); p != "" && (p == toks[k+1] || n == "" && !certain) {
+						n = p
+						if l := operandLabels[c]; j < len(l) && strings.Contains(l[j], "|") {
+							picLabel[k+1+j] = true
+						}
+					}
 				}
 				if n != "" {
 					toks[k+1+j], changed = n, true
@@ -435,11 +442,14 @@ func nameValues(lines []string, names *ScriptNames) []string {
 			for j, l := range operandLabels[c] {
 				if a, b, ok := strings.Cut(l, "|"); ok {
 					l = a
-					if portrait {
+					if portrait && !picLabel[k+1+j] {
 						l = b
 					}
 				}
-				if l != "" && k+1+j < len(toks) {
+				switch {
+				case l != "" && k+1+j < len(toks) && operandDefaults[c][j] == toks[k+1+j] && toks[k+1+j] != "":
+					toks[k+1+j], changed = "\x00", true // left out, the default
+				case l != "" && k+1+j < len(toks):
 					toks[k+1+j], changed = l+"="+toks[k+1+j], true
 				}
 			}
@@ -447,6 +457,7 @@ func nameValues(lines []string, names *ScriptNames) []string {
 		if !changed && comment == "" || !changed && strings.HasSuffix(l, comment) {
 			continue
 		}
+		toks = slices.DeleteFunc(toks, func(t string) bool { return t == "\x00" })
 		var b strings.Builder
 		b.WriteString(l[:len(l)-len(strings.TrimLeft(l, "\t"))])
 		for k, t := range toks {
@@ -461,6 +472,47 @@ func nameValues(lines []string, names *ScriptNames) []string {
 		lines[i] = b.String()
 	}
 	return lines
+}
+
+// headSet is, for each label line, whether a portrait head may be set
+// there: after Portrait = H (or ShowPortrait H) not 255 on a way to it,
+// falling through or by any jump naming it (Goto, Gosub, OnGoto ...).
+// An event starts without one.
+func headSet(lines []string) []bool {
+	entry := map[string]bool{}
+	out := make([]bool, len(lines))
+	for changed := true; changed; {
+		changed = false
+		state := false
+		for i, l := range lines {
+			toks, _ := scriptTokens(l)
+			if len(toks) == 0 {
+				continue
+			}
+			if !strings.HasPrefix(l, "\t") {
+				name := strings.TrimSuffix(toks[0], ":")
+				if strings.HasPrefix(name, "event") {
+					state = false
+				}
+				state = state || entry[name]
+				out[i] = state
+				continue
+			}
+			for k, t := range toks {
+				switch {
+				case t == "Save" && k+2 < len(toks) && toks[k+2] == "Portrait",
+					t == "ShowPortrait" && k+1 < len(toks):
+					state = toks[k+1] != "255"
+				case state && k > 0 && !entry[t]:
+					entry[t], changed = true, true // a jump target, maybe
+				}
+			}
+			if toks[0] == "Goto" || toks[0] == "Exit" || toks[0] == "Return" {
+				state = false // no falling through
+			}
+		}
+	}
+	return out
 }
 
 // commentAt is where a line's // comment starts outside strings, or -1.

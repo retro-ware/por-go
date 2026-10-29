@@ -97,8 +97,7 @@ EnterArena:
 	Delay
 	if DuelOffered > 0: Goto OfferPartner
 	PrintClear "THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 ChooseDuelist OfferPartner
+	Ask YesNoMenu "YES" -> ChooseDuelist "NO" -> OfferPartner
 
 ChooseDuelist:
 	Who "WHO WILL DUEL?"
@@ -116,8 +115,7 @@ OfferPartner:
 	DuelOffered = 1
 	if PartnerDeclined != 0: Exit
 	PrintClear "'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 RollHireling DeclinePartner
+	Ask YesNoMenu "YES" -> RollHireling "NO" -> DeclinePartner
 
 RollHireling:
 	if PartnerTries > 7: Goto NoHirelingLeft
@@ -189,8 +187,7 @@ OfferHireling:
 	Print " WHO WILL JOIN YOU FOR "
 	Print $AuxText
 	Print ". IS THIS ACCEPTABLE?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 AcceptHireling ConsiderAnother
+	Ask YesNoMenu "YES" -> AcceptHireling "NO" -> ConsiderAnother
 
 AcceptHireling:
 	alias Hireling = Scratch1
@@ -202,8 +199,7 @@ AcceptHireling:
 
 ConsiderAnother:
 	PrintClear "'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 RollHireling DeclinePartner
+	Ask YesNoMenu "YES" -> RollHireling "NO" -> DeclinePartner
 
 DeclinePartner:
 	PartnerDeclined = 1
@@ -240,8 +236,7 @@ AskTrain:
 	PrintClear "'WE TRAIN ONLY "
 	Print $AuxMonsterName
 	Print "HERE. DO YOU WANT TO TRAIN?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 OpenTraining ClearAndExit
+	Ask YesNoMenu "YES" -> OpenTraining "NO" -> ClearAndExit
 
 OpenTraining:
 	Program 0

@@ -199,7 +199,7 @@ SmithyEnter:
 	Print " THE SMITH (A HUMAN) AND THREE FIRE GIANTS ARE WORKING ON A SUIT OF ARMOR. PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR."
 	Portrait = WhiteBeard
 	Gosub PressToContinue
-	EncounterMenu Man12 distance=2 body=ShopkeeperApron result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE SMITH LOOKS UP FROM HIS WORK. 'WHAT DO YOU NEED?'" mid="THE SMITH IGNORES YOU AS HE HAMMERS ON A GREAVE." far="" escape=9 strength=9
+	EncounterMenu Man12 distance=2 body=ShopkeeperApron result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE SMITH LOOKS UP FROM HIS WORK. 'WHAT DO YOU NEED?'" mid="THE SMITH IGNORES YOU AS HE HAMMERS ON A GREAVE." escape=9 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done SmithyAttack BackOut
 	Parlay 0 1 2 2 1 Scratch10
@@ -420,7 +420,7 @@ PatrolCheckDisguise:
 
 PatrolEncounterMenu:
 	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" mid="" far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeAfterCombat PatrolFight
 
@@ -429,7 +429,7 @@ PatrolQuestion:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." far="" escape=12 strength=9
+	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeAfterCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"

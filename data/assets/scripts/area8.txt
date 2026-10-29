@@ -348,8 +348,7 @@ GraveyardDanger:
 	PrintClear "UNDEAD FROM THE GRAVEYARD HAVE GROWN MORE DANGEROUS THAN ALL OF THE OTHER FORCES WHICH CONFRONT US."
 	Gosub PressToContinue
 	PrintClear "'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'"
-	Gosub YesNoMenu
-	OnGoto Scratch1 AcceptGraveyard OfferCommissions
+	Ask YesNoMenu "YES" -> AcceptGraveyard "NO" -> OfferCommissions
 
 AcceptGraveyard:
 	PrintClear "'EXCELLENT.'"
@@ -553,8 +552,7 @@ CouncilGuard:
 	SetupMonster Swordsman27 distance=1 body=PlateArmor
 	Approach
 	PrintClear "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
-	Gosub YesNoMenu
-	OnGoto Scratch1 LeaveHall FightGuards
+	Ask YesNoMenu "YES" -> LeaveHall "NO" -> FightGuards
 
 LeaveHall:
 	Facing = 0

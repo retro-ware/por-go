@@ -211,6 +211,7 @@ func ParseScript(text string, names *ScriptNames) (*Script, error) {
 		}
 	}
 	for i, p := range todo {
+		p.args = withDefaults(eclOpName(s.Code[i].Op), p.args)
 		for j, t := range p.args {
 			if l, v, ok := strings.Cut(t, "="); ok && !strings.HasPrefix(t, `"`) {
 				if k := operandLabels[eclOpName(s.Code[i].Op)]; j >= len(k) || !slices.Contains(strings.Split(k[j], "|"), l) {
