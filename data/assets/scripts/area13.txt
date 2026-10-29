@@ -27,7 +27,7 @@ FindFatima:
 NextMember:
 	Add 1 Scratch2 Scratch2
 	if Scratch2 < 8: Goto FindFatima
-	NewECL 27
+	NewECL Quagmire
 
 FatimaFound:
 	if SelControl < 128: Goto NextMember
@@ -39,7 +39,7 @@ FatimaLeaves:
 	Save 0 SelStatus
 	Add 128 Scratch2 Scratch2
 	LoadCharacter Scratch2
-	NewECL 27
+	NewECL Quagmire
 
 WaterPit:
 	if PoolPitDone == 1: Exit

@@ -23,18 +23,15 @@ event0:
 	OnGoto Facing 4 ExitNorth ExitEast Done ExitWest
 
 ExitNorth:
-	Save 1 SymbolSet
-	NewECL 18
+	EnterArea PodolPlaza
 
 ExitEast:
-	Save 2 SymbolSet
-	NewECL 15
+	EnterArea MendorsLibrary
 
 ExitWest:
 	Save 7 SymbolSet
-	Save 11 MapX
-	Save 28 MapY
-	NewECL 26
+	SetMapXY 11 28
+	NewECL Wilderness
 
 event1:
 	And 127 Cell Scratch10

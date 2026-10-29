@@ -8,7 +8,7 @@ event1:
 
 EmptyCaveLeave:
 	PrintClear "YOU ENTER THE ENORMOUS CAVE, SEARCH IT AND FIND NOTHING OF INTREST.  YOU THEN LEAVE."
-	NewECL 25
+	NewECL Mountains
 
 CheckCaveState:
 	And DragonCaveFlags 2 Scratch2
@@ -102,7 +102,7 @@ BottleRecovered:
 	Goto LeaveCave
 
 LeaveCave:
-	NewECL 25
+	NewECL Mountains
 
 PressReturn:
 	HMenu Scratch1 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"

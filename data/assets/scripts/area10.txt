@@ -5,8 +5,7 @@ event0:
 	Save SavedGroundShade SetGroundShade
 	Save 0 WallSplitA
 	Save 0 WallSplitB
-	Save 7 SymbolSet
-	NewECL 26
+	EnterArea Wilderness
 
 InsideEnter:
 	Save "THE SPECTRE HAS NOTICED YOU." $AuxMonsterName

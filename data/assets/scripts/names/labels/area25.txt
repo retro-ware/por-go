@@ -21,7 +21,7 @@
 9B09 SiteFound
 9B31 SiteNone
 9B32 DragonInDistance
-9BAC DragonCave
+9BAC DragonCaveEvent
 9C3E LargeCave
 9C6B CaveMenu
 9CA3 EnterDragonCave

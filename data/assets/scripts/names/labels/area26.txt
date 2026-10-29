@@ -26,7 +26,7 @@
 9B62 SiteColumnLoop
 9B91 SiteDispatch
 9BB9 AbandonedCamp
-9BEC NomadCamp
+9BEC NomadCampEvent
 9C55 EnterNomadCamp
 9C5D CityNorthEdge
 9CDE EnterNorthGate

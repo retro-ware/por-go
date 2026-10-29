@@ -349,7 +349,7 @@ GoUpstairs:
 	PrintClear "YOU GO UPSTAIRS."
 	Save 5 PartyX
 	Save 7 PartyY
-	NewECL 7
+	NewECL ValjevoCastle7
 
 ArguingGiants:
 	And CadornaQuartersFlags 128 Scratch10

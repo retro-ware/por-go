@@ -457,17 +457,17 @@ GroupPortraitTable:
 	Data 57 255 13 255 255 6 16 255 255 255 11 255 54
 
 LeaveToArea26:
-	NewECL 26
+	NewECL Wilderness
 
 TeleportToArea23:
 	Or TeleporterRockFlags 1 TeleporterRockFlags
 	Save 4 PartyX
 	Save 15 PartyY
 	Save 0 Facing
-	NewECL 23
+	NewECL LizardManVillage
 
 ExitToArea23:
 	Save 0 PartyX
 	Save 12 PartyY
 	Save 0 Facing
-	NewECL 23
+	NewECL LizardManVillage

@@ -226,7 +226,7 @@ event1:
 
 SpecialSquare:
 	And Cell 31 Scratch1
-	OnGoto Scratch1 14 Done MageGuardRoom FighterGuardRoom NearWall StojanowGate GateEntrance WallSquare Done BugbearsBehindGate WagonTrader GateTowerSquare GateTowerSquare Done MonstersBehindWall
+	OnGoto Scratch1 14 Done MageGuardRoom FighterGuardRoom NearWall StojanowGateEvent GateEntrance WallSquare Done BugbearsBehindGate WagonTrader GateTowerSquare GateTowerSquare Done MonstersBehindWall
 
 event3:
 	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
@@ -496,7 +496,7 @@ FleeToArea6:
 	Save 4 PartyX
 	Save 15 PartyY
 	Save 0 Facing
-	NewECL 6
+	NewECL ValjevoCastle6
 
 FightTowerMonsters:
 	PartySurprise Scratch9 Scratch10
@@ -607,7 +607,7 @@ ArrowSlits:
 	Damage 2 1 6 0 44
 	Exit
 
-StojanowGate:
+StojanowGateEvent:
 	if BugbearWarnings == 2: Save 1 BugbearWarnings
 	And GateFlags 32 Scratch10
 	IfNe

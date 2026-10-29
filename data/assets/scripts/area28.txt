@@ -6,7 +6,7 @@ event0:
 	if LeftMap == 0: Exit
 	Save 253 QuestZhentilOutpost
 	Save 255 Portrait
-	NewECL 25
+	NewECL Mountains
 
 Table994C:
 	Data 1 2 0 0 0 0 3 0 0 0 0 0 0 4 0 0
@@ -198,7 +198,7 @@ Surrender:
 StripAndExpel:
 	Rob 1 100 255
 	Save 255 Portrait
-	NewECL 25
+	NewECL Mountains
 
 GuardWaveFight:
 	Save 57 Portrait
@@ -260,7 +260,7 @@ RunForGate:
 	Combat
 	if CombatEnd > 128: Goto CaughtFleeing
 	PrintClear "YOU ESCAPE FROM THE OUTPOST."
-	NewECL 25
+	NewECL Mountains
 
 CaughtFleeing:
 	PrintClear "YOU TRY TO RUN BUT ARE CAUGHT.  YOU ARE CAPTURED, STRIPPED AND TOSSED OUT INTO THE WILDERNESS."
@@ -542,7 +542,7 @@ ApproachTwice:
 LeaveOutpost:
 	Save 253 QuestZhentilOutpost
 	Save 255 Portrait
-	NewECL 25
+	NewECL Mountains
 
 PressReturn:
 	HMenu Scratch8 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"

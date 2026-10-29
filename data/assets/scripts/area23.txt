@@ -228,7 +228,7 @@ ExitToArea22North:
 LeaveToArea22:
 	Save 15 PartyX
 	Save 1 Facing
-	NewECL 22
+	NewECL LizardManSwamp
 
 LizardMenGroup:
 	And RoomsVisited 1 Scratch10

@@ -35,6 +35,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	areas, err := engine.ReadScriptAreas(filepath.Join(dir, "names", "areas.txt"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	global := engine.ScriptVarNames()
 	readNames(filepath.Join(dir, "names", "global.txt"), global)
 	done := map[int][]byte{}
@@ -67,7 +71,7 @@ func main() {
 				seen[n] = a
 			}
 			var out bytes.Buffer
-			if err := engine.ScriptECL(b[2:], &out, names); err != nil {
+			if err := engine.ScriptECL(b[2:], &out, names, areas); err != nil {
 				log.Fatalf("%s: %v", area, err)
 			}
 			if err := os.WriteFile(filepath.Join(dir, area+".txt"), out.Bytes(), 0o644); err != nil {

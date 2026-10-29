@@ -389,7 +389,7 @@ MarkLeftCamp:
 	if QuestNomads != 255: Save 254 QuestNomads
 
 LoadWilderness:
-	NewECL 26
+	NewECL Wilderness
 
 NomadsGather:
 	And MarkFlags4 2 Scratch10

@@ -13,7 +13,7 @@
 9D25 BuyPassage
 9D54 OnlyBoatOut
 9DD5 GatewaySouth
-9E07 TempleOfBane
+9E07 TempleOfBaneEvent
 9EA6 BishopAudience
 9FAF DirtenStudy
 A010 AccompanyDirtenAsk

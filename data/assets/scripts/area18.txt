@@ -40,22 +40,17 @@ event0:
 	OnGoto Facing 4 ExitNorth ExitEast ExitSouth ExitWest
 
 ExitNorth:
-	Save 2 SymbolSet
-	NewECL 9
+	EnterArea StojanowGate
 
 ExitEast:
-	Save 8 SymbolSet
-	NewECL 29
+	EnterArea KutosWell
 
 ExitSouth:
-	Save 4 SymbolSet
-	NewECL 2
+	EnterArea HobgoblinBarracks
 
 ExitWest:
-	Save 11 MapX
-	Save 28 MapY
-	Save 7 SymbolSet
-	NewECL 26
+	SetMapXY 11 28
+	EnterArea Wilderness
 
 PlazaApproach:
 	if Hours < 14: Save 11 Sky

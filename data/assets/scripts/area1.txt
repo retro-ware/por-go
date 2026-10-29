@@ -4,7 +4,7 @@ event0:
 	Save Scratch6 Sky
 	if LeftMap == 0: Exit
 	if QuestBivant == 1: Save 254 QuestBivant
-	NewECL 25
+	NewECL Mountains
 
 event1:
 	if BaseCaptured == 255: Goto Done
@@ -295,7 +295,7 @@ FleeLeaveBoy:
 LeaveBase:
 	Save 128 QuestBivant
 	Save 128 BaseCaptured
-	NewECL 25
+	NewECL Mountains
 
 SneakPastFails:
 	PrintClear "YOU TRY TO SNEAK UP PAST THE GUARDS BUT THEY ARE TOO ALERT.  YOU CANNOT GET BY THE GUARDS INTO THE SLAVE PEN.  WHAT WILL YOU DO?"

@@ -102,7 +102,11 @@ func (e *Engine) parseScriptFile(area int) (*Script, error) {
 	for a, n := range names {
 		vars[n] = a
 	}
-	s, err := ParseScript(string(b), vars)
+	areas, err := ReadScriptAreas(filepath.Join(dir, "names", "areas.txt"))
+	if err != nil {
+		return nil, err
+	}
+	s, err := ParseScript(string(b), vars, areas)
 	if err != nil {
 		return nil, fmt.Errorf("%s:%v", path, err)
 	}
@@ -111,7 +115,7 @@ func (e *Engine) parseScriptFile(area int) (*Script, error) {
 }
 
 // ParseScript parses a script; vars are the variables' addresses by name.
-func ParseScript(text string, vars map[string]int) (*Script, error) {
+func ParseScript(text string, vars map[string]int, areas []ScriptArea) (*Script, error) {
 	s := &Script{Labels: map[string]int{}, At: map[int]string{}}
 	tables := map[string]int{}
 	ops := map[string]byte{}
@@ -124,7 +128,12 @@ func ParseScript(text string, vars map[string]int) (*Script, error) {
 	}
 	var todo []pending
 	var waiting []string // labels for the next line
-	src, err := unfoldScript(text)
+	for _, a := range areas {
+		if _, ok := vars[a.Name]; ok {
+			return nil, fmt.Errorf("%s is an area and a variable", a.Name)
+		}
+	}
+	src, err := unfoldScript(text, areas)
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +185,14 @@ func ParseScript(text string, vars map[string]int) (*Script, error) {
 		}
 		s.Events[i] = at
 	}
+	for _, a := range areas {
+		if _, ok := s.Labels[a.Name]; ok || tables[a.Name] != 0 {
+			return nil, fmt.Errorf("%s is an area and a label", a.Name)
+		}
+	}
 	for i, p := range todo {
 		for _, t := range p.args {
-			a, err := scriptArg(t, s.Labels, tables, vars)
+			a, err := scriptArg(t, s.Labels, tables, vars, areas)
 			if err != nil {
 				return nil, fmt.Errorf("%d: %v", p.line, err)
 			}
@@ -189,7 +203,7 @@ func ParseScript(text string, vars map[string]int) (*Script, error) {
 }
 
 // scriptArg is one operand token.
-func scriptArg(t string, labels, tables, vars map[string]int) (Arg, error) {
+func scriptArg(t string, labels, tables, vars map[string]int, areas []ScriptArea) (Arg, error) {
 	if strings.HasPrefix(t, `"`) {
 		str, err := strconv.Unquote(t)
 		if err != nil {
@@ -225,6 +239,11 @@ func scriptArg(t string, labels, tables, vars map[string]int) (Arg, error) {
 	}
 	if a, ok := vars[t]; ok {
 		return Arg{Type: typ, N: a}, nil
+	}
+	for _, a := range areas {
+		if a.Name == t && typ == 1 {
+			return Arg{Type: 0, N: a.ID}, nil
+		}
 	}
 	return Arg{}, fmt.Errorf("no label, table or variable %s", t)
 }
@@ -298,4 +317,36 @@ func ReadScriptNames(path string, names map[int]string) error {
 		names[int(a)] = fs[1]
 	}
 	return sc.Err()
+}
+
+// ScriptArea is one area of names/areas.txt.
+type ScriptArea struct {
+	ID, Set int // NewECL's number, the data set holding it
+	Name    string
+}
+
+// ReadScriptAreas reads the "ID SET Name" lines of an areas file, if
+// there is one (# starts a comment).
+func ReadScriptAreas(path string) ([]ScriptArea, error) {
+	b, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	var areas []ScriptArea
+	for n, line := range strings.Split(string(b), "\n") {
+		line, _, _ = strings.Cut(line, "#")
+		fs := strings.Fields(line)
+		if len(fs) == 0 {
+			continue
+		}
+		id, err1 := strconv.Atoi(fs[0])
+		set, err2 := strconv.Atoi(fs[1%len(fs)])
+		if len(fs) != 3 || err1 != nil || err2 != nil {
+			return nil, fmt.Errorf("%s:%d: want \"ID SET Name\"", path, n+1)
+		}
+		areas = append(areas, ScriptArea{id, set, fs[2]})
+	}
+	return areas, nil
 }

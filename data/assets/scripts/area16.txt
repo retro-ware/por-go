@@ -166,7 +166,7 @@ LeaveRuins:
 	if LizardMenKilled >= 40: Save 254 QuestLizardmen
 
 GotoArea27:
-	NewECL 27
+	NewECL Quagmire
 
 SearchForTunnel:
 	if Scratch1 == 6: Goto BlockedStairs

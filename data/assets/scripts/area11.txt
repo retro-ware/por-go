@@ -266,7 +266,7 @@ FightWatch:
 	Exit
 
 LeaveArea:
-	NewECL 0
+	NewECL NewPhlan
 
 AfterWatchFight:
 	if CombatEnd > 128: Goto EjectParty
@@ -297,7 +297,7 @@ EjectParty:
 	GetTable EjectYTable AuxMember PartyY
 	PrintClear ""
 	Call CallRedraw
-	NewECL 0
+	NewECL NewPhlan
 
 PressReturn:
 	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"

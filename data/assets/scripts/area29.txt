@@ -51,9 +51,9 @@ event1:
 	Save 0 Scratch1
 	Save 2 Scratch2
 	GetTable CellEventTable Scratch10 AuxCounter
-	OnGoto AuxCounter 16 Done RandomEncounterRoll WellPlaza KutosWell WellApproach PlazaWander SicklyKobolds LizardPatrol SeerWoman NorthWallDoor SouthWallDoor HiddenCatacombs CatacombSniper1 CatacombSniper2 BanditTreasure NorrisBandits
+	OnGoto AuxCounter 16 Done RandomEncounterRoll WellPlaza KutosWellEvent WellApproach PlazaWander SicklyKobolds LizardPatrol SeerWoman NorthWallDoor SouthWallDoor HiddenCatacombs CatacombSniper1 CatacombSniper2 BanditTreasure NorrisBandits
 
-KutosWell:
+KutosWellEvent:
 	if InWell != 0: Goto WellSecretDoor
 	if Scratch10 == 2: Save 0 AuxEncChoice
 	if Scratch10 == 5: Save 2 AuxEncChoice

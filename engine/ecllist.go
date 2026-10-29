@@ -32,12 +32,12 @@ func ListECL(code []byte, w io.Writer) {
 // names, L_XXXX unnamed), variables by their names in names (script
 // address -> name; an unnamed one stays [XXXX]), and the tables inside
 // the code image as Data lines under their labels. For cmd/eclscript.
-func ScriptECL(code []byte, w io.Writer, names map[int]string) error {
+func ScriptECL(code []byte, w io.Writer, names map[int]string, areas []ScriptArea) error {
 	var b strings.Builder
 	if err := scriptPlain(code, &b, names); err != nil {
 		return err
 	}
-	_, err := io.WriteString(w, foldScript(b.String()))
+	_, err := io.WriteString(w, foldScript(b.String(), areas))
 	return err
 }
 

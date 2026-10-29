@@ -8,12 +8,10 @@ event0:
 	Call CallStepForward
 	Save 255 HoldMove
 	if Facing == 1 {
-		Save 3 SymbolSet
-		NewECL 0
+		EnterArea NewPhlan
 	}
 	also if Facing != 1 {
-		Save 8 SymbolSet
-		NewECL 29
+		EnterArea KutosWell
 	}
 
 StoreCellCode:

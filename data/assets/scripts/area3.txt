@@ -753,4 +753,4 @@ SnakesFight:
 	Exit
 
 ExitToArea5:
-	NewECL 5
+	NewECL ValjevoGrounds

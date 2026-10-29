@@ -1,0 +1,32 @@
+# The areas: number (NewECL's operand, the ECL/GEO block), the data set
+# whose files hold it (ECL<set>.DAX, SymbolSet), name. Names from
+# phlan-poc/MAPS.md and the scripts' text.
+0  3 NewPhlan            # the civilized district
+1  6 BuccaneerBase
+2  4 HobgoblinBarracks
+3  5 ValjevoCastle3
+4  5 ValjevoCastle4
+5  5 ValjevoGrounds      # hedges, alarm
+6  5 ValjevoCastle6
+7  5 ValjevoCastle7
+8  3 CityHall
+9  2 StojanowGate
+10 4 ValhingenGraveyard
+11 3 TrainingHall        # teachers, the arena
+13 8 KoboldCaves
+14 3 CadornaTextileHouse
+15 2 MendorsLibrary
+16 8 YarashsPyramid
+17 7 NomadCamp
+18 1 PodolPlaza
+19 6 DragonCave
+20 2 Slums
+21 4 SokalKeep
+22 7 LizardManSwamp
+23 7 LizardManVillage
+24 1 TempleOfBane
+25 6 Mountains           # wilderness: the dragon, the anhkhegs
+26 7 Wilderness          # wilderness by the city: its edges, the nomads
+27 8 Quagmire            # wilderness: the ruined castle, kobolds, the boat
+28 6 ZhentilOutpost
+29 8 KutosWell

@@ -7,21 +7,16 @@ event0:
 	OnGoto Facing 4 ExitNorthToSlums ExitEastToSlums ExitSouth ExitWest
 
 ExitNorthToSlums:
-	Save 13 MapX
-	Save 26 MapY
-	Save 7 SymbolSet
-	NewECL 26
+	SetMapXY 13 26
+	EnterArea Wilderness
 
 ExitEastToSlums:
-	Save 13 MapX
-	Save 27 MapY
-	Save 7 SymbolSet
-	NewECL 26
+	SetMapXY 13 27
+	EnterArea Wilderness
 
 ExitSouth:
 	Call CallStepForward
-	Save 1 SymbolSet
-	NewECL 24
+	EnterArea TempleOfBane
 
 ExitWest:
 	Exit

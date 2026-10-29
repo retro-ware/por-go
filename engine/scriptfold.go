@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -40,7 +41,7 @@ type srcLine struct {
 
 // unfoldScript reads a script into its labels and plain commands, the
 // conditions written out as Compare and If commands.
-func unfoldScript(text string) ([]srcLine, error) {
+func unfoldScript(text string, areas []ScriptArea) ([]srcLine, error) {
 	var out []srcLine
 	var last []string // the last test's operands and its kind ("Compare" or "CompareAnd")
 	inBlock, guard := false, ""
@@ -111,8 +112,10 @@ func unfoldScript(text string) ([]srcLine, error) {
 				if i == 0 {
 					return nil, fmt.Errorf("%d: an if without a command", n)
 				}
-				emit(guard)
-				emit(toks[:i]...)
+				for _, c := range expandMacro(toks[:i], areas) {
+					emit(guard)
+					emit(c...)
+				}
 				if slices.Contains(flagSetters, toks[0]) {
 					last = nil
 				}
@@ -122,13 +125,15 @@ func unfoldScript(text string) ([]srcLine, error) {
 				if i < 0 {
 					i = len(toks)
 				}
-				if inBlock {
-					emit(guard)
-				}
 				if slices.Contains(flagSetters, t) || strings.HasPrefix(t, "If") {
 					last = nil // the flags are no longer the last if's
 				}
-				emit(toks[:i]...)
+				for _, c := range expandMacro(toks[:i], areas) {
+					if inBlock {
+						emit(guard)
+					}
+					emit(c...)
+				}
 				toks = toks[i:]
 			}
 		}
@@ -137,6 +142,66 @@ func unfoldScript(text string) ([]srcLine, error) {
 		return nil, fmt.Errorf("an if block without }")
 	}
 	return out, nil
+}
+
+// The commands that stand for several (a guard guards each):
+//
+//	SetMapXY X Y      Save X MapX, Save Y MapY
+//	EnterArea Name    Save <its set> SymbolSet, NewECL Name
+func expandMacro(c []string, areas []ScriptArea) [][]string {
+	switch {
+	case c[0] == "SetMapXY" && len(c) == 3:
+		return [][]string{{"Save", c[1], "MapX"}, {"Save", c[2], "MapY"}}
+	case c[0] == "EnterArea" && len(c) == 2:
+		for _, a := range areas {
+			if a.Name == c[1] {
+				return [][]string{{"Save", strconv.Itoa(a.Set), "SymbolSet"}, {"NewECL", c[1]}}
+			}
+		}
+	}
+	return [][]string{c}
+}
+
+// foldMacros writes the commands expandMacro makes as the one, and an
+// area number as its name.
+func foldMacros(lines []string, areas []ScriptArea) []string {
+	byID := map[string]ScriptArea{}
+	for _, a := range areas {
+		byID[strconv.Itoa(a.ID)] = a
+	}
+	var out []string
+	for i := 0; i < len(lines); i++ {
+		ind, f := splitCmd(lines[i])
+		var ind2 string
+		var g []string
+		if i+1 < len(lines) {
+			ind2, g = splitCmd(lines[i+1])
+		}
+		pair := ind != "" && ind == ind2 && len(f) == 3 && len(g) >= 2 && f[0] == "Save"
+		switch {
+		case pair && f[2] == "MapX" && len(g) == 3 && g[0] == "Save" && g[2] == "MapY":
+			out = append(out, ind+"SetMapXY "+f[1]+" "+g[1])
+			i++
+		case pair && f[2] == "SymbolSet" && len(g) == 2 && g[0] == "NewECL" && byID[g[1]].Name != "" && strconv.Itoa(byID[g[1]].Set) == f[1]:
+			out = append(out, ind+"EnterArea "+byID[g[1]].Name)
+			i++
+		case len(f) == 2 && f[0] == "NewECL" && byID[f[1]].Name != "":
+			out = append(out, ind+"NewECL "+byID[f[1]].Name)
+		default:
+			out = append(out, lines[i])
+		}
+	}
+	return out
+}
+
+// splitCmd is a line's indent and words when it is a plain command line
+// without a comment or string.
+func splitCmd(l string) (string, []string) {
+	t := strings.TrimLeft(l, "\t")
+	if t == l || strings.ContainsAny(t, "\"/:{};") || strings.HasPrefix(t, "if ") || strings.HasPrefix(t, "also ") {
+		return "", nil
+	}
+	return l[:len(l)-len(t)], strings.Fields(t)
 }
 
 // parseCond is a test's operands with its kind last, and its If.
@@ -154,7 +219,7 @@ func parseCond(c []string) ([]string, string, error) {
 
 // foldScript writes a plain script's Compare and If commands as if lines
 // (cmd/eclscript); unfoldScript reads them back to the same commands.
-func foldScript(text string) string {
+func foldScript(text string, areas []ScriptArea) string {
 	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
 	cmd := func(i int) (string, []string, bool) { // a command line's name and operands
 		if i >= len(lines) || !strings.HasPrefix(lines[i], "\t") {
@@ -233,5 +298,5 @@ func foldScript(text string) string {
 		}
 		i = j - 1
 	}
-	return strings.Join(out, "\n") + "\n"
+	return strings.Join(foldMacros(out, areas), "\n") + "\n"
 }

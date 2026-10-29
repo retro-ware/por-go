@@ -71,7 +71,7 @@ A82F FirstWallWarning
 A863 SecondWallWarning
 A8A9 BugbearsPunch
 A97B ArrowSlits
-A9BE StojanowGate
+A9BE StojanowGateEvent
 AAC4 WatchWagonMan
 AB64 GateEntrance
 ABF6 BugbearsSendAway

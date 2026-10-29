@@ -70,7 +70,7 @@ event0:
 	if LeftMap == 0: Exit
 	Call CallStepForward
 	Save 255 HoldMove
-	NewECL 3
+	NewECL ValjevoCastle3
 
 event1:
 	Gosub CheckAlarm

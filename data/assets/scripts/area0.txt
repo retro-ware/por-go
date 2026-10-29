@@ -9,8 +9,7 @@ event0:
 	Call CallStepForward
 	Save 255 HoldMove
 	LoadFiles 255 255 127
-	Save 2 SymbolSet
-	NewECL 20
+	EnterArea Slums
 
 InsideTown:
 	And 127 Cell Scratch10
@@ -90,7 +89,7 @@ event4:
 	Exit
 
 CellDispatch:
-	OnGoto AuxCounter 28 ResetVisits PierBoat HarborMaster GatewaySouth ResetVisits TempleOfBane TempleOfTyr TempleOfSune RiverView InnRest ToArea11A ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ToArea11B ResetVisits GeneralShop TavernEnter ArmorShop WeaponShop SilverShop HealerTemple UnsettledGateway CityHallOutside ToArea8
+	OnGoto AuxCounter 28 ResetVisits PierBoat HarborMaster GatewaySouth ResetVisits TempleOfBaneEvent TempleOfTyr TempleOfSune RiverView InnRest ToArea11A ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ToArea11B ResetVisits GeneralShop TavernEnter ArmorShop WeaponShop SilverShop HealerTemple UnsettledGateway CityHallOutside ToArea8
 
 PierBoat:
 	if BoatPassageBought == 0: Exit
@@ -104,27 +103,20 @@ BoardBoat:
 	Save 1 OnBoat
 	LoadFiles 255 255 127
 	if BoatDestination == 0 {
-		Save 4 SymbolSet
-		NewECL 21
+		EnterArea SokalKeep
 	}
 	if BoatDestination < 2: Goto SailToArea27
 	also if BoatDestination > 2: Goto SailToArea26
-	Save 7 MapX
-	Save 29 MapY
-	Save 7 SymbolSet
-	NewECL 26
+	SetMapXY 7 29
+	EnterArea Wilderness
 
 SailToArea26:
-	Save 13 MapX
-	Save 27 MapY
-	Save 7 SymbolSet
-	NewECL 26
+	SetMapXY 13 27
+	EnterArea Wilderness
 
 SailToArea27:
-	Save 9 MapX
-	Save 29 MapY
-	Save 8 SymbolSet
-	NewECL 27
+	SetMapXY 9 29
+	EnterArea Quagmire
 
 HarborMaster:
 	if Facing != 0: Exit
@@ -157,7 +149,7 @@ GatewaySouth:
 	PrintClear "TO THE NORTH IS THE PASSENGER DOCK."
 	Exit
 
-TempleOfBane:
+TempleOfBaneEvent:
 	if DirtenState == 255: Exit
 	if BishopSummons == 254: Goto BishopAudience
 	if DirtenState == 128: Goto BishopAudience
@@ -271,10 +263,10 @@ NotEnoughPlatinum:
 	Exit
 
 ToArea11A:
-	NewECL 11
+	NewECL TrainingHall
 
 ToArea11B:
-	NewECL 11
+	NewECL TrainingHall
 
 GeneralShop:
 	Gosub EnterBuildingOnce
@@ -611,7 +603,7 @@ SkullcrusherLeaves:
 	Goto CityHallOutside
 
 ToArea8:
-	NewECL 8
+	NewECL CityHall
 
 WatchResponds:
 	Gosub WatchApproaches

@@ -83,7 +83,7 @@ RedrawExit:
 
 DescendToArea5:
 	LoadFiles 3 2 255
-	NewECL 5
+	NewECL ValjevoGrounds
 
 DestX:
 	Data 13 11 5 5 5 3 3
@@ -450,4 +450,4 @@ LeaveCastle:
 	Save 1 Facing
 	Save 3 SymbolSet
 	Save 0 TyranthraxusDefeated
-	NewECL 0
+	NewECL NewPhlan

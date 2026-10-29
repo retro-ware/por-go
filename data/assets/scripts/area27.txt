@@ -30,7 +30,7 @@ EdgeOk:
 ExitToCity:
 	Save 7 SymbolSet
 	Save 14 MapX
-	NewECL 26
+	NewECL Wilderness
 
 EdgeWestCorner:
 	if MapY != 31: Goto ExitToCity
@@ -126,7 +126,7 @@ RuinedCastle:
 
 EnterCastle:
 	Gosub LeaveWilderness
-	NewECL 16
+	NewECL YarashsPyramid
 
 KoboldHorde:
 	if QuestKobolds != 0: Exit
@@ -181,7 +181,7 @@ EnterSmallCave:
 EnterKoboldCaves:
 	Save 15 PartyY
 	Save 0 Facing
-	NewECL 13
+	NewECL KoboldCaves
 
 BoatDock:
 	ClearBox
@@ -195,8 +195,7 @@ TakeBoat:
 	Gosub LeaveWilderness
 	Save 15 PartyX
 	Save 1 PartyY
-	Save 3 SymbolSet
-	NewECL 0
+	EnterArea NewPhlan
 
 LeaveWilderness:
 	Picture 255
@@ -344,7 +343,7 @@ LoadLair:
 	ClearBox
 	Save 8 SkyInside
 	Call CallRedraw
-	NewECL 27
+	NewECL Quagmire
 
 LairCell:
 	And Cell 127 Scratch10
@@ -529,7 +528,7 @@ PassageOutside:
 LeaveLair:
 	Save 0 In3D
 	Save 0 InLair
-	NewECL 27
+	NewECL Quagmire
 
 ExitEvent:
 	Exit

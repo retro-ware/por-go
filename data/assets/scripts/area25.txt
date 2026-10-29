@@ -24,8 +24,7 @@ EdgeOk:
 
 ExitToCity:
 	Save 3 MapX
-	Save 7 SymbolSet
-	NewECL 26
+	EnterArea Wilderness
 
 EdgeEastCorner:
 	if MapY != 31: Goto ExitToCity
@@ -103,7 +102,7 @@ FindSiteX:
 
 SiteFound:
 	GetTable SiteKind Scratch4 Scratch1
-	OnGoto Scratch1 8 SiteNone DragonInDistance DragonCave AnkhegAmbush SlaverCaravan BuccaneerBaseSite GuardsRideBy OutpostRiders
+	OnGoto Scratch1 8 SiteNone DragonInDistance DragonCaveEvent AnkhegAmbush SlaverCaravan BuccaneerBaseSite GuardsRideBy OutpostRiders
 
 SiteNone:
 	Exit
@@ -114,7 +113,7 @@ DragonInDistance:
 	Save 1 DragonSeen
 	Goto Done
 
-DragonCave:
+DragonCaveEvent:
 	ClearBox
 	Call CallClearView
 	Picture 32
@@ -134,7 +133,7 @@ CaveMenu:
 EnterDragonCave:
 	PrintClear "YOU ENTER THE CAVE."
 	Gosub LeaveWilderness
-	NewECL 19
+	NewECL DragonCave
 
 AnkhegAmbush:
 	if AnkhegsDefeated != 0: Goto Done
@@ -168,7 +167,7 @@ BuccaneerBaseSite:
 
 EnterBuccaneerBase:
 	Gosub LeaveWilderness
-	NewECL 1
+	NewECL BuccaneerBase
 
 GuardsRideBy:
 	if GuardsRideBySeen != 0: Goto Done
@@ -198,7 +197,7 @@ DenyEnvoy:
 EscortToOutpost:
 	PrintClear "THE RIDERS ESCORT YOU INTO THE OUTPOST."
 	Gosub LeaveWilderness
-	NewECL 28
+	NewECL ZhentilOutpost
 
 KeepRiders:
 	if KeepRidersFought != 0: Goto Done
@@ -369,7 +368,7 @@ LoadLair:
 	Save 8 SkyInside
 	ClearBox
 	Call CallRedraw
-	NewECL 25
+	NewECL Mountains
 
 LairCell:
 	And Cell 127 Scratch10
@@ -537,7 +536,7 @@ LeaveLair:
 	LoadFiles 4 4 0
 	Save 0 InLair
 	Call CallRedraw
-	NewECL 25
+	NewECL Mountains
 
 ExitEvent:
 	Exit

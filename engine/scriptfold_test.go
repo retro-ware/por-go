@@ -16,6 +16,10 @@ func TestFoldScript(t *testing.T) {
 	if err != nil || !l.Exists("ECL1.DAX") {
 		t.Skip("no game files")
 	}
+	areas, err := ReadScriptAreas("../data/assets/scripts/names/areas.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
 	names := ScriptVarNames()
 	vars := map[string]int{}
 	for a, n := range names {
@@ -32,12 +36,12 @@ func TestFoldScript(t *testing.T) {
 			if err := scriptPlain(b[2:], &plain, names); err != nil {
 				t.Fatal(err)
 			}
-			folded := foldScript(plain.String())
-			want, err := ParseScript(plain.String(), vars)
+			folded := foldScript(plain.String(), areas)
+			want, err := ParseScript(plain.String(), vars, areas)
 			if err != nil {
 				t.Fatalf("ECL%d %d: %v\n%.300s", disk, block, err, plain.String())
 			}
-			got, err := ParseScript(folded, vars)
+			got, err := ParseScript(folded, vars, areas)
 			if err != nil {
 				os.WriteFile(t.TempDir()+"/f.txt", []byte(folded), 0o644)
 				t.Fatalf("ECL%d %d: %v", disk, block, err)
@@ -59,12 +63,12 @@ func TestUnfoldForms(t *testing.T) {
 	one := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n\tif A == 3 { Save 1 B; Exit }\n\talso if A < 3: Goto event0\n\tExit\n"
 	many := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n\tif A == 3 {\n\t\tSave 1 B\n\t\tExit\n\t}\n\talso if A < 3:Goto event0\n\tExit\n"
 	plain := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n\tCompare A 3\n\tIfEq\n\tSave 1 B\n\tIfEq\n\tExit\n\tIfLt\n\tGoto event0\n\tExit\n"
-	want, err := ParseScript(plain, vars)
+	want, err := ParseScript(plain, vars, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, s := range []string{one, many} {
-		got, err := ParseScript(s, vars)
+		got, err := ParseScript(s, vars, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -76,7 +80,7 @@ func TestUnfoldForms(t *testing.T) {
 		}
 	}
 	for _, bad := range []string{"\tif A == 3 {\n", "\t}\n", "\tif A = 3: Exit\n", "\tCompare B 1\n\talso if A == 3: Exit\n"} {
-		if _, err := ParseScript("event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"+bad+"\tExit\n", vars); err == nil {
+		if _, err := ParseScript("event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"+bad+"\tExit\n", vars, nil); err == nil {
 			t.Errorf("%q parsed", bad)
 		}
 	}

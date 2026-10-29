@@ -2,7 +2,7 @@
 9969 CheckSecretDoorBlock
 9998 CheckNailedDoor
 99D6 CheckWellAmbush
-9A81 KutosWell
+9A81 KutosWellEvent
 9B07 SaySouth
 9B0F SayWest
 9B16 SayNorth

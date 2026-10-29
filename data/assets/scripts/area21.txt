@@ -15,8 +15,7 @@ SailToPhlan:
 	Save 15 PartyX
 	Save 1 PartyY
 	Save 3 Facing
-	Save 3 SymbolSet
-	NewECL 0
+	EnterArea NewPhlan
 
 StayAtKeep:
 	Save 255 HoldMove

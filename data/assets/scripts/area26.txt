@@ -29,16 +29,14 @@ NoEdgeExit:
 
 ExitToArea27:
 	Save 3 MapX
-	Save 8 SymbolSet
-	NewECL 27
+	EnterArea Quagmire
 
 WestEdgeExit:
 	OnGoto FacingRaw 8 NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit WestEdgeRowCheck ExitToArea25 ExitToArea25
 
 ExitToArea25:
 	Save 14 MapX
-	Save 6 SymbolSet
-	NewECL 25
+	EnterArea Mountains
 
 EastEdgeRowCheck:
 	if MapY != 25: Goto ExitToArea27
@@ -131,7 +129,7 @@ SiteColumnLoop:
 
 SiteDispatch:
 	GetTable SiteKindTable Scratch4 Scratch1
-	OnGoto Scratch1 8 AbandonedCamp NomadCamp CityNorthEdge CityEastEdge CityWestEdge HiddenRowboat PyramidFront BoatHome
+	OnGoto Scratch1 8 AbandonedCamp NomadCampEvent CityNorthEdge CityEastEdge CityWestEdge HiddenRowboat PyramidFront BoatHome
 
 AbandonedCamp:
 	if CampFound != 0: Goto Done
@@ -139,7 +137,7 @@ AbandonedCamp:
 	Save 1 CampFound
 	Goto Done
 
-NomadCamp:
+NomadCampEvent:
 	if NomadCampSeen != 0: Goto Done
 	ClearBox
 	Call CallClearView
@@ -151,7 +149,7 @@ NomadCamp:
 
 EnterNomadCamp:
 	Gosub Enter3DSetup
-	NewECL 17
+	NewECL NomadCamp
 
 CityNorthEdge:
 	ClearBox
@@ -166,16 +164,14 @@ EnterNorthGate:
 	Save 4 PartyX
 	Save 0 PartyY
 	Save 2 Facing
-	Save 3 SymbolSet
-	NewECL 14
+	EnterArea CadornaTextileHouse
 
 EnterGraveyard:
 	Gosub Enter3DSetup
 	Save 0 PartyX
 	Save 4 PartyY
 	Save 3 Facing
-	Save 4 SymbolSet
-	NewECL 10
+	EnterArea ValhingenGraveyard
 
 CityEastEdge:
 	ClearBox
@@ -190,24 +186,21 @@ EnterEastNorth:
 	Save 15 PartyX
 	Save 4 PartyY
 	Save 3 Facing
-	Save 3 SymbolSet
-	NewECL 14
+	EnterArea CadornaTextileHouse
 
 EnterEastSouth:
 	Gosub Enter3DSetup
 	Save 15 PartyX
 	Save 4 PartyY
 	Save 3 Facing
-	Save 1 SymbolSet
-	NewECL 24
+	EnterArea TempleOfBane
 
 BoatToCivilized:
 	Gosub Enter3DSetup
 	Save 15 PartyX
 	Save 1 PartyY
 	Save 3 Facing
-	Save 3 SymbolSet
-	NewECL 0
+	EnterArea NewPhlan
 
 CityWestEdge:
 	ClearBox
@@ -222,16 +215,14 @@ EnterWestNorth:
 	Save 0 PartyX
 	Save 4 PartyY
 	Save 3 Facing
-	Save 1 SymbolSet
-	NewECL 18
+	EnterArea PodolPlaza
 
 EnterWestSouth:
 	Gosub Enter3DSetup
 	Save 0 PartyX
 	Save 4 PartyY
 	Save 3 Facing
-	Save 4 SymbolSet
-	NewECL 2
+	EnterArea HobgoblinBarracks
 
 HiddenRowboat:
 	PrintClear "YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?"
@@ -239,8 +230,7 @@ HiddenRowboat:
 	OnGoto Scratch1 2 PyramidFront Done
 
 PyramidFront:
-	Save 6 MapX
-	Save 16 MapY
+	SetMapXY 6 16
 	Call CallRedraw
 	Delay
 	ClearBox
@@ -252,7 +242,7 @@ PyramidFront:
 
 EnterPyramid:
 	Gosub Enter3DSetup
-	NewECL 22
+	NewECL LizardManSwamp
 
 PyramidGoBack:
 	Save 14 MapY
@@ -418,7 +408,7 @@ LairLoad:
 	Save LairStartY26 PartyY
 	ClearBox
 	Call CallRedraw
-	NewECL 26
+	NewECL Wilderness
 
 LairCellDispatch:
 	And Cell 127 Scratch10
@@ -550,7 +540,7 @@ LeaveLair:
 	LoadFiles 5 5 0
 	Save 0 InLair
 	Call CallRedraw
-	NewECL 26
+	NewECL Wilderness
 
 FightDone:
 	Exit
@@ -731,8 +721,7 @@ RiverFrameReset:
 LandRecovers:
 	PrintClear "AS YOU LEAVE THE SORCERER'S PYRAMID BEHIND YOU CAN SEE THAT THE LAND IS ALREADY BEGINNING TO RECOVER FROM THE ALCHEMICAL POLLUTION CAUSED BY THE PYRAMID."
 	Gosub PressReturn
-	Save 7 MapX
-	Save 17 MapY
+	SetMapXY 7 17
 	Call CallRedraw
 	Save 9 Scratch1
 	Save 72 Scratch2
