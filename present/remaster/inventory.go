@@ -89,24 +89,26 @@ type inventory struct {
 	img, tip    *gpu.Image     // the canvas and the tooltip on the GPU
 	glyph       func(byte) [8]byte
 
-	shown  bool           // the last frame was the inventory
-	sel    int            // the highlighted item (InvItem.Index), -1 for none
-	ask    *engine.Action // a Drop or Sell waits for Yes
-	view   *engine.Inventory
-	acts   []engine.Action // to send (Presenter.Actions)
-	words  []word          // the menu row's words, or the question's Yes and No
-	k      int             // canvas scale
-	at     image.Point     // canvas top left on screen
-	w, h   int             // canvas size
-	list   pane            // the party inventory
-	wares  pane            // the shop's goods (Browse)
-	ware   int             // the highlighted ware (InvItem.Index), -1 for none
-	lines  []hit           // the items' rectangles (canvas)
-	dollAt image.Rectangle
-	arrows [2]image.Rectangle
-	hover  image.Point // the pointer (canvas)
-	member int         // View.Inventory.Member
-	count  int         // party members
+	shown   bool           // the last frame was the inventory
+	sel     int            // the highlighted item (InvItem.Index), -1 for none
+	ask     *engine.Action // a Drop or Sell waits for Yes
+	view    *engine.Inventory
+	acts    []engine.Action // to send (Presenter.Actions)
+	words   []word          // the menu row's words, or the question's Yes and No
+	k       int             // canvas scale
+	at      image.Point     // canvas top left on screen
+	w, h    int             // canvas size
+	list    pane            // the party inventory
+	wares   pane            // the shop's goods (Browse)
+	ware    int             // the highlighted ware (InvItem.Index), -1 for none
+	lines   []hit           // the items' rectangles (canvas)
+	dollAt  image.Rectangle
+	face    image.Rectangle // the portrait on the canvas, when facePNG is drawn over it at the window's resolution
+	facePNG image.Image
+	arrows  [2]image.Rectangle
+	hover   image.Point // the pointer (canvas)
+	member  int         // View.Inventory.Member
+	count   int         // party members
 
 	held      bool        // the left button was down last frame
 	press     *hit        // the item the button went down on
@@ -451,6 +453,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	lx, lw := 8, (leftCells-2)*8
 	inv.arrows = [2]image.Rectangle{}
 	inv.dollAt = image.Rectangle{}
+	inv.facePNG = nil
 	if shop {
 		inv.drawTabs(&inv.wares, lx, busy)
 		inv.drawPane(&inv.wares, inv.wares.shown(in.Wares), inv.ware, true, true, busy, lx, (split-1)*8, bottom)
@@ -547,6 +550,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	op.GeoM.Scale(float64(inv.k), float64(inv.k))
 	op.GeoM.Translate(float64(inv.at.X), float64(inv.at.Y))
 	dst.DrawImage(inv.img, op)
+	if inv.facePNG != nil { // the PNG portrait at the window's resolution, as the cards
+		op := &gpu.DrawImageOptions{}
+		op.GeoM.Translate(float64(inv.at.X+inv.face.Min.X*inv.k), float64(inv.at.Y+inv.face.Min.Y*inv.k))
+		dst.DrawImage(p.hiFace(inv.facePNG, portraitSize*inv.k), op)
+	}
 	return true
 }
 
@@ -564,7 +572,11 @@ func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bott
 		}
 		if f := p.portrait(m); f != nil {
 			r := image.Rect(lx+(lw-portraitSize)/2, 20+oy, lx+(lw+portraitSize)/2, 20+oy+portraitSize)
-			draw.Draw(inv.px, r, f, f.Bounds().Min, draw.Src)
+			if m.Portrait != nil { // drawn at the window's resolution over the canvas (Draw)
+				inv.face, inv.facePNG = r, m.Portrait
+			} else {
+				draw.Draw(inv.px, r, f, f.Bounds().Min, draw.Src)
+			}
 		}
 		hp := "HP " + strconv.Itoa(m.HP) + "/" + strconv.Itoa(m.MaxHP)
 		inv.text(hp, lx+(lw-8*len(hp))/2, 70+oy, green)

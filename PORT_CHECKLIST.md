@@ -194,3 +194,4 @@ original. Ticked items are ported and checked in a headless run
 - [x] Memorize screen (extra): F1-F8 and the cards switch to another member's plan, as on the camp bar
 - [x] Sheet portrait (extra): a dropped PNG smaller than its box is scaled up by whole pixels with nearest filtering when that fills at least 90% of the box (a 128 pixel portrait is 4x: crisp pixel art on its foot), else by Catmull-Rom to the exact size; journal scans still shrink bilinear on the GPU (page.go drawOverlays, cached per size)
 - [x] Party cards (extra): a PNG portrait is drawn at the window's resolution over the card (hiFace, cached per size; the same whole-pixel-or-Catmull-Rom rule as the sheet, wholeScale/fitSquare) instead of the card's 48 pixel face, the status label and the KO dimming over it
+- [x] Inventory (extra): the member's PNG portrait beside the doll is drawn at the window's resolution over the canvas (hiFace), as the cards and the sheet
