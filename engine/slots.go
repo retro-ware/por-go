@@ -142,8 +142,8 @@ func copyFile(src, dst string) {
 }
 
 // lettered: the original's Save and Load (savgam<L>.dat) instead of the
-// slot screen, for traced runs only.
-func (e *Engine) lettered() bool { return e.Trace != nil }
+// slot screen; only the retired trace harness used them.
+func (e *Engine) lettered() bool { return false }
 
 // slotName keeps what a folder name may hold.
 func slotName(s string) string {
@@ -164,12 +164,12 @@ func (e *Engine) inSlot(name string, f func()) {
 	f()
 }
 
-// SlotIndex is the slot's line on the slot screen, or -1 (cmd/snap).
+// SlotIndex is the slot's line on the slot screen, or -1 (tests).
 func (e *Engine) SlotIndex(name string) int {
 	return slices.IndexFunc(e.slots(), func(s slot) bool { return s.name == name })
 }
 
-// LoadSlotNamed loads the slot without the screen (cmd/snap).
+// LoadSlotNamed loads the slot without the screen (tests).
 func (e *Engine) LoadSlotNamed(name string) bool {
 	e.adoptLettered()
 	return e.loadFrom(name)

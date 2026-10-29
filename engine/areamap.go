@@ -74,7 +74,6 @@ func (e *Engine) drawAreaMapParty() {
 	c := e.areaIconTick
 	e.drawIcon(int(v), int(y), byte(e.facing), c%2, c/2+9)
 	e.areaIconTick = (c + 1) % 6
-	e.Flip()
 }
 
 // areaMapInit = ovr28:0207: the three frames of the area map screen.

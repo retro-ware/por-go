@@ -152,7 +152,7 @@ func (e *Engine) CommandInput() byte {
 	switch {
 	case e.viewMode == 1:
 		for done := false; !done; {
-			if f := e.DevAction; f != nil { // headless checks (cmd/snap)
+			if f := e.DevAction; f != nil { // headless checks (POR_DEV)
 				e.DevAction = nil
 				f()
 			}

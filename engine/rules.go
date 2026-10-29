@@ -283,7 +283,6 @@ func (e *Engine) KillCharacter(c *Character, status byte, msg string) {
 		c.HP = 0
 	}
 	e.combatClearIcon(0, 0, idx)
-	e.Flip()
 	e.cpos[idx].size = 0 // DS:5F2A + 4*idx
 	e.combatRedrawMap()
 	if e.clearCombatInfo(c) {
@@ -592,13 +591,11 @@ func (e *Engine) hitMessage(c *Character, magical bool, msg string) {
 	for i := 0; i <= n; i++ {
 		for f := 0; f <= 3; f++ {
 			e.drawHitFrame(f, px, py)
-			e.Flip()
 			e.Delay(0x46)
 			e.restoreHitFrame(px, py)
 		}
 	}
 	e.soundWait(0xA)
-	e.Flip()
 	if n == 0 {
 		e.MsgDelay()
 	}

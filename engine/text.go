@@ -16,18 +16,12 @@ func (e *Engine) DisplayChar(x, y, colour int, ch byte, upcase bool) {
 // displayCharBg is DisplayChar on a coloured background (the selection
 // indicator of the menus; the original always draws on black).
 func (e *Engine) displayCharBg(x, y, colour, bg int, ch byte, upcase bool) {
-	if e.Trace != nil {
-		e.Trace("0709:01DF", "DisplayChar", x, y, colour, 1, int(ch), b2i(upcase))
-	}
 	e.drawChar(x, y, colour, bg, ch, upcase)
 }
 
 // displayCharN = 0709:01DF with a repeat count: ch drawn count times from x on.
 // ponytail: cells past lastCol are dropped; the original writes on into the next row's video memory.
 func (e *Engine) displayCharN(x, y, colour, count int, ch byte, upcase bool) {
-	if e.Trace != nil {
-		e.Trace("0709:01DF", "DisplayChar", x, y, colour, count, int(ch), b2i(upcase))
-	}
 	if x > lastCol || y > promptRow {
 		return
 	}
@@ -67,9 +61,6 @@ func (e *Engine) paintChar(x, y, colour, bg int, ch byte, upcase bool) {
 // DisplayString = 0709:0626 displayString(x, y, colour, str): characters
 // are drawn left to right, each upcased, no wrapping (x stops at lastCol).
 func (e *Engine) DisplayString(x, y, colour int, s string) {
-	if e.Trace != nil {
-		e.Trace("0709:0626", "DisplayString", x, y, colour, s)
-	}
 	if x > lastCol || y > lastCol {
 		return
 	}
@@ -80,18 +71,11 @@ func (e *Engine) DisplayString(x, y, colour int, s string) {
 
 // ClearCells = 03F1:0137: fill cells [x1..x2] x [y1..y2] with black.
 func (e *Engine) ClearCells(x1, y1, x2, y2 int) {
-	if e.Trace != nil {
-		e.Trace("03F1:0137", "ClearCells", x1, y1, x2, y2)
-	}
 	e.fillCells(x1, y1, x2, y2)
 }
 
 // fillCells = 0709:00B7 (x1, y1, x2, y2, page, 0) for both EGA pages.
 func (e *Engine) fillCells(x1, y1, x2, y2 int) {
-	if e.Trace != nil {
-		e.Trace("0709:00B7", "FillCells", x1, y1, x2, y2, 0, 0)
-		e.Trace("0709:00B7", "FillCells", x1, y1, x2, y2, 1, 0)
-	}
 	e.S.Lock()
 	e.fill(x1*8, y1*8, x2*8+8, y2*8+8, 0)
 	e.S.Unlock()
@@ -119,9 +103,6 @@ func (e *Engine) DrawBorder(x1, y1, x2, y2, style int) {
 // DrawBoxTitled = 03F1:02E8: clear the interior, draw the border, then
 // centre the title on row y1 in the given colour.
 func (e *Engine) DrawBoxTitled(x1, y1, x2, y2, style, colour int, title string) {
-	if e.Trace != nil {
-		e.Trace("03F1:02E8", "DrawBoxTitled", x1, y1, x2, y2, style, colour, title)
-	}
 	if len(title) > 0x28 {
 		title = title[:0x28]
 	}
@@ -140,9 +121,6 @@ func punct(c byte) bool { return strings.IndexByte("!,-.:;?", c) >= 0 }
 // DS:5E25 y) when it lies inside the box. When the box is full the player
 // is asked to press a key and the box starts over.
 func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s string) {
-	if e.Trace != nil {
-		e.Trace("0709:0768", "DisplayTextBlock", x1, y1, x2, y2, colour, b2i(clear), s)
-	}
 	if x1 > lastCol || y1 > promptRow || x2 > lastCol || y2 > lastCol {
 		return
 	}
@@ -215,9 +193,6 @@ func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s stri
 
 // ClearBox = 0709:0DD3 (x1, y1, x2, y2): blank the cell rectangle.
 func (e *Engine) ClearBox(x1, y1, x2, y2 int) {
-	if e.Trace != nil {
-		e.Trace("0709:0DD3", "ClearBox", x1, y1, x2, y2)
-	}
 	e.fillCells(x1, y1, x2, y2)
 }
 
@@ -235,7 +210,7 @@ func (e *Engine) InputNumber(prompt string, colour int) uint16 {
 // skipText (extra): a key pressed while text is
 // printed slowly shows the rest at once; the key is used up.
 func (e *Engine) skipText() bool {
-	if e.tr != nil || e.msgDelay == 0 {
+	if e.msgDelay == 0 {
 		return false
 	}
 	if !e.ext.skip && e.KeyPressed() {

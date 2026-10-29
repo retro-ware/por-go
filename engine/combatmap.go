@@ -121,7 +121,6 @@ func (e *Engine) flyMissile(x1, y1, x2, y2, frames, delay int) {
 		for {
 			if delay > 0 || px%3 == 0 || py%3 == 0 {
 				e.drawHitFrame(f, px, py)
-				e.Flip()
 				e.Delay(delay)
 				e.restoreHitFrame(px, py)
 				if f++; f >= frames {
@@ -176,7 +175,6 @@ func (e *Engine) flyMissile(x1, y1, x2, y2, frames, delay int) {
 			px, py := (x2-e.cmap.viewX)*3, (y2-e.cmap.viewY)*3
 			e.drawHitFrame(f, px, py)
 			if delay > 0 {
-				e.Flip()
 				e.Delay(delay)
 				e.restoreHitFrame(px, py)
 			}
@@ -185,7 +183,6 @@ func (e *Engine) flyMissile(x1, y1, x2, y2, frames, delay int) {
 			break
 		}
 	}
-	e.Flip()
 }
 
 // isParty = 00BA:23B7 (char): true for the party side.

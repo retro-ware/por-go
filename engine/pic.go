@@ -24,9 +24,6 @@ func (e *Engine) LoadSymbolSet(set, block int) {
 
 // LoadPicMasked = 0464:0111 with the mask flag set.
 func (e *Engine) LoadPicMasked(name string, id int, mask byte) *dax.Image {
-	if e.Trace != nil {
-		e.Trace("0464:0111", "LoadPic", name, id, 1, int(mask), "")
-	}
 	b := e.L.Block(name, id)
 	if b == nil {
 		return nil
@@ -36,9 +33,6 @@ func (e *Engine) LoadPicMasked(name string, id int, mask byte) *dax.Image {
 
 // LoadPic = 0464:0111 (no masking).
 func (e *Engine) LoadPic(name string, id int) *dax.Image {
-	if e.Trace != nil {
-		e.Trace("0464:0111", "LoadPic", name, id, 0, 0, "")
-	}
 	b := e.L.Block(name, id)
 	if b == nil {
 		return nil
@@ -48,9 +42,6 @@ func (e *Engine) LoadPic(name string, id int) *dax.Image {
 
 // DrawPicture = 0464:1951 draw_picture(x, y, pic): blit frame at cell (x,y).
 func (e *Engine) DrawPicture(x, y int, im *dax.Image, frame int) {
-	if e.Trace != nil {
-		e.Trace("0464:1951", "DrawPicture", x, y, picID(im, frame))
-	}
 	if im == nil || frame >= im.Count {
 		return
 	}
@@ -129,13 +120,6 @@ func (e *Engine) put8x8(x, y, id int, masked bool, mode int) {
 // DrawPictureMasked = 0464:08D4 (x, y, frame, mode): like DrawPicture;
 // with mode bit 0 and a masked picture the mask pixels are not drawn.
 func (e *Engine) DrawPictureMasked(x, y int, im *dax.Image, frame, mode int) {
-	if e.Trace != nil {
-		px, py := x, y
-		if e.pageDraw {
-			px, py = x-1, y-1
-		}
-		e.Trace("0464:08D4", "DrawPictureMasked", px, py, frame, mode, picID(im, 0), "")
-	}
 	masked := mode&1 != 0
 	if im == nil || frame >= im.Count {
 		return

@@ -615,7 +615,6 @@ func (e *Engine) iconPane(x, y int) {
 	}
 	e.drawIcon(x, y, 0, 0, 0xC)
 	e.drawIcon(x+3, y, 0, 1, 0xC)
-	e.Flip() // 0464:1B52
 }
 
 // iconCopy = ovr17:35BE (src, dst, recolour) nested in the icon editor:

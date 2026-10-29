@@ -159,7 +159,7 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 		e.ext.menu--
 		e.ext.nav = nav
 		e.regionCut(mark)
-		if e.ext.menu == 0 && e.tr == nil {
+		if e.ext.menu == 0 {
 			e.S.SetHint("")
 			e.ext.hint = ""
 		}

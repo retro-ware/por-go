@@ -39,11 +39,8 @@ type Engine struct {
 	tempSel   *Character             // selectTemp: selected but not in the party
 	page      [pageStride * 168]byte // DS:4A20 drawing page contents (pageSet)
 	pageDraw  bool                   // drawing the 3D view: the original draws into page DS:4A20, one cell up and left of the screen
-	flips     int                    // traced Flips
 	RandSeed  uint32                 // DS:4428, Turbo Pascal RandSeed
-	FixedSeed *uint32                // if set, Randomize uses it instead of the clock (trace runs)
-	Trace     TraceFunc              // nil in normal play; see trace.go
-	tr        *traceState            // trace mode clock and key script
+	FixedSeed *uint32                // if set, Randomize uses it instead of the clock (POR_SEED)
 
 	font  []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph
 	sym   [5]*dax.Image // DS:5E3A symbol sets
@@ -167,7 +164,7 @@ type Engine struct {
 	snd          sound // PC speaker driver (08AE)
 	vox          voice // voice.go: the voice-over
 
-	DevAction func() // run once at the next adventuring command prompt (cmd/snap)
+	DevAction func() // run once at the next adventuring command prompt (POR_DEV)
 }
 
 // Dice = ovr25:0DE3 Dice(n, sides): sum of n rolls of 1..sides, kept in a
@@ -233,9 +230,6 @@ func (e *Engine) Run() {
 	e.Init()  // ovr12:002D
 	e.Title() // ovr02: title pictures, lightning, credits
 	// Copy protection (ovr03:00FD code wheel) deliberately skipped.
-	if e.Trace != nil {
-		e.Trace("ovr03:00FD", "CopyProtection")
-	}
 	e.adventure()
 	e.Exit()
 }
@@ -250,18 +244,12 @@ func (e *Engine) Play() {
 
 // Exit = 0899:0000: back to DOS.
 func (e *Engine) Exit() {
-	if e.tr != nil {
-		panic(TraceDone{"exit"})
-	}
 	os.Exit(0)
 }
 
 // Randomize = 0AF8:1247: RandSeed = DOS time (CX = hour:min low word,
 // DX = sec:hundredths high word).
 func (e *Engine) Randomize() {
-	if e.Trace != nil {
-		e.Trace("0AF8:1247", "Randomize")
-	}
 	if e.FixedSeed != nil {
 		e.RandSeed = *e.FixedSeed
 		return
@@ -282,22 +270,11 @@ func (e *Engine) Random(n int) int {
 
 // Ticks = 0709:0C3F, time in hundredths of a second.
 func (e *Engine) Ticks() int64 {
-	if e.tr != nil { // virtual clock: 10 ms per call (emu prims.py _ticks)
-		e.Trace("0709:0C3F", "Ticks")
-		t := e.tr.ms / 10
-		e.tr.ms += 10
-		return t
-	}
 	return int64(time.Since(e.start) / (10 * time.Millisecond))
 }
 
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
 func (e *Engine) Delay(ms int) {
-	if e.tr != nil {
-		e.Trace("0A40:029C", "Delay", ms)
-		e.tr.ms += int64(ms)
-		return
-	}
 	if e.beginFlag == 5 || e.snap.win == WinThreeD { // the remastered 3D views animate with the page: combat's moves and hits, a script walking the party (the intro's tour)
 		e.publish()
 	}
@@ -308,9 +285,6 @@ func (e *Engine) Delay(ms int) {
 
 // KeyPressed / ReadKey / ClearKeyboard = 0A40:02FD, BIOS read, 0899:0104.
 func (e *Engine) KeyPressed() bool {
-	if e.tr != nil {
-		return e.tr.keyPressed(e)
-	}
 	e.walkFeed()
 	e.publish()
 	for len(e.ext.ahead) == 0 && e.S.KeyPressed() { // nav.go: translate as the key is seen
@@ -321,9 +295,6 @@ func (e *Engine) KeyPressed() bool {
 }
 
 func (e *Engine) ReadKey() uint16 {
-	if e.tr != nil {
-		return e.tr.readKey(e)
-	}
 	e.ext.skip = false
 	e.actsDone()
 	for e.release(); len(e.ext.ahead) == 0; e.release() {
@@ -372,13 +343,10 @@ func (e *Engine) WaitSeconds(n int) {
 	e.ClearKeyboard()
 }
 
-// idle yields the CPU inside the original's busy-wait loops; it is not a
-// call of the original, so it is untraced and costs no virtual time.
+// idle yields the CPU inside the original's busy-wait loops.
 func (e *Engine) idle() {
 	e.ext.skip = false
-	if e.tr == nil {
-		e.actsDone() // an action taken last is done too
-		e.pace(waiting)
-		sleep(1)
-	}
+	e.actsDone() // an action taken last is done too
+	e.pace(waiting)
+	sleep(1)
 }

@@ -3,9 +3,6 @@ package engine
 import (
 	"image"
 
-	"crypto/md5"
-	"encoding/hex"
-	"fmt"
 	"strings"
 
 	"por/dax"
@@ -84,13 +81,6 @@ func (e *Engine) tileOf(x, y int) byte {
 // skips the image's mask colour; under (0464:0D71 mode 4) keeps what was
 // there in DS:4A24.
 func (e *Engine) drawPage(x, y int, im *dax.Image, frame int, masked, under bool) {
-	if e.Trace != nil {
-		mode := b2i(masked)
-		if under {
-			mode |= 4
-		}
-		e.Trace("0464:0D71", "DrawPage", x, y, frame, mode, picID(im, 0), "")
-	}
 	e.blitPage(x, y, im, frame, masked, under)
 }
 
@@ -163,10 +153,6 @@ func (e *Engine) restoreUnder(x, y int, im *dax.Image) {
 	if len(e.sprUnder) != w*im.Height {
 		e.sprUnder = make([]byte, w*im.Height)
 	}
-	if e.Trace != nil {
-		s := md5.Sum(e.sprUnder)
-		e.Trace("0464:0D71", "DrawPage", x, y, 0, 0, fmt.Sprintf("%dx%d:%s", im.Height, w, hex.EncodeToString(s[:])[:10]), "")
-	}
 	x0, pw := e.pageGeom()
 	e.S.Lock()
 	defer e.S.Unlock()
@@ -191,9 +177,6 @@ func (e *Engine) drawTile(x, y int, t byte) {
 	}
 	// 0464:08D4 (page DS:4A20, tiles, mode 0, frame, x, y): the same blit
 	// into the page as 0D71 unmasked.
-	if e.Trace != nil {
-		e.Trace("0464:08D4", "DrawPictureMasked", x, y, f, 0, picID(im, 0), "")
-	}
 	e.blitPage(x, y, im, f, false, false)
 }
 
@@ -522,7 +505,6 @@ func (e *Engine) combatCentre(x, y, r, dir int) {
 		ny = min(max(ny, 0), 0x18)
 	}
 	e.drawCursor(nx, ny)
-	e.Flip()
 }
 
 // combatTurn = ovr32:0AF8 (char, dir, pose, hide): face dir and draw the
@@ -542,7 +524,6 @@ func (e *Engine) combatTurn(c *Character, dir, pose byte, hide bool) {
 	if !hide && e.combatOnScreen(c, true) {
 		e.unitDrawn(idx, pose)
 		e.drawIcon(int(e.combatScreenX[idx]), int(e.combatScreenY[idx]), dir, pose, c.Order)
-		e.Flip()
 	}
 }
 
@@ -617,7 +598,6 @@ func (e *Engine) combatRemoveFromMap(c *Character) {
 			e.drawPage((int(e.combatScreenX[idx])+dx)*3, (int(e.combatScreenY[idx])+dy)*3, e.icons[0x18][0], 0, true, true) // DS:5F1A = icon slot 0x18 pose 0
 		}
 	}
-	e.Flip()
 	if c.Combat.Extra == 0 && e.nbodies+1 < len(e.bodies) {
 		e.nbodies++
 		b := &e.bodies[e.nbodies]

@@ -9,9 +9,6 @@ import (
 
 // ClearScreen = 0709:0CAB.
 func (e *Engine) ClearScreen() {
-	if e.Trace != nil {
-		e.Trace("0709:0CAB", "ClearScreen")
-	}
 	e.fillCells(0, 0, 0x27, 0x18)
 	e.clearPage()
 }

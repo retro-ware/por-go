@@ -130,9 +130,6 @@ func (e *Engine) drawSky() {
 
 // FillRect = 0464:2632 (x cells, y rows, w cells, h rows, colour), in page coordinates.
 func (e *Engine) FillRect(x, y, w, h int, colour byte) {
-	if e.Trace != nil {
-		e.Trace("0464:2632", "FillRect", x, y, w, h, int(colour), "", "")
-	}
 	// The original fills the drawing page DS:4A20, one cell up and left
 	// of the screen.
 	e.S.Lock()
@@ -170,7 +167,6 @@ func (e *Engine) Draw3DView(x, y, dir int) {
 	e.S.Hold()
 	e.pg.held++
 	e.pageDraw = true
-	defer e.Flip()
 	defer func() { e.pageDraw = false }()
 	defer func() { e.pg.held-- }()
 	defer e.S.Release() // 0464:1B52 via the near thunk ovr30:05F3: show the finished frame

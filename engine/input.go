@@ -54,9 +54,6 @@ func (e *Engine) ReadKeyByte() byte {
 
 // DisplaySpaces = 0709:05EB (x, y, colour, count): count blank cells.
 func (e *Engine) DisplaySpaces(x, y, colour, count int) {
-	if e.Trace != nil {
-		e.Trace("0709:05EB", "DisplaySpaces", x, y, colour, count)
-	}
 	if x > lastCol || y > promptRow {
 		return
 	}
@@ -112,9 +109,6 @@ func (e *Engine) inputLine(prompt string, colour, maxlen int) string {
 // DisplayMessageWait = 0709:0D68 (str, colour): message on row 24 for
 // msgDelay*225 ms, then cleared.
 func (e *Engine) DisplayMessageWait(colour int, s string) {
-	if e.Trace != nil {
-		e.Trace("0709:0D68", "DisplayMessageWait", s, colour)
-	}
 	if len(s) > 40 {
 		s = s[:40]
 	}

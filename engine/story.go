@@ -28,7 +28,6 @@ func (e *Engine) ProgramEight() {
 		if count > 0 {                             // ovr19:004C: frame 1, unmasked, then 1B52
 			e.drawPage(x-1, y-1, e.pic.frames[0].Image, 0, false, false)
 		}
-		e.Flip()
 		for {
 			var delay int64
 			if cur >= 1 && cur <= count {
@@ -151,17 +150,14 @@ func (e *Engine) EndgameHook(n int) {
 	}
 	if n != 0 {
 		e.DrawAreaMap(0x11, 0xF)
-		e.Flip()
 		for k := 0; k <= 8; k++ {
 			tiles(&endTo1, &endTo2, true)
 			e.DrawAreaMap(int(endMapX[k]), int(endMapY[k]))
-			e.Flip()
 		}
 	}
 	tiles(&endTo1, &endTo2, false)
 	if n != 0 {
 		e.DrawAreaMap(0x17, 0x19)
-		e.Flip()
 		e.MsgDelay()
 		e.MsgDelay()
 	}

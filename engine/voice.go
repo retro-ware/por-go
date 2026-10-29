@@ -61,7 +61,7 @@ func (e *Engine) setVoiceOn(on bool) {
 // speak queues the text's recording, unless the voice is off, there is no
 // recording or this save has heard it.
 func (e *Engine) speak(key string) {
-	if e.tr != nil || e.ext.voiced[key] || !e.voiceOn() {
+	if e.ext.voiced[key] || !e.voiceOn() {
 		return
 	}
 	b, err := os.ReadFile(filepath.Join(e.L.Dir, "SPEECH", key+".mp3"))

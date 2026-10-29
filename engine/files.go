@@ -140,9 +140,6 @@ func (e *Engine) fileError(verb, path string) {
 
 // PromptRow24 = 0709:0BF5: clear row 24, show, wait for a key.
 func (e *Engine) PromptRow24(colour int, s string) byte {
-	if e.Trace != nil {
-		e.Trace("0709:0BF5", "MessageRow24b", colour, s)
-	}
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colour, s)
 	return e.ReadKeyByte()

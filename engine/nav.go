@@ -146,7 +146,7 @@ func (e *Engine) translate(k uint16) uint16 {
 	case k == '?' && !e.ext.typing:
 		e.Help()
 		return 0
-	case k == KeyF9 && e.ext.guarded && e.tr == nil:
+	case k == KeyF9 && e.ext.guarded:
 		e.SlotMenu(false)
 		return 0
 	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
@@ -289,9 +289,6 @@ func (e *Engine) rosterRegion() {
 
 // pollMouse runs the hover action of the region the pointer moved onto.
 func (e *Engine) pollMouse() {
-	if e.tr != nil { // no window
-		return
-	}
 	cx, cy, ok := e.S.Mouse()
 	at := 0
 	if ok {
@@ -311,9 +308,6 @@ func (e *Engine) pollMouse() {
 
 // showHint updates the window's hint line.
 func (e *Engine) showHint() {
-	if e.tr != nil { // no window
-		return
-	}
 	if h := e.hintText(); h != e.ext.hint {
 		e.ext.hint = h
 		e.S.SetHint(h)
