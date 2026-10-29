@@ -468,21 +468,11 @@ func (e *Engine) memorizeMenu() {
 		return
 	}
 	e.relearnSpells(e.selected())
-	done := false
+	// extra: no "Spells to be memorized" list and "Memorize These Spells?"
+	// before or after: the book's list marks the chosen spells, Clear drops them
+	done, drew := false, false
 	index := -1
 	var any bool
-	e.SpellList(5, 0, &index, &any)
-	drew := true
-	if any {
-		if !e.YesNo(colYellow, colLightGreen, colWhite, "Memorize These Spells? ") {
-			clearMemorize(e.selected())
-		} else {
-			done = true
-		}
-	} else {
-		drew = false
-	}
-	index = -1
 	for !done {
 		done = !e.memorizeInfo()
 		if done {
@@ -508,13 +498,6 @@ func (e *Engine) memorizeMenu() {
 			}
 			c.Memorized[k] = spell + 0x80
 			e.sortSpells()
-		}
-	}
-	if index != -1 {
-		index = -1
-		e.SpellList(5, 0, &index, &any)
-		if any && !e.YesNo(colYellow, colLightGreen, colWhite, "Memorize these spells? ") {
-			clearMemorize(e.selected())
 		}
 	}
 	if drew {
