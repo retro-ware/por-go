@@ -815,12 +815,8 @@ func (e *Engine) announceCast(c *Character, msg string, spell int) {
 		e.combatSay(nil, "Spell: "+e.spellName(spell), true)
 		return
 	}
-	e.ClearCells(1, 18, winRight, winBottom)
-	e.displayName(c, 1, 19, false)
-	e.DisplayString(len(c.Name())+2, 19, colLightGreen, msg)
-	e.DisplayString(1, 20, colLightGreen, e.spellName(spell))
+	e.say(c.Name() + " " + msg + " " + e.spellName(spell)) // extra: the original's flash in the message area is a toast, as CharMessage's
 	e.MsgDelay()
-	e.ClearMessageArea()
 }
 
 // spellTableInit = ovr23:3413: the DS:6B84 table of spell effects (indexed
