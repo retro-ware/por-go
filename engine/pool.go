@@ -138,7 +138,7 @@ const (
 // that cannot be readied (no slot: it is used straight from the pool).
 func dollSlot(e *Engine, c *Character, it *Item) int {
 	switch s := int(e.base(it.Type).Slot); {
-	case it.Type == itemArrow:
+	case it.Type == itemArrow || it.Readied == 2 || e.missileSlot(c, it): // the Missiles slot (extra): arrows, or a thrown weapon beside the weapon
 		return DollArrows
 	case it.Type == itemQuarrel:
 		return DollBolts
@@ -168,7 +168,6 @@ type Inventory struct {
 	Pool   []InvItem           // the party inventory
 	Cap    int                 // the party inventory's slots
 	Use    bool                // items can be used here (ActUse)
-	Throw  bool                // combat: unreadied throwables can be thrown (ActThrow)
 	Sell   bool                // a shop buys them (ActSell)
 	Switch bool                // ActMember shows another member (not in combat)
 	Powers []Power             // what the member can do besides items (the View menu's)
@@ -193,7 +192,6 @@ type InvItem struct {
 	Slot  bool     // it has a doll slot (it can be readied)
 	Wrong bool     // the member's class cannot ready it
 	Use   bool     // it has a use (a scroll, a spell of its own)
-	Throw bool     // it can be thrown
 	Look  []string // what it does (the shop's Look text)
 	Price string   // what selling it pays
 	Kind  ItemKind // its party inventory tab
@@ -208,13 +206,24 @@ const (
 	KindArmor
 )
 
+// invItem is it as the remaster names and pictures it (the icon's key).
+func (e *Engine) invItem(c *Character, it *Item) *InvItem {
+	e.ItemName(c, it, 0, 0, false, false)
+	x := &InvItem{Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Kind: itemKind(e, c, it)}
+	for _, w := range it.Words {
+		if w != 0 {
+			x.Words = append(x.Words, itemWords[w])
+		}
+	}
+	return x
+}
+
 // inventoryView builds the snapshot of the inventory screen.
 func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 	hired := c.Control >= 0x80 && c.Okay != 0 && c.Status != statusAnimated
 	v := &Inventory{Member: slices.Index(e.party, c), Cap: e.poolCap(),
 		Use: c.Okay != 0 && e.area.NoMagic == 0 && (e.beginFlag == 2 || e.beginFlag == 3 || e.beginFlag == 4 ||
 			e.beginFlag == 5 && c.Combat != nil && c.Combat.CanUse != 0),
-		Throw:  e.beginFlag == 5 && c.Okay != 0,
 		Sell:   !hired && e.beginFlag == 1,
 		Switch: e.beginFlag != 5,
 	}
@@ -224,18 +233,9 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		}
 	}
 	for i, it := range items {
-		e.ItemName(c, it, 0, 0, false, false)
 		v2 := sellValue(it)
-		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
-			Wrong: dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0,
-			Use:   e.usable(it), Throw: it.Readied == 0 && e.throwableItem(it),
-			Look: e.itemLines(it), Price: moneyText(v2/200, v2%200)}
-		x.Kind = itemKind(e, c, it)
-		for _, w := range it.Words {
-			if w != 0 {
-				x.Words = append(x.Words, itemWords[w])
-			}
-		}
+		x := *e.invItem(c, it)
+		x.Index, x.Slot, x.Wrong, x.Use, x.Look, x.Price = i, dollSlot(e, c, it) >= 0, dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0, e.usable(it), e.itemLines(it), moneyText(v2/200, v2%200)
 		if it.Readied != 0 {
 			if s := dollSlot(e, c, it); s >= 0 && v.Doll[s] == nil {
 				v.Doll[s] = &x

@@ -18,7 +18,7 @@ const (
 	ActMember            // show party member N
 	ActReady             // inventory: ready or unready item N
 	ActUse               // inventory: use item N
-	ActThrow             // inventory (combat): throw item N
+	ActRanged            // combat: throw the Missiles slot's weapon (aims as Attack)
 	ActDrop              // inventory: drop item N (the player already confirmed)
 	ActSell              // inventory: sell item N (confirmed)
 	ActWalk              // combat: walk to square X, Y (one of Battle.Reach)

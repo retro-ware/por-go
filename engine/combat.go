@@ -142,9 +142,8 @@ func (e *Engine) playerTurn(c *Character) {
 		case ActItems:
 			done = e.ItemsMenu() // ovr20:0EF8 (var done)
 			e.setSpeed(c)
-			if e.ext.throwing != nil {
-				done = e.throwItem(c)
-			}
+		case ActRanged:
+			done = e.throwMissile(c)
 		case ActCast:
 			if slices.ContainsFunc(turn.Spells, func(s Spell) bool { return s.ID == a.N }) {
 				var ok bool
@@ -198,6 +197,10 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	t := &Turn{Unit: e.combatIndex(c), Moves: int(ci.Moves >> 1)}
 	can := func(k ActKind) { t.Can = append(t.Can, k) }
 	can(ActAttack)
+	if m := e.missile(c); m != nil { // extra: the Missiles slot's thrown weapon
+		can(ActRanged)
+		t.Missile = e.invItem(c, m)
+	}
 	if !e.rangedWeapon(c) || e.throwable(c) {
 		can(ActGuard) // Done's
 	}
@@ -514,12 +517,18 @@ func (e *Engine) throwableItem(it *Item) bool {
 	return e.base(it.Type).Range > 1 && e.base(it.Type).Usage&0x10 != 0 // thrown: also darts and javelins, used up
 }
 
-// throwItem (extra): Throw from the inventory readies the item in place of
-// the weapon, aims as Aim does, then readies the weapon again. Nothing
-// changes when the swap fails or the aim is given up.
-func (e *Engine) throwItem(c *Character) (done bool) {
-	it, w := e.ext.throwing, c.Slots[slotWeapon]
-	e.ext.throwing = nil
+// throwMissile (extra): ActRanged takes the Missiles slot's weapon in hand
+// in place of the weapon, aims as Aim does, then readies the weapon again.
+// Nothing changes when the swap fails or the aim is given up.
+func (e *Engine) throwMissile(c *Character) (done bool) {
+	it, w := e.missile(c), c.Slots[slotWeapon]
+	if it == nil {
+		return false
+	}
+	if len(e.throwTargets(c, it)) == 0 { // as Attack's "No foe in reach"
+		e.refuse("No target in range")
+		return false
+	}
 	saved := e.partySel
 	for i, p := range e.party {
 		if p == c {
@@ -534,16 +543,14 @@ func (e *Engine) throwItem(c *Character) (done bool) {
 		}
 		e.ApplyItems(c) // free the weapon's hands: readyItem counts c.Hands
 	}
-	e.readyItem(it)
+	it.Readied = 1 // in hand (the weapon's hands are free)
 	e.ApplyItems(c)
-	if it.Readied != 0 {
-		var aim aimTarget
-		e.ext.enemiesOnly = true
-		e.playerAim(c, 0xFF, 1, 0, &done, &aim)
-		e.ext.enemiesOnly = false
-		if slices.Contains(c.Items, it) && it.Readied != 0 {
-			e.readyItem(it)
-		}
+	var aim aimTarget
+	e.ext.enemiesOnly = true
+	e.playerAim(c, 0xFF, 1, 0, &done, &aim)
+	e.ext.enemiesOnly = false
+	if slices.Contains(c.Items, it) { // not the last one thrown
+		it.Readied = 2
 	}
 	if w != nil && slices.Contains(c.Items, w) && w.Readied == 0 {
 		e.readyItem(w)
@@ -565,7 +572,7 @@ func (e *Engine) ammoFor(c *Character, it **Item) bool {
 			*it = w
 		}
 		if f&8 != 0 {
-			if f&1 != 0 {
+			if f&1 != 0 && c.Slots[slotArrows] != nil && c.Slots[slotArrows].Type == itemArrow { // not a missile in the slot
 				*it = c.Slots[slotArrows]
 			}
 			if f&0x80 != 0 {
@@ -612,11 +619,10 @@ func (e *Engine) quickOne(c *Character) {
 }
 
 // combatItems (extra): c carries an item its items menu could Use (when
-// it may use items this round) or Throw.
+// it may use items this round).
 func (e *Engine) combatItems(c *Character) bool {
 	for _, it := range e.carried(c) {
-		if it.Readied == 0 && e.throwableItem(it) ||
-			c.Combat.CanUse != 0 && (e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80) {
+		if c.Combat.CanUse != 0 && (e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80) {
 			return true
 		}
 	}

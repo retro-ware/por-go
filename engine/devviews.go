@@ -56,8 +56,18 @@ func (e *Engine) DevScene(name string) func() {
 			e.Shop()
 			e.DrawMainScreen()
 		}
-	case "combat", "wildcombat", "castfight": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight)
+	case "combat", "wildcombat", "castfight", "missile": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: a javelin in every member's Missiles slot (the Ranged button)
 		return func() {
+			if name == "missile" {
+				for i, c := range e.party {
+					e.selectMember(i)
+					e.ApplyItems(c)
+					if c.Slots[slotWeapon] != nil {
+						e.readyItem(e.AddItemCopy(c, e.RandomItem(itemJavelin)))
+					}
+				}
+				e.selectMember(0)
+			}
 			if name == "wildcombat" { // the overland's terrain, from the dungeon save
 				e.viewMode = 2
 			}

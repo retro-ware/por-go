@@ -80,7 +80,7 @@ var dollBoxes = [engine.DollSlots]image.Rectangle{
 }
 
 var slotNames = [engine.DollSlots]string{"Weapon", "Shield", "Armour", "Gauntlets", "Helm", "Belt", "Robe", "Cloak",
-	"Boots", "Ring", "Ring", "Arrows", "Bolts", "Bracers"}
+	"Boots", "Ring", "Ring", "Missiles", "Bolts", "Bracers"}
 
 // inventory is the screen's state between frames.
 type inventory struct {
@@ -386,9 +386,6 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 			{text: "Exit", act: engine.ActClose, on: true}}
 	}
 	w := []word{{text: "Ready", act: engine.ActReady, on: it != nil && it.Slot}}
-	if in.Throw {
-		w = append(w, word{text: "Throw", act: engine.ActThrow, on: it != nil && it.Throw})
-	}
 	if in.Use {
 		w = append(w, word{text: "Use", act: engine.ActUse, on: it != nil && it.Use})
 	}

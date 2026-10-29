@@ -137,11 +137,13 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	}
 	m, r, k := v.Party[i], p.cards[i], cardScale(dst)
 	lines, sel := []string{m.Name, m.Class}, -1
+	var keys []byte
 	if p.ctx > 0 {
-		lines, sel, p.ctxActs = nil, p.ctxSel, p.ctxActs[:0]
+		lines, sel, p.ctxActs, p.ctxKeys = nil, p.ctxSel, p.ctxActs[:0], p.ctxKeys[:0]
 		for _, pw := range m.Powers {
-			lines, p.ctxActs = append(lines, pw.Name), append(p.ctxActs, pw.Kind)
+			lines, p.ctxActs, p.ctxKeys = append(lines, pw.Name), append(p.ctxActs, pw.Kind), append(p.ctxKeys, pw.Name[0]) // the first letter: the hotkey (all differ)
 		}
+		keys = p.ctxKeys
 		if len(lines) == 0 { // nothing to do (a fight began)
 			p.ctx = 0
 			return
@@ -157,7 +159,7 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	}
 	rects := slices.Clone(p.menuRects)                                                  // not a menu: the question's clicks stay
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf // its own image: the menu's keeps its size
-	p.drawMenu(dst, p.glyph, "", lines, nil, sel, float64(k), cx, r.Min.Y)
+	p.drawMenu(dst, p.glyph, "", lines, keys, sel, float64(k), cx, r.Min.Y)
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf
 	if p.ctx > 0 {
 		p.ctxRects = append(p.ctxRects[:0], p.menuRects...)

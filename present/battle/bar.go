@@ -46,14 +46,14 @@ type barItem struct {
 var hotkeys = map[string]struct {
 	key   uint16
 	label string
-}{"Attack": {'f', "F"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
+}{"Attack": {'f', "F"}, "Ranged": {'m', "M"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
 	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Flee": {'r', "R"}, "Yes": {'y', "Y"}, "No": {'n', "N"}} // Cancel: Esc, unshown
 
 // leftArrow is the glyph drawn for "\x1b" (Backspace): the game's font has none.
 var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
 
 // actWords are the bar's words for the turn's actions.
-var actWords = map[engine.ActKind]string{engine.ActAttack: "Attack", engine.ActGuard: "Guard", engine.ActItems: "Items",
+var actWords = map[engine.ActKind]string{engine.ActAttack: "Attack", engine.ActRanged: "Ranged", engine.ActGuard: "Guard", engine.ActItems: "Items",
 	engine.ActCast: "Cast", engine.ActTurn: "Turn", engine.ActBandage: "Bandage", engine.ActWait: "Wait", engine.ActEnd: "End", engine.ActQuick: "Quick", engine.ActFlee: "Flee"}
 
 // hotkey is the button whose hotkey is k (nil: none).
@@ -114,7 +114,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	}
 	n, bw := len(items), face*k/2+4*k
 	w, h := max(n*(bw+4*k), 7*8*k+bw), (promptH+labelH)*k+bw
-	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover)
+	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover) + "|" + p.RangedKey
 	for _, it := range items {
 		id += "|" + it.Text
 	}
@@ -126,7 +126,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	}
 	if id != br.id {
 		br.id = id
-		br.img.WritePixels(barPixels(glyph, items, hover, w, h, k).Pix)
+		br.img.WritePixels(barPixels(glyph, items, hover, w, h, k, p.Ranged).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
@@ -215,7 +215,7 @@ func (p *Presenter) Actions() []engine.Action {
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
 // barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
-func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int) *image.RGBA {
+func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, ranged image.Image) *image.RGBA {
 	rgb := pal.EGA
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	textOn := func(im *image.RGBA, s string, x, y, scale int, c color.RGBA) {
@@ -256,7 +256,11 @@ func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int) *i
 		// proportion; then scaled as one to the button (so their relation holds)
 		f := image.NewRGBA(image.Rect(0, 0, face, face))
 		draw.Draw(f, f.Bounds(), image.NewUniform(color.RGBA{0x18, 0x20, 0x38, 0xFF}), image.Point{}, draw.Src)
-		if ic := iconPicture(it.Text); ic != nil {
+		if ic := iconPicture(it.Text); it.Kind == engine.ActRanged && ranged != nil { // the missile's own icon (the inventory's atlas cell), 3x in the middle
+			b := ranged.Bounds()
+			s := (face - 3*b.Dx()) / 2
+			xdraw.NearestNeighbor.Scale(f, image.Rect(s, s, s+3*b.Dx(), s+3*b.Dy()), ranged, b, draw.Over, nil)
+		} else if ic != nil {
 			draw.Draw(f, f.Bounds(), ic, ic.Bounds().Min, draw.Over)
 		} else {
 			textOn(f, string(it.Key), (face-32)/2, (face-32)/2, 4, rgb(15))

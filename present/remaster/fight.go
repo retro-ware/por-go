@@ -35,6 +35,16 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 			}
 		}
 	}
+	p.battle.Ranged, p.battle.RangedKey = nil, ""
+	if b.Turn != nil && b.Turn.Missile != nil { // the Ranged button shows the missile's icon
+		p.inv.load()
+		if n := p.inv.icon(b.Turn.Missile); n >= 0 {
+			at := image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell)
+			p.battle.Ranged, p.battle.RangedKey = p.inv.atlas.(interface {
+				SubImage(image.Rectangle) image.Image
+			}).SubImage(image.Rectangle{at, at.Add(image.Pt(atlasCell, atlasCell))}), strconv.Itoa(n)
+		}
+	}
 	p.battle.DrawBar(dst, glyph, b, max(1, int(k)/2), p.mapBottom)
 	p.drawFightRows(dst, glyph, b, k)
 	cx := dst.Bounds().Dx() / 2

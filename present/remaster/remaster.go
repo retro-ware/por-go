@@ -86,6 +86,7 @@ type Presenter struct {
 	ctx         int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
 	ctxSel      int                         // its highlighted line (-1 none)
 	ctxActs     []engine.ActKind            // its lines' actions, for the member
+	ctxKeys     []byte                      // its lines' hotkeys (the first letters)
 	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
@@ -255,8 +256,22 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.fight {
 		return p.fightKey(k)
 	}
-	if p.ctx > 0 && k == 27 {
-		p.ctx = 0
+	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
+		n := len(p.ctxActs)
+		switch c := byte(k); {
+		case k == 0x4800:
+			p.ctxSel = (max(p.ctxSel, 0) + n - 1) % n
+		case k == 0x5000:
+			p.ctxSel = (p.ctxSel + 1) % n
+		case k == 13 && p.ctxSel >= 0:
+			p.send(p.ctxActs[p.ctxSel], p.ctx-1)
+			p.ctx = 0
+		case k == 27:
+			p.ctx = 0
+		case k < 128 && slices.Contains(p.ctxKeys, c&^0x20): // a letter's hotkey, either case
+			p.send(p.ctxActs[slices.Index(p.ctxKeys, c&^0x20)], p.ctx-1)
+			p.ctx = 0
+		}
 		return true
 	}
 	if !p.active || p.view == nil {
@@ -371,13 +386,14 @@ func (p *Presenter) Hover(x, y int) {
 		return
 	}
 	p.cardHover = 1 + cardUnder(p.cards, x, y)
-	if p.ctx > 0 {
-		p.ctxSel = slices.IndexFunc(p.ctxRects, func(r image.Rectangle) bool { return image.Pt(x, y).In(r) })
-	}
-	if !p.menu || image.Pt(x, y) == p.pointer {
+	if !(p.menu || p.ctx > 0) || image.Pt(x, y) == p.pointer {
 		return
 	}
 	p.pointer = image.Pt(x, y)
+	if p.ctx > 0 { // a moved pointer takes the context menu's highlight (keys keep it while it rests)
+		p.ctxSel = slices.IndexFunc(p.ctxRects, func(r image.Rectangle) bool { return p.pointer.In(r) })
+		return
+	}
 	for i, r := range p.menuRects {
 		if p.pointer.In(r) {
 			p.sel = i

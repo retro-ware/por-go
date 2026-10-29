@@ -547,7 +547,7 @@ func (e *Engine) aiPickWeapon(c *Character) {
 			pend = best1
 		}
 		if f&8 != 0 {
-			if f&1 != 0 {
+			if f&1 != 0 && c.Slots[slotArrows] != nil && c.Slots[slotArrows].Type == itemArrow { // not a missile in the slot
 				pend = c.Slots[slotArrows]
 			}
 			if f&0x80 != 0 {

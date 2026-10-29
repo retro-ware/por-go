@@ -174,6 +174,10 @@ func (e *Engine) ApplyItems(c *Character) {
 			continue
 		}
 		typ := it.Type
+		if it.Readied == 2 { // extra: a thrown weapon in the Missiles slot (readyItem): not in hand
+			c.Slots[slotArrows] = it
+			continue
+		}
 		switch s := e.base(typ).Slot; {
 		case s <= 8:
 			c.Slots[s] = it
@@ -253,7 +257,7 @@ func (e *Engine) weaponStats(c *Character) {
 	if flags > 0x7F && c.Slots[slotBolts] != nil {
 		plus += int8(c.Slots[slotBolts].Plus)
 	}
-	if flags&1 != 0 && c.Slots[slotArrows] != nil {
+	if flags&1 != 0 && c.Slots[slotArrows] != nil && c.Slots[slotArrows].Type == itemArrow { // not a missile in the slot
 		plus += int8(c.Slots[slotArrows].Plus)
 	}
 	c.Bonus[0] += byte(plus)

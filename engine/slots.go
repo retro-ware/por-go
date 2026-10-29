@@ -79,7 +79,7 @@ func (e *Engine) unwindReset() {
 	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
 	x.buying, x.campBar, x.selSet, x.paging = false, false, false, false
 	x.fullMap, x.walk, x.back, x.aoe, x.picker, x.enemiesOnly = false, nil, false, 0, false, false
-	x.throwing, x.menuFloor, x.panel, e.snap.typing = nil, 0, nil, nil
+	x.menuFloor, x.panel, e.snap.typing = 0, nil, nil
 	e.partySel = 0                  // a defer on the way out may have put back the old party's index
 	e.loadedGame = e.beginFlag != 0 // DS:49F8, as the party menu's Load
 }

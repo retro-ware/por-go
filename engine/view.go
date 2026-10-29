@@ -290,11 +290,10 @@ func (e *Engine) paladinCure(c *Character) {
 }
 
 // inventory runs ItemsMenu for ViewCharacter (extra: leave reports that
-// the View page should close too: the inventory was opened straight (F1-F8,
-// I), or Throw left it to aim).
+// the View page should close too: the inventory was opened straight (F1-F8, I)).
 func (e *Engine) inventory(direct bool) (quit, leave bool) {
 	quit = e.ItemsMenu()
-	return quit, !quit && (direct || e.ext.throwing != nil)
+	return quit, !quit && direct
 }
 
 // canLoseItem = ovr20:0D70 (item): readied items must be unreadied first;
@@ -407,15 +406,6 @@ func (e *Engine) ItemsMenu() bool {
 			if quit && e.beginFlag == 5 {
 				return true
 			}
-		case a.Kind == ActThrow && inv.Throw:
-			switch {
-			case it.Readied != 0 || !e.throwableItem(it):
-			case len(e.throwTargets(c, it)) == 0: // extra: nobody to throw it at
-				e.refuse("No target in range")
-			default:
-				e.ext.throwing = it
-				return false
-			}
 		case a.Kind == ActDrop:
 			if e.canLoseItem(it) {
 				e.RemoveItem(c, it)
@@ -449,6 +439,20 @@ func (e *Engine) swapReady(c *Character, it *Item) {
 	e.readyItem(it)
 }
 
+// missileSlot (extra): readied now, the unreadied thrown weapon it would
+// go into the Missiles slot (the arrows', Readied 2), as a weapon is in hand.
+func (e *Engine) missileSlot(c *Character, it *Item) bool {
+	return it.Readied == 0 && e.throwableItem(it) && c.Slots[slotWeapon] != nil && c.Slots[slotWeapon] != it
+}
+
+// missile (extra) is the thrown weapon in c's Missiles slot (ActRanged throws it), or nil.
+func (e *Engine) missile(c *Character) *Item {
+	if m := c.Slots[slotArrows]; m != nil && m.Readied == 2 {
+		return m
+	}
+	return nil
+}
+
 // inTheWay is the readied item of c whose slot it would take (readyItem's
 // "already using"), nil for none.
 func (e *Engine) inTheWay(c *Character, it *Item) *Item {
@@ -457,7 +461,7 @@ func (e *Engine) inTheWay(c *Character, it *Item) *Item {
 	}
 	slot := int(e.base(it.Type).Slot)
 	switch {
-	case it.Type == itemArrow:
+	case it.Type == itemArrow || e.missileSlot(c, it):
 		slot = slotArrows
 	case it.Type == itemQuarrel:
 		slot = slotBolts
@@ -502,10 +506,14 @@ func (e *Engine) readyItem(it *Item) {
 	}
 	why := 0
 	typ := it.Type
-	if int(e.base(typ).Hands)+int(c.Hands) > 2 {
+	missile := e.missileSlot(c, it) // extra: a thrown weapon beside the weapon in hand: the Missiles slot, no hands
+	if int(e.base(typ).Hands)+int(c.Hands) > 2 && !missile {
 		why = 3
 	}
 	slot := int(e.base(typ).Slot)
+	if missile {
+		slot = slotArrows
+	}
 	switch {
 	case slot <= 8:
 		if c.Slots[slot] != nil {
@@ -516,7 +524,7 @@ func (e *Engine) readyItem(it *Item) {
 			why = 2
 		}
 	}
-	if typ == itemArrow && c.Slots[slotArrows] != nil {
+	if (typ == itemArrow || missile) && c.Slots[slotArrows] != nil {
 		why, slot = 2, slotArrows
 	}
 	if typ == itemQuarrel && c.Slots[slotBolts] != nil {
@@ -538,6 +546,9 @@ func (e *Engine) readyItem(it *Item) {
 	case 0:
 		e.takeFromPool(c, it) // extra: out of the party inventory
 		it.Readied = 1
+		if missile {
+			it.Readied = 2
+		}
 		if effect {
 			e.itemAffect(it, c, 0)
 		}

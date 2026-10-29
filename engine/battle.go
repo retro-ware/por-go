@@ -37,11 +37,12 @@ type Battle struct {
 
 // Turn is what the acting member may do (the original's combat menu).
 type Turn struct {
-	Unit   int       // whose turn
-	Can    []ActKind // the actions offered, in the menu's order
-	Spells []Spell   // what ActCast casts
-	Aim    bool      // aiming: ActAim takes a square, ActPoint previews one, ActClose gives up
-	Moves  int       // squares of move left
+	Unit    int       // whose turn
+	Can     []ActKind // the actions offered, in the menu's order
+	Spells  []Spell   // what ActCast casts
+	Aim     bool      // aiming: ActAim takes a square, ActPoint previews one, ActClose gives up
+	Missile *InvItem  // extra: the Missiles slot's thrown weapon ActRanged throws (its icon on the button), or nil
+	Moves   int       // squares of move left
 }
 
 // Spell is one memorised spell ActCast can cast.
