@@ -155,7 +155,7 @@ UndeadPatrol:
 	OnGoto Scratch1 PatrolLeaves PatrolFight
 
 PatrolMenu:
-	EncounterMenu 34 0 34 Scratch1 0 3 0 1 4 "A PACK OF UNDEAD SUDDENLY APPEARS." "" "" 0 0
+	EncounterMenu Skeleton distance=0 closeup=Skeleton result=Scratch1 combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="A PACK OF UNDEAD SUDDENLY APPEARS." mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 ClearExit PatrolFight RunAway PatrolParlay
 
 PatrolParlay:
@@ -214,7 +214,7 @@ SmithyFrogCheck:
 	Exit
 
 FrogsMenu:
-	EncounterMenu 37 2 37 Scratch1 0 0 0 0 4 "THE CROAKING RISES IN VOLUME." "" "" 0 0
+	EncounterMenu GiantFrog distance=2 closeup=GiantFrog result=Scratch1 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Talk near="THE CROAKING RISES IN VOLUME." mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 ClearExit FrogsFight RunAway FrogsParlay
 
 FrogsParlay:
@@ -262,7 +262,7 @@ HauntsRise:
 	Gosub PressToContinue
 
 HauntsMenu:
-	EncounterMenu 17 2 17 Scratch1 1 1 1 1 4 "GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL" "" "" 0 0
+	EncounterMenu Spectre distance=2 closeup=Spectre result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL" mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 ClearExit HauntsWail RunAway HauntsParlay
 
 HauntsWail:
@@ -401,7 +401,7 @@ Chapel:
 FerranSpirit:
 	if FerranFaded == 255: Exit
 	if FerranFreed == 255: Exit
-	EncounterMenu 17 0 19 Scratch1 0 3 1 1 4 "A PALE FORM RISES BEFORE YOU." "" "" 0 0
+	EncounterMenu Spectre distance=0 closeup=19 result=Scratch1 combat=Attack wait=Approach flee=Mirror advance=Mirror parlay=Talk near="A PALE FORM RISES BEFORE YOU." mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 ClearExit FerranFight RunAway FerranParlay
 
 FerranParlay:

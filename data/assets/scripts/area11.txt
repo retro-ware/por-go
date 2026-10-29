@@ -9,7 +9,7 @@ event0:
 event1:
 	PrintClear ""
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Scratch10 = 127 & Cell
 	if Scratch10 == 0: Goto LeaveArea
 	AuxCounter = 10
@@ -34,8 +34,8 @@ NoRestHere:
 event3:
 	alias Choice = Scratch1
 	RestChance = 0
-	Portrait = 57
-	SetupMonster ArmoredFighter distance=2 body=1
+	Portrait = NoseguardHelmet
+	SetupMonster ArmoredFighter distance=2 body=PlateArmor
 	Delay
 	Approach
 	Delay
@@ -70,7 +70,7 @@ ReadDoorSign:
 ClericTrainer:
 	if TrainerCooldown > 0: Exit
 	TrainerCooldown = 2
-	ShowPortrait 16 4
+	ShowPortrait DarkBeard ClericMace
 	Scratch4 = 114
 	$AuxMonsterName = "CLERICS "
 	Goto AskTrain
@@ -78,7 +78,7 @@ ClericTrainer:
 MagicUserTrainer:
 	if TrainerCooldown > 0: Exit
 	TrainerCooldown = 2
-	ShowPortrait 16 2
+	ShowPortrait DarkBeard NobleRobe
 	Scratch4 = 113
 	$AuxMonsterName = "MAGIC USERS "
 	Goto AskTrain
@@ -88,8 +88,8 @@ EnterArena:
 	PrintClear "THE ROOM IS FILLED WITH DUELING PAIRS."
 	Gosub PressReturn
 	ArenaEntered = 1
-	Portrait = 9
-	SetupMonster Fighter16 distance=2 body=1
+	Portrait = Bearded
+	SetupMonster Fighter16 distance=2 body=PlateArmor
 	Delay
 	Approach
 	Delay
@@ -136,7 +136,7 @@ NoHirelingLeft:
 	PrintClear "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
 	PartnerTries = 8
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Exit
 
 HireAcolyte:
@@ -208,7 +208,7 @@ ConsiderAnother:
 DeclinePartner:
 	PartnerDeclined = 1
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Exit
 
 FightersSign:
@@ -218,7 +218,7 @@ FightersSign:
 FighterTrainer:
 	if TrainerCooldown > 0: Exit
 	TrainerCooldown = 2
-	ShowPortrait 16 1
+	ShowPortrait DarkBeard PlateArmor
 	Scratch4 = 120
 	$AuxMonsterName = "FIGHTERS "
 	Goto AskTrain
@@ -226,7 +226,7 @@ FighterTrainer:
 ThiefTrainer:
 	if TrainerCooldown > 0: Exit
 	TrainerCooldown = 2
-	ShowPortrait 16 8
+	ShowPortrait DarkBeard RogueDagger
 	Scratch4 = 116
 	$AuxMonsterName = "THIEVES "
 	Goto AskTrain
@@ -274,7 +274,7 @@ ClearAndExit:
 	Temp2 = 0
 	Temp3 = 0
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Exit
 
 YesNoMenu:

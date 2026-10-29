@@ -14,7 +14,8 @@ scripts, and also:
 - `values.txt`: named numbers made from the game data by `cmd/eclscript`
   (monsters, item types), `Kind Set Number Name`. Do not edit; it is
   rewritten.
-- `pictures.txt`: named numbers by hand (pictures, sprites, combat icons),
+- `pictures.txt`: named numbers by hand (pictures, sprites, combat icons,
+  portrait heads and bodies, encounter reactions),
   same format; set 0 is every set.
 
 A command's operand of a kind (`LoadMonster`'s monster and icon,

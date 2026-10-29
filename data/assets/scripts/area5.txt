@@ -192,7 +192,7 @@ SurpriseGiants:
 
 GiantsMenu:
 	Delay
-	EncounterMenu 55 2 55 Scratch10 0 4 0 4 4 "THEY HOLD THEIR WEAPONS READY." "" "" 12 12
+	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="THEY HOLD THEIR WEAPONS READY." mid="" far="" escape=12 strength=12
 	OnGoto Scratch10 Done FightGiants FledCombat
 	Parlay 0 1 1 1 0 Scratch10
 	OnGoto Scratch10 WhoSentYou
@@ -239,11 +239,11 @@ TowerTrolls:
 	OnGoto Surprise TrollsMenu TrollsCharge TrollsUnawareMenu
 
 TrollsMenu:
-	EncounterMenu 31 2 31 Scratch10 0 0 0 1 0 "YOU SEE A PACK OF TROLLS." "" "" 12 12
+	EncounterMenu GreenBrute distance=2 closeup=GreenBrute result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE A PACK OF TROLLS." mid="" far="" escape=12 strength=12
 	OnGoto Scratch10 Done FightTrolls StepBack FightTrolls
 
 TrollsUnawareMenu:
-	EncounterMenu 31 2 31 Scratch10 0 1 1 1 0 "YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU." "" "" 10 10
+	EncounterMenu GreenBrute distance=2 closeup=GreenBrute result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU." mid="" far="" escape=10 strength=10
 	OnGoto Scratch10 Done FightTrolls StepBack FightTrolls
 
 TrollsCharge:
@@ -306,9 +306,9 @@ WrongPassword:
 HarmlessMage:
 	Scratch10 = CastleFlags2 & 4
 	if 0 != Scratch10: Exit
-	Portrait = 55
-	EncounterMenu 12 2 31 Scratch10 2 4 1 4 4 "YOU SEE A HARMLESS, MIDDLE AGED MAN." "" "" 12 12
-	Portrait = 255
+	Portrait = GoldCirclet
+	EncounterMenu Man12 distance=2 body=MerchantCoat result=Scratch10 combat=Flee wait=Talk flee=Mirror advance=Talk parlay=Talk near="YOU SEE A HARMLESS, MIDDLE AGED MAN." mid="" far="" escape=12 strength=12
+	Portrait = None
 	OnGoto Scratch10 MageFlees MageBegs StepBack
 
 MageBegs:
@@ -408,13 +408,13 @@ ThroneRoom:
 	if 0 != Scratch10: Exit
 	PrintClear "YOU ENTER A CHAMBER WHICH IS LAVISHLY APPOINTED WITH HANGINGS, CARPETS AND FURNITURE. SITTING ON A THRONE IS A POWERFUL LOOKING MAN CLAD IN BARBARIC SPLENDOR."
 	Gosub PressReturn
-	Portrait = 54
-	SetupMonster Fighter16 distance=1 body=1
+	Portrait = HornedHelmet
+	SetupMonster Fighter16 distance=1 body=PlateArmor
 	PrintClear "'WHAT IS YOUR BUSINESS WITH TYRANTHRAXUS, LORD OF PHLAN?'"
 	Approach
 	Delay
-	EncounterMenu 16 0 1 Scratch10 0 0 1 0 4 "" "" "" 0 0
-	Portrait = 255
+	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Mirror advance=Attack parlay=Talk near="" mid="" far="" escape=0 strength=0
+	Portrait = None
 	OnGoto Scratch10 Done FightImpostor FledCombat
 	Parlay 0 1 2 2 3 Scratch10
 	OnGoto Scratch10 ArrogantKnave HeavyCrown BegoneOrWrath
@@ -468,7 +468,7 @@ FightImpostor:
 
 event3:
 	Gosub RollSurprise
-	EncounterMenu 60 2 60 Scratch10 0 3 0 3 0 "YOU SEE GIANT SNAKES." "" "" 15 15
+	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="YOU SEE GIANT SNAKES." mid="" far="" escape=15 strength=15
 	OnGoto Scratch10 Done FightSnakes StepBack
 
 FightSnakes:

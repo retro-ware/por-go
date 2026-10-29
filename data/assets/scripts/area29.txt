@@ -171,8 +171,8 @@ SecretDoorSpotted:
 
 NorrisBandits:
 	if BanditsDone == 255: Exit
-	Portrait = 10
-	SetupMonster Fighter16 distance=2 body=6
+	Portrait = EyepatchHelmet
+	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	Delay
 	Approach
 	Delay
@@ -181,7 +181,7 @@ NorrisBandits:
 	Gosub PressToContinue
 	PrintClear "WHAT DO YOU DO?"
 	AuxMember = Menu "SURRENDER" "FIGHT"
-	Portrait = 255
+	Portrait = None
 	OnGoto AuxMember SurrenderToBandits
 	Morale = 70
 	ClearMonsters
@@ -391,27 +391,27 @@ BloodthirstyMonsters:
 	if AuxMember < 1: Goto AvoidedBy
 	$AuxMonsterName = "YOU SEE SOME BLOODTHIRSTY "
 	$AuxNameCopy2 = $AuxText
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	AuxEncTemp += 9
 	OnGoto AuxMember Done EncounterFight DropOff EncounterFight
 
 FaceToFace:
 	$AuxMonsterName = "YOU ARE SUDDENLY FACE TO FACE WITH ARMED "
 	$AuxNameCopy6 = $AuxText
-	EncounterMenu AuxEncMonster2 0 Scratch8 AuxMember 0 2 0 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=0 closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Attack advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	OnGoto AuxMember Done EncounterFight DropOff ParlayMonsters
 
 AvoidedBy:
 	$AuxMonsterName = "YOU ARE BEING AVOIDED BY SOME "
 	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	AuxEncTemp -= 10
 	OnGoto AuxMember Done EncounterFight DropOff ParlayMonsters
 
 SurprisedParty:
 	$AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
 	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	AuxEncTemp -= 20
 	OnGoto AuxMember Done FightSurprised Done ParlayMonsters
 
@@ -426,7 +426,7 @@ SicklyKobolds:
 	Approach
 	PrintClear "YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE."
 	Gosub PressToContinue
-	EncounterMenu 0 2 0 AuxMember 0 2 2 2 4 "THE KOBOLDS ARE TRYING TO SNEAK OFF." "" "" 0 0
+	EncounterMenu Kobold distance=2 closeup=Kobold result=AuxMember combat=Attack wait=Flee flee=Flee advance=Flee parlay=Talk near="THE KOBOLDS ARE TRYING TO SNEAK OFF." mid="" far="" escape=0 strength=0
 	OnGoto AuxMember Done SicklyKoboldsFight DropOff SicklyKoboldsParlay
 
 SicklyKoboldsFight:
@@ -546,7 +546,7 @@ DropOff:
 
 Done:
 	RedrawView
-	Portrait = 255
+	Portrait = None
 	Call CallRedraw
 	Exit
 

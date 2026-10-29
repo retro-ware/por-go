@@ -44,13 +44,13 @@ GuardsHuntBoy:
 	if AnimalsLoose != 0: Scratch1 += 1
 	if Scratch1 > GuardSpotChance: Goto CheckAnimals
 	GuardSpotChance = 1 + GuardPatrolCount
-	Portrait = 6
-	SetupMonster Fighter16 distance=2 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=2 body=BareChest
 	Delay
 	Approach
 	Delay
 	Approach
-	Portrait = 255
+	Portrait = None
 	OnGoto GuardPatrolCount GuardsSpotBoy AlarmRunForGate AnotherWaveAttacks CaptainAppears
 
 GuardsSpotBoy:
@@ -114,9 +114,9 @@ MainGateEmpty:
 
 GateGuardsAttack:
 	if GateGuardsDefeated != 0: Goto Done
-	Portrait = 6
-	SetupMonster Fighter16 distance=0 body=3
-	Portrait = 255
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=0 body=BareChest
+	Portrait = None
 	PrintClear "SOME GUARDS RUSH FOWARD AND ATTACK."
 	Morale = 100
 	ClearMonsters
@@ -152,13 +152,13 @@ PunchMerchant:
 	PrintClear "YOU PUNCH THE MERCHANT IN THE NOSE AND HE FALLS TO THE GROUND, BADLY BLEEDING.  THE MERCHANT YELLS FOR HIS GUARDS AND THEY COME RUNNING."
 	Morale = 60
 	Gosub ClearPicture
-	Portrait = 1
-	SetupMonster Fighter16 distance=2 body=1
+	Portrait = RedFaced
+	SetupMonster Fighter16 distance=2 body=PlateArmor
 	Delay
 	Approach
 	Delay
 	Approach
-	Portrait = 255
+	Portrait = None
 	ClearMonsters
 	LoadMonster Buccaneer count=6 icon=11
 	Combat
@@ -195,8 +195,8 @@ SneakToPenGate:
 
 PenGateGuards:
 	alias Choice = Scratch1
-	Portrait = 6
-	SetupMonster Fighter16 distance=0 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=0 body=BareChest
 	PrintClear "YOU ARE NEAR THE FRONT GATE TO THE SLAVE PEN.  TWO GUARDS GUARD THE DOOR.  WHAT WILL YOU DO?"
 	Choice = Menu "ATTACK" -> AttackPenGuards "TRY TO SNEAK BY" -> SneakPastFails "LEAVE" -> StepBack
 
@@ -212,8 +212,8 @@ AttackPenGuards:
 	Goto Done
 
 CutOffWithBoy:
-	Portrait = 6
-	SetupMonster Fighter16 distance=2 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=2 body=BareChest
 	Delay
 	Approach
 	Delay
@@ -253,8 +253,8 @@ CaptainAppears:
 	alias Choice = Scratch1
 	if CaptainKilled != 0: Goto FinalWave
 	PrintClear "THE SLAVES CHEER YOUR VICTORY.  A LARGE GROUP OF BUCCANEERS STANDS IN DISBELIEF.  THE BUCCANEERS PART AS A LARGE MAN IN GLEAMING CHAIN MAIL STEPS FORTH.  THE SLAVES FALL SILENT."
-	Portrait = 9
-	SetupMonster Fighter16 distance=2 body=5
+	Portrait = Bearded
+	SetupMonster Fighter16 distance=2 body=HeraldTabard
 	Delay
 	Approach
 	Delay
@@ -284,8 +284,8 @@ FinalBattle:
 	Goto Done
 
 FinalWave:
-	Portrait = 6
-	SetupMonster Fighter16 distance=2 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=2 body=BareChest
 	PrintClear "THE LAST OF THE BUCCANNEERS FORM INTO A FINAL WAVE AND ATTACK."
 	Morale = 60
 	ClearMonsters
@@ -322,16 +322,16 @@ SlavePenUnguarded:
 
 QuartersAlarm:
 	PrintClear "AS YOU APPROACH THE CAPTAIN'S QUARTERS THE ELITE GUARDS SOUND AN ALARM AND GUARDS RUSH FORTH AND ATTACK."
-	Portrait = 6
+	Portrait = LongHaired
 	Goto BuccaneerWaves
 
 CaptainDoorGuards:
 	alias Choice = Scratch1
 	if BaseAlerted != 0: Goto Done
 	if DoorGuardsKilled != 0: Goto Done
-	Portrait = 6
-	SetupMonster Fighter16 distance=0 body=3
-	Portrait = 255
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=0 body=BareChest
+	Portrait = None
 	if QuestBivant >= 254: Goto QuartersAlarm
 	PrintClear "STANDING IN FRONT OF THE DOOR ARE TWO LARGE GUARDS.  ONE OF THEM SAYS 'DO YOU HAVE A PASS TO SEE THE CAPTAIN?'  WHAT WILL YOU DO?"
 	Choice = Menu "SHOW PASS" -> ShowPass "LEAVE" -> LeaveDoorGuards "BRIBE" -> BribeRefused "ATTACK" -> AttackDoorGuards
@@ -365,12 +365,12 @@ CaptainRoom:
 	if BaseAlerted != 0: Goto Done
 	if CaptainFightDone != 0: Goto Done
 	if CaptainKilled == 1: Goto Done
-	Portrait = 6
-	SetupMonster Fighter16 distance=0 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=0 body=BareChest
 	PrintClear "YOU ENTER A ROOM WITH FOUR GUARDS IN GLEAMING CHAIN MAIL.  AS YOU ENTER, ONE OF THEM GOES THROUGH THE SOUTH DOOR AND RETURNS WITH THE BUCCANEER CAPTAIN."
 	Gosub PressToContinue
-	Portrait = 9
-	SetupMonster Fighter16 distance=0 body=5
+	Portrait = Bearded
+	SetupMonster Fighter16 distance=0 body=HeraldTabard
 	PrintClear "THE CAPTAIN LOOKS YOU OVER AND SAYS 'WHAT DO YOU WANT?'"
 	Choice = Menu "ATTACK" -> CaptainFight "MENTION YOUNG BOY" -> MentionBoy "LEAVE" -> StepBack
 
@@ -416,8 +416,8 @@ SeedyManPass:
 	alias Choice = Scratch2
 	if PassBought != 0: Goto Done
 	if QuestBivant >= 254: Goto Done
-	Portrait = 10
-	SetupMonster Fighter16 distance=0 body=9
+	Portrait = EyepatchHelmet
+	SetupMonster Fighter16 distance=0 body=ShopkeeperApron
 	PrintClear "THERE IS A SEEDY LITTLE MAN HERE WHO WHISPERS 'PSSST, BUDDY.  WANT TO BUY A PASS TO SEE THE CAPTAIN?'"
 	Choice = Menu "BUY PASS" -> BuyPass "LEAVE" -> Done
 
@@ -433,8 +433,8 @@ BuyPass:
 GuardTower:
 	alias Choice = Scratch2
 	if BaseAlerted != 0: Goto Done
-	Portrait = 6
-	SetupMonster Fighter16 distance=0 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=0 body=BareChest
 	if QuestBivant >= 254: Goto TowerGuardsAttack
 	PrintClear "YOU HAVE ENTERED ONE OF THE GUARD TOWERS.  INSIDE ARE FOUR BUCCANEERS.  ONE OF THEM SAYS 'THIS IS A RESTRICTED AREA, LEAVE NOW!'  WHAT WILL YOU DO?"
 	Choice = Menu "ATTACK" -> AttackTowerGuards "LEAVE" -> StepBack
@@ -457,8 +457,8 @@ TowerFight:
 BarracksEnter:
 	alias Choice = Scratch1
 	if BaseAlerted != 0: Goto Done
-	Portrait = 6
-	SetupMonster Fighter16 distance=0 body=3
+	Portrait = LongHaired
+	SetupMonster Fighter16 distance=0 body=BareChest
 	if QuestBivant >= 254: Goto BarracksGuardsAttack
 	PrintClear "YOU ENTER A BARRACKS FILED WITH TWENTY BUCCANEERS.  ONE OF THE BUCCANEERS SAYS 'THIS AREA IS OFF LIMITS.  LEAVE NOW.' WHAT WILL YOU DO?"
 	Choice = Menu "ATTACK" -> AttackBarracks "LEAVE" -> StepBack
@@ -519,7 +519,7 @@ SlavePenGate:
 InsideSlavePen:
 	alias Choice = Scratch1
 	if SlavePenBlocked != 0: Goto Done
-	ShowPortrait 255 42
+	ShowPortrait None 42
 	PrintClear "YOU ARE IN THE SLAVE PEN.  STANDING NEAR YOU IS THE YOUNG BOY.  WHAT WILL YOU DO?"
 	Choice = Menu "GET HIM" -> TakeBoy "LEAVE" -> StepBack
 
@@ -535,7 +535,7 @@ TakeBoy:
 Done:
 	Picture None
 	RedrawView
-	Portrait = 255
+	Portrait = None
 	Exit
 
 LeaveDoorGuards:

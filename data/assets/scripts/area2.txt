@@ -262,8 +262,8 @@ SmallDarkRoom:
 	PrintClear "YOU ARE IN A VERY SMALL, DARK ROOM."
 	if PrisonerState == 255: Exit
 	if PrisonerState == 128: Goto FreeManMenu
-	Portrait = 32
-	SetupMonster Fighter14 distance=0 body=3
+	Portrait = Moustached
+	SetupMonster Fighter14 distance=0 body=BareChest
 	Print "A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47."
 
 PrisonerContinue:
@@ -274,7 +274,7 @@ PrisonerMenu:
 	AuxParlayChoice = Menu "FREE" -> FreeMenu "ATTACK" -> KillPrisoner "PARLAY" -> ParlayPrisoner "LEAVE" -> LeavePrisoner
 
 LeavePrisoner:
-	Portrait = 255
+	Portrait = None
 	Goto Done
 
 FreeMenu:
@@ -303,7 +303,7 @@ KillPrisoner:
 	PrintClear "THE MAN DIES A CRUEL DEATH."
 	Gosub PressToContinue
 	PrisonerState = 255
-	Portrait = 255
+	Portrait = None
 	Call CallRedraw
 	Exit
 
@@ -344,7 +344,7 @@ FightFreeMan:
 	LoadMonster Skullcrusher count=1 icon=Skullcrusher
 	Combat
 	PrisonerState = 255
-	Portrait = 255
+	Portrait = None
 	Exit
 
 FreeManWaits:
@@ -356,7 +356,7 @@ FleeRoom:
 	PartyX = PrevX
 	PartyY = PrevY
 	Call CallRedraw
-	Portrait = 255
+	Portrait = None
 	Exit
 
 ParlayFreeMan:
@@ -379,14 +379,14 @@ SkullcrusherJoins:
 	AddNPC Skullcrusher 100
 	Gosub PressToContinue
 	PrisonerState = 255
-	Portrait = 255
+	Portrait = None
 	Call CallRedraw
 	Exit
 
 SkullcrusherLeaves:
 	PrintClear "'OH WELL.' HE LEAVES."
 	PrisonerState = 255
-	Portrait = 255
+	Portrait = None
 	Exit
 
 DislikeTone:
@@ -459,7 +459,7 @@ OpenBox:
 
 HobgoblinEncounter:
 	Gosub PressToContinue
-	EncounterMenu 6 2 6 AuxMenuChoice 0 3 0 1 4 "YOU ENCOUNTER HOBGOBLINS!" "" "" 7 7
+	EncounterMenu Hobgoblin distance=2 closeup=Hobgoblin result=AuxMenuChoice combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="YOU ENCOUNTER HOBGOBLINS!" mid="" far="" escape=7 strength=7
 	if AuxMenuChoice == 1: Goto HobgoblinFight
 	if AuxMenuChoice == 2: Goto HobgoblinsChase
 	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
@@ -642,18 +642,18 @@ BlindfoldedWalk:
 	Facing = 0
 	HobgoblinTempleState = 1
 	Call CallRedraw
-	Portrait = 255
+	Portrait = None
 	Exit
 
 ShowThief:
 	Facing = 3
 	Call CallRedraw
-	ShowPortrait 52 8
+	ShowPortrait BlondElder RogueDagger
 	Return
 
 LeaveWell:
 	PartyX = 1
-	ShowPortrait 255 255
+	ShowPortrait None None
 	Call CallRedraw
 	Return
 

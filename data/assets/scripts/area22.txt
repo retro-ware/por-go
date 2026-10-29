@@ -183,8 +183,8 @@ PriestRoom:
 PriestEncounter:
 	Scratch7 = 6
 	Gosub LoadGroupData
-	EncounterMenu AuxPartyStrength MaxDist AuxCounter Scratch10 0 4 1 4 4 "HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." "" "" 9 9
-	Portrait = 255
+	EncounterMenu AuxPartyStrength distance=MaxDist closeup=AuxCounter result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." mid="" far="" escape=9 strength=9
+	Portrait = None
 	Scratch6 = 6
 	OnGoto Scratch10 Done FightGroup PriestFlee
 	Parlay 0 0 1 1 0 Scratch10
@@ -320,18 +320,18 @@ SayYouSurprise:
 	Return
 
 FriendlyGroupMenu:
-	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 4 "THEY SMILE AT YOU." "THEY WAVE AND SAY 'SAVED!'" "THE LEADER WAVES AND CALLS TO YOU." AuxMenuChoice AuxMenuChoice
+	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THEY SMILE AT YOU." mid="THEY WAVE AND SAY 'SAVED!'" far="THE LEADER WAVES AND CALLS TO YOU." escape=AuxMenuChoice strength=AuxMenuChoice
 	Goto EncounterOutcome
 
 HungryGroupMenu:
-	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 0 "ONE LICKS ITS LIPS." "" "" AuxMenuChoice AuxMenuChoice
+	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="ONE LICKS ITS LIPS." mid="" far="" escape=AuxMenuChoice strength=AuxMenuChoice
 	Goto EncounterOutcome
 
 FlyingGroupMenu:
-	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 0 "THEY FLY TOWARD YOU." "" "" AuxMenuChoice AuxMenuChoice
+	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="THEY FLY TOWARD YOU." mid="" far="" escape=AuxMenuChoice strength=AuxMenuChoice
 
 EncounterOutcome:
-	Portrait = 255
+	Portrait = None
 	if Scratch3 == 3: Surprise = 1
 	OnGoto Scratch3 Done FightGroup FleeEncounter FightGroup
 

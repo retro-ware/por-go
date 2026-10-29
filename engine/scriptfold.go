@@ -367,9 +367,9 @@ func foldScript(text string, names *ScriptNames) string {
 
 // nameValues writes the numbers of the commands' operands of a kind
 // (operandKinds) as their names, and a Treasure's items as a comment. A
-// Picture while a portrait is up (Save H Portrait without ShowPortrait)
-// is a BODY picture and stays a number, as does an encounter's close-up
-// (SetupMonster) that is not its sprite's creature.
+// Picture or close-up while a portrait head is set is a BODY picture; a
+// close-up otherwise is named only as its sprite's creature (a head may be
+// set elsewhere).
 func nameValues(lines []string, names *ScriptNames) []string {
 	portrait := false
 	for i, l := range lines {
@@ -394,6 +394,9 @@ func nameValues(lines []string, names *ScriptNames) []string {
 			if c == "Save" && k+2 < len(toks) && toks[k+2] == "Portrait" {
 				portrait = toks[k+1] != "255"
 			}
+			if c == "ShowPortrait" && k+1 < len(toks) {
+				portrait = toks[k+1] != "255" // it leaves the head set
+			}
 			if c == "Treasure" && k+8 < len(toks) && names.Treasure != nil && comment == "" {
 				switch v, err := strconv.Atoi(toks[k+8]); {
 				case err != nil || v == 0xFF:
@@ -403,8 +406,18 @@ func nameValues(lines []string, names *ScriptNames) []string {
 					comment = fmt.Sprintf("// %d random items", v-0x80)
 				}
 			}
-			for j, kind := range operandKinds[c] {
-				if kind == "" || k+1+j >= len(toks) || kind == "Picture" && c == "Picture" && portrait {
+			kinds := operandKinds[c]
+			if c == "Save" && k+2 < len(toks) && toks[k+2] == "Portrait" {
+				kinds = []string{"Head"}
+			}
+			for j, kind := range kinds {
+				if a, b, ok := strings.Cut(kind, "|"); ok {
+					kind = a
+					if portrait {
+						kind = b // a BODY picture under the head
+					}
+				}
+				if kind == "" || k+1+j >= len(toks) {
 					continue
 				}
 				v, err := strconv.Atoi(toks[k+1+j])
@@ -412,8 +425,8 @@ func nameValues(lines []string, names *ScriptNames) []string {
 					continue
 				}
 				n := valueName(names.Values, kind, names.Set, v)
-				if c == "SetupMonster" && j == 2 && n != toks[k+1] {
-					n = "" // with a portrait up it is a BODY picture: named when it is the sprite's creature
+				if kind == "Picture" && c != "Picture" && n != toks[k+1] {
+					n = "" // a portrait may be up from elsewhere: named when it is the sprite's creature
 				}
 				if n != "" {
 					toks[k+1+j], changed = n, true

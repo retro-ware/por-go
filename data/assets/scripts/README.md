@@ -129,8 +129,8 @@ scripts, kept on purpose).
 | Command | Does |
 |---------|------|
 | `Picture Name` | show a picture in the view; `Picture None` puts the 3D view back |
-| `ShowPortrait Head Body` | show a two-part portrait (`Portrait = Head` + `Picture Body`) |
-| `Portrait = N` | while not 255, pictures are BODY pictures under head N |
+| `ShowPortrait Head Body` | show a two-part portrait (`Portrait = Head` + `Picture Body`); `ShowPortrait None None` clears it |
+| `Portrait = Head` | while a head is set (not `None`), a `Picture` or an encounter's close-up is the BODY under that head |
 | `RedrawView` | redraw the 3D view after a picture or sprite |
 | `Sky = N`, `SkyInside = N` | the sky colours |
 | `LoadMap Map unused=X icons=Y` | load map (GEO block) Map; `Keep`/`Unchanged` keep the current one. `unused` is ignored, by the original too. `icons` not 255 loads the wilderness travel icons outdoors |
@@ -146,7 +146,20 @@ scripts, kept on purpose).
 | `AddNPC M Morale` | monster M joins the party |
 | `SetupMonster S distance=D closeup=P` | show sprite S coming at the party from up to D squares away (fewer if a wall is nearer), P the close-up picture once it is near; `body=P` when a portrait is up |
 | `Approach` | the monster comes one square closer |
-| `EncounterMenu S D P Result r1..r5 "T1" "T2" "T3" flee strength` | the COMBAT/WAIT/FLEE/PARLAY approach menu; Result 0 nothing, 1 fight, 2 the party flees, 3 talk |
+| `EncounterMenu S distance=D closeup=P result=R combat= wait= flee= advance= parlay= near= mid= far= escape=E strength=N` | the COMBAT/WAIT/FLEE/ADVANCE (PARLAY when near) approach menu for sprite S, coming from D squares like `SetupMonster`. R gets 0 nothing, 1 fight, 2 the party got away, 3 talk. `combat` .. `parlay` are how the monsters react to each choice (below). `near`/`mid`/`far` are the texts shown at distance 0/1/2 (an empty one falls back to the others). `escape`: against `Attack`, FLEE gets away when the party's weakest has at least E. `strength`: `Flee` monsters run even from COMBAT when N is above the party's best, else they fight |
+
+Reactions (`EncounterMenu`):
+
+| Reaction | The monsters ... |
+|----------|------------------|
+| `Attack` | fight, whatever the party does (FLEE may get away, see `escape`) |
+| `Mirror` | answer in kind: COMBAT fights, WAIT waits, FLEE lets the party go, ADVANCE closes in, PARLAY talks |
+| `Flee` | run away (a COMBAT makes them fight unless `strength` says otherwise) |
+| `Approach` | come one square closer (COMBAT fights, FLEE lets the party go, PARLAY talks) |
+| `Talk` | close in and talk at distance 0 (COMBAT fights, FLEE lets the party go) |
+
+| Command | Does |
+|---------|------|
 | `PartySurprise A B` / `Surprise A B C D` | roll surprise; `Surprise` is 0 none, 1 party surprised, 2 monsters surprised |
 | `PartyStrength D` | the party's strength (hit points, AC, THAC0, levels) into D |
 | `Combat` | run the fight with the loaded monsters (or the shop, temple or treasure screen when no fight is pending) |

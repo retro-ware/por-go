@@ -265,8 +265,8 @@ EnvoysRematch:
 	PrintClear "THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'"
 
 FightEnvoys:
-	Portrait = 69
-	SetupMonster Fighter16 distance=1 body=1
+	Portrait = Fanged
+	SetupMonster Fighter16 distance=1 body=PlateArmor
 	Approach
 	Morale = 100
 	ClearMonsters
@@ -275,7 +275,7 @@ FightEnvoys:
 	LoadMonster Kobold0 count=8 icon=Kobold
 	LoadMonster Envoy count=2 icon=11
 	Combat
-	Portrait = 255
+	Portrait = None
 	KoboldKingState = 3
 	if CombatEnd > 128: Goto EscapeKobolds
 	PrintClear "THE KING HAS ESCAPED DURING THE FIGHT."
@@ -405,8 +405,8 @@ FatimaRoom:
 
 MeetFatima:
 	alias Choice = Scratch1
-	Portrait = 67
-	SetupMonster Fighter16 distance=0 body=37
+	Portrait = BlueHaired
+	SetupMonster Fighter16 distance=0 body=BlueDressKnife
 	PrintClear "IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU."
 	Gosub PressReturn
 	PrintClear "'I AM PRINCESS FATIMA.' THE PRINCESS CONTINUES."
@@ -423,7 +423,7 @@ AttackFatima:
 	LoadMonster PrincessFatima count=1 icon=11
 	Combat
 	FatimaMet = 1
-	Portrait = 255
+	Portrait = None
 	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
@@ -435,13 +435,13 @@ FatimaJoins:
 FatimaGoesAlone:
 	PrintClear "SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES."
 	FatimaMet = 1
-	Portrait = 255
+	Portrait = None
 	Exit
 
 AddFatima:
 	AddNPC PrincessFatima 100
 	FatimaMet = 1
-	ShowPortrait 255 255
+	ShowPortrait None None
 	Exit
 
 PrisonCell:
@@ -731,14 +731,14 @@ PrisonWalkStep:
 
 ReachPrison:
 	if 1 == FatimaMet: Goto ThrownInCell
-	Portrait = 67
-	SetupMonster Kobold distance=0 body=37
+	Portrait = BlueHaired
+	SetupMonster Kobold distance=0 body=BlueDressKnife
 	PrintClear "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
 	AddNPC PrincessFatima 100
 	ClearMonsters
 	LoadMonster Kobold0 count=10 icon=Kobold
 	Combat
-	Portrait = 255
+	Portrait = None
 	if PartyCount == 8: Goto FatimaJournal
 	PrintClear "WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE."
 	Gosub JournalEntry

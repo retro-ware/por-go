@@ -248,7 +248,7 @@ OldLizardman:
 	if 0 == Scratch10: Goto BuildingEncounter
 	PrintClear "AN OLD LIZARDMAN APPEARS BEFORE YOU, HAND RAISED IN A GESTURE OF PEACE."
 	Delay
-	EncounterMenu 57 0 13 Scratch10 0 4 4 4 4 "HE LOOKS AT YOU PATIENTLY." "" "" 6 6
+	EncounterMenu Lizardman distance=0 closeup=13 result=Scratch10 combat=Attack wait=Talk flee=Talk advance=Talk parlay=Talk near="HE LOOKS AT YOU PATIENTLY." mid="" far="" escape=6 strength=6
 	OnGoto Scratch10 PushBack SlayOldLizardman PushBack AskFriendWord
 
 SlayOldLizardman:
@@ -341,7 +341,7 @@ DrythhAttacks:
 	Picture None
 	OldLizardmanFlags = OldLizardmanFlags & 254
 	OldLizardmanFlags = OldLizardmanFlags | 2
-	EncounterMenu 57 1 57 Scratch10 0 0 0 0 0 "" "" "" 6 6
+	EncounterMenu Lizardman distance=1 closeup=Lizardman result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=6 strength=6
 	OnGoto Scratch10 RedrawExit DrythhFight PushBack
 
 DrythhFight:
@@ -372,7 +372,7 @@ LizardPatrol:
 	Surprise Scratch8 Scratch9 0 1
 	if Surprise == 1: Goto LizardPatrolAmbush
 	Surprise = 0
-	EncounterMenu 57 2 57 Scratch10 0 0 0 0 0 "2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU." "" "" 15 6
+	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU." mid="" far="" escape=15 strength=6
 	OnGoto Scratch10 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
 
 LizardPatrolAmbush:
@@ -455,7 +455,7 @@ GiantLizards:
 	Surprise Scratch8 Scratch9 0 0
 	if Surprise == 1: Goto GiantLizardsAmbush
 	Surprise = 0
-	EncounterMenu 59 2 59 Scratch10 0 0 0 0 0 "3 GIANT LIZARDS CHARGE TOWARD YOU." "" "" 15 15
+	EncounterMenu GiantLizard distance=2 closeup=GiantLizard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="3 GIANT LIZARDS CHARGE TOWARD YOU." mid="" far="" escape=15 strength=15
 	OnGoto Scratch10 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
 
 GiantLizardsAmbush:
@@ -512,7 +512,7 @@ PoolLizardmen:
 	Surprise Scratch8 Scratch9 0 0
 	if Surprise == 1: Goto LizardmenDive
 	Surprise = 2
-	EncounterMenu 57 0 57 Scratch10 2 2 2 2 2 "THEY TURN TO DIVE BACK IN THE WATER." "" "" 0 0
+	EncounterMenu Lizardman distance=0 closeup=Lizardman result=Scratch10 combat=Flee wait=Flee flee=Flee advance=Flee parlay=Flee near="THEY TURN TO DIVE BACK IN THE WATER." mid="" far="" escape=0 strength=0
 	OnGoto Scratch10 LizardmenDive PoolLizardmenFight
 
 LizardmenDive:

@@ -118,7 +118,7 @@ RedrawExit:
 	Call CallRedraw
 
 event3:
-	Portrait = 255
+	Portrait = None
 	Exit
 
 event4:
@@ -237,7 +237,7 @@ LizardMenGroup:
 	Scratch3 = 6
 	Scratch10 = SecretDoorsFound & 4
 	if 0 == Scratch10: Scratch3 = 30
-	EncounterMenu 57 2 57 Scratch10 0 3 1 1 4 "THEY ARE WARY, BUT NOT HOSTILE." "STANDING READY THEIR LEADER SAYS 'YOU MUST BE THE SERVANTS OF YARASH!'" "THEIR LEADER SAYS 'FOUL SERVANTS OF YARASH!'" Scratch3 Scratch3
+	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Approach flee=Mirror advance=Mirror parlay=Talk near="THEY ARE WARY, BUT NOT HOSTILE." mid="STANDING READY THEIR LEADER SAYS 'YOU MUST BE THE SERVANTS OF YARASH!'" far="THEIR LEADER SAYS 'FOUL SERVANTS OF YARASH!'" escape=Scratch3 strength=Scratch3
 	RoomsVisited = RoomsVisited | 1
 	OnGoto Scratch10 RedrawExit LizardMenAttack AfterLizardFight
 	Parlay 15 15 30 50 0 Scratch10
@@ -416,7 +416,7 @@ PumpingRoom:
 	Gosub PressReturn
 	PrintClear "TWO OF THEM ARE POURING BARRELS OF THE BLACK CONTAMINANT INTO A LARGE VAT. THE OTHER IS WORKING A BELLOWS PUMP."
 	Gosub PressReturn
-	EncounterMenu 57 2 57 Scratch10 0 3 1 3 4 "THEY RECOIL IN FEAR" "" "" 0 0
+	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Approach flee=Mirror advance=Approach parlay=Talk near="THEY RECOIL IN FEAR" mid="" far="" escape=0 strength=0
 	OnGoto Scratch10 RedrawExit SlavesAttack TeleportToDest
 	Parlay 0 0 1 1 0 Scratch10
 	OnGoto Scratch10 SlavesAttack
@@ -443,12 +443,12 @@ SlavesAttack:
 AncientMage:
 	Scratch10 = RoomsVisited2 & 4
 	if 0 != Scratch10: Exit
-	Portrait = 56
-	SetupMonster Mage distance=2 body=30
+	Portrait = Elder
+	SetupMonster Mage distance=2 body=WhiteRobe
 	PrintClear "AN ANCIENT MAGE LOOKS UP FROM HIS STUDIES, 'AH, GOOD, I NEED MORE SPECIMENS AS CONTROLS.' HE TURNS TO HIS MUTATED GUARDS, 'SUBDUE THEM!'"
 	Gosub PressReturn
-	EncounterMenu 24 2 30 Scratch10 0 3 0 3 0 "" "" "" 12 12
-	Portrait = 255
+	EncounterMenu Mage distance=2 body=WhiteRobe result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="" mid="" far="" escape=12 strength=12
+	Portrait = None
 	OnGoto Scratch10 RedrawExit FightMage TeleportToDest
 
 FightMage:

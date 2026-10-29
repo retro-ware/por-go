@@ -222,6 +222,9 @@ func ParseScript(text string, names *ScriptNames) (*Script, error) {
 			if k := operandKinds[eclOpName(s.Code[i].Op)]; j < len(k) {
 				kind = k[j]
 			}
+			if eclOpName(s.Code[i].Op) == "Save" && j == 0 && len(p.args) == 2 && p.args[1] == "Portrait" {
+				kind = "Head"
+			}
 			if v, ok := valueOf(names.Values, kind, names.Set, t); ok {
 				if _, clash := vars[t]; clash {
 					return nil, fmt.Errorf("%d: %s is a %s and a variable", p.line, t, kind)

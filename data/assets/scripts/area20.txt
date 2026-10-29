@@ -19,7 +19,7 @@ StoreCellCode:
 	Exit
 
 event1:
-	ShowPortrait 255 255
+	ShowPortrait None None
 	EventTimer = 0
 	PrintClear ""
 	Scratch10 = 127 & Cell
@@ -130,28 +130,28 @@ PatrolApproach:
 	if AuxMember < 1: Goto SpySeedyPatrol
 	$AuxMonsterName = "YOU ARE BEING APPROACHED BY SOME ANGRY"
 	$AuxNameCopy5 = $AuxText
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	PatrolMorale = 60
 	OnGoto AuxMember Done FightPatrol RunAway ConversePatrol
 
 BumpIntoPatrol:
 	$AuxMonsterName = "YOU BUMP INTO SOME "
 	$AuxNameCopy1 = $AuxText
-	EncounterMenu AuxEncMonster2 0 Scratch8 AuxMember 0 2 0 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=0 closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Attack advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	PatrolMorale = 50
 	OnGoto AuxMember Done FightPatrol RunAway ConversePatrol
 
 SpySeedyPatrol:
 	$AuxMonsterName = "YOU SPY A GROUP OF SEEDY-LOOKING "
 	$AuxNameCopy4 = $AuxText
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	PatrolMorale = 40
 	OnGoto AuxMember Done FightPatrol RunAway ConversePatrol
 
 SurprisePatrol:
 	$AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
 	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName mid="" far="" escape=AuxEncResult strength=AuxEncResult2
 	PatrolMorale = 30
 	OnGoto AuxMember Done FightPatrol YouHide ConversePatrol
 
@@ -190,8 +190,8 @@ GoblinTrainer:
 OhloRoom:
 	if OhloQuestState == 255: Exit
 	if OhloPotionState == 255: Exit
-	Portrait = 8
-	SetupMonster Mage distance=1 body=2
+	Portrait = GrinningBlond
+	SetupMonster Mage distance=1 body=NobleRobe
 	if OhloPotionState == 250: Goto OhloWantsPotion
 	if OhloQuestState == 250: Goto OhloEmptyHanded
 	PrintClear "YOU BURST INTO AN ELEGANTLY PANELLED ROOM. A SMALL MAN SITS HUNCHED OVER A TABLE BY THE EAST WALL. HE SETS DOWN HIS PEN AND GAZES STERNLY AT YOU.  'WELL?', HE DEMANDS.  (WHAT DO YOU DO?)"
@@ -200,7 +200,7 @@ OhloRoom:
 LeaveOhlo:
 	PrintClear "YOU GO BACK OUT THE DOOR."
 	Picture None
-	Portrait = 255
+	Portrait = None
 	PartyX = 14
 	PartyY = 10
 	Facing = 1
@@ -325,7 +325,7 @@ RumorTreasureRoom:
 FortuneTeller:
 	if FortuneTellerState > 250: Exit
 	FortuneTellerState = 251
-	ShowPortrait 25 13
+	ShowPortrait EarringWoman GreyApron
 	PrintClear "SEATED AT A TABLE IS A RAGGED OLD WOMAN. SHE GREETS YOU. 'WELCOME. FOR THE PRICE OF A FEW COPPERS, I WILL TELL YOUR FORTUNE.' (WHAT DO YOU DO?)"
 	AuxMenuChoice = Menu "ATTACK" -> MurderOldWoman "LEAVE" -> LeaveFortuneShop "PAY" -> PayFortune
 
@@ -521,7 +521,7 @@ PotionBooth:
 	if OhloPotionState >= 250: Exit
 	if BoothFightDone != 0: Exit
 	Compare BoothManDone 255
-	ShowPortrait 5 9
+	ShowPortrait BrownHaired ShopkeeperApron
 	IfEq
 	PrintClear "I AM SORRY, BUT I HAVE NOTHING TO SELL NOW.  COME BACK SOME OTHER TIME. "
 	IfEq
@@ -576,7 +576,7 @@ SpeakPassword:
 	BoothManDone = 255
 	OhloPotionState = 250
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Gosub ClearPortrait
 	Exit
 
@@ -751,7 +751,7 @@ PatrolAngered:
 	Goto FightPatrol
 
 ClearPortrait:
-	Portrait = 255
+	Portrait = None
 	Return
 
 CountSlumsCleared:

@@ -397,7 +397,7 @@ SkeletonLairEntry:
 	if SkeletonsGone == 0: Exit
 
 SkeletonMakerMenu:
-	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 " YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." "" "" 0 0
+	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
 
 SkeletonMakerSurprised:
@@ -450,7 +450,7 @@ ZombieLairEntry:
 	if ZombiesGone == 0: Exit
 
 ZombieMakerMenu:
-	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 "IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." "" "" 0 0
+	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
 
 ZombieMakerSurprised:
@@ -528,7 +528,7 @@ WightLairEntry:
 	if WightsGone == 0: Exit
 
 WightMakerMenu:
-	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 "YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." "" "" 0 0
+	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 Done WightMakerSurprised FleeRandomly WightMakerNotices
 
 WightMakerSurprised:
@@ -593,8 +593,8 @@ MysticManMeet:
 	alias Choice = Scratch1
 	if MysticManState < 3: Exit
 	if MysticManState > 249: Exit
-	Portrait = 0
-	SetupMonster Fighter14 distance=2 body=2
+	Portrait = BlondHeadband
+	SetupMonster Fighter14 distance=2 body=NobleRobe
 	Gosub ApproachTwice
 	PrintClear "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
 	Gosub PressReturn
@@ -608,7 +608,7 @@ MysticManJoins:
 	MysticManState = 250
 	PrintClear "'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS."
 	AddNPC Level6Mu24 99
-	Portrait = 255
+	Portrait = None
 	Exit
 
 PartyTooLarge:
@@ -618,7 +618,7 @@ PartyTooLarge:
 MysticManAttacks:
 	Surprise = 1
 	PrintClear "'THEN DIE YOU SCUM,' THE MAN SPITS."
-	Portrait = 255
+	Portrait = None
 	ClearMonsters
 	LoadMonster Level6Mu24 count=1 icon=Level6Mu
 	Combat
@@ -808,7 +808,7 @@ PartyConfronted:
 PartySneaksUp:
 	$AuxText = "YOU HAVE MANAGED TO SNEAK UP ON SOME "
 	$AuxNameCopy8 = $AuxMonsterName
-	EncounterMenu Scratch5 MonsterDist Scratch5 Scratch1 1 0 2 3 4 $AuxText "" "" 0 0
+	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Attack flee=Flee advance=Approach parlay=Talk near=$AuxText mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 Done StartFight FleeRandomly PartyNoticed
 
 PartyNoticed:
@@ -820,7 +820,7 @@ FindUndead:
 	PrintClear "YOU FIND SOME UNDEAD."
 
 EncounterChoice:
-	EncounterMenu Scratch5 MonsterDist Scratch5 Scratch1 1 1 1 1 4 "" "" "" Scratch4 Scratch4
+	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="" mid="" far="" escape=Scratch4 strength=Scratch4
 	OnGoto Scratch1 Done StartFight FleeRandomly ParlayFails
 
 ParlayFails:

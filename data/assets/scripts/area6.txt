@@ -197,10 +197,10 @@ SmithyEnter:
 	if 0 != Scratch10: Goto SmithyArmorPile
 	if Hours > 14: Goto SmithyArmorPile
 	Print " THE SMITH (A HUMAN) AND THREE FIRE GIANTS ARE WORKING ON A SUIT OF ARMOR. PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR."
-	Portrait = 13
+	Portrait = WhiteBeard
 	Gosub PressToContinue
-	EncounterMenu 12 2 9 Scratch10 0 1 1 1 4 "THE SMITH LOOKS UP FROM HIS WORK. 'WHAT DO YOU NEED?'" "THE SMITH IGNORES YOU AS HE HAMMERS ON A GREAVE." "" 9 9
-	Portrait = 255
+	EncounterMenu Man12 distance=2 body=ShopkeeperApron result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE SMITH LOOKS UP FROM HIS WORK. 'WHAT DO YOU NEED?'" mid="THE SMITH IGNORES YOU AS HE HAMMERS ON A GREAVE." far="" escape=9 strength=9
+	Portrait = None
 	OnGoto Scratch10 Done SmithyAttack BackOut
 	Parlay 0 1 2 2 1 Scratch10
 	OnGoto Scratch10 SmithyNoOrders SmithyExposed
@@ -264,8 +264,8 @@ BaneTempleEnter:
 	Facing = 0
 	Call CallRedraw
 	Gosub PressToContinue
-	Portrait = 14
-	SetupMonster ShieldFighter distance=2 body=7
+	Portrait = BrownHairedYouth
+	SetupMonster ShieldFighter distance=2 body=MailCloak
 	PrintClear "A PRIEST AND TWO ACOLYTES TURN FROM THE ALTER, 'WELCOME MY CHILDREN. COME FORWARD AND ACCEPT THE BLESSING OF LORD BANE.'"
 	Approach
 	Delay
@@ -274,7 +274,7 @@ BaneTempleEnter:
 PriestMenu:
 	alias Choice = Scratch10
 	Choice = Menu "ACCEPT BLESSING" "TALK" "LEAVE" "KILL THEM"
-	Portrait = 255
+	Portrait = None
 	OnGoto Choice AcceptBlessing PriestTalk PriestUnmasks
 
 PriestFight:
@@ -386,8 +386,8 @@ BackOut:
 
 GiantPatrol:
 	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
-	Portrait = 9
-	SetupMonster Fighter16 distance=2 body=1
+	Portrait = Bearded
+	SetupMonster Fighter16 distance=2 body=PlateArmor
 	Gosub CheckPatrolSurprise
 	IfNe
 	Goto PatrolSighted
@@ -402,7 +402,7 @@ GiantPatrol:
 
 PatrolBlasphemers:
 	Print "'BLASPHEMERS! GET THEM!'"
-	Portrait = 255
+	Portrait = None
 	Goto PatrolFight
 
 PatrolSighted:
@@ -420,8 +420,8 @@ PatrolCheckDisguise:
 
 PatrolEncounterMenu:
 	Gosub PressToContinue
-	EncounterMenu 16 2 1 Scratch10 0 0 0 1 0 "THEY ADVANCE, WEAPONS READY" "" "" 12 9
-	Portrait = 255
+	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" mid="" far="" escape=12 strength=9
+	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeAfterCombat PatrolFight
 
 PatrolQuestion:
@@ -429,8 +429,8 @@ PatrolQuestion:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Gosub PressToContinue
-	EncounterMenu 16 2 1 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
-	Portrait = 255
+	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." far="" escape=12 strength=9
+	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeAfterCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
 	Parlay 0 1 1 2 0 Scratch10
@@ -462,7 +462,7 @@ PatrolIntruders:
 PatrolFight:
 	Delay
 	Morale = 60
-	Portrait = 255
+	Portrait = None
 	Delay
 	RedrawView
 	ClearMonsters

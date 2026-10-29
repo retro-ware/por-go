@@ -27,14 +27,15 @@ type ScriptValue struct {
 
 // operandKinds are the kinds of the commands' operands, "" a plain number.
 var operandKinds = map[string][]string{
-	"LoadMonster":  {"Monster", "", "Icon"},
-	"AddNPC":       {"Monster"},
-	"Picture":      {"Picture"},
-	"SetupMonster": {"Sprite", "", "Picture"},
-	"FindItem":     {"Item"},
-	"ShowPortrait": {"Head", "Body"},
-	"LoadMap":      {"Map"},
-	"LoadWalls":    {"Walls", "Walls", "Walls"},
+	"LoadMonster":   {"Monster", "", "Icon"},
+	"AddNPC":        {"Monster"},
+	"Picture":       {"Picture|Body"},
+	"SetupMonster":  {"Sprite", "", "Picture|Body"},
+	"EncounterMenu": {"Sprite", "", "Picture|Body", "", "Reaction", "Reaction", "Reaction", "Reaction", "Reaction"},
+	"FindItem":      {"Item"},
+	"ShowPortrait":  {"Head", "Body"},
+	"LoadMap":       {"Map"},
+	"LoadWalls":     {"Walls", "Walls", "Walls"},
 }
 
 // operandLabels name the commands' operands in the script, as label=value
@@ -45,6 +46,8 @@ var operandLabels = map[string][]string{
 	"LoadMonster":  {"", "count", "icon"},
 	"SetupMonster": {"", "distance", "closeup|body"},
 	"LoadMap":      {"", "unused", "icons"},
+	"EncounterMenu": {"", "distance", "closeup|body", "result", "combat", "wait", "flee", "advance", "parlay",
+		"near", "mid", "far", "escape", "strength"},
 }
 
 // ReadScriptValues adds the values of a values file, if there is one.
@@ -84,8 +87,15 @@ func valueName(vals []ScriptValue, kind string, set, v int) string {
 	return ""
 }
 
-// valueOf is the number kind's name stands for in set.
+// valueOf is the number kind's name stands for in set; kind may be a|b,
+// either kind's.
 func valueOf(vals []ScriptValue, kind string, set int, name string) (int, bool) {
+	if a, b, ok := strings.Cut(kind, "|"); ok {
+		if v, ok := valueOf(vals, a, set, name); ok {
+			return v, true
+		}
+		kind = b
+	}
 	for _, x := range vals {
 		if x.Kind == kind && x.Name == name && (x.Set == set || x.Set == 0) {
 			return x.N, true

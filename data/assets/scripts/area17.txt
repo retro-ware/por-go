@@ -1,11 +1,11 @@
 KoboldEncounterMenu:
-	EncounterMenu 0 MaxDist 0 Scratch10 0 0 0 0 0 "" "" "" 6 6
+	EncounterMenu Kobold distance=MaxDist closeup=Kobold result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=6 strength=6
 	Return
 
 NomadEncounterMenu:
-	Portrait = 61
-	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
-	Portrait = 255
+	Portrait = NomadBeard
+	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=12
+	Portrait = None
 	Return
 
 GetCampState:
@@ -233,8 +233,8 @@ SetSky:
 	Return
 
 ShowNomads:
-	Portrait = 61
-	SetupMonster Swordsman11 distance=2 body=30
+	Portrait = NomadBeard
+	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 
 ApproachPause:
 	Delay
@@ -246,7 +246,7 @@ ApproachTwice:
 
 ApproachHidePortrait:
 	Gosub ApproachPause
-	Portrait = 255
+	Portrait = None
 	Return
 
 event0:
@@ -331,9 +331,9 @@ NomadFight:
 	Exit
 
 NomadsHostile:
-	Portrait = 61
-	SetupMonster Swordsman11 distance=2 body=30
-	Portrait = 255
+	Portrait = NomadBeard
+	SetupMonster Swordsman11 distance=2 body=WhiteRobe
+	Portrait = None
 	OnGoto NomadFightCount NomadsSpotYou NomadsSpotYou NomadsSpotYou HeadmanRallies
 
 NomadsSpotYou:
@@ -345,9 +345,9 @@ NomadsSpotYou:
 HeadmanRallies:
 	PrintClear "THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE."
 	Gosub PressToContinue
-	Portrait = 74
-	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
-	Portrait = 255
+	Portrait = NomadElder
+	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=12
+	Portrait = None
 	OnGoto Scratch10 Done TribeFight ExitToWilderness
 
 TribeFight:
@@ -376,7 +376,7 @@ LeaveCamp:
 ExitToWilderness:
 	RedrawView
 	Call CallRedraw
-	Portrait = 255
+	Portrait = None
 	Scratch10 = MarkFlags4 & 4
 	if 0 != Scratch10: Goto MarkLeftCamp
 	Scratch10 = MarkFlags4 & 1
@@ -391,20 +391,20 @@ LoadWilderness:
 NomadsGather:
 	Scratch10 = MarkFlags4 & 2
 	if 0 != Scratch10: Goto NomadsHostile
-	Portrait = 61
-	SetupMonster Swordsman11 distance=2 body=30
+	Portrait = NomadBeard
+	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 	PrintClear "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
 	Gosub ApproachPause
 	PrintClear "ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP."
 	Gosub ApproachPause
 	PrintClear "YOU CAN SEE CHILDREN PEERING OUT OF THE TENT OPENINGS, ONLY TO BE PUSHED BACK INSIDE BY THEIR MOTHERS."
 	Gosub PressToContinue
-	EncounterMenu 11 0 30 Scratch10 0 1 1 1 4 "THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." "" "" 12 12
-	Portrait = 255
+	EncounterMenu Swordsman11 distance=0 body=WhiteRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." mid="" far="" escape=12 strength=12
+	Portrait = None
 	OnGoto Scratch10 Done NomadFightNoSurprise ExitToWilderness
-	ShowPortrait 74 30
-	SetupMonster Swordsman11 distance=0 closeup=30
-	Portrait = 255
+	ShowPortrait NomadElder WhiteRobe
+	SetupMonster Swordsman11 distance=0 body=WhiteRobe
+	Portrait = None
 	PrintClear "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
 	Gosub PressToContinue
 	$AuxCounter = "TOMORROW"
@@ -442,9 +442,9 @@ LodgingRest:
 	Program 9
 
 MorningGreeting:
-	Portrait = 74
-	SetupMonster Swordsman11 distance=2 body=30
-	Portrait = 255
+	Portrait = NomadElder
+	SetupMonster Swordsman11 distance=2 body=WhiteRobe
+	Portrait = None
 	Gosub ApproachHidePortrait
 	PrintClear "THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'"
 	Gosub ApproachHidePortrait
@@ -462,8 +462,8 @@ CampGames:
 	Call CallRedraw
 	PrintClear "AS NIGHT FALLS, THE NOMADS BUILD A HUGE CAMPFIRE IN THE CENTER OF THE CAMP. THE WHOLE TRIBE GATHERS FOR THE FEAST. AFTER THE FEAST THERE IS DANCING AND WILD CELEBRATIONS."
 	Gosub PressToContinue
-	ShowPortrait 74 30
-	Portrait = 255
+	ShowPortrait NomadElder WhiteRobe
+	Portrait = None
 	PrintClear "DURING THE FESTIVITIES THE CHIEF (HIS TONGUE LOOSENED BY DRINK) TELLS YOU OF THE DANGERS OF THE REGION. YOU MAKE HASSAD AHWAL'S TALK ENTRY 55 IN YOUR JOURNAL."
 	Gosub PressToContinue
 	PrintClear "THE HEADMAN SEEMS VERY UNEASY AS HE CONTINUES TO SPEAK. HE PRACTICALLY BEGS YOU TO STAY FOR A FEW MORE DAYS, RATHER THAN LEAVE IN THE MORNING AS YOU PLANNED."
@@ -494,8 +494,8 @@ GuardEscort:
 
 HeadmanAsks:
 	alias Choice = Scratch10
-	Portrait = 74
-	SetupMonster Swordsman11 distance=2 body=30
+	Portrait = NomadElder
+	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 	Sky = 11
 	Gosub ApproachTwice
 	CampStage = 3
@@ -640,8 +640,8 @@ KoboldLeader:
 	PrintClear "AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS."
 	Gosub PressToContinue
 	RedrawView
-	ShowPortrait 74 30
-	Portrait = 255
+	ShowPortrait NomadElder WhiteRobe
+	Portrait = None
 	PrintClear "WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'"
 	Gosub PressToContinue
 	MarkFlags4 = MarkFlags4 | 8
@@ -688,8 +688,8 @@ RaidWon:
 	if 0 != Scratch10: Exit
 	Scratch10 = MarkFlags4 & 2
 	if 0 != Scratch10: Exit
-	ShowPortrait 62 30
-	Portrait = 255
+	ShowPortrait NomadMoustache WhiteRobe
+	Portrait = None
 	PrintClear "THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'"
 	ClearMonsters
 	Treasure 0 0 0 #1388 0 0 0 37 // Wand of Magic Missiles, Two-Handed Sword +2
@@ -731,12 +731,12 @@ HostileLeader:
 	Goto KoboldRaid
 
 NomadBetrayal:
-	Portrait = 74
-	SetupMonster Swordsman11 distance=2 body=30
+	Portrait = NomadElder
+	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 	PrintClear "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
 	Gosub PressToContinue
-	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
-	Portrait = 255
+	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="" mid="" far="" escape=12 strength=12
+	Portrait = None
 	OnGoto Scratch10 Done BetrayalFight
 	Gosub RetreatOrFight
 	Goto KoboldRaid

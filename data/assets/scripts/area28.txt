@@ -5,7 +5,7 @@ event0:
 	SkyInside = 10
 	if LeftMap == 0: Exit
 	QuestZhentilOutpost = 253
-	Portrait = 255
+	Portrait = None
 	NewECL Mountains
 
 Table994C:
@@ -33,7 +33,7 @@ AlarmCheck:
 	if Scratch1 >= AlarmLevel: Goto CellDispatch
 	Scratch1 = 5 * AlarmLevel
 	AlarmLevel += 1
-	Portrait = 57
+	Portrait = NoseguardHelmet
 	if Scratch1 > 30: Goto DwarfAndCommandant
 	if Scratch1 == 10 {
 		PrintClear "THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS."
@@ -121,8 +121,8 @@ CommandantOffice:
 	Return
 
 TourBarracks:
-	Portrait = 57
-	SetupMonster Fighter16 distance=1 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=1 body=LeatherHarness
 	PrintClear "THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'"
 	RedrawView
 	Gosub PressReturn
@@ -143,15 +143,15 @@ TourQuarters:
 	SetupMonster Fighter16 distance=1 closeup=6
 	PrintClear "THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES."
 	RedrawView
-	Portrait = 255
+	Portrait = None
 	Return
 
 RestrictedGuards:
 	alias Choice = Scratch1
 	if QuestZhentilOutpost != 0 || AttackedGuards != 0: Goto Done
 	if NightInQuarters == 1: Goto Done
-	Portrait = 57
-	SetupMonster Fighter16 distance=0 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=0 body=LeatherHarness
 	PrintClear "THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?"
 	Choice = Menu "RETURN" -> BackToQuarters "ATTACK" -> AttackGuards "BRIBE" -> AngeredGuards
 
@@ -173,8 +173,8 @@ AttackGuards:
 	PrintClear "YOU ATTACK THE GUARDS.  THE GUARDS SOUND AN ALARM AND ATTACK."
 	AttackedGuards = 1
 	Morale = 75
-	Portrait = 57
-	SetupMonster Fighter16 distance=2 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	Gosub ApproachTwice
 	ClearMonsters
 	LoadMonster Guard count=4 icon=11
@@ -197,12 +197,12 @@ Surrender:
 
 StripAndExpel:
 	Rob 1 100 255
-	Portrait = 255
+	Portrait = None
 	NewECL Mountains
 
 GuardWaveFight:
-	Portrait = 57
-	SetupMonster Fighter16 distance=2 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	Gosub ApproachTwice
 	ClearMonsters
 	LoadMonster Guard count=16 icon=11
@@ -220,8 +220,8 @@ DwarfAttackCheck:
 DwarfAndCommandant:
 	if OutpostConquered != 0: Exit
 	PrintClear "A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK"
-	Portrait = 13
-	SetupMonster SmallFighter distance=2 body=6
+	Portrait = WhiteBeard
+	SetupMonster SmallFighter distance=2 body=LeatherHarness
 	Gosub ApproachTwice
 	ClearMonsters
 	LoadMonster DwarvenFighter count=1 icon=DwarvenFighter
@@ -232,7 +232,7 @@ DwarfAndCommandant:
 	OutpostFought = 1
 	if CombatEnd > 128: Goto RunForGate
 	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
-	Portrait = 255
+	Portrait = None
 	SetupMonster Fighter16 distance=2 closeup=50
 	Gosub ApproachTwice
 	ClearMonsters
@@ -252,7 +252,7 @@ RunForGate:
 	PartyY = 0
 	Facing = 0
 	Call CallRedraw
-	Portrait = 57
+	Portrait = NoseguardHelmet
 	SetupMonster Fighter16 distance=2 body=11
 	PrintClear "YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS."
 	ClearMonsters
@@ -292,8 +292,8 @@ SleepWithWatch:
 	Morale = 70
 
 NightAmbush:
-	Portrait = 57
-	SetupMonster Fighter16 distance=0 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=0 body=LeatherHarness
 	ClearMonsters
 	LoadMonster Aides count=4 icon=11
 	Combat
@@ -309,8 +309,8 @@ NightFleeGuards:
 
 MoreMenAttack:
 	PrintClear "AS YOU DEFEAT THE GUARDS SOME MORE MEN RUN IN AND ATTACK."
-	Portrait = 57
-	SetupMonster Fighter16 distance=0 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=0 body=LeatherHarness
 	ClearMonsters
 
 SecondWaveFight:
@@ -355,7 +355,7 @@ DinnerWalkStep:
 	Gosub WalkSteps
 	Scratch6 += 1
 	if Scratch6 <= 10: Goto DinnerWalkStep
-	ShowPortrait 255 50
+	ShowPortrait None 50
 	PrintClear "YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE."
 	Gosub PressReturn
 	PrintClear "THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?"
@@ -517,8 +517,8 @@ FrontGateCheck:
 	Scratch1 = Random 99
 	if Scratch1 >= 75: Goto NearFrontGate
 	PrintClear "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
-	Portrait = 57
-	SetupMonster Fighter16 distance=2 body=6
+	Portrait = NoseguardHelmet
+	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	Gosub ApproachTwice
 	ClearMonsters
 	LoadMonster Guard count=11 icon=11
@@ -543,7 +543,7 @@ ApproachTwice:
 
 LeaveOutpost:
 	QuestZhentilOutpost = 253
-	Portrait = 255
+	Portrait = None
 	NewECL Mountains
 
 PressReturn:
@@ -575,7 +575,7 @@ RestNormal:
 event3:
 	RestChance = 0
 	if NightInQuarters == 0: Goto EscortToDinner
-	Portrait = 57
+	Portrait = NoseguardHelmet
 	Goto GuardsSpotYou
 
 event4:

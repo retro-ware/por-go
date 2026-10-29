@@ -43,7 +43,7 @@ MansionEntry:
 
 OrcsConfused:
 	PrintClear "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF ORCS WHO ARE SURPRISED THAT YOU'RE HERE.  WITH CONFUSED LOOKS ON THEIR FACES THEY STARE AT YOU"
-	EncounterMenu 2 1 4 Scratch1 1 1 1 1 1 "" "" "" 0 0
+	EncounterMenu Goblin distance=1 closeup=4 result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Mirror near="" mid="" far="" escape=0 strength=0
 	OnGoto Scratch1 ExitEvent FightEntryOrcs FightEntryOrcs FightEntryOrcs
 
 FightEntryOrcs:
@@ -439,7 +439,7 @@ SpotGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxCounter
 	Print "."
-	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 2 3 0 1 4 "" "" "THE MONSTERS STAND READY" AuxEncChoice AuxEncChoice2
+	EncounterMenu AuxEncMonster distance=MonsterDist closeup=AuxEncDist result=Scratch1 combat=Flee wait=Approach flee=Attack advance=Mirror parlay=Talk near="" mid="" far="THE MONSTERS STAND READY" escape=AuxEncChoice strength=AuxEncChoice2
 	AuxEncValue = 130
 	OnGoto Scratch1 ExitEvent FightGroup StepBack IntimidateGroup
 
@@ -449,7 +449,7 @@ OrcPatrol:
 	Choice = Menu "PRESS <RETURN> TO CONTINUE"
 	EncounterCount1 = 4
 	EncounterTemp = 0
-	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Choice 0 1 1 1 4 "" "" "THE ORCS READY THEIR SPEARS" AuxEncChoice AuxEncChoice2
+	EncounterMenu AuxEncMonster distance=MonsterDist closeup=AuxEncDist result=Choice combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="" mid="" far="THE ORCS READY THEIR SPEARS" escape=AuxEncChoice strength=AuxEncChoice2
 	AuxEncValue = 10
 	AuxEncDist = 4
 	OnGoto Choice OrcsSawParty FightGroup OrcsSawParty ParlayOrcPatrol
@@ -470,7 +470,7 @@ SurpriseGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxCounter
 	Print "."
-	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 1 1 1 1 1 "YOU HAVE SURPRISED THEM." "" "" AuxEncChoice AuxEncChoice2
+	EncounterMenu AuxEncMonster distance=MonsterDist closeup=AuxEncDist result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Mirror near="YOU HAVE SURPRISED THEM." mid="" far="" escape=AuxEncChoice strength=AuxEncChoice2
 	AuxEncValue = 50
 	if 1 == EncounterIsOrcs: Goto OrcsSurprisedMenu
 	OnGoto Scratch1 ExitEvent PartySurprises ExitEvent IntimidateGroup
@@ -482,7 +482,7 @@ FaceToFace:
 	PrintClear "YOU ARE SUDDENLY FACE TO FACE WITH A GROUP OF "
 	Print $AuxCounter
 	Print "."
-	EncounterMenu AuxEncMonster 0 AuxEncDist Scratch1 1 1 1 1 1 "THEY ARE AS SURPRISED AS YOU." "" "" AuxEncChoice AuxEncChoice2
+	EncounterMenu AuxEncMonster distance=0 closeup=AuxEncDist result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Mirror near="THEY ARE AS SURPRISED AS YOU." mid="" far="" escape=AuxEncChoice strength=AuxEncChoice2
 	AuxEncValue = 50
 	OnGoto Scratch1 ExitEvent FightGroup StepBack FightGroup
 

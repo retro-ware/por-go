@@ -81,7 +81,7 @@ CadornaConfronts:
 	QuestCadornaPayment = 255
 	IronBoxState = 255
 	if QuestCadornaTraitor >= 254: Exit
-	ShowPortrait 55 31
+	ShowPortrait GoldCirclet MerchantCoat
 	PrintClear "COUNCILMAN CADORNA CONFRONTS YOU. 'YOU HAVE TAKEN MY FAMILY TREASURE. I DON'T FORGET SUCH THINGS.' HE STRIDES OFF."
 	Gosub ClearPicture
 	Exit
@@ -504,7 +504,7 @@ OffersDone:
 CadornaChambers:
 	if QuestCadornaTraitor >= 255: Exit
 	if CadornaCommission != 254: Exit
-	ShowPortrait 55 31
+	ShowPortrait GoldCirclet MerchantCoat
 	PrintClear "'WHEN OLD PHLAN WAS OVERRUN, A FAMILY TREASURE WAS HIDDEN IN THE WESTERN BUILDING OF THE TEXTILE COMPLEX."
 	Gosub PressToContinue
 	PrintClear "'THE FAITHFUL SERVANT SENT TO FETCH IT NEVER RETURNED.  THE COMPLEX IS JUST SOUTH OF PODOL PLAZA.  BRING THE TREASURE TO ME AND YOU WILL BE WELL REWARDED.'"
@@ -516,7 +516,7 @@ CadornaChambers:
 CadornaZhentilMission:
 	Gosub CheckQuestOver
 	if ZhentilMission != 254: Exit
-	ShowPortrait 55 1
+	ShowPortrait GoldCirclet PlateArmor
 	PrintClear "'IT IS IMPERATIVE THAT A MESSAGE BE DELIVERED TO THE ZHENTIL OUTPOST TO THE WEST.  I AM SENDING YOU AS DIPLOMATIC ENVOYS."
 	Gosub PressToContinue
 	PrintClear "'WHEN YOU GET TO ZHENTIAL KEEP, PRESENT THIS PACKET TO ITS COMMANDANT.  DO NOT BREAK THE SEALS OR YOU WILL BE SEIZED AS SPIES.'"
@@ -526,7 +526,7 @@ CadornaZhentilMission:
 
 UrslingenRoom:
 	if UrslingenGateMission != 254: Exit
-	ShowPortrait 16 7
+	ShowPortrait DarkBeard MailCloak
 	PrintClear "'THANK YOU FOR COMING.  I MUST BE BRIEF FOR OUR NEED IS URGENT.  OUR ONE CHANCE TO DEFEAT THE ENEMY IS THROUGH AN ASSAULT ON THE CASTLE. TO DO THIS, WE MUST FIRST SECURE STOJANOW GATE."
 	Gosub PressToContinue
 	PrintClear "'THE GATE IS TOO STRONG TO BE TAKEN BY STORM. A SMALL BAND MUST SLIP INSIDE AND HOLD UNTIL RELIEVED. YOU ARE THE BEST AND THE BRAVEST. THE COUNCIL HAS INSTRUCTED ME TO ENTRUST THE TASK TO YOU.'"
@@ -536,7 +536,7 @@ UrslingenRoom:
 
 CouncilChambers:
 	if FinalAttackMeeting != 254: Exit
-	ShowPortrait 16 2
+	ShowPortrait DarkBeard NobleRobe
 	PrintClear "IN THE COUNCIL CHAMBERS, THE ENTIRE CITY COUNCIL IS WAITING FOR YOU. THE LORD HIGH MAYOR, ULRICH EBERHARD, SPEAKS: 'OUR FORCES ARE MARSHALLED FOR THE ASSAULT ON VALJEVO CASTLE."
 	Gosub PressToContinue
 	PrintClear "'IT IS THE UNANIMOUS REQUEST OF THE COUNCIL THAT YOU LEAD THE ATTACK. YOUR SKILL AND BRAVERY HAVE WON THE ADMIRATION OF ALL PHLAN.  WE LOOK TO YOU TO HELP US WIN OUR FREEDOM.'"
@@ -549,8 +549,8 @@ GuardPost:
 
 CouncilGuard:
 	if HallGuardsFought != 0: Exit
-	Portrait = 57
-	SetupMonster Swordsman27 distance=1 body=1
+	Portrait = NoseguardHelmet
+	SetupMonster Swordsman27 distance=1 body=PlateArmor
 	Approach
 	PrintClear "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
 	Gosub YesNoMenu
@@ -579,7 +579,7 @@ FightGuards:
 	Exit
 
 GuardEscort:
-	ShowPortrait 57 1
+	ShowPortrait NoseguardHelmet PlateArmor
 	PrintClear "THE GUARD CAPTAIN STEPS FORWARD. 'PLEASE LET US SHOW YOU THE WAY.'"
 	Gosub PressToContinue
 	Gosub ClearPicture
@@ -607,7 +607,7 @@ YesNoMenu:
 	Return
 
 ShowClerk:
-	ShowPortrait 24 32
+	ShowPortrait BraidedWoman BandedArmor
 	Return
 
 EscortStep:
@@ -617,7 +617,7 @@ EscortStep:
 	Delay
 
 ClearPicture:
-	ShowPortrait 255 255
+	ShowPortrait None None
 	Return
 
 CheckQuestOver:

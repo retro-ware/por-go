@@ -159,8 +159,8 @@ StepBack:
 
 event3:
 	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
-	Portrait = 9
-	SetupMonster Fighter16 distance=2 body=1
+	Portrait = Bearded
+	SetupMonster Fighter16 distance=2 body=PlateArmor
 	Gosub RollSurprise
 	IfNe
 	Goto PatrolSighted
@@ -175,7 +175,7 @@ event3:
 
 BlasphemersAttack:
 	Print "'BLASPHEMERS! GET THEM!'"
-	Portrait = 255
+	Portrait = None
 	Goto PatrolFight
 
 PatrolSighted:
@@ -195,8 +195,8 @@ PatrolSeesYou:
 
 PatrolAdvances:
 	Gosub PressToContinue
-	EncounterMenu 16 2 1 Scratch10 0 0 0 1 0 "THEY ADVANCE, WEAPONS READY" "" "" 12 9
-	Portrait = 255
+	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" mid="" far="" escape=12 strength=9
+	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat PatrolFight
 
 PatrolQuestions:
@@ -204,8 +204,8 @@ PatrolQuestions:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Delay
-	EncounterMenu 16 2 1 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
-	Portrait = 255
+	EncounterMenu Fighter16 distance=2 closeup=1 result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." far="" escape=12 strength=9
+	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
 	Parlay 0 1 1 2 0 Scratch10
@@ -214,7 +214,7 @@ PatrolQuestions:
 PatrolFight:
 	Delay
 	Morale = 60
-	Portrait = 255
+	Portrait = None
 	Delay
 	RedrawView
 	ClearMonsters
@@ -254,9 +254,9 @@ Imposters:
 ArmedManAttacks:
 	Scratch10 = PatrolsFought3 & 1
 	if 0 != Scratch10: Exit
-	Portrait = 12
-	SetupMonster Fighter16 distance=0 body=1
-	Portrait = 255
+	Portrait = GoldCapBeard
+	SetupMonster Fighter16 distance=0 body=PlateArmor
+	Portrait = None
 	PrintClear "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
 	Gosub DelayRaiseAlarm
 	Morale = 50
@@ -282,10 +282,10 @@ DoorSlams:
 FighterConfronts:
 	Surprise = 0
 	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
-	Portrait = 12
+	Portrait = GoldCapBeard
 	Delay
-	EncounterMenu 16 0 1 Scratch10 0 4 0 4 4 "'WHAT ARE YOU DOING HERE?'" "" "" 9 9
-	Portrait = 255
+	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="" far="" escape=9 strength=9
+	Portrait = None
 	OnGoto Scratch10 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?' HE REPEATS."
 	Parlay 0 2 2 1 0 Scratch10
@@ -307,8 +307,8 @@ FighterFight:
 	Combat
 	Gosub AfterCombat
 	PatrolsFought3 = PatrolsFought3 | 1
-	Portrait = 9
-	SetupMonster Fighter16 distance=2 body=1
+	Portrait = Bearded
+	SetupMonster Fighter16 distance=2 body=PlateArmor
 	PrintClear "A PATROL ROUNDS THE CORNER.."
 	Goto PatrolSeesYou
 
@@ -333,7 +333,7 @@ GiantApartment:
 	PrintClear "AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM."
 	Call CallRedraw
 	Gosub PressToContinue
-	EncounterMenu 55 1 55 Scratch10 0 3 0 3 4 "THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." "THE GIANTS ARE WALKING TOWARD YOU." "" 12 12
+	EncounterMenu HillGiant distance=1 closeup=HillGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." mid="THE GIANTS ARE WALKING TOWARD YOU." far="" escape=12 strength=12
 	OnGoto Scratch10 Done ApartmentFight FleeCombat
 	PrintClear "'HEY, WHAT DO YOU THINK YOU'RE DOING?'"
 	Parlay 0 0 0 1 0 Scratch10
@@ -388,7 +388,7 @@ BucketNoticed:
 	Surprise = 0
 
 BucketGiantsCharge:
-	EncounterMenu 56 2 56 Scratch10 0 0 0 1 0 "THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!" "" "" 12 12
+	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!" mid="" far="" escape=12 strength=12
 	OnGoto Scratch10 Done SleepingGiantsFight FleeCombat
 
 SleepingGiants:
@@ -419,7 +419,7 @@ GiantQuarters:
 	IfGt
 	Goto WakingGiants
 	Surprise = 0
-	EncounterMenu 55 2 55 Scratch10 0 0 0 1 0 "YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR." "" "" 12 12
+	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR." mid="" far="" escape=12 strength=12
 	OnGoto Scratch10 Done ArmoringGiants FleeCombat
 
 ArmoringGiants:
@@ -427,7 +427,7 @@ ArmoringGiants:
 	Goto QuartersFight
 
 WakingGiants:
-	EncounterMenu 55 2 55 Scratch10 0 0 0 1 0 "YOU SEE SOME GIANTS STRUGGLING OUT OF BED." "" "" 9 9
+	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS STRUGGLING OUT OF BED." mid="" far="" escape=9 strength=9
 	OnGoto Scratch10 Done WakingGiantsHit FleeCombat
 
 WakingGiantsHit:
@@ -542,7 +542,7 @@ DoorGiantsChallenge:
 	SetupMonster HillGiant distance=0 closeup=HillGiant
 	Scratch10 = BaneTempleFlags & 3
 	if 0 != Scratch10: Goto TempleThieves
-	EncounterMenu 55 0 55 Scratch10 0 4 0 4 4 "'WHAT PASSWORD?'" "" "" 12 12
+	EncounterMenu HillGiant distance=0 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT PASSWORD?'" mid="" far="" escape=12 strength=12
 	OnGoto Scratch10 Done DoorGiantsFight FleeCombat
 	Parlay 0 1 1 1 1 Scratch10
 	OnGoto Scratch10 WhoSentYou
@@ -713,7 +713,7 @@ GiantSnakes:
 	Scratch10 = CadornaQuartersFlags & 64
 	if 0 != Scratch10: Exit
 	Gosub RollSurprise
-	EncounterMenu 60 2 60 Scratch10 0 0 0 1 0 "YOU SEE GIANT SNAKES." "" "" 15 15
+	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE GIANT SNAKES." mid="" far="" escape=15 strength=15
 	OnGoto Scratch10 Done SnakesFight StepBack
 
 SnakesFight:

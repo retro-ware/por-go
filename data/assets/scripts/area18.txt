@@ -172,7 +172,7 @@ PatrolEncounterMenu:
 	EncMenuMode = 2
 	if PatrolsBeaten >= 64: EncMenuMode = 0
 	Gosub SpotPatrol
-	EncounterMenu EncMonster EncMenuMode EncMonster Scratch1 2 3 0 1 4 "THE MONSTERS STAND READY" "THE MONSTERS PREPARE" "" EncDistance EncDistance
+	EncounterMenu EncMonster distance=EncMenuMode closeup=EncMonster result=Scratch1 combat=Flee wait=Approach flee=Attack advance=Mirror parlay=Talk near="THE MONSTERS STAND READY" mid="THE MONSTERS PREPARE" far="" escape=EncDistance strength=EncDistance
 	Morale = 100
 	OnGoto Scratch1 Done PatrolFight PartyFlees PatrolParlay
 
@@ -199,7 +199,7 @@ PartyFlees:
 	PrintClear "THE PARTY RUNS AND ESCAPES."
 	Facing = Random 3
 	Scratch1 = Random 7
-	Portrait = 255
+	Portrait = None
 	PartyX = RandomExitX[Scratch1]
 	PartyY = Scratch1
 	Call CallRedraw
@@ -445,8 +445,8 @@ MonstersTurnAway:
 TavernEnter:
 	if TavernState != 0: Goto TavernCrowd
 	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
-	Portrait = 6
-	SetupMonster ShieldBearer distance=0 body=3
+	Portrait = LongHaired
+	SetupMonster ShieldBearer distance=0 body=BareChest
 	Print "YOU OPENED THE DOOR INTO A DRUNK BUCCANEER."
 	Gosub PressToContinue
 	PrintClear "HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?"
@@ -470,14 +470,14 @@ DuelBuccaneer:
 	if CombatEnd > 128: Goto BuccaneerPaid
 	PrintClear "THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING."
 	Gosub PressToContinue
-	Portrait = 255
+	Portrait = None
 	Goto TavernCrowd
 
 BuccaneerPaid:
 	PrintClear "THE BUCCANEER SMILES.'THAT IS SUFFICIENT PAYMENT.' HE LEAVES."
 	Gosub PressToContinue
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Goto TavernCrowd
 
 PatronsAttack:
@@ -489,7 +489,7 @@ PatronsAttack:
 	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
 	LoadMonster Orc4 count=8 icon=Orc
 	Combat
-	Portrait = 255
+	Portrait = None
 	if CombatEnd > 128: Goto PartyFlees
 	TavernState = 2
 	Goto BarDestroyed
@@ -579,7 +579,7 @@ IlmaterTemple:
 
 IlmaterHealer:
 	alias Choice = Scratch1
-	ShowPortrait 48 25
+	ShowPortrait SilverHairedWoman BlueCape
 	PrintClear "A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?"
 	Choice = Menu "YES" -> Heal "NO" -> RestHere
 
@@ -591,7 +591,7 @@ Heal:
 RestHere:
 	PrintClear "'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES."
 	Picture None
-	Portrait = 255
+	Portrait = None
 	LastBuildingCell = 4
 	Exit
 

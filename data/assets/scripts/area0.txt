@@ -32,7 +32,7 @@ StayOutside:
 event1:
 	PrintClear ""
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Scratch10 = 127 & Cell
 	if TourDone < 1: Exit
 	PartyMemberFound = 0
@@ -121,7 +121,7 @@ SailToArea27:
 HarborMaster:
 	if Facing != 0: Exit
 	if BoatPassageBought == 1: Exit
-	ShowPortrait 16 7
+	ShowPortrait DarkBeard MailCloak
 	if QuestSokalKeep < 254: Goto OnlyBoatOut
 	PrintClear "THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'"
 	BoatDestination = Menu "SOKAL" -> BuyPassage "EAST" -> BuyPassage "WEST" -> BuyPassage "BAY" -> BuyPassage "NONE" -> ResetVisits
@@ -151,21 +151,21 @@ TempleOfBaneEvent:
 	if DirtenState == 255: Exit
 	if BishopSummons == 254: Goto BishopAudience
 	if DirtenState == 128: Goto BishopAudience
-	ShowPortrait 8 4
+	ShowPortrait GrinningBlond ClericMace
 	PrintClear "THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?"
 	AuxMenuChoice = Menu "LEAVE" -> LeaveBishop "FORCE YOUR WAY PAST" -> WatchResponds
 
 BishopAudience:
 	if DirtenState == 128: Goto DirtenStudy
-	ShowPortrait 13 1
+	ShowPortrait WhiteBeard PlateArmor
 	PrintClear "YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR."
 	Gosub PressReturn
-	ShowPortrait 0 4
+	ShowPortrait BlondHeadband ClericMace
 	PrintClear "'HE IS BOUND TO RECOVER THE TEMPLE WHICH HAS BEEN DESECRATED TO BANE.  GO WITH HIM ACROSS THE RIVER AND HELP HIM TO CLEANSE THE TEMPLE.  IN PAYMENT, YOU MAY KEEP THE HIDDEN TREASURES.'"
 	Goto AccompanyDirtenAsk
 
 DirtenStudy:
-	ShowPortrait 0 4
+	ShowPortrait BlondHeadband ClericMace
 	PrintClear "YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'"
 
 AccompanyDirtenAsk:
@@ -192,7 +192,7 @@ LeaveBishop:
 	Exit
 
 TempleOfTyr:
-	ShowPortrait 34 2
+	ShowPortrait ScowlingBlond NobleRobe
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE PRIESTS OF TYR WELCOME YOU TO THE TEMPLE."
 	$AuxText = "MAD MAN"
@@ -201,7 +201,7 @@ TempleOfTyr:
 	Goto SeekHealingAsk
 
 TempleOfSune:
-	ShowPortrait 22 24
+	ShowPortrait BlondWoman GreyApron2
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE."
 	Goto SeekHealingAsk
@@ -218,7 +218,7 @@ StojanowRiver:
 
 InnRest:
 	if TrainerVisited != 0: Exit
-	ShowPortrait 45 24
+	ShowPortrait CurlyHairedWoman GreyApron2
 	if FoughtWatch != 0: Goto RefuseService
 	PrintClear "'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'"
 	Gosub YesNoMenu
@@ -261,7 +261,7 @@ ToArea11B:
 GeneralShop:
 	Gosub EnterBuildingOnce
 	if FoughtWatch > 0: Goto RefuseService
-	ShowPortrait 42 9
+	ShowPortrait BlackBeard ShopkeeperApron
 	PrintClear "THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 GeneralShopBrowse ResetVisits
@@ -312,7 +312,7 @@ TavernTale:
 	Exit
 
 GamblerGame:
-	ShowPortrait 8 7
+	ShowPortrait GrinningBlond MailCloak
 	PrintClear "'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'"
 	Gosub PressReturn
 	Who "WHO WILL GAMBLE?"
@@ -365,8 +365,8 @@ WagerRefused:
 	Goto GambleAgainAsk
 
 DrunkenBrawl:
-	Portrait = 53
-	SetupMonster Fighter7 distance=2 body=7
+	Portrait = WhiteHaired
+	SetupMonster Fighter7 distance=2 body=MailCloak
 	PrintClear "A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE."
 	Gosub PressReturn
 	AuxMonster = Random 1
@@ -410,7 +410,7 @@ BrawlFight:
 
 ArmorShop:
 	Gosub EnterBuildingOnce
-	ShowPortrait 63 34
+	ShowPortrait CurlyBlondYouth GreyApron3
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
 	Gosub YesNoMenu
@@ -428,7 +428,7 @@ ArmorShopBrowse:
 
 WeaponShop:
 	Gosub EnterBuildingOnce
-	ShowPortrait 42 9
+	ShowPortrait BlackBeard ShopkeeperApron
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'"
 	Gosub YesNoMenu
@@ -447,7 +447,7 @@ WeaponShopBrowse:
 SilverShop:
 	if Building2Entered != 0: Exit
 	Building2Entered = 1
-	ShowPortrait 63 34
+	ShowPortrait CurlyBlondYouth GreyApron3
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'"
 	Gosub YesNoMenu
@@ -465,7 +465,7 @@ SilverShopBrowse:
 
 HealerTemple:
 	if Combat1Won != 0: Exit
-	ShowPortrait 57 1
+	ShowPortrait NoseguardHelmet PlateArmor
 	if FoughtWatch > 0: Goto WatchFightsBack
 	PrintClear "THE PRIESTS OF TEMPUS BID YOU WELCOME."
 	Goto SeekHealingAsk
@@ -479,7 +479,7 @@ MustLeave:
 	PrintClear "THEN YOU MUST LEAVE."
 	PartyX = PrevX
 	PartyY = PrevY
-	Portrait = 255
+	Portrait = None
 	Call CallRedraw
 	Exit
 
@@ -487,7 +487,7 @@ TempleHealing:
 	ClearMonsters
 	Temple = 1
 	Combat
-	ShowPortrait 255 255
+	ShowPortrait None None
 	Exit
 
 WatchFightsBack:
@@ -653,8 +653,8 @@ PressReturn:
 	Return
 
 WatchApproaches:
-	Portrait = 9
-	SetupMonster Swordsman27 distance=2 body=7
+	Portrait = Bearded
+	SetupMonster Swordsman27 distance=2 body=MailCloak
 	Delay
 	Approach
 	Delay
@@ -699,8 +699,8 @@ CityTour:
 	PartyY = 1
 	Facing = 3
 	Call CallRedraw
-	Portrait = 8
-	SetupMonster Man12 distance=2 body=9
+	Portrait = GrinningBlond
+	SetupMonster Man12 distance=2 body=ShopkeeperApron
 	Delay
 	Approach
 	Delay
@@ -709,7 +709,7 @@ CityTour:
 	PrintClear "'GREETINGS, COURAGEOUS ONES, I AM ROLF, APPOINTED BY THE COUNCIL TO INTRODUCE NEWCOMERS TO THE FAIR CITY OF PHLAN. IF YOU WILL ACCOMPANY ME, I WILL START THE TOUR.'"
 	Gosub PressReturn
 	RedrawView
-	Picture 255
+	Picture None
 	Scratch1 = 0
 
 TourStopLoop:

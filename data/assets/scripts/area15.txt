@@ -310,7 +310,7 @@ BasiliskSeen:
 BasiliskMenu:
 	Surprise = 0
 	Gosub ShortPause
-	EncounterMenu 26 MaxDist 26 Scratch10 0 0 0 0 0 "IT HISSES AT YOU." "" "" 0 0
+	EncounterMenu Basilisk distance=MaxDist closeup=Basilisk result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="IT HISSES AT YOU." mid="" far="" escape=0 strength=0
 	PrintClear " "
 	OnGoto Scratch10 RedrawExit BasiliskFight FleeFromBasilisk BasiliskFight
 
@@ -523,7 +523,7 @@ KoboldTable:
 	if 0 != Scratch10: Exit
 	Print "LOOKING UP FROM A TABLE ARE FIVE KOBOLDS."
 	Gosub ShortPause
-	EncounterMenu 0 2 0 Scratch4 2 4 0 4 4 "THEY PLEAD FOR MERCY." "THEY STAND ARMS RAISED IN SURRENDER." " " 6 6
+	EncounterMenu Kobold distance=2 closeup=Kobold result=Scratch4 combat=Flee wait=Talk flee=Attack advance=Talk parlay=Talk near="THEY PLEAD FOR MERCY." mid="THEY STAND ARMS RAISED IN SURRENDER." far=" " escape=6 strength=6
 	PrintClear " "
 	OnGoto Scratch4 RedrawExit KoboldFight FleeFromKobolds KoboldsPlead
 

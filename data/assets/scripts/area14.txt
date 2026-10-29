@@ -72,8 +72,8 @@ BackstabThief:
 	if QuestKovelThieves != 0: Goto Done
 	if Scratch7 == LastBackstabCell: Goto Done
 	if ThievesKilled >= 21: Goto Done
-	Portrait = 32
-	SetupMonster Swordsman11 distance=2 body=8
+	Portrait = Moustached
+	SetupMonster Swordsman11 distance=2 body=RogueDagger
 	Delay
 	Approach
 	Delay
@@ -430,8 +430,8 @@ WeaponPileAmbush:
 		WeaponPileGasDone = 1
 		Goto HarmlessGas
 	}
-	Portrait = 71
-	SetupMonster Swordsman11 distance=0 body=8
+	Portrait = WhiteHairedScowl
+	SetupMonster Swordsman11 distance=0 body=RogueDagger
 	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!"
 	Delay
 	Scratch1 = 5 + ThievesKilled
@@ -482,8 +482,8 @@ ThievesFlee:
 	alias Choice = Scratch1
 	if ThiefChaseDone != 0: Goto Done
 	ThiefChaseDone = 255
-	Portrait = 44
-	SetupMonster Swordsman11 distance=0 body=8
+	Portrait = BlueMohawk
+	SetupMonster Swordsman11 distance=0 body=RogueDagger
 	PrintClear "AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?"
 	Choice = Menu "YES" -> ChaseThieves "NO" -> Done
 
@@ -513,8 +513,8 @@ ChaseSouth:
 
 CatchGuildMaster:
 	alias Choice = Scratch1
-	Portrait = 44
-	SetupMonster Swordsman11 distance=0 body=8
+	Portrait = BlueMohawk
+	SetupMonster Swordsman11 distance=0 body=RogueDagger
 	PrintClear "YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?"
 	Choice = Menu "ATTACK" -> AttackThief "RELEASE" -> ReleaseGuildMaster
 
@@ -527,8 +527,8 @@ ChaseEnd:
 
 ThiefAmbush:
 	if GuildAmbushDone != 0: Goto Done
-	Portrait = 44
-	SetupMonster Swordsman11 distance=0 body=8
+	Portrait = BlueMohawk
+	SetupMonster Swordsman11 distance=0 body=RogueDagger
 	PrintClear "AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES."
 	Surprise = 1
 	Morale = 60
@@ -556,15 +556,15 @@ JailCell:
 	Goto Done
 
 JailThugs:
-	Portrait = 32
-	SetupMonster Swordsman11 distance=0 body=8
+	Portrait = Moustached
+	SetupMonster Swordsman11 distance=0 body=RogueDagger
 	PrintClear "YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU."
 	ClearMonsters
 	LoadMonster StLvlThief count=10 icon=12
 	Combat
 	FilesFound = FilesFound | 2
 	if CombatEnd > 128: Goto FleeBack
-	ShowPortrait 16 8
+	ShowPortrait DarkBeard RogueDagger
 	PrintClear "YOU RUSH TO HELP THE OLD THIEF BUT IT'S TOO LATE.  BEFORE HE DIES HE SAYS, 'THE BOSS HAS ALLIES EVERYWHERE.  TAKE THESE PAPERS.  THEY MAY HELP.'  HE THEN DIES."
 	Gosub PressToContinue
 	PrintClear "YOU COPY THE PAPERS INTO YOUR JOURNAL UNDER JOURNAL ENTRY 48."
@@ -623,7 +623,7 @@ Done:
 	if ThievesKilled >= 21: Gosub MarkGuildCleared
 	RedrawView
 	Picture None
-	Portrait = 255
+	Portrait = None
 	Exit
 
 MarkGuildCleared:
