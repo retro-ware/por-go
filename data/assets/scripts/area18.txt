@@ -22,20 +22,20 @@ event4:
 	LoadWalls 1 3 5
 	NoCoords = 0
 	if AreaKind == 18: Exit
-	if QuestPodalAuction != 1: Goto ResetPatrols
+	if QuestPodalAuction != AuctionOn: Goto ResetPatrols
 	PatrolsBeaten = 64
-	DisguiseState = 0
+	DisguiseState = NotChosen
 	Exit
 
 ResetPatrols:
-	if PodalPlazaCleared < 254: PatrolsBeaten = 0
-	DisguiseState = 255
+	if PodalPlazaCleared < RewardDue: PatrolsBeaten = 0
+	DisguiseState = CoverBroken
 	Exit
 
 event0:
 	if LeftMap == 0: Goto PlazaApproach
 	Call CallStepForward
-	HoldMove = 255
+	HoldMove = SkipMove
 	NoCoords = 0
 	OnGoto Facing ExitNorth ExitEast ExitSouth ExitWest
 
@@ -56,7 +56,7 @@ PlazaApproach:
 	alias Choice = Scratch1
 	if Hours < 14: Sky = 11
 	also if Hours >= 14: Sky = 8
-	if DisguiseState != 0: Exit
+	if DisguiseState != NotChosen: Exit
 	Choice = VMenu "THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?" "STRIDE BOLDLY FORWARD!" "DISGUISE PARTY AS MONSTERS." "SNEAK, REMAINING UNSEEN"
 	DisguiseState = DisguiseChoiceTable[Choice]
 	Exit
@@ -85,14 +85,14 @@ StreetSquareEarly:
 
 PatrolMeet:
 	Gosub RollPatrol
-	if DisguiseState == 255: Goto PatrolEncounterMenu
-	if DisguiseState == 0: Goto PatrolEncounterMenu
+	if DisguiseState == CoverBroken: Goto PatrolEncounterMenu
+	if DisguiseState == NotChosen: Goto PatrolEncounterMenu
 	SetupMonster EncMonster distance=2 closeup=EncMonster
 	Delay
 	Gosub SpotPatrol
 	Approach
 	Delay
-	if DisguiseState == 2: Goto SneakPast
+	if DisguiseState == Disguised: Goto SneakPast
 	Scratch1 = Random 1
 	OnGoto Scratch1 PatrolGlare PatrolCheckOut
 
@@ -110,8 +110,8 @@ DisguiseCheck:
 	Scratch1 = 0
 
 DisguiseCheckMember:
-	LoadCharacter Scratch1
-	if SelRace == 7: Goto DisguiseCheckNext
+	SelectMember Scratch1
+	if SelRace == Human: Goto DisguiseCheckNext
 	Scratch10 += 5
 
 DisguiseCheckNext:
@@ -123,7 +123,7 @@ DisguiseCheckNext:
 PatrolDemandWho:
 	Print "AND DEMAND, 'WHO ARE YOU?'"
 	Approach
-	Parlay 0 1 2 3 4 Scratch1
+	Scratch1 = Parlay 0 1 2 3 4
 	OnGoto Scratch1 PatrolGrumble HereForBoss SettlersKillThem SettlersKillThem PatrolGrumble
 
 SettlersKillThem:
@@ -138,7 +138,7 @@ HereForBoss:
 
 PatrolGrumble:
 	Scratch1 = Random 50
-	PartyStrength Scratch2
+	Scratch2 = PartyStrength
 	if Scratch2 < Scratch1: Goto SettlersKillThem
 	PrintClear "THEY GRUMBLE AND MOVE ON."
 	Goto Done
@@ -182,7 +182,7 @@ PatrolFight:
 	Combat
 	Gosub CountPatrolBeaten
 	if Cell < 127: Goto CoverBlown
-	if CombatEnd > 128: Goto PartyFlees
+	if CombatEnd > PartyDied: Goto PartyFlees
 	Goto Done
 
 CountPatrolBeaten:
@@ -206,16 +206,16 @@ PartyFlees:
 	NoCoords = 1
 
 CoverBlown:
-	if DisguiseState == 0: Exit
-	if DisguiseState == 255: Exit
-	DisguiseState = 255
+	if DisguiseState == NotChosen: Exit
+	if DisguiseState == CoverBroken: Exit
+	DisguiseState = CoverBroken
 	Gosub PressToContinue
 	PrintClear "YOUR COVER IS BLOWN."
 	Goto Done
 
 PatrolParlay:
-	if DisguiseState == 255 && PatrolsBeaten == 64: Goto PatrolFight
-	Parlay 10 20 20 20 30 Scratch1
+	if DisguiseState == CoverBroken && PatrolsBeaten == 64: Goto PatrolFight
+	Scratch1 = Parlay 10 20 20 20 30
 	Scratch2 = Random 50
 	Scratch1 = Scratch1 + Scratch2
 	Scratch2 = SelReaction * 2
@@ -259,13 +259,13 @@ PatrolOgres:
 	$AuxCounter = " OGRES"
 
 RollPatrolCount:
-	PartyStrength Scratch1
+	Scratch1 = PartyStrength
 	Scratch2 = EncStrengthTable[EncType]
 	Scratch1 = Scratch1 / Scratch2
 	Scratch1 = Scratch1 / 3
 	Scratch2 = Random Scratch1
 	Scratch1 = Scratch1 + Scratch2
-	if 64 == PatrolsBeaten && 255 == DisguiseState: Scratch1 = 2 * Scratch1
+	if 64 == PatrolsBeaten && CoverBroken == DisguiseState: Scratch1 = 2 * Scratch1
 	if Scratch1 < 2: Scratch1 = 2
 	Scratch2 = EncMinCountTable[EncType]
 	if Scratch1 < Scratch2: Goto SetPatrolCount
@@ -300,7 +300,7 @@ SpotPatrol:
 
 OverhearRumor:
 	if OverheardIndex == 5: OverheardIndex -= 5
-	if DisguiseState >= 254: Goto Done
+	if DisguiseState >= AuctionEnded: Goto Done
 	Gosub RollPatrol
 	SetupMonster EncMonster distance=2 closeup=EncMonster
 	Delay
@@ -357,7 +357,7 @@ MakeBid:
 	alias Choice = Scratch1
 	PrintClear "YOU UP THE BID. MONSTERS NEARBY TURN, STARE,"
 	Gosub RollSuspicion
-	if 255 == DisguiseState: Goto AuctionCancelled
+	if CoverBroken == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	PrintClear "THE MAN THEN SPEAKS A WORD AND THE AUCTIONEER'S BLOCK IS ENVELOPED IN DARKNESS."
 	Gosub PressToContinue
@@ -371,7 +371,7 @@ FollowOgre:
 	Gosub PressToContinue
 	PrintClear "THE MONSTERS LOOK AROUND FOR A SCAPEGOAT. THEIR EYES FALL UPON YOUR PARTY, THEN THEY "
 	Gosub RollSuspicion
-	if 255 == DisguiseState: Goto AuctionCancelled
+	if CoverBroken == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	Goto AuctionOver
 
@@ -388,7 +388,7 @@ WaitForWinner:
 AuctionLeave:
 	PrintClear "AS YOU MOVE AWAY THE MONSTERS GLANCE YOUR WAY, "
 	Gosub RollSuspicion
-	if 255 == DisguiseState: Goto AuctionCancelled
+	if CoverBroken == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	PrintClear "THE AUCTION ENDS. YOU DON'T SEE WHO BOUGHT THE ITEM."
 	Goto AuctionOver
@@ -396,7 +396,7 @@ AuctionLeave:
 MoveCloser:
 	PrintClear "THE MONSTERS SHOOT YOU ANGRY LOOKS, "
 	Gosub RollSuspicion
-	if 255 == DisguiseState: Goto AuctionCancelled
+	if CoverBroken == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	PrintClear "YOU NOW SEE THE WAND ISN'T A MAJOR ARTIFACT, IT'S ONLY A WAND OF FEAR!"
 	Goto AuctionBidding
@@ -420,21 +420,21 @@ AuctionCancelled:
 	Gosub PressToContinue
 	PrintClear "'THE AUCTION IS CANCELLED!' YELLS THE AUCTIONEER AS HE FLEES."
 	Gosub PressToContinue
-	DisguiseState = 255
-	QuestPodalAuction = 254
+	DisguiseState = CoverBroken
+	QuestPodalAuction = RewardDue
 	Goto PatrolEncounterMenu
 
 AuctionOver:
 	Gosub PressToContinue
 	PrintClear "THE AUCTION OVER, THE MONSTERS GRUMBLE AND TURN AWAY.'"
-	DisguiseState = 254
-	QuestPodalAuction = 254
+	DisguiseState = AuctionEnded
+	QuestPodalAuction = RewardDue
 	Goto Done
 
 RollSuspicion:
-	if DisguiseState == 2: DisguiseState = 255
+	if DisguiseState == Disguised: DisguiseState = CoverBroken
 	Scratch2 = Random 5
-	if Scratch2 == 0: DisguiseState = 255
+	if Scratch2 == 0: DisguiseState = CoverBroken
 	Return
 
 MonstersTurnAway:
@@ -443,7 +443,7 @@ MonstersTurnAway:
 	Return
 
 TavernEnter:
-	if TavernState != 0: Goto TavernCrowd
+	if TavernState != FirstVisit: Goto TavernCrowd
 	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
 	Portrait = LongHaired
 	SetupMonster ShieldBearer distance=0 body=BareChest
@@ -457,7 +457,7 @@ BuccaneerMenu:
 
 ChallengeBuccaneer:
 	Who "WHO WILL CHALLENGE THE BUCCANEER?"
-	if SelStatus > 0: Goto DuelBuccaneer
+	if SelStatus > Died: Goto DuelBuccaneer
 	PrintClear "THAT ONE IS UNACCEPTABLE. CHOOSE ANOTHER."
 	Goto ChallengeBuccaneer
 
@@ -466,8 +466,8 @@ DuelBuccaneer:
 	Call CallDuelB
 	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
 	Combat
-	TavernState = 1
-	if CombatEnd > 128: Goto BuccaneerPaid
+	TavernState = BrawlBegun
+	if CombatEnd > PartyDied: Goto BuccaneerPaid
 	PrintClear "THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING."
 	Gosub PressToContinue
 	Portrait = None
@@ -490,8 +490,8 @@ PatronsAttack:
 	LoadMonster Orc4 count=8 icon=Orc
 	Combat
 	Portrait = None
-	if CombatEnd > 128: Goto PartyFlees
-	TavernState = 2
+	if CombatEnd > PartyDied: Goto PartyFlees
+	TavernState = BrawlWon
 	Goto BarDestroyed
 
 BribeBuccaneer:
@@ -505,7 +505,7 @@ PayBribe:
 
 TavernCrowd:
 	alias Choice = Scratch1
-	if TavernState > 1: Goto BarDestroyed
+	if TavernState > BrawlBegun: Goto BarDestroyed
 	SetupMonster Goblin distance=0 closeup=Goblin
 	PrintClear "THE CREATURES IGNORE YOU FOR THE MOMENT."
 	Gosub PressToContinue
@@ -514,8 +514,8 @@ TavernCrowd:
 
 MixWithMonsters:
 	alias Choice = Scratch1
-	if DisguiseState == 2: Goto PatronsAttack
-	if DisguiseState == 255: Goto PatronsAttack
+	if DisguiseState == Disguised: Goto PatronsAttack
+	if DisguiseState == CoverBroken: Goto PatronsAttack
 	PrintClear "MONSTERS INSULT YOUR ABILITIES AND PARENTAGE."
 	Gosub PressToContinue
 	Choice = VMenu "WHAT DO YOU DO?" "ATTACK" "TRY TO LEAVE" "INSULT BACK" "JOIN IN HEAVY DRINKING"
@@ -524,12 +524,12 @@ MixWithMonsters:
 DrinkHeavily:
 	PartyX = 2
 	PartyY = 10
-	Facing = 2
+	Facing = South
 	Call CallRedraw
 	Rob 1 100 50
 	NoCoords = 1
 	PrintClear "YOU HAD A GREAT TIME UNTIL YOU ALL PASSED OUT. YOUR PURSE IS MISSING."
-	if PatrolsBeaten >= 64: DisguiseState = 255
+	if PatrolsBeaten >= 64: DisguiseState = CoverBroken
 	Exit
 
 StepBack:
@@ -552,20 +552,20 @@ FreeForAllMember:
 	Scratch1 = Random 44
 	Scratch1 += 8
 	Scratch2 += 1
-	LoadCharacter Scratch1
-	SelSide = 128
-	SelControl = 178
+	SelectMember Scratch1
+	SelSide = PartyControlled
+	SelControl = NPCMember
 	Scratch1 = 128 | Scratch1
-	LoadCharacter Scratch1
+	SelectMember Scratch1
 	if Scratch2 < 21: Goto FreeForAllMember
 	Combat
-	if CombatEnd > 128: Goto PartyFlees
-	TavernState = 2
+	if CombatEnd > PartyDied: Goto PartyFlees
+	TavernState = BrawlWon
 
 BarDestroyed:
-	if TavernState > 2: Exit
+	if TavernState > BrawlWon: Exit
 	PrintClear "THE BAR LOOKS LIKE IT WAS DESTROYED BY EXPERTS."
-	TavernState = 3
+	TavernState = BarWrecked
 	Exit
 
 ThePittSign:
@@ -602,12 +602,12 @@ BaneShrine:
 
 RobedOrc:
 	alias Choice = Scratch1
-	if BaneRecruiterState != 0: Goto BaneMeeting
+	if BaneRecruiterState != NotMet: Goto BaneMeeting
 	SetupMonster Orc distance=1 closeup=Orc
 	PrintClear "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
 	Choice = Menu "LEAVE" "GREET" "ATTACK"
-	if DisguiseState == 255: Goto AttackOrc
-	if DisguiseState == 2: Goto AttackOrc
+	if DisguiseState == CoverBroken: Goto AttackOrc
+	if DisguiseState == Disguised: Goto AttackOrc
 	OnGoto Choice StepBack GreetOrc AttackOrc
 
 GreetOrc:
@@ -627,7 +627,7 @@ AcceptRecruit:
 	PrintClear "'MEET HERE IN TWO HOURS. YOU MAY MEET HIGH PRIEST MACE.' HE ESCORTS YOU OUT."
 
 SetMeetHour:
-	BaneRecruiterState = 1
+	BaneRecruiterState = MeetingSet
 	BaneMeetHour = Hours
 	BaneMeetHour += 2
 	if BaneMeetHour > 23: BaneMeetHour -= 24
@@ -638,7 +638,7 @@ DeclineRecruit:
 	Goto SetMeetHour
 
 BaneMeeting:
-	if BaneRecruiterState != 1: Exit
+	if BaneRecruiterState != MeetingSet: Exit
 	if BaneMeetHour >= Hours: Exit
 	SetupMonster Orc distance=1 closeup=Orc
 	PrintClear "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
@@ -650,8 +650,8 @@ BaneMeeting:
 	LoadMonster Ogre count=3 icon=Ogre
 	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
-	BaneRecruiterState = 2
-	if CombatEnd > 128: Goto PartyFlees
+	BaneRecruiterState = AmbushFought
+	if CombatEnd > PartyDied: Goto PartyFlees
 	Exit
 
 AttackOrc:
@@ -660,8 +660,8 @@ AttackOrc:
 	LoadMonster OrcLeader5 count=1 icon=OrcLeader
 	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
-	BaneRecruiterState = 2
-	if CombatEnd > 128: Goto PartyFlees
+	BaneRecruiterState = AmbushFought
+	if CombatEnd > PartyDied: Goto PartyFlees
 	Exit
 
 RememberBuilding:
@@ -684,7 +684,7 @@ PressToContinue:
 	Return
 
 SlumsCleared9:
-	if PatrolsBeaten == 9: PodalPlazaCleared = 254
+	if PatrolsBeaten == 9: PodalPlazaCleared = RewardDue
 	PatrolsBeaten = 10
 	Exit
 

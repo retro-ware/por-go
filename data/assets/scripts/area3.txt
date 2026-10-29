@@ -1,10 +1,9 @@
 RollSurprise:
 	PartySurprise Scratch8 Scratch9
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Scratch9 += 1
+	if CastleFlags has Disguised: Scratch9 += 1
 	Surprise Scratch8 Scratch9 0 0
-	if AlarmEndHour != 0: Surprise = Surprise & 1
-	if Surprise == 3: Surprise = 0
+	if AlarmEndHour != 0: Surprise &= PartyIsSurprised
+	if Surprise == 3: Surprise = NoSurprise
 	Compare Surprise 1
 	Return
 
@@ -67,7 +66,7 @@ SetSky:
 
 event0:
 	alias ByFacing9AA6Entry = Scratch1
-	CastleRoomFlags = CastleRoomFlags & 127
+	CastleRoomFlags &= ~VisitFlag
 	if LeftMap == 0: Goto CheckWallEvents
 	ByFacing9AA6Entry = ByFacing9AA6[Facing]
 	Call CallStepForward
@@ -79,21 +78,19 @@ ByFacing9AA6:
 CheckWallEvents:
 	Gosub SetSky
 	Scratch10 = Cell & 31
-	if Facing == 1 && Scratch10 == 30: Goto MainGate
-	if Facing == 3 && Scratch10 == 31: Goto MainGate
-	if Facing == 0 && Scratch10 == 17: Goto WellDive
+	if Facing == East && Scratch10 == 30: Goto MainGate
+	if Facing == West && Scratch10 == 31: Goto MainGate
+	if Facing == North && Scratch10 == 17: Goto WellDive
 	Exit
 
 event1:
 	Gosub CheckAlarm
 	IfLt
 	Goto RoomEvents
-	Scratch10 = Cell & 64
-	if 0 != Scratch10: Goto RoomEvents
+	if Cell has 64: Goto RoomEvents
 	Scratch1 = 2
 	if Search == 0: Scratch1 = 20
-	Scratch10 = Cell & 32
-	if 0 != Scratch10: Scratch1 += Scratch1
+	if Cell has 32: Scratch1 += Scratch1
 	Scratch10 = Random Scratch1
 	if Scratch10 == 0: Goto event3
 
@@ -117,8 +114,7 @@ event2:
 	RestEvery = 0
 	RestChance = 10
 	if AlarmEndHour == 0: Exit
-	Scratch10 = Cell & 64
-	if 0 != Scratch10: Exit
+	if Cell has 64: Exit
 	RestEvery = 1
 	RestChance = 17
 
@@ -141,35 +137,31 @@ ByFacing9C24:
 	Data 3 5 5 3
 
 FleeCombat:
-	CombatEnd = 129
+	CombatEnd = PartyFled
 
 AfterCombat:
-	if CombatEnd == 0: Return
+	if CombatEnd == FightOver: Return
 	Gosub RaiseAlarm
-	CastleFlags = CastleFlags & 254
-	if CombatEnd != 129: Return
+	CastleFlags &= ~Disguised
+	if CombatEnd != PartyFled: Return
 
 StepBack:
-	HoldMove = 255
+	HoldMove = SkipMove
 	PartyX = PrevX
 	PartyY = PrevY
 	Facing = Facing + 2
-	if Facing > 3: Facing -= 4
+	if Facing > West: Facing -= 4
 	Goto Done
 
 event3:
 	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
 	Portrait = Bearded
 	SetupMonster Fighter16 distance=2 body=PlateArmor
-	Gosub RollSurprise
-	IfNe
-	Goto PatrolSighted
+	if Gosub RollSurprise then Surprise != PartyIsSurprised: Goto PatrolSighted
 	PrintClear $AuxEncText
 	Print " SURPRISES YOU."
-	Scratch10 = BaneTempleFlags & 3
-	if 0 != Scratch10: Goto BlasphemersAttack
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto PatrolQuestions
+	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto BlasphemersAttack
+	if CastleFlags has Disguised: Goto PatrolQuestions
 	Print " 'THAT'S THEM! GET THEM!'"
 	Goto PatrolAdvances
 
@@ -181,14 +173,12 @@ BlasphemersAttack:
 PatrolSighted:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
-	Scratch10 = BaneTempleFlags & 3
-	if 0 == Scratch10: Goto PatrolNoAlarm
+	if BaneTempleFlags lacks OfferingBoxStolen+CrossedSwordsStolen: Goto PatrolNoAlarm
 	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
 	Goto PatrolAdvances
 
 PatrolNoAlarm:
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto PatrolQuestions
+	if CastleFlags has Disguised: Goto PatrolQuestions
 
 PatrolSeesYou:
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
@@ -200,7 +190,7 @@ PatrolAdvances:
 	OnGoto Scratch10 Done PatrolFight FleeCombat PatrolFight
 
 PatrolQuestions:
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Delay
@@ -208,7 +198,7 @@ PatrolQuestions:
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
-	Parlay 0 1 1 2 0 Scratch10
+	Scratch10 = Parlay 0 1 1 2 0
 	OnGosub Scratch10 AskAuthority PatrolIntruders AskPassword
 
 PatrolFight:
@@ -230,7 +220,7 @@ PatrolIntruders:
 
 AskPassword:
 	PrintClear "'ALL RIGHT THEN. WHAT IS TODAY'S PASSWORD?'"
-	InputString 6 $AuxInputText
+	$AuxInputText = InputString 6
 	Compare "HARASH" $AuxInputText
 	Goto CheckAnswer
 
@@ -238,7 +228,7 @@ AskAuthority:
 	PrintClear "'I'M SORRY, SIR, THERE'S AN ALERT. "
 	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
 	NewLine
-	InputString 12 $AuxInputText
+	$AuxInputText = InputString 12
 	Compare "TYRANTHRAXUS" $AuxInputText
 
 CheckAnswer:
@@ -252,8 +242,7 @@ Imposters:
 	Return
 
 ArmedManAttacks:
-	Scratch10 = PatrolsFought3 & 1
-	if 0 != Scratch10: Exit
+	if PatrolsFought3 has PatrolsFought: Exit
 	Portrait = GoldCapBeard
 	SetupMonster Fighter16 distance=0 body=PlateArmor
 	Portrait = None
@@ -264,15 +253,13 @@ ArmedManAttacks:
 	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
 	Combat
 	Gosub AfterCombat
-	PatrolsFought3 = PatrolsFought3 | 1
+	PatrolsFought3 |= PatrolsFought
 	Exit
 
 FighterBuilding:
-	Scratch10 = PatrolsFought3 & 1
-	if 0 != Scratch10: Exit
+	if PatrolsFought3 has PatrolsFought: Exit
 	if AlarmEndHour != 0: Goto DoorSlams
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto FighterConfronts
+	if CastleFlags has Disguised: Goto FighterConfronts
 
 DoorSlams:
 	PrintClear "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
@@ -280,7 +267,7 @@ DoorSlams:
 	Exit
 
 FighterConfronts:
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
 	Portrait = GoldCapBeard
 	Delay
@@ -288,7 +275,7 @@ FighterConfronts:
 	Portrait = None
 	OnGoto Scratch10 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?' HE REPEATS."
-	Parlay 0 2 2 1 0 Scratch10
+	Scratch10 = Parlay 0 2 2 1 0
 	if Scratch10 == 2: Goto FighterRetreats
 	PrintClear ""
 	OnGosub Scratch10 AskAuthority AskPassword
@@ -306,7 +293,7 @@ FighterFight:
 	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
 	Combat
 	Gosub AfterCombat
-	PatrolsFought3 = PatrolsFought3 | 1
+	PatrolsFought3 |= PatrolsFought
 	Portrait = Bearded
 	SetupMonster Fighter16 distance=2 body=PlateArmor
 	PrintClear "A PATROL ROUNDS THE CORNER.."
@@ -318,27 +305,25 @@ FighterRetreats:
 	Goto Done
 
 DiningHall:
-	Scratch10 = CastleFlags & 2
-	if 0 != Scratch10: Exit
+	if CastleFlags has HallSeen: Exit
 	PrintClear "YOU ARE IN A HALL WITH LONG TABLES, BENCHES AND A GREAT HEARTH AT ONE END. IN THE CORNERS ARE HEAPS OF GARBAGE BEING PICKED OVER BY SOME RATS WHICH FLEE AT YOUR ENTRANCE."
 	Delay
-	CastleFlags = CastleFlags | 2
+	CastleFlags |= HallSeen
 	Exit
 
 GiantApartment:
-	Scratch10 = CastleFlags & 4
-	if 0 != Scratch10: Exit
-	Surprise = 0
-	Facing = 1
+	if CastleFlags has PatrolTalkedAway: Exit
+	Surprise = NoSurprise
+	Facing = East
 	PrintClear "AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM."
 	Call CallRedraw
 	Gosub PressToContinue
 	EncounterMenu HillGiant distance=1 closeup=HillGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." mid="THE GIANTS ARE WALKING TOWARD YOU." escape=12 strength=12
 	OnGoto Scratch10 Done ApartmentFight FleeCombat
 	PrintClear "'HEY, WHAT DO YOU THINK YOU'RE DOING?'"
-	Parlay 0 0 0 1 0 Scratch10
+	Scratch10 = Parlay 0 0 0 1 0
 	PrintClear "'OH... OKAY.' AND WITH THAT THEY LEAVE."
-	CastleFlags = CastleFlags | 4
+	CastleFlags |= PatrolTalkedAway
 	Goto Done
 
 ApartmentFight:
@@ -347,17 +332,17 @@ ApartmentFight:
 	LoadMonster HillGiant count=2 icon=HillGiant
 	Combat
 	Gosub AfterCombat
-	CastleFlags = CastleFlags | 4
+	CastleFlags |= PatrolTalkedAway
 	Exit
 
 LooseStoneTreasure:
-	Scratch10 = CastleFlags & 8
+	Scratch10 = CastleFlags & LooseStoneFound
 	if Scratch10 != 0 || Search != 1: Exit
 	PrintClear "UNDER A LOOSE STONE YOU FIND SOME TREASURE. "
 	Gosub TakeItMenu
 	IfNe
 	Exit
-	CastleFlags = CastleFlags | 8
+	CastleFlags |= LooseStoneFound
 	ClearMonsters
 	Treasure 0 0 0 200 0 0 0 34 // Potion of Speed
 	Combat
@@ -368,14 +353,11 @@ Latrine:
 	Exit
 
 BucketRoom:
-	Scratch10 = CastleFlags & 16
-	if 0 != Scratch10: Exit
+	if CastleFlags has SleepingGiantsFought: Exit
 	Scratch5 = 2
 	if Hours < 14: Scratch5 = 4
-	Gosub RollSurprise
-	IfGt
-	Goto SleepingGiants
-	Surprise = 1
+	if Gosub RollSurprise then Surprise > PartyIsSurprised: Goto SleepingGiants
+	Surprise = PartyIsSurprised
 	if Search == 1: Goto BucketNoticed
 	PrintClear "AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS."
 	Gosub PressToContinue
@@ -385,7 +367,7 @@ BucketRoom:
 BucketNoticed:
 	PrintClear "BEFORE YOU OPEN THE DOOR ALL THE WAY, YOU NOTICE A BUCKET ABOVE THE DOOR. YOU KICK THE DOOR OPEN LETTING THE BUCKET FALL HARMLESSLY TO THE GROUND."
 	Gosub PressToContinue
-	Surprise = 0
+	Surprise = NoSurprise
 
 BucketGiantsCharge:
 	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!" escape=12 strength=12
@@ -408,17 +390,14 @@ SleepingGiantsFight:
 	Treasure 0 0 0 #012C 0 0 0 255
 	Combat
 	Gosub AfterCombat
-	CastleFlags = CastleFlags | 16
+	CastleFlags |= SleepingGiantsFought
 	Exit
 
 GiantQuarters:
-	Scratch10 = CadornaQuartersFlags & Scratch1
-	if 0 != Scratch10: Exit
+	if CadornaQuartersFlags has Scratch1: Exit
 	if Hours >= 14: Exit
-	Gosub RollSurprise
-	IfGt
-	Goto WakingGiants
-	Surprise = 0
+	if Gosub RollSurprise then Surprise > PartyIsSurprised: Goto WakingGiants
+	Surprise = NoSurprise
 	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR." escape=12 strength=12
 	OnGoto Scratch10 Done ArmoringGiants FleeCombat
 
@@ -439,7 +418,7 @@ QuartersFight:
 	LoadMonster HillGiant count=8 icon=HillGiant
 	Combat
 	Gosub AfterCombat
-	CadornaQuartersFlags = CadornaQuartersFlags | Scratch1
+	CadornaQuartersFlags |= Scratch1
 	Exit
 
 FindTreasure:
@@ -449,21 +428,20 @@ FindTreasure:
 	Gosub TakeItMenu
 	IfNe
 	Exit
-	SearchTowerFlags = SearchTowerFlags | Scratch1
+	SearchTowerFlags |= Scratch1
 	ClearMonsters
 	Treasure 0 0 0 11 0 0 0 255
 	Combat
 	Exit
 
 MainGate:
+	alias Choice = Scratch10
 	Scratch1 = 64
-	if Scratch10 == 31: Scratch1 = 128
-	Scratch10 = BaneTempleFlags & Scratch1
-	if 0 != Scratch10: Goto GateRecognized
-	Scratch10 = BaneTempleFlags & 3
-	if 0 != Scratch10: Goto GateThief
-	Scratch10 = VMenu "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
-	OnGoto Scratch10 GivePassword BoulderVolley
+	if Choice == 31: Scratch1 = 128
+	if BaneTempleFlags has Scratch1: Goto GateRecognized
+	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto GateThief
+	Choice = VMenu "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
+	OnGoto Choice GivePassword BoulderVolley
 
 GateRecognized:
 	PrintClear "YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'"
@@ -474,15 +452,14 @@ GateThief:
 
 BoulderVolley:
 	Gosub DelayRaiseAlarm
-	BaneTempleFlags = BaneTempleFlags | Scratch1
+	BaneTempleFlags |= Scratch1
 	PrintClear "A VOLLEY OF BOULDERS ARE THROWN AT YOU..."
 	Delay
 	Damage 12 2 6 0 48
 	Exit
 
 GivePassword:
-	Scratch10 = CastleFlags2 & 2
-	if 0 == Scratch10: Goto EnterPassword
+	if CastleFlags2 lacks CadornaAlong: Goto EnterPassword
 	LoadMap Keep unused=16 icons=255
 	PrintClear ""
 	Protection ProtectionStart
@@ -495,11 +472,11 @@ GivePassword:
 
 EnterPassword:
 	PrintClear "WHAT PASSWORD DO YOU GIVE? "
-	InputString 6 $AuxInputText
+	$AuxInputText = InputString 6
 	if $AuxInputText != "RHODIA": Goto WrongPassword
 	PrintClear "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
 	Call CallStepForward
-	HoldMove = 255
+	HoldMove = SkipMove
 	Exit
 
 WrongPassword:
@@ -513,42 +490,37 @@ ProtectionStart:
 	Data 0
 
 CobwebBuilding:
-	Scratch10 = BaneTempleFlags & 16
-	if 0 != Scratch10: Exit
+	if BaneTempleFlags has CobwebRoom: Exit
 	PrintClear "YOU ARE IN A DESERTED BUILDING. THERE ARE NOTHING BUT VERY LARGE COBWEBS HERE."
 	Delay
-	BaneTempleFlags = BaneTempleFlags | 16
+	BaneTempleFlags |= CobwebRoom
 	Exit
 
 CeilingCaves:
-	Scratch10 = BaneTempleFlags & 32
-	if 0 != Scratch10: Exit
+	if BaneTempleFlags has CeilingCavedIn: Exit
 	PrintClear "AS YOU PUSH THE DOOR OPEN THE CEILING CAVES IN."
 	Delay
 	Damage 1 2 6 0 50
-	BaneTempleFlags = BaneTempleFlags | 32
+	BaneTempleFlags |= CeilingCavedIn
 	Exit
 
 DoorGiants:
-	Scratch10 = CastleFlags & 128
-	if 0 != Scratch10: Exit
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Exit
-	Facing = 1
+	if CastleFlags has GiantsPassed: Exit
+	if CastleFlags has Disguised: Exit
+	Facing = East
 	Call CallRedraw
 	PrintClear "TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR."
 
 DoorGiantsChallenge:
 	SetupMonster HillGiant distance=0 closeup=HillGiant
-	Scratch10 = BaneTempleFlags & 3
-	if 0 != Scratch10: Goto TempleThieves
+	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto TempleThieves
 	EncounterMenu HillGiant distance=0 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT PASSWORD?'" escape=12 strength=12
 	OnGoto Scratch10 Done DoorGiantsFight FleeCombat
-	Parlay 0 1 1 1 1 Scratch10
+	Scratch10 = Parlay 0 1 1 1 1
 	OnGoto Scratch10 WhoSentYou
 	PrintClear "'TELL ME PASSWORD OR I KILL YOU. NOW!'"
 	NewLine
-	InputString 6 $AuxInputText
+	$AuxInputText = InputString 6
 	if "HARASH" != $AuxInputText: Goto WrongAnswerDinner
 	PrintClear "'OKAY, BUT NO HANGING AROUND.'"
 	Goto Done
@@ -556,7 +528,7 @@ DoorGiantsChallenge:
 WhoSentYou:
 	PrintClear "THE GIANT HESITATES, 'WHO SENT YOU?'"
 	NewLine
-	InputString 12 $AuxInputText
+	$AuxInputText = InputString 12
 	if "TYRANTHRAXUS" != $AuxInputText: Goto WrongAnswerDinner
 	PrintClear "'SORRY ME NOT KNOW! JUST DOING JOB! YOU GO NOW.'"
 	Goto Done
@@ -570,18 +542,17 @@ WrongAnswerDinner:
 
 DoorGiantsFight:
 	Gosub RaiseAlarm
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 50
 	ClearMonsters
 	LoadMonster HillGiant count=2 icon=HillGiant
 	Combat
 	Gosub AfterCombat
-	CastleFlags = CastleFlags | 128
+	CastleFlags |= GiantsPassed
 	Exit
 
 GiantsBarWay:
-	Scratch10 = CastleFlags & 128
-	if 0 != Scratch10: Exit
+	if CastleFlags has GiantsPassed: Exit
 	PrintClear "TWO GIANTS STAND BARRING YOUR WAY."
 	Goto DoorGiantsChallenge
 
@@ -597,15 +568,14 @@ DiveMenu:
 
 ChooseDiver:
 	Who "WHO WILL DIVE IN?"
-	if SelStatus != 1: Goto ChooseDiver
+	if SelStatus != Okay: Goto ChooseDiver
 	Scratch4 = 0
 	if SelCon < 12: Goto NoBottom
 	Scratch10 = Random 20
 	if Scratch10 > SelCon: Goto NoBottom
 	PrintClear "YOU REACH THE BOTTOM AND FEEL AROUND... "
 	Delay
-	Scratch10 = CastleFlags & 32
-	if 0 != Scratch10: Goto OnlyMud
+	if CastleFlags has SwordInWell: Goto OnlyMud
 	Print "AND YOU FIND A SWORD! "
 	Gosub TakeItMenu
 	IfEq
@@ -643,19 +613,16 @@ TryAgain:
 	Goto DiveMenu
 
 TakeSword:
-	CastleFlags = CastleFlags | 32
+	CastleFlags |= SwordInWell
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 36 // Long Sword +2 Flame Tongue
 	Combat
 	Exit
 
 CadornaCell:
-	Scratch10 = CastleFlags2 & 2
-	if 0 != Scratch10: Exit
-	Scratch10 = CadornaQuartersFlags & 8
-	if 0 == Scratch10: Exit
-	Scratch10 = CadornaQuartersFlags & 48
-	if 0 != Scratch10: Exit
+	if CastleFlags2 has CadornaAlong: Exit
+	if CadornaQuartersFlags lacks SouthDoorOpen: Exit
+	if CadornaQuartersFlags has CadornaReleased+CadornaKilled: Exit
 	Picture ChainedPrisoner
 	PrintClear "THIS IS A SMALL CELL. CHAINED TO THE WALL IS A MAN BEATEN TO WITHIN AN INCH OF HIS LIFE. AS YOU OPEN THE DOOR HE LOOKS UP AND YOU FEEL A SHOCK... THE MAN IS PORPHYRYS CADORNA."
 	Gosub PressToContinue
@@ -663,36 +630,33 @@ CadornaCell:
 	Scratch4 = 0
 
 CadornaMenu:
-	Scratch10 = Menu "RELEASE HIM" "LEAVE HIM" "KILL HIM"
-	OnGoto Scratch10 ReleaseCadorna LeaveCadorna
-	Scratch10 = Scratch4 & 1
-	if 0 != Scratch10: Goto KillCadorna
+	alias Choice = Scratch10
+	Choice = Menu "RELEASE HIM" "LEAVE HIM" "KILL HIM"
+	OnGoto Choice ReleaseCadorna LeaveCadorna
+	if Scratch4 has 1: Goto KillCadorna
 
 CadornaPleads:
 	PrintClear "'WAIT!' HE SHRIEKS. 'I KNOW HOW TO GET THROUGH THE MAIN GATES. I CAN HELP YOU.'"
-	Scratch4 = Scratch4 | 1
+	Scratch4 |= 1
 	Goto CadornaMenu
 
 KillCadorna:
 	PrintClear "WITH A QUICK STROKE YOU RELEASE HIM FROM THIS PAIN... TO ALL THE PAIN TO COME."
-	QuestCadornaDead = 254
-	CadornaQuartersFlags = CadornaQuartersFlags | 32
+	QuestCadornaDead = RewardDue
+	CadornaQuartersFlags |= CadornaKilled
 	Goto Done
 
 LeaveCadorna:
-	Scratch10 = Scratch4 & 2
-	if 0 != Scratch10: Goto LeaveAgain
+	if Scratch4 has 2: Goto LeaveAgain
 	PrintClear "'WAIT DON'T LEAVE ME HERE. IF YOU DO I'LL RAISE THE ALARM.'"
-	Scratch4 = Scratch4 | 2
+	Scratch4 |= 2
 	Goto CadornaMenu
 
 LeaveAgain:
-	Scratch10 = Scratch4 & 1
-	if 0 == Scratch10: Goto CadornaPleads
-	Scratch10 = Scratch4 & 4
-	if 0 != Scratch10: Goto CadornaScreams
+	if Scratch4 lacks 1: Goto CadornaPleads
+	if Scratch4 has 4: Goto CadornaScreams
 	PrintClear "'I KNOW THE WAY THROUGH THE HEDGE... LEFT RIGHT RIGHT... FOR CHANTUA'S SAKE! DON'T LEAVE ME!'"
-	Scratch4 = Scratch4 | 4
+	Scratch4 |= 4
 	Goto CadornaMenu
 
 CadornaScreams:
@@ -701,13 +665,12 @@ CadornaScreams:
 
 ReleaseCadorna:
 	PrintClear "'THANK YOU! THANK YOU! I JUST THOUGHT THAT THE POOL WAS HERE! THERE WAS NOWHERE ELSE TO GO! I HAVE NOWHERE TO GO. TAKE ME WITH YOU?'"
-	CadornaQuartersFlags = CadornaQuartersFlags | 16
-	if Ask YesNoMenu == "YES": CastleFlags2 = CastleFlags2 | 2
+	CadornaQuartersFlags |= CadornaReleased
+	if Ask YesNoMenu == "YES": CastleFlags2 |= CadornaAlong
 	Goto StepBack
 
 GiantSnakes:
-	Scratch10 = CadornaQuartersFlags & 64
-	if 0 != Scratch10: Exit
+	if CadornaQuartersFlags has QuartersFightDone: Exit
 	Gosub RollSurprise
 	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE GIANT SNAKES." escape=15 strength=15
 	OnGoto Scratch10 Done SnakesFight StepBack
@@ -718,7 +681,7 @@ SnakesFight:
 	LoadMonster GiantSnake count=5 icon=GiantSnake
 	Combat
 	Gosub AfterCombat
-	CadornaQuartersFlags = CadornaQuartersFlags | 64
+	CadornaQuartersFlags |= QuartersFightDone
 	Exit
 
 ExitToArea5:

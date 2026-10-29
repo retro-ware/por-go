@@ -2,7 +2,7 @@ FleeBack:
 	PartyX = DestX[Scratch10]
 	PartyY = DestY[Scratch10]
 	Facing = DestFacing[Scratch10]
-	HoldMove = 255
+	HoldMove = SkipMove
 	Goto RedrawExit
 
 DestX:
@@ -54,27 +54,24 @@ SetSky:
 event0:
 	Gosub SetSky
 	if LeftMap != 0: Goto LeaveArea
-	Scratch10 = Cell & 64
-	if 0 == Scratch10: Exit
+	if Cell lacks 64: Exit
 	Scratch10 = 1 & Cell
 	Scratch8 = Table9B07[Scratch10]
 	if Scratch8 != Facing: Exit
-	Scratch10 = LibraryEventFlags & 32
-	if 0 != Scratch10: Exit
-	Scratch10 = BooksFoundFlags & 159
-	if 0 == Scratch10: Exit
+	if LibraryEventFlags has SpectreBeaten: Exit
+	if BooksFoundFlags lacks Fyerdetha+Urgund+LexGeographicaBook+HistoryNorth+ArtsOfWarBook+NamedBookTaken: Exit
 	SetupMonster Spectre distance=0 closeup=Spectre
 	PrintClear "A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU."
 	Gosub ShortPause
 	Morale = 100
 	PartySurprise Scratch2 Scratch3
 	Surprise Scratch2 Scratch3 2 2
-	if Surprise == 2: Surprise = 0
+	if Surprise == MonstersAreSurprised: Surprise = NoSurprise
 	ClearMonsters
 	LoadMonster Spectre count=1 icon=Spectre
 	Combat
-	if CombatEnd == 129: Goto FleeFromBasilisk
-	LibraryEventFlags = LibraryEventFlags | 32
+	if CombatEnd == PartyFled: Goto FleeFromBasilisk
+	LibraryEventFlags |= SpectreBeaten
 
 RedrawExit:
 	RedrawView
@@ -212,21 +209,19 @@ PhilosophyBooks:
 	Exit
 
 FyerdethaBook:
-	Scratch10 = BooksFoundFlags & 1
-	if 0 != Scratch10: Goto PhilosophyBooks
+	if BooksFoundFlags has Fyerdetha: Goto PhilosophyBooks
 	PrintClear "YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7."
 	Gosub TakeItMenu
-	BooksFoundFlags = BooksFoundFlags | 1
-	if QuestBookFyerdetha != 255: QuestBookFyerdetha = 254
+	BooksFoundFlags |= Fyerdetha
+	if QuestBookFyerdetha != Rewarded: QuestBookFyerdetha = RewardDue
 	Exit
 
 UrgundBook:
-	Scratch10 = BooksFoundFlags & 2
-	if 0 != Scratch10: Goto PhilosophyBooks
+	if BooksFoundFlags has Urgund: Goto PhilosophyBooks
 	PrintClear "YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL."
 	Gosub TakeItMenu
-	BooksFoundFlags = BooksFoundFlags | 2
-	if QuestBookUrgund != 255: QuestBookUrgund = 254
+	BooksFoundFlags |= Urgund
+	if QuestBookUrgund != Rewarded: QuestBookUrgund = RewardDue
 	Exit
 
 NamedBook:
@@ -235,8 +230,8 @@ NamedBook:
 	OnGosub NamedBooksFound TitleMeditations TitleHarmonyOfRock TitleStromPoetics TitleChroniclesArram TitleNatureOfWriting
 	NamedBooksFound += 1
 	Gosub TakeItMenu
-	BooksFoundFlags = 128 | BooksFoundFlags
-	if QuestBookNamed != 255: QuestBookNamed = 254
+	BooksFoundFlags = NamedBookTaken | BooksFoundFlags
+	if QuestBookNamed != Rewarded: QuestBookNamed = RewardDue
 	Exit
 
 TitleMeditations:
@@ -268,35 +263,31 @@ HistoryBooks:
 	Exit
 
 LexGeographica:
-	Scratch10 = BooksFoundFlags & 4
-	if 0 != Scratch10: Goto HistoryBooks
+	if BooksFoundFlags has LexGeographicaBook: Goto HistoryBooks
 	PrintClear "YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL."
 	Gosub TakeItMenu
-	BooksFoundFlags = BooksFoundFlags | 4
-	if QuestBookLexGeographica != 255: QuestBookLexGeographica = 254
+	BooksFoundFlags |= LexGeographicaBook
+	if QuestBookLexGeographica != Rewarded: QuestBookLexGeographica = RewardDue
 	Exit
 
 HistoryOfNorth:
-	Scratch10 = BooksFoundFlags & 8
-	if 0 != Scratch10: Goto HistoryBooks
+	if BooksFoundFlags has HistoryNorth: Goto HistoryBooks
 	PrintClear "YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8."
 	Gosub TakeItMenu
-	if QuestBookHistoryNorth != 255: QuestBookHistoryNorth = 254
-	BooksFoundFlags = BooksFoundFlags | 8
+	if QuestBookHistoryNorth != Rewarded: QuestBookHistoryNorth = RewardDue
+	BooksFoundFlags |= HistoryNorth
 	Exit
 
 ArtsOfWar:
-	Scratch10 = BooksFoundFlags & 16
-	if 0 != Scratch10: Goto HistoryBooks
+	if BooksFoundFlags has ArtsOfWarBook: Goto HistoryBooks
 	PrintClear "YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21."
 	Gosub TakeItMenu
-	if QuestBookArtsOfWar != 255: QuestBookArtsOfWar = 254
-	BooksFoundFlags = BooksFoundFlags | 16
+	if QuestBookArtsOfWar != Rewarded: QuestBookArtsOfWar = RewardDue
+	BooksFoundFlags |= ArtsOfWarBook
 	Exit
 
 BasiliskLair:
-	Scratch10 = LibraryEventFlags & 64
-	if 0 != Scratch10: Exit
+	if LibraryEventFlags has ReptileBeaten: Exit
 	SetupMonster Basilisk distance=2 closeup=Basilisk
 	PartySurprise Scratch6 Scratch7
 	Surprise Scratch6 Scratch7 0 0
@@ -306,7 +297,7 @@ BasiliskSeen:
 	PrintClear "AMID THE LITTER OF THE ROOM YOU SEE A DULL BROWN REPTILIAN MONSTER."
 
 BasiliskMenu:
-	Surprise = 0
+	Surprise = NoSurprise
 	Gosub ShortPause
 	EncounterMenu Basilisk distance=MaxDist closeup=Basilisk result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="IT HISSES AT YOU." escape=0 strength=0
 	PrintClear " "
@@ -343,34 +334,33 @@ BasiliskFight:
 	LoadMonster Basilisk count=1 icon=Basilisk
 	Treasure 0 0 0 0 0 0 0 3 // Clerical Scroll With 2 Spells, Cloak of Displacement, Potion of Healing, Potion of Giant Strength
 	Combat
-	if CombatEnd == 129: Goto FleeFromBasilisk
-	LibraryEventFlags = LibraryEventFlags | 64
+	if CombatEnd == PartyFled: Goto FleeFromBasilisk
+	LibraryEventFlags |= ReptileBeaten
 	Exit
 
 BonesRoom:
-	if BonesRoomState == 1: Goto BonesJar
-	also if BonesRoomState > 1: Exit
+	if BonesRoomState == BonesShown: Goto BonesJar
+	also if BonesRoomState > BonesShown: Exit
 	PrintClear "YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK."
 	Gosub ShortPause
-	BonesRoomState = 1
+	BonesRoomState = BonesShown
 
 BonesJar:
-	Scratch3 = BooksFoundFlags & 32
+	Scratch3 = BooksFoundFlags & Jar
 	Gosub ExitUnlessSearchNew
-	BonesRoomState = 2
+	BonesRoomState = JarFound
 	PrintClear "YOU SEE A JAR UNDER THE FLOORBOARDS."
 	Gosub TakeItMenu
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 5 // Potion Extra Healing, Potion Extra Healing, Potion Extra Healing
 	Combat
-	BooksFoundFlags = BooksFoundFlags | 32
+	BooksFoundFlags |= Jar
 	Exit
 
 BenchChamber:
-	Scratch10 = BenchChamberSeen & Scratch1
-	if 0 != Scratch10: Exit
+	if BenchChamberSeen has Scratch1: Exit
 	PrintClear "YOU SEE A CHAMBER FILLED WITH ROTTED FURNITURE AND BENCHES."
-	BenchChamberSeen = BenchChamberSeen | Scratch1
+	BenchChamberSeen |= Scratch1
 	Exit
 
 FrescoRoom:
@@ -386,8 +376,7 @@ WritingHall:
 	Exit
 
 MadFighter:
-	Scratch10 = LibraryEventFlags & 3
-	if 0 != Scratch10: Exit
+	if LibraryEventFlags has MadFighterGone+FighterJoined: Exit
 	SetupMonster ArmoredFighter distance=0 closeup=MadMan
 	PrintClear "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
 
@@ -399,7 +388,7 @@ MadFighterMenu:
 	PrintClear "WATCHING YOU WARILY, HE INCHES AWAY. WHEN HE IS OUT OF SWORD'S REACH HE SCRAMBLES TO HIS FEET AND FLEES THE ROOM."
 	Gosub ShortPause
 	Gosub ShortPause
-	LibraryEventFlags = LibraryEventFlags | 1
+	LibraryEventFlags |= MadFighterGone
 	Goto RedrawExit
 
 MadFighterWait:
@@ -411,7 +400,7 @@ FleeFromMadman:
 	Goto FleeBack
 
 MadFighterParlay:
-	Parlay 0 1 2 3 4 Scratch10
+	Scratch10 = Parlay 0 1 2 3 4
 	PrintClear " "
 	OnGoto Scratch10 MadFighterWait MadFighterWait InviteMadman MadFighterWait MadFighterFight
 
@@ -423,7 +412,7 @@ InviteMadman:
 	PrintClear "HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?"
 	if Ask YesNoMenu == "NO": Goto MadFighterParlay
 	PrintClear "HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU."
-	LibraryEventFlags = LibraryEventFlags | 2
+	LibraryEventFlags |= FighterJoined
 	AddNPC MadMan 0
 	Goto RedrawExit
 
@@ -451,12 +440,12 @@ RaveNotHuman:
 
 MadFighterFight:
 	Morale = 0
-	Surprise = 0
+	Surprise = NoSurprise
 	ClearMonsters
 	LoadMonster MadMan count=1 icon=Aides
 	Combat
-	if CombatEnd == 129: Goto FleeFromMadman
-	LibraryEventFlags = LibraryEventFlags | 1
+	if CombatEnd == PartyFled: Goto FleeFromMadman
+	LibraryEventFlags |= MadFighterGone
 	Exit
 
 StudyRoom:
@@ -466,14 +455,14 @@ StudyRoom:
 	Exit
 
 TrashBook:
-	Scratch3 = BooksFoundFlags & 64
+	Scratch3 = BooksFoundFlags & TrashBookTaken
 	Gosub ExitUnlessSearchNew
 	PrintClear "BURIED AMID ALL THE TRASH YOU SEE A BOOK."
 	Gosub TakeItMenu
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 1 // Manual of Bodily Health
 	Combat
-	BooksFoundFlags = BooksFoundFlags | 64
+	BooksFoundFlags |= TrashBookTaken
 	Exit
 
 CarrelsRoom:
@@ -496,7 +485,7 @@ CarrelsFoil:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 2 // 3 Sheet of Gold
 	Combat
-	LibraryEventFlags = LibraryEventFlags | CarrelFoilBit
+	LibraryEventFlags |= CarrelFoilBit
 	Exit
 
 CarrelFoilBitTable:
@@ -513,8 +502,7 @@ StoreroomEnter:
 	StoreroomSeen = 1
 
 KoboldTable:
-	Scratch10 = LibraryEventFlags & 128
-	if 0 != Scratch10: Exit
+	if LibraryEventFlags has KoboldsDone: Exit
 	Print "LOOKING UP FROM A TABLE ARE FIVE KOBOLDS."
 	Gosub ShortPause
 	EncounterMenu Kobold distance=2 closeup=Kobold result=Scratch4 combat=Flee wait=Talk flee=Attack advance=Talk parlay=Talk near="THEY PLEAD FOR MERCY." mid="THEY STAND ARMS RAISED IN SURRENDER." far=" " escape=6 strength=6
@@ -529,16 +517,16 @@ KoboldsPlead:
 	PrintClear "ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?"
 	if Ask YesNoMenu == "NO": Goto KoboldFight
 	PrintClear "THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10."
-	LibraryEventFlags = LibraryEventFlags | 128
+	LibraryEventFlags |= KoboldsDone
 	Gosub PressToContinue
 	Goto RedrawExit
 
 KoboldFight:
 	Morale = 10
-	Surprise = 0
+	Surprise = NoSurprise
 	ClearMonsters
 	LoadMonster Kobold0 count=5 icon=Kobold
 	Combat
-	if CombatEnd == 129: Goto FleeFromKobolds
-	LibraryEventFlags = LibraryEventFlags | 128
+	if CombatEnd == PartyFled: Goto FleeFromKobolds
+	LibraryEventFlags |= KoboldsDone
 	Exit

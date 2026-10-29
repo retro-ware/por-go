@@ -86,7 +86,7 @@ MagicUserTrainer:
 EnterArena:
 	if ArenaEntered > 0: Goto ClearAndExit
 	PrintClear "THE ROOM IS FILLED WITH DUELING PAIRS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	ArenaEntered = 1
 	Portrait = Bearded
 	SetupMonster Fighter16 distance=2 body=PlateArmor
@@ -261,7 +261,7 @@ LeaveArea:
 	NewECL NewPhlan
 
 AfterWatchFight:
-	if CombatEnd > 128: Goto EjectParty
+	if CombatEnd > PartyDied: Goto EjectParty
 	if WatchCombatDone11 > 0: Return
 
 ClearAndExit:
@@ -280,7 +280,7 @@ YesNoMenu:
 CheckPartyFull:
 	if PartyCount < 8: Return
 	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto ClearAndExit
 
 EjectParty:
@@ -292,8 +292,9 @@ EjectParty:
 	Call CallRedraw
 	NewECL NewPhlan
 
-PressReturn:
-	AuxMenuChoice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
+WaitReturnPressed:
+	alias Choice = AuxMenuChoice
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 EjectXTable:

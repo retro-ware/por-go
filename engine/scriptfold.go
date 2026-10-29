@@ -48,8 +48,26 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 	var last []string // the last test's operands and its kind ("Compare" or "CompareAnd")
 	inBlock, guard := false, ""
 	alias := map[string]string{} // the section's
+	type textLine struct {
+		n int
+		s string
+	}
+	var src []textLine
 	for n, line := range strings.Split(text, "\n") {
-		n++
+		if t := strings.TrimLeft(line, "\t "); strings.HasPrefix(t, "stock ") && len(src) > 0 {
+			k := len(src) - 1
+			for k > 0 && src[k].s == "" {
+				k--
+			}
+			src[k].s += " " + strings.TrimPrefix(t, "stock ") // an OpenShop's items go on
+			src = append(src, textLine{n + 1, ""})
+			continue
+		}
+		src = append(src, textLine{n + 1, line})
+	}
+	var loops []loop // the open for loops
+	for i := 0; i < len(src); i++ {
+		n, line := src[i].n, src[i].s
 		toks, err := scriptTokens(line)
 		if err != nil {
 			return nil, fmt.Errorf("%d: %v", n, err)
@@ -76,6 +94,26 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 			continue
 		}
 		unalias(toks, alias)
+		unnameVarValues(toks, names)
+		if toks[0] == "for" {
+			lp, a, ok := forLoop(toks)
+			if !ok || inBlock || len(out) == 0 || !out[len(out)-1].label {
+				return nil, fmt.Errorf("%d: want L: then for X = A to B or for X = A while X op B", n)
+			}
+			lp.label = out[len(out)-1].toks[0]
+			out = slices.Insert(out, len(out)-1, srcLine{n: n, toks: []string{"Save", a, lp.x}})
+			loops = append(loops, lp)
+			continue
+		}
+		if len(toks) == 1 && toks[0] == "next" {
+			if len(loops) == 0 || inBlock {
+				return nil, fmt.Errorf("%d: next without a for", n)
+			}
+			lp := loops[len(loops)-1]
+			loops = loops[:len(loops)-1]
+			src = slices.Insert(src, i+1, textLine{n, "\t" + lp.x + " += 1"}, textLine{n, "\tif " + lp.x + " " + lp.op + " " + lp.b + ": Goto " + lp.label})
+			continue
+		}
 		emit := func(t ...string) { out = append(out, srcLine{n: n, toks: t}) }
 		// the command parts of the line, split at ; { }
 		for len(toks) > 0 {
@@ -161,6 +199,9 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 			}
 		}
 	}
+	if len(loops) > 0 {
+		return nil, fmt.Errorf("a for without next")
+	}
 	if inBlock {
 		return nil, fmt.Errorf("an if block without }")
 	}
@@ -179,6 +220,13 @@ func expandMacro(c []string, names *ScriptNames) [][]string {
 		return a
 	}
 	switch {
+	case c[0] == "OpenShop" && len(c) >= 2:
+		if v, ok := valueOf(names.Values, "Stock", names.Set, strings.Join(c[1:], ",")); ok {
+			return [][]string{{"Treasure", "0", "0", "0", "0", "0", "0", "0", strconv.Itoa(v)},
+				{"Save", "1", "Shop"}, {"Save", "1", "ShopFlag"}, {"Save", "16", "ShopKind"}, {"Combat"}}
+		}
+	case c[0] == "OpenTemple" && len(c) == 1:
+		return [][]string{{"Save", "1", "Temple"}, {"Combat"}}
 	case c[0] == "SetMapXY" && len(c) == 3:
 		return [][]string{{"Save", c[1], "MapX"}, {"Save", c[2], "MapY"}}
 	case c[0] == "ShowPortrait" && len(c) == 3:
@@ -256,12 +304,18 @@ func parseCond(c []string) ([]string, string, error) {
 		return []string{c[0], c[2], c[4], c[6], "CompareAnd"}, "IfNe", nil
 	case len(c) == 4 && c[0] == "Ask" && c[2] == "==":
 		return []string{c[1], "Ask"}, askIf + c[1] + " " + c[3], nil // resolveAsks makes it IfEq or IfNe
+	case len(c) == 6 && c[0] == "Gosub" && c[2] == "then" && ifOps[c[4]] != "":
+		return []string{c[1], "Gosub"}, ifOps[c[4]], nil // the section's Compare A B tests
+	case len(c) == 3 && c[1] == "has":
+		return []string{c[0], c[2], hasScratch, "And"}, "IfNe", nil
+	case len(c) == 3 && c[1] == "lacks":
+		return []string{c[0], c[2], hasScratch, "And"}, "IfEq", nil
 	case len(c) == 2 && c[0] == "Carried":
 		return []string{c[1], "FindItem"}, "IfEq", nil
 	case len(c) == 2 && c[0] == "!Carried":
 		return []string{c[1], "FindItem"}, "IfNe", nil
 	}
-	return nil, "", fmt.Errorf("a test is A op B, A == B && C == D, A != B || C != D, [!]Carried Item or Ask M == ANSWER: %s", strings.Join(c, " "))
+	return nil, "", fmt.Errorf("a test is A op B, A == B && C == D, A != B || C != D, X has N, X lacks N, [!]Carried Item or Ask M == ANSWER: %s", strings.Join(c, " "))
 }
 
 // foldScript writes a plain script's Compare and If commands as if lines
@@ -279,6 +333,7 @@ func foldScript(text string, names *ScriptNames) string {
 		return toks[0], toks[1:], true
 	}
 	askTests := askSections(lines)
+	cmpTests := compareSections(lines)
 	opOf := map[string]string{}
 	for k, v := range ifOps {
 		opOf[v] = k
@@ -287,7 +342,8 @@ func foldScript(text string, names *ScriptNames) string {
 	for i := 0; i < len(lines); i++ {
 		op, args, ok := cmd(i)
 		asked := askTests[strings.Join(args, " ")]
-		test := op == "Gosub" && len(args) == 1 && asked != nil ||
+		compared := cmpTests[strings.Join(args, " ")]
+		test := op == "Gosub" && len(args) == 1 && (asked != nil || compared != nil) ||
 			op == "Compare" && len(args) == 2 || op == "CompareAnd" && len(args) == 4 ||
 			op == "FindItem" && len(args) == 1 || (op == "And" || op == "Or") && len(args) == 3
 		if op == "Compare" && len(args) == 2 && args[0] == "0" {
@@ -313,7 +369,7 @@ func foldScript(text string, names *ScriptNames) string {
 			if !ok1 || !ok2 || opOf[ifOp] == "" || strings.HasPrefix(guarded, "If") {
 				break
 			}
-			if (op == "CompareAnd" || op == "FindItem" || op == "Gosub") && ifOp != "IfEq" && ifOp != "IfNe" {
+			if (op == "CompareAnd" || op == "FindItem" || op == "Gosub" && asked != nil) && ifOp != "IfEq" && ifOp != "IfNe" {
 				break
 			}
 			if len(runs) > 0 && runs[len(runs)-1].ifOp == ifOp {
@@ -338,6 +394,8 @@ func foldScript(text string, names *ScriptNames) string {
 		for k, r := range runs {
 			var cond string
 			switch {
+			case op == "Gosub" && asked == nil:
+				cond = "Gosub " + args[0] + " then " + compared[0] + " " + opOf[r.ifOp] + " " + compared[1]
 			case op == "Gosub" && r.ifOp == "IfEq":
 				cond = "Ask " + args[0] + " == " + asked[0]
 			case op == "Gosub":
@@ -371,7 +429,7 @@ func foldScript(text string, names *ScriptNames) string {
 		}
 		i = j - 1
 	}
-	return strings.Join(aliasScratch(foldAsks(assignLines(foldMenus(nameValues(foldMacros(out, names.Areas), names))))), "\n") + "\n"
+	return strings.Join(aliasScratch(nameData(foldLoops(foldAsks(nameVarValues(foldHas(foldShops(assignLines(foldMenus(nameValues(foldMacros(out, names.Areas), names))), names)), names))), names)), "\n") + "\n"
 }
 
 // nameValues writes the numbers of the commands' operands of a kind

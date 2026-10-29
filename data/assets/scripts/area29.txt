@@ -3,7 +3,7 @@ event0:
 	Gosub UpdateSky
 	if LeftMap == 0: Goto CheckEntry
 	Call CallStepForward
-	HoldMove = 255
+	HoldMove = SkipMove
 	SymbolSet = ExitSymbolSetByFacing[Facing]
 	ExitAreaByFacingEntry = ExitAreaByFacing[Facing]
 	NoCoords = 0
@@ -12,22 +12,22 @@ event0:
 CheckEntry:
 	Scratch10 = 127 & Cell
 	if Scratch10 != 1: Goto CheckSecretDoorBlock
-	GroundKind = 0
+	GroundKind = Surface
 	Gosub UpdateSky
 
 CheckSecretDoorBlock:
-	if SecretDoorFound == 255: Goto CheckNailedDoor
-	if Scratch10 == 6 && Facing == 0: HoldMove = 255
-	if Scratch10 == 7 && Facing == 2: HoldMove = 255
+	if SecretDoorFound == Completed: Goto CheckNailedDoor
+	if Scratch10 == 6 && Facing == North: HoldMove = SkipMove
+	if Scratch10 == 7 && Facing == South: HoldMove = SkipMove
 
 CheckNailedDoor:
 	alias ExitCellByFacingEntry = Scratch9
-	if Scratch10 == 21 && Facing == 2: Goto NailedDoor
+	if Scratch10 == 21 && Facing == South: Goto NailedDoor
 	ExitCellByFacingEntry = ExitCellByFacing[Facing]
 	if ExitCellByFacingEntry != Scratch10: Goto CheckWellAmbush
-	AuxMember = WildFlags & 1
+	AuxMember = WildFlags & WellRungs
 	if 0 == AuxMember: Goto WellPlaza
-	GroundKind = 1
+	GroundKind = ByTheWell
 	Gosub UpdateSky
 
 CheckWellAmbush:
@@ -46,13 +46,14 @@ CheckWellAmbush:
 	Goto WaitingKobolds
 
 event1:
+	alias CellEvent = AuxCounter
 	EncounterMode = 0
 	PrintClear ""
 	Scratch10 = 127 & Cell
 	Scratch1 = 0
 	Scratch2 = 2
-	AuxCounter = CellEventTable[Scratch10]
-	OnGoto AuxCounter Done RandomEncounterRoll WellPlaza KutosWellEvent WellApproach PlazaWander SicklyKobolds LizardPatrol SeerWoman NorthWallDoor SouthWallDoor HiddenCatacombs CatacombSniper1 CatacombSniper2 BanditTreasure NorrisBandits
+	CellEvent = CellEventTable[Scratch10]
+	OnGoto CellEvent Done RandomEncounterRoll WellPlaza KutosWellEvent WellApproach PlazaWander SicklyKobolds LizardPatrol SeerWoman NorthWallDoor SouthWallDoor HiddenCatacombs CatacombSniper1 CatacombSniper2 BanditTreasure NorrisBandits
 
 KutosWellEvent:
 	if InWell != 0: Goto WellSecretDoor
@@ -92,7 +93,7 @@ ArrowRain:
 	if Search != 1: Exit
 	Damage 9 1 6 0 41
 	PrintClear "A RAIN OF ARROWS POURS OVER YOU."
-	if Surprise != 1: Goto MonstersAttack
+	if Surprise != PartyIsSurprised: Goto MonstersAttack
 	Exit
 
 RandomEncounterRoll:
@@ -110,7 +111,7 @@ event2:
 	RestChance = 100
 	if InWell != 1: Goto PlazaRest
 	if Cell == 16: Exit
-	if BanditsDone != 255: RestEvery = 1
+	if BanditsDone != Completed: RestEvery = 1
 	Exit
 
 PlazaRest:
@@ -123,7 +124,7 @@ PlazaRest:
 event3:
 	if InWell != 0: Goto NorrisBandits
 	EncounterMode = 200
-	Surprise = 0
+	Surprise = NoSurprise
 	Goto RandomEncounter
 
 event4:
@@ -147,16 +148,17 @@ NorthWallDoor:
 	$AuxMonsterName = "NORTH WALL."
 
 SearchSecretDoor:
-	if SecretDoorFound == 255: Goto SecretDoorSpotted
+	if SecretDoorFound == Completed: Goto SecretDoorSpotted
 	AuxMember = 0
 
 SearchMemberLoop:
-	LoadCharacter AuxMember
-	if SelStatus != 1: Goto NextSearcher
-	AuxSearchCount = SecretDoorChanceByRace[SelRace]
-	AuxSearchCount += Search
+	alias SecretDoorChanceByRaceEntry = AuxSearchCount
+	SelectMember AuxMember
+	if SelStatus != Okay: Goto NextSearcher
+	SecretDoorChanceByRaceEntry = SecretDoorChanceByRace[SelRace]
+	SecretDoorChanceByRaceEntry += Search
 	AuxRoll = Random 5
-	if AuxSearchCount > AuxRoll: Goto SecretDoorSpotted
+	if SecretDoorChanceByRaceEntry > AuxRoll: Goto SecretDoorSpotted
 
 NextSearcher:
 	AuxMember += 1
@@ -166,11 +168,11 @@ NextSearcher:
 SecretDoorSpotted:
 	PrintClear "YOU FIND A SECRET DOOR IN THE "
 	Print $AuxMonsterName
-	SecretDoorFound = 255
+	SecretDoorFound = Completed
 	Exit
 
 NorrisBandits:
-	if BanditsDone == 255: Exit
+	if BanditsDone == Completed: Exit
 	Portrait = EyepatchHelmet
 	SetupMonster Fighter16 distance=2 body=LeatherHarness
 	Delay
@@ -189,15 +191,15 @@ NorrisBandits:
 	LoadMonster Lizardman count=5 icon=Lizardman
 	LoadMonster KoboldLeader1 count=9 icon=KoboldLeader
 	Combat
-	if CombatEnd > 128: Goto ReleasedAboveGround
-	BanditsDone = 255
-	QuestBandits = 254
+	if CombatEnd > PartyDied: Goto ReleasedAboveGround
+	BanditsDone = Completed
+	QuestBandits = RewardDue
 	PrintClear "ON THE LEADER'S BODY, YOU FIND A CURIOUS MESSAGE THAT YOU PLACE IN YOUR JOURNAL AS ENTRY 50."
 	Gosub PressToContinue
 	PrintClear "YOU HAVE DEFEATED THE DREADED BANDIT GANG AND RID PHLAN OF A GREAT EVIL.  THE HONEST SETTLERS WILL CHEER YOUR DEEDS!"
 	Gosub PressToContinue
 	PrintClear "YOU HAVE ALSO TAKEN POSSESSION OF A HIDEOUT IN WHICH YOU MAY REST UNDISTURBED FROM THE RIGORS OF YOUR QUESTING."
-	BanditTreasureState = 250
+	BanditTreasureState = TreasureWaits
 	AuxMember = 0
 	Gosub PauseLoop
 	Exit
@@ -206,37 +208,37 @@ SurrenderToBandits:
 	RedrawView
 	PrintClear "YOU ARE STRIPPED OF ALL VALUABLES AND BLINDFOLDED.  THE BANDITS RELEASE YOU SOMEWHERE ABOVE GROUND."
 	Rob 1 100 100
-	BanditsDone = 255
-	BanditTreasureState = 255
+	BanditsDone = Completed
+	BanditTreasureState = TreasureGone
 
 ReleasedAboveGround:
 	InWell = 0
-	GroundKind = 0
+	GroundKind = Surface
 	Gosub UpdateSky
 	LoadMap 29 unused=2 icons=255
 	LoadWalls 3 20 1
 	Goto DropOff
 
 BanditTreasure:
-	if BanditTreasureState != 250: Exit
+	if BanditTreasureState != TreasureWaits: Exit
 	PrintClear "YOU HAVE FOUND THE BANDIT'S TREASURE.  DO YOU TAKE IT?"
 	Gosub YesOrExit
 	PrintClear "YOU GRAB THE LOOT."
 	ClearMonsters
 	Treasure 0 #08FC 0 92 0 20 0 255
 	Combat
-	BanditTreasureState = 255
+	BanditTreasureState = TreasureGone
 	Exit
 
 HiddenCatacombs:
-	GroundKind = 0
+	GroundKind = Surface
 	Gosub UpdateSky
 	Call CallRedraw
-	if CatacombAmbushDone == 255: Exit
+	if CatacombAmbushDone == Completed: Exit
 	PrintClear "YOU PASS INTO HIDDEN CATACOMBS. THIS LARGE ROOM IS DIMLY LIT BY SPUTTERING TORCHES. THROUGH THE SMOKE YOU SEE CURTAINS HUNG TO COVER DOORWAYS."
 	Gosub PressToContinue
-	if BanditsDone == 255: Exit
-	if Facing == 0: Goto ArrowVolley
+	if BanditsDone == Completed: Exit
+	if Facing == North: Goto ArrowVolley
 	SetupMonster Kobold distance=2 closeup=Kobold
 	AuxMember = 25
 	Gosub PauseLoop
@@ -245,26 +247,26 @@ ArrowVolley:
 	PrintClear "SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP."
 	Delay
 	Damage 4 1 6 0 39
-	CatacombAmbushDone = 255
+	CatacombAmbushDone = Completed
 	Gosub PressToContinue
 	Goto Done
 
 CatacombSniper1:
-	if BanditsDone == 255: Exit
-	if CatacombSpot1Done == 255: Exit
-	if Facing == 0: Gosub SniperArrow
+	if BanditsDone == Completed: Exit
+	if CatacombSpot1Done == Completed: Exit
+	if Facing == North: Gosub SniperArrow
 	IfNe
 	Gosub ShowSniper
-	CatacombSpot1Done = 255
+	CatacombSpot1Done = Completed
 	Exit
 
 CatacombSniper2:
-	if BanditsDone == 255: Exit
-	if CatacombSpot2Done == 255: Exit
-	if Facing == 2: Gosub SniperArrow
+	if BanditsDone == Completed: Exit
+	if CatacombSpot2Done == Completed: Exit
+	if Facing == South: Gosub SniperArrow
 	IfNe
 	Gosub ShowSniper
-	CatacombSpot2Done = 255
+	CatacombSpot2Done = Completed
 	Exit
 
 ShowSniper:
@@ -278,7 +280,7 @@ SniperArrow:
 	Return
 
 WellSecretDoor:
-	GroundKind = 2
+	GroundKind = WellBottom
 	Gosub UpdateSky
 	Call CallRedraw
 	PrintClear "JUST ABOVE THE WATERLINE, A SECRET DOOR HAS BEEN LEFT AJAR IN THE SOUTH WALL OF THE WELL.  DO YOU WANT TO CLIMB UP THE RUNGS?"
@@ -287,7 +289,7 @@ WellSecretDoor:
 	PrintClear "YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL."
 	LoadMap 29 unused=255 icons=255
 	LoadWalls 3 20 1
-	GroundKind = 1
+	GroundKind = ByTheWell
 	Gosub UpdateSky
 	Call CallRedraw
 	Goto event1
@@ -306,7 +308,7 @@ WaitingKobolds:
 	Goto WellFight
 
 WellPlaza:
-	AuxMember = WildFlags & 1
+	AuxMember = WildFlags & WellRungs
 	if 0 != AuxMember: Goto ClimbDownWell
 
 MonstersAttack:
@@ -323,7 +325,7 @@ WellFight:
 	LoadMonster Kobold0 count=6 icon=Kobold
 	LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
 	Combat
-	if CombatEnd >= 128: Goto AfterCombat
+	if CombatEnd >= PartyDied: Goto AfterCombat
 	if Scratch1 == 250: Goto WellCleared
 	if Scratch4 < 1: PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS."
 	also if Scratch4 == 1: PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS."
@@ -338,7 +340,7 @@ WellFight:
 	Goto WellFight
 
 WellCleared:
-	WildFlags = WildFlags | 1
+	WildFlags |= WellRungs
 	Exit
 
 CheckEncounterCount:
@@ -348,14 +350,18 @@ CheckEncounterCount:
 
 RandomEncounter:
 	alias EncTable2Entry = Scratch8
+	alias EncTable3Entry = AuxEncResult
+	alias EncTable4Entry = AuxEncResult2
+	alias EncTable5Entry = AuxEncMonster2
+	alias EncTable6Entry = AuxEncTemp
 	Scratch7 = Random 2
 	OnGosub Scratch7 NameGnolls NameKobolds NameLizardmen
 	MonsterDist = EncMonsterDistTable[Scratch7]
 	EncTable2Entry = EncTable2[Scratch7]
-	AuxEncResult = EncTable3[Scratch7]
-	AuxEncResult2 = EncTable4[Scratch7]
-	AuxEncMonster2 = EncTable5[Scratch7]
-	AuxEncTemp = EncTable6[Scratch7]
+	EncTable3Entry = EncTable3[Scratch7]
+	EncTable4Entry = EncTable4[Scratch7]
+	EncTable5Entry = EncTable5[Scratch7]
+	EncTable6Entry = EncTable6[Scratch7]
 	if EncounterMode == 200: Goto FaceToFace
 	PartySurprise AuxMember AuxRoll
 	Surprise AuxMember AuxRoll 0 0
@@ -418,7 +424,7 @@ SurprisedParty:
 SicklyKobolds:
 	AuxSightText = Random 20
 	if AuxSightText != 15: Exit
-	if KoboldBandDone == 255: Exit
+	if KoboldBandDone == Completed: Exit
 	SetupMonster Kobold distance=2 closeup=Kobold
 	Delay
 	Approach
@@ -430,69 +436,70 @@ SicklyKobolds:
 	OnGoto AuxMember Done SicklyKoboldsFight DropOff SicklyKoboldsParlay
 
 SicklyKoboldsFight:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 25
 	ClearMonsters
 	LoadMonster Kobold0 count=2 icon=Kobold
 	LoadMonster KoboldLeader1 count=4 icon=KoboldLeader
 	Combat
-	KoboldBandDone = 255
+	KoboldBandDone = Completed
 	Exit
 
 SicklyKoboldsParlay:
-	Parlay 0 0 0 0 0 AuxParlay
+	alias Choice = AuxMember
+	AuxParlay = Parlay 0 0 0 0 0
 	PrintClear "THE KOBOLDS FAWN ON YOU PATHETICALLY.  'PLEASE, OH PLEASE NOBLE ONES, DON'T HURT US,' THEY BEG.  'WE WERE SENT ON A SCOUTING MISSION BY OUR KING.  RUMORS OF A WONDROUS POOL CAME TO HIM IN HIS LAIR."
 	Gosub PressToContinue
 	PrintClear "WE ARE ALL THAT REMAINS OF THE MIGHTY BAND THAT WAS SENT WEST TO TEST THE TALES.  WE MEAN YOU NO HARM.  WE ONLY SEEK TO RETURN TO OUR FAMILIES.'  (WHAT DO YOU DO?)"
-	AuxMember = Menu "RELEASE THEM?" "FIGHT?" "QUESTION THEM?"
-	OnGoto AuxMember KoboldsScamper SicklyKoboldsFight
+	Choice = Menu "RELEASE THEM?" "FIGHT?" "QUESTION THEM?"
+	OnGoto Choice KoboldsScamper SicklyKoboldsFight
 	PrintClear "THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)"
-	AuxMember = Menu "RELEASE THEM?" -> KoboldsScamper "FIGHT THEM?" -> SicklyKoboldsFight
+	Choice = Menu "RELEASE THEM?" -> KoboldsScamper "FIGHT THEM?" -> SicklyKoboldsFight
 
 KoboldsScamper:
 	PrintClear "THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL."
-	KoboldBandDone = 255
+	KoboldBandDone = Completed
 	Goto Done
 
 LizardPatrol:
-	AuxMember = WildFlags & 8
+	AuxMember = WildFlags & FightWon
 	if 0 != AuxMember: Exit
 	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!"
 	Gosub PressToContinue
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 75
 	ClearMonsters
 	LoadMonster Lizardman count=1 icon=Lizardman
 	LoadMonster GiantLizard count=4 icon=GiantLizard
 	Combat
-	if CombatEnd < 128: WildFlags = WildFlags | 8
+	if CombatEnd < PartyDied: WildFlags |= FightWon
 	Exit
 
 NailedDoor:
-	AuxMember = WildFlags & 16
+	AuxMember = WildFlags & NailedDoorForced
 	if 0 != AuxMember: Exit
-	HoldMove = 255
+	HoldMove = SkipMove
 	PrintClear "THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?"
 	Gosub YesOrExit
 	PrintClear "THE DOOR IS FREED."
-	WildFlags = WildFlags | 16
+	WildFlags |= NailedDoorForced
 	HoldMove = 0
 	Exit
 
 SeerWoman:
-	AuxMember = WildFlags & 2
+	AuxMember = WildFlags & SpiritWarning
 	if 0 != AuxMember: Goto HiddenArmor
 	Picture WomanInGreen
 	PrintClear "A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE."
 	Gosub PressToContinue
 	PrintClear "AN EVIL SPIRIT FROM AN UNHOLY POOL GUIDES YOUR ENEMIES. IT HIDES BEHIND A FAIR COUNTENANCE. BE NOT DECEIVED.' WITH THAT, THE WOMAN IS GONE."
 	Picture None
-	WildFlags = WildFlags | 2
+	WildFlags |= SpiritWarning
 	Exit
 
 HiddenArmor:
-	AuxMember = WildFlags & 4
+	AuxMember = WildFlags & SearchedTreasure
 	if 0 != AuxMember: Exit
 	if Search != 1: Exit
 	PrintClear "BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?"
@@ -500,11 +507,11 @@ HiddenArmor:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 58 // Bracers AC 4, Quarter Staff +1, Banded Mail +1
 	Combat
-	WildFlags = WildFlags | 4
+	WildFlags |= SearchedTreasure
 	Exit
 
 AfterCombat:
-	if CombatEnd > 128: Goto DropOff
+	if CombatEnd > PartyDied: Goto DropOff
 	if CombatEnd < 1: Goto CountEncounter
 	if Beaten == 0: Exit
 
@@ -513,10 +520,10 @@ CountEncounter:
 	Goto Done
 
 FightSurprised:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 
 EncounterFight:
-	PartyStrength AuxPartyStrength
+	AuxPartyStrength = PartyStrength
 	AuxTemp9 = 0
 	Morale = AuxEncTemp
 	if Scratch7 < 1: AuxPartyStrength = AuxPartyStrength / 3
@@ -551,8 +558,8 @@ Done:
 	Exit
 
 ParlayMonsters:
-	Surprise = 0
-	Parlay 10 20 20 20 30 AuxParlay
+	Surprise = NoSurprise
+	AuxParlay = Parlay 10 20 20 20 30
 	AuxRoll2 = Random 30
 	AuxParlay = AuxParlay + AuxRoll2
 	AuxParlay = AuxParlay + SelReaction
@@ -590,7 +597,8 @@ PauseLoop:
 	Return
 
 PressToContinue:
-	AuxMenuChoice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	alias Choice = AuxMenuChoice
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 UpdateSky:
@@ -608,8 +616,9 @@ UpdateSky:
 	Return
 
 YesOrExit:
-	AuxMember = Menu "YES" "NO"
-	if AuxMember == 0: Return
+	alias Choice = AuxMember
+	Choice = Menu "YES" "NO"
+	if Choice == 0: Return
 	Exit
 
 ShowKobolds:
@@ -621,7 +630,7 @@ ShowKobolds:
 	Return
 
 ExitIfWellCleared:
-	AuxMember = WildFlags & 1
+	AuxMember = WildFlags & WellRungs
 	if 0 != AuxMember: Exit
 	Return
 

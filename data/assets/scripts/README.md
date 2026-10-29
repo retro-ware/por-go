@@ -44,11 +44,14 @@ calls a section up to its `Return`.
 | `$Name`       | a string variable |
 | `Kobold`      | a named number: a monster, item, picture, sprite, icon ... (by the operand's kind; `names/values.txt`, `names/pictures.txt`) |
 | `count=8`     | an operand with its label; the label is only for reading and must be that operand's |
+| `SelSide = PartyControlled` | a number beside a variable by the name of that variable's value (`names/variables.txt`): after `=`, a comparison, or a mask |
+| `Seen+Done`, `~Seen` | a mask by its bits' names (with `&=`: the bits not named) |
 
 `Scratch1` .. `Scratch10` are temporary words that every section reuses.
 `alias Choice = Scratch1` under a label names one for that section (until
-the next label). `cmd/eclscript` adds `Choice` for a menu's answer and
-`<Table>` for an entry read from a table.
+the next label). `cmd/eclscript` adds `Choice` for a menu's answer,
+`<Table>` for an entry read from a table, and `Monster1`, `Icon1` ...
+for words a `LoadMonster` reads (`Aux...` words too).
 
 ## Assignments and arithmetic
 
@@ -58,9 +61,13 @@ the next label). `cmd/eclscript` adds `Choice` for a menu's answer and
 | `D = A + B`       | addition, also `-` `*` `/` (integer, x/0 = 0) |
 | `D = A & B`       | bitwise and, `\|` or. Sets the test flags as `0 op D` (see Tests) |
 | `D += A`, `D -= A`| add to D, take from D |
+| `D \|= Bits`, `D &= ~Bits` | set bits of D, clear them |
 | `D = T[I]`        | entry I of table (or variable row) T |
 | `T[I] = V`        | set entry I of T |
 | `D = Random N`    | a random number 0 .. N |
+| `D = PartyStrength` | the party's strength (hit points, AC, THAC0, levels) |
+| `D = InputNumber N`, `$D = InputString N` | ask for a number or text (N is not used by the port) |
+| `D = Parlay a b c d e` | the HAUGHTY/SLY/NICE/MEEK/ABUSIVE menu; D gets the chosen attitude's operand |
 
 Words are 16 bits and wrap; many variables are bytes.
 
@@ -83,15 +90,16 @@ also if Facing < 2: Goto B             the same test's result again (no new test
 | `A != B \|\| C != D`      | either differs |
 | `Carried Item`, `!Carried Item` | someone in the party carries it (or nobody does) |
 | `Ask M == "YES"` | calls menu section M, which asks a two-answer `D = Menu "YES" "NO"` and ends in `Compare D 0`, and tests the answer |
+| `X has Bits`, `X lacks Bits` | some of the bits are set in X, or none (`Scratch10 = X & Bits` and `0 != Scratch10`; Scratch10 keeps the mask) |
+| `Gosub M then A op B` | calls section M, which ends in the test `Compare A B` and `Return`, and tests its result |
 | `0 op D` right after `D = A & B` / `D = A \| B` | tests that result without a new comparison (`0 != D`: D is not 0) |
 
 Every command inside an `if` block is guarded by the one test: a `Gosub`
 inside may change what the commands after it see. The raw form, `Compare
 A B` followed by `IfEq`/`IfNe`/`IfLt`/`IfGt`/`IfLe`/`IfGe` (each skips the
 next command unless its comparison held), still appears where the test
-is made elsewhere: after a `Gosub` of a section that ends in a test
-(`CheckGarrisonsBeaten`, `RollSurprise`), or at a label in the middle of
-a test.
+is made elsewhere: after a `Gosub` of a section whose test is not its
+last command, or at a label in the middle of a test.
 
 ## Flow
 
@@ -101,6 +109,8 @@ a test.
 | `Gosub L` / `Return` | call section L, come back at `Return` |
 | `OnGoto V L0 L1 ...` | go to the V-th label (0 first); past the list, continue |
 | `OnGosub V L0 L1 ...` | the same as a call |
+| `for X = A to B` ... `next` | X from A to B: the commands between run once for each (at least once). Under the loop's label; `X = A` is before it, `next` is `X += 1` and `if X < B+1: Goto` the label |
+| `for X = A while X op B` ... `next` | the same, while the test holds after each `X += 1` |
 | `Exit` | end the event; redraws the view frame if text was shown |
 | `Call Name` | run an engine routine the original called by address (`CallRedraw`, duel setup, sounds; `names/global.txt`) |
 | `Program N` | open a game screen: 0 party menu, 9 encamp |
@@ -121,10 +131,8 @@ a test.
 | `D = Menu "A" -> L1 "B" -> L2` | the same, then go to the answer's label (`HMenu` + `OnGoto`) |
 | `Ask M "YES" -> L1 "NO" -> L2` | call menu section M (it only asks `D = Menu "YES" "NO"` and returns), then go to the answer's label; an answer without `->` goes on with the next line (`Gosub M` + `OnGoto D L1 L2`) |
 | `D = VMenu "PROMPT" "A" "B"` | a vertical list menu |
-| `Parlay a b c d e D` | the HAUGHTY/SLY/NICE/MEEK/ABUSIVE menu; D gets the operand of the chosen attitude |
-| `InputNumber N D`, `InputString N $D` | ask for a number or text into D (N is not used by the port) |
 | `Who "PROMPT"` | choose a party member (the selected member after) |
-| `LoadCharacter N` | select party member N (+128: also remove them if they died) |
+| `SelectMember N` | select party member N (+128: also remove them if they died) |
 
 ## Pictures and the view
 
@@ -163,8 +171,9 @@ Reactions (`EncounterMenu`):
 | Command | Does |
 |---------|------|
 | `PartySurprise A B` / `Surprise A B C D` | roll surprise; `Surprise` is 0 none, 1 party surprised, 2 monsters surprised |
-| `PartyStrength D` | the party's strength (hit points, AC, THAC0, levels) into D |
 | `Combat` | run the fight with the loaded monsters (or the shop, temple or treasure screen when no fight is pending) |
+| `OpenShop` + `stock Item ...` lines | the shop selling those items: `Treasure` with the ITEM block of exactly those items (`Item*20`: 20 of it), `Shop = 1`, `ShopFlag = 1`, `ShopKind = 16` (the last two are never read) and `Combat` |
+| `OpenTemple` | the temple (`Temple = 1`, `Combat`) |
 | `Damage flags dice sides bonus save` | roll damage on one member, everyone (flags 64) or `flags` random members; with flags 128 a saving throw avoids it |
 | `Treasure g1 .. g7 Items` | treasure for after the fight: 7 money amounts (copper .. platinum, gems, jewelry), Items an ITEM block (contents in the comment), 128+N for N random items, 255 none |
 | `Rob Who Pct x` | take Pct% of the money and items, of the selected member (Who 0) or everyone |
@@ -176,6 +185,9 @@ Reactions (`EncounterMenu`):
 | `CheckParty What Special Min Max Avg Found` | a party census (a skill or special ability) |
 | `Spell N Slot Count` | look for memorized spell N |
 | `Carried Item` | see Tests (the `FindItem` command) |
+
+A table under a label ending in `Monsters` or `Icons` has its entries by
+name (`Data Nomad StLvlThief`).
 
 Unknown or unnamed things keep their numbers; where a name in `names/`
 is a guess, its comment there says so.

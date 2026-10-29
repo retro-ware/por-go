@@ -96,7 +96,7 @@ ACD6 PickLizardMen
 ACEB PickBandits
 ACFE PickNomads
 AD10 PickMerchants
-AD24 PressReturn
+AD24 WaitReturnPressed
 AD47 Done
 AD54 DrawRiver
 AD66 RiverDrawBegin

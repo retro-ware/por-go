@@ -105,5 +105,5 @@ B388 KoboldAmbush
 B44D RestRareEncounter
 B49E WhatDoYouDo
 B4AE ThrownInCell
-B4ED PressReturn
+B4ED WaitReturnPressed
 B512 JournalEntry

@@ -149,7 +149,7 @@ event4:
 	if AreaKind == 16: Exit
 	PartyX = 8
 	PartyY = 14
-	Facing = 0
+	Facing = North
 	LoadMap 16 unused=2 icons=255
 	LoadWalls 9 20 23
 	PrintClear "YOU SENSE AN ANTI-MAGIC SHELL AROUND YOU."
@@ -158,15 +158,15 @@ event4:
 	Exit
 
 MoatBlocks:
-	HoldMove = 255
+	HoldMove = SkipMove
 	PrintClear "AHEAD OF YOU IS A MOAT FILLED WITH SLUDGE AND THORNS. YOU CANNOT PROCEED BECAUSE THE MUD WOULD SURELY DRAG YOU DOWN TO YOUR DEATH."
 	Exit
 
 LeaveRuins:
 	RedrawView
 	Picture None
-	if QuestLizardmen == 255: Goto GotoArea27
-	if LizardMenKilled >= 40: QuestLizardmen = 254
+	if QuestLizardmen == Rewarded: Goto GotoArea27
+	if LizardMenKilled >= 40: QuestLizardmen = RewardDue
 
 GotoArea27:
 	NewECL Quagmire
@@ -188,14 +188,14 @@ GoDownMenu:
 	EncountersDone = 254 | EncountersDone
 	BuildingsSeen = 254 | BuildingsSeen
 	RedrawView
-	HoldMove = 255
+	HoldMove = SkipMove
 	Call CallRedraw
 	Scratch7 = 4
 	Gosub CapLizardCounts
 	if Scratch4 < 2: Exit
 	SetupMonster GiantLizard distance=1 closeup=GiantLizard
 	PrintClear "YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!"
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 100
 	Approach
 	Delay
@@ -235,15 +235,14 @@ FindTreasure:
 	Gosub TakeItMenu
 	IfNe
 	Exit
-	EncountersDone = EncountersDone | 1
+	EncountersDone |= 1
 	ClearMonsters
 	Treasure 0 0 0 #03E8 0 1 1 255
 	Combat
 	Exit
 
 OldLizardman:
-	Scratch10 = OldLizardmanFlags & 1
-	if 0 == Scratch10: Goto BuildingEncounter
+	if OldLizardmanFlags lacks StillToMeet: Goto BuildingEncounter
 	PrintClear "AN OLD LIZARDMAN APPEARS BEFORE YOU, HAND RAISED IN A GESTURE OF PEACE."
 	Delay
 	EncounterMenu Lizardman distance=0 closeup=NoPicture13 result=Scratch10 combat=Attack wait=Talk flee=Talk advance=Talk parlay=Talk near="HE LOOKS AT YOU PATIENTLY." escape=6 strength=6
@@ -257,8 +256,8 @@ OldLizardmanGone:
 	Call CallRedraw
 	Delay
 	Delay
-	OldLizardmanFlags = OldLizardmanFlags & 254
-	OldLizardmanFlags = OldLizardmanFlags | 2
+	OldLizardmanFlags &= ~StillToMeet
+	OldLizardmanFlags |= MetOrKilled
 
 BuildingEncounter:
 	OnGoto Scratch9 LizardPatrol GiantLizards JavelinAmbush
@@ -266,10 +265,10 @@ BuildingEncounter:
 PushBack:
 	PartyX = 8
 	PartyY = 12
-	Facing = 2
+	Facing = South
 
 HoldRedrawExit:
-	HoldMove = 255
+	HoldMove = SkipMove
 	Goto RedrawExit
 
 AskFriendWord:
@@ -278,7 +277,7 @@ AskFriendWord:
 
 FriendWordInput:
 	PrintClear "WHAT IS IT?"
-	InputString 6 $Scratch1
+	$Scratch1 = InputString 6
 	PrintClear "DO YOU REALLY MEAN "
 	Print $Scratch1
 	Print "?"
@@ -302,20 +301,20 @@ OldLizardmanStory:
 
 ChooseChampion:
 	Who "WHO WILL BE MY CHAMPION?"
-	if SelStatus == 1: Goto ChampionDuel
+	if SelStatus == Okay: Goto ChampionDuel
 	PrintClear "PLEASE, BE SERIOUS."
 	Delay
 	Goto ChooseChampion
 
 ChampionDuel:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 100
 	ClearMonsters
 	Call CallDuelB
 	LoadMonster Drythh count=1 icon=Lizardman
 	Combat
-	if CombatEnd == 129: Goto ChampionLost
-	if QuestLizardmen != 255: QuestLizardmen = 254
+	if CombatEnd == PartyFled: Goto ChampionLost
+	if QuestLizardmen != Rewarded: QuestLizardmen = RewardDue
 	PrintClear "SEEING THEIR LEADER FALL, THE OTHER LIZARD MEN WITHDRAW. THE OLD LIZARD MAN TURNS TO YOU, 'YOU HAVE DONE ME GREAT SERVICE. REST ASSURED THAT MY PEOPLE WILL NOT JOIN TYRANTHRAXUS.'"
 	Gosub PressToContinue
 	PrintClear "'STILL MY PEOPLE STILL ARE HOSTILE TO STRANGERS. I THINK IT IS BEST IF YOU LEAVE.' HE TURNS AND DISAPPEARS INTO THE WILDERNESS."
@@ -333,39 +332,37 @@ RefuseChampion:
 DrythhAttacks:
 	Gosub PressToContinue
 	Picture None
-	OldLizardmanFlags = OldLizardmanFlags & 254
-	OldLizardmanFlags = OldLizardmanFlags | 2
+	OldLizardmanFlags &= ~StillToMeet
+	OldLizardmanFlags |= MetOrKilled
 	EncounterMenu Lizardman distance=1 closeup=Lizardman result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=6 strength=6
 	OnGoto Scratch10 RedrawExit DrythhFight PushBack
 
 DrythhFight:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 100
 	ClearMonsters
 	LoadMonster Drythh count=1 icon=Lizardman
 	LoadMonster Lizardman count=12 icon=Lizardman
 	Combat
-	if CombatEnd == 129: Goto PushBack
+	if CombatEnd == PartyFled: Goto PushBack
 	Exit
 
 RuinedBuilding:
-	Scratch10 = BuildingsSeen & 2
-	if 0 != Scratch10: Goto RuinedBuildingCheck
+	if BuildingsSeen has RubbleBuilding: Goto RuinedBuildingCheck
 	PrintClear "YOU ENTER A BUILDING WHOSE WALLS ARE MORE OR LESS INTACT, THOUGH THE ROOF HAS FALLEN IN. RUBBLE MAKES PASSAGE DIFFICULT."
 	Delay
-	BuildingsSeen = BuildingsSeen | 2
+	BuildingsSeen |= RubbleBuilding
 
 RuinedBuildingCheck:
-	Scratch10 = EncountersDone & 2
-	if 0 != Scratch10: Exit
+	if EncountersDone has 2: Exit
 	Scratch9 = 0
 	Goto OldLizardman
 
 LizardPatrol:
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 1
-	if Surprise == 1: Goto LizardPatrolAmbush
-	Surprise = 0
+	if Surprise == PartyIsSurprised: Goto LizardPatrolAmbush
+	Surprise = NoSurprise
 	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU." escape=15 strength=6
 	OnGoto Scratch10 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
 
@@ -374,7 +371,7 @@ LizardPatrolAmbush:
 	PrintClear "SUDDENLY YOU ARE ATTACKED BY TWO LIZARD MEN AND A GIANT LIZARD!"
 	Delay
 	Approach
-	Surprise = 1
+	Surprise = PartyIsSurprised
 
 LizardPatrolFight:
 	Scratch7 = 0
@@ -388,33 +385,31 @@ LizardPatrolFight:
 LizardCombat:
 	Combat
 	Gosub CountLizardKills
-	if CombatEnd == 129: Goto PushBack
+	if CombatEnd == PartyFled: Goto PushBack
 
 MarkEncounterDone:
 	alias EncounterBit = Scratch1
 	EncounterBit = EncounterBitTable[Scratch7]
-	EncountersDone = EncountersDone | EncounterBit
+	EncountersDone |= EncounterBit
 	Exit
 
 EncounterBitTable:
 	Data 2 8 4
 
 CentralKeep:
-	Scratch10 = BuildingsSeen & 4
-	if 0 != Scratch10: Goto CentralKeepCheck
+	if BuildingsSeen has CentralKeepSeen: Goto CentralKeepCheck
 	PrintClear "YOU ENTER THE REMAINS OF THE CENTRAL KEEP. THE CEILING AND WALLS HAVE COLLAPSED TO THE POINT WHERE THE INTERIOR IS CHOKED WITH RUBBLE."
-	BuildingsSeen = BuildingsSeen | 4
+	BuildingsSeen |= CentralKeepSeen
 	Delay
 
 CentralKeepCheck:
 	Scratch9 = 2
-	Scratch10 = EncountersDone & 4
-	if 0 == Scratch10: Goto OldLizardman
+	if EncountersDone lacks 4: Goto OldLizardman
 	if Scratch1 == 0: Exit
 	Goto SearchForTunnel
 
 JavelinAmbush:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 50
 	Scratch7 = 2
 	Gosub CapLizardCounts
@@ -432,23 +427,21 @@ JavelinAmbush:
 	Goto LizardCombat
 
 LShapedBuilding:
-	Scratch10 = BuildingsSeen & 8
-	if 0 != Scratch10: Goto LShapedBuildingCheck
+	if BuildingsSeen has LShapedSeen: Goto LShapedBuildingCheck
 	PrintClear "YOU HAVE ENTERED AN L-SHAPED BUILDING. IT IS REASONALBLY INTACT... THERE ARE EVEN PORTIONS OF ROOF OVERHEAD!"
 	Delay
-	BuildingsSeen = BuildingsSeen | 8
+	BuildingsSeen |= LShapedSeen
 
 LShapedBuildingCheck:
-	Scratch10 = EncountersDone & 8
-	if 0 != Scratch10: Exit
+	if EncountersDone has 8: Exit
 	Scratch9 = 1
 	Goto OldLizardman
 
 GiantLizards:
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	if Surprise == 1: Goto GiantLizardsAmbush
-	Surprise = 0
+	if Surprise == PartyIsSurprised: Goto GiantLizardsAmbush
+	Surprise = NoSurprise
 	EncounterMenu GiantLizard distance=2 closeup=GiantLizard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="3 GIANT LIZARDS CHARGE TOWARD YOU." escape=15 strength=15
 	OnGoto Scratch10 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
 
@@ -457,7 +450,7 @@ GiantLizardsAmbush:
 	Delay
 	Approach
 	PrintClear "SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!"
-	Surprise = 1
+	Surprise = PartyIsSurprised
 
 GiantLizardsFight:
 	Scratch7 = 1
@@ -475,7 +468,7 @@ TunnelSlopesUp:
 
 GoUpMenu:
 	Print " DO YOU GO UP?"
-	HoldMove = 255
+	HoldMove = SkipMove
 	if Ask YesNoMenu == "NO": Exit
 	PartyX = UpExitXTable[Scratch1]
 	PartyY = UpExitYTable[Scratch1]
@@ -498,18 +491,17 @@ PoolLizardmen:
 	PrintClear "A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. "
 	Delay
 	Damage Scratch5 1 6 0 44
-	Scratch10 = BuildingsSeen & 1
-	if 0 == Scratch10: Goto LizardmenDive
+	if BuildingsSeen lacks PoolLizardsDived: Goto LizardmenDive
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	if Surprise == 1: Goto LizardmenDive
-	Surprise = 2
+	if Surprise == PartyIsSurprised: Goto LizardmenDive
+	Surprise = MonstersAreSurprised
 	EncounterMenu Lizardman distance=0 closeup=Lizardman result=Scratch10 combat=Flee wait=Flee flee=Flee advance=Flee parlay=Flee near="THEY TURN TO DIVE BACK IN THE WATER." escape=0 strength=0
 	OnGoto Scratch10 LizardmenDive PoolLizardmenFight
 
 LizardmenDive:
 	Scratch8 = 0
-	BuildingsSeen = BuildingsSeen | 1
+	BuildingsSeen |= PoolLizardsDived
 	PrintClear "BEFORE YOU CAN REACT THEY TURN AND DIVE BACK INTO THE WATER."
 	Delay
 	Goto DeepPool
@@ -524,7 +516,7 @@ PoolLizardmenFight:
 	Combat
 	Gosub CountLizardKills
 	Scratch8 = 1
-	if CombatEnd != 129: Goto DeepPool
+	if CombatEnd != PartyFled: Goto DeepPool
 	Gosub FindPoolCell
 	IfNe
 	Exit
@@ -567,19 +559,18 @@ PoolGuarded:
 	Exit
 
 PoolSearch:
-	alias PoolTreasureBit = Scratch1
 	alias PoolTreasure = Scratch3
+	alias PoolTreasureBit = Scratch1
 	Gosub FindPoolCell
 	Scratch5 = Scratch10
 	PoolTreasureBit = PoolTreasureBitTable[Scratch10]
-	Scratch10 = PoolTreasureTaken & PoolTreasureBit
-	if 0 != Scratch10: Goto PoolEmpty
+	if PoolTreasureTaken has PoolTreasureBit: Goto PoolEmpty
 	PrintClear "YOU FIND SOME TREASURE."
 	Gosub TakeItMenu
 	IfNe
 	Exit
 	PoolTreasure = PoolTreasureTable[Scratch5]
-	PoolTreasureTaken = PoolTreasureTaken | PoolTreasureBit
+	PoolTreasureTaken |= PoolTreasureBit
 	ClearMonsters
 	Treasure 0 #03E8 0 #03E8 0 1 0 PoolTreasure
 	Combat

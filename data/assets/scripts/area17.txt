@@ -9,27 +9,22 @@ NomadEncounterMenu:
 	Return
 
 GetCampState:
-	Scratch10 = MarkFlags4 & 8
-	if 0 == Scratch10: Goto CampNotHostile
+	if MarkFlags4 lacks KoboldRaidWon: Goto CampNotHostile
 	Scratch1 = 0
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Return
-	Scratch10 = MarkFlags4 & 2
-	if 0 != Scratch10: Scratch1 = 1
+	if MarkFlags4 has FoughtTribe: Return
+	if MarkFlags4 has AttackedNomadAlly: Scratch1 = 1
 	Return
 
 CampNotHostile:
 	Scratch1 = 2
-	Scratch10 = MarkFlags4 & 4
-	if 0 == Scratch10: Goto CampFriendlyCheck
+	if MarkFlags4 lacks FoughtTribe: Goto CampFriendlyCheck
 
 CampDayCheck:
 	if Hours < 18: Scratch1 = 3
 	Return
 
 CampFriendlyCheck:
-	Scratch10 = MarkFlags4 & 2
-	if 0 == Scratch10: Goto CampByStage
+	if MarkFlags4 lacks AttackedNomadAlly: Goto CampByStage
 	if Hours < 18: Scratch1 = 1
 	Return
 
@@ -73,25 +68,24 @@ MakeAlliesNomads:
 	if NomadAllies == 0: Return
 
 MakeAlliesLoop:
-	LoadCharacter Scratch1
-	SelSide = 128
+	SelectMember Scratch1
+	SelSide = PartyControlled
 	Scratch2 = Scratch1 + 128
-	LoadCharacter Scratch2
+	SelectMember Scratch2
 	Scratch1 = Scratch1 + 1
 	if Scratch1 < Scratch4: Goto MakeAlliesLoop
 	Return
 
 CheckAttackedAlly:
 	if AttackedAlly == 0: Return
-	MarkFlags4 = MarkFlags4 | 2
-	MarkFlags4 = MarkFlags4 & 254
+	MarkFlags4 |= AttackedNomadAlly
+	MarkFlags4 &= ~FeastAccepted
 	Return
 
 RollNomadAllies:
 	Call CallLookAhead
 	NomadAllies = 0
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Goto SizeKoboldBand
+	if MarkFlags4 has FoughtTribe: Goto SizeKoboldBand
 	if Cell == 4: Goto SizeKoboldBand
 	Scratch10 = Random 6
 	NomadAllies = 1 + Scratch10
@@ -101,7 +95,7 @@ RollNomadAllies:
 
 SizeKoboldBand:
 	Call CallLookAhead
-	PartyStrength Scratch10
+	Scratch10 = PartyStrength
 	Scratch9 = 56 - NomadAllies
 	if Scratch10 > Scratch9: Scratch10 = Scratch9
 	Scratch9 = Scratch9 / 2
@@ -118,10 +112,10 @@ FindRetreatZone:
 	Scratch10 = 0
 
 RetreatZoneLoop:
-	alias ZoneYMax = Scratch6
 	alias ZoneXMax = Scratch7
-	alias ZoneYMin = Scratch8
 	alias ZoneXMin = Scratch9
+	alias ZoneYMax = Scratch6
+	alias ZoneYMin = Scratch8
 	ZoneXMin = ZoneXMinTable[Scratch10]
 	ZoneYMin = ZoneYMinTable[Scratch10]
 	ZoneXMax = ZoneXMaxTable[Scratch10]
@@ -139,7 +133,7 @@ NextRetreatZone:
 RetreatToZone:
 	PartyX = ZoneDestXTable[Scratch10]
 	PartyY = ZoneDestYTable[Scratch10]
-	Facing = 1
+	Facing = East
 	RedrawView
 	Call CallRedraw
 	Gosub HearWarCries
@@ -151,10 +145,10 @@ HearWarCries:
 	OnGosub Facing CriesLeft CriesBehind CriesRight CriesAhead
 
 FaceTheSound:
-	if Facing == 3: Goto PressToContinue
+	if Facing == West: Goto PressToContinue
 	Print " YOU SPIN TO FACE THE SOUND."
 	Gosub PressToContinue
-	Facing = 3
+	Facing = West
 	Call CallRedraw
 	Return
 
@@ -253,16 +247,15 @@ event0:
 	if LeftMap == 0: Goto CheckLodgingExit
 	PrintClear "THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?"
 	if Ask YesNoMenu == "YES": Goto ExitToWilderness
-	HoldMove = 255
+	HoldMove = SkipMove
 
 CheckLodgingExit:
 	Gosub SetSky
 	Gosub SetRestRules
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Exit
+	if MarkFlags4 has FoughtTribe: Exit
 	Scratch1 = Cell & 127
 	if Scratch1 > 1: Exit
-	if CampStage != 1: Exit
+	if CampStage != Lodged: Exit
 	if WallAhead != 2: Exit
 	Goto GuardEscort
 
@@ -297,12 +290,11 @@ event4:
 	LoadWalls 7 8 23
 	PartyX = 1
 	PartyY = 14
-	Facing = 1
+	Facing = East
 	Exit
 
 CampOutskirts:
-	Scratch10 = MarkFlags4 & 1
-	if 0 != Scratch10: Exit
+	if MarkFlags4 has FeastAccepted: Exit
 	if Hours <= 14: Goto NomadsGather
 	Scratch10 = Random 99
 	if Scratch10 >= 50: Goto NomadsGather
@@ -313,11 +305,11 @@ CampOutskirts:
 	Gosub ShowNomads
 
 NomadFightNoSurprise:
-	Surprise = 0
+	Surprise = NoSurprise
 
 NomadFight:
 	Morale = 100
-	MarkFlags4 = MarkFlags4 | 2
+	MarkFlags4 |= AttackedNomadAlly
 	NomadAllies = 0
 	Gosub SizeKoboldBand
 	Scratch9 = Scratch9 / 2
@@ -349,7 +341,7 @@ HeadmanRallies:
 	OnGoto Scratch10 Done TribeFight ExitToWilderness
 
 TribeFight:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 100
 	MonsterHit = 254
 	ClearMonsters
@@ -362,11 +354,11 @@ TribeFight:
 TribeCombat:
 	Combat
 	Gosub CheckFled
-	MarkFlags4 = MarkFlags4 | 4
+	MarkFlags4 |= FoughtTribe
 	Exit
 
 CheckFled:
-	if CombatEnd != 129: Return
+	if CombatEnd != PartyFled: Return
 
 LeaveCamp:
 	Mark4 = 1
@@ -375,20 +367,18 @@ ExitToWilderness:
 	RedrawView
 	Call CallRedraw
 	Portrait = None
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Goto MarkLeftCamp
-	Scratch10 = MarkFlags4 & 1
+	if MarkFlags4 has FoughtTribe: Goto MarkLeftCamp
+	Scratch10 = MarkFlags4 & FeastAccepted
 	if Scratch10 != 1: Goto LoadWilderness
 
 MarkLeftCamp:
-	if QuestNomads != 255: QuestNomads = 254
+	if QuestNomads != Rewarded: QuestNomads = RewardDue
 
 LoadWilderness:
 	NewECL Wilderness
 
 NomadsGather:
-	Scratch10 = MarkFlags4 & 2
-	if 0 != Scratch10: Goto NomadsHostile
+	if MarkFlags4 has AttackedNomadAlly: Goto NomadsHostile
 	Portrait = NomadBeard
 	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 	PrintClear "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
@@ -414,15 +404,15 @@ NomadsGather:
 	PrintClear "'THEN YOU MUST LEAVE US,' HE RESPONDS WITH AS MUCH DIGNITY AS HE CAN MUSTER. DO YOU LEAVE?"
 	if Ask YesNoMenu == "YES": Goto LeaveCamp
 	PrintClear "'YOUR INSULTS ARE TOO MANY! KILL THEM!'"
-	Surprise = 1
+	Surprise = PartyIsSurprised
 	Goto NomadFight
 
 AcceptFeast:
-	MarkFlags4 = MarkFlags4 | 1
+	MarkFlags4 |= FeastAccepted
 	if Hours < 14: Goto CampGames
 	PrintClear "'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS."
 	Gosub PressToContinue
-	CampStage = 1
+	CampStage = Lodged
 
 LodgingRest:
 	RedrawView
@@ -444,11 +434,11 @@ MorningGreeting:
 	Gosub ApproachHidePortrait
 
 CampGames:
-	CampStage = 2
+	CampStage = Games
 	PrintClear "'COME, LET THERE BE GAMES FOR OUR GUESTS.' HE LEADS YOU TO THE CAMP'S CENTRAL CLEARING."
 	RedrawView
 	Gosub WalkToClearing
-	Facing = 1
+	Facing = East
 	Call CallRedraw
 	PrintClear "YOU ARE TREATED AS HONORED GUESTS FOR THE REST OF THE DAY. THERE ARE CONTESTS OF STRENGTH AND SKILL IN YOUR HONOR."
 	Gosub PressToContinue
@@ -481,7 +471,7 @@ GuardEscort:
 	Call CallRedraw
 	PrintClear "HOWEVER, AWAKENED BY THE TALK SOMEONE IN THE TENT HAS SEEN YOUR ACT AND A SCREAM GOES OUT 'TREACHERY! THEY HAVE SLAIN SAMIR!' THE CAMP BEGINS TO STIR."
 	Gosub PressToContinue
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	MaxDist = 2
 	Gosub NomadEncounterMenu
 	OnGoto Choice Done NomadFight ExitToWilderness
@@ -492,7 +482,7 @@ HeadmanAsks:
 	SetupMonster Swordsman11 distance=2 body=WhiteRobe
 	Sky = 11
 	Gosub ApproachTwice
-	CampStage = 3
+	CampStage = HeadmanRequest
 	PrintClear "THE HEADMAN COMES TO YOU AND SAYS, 'ABOUT MY REQUEST OF LAST NIGHT, WHAT IS YOUR DECISION?'"
 	Choice = Menu "STAY AND FIGHT" "LEAVE"
 	OnGoto Choice StayAndFight
@@ -556,10 +546,9 @@ WalkPathToClearing:
 	Data 0 0 0 0
 
 KoboldRaid:
-	Scratch10 = Cell & 128
-	if 0 == Scratch10: Goto RaidCries
+	if Cell lacks 128: Goto RaidCries
 	PartyY -= 1
-	Facing = 1
+	Facing = East
 	PrintClear "THE SOUND OF WAR CRIES DRAWS YOU OUT OF THE HUT. "
 	Gosub FaceTheSound
 	Goto RaidByStage
@@ -568,8 +557,7 @@ RaidCries:
 	Gosub HearWarCries
 
 RaidByStage:
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Goto HostileRaid
+	if MarkFlags4 has FoughtTribe: Goto HostileRaid
 	if Cell == 4: Goto HostileRaid
 	OnGoto KoboldRaidStage KoboldHorde KoboldsMelee KoboldsMelee KoboldLeader
 
@@ -590,7 +578,7 @@ KoboldFightAllied:
 	Gosub RollNomadAllies
 
 KoboldFight:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 80
 	ClearMonsters
 	if NomadAllies == 0: Goto LoadKobolds
@@ -599,11 +587,10 @@ KoboldFight:
 LoadKobolds:
 	LoadMonster Kobold0 count=Scratch9 icon=Kobold
 	LoadMonster Kobold123 count=Scratch9 icon=Kobold
-	Scratch10 = MarkFlags4 & 2
-	if 0 == Scratch10: Gosub MakeAlliesNomads
+	if MarkFlags4 lacks AttackedNomadAlly: Gosub MakeAlliesNomads
 	Combat
 	Gosub CheckAttackedAlly
-	if CombatEnd != 129: Goto KoboldWaveDone
+	if CombatEnd != PartyFled: Goto KoboldWaveDone
 	Gosub RetreatOrFight
 	Goto KoboldRaid
 
@@ -615,20 +602,19 @@ KoboldWaveDone:
 KoboldsMelee:
 	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. "
-	Scratch10 = MarkFlags4 & 2
-	if 0 == Scratch10: Goto KoboldEncounter
+	if MarkFlags4 lacks AttackedNomadAlly: Goto KoboldEncounter
 	PrintClear "THE NOMADS SEE YOU AND SHOUT, 'THE FILTHY TRAITORS! GET THEM!' THE KOBOLDS, SEEING AN OPPORTUNITY, JOIN WITH THEM."
 	Goto KoboldEncounter
 
 KoboldLeader:
-	Scratch10 = MarkFlags4 & 2
-	if 0 != Scratch10: Goto NomadBetrayal
+	alias Choice = Scratch10
+	if MarkFlags4 has AttackedNomadAlly: Goto NomadBetrayal
 	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK."
 	Gosub PressToContinue
 	PrintClear "'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'"
-	Scratch10 = Menu "DESTROY THE KOBOLDS" "FLEE"
-	OnGoto Scratch10 FinishTogether
+	Choice = Menu "DESTROY THE KOBOLDS" "FLEE"
+	OnGoto Choice FinishTogether
 	PrintClear "THE HEADMAN SNEERS, 'COWARDS!' HE TURNS TO THE TWO GUARDS STILL LIVING AND YELLS, 'FOR HYRNKA!' HE AND HIS TWO GUARDS CHARGE INTO THE PACK."
 	Gosub PressToContinue
 	PrintClear "AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS."
@@ -638,7 +624,7 @@ KoboldLeader:
 	Portrait = None
 	PrintClear "WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'"
 	Gosub PressToContinue
-	MarkFlags4 = MarkFlags4 | 8
+	MarkFlags4 |= KoboldRaidWon
 	CampStage = 0
 	ClearMonsters
 	Treasure 0 0 0 #01F4 0 0 0 255
@@ -651,12 +637,11 @@ FinishTogether:
 	NomadAllies = 3
 
 KoboldLeaderFight:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 50
 	Delay
 	ClearMonsters
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Goto LoadKoboldLeader
+	if MarkFlags4 has FoughtTribe: Goto LoadKoboldLeader
 	LoadMonster Hassad count=1 icon=Hassad
 	LoadMonster ThLvlFighter41 count=2 icon=ThLvlFighter
 	Gosub MakeAlliesNomads
@@ -667,21 +652,18 @@ LoadKoboldLeader:
 	LoadMonster Kobold123 count=26 icon=Kobold
 	Combat
 	Gosub CheckAttackedAlly
-	Scratch10 = MarkFlags4 & 2
-	if 0 != Scratch10: Goto BetrayedOrFled
-	if CombatEnd != 129: Goto RaidWon
+	if MarkFlags4 has AttackedNomadAlly: Goto BetrayedOrFled
+	if CombatEnd != PartyFled: Goto RaidWon
 
 BetrayedOrFled:
-	MarkFlags4 = MarkFlags4 | 5
+	MarkFlags4 |= FeastAccepted+FoughtTribe
 	Goto ExitToWilderness
 
 RaidWon:
-	MarkFlags4 = MarkFlags4 | 8
+	MarkFlags4 |= KoboldRaidWon
 	CampStage = 0
-	Scratch10 = MarkFlags4 & 4
-	if 0 != Scratch10: Exit
-	Scratch10 = MarkFlags4 & 2
-	if 0 != Scratch10: Exit
+	if MarkFlags4 has FoughtTribe: Exit
+	if MarkFlags4 has AttackedNomadAlly: Exit
 	ShowPortrait NomadMoustache WhiteRobe
 	Portrait = None
 	PrintClear "THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'"
@@ -714,8 +696,7 @@ HostileBand:
 	Goto HostileEncounter
 
 HostileLeader:
-	Scratch10 = MarkFlags4 & 4
-	if 0 == Scratch10: Goto KoboldLeader
+	if MarkFlags4 lacks FoughtTribe: Goto KoboldLeader
 	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER."
 	Gosub PressToContinue
@@ -736,7 +717,7 @@ NomadBetrayal:
 	Goto KoboldRaid
 
 BetrayalFight:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 100
 	ClearMonsters
 	LoadMonster ThLvlFighter41 count=5 icon=ThLvlFighter
@@ -744,6 +725,6 @@ BetrayalFight:
 	LoadMonster Shaman count=1 icon=Shaman
 	LoadMonster Kobold123 count=49 icon=Kobold
 	MonsterHit = 255
-	MarkFlags4 = MarkFlags4 | 8
+	MarkFlags4 |= KoboldRaidWon
 	Treasure 0 0 0 #1F40 0 0 0 255
 	Goto TribeCombat

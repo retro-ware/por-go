@@ -3,12 +3,12 @@ event0:
 	if Hours >= 14: Scratch6 = 8
 	Sky = Scratch6
 	if LeftMap == 0: Exit
-	if QuestBivant == 1: QuestBivant = 254
+	if QuestBivant == BoyPurchased: QuestBivant = RewardDue
 	NewECL Mountains
 
 event1:
-	if BaseCaptured == 255: Goto Done
-	if QuestBivant >= 254: Goto GuardsHuntBoy
+	if BaseCaptured == Captured: Goto Done
+	if QuestBivant >= RewardDue: Goto GuardsHuntBoy
 
 CheckAnimals:
 	if AnimalsLoose == 0: Goto DispatchCell
@@ -58,7 +58,7 @@ GuardsSpotBoy:
 	ClearMonsters
 	LoadMonster Buccaneer count=20 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	GuardPatrolCount += 1
 	Goto CheckAnimals
 
@@ -68,7 +68,7 @@ AlarmRunForGate:
 	LoadMonster RdLvlFighter count=4 icon=11
 	LoadMonster Buccaneer count=30 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	GuardPatrolCount += 1
 	Goto CheckAnimals
 
@@ -78,7 +78,7 @@ AnotherWaveAttacks:
 	LoadMonster RdLvlFighter count=4 icon=11
 	LoadMonster Buccaneer count=40 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	GuardPatrolCount += 1
 	Goto CheckAnimals
 
@@ -88,7 +88,7 @@ MainGateEnter:
 	EnteredBase = 1
 	Cell = 2
 	Scratch3 = 0
-	Facing = 2
+	Facing = South
 
 EscortToCampLoop:
 	if Scratch3 == 10: Goto MerchantsCamp
@@ -101,7 +101,7 @@ EscortToCampLoop:
 MainGateCheck:
 	if AnimalsLoose != 0: Goto MainGateEmpty
 	if BoyBought != 0: Goto GateGuardsStand
-	if BaseCaptured == 255: Goto MainGateEmpty
+	if BaseCaptured == Captured: Goto MainGateEmpty
 	if QuestBivant != 0: Goto GateGuardsAttack
 
 GateGuardsStand:
@@ -122,7 +122,7 @@ GateGuardsAttack:
 	ClearMonsters
 	LoadMonster Buccaneer count=8 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeToCamp
+	if CombatEnd > PartyDied: Goto FleeToCamp
 	GateGuardsDefeated = 1
 	Exit
 
@@ -162,7 +162,7 @@ PunchMerchant:
 	ClearMonsters
 	LoadMonster Buccaneer count=6 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeToCamp
+	if CombatEnd > PartyDied: Goto FleeToCamp
 	PrintClear "AFTER YOU DEFEAT THE GUARDS YOU SEE A CROWD HAS FORMED.  FROM WITHIN THE CROWD A LARGE MAN IN GLEAMING CHAIN MAIL STEPS OUT.  HE SAYS 'THAT WAS AMUSING BUT DO NOT CAUSE ANYMORE TROUBLE!'"
 	Gosub PressToContinue
 	PrintClear "THE MAN THEN LEAVES AND BEFORE YOU IS THE SLEAZY MERCHANT.  HE BEGS FORGIVENESS THEN WIMPERS AWAY."
@@ -187,7 +187,7 @@ RescueBoyMenu:
 
 SneakToPenGate:
 	PrintClear "YOU MOVE THROUGH THE CROWD NONCHALANTLY UNTIL YOU ARE NEAR THE FRONT GATE OF THE SLAVE PEN."
-	Facing = 2
+	Facing = South
 	PartyX = 7
 	PartyY = 6
 	Call CallRedraw
@@ -207,7 +207,7 @@ AttackPenGuards:
 	ClearMonsters
 	LoadMonster Buccaneer count=4 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	PenGuardsDefeated = 1
 	Goto Done
 
@@ -226,7 +226,7 @@ BuccaneerWaves:
 	LoadMonster Buccaneer count=20 icon=11
 	LoadMonster RdLvlFighter count=1 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeLeaveBoy
+	if CombatEnd > PartyDied: Goto FleeLeaveBoy
 	SetupMonster Fighter16 distance=2 body=BareChest
 	Delay
 	Approach
@@ -238,7 +238,7 @@ BuccaneerWaves:
 	LoadMonster ThLvlFighter101 count=1 icon=11
 	LoadMonster Buccaneer count=50 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeLeaveBoy
+	if CombatEnd > PartyDied: Goto FleeLeaveBoy
 	SetupMonster Fighter16 distance=2 body=BareChest
 	PrintClear "AFTER DEFEATING THE LAST, WAVE YOU SEE ANOTHER WAVE ATTACK FROM THE SOUTH OF THE COMPOUND."
 	Morale = 100
@@ -247,7 +247,7 @@ BuccaneerWaves:
 	LoadMonster RdLvlFighter count=2 icon=11
 	LoadMonster Buccaneer count=53 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeLeaveBoy
+	if CombatEnd > PartyDied: Goto FleeLeaveBoy
 
 CaptainAppears:
 	alias Choice = Scratch1
@@ -277,10 +277,10 @@ FinalBattle:
 	LoadMonster ThLvlFighter41 count=15 icon=11
 	LoadMonster Buccaneer count=40 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeLeaveBoy
+	if CombatEnd > PartyDied: Goto FleeLeaveBoy
 	PrintClear "AFTER DEFEATING THE LAST OF THE BUCCANNEERS THE REST SURRENDER OR FLEE.  YOU RESCUE THE SLAVES AND CAPTURE THE FORT."
-	BaseCaptured = 255
-	QuestBivant = 254
+	BaseCaptured = Captured
+	QuestBivant = RewardDue
 	Goto Done
 
 FinalWave:
@@ -295,8 +295,8 @@ FleeLeaveBoy:
 	PrintClear "YOU RUN FROM THE BATTLE AND OUT THE OUTPOST GATE.  THE YOUNG BOY COULD NOT KEEP UP AND WAS LEFT BEHIND."
 
 LeaveBase:
-	QuestBivant = 128
-	BaseCaptured = 128
+	QuestBivant = Bungled
+	BaseCaptured = FledWithoutBoy
 	NewECL Mountains
 
 SneakPastFails:
@@ -332,7 +332,7 @@ CaptainDoorGuards:
 	Portrait = LongHaired
 	SetupMonster Fighter16 distance=0 body=BareChest
 	Portrait = None
-	if QuestBivant >= 254: Goto QuartersAlarm
+	if QuestBivant >= RewardDue: Goto QuartersAlarm
 	PrintClear "STANDING IN FRONT OF THE DOOR ARE TWO LARGE GUARDS.  ONE OF THEM SAYS 'DO YOU HAVE A PASS TO SEE THE CAPTAIN?'  WHAT WILL YOU DO?"
 	Choice = Menu "SHOW PASS" -> ShowPass "LEAVE" -> LeaveDoorGuards "BRIBE" -> BribeRefused "ATTACK" -> AttackDoorGuards
 
@@ -346,7 +346,7 @@ AttackDoorGuards:
 	ClearMonsters
 	LoadMonster ThLvlFighter41 count=2 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	PrintClear "YOU KILL THE GUARDS BUT ARE CAUGHT DOING IT.  A LARGE GROUP OF GUARDS RUN TOWARD YOU AND ATTACK."
 	DoorGuardsKilled = 1
 	Goto BuccaneerWaves
@@ -381,7 +381,7 @@ CaptainFight:
 	LoadMonster Captain count=1 icon=Captain
 	LoadMonster ThLvlFighter41 count=4 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeQuarters
+	if CombatEnd > PartyDied: Goto FleeQuarters
 	PrintClear "YOU KILL THE CAPTAIN."
 	CaptainKilled = 1
 	Goto Done
@@ -389,7 +389,7 @@ CaptainFight:
 FleeQuarters:
 	PartyX = 7
 	PartyY = 11
-	Facing = 0
+	Facing = North
 	Call CallRedraw
 	PrintClear "YOU HAVE RUN OUTSIDE THE CAPTAINS QUARTERS.  AN ALARM GOES OFF IN THE DISTANCE.  YOU SEE A LARGE GROUP OF ANGRY BUCCANEERS CHARGING TOWARD YOU!"
 	Goto BuccaneerWaves
@@ -401,21 +401,21 @@ MentionBoy:
 
 BuyTheBoy:
 	PrintClear "THE CAPTAIN SAYS 'YOU HAVE MADE A GOOD DEAL.'  AFTER TALKING THE CAPTAIN MAKES A MOTION AND THE BOY IS BROUGHT TO YOU."
-	QuestBivant = 1
+	QuestBivant = BoyPurchased
 	Rob 1 75 10
 	Gosub PressToContinue
 	BoyBought = 1
 	PrintClear "THE CAPTAIN THEN LEAVES THE ROOM AND YOU ARE ESCORTED BACK OUTSIDE."
 	PartyX = 7
 	PartyY = 11
-	Facing = 0
+	Facing = North
 	Call CallRedraw
 	Goto Done
 
 SeedyManPass:
 	alias Choice = Scratch2
 	if PassBought != 0: Goto Done
-	if QuestBivant >= 254: Goto Done
+	if QuestBivant >= RewardDue: Goto Done
 	Portrait = EyepatchHelmet
 	SetupMonster Fighter16 distance=0 body=ShopkeeperApron
 	PrintClear "THERE IS A SEEDY LITTLE MAN HERE WHO WHISPERS 'PSSST, BUDDY.  WANT TO BUY A PASS TO SEE THE CAPTAIN?'"
@@ -424,7 +424,7 @@ SeedyManPass:
 BuyPass:
 	PrintClear "YOU BUY THE PASS.  THE SEEDY LITTLE MAN DISAPPEARS AROUND A CORNER."
 	Rob 0 25 0
-	PassBought = 255
+	PassBought = Completed
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 57 // Pass
 	Combat
@@ -435,7 +435,7 @@ GuardTower:
 	if BaseAlerted != 0: Goto Done
 	Portrait = LongHaired
 	SetupMonster Fighter16 distance=0 body=BareChest
-	if QuestBivant >= 254: Goto TowerGuardsAttack
+	if QuestBivant >= RewardDue: Goto TowerGuardsAttack
 	PrintClear "YOU HAVE ENTERED ONE OF THE GUARD TOWERS.  INSIDE ARE FOUR BUCCANEERS.  ONE OF THEM SAYS 'THIS IS A RESTRICTED AREA, LEAVE NOW!'  WHAT WILL YOU DO?"
 	Choice = Menu "ATTACK" -> AttackTowerGuards "LEAVE" -> StepBack
 
@@ -451,7 +451,7 @@ TowerFight:
 	ClearMonsters
 	LoadMonster Buccaneer count=4 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	Goto Done
 
 BarracksEnter:
@@ -459,7 +459,7 @@ BarracksEnter:
 	if BaseAlerted != 0: Goto Done
 	Portrait = LongHaired
 	SetupMonster Fighter16 distance=0 body=BareChest
-	if QuestBivant >= 254: Goto BarracksGuardsAttack
+	if QuestBivant >= RewardDue: Goto BarracksGuardsAttack
 	PrintClear "YOU ENTER A BARRACKS FILED WITH TWENTY BUCCANEERS.  ONE OF THE BUCCANEERS SAYS 'THIS AREA IS OFF LIMITS.  LEAVE NOW.' WHAT WILL YOU DO?"
 	Choice = Menu "ATTACK" -> AttackBarracks "LEAVE" -> StepBack
 
@@ -475,7 +475,7 @@ BarracksFight:
 	ClearMonsters
 	LoadMonster Buccaneer count=20 icon=11
 	Combat
-	if CombatEnd > 128: Goto CutOffWithBoy
+	if CombatEnd > PartyDied: Goto CutOffWithBoy
 	Goto BuccaneerWaves
 
 EmptyBarracks:
@@ -501,7 +501,7 @@ ReleaseAnimals:
 	Gosub PressToContinue
 	if BaseAlerted != 0: Goto Done
 	PrintClear "THERE IS MASS CONFUSION AS THE ANIMALS RUN AROUND THE COMPOUND.  GUARDS ARE LEAVING THEIR POSTS IN ORDER TO CONTROL THE ANIMALS."
-	AnimalsLoose = 255
+	AnimalsLoose = Completed
 	Goto Done
 
 AnimalPenDoorOpen:
@@ -525,10 +525,10 @@ InsideSlavePen:
 
 TakeBoy:
 	PrintClear "YOU TAKE THE YOUNG BOY AND LEAVE.  THE OTHER SLAVES ALSO RUN OUT THE SLAVE PEN."
-	QuestBivant = 254
+	QuestBivant = RewardDue
 	PartyX = 7
 	PartyY = 6
-	Facing = 0
+	Facing = North
 	Call CallRedraw
 	Goto Done
 
@@ -569,9 +569,9 @@ ClearPicture:
 	Return
 
 event2:
-	if BaseCaptured == 255: Goto RestSafe
+	if BaseCaptured == Captured: Goto RestSafe
 	if Scratch10 != 2: Goto RestDangerous
-	if QuestBivant >= 254: Goto RestDangerous
+	if QuestBivant >= RewardDue: Goto RestDangerous
 
 RestSafe:
 	RestChance = 1
@@ -584,7 +584,7 @@ RestDangerous:
 	Exit
 
 event3:
-	if QuestBivant >= 254: Goto GuardsSpotBoy
+	if QuestBivant >= RewardDue: Goto GuardsSpotBoy
 	RestChance = 0
 	PrintClear "A GUARD COMES BY AND SAYS 'IF YOU WISH TO CAMP, GO TO THE MERCHANTS AREA!'"
 	Exit
@@ -593,7 +593,7 @@ event4:
 	if AreaKind == 1: Goto LoadAreaFiles
 	PartyY = 0
 	PartyX = 8
-	Facing = 2
+	Facing = South
 	Call CallRedraw
 	Scratch1 = 0
 

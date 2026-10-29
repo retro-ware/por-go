@@ -14,12 +14,12 @@ InsideEnter:
 	Exit
 
 VampireBlocksMove:
-	if VampireState == 255: Exit
-	if Scratch10 == 29 && Facing == 0: HoldMove = 255
+	if VampireState == Slain: Exit
+	if Scratch10 == 29 && Facing == North: HoldMove = SkipMove
 	Exit
 
 event1:
-	Surprise = 0
+	Surprise = NoSurprise
 	MaxDist = 0
 	Morale = 101
 	Scratch6 = 0
@@ -67,9 +67,9 @@ event4:
 	SoundParamB = 189
 	PartyY = 4
 	PartyX = 0
-	Facing = 1
+	Facing = East
 	VisitStage += 1
-	PartyStrength PartyPower
+	PartyPower = PartyStrength
 	PartyPower = PartyPower / 2
 	if UndeadKillTable < PartyPower: SkeletonGroup = PartyPower - UndeadKillTable
 	also if UndeadKillTable >= PartyPower: SkeletonGroup = 0
@@ -99,7 +99,7 @@ Cell1Event:
 	Sky = 8
 	Call CallRedraw
 	Print "FIERCE GUSTS OF WIND HOWL PAST AND THE GROUND SHAKES AS PEALS OF THUNDER ROCK THE LAND.  THE SWIRLING MURK HIDES WHAT LIES AHEAD."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Sky = 15
 	Call CallRedraw
 	Sky = 8
@@ -111,7 +111,7 @@ Cell1Event:
 	Exit
 
 SkeletonPatrol:
-	if UndeadKillTable == 255: Exit
+	if UndeadKillTable == Destroyed: Exit
 	if SkeletonGroup == 0: Exit
 	Scratch1 = Random 9
 	if 8 > Scratch1: Exit
@@ -128,7 +128,7 @@ SkeletonsBeaten:
 SkeletonAttack:
 	Gosub SkeletonsApproach
 	PrintClear "SKELETONS SILENTLY ATTACK."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto StartFight
 
 SkeletonAmbush:
@@ -137,7 +137,7 @@ SkeletonAmbush:
 	Scratch9 = 8
 	SetupMonster Skeleton distance=0 closeup=Tombstone
 	PrintClear "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch5 = 34
 	Scratch3 = 34
 	Scratch7 = SkeletonCount
@@ -149,10 +149,10 @@ SkeletonAmbushOver:
 
 GiantSkeletonApproach:
 	if GiantSkeletonState > 0: Exit
-	if UndeadKillTable == 255: Exit
+	if UndeadKillTable == Destroyed: Exit
 	Gosub SkeletonsApproach
 	PrintClear "THE ENCLAVE IS GUARDED BY A SKELETON ARMY!"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch9 = 3
 	Scratch6 = 1
 	Gosub RandomEncounter
@@ -164,7 +164,7 @@ GiantSkeletonStep:
 	Exit
 
 GiantSkeletonLair:
-	if UndeadKillTable == 255: Goto SkeletonTreasure
+	if UndeadKillTable == Destroyed: Goto SkeletonTreasure
 	if GiantSkeletonState > 9: Goto SkeletonTreasure
 	Scratch7 = 0
 	PrintClear "YOU FIND A GIANT SKELETON"
@@ -174,7 +174,7 @@ GiantSkeletonLair:
 
 GiantSkeletonFight:
 	Gosub SkeletonsApproach
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	ClearMonsters
 	LoadMonster GiantSkeleton count=1 icon=GiantSkeleton
 	if Scratch7 != 0: LoadMonster Skeleton count=Scratch7 icon=Skeleton
@@ -184,7 +184,7 @@ GiantSkeletonFight:
 	GiantSkeletonsKilled += 1
 
 SkeletonTreasure:
-	if SkeletonTreasureTaken == 255: Exit
+	if SkeletonTreasureTaken == Completed: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND A MARBLE CHEST.  OPEN IT?"
 	Ask YesNoMenu "YES" -> TakeSkeletonTreasure "NO" -> Done
@@ -193,11 +193,11 @@ TakeSkeletonTreasure:
 	ClearMonsters
 	Treasure 0 28 0 69 0 10 12 59 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells
 	Combat
-	SkeletonTreasureTaken = 255
+	SkeletonTreasureTaken = Completed
 	Exit
 
 ZombiePatrol:
-	if ZombieStrength == 255: Exit
+	if ZombieStrength == Destroyed: Exit
 	if ZombieGroup == 0: Exit
 	Scratch1 = Random 9
 	if Search == 1: Scratch1 += 2
@@ -215,15 +215,15 @@ ZombiesBeaten:
 ZombieAttack:
 	Gosub ZombiesApproach
 	PrintClear "LUMBERING FIGURES REACH FOR YOU."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto StartFight
 
 GiantZombieApproach:
-	if ZombieStrength == 255: Exit
+	if ZombieStrength == Destroyed: Exit
 	if GiantZombieState > 0: Exit
 	Gosub ZombiesApproach
 	PrintClear "ZOMBIES SHUFFLE DOWN THE STAIRS!"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch9 = 4
 	Scratch6 = 1
 	Gosub RandomEncounter
@@ -236,9 +236,9 @@ GiantZombieStep:
 
 GiantZombieLair:
 	if GiantZombieState > 10: Goto ZombieTreasure
-	if ZombieStrength == 255: Goto ZombieTreasure
+	if ZombieStrength == Destroyed: Goto ZombieTreasure
 	PrintClear "A ZOMBIE WITH GRAY, LEATHERY-HARD SKIN GAZES AT YOU WITH HATE-FILLED EYES."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Gosub ZombiesApproach
 	Scratch1 = 0
 	if ZombieCount >= 16: Scratch1 = 15
@@ -252,7 +252,7 @@ GiantZombieLair:
 	GiantZombiesKilled += 1
 
 ZombieTreasure:
-	if ZombieTreasureTaken == 255: Exit
+	if ZombieTreasureTaken == Completed: Exit
 	PrintClear "VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?"
 	Ask YesNoMenu "YES" -> TakeZombieTreasure "NO" -> Done
 
@@ -260,11 +260,11 @@ TakeZombieTreasure:
 	ClearMonsters
 	Treasure 0 #0122 0 110 0 0 0 28 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Wand of Lightning Bolt, Potion of Healing
 	Combat
-	ZombieTreasureTaken = 255
+	ZombieTreasureTaken = Completed
 	Exit
 
 WightPatrol:
-	if WightStrength == 255: Exit
+	if WightStrength == Destroyed: Exit
 	if WightGroup == 0: Exit
 	Scratch1 = Random 9
 	if Search == 1: Scratch1 += 2
@@ -284,29 +284,29 @@ WightGroupFight:
 WightAttack:
 	Gosub WightsApproach
 	PrintClear "DARK, BENT CREATURES RUSH SWIFTLY AT YOU."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto StartFight
 
 WightBossWarning:
-	if WightStrength == 255: Exit
+	if WightStrength == Destroyed: Exit
 	if WightBossState > 0: Exit
 	PrintClear "YOU STAND BEFORE A HUGE TOWER. THE SINGLE ENTRANCE IS LOCKED AND STRONGLY BUILT."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "WARNING VOICES CRY FROM WITHIN.  'WE ARE THE SPIRITS OF THOSE WHO FOUGHT THE DRAGONS.  LEAVE US OR DIE.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "DO YOU LEAVE?"
 	Ask YesNoMenu "YES" -> BackAwayFromWights "NO" -> WightBossApproach
 
 BackAwayFromWights:
 	PartyX = 14
-	Facing = 3
+	Facing = West
 	Exit
 
 WightBossApproach:
 	if WightBossState > 0: Exit
-	if WightStrength == 255: Exit
+	if WightStrength == Destroyed: Exit
 	Gosub WightsApproach
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "YOU ARE ATTACKED BY WIGHTS."
 	Scratch9 = 5
 	Scratch6 = 1
@@ -321,7 +321,7 @@ WightBossStep:
 WightBossLair:
 	alias Choice = Scratch1
 	if WightBossState > 9: Goto WightTreasure
-	if WightStrength == 255: Goto WightTreasure
+	if WightStrength == Destroyed: Goto WightTreasure
 	SetupMonster Ghost distance=1 closeup=Ghost
 	Approach
 	PrintClear "IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?"
@@ -330,7 +330,7 @@ WightBossLair:
 LeaveWightLair:
 	PartyX = 15
 	PartyY = 6
-	Facing = 0
+	Facing = North
 	Goto RedrawExit
 
 FightWightBoss:
@@ -343,7 +343,7 @@ FightWightBoss:
 	WightBossesKilled += 1
 
 WightTreasure:
-	if WightTreasureTaken == 255: Exit
+	if WightTreasureTaken == Completed: Exit
 	PrintClear "IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?"
 	Ask YesNoMenu "YES" -> StripWarriorBody "NO" -> Done
 
@@ -351,21 +351,21 @@ StripWarriorBody:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 26 // Clerical Scroll With 2 Spells, Sling Of Seeking +2, Hammer +3, Potion Extra Healing, Magic User Scroll With 3 Spells
 	Combat
-	WightTreasureTaken = 255
+	WightTreasureTaken = Completed
 	Exit
 
 BoneTowerView:
-	if Facing != 2: Goto BoneTowerCheck
+	if Facing != South: Goto BoneTowerCheck
 	PrintClear "A TOWER STANDS CLEARLY ABOVE ALL CRYPTS IN THE AREA.  HUGE PILES OF HUMAN BONES ARE STREWN ABOUT."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 
 BoneTowerCheck:
 	if Event5Seen > 0: Goto FumesDoorway
-	if UndeadKillTable == 255: Exit
+	if UndeadKillTable == Destroyed: Exit
 	if SkeletonCount < 1: Exit
 	Gosub SkeletonsApproach
 	PrintClear "A SMALL ARMY OF SKELETONS RUSHES FROM THE TOWER."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch9 = 6
 	Scratch6 = 1
 	Gosub RandomEncounter
@@ -376,7 +376,7 @@ BoneTowerSeenSet:
 	Event5Seen += 1
 
 FumesDoorway:
-	if Facing != 0: PrintClear "NOXIOUS FUMES POUR FROM THE TOWER DOORWAY, MAKING IT IMPOSSIBLE TO SEE INSIDE."
+	if Facing != North: PrintClear "NOXIOUS FUMES POUR FROM THE TOWER DOORWAY, MAKING IT IMPOSSIBLE TO SEE INSIDE."
 	Exit
 
 FumesDamage:
@@ -388,7 +388,7 @@ FumesDamage:
 
 SkeletonLairEntry:
 	if SkeletonLairDone > 0: Exit
-	if UndeadKillTable == 255: Exit
+	if UndeadKillTable == Destroyed: Exit
 	if SkeletonCount != 0: Goto SkeletonMakerMenu
 	if SkeletonsGone == 0: Exit
 
@@ -397,7 +397,7 @@ SkeletonMakerMenu:
 	OnGoto Scratch1 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
 
 SkeletonMakerSurprised:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	Goto FightSkeletonMaker
 
 SkeletonMakerNotices:
@@ -417,13 +417,13 @@ FightSkeletonMaker:
 	Exit
 
 FurTowerView:
-	if Facing == 0: Goto FurTowerCheck
+	if Facing == North: Goto FurTowerCheck
 	PrintClear "ALL AROUND THE TOWER, PILES OF HAIR AND FUR COVER THE AREA."
 
 FurTowerCheck:
 	if FurTowerSeen > 0: Exit
 	Gosub ZombiesApproach
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "THE TOWER DOOR SWINGS OPEN AND A SMALL ARMY OF ZOMBIES SHUFFLES OUT.  THE DOOR CLOSES WITH A CLAMOR OF LOCKS FALLING INTO PLACE."
 	Scratch9 = 7
 	Scratch6 = 1
@@ -441,7 +441,7 @@ ClothingChamber:
 
 ZombieLairEntry:
 	if ZombieLairDone > 0: Exit
-	if ZombieStrength == 255: Exit
+	if ZombieStrength == Destroyed: Exit
 	if ZombieCount != 0: Goto ZombieMakerMenu
 	if ZombiesGone == 0: Exit
 
@@ -450,7 +450,7 @@ ZombieMakerMenu:
 	OnGoto Scratch1 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
 
 ZombieMakerSurprised:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	Goto FightZombieMaker
 
 ZombieMakerNotices:
@@ -474,8 +474,8 @@ Monster114Ambush:
 	SetupMonster Mummy distance=1 closeup=Mummy
 	Approach
 	PrintClear "WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI."
-	Gosub PressReturn
-	PartyStrength Scratch1
+	Gosub WaitReturnPressed
+	Scratch1 = PartyStrength
 	Scratch1 = Scratch1 / 16
 	if Scratch1 == 0: Scratch1 = 1
 	ClearMonsters
@@ -485,13 +485,13 @@ Monster114Ambush:
 	Exit
 
 LightningTowerView:
-	if Facing == 2: PrintClear "THE AIR AROUND THE TOWER IS CHARGED WITH STATIC ELECTRICITY AND BALL LIGHTNING. "
+	if Facing == South: PrintClear "THE AIR AROUND THE TOWER IS CHARGED WITH STATIC ELECTRICITY AND BALL LIGHTNING. "
 	if LightningTowerFought > 0: Goto WarningDoor
-	if WightStrength == 255: Goto WarningDoor
+	if WightStrength == Destroyed: Goto WarningDoor
 	if WightCount == 0: Goto WarningDoor
 	Print " WIGHTS APPEAR FROM BEHIND THE TOWER."
 	Gosub WightsApproach
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch9 = 9
 	ClearMonsters
 	LoadMonster Wight count=WightCount icon=Wight
@@ -503,8 +503,8 @@ LightningTowerSeenSet:
 	Exit
 
 WarningDoor:
-	if Facing == 2: PrintClear "WRITTEN ON THE DOOR (IN THE COMMON TONGUE) IS: 'DO NOT OPEN THIS DOOR. A GREAT EVIL HAS BEEN LAID TO REST HERE.'"
-	also if Facing != 2: Exit
+	if Facing == South: PrintClear "WRITTEN ON THE DOOR (IN THE COMMON TONGUE) IS: 'DO NOT OPEN THIS DOOR. A GREAT EVIL HAS BEEN LAID TO REST HERE.'"
+	also if Facing != South: Exit
 	if Search == 1: PrintClear "THERE ARE LARGE SILVER HOLY SYMBOLS UP AND DOWN THE CRACK IN THE DOORWAY."
 	Exit
 
@@ -512,14 +512,14 @@ GlassChamberSting:
 	PrintClear "THE LOWER CHAMBER IS FILLED WITH GLASS AND FUR OBJECTS OF ALL TYPES. "
 	if StungInChamber < 1: Print "A SHARP CRACK SPLITS THE AIR AND YOU ARE STUNG."
 	also if StungInChamber >= 1: Exit
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Damage 202 4 1 0 2
 	StungInChamber += 1
 	Exit
 
 WightLairEntry:
 	if WightLairDone > 0: Exit
-	if WightStrength == 255: Exit
+	if WightStrength == Destroyed: Exit
 	if WightCount != 0: Goto WightMakerMenu
 	if WightsGone == 0: Exit
 
@@ -528,7 +528,7 @@ WightMakerMenu:
 	OnGoto Scratch1 Done WightMakerSurprised FleeRandomly WightMakerNotices
 
 WightMakerSurprised:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	Goto FightWightMaker
 
 WightMakerNotices:
@@ -545,14 +545,14 @@ FightWightMaker:
 	if WightStrength > 249: WightStrength = 249
 	WightStrength += 5
 	LairsCleared += 1
-	if MysticManState >= 250: Exit
+	if MysticManState >= MysticJoined: Exit
 	MysticManState += 1
 	Exit
 
 BrassDoorsView:
-	if Facing != 2: Goto BrassDoorsFight
+	if Facing != South: Goto BrassDoorsFight
 	PrintClear "IN THE ENTRY IS SET A HUGE PAIR OF BRASS DOORS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 
 BrassDoorsFight:
 	if TowerFightDone > 0: Goto KnightPanel
@@ -566,18 +566,18 @@ BrassDoorsFight:
 	if Scratch1 == 2: Goto FleeRandomly
 	TowerFightDone += 1
 	LairsCleared += 2
-	if MysticManState >= 250: Exit
+	if MysticManState >= MysticJoined: Exit
 	MysticManState += 2
 	Exit
 
 KnightPanel:
-	if Facing != 0: PrintClear "IN THE MIDDLE OF A DOOR IS A PANEL OF A POWERFUL KNIGHT FIGHTING SEVERAL UNDEAD."
+	if Facing != North: PrintClear "IN THE MIDDLE OF A DOOR IS A PANEL OF A POWERFUL KNIGHT FIGHTING SEVERAL UNDEAD."
 	Exit
 
 GiftVoice:
 	if Treasure29Taken > 0: Exit
 	PrintClear "A VOICE SPEAKS, 'COME, MY BRAVE ADVENTURERS.  YOU MUST TAKE MY GIFTS TO BETTER FIGHT THE EVIL THAT HAS COME TO THE CITY.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "FROM THE MAGICALLY-LIT TOMB OF A BRAVE KNIGHT, A BODY RISES FROM ITS RESTING PLACE TO LAY WEAPONS BEFORE THE PARTY."
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 29 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Ring of Fire Resistance, and 2 more
@@ -593,15 +593,15 @@ MysticManMeet:
 	SetupMonster Fighter14 distance=2 body=NobleRobe
 	Gosub ApproachTwice
 	PrintClear "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "'HAIL, NOBLE ADVENTURERS,' HE CALLS. 'I WOULD ASK YOU TO HELP ME END THIS FOUL UNDEAD CURSE.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "DO YOU LET HIM JOIN THE PARTY OR SEND HIM AWAY?"
 	Choice = Menu "LET HIM JOIN" -> MysticManJoins "SEND HIM AWAY" -> MysticManAttacks
 
 MysticManJoins:
 	if PartyCount > 7: Goto PartyTooLarge
-	MysticManState = 250
+	MysticManState = MysticJoined
 	PrintClear "'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS."
 	AddNPC Level6Mu24 99
 	Portrait = None
@@ -612,7 +612,7 @@ PartyTooLarge:
 	Exit
 
 MysticManAttacks:
-	Surprise = 1
+	Surprise = PartyIsSurprised
 	PrintClear "'THEN DIE YOU SCUM,' THE MAN SPITS."
 	Portrait = None
 	ClearMonsters
@@ -620,20 +620,20 @@ MysticManAttacks:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	MysticManState = 255
+	MysticManState = Finished
 	Exit
 
 BlackCrypt:
 	if CryptState > 250: Goto DustyCryptRemains
-	if VampireState == 250: Goto VampireGuardsApproach
+	if VampireState == FledAsVapor: Goto VampireGuardsApproach
 	PrintClear "INSIDE THE RUINS OF A BLACK MARBLE CRYPT IS A COFFIN FILLED WITH DUST.  AMONG THE PILES OF DUST ARE SEVERAL BROKEN CROSSES, VIALS OF SPILLED HOLY WATER, AND A SCROLL."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "DO YOU READ THE SCROLL?"
 	Ask YesNoMenu "YES" -> ScrollToJournal "NO" -> CoffinAsk
 
 ScrollToJournal:
 	PrintClear "THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 
 CoffinAsk:
 	PrintClear "DO YOU WANT TO DO ANYTHING WITH THE COFFIN?"
@@ -650,7 +650,7 @@ ExamineCoffin:
 
 SanctifyCoffin:
 	PrintClear "YOU SCATTER THE DUST AND PLACE WHAT HOLY ITEMS YOU CAN SPARE INSIDE."
-	CryptState = 251
+	CryptState = HolyItemsPlaced
 	Exit
 
 OverturnCoffin:
@@ -659,7 +659,7 @@ OverturnCoffin:
 
 DustyCryptRemains:
 	PrintClear "YOU ARE IN THE DUSTY REMAINS OF A BLACK MARBLE CRYPT."
-	if VampireState == 250: Goto VampireGuardsApproach
+	if VampireState == FledAsVapor: Goto VampireGuardsApproach
 	Exit
 
 VampireGuardsApproach:
@@ -669,8 +669,8 @@ VampireGuardsApproach:
 	Delay
 	Approach
 	PrintClear "THERE IS A VAMPIRE HERE."
-	Gosub PressReturn
-	if CryptState == 251: Goto ReloadVampire
+	Gosub WaitReturnPressed
+	if CryptState == HolyItemsPlaced: Goto ReloadVampire
 	if VampireFought > 0: Goto ReloadVampire
 	ClearMonsters
 	LoadMonster Vampire23 count=1 icon=Vampire
@@ -678,14 +678,14 @@ VampireGuardsApproach:
 
 VampireFightLoop:
 	if !Carried 82: Goto FightVampire
-	if VampireGuardLoaded != 255: LoadMonster Efreeti70 count=1 icon=Efreeti
+	if VampireGuardLoaded != Completed: LoadMonster Efreeti70 count=1 icon=Efreeti
 
 FightVampire:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	VampireState = 255
-	QuestGraveyard = 254
+	VampireState = Slain
+	QuestGraveyard = RewardDue
 	Exit
 
 ReloadVampire:
@@ -700,33 +700,33 @@ PitStairs:
 
 DescendPit:
 	PartyX = 14
-	Facing = 3
+	Facing = West
 	Call CallRedraw
-	if VampireState > 255: Exit
+	if VampireState > Slain: Exit
 
 VampireLair:
-	if VampireState >= 250: Goto VampireTreasure
+	if VampireState >= FledAsVapor: Goto VampireTreasure
 	Sky = 15
 	Call CallRedraw
 	PrintClear "THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH."
 	SetupMonster Vampire distance=1 closeup=Vampire
 	Approach
-	Gosub PressReturn
-	if MysticManState == 250: Scratch1 = 1
-	also if MysticManState != 250: Scratch1 = 0
+	Gosub WaitReturnPressed
+	if MysticManState == MysticJoined: Scratch1 = 1
+	also if MysticManState != MysticJoined: Scratch1 = 0
 	ClearMonsters
 	LoadMonster Vampire23 count=1 icon=Vampire
 	LoadMonster Wolf count=50 icon=Wolf
 	if Carried 82 {
 		LoadMonster Efreeti70 count=1 icon=Efreeti
-		VampireGuardLoaded = 255
+		VampireGuardLoaded = Completed
 	}
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
 	VampireFought += 1
-	MysticManState = 255
-	VampireState = 250
+	MysticManState = Finished
+	VampireState = FledAsVapor
 	if UndeadKillTable > 249: UndeadKillTable = 249
 	UndeadKillTable += 5
 	if ZombieStrength > 249: ZombieStrength = 249
@@ -739,7 +739,7 @@ VampireLair:
 	Exit
 
 VampireTreasure:
-	if VampireTreasureTaken == 255: Exit
+	if VampireTreasureTaken == Completed: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?"
 	Ask YesNoMenu "YES" -> TakeVampireTreasure "NO" -> Done
@@ -748,7 +748,7 @@ TakeVampireTreasure:
 	ClearMonsters
 	Treasure 0 0 0 #2328 0 12 0 30 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Clerical Scroll With 2 Spells, and 2 more
 	Combat
-	VampireTreasureTaken = 255
+	VampireTreasureTaken = Completed
 	Exit
 
 GhoulPack:
@@ -757,10 +757,10 @@ GhoulPack:
 	Delay
 	Approach
 	PrintClear "A PACK OF HUNGRY GHOULS LOPES TOWARD YOU."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch1 = Random 2
 	Scratch1 += 1
-	PartyStrength Scratch8
+	Scratch8 = PartyStrength
 	Scratch1 = Scratch8 / Scratch1
 	if Scratch1 == 0: Scratch1 = 1
 	ClearMonsters
@@ -769,7 +769,7 @@ GhoulPack:
 	Exit
 
 MysticManHint:
-	if Facing == 0 && MysticManState == 250: PrintClear "THE MYSTIC MAN SPEAKS, 'THE VAMPIRE IS BEHIND THE NORTHERN WALL.'"
+	if Facing == North && MysticManState == MysticJoined: PrintClear "THE MYSTIC MAN SPEAKS, 'THE VAMPIRE IS BEHIND THE NORTHERN WALL.'"
 	Exit
 
 RandomEncounter:
@@ -783,13 +783,13 @@ RandomEncounter:
 	if Scratch6 == 1: Return
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 0 0
-	if Surprise != 1: Goto SurpriseCheck
+	if Surprise != PartyIsSurprised: Goto SurpriseCheck
 	OnGoto Scratch9 SkeletonAttack ZombieAttack WightAttack
 
 SurpriseCheck:
-	if Surprise > 2: Goto PartyConfronted
-	also if Surprise == 2: Goto PartySneaksUp
-	also if Surprise < 2: Goto FindUndead
+	if Surprise > MonstersAreSurprised: Goto PartyConfronted
+	also if Surprise == MonstersAreSurprised: Goto PartySneaksUp
+	also if Surprise < MonstersAreSurprised: Goto FindUndead
 
 PartyConfronted:
 	MaxDist = 0
@@ -804,7 +804,7 @@ PartySneaksUp:
 	OnGoto Scratch1 Done StartFight FleeRandomly PartyNoticed
 
 PartyNoticed:
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "YOU ARE NOTICED."
 	Goto EncounterChoice
 
@@ -816,7 +816,7 @@ EncounterChoice:
 	OnGoto Scratch1 Done StartFight FleeRandomly ParlayFails
 
 ParlayFails:
-	Parlay 0 0 0 0 0 Scratch1
+	Scratch1 = Parlay 0 0 0 0 0
 	PrintClear "THEY DON'T LISTEN."
 
 StartFight:
@@ -834,7 +834,7 @@ FightGroup:
 
 CheckFled:
 	Scratch1 = 0
-	if CombatEnd > 128: Scratch1 = 2
+	if CombatEnd > PartyDied: Scratch1 = 2
 	Return
 
 FleeRandomly:
@@ -857,8 +857,9 @@ LoadRandomUndead:
 	also if Scratch1 == 2: LoadMonster Mummy count=1 icon=Mummy
 	Goto FightGroup
 
-PressReturn:
-	AuxMonster = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
+WaitReturnPressed:
+	alias Choice = AuxMonster
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 SkeletonsApproach:

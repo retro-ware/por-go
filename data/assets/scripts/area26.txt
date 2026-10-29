@@ -1,5 +1,5 @@
 event0:
-	if InLair == 255: Exit
+	if InLair == InsideLair: Exit
 	if MapY <= 2: Gosub NorthEdgeHold
 	OnGoto FacingRaw CheckBlockedMove CheckEastEdge CheckEastEdge CheckEastEdge CheckBlockedMove CheckWestEdge CheckWestEdge CheckWestEdge
 
@@ -18,7 +18,7 @@ NorthEdgeHold:
 	OnGoto FacingRaw HoldMoving HoldMoving NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit HoldMoving
 
 HoldMoving:
-	HoldMove = 255
+	HoldMove = SkipMove
 	Return
 
 EastEdgeExit:
@@ -40,12 +40,12 @@ ExitToArea25:
 
 EastEdgeRowCheck:
 	if MapY != 25: Goto ExitToArea27
-	HoldMove = 255
+	HoldMove = SkipMove
 	Return
 
 WestEdgeRowCheck:
 	if MapY != 31: Goto ExitToArea25
-	HoldMove = 255
+	HoldMove = SkipMove
 	Return
 
 ProbeAheadBlocked:
@@ -62,7 +62,7 @@ ProbeTableLoop:
 	Scratch2 = MapEventTable1[Scratch1]
 	if Scratch3 == 19: Scratch2 = MapEventTable2[Scratch1]
 	if ProbeWall == Scratch2 {
-		HoldMove = 255
+		HoldMove = SkipMove
 		Return
 	}
 	Scratch1 += 1
@@ -97,7 +97,7 @@ ProbeW:
 	Return
 
 event1:
-	if InLair == 255: Goto LairCellDispatch
+	if InLair == InsideLair: Goto LairCellDispatch
 	if Boss < 254: Goto FindSite
 	if RiverOpen != 0: Goto FindSite
 	Gosub LandRecovers
@@ -109,8 +109,8 @@ FindSite:
 	Scratch1 = 0
 
 SiteRowLoop:
-	alias SiteY = Scratch2
 	alias SiteRange = Scratch3
+	alias SiteY = Scratch2
 	if Scratch1 >= 9: Goto RandomEncounterCheck
 	SiteRange = SiteRangeTable[Scratch1]
 	SiteY = SiteYTable[Scratch1]
@@ -167,14 +167,14 @@ EnterNorthGate:
 	Gosub Enter3DSetup
 	PartyX = 4
 	PartyY = 0
-	Facing = 2
+	Facing = South
 	EnterArea CadornaTextileHouse
 
 EnterGraveyard:
 	Gosub Enter3DSetup
 	PartyX = 0
 	PartyY = 4
-	Facing = 3
+	Facing = West
 	EnterArea ValhingenGraveyard
 
 CityEastEdge:
@@ -189,21 +189,21 @@ EnterEastNorth:
 	Gosub Enter3DSetup
 	PartyX = 15
 	PartyY = 4
-	Facing = 3
+	Facing = West
 	EnterArea CadornaTextileHouse
 
 EnterEastSouth:
 	Gosub Enter3DSetup
 	PartyX = 15
 	PartyY = 4
-	Facing = 3
+	Facing = West
 	EnterArea TempleOfBane
 
 BoatToCivilized:
 	Gosub Enter3DSetup
 	PartyX = 15
 	PartyY = 1
-	Facing = 3
+	Facing = West
 	EnterArea NewPhlan
 
 CityWestEdge:
@@ -218,14 +218,14 @@ EnterWestNorth:
 	Gosub Enter3DSetup
 	PartyX = 0
 	PartyY = 4
-	Facing = 3
+	Facing = West
 	EnterArea PodolPlaza
 
 EnterWestSouth:
 	Gosub Enter3DSetup
 	PartyX = 0
 	PartyY = 4
-	Facing = 3
+	Facing = West
 	EnterArea HobgoblinBarracks
 
 HiddenRowboat:
@@ -265,7 +265,7 @@ BoatHome:
 Enter3DSetup:
 	Picture None
 	ClearBox
-	In3D = 1
+	In3D = Dungeon3D
 	WallSlot1 = 127
 	WallSlot1B = 127
 	WallSlot2 = 127
@@ -290,7 +290,7 @@ StartEncounter:
 	SurpriseTable2Entry = SurpriseTable2[EncounterKind]
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 SurpriseTable1Entry SurpriseTable2Entry
-	if SurpriseTable2Entry == 9: Surprise = Surprise & 1
+	if SurpriseTable2Entry == 9: Surprise &= PartyIsSurprised
 	OnGoto Surprise SpotGroup PartySurprised SurpriseThem FaceToFace
 
 SpotGroup:
@@ -327,13 +327,13 @@ EncounterFight:
 EncounterCombat:
 	ClearBox
 	Combat
-	if CombatEnd > 128: Goto FightDone
+	if CombatEnd > PartyDied: Goto FightDone
 	Exit
 
 EncounterParlay:
 	if AuxMember == 0: Goto EncounterFight
 	if AuxMember == 50: Goto FriendlyGreet
-	Parlay 30 30 30 5 60 Scratch1
+	Scratch1 = Parlay 30 30 30 5 60
 	Scratch2 = Random 30
 	Scratch1 = Scratch1 + Scratch2
 	Scratch1 = Scratch1 + SelReaction
@@ -381,7 +381,7 @@ RuinedHuts:
 	Choice = Menu "INVESTIGATE" -> EnterLair "LEAVE" -> Done
 
 EnterLair:
-	InLair = 255
+	InLair = InsideLair
 	OnGoto Scratch6 LairStartA LairStartB LairStartC
 
 LairStartA:
@@ -399,7 +399,7 @@ LairStartC:
 	LairStartY26 = 6
 
 LairLoad:
-	In3D = 1
+	In3D = Dungeon3D
 	SavedMapX = MapX
 	SavedMapY = MapY
 	WallSlot1 = 135
@@ -433,11 +433,11 @@ SplashingPool:
 PoolLizardMen:
 	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	ClearMonsters
 	LoadMonster Lizardman count=6 icon=57
 	Combat
-	LairFightFlags = LairFightFlags | 1
+	LairFightFlags |= 1
 	Exit
 
 DisplacerAmbush:
@@ -445,15 +445,15 @@ DisplacerAmbush:
 	if 0 != Scratch1: Exit
 	SetupMonster DisplacerBeast distance=0 closeup=DisplacerBeast
 	PrintClear "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
-	Surprise = 1
+	Surprise = PartyIsSurprised
 	ClearMonsters
 	LoadMonster DisplacerBeast count=2 icon=DisplacerBeast
 	Combat
-	LairFightFlags = LairFightFlags | 2
+	LairFightFlags |= 2
 	Exit
 
 ChainedKobolds:
-	Scratch1 = LairFightFlags & 4
+	Scratch1 = LairFightFlags & KoboldPrisoners
 	if 0 != Scratch1: Exit
 	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
@@ -461,13 +461,13 @@ ChainedKobolds:
 
 ReleaseKobolds:
 	PrintClear "YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR."
-	LairFightFlags = 4 | LairFightFlags
+	LairFightFlags = KoboldPrisoners | LairFightFlags
 	Picture None
 	Exit
 
 KillKobolds:
 	PrintClear "YOU COLDLY KILL THE DEFENSELESS KOBOLDS."
-	LairFightFlags = 4 | LairFightFlags
+	LairFightFlags = KoboldPrisoners | LairFightFlags
 
 StenchWest:
 	PrintClear "AN AWFUL STENCH IS COMING FROM THE WEST."
@@ -481,8 +481,8 @@ MutantLizardHut:
 	ClearMonsters
 	LoadMonster MutantLizMan count=2 icon=57
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	LairFightFlags = LairFightFlags | 8
+	if CombatEnd > PartyDied: Goto StepBack
+	LairFightFlags |= 8
 	Exit
 
 LizardHut:
@@ -493,12 +493,12 @@ LizardHut:
 	ClearMonsters
 	LoadMonster Lizardman count=4 icon=57
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	LairFightFlags = LairFightFlags | 16
+	if CombatEnd > PartyDied: Goto StepBack
+	LairFightFlags |= 16
 	Exit
 
 LargeLizardMen:
-	LairFightFlags = LairFightFlags & 32
+	LairFightFlags &= 32
 	if 0 != LairFightFlags: Exit
 	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
@@ -507,8 +507,8 @@ LargeLizardMen:
 	LoadMonster Lizardman count=4 icon=57
 	Combat
 	MonsterHit = 0
-	if CombatEnd > 128: Goto StepBack
-	LairFightFlags = LairFightFlags | 32
+	if CombatEnd > PartyDied: Goto StepBack
+	LairFightFlags |= 32
 	Exit
 
 StirgeSwarm:
@@ -534,9 +534,9 @@ LeaveLairAsk:
 	Choice = Menu "RETURN" -> StepBack "LEAVE" -> LeaveLair
 
 LeaveLair:
-	In3D = 0
+	In3D = Overland
 	LoadMap 5 unused=5 icons=0
-	InLair = 0
+	InLair = OutsideLair
 	Call CallRedraw
 	NewECL Wilderness
 
@@ -552,22 +552,31 @@ RedrawExit:
 	Exit
 
 PickEncounter:
+	alias EncounterParam2Entry = AuxMember
+	alias EncounterParam3Entry = AuxRoll
+	alias EncounterParam5Entry = AuxEncResult
+	alias EncounterParam7Entry = AuxEncTemp
+	alias LeaderId = AuxPartyStrength
+	alias LeaderPic = AuxParlay
+	alias MonsterId = AuxMonster
+	alias MonsterPic = AuxTemp9
+	alias StrengthDiv = AuxCounter
 	Scratch1 = Random 20
 	if Scratch1 == 20 && ForcedEncounter == 0: Return
 	Scratch1 = Random 17
 	OnGosub Scratch1 PickKobolds PickKobolds PickKobolds PickKobolds PickDisplacers PickDisplacers PickDriders PickStirges PickStirges PickStirges PickLizardMen PickLizardMen PickLizardMen PickBandits PickNomads PickNomads PickMerchants PickMerchants
-	AuxTemp9 = MonsterPicTable[EncounterKind]
-	AuxParlay = LeaderPicTable[EncounterKind]
-	AuxMember = EncounterParam2[EncounterKind]
-	AuxRoll = EncounterParam3[EncounterKind]
-	AuxMonster = MonsterIdTable[EncounterKind]
-	AuxEncResult = EncounterParam5[EncounterKind]
+	MonsterPic = MonsterPicTable[EncounterKind]
+	LeaderPic = LeaderPicTable[EncounterKind]
+	EncounterParam2Entry = EncounterParam2[EncounterKind]
+	EncounterParam3Entry = EncounterParam3[EncounterKind]
+	MonsterId = MonsterIdTable[EncounterKind]
+	EncounterParam5Entry = EncounterParam5[EncounterKind]
 	AuxEncResult2 = MoraleTable[EncounterKind]
-	AuxEncTemp = EncounterParam7[EncounterKind]
-	AuxPartyStrength = LeaderIdTable[EncounterKind]
-	AuxCounter = StrengthDivTable[EncounterKind]
-	PartyStrength Scratch1
-	Scratch1 = Scratch1 / AuxCounter
+	EncounterParam7Entry = EncounterParam7[EncounterKind]
+	LeaderId = LeaderIdTable[EncounterKind]
+	StrengthDiv = StrengthDivTable[EncounterKind]
+	Scratch1 = PartyStrength
+	Scratch1 = Scratch1 / StrengthDiv
 	Scratch2 = Random 5
 	OnGoto Scratch2 CountThird CountHalf CountHalf CountHalf CountLeaders
 
@@ -581,10 +590,11 @@ CountHalf:
 	if Scratch1 <= 0: Scratch1 = 1
 
 CountLeaders:
+	alias LeaderEvery = AuxMenuChoice
 	LeaderCount = 0
 	Scratch3 = Scratch1
-	AuxMenuChoice = LeaderEveryTable[EncounterKind]
-	if AuxMenuChoice == 0: Goto CapMonsterCount
+	LeaderEvery = LeaderEveryTable[EncounterKind]
+	if LeaderEvery == 0: Goto CapMonsterCount
 
 LeaderLoop:
 	if Scratch3 < AuxMenuChoice: Goto CapMonsterCount
@@ -599,45 +609,45 @@ CapMonsterCount:
 
 PickKobolds:
 	$AuxMonsterName = "KOBOLDS"
-	EncounterKind = 0
+	EncounterKind = Kobolds
 	Return
 
 PickDisplacers:
 	$AuxMonsterName = "DISPLACER BEASTS"
-	EncounterKind = 1
+	EncounterKind = DisplacerBeasts
 	Return
 
 PickDriders:
 	$AuxMonsterName = "DRIDERS"
-	EncounterKind = 2
+	EncounterKind = Driders
 	Return
 
 PickStirges:
 	$AuxMonsterName = "STIRGES"
-	EncounterKind = 3
+	EncounterKind = Stirges
 	Return
 
 PickLizardMen:
 	$AuxMonsterName = "LIZARD MEN"
-	EncounterKind = 4
+	EncounterKind = LizardMen
 	Return
 
 PickBandits:
 	$AuxMonsterName = "BANDITS"
-	EncounterKind = 5
+	EncounterKind = Bandits
 	Return
 
 PickNomads:
 	$AuxMonsterName = "NOMADS"
-	EncounterKind = 6
+	EncounterKind = Nomads
 	Return
 
 PickMerchants:
 	$AuxMonsterName = "MERCHANTS"
-	EncounterKind = 7
+	EncounterKind = Merchants
 	Return
 
-PressReturn:
+WaitReturnPressed:
 	alias Choice = Scratch8
 	Choice = Menu "HIT <RETURN> OR BUTTON TO CONTINUE"
 	Return
@@ -683,7 +693,7 @@ RiverTileLoop:
 
 RiverRowDone:
 	if Scratch1 == 8 && RiverOpen == 0: Goto RiverDrawEnd
-	if RiverState == 1: Gosub RiverAnimFrame
+	if RiverState == Flowing: Gosub RiverAnimFrame
 	Scratch1 += 1
 	Goto RiverRowLoop
 
@@ -720,18 +730,18 @@ RiverFrameReset:
 
 LandRecovers:
 	PrintClear "AS YOU LEAVE THE SORCERER'S PYRAMID BEHIND YOU CAN SEE THAT THE LAND IS ALREADY BEGINNING TO RECOVER FROM THE ALCHEMICAL POLLUTION CAUSED BY THE PYRAMID."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	SetMapXY 7 17
 	Call CallRedraw
 	Scratch1 = 9
 	Scratch2 = 72
 	UnknownD015 = 0
-	RiverState = 1
+	RiverState = Flowing
 	Goto RiverDrawBegin
 
 RiverOpened:
 	RiverOpen = 255
-	RiverState = 255
+	RiverState = Opened
 	MapY = 16
 	MapX = 6
 	Delay
@@ -766,7 +776,7 @@ PatchPyramidTiles:
 
 CheckMarker4:
 	if Mark4 != 0: Goto ShowMarker4
-	Scratch9 = MarkFlags4 & 8
+	Scratch9 = MarkFlags4 & KoboldRaidWon
 	if 0 != Scratch9: Goto ShowMarker4
 	if Mark4Off != 0: Return
 
@@ -837,7 +847,7 @@ LeaderPicTable:
 	Data 1 68 69 61 57 11 11 11
 
 event2:
-	if In3D == 1: Goto NoRest3D
+	if In3D == Dungeon3D: Goto NoRest3D
 	RestChance = 10
 	RestEvery = 96
 	Exit
@@ -851,8 +861,8 @@ event3:
 	Goto StartEncounter
 
 event4:
-	if InLair == 255: Goto LairSetup
-	In3D = 0
+	if InLair == InsideLair: Goto LairSetup
+	In3D = Overland
 	NoCoords = 0
 	LoadMap 5 unused=5 icons=0
 	if Boss < 254: Exit
@@ -861,7 +871,7 @@ event4:
 	Exit
 
 LairSetup:
-	In3D = 1
+	In3D = Dungeon3D
 	NoCoords = 255
 	SkyInside = 8
 	LoadWalls 7 8 23

@@ -1,7 +1,7 @@
 9914 TeleportToDest
 9982 YesNoMenu
 999C FlashTeleport
-99E1 PressReturn
+99E1 WaitReturnPressed
 9A09 SearchSecretDoor
 9A1E SearchMemberLoop
 9A66 SecretDoorFound

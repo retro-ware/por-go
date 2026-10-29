@@ -6,11 +6,11 @@ event0:
 	if LeftMap == 0: Goto StoreCellCode
 	NoCoords = 0
 	Call CallStepForward
-	HoldMove = 255
-	if Facing == 1 {
+	HoldMove = SkipMove
+	if Facing == East {
 		EnterArea NewPhlan
 	}
-	also if Facing != 1 {
+	also if Facing != East {
 		EnterArea KutosWell
 	}
 
@@ -38,8 +38,8 @@ CellCaseJump:
 	OnGoto AuxCounter SlumsStreet OrcsArguePapers GoblinTrainer OhloRoom DirtyRoom UncleanStable FeedingKobolds HempMarket FortuneTeller OrcHome HobgoblinGold StorageRoom TreasureRoom GuardsIntercept LeadersMeeting AlertedGuards LargeEmptyRoom RopeGuildEntry InsideRopeGuild PotionBooth GrainSack
 
 event2:
-	if FortuneTellerState == 255: Goto RestDangerous
-	if QuestSlums >= 254: Goto RestSafe
+	if FortuneTellerState == Murdered: Goto RestDangerous
+	if QuestSlums >= RewardDue: Goto RestSafe
 	if Scratch10 == 0: Goto RestDangerous
 
 RestSafe:
@@ -54,8 +54,8 @@ RestDangerous:
 
 event3:
 	EventTimer = 200
-	Surprise = 0
-	PartyStrength AuxPartyStrength
+	Surprise = NoSurprise
+	AuxPartyStrength = PartyStrength
 	Goto ScalePatrol
 
 event4:
@@ -66,25 +66,25 @@ event4:
 	SkyInside = 9
 	LoadMap 20 unused=2 icons=255
 	LoadWalls 2 4 1
-	if SlumsEntered != 255: Goto RestSafe
+	if SlumsEntered != Completed: Goto RestSafe
 	Exit
 
 SlumsStreet:
-	PartyStrength AuxPartyStrength
-	if QuestSlums >= 254: Exit
-	if SlumsEntered != 255: PrintClear "YOU HAVE ENTERED THE MONSTER-CRAWLING SLUMS OF PHLAN.  SMALL, UGLY THINGS SCURRY FROM BENEATH YOUR FEET.  IN THE DISTANCE, AN ALARM SOUNDS."
-	SlumsEntered = 255
+	AuxPartyStrength = PartyStrength
+	if QuestSlums >= RewardDue: Exit
+	if SlumsEntered != Completed: PrintClear "YOU HAVE ENTERED THE MONSTER-CRAWLING SLUMS OF PHLAN.  SMALL, UGLY THINGS SCURRY FROM BENEATH YOUR FEET.  IN THE DISTANCE, AN ALARM SOUNDS."
+	SlumsEntered = Completed
 	if 0 != Scratch10: Exit
 	if PatrolsBeaten >= 15: Exit
 	AuxSightText = Random 13
 	if Search == 1: AuxSightText += 4
-	if FortuneTellerState == 255: AuxSightText += 5
+	if FortuneTellerState == Murdered: AuxSightText += 5
 	if AuxSightText <= 12: Exit
 
 ScalePatrol:
 	AuxPartyStrength = AuxPartyStrength / 3
 	AuxPartyStrength = AuxPartyStrength * 2
-	if FortuneTellerState == 255: AuxPartyStrength += 5
+	if FortuneTellerState == Murdered: AuxPartyStrength += 5
 
 PickPatrol:
 	Scratch7 = Random 2
@@ -103,29 +103,32 @@ PatrolOrcs:
 
 PatrolSurprise:
 	alias PatrolMonster = Scratch8
+	alias PatrolPicture = AuxEncMonster2
+	alias PatrolTable3Entry = AuxEncResult
+	alias PatrolTable4Entry = AuxEncResult2
 	MonsterDist = PatrolDistTable[Scratch7]
 	PatrolMonster = PatrolMonsterTable[Scratch7]
-	AuxEncResult = PatrolTable3[Scratch7]
-	AuxEncResult2 = PatrolTable4[Scratch7]
-	AuxEncMonster2 = PatrolPictureTable[Scratch7]
+	PatrolTable3Entry = PatrolTable3[Scratch7]
+	PatrolTable4Entry = PatrolTable4[Scratch7]
+	PatrolPicture = PatrolPictureTable[Scratch7]
 	PartySurprise AuxMember AuxRoll
 	Surprise AuxMember AuxRoll 0 0
-	if Surprise != 1: Goto PatrolApproach
-	SetupMonster AuxEncMonster2 distance=2 closeup=PatrolMonster
+	if Surprise != PartyIsSurprised: Goto PatrolApproach
+	SetupMonster PatrolPicture distance=2 closeup=PatrolMonster
 	Approach
 	Delay
 	Approach
 	PrintClear "YOU ARE SURPRISED BY"
 	if AuxPartyStrength > 18: Print " A BUGBEAR LEADING A PARTY OF"
 	Print $AuxText
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	MaxDist = 0
 	PatrolMorale = 70
 	Goto FightPatrol
 
 PatrolApproach:
 	if Surprise == 3: Goto BumpIntoPatrol
-	if Surprise == 2: Goto SurprisePatrol
+	if Surprise == MonstersAreSurprised: Goto SurprisePatrol
 	AuxMember = Random 1
 	if AuxMember < 1: Goto SpySeedyPatrol
 	$AuxMonsterName = "YOU ARE BEING APPROACHED BY SOME ANGRY"
@@ -156,46 +159,47 @@ SurprisePatrol:
 	OnGoto AuxMember Done FightPatrol YouHide ConversePatrol
 
 OrcsArguePapers:
-	if OrcPapersFight == 255: Exit
+	if OrcPapersFight == Completed: Exit
 	SetupMonster Orc distance=1 closeup=Orc
 	Approach
 	PrintClear "SEVERAL ORCS ARE ARGUING OVER SOME PAPERS."
-	Gosub PressReturn
-	Surprise = 0
+	Gosub WaitReturnPressed
+	Surprise = NoSurprise
 	Morale = 99
 	ClearMonsters
 	LoadMonster Orc13 count=1 icon=Orc
 	LoadMonster Orc4 count=3 icon=Orc
 	Combat
-	OrcPapersFight = 255
+	OrcPapersFight = Completed
 	Gosub CountSlumsCleared
 	Exit
 
 GoblinTrainer:
-	if GoblinTrainerFight == 255: Exit
+	if GoblinTrainerFight == Completed: Exit
 	SetupMonster Goblin distance=1 closeup=Goblin
 	Approach
 	PrintClear "A HEALTHY-LOOKING GOBLIN IS INSTRUCTING A GROUP OF YOUNG WARRIORS.  HE SMILES AND SAYS, 'I SEE OUR OPPONENTS HAVE ARRIVED.'"
-	Gosub PressReturn
-	Surprise = 0
+	Gosub WaitReturnPressed
+	Surprise = NoSurprise
 	Morale = 60
 	ClearMonsters
 	LoadMonster GoblinGuard count=8 icon=GoblinGuard
 	LoadMonster GoblinLeader12 count=1 icon=GoblinLeader
 	Combat
 	Gosub CountSlumsCleared
-	GoblinTrainerFight = 255
+	GoblinTrainerFight = Completed
 	Exit
 
 OhloRoom:
-	if OhloQuestState == 255: Exit
-	if OhloPotionState == 255: Exit
+	alias Choice = AuxMember
+	if OhloQuestState == Finished: Exit
+	if OhloPotionState == OhloFought: Exit
 	Portrait = GrinningBlond
 	SetupMonster Mage distance=1 body=NobleRobe
-	if OhloPotionState == 250: Goto OhloWantsPotion
-	if OhloQuestState == 250: Goto OhloEmptyHanded
+	if OhloPotionState == PackageReceived: Goto OhloWantsPotion
+	if OhloQuestState == SentForPotion: Goto OhloEmptyHanded
 	PrintClear "YOU BURST INTO AN ELEGANTLY PANELLED ROOM. A SMALL MAN SITS HUNCHED OVER A TABLE BY THE EAST WALL. HE SETS DOWN HIS PEN AND GAZES STERNLY AT YOU.  'WELL?', HE DEMANDS.  (WHAT DO YOU DO?)"
-	AuxMember = Menu "LEAVE" -> LeaveOhlo "TALK" -> TalkToOhlo "ATTACK" -> OhloAttacks
+	Choice = Menu "LEAVE" -> LeaveOhlo "TALK" -> TalkToOhlo "ATTACK" -> OhloAttacks
 
 LeaveOhlo:
 	PrintClear "YOU GO BACK OUT THE DOOR."
@@ -203,17 +207,17 @@ LeaveOhlo:
 	Portrait = None
 	PartyX = 14
 	PartyY = 10
-	Facing = 1
+	Facing = East
 	Goto RedrawAndRecheck
 
 TalkToOhlo:
-	Parlay 0 1 2 3 4 AuxParlay
+	AuxParlay = Parlay 0 1 2 3 4
 	OnGoto AuxParlay OhloAttacks OhloBegone OhloOffersJob OhloOffersJob OhloAttacks
 
 OhloAttacks:
 	PrintClear "'YOU PRESUME TOO MUCH,' THE MAN SAYS QUIETLY.  HE GESTURES."
-	OhloQuestState = 255
-	Surprise = 0
+	OhloQuestState = Finished
+	Surprise = NoSurprise
 	Morale = 99
 	ClearMonsters
 	LoadMonster Hobgoblin count=25 icon=Hobgoblin
@@ -222,27 +226,30 @@ OhloAttacks:
 	LoadMonster Orc4 count=8 icon=Orc
 	Combat
 	Gosub ClearPortrait
-	OhloPotionState = 255
+	OhloPotionState = OhloFought
 	Gosub CountSlumsCleared
 	Exit
 
 OhloBegone:
+	alias Choice = AuxMember
 	PrintClear "'I HAVE NO TIME FOR THE LIKES OF YOU,' THE MAN SAYS AIRILY.  'BEGONE!' (WHAT DO YOU DO?)"
-	AuxMember = Menu "STAY" -> OhloAttacks "LEAVE" -> LeaveOhlo "ATTACK" -> OhloAttacks
+	Choice = Menu "STAY" -> OhloAttacks "LEAVE" -> LeaveOhlo "ATTACK" -> OhloAttacks
 
 OhloOffersJob:
+	alias Choice = AuxMenuChoice
 	PrintClear "'I MAY HAVE A USE FOR YOU,' THE MAN SAYS. 'SOME TIME AGO, I ORDERED A SPECIAL POTION.  THE POTION IS READY BUT I CAN'T LEAVE TO FETCH IT.  BRING IT HERE, I PAY WELL.' (WHAT DO YOU DO?)"
-	AuxMenuChoice = Menu "ACCEPT THE COMMISSION" -> AcceptPotionJob "REJECT IT" -> OhloBegone
+	Choice = Menu "ACCEPT THE COMMISSION" -> AcceptPotionJob "REJECT IT" -> OhloBegone
 
 AcceptPotionJob:
 	PrintClear "'IT WAITS IN A BOOTH IN THE OLD ROPE GUILD BUT A SHORT DISTANCE TO THE SOUTHEAST FROM WHERE YOU NOW STAND.  SPEAK MY NAME, OHLO.'"
-	Gosub PressReturn
-	OhloQuestState = 250
+	Gosub WaitReturnPressed
+	OhloQuestState = SentForPotion
 	Goto LeaveOhlo
 
 OhloWantsPotion:
+	alias Choice = AuxMenuChoice
 	PrintClear "'YOU HAVE DONE WELL. GIVE ME THE POTION AND YOU WILL BE REWARDED.' (WHAT DO YOU DO?)"
-	AuxMenuChoice = Menu "GIVE" -> GivePotion "ASK FOR MORE MONEY" -> OhloAttacks "REFUSE TO GIVE" -> OhloAttacks
+	Choice = Menu "GIVE" -> GivePotion "ASK FOR MORE MONEY" -> OhloAttacks "REFUSE TO GIVE" -> OhloAttacks
 
 OhloEmptyHanded:
 	PrintClear "'YOU HAVE RETURNED EMPTY HANDED,' HE OBSERVES. 'I HAVE NO TIME FOR YOU NOW.'  HE WAVES HIS HAND."
@@ -253,8 +260,8 @@ GivePotion:
 	ClearMonsters
 	Treasure 0 0 0 0 150 0 1 129 // 1 random items
 	Combat
-	OhloQuestState = 255
-	OhloPotionState = 255
+	OhloQuestState = Finished
+	OhloPotionState = OhloFought
 	Gosub ClearPortrait
 	Gosub CountSlumsCleared
 	Goto LeaveOhlo
@@ -271,39 +278,40 @@ UncleanStable:
 	StableSeen20 = 250
 
 FindLeatherBag:
-	if LeatherBagOpened == 255: Exit
+	alias Choice = AuxMenuChoice
+	if LeatherBagOpened == Completed: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND A LONG LEATHER BAG.  WILL YOU OPEN IT?"
-	AuxMenuChoice = Menu "YES" -> OpenLeatherBag "NO" -> Done
+	Choice = Menu "YES" -> OpenLeatherBag "NO" -> Done
 
 OpenLeatherBag:
 	ClearMonsters
 	Treasure 0 0 0 100 0 2 0 41 // Short Bow +1, 20 Arrow +1
 	Combat
-	LeatherBagOpened = 255
+	LeatherBagOpened = Completed
 	Exit
 
 FeedingKobolds:
-	if KoboldsFed == 255: Exit
+	if KoboldsFed == Completed: Exit
 	SetupMonster Kobold distance=1 closeup=Kobold
 	Delay
 	Approach
 	PrintClear "YOU INTERRUPT SOME FEEDING KOBOLDS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Morale = 60
-	Surprise = 0
+	Surprise = NoSurprise
 	ClearMonsters
 	LoadMonster KoboldLeader11 count=1 icon=KoboldLeader
 	LoadMonster Kobold0 count=15 icon=Kobold
 	Combat
 	Gosub CountSlumsCleared
-	KoboldsFed = 255
+	KoboldsFed = Completed
 	Exit
 
 HempMarket:
-	if QuestSlums >= 254: Exit
-	if HempMarketSeen == 255: Exit
-	HempMarketSeen = 255
+	if QuestSlums >= RewardDue: Exit
+	if HempMarketSeen == Completed: Exit
+	HempMarketSeen = Completed
 	PrintClear "YOU WANDER IN THE OLD HEMP MARKET.  MONSTERS SCURRY AT YOUR APPROACH.  YOU OCCASSIONALLY CATCH SNATCHES OF CONVERSATIONS."
 	Delay
 	Delay
@@ -323,17 +331,18 @@ RumorTreasureRoom:
 	Exit
 
 FortuneTeller:
+	alias Choice = AuxMenuChoice
 	if FortuneTellerState > 250: Exit
-	FortuneTellerState = 251
+	FortuneTellerState = Visited
 	ShowPortrait EarringWoman GreyApron
 	PrintClear "SEATED AT A TABLE IS A RAGGED OLD WOMAN. SHE GREETS YOU. 'WELCOME. FOR THE PRICE OF A FEW COPPERS, I WILL TELL YOUR FORTUNE.' (WHAT DO YOU DO?)"
-	AuxMenuChoice = Menu "ATTACK" -> MurderOldWoman "LEAVE" -> LeaveFortuneShop "PAY" -> PayFortune
+	Choice = Menu "ATTACK" -> MurderOldWoman "LEAVE" -> LeaveFortuneShop "PAY" -> PayFortune
 
 MurderOldWoman:
 	PrintClear "YOU EASILY MURDER THE OLD WOMAN.  EXCEPT FOR A FEW COPPER PIECES YOU FIND NOTHING OF VALUE.  THE GODS HAVE NOTED YOUR ACTIONS."
 	PatrolsBeaten = 0
-	FortuneTellerState = 255
-	Gosub PressReturn
+	FortuneTellerState = Murdered
+	Gosub WaitReturnPressed
 	ClearMonsters
 	Treasure 3 0 0 0 0 0 0 255
 	Combat
@@ -343,14 +352,14 @@ MurderOldWoman:
 LeaveFortuneShop:
 	PartyX = 3
 	PartyY = 4
-	Facing = 0
+	Facing = North
 	PrintClear "YOU LEAVE THE SHOP."
 	Gosub ClearPortrait
 	Goto RedrawAndRecheck
 
 PayFortune:
 	PrintClear "THE WOMAN'S HANDS MAKE MYSTIC PASSAGES WHILE SHE MUTTERS SOME WORDS.  HER VOICE UNDERGOES A STRANGE TRANSFORMATION ..."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	if PatrolsBeaten <= 25: Goto FortuneBlood
 	if PatrolsBeaten <= 75: Goto FortunePowerful
 	also if PatrolsBeaten > 75: Goto FortuneNewWays
@@ -367,16 +376,17 @@ FortuneNewWays:
 	PrintClear "THE TIME IS NIGH WHEN THE PATHS YOU HAVE TROD WILL EMPTY AND YOU MUST SEEK NEW WAYS.  THE RIDDLE'S ANSWER IS GREAT EVIL USING GREAT GOOD FOR GREAT EVIL."
 
 FortuneFinished:
-	Gosub PressReturn
+	alias Choice = AuxMenuChoice
+	Gosub WaitReturnPressed
 	PrintClear "THE TELLING IS FINISHED. (WHAT DO YOU DO?)"
-	AuxMenuChoice = Menu "ATTACK" -> MurderOldWoman "LEAVE" -> LeaveFortuneShop
+	Choice = Menu "ATTACK" -> MurderOldWoman "LEAVE" -> LeaveFortuneShop
 
 OrcHome:
-	if OrcHomeFight == 255: Exit
+	if OrcHomeFight == Completed: Exit
 	SetupMonster Orc distance=1 closeup=Orc
 	Approach
 	PrintClear "A LARGE ORC RAISES HIS HEAD AND SNARLS, 'HOW DARE YOU BREAK INTO OUR HOME?'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Morale = 70
 	ClearMonsters
 	LoadMonster OrcLeader15 count=1 icon=OrcLeader
@@ -384,114 +394,115 @@ OrcHome:
 	LoadMonster Orc4 count=20 icon=Orc
 	Combat
 	Gosub CountSlumsCleared
-	OrcHomeFight = 255
+	OrcHomeFight = Completed
 	Exit
 
 HobgoblinGold:
-	if HobgoblinGoldState >= 250: Goto SearchValuables
+	if HobgoblinGoldState >= HobgoblinsBeaten: Goto SearchValuables
 	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	Approach
 	PrintClear "SOME HOBGOBLINS ARE ARGUING OVER A PILE OF GOLD.  'THIEVES!' THEY SCREAM WHEN THEY SEE YOU."
-	Gosub PressReturn
-	Surprise = 0
+	Gosub WaitReturnPressed
+	Surprise = NoSurprise
 	Morale = 75
 	ClearMonsters
 	LoadMonster Hobgoblin count=5 icon=Hobgoblin
 	Combat
-	HobgoblinGoldState = 250
+	HobgoblinGoldState = HobgoblinsBeaten
 	Gosub CountSlumsCleared
 	Exit
 
 SearchValuables:
-	if 255 == HobgoblinGoldState: Exit
+	if ValuablesTaken == HobgoblinGoldState: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND A LARGE NUMBER OF VALUABLES."
 	ClearMonsters
 	Treasure 0 0 0 #01F4 50 0 0 40 // Short Bow +1, Ring Of Protection +1
 	Combat
-	HobgoblinGoldState = 255
+	HobgoblinGoldState = ValuablesTaken
 	Exit
 
 StorageRoom:
-	if StorageRoomSeen == 255: Exit
-	StorageRoomSeen = 255
+	if StorageRoomSeen == Completed: Exit
+	StorageRoomSeen = Completed
 	PrintClear "YOU HAVE ENTERED A SMALL STORAGE ROOM."
 	Exit
 
 TreasureRoom:
-	if TreasureRoomFight == 255: Exit
+	if TreasureRoomFight == Completed: Exit
 	PrintClear "YOU HAVE STUMBLED INTO A TREASURE ROOM."
 	ClearMonsters
 	Treasure 0 0 #03E8 92 50 4 2 41 // Short Bow +1, 20 Arrow +1
 	Combat
-	TreasureRoomFight = 255
+	TreasureRoomFight = Completed
 	Exit
 
 GuardsIntercept:
-	if GuardsInterceptFight == 255: Exit
+	if GuardsInterceptFight == Completed: Exit
 	SetupMonster Orc distance=1 closeup=Orc
 	Approach
 	PrintClear "GUARDS RUN TO INTERCEPT YOU."
-	Gosub PressReturn
-	Surprise = 0
+	Gosub WaitReturnPressed
+	Surprise = NoSurprise
 	Morale = 60
 	ClearMonsters
 	LoadMonster Orc4 count=30 icon=Orc
 	LoadMonster OrcLeader5 count=4 icon=OrcLeader
 	Combat
 	Gosub CountSlumsCleared
-	GuardsInterceptFight = 255
+	GuardsInterceptFight = Completed
 	Exit
 
 LeadersMeeting:
-	if LeadersMeetingFight == 255: Exit
+	if LeadersMeetingFight == Completed: Exit
 	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	PrintClear "YOU INTRUDE ON A GATHERING OF MONSTER LEADERS."
-	Gosub PressReturn
-	Surprise = 0
+	Gosub WaitReturnPressed
+	Surprise = NoSurprise
 	Morale = 80
 	ClearMonsters
 	LoadMonster Ogre count=1 icon=Ogre
 	LoadMonster Gnoll count=2 icon=Gnoll
 	LoadMonster HobgoblinLdr count=2 icon=HobgoblinLdr
 	Combat
-	LeadersMeetingFight = 255
+	LeadersMeetingFight = Completed
 	Gosub CountSlumsCleared
 	Exit
 
 AlertedGuards:
-	if AlertedGuardsFight == 255: Exit
+	if AlertedGuardsFight == Completed: Exit
 	SetupMonster Goblin distance=1 closeup=Goblin
 	Approach
 	PrintClear "YOU HAVE ALERTED THE GUARDS."
-	Gosub PressReturn
-	Surprise = 0
+	Gosub WaitReturnPressed
+	Surprise = NoSurprise
 	Morale = 60
 	ClearMonsters
 	LoadMonster GoblinGuard count=12 icon=GoblinGuard
 	LoadMonster GoblinLeader3 count=21 icon=GoblinLeader
 	Combat
 	Gosub CountSlumsCleared
-	AlertedGuardsFight = 255
+	AlertedGuardsFight = Completed
 	Exit
 
 LargeEmptyRoom:
-	if EmptyRoomSeen == 255: Goto LooseFloorboard
-	EmptyRoomSeen = 255
+	if EmptyRoomSeen == Completed: Goto LooseFloorboard
+	EmptyRoomSeen = Completed
 	PrintClear "THIS LARGE ROOM IS APPARENTLY EMPTY."
 	Delay
 
 LooseFloorboard:
-	if FloorChestTaken == 255: Exit
+	alias Choice = AuxMenuChoice
+	if FloorChestTaken == Completed: Exit
 	if Search < 1: Exit
 	PrintClear "YOU FIND A LOOSE FLOORBOARD.  PRYING IT UP, YOU FIND A CHEST HIDDEN BENEATH THE FLOOR.  DO YOU TAKE IT?"
-	AuxMenuChoice = Menu "YES" -> TakeChest "NO" -> Done
+	Choice = Menu "YES" -> TakeChest "NO" -> Done
 
 TakeChest:
 	ClearMonsters
 	Treasure 0 0 0 0 200 2 0 42 // Magic User Scroll With 1 Spell, Shield +1
 	Combat
-	FloorChestTaken = 255
+	FloorChestTaken = Completed
 	Exit
 
 RopeGuildEntry:
@@ -503,13 +514,13 @@ RopeGuildEntry:
 InsideRopeGuild:
 	NoCoords = 1
 	InRopeGuild = 1
-	if QuestSlums >= 254: Exit
-	if RopeGuildEntered != 255: PrintClear "YOU HAVE ENTERED THE MYSTERIOUS BUILDING THAT WAS ONCE THE ROPE GUILD.  MOST WHO VENTURE INTO ITS TWISTY HALLS NEVER RETURN."
-	RopeGuildEntered = 255
+	if QuestSlums >= RewardDue: Exit
+	if RopeGuildEntered != Completed: PrintClear "YOU HAVE ENTERED THE MYSTERIOUS BUILDING THAT WAS ONCE THE ROPE GUILD.  MOST WHO VENTURE INTO ITS TWISTY HALLS NEVER RETURN."
+	RopeGuildEntered = Completed
 	if PatrolsBeaten >= 15: Exit
-	PartyStrength AuxPartyStrength
+	AuxPartyStrength = PartyStrength
 	AuxSightText = Random 10
-	if FortuneTellerState == 255 {
+	if FortuneTellerState == Murdered {
 		AuxPartyStrength += 10
 		AuxSightText += 3
 	}
@@ -518,7 +529,7 @@ InsideRopeGuild:
 	Exit
 
 PotionBooth:
-	if OhloPotionState >= 250: Exit
+	if OhloPotionState >= PackageReceived: Exit
 	if BoothFightDone != 0: Exit
 	Compare BoothManDone 255
 	ShowPortrait BrownHaired ShopkeeperApron
@@ -529,75 +540,76 @@ PotionBooth:
 	PrintClear "A MAN HURRIES FORWARD. 'I AM SORRY, NOBLE ONES, BUT I HAVE NOTHING TO SELL.'"
 
 BoothMenu:
+	alias Choice = AuxMenuChoice
 	Print "(WHAT DO YOU DO?)"
-	AuxMenuChoice = Menu "LEAVE" -> LeaveBooth "ATTACK" -> AttackBoothMan "SPEAK" -> SpeakPassword
+	Choice = Menu "LEAVE" -> LeaveBooth "ATTACK" -> AttackBoothMan "SPEAK" -> SpeakPassword
 
 LeaveBooth:
 	Picture None
 	Gosub ClearPortrait
-	BoothManDone = 255
+	BoothManDone = Completed
 	PartyX = 14
 	PartyY = 12
-	Facing = 3
+	Facing = West
 	Goto RedrawAndRecheck
 
 AttackBoothMan:
 	PrintClear "THE MAN RUNS SCREAMING INTO THE BACK OF THE BOOTH."
 	Gosub ClearPortrait
-	BoothManDone = 255
+	BoothManDone = Completed
 	SetupMonster Hobgoblin distance=2 closeup=Hobgoblin
 	Delay
 	Approach
 	Delay
 	Approach
 	Morale = 99
-	Surprise = 0
+	Surprise = NoSurprise
 	ClearMonsters
 	LoadMonster Hobgoblin count=15 icon=Hobgoblin
 	LoadMonster HobgoblinLdr count=4 icon=HobgoblinLdr
 	Combat
 	BoothFightDone = 1
-	if OhloPotionState != 255: Gosub CountSlumsCleared
+	if OhloPotionState != OhloFought: Gosub CountSlumsCleared
 	Exit
 
 SpeakPassword:
 	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
 	NewLine
-	InputString 4 $AuxText
+	$AuxText = InputString 4
 	$AuxMonsterName = "OHLO"
 	if $AuxMonsterName != $AuxText {
 		PrintClear "'I AM SORRY,' THE MAN SAYS, 'I CANNOT HELP YOU.'"
-		BoothManDone = 255
+		BoothManDone = Completed
 		Gosub ClearPortrait
 	}
 	IfNe
 	Exit
 	PrintClear "'WAIT A MOMENT,' THE MAN SAYS.  HE HURRIES TO THE BACK OF THE BOOTH AND RETURNS WITH A PACKAGE. 'HERE,' HE SAYS."
-	BoothManDone = 255
-	OhloPotionState = 250
+	BoothManDone = Completed
+	OhloPotionState = PackageReceived
 	Picture None
 	Portrait = None
 	Gosub ClearPortrait
 	Exit
 
 GrainSack:
-	if GrainSackFight == 255: Exit
-	Surprise = 0
+	if GrainSackFight == Completed: Exit
+	Surprise = NoSurprise
 	Morale = 75
 	SetupMonster GreenBrute distance=0 closeup=GreenBrute
 	PrintClear "SOME MONSTERS ARE TOSSING A SACK OF GRAIN. WHEN THE SACK BREAKS THEY WAIL, 'OH, NO! WHAT CAN WE THROW NOW?' ONE LOOKS YOUR WAY. 'I KNOW,' HE SAYS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	ClearMonsters
 	LoadMonster Ogre count=2 icon=Ogre
 	LoadMonster Troll count=4 icon=Troll
 	Treasure 0 0 0 30 50 0 1 131 // 3 random items
 	Combat
 	Gosub CountSlumsCleared
-	GrainSackFight = 255
+	GrainSackFight = Completed
 	Exit
 
 AfterPatrolFight:
-	if CombatEnd > 128: Goto RunAway
+	if CombatEnd > PartyDied: Goto RunAway
 	if CombatEnd < 1 {
 		PatrolsBeaten += 1
 		Gosub CountSlumsCleared
@@ -672,22 +684,22 @@ Done:
 	Exit
 
 ConversePatrol:
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "YOU ARE CONVERSING WITH "
 	if AuxPartyStrength > 18: Print "A BUGBEAR LEADING"
 	Print "A PARTY OF "
 	Print $AuxText
 	if AuxPartyStrength > 8: Goto ParlayMidStrength
-	Parlay 10 20 20 20 30 AuxParlay
+	AuxParlay = Parlay 10 20 20 20 30
 	Goto ParlayResult
 
 ParlayMidStrength:
 	if AuxPartyStrength > 15: Goto ParlayHighStrength
-	Parlay 5 15 15 10 25 AuxParlay
+	AuxParlay = Parlay 5 15 15 10 25
 	Goto ParlayResult
 
 ParlayHighStrength:
-	Parlay 0 10 10 0 15 AuxParlay
+	AuxParlay = Parlay 0 10 10 0 15
 
 ParlayResult:
 	alias Choice = Scratch9
@@ -701,7 +713,7 @@ ParlayResult:
 
 PayPatrol:
 	PrintClear "TYPE IN THE NUMBER OF GP YOU OFFER."
-	InputNumber 2 Scratch9
+	Scratch9 = InputNumber 2
 	if Scratch9 >= AuxPartyStrength: Goto PatrolTakesCoins
 	PrintClear "'WHAT A BUNCH OF CHEAPSKATES,' THE LEADER COMPLAINS. 'LET 'EM HAVE IT BOYS!'"
 	Goto FightPatrol
@@ -715,7 +727,7 @@ PatrolTakesCoins:
 SurrenderToPatrol:
 	PrintClear "THE MONSTERS ROB AND BLINDFOLD YOU. YOU ARE KICKED SOUNDLY AND SENT ON YOUR WAY."
 	Rob 1 100 100
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto RunAway
 
 TryRunning:
@@ -739,7 +751,7 @@ PatrolAdvice:
 
 StopPatrol:
 	PrintClear "'HOW DARE YOU INTERFERE WITH THE BOSS'S BUSINESS?' THE LEADER ROARS.  'KILL THEM,' HE ORDERS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto FightPatrol
 
 PatrolAngered:
@@ -747,7 +759,7 @@ PatrolAngered:
 	Print $AuxText
 	Print "THEY ATTACK."
 	if AuxParlay < 65: PatrolMorale = PatrolMorale + 20
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto FightPatrol
 
 ClearPortrait:
@@ -755,14 +767,15 @@ ClearPortrait:
 	Return
 
 CountSlumsCleared:
-	if QuestSlums >= 254: Return
+	if QuestSlums >= RewardDue: Return
 	QuestSlums += 1
 	if QuestSlums < 25: Return
-	QuestSlums = 254
+	QuestSlums = RewardDue
 	Return
 
-PressReturn:
-	AuxMenuChoice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
+WaitReturnPressed:
+	alias Choice = AuxMenuChoice
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	PrintClear ""
 	Return
 

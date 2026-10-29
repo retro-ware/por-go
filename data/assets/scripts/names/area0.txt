@@ -23,5 +23,5 @@ B5D6 TourStopY  # GetTable -> [6E7B] tour position
 B5F8 TourStopFacing  # GetTable -> Facing
 B61A EjectXTable  # GetTable -> PartyX after losing to watch
 B61E EjectYTable  # GetTable -> PartyY after losing to watch
-B622 DuelMonsterTable  # GetTable -> [9805..9809] tavern brawl monsters (guess)
-B628 DuelCountTable  # GetTable -> [980B..980E] paired counts (guess)
+B622 DuelMonsters  # GetTable -> AuxMonster: the duel monsters, by set
+B628 DuelIcons  # GetTable -> the duel monsters' combat icons (LoadMonster icon=)

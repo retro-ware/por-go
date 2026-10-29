@@ -1,5 +1,5 @@
 event0:
-	if InLair == 255: Exit
+	if InLair == InsideLair: Exit
 	if MapY <= 2: Gosub EdgeNorth
 	if MapX <= 2: Gosub EdgeWest
 	if MapX == 15: Gosub EdgeEast
@@ -13,7 +13,7 @@ EdgeWest:
 	OnGoto FacingRaw EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove BlockMove BlockMove
 
 BlockMove:
-	HoldMove = 255
+	HoldMove = SkipMove
 	Return
 
 EdgeEast:
@@ -28,7 +28,7 @@ ExitToCity:
 
 EdgeEastCorner:
 	if MapY != 31: Goto ExitToCity
-	HoldMove = 255
+	HoldMove = SkipMove
 	Return
 
 CheckTerrainAhead:
@@ -43,7 +43,7 @@ CheckTerrainLoop:
 	if Scratch1 == 8: Return
 	BlockedTerrainEntry = BlockedTerrain[Scratch1]
 	if ProbeWall == BlockedTerrainEntry {
-		HoldMove = 255
+		HoldMove = SkipMove
 		Return
 	}
 	Scratch1 += 1
@@ -78,13 +78,13 @@ ProbeW:
 	Return
 
 event1:
-	if InLair == 255: Goto LairCell
+	if InLair == InsideLair: Goto LairCell
 	Scratch1 = 0
 	Scratch4 = 0
 
 FindSiteRow:
-	alias SiteRowYEntry = Scratch2
 	alias SiteRowEndEntry = Scratch3
+	alias SiteRowYEntry = Scratch2
 	if Scratch1 >= 8: Goto RollEncounter
 	SiteRowEndEntry = SiteRowEnd[Scratch1]
 	SiteRowYEntry = SiteRowY[Scratch1]
@@ -115,16 +115,16 @@ SiteNone:
 DragonInDistance:
 	if DragonSeen != 0: Goto Done
 	PrintClear "OFF IN THE DISTANCE YOU SEE A LARGE DRAGON FLYING THROUGH THE AIR.  AS YOU WATCH, HE SWOOPS DOWN BEHIND A MOUNTAIN AND DISAPPEARS."
-	DragonSeen = 1
+	DragonSeen = SeenFlying
 	Goto Done
 
 DragonCaveEvent:
 	ClearBox
 	Call CallClearView
 	Picture Mountains
-	if DragonSeen == 255: Goto LargeCave
+	if DragonSeen == SeenLanding: Goto LargeCave
 	PrintClear "AS YOU HIKE THROUGH THE MOUNTAINS, A LARGE DRAGON FLYS ABOVE YOU.  IT CIRCLES THEN SWOOPS DOWN AND LANDS IN FRONT OF A CAVE.  IT DISAPPEARS INTO A CAVE."
-	DragonSeen = 255
+	DragonSeen = SeenLanding
 	Goto CaveMenu
 
 LargeCave:
@@ -149,7 +149,7 @@ AnkhegAmbush:
 	LoadMonster Ahnkheg count=2 icon=Ahnkheg
 	ClearBox
 	Combat
-	if CombatEnd > 128: Goto ExitEvent
+	if CombatEnd > PartyDied: Goto ExitEvent
 	AnkhegsDefeated = 1
 	Exit
 
@@ -182,11 +182,11 @@ GuardsRideBy:
 
 OutpostRiders:
 	alias Choice = Scratch1
-	if ZhentilMission != 255: Goto KeepRiders
-	if QuestZhentilOutpost > 253: Goto KeepRiders
-	also if QuestZhentilOutpost == 253 {
+	if ZhentilMission != PacketReceived: Goto KeepRiders
+	if QuestZhentilOutpost > LeftOutpost: Goto KeepRiders
+	also if QuestZhentilOutpost == LeftOutpost {
 		GuardsRideBySeen = 1
-		QuestZhentilOutpost = 254
+		QuestZhentilOutpost = RewardDue
 		Goto Done
 	}
 	ClearBox
@@ -219,8 +219,8 @@ FightKeepRiders:
 	ClearMonsters
 	LoadMonster Corporal count=12 icon=11
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	KeepRidersFought = 255
+	if CombatEnd > PartyDied: Goto StepBack
+	KeepRidersFought = Completed
 	Exit
 
 LeaveWilderness:
@@ -232,7 +232,7 @@ LeaveWilderness:
 	WallSlot2B = 127
 	WallSlot3 = 127
 	WallSlot3B = 127
-	In3D = 1
+	In3D = Dungeon3D
 	LoadMap Unchanged unused=127 icons=127
 	Return
 
@@ -250,7 +250,7 @@ RandomEncounter:
 	EncSurpriseBEntry = EncSurpriseB[EncounterType25]
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 EncSurpriseAEntry EncSurpriseBEntry
-	if EncSurpriseBEntry == 9: Surprise = Surprise & 1
+	if EncSurpriseBEntry == 9: Surprise &= PartyIsSurprised
 	OnGoto Surprise SpotGroup PartySurprised SurpriseGroup FaceToFace
 
 SpotGroup:
@@ -290,13 +290,13 @@ EncounterFight:
 StartCombat:
 	ClearBox
 	Combat
-	if CombatEnd > 128: Goto ExitEvent
+	if CombatEnd > PartyDied: Goto ExitEvent
 	Exit
 
 EncounterParlay:
 	if AuxMember == 0: Goto EncounterFight
 	if AuxMember == 50: Goto FriendlyGroup
-	Parlay 20 10 50 0 30 Scratch1
+	Scratch1 = Parlay 20 10 50 0 30
 	Scratch2 = Random 30
 	Scratch1 = Scratch1 + Scratch2
 	Scratch1 = Scratch1 + SelReaction
@@ -337,7 +337,7 @@ SmallDarkCave:
 	Choice = Menu "ENTER" -> EnterLair "LEAVE" -> Done
 
 EnterLair:
-	InLair = 255
+	InLair = InsideLair
 	Scratch6 = Random 3
 	OnGoto Scratch6 LairStartA LairStartB LairStartC LairStartD
 
@@ -362,7 +362,7 @@ LairStartD:
 	Goto LoadLair
 
 LoadLair:
-	In3D = 1
+	In3D = Dungeon3D
 	WallSlot1 = 145
 	WallSlot1B = 145
 	WallSlot2 = 145
@@ -389,7 +389,7 @@ TwoBoars:
 	ClearMonsters
 	LoadMonster WildBoar count=2 icon=WildBoar
 	Combat
-	DragonCaveFlags = DragonCaveFlags | 1
+	DragonCaveFlags |= 1
 	Exit
 
 BoarSow:
@@ -407,7 +407,7 @@ ApproachSow:
 	LoadMonster WildBoar count=1 icon=WildBoar
 	Combat
 	MonsterHit = 0
-	if CombatEnd > 128: Goto StepBack
+	if CombatEnd > PartyDied: Goto StepBack
 	Scratch1 = DragonCaveFlags | 4
 	Exit
 
@@ -419,7 +419,7 @@ ThreeBoars:
 	ClearMonsters
 	LoadMonster WildBoar count=3 icon=WildBoar
 	Combat
-	DragonCaveFlags = DragonCaveFlags | 4
+	DragonCaveFlags |= 4
 	Exit
 
 DwarfRemains:
@@ -431,13 +431,13 @@ SoftGround:
 	Exit
 
 AnkhegVictims:
-	Scratch1 = DragonCaveFlags & 8
+	Scratch1 = DragonCaveFlags & AnkhegRemains
 	if 0 != Scratch1: Exit
 	PrintClear "THE REMAINS OF SEVERAL OF THE ANHKHEG'S VICTIM.  ADMIST THE DEBRIS IS SOME TREASURE."
 	ClearMonsters
 	Treasure #1388 #07D0 #01F4 0 0 1 0 255
 	Combat
-	DragonCaveFlags = DragonCaveFlags | 8
+	DragonCaveFlags |= AnkhegRemains
 	Exit
 
 AnkhegLunges:
@@ -448,8 +448,8 @@ AnkhegLunges:
 	ClearMonsters
 	LoadMonster Ahnkheg count=1 icon=Ahnkheg
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	DragonCaveFlags = DragonCaveFlags | 16
+	if CombatEnd > PartyDied: Goto StepBack
+	DragonCaveFlags |= 16
 	Exit
 
 SnakeSkin:
@@ -464,21 +464,21 @@ GiganticSnake:
 	ClearMonsters
 	LoadMonster GiantSnake count=1 icon=GiantSnake
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	DragonCaveFlags = DragonCaveFlags | 32
+	if CombatEnd > PartyDied: Goto StepBack
+	DragonCaveFlags |= 32
 	Exit
 
 SnakeFalls:
 	Scratch1 = DragonCaveFlags & 64
 	if 0 != Scratch1: Exit
-	Surprise = 1
+	Surprise = PartyIsSurprised
 	SetupMonster GiantSnake distance=0 closeup=GiantSnake
 	PrintClear "AS YOU WALK INTO THIS ROOM A GIANT SNAKE FALLS ON TOP OF THE PARTY."
 	ClearMonsters
 	LoadMonster GiantSnake count=1 icon=GiantSnake
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	DragonCaveFlags = DragonCaveFlags | 64
+	if CombatEnd > PartyDied: Goto StepBack
+	DragonCaveFlags |= 64
 	Exit
 
 ThriKreenBlock:
@@ -492,8 +492,8 @@ AttackThriKreen:
 	ClearMonsters
 	LoadMonster ThriKreen count=2 icon=ThriKreen
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	DragonCaveFlags = DragonCaveFlags | 128
+	if CombatEnd > PartyDied: Goto StepBack
+	DragonCaveFlags |= 128
 	Exit
 
 ThriKreenWarriors:
@@ -504,8 +504,8 @@ ThriKreenWarriors:
 	ClearMonsters
 	LoadMonster ThriKreen count=3 icon=ThriKreen
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	DragonCaveFlags2 = DragonCaveFlags2 | 1
+	if CombatEnd > PartyDied: Goto StepBack
+	DragonCaveFlags2 |= 1
 	Exit
 
 ThriKreenChest:
@@ -517,8 +517,8 @@ ThriKreenChest:
 	LoadMonster ThriKreen count=4 icon=ThriKreen
 	Treasure 0 #07D0 0 #03E8 0 3 1 129 // 1 random items
 	Combat
-	if CombatEnd > 128: Goto StepBack
-	DragonCaveFlags2 = DragonCaveFlags2 | 2
+	if CombatEnd > PartyDied: Goto StepBack
+	DragonCaveFlags2 |= 2
 	Exit
 
 PassageOutside:
@@ -527,9 +527,9 @@ PassageOutside:
 	Choice = Menu "LEAVE CAVE" -> LeaveLair "STAY IN" -> Done
 
 LeaveLair:
-	In3D = 0
+	In3D = Overland
 	LoadMap 4 unused=4 icons=0
-	InLair = 0
+	InLair = OutsideLair
 	Call CallRedraw
 	NewECL Mountains
 
@@ -547,21 +547,30 @@ StepBack:
 	Exit
 
 PickEncounter:
+	alias EncData2Entry = AuxMember
+	alias EncData3Entry = AuxRoll
+	alias EncData5Entry = AuxEncResult
+	alias EncData7Entry = AuxEncTemp
+	alias EncData9Entry = AuxTemp9
+	alias EncMonster2Entry = AuxPartyStrength
+	alias EncMonsterEntry = AuxMonster
+	alias EncMoraleEntry = AuxEncResult2
+	alias EncStrengthEntry = AuxCounter
 	Scratch1 = Random 20
 	if Scratch1 == 20 && ForceEncounter25 == 0: Return
 	Scratch1 = Random 19
 	OnGosub Scratch1 PickBoars PickBoars PickBoars PickMantis PickTigers PickTigers PickTigers PickThriKreens PickThriKreens PickAnkheg PickCentaurs PickCentaurs PickSoldiers PickSoldiers PickThieves BuccaneerBaseSite PickQuicklings PickQuicklings PickSnakes PickSnakes
-	AuxTemp9 = EncData9[EncounterType25]
-	AuxMember = EncData2[EncounterType25]
-	AuxRoll = EncData3[EncounterType25]
-	AuxMonster = EncMonster[EncounterType25]
-	AuxEncResult = EncData5[EncounterType25]
-	AuxEncResult2 = EncMorale[EncounterType25]
-	AuxEncTemp = EncData7[EncounterType25]
-	AuxPartyStrength = EncMonster2[EncounterType25]
-	AuxCounter = EncStrength[EncounterType25]
-	PartyStrength Scratch1
-	Scratch1 = Scratch1 / AuxCounter
+	EncData9Entry = EncData9[EncounterType25]
+	EncData2Entry = EncData2[EncounterType25]
+	EncData3Entry = EncData3[EncounterType25]
+	EncMonsterEntry = EncMonster[EncounterType25]
+	EncData5Entry = EncData5[EncounterType25]
+	EncMoraleEntry = EncMorale[EncounterType25]
+	EncData7Entry = EncData7[EncounterType25]
+	EncMonster2Entry = EncMonster2[EncounterType25]
+	EncStrengthEntry = EncStrength[EncounterType25]
+	Scratch1 = PartyStrength
+	Scratch1 = Scratch1 / EncStrengthEntry
 	Scratch2 = Random 5
 	OnGoto Scratch2 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
 
@@ -575,10 +584,11 @@ GroupSizeMedium:
 	if Scratch1 <= 0: Scratch1 = 1
 
 SplitGroups:
+	alias EncGroupSizeEntry = AuxMenuChoice
 	EncounterExtraCount25 = 0
 	Scratch3 = Scratch1
-	AuxMenuChoice = EncGroupSize[EncounterType25]
-	if AuxMenuChoice == 0: Goto CapGroupSize
+	EncGroupSizeEntry = EncGroupSize[EncounterType25]
+	if EncGroupSizeEntry == 0: Goto CapGroupSize
 
 SplitGroupsLoop:
 	if Scratch3 < AuxMenuChoice: Goto CapGroupSize
@@ -715,7 +725,7 @@ EncMonster2:
 	Data 10 120 74 119 118 65 67 54 51 100 60
 
 event2:
-	if In3D == 1: Goto RestInside
+	if In3D == Dungeon3D: Goto RestInside
 	RestChance = 10
 	RestEvery = 96
 	Exit
@@ -729,15 +739,15 @@ event3:
 	Goto RandomEncounter
 
 event4:
-	if InLair == 255: Goto LoadLairFiles
-	In3D = 0
+	if InLair == InsideLair: Goto LoadLairFiles
+	In3D = Overland
 	NoCoords = 0
 	LoadMap 4 unused=4 icons=0
 	Gosub MarkKeepOnMap
 	Exit
 
 LoadLairFiles:
-	In3D = 1
+	In3D = Dungeon3D
 	NoCoords = 255
 	LoadWalls 17 17 17
 	LoadMap 25 unused=2 icons=255

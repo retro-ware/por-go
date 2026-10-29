@@ -36,4 +36,4 @@ A0A1 ClearAndExit
 A0BD YesNoMenu
 A0CD CheckPartyFull
 A119 EjectParty
-A144 PressReturn
+A144 WaitReturnPressed

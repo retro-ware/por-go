@@ -6,7 +6,7 @@
 99D9 StartAlarm
 9A0E AskTakeIt
 9A1D YesNoMenu
-9A37 PressReturn
+9A37 WaitReturnPressed
 9A5F SetSkyByHour
 9AFB OnStep
 9B4B ThornHedge

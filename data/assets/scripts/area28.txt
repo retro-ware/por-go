@@ -4,7 +4,7 @@ event0:
 	Sky = Scratch6
 	SkyInside = 10
 	if LeftMap == 0: Exit
-	QuestZhentilOutpost = 253
+	QuestZhentilOutpost = LeftOutpost
 	Portrait = None
 	NewECL Mountains
 
@@ -53,9 +53,9 @@ GuardsSpotYou:
 EscortIn:
 	if EscortedIn != 0: Goto FrontGateCheck
 	PrintClear "YOU ARE BEING ESCORTED INTO ZHENTIL OUTPOST."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch6 = 0
-	EscortedIn = 128
+	EscortedIn = Escorted
 
 EscortStep:
 	Scratch1 = RouteStepTable[Scratch6]
@@ -103,20 +103,20 @@ TourNothing:
 
 TourInnerWall:
 	PrintClear "FROM HERE YOU SEE A LARGE INNER WALL AROUND THE CENTRAL KEEP.  THIS AREA IS BUSY WITH MEN ENTERING AND LEAVING BARRACKS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourToKeep:
 	PrintClear "YOU ARE LED TOWARD THE CENTRAL KEEP."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 CommandantOffice:
 	Picture EyepatchMan
 	PrintClear "YOU ARE INSIDE THE COMMANDANT'S OFFICE.  HE GREETS YOU AND YOU HAND HIM THE PAPERS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "AFTER SKIMMING THROUGH THE PAPERS THE COMMANDANT SAYS, 'I WELCOME YOU AND HOPE YOU WILL JOIN ME FOR DINNER TONIGHT.'  HE TELLS A GUARD TO GIVE YOU A TOUR OF THE OUTPOST."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	InvitedToDinner = 1
 	Return
 
@@ -125,18 +125,18 @@ TourBarracks:
 	SetupMonster Fighter16 distance=1 body=LeatherHarness
 	PrintClear "THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'"
 	RedrawView
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourWatchTowers:
 	SetupMonster Fighter16 distance=1 body=LeatherHarness
 	PrintClear "'HERE YOU SEE ONE OF OUR FINE WATCH TOWERS WHICH WERE BUILT BY THE FINEST STONE MASONS IN THE LAND.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "'FROM HERE YOU CAN ALSO SEE OUR SOLIDLY BUILT OUTSIDE WALL.  THIS WALL HAS SURVIVED MANY ATTACKS, INCLUDING ONE FROM A DRAGON.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "THE GUARD SAYS 'THAT CONCLUDES THE TOUR.  I WILL SHOW YOU TO YOUR QUARTERS.'"
 	RedrawView
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourQuarters:
@@ -159,7 +159,7 @@ BackToQuarters:
 	PrintClear "YOU GO BACK TO YOUR QUARTERS."
 	PartyX = 5
 	PartyY = 0
-	Facing = 1
+	Facing = East
 	Call CallRedraw
 	Goto Done
 
@@ -179,7 +179,7 @@ AttackGuards:
 	ClearMonsters
 	LoadMonster Guard count=4 icon=11
 	Combat
-	if CombatEnd > 128: Goto FleeStopped
+	if CombatEnd > PartyDied: Goto FleeStopped
 	Goto SurrenderOrDie
 
 FleeStopped:
@@ -208,7 +208,7 @@ GuardWaveFight:
 	LoadMonster Guard count=16 icon=11
 	LoadMonster Corporal count=4 icon=11
 	Combat
-	if CombatEnd > 128: Goto RunForGate
+	if CombatEnd > PartyDied: Goto RunForGate
 	AlarmFightScore += 20
 	if AlarmFightScore >= 40: Goto Done
 	PrintClear "MORE GUARDS RUSH UP TO ATTACK."
@@ -230,7 +230,7 @@ DwarfAndCommandant:
 	LoadMonster Guard count=25 icon=11
 	Combat
 	OutpostFought = 1
-	if CombatEnd > 128: Goto RunForGate
+	if CombatEnd > PartyDied: Goto RunForGate
 	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
 	Portrait = None
 	SetupMonster Fighter16 distance=2 closeup=EyepatchMan
@@ -241,16 +241,16 @@ DwarfAndCommandant:
 	LoadMonster Corporal count=24 icon=11
 	LoadMonster Aides count=20 icon=11
 	Combat
-	if CombatEnd > 128: Goto RunForGate
+	if CombatEnd > PartyDied: Goto RunForGate
 	PrintClear "AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY."
-	QuestZhentilOutpost = 1
+	QuestZhentilOutpost = CommandantKilled
 	OutpostConquered = 1
 	Goto Done
 
 RunForGate:
 	PartyX = 7
 	PartyY = 0
-	Facing = 0
+	Facing = North
 	Call CallRedraw
 	Portrait = NoseguardHelmet
 	SetupMonster Fighter16 distance=2 body=NoBody11
@@ -258,7 +258,7 @@ RunForGate:
 	ClearMonsters
 	LoadMonster Guard count=6 icon=11
 	Combat
-	if CombatEnd > 128: Goto CaughtFleeing
+	if CombatEnd > PartyDied: Goto CaughtFleeing
 	PrintClear "YOU ESCAPE FROM THE OUTPOST."
 	NewECL Mountains
 
@@ -288,7 +288,7 @@ SleepWithWatch:
 	Delay
 	Hours += 2
 	PrintClear "YOU WAIT IN YOUR ROOM FOR ABOUT TWO HOURS WHEN SUDDENLY FOUR ARMED GUARDS BURST IN AND ATTACK YOU."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Morale = 70
 
 NightAmbush:
@@ -297,11 +297,11 @@ NightAmbush:
 	ClearMonsters
 	LoadMonster Aides count=4 icon=11
 	Combat
-	if CombatEnd > 128: Goto NightFleeGuards
+	if CombatEnd > PartyDied: Goto NightFleeGuards
 	Goto MoreMenAttack
 
 NightFleeGuards:
-	Facing = 3
+	Facing = West
 	Scratch1 = 1
 	Gosub WalkSteps
 	PrintClear "YOU RUN INTO SOME MORE GUARDS."
@@ -317,7 +317,7 @@ SecondWaveFight:
 	LoadMonster Corporal count=5 icon=11
 	LoadMonster Aides count=6 icon=11
 	Combat
-	if CombatEnd > 128: Goto RanAndHid
+	if CombatEnd > PartyDied: Goto RanAndHid
 	PrintClear "AN ALARM GOES OFF IN THE DISTANCE."
 	AlarmLevel = 1
 	Goto Done
@@ -346,18 +346,17 @@ EscortToDinner:
 	Hours = 14
 	Sky = 8
 	PrintClear "AT DUSK A GUARD COMES BY TO ESCORT YOU TO DINNER."
-	Scratch6 = 0
 
 DinnerWalkStep:
 	alias WalkStep = Scratch1
-	WalkStep = WalkStepTable[Scratch6]
-	Facing = WalkFacingTable[Scratch6]
-	Gosub WalkSteps
-	Scratch6 += 1
-	if Scratch6 <= 10: Goto DinnerWalkStep
+	for Scratch6 = 0 while Scratch6 <= 10
+		WalkStep = WalkStepTable[Scratch6]
+		Facing = WalkFacingTable[Scratch6]
+		Gosub WalkSteps
+	next
 	ShowPortrait None 50
 	PrintClear "YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?"
 
 DinnerTopicMenu:
@@ -413,7 +412,7 @@ TalkOldPhlan:
 	if TalkedOldPhlan != 0: Goto ConversationStale
 	TalkedOldPhlan = 1
 	PrintClear "AS YOU TALK ABOUT OLD PHLAN'S INHABITANTS THE COMMANDANT SAYS 'I KNOW A LEGEND ABOUT A FIRE BEING CALLED TIRANTIKUS.  I BELIEVE, THAT TIRANTIKUS AND TYRANTHRAXUS ARE ONE AND THE SAME'."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "YOU CONTINUE TO TALK ABOUT OLD PHLAN AND THE COMMANDANT SAYS 'IS NEW PHLAN HAVING ANY TROUBLE WITH TYRANTHRAXUS?'"
 	Choice = Menu "DON'T TALK" -> TopicNothing "TROUBLE" -> TyranthraxusTrouble "NO TROUBLE" -> NoTyranthraxusTrouble
 
@@ -464,7 +463,7 @@ MentionPool:
 	Goto TopicDone
 
 TopicDone:
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	if TopicsDiscussed == 2: Goto CommandantLeaves
 	PrintClear "YOU CONTINUE YOUR CONVERSATION WITH THE COMMANDANT.  WHAT WILL BE YOUR NEXT TOPIC OF DISSCUSION?"
 	TopicsDiscussed += 1
@@ -513,7 +512,7 @@ FrontGateCheck:
 	if ReachedGate != 0: Goto Done
 	ReachedGate = 1
 	PrintClear "THE COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE!"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Scratch1 = Random 99
 	if Scratch1 >= 75: Goto NearFrontGate
 	PrintClear "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
@@ -542,11 +541,11 @@ ApproachTwice:
 	Return
 
 LeaveOutpost:
-	QuestZhentilOutpost = 253
+	QuestZhentilOutpost = LeftOutpost
 	Portrait = None
 	NewECL Mountains
 
-PressReturn:
+WaitReturnPressed:
 	alias Choice = Scratch8
 	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	Return
@@ -589,7 +588,7 @@ event4:
 	if AreaKind == 28: Exit
 	PartyX = 7
 	PartyY = 0
-	Facing = 2
+	Facing = South
 	EntryPoint = 2
 	Call CallRedraw
 	Hours = 0

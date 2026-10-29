@@ -121,7 +121,7 @@ func ReadAreaNames(dir string, area int, labels bool) (*ScriptNames, error) {
 			n.Set = a.Set
 		}
 	}
-	for _, f := range []string{"values.txt", "pictures.txt"} {
+	for _, f := range []string{"values.txt", "pictures.txt", "variables.txt"} {
 		if n.Values, err = ReadScriptValues(filepath.Join(dir, "names", f), n.Values); err != nil {
 			return nil, err
 		}
@@ -148,6 +148,7 @@ func ParseScript(text string, names *ScriptNames) (*Script, error) {
 	}
 	var todo []pending
 	var waiting []string // labels for the next line
+	dataKind := ""       // the kind of the table's entries
 	for _, a := range areas {
 		if _, ok := vars[a.Name]; ok {
 			return nil, fmt.Errorf("%s is an area and a variable", a.Name)
@@ -170,9 +171,13 @@ func ParseScript(text string, names *ScriptNames) (*Script, error) {
 		if toks[0] == "Data" {
 			for _, l := range waiting {
 				tables[l] = eclBase + len(s.Data)
+				dataKind = tableKind(l)
 			}
 			waiting = nil
 			for _, t := range toks[1:] {
+				if v, ok := valueOf(names.Values, dataKind, names.Set, t); ok && dataKind != "" {
+					t = strconv.Itoa(v)
+				}
 				v, err := strconv.ParseUint(t, 10, 8)
 				if err != nil {
 					return nil, fmt.Errorf("%d: data byte %q", n, t)

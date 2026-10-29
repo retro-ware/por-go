@@ -183,6 +183,19 @@ func DataValues(l *dax.Loader, set int) []ScriptValue {
 		}
 	}
 	add("Item", items)
+	for id := range 0x80 { // the stocks, an ITEM block's items by name
+		var s []string
+		for _, it := range readRecords[Item](l.Block(fmt.Sprintf("ITEM%d", set), id), itemRecSize) {
+			n := camelName(itemFullName(it))
+			if it.Count > 1 {
+				n += "*" + strconv.Itoa(int(it.Count))
+			}
+			s = append(s, n)
+		}
+		if len(s) > 0 && !slices.Contains(s, "") {
+			out = append(out, ScriptValue{"Stock", set, id, strings.Join(s, ",")})
+		}
+	}
 	return out
 }
 

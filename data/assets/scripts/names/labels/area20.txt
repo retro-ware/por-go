@@ -87,4 +87,4 @@ B60A StopPatrol
 B65B PatrolAngered
 B695 ClearPortrait
 B69C CountSlumsCleared
-B6BC PressReturn
+B6BC WaitReturnPressed

@@ -73,7 +73,7 @@ B5CB NearFrontGate
 B5E7 Done
 B5EC ApproachTwice
 B5F1 LeaveOutpost
-B601 PressReturn
+B601 WaitReturnPressed
 B63B RestAlarmed
 B648 RestCheckNight
 B66B RestNormal

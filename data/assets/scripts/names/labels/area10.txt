@@ -106,7 +106,7 @@ B5FA CheckFled
 B60E FleeRandomly
 B634 RedrawExit
 B639 LoadRandomUndead
-B672 PressReturn
+B672 WaitReturnPressed
 B696 SkeletonsApproach
 B6A1 ZombiesApproach
 B6AC WightsApproach

@@ -3,7 +3,7 @@
 992D MoveToTableSpot
 9982 YesNoMenu
 999C TeleportFlash
-99E3 PressReturn
+99E3 WaitReturnPressed
 9A0B SearchSecretDoor
 9A20 CheckMemberFinds
 9A77 SecretDoorFound

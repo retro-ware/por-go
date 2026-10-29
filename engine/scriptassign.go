@@ -39,6 +39,10 @@ func tableRef(t string) (string, string, bool) {
 	return t[:i], t[i+1 : len(t)-1], true
 }
 
+// destLast are the commands that put their result in their last
+// operand, written D = Command operands.
+var destLast = []string{"PartyStrength", "InputNumber", "InputString", "Parlay"}
+
 // expandAssign is the plain commands of an assignment or count-less
 // OnGoto, or nil.
 func expandAssign(c []string) [][]string {
@@ -60,7 +64,7 @@ func expandAssign(c []string) [][]string {
 		// askMenu: the answer's variable, from M's menu (resolveAsks)
 		return [][]string{{"Gosub", c[1]}, append([]string{"OnGoto", askMenu + c[1] + " " + strings.Join(c[2:], " "), n(len(labels))}, labels...)}
 	}
-	if len(c) < 3 || c[1] != "=" && c[1] != "+=" && c[1] != "-=" {
+	if len(c) < 3 || !slices.Contains([]string{"=", "+=", "-=", "|=", "&="}, c[1]) {
 		return nil
 	}
 	d, r := c[0], c[2:]
@@ -68,8 +72,14 @@ func expandAssign(c []string) [][]string {
 		return [][]string{{"SaveTable", r[0], t, i}}
 	}
 	switch {
+	case slices.Contains(destLast, r[0]):
+		return [][]string{append(slices.Clone(r), d)}
 	case len(c) == 3 && (c[1] == "+=" || c[1] == "-="):
 		return [][]string{{arithOps[c[1][:1]], c[2], d, d}}
+	case len(c) == 3 && (c[1] == "|=" || c[1] == "&="):
+		return [][]string{{arithOps[c[1][:1]], d, c[2], d}}
+	case c[1] != "=":
+		return nil
 	case len(r) == 1:
 		if t, i, ok := tableRef(r[0]); ok {
 			return [][]string{{"GetTable", t, i, d}}
@@ -110,6 +120,8 @@ func assignForm(c []string) []string {
 		return j(c[2], "=", c[1])
 	case (c[0] == "Add" || c[0] == "Sub") && len(c) == 4 && c[2] == c[3]:
 		return j(c[3], map[string]string{"Add": "+=", "Sub": "-="}[c[0]], c[1])
+	case (c[0] == "And" || c[0] == "Or") && len(c) == 4 && c[1] == c[3]:
+		return j(c[3], map[string]string{"And": "&=", "Or": "|="}[c[0]], c[2])
 	case c[0] == "Sub" && len(c) == 4:
 		return j(c[3], "=", c[2], "-", c[1])
 	case len(c) == 4 && slices.Contains([]string{"Add", "Mul", "Div", "And", "Or"}, c[0]):
@@ -122,6 +134,8 @@ func assignForm(c []string) []string {
 		return j(c[3], "=", c[1]+"["+c[2]+"]")
 	case c[0] == "SaveTable" && len(c) == 4:
 		return j(c[2]+"["+c[3]+"]", "=", c[1])
+	case slices.Contains(destLast, c[0]) && len(c) >= 2:
+		return append(j(c[len(c)-1], "=", c[0]), c[1:len(c)-1]...)
 	case c[0] == "Random" && len(c) == 3:
 		return j(c[2], "=", "Random", c[1])
 	case c[0] == "HMenu" && len(c) >= 3 && cnt(2):
@@ -210,7 +224,7 @@ func joinTokens(toks []string) string {
 
 var hexTable = regexp.MustCompile(`^Table[0-9A-F]+$`) // an unnamed table
 
-var scratchName = regexp.MustCompile(`^Scratch\d+$`)
+var scratchName = regexp.MustCompile(`^(Scratch\d+|Aux[A-Za-z0-9]*)$`) // the temporary words
 
 // aliasScratch names a section's scratch variable by its one role there:
 // Choice for a menu's answer, a table's entry by the table (Kinds[I] into
@@ -237,6 +251,8 @@ func aliasScratch(lines []string) []string {
 			k++
 		}
 		roles := map[string]map[string]bool{}
+		var order []string            // the variables, in order
+		uses := map[string][]string{} // the roles of their uses
 		for _, l := range lines[j:k] {
 			toks, _ := scriptTokens(l)
 			for p := 0; p+2 < len(toks); p++ {
@@ -254,24 +270,53 @@ func aliasScratch(lines []string) []string {
 				}
 				if roles[toks[p]] == nil {
 					roles[toks[p]] = map[string]bool{}
+					order = append(order, toks[p])
 				}
 				roles[toks[p]][role] = true
+			}
+			// a table entry's role by its use: a LoadMonster's monster, icon or count
+			if p := slices.Index(toks, "LoadMonster"); p >= 0 && p+1 < len(toks) {
+				for _, t := range toks[p+1:] {
+					l, v, ok := strings.Cut(t, "=")
+					if !ok {
+						l, v = "Monster", t
+					}
+					if l == "Monster" || l == "icon" || l == "count" {
+						uses[v] = append(uses[v], strings.ToUpper(l[:1])+l[1:])
+					}
+				}
 			}
 		}
 		alias := map[string]string{}
 		taken := map[string]bool{}
 		var vars []string
-		for v, rs := range roles {
-			if len(rs) == 1 && !rs[""] {
-				for r := range rs {
-					if !used[r] && !taken[r] {
-						alias[v], taken[r] = r, true
-						vars = append(vars, v)
-					}
+		byRole := map[string][]string{}
+		for _, v := range order {
+			rs := roles[v]
+			if len(rs) != 1 || rs[""] {
+				continue
+			}
+			r := ""
+			for r = range rs {
+			}
+			if u := uses[v]; len(u) > 0 && r != "Choice" && !slices.ContainsFunc(u, func(s string) bool { return s != u[0] }) {
+				r = u[0]
+			}
+			byRole[r] = append(byRole[r], v)
+		}
+		for r, vs := range byRole {
+			for n, v := range vs {
+				a := r
+				if len(vs) > 1 {
+					a += strconv.Itoa(n + 1)
+				}
+				if !used[a] && !taken[a] {
+					alias[v], taken[a] = a, true
+					vars = append(vars, v)
 				}
 			}
 		}
-		slices.Sort(vars)
+		slices.SortFunc(vars, func(a, b string) int { return strings.Compare(alias[a], alias[b]) })
 		out = append(out, lines[i:j]...)
 		if j > i && len(vars) > 0 {
 			for _, v := range vars {

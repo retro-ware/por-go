@@ -7,13 +7,13 @@ event0:
 	if LeftMap == 0: Goto InsideTown
 	LeavingTown = 1
 	Call CallStepForward
-	HoldMove = 255
+	HoldMove = SkipMove
 	LoadMap Keep unused=255 icons=127
 	EnterArea Slums
 
 InsideTown:
 	Scratch10 = 127 & Cell
-	if QuestTyranthraxus >= 254: Exit
+	if QuestTyranthraxus >= RewardDue: Exit
 	if Scratch5 != 8: Exit
 	if Scratch10 == 0 && WallAhead == 9: Goto LockedDoor
 	if Scratch10 == 4 && WallAhead == 7: Goto LockedDoor
@@ -25,7 +25,7 @@ LockedDoor:
 	Ask YesNoMenu "YES" -> WatchResponds "NO" -> StayOutside
 
 StayOutside:
-	HoldMove = 255
+	HoldMove = SkipMove
 	Exit
 
 event1:
@@ -54,7 +54,7 @@ event2:
 	Exit
 
 SetNoRest:
-	if QuestTyranthraxus >= 254: Goto NoRestHere
+	if QuestTyranthraxus >= RewardDue: Goto NoRestHere
 	if TrainerVisited != 0: Goto NoRestHere
 	RestEvery = 1
 	RestChance = 101
@@ -98,7 +98,7 @@ PierBoat:
 BoardBoat:
 	LeavingTown = 1
 	PrintClear "YOU BOARD A BOAT."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	OnBoat = 1
 	LoadMap Keep unused=255 icons=127
 	if BoatDestination == 0 {
@@ -118,10 +118,10 @@ SailToArea27:
 	EnterArea Quagmire
 
 HarborMaster:
-	if Facing != 0: Exit
+	if Facing != North: Exit
 	if BoatPassageBought == 1: Exit
 	ShowPortrait DarkBeard MailCloak
-	if QuestSokalKeep < 254: Goto OnlyBoatOut
+	if QuestSokalKeep < RewardDue: Goto OnlyBoatOut
 	PrintClear "THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'"
 	BoatDestination = Menu "SOKAL" -> BuyPassage "EAST" -> BuyPassage "WEST" -> BuyPassage "BAY" -> BuyPassage "NONE" -> ResetVisits
 
@@ -134,31 +134,32 @@ BuyPassage:
 
 OnlyBoatOut:
 	PrintClear "'BY ORDER OF THE CITY COUNCIL,' THE HARBOR MASTER SAYS, 'THE ONLY BOAT OUT IS GOING TO SOKAL KEEP.  YOU CAN CATCH IT AT THE END OF THE PIER.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Picture None
 	BoatDestination = 0
 	BoatPassageBought = 1
 	Exit
 
 GatewaySouth:
-	if IronBoxState == 1: Goto WatchTakesTreasure
-	if Facing == 2: Exit
+	if IronBoxState == CarriedUnopened: Goto WatchTakesTreasure
+	if Facing == South: Exit
 	PrintClear "TO THE NORTH IS THE PASSENGER DOCK."
 	Exit
 
 TempleOfBaneEvent:
-	if DirtenState == 255: Exit
-	if BishopSummons == 254: Goto BishopAudience
-	if DirtenState == 128: Goto BishopAudience
+	alias Choice = AuxMenuChoice
+	if DirtenState == DirtenJoined: Exit
+	if BishopSummons == Summoned: Goto BishopAudience
+	if DirtenState == AskedToAccompany: Goto BishopAudience
 	ShowPortrait GrinningBlond ClericMace
 	PrintClear "THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?"
-	AuxMenuChoice = Menu "LEAVE" -> LeaveBishop "FORCE YOUR WAY PAST" -> WatchResponds
+	Choice = Menu "LEAVE" -> LeaveBishop "FORCE YOUR WAY PAST" -> WatchResponds
 
 BishopAudience:
-	if DirtenState == 128: Goto DirtenStudy
+	if DirtenState == AskedToAccompany: Goto DirtenStudy
 	ShowPortrait WhiteBeard PlateArmor
 	PrintClear "YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	ShowPortrait BlondHeadband ClericMace
 	PrintClear "'HE IS BOUND TO RECOVER THE TEMPLE WHICH HAS BEEN DESECRATED TO BANE.  GO WITH HIM ACROSS THE RIVER AND HELP HIM TO CLEANSE THE TEMPLE.  IN PAYMENT, YOU MAY KEEP THE HIDDEN TREASURES.'"
 	Goto AccompanyDirtenAsk
@@ -168,15 +169,15 @@ DirtenStudy:
 	PrintClear "YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'"
 
 AccompanyDirtenAsk:
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "'WILL YOU ACCOMPANY DIRTEN?'"
-	DirtenState = 128
+	DirtenState = AskedToAccompany
 	Ask YesNoMenu "YES" -> DirtenJoins "NO" -> DeclineDirten
 
 DirtenJoins:
 	Gosub CheckPartySize
 	AddNPC Dirten 99
-	DirtenState = 255
+	DirtenState = DirtenJoined
 	Picture None
 	Return
 
@@ -239,7 +240,7 @@ CheckPlatinum:
 	if 1 > &SelPlatinum: Goto NotEnoughPlatinum
 	&SelPlatinum -= 1
 	Scratch1 = 128 + SelPartyIndex2
-	LoadCharacter Scratch1
+	SelectMember Scratch1
 	TrainerVisited = 1
 	Return
 
@@ -264,11 +265,9 @@ GeneralShop:
 
 GeneralShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 54 // Holy Water vial, Silver Holy Symbol Of Sune, Iron Holy Symbol Of Tempus, Wooden Holy Symbol Of Tyr, Flask of Oil, Silver Mirror, and 1 more
-	Shop = 1
-	ShopFlag = 1
-	ShopKind = 16
-	Combat
+	OpenShop
+		stock HolyWaterVial SilverHolySymbolOfSune IronHolySymbolOfTempus WoodenHolySymbolOfTyr FlaskOfOil SilverMirror
+		stock BrassMirror
 	Picture None
 	Exit
 
@@ -276,7 +275,7 @@ TavernEnter:
 	if TavernEntered > 0: Goto PickpocketRoll
 	TavernEntered = 1
 	PrintClear "YOU ARE IN A TAVERN.  THE AIR IS FILLED WITH SMOKE AND GOSSIP.  PEOPLE ARE GAMBLING AT THE TABLES."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 
 PickpocketRoll:
 	Scratch1 = Random 255
@@ -290,7 +289,7 @@ PickpocketRoll:
 TavernEvent:
 	if Scratch1 == 1 {
 		PrintClear "YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET."
-		Gosub PressReturn
+		Gosub WaitReturnPressed
 	}
 	Picture None
 	PrintClear " DOES ANYONE WANT TO GAMBLE?"
@@ -301,7 +300,7 @@ TavernTale:
 	Scratch6 = Random 22
 	Scratch6 += 1
 	Print Scratch6
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	AuxRoll = Random 3
 	if AuxRoll == 1: Goto DrunkenBrawl
 	Exit
@@ -309,11 +308,11 @@ TavernTale:
 GamblerGame:
 	ShowPortrait GrinningBlond MailCloak
 	PrintClear "'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Who "WHO WILL GAMBLE?"
 
 TavernGamble:
-	if SelStatus != 1: Goto TooHurtToGamble
+	if SelStatus != Okay: Goto TooHurtToGamble
 	GamblerIndex = SelPartyIndex
 	&GamblerPlatinum = &SelPlatinum
 
@@ -321,9 +320,9 @@ WagerPrompt:
 	PrintClear "YOU HAVE "
 	Print &GamblerPlatinum
 	Print " PP."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "HOW MANY PLATINUM PIECES WILL YOU WAGER? (HOUSE LIMIT IS 1000)"
-	InputNumber 4 &Wager
+	&Wager = InputNumber 4
 	if &GamblerPlatinum < &Wager: Goto WagerRefused
 	if &Wager > #03E8: Goto WagerRefused
 	if &Wager == 0: Goto WagerRefused
@@ -341,13 +340,13 @@ WagerPrompt:
 	&GamblerPlatinum -= &Wager
 
 GambleAgainAsk:
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "WILL YOU GO AGAIN?"
 	Ask YesNoMenu "YES" -> WagerPrompt "NO"
-	LoadCharacter GamblerIndex
+	SelectMember GamblerIndex
 	&SelPlatinum = &GamblerPlatinum
 	Wager = 128 + GamblerIndex
-	LoadCharacter Wager
+	SelectMember Wager
 	Goto ResetVisits
 
 TooHurtToGamble:
@@ -359,48 +358,56 @@ WagerRefused:
 	Goto GambleAgainAsk
 
 DrunkenBrawl:
+	alias Icon1 = AuxRoll2
+	alias Icon2 = AuxTempC
+	alias Icon3 = AuxSearchCount
+	alias Icon4 = AuxEncText
+	alias Monster1 = AuxEncResult
+	alias Monster2 = AuxEncResult2
+	alias Monster3 = AuxEncTemp
+	alias Monster4 = AuxTemp9
 	Portrait = WhiteHaired
 	SetupMonster Fighter7 distance=2 body=MailCloak
 	PrintClear "A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	AuxMonster = Random 1
-	PartyStrength Scratch2
+	Scratch2 = PartyStrength
 	if Scratch2 > 24: AuxMonster += 1
 	if Scratch2 > 50: AuxMonster += 1
-	AuxEncResult = DuelMonsterTable[AuxMonster]
-	AuxRoll2 = DuelCountTable[AuxMonster]
+	Monster1 = DuelMonsters[AuxMonster]
+	Icon1 = DuelIcons[AuxMonster]
 	AuxMonster += 1
-	AuxEncResult2 = DuelMonsterTable[AuxMonster]
-	AuxTempC = DuelCountTable[AuxMonster]
+	Monster2 = DuelMonsters[AuxMonster]
+	Icon2 = DuelIcons[AuxMonster]
 	AuxMonster += 1
-	AuxEncTemp = DuelMonsterTable[AuxMonster]
-	AuxSearchCount = DuelCountTable[AuxMonster]
+	Monster3 = DuelMonsters[AuxMonster]
+	Icon3 = DuelIcons[AuxMonster]
 	AuxPartyStrength = Random 3
-	AuxTemp9 = DuelMonsterTable[AuxPartyStrength]
-	AuxEncText = DuelCountTable[AuxPartyStrength]
+	Monster4 = DuelMonsters[AuxPartyStrength]
+	Icon4 = DuelIcons[AuxPartyStrength]
 	NoLoot = 1
 	Duel = 1
 	Morale = 50
 	ClearMonsters
-	LoadMonster AuxEncResult count=11 icon=AuxRoll2
-	LoadMonster AuxEncResult2 count=11 icon=AuxTempC
-	LoadMonster AuxEncTemp count=11 icon=AuxSearchCount
-	LoadMonster AuxTemp9 count=13 icon=AuxEncText
-	Scratch1 = 41
+	LoadMonster Monster1 count=11 icon=Icon1
+	LoadMonster Monster2 count=11 icon=Icon2
+	LoadMonster Monster3 count=11 icon=Icon3
+	LoadMonster Monster4 count=13 icon=Icon4
 
 BrawlFight:
-	LoadCharacter Scratch1
-	SelSide = 128
-	SelControl = 178
-	AuxTemp9 = 128 + Scratch1
-	LoadCharacter AuxTemp9
-	Scratch1 += 1
-	if Scratch1 < 54: Goto BrawlFight
+	alias Choice = AuxParlay
+	for Scratch1 = 41 to 53
+		SelectMember Scratch1
+		SelSide = PartyControlled
+		SelControl = NPCMember
+		AuxTemp9 = 128 + Scratch1
+		SelectMember AuxTemp9
+	next
 	Combat
-	if CombatEnd > 128: Goto RunAway
+	if CombatEnd > PartyDied: Goto RunAway
 	Gosub WatchApproaches
 	PrintClear "THE CITY WATCH CHARGES IN. DO YOU RUN AWAY OR STAY TO CONFRONT THEM?"
-	AuxParlay = Menu "STAY" -> WatchResponds "RUN" -> RunAway
+	Choice = Menu "STAY" -> WatchResponds "RUN" -> RunAway
 
 ArmorShop:
 	Gosub EnterBuildingOnce
@@ -411,11 +418,9 @@ ArmorShop:
 
 ArmorShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 52 // Brass Dragon Figurine, Gold Chain, Pearl Necklace, Gold Lightning Figurine, Jewelled Silver Wings, Silver Dragon Statuette, and 5 more
-	Shop = 1
-	ShopFlag = 1
-	ShopKind = 16
-	Combat
+	OpenShop
+		stock BrassDragonFigurine GoldChain PearlNecklace GoldLightningFigurine JewelledSilverWings SilverDragonStatuette
+		stock GoldScarab EmeraldBroach PlatinumSphere FineOpalPendant DiamondNecklace
 	Picture None
 	Exit
 
@@ -428,11 +433,17 @@ WeaponShop:
 
 WeaponShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 53 // Shield, Plate Mail, Banded Mail, Splint Mail, Chain Mail, Scale Mail, and 51 more
-	Shop = 1
-	ShopFlag = 1
-	ShopKind = 16
-	Combat
+	OpenShop
+		stock Shield PlateMail BandedMail SplintMail ChainMail ScaleMail
+		stock RingMail StuddedLeatherArmor PaddedArmor LeatherArmor Arrow*10 LightCrossbow
+		stock Sling ShortBow LongBow CompositeShortBow CompositeLongBow Voulge
+		stock Trident TwoHandedSword ShortSword LongSword BroadSword BastardSword
+		stock QuarterStaff Spetum Spear Scimitar Ranseur Quarrel*20
+		stock AwlPike MilitaryPick Partisan MorningStar Mace JoStick
+		stock Javelin*2 Hammer LucernHammer Halberd GuisarmeVoulge Guisarme
+		stock GlaiveGuisarme Glaive MilitaryFork Flail FauchardFork Fauchard
+		stock Dart*4 Dagger Club BoStick BillGuisarme BecDeCorbin
+		stock Bardiche HandAxe BattleAxe
 	Picture None
 	Exit
 
@@ -446,11 +457,10 @@ SilverShop:
 
 SilverShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 55 // Fine Composite Long Bow, Silver Ring, Silver Plate Mail, Silver Chain Mail, Silver Quarrel, 20 Silver Arrow, and 7 more
-	Shop = 1
-	ShopFlag = 1
-	ShopKind = 16
-	Combat
+	OpenShop
+		stock FineCompositeLongBow SilverRing SilverPlateMail SilverChainMail SilverQuarrel SilverArrow*20
+		stock SilverDagger SilverTwoHandedSword SilverShortSword SilverLongSword SilverBroadSword SilverBastardSword
+		stock SilverMace
 	Picture None
 	Exit
 
@@ -475,8 +485,7 @@ MustLeave:
 
 TempleHealing:
 	ClearMonsters
-	Temple = 1
-	Combat
+	OpenTemple
 	ShowPortrait None None
 	Exit
 
@@ -494,14 +503,14 @@ WatchFightsBack:
 
 UnsettledGateway:
 	PrintClear "YOU ARE BY THE GATEWAY TO THE UNSETTLED AREAS. THE CITY WATCH EYES YOU SUSPICIOUSLY."
-	if IronBoxState == 1: Goto WatchTakesTreasure
+	if IronBoxState == CarriedUnopened: Goto WatchTakesTreasure
 	Exit
 
 WatchTakesTreasure:
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "THE CITY WATCH STOPS YOU AND REMOVES CADORNA'S TREASURE FROM YOUR KEEPING.  THEY TELL YOU YOUR REWARD WAITS WITH THE CITY CLERK."
-	QuestCadornaPayment = 254
-	IronBoxState = 255
+	QuestCadornaPayment = RewardDue
+	IronBoxState = HandedIn
 	Exit
 
 CityHallOutside:
@@ -514,7 +523,7 @@ CityHallOutside:
 	CityHallSeen = 1
 	PrintClear "YOU ARE OUTSIDE THE CITY HALL. THE CITY CLERK WAITS INSIDE TO AWARD COMMISSIONS."
 	if Scratch10 != 26 || WallAhead != 11: Exit
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "PROCLAMATIONS ARE POSTED ON THE WALLS, IN YOUR JOURNAL YOU NOTE "
 	if CouncilFavor == 0: Goto OldProclamations
 	ProclamationIndex = CouncilFavor - 1
@@ -565,12 +574,12 @@ Proclamation9:
 
 SkullcrusherLeaves:
 	PrintClear "SKULLCRUSHER SPEAKS, 'I MUST GO TO MY MASTER NOW.' "
-	SelStatus = 0
+	SelStatus = Died
 	SelName = 0
 	AuxMember += 128
-	LoadCharacter AuxMember
+	SelectMember AuxMember
 	Print "HE LEAVES."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto CityHallOutside
 
 ToArea8:
@@ -619,13 +628,13 @@ EnterBuildingOnce:
 	Return
 
 AfterWatchFight:
-	if CombatEnd > 128: Goto RunAway
+	if CombatEnd > PartyDied: Goto RunAway
 	if WatchCombatDone0 > 0: Return
 
 CheckPartySize:
 	if PartyCount < 8: Return
 	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Picture None
 	Exit
 
@@ -638,8 +647,9 @@ RunAway:
 	Call CallRedraw
 	Exit
 
-PressReturn:
-	AuxMenuChoice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
+WaitReturnPressed:
+	alias Choice = AuxMenuChoice
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 WatchApproaches:
@@ -656,7 +666,7 @@ FindMemberByName:
 	AuxMember = 0
 
 FindMemberLoop:
-	LoadCharacter AuxMember
+	SelectMember AuxMember
 	if SelStatus > 127: Goto NextMember
 	if $SelName == $AuxText: Goto MemberFound
 
@@ -672,12 +682,12 @@ MemberFound:
 
 MadManAttacks:
 	PrintClear "THE MAD MAN SUDDENLY BEGINS TO SCREAM AND ATTACK EVERYONE WITHIN ARM'S REACH."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Goto WatchResponds
 
 PriestWarnsMadMan:
 	PrintClear "AN AGED PRIEST APPROACHES, POINTING AT THE MAD MAN, HE SPEAKS, 'THAT MAN URGENTLY NEEDS OUR CARE.  DROP HIM FROM YOUR PARTY OR HE WILL BRING YOU TO GRIEF.  WE WILL CARE FOR HIM.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 CityTour:
@@ -687,7 +697,7 @@ CityTour:
 	Sky = Scratch5
 	PartyX = 15
 	PartyY = 1
-	Facing = 3
+	Facing = West
 	Call CallRedraw
 	Portrait = GrinningBlond
 	SetupMonster Man12 distance=2 body=ShopkeeperApron
@@ -697,15 +707,15 @@ CityTour:
 	Approach
 	Delay
 	PrintClear "'GREETINGS, COURAGEOUS ONES, I AM ROLF, APPOINTED BY THE COUNCIL TO INTRODUCE NEWCOMERS TO THE FAIR CITY OF PHLAN. IF YOU WILL ACCOMPANY ME, I WILL START THE TOUR.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	RedrawView
 	Picture None
 	Scratch1 = 0
 
 TourStopLoop:
+	alias TourStopKind = Scratch4
 	alias TourStopXEntry = Scratch2
 	alias TourStopYEntry = Scratch3
-	alias TourStopKind = Scratch4
 	PrintClear ""
 	TourStopXEntry = TourStopX[Scratch1]
 	TourStopYEntry = TourStopY[Scratch1]
@@ -730,34 +740,34 @@ TourStopNone:
 
 TourTempleOfTyr:
 	PrintClear "'YOU NOW FACE AN ENTRANCE TO THE TEMPLE OF TYR.  THERE ARE THREE TEMPLES IN PHLAN: TYR'S, SUNE'S, AND TEMPUS. TYR'S IS THE LARGEST AND HOUSES BISHOP BRACCIO. IF YOU WILL TURN AROUND NOW, '"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourPassengerDock:
 	PrintClear "'YOU WILL SEE THE ENTRANCE TO THE PASSENGER DOCK AREA WE JUST DEPARTED.  FEW SHIPS DARE THE PERILOUS PASSAGE HERE, BUT THE COUNCIL IS DEVELOPING A PLAN TO OPEN UP THE SEA LANES.  PLEASE FOLLOW ME.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourTrainingSchools:
 	PrintClear "'BEHIND THESE DOORS ARE THE SPECIAL TRAINING SCHOOLS  WHERE ADVENTURERS INCREASE THEIR SKILLS. LET US NOW GO TO THE CITY'S MOST IMPORTANT BUILDING.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourCityHall:
 	PrintClear "'WE ARE JUST OUTSIDE THE CITY HALL. PROCLAMATIONS ARE POSTED ON THESE WALLS. INSIDE, THE CITY CLERK AWARDS THE COUNCIL'S COMMISSIONS.  COMMISSIONS ARE THE QUICKEST WAY TO FAME AND FORTUNE.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourSuneTemple:
 	PrintClear "'ON YOUR RIGHT IS ONE OF THE ENTRANCE'S TO SUNE'S TEMPLE. AS WITH ALL PHLAN'S TEMPLES, VARIOUS CLERICAL SERVICES ARE OFFERED INSIDE.  ON YOUR LEFT IS AN ENTRANCE TO THE CITY PARK.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourEnd:
 	PrintClear "'BEYOND THIS GATE ARE THE MONSTER-RIDDEN AREAS OF THE OLD CITY WE ARE SLOWLY PREPARING FOR SETTLEMENT.  THE COUNCIL OFFERS A GENEROUS REWARD TO THOSE WHO CLEAR AREAS OF MONSTERS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "'OUR TOUR IS ENDED. AGAIN, LET ME URGE YOU TO APPLY TO THE CITY CLERK FOR A COMMISSION.  GOOD-BYE AND GOOD FORTUNE.' (YOU ARE ON YOUR OWN NOW)"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Return
 
 TourStopKinds:
@@ -786,8 +796,8 @@ EjectXTable:
 EjectYTable:
 	Data 11 10 0 3
 
-DuelMonsterTable:
-	Data 40 45 54 53 41 51
+DuelMonsters:
+	Data Nomad StLvlThief Corporal Aides ThLvlFighter41 ThLvlThief51
 
-DuelCountTable:
-	Data 11 13 16 15 11 24 144
+DuelIcons:
+	Data 11 13 ThLvlFighter Nomad 11 24 144

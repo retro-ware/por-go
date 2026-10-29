@@ -20,7 +20,7 @@
 9BDC AlarmActive
 9BE2 StartAlarm
 9C26 YesNoMenu
-9C40 PressReturn
+9C40 WaitReturnPressed
 9C9C LeaveArea
 9CA4 OnStep
 9CB7 MatchDoorSpot

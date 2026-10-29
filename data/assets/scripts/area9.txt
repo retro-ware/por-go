@@ -7,9 +7,8 @@ BugbearsApproach:
 	Return
 
 CheckGarrisonsBeaten:
-	Scratch10 = GateFlags & 4
-	if 0 == Scratch10: Return
-	Scratch10 = GateFlags & 8
+	if GateFlags lacks WestGarrisonSlain: Return
+	Scratch10 = GateFlags & EastGarrisonSlain
 	Return
 
 SetSkyByHour:
@@ -24,7 +23,7 @@ PayMoney:
 	Scratch1 = 0
 
 CheckMemberMoney:
-	LoadCharacter Scratch1
+	SelectMember Scratch1
 	Gosub CheckMemberOk
 	IfNe
 	Goto NextPayer
@@ -44,7 +43,7 @@ NextPayer:
 	Scratch1 = Scratch1 + 1
 	if Scratch1 < 8: Goto CheckMemberMoney
 	PrintClear "YOU DON'T HAVE ENOUGH MONEY!"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Compare 0 1
 	Return
 
@@ -91,9 +90,9 @@ TakeCoinKind:
 	Scratch1 = 0
 
 TakeFromMember:
-	alias SelNameEntry = Scratch6
 	alias SelName2Entry = Scratch7
-	LoadCharacter Scratch1
+	alias SelNameEntry = Scratch6
+	SelectMember Scratch1
 	Gosub CheckMemberOk
 	IfNe
 	Goto NextCoinMember
@@ -109,7 +108,7 @@ DeductCoins:
 	SelName2[Scratch10] = Scratch7
 	&Scratch4 -= &Scratch8
 	Scratch2 = Scratch1 | 128
-	LoadCharacter Scratch2
+	SelectMember Scratch2
 	if Scratch4 == 0: Return
 
 NextCoinMember:
@@ -119,8 +118,8 @@ NextCoinMember:
 	Return
 
 CheckMemberOk:
-	if SelStatus == 0: Goto MemberNotOk
-	if SelStatus != 1: Goto MemberOk
+	if SelStatus == Died: Goto MemberNotOk
+	if SelStatus != Okay: Goto MemberOk
 	if SelControl >= 128: Goto MemberNotOk
 
 MemberOk:
@@ -169,7 +168,7 @@ YesNoMenu:
 	Compare Choice 0
 	Return
 
-PressReturn:
+WaitReturnPressed:
 	alias Choice = Scratch9
 	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	PrintClear " "
@@ -216,12 +215,10 @@ event1:
 	IfLt
 	Goto SpecialSquare
 	if PartyY > 6: Goto SpecialSquare
-	Scratch10 = Cell & 64
-	if 0 != Scratch10: Goto SpecialSquare
+	if Cell has 64: Goto SpecialSquare
 	Scratch1 = 2
 	if Search == 0: Scratch1 = 20
-	Scratch10 = Cell & 32
-	if 0 != Scratch10: Scratch1 += Scratch1
+	if Cell has 32: Scratch1 += Scratch1
 	Scratch1 = Random Scratch1
 	if Scratch1 == 0: Goto event3
 
@@ -232,34 +229,33 @@ SpecialSquare:
 event3:
 	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
 	Portrait = GrinningBlond
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto PatrolMenu
+	if CastleFlags has Disguised: Goto PatrolMenu
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=9 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done FightPatrol FledCombat FightPatrol
 
 PatrolMenu:
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
 	Portrait = None
 	OnGoto Scratch10 Done FightPatrol FledCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
-	Parlay 0 1 1 2 0 Scratch10
+	Scratch10 = Parlay 0 1 1 2 0
 	OnGoto Scratch10 AskAuthority PatrolSpotsIntruders
 	PrintClear "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
-	InputString 6 $AuxInputText
+	$AuxInputText = InputString 6
 	Compare "HARASH" $AuxInputText
 	Goto CheckAnswer
 
 AskAuthority:
 	PrintClear "'I'M SORRY, SIR, THERE'S AN ALERT. "
 	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
-	InputString 12 $AuxInputText
+	$AuxInputText = InputString 12
 	Compare "TYRANTHRAXUS" $AuxInputText
 
 CheckAnswer:
@@ -286,26 +282,25 @@ FightPatrol:
 	Exit
 
 FledCombat:
-	CombatEnd = 129
+	CombatEnd = PartyFled
 
 AfterCombat:
-	if CombatEnd == 0: Return
+	if CombatEnd == FightOver: Return
 	Gosub StartAlarm
-	CastleFlags = CastleFlags & 254
-	if CombatEnd != 129: Return
-	HoldMove = 255
+	CastleFlags &= ~Disguised
+	if CombatEnd != PartyFled: Return
+	HoldMove = SkipMove
 	PartyX = PrevX
 	PartyY = PrevY
 	Facing = Facing + 2
-	if Facing > 3: Facing -= 4
+	if Facing > West: Facing -= 4
 	Goto Done
 
 event2:
 	RestEvery = 0
 	RestChance = 10
 	if AlarmEndHour == 0: Exit
-	Scratch10 = Cell & 64
-	if 0 != Scratch10: Exit
+	if Cell has 64: Exit
 	if PartyY > 6: Exit
 	RestEvery = 1
 	RestChance = 17
@@ -334,13 +329,12 @@ AskUpstairs:
 TowerDoor:
 	Scratch1 = 1
 	if Scratch5 == 3: Scratch1 = 2
-	Scratch10 = GateFlags & Scratch1
-	if 0 != Scratch10: Goto TakeStairs
+	if GateFlags has Scratch1: Goto TakeStairs
 	Gosub CheckGarrisonsBeaten
 	IfNe
 	Exit
 	PrintClear "FROM THE TOP OF THE GATE COMES A VOLLEY OF ROCKS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Damage 16 1 6 0 43
 	Exit
 
@@ -353,7 +347,7 @@ TakeStairs:
 	Cell = TowerExitCellTable[Scratch5]
 
 StairsRedraw:
-	HoldMove = 255
+	HoldMove = SkipMove
 	Call CallRedraw
 	Goto event1
 
@@ -367,18 +361,16 @@ TowerExitCellTable:
 	Data 10 11 12 0 1 2
 
 MageGuardRoom:
-	Scratch10 = GuardRoomSeenBits & 1
-	if 0 != Scratch10: Goto MageAndEttins
+	if GuardRoomSeenBits has Tower1Seen: Goto MageAndEttins
 	Gosub DescribeGuardRoom
-	GuardRoomSeenBits = GuardRoomSeenBits | 1
+	GuardRoomSeenBits |= Tower1Seen
 
 MageAndEttins:
-	Scratch10 = GateFlags & 4
-	if 0 != Scratch10: Exit
+	if GateFlags has WestGarrisonSlain: Exit
 	Gosub DescribeEttins
 	Portrait = BlondElder
 	PrintClear "YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." escape=0 strength=0
 	Portrait = None
 	RedrawView
@@ -389,7 +381,7 @@ MageFlee:
 	Goto TakeStairs
 
 FightMageGuards:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	Morale = 50
 	Gosub StartAlarm
 	ClearMonsters
@@ -397,23 +389,21 @@ FightMageGuards:
 	LoadMonster Aides count=1 icon=Aides
 	LoadMonster Ettin count=3 icon=Ettin
 	Combat
-	if CombatEnd == 129: Goto MageFlee
-	GateFlags = GateFlags | 4
+	if CombatEnd == PartyFled: Goto MageFlee
+	GateFlags |= WestGarrisonSlain
 	Exit
 
 FighterGuardRoom:
-	Scratch10 = GuardRoomSeenBits & 2
-	if 0 != Scratch10: Goto FighterAndEttins
+	if GuardRoomSeenBits has Tower2Seen: Goto FighterAndEttins
 	Gosub DescribeGuardRoom
-	GuardRoomSeenBits = GuardRoomSeenBits | 2
+	GuardRoomSeenBits |= Tower2Seen
 
 FighterAndEttins:
-	Scratch10 = GateFlags & 8
-	if 0 != Scratch10: Exit
+	if GateFlags has EastGarrisonSlain: Exit
 	Gosub DescribeEttins
 	Portrait = SandyHaired
 	PrintClear "YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." escape=0 strength=0
 	Portrait = None
 	RedrawView
@@ -424,7 +414,7 @@ FighterFlee:
 	Goto TakeStairs
 
 FightFighterGuards:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	Morale = 50
 	Gosub StartAlarm
 	ClearMonsters
@@ -432,8 +422,8 @@ FightFighterGuards:
 	LoadMonster Aides count=1 icon=Aides
 	LoadMonster Ettin count=3 icon=Ettin
 	Combat
-	if CombatEnd == 129: Goto FighterFlee
-	GateFlags = GateFlags | 8
+	if CombatEnd == PartyFled: Goto FighterFlee
+	GateFlags |= EastGarrisonSlain
 	Exit
 
 GateTowerSquare:
@@ -443,17 +433,15 @@ GateTowerSquare:
 	Scratch2 = 0
 	Scratch1 = Cell & 1
 	OnGoto Scratch1 EastTowerCheck
-	Scratch9 = GateFlags & 4
-	if 0 == Scratch9: Scratch2 = Scratch2 | 2
-	Scratch10 = GateFlags & 8
-	if 0 == Scratch10: Scratch2 = Scratch2 | 1
+	Scratch9 = GateFlags & WestGarrisonSlain
+	if 0 == Scratch9: Scratch2 |= 2
+	if GateFlags lacks EastGarrisonSlain: Scratch2 |= 1
 	Goto TowersCharge
 
 EastTowerCheck:
-	Scratch9 = GateFlags & 8
-	if 0 == Scratch9: Scratch2 = Scratch2 | 2
-	Scratch10 = GateFlags & 4
-	if 0 == Scratch10: Scratch2 = Scratch2 | 1
+	Scratch9 = GateFlags & EastGarrisonSlain
+	if 0 == Scratch9: Scratch2 |= 2
+	if GateFlags lacks WestGarrisonSlain: Scratch2 |= 1
 
 TowersCharge:
 	Scratch3 = 1
@@ -473,7 +461,7 @@ FarTowerCharges:
 
 TowerMonstersMenu:
 	Portrait = SandyHaired
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	EncounterMenu Mage distance=MaxDist body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=6
 	Portrait = None
 	RedrawView
@@ -483,17 +471,16 @@ FleeToArea6:
 	Gosub StartAlarm
 	PartyX = 4
 	PartyY = 15
-	Facing = 0
+	Facing = North
 	NewECL ValjevoCastle6
 
 FightTowerMonsters:
 	PartySurprise Scratch9 Scratch10
 	Morale = 80
-	Scratch10 = GateFlags & 8
+	Scratch10 = GateFlags & EastGarrisonSlain
 	Surprise Scratch9 Scratch10 1 1
 	Scratch4 = 24
-	Scratch10 = GateFlags & 8
-	if 0 != Scratch10: Scratch4 = 89
+	if GateFlags has EastGarrisonSlain: Scratch4 = 89
 	Gosub StartAlarm
 	ClearMonsters
 	LoadMonster Scratch4 count=Scratch3 icon=Level6Mu
@@ -501,19 +488,18 @@ FightTowerMonsters:
 	Scratch3 = Scratch3 * 3
 	LoadMonster Ettin count=Scratch3 icon=Ettin
 	Combat
-	if CombatEnd == 129: Goto FleeToArea6
+	if CombatEnd == PartyFled: Goto FleeToArea6
 
 GarrisonSlain:
-	GateFlags = GateFlags | 12
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Goto GateTaken
+	GateFlags |= WestGarrisonSlain+EastGarrisonSlain
+	if GateFlags has OutsideGuardsSlain: Goto GateTaken
 	PrintClear "YOU HAVE SLAIN THE GARRISON. NOW IF YOU CAN BUT SLAY THE OUTSIDE GUARDS QUICKLY BEFORE THE ENEMY ARRIVES THE GATE WILL BE YOURS!"
 	Exit
 
 GateTaken:
-	GateFlags = GateFlags | 3
+	GateFlags |= WestSideCleared+EastSideCleared
 	PrintClear "YOU HAVE TAKEN THE GATE! YOU OPEN THE GREAT PORTALS AS 20  HUMAN AND DEMI-HUMAN GUARDS IMMEDIATELY TAKE POSSESSION OF THE GUARD TOWERS."
-	if QuestGateTaken != 255: QuestGateTaken = 254
+	if QuestGateTaken != Rewarded: QuestGateTaken = RewardDue
 	Exit
 
 NearWall:
@@ -523,8 +509,7 @@ NearWall:
 	OnGoto BugbearWarnings FirstWallWarning SecondWallWarning BugbearsPunch
 
 BugbearsDemand:
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Goto ArrowSlits
+	if GateFlags has OutsideGuardsSlain: Goto ArrowSlits
 	Gosub BugbearsApproach
 	PrintClear "A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'"
 
@@ -534,15 +519,15 @@ BugbearsMenu:
 	OnGoto Choice PushedBack SurrenderToBugbears
 
 FightBugbears:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 60
 	Gosub StartAlarm
 	BugbearWarnings = 3
 	ClearMonsters
 	LoadMonster Bugbear count=16 icon=Bugbear
 	Combat
-	if CombatEnd == 129: Goto PushedBack
-	GateFlags = GateFlags | 16
+	if CombatEnd == PartyFled: Goto PushedBack
+	GateFlags |= OutsideGuardsSlain
 	Exit
 
 SurrenderToBugbears:
@@ -550,7 +535,7 @@ SurrenderToBugbears:
 	Rob 1 100 20
 
 PushedBack:
-	Facing = 2
+	Facing = South
 	PartyY = 14
 	RedrawView
 	if PartyX < 9: Goto PushedWest
@@ -561,7 +546,7 @@ PushedWest:
 	PartyX = 4
 
 PushedRedraw:
-	HoldMove = 255
+	HoldMove = SkipMove
 	Goto Done
 
 FirstWallWarning:
@@ -590,34 +575,30 @@ ArrowSlits:
 	IfNe
 	Exit
 	PrintClear "FROM ARROW SLITS IN THE TOWER ARE SHOT A COUPLE ARROWS."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Damage 2 1 6 0 44
 	Exit
 
 StojanowGateEvent:
 	if BugbearWarnings == 2: BugbearWarnings = 1
-	Scratch10 = GateFlags & 32
-	if 0 != Scratch10: Goto WatchWagonMan
+	if GateFlags has GateSeen: Goto WatchWagonMan
 	PrintClear "BEFORE YOU IS STOJANOW GATE. THIS ANCIENT EDIFICE IS BUILT ACROSS THE BEND OF THE RIVER, THUS ISOLATING THE OLD TOWN AND THE CASTLE FROM THE REST OF THE CITY."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS."
-	Gosub PressReturn
-	GateFlags = GateFlags | 32
+	Gosub WaitReturnPressed
+	GateFlags |= GateSeen
 
 WatchWagonMan:
-	if Facing != 0 || Search != 1: Exit
+	if Facing != North || Search != 1: Exit
 	if Hours >= 5: Exit
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Exit
+	if GateFlags has OutsideGuardsSlain: Exit
 	PrintClear "BEFORE THE GATE YOU CAN MAKE OUT A MAN WITH A WAGON OF GOODS WHO IS TALKING TO TWO OF THE BUGBEARS. THE MAN HANDS SOMETHING TO THE BUGBEARS AND THE GATES OPEN."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	Exit
 
 GateEntrance:
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Goto ArrowSlits
-	Scratch10 = GateFlags & 64
-	if 0 == Scratch10: Goto NearWall
+	if GateFlags has OutsideGuardsSlain: Goto ArrowSlits
+	if GateFlags lacks WagonOwned: Goto NearWall
 	if BugbearWarnings == 3: Goto ImpostorsApproach
 	Scratch10 = Random 9
 	if Scratch10 <= BugbearWarnings: Goto ImpostorsApproach
@@ -640,7 +621,7 @@ PayToll:
 	PrintClear "THE BUGBEAR TAKES THE MONEY AND THE GATE OPENS. YOU PROCEED THROUGH."
 	RedrawView
 	Picture None
-	Facing = 0
+	Facing = North
 	PartyX = 8
 	PartyY = 9
 
@@ -649,7 +630,7 @@ WalkThroughGate:
 	Call CallRedraw
 	Delay
 	if PartyY > 5: Goto WalkThroughGate
-	HoldMove = 255
+	HoldMove = SkipMove
 	Exit
 
 ImpostorsApproach:
@@ -660,46 +641,42 @@ ImpostorsAccused:
 	Goto BugbearsMenu
 
 WallSquare:
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Goto ArrowSlits
+	if GateFlags has OutsideGuardsSlain: Goto ArrowSlits
 	Goto BugbearsDemand
 
 BugbearsBehindGate:
 	Gosub CheckGarrisonsBeaten
 	IfEq
 	Exit
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Exit
+	if GateFlags has OutsideGuardsSlain: Exit
 	EncounterMenu Bugbear distance=1 closeup=Bugbear result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." escape=9 strength=9
 	OnGoto Scratch10 Done FightGateBugbears FleeToArea6
 
 FightGateBugbears:
-	Surprise = 2
+	Surprise = MonstersAreSurprised
 	Morale = 60
 	Gosub StartAlarm
 	BugbearWarnings = 3
 	ClearMonsters
 	LoadMonster Bugbear count=16 icon=Bugbear
 	Combat
-	if CombatEnd == 129: Goto FleeToArea6
-	GateFlags = GateFlags | 16
+	if CombatEnd == PartyFled: Goto FleeToArea6
+	GateFlags |= OutsideGuardsSlain
 	Goto GarrisonSlain
 
 WagonTrader:
 	if Hours >= 14: Exit
-	Scratch10 = GateFlags & 64
-	if 0 != Scratch10: Exit
+	if GateFlags has WagonOwned: Exit
 	if WagonManMet != 0: Exit
 	Gosub CheckGarrisonsBeaten
 	IfEq
 	Goto WagonPasses
-	Scratch10 = GateFlags & 16
-	if 0 != Scratch10: Exit
+	if GateFlags has OutsideGuardsSlain: Exit
 
 WagonPasses:
 	alias Choice = Scratch10
 	PrintClear "A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH."
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	WagonManMet = 1
 	Portrait = BrownHaired
 	EncounterMenu Man12 distance=0 body=ShopkeeperApron result=Choice combat=Attack wait=Approach flee=Approach advance=Approach parlay=Talk escape=0 strength=0
@@ -716,14 +693,14 @@ BuyWagon:
 	IfNe
 	Goto NoMoneyForWagon
 	PrintClear "'PLEASURE DOING BUSINESS WITH YOU. HERE'S YOUR WAGON.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "'OH, BY THE WAY. BETTER BEWARE OF THE GUARDS. EVER SINCE THE GIANTS MOVED INTO THE CASTLE AREA, BUGBEARS HAVE BEEN STUCK GUARDING THE GATE. AND THEY HATE IT.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	PrintClear "'NOT ONLY THAT THEY'RE AFRAID OF THEM ETTIN. MAKES 'EM REAL JUMPY. WOULDN'T GIVE 'EM NO BACK TALK IF I WERE YOU.'"
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 
 GotWagon:
-	GateFlags = GateFlags | 64
+	GateFlags |= WagonOwned
 	Goto Done
 
 NoMoneyForWagon:
@@ -738,18 +715,17 @@ MonstersBehindWall:
 	Gosub CheckGarrisonsBeaten
 	IfNe
 	Exit
-	Scratch10 = GateFlags & 16
-	if 0 == Scratch10: Exit
+	if GateFlags lacks OutsideGuardsSlain: Exit
 	PrintClear "A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL"
 	Portrait = SandyHaired
-	Gosub PressReturn
+	Gosub WaitReturnPressed
 	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY RUSH TOWARD YOU" escape=12 strength=12
 	Portrait = None
 	RedrawView
 	OnGoto Scratch10 Done FightWallMonsters PushedBack
 
 FightWallMonsters:
-	Surprise = 0
+	Surprise = NoSurprise
 	Morale = 80
 	Gosub StartAlarm
 	ClearMonsters
@@ -757,21 +733,21 @@ FightWallMonsters:
 	LoadMonster Aides count=2 icon=Aides
 	LoadMonster Ettin count=6 icon=Ettin
 	Combat
-	if CombatEnd == 129: Goto PushedBack
+	if CombatEnd == PartyFled: Goto PushedBack
 	Goto GarrisonSlain
 
 MarkWestTowerUsed:
-	GateFlags = GateFlags | 1
+	GateFlags |= WestSideCleared
 	Exit
 
 MarkEastTowerUsed:
-	GateFlags = GateFlags | 2
+	GateFlags |= EastSideCleared
 	Exit
 
 DescribeGuardRoom:
 	PrintClear "YOU ENTER A GUARD ROOM. THERE ARE TABLES, CHAIRS, AND BEDS HERE. ALL BUT TWO OF THE BEDS ARE 14 FEET LONG!"
-	Goto PressReturn
+	Goto WaitReturnPressed
 
 DescribeEttins:
 	PrintClear "THERE ARE TWO HUMANS AND THREE ETTIN IN THE ROOM."
-	Goto PressReturn
+	Goto WaitReturnPressed

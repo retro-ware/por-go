@@ -80,7 +80,7 @@ AE89 EnterBuildingOnce
 AE98 AfterWatchFight
 AEAB CheckPartySize
 AEF7 RunAway
-AF1F PressReturn
+AF1F WaitReturnPressed
 AF43 WatchApproaches
 AF56 FindMemberByName
 AF5C FindMemberLoop

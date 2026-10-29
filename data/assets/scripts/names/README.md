@@ -17,6 +17,9 @@ scripts, and also:
 - `pictures.txt`: named numbers by hand (pictures, sprites, combat icons,
   portrait heads and bodies, encounter reactions),
   same format; set 0 is every set.
+- `variables.txt`: by hand, the values and flag bits of variables, the
+  variable's name as the kind (`CastleFlags 0 1 Disguised`).
+- `values.txt` also has the shops' stocks, `Stock Set Block Item,Item,...`.
 
 A command's operand of a kind (`LoadMonster`'s monster and icon,
 `Picture`, `SetupMonster`'s sprite and picture, `FindItem`'s item,

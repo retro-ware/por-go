@@ -13,4 +13,4 @@ A142 AskAdvice
 A285 OfferGift
 A3C7 BottleRecovered
 A565 LeaveCave
-A568 PressReturn
+A568 WaitReturnPressed

@@ -122,3 +122,25 @@ func TestUnfoldAssign(t *testing.T) {
 		t.Errorf("got %v\nwant %v", got.Code, want.Code)
 	}
 }
+
+func TestUnfoldNamed(t *testing.T) {
+	names := &ScriptNames{Vars: map[int]string{0x4A00: "A", 0x4A01: "B", 0x6E79: "Scratch1", 0x6E82: "Scratch10", 0x4A02: "Temple"},
+		Values: []ScriptValue{{"A", 0, 1, "Seen"}, {"A", 0, 4, "Done"}, {"B", 0, 2, "South"}}}
+	head := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"
+	got, err := ParseScript(head+"\tA |= Seen+Done\n\tA &= ~Seen\n\tif A has Done: Exit\n\talso if A lacks Done: Exit\n\tif B == South: Exit\n"+
+		"\tB = PartyStrength\n\tOpenTemple\nL:\n\tfor Scratch1 = 1 to 7\n\t\tA += 1\n\tnext\n\tif Gosub T then B > South: Exit\n\tExit\nT:\n\tCompare B 2\n\tReturn\n", names)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := ParseScript(head+"\tOr A 5 A\n\tAnd A 254 A\n\tAnd A 4 Scratch10\n\tIfNe\n\tExit\n\tIfEq\n\tExit\n\tCompare B 2\n\tIfEq\n\tExit\n"+
+		"\tPartyStrength B\n\tSave 1 Temple\n\tCombat\n\tSave 1 Scratch1\nL:\n\tAdd 1 A A\n\tAdd 1 Scratch1 Scratch1\n\tCompare Scratch1 8\n\tIfLt\n\tGoto L\n\tGosub T\n\tIfGt\n\tExit\n\tExit\nT:\n\tCompare B 2\n\tReturn\n", names)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range want.Code {
+		want.Code[i].Line, got.Code[i].Line = 0, 0
+	}
+	if !reflect.DeepEqual(want.Code, got.Code) {
+		t.Errorf("got %v\nwant %v", got.Code, want.Code)
+	}
+}

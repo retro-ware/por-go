@@ -1,10 +1,9 @@
 RollSurprise:
 	PartySurprise Scratch8 Scratch9
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Scratch9 += 1
+	if CastleFlags has Disguised: Scratch9 += 1
 	Surprise Scratch8 Scratch9 0 0
-	if AlarmEndHour != 0: Surprise = Surprise & 1
-	if Surprise == 3: Surprise = 0
+	if AlarmEndHour != 0: Surprise &= PartyIsSurprised
+	if Surprise == 3: Surprise = NoSurprise
 	Compare Surprise 1
 	Return
 
@@ -64,24 +63,21 @@ SetSky:
 
 event0:
 	Gosub SetSky
-	CastleRoomFlags = CastleRoomFlags & 127
-	Scratch10 = BaneTempleFlags & 3
-	if 0 != Scratch10: CastleFlags = CastleFlags & 254
+	CastleRoomFlags &= ~VisitFlag
+	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: CastleFlags &= ~Disguised
 	if LeftMap == 0: Exit
 	Call CallStepForward
-	HoldMove = 255
+	HoldMove = SkipMove
 	NewECL ValjevoCastle3
 
 event1:
 	Gosub CheckAlarm
 	IfLt
 	Goto RoomEvents
-	Scratch10 = Cell & 64
-	if 0 != Scratch10: Goto RoomEvents
+	if Cell has 64: Goto RoomEvents
 	Scratch1 = 2
 	if Search == 0: Scratch1 = 20
-	Scratch10 = Cell & 32
-	if 0 != Scratch10: Scratch1 += Scratch1
+	if Cell has 32: Scratch1 += Scratch1
 	Scratch10 = Random Scratch1
 	if Scratch10 == 0: Goto event3
 
@@ -93,8 +89,7 @@ event2:
 	RestEvery = 0
 	RestChance = 10
 	if AlarmEndHour == 0: Exit
-	Scratch10 = Cell & 64
-	if 0 != Scratch10: Exit
+	if Cell has 64: Exit
 	RestEvery = 1
 	RestChance = 17
 
@@ -111,35 +106,31 @@ event4:
 	Exit
 
 FleeCombat:
-	CombatEnd = 129
+	CombatEnd = PartyFled
 
 AfterCombat:
-	if CombatEnd == 0: Return
+	if CombatEnd == FightOver: Return
 	Gosub RaiseAlarm
-	CastleFlags = CastleFlags & 254
-	if CombatEnd != 129: Return
+	CastleFlags &= ~Disguised
+	if CombatEnd != PartyFled: Return
 
 StepBack:
-	HoldMove = 255
+	HoldMove = SkipMove
 	PartyX = PrevX
 	PartyY = PrevY
 	Facing = Facing + 2
-	if Facing > 3: Facing -= 4
+	if Facing > West: Facing -= 4
 	Goto Done
 
 event3:
 	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
 	Portrait = Bearded
 	SetupMonster Fighter16 distance=2 body=PlateArmor
-	Gosub RollSurprise
-	IfNe
-	Goto PatrolSighted
+	if Gosub RollSurprise then Surprise != PartyIsSurprised: Goto PatrolSighted
 	PrintClear $AuxEncText
 	Print " SURPRISES YOU."
-	Scratch10 = BaneTempleFlags & 3
-	if 0 != Scratch10: Goto BlasphemersAttack
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto PatrolQuestions
+	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto BlasphemersAttack
+	if CastleFlags has Disguised: Goto PatrolQuestions
 	Print " 'THAT'S THEM! GET THEM!'"
 	Goto PatrolAdvances
 
@@ -151,14 +142,12 @@ BlasphemersAttack:
 PatrolSighted:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
-	Scratch10 = BaneTempleFlags & 3
-	if 0 == Scratch10: Goto PatrolNoAlarm
+	if BaneTempleFlags lacks OfferingBoxStolen+CrossedSwordsStolen: Goto PatrolNoAlarm
 	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
 	Goto PatrolAdvances
 
 PatrolNoAlarm:
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto PatrolQuestions
+	if CastleFlags has Disguised: Goto PatrolQuestions
 
 PatrolSeesYou:
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
@@ -170,7 +159,7 @@ PatrolAdvances:
 	OnGoto Scratch10 Done PatrolFight FleeCombat PatrolFight
 
 PatrolQuestions:
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Gosub PressToContinue
@@ -178,7 +167,7 @@ PatrolQuestions:
 	Portrait = None
 	OnGoto Scratch10 Done PatrolFight FleeCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
-	Parlay 0 1 1 2 0 Scratch10
+	Scratch10 = Parlay 0 1 1 2 0
 	OnGosub Scratch10 AlertSorry PatrolIntruders AskPassword
 
 PatrolFight:
@@ -199,7 +188,7 @@ PatrolIntruders:
 
 AskPassword:
 	PrintClear "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
-	InputString 6 $AuxInputText
+	$AuxInputText = InputString 6
 	Compare "HARASH" $AuxInputText
 	Goto CheckAnswer
 
@@ -209,7 +198,7 @@ AlertSorry:
 AskAuthority:
 	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
 	NewLine
-	InputString 12 $AuxInputText
+	$AuxInputText = InputString 12
 	Compare "TYRANTHRAXUS" $AuxInputText
 
 CheckAnswer:
@@ -223,8 +212,7 @@ Imposters:
 	Return
 
 ArmedManAttacks:
-	Scratch10 = CastleFlags2 & 8
-	if 0 != Scratch10: Exit
+	if CastleFlags2 has OverseerFight: Exit
 	Portrait = BlondElder
 	SetupMonster Fighter16 distance=0 body=PlateArmor
 	Portrait = None
@@ -235,15 +223,13 @@ ArmedManAttacks:
 	LoadMonster ThLvlFighter84 count=1 icon=ThLvlFighter
 	Combat
 	Gosub AfterCombat
-	CastleFlags2 = CastleFlags2 | 8
+	CastleFlags2 |= OverseerFight
 	Exit
 
 FighterBuilding:
-	Scratch10 = CastleFlags2 & 8
-	if 0 != Scratch10: Exit
+	if CastleFlags2 has OverseerFight: Exit
 	if AlarmEndHour != 0: Goto DoorSlams
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto FighterConfronts
+	if CastleFlags has Disguised: Goto FighterConfronts
 
 DoorSlams:
 	PrintClear "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
@@ -251,7 +237,7 @@ DoorSlams:
 	Goto FourGiantsCharge
 
 FighterConfronts:
-	Surprise = 0
+	Surprise = NoSurprise
 	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
 	Portrait = BlondElder
 	Gosub PressToContinue
@@ -259,7 +245,7 @@ FighterConfronts:
 	Portrait = None
 	OnGoto Scratch10 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?', HE REPEATS."
-	Parlay 0 2 2 1 0 Scratch10
+	Scratch10 = Parlay 0 2 2 1 0
 	if Scratch10 == 2: Goto FighterRetreats
 	PrintClear ""
 	OnGosub Scratch10 AskAuthority AskPassword
@@ -273,8 +259,7 @@ FighterHitsButton:
 
 FighterFight:
 	Morale = 50
-	Scratch10 = CastleFlags2 & 16
-	if 0 != Scratch10: Goto LoadFighter
+	if CastleFlags2 has FourGiants: Goto LoadFighter
 	PrintClear "AS YOU START TO ATTACK HIM, FOUR GIANTS BURST OUT OF A NEARBY BUILDING."
 
 LoadFighter:
@@ -283,8 +268,8 @@ LoadFighter:
 	if Scratch10 == 0: LoadMonster FireGiant count=4 icon=FireGiant
 	Combat
 	Gosub AfterCombat
-	CastleFlags2 = CastleFlags2 | 8
-	CastleFlags2 = CastleFlags2 | 16
+	CastleFlags2 |= OverseerFight
+	CastleFlags2 |= FourGiants
 	Portrait = Bearded
 	SetupMonster Fighter16 distance=2 body=PlateArmor
 	PrintClear "A PATROL ROUNDS THE CORNER.."
@@ -295,8 +280,7 @@ FighterRetreats:
 	Gosub DelayRaiseAlarm
 
 FourGiantsCharge:
-	Scratch10 = CastleFlags2 & 16
-	if 0 != Scratch10: Goto Done
+	if CastleFlags2 has FourGiants: Goto Done
 	PrintClear "A GROUP OF FOUR GIANTS CHARGE OUT OF A NEARBY BUILDING."
 	Gosub PressToContinue
 	Picture None
@@ -309,26 +293,23 @@ GiantsFight:
 	LoadMonster FireGiant count=4 icon=FireGiant
 	Combat
 	Gosub AfterCombat
-	CastleFlags2 = CastleFlags2 | 16
+	CastleFlags2 |= FourGiants
 	Exit
 
 PigstyBarracks:
 	PrintClear "YOU ENTER A ROOM THAT MORE RESEMBLES A PIGSTY THAN THE BARRACKS IT IS. "
-	Scratch10 = CastleRoomFlags & 64
-	if 0 != Scratch10: Exit
-	Scratch10 = CastleFlags2 & 16
-	if 0 != Scratch10: Exit
+	if CastleRoomFlags has BarracksGiantsMet: Exit
+	if CastleFlags2 has FourGiants: Exit
 	Print "IN THE ROOM ARE FOUR GIANTS."
 	Gosub PressToContinue
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto BarracksGiants
+	if CastleFlags has Disguised: Goto BarracksGiants
 	if AlarmEndHour != 0: Goto ThemIntruders
 
 BarracksGiants:
 	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS LOOK UP AT YOU." escape=12 strength=12
 	OnGoto Scratch10 Done GiantsFight FleeCombat
 	PrintClear "'WHAT YA DOIN' HERE?'"
-	Parlay 0 1 2 2 3 Scratch10
+	Scratch10 = Parlay 0 1 2 2 3
 	OnGoto Scratch10 GiantsGivePaper GiantsReadList GetLostWimp ThreatenUs
 
 GiantsGivePaper:
@@ -341,8 +322,8 @@ GiantsReadList:
 ShowPasswords:
 	Gosub PressToContinue
 	PrintClear ""
-	CastleFlags2 = CastleFlags2 | 32
-	CastleRoomFlags = CastleRoomFlags | 64
+	CastleFlags2 |= PasswordsRead
+	CastleRoomFlags |= BarracksGiantsMet
 	LoadMap Keep unused=16 icons=255
 	PrintClear ""
 	Protection ProtectionStart
@@ -388,19 +369,17 @@ ThemIntruders:
 	OnGoto Scratch10 Done GiantsAdvance FleeCombat GiantsAdvance
 
 PaperOnGround:
-	Scratch10 = CastleFlags2 & 32
-	if 0 != Scratch10: Exit
-	Scratch10 = CastleFlags2 & 16
+	if CastleFlags2 has PasswordsRead: Exit
+	Scratch10 = CastleFlags2 & FourGiants
 	if Scratch10 != 16 || Search != 1: Exit
 	PrintClear "ON THE GROUND YOU FIND A PEACE OF PAPER THAT SAYS:"
 	Goto ShowPasswords
 
 Armory:
-	Scratch10 = ArmoryVisited & 1
-	if 0 != Scratch10: Goto TakeArmoryLoot
+	if ArmoryVisited has Visited: Goto TakeArmoryLoot
 	PrintClear "YOU HAVE ENTERED AN ARMORY. INSIDE IS A LARGE ASSORTMENT OF ARMOR AND WEAPONS."
 	Gosub PressToContinue
-	ArmoryVisited = ArmoryVisited | 1
+	ArmoryVisited |= Visited
 
 TakeArmoryLoot:
 	PrintClear "DO YOU WANT TO TAKE ANYTHING?"
@@ -411,7 +390,7 @@ TakeArmoryLoot:
 	Goto TakeArmoryLoot
 
 Kitchen:
-	CastleFlags2 = CastleFlags2 & 128
+	CastleFlags2 &= WritingShown
 	if 0 != CastleFlags2: Exit
 	Picture Gnoll
 	PrintClear "YOU ENTER A ROOM THAT REEKS OF SMOKE AND BURNED FOOD. YOU SEE THREE HUMAN SLAVES COOKING MEAT, PEELING POTATOES, AND BEING BEATEN BY VISCIOUS LOOKING GNOLL."
@@ -442,18 +421,16 @@ FreeSlaves:
 	LoadWalls 24 25 1
 	PrintClear "'IT IS TODAY'S PASSWORD AT THE MAIN GATE INTO THE HEDGE MAZE. ALAS, I CAN NOT HELP YOU WITH THAT FOR I HAVE NOT BEEN INSIDE. BUT I HAVE HEARD THE MAZE IS DEADLY!'"
 	Gosub PressToContinue
-	CastleFlags2 = CastleFlags2 | 128
+	CastleFlags2 |= WritingShown
 	Exit
 
 LeaveKitchen:
-	Scratch10 = CastleFlags & 1
-	if 0 == Scratch10: Goto FleeCombat
+	if CastleFlags lacks Disguised: Goto FleeCombat
 	Goto StepBack
 
 TalkOverseer:
-	Scratch10 = CastleRoomFlags & 1
-	if 0 != Scratch10: Goto BoilingOil
-	CastleRoomFlags = CastleRoomFlags | 1
+	if CastleRoomFlags has KitchenOverseer: Goto BoilingOil
+	CastleRoomFlags |= KitchenOverseer
 	PrintClear "THE OVERSEER TURNS TOWARD YOU BLUDGEON IN HAND. 'GO ON! GET OUT OF MY KITCHEN OR I'LL THROW BOILING OIL ON YOU!'"
 	Gosub PressToContinue
 	Goto KitchenMenu
@@ -465,16 +442,14 @@ BoilingOil:
 	Goto KitchenMenu
 
 ScribesHall:
-	Surprise = 0
-	Scratch10 = CastleRoomFlags & 2
-	if 0 != Scratch10: Goto SearchReports
+	Surprise = NoSurprise
+	if CastleRoomFlags has Scribes: Goto SearchReports
 	if Hours > 17: Goto EmptyScribesHall
 	if AlarmEndHour != 0: Goto EmptyScribesHall
 	PrintClear "YOU ENTER A BRIGHTLY LIT BUILDING WHICH REEKS OF TALLOW AND LEATHER. YOU SEE SIX SCRIBES BUSILY WRITING DOWN THE REPORTS OF A COUPLE OF OFFICERS."
 	Gosub PressToContinue
 	Portrait = WhiteHaired
-	Scratch10 = CastleFlags & 1
-	if 0 != Scratch10: Goto OfficerAsks
+	if CastleFlags has Disguised: Goto OfficerAsks
 	EncounterMenu Mage distance=2 body=MailCloak result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="'YOU DON'T BELONG HERE!'" escape=12 strength=12
 	Portrait = None
 	Gosub RaiseAlarm
@@ -487,7 +462,7 @@ OfficerAsks:
 
 OfficerParlay:
 	PrintClear "WHAT ARE YOU DOING HERE?"
-	Parlay 0 1 1 2 0 Scratch10
+	Scratch10 = Parlay 0 1 1 2 0
 	PrintClear ""
 	OnGosub Scratch10 AskAuthority Imposters AskPassword
 
@@ -501,15 +476,14 @@ OfficersAttack:
 	Gosub AfterCombat
 	Scratch10 = Random 4
 	if Scratch10 == 0: Gosub RaiseAlarm
-	CastleRoomFlags = CastleRoomFlags | 2
+	CastleRoomFlags |= Scribes
 	Exit
 
 EmptyScribesHall:
-	Scratch10 = CastleRoomFlags & 4
-	if 0 != Scratch10: Exit
+	if CastleRoomFlags has EmptyScriptorium: Exit
 	PrintClear "YOU ENTER A BUILDING WHICH IS FILLED WITH TABLES AND WRITING SUPPLIES. THOUGH EMPTY, THERE ARE SIGNS THAT WORK HAS BEEN DONE HERE RECENTLY."
 	Gosub PressToContinue
-	CastleRoomFlags = CastleRoomFlags | 4
+	CastleRoomFlags |= EmptyScriptorium
 	Exit
 
 SearchReports:
@@ -520,18 +494,16 @@ SearchReports:
 	Exit
 
 CadornaEvidence:
-	Scratch10 = CastleRoomFlags & 8
-	if 0 != Scratch10: Goto SearchReports
-	CastleRoomFlags = CastleRoomFlags | 8
-	if QuestCadornaTraitor != 255: QuestCadornaTraitor = 254
+	if CastleRoomFlags has CadornaEvidenceFound: Goto SearchReports
+	CastleRoomFlags |= CadornaEvidenceFound
+	if QuestCadornaTraitor != Rewarded: QuestCadornaTraitor = RewardDue
 	PrintClear "YOU FIND HARD EVIDENCE THAT CADORNA HAS BEEN USING YOU FOR HIS OWN ENDS AND HAS BEEN SEEKING THE POOL OF RADIANCE FOR HIMSELF."
 	Gosub PressToContinue
 	Exit
 
 FlamingAuraNote:
-	Scratch10 = CastleRoomFlags & 16
-	if 0 != Scratch10: Goto SearchReports
-	CastleRoomFlags = CastleRoomFlags | 16
+	if CastleRoomFlags has TyranthraxusNote: Goto SearchReports
+	CastleRoomFlags |= TyranthraxusNote
 	PrintClear "THE FOLLOWING CATCHES YOUR EYE, 'DO NOT BE FOOLED BY OUTWARD FORMS FOR YOU SHALL KNOW ME BY MY FLAMING AURA."
 	NewLine
 	Print "--TYRANTHRAXUS'"
@@ -539,9 +511,8 @@ FlamingAuraNote:
 	Exit
 
 BarbarianReport:
-	Scratch10 = CastleRoomFlags & 32
-	if 0 != Scratch10: Goto SearchReports
-	CastleRoomFlags = CastleRoomFlags | 32
+	if CastleRoomFlags has BarbarianReportSeen: Goto SearchReports
+	CastleRoomFlags |= BarbarianReportSeen
 	PrintClear "YOU FIND A REPORT INDICATING THAT THE NORTHERN BARBARIANS ARE READY FOR THE TAKE OVER OF A STRONG LEADER AND THAT THE CHIEF OF THE RAVEN CLAN IS ALLIED TO TYRANTHRAXUS."
 	Gosub PressToContinue
 	Exit
@@ -586,9 +557,7 @@ ScribeArrives:
 	Portrait = Goatee
 	SetupMonster Cleric distance=1 body=WhiteRobe
 	Portrait = None
-	Gosub RollSurprise
-	IfLt
-	Goto AmbushScribe
+	if Gosub RollSurprise then Surprise < PartyIsSurprised: Goto AmbushScribe
 	PrintClear "A SCRIBE WALKS INTO THE ROOM. HE SEES YOU AND LETS OUT A GASP. HE DROPS HIS BOOKS AND RUNS OUT THE DOOR."
 	Gosub DelayRaiseAlarm
 	Goto Done
