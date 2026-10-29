@@ -10,22 +10,18 @@ NomadEncounterMenu:
 
 GetCampState:
 	And MarkFlags4 8 Scratch10
-	IfEq
-	Goto CampNotHostile
+	if 0 == Scratch10: Goto CampNotHostile
 	Save 0 Scratch1
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Return
+	if 0 != Scratch10: Return
 	And MarkFlags4 2 Scratch10
-	IfNe
-	Save 1 Scratch1
+	if 0 != Scratch10: Save 1 Scratch1
 	Return
 
 CampNotHostile:
 	Save 2 Scratch1
 	And MarkFlags4 4 Scratch10
-	IfEq
-	Goto CampFriendlyCheck
+	if 0 == Scratch10: Goto CampFriendlyCheck
 
 CampDayCheck:
 	if Hours < 18: Save 3 Scratch1
@@ -33,8 +29,7 @@ CampDayCheck:
 
 CampFriendlyCheck:
 	And MarkFlags4 2 Scratch10
-	IfEq
-	Goto CampByStage
+	if 0 == Scratch10: Goto CampByStage
 	if Hours < 18: Save 1 Scratch1
 	Return
 
@@ -96,8 +91,7 @@ RollNomadAllies:
 	Call CallLookAhead
 	Save 0 NomadAllies
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Goto SizeKoboldBand
+	if 0 != Scratch10: Goto SizeKoboldBand
 	if Cell == 4: Goto SizeKoboldBand
 	Random 6 Scratch10
 	Add 1 Scratch10 NomadAllies
@@ -234,7 +228,7 @@ SetSky:
 
 ShowNomads:
 	Save 61 Portrait
-	SetupMonster 11 2 30
+	SetupMonster Swordsman11 2 30
 
 ApproachPause:
 	Delay
@@ -261,8 +255,7 @@ CheckLodgingExit:
 	Gosub SetSky
 	Gosub SetRestRules
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And Cell 127 Scratch1
 	if Scratch1 > 1: Exit
 	if CampStage != 1: Exit
@@ -305,8 +298,7 @@ event4:
 
 CampOutskirts:
 	And MarkFlags4 1 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	if Hours <= 14: Goto NomadsGather
 	Random 99 Scratch10
 	if Scratch10 >= 50: Goto NomadsGather
@@ -326,7 +318,7 @@ NomadFight:
 	Gosub SizeKoboldBand
 	Div Scratch9 2 Scratch9
 	ClearMonsters
-	LoadMonster 40 Scratch9 12
+	LoadMonster Nomad Scratch9 Nomad
 	Combat
 	Gosub CheckFled
 	Add NomadFightCount 1 NomadFightCount
@@ -334,7 +326,7 @@ NomadFight:
 
 NomadsHostile:
 	Save 61 Portrait
-	SetupMonster 11 2 30
+	SetupMonster Swordsman11 2 30
 	Save 255 Portrait
 	OnGoto NomadFightCount 4 NomadsSpotYou NomadsSpotYou NomadsSpotYou HeadmanRallies
 
@@ -357,10 +349,10 @@ TribeFight:
 	Save 100 Morale
 	Save 254 MonsterHit
 	ClearMonsters
-	LoadMonster 41 5 13
-	LoadMonster 42 1 11
-	LoadMonster 43 1 14
-	LoadMonster 40 49 12
+	LoadMonster ThLvlFighter41 5 ThLvlFighter
+	LoadMonster Hassad 1 Hassad
+	LoadMonster Shaman 1 Shaman
+	LoadMonster Nomad 49 Nomad
 	Treasure 0 0 0 #1388 0 0 0 255
 
 TribeCombat:
@@ -380,8 +372,7 @@ ExitToWilderness:
 	Call CallRedraw
 	Save 255 Portrait
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Goto MarkLeftCamp
+	if 0 != Scratch10: Goto MarkLeftCamp
 	And MarkFlags4 1 Scratch10
 	if Scratch10 != 1: Goto LoadWilderness
 
@@ -393,10 +384,9 @@ LoadWilderness:
 
 NomadsGather:
 	And MarkFlags4 2 Scratch10
-	IfNe
-	Goto NomadsHostile
+	if 0 != Scratch10: Goto NomadsHostile
 	Save 61 Portrait
-	SetupMonster 11 2 30
+	SetupMonster Swordsman11 2 30
 	PrintClear "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
 	Gosub ApproachPause
 	PrintClear "ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP."
@@ -406,9 +396,8 @@ NomadsGather:
 	EncounterMenu 11 0 30 Scratch10 0 1 1 1 4 "THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." "" "" 12 12
 	Save 255 Portrait
 	OnGoto Scratch10 3 Done NomadFightNoSurprise ExitToWilderness
-	Save 74 Portrait
-	Picture 30
-	SetupMonster 11 0 30
+	ShowPortrait 74 30
+	SetupMonster Swordsman11 0 30
 	Save 255 Portrait
 	PrintClear "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
 	Gosub PressToContinue
@@ -448,7 +437,7 @@ LodgingRest:
 
 MorningGreeting:
 	Save 74 Portrait
-	SetupMonster 11 2 30
+	SetupMonster Swordsman11 2 30
 	Save 255 Portrait
 	Gosub ApproachHidePortrait
 	PrintClear "THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'"
@@ -467,8 +456,7 @@ CampGames:
 	Call CallRedraw
 	PrintClear "AS NIGHT FALLS, THE NOMADS BUILD A HUGE CAMPFIRE IN THE CENTER OF THE CAMP. THE WHOLE TRIBE GATHERS FOR THE FEAST. AFTER THE FEAST THERE IS DANCING AND WILD CELEBRATIONS."
 	Gosub PressToContinue
-	Save 74 Portrait
-	Picture 30
+	ShowPortrait 74 30
 	Save 255 Portrait
 	PrintClear "DURING THE FESTIVITIES THE CHIEF (HIS TONGUE LOOSENED BY DRINK) TELLS YOU OF THE DANGERS OF THE REGION. YOU MAKE HASSAD AHWAL'S TALK ENTRY 55 IN YOUR JOURNAL."
 	Gosub PressToContinue
@@ -499,7 +487,7 @@ GuardEscort:
 
 HeadmanAsks:
 	Save 74 Portrait
-	SetupMonster 11 2 30
+	SetupMonster Swordsman11 2 30
 	Save 11 Sky
 	Gosub ApproachTwice
 	Save 3 CampStage
@@ -567,8 +555,7 @@ WalkPathToClearing:
 
 KoboldRaid:
 	And Cell 128 Scratch10
-	IfEq
-	Goto RaidCries
+	if 0 == Scratch10: Goto RaidCries
 	Sub 1 PartyY PartyY
 	Save 1 Facing
 	PrintClear "THE SOUND OF WAR CRIES DRAWS YOU OUT OF THE HUT. "
@@ -580,13 +567,12 @@ RaidCries:
 
 RaidByStage:
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Goto HostileRaid
+	if 0 != Scratch10: Goto HostileRaid
 	if Cell == 4: Goto HostileRaid
 	OnGoto KoboldRaidStage 4 KoboldHorde KoboldsMelee KoboldsMelee KoboldLeader
 
 KoboldHorde:
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	Save 1 KoboldRaidStage
 	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS."
 
@@ -606,14 +592,13 @@ KoboldFight:
 	Save 80 Morale
 	ClearMonsters
 	if NomadAllies == 0: Goto LoadKobolds
-	LoadMonster 40 NomadAllies 12
+	LoadMonster Nomad NomadAllies Nomad
 
 LoadKobolds:
-	LoadMonster 0 Scratch9 0
-	LoadMonster 123 Scratch9 0
+	LoadMonster Kobold0 Scratch9 Kobold
+	LoadMonster Kobold123 Scratch9 Kobold
 	And MarkFlags4 2 Scratch10
-	IfEq
-	Gosub MakeAlliesNomads
+	if 0 == Scratch10: Gosub MakeAlliesNomads
 	Combat
 	Gosub CheckAttackedAlly
 	if CombatEnd != 129: Goto KoboldWaveDone
@@ -626,19 +611,17 @@ KoboldWaveDone:
 	Exit
 
 KoboldsMelee:
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	PrintClear "AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. "
 	And MarkFlags4 2 Scratch10
-	IfEq
-	Goto KoboldEncounter
+	if 0 == Scratch10: Goto KoboldEncounter
 	PrintClear "THE NOMADS SEE YOU AND SHOUT, 'THE FILTHY TRAITORS! GET THEM!' THE KOBOLDS, SEEING AN OPPORTUNITY, JOIN WITH THEM."
 	Goto KoboldEncounter
 
 KoboldLeader:
 	And MarkFlags4 2 Scratch10
-	IfNe
-	Goto NomadBetrayal
-	SetupMonster 0 2 0
+	if 0 != Scratch10: Goto NomadBetrayal
+	SetupMonster Kobold 2 Kobold
 	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK."
 	Gosub PressToContinue
 	PrintClear "'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'"
@@ -649,8 +632,7 @@ KoboldLeader:
 	PrintClear "AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS."
 	Gosub PressToContinue
 	RedrawView
-	Save 74 Portrait
-	Picture 30
+	ShowPortrait 74 30
 	Save 255 Portrait
 	PrintClear "WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'"
 	Gosub PressToContinue
@@ -672,21 +654,19 @@ KoboldLeaderFight:
 	Delay
 	ClearMonsters
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Goto LoadKoboldLeader
-	LoadMonster 42 1 11
-	LoadMonster 41 2 13
+	if 0 != Scratch10: Goto LoadKoboldLeader
+	LoadMonster Hassad 1 Hassad
+	LoadMonster ThLvlFighter41 2 ThLvlFighter
 	Gosub MakeAlliesNomads
 
 LoadKoboldLeader:
 	Treasure 0 0 0 #0BB8 0 0 0 255
-	LoadMonster 0 27 0
-	LoadMonster 123 26 0
+	LoadMonster Kobold0 27 Kobold
+	LoadMonster Kobold123 26 Kobold
 	Combat
 	Gosub CheckAttackedAlly
 	And MarkFlags4 2 Scratch10
-	IfNe
-	Goto BetrayedOrFled
+	if 0 != Scratch10: Goto BetrayedOrFled
 	if CombatEnd != 129: Goto RaidWon
 
 BetrayedOrFled:
@@ -697,17 +677,14 @@ RaidWon:
 	Or MarkFlags4 8 MarkFlags4
 	Save 0 CampStage
 	And MarkFlags4 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And MarkFlags4 2 Scratch10
-	IfNe
-	Exit
-	Save 62 Portrait
-	Picture 30
+	if 0 != Scratch10: Exit
+	ShowPortrait 62 30
 	Save 255 Portrait
 	PrintClear "THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'"
 	ClearMonsters
-	Treasure 0 0 0 #1388 0 0 0 37
+	Treasure 0 0 0 #1388 0 0 0 37 // Wand of Magic Missiles, Two-Handed Sword +2
 	Combat
 	PrintClear "'NOW PLEASE LEAVE US TO OUR MOURNING. IT IS A PERSONAL THING FOR OUR PEOPLE.'"
 	Goto ExitToWilderness
@@ -717,7 +694,7 @@ HostileRaid:
 	OnGoto KoboldRaidStage 4 HostileHorde HostileBand HostileBand HostileLeader
 
 HostileHorde:
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	Save 1 KoboldRaidStage
 	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP."
 
@@ -730,15 +707,14 @@ HostileEncounter:
 	Goto KoboldRaid
 
 HostileBand:
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	PrintClear "ADVANCING ON YOU IS A LARGE BAND OF KOBOLDS WITH BLOOD LUST IN THEIR EYES."
 	Goto HostileEncounter
 
 HostileLeader:
 	And MarkFlags4 4 Scratch10
-	IfEq
-	Goto KoboldLeader
-	SetupMonster 0 2 0
+	if 0 == Scratch10: Goto KoboldLeader
+	SetupMonster Kobold 2 Kobold
 	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER."
 	Gosub PressToContinue
 	Gosub KoboldEncounterMenu
@@ -748,7 +724,7 @@ HostileLeader:
 
 NomadBetrayal:
 	Save 74 Portrait
-	SetupMonster 11 2 30
+	SetupMonster Swordsman11 2 30
 	PrintClear "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
 	Gosub PressToContinue
 	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
@@ -761,10 +737,10 @@ BetrayalFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 41 5 13
-	LoadMonster 42 1 11
-	LoadMonster 43 1 14
-	LoadMonster 123 49 0
+	LoadMonster ThLvlFighter41 5 ThLvlFighter
+	LoadMonster Hassad 1 Hassad
+	LoadMonster Shaman 1 Shaman
+	LoadMonster Kobold123 49 Kobold
 	Save 255 MonsterHit
 	Or MarkFlags4 8 MarkFlags4
 	Treasure 0 0 0 #1F40 0 0 0 255

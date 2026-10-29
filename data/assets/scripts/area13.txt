@@ -71,7 +71,7 @@ MineTailings:
 
 KoboldTruce:
 	if KoboldTruceState != 0: Goto DeadfallTrap
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	Save 1 KoboldTruceState
 	PrintClear "A KOBOLD APPROACHES WAVING A WHITE FLAG."
 	Delay
@@ -90,13 +90,13 @@ TruceAgreed:
 	OnGoto Scratch1 3 FollowGuide TruceRefused KoboldCriesOut
 
 TruceRefused:
-	Picture 255
+	Picture None
 	PrintClear "THE KOBOLD RETREATS, THEN STRIKES THE WALL."
 	Gosub PressReturn
 	Goto RoofCollapses
 
 KoboldCriesOut:
-	Picture 255
+	Picture None
 	PrintClear "THE KOBOLD CRIES OUT, 'I'LL NOT GO ALONE!'"
 	Gosub PressReturn
 	Goto RoofCollapses
@@ -109,7 +109,7 @@ DeadfallTrap:
 RoofCollapses:
 	PrintClear "THE ROOF COLLAPSES."
 	Damage 192 2 6 0 1
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	PrintClear "BEFORE YOU RECOVER, KOBOLDS ARRIVE."
 	Save 25 Morale
 	Save 1 Surprise
@@ -117,7 +117,7 @@ RoofCollapses:
 	Save 254 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster 0 20 0
+	LoadMonster Kobold0 20 Kobold
 	Combat
 	Save 2 KoboldTruceState
 	if CombatEnd > 128: Goto EscapeKobolds
@@ -137,7 +137,7 @@ NetTrap:
 	if 1 == NetTrapDone: Exit
 	Gosub CheckTrap
 	if Scratch10 == 1: Goto DisarmNet
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	PrintClear "A NET ENTANGLES YOU."
 	Save 50 Morale
 	Save 1 Surprise
@@ -145,7 +145,7 @@ NetTrap:
 	Save 254 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster 0 20 0
+	LoadMonster Kobold0 20 Kobold
 	Combat
 	Save 1 NetTrapDone
 	if CombatEnd > 128: Goto EscapeKobolds
@@ -173,7 +173,7 @@ DisarmSpikes:
 
 DrunkenKobold:
 	if 0 != KoboldKingState || 255 != DrunkKoboldState: Exit
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	PrintClear "A DRUNKEN KOBOLD LIES HERE."
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "SLIP PAST" "WAKE IT" "KILL IT"
@@ -216,19 +216,19 @@ ThroneRoom:
 KoboldHorde:
 	Save 0 Facing
 	Call CallRedraw
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	PrintClear "BEFORE YOU IS A HORDE OF KOBOLDS. BEHIND THEM ARE TWO MEN AND AN ANCIENT KOBOLD ON A WOODEN THRONE."
 	Approach
 	Gosub PressReturn
 	PrintClear "ONE SAYS,'THESE MEN ARE ENEMIES. DEFEAT THEM AND MY LORD SHALL BE MOST GENEROUS.' THE KING LOOKS AT HIM, AND THEN AT YOU. HE SMILES AND SCREAMS, 'KILL THEM!'"
 
 FightHorde:
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	Save 70 Morale
 	ClearMonsters
-	LoadMonster 31 4 31
-	LoadMonster 0 35 0
-	LoadMonster 1 11 1
+	LoadMonster Troll 4 Troll
+	LoadMonster Kobold0 35 Kobold
+	LoadMonster KoboldLeader1 11 KoboldLeader
 	Save PartyCount Scratch2
 	Add 4 PartyCount Scratch3
 
@@ -244,13 +244,13 @@ MakeMembersHostile:
 BallistaFire:
 	PrintClear "THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE."
 	Damage 7 2 6 0 57
-	SetupMonster 0 1 0
+	SetupMonster Kobold 1 Kobold
 	Approach
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster 120 5 120
-	LoadMonster 0 45 0
-	LoadMonster 1 8 1
+	LoadMonster WildBoar 5 WildBoar
+	LoadMonster Kobold0 45 Kobold
+	LoadMonster KoboldLeader1 8 KoboldLeader
 	Combat
 	Save 2 KoboldKingState
 	if CombatEnd > 128: Goto OfferSurrender
@@ -265,14 +265,14 @@ EnvoysRematch:
 
 FightEnvoys:
 	Save 69 Portrait
-	SetupMonster 16 1 1
+	SetupMonster Fighter16 1 1
 	Approach
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 31 2 31
-	LoadMonster 120 2 120
-	LoadMonster 0 8 0
-	LoadMonster 87 2 11
+	LoadMonster Troll 2 Troll
+	LoadMonster WildBoar 2 WildBoar
+	LoadMonster Kobold0 8 Kobold
+	LoadMonster Envoy 2 11
 	Combat
 	Save 255 Portrait
 	Save 3 KoboldKingState
@@ -329,13 +329,13 @@ Done:
 KingsQuarters:
 	if KoboldKingState != 4: Exit
 	PrintClear "YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS."
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 31 3 31
-	LoadMonster 120 3 120
-	LoadMonster 0 20 0
-	LoadMonster 1 4 1
+	LoadMonster Troll 3 Troll
+	LoadMonster WildBoar 3 WildBoar
+	LoadMonster Kobold0 20 Kobold
+	LoadMonster KoboldLeader1 4 KoboldLeader
 	Combat
 	Save 5 KoboldKingState
 	Exit
@@ -358,7 +358,7 @@ BrassBottle:
 
 PullBottle:
 	PrintClear "AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID."
-	SetupMonster 70 0 70
+	SetupMonster Efreeti 0 Efreeti
 	PrintClear "'I AM THE EFREETI SAMIR AHWAHL. YOU ARE NOT MY MASTER. ARE YOU, PERCHANCE, VAMPIRES?'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "YES" "NO" "ATTACK IT"
@@ -370,7 +370,7 @@ EfreetiReturns:
 	Call CallRedraw
 	Delay
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 50
+	Treasure 0 0 0 0 0 0 0 50 // Efreeti Bottle
 	Combat
 	Save 1 EfreetiBottleDone
 	Exit
@@ -381,7 +381,7 @@ EfreetiAttacks:
 FightEfreeti:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 124 1 70
+	LoadMonster Efreeti124 1 Efreeti
 	Combat
 	Save 1 EfreetiBottleDone
 	Exit
@@ -404,7 +404,7 @@ FatimaRoom:
 
 MeetFatima:
 	Save 67 Portrait
-	SetupMonster 16 0 37
+	SetupMonster Fighter16 0 37
 	PrintClear "IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU."
 	Gosub PressReturn
 	PrintClear "'I AM PRINCESS FATIMA.' THE PRINCESS CONTINUES."
@@ -419,7 +419,7 @@ MeetFatima:
 AttackFatima:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 104 1 11
+	LoadMonster PrincessFatima 1 11
 	Combat
 	Save 1 FatimaMet
 	Save 255 Portrait
@@ -438,10 +438,9 @@ FatimaGoesAlone:
 	Exit
 
 AddFatima:
-	AddNPC 104 100
+	AddNPC PrincessFatima 100
 	Save 1 FatimaMet
-	Save 255 Portrait
-	Picture 255
+	ShowPortrait 255 255
 	Exit
 
 PrisonCell:
@@ -480,7 +479,7 @@ WyvernLands:
 	PrintClear "THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU."
 	Save 1 Facing
 	Call CallRedraw
-	SetupMonster 121 2 121
+	SetupMonster Wyvern 2 Wyvern
 	Delay
 	Approach
 	Delay
@@ -489,14 +488,14 @@ WyvernLands:
 	Save 1 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 121 1 121
+	LoadMonster Wyvern 1 Wyvern
 	Combat
 	Save 1 WyvernState
 	Exit
 
 WyvernCharges:
 	if WyvernState != 0: Exit
-	SetupMonster 121 2 121
+	SetupMonster Wyvern 2 Wyvern
 	PrintClear "BEFORE YOU LIES A HUGE WYVERN. IT RISES UP AND CHARGES."
 	Approach
 	Delay
@@ -504,7 +503,7 @@ WyvernCharges:
 	Gosub PressReturn
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 121 1 121
+	LoadMonster Wyvern 1 Wyvern
 	Combat
 	Save 1 WyvernState
 	Exit
@@ -562,7 +561,7 @@ WyvernNest:
 	if WyvernState != 1: Exit
 	PrintClear "AMONGST A NEST OF LOGS YOU FIND SOME TREASURE."
 	ClearMonsters
-	Treasure 0 #03E8 #01F4 #03E8 0 2 2 130
+	Treasure 0 #03E8 #01F4 #03E8 0 2 2 130 // 2 random items
 	Combat
 	Save 2 WyvernState
 	Exit
@@ -571,7 +570,7 @@ KoboldHoard:
 	if KoboldKingState != 6: Exit
 	PrintClear "STREWN ACROSS THE FLOOR IS THE ACCUMULATED WEALTH OF THE KOBOLD COMMUNITY."
 	ClearMonsters
-	Treasure #C350 0 0 0 0 6 2 43
+	Treasure #C350 0 0 0 0 6 2 43 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, 25 Dust Covered Boots, 5 Rotting Leather Saddle, Silver Brooch, 6 Fungus Covered Tapestry, and 4 more
 	Combat
 	Save 7 KoboldKingState
 	Exit
@@ -619,7 +618,7 @@ TrapBackOff:
 	Exit
 
 FollowGuide:
-	Picture 255
+	Picture None
 	Save 0 Scratch6
 
 GuideStep:
@@ -634,11 +633,11 @@ GuideStep:
 
 WalkSteps:
 	Save 1 Scratch2
-	if Scratch1 == 0: Call CallRedraw
-	IfEq
-	Delay
-	IfEq
-	Return
+	if Scratch1 == 0 {
+		Call CallRedraw
+		Delay
+		Return
+	}
 
 WalkStepLoop:
 	if Scratch2 > Scratch1: Return
@@ -733,11 +732,11 @@ PrisonWalkStep:
 ReachPrison:
 	if 1 == FatimaMet: Goto ThrownInCell
 	Save 67 Portrait
-	SetupMonster 0 0 37
+	SetupMonster Kobold 0 37
 	PrintClear "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
-	AddNPC 104 100
+	AddNPC PrincessFatima 100
 	ClearMonsters
-	LoadMonster 0 10 0
+	LoadMonster Kobold0 10 Kobold
 	Combat
 	Save 255 Portrait
 	if PartyCount == 8: Goto FatimaJournal
@@ -764,7 +763,7 @@ KoboldAmbush:
 	if 1 != Search: Add 40 Scratch1 Scratch1
 	Random Scratch1 Scratch2
 	if 1 != Scratch2: Exit
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	PrintClear "KOBOLDS SEEM TO BOIL UP FROM NOWHERE."
 	Gosub PressReturn
 	Save 30 Morale
@@ -772,8 +771,8 @@ KoboldAmbush:
 	Save 252 PartyMove
 	Save 254 PartyHit
 	ClearMonsters
-	LoadMonster 0 15 0
-	LoadMonster 1 3 1
+	LoadMonster Kobold0 15 Kobold
+	LoadMonster KoboldLeader1 3 KoboldLeader
 	Combat
 	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
@@ -792,12 +791,12 @@ RestRareEncounter:
 
 event3:
 	Save 0 RestChance
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	PrintClear "KOBOLDS APPEAR AND BOMBARD YOU WITH ROCKS."
 	Damage 7 1 4 1 50
 	RedrawView
 	Call CallRedraw
-	Picture 255
+	Picture None
 	Exit
 
 WhatDoYouDo:

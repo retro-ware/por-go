@@ -31,7 +31,7 @@ StayOutside:
 
 event1:
 	PrintClear ""
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	And 127 Cell Scratch10
 	if TourDone < 1: Exit
@@ -94,7 +94,7 @@ CellDispatch:
 PierBoat:
 	if BoatPassageBought == 0: Exit
 	if Hours > 14: Goto BoardBoat
-	Picture 41
+	Picture Ship
 
 BoardBoat:
 	Save 1 LeavingTown
@@ -121,8 +121,7 @@ SailToArea27:
 HarborMaster:
 	if Facing != 0: Exit
 	if BoatPassageBought == 1: Exit
-	Save 16 Portrait
-	Picture 7
+	ShowPortrait 16 7
 	if QuestSokalKeep < 254: Goto OnlyBoatOut
 	PrintClear "THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'"
 	HMenu BoatDestination 5 "SOKAL" "EAST" "WEST" "BAY" "NONE"
@@ -132,13 +131,13 @@ BuyPassage:
 	Gosub PayPlatinum
 	Save 1 BoatPassageBought
 	PrintClear "'CATCH THE BOAT AT THE END OF THE PIER.'"
-	Picture 255
+	Picture None
 	Exit
 
 OnlyBoatOut:
 	PrintClear "'BY ORDER OF THE CITY COUNCIL,' THE HARBOR MASTER SAYS, 'THE ONLY BOAT OUT IS GOING TO SOKAL KEEP.  YOU CAN CATCH IT AT THE END OF THE PIER.'"
 	Gosub PressReturn
-	Picture 255
+	Picture None
 	Save 0 BoatDestination
 	Save 1 BoatPassageBought
 	Exit
@@ -153,26 +152,22 @@ TempleOfBaneEvent:
 	if DirtenState == 255: Exit
 	if BishopSummons == 254: Goto BishopAudience
 	if DirtenState == 128: Goto BishopAudience
-	Save 8 Portrait
-	Picture 4
+	ShowPortrait 8 4
 	PrintClear "THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?"
 	HMenu AuxMenuChoice 2 "LEAVE" "FORCE YOUR WAY PAST"
 	OnGoto AuxMenuChoice 2 LeaveBishop WatchResponds
 
 BishopAudience:
 	if DirtenState == 128: Goto DirtenStudy
-	Save 13 Portrait
-	Picture 1
+	ShowPortrait 13 1
 	PrintClear "YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR."
 	Gosub PressReturn
-	Save 0 Portrait
-	Picture 4
+	ShowPortrait 0 4
 	PrintClear "'HE IS BOUND TO RECOVER THE TEMPLE WHICH HAS BEEN DESECRATED TO BANE.  GO WITH HIM ACROSS THE RIVER AND HELP HIM TO CLEANSE THE TEMPLE.  IN PAYMENT, YOU MAY KEEP THE HIDDEN TREASURES.'"
 	Goto AccompanyDirtenAsk
 
 DirtenStudy:
-	Save 0 Portrait
-	Picture 4
+	ShowPortrait 0 4
 	PrintClear "YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'"
 
 AccompanyDirtenAsk:
@@ -184,13 +179,13 @@ AccompanyDirtenAsk:
 
 DirtenJoins:
 	Gosub CheckPartySize
-	AddNPC 107 99
+	AddNPC Dirten 99
 	Save 255 DirtenState
-	Picture 255
+	Picture None
 	Return
 
 DeclineDirten:
-	Picture 255
+	Picture None
 	Exit
 
 LeaveBishop:
@@ -199,8 +194,7 @@ LeaveBishop:
 	Exit
 
 TempleOfTyr:
-	Save 34 Portrait
-	Picture 2
+	ShowPortrait 34 2
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE PRIESTS OF TYR WELCOME YOU TO THE TEMPLE."
 	Save "MAD MAN" $AuxText
@@ -209,8 +203,7 @@ TempleOfTyr:
 	Goto SeekHealingAsk
 
 TempleOfSune:
-	Save 22 Portrait
-	Picture 24
+	ShowPortrait 22 24
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE."
 	Goto SeekHealingAsk
@@ -227,8 +220,7 @@ StojanowRiver:
 
 InnRest:
 	if TrainerVisited != 0: Exit
-	Save 45 Portrait
-	Picture 24
+	ShowPortrait 45 24
 	if FoughtWatch != 0: Goto RefuseService
 	PrintClear "'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'"
 	Gosub YesNoMenu
@@ -238,7 +230,7 @@ PayForRest:
 	Gosub PayPlatinum
 	Gosub SetNoRest
 	Program 9
-	Picture 255
+	Picture None
 	Exit
 
 PayPlatinum:
@@ -259,7 +251,7 @@ CheckPlatinum:
 NotEnoughPlatinum:
 	PrintClear "YOU DON'T HAVE ENOUGH PLATINUM."
 	Delay
-	Picture 255
+	Picture None
 	Exit
 
 ToArea11A:
@@ -271,20 +263,19 @@ ToArea11B:
 GeneralShop:
 	Gosub EnterBuildingOnce
 	if FoughtWatch > 0: Goto RefuseService
-	Save 42 Portrait
-	Picture 9
+	ShowPortrait 42 9
 	PrintClear "THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 GeneralShopBrowse ResetVisits
 
 GeneralShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 54
+	Treasure 0 0 0 0 0 0 0 54 // Holy Water vial, Silver Holy Symbol Of Sune, Iron Holy Symbol Of Tempus, Wooden Holy Symbol Of Tyr, Flask of Oil, Silver Mirror, and 1 more
 	Save 1 Shop
 	Save 1 ShopFlag
 	Save 16 ShopKind
 	Combat
-	Picture 255
+	Picture None
 	Exit
 
 TavernEnter:
@@ -308,7 +299,7 @@ TavernEvent:
 		PrintClear "YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET."
 		Gosub PressReturn
 	}
-	Picture 255
+	Picture None
 	PrintClear " DOES ANYONE WANT TO GAMBLE?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 GamblerGame TavernTale
@@ -324,8 +315,7 @@ TavernTale:
 	Exit
 
 GamblerGame:
-	Save 8 Portrait
-	Picture 7
+	ShowPortrait 8 7
 	PrintClear "'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'"
 	Gosub PressReturn
 	Who "WHO WILL GAMBLE?"
@@ -379,7 +369,7 @@ WagerRefused:
 
 DrunkenBrawl:
 	Save 53 Portrait
-	SetupMonster 7 2 7
+	SetupMonster Fighter7 2 7
 	PrintClear "A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE."
 	Gosub PressReturn
 	Random 1 AuxMonster
@@ -424,8 +414,7 @@ BrawlFight:
 
 ArmorShop:
 	Gosub EnterBuildingOnce
-	Save 63 Portrait
-	Picture 34
+	ShowPortrait 63 34
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
 	Gosub YesNoMenu
@@ -433,18 +422,17 @@ ArmorShop:
 
 ArmorShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 52
+	Treasure 0 0 0 0 0 0 0 52 // Brass Dragon Figurine, Gold Chain, Pearl Necklace, Gold Lightning Figurine, Jewelled Silver Wings, Silver Dragon Statuette, and 5 more
 	Save 1 Shop
 	Save 1 ShopFlag
 	Save 16 ShopKind
 	Combat
-	Picture 255
+	Picture None
 	Exit
 
 WeaponShop:
 	Gosub EnterBuildingOnce
-	Save 42 Portrait
-	Picture 9
+	ShowPortrait 42 9
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'"
 	Gosub YesNoMenu
@@ -452,19 +440,18 @@ WeaponShop:
 
 WeaponShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 53
+	Treasure 0 0 0 0 0 0 0 53 // Shield, Plate Mail, Banded Mail, Splint Mail, Chain Mail, Scale Mail, and 51 more
 	Save 1 Shop
 	Save 1 ShopFlag
 	Save 16 ShopKind
 	Combat
-	Picture 255
+	Picture None
 	Exit
 
 SilverShop:
 	if Building2Entered != 0: Exit
 	Save 1 Building2Entered
-	Save 63 Portrait
-	Picture 34
+	ShowPortrait 63 34
 	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'"
 	Gosub YesNoMenu
@@ -472,18 +459,17 @@ SilverShop:
 
 SilverShopBrowse:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 55
+	Treasure 0 0 0 0 0 0 0 55 // Fine Composite Long Bow, Silver Ring, Silver Plate Mail, Silver Chain Mail, Silver Quarrel, 20 Silver Arrow, and 7 more
 	Save 1 Shop
 	Save 1 ShopFlag
 	Save 16 ShopKind
 	Combat
-	Picture 255
+	Picture None
 	Exit
 
 HealerTemple:
 	if Combat1Won != 0: Exit
-	Save 57 Portrait
-	Picture 1
+	ShowPortrait 57 1
 	if FoughtWatch > 0: Goto WatchFightsBack
 	PrintClear "THE PRIESTS OF TEMPUS BID YOU WELCOME."
 	Goto SeekHealingAsk
@@ -505,18 +491,17 @@ TempleHealing:
 	ClearMonsters
 	Save 1 Temple
 	Combat
-	Save 255 Portrait
-	Picture 255
+	ShowPortrait 255 255
 	Exit
 
 WatchFightsBack:
-	SetupMonster 16 0 1
+	SetupMonster Fighter16 0 1
 	PrintClear "YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!"
 	Save 99 Morale
 	ClearMonsters
-	LoadMonster 83 12 12
-	LoadMonster 41 20 11
-	LoadMonster 85 20 16
+	LoadMonster ThLvlCleric 12 12
+	LoadMonster ThLvlFighter41 20 11
+	LoadMonster ThLvlFighter85 20 ThLvlFighter
 	Combat
 	if CombatEnd == 1: Save 1 Combat1Won
 	Exit
@@ -615,10 +600,10 @@ FightWatch:
 	Save 0 WatchCombatDone0
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster 94 2 14
-	LoadMonster 84 12 16
-	LoadMonster 53 12 11
-	LoadMonster 40 12 15
+	LoadMonster Level3Mu 2 Level3Mu
+	LoadMonster ThLvlFighter84 12 ThLvlFighter
+	LoadMonster Aides 12 11
+	LoadMonster Nomad 12 Nomad
 	Combat
 	Save 1 WatchCombatDone0
 	Gosub AfterWatchFight
@@ -638,7 +623,7 @@ ResetVisits:
 	Save 0 BuildingEntered
 	Save 0 TavernEntered
 	Save 0 Building2Entered
-	Picture 255
+	Picture None
 	Exit
 
 EnterBuildingOnce:
@@ -654,7 +639,7 @@ CheckPartySize:
 	if PartyCount < 8: Return
 	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
 	Gosub PressReturn
-	Picture 255
+	Picture None
 	Exit
 
 RunAway:
@@ -672,7 +657,7 @@ PressReturn:
 
 WatchApproaches:
 	Save 9 Portrait
-	SetupMonster 27 2 7
+	SetupMonster Swordsman27 2 7
 	Delay
 	Approach
 	Delay
@@ -718,7 +703,7 @@ CityTour:
 	Save 3 Facing
 	Call CallRedraw
 	Save 8 Portrait
-	SetupMonster 12 2 9
+	SetupMonster Man12 2 9
 	Delay
 	Approach
 	Delay

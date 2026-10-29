@@ -80,17 +80,8 @@ func (e *Engine) loadScript(area int) {
 
 func (e *Engine) parseScriptFile(area int) (*Script, error) {
 	dir := e.scriptDir()
-	if e.scriptNames == nil {
-		e.scriptNames = ScriptVarNames()
-		if err := ReadScriptNames(filepath.Join(dir, "names", "global.txt"), e.scriptNames); err != nil {
-			return nil, err
-		}
-	}
-	names := map[int]string{}
-	for a, n := range e.scriptNames {
-		names[a] = n
-	}
-	if err := ReadScriptNames(filepath.Join(dir, "names", fmt.Sprintf("area%d.txt", area)), names); err != nil {
+	names, err := ReadAreaNames(dir, area, false)
+	if err != nil {
 		return nil, err
 	}
 	path := filepath.Join(dir, fmt.Sprintf("area%d.txt", area))
@@ -98,15 +89,7 @@ func (e *Engine) parseScriptFile(area int) (*Script, error) {
 	if err != nil {
 		return nil, err
 	}
-	vars := map[string]int{}
-	for a, n := range names {
-		vars[n] = a
-	}
-	areas, err := ReadScriptAreas(filepath.Join(dir, "names", "areas.txt"))
-	if err != nil {
-		return nil, err
-	}
-	s, err := ParseScript(string(b), vars, areas)
+	s, err := ParseScript(string(b), names)
 	if err != nil {
 		return nil, fmt.Errorf("%s:%v", path, err)
 	}
@@ -114,8 +97,44 @@ func (e *Engine) parseScriptFile(area int) (*Script, error) {
 	return s, nil
 }
 
-// ParseScript parses a script; vars are the variables' addresses by name.
-func ParseScript(text string, vars map[string]int, areas []ScriptArea) (*Script, error) {
+// ReadAreaNames reads area's names from the names files in the scripts
+// folder dir: the variables (with labels, the labels and tables too), the
+// areas and the values.
+func ReadAreaNames(dir string, area int, labels bool) (*ScriptNames, error) {
+	n := &ScriptNames{Vars: ScriptVarNames()}
+	files := []string{"global.txt", fmt.Sprintf("area%d.txt", area)}
+	if labels {
+		files = append(files, fmt.Sprintf("labels/area%d.txt", area))
+	}
+	for _, f := range files {
+		if err := ReadScriptNames(filepath.Join(dir, "names", f), n.Vars); err != nil {
+			return nil, err
+		}
+	}
+	var err error
+	if n.Areas, err = ReadScriptAreas(filepath.Join(dir, "names", "areas.txt")); err != nil {
+		return nil, err
+	}
+	for _, a := range n.Areas {
+		if a.ID == area {
+			n.Set = a.Set
+		}
+	}
+	for _, f := range []string{"values.txt", "pictures.txt"} {
+		if n.Values, err = ReadScriptValues(filepath.Join(dir, "names", f), n.Values); err != nil {
+			return nil, err
+		}
+	}
+	return n, nil
+}
+
+// ParseScript parses a script.
+func ParseScript(text string, names *ScriptNames) (*Script, error) {
+	vars := map[string]int{}
+	for a, n := range names.Vars {
+		vars[n] = a
+	}
+	areas := names.Areas
 	s := &Script{Labels: map[string]int{}, At: map[int]string{}}
 	tables := map[string]int{}
 	ops := map[string]byte{}
@@ -133,7 +152,7 @@ func ParseScript(text string, vars map[string]int, areas []ScriptArea) (*Script,
 			return nil, fmt.Errorf("%s is an area and a variable", a.Name)
 		}
 	}
-	src, err := unfoldScript(text, areas)
+	src, err := unfoldScript(text, names)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +210,18 @@ func ParseScript(text string, vars map[string]int, areas []ScriptArea) (*Script,
 		}
 	}
 	for i, p := range todo {
-		for _, t := range p.args {
+		for j, t := range p.args {
+			kind := ""
+			if k := operandKinds[eclOpName(s.Code[i].Op)]; j < len(k) {
+				kind = k[j]
+			}
+			if v, ok := valueOf(names.Values, kind, names.Set, t); ok {
+				if _, clash := vars[t]; clash {
+					return nil, fmt.Errorf("%d: %s is a %s and a variable", p.line, t, kind)
+				}
+				s.Code[i].Args = append(s.Code[i].Args, Arg{Type: 0, N: v})
+				continue
+			}
 			a, err := scriptArg(t, s.Labels, tables, vars, areas)
 			if err != nil {
 				return nil, fmt.Errorf("%d: %v", p.line, err)
@@ -317,6 +347,15 @@ func ReadScriptNames(path string, names map[int]string) error {
 		names[int(a)] = fs[1]
 	}
 	return sc.Err()
+}
+
+// ScriptNames are the names a script's words stand for.
+type ScriptNames struct {
+	Vars     map[int]string // variables (and, for cmd/eclscript, labels and tables) by address
+	Areas    []ScriptArea
+	Values   []ScriptValue
+	Set      int                    // the area's data set
+	Treasure func(block int) string // an ITEM block's items, for cmd/eclscript's comments
 }
 
 // ScriptArea is one area of names/areas.txt.

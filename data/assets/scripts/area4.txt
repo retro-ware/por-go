@@ -1,8 +1,7 @@
 RollSurprise:
 	PartySurprise Scratch8 Scratch9
 	And CastleFlags 1 Scratch10
-	IfNe
-	Add 1 Scratch9 Scratch9
+	if 0 != Scratch10: Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
 	if AlarmEndHour != 0: And Surprise 1 Surprise
 	if Surprise == 3: Save 0 Surprise
@@ -65,8 +64,7 @@ event0:
 	Gosub SetSky
 	And CastleRoomFlags 127 CastleRoomFlags
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	And CastleFlags 254 CastleFlags
+	if 0 != Scratch10: And CastleFlags 254 CastleFlags
 	if LeftMap == 0: Exit
 	Call CallStepForward
 	Save 255 HoldMove
@@ -77,13 +75,11 @@ event1:
 	IfLt
 	Goto RoomEvents
 	And Cell 64 Scratch10
-	IfNe
-	Goto RoomEvents
+	if 0 != Scratch10: Goto RoomEvents
 	Save 2 Scratch1
 	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
-	IfNe
-	Add Scratch1 Scratch1 Scratch1
+	if 0 != Scratch10: Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch10
 	if Scratch10 == 0: Goto event3
 
@@ -96,8 +92,7 @@ event2:
 	Save 10 RestChance
 	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 1 RestEvery
 	Save 17 RestChance
 
@@ -133,18 +128,16 @@ StepBack:
 event3:
 	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
 	Save 9 Portrait
-	SetupMonster 16 2 1
+	SetupMonster Fighter16 2 1
 	Gosub RollSurprise
 	IfNe
 	Goto PatrolSighted
 	PrintClear $AuxEncText
 	Print " SURPRISES YOU."
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	Goto BlasphemersAttack
+	if 0 != Scratch10: Goto BlasphemersAttack
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto PatrolQuestions
+	if 0 != Scratch10: Goto PatrolQuestions
 	Print " 'THAT'S THEM! GET THEM!'"
 	Goto PatrolAdvances
 
@@ -157,15 +150,13 @@ PatrolSighted:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	And BaneTempleFlags 3 Scratch10
-	IfEq
-	Goto PatrolNoAlarm
+	if 0 == Scratch10: Goto PatrolNoAlarm
 	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
 	Goto PatrolAdvances
 
 PatrolNoAlarm:
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto PatrolQuestions
+	if 0 != Scratch10: Goto PatrolQuestions
 
 PatrolSeesYou:
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
@@ -194,8 +185,8 @@ PatrolFight:
 	Save 60 Morale
 	Save 255 Portrait
 	ClearMonsters
-	LoadMonster 75 1 11
-	LoadMonster 55 5 55
+	LoadMonster ThLvlFighter75 1 ThLvlFighter
+	LoadMonster HillGiant 5 HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit
@@ -231,16 +222,15 @@ Imposters:
 
 ArmedManAttacks:
 	And CastleFlags2 8 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 52 Portrait
-	SetupMonster 16 0 1
+	SetupMonster Fighter16 0 1
 	Save 255 Portrait
 	PrintClear "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
 	Gosub DelayRaiseAlarm
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster 84 1 11
+	LoadMonster ThLvlFighter84 1 ThLvlFighter
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 8 CastleFlags2
@@ -248,12 +238,10 @@ ArmedManAttacks:
 
 FighterBuilding:
 	And CastleFlags2 8 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	if AlarmEndHour != 0: Goto DoorSlams
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto FighterConfronts
+	if 0 != Scratch10: Goto FighterConfronts
 
 DoorSlams:
 	PrintClear "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
@@ -283,20 +271,19 @@ FighterHitsButton:
 FighterFight:
 	Save 50 Morale
 	And CastleFlags2 16 Scratch10
-	IfNe
-	Goto LoadFighter
+	if 0 != Scratch10: Goto LoadFighter
 	PrintClear "AS YOU START TO ATTACK HIM, FOUR GIANTS BURST OUT OF A NEARBY BUILDING."
 
 LoadFighter:
 	ClearMonsters
-	LoadMonster 84 1 11
-	if Scratch10 == 0: LoadMonster 56 4 56
+	LoadMonster ThLvlFighter84 1 ThLvlFighter
+	if Scratch10 == 0: LoadMonster FireGiant 4 FireGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 8 CastleFlags2
 	Or CastleFlags2 16 CastleFlags2
 	Save 9 Portrait
-	SetupMonster 16 2 1
+	SetupMonster Fighter16 2 1
 	PrintClear "A PATROL ROUNDS THE CORNER.."
 	Goto PatrolSeesYou
 
@@ -306,18 +293,17 @@ FighterRetreats:
 
 FourGiantsCharge:
 	And CastleFlags2 16 Scratch10
-	IfNe
-	Goto Done
+	if 0 != Scratch10: Goto Done
 	PrintClear "A GROUP OF FOUR GIANTS CHARGE OUT OF A NEARBY BUILDING."
 	Gosub PressToContinue
-	Picture 255
+	Picture None
 	EncounterMenu 56 2 56 Scratch10 0 0 0 1 0 "THEY COME RUNNING TOWARD YOU." "" "" 12 12
 	OnGoto Scratch10 3 Done GiantsFight FleeCombat
 
 GiantsFight:
 	ClearMonsters
 	Save 80 Morale
-	LoadMonster 56 4 56
+	LoadMonster FireGiant 4 FireGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 16 CastleFlags2
@@ -326,16 +312,13 @@ GiantsFight:
 PigstyBarracks:
 	PrintClear "YOU ENTER A ROOM THAT MORE RESEMBLES A PIGSTY THAN THE BARRACKS IT IS. "
 	And CastleRoomFlags 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And CastleFlags2 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Print "IN THE ROOM ARE FOUR GIANTS."
 	Gosub PressToContinue
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto BarracksGiants
+	if 0 != Scratch10: Goto BarracksGiants
 	if AlarmEndHour != 0: Goto ThemIntruders
 
 BarracksGiants:
@@ -403,8 +386,7 @@ ThemIntruders:
 
 PaperOnGround:
 	And CastleFlags2 32 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And CastleFlags2 16 Scratch10
 	if Scratch10 != 16 || Search != 1: Exit
 	PrintClear "ON THE GROUND YOU FIND A PEACE OF PAPER THAT SAYS:"
@@ -412,8 +394,7 @@ PaperOnGround:
 
 Armory:
 	And ArmoryVisited 1 Scratch10
-	IfNe
-	Goto TakeArmoryLoot
+	if 0 != Scratch10: Goto TakeArmoryLoot
 	PrintClear "YOU HAVE ENTERED AN ARMORY. INSIDE IS A LARGE ASSORTMENT OF ARMOR AND WEAPONS."
 	Gosub PressToContinue
 	Or ArmoryVisited 1 ArmoryVisited
@@ -424,15 +405,14 @@ TakeArmoryLoot:
 	IfNe
 	Exit
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 33
+	Treasure 0 0 0 0 0 0 0 33 // Sling, Shield, Plate Mail, Banded Mail, Splint Mail, Chain Mail, and 52 more
 	Combat
 	Goto TakeArmoryLoot
 
 Kitchen:
 	And CastleFlags2 128 CastleFlags2
-	IfNe
-	Exit
-	Picture 73
+	if 0 != CastleFlags2: Exit
+	Picture Gnoll
 	PrintClear "YOU ENTER A ROOM THAT REEKS OF SMOKE AND BURNED FOOD. YOU SEE THREE HUMAN SLAVES COOKING MEAT, PEELING POTATOES, AND BEING BEATEN BY VISCIOUS LOOKING GNOLL."
 	Gosub PressToContinue
 
@@ -444,7 +424,7 @@ FreeSlaves:
 	PrintClear "THE GNOLL TURNS TO FLEE. AS HE RUNS BY, ONE OF THE SLAVES TRIPS HIM. YOU ADVANCE AND CUT THE OVERSEER'S THROAT."
 	Gosub PressToContinue
 	RedrawView
-	Picture 255
+	Picture None
 	PrintClear "TWO OF THE SLAVES RUN QUICKLY OUT THE DOOR. THE THIRD APPROACHES YOU WITH TEARS OF GRATITUDE IN HIS EYES. 'I THANK YOU FOR FREEING ME. "
 	Gosub PressToContinue
 	PrintClear "BEFORE I LEAVE LET ME HELP YOU AS BEST I CAN.' HE TAKES A SLIP OF PAPER FROM THE POUCH OF THE DEAD GNOLL. 'HERE, YOU WILL NEED THIS.'"
@@ -465,14 +445,12 @@ FreeSlaves:
 
 LeaveKitchen:
 	And CastleFlags 1 Scratch10
-	IfEq
-	Goto FleeCombat
+	if 0 == Scratch10: Goto FleeCombat
 	Goto StepBack
 
 TalkOverseer:
 	And CastleRoomFlags 1 Scratch10
-	IfNe
-	Goto BoilingOil
+	if 0 != Scratch10: Goto BoilingOil
 	Or CastleRoomFlags 1 CastleRoomFlags
 	PrintClear "THE OVERSEER TURNS TOWARD YOU BLUDGEON IN HAND. 'GO ON! GET OUT OF MY KITCHEN OR I'LL THROW BOILING OIL ON YOU!'"
 	Gosub PressToContinue
@@ -487,16 +465,14 @@ BoilingOil:
 ScribesHall:
 	Save 0 Surprise
 	And CastleRoomFlags 2 Scratch10
-	IfNe
-	Goto SearchReports
+	if 0 != Scratch10: Goto SearchReports
 	if Hours > 17: Goto EmptyScribesHall
 	if AlarmEndHour != 0: Goto EmptyScribesHall
 	PrintClear "YOU ENTER A BRIGHTLY LIT BUILDING WHICH REEKS OF TALLOW AND LEATHER. YOU SEE SIX SCRIBES BUSILY WRITING DOWN THE REPORTS OF A COUPLE OF OFFICERS."
 	Gosub PressToContinue
 	Save 53 Portrait
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto OfficerAsks
+	if 0 != Scratch10: Goto OfficerAsks
 	EncounterMenu 24 2 7 Scratch10 0 3 0 3 0 "'YOU DON'T BELONG HERE!'" "" "" 12 12
 	Save 255 Portrait
 	Gosub RaiseAlarm
@@ -518,7 +494,7 @@ OfficersAttack:
 	Save 100 Morale
 	Delay
 	ClearMonsters
-	LoadMonster 87 2 14
+	LoadMonster Envoy 2 14
 	Combat
 	Gosub AfterCombat
 	Random 4 Scratch10
@@ -528,8 +504,7 @@ OfficersAttack:
 
 EmptyScribesHall:
 	And CastleRoomFlags 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU ENTER A BUILDING WHICH IS FILLED WITH TABLES AND WRITING SUPPLIES. THOUGH EMPTY, THERE ARE SIGNS THAT WORK HAS BEEN DONE HERE RECENTLY."
 	Gosub PressToContinue
 	Or CastleRoomFlags 4 CastleRoomFlags
@@ -544,8 +519,7 @@ SearchReports:
 
 CadornaEvidence:
 	And CastleRoomFlags 8 Scratch10
-	IfNe
-	Goto SearchReports
+	if 0 != Scratch10: Goto SearchReports
 	Or CastleRoomFlags 8 CastleRoomFlags
 	if QuestCadornaTraitor != 255: Save 254 QuestCadornaTraitor
 	PrintClear "YOU FIND HARD EVIDENCE THAT CADORNA HAS BEEN USING YOU FOR HIS OWN ENDS AND HAS BEEN SEEKING THE POOL OF RADIANCE FOR HIMSELF."
@@ -554,8 +528,7 @@ CadornaEvidence:
 
 FlamingAuraNote:
 	And CastleRoomFlags 16 Scratch10
-	IfNe
-	Goto SearchReports
+	if 0 != Scratch10: Goto SearchReports
 	Or CastleRoomFlags 16 CastleRoomFlags
 	PrintClear "THE FOLLOWING CATCHES YOUR EYE, 'DO NOT BE FOOLED BY OUTWARD FORMS FOR YOU SHALL KNOW ME BY MY FLAMING AURA."
 	NewLine
@@ -565,8 +538,7 @@ FlamingAuraNote:
 
 BarbarianReport:
 	And CastleRoomFlags 32 Scratch10
-	IfNe
-	Goto SearchReports
+	if 0 != Scratch10: Goto SearchReports
 	Or CastleRoomFlags 32 CastleRoomFlags
 	PrintClear "YOU FIND A REPORT INDICATING THAT THE NORTHERN BARBARIANS ARE READY FOR THE TAKE OVER OF A STRONG LEADER AND THAT THE CHIEF OF THE RAVEN CLAN IS ALLIED TO TYRANTHRAXUS."
 	Gosub PressToContinue
@@ -612,7 +584,7 @@ NeedClearArea:
 
 ScribeArrives:
 	Save 72 Portrait
-	SetupMonster 22 1 30
+	SetupMonster Cleric 1 30
 	Save 255 Portrait
 	Gosub RollSurprise
 	IfLt
@@ -624,7 +596,7 @@ ScribeArrives:
 AmbushScribe:
 	VMenu Scratch10 "YOU SEE A SCRIBE COMING TOWARD THE BUILDING WITH AN ARM FULL OF BOOKS." 3 "RUN AWAY" "AMBUSH AND KILL HIM" "AMBUSH AND TIE HIM UP"
 	RedrawView
-	Picture 255
+	Picture None
 	OnGoto Scratch10 2 FleeCombat KillScribe
 	PrintClear "AS HE COMES THROUGH THE DOOR YOU KNOCK HIM OUT AND DRAG HIS FORM INTO A CORNER."
 	Gosub PressToContinue

@@ -13,8 +13,7 @@ AskUseDisguise:
 CheckPatrolSurprise:
 	PartySurprise Scratch8 Scratch9
 	And CastleFlags 1 Scratch10
-	IfNe
-	Add 1 Scratch9 Scratch9
+	if 0 != Scratch10: Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
 	if AlarmEndHour != 0: And Surprise 1 Surprise
 	if Surprise == 3: Save 0 Surprise
@@ -77,8 +76,7 @@ event0:
 	Gosub SetSkyByTime
 	And CastleRoomFlags 127 CastleRoomFlags
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	And CastleFlags 254 CastleFlags
+	if 0 != Scratch10: And CastleFlags 254 CastleFlags
 	if LeftMap == 0: Exit
 	Save 3 Scratch1
 	if Facing != 2: Goto StepOutToCity
@@ -97,13 +95,11 @@ event1:
 	IfLt
 	Goto DispatchCell
 	And Cell 64 Scratch10
-	IfNe
-	Goto DispatchCell
+	if 0 != Scratch10: Goto DispatchCell
 	Save 2 Scratch1
 	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
-	IfNe
-	Add Scratch1 Scratch1 Scratch1
+	if 0 != Scratch10: Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch10
 	if Scratch10 == 0: Goto GiantPatrol
 
@@ -116,8 +112,7 @@ event2:
 	Save 10 RestChance
 	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 1 RestEvery
 	Save 17 RestChance
 
@@ -141,8 +136,7 @@ event4:
 
 LaundryEnter:
 	And CastleDeedFlags 3 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU ENTER A BUILDING WHERE WOMEN ARE WASHING CLOTHES. AS YOU COME IN, THEY RETREAT TO THE CORNER LOOKING FEARFULLY AT YOU."
 	Gosub PressToContinue
 	PrintClear "YOU HEAR ONE OF THEM WHISPER, 'THEY DON'T BELONG HERE; THEY MUST HAVE COME TO KILL TYRANTHRAXUS'. A HALF-ORC WOMAN STEPS FORWARD 'WHAT DO YOU WANT OF US?'"
@@ -197,8 +191,7 @@ LaundryKillWomen:
 SmithyEnter:
 	PrintClear "YOU ARE IN A SMITHY."
 	And CastleDeedFlags 8 Scratch10
-	IfNe
-	Goto SmithyArmorPile
+	if 0 != Scratch10: Goto SmithyArmorPile
 	if Hours > 14: Goto SmithyArmorPile
 	Print " THE SMITH (A HUMAN) AND THREE FIRE GIANTS ARE WORKING ON A SUIT OF ARMOR. PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR."
 	Save 13 Portrait
@@ -222,15 +215,14 @@ SmithyNoOrders:
 
 SmithyArmorPile:
 	And CastleDeedFlags 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR. "
 	Gosub AskTakeIt
 	IfNe
 	Exit
 	Or CastleDeedFlags 4 CastleDeedFlags
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 33
+	Treasure 0 0 0 0 0 0 0 33 // Sling, Shield, Plate Mail, Banded Mail, Splint Mail, Chain Mail, and 52 more
 	Combat
 	Exit
 
@@ -240,8 +232,8 @@ SmithyAttack:
 SmithyFight:
 	Save 30 Morale
 	ClearMonsters
-	LoadMonster 41 1 11
-	LoadMonster 56 3 56
+	LoadMonster ThLvlFighter41 1 ThLvlFighter
+	LoadMonster FireGiant 3 FireGiant
 	Treasure 0 0 0 20 0 0 0 255
 	Combat
 	Gosub AfterCombat
@@ -250,16 +242,14 @@ SmithyFight:
 
 CoalStoreroom:
 	And CastleDeedFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU ARE IN A STOREROOM FULL OF COAL."
 	Or CastleDeedFlags 16 CastleDeedFlags
 	Exit
 
 Smokehouse:
 	And CastleDeedFlags 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU ARE IN A STANDARD MEAT SMOKEHOUSE... WELL MAYBE NOT QUITE STANDARD. YOU FEEL A LITTLE SICK AS YOU LOOK AT THE MEAT. THE SMELL AND THE SMOKE DON'T HELP EITHER."
 	Or CastleDeedFlags 64 CastleDeedFlags
 	Exit
@@ -267,13 +257,12 @@ Smokehouse:
 BaneTempleEnter:
 	PrintClear "YOU ARE IN A BUILDING THAT WAS ONCE A BARRACKS BUT HAS NOW BEEN CONVERTED TO A TEMPLE OF BANE. AT THE FAR END OF THE ROOM IS A CRUDE ALTER."
 	And CastleDeedFlags 128 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 0 Facing
 	Call CallRedraw
 	Gosub PressToContinue
 	Save 14 Portrait
-	SetupMonster 29 2 7
+	SetupMonster ShieldFighter 2 7
 	PrintClear "A PRIEST AND TWO ACOLYTES TURN FROM THE ALTER, 'WELCOME MY CHILDREN. COME FORWARD AND ACCEPT THE BLESSING OF LORD BANE.'"
 	Approach
 	Delay
@@ -288,8 +277,8 @@ PriestFight:
 	Save 100 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster 91 1 13
-	LoadMonster 90 2 13
+	LoadMonster Level5Cleric 1 13
+	LoadMonster StLvlCleric 2 13
 	Combat
 	Gosub AfterCombat
 	Or CastleDeedFlags 128 CastleDeedFlags
@@ -318,8 +307,7 @@ BlessNextMember:
 	Add Scratch1 1 Scratch1
 	if Scratch1 < 8: Goto BlessMemberLoop
 	And BaneTempleFlags 4 Scratch10
-	IfEq
-	Goto Done
+	if 0 == Scratch10: Goto Done
 
 PriestUnmasks:
 	PrintClear "THE PRIEST SHOUTS, 'WHAT'S THIS? YOU AREN'T WORSHIPPERS OF LORD BANE! DIE IMPOSTERS!' HE GRABS THE LAST RHINESTONE FROM A NECKLACE AND THROWS IT AT YOU. A FIREBALL EXPLODES!"
@@ -332,8 +320,7 @@ PriestUnmasks:
 
 PriestTalk:
 	And BaneTempleFlags 8 Scratch10
-	IfEq
-	Goto PriestTalkFirst
+	if 0 == Scratch10: Goto PriestTalkFirst
 	PrintClear "'I HAVE NO MORE TIME TO TALK WITH YOU, THE LORD BANE REQUIRES MY CONSTANT DEVOTION. COME, BEFORE YOU LEAVE ACCEPT THE BLESSING OF OUR LORD."
 	Goto PriestMenu
 
@@ -345,8 +332,7 @@ PriestTalkFirst:
 AltarEnter:
 	PrintClear "YOU ARE BEFORE THE ALTER. "
 	And BaneTempleFlags 1 Scratch10
-	IfNe
-	Goto AltarSwords
+	if 0 != Scratch10: Goto AltarSwords
 	Print "NEAR IT IS THE OFFERING BOX WITH SOME CHANGE IN IT. "
 	Gosub AskTakeIt
 	IfNe
@@ -364,8 +350,7 @@ AltarBoxLeft:
 
 AltarSwords:
 	And BaneTempleFlags 2 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "BEHIND THE ALTER ARE TWO CROSSED SWORDS. DO YOU TAKE THEM?"
 	Gosub YesNoMenu
 	IfNe
@@ -373,7 +358,7 @@ AltarSwords:
 	Or BaneTempleFlags 2 BaneTempleFlags
 	And CastleFlags 254 CastleFlags
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 35
+	Treasure 0 0 0 0 0 0 0 35 // Long Sword +3, Long Sword +3
 	Combat
 	Exit
 
@@ -397,18 +382,16 @@ BackOut:
 GiantPatrol:
 	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
 	Save 9 Portrait
-	SetupMonster 16 2 1
+	SetupMonster Fighter16 2 1
 	Gosub CheckPatrolSurprise
 	IfNe
 	Goto PatrolSighted
 	PrintClear $AuxEncText
 	Print " SURPRISES YOU."
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	Goto PatrolBlasphemers
+	if 0 != Scratch10: Goto PatrolBlasphemers
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto PatrolQuestion
+	if 0 != Scratch10: Goto PatrolQuestion
 	Print " 'THAT'S THEM! GET THEM!'"
 	Goto PatrolEncounterMenu
 
@@ -421,15 +404,13 @@ PatrolSighted:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	And BaneTempleFlags 3 Scratch10
-	IfEq
-	Goto PatrolCheckDisguise
+	if 0 == Scratch10: Goto PatrolCheckDisguise
 	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
 	Goto PatrolEncounterMenu
 
 PatrolCheckDisguise:
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto PatrolQuestion
+	if 0 != Scratch10: Goto PatrolQuestion
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
 
 PatrolEncounterMenu:
@@ -480,8 +461,8 @@ PatrolFight:
 	Delay
 	RedrawView
 	ClearMonsters
-	LoadMonster 75 1 11
-	LoadMonster 55 5 55
+	LoadMonster ThLvlFighter75 1 ThLvlFighter
+	LoadMonster HillGiant 5 HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit

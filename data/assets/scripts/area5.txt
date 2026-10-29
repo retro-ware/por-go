@@ -1,8 +1,7 @@
 RollSurprise:
 	PartySurprise Scratch8 Scratch9
 	And CastleFlags 1 Scratch10
-	IfNe
-	Add 1 Scratch9 Scratch9
+	if 0 != Scratch10: Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
 	if AlarmEndHour != 0: And Surprise 1 Surprise
 	if Surprise == 3: Save 0 Surprise
@@ -110,8 +109,7 @@ event1:
 	IfLt
 	Goto SpecialSquare
 	And Cell 64 Scratch10
-	IfNe
-	Goto SpecialSquare
+	if 0 != Scratch10: Goto SpecialSquare
 	Save 2 Scratch1
 	if Search != 1: Save 20 Scratch1
 	Random Scratch1 Scratch10
@@ -128,8 +126,7 @@ event2:
 	Save 10 RestChance
 	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 1 RestEvery
 	Save 17 RestChance
 
@@ -145,8 +142,7 @@ event4:
 
 Disorient:
 	And CastleRoomFlags 128 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU FEEL A SUDDEN DISORIENTATION."
 	Random 3 Scratch10
 	Add 3 Scratch10 Scratch1
@@ -181,8 +177,7 @@ StepBack:
 
 GateGiants:
 	And CastleDeedFlags 32 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Gosub RollSurprise
 	IfGt
 	Goto SurpriseGiants
@@ -227,7 +222,7 @@ FightGiants:
 	Save 60 Morale
 	RedrawView
 	ClearMonsters
-	LoadMonster 55 3 55
+	LoadMonster HillGiant 3 HillGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleDeedFlags 32 CastleDeedFlags
@@ -235,8 +230,7 @@ FightGiants:
 
 TowerTrolls:
 	And CastleFlags2 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU HAVE ENTERED THE REMAINS OF A TOWER. "
 	Delay
 	Gosub RollSurprise
@@ -251,7 +245,7 @@ TrollsUnawareMenu:
 	OnGoto Scratch10 4 Done FightTrolls StepBack FightTrolls
 
 TrollsCharge:
-	SetupMonster 31 2 31
+	SetupMonster GreenBrute 2 GreenBrute
 	Delay
 	PrintClear "A PACK OF TROLLS CHARGE FROM WHERE THEY WERE HIDING."
 	Approach
@@ -261,7 +255,7 @@ TrollsCharge:
 FightTrolls:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 31 8 31
+	LoadMonster Troll 8 Troll
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 64 CastleFlags2
@@ -272,11 +266,9 @@ CastleGate:
 	Save 64 Scratch1
 	if Scratch10 == 22: Save 128 Scratch1
 	And BaneTempleFlags Scratch1 Scratch10
-	IfNe
-	Goto GateRecognizesYou
+	if 0 != Scratch10: Goto GateRecognizesYou
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	Goto GateCallsThief
+	if 0 != Scratch10: Goto GateCallsThief
 	VMenu Scratch10 "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" 2 "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
 	OnGoto Scratch10 2 GivePassword BouldersThrown
 
@@ -311,8 +303,7 @@ WrongPassword:
 
 HarmlessMage:
 	And CastleFlags2 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 55 Portrait
 	EncounterMenu 12 2 31 Scratch10 2 4 1 4 4 "YOU SEE A HARMLESS, MIDDLE AGED MAN." "" "" 12 12
 	Save 255 Portrait
@@ -328,7 +319,7 @@ MageBegs:
 	Save 50 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster 86 1 14
+	LoadMonster AlHyamDazid 1 14
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 4 CastleFlags2
@@ -353,15 +344,12 @@ GoUpstairs:
 
 ArguingGiants:
 	And CadornaQuartersFlags 128 Scratch10
-	IfNe
-	Exit
-	SetupMonster 56 1 56
+	if 0 != Scratch10: Exit
+	SetupMonster FireGiant 1 FireGiant
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	Goto GiantsCallThief
+	if 0 != Scratch10: Goto GiantsCallThief
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto FrogsAndToads
+	if 0 != Scratch10: Goto FrogsAndToads
 	if AlarmEndHour != 0: Goto GiantsSpotIntruders
 
 FrogsAndToads:
@@ -394,7 +382,7 @@ FightArguingGiants:
 	Save 0 Surprise
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster 56 4 56
+	LoadMonster FireGiant 4 FireGiant
 	Combat
 	Gosub AfterCombat
 	Or CadornaQuartersFlags 128 CadornaQuartersFlags
@@ -413,12 +401,11 @@ GiantsRaiseAlarm:
 
 ThroneRoom:
 	And CastleFlags 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU ENTER A CHAMBER WHICH IS LAVISHLY APPOINTED WITH HANGINGS, CARPETS AND FURNITURE. SITTING ON A THRONE IS A POWERFUL LOOKING MAN CLAD IN BARBARIC SPLENDOR."
 	Gosub PressReturn
 	Save 54 Portrait
-	SetupMonster 16 1 1
+	SetupMonster Fighter16 1 1
 	PrintClear "'WHAT IS YOUR BUSINESS WITH TYRANTHRAXUS, LORD OF PHLAN?'"
 	Approach
 	Delay
@@ -467,8 +454,8 @@ FightImpostor:
 	Save 0 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster 92 1 11
-	LoadMonster 93 2 12
+	LoadMonster Tyranithraxus92 1 ThLvlFighter
+	LoadMonster ThLvlThief93 2 12
 	Treasure 0 0 0 0 0 8 1 255
 	Combat
 	Gosub AfterCombat
@@ -483,7 +470,7 @@ event3:
 FightSnakes:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 60 4 60
+	LoadMonster GiantSnake 4 GiantSnake
 	Combat
 	if CombatEnd == 129: Goto StepBack
 	Exit

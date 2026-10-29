@@ -39,8 +39,7 @@ PressReturn:
 
 SearchSecretDoor:
 	And Scratch1 SecretDoorBits Scratch10
-	IfNe
-	Goto SecretDoorFound
+	if 0 != Scratch10: Goto SecretDoorFound
 	Save 0 Scratch10
 
 CheckMemberFinds:
@@ -91,8 +90,7 @@ ByFacing9B22:
 
 event0:
 	And Cell 31 Scratch1
-	IfEq
-	Exit
+	if 0 == Scratch1: Exit
 	if Scratch1 > 11: Exit
 	Sub 1 Scratch1 Scratch1
 	GetTable Table9C95 Scratch1 Scratch10
@@ -154,8 +152,7 @@ SecretDoorSpot:
 CheckSecretPassage:
 	GetTable Table9CA0 Scratch1 Scratch1
 	And SecretDoorBits Scratch1 Scratch10
-	IfNe
-	Goto PassageLeave
+	if 0 != Scratch10: Goto PassageLeave
 	Save 255 HoldMove
 	Exit
 
@@ -172,11 +169,9 @@ Table9CA0:
 
 PriestRoom:
 	And SecretDoorBits 128 Scratch10
-	IfNe
-	Goto HoleInWall
+	if 0 != Scratch10: Goto HoleInWall
 	And SouthGroupsBeaten 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 0 Surprise
 	PrintClear "YOU SEE A HUMAN PRIEST."
 	Gosub PressReturn
@@ -232,16 +227,14 @@ RockRoom:
 	PrintClear "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
 	Gosub PressReturn
 	And TeleporterRockFlags 2 Scratch10
-	IfNe
-	Goto RockRoomMenu
+	if 0 != Scratch10: Goto RockRoomMenu
 	OnGoto Search 2 StepOnTeleporter FeelTingle
 
 StepOnTeleporter:
 	Gosub TeleportFlash
 	Or TeleporterRockFlags 2 TeleporterRockFlags
 	And TeleporterRockFlags 1 Scratch10
-	IfEq
-	Goto TeleportToArea23
+	if 0 == Scratch10: Goto TeleportToArea23
 	Save 0 Scratch1
 	And TeleporterRockFlags 254 TeleporterRockFlags
 	Goto MoveToTableSpot
@@ -268,8 +261,7 @@ ThrowRock:
 
 ToggleTeleporter:
 	And TeleporterRockFlags 1 Scratch10
-	IfEq
-	Goto SetTeleporterBit
+	if 0 == Scratch10: Goto SetTeleporterBit
 	And TeleporterRockFlags 254 TeleporterRockFlags
 	Return
 
@@ -294,8 +286,7 @@ RandomEncounter:
 	Random 5 Scratch7
 	GetTable Table9CA0 Scratch7 Scratch10
 	And Scratch3 Scratch10 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 
 StartGroupEncounter:
 	Save Scratch7 Scratch6
@@ -366,8 +357,7 @@ PickUnbeatenGroup:
 	Random 5 Scratch7
 	GetTable Table9CA0 Scratch7 Scratch10
 	And Scratch3 Scratch10 Scratch10
-	IfNe
-	Goto PickUnbeatenGroup
+	if 0 != Scratch10: Goto PickUnbeatenGroup
 	Goto StartGroupEncounter
 
 LoadGroupData:

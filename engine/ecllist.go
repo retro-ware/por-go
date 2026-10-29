@@ -31,13 +31,14 @@ func ListECL(code []byte, w io.Writer) {
 // (event0..event4 for the entry points; the others by their names in
 // names, L_XXXX unnamed), variables by their names in names (script
 // address -> name; an unnamed one stays [XXXX]), and the tables inside
-// the code image as Data lines under their labels. For cmd/eclscript.
-func ScriptECL(code []byte, w io.Writer, names map[int]string, areas []ScriptArea) error {
+// the code image as Data lines under their labels; then folded
+// (foldScript). For cmd/eclscript.
+func ScriptECL(code []byte, w io.Writer, names *ScriptNames) error {
 	var b strings.Builder
-	if err := scriptPlain(code, &b, names); err != nil {
+	if err := scriptPlain(code, &b, names.Vars); err != nil {
 		return err
 	}
-	_, err := io.WriteString(w, foldScript(b.String(), areas))
+	_, err := io.WriteString(w, foldScript(b.String(), names))
 	return err
 }
 

@@ -71,7 +71,7 @@ BackstabThief:
 	if Scratch7 == LastBackstabCell: Goto Done
 	if ThievesKilled >= 21: Goto Done
 	Save 32 Portrait
-	SetupMonster 11 2 8
+	SetupMonster Swordsman11 2 8
 	Delay
 	Approach
 	Delay
@@ -96,8 +96,8 @@ ThiefBackstabs:
 AttackThief:
 	ClearMonsters
 	Save 30 Morale
-	if ThievesKilled >= 18: LoadMonster 51 1 12
-	also if ThievesKilled < 18: LoadMonster 45 1 12
+	if ThievesKilled >= 18: LoadMonster ThLvlThief51 1 12
+	also if ThievesKilled < 18: LoadMonster StLvlThief 1 12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
 	Add 1 ThievesKilled ThievesKilled
@@ -111,12 +111,11 @@ LootRoom:
 
 LootPile:
 	And RoomsLooted 1 Scratch1
-	IfNe
-	Goto Done
+	if 0 != Scratch1: Goto Done
 	PrintClear "PILED HERE IS VARIOUS LOOT.  THERE IS A WIDE VARIETY OF NICK NACKS FROM TARNISHED BRONZE CANDLESTICKS TO ONE OR TWO USEFUL ITEMS."
 	Delay
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 56
+	Treasure 0 0 0 0 0 0 0 56 // Electrum Decanter, Silver Scarab, Incense, Silver Mirror, Leather Armor +4, Short Sword +2
 	Combat
 	Or 1 RoomsLooted RoomsLooted
 	Goto Done
@@ -241,11 +240,10 @@ CabinetCAvoidTrap:
 
 RugsAndTapestries:
 	And 4 RoomsLooted Scratch1
-	IfGt
-	Goto Done
+	if 0 > Scratch1: Goto Done
 	PrintClear "YOU SEE A WIDE COLLECTION OF RUGS AND TAPESTRIES.  TWO OF THEM LOOK EXTRAORDINARY WHILE THE OTHERS LOOK AVERAGE."
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 24
+	Treasure 0 0 0 0 0 0 0 24 // 2 Fine Tapestry, 26 Huge Tapestry
 	Combat
 	Or 4 RoomsLooted RoomsLooted
 	Goto Done
@@ -268,7 +266,7 @@ ScrollCabinetOpen:
 	if ScrollCaseLock != 0: Goto WoodenCabinet
 	PrintClear "YOU FIND A WIDE VARIETY OF SCROLLS IN SCROLL CASES."
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 25
+	Treasure 0 0 0 0 0 0 0 25 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Clerical Scroll With 3 Spells, Clerical Scroll With 3 Spells, and 2 more
 	Combat
 	Or 8 RoomsLooted RoomsLooted
 	Goto Done
@@ -300,8 +298,7 @@ ChooseCasket:
 
 CasketA:
 	And 1 CasketsLooted Scratch1
-	IfNe
-	Goto CasketEmpty
+	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
 	OnGoto TrapResult 3 CasketANeedle CasketAvoidTrap CasketAOpen
 
@@ -329,8 +326,7 @@ CasketAvoidTrap:
 
 CasketB:
 	And 2 CasketsLooted Scratch1
-	IfNe
-	Goto CasketEmpty
+	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
 	OnGoto TrapResult 3 CasketBDart CasketAvoidTrap CasketBOpen
 
@@ -353,8 +349,7 @@ CasketBDart:
 
 CasketC:
 	And 4 CasketsLooted Scratch1
-	IfNe
-	Goto CasketEmpty
+	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
 	OnGoto TrapResult 3 CasketCPowder CasketAvoidTrap CasketCOpen
 
@@ -377,8 +372,7 @@ CasketCPowder:
 
 CasketD:
 	And 8 CasketsLooted Scratch1
-	IfNe
-	Goto CasketEmpty
+	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
 	OnGoto TrapResult 3 CasketDDarts CasketAvoidTrap CasketDOpen
 
@@ -405,8 +399,7 @@ CasketEmpty:
 
 WeaponPile:
 	And RoomsLooted 32 Scratch1
-	IfNe
-	Goto Done
+	if 0 != Scratch1: Goto Done
 	PrintClear "INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?"
 	HMenu Scratch1 3 "TAKE SOME" "SEARCH THEM" "LEAVE THEM"
 	OnGoto Scratch1 3 TakeWeapons SearchWeapons LeaveWeapons
@@ -414,7 +407,7 @@ WeaponPile:
 TakeWeapons:
 	if 0 == WeaponPileGasDone: Goto WeaponPileAmbush
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 27
+	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
 	Combat
 	Or 32 RoomsLooted RoomsLooted
 	Goto Done
@@ -438,7 +431,7 @@ WeaponPileAmbush:
 		Goto HarmlessGas
 	}
 	Save 71 Portrait
-	SetupMonster 11 0 8
+	SetupMonster Swordsman11 0 8
 	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!"
 	Delay
 	Add 5 ThievesKilled Scratch1
@@ -464,9 +457,9 @@ AmbushFight:
 	ClearMonsters
 	Save 1 Surprise
 	Save 1 WeaponPileGasDone
-	Treasure 0 0 0 0 0 0 0 27
-	if Scratch2 != 0: LoadMonster 51 Scratch2 12
-	if Scratch3 != 0: LoadMonster 45 Scratch3 12
+	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
+	if Scratch2 != 0: LoadMonster ThLvlThief51 Scratch2 12
+	if Scratch3 != 0: LoadMonster StLvlThief Scratch3 12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
 	Add Scratch2 ThievesKilled ThievesKilled
@@ -489,7 +482,7 @@ ThievesFlee:
 	if ThiefChaseDone != 0: Goto Done
 	Save 255 ThiefChaseDone
 	Save 44 Portrait
-	SetupMonster 11 0 8
+	SetupMonster Swordsman11 0 8
 	PrintClear "AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 ChaseThieves Done
@@ -520,7 +513,7 @@ ChaseSouth:
 
 CatchGuildMaster:
 	Save 44 Portrait
-	SetupMonster 11 0 8
+	SetupMonster Swordsman11 0 8
 	PrintClear "YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "ATTACK" "RELEASE"
 	OnGoto Scratch1 2 AttackThief ReleaseGuildMaster
@@ -535,13 +528,13 @@ ChaseEnd:
 ThiefAmbush:
 	if GuildAmbushDone != 0: Goto Done
 	Save 44 Portrait
-	SetupMonster 11 0 8
+	SetupMonster Swordsman11 0 8
 	PrintClear "AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES."
 	Save 1 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster 45 15 12
-	LoadMonster 51 3 12
+	LoadMonster StLvlThief 15 12
+	LoadMonster ThLvlThief51 3 12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
 	Add 15 ThievesKilled ThievesKilled
@@ -550,8 +543,7 @@ ThiefAmbush:
 
 FloorFiles:
 	And FilesFound 1 Scratch1
-	IfNe
-	Goto Done
+	if 0 != Scratch1: Goto Done
 	PrintClear "ON THE FLOOR HERE YOU FIND SOME IMPORTANT LOOKING FILES.  YOU STUFF THE FILES INTO YOUR JOURNAL UNDER ENTRIES 38 AND 51."
 	Delay
 	Or FilesFound 1 FilesFound
@@ -559,22 +551,20 @@ FloorFiles:
 
 JailCell:
 	And FilesFound 2 Scratch1
-	IfEq
-	Goto JailThugs
+	if 0 == Scratch1: Goto JailThugs
 	PrintClear "YOU ARE IN A ROOM THAT HAS BEEN CONVERTED TO A JAIL CELL.  IT IS EMPTY."
 	Goto Done
 
 JailThugs:
 	Save 32 Portrait
-	SetupMonster 11 0 8
+	SetupMonster Swordsman11 0 8
 	PrintClear "YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU."
 	ClearMonsters
-	LoadMonster 45 10 12
+	LoadMonster StLvlThief 10 12
 	Combat
 	Or FilesFound 2 FilesFound
 	if CombatEnd > 128: Goto FleeBack
-	Save 16 Portrait
-	Picture 8
+	ShowPortrait 16 8
 	PrintClear "YOU RUSH TO HELP THE OLD THIEF BUT IT'S TOO LATE.  BEFORE HE DIES HE SAYS, 'THE BOSS HAS ALLIES EVERYWHERE.  TAKE THESE PAPERS.  THEY MAY HELP.'  HE THEN DIES."
 	Gosub PressToContinue
 	PrintClear "YOU COPY THE PAPERS INTO YOUR JOURNAL UNDER JOURNAL ENTRY 48."
@@ -583,8 +573,7 @@ JailThugs:
 
 SlateMazeNW:
 	And FilesFound 4 Scratch1
-	IfNe
-	Goto Done
+	if 0 != Scratch1: Goto Done
 	Or FilesFound 4 FilesFound
 	PrintClear "ON A NEARBY WALL IS A SLATE.  DRAWN ON THE SLATE IS A COMPLEX MAZE WITH THE WORDS 'NW CASTLE' UNDER IT.  YOU COPY THE CASTLE INTO YOUR JOURNAL UNDER JOURNAL ENTRY 41."
 	Delay
@@ -592,8 +581,7 @@ SlateMazeNW:
 
 MapMazeNE:
 	And FilesFound 8 Scratch1
-	IfNe
-	Goto Done
+	if 0 != Scratch1: Goto Done
 	Or FilesFound 8 FilesFound
 	PrintClear "ON THE FLOOR IS A CRUDE MAP.  IT IS A MAP OF A COMPLEX MAZE WITH THE WORDS 'NE CASTLE' UNDER IT.  YOU TAKE THE MAP AND PUT IT IN YOUR JOURNAL UNDER JOURNAL ENTRY 29."
 	Delay
@@ -601,11 +589,11 @@ MapMazeNE:
 
 WalkSteps:
 	Save 1 Scratch2
-	if Scratch1 == 0: Call CallRedraw
-	IfEq
-	Delay
-	IfEq
-	Return
+	if Scratch1 == 0 {
+		Call CallRedraw
+		Delay
+		Return
+	}
 
 WalkStepLoop:
 	if Scratch2 > Scratch1: Return
@@ -634,7 +622,7 @@ StepWest:
 Done:
 	if ThievesKilled >= 21: Gosub MarkGuildCleared
 	RedrawView
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	Exit
 

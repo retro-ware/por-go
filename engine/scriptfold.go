@@ -18,8 +18,10 @@ import (
 //	}
 //	also if Facing < 2: Goto B          the same test again, not redone
 //
-// with == != < > <= >= between two operands (Compare), or A == B && C == D
-// and A != B || C != D (CompareAnd). It stands for the byte code's
+// with == != < > <= >= between two operands (Compare), A == B && C == D
+// and A != B || C != D (CompareAnd), Carried Item and !Carried Item
+// (FindItem). Right after an And or Or into D, 0 op D tests its result
+// without a Compare (the flags those set compare 0 with it). It stands for the byte code's
 // Compare A B, then IfEq (or the comparison's If) before each command:
 // every command in a block is guarded by the one test, as a Gosub or Call
 // in it may change what later ones see. "also" guards with the flags of
@@ -28,9 +30,9 @@ import (
 
 var ifOps = map[string]string{"==": "IfEq", "!=": "IfNe", "<": "IfLt", ">": "IfGt", "<=": "IfLe", ">=": "IfGe"}
 
-// flagSetters are the commands that change the test flags (Gosub and
-// Call may).
-var flagSetters = []string{"Compare", "CompareAnd", "And", "Or", "FindItem", "Gosub", "Call"}
+// flagSetters are the commands that change the test flags (a Gosub's
+// commands may).
+var flagSetters = []string{"Compare", "CompareAnd", "And", "Or", "FindItem", "Gosub"}
 
 // srcLine is one command or label of a script with its line number.
 type srcLine struct {
@@ -41,7 +43,7 @@ type srcLine struct {
 
 // unfoldScript reads a script into its labels and plain commands, the
 // conditions written out as Compare and If commands.
-func unfoldScript(text string, areas []ScriptArea) ([]srcLine, error) {
+func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 	var out []srcLine
 	var last []string // the last test's operands and its kind ("Compare" or "CompareAnd")
 	inBlock, guard := false, ""
@@ -92,14 +94,20 @@ func unfoldScript(text string, areas []ScriptArea) ([]srcLine, error) {
 				if err != nil {
 					return nil, fmt.Errorf("%d: %v", n, err)
 				}
-				if also {
-					if !slices.Equal(test, last) {
-						return nil, fmt.Errorf("%d: also if tests other operands than the if before", n)
-					}
-				} else {
-					emit(append([]string{test[len(test)-1]}, test[:len(test)-1]...)...)
-					last = test
+				// 0 op D right after an And or Or into D tests its flags
+				andOr := len(cond) == 3 && cond[0] == "0" && (also && len(last) == 3 && last[2] == "AndOr" ||
+					!also && len(out) > 0 && !out[len(out)-1].label && slices.Contains([]string{"And", "Or"}, out[len(out)-1].toks[0]) &&
+						len(out[len(out)-1].toks) == 4 && out[len(out)-1].toks[3] == cond[2])
+				if andOr {
+					test[2] = "AndOr"
 				}
+				switch {
+				case also && !slices.Equal(test, last):
+					return nil, fmt.Errorf("%d: also if tests other operands than the if before", n)
+				case !also && !andOr:
+					emit(append([]string{test[len(test)-1]}, test[:len(test)-1]...)...)
+				}
+				last = test
 				guard, toks = ifOp, toks[end+1:]
 				if block {
 					inBlock = true
@@ -112,7 +120,7 @@ func unfoldScript(text string, areas []ScriptArea) ([]srcLine, error) {
 				if i == 0 {
 					return nil, fmt.Errorf("%d: an if without a command", n)
 				}
-				for _, c := range expandMacro(toks[:i], areas) {
+				for _, c := range expandMacro(toks[:i], names) {
 					emit(guard)
 					emit(c...)
 				}
@@ -128,7 +136,7 @@ func unfoldScript(text string, areas []ScriptArea) ([]srcLine, error) {
 				if slices.Contains(flagSetters, t) || strings.HasPrefix(t, "If") {
 					last = nil // the flags are no longer the last if's
 				}
-				for _, c := range expandMacro(toks[:i], areas) {
+				for _, c := range expandMacro(toks[:i], names) {
 					if inBlock {
 						emit(guard)
 					}
@@ -148,12 +156,22 @@ func unfoldScript(text string, areas []ScriptArea) ([]srcLine, error) {
 //
 //	SetMapXY X Y      Save X MapX, Save Y MapY
 //	EnterArea Name    Save <its set> SymbolSet, NewECL Name
-func expandMacro(c []string, areas []ScriptArea) [][]string {
+//	ShowPortrait H B  Save H Portrait, Picture B (a HEAD and BODY picture)
+func expandMacro(c []string, names *ScriptNames) [][]string {
 	switch {
 	case c[0] == "SetMapXY" && len(c) == 3:
 		return [][]string{{"Save", c[1], "MapX"}, {"Save", c[2], "MapY"}}
+	case c[0] == "ShowPortrait" && len(c) == 3:
+		h, b := c[1], c[2]
+		if v, ok := valueOf(names.Values, "Head", names.Set, h); ok {
+			h = strconv.Itoa(v)
+		}
+		if v, ok := valueOf(names.Values, "Body", names.Set, b); ok {
+			b = strconv.Itoa(v)
+		}
+		return [][]string{{"Save", h, "Portrait"}, {"Picture", b}}
 	case c[0] == "EnterArea" && len(c) == 2:
-		for _, a := range areas {
+		for _, a := range names.Areas {
 			if a.Name == c[1] {
 				return [][]string{{"Save", strconv.Itoa(a.Set), "SymbolSet"}, {"NewECL", c[1]}}
 			}
@@ -181,6 +199,9 @@ func foldMacros(lines []string, areas []ScriptArea) []string {
 		switch {
 		case pair && f[2] == "MapX" && len(g) == 3 && g[0] == "Save" && g[2] == "MapY":
 			out = append(out, ind+"SetMapXY "+f[1]+" "+g[1])
+			i++
+		case pair && f[2] == "Portrait" && len(g) == 2 && g[0] == "Picture":
+			out = append(out, ind+"ShowPortrait "+f[1]+" "+g[1])
 			i++
 		case pair && f[2] == "SymbolSet" && len(g) == 2 && g[0] == "NewECL" && byID[g[1]].Name != "" && strconv.Itoa(byID[g[1]].Set) == f[1]:
 			out = append(out, ind+"EnterArea "+byID[g[1]].Name)
@@ -213,13 +234,17 @@ func parseCond(c []string) ([]string, string, error) {
 		return []string{c[0], c[2], c[4], c[6], "CompareAnd"}, "IfEq", nil
 	case len(c) == 7 && c[1] == "!=" && c[3] == "||" && c[5] == "!=":
 		return []string{c[0], c[2], c[4], c[6], "CompareAnd"}, "IfNe", nil
+	case len(c) == 2 && c[0] == "Carried":
+		return []string{c[1], "FindItem"}, "IfEq", nil
+	case len(c) == 2 && c[0] == "!Carried":
+		return []string{c[1], "FindItem"}, "IfNe", nil
 	}
-	return nil, "", fmt.Errorf("a test is A op B, A == B && C == D or A != B || C != D: %s", strings.Join(c, " "))
+	return nil, "", fmt.Errorf("a test is A op B, A == B && C == D, A != B || C != D or [!]Carried Item: %s", strings.Join(c, " "))
 }
 
 // foldScript writes a plain script's Compare and If commands as if lines
 // (cmd/eclscript); unfoldScript reads them back to the same commands.
-func foldScript(text string, areas []ScriptArea) string {
+func foldScript(text string, names *ScriptNames) string {
 	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
 	cmd := func(i int) (string, []string, bool) { // a command line's name and operands
 		if i >= len(lines) || !strings.HasPrefix(lines[i], "\t") {
@@ -238,7 +263,14 @@ func foldScript(text string, areas []ScriptArea) string {
 	var out []string
 	for i := 0; i < len(lines); i++ {
 		op, args, ok := cmd(i)
-		test := op == "Compare" && len(args) == 2 || op == "CompareAnd" && len(args) == 4
+		test := op == "Compare" && len(args) == 2 || op == "CompareAnd" && len(args) == 4 ||
+			op == "FindItem" && len(args) == 1 || (op == "And" || op == "Or") && len(args) == 3
+		if op == "Compare" && len(args) == 2 && args[0] == "0" {
+			// after an And or Or into the operand, if 0 op D would not redo the Compare
+			if p, pa, _ := cmd(i - 1); (p == "And" || p == "Or") && len(pa) == 3 && pa[2] == args[1] {
+				test = false
+			}
+		}
 		if !ok || !test {
 			out = append(out, lines[i])
 			continue
@@ -256,7 +288,7 @@ func foldScript(text string, areas []ScriptArea) string {
 			if !ok1 || !ok2 || opOf[ifOp] == "" || strings.HasPrefix(guarded, "If") {
 				break
 			}
-			if op == "CompareAnd" && ifOp != "IfEq" && ifOp != "IfNe" {
+			if (op == "CompareAnd" || op == "FindItem") && ifOp != "IfEq" && ifOp != "IfNe" {
 				break
 			}
 			if len(runs) > 0 && runs[len(runs)-1].ifOp == ifOp {
@@ -269,17 +301,29 @@ func foldScript(text string, areas []ScriptArea) string {
 				break
 			}
 		}
+		if op == "And" || op == "Or" {
+			out = append(out, lines[i]) // the And stays, the ifs test its result
+		}
 		if len(runs) == 0 {
-			out = append(out, lines[i])
+			if op != "And" && op != "Or" {
+				out = append(out, lines[i])
+			}
 			continue
 		}
 		for k, r := range runs {
 			var cond string
-			if op == "Compare" {
+			switch {
+			case op == "Compare":
 				cond = args[0] + " " + opOf[r.ifOp] + " " + args[1]
-			} else if r.ifOp == "IfEq" {
+			case op == "And" || op == "Or":
+				cond = "0 " + opOf[r.ifOp] + " " + args[2]
+			case op == "FindItem" && r.ifOp == "IfEq":
+				cond = "Carried " + args[0]
+			case op == "FindItem":
+				cond = "!Carried " + args[0]
+			case r.ifOp == "IfEq":
 				cond = fmt.Sprintf("%s == %s && %s == %s", args[0], args[1], args[2], args[3])
-			} else {
+			default:
 				cond = fmt.Sprintf("%s != %s || %s != %s", args[0], args[1], args[2], args[3])
 			}
 			kw := "if"
@@ -298,5 +342,93 @@ func foldScript(text string, areas []ScriptArea) string {
 		}
 		i = j - 1
 	}
-	return strings.Join(foldMacros(out, areas), "\n") + "\n"
+	return strings.Join(nameValues(foldMacros(out, names.Areas), names), "\n") + "\n"
+}
+
+// nameValues writes the numbers of the commands' operands of a kind
+// (operandKinds) as their names, and a Treasure's items as a comment. A
+// Picture while a portrait is up (Save H Portrait without ShowPortrait)
+// is a BODY picture and stays a number, as does an encounter's close-up
+// (SetupMonster) that is not its sprite's creature.
+func nameValues(lines []string, names *ScriptNames) []string {
+	portrait := false
+	for i, l := range lines {
+		if !strings.HasPrefix(l, "\t") {
+			portrait = false // a label
+			continue
+		}
+		code, comment := l, ""
+		if k := commentAt(l); k >= 0 {
+			code, comment = strings.TrimRight(l[:k], " \t"), l[k:]
+		}
+		toks, err := scriptTokens(code)
+		if err != nil {
+			continue
+		}
+		changed := false
+		for k := 0; k < len(toks); k++ {
+			if k > 0 && !slices.Contains([]string{":", "{", ";"}, toks[k-1]) {
+				continue
+			}
+			c := toks[k]
+			if c == "Save" && k+2 < len(toks) && toks[k+2] == "Portrait" {
+				portrait = toks[k+1] != "255"
+			}
+			if c == "Treasure" && k+8 < len(toks) && names.Treasure != nil && comment == "" {
+				switch v, err := strconv.Atoi(toks[k+8]); {
+				case err != nil || v == 0xFF:
+				case v < 0x80:
+					comment = "// " + names.Treasure(v)
+				default:
+					comment = fmt.Sprintf("// %d random items", v-0x80)
+				}
+			}
+			for j, kind := range operandKinds[c] {
+				if kind == "" || k+1+j >= len(toks) || kind == "Picture" && c == "Picture" && portrait {
+					continue
+				}
+				v, err := strconv.Atoi(toks[k+1+j])
+				if err != nil {
+					continue
+				}
+				n := valueName(names.Values, kind, names.Set, v)
+				if c == "SetupMonster" && j == 2 && n != toks[k+1] {
+					n = "" // with a portrait up it is a BODY picture: named when it is the sprite's creature
+				}
+				if n != "" {
+					toks[k+1+j], changed = n, true
+				}
+			}
+		}
+		if !changed && comment == "" || !changed && strings.HasSuffix(l, comment) {
+			continue
+		}
+		var b strings.Builder
+		b.WriteString(l[:len(l)-len(strings.TrimLeft(l, "\t"))])
+		for k, t := range toks {
+			if k > 0 && t != ":" && t != ";" {
+				b.WriteByte(' ')
+			}
+			b.WriteString(t)
+		}
+		if comment != "" {
+			b.WriteString(" " + comment)
+		}
+		lines[i] = b.String()
+	}
+	return lines
+}
+
+// commentAt is where a line's // comment starts outside strings, or -1.
+func commentAt(l string) int {
+	quoted := false
+	for i := 0; i < len(l); i++ {
+		switch {
+		case l[i] == '"' && (i == 0 || l[i-1] != '\\'):
+			quoted = !quoted
+		case !quoted && strings.HasPrefix(l[i:], "//"):
+			return i
+		}
+	}
+	return -1
 }

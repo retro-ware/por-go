@@ -66,7 +66,6 @@ type Engine struct {
 	script             *Script               // the area's event script (script.go)
 	cur, argPos        int                   // the instruction being run, its next operand for FetchArgs
 	native             map[int]func(*Engine) // the native scripts at instructions of script
-	scriptNames        map[int]string        // the scripts' shared variable names
 	viewMode           int                   // DS:49FA (1 = 3D view)
 	prevViewMode       int                   // DS:49F9
 	sqrpaci            [2]*dax.Image

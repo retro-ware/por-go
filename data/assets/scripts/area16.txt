@@ -161,7 +161,7 @@ MoatBlocks:
 
 LeaveRuins:
 	RedrawView
-	Picture 255
+	Picture None
 	if QuestLizardmen == 255: Goto GotoArea27
 	if LizardMenKilled >= 40: Save 254 QuestLizardmen
 
@@ -192,7 +192,7 @@ GoDownMenu:
 	Save 4 Scratch7
 	Gosub CapLizardCounts
 	if Scratch4 < 2: Exit
-	SetupMonster 59 1 59
+	SetupMonster GiantLizard 1 GiantLizard
 	PrintClear "YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!"
 	Save 0 Surprise
 	Save 100 Morale
@@ -201,7 +201,7 @@ GoDownMenu:
 	Save 254 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster 59 Scratch4 59
+	LoadMonster GiantLizard Scratch4 GiantLizard
 	Combat
 	Gosub CountLizardKills
 	Exit
@@ -242,8 +242,7 @@ FindTreasure:
 
 OldLizardman:
 	And OldLizardmanFlags 1 Scratch10
-	IfEq
-	Goto BuildingEncounter
+	if 0 == Scratch10: Goto BuildingEncounter
 	PrintClear "AN OLD LIZARDMAN APPEARS BEFORE YOU, HAND RAISED IN A GESTURE OF PEACE."
 	Delay
 	EncounterMenu 57 0 13 Scratch10 0 4 4 4 4 "HE LOOKS AT YOU PATIENTLY." "" "" 6 6
@@ -316,7 +315,7 @@ ChampionDuel:
 	Save 100 Morale
 	ClearMonsters
 	Call CallDuelB
-	LoadMonster 95 1 57
+	LoadMonster Drythh 1 Lizardman
 	Combat
 	if CombatEnd == 129: Goto ChampionLost
 	if QuestLizardmen != 255: Save 254 QuestLizardmen
@@ -336,7 +335,7 @@ RefuseChampion:
 
 DrythhAttacks:
 	Gosub PressToContinue
-	Picture 255
+	Picture None
 	And OldLizardmanFlags 254 OldLizardmanFlags
 	Or OldLizardmanFlags 2 OldLizardmanFlags
 	EncounterMenu 57 1 57 Scratch10 0 0 0 0 0 "" "" "" 6 6
@@ -346,24 +345,22 @@ DrythhFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 95 1 57
-	LoadMonster 57 12 57
+	LoadMonster Drythh 1 Lizardman
+	LoadMonster Lizardman 12 Lizardman
 	Combat
 	if CombatEnd == 129: Goto PushBack
 	Exit
 
 RuinedBuilding:
 	And BuildingsSeen 2 Scratch10
-	IfNe
-	Goto RuinedBuildingCheck
+	if 0 != Scratch10: Goto RuinedBuildingCheck
 	PrintClear "YOU ENTER A BUILDING WHOSE WALLS ARE MORE OR LESS INTACT, THOUGH THE ROOF HAS FALLEN IN. RUBBLE MAKES PASSAGE DIFFICULT."
 	Delay
 	Or BuildingsSeen 2 BuildingsSeen
 
 RuinedBuildingCheck:
 	And EncountersDone 2 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 0 Scratch9
 	Goto OldLizardman
 
@@ -376,7 +373,7 @@ LizardPatrol:
 	OnGoto Scratch10 4 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
 
 LizardPatrolAmbush:
-	SetupMonster 57 1 57
+	SetupMonster Lizardman 1 Lizardman
 	PrintClear "SUDDENLY YOU ARE ATTACKED BY TWO LIZARD MEN AND A GIANT LIZARD!"
 	Delay
 	Approach
@@ -386,10 +383,10 @@ LizardPatrolFight:
 	Save 0 Scratch7
 	Save 100 Morale
 	RedrawView
-	Picture 255
+	Picture None
 	ClearMonsters
-	LoadMonster 57 2 57
-	LoadMonster 59 1 59
+	LoadMonster Lizardman 2 Lizardman
+	LoadMonster GiantLizard 1 GiantLizard
 
 LizardCombat:
 	Combat
@@ -406,8 +403,7 @@ EncounterBitTable:
 
 CentralKeep:
 	And BuildingsSeen 4 Scratch10
-	IfNe
-	Goto CentralKeepCheck
+	if 0 != Scratch10: Goto CentralKeepCheck
 	PrintClear "YOU ENTER THE REMAINS OF THE CENTRAL KEEP. THE CEILING AND WALLS HAVE COLLAPSED TO THE POINT WHERE THE INTERIOR IS CHOKED WITH RUBBLE."
 	Or BuildingsSeen 4 BuildingsSeen
 	Delay
@@ -415,8 +411,7 @@ CentralKeep:
 CentralKeepCheck:
 	Save 2 Scratch9
 	And EncountersDone 4 Scratch10
-	IfEq
-	Goto OldLizardman
+	if 0 == Scratch10: Goto OldLizardman
 	if Scratch1 == 0: Exit
 	Goto SearchForTunnel
 
@@ -426,7 +421,7 @@ JavelinAmbush:
 	Save 2 Scratch7
 	Gosub CapLizardCounts
 	if Scratch5 < 2: Goto MarkEncounterDone
-	SetupMonster 57 0 57
+	SetupMonster Lizardman 0 Lizardman
 	PrintClear "SUDDENLY LIZARD MEN JUMP UP FROM WHERE THEY WERE HIDING AND THROW JAVELINS AT YOU."
 	if Scratch4 > 1: Print " AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS."
 	Delay
@@ -434,22 +429,20 @@ JavelinAmbush:
 	Save 253 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster 57 Scratch5 57
-	if Scratch4 != 0: LoadMonster 59 Scratch4 59
+	LoadMonster Lizardman Scratch5 Lizardman
+	if Scratch4 != 0: LoadMonster GiantLizard Scratch4 GiantLizard
 	Goto LizardCombat
 
 LShapedBuilding:
 	And BuildingsSeen 8 Scratch10
-	IfNe
-	Goto LShapedBuildingCheck
+	if 0 != Scratch10: Goto LShapedBuildingCheck
 	PrintClear "YOU HAVE ENTERED AN L-SHAPED BUILDING. IT IS REASONALBLY INTACT... THERE ARE EVEN PORTIONS OF ROOF OVERHEAD!"
 	Delay
 	Or BuildingsSeen 8 BuildingsSeen
 
 LShapedBuildingCheck:
 	And EncountersDone 8 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 1 Scratch9
 	Goto OldLizardman
 
@@ -462,7 +455,7 @@ GiantLizards:
 	OnGoto Scratch10 4 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
 
 GiantLizardsAmbush:
-	SetupMonster 59 1 59
+	SetupMonster GiantLizard 1 GiantLizard
 	Delay
 	Approach
 	PrintClear "SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!"
@@ -472,7 +465,7 @@ GiantLizardsFight:
 	Save 1 Scratch7
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 59 3 59
+	LoadMonster GiantLizard 3 GiantLizard
 	Goto LizardCombat
 
 StairsUp:
@@ -505,13 +498,12 @@ PoolLizardmen:
 	Gosub CapLizardCounts
 	Save 1 Scratch8
 	if Scratch5 < 3: Goto DeepPool
-	SetupMonster 57 0 57
+	SetupMonster Lizardman 0 Lizardman
 	PrintClear "A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. "
 	Delay
 	Damage Scratch5 1 6 0 44
 	And BuildingsSeen 1 Scratch10
-	IfEq
-	Goto LizardmenDive
+	if 0 == Scratch10: Goto LizardmenDive
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 0
 	if Surprise == 1: Goto LizardmenDive
@@ -532,7 +524,7 @@ PoolLizardmenFight:
 	Save 254 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster 57 Scratch5 57
+	LoadMonster Lizardman Scratch5 Lizardman
 	Combat
 	Gosub CountLizardKills
 	Save 1 Scratch8
@@ -565,7 +557,7 @@ PoolTreasureTable:
 
 DeepPool:
 	RedrawView
-	Picture 255
+	Picture None
 	PrintClear "YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?"
 	Gosub YesNoMenu
 	IfNe
@@ -585,8 +577,7 @@ PoolSearch:
 	Save Scratch10 Scratch5
 	GetTable PoolTreasureBitTable Scratch10 Scratch1
 	And PoolTreasureTaken Scratch1 Scratch10
-	IfNe
-	Goto PoolEmpty
+	if 0 != Scratch10: Goto PoolEmpty
 	PrintClear "YOU FIND SOME TREASURE."
 	Gosub TakeItMenu
 	IfNe

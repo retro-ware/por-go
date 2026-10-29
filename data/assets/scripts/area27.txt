@@ -119,7 +119,7 @@ RuinedCastle:
 	Call CallLookAhead
 	ClearBox
 	Call CallClearView
-	Picture 24
+	Picture Swamp
 	PrintClear "YOU FIND A RUINED CASTLE SURROUNDED BY QUICKSAND.   AN OLD WORN DRAWBRIDGE IS THE ONLY SAFE WAY ACROSS THE QUAGMIRE.  WILL YOU ENTER THE RUINED CASTLE?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterCastle Done
@@ -131,13 +131,13 @@ EnterCastle:
 KoboldHorde:
 	if QuestKobolds != 0: Exit
 	if KoboldHordeDefeated != 0: Exit
-	SetupMonster 0 0 0
+	SetupMonster Kobold 0 Kobold
 	Save 50 Morale
 	PrintClear "A SCREAMING HORDE OF KOBOLDS ATTACKS THE PARTY."
 	ClearMonsters
 	ClearBox
-	LoadMonster 0 25 0
-	LoadMonster 1 5 1
+	LoadMonster Kobold0 25 Kobold
+	LoadMonster KoboldLeader1 5 KoboldLeader
 	Combat
 	if CombatEnd > 128: Goto ExitEvent
 	Save 255 KoboldHordeDefeated
@@ -145,11 +145,10 @@ KoboldHorde:
 
 TwoCaves:
 	And MarkFlags57 2 Scratch1
-	IfEq
-	Goto KoboldsEnterCave
+	if 0 == Scratch1: Goto KoboldsEnterCave
 	ClearBox
 	Call CallClearView
-	Picture 27
+	Picture Hill
 	PrintClear "YOU FIND TWO CAVES;  A SMALL, WELL-HIDDEN CAVE AND A LARGER, MORE OBVIOUS CAVE.  WHAT CAVE WILL YOU ENTER?"
 	Goto CaveMenu
 
@@ -160,7 +159,7 @@ KoboldsEnterCave:
 	Save 73 ProbeCell
 	Call CallLookAhead
 	ClearBox
-	Picture 27
+	Picture Hill
 	PrintClear "YOU SEE A SMALL GROUP OF KOBOLDS ENTERING A SMALL,   CONCEALED CAVE.  A LARGER, MORE NOTICEABLE CAVE LIES JUST EAST OF THE SMALL HIDDEN, CAVE.  WHAT CAVE WILL YOU ENTER?"
 
 CaveMenu:
@@ -186,7 +185,7 @@ EnterKoboldCaves:
 BoatDock:
 	ClearBox
 	Call CallClearView
-	Picture 41
+	Picture Ship
 	PrintClear "THERE IS A BOAT DOCKED HERE THAT WILL RETURN YOU TO THE CIVILIZED SECTION OF PHLAN.  WILL YOU TAKE IT?"
 	HMenu Scratch1 2 "TAKE BOAT" "STAY"
 	OnGoto Scratch1 2 TakeBoat Done
@@ -198,7 +197,7 @@ TakeBoat:
 	EnterArea NewPhlan
 
 LeaveWilderness:
-	Picture 255
+	Picture None
 	ClearBox
 	Save 1 In3D
 	Save 127 WallSlot1
@@ -356,29 +355,26 @@ HalflingRemains:
 
 WyvernTreasure:
 	And WyvernLairFlags 1 Scratch1
-	IfNe
-	Exit
+	if 0 != Scratch1: Exit
 	PrintClear "YOU HAVE FOUND THE WYVERN'S TREASURE!"
 	ClearMonsters
-	Treasure #1388 #1770 #07D0 #03E8 0 3 3 129
+	Treasure #1388 #1770 #07D0 #03E8 0 3 3 129 // 1 random items
 	Combat
 	Or WyvernLairFlags 1 WyvernLairFlags
 	Exit
 
 FerociousWyvern:
 	And WyvernLairFlags 2 Scratch1
-	IfNe
-	Exit
-	SetupMonster 121 2 121
+	if 0 != Scratch1: Exit
+	SetupMonster Wyvern 2 Wyvern
 	Approach
 	Approach
 	PrintClear "YOU HAVE STUMBLED ACROSS A FEROCIOUS WYVERN.  IT CHARGES AND ATTACKS!"
 	Save 100 Morale
 	And WyvernLairFlags 4 Scratch1
-	IfEq
-	Save 254 MonsterHit
+	if 0 == Scratch1: Save 254 MonsterHit
 	ClearMonsters
-	LoadMonster 121 1 121
+	LoadMonster Wyvern 1 Wyvern
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 2 WyvernLairFlags
@@ -387,18 +383,16 @@ FerociousWyvern:
 
 TerribleWyvern:
 	And WyvernLairFlags 4 Scratch1
-	IfNe
-	Exit
-	SetupMonster 121 2 121
+	if 0 != Scratch1: Exit
+	SetupMonster Wyvern 2 Wyvern
 	Approach
 	Approach
 	PrintClear "A TERRIBLE WYVERN CHARGES TO ATTACK THE PARTY!"
 	Save 100 Morale
 	And WyvernLairFlags 2 Scratch1
-	IfEq
-	Save 254 MonsterHit
+	if 0 == Scratch1: Save 254 MonsterHit
 	ClearMonsters
-	LoadMonster 121 1 121
+	LoadMonster Wyvern 1 Wyvern
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 4 WyvernLairFlags
@@ -407,15 +401,14 @@ TerribleWyvern:
 
 FourLizards:
 	And WyvernLairFlags 8 Scratch1
-	IfNe
-	Exit
-	SetupMonster 59 2 59
+	if 0 != Scratch1: Exit
+	SetupMonster GiantLizard 2 GiantLizard
 	Approach
 	Approach
 	PrintClear "FOUR GIANT LIZARDS RUN UP AND ATTACK THE PARTY!"
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster 59 4 59
+	LoadMonster GiantLizard 4 GiantLizard
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 8 WyvernLairFlags
@@ -428,14 +421,13 @@ HumanBones:
 
 LizardsAndMinotaurs:
 	And WyvernLairFlags 16 Scratch1
-	IfNe
-	Exit
-	SetupMonster 59 0 59
+	if 0 != Scratch1: Exit
+	SetupMonster GiantLizard 0 GiantLizard
 	PrintClear "YOU ENTER A CHAMBER WITH FOUR GIANT LIZARDS AND TWO MINOTAURS.  THE MINOTAURS ORDER THE LIZARDS TO ATTACK."
 	Save 70 Morale
 	ClearMonsters
-	LoadMonster 59 4 59
-	LoadMonster 62 2 62
+	LoadMonster GiantLizard 4 GiantLizard
+	LoadMonster Minotaur 2 Minotaur
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 16 WyvernLairFlags
@@ -443,24 +435,22 @@ LizardsAndMinotaurs:
 
 LairTreasure:
 	And WyvernLairFlags 32 Scratch1
-	IfNe
-	Exit
+	if 0 != Scratch1: Exit
 	PrintClear "YOU HAVE FOUND SOME TREASURE."
 	ClearMonsters
-	Treasure #1770 #0FA0 #0BB8 0 0 0 0 129
+	Treasure #1770 #0FA0 #0BB8 0 0 0 0 129 // 1 random items
 	Combat
 	Or WyvernLairFlags 32 WyvernLairFlags
 	Exit
 
 TwoLizards:
 	And WyvernLairFlags 64 Scratch1
-	IfNe
-	Exit
-	SetupMonster 59 0 59
+	if 0 != Scratch1: Exit
+	SetupMonster GiantLizard 0 GiantLizard
 	PrintClear "GUARDING THIS CHAMBER ARE TWO GIANT LIZARDS.  AS YOU APPROACH, THEY ATTACK."
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 59 2 59
+	LoadMonster GiantLizard 2 GiantLizard
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 64 WyvernLairFlags
@@ -469,7 +459,7 @@ TwoLizards:
 GnollAttack:
 	Random 7 Scratch1
 	if Scratch1 > 0: Exit
-	SetupMonster 73 2 73
+	SetupMonster Gnoll 2 Gnoll
 	Approach
 	Approach
 	PrintClear "YOU ARE ATTACKED BY SOME GNOLLS."
@@ -477,7 +467,7 @@ GnollAttack:
 	Add 4 Scratch1 Scratch1
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster 73 Scratch1 73
+	LoadMonster Gnoll Scratch1 Gnoll
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Exit
@@ -489,14 +479,13 @@ ElfRemains:
 
 GnollsAndTrolls:
 	And WyvernLairFlags 128 Scratch1
-	IfNe
-	Exit
-	SetupMonster 73 0 73
+	if 0 != Scratch1: Exit
+	SetupMonster Gnoll 0 Gnoll
 	PrintClear "IN THIS ROOM ARE SOME GNOLLS AND TROLLS.  THEY ATTACK YOU IMMEDIATELY."
 	Save 75 Morale
 	ClearMonsters
-	LoadMonster 73 12 73
-	LoadMonster 31 4 31
+	LoadMonster Gnoll 12 Gnoll
+	LoadMonster Troll 4 Troll
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 128 WyvernLairFlags
@@ -505,7 +494,7 @@ GnollsAndTrolls:
 MadKobolds:
 	Random 7 Scratch1
 	if Scratch1 > 0: Exit
-	SetupMonster 0 2 0
+	SetupMonster Kobold 2 Kobold
 	Approach
 	Approach
 	Save 50 Morale
@@ -515,8 +504,8 @@ MadKobolds:
 	Add 10 Scratch1 Scratch1
 	if Scratch1 >= 40: Save 3 Scratch2
 	ClearMonsters
-	LoadMonster 0 Scratch1 0
-	if Scratch2 != 0: LoadMonster 1 Scratch2 0
+	LoadMonster Kobold0 Scratch1 Kobold
+	if Scratch2 != 0: LoadMonster KoboldLeader1 Scratch2 Kobold
 	Combat
 	Exit
 
@@ -635,14 +624,13 @@ PickMinotaurs:
 Done:
 	PrintClear " "
 	RedrawView
-	Picture 255
+	Picture None
 	Gosub MarkSitesOnMap
 	Exit
 
 MarkSitesOnMap:
 	And MarkFlags57 1 Scratch1
-	IfNe
-	Goto MarkCavesSite
+	if 0 != Scratch1: Goto MarkCavesSite
 	Save 11 ProbeX
 	Save 8 ProbeY
 	Save 34 ProbeCell
@@ -650,8 +638,7 @@ MarkSitesOnMap:
 
 MarkCavesSite:
 	And MarkFlags57 2 Scratch1
-	IfNe
-	Goto MarkThirdSite
+	if 0 != Scratch1: Goto MarkThirdSite
 	Save 6 ProbeX
 	Save 15 ProbeY
 	Save 48 ProbeCell
@@ -659,8 +646,7 @@ MarkCavesSite:
 
 MarkThirdSite:
 	And MarkFlags57 4 Scratch1
-	IfNe
-	Return
+	if 0 != Scratch1: Return
 	Save 7 ProbeX
 	Save 23 ProbeY
 	Save 17 ProbeCell

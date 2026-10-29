@@ -7,7 +7,7 @@ event0:
 
 BoardBoat:
 	if SkyColor21 == 8: Goto SailToPhlan
-	Picture 41
+	Picture Ship
 
 SailToPhlan:
 	PrintClear "YOU BOARD A BOAT."
@@ -29,7 +29,7 @@ event1:
 	And 127 Cell Scratch10
 	RedrawView
 	PrintClear ""
-	Picture 255
+	Picture None
 	Save 0 Scratch6
 	Save 0 AuxCounter
 
@@ -79,7 +79,7 @@ event4:
 	Goto NoRest
 
 DeadElf:
-	Picture 3
+	Picture Bones
 	if ElfScrollTaken == 255: Goto ElfLooted
 	if ElfBodyHacked == 255: Goto ElfLooted
 	PrintClear "THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT."
@@ -120,7 +120,7 @@ ElfLooted:
 	PrintClear "YOU SEE THE PITIFUL REMAINS OF A DEAD ELF.  EVERYTHING OF VALUE HAS BEEN TAKEN OR DESTROYED."
 
 ElfDone:
-	Picture 255
+	Picture None
 	Exit
 
 KeepGates:
@@ -143,7 +143,7 @@ PatrolRoll:
 	if 3 != Scratch1: Exit
 
 UndeadPatrol:
-	SetupMonster 34 2 34
+	SetupMonster Skeleton 2 Skeleton
 	Delay
 	Approach
 	Delay
@@ -169,7 +169,7 @@ PatrolParlay:
 
 PatrolLeaves:
 	PrintClear "THE UNDEAD LEAVE."
-	Picture 255
+	Picture None
 	Exit
 
 WrongPassword:
@@ -240,7 +240,7 @@ SmithyHammer:
 
 TakeHammer:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 19
+	Treasure 0 0 0 0 0 0 0 19 // Hammer +1
 	Combat
 	Save 255 HammerTaken
 	Exit
@@ -276,7 +276,7 @@ HauntsParlay:
 	Save "LUX" $AuxText
 	if $AuxMonsterName == $AuxText: Goto HauntsAppease
 	PrintClear "WRONG WORD. "
-	Picture 255
+	Picture None
 	Print "THE MOANING CONTINUES."
 
 BarracksSearch:
@@ -289,7 +289,7 @@ HauntsAppease:
 	Gosub PressToContinue
 	PrintClear "BEFORE THE CLERIC'S SPELLS INADVERTENTLY BOUND THEM TO THIS PLACE. ONE SPIRIT'S VOICE RISES ABOVE THE REST, 'AN ACCOUNT OF OUR TRIALS IS WITHIN THE DIARY.' HE POINTS TO A FLOORBOARD."
 	Gosub PressToContinue
-	Picture 255
+	Picture None
 	Save 5 Scratch1
 	Save 255 HauntsAppeased
 
@@ -311,7 +311,7 @@ TakeGems:
 
 Insects:
 	if InsectsBeaten == 255: Exit
-	SetupMonster 18 0 18
+	SetupMonster Scorpion 0 Scorpion
 	PrintClear "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
 	Save 25 AuxMember
 	Gosub PressToContinue
@@ -329,7 +329,7 @@ InsectsDone:
 OrcRaid:
 	if FerranFreed == 255: Goto EmptyHall
 	if OrcRaidBeaten == 255: Goto EmptyHall
-	SetupMonster 6 1 6
+	SetupMonster Hobgoblin 1 Hobgoblin
 	PrintClear "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
 	Gosub PressToContinue
 	Save 5 Scratch1
@@ -380,7 +380,7 @@ MagicGear:
 
 TakeGear:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 21
+	Treasure 0 0 0 0 0 0 0 21 // Mace +2, Chain Mail +1, Long Sword +1, Shield +1
 	Combat
 	Save 255 MagicGearTaken
 	Exit
@@ -415,11 +415,11 @@ FerranParlay:
 	}
 	Save 255 FerranFaded
 	PrintClear "THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY."
-	Picture 255
+	Picture None
 	Exit
 
 FerranSpeaks:
-	Picture 19
+	Picture HoodedMan
 	PrintClear "THE SHAPE SPEAKS, 'I AM THE LIFE FORM OF FERRAN MARTINEZ, BOUND WITH THE UNDEAD SPIRITS OF ALL WHO DIE WITHIN THESE WALLS TO GUARD THE KEEP. TELL ME, HAS THE CITY BEEN FREED?'"
 	NewLine
 	Print "DO YOU: "
@@ -429,7 +429,7 @@ FerranSpeaks:
 LieToFerran:
 	PrintClear "'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY."
 	Save 255 LiedToFerran
-	Picture 255
+	Picture None
 	Exit
 
 TellFerranTruth:
@@ -447,7 +447,7 @@ FerranPassword:
 	Save 0 PatrolPassword
 	Save 255 FerranFreed
 	Save 254 QuestSokalKeep
-	Picture 255
+	Picture None
 	Exit
 
 FerranFight:
@@ -474,7 +474,7 @@ RunAway:
 	Call CallRedraw
 
 ClearExit:
-	Picture 255
+	Picture None
 	Exit
 
 PressToContinue:

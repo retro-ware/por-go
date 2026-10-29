@@ -141,7 +141,7 @@ NomadCampEvent:
 	if NomadCampSeen != 0: Goto Done
 	ClearBox
 	Call CallClearView
-	Picture 30
+	Picture Forest
 	Save 1 Mark4Off
 	PrintClear "YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
@@ -154,7 +154,7 @@ EnterNomadCamp:
 CityNorthEdge:
 	ClearBox
 	Call CallClearView
-	Picture 40
+	Picture Harbor
 	PrintClear "YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?"
 	HMenu Scratch1 3 "CITY" "GRAVEYARD" "LEAVE"
 	OnGoto Scratch1 3 EnterNorthGate EnterGraveyard Done
@@ -176,7 +176,7 @@ EnterGraveyard:
 CityEastEdge:
 	ClearBox
 	Call CallClearView
-	Picture 40
+	Picture Harbor
 	PrintClear "YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?"
 	HMenu Scratch1 4 "NORTH" "SOUTH" "BOAT" "LEAVE"
 	OnGoto Scratch1 4 EnterEastNorth EnterEastSouth BoatToCivilized Done
@@ -205,7 +205,7 @@ BoatToCivilized:
 CityWestEdge:
 	ClearBox
 	Call CallClearView
-	Picture 40
+	Picture Harbor
 	PrintClear "YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?"
 	HMenu Scratch1 3 "NORTH" "SOUTH" "LEAVE"
 	OnGoto Scratch1 3 EnterWestNorth EnterWestSouth Done
@@ -235,7 +235,7 @@ PyramidFront:
 	Delay
 	ClearBox
 	Call CallClearView
-	Picture 36
+	Picture Pyramid
 	PrintClear "YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "ENTER" "GO BACK"
 	OnGoto Scratch1 2 EnterPyramid PyramidGoBack
@@ -247,19 +247,19 @@ EnterPyramid:
 PyramidGoBack:
 	Save 14 MapY
 	Call CallRedraw
-	Picture 255
+	Picture None
 	Goto Done
 
 BoatHome:
 	ClearBox
 	Call CallClearView
-	Picture 41
+	Picture Ship
 	PrintClear "THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?"
 	HMenu Scratch1 2 "TAKE BOAT" "STAY"
 	OnGoto Scratch1 2 BoatToCivilized Done
 
 Enter3DSetup:
-	Picture 255
+	Picture None
 	ClearBox
 	Save 1 In3D
 	Save 127 WallSlot1
@@ -420,40 +420,37 @@ GroveEdge:
 
 SplashingPool:
 	And LairFightFlags 1 Scratch1
-	IfNe
-	Exit
+	if 0 != Scratch1: Exit
 	PrintClear "NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?"
 	HMenu Scratch1 2 "APPROACH" "LEAVE"
 	OnGoto Scratch1 2 PoolLizardMen Done
 
 PoolLizardMen:
-	SetupMonster 57 0 57
+	SetupMonster Lizardman 0 Lizardman
 	PrintClear "YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!"
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster 57 6 57
+	LoadMonster Lizardman 6 57
 	Combat
 	Or LairFightFlags 1 LairFightFlags
 	Exit
 
 DisplacerAmbush:
 	And LairFightFlags 2 Scratch1
-	IfNe
-	Exit
-	SetupMonster 68 0 68
+	if 0 != Scratch1: Exit
+	SetupMonster DisplacerBeast 0 DisplacerBeast
 	PrintClear "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
 	Save 1 Surprise
 	ClearMonsters
-	LoadMonster 68 2 68
+	LoadMonster DisplacerBeast 2 DisplacerBeast
 	Combat
 	Or LairFightFlags 2 LairFightFlags
 	Exit
 
 ChainedKobolds:
 	And LairFightFlags 4 Scratch1
-	IfNe
-	Exit
-	SetupMonster 0 0 0
+	if 0 != Scratch1: Exit
+	SetupMonster Kobold 0 Kobold
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
 	HMenu Scratch1 3 "RELEASE" "ATTACK" "LEAVE"
 	OnGoto Scratch1 3 ReleaseKobolds KillKobolds StepBack
@@ -461,7 +458,7 @@ ChainedKobolds:
 ReleaseKobolds:
 	PrintClear "YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR."
 	Or 4 LairFightFlags LairFightFlags
-	Picture 255
+	Picture None
 	Exit
 
 KillKobolds:
@@ -474,12 +471,11 @@ StenchWest:
 
 MutantLizardHut:
 	And LairFightFlags 8 Scratch1
-	IfNe
-	Exit
-	SetupMonster 57 0 57
+	if 0 != Scratch1: Exit
+	SetupMonster Lizardman 0 Lizardman
 	PrintClear "YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY."
 	ClearMonsters
-	LoadMonster 58 2 57
+	LoadMonster MutantLizMan 2 57
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 8 LairFightFlags
@@ -487,12 +483,11 @@ MutantLizardHut:
 
 LizardHut:
 	And LairFightFlags 16 Scratch1
-	IfNe
-	Exit
-	SetupMonster 57 0 57
+	if 0 != Scratch1: Exit
+	SetupMonster Lizardman 0 Lizardman
 	PrintClear "INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY."
 	ClearMonsters
-	LoadMonster 57 4 57
+	LoadMonster Lizardman 4 57
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 16 LairFightFlags
@@ -500,13 +495,12 @@ LizardHut:
 
 LargeLizardMen:
 	And LairFightFlags 32 LairFightFlags
-	IfNe
-	Exit
-	SetupMonster 57 0 57
+	if 0 != LairFightFlags: Exit
+	SetupMonster Lizardman 0 Lizardman
 	PrintClear "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
 	Save 252 MonsterHit
 	ClearMonsters
-	LoadMonster 57 4 57
+	LoadMonster Lizardman 4 57
 	Combat
 	Save 0 MonsterHit
 	if CombatEnd > 128: Goto StepBack
@@ -515,12 +509,12 @@ LargeLizardMen:
 
 StirgeSwarm:
 	if LairRespawnTimer != 0: Goto StirgeTimerTick
-	SetupMonster 61 0 61
+	SetupMonster Stirge 0 Stirge
 	PrintClear "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
 	Random 30 Scratch1
 	if Scratch1 < 6: Save 6 Scratch1
 	ClearMonsters
-	LoadMonster 61 6 61
+	LoadMonster Stirge 6 Stirge
 	Combat
 	Save 3 LairRespawnTimer
 	Exit
@@ -646,7 +640,7 @@ PressReturn:
 Done:
 	PrintClear " "
 	RedrawView
-	Picture 255
+	Picture None
 	Gosub PatchPyramidTiles
 	Exit
 
@@ -767,8 +761,7 @@ PatchPyramidTiles:
 CheckMarker4:
 	if Mark4 != 0: Goto ShowMarker4
 	And MarkFlags4 8 Scratch9
-	IfNe
-	Goto ShowMarker4
+	if 0 != Scratch9: Goto ShowMarker4
 	if Mark4Off != 0: Return
 
 ShowMarker4:

@@ -34,8 +34,7 @@ PressReturn:
 
 SearchSecretDoor:
 	And Scratch1 SecretDoorsFound Scratch10
-	IfNe
-	Goto SecretDoorFound
+	if 0 != Scratch10: Goto SecretDoorFound
 	Save 0 Scratch10
 
 SearchMemberLoop:
@@ -85,8 +84,7 @@ ByFacing9B0F:
 
 event0:
 	And Cell 31 Scratch1
-	IfEq
-	Exit
+	if 0 == Scratch1: Exit
 	if Scratch1 > 10: Exit
 	Sub 1 Scratch1 Scratch1
 	GetTable Table9C40 Scratch1 Scratch10
@@ -136,8 +134,7 @@ CheckSecretDoor:
 BlockUnfoundDoor:
 	GetTable Table9C4A Scratch1 Scratch1
 	And SecretDoorsFound Scratch1 Scratch10
-	IfEq
-	Save 255 HoldMove
+	if 0 == Scratch10: Save 255 HoldMove
 	Exit
 
 Table9C40:
@@ -150,16 +147,14 @@ RockRoom:
 	PrintClear "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
 	Gosub PressReturn
 	And TeleporterRockFlags 2 Scratch10
-	IfNe
-	Goto RockRoomMenu
+	if 0 != Scratch10: Goto RockRoomMenu
 	OnGoto Search 2 RockRoomTeleport TingleNearBareArea
 
 RockRoomTeleport:
 	Gosub FlashTeleport
 	Or TeleporterRockFlags 2 TeleporterRockFlags
 	And TeleporterRockFlags 1 Scratch10
-	IfEq
-	Goto RockTeleportAlt
+	if 0 == Scratch10: Goto RockTeleportAlt
 	Gosub ToggleRockFlag
 	GetTable Table9CE7 Scratch1 Scratch1
 	if Scratch1 == 255: Goto ExitToArea22North
@@ -196,8 +191,7 @@ ThrowRock:
 
 ToggleRockFlag:
 	And TeleporterRockFlags 1 Scratch10
-	IfEq
-	Goto SetRockFlag
+	if 0 == Scratch10: Goto SetRockFlag
 	And TeleporterRockFlags 254 TeleporterRockFlags
 	Return
 
@@ -232,15 +226,13 @@ LeaveToArea22:
 
 LizardMenGroup:
 	And RoomsVisited 1 Scratch10
-	IfNe
-	Goto CheckSecretDoor
+	if 0 != Scratch10: Goto CheckSecretDoor
 	Save 0 Surprise
 	PrintClear "YOU SEE A GROUP OF FIVE LIZARD MEN. THEY HISS AT YOU."
 	Gosub PressReturn
 	Save 6 Scratch3
 	And SecretDoorsFound 4 Scratch10
-	IfEq
-	Save 30 Scratch3
+	if 0 == Scratch10: Save 30 Scratch3
 	EncounterMenu 57 2 57 Scratch10 0 3 1 1 4 "THEY ARE WARY, BUT NOT HOSTILE." "STANDING READY THEIR LEADER SAYS 'YOU MUST BE THE SERVANTS OF YARASH!'" "THEIR LEADER SAYS 'FOUL SERVANTS OF YARASH!'" Scratch3 Scratch3
 	Or RoomsVisited 1 RoomsVisited
 	OnGoto Scratch10 3 RedrawExit LizardMenAttack AfterLizardFight
@@ -255,7 +247,7 @@ LizardMenAttack:
 	Gosub PressReturn
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster 57 5 57
+	LoadMonster Lizardman 5 57
 	Combat
 	if CombatEnd != 129: Exit
 
@@ -265,8 +257,7 @@ AfterLizardFight:
 
 TortureRoom:
 	And RoomsVisited 2 Scratch10
-	IfNe
-	Goto CheckSecretDoor
+	if 0 != Scratch10: Goto CheckSecretDoor
 	PrintClear "YOU HAVE ENTERED A ROOM FILLED WITH A HORRIBLE ASSORTMENT OF TORTURE INSTUMENTS. IN THE CENTER IS A LARGE TABLE WITH METAL RESTRAINTS."
 	Gosub PressReturn
 	PrintClear "THE WALLS ARE LINED WITH FLASKS AND BOTTLES CONTAINING POWDERS, OILS, OINTMENTS, AND DRAUGHTS. THESE ARE SURELY OF AN ALCHEMICAL NATURE."
@@ -275,8 +266,7 @@ TortureRoom:
 
 VatRoom:
 	And RoomsVisited 4 Scratch10
-	IfNe
-	Goto CheckSecretDoor
+	if 0 != Scratch10: Goto CheckSecretDoor
 	PrintClear "YOU HAVE ENTERED A ROOM FILLED WITH LARGE VATS WITH THE SAME OILY BLACK STUFF THAT FLOWS FROM THE FOUNTAIN. THE CHAMBER STINKS. ON THE WALLS ARE SHELVES OF BOTTLES AND FLASKS."
 	Or RoomsVisited 4 RoomsVisited
 	Exit
@@ -284,13 +274,13 @@ VatRoom:
 VatLizardAmbush:
 	And RoomsVisited 8 Scratch10
 	if Scratch10 != 0 || Search != 1: Exit
-	SetupMonster 57 0 57
+	SetupMonster Lizardman 0 Lizardman
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 4 1
 	PrintClear "AS YOU ARE POKING AROUND IN THE VATS, A PAIN CRAZED LIZARD MAN SURFACES AND ATTACKS YOU! TWO OTHERS QUICKLY JOIN HIM FROM OTHER VATS."
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster 58 3 57
+	LoadMonster MutantLizMan 3 57
 	Combat
 	if CombatEnd == 129: Goto AfterLizardFight
 	Or RoomsVisited 8 RoomsVisited
@@ -298,8 +288,7 @@ VatLizardAmbush:
 
 AlchemistLab:
 	And RoomsVisited 16 Scratch10
-	IfNe
-	Goto CheckSecretDoor
+	if 0 != Scratch10: Goto CheckSecretDoor
 	PrintClear "YOU HAVE ENTERED WHAT LOOKS LIKE AN ORDINARY ALCHEMISTS LAB... RECENTLY USED."
 	Or RoomsVisited 16 RoomsVisited
 	Exit
@@ -319,7 +308,7 @@ JunkStoreroom:
 	Gosub PressReturn
 	Or RoomsVisited2 Scratch1 RoomsVisited2
 	ClearMonsters
-	Treasure 0 #04B0 0 #0190 0 0 0 131
+	Treasure 0 #04B0 0 #0190 0 0 0 131 // 3 random items
 	Combat
 	Exit
 
@@ -362,7 +351,7 @@ PasswordRunes:
 FountainChamber:
 	And RoomsVisited 128 Scratch10
 	if Scratch10 != 0 || Facing != 1: Exit
-	Picture 45
+	Picture Sewers
 	PrintClear "YOU HAVE ENTERED THE FOUNTAIN CHAMBER. IN THE CENTER OF THE ROOM A COLUMN OF BLACK FOUL WATER JETS UP THROUGH A CLEAR PIPE AND OUT THE ROOF."
 	Gosub PressReturn
 	PrintClear "ANOTHER PIPE, RUNNING FROM THE WALL ACROSS AND TO YOUR RIGHT, PUMPS IN STREAMS OF THE FOUL LIQUID. ALL ABOUT THE ROOM ARE VALVES, GAUGES, PETCOCKS, AND PIPES."
@@ -417,8 +406,7 @@ FountainDone:
 
 PumpingRoom:
 	And RoomsVisited2 3 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU HAVE ENTERED A PUMPING ROOM. WORKING AS SLAVES IN THIS ROOM ARE THREE LIZARD MEN WITH WHIP CUTS ACROSS THEIR BACK WHO ARE SHACKLED TO THE WALL BY LONG CHAINS."
 	Gosub PressReturn
 	PrintClear "TWO OF THEM ARE POURING BARRELS OF THE BLACK CONTAMINANT INTO A LARGE VAT. THE OTHER IS WORKING A BELLOWS PUMP."
@@ -440,7 +428,7 @@ SlavesAttack:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 57 3 57
+	LoadMonster Lizardman 3 57
 	Combat
 	Save 0 Scratch1
 	if CombatEnd == 129: Goto TeleportToDest
@@ -449,10 +437,9 @@ SlavesAttack:
 
 AncientMage:
 	And RoomsVisited2 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Save 56 Portrait
-	SetupMonster 24 2 30
+	SetupMonster Mage 2 30
 	PrintClear "AN ANCIENT MAGE LOOKS UP FROM HIS STUDIES, 'AH, GOOD, I NEED MORE SPECIMENS AS CONTROLS.' HE TURNS TO HIS MUTATED GUARDS, 'SUBDUE THEM!'"
 	Gosub PressReturn
 	EncounterMenu 24 2 30 Scratch10 0 3 0 3 0 "" "" "" 12 12
@@ -463,8 +450,8 @@ FightMage:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 81 1 14
-	LoadMonster 58 6 57
+	LoadMonster Yarash 1 Shaman
+	LoadMonster MutantLizMan 6 57
 	Combat
 	Save 0 Scratch1
 	if CombatEnd == 129: Goto TeleportToDest
@@ -508,16 +495,14 @@ DialGold:
 
 YarashDesk:
 	And RoomsVisited2 64 Scratch10
-	IfNe
-	Goto SearchDeskPapers
+	if 0 != Scratch10: Goto SearchDeskPapers
 	PrintClear "THIS IS THE DESK OF YARASH. ON IT IS A LITTER OF PAPERS."
 	Or RoomsVisited2 64 RoomsVisited2
 	Gosub PressReturn
 
 SearchDeskPapers:
 	And RoomsVisited2 128 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	if Search == 0: Exit
 	Or RoomsVisited2 128 RoomsVisited2
 	PrintClear "AMONG THE PAPERS ON THE DESK YOU FIND THE FOLLOWING AND SLIP THEM INTO YOUR JOURNAL:"

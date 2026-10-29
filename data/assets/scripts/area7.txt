@@ -93,14 +93,12 @@ DestY:
 
 HoldAtSecretDoor:
 	And SearchTowerFlags 8 Scratch10
-	IfEq
-	Save 255 HoldMove
+	if 0 == Scratch10: Save 255 HoldMove
 	Exit
 
 SecretDoorCheck:
 	And SearchTowerFlags 8 Scratch10
-	IfNe
-	Goto SecretDoorFound
+	if 0 != Scratch10: Goto SecretDoorFound
 	Save 0 Scratch9
 
 SecretDoorRoll:
@@ -151,8 +149,7 @@ ChooseOpener:
 	Who "WHO WILL OPEN IT?"
 	if SelStatus != 1: Goto ChooseOpener
 	And SearchTowerFlags 16 Scratch10
-	IfNe
-	Goto SawStatues
+	if 0 != Scratch10: Goto SawStatues
 	Random 19 Scratch10
 	Add 1 Scratch10 Scratch10
 	if Scratch10 >= SelSaveVsPetrify: Goto OpenerPetrified
@@ -191,8 +188,7 @@ StatueRoom:
 
 MedusaMenu:
 	And SearchTowerFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	EncounterMenu 49 1 49 Scratch10 0 3 0 3 0 "A MEDUSA COMES RUNNING TOWARD YOU." "" "" 9 9
 	OnGoto Scratch10 3 RedrawExit MedusaFight RetreatFromMedusa
 
@@ -200,7 +196,7 @@ MedusaFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 49 1 49
+	LoadMonster Medusa 1 Medusa
 	Combat
 	if CombatEnd == 129: Goto RetreatFromMedusa
 	Or SearchTowerFlags 16 SearchTowerFlags
@@ -219,15 +215,12 @@ BenchRoom:
 
 MessengerThief:
 	And GenheerisFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And SearchTowerFlags 96 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Print " WAITING HERE IS A MAN PLAYING WITH A DAGGER."
 	And BaneTempleFlags 3 Scratch10
-	IfNe
-	Goto ThiefAttacks
+	if 0 != Scratch10: Goto ThiefAttacks
 	Print " AS YOU COME IN HE NODS AT YOU."
 	Gosub PressToContinue
 	Save 70 Portrait
@@ -256,7 +249,7 @@ ThiefFight:
 	Save 100 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster 45 1 12
+	LoadMonster StLvlThief 1 12
 	Combat
 	if CombatEnd == 129: Goto RetreatFromThief
 	Or SearchTowerFlags 32 SearchTowerFlags
@@ -269,16 +262,13 @@ MerchantRoom:
 
 GenheerisAtDesk:
 	And GenheerisFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And GenheerisFlags 3 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Print " A MIDDLE AGED MAN IN ROBES LOOKS UP FROM A DESK."
 	Gosub PressToContinue
 	And SearchTowerFlags 32 Scratch10
-	IfNe
-	Goto GenheerisOffer
+	if 0 != Scratch10: Goto GenheerisOffer
 	Save 59 Portrait
 	EncounterMenu 24 1 31 Scratch10 0 4 1 4 4 "'SO WHAT MESSAGE FROM TYRANTHRAXUS REQUIRES ALL OF YOU TO DELIVER IT?'" "" "" 0 0
 	Save 255 Portrait
@@ -291,7 +281,7 @@ GenheerisAtDesk:
 
 GenheerisOffer:
 	Save 59 Portrait
-	SetupMonster 24 0 31
+	SetupMonster Mage 0 31
 	PrintClear "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
 	Gosub PressToContinue
 	if PartyCount == 8: Goto GenheerisDeal
@@ -301,7 +291,7 @@ GenheerisOffer:
 	IfNe
 	Goto GenheerisFight
 	PrintClear "GOOD."
-	AddNPC 88 100
+	AddNPC Genheeris 100
 	Or GenheerisFlags 1 GenheerisFlags
 	Goto RedrawExit
 
@@ -319,7 +309,7 @@ GenheerisFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 88 1 14
+	LoadMonster Genheeris 1 14
 	Combat
 	Or GenheerisFlags 2 GenheerisFlags
 	if CombatEnd != 129: Exit
@@ -332,8 +322,7 @@ RetreatFromGenheeris:
 
 GenheerisLeaves:
 	And GenheerisFlags 1 Scratch10
-	IfEq
-	Exit
+	if 0 == Scratch10: Exit
 	And GenheerisFlags 252 GenheerisFlags
 	Or GenheerisFlags 2 GenheerisFlags
 	Save 0 AuxCounter
@@ -355,8 +344,7 @@ FindGenheerisNext:
 
 AudienceHall:
 	And GenheerisFlags 8 Scratch10
-	IfNe
-	Goto HallGuards
+	if 0 != Scratch10: Goto HallGuards
 	PrintClear "YOU ARE IN THE AUDIENCE HALL OF TYRANTHRAXUS, CONQUEROR OF PHLAN. THE CEILING HAS BEEN TORN AWAY LEAVING THE ENTIRE SECTION OF THE TOWER OPEN TO THE SKY."
 	Gosub PressToContinue
 	PrintClear "IN THE CENTER OF THE ROOM IS A GLOWING POOL. AN ANCIENT BRONZE DRAGON, SURROUNDED BY A FIERY AURA, RISES FROM WHERE IT WAS COILED NEARBY."
@@ -366,8 +354,7 @@ AudienceHall:
 
 HallGuards:
 	And GenheerisFlags 4 Scratch10
-	IfNe
-	Goto DragonOffer
+	if 0 != Scratch10: Goto DragonOffer
 	Save 12 Portrait
 	EncounterMenu 16 0 1 Scratch10 0 0 0 0 0 "TWO GUARDS MOVE TO BAR YOUR PATH. THE DRAGON LOOKS AT YOU WITH MALEVOLENCE. 'GUARDS, KILL THESE PESTS.'" "" "" 9 9
 	Save 255 Portrait
@@ -383,16 +370,15 @@ GuardsFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 85 12 11
+	LoadMonster ThLvlFighter85 12 ThLvlFighter
 	Combat
 	if CombatEnd == 129: Goto RetreatFromHall
 	Or GenheerisFlags 4 GenheerisFlags
 
 DragonOffer:
 	And GenheerisFlags 16 Scratch10
-	IfNe
-	Goto RedrawExit
-	Picture 66
+	if 0 != Scratch10: Goto RedrawExit
+	Picture BrownDragon
 	PrintClear "THE DRAGON LOOKS AT YOU WITH INTEREST. 'YOU ARE INDEED MIGHTY WARRIORS. EVEN SO, THERE IS NO HOPE OF YOUR SUCCESS. BUT YOU INTEREST ME.'"
 	Gosub PressToContinue
 	PrintClear "'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'"
@@ -430,7 +416,7 @@ VoteNext:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 66 1 66
+	LoadMonster Tyranithraxus66 1 Tyranithraxus
 	Combat
 	if CombatEnd == 129: Goto RetreatFromHall
 	if QuestTyranthraxus != 255: Save 254 QuestTyranthraxus

@@ -16,15 +16,6 @@ func TestFoldScript(t *testing.T) {
 	if err != nil || !l.Exists("ECL1.DAX") {
 		t.Skip("no game files")
 	}
-	areas, err := ReadScriptAreas("../data/assets/scripts/names/areas.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	names := ScriptVarNames()
-	vars := map[string]int{}
-	for a, n := range names {
-		vars[n] = a
-	}
 	n := 0
 	for disk := 1; disk <= 8; disk++ {
 		for block := range 40 {
@@ -32,16 +23,20 @@ func TestFoldScript(t *testing.T) {
 			if len(b) < 2 {
 				continue
 			}
-			var plain strings.Builder
-			if err := scriptPlain(b[2:], &plain, names); err != nil {
+			names, err := ReadAreaNames("../data/assets/scripts", block, true)
+			if err != nil {
 				t.Fatal(err)
 			}
-			folded := foldScript(plain.String(), areas)
-			want, err := ParseScript(plain.String(), vars, areas)
+			var plain strings.Builder
+			if err := scriptPlain(b[2:], &plain, names.Vars); err != nil {
+				t.Fatal(err)
+			}
+			folded := foldScript(plain.String(), names)
+			want, err := ParseScript(plain.String(), names)
 			if err != nil {
 				t.Fatalf("ECL%d %d: %v\n%.300s", disk, block, err, plain.String())
 			}
-			got, err := ParseScript(folded, vars, areas)
+			got, err := ParseScript(folded, names)
 			if err != nil {
 				os.WriteFile(t.TempDir()+"/f.txt", []byte(folded), 0o644)
 				t.Fatalf("ECL%d %d: %v", disk, block, err)
@@ -59,16 +54,16 @@ func TestFoldScript(t *testing.T) {
 }
 
 func TestUnfoldForms(t *testing.T) {
-	vars := map[string]int{"A": 0x4A00, "B": 0x4A01}
+	names := &ScriptNames{Vars: map[int]string{0x4A00: "A", 0x4A01: "B"}}
 	one := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n\tif A == 3 { Save 1 B; Exit }\n\talso if A < 3: Goto event0\n\tExit\n"
 	many := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n\tif A == 3 {\n\t\tSave 1 B\n\t\tExit\n\t}\n\talso if A < 3:Goto event0\n\tExit\n"
 	plain := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n\tCompare A 3\n\tIfEq\n\tSave 1 B\n\tIfEq\n\tExit\n\tIfLt\n\tGoto event0\n\tExit\n"
-	want, err := ParseScript(plain, vars, nil)
+	want, err := ParseScript(plain, names)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, s := range []string{one, many} {
-		got, err := ParseScript(s, vars, nil)
+		got, err := ParseScript(s, names)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,8 +75,29 @@ func TestUnfoldForms(t *testing.T) {
 		}
 	}
 	for _, bad := range []string{"\tif A == 3 {\n", "\t}\n", "\tif A = 3: Exit\n", "\tCompare B 1\n\talso if A == 3: Exit\n"} {
-		if _, err := ParseScript("event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"+bad+"\tExit\n", vars, nil); err == nil {
+		if _, err := ParseScript("event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"+bad+"\tExit\n", names); err == nil {
 			t.Errorf("%q parsed", bad)
 		}
+	}
+}
+
+// The tests on an And's result and on a carried item.
+func TestUnfoldAndCarried(t *testing.T) {
+	names := &ScriptNames{Vars: map[int]string{0x4A00: "A", 0x4A01: "B"},
+		Values: []ScriptValue{{"Item", 0, 91, "Pass"}}}
+	head := "event0:\nevent1:\nevent2:\nevent3:\nevent4:\n"
+	got, err := ParseScript(head+"\tAnd 127 A B\n\tif 0 < B: Exit\n\talso if 0 == B { Save 1 A; Exit }\n\tif Carried Pass: Exit\n\tif 0 == B: Exit\n", names)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := ParseScript(head+"\tAnd 127 A B\n\tIfLt\n\tExit\n\tIfEq\n\tSave 1 A\n\tIfEq\n\tExit\n\tFindItem 91\n\tIfEq\n\tExit\n\tCompare 0 B\n\tIfEq\n\tExit\n", names)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range want.Code {
+		want.Code[i].Line, got.Code[i].Line = 0, 0
+	}
+	if !reflect.DeepEqual(want.Code, got.Code) {
+		t.Errorf("got %v\nwant %v", got.Code, want.Code)
 	}
 }

@@ -65,73 +65,73 @@ PickEncounter:
 	if Scratch1 > 7: Goto GhoulsAttack
 	if Scratch1 > 3: Goto ScorpionsApproach
 	Save 60 Morale
-	SetupMonster 37 0 37
+	SetupMonster GiantFrog 0 GiantFrog
 	PrintClear "EVIL LOOKING FROGS BOIL UP FROM BELOW."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 38 8 37
+	LoadMonster PoisonousFrog 8 PoisonousFrog
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 HobgoblinsCharge:
 	Save 60 Morale
-	SetupMonster 6 2 6
+	SetupMonster Hobgoblin 2 Hobgoblin
 	PrintClear "HOBGOBLINS CHARGE SCREAMING."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 6 8 6
-	LoadMonster 7 1 7
+	LoadMonster Hobgoblin 8 Hobgoblin
+	LoadMonster HobgoblinLdr 1 HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 SkeletalForce:
 	Save 100 Morale
-	SetupMonster 34 2 34
+	SetupMonster Skeleton 2 Skeleton
 	PrintClear "A SKELETAL FORCE SPOTS YOU AND ATTACKS."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 20 1 20
-	LoadMonster 34 10 34
-	LoadMonster 35 8 35
+	LoadMonster Wight 1 Wight
+	LoadMonster Skeleton 10 Skeleton
+	LoadMonster Zombie 8 35
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 GhoulsAttack:
 	Save 100 Morale
-	SetupMonster 72 2 72
+	SetupMonster Ghoul 2 Ghoul
 	PrintClear "SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 20 1 20
-	LoadMonster 72 5 72
+	LoadMonster Wight 1 Wight
+	LoadMonster Ghoul 5 Ghoul
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 ScorpionsApproach:
-	SetupMonster 18 1 18
+	SetupMonster Scorpion 1 Scorpion
 	Save 50 Morale
 	PrintClear "SCORPIONS APPROACH HUNGRILY."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 18 3 18
-	LoadMonster 39 1 18
+	LoadMonster LargeScorpion 3 18
+	LoadMonster HugeScorpion 1 18
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 CourtyardAmbush:
 	if HobgoblinTempleState != 0: Exit
-	SetupMonster 6 0 6
+	SetupMonster Hobgoblin 0 Hobgoblin
 	PrintClear "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
 	Save 60 Morale
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 6 12 6
-	LoadMonster 7 2 7
+	LoadMonster Hobgoblin 12 Hobgoblin
+	LoadMonster HobgoblinLdr 2 HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto ChasedOut
 	Save 1 HobgoblinTempleState
@@ -264,7 +264,7 @@ SmallDarkRoom:
 	if PrisonerState == 255: Exit
 	if PrisonerState == 128: Goto FreeManMenu
 	Save 32 Portrait
-	SetupMonster 14 0 3
+	SetupMonster Fighter14 0 3
 	Print "A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47."
 
 PrisonerContinue:
@@ -285,9 +285,7 @@ FreeMenu:
 	OnGoto AuxParlayChoice 4 UnlockChains PickLockFails ChainsHold PrisonerMenu
 
 UnlockChains:
-	FindItem 75
-	IfEq
-	Goto KeyOpensLocks
+	if Carried 75: Goto KeyOpensLocks
 	PrintClear "YOU HAVE NO KEY TO UNLOCK THE PADLOCKS."
 	Goto PrisonerContinue
 
@@ -347,7 +345,7 @@ FreeManMenu:
 FightFreeMan:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 27 1 11
+	LoadMonster Skullcrusher 1 Skullcrusher
 	Combat
 	Save 255 PrisonerState
 	Save 255 Portrait
@@ -383,7 +381,7 @@ AddSkullcrusher:
 
 SkullcrusherJoins:
 	PrintClear "'GREAT! MY NAME IS SKULLCRUSHER. THERE'S A SECRET DOOR TO THE SOUTHEAST. THAT'S WHERE I MET THE HOBGOBLIN LEADER.'"
-	AddNPC 27 100
+	AddNPC Skullcrusher 100
 	Gosub PressToContinue
 	Save 255 PrisonerState
 	Save 255 Portrait
@@ -404,15 +402,15 @@ GrishnakTemple:
 	if HobgoblinTempleState != 1: Exit
 	PrintClear "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
 	Gosub PressToContinue
-	SetupMonster 6 0 9
+	SetupMonster Hobgoblin 0 9
 	PrintClear "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
-	SetupMonster 6 0 6
+	SetupMonster Hobgoblin 0 Hobgoblin
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 28 1 2
-	LoadMonster 7 3 7
-	LoadMonster 6 12 6
-	Treasure 100 20 30 40 8 0 0 38
+	LoadMonster Grishnak 1 Grishnak
+	LoadMonster HobgoblinLdr 3 HobgoblinLdr
+	LoadMonster Hobgoblin 12 Hobgoblin
+	Treasure 100 20 30 40 8 0 0 38 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Quarter Staff, Potion of Healing, and 2 more
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
 	Save 2 HobgoblinTempleState
@@ -435,16 +433,16 @@ OgreChief:
 	Save 2 Facing
 	Call CallRedraw
 	PrintClear "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
-	SetupMonster 6 1 6
+	SetupMonster Hobgoblin 1 Hobgoblin
 	PrintClear "YOU SEE THE CHIEF OF THE HOBGOBLINS, A HUGE OGRE. AS YOU ENTER, HE RISES TO HIS FULL, TEN FEET OF HEIGHT; HIS HEAD WREATHED IN THE FLICKERING SHADOWS."
 	Gosub PressToContinue
 	PrintClear "'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'"
 	Gosub PressToContinue
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 8 1 8
-	LoadMonster 6 18 6
-	LoadMonster 7 4 7
+	LoadMonster Ogre 1 Ogre
+	LoadMonster Hobgoblin 18 Hobgoblin
+	LoadMonster HobgoblinLdr 4 HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
 	Save 255 IronBoxFound
@@ -460,7 +458,7 @@ OpenBox:
 	Save 128 IronBoxState
 	Save 1 RestalDealDone
 	ClearMonsters
-	Treasure #01C2 20 0 0 #0190 8 4 39
+	Treasure #01C2 20 0 0 #0190 8 4 39 // Gauntlets of Ogre Power, Gold Banded Wand, Jewel Studded Bowl, Jewelled Dragon Statuette, Ring
 	Combat
 	Exit
 
@@ -472,12 +470,12 @@ HobgoblinEncounter:
 	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
 
 HobgoblinFight:
-	SetupMonster 6 0 6
+	SetupMonster Hobgoblin 0 Hobgoblin
 	Save 60 Morale
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster 6 AuxCounter 6
-	LoadMonster 7 AuxMember 7
+	LoadMonster Hobgoblin AuxCounter Hobgoblin
+	LoadMonster HobgoblinLdr AuxMember HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
 	if Scratch10 == 2: Goto MarkBarracksSeen
@@ -617,7 +615,7 @@ MeetRestal:
 
 DuplicateSeal:
 	ClearMonsters
-	Treasure 0 0 0 0 200 4 2 39
+	Treasure 0 0 0 0 200 4 2 39 // Gauntlets of Ogre Power, Gold Banded Wand, Jewel Studded Bowl, Jewelled Dragon Statuette, Ring
 	Combat
 	Save 1 RestalDealDone
 	Save 1 IronBoxState
@@ -652,14 +650,12 @@ BlindfoldedWalk:
 ShowThief:
 	Save 3 Facing
 	Call CallRedraw
-	Save 52 Portrait
-	Picture 8
+	ShowPortrait 52 8
 	Return
 
 LeaveWell:
 	Save 1 PartyX
-	Save 255 Portrait
-	Picture 255
+	ShowPortrait 255 255
 	Call CallRedraw
 	Return
 

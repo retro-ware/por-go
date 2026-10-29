@@ -191,7 +191,7 @@ CountPatrolBeaten:
 
 Done:
 	RedrawView
-	Picture 255
+	Picture None
 	Exit
 
 PartyFlees:
@@ -336,7 +336,7 @@ RumorBaneTemple:
 AuctionStart:
 	Save 0 NoCoords
 	if DisguiseState > 253: Exit
-	Picture 16
+	Picture OldMan
 	PrintClear "THE AUCTIONEER CRIES 'CREATURES OF ALL AGES, WELCOME TO THIS AUCTION FOR AN ITEM BOTH MAGICAL AND POWERFUL!'"
 	Gosub PressToContinue
 	PrintClear "THE AUCTIONEER HAS EITHER A WAND OR STAFF."
@@ -442,7 +442,7 @@ TavernEnter:
 	if TavernState != 0: Goto TavernCrowd
 	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
 	Save 6 Portrait
-	SetupMonster 19 0 3
+	SetupMonster ShieldBearer 0 3
 	Print "YOU OPENED THE DOOR INTO A DRUNK BUCCANEER."
 	Gosub PressToContinue
 	PrintClear "HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?"
@@ -460,7 +460,7 @@ ChallengeBuccaneer:
 DuelBuccaneer:
 	ClearMonsters
 	Call CallDuelB
-	LoadMonster 41 1 16
+	LoadMonster ThLvlFighter41 1 ThLvlFighter
 	Combat
 	Save 1 TavernState
 	if CombatEnd > 128: Goto BuccaneerPaid
@@ -472,7 +472,7 @@ DuelBuccaneer:
 BuccaneerPaid:
 	PrintClear "THE BUCCANEER SMILES.'THAT IS SUFFICIENT PAYMENT.' HE LEAVES."
 	Gosub PressToContinue
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	Goto TavernCrowd
 
@@ -480,10 +480,10 @@ PatronsAttack:
 	PrintClear "YOUR ACTIONS ANGER THE PATRONS AND THEY ATTACK."
 	Save 30 Morale
 	ClearMonsters
-	LoadMonster 6 4 6
-	LoadMonster 2 12 2
-	LoadMonster 41 1 16
-	LoadMonster 4 8 4
+	LoadMonster Hobgoblin 4 Hobgoblin
+	LoadMonster GoblinGuard 12 GoblinGuard
+	LoadMonster ThLvlFighter41 1 ThLvlFighter
+	LoadMonster Orc4 8 Orc
 	Combat
 	Save 255 Portrait
 	if CombatEnd > 128: Goto PartyFlees
@@ -501,7 +501,7 @@ PayBribe:
 
 TavernCrowd:
 	if TavernState > 1: Goto BarDestroyed
-	SetupMonster 2 0 2
+	SetupMonster Goblin 0 Goblin
 	PrintClear "THE CREATURES IGNORE YOU FOR THE MOMENT."
 	Gosub PressToContinue
 	VMenu Scratch1 "WHAT DO YOU DO?" 4 "MIX WITH MONSTERS" "DRINK HEAVILY" "ATTACK" "LEAVE"
@@ -537,9 +537,9 @@ FreeForAll:
 	Gosub PressToContinue
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster 2 25 2
-	LoadMonster 6 20 6
-	LoadMonster 8 5 8
+	LoadMonster GoblinGuard 25 GoblinGuard
+	LoadMonster Hobgoblin 20 Hobgoblin
+	LoadMonster Ogre 5 Ogre
 	Save 0 Scratch2
 
 FreeForAllMember:
@@ -572,8 +572,7 @@ IlmaterTemple:
 	PrintClear "THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE."
 
 IlmaterHealer:
-	Save 48 Portrait
-	Picture 25
+	ShowPortrait 48 25
 	PrintClear "A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 Heal RestHere
@@ -585,7 +584,7 @@ Heal:
 
 RestHere:
 	PrintClear "'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES."
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	Save 4 LastBuildingCell
 	Exit
@@ -597,7 +596,7 @@ BaneShrine:
 
 RobedOrc:
 	if BaneRecruiterState != 0: Goto BaneMeeting
-	SetupMonster 4 1 4
+	SetupMonster Orc 1 Orc
 	PrintClear "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
 	HMenu Scratch1 3 "LEAVE" "GREET" "ATTACK"
 	if DisguiseState == 255: Goto AttackOrc
@@ -634,15 +633,15 @@ DeclineRecruit:
 BaneMeeting:
 	if BaneRecruiterState != 1: Exit
 	if BaneMeetHour >= Hours: Exit
-	SetupMonster 4 1 4
+	SetupMonster Orc 1 Orc
 	PrintClear "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
 	Gosub PressToContinue
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster 4 8 4
-	LoadMonster 5 1 5
-	LoadMonster 8 3 8
-	Treasure 0 0 0 0 0 0 0 22
+	LoadMonster Orc4 8 Orc
+	LoadMonster OrcLeader5 1 OrcLeader
+	LoadMonster Ogre 3 Ogre
+	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
 	Save 2 BaneRecruiterState
 	if CombatEnd > 128: Goto PartyFlees
@@ -651,8 +650,8 @@ BaneMeeting:
 AttackOrc:
 	Save 90 Morale
 	ClearMonsters
-	LoadMonster 5 1 5
-	Treasure 0 0 0 0 0 0 0 22
+	LoadMonster OrcLeader5 1 OrcLeader
+	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
 	Save 2 BaneRecruiterState
 	if CombatEnd > 128: Goto PartyFlees

@@ -135,7 +135,7 @@ SkeletonAmbush:
 	if SkeletonAmbushDone > 0: Exit
 	if SkeletonCount == 0: Exit
 	Save 8 Scratch9
-	SetupMonster 34 0 11
+	SetupMonster Skeleton 0 11
 	PrintClear "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
 	Gosub PressReturn
 	Save 34 Scratch5
@@ -176,8 +176,8 @@ GiantSkeletonFight:
 	Gosub SkeletonsApproach
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster 22 1 22
-	if Scratch7 != 0: LoadMonster 34 Scratch7 34
+	LoadMonster GiantSkeleton 1 GiantSkeleton
+	if Scratch7 != 0: LoadMonster Skeleton Scratch7 Skeleton
 	Combat
 	Gosub CheckFled
 	Add 10 GiantSkeletonState GiantSkeletonState
@@ -192,7 +192,7 @@ SkeletonTreasure:
 
 TakeSkeletonTreasure:
 	ClearMonsters
-	Treasure 0 28 0 69 0 10 12 59
+	Treasure 0 28 0 69 0 10 12 59 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells
 	Combat
 	Save 255 SkeletonTreasureTaken
 	Exit
@@ -244,8 +244,8 @@ GiantZombieLair:
 	Save 0 Scratch1
 	if ZombieCount >= 16: Save 15 Scratch1
 	ClearMonsters
-	LoadMonster 29 1 35
-	if Scratch1 != 0: LoadMonster 35 Scratch1 35
+	LoadMonster JujuZombie 1 35
+	if Scratch1 != 0: LoadMonster Zombie Scratch1 35
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -260,7 +260,7 @@ ZombieTreasure:
 
 TakeZombieTreasure:
 	ClearMonsters
-	Treasure 0 #0122 0 110 0 0 0 28
+	Treasure 0 #0122 0 110 0 0 0 28 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Wand of Lightning Bolt, Potion of Healing
 	Combat
 	Save 255 ZombieTreasureTaken
 	Exit
@@ -324,7 +324,7 @@ WightBossStep:
 WightBossLair:
 	if WightBossState > 9: Goto WightTreasure
 	if WightStrength == 255: Goto WightTreasure
-	SetupMonster 21 1 21
+	SetupMonster Ghost 1 Ghost
 	Approach
 	PrintClear "IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?"
 	HMenu Scratch1 2 "LEAVE" "STAY"
@@ -338,7 +338,7 @@ LeaveWightLair:
 
 FightWightBoss:
 	ClearMonsters
-	LoadMonster 21 1 21
+	LoadMonster Wraith 1 Wraith
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -353,7 +353,7 @@ WightTreasure:
 
 StripWarriorBody:
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 26
+	Treasure 0 0 0 0 0 0 0 26 // Clerical Scroll With 2 Spells, Sling Of Seeking +2, Hammer +3, Potion Extra Healing, Magic User Scroll With 3 Spells
 	Combat
 	Save 255 WightTreasureTaken
 	Exit
@@ -409,7 +409,7 @@ SkeletonMakerNotices:
 
 FightSkeletonMaker:
 	ClearMonsters
-	LoadMonster 17 1 17
+	LoadMonster Spectre 1 Spectre
 	Treasure 0 0 0 #07D0 #022B 0 3 255
 	Combat
 	Gosub CheckFled
@@ -462,7 +462,7 @@ ZombieMakerNotices:
 
 FightZombieMaker:
 	ClearMonsters
-	LoadMonster 17 1 17
+	LoadMonster Spectre 1 Spectre
 	Treasure 0 0 0 #0457 #021E 13 0 255
 	Combat
 	Gosub CheckFled
@@ -475,7 +475,7 @@ FightZombieMaker:
 
 Monster114Ambush:
 	if Monster114Fought > 0: Exit
-	SetupMonster 114 1 114
+	SetupMonster Mummy 1 Mummy
 	Approach
 	PrintClear "WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI."
 	Gosub PressReturn
@@ -483,7 +483,7 @@ Monster114Ambush:
 	Div Scratch1 16 Scratch1
 	if Scratch1 == 0: Save 1 Scratch1
 	ClearMonsters
-	LoadMonster 114 Scratch1 114
+	LoadMonster Mummy Scratch1 Mummy
 	Combat
 	Add 1 Monster114Fought Monster114Fought
 	Exit
@@ -498,7 +498,7 @@ LightningTowerView:
 	Gosub PressReturn
 	Save 9 Scratch9
 	ClearMonsters
-	LoadMonster 20 WightCount 20
+	LoadMonster Wight WightCount Wight
 	Goto FightGroup
 
 LightningTowerSeenSet:
@@ -540,7 +540,7 @@ WightMakerNotices:
 
 FightWightMaker:
 	ClearMonsters
-	LoadMonster 17 1 17
+	LoadMonster Spectre 1 Spectre
 	Treasure 0 0 0 #07D0 #022B 0 3 255
 	Combat
 	Gosub CheckFled
@@ -561,10 +561,10 @@ BrassDoorsView:
 BrassDoorsFight:
 	if TowerFightDone > 0: Goto KnightPanel
 	PrintClear "SHADOWY FORMS FLOW FROM BETWEEN THE DOORS AND ATTACK."
-	SetupMonster 17 2 17
+	SetupMonster Spectre 2 Spectre
 	Approach
 	ClearMonsters
-	LoadMonster 17 2 17
+	LoadMonster Spectre 2 Spectre
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -584,7 +584,7 @@ GiftVoice:
 	Gosub PressReturn
 	PrintClear "FROM THE MAGICALLY-LIT TOMB OF A BRAVE KNIGHT, A BODY RISES FROM ITS RESTING PLACE TO LAY WEAPONS BEFORE THE PARTY."
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 29
+	Treasure 0 0 0 0 0 0 0 29 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Ring of Fire Resistance, and 2 more
 	Combat
 	Add 1 Treasure29Taken Treasure29Taken
 	Exit
@@ -593,7 +593,7 @@ MysticManMeet:
 	if MysticManState < 3: Exit
 	if MysticManState > 249: Exit
 	Save 0 Portrait
-	SetupMonster 14 2 2
+	SetupMonster Fighter14 2 2
 	Gosub ApproachTwice
 	PrintClear "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
 	Gosub PressReturn
@@ -607,7 +607,7 @@ MysticManJoins:
 	if PartyCount > 7: Goto PartyTooLarge
 	Save 250 MysticManState
 	PrintClear "'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS."
-	AddNPC 24 99
+	AddNPC Level6Mu24 99
 	Save 255 Portrait
 	Exit
 
@@ -620,7 +620,7 @@ MysticManAttacks:
 	PrintClear "'THEN DIE YOU SCUM,' THE MAN SPITS."
 	Save 255 Portrait
 	ClearMonsters
-	LoadMonster 24 1 24
+	LoadMonster Level6Mu24 1 Level6Mu
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -669,7 +669,7 @@ DustyCryptRemains:
 	Exit
 
 VampireGuardsApproach:
-	SetupMonster 23 2 23
+	SetupMonster Vampire 2 Vampire
 	Delay
 	Approach
 	Delay
@@ -679,14 +679,12 @@ VampireGuardsApproach:
 	if CryptState == 251: Goto ReloadVampire
 	if VampireFought > 0: Goto ReloadVampire
 	ClearMonsters
-	LoadMonster 23 1 23
-	LoadMonster 106 15 106
+	LoadMonster Vampire23 1 Vampire
+	LoadMonster Wolf 15 Wolf
 
 VampireFightLoop:
-	FindItem 82
-	IfNe
-	Goto FightVampire
-	if VampireGuardLoaded != 255: LoadMonster 70 1 70
+	if !Carried 82: Goto FightVampire
+	if VampireGuardLoaded != 255: LoadMonster Efreeti70 1 Efreeti
 
 FightVampire:
 	Combat
@@ -698,7 +696,7 @@ FightVampire:
 
 ReloadVampire:
 	ClearMonsters
-	LoadMonster 105 1 23
+	LoadMonster Vampire105 1 Vampire
 	Goto VampireFightLoop
 
 PitStairs:
@@ -718,19 +716,18 @@ VampireLair:
 	Save 15 Sky
 	Call CallRedraw
 	PrintClear "THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH."
-	SetupMonster 23 1 23
+	SetupMonster Vampire 1 Vampire
 	Approach
 	Gosub PressReturn
 	if MysticManState == 250: Save 1 Scratch1
 	also if MysticManState != 250: Save 0 Scratch1
 	ClearMonsters
-	LoadMonster 23 1 23
-	LoadMonster 106 50 106
-	FindItem 82
-	IfEq
-	LoadMonster 70 1 70
-	IfEq
-	Save 255 VampireGuardLoaded
+	LoadMonster Vampire23 1 Vampire
+	LoadMonster Wolf 50 Wolf
+	if Carried 82 {
+		LoadMonster Efreeti70 1 Efreeti
+		Save 255 VampireGuardLoaded
+	}
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -757,13 +754,13 @@ VampireTreasure:
 
 TakeVampireTreasure:
 	ClearMonsters
-	Treasure 0 0 0 #2328 0 12 0 30
+	Treasure 0 0 0 #2328 0 12 0 30 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Clerical Scroll With 2 Spells, and 2 more
 	Combat
 	Save 255 VampireTreasureTaken
 	Exit
 
 GhoulPack:
-	SetupMonster 72 2 72
+	SetupMonster Ghoul 2 Ghoul
 	Approach
 	Delay
 	Approach
@@ -775,7 +772,7 @@ GhoulPack:
 	Div Scratch8 Scratch1 Scratch1
 	if Scratch1 == 0: Save 1 Scratch1
 	ClearMonsters
-	LoadMonster 72 Scratch1 72
+	LoadMonster Ghoul Scratch1 Ghoul
 	Combat
 	Exit
 
@@ -858,11 +855,11 @@ RedrawExit:
 
 LoadRandomUndead:
 	Mul Scratch7 4 Scratch6
-	LoadMonster 35 Scratch6 35
+	LoadMonster Zombie Scratch6 35
 	Random 4 Scratch1
-	if Scratch1 < 2: LoadMonster 29 2 35
-	also if Scratch1 > 2: LoadMonster 72 2 72
-	also if Scratch1 == 2: LoadMonster 114 1 114
+	if Scratch1 < 2: LoadMonster JujuZombie 2 35
+	also if Scratch1 > 2: LoadMonster Ghoul 2 Ghoul
+	also if Scratch1 == 2: LoadMonster Mummy 1 Mummy
 	Goto FightGroup
 
 PressReturn:
@@ -870,15 +867,15 @@ PressReturn:
 	Return
 
 SkeletonsApproach:
-	SetupMonster 34 2 34
+	SetupMonster Skeleton 2 Skeleton
 	Goto ApproachTwice
 
 ZombiesApproach:
-	SetupMonster 35 2 35
+	SetupMonster Zombie 2 Zombie
 	Goto ApproachTwice
 
 WightsApproach:
-	SetupMonster 20 2 20
+	SetupMonster Troll 2 Troll
 
 ApproachTwice:
 	Approach

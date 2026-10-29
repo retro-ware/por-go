@@ -55,18 +55,15 @@ event0:
 	Gosub SetSky
 	if LeftMap != 0: Goto LeaveArea
 	And Cell 64 Scratch10
-	IfEq
-	Exit
+	if 0 == Scratch10: Exit
 	And 1 Cell Scratch10
 	GetTable Table9B07 Scratch10 Scratch8
 	if Scratch8 != Facing: Exit
 	And LibraryEventFlags 32 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	And BooksFoundFlags 159 Scratch10
-	IfEq
-	Exit
-	SetupMonster 17 0 17
+	if 0 == Scratch10: Exit
+	SetupMonster Spectre 0 Spectre
 	PrintClear "A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU."
 	Gosub ShortPause
 	Save 100 Morale
@@ -74,7 +71,7 @@ event0:
 	Surprise Scratch2 Scratch3 2 2
 	if Surprise == 2: Save 0 Surprise
 	ClearMonsters
-	LoadMonster 17 1 17
+	LoadMonster Spectre 1 Spectre
 	Combat
 	if CombatEnd == 129: Goto FleeFromBasilisk
 	Or LibraryEventFlags 32 LibraryEventFlags
@@ -214,8 +211,7 @@ PhilosophyBooks:
 
 FyerdethaBook:
 	And BooksFoundFlags 1 Scratch10
-	IfNe
-	Goto PhilosophyBooks
+	if 0 != Scratch10: Goto PhilosophyBooks
 	PrintClear "YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7."
 	Gosub TakeItMenu
 	Or BooksFoundFlags 1 BooksFoundFlags
@@ -224,8 +220,7 @@ FyerdethaBook:
 
 UrgundBook:
 	And BooksFoundFlags 2 Scratch10
-	IfNe
-	Goto PhilosophyBooks
+	if 0 != Scratch10: Goto PhilosophyBooks
 	PrintClear "YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL."
 	Gosub TakeItMenu
 	Or BooksFoundFlags 2 BooksFoundFlags
@@ -272,8 +267,7 @@ HistoryBooks:
 
 LexGeographica:
 	And BooksFoundFlags 4 Scratch10
-	IfNe
-	Goto HistoryBooks
+	if 0 != Scratch10: Goto HistoryBooks
 	PrintClear "YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL."
 	Gosub TakeItMenu
 	Or BooksFoundFlags 4 BooksFoundFlags
@@ -282,8 +276,7 @@ LexGeographica:
 
 HistoryOfNorth:
 	And BooksFoundFlags 8 Scratch10
-	IfNe
-	Goto HistoryBooks
+	if 0 != Scratch10: Goto HistoryBooks
 	PrintClear "YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8."
 	Gosub TakeItMenu
 	if QuestBookHistoryNorth != 255: Save 254 QuestBookHistoryNorth
@@ -292,8 +285,7 @@ HistoryOfNorth:
 
 ArtsOfWar:
 	And BooksFoundFlags 16 Scratch10
-	IfNe
-	Goto HistoryBooks
+	if 0 != Scratch10: Goto HistoryBooks
 	PrintClear "YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21."
 	Gosub TakeItMenu
 	if QuestBookArtsOfWar != 255: Save 254 QuestBookArtsOfWar
@@ -302,9 +294,8 @@ ArtsOfWar:
 
 BasiliskLair:
 	And LibraryEventFlags 64 Scratch10
-	IfNe
-	Exit
-	SetupMonster 26 2 26
+	if 0 != Scratch10: Exit
+	SetupMonster Basilisk 2 Basilisk
 	PartySurprise Scratch6 Scratch7
 	Surprise Scratch6 Scratch7 0 0
 	OnGoto Surprise 4 BasiliskSeen BasiliskSurprisesUs BasiliskUnaware BasiliskWaking
@@ -346,8 +337,8 @@ FleeFromBasilisk:
 BasiliskFight:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster 26 1 26
-	Treasure 0 0 0 0 0 0 0 3
+	LoadMonster Basilisk 1 Basilisk
+	Treasure 0 0 0 0 0 0 0 3 // Clerical Scroll With 2 Spells, Cloak of Displacement, Potion of Healing, Potion of Giant Strength
 	Combat
 	if CombatEnd == 129: Goto FleeFromBasilisk
 	Or LibraryEventFlags 64 LibraryEventFlags
@@ -367,15 +358,14 @@ BonesJar:
 	PrintClear "YOU SEE A JAR UNDER THE FLOORBOARDS."
 	Gosub TakeItMenu
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 5
+	Treasure 0 0 0 0 0 0 0 5 // Potion Extra Healing, Potion Extra Healing, Potion Extra Healing
 	Combat
 	Or BooksFoundFlags 32 BooksFoundFlags
 	Exit
 
 BenchChamber:
 	And BenchChamberSeen Scratch1 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "YOU SEE A CHAMBER FILLED WITH ROTTED FURNITURE AND BENCHES."
 	Or BenchChamberSeen Scratch1 BenchChamberSeen
 	Exit
@@ -394,9 +384,8 @@ WritingHall:
 
 MadFighter:
 	And LibraryEventFlags 3 Scratch10
-	IfNe
-	Exit
-	SetupMonster 15 0 25
+	if 0 != Scratch10: Exit
+	SetupMonster ArmoredFighter 0 25
 	PrintClear "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
 
 MadFighterMenu:
@@ -435,7 +424,7 @@ InviteMadman:
 	Goto MadFighterParlay
 	PrintClear "HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU."
 	Or LibraryEventFlags 2 LibraryEventFlags
-	AddNPC 25 0
+	AddNPC MadMan 0
 	Goto RedrawExit
 
 MadmanRaves:
@@ -464,7 +453,7 @@ MadFighterFight:
 	Save 0 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster 25 1 11
+	LoadMonster MadMan 1 Aides
 	Combat
 	if CombatEnd == 129: Goto FleeFromMadman
 	Or LibraryEventFlags 1 LibraryEventFlags
@@ -482,7 +471,7 @@ TrashBook:
 	PrintClear "BURIED AMID ALL THE TRASH YOU SEE A BOOK."
 	Gosub TakeItMenu
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 1
+	Treasure 0 0 0 0 0 0 0 1 // Manual of Bodily Health
 	Combat
 	Or BooksFoundFlags 64 BooksFoundFlags
 	Exit
@@ -503,7 +492,7 @@ CarrelsFoil:
 	PrintClear "AMID THE TRASH YOU FIND A BOX WHICH CONTAINS GOLD FOIL."
 	Gosub TakeItMenu
 	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 2
+	Treasure 0 0 0 0 0 0 0 2 // 3 Sheet of Gold
 	Combat
 	Or LibraryEventFlags Scratch2 LibraryEventFlags
 	Exit
@@ -523,8 +512,7 @@ StoreroomEnter:
 
 KoboldTable:
 	And LibraryEventFlags 128 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Print "LOOKING UP FROM A TABLE ARE FIVE KOBOLDS."
 	Gosub ShortPause
 	EncounterMenu 0 2 0 Scratch4 2 4 0 4 4 "THEY PLEAD FOR MERCY." "THEY STAND ARMS RAISED IN SURRENDER." " " 6 6
@@ -549,7 +537,7 @@ KoboldFight:
 	Save 10 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster 0 5 0
+	LoadMonster Kobold0 5 Kobold
 	Combat
 	if CombatEnd == 129: Goto FleeFromKobolds
 	Or LibraryEventFlags 128 LibraryEventFlags

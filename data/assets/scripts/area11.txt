@@ -8,7 +8,7 @@ event0:
 
 event1:
 	PrintClear ""
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	And 127 Cell Scratch10
 	if Scratch10 == 0: Goto LeaveArea
@@ -34,7 +34,7 @@ NoRestHere:
 event3:
 	Save 0 RestChance
 	Save 57 Portrait
-	SetupMonster 15 2 1
+	SetupMonster ArmoredFighter 2 1
 	Delay
 	Approach
 	Delay
@@ -70,8 +70,7 @@ ReadDoorSign:
 ClericTrainer:
 	if TrainerCooldown > 0: Exit
 	Save 2 TrainerCooldown
-	Save 16 Portrait
-	Picture 4
+	ShowPortrait 16 4
 	Save 114 Scratch4
 	Save "CLERICS " $AuxMonsterName
 	Goto AskTrain
@@ -79,8 +78,7 @@ ClericTrainer:
 MagicUserTrainer:
 	if TrainerCooldown > 0: Exit
 	Save 2 TrainerCooldown
-	Save 16 Portrait
-	Picture 2
+	ShowPortrait 16 2
 	Save 113 Scratch4
 	Save "MAGIC USERS " $AuxMonsterName
 	Goto AskTrain
@@ -91,7 +89,7 @@ EnterArena:
 	Gosub PressReturn
 	Save 1 ArenaEntered
 	Save 9 Portrait
-	SetupMonster 16 2 1
+	SetupMonster Fighter16 2 1
 	Delay
 	Approach
 	Delay
@@ -137,7 +135,7 @@ RollHireling:
 NoHirelingLeft:
 	PrintClear "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
 	Save 8 PartnerTries
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	Exit
 
@@ -208,7 +206,7 @@ ConsiderAnother:
 
 DeclinePartner:
 	Save 1 PartnerDeclined
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	Exit
 
@@ -219,8 +217,7 @@ FightersSign:
 FighterTrainer:
 	if TrainerCooldown > 0: Exit
 	Save 2 TrainerCooldown
-	Save 16 Portrait
-	Picture 1
+	ShowPortrait 16 1
 	Save 120 Scratch4
 	Save "FIGHTERS " $AuxMonsterName
 	Goto AskTrain
@@ -228,8 +225,7 @@ FighterTrainer:
 ThiefTrainer:
 	if TrainerCooldown > 0: Exit
 	Save 2 TrainerCooldown
-	Save 16 Portrait
-	Picture 8
+	ShowPortrait 16 8
 	Save 116 Scratch4
 	Save "THIEVES " $AuxMonsterName
 	Goto AskTrain
@@ -248,17 +244,17 @@ AskTrain:
 
 OpenTraining:
 	Program 0
-	Picture 255
+	Picture None
 	Exit
 
 FightWatch:
 	Save 0 WatchCombatDone11
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster 94 2 14
-	LoadMonster 84 12 11
-	LoadMonster 53 12 16
-	LoadMonster 40 12 15
+	LoadMonster Level3Mu 2 Level3Mu
+	LoadMonster ThLvlFighter84 12 11
+	LoadMonster Aides 12 ThLvlFighter
+	LoadMonster Nomad 12 Nomad
 	Combat
 	Save 1 WatchCombatDone11
 	Gosub AfterWatchFight
@@ -276,7 +272,7 @@ ClearAndExit:
 	Save 0 Temp1
 	Save 0 Temp2
 	Save 0 Temp3
-	Picture 255
+	Picture None
 	Save 255 Portrait
 	Exit
 

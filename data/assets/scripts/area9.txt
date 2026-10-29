@@ -1,5 +1,5 @@
 BugbearsApproach:
-	SetupMonster 63 2 63
+	SetupMonster Bugbear 2 Bugbear
 	Delay
 	Approach
 	Delay
@@ -8,8 +8,7 @@ BugbearsApproach:
 
 CheckGarrisonsBeaten:
 	And GateFlags 4 Scratch10
-	IfEq
-	Return
+	if 0 == Scratch10: Return
 	And GateFlags 8 Scratch10
 	Return
 
@@ -214,13 +213,11 @@ event1:
 	Goto SpecialSquare
 	if PartyY > 6: Goto SpecialSquare
 	And Cell 64 Scratch10
-	IfNe
-	Goto SpecialSquare
+	if 0 != Scratch10: Goto SpecialSquare
 	Save 2 Scratch1
 	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
-	IfNe
-	Add Scratch1 Scratch1 Scratch1
+	if 0 != Scratch10: Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch1
 	if Scratch1 == 0: Goto event3
 
@@ -235,8 +232,7 @@ event3:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	And CastleFlags 1 Scratch10
-	IfNe
-	Goto PatrolMenu
+	if 0 != Scratch10: Goto PatrolMenu
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
 	Gosub PressReturn
 	EncounterMenu 16 2 5 Scratch10 0 0 0 0 0 "THEY ADVANCE, WEAPONS READY" "" "" 9 9
@@ -279,8 +275,8 @@ FightPatrol:
 	Save 60 Morale
 	Delay
 	ClearMonsters
-	LoadMonster 75 1 11
-	LoadMonster 55 5 55
+	LoadMonster ThLvlFighter75 1 Aides
+	LoadMonster HillGiant 5 HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit
@@ -305,8 +301,7 @@ event2:
 	Save 10 RestChance
 	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	if PartyY > 6: Exit
 	Save 1 RestEvery
 	Save 17 RestChance
@@ -336,8 +331,7 @@ TowerDoor:
 	Save 1 Scratch1
 	if Scratch5 == 3: Save 2 Scratch1
 	And GateFlags Scratch1 Scratch10
-	IfNe
-	Goto TakeStairs
+	if 0 != Scratch10: Goto TakeStairs
 	Gosub CheckGarrisonsBeaten
 	IfNe
 	Exit
@@ -372,15 +366,13 @@ TowerExitCellTable:
 
 MageGuardRoom:
 	And GuardRoomSeenBits 1 Scratch10
-	IfNe
-	Goto MageAndEttins
+	if 0 != Scratch10: Goto MageAndEttins
 	Gosub DescribeGuardRoom
 	Or GuardRoomSeenBits 1 GuardRoomSeenBits
 
 MageAndEttins:
 	And GateFlags 4 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Gosub DescribeEttins
 	Save 52 Portrait
 	PrintClear "YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'"
@@ -399,9 +391,9 @@ FightMageGuards:
 	Save 50 Morale
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster 89 1 14
-	LoadMonster 53 1 11
-	LoadMonster 71 3 71
+	LoadMonster ThLvlMu 1 Level6Mu
+	LoadMonster Aides 1 Aides
+	LoadMonster Ettin 3 Ettin
 	Combat
 	if CombatEnd == 129: Goto MageFlee
 	Or GateFlags 4 GateFlags
@@ -409,15 +401,13 @@ FightMageGuards:
 
 FighterGuardRoom:
 	And GuardRoomSeenBits 2 Scratch10
-	IfNe
-	Goto FighterAndEttins
+	if 0 != Scratch10: Goto FighterAndEttins
 	Gosub DescribeGuardRoom
 	Or GuardRoomSeenBits 2 GuardRoomSeenBits
 
 FighterAndEttins:
 	And GateFlags 8 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	Gosub DescribeEttins
 	Save 11 Portrait
 	PrintClear "YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'"
@@ -436,9 +426,9 @@ FightFighterGuards:
 	Save 50 Morale
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster 24 1 14
-	LoadMonster 53 1 11
-	LoadMonster 71 3 71
+	LoadMonster Level6Mu24 1 Level6Mu
+	LoadMonster Aides 1 Aides
+	LoadMonster Ettin 3 Ettin
 	Combat
 	if CombatEnd == 129: Goto FighterFlee
 	Or GateFlags 8 GateFlags
@@ -452,20 +442,16 @@ GateTowerSquare:
 	And Cell 1 Scratch1
 	OnGoto Scratch1 1 EastTowerCheck
 	And GateFlags 4 Scratch9
-	IfEq
-	Or Scratch2 2 Scratch2
+	if 0 == Scratch9: Or Scratch2 2 Scratch2
 	And GateFlags 8 Scratch10
-	IfEq
-	Or Scratch2 1 Scratch2
+	if 0 == Scratch10: Or Scratch2 1 Scratch2
 	Goto TowersCharge
 
 EastTowerCheck:
 	And GateFlags 8 Scratch9
-	IfEq
-	Or Scratch2 2 Scratch2
+	if 0 == Scratch9: Or Scratch2 2 Scratch2
 	And GateFlags 4 Scratch10
-	IfEq
-	Or Scratch2 1 Scratch2
+	if 0 == Scratch10: Or Scratch2 1 Scratch2
 
 TowersCharge:
 	Save 1 Scratch3
@@ -505,22 +491,20 @@ FightTowerMonsters:
 	Surprise Scratch9 Scratch10 1 1
 	Save 24 Scratch4
 	And GateFlags 8 Scratch10
-	IfNe
-	Save 89 Scratch4
+	if 0 != Scratch10: Save 89 Scratch4
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster Scratch4 Scratch3 14
-	LoadMonster 53 Scratch3 11
+	LoadMonster Scratch4 Scratch3 Level6Mu
+	LoadMonster Aides Scratch3 Aides
 	Mul Scratch3 3 Scratch3
-	LoadMonster 71 Scratch3 71
+	LoadMonster Ettin Scratch3 Ettin
 	Combat
 	if CombatEnd == 129: Goto FleeToArea6
 
 GarrisonSlain:
 	Or GateFlags 12 GateFlags
 	And GateFlags 16 Scratch10
-	IfNe
-	Goto GateTaken
+	if 0 != Scratch10: Goto GateTaken
 	PrintClear "YOU HAVE SLAIN THE GARRISON. NOW IF YOU CAN BUT SLAY THE OUTSIDE GUARDS QUICKLY BEFORE THE ENEMY ARRIVES THE GATE WILL BE YOURS!"
 	Exit
 
@@ -538,8 +522,7 @@ NearWall:
 
 BugbearsDemand:
 	And GateFlags 16 Scratch10
-	IfNe
-	Goto ArrowSlits
+	if 0 != Scratch10: Goto ArrowSlits
 	Gosub BugbearsApproach
 	PrintClear "A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'"
 
@@ -553,7 +536,7 @@ FightBugbears:
 	Gosub StartAlarm
 	Save 3 BugbearWarnings
 	ClearMonsters
-	LoadMonster 63 16 63
+	LoadMonster Bugbear 16 Bugbear
 	Combat
 	if CombatEnd == 129: Goto PushedBack
 	Or GateFlags 16 GateFlags
@@ -610,8 +593,7 @@ ArrowSlits:
 StojanowGateEvent:
 	if BugbearWarnings == 2: Save 1 BugbearWarnings
 	And GateFlags 32 Scratch10
-	IfNe
-	Goto WatchWagonMan
+	if 0 != Scratch10: Goto WatchWagonMan
 	PrintClear "BEFORE YOU IS STOJANOW GATE. THIS ANCIENT EDIFICE IS BUILT ACROSS THE BEND OF THE RIVER, THUS ISOLATING THE OLD TOWN AND THE CASTLE FROM THE REST OF THE CITY."
 	Gosub PressReturn
 	PrintClear "THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS."
@@ -622,19 +604,16 @@ WatchWagonMan:
 	if Facing != 0 || Search != 1: Exit
 	if Hours >= 5: Exit
 	And GateFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	PrintClear "BEFORE THE GATE YOU CAN MAKE OUT A MAN WITH A WAGON OF GOODS WHO IS TALKING TO TWO OF THE BUGBEARS. THE MAN HANDS SOMETHING TO THE BUGBEARS AND THE GATES OPEN."
 	Gosub PressReturn
 	Exit
 
 GateEntrance:
 	And GateFlags 16 Scratch10
-	IfNe
-	Goto ArrowSlits
+	if 0 != Scratch10: Goto ArrowSlits
 	And GateFlags 64 Scratch10
-	IfEq
-	Goto NearWall
+	if 0 == Scratch10: Goto NearWall
 	if BugbearWarnings == 3: Goto ImpostorsApproach
 	Random 9 Scratch10
 	if Scratch10 <= BugbearWarnings: Goto ImpostorsApproach
@@ -658,7 +637,7 @@ PayToll:
 	Goto BugbearsSendAway
 	PrintClear "THE BUGBEAR TAKES THE MONEY AND THE GATE OPENS. YOU PROCEED THROUGH."
 	RedrawView
-	Picture 255
+	Picture None
 	Save 0 Facing
 	Save 8 PartyX
 	Save 9 PartyY
@@ -680,8 +659,7 @@ ImpostorsAccused:
 
 WallSquare:
 	And GateFlags 16 Scratch10
-	IfNe
-	Goto ArrowSlits
+	if 0 != Scratch10: Goto ArrowSlits
 	Goto BugbearsDemand
 
 BugbearsBehindGate:
@@ -689,8 +667,7 @@ BugbearsBehindGate:
 	IfEq
 	Exit
 	And GateFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	EncounterMenu 63 1 63 Scratch10 0 0 0 0 0 "BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." "" "" 9 9
 	OnGoto Scratch10 3 Done FightGateBugbears FleeToArea6
 
@@ -700,7 +677,7 @@ FightGateBugbears:
 	Gosub StartAlarm
 	Save 3 BugbearWarnings
 	ClearMonsters
-	LoadMonster 63 16 63
+	LoadMonster Bugbear 16 Bugbear
 	Combat
 	if CombatEnd == 129: Goto FleeToArea6
 	Or GateFlags 16 GateFlags
@@ -709,15 +686,13 @@ FightGateBugbears:
 WagonTrader:
 	if Hours >= 14: Exit
 	And GateFlags 64 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 	if WagonManMet != 0: Exit
 	Gosub CheckGarrisonsBeaten
 	IfEq
 	Goto WagonPasses
 	And GateFlags 16 Scratch10
-	IfNe
-	Exit
+	if 0 != Scratch10: Exit
 
 WagonPasses:
 	PrintClear "A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH."
@@ -764,8 +739,7 @@ MonstersBehindWall:
 	IfNe
 	Exit
 	And GateFlags 16 Scratch10
-	IfEq
-	Exit
+	if 0 == Scratch10: Exit
 	PrintClear "A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL"
 	Save 11 Portrait
 	Gosub PressReturn
@@ -779,9 +753,9 @@ FightWallMonsters:
 	Save 80 Morale
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster 24 2 14
-	LoadMonster 53 2 11
-	LoadMonster 71 6 71
+	LoadMonster Level6Mu24 2 Level6Mu
+	LoadMonster Aides 2 Aides
+	LoadMonster Ettin 6 Ettin
 	Combat
 	if CombatEnd == 129: Goto PushedBack
 	Goto GarrisonSlain

@@ -116,7 +116,7 @@ DragonInDistance:
 DragonCaveEvent:
 	ClearBox
 	Call CallClearView
-	Picture 32
+	Picture Mountains
 	if DragonSeen == 255: Goto LargeCave
 	PrintClear "AS YOU HIKE THROUGH THE MOUNTAINS, A LARGE DRAGON FLYS ABOVE YOU.  IT CIRCLES THEN SWOOPS DOWN AND LANDS IN FRONT OF A CAVE.  IT DISAPPEARS INTO A CAVE."
 	Save 255 DragonSeen
@@ -137,11 +137,11 @@ EnterDragonCave:
 
 AnkhegAmbush:
 	if AnkhegsDefeated != 0: Goto Done
-	SetupMonster 65 1 65
+	SetupMonster Ankheg 1 Ankheg
 	PrintClear "AS YOU WALK THROUGH THIS AREA TWO ANHKHEGS ERUPT FROM THE GROUND BENEATH YOU."
 	Save 90 Morale
 	ClearMonsters
-	LoadMonster 65 2 65
+	LoadMonster Ahnkheg 2 Ahnkheg
 	ClearBox
 	Combat
 	if CombatEnd > 128: Goto ExitEvent
@@ -160,7 +160,7 @@ BuccaneerBaseSite:
 	if QuestBivant != 0: Goto Done
 	ClearBox
 	Call CallClearView
-	Picture 39
+	Picture Arena
 	PrintClear "YOU HAVE REACHED THE BUCCANEER BASE.  A BAND OF BUCCANEERS RIDE OUT TO ESCORT YOU IN.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterBuccaneerBase DoneMarkKeep
@@ -185,7 +185,7 @@ OutpostRiders:
 	}
 	ClearBox
 	Call CallClearView
-	Picture 33
+	Picture Castle
 	PrintClear "A GROUP OF MEN ON HORSEBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS, 'ARE YOU THE DIPLOMATIC ENVOYS FROM NEW PHLAN?'  WHAT WILL YOU SAY?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 EscortToOutpost DenyEnvoy
@@ -203,23 +203,23 @@ KeepRiders:
 	if KeepRidersFought != 0: Goto Done
 	ClearBox
 	Call CallClearView
-	Picture 33
+	Picture Castle
 	PrintClear "AS YOU APPROACH THE KEEP, A GROUP OF ARMED MEN ON HORESBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS 'YOU ARE TRESSPASSING ON PRIVATE LAND; LEAVE NOW OR FACE THE CONSQUENCES!'"
 	HMenu Scratch1 2 "STAY" "LEAVE"
 	OnGoto Scratch1 2 FightKeepRiders ExitEvent
 
 FightKeepRiders:
-	SetupMonster 16 2 0
+	SetupMonster Fighter16 2 0
 	ClearBox
 	ClearMonsters
-	LoadMonster 54 12 11
+	LoadMonster Corporal 12 11
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Save 255 KeepRidersFought
 	Exit
 
 LeaveWilderness:
-	Picture 255
+	Picture None
 	ClearBox
 	Save 127 WallSlot1
 	Save 127 WallSlot1B
@@ -376,21 +376,19 @@ LairCell:
 
 TwoBoars:
 	And DragonCaveFlags 1 Scratch1
-	IfNe
-	Exit
-	SetupMonster 120 0 120
+	if 0 != Scratch1: Exit
+	SetupMonster WildBoar 0 WildBoar
 	PrintClear "OUT OF THE SHADOWS, TWO LARGE WILD BOARS CHARGE."
 	ClearMonsters
-	LoadMonster 120 2 120
+	LoadMonster WildBoar 2 WildBoar
 	Combat
 	Or DragonCaveFlags 1 DragonCaveFlags
 	Exit
 
 BoarSow:
 	And DragonCaveFlags 2 Scratch1
-	IfNe
-	Exit
-	SetupMonster 120 1 120
+	if 0 != Scratch1: Exit
+	SetupMonster WildBoar 1 WildBoar
 	PrintClear "NEAR YOU IS A LARGE, WILD BOAR SOW FEEDING HER YOUNG.  AS YOU NEAR SHE GROWLS A WARNING TO STAY AWAY.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "APPROACH" "LEAVE"
 	OnGoto Scratch1 2 ApproachSow Done
@@ -400,7 +398,7 @@ ApproachSow:
 	Save 100 Morale
 	Save 252 MonsterHit
 	ClearMonsters
-	LoadMonster 120 1 120
+	LoadMonster WildBoar 1 WildBoar
 	Combat
 	Save 0 MonsterHit
 	if CombatEnd > 128: Goto StepBack
@@ -409,12 +407,11 @@ ApproachSow:
 
 ThreeBoars:
 	And DragonCaveFlags 4 Scratch1
-	IfNe
-	Exit
-	SetupMonster 120 0 120
+	if 0 != Scratch1: Exit
+	SetupMonster WildBoar 0 WildBoar
 	PrintClear "AT THE END OF THE PASSAGEWAY ARE THREE LARGE WILD BOARS.  THEY CHARGE AT YOU AND ATTACK!"
 	ClearMonsters
-	LoadMonster 120 3 120
+	LoadMonster WildBoar 3 WildBoar
 	Combat
 	Or DragonCaveFlags 4 DragonCaveFlags
 	Exit
@@ -429,8 +426,7 @@ SoftGround:
 
 AnkhegVictims:
 	And DragonCaveFlags 8 Scratch1
-	IfNe
-	Exit
+	if 0 != Scratch1: Exit
 	PrintClear "THE REMAINS OF SEVERAL OF THE ANHKHEG'S VICTIM.  ADMIST THE DEBRIS IS SOME TREASURE."
 	ClearMonsters
 	Treasure #1388 #07D0 #01F4 0 0 1 0 255
@@ -440,12 +436,11 @@ AnkhegVictims:
 
 AnkhegLunges:
 	And DragonCaveFlags 16 Scratch1
-	IfNe
-	Exit
-	SetupMonster 65 1 65
+	if 0 != Scratch1: Exit
+	SetupMonster Ankheg 1 Ankheg
 	PrintClear "FROM THE SOUTH, A LARGE ANHKHEG LUNGES OUT AND ATTACKS THE PARTY."
 	ClearMonsters
-	LoadMonster 65 1 65
+	LoadMonster Ahnkheg 1 Ahnkheg
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 16 DragonCaveFlags
@@ -457,12 +452,11 @@ SnakeSkin:
 
 GiganticSnake:
 	And DragonCaveFlags 32 Scratch1
-	IfNe
-	Exit
-	SetupMonster 60 1 60
+	if 0 != Scratch1: Exit
+	SetupMonster GiantSnake 1 GiantSnake
 	PrintClear "A GIGANTIC SNAKE LIES IN FRONT OF YOU.  IT REARS AND ATTACKS."
 	ClearMonsters
-	LoadMonster 60 1 60
+	LoadMonster GiantSnake 1 GiantSnake
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 32 DragonCaveFlags
@@ -470,13 +464,12 @@ GiganticSnake:
 
 SnakeFalls:
 	And DragonCaveFlags 64 Scratch1
-	IfNe
-	Exit
+	if 0 != Scratch1: Exit
 	Save 1 Surprise
-	SetupMonster 60 0 60
+	SetupMonster GiantSnake 0 GiantSnake
 	PrintClear "AS YOU WALK INTO THIS ROOM A GIANT SNAKE FALLS ON TOP OF THE PARTY."
 	ClearMonsters
-	LoadMonster 60 1 60
+	LoadMonster GiantSnake 1 GiantSnake
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 64 DragonCaveFlags
@@ -484,16 +477,15 @@ SnakeFalls:
 
 ThriKreenBlock:
 	And DragonCaveFlags 128 Scratch1
-	IfNe
-	Exit
-	SetupMonster 118 0 118
+	if 0 != Scratch1: Exit
+	SetupMonster ThriKreen 0 ThriKreen
 	PrintClear "THERE ARE TWO THRI-KREEN HERE.  THEY BLOCK THE PASSAGE WITH THEIR BODIES.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "LEAVE" "ATTACK"
 	OnGoto Scratch1 2 StepBack AttackThriKreen
 
 AttackThriKreen:
 	ClearMonsters
-	LoadMonster 118 2 118
+	LoadMonster ThriKreen 2 ThriKreen
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 128 DragonCaveFlags
@@ -501,12 +493,11 @@ AttackThriKreen:
 
 ThriKreenWarriors:
 	And DragonCaveFlags2 1 Scratch1
-	IfNe
-	Exit
-	SetupMonster 118 0 118
+	if 0 != Scratch1: Exit
+	SetupMonster ThriKreen 0 ThriKreen
 	PrintClear "BEFORE YOU ARE THREE THRI-KREEN WARRIORS.  THEY ATTACK YOU IMMEDIATELY."
 	ClearMonsters
-	LoadMonster 118 3 118
+	LoadMonster ThriKreen 3 ThriKreen
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags2 1 DragonCaveFlags2
@@ -514,13 +505,12 @@ ThriKreenWarriors:
 
 ThriKreenChest:
 	And DragonCaveFlags2 2 Scratch1
-	IfNe
-	Exit
-	SetupMonster 118 0 118
+	if 0 != Scratch1: Exit
+	SetupMonster ThriKreen 0 ThriKreen
 	PrintClear "YOU ENTER A CAVE ROOM WITH FOUR THRI-KREEN WARRIORS IN IT.  ON THE FLOOR IS A CHEST WITH TREASURE IN IT.  AS YOU ENTER THEY ATTACK."
 	ClearMonsters
-	LoadMonster 118 4 118
-	Treasure 0 #07D0 0 #03E8 0 3 1 129
+	LoadMonster ThriKreen 4 ThriKreen
+	Treasure 0 #07D0 0 #03E8 0 3 1 129 // 1 random items
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags2 2 DragonCaveFlags2
@@ -656,13 +646,13 @@ MarkKeepOnMap:
 
 DoneMarkKeep:
 	RedrawView
-	Picture 255
+	Picture None
 	Gosub MarkKeepOnMap
 	Exit
 
 Done:
 	RedrawView
-	Picture 255
+	Picture None
 	Exit
 
 BlockedTerrain:
