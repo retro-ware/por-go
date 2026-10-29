@@ -232,8 +232,8 @@ SmithyAttack:
 SmithyFight:
 	Save 30 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter41 1 ThLvlFighter
-	LoadMonster FireGiant 3 FireGiant
+	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
+	LoadMonster FireGiant count=3 icon=FireGiant
 	Treasure 0 0 0 20 0 0 0 255
 	Combat
 	Gosub AfterCombat
@@ -262,7 +262,7 @@ BaneTempleEnter:
 	Call CallRedraw
 	Gosub PressToContinue
 	Save 14 Portrait
-	SetupMonster ShieldFighter 2 7
+	SetupMonster ShieldFighter distance=2 body=7
 	PrintClear "A PRIEST AND TWO ACOLYTES TURN FROM THE ALTER, 'WELCOME MY CHILDREN. COME FORWARD AND ACCEPT THE BLESSING OF LORD BANE.'"
 	Approach
 	Delay
@@ -277,8 +277,8 @@ PriestFight:
 	Save 100 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster Level5Cleric 1 13
-	LoadMonster StLvlCleric 2 13
+	LoadMonster Level5Cleric count=1 icon=13
+	LoadMonster StLvlCleric count=2 icon=13
 	Combat
 	Gosub AfterCombat
 	Or CastleDeedFlags 128 CastleDeedFlags
@@ -382,7 +382,7 @@ BackOut:
 GiantPatrol:
 	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
 	Save 9 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	Gosub CheckPatrolSurprise
 	IfNe
 	Goto PatrolSighted
@@ -461,8 +461,8 @@ PatrolFight:
 	Delay
 	RedrawView
 	ClearMonsters
-	LoadMonster ThLvlFighter75 1 ThLvlFighter
-	LoadMonster HillGiant 5 HillGiant
+	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
+	LoadMonster HillGiant count=5 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit

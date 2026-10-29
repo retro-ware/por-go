@@ -543,7 +543,7 @@ GuardPost:
 CouncilGuard:
 	if HallGuardsFought != 0: Exit
 	Save 57 Portrait
-	SetupMonster Swordsman27 1 1
+	SetupMonster Swordsman27 distance=1 body=1
 	Approach
 	PrintClear "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
 	Gosub YesNoMenu
@@ -561,10 +561,10 @@ FightGuards:
 	Save 99 Morale
 	Save 1 Surprise
 	ClearMonsters
-	LoadMonster Level3Mu 3 Level3Mu
-	LoadMonster Aides 6 11
-	LoadMonster ThLvlFighter85 5 ThLvlFighter
-	LoadMonster Corporal Scratch1 Nomad
+	LoadMonster Level3Mu count=3 icon=Level3Mu
+	LoadMonster Aides count=6 icon=11
+	LoadMonster ThLvlFighter85 count=5 icon=ThLvlFighter
+	LoadMonster Corporal count=Scratch1 icon=Nomad
 	Combat
 	Save 1 FoughtWatch
 	Save 1 HallGuardsFought

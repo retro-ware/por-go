@@ -131,13 +131,13 @@ EnterCastle:
 KoboldHorde:
 	if QuestKobolds != 0: Exit
 	if KoboldHordeDefeated != 0: Exit
-	SetupMonster Kobold 0 Kobold
+	SetupMonster Kobold distance=0 closeup=Kobold
 	Save 50 Morale
 	PrintClear "A SCREAMING HORDE OF KOBOLDS ATTACKS THE PARTY."
 	ClearMonsters
 	ClearBox
-	LoadMonster Kobold0 25 Kobold
-	LoadMonster KoboldLeader1 5 KoboldLeader
+	LoadMonster Kobold0 count=25 icon=Kobold
+	LoadMonster KoboldLeader1 count=5 icon=KoboldLeader
 	Combat
 	if CombatEnd > 128: Goto ExitEvent
 	Save 255 KoboldHordeDefeated
@@ -251,9 +251,9 @@ FaceToFace:
 EncounterFight:
 	Save AuxEncResult2 Morale
 	ClearMonsters
-	LoadMonster AuxMonster EncounterCount27 AuxMonster
+	LoadMonster AuxMonster count=EncounterCount27 icon=AuxMonster
 	if EncounterExtraCount27 == 0: Goto StartCombat
-	LoadMonster AuxPartyStrength EncounterExtraCount27 AuxPartyStrength
+	LoadMonster AuxPartyStrength count=EncounterExtraCount27 icon=AuxPartyStrength
 
 StartCombat:
 	ClearBox
@@ -366,7 +366,7 @@ WyvernTreasure:
 FerociousWyvern:
 	And WyvernLairFlags 2 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster Wyvern 2 Wyvern
+	SetupMonster Wyvern distance=2 closeup=Wyvern
 	Approach
 	Approach
 	PrintClear "YOU HAVE STUMBLED ACROSS A FEROCIOUS WYVERN.  IT CHARGES AND ATTACKS!"
@@ -374,7 +374,7 @@ FerociousWyvern:
 	And WyvernLairFlags 4 Scratch1
 	if 0 == Scratch1: Save 254 MonsterHit
 	ClearMonsters
-	LoadMonster Wyvern 1 Wyvern
+	LoadMonster Wyvern count=1 icon=Wyvern
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 2 WyvernLairFlags
@@ -384,7 +384,7 @@ FerociousWyvern:
 TerribleWyvern:
 	And WyvernLairFlags 4 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster Wyvern 2 Wyvern
+	SetupMonster Wyvern distance=2 closeup=Wyvern
 	Approach
 	Approach
 	PrintClear "A TERRIBLE WYVERN CHARGES TO ATTACK THE PARTY!"
@@ -392,7 +392,7 @@ TerribleWyvern:
 	And WyvernLairFlags 2 Scratch1
 	if 0 == Scratch1: Save 254 MonsterHit
 	ClearMonsters
-	LoadMonster Wyvern 1 Wyvern
+	LoadMonster Wyvern count=1 icon=Wyvern
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 4 WyvernLairFlags
@@ -402,13 +402,13 @@ TerribleWyvern:
 FourLizards:
 	And WyvernLairFlags 8 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster GiantLizard 2 GiantLizard
+	SetupMonster GiantLizard distance=2 closeup=GiantLizard
 	Approach
 	Approach
 	PrintClear "FOUR GIANT LIZARDS RUN UP AND ATTACK THE PARTY!"
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster GiantLizard 4 GiantLizard
+	LoadMonster GiantLizard count=4 icon=GiantLizard
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 8 WyvernLairFlags
@@ -422,12 +422,12 @@ HumanBones:
 LizardsAndMinotaurs:
 	And WyvernLairFlags 16 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster GiantLizard 0 GiantLizard
+	SetupMonster GiantLizard distance=0 closeup=GiantLizard
 	PrintClear "YOU ENTER A CHAMBER WITH FOUR GIANT LIZARDS AND TWO MINOTAURS.  THE MINOTAURS ORDER THE LIZARDS TO ATTACK."
 	Save 70 Morale
 	ClearMonsters
-	LoadMonster GiantLizard 4 GiantLizard
-	LoadMonster Minotaur 2 Minotaur
+	LoadMonster GiantLizard count=4 icon=GiantLizard
+	LoadMonster Minotaur count=2 icon=Minotaur
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 16 WyvernLairFlags
@@ -446,11 +446,11 @@ LairTreasure:
 TwoLizards:
 	And WyvernLairFlags 64 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster GiantLizard 0 GiantLizard
+	SetupMonster GiantLizard distance=0 closeup=GiantLizard
 	PrintClear "GUARDING THIS CHAMBER ARE TWO GIANT LIZARDS.  AS YOU APPROACH, THEY ATTACK."
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster GiantLizard 2 GiantLizard
+	LoadMonster GiantLizard count=2 icon=GiantLizard
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 64 WyvernLairFlags
@@ -459,7 +459,7 @@ TwoLizards:
 GnollAttack:
 	Random 7 Scratch1
 	if Scratch1 > 0: Exit
-	SetupMonster Gnoll 2 Gnoll
+	SetupMonster Gnoll distance=2 closeup=Gnoll
 	Approach
 	Approach
 	PrintClear "YOU ARE ATTACKED BY SOME GNOLLS."
@@ -467,7 +467,7 @@ GnollAttack:
 	Add 4 Scratch1 Scratch1
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster Gnoll Scratch1 Gnoll
+	LoadMonster Gnoll count=Scratch1 icon=Gnoll
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Exit
@@ -480,12 +480,12 @@ ElfRemains:
 GnollsAndTrolls:
 	And WyvernLairFlags 128 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster Gnoll 0 Gnoll
+	SetupMonster Gnoll distance=0 closeup=Gnoll
 	PrintClear "IN THIS ROOM ARE SOME GNOLLS AND TROLLS.  THEY ATTACK YOU IMMEDIATELY."
 	Save 75 Morale
 	ClearMonsters
-	LoadMonster Gnoll 12 Gnoll
-	LoadMonster Troll 4 Troll
+	LoadMonster Gnoll count=12 icon=Gnoll
+	LoadMonster Troll count=4 icon=Troll
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 128 WyvernLairFlags
@@ -494,7 +494,7 @@ GnollsAndTrolls:
 MadKobolds:
 	Random 7 Scratch1
 	if Scratch1 > 0: Exit
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	Approach
 	Approach
 	Save 50 Morale
@@ -504,8 +504,8 @@ MadKobolds:
 	Add 10 Scratch1 Scratch1
 	if Scratch1 >= 40: Save 3 Scratch2
 	ClearMonsters
-	LoadMonster Kobold0 Scratch1 Kobold
-	if Scratch2 != 0: LoadMonster KoboldLeader1 Scratch2 Kobold
+	LoadMonster Kobold0 count=Scratch1 icon=Kobold
+	if Scratch2 != 0: LoadMonster KoboldLeader1 count=Scratch2 icon=Kobold
 	Combat
 	Exit
 

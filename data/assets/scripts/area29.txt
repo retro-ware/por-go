@@ -170,7 +170,7 @@ SecretDoorSpotted:
 NorrisBandits:
 	if BanditsDone == 255: Exit
 	Save 10 Portrait
-	SetupMonster Fighter16 2 6
+	SetupMonster Fighter16 distance=2 body=6
 	Delay
 	Approach
 	Delay
@@ -183,9 +183,9 @@ NorrisBandits:
 	OnGoto AuxMember 1 SurrenderToBandits
 	Save 70 Morale
 	ClearMonsters
-	LoadMonster NorrisTheGray 1 NorrisTheGray
-	LoadMonster Lizardman 5 Lizardman
-	LoadMonster KoboldLeader1 9 KoboldLeader
+	LoadMonster NorrisTheGray count=1 icon=NorrisTheGray
+	LoadMonster Lizardman count=5 icon=Lizardman
+	LoadMonster KoboldLeader1 count=9 icon=KoboldLeader
 	Combat
 	if CombatEnd > 128: Goto ReleasedAboveGround
 	Save 255 BanditsDone
@@ -235,7 +235,7 @@ HiddenCatacombs:
 	Gosub PressToContinue
 	if BanditsDone == 255: Exit
 	if Facing == 0: Goto ArrowVolley
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	Save 25 AuxMember
 	Gosub PauseLoop
 
@@ -266,7 +266,7 @@ CatacombSniper2:
 	Exit
 
 ShowSniper:
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 
 SniperArrow:
 	Damage 1 1 6 0 39
@@ -318,14 +318,14 @@ WellFight:
 	Save Scratch2 MaxDist
 	Save 67 Morale
 	ClearMonsters
-	LoadMonster Kobold0 6 Kobold
-	LoadMonster KoboldLeader1 3 KoboldLeader
+	LoadMonster Kobold0 count=6 icon=Kobold
+	LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
 	Combat
 	if CombatEnd >= 128: Goto AfterCombat
 	if Scratch1 == 250: Goto WellCleared
 	if Scratch4 < 1: PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS."
 	also if Scratch4 == 1: PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS."
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	Delay
 	Approach
 	Delay
@@ -359,7 +359,7 @@ RandomEncounter:
 	OnGoto Surprise 4 BloodthirstyMonsters SurprisedBy SurprisedParty FaceToFace
 
 SurprisedBy:
-	SetupMonster AuxEncMonster2 2 Scratch8
+	SetupMonster AuxEncMonster2 distance=2 closeup=Scratch8
 	Delay
 	Approach
 	Delay
@@ -416,7 +416,7 @@ SicklyKobolds:
 	Random 20 AuxSightText
 	if AuxSightText != 15: Exit
 	if KoboldBandDone == 255: Exit
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	Delay
 	Approach
 	Delay
@@ -430,8 +430,8 @@ SicklyKoboldsFight:
 	Save 0 Surprise
 	Save 25 Morale
 	ClearMonsters
-	LoadMonster Kobold0 2 Kobold
-	LoadMonster KoboldLeader1 4 KoboldLeader
+	LoadMonster Kobold0 count=2 icon=Kobold
+	LoadMonster KoboldLeader1 count=4 icon=KoboldLeader
 	Combat
 	Save 255 KoboldBandDone
 	Exit
@@ -455,14 +455,14 @@ KoboldsScamper:
 LizardPatrol:
 	And WildFlags 8 AuxMember
 	if 0 != AuxMember: Exit
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!"
 	Gosub PressToContinue
 	Save 0 Surprise
 	Save 75 Morale
 	ClearMonsters
-	LoadMonster Lizardman 1 Lizardman
-	LoadMonster GiantLizard 4 GiantLizard
+	LoadMonster Lizardman count=1 icon=Lizardman
+	LoadMonster GiantLizard count=4 icon=GiantLizard
 	Combat
 	if CombatEnd < 128: Or WildFlags 8 WildFlags
 	Exit
@@ -526,8 +526,8 @@ EncounterFight:
 LoadEncounter:
 	if AuxPartyStrength == 0: Save 1 AuxPartyStrength
 	ClearMonsters
-	if AuxTemp9 != 0: LoadMonster KoboldLeader1 3 KoboldLeader
-	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	if AuxTemp9 != 0: LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
+	LoadMonster Scratch8 count=AuxPartyStrength icon=Scratch8
 	Combat
 	Goto AfterCombat
 
@@ -611,7 +611,7 @@ YesOrExit:
 	Exit
 
 ShowKobolds:
-	SetupMonster Kobold Scratch2 Kobold
+	SetupMonster Kobold distance=Scratch2 closeup=Kobold
 	Delay
 	Approach
 	Delay

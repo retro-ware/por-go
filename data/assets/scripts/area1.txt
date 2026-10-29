@@ -45,7 +45,7 @@ GuardsHuntBoy:
 	if Scratch1 > GuardSpotChance: Goto CheckAnimals
 	Add 1 GuardPatrolCount GuardSpotChance
 	Save 6 Portrait
-	SetupMonster Fighter16 2 3
+	SetupMonster Fighter16 distance=2 body=3
 	Delay
 	Approach
 	Delay
@@ -56,7 +56,7 @@ GuardsHuntBoy:
 GuardsSpotBoy:
 	PrintClear "SOME OF THE GUARDS SPOT YOU WITH THE BOY."
 	ClearMonsters
-	LoadMonster Buccaneer 20 11
+	LoadMonster Buccaneer count=20 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	Add 1 GuardPatrolCount GuardPatrolCount
@@ -65,8 +65,8 @@ GuardsSpotBoy:
 AlarmRunForGate:
 	PrintClear "AN ALARM GOES OFF IN THE DISTANCE.  YOUR ONLY HOPE IS TO RUN FOR THE FRONT GATE."
 	ClearMonsters
-	LoadMonster RdLvlFighter 4 11
-	LoadMonster Buccaneer 30 11
+	LoadMonster RdLvlFighter count=4 icon=11
+	LoadMonster Buccaneer count=30 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	Add 1 GuardPatrolCount GuardPatrolCount
@@ -75,8 +75,8 @@ AlarmRunForGate:
 AnotherWaveAttacks:
 	PrintClear "ANOTHER WAVE OF MEN ATTACK YOU."
 	ClearMonsters
-	LoadMonster RdLvlFighter 4 11
-	LoadMonster Buccaneer 40 11
+	LoadMonster RdLvlFighter count=4 icon=11
+	LoadMonster Buccaneer count=40 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	Add 1 GuardPatrolCount GuardPatrolCount
@@ -115,12 +115,12 @@ MainGateEmpty:
 GateGuardsAttack:
 	if GateGuardsDefeated != 0: Goto Done
 	Save 6 Portrait
-	SetupMonster Fighter16 0 3
+	SetupMonster Fighter16 distance=0 body=3
 	Save 255 Portrait
 	PrintClear "SOME GUARDS RUSH FOWARD AND ATTACK."
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Buccaneer 8 11
+	LoadMonster Buccaneer count=8 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeToCamp
 	Save 1 GateGuardsDefeated
@@ -152,14 +152,14 @@ PunchMerchant:
 	Save 60 Morale
 	Gosub ClearPicture
 	Save 1 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	Delay
 	Approach
 	Delay
 	Approach
 	Save 255 Portrait
 	ClearMonsters
-	LoadMonster Buccaneer 6 11
+	LoadMonster Buccaneer count=6 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeToCamp
 	PrintClear "AFTER YOU DEFEAT THE GUARDS YOU SEE A CROWD HAS FORMED.  FROM WITHIN THE CROWD A LARGE MAN IN GLEAMING CHAIN MAIL STEPS OUT.  HE SAYS 'THAT WAS AMUSING BUT DO NOT CAUSE ANYMORE TROUBLE!'"
@@ -193,7 +193,7 @@ SneakToPenGate:
 
 PenGateGuards:
 	Save 6 Portrait
-	SetupMonster Fighter16 0 3
+	SetupMonster Fighter16 distance=0 body=3
 	PrintClear "YOU ARE NEAR THE FRONT GATE TO THE SLAVE PEN.  TWO GUARDS GUARD THE DOOR.  WHAT WILL YOU DO?"
 	HMenu Scratch1 3 "ATTACK" "TRY TO SNEAK BY" "LEAVE"
 	OnGoto Scratch1 3 AttackPenGuards SneakPastFails StepBack
@@ -203,7 +203,7 @@ AttackPenGuards:
 	PrintClear "YOU ATTACK THE GUARDS."
 	Save 65 Morale
 	ClearMonsters
-	LoadMonster Buccaneer 4 11
+	LoadMonster Buccaneer count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	Save 1 PenGuardsDefeated
@@ -211,7 +211,7 @@ AttackPenGuards:
 
 CutOffWithBoy:
 	Save 6 Portrait
-	SetupMonster Fighter16 2 3
+	SetupMonster Fighter16 distance=2 body=3
 	Delay
 	Approach
 	Delay
@@ -221,29 +221,29 @@ CutOffWithBoy:
 BuccaneerWaves:
 	Save 80 Morale
 	ClearMonsters
-	LoadMonster Buccaneer 20 11
-	LoadMonster RdLvlFighter 1 11
+	LoadMonster Buccaneer count=20 icon=11
+	LoadMonster RdLvlFighter count=1 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
-	SetupMonster Fighter16 2 3
+	SetupMonster Fighter16 distance=2 closeup=3
 	Delay
 	Approach
 	Delay
 	Approach
 	PrintClear "AFTER DEFEATING THE FIRST WAVE OF BUCCANEERS,  YOU SEE ANOTHER WAVE FORMING IN THE DISTANCE.  WITH A LOUD ROAR THEY ATTACK YOU IN FULL FORCE."
 	ClearMonsters
-	LoadMonster RdLvlFighter 1 11
-	LoadMonster ThLvlFighter101 1 11
-	LoadMonster Buccaneer 50 11
+	LoadMonster RdLvlFighter count=1 icon=11
+	LoadMonster ThLvlFighter101 count=1 icon=11
+	LoadMonster Buccaneer count=50 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
-	SetupMonster Fighter16 2 3
+	SetupMonster Fighter16 distance=2 closeup=3
 	PrintClear "AFTER DEFEATING THE LAST, WAVE YOU SEE ANOTHER WAVE ATTACK FROM THE SOUTH OF THE COMPOUND."
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter101 1 11
-	LoadMonster RdLvlFighter 2 11
-	LoadMonster Buccaneer 53 11
+	LoadMonster ThLvlFighter101 count=1 icon=11
+	LoadMonster RdLvlFighter count=2 icon=11
+	LoadMonster Buccaneer count=53 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
 
@@ -251,7 +251,7 @@ CaptainAppears:
 	if CaptainKilled != 0: Goto FinalWave
 	PrintClear "THE SLAVES CHEER YOUR VICTORY.  A LARGE GROUP OF BUCCANEERS STANDS IN DISBELIEF.  THE BUCCANEERS PART AS A LARGE MAN IN GLEAMING CHAIN MAIL STEPS FORTH.  THE SLAVES FALL SILENT."
 	Save 9 Portrait
-	SetupMonster Fighter16 2 5
+	SetupMonster Fighter16 distance=2 body=5
 	Delay
 	Approach
 	Delay
@@ -269,11 +269,11 @@ AttackCaptain:
 	PrintClear "YOU THROW CAUTION TO THE WIND AND ATTACK.  THE CAPTAIN SMILES AND THEN RUSHES TO BATTLE."
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Captain 1 Captain
+	LoadMonster Captain count=1 icon=Captain
 
 FinalBattle:
-	LoadMonster ThLvlFighter41 15 11
-	LoadMonster Buccaneer 40 11
+	LoadMonster ThLvlFighter41 count=15 icon=11
+	LoadMonster Buccaneer count=40 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
 	PrintClear "AFTER DEFEATING THE LAST OF THE BUCCANNEERS THE REST SURRENDER OR FLEE.  YOU RESCUE THE SLAVES AND CAPTURE THE FORT."
@@ -283,7 +283,7 @@ FinalBattle:
 
 FinalWave:
 	Save 6 Portrait
-	SetupMonster Fighter16 2 3
+	SetupMonster Fighter16 distance=2 body=3
 	PrintClear "THE LAST OF THE BUCCANNEERS FORM INTO A FINAL WAVE AND ATTACK."
 	Save 60 Morale
 	ClearMonsters
@@ -327,7 +327,7 @@ CaptainDoorGuards:
 	if BaseAlerted != 0: Goto Done
 	if DoorGuardsKilled != 0: Goto Done
 	Save 6 Portrait
-	SetupMonster Fighter16 0 3
+	SetupMonster Fighter16 distance=0 body=3
 	Save 255 Portrait
 	if QuestBivant >= 254: Goto QuartersAlarm
 	PrintClear "STANDING IN FRONT OF THE DOOR ARE TWO LARGE GUARDS.  ONE OF THEM SAYS 'DO YOU HAVE A PASS TO SEE THE CAPTAIN?'  WHAT WILL YOU DO?"
@@ -342,7 +342,7 @@ BribeRefused:
 AttackDoorGuards:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter41 2 11
+	LoadMonster ThLvlFighter41 count=2 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	PrintClear "YOU KILL THE GUARDS BUT ARE CAUGHT DOING IT.  A LARGE GROUP OF GUARDS RUN TOWARD YOU AND ATTACK."
@@ -363,11 +363,11 @@ CaptainRoom:
 	if CaptainFightDone != 0: Goto Done
 	if CaptainKilled == 1: Goto Done
 	Save 6 Portrait
-	SetupMonster Fighter16 0 3
+	SetupMonster Fighter16 distance=0 body=3
 	PrintClear "YOU ENTER A ROOM WITH FOUR GUARDS IN GLEAMING CHAIN MAIL.  AS YOU ENTER, ONE OF THEM GOES THROUGH THE SOUTH DOOR AND RETURNS WITH THE BUCCANEER CAPTAIN."
 	Gosub PressToContinue
 	Save 9 Portrait
-	SetupMonster Fighter16 0 5
+	SetupMonster Fighter16 distance=0 body=5
 	PrintClear "THE CAPTAIN LOOKS YOU OVER AND SAYS 'WHAT DO YOU WANT?'"
 	HMenu Scratch1 3 "ATTACK" "MENTION YOUNG BOY" "LEAVE"
 	OnGoto Scratch1 3 CaptainFight MentionBoy StepBack
@@ -376,8 +376,8 @@ CaptainFight:
 	PrintClear "YOU DRAW YOUR WEAPONS AND ATTACK.  THE CAPTAIN DRAWS HIS SWORD AND YELLS FOR HIS GUARDS TO ATTACK!"
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Captain 1 Captain
-	LoadMonster ThLvlFighter41 4 11
+	LoadMonster Captain count=1 icon=Captain
+	LoadMonster ThLvlFighter41 count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeQuarters
 	PrintClear "YOU KILL THE CAPTAIN."
@@ -414,7 +414,7 @@ SeedyManPass:
 	if PassBought != 0: Goto Done
 	if QuestBivant >= 254: Goto Done
 	Save 10 Portrait
-	SetupMonster Fighter16 0 9
+	SetupMonster Fighter16 distance=0 body=9
 	PrintClear "THERE IS A SEEDY LITTLE MAN HERE WHO WHISPERS 'PSSST, BUDDY.  WANT TO BUY A PASS TO SEE THE CAPTAIN?'"
 	HMenu Scratch2 2 "BUY PASS" "LEAVE"
 	OnGoto Scratch2 2 BuyPass Done
@@ -431,7 +431,7 @@ BuyPass:
 GuardTower:
 	if BaseAlerted != 0: Goto Done
 	Save 6 Portrait
-	SetupMonster Fighter16 0 3
+	SetupMonster Fighter16 distance=0 body=3
 	if QuestBivant >= 254: Goto TowerGuardsAttack
 	PrintClear "YOU HAVE ENTERED ONE OF THE GUARD TOWERS.  INSIDE ARE FOUR BUCCANEERS.  ONE OF THEM SAYS 'THIS IS A RESTRICTED AREA, LEAVE NOW!'  WHAT WILL YOU DO?"
 	HMenu Scratch2 2 "ATTACK" "LEAVE"
@@ -447,7 +447,7 @@ AttackTowerGuards:
 TowerFight:
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster Buccaneer 4 11
+	LoadMonster Buccaneer count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	Goto Done
@@ -455,7 +455,7 @@ TowerFight:
 BarracksEnter:
 	if BaseAlerted != 0: Goto Done
 	Save 6 Portrait
-	SetupMonster Fighter16 0 3
+	SetupMonster Fighter16 distance=0 body=3
 	if QuestBivant >= 254: Goto BarracksGuardsAttack
 	PrintClear "YOU ENTER A BARRACKS FILED WITH TWENTY BUCCANEERS.  ONE OF THE BUCCANEERS SAYS 'THIS AREA IS OFF LIMITS.  LEAVE NOW.' WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "ATTACK" "LEAVE"
@@ -471,7 +471,7 @@ AttackBarracks:
 BarracksFight:
 	Save 70 Morale
 	ClearMonsters
-	LoadMonster Buccaneer 20 11
+	LoadMonster Buccaneer count=20 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	Goto BuccaneerWaves

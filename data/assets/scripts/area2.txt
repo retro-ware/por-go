@@ -65,73 +65,73 @@ PickEncounter:
 	if Scratch1 > 7: Goto GhoulsAttack
 	if Scratch1 > 3: Goto ScorpionsApproach
 	Save 60 Morale
-	SetupMonster GiantFrog 0 GiantFrog
+	SetupMonster GiantFrog distance=0 closeup=GiantFrog
 	PrintClear "EVIL LOOKING FROGS BOIL UP FROM BELOW."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster PoisonousFrog 8 PoisonousFrog
+	LoadMonster PoisonousFrog count=8 icon=PoisonousFrog
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 HobgoblinsCharge:
 	Save 60 Morale
-	SetupMonster Hobgoblin 2 Hobgoblin
+	SetupMonster Hobgoblin distance=2 closeup=Hobgoblin
 	PrintClear "HOBGOBLINS CHARGE SCREAMING."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster Hobgoblin 8 Hobgoblin
-	LoadMonster HobgoblinLdr 1 HobgoblinLdr
+	LoadMonster Hobgoblin count=8 icon=Hobgoblin
+	LoadMonster HobgoblinLdr count=1 icon=HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 SkeletalForce:
 	Save 100 Morale
-	SetupMonster Skeleton 2 Skeleton
+	SetupMonster Skeleton distance=2 closeup=Skeleton
 	PrintClear "A SKELETAL FORCE SPOTS YOU AND ATTACKS."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster Wight 1 Wight
-	LoadMonster Skeleton 10 Skeleton
-	LoadMonster Zombie 8 35
+	LoadMonster Wight count=1 icon=Wight
+	LoadMonster Skeleton count=10 icon=Skeleton
+	LoadMonster Zombie count=8 icon=35
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 GhoulsAttack:
 	Save 100 Morale
-	SetupMonster Ghoul 2 Ghoul
+	SetupMonster Ghoul distance=2 closeup=Ghoul
 	PrintClear "SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster Wight 1 Wight
-	LoadMonster Ghoul 5 Ghoul
+	LoadMonster Wight count=1 icon=Wight
+	LoadMonster Ghoul count=5 icon=Ghoul
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 ScorpionsApproach:
-	SetupMonster Scorpion 1 Scorpion
+	SetupMonster Scorpion distance=1 closeup=Scorpion
 	Save 50 Morale
 	PrintClear "SCORPIONS APPROACH HUNGRILY."
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster LargeScorpion 3 18
-	LoadMonster HugeScorpion 1 18
+	LoadMonster LargeScorpion count=3 icon=18
+	LoadMonster HugeScorpion count=1 icon=18
 	Combat
 	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 CourtyardAmbush:
 	if HobgoblinTempleState != 0: Exit
-	SetupMonster Hobgoblin 0 Hobgoblin
+	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
 	PrintClear "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
 	Save 60 Morale
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster Hobgoblin 12 Hobgoblin
-	LoadMonster HobgoblinLdr 2 HobgoblinLdr
+	LoadMonster Hobgoblin count=12 icon=Hobgoblin
+	LoadMonster HobgoblinLdr count=2 icon=HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto ChasedOut
 	Save 1 HobgoblinTempleState
@@ -264,7 +264,7 @@ SmallDarkRoom:
 	if PrisonerState == 255: Exit
 	if PrisonerState == 128: Goto FreeManMenu
 	Save 32 Portrait
-	SetupMonster Fighter14 0 3
+	SetupMonster Fighter14 distance=0 body=3
 	Print "A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47."
 
 PrisonerContinue:
@@ -345,7 +345,7 @@ FreeManMenu:
 FightFreeMan:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Skullcrusher 1 Skullcrusher
+	LoadMonster Skullcrusher count=1 icon=Skullcrusher
 	Combat
 	Save 255 PrisonerState
 	Save 255 Portrait
@@ -402,14 +402,14 @@ GrishnakTemple:
 	if HobgoblinTempleState != 1: Exit
 	PrintClear "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
 	Gosub PressToContinue
-	SetupMonster Hobgoblin 0 9
+	SetupMonster Hobgoblin distance=0 closeup=9
 	PrintClear "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
-	SetupMonster Hobgoblin 0 Hobgoblin
+	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Grishnak 1 Grishnak
-	LoadMonster HobgoblinLdr 3 HobgoblinLdr
-	LoadMonster Hobgoblin 12 Hobgoblin
+	LoadMonster Grishnak count=1 icon=Grishnak
+	LoadMonster HobgoblinLdr count=3 icon=HobgoblinLdr
+	LoadMonster Hobgoblin count=12 icon=Hobgoblin
 	Treasure 100 20 30 40 8 0 0 38 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Quarter Staff, Potion of Healing, and 2 more
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
@@ -433,16 +433,16 @@ OgreChief:
 	Save 2 Facing
 	Call CallRedraw
 	PrintClear "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
-	SetupMonster Hobgoblin 1 Hobgoblin
+	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	PrintClear "YOU SEE THE CHIEF OF THE HOBGOBLINS, A HUGE OGRE. AS YOU ENTER, HE RISES TO HIS FULL, TEN FEET OF HEIGHT; HIS HEAD WREATHED IN THE FLICKERING SHADOWS."
 	Gosub PressToContinue
 	PrintClear "'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'"
 	Gosub PressToContinue
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Ogre 1 Ogre
-	LoadMonster Hobgoblin 18 Hobgoblin
-	LoadMonster HobgoblinLdr 4 HobgoblinLdr
+	LoadMonster Ogre count=1 icon=Ogre
+	LoadMonster Hobgoblin count=18 icon=Hobgoblin
+	LoadMonster HobgoblinLdr count=4 icon=HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
 	Save 255 IronBoxFound
@@ -470,12 +470,12 @@ HobgoblinEncounter:
 	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
 
 HobgoblinFight:
-	SetupMonster Hobgoblin 0 Hobgoblin
+	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
 	Save 60 Morale
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster Hobgoblin AuxCounter Hobgoblin
-	LoadMonster HobgoblinLdr AuxMember HobgoblinLdr
+	LoadMonster Hobgoblin count=AuxCounter icon=Hobgoblin
+	LoadMonster HobgoblinLdr count=AuxMember icon=HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
 	if Scratch10 == 2: Goto MarkBarracksSeen

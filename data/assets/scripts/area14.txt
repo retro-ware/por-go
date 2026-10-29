@@ -71,7 +71,7 @@ BackstabThief:
 	if Scratch7 == LastBackstabCell: Goto Done
 	if ThievesKilled >= 21: Goto Done
 	Save 32 Portrait
-	SetupMonster Swordsman11 2 8
+	SetupMonster Swordsman11 distance=2 body=8
 	Delay
 	Approach
 	Delay
@@ -96,8 +96,8 @@ ThiefBackstabs:
 AttackThief:
 	ClearMonsters
 	Save 30 Morale
-	if ThievesKilled >= 18: LoadMonster ThLvlThief51 1 12
-	also if ThievesKilled < 18: LoadMonster StLvlThief 1 12
+	if ThievesKilled >= 18: LoadMonster ThLvlThief51 count=1 icon=12
+	also if ThievesKilled < 18: LoadMonster StLvlThief count=1 icon=12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
 	Add 1 ThievesKilled ThievesKilled
@@ -431,7 +431,7 @@ WeaponPileAmbush:
 		Goto HarmlessGas
 	}
 	Save 71 Portrait
-	SetupMonster Swordsman11 0 8
+	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!"
 	Delay
 	Add 5 ThievesKilled Scratch1
@@ -458,8 +458,8 @@ AmbushFight:
 	Save 1 Surprise
 	Save 1 WeaponPileGasDone
 	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
-	if Scratch2 != 0: LoadMonster ThLvlThief51 Scratch2 12
-	if Scratch3 != 0: LoadMonster StLvlThief Scratch3 12
+	if Scratch2 != 0: LoadMonster ThLvlThief51 count=Scratch2 icon=12
+	if Scratch3 != 0: LoadMonster StLvlThief count=Scratch3 icon=12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
 	Add Scratch2 ThievesKilled ThievesKilled
@@ -482,7 +482,7 @@ ThievesFlee:
 	if ThiefChaseDone != 0: Goto Done
 	Save 255 ThiefChaseDone
 	Save 44 Portrait
-	SetupMonster Swordsman11 0 8
+	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 ChaseThieves Done
@@ -513,7 +513,7 @@ ChaseSouth:
 
 CatchGuildMaster:
 	Save 44 Portrait
-	SetupMonster Swordsman11 0 8
+	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "ATTACK" "RELEASE"
 	OnGoto Scratch1 2 AttackThief ReleaseGuildMaster
@@ -528,13 +528,13 @@ ChaseEnd:
 ThiefAmbush:
 	if GuildAmbushDone != 0: Goto Done
 	Save 44 Portrait
-	SetupMonster Swordsman11 0 8
+	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES."
 	Save 1 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster StLvlThief 15 12
-	LoadMonster ThLvlThief51 3 12
+	LoadMonster StLvlThief count=15 icon=12
+	LoadMonster ThLvlThief51 count=3 icon=12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
 	Add 15 ThievesKilled ThievesKilled
@@ -557,10 +557,10 @@ JailCell:
 
 JailThugs:
 	Save 32 Portrait
-	SetupMonster Swordsman11 0 8
+	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU."
 	ClearMonsters
-	LoadMonster StLvlThief 10 12
+	LoadMonster StLvlThief count=10 icon=12
 	Combat
 	Or FilesFound 2 FilesFound
 	if CombatEnd > 128: Goto FleeBack

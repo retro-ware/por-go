@@ -41,12 +41,12 @@ AlarmCheck:
 	}
 
 GuardsSpotYou:
-	SetupMonster Fighter16 2 6
+	SetupMonster Fighter16 distance=2 closeup=6
 	Gosub ApproachTwice
 	PrintClear "SOME GUARDS SPOT YOU AND ATTACK."
 	ClearMonsters
-	LoadMonster Guard Scratch1 11
-	LoadMonster Corporal AlarmLevel 11
+	LoadMonster Guard count=Scratch1 icon=11
+	LoadMonster Corporal count=AlarmLevel icon=11
 	Combat
 	Goto CellDispatch
 
@@ -122,14 +122,14 @@ CommandantOffice:
 
 TourBarracks:
 	Save 57 Portrait
-	SetupMonster Fighter16 1 6
+	SetupMonster Fighter16 distance=1 body=6
 	PrintClear "THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'"
 	RedrawView
 	Gosub PressReturn
 	Return
 
 TourWatchTowers:
-	SetupMonster Fighter16 1 6
+	SetupMonster Fighter16 distance=1 closeup=6
 	PrintClear "'HERE YOU SEE ONE OF OUR FINE WATCH TOWERS WHICH WERE BUILT BY THE FINEST STONE MASONS IN THE LAND.'"
 	Gosub PressReturn
 	PrintClear "'FROM HERE YOU CAN ALSO SEE OUR SOLIDLY BUILT OUTSIDE WALL.  THIS WALL HAS SURVIVED MANY ATTACKS, INCLUDING ONE FROM A DRAGON.'"
@@ -140,7 +140,7 @@ TourWatchTowers:
 	Return
 
 TourQuarters:
-	SetupMonster Fighter16 1 6
+	SetupMonster Fighter16 distance=1 closeup=6
 	PrintClear "THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES."
 	RedrawView
 	Save 255 Portrait
@@ -150,7 +150,7 @@ RestrictedGuards:
 	if QuestZhentilOutpost != 0 || AttackedGuards != 0: Goto Done
 	if NightInQuarters == 1: Goto Done
 	Save 57 Portrait
-	SetupMonster Fighter16 0 6
+	SetupMonster Fighter16 distance=0 body=6
 	PrintClear "THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?"
 	HMenu Scratch1 3 "RETURN" "ATTACK" "BRIBE"
 	OnGoto Scratch1 3 BackToQuarters AttackGuards AngeredGuards
@@ -174,10 +174,10 @@ AttackGuards:
 	Save 1 AttackedGuards
 	Save 75 Morale
 	Save 57 Portrait
-	SetupMonster Fighter16 2 6
+	SetupMonster Fighter16 distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
-	LoadMonster Guard 4 11
+	LoadMonster Guard count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeStopped
 	Goto SurrenderOrDie
@@ -187,7 +187,7 @@ FleeStopped:
 	Goto GuardWaveFight
 
 SurrenderOrDie:
-	SetupMonster Fighter16 2 6
+	SetupMonster Fighter16 distance=2 closeup=6
 	PrintClear "MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "SURRENDER" "ATTACK"
 	OnGoto Scratch1 2 Surrender GuardWaveFight
@@ -202,11 +202,11 @@ StripAndExpel:
 
 GuardWaveFight:
 	Save 57 Portrait
-	SetupMonster Fighter16 2 6
+	SetupMonster Fighter16 distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
-	LoadMonster Guard 16 11
-	LoadMonster Corporal 4 11
+	LoadMonster Guard count=16 icon=11
+	LoadMonster Corporal count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto RunForGate
 	Add 20 AlarmFightScore AlarmFightScore
@@ -221,25 +221,25 @@ DwarfAndCommandant:
 	if OutpostConquered != 0: Exit
 	PrintClear "A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK"
 	Save 13 Portrait
-	SetupMonster SmallFighter 2 6
+	SetupMonster SmallFighter distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
-	LoadMonster DwarvenFighter 1 DwarvenFighter
-	LoadMonster Aides 10 11
-	LoadMonster Corporal 12 11
-	LoadMonster Guard 25 11
+	LoadMonster DwarvenFighter count=1 icon=DwarvenFighter
+	LoadMonster Aides count=10 icon=11
+	LoadMonster Corporal count=12 icon=11
+	LoadMonster Guard count=25 icon=11
 	Combat
 	Save 1 OutpostFought
 	if CombatEnd > 128: Goto RunForGate
 	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
 	Save 255 Portrait
-	SetupMonster Fighter16 2 50
+	SetupMonster Fighter16 distance=2 closeup=50
 	Gosub ApproachTwice
 	ClearMonsters
-	LoadMonster AlHyamDazid 1 AlHyamDazid
-	LoadMonster Commandant 1 Captain
-	LoadMonster Corporal 24 11
-	LoadMonster Aides 20 11
+	LoadMonster AlHyamDazid count=1 icon=AlHyamDazid
+	LoadMonster Commandant count=1 icon=Captain
+	LoadMonster Corporal count=24 icon=11
+	LoadMonster Aides count=20 icon=11
 	Combat
 	if CombatEnd > 128: Goto RunForGate
 	PrintClear "AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY."
@@ -253,10 +253,10 @@ RunForGate:
 	Save 0 Facing
 	Call CallRedraw
 	Save 57 Portrait
-	SetupMonster Fighter16 2 11
+	SetupMonster Fighter16 distance=2 body=11
 	PrintClear "YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS."
 	ClearMonsters
-	LoadMonster Guard 6 11
+	LoadMonster Guard count=6 icon=11
 	Combat
 	if CombatEnd > 128: Goto CaughtFleeing
 	PrintClear "YOU ESCAPE FROM THE OUTPOST."
@@ -292,9 +292,9 @@ SleepWithWatch:
 
 NightAmbush:
 	Save 57 Portrait
-	SetupMonster Fighter16 0 6
+	SetupMonster Fighter16 distance=0 body=6
 	ClearMonsters
-	LoadMonster Aides 4 11
+	LoadMonster Aides count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto NightFleeGuards
 	Goto MoreMenAttack
@@ -309,12 +309,12 @@ NightFleeGuards:
 MoreMenAttack:
 	PrintClear "AS YOU DEFEAT THE GUARDS SOME MORE MEN RUN IN AND ATTACK."
 	Save 57 Portrait
-	SetupMonster Fighter16 0 6
+	SetupMonster Fighter16 distance=0 body=6
 	ClearMonsters
 
 SecondWaveFight:
-	LoadMonster Corporal 5 11
-	LoadMonster Aides 6 11
+	LoadMonster Corporal count=5 icon=11
+	LoadMonster Aides count=6 icon=11
 	Combat
 	if CombatEnd > 128: Goto RanAndHid
 	PrintClear "AN ALARM GOES OFF IN THE DISTANCE."
@@ -515,10 +515,10 @@ FrontGateCheck:
 	if Scratch1 >= 75: Goto NearFrontGate
 	PrintClear "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
 	Save 57 Portrait
-	SetupMonster Fighter16 2 6
+	SetupMonster Fighter16 distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
-	LoadMonster Guard 11 11
+	LoadMonster Guard count=11 icon=11
 	Combat
 	Goto Done
 

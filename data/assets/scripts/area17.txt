@@ -228,7 +228,7 @@ SetSky:
 
 ShowNomads:
 	Save 61 Portrait
-	SetupMonster Swordsman11 2 30
+	SetupMonster Swordsman11 distance=2 body=30
 
 ApproachPause:
 	Delay
@@ -318,7 +318,7 @@ NomadFight:
 	Gosub SizeKoboldBand
 	Div Scratch9 2 Scratch9
 	ClearMonsters
-	LoadMonster Nomad Scratch9 Nomad
+	LoadMonster Nomad count=Scratch9 icon=Nomad
 	Combat
 	Gosub CheckFled
 	Add NomadFightCount 1 NomadFightCount
@@ -326,7 +326,7 @@ NomadFight:
 
 NomadsHostile:
 	Save 61 Portrait
-	SetupMonster Swordsman11 2 30
+	SetupMonster Swordsman11 distance=2 body=30
 	Save 255 Portrait
 	OnGoto NomadFightCount 4 NomadsSpotYou NomadsSpotYou NomadsSpotYou HeadmanRallies
 
@@ -349,10 +349,10 @@ TribeFight:
 	Save 100 Morale
 	Save 254 MonsterHit
 	ClearMonsters
-	LoadMonster ThLvlFighter41 5 ThLvlFighter
-	LoadMonster Hassad 1 Hassad
-	LoadMonster Shaman 1 Shaman
-	LoadMonster Nomad 49 Nomad
+	LoadMonster ThLvlFighter41 count=5 icon=ThLvlFighter
+	LoadMonster Hassad count=1 icon=Hassad
+	LoadMonster Shaman count=1 icon=Shaman
+	LoadMonster Nomad count=49 icon=Nomad
 	Treasure 0 0 0 #1388 0 0 0 255
 
 TribeCombat:
@@ -386,7 +386,7 @@ NomadsGather:
 	And MarkFlags4 2 Scratch10
 	if 0 != Scratch10: Goto NomadsHostile
 	Save 61 Portrait
-	SetupMonster Swordsman11 2 30
+	SetupMonster Swordsman11 distance=2 body=30
 	PrintClear "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
 	Gosub ApproachPause
 	PrintClear "ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP."
@@ -397,7 +397,7 @@ NomadsGather:
 	Save 255 Portrait
 	OnGoto Scratch10 3 Done NomadFightNoSurprise ExitToWilderness
 	ShowPortrait 74 30
-	SetupMonster Swordsman11 0 30
+	SetupMonster Swordsman11 distance=0 closeup=30
 	Save 255 Portrait
 	PrintClear "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
 	Gosub PressToContinue
@@ -437,7 +437,7 @@ LodgingRest:
 
 MorningGreeting:
 	Save 74 Portrait
-	SetupMonster Swordsman11 2 30
+	SetupMonster Swordsman11 distance=2 body=30
 	Save 255 Portrait
 	Gosub ApproachHidePortrait
 	PrintClear "THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'"
@@ -487,7 +487,7 @@ GuardEscort:
 
 HeadmanAsks:
 	Save 74 Portrait
-	SetupMonster Swordsman11 2 30
+	SetupMonster Swordsman11 distance=2 body=30
 	Save 11 Sky
 	Gosub ApproachTwice
 	Save 3 CampStage
@@ -572,7 +572,7 @@ RaidByStage:
 	OnGoto KoboldRaidStage 4 KoboldHorde KoboldsMelee KoboldsMelee KoboldLeader
 
 KoboldHorde:
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	Save 1 KoboldRaidStage
 	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS."
 
@@ -592,11 +592,11 @@ KoboldFight:
 	Save 80 Morale
 	ClearMonsters
 	if NomadAllies == 0: Goto LoadKobolds
-	LoadMonster Nomad NomadAllies Nomad
+	LoadMonster Nomad count=NomadAllies icon=Nomad
 
 LoadKobolds:
-	LoadMonster Kobold0 Scratch9 Kobold
-	LoadMonster Kobold123 Scratch9 Kobold
+	LoadMonster Kobold0 count=Scratch9 icon=Kobold
+	LoadMonster Kobold123 count=Scratch9 icon=Kobold
 	And MarkFlags4 2 Scratch10
 	if 0 == Scratch10: Gosub MakeAlliesNomads
 	Combat
@@ -611,7 +611,7 @@ KoboldWaveDone:
 	Exit
 
 KoboldsMelee:
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. "
 	And MarkFlags4 2 Scratch10
 	if 0 == Scratch10: Goto KoboldEncounter
@@ -621,7 +621,7 @@ KoboldsMelee:
 KoboldLeader:
 	And MarkFlags4 2 Scratch10
 	if 0 != Scratch10: Goto NomadBetrayal
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK."
 	Gosub PressToContinue
 	PrintClear "'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'"
@@ -655,14 +655,14 @@ KoboldLeaderFight:
 	ClearMonsters
 	And MarkFlags4 4 Scratch10
 	if 0 != Scratch10: Goto LoadKoboldLeader
-	LoadMonster Hassad 1 Hassad
-	LoadMonster ThLvlFighter41 2 ThLvlFighter
+	LoadMonster Hassad count=1 icon=Hassad
+	LoadMonster ThLvlFighter41 count=2 icon=ThLvlFighter
 	Gosub MakeAlliesNomads
 
 LoadKoboldLeader:
 	Treasure 0 0 0 #0BB8 0 0 0 255
-	LoadMonster Kobold0 27 Kobold
-	LoadMonster Kobold123 26 Kobold
+	LoadMonster Kobold0 count=27 icon=Kobold
+	LoadMonster Kobold123 count=26 icon=Kobold
 	Combat
 	Gosub CheckAttackedAlly
 	And MarkFlags4 2 Scratch10
@@ -694,7 +694,7 @@ HostileRaid:
 	OnGoto KoboldRaidStage 4 HostileHorde HostileBand HostileBand HostileLeader
 
 HostileHorde:
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	Save 1 KoboldRaidStage
 	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP."
 
@@ -707,14 +707,14 @@ HostileEncounter:
 	Goto KoboldRaid
 
 HostileBand:
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "ADVANCING ON YOU IS A LARGE BAND OF KOBOLDS WITH BLOOD LUST IN THEIR EYES."
 	Goto HostileEncounter
 
 HostileLeader:
 	And MarkFlags4 4 Scratch10
 	if 0 == Scratch10: Goto KoboldLeader
-	SetupMonster Kobold 2 Kobold
+	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER."
 	Gosub PressToContinue
 	Gosub KoboldEncounterMenu
@@ -724,7 +724,7 @@ HostileLeader:
 
 NomadBetrayal:
 	Save 74 Portrait
-	SetupMonster Swordsman11 2 30
+	SetupMonster Swordsman11 distance=2 body=30
 	PrintClear "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
 	Gosub PressToContinue
 	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
@@ -737,10 +737,10 @@ BetrayalFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter41 5 ThLvlFighter
-	LoadMonster Hassad 1 Hassad
-	LoadMonster Shaman 1 Shaman
-	LoadMonster Kobold123 49 Kobold
+	LoadMonster ThLvlFighter41 count=5 icon=ThLvlFighter
+	LoadMonster Hassad count=1 icon=Hassad
+	LoadMonster Shaman count=1 icon=Shaman
+	LoadMonster Kobold123 count=49 icon=Kobold
 	Save 255 MonsterHit
 	Or MarkFlags4 8 MarkFlags4
 	Treasure 0 0 0 #1F40 0 0 0 255

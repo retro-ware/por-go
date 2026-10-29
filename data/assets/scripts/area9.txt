@@ -1,5 +1,5 @@
 BugbearsApproach:
-	SetupMonster Bugbear 2 Bugbear
+	SetupMonster Bugbear distance=2 closeup=Bugbear
 	Delay
 	Approach
 	Delay
@@ -275,8 +275,8 @@ FightPatrol:
 	Save 60 Morale
 	Delay
 	ClearMonsters
-	LoadMonster ThLvlFighter75 1 Aides
-	LoadMonster HillGiant 5 HillGiant
+	LoadMonster ThLvlFighter75 count=1 icon=Aides
+	LoadMonster HillGiant count=5 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit
@@ -391,9 +391,9 @@ FightMageGuards:
 	Save 50 Morale
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster ThLvlMu 1 Level6Mu
-	LoadMonster Aides 1 Aides
-	LoadMonster Ettin 3 Ettin
+	LoadMonster ThLvlMu count=1 icon=Level6Mu
+	LoadMonster Aides count=1 icon=Aides
+	LoadMonster Ettin count=3 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto MageFlee
 	Or GateFlags 4 GateFlags
@@ -426,9 +426,9 @@ FightFighterGuards:
 	Save 50 Morale
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster Level6Mu24 1 Level6Mu
-	LoadMonster Aides 1 Aides
-	LoadMonster Ettin 3 Ettin
+	LoadMonster Level6Mu24 count=1 icon=Level6Mu
+	LoadMonster Aides count=1 icon=Aides
+	LoadMonster Ettin count=3 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto FighterFlee
 	Or GateFlags 8 GateFlags
@@ -494,10 +494,10 @@ FightTowerMonsters:
 	if 0 != Scratch10: Save 89 Scratch4
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster Scratch4 Scratch3 Level6Mu
-	LoadMonster Aides Scratch3 Aides
+	LoadMonster Scratch4 count=Scratch3 icon=Level6Mu
+	LoadMonster Aides count=Scratch3 icon=Aides
 	Mul Scratch3 3 Scratch3
-	LoadMonster Ettin Scratch3 Ettin
+	LoadMonster Ettin count=Scratch3 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto FleeToArea6
 
@@ -536,7 +536,7 @@ FightBugbears:
 	Gosub StartAlarm
 	Save 3 BugbearWarnings
 	ClearMonsters
-	LoadMonster Bugbear 16 Bugbear
+	LoadMonster Bugbear count=16 icon=Bugbear
 	Combat
 	if CombatEnd == 129: Goto PushedBack
 	Or GateFlags 16 GateFlags
@@ -677,7 +677,7 @@ FightGateBugbears:
 	Gosub StartAlarm
 	Save 3 BugbearWarnings
 	ClearMonsters
-	LoadMonster Bugbear 16 Bugbear
+	LoadMonster Bugbear count=16 icon=Bugbear
 	Combat
 	if CombatEnd == 129: Goto FleeToArea6
 	Or GateFlags 16 GateFlags
@@ -753,9 +753,9 @@ FightWallMonsters:
 	Save 80 Morale
 	Gosub StartAlarm
 	ClearMonsters
-	LoadMonster Level6Mu24 2 Level6Mu
-	LoadMonster Aides 2 Aides
-	LoadMonster Ettin 6 Ettin
+	LoadMonster Level6Mu24 count=2 icon=Level6Mu
+	LoadMonster Aides count=2 icon=Aides
+	LoadMonster Ettin count=6 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto PushedBack
 	Goto GarrisonSlain

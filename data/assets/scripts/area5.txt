@@ -222,7 +222,7 @@ FightGiants:
 	Save 60 Morale
 	RedrawView
 	ClearMonsters
-	LoadMonster HillGiant 3 HillGiant
+	LoadMonster HillGiant count=3 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleDeedFlags 32 CastleDeedFlags
@@ -245,7 +245,7 @@ TrollsUnawareMenu:
 	OnGoto Scratch10 4 Done FightTrolls StepBack FightTrolls
 
 TrollsCharge:
-	SetupMonster GreenBrute 2 GreenBrute
+	SetupMonster GreenBrute distance=2 closeup=GreenBrute
 	Delay
 	PrintClear "A PACK OF TROLLS CHARGE FROM WHERE THEY WERE HIDING."
 	Approach
@@ -255,7 +255,7 @@ TrollsCharge:
 FightTrolls:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Troll 8 Troll
+	LoadMonster Troll count=8 icon=Troll
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 64 CastleFlags2
@@ -319,7 +319,7 @@ MageBegs:
 	Save 50 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster AlHyamDazid 1 14
+	LoadMonster AlHyamDazid count=1 icon=14
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 4 CastleFlags2
@@ -345,7 +345,7 @@ GoUpstairs:
 ArguingGiants:
 	And CadornaQuartersFlags 128 Scratch10
 	if 0 != Scratch10: Exit
-	SetupMonster FireGiant 1 FireGiant
+	SetupMonster FireGiant distance=1 closeup=FireGiant
 	And BaneTempleFlags 3 Scratch10
 	if 0 != Scratch10: Goto GiantsCallThief
 	And CastleFlags 1 Scratch10
@@ -382,7 +382,7 @@ FightArguingGiants:
 	Save 0 Surprise
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster FireGiant 4 FireGiant
+	LoadMonster FireGiant count=4 icon=FireGiant
 	Combat
 	Gosub AfterCombat
 	Or CadornaQuartersFlags 128 CadornaQuartersFlags
@@ -405,7 +405,7 @@ ThroneRoom:
 	PrintClear "YOU ENTER A CHAMBER WHICH IS LAVISHLY APPOINTED WITH HANGINGS, CARPETS AND FURNITURE. SITTING ON A THRONE IS A POWERFUL LOOKING MAN CLAD IN BARBARIC SPLENDOR."
 	Gosub PressReturn
 	Save 54 Portrait
-	SetupMonster Fighter16 1 1
+	SetupMonster Fighter16 distance=1 body=1
 	PrintClear "'WHAT IS YOUR BUSINESS WITH TYRANTHRAXUS, LORD OF PHLAN?'"
 	Approach
 	Delay
@@ -454,8 +454,8 @@ FightImpostor:
 	Save 0 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster Tyranithraxus92 1 ThLvlFighter
-	LoadMonster ThLvlThief93 2 12
+	LoadMonster Tyranithraxus92 count=1 icon=ThLvlFighter
+	LoadMonster ThLvlThief93 count=2 icon=12
 	Treasure 0 0 0 0 0 8 1 255
 	Combat
 	Gosub AfterCombat
@@ -470,7 +470,7 @@ event3:
 FightSnakes:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster GiantSnake 4 GiantSnake
+	LoadMonster GiantSnake count=4 icon=GiantSnake
 	Combat
 	if CombatEnd == 129: Goto StepBack
 	Exit

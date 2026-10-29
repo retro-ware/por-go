@@ -192,7 +192,7 @@ GoDownMenu:
 	Save 4 Scratch7
 	Gosub CapLizardCounts
 	if Scratch4 < 2: Exit
-	SetupMonster GiantLizard 1 GiantLizard
+	SetupMonster GiantLizard distance=1 closeup=GiantLizard
 	PrintClear "YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!"
 	Save 0 Surprise
 	Save 100 Morale
@@ -201,7 +201,7 @@ GoDownMenu:
 	Save 254 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster GiantLizard Scratch4 GiantLizard
+	LoadMonster GiantLizard count=Scratch4 icon=GiantLizard
 	Combat
 	Gosub CountLizardKills
 	Exit
@@ -315,7 +315,7 @@ ChampionDuel:
 	Save 100 Morale
 	ClearMonsters
 	Call CallDuelB
-	LoadMonster Drythh 1 Lizardman
+	LoadMonster Drythh count=1 icon=Lizardman
 	Combat
 	if CombatEnd == 129: Goto ChampionLost
 	if QuestLizardmen != 255: Save 254 QuestLizardmen
@@ -345,8 +345,8 @@ DrythhFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Drythh 1 Lizardman
-	LoadMonster Lizardman 12 Lizardman
+	LoadMonster Drythh count=1 icon=Lizardman
+	LoadMonster Lizardman count=12 icon=Lizardman
 	Combat
 	if CombatEnd == 129: Goto PushBack
 	Exit
@@ -373,7 +373,7 @@ LizardPatrol:
 	OnGoto Scratch10 4 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
 
 LizardPatrolAmbush:
-	SetupMonster Lizardman 1 Lizardman
+	SetupMonster Lizardman distance=1 closeup=Lizardman
 	PrintClear "SUDDENLY YOU ARE ATTACKED BY TWO LIZARD MEN AND A GIANT LIZARD!"
 	Delay
 	Approach
@@ -385,8 +385,8 @@ LizardPatrolFight:
 	RedrawView
 	Picture None
 	ClearMonsters
-	LoadMonster Lizardman 2 Lizardman
-	LoadMonster GiantLizard 1 GiantLizard
+	LoadMonster Lizardman count=2 icon=Lizardman
+	LoadMonster GiantLizard count=1 icon=GiantLizard
 
 LizardCombat:
 	Combat
@@ -421,7 +421,7 @@ JavelinAmbush:
 	Save 2 Scratch7
 	Gosub CapLizardCounts
 	if Scratch5 < 2: Goto MarkEncounterDone
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "SUDDENLY LIZARD MEN JUMP UP FROM WHERE THEY WERE HIDING AND THROW JAVELINS AT YOU."
 	if Scratch4 > 1: Print " AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS."
 	Delay
@@ -429,8 +429,8 @@ JavelinAmbush:
 	Save 253 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster Lizardman Scratch5 Lizardman
-	if Scratch4 != 0: LoadMonster GiantLizard Scratch4 GiantLizard
+	LoadMonster Lizardman count=Scratch5 icon=Lizardman
+	if Scratch4 != 0: LoadMonster GiantLizard count=Scratch4 icon=GiantLizard
 	Goto LizardCombat
 
 LShapedBuilding:
@@ -455,7 +455,7 @@ GiantLizards:
 	OnGoto Scratch10 4 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
 
 GiantLizardsAmbush:
-	SetupMonster GiantLizard 1 GiantLizard
+	SetupMonster GiantLizard distance=1 closeup=GiantLizard
 	Delay
 	Approach
 	PrintClear "SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!"
@@ -465,7 +465,7 @@ GiantLizardsFight:
 	Save 1 Scratch7
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster GiantLizard 3 GiantLizard
+	LoadMonster GiantLizard count=3 icon=GiantLizard
 	Goto LizardCombat
 
 StairsUp:
@@ -498,7 +498,7 @@ PoolLizardmen:
 	Gosub CapLizardCounts
 	Save 1 Scratch8
 	if Scratch5 < 3: Goto DeepPool
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. "
 	Delay
 	Damage Scratch5 1 6 0 44
@@ -524,7 +524,7 @@ PoolLizardmenFight:
 	Save 254 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
-	LoadMonster Lizardman Scratch5 Lizardman
+	LoadMonster Lizardman count=Scratch5 icon=Lizardman
 	Combat
 	Gosub CountLizardKills
 	Save 1 Scratch8

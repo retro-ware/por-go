@@ -143,7 +143,7 @@ PatrolRoll:
 	if 3 != Scratch1: Exit
 
 UndeadPatrol:
-	SetupMonster Skeleton 2 Skeleton
+	SetupMonster Skeleton distance=2 closeup=Skeleton
 	Delay
 	Approach
 	Delay
@@ -311,7 +311,7 @@ TakeGems:
 
 Insects:
 	if InsectsBeaten == 255: Exit
-	SetupMonster Scorpion 0 Scorpion
+	SetupMonster Scorpion distance=0 closeup=Scorpion
 	PrintClear "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
 	Save 25 AuxMember
 	Gosub PressToContinue
@@ -329,7 +329,7 @@ InsectsDone:
 OrcRaid:
 	if FerranFreed == 255: Goto EmptyHall
 	if OrcRaidBeaten == 255: Goto EmptyHall
-	SetupMonster Hobgoblin 1 Hobgoblin
+	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	PrintClear "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
 	Gosub PressToContinue
 	Save 5 Scratch1
@@ -502,7 +502,7 @@ LoadEncounter:
 	Save 1 Scratch6
 
 LoadEncounterGroup:
-	LoadMonster AuxRoll AuxEncResult AuxEncResult2
+	LoadMonster AuxRoll count=AuxEncResult icon=AuxEncResult2
 	if AuxPartyStrength == 0: Goto EncounterCombat
 	Add 1 Scratch1 Scratch1
 	Sub 1 AuxPartyStrength AuxPartyStrength

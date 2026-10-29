@@ -196,7 +196,7 @@ MedusaFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Medusa 1 Medusa
+	LoadMonster Medusa count=1 icon=Medusa
 	Combat
 	if CombatEnd == 129: Goto RetreatFromMedusa
 	Or SearchTowerFlags 16 SearchTowerFlags
@@ -249,7 +249,7 @@ ThiefFight:
 	Save 100 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster StLvlThief 1 12
+	LoadMonster StLvlThief count=1 icon=12
 	Combat
 	if CombatEnd == 129: Goto RetreatFromThief
 	Or SearchTowerFlags 32 SearchTowerFlags
@@ -281,7 +281,7 @@ GenheerisAtDesk:
 
 GenheerisOffer:
 	Save 59 Portrait
-	SetupMonster Mage 0 31
+	SetupMonster Mage distance=0 body=31
 	PrintClear "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
 	Gosub PressToContinue
 	if PartyCount == 8: Goto GenheerisDeal
@@ -309,7 +309,7 @@ GenheerisFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Genheeris 1 14
+	LoadMonster Genheeris count=1 icon=14
 	Combat
 	Or GenheerisFlags 2 GenheerisFlags
 	if CombatEnd != 129: Exit
@@ -370,7 +370,7 @@ GuardsFight:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter85 12 ThLvlFighter
+	LoadMonster ThLvlFighter85 count=12 icon=ThLvlFighter
 	Combat
 	if CombatEnd == 129: Goto RetreatFromHall
 	Or GenheerisFlags 4 GenheerisFlags
@@ -416,7 +416,7 @@ VoteNext:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Tyranithraxus66 1 Tyranithraxus
+	LoadMonster Tyranithraxus66 count=1 icon=Tyranithraxus
 	Combat
 	if CombatEnd == 129: Goto RetreatFromHall
 	if QuestTyranthraxus != 255: Save 254 QuestTyranthraxus

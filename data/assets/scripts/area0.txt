@@ -369,7 +369,7 @@ WagerRefused:
 
 DrunkenBrawl:
 	Save 53 Portrait
-	SetupMonster Fighter7 2 7
+	SetupMonster Fighter7 distance=2 body=7
 	PrintClear "A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE."
 	Gosub PressReturn
 	Random 1 AuxMonster
@@ -391,10 +391,10 @@ DrunkenBrawl:
 	Save 1 Duel
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster AuxEncResult 11 AuxRoll2
-	LoadMonster AuxEncResult2 11 AuxTempC
-	LoadMonster AuxEncTemp 11 AuxSearchCount
-	LoadMonster AuxTemp9 13 AuxEncText
+	LoadMonster AuxEncResult count=11 icon=AuxRoll2
+	LoadMonster AuxEncResult2 count=11 icon=AuxTempC
+	LoadMonster AuxEncTemp count=11 icon=AuxSearchCount
+	LoadMonster AuxTemp9 count=13 icon=AuxEncText
 	Save 41 Scratch1
 
 BrawlFight:
@@ -495,13 +495,13 @@ TempleHealing:
 	Exit
 
 WatchFightsBack:
-	SetupMonster Fighter16 0 1
+	SetupMonster Fighter16 distance=0 closeup=1
 	PrintClear "YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!"
 	Save 99 Morale
 	ClearMonsters
-	LoadMonster ThLvlCleric 12 12
-	LoadMonster ThLvlFighter41 20 11
-	LoadMonster ThLvlFighter85 20 ThLvlFighter
+	LoadMonster ThLvlCleric count=12 icon=12
+	LoadMonster ThLvlFighter41 count=20 icon=11
+	LoadMonster ThLvlFighter85 count=20 icon=ThLvlFighter
 	Combat
 	if CombatEnd == 1: Save 1 Combat1Won
 	Exit
@@ -600,10 +600,10 @@ FightWatch:
 	Save 0 WatchCombatDone0
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster Level3Mu 2 Level3Mu
-	LoadMonster ThLvlFighter84 12 ThLvlFighter
-	LoadMonster Aides 12 11
-	LoadMonster Nomad 12 Nomad
+	LoadMonster Level3Mu count=2 icon=Level3Mu
+	LoadMonster ThLvlFighter84 count=12 icon=ThLvlFighter
+	LoadMonster Aides count=12 icon=11
+	LoadMonster Nomad count=12 icon=Nomad
 	Combat
 	Save 1 WatchCombatDone0
 	Gosub AfterWatchFight
@@ -657,7 +657,7 @@ PressReturn:
 
 WatchApproaches:
 	Save 9 Portrait
-	SetupMonster Swordsman27 2 7
+	SetupMonster Swordsman27 distance=2 body=7
 	Delay
 	Approach
 	Delay
@@ -703,7 +703,7 @@ CityTour:
 	Save 3 Facing
 	Call CallRedraw
 	Save 8 Portrait
-	SetupMonster Man12 2 9
+	SetupMonster Man12 distance=2 body=9
 	Delay
 	Approach
 	Delay

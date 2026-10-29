@@ -128,7 +128,7 @@ StepBack:
 event3:
 	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
 	Save 9 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	Gosub RollSurprise
 	IfNe
 	Goto PatrolSighted
@@ -185,8 +185,8 @@ PatrolFight:
 	Save 60 Morale
 	Save 255 Portrait
 	ClearMonsters
-	LoadMonster ThLvlFighter75 1 ThLvlFighter
-	LoadMonster HillGiant 5 HillGiant
+	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
+	LoadMonster HillGiant count=5 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit
@@ -224,13 +224,13 @@ ArmedManAttacks:
 	And CastleFlags2 8 Scratch10
 	if 0 != Scratch10: Exit
 	Save 52 Portrait
-	SetupMonster Fighter16 0 1
+	SetupMonster Fighter16 distance=0 body=1
 	Save 255 Portrait
 	PrintClear "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
 	Gosub DelayRaiseAlarm
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter84 1 ThLvlFighter
+	LoadMonster ThLvlFighter84 count=1 icon=ThLvlFighter
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 8 CastleFlags2
@@ -276,14 +276,14 @@ FighterFight:
 
 LoadFighter:
 	ClearMonsters
-	LoadMonster ThLvlFighter84 1 ThLvlFighter
-	if Scratch10 == 0: LoadMonster FireGiant 4 FireGiant
+	LoadMonster ThLvlFighter84 count=1 icon=ThLvlFighter
+	if Scratch10 == 0: LoadMonster FireGiant count=4 icon=FireGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 8 CastleFlags2
 	Or CastleFlags2 16 CastleFlags2
 	Save 9 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	PrintClear "A PATROL ROUNDS THE CORNER.."
 	Goto PatrolSeesYou
 
@@ -303,7 +303,7 @@ FourGiantsCharge:
 GiantsFight:
 	ClearMonsters
 	Save 80 Morale
-	LoadMonster FireGiant 4 FireGiant
+	LoadMonster FireGiant count=4 icon=FireGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 16 CastleFlags2
@@ -494,7 +494,7 @@ OfficersAttack:
 	Save 100 Morale
 	Delay
 	ClearMonsters
-	LoadMonster Envoy 2 14
+	LoadMonster Envoy count=2 icon=14
 	Combat
 	Gosub AfterCombat
 	Random 4 Scratch10
@@ -584,7 +584,7 @@ NeedClearArea:
 
 ScribeArrives:
 	Save 72 Portrait
-	SetupMonster Cleric 1 30
+	SetupMonster Cleric distance=1 body=30
 	Save 255 Portrait
 	Gosub RollSurprise
 	IfLt

@@ -399,6 +399,17 @@ func nameValues(lines []string, names *ScriptNames) []string {
 					toks[k+1+j], changed = n, true
 				}
 			}
+			for j, l := range operandLabels[c] {
+				if a, b, ok := strings.Cut(l, "|"); ok {
+					l = a
+					if portrait {
+						l = b
+					}
+				}
+				if l != "" && k+1+j < len(toks) {
+					toks[k+1+j], changed = l+"="+toks[k+1+j], true
+				}
+			}
 		}
 		if !changed && comment == "" || !changed && strings.HasSuffix(l, comment) {
 			continue

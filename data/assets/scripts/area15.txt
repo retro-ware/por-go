@@ -63,7 +63,7 @@ event0:
 	if 0 != Scratch10: Exit
 	And BooksFoundFlags 159 Scratch10
 	if 0 == Scratch10: Exit
-	SetupMonster Spectre 0 Spectre
+	SetupMonster Spectre distance=0 closeup=Spectre
 	PrintClear "A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU."
 	Gosub ShortPause
 	Save 100 Morale
@@ -71,7 +71,7 @@ event0:
 	Surprise Scratch2 Scratch3 2 2
 	if Surprise == 2: Save 0 Surprise
 	ClearMonsters
-	LoadMonster Spectre 1 Spectre
+	LoadMonster Spectre count=1 icon=Spectre
 	Combat
 	if CombatEnd == 129: Goto FleeFromBasilisk
 	Or LibraryEventFlags 32 LibraryEventFlags
@@ -295,7 +295,7 @@ ArtsOfWar:
 BasiliskLair:
 	And LibraryEventFlags 64 Scratch10
 	if 0 != Scratch10: Exit
-	SetupMonster Basilisk 2 Basilisk
+	SetupMonster Basilisk distance=2 closeup=Basilisk
 	PartySurprise Scratch6 Scratch7
 	Surprise Scratch6 Scratch7 0 0
 	OnGoto Surprise 4 BasiliskSeen BasiliskSurprisesUs BasiliskUnaware BasiliskWaking
@@ -337,7 +337,7 @@ FleeFromBasilisk:
 BasiliskFight:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Basilisk 1 Basilisk
+	LoadMonster Basilisk count=1 icon=Basilisk
 	Treasure 0 0 0 0 0 0 0 3 // Clerical Scroll With 2 Spells, Cloak of Displacement, Potion of Healing, Potion of Giant Strength
 	Combat
 	if CombatEnd == 129: Goto FleeFromBasilisk
@@ -385,7 +385,7 @@ WritingHall:
 MadFighter:
 	And LibraryEventFlags 3 Scratch10
 	if 0 != Scratch10: Exit
-	SetupMonster ArmoredFighter 0 25
+	SetupMonster ArmoredFighter distance=0 closeup=25
 	PrintClear "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
 
 MadFighterMenu:
@@ -453,7 +453,7 @@ MadFighterFight:
 	Save 0 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster MadMan 1 Aides
+	LoadMonster MadMan count=1 icon=Aides
 	Combat
 	if CombatEnd == 129: Goto FleeFromMadman
 	Or LibraryEventFlags 1 LibraryEventFlags
@@ -537,7 +537,7 @@ KoboldFight:
 	Save 10 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster Kobold0 5 Kobold
+	LoadMonster Kobold0 count=5 icon=Kobold
 	Combat
 	if CombatEnd == 129: Goto FleeFromKobolds
 	Or LibraryEventFlags 128 LibraryEventFlags

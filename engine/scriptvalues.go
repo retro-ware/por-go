@@ -35,6 +35,15 @@ var operandKinds = map[string][]string{
 	"ShowPortrait": {"Head", "Body"},
 }
 
+// operandLabels name the commands' operands in the script, as label=value
+// (LoadMonster Orc count=8 icon=Orc); "" is an operand without one, a|b
+// two labels (a SetupMonster's close-up is a body picture while a
+// portrait is up).
+var operandLabels = map[string][]string{
+	"LoadMonster":  {"", "count", "icon"},
+	"SetupMonster": {"", "distance", "closeup|body"},
+}
+
 // ReadScriptValues adds the values of a values file, if there is one.
 func ReadScriptValues(path string, vals []ScriptValue) ([]ScriptValue, error) {
 	b, err := os.ReadFile(path)

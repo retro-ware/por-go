@@ -156,7 +156,7 @@ StepBack:
 event3:
 	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
 	Save 9 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	Gosub RollSurprise
 	IfNe
 	Goto PatrolSighted
@@ -214,8 +214,8 @@ PatrolFight:
 	Delay
 	RedrawView
 	ClearMonsters
-	LoadMonster ThLvlFighter75 1 ThLvlFighter
-	LoadMonster HillGiant 5 HillGiant
+	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
+	LoadMonster HillGiant count=5 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Exit
@@ -251,13 +251,13 @@ ArmedManAttacks:
 	And PatrolsFought3 1 Scratch10
 	if 0 != Scratch10: Exit
 	Save 12 Portrait
-	SetupMonster Fighter16 0 1
+	SetupMonster Fighter16 distance=0 body=1
 	Save 255 Portrait
 	PrintClear "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
 	Gosub DelayRaiseAlarm
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter75 1 ThLvlFighter
+	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
 	Combat
 	Gosub AfterCombat
 	Or PatrolsFought3 1 PatrolsFought3
@@ -298,12 +298,12 @@ FighterHitsButton:
 FighterFight:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster ThLvlFighter75 1 ThLvlFighter
+	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
 	Combat
 	Gosub AfterCombat
 	Or PatrolsFought3 1 PatrolsFought3
 	Save 9 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	PrintClear "A PATROL ROUNDS THE CORNER.."
 	Goto PatrolSeesYou
 
@@ -339,7 +339,7 @@ GiantApartment:
 ApartmentFight:
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster HillGiant 2 HillGiant
+	LoadMonster HillGiant count=2 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags 4 CastleFlags
@@ -387,7 +387,7 @@ BucketGiantsCharge:
 	OnGoto Scratch10 3 Done SleepingGiantsFight FleeCombat
 
 SleepingGiants:
-	SetupMonster FireGiant 1 FireGiant
+	SetupMonster FireGiant distance=1 closeup=FireGiant
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE SOME SLEEPING GIANTS."
 	HMenu Scratch10 2 "SNEAK OUT QUIETLY" "ATTACK AS THEY SLEEP"
 	OnGoto Scratch10 1 StepBack
@@ -398,7 +398,7 @@ SleepingGiantsFight:
 	Save 100 Morale
 	Gosub PressToContinue
 	ClearMonsters
-	LoadMonster FireGiant Scratch5 FireGiant
+	LoadMonster FireGiant count=Scratch5 icon=FireGiant
 	Treasure 0 0 0 #012C 0 0 0 255
 	Combat
 	Gosub AfterCombat
@@ -430,7 +430,7 @@ WakingGiantsHit:
 QuartersFight:
 	Save 40 Morale
 	ClearMonsters
-	LoadMonster HillGiant 8 HillGiant
+	LoadMonster HillGiant count=8 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Or CadornaQuartersFlags Scratch1 CadornaQuartersFlags
@@ -533,7 +533,7 @@ DoorGiants:
 	PrintClear "TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR."
 
 DoorGiantsChallenge:
-	SetupMonster HillGiant 0 HillGiant
+	SetupMonster HillGiant distance=0 closeup=HillGiant
 	And BaneTempleFlags 3 Scratch10
 	if 0 != Scratch10: Goto TempleThieves
 	EncounterMenu 55 0 55 Scratch10 0 4 0 4 4 "'WHAT PASSWORD?'" "" "" 12 12
@@ -567,7 +567,7 @@ DoorGiantsFight:
 	Save 0 Surprise
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster HillGiant 2 HillGiant
+	LoadMonster HillGiant count=2 icon=HillGiant
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags 128 CastleFlags
@@ -713,7 +713,7 @@ GiantSnakes:
 SnakesFight:
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster GiantSnake 5 GiantSnake
+	LoadMonster GiantSnake count=5 icon=GiantSnake
 	Combat
 	Gosub AfterCombat
 	Or CadornaQuartersFlags 64 CadornaQuartersFlags

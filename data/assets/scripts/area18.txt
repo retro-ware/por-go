@@ -14,7 +14,7 @@ RestSafe:
 
 event3:
 	Gosub RollPatrol
-	SetupMonster EncMonster 2 EncMonster
+	SetupMonster EncMonster distance=2 closeup=EncMonster
 	Goto PatrolFight
 
 event4:
@@ -86,7 +86,7 @@ PatrolMeet:
 	Gosub RollPatrol
 	if DisguiseState == 255: Goto PatrolEncounterMenu
 	if DisguiseState == 0: Goto PatrolEncounterMenu
-	SetupMonster EncMonster 2 EncMonster
+	SetupMonster EncMonster distance=2 closeup=EncMonster
 	Delay
 	Gosub SpotPatrol
 	Approach
@@ -283,12 +283,12 @@ LoadPatrol:
 	Print $AuxCounter
 	Print " RUSH TO ATTACK."
 	GetTable EncMonsterTable EncType Scratch1
-	LoadMonster Scratch1 EncCount Scratch1
+	LoadMonster Scratch1 count=EncCount icon=Scratch1
 	GetTable EncMoraleTable EncType EncMorale
 	if EncExtraCount == 0: Return
 	Add EncMorale 10 EncMorale
 	Add 1 Scratch1 Scratch1
-	LoadMonster Scratch1 EncExtraCount Scratch1
+	LoadMonster Scratch1 count=EncExtraCount icon=Scratch1
 	Return
 
 SpotPatrol:
@@ -301,7 +301,7 @@ OverhearRumor:
 	if OverheardIndex == 5: Sub 5 OverheardIndex OverheardIndex
 	if DisguiseState >= 254: Goto Done
 	Gosub RollPatrol
-	SetupMonster EncMonster 2 EncMonster
+	SetupMonster EncMonster distance=2 closeup=EncMonster
 	Delay
 	PrintClear "AS YOU MOVE YOU OVERHEAR SOME"
 	Approach
@@ -442,7 +442,7 @@ TavernEnter:
 	if TavernState != 0: Goto TavernCrowd
 	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
 	Save 6 Portrait
-	SetupMonster ShieldBearer 0 3
+	SetupMonster ShieldBearer distance=0 body=3
 	Print "YOU OPENED THE DOOR INTO A DRUNK BUCCANEER."
 	Gosub PressToContinue
 	PrintClear "HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?"
@@ -460,7 +460,7 @@ ChallengeBuccaneer:
 DuelBuccaneer:
 	ClearMonsters
 	Call CallDuelB
-	LoadMonster ThLvlFighter41 1 ThLvlFighter
+	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
 	Combat
 	Save 1 TavernState
 	if CombatEnd > 128: Goto BuccaneerPaid
@@ -480,10 +480,10 @@ PatronsAttack:
 	PrintClear "YOUR ACTIONS ANGER THE PATRONS AND THEY ATTACK."
 	Save 30 Morale
 	ClearMonsters
-	LoadMonster Hobgoblin 4 Hobgoblin
-	LoadMonster GoblinGuard 12 GoblinGuard
-	LoadMonster ThLvlFighter41 1 ThLvlFighter
-	LoadMonster Orc4 8 Orc
+	LoadMonster Hobgoblin count=4 icon=Hobgoblin
+	LoadMonster GoblinGuard count=12 icon=GoblinGuard
+	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
+	LoadMonster Orc4 count=8 icon=Orc
 	Combat
 	Save 255 Portrait
 	if CombatEnd > 128: Goto PartyFlees
@@ -501,7 +501,7 @@ PayBribe:
 
 TavernCrowd:
 	if TavernState > 1: Goto BarDestroyed
-	SetupMonster Goblin 0 Goblin
+	SetupMonster Goblin distance=0 closeup=Goblin
 	PrintClear "THE CREATURES IGNORE YOU FOR THE MOMENT."
 	Gosub PressToContinue
 	VMenu Scratch1 "WHAT DO YOU DO?" 4 "MIX WITH MONSTERS" "DRINK HEAVILY" "ATTACK" "LEAVE"
@@ -537,9 +537,9 @@ FreeForAll:
 	Gosub PressToContinue
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster GoblinGuard 25 GoblinGuard
-	LoadMonster Hobgoblin 20 Hobgoblin
-	LoadMonster Ogre 5 Ogre
+	LoadMonster GoblinGuard count=25 icon=GoblinGuard
+	LoadMonster Hobgoblin count=20 icon=Hobgoblin
+	LoadMonster Ogre count=5 icon=Ogre
 	Save 0 Scratch2
 
 FreeForAllMember:
@@ -596,7 +596,7 @@ BaneShrine:
 
 RobedOrc:
 	if BaneRecruiterState != 0: Goto BaneMeeting
-	SetupMonster Orc 1 Orc
+	SetupMonster Orc distance=1 closeup=Orc
 	PrintClear "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
 	HMenu Scratch1 3 "LEAVE" "GREET" "ATTACK"
 	if DisguiseState == 255: Goto AttackOrc
@@ -633,14 +633,14 @@ DeclineRecruit:
 BaneMeeting:
 	if BaneRecruiterState != 1: Exit
 	if BaneMeetHour >= Hours: Exit
-	SetupMonster Orc 1 Orc
+	SetupMonster Orc distance=1 closeup=Orc
 	PrintClear "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
 	Gosub PressToContinue
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster Orc4 8 Orc
-	LoadMonster OrcLeader5 1 OrcLeader
-	LoadMonster Ogre 3 Ogre
+	LoadMonster Orc4 count=8 icon=Orc
+	LoadMonster OrcLeader5 count=1 icon=OrcLeader
+	LoadMonster Ogre count=3 icon=Ogre
 	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
 	Save 2 BaneRecruiterState
@@ -650,7 +650,7 @@ BaneMeeting:
 AttackOrc:
 	Save 90 Morale
 	ClearMonsters
-	LoadMonster OrcLeader5 1 OrcLeader
+	LoadMonster OrcLeader5 count=1 icon=OrcLeader
 	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
 	Save 2 BaneRecruiterState

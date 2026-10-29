@@ -110,7 +110,7 @@ PatrolSurprise:
 	PartySurprise AuxMember AuxRoll
 	Surprise AuxMember AuxRoll 0 0
 	if Surprise != 1: Goto PatrolApproach
-	SetupMonster AuxEncMonster2 2 Scratch8
+	SetupMonster AuxEncMonster2 distance=2 closeup=Scratch8
 	Approach
 	Delay
 	Approach
@@ -156,15 +156,15 @@ SurprisePatrol:
 
 OrcsArguePapers:
 	if OrcPapersFight == 255: Exit
-	SetupMonster Orc 1 Orc
+	SetupMonster Orc distance=1 closeup=Orc
 	Approach
 	PrintClear "SEVERAL ORCS ARE ARGUING OVER SOME PAPERS."
 	Gosub PressReturn
 	Save 0 Surprise
 	Save 99 Morale
 	ClearMonsters
-	LoadMonster Orc13 1 Orc
-	LoadMonster Orc4 3 Orc
+	LoadMonster Orc13 count=1 icon=Orc
+	LoadMonster Orc4 count=3 icon=Orc
 	Combat
 	Save 255 OrcPapersFight
 	Gosub CountSlumsCleared
@@ -172,15 +172,15 @@ OrcsArguePapers:
 
 GoblinTrainer:
 	if GoblinTrainerFight == 255: Exit
-	SetupMonster Goblin 1 Goblin
+	SetupMonster Goblin distance=1 closeup=Goblin
 	Approach
 	PrintClear "A HEALTHY-LOOKING GOBLIN IS INSTRUCTING A GROUP OF YOUNG WARRIORS.  HE SMILES AND SAYS, 'I SEE OUR OPPONENTS HAVE ARRIVED.'"
 	Gosub PressReturn
 	Save 0 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster GoblinGuard 8 GoblinGuard
-	LoadMonster GoblinLeader12 1 GoblinLeader
+	LoadMonster GoblinGuard count=8 icon=GoblinGuard
+	LoadMonster GoblinLeader12 count=1 icon=GoblinLeader
 	Combat
 	Gosub CountSlumsCleared
 	Save 255 GoblinTrainerFight
@@ -190,7 +190,7 @@ OhloRoom:
 	if OhloQuestState == 255: Exit
 	if OhloPotionState == 255: Exit
 	Save 8 Portrait
-	SetupMonster Mage 1 2
+	SetupMonster Mage distance=1 body=2
 	if OhloPotionState == 250: Goto OhloWantsPotion
 	if OhloQuestState == 250: Goto OhloEmptyHanded
 	PrintClear "YOU BURST INTO AN ELEGANTLY PANELLED ROOM. A SMALL MAN SITS HUNCHED OVER A TABLE BY THE EAST WALL. HE SETS DOWN HIS PEN AND GAZES STERNLY AT YOU.  'WELL?', HE DEMANDS.  (WHAT DO YOU DO?)"
@@ -216,10 +216,10 @@ OhloAttacks:
 	Save 0 Surprise
 	Save 99 Morale
 	ClearMonsters
-	LoadMonster Hobgoblin 25 Hobgoblin
-	LoadMonster OrcLeader5 2 OrcLeader
-	LoadMonster Level3Mu 1 Level3Mu
-	LoadMonster Orc4 8 Orc
+	LoadMonster Hobgoblin count=25 icon=Hobgoblin
+	LoadMonster OrcLeader5 count=2 icon=OrcLeader
+	LoadMonster Level3Mu count=1 icon=Level3Mu
+	LoadMonster Orc4 count=8 icon=Orc
 	Combat
 	Gosub ClearPortrait
 	Save 255 OhloPotionState
@@ -289,7 +289,7 @@ OpenLeatherBag:
 
 FeedingKobolds:
 	if KoboldsFed == 255: Exit
-	SetupMonster Kobold 1 Kobold
+	SetupMonster Kobold distance=1 closeup=Kobold
 	Delay
 	Approach
 	PrintClear "YOU INTERRUPT SOME FEEDING KOBOLDS."
@@ -297,8 +297,8 @@ FeedingKobolds:
 	Save 60 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster KoboldLeader11 1 KoboldLeader
-	LoadMonster Kobold0 15 Kobold
+	LoadMonster KoboldLeader11 count=1 icon=KoboldLeader
+	LoadMonster Kobold0 count=15 icon=Kobold
 	Combat
 	Gosub CountSlumsCleared
 	Save 255 KoboldsFed
@@ -379,15 +379,15 @@ FortuneFinished:
 
 OrcHome:
 	if OrcHomeFight == 255: Exit
-	SetupMonster Orc 1 Orc
+	SetupMonster Orc distance=1 closeup=Orc
 	Approach
 	PrintClear "A LARGE ORC RAISES HIS HEAD AND SNARLS, 'HOW DARE YOU BREAK INTO OUR HOME?'"
 	Gosub PressReturn
 	Save 70 Morale
 	ClearMonsters
-	LoadMonster OrcLeader15 1 OrcLeader
-	LoadMonster OrcLeader14 3 OrcLeader
-	LoadMonster Orc4 20 Orc
+	LoadMonster OrcLeader15 count=1 icon=OrcLeader
+	LoadMonster OrcLeader14 count=3 icon=OrcLeader
+	LoadMonster Orc4 count=20 icon=Orc
 	Combat
 	Gosub CountSlumsCleared
 	Save 255 OrcHomeFight
@@ -395,14 +395,14 @@ OrcHome:
 
 HobgoblinGold:
 	if HobgoblinGoldState >= 250: Goto SearchValuables
-	SetupMonster Hobgoblin 1 Hobgoblin
+	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	Approach
 	PrintClear "SOME HOBGOBLINS ARE ARGUING OVER A PILE OF GOLD.  'THIEVES!' THEY SCREAM WHEN THEY SEE YOU."
 	Gosub PressReturn
 	Save 0 Surprise
 	Save 75 Morale
 	ClearMonsters
-	LoadMonster Hobgoblin 5 Hobgoblin
+	LoadMonster Hobgoblin count=5 icon=Hobgoblin
 	Combat
 	Save 250 HobgoblinGoldState
 	Gosub CountSlumsCleared
@@ -435,15 +435,15 @@ TreasureRoom:
 
 GuardsIntercept:
 	if GuardsInterceptFight == 255: Exit
-	SetupMonster Orc 1 Orc
+	SetupMonster Orc distance=1 closeup=Orc
 	Approach
 	PrintClear "GUARDS RUN TO INTERCEPT YOU."
 	Gosub PressReturn
 	Save 0 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster Orc4 30 Orc
-	LoadMonster OrcLeader5 4 OrcLeader
+	LoadMonster Orc4 count=30 icon=Orc
+	LoadMonster OrcLeader5 count=4 icon=OrcLeader
 	Combat
 	Gosub CountSlumsCleared
 	Save 255 GuardsInterceptFight
@@ -451,15 +451,15 @@ GuardsIntercept:
 
 LeadersMeeting:
 	if LeadersMeetingFight == 255: Exit
-	SetupMonster Hobgoblin 1 Hobgoblin
+	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	PrintClear "YOU INTRUDE ON A GATHERING OF MONSTER LEADERS."
 	Gosub PressReturn
 	Save 0 Surprise
 	Save 80 Morale
 	ClearMonsters
-	LoadMonster Ogre 1 Ogre
-	LoadMonster Gnoll 2 Gnoll
-	LoadMonster HobgoblinLdr 2 HobgoblinLdr
+	LoadMonster Ogre count=1 icon=Ogre
+	LoadMonster Gnoll count=2 icon=Gnoll
+	LoadMonster HobgoblinLdr count=2 icon=HobgoblinLdr
 	Combat
 	Save 255 LeadersMeetingFight
 	Gosub CountSlumsCleared
@@ -467,15 +467,15 @@ LeadersMeeting:
 
 AlertedGuards:
 	if AlertedGuardsFight == 255: Exit
-	SetupMonster Goblin 1 Goblin
+	SetupMonster Goblin distance=1 closeup=Goblin
 	Approach
 	PrintClear "YOU HAVE ALERTED THE GUARDS."
 	Gosub PressReturn
 	Save 0 Surprise
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster GoblinGuard 12 GoblinGuard
-	LoadMonster GoblinLeader3 21 GoblinLeader
+	LoadMonster GoblinGuard count=12 icon=GoblinGuard
+	LoadMonster GoblinLeader3 count=21 icon=GoblinLeader
 	Combat
 	Gosub CountSlumsCleared
 	Save 255 AlertedGuardsFight
@@ -553,7 +553,7 @@ AttackBoothMan:
 	PrintClear "THE MAN RUNS SCREAMING INTO THE BACK OF THE BOOTH."
 	Gosub ClearPortrait
 	Save 255 BoothManDone
-	SetupMonster Hobgoblin 2 Hobgoblin
+	SetupMonster Hobgoblin distance=2 closeup=Hobgoblin
 	Delay
 	Approach
 	Delay
@@ -561,8 +561,8 @@ AttackBoothMan:
 	Save 99 Morale
 	Save 0 Surprise
 	ClearMonsters
-	LoadMonster Hobgoblin 15 Hobgoblin
-	LoadMonster HobgoblinLdr 4 HobgoblinLdr
+	LoadMonster Hobgoblin count=15 icon=Hobgoblin
+	LoadMonster HobgoblinLdr count=4 icon=HobgoblinLdr
 	Combat
 	Save 1 BoothFightDone
 	if OhloPotionState != 255: Gosub CountSlumsCleared
@@ -592,12 +592,12 @@ GrainSack:
 	if GrainSackFight == 255: Exit
 	Save 0 Surprise
 	Save 75 Morale
-	SetupMonster GreenBrute 0 GreenBrute
+	SetupMonster GreenBrute distance=0 closeup=GreenBrute
 	PrintClear "SOME MONSTERS ARE TOSSING A SACK OF GRAIN. WHEN THE SACK BREAKS THEY WAIL, 'OH, NO! WHAT CAN WE THROW NOW?' ONE LOOKS YOUR WAY. 'I KNOW,' HE SAYS."
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster Ogre 2 Ogre
-	LoadMonster Troll 4 Troll
+	LoadMonster Ogre count=2 icon=Ogre
+	LoadMonster Troll count=4 icon=Troll
 	Treasure 0 0 0 30 50 0 1 131 // 3 random items
 	Combat
 	Gosub CountSlumsCleared
@@ -637,7 +637,7 @@ AddLeaders:
 FightPlainPatrol:
 	Save PatrolMorale Morale
 	ClearMonsters
-	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	LoadMonster Scratch8 count=AuxPartyStrength icon=Scratch8
 	Combat
 	Goto AfterPatrolFight
 
@@ -645,8 +645,8 @@ FightPatrolWithLeaders:
 	Add 5 PatrolMorale PatrolMorale
 	Save PatrolMorale Morale
 	ClearMonsters
-	LoadMonster Scratch3 Scratch2 Scratch3
-	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	LoadMonster Scratch3 count=Scratch2 icon=Scratch3
+	LoadMonster Scratch8 count=AuxPartyStrength icon=Scratch8
 	Combat
 	Goto AfterPatrolFight
 
@@ -654,9 +654,9 @@ FightPatrolWithBugbear:
 	Add 15 PatrolMorale PatrolMorale
 	Save PatrolMorale Morale
 	ClearMonsters
-	LoadMonster Scratch3 Scratch2 Scratch3
-	LoadMonster Bugbear 1 Bugbear
-	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	LoadMonster Scratch3 count=Scratch2 icon=Scratch3
+	LoadMonster Bugbear count=1 icon=Bugbear
+	LoadMonster Scratch8 count=AuxPartyStrength icon=Scratch8
 	Combat
 	Goto AfterPatrolFight
 

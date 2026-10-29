@@ -247,7 +247,7 @@ LizardMenAttack:
 	Gosub PressReturn
 	Save 60 Morale
 	ClearMonsters
-	LoadMonster Lizardman 5 57
+	LoadMonster Lizardman count=5 icon=57
 	Combat
 	if CombatEnd != 129: Exit
 
@@ -274,13 +274,13 @@ VatRoom:
 VatLizardAmbush:
 	And RoomsVisited 8 Scratch10
 	if Scratch10 != 0 || Search != 1: Exit
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 4 1
 	PrintClear "AS YOU ARE POKING AROUND IN THE VATS, A PAIN CRAZED LIZARD MAN SURFACES AND ATTACKS YOU! TWO OTHERS QUICKLY JOIN HIM FROM OTHER VATS."
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster MutantLizMan 3 57
+	LoadMonster MutantLizMan count=3 icon=57
 	Combat
 	if CombatEnd == 129: Goto AfterLizardFight
 	Or RoomsVisited 8 RoomsVisited
@@ -428,7 +428,7 @@ SlavesAttack:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Lizardman 3 57
+	LoadMonster Lizardman count=3 icon=57
 	Combat
 	Save 0 Scratch1
 	if CombatEnd == 129: Goto TeleportToDest
@@ -439,7 +439,7 @@ AncientMage:
 	And RoomsVisited2 4 Scratch10
 	if 0 != Scratch10: Exit
 	Save 56 Portrait
-	SetupMonster Mage 2 30
+	SetupMonster Mage distance=2 body=30
 	PrintClear "AN ANCIENT MAGE LOOKS UP FROM HIS STUDIES, 'AH, GOOD, I NEED MORE SPECIMENS AS CONTROLS.' HE TURNS TO HIS MUTATED GUARDS, 'SUBDUE THEM!'"
 	Gosub PressReturn
 	EncounterMenu 24 2 30 Scratch10 0 3 0 3 0 "" "" "" 12 12
@@ -450,8 +450,8 @@ FightMage:
 	Save 0 Surprise
 	Save 100 Morale
 	ClearMonsters
-	LoadMonster Yarash 1 Shaman
-	LoadMonster MutantLizMan 6 57
+	LoadMonster Yarash count=1 icon=Shaman
+	LoadMonster MutantLizMan count=6 icon=57
 	Combat
 	Save 0 Scratch1
 	if CombatEnd == 129: Goto TeleportToDest

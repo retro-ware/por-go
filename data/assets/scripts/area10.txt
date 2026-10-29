@@ -135,7 +135,7 @@ SkeletonAmbush:
 	if SkeletonAmbushDone > 0: Exit
 	if SkeletonCount == 0: Exit
 	Save 8 Scratch9
-	SetupMonster Skeleton 0 11
+	SetupMonster Skeleton distance=0 closeup=11
 	PrintClear "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
 	Gosub PressReturn
 	Save 34 Scratch5
@@ -176,8 +176,8 @@ GiantSkeletonFight:
 	Gosub SkeletonsApproach
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster GiantSkeleton 1 GiantSkeleton
-	if Scratch7 != 0: LoadMonster Skeleton Scratch7 Skeleton
+	LoadMonster GiantSkeleton count=1 icon=GiantSkeleton
+	if Scratch7 != 0: LoadMonster Skeleton count=Scratch7 icon=Skeleton
 	Combat
 	Gosub CheckFled
 	Add 10 GiantSkeletonState GiantSkeletonState
@@ -244,8 +244,8 @@ GiantZombieLair:
 	Save 0 Scratch1
 	if ZombieCount >= 16: Save 15 Scratch1
 	ClearMonsters
-	LoadMonster JujuZombie 1 35
-	if Scratch1 != 0: LoadMonster Zombie Scratch1 35
+	LoadMonster JujuZombie count=1 icon=35
+	if Scratch1 != 0: LoadMonster Zombie count=Scratch1 icon=35
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -324,7 +324,7 @@ WightBossStep:
 WightBossLair:
 	if WightBossState > 9: Goto WightTreasure
 	if WightStrength == 255: Goto WightTreasure
-	SetupMonster Ghost 1 Ghost
+	SetupMonster Ghost distance=1 closeup=Ghost
 	Approach
 	PrintClear "IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?"
 	HMenu Scratch1 2 "LEAVE" "STAY"
@@ -338,7 +338,7 @@ LeaveWightLair:
 
 FightWightBoss:
 	ClearMonsters
-	LoadMonster Wraith 1 Wraith
+	LoadMonster Wraith count=1 icon=Wraith
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -409,7 +409,7 @@ SkeletonMakerNotices:
 
 FightSkeletonMaker:
 	ClearMonsters
-	LoadMonster Spectre 1 Spectre
+	LoadMonster Spectre count=1 icon=Spectre
 	Treasure 0 0 0 #07D0 #022B 0 3 255
 	Combat
 	Gosub CheckFled
@@ -462,7 +462,7 @@ ZombieMakerNotices:
 
 FightZombieMaker:
 	ClearMonsters
-	LoadMonster Spectre 1 Spectre
+	LoadMonster Spectre count=1 icon=Spectre
 	Treasure 0 0 0 #0457 #021E 13 0 255
 	Combat
 	Gosub CheckFled
@@ -475,7 +475,7 @@ FightZombieMaker:
 
 Monster114Ambush:
 	if Monster114Fought > 0: Exit
-	SetupMonster Mummy 1 Mummy
+	SetupMonster Mummy distance=1 closeup=Mummy
 	Approach
 	PrintClear "WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI."
 	Gosub PressReturn
@@ -483,7 +483,7 @@ Monster114Ambush:
 	Div Scratch1 16 Scratch1
 	if Scratch1 == 0: Save 1 Scratch1
 	ClearMonsters
-	LoadMonster Mummy Scratch1 Mummy
+	LoadMonster Mummy count=Scratch1 icon=Mummy
 	Combat
 	Add 1 Monster114Fought Monster114Fought
 	Exit
@@ -498,7 +498,7 @@ LightningTowerView:
 	Gosub PressReturn
 	Save 9 Scratch9
 	ClearMonsters
-	LoadMonster Wight WightCount Wight
+	LoadMonster Wight count=WightCount icon=Wight
 	Goto FightGroup
 
 LightningTowerSeenSet:
@@ -540,7 +540,7 @@ WightMakerNotices:
 
 FightWightMaker:
 	ClearMonsters
-	LoadMonster Spectre 1 Spectre
+	LoadMonster Spectre count=1 icon=Spectre
 	Treasure 0 0 0 #07D0 #022B 0 3 255
 	Combat
 	Gosub CheckFled
@@ -561,10 +561,10 @@ BrassDoorsView:
 BrassDoorsFight:
 	if TowerFightDone > 0: Goto KnightPanel
 	PrintClear "SHADOWY FORMS FLOW FROM BETWEEN THE DOORS AND ATTACK."
-	SetupMonster Spectre 2 Spectre
+	SetupMonster Spectre distance=2 closeup=Spectre
 	Approach
 	ClearMonsters
-	LoadMonster Spectre 2 Spectre
+	LoadMonster Spectre count=2 icon=Spectre
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -593,7 +593,7 @@ MysticManMeet:
 	if MysticManState < 3: Exit
 	if MysticManState > 249: Exit
 	Save 0 Portrait
-	SetupMonster Fighter14 2 2
+	SetupMonster Fighter14 distance=2 body=2
 	Gosub ApproachTwice
 	PrintClear "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
 	Gosub PressReturn
@@ -620,7 +620,7 @@ MysticManAttacks:
 	PrintClear "'THEN DIE YOU SCUM,' THE MAN SPITS."
 	Save 255 Portrait
 	ClearMonsters
-	LoadMonster Level6Mu24 1 Level6Mu
+	LoadMonster Level6Mu24 count=1 icon=Level6Mu
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
@@ -669,7 +669,7 @@ DustyCryptRemains:
 	Exit
 
 VampireGuardsApproach:
-	SetupMonster Vampire 2 Vampire
+	SetupMonster Vampire distance=2 closeup=Vampire
 	Delay
 	Approach
 	Delay
@@ -679,12 +679,12 @@ VampireGuardsApproach:
 	if CryptState == 251: Goto ReloadVampire
 	if VampireFought > 0: Goto ReloadVampire
 	ClearMonsters
-	LoadMonster Vampire23 1 Vampire
-	LoadMonster Wolf 15 Wolf
+	LoadMonster Vampire23 count=1 icon=Vampire
+	LoadMonster Wolf count=15 icon=Wolf
 
 VampireFightLoop:
 	if !Carried 82: Goto FightVampire
-	if VampireGuardLoaded != 255: LoadMonster Efreeti70 1 Efreeti
+	if VampireGuardLoaded != 255: LoadMonster Efreeti70 count=1 icon=Efreeti
 
 FightVampire:
 	Combat
@@ -696,7 +696,7 @@ FightVampire:
 
 ReloadVampire:
 	ClearMonsters
-	LoadMonster Vampire105 1 Vampire
+	LoadMonster Vampire105 count=1 icon=Vampire
 	Goto VampireFightLoop
 
 PitStairs:
@@ -716,16 +716,16 @@ VampireLair:
 	Save 15 Sky
 	Call CallRedraw
 	PrintClear "THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH."
-	SetupMonster Vampire 1 Vampire
+	SetupMonster Vampire distance=1 closeup=Vampire
 	Approach
 	Gosub PressReturn
 	if MysticManState == 250: Save 1 Scratch1
 	also if MysticManState != 250: Save 0 Scratch1
 	ClearMonsters
-	LoadMonster Vampire23 1 Vampire
-	LoadMonster Wolf 50 Wolf
+	LoadMonster Vampire23 count=1 icon=Vampire
+	LoadMonster Wolf count=50 icon=Wolf
 	if Carried 82 {
-		LoadMonster Efreeti70 1 Efreeti
+		LoadMonster Efreeti70 count=1 icon=Efreeti
 		Save 255 VampireGuardLoaded
 	}
 	Combat
@@ -760,7 +760,7 @@ TakeVampireTreasure:
 	Exit
 
 GhoulPack:
-	SetupMonster Ghoul 2 Ghoul
+	SetupMonster Ghoul distance=2 closeup=Ghoul
 	Approach
 	Delay
 	Approach
@@ -772,7 +772,7 @@ GhoulPack:
 	Div Scratch8 Scratch1 Scratch1
 	if Scratch1 == 0: Save 1 Scratch1
 	ClearMonsters
-	LoadMonster Ghoul Scratch1 Ghoul
+	LoadMonster Ghoul count=Scratch1 icon=Ghoul
 	Combat
 	Exit
 
@@ -828,7 +828,7 @@ StartFight:
 	Save 0 Beaten
 	if Scratch7 == 0: Save 1 Scratch7
 	ClearMonsters
-	LoadMonster Scratch3 Scratch7 Scratch5
+	LoadMonster Scratch3 count=Scratch7 icon=Scratch5
 	if Scratch3 == 20: Goto LoadRandomUndead
 
 FightGroup:
@@ -855,11 +855,11 @@ RedrawExit:
 
 LoadRandomUndead:
 	Mul Scratch7 4 Scratch6
-	LoadMonster Zombie Scratch6 35
+	LoadMonster Zombie count=Scratch6 icon=35
 	Random 4 Scratch1
-	if Scratch1 < 2: LoadMonster JujuZombie 2 35
-	also if Scratch1 > 2: LoadMonster Ghoul 2 Ghoul
-	also if Scratch1 == 2: LoadMonster Mummy 1 Mummy
+	if Scratch1 < 2: LoadMonster JujuZombie count=2 icon=35
+	also if Scratch1 > 2: LoadMonster Ghoul count=2 icon=Ghoul
+	also if Scratch1 == 2: LoadMonster Mummy count=1 icon=Mummy
 	Goto FightGroup
 
 PressReturn:
@@ -867,15 +867,15 @@ PressReturn:
 	Return
 
 SkeletonsApproach:
-	SetupMonster Skeleton 2 Skeleton
+	SetupMonster Skeleton distance=2 closeup=Skeleton
 	Goto ApproachTwice
 
 ZombiesApproach:
-	SetupMonster Zombie 2 Zombie
+	SetupMonster Zombie distance=2 closeup=Zombie
 	Goto ApproachTwice
 
 WightsApproach:
-	SetupMonster Troll 2 Troll
+	SetupMonster Troll distance=2 closeup=Troll
 
 ApproachTwice:
 	Approach

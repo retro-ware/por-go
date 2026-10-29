@@ -36,7 +36,7 @@ MansionEntry:
 	if OrcsKnowParty == 1: Save 20 AuxMonsterCount
 	also if OrcsKnowParty != 1: Save 10 AuxMonsterCount
 	if Carried 74: Goto OrcsConfused
-	SetupMonster Orc 2 Orc
+	SetupMonster Orc distance=2 closeup=Orc
 	Gosub ApproachTwice
 	PrintClear "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF FOUL ORCS.  THEY SNARL AT YOU AND ATTACK!"
 	Goto FightEntryOrcs
@@ -48,7 +48,7 @@ OrcsConfused:
 
 FightEntryOrcs:
 	ClearMonsters
-	LoadMonster Orc4 AuxMonsterCount Orc
+	LoadMonster Orc4 count=AuxMonsterCount icon=Orc
 	Save 99 Morale
 	Combat
 	Save 0 Scratch10
@@ -133,11 +133,11 @@ TakeBodiesJewelry:
 OgreAndOrcs:
 	And MansionRoomBits 16 Scratch1
 	if Scratch1 != 0: Goto ExitEvent
-	SetupMonster Barbarian 0 Barbarian
+	SetupMonster Barbarian distance=0 closeup=Barbarian
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE SIX ORCS LED BY A LARGE OGRE.  THEY LUNGE FOWARD AND ATTACK."
 	ClearMonsters
-	LoadMonster Orc4 6 Orc
-	LoadMonster Ogre 1 Ogre
+	LoadMonster Orc4 count=6 icon=Orc
+	LoadMonster Ogre count=1 icon=Ogre
 	Save 80 Morale
 	Combat
 	if CombatEnd > 128: Goto StepBack
@@ -148,7 +148,7 @@ OgreAndOrcs:
 GoblinSlaves:
 	And MansionRoomBits 32 Scratch1
 	if Scratch1 != 0: Goto ExitEvent
-	SetupMonster Goblin 0 Goblin
+	SetupMonster Goblin distance=0 closeup=Goblin
 	PrintClear "IN THIS ROOM ARE SOME GOBLIN SLAVES THAT ARE COWERING IN THE CORNER.  THEY ALL SCREAM 'PLEASE DON'T KILL US.'  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "KILL THEM" "LET THEM GO"
 	OnGoto Scratch1 2 KillGoblins FreeGoblins
@@ -170,12 +170,12 @@ OutsideMansion:
 OrcGuardRoom:
 	And MansionFightBits 1 Scratch1
 	if Scratch1 != 0: Goto ExitEvent
-	SetupMonster Orc 0 Orc
+	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "YOU ENTER INTO A FILTHY ROOM.  EIGHT ORC GUARDS ATTACK YOU IMMEDIATELY."
 	ClearMonsters
 	Save 80 Morale
-	LoadMonster Orc4 6 Orc
-	LoadMonster OrcLeader5 2 OrcLeader
+	LoadMonster Orc4 count=6 icon=Orc
+	LoadMonster OrcLeader5 count=2 icon=OrcLeader
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or MansionFightBits 1 MansionFightBits
@@ -191,10 +191,10 @@ HayBeds:
 SearchBeds:
 	And MansionFightBits 2 Scratch1
 	if Scratch1 != 0: Goto BedsEmpty
-	SetupMonster Orc 0 Orc
+	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "AS YOU SEARCH THE BEDS A GROUP OF ORCS COMES INTO THE ROOM.  THEY ATTACK IMMEDIATELY."
 	ClearMonsters
-	LoadMonster Orc4 8 Orc
+	LoadMonster Orc4 count=8 icon=Orc
 	Save 80 Morale
 	Combat
 	if CombatEnd > 128: Goto StepBack
@@ -230,7 +230,7 @@ TempleEntrance:
 	if QuestTempleOfBane >= 254: Goto ExitEvent
 	if TempleGuardState == 1: Goto ExitEvent
 	also if TempleGuardState > 1: Goto ExitAmbush
-	SetupMonster Orc 0 Orc
+	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "YOU STAND IN FRONT OF THE ENTRANCE TO A LARGE SHADOWY TEMPLE.  AN OLD BLIND DECREPIT ORC STANDS OUTSIDE WITH EIGHT ORC GUARDS."
 	if OrcsKnowParty == 1: Goto GuardsLetYouIn
 	Print "  THE AGED ORC COMES GRASPING TOWARD YOU.  WILL YOU LET HIM TOUCH YOU?"
@@ -257,7 +257,7 @@ BackOffTwice:
 
 FightTempleGuards:
 	ClearMonsters
-	LoadMonster Orc4 8 Orc
+	LoadMonster Orc4 count=8 icon=Orc
 	Save 99 Morale
 	Combat
 	if CombatEnd > 128: Goto StepBack
@@ -323,7 +323,7 @@ DestroyAltar:
 	PrintClear "AS YOU DESTROY THE ALTAR, THE TEMPLE DOORS FLY OPEN AND A SCREAMING HORDE OF ORCS LED BY A HALF-ORC CLERIC ATTACK.  YOU TURN TO FACE THEM."
 	Save 3 Facing
 	Call CallRedraw
-	SetupMonster Orc 2 Orc
+	SetupMonster Orc distance=2 closeup=Orc
 	Gosub ApproachTwice
 	Save 1 AltarDestroyed
 	Goto FightHalfOrcCleric
@@ -349,21 +349,21 @@ CheckAllLooted:
 	Goto ExitEvent
 
 ExitAmbush:
-	SetupMonster Orc 0 Orc
+	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "AS YOU EXIT THE TEMPLE YOU ARE ATTACKED BY A VERY LARGE GROUP OF ORCS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THE UNBELIEVING TOADS.  KILL THEM OR SUFFER MY WRATH!'"
 	Goto FightHalfOrcCleric
 
 LootAmbush:
-	SetupMonster Orc 0 Orc
+	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "THE MINUTE YOU FIND THE TREASURE A LARGE GROUP OF ORCS CHARGE THROUGH THE TEMPLE DOORS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THESE SCUM WHO WOULD STEAL FROM OUR TEMPLE.'"
 
 FightHalfOrcCleric:
 	Save 99 Morale
 	ClearMonsters
-	LoadMonster OrcLeader5 5 OrcLeader
-	LoadMonster Mace 1 Mace
-	LoadMonster Orc44 20 OrcLeader
-	LoadMonster Orc4 30 Orc
+	LoadMonster OrcLeader5 count=5 icon=OrcLeader
+	LoadMonster Mace count=1 icon=Mace
+	LoadMonster Orc44 count=20 icon=OrcLeader
+	LoadMonster Orc4 count=30 icon=Orc
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Save 254 QuestTempleOfBane
@@ -457,7 +457,7 @@ OrcPatrol:
 
 SurprisedByGroup:
 	if 1 == EncounterIsOrcs: Goto OrcPatrol
-	SetupMonster AuxEncMonster 0 AuxEncDist
+	SetupMonster AuxEncMonster distance=0 closeup=AuxEncDist
 	PrintClear "YOU ARE SURPRISED BY "
 	Print $AuxCounter
 	Print "."
@@ -494,9 +494,9 @@ FightGroup:
 	Save AuxEncMorale Morale
 	Add 1 AuxSightText Scratch4
 	ClearMonsters
-	LoadMonster AuxSightText EncounterCount1 AuxEncDist
+	LoadMonster AuxSightText count=EncounterCount1 icon=AuxEncDist
 	if EncounterCount2 == 0: Goto GroupCombat
-	LoadMonster Scratch4 EncounterCount2 Scratch4
+	LoadMonster Scratch4 count=EncounterCount2 icon=Scratch4
 
 GroupCombat:
 	if EncounterIsOrcs == 1: Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
@@ -699,9 +699,9 @@ RestDangerous:
 
 event3:
 	PrintClear "WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY ORCS."
-	SetupMonster Orc 0 Orc
+	SetupMonster Orc distance=0 closeup=Orc
 	ClearMonsters
-	LoadMonster Orc4 10 Orc
+	LoadMonster Orc4 count=10 icon=Orc
 	Combat
 	Exit
 

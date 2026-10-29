@@ -337,7 +337,7 @@ FleeEncounter:
 
 FightGroup:
 	ClearMonsters
-	LoadMonster AuxEncTemp AuxMember AuxRoll
+	LoadMonster AuxEncTemp count=AuxMember icon=AuxRoll
 	Combat
 	if CombatEnd == 129: Goto FleeEncounter
 	GetTable Table9CA0 Scratch6 Scratch7

@@ -34,7 +34,7 @@ NoRestHere:
 event3:
 	Save 0 RestChance
 	Save 57 Portrait
-	SetupMonster ArmoredFighter 2 1
+	SetupMonster ArmoredFighter distance=2 body=1
 	Delay
 	Approach
 	Delay
@@ -89,7 +89,7 @@ EnterArena:
 	Gosub PressReturn
 	Save 1 ArenaEntered
 	Save 9 Portrait
-	SetupMonster Fighter16 2 1
+	SetupMonster Fighter16 distance=2 body=1
 	Delay
 	Approach
 	Delay
@@ -251,10 +251,10 @@ FightWatch:
 	Save 0 WatchCombatDone11
 	Save 50 Morale
 	ClearMonsters
-	LoadMonster Level3Mu 2 Level3Mu
-	LoadMonster ThLvlFighter84 12 11
-	LoadMonster Aides 12 ThLvlFighter
-	LoadMonster Nomad 12 Nomad
+	LoadMonster Level3Mu count=2 icon=Level3Mu
+	LoadMonster ThLvlFighter84 count=12 icon=11
+	LoadMonster Aides count=12 icon=ThLvlFighter
+	LoadMonster Nomad count=12 icon=Nomad
 	Combat
 	Save 1 WatchCombatDone11
 	Gosub AfterWatchFight

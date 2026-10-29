@@ -314,9 +314,9 @@ FaceToFace:
 EncounterFight:
 	Save AuxEncResult2 Morale
 	ClearMonsters
-	LoadMonster AuxMonster MonsterCount AuxTemp9
+	LoadMonster AuxMonster count=MonsterCount icon=AuxTemp9
 	if LeaderCount == 0: Goto EncounterCombat
-	LoadMonster AuxPartyStrength LeaderCount AuxParlay
+	LoadMonster AuxPartyStrength count=LeaderCount icon=AuxParlay
 
 EncounterCombat:
 	ClearBox
@@ -426,11 +426,11 @@ SplashingPool:
 	OnGoto Scratch1 2 PoolLizardMen Done
 
 PoolLizardMen:
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!"
 	Gosub PressReturn
 	ClearMonsters
-	LoadMonster Lizardman 6 57
+	LoadMonster Lizardman count=6 icon=57
 	Combat
 	Or LairFightFlags 1 LairFightFlags
 	Exit
@@ -438,11 +438,11 @@ PoolLizardMen:
 DisplacerAmbush:
 	And LairFightFlags 2 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster DisplacerBeast 0 DisplacerBeast
+	SetupMonster DisplacerBeast distance=0 closeup=DisplacerBeast
 	PrintClear "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
 	Save 1 Surprise
 	ClearMonsters
-	LoadMonster DisplacerBeast 2 DisplacerBeast
+	LoadMonster DisplacerBeast count=2 icon=DisplacerBeast
 	Combat
 	Or LairFightFlags 2 LairFightFlags
 	Exit
@@ -450,7 +450,7 @@ DisplacerAmbush:
 ChainedKobolds:
 	And LairFightFlags 4 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster Kobold 0 Kobold
+	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
 	HMenu Scratch1 3 "RELEASE" "ATTACK" "LEAVE"
 	OnGoto Scratch1 3 ReleaseKobolds KillKobolds StepBack
@@ -472,10 +472,10 @@ StenchWest:
 MutantLizardHut:
 	And LairFightFlags 8 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY."
 	ClearMonsters
-	LoadMonster MutantLizMan 2 57
+	LoadMonster MutantLizMan count=2 icon=57
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 8 LairFightFlags
@@ -484,10 +484,10 @@ MutantLizardHut:
 LizardHut:
 	And LairFightFlags 16 Scratch1
 	if 0 != Scratch1: Exit
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY."
 	ClearMonsters
-	LoadMonster Lizardman 4 57
+	LoadMonster Lizardman count=4 icon=57
 	Combat
 	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 16 LairFightFlags
@@ -496,11 +496,11 @@ LizardHut:
 LargeLizardMen:
 	And LairFightFlags 32 LairFightFlags
 	if 0 != LairFightFlags: Exit
-	SetupMonster Lizardman 0 Lizardman
+	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
 	Save 252 MonsterHit
 	ClearMonsters
-	LoadMonster Lizardman 4 57
+	LoadMonster Lizardman count=4 icon=57
 	Combat
 	Save 0 MonsterHit
 	if CombatEnd > 128: Goto StepBack
@@ -509,12 +509,12 @@ LargeLizardMen:
 
 StirgeSwarm:
 	if LairRespawnTimer != 0: Goto StirgeTimerTick
-	SetupMonster Stirge 0 Stirge
+	SetupMonster Stirge distance=0 closeup=Stirge
 	PrintClear "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
 	Random 30 Scratch1
 	if Scratch1 < 6: Save 6 Scratch1
 	ClearMonsters
-	LoadMonster Stirge 6 Stirge
+	LoadMonster Stirge count=6 icon=Stirge
 	Combat
 	Save 3 LairRespawnTimer
 	Exit

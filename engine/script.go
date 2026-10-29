@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -211,6 +212,12 @@ func ParseScript(text string, names *ScriptNames) (*Script, error) {
 	}
 	for i, p := range todo {
 		for j, t := range p.args {
+			if l, v, ok := strings.Cut(t, "="); ok && !strings.HasPrefix(t, `"`) {
+				if k := operandLabels[eclOpName(s.Code[i].Op)]; j >= len(k) || !slices.Contains(strings.Split(k[j], "|"), l) {
+					return nil, fmt.Errorf("%d: %s is not operand %d of %s", p.line, l, j+1, eclOpName(s.Code[i].Op))
+				}
+				t = v
+			}
 			kind := ""
 			if k := operandKinds[eclOpName(s.Code[i].Op)]; j < len(k) {
 				kind = k[j]
