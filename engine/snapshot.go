@@ -95,6 +95,7 @@ type View struct {
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
 	IconDrop  bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
+	Ordering  bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
 	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActMove Up/Down steps, Enter takes the candidate
 	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
@@ -224,7 +225,7 @@ func (e *Engine) publish() {
 		}
 	}
 	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.TallRow, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, s.credits, s.slots, s.tallRow, e.ext.choosing, s.spellPick
-	v.IconDrop = s.iconDrop != nil
+	v.IconDrop, v.Ordering = s.iconDrop != nil, e.ext.ordering
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {

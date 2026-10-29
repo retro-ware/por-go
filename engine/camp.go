@@ -689,6 +689,8 @@ func (e *Engine) orderMenu() {
 		exit
 	)
 	placing := false
+	e.ext.ordering = true // extra: a card dragged onto another's place moves the member there (ActOrder)
+	defer func() { e.ext.ordering = false }()
 	for key := selectIt; key != NoPick && key != exit; {
 		menu := Bar{{"Select", selectIt}, {"Exit", exit}}
 		if placing {
@@ -745,53 +747,16 @@ func (e *Engine) dropMenu() {
 	e.DisplayPartyList()
 }
 
-// campSpeedMenu = ovr16:1A97: the message delay (DS:49E2), 0 fastest.
-func (e *Engine) campSpeedMenu() {
-	const (
-		faster Choice = iota
-		slower
-		exit
-	)
-	for key := faster; key != NoPick && key != exit; {
-		e.DisplayString(1, 18, colLightGreen, "Game Speed = "+strconv.Itoa(int(e.msgDelay))+" (0=fastest 9=slowest)")
-		menu := Bar{{}} // the original's bar starts with a space
-		if e.msgDelay > 0 {
-			menu = append(menu, Entry{"Faster", faster})
-		}
-		if e.msgDelay < 9 {
-			menu = append(menu, Entry{"Slower", slower})
-		}
-		menu = append(menu, Entry{"Exit", exit})
-		p := e.DisplayInput("Game Speed:", menu, colLightMagenta, colLightGreen, colWhite, true, true)
-		key = p.ID
-		switch {
-		case p.ID == PickMove && p.Dir == DirDown && e.msgDelay > 0:
-			e.msgDelay--
-		case p.ID == PickMove && p.Dir == DirUp && e.msgDelay < 9:
-			e.msgDelay++
-		case key == faster:
-			e.msgDelay--
-		case key == slower:
-			e.msgDelay++
-		}
-	}
-	e.ClearMessageArea()
-}
-
 // alterMenu = ovr16:1C59.
 func (e *Engine) alterMenu() {
-	const (
+	const ( // extra: no Speed (the message delay) and no Pics (monsters and portraits off)
 		order Choice = iota
 		drop
-		speed
 		icon
-		pics
 		exit
-		monsters
-		portraits
 	)
 	for key := order; key != NoPick && key != exit; {
-		p := e.DisplayInput("Alter: ", Bar{{"Order", order}, {"Drop", drop}, {"Speed", speed}, {"Icon", icon}, {"Pics", pics}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, true)
+		p := e.DisplayInput("Alter: ", Bar{{"Order", order}, {"Drop", drop}, {"Icon", icon}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, true)
 		key = p.ID
 		if p.extra() {
 			e.partyKeypad(p)
@@ -803,27 +768,9 @@ func (e *Engine) alterMenu() {
 			e.orderMenu()
 		case drop:
 			e.dropMenu()
-		case speed:
-			e.campSpeedMenu()
 		case icon:
 			e.iconEditor()
 			e.DrawMainScreen()
-		case pics:
-			for k := pics; k != NoPick && k != exit; {
-				menu := Bar{{"Monsters off ", monsters}, {"Portraits off ", portraits}, {"Exit", exit}} // two spaces after each
-				if e.viewBit1 != 0 {
-					menu[0].Word = "Monsters on "
-				}
-				if e.viewBit0 != 0 {
-					menu[1].Word = "Portraits on "
-				}
-				k = e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, false, true).ID
-				if k == monsters {
-					e.viewBit1 ^= 1
-				} else if k == portraits {
-					e.viewBit0 ^= 1
-				}
-			}
 		}
 	}
 }

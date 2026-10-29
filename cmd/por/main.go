@@ -202,7 +202,7 @@ func (g *game) mouse() {
 		g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy)
 		return
 	}
-	g.remaster.Hover(mx, my)
+	g.remaster.Hover(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft))
 	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) || g.leftOnce
 	g.leftOnce = false
 	if left && g.remaster.Click(mx, my) { // an action bar button, a menu item, the combat map

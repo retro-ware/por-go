@@ -542,7 +542,7 @@ func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 		r := 0x11
 		if e.resting != 0 {
 			r = 0x12
-		} else {
+		} else if !e.pg.frameUp { // extra: with the main frame up the border is there (redrawing it read as the frame torn down: the classic page came up)
 			e.DrawBorder(1, r, winRight, winBottom, 0)
 		}
 		e.ClearCells(1, r, winRight, winBottom)

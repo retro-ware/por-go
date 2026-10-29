@@ -1,6 +1,9 @@
 package engine
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Navigation that works the same way on every screen (not in the DOS
 // game). The presenter sends typed actions; the ported routines read them
@@ -105,6 +108,15 @@ func (e *Engine) extraAct(a Action) bool {
 		if e.ext.viewing {
 			e.SheetPortrait()
 		}
+	case ActOrder: // extra: the Party Order bar takes a dragged card
+		n := len(e.party)
+		if !e.ext.ordering || a.N < 0 || a.N >= n || a.X < 0 || a.X >= n || a.N == a.X {
+			return false
+		}
+		c := e.party[a.N]
+		e.party = slices.Insert(slices.Delete(e.party, a.N, a.N+1), a.X, c)
+		e.selectMember(a.X)
+		e.DisplayPartyList()
 	case ActIcon: // extra: the icon editor takes the PNG while it is up
 		if f := e.snap.iconDrop; f != nil {
 			f(readPNG(a.Text))

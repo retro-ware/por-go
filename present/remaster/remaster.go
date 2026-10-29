@@ -87,6 +87,9 @@ type Presenter struct {
 	typed       string                      // ... and reads this
 	hovered     [3]int                      // the spot and cell the pointer was last on (Mouse)
 	cardHover   int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
+	dragFrom    int                         // 1 + the card pressed while the party is being ordered (View.Ordering), it follows the pointer to the card it is dropped on (0 none)
+	dragAt      image.Point                 // where the pointer is while a card is dragged
+	ordering    bool                        // View.Ordering
 	ctx         int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
 	ctxSel      int                         // its highlighted line (-1 none)
 	ctxActs     []engine.ActKind            // its lines' actions, for the member
@@ -257,7 +260,21 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.animate()
 	p.view.Draw(dst)
 	p.drawMap(dst, v.Map, len(v.Party))
-	p.drawParty(dst, v.Party, cardAt(dst))
+	p.ordering = v.Ordering
+	if !p.ordering {
+		p.dragFrom = 0
+	}
+	at := cardAt(dst)
+	if p.dragFrom > 0 { // the dragged card hangs under the pointer
+		at = func(i, n int) image.Rectangle {
+			r := cardAt(dst)(i, n)
+			if i == p.dragFrom-1 {
+				r = r.Sub(r.Min).Add(p.dragAt).Sub(image.Pt(r.Dx()/2, r.Dy()/2))
+			}
+			return r
+		}
+	}
+	p.drawParty(dst, v.Party, at)
 	p.view.DrawMenu(dst) // over the map and cards
 	p.cards = p.cards[:0]
 	for i := range v.Party {
@@ -461,6 +478,9 @@ func (p *Presenter) Click(x, y int) bool {
 		}
 		for i, r := range p.cards { // a portrait: on the command bar the member is selected and its context menu opens, else it is the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
+				if p.ordering { // and while the party is ordered the card is picked up (Hover drops it)
+					p.dragFrom, p.dragAt = 1+i, image.Pt(x, y)
+				}
 				p.selectCard(i)
 				return true
 			}
@@ -485,7 +505,9 @@ func (p *Presenter) Click(x, y int) bool {
 }
 
 // Hover moves the vertical menu's highlight to the item under screen pixel (x, y).
-func (p *Presenter) Hover(x, y int) {
+// down: the left button is held; a card pressed while the party is being
+// ordered (Click took it) follows the pointer and goes where it is let go.
+func (p *Presenter) Hover(x, y int, down bool) {
 	if p.main {
 		p.mainHover(x, y)
 		return
@@ -506,6 +528,15 @@ func (p *Presenter) Hover(x, y int) {
 		return
 	}
 	p.cardHover = 1 + cardUnder(p.cards, x, y)
+	if p.dragFrom > 0 {
+		p.dragAt = image.Pt(x, y)
+		if !down {
+			if to := p.cardHover; to > 0 && to != p.dragFrom {
+				p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActOrder, N: p.dragFrom - 1, X: to - 1})
+			}
+			p.dragFrom = 0
+		}
+	}
 	if !(p.menu || p.ctx > 0) || image.Pt(x, y) == p.pointer {
 		return
 	}

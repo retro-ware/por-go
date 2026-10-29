@@ -65,6 +65,7 @@ type extras struct {
 	toItems       bool                    // the next View opens on the inventory (F1-F8)
 	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
 	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
+	ordering      bool                    // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
 	sels          map[string]int          // the highlighted item each menu was left with
 	listWord      map[string]Choice       // a list menu's highlighted word, kept across pages
 	selSet        bool                    // the caller set the highlight (YesNo): keep it
