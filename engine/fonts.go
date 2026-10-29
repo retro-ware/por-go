@@ -78,7 +78,7 @@ func (e *Engine) loadFont() {
 func (e *Engine) cycleFont(step int) {
 	n := len(e.ext.fonts) + 1
 	e.ext.font = (e.ext.font + step + n) % n
-	e.ext.note, e.ext.noteAt = e.FontName(), time.Now()
+	e.say(e.FontName())
 	for y := range e.ext.cells {
 		for x := range e.ext.cells[y] {
 			c := &e.ext.cells[y][x]

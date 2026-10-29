@@ -113,17 +113,9 @@ func (e *Engine) canStudy(mode int) bool {
 	c := e.selected()
 	switch {
 	case mode == 1 && e.area.NoMagic > 0:
-		msg = "cannot cast spells in this area"
-	case c.Status == statusAnimated || c.Okay == 0:
-		msg = "is in no condition to "
-		switch mode {
-		case 1:
-			msg += "cast any spells"
-		case 2:
-			msg += "memorize spells"
-		case 3:
-			msg += "scribe any scrolls"
-		}
+		msg = "cannot cast spells here"
+	case c.Status == statusAnimated || c.Okay == 0: // extra: shorter than the original's "is in no condition to cast any spells", so it fits a note
+		msg = [...]string{"cannot cast now", "cannot memorize now", "cannot scribe now"}[mode-1]
 	}
 	if msg == "" {
 		return true

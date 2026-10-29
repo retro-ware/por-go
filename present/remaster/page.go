@@ -15,7 +15,8 @@ import (
 // Rect is where the page lands on the window, in device pixels.
 type Rect struct{ X, Y, W, H float64 }
 
-// Note is a toast shown over the top of the page, in the game's current font.
+// Note is a toast shown on the bottom line of the page (row 24, in place
+// of the prompt), in the game's current font.
 type Note struct {
 	Text  string
 	Show  bool
@@ -59,11 +60,11 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 			}
 		}
 	}
-	if note.Show { // white on blue at the top
-		s := upTo(" "+note.Text+" ", 40)
-		x0 := (40 - len(s)) * 4
-		for i := 0; i < len(s); i++ {
-			glyphAt(m, note.Glyph(s[i]), x0+i*8, 4, pal.EGA(15), pal.EGA(1))
+	if note.Show { // yellow, centred on the bottom line in place of the prompt (as the inventory's menu row)
+		draw.Draw(m, image.Rect(0, pal.H-8, pal.W, pal.H), image.Black, image.Point{}, draw.Src)
+		x0 := (pal.W - 8*len(note.Text)) / 2
+		for i := 0; i < len(note.Text); i++ {
+			glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, pal.H-8, pal.EGA(14), color.RGBA{A: 255})
 		}
 	}
 	pg.img.WritePixels(m.Pix)

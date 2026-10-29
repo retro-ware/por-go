@@ -171,11 +171,10 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if asking {
 		p.answered = pane
 	}
-	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
-	textOnly := shown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
-	if textOnly { // a message, no choice to make: along the bottom edge
+	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered))     // back from a question with its text unchanged: the encounter is over
+	if shown && v.Command && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, b.Dy()-int(pk*th/2))
-	} else if shown {
+	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
@@ -198,19 +197,14 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.sel = min(p.sel, len(lines)-1)
 		top := cy + int(pk*th/2) + int(pk*8)
-		if v.Command || noChoice(v) {
+		if v.Command || !shown { // no text box above: in the middle
 			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
 		p.menuSel = v.Menu.Sel
 		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
-	if note.Show { // the toast (font name ...): the strip pageImage wrote it into
-		n := min(len(note.Text)+2, 40) * 8
-		r := image.Rect((pal.W-n)/2, 4, (pal.W+n)/2, 12)
-		op := &gpu.DrawImageOptions{}
-		op.GeoM.Scale(k, k)
-		op.GeoM.Translate(float64(dst.Bounds().Dx())/2-k*float64(n)/2, k*4)
-		dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
+	if note.Show { // the toast: the bottom line pageImage wrote it on, boxed along the bottom edge
+		drawBox(dst, frame, p.border.tiles, engine.CellRect{X1: 1, Y1: 24, X2: 38, Y2: 24}.Framed(), pk, cx, b.Dy()-int(pk*12))
 	}
 	return Rect{}
 }

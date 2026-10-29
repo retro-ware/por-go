@@ -71,11 +71,6 @@ func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(strin
 // DisplayMessageWait = 0709:0D68 (str, colour): message on row 24 for
 // msgDelay*225 ms, then cleared.
 func (e *Engine) DisplayMessageWait(colour int, s string) {
-	if len(s) > 40 {
-		s = s[:40]
-	}
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colour, s)
+	e.say(s)                       // extra: a flash at the bottom (the original's row 24 is never drawn on the remastered 3D view); nothing to confirm
 	e.Delay(int(e.msgDelay) * 225) // 0709:0DBE
-	e.ClearRow24()
 }

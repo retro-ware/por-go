@@ -168,8 +168,8 @@ func (e *Engine) act() Action {
 }
 
 // say shows s as the window's note: what a direct action reports instead
-// of the original's message line.
-func (e *Engine) say(s string) { e.ext.note, e.ext.noteAt = s, time.Now() }
+// of the original's message line. It is cut to the bottom line (noteCols).
+func (e *Engine) say(s string) { e.ext.note, e.ext.noteAt = cut(s, noteCols), time.Now() }
 
 // ask (extra) puts the yes/no question q to the player as the View's
 // Battle.Ask and waits for ActYes or ActClose.

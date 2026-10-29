@@ -14,9 +14,10 @@ import (
 // their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
 func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
 	rows, hot := items, keys
-	if title != "" {
-		rows, hot = append([]string{title, ""}, items...), append([]byte{0, 0}, keys...)
-		sel += 2
+	if title != "" { // a long question on two lines, so the box stays narrow
+		t := append(wrap(title, 24), "")
+		rows, hot = append(t, items...), append(make([]byte, len(t)), keys...)
+		sel += len(t)
 	}
 	w := 0
 	for _, r := range rows {

@@ -276,7 +276,7 @@ func (g *game) gamepad(id gpu.GamepadID) {
 
 func (g *game) Draw(dst *gpu.Image) {
 	text, at := g.eng.Note()
-	note := remaster.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
+	note := remaster.Note{Text: text, Show: time.Since(at) < time.Second+time.Duration(len(text))*80*time.Millisecond, Glyph: g.eng.Glyph}
 	if g.remaster.Inventory(dst, note, g.eng.View()) { // the inventory screen
 		g.pic = remaster.Rect{}
 	} else {

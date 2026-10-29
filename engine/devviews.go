@@ -90,6 +90,29 @@ func (e *Engine) DevScene(name string) func() {
 			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
 			e.DrawMainScreen()
 		}
+	case "cure": // the paladin's Cure: the member pick, then the 'not diseased, cure anyway' question
+		return func() {
+			e.paladinCure(e.selected())
+			e.DrawMainScreen()
+		}
+	case "cast", "castko": // Cast on the command bar with Cure Light Wounds memorized; castko with the selected member unconscious
+		return func() {
+			c := e.selected()
+			if name == "cast" { // an able caster
+				for i, m := range e.party {
+					if m.Status == statusOkay {
+						e.selectMember(i)
+						c = m
+						break
+					}
+				}
+			} else {
+				c.Status, c.Okay = statusUnconscious, 0
+			}
+			c.Memorized[0] = spCureLightWounds
+			e.command(cmdCast, true)
+			e.DrawMainScreen()
+		}
 	case "who": // a member pick on the view, as a script's "Who will search?"
 		return func() { e.SelectCharacter("Who will search?", false, nil) }
 	case "effects":

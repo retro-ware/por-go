@@ -535,6 +535,9 @@ func (e *Engine) Revive(c *Character, hp byte) bool {
 func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 	if e.beginFlag == 5 {
 		e.combatSay(c, msg, true) // extra: under the view, not in the side pane
+	} else if wait { // extra: the original's flash of the text (MsgDelay, then cleared) is a toast
+		e.say(c.Name() + " " + msg)
+		return
 	} else {
 		r := 0x11
 		if e.resting != 0 {

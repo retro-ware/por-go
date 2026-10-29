@@ -247,9 +247,7 @@ const (
 func (e *Engine) command(k Choice, view3D bool) bool {
 	switch k {
 	case cmdCast:
-		if !view3D || e.selected().Status == statusOkay {
-			e.CastMenu() // ovr16:04A1
-		}
+		e.CastMenu() // ovr16:04A1; canStudy says why a member in no condition cannot (the original ignores the key on the 3D view)
 	case cmdInv: // extra: straight to the inventory
 		if len(e.carried(e.selected())) == 0 {
 			e.BottomMessage("No items")

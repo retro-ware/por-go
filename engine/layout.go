@@ -23,6 +23,7 @@ const (
 // The 40x25 text screen.
 const (
 	textCols   = 40 // characters per line
+	noteCols   = 36 // a note (say) fits the bottom line's box with a blank each side
 	lastCol    = 39
 	winRight   = 38 // inner right edge of the framed text window
 	winBottom  = 22 // its inner bottom row
