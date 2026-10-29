@@ -232,7 +232,7 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 	for i, it := range items {
 		v2 := sellValue(it)
 		x := *e.invItem(c, it)
-		x.Index, x.Slot, x.Wrong, x.Use, x.Look, x.Price = i, dollSlot(e, c, it) >= 0, dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0, e.usable(it), e.itemLines(it), moneyText(v2/200, v2%200)
+		x.Index, x.Slot, x.Wrong, x.Use, x.Look, x.Price = i, dollSlot(e, c, it) >= 0, dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0, e.usable(it), e.itemLines(it, e.readiedLike(c, it)), moneyText(v2/200, v2%200)
 		if it.Readied != 0 {
 			if s := dollSlot(e, c, it); s >= 0 && v.Doll[s] == nil {
 				v.Doll[s] = &x

@@ -114,7 +114,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	}
 	n, bw := len(items), face*k/2+4*k
 	w, h := max(n*(bw+4*k), 7*8*k+bw), (promptH+labelH)*k+bw
-	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover) + "|" + p.RangedKey
+	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover) + "|" + p.IconKey
 	for _, it := range items {
 		id += "|" + it.Text
 	}
@@ -126,7 +126,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	}
 	if id != br.id {
 		br.id = id
-		br.img.WritePixels(barPixels(glyph, items, hover, w, h, k, p.Ranged).Pix)
+		br.img.WritePixels(barPixels(glyph, items, hover, w, h, k, p.Icons).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
@@ -215,7 +215,7 @@ func (p *Presenter) Actions() []engine.Action {
 func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
 // barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
-func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, ranged image.Image) *image.RGBA {
+func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, icons map[engine.ActKind]image.Image) *image.RGBA {
 	rgb := pal.EGA
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	textOn := func(im *image.RGBA, s string, x, y, scale int, c color.RGBA) {
@@ -256,10 +256,10 @@ func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, ra
 		// proportion; then scaled as one to the button (so their relation holds)
 		f := image.NewRGBA(image.Rect(0, 0, face, face))
 		draw.Draw(f, f.Bounds(), image.NewUniform(color.RGBA{0x18, 0x20, 0x38, 0xFF}), image.Point{}, draw.Src)
-		if ic := iconPicture(it.Text); it.Kind == engine.ActRanged && ranged != nil { // the missile's own icon (the inventory's atlas cell), 3x in the middle
-			b := ranged.Bounds()
+		if ic, own := iconPicture(it.Text), icons[it.Kind]; own != nil { // the item's own icon (the inventory's atlas cell), 3x in the middle
+			b := own.Bounds()
 			s := (face - 3*b.Dx()) / 2
-			xdraw.NearestNeighbor.Scale(f, image.Rect(s, s, s+3*b.Dx(), s+3*b.Dy()), ranged, b, draw.Over, nil)
+			xdraw.NearestNeighbor.Scale(f, image.Rect(s, s, s+3*b.Dx(), s+3*b.Dy()), own, b, draw.Over, nil)
 		} else if ic != nil {
 			draw.Draw(f, f.Bounds(), ic, ic.Bounds().Min, draw.Over)
 		} else {

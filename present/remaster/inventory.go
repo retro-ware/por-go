@@ -698,11 +698,20 @@ func (inv *inventory) panel(t [3]*gpu.Image, lines []string, words []word, at fu
 	px := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(px, px.Rect, image.Black, image.Point{}, draw.Src)
 	for i, l := range lines {
-		c := green
+		c := gray
 		if i == 0 {
 			c = cyan
 		}
-		drawText(px, inv.glyph, upTo(l, cw-2), 8, 8+8*i, c)
+		l = upTo(l, cw-2)
+		if j := strings.LastIndex(l, " ("); j >= 0 && strings.HasSuffix(l, ")") && (l[j+2] == '+' || l[j+2] == '-') { // the Look's difference to the readied item: green better, red worse
+			dc := green
+			if l[j+2] == '-' {
+				dc = red
+			}
+			drawText(px, inv.glyph, l[j:], 8+8*j, 8+8*i, dc)
+			l = l[:j]
+		}
+		drawText(px, inv.glyph, l, 8, 8+8*i, c)
 	}
 	x, y := (w-8*ww)/2, 8*(len(lines)+2)
 	for i := range words {

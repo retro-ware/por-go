@@ -26,7 +26,7 @@ func (e *Engine) shopWares(v *Inventory, c *Character) {
 	for i, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
 		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
-			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it), Price: strconv.Itoa(int(it.Price)) + " gold",
+			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it, e.readiedLike(c, it)), Price: strconv.Itoa(int(it.Price)) + " gold",
 			Kind: itemKind(e, c, it)}
 		for _, w := range it.Words {
 			if w != 0 {

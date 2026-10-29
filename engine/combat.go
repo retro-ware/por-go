@@ -197,6 +197,9 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	t := &Turn{Unit: e.combatIndex(c), Moves: int(ci.Moves >> 1)}
 	can := func(k ActKind) { t.Can = append(t.Can, k) }
 	can(ActAttack)
+	if w := c.Slots[slotWeapon]; w != nil {
+		t.Weapon = e.invItem(c, w)
+	}
 	if m := e.missile(c); m != nil { // extra: a thrown weapon in the Missiles slot, or a launcher with its ammunition
 		can(ActRanged)
 		t.Missile = e.invItem(c, m)

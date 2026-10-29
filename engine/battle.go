@@ -41,7 +41,8 @@ type Turn struct {
 	Can     []ActKind // the actions offered, in the menu's order
 	Spells  []Spell   // what ActCast casts
 	Aim     bool      // aiming: ActAim takes a square, ActPoint previews one, ActClose gives up
-	Missile *InvItem  // extra: the Missiles slot's thrown weapon ActRanged throws (its icon on the button), or nil
+	Weapon  *InvItem  // extra: the weapon in hand (its icon on the Attack button), or nil
+	Missile *InvItem  // extra: what ActRanged shoots (its icon on the Ranged button), or nil
 	Moves   int       // squares of move left
 }
 

@@ -13,10 +13,22 @@ import (
 // (the DS:05D6 masks).
 var classBits = [8]byte{0x02, 0x10, 0x08, 0x40, 0x80, 0x01, 0x04, 0x20}
 
-// itemLines is the Look text for an item, at most 0x1E wide.
-func (e *Engine) itemLines(it *Item) []string {
+// itemLines is the Look text for an item, at most 0x1E wide. With vs (the
+// item readied in the slot it would take) the damage and armour class lines
+// end with the difference to it, " (+1)" better, " (-2)" worse.
+func (e *Engine) itemLines(it, vs *Item) []string {
 	typ := it.Type
 	b := e.base(typ)
+	delta := func(v, o float64) string {
+		if vs == nil || v == o {
+			return ""
+		}
+		sign := ""
+		if v > o {
+			sign = "+"
+		}
+		return " (" + sign + strconv.FormatFloat(v-o, 'f', -1, 64) + ")"
+	}
 	dice := func(n, d byte, bonus int8) string {
 		s := strconv.Itoa(int(n)) + "d" + strconv.Itoa(int(d))
 		if bonus > 0 {
@@ -37,7 +49,7 @@ func (e *Engine) itemLines(it *Item) []string {
 			hands = "two hands"
 		}
 		add("Weapon, " + hands)
-		add("Damage " + dice(b.Dice, b.Sides, int8(b.Bonus)))
+		add("Damage " + dice(b.Dice, b.Sides, int8(b.Bonus)) + delta(e.damageAvg(it), e.damageAvg(vs)))
 		if b.LargeDice > 0 && (b.LargeDice != b.Dice || b.LargeSides != b.Sides || b.LargeBonus != b.Bonus) {
 			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)))
 		}
@@ -74,7 +86,7 @@ func (e *Engine) itemLines(it *Item) []string {
 		v &= 0x7F
 		switch {
 		case slot == 2:
-			add("Armor, AC " + strconv.Itoa(10-(v-50)))
+			add("Armor, AC " + strconv.Itoa(10-(v-50)) + delta(e.protection(it), e.protection(vs)))
 			switch w := it.Weight; {
 			case w > 0x18F:
 				add("Movement 6")
@@ -82,9 +94,9 @@ func (e *Engine) itemLines(it *Item) []string {
 				add("Movement 9")
 			}
 		case slot == 1:
-			add("Shield, AC " + strconv.Itoa(v) + " better")
+			add("Shield, AC " + strconv.Itoa(v) + " better" + delta(e.protection(it), e.protection(vs)))
 		case v > 0:
-			add("AC " + strconv.Itoa(v) + " better")
+			add("AC " + strconv.Itoa(v) + " better" + delta(e.protection(it), e.protection(vs)))
 		}
 	}
 	switch {
@@ -144,7 +156,7 @@ func (e *Engine) lookItem(it *Item) {
 		return
 	}
 	e.ItemName(nil, it, 0, 0, false, false)
-	l := e.itemLines(it)
+	l := e.itemLines(it, nil)
 	y1 := 4
 	y2 := min(y1+len(l)+3, 0x16)
 	e.DrawBoxTitled(1, y1, winRight, y2, 0, colWhite, "")
@@ -155,4 +167,51 @@ func (e *Engine) lookItem(it *Item) {
 		}
 	}
 	e.PromptRow24(colLightMagenta, "Press any key")
+}
+
+// damageAvg is the item's average damage (against small foes) with its
+// known magic plus, for the Look's comparison; 0 for nil.
+func (e *Engine) damageAvg(it *Item) float64 {
+	if it == nil {
+		return 0
+	}
+	b := e.base(it.Type)
+	return float64(b.Dice)*float64(b.Sides+1)/2 + float64(int8(b.Bonus)) + e.knownPlus(it)
+}
+
+// protection is the armour class points the item is worth with its known
+// magic plus (an armour's over AC 10), for the Look's comparison; 0 for nil.
+func (e *Engine) protection(it *Item) float64 {
+	if it == nil {
+		return 0
+	}
+	b := e.base(it.Type)
+	v := float64(b.Protection & 0x7F)
+	if b.Slot == 2 {
+		v -= 50
+	}
+	return v + e.knownPlus(it)
+}
+
+// knownPlus is the item's magic plus when identified, else 0.
+func (e *Engine) knownPlus(it *Item) float64 {
+	if it.Hidden != 0 {
+		return 0
+	}
+	return float64(int8(it.Plus))
+}
+
+// readiedLike (extra) is the item c has readied in the doll slot it would
+// take, for the Look's comparison: nil for a readied item or one without a slot.
+func (e *Engine) readiedLike(c *Character, it *Item) *Item {
+	s := dollSlot(e, c, it)
+	if it.Readied != 0 || s < 0 {
+		return nil
+	}
+	for _, o := range c.Items {
+		if o.Readied != 0 && o != it && dollSlot(e, c, o) == s {
+			return o
+		}
+	}
+	return nil
 }

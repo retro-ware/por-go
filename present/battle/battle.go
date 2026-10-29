@@ -22,8 +22,8 @@ import (
 
 // Presenter keeps the GPU side of one combat map.
 type Presenter struct {
-	Ranged                     image.Image // the Ranged button's icon: the Missiles slot's weapon (nil: its letter)
-	RangedKey                  string      // names it, so the bar redraws when it changes
+	Icons                      map[engine.ActKind]image.Image // a button's icon in place of the generic one: the weapon in hand on Attack, what Ranged shoots
+	IconKey                    string                         // names them, so the bar redraws when they change
 	white, atlas, shadow, wood *gpu.Image
 	tiles                      [256]image.Image // the tiles the atlas holds
 	empty                      [256]bool        // tiles with nothing on the ground

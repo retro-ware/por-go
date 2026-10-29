@@ -35,14 +35,23 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 			}
 		}
 	}
-	p.battle.Ranged, p.battle.RangedKey = nil, ""
-	if b.Turn != nil && b.Turn.Missile != nil { // the Ranged button shows the missile's icon
+	p.battle.Icons, p.battle.IconKey = nil, ""
+	if b.Turn != nil { // the Attack button shows the weapon in hand, Ranged what it shoots
 		p.inv.load()
-		if n := p.inv.icon(b.Turn.Missile); n >= 0 {
-			at := image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell)
-			p.battle.Ranged, p.battle.RangedKey = p.inv.atlas.(interface {
-				SubImage(image.Rectangle) image.Image
-			}).SubImage(image.Rectangle{at, at.Add(image.Pt(atlasCell, atlasCell))}), strconv.Itoa(n)
+		for kind, it := range map[engine.ActKind]*engine.InvItem{engine.ActAttack: b.Turn.Weapon, engine.ActRanged: b.Turn.Missile} {
+			if it == nil {
+				continue
+			}
+			if n := p.inv.icon(it); n >= 0 {
+				at := image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell)
+				if p.battle.Icons == nil {
+					p.battle.Icons = map[engine.ActKind]image.Image{}
+				}
+				p.battle.Icons[kind] = p.inv.atlas.(interface {
+					SubImage(image.Rectangle) image.Image
+				}).SubImage(image.Rectangle{at, at.Add(image.Pt(atlasCell, atlasCell))})
+				p.battle.IconKey += strconv.Itoa(int(kind)) + ":" + strconv.Itoa(n) + " "
+			}
 		}
 	}
 	p.battle.DrawBar(dst, glyph, b, max(1, int(k)/2), p.mapBottom)
