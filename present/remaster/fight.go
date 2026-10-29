@@ -18,7 +18,7 @@ import (
 // map (the panel and the message line) drawn from View.Battle in its font,
 // colours and border; the spell list Cast opens and the battle Log.
 
-const fightRows = 5 // cells: a border, the panel, two message lines, a border
+const fightRows = 1 // cells: the status line
 
 // drawFight draws the rows, the bar, whose turn it is, the spell list and the Log over the 3D map.
 func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View) {
@@ -60,9 +60,10 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 	}
 }
 
-// drawFightRows draws the panel (the unit under the pointer, else the one
-// the game names) and the last message, or the question asked, in a box
-// of the game's border along the bottom.
+// drawFightRows draws the status line along the bottom: the question
+// asked, the aiming help, else the panel (the unit under the pointer, else
+// the one the game names); between the player's turns the last message.
+// All of them are in the Log (L).
 func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.Battle, k float64) {
 	const w, h = 40 * 8, fightRows * 8
 	if p.rowsImg == nil {
@@ -73,9 +74,9 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *e
 		im.Pix[i] = 255
 	}
 	rgb := pal.EGA
-	x := 8
+	x := 0
 	put := func(s string, c int, y int) {
-		s = s[:min(len(s), max(0, (w-8-x)/8))]
+		s = s[:min(len(s), max(0, (w-x)/8))]
 		drawText(im, glyph, s, x, y, rgb(c))
 		x += len(s)*8 + 8
 	}
@@ -83,18 +84,26 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *e
 	if b.Turn != nil && panel == 0 {
 		panel = b.Turn.Unit
 	}
+	hover := false
 	if mx, my, ok := p.battle.Pick(gpu.CursorPosition()); ok && my < p.mapBottom {
 		for _, u := range b.Units {
 			for _, s := range u.Squares {
 				if s == image.Pt(mx, my) {
-					panel = u.ID
+					panel, hover = u.ID, true
 				}
 			}
 		}
 	}
-	if b.Turn != nil && b.Turn.Aim && b.AimWhy != "" {
-		put(b.AimWhy, 12, 8)
-	} else {
+	switch {
+	case b.Ask != "":
+		put(b.Ask, 13, 0)
+	case b.Turn != nil && b.Turn.Aim && b.AimWhy != "":
+		put(b.AimWhy, 12, 0)
+	case b.Turn != nil && b.Turn.Aim:
+		put("Aim: Tab, click=target  Esc=cancel", 10, 0)
+	case b.Turn == nil && b.Panel == 0 && !hover && len(b.Log) > 0: // between the player's turns: what happens
+		put(b.Log[len(b.Log)-1], 10, 0)
+	default:
 		for _, u := range b.Units {
 			if u.ID != panel {
 				continue
@@ -103,48 +112,29 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *e
 			if !u.Party {
 				name = 12
 			}
-			put(u.Name, name, 8)
+			put(u.Name, name, 0)
 			x -= 8
-			put(" HP", 15, 8)
+			put(" HP", 15, 0)
 			x -= 8
-			put(" "+strconv.Itoa(u.HP), 10, 8)
-			put("AC", 15, 8)
+			put(" "+strconv.Itoa(u.HP), 10, 0)
+			put("AC", 15, 0)
 			x -= 8
-			put(" "+strconv.Itoa(u.AC), 10, 8)
+			put(" "+strconv.Itoa(u.AC), 10, 0)
 			if u.Status != "" {
-				put(u.Status, 15, 8)
+				put(u.Status, 15, 0)
 				break
 			}
-			put("Dmg", 15, 8)
+			put("Dmg", 15, 0)
 			x -= 8
-			put(" "+u.Dmg, 10, 8)
+			put(" "+u.Dmg, 10, 0)
 			if u.Hit > 0 {
-				put("CtH", 15, 8)
+				put("CtH", 15, 0)
 				x -= 8
-				put(" "+strconv.Itoa(u.Hit), 10, 8)
+				put(" "+strconv.Itoa(u.Hit), 10, 0)
 			}
 		}
 	}
-	var lines []string
-	switch {
-	case b.Ask != "":
-		lines = []string{b.Ask}
-	case b.Turn != nil && b.Turn.Aim:
-		lines = []string{"Aim: Tab, click=target  Esc=cancel"}
-	case len(b.Log) > 0:
-		lines = wrap(b.Log[len(b.Log)-1], 38)
-		lines = lines[max(0, len(lines)-2):]
-	}
-	for i, l := range lines {
-		x = 8
-		c := 10
-		if b.Ask != "" {
-			c = 13
-		}
-		put(l, c, 16+i*8)
-	}
 	p.rowsImg.WritePixels(im.Pix)
-	drawBorder(p.rowsImg, p.border.tiles, gpu.GeoM{}, 40, fightRows)
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(dst.Bounds().Dx())-k*w)/2, float64(p.mapBottom))
