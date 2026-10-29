@@ -914,9 +914,19 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 			}
 		}
 		for _, l := range inv.lines {
-			if inv.hover.In(l.r) {
-				inv.press, inv.pressAt = &l, inv.hover
+			if !inv.hover.In(l.r) {
+				continue
 			}
+			if inv.view.Wares != nil && !l.doll && gpu.IsKeyPressed(gpu.KeyShift) { // Shift-click: a quick trade, no question
+				inv.choose(l.ware, l.item.Index)
+				if l.ware {
+					inv.do(engine.ActBuy)
+				} else if inv.view.Sell {
+					inv.acts = append(inv.acts, engine.Action{Kind: engine.ActSell, N: l.item.Index})
+				}
+				return
+			}
+			inv.press, inv.pressAt = &l, inv.hover
 		}
 		return
 	}
