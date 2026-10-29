@@ -12,6 +12,7 @@ on:
         required: true
 env:
   TAG: ${{ inputs.tag || github.ref_name }}
+  CGO_ENABLED: "0" # goffi's stubs link only without cgo
 permissions:
   contents: write
 jobs:
@@ -64,8 +65,8 @@ jobs:
               go build -trimpath -ldflags "-s -w -H windowsgui" -o "$out/por.exe" ./cmd/por
               (cd ../gameimport && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -H windowsgui" -o "$OLDPWD/$out/gameimport.exe" ./cmd/gameimport) ;;
             macos-*)
-              CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o por-arm64 ./cmd/por
-              CGO_ENABLED=1 GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o por-amd64 ./cmd/por
+              GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o por-arm64 ./cmd/por
+              GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o por-amd64 ./cmd/por
               lipo -create -output "$out/por" por-arm64 por-amd64
               for a in arm64 amd64; do (cd ../gameimport && CGO_ENABLED=0 GOARCH=$a go build -trimpath -ldflags "-s -w" -o "$OLDPWD/gameimport-$a" ./cmd/gameimport); done
               lipo -create -output "$out/gameimport" gameimport-arm64 gameimport-amd64 ;;
