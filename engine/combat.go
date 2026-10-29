@@ -211,7 +211,9 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	if !e.rangedWeapon(c) || e.throwable(c) {
 		can(ActGuard) // Done's
 	}
-	can(ActItems) // extra: always (to swap weapons too), as the sheet
+	if e.combatItems(c) { // the inventory itself is a click on the card away
+		can(ActItems)
+	}
 	if ci.CanCast != 0 && e.area.NoMagic == 0 {
 		seen := map[byte]bool{}
 		for _, v := range c.Memorized[:0x15] {
@@ -635,6 +637,17 @@ func (e *Engine) quickOne(c *Character) {
 	if t := c.Combat.Target; t != nil && t.Side == c.Side {
 		c.Combat.Target = nil
 	}
+}
+
+// combatItems (extra): c carries an item its items menu could Use (when
+// it may use items this round).
+func (e *Engine) combatItems(c *Character) bool {
+	for _, it := range e.carried(c) {
+		if c.Combat.CanUse != 0 && (e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80) {
+			return true
+		}
+	}
+	return false
 }
 
 // damageText is the damage of the readied attack, as the View page shows it.

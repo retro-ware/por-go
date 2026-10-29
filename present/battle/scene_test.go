@@ -86,3 +86,22 @@ func TestButtonRects(t *testing.T) {
 		t.Errorf("button 2 of 3 on a 400 wide bar: %v", r)
 	}
 }
+
+// TestNDC: ndc is pick's inverse: a square's centre projects to a screen
+// point that picks the square again, and the eye's own square is out of sight.
+func TestNDC(t *testing.T) {
+	c := camera{eye: vec{20, 9, 20}, at: vec{14, 0, 8}, fovy: 0.8, aspect: 4.0 / 3}
+	for _, w := range []vec{{14.5, 0, 8.5}, {10.5, 0, 6.5}, {17.5, 0, 12.5}} {
+		nx, ny, ok := c.ndc(w)
+		x, z, picked := c.pick(nx, ny)
+		if !ok || !picked || x != int(w[0]) || z != int(w[2]) {
+			t.Errorf("%v → (%.2f, %.2f) %v → %d,%d %v", w, nx, ny, ok, x, z, picked)
+		}
+	}
+	if _, _, ok := c.ndc(vec{26, 0, 32}); ok {
+		t.Error("a point behind the eye is in sight")
+	}
+	if _, _, ok := (camera{}).ndc(vec{1, 0, 1}); ok {
+		t.Error("the zero camera sees")
+	}
+}

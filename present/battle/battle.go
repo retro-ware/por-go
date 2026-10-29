@@ -191,6 +191,21 @@ func (p *Presenter) pan(dt float64) {
 	p.offset = p.offset.add(vec{-sin*f + cos*r, 0, -cos*f - sin*r}.mul(v))
 }
 
+// chase is how much of the easing toward focus this frame takes (0..1):
+// all of it when the player pans or the focus is out of sight, none while
+// it sits inside the view's comfort box (the eye does not follow what is
+// in plain sight: less motion the player did not ask for), and rising
+// smoothly as it leaves the box for the edge.
+func (p *Presenter) chase(focus vec, panned bool) float64 {
+	const side, top, bottom = 0.6, 0.65, -0.3 // the box in -1..1 (the bar covers the bottom)
+	nx, ny, ok := p.cam.ndc(focus)
+	if panned || !ok {
+		return 1
+	}
+	out := max(0, math.Abs(nx)-side, ny-top, bottom-ny)
+	return min(1, out/0.3)
+}
+
 func (p *Presenter) initCamera() {
 	if p.distTo == 0 {
 		p.dist, p.distTo = 12, 12
@@ -247,12 +262,13 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	if focus != p.focus { // a new thing to watch: let go of the pan
 		p.focus, p.offset = focus, vec{}
 	}
+	o := p.offset
 	p.pan(dt)
 	focus = focus.add(p.offset)
 	k := 1 - math.Exp(-dt*8)
 	p.yaw += (p.yawTo - p.yaw) * k
 	p.dist += (p.distTo - p.dist) * k
-	p.at = p.at.add(focus.sub(p.at).mul(k))
+	p.at = p.at.add(focus.sub(p.at).mul(k * p.chase(focus, p.offset != o)))
 
 	r := dst.Bounds()
 	h := p.dist * math.Cos(pitch)

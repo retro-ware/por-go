@@ -223,6 +223,19 @@ func (c camera) viewProj() gpu.Mat4 {
 	return mul(perspective(float32(c.fovy), float32(c.aspect), 0.1, 200), view)
 }
 
+// ndc is where world point w lands on the screen, in -1..1 (y up); ok is
+// false behind the eye (pick's inverse).
+func (c camera) ndc(w vec) (nx, ny float64, ok bool) {
+	r, u, f := c.basis()
+	d := w.sub(c.eye)
+	z := d.dot(f)
+	if !(z > 0.1) { // behind, or NaN from a zero camera (the first frame)
+		return 0, 0, false
+	}
+	t := math.Tan(c.fovy / 2)
+	return d.dot(r) / (z * t * c.aspect), d.dot(u) / (z * t), true
+}
+
 // pick is the map square under screen point (nx, ny) in -1..1 (y up), on
 // the floor; ok is false off the map.
 func (c camera) pick(nx, ny float64) (x, z int, ok bool) {

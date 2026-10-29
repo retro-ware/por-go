@@ -375,6 +375,8 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 			p.ctxSend(p.ctxSel)
 		case k == 27:
 			p.ctx = 0
+		case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: another member's menu (keyAct)
+			return false
 		case k < 128 && slices.Contains(p.ctxKeys, c&^0x20): // a letter's hotkey, either case
 			p.ctxSend(slices.Index(p.ctxKeys, c&^0x20))
 		}
