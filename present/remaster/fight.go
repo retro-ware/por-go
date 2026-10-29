@@ -18,17 +18,17 @@ import (
 const fightRows = 1 // cells: the status line
 
 // drawFight draws the rows, the bar, whose turn it is, the spell list and the Log over the 3D map.
-func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View) {
+func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
+	glyph := note.Glyph
 	b, k := v.Battle, scale(dst)
 	p.mapBottom = dst.Bounds().Dy() - int(k)*8*fightRows
 	if b.Turn != nil {
 		for _, m := range v.Party { // whose turn: the portrait card, bottom left
 			if m.Selected {
 				ck := max(1, int(k)/2) // as the bar
-				p.drawParty(dst, []engine.Member{m}, func(int, int) image.Rectangle {
-					y := p.mapBottom - (cardH+cardGap)*ck + cardFoot*ck
-					return image.Rect(cardGap*ck, y, cardGap*ck+cardW*ck, y+cardH*ck)
-				})
+				y := p.mapBottom - (cardH+cardGap)*ck + cardFoot*ck
+				p.fightCard = image.Rect(cardGap*ck, y, cardGap*ck+cardW*ck, y+cardH*ck)
+				p.drawParty(dst, []engine.Member{m}, func(int, int) image.Rectangle { return p.fightCard })
 			}
 		}
 	}
@@ -52,7 +52,7 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 		}
 	}
 	p.battle.DrawBar(dst, glyph, b, max(1, int(k)/2), p.mapBottom)
-	p.drawFightRows(dst, glyph, b, k)
+	p.drawFightRows(dst, note, b, k)
 	cx := dst.Bounds().Dx() / 2
 	switch {
 	case p.battle.Picking && b.Turn != nil && p.pick == nil: // the bar's Cast list (View.SpellPick is drawn by Draw)
@@ -75,8 +75,9 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 // asked, the aiming help, else the panel (the unit under the pointer, else
 // the one the game names); between the player's turns the last message.
 // All of them are in the Log (L).
-func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.Battle, k float64) {
+func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k float64) {
 	const w, h = 40 * 8, fightRows * 8
+	glyph := note.Glyph
 	if p.rowsImg == nil {
 		p.rowsImg = gpu.NewImage(w, h)
 	}
@@ -108,6 +109,8 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *e
 	switch {
 	case b.Ask != "":
 		put(b.Ask, 13, 0)
+	case note.Show: // a refusal (why the attack is not possible ...)
+		put(note.Text, 12, 0)
 	case b.Turn != nil && b.Turn.Aim && b.AimWhy != "":
 		put(b.AimWhy, 12, 0)
 	case b.Turn != nil && b.Turn.Aim:
@@ -172,6 +175,10 @@ func (p *Presenter) fightClick(x, y int) bool {
 		return true
 	}
 	if p.pickClick(x, y) {
+		return true
+	}
+	if image.Pt(x, y).In(p.fightCard) && p.fightView != nil && p.fightView.Turn != nil { // the active member's inventory
+		p.send(engine.ActItems, 0)
 		return true
 	}
 	return p.battle.Click(x, y)

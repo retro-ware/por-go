@@ -3,6 +3,7 @@ package engine
 // The combat main loop and the player's command menus (ovr09).
 
 import (
+	"cmp"
 	"image"
 	"slices"
 	"strconv"
@@ -129,7 +130,7 @@ func (e *Engine) playerTurn(c *Character) {
 		a := e.act()
 		turn := e.snap.turn
 		e.snap.turn = nil
-		if !slices.Contains(turn.Can, a.Kind) && a.Kind != ActWalk {
+		if !slices.Contains(turn.Can, a.Kind) && a.Kind != ActWalk && a.Kind != ActMember { // the card's clicks are no bar buttons
 			continue
 		}
 		switch a.Kind {
@@ -141,6 +142,9 @@ func (e *Engine) playerTurn(c *Character) {
 			done = e.attackUnit(c, a.N, reach)
 		case ActItems:
 			done = e.ItemsMenu() // ovr20:0EF8 (var done)
+			e.setSpeed(c)
+		case ActMember: // extra: the card's right click: the sheet
+			done = e.ViewCharacter()
 			e.setSpeed(c)
 		case ActRanged:
 			done = e.rangedAttack(c)
@@ -207,9 +211,7 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	if !e.rangedWeapon(c) || e.throwable(c) {
 		can(ActGuard) // Done's
 	}
-	if e.combatItems(c) {
-		can(ActItems)
-	}
+	can(ActItems) // extra: always (to swap weapons too), as the sheet
 	if ci.CanCast != 0 && e.area.NoMagic == 0 {
 		seen := map[byte]bool{}
 		for _, v := range c.Memorized[:0x15] {
@@ -293,10 +295,15 @@ func (e *Engine) attackUnit(c *Character, n int, reach map[[2]int][]int) bool {
 		e.ext.enemiesOnly = false
 		return ok
 	}
-	if !slices.Contains(e.snap.targets, n) {
+	t := e.combatant(byte(n))
+	if !slices.Contains(e.snap.targets, n) { // extra: the status row says why not
+		why := "Not a target"
+		if t != nil && e.mayActAgainst(c, t) {
+			why = cmp.Or(e.targetWhy(c, t, e.weaponRange(c), 1), "No path to it this turn")
+		}
+		e.refuse(why)
 		return false
 	}
-	t := e.combatant(byte(n))
 	if p := e.pathNextTo(c, t, reach); p != nil {
 		if e.walk(c, p) {
 			return true
@@ -628,17 +635,6 @@ func (e *Engine) quickOne(c *Character) {
 	if t := c.Combat.Target; t != nil && t.Side == c.Side {
 		c.Combat.Target = nil
 	}
-}
-
-// combatItems (extra): c carries an item its items menu could Use (when
-// it may use items this round).
-func (e *Engine) combatItems(c *Character) bool {
-	for _, it := range e.carried(c) {
-		if c.Combat.CanUse != 0 && (e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80) {
-			return true
-		}
-	}
-	return false
 }
 
 // damageText is the damage of the readied attack, as the View page shows it.

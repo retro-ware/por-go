@@ -80,6 +80,7 @@ type Presenter struct {
 	inv         inventory                   // the inventory screen (inventory.go)
 	fightView   *engine.Battle              // the combat map last drawn
 	fightLog    bool                        // the battle Log is up (fight.go)
+	fightCard   image.Rectangle             // the active member's card (fight.go): left click the inventory, right click the sheet
 	rowsImg     *gpu.Image                  // the combat rows, drawn at scale 1
 	typing      bool                        // a line is being typed (input.go) ...
 	typed       string                      // ... and reads this
@@ -209,7 +210,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.shown, p.active, p.menu = "", false, false
 		p.fightView = v.Battle
 		p.battle.Draw(dst, v.Battle)
-		p.drawFight(dst, note.Glyph, v)
+		p.drawFight(dst, note, v)
 		return Rect{}
 	}
 	if p.main = v.MainMenu != nil; p.main {
@@ -493,6 +494,7 @@ func (p *Presenter) Hover(x, y int) {
 		return
 	}
 	if p.fight {
+		p.pointer = image.Pt(x, y)
 		if !p.fightLog {
 			p.battle.Point(x, y)
 		}

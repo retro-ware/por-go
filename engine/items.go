@@ -170,10 +170,9 @@ func (e *Engine) refuse(s string) { e.bottomMessage(s, colLightRed) }
 // row 24 is under the text box there, and its delay held the game).
 func (e *Engine) bottomMessage(s string, colour int) {
 	s = cut(s, textCols)
+	e.say(s)
 	if e.beginFlag == 5 && e.cmap != nil {
 		e.combatSay(nil, s, true)
 		e.MsgDelay()
-		return
 	}
-	e.say(s)
 }

@@ -153,6 +153,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	case p.cardHover > 0 && p.active && v.Command:
 		p.ctx = 0
 		p.send(engine.ActInventory, p.cardHover-1)
+	case p.fight && p.pointer.In(p.fightCard): // the active member's sheet
+		p.send(engine.ActMember, 0)
 	case p.ctx > 0:
 		p.ctx = 0
 	default:

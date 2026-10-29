@@ -239,6 +239,7 @@ func (e *Engine) ViewCharacter() bool {
 	if e.beginFlag == 5 {
 		e.combatViewLeave() // ovr31 (seg 03E0) +2A
 	}
+	e.snap.portrait = CellRect{} // extra: Shift-click and dropped PNGs go with the sheet (DrawMainScreen keeps the page)
 	e.DrawMainScreen()
 	return quit
 }
@@ -501,7 +502,7 @@ func (e *Engine) readyItem(it *Item) {
 			e.refuse("It's Cursed")
 			return
 		}
-		if e.partyMember(c) && e.poolFull(it) { // extra: it goes back into the party inventory
+		if e.partyMember(c) && e.poolFull(it) && !(e.beginFlag == 5 && c.Auto != 0) { // extra: it goes back into the party inventory; the computer's turn never stalls on a full one (it overflows, addToPool)
 			e.refuse("No room in the party items")
 			return
 		}

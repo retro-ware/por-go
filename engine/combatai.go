@@ -372,6 +372,9 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 				if e.rangedWeapon(c) && !e.throwable(c) && e.nearEnemies(c, 1) > 0 {
 					e.aiPickWeapon(c)
 					stop = true
+					if e.rangedWeapon(c) && !e.throwable(c) { // extra: the swap was refused: the turn ends instead of trying forever (a soft lock)
+						stop = e.aiGiveUp(c)
+					}
 					continue
 				}
 				if e.rangeTo(c, tgt) == 1 || e.mayActAgainst(c, tgt) {

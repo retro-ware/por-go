@@ -70,7 +70,8 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 		case flags&0x14 == 0x14:
 			add("Thrown, or used in melee")
 		case flags&0x10 != 0:
-			add("Thrown, used up")
+			add("Thrown, used up; not with")
+			add("a foe adjacent")
 		case flags&0x80 != 0:
 			add("Needs quarrels")
 		case flags&1 != 0 && flags&8 != 0:

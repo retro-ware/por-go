@@ -147,10 +147,7 @@ func battleView(t *testing.T) (*engine.Engine, engine.View) {
 	e.FixedSeed = &seed
 	e.Init()
 	go e.Play()
-	i := e.SlotIndex("GAME A")
-	if i < 0 {
-		t.Skip("no GAME A save")
-	}
+	i := max(e.SlotIndex("GAME A"), 0) // else the newest save
 	ks := []engine.Action{hot('L')}
 	for ; i > 0; i-- {
 		ks = append(ks, down)
@@ -165,6 +162,9 @@ func battleView(t *testing.T) (*engine.Engine, engine.View) {
 		}
 		e.Act(resolve(e, k))
 		time.Sleep(50 * time.Millisecond)
+	}
+	if v.Battle == nil {
+		t.Skip("no fight: no saved game?")
 	}
 	return e, v
 }
@@ -417,4 +417,42 @@ func actWait(e *engine.Engine, a engine.Action) engine.View {
 	}
 	time.Sleep(100 * time.Millisecond)
 	return e.View()
+}
+
+// TestAttackRefusal: a foe that is no target (here: a party member) is
+// refused with the reason on the note, the turn going on.
+func TestAttackRefusal(t *testing.T) {
+	e, v := battleView(t)
+	if v.Battle == nil || v.Battle.Turn == nil {
+		t.Fatal("no turn")
+	}
+	actWait(e, engine.Action{Kind: engine.ActAttack, N: v.Battle.Turn.Unit})
+	if s, _ := e.Note(); s != "Not a target" {
+		t.Errorf("note %q, want Not a target", s)
+	}
+	if e.View().Battle.Turn == nil {
+		t.Error("the turn was used")
+	}
+}
+
+// TestFightSheet: the card's right click (ActMember) opens the active
+// member's sheet, not the first member's.
+func TestFightSheet(t *testing.T) {
+	e, v := battleView(t)
+	var active string
+	for _, u := range v.Battle.Units {
+		if u.ID == v.Battle.Turn.Unit {
+			active = u.Name
+		}
+	}
+	v = actWait(e, engine.Action{Kind: engine.ActMember, N: 0})
+	var selected string
+	for _, m := range v.Party {
+		if m.Selected {
+			selected = m.Name
+		}
+	}
+	if v.Menu == nil || selected != active {
+		t.Errorf("menu %v, selected %q, want the sheet of %q", v.Menu != nil, selected, active)
+	}
 }

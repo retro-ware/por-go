@@ -167,7 +167,7 @@ func (p *Presenter) Click(x, y int) bool {
 		return true
 	}
 	for _, u := range b.Units {
-		if slices.Contains(b.Targets, u.ID) && slices.Contains(u.Squares, sq) {
+		if !u.Party && slices.Contains(u.Squares, sq) { // any foe: the game refuses with the reason
 			p.act(engine.Action{Kind: engine.ActAttack, N: u.ID})
 			return true
 		}
