@@ -9,6 +9,7 @@ def SetSky() {
 def FindPoolCell() {
     Scratch10 = 0
     Scratch7 = Cell & ~Inside
+    goto FindPoolCellLoop
 
     FindPoolCellLoop:
     Scratch9 = PoolCellTable[Scratch10]
@@ -45,6 +46,7 @@ def CountLizardKills() {
 def AddKills() {
     if Scratch1 < Beaten { goto AddKillsCapped }
     Scratch1 = Beaten
+    goto AddKillsCapped
 
     AddKillsCapped:
     Beaten -= Scratch1
@@ -72,6 +74,7 @@ on move {
     SetSky()
     Scratch10 = 0
     Scratch7 = Cell & ~Inside
+    goto BlockScanLoop
 
     BlockScanLoop:
     Scratch9 = Table9B00[Scratch10]
@@ -91,6 +94,7 @@ on move {
 on step {
     Scratch10 = 0
     Scratch7 = Cell & ~Inside
+    goto EventScanLoop
 
     EventScanLoop:
     Scratch9 = Table9B96[Scratch10]
@@ -115,6 +119,7 @@ on camp {
 RedrawExit:
     RedrawView()
     CallRedraw()
+    goto event3
 
 on rest {
     exit
@@ -146,6 +151,7 @@ LeaveRuins:
     Picture(None)
     if QuestLizardmen == Rewarded { goto GotoArea27 }
     if LizardMenKilled >= 40 { QuestLizardmen = RewardDue }
+    goto GotoArea27
 
     GotoArea27:
     NewECL(Quagmire)
@@ -156,6 +162,7 @@ SearchForTunnel:
     Text("SEARCHING THROUGH THE ")
     gosub [WordRubble, WordSwamp, WordSwamp, WordRubble, WordRubble][Scratch10]
     Print(" YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?")
+    goto GoDownMenu
 
 GoDownMenu:
     if YesNoMenu() != "YES" { exit }
@@ -219,9 +226,11 @@ OldLizardman:
         flee=Talk, advance=Talk, parlay=Talk, near="HE LOOKS AT YOU PATIENTLY.", escape=6,
         strength=6)
     goto [PushBack, SlayOldLizardman, PushBack, AskFriendWord][Scratch10]
+    goto SlayOldLizardman
 
 SlayOldLizardman:
     Text("YOU LASH OUT WITH YOUR WEAPON DEALING ONE SWIFT, DEADLY BLOW. THE OLD LIZARD MAN TOTTERS FOR A MOMENT WITH A SURPRISED LOOK ON HIS FACE, AND THEN COLLAPSES.")
+    goto OldLizardmanGone
 
 OldLizardmanGone:
     RedrawView()
@@ -230,14 +239,17 @@ OldLizardmanGone:
     Delay()
     OldLizardmanFlags &= ~StillToMeet
     OldLizardmanFlags |= MetOrKilled
+    goto BuildingEncounter
 
 BuildingEncounter:
     goto [LizardPatrol, GiantLizards, JavelinAmbush][Scratch9]
+    goto PushBack
 
 PushBack:
     PartyX = 8
     PartyY = 12
     Facing = South
+    goto HoldRedrawExit
 
 HoldRedrawExit:
     HoldMove = SkipMove
@@ -246,6 +258,7 @@ HoldRedrawExit:
 AskFriendWord:
     Text("A GROUP OF HUMANS WERE DESCRIBED TO ME BY THREE OF OUR PEOPLE WHOM THEY RESCUED. IF YOU ARE THEY YOU WILL HAVE BEEN SHOWN OUR TRIBAL FRIEND-WORD.")
     PressToContinue()
+    goto FriendWordInput
 
     FriendWordInput:
     Text("WHAT IS IT?")
@@ -270,6 +283,7 @@ AskFriendWord:
     if YesNoMenu() != "YES" { goto RefuseChampion }
     Scratch1 = SelPartyIndex2
     Scratch2 = 0
+    goto ChooseChampion
 
     ChooseChampion:
     Who("WHO WILL BE MY CHAMPION?")
@@ -300,6 +314,7 @@ AskFriendWord:
 
     RefuseChampion:
     Text("'THEN I MUST FIGHT HIM MYSELF.' THE COMBAT IS EXTREMELY SHORT IN DURATION. WHEN IT IS FINISHED DRYTHH TURNS TO HIS FOLLOWERS, 'KILL THEM!'")
+    goto DrythhAttacks
 
     DrythhAttacks:
     PressToContinue()
@@ -309,6 +324,7 @@ AskFriendWord:
     EncounterMenu(Lizardman, distance=1, closeup=Lizardman, result=Scratch10, combat=Attack, wait=Attack,
         flee=Attack, advance=Attack, parlay=Attack, escape=6, strength=6)
     goto [RedrawExit, DrythhFight, PushBack][Scratch10]
+    goto DrythhFight
 
 DrythhFight:
     Surprise = NoSurprise
@@ -325,6 +341,7 @@ RuinedBuilding:
     Text("YOU ENTER A BUILDING WHOSE WALLS ARE MORE OR LESS INTACT, THOUGH THE ROOF HAS FALLEN IN. RUBBLE MAKES PASSAGE DIFFICULT.")
     Delay()
     BuildingsSeen |= RubbleBuilding
+    goto RuinedBuildingCheck
 
     RuinedBuildingCheck:
     if EncountersDone has RubbleBuildingFight { exit }
@@ -340,6 +357,7 @@ LizardPatrol:
         flee=Attack, advance=Attack, parlay=Attack,
         near="2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU.", escape=15, strength=6)
     goto [RedrawExit, LizardPatrolFight, PushBack, LizardPatrolFight][Scratch10]
+    goto LizardPatrolAmbush
 
     LizardPatrolAmbush:
     SetupMonster(Lizardman, distance=1, closeup=Lizardman)
@@ -347,6 +365,7 @@ LizardPatrol:
     Delay()
     Approach()
     Surprise = PartyIsSurprised
+    goto LizardPatrolFight
 
 LizardPatrolFight:
     Scratch7 = 0
@@ -356,11 +375,13 @@ LizardPatrolFight:
     ClearMonsters()
     LoadMonster(Lizardman, count=2, icon=Lizardman)
     LoadMonster(GiantLizard, count=1, icon=GiantLizard)
+    goto LizardCombat
 
 LizardCombat:
     Combat()
     CountLizardKills()
     if CombatEnd == PartyFled { goto PushBack }
+    goto MarkEncounterDone
 
 MarkEncounterDone:
     Scratch1 = EncounterBitTable[Scratch7]
@@ -372,6 +393,7 @@ CentralKeep:
     Text("YOU ENTER THE REMAINS OF THE CENTRAL KEEP. THE CEILING AND WALLS HAVE COLLAPSED TO THE POINT WHERE THE INTERIOR IS CHOKED WITH RUBBLE.")
     BuildingsSeen |= CentralKeepSeen
     Delay()
+    goto CentralKeepCheck
 
     CentralKeepCheck:
     Scratch9 = 2
@@ -402,6 +424,7 @@ LShapedBuilding:
     Text("YOU HAVE ENTERED AN L-SHAPED BUILDING. IT IS REASONALBLY INTACT... THERE ARE EVEN PORTIONS OF ROOF OVERHEAD!")
     Delay()
     BuildingsSeen |= LShapedSeen
+    goto LShapedBuildingCheck
 
     LShapedBuildingCheck:
     if EncountersDone has LShapedBuildingFight { exit }
@@ -417,6 +440,7 @@ GiantLizards:
         flee=Attack, advance=Attack, parlay=Attack, near="3 GIANT LIZARDS CHARGE TOWARD YOU.",
         escape=15, strength=15)
     goto [RedrawExit, GiantLizardsFight, PushBack, GiantLizardsFight][Scratch10]
+    goto GiantLizardsAmbush
 
     GiantLizardsAmbush:
     SetupMonster(GiantLizard, distance=1, closeup=GiantLizard)
@@ -424,6 +448,7 @@ GiantLizards:
     Approach()
     Text("SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!")
     Surprise = PartyIsSurprised
+    goto GiantLizardsFight
 
 GiantLizardsFight:
     Scratch7 = 1
@@ -438,6 +463,7 @@ StairsUp:
 
 TunnelSlopesUp:
     Text("THE TUNNEL BEGINS TO SLOPE UP.")
+    goto GoUpMenu
 
 GoUpMenu:
     Print(" DO YOU GO UP?")
@@ -467,6 +493,7 @@ PoolLizardmen:
         flee=Flee, advance=Flee, parlay=Flee, near="THEY TURN TO DIVE BACK IN THE WATER.", escape=0,
         strength=0)
     goto [LizardmenDive, PoolLizardmenFight][Scratch10]
+    goto LizardmenDive
 
 LizardmenDive:
     Scratch8 = 0
@@ -498,6 +525,7 @@ DeepPool:
     Text("YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?")
     if YesNoMenu() != "YES" { exit }
     goto [PoolGuarded, PoolSearch][Scratch8]
+    goto PoolGuarded
 
 PoolGuarded:
     Text("YOU DIVE INTO THE POOL AND BEGIN TO SEARCH BY TOUCH. SUDDENLY BEFORE YOUR CLOUDED VISION YOU SEE SOME LIZARD MEN...")

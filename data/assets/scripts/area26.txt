@@ -12,6 +12,7 @@ CheckEastEdge:
 
 CheckWestEdge:
     if MapX == 2 { WestEdgeExit() }
+    goto CheckBlockedMove
 
 CheckBlockedMove:
     ProbeAheadBlocked()
@@ -67,6 +68,7 @@ def ProbeAheadBlocked() {
     Scratch1 = 0
     Scratch3 = 28
     if Boss >= YarashBeaten { Scratch3 = 19 }
+    goto ProbeTableLoop
 
     ProbeTableLoop:
     if Scratch1 > Scratch3 { return }
@@ -127,6 +129,7 @@ on step {
     FindSite:
     Scratch4 = 0
     Scratch1 = 0
+    goto SiteRowLoop
 
     SiteRowLoop:
     if Scratch1 >= 9 { goto RandomEncounterCheck }
@@ -139,6 +142,7 @@ on step {
 
     SiteRowFound:
     Scratch3 += Scratch4
+    goto SiteColumnLoop
 
     SiteColumnLoop:
     if Scratch4 >= Scratch3 { goto RandomEncounterCheck }
@@ -169,6 +173,7 @@ NomadCampEvent:
     Text("YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?")
     Scratch1 = Menu("ENTER", "LEAVE")
     goto [EnterNomadCamp, Done][Scratch1]
+    goto EnterNomadCamp
 
 EnterNomadCamp:
     Enter3DSetup()
@@ -181,6 +186,7 @@ CityNorthEdge:
     Text("YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?")
     Scratch1 = Menu("CITY", "GRAVEYARD", "LEAVE")
     goto [EnterNorthGate, EnterGraveyard, Done][Scratch1]
+    goto EnterNorthGate
 
 EnterNorthGate:
     Enter3DSetup()
@@ -203,6 +209,7 @@ CityEastEdge:
     Text("YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?")
     Scratch1 = Menu("NORTH", "SOUTH", "BOAT", "LEAVE")
     goto [EnterEastNorth, EnterEastSouth, BoatToCivilized, Done][Scratch1]
+    goto EnterEastNorth
 
 EnterEastNorth:
     Enter3DSetup()
@@ -232,6 +239,7 @@ CityWestEdge:
     Text("YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?")
     Scratch1 = Menu("NORTH", "SOUTH", "LEAVE")
     goto [EnterWestNorth, EnterWestSouth, Done][Scratch1]
+    goto EnterWestNorth
 
 EnterWestNorth:
     Enter3DSetup()
@@ -251,6 +259,7 @@ HiddenRowboat:
     Text("YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?")
     Scratch1 = Menu("YES", "NO")
     goto [PyramidFront, Done][Scratch1]
+    goto PyramidFront
 
 PyramidFront:
     MapX = 6
@@ -263,6 +272,7 @@ PyramidFront:
     Text("YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?")
     Scratch1 = Menu("ENTER", "GO BACK")
     goto [EnterPyramid, PyramidGoBack][Scratch1]
+    goto EnterPyramid
 
 EnterPyramid:
     Enter3DSetup()
@@ -281,6 +291,7 @@ BoatHome:
     Text("THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?")
     Scratch1 = Menu("TAKE BOAT", "STAY")
     goto [BoatToCivilized, Done][Scratch1]
+    goto Enter3DSetup
 
 Enter3DSetup:
     Picture(None)
@@ -300,6 +311,7 @@ RandomEncounterCheck:
     Scratch1 = Random(19)
     ForcedEncounter = 0
     if Scratch1 != 0 { goto Done }
+    goto StartEncounter
 
 StartEncounter:
     PickEncounter()
@@ -310,6 +322,7 @@ StartEncounter:
     Surprise(Scratch1, Scratch2, Scratch4, Scratch5)
     if Scratch5 == 9 { Surprise &= PartyIsSurprised }
     goto [SpotGroup, PartySurprised, SurpriseThem, FaceToFace][Surprise]
+    goto SpotGroup
 
 SpotGroup:
     Text("YOU SPOT A GROUP OF ")
@@ -317,6 +330,7 @@ SpotGroup:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Talk, escape=AuxEncTemp, strength=AuxEncTemp)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto PartySurprised
 
 PartySurprised:
     Text("YOU ARE SURPRISED BY A GROUP OF ")
@@ -324,6 +338,7 @@ PartySurprised:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Mirror, escape=99, strength=99)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto SurpriseThem
 
 SurpriseThem:
     Text("YOU SURPRISE A GROUP OF ")
@@ -331,6 +346,7 @@ SurpriseThem:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Flee,
         flee=Flee, advance=Mirror, parlay=Mirror, escape=0, strength=0)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto FaceToFace
 
 FaceToFace:
     Text("SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF ")
@@ -338,6 +354,7 @@ FaceToFace:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Mirror, escape=0, strength=0)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto EncounterFight
 
 EncounterFight:
     Morale = AuxEncResult2
@@ -345,6 +362,7 @@ EncounterFight:
     LoadMonster(AuxMonster, count=MonsterCount, icon=AuxTemp9)
     if LeaderCount == 0 { goto EncounterCombat }
     LoadMonster(AuxPartyStrength, count=LeaderCount, icon=AuxParlay)
+    goto EncounterCombat
 
     EncounterCombat:
     ClearBox()
@@ -396,15 +414,18 @@ LairFound:
     Text("YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?")
     Scratch1 = Menu("ENTER", "LEAVE")
     goto [EnterLair, Done][Scratch1]
+    goto RuinedHuts
 
     RuinedHuts:
     Text("YOU HAVE FOUND SOME RUINED HUTS.  WILL YOU INVESTIGATE?")
     Scratch1 = Menu("INVESTIGATE", "LEAVE")
     goto [EnterLair, Done][Scratch1]
+    goto EnterLair
 
 EnterLair:
     InLair = InsideLair
     goto [LairStartA, LairStartB, LairStartC][Scratch6]
+    goto LairStartA
 
 LairStartA:
     LairStartX26 = 2
@@ -419,6 +440,7 @@ LairStartB:
 LairStartC:
     LairStartX26 = 13
     LairStartY26 = 6
+    goto LairLoad
 
 LairLoad:
     In3D = Dungeon3D
@@ -442,6 +464,7 @@ LairCellDispatch:
     Scratch10 = Cell & ~Inside
     goto [Done, GroveEdge, SplashingPool, DisplacerAmbush, ChainedKobolds, StenchWest, MutantLizardHut,
         LizardHut, LargeLizardMen, StirgeSwarm, LeaveLairAsk][Scratch10]
+    goto GroveEdge
 
 GroveEdge:
     Text("YOU ARE AT THE EDGE OF THE GROVE.")
@@ -452,6 +475,7 @@ SplashingPool:
     Text("NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?")
     Scratch1 = Menu("APPROACH", "LEAVE")
     goto [PoolLizardMen, Done][Scratch1]
+    goto PoolLizardMen
 
 PoolLizardMen:
     SetupMonster(Lizardman, distance=0, closeup=Lizardman)
@@ -480,6 +504,7 @@ ChainedKobolds:
     Text("AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?")
     Scratch1 = Menu("RELEASE", "ATTACK", "LEAVE")
     goto [ReleaseKobolds, KillKobolds, StepBack][Scratch1]
+    goto ReleaseKobolds
 
 ReleaseKobolds:
     Text("YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR.")
@@ -490,6 +515,7 @@ ReleaseKobolds:
 KillKobolds:
     Text("YOU COLDLY KILL THE DEFENSELESS KOBOLDS.")
     LairFightFlags = KoboldPrisoners | LairFightFlags
+    goto StenchWest
 
 StenchWest:
     Text("AN AWFUL STENCH IS COMING FROM THE WEST.")
@@ -554,6 +580,7 @@ LeaveLairAsk:
     Text("YOU ARE ABOUT TO LEAVE THIS AREA.  DO YOU WANT TO RETURN?")
     Scratch1 = Menu("RETURN", "LEAVE")
     goto [StepBack, LeaveLair][Scratch1]
+    goto LeaveLair
 
 LeaveLair:
     In3D = Overland
@@ -568,6 +595,7 @@ FightDone:
 StepBack:
     PartyX = PrevX
     PartyY = PrevY
+    goto RedrawExit
 
 RedrawExit:
     CallRedraw()
@@ -605,12 +633,14 @@ CountThird:
 CountHalf:
     Scratch1 = Scratch1 / 2
     if Scratch1 <= 0 { Scratch1 = 1 }
+    goto CountLeaders
 
 CountLeaders:
     LeaderCount = 0
     Scratch3 = Scratch1
     AuxMenuChoice = LeaderEveryTable[EncounterKind]
     if AuxMenuChoice == 0 { goto CapMonsterCount }
+    goto LeaderLoop
 
     LeaderLoop:
     if Scratch3 < AuxMenuChoice { goto CapMonsterCount }
@@ -693,12 +723,14 @@ def DrawRiver() {
 RiverDrawBegin:
     CallBeginDraw()
     RiverFrame = 0
+    goto RiverRowLoop
 
 RiverRowLoop:
     if Scratch1 == 36 { goto RiverDrawEnd }
     Scratch7 = RiverRowTable[Scratch1]
     &Scratch3 = 8 * Scratch7
     Scratch6 = 0
+    goto RiverTileLoop
 
     RiverTileLoop:
     if Scratch6 == 8 { goto RiverRowDone }
@@ -729,6 +761,7 @@ def RiverAnimFrame() {
     RiverFrame += 1
     if RiverFrame != 2 { return }
     DelayCounter = 0
+    goto RiverDelayLoop
 
     RiverDelayLoop:
     if DelayCounter == 100 { goto RiverFrameShow }
@@ -748,6 +781,7 @@ RiverCallC003:
 RiverRowCheck29:
     if Scratch1 > 29 { goto RiverCallC003 }
     CallUnknownC009()
+    goto RiverFrameReset
 
 RiverFrameReset:
     RiverFrame = 0
@@ -801,11 +835,13 @@ def PatchPyramidTiles() {
     ProbeY = 17
     ProbeCell = 10
     CallLookAhead()
+    goto CheckMarker4
 
     CheckMarker4:
     if Mark4 != 0 { goto ShowMarker4 }
     if Scratch9 = MarkFlags4 & KoboldRaidWon; Scratch9 != 0 { goto ShowMarker4 }
     if Mark4Off != 0 { return }
+    goto ShowMarker4
 
     ShowMarker4:
     ProbeX = 12

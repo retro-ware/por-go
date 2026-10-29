@@ -99,10 +99,10 @@ func WriteScript(s *Script, names *ScriptNames) (string, error) {
 				w.b.WriteString(indent + l + "\n")
 			}
 		}
+		if end < len(s.Code) && w.runsOn(end-1) { // the byte code falls through; the parser leaves this jump out
+			fmt.Fprintf(&w.b, "%sgoto %s\n", indent, s.At[end])
+		}
 		if _, ok := w.events[i]; ok || w.defs[i] {
-			if last := s.Code[end-1]; end < len(s.Code) && !(isTerminator(last.Op) && !(end > 1 && isIf(s.Code[end-2].Op))) {
-				fmt.Fprintf(&w.b, "%sgoto %s\n", indent, s.At[end]) // the byte code falls through; the parser leaves this jump out
-			}
 			w.b.WriteString("}\n")
 		}
 		i = end
@@ -322,6 +322,12 @@ func (w *scriptWriter) flagsComment(i int, op byte) string {
 	return t
 }
 
+// runsOn: command i goes on to the next command (it is no exit, goto,
+// return or NewECL, or an if guards it).
+func (w *scriptWriter) runsOn(i int) bool {
+	return !isTerminator(w.s.Code[i].Op) || i > 0 && isIf(w.s.Code[i-1].Op)
+}
+
 // blockEnd is where the section starting at command i ends: at the next
 // label, taken further over labels only gotos inside the section reach.
 func (w *scriptWriter) blockEnd(i int) int {
@@ -353,11 +359,14 @@ func (w *scriptWriter) stmts(idx []int, guarded bool) ([]string, error) {
 	var out []string
 	for k := 0; k < len(idx); {
 		i := idx[k]
-		if k > 0 {
+		if k > 0 && len(w.labelsAt[i]) > 0 {
+			if guarded {
+				return nil, fmt.Errorf("label %s on a guarded command", w.labelsAt[i][0])
+			}
+			if w.runsOn(idx[k-1]) {
+				out = append(out, "goto "+w.labelsAt[i][0])
+			}
 			for _, l := range w.labelsAt[i] {
-				if guarded {
-					return nil, fmt.Errorf("label %s on a guarded command", l)
-				}
 				out = append(out, "", l+":")
 			}
 		}

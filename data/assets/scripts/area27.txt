@@ -9,6 +9,7 @@ on move {
 
 EdgeNorth:
     goto [BlockMove, BlockMove, EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeOk, BlockMove][FacingRaw]
+    goto BlockMove
 
 BlockMove:
     HoldMove = SkipMove
@@ -21,6 +22,7 @@ def EdgeEast() {
 
 CheckWestEdge:
     if MapX == 2 { EdgeWest() }
+    goto CheckTerrain
 
 CheckTerrain:
     CheckTerrainAhead()
@@ -51,6 +53,7 @@ def CheckTerrainAhead() {
     CallUnknownC01B()
     Scratch1 = 0
     Scratch3 = 8
+    goto CheckTerrainLoop
 
     CheckTerrainLoop:
     if Scratch1 == Scratch3 { return }
@@ -103,6 +106,7 @@ on step {
     if InLair == InsideLair { goto LairCell }
     Scratch1 = 0
     Scratch4 = 0
+    goto FindSiteRow
 
     FindSiteRow:
     if Scratch1 >= 5 { goto RollEncounter }
@@ -115,6 +119,7 @@ on step {
 
     SiteRowFound:
     Scratch3 += Scratch4
+    goto FindSiteX
 
     FindSiteX:
     if Scratch4 >= Scratch3 { goto RollEncounter }
@@ -141,6 +146,7 @@ RuinedCastle:
     Text("YOU FIND A RUINED CASTLE SURROUNDED BY QUICKSAND.   AN OLD WORN DRAWBRIDGE IS THE ONLY SAFE WAY ACROSS THE QUAGMIRE.  WILL YOU ENTER THE RUINED CASTLE?")
     Scratch1 = Menu("ENTER", "LEAVE")
     goto [EnterCastle, Done][Scratch1]
+    goto EnterCastle
 
 EnterCastle:
     LeaveWilderness()
@@ -178,10 +184,12 @@ TwoCaves:
     ClearBox()
     Picture(Hill)
     Text("YOU SEE A SMALL GROUP OF KOBOLDS ENTERING A SMALL,   CONCEALED CAVE.  A LARGER, MORE NOTICEABLE CAVE LIES JUST EAST OF THE SMALL HIDDEN, CAVE.  WHAT CAVE WILL YOU ENTER?")
+    goto CaveMenu
 
     CaveMenu:
     Scratch1 = Menu("LARGE", "SMALL", "EXIT")
     goto [EnterLargeCave, EnterSmallCave, Done][Scratch1]
+    goto EnterLargeCave
 
 EnterLargeCave:
     LeaveWilderness()
@@ -193,6 +201,7 @@ EnterSmallCave:
     LeaveWilderness()
     PartyX = 6
     TookLargeCave = SmallCave
+    goto EnterKoboldCaves
 
 EnterKoboldCaves:
     PartyY = 15
@@ -206,6 +215,7 @@ BoatDock:
     Text("THERE IS A BOAT DOCKED HERE THAT WILL RETURN YOU TO THE CIVILIZED SECTION OF PHLAN.  WILL YOU TAKE IT?")
     Scratch1 = Menu("TAKE BOAT", "STAY")
     goto [TakeBoat, Done][Scratch1]
+    goto TakeBoat
 
 TakeBoat:
     LeaveWilderness()
@@ -231,6 +241,7 @@ RollEncounter:
     Scratch1 = Random(19)
     ForceEncounter27 = 0
     if Scratch1 != 0 { goto Done }
+    goto RandomEncounter
 
 RandomEncounter:
     PickEncounter()
@@ -241,6 +252,7 @@ RandomEncounter:
     Surprise(Scratch1, Scratch2, Scratch4, Scratch5)
     if Scratch5 == 9 { Surprise &= PartyIsSurprised }
     goto [SpotGroup, PartySurprised, SurpriseGroup, FaceToFace][Surprise]
+    goto SpotGroup
 
 SpotGroup:
     Text("YOU SPOT A GROUP OF ")
@@ -248,6 +260,7 @@ SpotGroup:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Talk, escape=AuxEncTemp, strength=AuxEncTemp)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto PartySurprised
 
 PartySurprised:
     Text("YOU ARE SURPRISED BY A GROUP OF ")
@@ -255,6 +268,7 @@ PartySurprised:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Mirror, escape=99, strength=99)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto SurpriseGroup
 
 SurpriseGroup:
     Text("YOU SURPRISE A GROUP OF ")
@@ -262,6 +276,7 @@ SurpriseGroup:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Flee,
         flee=Flee, advance=Mirror, parlay=Mirror, escape=0, strength=0)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto FaceToFace
 
 FaceToFace:
     Text("SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF ")
@@ -269,6 +284,7 @@ FaceToFace:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Mirror, escape=0, strength=0)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto EncounterFight
 
 EncounterFight:
     Morale = AuxEncResult2
@@ -276,6 +292,7 @@ EncounterFight:
     LoadMonster(AuxMonster, count=EncounterCount27, icon=AuxMonster)
     if EncounterExtraCount27 == 0 { goto StartCombat }
     LoadMonster(AuxPartyStrength, count=EncounterExtraCount27, icon=AuxPartyStrength)
+    goto StartCombat
 
     StartCombat:
     ClearBox()
@@ -325,11 +342,13 @@ SmallDarkCave:
     Text("YOU HAVE FOUND A SMALL, DARK CAVE.  WILL YOU ENTER?")
     Scratch1 = Menu("ENTER", "LEAVE")
     goto [EnterLair, Done][Scratch1]
+    goto EnterLair
 
 EnterLair:
     Scratch6 = Random(3)
     InLair = InsideLair
     goto [LairStartA, LairStartB, LairStartC, LairStartD][Scratch6]
+    goto LairStartA
 
 LairStartA:
     LairStartX27 = 0
@@ -349,6 +368,7 @@ LairStartC:
 LairStartD:
     LairStartX27 = 11
     LairStartY27 = 0
+    goto LoadLair
 
 LoadLair:
     In3D = Dungeon3D
@@ -371,6 +391,7 @@ LairCell:
     goto [Done, HalflingRemains, WyvernTreasure, FerociousWyvern, TerribleWyvern, FourLizards,
         HumanBones, LizardsAndMinotaurs, LairTreasure, TwoLizards, GnollAttack, GnollAttack,
         ElfRemains, GnollsAndTrolls, GnollsAndTrolls, MadKobolds, MadKobolds, PassageOutside][Scratch10]
+    goto HalflingRemains
 
 HalflingRemains:
     Text("LYING HERE ARE THE PARTIALLY EATEN REMAINS OF A HALFING.")
@@ -527,6 +548,7 @@ PassageOutside:
     Text("YOU FIND A PASSAGEWAY GOING OUT.  WHAT WILL YOU DO?")
     Scratch1 = Menu("STAY", "LEAVE")
     goto [Done, LeaveLair][Scratch1]
+    goto LeaveLair
 
 LeaveLair:
     In3D = Overland
@@ -577,12 +599,14 @@ GroupSizeLarge:
 GroupSizeMedium:
     Scratch1 = Scratch1 / 2
     if Scratch1 <= 0 { Scratch1 = 1 }
+    goto SplitGroups
 
 SplitGroups:
     EncounterExtraCount27 = 0
     Scratch3 = Scratch1
     AuxMenuChoice = EncGroupSize[EncounterType27]
     if AuxMenuChoice == 0 { goto CapGroupSize }
+    goto SplitGroupsLoop
 
     SplitGroupsLoop:
     if Scratch3 < AuxMenuChoice { goto CapGroupSize }
@@ -662,6 +686,7 @@ def MarkSitesOnMap() {
     ProbeY = 8
     ProbeCell = 34
     CallLookAhead()
+    goto MarkCavesSite
 
     MarkCavesSite:
     if Scratch1 = MarkFlags57 & CavesFound; Scratch1 != 0 { goto MarkThirdSite }
@@ -669,6 +694,7 @@ def MarkSitesOnMap() {
     ProbeY = 15
     ProbeCell = 48
     CallLookAhead()
+    goto MarkThirdSite
 
     MarkThirdSite:
     if Scratch1 = MarkFlags57 & 4; Scratch1 != 0 { return }
@@ -691,6 +717,7 @@ PatchMapRow:
     Scratch7 = MapPatchBase[Scratch1]
     &Scratch3 = 8 * Scratch7
     Scratch6 = 0
+    goto PatchMapCell
 
     PatchMapCell:
     if Scratch6 == 8 { goto PatchMapNextRow }

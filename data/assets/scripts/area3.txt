@@ -20,10 +20,12 @@ def CheckAlarm() {
     if Search == Searching { goto AlarmSounding }
     AuxRoll = Random(9)
     if 0 != AuxRoll { goto AlarmOnReturn }
+    goto AlarmSounding
 
     AlarmSounding:
     Text("AN ALARM IS SOUNDING.")
     Delay()
+    goto AlarmOnReturn
 
     AlarmOnReturn:
     return 1 < 0
@@ -90,6 +92,7 @@ on step {
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch10 = Random(Scratch1)
     if Scratch10 == 0 { goto L_9C7C }
+    goto RoomEvents
 
     RoomEvents:
     Scratch1 = Cell & 31
@@ -129,12 +132,14 @@ on load {
 
 FleeCombat:
     CombatEnd = PartyFled
+    goto AfterCombat
 
 AfterCombat:
     if CombatEnd == FightOver { return }
     RaiseAlarm()
     CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
     if CombatEnd != PartyFled { return }
+    goto StepBack
 
 StepBack:
     HoldMove = SkipMove
@@ -176,6 +181,7 @@ on rest {
 
 PatrolSeesYou:
     Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
+    goto PatrolAdvances
 
 PatrolAdvances:
     PressToContinue()
@@ -184,6 +190,7 @@ PatrolAdvances:
         strength=9)
     Portrait = None
     goto [Done, PatrolFight, FleeCombat, PatrolFight][Scratch10]
+    goto PatrolQuestions
 
 PatrolQuestions:
     Surprise = NoSurprise
@@ -198,6 +205,7 @@ PatrolQuestions:
     Text("WHAT ARE YOU DOING HERE?")
     Scratch10 = Parlay(0, 1, 1, 2, 0)
     gosub [AskAuthority, PatrolIntruders, AskPassword][Scratch10]
+    goto PatrolFight
 
 PatrolFight:
     Delay()
@@ -261,6 +269,7 @@ FighterBuilding:
     if PatrolsFought3 has PatrolsFought { exit }
     if AlarmEndHour != 0 { goto DoorSlams }
     if CastleFlags has Disguised { goto FighterConfronts }
+    goto DoorSlams
 
     DoorSlams:
     Text("THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. ")
@@ -282,12 +291,14 @@ FighterBuilding:
     if Scratch10 == 2 { goto FighterRetreats }
     Text("")
     gosub [AskAuthority, AskPassword][Scratch10]
+    goto FighterHitsButton
 
 FighterHitsButton:
     Text("HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'")
     Scratch10 = Menu("STAY AND FIGHT", "RUN")
     RaiseAlarm()
     goto [FighterFight, FleeCombat][Scratch10]
+    goto FighterFight
 
 FighterFight:
     Morale = 100
@@ -371,12 +382,14 @@ BucketRoom:
     Text("BEFORE YOU OPEN THE DOOR ALL THE WAY, YOU NOTICE A BUCKET ABOVE THE DOOR. YOU KICK THE DOOR OPEN LETTING THE BUCKET FALL HARMLESSLY TO THE GROUND.")
     PressToContinue()
     Surprise = NoSurprise
+    goto BucketGiantsCharge
 
     BucketGiantsCharge:
     EncounterMenu(FireGiant, distance=2, closeup=FireGiant, result=Scratch10, combat=Attack, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Attack,
         near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!", escape=12, strength=12)
     goto [Done, SleepingGiantsFight, FleeCombat][Scratch10]
+    goto SleepingGiants
 
     SleepingGiants:
     SetupMonster(FireGiant, distance=1, closeup=FireGiant)
@@ -385,6 +398,7 @@ BucketRoom:
     goto [StepBack][Scratch10]
     Approach()
     Text("AS YOU SNEAK TOWARD THEM A LOOSE BOARD CREAKS. THE GIANTS GET TO THEIR FEET SHAKING THE SLEEP FROM THEIR EYES.")
+    goto SleepingGiantsFight
 
 SleepingGiantsFight:
     Morale = 100
@@ -406,6 +420,7 @@ GiantQuarters:
         flee=Attack, advance=Mirror, parlay=Attack,
         near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR.", escape=12, strength=12)
     goto [Done, ArmoringGiants, FleeCombat][Scratch10]
+    goto ArmoringGiants
 
 ArmoringGiants:
     PartyHit = 2
@@ -416,9 +431,11 @@ WakingGiants:
         flee=Attack, advance=Mirror, parlay=Attack,
         near="YOU SEE SOME GIANTS STRUGGLING OUT OF BED.", escape=9, strength=9)
     goto [Done, WakingGiantsHit, FleeCombat][Scratch10]
+    goto WakingGiantsHit
 
 WakingGiantsHit:
     PartyHit = 5
+    goto QuartersFight
 
 QuartersFight:
     Morale = 40
@@ -447,6 +464,7 @@ MainGate:
     if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto GateThief }
     Scratch10 = VMenu("A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'", "GIVE THE PASSWORD", "FORCE THE GATE OPEN")
     goto [GivePassword, BoulderVolley][Scratch10]
+    goto GateRecognized
 
     GateRecognized:
     Text("YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'")
@@ -454,6 +472,7 @@ MainGate:
 
     GateThief:
     Text("YOU HEAR A DEEP VOICE,'THIEF! YOU STOLE FROM LORDBANE!'")
+    goto BoulderVolley
 
 BoulderVolley:
     DelayRaiseAlarm()
@@ -474,6 +493,7 @@ GivePassword:
     LoadMap(Keep)
     PressToContinue()
     LoadWalls(Castle, Castle2, Stone)
+    goto EnterPassword
 
     EnterPassword:
     Text("WHAT PASSWORD DO YOU GIVE? ")
@@ -509,6 +529,7 @@ DoorGiants:
     Facing = East
     CallRedraw()
     Text("TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR.")
+    goto DoorGiantsChallenge
 
 DoorGiantsChallenge:
     SetupMonster(HillGiant, distance=0, closeup=HillGiant)
@@ -539,6 +560,7 @@ TempleThieves:
 
 WrongAnswerDinner:
     Text("'WRONG ANSWER, DINNER!'")
+    goto DoorGiantsFight
 
 DoorGiantsFight:
     RaiseAlarm()
@@ -562,9 +584,11 @@ WellView:
 
 WellDive:
     Text("THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?")
+    goto DiveMenu
 
 DiveMenu:
     if YesNoMenu() != "YES" { exit }
+    goto ChooseDiver
 
     ChooseDiver:
     Who("WHO WILL DIVE IN?")
@@ -586,6 +610,7 @@ DiveMenu:
 
     OnlyMud:
     Print("ASIDE FROM A LAYER OF MUD, YOU DON'T FIND ANYTHING.")
+    goto RunningOutOfAir
 
     RunningOutOfAir:
     Delay()
@@ -604,6 +629,7 @@ DiveMenu:
     Print("YOU BREAK THE SURFACE JUST AS YOU BREATHE IN SOME WATER.")
     Delay()
     Damage(160, 1, 6, 0, 128)
+    goto TryAgain
 
     TryAgain:
     if Scratch4 != 0 { goto TakeSword }
@@ -626,11 +652,13 @@ CadornaCell:
     PressToContinue()
     Text("'IN THE NAME OF CHANTUA, HELP ME, PLEASE! BY ALL THAT'S MERCIFUL HELP ME.' HE BEGINS TO COUGH.")
     Scratch4 = 0
+    goto CadornaMenu
 
 CadornaMenu:
     Scratch10 = Menu("RELEASE HIM", "LEAVE HIM", "KILL HIM")
     goto [ReleaseCadorna, LeaveCadorna][Scratch10]
     if Scratch4 has 1 { goto KillCadorna }
+    goto CadornaPleads
 
 CadornaPleads:
     Text("'WAIT!' HE SHRIEKS. 'I KNOW HOW TO GET THROUGH THE MAIN GATES. I CAN HELP YOU.'")
@@ -673,6 +701,7 @@ GiantSnakes:
         flee=Attack, advance=Mirror, parlay=Attack, near="YOU SEE GIANT SNAKES.", escape=15,
         strength=15)
     goto [Done, SnakesFight, StepBack][Scratch10]
+    goto SnakesFight
 
 SnakesFight:
     Morale = 100

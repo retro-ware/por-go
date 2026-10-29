@@ -5,6 +5,7 @@ FleeNorth:
 
 FleeSouth:
     Scratch1 = Random(3)
+    goto MoveToTableSpot
 
 MoveToTableSpot:
     PartyX = DestX[Scratch1]
@@ -44,6 +45,7 @@ CheckMemberFinds:
     if SelRace == HalfElf { Scratch9 += 1 }
     Scratch8 = Random(5)
     if Scratch8 > Scratch9 { goto NextMember }
+    goto SecretDoorFound
 
 SecretDoorFound:
     SecretDoorBits = Scratch1 | SecretDoorBits
@@ -155,6 +157,7 @@ PriestRoom:
     Text("YOU SEE A HUMAN PRIEST.")
     WaitReturnPressed()
     MaxDist = 1
+    goto PriestEncounter
 
 PriestEncounter:
     Scratch7 = 6
@@ -176,6 +179,7 @@ PriestEncounter:
     CallRedraw()
     WaitReturnPressed()
     SecretDoorBits |= PriestFreed
+    goto HoleInWall
 
 HoleInWall:
     Text("THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?")
@@ -205,6 +209,7 @@ RockRoom:
     WaitReturnPressed()
     if TeleporterRockFlags has TeleporterKnown { goto RockRoomMenu }
     goto [StepOnTeleporter, FeelTingle][Search]
+    goto StepOnTeleporter
 
 StepOnTeleporter:
     TeleportFlash()
@@ -216,11 +221,13 @@ StepOnTeleporter:
 
 FeelTingle:
     Text("AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA.")
+    goto RockRoomMenu
 
 RockRoomMenu:
     Scratch10 = Menu("GO BACK", "MOVE ON", "THROW A ROCK")
     Text(" ")
     goto [RockGoBack, StepOnTeleporter, ThrowRock][Scratch10]
+    goto RockGoBack
 
 RockGoBack:
     Scratch1 = 8
@@ -261,6 +268,7 @@ RandomEncounter:
     Scratch7 = Random(5)
     Scratch10 = Table9CA0[Scratch7]
     if Scratch3 has Scratch10 { exit }
+    goto StartGroupEncounter
 
 StartGroupEncounter:
     Scratch6 = Scratch7
@@ -273,6 +281,7 @@ StartGroupEncounter:
     Print($AuxTemp9)
     WaitReturnPressed()
     goto [FriendlyGroupMenu, HungryGroupMenu, FlyingGroupMenu][AuxEncResult2]
+    goto SayYouSee
 
 SayYouSee:
     Text("YOU SEE")
@@ -308,11 +317,13 @@ FlyingGroupMenu:
     EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
         wait=CloseIn, flee=Attack, advance=CloseIn, parlay=Attack, near="THEY FLY TOWARD YOU.",
         escape=AuxMenuChoice, strength=AuxMenuChoice)
+    goto EncounterOutcome
 
 EncounterOutcome:
     Portrait = None
     if Scratch3 == 3 { Surprise = PartyIsSurprised }
     goto [Done, FightGroup, FleeEncounter, FightGroup][Scratch3]
+    goto FleeEncounter
 
 FleeEncounter:
     if PartyY < 8 { goto FleeNorth }
@@ -335,6 +346,7 @@ FightGroup:
 ForcedEncounter:
     Scratch3 = SouthGroupsBeaten
     if PartyY < 8 { Scratch3 = NorthGroupsBeaten }
+    goto PickUnbeatenGroup
 
     PickUnbeatenGroup:
     Scratch7 = Random(5)
@@ -382,6 +394,7 @@ DridersText:
 
 GauntMenText:
     $AuxTemp9 = " SOME GAUNT MEN IN POORLY FITTING LEATHER."
+    goto GroupTextDone
 
 GroupTextDone:
     return

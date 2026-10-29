@@ -45,6 +45,7 @@ on step {
     }
     if PartyMemberFound != 0 { goto MadManAttacks }
     AuxCounter = 0
+    goto FindCellLoop
 
     FindCellLoop:
     if AuxCounter == Scratch10 { goto CellDispatch }
@@ -102,11 +103,13 @@ CellDispatch:
         ResetVisits, ResetVisits, ResetVisits, ResetVisits, ToArea11B, ResetVisits, GeneralShop,
         TavernEnter, ArmorShop, WeaponShop, SilverShop, HealerTemple, UnsettledGateway,
         CityHallOutside, ToArea8][AuxCounter]
+    goto PierBoat
 
 PierBoat:
     if BoatPassageBought == 0 { exit }
     if Hours > 14 { goto BoardBoat }
     Picture(Ship)
+    goto BoardBoat
 
     BoardBoat:
     LeavingTown = 1
@@ -142,6 +145,7 @@ HarborMaster:
     Text("THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'")
     BoatDestination = Menu("SOKAL", "EAST", "WEST", "BAY", "NONE")
     goto [BuyPassage, BuyPassage, BuyPassage, BuyPassage, ResetVisits][BoatDestination]
+    goto BuyPassage
 
 BuyPassage:
     PayPlatinum()
@@ -172,6 +176,7 @@ TempleOfBaneEvent:
     Text("THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?")
     AuxMenuChoice = Menu("LEAVE", "FORCE YOUR WAY PAST")
     goto [LeaveBishop, WatchResponds][AuxMenuChoice]
+    goto BishopAudience
 
     BishopAudience:
     if DirtenState == AskedToAccompany { goto DirtenStudy }
@@ -185,6 +190,7 @@ TempleOfBaneEvent:
     DirtenStudy:
     ShowPortrait(BlondHeadband, ClericMace)
     Text("YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'")
+    goto AccompanyDirtenAsk
 
     AccompanyDirtenAsk:
     WaitReturnPressed()
@@ -192,6 +198,7 @@ TempleOfBaneEvent:
     DirtenState = AskedToAccompany
     YesNoMenu()
     goto [DirtenJoins, DeclineDirten][Scratch1]
+    goto DirtenJoins
 
 DirtenJoins:
     CheckPartySize()
@@ -241,6 +248,7 @@ InnRest:
     Text("'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'")
     YesNoMenu()
     goto [PayForRest, MustLeave][Scratch1]
+    goto PayForRest
 
 PayForRest:
     PayPlatinum()
@@ -283,6 +291,7 @@ GeneralShop:
     Text("THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'")
     YesNoMenu()
     goto [GeneralShopBrowse, ResetVisits][Scratch1]
+    goto GeneralShopBrowse
 
 GeneralShopBrowse:
     ClearMonsters()
@@ -295,6 +304,7 @@ TavernEnter:
     TavernEntered = 1
     Text("YOU ARE IN A TAVERN.  THE AIR IS FILLED WITH SMOKE AND GOSSIP.  PEOPLE ARE GAMBLING AT THE TABLES.")
     WaitReturnPressed()
+    goto PickpocketRoll
 
     PickpocketRoll:
     Scratch1 = Random(255)
@@ -305,6 +315,7 @@ TavernEnter:
     Text("YOU FEEL A LIGHT TOUCH ON YOUR PURSE.  DO YOU IGNORE IT OR GRAB THE OFFENDING HAND?")
     Scratch1 = Menu("IGNORE", "GRAB")
     goto [TavernEvent, DrunkenBrawl][Scratch1]
+    goto TavernEvent
 
 TavernEvent:
     if Scratch1 == 1 {
@@ -315,6 +326,7 @@ TavernEvent:
     Text(" DOES ANYONE WANT TO GAMBLE?")
     YesNoMenu()
     goto [GamblerGame, TavernTale][Scratch1]
+    goto TavernTale
 
 TavernTale:
     Text("YOU OVERHEAR TAVERN TALE ")
@@ -331,11 +343,13 @@ GamblerGame:
     Text("'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'")
     WaitReturnPressed()
     Who("WHO WILL GAMBLE?")
+    goto TavernGamble
 
     TavernGamble:
     if SelStatus != Okay { goto TooHurtToGamble }
     GamblerIndex = SelPartyIndex
     &GamblerPlatinum = &SelPlatinum
+    goto WagerPrompt
 
 WagerPrompt:
     Text("YOU HAVE ")
@@ -359,6 +373,7 @@ WagerPrompt:
     }
     Text("RED. SORRY, YOU LOSE.")
     &GamblerPlatinum -= &Wager
+    goto GambleAgainAsk
 
 GambleAgainAsk:
     WaitReturnPressed()
@@ -420,6 +435,7 @@ DrunkenBrawl:
     Text("THE CITY WATCH CHARGES IN. DO YOU RUN AWAY OR STAY TO CONFRONT THEM?")
     AuxParlay = Menu("STAY", "RUN")
     goto [WatchResponds, RunAway][AuxParlay]
+    goto ArmorShop
 
 ArmorShop:
     EnterBuildingOnce()
@@ -428,6 +444,7 @@ ArmorShop:
     Text("THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'")
     YesNoMenu()
     goto [ArmorShopBrowse, ResetVisits][Scratch1]
+    goto ArmorShopBrowse
 
 ArmorShopBrowse:
     ClearMonsters()
@@ -442,6 +459,7 @@ WeaponShop:
     Text("THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'")
     YesNoMenu()
     goto [WeaponShopBrowse, ResetVisits][Scratch1]
+    goto WeaponShopBrowse
 
 WeaponShopBrowse:
     ClearMonsters()
@@ -457,6 +475,7 @@ SilverShop:
     Text("THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'")
     YesNoMenu()
     goto [SilverShopBrowse, ResetVisits][Scratch1]
+    goto SilverShopBrowse
 
 SilverShopBrowse:
     ClearMonsters()
@@ -475,6 +494,7 @@ SeekHealingAsk:
     Print("' DO YOU SEEK HEALING?'")
     YesNoMenu()
     goto [TempleHealing, MustLeave][Scratch1]
+    goto MustLeave
 
 MustLeave:
     Text("THEN YOU MUST LEAVE.")
@@ -601,6 +621,7 @@ WatchResponds:
     Text("THE CITY WATCH RESPONDS TO THE NOISE.  DO YOU STAY TO FIGHT THEM OR RUN AWAY?")
     Scratch1 = Menu("STAY", "RUN")
     goto [FightWatch, RunAway][Scratch1]
+    goto FightWatch
 
 FightWatch:
     WatchCombatDone0 = 0
@@ -686,6 +707,7 @@ FindMemberLoop:
     SelectMember(AuxMember)
     if SelStatus > 127 { goto NextMember }
     if $SelName == $AuxText { goto MemberFound }
+    goto NextMember
 
 NextMember:
     AuxMember += 1
@@ -729,6 +751,7 @@ CityTour:
     RedrawView()
     Picture(None)
     Scratch1 = 0
+    goto TourStopLoop
 
     TourStopLoop:
     Text("")

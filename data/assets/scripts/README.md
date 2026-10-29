@@ -39,12 +39,13 @@ Every script has five entry points:
 | `on rest` | after the camp menu (rest interruptions) |
 
 The script is one sequence of commands; the blocks and labels only name
-places in it. A `def` or `on` block ends in `exit`, `goto`, `return` or
-`NewECL`; where the byte code just ran on into the label after the block,
-the block ends in `goto` that label (the parser leaves that one jump out
-of the byte code, so it still matches the original). A labelled section
-without braces runs on into the next label. A label inside a block is one
-only jumps from inside the block reach.
+places in it. Every run of statements ends in `exit`, `goto`, `return` or
+`NewECL` before the next label or `}`: where the byte code just ran on
+into the next label, the text says `goto` that label, and the parser
+leaves a `goto` to the label right after it out of the byte code (a few
+originals jump to the next command; that does nothing, and the text reads
+the same). A label inside a block is one only jumps from inside the block
+reach.
 
 ## Statements
 

@@ -20,10 +20,12 @@ def CheckAlarmSounding() {
     if Search == Searching { goto SayAlarmSounding }
     AuxRoll = Random(9)
     if AuxRoll != 0 { goto AlarmActive }
+    goto SayAlarmSounding
 
     SayAlarmSounding:
     Text("AN ALARM IS SOUNDING.")
     Delay()
+    goto AlarmActive
 
     AlarmActive:
     return 1 < 0
@@ -82,6 +84,7 @@ on move {
     if Scratch1 == 4 and Facing == East { goto GoUpstairs }
     if WallAhead == 7 { goto ThornHedge }
     if WallAhead != 9 { exit }
+    goto ThornHedge
 
     ThornHedge:
     Text("THERE IS A HEDGE WITH POISONOUS THORNS IN THAT DIRECTION. DO YOU WANT TO TRY TO CUT THROUGH?")
@@ -100,6 +103,7 @@ on step {
     if Search != Searching { Scratch1 = 20 }
     Scratch10 = Random(Scratch1)
     if Scratch10 == 0 { goto L_ABF0 }
+    goto SpecialSquare
 
     SpecialSquare:
     Scratch1 = Cell & 31
@@ -143,12 +147,14 @@ Disorient:
 
 FledCombat:
     CombatEnd = PartyFled
+    goto AfterCombat
 
 AfterCombat:
     if CombatEnd == FightOver { return }
     StartAlarm()
     CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
     if CombatEnd != PartyFled { return }
+    goto StepBack
 
 StepBack:
     HoldMove = SkipMove
@@ -167,6 +173,7 @@ GateGiants:
 
     SurpriseGiants:
     Text("YOU SURPRISE THREE GIANTS!")
+    goto GiantsMenu
 
     GiantsMenu:
     Delay()
@@ -177,6 +184,7 @@ GateGiants:
     Scratch10 = Parlay(0, 1, 1, 1, 0)
     goto [WhoSentYou][Scratch10]
     Text("'ALL RIGHT, THEN. WHAT TODAY'S PASSWORD?'")
+    goto AskPassword
 
     AskPassword:
     $AuxInputText = InputString(6)
@@ -198,6 +206,7 @@ WhoSentYou:
 
     WrongMasterName:
     Text("'WHO HIM? OH WELL HE NO CAN HELP YOU NOW!'")
+    goto FightGiants
 
 FightGiants:
     Delay()
@@ -216,18 +225,21 @@ TowerTrolls:
     Delay()
     RollSurprise()
     goto [TrollsMenu, TrollsCharge, TrollsUnawareMenu][Surprise]
+    goto TrollsMenu
 
 TrollsMenu:
     EncounterMenu(GreenBrute, distance=2, closeup=GreenBrute, result=Scratch10, combat=Attack, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Attack, near="YOU SEE A PACK OF TROLLS.", escape=12,
         strength=12)
     goto [Done, FightTrolls, StepBack, FightTrolls][Scratch10]
+    goto TrollsUnawareMenu
 
 TrollsUnawareMenu:
     EncounterMenu(GreenBrute, distance=2, closeup=GreenBrute, result=Scratch10, combat=Attack, wait=Mirror,
         flee=Mirror, advance=Mirror, parlay=Attack,
         near="YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU.", escape=10, strength=10)
     goto [Done, FightTrolls, StepBack, FightTrolls][Scratch10]
+    goto TrollsCharge
 
 TrollsCharge:
     SetupMonster(GreenBrute, distance=2, closeup=GreenBrute)
@@ -236,6 +248,7 @@ TrollsCharge:
     Approach()
     WaitReturnPressed()
     Approach()
+    goto FightTrolls
 
 FightTrolls:
     Morale = 100
@@ -254,6 +267,7 @@ CastleGate:
     if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto GateCallsThief }
     Scratch10 = VMenu("A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'", "GIVE THE PASSWORD", "FORCE THE GATE OPEN")
     goto [GivePassword, BouldersThrown][Scratch10]
+    goto GateRecognizesYou
 
     GateRecognizesYou:
     Text("YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'")
@@ -261,6 +275,7 @@ CastleGate:
 
     GateCallsThief:
     Text("YOU HEAR A DEEP VOICE, 'THIEF! YOU STOLE FROM LORD BANE!'")
+    goto BouldersThrown
 
 BouldersThrown:
     WaitReturnPressed()
@@ -292,6 +307,7 @@ HarmlessMage:
         strength=12)
     Portrait = None
     goto [MageFlees, MageBegs, StepBack][Scratch10]
+    goto MageBegs
 
 MageBegs:
     Text("'WAIT! I WAS JUST A MAGE SEARCHING FOR KNOWLEDGE WHEN TYRANTHRAXUS CAPTURED ME. I'VE BEEN FORCED TO WORK FOR HIM. SPARE ME AND I WILL LEAVE, NEVER TO RETURN!'")
@@ -332,6 +348,7 @@ ArguingGiants:
     if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto GiantsCallThief }
     if CastleFlags has Disguised { goto FrogsAndToads }
     if AlarmEndHour != 0 { goto GiantsSpotIntruders }
+    goto FrogsAndToads
 
     FrogsAndToads:
     Text("THIS TOWER IS OCCUPIED BY FOUR GIANTS. AS YOU COME IN THEY ARE IN THE MIDST OF AN ARGUMENT. THE BIGGEST ONE TURNS TO YOU AND SAYS, 'THEM LOOK SMART. THEM TELL US.'")
@@ -348,6 +365,7 @@ AnswerNo:
     Text("BEFORE HE CAN ATTACK THE OTHERS GRAB HIM AND SAY, 'YOU BETTER GO LITTLE MEN.")
     Scratch10 = Menu("STAY", "LEAVE")
     goto [GiantsAttackAnyway, StepBack][Scratch10]
+    goto AnswerYes
 
 AnswerYes:
     Text("AS THE GIANT TURNS IN TRIUMPH TO HIS COMPANIONS, THE OTHERS PICK UP THEIR CLUBS. 'WHAT THEY KNOW? WE KNOCK DUMB LITTLE MEN'S BRAINS OUT!'")
@@ -357,6 +375,7 @@ AnswerYes:
 
 GiantsAttackAnyway:
     Text("'OH WELL. CAN'T LET HERDREK HAVE ALL FUN.' THEY PICK UP THEIR CLUBS AND ATTACK.")
+    goto FightArguingGiants
 
 FightArguingGiants:
     WaitReturnPressed()
@@ -375,6 +394,7 @@ GiantsCallThief:
 
 GiantsSpotIntruders:
     Text("YOU SEE FOUR GIANTS. 'THEM THE NOT BELONG HERE! GET THEM!")
+    goto GiantsRaiseAlarm
 
 GiantsRaiseAlarm:
     StartAlarm()
@@ -422,6 +442,7 @@ BegoneOrWrath:
     Text("'BEGONE OR FEEL THE WRATH AND POWER OF TYRANTHRAXUS!' DO YOU LEAVE?")
     if YesNoMenu() == "YES" { goto FledCombat }
     Text("THEN FEEL MY WRATH!")
+    goto FightImpostor
 
 FightImpostor:
     Delay()

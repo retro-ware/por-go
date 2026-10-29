@@ -36,6 +36,7 @@ CampFriendlyCheck:
 
     CampByStage:
     goto [StageLodging, StageGames, StageKoboldWait, CampDayCheck][CampStage]
+    goto StageLodging
 
 StageLodging:
     Scratch1 = 4
@@ -48,6 +49,7 @@ StageGames:
 
 StageKoboldWait:
     Scratch1 = 7
+    goto StageNightCheck
 
 StageNightCheck:
     if Hours > 1 { Scratch1 = 5 }
@@ -73,6 +75,7 @@ def MakeAlliesNomads() {
     Scratch1 = PartyCount
     Scratch4 = NomadAllies + PartyCount
     if NomadAllies == 0 { return }
+    goto MakeAlliesLoop
 
     MakeAlliesLoop:
     SelectMember(Scratch1)
@@ -132,6 +135,7 @@ RetreatZoneLoop:
     if PartyY < Scratch8 { goto NextRetreatZone }
     if PartyX > Scratch7 { goto NextRetreatZone }
     if PartyY <= Scratch6 { goto RetreatToZone }
+    goto NextRetreatZone
 
     NextRetreatZone:
     Scratch10 += 1
@@ -187,6 +191,7 @@ WalkToHut:
     Scratch1 = PartyY * 12
     Scratch1 += PartyX
     Scratch10 = WalkPathToHut[Scratch1]
+    goto WalkToHutStep
 
     WalkToHutStep:
     if not WalkStep() { goto WalkToHut }
@@ -198,6 +203,7 @@ WalkToClearing:
     Scratch1 = PartyY * 12
     Scratch1 += PartyX
     Scratch10 = WalkPathToClearing[Scratch1]
+    goto WalkToClearingStep
 
     WalkToClearingStep:
     if not WalkStep() { goto WalkToClearing }
@@ -260,6 +266,7 @@ on move {
     Text("THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?")
     if YesNoMenu() == "YES" { goto ExitToWilderness }
     HoldMove = SkipMove
+    goto CheckLodgingExit
 
     CheckLodgingExit:
     SetSky()
@@ -283,6 +290,7 @@ on step {
 
 RoomEvents:
     goto [Done, NomadsHostile, KoboldRaid, Done, CampOutskirts, Done, MorningGreeting, HeadmanAsks][Scratch1]
+    goto event3
 
 on rest {
     SetSky()
@@ -322,9 +330,11 @@ CampOutskirts:
     goto [ExitToWilderness, NomadsGather][Scratch10]
     Text("YOU CHARGE INTO A GROUP OF SCRUFFY LOOKING NOMADS.")
     ShowNomads()
+    goto NomadFightNoSurprise
 
 NomadFightNoSurprise:
     Surprise = NoSurprise
+    goto NomadFight
 
 NomadFight:
     Morale = 100
@@ -344,12 +354,14 @@ NomadsHostile:
     SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
     Portrait = None
     goto [NomadsSpotYou, NomadsSpotYou, NomadsSpotYou, HeadmanRallies][NomadFightCount]
+    goto NomadsSpotYou
 
 NomadsSpotYou:
     Text("A GROUP OF NOMADS SPOT YOU. THEY SHOUT AND CHARGE. AS THEY COME CLOSER THEIR NUMBERS SWELL WITH ARRIVALS.")
     PressToContinue()
     NomadEncounterMenu()
     goto [Done, NomadFightNoSurprise, ExitToWilderness][Scratch10]
+    goto HeadmanRallies
 
 HeadmanRallies:
     Text("THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE.")
@@ -359,6 +371,7 @@ HeadmanRallies:
         flee=Attack, advance=Attack, parlay=Attack, escape=12, strength=12)
     Portrait = None
     goto [Done, TribeFight, ExitToWilderness][Scratch10]
+    goto TribeFight
 
 TribeFight:
     Surprise = NoSurprise
@@ -370,6 +383,7 @@ TribeFight:
     LoadMonster(Shaman, count=1, icon=Shaman)
     LoadMonster(Nomad, count=49, icon=Nomad)
     Treasure(gold=5000)
+    goto TribeCombat
 
 TribeCombat:
     Combat()
@@ -384,6 +398,7 @@ def CheckFled() {
 
 LeaveCamp:
     Mark4 = 1
+    goto ExitToWilderness
 
 ExitToWilderness:
     RedrawView()
@@ -392,9 +407,11 @@ ExitToWilderness:
     if MarkFlags4 has FoughtTribe { goto MarkLeftCamp }
     Scratch10 = MarkFlags4 & FeastAccepted
     if Scratch10 != 1 { goto LoadWilderness }
+    goto MarkLeftCamp
 
     MarkLeftCamp:
     if QuestNomads != Rewarded { QuestNomads = RewardDue }
+    goto LoadWilderness
 
     LoadWilderness:
     NewECL(Wilderness)
@@ -437,6 +454,7 @@ NomadsGather:
     Text("'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS.")
     PressToContinue()
     CampStage = Lodged
+    goto LodgingRest
 
 LodgingRest:
     RedrawView()
@@ -448,6 +466,7 @@ LodgingRest:
     RestSaveY = PartyY
     RestSaveFacing = Facing
     Program(9)
+    goto MorningGreeting
 
 MorningGreeting:
     Portrait = NomadElder
@@ -456,6 +475,7 @@ MorningGreeting:
     ApproachHidePortrait()
     Text("THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'")
     ApproachHidePortrait()
+    goto CampGames
 
 CampGames:
     CampStage = Games
@@ -498,6 +518,7 @@ GuardEscort:
     MaxDist = 2
     NomadEncounterMenu()
     goto [Done, NomadFight, ExitToWilderness][Scratch10]
+    goto HeadmanAsks
 
 HeadmanAsks:
     Portrait = NomadElder
@@ -527,25 +548,30 @@ KoboldRaid:
 
     RaidCries:
     HearWarCries()
+    goto RaidByStage
 
     RaidByStage:
     if MarkFlags4 has FoughtTribe { goto HostileRaid }
     if Cell == 4 { goto HostileRaid }
     goto [KoboldHorde, KoboldsMelee, KoboldsMelee, KoboldLeader][KoboldRaidStage]
+    goto KoboldHorde
 
 KoboldHorde:
     SetupMonster(Kobold, distance=2, closeup=Kobold)
     KoboldRaidStage = 1
     Text("A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS.")
+    goto KoboldEncounter
 
 KoboldEncounter:
     PressToContinue()
     KoboldEncounterMenu()
     goto [Done, KoboldFightAllied][Scratch10]
     if RetreatOrFight() { goto KoboldRaid }
+    goto KoboldFightAllied
 
 KoboldFightAllied:
     RollNomadAllies()
+    goto KoboldFight
 
 KoboldFight:
     Surprise = NoSurprise
@@ -553,6 +579,7 @@ KoboldFight:
     ClearMonsters()
     if NomadAllies == 0 { goto LoadKobolds }
     LoadMonster(Nomad, count=NomadAllies, icon=Nomad)
+    goto LoadKobolds
 
     LoadKobolds:
     LoadMonster(Kobold0, count=Scratch9, icon=Kobold)
@@ -604,6 +631,7 @@ KoboldLeader:
 FinishTogether:
     Text("'THEN LET US DO IT!'")
     NomadAllies = 3
+    goto KoboldLeaderFight
 
 KoboldLeaderFight:
     Surprise = NoSurprise
@@ -614,6 +642,7 @@ KoboldLeaderFight:
     LoadMonster(Hassad, count=1, icon=Hassad)
     LoadMonster(ThLvlFighter41, count=2, icon=ThLvlFighter)
     MakeAlliesNomads()
+    goto LoadKoboldLeader
 
     LoadKoboldLeader:
     Treasure(gold=3000)
@@ -623,6 +652,7 @@ KoboldLeaderFight:
     CheckAttackedAlly()
     if MarkFlags4 has AttackedNomadAlly { goto BetrayedOrFled }
     if CombatEnd != PartyFled { goto RaidWon }
+    goto BetrayedOrFled
 
     BetrayedOrFled:
     MarkFlags4 |= FeastAccepted|FoughtTribe
@@ -645,11 +675,13 @@ KoboldLeaderFight:
 HostileRaid:
     NomadAllies = 0
     goto [HostileHorde, HostileBand, HostileBand, HostileLeader][KoboldRaidStage]
+    goto HostileHorde
 
 HostileHorde:
     SetupMonster(Kobold, distance=2, closeup=Kobold)
     KoboldRaidStage = 1
     Text("A HORDE OF KOBOLDS IS ATTACKING THE CAMP.")
+    goto HostileEncounter
 
 HostileEncounter:
     PressToContinue()

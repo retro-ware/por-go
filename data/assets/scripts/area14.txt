@@ -39,12 +39,15 @@ DoorTrapSquare:
     if Scratch10 == 1 { goto Done }
     if TrapSquareDone6 == 0 { goto DoorTrapCheck }
     if Scratch9 == 3 { goto DoorTrapOutcome }
+    goto DoorTrapCheck
 
     DoorTrapCheck:
     CheckTrap()
+    goto DoorTrapOutcome
 
     DoorTrapOutcome:
     goto [DoorTrapSprung, Done, DoorTrapDisarmed][TrapResult]
+    goto DoorTrapDisarmed
 
 DoorTrapDisarmed:
     TrapSquareDone[Scratch9] = 1
@@ -95,6 +98,7 @@ BackstabThief:
     Print(".  HE TRIES TO ATTACK THE PARTY BUT YOU STOP HIM.  WHAT WILL YOU DO?")
     Scratch4 = Menu("ATTACK HIM", "LET HIM GO")
     goto [AttackThief, Done][Scratch4]
+    goto ThiefBackstabs
 
     ThiefBackstabs:
     Print(", BACKSTABS A PARTY MEMBER THEN DISAPPEARS THROUGH THE WALL.")
@@ -122,6 +126,7 @@ LootRoom:
     Scratch10 = LootRoomDone[Scratch9]
     if Scratch10 == 1 { goto Done }
     goto [LootPile, CabinetsMenu, RugsAndTapestries, WoodenCabinet, CasketTable, WeaponPile][Scratch9]
+    goto LootPile
 
 LootPile:
     if Scratch1 = RoomsLooted & LootPileTaken; Scratch1 != 0 { goto Done }
@@ -155,10 +160,12 @@ CabinetA:
 LockedMenu:
     LockAttempt = 0
     Text("IT IS LOCKED.  HOW WILL YOU OPEN THE LOCK?")
+    goto OpenLockMenu
 
 OpenLockMenu:
     Scratch1 = Menu("PICK", "BREAK", "CAST KNOCK", "LEAVE")
     goto [PickLock, BreakLock, CastKnock, LeaveLock][Scratch1]
+    goto CastKnock
 
 CastKnock:
     Spell(31, Scratch5, Scratch6)
@@ -228,6 +235,7 @@ CabinetC:
     if CabinetCLock == Looted { goto CabinetEmpty }
     CheckTrap()
     goto [CabinetCNeedle, CabinetCAvoidTrap, CabinetCOpen][TrapResult]
+    goto CabinetCOpen
 
 CabinetCOpen:
     Scratch2 = 2
@@ -266,11 +274,13 @@ WoodenCabinet:
     Text("IN FRONT OF YOU IS A WOODEN CABINET.  WHAT WILL YOU DO?")
     Scratch1 = Menu("EXAMINE THE CABINET", "LEAVE IT")
     goto [ExamineCabinet, Done][Scratch1]
+    goto ExamineCabinet
 
 ExamineCabinet:
     if ScrollCaseLock == Looted { goto ScrollCabinetEmpty }
     CheckTrap()
     goto [ScrollCabinetGas, ScrollCabinetAvoidTrap, ScrollCabinetOpen][TrapResult]
+    goto ScrollCabinetOpen
 
 ScrollCabinetOpen:
     Scratch2 = 3
@@ -302,16 +312,19 @@ CasketTable:
     Text("BEFORE YOU IS A TABLE WITH FOUR SMALL CASKETS ON TOP OF IT.  WHAT WILL YOU DO?")
     Scratch1 = Menu("SEARCH A CASKET", "LEAVE")
     goto [ChooseCasket, Done][Scratch1]
+    goto ChooseCasket
 
 ChooseCasket:
     Text("WHICH CASKET WILL YOU SEARCH?")
     Scratch1 = Menu("A", "B", "C", "D")
     goto [CasketA, CasketB, CasketC, CasketD][Scratch1]
+    goto CasketA
 
 CasketA:
     if Scratch1 = GemsCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketANeedle, CasketAvoidTrap, CasketAOpen][TrapResult]
+    goto CasketAOpen
 
 CasketAOpen:
     Scratch2 = 4
@@ -339,6 +352,7 @@ CasketB:
     if Scratch1 = JewelryCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketBDart, CasketAvoidTrap, CasketBOpen][TrapResult]
+    goto CasketBOpen
 
 CasketBOpen:
     Scratch2 = 5
@@ -361,6 +375,7 @@ CasketC:
     if Scratch1 = BigGemsCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketCPowder, CasketAvoidTrap, CasketCOpen][TrapResult]
+    goto CasketCOpen
 
 CasketCOpen:
     Scratch2 = 6
@@ -383,6 +398,7 @@ CasketD:
     if Scratch1 = PearlsCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketDDarts, CasketAvoidTrap, CasketDOpen][TrapResult]
+    goto CasketDOpen
 
 CasketDOpen:
     Scratch2 = 7
@@ -410,6 +426,7 @@ WeaponPile:
     Text("INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?")
     Scratch1 = Menu("TAKE SOME", "SEARCH THEM", "LEAVE THEM")
     goto [TakeWeapons, SearchWeapons, LeaveWeapons][Scratch1]
+    goto TakeWeapons
 
 TakeWeapons:
     if 0 == WeaponPileGasDone { goto WeaponPileAmbush }
@@ -427,6 +444,7 @@ LeaveWeapons:
 SearchWeapons:
     CheckTrap()
     goto [WeaponPileAmbush, WeaponTrapBypassed, WeaponTrapDisarmed][TrapResult]
+    goto WeaponTrapDisarmed
 
 WeaponTrapDisarmed:
     WeaponPileGasDone = 1
@@ -456,6 +474,7 @@ WeaponPileAmbush:
     AmbushFewThieves:
     Scratch3 = 5
     Scratch2 = 0
+    goto AmbushFight
 
     AmbushFight:
     Scratch1 = Random(3)
@@ -493,9 +512,11 @@ ThievesFlee:
     Text("AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?")
     Scratch1 = Menu("YES", "NO")
     goto [ChaseThieves, Done][Scratch1]
+    goto ChaseThieves
 
 ChaseThieves:
     Scratch6 = 0
+    goto ChaseStep
 
 ChaseStep:
     Scratch1 = ChaseSteps[Scratch6]
@@ -504,6 +525,7 @@ ChaseStep:
     if Scratch6 == 3 { goto ThievesSplit }
     if Scratch6 == 11 { goto CatchGuildMaster }
     if Scratch6 == 15 { goto ChaseEnd }
+    goto ChaseNextStep
 
 ChaseNextStep:
     Scratch6 += 1
@@ -513,6 +535,7 @@ ThievesSplit:
     Text("AS YOU ENTER THIS ROOM THE TWO THIEVES SPLIT; ONE GOING THROUGH THE EAST DOOR, THE OTHER GOING THROUGH THE SOUTH.  WHICH PATH WILL YOU TAKE?")
     Scratch1 = Menu("SOUTH", "EAST", "DON'T FOLLOW")
     goto [ChaseSouth, ChaseNextStep, Done][Scratch1]
+    goto ChaseSouth
 
 ChaseSouth:
     Scratch6 += 8
@@ -524,6 +547,7 @@ CatchGuildMaster:
     Text("YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?")
     Scratch1 = Menu("ATTACK", "RELEASE")
     goto [AttackThief, ReleaseGuildMaster][Scratch1]
+    goto ReleaseGuildMaster
 
 ReleaseGuildMaster:
     Text("AFTER YOU RELEASE HIM THE THIEF SLOWLY WALKS TOWARD THE FAR DOOR THANKING YOU ALL THE WAY.  PARTWAY THROUGH THE DOOR HE SAYS, 'SUCKERS', THEN SPRINTS AWAY.")
@@ -531,6 +555,7 @@ ReleaseGuildMaster:
 
 ChaseEnd:
     if ThievesKilled > 15 { goto CatchGuildMaster }
+    goto ThiefAmbush
 
 ThiefAmbush:
     if GuildAmbushDone != 0 { goto Done }
@@ -597,6 +622,7 @@ def WalkSteps() {
         Delay()
         return
     }
+    goto WalkStepLoop
 
     WalkStepLoop:
     if Scratch2 > Scratch1 { return }
@@ -668,6 +694,7 @@ def CheckTrap() {
     PartyDetectsTrap:
     Text("YOUR PARTY DETECTS A TRAP!")
     Delay()
+    goto TrapMenu
 
     TrapMenu:
     Text("WHAT DO YOU WANT TO DO?")

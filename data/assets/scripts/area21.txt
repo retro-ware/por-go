@@ -10,6 +10,7 @@ on move {
 BoardBoat:
     if SkyColor21 == 8 { goto SailToPhlan }
     Picture(Ship)
+    goto SailToPhlan
 
     SailToPhlan:
     Text("YOU BOARD A BOAT.")
@@ -21,6 +22,7 @@ BoardBoat:
 
 StayAtKeep:
     HoldMove = SkipMove
+    goto EnterDone
 
 EnterDone:
     Scratch10 = ~Inside & Cell
@@ -34,6 +36,7 @@ on step {
     Picture(None)
     Scratch6 = 0
     AuxCounter = 0
+    goto FindCellLoop
 
     FindCellLoop:
     if AuxCounter == Scratch10 { goto CellDispatch }
@@ -93,6 +96,7 @@ DeadElf:
     Text("THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT.")
     PressToContinue()
     if Search != Searching { goto ElfMenu }
+    goto ElfScroll
 
 ElfScroll:
     Text("IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ...")
@@ -113,6 +117,7 @@ ElfScroll:
 ElfMenu:
     Scratch1 = VMenu("WHAT DO YOU DO?", "LEAVE", "SEARCH", "ATTACK", "TALK")
     goto [ClearExit, ElfScroll, HackElf, TalkToElf][Scratch1]
+    goto TalkToElf
 
 TalkToElf:
     Scratch1 = Parlay(0, 0, 0, 0, 0)
@@ -126,6 +131,7 @@ HackElf:
 
 ElfLooted:
     Text("YOU SEE THE PITIFUL REMAINS OF A DEAD ELF.  EVERYTHING OF VALUE HAS BEEN TAKEN OR DESTROYED.")
+    goto ElfDone
 
 ElfDone:
     Picture(None)
@@ -149,6 +155,7 @@ PatrolRoad:
     PatrolRoll:
     Scratch1 = Random(5)
     if 3 != Scratch1 { exit }
+    goto UndeadPatrol
 
 UndeadPatrol:
     SetupMonster(Skeleton, distance=2, closeup=Skeleton)
@@ -160,12 +167,14 @@ UndeadPatrol:
     Text("AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?")
     YesNoMenu()
     goto [PatrolLeaves, PatrolFight][Scratch1]
+    goto PatrolMenu
 
     PatrolMenu:
     EncounterMenu(Skeleton, distance=0, closeup=Skeleton, result=Scratch1, combat=Attack, wait=CloseIn,
         flee=Attack, advance=Mirror, parlay=Talk, near="A PACK OF UNDEAD SUDDENLY APPEARS.",
         escape=0, strength=0)
     goto [ClearExit, PatrolFight, RunAway, PatrolParlay][Scratch1]
+    goto PatrolParlay
 
 PatrolParlay:
     Scratch1 = Parlay(0, 0, 0, 0, 0)
@@ -179,6 +188,7 @@ PatrolParlay:
     }
     if $AuxMonsterName != $AuxText { goto WrongPassword }
     PatrolPassword = 1
+    goto PatrolLeaves
 
 PatrolLeaves:
     Text("THE UNDEAD LEAVE.")
@@ -187,6 +197,7 @@ PatrolLeaves:
 
 WrongPassword:
     Text("THEY DIDN'T LIKE THAT WORD.")
+    goto PatrolFight
 
 PatrolFight:
     Scratch1 = 3
@@ -217,6 +228,7 @@ Smithy:
     if SmithySeen > 0 { goto SmithyFrogCheck }
     Text("A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY.")
     SmithySeen = 1
+    goto SmithyFrogCheck
 
     SmithyFrogCheck:
     if SmithyFrogs == FrogsDefeated { exit }
@@ -230,10 +242,12 @@ Smithy:
         flee=Attack, advance=Attack, parlay=Talk, near="THE CROAKING RISES IN VOLUME.", escape=0,
         strength=0)
     goto [ClearExit, FrogsFight, RunAway, FrogsParlay][Scratch1]
+    goto FrogsParlay
 
 FrogsParlay:
     Scratch1 = Parlay(0, 0, 0, 0, 0)
     Text("CROAK!")
+    goto FrogsFight
 
 FrogsFight:
     Scratch1 = 0
@@ -252,6 +266,7 @@ SmithyHammer:
     Print(" DO YOU TAKE IT?")
     YesNoMenu()
     goto [TakeHammer, ClearExit][Scratch1]
+    goto TakeHammer
 
 TakeHammer:
     ClearMonsters()
@@ -276,12 +291,14 @@ Barracks:
     HauntsSeen = Yes
     Text("A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING.")
     PressToContinue()
+    goto HauntsMenu
 
     HauntsMenu:
     EncounterMenu(Spectre, distance=2, closeup=Spectre, result=Scratch1, combat=Mirror, wait=Mirror,
         flee=Mirror, advance=Mirror, parlay=Talk,
         near="GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL", escape=0, strength=0)
     goto [ClearExit, HauntsWail, RunAway, HauntsParlay][Scratch1]
+    goto HauntsWail
 
 HauntsWail:
     Text("'WOE, WOOOE, OH WOE,' THE FIGURES CRY PITEOUSLY.")
@@ -297,6 +314,7 @@ HauntsParlay:
     Text("WRONG WORD. ")
     Picture(None)
     Print("THE MOANING CONTINUES.")
+    goto BarracksSearch
 
 BarracksSearch:
     if Search != Searching { exit }
@@ -311,6 +329,7 @@ HauntsAppease:
     Picture(None)
     Scratch1 = 5
     HauntsAppeased = Yes
+    goto DiaryGems
 
 DiaryGems:
     if DiaryGemsTaken == Yes { exit }
@@ -320,6 +339,7 @@ DiaryGems:
     Text("DO YOU TAKE THE GEMS?")
     YesNoMenu()
     goto [TakeGems, ClearExit][Scratch1]
+    goto TakeGems
 
 TakeGems:
     ClearMonsters()
@@ -364,6 +384,7 @@ OrcRaidDone:
 
 EmptyHallCheck:
     if HallEmptyFlag != Yes { exit }
+    goto EmptyHall
 
 EmptyHall:
     if Scratch5 == 10 { exit }
@@ -401,6 +422,7 @@ MagicGear:
     Print("DO YOU TAKE IT?")
     YesNoMenu()
     goto [TakeGear, ClearExit][Scratch1]
+    goto TakeGear
 
 TakeGear:
     ClearMonsters()
@@ -428,6 +450,7 @@ FerranSpirit:
         flee=Mirror, advance=Mirror, parlay=Talk, near="A PALE FORM RISES BEFORE YOU.", escape=0,
         strength=0)
     goto [ClearExit, FerranFight, RunAway, FerranParlay][Scratch1]
+    goto FerranParlay
 
 FerranParlay:
     Scratch1 = Parlay(0, 0, 0, 0, 0)
@@ -451,6 +474,7 @@ FerranParlay:
     Print("DO YOU: ")
     Scratch1 = Menu("TELL THE TRUTH?", "LIE?", "RUN AWAY?")
     goto [TellFerranTruth, LieToFerran, RunAway][Scratch1]
+    goto LieToFerran
 
 LieToFerran:
     Text("'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY.")
@@ -466,6 +490,7 @@ TellFerranTruth:
     Text("")
     if MagicGearTaken == Yes { goto FerranPassword }
     Text("TO FIND HELP FOR YOUR BATTLES, YOU SHOULD PASS THROUGH THE ILLUSIONARY WALL IN THE ARMORY OF THIS KEEP.")
+    goto FerranPassword
 
     FerranPassword:
     Print("TO PASS MY GUARDS ON THE WAY OUT, SPEAK THE WORD 'SAMOSUD'.  NOW WE ARE FREED, OUR DUTY DONE!' FERRAN FADES AWAY.")
@@ -499,6 +524,7 @@ RunAway:
     PartyY = FleeYTable[AuxTemp9]
     Text("")
     CallRedraw()
+    goto ClearExit
 
 ClearExit:
     Picture(None)
@@ -530,6 +556,7 @@ LoadEncounter:
     if Scratch6 != 0 { goto LoadEncounterGroup }
     ClearMonsters()
     Scratch6 = 1
+    goto LoadEncounterGroup
 
     LoadEncounterGroup:
     LoadMonster(AuxRoll, count=AuxEncResult, icon=AuxEncResult2)

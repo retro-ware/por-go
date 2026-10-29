@@ -20,10 +20,12 @@ def CheckAlarm() {
     if Search == Searching { goto AlarmSounding }
     AuxRoll = Random(9)
     if AuxRoll != 0 { goto AlarmOnReturn }
+    goto AlarmSounding
 
     AlarmSounding:
     Text("AN ALARM IS SOUNDING.")
     Delay()
+    goto AlarmOnReturn
 
     AlarmOnReturn:
     return 1 < 0
@@ -82,6 +84,7 @@ on step {
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch10 = Random(Scratch1)
     if Scratch10 == 0 { goto L_9BD1 }
+    goto RoomEvents
 
     RoomEvents:
     Scratch1 = Cell & 31
@@ -115,12 +118,14 @@ on load {
 
 FleeCombat:
     CombatEnd = PartyFled
+    goto AfterCombat
 
 AfterCombat:
     if CombatEnd == FightOver { return }
     RaiseAlarm()
     CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
     if CombatEnd != PartyFled { return }
+    goto StepBack
 
 StepBack:
     HoldMove = SkipMove
@@ -162,6 +167,7 @@ on rest {
 
 PatrolSeesYou:
     Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
+    goto PatrolAdvances
 
 PatrolAdvances:
     PressToContinue()
@@ -170,6 +176,7 @@ PatrolAdvances:
         strength=9)
     Portrait = None
     goto [Done, PatrolFight, FleeCombat, PatrolFight][Scratch10]
+    goto PatrolQuestions
 
 PatrolQuestions:
     Surprise = NoSurprise
@@ -184,6 +191,7 @@ PatrolQuestions:
     Text("WHAT ARE YOU DOING HERE?")
     Scratch10 = Parlay(0, 1, 1, 2, 0)
     gosub [AlertSorry, PatrolIntruders, AskPassword][Scratch10]
+    goto PatrolFight
 
 PatrolFight:
     Delay()
@@ -219,6 +227,7 @@ AskAuthority:
     NewLine()
     $AuxInputText = InputString(12)
     Compare("TYRANTHRAXUS", $AuxInputText)
+    goto CheckAnswer
 
 CheckAnswer:
     if (!=) { goto Imposters } # "TYRANTHRAXUS" != $AuxInputText
@@ -248,6 +257,7 @@ FighterBuilding:
     if CastleFlags2 has OverseerFight { exit }
     if AlarmEndHour != 0 { goto DoorSlams }
     if CastleFlags has Disguised { goto FighterConfronts }
+    goto DoorSlams
 
     DoorSlams:
     Text("THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. ")
@@ -269,17 +279,20 @@ FighterBuilding:
     if Scratch10 == 2 { goto FighterRetreats }
     Text("")
     gosub [AskAuthority, AskPassword][Scratch10]
+    goto FighterHitsButton
 
 FighterHitsButton:
     Text("HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'")
     Scratch10 = Menu("STAY AND FIGHT", "RUN")
     RaiseAlarm()
     goto [FighterFight, FleeCombat][Scratch10]
+    goto FighterFight
 
 FighterFight:
     Morale = 50
     if CastleFlags2 has FourGiants { goto LoadFighter }
     Text("AS YOU START TO ATTACK HIM, FOUR GIANTS BURST OUT OF A NEARBY BUILDING.")
+    goto LoadFighter
 
     LoadFighter:
     ClearMonsters()
@@ -297,6 +310,7 @@ FighterFight:
 FighterRetreats:
     Text("HE QUICKLY RETREATS THROUGH THE DOOR AND SLAMS IT, YELLING, 'INTRUDERS!'")
     DelayRaiseAlarm()
+    goto FourGiantsCharge
 
 FourGiantsCharge:
     if CastleFlags2 has FourGiants { goto Done }
@@ -307,6 +321,7 @@ FourGiantsCharge:
         flee=Attack, advance=Mirror, parlay=Attack, near="THEY COME RUNNING TOWARD YOU.", escape=12,
         strength=12)
     goto [Done, GiantsFight, FleeCombat][Scratch10]
+    goto GiantsFight
 
 GiantsFight:
     ClearMonsters()
@@ -325,6 +340,7 @@ PigstyBarracks:
     PressToContinue()
     if CastleFlags has Disguised { goto BarracksGiants }
     if AlarmEndHour != 0 { goto ThemIntruders }
+    goto BarracksGiants
 
     BarracksGiants:
     EncounterMenu(FireGiant, distance=2, closeup=FireGiant, result=Scratch10, combat=Attack, wait=CloseIn,
@@ -334,6 +350,7 @@ PigstyBarracks:
     Text("'WHAT YA DOIN' HERE?'")
     Scratch10 = Parlay(0, 1, 2, 2, 3)
     goto [GiantsGivePaper, GiantsReadList, GetLostWimp, ThreatenUs][Scratch10]
+    goto GiantsGivePaper
 
 GiantsGivePaper:
     Text("'SORRY, SIR. YEAH, WE CAN GET YA TO THE BOSS. THIS PAPER HAS THE PASSWORDS.'")
@@ -341,6 +358,7 @@ GiantsGivePaper:
 
 GiantsReadList:
     Text("'WE DO SO KNOW THE PASSWORDS! YOU ALWAYS THINK YOU'RE SO SMART. LET'S SEE IF YOU CAN READ TODAY'S LIST.'")
+    goto ShowPasswords
 
 ShowPasswords:
     PressToContinue()
@@ -364,9 +382,11 @@ GetLostWimp:
     Text("'GET LOST, WIMP! IF YA DON'T BEAT IT WE'LL BEAT YOU! HA! HA!' THE GIANT LEADER POKES THE GIANT NEXT TO HIM, 'BEAT IT, BEAT THEM! GET IT?!'")
     Scratch10 = Menu("STAY", "LEAVE")
     goto [SaidGetLost, StepBack][Scratch10]
+    goto SaidGetLost
 
 SaidGetLost:
     Text("'I SAID GET LOST!' ")
+    goto GiantsAdvance
 
 GiantsAdvance:
     Print("THE GIANT READIES HIS WEAPON AND ADVANCES. THE OTHERS FOLLOW SUIT.")
@@ -382,6 +402,7 @@ ThemIntruders:
     EncounterMenu(FireGiant, distance=2, closeup=FireGiant, result=Scratch10, combat=Attack, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Attack, near="'GET EM!'", escape=12, strength=12)
     goto [Done, GiantsAdvance, FleeCombat, GiantsAdvance][Scratch10]
+    goto PaperOnGround
 
 PaperOnGround:
     if CastleFlags2 has PasswordsRead { exit }
@@ -395,6 +416,7 @@ Armory:
     Text("YOU HAVE ENTERED AN ARMORY. INSIDE IS A LARGE ASSORTMENT OF ARMOR AND WEAPONS.")
     PressToContinue()
     ArmoryVisited |= Visited
+    goto TakeArmoryLoot
 
     TakeArmoryLoot:
     Text("DO YOU WANT TO TAKE ANYTHING?")
@@ -409,11 +431,13 @@ Kitchen:
     Picture(Gnoll)
     Text("YOU ENTER A ROOM THAT REEKS OF SMOKE AND BURNED FOOD. YOU SEE THREE HUMAN SLAVES COOKING MEAT, PEELING POTATOES, AND BEING BEATEN BY VISCIOUS LOOKING GNOLL.")
     PressToContinue()
+    goto KitchenMenu
 
 KitchenMenu:
     Scratch10 = VMenu("WHAT DO YOU DO?", "KILL THE OVERSEER AND FREE THE SLAVES", "GO BACK OUTSIDE",
         "TALK TO THE OVERSEER")
     goto [FreeSlaves, LeaveKitchen, TalkOverseer][Scratch10]
+    goto FreeSlaves
 
 FreeSlaves:
     Text("THE GNOLL TURNS TO FLEE. AS HE RUNS BY, ONE OF THE SLAVES TRIPS HIM. YOU ADVANCE AND CUT THE OVERSEER'S THROAT.")
@@ -469,6 +493,7 @@ ScribesHall:
     Portrait = None
     RaiseAlarm()
     goto [Done, OfficersAttack, FleeCombat][Scratch10]
+    goto OfficerAsks
 
     OfficerAsks:
     EncounterMenu(Mage, distance=2, body=MailCloak, result=Scratch10, combat=Attack, wait=CloseIn, flee=Attack,
@@ -476,12 +501,14 @@ ScribesHall:
         escape=12, strength=12)
     Portrait = None
     goto [Done, OfficersAttack, FleeCombat, OfficerParlay][Scratch10]
+    goto OfficerParlay
 
 OfficerParlay:
     Text("WHAT ARE YOU DOING HERE?")
     Scratch10 = Parlay(0, 1, 1, 2, 0)
     Text("")
     gosub [AskAuthority, Imposters, AskPassword][Scratch10]
+    goto OfficersAttack
 
 OfficersAttack:
     Text("THE SIX SCRIBES DIVE FOR COVER AS THE TWO OFFICERS ATTACK.")
@@ -536,6 +563,7 @@ BarbarianReport:
 
 RecordsBuilding:
     Text("YOU ARE IN A BUILDING FULL OF RECORDS. ")
+    goto ReadRecordsMenu
 
 ReadRecordsMenu:
     Print("DO YOU WISH TO SPEND HOURS READING THE RECORDS?")
@@ -543,14 +571,17 @@ ReadRecordsMenu:
     Scratch10 = Random(1)
     if AlarmEndHour == 0 { goto ReadRecords }
     if Scratch10 == 0 { goto L_9BD1 }
+    goto ReadRecords
 
 ReadRecords:
     if Hours > 17 { goto ReportByProgress }
     Scratch10 = Random(19)
     if Scratch10 < 3 { goto ScribeArrives }
+    goto ReportByProgress
 
     ReportByProgress:
     goto [RedWizardsReport, TyranthraxusPattern, NeedClearArea][ReportsFound]
+    goto RedWizardsReport
 
 RedWizardsReport:
     ReportsFound = RedWizardsFound

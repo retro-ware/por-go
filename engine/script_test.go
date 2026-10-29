@@ -38,6 +38,7 @@ func TestScriptRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatalf("area %d: decode: %v", block, err)
 			}
+			want.dropNextGotos() // the text's goto before a label is no jump (a few originals have one: it does nothing)
 			text, err := WriteScript(want, names)
 			if err != nil {
 				t.Errorf("area %d: write: %v", block, err)

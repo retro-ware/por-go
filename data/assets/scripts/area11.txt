@@ -14,6 +14,7 @@ on step {
     Scratch10 = ~Inside & Cell
     if Scratch10 == 0 { goto LeaveArea }
     AuxCounter = 10
+    goto FindCellLoop
 
     FindCellLoop:
     if AuxCounter == Scratch10 { goto CellDispatch }
@@ -61,6 +62,7 @@ CellDispatch:
     if TrainerCooldown != 0 { TrainerCooldown -= 1 }
     goto [ReadNotices, ReadDoorSign, ClericTrainer, MagicUserTrainer, EnterArena, FightersSign,
         FighterTrainer, ThiefTrainer, RoguesSign][AuxCounter]
+    goto ReadNotices
 
 ReadNotices:
     if NoticesRead > 0 { exit }
@@ -106,6 +108,7 @@ EnterArena:
     Text("THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'")
     YesNoMenu()
     goto [ChooseDuelist, OfferPartner][Scratch1]
+    goto ChooseDuelist
 
 ChooseDuelist:
     Who("WHO WILL DUEL?")
@@ -125,6 +128,7 @@ OfferPartner:
     Text("'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'")
     YesNoMenu()
     goto [RollHireling, DeclinePartner][Scratch1]
+    goto RollHireling
 
 RollHireling:
     if PartnerTries > 7 { goto NoHirelingLeft }
@@ -138,6 +142,7 @@ RollHireling:
     if Scratch1 < 195 { goto HireCurate }
     if Scratch1 < 220 { goto HireHero }
     if Scratch1 < 240 { goto HireTheurgist }
+    goto NoHirelingLeft
 
     NoHirelingLeft:
     Text("'THERE IS NO ONE WHO WILL GO WITH YOU.'")
@@ -184,6 +189,7 @@ RollHireling:
     HireTheurgist:
     Scratch2 = 7
     $AuxMonsterName = "THEURGIST"
+    goto OfferHireling
 
     OfferHireling:
     if Scratch2 <= 1 { $AuxText = "1 SHARE" }
@@ -198,6 +204,7 @@ RollHireling:
     Print(". IS THIS ACCEPTABLE?'")
     YesNoMenu()
     goto [AcceptHireling, ConsiderAnother][Scratch1]
+    goto AcceptHireling
 
 AcceptHireling:
     CheckPartyFull()
@@ -205,11 +212,13 @@ AcceptHireling:
     Scratch2 = Scratch2 * 5
     Scratch2 += 50
     AddNPC(Scratch1, Scratch2)
+    goto ConsiderAnother
 
 ConsiderAnother:
     Text("'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'")
     YesNoMenu()
     goto [RollHireling, DeclinePartner][Scratch1]
+    goto DeclinePartner
 
 DeclinePartner:
     PartnerDeclined = 1
@@ -248,6 +257,7 @@ AskTrain:
     Print("HERE. DO YOU WANT TO TRAIN?'")
     YesNoMenu()
     goto [OpenTraining, ClearAndExit][Scratch1]
+    goto OpenTraining
 
 OpenTraining:
     Program(0)

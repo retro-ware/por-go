@@ -17,6 +17,7 @@ on step {
 CellDispatch:
     Scratch7 = Cell & ~Inside
     goto [Done, EscortIn, RestrictedGuards, QuartersEnter, ClimbableWall, DwarfAttackCheck][Scratch7]
+    goto AlarmCheck
 
 AlarmCheck:
     if OutpostConquered != 0 { goto CellDispatch }
@@ -30,6 +31,7 @@ AlarmCheck:
         Text("THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS.")
         goto CellDispatch
     }
+    goto GuardsSpotYou
 
 GuardsSpotYou:
     SetupMonster(Fighter16, distance=2, body=LeatherHarness)
@@ -47,6 +49,7 @@ EscortIn:
     WaitReturnPressed()
     Scratch6 = 0
     EscortedIn = Escorted
+    goto EscortStep
 
     EscortStep:
     Scratch1 = RouteStepTable[Scratch6]
@@ -66,6 +69,7 @@ def WalkSteps() {
         Delay()
         return
     }
+    goto WalkStepLoop
 
     WalkStepLoop:
     if Scratch2 > Scratch1 { return }
@@ -158,6 +162,7 @@ RestrictedGuards:
     Text("THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?")
     Scratch1 = Menu("RETURN", "ATTACK", "BRIBE")
     goto [BackToQuarters, AttackGuards, AngeredGuards][Scratch1]
+    goto BackToQuarters
 
 BackToQuarters:
     Text("YOU GO BACK TO YOUR QUARTERS.")
@@ -171,6 +176,7 @@ AngeredGuards:
     Text("YOU'VE ANGERED THE GUARDS.  THEY DEMAND THAT YOU RETURN TO YOUR QUARTERS.  WHAT WILL YOU DO?")
     Scratch1 = Menu("GO BACK INSIDE.", "ATTACK GUARDS.")
     goto [BackToQuarters, AttackGuards][Scratch1]
+    goto AttackGuards
 
 AttackGuards:
     AlarmFightScore = 0
@@ -195,9 +201,11 @@ AttackGuards:
     Text("MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?")
     Scratch1 = Menu("SURRENDER", "ATTACK")
     goto [Surrender, GuardWaveFight][Scratch1]
+    goto Surrender
 
 Surrender:
     Text("YOU SURRENDER.  THEY STRIP YOU OF ALL POSSESSIONS AND TOSS YOU OUT INTO THE WILDERNESS.'")
+    goto StripAndExpel
 
 StripAndExpel:
     Rob(1, 100, 255)
@@ -220,6 +228,7 @@ GuardWaveFight:
 
 DwarfAttackCheck:
     if AttackedGuards != 1 or OutpostFought != 0 { goto Done }
+    goto DwarfAndCommandant
 
 DwarfAndCommandant:
     if OutpostConquered != 0 { exit }
@@ -278,6 +287,7 @@ QuartersEnter:
     Delay()
     Scratch1 = VMenu("HOW DO YOU SPEND THE NIGHT?", "GOTO SLEEP", "SLEEP WITH A WATCH")
     goto [SleepNoWatch, SleepWithWatch][Scratch1]
+    goto SleepNoWatch
 
 SleepNoWatch:
     Delay()
@@ -293,6 +303,7 @@ SleepWithWatch:
     Text("YOU WAIT IN YOUR ROOM FOR ABOUT TWO HOURS WHEN SUDDENLY FOUR ARMED GUARDS BURST IN AND ATTACK YOU.")
     WaitReturnPressed()
     Morale = 70
+    goto NightAmbush
 
 NightAmbush:
     Portrait = NoseguardHelmet
@@ -315,6 +326,7 @@ NightAmbush:
     Portrait = NoseguardHelmet
     SetupMonster(Fighter16, distance=0, body=LeatherHarness)
     ClearMonsters()
+    goto SecondWaveFight
 
     SecondWaveFight:
     LoadMonster(Corporal, count=5, icon=Soldier)
@@ -352,21 +364,25 @@ EscortToDinner:
     Text("YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE.")
     WaitReturnPressed()
     Text("THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?")
+    goto DinnerTopicMenu
 
 DinnerTopicMenu:
     Scratch1 = Menu("NOTHING", "CITY", "MAGIC", "POLITICS")
     goto [TopicNothing, TopicCity, TopicMagic, TopicPolitics][Scratch1]
+    goto TopicCity
 
 TopicCity:
     Text("ARE YOU GOING TO TALK ABOUT NEW OR OLD PHLAN?")
     Scratch1 = Menu("NEW", "OLD")
     goto [TalkNewPhlan, TalkOldPhlan][Scratch1]
+    goto TopicNothing
 
 TopicNothing:
     if TopicsDiscussed != 0 { goto ConversationDies }
     Text("THE CONVERSATION BEGINS TO DIE DOWN.  THE COMMANDANT  STARTS A CONVERSATION BY SAYING 'WELL, ARE YOU HAVING MUCH TROUBLE WITH THE CREATURES FROM OLD PHLAN?'")
     Scratch1 = Menu("TALK", "SAY LITTLE OR NOTHING")
     goto [TalkOldPhlan, ConversationDies][Scratch1]
+    goto ConversationDies
 
 ConversationDies:
     Text("THE CONVERSATION COMPLETELY DIES AND EVERYONE IS STARING AT EACH OTHER.  THE COMMANDANT EXCUSES HIMSELF AND LEAVES.  A GUARD TAKES YOU BACK TO YOUR QUARTERS.")
@@ -376,11 +392,13 @@ TyranthraxusTrouble:
     Text("THE COMMANDANT SAYS 'I EXPECT THERE WOULD BE TROUBLE; I'VE HEARD TYRANTHRAXUS IS A POWERFUL FIRE DEMON.  YOUR CITY'S DEFENCES MUST BE QUITE STRONG, HOW STRONG ARE THEY?'")
     Scratch1 = Menu("DON'T TALK", "STRONG", "AVERAGE", "WEAK")
     goto [NoAnswer, ForcesStrong, ForcesAverage, ForcesWeak][Scratch1]
+    goto NoTyranthraxusTrouble
 
 NoTyranthraxusTrouble:
     Text("THE COMMANDANT IS SURPRISED THAT YOUR CITY IS HAVING NO TROUBLE WITH TYRANTHRAXUS.  HE THEN SAYS, 'YOUR TOWN DEFENSES MUST BE STRONG IN ORDER TO HANDLE HIM.  HOW STRONG ARE THEY?'")
     Scratch1 = Menu("DON'T TALK", "STRONG", "AVERAGE", "WEAK")
     goto [NoAnswer, ForcesStrong, ForcesAverage, ForcesWeak][Scratch1]
+    goto TalkNewPhlan
 
 TalkNewPhlan:
     if TalkedNewPhlan != 0 { goto ConversationStale }
@@ -388,6 +406,7 @@ TalkNewPhlan:
     Text("AS YOU TALK ABOUT NEW PHLAN THE COMMANDANT LISTENS CAREFULLY.  THE COMMANDANT SAYS 'IS IT TRUE THAT THE REAL POWER IN NEW PHLAN IS BISHOP BRACCIO?'")
     Scratch1 = Menu("YES", "NO", "DON'T KNOW")
     goto [BraccioIsPower, BraccioNotPower, DontKnowAnswer][Scratch1]
+    goto BraccioIsPower
 
 BraccioIsPower:
     Text("YOU SAY THAT BISHOP BRACCIO IS THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'PHLAN MUST BE A CITY OF FOOLS IF A BISHOP OF TYR HAS POWER!'")
@@ -409,6 +428,7 @@ TalkOldPhlan:
     Text("YOU CONTINUE TO TALK ABOUT OLD PHLAN AND THE COMMANDANT SAYS 'IS NEW PHLAN HAVING ANY TROUBLE WITH TYRANTHRAXUS?'")
     Scratch1 = Menu("DON'T TALK", "TROUBLE", "NO TROUBLE")
     goto [TopicNothing, TyranthraxusTrouble, NoTyranthraxusTrouble][Scratch1]
+    goto TopicMagic
 
 TopicMagic:
     if AdvisorAsked != 0 { goto ConversationStale }
@@ -416,6 +436,7 @@ TopicMagic:
     Text("ONE OF THE COMMANDANT'S ADVISORS ASKS YOU IF YOU'VE HEARD OF ANY UNIQUE MAGICAL ITEMS OR PLACES?")
     Scratch1 = Menu("DON'T TALK", "LIE", "MENTION POOL OF RADIANCE")
     goto [TopicNothing, LieAboutMagic, MentionPool][Scratch1]
+    goto TopicPolitics
 
 TopicPolitics:
     if TalkedPolitics != 0 { goto ConversationStale }
@@ -423,6 +444,7 @@ TopicPolitics:
     Text("AS YOU MENTION POLITICS THE COMMANDANT SAYS 'I'VE HEARD THAT PHLAN'S TOWN COUNCIL IS CORRUPT, SPECIFICALLY ULRICH EBERHARD.  IS THIS TRUE?")
     Scratch1 = Menu("YES", "NO", "DON'T KNOW")
     goto [EberhardCorrupt, EberhardHonest, DontKnowAnswer][Scratch1]
+    goto EberhardCorrupt
 
 EberhardCorrupt:
     Text("YOU SAY THAT ULRICH EBERHARD IS CORRUPT AND HE RESPONDS BY SAYING 'I WOULD ADVISE YOU TO BE CAREFUL WHEN DEALING WITH THE TOWN COUNCIL.'")
@@ -474,6 +496,7 @@ CommandantLeaves:
 EscortToQuarters:
     Scratch6 = 0
     GivenQuarters = 1
+    goto QuartersWalkStep
 
     QuartersWalkStep:
     Scratch1 = QuartersStepTable[Scratch6]
@@ -489,6 +512,7 @@ ClimbableWall:
     Text("THE WALL IS CLIMBABLE HERE, WILL YOU SCALE OVER IT?")
     Scratch1 = Menu("CLIMB OVER WALL", "LEAVE")
     goto [ClimbOverWall, Done][Scratch1]
+    goto ClimbOverWall
 
 ClimbOverWall:
     Text("YOU CLIMB OVER THE WALL AND LEAVE THE OUTPOST.")

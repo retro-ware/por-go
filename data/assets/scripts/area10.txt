@@ -27,6 +27,7 @@ on step {
     Scratch10 = ~Inside & Cell
     if VampireState >= 254 { exit }
     AuxCounter = 0
+    goto FindCellLoop
 
     FindCellLoop:
     if AuxCounter == Scratch10 { goto CellDispatch }
@@ -194,6 +195,7 @@ GiantSkeletonLair:
     if SkeletonCount < 17 { goto GiantSkeletonFight }
     Print(" AND ITS RETAINERS.")
     Scratch7 = SkeletonCount
+    goto GiantSkeletonFight
 
     GiantSkeletonFight:
     SkeletonsApproach()
@@ -205,6 +207,7 @@ GiantSkeletonLair:
     CheckFled()
     GiantSkeletonState += 10
     GiantSkeletonsKilled += 1
+    goto SkeletonTreasure
 
     SkeletonTreasure:
     if SkeletonTreasureTaken == Yes { exit }
@@ -212,6 +215,7 @@ GiantSkeletonLair:
     Text("YOU FIND A MARBLE CHEST.  OPEN IT?")
     YesNoMenu()
     goto [TakeSkeletonTreasure, Done][Scratch1]
+    goto TakeSkeletonTreasure
 
 TakeSkeletonTreasure:
     ClearMonsters()
@@ -274,12 +278,14 @@ GiantZombieLair:
     if Scratch1 == 2 { goto FleeRandomly }
     GiantZombieState += 10
     GiantZombiesKilled += 1
+    goto ZombieTreasure
 
     ZombieTreasure:
     if ZombieTreasureTaken == Yes { exit }
     Text("VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?")
     YesNoMenu()
     goto [TakeZombieTreasure, Done][Scratch1]
+    goto TakeZombieTreasure
 
 TakeZombieTreasure:
     ClearMonsters()
@@ -322,6 +328,7 @@ WightBossWarning:
     Text("DO YOU LEAVE?")
     YesNoMenu()
     goto [BackAwayFromWights, WightBossApproach][Scratch1]
+    goto BackAwayFromWights
 
 BackAwayFromWights:
     PartyX = 14
@@ -352,6 +359,7 @@ WightBossLair:
     Text("IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?")
     Scratch1 = Menu("LEAVE", "STAY")
     goto [LeaveWightLair, FightWightBoss][Scratch1]
+    goto LeaveWightLair
 
 LeaveWightLair:
     PartyX = 15
@@ -367,12 +375,14 @@ FightWightBoss:
     if Scratch1 == 2 { goto FleeRandomly }
     WightBossState += 10
     WightBossesKilled += 1
+    goto WightTreasure
 
 WightTreasure:
     if WightTreasureTaken == Yes { exit }
     Text("IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?")
     YesNoMenu()
     goto [StripWarriorBody, Done][Scratch1]
+    goto StripWarriorBody
 
 StripWarriorBody:
     ClearMonsters()
@@ -385,6 +395,7 @@ BoneTowerView:
     if Facing != South { goto BoneTowerCheck }
     Text("A TOWER STANDS CLEARLY ABOVE ALL CRYPTS IN THE AREA.  HUGE PILES OF HUMAN BONES ARE STREWN ABOUT.")
     WaitReturnPressed()
+    goto BoneTowerCheck
 
     BoneTowerCheck:
     if Event5Seen > 0 { goto FumesDoorway }
@@ -401,6 +412,7 @@ BoneTowerView:
 
 BoneTowerSeenSet:
     Event5Seen += 1
+    goto FumesDoorway
 
 FumesDoorway:
     if Facing != North {
@@ -420,12 +432,14 @@ SkeletonLairEntry:
     if UndeadKillTable == Destroyed { exit }
     if SkeletonCount != 0 { goto SkeletonMakerMenu }
     if SkeletonsGone == 0 { exit }
+    goto SkeletonMakerMenu
 
     SkeletonMakerMenu:
     EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=CloseIn,
         flee=Flee, advance=CloseIn, parlay=Talk,
         near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS.", escape=0, strength=0)
     goto [Done, SkeletonMakerSurprised, FleeRandomly, SkeletonMakerNotices][Scratch1]
+    goto SkeletonMakerSurprised
 
 SkeletonMakerSurprised:
     Surprise = MonstersAreSurprised
@@ -433,6 +447,7 @@ SkeletonMakerSurprised:
 
 SkeletonMakerNotices:
     Text($AuxMonsterName)
+    goto FightSkeletonMaker
 
 FightSkeletonMaker:
     ClearMonsters()
@@ -450,6 +465,7 @@ FightSkeletonMaker:
 FurTowerView:
     if Facing == North { goto FurTowerCheck }
     Text("ALL AROUND THE TOWER, PILES OF HAIR AND FUR COVER THE AREA.")
+    goto FurTowerCheck
 
     FurTowerCheck:
     if FurTowerSeen > 0 { exit }
@@ -475,6 +491,7 @@ ZombieLairEntry:
     if ZombieStrength == Destroyed { exit }
     if ZombieCount != 0 { goto ZombieMakerMenu }
     if ZombiesGone == 0 { exit }
+    goto ZombieMakerMenu
 
     ZombieMakerMenu:
     EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=CloseIn,
@@ -482,6 +499,7 @@ ZombieLairEntry:
         near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES.",
         escape=0, strength=0)
     goto [Done, ZombieMakerSurprised, FleeRandomly, ZombieMakerNotices][Scratch1]
+    goto ZombieMakerSurprised
 
 ZombieMakerSurprised:
     Surprise = MonstersAreSurprised
@@ -489,6 +507,7 @@ ZombieMakerSurprised:
 
 ZombieMakerNotices:
     Text($AuxMonsterName)
+    goto FightZombieMaker
 
 FightZombieMaker:
     ClearMonsters()
@@ -566,12 +585,14 @@ WightLairEntry:
     if WightStrength == Destroyed { exit }
     if WightCount != 0 { goto WightMakerMenu }
     if WightsGone == 0 { exit }
+    goto WightMakerMenu
 
     WightMakerMenu:
     EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=CloseIn,
         flee=Flee, advance=CloseIn, parlay=Talk, near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT.",
         escape=0, strength=0)
     goto [Done, WightMakerSurprised, FleeRandomly, WightMakerNotices][Scratch1]
+    goto WightMakerSurprised
 
 WightMakerSurprised:
     Surprise = MonstersAreSurprised
@@ -579,6 +600,7 @@ WightMakerSurprised:
 
 WightMakerNotices:
     Text($AuxMonsterName)
+    goto FightWightMaker
 
 FightWightMaker:
     ClearMonsters()
@@ -599,6 +621,7 @@ BrassDoorsView:
     if Facing != South { goto BrassDoorsFight }
     Text("IN THE ENTRY IS SET A HUGE PAIR OF BRASS DOORS.")
     WaitReturnPressed()
+    goto BrassDoorsFight
 
     BrassDoorsFight:
     if TowerFightDone > 0 { goto KnightPanel }
@@ -646,6 +669,7 @@ MysticManMeet:
     Text("DO YOU LET HIM JOIN THE PARTY OR SEND HIM AWAY?")
     Scratch1 = Menu("LET HIM JOIN", "SEND HIM AWAY")
     goto [MysticManJoins, MysticManAttacks][Scratch1]
+    goto MysticManJoins
 
 MysticManJoins:
     if PartyCount > 7 { goto PartyTooLarge }
@@ -679,20 +703,24 @@ BlackCrypt:
     Text("DO YOU READ THE SCROLL?")
     YesNoMenu()
     goto [ScrollToJournal, CoffinAsk][Scratch1]
+    goto ScrollToJournal
 
 ScrollToJournal:
     Text("THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43.")
     WaitReturnPressed()
+    goto CoffinAsk
 
 CoffinAsk:
     Text("DO YOU WANT TO DO ANYTHING WITH THE COFFIN?")
     YesNoMenu()
     goto [CoffinMenu, Done][Scratch1]
+    goto CoffinMenu
 
 CoffinMenu:
     Text("WHAT DO YOU WANT TO DO TO IT?")
     Scratch1 = Menu("EXAMINE", "SANCTIFY", "OVERTURN")
     goto [ExamineCoffin, SanctifyCoffin, OverturnCoffin][Scratch1]
+    goto ExamineCoffin
 
 ExamineCoffin:
     Text("YOU FIND NOTHING.")
@@ -725,10 +753,12 @@ VampireGuardsApproach:
     ClearMonsters()
     LoadMonster(Vampire23, count=1, icon=Vampire)
     LoadMonster(Wolf, count=15, icon=Wolf)
+    goto VampireFightLoop
 
 VampireFightLoop:
     if not Carried(EfreetiBottle) { goto FightVampire }
     if VampireGuardLoaded != Yes { LoadMonster(Efreeti70, count=1, icon=Efreeti) }
+    goto FightVampire
 
     FightVampire:
     Combat()
@@ -748,12 +778,14 @@ PitStairs:
     Text("WOODEN STAIRS LEAD INTO A PIT.  DO YOU GO DOWN?")
     YesNoMenu()
     goto [DescendPit, Done][Scratch1]
+    goto DescendPit
 
 DescendPit:
     PartyX = 14
     Facing = West
     CallRedraw()
     if VampireState > Slain { exit }
+    goto VampireLair
 
 VampireLair:
     if VampireState >= FledAsVapor { goto VampireTreasure }
@@ -798,6 +830,7 @@ VampireLair:
     Text("YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?")
     YesNoMenu()
     goto [TakeVampireTreasure, Done][Scratch1]
+    goto TakeVampireTreasure
 
 TakeVampireTreasure:
     ClearMonsters()
@@ -839,6 +872,7 @@ RandomEncounter:
     Surprise(Scratch1, Scratch2, 0, 0)
     if Surprise != PartyIsSurprised { goto SurpriseCheck }
     goto [SkeletonAttack, ZombieAttack, WightAttack][Scratch9]
+    goto SurpriseCheck
 
     SurpriseCheck:
     if Surprise > MonstersAreSurprised {
@@ -848,6 +882,7 @@ RandomEncounter:
     } else if Surprise < MonstersAreSurprised {
         goto FindUndead
     }
+    goto PartyConfronted
 
     PartyConfronted:
     MaxDist = 0
@@ -861,6 +896,7 @@ RandomEncounter:
     EncounterMenu(Scratch5, distance=MonsterDist, closeup=Scratch5, result=Scratch1, combat=Mirror,
         wait=Attack, flee=Flee, advance=CloseIn, parlay=Talk, near=$AuxText, escape=0, strength=0)
     goto [Done, StartFight, FleeRandomly, PartyNoticed][Scratch1]
+    goto PartyNoticed
 
 PartyNoticed:
     Surprise = NoSurprise
@@ -869,15 +905,18 @@ PartyNoticed:
 
 FindUndead:
     Text("YOU FIND SOME UNDEAD.")
+    goto EncounterChoice
 
 EncounterChoice:
     EncounterMenu(Scratch5, distance=MonsterDist, closeup=Scratch5, result=Scratch1, combat=Mirror,
         wait=Mirror, flee=Mirror, advance=Mirror, parlay=Talk, escape=Scratch4, strength=Scratch4)
     goto [Done, StartFight, FleeRandomly, ParlayFails][Scratch1]
+    goto ParlayFails
 
 ParlayFails:
     Scratch1 = Parlay(0, 0, 0, 0, 0)
     Text("THEY DON'T LISTEN.")
+    goto StartFight
 
 StartFight:
     Beaten = 0
@@ -885,6 +924,7 @@ StartFight:
     ClearMonsters()
     LoadMonster(Scratch3, count=Scratch7, icon=Scratch5)
     if Scratch3 == 20 { goto LoadRandomUndead }
+    goto FightGroup
 
 FightGroup:
     Combat()
@@ -892,6 +932,7 @@ FightGroup:
     if Scratch1 == 2 { goto FleeRandomly }
     goto [SkeletonsBeaten, ZombiesBeaten, WightGroupFight, GiantSkeletonStep, GiantZombieStep,
         WightBossStep, BoneTowerSeenSet, FurTowerSeenSet, SkeletonAmbushOver, LightningTowerSeenSet][Scratch9]
+    goto CheckFled
 
 CheckFled:
     Scratch1 = 0
@@ -904,6 +945,7 @@ FleeRandomly:
     PartyX = FleeXTable[Scratch1]
     PartyY = FleeYTable[Scratch1]
     NoCoords = 1
+    goto RedrawExit
 
 RedrawExit:
     CallRedraw()

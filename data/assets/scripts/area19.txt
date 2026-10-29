@@ -18,11 +18,13 @@ CheckCaveState:
     Scratch2 = DragonTalkFlags & DragonSpoke
     if Scratch2 != 1 { goto MagicMouthAsks }
     if Carried(EfreetiBottle) { goto BottleRecovered }
+    goto MagicMouthAsks
 
     MagicMouthAsks:
     Text("AS YOU ARE ENTERING THE CAVE, A MAGIC MOUTH APPEARS ON ONE OF THE WALLS.  IN A BOOMING VOICE IT SAYS, 'WHO ENTERS THE HOME OF DIOGENES?  SPEAK NOW AND DECLARE YOUR INTENT!'")
     Scratch1 = Menu("STATE NAME AND INTENT", "LEAVE")
     goto [StateIntentMenu, LeaveCave][Scratch1]
+    goto StateIntentMenu
 
 StateIntentMenu:
     Text("WHAT WILL YOU SAY IS YOUR REASON FOR BEING HERE?")
@@ -30,12 +32,14 @@ StateIntentMenu:
     Scratch1 = VMenu("DRAGON'S CAVE", "ASK DRAGON FOR ADVICE", "CHALLENGE EVIL LEADER OF OLD PHLAN",
         "PLEDGE PARTY TO DRAGON'S SERVICE", "OFFER A GIFT")
     goto [AskAdvice, ChallengeDragon, PledgeService, OfferGift][Scratch1]
+    goto PledgeService
 
 PledgeService:
     Picture(GreyDragon)
     Text("YOU HEAR A GREAT FLAPPING SOUND.  A STRONG WHOOSH OF AIR COMES DOWN UPON THE ADVENTURERS.  A LARGE SILVER DRAGON STANDS BEFORE YOU.  IN A BOOMING VOICE IT SAYS...")
     WaitReturnPressed()
     Text("'I ACCEPT YOUR PLEDGE.  FOR YOUR FIRST DUTY, I COMMAND YOU TO RECOVER A POWERFUL MAGICAL BOTTLE FROM A KOBOLD SETTLEMENT IN THE HILLS FAR TO THE EAST.  THEN RETURN TO ME AND I SHALL GIVE YOU ANOTHER TASK.'")
+    goto DragonFliesOff
 
 DragonFliesOff:
     WaitReturnPressed()
@@ -50,6 +54,7 @@ ChallengeDragon:
     Text("'YOU FOOLS.  I AM A GOOD SILVER DRAGON NOT THE EVIL LEADER OF PHLAN.  DON'T YOU KNOW THAT WE METALLIC DRAGONS ARE GOOD CREATURES?'  WHAT WILL YOU DO?")
     Scratch1 = Menu("APOLOGIZE", "SLAY DRAGON")
     goto [ApologizeToDragon, DragonFleesUp][Scratch1]
+    goto ApologizeToDragon
 
 ApologizeToDragon:
     Text("AFTER HEARING YOUR APOLOGY THE DRAGON SAYS, 'THOUGH YOU ARE FOOLISH I BELIEVE YOUR ACTS ARE NOBLE.  I WILL HELP YOU WITH YOUR QUEST TO CLEANSE THE CITY OF PHLAN FROM EVIL.'")
@@ -63,11 +68,13 @@ DragonFleesUp:
     Text("YOU MAY EASILY FOLLOW THE DRAGON BY CLIMBING UP A WALL AND THEN THROUGH THE HOLE IN THE CEILING.  WHAT WILL YOU DO?")
     Scratch1 = Menu("FOLLOW DRAGON", "LEAVE")
     goto [FollowDragonUp, LeaveCave][Scratch1]
+    goto FollowDragonUp
 
 FollowDragonUp:
     Text("YOU CLIMB TO THE SECOND LEVEL OF THE DRAGON'S DEN.  THERE IS THE DRAGON WAITING FOR YOU.  HE LOOKS EXTREMELY MAD!  WHAT WILL YOU DO?")
     Scratch1 = Menu("ATTACK", "LEAVE")
     goto [AttackDragonFireball, LeaveCave][Scratch1]
+    goto AttackDragonFireball
 
 AttackDragonFireball:
     Text("YOU TRY TO ATTACK THE DRAGON BUT SEEM TO BE FROZEN IN TIME.  THE DRAGON THROWS A FIREBALL IN THE MIDDLE OF THE PARTY AND THEN DISAPPEARS.  YOU HAVE A STRANGE FEELING THAT YOU JUST MADE A BIG MISTAKE.")

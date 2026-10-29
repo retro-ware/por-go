@@ -12,6 +12,7 @@ on move {
     } else {
         EnterArea(KutosWell)
     }
+    goto StoreCellCode
 
     StoreCellCode:
     Scratch10 = ~Inside & Cell
@@ -28,6 +29,7 @@ on step {
     Scratch2 = 0
     Scratch3 = 0
     AuxCounter = 0
+    goto FindCellCase
 
     FindCellCase:
     if AuxCounter == Scratch10 { goto CellCaseJump }
@@ -92,15 +94,18 @@ SlumsStreet:
     if Search == Searching { AuxSightText += 4 }
     if FortuneTellerState == Murdered { AuxSightText += 5 }
     if AuxSightText <= 12 { exit }
+    goto ScalePatrol
 
 ScalePatrol:
     AuxPartyStrength = AuxPartyStrength / 3
     AuxPartyStrength = AuxPartyStrength * 2
     if FortuneTellerState == Murdered { AuxPartyStrength += 5 }
+    goto PickPatrol
 
 PickPatrol:
     Scratch7 = Random(2)
     goto [PatrolKobolds, PatrolGoblins, PatrolOrcs][Scratch7]
+    goto PatrolKobolds
 
 PatrolKobolds:
     $AuxText = " KOBOLDS. "
@@ -112,6 +117,7 @@ PatrolGoblins:
 
 PatrolOrcs:
     $AuxText = " ORCS. "
+    goto PatrolSurprise
 
 PatrolSurprise:
     MonsterDist = PatrolDistTable[Scratch7]
@@ -146,6 +152,7 @@ PatrolSurprise:
         escape=AuxEncResult, strength=AuxEncResult2)
     PatrolMorale = 60
     goto [Done, FightPatrol, RunAway, ConversePatrol][AuxMember]
+    goto BumpIntoPatrol
 
     BumpIntoPatrol:
     $AuxMonsterName = "YOU BUMP INTO SOME "
@@ -155,6 +162,7 @@ PatrolSurprise:
         strength=AuxEncResult2)
     PatrolMorale = 50
     goto [Done, FightPatrol, RunAway, ConversePatrol][AuxMember]
+    goto SpySeedyPatrol
 
     SpySeedyPatrol:
     $AuxMonsterName = "YOU SPY A GROUP OF SEEDY-LOOKING "
@@ -164,6 +172,7 @@ PatrolSurprise:
         strength=AuxEncResult2)
     PatrolMorale = 40
     goto [Done, FightPatrol, RunAway, ConversePatrol][AuxMember]
+    goto SurprisePatrol
 
     SurprisePatrol:
     $AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
@@ -173,6 +182,7 @@ PatrolSurprise:
         strength=AuxEncResult2)
     PatrolMorale = 30
     goto [Done, FightPatrol, YouHide, ConversePatrol][AuxMember]
+    goto OrcsArguePapers
 
 OrcsArguePapers:
     if OrcPapersFight == Yes { exit }
@@ -216,6 +226,7 @@ OhloRoom:
     Text("YOU BURST INTO AN ELEGANTLY PANELLED ROOM. A SMALL MAN SITS HUNCHED OVER A TABLE BY THE EAST WALL. HE SETS DOWN HIS PEN AND GAZES STERNLY AT YOU.  'WELL?', HE DEMANDS.  (WHAT DO YOU DO?)")
     AuxMember = Menu("LEAVE", "TALK", "ATTACK")
     goto [LeaveOhlo, TalkToOhlo, OhloAttacks][AuxMember]
+    goto LeaveOhlo
 
 LeaveOhlo:
     Text("YOU GO BACK OUT THE DOOR.")
@@ -229,6 +240,7 @@ LeaveOhlo:
 TalkToOhlo:
     AuxParlay = Parlay(0, 1, 2, 3, 4)
     goto [OhloAttacks, OhloBegone, OhloOffersJob, OhloOffersJob, OhloAttacks][AuxParlay]
+    goto OhloAttacks
 
 OhloAttacks:
     Text("'YOU PRESUME TOO MUCH,' THE MAN SAYS QUIETLY.  HE GESTURES.")
@@ -250,11 +262,13 @@ OhloBegone:
     Text("'I HAVE NO TIME FOR THE LIKES OF YOU,' THE MAN SAYS AIRILY.  'BEGONE!' (WHAT DO YOU DO?)")
     AuxMember = Menu("STAY", "LEAVE", "ATTACK")
     goto [OhloAttacks, LeaveOhlo, OhloAttacks][AuxMember]
+    goto OhloOffersJob
 
 OhloOffersJob:
     Text("'I MAY HAVE A USE FOR YOU,' THE MAN SAYS. 'SOME TIME AGO, I ORDERED A SPECIAL POTION.  THE POTION IS READY BUT I CAN'T LEAVE TO FETCH IT.  BRING IT HERE, I PAY WELL.' (WHAT DO YOU DO?)")
     AuxMenuChoice = Menu("ACCEPT THE COMMISSION", "REJECT IT")
     goto [AcceptPotionJob, OhloBegone][AuxMenuChoice]
+    goto AcceptPotionJob
 
 AcceptPotionJob:
     Text("'IT WAITS IN A BOOTH IN THE OLD ROPE GUILD BUT A SHORT DISTANCE TO THE SOUTHEAST FROM WHERE YOU NOW STAND.  SPEAK MY NAME, OHLO.'")
@@ -266,6 +280,7 @@ OhloWantsPotion:
     Text("'YOU HAVE DONE WELL. GIVE ME THE POTION AND YOU WILL BE REWARDED.' (WHAT DO YOU DO?)")
     AuxMenuChoice = Menu("GIVE", "ASK FOR MORE MONEY", "REFUSE TO GIVE")
     goto [GivePotion, OhloAttacks, OhloAttacks][AuxMenuChoice]
+    goto OhloEmptyHanded
 
 OhloEmptyHanded:
     Text("'YOU HAVE RETURNED EMPTY HANDED,' HE OBSERVES. 'I HAVE NO TIME FOR YOU NOW.'  HE WAVES HIS HAND.")
@@ -292,6 +307,7 @@ UncleanStable:
     if StableSeen20 >= Yes { goto FindLeatherBag }
     Text("YOU HAVE ENTERED A VERY UNCLEAN STABLE.  THERE IS EVIDENCE THAT A LARGE AND UNTIDY ANIMAL HAD LIVED HERE.")
     StableSeen20 = Yes
+    goto FindLeatherBag
 
     FindLeatherBag:
     if LeatherBagOpened == Yes { exit }
@@ -299,6 +315,7 @@ UncleanStable:
     Text("YOU FIND A LONG LEATHER BAG.  WILL YOU OPEN IT?")
     AuxMenuChoice = Menu("YES", "NO")
     goto [OpenLeatherBag, Done][AuxMenuChoice]
+    goto OpenLeatherBag
 
 OpenLeatherBag:
     ClearMonsters()
@@ -333,6 +350,7 @@ HempMarket:
     Delay()
     AuxMember = Random(2)
     goto [RumorCatacombs, RumorTemple, RumorTreasureRoom][AuxMember]
+    goto RumorCatacombs
 
 RumorCatacombs:
     Text("... THE GANG IS OPERATING FROM THE CATACOMBS BY THE WELL...")
@@ -353,6 +371,7 @@ FortuneTeller:
     Text("SEATED AT A TABLE IS A RAGGED OLD WOMAN. SHE GREETS YOU. 'WELCOME. FOR THE PRICE OF A FEW COPPERS, I WILL TELL YOUR FORTUNE.' (WHAT DO YOU DO?)")
     AuxMenuChoice = Menu("ATTACK", "LEAVE", "PAY")
     goto [MurderOldWoman, LeaveFortuneShop, PayFortune][AuxMenuChoice]
+    goto MurderOldWoman
 
 MurderOldWoman:
     Text("YOU EASILY MURDER THE OLD WOMAN.  EXCEPT FOR A FEW COPPER PIECES YOU FIND NOTHING OF VALUE.  THE GODS HAVE NOTED YOUR ACTIONS.")
@@ -382,6 +401,7 @@ PayFortune:
     } else {
         goto FortuneNewWays
     }
+    goto FortuneBlood
 
     FortuneBlood:
     Text("BLOOD AND VIOLENCE ARE WRIT BOLDLY IN YOUR FUTURE.  LOOK FOR FRIENDS WHERE YOU EXPECT ENEMIES AND ENEMIES WHERE YOU EXPECT ALLIES.")
@@ -393,12 +413,14 @@ PayFortune:
 
     FortuneNewWays:
     Text("THE TIME IS NIGH WHEN THE PATHS YOU HAVE TROD WILL EMPTY AND YOU MUST SEEK NEW WAYS.  THE RIDDLE'S ANSWER IS GREAT EVIL USING GREAT GOOD FOR GREAT EVIL.")
+    goto FortuneFinished
 
     FortuneFinished:
     WaitReturnPressed()
     Text("THE TELLING IS FINISHED. (WHAT DO YOU DO?)")
     AuxMenuChoice = Menu("ATTACK", "LEAVE")
     goto [MurderOldWoman, LeaveFortuneShop][AuxMenuChoice]
+    goto OrcHome
 
 OrcHome:
     if OrcHomeFight == Yes { exit }
@@ -509,6 +531,7 @@ LargeEmptyRoom:
     EmptyRoomSeen = Yes
     Text("THIS LARGE ROOM IS APPARENTLY EMPTY.")
     Delay()
+    goto LooseFloorboard
 
     LooseFloorboard:
     if FloorChestTaken == Yes { exit }
@@ -516,6 +539,7 @@ LargeEmptyRoom:
     Text("YOU FIND A LOOSE FLOORBOARD.  PRYING IT UP, YOU FIND A CHEST HIDDEN BENEATH THE FLOOR.  DO YOU TAKE IT?")
     AuxMenuChoice = Menu("YES", "NO")
     goto [TakeChest, Done][AuxMenuChoice]
+    goto TakeChest
 
 TakeChest:
     ClearMonsters()
@@ -559,11 +583,13 @@ PotionBooth:
         goto BoothMenu
     }
     Text("A MAN HURRIES FORWARD. 'I AM SORRY, NOBLE ONES, BUT I HAVE NOTHING TO SELL.'")
+    goto BoothMenu
 
     BoothMenu:
     Print("(WHAT DO YOU DO?)")
     AuxMenuChoice = Menu("LEAVE", "ATTACK", "SPEAK")
     goto [LeaveBooth, AttackBoothMan, SpeakPassword][AuxMenuChoice]
+    goto LeaveBooth
 
 LeaveBooth:
     Picture(None)
@@ -652,6 +678,7 @@ FightPatrol:
 
     CheckOrcStrength:
     if AuxPartyStrength < 14 { goto FightPlainPatrol }
+    goto AddLeaders
 
     AddLeaders:
     Scratch3 = 1 + Scratch8
@@ -699,6 +726,7 @@ RunAway:
     PartyX = HideXTable[AuxTemp9]
     PartyY = HideYTable[AuxTemp9]
     Text("")
+    goto RedrawAndRecheck
 
 RedrawAndRecheck:
     CallRedraw()
@@ -725,6 +753,7 @@ ConversePatrol:
 
     ParlayHighStrength:
     AuxParlay = Parlay(0, 10, 10, 0, 15)
+    goto ParlayResult
 
     ParlayResult:
     AuxRoll2 = Random(30)
@@ -735,6 +764,7 @@ ConversePatrol:
     Text("THE MONSTERS RESPOND, 'DA BOSS DON'T LIKE YOUSE GUYS. GIVE US SUMPTIN AN MAYBE WE'LL FERGET WE SEEN YAS.' (WHAT DO YOU DO?)")
     Scratch9 = Menu("PAY", "SURRENDER", "RUN", "FIGHT")
     goto [PayPatrol, SurrenderToPatrol, TryRunning, FightPatrol][Scratch9]
+    goto PayPatrol
 
 PayPatrol:
     Text("TYPE IN THE NUMBER OF GP YOU OFFER.")
@@ -772,11 +802,13 @@ PatrolWarnsLeave:
     Text("THE LEADER SPEAKS, 'THE BOSS DON'T ALLOW YOUR KIND IN HIS TERRITORY.  LEAVE NOW OR WE'LL HAVE TO RUN YOU IN.' (WHAT DO YOU DO?)")
     Scratch9 = Menu("FIGHT", "STAY", "LEAVE", "RUN")
     goto [FightPatrol, FightPatrol, Done, RunAway][Scratch9]
+    goto PatrolAdvice
 
     PatrolAdvice:
     Text("'LET ME GIVE YOU A PIECE OF ADVICE,' THEIR LEADER SAYS.  'STAY AWAY FROM THE TEXTILE HOUSE. THE UNDEAD ARE GOING CRAZY UP THERE.'  THE MONSTERS TURN TO LEAVE. (WHAT DO YOU DO?)")
     Scratch9 = Menu("LET THEM GO", "STOP THEM")
     goto [Done, StopPatrol][Scratch9]
+    goto StopPatrol
 
 StopPatrol:
     Text("'HOW DARE YOU INTERFERE WITH THE BOSS'S BUSINESS?' THE LEADER ROARS.  'KILL THEM,' HE ORDERS.")

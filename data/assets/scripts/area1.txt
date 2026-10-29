@@ -18,12 +18,14 @@ CheckAnimals:
     Scratch1 = Cell & Inside
     if Scratch1 != 0 { goto CheckRecapture }
     Text("ANIMALS ARE RUNNING ALL OVER THE COMPOUND.")
+    goto CheckRecapture
 
     CheckRecapture:
     if BaseAlerted != 0 { goto DispatchCell }
     StampedeTimer += 1
     if Search != NotSearching { StampedeTimer += 9 }
     if StampedeTimer >= 60 { RecaptureAnimals() }
+    goto DispatchCell
 
     DispatchCell:
     Scratch10 = Cell & ~Inside
@@ -31,11 +33,13 @@ CheckAnimals:
     goto [Done, MainGateEnter, MerchantsCamp, SlavePenOutside, CaptainDoorGuards, CaptainRoom,
         SeedyManPass, GuardTower, BarracksEnter, AnimalPenPacked, AnimalPenGate, SlavePenGateCheck,
         InsideSlavePen][Scratch10]
+    goto DispatchCellStampede
 
     DispatchCellStampede:
     goto [Done, MainGateEmpty, MerchantsCamp, SlavePenOutsideStampede, CaptainDoorGuards, CaptainRoom,
         Done, GuardTower, EmptyBarracks, AnimalPensEmpty, AnimalPenDoorOpen, SlavePenGate,
         InsideSlavePen][Scratch10]
+    goto RecaptureAnimals
 
 RecaptureAnimals:
     Text("THE ANIMALS HAVE BEEN CAPTURED.")
@@ -59,6 +63,7 @@ GuardsHuntBoy:
     Approach()
     Portrait = None
     goto [GuardsSpotBoy, AlarmRunForGate, AnotherWaveAttacks, CaptainAppears][GuardPatrolCount]
+    goto GuardsSpotBoy
 
 GuardsSpotBoy:
     Text("SOME OF THE GUARDS SPOT YOU WITH THE BOY.")
@@ -96,6 +101,7 @@ MainGateEnter:
     Cell = 2
     Scratch3 = 0
     Facing = South
+    goto EscortToCampLoop
 
     EscortToCampLoop:
     if Scratch3 == 10 { goto MerchantsCamp }
@@ -110,6 +116,7 @@ MainGateEnter:
     if BoyBought != 0 { goto GateGuardsStand }
     if BaseCaptured == Captured { goto MainGateEmpty }
     if QuestBivant != 0 { goto GateGuardsAttack }
+    goto GateGuardsStand
 
     GateGuardsStand:
     Text("YOU ARE NEAR THE MAIN GATE TO THE COMPOUND.  SOME BUCCANEERS STAND GUARD NEAR THE ENTRANCE.")
@@ -153,6 +160,7 @@ SlavePenOutside:
     PressToContinue()
     Scratch1 = VMenu("WHAT WILL YOU DO?", "PUNCH MERCHANT", "AGREE", "SAY NOTHING", "RESCUE BOY")
     goto [PunchMerchant, AgreeWithMerchant, Done, RescueBoyMenu][Scratch1]
+    goto PunchMerchant
 
 PunchMerchant:
     Text("YOU PUNCH THE MERCHANT IN THE NOSE AND HE FALLS TO THE GROUND, BADLY BLEEDING.  THE MERCHANT YELLS FOR HIS GUARDS AND THEY COME RUNNING.")
@@ -189,6 +197,7 @@ RescueBoyMenu:
     Text("YOU IGNORE THE SLEAZY MERCHANT AND CONCENTRATE ON RESCUING THE BOY.")
     Scratch1 = VMenu("HOW WILL YOU RESCUE THE BOY?", "SNEAK INTO PEN", "ATTACK GUARDS", "DO NOT RESCUE BOY NOW")
     goto [SneakToPenGate, AttackPenGuards, Done][Scratch1]
+    goto SneakToPenGate
 
 SneakToPenGate:
     Text("YOU MOVE THROUGH THE CROWD NONCHALANTLY UNTIL YOU ARE NEAR THE FRONT GATE OF THE SLAVE PEN.")
@@ -197,6 +206,7 @@ SneakToPenGate:
     PartyY = 6
     CallRedraw()
     if PenGuardsDefeated != 0 { goto Done }
+    goto PenGateGuards
 
 PenGateGuards:
     Portrait = LongHaired
@@ -204,6 +214,7 @@ PenGateGuards:
     Text("YOU ARE NEAR THE FRONT GATE TO THE SLAVE PEN.  TWO GUARDS GUARD THE DOOR.  WHAT WILL YOU DO?")
     Scratch1 = Menu("ATTACK", "TRY TO SNEAK BY", "LEAVE")
     goto [AttackPenGuards, SneakPastFails, StepBack][Scratch1]
+    goto AttackPenGuards
 
 AttackPenGuards:
     ClearPicture()
@@ -224,6 +235,7 @@ CutOffWithBoy:
     Delay()
     Approach()
     Text("YOU TRY TO RUN FROM THE GUARDS BUT ARE CUT OFF BY NEW ARRIVALS.  THE YOUNG BOY IS SLOWING YOU DOWN.  IF YOU RUN AGAIN YOU WILL LEAVE HIM BEHIND.")
+    goto BuccaneerWaves
 
 BuccaneerWaves:
     Morale = 80
@@ -253,6 +265,7 @@ BuccaneerWaves:
     LoadMonster(Buccaneer, count=53, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeLeaveBoy }
+    goto CaptainAppears
 
 CaptainAppears:
     if CaptainKilled != 0 { goto FinalWave }
@@ -266,6 +279,7 @@ CaptainAppears:
     Text("THE CAPTAIN SAYS 'YOU HAVE FOUGHT WELL.  YOU MAY RANSOM YOURSELVES OR DIE!'  WHAT WILL YOU DO?")
     Scratch1 = Menu("SURRENDER", "ATTACK")
     goto [SurrenderToCaptain, AttackCaptain][Scratch1]
+    goto SurrenderToCaptain
 
 SurrenderToCaptain:
     Text("THE CAPTAIN SAYS 'YOU HAVE CHOSEN WISELY.'  SOME OF THE BUCCANEERS COME FORWARD AND STRIP YOU OF SOME OF YOUR ITEMS AND MONEY.  THEY ESCORT YOU OUT OF THE COMPOUND.")
@@ -277,6 +291,7 @@ AttackCaptain:
     Morale = 100
     ClearMonsters()
     LoadMonster(Captain, count=1, icon=Captain)
+    goto FinalBattle
 
 FinalBattle:
     LoadMonster(ThLvlFighter41, count=15, icon=Soldier)
@@ -298,6 +313,7 @@ FinalWave:
 
 FleeLeaveBoy:
     Text("YOU RUN FROM THE BATTLE AND OUT THE OUTPOST GATE.  THE YOUNG BOY COULD NOT KEEP UP AND WAS LEFT BEHIND.")
+    goto LeaveBase
 
 LeaveBase:
     QuestBivant = Bungled
@@ -308,6 +324,7 @@ SneakPastFails:
     Text("YOU TRY TO SNEAK UP PAST THE GUARDS BUT THEY ARE TOO ALERT.  YOU CANNOT GET BY THE GUARDS INTO THE SLAVE PEN.  WHAT WILL YOU DO?")
     Scratch1 = Menu("ATTACK GUARDS", "LEAVE")
     goto [AttackPenGuards, StepBack][Scratch1]
+    goto SlavePenOutsideSeen
 
 SlavePenOutsideSeen:
     Text("YOU ARE JUST OUTSIDE THE SLAVE PEN.")
@@ -340,11 +357,13 @@ CaptainDoorGuards:
     Text("STANDING IN FRONT OF THE DOOR ARE TWO LARGE GUARDS.  ONE OF THEM SAYS 'DO YOU HAVE A PASS TO SEE THE CAPTAIN?'  WHAT WILL YOU DO?")
     Scratch1 = Menu("SHOW PASS", "LEAVE", "BRIBE", "ATTACK")
     goto [ShowPass, LeaveDoorGuards, BribeRefused, AttackDoorGuards][Scratch1]
+    goto BribeRefused
 
 BribeRefused:
     Text("YOU OFFER THE GUARDS SOME MONEY BUT THEY REFUSE.  ONE OF THE GUARDS SAYS 'GET OTTA' HERE YA SCUM'")
     Scratch1 = Menu("ATTACK", "LEAVE")
     goto [AttackDoorGuards, LeaveDoorGuards][Scratch1]
+    goto AttackDoorGuards
 
 AttackDoorGuards:
     Morale = 100
@@ -378,6 +397,7 @@ CaptainRoom:
     Text("THE CAPTAIN LOOKS YOU OVER AND SAYS 'WHAT DO YOU WANT?'")
     Scratch1 = Menu("ATTACK", "MENTION YOUNG BOY", "LEAVE")
     goto [CaptainFight, MentionBoy, StepBack][Scratch1]
+    goto CaptainFight
 
 CaptainFight:
     Text("YOU DRAW YOUR WEAPONS AND ATTACK.  THE CAPTAIN DRAWS HIS SWORD AND YELLS FOR HIS GUARDS TO ATTACK!")
@@ -403,6 +423,7 @@ MentionBoy:
     Text("YOU MENTION THE YOUNG BOY IN THE SLAVE PEN AND THE CAPTAIN SEEMS INTERESTED.  HE SAYS 'I CAN LET YOU BUY THE YOUNG BOY BUT IT WILL COST YOU ALOT!'  WHAT WILL YOU DO?")
     Scratch1 = Menu("BUY THE BOY", "ATTACK")
     goto [BuyTheBoy, CaptainFight][Scratch1]
+    goto BuyTheBoy
 
 BuyTheBoy:
     Text("THE CAPTAIN SAYS 'YOU HAVE MADE A GOOD DEAL.'  AFTER TALKING THE CAPTAIN MAKES A MOTION AND THE BOY IS BROUGHT TO YOU.")
@@ -425,6 +446,7 @@ SeedyManPass:
     Text("THERE IS A SEEDY LITTLE MAN HERE WHO WHISPERS 'PSSST, BUDDY.  WANT TO BUY A PASS TO SEE THE CAPTAIN?'")
     Scratch2 = Menu("BUY PASS", "LEAVE")
     goto [BuyPass, Done][Scratch2]
+    goto BuyPass
 
 BuyPass:
     Text("YOU BUY THE PASS.  THE SEEDY LITTLE MAN DISAPPEARS AROUND A CORNER.")
@@ -443,6 +465,7 @@ GuardTower:
     Text("YOU HAVE ENTERED ONE OF THE GUARD TOWERS.  INSIDE ARE FOUR BUCCANEERS.  ONE OF THEM SAYS 'THIS IS A RESTRICTED AREA, LEAVE NOW!'  WHAT WILL YOU DO?")
     Scratch2 = Menu("ATTACK", "LEAVE")
     goto [AttackTowerGuards, StepBack][Scratch2]
+    goto TowerGuardsAttack
 
     TowerGuardsAttack:
     Text("THE TOWER GUARDS ATTACK.")
@@ -450,6 +473,7 @@ GuardTower:
 
 AttackTowerGuards:
     Text("YOU ATTACK THE TOWER GUARDS.")
+    goto TowerFight
 
 TowerFight:
     Morale = 60
@@ -467,6 +491,7 @@ BarracksEnter:
     Text("YOU ENTER A BARRACKS FILED WITH TWENTY BUCCANEERS.  ONE OF THE BUCCANEERS SAYS 'THIS AREA IS OFF LIMITS.  LEAVE NOW.' WHAT WILL YOU DO?")
     Scratch1 = Menu("ATTACK", "LEAVE")
     goto [AttackBarracks, StepBack][Scratch1]
+    goto BarracksGuardsAttack
 
     BarracksGuardsAttack:
     Text("THE GUARDS IN THE BARRACKS ATTACK.")
@@ -474,6 +499,7 @@ BarracksEnter:
 
 AttackBarracks:
     Text("YOU ATTACK THE BUCCANEERS.")
+    goto BarracksFight
 
 BarracksFight:
     Morale = 70
@@ -500,6 +526,7 @@ AnimalPenGate:
     Text("YOU ARE AT THE GATE TO THE ANIMAL PENS.  THE ANIMALS ARE RESTLESS.  WHAT WILL YOU DO?")
     Scratch1 = Menu("RELEASE ANIMALS", "LEAVE")
     goto [ReleaseAnimals, Done][Scratch1]
+    goto ReleaseAnimals
 
 ReleaseAnimals:
     Text("AS SOON AS YOU OPEN THE GATE THE ANIMALS INSIDE CHARGE OUT.  THEY STAMPEDE ACROSS THE COMPOUND.")
@@ -516,6 +543,7 @@ AnimalPenDoorOpen:
 SlavePenGateCheck:
     if BaseAlerted != 0 { goto SlavePenGate }
     if PenGuardsDefeated == 0 { goto PenGateGuards }
+    goto SlavePenGate
 
 SlavePenGate:
     Text("YOU ARE NEAR THE GATE TO THE SLAVE PEN.")
@@ -527,6 +555,7 @@ InsideSlavePen:
     Text("YOU ARE IN THE SLAVE PEN.  STANDING NEAR YOU IS THE YOUNG BOY.  WHAT WILL YOU DO?")
     Scratch1 = Menu("GET HIM", "LEAVE")
     goto [TakeBoy, StepBack][Scratch1]
+    goto TakeBoy
 
 TakeBoy:
     Text("YOU TAKE THE YOUNG BOY AND LEAVE.  THE OTHER SLAVES ALSO RUN OUT THE SLAVE PEN.")
@@ -562,6 +591,7 @@ def PressToContinue() {
 
 def DelayLoop() {
     Scratch4 = 0
+    goto DelayLoopNext
 
     DelayLoopNext:
     if Scratch4 > 200 { return }
@@ -579,6 +609,7 @@ on camp {
     if BaseCaptured == Captured { goto RestSafe }
     if Scratch10 != 2 { goto RestDangerous }
     if QuestBivant >= RewardDue { goto RestDangerous }
+    goto RestSafe
 
     RestSafe:
     RestChance = 1
@@ -605,6 +636,7 @@ on load {
     Facing = South
     CallRedraw()
     Scratch1 = 0
+    goto LoadAreaFiles
 
     LoadAreaFiles:
     LoadWalls(Planks, Palisade, Palisade)

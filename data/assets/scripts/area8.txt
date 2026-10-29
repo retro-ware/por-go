@@ -29,6 +29,7 @@ on step {
     Scratch10 = ~Inside & Cell
     CheckQuestOver()
     CellEventIndex = 26
+    goto FindCellEvent
 
     FindCellEvent:
     if CellEventIndex == Scratch10 { goto CellEvents }
@@ -115,6 +116,7 @@ def ClerkOffice() {
     Scratch4 = 0
     Scratch5 = 0
     Scratch6 = 0
+    goto UndeadRewardLoop
 
     UndeadRewardLoop:
     Scratch2 = UndeadKillTable[Scratch1]
@@ -137,11 +139,13 @@ BivantPenalty:
 ScanQuests:
     Scratch1 = 0
     RewardKind = NoReward
+    goto ScanQuestLoop
 
 ScanQuestLoop:
     Scratch7 = 255
     Scratch2 = QuestBandits[Scratch1]
     if Scratch2 == 254 { goto ClerkSpeaks }
+    goto NextQuest
 
 NextQuest:
     Scratch1 += 1
@@ -177,6 +181,7 @@ ClearingRewards:
     if TextileHouseCleared != RewardDue { goto ToScanQuests }
     $AuxText = "CADORNA TEXTILE HOUSE.'"
     TextileHouseCleared = Rewarded
+    goto ClearingReward
 
     ClearingReward:
     Text("'THERE IS A REWARD FOR CLEARING THE ")
@@ -201,6 +206,7 @@ LoadReward:
     Scratch4 = RewardTable2[Scratch1]
     Scratch5 = RewardTable3[Scratch1]
     Scratch6 = RewardTable4[Scratch1]
+    goto GiveReward
 
 GiveReward:
     Print(" HERE IS YOUR REWARD.'")
@@ -215,6 +221,7 @@ GiveReward:
     } else if RewardKind > UndeadBounty {
         goto ClearingRewards
     }
+    goto MarkQuestPaid
 
 MarkQuestPaid:
     QuestBandits[Scratch1] = 255
@@ -386,6 +393,7 @@ GraveyardNotice:
     Text("'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'")
     YesNoMenu()
     goto [AcceptGraveyard, OfferCommissions][Scratch1]
+    goto AcceptGraveyard
 
 AcceptGraveyard:
     Text("'EXCELLENT.'")
@@ -398,6 +406,7 @@ AcceptGraveyard:
 
 GraveyardContinue:
     PressToContinue()
+    goto OfferCommissions
 
 OfferCommissions:
     Text("THE CLERK SHUFFLES THROUGH HER PAPERS. 'ON THE MATTER OF COMMISSION,' SHE SAYS, 'I CAN OFFER THE FOLLOWING: '")
@@ -408,10 +417,12 @@ BackSoSoon:
     ClerkTalkedThisVisit = 1
     ShowClerk()
     Text("'BACK SO SOON? I CAN ONLY REPEAT THE EARLIER OFFERS: '")
+    goto ListOffers
 
 ListOffers:
     PressToContinue()
     Scratch1 = 0
+    goto OfferLoop
 
 OfferLoop:
     if OffersListed > 2 { goto OffersDone }
@@ -421,6 +432,7 @@ OfferLoop:
         OfferBivant, OfferZhentilMission, OfferUrslingen, OfferCouncilMeeting][Scratch1]
     OffersListed += 1
     PressToContinue()
+    goto NextOffer
 
 NextOffer:
     Scratch1 += 1
@@ -549,6 +561,7 @@ def OfferCouncilMeeting() {
 MarkCadornaTraitor:
     if QuestCadornaTraitor >= RewardDue { goto OffersDone }
     QuestCadornaTraitor = RewardDue
+    goto OffersDone
 
 OffersDone:
     Text("'THESE ARE ALL OF THE COMMISSIONS CURRENTLY AVAILABLE.'")
@@ -615,6 +628,7 @@ CouncilGuard:
     Text("YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?")
     YesNoMenu()
     goto [LeaveHall, FightGuards][Scratch1]
+    goto LeaveHall
 
 LeaveHall:
     Facing = North

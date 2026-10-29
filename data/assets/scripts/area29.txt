@@ -13,11 +13,13 @@ on move {
     if Scratch10 != 1 { goto CheckSecretDoorBlock }
     GroundKind = Surface
     UpdateSky()
+    goto CheckSecretDoorBlock
 
     CheckSecretDoorBlock:
     if SecretDoorFound == Yes { goto CheckNailedDoor }
     if Scratch10 == 6 and Facing == North { HoldMove = SkipMove }
     if Scratch10 == 7 and Facing == South { HoldMove = SkipMove }
+    goto CheckNailedDoor
 
     CheckNailedDoor:
     if Scratch10 == 21 and Facing == South { goto NailedDoor }
@@ -26,6 +28,7 @@ on move {
     if AuxMember = WildFlags & WellRungs; AuxMember == 0 { goto WellPlaza }
     GroundKind = ByTheWell
     UpdateSky()
+    goto CheckWellAmbush
 
     CheckWellAmbush:
     ExitIfWellCleared()
@@ -91,6 +94,7 @@ NearWell:
     Text("YOU ARE JUST ")
     gosub [SaySouth, SayWest, SayNorth, SayEast][AuxEncChoice]
     Print(" OF KUTO'S WELL.")
+    goto ArrowRain
 
 ArrowRain:
     ExitIfWellCleared()
@@ -155,10 +159,12 @@ SouthWallDoor:
 
 NorthWallDoor:
     $AuxMonsterName = "NORTH WALL."
+    goto SearchSecretDoor
 
 SearchSecretDoor:
     if SecretDoorFound == Yes { goto SecretDoorSpotted }
     AuxMember = 0
+    goto SearchMemberLoop
 
 SearchMemberLoop:
     SelectMember(AuxMember)
@@ -167,6 +173,7 @@ SearchMemberLoop:
     AuxSearchCount += Search
     AuxRoll = Random(5)
     if AuxSearchCount > AuxRoll { goto SecretDoorSpotted }
+    goto NextSearcher
 
     NextSearcher:
     AuxMember += 1
@@ -218,6 +225,7 @@ SurrenderToBandits:
     Rob(1, 100, 100)
     BanditsDone = Yes
     BanditTreasureState = TreasureGone
+    goto ReleasedAboveGround
 
 ReleasedAboveGround:
     InWell = 0
@@ -250,6 +258,7 @@ HiddenCatacombs:
     SetupMonster(Kobold, distance=2, closeup=Kobold)
     AuxMember = 25
     PauseLoop()
+    goto ArrowVolley
 
     ArrowVolley:
     Text("SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP.")
@@ -323,11 +332,13 @@ WaitingKobolds:
 
 WellPlaza:
     if AuxMember = WildFlags & WellRungs; AuxMember != 0 { goto ClimbDownWell }
+    goto MonstersAttack
 
 MonstersAttack:
     Scratch4 = 0
     ShowKobolds()
     Text("MONSTERS FROM THE SURROUNDING BUILDINGS ATTACK YOU.")
+    goto WellFight
 
 WellFight:
     ExitIfWellCleared()
@@ -377,6 +388,7 @@ RandomEncounter:
     PartySurprise(AuxMember, AuxRoll)
     Surprise(AuxMember, AuxRoll, 0, 0)
     goto [BloodthirstyMonsters, SurprisedBy, SurprisedParty, FaceToFace][Surprise]
+    goto SurprisedBy
 
 SurprisedBy:
     SetupMonster(AuxEncMonster2, distance=2, closeup=Scratch8)
@@ -416,6 +428,7 @@ BloodthirstyMonsters:
         escape=AuxEncResult, strength=AuxEncResult2)
     AuxEncTemp += 9
     goto [Done, EncounterFight, DropOff, EncounterFight][AuxMember]
+    goto FaceToFace
 
 FaceToFace:
     $AuxMonsterName = "YOU ARE SUDDENLY FACE TO FACE WITH ARMED "
@@ -424,6 +437,7 @@ FaceToFace:
         flee=Attack, advance=Mirror, parlay=Talk, near=$AuxMonsterName, escape=AuxEncResult,
         strength=AuxEncResult2)
     goto [Done, EncounterFight, DropOff, ParlayMonsters][AuxMember]
+    goto AvoidedBy
 
 AvoidedBy:
     $AuxMonsterName = "YOU ARE BEING AVOIDED BY SOME "
@@ -433,6 +447,7 @@ AvoidedBy:
         strength=AuxEncResult2)
     AuxEncTemp -= 10
     goto [Done, EncounterFight, DropOff, ParlayMonsters][AuxMember]
+    goto SurprisedParty
 
 SurprisedParty:
     $AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
@@ -442,6 +457,7 @@ SurprisedParty:
         strength=AuxEncResult2)
     AuxEncTemp -= 20
     goto [Done, FightSurprised, Done, ParlayMonsters][AuxMember]
+    goto SicklyKobolds
 
 SicklyKobolds:
     AuxSightText = Random(20)
@@ -457,6 +473,7 @@ SicklyKobolds:
     EncounterMenu(Kobold, distance=2, closeup=Kobold, result=AuxMember, combat=Attack, wait=Flee, flee=Flee,
         advance=Flee, parlay=Talk, near="THE KOBOLDS ARE TRYING TO SNEAK OFF.", escape=0, strength=0)
     goto [Done, SicklyKoboldsFight, DropOff, SicklyKoboldsParlay][AuxMember]
+    goto SicklyKoboldsFight
 
 SicklyKoboldsFight:
     Surprise = NoSurprise
@@ -478,6 +495,7 @@ SicklyKoboldsParlay:
     Text("THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)")
     AuxMember = Menu("RELEASE THEM?", "FIGHT THEM?")
     goto [KoboldsScamper, SicklyKoboldsFight][AuxMember]
+    goto KoboldsScamper
 
 KoboldsScamper:
     Text("THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL.")
@@ -533,6 +551,7 @@ AfterCombat:
     if CombatEnd > PartyDied { goto DropOff }
     if CombatEnd < 1 { goto CountEncounter }
     if Beaten == 0 { exit }
+    goto CountEncounter
 
     CountEncounter:
     if EncounterCount != 255 { EncounterCount += 1 }
@@ -540,6 +559,7 @@ AfterCombat:
 
 FightSurprised:
     Surprise = MonstersAreSurprised
+    goto EncounterFight
 
 EncounterFight:
     AuxPartyStrength = PartyStrength()
@@ -554,6 +574,7 @@ EncounterFight:
     }
     AuxPartyStrength = AuxPartyStrength / 2
     AuxTemp9 = 3
+    goto LoadEncounter
 
     LoadEncounter:
     if AuxPartyStrength == 0 { AuxPartyStrength = 1 }

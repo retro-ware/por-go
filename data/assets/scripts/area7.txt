@@ -64,6 +64,7 @@ StairsDown:
 
 StairsUp:
     Text("DO YOU WANT TO GO UP THESE STAIRS?")
+    goto TakeStairsMenu
 
 TakeStairsMenu:
     HoldMove = SkipMove
@@ -71,6 +72,7 @@ TakeStairsMenu:
     PartyX = DestX[Scratch1]
     PartyY = DestY[Scratch1]
     if Scratch1 == 0 { goto DescendToArea5 }
+    goto RedrawExit
 
 RedrawExit:
     RedrawView()
@@ -88,6 +90,7 @@ HoldAtSecretDoor:
 SecretDoorCheck:
     if SearchTowerFlags has SecretDoor { goto SecretDoorFound }
     Scratch9 = 0
+    goto SecretDoorRoll
 
 SecretDoorRoll:
     SelectMember(Scratch10)
@@ -98,6 +101,7 @@ SecretDoorRoll:
     if SelRace == HalfElf { Scratch9 += 1 }
     Scratch8 = Random(5)
     if Scratch8 <= Scratch9 { goto SecretDoorFound }
+    goto SecretDoorNextMember
 
     SecretDoorNextMember:
     Scratch10 = Scratch10 + 1
@@ -134,6 +138,7 @@ def DirRight() {
 TrapDoorRoom:
     Text("YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?")
     if YesNoMenu() != "YES" { exit }
+    goto ChooseOpener
 
     ChooseOpener:
     Who("WHO WILL OPEN IT?")
@@ -142,6 +147,7 @@ TrapDoorRoom:
     Scratch10 = Random(19)
     Scratch10 += 1
     if Scratch10 >= SelSaveVsPetrify { goto OpenerPetrified }
+    goto SawStatues
 
     SawStatues:
     Text("QUICKLY LOOKING AWAY, ")
@@ -156,6 +162,7 @@ TrapDoorRoom:
     Print($SelName)
     Print(" TURNS TO STONE.")
     SelectMember(Scratch1)
+    goto JumpTrapDoor
 
     JumpTrapDoor:
     Print(" DO YOU WANT TO JUMP THROUGH THE TRAP DOOR?")
@@ -166,12 +173,14 @@ TrapDoorRoom:
     PartyX = 11
     PartyY = 5
     CallRedraw()
+    goto StatueRoom
 
 StatueRoom:
     if StatueRoomSeen != 0 { goto MedusaMenu }
     Text("YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR.")
     PressToContinue()
     StatueRoomSeen = 1
+    goto MedusaMenu
 
     MedusaMenu:
     if SearchTowerFlags has MedusaKilled { exit }
@@ -179,6 +188,7 @@ StatueRoom:
         advance=CloseIn, parlay=Attack, near="A MEDUSA COMES RUNNING TOWARD YOU.", escape=9,
         strength=9)
     goto [RedrawExit, MedusaFight, RetreatFromMedusa][Scratch10]
+    goto MedusaFight
 
 MedusaFight:
     Surprise = NoSurprise
@@ -200,6 +210,7 @@ BenchRoom:
     if BenchRoomSeen != 0 { goto MessengerThief }
     Text("YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES.")
     BenchRoomSeen = 1
+    goto MessengerThief
 
     MessengerThief:
     if GenheerisFlags has DragonDone { exit }
@@ -231,6 +242,7 @@ RetreatFromThief:
 ThiefAttacks:
     Text("THE THIEF SHOUTS 'BLASPHEMERS!' AND ATTACKS.")
     Delay()
+    goto ThiefFight
 
 ThiefFight:
     Morale = 100
@@ -246,6 +258,7 @@ MerchantRoom:
     if MerchantRoomSeen != 0 { goto GenheerisAtDesk }
     Text("YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT.")
     MerchantRoomSeen = 1
+    goto GenheerisAtDesk
 
     GenheerisAtDesk:
     if GenheerisFlags has DragonDone { exit }
@@ -265,6 +278,7 @@ MerchantRoom:
     Text("'TELL AL-HYAM DHAZID TO EXECUTE PHASE 2 OF PLAN A. DISMISSED.'")
     Scratch10 = Menu("LEAVE", "STAY")
     goto [RetreatFromGenheeris][Scratch10]
+    goto GenheerisOffer
 
 GenheerisOffer:
     Portrait = GreyBeard
@@ -298,6 +312,7 @@ GenheerisOffer:
     Combat()
     GenheerisFlags |= GenheerisLeft
     if CombatEnd != PartyFled { exit }
+    goto RetreatFromGenheeris
 
 RetreatFromGenheeris:
     PartyX = 2
@@ -310,6 +325,7 @@ GenheerisLeaves:
     GenheerisFlags &= ~(GenheerisJoined|GenheerisLeft)
     GenheerisFlags |= GenheerisLeft
     AuxCounter = 0
+    goto FindGenheerisLoop
 
 FindGenheerisLoop:
     SelectMember(AuxCounter)
@@ -334,6 +350,7 @@ AudienceHall:
     PressToContinue()
     CallRedraw()
     GenheerisFlags |= AudienceHallSeen
+    goto HallGuards
 
     HallGuards:
     if GenheerisFlags has GuardsBeaten { goto DragonOffer }
@@ -344,6 +361,7 @@ AudienceHall:
         escape=9, strength=9)
     Portrait = None
     goto [RedrawExit, GuardsFight][Scratch10]
+    goto RetreatFromHall
 
 RetreatFromHall:
     PartyX = 3
@@ -359,6 +377,7 @@ GuardsFight:
     Combat()
     if CombatEnd == PartyFled { goto RetreatFromHall }
     GenheerisFlags |= GuardsBeaten
+    goto DragonOffer
 
 DragonOffer:
     if GenheerisFlags has DragonDone { goto RedrawExit }
@@ -368,6 +387,7 @@ DragonOffer:
     Text("'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'")
     PressToContinue()
     AuxCounter = 0
+    goto VoteLoop
 
 VoteLoop:
     SelectMember(AuxCounter)
@@ -386,10 +406,12 @@ VoteLoop:
     if SelAlignment == LawfulEvil { SelSide = MonsterSide }
     if SelAlignment == NeutralEvil { SelSide = MonsterSide }
     if SelAlignment == ChaoticEvil { SelSide = MonsterSide }
+    goto SaveVote
 
 SaveVote:
     Scratch1 = 128 + AuxCounter
     SelectMember(Scratch1)
+    goto VoteNext
 
 VoteNext:
     AuxCounter += 1
@@ -407,6 +429,7 @@ VoteNext:
     TowerEndFlags = GenheerisFlags | DragonDone
     TyranthraxusDefeated = 1
     Program(8)
+    goto LeaveCastle
 
 LeaveCastle:
     Text("KNOWING THAT TYRANTHRAXUS HAS FINALLY BEEN DEFEATED, YOU LEAVE THE CASTLE. MOVING THROUGH THE STREETS YOU CATCH OCCASIONAL GLIMPSES OF MONSTERS IN HIDING. NONE ATTACK.")

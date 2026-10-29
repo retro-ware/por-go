@@ -57,6 +57,7 @@ RandomEncounterRoll:
     if Search != Searching { Scratch1 = 30 }
     Scratch1 = Random(Scratch1)
     if 1 != Scratch1 { exit }
+    goto RandomEncounter
 
 RandomEncounter:
     Scratch1 = 18
@@ -151,10 +152,12 @@ CourtyardAmbush:
 
     ChasedOut:
     Text("YOU ARE CHASED OUT INTO THE STREETS.")
+    goto EjectToStreet
 
 EjectToStreet:
     Scratch2 = Random(1)
     goto [EjectWest, EjectEast][Scratch2]
+    goto EjectWest
 
 EjectWest:
     PartyX = 4
@@ -238,12 +241,14 @@ DeadHobgoblin:
     FindSkullcrusher()
     if Scratch3 != 255 { goto BodyMenu }
     Print("SKULLCRUSHER LAUGHS AND CRACKS HIS KNUCKLES.")
+    goto BodyMenu
 
 BodyMenu:
     PressToContinue()
     Text("WHAT DO YOU DO WITH THE BODY?")
     AuxParlayChoice = Menu("SEARCH", "DESTROY", "LEAVE")
     goto [SearchBody, DestroyBody, Done][AuxParlayChoice]
+    goto SearchBody
 
 SearchBody:
     Text("YOU FIND NOTHING OF ANY VALUE.")
@@ -277,14 +282,17 @@ SmallDarkRoom:
     Portrait = Moustached
     SetupMonster(Fighter14, distance=0, body=BareChest)
     Print("A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47.")
+    goto PrisonerContinue
 
 PrisonerContinue:
     PressToContinue()
+    goto PrisonerMenu
 
 PrisonerMenu:
     Text("WHAT DO YOU DO WITH THE MAN?")
     AuxParlayChoice = Menu("FREE", "ATTACK", "PARLAY", "LEAVE")
     goto [FreeMenu, KillPrisoner, ParlayPrisoner, LeavePrisoner][AuxParlayChoice]
+    goto LeavePrisoner
 
 LeavePrisoner:
     Portrait = None
@@ -294,6 +302,7 @@ FreeMenu:
     Text("HOW WILL YOU FREE HIM?")
     AuxParlayChoice = Menu("UNLOCK", "PICK LOCK", "BREAK CHAINS", "LEAVE")
     goto [UnlockChains, PickLockFails, ChainsHold, PrisonerMenu][AuxParlayChoice]
+    goto UnlockChains
 
 UnlockChains:
     if Carried(BrassKey) { goto KeyOpensLocks }
@@ -324,6 +333,7 @@ KillPrisoner:
 ParlayPrisoner:
     AuxParlayChoice = Parlay(0, 1, 2, 3, 4)
     goto [WhatsYourProblem, DontFoolMe, AlmostKilledLeader, FreeMeHelp, WordsDontBreak][AuxParlayChoice]
+    goto WhatsYourProblem
 
 WhatsYourProblem:
     Text(" 'WHATS YOUR PROBLEM?'")
@@ -347,11 +357,13 @@ WordsDontBreak:
 
 FreeManContinue:
     PressToContinue()
+    goto FreeManMenu
 
 FreeManMenu:
     Text("THERE IS A FREE MAN HERE. WHAT DO YOU DO?")
     AuxParlayChoice = Menu("ATTACK", "WAIT", "FLEE", "PARLAY", "LEAVE")
     goto [FightFreeMan, FreeManWaits, FleeRoom, ParlayFreeMan, LeavePrisoner][AuxParlayChoice]
+    goto FightFreeMan
 
 FightFreeMan:
     Morale = 100
@@ -377,6 +389,7 @@ FleeRoom:
 ParlayFreeMan:
     AuxParlayChoice = Parlay(0, 0, 0, 0, 1)
     goto [ServantThanks, DislikeTone][AuxParlayChoice]
+    goto ServantThanks
 
 ServantThanks:
     Text("'THANKS FOR FREEING ME. I'M LORD CADORNA'S SERVANT.")
@@ -384,6 +397,7 @@ ServantThanks:
     Text("ADD HIM TO YOUR PARTY?")
     AuxParlayChoice = Menu("YES", "NO")
     goto [AddSkullcrusher, SkullcrusherLeaves][AuxParlayChoice]
+    goto AddSkullcrusher
 
 AddSkullcrusher:
     if PartyCount != 8 { goto SkullcrusherJoins }
@@ -460,6 +474,7 @@ OgreChief:
     Text("YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?")
     Scratch1 = Menu("OPEN IT", "TAKE IT UNOPENED")
     goto [OpenBox, TakeBoxUnopened][Scratch1]
+    goto TakeBoxUnopened
 
 TakeBoxUnopened:
     IronBoxState = CarriedUnopened
@@ -481,6 +496,7 @@ HobgoblinEncounter:
     if AuxMenuChoice == 1 { goto HobgoblinFight }
     if AuxMenuChoice == 2 { goto HobgoblinsChase }
     Text("THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!")
+    goto HobgoblinFight
 
     HobgoblinFight:
     SetupMonster(Hobgoblin, distance=0, closeup=Hobgoblin)
@@ -499,6 +515,7 @@ HobgoblinEncounter:
 def FindSkullcrusher() {
     Scratch2 = 0
     Scratch3 = 0
+    goto FindSkullcrusherLoop
 
     FindSkullcrusherLoop:
     SelectMember(Scratch2)
@@ -510,6 +527,7 @@ def FindSkullcrusher() {
     SkullcrusherFound:
     if SelStatus != Okay { goto FindSkullcrusherDone }
     Scratch3 = 255
+    goto FindSkullcrusherDone
 
     FindSkullcrusherDone:
     return
@@ -520,6 +538,7 @@ HobgoblinsChase:
     Scratch2 = Random(3)
     NoCoords = 1
     goto [EscapeSpot1, EscapeSpot2, EscapeSpot3, EscapeSpot4][Scratch2]
+    goto EscapeSpot1
 
 EscapeSpot1:
     PartyX = 4
@@ -539,6 +558,7 @@ EscapeSpot3:
 EscapeSpot4:
     PartyX = 12
     PartyY = 13
+    goto EscapeRedraw
 
 EscapeRedraw:
     CallRedraw()
@@ -559,6 +579,7 @@ ThievesWell:
     Text("ON THE WELL IS A NOTE,'THIEVES ONLY.' THE WELL HAS NO RUNGS OR ROPE AND SEEMS VERY DEEP. ONLY A SKILLFUL CLIMBER COULD SURVIVE THE DESCENT. WHAT DO YOU DO?")
     Scratch1 = Menu("LEAVE", "CLIMB DOWN")
     goto [Done, ChooseClimber][Scratch1]
+    goto ChooseClimber
 
 ChooseClimber:
     Who("WHO WILL CLIMB DOWN?")
@@ -577,10 +598,12 @@ ChooseClimber:
     Text("YOU BEGIN A LONG FALL.")
     PressToContinue()
     Scratch1 = 0
+    goto FeatherFallScan
 
 FeatherFallScan:
     Scratch2 = EffectTable[Scratch1]
     if Scratch2 == 27 { goto FeatherFallCheck }
+    goto FeatherFallNext
 
 FeatherFallNext:
     Scratch1 += 1
@@ -627,6 +650,7 @@ MeetRestal:
     Text("'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'")
     Scratch1 = Menu("YES", "NO")
     goto [DuplicateSeal, RestalFarewell][Scratch1]
+    goto DuplicateSeal
 
 DuplicateSeal:
     ClearMonsters()
@@ -634,6 +658,7 @@ DuplicateSeal:
     Combat()
     RestalDealDone = 1
     IronBoxState = CarriedUnopened
+    goto RestalFarewell
 
 RestalFarewell:
     Text("THE OLD THIEF LAUGHS, 'PERHAPS WE SHALL MEET AGAIN.'")
@@ -646,11 +671,13 @@ TextileHouseOffer:
     Text("'YOU ARE SEEKING THE TEXTILE HOUSE. WE CAN GET YOU IN UNSEEN AND POSSIBLY HELP YOU WITH THE TREASURE. INTERESTED?'")
     Scratch1 = Menu("YES", "NO")
     goto [Blindfold, RestalFarewell][Scratch1]
+    goto Blindfold
 
 Blindfold:
     Text("A ROPE IS TOSSED UP AND THE REST OF THE PARTY COMES DOWN. THE OLD THIEF SAYS 'OUR RULES REQUIRE YOU TO BE BLINDFOLDED IN OUR GUILD HOUSE, OKAY?'")
     Scratch1 = Menu("YES", "NO")
     goto [BlindfoldedWalk, RestalFarewell][Scratch1]
+    goto BlindfoldedWalk
 
 BlindfoldedWalk:
     Text("YOU ARE BLINDFOLDED AND TAKEN ON A LONG, TWISTING WALK, THEN UP A LADDER.'ONLY MEET US AT THE MAIN WELL.'")

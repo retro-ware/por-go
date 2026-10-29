@@ -106,6 +106,7 @@ StreetSquare:
     if DisguiseState == Disguised { goto SneakPast }
     Scratch1 = Random(1)
     goto [PatrolGlare, PatrolCheckOut][Scratch1]
+    goto PatrolGlare
 
 PatrolGlare:
     Print("THEY GLARE AT YOUR PARTY, ")
@@ -113,29 +114,34 @@ PatrolGlare:
 
 PatrolCheckOut:
     Print("THEY CHECK OUT YOUR PARTY, ")
+    goto DisguiseCheck
 
 DisguiseCheck:
     Delay()
     Approach()
     Scratch10 = 5
     Scratch1 = 0
+    goto DisguiseCheckMember
 
 DisguiseCheckMember:
     SelectMember(Scratch1)
     if SelRace == Human { goto DisguiseCheckNext }
     Scratch10 += 5
+    goto DisguiseCheckNext
 
     DisguiseCheckNext:
     Scratch1 += 1
     if Scratch1 < 8 { goto DisguiseCheckMember }
     Scratch9 = Random(100)
     if Scratch9 > Scratch10 { goto PatrolWalkOn }
+    goto PatrolDemandWho
 
 PatrolDemandWho:
     Print("AND DEMAND, 'WHO ARE YOU?'")
     Approach()
     Scratch1 = Parlay(0, 1, 2, 3, 4)
     goto [PatrolGrumble, HereForBoss, SettlersKillThem, SettlersKillThem, PatrolGrumble][Scratch1]
+    goto SettlersKillThem
 
 SettlersKillThem:
     Text("THEY YELL 'SETTLERS! KILL THEM!'")
@@ -157,6 +163,7 @@ PatrolGrumble:
 PatrolWalkOn:
     Scratch1 = Random(1)
     goto [WalkOn, LaughWalkOn][Scratch1]
+    goto WalkOn
 
 WalkOn:
     Print("AND WALK ON.")
@@ -170,6 +177,7 @@ SneakPast:
     Scratch1 = Random(5)
     PressToContinue()
     goto [PatrolDemandWho, StopTheyMoveOn, StopTheyMoveOn, SlipPast, SlipPast, SlipPast][Scratch1]
+    goto SlipPast
 
 SlipPast:
     Text("YOUR PARTY SLIPS PAST THEM.")
@@ -188,6 +196,7 @@ PatrolEncounterMenu:
         mid="THE MONSTERS PREPARE", escape=EncDistance, strength=EncDistance)
     Morale = 100
     goto [Done, PatrolFight, PartyFlees, PatrolParlay][Scratch1]
+    goto PatrolFight
 
 PatrolFight:
     LoadPatrol()
@@ -218,6 +227,7 @@ PartyFlees:
     PartyY = Scratch1
     CallRedraw()
     NoCoords = 1
+    goto CoverBlown
 
 CoverBlown:
     if DisguiseState == NotChosen { exit }
@@ -274,6 +284,7 @@ PatrolHobgoblins:
 
 PatrolOgres:
     $AuxCounter = " OGRES"
+    goto RollPatrolCount
 
 RollPatrolCount:
     Scratch1 = PartyStrength()
@@ -288,6 +299,7 @@ RollPatrolCount:
     if Scratch1 < Scratch2 { goto SetPatrolCount }
     EncExtraCount = EncExtraTable[EncType]
     if Scratch1 > 50 { Scratch1 = 50 }
+    goto SetPatrolCount
 
     SetPatrolCount:
     EncCount = Scratch1
@@ -332,6 +344,7 @@ OverhearRumor:
     OverheardIndex += AboutOgres
     Approach()
     goto [RumorBoss, RumorOgres, RumorBaneTemple, RumorLard, RumorBidder][Scratch1]
+    goto RumorBoss
 
 RumorBoss:
     Print("'DO YOU THINK HE'LL REALLY SHOW UP -- THE BOSS I MEAN?'")
@@ -363,12 +376,14 @@ AuctionStart:
     PressToContinue()
     Scratch1 = VMenu("DO YOU WISH TO:", "STAND AND LISTEN", "MOVE IN CLOSER", "LISTEN TO COMMENTS", "LEAVE")
     goto [AuctionBidding, MoveCloser, AuctionComments, AuctionLeave][Scratch1]
+    goto AuctionBidding
 
 AuctionBidding:
     Text("THE BIDDING ESCALATES TO 5,000 GOLD PIECES -- HIGH BID FROM A MAN IN PLAIN CLOTHES, NEXT TO AN OGRE.")
     PressToContinue()
     Scratch1 = VMenu("DO YOU WISH TO:", "MAKE A BID", "WAIT FOR WINNER", "TRY TO LEAVE")
     goto [MakeBid, WaitForWinner, AuctionLeave][Scratch1]
+    goto MakeBid
 
 MakeBid:
     Text("YOU UP THE BID. MONSTERS NEARBY TURN, STARE,")
@@ -381,6 +396,7 @@ MakeBid:
     PressToContinue()
     Scratch1 = VMenu("DO YOU:", "FOLLOW THE OGRE", "MOVE QUIETLY AWAY", "LOOK FOR THE MAN IN PLAIN CLOTHES")
     goto [FollowOgre, AuctionLeave, LookForGarwin][Scratch1]
+    goto FollowOgre
 
 FollowOgre:
     Text("THE OGRE IS TACKLED AND SEARCHED. HE DOESN'T HAVE THE ITEM ON HIM.")
@@ -420,6 +436,7 @@ MoveCloser:
 AuctionComments:
     Scratch1 = Random(1)
     goto [CommentIllumination, CommentCommand][Scratch1]
+    goto CommentIllumination
 
 CommentIllumination:
     Text("'IT'S A WAND OF ILLUMINATION. WHO CARES, I SEE IN THE DARK ANYWAY!'")
@@ -468,10 +485,12 @@ TavernEnter:
     Print("YOU OPENED THE DOOR INTO A DRUNK BUCCANEER.")
     PressToContinue()
     Text("HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?")
+    goto BuccaneerMenu
 
 BuccaneerMenu:
     Scratch1 = Menu("CHALLENGE", "ATTACK", "FLEE", "BRIBE")
     goto [ChallengeBuccaneer, PatronsAttack, PartyFlees, BribeBuccaneer][Scratch1]
+    goto ChallengeBuccaneer
 
 ChallengeBuccaneer:
     Who("WHO WILL CHALLENGE THE BUCCANEER?")
@@ -516,6 +535,7 @@ BribeBuccaneer:
     Text("'A TENTH OF YOUR MONEY THEN.'DO YOU ACCEPT?")
     Scratch1 = Menu("YES", "NO")
     goto [PayBribe, BuccaneerMenu][Scratch1]
+    goto PayBribe
 
 PayBribe:
     Rob(1, 10, 10)
@@ -528,6 +548,7 @@ TavernCrowd:
     PressToContinue()
     Scratch1 = VMenu("WHAT DO YOU DO?", "MIX WITH MONSTERS", "DRINK HEAVILY", "ATTACK", "LEAVE")
     goto [MixWithMonsters, DrinkHeavily, PatronsAttack, StepBack][Scratch1]
+    goto MixWithMonsters
 
 MixWithMonsters:
     if DisguiseState == Disguised { goto PatronsAttack }
@@ -536,6 +557,7 @@ MixWithMonsters:
     PressToContinue()
     Scratch1 = VMenu("WHAT DO YOU DO?", "ATTACK", "TRY TO LEAVE", "INSULT BACK", "JOIN IN HEAVY DRINKING")
     goto [FreeForAll, PatronsAttack, FreeForAll, DrinkHeavily][Scratch1]
+    goto DrinkHeavily
 
 DrinkHeavily:
     PartyX = 2
@@ -563,6 +585,7 @@ FreeForAll:
     LoadMonster(Hobgoblin, count=20, icon=Hobgoblin)
     LoadMonster(Ogre, count=5, icon=Ogre)
     Scratch2 = 0
+    goto FreeForAllMember
 
     FreeForAllMember:
     Scratch1 = Random(44)
@@ -577,6 +600,7 @@ FreeForAll:
     Combat()
     if CombatEnd > PartyDied { goto PartyFlees }
     TavernState = BrawlWon
+    goto BarDestroyed
 
 BarDestroyed:
     if TavernState > BrawlWon { exit }
@@ -592,17 +616,20 @@ ThePittSign:
 IlmaterTemple:
     if LastBuildingCell != 4 { goto IlmaterHealer }
     Text("THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE.")
+    goto IlmaterHealer
 
     IlmaterHealer:
     ShowPortrait(SilverHairedWoman, BlueCape)
     Text("A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?")
     Scratch1 = Menu("YES", "NO")
     goto [Heal, RestHere][Scratch1]
+    goto Heal
 
 Heal:
     Temple = 1
     ClearMonsters()
     Combat()
+    goto RestHere
 
 RestHere:
     Text("'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES.")
@@ -624,15 +651,18 @@ RobedOrc:
     if DisguiseState == CoverBroken { goto AttackOrc }
     if DisguiseState == Disguised { goto AttackOrc }
     goto [StepBack, GreetOrc, AttackOrc][Scratch1]
+    goto GreetOrc
 
 GreetOrc:
     Text("THE ORC SMILES CROOKEDLY.'GREETINGS FROM BANE.")
     if QuestTempleOfBane != 0 { goto RecruitRecover }
     Print(" WE ARE RECRUITING CREATURES FOR OUR TEMPLE TO THE NORTHEAST. ARE YOU INTERESTED?'")
+    goto RecruitMenu
 
 RecruitMenu:
     Scratch1 = Menu("YES", "NO")
     goto [AcceptRecruit, DeclineRecruit][Scratch1]
+    goto RecruitRecover
 
 RecruitRecover:
     Print(" WE ARE HIRING CREATURES TO RECOVER OUR TEMPLE. ARE YOU INTERESTED?'")
@@ -640,6 +670,7 @@ RecruitRecover:
 
 AcceptRecruit:
     Text("'MEET HERE IN TWO HOURS. YOU MAY MEET HIGH PRIEST MACE.' HE ESCORTS YOU OUT.")
+    goto SetMeetHour
 
 SetMeetHour:
     BaneRecruiterState = MeetingSet

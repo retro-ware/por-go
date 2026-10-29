@@ -14,6 +14,7 @@ def EdgeNorth() {
 
 EdgeWest:
     goto [EdgeOk, EdgeOk, EdgeOk, EdgeOk, EdgeOk, BlockMove, BlockMove, BlockMove][FacingRaw]
+    goto BlockMove
 
 BlockMove:
     HoldMove = SkipMove
@@ -42,6 +43,7 @@ def CheckTerrainAhead() {
     gosub [ProbeN, ProbeNE, ProbeE, ProbeSE, ProbeS, ProbeSW, ProbeW, ProbeNW][FacingRaw]
     CallUnknownC01B()
     Scratch1 = 0
+    goto CheckTerrainLoop
 
     CheckTerrainLoop:
     if Scratch1 == 8 { return }
@@ -94,6 +96,7 @@ on step {
     if InLair == InsideLair { goto LairCell }
     Scratch1 = 0
     Scratch4 = 0
+    goto FindSiteRow
 
     FindSiteRow:
     if Scratch1 >= 8 { goto RollEncounter }
@@ -106,6 +109,7 @@ on step {
 
     SiteRowFound:
     Scratch3 += Scratch4
+    goto FindSiteX
 
     FindSiteX:
     if Scratch4 >= Scratch3 { goto RollEncounter }
@@ -141,11 +145,13 @@ DragonCaveEvent:
 
     LargeCave:
     Text("AS YOU HIKE THROUGH THE MOUNTAINS YOU SEE A LARGE CAVE.")
+    goto CaveMenu
 
     CaveMenu:
     Print(" WHAT WILL YOU DO?")
     Scratch1 = Menu("ENTER CAVE", "IGNORE CAVE")
     goto [EnterDragonCave, DoneMarkKeep][Scratch1]
+    goto EnterDragonCave
 
 EnterDragonCave:
     Text("YOU ENTER THE CAVE.")
@@ -181,6 +187,7 @@ BuccaneerBaseSite:
     Text("YOU HAVE REACHED THE BUCCANEER BASE.  A BAND OF BUCCANEERS RIDE OUT TO ESCORT YOU IN.  WHAT WILL YOU DO?")
     Scratch1 = Menu("ENTER", "LEAVE")
     goto [EnterBuccaneerBase, DoneMarkKeep][Scratch1]
+    goto EnterBuccaneerBase
 
 EnterBuccaneerBase:
     LeaveWilderness()
@@ -207,6 +214,7 @@ OutpostRiders:
     Text("A GROUP OF MEN ON HORSEBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS, 'ARE YOU THE DIPLOMATIC ENVOYS FROM NEW PHLAN?'  WHAT WILL YOU SAY?")
     Scratch1 = Menu("YES", "NO")
     goto [EscortToOutpost, DenyEnvoy][Scratch1]
+    goto DenyEnvoy
 
 DenyEnvoy:
     Text("AFTER SAYING NO, THE RIDERS RETURN TO THE OUTPOST.  BEFORE LEAVING, THEIR LEADER SAYS, 'YOU ARE TRESSPASSING ON PRIVATE LAND.  I ADVISE YOU TO LEAVE.'")
@@ -225,6 +233,7 @@ KeepRiders:
     Text("AS YOU APPROACH THE KEEP, A GROUP OF ARMED MEN ON HORESBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS 'YOU ARE TRESSPASSING ON PRIVATE LAND; LEAVE NOW OR FACE THE CONSQUENCES!'")
     Scratch1 = Menu("STAY", "LEAVE")
     goto [FightKeepRiders, ExitEvent][Scratch1]
+    goto FightKeepRiders
 
 FightKeepRiders:
     SetupMonster(Fighter16, distance=2, closeup=Kobold)
@@ -254,6 +263,7 @@ RollEncounter:
     Scratch1 = Random(19)
     ForceEncounter25 = 0
     if Scratch1 != 0 { goto Done }
+    goto RandomEncounter
 
 RandomEncounter:
     PickEncounter()
@@ -264,6 +274,7 @@ RandomEncounter:
     Surprise(Scratch1, Scratch2, Scratch4, Scratch5)
     if Scratch5 == 9 { Surprise &= PartyIsSurprised }
     goto [SpotGroup, PartySurprised, SurpriseGroup, FaceToFace][Surprise]
+    goto SpotGroup
 
 SpotGroup:
     Text("YOU SPOT A GROUP OF ")
@@ -271,6 +282,7 @@ SpotGroup:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Talk, escape=AuxEncTemp, strength=AuxEncTemp)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto PartySurprised
 
 PartySurprised:
     Text("YOU ARE SURPRISED BY A GROUP OF ")
@@ -279,6 +291,7 @@ PartySurprised:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Mirror, escape=99, strength=99)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto SurpriseGroup
 
 SurpriseGroup:
     Text("YOU SURPRISE A GROUP OF ")
@@ -287,6 +300,7 @@ SurpriseGroup:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Flee,
         flee=Flee, advance=Mirror, parlay=Mirror, escape=0, strength=0)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto FaceToFace
 
 FaceToFace:
     Text("SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF ")
@@ -295,6 +309,7 @@ FaceToFace:
     EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Mirror, escape=0, strength=0)
     goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
+    goto EncounterFight
 
 EncounterFight:
     Morale = AuxEncResult2
@@ -302,6 +317,7 @@ EncounterFight:
     LoadMonster(AuxMonster, count=EncounterCount25, icon=AuxTemp9)
     if EncounterExtraCount25 == 0 { goto StartCombat }
     LoadMonster(AuxPartyStrength, count=EncounterExtraCount25, icon=AuxTemp9)
+    goto StartCombat
 
     StartCombat:
     ClearBox()
@@ -351,11 +367,13 @@ SmallDarkCave:
     Text("YOU HAVE FOUND A SMALL DARK CAVE.  WILL YOU ENTER?")
     Scratch1 = Menu("ENTER", "LEAVE")
     goto [EnterLair, Done][Scratch1]
+    goto EnterLair
 
 EnterLair:
     InLair = InsideLair
     Scratch6 = Random(3)
     goto [LairStartA, LairStartB, LairStartC, LairStartD][Scratch6]
+    goto LairStartA
 
 LairStartA:
     LairStartX25 = 15
@@ -398,6 +416,7 @@ LairCell:
     goto [Done, TwoBoars, BoarSow, ThreeBoars, DwarfRemains, SoftGround, AnkhegVictims, AnkhegLunges,
         SnakeSkin, GiganticSnake, SnakeFalls, ThriKreenBlock, ThriKreenWarriors, ThriKreenChest,
         PassageOutside][Scratch10]
+    goto TwoBoars
 
 TwoBoars:
     if Scratch1 = DragonCaveFlags & TwoBoarsFought; Scratch1 != 0 { exit }
@@ -415,6 +434,7 @@ BoarSow:
     Text("NEAR YOU IS A LARGE, WILD BOAR SOW FEEDING HER YOUNG.  AS YOU NEAR SHE GROWLS A WARNING TO STAY AWAY.  WHAT WILL YOU DO?")
     Scratch1 = Menu("APPROACH", "LEAVE")
     goto [ApproachSow, Done][Scratch1]
+    goto ApproachSow
 
 ApproachSow:
     Text("AS YOU APPROACH HER HAIR BRISTLES AND SHE ATTACKS!")
@@ -499,6 +519,7 @@ ThriKreenBlock:
     Text("THERE ARE TWO THRI-KREEN HERE.  THEY BLOCK THE PASSAGE WITH THEIR BODIES.  WHAT WILL YOU DO?")
     Scratch1 = Menu("LEAVE", "ATTACK")
     goto [StepBack, AttackThriKreen][Scratch1]
+    goto AttackThriKreen
 
 AttackThriKreen:
     ClearMonsters()
@@ -535,6 +556,7 @@ PassageOutside:
     Text("YOU HAVE FOUND A PASSAGE WHICH LEADS OUTSIDE.  WILL YOU TAKE IT?")
     Scratch1 = Menu("LEAVE CAVE", "STAY IN")
     goto [LeaveLair, Done][Scratch1]
+    goto LeaveLair
 
 LeaveLair:
     In3D = Overland
@@ -588,12 +610,14 @@ GroupSizeLarge:
 GroupSizeMedium:
     Scratch1 = Scratch1 / 2
     if Scratch1 <= 0 { Scratch1 = 1 }
+    goto SplitGroups
 
 SplitGroups:
     EncounterExtraCount25 = 0
     Scratch3 = Scratch1
     AuxMenuChoice = EncGroupSize[EncounterType25]
     if AuxMenuChoice == 0 { goto CapGroupSize }
+    goto SplitGroupsLoop
 
     SplitGroupsLoop:
     if Scratch3 < AuxMenuChoice { goto CapGroupSize }

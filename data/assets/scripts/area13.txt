@@ -26,10 +26,12 @@ AskLeave:
     Scratch1 = Menu("YES", "NO")
     if Scratch1 == 1 { exit }
     Scratch2 = 0
+    goto FindFatima
 
 FindFatima:
     SelectMember(Scratch2)
     if $SelName == "PRINCESS FATIMA" { goto FatimaFound }
+    goto NextMember
 
 NextMember:
     Scratch2 += 1
@@ -40,6 +42,7 @@ FatimaFound:
     if SelControl < 128 { goto NextMember }
     if SelStatus > 127 { goto FatimaLeaves }
     Text("THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'")
+    goto FatimaLeaves
 
     FatimaLeaves:
     SelName = 0
@@ -89,12 +92,14 @@ KoboldTruce:
     WhatDoYouDo()
     Scratch1 = Menu("AGREE", "REFUSE", "KILL IT")
     goto [TruceAgreed, TruceRefused, KoboldCriesOut][Scratch1]
+    goto TruceAgreed
 
 TruceAgreed:
     Text("'I AM TO ESCORT YOU TO OUR TREASURE.'")
     WhatDoYouDo()
     Scratch1 = Menu("FOLLOW", "REFUSE", "KILL IT")
     goto [FollowGuide, TruceRefused, KoboldCriesOut][Scratch1]
+    goto TruceRefused
 
 TruceRefused:
     Picture(None)
@@ -112,6 +117,7 @@ DeadfallTrap:
     if KoboldTruceState != WhiteFlagMet { exit }
     CheckTrap()
     if Scratch10 == 1 { goto DisarmDeadfall }
+    goto RoofCollapses
 
 RoofCollapses:
     Text("THE ROOF COLLAPSES.")
@@ -186,6 +192,7 @@ DrunkenKobold:
     WhatDoYouDo()
     Scratch1 = Menu("SLIP PAST", "WAKE IT", "KILL IT")
     goto [SlipPast, WakeKobold, KillDrunkKobold][Scratch1]
+    goto SlipPast
 
 SlipPast:
     Text("YOU SLIP BY WITH EASE.")
@@ -196,6 +203,7 @@ WakeKobold:
     WhatDoYouDo()
     Scratch1 = Menu("YES", "NO", "KILL IT")
     goto [FollowToKing, KoboldSleeps, KillDrunkKobold][Scratch1]
+    goto FollowToKing
 
 FollowToKing:
     Text("'THEN FOLLOW ME.'")
@@ -220,6 +228,7 @@ HearVoices:
 ThroneRoom:
     if KoboldKingState >= GuardsFought { exit }
     goto [KoboldHorde, FightHorde, BallistaFire, EnvoysFight, Done][KoboldKingState]
+    goto KoboldHorde
 
 KoboldHorde:
     Facing = North
@@ -229,6 +238,7 @@ KoboldHorde:
     Approach()
     WaitReturnPressed()
     Text("ONE SAYS,'THESE MEN ARE ENEMIES. DEFEAT THEM AND MY LORD SHALL BE MOST GENEROUS.' THE KING LOOKS AT HIM, AND THEN AT YOU. HE SMILES AND SCREAMS, 'KILL THEM!'")
+    goto FightHorde
 
 FightHorde:
     SetupMonster(Kobold, distance=0, closeup=Kobold)
@@ -239,6 +249,7 @@ FightHorde:
     LoadMonster(KoboldLeader1, count=11, icon=KoboldLeader)
     Scratch2 = PartyCount
     Scratch3 = 4 + PartyCount
+    goto MakeMembersHostile
 
     MakeMembersHostile:
     SelectMember(Scratch2)
@@ -248,6 +259,7 @@ FightHorde:
     Combat()
     KoboldKingState = HordeFought
     if CombatEnd > PartyDied { goto OfferSurrender }
+    goto BallistaFire
 
 BallistaFire:
     Text("THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE.")
@@ -262,6 +274,7 @@ BallistaFire:
     Combat()
     KoboldKingState = BallistaFired
     if CombatEnd > PartyDied { goto OfferSurrender }
+    goto EnvoysFight
 
 EnvoysFight:
     if KoboldKingState != BallistaFired { goto EnvoysRematch }
@@ -270,6 +283,7 @@ EnvoysFight:
 
     EnvoysRematch:
     Text("THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'")
+    goto FightEnvoys
 
     FightEnvoys:
     Portrait = Fanged
@@ -292,6 +306,7 @@ EnvoysFight:
 OfferSurrender:
     KingFightTemp = KoboldKingState - HordeFought
     goto [SurrenderOrDie, DeathOrPrison][KingFightTemp]
+    goto SurrenderOrDie
 
 SurrenderOrDie:
     Text("KOBOLDS BLOCK ALL THE EXITS.")
@@ -300,17 +315,20 @@ SurrenderOrDie:
     WhatDoYouDo()
     Scratch1 = Menu("SURRENDER", "FIGHT")
     goto [Surrender, FightHorde][Scratch1]
+    goto DeathOrPrison
 
 DeathOrPrison:
     Text("THE BALLISTA ARE RELOADED. THE KING CALLS OUT,'DEATH OR IMPRISONMENT.'")
     WhatDoYouDo()
     Scratch1 = Menu("SURRENDER", "FIGHT")
     goto [Surrender, BallistaFire][Scratch1]
+    goto SearchNorthWall
 
 SearchNorthWall:
     if Facing != North { exit }
     HoldMove = SkipMove
     AuxMember = 0
+    goto CheckMemberFinds
 
 CheckMemberFinds:
     SelectMember(AuxMember)
@@ -320,6 +338,7 @@ CheckMemberFinds:
     if SelRace == Elf { AuxSearchCount += 1 }
     AuxRoll = Random(5)
     if AuxSearchCount > AuxRoll { goto SecretDoorFound }
+    goto NextSearcher
 
     NextSearcher:
     AuxMember += 1
@@ -363,6 +382,7 @@ BrassBottle:
     WhatDoYouDo()
     Scratch1 = Menu("LEAVE IT", "PULL IT OUT")
     goto [Done, PullBottle][Scratch1]
+    goto PullBottle
 
 PullBottle:
     Text("AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID.")
@@ -371,6 +391,7 @@ PullBottle:
     WhatDoYouDo()
     Scratch1 = Menu("YES", "NO", "ATTACK IT")
     goto [EfreetiAttacks, EfreetiReturns, FightEfreeti][Scratch1]
+    goto EfreetiReturns
 
 EfreetiReturns:
     Text("'FOOLS, SUMMON ME ONLY WHEN A VAMPIRE IS NEAR OR FACE MY WRATH.' HE RETURNS TO THE BOTTLE.")
@@ -385,6 +406,7 @@ EfreetiReturns:
 
 EfreetiAttacks:
     Text("'DIE HAPPY FIENDS, YOUR DEATHS SHALL BE MY FREEDOM.'")
+    goto FightEfreeti
 
 FightEfreeti:
     Morale = 100
@@ -409,6 +431,7 @@ FatimaRoom:
     WaitReturnPressed()
     Facing = North
     CallRedraw()
+    goto MeetFatima
 
     MeetFatima:
     Portrait = BlueHaired
@@ -423,6 +446,7 @@ FatimaRoom:
     WhatDoYouDo()
     Scratch1 = Menu("YES", "NO", "ATTACK HER")
     goto [FatimaJoins, FatimaGoesAlone, AttackFatima][Scratch1]
+    goto AttackFatima
 
 AttackFatima:
     Morale = 100
@@ -438,6 +462,7 @@ FatimaJoins:
     if PartyCount != 8 { goto AddFatima }
     Text("'YOUR GROUP IS TOO LARGE.'")
     WaitReturnPressed()
+    goto FatimaGoesAlone
 
 FatimaGoesAlone:
     Text("SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES.")
@@ -470,6 +495,7 @@ RubbleSlope:
     Text("THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?")
     Scratch1 = Menu("YES", "NO")
     goto [ClimbSlope, SlopeStepBack][Scratch1]
+    goto SlopeStepBack
 
 SlopeStepBack:
     PartyX = PrevX
@@ -481,6 +507,7 @@ ClimbSlope:
     Text("YOU DISLODGE A NUMBER OF ROCKS.")
     Delay()
     RubbleSlopeUsed = 1
+    goto WyvernLands
 
 WyvernLands:
     if WyvernState != 0 { exit }
@@ -523,6 +550,7 @@ CrippledKobold:
     CrippledKoboldMet = 1
     Scratch1 = Menu("GIVE IT WATER", "THREATEN IT", "KILL IT")
     goto [GiveWater, ThreatenKobold, KillKobold][Scratch1]
+    goto GiveWater
 
 GiveWater:
     Text("WHEN YOU GIVE IT WATER, IT CRAWLS OUT AND TELLS YOU ITS TALE.")
@@ -533,6 +561,7 @@ GiveWater:
     WhatDoYouDo()
     Scratch1 = Menu("LET IT LEAVE", "KILL IT")
     goto [Done, KillKobold][Scratch1]
+    goto ThreatenKobold
 
 ThreatenKobold:
     Text("THE KOBOLD RETREATS AROUND A BEND.")
@@ -596,6 +625,7 @@ MemberFindsTrap:
     if SelStatus != Okay { goto NextTrapFinder }
     AuxRoll = Random(99)
     if SelFindTraps > AuxRoll { goto TrapFound }
+    goto NextTrapFinder
 
     NextTrapFinder:
     AuxMember += 1
@@ -607,6 +637,7 @@ TrapFound:
     WhatDoYouDo()
     AuxMember = Menu("DISARM IT", "GO ON", "LEAVE")
     goto [DisarmTrap, TrapNotDisarmed, TrapBackOff][AuxMember]
+    goto DisarmTrap
 
 DisarmTrap:
     Who("WHO WILL DISARM THE TRAP?")
@@ -630,6 +661,7 @@ TrapBackOff:
 FollowGuide:
     Picture(None)
     Scratch6 = 0
+    goto GuideStep
 
     GuideStep:
     Scratch1 = GuidePathMove[Scratch6]
@@ -648,6 +680,7 @@ def WalkSteps() {
         Delay()
         return
     }
+    goto WalkStepLoop
 
     WalkStepLoop:
     if Scratch2 > Scratch1 { return }
@@ -717,6 +750,7 @@ def ClamberDown() {
 
 GuideToKing:
     Scratch6 = 13
+    goto KingGuideStep
 
     KingGuideStep:
     Scratch1 = GuidePathMove[Scratch6]
@@ -741,6 +775,7 @@ Surrender:
     Text("THE KOBOLDS HERD YOU TOWARD YOUR PRISON. SOME NAB BITS OF YOUR EQUIPMENT AND LEAVE.")
     Rob(1, 25, 10)
     Scratch6 = 22
+    goto PrisonWalkStep
 
     PrisonWalkStep:
     Scratch1 = GuidePathMove[Scratch6]
@@ -765,6 +800,7 @@ def ReachPrison() {
     Text("WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE.")
     JournalEntry()
     Print("16")
+    goto FatimaJournal
 
     FatimaJournal:
     FatimaMet = 1

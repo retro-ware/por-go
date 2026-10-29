@@ -38,6 +38,7 @@ SearchMemberLoop:
     if SelRace == HalfElf { Scratch9 += 1 }
     Scratch8 = Random(5)
     if Scratch8 > Scratch9 { goto NextSearcher }
+    goto SecretDoorFound
 
 SecretDoorFound:
     SecretDoorsFound = Scratch1 | SecretDoorsFound
@@ -101,6 +102,7 @@ on camp {
 RedrawExit:
     RedrawView()
     CallRedraw()
+    goto event3
 
 on rest {
     Portrait = None
@@ -131,6 +133,7 @@ RockRoom:
     WaitReturnPressed()
     if TeleporterRockFlags has TeleporterKnown { goto RockRoomMenu }
     goto [RockRoomTeleport, TingleNearBareArea][Search]
+    goto RockRoomTeleport
 
 RockRoomTeleport:
     FlashTeleport()
@@ -148,11 +151,13 @@ RockRoomTeleport:
 
 TingleNearBareArea:
     Text("AS YOU CAREFULLY SEARCH THE ROOM YOU FEEL A STRANGE TINGLE AS YOU GET CLOSE TO A BARE AREA.")
+    goto RockRoomMenu
 
 RockRoomMenu:
     Scratch10 = Menu("GO BACK", "MOVE ON", "THROW A ROCK")
     Text(" ")
     goto [GoBack, RockRoomTeleport, ThrowRock][Scratch10]
+    goto GoBack
 
 GoBack:
     Scratch1 = Cell & ~(Special|Inside)
@@ -190,6 +195,7 @@ DialTeleport:
 
 ExitToArea22North:
     PartyY = 7
+    goto LeaveToArea22
 
 LeaveToArea22:
     PartyX = 15
@@ -223,6 +229,7 @@ LizardMenAttack:
     LoadMonster(Lizardman, count=5, icon=Lizardman)
     Combat()
     if CombatEnd != PartyFled { exit }
+    goto AfterLizardFight
 
 AfterLizardFight:
     Scratch1 = 2
@@ -285,6 +292,7 @@ JunkStoreroom:
 PasswordDoor:
     Scratch10 = RoomsVisited & PasswordDoorRoom
     if Scratch10 != 0 or Facing != East { exit }
+    goto AskPassword
 
     AskPassword:
     LoadMap(Keep)
@@ -319,6 +327,7 @@ FountainChamber:
     Text("ANOTHER PIPE, RUNNING FROM THE WALL ACROSS AND TO YOUR RIGHT, PUMPS IN STREAMS OF THE FOUL LIQUID. ALL ABOUT THE ROOM ARE VALVES, GAUGES, PETCOCKS, AND PIPES.")
     Scratch3 = 0
     Scratch4 = 0
+    goto FountainMenu
 
 FountainMenu:
     WaitReturnPressed()
@@ -327,6 +336,7 @@ FountainMenu:
     goto [MoveAway][Scratch1]
     if Scratch4 != 0 { Scratch4 += 1 }
     if Scratch4 > 3 { goto FountainExplodes }
+    goto DestroyEquipment
 
     DestroyEquipment:
     Scratch3 = Scratch3 + 1
@@ -355,6 +365,7 @@ MoveAway:
     RunTooLate:
     Text("YOU START TO RUN FOR THE EXIT... YOU DON'T MAKE IT.")
     WaitReturnPressed()
+    goto FountainExplodes
 
 FountainExplodes:
     MarkFountainDone()
@@ -362,6 +373,7 @@ FountainExplodes:
     Facing = West
     WaitReturnPressed()
     Damage(224, 3, 10, 0, 0)
+    goto FountainDone
 
 FountainDone:
     goto RedrawExit
@@ -407,6 +419,7 @@ AncientMage:
         advance=CloseIn, parlay=Attack, escape=12, strength=12)
     Portrait = None
     goto [RedrawExit, FightMage, TeleportToDest][Scratch10]
+    goto FightMage
 
 FightMage:
     Surprise = NoSurprise
@@ -464,6 +477,7 @@ YarashDesk:
     Text("THIS IS THE DESK OF YARASH. ON IT IS A LITTER OF PAPERS.")
     RoomsVisited2 |= YarashDeskSearched
     WaitReturnPressed()
+    goto SearchDeskPapers
 
     SearchDeskPapers:
     if RoomsVisited2 has DeskPapers { exit }

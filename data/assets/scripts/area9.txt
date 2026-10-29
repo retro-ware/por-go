@@ -41,6 +41,7 @@ CheckMemberMoney:
     if &Scratch6 >= &Scratch4 { goto TakeCoins }
     &Scratch2 += &Scratch6
     if &Scratch2 >= &Scratch4 { goto TakeCoins }
+    goto NextPayer
 
     NextPayer:
     Scratch1 = Scratch1 + 1
@@ -72,6 +73,7 @@ CheckMemberMoney:
 
 def ScaleCost() {
     &Scratch6 = &Scratch4
+    goto ScaleCostLoop
 
     ScaleCostLoop:
     &Scratch4 += &Scratch6
@@ -93,6 +95,7 @@ TakeFromMember:
     &Scratch8 = &Scratch6
     if &Scratch8 < &Scratch4 { goto DeductCoins }
     &Scratch8 = &Scratch4
+    goto DeductCoins
 
     DeductCoins:
     &Scratch6 -= &Scratch8
@@ -102,6 +105,7 @@ TakeFromMember:
     Scratch2 = Scratch1 | 128
     SelectMember(Scratch2)
     if Scratch4 == 0 { return }
+    goto NextCoinMember
 
     NextCoinMember:
     Scratch1 = Scratch1 + 1
@@ -112,6 +116,7 @@ def CheckMemberOk() {
     if SelStatus == Died { goto MemberNotOk }
     if SelStatus != Okay { goto MemberOk }
     if SelControl >= 128 { goto MemberNotOk }
+    goto MemberOk
 
     MemberOk:
     return 0 != 0
@@ -133,10 +138,12 @@ def CheckAlarmSounding() {
     if Search == Searching { goto SayAlarmSounding }
     AuxRoll = Random(9)
     if 0 != AuxRoll { goto AlarmActive }
+    goto SayAlarmSounding
 
     SayAlarmSounding:
     Text("AN ALARM IS SOUNDING.")
     Delay()
+    goto AlarmActive
 
     AlarmActive:
     return 1 < 0
@@ -170,6 +177,7 @@ on move {
     Scratch1 = 18
     SymbolSet = 1
     AlarmEndHour = 0
+    goto LeaveArea
 
     LeaveArea:
     CallStepForward()
@@ -179,6 +187,7 @@ on move {
     SetSkyByHour()
     Scratch5 = 0
     Scratch1 = Cell & 31
+    goto MatchDoorSpot
 
     MatchDoorSpot:
     Scratch9 = Table9D10[Scratch5]
@@ -204,6 +213,7 @@ on step {
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch1 = Random(Scratch1)
     if Scratch1 == 0 { goto L_9DB4 }
+    goto SpecialSquare
 
     SpecialSquare:
     Scratch1 = Cell & 31
@@ -228,6 +238,7 @@ on rest {
         strength=9)
     Portrait = None
     goto [Done, FightPatrol, FledCombat, FightPatrol][Scratch10]
+    goto PatrolMenu
 
     PatrolMenu:
     WaitReturnPressed()
@@ -250,6 +261,7 @@ AskAuthority:
     Print("ON WHOSE AUTHORITY ARE YOU HERE?'")
     $AuxInputText = InputString(12)
     Compare("TYRANTHRAXUS", $AuxInputText)
+    goto CheckAnswer
 
 CheckAnswer:
     if (==) { goto PatrolLeaves } # "TYRANTHRAXUS" == $AuxInputText
@@ -262,6 +274,7 @@ CheckAnswer:
 
 PatrolSpotsIntruders:
     Text("'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'")
+    goto FightPatrol
 
 FightPatrol:
     Morale = 60
@@ -275,6 +288,7 @@ FightPatrol:
 
 FledCombat:
     CombatEnd = PartyFled
+    goto AfterCombat
 
 AfterCombat:
     if CombatEnd == FightOver { return }
@@ -333,11 +347,13 @@ TowerDoor:
 
 AskStairs:
     if YesNoMenu() != "YES" { goto StairsRedraw }
+    goto TakeStairs
 
 TakeStairs:
     PartyX = TowerExitXTable[Scratch5]
     PartyY = TowerExitYTable[Scratch5]
     Cell = TowerExitCellTable[Scratch5]
+    goto StairsRedraw
 
 StairsRedraw:
     HoldMove = SkipMove
@@ -348,6 +364,7 @@ MageGuardRoom:
     if GuardRoomSeenBits has Tower1Seen { goto MageAndEttins }
     DescribeGuardRoom()
     GuardRoomSeenBits |= Tower1Seen
+    goto MageAndEttins
 
     MageAndEttins:
     if GateFlags has WestGarrisonSlain { exit }
@@ -361,6 +378,7 @@ MageGuardRoom:
     Portrait = None
     RedrawView()
     goto [Done, FightMageGuards][Scratch10]
+    goto MageFlee
 
 MageFlee:
     Scratch5 = 0
@@ -383,6 +401,7 @@ FighterGuardRoom:
     if GuardRoomSeenBits has Tower2Seen { goto FighterAndEttins }
     DescribeGuardRoom()
     GuardRoomSeenBits |= Tower2Seen
+    goto FighterAndEttins
 
     FighterAndEttins:
     if GateFlags has EastGarrisonSlain { exit }
@@ -395,6 +414,7 @@ FighterGuardRoom:
     Portrait = None
     RedrawView()
     goto [Done, FightFighterGuards][Scratch10]
+    goto FighterFlee
 
 FighterFlee:
     Scratch5 = 1
@@ -425,6 +445,7 @@ GateTowerSquare:
 EastTowerCheck:
     if Scratch9 = GateFlags & EastGarrisonSlain; Scratch9 == 0 { Scratch2 |= 2 }
     if GateFlags lacks WestGarrisonSlain { Scratch2 |= 1 }
+    goto TowersCharge
 
 TowersCharge:
     Scratch3 = 1
@@ -441,6 +462,7 @@ NearTowerCharges:
 FarTowerCharges:
     Text("MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER.")
     MaxDist = 1
+    goto TowerMonstersMenu
 
 TowerMonstersMenu:
     Portrait = SandyHaired
@@ -450,6 +472,7 @@ TowerMonstersMenu:
     Portrait = None
     RedrawView()
     goto [Done, FightTowerMonsters][Scratch10]
+    goto FleeToArea6
 
 FleeToArea6:
     StartAlarm()
@@ -473,6 +496,7 @@ FightTowerMonsters:
     LoadMonster(Ettin, count=Scratch3, icon=Ettin)
     Combat()
     if CombatEnd == PartyFled { goto FleeToArea6 }
+    goto GarrisonSlain
 
 GarrisonSlain:
     GateFlags |= WestGarrisonSlain|EastGarrisonSlain
@@ -489,15 +513,18 @@ GarrisonSlain:
 NearWall:
     if CheckGarrisonsBeaten() != 0 { exit }
     goto [FirstWallWarning, SecondWallWarning, BugbearsPunch][BugbearWarnings]
+    goto BugbearsDemand
 
 BugbearsDemand:
     if GateFlags has OutsideGuardsSlain { goto ArrowSlits }
     BugbearsApproach()
     Text("A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'")
+    goto BugbearsMenu
 
 BugbearsMenu:
     Scratch10 = Menu("FLEE", "SURRENDER", "ATTACK")
     goto [PushedBack, SurrenderToBugbears][Scratch10]
+    goto FightBugbears
 
 FightBugbears:
     Surprise = NoSurprise
@@ -514,6 +541,7 @@ FightBugbears:
 SurrenderToBugbears:
     Text("THE BUGBEARS STRIP YOU OF ANYTHING REMOTELY VALUABLE AND SEND YOU ON YOUR WAY.")
     Rob(1, 100, 20)
+    goto PushedBack
 
 PushedBack:
     Facing = South
@@ -525,6 +553,7 @@ PushedBack:
 
     PushedWest:
     PartyX = 4
+    goto PushedRedraw
 
     PushedRedraw:
     HoldMove = SkipMove
@@ -565,6 +594,7 @@ StojanowGateEvent:
     Text("THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS.")
     WaitReturnPressed()
     GateFlags |= GateSeen
+    goto WatchWagonMan
 
     WatchWagonMan:
     if Facing != North or Search != Searching { exit }
@@ -585,6 +615,7 @@ GateEntrance:
     if YesNoMenu() == "YES" { goto PayToll }
     Scratch10 = Random(9)
     if Scratch10 <= BugbearWarnings { goto ImpostorsAccused }
+    goto BugbearsSendAway
 
 BugbearsSendAway:
     Text("'ALL RIGHT, GET OUT OF HERE THEN. COME BACK WHEN YOU'VE LEARNED THE RULES.'")
@@ -600,6 +631,7 @@ PayToll:
     Facing = North
     PartyX = 8
     PartyY = 9
+    goto WalkThroughGate
 
     WalkThroughGate:
     PartyY -= 1
@@ -611,6 +643,7 @@ PayToll:
 
 ImpostorsApproach:
     BugbearsApproach()
+    goto ImpostorsAccused
 
 ImpostorsAccused:
     Text("'HEY, WAIT A MINUTE. THEY ARE IMPOSTERS! ALL RIGHT, THROW DOWN YOUR WEAPONS!'")
@@ -627,6 +660,7 @@ BugbearsBehindGate:
         flee=Attack, advance=Attack, parlay=Attack,
         near="BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE.", escape=9, strength=9)
     goto [Done, FightGateBugbears, FleeToArea6][Scratch10]
+    goto FightGateBugbears
 
 FightGateBugbears:
     Surprise = MonstersAreSurprised
@@ -646,6 +680,7 @@ WagonTrader:
     if WagonManMet != 0 { exit }
     if CheckGarrisonsBeaten() == 0 { goto WagonPasses }
     if GateFlags has OutsideGuardsSlain { exit }
+    goto WagonPasses
 
     WagonPasses:
     Text("A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH.")
@@ -661,6 +696,7 @@ WagonTrader:
     Text("'SORRY, THAT'S MY FINAL OFFER. TAKE IT OR LEAVE IT.")
     Scratch10 = Menu("TAKE IT", "LEAVE IT")
     goto [BuyWagon, Done][Scratch10]
+    goto BuyWagon
 
 BuyWagon:
     &Scratch4 = 50
@@ -671,6 +707,7 @@ BuyWagon:
     WaitReturnPressed()
     Text("'NOT ONLY THAT THEY'RE AFRAID OF THEM ETTIN. MAKES 'EM REAL JUMPY. WOULDN'T GIVE 'EM NO BACK TALK IF I WERE YOU.'")
     WaitReturnPressed()
+    goto GotWagon
 
 GotWagon:
     GateFlags |= WagonOwned
@@ -695,6 +732,7 @@ MonstersBehindWall:
     Portrait = None
     RedrawView()
     goto [Done, FightWallMonsters, PushedBack][Scratch10]
+    goto FightWallMonsters
 
 FightWallMonsters:
     Surprise = NoSurprise

@@ -32,10 +32,12 @@ def CheckAlarmExpired() {
     if Search == Searching { goto PrintAlarmSounding }
     AuxRoll = Random(9)
     if 0 != AuxRoll { goto AlarmReturnActive }
+    goto PrintAlarmSounding
 
     PrintAlarmSounding:
     Text("AN ALARM IS SOUNDING.")
     Delay()
+    goto AlarmReturnActive
 
     AlarmReturnActive:
     return 1 < 0
@@ -87,6 +89,7 @@ on move {
     SymbolSet = 2
     WallSplitA = 0
     WallSplitB = 0
+    goto StepOutToCity
 
     StepOutToCity:
     CallStepForward()
@@ -102,6 +105,7 @@ on step {
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch10 = Random(Scratch1)
     if Scratch10 == 0 { goto GiantPatrol }
+    goto DispatchCell
 
     DispatchCell:
     Scratch1 = Cell & 31
@@ -152,9 +156,11 @@ LaundryEnter:
     } else {
         goto LaundryGoodLuck
     }
+    goto LaundryOfferDisguise
 
 LaundryOfferDisguise:
     if OfferDisguiseHelp() == 0 { goto LaundryPutOnClothes }
+    goto LaundryGoodLuck
 
 LaundryGoodLuck:
     Text("'WELL THEN, GOOD LUCK. BEST YOU LEAVE BEFORE YOU ARE FOUND HERE.")
@@ -162,6 +168,7 @@ LaundryGoodLuck:
 
 LaundryPutOnClothes:
     Text("THEY HELP YOU PUT ON THE CLOTHES. 'HAVE NO FEAR.")
+    goto LaundryKeepSilence
 
 LaundryKeepSilence:
     Print(" WE WILL KEEP SILENCE.'")
@@ -173,6 +180,7 @@ LaundryKeepSilence:
 
 LaundryDropDisguise:
     CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
+    goto LaundryLeave
 
 LaundryLeave:
     goto BackOut
@@ -229,6 +237,7 @@ SmithyArmorPile:
 
 SmithyAttack:
     Surprise = MonstersAreSurprised
+    goto SmithyFight
 
 SmithyFight:
     Morale = 30
@@ -265,11 +274,13 @@ BaneTempleEnter:
     Approach()
     Delay()
     Approach()
+    goto PriestMenu
 
 PriestMenu:
     Scratch10 = Menu("ACCEPT BLESSING", "TALK", "LEAVE", "KILL THEM")
     Portrait = None
     goto [AcceptBlessing, PriestTalk, PriestUnmasks][Scratch10]
+    goto PriestFight
 
 PriestFight:
     Morale = 100
@@ -286,6 +297,7 @@ AcceptBlessing:
     Text("YOU GO FORWARD AND KNEEL. 'IN THE NAME OF LORD BANE, GOD OF GODS, I BLESS YOU.'")
     PressToContinue()
     Scratch1 = 0
+    goto BlessMemberLoop
 
 BlessMemberLoop:
     SelectMember(Scratch1)
@@ -297,11 +309,13 @@ BlessMemberLoop:
     Delay()
     BaneTempleFlags |= DoubledInAgony
     Damage(160, 2, 10, 2, 128)
+    goto BlessNextMember
 
 BlessNextMember:
     Scratch1 = Scratch1 + 1
     if Scratch1 < 8 { goto BlessMemberLoop }
     if BaneTempleFlags lacks DoubledInAgony { goto Done }
+    goto PriestUnmasks
 
 PriestUnmasks:
     Text("THE PRIEST SHOUTS, 'WHAT'S THIS? YOU AREN'T WORSHIPPERS OF LORD BANE! DIE IMPOSTERS!' HE GRABS THE LAST RHINESTONE FROM A NECKLACE AND THROWS IT AT YOU. A FIREBALL EXPLODES!")
@@ -334,9 +348,11 @@ AltarEnter:
     Text("THERE IS A FEELING OF SOMETHING IMMENSE AND EVIL STARING DOWN AT YOU...")
     PressToContinue()
     Damage(224, 2, 10, 2, 0)
+    goto AltarBoxLeft
 
     AltarBoxLeft:
     Text("")
+    goto AltarSwords
 
     AltarSwords:
     if BaneTempleFlags has CrossedSwordsStolen { exit }
@@ -351,12 +367,14 @@ AltarEnter:
 
 FleeAfterCombat:
     CombatEnd = PartyFled
+    goto AfterCombat
 
 AfterCombat:
     if CombatEnd == FightOver { return }
     StartAlarm()
     CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
     if CombatEnd != PartyFled { return }
+    goto BackOut
 
 BackOut:
     HoldMove = SkipMove
@@ -393,6 +411,7 @@ GiantPatrol:
     PatrolCheckDisguise:
     if CastleFlags has Disguised { goto PatrolQuestion }
     Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
+    goto PatrolEncounterMenu
 
     PatrolEncounterMenu:
     PressToContinue()
@@ -401,6 +420,7 @@ GiantPatrol:
         strength=9)
     Portrait = None
     goto [Done, PatrolFight, FleeAfterCombat, PatrolFight][Scratch10]
+    goto PatrolQuestion
 
     PatrolQuestion:
     Surprise = NoSurprise
@@ -425,6 +445,7 @@ PatrolAskAuthority:
     NewLine()
     $AuxInputText = InputString(12)
     Compare("TYRANTHRAXUS", $AuxInputText)
+    goto PatrolCheckAnswer
 
 PatrolCheckAnswer:
     if (!=) { goto PatrolImposters } # "TYRANTHRAXUS" != $AuxInputText
@@ -437,6 +458,7 @@ PatrolCheckAnswer:
 
 PatrolIntruders:
     Text("'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'")
+    goto PatrolFight
 
 PatrolFight:
     Delay()

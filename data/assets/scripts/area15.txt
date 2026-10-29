@@ -114,6 +114,7 @@ GardenEnter:
     Text("YOU SEE WHAT ONCE WAS A GARDEN, NOW-WEED FILLED. THE PLEASANT POND HAS BECOME A SWAMP.")
     ShortPause()
     GardenVisits = 1
+    goto GardenWalk
 
     GardenWalk:
     if GardenVisits > 7 { exit }
@@ -127,6 +128,7 @@ GardenEnter:
     Text("AS YOU MOVE THROUGH THE GARDEN ")
     GardenVisits += 1
     goto [SlimeAvoided, SlimeStepped][Surprise]
+    goto SlimeAvoided
 
 SlimeAvoided:
     Print("YOU SEE A STRANGE GREEN PLANT GROWTH WHICH YOU RECOGNIZE AS GREEN SLIME. YOU CAREFULLY MOVE AROUND IT.")
@@ -148,6 +150,7 @@ StacksEnter:
     gosub [SignPhilosophy, SignMathematics, SignHistory, SignRhetoric][Scratch1]
     PressToContinue()
     StacksSignSeen[Scratch1] = 1
+    goto StacksSearch
 
     StacksSearch:
     if Scratch1 == 3 { goto BasiliskLair }
@@ -155,6 +158,7 @@ StacksEnter:
     Text("AS YOU SEARCH THE ROOM YOU SCAN RANDOM BOOKS.")
     ShortPause()
     goto [PhilosophyBooks, MathNothing, HistoryBooks, RhetoricNothing][Scratch1]
+    goto SignRhetoric
 
 SignRhetoric:
     Print("RHETORIC.")
@@ -284,9 +288,11 @@ BasiliskLair:
     PartySurprise(Scratch6, Scratch7)
     Surprise(Scratch6, Scratch7, 0, 0)
     goto [BasiliskSeen, BasiliskSurprisesUs, BasiliskUnaware, BasiliskWaking][Surprise]
+    goto BasiliskSeen
 
 BasiliskSeen:
     Text("AMID THE LITTER OF THE ROOM YOU SEE A DULL BROWN REPTILIAN MONSTER.")
+    goto BasiliskMenu
 
 BasiliskMenu:
     Surprise = NoSurprise
@@ -295,6 +301,7 @@ BasiliskMenu:
         flee=Attack, advance=Attack, parlay=Attack, near="IT HISSES AT YOU.", escape=0, strength=0)
     Text(" ")
     goto [RedrawExit, BasiliskFight, FleeFromBasilisk, BasiliskFight][Scratch10]
+    goto BasiliskSurprisesUs
 
 BasiliskSurprisesUs:
     Text("YOU HEAR A HISS. AS YOU LOOK DOWN YOU SUDDENLY SEE A DULL BROWN REPTILIAN MONSTER.")
@@ -339,6 +346,7 @@ BonesRoom:
     Text("YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK.")
     ShortPause()
     BonesRoomState = BonesShown
+    goto BonesJar
 
     BonesJar:
     Scratch3 = BooksFoundFlags & Jar
@@ -374,6 +382,7 @@ MadFighter:
     if LibraryEventFlags has MadFighterGone|FighterJoined { exit }
     SetupMonster(ArmoredFighter, distance=0, closeup=MadMan)
     Text("YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'")
+    goto MadFighterMenu
 
 MadFighterMenu:
     Scratch10 = Menu("COMBAT", "WAIT", "FLEE", "PARLAY", "IGNORE")
@@ -397,6 +406,7 @@ MadFighterParlay:
     Scratch10 = Parlay(0, 1, 2, 3, 4)
     Text(" ")
     goto [MadFighterWait, MadFighterWait, InviteMadman, MadFighterWait, MadFighterFight][Scratch10]
+    goto InviteMadman
 
 InviteMadman:
     MadmanRaves()
@@ -469,6 +479,7 @@ CarrelsRoom:
     if (!=) { goto CarrelsFoil } # the flags of the jump here
     Text("YOU ARE IN THE ILLUMINATORS CARRELS. ALL THEIR EQUIPMENT HAS DECAYED AND LIES ROTTING ON THE FLOOR.")
     CarrelsSeen[Scratch1] = 1
+    goto CarrelsFoil
 
     CarrelsFoil:
     Scratch2 = CarrelFoilBitTable[Scratch1]
@@ -493,6 +504,7 @@ StoreroomEnter:
     if StoreroomSeen != 0 { goto KoboldTable }
     Text("YOU HAVE ENTERED A STOREROOM FULL OF SUPPLIES TOO OLD TO BE USEFUL.  ")
     StoreroomSeen = 1
+    goto KoboldTable
 
     KoboldTable:
     if LibraryEventFlags has KoboldsDone { exit }
@@ -503,6 +515,7 @@ StoreroomEnter:
         mid="THEY STAND ARMS RAISED IN SURRENDER.", far=" ", escape=6, strength=6)
     Text(" ")
     goto [RedrawExit, KoboldFight, FleeFromKobolds, KoboldsPlead][Scratch4]
+    goto FleeFromKobolds
 
 FleeFromKobolds:
     Scratch10 = 3
