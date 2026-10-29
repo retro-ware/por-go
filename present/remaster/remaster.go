@@ -17,6 +17,8 @@ import (
 	"gpu"
 	"gpu/vector"
 
+	xdraw "golang.org/x/image/draw"
+
 	"blobber"
 	"blobber/maps"
 
@@ -305,11 +307,7 @@ func (p *Presenter) Click(x, y int) bool {
 	if !p.fight {
 		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
-				if gpu.IsKeyPressed(gpu.KeyShift) { // Shift-click: the next head
-					p.send(engine.ActHead, i)
-				} else {
-					p.send(engine.ActMember, i)
-				}
+				p.send(engine.ActMember, i)
 				return true
 			}
 		}
@@ -608,6 +606,30 @@ var cardLabels = map[string]string{
 	"Poisoned":    "poisoned", // dead of poison, as the sheet puts it
 	"Stoned":      "stone",
 	"Gone":        "gone",
+}
+
+// portrait is m's card art: the PNG the player dropped on the sheet, fitted
+// into the PortraitSize square (cached), else the paper-doll head's face.
+func (p *Presenter) portrait(m engine.Member) image.Image {
+	if m.Portrait == nil {
+		return p.face(m.Head)
+	}
+	if f, ok := p.faces[m.Portrait]; ok {
+		return f
+	}
+	const n = portraitSize
+	f := image.NewRGBA(image.Rect(0, 0, n, n))
+	b := m.Portrait.Bounds()
+	w, h := n, b.Dy()*n/max(b.Dx(), 1) // the shape kept
+	if h > n {
+		w, h = b.Dx()*n/max(b.Dy(), 1), n
+	}
+	xdraw.CatmullRom.Scale(f, image.Rect((n-w)/2, (n-h)/2, (n-w)/2+w, (n-h)/2+h), m.Portrait, b, draw.Src, nil)
+	if p.faces == nil {
+		p.faces = map[image.Image]image.Image{}
+	}
+	p.faces[m.Portrait] = f
+	return f
 }
 
 // face is the card art for a head: its lit pixels (the face, hair and

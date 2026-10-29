@@ -170,7 +170,9 @@ var in struct {
 	mdown     [mouseCount]bool
 	mhit      [mouseCount]bool
 	mdur      [mouseCount]int
-	chars     []rune // typed since the last tick
+	chars     []rune   // typed since the last tick
+	drops     []string // files dropped on the window since the last tick
+	tickDrops []string
 	tickChars []rune
 	wheel     [2]float64
 	tickWheel [2]float64
@@ -200,6 +202,7 @@ func initInput(app *gogpu.App) {
 	ev.OnMouseRelease(func(b gpucontext.MouseButton, x, y float64) { button(b, false, x, y) })
 	ev.OnMouseMove(func(x, y float64) { in.cursor = [2]float64{x, y} })
 	ev.OnScroll(func(dx, dy float64) { in.wheel[0] += dx; in.wheel[1] += dy })
+	app.OnDragDrop(func(paths []string, _, _ float64) { in.drops = append(in.drops, paths...) })
 }
 
 // tickInput advances the held counts; called before each Update.
@@ -227,7 +230,11 @@ func tickInput() {
 	}
 	in.tickChars, in.chars = append(in.tickChars[:0], in.chars...), in.chars[:0]
 	in.tickWheel, in.wheel = in.wheel, [2]float64{}
+	in.tickDrops, in.drops = append(in.tickDrops[:0], in.drops...), in.drops[:0]
 }
+
+// AppendDroppedFiles appends the paths of the files dropped on the window this tick.
+func AppendDroppedFiles(ps []string) []string { return append(ps, in.tickDrops...) }
 
 func IsKeyPressed(k Key) bool     { return k >= 0 && k < keyAll && in.dur[k] > 0 }
 func IsKeyJustPressed(k Key) bool { return KeyPressDuration(k) == 1 }

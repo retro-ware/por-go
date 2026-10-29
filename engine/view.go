@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"image"
 	"slices"
 	"strconv"
 	"strings"
@@ -321,12 +322,28 @@ func (e *Engine) canLoseItem(it *Item) bool {
 // the top right of the sheet.
 func (e *Engine) SheetPortrait() {
 	c := e.selected()
-	if c.PortHead == 0 || c.PortBody == 0 {
+	if c.Portrait == nil && (c.PortHead == 0 || c.PortBody == 0) {
 		return
 	}
-	e.DrawBoxTitled(28, 1, winRight, 11, 0, colBlack, "")
+	box := CellRect{28, 1, winRight, 11}
+	e.DrawBoxTitled(box.X1, box.Y1, box.X2, box.Y2, 0, colBlack, "")
+	e.snap.portrait = box  // Shift-click and a dropped PNG land here
+	if c.Portrait != nil { // extra: the dropped PNG, fitted into the box at the window's resolution
+		e.pg.overlays = []Overlay{{Img: c.Portrait, At: fit(c.Portrait.Bounds(), box.Pixels().Inset(8))}}
+		return
+	}
+	e.pg.overlays = nil
 	e.LoadPortrait(charArt, int(portraitHead[c.PortHead]), int(portraitBody[c.PortBody]))
 	e.DrawPortrait(0x1C, 1, true)
+}
+
+// fit is the largest rectangle of b's shape inside r, centred.
+func fit(b, r image.Rectangle) image.Rectangle {
+	w, h := r.Dx(), b.Dy()*r.Dx()/max(b.Dx(), 1)
+	if h > r.Dy() {
+		w, h = b.Dx()*r.Dy()/max(b.Dy(), 1), r.Dy()
+	}
+	return image.Rect(0, 0, w, h).Add(r.Min.Add(image.Pt((r.Dx()-w)/2, (r.Dy()-h)/2)))
 }
 
 // ItemsMenu = ovr20:0EF8: the character's items with Ready, Use, Trade,

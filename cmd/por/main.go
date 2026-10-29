@@ -91,6 +91,9 @@ func (g *game) Update() error {
 		g.gamepad(id)
 	}
 	g.mouse()
+	for _, f := range gpu.AppendDroppedFiles(nil) {
+		g.remaster.Drop(f, g.eng.View())
+	}
 	g.act()
 	if g.sent {
 		g.settle()

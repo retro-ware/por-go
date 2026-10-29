@@ -2,6 +2,10 @@ package remaster
 
 import (
 	"image"
+	"path/filepath"
+	"strings"
+
+	"gpu"
 
 	"por/engine"
 )
@@ -104,6 +108,14 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	}
 }
 
+// Drop takes a file dropped on the window: a PNG while the sheet is up
+// becomes the member's portrait.
+func (p *Presenter) Drop(path string, v engine.View) {
+	if v.Portrait != (engine.CellRect{}) && strings.EqualFold(filepath.Ext(path), ".png") {
+		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPortrait, N: -1, Text: path})
+	}
+}
+
 // menuIndex is the item of m that hotkey c picks, or -1.
 func menuIndex(m *engine.Menu, c byte) int {
 	if m != nil {
@@ -134,6 +146,10 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	}
 	if right {
 		p.send(engine.ActClose, 0)
+	}
+	if r := v.Portrait; left && in && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) { // Shift-click on the sheet's portrait: the next head
+		p.send(engine.ActHead, -1)
+		return
 	}
 	spot := -1
 	for i, r := range v.Spots { // the topmost: the last

@@ -56,7 +56,8 @@ const (
 	ActCure              // inventory: a paladin cures disease
 	ActMainMenu          // drop the game in play for the party menu (the pause menu's Back to Main Menu)
 	ActBuy               // shop inventory: buy ware N (Inventory.Wares)
-	ActHead              // member N's next portrait head (Shift-click on a card or the inventory's portrait)
+	ActHead              // member N's next paper-doll head (N < 0: the selected member); Shift-click on the sheet's portrait
+	ActPortrait          // the PNG at Text is member N's portrait (N < 0: the selected member); a file dropped on the sheet
 )
 
 // Directions of ActMove.

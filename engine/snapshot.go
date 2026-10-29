@@ -68,6 +68,7 @@ type Member struct {
 	Class    string      // as the sheet names it ("Fighter/Thief" ...)
 	Selected bool        // the selected member, or the candidate while a member is picked (SelectCharacter)
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
+	Portrait image.Image // extra: the PNG the player dropped on the sheet, in place of Head (nil: none)
 }
 
 // View is one published snapshot.
@@ -91,6 +92,7 @@ type View struct {
 	Text      [25][40]Cell   // the text cells, over Page
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
+	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
 	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActMove Up/Down steps, Enter takes the candidate
 	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
@@ -159,6 +161,7 @@ type snapState struct {
 	picsPal      pal.Regs
 	cmapOn       bool                   // the combat map is set up (cmapShown) and shown
 	sheetOn      bool                   // a character sheet is up over the combat map
+	portrait     CellRect               // the sheet's portrait box while a sheet is up
 	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
 	effects      []effect               // sprites on the combat page
 	marks        []image.Point          // squares markReach framed
@@ -213,7 +216,7 @@ func (e *Engine) publish() {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots, v.Credits, v.Slots, v.Choosing = s.typing, e.spots(), s.credits, s.slots, e.ext.choosing
+	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.Choosing = s.typing, e.spots(), s.portrait, s.credits, s.slots, e.ext.choosing
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {
@@ -223,7 +226,7 @@ func (e *Engine) publish() {
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
 			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,
-			Class: className(c.Class), Head: e.charHead(c),
+			Class: className(c.Class), Head: e.charHead(c), Portrait: c.Portrait,
 		})
 	}
 	v.Border = e.borderTiles()

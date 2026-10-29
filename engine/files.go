@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"image"
+	"image/png"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -222,6 +224,30 @@ func (e *Engine) SaveCharacter(c *Character, name string) {
 			}
 		}
 	}
+	p := e.savePath(base + ".png") // extra: the dropped portrait
+	os.Remove(p)
+	if c.Portrait != nil {
+		if f, err := os.Create(p); err == nil {
+			png.Encode(f, c.Portrait)
+			f.Close()
+		} else {
+			e.fileError("write", p)
+		}
+	}
+}
+
+// readPNG decodes the PNG at path, nil when it is not one.
+func readPNG(path string) image.Image {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+	im, err := png.Decode(f)
+	if err != nil {
+		return nil
+	}
+	return im
 }
 
 func affectRecords(list []*Affect) []*affectRecord {
@@ -254,6 +280,7 @@ func (e *Engine) LoadCharacter(name string, c *Character, useSav bool) bool {
 	if b, err := os.ReadFile(e.savePath(nm + ".spc")); err == nil {
 		c.Affects = readAffects(b)
 	}
+	c.Portrait = readPNG(e.savePath(nm + ".png"))
 	e.ClearKeyboard()
 	return true
 }

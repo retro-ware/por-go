@@ -93,7 +93,7 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 			t = p.border.grey
 		}
 		drawBorder(d, t, gpu.GeoM{}, cardW/8, frameH/8)
-		if f := p.face(m.Head); f != nil {
+		if f := p.portrait(m); f != nil {
 			g, ok := p.faceImgs[f]
 			if !ok {
 				g = gpu.NewImageFromImage(f)

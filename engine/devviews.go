@@ -1,5 +1,7 @@
 package engine
 
+import "os"
+
 // DevView is a named screen the snap tool can render (development aid).
 type DevView struct {
 	Name string
@@ -98,6 +100,12 @@ func (e *Engine) DevScene(name string) func() {
 	case "cure": // the paladin's Cure: the member pick, then the 'not diseased, cure anyway' question
 		return func() {
 			e.paladinCure(e.selected())
+			e.DrawMainScreen()
+		}
+	case "portrait": // the PNG at POR_PNG as the selected member's portrait: the sheet, then the view with the cards
+		return func() {
+			e.selected().Portrait = readPNG(os.Getenv("POR_PNG"))
+			e.ViewCharacter()
 			e.DrawMainScreen()
 		}
 	case "cast", "castko": // Cast on the command bar with Cure Light Wounds memorized; castko with the selected member unconscious
