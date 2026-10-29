@@ -1442,6 +1442,7 @@ func (g *Game) menuOptions() []menuLine {
 			{"Fullscreen", func(*Game) string { return onOff(gpu.IsFullscreen()) }, func(*Game, int) { gpu.SetFullscreen(!gpu.IsFullscreen()) }},
 			{"Dithered darkness", func(g *Game) string { return onOff(g.dither) }, func(g *Game, _ int) { g.dither = !g.dither }},
 			{"Torch intensity", func(g *Game) string { return fmt.Sprintf("%.1f", g.torch) }, func(g *Game, d int) { g.torch = step(g.torch, 0.5, 1.5, 0.5, d) }},
+			{"Picture box", func(*Game) string { return map[bool]string{false: "Normal", true: "Double"}[Settings.PicDouble] }, flip(&Settings.PicDouble)},
 		}
 	case "Audio":
 		return []menuLine{{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }}}
@@ -2299,6 +2300,7 @@ type Options struct {
 	Speed                             float64 // walk and turn speed, minSpeed to maxSpeed times the normal
 	MapOff, MapSmall                  bool    // the host's minimap: hidden; half its size
 	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
+	PicDouble                         bool    // the host's picture box at twice the pop-up scale
 }
 
 const minAlpha = 0.2

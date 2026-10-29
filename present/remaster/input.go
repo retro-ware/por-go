@@ -25,6 +25,9 @@ var scanDir = map[uint16]int{0x4800: engine.DirUp, 0x5000: engine.DirDown, 0x4B0
 var keypadDir = [...]int{engine.DirEnd, engine.DirDown, engine.DirPgDn, engine.DirLeft, engine.DirCentre, engine.DirRight, engine.DirHome, engine.DirUp, engine.DirPgUp}
 
 func (p *Presenter) send(kind engine.ActKind, n int) {
+	if kind == engine.ActPick || kind == engine.ActContinue { // a question answered: the next menu pops up, the same one again too
+		p.asked = ""
+	}
 	p.inv.acts = append(p.inv.acts, engine.Action{Kind: kind, N: n})
 }
 

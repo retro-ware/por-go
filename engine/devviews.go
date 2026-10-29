@@ -82,7 +82,9 @@ func (e *Engine) DevScene(name string) func() {
 			e.ShowEncounter(sprite, pic, 0, &e.es.encounterShown)
 			e.msgCol, e.msgRow = 1, 0x11
 			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "A band of kobolds blocks the way.")
-			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "")
+			for e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "") == 1 { // WAIT: slow text, then the menu again
+				e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
+			}
 			e.ClearBox(0, promptRow, lastCol, promptRow)
 			e.slowText, e.es.inEncounterMenu = false, 0
 			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")

@@ -281,7 +281,9 @@ func (e *Engine) Ticks() int64 {
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
 func (e *Engine) Delay(ms int) {
 	if e.beginFlag == 5 || e.snap.win == WinThreeD { // the remastered 3D views animate with the page: combat's moves and hits, a script walking the party (the intro's tour)
+		e.snap.busy = true
 		e.publish()
+		e.snap.busy = false
 	}
 	e.pace(pausing)
 	sleep(ms)

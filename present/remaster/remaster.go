@@ -58,8 +58,7 @@ type Presenter struct {
 	active      bool                        // the last frame was drawn remastered
 	menu        bool                        // the vertical menu is open
 	sel         int                         // its highlighted item
-	asked       string                      // the question menu last opened by itself (menuID) ...
-	askedSeq    uint64                      // ... and the View it came with: the same menu in a later View (a refusal, back from Browse) opens again
+	asked       string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
 	answered    [][8]byte                   // the text pane under the last question: once it is answered, that text is done
 	mapImg      *gpu.Image                  // View.Map on the GPU
 	mapSrc      image.Image                 // the View.Map it holds
@@ -161,7 +160,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		pp, py := pk, int(float64(cy)-pk*th/2)/2
-		if v.Window == engine.WinPicture { // the pixel art at twice the pop-ups' scale, as far as the text box and a menu still fit under it; the text box moves down under it
+		if v.Window == engine.WinPicture && blobber.Settings.PicDouble { // the pixel art at twice the pop-ups' scale (Esc, Graphics), as far as the text box and a menu still fit under it; the text box moves down under it
 			pp = max(pk, min(2*pk, float64(int((float64(b.Dy())-pk*(th+7*8))/ph))))
 			py = int(pp*ph/2) + int(pk*4)
 			cy = py + int(pp*ph/2) + int(pk*(4+th/2))
@@ -180,8 +179,8 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
-		if id := menuID(v.Menu); id != p.asked || v.Seq != p.askedSeq {
-			p.asked, p.askedSeq, p.menu, p.sel = id, v.Seq, true, v.Menu.Sel
+		if id := menuID(v.Menu); id != p.asked {
+			p.asked, p.menu, p.sel = id, true, v.Menu.Sel
 		}
 	} else {
 		p.asked = ""
@@ -192,7 +191,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.menuRects = p.menuRects[:0]
 	} else if v.Menu == nil { // typed input and "press a key" prompts: the original's line
 		p.menu = false
-		if !textOnly { // the bar under a message has nothing to answer
+		if !textOnly && !v.Busy { // the bar under a message has nothing to answer; a delay's View still shows the last menu's row
 			p.drawRows(dst, frame, engine.PromptRows, k)
 		}
 	} else if p.menu {

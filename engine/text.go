@@ -199,8 +199,12 @@ func (e *Engine) skipText() bool {
 	if e.msgDelay == 0 {
 		return false
 	}
-	if !e.ext.skip && e.keyHit() {
-		e.ext.skip = true
+	if !e.ext.skip {
+		e.snap.busy = true // the poll publishes (View.Busy): text is typing, no input is waited for
+		if e.keyHit() {
+			e.ext.skip = true
+		}
+		e.snap.busy = false
 	}
 	return e.ext.skip
 }
