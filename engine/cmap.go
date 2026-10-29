@@ -542,28 +542,6 @@ func (e *Engine) combatCentre(x, y, r, dir int) {
 	e.Flip()
 }
 
-// panView (extra): scroll the view to top left square (x,y) within the
-// map, redrawing what stands there, the aim's frames and the cursor.
-func (e *Engine) panView(x, y int) {
-	if !e.recentre(x+viewW/2, y+3, 0xFF) { // the map's edge: recentre clamps
-		return
-	}
-	for i := 1; i <= e.ncomb; i++ {
-		c := e.combatant(byte(i))
-		if c != nil && c.Okay != 0 && e.cpos[i].size > 0 && e.combatOnScreen(c, false) {
-			e.unitDrawn(i, 0)
-			e.drawIcon(int(e.combatScreenX[i]), int(e.combatScreenY[i]), c.Combat.Facing, 0, c.Order)
-		}
-	}
-	if len(e.ext.aimMarks) > 0 {
-		e.markReach(e.ext.aimMarks, true)
-	}
-	if e.snap.cursorOn {
-		e.drawCursor(e.snap.cursor.X, e.snap.cursor.Y)
-	}
-	e.Flip()
-}
-
 // combatTurn = ovr32:0AF8 (char, dir, pose, hide): face dir and draw the
 // icon in the given pose (not with hide).
 func (e *Engine) combatTurn(c *Character, dir, pose byte, hide bool) {
