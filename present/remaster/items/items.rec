@@ -20,7 +20,7 @@ icon: 1061
 
 internal_name: 05
 name: Bill-Guisarme
-icon: 441
+icon: 886
 
 internal_name: 06
 name: Bo Stick
@@ -44,7 +44,7 @@ icon: 695
 
 internal_name: 0B
 name: Fauchard-Fork
-icon: 261
+icon: 887
 
 internal_name: 0C
 name: Flail
@@ -52,27 +52,27 @@ icon: 211
 
 internal_name: 0D
 name: Military Fork
-icon: 472
+icon: 723
 
 internal_name: 0E
 name: Glaive
-icon: 260
+icon: 862
 
 internal_name: 0F
 name: Glaive-Guisarme
-icon: 441
+icon: 742
 
 internal_name: 10
 name: Guisarme
-icon: 441
+icon: 695
 
 internal_name: 11
 name: Guisarme-Voulge
-icon: 261
+icon: 742
 
 internal_name: 12
 name: Halberd
-icon: 767
+icon: 1063
 
 internal_name: 13
 name: Lucern Hammer
@@ -84,7 +84,7 @@ icon: 264
 
 internal_name: 15
 name: Javelin
-icon: 584
+icon: 693
 
 internal_name: 16
 name: Jo Stick
@@ -92,7 +92,7 @@ icon: 696
 
 internal_name: 17
 name: Mace
-icon: 359
+icon: 947
 
 internal_name: 18
 name: Morning Star
@@ -100,7 +100,7 @@ icon: 360
 
 internal_name: 19
 name: Partisan
-icon: 440
+icon: 910
 
 internal_name: 1A
 name: Military Pick
@@ -108,27 +108,27 @@ icon: 931
 
 internal_name: 1B
 name: Awl Pike
-icon: 259
+icon: 765
 
 internal_name: 1C
 name: Quarrel
-icon: 717
+icon: 41
 
 internal_name: 1D
 name: Ranseur
-icon: 743
+icon: 694
 
 internal_name: 1E
 name: Scimitar
-icon: 714
+icon: 764
 
 internal_name: 1F
 name: Spear
-icon: 583
+icon: 813
 
 internal_name: 20
 name: Spetum
-icon: 472
+icon: 773
 
 internal_name: 21
 name: Quarter Staff
@@ -140,11 +140,11 @@ icon: 684
 
 internal_name: 23
 name: Broad Sword
-icon: 571
+icon: 733
 
 internal_name: 24
 name: Long Sword
-icon: 353
+icon: 729
 
 internal_name: 25
 name: Short Sword
@@ -152,19 +152,19 @@ icon: 553
 
 internal_name: 26
 name: Two-Handed Sword
-icon: 650
+icon: 900
 
 internal_name: 27
 name: Trident
-icon: 700
+icon: 771
 
 internal_name: 28
 name: Voulge
-icon: 180
+icon: 886
 
 internal_name: 29
 name: Composite Long Bow
-icon: 938
+icon: 1174
 
 internal_name: 2A
 name: Composite Short Bow
@@ -180,7 +180,7 @@ icon: 552
 
 internal_name: 2D
 name: Heavy Crossbow
-icon: 963
+icon: 1162
 
 internal_name: 2E
 name: Light Crossbow
@@ -192,15 +192,15 @@ icon: 574
 
 internal_name: 32
 name: Leather Armor
-icon: 336
+icon: 337
 
 internal_name: 33
 name: Padded Armor
-icon: 337
+icon: 98
 
 internal_name: 34
 name: Studded Leather Armor
-icon: 337
+icon: 336
 
 internal_name: 35
 name: Ring Mail
@@ -240,7 +240,7 @@ icon: 527
 
 internal_name: 3F
 name: Gauntlets of Ogre Power
-icon: 226
+icon: 228
 
 internal_name: 40
 name: Helm
@@ -276,7 +276,7 @@ icon: 231
 
 internal_name: 46:Figurine
 name: Brass Dragon / Gold Lightning Figurine
-icon: 284
+icon: 1189
 
 internal_name: 46:Necklace
 name: Diamond/Pearl Necklace
@@ -304,7 +304,7 @@ icon: 556
 
 internal_name: 46:Wand
 name: Gold Banded Wand
-icon: 662
+icon: 522
 
 internal_name: 46:Chain
 name: Gold Chain
@@ -312,23 +312,23 @@ icon: 391
 
 internal_name: 46:Scarab
 name: Gold/Silver Scarab
-icon: 616
+icon: 1231
 
 internal_name: 46:Statuette
 name: Gold/Silver Dragon Statuette
-icon: 285
+icon: 1189
 
 internal_name: 46:Incense
 name: Incense / Bag of Holding
-icon: 20
+icon: 1166
 
 internal_name: 46:Bowl
 name: Jewel Studded Bowl
-icon: 405
+icon: 1171
 
 internal_name: 46:Wings
 name: Jewelled Silver Wings
-icon: 439
+icon: 1234
 
 internal_name: 46:Manual
 name: Manual of Bodily Health
@@ -352,11 +352,11 @@ icon: 563
 
 internal_name: 46:Holy Symbol
 name: Woods Holy Symbol
-icon: 286
+icon: 610
 
 internal_name: 46:Ointment
 name: Keoghtum's Ointment
-icon: 247
+icon: 73
 
 internal_name: 47
 name: Potion
@@ -372,7 +372,7 @@ icon: 282
 
 internal_name: 47:Javelin
 name: Javelin of Lightning
-icon: 584
+icon: 789
 
 internal_name: 48
 name: Curio
@@ -384,7 +384,7 @@ icon: 185
 
 internal_name: 48:Brazier
 name: Copper Brazier
-icon: 348
+icon: 221
 
 internal_name: 48:Tapestry
 name: (Fungus Covered) Tapestry
@@ -392,7 +392,7 @@ icon: 556
 
 internal_name: 48:Saddle
 name: Rotting Leather Saddle
-icon: 291
+icon: 1250
 
 internal_name: 48:Rug
 name: Rotting Rug
@@ -400,11 +400,11 @@ icon: 131
 
 internal_name: 48:Statuette
 name: Stone Statuette
-icon: 286
+icon: 1214
 
 internal_name: 49
 name: Arrow
-icon: 38
+icon: 42
 
 internal_name: 4A
 name: Leather Holy Symbol
