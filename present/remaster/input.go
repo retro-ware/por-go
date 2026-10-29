@@ -159,6 +159,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.send(engine.ActMember, 0)
 	case p.ctx > 0:
 		p.ctx = 0
+	case p.menu && v.Command: // the command bar's popup: it alone closes (key)
+		p.menu = false
 	default:
 		p.send(engine.ActClose, 0)
 	}

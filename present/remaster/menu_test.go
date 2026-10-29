@@ -18,4 +18,9 @@ func TestEscClosesCommandMenu(t *testing.T) {
 	if !p.key(27, v) || p.menu {
 		t.Fatal("Esc did not close the menu")
 	}
+	p.key(13, v)
+	p.Mouse(0, 0, false, false, true, 0, v)
+	if p.menu {
+		t.Fatal("a right click did not close the menu")
+	}
 }
