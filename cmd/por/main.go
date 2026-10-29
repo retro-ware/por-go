@@ -148,10 +148,12 @@ var repeatKeys = []gpu.Key{
 // keys passes the keyboard to the engine.
 func (g *game) keys() {
 	paced := false
-	// fluid movement: the view asks for the held move as the last one ends
+	// fluid movement: the view asks for the held move as the last one ends.
+	// A key counts as held only after holdTicks: a tap (even one a little
+	// longer than half a turn) is one move, never two
 	var held uint16
 	for _, k := range repeatKeys[:8] {
-		if gpu.KeyPressDuration(k) > 0 {
+		if gpu.KeyPressDuration(k) >= holdTicks {
 			held, _ = biosKey(k)
 		}
 	}
@@ -252,8 +254,9 @@ var padButtons = []struct {
 	{gpu.StandardGamepadButtonCenterLeft, 27, false},
 }
 
-// Held buttons repeat after padDelay ticks (1/tps s), every padRate ticks.
-const padDelay, padRate = tps / 3, tps * 3 / 20
+// Held buttons repeat after padDelay ticks (1/tps s), every padRate ticks;
+// a move key held holdTicks (200 ms) flows on, a shorter press is a tap.
+const padDelay, padRate, holdTicks = tps / 3, tps * 3 / 20, tps / 5
 
 func repeats(d int) bool { return d == 1 || d >= padDelay && (d-padDelay)%padRate == 0 }
 
