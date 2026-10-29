@@ -1387,6 +1387,21 @@ func (g *Game) updateMenu() bool {
 		case 9:
 			gpu.SetFullscreen(!gpu.IsFullscreen())
 		case 10:
+			Settings.MapOff = !Settings.MapOff
+		case 11:
+			Settings.MapSmall = !Settings.MapSmall
+		case 12: // slider as Walk speed: Left more translucent, Right / Enter more opaque (Enter wraps)
+			a := Settings.MapAlpha + 0.1
+			if KeyJustPressed(gpu.KeyLeft) {
+				a = math.Max(minAlpha, Settings.MapAlpha-0.1)
+			} else if a > 1.05 {
+				a = minAlpha
+				if KeyJustPressed(gpu.KeyRight) {
+					a = 1
+				}
+			}
+			Settings.MapAlpha = math.Round(math.Min(a, 1)*10) / 10
+		case 13:
 			Voice(true)
 		}
 		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, gpu.IsFullscreen(), g.torch
@@ -1405,7 +1420,10 @@ func (g *Game) menuItems() []string {
 			"Walk speed:        " + strings.Repeat("#", bar+1) + strings.Repeat("-", int((maxSpeed-minSpeed)/0.25)-bar) + fmt.Sprintf(" %.2fx", Settings.Speed),
 			"Smooth monsters:   " + onOff(Settings.SmoothMonsters), "Dithered darkness: " + onOff(g.dither), "Normal mapping:    " + onOff(Settings.NormalMaps),
 			"Light maps:        " + onOff(Settings.LightMaps),
-			fmt.Sprintf("Torch intensity:   %.1f", g.torch), "Fullscreen:        " + onOff(gpu.IsFullscreen())}
+			fmt.Sprintf("Torch intensity:   %.1f", g.torch), "Fullscreen:        " + onOff(gpu.IsFullscreen()),
+			"Minimap:           " + onOff(!Settings.MapOff), "Minimap size:      " + map[bool]string{false: "Normal", true: "Small"}[Settings.MapSmall]}
+		ab := int(math.Round((Settings.MapAlpha - minAlpha) / 0.1))
+		items = append(items, "Minimap opacity:   "+strings.Repeat("#", ab+1)+strings.Repeat("-", int(math.Round((1-minAlpha)/0.1))-ab)+fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100))
 		if Voice != nil {
 			items = append(items, "Voice-over:        "+onOff(Voice(false)))
 		}
@@ -2177,14 +2195,18 @@ type Options struct {
 	Smooth, Fluid, Haze, Dither, Fullscreen, SmoothMonsters, NormalMaps, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
 	Torch                                                                          float64
 	Speed                                                                          float64 // walk and turn speed, minSpeed to maxSpeed times the normal
+	MapOff, MapSmall                                                               bool    // the host's minimap: hidden; half its size
+	MapAlpha                                                                       float64 // the minimap's opacity, minAlpha to 1
 }
+
+const minAlpha = 0.2
 
 const minSpeed, maxSpeed = 0.5, 2.0
 
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, LightMaps: true, Torch: 1, Speed: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, LightMaps: true, Torch: 1, Speed: 1, MapAlpha: 1}
 	OnSettings func(Options)
 	// Voice, when set, adds a "Voice-over" line to the options: it toggles
 	// the voice first when toggle, then reports whether it is on.

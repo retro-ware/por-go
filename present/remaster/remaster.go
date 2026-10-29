@@ -358,6 +358,9 @@ func mapRect(dst *gpu.Image, n int) image.Rectangle {
 	per := max(n, 2) - (max(n, 2)+1)/2
 	y := top.Min.Y - (per-1)*(cardH+cardGap)*k // ...up to its first
 	side := min(y-2*gap, b.Dx()/2)
+	if blobber.Settings.MapSmall {
+		side /= 2
+	}
 	return image.Rect(b.Dx()-gap-side, gap, b.Dx()-gap, gap+side)
 }
 
@@ -374,7 +377,7 @@ const mapSide = 16 * engine.MapCell
 
 // drawMap shows the map as the full map draws it (View.Map) in mapRect.
 func (p *Presenter) drawMap(dst *gpu.Image, m image.Image, n int) {
-	if m == nil {
+	if m == nil || blobber.Settings.MapOff {
 		return
 	}
 	if p.mapImg == nil {
@@ -385,10 +388,12 @@ func (p *Presenter) drawMap(dst *gpu.Image, m image.Image, n int) {
 		p.mapSrc = m
 	}
 	r := mapRect(dst, n)
-	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.Gray{0x80}, false)
-	dst.SubImage(r.Inset(1)).(*gpu.Image).Fill(color.Black)
+	a := float32(blobber.Settings.MapAlpha) // the opacity slider (Esc, Options)
+	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.NRGBA{0x80, 0x80, 0x80, uint8(255 * a)}, false)
+	vector.DrawFilledRect(dst, float32(r.Min.X+1), float32(r.Min.Y+1), float32(r.Dx()-2), float32(r.Dy()-2), color.NRGBA{A: uint8(255 * a)}, false)
 	k := float64(r.Dx()-2) / mapSide // any scale: the square keeps the aspect
 	op := &gpu.DrawImageOptions{}
+	op.ColorScale.ScaleAlpha(a)
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(float64(r.Min.X)+(float64(r.Dx())-mapSide*k)/2, float64(r.Min.Y)+(float64(r.Dy())-mapSide*k)/2)
 	dst.DrawImage(p.mapImg, op)
