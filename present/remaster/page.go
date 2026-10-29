@@ -6,6 +6,8 @@ import (
 	"image/draw"
 	"math"
 
+	xdraw "golang.org/x/image/draw"
+
 	"gpu"
 
 	"por/engine"
@@ -30,7 +32,15 @@ type page struct {
 	seq   uint64
 	noted bool
 	drawn bool
-	scans map[image.Image]*gpu.Image // the overlays on the GPU
+	scans map[image.Image]scan // the overlays on the GPU
+}
+
+// scan is an overlay on the GPU: the picture itself (w, h 0), or a copy
+// scaled up to w by h window pixels (Catmull-Rom: sharper than the GPU's
+// bilinear).
+type scan struct {
+	im   *gpu.Image
+	w, h int
 }
 
 // pageImage draws v's page (only when a new View or the note changed) and
@@ -109,25 +119,58 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
 			keep = keep || o.Img == img
 		}
 		if !keep {
-			im.Deallocate()
+			im.im.Deallocate()
 			delete(pg.scans, img)
 		}
 	}
 	k := r.W / pal.W
 	for _, o := range os {
-		im := pg.scans[o.Img]
-		if im == nil {
-			if pg.scans == nil {
-				pg.scans = map[image.Image]*gpu.Image{}
-			}
-			im = gpu.NewImageFromImage(o.Img)
-			pg.scans[o.Img] = im
-		}
 		b := o.Part()
-		im = im.SubImage(b).(*gpu.Image) // drawn from its own top left
+		tw, th := o.At.Dx()*int(k), o.At.Dy()*int(k) // its place in window pixels
+		x, y := r.X+float64(o.At.Min.X)*k, r.Y+float64(o.At.Min.Y)*k
+		// a picture smaller than its place (a portrait) is scaled up by whole
+		// pixels when that nearly fills the place (crisp pixel art, on its
+		// foot), else by Catmull-Rom to the exact size; a larger one (a journal
+		// scan) shrinks bilinear on the GPU
+		s := min(tw/b.Dx(), th/b.Dy())
+		whole := s >= 1 && s*b.Dx() >= tw*9/10 && s*b.Dy() >= th*9/10
+		sw, sh := 0, 0
+		if s >= 1 && !whole {
+			sw, sh = tw, th
+		}
+		sc, ok := pg.scans[o.Img]
+		if !ok || sc.w != sw || sc.h != sh {
+			if ok {
+				sc.im.Deallocate()
+			}
+			if pg.scans == nil {
+				pg.scans = map[image.Image]scan{}
+			}
+			src := o.Img
+			if sw > 0 {
+				m := image.NewRGBA(image.Rect(0, 0, sw, sh))
+				xdraw.CatmullRom.Scale(m, m.Bounds(), o.Img, b, draw.Src, nil)
+				src = m
+			}
+			sc = scan{gpu.NewImageFromImage(src), sw, sh}
+			pg.scans[o.Img] = sc
+		}
+		im := sc.im
 		op := &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
-		op.GeoM.Scale(float64(o.At.Dx())*k/float64(b.Dx()), float64(o.At.Dy())*k/float64(b.Dy()))
-		op.GeoM.Translate(r.X+float64(o.At.Min.X)*k, r.Y+float64(o.At.Min.Y)*k)
+		switch {
+		case whole:
+			im = im.SubImage(b).(*gpu.Image)
+			op.Filter = gpu.FilterNearest
+			op.GeoM.Scale(float64(s), float64(s))
+			x += float64(tw-s*b.Dx()) / 2
+			y += float64(th - s*b.Dy())
+		case sw > 0:
+			op.Filter = gpu.FilterNearest
+		default:
+			im = im.SubImage(b).(*gpu.Image) // drawn from its own top left
+			op.GeoM.Scale(float64(tw)/float64(b.Dx()), float64(th)/float64(b.Dy()))
+		}
+		op.GeoM.Translate(x, y)
 		dst.DrawImage(im, op)
 	}
 }
