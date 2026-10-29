@@ -69,6 +69,7 @@ type Member struct {
 	MaxHP    int
 	AC       int    // as displayed: 10 down to negative
 	Status   string // as the sheet names it ("Okay", "Unconscious" ...)
+	Class    string // as the sheet names it ("Fighter/Thief" ...)
 	Selected bool
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
 }
@@ -87,6 +88,7 @@ type View struct {
 	Command   bool // Menu is the adventuring command bar
 	Party     []Member
 	Battle    *Battle     // the combat map (nil outside combat)
+	Inventory *Inventory  // the inventory screen is up (nil otherwise)
 	Map       image.Image // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 }
 
@@ -119,6 +121,8 @@ func (e *Engine) View() View {
 // snapState is the engine's side of the seam.
 type snapState struct {
 	view       atomic.Pointer[View]
+	inv        *Inventory             // the inventory screen ItemsMenu shows (nil when it is not up)
+	invSel     *int                   // its list's highlighted line
 	win        Window                 // set by whatever drew into the view window last
 	frame      []byte                 // the frame's border pixels as DrawMainFrame left them
 	heads      map[int]image.Image    // decoded HEAD blocks by id
@@ -206,6 +210,11 @@ func (e *Engine) publish() {
 	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText {
 		v.Map = e.mapImage(mapCell)
 	}
+	if s.inv != nil {
+		inv := *s.inv
+		inv.Sel = *s.invSel
+		v.Inventory = &inv
+	}
 	if m := s.menu; m != nil {
 		c := *m
 		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
@@ -233,7 +242,7 @@ func (e *Engine) publish() {
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
 			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == e.partySel,
-			Head: e.charHead(c),
+			Class: className(c.Class), Head: e.charHead(c),
 		})
 	}
 	v.Battle = e.battle()

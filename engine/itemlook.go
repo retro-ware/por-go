@@ -110,7 +110,7 @@ func (e *Engine) itemLines(it *Item) []string {
 	if it.Hidden == 0 && int8(it.Plus) > 0 && (b.Dice > 0 || b.Protection > 0x80) {
 		add("Magic +" + strconv.Itoa(int(int8(it.Plus))))
 	}
-	add("Weight " + strconv.Itoa(int(it.Weight)) + ", price " + strconv.Itoa(int(it.Price)))
+	add("Price " + strconv.Itoa(int(it.Price))) // extra: no weight (the party inventory counts slots)
 	if slot != 0xA || b.Hands != 0 {
 		var who []string
 		for k, m := range classBits {
@@ -154,5 +154,7 @@ func (e *Engine) lookItem(it *Item) {
 			e.DisplayString(3, y1+3+i, colLightGreen, s)
 		}
 	}
+	e.overlay(CellRect{1, y1, winRight, y2})
 	e.PromptRow24(colLightMagenta, "Press any key")
+	e.overlay(CellRect{})
 }

@@ -58,6 +58,7 @@ type Presenter struct {
 	battle    battle.Presenter            // the combat map in 3D
 	mapBottom int                         // screen rows above this are the 3D map
 	fight     bool                        // the last frame was the 3D combat map
+	inv       inventory                   // the inventory screen (inventory.go)
 }
 
 // Draw shows the game on dst and returns where the classic picture went
@@ -141,13 +142,13 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		pic = engine.ViewWindow.Framed()
 	}
 	if v.Window == engine.WinPicture || v.Window == engine.WinText {
-		drawBox(dst, frame, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
+		drawBox(dst, frame, engine.TextPane.Framed(), pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
 	textOnly := v.TextShown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
 	if textOnly { // a message, no choice to make: along the bottom edge
-		drawBox(dst, frame, txt, pk, cx, b.Dy()-int(pk*th/2))
+		drawBox(dst, frame, engine.TextPane.Framed(), txt, pk, cx, b.Dy()-int(pk*th/2))
 	} else if v.TextShown {
-		drawBox(dst, frame, txt, pk, cx, cy)
+		drawBox(dst, frame, engine.TextPane.Framed(), txt, pk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked {
@@ -451,8 +452,8 @@ func scale(dst *gpu.Image) float64 {
 }
 
 // drawBox copies box r of the classic frame onto dst at scale k, centred
-// on cx, cy: its inside, in a plain border (drawBorder).
-func drawBox(dst, frame *gpu.Image, r engine.CellRect, k float64, cx, cy int) {
+// on cx, cy: its inside, in a plain border (drawBorder) of tiles' cells.
+func drawBox(dst, frame *gpu.Image, tiles, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
 	var g gpu.GeoM
 	g.Scale(k, k)
@@ -460,14 +461,13 @@ func drawBox(dst, frame *gpu.Image, r engine.CellRect, k float64, cx, cy int) {
 	op := &gpu.DrawImageOptions{GeoM: g}
 	op.GeoM.Translate(8*k, 8*k)
 	dst.DrawImage(frame.SubImage(px.Inset(8)).(*gpu.Image), op)
-	drawBorder(dst, frame, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
+	drawBorder(dst, frame, tiles, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
 }
 
-// drawBorder draws a cw by ch cell box's border at g from the text pane's
-// own cells: its corners and one plain ribbon cell along each edge (none of
-// the frame's junction tiles).
-func drawBorder(dst, frame *gpu.Image, g gpu.GeoM, cw, ch int) {
-	f := engine.TextPane.Framed()
+// drawBorder draws a cw by ch cell box's border at g from the cells of
+// the frame's box f (the text pane's on the main screen): its corners and
+// one plain ribbon cell along each edge (none of the frame's junction tiles).
+func drawBorder(dst, frame *gpu.Image, f engine.CellRect, g gpu.GeoM, cw, ch int) {
 	cell := func(sx, sy, x, y int) {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(x*8), float64(y*8))

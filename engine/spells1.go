@@ -149,7 +149,7 @@ func (e *Engine) addScrollSpells(all byte) {
 func (e *Engine) addAllScrolls(all byte) {
 	e.spellItems = [0x31]*Item{}
 	e.spellItemCount = 0
-	for _, it := range e.selected().Items {
+	for _, it := range e.carried(e.selected()) {
 		e.usedScroll = it
 		if e.isScroll(it) {
 			e.addScrollSpells(all)

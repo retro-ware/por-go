@@ -34,7 +34,7 @@ func (e *Engine) studyTime(c *Character) int {
 			sumMem += int(l)
 		}
 	}
-	for _, it := range c.Items {
+	for _, it := range e.carried(c) {
 		if !e.isScroll(it) {
 			continue
 		}
@@ -76,7 +76,7 @@ func clearMemorize(c *Character) {
 
 // clearScribe = ovr16:019C (char): scroll spells are no longer being scribed.
 func (e *Engine) clearScribe(c *Character) {
-	for _, it := range c.Items {
+	for _, it := range e.carried(c) {
 		if e.isScroll(it) {
 			for k := 1; k <= 3; k++ {
 				it.Spells[k-1] &= 0x7F
@@ -577,7 +577,7 @@ func (e *Engine) scribeMenu() {
 			continue
 		}
 		found := false
-		for _, it := range c.Items {
+		for _, it := range e.carried(c) {
 			if found {
 				break
 			}
@@ -599,7 +599,7 @@ func (e *Engine) scribeMenu() {
 			continue
 		}
 		// (any item's spell bytes count here, not only scrolls)
-		for _, it := range c.Items {
+		for _, it := range e.carried(c) {
 			if found {
 				break
 			}
@@ -759,7 +759,7 @@ func (e *Engine) magicCommands() string {
 	if caster {
 		m += "Memorize "
 	}
-	if mu && slices.ContainsFunc(c.Items, e.isScroll) {
+	if mu && slices.ContainsFunc(e.carried(c), e.isScroll) {
 		m += "Scribe "
 	}
 	return m
@@ -1100,7 +1100,7 @@ func (e *Engine) memorizeOne(c *Character, check *bool) int {
 // scribed; the spell goes into the book and off the scroll.
 func (e *Engine) scribeOne(c *Character, check *bool) int {
 	found := 0
-	for _, it := range append([]*Item(nil), c.Items...) {
+	for _, it := range e.carried(c) {
 		if found != 0 {
 			break
 		}

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -585,23 +586,16 @@ func (e *Engine) StepForward() {
 	e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing)
 }
 
-// ItemSave = ovr08:1DF0 (c, pct): each item is lost with chance pct. The
-// reductions for big items accumulate over the list, as in the original.
+// ItemSave = ovr08:1DF0 (c, pct): each item is lost with chance pct.
+// extra: no reductions for heavy items (items weigh nothing), and the
+// party inventory takes its chance with the first member.
+// ponytail: the pool goes with party[0] only, so a hazard to another member alone spares it.
 func (e *Engine) ItemSave(c *Character, pct int) {
-	for _, it := range append([]*Item(nil), c.Items...) {
-		if v := it.Weight; v > 0xFF {
-			if pct > 0x5A {
-				pct -= 0x5A
-			} else {
-				pct = 0
-			}
-		} else if v > 0x18 {
-			if pct > 0x32 {
-				pct -= 0x32
-			} else {
-				pct = 0
-			}
-		}
+	list := c.Items
+	if len(e.party) > 0 && c == e.party[0] {
+		list = e.carried(c)
+	}
+	for _, it := range slices.Clone(list) {
 		if e.Dice(1, 100) <= pct {
 			e.RemoveItem(c, it) // 00BA:1509
 		}

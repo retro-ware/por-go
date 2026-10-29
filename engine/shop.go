@@ -90,7 +90,7 @@ func (e *Engine) shopBuy() {
 			continue
 		}
 		if key == 'I' { // extra: the buyer's own items
-			if len(e.selected().Items) == 0 {
+			if len(e.carried(e.selected())) == 0 {
 				e.BottomMessage("No items")
 			} else {
 				top := e.listTop // extra: back on the same page of the list
@@ -100,7 +100,7 @@ func (e *Engine) shopBuy() {
 					if n := len(e.ext.later); n > 0 && e.ext.later[n-1] == 'V' {
 						e.ext.later = e.ext.later[:n-1] // the queued View
 					}
-					if len(e.selected().Items) == 0 {
+					if len(e.carried(e.selected())) == 0 {
 						e.BottomMessage("No items")
 						break
 					}
@@ -184,9 +184,13 @@ func (e *Engine) identifyMenu() bool {
 		var list []*ListNode
 		var owner []*Character
 		var item []*Item
-		for _, c := range e.party {
+		for i, c := range e.party {
 			head := false
-			for _, it := range c.Items {
+			own := c.Items
+			if i == 0 { // extra: the party inventory, listed with the first member
+				own = e.carried(c)
+			}
+			for _, it := range own {
 				if !unknown(it) {
 					continue
 				}

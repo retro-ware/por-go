@@ -170,11 +170,11 @@ func (e *Engine) stoneGaze(c *Character, a *Affect, flag byte) {
 	e.flyMissile(e.combatX(c), e.combatY(c), e.combatX(t), e.combatY(t), 4, 0x2D)
 	if e.FindAffect(c, affReflectableGaze) != nil {
 		reflected := false
-		for _, p := range t.Items {
+		for _, p := range e.carried(t) {
 			if reflected {
 				break
 			}
-			if p.Readied != 0 && (p.Words[0] == 0x76 || p.Words[1] == 0x76 || p.Words[2] == 0x76) {
+			if (p.Readied != 0 || dollSlot(e, t, p) < 0) && (p.Words[0] == 0x76 || p.Words[1] == 0x76 || p.Words[2] == 0x76) {
 				e.CharMessage(t, "reflects it!", false)
 				e.flyMissile(e.combatX(t), e.combatY(t), e.combatX(c), e.combatY(c), 4, 0x2D)
 				reflected = true
@@ -647,11 +647,11 @@ func (e *Engine) blockMind(c *Character, a *Affect, flag byte) {
 // (0x98 with 0xFC) or 0x76 item in slots 1..3 of a used item.
 func (e *Engine) gazeReflected(c *Character, a *Affect, flag byte) {
 	t := c.Combat.Target
-	for _, p := range t.Items {
+	for _, p := range e.carried(t) { // extra: a mirror works from the party inventory (it has no slot)
 		if e.affectVeto != 0 {
 			break
 		}
-		if p.Readied != 0 {
+		if p.Readied != 0 || dollSlot(e, t, p) < 0 {
 			for k := 1; k <= 3; k++ {
 				if p.Words[k-1] == 0x98 && p.Words[2] == 0xFC || p.Words[k-1] == 0x76 {
 					e.affectVeto = 1
