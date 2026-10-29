@@ -45,6 +45,7 @@ type Presenter struct {
 	bars        *gpu.Image                  // bars.png
 	cardImgs    []*gpu.Image                // the cards, drawn at scale 1
 	faceImgs    map[image.Image]*gpu.Image  // the faces on the GPU
+	hiFaces     map[image.Image]*gpu.Image  // the PNG portraits at the cards' window resolution
 	labels      map[string]*gpu.Image       // card labels in the game's font
 	glyph       func(byte) [8]byte          // the game's font
 	main        bool                        // the main menu is up (mainmenu.go)
@@ -776,19 +777,55 @@ func (p *Presenter) portrait(m engine.Member) image.Image {
 	if f, ok := p.faces[m.Portrait]; ok {
 		return f
 	}
-	const n = portraitSize
-	f := image.NewRGBA(image.Rect(0, 0, n, n))
-	b := m.Portrait.Bounds()
-	w, h := n, b.Dy()*n/max(b.Dx(), 1) // the shape kept
-	if h > n {
-		w, h = b.Dx()*n/max(b.Dy(), 1), n
-	}
-	xdraw.CatmullRom.Scale(f, image.Rect((n-w)/2, n-h, (n-w)/2+w, n), m.Portrait, b, draw.Src, nil)
+	f := fitSquare(m.Portrait, portraitSize)
 	if p.faces == nil {
 		p.faces = map[image.Image]image.Image{}
 	}
 	p.faces[m.Portrait] = f
 	return f
+}
+
+// hiFace is a PNG portrait at n pixels square for a card at the window's
+// resolution (cached per size): more detail than the card's own face.
+func (p *Presenter) hiFace(src image.Image, n int) *gpu.Image {
+	if g, ok := p.hiFaces[src]; ok && g.Bounds().Dx() == n {
+		return g
+	}
+	g := gpu.NewImageFromImage(fitSquare(src, n))
+	if old, ok := p.hiFaces[src]; ok {
+		old.Deallocate()
+	}
+	p.hiFaces[src] = g
+	return g
+}
+
+// fitSquare is src fitted into an n pixel square, its shape kept, on the
+// square's foot: by whole pixels when those nearly fill it (crisp pixel
+// art), else by Catmull-Rom.
+func fitSquare(src image.Image, n int) *image.RGBA {
+	b := src.Bounds()
+	f := image.NewRGBA(image.Rect(0, 0, n, n))
+	w, h := n, b.Dy()*n/max(b.Dx(), 1)
+	if h > n {
+		w, h = b.Dx()*n/max(b.Dy(), 1), n
+	}
+	var sc xdraw.Scaler = xdraw.CatmullRom
+	if s := wholeScale(b.Dx(), b.Dy(), n, n); s > 0 {
+		w, h, sc = s*b.Dx(), s*b.Dy(), xdraw.NearestNeighbor
+	}
+	sc.Scale(f, image.Rect((n-w)/2, n-h, (n-w)/2+w, n), src, b, draw.Src, nil)
+	return f
+}
+
+// wholeScale is the whole number of pixels per source pixel that scales a
+// sw by sh picture up to nearly fill tw by th (at least 90%), 0 when none
+// does (a smaller picture is drawn smoothly to the exact size instead).
+func wholeScale(sw, sh, tw, th int) int {
+	s := min(tw/max(sw, 1), th/max(sh, 1))
+	if s >= 1 && s*sw >= tw*9/10 && s*sh >= th*9/10 {
+		return s
+	}
+	return 0
 }
 
 // face is the card art for a head: its lit pixels (the face, hair and

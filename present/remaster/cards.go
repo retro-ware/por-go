@@ -69,7 +69,7 @@ func (p *Presenter) setup(note Note, v engine.View) {
 	p.glyph, blobber.Glyph = note.Glyph, note.Glyph
 	p.border.update(v.Border)
 	if p.faceImgs == nil {
-		p.faceImgs, p.labels = map[image.Image]*gpu.Image{}, map[string]*gpu.Image{}
+		p.faceImgs, p.hiFaces, p.labels = map[image.Image]*gpu.Image{}, map[image.Image]*gpu.Image{}, map[string]*gpu.Image{}
 	}
 }
 
@@ -93,7 +93,7 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 			t = p.border.grey
 		}
 		drawBorder(d, t, gpu.GeoM{}, cardW/8, frameH/8)
-		if f := p.portrait(m); f != nil {
+		if f := p.portrait(m); f != nil && m.Portrait == nil { // a PNG is drawn at the window's resolution below
 			g, ok := p.faceImgs[f]
 			if !ok {
 				g = gpu.NewImageFromImage(f)
@@ -106,8 +106,8 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 			}
 			d.DrawImage(g, op)
 		}
-		if s := cardLabels[m.Status]; s != "" {
-			p.label(d, s, cardFace+1, cardFace+portraitSize-9)
+		if s := cardLabels[m.Status]; s != "" && m.Portrait == nil {
+			p.label(d, s, cardFace+1, cardFace+portraitSize-9, 1)
 		}
 		fill := greenFill
 		if m.HP*4 < m.MaxHP {
@@ -120,6 +120,18 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 		op.GeoM.Scale(k, k)
 		op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
 		dst.DrawImage(d, op)
+		if m.Portrait != nil { // the PNG at the window's resolution (the card's 48 pixels lose its detail), the status over it
+			ki := int(k)
+			op := &gpu.DrawImageOptions{}
+			op.GeoM.Translate(float64(r.Min.X+cardFace*ki), float64(r.Min.Y+cardFace*ki))
+			if m.HP <= 0 {
+				op.ColorScale.Scale(0.35, 0.35, 0.35, 1)
+			}
+			dst.DrawImage(p.hiFace(m.Portrait, portraitSize*ki), op)
+			if s := cardLabels[m.Status]; s != "" {
+				p.label(dst, s, r.Min.X+(cardFace+1)*ki, r.Min.Y+(cardFace+portraitSize-9)*ki, float64(ki))
+			}
+		}
 	}
 }
 
@@ -185,8 +197,9 @@ func (p *Presenter) bar(dst *gpu.Image, x, y, w, v, maxV int, fill image.Rectang
 	}
 }
 
-// label writes s in the game's font, white on black, at (x, y).
-func (p *Presenter) label(dst *gpu.Image, s string, x, y int) {
+// label writes s in the game's font, white on black, at (x, y), k times
+// its size.
+func (p *Presenter) label(dst *gpu.Image, s string, x, y int, k float64) {
 	img, ok := p.labels[s]
 	if !ok {
 		m := image.NewRGBA(image.Rect(0, 0, 8*len(s)+2, 10))
@@ -200,6 +213,7 @@ func (p *Presenter) label(dst *gpu.Image, s string, x, y int) {
 		p.labels[s] = img
 	}
 	op := &gpu.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(float64(x), float64(y))
 	dst.DrawImage(img, op)
 }

@@ -132,10 +132,9 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
 		// pixels when that nearly fills the place (crisp pixel art, on its
 		// foot), else by Catmull-Rom to the exact size; a larger one (a journal
 		// scan) shrinks bilinear on the GPU
-		s := min(tw/b.Dx(), th/b.Dy())
-		whole := s >= 1 && s*b.Dx() >= tw*9/10 && s*b.Dy() >= th*9/10
+		s := wholeScale(b.Dx(), b.Dy(), tw, th)
 		sw, sh := 0, 0
-		if s >= 1 && !whole {
+		if s == 0 && tw >= b.Dx() && th >= b.Dy() {
 			sw, sh = tw, th
 		}
 		sc, ok := pg.scans[o.Img]
@@ -158,7 +157,7 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
 		im := sc.im
 		op := &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
 		switch {
-		case whole:
+		case s > 0:
 			im = im.SubImage(b).(*gpu.Image)
 			op.Filter = gpu.FilterNearest
 			op.GeoM.Scale(float64(s), float64(s))
