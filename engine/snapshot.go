@@ -87,9 +87,10 @@ type View struct {
 	Menu      *Menu
 	Command   bool // Menu is the adventuring command bar
 	Party     []Member
-	Battle    *Battle     // the combat map (nil outside combat)
-	Inventory *Inventory  // the inventory screen is up (nil otherwise)
-	Map       image.Image // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
+	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
+	Battle    *Battle        // the combat map (nil outside combat)
+	Inventory *Inventory     // the inventory screen is up (nil otherwise)
+	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 }
 
 // Menu is the menu bar waiting for a choice on the prompt line.
@@ -126,6 +127,7 @@ type snapState struct {
 	win        Window                 // set by whatever drew into the view window last
 	frame      []byte                 // the frame's border pixels as DrawMainFrame left them
 	heads      map[int]image.Image    // decoded HEAD blocks by id
+	tiles      [3]image.Image         // View.Border, once decoded
 	border     [][2]int               // pixel positions of frame
 	menu       *Menu                  // the innermost DisplayInput's menu (Sel unset)
 	cursor     image.Point            // drawCursor's last square
@@ -245,6 +247,7 @@ func (e *Engine) publish() {
 			Class: className(c.Class), Head: e.charHead(c),
 		})
 	}
+	v.Border = e.borderTiles()
 	v.Battle = e.battle()
 	s.view.Store(v)
 }
@@ -312,4 +315,17 @@ func (e *Engine) menuShown(prompt, menu string, start, end []int) *Menu {
 	}
 	e.snap.menu = m
 	return old
+}
+
+// borderTiles decodes DrawBorder's style 0 cells (0x114 corner, 0x115
+// side, 0x116 top) once the symbols are loaded.
+func (e *Engine) borderTiles() [3]image.Image {
+	if e.snap.tiles[0] != nil || e.sym[4] == nil {
+		return e.snap.tiles
+	}
+	im := e.sym[4]
+	for i := range e.snap.tiles {
+		e.snap.tiles[i] = e.toRGBA(im.Frame(0x114+i-symFix[4]), im.Width*8, im.Height, image.NewRGBA(image.Rect(0, 0, im.Width*8, im.Height)), 0, 0)
+	}
+	return e.snap.tiles
 }

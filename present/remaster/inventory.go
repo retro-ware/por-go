@@ -15,8 +15,6 @@ import (
 
 	"gpu"
 
-	"blobber/ui"
-
 	"por/ega"
 	"por/engine"
 	"por/present/classic"
@@ -50,10 +48,6 @@ const (
 	atlasCols  = 24
 	wheelPause = 60 * time.Millisecond // the quickest the wheel scrolls a line
 )
-
-// outer is the items screen's own border (the game's DrawBorder round the
-// screen): the box tiles come from it.
-var outer = engine.OuterBox.Framed()
 
 func col(i int) color.RGBA {
 	c := ega.Palette[i]
@@ -243,7 +237,8 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 	inv.load()
 	inv.shown, inv.member, inv.count, inv.glyph = true, in.Member, len(v.Party), note.Glyph
 	inv.busy = v.Menu == nil || !hasKey(v.Menu, 'E') || in.Over != (engine.CellRect{})
-	frame := p.Classic.Frame(scr, note)
+	p.setup(note, v)
+	frame, t := p.Classic.Frame(scr, note), p.border.tiles
 
 	b := dst.Bounds()
 	inv.k = max(1, min(b.Dx()/invW, b.Dy()/invH))
@@ -268,7 +263,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 			inv.text(cl, lx+(lw-8*len(cl))/2, 18+10*i, green)
 		}
 		if f := p.face(m.Head); f != nil {
-			r := image.Rect(lx+(lw-ui.PortraitSize)/2, 20+oy, lx+(lw+ui.PortraitSize)/2, 20+oy+ui.PortraitSize)
+			r := image.Rect(lx+(lw-portraitSize)/2, 20+oy, lx+(lw+portraitSize)/2, 20+oy+portraitSize)
 			draw.Draw(inv.px, r, f, f.Bounds().Min, draw.Src)
 		}
 		hp := "HP " + strconv.Itoa(m.HP) + "/" + strconv.Itoa(m.MaxHP)
@@ -361,19 +356,19 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 
 	// onto the GPU: the boxes' borders, the menu row, the game's boxes over it
 	inv.img.WritePixels(inv.px.Pix)
-	drawBorder(inv.img, frame, outer, gpu.GeoM{}, leftCells, ch-1)
+	drawBorder(inv.img, t, gpu.GeoM{}, leftCells, ch-1)
 	var g gpu.GeoM
 	g.Translate(leftCells*8, 0)
-	drawBorder(inv.img, frame, outer, g, cw-leftCells, ch-1)
+	drawBorder(inv.img, t, g, cw-leftCells, ch-1)
 	pr := engine.PromptRows.Pixels()
 	inv.bar = pr.Sub(pr.Min).Add(image.Pt((inv.w-pr.Dx())/2, (ch-1)*8))
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(float64(inv.bar.Min.X), float64(inv.bar.Min.Y))
 	inv.img.DrawImage(frame.SubImage(pr).(*gpu.Image), op)
 	if in.Over != (engine.CellRect{}) {
-		drawBox(inv.img, frame, outer, in.Over, 1, inv.w/2, inv.h/2)
+		drawBox(inv.img, frame, t, in.Over, 1, inv.w/2, inv.h/2)
 	} else if !inv.dragging && !inv.busy {
-		inv.tooltip(frame, in)
+		inv.tooltip(t, in)
 	}
 
 	// onto the screen at the whole scale
@@ -388,7 +383,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 
 // tooltip names what the pointer is on when the screen does not show it
 // whole: a doll slot (its item or what goes there), a cut list line.
-func (inv *inventory) tooltip(frame *gpu.Image, in *engine.Inventory) {
+func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 	s := ""
 	for i, r := range dollBoxes {
 		if inv.hover.In(r.Add(inv.dollAt.Min)) {
@@ -418,7 +413,7 @@ func (inv *inventory) tooltip(frame *gpu.Image, in *engine.Inventory) {
 	draw.Draw(px, px.Rect, image.Black, image.Point{}, draw.Src)
 	drawText(px, inv.glyph, upTo(s, cw-2), 8, 8, cyan)
 	inv.tip.WritePixels(px.Pix)
-	drawBorder(inv.tip, frame, outer, gpu.GeoM{}, cw, 3)
+	drawBorder(inv.tip, t, gpu.GeoM{}, cw, 3)
 	x := min(inv.hover.X+8, inv.w-w)
 	y := inv.hover.Y + 12
 	if y+h > inv.h {

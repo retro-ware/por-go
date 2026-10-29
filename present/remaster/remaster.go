@@ -16,8 +16,6 @@ import (
 
 	"blobber"
 	"blobber/maps"
-	"blobber/party"
-	"blobber/ui"
 
 	"por/ega"
 	"por/engine"
@@ -37,7 +35,12 @@ type Presenter struct {
 	shown     string                      // the scene the view shows
 	last      time.Time                   // when the animation last advanced
 	ticks     float64                     // animation time not yet run, in 1/60 s ticks
-	party     party.Party                 // View.Party as Blobber's cards show it
+	border    borders                     // the game's window border
+	bars      *gpu.Image                  // bars.png
+	cardImgs  []*gpu.Image                // the cards, drawn at scale 1
+	faceImgs  map[image.Image]*gpu.Image  // the faces on the GPU
+	labels    map[string]*gpu.Image       // card labels in the game's font
+	glyph     func(byte) [8]byte          // the game's font
 	cards     []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
 	faces     map[image.Image]image.Image // card art cropped from each paper-doll head
 	inside    bool                        // the view has the inside ceiling
@@ -64,6 +67,7 @@ type Presenter struct {
 // Draw shows the game on dst and returns where the classic picture went
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
+	p.setup(note, v)
 	p.fight = v.Battle != nil && !p.failed
 	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
 	if p.fight {
@@ -83,12 +87,11 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		}
 		for _, m := range v.Party { // whose turn: the portrait card, bottom left
 			if m.Selected {
-				ck := max(1, int(k)/2) // as the bar (ui.K knows only the dungeon view's screen)
-				ui.CardAt = func(int, int) image.Rectangle {
-					y := dst.Bounds().Dy() - int(k)*8 - (ui.CardH+cardGap)*ck + ui.CardFoot*ck // bottom left, over the status row
-					return image.Rect(cardGap*ck, y, cardGap*ck+ui.CardW*ck, y+ui.CardH*ck)
-				}
-				p.drawParty(dst, []engine.Member{m})
+				ck := max(1, int(k)/2) // as the bar
+				p.drawParty(dst, []engine.Member{m}, func(int, int) image.Rectangle {
+					y := dst.Bounds().Dy() - int(k)*8 - (cardH+cardGap)*ck + cardFoot*ck // bottom left, over the status row
+					return image.Rect(cardGap*ck, y, cardGap*ck+cardW*ck, y+cardH*ck)
+				})
 			}
 		}
 		p.battle.DrawBar(dst, note.Glyph, v.Menu, max(1, int(k)/2), dst.Bounds().Dy()-int(k)*10)
@@ -120,13 +123,13 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	}
 	blobber.Night = !v.Day
 	p.animate()
-	ui.CardAt = cardAt(dst)
 	p.view.Draw(dst)
 	p.drawMap(dst, v.Map)
-	p.drawParty(dst, v.Party)
+	p.drawParty(dst, v.Party, cardAt(dst))
+	p.view.DrawMenu(dst) // over the map and cards
 	p.cards = p.cards[:0]
 	for i := range v.Party {
-		p.cards = append(p.cards, ui.CardAt(i, len(v.Party)))
+		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
 	k := scale(dst)
 	b := dst.Bounds()
@@ -142,13 +145,13 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		pic = engine.ViewWindow.Framed()
 	}
 	if v.Window == engine.WinPicture || v.Window == engine.WinText {
-		drawBox(dst, frame, engine.TextPane.Framed(), pic, pk, cx, int(float64(cy)-pk*th/2)/2)
+		drawBox(dst, frame, p.border.tiles, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
 	textOnly := v.TextShown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
 	if textOnly { // a message, no choice to make: along the bottom edge
-		drawBox(dst, frame, engine.TextPane.Framed(), txt, pk, cx, b.Dy()-int(pk*th/2))
+		drawBox(dst, frame, p.border.tiles, txt, pk, cx, b.Dy()-int(pk*th/2))
 	} else if v.TextShown {
-		drawBox(dst, frame, engine.TextPane.Framed(), txt, pk, cx, cy)
+		drawBox(dst, frame, p.border.tiles, txt, pk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked {
@@ -173,7 +176,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
 		}
 		p.menuSel, p.keys = v.Menu.Sel, keys
-		p.drawMenu(dst, frame, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
+		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
 	if note.Show { // the toast (font name ...): the strip Frame wrote it into
 		n := min(len(note.Text)+2, 40) * 8
@@ -340,12 +343,12 @@ func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
 		if i >= left {
 			col, row, per = 1, i-left, n-left
 		}
-		y := b.Dy() - (per-row)*(ui.CardH+cardGap)*k + ui.CardFoot*k // the bars end a gap above the bottom
+		y := b.Dy() - (per-row)*(cardH+cardGap)*k + cardFoot*k // the bars end a gap above the bottom
 		x := cardGap * k
 		if col == 1 {
-			x = b.Dx() - cardGap*k - ui.CardW*k
+			x = b.Dx() - cardGap*k - cardW*k
 		}
-		return image.Rect(x, y, x+ui.CardW*k, y+ui.CardH*k)
+		return image.Rect(x, y, x+cardW*k, y+cardH*k)
 	}
 }
 
@@ -363,7 +366,7 @@ const cardGap, cardRows = 8, 4
 // cardScale is the cards' whole scale: the largest where a column of four
 // fits under the map at its smallest.
 func cardScale(dst *gpu.Image) int {
-	return max(1, min(ui.K(480, 360), (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(ui.CardH+cardGap))))
+	return max(1, min(dst.Bounds().Dx()/480, dst.Bounds().Dy()/360, (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(cardH+cardGap))))
 }
 
 // mapSide is View.Map's side in pixels.
@@ -372,7 +375,7 @@ const mapSide = 16 * engine.MapCell
 // mapScale is the map's whole scale: as large as leaves room for the card
 // columns (four cards each, two of them NPCs) under it.
 func mapScale(dst *gpu.Image) int {
-	free := dst.Bounds().Dy() - cardRows*(ui.CardH+cardGap)*cardScale(dst) - cardGap - 2
+	free := dst.Bounds().Dy() - cardRows*(cardH+cardGap)*cardScale(dst) - cardGap - 2
 	return max(1, free/mapSide)
 }
 
@@ -411,7 +414,7 @@ func (p *Presenter) scene(v engine.View) *blobber.Scene {
 			p.failed = true
 			return nil
 		}
-		ui.Install() // the skin for the menu and options windows
+		blobber.Window = p.window // its menu and options in the game's box
 	}
 	if sc, ok := p.scenes[name]; ok {
 		return sc
@@ -453,7 +456,7 @@ func scale(dst *gpu.Image) float64 {
 
 // drawBox copies box r of the classic frame onto dst at scale k, centred
 // on cx, cy: its inside, in a plain border (drawBorder) of tiles' cells.
-func drawBox(dst, frame *gpu.Image, tiles, r engine.CellRect, k float64, cx, cy int) {
+func drawBox(dst, frame *gpu.Image, tiles [3]*gpu.Image, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
 	var g gpu.GeoM
 	g.Scale(k, k)
@@ -461,31 +464,29 @@ func drawBox(dst, frame *gpu.Image, tiles, r engine.CellRect, k float64, cx, cy 
 	op := &gpu.DrawImageOptions{GeoM: g}
 	op.GeoM.Translate(8*k, 8*k)
 	dst.DrawImage(frame.SubImage(px.Inset(8)).(*gpu.Image), op)
-	drawBorder(dst, frame, tiles, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
+	drawBorder(dst, tiles, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
 }
 
-// drawBorder draws a cw by ch cell box's border at g from the cells of
-// the frame's box f (the text pane's on the main screen): its corners and
-// one plain ribbon cell along each edge (none of the frame's junction tiles).
-func drawBorder(dst, frame *gpu.Image, f engine.CellRect, g gpu.GeoM, cw, ch int) {
-	cell := func(sx, sy, x, y int) {
+// drawBorder draws a cw by ch cell box's border at g in tiles t (the
+// game's corner, side and top cells: borders), as DrawBorder does.
+func drawBorder(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int) {
+	cell := func(i, x, y int) {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(x*8), float64(y*8))
 		op.GeoM.Concat(g)
-		dst.DrawImage(frame.SubImage(image.Rect(sx*8, sy*8, sx*8+8, sy*8+8)).(*gpu.Image), op)
+		dst.DrawImage(t[i], op)
 	}
 	for x := 1; x < cw-1; x++ {
-		cell(f.X1+1, f.Y1, x, 0)
-		cell(f.X1+1, f.Y2, x, ch-1)
+		cell(2, x, 0)
+		cell(2, x, ch-1)
 	}
 	for y := 1; y < ch-1; y++ {
-		cell(f.X1, f.Y1+1, 0, y)
-		cell(f.X2, f.Y1+1, cw-1, y)
+		cell(1, 0, y)
+		cell(1, cw-1, y)
 	}
-	cell(f.X1, f.Y1, 0, 0)
-	cell(f.X2, f.Y1, cw-1, 0)
-	cell(f.X1, f.Y2, 0, ch-1)
-	cell(f.X2, f.Y2, cw-1, ch-1)
+	for _, c := range [][2]int{{0, 0}, {cw - 1, 0}, {0, ch - 1}, {cw - 1, ch - 1}} {
+		cell(0, c[0], c[1])
+	}
 }
 
 // drawRows lays rows of the original's screen along the bottom.
@@ -517,20 +518,6 @@ func (p *Presenter) Cell(x, y int) (int, int, bool) {
 	return 0, 0, p.noMenu // "press a key": a click anywhere, as on the original's screen
 }
 
-// drawParty shows the party as Blobber's portrait cards, each with the
-// character's paper-doll head.
-func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member) {
-	p.party.Chars, ui.Selected = p.party.Chars[:0], nil
-	for _, m := range ms {
-		c := &party.Character{Name: m.Name, HP: m.HP, MaxHP: m.MaxHP, Face: p.face(m.Head), Label: cardLabels[m.Status]}
-		if m.Selected { // the selected member's card in gold
-			ui.Selected = c
-		}
-		p.party.Chars = append(p.party.Chars, c)
-	}
-	ui.DrawParty(dst, &p.party)
-}
-
 // cardLabels: the sheet's status as the card spells it over the portrait,
 // short enough to fit there (a member at 0 hit points is not always dead).
 var cardLabels = map[string]string{
@@ -553,7 +540,7 @@ func (p *Presenter) face(head image.Image) image.Image {
 	if f, ok := p.faces[head]; ok {
 		return f
 	}
-	const n = ui.PortraitSize
+	const n = portraitSize
 	lit := image.Rectangle{}
 	b := head.Bounds()
 	for y := b.Min.Y; y < b.Max.Y; y++ {

@@ -127,6 +127,10 @@ func (v *View) Draw(dst *gpu.Image) {
 	b := dst.Bounds()
 	v.g.resize(b.Dx(), b.Dy())
 	v.g.draw3D(dst, v.g.camera())
+}
+
+// DrawMenu draws the Esc menu, when it is open, over what the host drew on the view.
+func (v *View) DrawMenu(dst *gpu.Image) {
 	if v.g.menu {
 		v.g.drawMenu(dst)
 	}

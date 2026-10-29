@@ -4,7 +4,6 @@
 package blobber
 
 import (
-	"blobber/font"
 	"fmt"
 	"image"
 	"image/color"
@@ -202,7 +201,7 @@ func (p *Prompt) draw(screen *gpu.Image) {
 	vector.DrawFilledRect(screen, bx, by, bw, bh, color.RGBA{0, 0, 0, 210}, false)
 	vector.StrokeRect(screen, bx, by, bw, bh, 2, color.RGBA{200, 180, 120, 255}, false)
 	for i, l := range lines {
-		font.Print(screen, l, int(bx)+12, int(by)+12+i*16)
+		Print(screen, l, int(bx)+12, int(by)+12+i*16)
 	}
 }
 
@@ -212,15 +211,13 @@ func (p *Prompt) draw(screen *gpu.Image) {
 var (
 	DebugLines     func() []string
 	HUD            func(screen *gpu.Image) // drawn over the scene, under prompts and modals
-	OnClick        func(x, y int) bool        // left click / tap in screen pixels; true = handled, no walking
+	OnClick        func(x, y int) bool     // left click / tap in screen pixels; true = handled, no walking
 	OnPromptAnswer func() []string
 
 	// Skin hooks; nil keeps the plain built-in look.
-	Window      func(screen *gpu.Image, title string, lines []string, sel int, bottom bool) // text window
-	SignImage   func(lines []string) *gpu.Image                                             // world text plaque
-	BoardImage  func(lines []string) *gpu.Image                                             // shop sign board (ShowSignAbove)
-	Panel       func(screen *gpu.Image, r image.Rectangle)                                  // backdrop, e.g. the minimap
-	PanelBorder func() int                                                                     // device px Panel's frame covers on each side
+	Window     func(screen *gpu.Image, title string, lines []string, sel int, bottom bool) // text window
+	SignImage  func(lines []string) *gpu.Image                                             // world text plaque
+	BoardImage func(lines []string) *gpu.Image                                             // shop sign board (ShowSignAbove)
 )
 
 // OnMove is called after every step or turn with the new position and facing (0=N 1=E 2=S 3=W).
@@ -245,11 +242,11 @@ func ShowSign(x, y, dir int, lines []string) {
 	}
 	w := 8
 	for _, l := range lines {
-		w = max(w, font.Width(l)+8)
+		w = max(w, Width(l)+8)
 	}
 	img := gpu.NewImage(w, 16*len(lines)+8)
 	for i, l := range lines {
-		font.Print(img, l, 4, 4+16*i)
+		Print(img, l, 4, 4+16*i)
 	}
 	sign.x, sign.y, sign.dir, sign.tex = x, y, dir, img
 }
@@ -321,7 +318,7 @@ func pondEdge(t float64) (float64, float64) {
 
 var texPondWater *gpu.Image // the sea's water, lighter: PoR's ponds are a bright blue
 
-var mudFor map[[2]int]bool            // the Pond map mudTiles were made for
+var mudFor map[[2]int]bool         // the Pond map mudTiles were made for
 var mudTiles map[[2]int]*gpu.Image // phlan-poc: per cell, its share of the bank around the ponds
 
 // pondMud is cell's share of the mud bank around the map's ponds: alpha from the distance to the whole
@@ -1657,12 +1654,12 @@ func (g *Game) Draw(screen *gpu.Image) {
 		}
 		return
 	}
-	font.Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", gpu.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
+	Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", gpu.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
 	if HUD != nil {
 		HUD(screen)
 	}
 	if g.time < msgUntil {
-		font.Print(screen, msg, (W-font.Width(msg))/2, 16)
+		Print(screen, msg, (W-Width(msg))/2, 16)
 	}
 	if g.menu {
 		g.drawMenu(screen)
@@ -1682,7 +1679,7 @@ func (g *Game) Draw(screen *gpu.Image) {
 		lines := DebugLines()
 		vector.DrawFilledRect(screen, 0, 20, float32(W), float32(16*len(lines)+8), color.RGBA{0, 0, 0, 180}, false)
 		for i, l := range lines {
-			font.Print(screen, l, 6, 24+i*16)
+			Print(screen, l, 6, 24+i*16)
 		}
 	}
 }
@@ -2053,25 +2050,25 @@ func (g *Game) drawMenu(screen *gpu.Image) {
 		return
 	}
 	vector.DrawFilledRect(screen, float32(W/2-130), float32(H/2-60), 260, 152, color.RGBA{0, 0, 0, 200}, false)
-	font.Print(screen, title+"  ("+hint+")", W/2-120, H/2-50)
+	Print(screen, title+"  ("+hint+")", W/2-120, H/2-50)
 	for i, s := range items {
 		cur := "  "
 		if i == g.sel {
 			cur = "> "
 		}
-		font.Print(screen, cur+s, W/2-120, H/2-20+i*16)
+		Print(screen, cur+s, W/2-120, H/2-20+i*16)
 	}
 }
 
 func (g *Game) drawAtlas(screen *gpu.Image) {
 	screen.Fill(color.RGBA{30, 30, 40, 255})
-	font.Print(screen, "Texture atlas (F12 to return). Bump details baked from the heightmap per facing.", 4, 0)
+	Print(screen, "Texture atlas (F12 to return). Bump details baked from the heightmap per facing.", 4, 0)
 	for i, a := range atlas {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(2, 2)
 		op.GeoM.Translate(float64(20+i*140%560), float64(40+(i*140/560)*170))
 		screen.DrawImage(a.img, op)
-		font.Print(screen, a.name, 20+i*140%560, 40+(i*140/560)*170+132)
+		Print(screen, a.name, 20+i*140%560, 40+(i*140/560)*170+132)
 	}
 }
 

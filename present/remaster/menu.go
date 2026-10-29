@@ -8,13 +8,12 @@ import (
 	"gpu"
 
 	"por/ega"
-	"por/engine"
 )
 
 // drawMenu draws a vertical menu in the original's look: a box with the
 // text pane's red border, the items in the game's font, green on black with
 // their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
-func (p *Presenter) drawMenu(dst, frame *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
+func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
 	rows, hot := items, keys
 	if title != "" {
 		rows, hot = append([]string{title, ""}, items...), append([]byte{0, 0}, keys...)
@@ -71,7 +70,7 @@ func (p *Presenter) drawMenu(dst, frame *gpu.Image, glyph func(byte) [8]byte, ti
 	}
 	p.menuImg.WritePixels(p.menuBuf)
 
-	drawBorder(p.menuImg, frame, engine.TextPane.Framed(), gpu.GeoM{}, cw, ch)
+	drawBorder(p.menuImg, p.border.tiles, gpu.GeoM{}, cw, ch)
 
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)

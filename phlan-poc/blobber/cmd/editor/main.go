@@ -24,7 +24,6 @@ import (
 	"blobber"
 	"blobber/events"
 	"blobber/party"
-	"blobber/font"
 	"blobber/sprites"
 
 	"gpu"
@@ -540,7 +539,7 @@ func (e *editor) Draw(screen *gpu.Image) {
 		if ch == e.brush && e.mon == "" {
 			vector.StrokeRect(screen, x-1, palY-1, 34, 34, 2, color.RGBA{255, 255, 255, 255}, false)
 		}
-		font.Print(screen, string(ch), int(x)+12, palY+32)
+		blobber.Print(screen, string(ch), int(x)+12, palY+32)
 	}
 	for i, fl := range e.flatList { // floor swatches, then ceiling swatches; the map's own are outlined
 		x, y := px+float32(i%monRow*36), float32(flatY+i/monRow*36)
@@ -548,7 +547,7 @@ func (e *editor) Draw(screen *gpu.Image) {
 		if e.flat(fl[0]) == fl[1] {
 			vector.StrokeRect(screen, x-1, y-1, 34, 34, 2, color.RGBA{255, 255, 255, 255}, false)
 		}
-		font.Print(screen, strings.ToUpper(fl[0][:1]), int(x)+1, int(y)+18)
+		blobber.Print(screen, strings.ToUpper(fl[0][:1]), int(x)+1, int(y)+18)
 	}
 	for i, n := range e.monList {
 		x, y := px+float32(i%monRow*36), float32(monY+i/monRow*36)
@@ -562,12 +561,12 @@ func (e *editor) Draw(screen *gpu.Image) {
 		}
 	}
 	if e.mon != "" {
-		font.Print(screen, "monster brush: "+e.mon+" (click a tile to place, again to remove)", panelX, monY+72)
+		blobber.Print(screen, "monster brush: "+e.mon+" (click a tile to place, again to remove)", panelX, monY+72)
 	}
-	font.Print(screen, fmt.Sprintf("map %s  %dx%d   Ctrl+S save   Shift+Arrows grow, Ctrl+Shift+Arrows shrink", e.name, len(e.grid[0]), len(e.grid)), panelX, monY-20)
+	blobber.Print(screen, fmt.Sprintf("map %s  %dx%d   Ctrl+S save   Shift+Arrows grow, Ctrl+Shift+Arrows shrink", e.name, len(e.grid[0]), len(e.grid)), panelX, monY-20)
 
 	here := e.tileEvents()
-	font.Print(screen, fmt.Sprintf("tile %d,%d: %d event(s)   N new  F facing  U use  Tab next  Del remove", e.selX, e.selY, len(here)), panelX, evY)
+	blobber.Print(screen, fmt.Sprintf("tile %d,%d: %d event(s)   N new  F facing  U use  Tab next  Del remove", e.selX, e.selY, len(here)), panelX, evY)
 	for i, ev := range here {
 		s := fmt.Sprintf("  event %d,%d %s", ev.x, ev.y, facings[ev.facing])
 		if ev.use {
@@ -576,7 +575,7 @@ func (e *editor) Draw(screen *gpu.Image) {
 		if ev == e.cur {
 			s = ">" + s[1:]
 		}
-		font.Print(screen, s, panelX, evY+16+i*16)
+		blobber.Print(screen, s, panelX, evY+16+i*16)
 	}
 	if e.cur != nil {
 		bg := color.RGBA{35, 35, 45, 255}
@@ -585,18 +584,18 @@ func (e *editor) Draw(screen *gpu.Image) {
 		}
 		vector.DrawFilledRect(screen, px, scriptY, winW-px, scriptH, bg, false)
 		for i, l := range e.cur.body {
-			font.Print(screen, l, panelX, scriptY+i*16)
+			blobber.Print(screen, l, panelX, scriptY+i*16)
 		}
 		if e.focus {
 			vector.DrawFilledRect(screen, px+float32(e.col*6), float32(scriptY+e.line*16), 2, 16, color.RGBA{255, 255, 255, 255}, false)
 		}
-		font.Print(screen, "click a keyword to insert it after the cursor line, Esc leaves the script:", panelX, tmplY-18)
+		blobber.Print(screen, "click a keyword to insert it after the cursor line, Esc leaves the script:", panelX, tmplY-18)
 		rows := (winH - tmplY) / 16
 		for i, t := range templates {
-			font.Print(screen, t, panelX+(i/rows)*220, tmplY+(i%rows)*16)
+			blobber.Print(screen, t, panelX+(i/rows)*220, tmplY+(i%rows)*16)
 		}
 	}
-	font.Print(screen, e.status, 4, winH-18)
+	blobber.Print(screen, e.status, 4, winH-18)
 }
 
 func (e *editor) Layout(int, int) (int, int) { return winW, winH }

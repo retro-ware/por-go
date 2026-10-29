@@ -7,7 +7,6 @@ A grid-based, turn-based first-person dungeon crawler engine in the style of Mig
 Requires Go 1.26+.
 
 ```
-go run ./cmd/blobber            # the game
 go run ./cmd/editor [mapname]   # map editor (default map: demo)
 go test ./...
 ```
@@ -35,7 +34,6 @@ The editor: left-click paints the selected wall material, right-click selects a 
 
 ## Tools
 
-- `go run ./tools/items-html > docs/items.html`: regenerate the weapon/armor catalog page.
 - `tools/new-monster.py`: generate monster poses with Gemini (API key needed).
 - `tools/new-texture.py`: generate floor/wall/ceiling textures with the OpenAI or Gemini image API.
 - `tools/monster-sprites.sh`: turn monster stills into animated sheets with sprite-gen (OpenAI key needed).
@@ -43,11 +41,11 @@ The editor: left-click paints the selected wall material, right-click selects a 
 
 ## Layout
 
-- `cmd/blobber`: the game (main loop, combat, saves). `cmd/editor`: map editor.
+- `cmd/editor`: map editor. The game itself runs inside Pool of Radiance (`por/cmd/por`).
 - Root package: grid renderer, movement, walls, billboards.
 - `events`: event VM (Xeen-style opcodes, see `reference.md`). `party`: characters, items, spells, conditions.
 - `maps`: `.map` / `.evt` files and data tables (`monsters.txt`, `classes.txt`, `spells.txt`, `world.txt`, ...).
-- `ui`: HUD, inventory, shops, dialogs, help. `sfx`: synthesized sound. `font`, `sprites`: helpers.
+- `sfx`: synthesized sound. `sprites`: helpers.
 - `assets`, `art`: textures and source art. `docs`: generated docs. `tools`: scripts.
 
 See `ROADMAP.md` for design decisions and status.
