@@ -10,6 +10,7 @@ import (
 	"image/draw"
 	"log"
 	"math"
+	"slices"
 	"time"
 
 	"gpu"
@@ -57,6 +58,7 @@ type Presenter struct {
 	menu        bool                        // the vertical menu is open
 	sel         int                         // its highlighted item
 	asked       string                      // the question menu last opened by itself (menuID)
+	answered    [][8]byte                   // the text pane under the last question: once it is answered, that text is done
 	mapImg      *gpu.Image                  // View.Map on the GPU
 	mapSrc      image.Image                 // the View.Map it holds
 	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
@@ -154,10 +156,15 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinPicture || v.Window == engine.WinText {
 		drawBox(dst, frame, p.border.tiles, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
 	}
-	textOnly := v.TextShown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
+	pane, asking := textPane(v), v.Menu != nil && !v.Command && !noChoice(v)
+	if asking {
+		p.answered = pane
+	}
+	shown := v.TextShown && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
+	textOnly := shown && v.Window != engine.WinPicture && v.Window != engine.WinText && (v.Menu == nil || v.Command || noChoice(v))
 	if textOnly { // a message, no choice to make: along the bottom edge
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, b.Dy()-int(pk*th/2))
-	} else if v.TextShown {
+	} else if shown {
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) { // a question: its choices pop up at once
@@ -194,6 +201,18 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
 	}
 	return Rect{}
+}
+
+// textPane is the text pane's glyphs.
+func textPane(v engine.View) [][8]byte {
+	r := engine.TextPane
+	var g [][8]byte
+	for y := r.Y1; y <= r.Y2; y++ {
+		for x := r.X1; x <= r.X2; x++ {
+			g = append(g, v.Text[y][x].Glyph)
+		}
+	}
+	return g
 }
 
 // Key turns window key k into actions (Actions hands them over). When the

@@ -90,9 +90,9 @@ type inventory struct {
 	img, tip    *gpu.Image     // the canvas and the tooltip on the GPU
 	glyph       func(byte) [8]byte
 
-	shown  bool            // the last frame was the inventory
-	sel    int             // the highlighted item (InvItem.Index), -1 for none
-	ask    *engine.Action  // a Drop or Sell waits for Yes
+	shown  bool           // the last frame was the inventory
+	sel    int            // the highlighted item (InvItem.Index), -1 for none
+	ask    *engine.Action // a Drop or Sell waits for Yes
 	view   *engine.Inventory
 	acts   []engine.Action // to send (Presenter.Actions)
 	words  []word          // the menu row's words, or the question's Yes and No
@@ -401,7 +401,6 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 	}
 	return append(w, word{text: "Exit", act: engine.ActClose, on: true})
 }
-
 
 // Inventory draws the inventory screen when the game shows it, and
 // reports whether it did.
@@ -930,7 +929,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		return
 	}
 	partySide := inv.hover.X >= inv.list.at.Min.X // dropped on the party's side of the divider
-	if h.ware { // a click highlights a ware, a second one or a drag over to the party's items buys it
+	if h.ware {                                   // a click highlights a ware, a second one or a drag over to the party's items buys it
 		was := inv.ware
 		inv.choose(true, h.item.Index)
 		if !drag && was == h.item.Index || drag && partySide {
