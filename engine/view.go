@@ -719,6 +719,11 @@ func (e *Engine) powers(c *Character) []Power {
 func (e *Engine) power(c *Character, k ActKind) {
 	switch k {
 	case ActSpells:
+		if e.beginFlag != 5 { // extra: outside combat the list casts (the original's View only shows it; its Cast command casts for the selected member)
+			e.selectMember(slices.Index(e.party, c))
+			e.CastMenu()
+			return
+		}
 		idx, any := -1, true
 		e.SpellList(0, 0, &idx, &any)
 	case ActMagic:
