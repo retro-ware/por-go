@@ -97,6 +97,7 @@ type View struct {
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
 	Credits   bool           // the page is Credits (the remaster adds RemasterCredit)
+	Slots     bool           // the page is the saved games (SlotMenu): the remaster stretches its box
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
@@ -141,6 +142,7 @@ type snapState struct {
 	main         []string    // PartyMenu waits: View.MainMenu
 	mainAsk      bool        // ... and asks View.Menu over it
 	credits      bool        // Credits waits: View.Credits
+	slots        bool        // SlotMenu is up: View.Slots
 	logo         image.Image // titleLogo, once cut
 	backdrop     image.Image // titleBackdrop, once read
 	backdropRead bool
@@ -207,7 +209,7 @@ func (e *Engine) publish() {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots, v.Credits = s.typing, e.spots(), s.credits
+	v.Typing, v.Spots, v.Credits, v.Slots = s.typing, e.spots(), s.credits, s.slots
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {

@@ -234,6 +234,9 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 	defer e.modalOn()()
 	restore := e.saveScreen()
 	defer restore()
+	outerSlots := e.snap.slots
+	e.snap.slots = true // extra: the remaster stretches the box over the screen
+	defer func() { e.snap.slots = outerSlots }()
 	canSave := !loadOnly && e.ext.inGame && len(e.party) > 0 && e.beginFlag != 5
 	first := 0 // the row of the first save
 	if canSave {

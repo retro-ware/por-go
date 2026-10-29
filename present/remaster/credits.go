@@ -11,7 +11,8 @@ import (
 	"por/pal"
 )
 
-// The credits (View.Credits): the original's 25 rows spread over 30 (a 4:3
+// The credits (View.Credits) and the saved games (View.Slots) on a 4:3
+// screen. The credits: the original's 25 rows spread over 30 (a 4:3
 // screen), a blank row more between the sections, and the remaster's own
 // line at the bottom of the big box, at half the cell size so it fits.
 
@@ -33,45 +34,84 @@ func creditRow(y int) int {
 const creditBlank = 0xc // a blank row inside the big box, for the new rows
 
 func (p *Presenter) drawCredits(dst *gpu.Image, v engine.View, note Note) Rect {
-	p.pageImage(v, note)
-	src := p.pg.px
-	const w, h = 2 * pal.W, 2 * 30 * 8 // twice the size: the remaster's line in half cells
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	row := func(from, to int) {
-		for y := 0; y < 16; y++ {
-			for x := 0; x < w; x++ {
-				m.SetRGBA(x, to*16+y, src.RGBAAt(x/2, from*8+y/2))
-			}
-		}
-	}
+	var from [tallRows]int
 	for _, y := range []int{7, 14, 21, 27, 28} {
-		row(creditBlank, y)
+		from[y] = creditBlank
 	}
 	for y := 0; y < 25; y++ {
-		row(y, creditRow(y))
+		from[creditRow(y)] = y
 	}
-	s := engine.RemasterCredit
-	x0, y0, fg := (w-len(s)*8)/2, 28*16+4, pal.EGA(0xe)
-	for i := 0; i < len(s); i++ {
-		g := p.glyph(s[i])
-		for r := 0; r < 8; r++ {
-			for b := 0; b < 8; b++ {
-				if g[r]&(0x80>>b) != 0 {
-					m.SetRGBA(x0+i*8+b, y0+r, fg)
+	return p.drawTall(dst, v, note, from, func(m *image.RGBA) {
+		s := engine.RemasterCredit
+		x0, y0, fg := (2*pal.W-len(s)*8)/2, 28*16+4, pal.EGA(0xe)
+		for i := 0; i < len(s); i++ {
+			g := p.glyph(s[i])
+			for r := 0; r < 8; r++ {
+				for b := 0; b < 8; b++ {
+					if g[r]&(0x80>>b) != 0 {
+						m.SetRGBA(x0+i*8+b, y0+r, fg)
+					}
 				}
 			}
 		}
+	})
+}
+
+// drawSlots draws the saved games (View.Slots) over 30 rows: the list's
+// box grows by five blank rows (row 20, inside the box under the list)
+// above the footer.
+func (p *Presenter) drawSlots(dst *gpu.Image, v engine.View, note Note) Rect {
+	var from [tallRows]int
+	for y := range from {
+		switch {
+		case y <= 20:
+			from[y] = y
+		case y < 26:
+			from[y] = 20
+		default:
+			from[y] = y - 5
+		}
 	}
-	if p.creditImg == nil {
-		p.creditImg = gpu.NewImage(w, h)
+	return p.drawTall(dst, v, note, from, nil)
+}
+
+// tallRows is a 4:3 screen's height in text rows.
+const tallRows = 30
+
+// drawTall draws the page with row y of the screen taken from the page's
+// row from[y], at twice the size (so extra can draw in half cells), at a
+// whole number of page pixels; the rows take the pointer (Cell) as the
+// page's.
+func (p *Presenter) drawTall(dst *gpu.Image, v engine.View, note Note, from [tallRows]int, extra func(*image.RGBA)) Rect {
+	p.pageImage(v, note)
+	src := p.pg.px
+	const w, h = 2 * pal.W, 2 * tallRows * 8
+	m := image.NewRGBA(image.Rect(0, 0, w, h))
+	for to, y := range from {
+		for dy := 0; dy < 16; dy++ {
+			for x := 0; x < w; x++ {
+				m.SetRGBA(x, to*16+dy, src.RGBAAt(x/2, y*8+dy/2))
+			}
+		}
 	}
-	p.creditImg.WritePixels(m.Pix)
+	if extra != nil {
+		extra(m)
+	}
+	if p.tallImg == nil {
+		p.tallImg = gpu.NewImage(w, h)
+	}
+	p.tallImg.WritePixels(m.Pix)
 	dst.Fill(color.Black)
 	b := dst.Bounds()
 	k := math.Max(1, math.Floor(math.Min(float64(b.Dx())/pal.W, float64(b.Dy())/(h/2)))) / 2 // whole page pixels
+	x0, y0 := (float64(b.Dx())-k*w)/2, (float64(b.Dy())-k*h)/2
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
-	op.GeoM.Translate((float64(b.Dx())-k*w)/2, (float64(b.Dy())-k*h)/2)
-	dst.DrawImage(p.creditImg, op)
+	op.GeoM.Translate(x0, y0)
+	dst.DrawImage(p.tallImg, op)
+	for to, y := range from {
+		at := image.Rect(int(x0), int(y0+k*float64(to*16)), int(x0+k*w), int(y0+k*float64(to*16+16)))
+		p.rows = append(p.rows, shownRows{at, image.Rect(0, y*8, pal.W, y*8+8)})
+	}
 	return Rect{}
 }

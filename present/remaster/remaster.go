@@ -49,7 +49,7 @@ type Presenter struct {
 	backdropSrc image.Image                 // ... uploaded from this
 	mainAt      time.Time                   // when the main menu first showed the backdrop
 	layer       *gpu.Image                  // the main menu drawn for its fade in
-	creditImg   *gpu.Image                  // the credits, spread (credits.go)
+	tallImg     *gpu.Image                  // the credits or saved games, spread (credits.go)
 	cards       []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
 	faces       map[image.Image]image.Image // card art cropped from each paper-doll head
 	inside      bool                        // the view has the inside ceiling
@@ -100,6 +100,10 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Credits {
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil
 		return p.drawCredits(dst, v, note)
+	}
+	if v.Slots {
+		p.shown, p.active, p.menu, p.cards = "", false, false, nil
+		return p.drawSlots(dst, v, note)
 	}
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText) {
