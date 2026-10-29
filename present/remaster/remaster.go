@@ -456,7 +456,7 @@ func (p *Presenter) scene(v engine.View) *blobber.Scene {
 			p.failed = true
 			return nil
 		}
-		blobber.Window = p.window // its menu and options in the game's box
+		blobber.Window = p.keyWindow // its menu and options in the game's box
 	}
 	if sc, ok := p.scenes[name]; ok {
 		return sc

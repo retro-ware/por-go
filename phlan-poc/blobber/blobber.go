@@ -132,6 +132,15 @@ func (p *Prompt) options() []option {
 	return out
 }
 
+// keys are the options' hotkeys (Hotkeys of their labels).
+func (p *Prompt) keys() []byte {
+	var labels []string
+	for _, o := range p.options() {
+		labels = append(labels, o.label)
+	}
+	return Hotkeys(labels)
+}
+
 var prompt *Prompt
 
 func ShowPrompt(lines []string, text bool, on func(string)) {
@@ -175,6 +184,12 @@ func (p *Prompt) update() {
 	if KeyRepeated(gpu.KeyDown) {
 		p.sel = (p.sel + 1) % len(opts)
 	}
+	for i, k := range p.keys() { // a hotkey picks its option
+		if k != 0 && KeyJustPressed(gpu.KeyA+gpu.Key(k-'A')) {
+			done(opts[i].value)
+			return
+		}
+	}
 	if KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace) {
 		done(opts[p.sel%len(opts)].value)
 	}
@@ -183,17 +198,20 @@ func (p *Prompt) update() {
 func (p *Prompt) draw(screen *gpu.Image) {
 	lines := append([]string{}, p.Lines...)
 	sel := -1
-	for i, o := range p.options() {
+	keys := make([]byte, len(lines))
+	opts := p.options()
+	for i, o := range opts {
 		if i == p.sel {
 			sel = o.line
 		}
 		lines[o.line] = "   " + o.label
+		keys[o.line] = p.keys()[i]
 	}
 	if p.Text {
 		lines = append(lines, "> "+p.input+"_")
 	}
 	if Window != nil {
-		Window(screen, "", lines, sel, true)
+		Window(screen, "", lines, keys, sel, true)
 		return
 	}
 	bw, bh := float32(W)*0.6, float32(16*len(lines)+24)
@@ -215,9 +233,9 @@ var (
 	OnPromptAnswer func() []string
 
 	// Skin hooks; nil keeps the plain built-in look.
-	Window     func(screen *gpu.Image, title string, lines []string, sel int, bottom bool) // text window
-	SignImage  func(lines []string) *gpu.Image                                             // world text plaque
-	BoardImage func(lines []string) *gpu.Image                                             // shop sign board (ShowSignAbove)
+	Window     func(screen *gpu.Image, title string, lines []string, keys []byte, sel int, bottom bool) // text window; keys[i] (0 none) is lines[i]'s hotkey
+	SignImage  func(lines []string) *gpu.Image                                                          // world text plaque
+	BoardImage func(lines []string) *gpu.Image                                                          // shop sign board (ShowSignAbove)
 )
 
 // OnMove is called after every step or turn with the new position and facing (0=N 1=E 2=S 3=W).
@@ -1333,6 +1351,13 @@ func (g *Game) tween() {
 func (g *Game) updateMenu() bool {
 	items := g.menuOptions()
 	n := len(items)
+	for i, k := range menuKeys(items) { // a hotkey picks its line
+		if k != 0 && KeyJustPressed(gpu.KeyA+gpu.Key(k-'A')) {
+			g.sel = i
+			items[i].change(g, 0)
+			return g.quit
+		}
+	}
 	if KeyRepeated(gpu.KeyUp) {
 		g.sel = (g.sel + n - 1) % n
 	}
@@ -1441,13 +1466,13 @@ func (g *Game) menuOptions() []menuLine {
 	ask := func(label, q string, do func()) menuLine {
 		return menuLine{label: label, change: func(g *Game, _ int) { g.confirm, g.sel = &question{q, do}, 0 }}
 	}
-	o := []menuLine{{label: "Resume", change: func(g *Game, _ int) { g.menu = false }}, page("Graphics")}
-	if Voice != nil {
-		o = append(o, page("Audio"))
-	}
-	o = append(o, page("Gameplay"))
+	o := []menuLine{{label: "Resume", change: func(g *Game, _ int) { g.menu = false }}}
 	if OnSaveLoad != nil {
 		o = append(o, menuLine{label: "Save / Load", change: func(g *Game, _ int) { g.menu = false; OnSaveLoad() }})
+	}
+	o = append(o, page("Gameplay"), page("Graphics"))
+	if Voice != nil {
+		o = append(o, page("Audio"))
 	}
 	if OnTeleportMenu != nil {
 		o = append(o, menuLine{label: "Teleport to level", change: func(g *Game, _ int) { g.menu = false; OnTeleportMenu() }})
@@ -1455,7 +1480,7 @@ func (g *Game) menuOptions() []menuLine {
 	if OnMainMenu != nil {
 		o = append(o, ask("Back to Main Menu", "Back to the main menu? Unsaved progress is lost.", func() { g.menu = false; OnMainMenu() }))
 	}
-	return append(o, ask("Quit", "Quit the game? Unsaved progress is lost.", func() { g.quit = true }))
+	return append(o, ask("Quit to DOS", "Quit the game? Unsaved progress is lost.", func() { g.quit = true }))
 }
 
 // question is a yes/no the menu asks before do.
@@ -1469,6 +1494,32 @@ type question struct {
 var OnSaveLoad, OnMainMenu func()
 
 // menuItems are the lines of the menu page shown.
+// menuKeys are the Esc menu lines' hotkeys (Hotkeys).
+func menuKeys(items []menuLine) []byte {
+	var labels []string
+	for _, o := range items {
+		labels = append(labels, o.label)
+	}
+	return Hotkeys(labels)
+}
+
+// Hotkeys gives each label its first letter not taken by a label above (0: none left).
+func Hotkeys(labels []string) []byte {
+	var keys []byte
+	taken := map[byte]bool{}
+	for _, l := range labels {
+		var k byte
+		for _, c := range []byte(strings.ToUpper(l)) {
+			if c >= 'A' && c <= 'Z' && !taken[c] {
+				k, taken[c] = c, true
+				break
+			}
+		}
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func (g *Game) menuItems() []string {
 	var out []string
 	for _, o := range g.menuOptions() {
@@ -1741,7 +1792,7 @@ func (g *Game) Draw(screen *gpu.Image) {
 		Help.Draw(screen)
 	}
 	if g.debug && DebugLines != nil && Window != nil {
-		Window(screen, "PARTY", DebugLines(), -1, false)
+		Window(screen, "PARTY", DebugLines(), nil, -1, false)
 	} else if g.debug && DebugLines != nil {
 		lines := DebugLines()
 		vector.DrawFilledRect(screen, 0, 20, float32(W), float32(16*len(lines)+8), color.RGBA{0, 0, 0, 180}, false)
@@ -2105,19 +2156,22 @@ func onOff(b bool) string {
 }
 
 func (g *Game) drawMenu(screen *gpu.Image) {
-	items, title, hint := g.menuItems(), "PAUSED", "Enter picks, Esc closes"
+	items, title := g.menuItems(), ""
 	switch {
 	case g.confirm != nil:
-		title, hint = g.confirm.q, "Enter picks, Esc goes back"
+		title = g.confirm.q
 	case g.page != "":
-		title, hint = strings.ToUpper(g.page), "Enter or Left / Right change, Esc goes back"
+		title = strings.ToUpper(g.page)
 	}
+	b := screen.Bounds() // the game dims under the menu
+	vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
 	if Window != nil {
-		Window(screen, title, append(items, "", hint), g.sel, false)
+		keys := menuKeys(g.menuOptions())
+		Window(screen, title, items, keys, g.sel, false)
 		return
 	}
 	vector.DrawFilledRect(screen, float32(W/2-130), float32(H/2-60), 260, 152, color.RGBA{0, 0, 0, 200}, false)
-	Print(screen, title+"  ("+hint+")", W/2-120, H/2-50)
+	Print(screen, title, W/2-120, H/2-50)
 	for i, s := range items {
 		cur := "  "
 		if i == g.sel {

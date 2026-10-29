@@ -160,13 +160,8 @@ func (p *Presenter) label(dst *gpu.Image, s string, x, y int) {
 	dst.DrawImage(img, op)
 }
 
-// window is Blobber's text window (its Esc menu, the options, prompts) as
-// the game's own menu box.
-func (p *Presenter) window(screen *gpu.Image, title string, lines []string, sel int, bottom bool) {
-	p.keyWindow(screen, title, lines, nil, sel, bottom)
-}
-
-// keyWindow is window with the lines' hotkeys (keys[i] in lines[i]) in white.
+// keyWindow is Blobber's text window (its Esc menu, the options, prompts) as
+// the game's own menu box, the lines' hotkeys (keys[i] in lines[i]) in white.
 func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, keys []byte, sel int, bottom bool) {
 	w := len(title)
 	for _, l := range lines {

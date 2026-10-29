@@ -1,10 +1,13 @@
 package remaster
 
 import (
+	"bytes"
 	"image"
 	"strconv"
 	"strings"
+	"unicode"
 
+	"blobber"
 	"gpu"
 
 	"por/engine"
@@ -42,7 +45,7 @@ func (p *Presenter) drawFight(dst *gpu.Image, glyph func(byte) [8]byte, v engine
 			lines[i] = s.Name
 		}
 		p.sel = min(max(p.sel, 0), len(lines)-1)
-		p.drawMenu(dst, glyph, "Cast:", lines, make([]byte, len(lines)), p.sel, k, cx, int(k)*16)
+		p.drawMenu(dst, glyph, "Cast:", lines, blobber.Hotkeys(lines), p.sel, k, cx, int(k)*16)
 	case p.fightLog:
 		var lines []string
 		for _, m := range b.Log {
@@ -162,6 +165,14 @@ func (p *Presenter) fightKey(k uint16) bool {
 			p.cast(p.sel)
 		case 27:
 			p.battle.Picking = false
+		default: // a spell's hotkey
+			var names []string
+			for _, s := range p.lastBattle().Turn.Spells {
+				names = append(names, s.Name)
+			}
+			if i := bytes.IndexByte(blobber.Hotkeys(names), byte(unicode.ToUpper(rune(k)))); k < 128 && i >= 0 {
+				p.cast(i)
+			}
 		}
 		return true
 	}
