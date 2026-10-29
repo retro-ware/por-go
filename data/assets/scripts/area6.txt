@@ -4,9 +4,7 @@ OfferDisguiseHelp:
 
 AskUseDisguise:
 	PrintClear "WILL YOU USE THE CLOTHING AS A DISGUISE?"
-	Gosub YesNoMenu
-	IfEq
-	CastleFlags = CastleFlags | 1
+	if Ask YesNoMenu == "YES": CastleFlags = CastleFlags | 1
 	Scratch10 = CastleFlags & 1
 	Return
 
@@ -357,9 +355,7 @@ AltarSwords:
 	Scratch10 = BaneTempleFlags & 2
 	if 0 != Scratch10: Exit
 	PrintClear "BEHIND THE ALTER ARE TWO CROSSED SWORDS. DO YOU TAKE THEM?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	BaneTempleFlags = BaneTempleFlags | 2
 	CastleFlags = CastleFlags & 254
 	ClearMonsters

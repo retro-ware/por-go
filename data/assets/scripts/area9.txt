@@ -345,9 +345,7 @@ TowerDoor:
 	Exit
 
 AskStairs:
-	Gosub YesNoMenu
-	IfNe
-	Goto StairsRedraw
+	if Ask YesNoMenu == "NO": Goto StairsRedraw
 
 TakeStairs:
 	PartyX = TowerExitXTable[Scratch5]
@@ -625,9 +623,7 @@ GateEntrance:
 	if Scratch10 <= BugbearWarnings: Goto ImpostorsApproach
 	Gosub BugbearsApproach
 	PrintClear "A BUGBEAR WALKS UP TO YOU. 'OKAY, LETS HAVE THE 15 GOLD.' DO YOU PAY HIM?"
-	Gosub YesNoMenu
-	IfEq
-	Goto PayToll
+	if Ask YesNoMenu == "YES": Goto PayToll
 	Scratch10 = Random 9
 	if Scratch10 <= BugbearWarnings: Goto ImpostorsAccused
 
@@ -710,9 +706,7 @@ WagonPasses:
 	Portrait = None
 	OnGoto Choice Done KillTrader Done
 	PrintClear "'WHY SURE I'LL SELL YOU MY WAGON. ALL IT'LL COST YOU IS 250 GOLD PIECES. HOW ABOUT IT?'"
-	Gosub YesNoMenu
-	IfEq
-	Goto BuyWagon
+	if Ask YesNoMenu == "YES": Goto BuyWagon
 	PrintClear "'SORRY, THAT'S MY FINAL OFFER. TAKE IT OR LEAVE IT."
 	Choice = Menu "TAKE IT" -> BuyWagon "LEAVE IT" -> Done
 

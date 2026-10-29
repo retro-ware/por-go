@@ -179,9 +179,7 @@ SearchForTunnel:
 	Print " YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?"
 
 GoDownMenu:
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	PartyX = DestX[Scratch1]
 	PartyY = DestY[Scratch1]
 	Facing = DestFacing[Scratch1]
@@ -284,9 +282,7 @@ FriendWordInput:
 	PrintClear "DO YOU REALLY MEAN "
 	Print $Scratch1
 	Print "?"
-	Gosub YesNoMenu
-	IfNe
-	Goto FriendWordInput
+	if Ask YesNoMenu == "NO": Goto FriendWordInput
 	if $Scratch1 == "SAVIOR": Goto OldLizardmanStory
 	PrintClear "'YOU ARE NOT THEY WHO RESCUED MY CHILDREN, BUT ARE MURDEROUS PIRATES! THEN YOU ARE NOT SAFE HERE!' HE DISAPPEARS WITH AMAZING SPEED INTO THE WILDERNESS AROUND YOU."
 	Goto OldLizardmanGone
@@ -300,9 +296,7 @@ OldLizardmanStory:
 	PrintClear "FROM NEARBY A GROUP OF LIZARD MEN APPEAR. ONE LARGER THAN THE REST MOVES TO THE FRONT, 'YOUR TIME IS THROUGH OLD ONE. YOUR CLAWS ARE BLUNT.'"
 	Gosub PressToContinue
 	PrintClear "'FACE ME OR FIND SOME FOOL TO CHAMPION YOU!' THE OLD LIZARD MAN TURNS TO YOU AND SAYS, 'OUR CAUSE IS ONE. WILL YOU CHAMPION ME?'"
-	Gosub YesNoMenu
-	IfNe
-	Goto RefuseChampion
+	if Ask YesNoMenu == "NO": Goto RefuseChampion
 	Scratch1 = SelPartyIndex2
 	Scratch2 = 0
 
@@ -482,9 +476,7 @@ TunnelSlopesUp:
 GoUpMenu:
 	Print " DO YOU GO UP?"
 	HoldMove = 255
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	PartyX = UpExitXTable[Scratch1]
 	PartyY = UpExitYTable[Scratch1]
 	LoadMap 16 unused=2 icons=255
@@ -563,9 +555,7 @@ DeepPool:
 	RedrawView
 	Picture None
 	PrintClear "YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	OnGoto Scratch8 PoolGuarded PoolSearch
 
 PoolGuarded:

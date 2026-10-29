@@ -97,9 +97,7 @@ OnStep:
 
 ThornHedge:
 	PrintClear "THERE IS A HEDGE WITH POISONOUS THORNS IN THAT DIRECTION. DO YOU WANT TO TRY TO CUT THROUGH?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	Print " AS YOU SLICE THROUGH SOMEONE IS PRICKED BY A THORN."
 	Damage 128 1 1 200 0
 	Call CallStepForward
@@ -424,9 +422,7 @@ ThroneRoom:
 	PrintClear "HE SEEMS TO COLLAPSE. 'ALL RIGHT. I'M NOT TYRANTHRAXUS. HE JUST HIRED ME TO IMPERSONATE HIM. IT'S NOT A BAD LIFE, BUT, HEY! I CAN TELL WHICH WAY THE WIND'S BLOWING.'"
 	Gosub PressReturn
 	PrintClear "'JUST LET ME GO, OKAY?"
-	Gosub YesNoMenu
-	IfNe
-	Goto FightImpostor
+	if Ask YesNoMenu == "NO": Goto FightImpostor
 	PrintClear "HE RUNS OUT OF THE HALL. THERE IS TREASURE ALL ABOUT. "
 	CastleFlags = CastleFlags | 64
 	Gosub AskTakeIt
@@ -447,9 +443,7 @@ HeavyCrown:
 
 BegoneOrWrath:
 	PrintClear "'BEGONE OR FEEL THE WRATH AND POWER OF TYRANTHRAXUS!' DO YOU LEAVE?"
-	Gosub YesNoMenu
-	IfEq
-	Goto FledCombat
+	if Ask YesNoMenu == "YES": Goto FledCombat
 	PrintClear "THEN FEEL MY WRATH!"
 
 FightImpostor:

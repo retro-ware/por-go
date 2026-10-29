@@ -24,9 +24,7 @@ ShortPause:
 TakeItMenu:
 	Gosub PressToContinue
 	PrintClear "DO YOU TAKE IT?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	Return
 
 YesNoMenu:
@@ -421,13 +419,9 @@ InviteMadman:
 	Gosub MadmanRaves
 	if PartyCount == 8: Goto MadFighterMenu
 	PrintClear "YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?"
-	Gosub YesNoMenu
-	IfNe
-	Goto MadFighterMenu
+	if Ask YesNoMenu == "NO": Goto MadFighterMenu
 	PrintClear "HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?"
-	Gosub YesNoMenu
-	IfNe
-	Goto MadFighterParlay
+	if Ask YesNoMenu == "NO": Goto MadFighterParlay
 	PrintClear "HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU."
 	LibraryEventFlags = LibraryEventFlags | 2
 	AddNPC MadMan 0
@@ -533,9 +527,7 @@ FleeFromKobolds:
 
 KoboldsPlead:
 	PrintClear "ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?"
-	Gosub YesNoMenu
-	IfNe
-	Goto KoboldFight
+	if Ask YesNoMenu == "NO": Goto KoboldFight
 	PrintClear "THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10."
 	LibraryEventFlags = LibraryEventFlags | 128
 	Gosub PressToContinue

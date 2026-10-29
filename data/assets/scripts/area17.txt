@@ -252,9 +252,7 @@ ApproachHidePortrait:
 event0:
 	if LeftMap == 0: Goto CheckLodgingExit
 	PrintClear "THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?"
-	Gosub YesNoMenu
-	IfEq
-	Goto ExitToWilderness
+	if Ask YesNoMenu == "YES": Goto ExitToWilderness
 	HoldMove = 255
 
 CheckLodgingExit:
@@ -412,13 +410,9 @@ NomadsGather:
 	PrintClear "THE BIGGEST NOMAD, APPARENTLY THE CHIEF OR HEADMAN, ACKNOWLEDGES YOU WITH A NOD, 'WE WILL GIVE A FEAST IN YOUR HONOR "
 	Print $AuxCounter
 	Print ". WILL YOU JOIN US?'"
-	Gosub YesNoMenu
-	IfEq
-	Goto AcceptFeast
+	if Ask YesNoMenu == "YES": Goto AcceptFeast
 	PrintClear "'THEN YOU MUST LEAVE US,' HE RESPONDS WITH AS MUCH DIGNITY AS HE CAN MUSTER. DO YOU LEAVE?"
-	Gosub YesNoMenu
-	IfEq
-	Goto LeaveCamp
+	if Ask YesNoMenu == "YES": Goto LeaveCamp
 	PrintClear "'YOUR INSULTS ARE TOO MANY! KILL THEM!'"
 	Surprise = 1
 	Goto NomadFight

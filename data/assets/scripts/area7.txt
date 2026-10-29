@@ -71,9 +71,7 @@ StairsUp:
 
 TakeStairsMenu:
 	HoldMove = 255
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	PartyX = DestX[Scratch1]
 	PartyY = DestY[Scratch1]
 	if Scratch1 == 0: Goto DescendToArea5
@@ -143,9 +141,7 @@ DirRight:
 
 TrapDoorRoom:
 	PrintClear "YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 
 ChooseOpener:
 	Who "WHO WILL OPEN IT?"
@@ -172,9 +168,7 @@ OpenerPetrified:
 
 JumpTrapDoor:
 	Print " DO YOU WANT TO JUMP THROUGH THE TRAP DOOR?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	PrintClear "THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR..."
 	Gosub PressToContinue
 	Damage 224 3 6 0 0

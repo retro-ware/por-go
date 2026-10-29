@@ -254,12 +254,14 @@ func parseCond(c []string) ([]string, string, error) {
 		return []string{c[0], c[2], c[4], c[6], "CompareAnd"}, "IfEq", nil
 	case len(c) == 7 && c[1] == "!=" && c[3] == "||" && c[5] == "!=":
 		return []string{c[0], c[2], c[4], c[6], "CompareAnd"}, "IfNe", nil
+	case len(c) == 4 && c[0] == "Ask" && c[2] == "==":
+		return []string{c[1], "Ask"}, askIf + c[1] + " " + c[3], nil // resolveAsks makes it IfEq or IfNe
 	case len(c) == 2 && c[0] == "Carried":
 		return []string{c[1], "FindItem"}, "IfEq", nil
 	case len(c) == 2 && c[0] == "!Carried":
 		return []string{c[1], "FindItem"}, "IfNe", nil
 	}
-	return nil, "", fmt.Errorf("a test is A op B, A == B && C == D, A != B || C != D or [!]Carried Item: %s", strings.Join(c, " "))
+	return nil, "", fmt.Errorf("a test is A op B, A == B && C == D, A != B || C != D, [!]Carried Item or Ask M == ANSWER: %s", strings.Join(c, " "))
 }
 
 // foldScript writes a plain script's Compare and If commands as if lines
@@ -276,6 +278,7 @@ func foldScript(text string, names *ScriptNames) string {
 		}
 		return toks[0], toks[1:], true
 	}
+	askTests := askSections(lines)
 	opOf := map[string]string{}
 	for k, v := range ifOps {
 		opOf[v] = k
@@ -283,7 +286,9 @@ func foldScript(text string, names *ScriptNames) string {
 	var out []string
 	for i := 0; i < len(lines); i++ {
 		op, args, ok := cmd(i)
-		test := op == "Compare" && len(args) == 2 || op == "CompareAnd" && len(args) == 4 ||
+		asked := askTests[strings.Join(args, " ")]
+		test := op == "Gosub" && len(args) == 1 && asked != nil ||
+			op == "Compare" && len(args) == 2 || op == "CompareAnd" && len(args) == 4 ||
 			op == "FindItem" && len(args) == 1 || (op == "And" || op == "Or") && len(args) == 3
 		if op == "Compare" && len(args) == 2 && args[0] == "0" {
 			// after an And or Or into the operand, if 0 op D would not redo the Compare
@@ -308,7 +313,7 @@ func foldScript(text string, names *ScriptNames) string {
 			if !ok1 || !ok2 || opOf[ifOp] == "" || strings.HasPrefix(guarded, "If") {
 				break
 			}
-			if (op == "CompareAnd" || op == "FindItem") && ifOp != "IfEq" && ifOp != "IfNe" {
+			if (op == "CompareAnd" || op == "FindItem" || op == "Gosub") && ifOp != "IfEq" && ifOp != "IfNe" {
 				break
 			}
 			if len(runs) > 0 && runs[len(runs)-1].ifOp == ifOp {
@@ -333,6 +338,10 @@ func foldScript(text string, names *ScriptNames) string {
 		for k, r := range runs {
 			var cond string
 			switch {
+			case op == "Gosub" && r.ifOp == "IfEq":
+				cond = "Ask " + args[0] + " == " + asked[0]
+			case op == "Gosub":
+				cond = "Ask " + args[0] + " == " + asked[1]
 			case op == "Compare":
 				cond = args[0] + " " + opOf[r.ifOp] + " " + args[1]
 			case op == "And" || op == "Or":

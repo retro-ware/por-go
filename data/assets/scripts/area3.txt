@@ -593,9 +593,7 @@ WellDive:
 	PrintClear "THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?"
 
 DiveMenu:
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 
 ChooseDiver:
 	Who "WHO WILL DIVE IN?"
@@ -704,9 +702,7 @@ CadornaScreams:
 ReleaseCadorna:
 	PrintClear "'THANK YOU! THANK YOU! I JUST THOUGHT THAT THE POOL WAS HERE! THERE WAS NOWHERE ELSE TO GO! I HAVE NOWHERE TO GO. TAKE ME WITH YOU?'"
 	CadornaQuartersFlags = CadornaQuartersFlags | 16
-	Gosub YesNoMenu
-	IfEq
-	CastleFlags2 = CastleFlags2 | 2
+	if Ask YesNoMenu == "YES": CastleFlags2 = CastleFlags2 | 2
 	Goto StepBack
 
 GiantSnakes:

@@ -192,9 +192,7 @@ PriestEncounter:
 	Scratch10 = Random 2
 	if Scratch10 != 0: Goto PriestPeace
 	PrintClear "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
-	Gosub YesNoMenu
-	IfNe
-	Goto PriestEncounter
+	if Ask YesNoMenu == "NO": Goto PriestEncounter
 	PrintClear "YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE."
 	RedrawView
 	Call CallRedraw
@@ -203,9 +201,7 @@ PriestEncounter:
 
 HoleInWall:
 	PrintClear "THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?"
-	Gosub YesNoMenu
-	IfEq
-	Goto LeaveToArea26
+	if Ask YesNoMenu == "YES": Goto LeaveToArea26
 	Goto Done
 
 PriestFlee:

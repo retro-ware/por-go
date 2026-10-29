@@ -335,12 +335,53 @@ func unalias(toks []string, m map[string]string) {
 	}
 }
 
-// askMenu marks an Ask's OnGoto operand until resolveAsks knows it.
-const askMenu = "?ask:"
+// askMenu marks an Ask's OnGoto operand, askIf the If of an "if Ask M ==
+// ANSWER" test, until resolveAsks knows M's menu.
+const askMenu, askIf = "?ask:", "?askif:"
+
+// askSections are the plain script's sections that ask a two-answer
+// menu D = Menu "A" "B", maybe print, then Compare D 0 and return: a
+// Gosub of one tests the answer (IfEq: the first). Their answers by name.
+func askSections(lines []string) map[string][]string {
+	out := map[string][]string{}
+	for i := 0; i < len(lines); i++ {
+		if strings.HasPrefix(lines[i], "\t") || !strings.HasSuffix(lines[i], ":") {
+			continue
+		}
+		var names []string
+		for i < len(lines) && lines[i] != "" && !strings.HasPrefix(lines[i], "\t") {
+			names = append(names, strings.TrimSuffix(lines[i], ":"))
+			i++
+		}
+		if i >= len(lines) {
+			break
+		}
+		m, _ := scriptTokens(lines[i])
+		if len(m) != 5 || m[0] != "HMenu" || m[2] != "2" {
+			continue
+		}
+		j := i + 1
+		for j < len(lines) && (strings.HasPrefix(lines[j], "\tPrint ") || strings.HasPrefix(lines[j], "\tPrintClear ")) {
+			j++
+		}
+		if j+1 < len(lines) && lines[j] == "\tCompare "+m[1]+" 0" && lines[j+1] == "\tReturn" {
+			for _, n := range names {
+				out[n] = m[3:]
+			}
+		}
+	}
+	return out
+}
 
 // resolveAsks puts the answer variable of each Ask's menu section in.
 func resolveAsks(out []srcLine) error {
 	for i, sl := range out {
+		if !sl.label && strings.HasPrefix(sl.toks[0], askIf) {
+			if err := resolveAskIf(out, i); err != nil {
+				return err
+			}
+			continue
+		}
 		if sl.label || len(sl.toks) < 2 || !strings.HasPrefix(sl.toks[1], askMenu) {
 			continue
 		}
@@ -409,4 +450,39 @@ func foldAsks(lines []string) []string {
 		out = append(out, lines[i])
 	}
 	return out
+}
+
+// resolveAskIf makes the If out[i] of an "if Ask M == ANSWER" IfEq for
+// M's first answer, IfNe for its second, and the test before it Gosub M.
+func resolveAskIf(out []srcLine, i int) error {
+	name, answer, _ := strings.Cut(strings.TrimPrefix(out[i].toks[0], askIf), " ")
+	at := slices.IndexFunc(out, func(x srcLine) bool { return x.label && x.toks[0] == name })
+	for at >= 0 && at < len(out) && out[at].label {
+		at++
+	}
+	if at < 0 || at >= len(out) || out[at].toks[0] != "HMenu" || len(out[at].toks) != 5 {
+		return fmt.Errorf("%d: Ask %s: %s is not a two-answer menu section", out[i].n, name, name)
+	}
+	j := at + 1
+	for j < len(out) && (out[j].toks[0] == "Print" || out[j].toks[0] == "PrintClear") {
+		j++
+	}
+	if j+1 >= len(out) || !slices.Equal(out[j].toks, []string{"Compare", out[at].toks[1], "0"}) || out[j+1].toks[0] != "Return" {
+		return fmt.Errorf("%d: Ask %s: %s does not end in Compare %s 0 and Return", out[i].n, name, name, out[at].toks[1])
+	}
+	switch answer {
+	case out[at].toks[3]:
+		out[i].toks = []string{"IfEq"}
+	case out[at].toks[4]:
+		out[i].toks = []string{"IfNe"}
+	default:
+		return fmt.Errorf("%d: Ask %s: its answers are %s and %s", out[i].n, name, out[at].toks[3], out[at].toks[4])
+	}
+	for k := i - 1; k >= 0; k-- {
+		if slices.Equal(out[k].toks, []string{"Ask", name}) {
+			out[k].toks = []string{"Gosub", name}
+			break
+		}
+	}
+	return nil
 }

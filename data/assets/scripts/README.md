@@ -82,15 +82,16 @@ also if Facing < 2: Goto B             the same test's result again (no new test
 | `A == B && C == D`        | both equal |
 | `A != B \|\| C != D`      | either differs |
 | `Carried Item`, `!Carried Item` | someone in the party carries it (or nobody does) |
+| `Ask M == "YES"` | calls menu section M, which asks a two-answer `D = Menu "YES" "NO"` and ends in `Compare D 0`, and tests the answer |
 | `0 op D` right after `D = A & B` / `D = A \| B` | tests that result without a new comparison (`0 != D`: D is not 0) |
 
 Every command inside an `if` block is guarded by the one test: a `Gosub`
 inside may change what the commands after it see. The raw form, `Compare
 A B` followed by `IfEq`/`IfNe`/`IfLt`/`IfGt`/`IfLe`/`IfGe` (each skips the
 next command unless its comparison held), still appears where the test
-comes from somewhere else: most often after `Gosub YesNoMenu`, whose
-`IfNe` reads a comparison made before the menu (a quirk of the original
-scripts, kept on purpose).
+is made elsewhere: after a `Gosub` of a section that ends in a test
+(`CheckGarrisonsBeaten`, `RollSurprise`), or at a label in the middle of
+a test.
 
 ## Flow
 

@@ -404,9 +404,7 @@ Armory:
 
 TakeArmoryLoot:
 	PrintClear "DO YOU WANT TO TAKE ANYTHING?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 33 // Sling, Shield, Plate Mail, Banded Mail, Splint Mail, Chain Mail, and 52 more
 	Combat
@@ -553,9 +551,7 @@ RecordsBuilding:
 
 ReadRecordsMenu:
 	Print "DO YOU WISH TO SPEND HOURS READING THE RECORDS?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	Scratch10 = Random 1
 	if AlarmEndHour == 0: Goto ReadRecords
 	if Scratch10 == 0: Goto event3

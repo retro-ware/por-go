@@ -336,9 +336,7 @@ AskPassword:
 	PrintClear "DO YOU REALLY MEAN "
 	Print $Scratch1
 	Print "?"
-	Gosub YesNoMenu
-	IfNe
-	Goto AskPassword
+	if Ask YesNoMenu == "NO": Goto AskPassword
 	if $Scratch1 == "NOKNOK": Goto RedrawExit
 	PrintClear "SUDDENLY A HIDDEN DOOR BURSTS OPEN AND A HORRIBLE MONSTER BURSTS FORTH SHOUTING 'KIAIAIAIAIAIAIAI!' IT WADES INTO YOU TEARING YOU APART WITH 3-INCH LONG CLAWS."
 	Gosub PressReturn
@@ -475,9 +473,7 @@ ColorDial:
 	PrintClear "YOU SEE A DIAL THAT CAN BE SET TO FOUR DIFFERENT COLORS: BLUE, COPPER, SILVER, AND GOLD. IT IS CURRENTLY SET TO "
 	OnGosub DialColor DialBlue DialCopper DialSilver DialGold
 	Print " DO YOU WISH TO CHANGE THE SETTING?"
-	Gosub YesNoMenu
-	IfNe
-	Exit
+	if Ask YesNoMenu == "NO": Exit
 	PrintClear "CHANGE TO WHAT SETTING?"
 	DialColor = Menu "BLUE" "COPPER" "SILVER" "GOLD"
 	Exit
