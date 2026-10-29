@@ -437,7 +437,6 @@ func (e *Engine) loadSlot(key byte) bool {
 	e.area.WallsA, e.area.WallsB = [3]uint16{}, [3]uint16{}
 	e.fileWallsA, e.fileWallsB = wallsA, wallsB
 	e.game, e.aux = f.Game, f.Aux
-	copy(e.ecl, f.ECL[:])
 	e.posX, e.posY, e.facing = int(f.X), int(f.Y), int(f.Facing)
 	e.pos3, e.pos4 = f.Pos3, f.Pos4
 	e.viewMode = int(f.ViewMode)
@@ -520,7 +519,11 @@ func (e *Engine) saveSlot(key byte) {
 		f.Area.WallsB[i] = uint16(e.mapPairB[i])
 	}
 	e.fileWallsA, e.fileWallsB = f.Area.WallsA, f.Area.WallsB
-	copy(f.ECL[:], e.ecl)
+	// the original's script image, for DOS saves (the engine reloads the
+	// text script)
+	if b := e.L.Block(e.set.file("ECL"), int(e.gs.areaKind)); len(b) >= 2 {
+		copy(f.ECL[:], b[2:])
+	}
 	f.X, f.Y, f.Facing, f.Pos3, f.Pos4 = byte(e.posX), byte(e.posY), byte(e.facing), e.pos3, e.pos4
 	f.ViewMode, f.BeginFlag, f.Count = byte(e.viewMode), e.beginFlag, byte(len(e.party))
 	for i := range e.party {

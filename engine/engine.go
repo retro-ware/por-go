@@ -57,14 +57,18 @@ type Engine struct {
 	saved      bool         // DS:557D
 	debug      bool         // DS:470C
 
-	game               gameVars // DS:49D6 record (vars.go)
-	area               areaVars // DS:49D2
-	aux                auxVars  // DS:49DA
-	ecl                []byte   // DS:49DE
-	posX, posY, facing int      // DS:6AAD, 6AAE, 6AAF
-	eclPC              int      // DS:49ED
-	viewMode           int      // DS:49FA (1 = 3D view)
-	prevViewMode       int      // DS:49F9
+	game               gameVars              // DS:49D6 record (vars.go)
+	area               areaVars              // DS:49D2
+	aux                auxVars               // DS:49DA
+	ecl                []byte                // DS:49DE
+	posX, posY, facing int                   // DS:6AAD, 6AAE, 6AAF
+	eclPC              int                   // DS:49ED; here the instruction number in script
+	script             *Script               // the area's event script (script.go)
+	cur, argPos        int                   // the instruction being run, its next operand for FetchArgs
+	native             map[int]func(*Engine) // the native scripts at instructions of script
+	scriptNames        map[int]string        // the scripts' shared variable names
+	viewMode           int                   // DS:49FA (1 = 3D view)
+	prevViewMode       int                   // DS:49F9
 	sqrpaci            [2]*dax.Image
 	items              []itemBase // DS:5582: base item records by type
 	pos3, pos4         byte       // DS:6AB0, 6AB1

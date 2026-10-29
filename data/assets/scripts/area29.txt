@@ -11,7 +11,7 @@ event0:
 	NewECL Scratch10
 
 CheckEntry:
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	Compare Scratch10 1
 	IfNe
 	Goto CheckSecretDoorBlock
@@ -37,7 +37,7 @@ CheckNailedDoor:
 	Compare Scratch9 Scratch10
 	IfNe
 	Goto CheckWellAmbush
-	AndOr WildFlags 1 AuxMember
+	And WildFlags 1 AuxMember
 	IfEq
 	Goto WellPlaza
 	Save 1 GroundKind
@@ -49,7 +49,7 @@ CheckWellAmbush:
 	Save PartyY Scratch4
 	Call CallStepForward
 	Call CallLookAhead
-	AndOr Cell 127 Scratch1
+	And Cell 127 Scratch1
 	Save Scratch2 PartyX
 	Save Scratch4 PartyY
 	Call CallLookAhead
@@ -62,8 +62,8 @@ CheckWellAmbush:
 
 event1:
 	Save 0 EncounterMode
-	Print ""
-	AndOr 127 Cell Scratch10
+	PrintClear ""
+	And 127 Cell Scratch10
 	Save 0 Scratch1
 	Save 2 Scratch2
 	GetTable CellEventTable Scratch10 AuxCounter
@@ -88,7 +88,7 @@ KutosWell:
 	Compare AuxEncChoice Facing
 	IfNe
 	Goto NearWell
-	Print "BEFORE YOU LIES KUTO'S WELL.  IT IS A SOURCE OF WATER IN ALL SEASONS."
+	PrintClear "BEFORE YOU LIES KUTO'S WELL.  IT IS A SOURCE OF WATER IN ALL SEASONS."
 	Goto ArrowRain
 
 SaySouth:
@@ -108,7 +108,7 @@ SayEast:
 	Return
 
 NearWell:
-	Print "YOU ARE JUST "
+	PrintClear "YOU ARE JUST "
 	OnGoto AuxEncChoice 4 SaySouth SayWest SayNorth SayEast
 	Print " OF KUTO'S WELL."
 
@@ -120,7 +120,7 @@ ArrowRain:
 	IfNe
 	Exit
 	Damage 9 1 6 0 41
-	Print "A RAIN OF ARROWS POURS OVER YOU."
+	PrintClear "A RAIN OF ARROWS POURS OVER YOU."
 	Compare Surprise 1
 	IfNe
 	Goto MonstersAttack
@@ -139,7 +139,7 @@ RandomEncounterRoll:
 	Random 10 AuxSightText
 	Compare Search 1
 	IfEq
-	Arith 2 AuxSightText AuxSightText
+	Add 2 AuxSightText AuxSightText
 	Compare AuxSightText 9
 	IfGt
 	Goto CheckEncounterCount
@@ -186,20 +186,20 @@ event4:
 	IfEq
 	Goto LoadWellFiles
 	LoadFiles 29 2 255
-	LoadFiles 3 20 1
+	LoadPieces 3 20 1
 	Exit
 
 LoadWellFiles:
 	LoadFiles 32 2 255
-	LoadFiles 18 17 1
+	LoadPieces 18 17 1
 	Exit
 
 SouthWallDoor:
-	Save "SOUTH WALL." str AuxMonsterName
+	Save "SOUTH WALL." $AuxMonsterName
 	Goto SearchSecretDoor
 
 NorthWallDoor:
-	Save "NORTH WALL." str AuxMonsterName
+	Save "NORTH WALL." $AuxMonsterName
 
 SearchSecretDoor:
 	Compare SecretDoorFound 255
@@ -213,22 +213,22 @@ SearchMemberLoop:
 	IfNe
 	Goto NextSearcher
 	GetTable SecretDoorChanceByRace SelRace AuxSearchCount
-	Arith Search AuxSearchCount AuxSearchCount
+	Add Search AuxSearchCount AuxSearchCount
 	Random 5 AuxRoll
 	Compare AuxSearchCount AuxRoll
 	IfGt
 	Goto SecretDoorSpotted
 
 NextSearcher:
-	Arith 1 AuxMember AuxMember
+	Add 1 AuxMember AuxMember
 	Compare AuxMember 8
 	IfLt
 	Goto SearchMemberLoop
 	Exit
 
 SecretDoorSpotted:
-	Print "YOU FIND A SECRET DOOR IN THE "
-	Print str AuxMonsterName
+	PrintClear "YOU FIND A SECRET DOOR IN THE "
+	Print $AuxMonsterName
 	Save 255 SecretDoorFound
 	Exit
 
@@ -242,9 +242,9 @@ NorrisBandits:
 	Approach
 	Delay
 	Approach
-	Print "YOU ARE SURROUNDED BY THE BANDIT BAND OF THE INFAMOUS NORRIS THE  GRAY.  'YOU DARE TO INVADE MY HALLS?', HE SNARLS. 'SURRENDER OR DIE!'"
+	PrintClear "YOU ARE SURROUNDED BY THE BANDIT BAND OF THE INFAMOUS NORRIS THE  GRAY.  'YOU DARE TO INVADE MY HALLS?', HE SNARLS. 'SURRENDER OR DIE!'"
 	Gosub PressToContinue
-	Print "WHAT DO YOU DO?"
+	PrintClear "WHAT DO YOU DO?"
 	HMenu AuxMember 2 "SURRENDER" "FIGHT"
 	Save 255 Portrait
 	OnGoto AuxMember 1 SurrenderToBandits
@@ -259,11 +259,11 @@ NorrisBandits:
 	Goto ReleasedAboveGround
 	Save 255 BanditsDone
 	Save 254 QuestBandits
-	Print "ON THE LEADER'S BODY, YOU FIND A CURIOUS MESSAGE THAT YOU PLACE IN YOUR JOURNAL AS ENTRY 50."
+	PrintClear "ON THE LEADER'S BODY, YOU FIND A CURIOUS MESSAGE THAT YOU PLACE IN YOUR JOURNAL AS ENTRY 50."
 	Gosub PressToContinue
-	Print "YOU HAVE DEFEATED THE DREADED BANDIT GANG AND RID PHLAN OF A GREAT EVIL.  THE HONEST SETTLERS WILL CHEER YOUR DEEDS!"
+	PrintClear "YOU HAVE DEFEATED THE DREADED BANDIT GANG AND RID PHLAN OF A GREAT EVIL.  THE HONEST SETTLERS WILL CHEER YOUR DEEDS!"
 	Gosub PressToContinue
-	Print "YOU HAVE ALSO TAKEN POSSESSION OF A HIDEOUT IN WHICH YOU MAY REST UNDISTURBED FROM THE RIGORS OF YOUR QUESTING."
+	PrintClear "YOU HAVE ALSO TAKEN POSSESSION OF A HIDEOUT IN WHICH YOU MAY REST UNDISTURBED FROM THE RIGORS OF YOUR QUESTING."
 	Save 250 BanditTreasureState
 	Save 0 AuxMember
 	Gosub PauseLoop
@@ -271,7 +271,7 @@ NorrisBandits:
 
 SurrenderToBandits:
 	RedrawView
-	Print "YOU ARE STRIPPED OF ALL VALUABLES AND BLINDFOLDED.  THE BANDITS RELEASE YOU SOMEWHERE ABOVE GROUND."
+	PrintClear "YOU ARE STRIPPED OF ALL VALUABLES AND BLINDFOLDED.  THE BANDITS RELEASE YOU SOMEWHERE ABOVE GROUND."
 	Rob 1 100 100
 	Save 255 BanditsDone
 	Save 255 BanditTreasureState
@@ -281,16 +281,16 @@ ReleasedAboveGround:
 	Save 0 GroundKind
 	Gosub UpdateSky
 	LoadFiles 29 2 255
-	LoadFiles 3 20 1
+	LoadPieces 3 20 1
 	Goto DropOff
 
 BanditTreasure:
 	Compare BanditTreasureState 250
 	IfNe
 	Exit
-	Print "YOU HAVE FOUND THE BANDIT'S TREASURE.  DO YOU TAKE IT?"
+	PrintClear "YOU HAVE FOUND THE BANDIT'S TREASURE.  DO YOU TAKE IT?"
 	Gosub YesOrExit
-	Print "YOU GRAB THE LOOT."
+	PrintClear "YOU GRAB THE LOOT."
 	ClearMonsters
 	Treasure 0 #08FC 0 92 0 20 0 255
 	Combat
@@ -304,7 +304,7 @@ HiddenCatacombs:
 	Compare CatacombAmbushDone 255
 	IfEq
 	Exit
-	Print "YOU PASS INTO HIDDEN CATACOMBS. THIS LARGE ROOM IS DIMLY LIT BY SPUTTERING TORCHES. THROUGH THE SMOKE YOU SEE CURTAINS HUNG TO COVER DOORWAYS."
+	PrintClear "YOU PASS INTO HIDDEN CATACOMBS. THIS LARGE ROOM IS DIMLY LIT BY SPUTTERING TORCHES. THROUGH THE SMOKE YOU SEE CURTAINS HUNG TO COVER DOORWAYS."
 	Gosub PressToContinue
 	Compare BanditsDone 255
 	IfEq
@@ -317,7 +317,7 @@ HiddenCatacombs:
 	Gosub PauseLoop
 
 ArrowVolley:
-	Print "SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP."
+	PrintClear "SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP."
 	Delay
 	Damage 4 1 6 0 39
 	Save 255 CatacombAmbushDone
@@ -359,7 +359,7 @@ ShowSniper:
 
 SniperArrow:
 	Damage 1 1 6 0 39
-	Print "THROUGH THE SMOKE AND DARKNESS, A DIMLY SEEN FIGURE FIRES AN ARROW INTO THE PARTY.  THE FIGURE FADES AWAY."
+	PrintClear "THROUGH THE SMOKE AND DARKNESS, A DIMLY SEEN FIGURE FIRES AN ARROW INTO THE PARTY.  THE FIGURE FADES AWAY."
 	RedrawView
 	Call CallRedraw
 	Return
@@ -368,12 +368,12 @@ WellSecretDoor:
 	Save 2 GroundKind
 	Gosub UpdateSky
 	Call CallRedraw
-	Print "JUST ABOVE THE WATERLINE, A SECRET DOOR HAS BEEN LEFT AJAR IN THE SOUTH WALL OF THE WELL.  DO YOU WANT TO CLIMB UP THE RUNGS?"
+	PrintClear "JUST ABOVE THE WATERLINE, A SECRET DOOR HAS BEEN LEFT AJAR IN THE SOUTH WALL OF THE WELL.  DO YOU WANT TO CLIMB UP THE RUNGS?"
 	Gosub YesOrExit
 	Save 0 InWell
-	Print "YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL."
+	PrintClear "YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL."
 	LoadFiles 29 255 255
-	LoadFiles 3 20 1
+	LoadPieces 3 20 1
 	Save 1 GroundKind
 	Gosub UpdateSky
 	Call CallRedraw
@@ -381,7 +381,7 @@ WellSecretDoor:
 
 WellApproach:
 	Gosub ExitIfWellCleared
-	Arith 1 Scratch2 Scratch2
+	Sub 1 Scratch2 Scratch2
 	Compare Search 1
 	IfEq
 	Goto MonstersAttack
@@ -390,19 +390,19 @@ WellApproach:
 WaitingKobolds:
 	Gosub ExitIfWellCleared
 	Gosub ShowKobolds
-	Print "YOU STUMBLE ON SOME WAITING KOBOLDS!"
+	PrintClear "YOU STUMBLE ON SOME WAITING KOBOLDS!"
 	Gosub ShortPause
 	Goto WellFight
 
 WellPlaza:
-	AndOr WildFlags 1 AuxMember
+	And WildFlags 1 AuxMember
 	IfNe
 	Goto ClimbDownWell
 
 MonstersAttack:
 	Save 0 Scratch4
 	Gosub ShowKobolds
-	Print "MONSTERS FROM THE SURROUNDING BUILDINGS ATTACK YOU."
+	PrintClear "MONSTERS FROM THE SURROUNDING BUILDINGS ATTACK YOU."
 
 WellFight:
 	Gosub ExitIfWellCleared
@@ -421,9 +421,9 @@ WellFight:
 	Goto WellCleared
 	Compare Scratch4 1
 	IfLt
-	Print "A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS."
+	PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS."
 	IfEq
-	Print "A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS."
+	PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS."
 	SetupMonster 0 2 0
 	Delay
 	Approach
@@ -435,7 +435,7 @@ WellFight:
 	Goto WellFight
 
 WellCleared:
-	AndOr WildFlags 1 WildFlags
+	Or WildFlags 1 WildFlags
 	Exit
 
 CheckEncounterCount:
@@ -467,23 +467,23 @@ SurprisedBy:
 	Approach
 	Delay
 	Approach
-	Print "YOU ARE SURPRISED BY "
-	Print str AuxText
+	PrintClear "YOU ARE SURPRISED BY "
+	Print $AuxText
 	Gosub PressToContinue
 	Save 0 MaxDist
 	Gosub EncounterFight
 	Goto AfterCombat
 
 NameGnolls:
-	Save "GNOLLS " str AuxText
+	Save "GNOLLS " $AuxText
 	Return
 
 NameKobolds:
-	Save "KOBOLDS. " str AuxText
+	Save "KOBOLDS. " $AuxText
 	Return
 
 NameLizardmen:
-	Save "LIZARDMEN. " str AuxText
+	Save "LIZARDMEN. " $AuxText
 	Return
 
 BloodthirstyMonsters:
@@ -491,30 +491,30 @@ BloodthirstyMonsters:
 	Compare AuxMember 1
 	IfLt
 	Goto AvoidedBy
-	Save "YOU SEE SOME BLOODTHIRSTY " str AuxMonsterName
-	Save str AuxText str AuxNameCopy2
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
-	Arith 9 AuxEncTemp AuxEncTemp
+	Save "YOU SEE SOME BLOODTHIRSTY " $AuxMonsterName
+	Save $AuxText $AuxNameCopy2
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Add 9 AuxEncTemp AuxEncTemp
 	OnGoto AuxMember 4 Done EncounterFight DropOff EncounterFight
 
 FaceToFace:
-	Save "YOU ARE SUDDENLY FACE TO FACE WITH ARMED " str AuxMonsterName
-	Save str AuxText str AuxNameCopy6
-	EncounterMenu AuxEncMonster2 0 Scratch8 AuxMember 0 2 0 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Save "YOU ARE SUDDENLY FACE TO FACE WITH ARMED " $AuxMonsterName
+	Save $AuxText $AuxNameCopy6
+	EncounterMenu AuxEncMonster2 0 Scratch8 AuxMember 0 2 0 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
 	OnGoto AuxMember 4 Done EncounterFight DropOff ParlayMonsters
 
 AvoidedBy:
-	Save "YOU ARE BEING AVOIDED BY SOME " str AuxMonsterName
-	Save str AuxText str AuxNameCopy3
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
-	Arith 10 AuxEncTemp AuxEncTemp
+	Save "YOU ARE BEING AVOIDED BY SOME " $AuxMonsterName
+	Save $AuxText $AuxNameCopy3
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Sub 10 AuxEncTemp AuxEncTemp
 	OnGoto AuxMember 4 Done EncounterFight DropOff ParlayMonsters
 
 SurprisedParty:
-	Save "YOU HAVE SURPRISED A PARTY OF " str AuxMonsterName
-	Save str AuxText str AuxNameCopy3
-	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
-	Arith 20 AuxEncTemp AuxEncTemp
+	Save "YOU HAVE SURPRISED A PARTY OF " $AuxMonsterName
+	Save $AuxText $AuxNameCopy3
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Sub 20 AuxEncTemp AuxEncTemp
 	OnGoto AuxMember 4 Done FightSurprised Done ParlayMonsters
 
 SicklyKobolds:
@@ -530,7 +530,7 @@ SicklyKobolds:
 	Approach
 	Delay
 	Approach
-	Print "YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE."
+	PrintClear "YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE."
 	Gosub PressToContinue
 	EncounterMenu 0 2 0 AuxMember 0 2 2 2 4 "THE KOBOLDS ARE TRYING TO SNEAK OFF." "" "" 0 0
 	OnGoto AuxMember 4 Done SicklyKoboldsFight DropOff SicklyKoboldsParlay
@@ -547,26 +547,26 @@ SicklyKoboldsFight:
 
 SicklyKoboldsParlay:
 	Parlay 0 0 0 0 0 AuxParlay
-	Print "THE KOBOLDS FAWN ON YOU PATHETICALLY.  'PLEASE, OH PLEASE NOBLE ONES, DON'T HURT US,' THEY BEG.  'WE WERE SENT ON A SCOUTING MISSION BY OUR KING.  RUMORS OF A WONDROUS POOL CAME TO HIM IN HIS LAIR."
+	PrintClear "THE KOBOLDS FAWN ON YOU PATHETICALLY.  'PLEASE, OH PLEASE NOBLE ONES, DON'T HURT US,' THEY BEG.  'WE WERE SENT ON A SCOUTING MISSION BY OUR KING.  RUMORS OF A WONDROUS POOL CAME TO HIM IN HIS LAIR."
 	Gosub PressToContinue
-	Print "WE ARE ALL THAT REMAINS OF THE MIGHTY BAND THAT WAS SENT WEST TO TEST THE TALES.  WE MEAN YOU NO HARM.  WE ONLY SEEK TO RETURN TO OUR FAMILIES.'  (WHAT DO YOU DO?)"
+	PrintClear "WE ARE ALL THAT REMAINS OF THE MIGHTY BAND THAT WAS SENT WEST TO TEST THE TALES.  WE MEAN YOU NO HARM.  WE ONLY SEEK TO RETURN TO OUR FAMILIES.'  (WHAT DO YOU DO?)"
 	HMenu AuxMember 3 "RELEASE THEM?" "FIGHT?" "QUESTION THEM?"
 	OnGoto AuxMember 2 KoboldsScamper SicklyKoboldsFight
-	Print "THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)"
+	PrintClear "THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)"
 	HMenu AuxMember 2 "RELEASE THEM?" "FIGHT THEM?"
 	OnGoto AuxMember 2 KoboldsScamper SicklyKoboldsFight
 
 KoboldsScamper:
-	Print "THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL."
+	PrintClear "THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL."
 	Save 255 KoboldBandDone
 	Goto Done
 
 LizardPatrol:
-	AndOr WildFlags 8 AuxMember
+	And WildFlags 8 AuxMember
 	IfNe
 	Exit
 	SetupMonster 57 0 57
-	Print "A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!"
+	PrintClear "A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!"
 	Gosub PressToContinue
 	Save 0 Surprise
 	Save 75 Morale
@@ -576,46 +576,46 @@ LizardPatrol:
 	Combat
 	Compare CombatEnd 128
 	IfLt
-	AndOr WildFlags 8 WildFlags
+	Or WildFlags 8 WildFlags
 	Exit
 
 NailedDoor:
-	AndOr WildFlags 16 AuxMember
+	And WildFlags 16 AuxMember
 	IfNe
 	Exit
 	Save 255 HoldMove
-	Print "THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?"
+	PrintClear "THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?"
 	Gosub YesOrExit
-	Print "THE DOOR IS FREED."
-	AndOr WildFlags 16 WildFlags
+	PrintClear "THE DOOR IS FREED."
+	Or WildFlags 16 WildFlags
 	Save 0 HoldMove
 	Exit
 
 SeerWoman:
-	AndOr WildFlags 2 AuxMember
+	And WildFlags 2 AuxMember
 	IfNe
 	Goto HiddenArmor
 	Picture 5
-	Print "A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE."
+	PrintClear "A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE."
 	Gosub PressToContinue
-	Print "AN EVIL SPIRIT FROM AN UNHOLY POOL GUIDES YOUR ENEMIES. IT HIDES BEHIND A FAIR COUNTENANCE. BE NOT DECEIVED.' WITH THAT, THE WOMAN IS GONE."
+	PrintClear "AN EVIL SPIRIT FROM AN UNHOLY POOL GUIDES YOUR ENEMIES. IT HIDES BEHIND A FAIR COUNTENANCE. BE NOT DECEIVED.' WITH THAT, THE WOMAN IS GONE."
 	Picture 255
-	AndOr WildFlags 2 WildFlags
+	Or WildFlags 2 WildFlags
 	Exit
 
 HiddenArmor:
-	AndOr WildFlags 4 AuxMember
+	And WildFlags 4 AuxMember
 	IfNe
 	Exit
 	Compare Search 1
 	IfNe
 	Exit
-	Print "BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?"
+	PrintClear "BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?"
 	Gosub YesOrExit
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 58
 	Combat
-	AndOr WildFlags 4 WildFlags
+	Or WildFlags 4 WildFlags
 	Exit
 
 AfterCombat:
@@ -632,7 +632,7 @@ AfterCombat:
 CountEncounter:
 	Compare EncounterCount 255
 	IfNe
-	Arith 1 EncounterCount EncounterCount
+	Add 1 EncounterCount EncounterCount
 	Goto Done
 
 FightSurprised:
@@ -644,12 +644,12 @@ EncounterFight:
 	Save AuxEncTemp Morale
 	Compare Scratch7 1
 	IfLt
-	Arith AuxPartyStrength 3 AuxPartyStrength
+	Div AuxPartyStrength 3 AuxPartyStrength
 	IfGt
-	Arith AuxPartyStrength 4 AuxPartyStrength
+	Div AuxPartyStrength 4 AuxPartyStrength
 	IfNe
 	Goto LoadEncounter
-	Arith AuxPartyStrength 2 AuxPartyStrength
+	Div AuxPartyStrength 2 AuxPartyStrength
 	Save 3 AuxTemp9
 
 LoadEncounter:
@@ -671,7 +671,7 @@ DropOff:
 	Save 1 NoCoords
 	GetTable DropOffXTable AuxTemp9 PartyX
 	GetTable DropOffYTable AuxTemp9 PartyY
-	Print ""
+	PrintClear ""
 	Call CallRedraw
 	Goto event1
 
@@ -685,17 +685,17 @@ ParlayMonsters:
 	Save 0 Surprise
 	Parlay 10 20 20 20 30 AuxParlay
 	Random 30 AuxRoll2
-	Arith AuxParlay AuxRoll2 AuxParlay
-	Arith AuxParlay SelReaction AuxParlay
+	Add AuxParlay AuxRoll2 AuxParlay
+	Add AuxParlay SelReaction AuxParlay
 	Compare AuxParlay 95
 	IfLt
 	Goto MonstersOffended
-	Print "'WE HAVE TO KEEP THIS AREA FREE OF INTRUDERS -- BOSS'S ORDERS.  WE'LL LET YOU GO THIS TIME.  BUT IF YOU COME BACK, YOU'LL FACE BIG TROUBLE.' THE MONSTERS LEAVE."
+	PrintClear "'WE HAVE TO KEEP THIS AREA FREE OF INTRUDERS -- BOSS'S ORDERS.  WE'LL LET YOU GO THIS TIME.  BUT IF YOU COME BACK, YOU'LL FACE BIG TROUBLE.' THE MONSTERS LEAVE."
 	Goto Done
 
 MonstersOffended:
-	Print "YOU HAVE OFFENDED THE "
-	Print str AuxText
+	PrintClear "YOU HAVE OFFENDED THE "
+	Print $AuxText
 	Print "THEY ATTACK."
 	Compare AuxParlay 65
 	IfLt
@@ -703,26 +703,26 @@ MonstersOffended:
 	Goto EncounterFight
 
 ClimbDownWell:
-	Print "RUNGS ARE SET IN THE SIDES OF THE WELL WALL.  DO YOU WANT TO CLIMB DOWN?"
+	PrintClear "RUNGS ARE SET IN THE SIDES OF THE WELL WALL.  DO YOU WANT TO CLIMB DOWN?"
 	Gosub YesOrExit
 	Save 1 InWell
-	Print "YOU SLOWLY CLIMB DOWN THE SLIPPERY RUNGS."
+	PrintClear "YOU SLOWLY CLIMB DOWN THE SLIPPERY RUNGS."
 	LoadFiles 32 2 255
-	LoadFiles 18 17 1
+	LoadPieces 18 17 1
 	Goto WellSecretDoor
 
 PlazaWander:
 	Random 9 AuxMember
 	Compare AuxMember 1
 	IfEq
-	Print "YOU WANDER IN THE PLAZA NEAR KUTO'S WELL."
+	PrintClear "YOU WANDER IN THE PLAZA NEAR KUTO'S WELL."
 	Exit
 
 ShortPause:
 	Save 50 AuxMember
 
 PauseLoop:
-	Arith 1 AuxMember AuxMember
+	Add 1 AuxMember AuxMember
 	Compare AuxMember 100
 	IfLt
 	Goto PauseLoop
@@ -766,7 +766,50 @@ ShowKobolds:
 	Return
 
 ExitIfWellCleared:
-	AndOr WildFlags 1 AuxMember
+	And WildFlags 1 AuxMember
 	IfNe
 	Exit
 	Return
+
+EncMonsterDistTable:
+	Data 2 2 2
+
+EncTable2:
+	Data 73 0 57
+
+EncTable3:
+	Data 9 6 12
+
+EncTable4:
+	Data 9 6 12
+
+EncTable5:
+	Data 73 0 57
+
+EncTable6:
+	Data 75 50 90
+
+DropOffXTable:
+	Data 13 2 11 1 13 1 10 6
+
+DropOffYTable:
+	Data 12 9 3 1 7 14 13 5
+
+ExitCellByFacing:
+	Data 2 17 5
+
+ExitSymbolSetByFacing:
+	Data 16 2 2
+
+ExitAreaByFacing:
+	Data 1 20 15 18
+
+CellEventTable:
+	Data 1 2 3 0 4 3 9 10 0 11 12 13 15 14 0 0
+	Data 3 3 5 0 6 7 8
+
+SecretDoorChanceByRace:
+	Data 0 0 1 0 1 0 0 0
+
+GroundShadeTable:
+	Data 9 0 6 0

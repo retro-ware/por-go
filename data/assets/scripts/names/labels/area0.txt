@@ -38,6 +38,7 @@ A328 PickpocketRoll
 A3B1 TavernEvent
 A413 TavernTale
 A452 GamblerGame
+A501 TavernGamble  # native Go (engine/native.go): the gamble after WHO WILL GAMBLE
 A51A WagerPrompt
 A609 GambleAgainAsk
 A647 TooHurtToGamble

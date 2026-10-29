@@ -65,35 +65,35 @@ CheckTerrainLoop:
 	Save 255 HoldMove
 	IfEq
 	Return
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Goto CheckTerrainLoop
 
 ProbeNW:
-	Arith 1 ProbeX ProbeX
+	Sub 1 ProbeX ProbeX
 
 ProbeN:
-	Arith 1 ProbeY ProbeY
+	Sub 1 ProbeY ProbeY
 	Return
 
 ProbeNE:
-	Arith 1 ProbeY ProbeY
+	Sub 1 ProbeY ProbeY
 
 ProbeE:
-	Arith 1 ProbeX ProbeX
+	Add 1 ProbeX ProbeX
 	Return
 
 ProbeSE:
-	Arith 1 ProbeX ProbeX
+	Add 1 ProbeX ProbeX
 
 ProbeS:
-	Arith 1 ProbeY ProbeY
+	Add 1 ProbeY ProbeY
 	Return
 
 ProbeSW:
-	Arith 1 ProbeY ProbeY
+	Add 1 ProbeY ProbeY
 
 ProbeW:
-	Arith 1 ProbeX ProbeX
+	Sub 1 ProbeX ProbeX
 	Return
 
 event1:
@@ -112,12 +112,12 @@ FindSiteRow:
 	Compare Scratch2 MapY
 	IfEq
 	Goto SiteRowFound
-	Arith 1 Scratch1 Scratch1
-	Arith Scratch3 Scratch4 Scratch4
+	Add 1 Scratch1 Scratch1
+	Add Scratch3 Scratch4 Scratch4
 	Goto FindSiteRow
 
 SiteRowFound:
-	Arith Scratch4 Scratch3 Scratch3
+	Add Scratch4 Scratch3 Scratch3
 
 FindSiteX:
 	Compare Scratch4 Scratch3
@@ -127,7 +127,7 @@ FindSiteX:
 	Compare Scratch5 MapX
 	IfEq
 	Goto SiteFound
-	Arith 1 Scratch4 Scratch4
+	Add 1 Scratch4 Scratch4
 	Goto FindSiteX
 
 SiteFound:
@@ -135,7 +135,7 @@ SiteFound:
 	OnGoto Scratch1 4 RuinedCastle KoboldHorde TwoCaves BoatDock
 
 RuinedCastle:
-	AndOr 1 MarkFlags57 MarkFlags57
+	Or 1 MarkFlags57 MarkFlags57
 	Save 11 ProbeX
 	Save 8 ProbeY
 	Save 113 ProbeCell
@@ -143,7 +143,7 @@ RuinedCastle:
 	ClearBox
 	Call CallClearView
 	Picture 24
-	Print "YOU FIND A RUINED CASTLE SURROUNDED BY QUICKSAND.   AN OLD WORN DRAWBRIDGE IS THE ONLY SAFE WAY ACROSS THE QUAGMIRE.  WILL YOU ENTER THE RUINED CASTLE?"
+	PrintClear "YOU FIND A RUINED CASTLE SURROUNDED BY QUICKSAND.   AN OLD WORN DRAWBRIDGE IS THE ONLY SAFE WAY ACROSS THE QUAGMIRE.  WILL YOU ENTER THE RUINED CASTLE?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterCastle Done
 
@@ -160,7 +160,7 @@ KoboldHorde:
 	Exit
 	SetupMonster 0 0 0
 	Save 50 Morale
-	Print "A SCREAMING HORDE OF KOBOLDS ATTACKS THE PARTY."
+	PrintClear "A SCREAMING HORDE OF KOBOLDS ATTACKS THE PARTY."
 	ClearMonsters
 	ClearBox
 	LoadMonster 0 25 0
@@ -173,24 +173,24 @@ KoboldHorde:
 	Exit
 
 TwoCaves:
-	AndOr MarkFlags57 2 Scratch1
+	And MarkFlags57 2 Scratch1
 	IfEq
 	Goto KoboldsEnterCave
 	ClearBox
 	Call CallClearView
 	Picture 27
-	Print "YOU FIND TWO CAVES;  A SMALL, WELL-HIDDEN CAVE AND A LARGER, MORE OBVIOUS CAVE.  WHAT CAVE WILL YOU ENTER?"
+	PrintClear "YOU FIND TWO CAVES;  A SMALL, WELL-HIDDEN CAVE AND A LARGER, MORE OBVIOUS CAVE.  WHAT CAVE WILL YOU ENTER?"
 	Goto CaveMenu
 
 KoboldsEnterCave:
-	AndOr MarkFlags57 2 MarkFlags57
+	Or MarkFlags57 2 MarkFlags57
 	Save 6 ProbeX
 	Save 15 ProbeY
 	Save 73 ProbeCell
 	Call CallLookAhead
 	ClearBox
 	Picture 27
-	Print "YOU SEE A SMALL GROUP OF KOBOLDS ENTERING A SMALL,   CONCEALED CAVE.  A LARGER, MORE NOTICEABLE CAVE LIES JUST EAST OF THE SMALL HIDDEN, CAVE.  WHAT CAVE WILL YOU ENTER?"
+	PrintClear "YOU SEE A SMALL GROUP OF KOBOLDS ENTERING A SMALL,   CONCEALED CAVE.  A LARGER, MORE NOTICEABLE CAVE LIES JUST EAST OF THE SMALL HIDDEN, CAVE.  WHAT CAVE WILL YOU ENTER?"
 
 CaveMenu:
 	HMenu Scratch1 3 "LARGE" "SMALL" "EXIT"
@@ -216,7 +216,7 @@ BoatDock:
 	ClearBox
 	Call CallClearView
 	Picture 41
-	Print "THERE IS A BOAT DOCKED HERE THAT WILL RETURN YOU TO THE CIVILIZED SECTION OF PHLAN.  WILL YOU TAKE IT?"
+	PrintClear "THERE IS A BOAT DOCKED HERE THAT WILL RETURN YOU TO THE CIVILIZED SECTION OF PHLAN.  WILL YOU TAKE IT?"
 	HMenu Scratch1 2 "TAKE BOAT" "STAY"
 	OnGoto Scratch1 2 TakeBoat Done
 
@@ -258,30 +258,30 @@ RandomEncounter:
 	Surprise Scratch1 Scratch2 Scratch4 Scratch5
 	Compare Scratch5 9
 	IfEq
-	AndOr Surprise 1 Surprise
+	And Surprise 1 Surprise
 	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseGroup FaceToFace
 
 SpotGroup:
-	Print "YOU SPOT A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "YOU SPOT A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 4 "" "" "" AuxEncTemp AuxEncTemp
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
 PartySurprised:
-	Print "YOU ARE SURPRISED BY A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 99 99
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
 SurpriseGroup:
-	Print "YOU SURPRISE A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "YOU SURPRISE A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 2 2 1 1 "" "" "" 0 0
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
 FaceToFace:
-	Print "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 0 0
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
@@ -311,14 +311,14 @@ EncounterParlay:
 	Goto FriendlyGroup
 	Parlay 20 20 5 5 30 Scratch1
 	Random 30 Scratch2
-	Arith Scratch1 Scratch2 Scratch1
-	Arith Scratch1 SelReaction Scratch1
-	Arith Scratch1 AuxEncBonus Scratch1
+	Add Scratch1 Scratch2 Scratch1
+	Add Scratch1 SelReaction Scratch1
+	Add Scratch1 AuxEncBonus Scratch1
 	Compare Scratch1 120
 	IfLt
 	Goto ParlayConvince
-	Print "THE "
-	Print str AuxMonsterName
+	PrintClear "THE "
+	Print $AuxMonsterName
 	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
 	Goto Done
 
@@ -326,30 +326,30 @@ ParlayConvince:
 	Compare Scratch1 100
 	IfLt
 	Goto ParlayInsult
-	Print "YOU CONVINCE THE "
-	Print str AuxMonsterName
+	PrintClear "YOU CONVINCE THE "
+	Print $AuxMonsterName
 	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
 	Goto Done
 
 ParlayInsult:
-	Print "YOU HAVE INSULTED THE "
-	Print str AuxMonsterName
+	PrintClear "YOU HAVE INSULTED THE "
+	Print $AuxMonsterName
 	Print "."
 	Print "THE "
-	Print str AuxMonsterName
+	Print $AuxMonsterName
 	Print " ATTACK YOU IMMEDIATELY!"
 	Goto EncounterFight
 
 FriendlyGroup:
-	Print "THE "
-	Print str AuxMonsterName
+	PrintClear "THE "
+	Print $AuxMonsterName
 	Print " GREET YOU AND YOU EXCHANGE PLEASANTRIES.  THE "
-	Print str AuxMonsterName
+	Print $AuxMonsterName
 	Print " THEN LEAVE AND BID YOU GOOD DAY."
 	Goto Done
 
 SmallDarkCave:
-	Print "YOU HAVE FOUND A SMALL, DARK CAVE.  WILL YOU ENTER?"
+	PrintClear "YOU HAVE FOUND A SMALL, DARK CAVE.  WILL YOU ENTER?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterLair Done
 
@@ -394,35 +394,35 @@ LoadLair:
 	NewECL 27
 
 LairCell:
-	AndOr Cell 127 Scratch10
+	And Cell 127 Scratch10
 	OnGoto Scratch10 18 Done HalflingRemains WyvernTreasure FerociousWyvern TerribleWyvern FourLizards HumanBones LizardsAndMinotaurs LairTreasure TwoLizards GnollAttack GnollAttack ElfRemains GnollsAndTrolls GnollsAndTrolls MadKobolds MadKobolds PassageOutside
 
 HalflingRemains:
-	Print "LYING HERE ARE THE PARTIALLY EATEN REMAINS OF A HALFING."
+	PrintClear "LYING HERE ARE THE PARTIALLY EATEN REMAINS OF A HALFING."
 	Delay
 	Goto Done
 
 WyvernTreasure:
-	AndOr WyvernLairFlags 1 Scratch1
+	And WyvernLairFlags 1 Scratch1
 	IfNe
 	Exit
-	Print "YOU HAVE FOUND THE WYVERN'S TREASURE!"
+	PrintClear "YOU HAVE FOUND THE WYVERN'S TREASURE!"
 	ClearMonsters
 	Treasure #1388 #1770 #07D0 #03E8 0 3 3 129
 	Combat
-	AndOr WyvernLairFlags 1 WyvernLairFlags
+	Or WyvernLairFlags 1 WyvernLairFlags
 	Exit
 
 FerociousWyvern:
-	AndOr WyvernLairFlags 2 Scratch1
+	And WyvernLairFlags 2 Scratch1
 	IfNe
 	Exit
 	SetupMonster 121 2 121
 	Approach
 	Approach
-	Print "YOU HAVE STUMBLED ACROSS A FEROCIOUS WYVERN.  IT CHARGES AND ATTACKS!"
+	PrintClear "YOU HAVE STUMBLED ACROSS A FEROCIOUS WYVERN.  IT CHARGES AND ATTACKS!"
 	Save 100 Morale
-	AndOr WyvernLairFlags 4 Scratch1
+	And WyvernLairFlags 4 Scratch1
 	IfEq
 	Save 254 MonsterHit
 	ClearMonsters
@@ -431,20 +431,20 @@ FerociousWyvern:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr WyvernLairFlags 2 WyvernLairFlags
+	Or WyvernLairFlags 2 WyvernLairFlags
 	Save 0 MonsterHit
 	Exit
 
 TerribleWyvern:
-	AndOr WyvernLairFlags 4 Scratch1
+	And WyvernLairFlags 4 Scratch1
 	IfNe
 	Exit
 	SetupMonster 121 2 121
 	Approach
 	Approach
-	Print "A TERRIBLE WYVERN CHARGES TO ATTACK THE PARTY!"
+	PrintClear "A TERRIBLE WYVERN CHARGES TO ATTACK THE PARTY!"
 	Save 100 Morale
-	AndOr WyvernLairFlags 2 Scratch1
+	And WyvernLairFlags 2 Scratch1
 	IfEq
 	Save 254 MonsterHit
 	ClearMonsters
@@ -453,18 +453,18 @@ TerribleWyvern:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr WyvernLairFlags 4 WyvernLairFlags
+	Or WyvernLairFlags 4 WyvernLairFlags
 	Save 0 MonsterHit
 	Exit
 
 FourLizards:
-	AndOr WyvernLairFlags 8 Scratch1
+	And WyvernLairFlags 8 Scratch1
 	IfNe
 	Exit
 	SetupMonster 59 2 59
 	Approach
 	Approach
-	Print "FOUR GIANT LIZARDS RUN UP AND ATTACK THE PARTY!"
+	PrintClear "FOUR GIANT LIZARDS RUN UP AND ATTACK THE PARTY!"
 	Save 60 Morale
 	ClearMonsters
 	LoadMonster 59 4 59
@@ -472,20 +472,20 @@ FourLizards:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr WyvernLairFlags 8 WyvernLairFlags
+	Or WyvernLairFlags 8 WyvernLairFlags
 	Exit
 
 HumanBones:
-	Print "THIS ROOM IS FILLED WITH HUMAN BONES."
+	PrintClear "THIS ROOM IS FILLED WITH HUMAN BONES."
 	Delay
 	Exit
 
 LizardsAndMinotaurs:
-	AndOr WyvernLairFlags 16 Scratch1
+	And WyvernLairFlags 16 Scratch1
 	IfNe
 	Exit
 	SetupMonster 59 0 59
-	Print "YOU ENTER A CHAMBER WITH FOUR GIANT LIZARDS AND TWO MINOTAURS.  THE MINOTAURS ORDER THE LIZARDS TO ATTACK."
+	PrintClear "YOU ENTER A CHAMBER WITH FOUR GIANT LIZARDS AND TWO MINOTAURS.  THE MINOTAURS ORDER THE LIZARDS TO ATTACK."
 	Save 70 Morale
 	ClearMonsters
 	LoadMonster 59 4 59
@@ -494,26 +494,26 @@ LizardsAndMinotaurs:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr WyvernLairFlags 16 WyvernLairFlags
+	Or WyvernLairFlags 16 WyvernLairFlags
 	Exit
 
 LairTreasure:
-	AndOr WyvernLairFlags 32 Scratch1
+	And WyvernLairFlags 32 Scratch1
 	IfNe
 	Exit
-	Print "YOU HAVE FOUND SOME TREASURE."
+	PrintClear "YOU HAVE FOUND SOME TREASURE."
 	ClearMonsters
 	Treasure #1770 #0FA0 #0BB8 0 0 0 0 129
 	Combat
-	AndOr WyvernLairFlags 32 WyvernLairFlags
+	Or WyvernLairFlags 32 WyvernLairFlags
 	Exit
 
 TwoLizards:
-	AndOr WyvernLairFlags 64 Scratch1
+	And WyvernLairFlags 64 Scratch1
 	IfNe
 	Exit
 	SetupMonster 59 0 59
-	Print "GUARDING THIS CHAMBER ARE TWO GIANT LIZARDS.  AS YOU APPROACH, THEY ATTACK."
+	PrintClear "GUARDING THIS CHAMBER ARE TWO GIANT LIZARDS.  AS YOU APPROACH, THEY ATTACK."
 	Save 100 Morale
 	ClearMonsters
 	LoadMonster 59 2 59
@@ -521,7 +521,7 @@ TwoLizards:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr WyvernLairFlags 64 WyvernLairFlags
+	Or WyvernLairFlags 64 WyvernLairFlags
 	Exit
 
 GnollAttack:
@@ -532,9 +532,9 @@ GnollAttack:
 	SetupMonster 73 2 73
 	Approach
 	Approach
-	Print "YOU ARE ATTACKED BY SOME GNOLLS."
+	PrintClear "YOU ARE ATTACKED BY SOME GNOLLS."
 	Random 30 Scratch1
-	Arith 4 Scratch1 Scratch1
+	Add 4 Scratch1 Scratch1
 	Save 60 Morale
 	ClearMonsters
 	LoadMonster 73 Scratch1 73
@@ -545,16 +545,16 @@ GnollAttack:
 	Exit
 
 ElfRemains:
-	Print "IN THIS ROOM ARE THE HORRID REMAINS OF SOME ELVES."
+	PrintClear "IN THIS ROOM ARE THE HORRID REMAINS OF SOME ELVES."
 	Delay
 	Exit
 
 GnollsAndTrolls:
-	AndOr WyvernLairFlags 128 Scratch1
+	And WyvernLairFlags 128 Scratch1
 	IfNe
 	Exit
 	SetupMonster 73 0 73
-	Print "IN THIS ROOM ARE SOME GNOLLS AND TROLLS.  THEY ATTACK YOU IMMEDIATELY."
+	PrintClear "IN THIS ROOM ARE SOME GNOLLS AND TROLLS.  THEY ATTACK YOU IMMEDIATELY."
 	Save 75 Morale
 	ClearMonsters
 	LoadMonster 73 12 73
@@ -563,7 +563,7 @@ GnollsAndTrolls:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr WyvernLairFlags 128 WyvernLairFlags
+	Or WyvernLairFlags 128 WyvernLairFlags
 	Exit
 
 MadKobolds:
@@ -576,9 +576,9 @@ MadKobolds:
 	Approach
 	Save 50 Morale
 	Save 0 Scratch2
-	Print "YOU ARE ATTACKED BY A GROUP OF MAD KOBOLDS."
+	PrintClear "YOU ARE ATTACKED BY A GROUP OF MAD KOBOLDS."
 	Random 40 Scratch1
-	Arith 10 Scratch1 Scratch1
+	Add 10 Scratch1 Scratch1
 	Compare Scratch1 40
 	IfGe
 	Save 3 Scratch2
@@ -591,7 +591,7 @@ MadKobolds:
 	Exit
 
 PassageOutside:
-	Print "YOU FIND A PASSAGEWAY GOING OUT.  WHAT WILL YOU DO?"
+	PrintClear "YOU FIND A PASSAGEWAY GOING OUT.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "STAY" "LEAVE"
 	OnGoto Scratch1 2 Done LeaveLair
 
@@ -629,19 +629,19 @@ PickEncounter:
 	GetTable EncMonster2 EncounterType27 AuxPartyStrength
 	GetTable EncStrength EncounterType27 AuxCounter
 	PartyStrength Scratch1
-	Arith Scratch1 AuxCounter Scratch1
+	Div Scratch1 AuxCounter Scratch1
 	Random 5 Scratch2
 	OnGoto Scratch2 5 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
 
 GroupSizeLarge:
-	Arith Scratch1 3 Scratch1
+	Div Scratch1 3 Scratch1
 	Compare Scratch1 0
 	IfLe
 	Save 1 Scratch1
 	Goto SplitGroups
 
 GroupSizeMedium:
-	Arith Scratch1 2 Scratch1
+	Div Scratch1 2 Scratch1
 	Compare Scratch1 0
 	IfLe
 	Save 1 Scratch1
@@ -658,71 +658,71 @@ SplitGroupsLoop:
 	Compare Scratch3 AuxMenuChoice
 	IfLt
 	Goto CapGroupSize
-	Arith 1 EncounterExtraCount27 EncounterExtraCount27
-	Arith AuxMenuChoice Scratch3 Scratch3
+	Add 1 EncounterExtraCount27 EncounterExtraCount27
+	Sub AuxMenuChoice Scratch3 Scratch3
 	Goto SplitGroupsLoop
 
 CapGroupSize:
 	Compare Scratch1 56
 	IfGe
-	Arith EncounterExtraCount27 56 Scratch1
+	Sub EncounterExtraCount27 56 Scratch1
 	Save Scratch1 EncounterCount27
 	Return
 
 PickKobolds:
-	Save "KOBOLDS" str AuxMonsterName
+	Save "KOBOLDS" $AuxMonsterName
 	Save 0 EncounterType27
 	Return
 
 PickGnolls:
-	Save "GNOLLS" str AuxMonsterName
+	Save "GNOLLS" $AuxMonsterName
 	Save 1 EncounterType27
 	Return
 
 PickLizardMen:
-	Save "LIZARD MEN" str AuxMonsterName
+	Save "LIZARD MEN" $AuxMonsterName
 	Save 2 EncounterType27
 	Return
 
 PickGiantLizards:
-	Save "GIANT LIZARDS" str AuxMonsterName
+	Save "GIANT LIZARDS" $AuxMonsterName
 	Save 3 EncounterType27
 	Return
 
 PickHippogriffs:
-	Save "HIPPOGRIFFS" str AuxMonsterName
+	Save "HIPPOGRIFFS" $AuxMonsterName
 	Save 4 EncounterType27
 	Return
 
 PickWyverns:
-	Save "WYVERNS" str AuxMonsterName
+	Save "WYVERNS" $AuxMonsterName
 	Save 5 EncounterType27
 	Return
 
 PickTrolls:
-	Save "TROLLS" str AuxMonsterName
+	Save "TROLLS" $AuxMonsterName
 	Save 6 EncounterType27
 	Return
 
 PickPhaseSpiders:
-	Save "PHASE SPIDERS" str AuxMonsterName
+	Save "PHASE SPIDERS" $AuxMonsterName
 	Save 7 EncounterType27
 	Return
 
 PickMinotaurs:
-	Save "MINOTAURS" str AuxMonsterName
+	Save "MINOTAURS" $AuxMonsterName
 	Save 8 EncounterType27
 	Return
 
 Done:
-	Print " "
+	PrintClear " "
 	RedrawView
 	Picture 255
 	Gosub MarkSitesOnMap
 	Exit
 
 MarkSitesOnMap:
-	AndOr MarkFlags57 1 Scratch1
+	And MarkFlags57 1 Scratch1
 	IfNe
 	Goto MarkCavesSite
 	Save 11 ProbeX
@@ -731,7 +731,7 @@ MarkSitesOnMap:
 	Call CallLookAhead
 
 MarkCavesSite:
-	AndOr MarkFlags57 2 Scratch1
+	And MarkFlags57 2 Scratch1
 	IfNe
 	Goto MarkThirdSite
 	Save 6 ProbeX
@@ -740,7 +740,7 @@ MarkCavesSite:
 	Call CallLookAhead
 
 MarkThirdSite:
-	AndOr MarkFlags57 4 Scratch1
+	And MarkFlags57 4 Scratch1
 	IfNe
 	Return
 	Save 7 ProbeX
@@ -759,7 +759,7 @@ PatchMapRow:
 	IfEq
 	Goto PatchMapDone
 	GetTable MapPatchBase Scratch1 Scratch7
-	Arith 8 Scratch7 Scratch3
+	Mul 8 Scratch7 &Scratch3
 	Save 0 Scratch6
 
 PatchMapCell:
@@ -767,19 +767,68 @@ PatchMapCell:
 	IfEq
 	Goto PatchMapNextRow
 	GetTable MapPatchValues Scratch2 Scratch5
-	Arith 1 Scratch2 Scratch2
-	Arith Scratch6 Scratch3 MapCellIndex
-	SaveTable Scratch5 MapPatchB MapCellIndex
-	Arith 1 Scratch6 Scratch6
+	Add 1 Scratch2 Scratch2
+	Add Scratch6 &Scratch3 &MapCellIndex
+	SaveTable Scratch5 MapPatchB &MapCellIndex
+	Add 1 Scratch6 Scratch6
 	Goto PatchMapCell
 
 PatchMapNextRow:
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Goto PatchMapRow
 
 PatchMapDone:
 	Call CallEndDraw
 	Return
+
+BlockedTerrain:
+	Data 46 47 60 67 68 75 76 119
+
+SiteRowY:
+	Data 8 14 15 16 29
+
+SiteX:
+	Data 11 6 7 5 6 7 6 7 9
+
+SiteRowEnd:
+	Data 1 2 3 2 1
+
+SiteKind:
+	Data 0 1 1 1 2 1 1 1 3
+
+EncSurpriseA:
+	Data 0 0 0 0 0 0 0 0 0
+
+EncSurpriseB:
+	Data 0 0 0 0 0 0 0 0 0
+
+EncStrength:
+	Data 1 2 3 4 4 8 7 6 7
+
+EncGroupSize:
+	Data 40 0 0 0 0 0 0 0 0 3 0 0 0 0 0 0
+	Data 0 0
+
+EncData2:
+	Data 30 20 20 0 0 0 10 0 10
+
+EncData3:
+	Data 0 0 0 0 0 0 0 0 0
+
+EncMonster:
+	Data 0 73 57 59 113 121 31 116 62
+
+EncData5:
+	Data 0 73 57 59 113 121 31 116 62
+
+EncMorale:
+	Data 40 50 60 50 70 70 60 70 70
+
+EncData7:
+	Data 6 9 6 15 18 24 12 31 12
+
+EncMonster2:
+	Data 0 73 57 59 113 121 31 116 62
 
 event2:
 	Compare In3D 1
@@ -813,7 +862,15 @@ event4:
 LoadLairFiles:
 	Save 1 In3D
 	Save 255 NoCoords
-	LoadFiles 17 17 17
+	LoadPieces 17 17 17
 	LoadFiles 27 2 255
 	Save 8 SkyInside
 	Exit
+
+MapPatchBase:
+	Data 104 105 106 126 161
+
+MapPatchValues:
+	Data 238 171 238 186 174 235 186 235 238 171 239 186 238 186 187 238
+	Data 187 234 187 238 171 238 170 238 238 170 234 186 174 234 187 238
+	Data 154 122 234 110 186 234 186 238 0

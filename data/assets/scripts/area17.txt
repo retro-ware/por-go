@@ -9,21 +9,21 @@ NomadEncounterMenu:
 	Return
 
 GetCampState:
-	AndOr MarkFlags4 8 Scratch10
+	And MarkFlags4 8 Scratch10
 	IfEq
 	Goto CampNotHostile
 	Save 0 Scratch1
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Return
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfNe
 	Save 1 Scratch1
 	Return
 
 CampNotHostile:
 	Save 2 Scratch1
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfEq
 	Goto CampFriendlyCheck
 
@@ -34,7 +34,7 @@ CampDayCheck:
 	Return
 
 CampFriendlyCheck:
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfEq
 	Goto CampByStage
 	Compare Hours 18
@@ -81,14 +81,14 @@ SetRestRules:
 	Compare Scratch10 1
 	IfEq
 	Return
-	Arith Hours Scratch10 Scratch10
-	Arith Scratch10 12 RestEvery
+	Sub Hours Scratch10 Scratch10
+	Mul Scratch10 12 RestEvery
 	Save 100 RestChance
 	Return
 
 MakeAlliesNomads:
 	Save PartyCount Scratch1
-	Arith NomadAllies PartyCount Scratch4
+	Add NomadAllies PartyCount Scratch4
 	Compare NomadAllies 0
 	IfEq
 	Return
@@ -96,9 +96,9 @@ MakeAlliesNomads:
 MakeAlliesLoop:
 	LoadCharacter Scratch1
 	Save 128 SelSide
-	Arith Scratch1 128 Scratch2
+	Add Scratch1 128 Scratch2
 	LoadCharacter Scratch2
-	Arith Scratch1 1 Scratch1
+	Add Scratch1 1 Scratch1
 	Compare Scratch1 Scratch4
 	IfLt
 	Goto MakeAlliesLoop
@@ -108,40 +108,40 @@ CheckAttackedAlly:
 	Compare AttackedAlly 0
 	IfEq
 	Return
-	AndOr MarkFlags4 2 MarkFlags4
-	AndOr MarkFlags4 254 MarkFlags4
+	Or MarkFlags4 2 MarkFlags4
+	And MarkFlags4 254 MarkFlags4
 	Return
 
 RollNomadAllies:
 	Call CallLookAhead
 	Save 0 NomadAllies
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Goto SizeKoboldBand
 	Compare Cell 4
 	IfEq
 	Goto SizeKoboldBand
 	Random 6 Scratch10
-	Arith 1 Scratch10 NomadAllies
+	Add 1 Scratch10 NomadAllies
 	Random 6 Scratch10
-	Arith 1 Scratch10 Scratch10
-	Arith Scratch10 NomadAllies NomadAllies
+	Add 1 Scratch10 Scratch10
+	Add Scratch10 NomadAllies NomadAllies
 
 SizeKoboldBand:
 	Call CallLookAhead
 	PartyStrength Scratch10
-	Arith NomadAllies 56 Scratch9
+	Sub NomadAllies 56 Scratch9
 	Compare Scratch10 Scratch9
 	IfGt
 	Save Scratch9 Scratch10
-	Arith Scratch9 2 Scratch9
+	Div Scratch9 2 Scratch9
 	Return
 
 RetreatOrFight:
 	Compare PartyX 11
 	IfLt
 	Goto FindRetreatZone
-	Print "THERE IS NOWHERE LEFT TO RETREAT. YOU MUST FIGHT."
+	PrintClear "THERE IS NOWHERE LEFT TO RETREAT. YOU MUST FIGHT."
 	Gosub PressToContinue
 	Compare 1 0
 	Return
@@ -168,7 +168,7 @@ RetreatZoneLoop:
 	Goto RetreatToZone
 
 NextRetreatZone:
-	Arith 1 Scratch10 Scratch10
+	Add 1 Scratch10 Scratch10
 	Compare Scratch10 12
 	IfLt
 	Goto RetreatZoneLoop
@@ -185,7 +185,7 @@ RetreatToZone:
 	Return
 
 HearWarCries:
-	Print "YOU HEAR WAR CRIES AND THE CLANG OF METAL "
+	PrintClear "YOU HEAR WAR CRIES AND THE CLANG OF METAL "
 	OnGoto Facing 4 CriesLeft CriesBehind CriesRight CriesAhead
 
 FaceTheSound:
@@ -219,8 +219,8 @@ WalkToHut:
 	Compare PartyX 4
 	IfLt
 	Goto WalkToHutStep
-	Arith PartyY 12 Scratch1
-	Arith PartyX Scratch1 Scratch1
+	Mul PartyY 12 Scratch1
+	Add PartyX Scratch1 Scratch1
 	GetTable WalkPathToHut Scratch1 Scratch10
 
 WalkToHutStep:
@@ -234,8 +234,8 @@ WalkToClearing:
 	Compare PartyX 4
 	IfLt
 	Goto WalkToClearingStep
-	Arith PartyY 12 Scratch1
-	Arith PartyX Scratch1 Scratch1
+	Mul PartyY 12 Scratch1
+	Add PartyX Scratch1 Scratch1
 	GetTable WalkPathToClearing Scratch1 Scratch10
 
 WalkToClearingStep:
@@ -262,13 +262,13 @@ WalkStep:
 
 YesNoMenu:
 	HMenu Scratch10 2 "YES" "NO"
-	Print " "
+	PrintClear " "
 	Compare Scratch10 0
 	Return
 
 PressToContinue:
 	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	Print " "
+	PrintClear " "
 	Return
 
 SetSky:
@@ -301,7 +301,7 @@ event0:
 	Compare LeftMap 0
 	IfEq
 	Goto CheckLodgingExit
-	Print "THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?"
+	PrintClear "THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?"
 	Gosub YesNoMenu
 	IfEq
 	Goto ExitToWilderness
@@ -310,10 +310,10 @@ event0:
 CheckLodgingExit:
 	Gosub SetSky
 	Gosub SetRestRules
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Exit
-	AndOr Cell 127 Scratch1
+	And Cell 127 Scratch1
 	Compare Scratch1 1
 	IfGt
 	Exit
@@ -361,14 +361,14 @@ event4:
 	IfEq
 	Exit
 	LoadFiles 17 2 255
-	LoadFiles 7 8 23
+	LoadPieces 7 8 23
 	Save 1 PartyX
 	Save 14 PartyY
 	Save 1 Facing
 	Exit
 
 CampOutskirts:
-	AndOr MarkFlags4 1 Scratch10
+	And MarkFlags4 1 Scratch10
 	IfNe
 	Exit
 	Compare Hours 14
@@ -378,10 +378,10 @@ CampOutskirts:
 	Compare Scratch10 50
 	IfGe
 	Goto NomadsGather
-	Print "YOU TRIP ON A WIRE TO THE ACCOMPANIMENT OF BELLS TINKLING. AFTER A MOMENT THERE IS A COMMOTION AHEAD OF YOU."
+	PrintClear "YOU TRIP ON A WIRE TO THE ACCOMPANIMENT OF BELLS TINKLING. AFTER A MOMENT THERE IS A COMMOTION AHEAD OF YOU."
 	HMenu Scratch10 3 "FLEE" "ADVANCE CAUTIOUSLY" "ATTACK"
 	OnGoto Scratch10 2 ExitToWilderness NomadsGather
-	Print "YOU CHARGE INTO A GROUP OF SCRUFFY LOOKING NOMADS."
+	PrintClear "YOU CHARGE INTO A GROUP OF SCRUFFY LOOKING NOMADS."
 	Gosub ShowNomads
 
 NomadFightNoSurprise:
@@ -389,15 +389,15 @@ NomadFightNoSurprise:
 
 NomadFight:
 	Save 100 Morale
-	AndOr MarkFlags4 2 MarkFlags4
+	Or MarkFlags4 2 MarkFlags4
 	Save 0 NomadAllies
 	Gosub SizeKoboldBand
-	Arith Scratch9 2 Scratch9
+	Div Scratch9 2 Scratch9
 	ClearMonsters
 	LoadMonster 40 Scratch9 12
 	Combat
 	Gosub CheckFled
-	Arith NomadFightCount 1 NomadFightCount
+	Add NomadFightCount 1 NomadFightCount
 	Exit
 
 NomadsHostile:
@@ -407,13 +407,13 @@ NomadsHostile:
 	OnGoto NomadFightCount 4 NomadsSpotYou NomadsSpotYou NomadsSpotYou HeadmanRallies
 
 NomadsSpotYou:
-	Print "A GROUP OF NOMADS SPOT YOU. THEY SHOUT AND CHARGE. AS THEY COME CLOSER THEIR NUMBERS SWELL WITH ARRIVALS."
+	PrintClear "A GROUP OF NOMADS SPOT YOU. THEY SHOUT AND CHARGE. AS THEY COME CLOSER THEIR NUMBERS SWELL WITH ARRIVALS."
 	Gosub PressToContinue
 	Gosub NomadEncounterMenu
 	OnGoto Scratch10 3 Done NomadFightNoSurprise ExitToWilderness
 
 HeadmanRallies:
-	Print "THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE."
+	PrintClear "THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE."
 	Gosub PressToContinue
 	Save 74 Portrait
 	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
@@ -434,7 +434,7 @@ TribeFight:
 TribeCombat:
 	Combat
 	Gosub CheckFled
-	AndOr MarkFlags4 4 MarkFlags4
+	Or MarkFlags4 4 MarkFlags4
 	Exit
 
 CheckFled:
@@ -449,10 +449,10 @@ ExitToWilderness:
 	RedrawView
 	Call CallRedraw
 	Save 255 Portrait
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Goto MarkLeftCamp
-	AndOr MarkFlags4 1 Scratch10
+	And MarkFlags4 1 Scratch10
 	Compare Scratch10 1
 	IfNe
 	Goto LoadWilderness
@@ -466,16 +466,16 @@ LoadWilderness:
 	NewECL 26
 
 NomadsGather:
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfNe
 	Goto NomadsHostile
 	Save 61 Portrait
 	SetupMonster 11 2 30
-	Print "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
+	PrintClear "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
 	Gosub ApproachPause
-	Print "ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP."
+	PrintClear "ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP."
 	Gosub ApproachPause
-	Print "YOU CAN SEE CHILDREN PEERING OUT OF THE TENT OPENINGS, ONLY TO BE PUSHED BACK INSIDE BY THEIR MOTHERS."
+	PrintClear "YOU CAN SEE CHILDREN PEERING OUT OF THE TENT OPENINGS, ONLY TO BE PUSHED BACK INSIDE BY THEIR MOTHERS."
 	Gosub PressToContinue
 	EncounterMenu 11 0 30 Scratch10 0 1 1 1 4 "THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." "" "" 12 12
 	Save 255 Portrait
@@ -484,39 +484,39 @@ NomadsGather:
 	Picture 30
 	SetupMonster 11 0 30
 	Save 255 Portrait
-	Print "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
+	PrintClear "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
 	Gosub PressToContinue
-	Save "TOMORROW" str AuxCounter
+	Save "TOMORROW" $AuxCounter
 	Compare Hours 14
 	IfLt
-	Save "TONIGHT" str AuxCounter
-	Print "THE BIGGEST NOMAD, APPARENTLY THE CHIEF OR HEADMAN, ACKNOWLEDGES YOU WITH A NOD, 'WE WILL GIVE A FEAST IN YOUR HONOR "
-	Print str AuxCounter
+	Save "TONIGHT" $AuxCounter
+	PrintClear "THE BIGGEST NOMAD, APPARENTLY THE CHIEF OR HEADMAN, ACKNOWLEDGES YOU WITH A NOD, 'WE WILL GIVE A FEAST IN YOUR HONOR "
+	Print $AuxCounter
 	Print ". WILL YOU JOIN US?'"
 	Gosub YesNoMenu
 	IfEq
 	Goto AcceptFeast
-	Print "'THEN YOU MUST LEAVE US,' HE RESPONDS WITH AS MUCH DIGNITY AS HE CAN MUSTER. DO YOU LEAVE?"
+	PrintClear "'THEN YOU MUST LEAVE US,' HE RESPONDS WITH AS MUCH DIGNITY AS HE CAN MUSTER. DO YOU LEAVE?"
 	Gosub YesNoMenu
 	IfEq
 	Goto LeaveCamp
-	Print "'YOUR INSULTS ARE TOO MANY! KILL THEM!'"
+	PrintClear "'YOUR INSULTS ARE TOO MANY! KILL THEM!'"
 	Save 1 Surprise
 	Goto NomadFight
 
 AcceptFeast:
-	AndOr MarkFlags4 1 MarkFlags4
+	Or MarkFlags4 1 MarkFlags4
 	Compare Hours 14
 	IfLt
 	Goto CampGames
-	Print "'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS."
+	PrintClear "'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS."
 	Gosub PressToContinue
 	Save 1 CampStage
 
 LodgingRest:
 	RedrawView
 	Gosub WalkToHut
-	Print "'HERE YOU MAY REST.'"
+	PrintClear "'HERE YOU MAY REST.'"
 	Gosub PressToContinue
 	Gosub SetRestRules
 	Save PartyX RestSaveX
@@ -529,32 +529,32 @@ MorningGreeting:
 	SetupMonster 11 2 30
 	Save 255 Portrait
 	Gosub ApproachHidePortrait
-	Print "THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'"
+	PrintClear "THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'"
 	Gosub ApproachHidePortrait
 
 CampGames:
 	Save 2 CampStage
-	Print "'COME, LET THERE BE GAMES FOR OUR GUESTS.' HE LEADS YOU TO THE CAMP'S CENTRAL CLEARING."
+	PrintClear "'COME, LET THERE BE GAMES FOR OUR GUESTS.' HE LEADS YOU TO THE CAMP'S CENTRAL CLEARING."
 	RedrawView
 	Gosub WalkToClearing
 	Save 1 Facing
 	Call CallRedraw
-	Print "YOU ARE TREATED AS HONORED GUESTS FOR THE REST OF THE DAY. THERE ARE CONTESTS OF STRENGTH AND SKILL IN YOUR HONOR."
+	PrintClear "YOU ARE TREATED AS HONORED GUESTS FOR THE REST OF THE DAY. THERE ARE CONTESTS OF STRENGTH AND SKILL IN YOUR HONOR."
 	Gosub PressToContinue
 	Save 8 Sky
 	Call CallRedraw
-	Print "AS NIGHT FALLS, THE NOMADS BUILD A HUGE CAMPFIRE IN THE CENTER OF THE CAMP. THE WHOLE TRIBE GATHERS FOR THE FEAST. AFTER THE FEAST THERE IS DANCING AND WILD CELEBRATIONS."
+	PrintClear "AS NIGHT FALLS, THE NOMADS BUILD A HUGE CAMPFIRE IN THE CENTER OF THE CAMP. THE WHOLE TRIBE GATHERS FOR THE FEAST. AFTER THE FEAST THERE IS DANCING AND WILD CELEBRATIONS."
 	Gosub PressToContinue
 	Save 74 Portrait
 	Picture 30
 	Save 255 Portrait
-	Print "DURING THE FESTIVITIES THE CHIEF (HIS TONGUE LOOSENED BY DRINK) TELLS YOU OF THE DANGERS OF THE REGION. YOU MAKE HASSAD AHWAL'S TALK ENTRY 55 IN YOUR JOURNAL."
+	PrintClear "DURING THE FESTIVITIES THE CHIEF (HIS TONGUE LOOSENED BY DRINK) TELLS YOU OF THE DANGERS OF THE REGION. YOU MAKE HASSAD AHWAL'S TALK ENTRY 55 IN YOUR JOURNAL."
 	Gosub PressToContinue
-	Print "THE HEADMAN SEEMS VERY UNEASY AS HE CONTINUES TO SPEAK. HE PRACTICALLY BEGS YOU TO STAY FOR A FEW MORE DAYS, RATHER THAN LEAVE IN THE MORNING AS YOU PLANNED."
+	PrintClear "THE HEADMAN SEEMS VERY UNEASY AS HE CONTINUES TO SPEAK. HE PRACTICALLY BEGS YOU TO STAY FOR A FEW MORE DAYS, RATHER THAN LEAVE IN THE MORNING AS YOU PLANNED."
 	Gosub PressToContinue
-	Print "'MY SCOUTS HAVE SEEN EVIDENCE OF A LARGE BAND OF KOBOLDS IN THE VICINITY. I WORRY ABOUT MY PEOPLE. IF YOU WOULD STAY UNTIL THEY PASS I WOULD APPRECIATE IT."
+	PrintClear "'MY SCOUTS HAVE SEEN EVIDENCE OF A LARGE BAND OF KOBOLDS IN THE VICINITY. I WORRY ABOUT MY PEOPLE. IF YOU WOULD STAY UNTIL THEY PASS I WOULD APPRECIATE IT."
 	Gosub PressToContinue
-	Print "'PLEASE THINK ABOUT IT OVERNIGHT.' AFTER A WHILE THE FESTIVITIES END AND YOU ARE ESCORTED TO YOUR LODGING. "
+	PrintClear "'PLEASE THINK ABOUT IT OVERNIGHT.' AFTER A WHILE THE FESTIVITIES END AND YOU ARE ESCORTED TO YOUR LODGING. "
 	Gosub PressToContinue
 	Save 18 Hours
 	Goto LodgingRest
@@ -564,11 +564,11 @@ GuardEscort:
 	Print "A GUARD APPEARS BEFORE YOU, 'YOU MUST HAVE MADE A MISTAKE. ALLOW ME TO ESCORT YOU TO YOUR LODGING.'"
 	HMenu Scratch10 2 "FOLLOW THE GUARD" "ATTACK THE GUARD"
 	OnGoto Scratch10 1 LodgingRest
-	Print "AS THE GUARD TURNS TO ESCORT YOU BACK TO YOUR TENT, YOU SMILE AND STICK HIM IN THE BACK. WITH A CHOKED CRY HE COLLAPSES."
+	PrintClear "AS THE GUARD TURNS TO ESCORT YOU BACK TO YOUR TENT, YOU SMILE AND STICK HIM IN THE BACK. WITH A CHOKED CRY HE COLLAPSES."
 	Gosub PressToContinue
 	RedrawView
 	Call CallRedraw
-	Print "HOWEVER, AWAKENED BY THE TALK SOMEONE IN THE TENT HAS SEEN YOUR ACT AND A SCREAM GOES OUT 'TREACHERY! THEY HAVE SLAIN SAMIR!' THE CAMP BEGINS TO STIR."
+	PrintClear "HOWEVER, AWAKENED BY THE TALK SOMEONE IN THE TENT HAS SEEN YOUR ACT AND A SCREAM GOES OUT 'TREACHERY! THEY HAVE SLAIN SAMIR!' THE CAMP BEGINS TO STIR."
 	Gosub PressToContinue
 	Save 2 Surprise
 	Save 2 MaxDist
@@ -581,25 +581,75 @@ HeadmanAsks:
 	Save 11 Sky
 	Gosub ApproachTwice
 	Save 3 CampStage
-	Print "THE HEADMAN COMES TO YOU AND SAYS, 'ABOUT MY REQUEST OF LAST NIGHT, WHAT IS YOUR DECISION?'"
+	PrintClear "THE HEADMAN COMES TO YOU AND SAYS, 'ABOUT MY REQUEST OF LAST NIGHT, WHAT IS YOUR DECISION?'"
 	HMenu Scratch10 2 "STAY AND FIGHT" "LEAVE"
 	OnGoto Scratch10 1 StayAndFight
-	Print "LOOKING DISAPPOINTED THE HEADMAN SAYS, 'GOOD LUCK IN YOUR TRAVELS.'"
+	PrintClear "LOOKING DISAPPOINTED THE HEADMAN SAYS, 'GOOD LUCK IN YOUR TRAVELS.'"
 	Goto LeaveCamp
 
 StayAndFight:
-	Print "'I AND MY PEOPLE THANK YOU. AND KNOW THAT WE HAVE HONOR. YOU SHALL BE RICHLY REWARDED FOR YOUR GENEROUS AID.'"
+	PrintClear "'I AND MY PEOPLE THANK YOU. AND KNOW THAT WE HAVE HONOR. YOU SHALL BE RICHLY REWARDED FOR YOUR GENEROUS AID.'"
 	Gosub PressToContinue
-	Print "'YOU MAY WANDER AS YOU WILL OR YOU MAY STAY HERE AND REST AND STUDY. FORGIVE ME, I MUST SEE TO MY PEOPLE.' HE LEAVES."
+	PrintClear "'YOU MAY WANDER AS YOU WILL OR YOU MAY STAY HERE AND REST AND STUDY. FORGIVE ME, I MUST SEE TO MY PEOPLE.' HE LEAVES."
 	Goto Done
 
+RestChanceTable:
+	Data 0 1 1 18 0 24 0 0
+
+ZoneXMinTable:
+	Data 0 4 8 0 0 0 4 8 4 8 4 8
+
+ZoneYMinTable:
+	Data 0 0 0 4 8 12 4 4 8 8 12 12
+
+ZoneXMaxTable:
+	Data 3 7 11 3 3 3 7 11 7 11 7 11
+
+ZoneYMaxTable:
+	Data 3 3 3 7 11 15 7 7 11 11 15 15
+
+ZoneDestXTable:
+	Data 4 7 11 4 4 4 8 13 8 13 8 10
+
+ZoneDestYTable:
+	Data 4 4 4 6 10 12 7 6
+
+WalkPathToHut:
+	Data 10 9 11 11 2 2 2 2 2 2 2 2 2 2 2 2
+	Data 2 2 2 2 2 2 2 3 3 3 3 3 2 2 2 2
+	Data 2 2 2 3 3 3 3 3 2 2 2 2 1 2 2 3
+	Data 3 3 3 3 2 2 2 2 0 2 2 2 3 3 3 3
+	Data 2 1 2 2 2 1 2 3 3 3 3 3 2 3 2 2
+	Data 2 2 2 1 2 3 3 3 1 2 2 1 1 2 2 2
+	Data 3 3 3 3 1 1 2 2 2 2 2 2 1 2 3 3
+	Data 1 1 2 1 2 2 2 2 3 3 3 3 2 3 1 1
+	Data 1 2 2 3 3 3 3 3 1 1 2 3 1 2 3 0
+	Data 0 1 0 3 1 1 1 1 0 255 0 3 3 3 3 3
+	Data 1 1 1 1 0 1 0 2 0 0 0 3 0 1 0 0
+	Data 0 0 0 3 1 1 3 3 0 0 0 0 0 0 0 0
+
+WalkPathToClearing:
+	Data 0 0 0 0 2 2 2 2 2 2 2 2 2 2 2 2
+	Data 2 2 2 2 2 2 2 3 3 3 3 3 2 2 2 2
+	Data 2 2 2 3 3 3 3 3 2 2 2 2 1 2 2 3
+	Data 3 3 3 3 2 2 2 2 0 2 2 2 3 3 3 3
+	Data 1 1 2 2 2 1 2 3 3 3 3 3 2 3 2 2
+	Data 2 2 2 1 2 3 3 3 1 1 1 1 1 2 2 2
+	Data 3 3 3 3 1 1 2 2 2 2 2 2 1 2 3 3
+	Data 1 1 2 1 2 255 3 3 3 3 3 3 2 3 1 1
+	Data 1 0 0 3 3 3 3 3 1 1 0 3 1 0 3 0
+	Data 0 1 0 3 1 1 1 1 0 0 0 3 3 3 3 3
+	Data 1 1 1 1 0 1 0 2 0 0 0 3 0 1 0 0
+	Data 0 0 0 3 1 1 3 3 0 0 0 0 0 0 0 0
+	Data 0 0 0 0
+
 KoboldRaid:
-	AndOr Cell 128 Scratch10
+	And Cell 128 Scratch10
 	IfEq
 	Goto RaidCries
-	Arith 1 PartyY PartyY
+	Sub 1 PartyY PartyY
 	Save 1 Facing
-	Print "THE SOUND OF WAR CRIES DRAWS YOU OUT OF THE HUT. "
+	PrintClear "THE SOUND OF WAR CRIES DRAWS YOU OUT OF THE HUT. "
 	Gosub FaceTheSound
 	Goto RaidByStage
 
@@ -607,7 +657,7 @@ RaidCries:
 	Gosub HearWarCries
 
 RaidByStage:
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Goto HostileRaid
 	Compare Cell 4
@@ -618,7 +668,7 @@ RaidByStage:
 KoboldHorde:
 	SetupMonster 0 2 0
 	Save 1 KoboldRaidStage
-	Print "A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS."
+	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS."
 
 KoboldEncounter:
 	Gosub PressToContinue
@@ -643,7 +693,7 @@ KoboldFight:
 LoadKobolds:
 	LoadMonster 0 Scratch9 0
 	LoadMonster 123 Scratch9 0
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfEq
 	Gosub MakeAlliesNomads
 	Combat
@@ -655,49 +705,49 @@ LoadKobolds:
 	Goto KoboldRaid
 
 KoboldWaveDone:
-	Arith KoboldRaidStage 1 KoboldRaidStage
+	Add KoboldRaidStage 1 KoboldRaidStage
 	Gosub SetRestRules
 	Exit
 
 KoboldsMelee:
 	SetupMonster 0 2 0
-	Print "AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. "
-	AndOr MarkFlags4 2 Scratch10
+	PrintClear "AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. "
+	And MarkFlags4 2 Scratch10
 	IfEq
 	Goto KoboldEncounter
-	Print "THE NOMADS SEE YOU AND SHOUT, 'THE FILTHY TRAITORS! GET THEM!' THE KOBOLDS, SEEING AN OPPORTUNITY, JOIN WITH THEM."
+	PrintClear "THE NOMADS SEE YOU AND SHOUT, 'THE FILTHY TRAITORS! GET THEM!' THE KOBOLDS, SEEING AN OPPORTUNITY, JOIN WITH THEM."
 	Goto KoboldEncounter
 
 KoboldLeader:
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfNe
 	Goto NomadBetrayal
 	SetupMonster 0 2 0
-	Print "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK."
+	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK."
 	Gosub PressToContinue
-	Print "'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'"
+	PrintClear "'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'"
 	HMenu Scratch10 2 "DESTROY THE KOBOLDS" "FLEE"
 	OnGoto Scratch10 1 FinishTogether
-	Print "THE HEADMAN SNEERS, 'COWARDS!' HE TURNS TO THE TWO GUARDS STILL LIVING AND YELLS, 'FOR HYRNKA!' HE AND HIS TWO GUARDS CHARGE INTO THE PACK."
+	PrintClear "THE HEADMAN SNEERS, 'COWARDS!' HE TURNS TO THE TWO GUARDS STILL LIVING AND YELLS, 'FOR HYRNKA!' HE AND HIS TWO GUARDS CHARGE INTO THE PACK."
 	Gosub PressToContinue
-	Print "AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS."
+	PrintClear "AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS."
 	Gosub PressToContinue
 	RedrawView
 	Save 74 Portrait
 	Picture 30
 	Save 255 Portrait
-	Print "WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'"
+	PrintClear "WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'"
 	Gosub PressToContinue
-	AndOr MarkFlags4 8 MarkFlags4
+	Or MarkFlags4 8 MarkFlags4
 	Save 0 CampStage
 	ClearMonsters
 	Treasure 0 0 0 #01F4 0 0 0 255
 	Combat
-	Print "'NOW LEAVE. WE HAVE OUR WOUNDED TO LOOK TO.'"
+	PrintClear "'NOW LEAVE. WE HAVE OUR WOUNDED TO LOOK TO.'"
 	Goto ExitToWilderness
 
 FinishTogether:
-	Print "'THEN LET US DO IT!'"
+	PrintClear "'THEN LET US DO IT!'"
 	Save 3 NomadAllies
 
 KoboldLeaderFight:
@@ -705,7 +755,7 @@ KoboldLeaderFight:
 	Save 50 Morale
 	Delay
 	ClearMonsters
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Goto LoadKoboldLeader
 	LoadMonster 42 1 11
@@ -718,7 +768,7 @@ LoadKoboldLeader:
 	LoadMonster 123 26 0
 	Combat
 	Gosub CheckAttackedAlly
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfNe
 	Goto BetrayedOrFled
 	Compare CombatEnd 129
@@ -726,26 +776,26 @@ LoadKoboldLeader:
 	Goto RaidWon
 
 BetrayedOrFled:
-	AndOr MarkFlags4 5 MarkFlags4
+	Or MarkFlags4 5 MarkFlags4
 	Goto ExitToWilderness
 
 RaidWon:
-	AndOr MarkFlags4 8 MarkFlags4
+	Or MarkFlags4 8 MarkFlags4
 	Save 0 CampStage
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfNe
 	Exit
-	AndOr MarkFlags4 2 Scratch10
+	And MarkFlags4 2 Scratch10
 	IfNe
 	Exit
 	Save 62 Portrait
 	Picture 30
 	Save 255 Portrait
-	Print "THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'"
+	PrintClear "THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'"
 	ClearMonsters
 	Treasure 0 0 0 #1388 0 0 0 37
 	Combat
-	Print "'NOW PLEASE LEAVE US TO OUR MOURNING. IT IS A PERSONAL THING FOR OUR PEOPLE.'"
+	PrintClear "'NOW PLEASE LEAVE US TO OUR MOURNING. IT IS A PERSONAL THING FOR OUR PEOPLE.'"
 	Goto ExitToWilderness
 
 HostileRaid:
@@ -755,7 +805,7 @@ HostileRaid:
 HostileHorde:
 	SetupMonster 0 2 0
 	Save 1 KoboldRaidStage
-	Print "A HORDE OF KOBOLDS IS ATTACKING THE CAMP."
+	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP."
 
 HostileEncounter:
 	Gosub PressToContinue
@@ -767,15 +817,15 @@ HostileEncounter:
 
 HostileBand:
 	SetupMonster 0 2 0
-	Print "ADVANCING ON YOU IS A LARGE BAND OF KOBOLDS WITH BLOOD LUST IN THEIR EYES."
+	PrintClear "ADVANCING ON YOU IS A LARGE BAND OF KOBOLDS WITH BLOOD LUST IN THEIR EYES."
 	Goto HostileEncounter
 
 HostileLeader:
-	AndOr MarkFlags4 4 Scratch10
+	And MarkFlags4 4 Scratch10
 	IfEq
 	Goto KoboldLeader
 	SetupMonster 0 2 0
-	Print "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER."
+	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER."
 	Gosub PressToContinue
 	Gosub KoboldEncounterMenu
 	OnGoto Scratch10 2 Done KoboldLeaderFight
@@ -785,7 +835,7 @@ HostileLeader:
 NomadBetrayal:
 	Save 74 Portrait
 	SetupMonster 11 2 30
-	Print "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
+	PrintClear "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
 	Gosub PressToContinue
 	EncounterMenu 11 MaxDist 30 Scratch10 0 0 0 0 0 "" "" "" 12 12
 	Save 255 Portrait
@@ -802,6 +852,6 @@ BetrayalFight:
 	LoadMonster 43 1 14
 	LoadMonster 123 49 0
 	Save 255 MonsterHit
-	AndOr MarkFlags4 8 MarkFlags4
+	Or MarkFlags4 8 MarkFlags4
 	Treasure 0 0 0 #1F40 0 0 0 255
 	Goto TribeCombat

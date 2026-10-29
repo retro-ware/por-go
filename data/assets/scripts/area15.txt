@@ -5,6 +5,15 @@ FleeBack:
 	Save 255 HoldMove
 	Goto RedrawExit
 
+DestX:
+	Data 7 5 9 9
+
+DestY:
+	Data 9 5 9 11
+
+DestFacing:
+	Data 1 2 0 0
+
 ShortPause:
 	Save MsgDelay AuxMember
 	Save 5 MsgDelay
@@ -14,7 +23,7 @@ ShortPause:
 
 TakeItMenu:
 	Gosub PressToContinue
-	Print "DO YOU TAKE IT?"
+	PrintClear "DO YOU TAKE IT?"
 	Gosub YesNoMenu
 	IfNe
 	Exit
@@ -22,13 +31,13 @@ TakeItMenu:
 
 YesNoMenu:
 	HMenu Scratch10 2 "YES" "NO"
-	Print " "
+	PrintClear " "
 	Compare Scratch10 0
 	Return
 
 PressToContinue:
 	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	Print " "
+	PrintClear " "
 	Return
 
 ExitUnlessSearchNew:
@@ -51,22 +60,22 @@ event0:
 	Compare LeftMap 0
 	IfNe
 	Goto LeaveArea
-	AndOr Cell 64 Scratch10
+	And Cell 64 Scratch10
 	IfEq
 	Exit
-	AndOr 1 Cell Scratch10
+	And 1 Cell Scratch10
 	GetTable Table9B07 Scratch10 Scratch8
 	Compare Scratch8 Facing
 	IfNe
 	Exit
-	AndOr LibraryEventFlags 32 Scratch10
+	And LibraryEventFlags 32 Scratch10
 	IfNe
 	Exit
-	AndOr BooksFoundFlags 159 Scratch10
+	And BooksFoundFlags 159 Scratch10
 	IfEq
 	Exit
 	SetupMonster 17 0 17
-	Print "A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU."
+	PrintClear "A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU."
 	Gosub ShortPause
 	Save 100 Morale
 	PartySurprise Scratch2 Scratch3
@@ -80,7 +89,7 @@ event0:
 	Compare CombatEnd 129
 	IfEq
 	Goto FleeFromBasilisk
-	AndOr LibraryEventFlags 32 LibraryEventFlags
+	Or LibraryEventFlags 32 LibraryEventFlags
 
 RedrawExit:
 	RedrawView
@@ -93,16 +102,29 @@ LeaveArea:
 	GetTable SymbolSets Facing SymbolSet
 	NewECL Scratch7
 
+Table9B07:
+	Data 2 0
+
+ByFacing9B09:
+	Data 29 0 0 2
+
+SymbolSets:
+	Data 8 0 0 4
+
 event1:
-	AndOr Cell 31 Scratch10
+	And Cell 31 Scratch10
 	GetTable Table9B5B Scratch10 Scratch2
 	GetTable Table9B6E Scratch10 Scratch1
 	OnGoto Scratch2 13 StacksEnter BonesRoom BenchChamber FrescoRoom WritingHall MadFighter StudyRoom TrashBook CarrelsRoom SmallDeskRoom StoreroomEnter RedrawExit GardenEnter
-	LoadMonster ?0C:00 0 2
-	Gosub L_0403
-	Arith ?06:07 ?08:08 ?08:09
-	LoadCharacter 0
-	Exit
+	Exit // extra: the original runs on into data at 9B5B
+
+Table9B5B:
+	Data 11 12 0 0 0 0 2 2 1 3 4 5 6 7 8 8
+	Data 8 9 10
+
+Table9B6E:
+	Data 0 0 0 1 2 3 1 2 0 0 0 0 0 0 0 1
+	Data 2 0 0
 
 event2:
 	Save 0 RestEvery
@@ -118,14 +140,14 @@ event4:
 	Exit
 	Save 18 SelIcon
 	LoadFiles 15 2 255
-	LoadFiles 1 19 23
+	LoadPieces 1 19 23
 	Exit
 
 GardenEnter:
 	Compare GardenVisits 0
 	IfNe
 	Goto GardenWalk
-	Print "YOU SEE WHAT ONCE WAS A GARDEN, NOW-WEED FILLED. THE PLEASANT POND HAS BECOME A SWAMP."
+	PrintClear "YOU SEE WHAT ONCE WAS A GARDEN, NOW-WEED FILLED. THE PLEASANT POND HAS BECOME A SWAMP."
 	Gosub ShortPause
 	Save 1 GardenVisits
 
@@ -144,8 +166,8 @@ GardenWalk:
 	IfNe
 	Save 2 Scratch8
 	Surprise Scratch6 Scratch7 0 Scratch8
-	Print "AS YOU MOVE THROUGH THE GARDEN "
-	Arith 1 GardenVisits GardenVisits
+	PrintClear "AS YOU MOVE THROUGH THE GARDEN "
+	Add 1 GardenVisits GardenVisits
 	OnGoto Surprise 2 SlimeAvoided SlimeStepped
 
 SlimeAvoided:
@@ -154,10 +176,10 @@ SlimeAvoided:
 	Exit
 
 SlimeStepped:
-	Print "YOU STEP INTO A STRANGE GREEN PLANT GROWTH... IT'S GREEN SLIME! QUICKLY, YOU SCRAPE IT OFF, TAKING A GOOD DEAL OF DAMAGE."
+	PrintClear "YOU STEP INTO A STRANGE GREEN PLANT GROWTH... IT'S GREEN SLIME! QUICKLY, YOU SCRAPE IT OFF, TAKING A GOOD DEAL OF DAMAGE."
 	Gosub ShortPause
 	Damage 160 1 4 0 0
-	Print "YOU NOW CAREFULLY AVOID THE GREEN SLIME."
+	PrintClear "YOU NOW CAREFULLY AVOID THE GREEN SLIME."
 	Gosub ShortPause
 	Exit
 
@@ -166,7 +188,7 @@ StacksEnter:
 	Compare Scratch2 0
 	IfNe
 	Goto StacksSearch
-	Print "THESE ARE THE LIBRARY STACKS. OLD AND MOLDERING BOOKS ARE STORED ON SHELVES. A SIGN OVER THE ENTRANCE READS "
+	PrintClear "THESE ARE THE LIBRARY STACKS. OLD AND MOLDERING BOOKS ARE STORED ON SHELVES. A SIGN OVER THE ENTRANCE READS "
 	OnGoto Scratch1 4 SignPhilosophy SignMathematics SignHistory SignRhetoric
 	Gosub PressToContinue
 	SaveTable 1 StacksSignSeen Scratch1
@@ -178,7 +200,7 @@ StacksSearch:
 	Compare Search 0
 	IfEq
 	Exit
-	Print "AS YOU SEARCH THE ROOM YOU SCAN RANDOM BOOKS."
+	PrintClear "AS YOU SEARCH THE ROOM YOU SCAN RANDOM BOOKS."
 	Gosub ShortPause
 	OnGoto Scratch1 4 PhilosophyBooks MathNothing HistoryBooks RhetoricNothing
 
@@ -199,44 +221,44 @@ SignHistory:
 	Return
 
 RhetoricNothing:
-	Print "YOU FIND SPEECHES FROM FAMOUS MURDER TRIALS, PUBLIC DEBATES, ETC., BUT NOTHING OF INTEREST."
+	PrintClear "YOU FIND SPEECHES FROM FAMOUS MURDER TRIALS, PUBLIC DEBATES, ETC., BUT NOTHING OF INTEREST."
 	Gosub ShortPause
-	Print ""
+	PrintClear ""
 	Exit
 
 MathNothing:
-	Print "YOU FIND ESSAYS ON GEOMETRY, METAMAGICAL MATH, UNIVERSAL GEOMETRY, ETC., BUT NOTHING USEFUL."
+	PrintClear "YOU FIND ESSAYS ON GEOMETRY, METAMAGICAL MATH, UNIVERSAL GEOMETRY, ETC., BUT NOTHING USEFUL."
 	Gosub ShortPause
-	Print ""
+	PrintClear ""
 	Exit
 
 PhilosophyBooks:
 	Random 11 Scratch3
 	OnGoto Scratch3 3 FyerdethaBook UrgundBook NamedBook
-	Print "YOU FIND WORKS ON NATURAL PHILOSOPHY, THEORIES OF ART, AND THE SUPERNATURAL SCIENCES. IT IS VERY BORING."
+	PrintClear "YOU FIND WORKS ON NATURAL PHILOSOPHY, THEORIES OF ART, AND THE SUPERNATURAL SCIENCES. IT IS VERY BORING."
 	Gosub ShortPause
-	Print ""
+	PrintClear ""
 	Exit
 
 FyerdethaBook:
-	AndOr BooksFoundFlags 1 Scratch10
+	And BooksFoundFlags 1 Scratch10
 	IfNe
 	Goto PhilosophyBooks
-	Print "YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7."
+	PrintClear "YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7."
 	Gosub TakeItMenu
-	AndOr BooksFoundFlags 1 BooksFoundFlags
+	Or BooksFoundFlags 1 BooksFoundFlags
 	Compare QuestBookFyerdetha 255
 	IfNe
 	Save 254 QuestBookFyerdetha
 	Exit
 
 UrgundBook:
-	AndOr BooksFoundFlags 2 Scratch10
+	And BooksFoundFlags 2 Scratch10
 	IfNe
 	Goto PhilosophyBooks
-	Print "YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL."
+	PrintClear "YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL."
 	Gosub TakeItMenu
-	AndOr BooksFoundFlags 2 BooksFoundFlags
+	Or BooksFoundFlags 2 BooksFoundFlags
 	Compare QuestBookUrgund 255
 	IfNe
 	Save 254 QuestBookUrgund
@@ -246,11 +268,11 @@ NamedBook:
 	Compare NamedBooksFound 5
 	IfGe
 	Goto PhilosophyBooks
-	Print "YOU FIND A BOOK ENTITLED "
+	PrintClear "YOU FIND A BOOK ENTITLED "
 	OnGoto NamedBooksFound 5 TitleMeditations TitleHarmonyOfRock TitleStromPoetics TitleChroniclesArram TitleNatureOfWriting
-	Arith 1 NamedBooksFound NamedBooksFound
+	Add 1 NamedBooksFound NamedBooksFound
 	Gosub TakeItMenu
-	AndOr 128 BooksFoundFlags BooksFoundFlags
+	Or 128 BooksFoundFlags BooksFoundFlags
 	Compare QuestBookNamed 255
 	IfNe
 	Save 254 QuestBookNamed
@@ -279,49 +301,49 @@ TitleNatureOfWriting:
 HistoryBooks:
 	Random 17 Scratch3
 	OnGoto Scratch3 3 LexGeographica HistoryOfNorth ArtsOfWar
-	Print "YOU FIND VARIOUS BOOKS WHICH ARE SO FILLED WITH MYTH THAT YOU DON'T FIND ANYTHING USEFUL."
+	PrintClear "YOU FIND VARIOUS BOOKS WHICH ARE SO FILLED WITH MYTH THAT YOU DON'T FIND ANYTHING USEFUL."
 	Gosub ShortPause
-	Print ""
+	PrintClear ""
 	Exit
 
 LexGeographica:
-	AndOr BooksFoundFlags 4 Scratch10
+	And BooksFoundFlags 4 Scratch10
 	IfNe
 	Goto HistoryBooks
-	Print "YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL."
+	PrintClear "YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL."
 	Gosub TakeItMenu
-	AndOr BooksFoundFlags 4 BooksFoundFlags
+	Or BooksFoundFlags 4 BooksFoundFlags
 	Compare QuestBookLexGeographica 255
 	IfNe
 	Save 254 QuestBookLexGeographica
 	Exit
 
 HistoryOfNorth:
-	AndOr BooksFoundFlags 8 Scratch10
+	And BooksFoundFlags 8 Scratch10
 	IfNe
 	Goto HistoryBooks
-	Print "YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8."
+	PrintClear "YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8."
 	Gosub TakeItMenu
 	Compare QuestBookHistoryNorth 255
 	IfNe
 	Save 254 QuestBookHistoryNorth
-	AndOr BooksFoundFlags 8 BooksFoundFlags
+	Or BooksFoundFlags 8 BooksFoundFlags
 	Exit
 
 ArtsOfWar:
-	AndOr BooksFoundFlags 16 Scratch10
+	And BooksFoundFlags 16 Scratch10
 	IfNe
 	Goto HistoryBooks
-	Print "YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21."
+	PrintClear "YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21."
 	Gosub TakeItMenu
 	Compare QuestBookArtsOfWar 255
 	IfNe
 	Save 254 QuestBookArtsOfWar
-	AndOr BooksFoundFlags 16 BooksFoundFlags
+	Or BooksFoundFlags 16 BooksFoundFlags
 	Exit
 
 BasiliskLair:
-	AndOr LibraryEventFlags 64 Scratch10
+	And LibraryEventFlags 64 Scratch10
 	IfNe
 	Exit
 	SetupMonster 26 2 26
@@ -330,17 +352,17 @@ BasiliskLair:
 	OnGoto Surprise 4 BasiliskSeen BasiliskSurprisesUs BasiliskUnaware BasiliskWaking
 
 BasiliskSeen:
-	Print "AMID THE LITTER OF THE ROOM YOU SEE A DULL BROWN REPTILIAN MONSTER."
+	PrintClear "AMID THE LITTER OF THE ROOM YOU SEE A DULL BROWN REPTILIAN MONSTER."
 
 BasiliskMenu:
 	Save 0 Surprise
 	Gosub ShortPause
 	EncounterMenu 26 MaxDist 26 Scratch10 0 0 0 0 0 "IT HISSES AT YOU." "" "" 0 0
-	Print " "
+	PrintClear " "
 	OnGoto Scratch10 4 RedrawExit BasiliskFight FleeFromBasilisk BasiliskFight
 
 BasiliskSurprisesUs:
-	Print "YOU HEAR A HISS. AS YOU LOOK DOWN YOU SUDDENLY SEE A DULL BROWN REPTILIAN MONSTER."
+	PrintClear "YOU HEAR A HISS. AS YOU LOOK DOWN YOU SUDDENLY SEE A DULL BROWN REPTILIAN MONSTER."
 	Gosub ShortPause
 	Approach
 	Gosub ShortPause
@@ -348,15 +370,15 @@ BasiliskSurprisesUs:
 	Goto BasiliskFight
 
 BasiliskUnaware:
-	Print "YOU SEE A DULL BROWN REPTILIAN MONSTER. IT DOESN'T SEEM AWARE OF YOU."
+	PrintClear "YOU SEE A DULL BROWN REPTILIAN MONSTER. IT DOESN'T SEEM AWARE OF YOU."
 	HMenu Scratch10 4 "COMBAT" "WAIT" "FLEE" "APPROACH"
-	Print " "
+	PrintClear " "
 	OnGoto Scratch10 3 BasiliskFight BasiliskMenu FleeFromBasilisk
 	Approach
 	Goto BasiliskMenu
 
 BasiliskWaking:
-	Print "SUDDENLY, YOU SPOT A DULL BROWN REPTILIAN MONSTER WHICH IS JUST COMING AWAKE."
+	PrintClear "SUDDENLY, YOU SPOT A DULL BROWN REPTILIAN MONSTER WHICH IS JUST COMING AWAKE."
 	Goto BasiliskMenu
 
 FleeFromBasilisk:
@@ -372,7 +394,7 @@ BasiliskFight:
 	Compare CombatEnd 129
 	IfEq
 	Goto FleeFromBasilisk
-	AndOr LibraryEventFlags 64 LibraryEventFlags
+	Or LibraryEventFlags 64 LibraryEventFlags
 	Exit
 
 BonesRoom:
@@ -381,35 +403,35 @@ BonesRoom:
 	Goto BonesJar
 	IfGt
 	Exit
-	Print "YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK."
+	PrintClear "YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK."
 	Gosub ShortPause
 	Save 1 BonesRoomState
 
 BonesJar:
-	AndOr BooksFoundFlags 32 Scratch3
+	And BooksFoundFlags 32 Scratch3
 	Gosub ExitUnlessSearchNew
 	Save 2 BonesRoomState
-	Print "YOU SEE A JAR UNDER THE FLOORBOARDS."
+	PrintClear "YOU SEE A JAR UNDER THE FLOORBOARDS."
 	Gosub TakeItMenu
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 5
 	Combat
-	AndOr BooksFoundFlags 32 BooksFoundFlags
+	Or BooksFoundFlags 32 BooksFoundFlags
 	Exit
 
 BenchChamber:
-	AndOr BenchChamberSeen Scratch1 Scratch10
+	And BenchChamberSeen Scratch1 Scratch10
 	IfNe
 	Exit
-	Print "YOU SEE A CHAMBER FILLED WITH ROTTED FURNITURE AND BENCHES."
-	AndOr BenchChamberSeen Scratch1 BenchChamberSeen
+	PrintClear "YOU SEE A CHAMBER FILLED WITH ROTTED FURNITURE AND BENCHES."
+	Or BenchChamberSeen Scratch1 BenchChamberSeen
 	Exit
 
 FrescoRoom:
 	Compare FrescoRoomSeen 0
 	IfNe
 	Exit
-	Print "YOU SEE AN EMPTY ROOM. THE ONLY FEATURE IS A SERIES OF FRESCOES ON THE WALLS OF LEARNED MEN AND THE HEAVENLY PATRONS OF ART AND LEARNING. YOU GET A FEELING OF PEACE."
+	PrintClear "YOU SEE AN EMPTY ROOM. THE ONLY FEATURE IS A SERIES OF FRESCOES ON THE WALLS OF LEARNED MEN AND THE HEAVENLY PATRONS OF ART AND LEARNING. YOU GET A FEELING OF PEACE."
 	Save 1 FrescoRoomSeen
 	Exit
 
@@ -417,25 +439,25 @@ WritingHall:
 	Compare WritingHallSeen 0
 	IfNe
 	Exit
-	Print "YOU ENTER A HALL WHICH IS FILLED WITH ROWS OF WRITING TABLES AND HIGH STOOLS. ROTTED MOUNDS OF PARCHMENT LITTER THE FLOOR."
+	PrintClear "YOU ENTER A HALL WHICH IS FILLED WITH ROWS OF WRITING TABLES AND HIGH STOOLS. ROTTED MOUNDS OF PARCHMENT LITTER THE FLOOR."
 	Save 1 WritingHallSeen
 	Exit
 
 MadFighter:
-	AndOr LibraryEventFlags 3 Scratch10
+	And LibraryEventFlags 3 Scratch10
 	IfNe
 	Exit
 	SetupMonster 15 0 25
-	Print "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
+	PrintClear "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
 
 MadFighterMenu:
 	HMenu Scratch10 5 "COMBAT" "WAIT" "FLEE" "PARLAY" "IGNORE"
-	Print " "
+	PrintClear " "
 	OnGoto Scratch10 4 MadFighterFight MadFighterWait FleeFromMadman MadFighterParlay
-	Print "WATCHING YOU WARILY, HE INCHES AWAY. WHEN HE IS OUT OF SWORD'S REACH HE SCRAMBLES TO HIS FEET AND FLEES THE ROOM."
+	PrintClear "WATCHING YOU WARILY, HE INCHES AWAY. WHEN HE IS OUT OF SWORD'S REACH HE SCRAMBLES TO HIS FEET AND FLEES THE ROOM."
 	Gosub ShortPause
 	Gosub ShortPause
-	AndOr LibraryEventFlags 1 LibraryEventFlags
+	Or LibraryEventFlags 1 LibraryEventFlags
 	Goto RedrawExit
 
 MadFighterWait:
@@ -448,7 +470,7 @@ FleeFromMadman:
 
 MadFighterParlay:
 	Parlay 0 1 2 3 4 Scratch10
-	Print " "
+	PrintClear " "
 	OnGoto Scratch10 5 MadFighterWait MadFighterWait InviteMadman MadFighterWait MadFighterFight
 
 InviteMadman:
@@ -456,21 +478,21 @@ InviteMadman:
 	Compare PartyCount 8
 	IfEq
 	Goto MadFighterMenu
-	Print "YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?"
+	PrintClear "YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?"
 	Gosub YesNoMenu
 	IfNe
 	Goto MadFighterMenu
-	Print "HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?"
+	PrintClear "HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?"
 	Gosub YesNoMenu
 	IfNe
 	Goto MadFighterParlay
-	Print "HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU."
-	AndOr LibraryEventFlags 2 LibraryEventFlags
+	PrintClear "HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU."
+	Or LibraryEventFlags 2 LibraryEventFlags
 	AddNPC 25 0
 	Goto RedrawExit
 
 MadmanRaves:
-	Print "THE MAN SCREAMS WHILE FROTHING AT THE MOUTH, "
+	PrintClear "THE MAN SCREAMS WHILE FROTHING AT THE MOUTH, "
 	Random 3 Scratch9
 	OnGoto Scratch9 4 RaveFire RaveCastle RaveHill RaveNotHuman
 	Goto PressToContinue
@@ -500,71 +522,74 @@ MadFighterFight:
 	Compare CombatEnd 129
 	IfEq
 	Goto FleeFromMadman
-	AndOr LibraryEventFlags 1 LibraryEventFlags
+	Or LibraryEventFlags 1 LibraryEventFlags
 	Exit
 
 StudyRoom:
 	Compare StudySeen 0
 	IfNe
 	Exit
-	Print "THIS ROOM WAS ONCE A STUDY. IT IS NOW A SHATTERED RUIN."
+	PrintClear "THIS ROOM WAS ONCE A STUDY. IT IS NOW A SHATTERED RUIN."
 	Save 1 StudySeen
 	Exit
 
 TrashBook:
-	AndOr BooksFoundFlags 64 Scratch3
+	And BooksFoundFlags 64 Scratch3
 	Gosub ExitUnlessSearchNew
-	Print "BURIED AMID ALL THE TRASH YOU SEE A BOOK."
+	PrintClear "BURIED AMID ALL THE TRASH YOU SEE A BOOK."
 	Gosub TakeItMenu
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 1
 	Combat
-	AndOr BooksFoundFlags 64 BooksFoundFlags
+	Or BooksFoundFlags 64 BooksFoundFlags
 	Exit
 
 CarrelsRoom:
 	GetTable CarrelsSeen Scratch1 Scratch10
 	IfNe
 	Goto CarrelsFoil
-	Print "YOU ARE IN THE ILLUMINATORS CARRELS. ALL THEIR EQUIPMENT HAS DECAYED AND LIES ROTTING ON THE FLOOR."
+	PrintClear "YOU ARE IN THE ILLUMINATORS CARRELS. ALL THEIR EQUIPMENT HAS DECAYED AND LIES ROTTING ON THE FLOOR."
 	SaveTable 1 CarrelsSeen Scratch1
 
 CarrelsFoil:
 	GetTable CarrelFoilBitTable Scratch1 Scratch2
-	AndOr LibraryEventFlags Scratch2 Scratch3
+	And LibraryEventFlags Scratch2 Scratch3
 	Gosub ExitUnlessSearchNew
 	Random 1 Scratch3
 	Compare Scratch3 0
 	IfNe
 	Exit
-	Print "AMID THE TRASH YOU FIND A BOX WHICH CONTAINS GOLD FOIL."
+	PrintClear "AMID THE TRASH YOU FIND A BOX WHICH CONTAINS GOLD FOIL."
 	Gosub TakeItMenu
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 2
 	Combat
-	AndOr LibraryEventFlags Scratch2 LibraryEventFlags
+	Or LibraryEventFlags Scratch2 LibraryEventFlags
 	Exit
 
+CarrelFoilBitTable:
+	Data 4 8 16
+
 SmallDeskRoom:
-	Print "YOU ARE IN A SMALL ROOM HAVING LITTLE MORE THAN A BENCH AND A SMALL DESK."
+	PrintClear "YOU ARE IN A SMALL ROOM HAVING LITTLE MORE THAN A BENCH AND A SMALL DESK."
 	Exit
 
 StoreroomEnter:
-	Print ""
+	PrintClear ""
 	Compare StoreroomSeen 0
 	IfNe
 	Goto KoboldTable
-	Print "YOU HAVE ENTERED A STOREROOM FULL OF SUPPLIES TOO OLD TO BE USEFUL.  "
+	PrintClear "YOU HAVE ENTERED A STOREROOM FULL OF SUPPLIES TOO OLD TO BE USEFUL.  "
 	Save 1 StoreroomSeen
 
 KoboldTable:
-	AndOr LibraryEventFlags 128 Scratch10
+	And LibraryEventFlags 128 Scratch10
 	IfNe
 	Exit
 	Print "LOOKING UP FROM A TABLE ARE FIVE KOBOLDS."
 	Gosub ShortPause
 	EncounterMenu 0 2 0 Scratch4 2 4 0 4 4 "THEY PLEAD FOR MERCY." "THEY STAND ARMS RAISED IN SURRENDER." " " 6 6
-	Print " "
+	PrintClear " "
 	OnGoto Scratch4 4 RedrawExit KoboldFight FleeFromKobolds KoboldsPlead
 
 FleeFromKobolds:
@@ -572,12 +597,12 @@ FleeFromKobolds:
 	Goto FleeBack
 
 KoboldsPlead:
-	Print "ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?"
+	PrintClear "ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?"
 	Gosub YesNoMenu
 	IfNe
 	Goto KoboldFight
-	Print "THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10."
-	AndOr LibraryEventFlags 128 LibraryEventFlags
+	PrintClear "THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10."
+	Or LibraryEventFlags 128 LibraryEventFlags
 	Gosub PressToContinue
 	Goto RedrawExit
 
@@ -590,5 +615,5 @@ KoboldFight:
 	Compare CombatEnd 129
 	IfEq
 	Goto FleeFromKobolds
-	AndOr LibraryEventFlags 128 LibraryEventFlags
+	Or LibraryEventFlags 128 LibraryEventFlags
 	Exit

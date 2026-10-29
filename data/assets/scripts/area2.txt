@@ -2,7 +2,7 @@ event4:
 	Save 11 Sky
 	Save 8 SkyInside
 	LoadFiles 2 2 255
-	LoadFiles 1 3 20
+	LoadPieces 1 3 20
 	Compare AreaKind 2
 	IfEq
 	Exit
@@ -43,8 +43,8 @@ ExitWest:
 	NewECL 26
 
 event1:
-	AndOr 127 Cell Scratch10
-	Print " "
+	And 127 Cell Scratch10
+	PrintClear " "
 	OnGoto Scratch10 25 RandomEncounterRoll CourtyardAmbush Barracks StenchRoom DeterioratedRoom TapestryRoom Nursery CarvedWall GraffitiRoom Done Done Done DarkObject DeadHobgoblin Kitchen SmokingFire Larder SmallDarkRoom GrishnakTemple BloodRoom SecretDoorHint OgreChief RandomEncounterRoll DiaryPage ThievesWell
 
 Done:
@@ -69,11 +69,11 @@ RandomEncounter:
 	IfGt
 	Exit
 	Random 10 Scratch1
-	Arith EncounterCount Scratch1 Scratch1
+	Add EncounterCount Scratch1 Scratch1
 	CompareAnd EncounterCount 9 IronBoxFound 0
 	IfEq
 	Exit
-	Arith 1 EncounterCount EncounterCount
+	Add 1 EncounterCount EncounterCount
 	CompareAnd EncounterCount 10 IronBoxFound 255
 	IfNe
 	Goto PickEncounter
@@ -95,7 +95,7 @@ PickEncounter:
 	Goto ScorpionsApproach
 	Save 60 Morale
 	SetupMonster 37 0 37
-	Print "EVIL LOOKING FROGS BOIL UP FROM BELOW."
+	PrintClear "EVIL LOOKING FROGS BOIL UP FROM BELOW."
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster 38 8 37
@@ -108,7 +108,7 @@ PickEncounter:
 HobgoblinsCharge:
 	Save 60 Morale
 	SetupMonster 6 2 6
-	Print "HOBGOBLINS CHARGE SCREAMING."
+	PrintClear "HOBGOBLINS CHARGE SCREAMING."
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster 6 8 6
@@ -122,7 +122,7 @@ HobgoblinsCharge:
 SkeletalForce:
 	Save 100 Morale
 	SetupMonster 34 2 34
-	Print "A SKELETAL FORCE SPOTS YOU AND ATTACKS."
+	PrintClear "A SKELETAL FORCE SPOTS YOU AND ATTACKS."
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster 20 1 20
@@ -137,7 +137,7 @@ SkeletalForce:
 GhoulsAttack:
 	Save 100 Morale
 	SetupMonster 72 2 72
-	Print "SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU."
+	PrintClear "SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU."
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster 20 1 20
@@ -151,7 +151,7 @@ GhoulsAttack:
 ScorpionsApproach:
 	SetupMonster 18 1 18
 	Save 50 Morale
-	Print "SCORPIONS APPROACH HUNGRILY."
+	PrintClear "SCORPIONS APPROACH HUNGRILY."
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster 18 3 18
@@ -167,7 +167,7 @@ CourtyardAmbush:
 	IfNe
 	Exit
 	SetupMonster 6 0 6
-	Print "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
+	PrintClear "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
 	Save 60 Morale
 	Gosub PressToContinue
 	ClearMonsters
@@ -178,11 +178,11 @@ CourtyardAmbush:
 	IfGt
 	Goto ChasedOut
 	Save 1 HobgoblinTempleState
-	Print "THINGS SEEM STRANGELY QUIET. THE DRUM HAS FADED TO SILENCE."
+	PrintClear "THINGS SEEM STRANGELY QUIET. THE DRUM HAS FADED TO SILENCE."
 	Exit
 
 ChasedOut:
-	Print "YOU ARE CHASED OUT INTO THE STREETS."
+	PrintClear "YOU ARE CHASED OUT INTO THE STREETS."
 
 EjectToStreet:
 	Random 1 Scratch2
@@ -202,7 +202,7 @@ Barracks:
 	Compare BarracksSeen 0
 	IfNe
 	Exit
-	Print "THIS CAVERNOUS BUILDING SERVES AS A BARRACKS."
+	PrintClear "THIS CAVERNOUS BUILDING SERVES AS A BARRACKS."
 	Save 14 AuxCounter
 	Save 3 AuxMember
 	Goto HobgoblinEncounter
@@ -215,7 +215,7 @@ StenchRoom:
 	Compare StenchRoomSeen 0
 	IfNe
 	Exit
-	Print "YOU ARE APPALLED BY THE STENCH IN THIS DAMP BUILDING."
+	PrintClear "YOU ARE APPALLED BY THE STENCH IN THIS DAMP BUILDING."
 	Save 255 StenchRoomSeen
 	Exit
 
@@ -223,7 +223,7 @@ DeterioratedRoom:
 	Compare DeterioratedRoomSeen 0
 	IfNe
 	Exit
-	Print "YOU ARE IN A DETERIORATED BUILDING."
+	PrintClear "YOU ARE IN A DETERIORATED BUILDING."
 	Save 255 DeterioratedRoomSeen
 	Exit
 
@@ -231,7 +231,7 @@ TapestryRoom:
 	Compare TapestryRoomSeen 0
 	IfNe
 	Exit
-	Print "WHEN YOU ENTER, A FEW FADED, MOTHEATEN TAPESTRIES FLUTTER MOURNFULLY."
+	PrintClear "WHEN YOU ENTER, A FEW FADED, MOTHEATEN TAPESTRIES FLUTTER MOURNFULLY."
 	Save 10 AuxCounter
 	Save 2 AuxMember
 	Goto HobgoblinEncounter
@@ -244,14 +244,14 @@ Nursery:
 	Compare NurserySeen 0
 	IfNe
 	Exit
-	Print "SEVERAL BABY HOBGOBLINS FLEE, SCREAMING IN FEAR!"
+	PrintClear "SEVERAL BABY HOBGOBLINS FLEE, SCREAMING IN FEAR!"
 	Save 255 NurserySeen
 	Gosub PressToContinue
-	Print "THE FLOOR IS SLIPPERY FROM DUNG AND REEKS OF URINE."
+	PrintClear "THE FLOOR IS SLIPPERY FROM DUNG AND REEKS OF URINE."
 	Exit
 
 CarvedWall:
-	Print "'SKULLCRUSHER WAS HERE' IS CARVED INTO THE NORTH WALL."
+	PrintClear "'SKULLCRUSHER WAS HERE' IS CARVED INTO THE NORTH WALL."
 	Gosub FindSkullcrusher
 	Compare Scratch3 255
 	IfNe
@@ -263,7 +263,7 @@ GraffitiRoom:
 	Compare GraffitiRoomSeen 0
 	IfNe
 	Exit
-	Print "GRAFFITI COVERS THE WALLS IN MEANINGLESS ABANDON."
+	PrintClear "GRAFFITI COVERS THE WALLS IN MEANINGLESS ABANDON."
 	Save 12 AuxCounter
 	Save 2 AuxMember
 	Goto HobgoblinEncounter
@@ -276,7 +276,7 @@ DarkObject:
 	Compare SkullcrusherLootDestroyed 0
 	IfNe
 	Exit
-	Print "YOU CAN BARELY SEE A DARK OBJECT TO THE WEST."
+	PrintClear "YOU CAN BARELY SEE A DARK OBJECT TO THE WEST."
 	Delay
 	Exit
 
@@ -284,7 +284,7 @@ DeadHobgoblin:
 	Compare SkullcrusherLootDestroyed 0
 	IfNe
 	Exit
-	Print "YOU SEE A DEAD HOBGOBLIN WITH ITS HEAD CRUSHED. WRITTEN IN BLOOD IS A MESSAGE: 'SKULLCRUSHER WAS HERE.'"
+	PrintClear "YOU SEE A DEAD HOBGOBLIN WITH ITS HEAD CRUSHED. WRITTEN IN BLOOD IS A MESSAGE: 'SKULLCRUSHER WAS HERE.'"
 	Gosub FindSkullcrusher
 	Compare Scratch3 255
 	IfNe
@@ -293,16 +293,16 @@ DeadHobgoblin:
 
 BodyMenu:
 	Gosub PressToContinue
-	Print "WHAT DO YOU DO WITH THE BODY?"
+	PrintClear "WHAT DO YOU DO WITH THE BODY?"
 	HMenu AuxParlayChoice 3 "SEARCH" "DESTROY" "LEAVE"
 	OnGoto AuxParlayChoice 3 SearchBody DestroyBody Done
 
 SearchBody:
-	Print "YOU FIND NOTHING OF ANY VALUE."
+	PrintClear "YOU FIND NOTHING OF ANY VALUE."
 	Goto BodyMenu
 
 DestroyBody:
-	Print "YOU DESTROY EVERYTHING OF VALUE."
+	PrintClear "YOU DESTROY EVERYTHING OF VALUE."
 	Save 255 SkullcrusherLootDestroyed
 	Exit
 
@@ -310,24 +310,24 @@ Kitchen:
 	Compare KitchenSeen 0
 	IfNe
 	Exit
-	Print "A SIMPLE KITCHEN, A FEW CLAY BOWLS ADORN THE FLOOR."
+	PrintClear "A SIMPLE KITCHEN, A FEW CLAY BOWLS ADORN THE FLOOR."
 	Save 255 KitchenSeen
 	Exit
 
 SmokingFire:
-	Print "THE REMAINS OF A SMOKING FIRE."
+	PrintClear "THE REMAINS OF A SMOKING FIRE."
 	Exit
 
 Larder:
 	Compare LarderSeen2 0
 	IfNe
 	Exit
-	Print "BREAD AND MEAT LIE ABOUT, AS WELL AS PIECES OF HUMAN ANATOMY."
+	PrintClear "BREAD AND MEAT LIE ABOUT, AS WELL AS PIECES OF HUMAN ANATOMY."
 	Save 255 LarderSeen2
 	Exit
 
 SmallDarkRoom:
-	Print "YOU ARE IN A VERY SMALL, DARK ROOM."
+	PrintClear "YOU ARE IN A VERY SMALL, DARK ROOM."
 	Compare PrisonerState 255
 	IfEq
 	Exit
@@ -342,7 +342,7 @@ PrisonerContinue:
 	Gosub PressToContinue
 
 PrisonerMenu:
-	Print "WHAT DO YOU DO WITH THE MAN?"
+	PrintClear "WHAT DO YOU DO WITH THE MAN?"
 	HMenu AuxParlayChoice 4 "FREE" "ATTACK" "PARLAY" "LEAVE"
 	OnGoto AuxParlayChoice 4 FreeMenu KillPrisoner ParlayPrisoner LeavePrisoner
 
@@ -351,7 +351,7 @@ LeavePrisoner:
 	Goto Done
 
 FreeMenu:
-	Print "HOW WILL YOU FREE HIM?"
+	PrintClear "HOW WILL YOU FREE HIM?"
 	HMenu AuxParlayChoice 4 "UNLOCK" "PICK LOCK" "BREAK CHAINS" "LEAVE"
 	OnGoto AuxParlayChoice 4 UnlockChains PickLockFails ChainsHold PrisonerMenu
 
@@ -359,24 +359,24 @@ UnlockChains:
 	FindItem 75
 	IfEq
 	Goto KeyOpensLocks
-	Print "YOU HAVE NO KEY TO UNLOCK THE PADLOCKS."
+	PrintClear "YOU HAVE NO KEY TO UNLOCK THE PADLOCKS."
 	Goto PrisonerContinue
 
 KeyOpensLocks:
-	Print "THE BRASS KEY YOU FOUND OPENS ALL OF THE PADLOCKS."
+	PrintClear "THE BRASS KEY YOU FOUND OPENS ALL OF THE PADLOCKS."
 	Save 128 PrisonerState
 	Goto FreeManContinue
 
 PickLockFails:
-	Print "NO ONE IS ABLE TO PICK ALL THE PADLOCKS."
+	PrintClear "NO ONE IS ABLE TO PICK ALL THE PADLOCKS."
 	Goto PrisonerContinue
 
 ChainsHold:
-	Print "DESPITE GREAT EFFORT, THE CHAINS HOLD."
+	PrintClear "DESPITE GREAT EFFORT, THE CHAINS HOLD."
 	Goto PrisonerContinue
 
 KillPrisoner:
-	Print "THE MAN DIES A CRUEL DEATH."
+	PrintClear "THE MAN DIES A CRUEL DEATH."
 	Gosub PressToContinue
 	Save 255 PrisonerState
 	Save 255 Portrait
@@ -388,30 +388,30 @@ ParlayPrisoner:
 	OnGoto AuxParlayChoice 5 WhatsYourProblem DontFoolMe AlmostKilledLeader FreeMeHelp WordsDontBreak
 
 WhatsYourProblem:
-	Print " 'WHATS YOUR PROBLEM?'"
+	PrintClear " 'WHATS YOUR PROBLEM?'"
 	Goto PrisonerContinue
 
 DontFoolMe:
-	Print " 'DON'T TRY TO FOOL ME.' HE GROWLS."
+	PrintClear " 'DON'T TRY TO FOOL ME.' HE GROWLS."
 	Goto PrisonerContinue
 
 AlmostKilledLeader:
-	Print " 'I ALMOST KILLED THE LEADER OF THESE SCUMMY HOBGOBLINS, BUT THE REST JUMPED ME!'"
+	PrintClear " 'I ALMOST KILLED THE LEADER OF THESE SCUMMY HOBGOBLINS, BUT THE REST JUMPED ME!'"
 	Goto PrisonerContinue
 
 FreeMeHelp:
-	Print " 'FREE ME AND I'LL HELP YOU.'"
+	PrintClear " 'FREE ME AND I'LL HELP YOU.'"
 	Goto PrisonerContinue
 
 WordsDontBreak:
-	Print " 'WORDS DON'T BREAK CHAINS!' HE SNARLS."
+	PrintClear " 'WORDS DON'T BREAK CHAINS!' HE SNARLS."
 	Goto PrisonerContinue
 
 FreeManContinue:
 	Gosub PressToContinue
 
 FreeManMenu:
-	Print "THERE IS A FREE MAN HERE. WHAT DO YOU DO?"
+	PrintClear "THERE IS A FREE MAN HERE. WHAT DO YOU DO?"
 	HMenu AuxParlayChoice 5 "ATTACK" "WAIT" "FLEE" "PARLAY" "LEAVE"
 	OnGoto AuxParlayChoice 5 FightFreeMan FreeManWaits FleeRoom ParlayFreeMan LeavePrisoner
 
@@ -425,11 +425,11 @@ FightFreeMan:
 	Exit
 
 FreeManWaits:
-	Print "THE MAN WAITS IMPATIENTLY."
+	PrintClear "THE MAN WAITS IMPATIENTLY."
 	Goto FreeManContinue
 
 FleeRoom:
-	Print "YOU FLEE THE ROOM."
+	PrintClear "YOU FLEE THE ROOM."
 	Save PrevX PartyX
 	Save PrevY PartyY
 	Call CallRedraw
@@ -441,9 +441,9 @@ ParlayFreeMan:
 	OnGoto AuxParlayChoice 2 ServantThanks DislikeTone
 
 ServantThanks:
-	Print "'THANKS FOR FREEING ME. I'M LORD CADORNA'S SERVANT."
+	PrintClear "'THANKS FOR FREEING ME. I'M LORD CADORNA'S SERVANT."
 	Gosub PressToContinue
-	Print "ADD HIM TO YOUR PARTY?"
+	PrintClear "ADD HIM TO YOUR PARTY?"
 	HMenu AuxParlayChoice 2 "YES" "NO"
 	OnGoto AuxParlayChoice 2 AddSkullcrusher SkullcrusherLeaves
 
@@ -451,11 +451,11 @@ AddSkullcrusher:
 	Compare PartyCount 8
 	IfNe
 	Goto SkullcrusherJoins
-	Print "THERE IS NO ROOM IN YOUR PARTY FOR HIM."
+	PrintClear "THERE IS NO ROOM IN YOUR PARTY FOR HIM."
 	Goto SkullcrusherLeaves
 
 SkullcrusherJoins:
-	Print "'GREAT! MY NAME IS SKULLCRUSHER. THERE'S A SECRET DOOR TO THE SOUTHEAST. THAT'S WHERE I MET THE HOBGOBLIN LEADER.'"
+	PrintClear "'GREAT! MY NAME IS SKULLCRUSHER. THERE'S A SECRET DOOR TO THE SOUTHEAST. THAT'S WHERE I MET THE HOBGOBLIN LEADER.'"
 	AddNPC 27 100
 	Gosub PressToContinue
 	Save 255 PrisonerState
@@ -464,23 +464,23 @@ SkullcrusherJoins:
 	Exit
 
 SkullcrusherLeaves:
-	Print "'OH WELL.' HE LEAVES."
+	PrintClear "'OH WELL.' HE LEAVES."
 	Save 255 PrisonerState
 	Save 255 Portrait
 	Exit
 
 DislikeTone:
-	Print "'I DON'T LIKE YOUR TONE.'"
+	PrintClear "'I DON'T LIKE YOUR TONE.'"
 	Goto FightFreeMan
 
 GrishnakTemple:
 	Compare HobgoblinTempleState 1
 	IfNe
 	Exit
-	Print "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
+	PrintClear "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
 	Gosub PressToContinue
 	SetupMonster 6 0 9
-	Print "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
+	PrintClear "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
 	SetupMonster 6 0 6
 	Save 100 Morale
 	ClearMonsters
@@ -496,7 +496,7 @@ GrishnakTemple:
 	Exit
 
 BloodRoom:
-	Print "THIS ROOM HAS HAD BLOOD SMEARED ON THE FLOOR AND WALLS IN A RITUAL, UNHOLY MANNER."
+	PrintClear "THIS ROOM HAS HAD BLOOD SMEARED ON THE FLOOR AND WALLS IN A RITUAL, UNHOLY MANNER."
 	Exit
 
 SecretDoorHint:
@@ -507,7 +507,7 @@ SecretDoorHint:
 	Compare 0 IronBoxFound
 	IfNe
 	Exit
-	Print "'IN THE EAST WALL IS THE SECRET DOOR.' SAYS SKULLCRUSHER.'IF WE GO THROUGH WE CAN SURPRISE THEM.'"
+	PrintClear "'IN THE EAST WALL IS THE SECRET DOOR.' SAYS SKULLCRUSHER.'IF WE GO THROUGH WE CAN SURPRISE THEM.'"
 	Gosub PressToContinue
 	Exit
 
@@ -517,11 +517,11 @@ OgreChief:
 	Exit
 	Save 2 Facing
 	Call CallRedraw
-	Print "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
+	PrintClear "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
 	SetupMonster 6 1 6
-	Print "YOU SEE THE CHIEF OF THE HOBGOBLINS, A HUGE OGRE. AS YOU ENTER, HE RISES TO HIS FULL, TEN FEET OF HEIGHT; HIS HEAD WREATHED IN THE FLICKERING SHADOWS."
+	PrintClear "YOU SEE THE CHIEF OF THE HOBGOBLINS, A HUGE OGRE. AS YOU ENTER, HE RISES TO HIS FULL, TEN FEET OF HEIGHT; HIS HEAD WREATHED IN THE FLICKERING SHADOWS."
 	Gosub PressToContinue
-	Print "'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'"
+	PrintClear "'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'"
 	Gosub PressToContinue
 	Save 100 Morale
 	ClearMonsters
@@ -533,7 +533,7 @@ OgreChief:
 	IfGt
 	Goto HobgoblinsChase
 	Save 255 IronBoxFound
-	Print "YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?"
+	PrintClear "YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?"
 	HMenu Scratch1 2 "OPEN IT" "TAKE IT UNOPENED"
 	OnGoto Scratch1 2 OpenBox TakeBoxUnopened
 
@@ -558,7 +558,7 @@ HobgoblinEncounter:
 	Compare AuxMenuChoice 2
 	IfEq
 	Goto HobgoblinsChase
-	Print "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
+	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
 
 HobgoblinFight:
 	SetupMonster 6 0 6
@@ -588,10 +588,10 @@ FindSkullcrusher:
 
 FindSkullcrusherLoop:
 	LoadCharacter Scratch2
-	Compare str SelName "SKULLCRUSHER"
+	Compare $SelName "SKULLCRUSHER"
 	IfEq
 	Goto SkullcrusherFound
-	Arith 1 Scratch2 Scratch2
+	Add 1 Scratch2 Scratch2
 	Compare Scratch2 9
 	IfNe
 	Goto FindSkullcrusherLoop
@@ -607,7 +607,7 @@ FindSkullcrusherDone:
 	Return
 
 HobgoblinsChase:
-	Print "THE HOBGOBLINS GIVE CHASE, BUT YOU ESCAPE."
+	PrintClear "THE HOBGOBLINS GIVE CHASE, BUT YOU ESCAPE."
 	Random 3 Scratch2
 	Save 1 NoCoords
 	OnGoto Scratch2 4 EscapeSpot1 EscapeSpot2 EscapeSpot3 EscapeSpot4
@@ -639,7 +639,7 @@ DiaryPage:
 	Compare 1 DiaryEntry11Found
 	IfEq
 	Exit
-	Print "YOU FIND A PAGE FROM A DIARY AND PLACE IT IN YOUR JOURNAL UNDER ENTRY 11."
+	PrintClear "YOU FIND A PAGE FROM A DIARY AND PLACE IT IN YOUR JOURNAL UNDER ENTRY 11."
 	Save 1 DiaryEntry11Found
 	Exit
 
@@ -648,7 +648,7 @@ PressToContinue:
 	Return
 
 ThievesWell:
-	Print "ON THE WELL IS A NOTE,'THIEVES ONLY.' THE WELL HAS NO RUNGS OR ROPE AND SEEMS VERY DEEP. ONLY A SKILLFUL CLIMBER COULD SURVIVE THE DESCENT. WHAT DO YOU DO?"
+	PrintClear "ON THE WELL IS A NOTE,'THIEVES ONLY.' THE WELL HAS NO RUNGS OR ROPE AND SEEMS VERY DEEP. ONLY A SKILLFUL CLIMBER COULD SURVIVE THE DESCENT. WHAT DO YOU DO?"
 	HMenu Scratch1 2 "LEAVE" "CLIMB DOWN"
 	OnGoto Scratch1 2 Done ChooseClimber
 
@@ -657,7 +657,7 @@ ChooseClimber:
 	Compare SelStatus 1
 	IfEq
 	Goto ClimbDown
-	Print "THAT ONE IS NOT WELL ENOUGH TO CLIMB."
+	PrintClear "THAT ONE IS NOT WELL ENOUGH TO CLIMB."
 	Gosub PressToContinue
 	Goto ChooseClimber
 
@@ -670,7 +670,7 @@ ClimbDown:
 	Compare Scratch1 SelThiefSkill6
 	IfLt
 	Goto MeetRestal
-	Print "YOU BEGIN A LONG FALL."
+	PrintClear "YOU BEGIN A LONG FALL."
 	Gosub PressToContinue
 	Save 0 Scratch1
 
@@ -681,27 +681,27 @@ FeatherFallScan:
 	Goto FeatherFallCheck
 
 FeatherFallNext:
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Compare Scratch1 64
 	IfEq
 	Goto HitStoneFloor
 	Goto FeatherFallScan
 
 FeatherFallCheck:
-	Arith 64 Scratch1 Scratch2
+	Add 64 Scratch1 Scratch2
 	GetTable EffectTable Scratch2 Scratch3
 	Compare Scratch3 SelPartyIndex2
 	IfNe
 	Goto FeatherFallNext
-	Print "YOU FLOAT DOWN THE WELL."
+	PrintClear "YOU FLOAT DOWN THE WELL."
 	Gosub PressToContinue
-	Print "FROM AN ARCHWAY AT THE BOTTOM COME ARROWS."
+	PrintClear "FROM AN ARCHWAY AT THE BOTTOM COME ARROWS."
 	Gosub PressToContinue
 	Damage 8 1 6 0 50
 	Goto LaughingThief
 
 HitStoneFloor:
-	Print "YOU HIT AN UNYIELDING STONE FLOOR."
+	PrintClear "YOU HIT AN UNYIELDING STONE FLOOR."
 	Gosub PressToContinue
 	Damage 160 15 6 0 128
 	Compare SelStatus 1
@@ -710,19 +710,19 @@ HitStoneFloor:
 	Save 1 PartyX
 	Save 3 Facing
 	Call CallRedraw
-	Print "YOUR FRIEND FLOATS OUT OF THE WELL."
+	PrintClear "YOUR FRIEND FLOATS OUT OF THE WELL."
 	Exit
 
 LaughingThief:
 	Gosub ShowThief
-	Print "HERE IS A LAUGHING THIEF."
+	PrintClear "HERE IS A LAUGHING THIEF."
 	Gosub RingLiftsYou
 	Gosub LeaveWell
 	Exit
 
 MeetRestal:
 	Gosub ShowThief
-	Print "AN OLD THIEF STANDS HERE.'WELCOME TO MY GUILD. I AM RESTAL.' HE BOWS LOW."
+	PrintClear "AN OLD THIEF STANDS HERE.'WELCOME TO MY GUILD. I AM RESTAL.' HE BOWS LOW."
 	Gosub PressToContinue
 	Compare CadornaCommission 255
 	IfNe
@@ -736,7 +736,7 @@ MeetRestal:
 	Compare RestalDealDone 1
 	IfEq
 	Goto RestalFarewell
-	Print "'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'"
+	PrintClear "'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 DuplicateSeal RestalFarewell
 
@@ -748,24 +748,24 @@ DuplicateSeal:
 	Save 1 IronBoxState
 
 RestalFarewell:
-	Print "THE OLD THIEF LAUGHS, 'PERHAPS WE SHALL MEET AGAIN.'"
+	PrintClear "THE OLD THIEF LAUGHS, 'PERHAPS WE SHALL MEET AGAIN.'"
 	Gosub RingLiftsYou
 	Gosub LeaveWell
 	Save 1 RestalDealDone
 	Exit
 
 TextileHouseOffer:
-	Print "'YOU ARE SEEKING THE TEXTILE HOUSE. WE CAN GET YOU IN UNSEEN AND POSSIBLY HELP YOU WITH THE TREASURE. INTERESTED?'"
+	PrintClear "'YOU ARE SEEKING THE TEXTILE HOUSE. WE CAN GET YOU IN UNSEEN AND POSSIBLY HELP YOU WITH THE TREASURE. INTERESTED?'"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 Blindfold RestalFarewell
 
 Blindfold:
-	Print "A ROPE IS TOSSED UP AND THE REST OF THE PARTY COMES DOWN. THE OLD THIEF SAYS 'OUR RULES REQUIRE YOU TO BE BLINDFOLDED IN OUR GUILD HOUSE, OKAY?'"
+	PrintClear "A ROPE IS TOSSED UP AND THE REST OF THE PARTY COMES DOWN. THE OLD THIEF SAYS 'OUR RULES REQUIRE YOU TO BE BLINDFOLDED IN OUR GUILD HOUSE, OKAY?'"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 BlindfoldedWalk RestalFarewell
 
 BlindfoldedWalk:
-	Print "YOU ARE BLINDFOLDED AND TAKEN ON A LONG, TWISTING WALK, THEN UP A LADDER.'ONLY MEET US AT THE MAIN WELL.'"
+	PrintClear "YOU ARE BLINDFOLDED AND TAKEN ON A LONG, TWISTING WALK, THEN UP A LADDER.'ONLY MEET US AT THE MAIN WELL.'"
 	Save 6 PartyX
 	Save 11 PartyY
 	Save 0 Facing

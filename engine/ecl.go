@@ -441,32 +441,31 @@ func (e *Engine) decodePackedString(n int) string {
 	return string(out)
 }
 
-// FetchArgs = ovr08:0000 (n): decode n operands following the opcode.
+// FetchArgs = ovr08:0000 (n): the next n operands of the instruction
+// being run, as the byte code had them; eclPC goes to the next one.
 func (e *Engine) FetchArgs(n int) {
+	var args []Arg
+	if e.script != nil && e.cur < len(e.script.Code) {
+		args = e.script.Code[e.cur].Args
+	}
 	k := 0
 	for i := 1; i <= n; i++ {
-		e.es.argType[i] = e.eclByte(e.eclPC + 1)
-		e.es.argLo[i] = e.eclByte(e.eclPC + 2)
-		e.eclPC += 2
-		switch e.es.argType[i] {
-		case 1, 2, 3:
-			e.eclPC++
-			e.es.argHi[i] = e.eclByte(e.eclPC)
+		var a Arg // a missing operand is a 0 byte
+		if e.argPos < len(args) {
+			a = args[e.argPos]
+		}
+		e.argPos++
+		e.es.argType[i], e.es.argLo[i], e.es.argHi[i] = a.Type, byte(a.N), byte(a.N>>8)
+		switch a.Type {
 		case 0x80:
 			k++
-			if l := int(e.es.argLo[i]); l > 0 {
-				e.es.str[k] = e.decodePackedString(l)
-			} else {
-				e.es.str[k] = ""
-			}
+			e.es.str[k] = a.S
 		case 0x81:
 			k++
-			e.eclPC++
-			e.es.argHi[i] = e.eclByte(e.eclPC)
-			e.es.str[k] = e.readStringVar(int(e.es.argHi[i])<<8 | int(e.es.argLo[i]))
+			e.es.str[k] = e.readStringVar(a.N)
 		}
 	}
-	e.eclPC++
+	e.eclPC = e.cur + 1
 }
 
 // ArgAddr returns hi<<8|lo of operand i (ovr08:06AF mkaddr).
@@ -490,16 +489,14 @@ func (e *Engine) InitAreaScript() {
 	s.groundShade, s.skyShade, s.skyChanged = 0x41, 9, 1
 	s.encounterShown = [2]byte{}
 	s.cloneIcon = 8
-	e.eclPC = eclBase
 	s.retStack = nil
 	s.flags = [6]bool{}
 	e.game.Portrait = 0xFF
 	e.game.RestEvery = 0
 	e.game.RestChance = 0
 	e.area.NoMagic = 0
-	for i := 0; i < 5; i++ {
-		e.FetchArgs(1)
-		s.events[i] = e.ArgAddr(1)
+	if e.script != nil {
+		s.events = e.script.Events
 	}
 	e.area.In3D = 1
 	if !e.loadedGame {
@@ -516,16 +513,10 @@ func (e *Engine) InitAreaScript() {
 
 // LoadArea = ovr08:0341: ECL<n>.DAX block areaId → ECL image (first word skipped).
 func (e *Engine) LoadArea(areaID int) {
-	for i := range e.ecl {
-		e.ecl[i] = 0
-	}
 	e.loadingMonster = false
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colWhite, "Loading...Please Wait")
-	b := e.L.Block(e.set.file("ECL"), areaID)
-	if len(b) >= 2 {
-		copy(e.ecl, b[2:])
-	}
+	e.loadScript(areaID)
 	e.ClearRow24()
 }
 
@@ -610,14 +601,12 @@ var opArgCount = map[byte]int{
 	0x14: 4, 0x23: 4, 0x2E: 5, 0x1E: 6, 0x2C: 6, 0x27: 8, 0x29: 14,
 }
 
-// FetchOpcodeArgs = ovr08:1EA6.
+// FetchOpcodeArgs = ovr08:1EA6: skip the next instruction (IF false).
 func (e *Engine) FetchOpcodeArgs() {
-	e.es.op = e.eclByte(e.eclPC)
-	if n, ok := opArgCount[e.es.op]; ok {
-		e.FetchArgs(n)
-	} else {
-		e.eclPC++
+	if e.script != nil && e.eclPC < len(e.script.Code) {
+		e.es.op = e.script.Code[e.eclPC].Op
 	}
+	e.eclPC++
 }
 
 // PartyHpRange = ovr08:1FB1 (&hi, &lo): highest and lowest +0x11C in the

@@ -1,12 +1,12 @@
 RollSurprise:
 	PartySurprise Scratch8 Scratch9
-	AndOr CastleFlags 1 Scratch10
+	And CastleFlags 1 Scratch10
 	IfNe
-	Arith 1 Scratch9 Scratch9
+	Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
 	Compare AlarmEndHour 0
 	IfNe
-	AndOr Surprise 1 Surprise
+	And Surprise 1 Surprise
 	Compare Surprise 3
 	IfEq
 	Save 0 Surprise
@@ -41,7 +41,7 @@ AlarmStillOn:
 	Goto AlarmOnReturn
 
 AlarmSounding:
-	Print "AN ALARM IS SOUNDING."
+	PrintClear "AN ALARM IS SOUNDING."
 	Delay
 
 AlarmOnReturn:
@@ -54,11 +54,11 @@ DelayRaiseAlarm:
 RaiseAlarm:
 	Compare AlarmEndHour 0
 	IfEq
-	Print "AN ALARM STARTS RINGING!"
+	PrintClear "AN ALARM STARTS RINGING!"
 	Delay
 	Save Hours AlarmHour
 	Save TenMinutes AlarmMinute
-	Arith 1 AlarmHour AlarmEndHour
+	Add 1 AlarmHour AlarmEndHour
 	Return
 
 TakeItMenu:
@@ -66,13 +66,13 @@ TakeItMenu:
 
 YesNoMenu:
 	HMenu Scratch10 2 "YES" "NO"
-	Print " "
+	PrintClear " "
 	Compare Scratch10 0
 	Return
 
 PressToContinue:
 	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	Print " "
+	PrintClear " "
 	Return
 
 SetSky:
@@ -85,7 +85,7 @@ SetSky:
 	Return
 
 event0:
-	AndOr CastleRoomFlags 127 CastleRoomFlags
+	And CastleRoomFlags 127 CastleRoomFlags
 	Compare LeftMap 0
 	IfEq
 	Goto CheckWallEvents
@@ -93,9 +93,12 @@ event0:
 	Call CallStepForward
 	NewECL Scratch1
 
+ByFacing9AA6:
+	Data 4 4 6 6
+
 CheckWallEvents:
 	Gosub SetSky
-	AndOr Cell 31 Scratch10
+	And Cell 31 Scratch10
 	CompareAnd Facing 1 Scratch10 30
 	IfEq
 	Goto MainGate
@@ -111,30 +114,38 @@ event1:
 	Gosub CheckAlarm
 	IfLt
 	Goto RoomEvents
-	AndOr Cell 64 Scratch10
+	And Cell 64 Scratch10
 	IfNe
 	Goto RoomEvents
 	Save 2 Scratch1
 	Compare Search 0
 	IfEq
 	Save 20 Scratch1
-	AndOr Cell 32 Scratch10
+	And Cell 32 Scratch10
 	IfNe
-	Arith Scratch1 Scratch1 Scratch1
+	Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch10
 	Compare Scratch10 0
 	IfEq
 	Goto event3
 
 RoomEvents:
-	AndOr Cell 31 Scratch1
+	And Cell 31 Scratch1
 	Compare Scratch1 22
 	IfGt
 	Exit
 	GetTable Table9B99 Scratch1 Scratch2
 	GetTable Table9BB0 Scratch1 Scratch1
 	OnGoto Scratch2 18 Done FighterBuilding ArmedManAttacks DiningHall GiantApartment LooseStoneTreasure Latrine BucketRoom GiantQuarters FindTreasure CobwebBuilding CeilingCaves DoorGiants WellView CadornaCell GiantSnakes GiantsBarWay ExitToArea5
-	Exit
+	Exit // extra: the original runs on into data at 9B99
+
+Table9B99:
+	Data 0 1 2 3 4 5 6 7 8 9 10 11 8 9 12 8
+	Data 9 13 14 15 16 17 17
+
+Table9BB0:
+	Data 0 0 0 0 0 0 0 0 1 1 0 0 2 2 0 4
+	Data 4 0 0 0 0 0 0
 
 event2:
 	Save 0 RestEvery
@@ -142,7 +153,7 @@ event2:
 	Compare AlarmEndHour 0
 	IfEq
 	Exit
-	AndOr Cell 64 Scratch10
+	And Cell 64 Scratch10
 	IfNe
 	Exit
 	Save 1 RestEvery
@@ -161,8 +172,11 @@ event4:
 	Exit
 	GetTable ByFacing9C24 Facing Scratch10
 	LoadFiles Scratch10 2 255
-	LoadFiles 24 25 1
+	LoadPieces 24 25 1
 	Exit
+
+ByFacing9C24:
+	Data 3 5 5 3
 
 FleeCombat:
 	Save 129 CombatEnd
@@ -172,7 +186,7 @@ AfterCombat:
 	IfEq
 	Return
 	Gosub RaiseAlarm
-	AndOr CastleFlags 254 CastleFlags
+	And CastleFlags 254 CastleFlags
 	Compare CombatEnd 129
 	IfNe
 	Return
@@ -181,25 +195,25 @@ StepBack:
 	Save 255 HoldMove
 	Save PrevX PartyX
 	Save PrevY PartyY
-	Arith Facing 2 Facing
+	Add Facing 2 Facing
 	Compare Facing 3
 	IfGt
-	Arith 4 Facing Facing
+	Sub 4 Facing Facing
 	Goto Done
 
 event3:
-	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" str AuxEncText
+	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
 	Save 9 Portrait
 	SetupMonster 16 2 1
 	Gosub RollSurprise
 	IfNe
 	Goto PatrolSighted
-	Print str AuxEncText
+	PrintClear $AuxEncText
 	Print " SURPRISES YOU."
-	AndOr BaneTempleFlags 3 Scratch10
+	And BaneTempleFlags 3 Scratch10
 	IfNe
 	Goto BlasphemersAttack
-	AndOr CastleFlags 1 Scratch10
+	And CastleFlags 1 Scratch10
 	IfNe
 	Goto PatrolQuestions
 	Print " 'THAT'S THEM! GET THEM!'"
@@ -211,16 +225,16 @@ BlasphemersAttack:
 	Goto PatrolFight
 
 PatrolSighted:
-	Print "YOU SEE A"
-	Print str AuxSightText
-	AndOr BaneTempleFlags 3 Scratch10
+	PrintClear "YOU SEE A"
+	Print $AuxSightText
+	And BaneTempleFlags 3 Scratch10
 	IfEq
 	Goto PatrolNoAlarm
 	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
 	Goto PatrolAdvances
 
 PatrolNoAlarm:
-	AndOr CastleFlags 1 Scratch10
+	And CastleFlags 1 Scratch10
 	IfNe
 	Goto PatrolQuestions
 
@@ -235,13 +249,13 @@ PatrolAdvances:
 
 PatrolQuestions:
 	Save 0 Surprise
-	Print "YOU SEE A"
-	Print str AuxSightText
+	PrintClear "YOU SEE A"
+	Print $AuxSightText
 	Delay
 	EncounterMenu 16 2 1 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
 	Save 255 Portrait
 	OnGoto Scratch10 3 Done PatrolFight FleeCombat
-	Print "WHAT ARE YOU DOING HERE?"
+	PrintClear "WHAT ARE YOU DOING HERE?"
 	Parlay 0 1 1 2 0 Scratch10
 	OnGoto Scratch10 3 AskAuthority PatrolIntruders AskPassword
 
@@ -259,83 +273,83 @@ PatrolFight:
 	Exit
 
 PatrolIntruders:
-	Print "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
+	PrintClear "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
 	Return
 
 AskPassword:
-	Print "'ALL RIGHT THEN. WHAT IS TODAY'S PASSWORD?'"
-	InputString 6 str AuxInputText
-	Compare "HARASH" str AuxInputText
+	PrintClear "'ALL RIGHT THEN. WHAT IS TODAY'S PASSWORD?'"
+	InputString 6 $AuxInputText
+	Compare "HARASH" $AuxInputText
 	Goto CheckAnswer
 
 AskAuthority:
-	Print "'I'M SORRY, SIR, THERE'S AN ALERT. "
+	PrintClear "'I'M SORRY, SIR, THERE'S AN ALERT. "
 	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
 	NewLine
-	InputString 12 str AuxInputText
-	Compare "TYRANTHRAXUS" str AuxInputText
+	InputString 12 $AuxInputText
+	Compare "TYRANTHRAXUS" $AuxInputText
 
 CheckAnswer:
 	IfNe
 	Goto Imposters
-	Print "WITH A NOD OF THE HEAD YOU ARE LEFT ALONE."
+	PrintClear "WITH A NOD OF THE HEAD YOU ARE LEFT ALONE."
 	Goto Done
 
 Imposters:
-	Print "'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'"
+	PrintClear "'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'"
 	Return
 
 ArmedManAttacks:
-	AndOr PatrolsFought3 1 Scratch10
+	And PatrolsFought3 1 Scratch10
 	IfNe
 	Exit
 	Save 12 Portrait
 	SetupMonster 16 0 1
 	Save 255 Portrait
-	Print "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
+	PrintClear "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
 	Gosub DelayRaiseAlarm
 	Save 50 Morale
 	ClearMonsters
 	LoadMonster 75 1 11
 	Combat
 	Gosub AfterCombat
-	AndOr PatrolsFought3 1 PatrolsFought3
+	Or PatrolsFought3 1 PatrolsFought3
 	Exit
 
 FighterBuilding:
-	AndOr PatrolsFought3 1 Scratch10
+	And PatrolsFought3 1 Scratch10
 	IfNe
 	Exit
 	Compare AlarmEndHour 0
 	IfNe
 	Goto DoorSlams
-	AndOr CastleFlags 1 Scratch10
+	And CastleFlags 1 Scratch10
 	IfNe
 	Goto FighterConfronts
 
 DoorSlams:
-	Print "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
+	PrintClear "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
 	Gosub DelayRaiseAlarm
 	Exit
 
 FighterConfronts:
 	Save 0 Surprise
-	Print "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
+	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
 	Save 12 Portrait
 	Delay
 	EncounterMenu 16 0 1 Scratch10 0 4 0 4 4 "'WHAT ARE YOU DOING HERE?'" "" "" 9 9
 	Save 255 Portrait
 	OnGoto Scratch10 3 Done FighterHitsButton FleeCombat
-	Print "'WHAT ARE YOU DOING HERE?' HE REPEATS."
+	PrintClear "'WHAT ARE YOU DOING HERE?' HE REPEATS."
 	Parlay 0 2 2 1 0 Scratch10
 	Compare Scratch10 2
 	IfEq
 	Goto FighterRetreats
-	Print ""
+	PrintClear ""
 	OnGoto Scratch10 2 AskAuthority AskPassword
 
 FighterHitsButton:
-	Print "HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'"
+	PrintClear "HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'"
 	HMenu Scratch10 2 "STAY AND FIGHT" "RUN"
 	Gosub RaiseAlarm
 	OnGoto Scratch10 2 FighterFight FleeCombat
@@ -346,41 +360,41 @@ FighterFight:
 	LoadMonster 75 1 11
 	Combat
 	Gosub AfterCombat
-	AndOr PatrolsFought3 1 PatrolsFought3
+	Or PatrolsFought3 1 PatrolsFought3
 	Save 9 Portrait
 	SetupMonster 16 2 1
-	Print "A PATROL ROUNDS THE CORNER.."
+	PrintClear "A PATROL ROUNDS THE CORNER.."
 	Goto PatrolSeesYou
 
 FighterRetreats:
-	Print "HE QUICKLY RETREATS THROUGH THE DOOR AND SLAMS IT, YELLING, 'INTRUDERS!'"
+	PrintClear "HE QUICKLY RETREATS THROUGH THE DOOR AND SLAMS IT, YELLING, 'INTRUDERS!'"
 	Gosub DelayRaiseAlarm
 	Goto Done
 
 DiningHall:
-	AndOr CastleFlags 2 Scratch10
+	And CastleFlags 2 Scratch10
 	IfNe
 	Exit
-	Print "YOU ARE IN A HALL WITH LONG TABLES, BENCHES AND A GREAT HEARTH AT ONE END. IN THE CORNERS ARE HEAPS OF GARBAGE BEING PICKED OVER BY SOME RATS WHICH FLEE AT YOUR ENTRANCE."
+	PrintClear "YOU ARE IN A HALL WITH LONG TABLES, BENCHES AND A GREAT HEARTH AT ONE END. IN THE CORNERS ARE HEAPS OF GARBAGE BEING PICKED OVER BY SOME RATS WHICH FLEE AT YOUR ENTRANCE."
 	Delay
-	AndOr CastleFlags 2 CastleFlags
+	Or CastleFlags 2 CastleFlags
 	Exit
 
 GiantApartment:
-	AndOr CastleFlags 4 Scratch10
+	And CastleFlags 4 Scratch10
 	IfNe
 	Exit
 	Save 0 Surprise
 	Save 1 Facing
-	Print "AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM."
+	PrintClear "AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM."
 	Call CallRedraw
 	Gosub PressToContinue
 	EncounterMenu 55 1 55 Scratch10 0 3 0 3 4 "THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." "THE GIANTS ARE WALKING TOWARD YOU." "" 12 12
 	OnGoto Scratch10 3 Done ApartmentFight FleeCombat
-	Print "'HEY, WHAT DO YOU THINK YOU'RE DOING?'"
+	PrintClear "'HEY, WHAT DO YOU THINK YOU'RE DOING?'"
 	Parlay 0 0 0 1 0 Scratch10
-	Print "'OH... OKAY.' AND WITH THAT THEY LEAVE."
-	AndOr CastleFlags 4 CastleFlags
+	PrintClear "'OH... OKAY.' AND WITH THAT THEY LEAVE."
+	Or CastleFlags 4 CastleFlags
 	Goto Done
 
 ApartmentFight:
@@ -389,30 +403,30 @@ ApartmentFight:
 	LoadMonster 55 2 55
 	Combat
 	Gosub AfterCombat
-	AndOr CastleFlags 4 CastleFlags
+	Or CastleFlags 4 CastleFlags
 	Exit
 
 LooseStoneTreasure:
-	AndOr CastleFlags 8 Scratch10
+	And CastleFlags 8 Scratch10
 	CompareAnd Scratch10 0 Search 1
 	IfNe
 	Exit
-	Print "UNDER A LOOSE STONE YOU FIND SOME TREASURE. "
+	PrintClear "UNDER A LOOSE STONE YOU FIND SOME TREASURE. "
 	Gosub TakeItMenu
 	IfNe
 	Exit
-	AndOr CastleFlags 8 CastleFlags
+	Or CastleFlags 8 CastleFlags
 	ClearMonsters
 	Treasure 0 0 0 200 0 0 0 34
 	Combat
 	Exit
 
 Latrine:
-	Print "YOU ENTER A LATRINE. THE LACK OF BAD SMELL GIVES YOU A GENERAL IDEA OF THE LEVEL OF SANITATION PRACTICED BY THE INHABITANTS OF THE AREA."
+	PrintClear "YOU ENTER A LATRINE. THE LACK OF BAD SMELL GIVES YOU A GENERAL IDEA OF THE LEVEL OF SANITATION PRACTICED BY THE INHABITANTS OF THE AREA."
 	Exit
 
 BucketRoom:
-	AndOr CastleFlags 16 Scratch10
+	And CastleFlags 16 Scratch10
 	IfNe
 	Exit
 	Save 2 Scratch5
@@ -426,13 +440,13 @@ BucketRoom:
 	Compare Search 1
 	IfEq
 	Goto BucketNoticed
-	Print "AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS."
+	PrintClear "AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS."
 	Gosub PressToContinue
 	Damage 1 1 4 0 50
 	Goto BucketGiantsCharge
 
 BucketNoticed:
-	Print "BEFORE YOU OPEN THE DOOR ALL THE WAY, YOU NOTICE A BUCKET ABOVE THE DOOR. YOU KICK THE DOOR OPEN LETTING THE BUCKET FALL HARMLESSLY TO THE GROUND."
+	PrintClear "BEFORE YOU OPEN THE DOOR ALL THE WAY, YOU NOTICE A BUCKET ABOVE THE DOOR. YOU KICK THE DOOR OPEN LETTING THE BUCKET FALL HARMLESSLY TO THE GROUND."
 	Gosub PressToContinue
 	Save 0 Surprise
 
@@ -442,11 +456,11 @@ BucketGiantsCharge:
 
 SleepingGiants:
 	SetupMonster 56 1 56
-	Print "AS YOU ENTER THE ROOM YOU SEE SOME SLEEPING GIANTS."
+	PrintClear "AS YOU ENTER THE ROOM YOU SEE SOME SLEEPING GIANTS."
 	HMenu Scratch10 2 "SNEAK OUT QUIETLY" "ATTACK AS THEY SLEEP"
 	OnGoto Scratch10 1 StepBack
 	Approach
-	Print "AS YOU SNEAK TOWARD THEM A LOOSE BOARD CREAKS. THE GIANTS GET TO THEIR FEET SHAKING THE SLEEP FROM THEIR EYES."
+	PrintClear "AS YOU SNEAK TOWARD THEM A LOOSE BOARD CREAKS. THE GIANTS GET TO THEIR FEET SHAKING THE SLEEP FROM THEIR EYES."
 
 SleepingGiantsFight:
 	Save 100 Morale
@@ -456,11 +470,11 @@ SleepingGiantsFight:
 	Treasure 0 0 0 #012C 0 0 0 255
 	Combat
 	Gosub AfterCombat
-	AndOr CastleFlags 16 CastleFlags
+	Or CastleFlags 16 CastleFlags
 	Exit
 
 GiantQuarters:
-	AndOr CadornaQuartersFlags Scratch1 Scratch10
+	And CadornaQuartersFlags Scratch1 Scratch10
 	IfNe
 	Exit
 	Compare Hours 14
@@ -490,19 +504,19 @@ QuartersFight:
 	LoadMonster 55 8 55
 	Combat
 	Gosub AfterCombat
-	AndOr CadornaQuartersFlags Scratch1 CadornaQuartersFlags
+	Or CadornaQuartersFlags Scratch1 CadornaQuartersFlags
 	Exit
 
 FindTreasure:
-	AndOr SearchTowerFlags Scratch1 Scratch10
+	And SearchTowerFlags Scratch1 Scratch10
 	CompareAnd Scratch10 0 Search 1
 	IfNe
 	Exit
-	Print "YOU FIND SOME TREASURE. "
+	PrintClear "YOU FIND SOME TREASURE. "
 	Gosub TakeItMenu
 	IfNe
 	Exit
-	AndOr SearchTowerFlags Scratch1 SearchTowerFlags
+	Or SearchTowerFlags Scratch1 SearchTowerFlags
 	ClearMonsters
 	Treasure 0 0 0 11 0 0 0 255
 	Combat
@@ -513,115 +527,121 @@ MainGate:
 	Compare Scratch10 31
 	IfEq
 	Save 128 Scratch1
-	AndOr BaneTempleFlags Scratch1 Scratch10
+	And BaneTempleFlags Scratch1 Scratch10
 	IfNe
 	Goto GateRecognized
-	AndOr BaneTempleFlags 3 Scratch10
+	And BaneTempleFlags 3 Scratch10
 	IfNe
 	Goto GateThief
 	VMenu Scratch10 "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" 2 "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
 	OnGoto Scratch10 2 GivePassword BoulderVolley
 
 GateRecognized:
-	Print "YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'"
+	PrintClear "YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'"
 	Goto BoulderVolley
 
 GateThief:
-	Print "YOU HEAR A DEEP VOICE,'THIEF! YOU STOLE FROM LORDBANE!'"
+	PrintClear "YOU HEAR A DEEP VOICE,'THIEF! YOU STOLE FROM LORDBANE!'"
 
 BoulderVolley:
 	Gosub DelayRaiseAlarm
-	AndOr BaneTempleFlags Scratch1 BaneTempleFlags
-	Print "A VOLLEY OF BOULDERS ARE THROWN AT YOU..."
+	Or BaneTempleFlags Scratch1 BaneTempleFlags
+	PrintClear "A VOLLEY OF BOULDERS ARE THROWN AT YOU..."
 	Delay
 	Damage 12 2 6 0 48
 	Exit
 
 GivePassword:
-	AndOr CastleFlags2 2 Scratch10
+	And CastleFlags2 2 Scratch10
 	IfEq
 	Goto EnterPassword
 	LoadFiles 255 16 255
-	Print ""
+	PrintClear ""
 	Protection ProtectionStart
-	Print "CADORNA HANDS YOU A SLIP OF PAPER AND WHISPERS, 'HERE IS TODAY'S GATE PASSWORD.'"
+	PrintClear "CADORNA HANDS YOU A SLIP OF PAPER AND WHISPERS, 'HERE IS TODAY'S GATE PASSWORD.'"
 	NewLine
 	Protection ProtectionEnd
 	LoadFiles 255 2 255
 	Gosub PressToContinue
-	LoadFiles 24 25 1
+	LoadPieces 24 25 1
 
 EnterPassword:
-	Print "WHAT PASSWORD DO YOU GIVE? "
-	InputString 6 str AuxInputText
-	Compare str AuxInputText "RHODIA"
+	PrintClear "WHAT PASSWORD DO YOU GIVE? "
+	InputString 6 $AuxInputText
+	Compare $AuxInputText "RHODIA"
 	IfNe
 	Goto WrongPassword
-	Print "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
+	PrintClear "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
 	Call CallStepForward
 	Save 255 HoldMove
 	Exit
 
 WrongPassword:
-	Print "'HAH! HAH! YOU'RE DUMB! THAT'S NOT THE PASSWORD!'"
+	PrintClear "'HAH! HAH! YOU'RE DUMB! THAT'S NOT THE PASSWORD!'"
 	Exit
 
+ProtectionEnd:
+	Data 138 128 135 124 129 121 0
+
+ProtectionStart:
+	Data 0
+
 CobwebBuilding:
-	AndOr BaneTempleFlags 16 Scratch10
+	And BaneTempleFlags 16 Scratch10
 	IfNe
 	Exit
-	Print "YOU ARE IN A DESERTED BUILDING. THERE ARE NOTHING BUT VERY LARGE COBWEBS HERE."
+	PrintClear "YOU ARE IN A DESERTED BUILDING. THERE ARE NOTHING BUT VERY LARGE COBWEBS HERE."
 	Delay
-	AndOr BaneTempleFlags 16 BaneTempleFlags
+	Or BaneTempleFlags 16 BaneTempleFlags
 	Exit
 
 CeilingCaves:
-	AndOr BaneTempleFlags 32 Scratch10
+	And BaneTempleFlags 32 Scratch10
 	IfNe
 	Exit
-	Print "AS YOU PUSH THE DOOR OPEN THE CEILING CAVES IN."
+	PrintClear "AS YOU PUSH THE DOOR OPEN THE CEILING CAVES IN."
 	Delay
 	Damage 1 2 6 0 50
-	AndOr BaneTempleFlags 32 BaneTempleFlags
+	Or BaneTempleFlags 32 BaneTempleFlags
 	Exit
 
 DoorGiants:
-	AndOr CastleFlags 128 Scratch10
+	And CastleFlags 128 Scratch10
 	IfNe
 	Exit
-	AndOr CastleFlags 1 Scratch10
+	And CastleFlags 1 Scratch10
 	IfNe
 	Exit
 	Save 1 Facing
 	Call CallRedraw
-	Print "TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR."
+	PrintClear "TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR."
 
 DoorGiantsChallenge:
 	SetupMonster 55 0 55
-	AndOr BaneTempleFlags 3 Scratch10
+	And BaneTempleFlags 3 Scratch10
 	IfNe
 	Goto TempleThieves
 	EncounterMenu 55 0 55 Scratch10 0 4 0 4 4 "'WHAT PASSWORD?'" "" "" 12 12
 	OnGoto Scratch10 3 Done DoorGiantsFight FleeCombat
 	Parlay 0 1 1 1 1 Scratch10
 	OnGoto Scratch10 1 WhoSentYou
-	Print "'TELL ME PASSWORD OR I KILL YOU. NOW!'"
+	PrintClear "'TELL ME PASSWORD OR I KILL YOU. NOW!'"
 	NewLine
-	InputString 6 str AuxInputText
-	Compare "HARASH" str AuxInputText
+	InputString 6 $AuxInputText
+	Compare "HARASH" $AuxInputText
 	IfNe
 	Goto WrongAnswerDinner
-	Print "'OKAY, BUT NO HANGING AROUND.'"
+	PrintClear "'OKAY, BUT NO HANGING AROUND.'"
 	Goto Done
 
 WhoSentYou:
-	Print "THE GIANT HESITATES, 'WHO SENT YOU?'"
+	PrintClear "THE GIANT HESITATES, 'WHO SENT YOU?'"
 	NewLine
-	InputString 12 str AuxInputText
-	Compare "TYRANTHRAXUS" str AuxInputText
+	InputString 12 $AuxInputText
+	Compare "TYRANTHRAXUS" $AuxInputText
 	IfNe
 	Goto WrongAnswerDinner
-	Print "'SORRY ME NOT KNOW! JUST DOING JOB! YOU GO NOW.'"
+	PrintClear "'SORRY ME NOT KNOW! JUST DOING JOB! YOU GO NOW.'"
 	Goto Done
 
 TempleThieves:
@@ -629,7 +649,7 @@ TempleThieves:
 	Goto DoorGiantsFight
 
 WrongAnswerDinner:
-	Print "'WRONG ANSWER, DINNER!'"
+	PrintClear "'WRONG ANSWER, DINNER!'"
 
 DoorGiantsFight:
 	Gosub RaiseAlarm
@@ -639,22 +659,22 @@ DoorGiantsFight:
 	LoadMonster 55 2 55
 	Combat
 	Gosub AfterCombat
-	AndOr CastleFlags 128 CastleFlags
+	Or CastleFlags 128 CastleFlags
 	Exit
 
 GiantsBarWay:
-	AndOr CastleFlags 128 Scratch10
+	And CastleFlags 128 Scratch10
 	IfNe
 	Exit
-	Print "TWO GIANTS STAND BARRING YOUR WAY."
+	PrintClear "TWO GIANTS STAND BARRING YOUR WAY."
 	Goto DoorGiantsChallenge
 
 WellView:
-	Print "BEFORE YOU IS A WELL FILLED WITH WATER."
+	PrintClear "BEFORE YOU IS A WELL FILLED WITH WATER."
 	Exit
 
 WellDive:
-	Print "THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?"
+	PrintClear "THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?"
 
 DiveMenu:
 	Gosub YesNoMenu
@@ -674,9 +694,9 @@ ChooseDiver:
 	Compare Scratch10 SelCon
 	IfGt
 	Goto NoBottom
-	Print "YOU REACH THE BOTTOM AND FEEL AROUND... "
+	PrintClear "YOU REACH THE BOTTOM AND FEEL AROUND... "
 	Delay
-	AndOr CastleFlags 32 Scratch10
+	And CastleFlags 32 Scratch10
 	IfNe
 	Goto OnlyMud
 	Print "AND YOU FIND A SWORD! "
@@ -686,7 +706,7 @@ ChooseDiver:
 	Goto RunningOutOfAir
 
 NoBottom:
-	Print "YOU SWIM DOWN UNTIL YOU FEEL YOUR PULSE BEATING IN YOUR EARS. YOU DON'T REACH THE BOTTOM."
+	PrintClear "YOU SWIM DOWN UNTIL YOU FEEL YOUR PULSE BEATING IN YOUR EARS. YOU DON'T REACH THE BOTTOM."
 	Goto RunningOutOfAir
 
 OnlyMud:
@@ -697,10 +717,10 @@ RunningOutOfAir:
 	Save 0 Scratch9
 	Compare SelMove 12
 	IfLt
-	Arith SelMove 12 Scratch9
+	Sub SelMove 12 Scratch9
 	Random 19 Scratch10
-	Arith Scratch9 Scratch10 Scratch10
-	Print "YOU ARE RUNNING OUT OF AIR... "
+	Add Scratch9 Scratch10 Scratch10
+	PrintClear "YOU ARE RUNNING OUT OF AIR... "
 	Delay
 	Compare Scratch10 SelCon
 	IfGt
@@ -718,83 +738,83 @@ TryAgain:
 	Compare Scratch4 0
 	IfNe
 	Goto TakeSword
-	Print "TRY AGAIN?"
+	PrintClear "TRY AGAIN?"
 	Goto DiveMenu
 
 TakeSword:
-	AndOr CastleFlags 32 CastleFlags
+	Or CastleFlags 32 CastleFlags
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 36
 	Combat
 	Exit
 
 CadornaCell:
-	AndOr CastleFlags2 2 Scratch10
+	And CastleFlags2 2 Scratch10
 	IfNe
 	Exit
-	AndOr CadornaQuartersFlags 8 Scratch10
+	And CadornaQuartersFlags 8 Scratch10
 	IfEq
 	Exit
-	AndOr CadornaQuartersFlags 48 Scratch10
+	And CadornaQuartersFlags 48 Scratch10
 	IfNe
 	Exit
 	Picture 7
-	Print "THIS IS A SMALL CELL. CHAINED TO THE WALL IS A MAN BEATEN TO WITHIN AN INCH OF HIS LIFE. AS YOU OPEN THE DOOR HE LOOKS UP AND YOU FEEL A SHOCK... THE MAN IS PORPHYRYS CADORNA."
+	PrintClear "THIS IS A SMALL CELL. CHAINED TO THE WALL IS A MAN BEATEN TO WITHIN AN INCH OF HIS LIFE. AS YOU OPEN THE DOOR HE LOOKS UP AND YOU FEEL A SHOCK... THE MAN IS PORPHYRYS CADORNA."
 	Gosub PressToContinue
-	Print "'IN THE NAME OF CHANTUA, HELP ME, PLEASE! BY ALL THAT'S MERCIFUL HELP ME.' HE BEGINS TO COUGH."
+	PrintClear "'IN THE NAME OF CHANTUA, HELP ME, PLEASE! BY ALL THAT'S MERCIFUL HELP ME.' HE BEGINS TO COUGH."
 	Save 0 Scratch4
 
 CadornaMenu:
 	HMenu Scratch10 3 "RELEASE HIM" "LEAVE HIM" "KILL HIM"
 	OnGoto Scratch10 2 ReleaseCadorna LeaveCadorna
-	AndOr Scratch4 1 Scratch10
+	And Scratch4 1 Scratch10
 	IfNe
 	Goto KillCadorna
 
 CadornaPleads:
-	Print "'WAIT!' HE SHRIEKS. 'I KNOW HOW TO GET THROUGH THE MAIN GATES. I CAN HELP YOU.'"
-	AndOr Scratch4 1 Scratch4
+	PrintClear "'WAIT!' HE SHRIEKS. 'I KNOW HOW TO GET THROUGH THE MAIN GATES. I CAN HELP YOU.'"
+	Or Scratch4 1 Scratch4
 	Goto CadornaMenu
 
 KillCadorna:
-	Print "WITH A QUICK STROKE YOU RELEASE HIM FROM THIS PAIN... TO ALL THE PAIN TO COME."
+	PrintClear "WITH A QUICK STROKE YOU RELEASE HIM FROM THIS PAIN... TO ALL THE PAIN TO COME."
 	Save 254 QuestCadornaDead
-	AndOr CadornaQuartersFlags 32 CadornaQuartersFlags
+	Or CadornaQuartersFlags 32 CadornaQuartersFlags
 	Goto Done
 
 LeaveCadorna:
-	AndOr Scratch4 2 Scratch10
+	And Scratch4 2 Scratch10
 	IfNe
 	Goto LeaveAgain
-	Print "'WAIT DON'T LEAVE ME HERE. IF YOU DO I'LL RAISE THE ALARM.'"
-	AndOr Scratch4 2 Scratch4
+	PrintClear "'WAIT DON'T LEAVE ME HERE. IF YOU DO I'LL RAISE THE ALARM.'"
+	Or Scratch4 2 Scratch4
 	Goto CadornaMenu
 
 LeaveAgain:
-	AndOr Scratch4 1 Scratch10
+	And Scratch4 1 Scratch10
 	IfEq
 	Goto CadornaPleads
-	AndOr Scratch4 4 Scratch10
+	And Scratch4 4 Scratch10
 	IfNe
 	Goto CadornaScreams
-	Print "'I KNOW THE WAY THROUGH THE HEDGE... LEFT RIGHT RIGHT... FOR CHANTUA'S SAKE! DON'T LEAVE ME!'"
-	AndOr Scratch4 4 Scratch4
+	PrintClear "'I KNOW THE WAY THROUGH THE HEDGE... LEFT RIGHT RIGHT... FOR CHANTUA'S SAKE! DON'T LEAVE ME!'"
+	Or Scratch4 4 Scratch4
 	Goto CadornaMenu
 
 CadornaScreams:
-	Print "YOU LEAVE. BEHIND YOU ARE HIS SCREAMS, 'INTRUDERS! INTRUDERS!'"
+	PrintClear "YOU LEAVE. BEHIND YOU ARE HIS SCREAMS, 'INTRUDERS! INTRUDERS!'"
 	Goto FleeCombat
 
 ReleaseCadorna:
-	Print "'THANK YOU! THANK YOU! I JUST THOUGHT THAT THE POOL WAS HERE! THERE WAS NOWHERE ELSE TO GO! I HAVE NOWHERE TO GO. TAKE ME WITH YOU?'"
-	AndOr CadornaQuartersFlags 16 CadornaQuartersFlags
+	PrintClear "'THANK YOU! THANK YOU! I JUST THOUGHT THAT THE POOL WAS HERE! THERE WAS NOWHERE ELSE TO GO! I HAVE NOWHERE TO GO. TAKE ME WITH YOU?'"
+	Or CadornaQuartersFlags 16 CadornaQuartersFlags
 	Gosub YesNoMenu
 	IfEq
-	AndOr CastleFlags2 2 CastleFlags2
+	Or CastleFlags2 2 CastleFlags2
 	Goto StepBack
 
 GiantSnakes:
-	AndOr CadornaQuartersFlags 64 Scratch10
+	And CadornaQuartersFlags 64 Scratch10
 	IfNe
 	Exit
 	Gosub RollSurprise
@@ -807,7 +827,7 @@ SnakesFight:
 	LoadMonster 60 5 60
 	Combat
 	Gosub AfterCombat
-	AndOr CadornaQuartersFlags 64 CadornaQuartersFlags
+	Or CadornaQuartersFlags 64 CadornaQuartersFlags
 	Exit
 
 ExitToArea5:

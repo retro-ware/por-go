@@ -58,13 +58,19 @@ func init() {
 	}
 }
 
-// RunECL = ovr04:3171 (addr): run the script from addr until it stops.
+// RunECL = ovr04:3171 (addr): run the script from instruction addr until
+// it stops.
 func (e *Engine) RunECL(addr int) {
 	e.eclPC = addr
 	e.es.stop = false
 	for !e.es.stop && !e.run.quit {
+		if e.script == nil || e.eclPC < 0 || e.eclPC >= len(e.script.Code) {
+			fmt.Fprintf(os.Stderr, "script: no instruction %d\n", e.eclPC)
+			break
+		}
 		e.es.prevOp = e.es.op
-		e.es.op = e.eclByte(e.eclPC)
+		e.cur, e.argPos = e.eclPC, 0
+		e.es.op = e.script.Code[e.eclPC].Op
 		if f := e.nativeScript(); f != nil {
 			f(e)
 			continue
@@ -74,7 +80,7 @@ func (e *Engine) RunECL(addr int) {
 			eclOps[e.es.op](e)
 		} else {
 			// Not ported yet: report it and end this script run.
-			fmt.Fprintf(os.Stderr, "ecl: opcode %02X at %04X not ported\n", e.es.op, e.eclPC)
+			fmt.Fprintf(os.Stderr, "ecl: opcode %02X on line %d not ported\n", e.es.op, e.script.Code[e.eclPC].Line)
 			e.FetchOpcodeArgs()
 			e.es.stop = true
 		}

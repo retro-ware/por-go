@@ -1,12 +1,12 @@
 YesNoMenu:
 	HMenu Scratch10 2 "YES" "NO"
-	Print " "
+	PrintClear " "
 	Compare Scratch10 0
 	Return
 
 PressToContinue:
 	HMenu Scratch9 1 "PRESS BUTTON OR RETURN TO CONTINUE"
-	Print " "
+	PrintClear " "
 	Return
 
 SetSky:
@@ -16,7 +16,7 @@ SetSky:
 
 event0:
 	Gosub SetSky
-	AndOr Cell 127 Scratch2
+	And Cell 127 Scratch2
 	Save 0 Scratch1
 
 StairsScanLoop:
@@ -25,7 +25,7 @@ StairsScanLoop:
 	CompareAnd Scratch2 Scratch3 Scratch4 Facing
 	IfEq
 	Goto StairsDispatch
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Compare Scratch1 8
 	IfLt
 	Goto StairsScanLoop
@@ -34,10 +34,19 @@ StairsScanLoop:
 StairsDispatch:
 	GetTable Table99E8 Scratch1 Scratch3
 	OnGoto Scratch3 3 StairsDown StairsUp HoldAtSecretDoor
-	Goto L_0302
+	Exit // extra: the original runs on into data at 99D8
+
+Table99D8:
+	Data 1 1 2 3 5 8 9 1
+
+Table99E0:
+	Data 3 1 0 2 3 0 2 0
+
+Table99E8:
+	Data 0 0 1 0 1 1 0 2
 
 event1:
-	AndOr Cell 127 Scratch1
+	And Cell 127 Scratch1
 	OnGoto Scratch1 11 RedrawExit SecretDoorCheck RedrawExit RedrawExit TrapDoorRoom StatueRoom BenchRoom MerchantRoom AudienceHall RedrawExit GenheerisLeaves
 
 event2:
@@ -60,11 +69,11 @@ event4:
 	Exit
 
 StairsDown:
-	Print "DO YOU WANT TO GO DOWN THESE STAIRS?"
+	PrintClear "DO YOU WANT TO GO DOWN THESE STAIRS?"
 	Goto TakeStairsMenu
 
 StairsUp:
-	Print "DO YOU WANT TO GO UP THESE STAIRS?"
+	PrintClear "DO YOU WANT TO GO UP THESE STAIRS?"
 
 TakeStairsMenu:
 	Save 255 HoldMove
@@ -86,14 +95,20 @@ DescendToArea5:
 	LoadFiles 3 2 255
 	NewECL 5
 
+DestX:
+	Data 13 11 5 5 5 3 3
+
+DestY:
+	Data 15 7 4 6 7 6 8
+
 HoldAtSecretDoor:
-	AndOr SearchTowerFlags 8 Scratch10
+	And SearchTowerFlags 8 Scratch10
 	IfEq
 	Save 255 HoldMove
 	Exit
 
 SecretDoorCheck:
-	AndOr SearchTowerFlags 8 Scratch10
+	And SearchTowerFlags 8 Scratch10
 	IfNe
 	Goto SecretDoorFound
 	Save 0 Scratch9
@@ -106,28 +121,28 @@ SecretDoorRoll:
 	Save 1 Scratch9
 	Compare Search 0
 	IfEq
-	Arith 1 Scratch9 Scratch9
+	Sub 1 Scratch9 Scratch9
 	Compare SelRace 2
 	IfEq
-	Arith 1 Scratch9 Scratch9
+	Add 1 Scratch9 Scratch9
 	Compare SelRace 4
 	IfEq
-	Arith 1 Scratch9 Scratch9
+	Add 1 Scratch9 Scratch9
 	Random 5 Scratch8
 	Compare Scratch8 Scratch9
 	IfLe
 	Goto SecretDoorFound
 
 SecretDoorNextMember:
-	Arith Scratch10 1 Scratch10
+	Add Scratch10 1 Scratch10
 	Compare Scratch10 8
 	IfLt
 	Goto SecretDoorRoll
 	Exit
 
 SecretDoorFound:
-	AndOr SearchTowerFlags 8 SearchTowerFlags
-	Print "A SECRET DOOR IS FOUND "
+	Or SearchTowerFlags 8 SearchTowerFlags
+	PrintClear "A SECRET DOOR IS FOUND "
 	OnGoto Facing 4 DirFront DirLeft DirBehind DirRight
 	Gosub PressToContinue
 	Exit
@@ -149,7 +164,7 @@ DirRight:
 	Return
 
 TrapDoorRoom:
-	Print "YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?"
+	PrintClear "YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?"
 	Gosub YesNoMenu
 	IfNe
 	Exit
@@ -159,26 +174,26 @@ ChooseOpener:
 	Compare SelStatus 1
 	IfNe
 	Goto ChooseOpener
-	AndOr SearchTowerFlags 16 Scratch10
+	And SearchTowerFlags 16 Scratch10
 	IfNe
 	Goto SawStatues
 	Random 19 Scratch10
-	Arith 1 Scratch10 Scratch10
+	Add 1 Scratch10 Scratch10
 	Compare Scratch10 SelSaveVsPetrify
 	IfGe
 	Goto OpenerPetrified
 
 SawStatues:
-	Print "QUICKLY LOOKING AWAY, "
-	Print str SelName
+	PrintClear "QUICKLY LOOKING AWAY, "
+	Print $SelName
 	Print " SAYS, 'I SAW BROKEN REMAINS OF STATUES... HEADS WITH FACES FULL OF TERROR."
 	Goto JumpTrapDoor
 
 OpenerPetrified:
 	Save 135 SelStatus
-	Arith SelPartyIndex 128 Scratch1
-	Print "WITH A SCREAM OF HORROR "
-	Print str SelName
+	Add SelPartyIndex 128 Scratch1
+	PrintClear "WITH A SCREAM OF HORROR "
+	Print $SelName
 	Print " TURNS TO STONE."
 	LoadCharacter Scratch1
 
@@ -187,7 +202,7 @@ JumpTrapDoor:
 	Gosub YesNoMenu
 	IfNe
 	Exit
-	Print "THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR..."
+	PrintClear "THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR..."
 	Gosub PressToContinue
 	Damage 224 3 6 0 0
 	Save 11 PartyX
@@ -198,12 +213,12 @@ StatueRoom:
 	Compare StatueRoomSeen 0
 	IfNe
 	Goto MedusaMenu
-	Print "YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR."
+	PrintClear "YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR."
 	Gosub PressToContinue
 	Save 1 StatueRoomSeen
 
 MedusaMenu:
-	AndOr SearchTowerFlags 16 Scratch10
+	And SearchTowerFlags 16 Scratch10
 	IfNe
 	Exit
 	EncounterMenu 49 1 49 Scratch10 0 3 0 3 0 "A MEDUSA COMES RUNNING TOWARD YOU." "" "" 9 9
@@ -218,7 +233,7 @@ MedusaFight:
 	Compare CombatEnd 129
 	IfEq
 	Goto RetreatFromMedusa
-	AndOr SearchTowerFlags 16 SearchTowerFlags
+	Or SearchTowerFlags 16 SearchTowerFlags
 	Exit
 
 RetreatFromMedusa:
@@ -231,18 +246,18 @@ BenchRoom:
 	Compare BenchRoomSeen 0
 	IfNe
 	Goto MessengerThief
-	Print "YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES."
+	PrintClear "YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES."
 	Save 1 BenchRoomSeen
 
 MessengerThief:
-	AndOr GenheerisFlags 16 Scratch10
+	And GenheerisFlags 16 Scratch10
 	IfNe
 	Exit
-	AndOr SearchTowerFlags 96 Scratch10
+	And SearchTowerFlags 96 Scratch10
 	IfNe
 	Exit
 	Print " WAITING HERE IS A MAN PLAYING WITH A DAGGER."
-	AndOr BaneTempleFlags 3 Scratch10
+	And BaneTempleFlags 3 Scratch10
 	IfNe
 	Goto ThiefAttacks
 	Print " AS YOU COME IN HE NODS AT YOU."
@@ -253,10 +268,10 @@ MessengerThief:
 	OnGoto Scratch10 3 RedrawExit ThiefFight RetreatFromThief
 	Parlay 1 1 1 1 0 Scratch10
 	OnGoto Scratch10 1 ThiefFight
-	Print "'HEY LOOK, COULD YOU KEEP QUIET? I JUST GOT BACK FROM THE NORTH AND I'M TIRED. OKAY?' A MOMENT LATER A VOICE FROM CALLS FROM THE OTHER DOORWAY, 'MESSENGER!'"
+	PrintClear "'HEY LOOK, COULD YOU KEEP QUIET? I JUST GOT BACK FROM THE NORTH AND I'M TIRED. OKAY?' A MOMENT LATER A VOICE FROM CALLS FROM THE OTHER DOORWAY, 'MESSENGER!'"
 	Gosub PressToContinue
-	AndOr SearchTowerFlags 64 SearchTowerFlags
-	Print "THE MAN GETS UP WITH A SIGH AND GOES INTO THE OFFICE. A MINUTE LATER HE COMES OUT PUTTING PAPERS INTO A POUCH AND GOES OUT THE DOOR. THE VOICE CALLS, 'MESSENGER!'"
+	Or SearchTowerFlags 64 SearchTowerFlags
+	PrintClear "THE MAN GETS UP WITH A SIGH AND GOES INTO THE OFFICE. A MINUTE LATER HE COMES OUT PUTTING PAPERS INTO A POUCH AND GOES OUT THE DOOR. THE VOICE CALLS, 'MESSENGER!'"
 	Goto RedrawExit
 
 RetreatFromThief:
@@ -266,7 +281,7 @@ RetreatFromThief:
 	Goto RedrawExit
 
 ThiefAttacks:
-	Print "THE THIEF SHOUTS 'BLASPHEMERS!' AND ATTACKS."
+	PrintClear "THE THIEF SHOUTS 'BLASPHEMERS!' AND ATTACKS."
 	Delay
 
 ThiefFight:
@@ -278,26 +293,26 @@ ThiefFight:
 	Compare CombatEnd 129
 	IfEq
 	Goto RetreatFromThief
-	AndOr SearchTowerFlags 32 SearchTowerFlags
+	Or SearchTowerFlags 32 SearchTowerFlags
 	Exit
 
 MerchantRoom:
 	Compare MerchantRoomSeen 0
 	IfNe
 	Goto GenheerisAtDesk
-	Print "YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT."
+	PrintClear "YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT."
 	Save 1 MerchantRoomSeen
 
 GenheerisAtDesk:
-	AndOr GenheerisFlags 16 Scratch10
+	And GenheerisFlags 16 Scratch10
 	IfNe
 	Exit
-	AndOr GenheerisFlags 3 Scratch10
+	And GenheerisFlags 3 Scratch10
 	IfNe
 	Exit
 	Print " A MIDDLE AGED MAN IN ROBES LOOKS UP FROM A DESK."
 	Gosub PressToContinue
-	AndOr SearchTowerFlags 32 Scratch10
+	And SearchTowerFlags 32 Scratch10
 	IfNe
 	Goto GenheerisOffer
 	Save 59 Portrait
@@ -306,36 +321,36 @@ GenheerisAtDesk:
 	OnGoto Scratch10 3 RedrawExit GenheerisOffer RetreatFromThief
 	Parlay 0 0 1 1 0 Scratch10
 	OnGoto Scratch10 1 GenheerisOffer
-	Print "'TELL AL-HYAM DHAZID TO EXECUTE PHASE 2 OF PLAN A. DISMISSED.'"
+	PrintClear "'TELL AL-HYAM DHAZID TO EXECUTE PHASE 2 OF PLAN A. DISMISSED.'"
 	HMenu Scratch10 2 "LEAVE" "STAY"
 	OnGoto Scratch10 1 RetreatFromGenheeris
 
 GenheerisOffer:
 	Save 59 Portrait
 	SetupMonster 24 0 31
-	Print "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
+	PrintClear "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
 	Gosub PressToContinue
 	Compare PartyCount 8
 	IfEq
 	Goto GenheerisDeal
-	Print "'IN FACT I WILL JOIN YOU. IS IT A DEAL?'"
+	PrintClear "'IN FACT I WILL JOIN YOU. IS IT A DEAL?'"
 	Gosub YesNoMenu
 	Save 255 Portrait
 	IfNe
 	Goto GenheerisFight
-	Print "GOOD."
+	PrintClear "GOOD."
 	AddNPC 88 100
-	AndOr GenheerisFlags 1 GenheerisFlags
+	Or GenheerisFlags 1 GenheerisFlags
 	Goto RedrawExit
 
 GenheerisDeal:
-	Print "'IS IT A DEAL?"
+	PrintClear "'IS IT A DEAL?"
 	Gosub YesNoMenu
 	Save 255 Portrait
 	IfNe
 	Goto GenheerisFight
-	AndOr GenheerisFlags 2 GenheerisFlags
-	Print "'GOOD. I WILL NOTIFY SOME OTHERS. YOU GO KILL HIM.' HE QUICKLY GETS UP AND LEAVES THE ROOM."
+	Or GenheerisFlags 2 GenheerisFlags
+	PrintClear "'GOOD. I WILL NOTIFY SOME OTHERS. YOU GO KILL HIM.' HE QUICKLY GETS UP AND LEAVES THE ROOM."
 	Goto RedrawExit
 
 GenheerisFight:
@@ -344,7 +359,7 @@ GenheerisFight:
 	ClearMonsters
 	LoadMonster 88 1 14
 	Combat
-	AndOr GenheerisFlags 2 GenheerisFlags
+	Or GenheerisFlags 2 GenheerisFlags
 	Compare CombatEnd 129
 	IfNe
 	Exit
@@ -356,11 +371,11 @@ RetreatFromGenheeris:
 	Goto RedrawExit
 
 GenheerisLeaves:
-	AndOr GenheerisFlags 1 Scratch10
+	And GenheerisFlags 1 Scratch10
 	IfEq
 	Exit
-	AndOr GenheerisFlags 252 GenheerisFlags
-	AndOr GenheerisFlags 2 GenheerisFlags
+	And GenheerisFlags 252 GenheerisFlags
+	Or GenheerisFlags 2 GenheerisFlags
 	Save 0 AuxCounter
 
 FindGenheerisLoop:
@@ -368,35 +383,35 @@ FindGenheerisLoop:
 	Compare SelStatus 1
 	IfNe
 	Goto FindGenheerisNext
-	Compare "GENHEERIS" str SelName
+	Compare "GENHEERIS" $SelName
 	IfNe
 	Goto FindGenheerisNext
 	Save 0 SelStatus
 	Save 0 SelName
-	Arith 128 AuxCounter AuxCounter
+	Add 128 AuxCounter AuxCounter
 	LoadCharacter AuxCounter
 	Exit
 
 FindGenheerisNext:
-	Arith 1 AuxCounter AuxCounter
+	Add 1 AuxCounter AuxCounter
 	Compare AuxCounter PartyCount
 	IfLt
 	Goto FindGenheerisLoop
 	Exit
 
 AudienceHall:
-	AndOr GenheerisFlags 8 Scratch10
+	And GenheerisFlags 8 Scratch10
 	IfNe
 	Goto HallGuards
-	Print "YOU ARE IN THE AUDIENCE HALL OF TYRANTHRAXUS, CONQUEROR OF PHLAN. THE CEILING HAS BEEN TORN AWAY LEAVING THE ENTIRE SECTION OF THE TOWER OPEN TO THE SKY."
+	PrintClear "YOU ARE IN THE AUDIENCE HALL OF TYRANTHRAXUS, CONQUEROR OF PHLAN. THE CEILING HAS BEEN TORN AWAY LEAVING THE ENTIRE SECTION OF THE TOWER OPEN TO THE SKY."
 	Gosub PressToContinue
-	Print "IN THE CENTER OF THE ROOM IS A GLOWING POOL. AN ANCIENT BRONZE DRAGON, SURROUNDED BY A FIERY AURA, RISES FROM WHERE IT WAS COILED NEARBY."
+	PrintClear "IN THE CENTER OF THE ROOM IS A GLOWING POOL. AN ANCIENT BRONZE DRAGON, SURROUNDED BY A FIERY AURA, RISES FROM WHERE IT WAS COILED NEARBY."
 	Gosub PressToContinue
 	Call CallRedraw
-	AndOr GenheerisFlags 8 GenheerisFlags
+	Or GenheerisFlags 8 GenheerisFlags
 
 HallGuards:
-	AndOr GenheerisFlags 4 Scratch10
+	And GenheerisFlags 4 Scratch10
 	IfNe
 	Goto DragonOffer
 	Save 12 Portrait
@@ -419,16 +434,16 @@ GuardsFight:
 	Compare CombatEnd 129
 	IfEq
 	Goto RetreatFromHall
-	AndOr GenheerisFlags 4 GenheerisFlags
+	Or GenheerisFlags 4 GenheerisFlags
 
 DragonOffer:
-	AndOr GenheerisFlags 16 Scratch10
+	And GenheerisFlags 16 Scratch10
 	IfNe
 	Goto RedrawExit
 	Picture 66
-	Print "THE DRAGON LOOKS AT YOU WITH INTEREST. 'YOU ARE INDEED MIGHTY WARRIORS. EVEN SO, THERE IS NO HOPE OF YOUR SUCCESS. BUT YOU INTEREST ME.'"
+	PrintClear "THE DRAGON LOOKS AT YOU WITH INTEREST. 'YOU ARE INDEED MIGHTY WARRIORS. EVEN SO, THERE IS NO HOPE OF YOUR SUCCESS. BUT YOU INTEREST ME.'"
 	Gosub PressToContinue
-	Print "'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'"
+	PrintClear "'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'"
 	Gosub PressToContinue
 	Save 0 AuxCounter
 
@@ -440,7 +455,7 @@ VoteLoop:
 	Compare SelControl 128
 	IfGe
 	Goto NpcVote
-	Print str SelName
+	PrintClear $SelName
 	Print " HOW DO YOU VOTE?"
 	HMenu Scratch10 2 "ATTACK" "JOIN TYRANTHRAXUS"
 	OnGoto Scratch10 1 SaveVote
@@ -449,7 +464,7 @@ VoteLoop:
 	Goto SaveVote
 
 NpcVote:
-	Compare "GENHEERIS" str SelName
+	Compare "GENHEERIS" $SelName
 	IfEq
 	Goto VoteNext
 	Compare SelAlignment 2
@@ -463,11 +478,11 @@ NpcVote:
 	Save 129 SelSide
 
 SaveVote:
-	Arith 128 AuxCounter Scratch1
+	Add 128 AuxCounter Scratch1
 	LoadCharacter Scratch1
 
 VoteNext:
-	Arith 1 AuxCounter AuxCounter
+	Add 1 AuxCounter AuxCounter
 	Compare AuxCounter PartyCount
 	IfLt
 	Goto VoteLoop
@@ -485,14 +500,14 @@ VoteNext:
 	Compare QuestTyranthraxus 255
 	IfNe
 	Save 254 QuestTyranthraxus
-	AndOr GenheerisFlags 16 TowerEndFlags
+	Or GenheerisFlags 16 TowerEndFlags
 	Save 1 TyranthraxusDefeated
 	Program 8
 
 LeaveCastle:
-	Print "KNOWING THAT TYRANTHRAXUS HAS FINALLY BEEN DEFEATED, YOU LEAVE THE CASTLE. MOVING THROUGH THE STREETS YOU CATCH OCCASIONAL GLIMPSES OF MONSTERS IN HIDING. NONE ATTACK."
+	PrintClear "KNOWING THAT TYRANTHRAXUS HAS FINALLY BEEN DEFEATED, YOU LEAVE THE CASTLE. MOVING THROUGH THE STREETS YOU CATCH OCCASIONAL GLIMPSES OF MONSTERS IN HIDING. NONE ATTACK."
 	Gosub PressToContinue
-	Print "FINALLY YOU ENTER THE CIVILIZED AREA OF PHLAN."
+	PrintClear "FINALLY YOU ENTER THE CIVILIZED AREA OF PHLAN."
 	Delay
 	Save 0 WallSplitA
 	Save 0 WallSplitB

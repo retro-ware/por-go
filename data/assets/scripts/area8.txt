@@ -4,7 +4,7 @@ event0:
 	IfGe
 	Save 8 SkyColor8
 	Save SkyColor8 Sky
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	Gosub CheckQuestOver
 	CompareAnd Scratch10 29 Facing 2
 	IfEq
@@ -18,7 +18,7 @@ WayBlocked:
 	Compare HallGuardsFought 0
 	IfNe
 	Exit
-	Print "THE WAY IS BLOCKED."
+	PrintClear "THE WAY IS BLOCKED."
 	Save 255 HoldMove
 	Goto CouncilGuard
 
@@ -35,9 +35,9 @@ CheckEastDoor:
 	Exit
 
 event1:
-	Print ""
+	PrintClear ""
 	Gosub ClearPicture
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	Gosub CheckQuestOver
 	Save 26 CellEventIndex
 
@@ -48,7 +48,7 @@ FindCellEvent:
 	Compare CellEventIndex 34
 	IfGt
 	Exit
-	Arith 1 CellEventIndex CellEventIndex
+	Add 1 CellEventIndex CellEventIndex
 	Goto FindCellEvent
 
 event2:
@@ -71,14 +71,14 @@ event3:
 
 event4:
 	LoadFiles 0 0 0
-	LoadFiles 127 127 127
+	LoadPieces 127 127 127
 	Compare RestChance 255
 	IfEq
 	Exit
 	Goto NoRestHere
 
 CellEvents:
-	Arith 26 CellEventIndex CellEventIndex
+	Sub 26 CellEventIndex CellEventIndex
 	OnGoto CellEventIndex 9 ExitToArea0 EnterCityHall OutsideClerkOffice ClerkOffice CadornaChambers CadornaZhentilMission UrslingenRoom CouncilChambers GuardPost
 	Gosub ClearPicture
 	Exit
@@ -91,14 +91,14 @@ EnterCityHall:
 	Compare HallEntered 0
 	IfGt
 	Exit
-	Arith 1 HallEntered HallEntered
+	Add 1 HallEntered HallEntered
 	Delay
 	Save 2 Facing
 	Call CallRedraw
 	Compare IronBoxState 128
 	IfEq
 	Goto CadornaConfronts
-	Print "YOU ENTER THE CITY HALL.  AS YOU FACE DOWN THE HALLWAY, YOU SEE A GUARDED DOOR."
+	PrintClear "YOU ENTER THE CITY HALL.  AS YOU FACE DOWN THE HALLWAY, YOU SEE A GUARDED DOOR."
 	Return
 
 CadornaConfronts:
@@ -109,13 +109,13 @@ CadornaConfronts:
 	Exit
 	Save 55 Portrait
 	Picture 31
-	Print "COUNCILMAN CADORNA CONFRONTS YOU. 'YOU HAVE TAKEN MY FAMILY TREASURE. I DON'T FORGET SUCH THINGS.' HE STRIDES OFF."
+	PrintClear "COUNCILMAN CADORNA CONFRONTS YOU. 'YOU HAVE TAKEN MY FAMILY TREASURE. I DON'T FORGET SUCH THINGS.' HE STRIDES OFF."
 	Gosub ClearPicture
 	Exit
 
 OutsideClerkOffice:
 	Gosub CheckQuestOver
-	Print "YOU ARE OUTSIDE THE CLERK'S OFFICE. GUARDS POSTED AROUND A DOOR IN THE SOUTH WALL WATCH YOU CLOSELY."
+	PrintClear "YOU ARE OUTSIDE THE CLERK'S OFFICE. GUARDS POSTED AROUND A DOOR IN THE SOUTH WALL WATCH YOU CLOSELY."
 	Save 0 ClerkTalkedThisVisit
 	Return
 
@@ -130,7 +130,7 @@ ClerkOffice:
 	Goto BackSoSoon
 	Save 1 ClerkMet
 	Save 1 ClerkTalkedThisVisit
-	Print "AT YOUR ENTRY, THE COUNCIL CLERK BEGINS LOOKING THROUGH A STACK OF PAPERS.  'BEFORE I CAN OFFER ANY COMMISSIONS, I MUST SEE IF YOU ARE DUE A CURRENT REWARD."
+	PrintClear "AT YOUR ENTRY, THE COUNCIL CLERK BEGINS LOOKING THROUGH A STACK OF PAPERS.  'BEFORE I CAN OFFER ANY COMMISSIONS, I MUST SEE IF YOU ARE DUE A CURRENT REWARD."
 	Gosub PressToContinue
 	Save 0 Scratch1
 	Save 0 RewardKind
@@ -142,20 +142,20 @@ ClerkOffice:
 UndeadRewardLoop:
 	GetTable UndeadKillTable Scratch1 Scratch2
 	GetTable UndeadPaidTable Scratch1 Scratch8
-	Arith Scratch8 Scratch2 Scratch9
+	Sub Scratch8 Scratch2 Scratch9
 	Compare Scratch9 0
 	IfGt
 	Save 1 RewardKind
 	OnGoto Scratch1 7 SetPlatinum AddGems AddJewelry AddItems AddGems AddJewelry AddItems
 	SaveTable Scratch2 UndeadPaidTable Scratch1
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Compare Scratch1 7
 	IfLt
 	Goto UndeadRewardLoop
 	Compare RewardKind 1
 	IfNe
 	Goto BivantPenalty
-	Print "'WE HAVE BEEN INFORMED YOU HAVE ELIMINATED SOME UNDEAD FROM THE GRAVEYARD."
+	PrintClear "'WE HAVE BEEN INFORMED YOU HAVE ELIMINATED SOME UNDEAD FROM THE GRAVEYARD."
 	Goto GiveReward
 
 BivantPenalty:
@@ -174,7 +174,7 @@ ScanQuestLoop:
 	Goto ClerkSpeaks
 
 NextQuest:
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Gosub CheckQuestOver
 	Compare Scratch1 25
 	IfGt
@@ -182,7 +182,7 @@ NextQuest:
 	Goto ScanQuestLoop
 
 ClerkSpeaks:
-	Print "THE CLERK SPEAKS. '"
+	PrintClear "THE CLERK SPEAKS. '"
 	OnGoto Scratch1 26 NorrisBonus SokalKeepBonus TempleAreaCleared BivantRescued DiscoursesValuable DescriptionsAmuse MapsHelp HistoriesUseful RecordsInsight SmallValue PodalPlazaSuccess GraveyardPrize KovelThievesGone StojonowCleared SwiftReturn LizardmenGone KoboldsGone NomadCampNews CadornaPaid GateTaken QuestOver SlumsCleared NoRewardText TempleOfBaneLoot CadornaTraitorNotice CadornaDeadNotice
 	Compare Scratch1 22
 	IfGt
@@ -190,14 +190,14 @@ ClerkSpeaks:
 	Goto LoadReward
 
 ClearingRewards:
-	AndOr LibraryEventFlags 96 Scratch1
+	And LibraryEventFlags 96 Scratch1
 	Compare Scratch1 96
 	IfNe
 	Goto CheckPodalPlaza
 	Compare LibraryRewardGiven 255
 	IfEq
 	Goto CheckPodalPlaza
-	Save "LIBRARY.'" str AuxText
+	Save "LIBRARY.'" $AuxText
 	Save 255 LibraryRewardGiven
 	Goto ClearingReward
 
@@ -205,7 +205,7 @@ CheckPodalPlaza:
 	Compare PodalPlazaCleared 254
 	IfNe
 	Goto CheckTextileHouse
-	Save "PODAL PLAZA.'" str AuxText
+	Save "PODAL PLAZA.'" $AuxText
 	Save 255 PodalPlazaCleared
 	Goto ClearingReward
 
@@ -213,12 +213,12 @@ CheckTextileHouse:
 	Compare TextileHouseCleared 254
 	IfNe
 	Goto ToScanQuests
-	Save "CADORNA TEXTILE HOUSE.'" str AuxText
+	Save "CADORNA TEXTILE HOUSE.'" $AuxText
 	Save 255 TextileHouseCleared
 
 ClearingReward:
-	Print "'THERE IS A REWARD FOR CLEARING THE "
-	Print str AuxText
+	PrintClear "'THERE IS A REWARD FOR CLEARING THE "
+	Print $AuxText
 	Save 10 Scratch1
 	Save 2 RewardKind
 	Goto LoadReward
@@ -230,7 +230,7 @@ CheckBivantBungled:
 	Compare QuestBivant 128
 	IfNe
 	Return
-	Print "'BY THE WAY, YOUR BUNGLING THE BIVANT RESCUE HAS COST US.'"
+	PrintClear "'BY THE WAY, YOUR BUNGLING THE BIVANT RESCUE HAS COST US.'"
 	Gosub PressToContinue
 	Save 255 QuestBivant
 	Return
@@ -268,12 +268,12 @@ MarkQuestPaid:
 
 NorrisBonus:
 	Print "THE COUNCIL HAS AWARDED A BONUS FOR YOUR ELIMINATING NORRIS THE GRAY."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 SokalKeepBonus:
 	Print "WITH SOKAL KEEP IN OUR HANDS, WE CAN USE BOATS TO BYPASS THE BARREN RIVER."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 TempleAreaCleared:
@@ -311,22 +311,22 @@ SmallValue:
 
 PodalPlazaSuccess:
 	Print "YOUR SUCCESS AT PODAL PLAZA IS NOTED."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 GraveyardPrize:
 	Print "THE COUNCIL HAS VOTED A SPECIAL PRIZE FOR ENDING THE GRAVEYARD MENACE."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 KovelThievesGone:
 	Print "THE COUNCIL WAS PLEASED BY THE ELIMINATION OF THE THIEVES IN KOVEL MANSION."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 StojonowCleared:
 	Print "WITH THE CLEARING OF THE STOJONOW RIVER, WE CAN OPEN UP THE HINTERLANDS FOR TRADE."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 SwiftReturn:
@@ -336,17 +336,17 @@ SwiftReturn:
 
 LizardmenGone:
 	Print "YOUR ELIMINATION OF THE LIZARDMEN MENACE HAS GREATLY IMPROVED OUR STRATEGIC POSITION."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 KoboldsGone:
 	Print "THIS LOSS OF THE KOBOLD FORCES WILL BE A MAJOR BLOW TO THE ENEMY."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 NomadCampNews:
 	Print "WE WERE MUCH RELIEVED BY THE NEWS YOU BRING FROM THE NOMAD CAMP."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 CadornaPaid:
@@ -366,7 +366,7 @@ QuestOver:
 
 SlumsCleared:
 	Print "YOUR CLEARING OF THE SLUM AREAS PERMITS US TO EXPAND."
-	Arith 1 CouncilFavor CouncilFavor
+	Add 1 CouncilFavor CouncilFavor
 	Return
 
 NoRewardText:
@@ -401,23 +401,23 @@ GraveyardNotice:
 	Compare GraveyardNoticeGiven 255
 	IfEq
 	Goto OfferCommissions
-	Print "PUTTING DOWN THE PAPERS, SHE SAYS, 'I MUST BRING TO YOUR ATTENTION THE FOLLOWING CONCERNING VALHINGEN GRAVEYARD: '"
+	PrintClear "PUTTING DOWN THE PAPERS, SHE SAYS, 'I MUST BRING TO YOUR ATTENTION THE FOLLOWING CONCERNING VALHINGEN GRAVEYARD: '"
 	Gosub PressToContinue
 	Compare Scratch1 36
 	IfGt
 	Goto GraveyardDanger
-	Print "THE UNDEAD ARE CROSSING THE RIVER IN HORDES AND KILLING OR CARRYING OFF OUR SETTLERS.  THE COUNCIL DEMANDS THESE ATTACKS BE STOPPED. A GENEROUS REWARD IS OFFERED.'"
+	PrintClear "THE UNDEAD ARE CROSSING THE RIVER IN HORDES AND KILLING OR CARRYING OFF OUR SETTLERS.  THE COUNCIL DEMANDS THESE ATTACKS BE STOPPED. A GENEROUS REWARD IS OFFERED.'"
 	Goto GraveyardContinue
 
 GraveyardDanger:
-	Print "UNDEAD FROM THE GRAVEYARD HAVE GROWN MORE DANGEROUS THAN ALL OF THE OTHER FORCES WHICH CONFRONT US."
+	PrintClear "UNDEAD FROM THE GRAVEYARD HAVE GROWN MORE DANGEROUS THAN ALL OF THE OTHER FORCES WHICH CONFRONT US."
 	Gosub PressToContinue
-	Print "'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'"
+	PrintClear "'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 AcceptGraveyard OfferCommissions
 
 AcceptGraveyard:
-	Print "'EXCELLENT.'"
+	PrintClear "'EXCELLENT.'"
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 51
 	Combat
@@ -429,7 +429,7 @@ GraveyardContinue:
 	Gosub PressToContinue
 
 OfferCommissions:
-	Print "THE CLERK SHUFFLES THROUGH HER PAPERS. 'ON THE MATTER OF COMMISSION,' SHE SAYS, 'I CAN OFFER THE FOLLOWING: '"
+	PrintClear "THE CLERK SHUFFLES THROUGH HER PAPERS. 'ON THE MATTER OF COMMISSION,' SHE SAYS, 'I CAN OFFER THE FOLLOWING: '"
 	Goto ListOffers
 
 BackSoSoon:
@@ -438,7 +438,7 @@ BackSoSoon:
 	Exit
 	Save 1 ClerkTalkedThisVisit
 	Gosub ShowClerk
-	Print "'BACK SO SOON? I CAN ONLY REPEAT THE EARLIER OFFERS: '"
+	PrintClear "'BACK SO SOON? I CAN ONLY REPEAT THE EARLIER OFFERS: '"
 
 ListOffers:
 	Gosub PressToContinue
@@ -452,39 +452,39 @@ OfferLoop:
 	IfEq
 	Goto MarkCadornaTraitor
 	OnGoto Scratch1 16 OfferSlums OfferSokalKeep OfferBooks OfferPodalAuction OfferCadorna OfferBishop OfferKovelMansion OfferNomads OfferKobolds OfferNone OfferRiverPollution OfferLizardmen OfferBivant OfferZhentilMission OfferUrslingen OfferCouncilMeeting
-	Arith 1 OffersListed OffersListed
+	Add 1 OffersListed OffersListed
 	Gosub PressToContinue
 
 NextOffer:
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Goto OfferLoop
 
 OfferSlums:
 	Compare QuestSlums 255
 	IfEq
 	Goto NextOffer
-	Print "THE SLUMS IMMEDIATELY TO OUR WEST NEED TO BE CLEARED OF MONSTERS.'"
+	PrintClear "THE SLUMS IMMEDIATELY TO OUR WEST NEED TO BE CLEARED OF MONSTERS.'"
 	Return
 
 OfferSokalKeep:
 	Compare QuestSokalKeep 255
 	IfEq
 	Goto NextOffer
-	Print "SOKAL KEEP ON THORN ISLAND MUST BE CLEARED.'"
+	PrintClear "SOKAL KEEP ON THORN ISLAND MUST BE CLEARED.'"
 	Return
 
 OfferBooks:
 	Compare LibraryRewardGiven 255
 	IfEq
 	Goto NextOffer
-	Print "THE COUNCIL IS OFFERING A REWARD FOR BOOKS, MAPS, TOMES, ETC. WHICH PROVIDE USEFUL INFORMATION ABOUT PHLAN BEFORE THE FALL.  THE REWARD IS TIED TO THE VALUE OF THE INFORMATION.'"
+	PrintClear "THE COUNCIL IS OFFERING A REWARD FOR BOOKS, MAPS, TOMES, ETC. WHICH PROVIDE USEFUL INFORMATION ABOUT PHLAN BEFORE THE FALL.  THE REWARD IS TIED TO THE VALUE OF THE INFORMATION.'"
 	Return
 
 OfferPodalAuction:
 	Compare QuestPodalAuction 255
 	IfEq
 	Goto NextOffer
-	Print "A WEAPON OF GREAT POWER IS TO BE AUCTIONED TO OUR ENEMIES. THIS AUCTION IS TO BE HELD IN PODAL PLAZA.  FIND OUT WHAT THE WEAPON IS AND RETURN.'"
+	PrintClear "A WEAPON OF GREAT POWER IS TO BE AUCTIONED TO OUR ENEMIES. THIS AUCTION IS TO BE HELD IN PODAL PLAZA.  FIND OUT WHAT THE WEAPON IS AND RETURN.'"
 	Save 1 QuestPodalAuction
 	Return
 
@@ -498,7 +498,7 @@ OfferCadorna:
 	Compare QuestCadornaPayment 255
 	IfEq
 	Goto NextOffer
-	Print "JUNIOR COUNCILMAN CADORNA HAS A SPECIAL COMMISSION FOR YOU.  HIS CHAMBERS ARE THROUGH THE EAST DOOR.'"
+	PrintClear "JUNIOR COUNCILMAN CADORNA HAS A SPECIAL COMMISSION FOR YOU.  HIS CHAMBERS ARE THROUGH THE EAST DOOR.'"
 	Save 254 CadornaCommission
 	Return
 
@@ -512,7 +512,7 @@ OfferBishop:
 	Compare QuestTempleOfBane 255
 	IfEq
 	Goto NextOffer
-	Print "YOU ARE SUMMONED BY THE BISHOP OF BRACCIO OF TYR. REPORT TO HIM AT TYR'S TEMPLE.'"
+	PrintClear "YOU ARE SUMMONED BY THE BISHOP OF BRACCIO OF TYR. REPORT TO HIM AT TYR'S TEMPLE.'"
 	Save 254 BishopSummons
 	Return
 
@@ -523,21 +523,21 @@ OfferKovelMansion:
 	Compare QuestKovelThieves 255
 	IfEq
 	Goto NextOffer
-	Print "A LARGE GROUP OF THIEVES OPERATES OUT OF THE OLD KOVEL MANSION. THE COUNCIL WILL PAY TO HAVE THEM CLEANED OUT.'"
+	PrintClear "A LARGE GROUP OF THIEVES OPERATES OUT OF THE OLD KOVEL MANSION. THE COUNCIL WILL PAY TO HAVE THEM CLEANED OUT.'"
 	Return
 
 OfferNomads:
 	Compare QuestNomads 255
 	IfEq
 	Goto NextOffer
-	Print "FIND THE NOMADS AND STOP THEM FROM JOINING FORCES WITH OUR ENEMIES.'"
+	PrintClear "FIND THE NOMADS AND STOP THEM FROM JOINING FORCES WITH OUR ENEMIES.'"
 	Return
 
 OfferKobolds:
 	Compare QuestKobolds 255
 	IfEq
 	Goto NextOffer
-	Print "A LARGE TRIBE OF KOBOLDS IS BEING RECRUITED BY THE ENEMY.  MAKE SURE THEY DON'T JOIN THE ENEMY FORCES.'"
+	PrintClear "A LARGE TRIBE OF KOBOLDS IS BEING RECRUITED BY THE ENEMY.  MAKE SURE THEY DON'T JOIN THE ENEMY FORCES.'"
 	Return
 
 OfferNone:
@@ -547,14 +547,14 @@ OfferRiverPollution:
 	Compare Boss 255
 	IfEq
 	Goto NextOffer
-	Print "FIND THE SOURCE OF THE RIVER'S POLLUTION AND END IT.'"
+	PrintClear "FIND THE SOURCE OF THE RIVER'S POLLUTION AND END IT.'"
 	Return
 
 OfferLizardmen:
 	Compare QuestLizardmen 255
 	IfEq
 	Goto NextOffer
-	Print "A TRIBE OF LIZARDMEN IS PREPARING TO JOIN THE ENEMY.  PREVENT THIS.'"
+	PrintClear "A TRIBE OF LIZARDMEN IS PREPARING TO JOIN THE ENEMY.  PREVENT THIS.'"
 	Return
 
 OfferBivant:
@@ -564,7 +564,7 @@ OfferBivant:
 	Compare QuestBivant 0
 	IfNe
 	Goto NextOffer
-	Print "THE HEIR TO THE HOUSE OF BIVANT MUST BE RESCUED.  WE WILL PAY GENEROUSLY FOR HIS SAFE RETURN.'"
+	PrintClear "THE HEIR TO THE HOUSE OF BIVANT MUST BE RESCUED.  WE WILL PAY GENEROUSLY FOR HIS SAFE RETURN.'"
 	Save 255 Mark3
 	Return
 
@@ -581,12 +581,12 @@ OfferZhentilMission:
 	Compare QuestZhentilOutpost 255
 	IfEq
 	Goto NextOffer
-	Print "LORD CADORNA HAS A DELICATE DIPLOMATIC MISSION THAT REQUIRES YOUR PARTICULAR SKILLS.  YOU ARE SUMMONED TO HIS CHAMBERS. GO THROUGH THE SOUTH DOOR.'"
+	PrintClear "LORD CADORNA HAS A DELICATE DIPLOMATIC MISSION THAT REQUIRES YOUR PARTICULAR SKILLS.  YOU ARE SUMMONED TO HIS CHAMBERS. GO THROUGH THE SOUTH DOOR.'"
 	Save 254 ZhentilMission
 	Return
 
 OfferZhentilMessage:
-	Print "WE NEED YOU TO DELIVER A MESSAGE TO THE ZHENTIL KEEP TO THE WEST. BE CAREFUL, THE TRAITOR CADORNA MAY HAVE TAMPERED WITH THE MESSAGE PACKET BEFORE HE FLED.'"
+	PrintClear "WE NEED YOU TO DELIVER A MESSAGE TO THE ZHENTIL KEEP TO THE WEST. BE CAREFUL, THE TRAITOR CADORNA MAY HAVE TAMPERED WITH THE MESSAGE PACKET BEFORE HE FLED.'"
 	Save 255 ZhentilMission
 	Return
 
@@ -597,8 +597,8 @@ OfferUrslingen:
 	Compare QuestCadornaTraitor 254
 	IfLt
 	Goto NextOffer
-	Print "LORD URSLINGEN WISHES URGENTLY TO SPEAK WITH YOU.  GO THROUGH THE SOUTH DOOR OF THE TRAITOR CADORNA'S OLD QUARTERS.'"
-	AndOr CadornaQuartersFlags 8 CadornaQuartersFlags
+	PrintClear "LORD URSLINGEN WISHES URGENTLY TO SPEAK WITH YOU.  GO THROUGH THE SOUTH DOOR OF THE TRAITOR CADORNA'S OLD QUARTERS.'"
+	Or CadornaQuartersFlags 8 CadornaQuartersFlags
 	Save 254 UrslingenGateMission
 	Return
 
@@ -612,7 +612,7 @@ OfferCouncilMeeting:
 	Compare QuestTyranthraxus 255
 	IfEq
 	Goto NextOffer
-	Print "YOU ARE SUMMONED TO A SPECIAL COUNCIL MEETING.  YOU ARE TO BE AWARDED A VALUABLE COMMISSION. THE CITY GUARDS WILL SHOW YOU THE WAY.'"
+	PrintClear "YOU ARE SUMMONED TO A SPECIAL COUNCIL MEETING.  YOU ARE TO BE AWARDED A VALUABLE COMMISSION. THE CITY GUARDS WILL SHOW YOU THE WAY.'"
 	Save 254 FinalAttackMeeting
 	Gosub PressToContinue
 	Goto GuardEscort
@@ -624,7 +624,7 @@ MarkCadornaTraitor:
 	Save 254 QuestCadornaTraitor
 
 OffersDone:
-	Print "'THESE ARE ALL OF THE COMMISSIONS CURRENTLY AVAILABLE.'"
+	PrintClear "'THESE ARE ALL OF THE COMMISSIONS CURRENTLY AVAILABLE.'"
 	Gosub ClearPicture
 	Exit
 
@@ -637,9 +637,9 @@ CadornaChambers:
 	Exit
 	Save 55 Portrait
 	Picture 31
-	Print "'WHEN OLD PHLAN WAS OVERRUN, A FAMILY TREASURE WAS HIDDEN IN THE WESTERN BUILDING OF THE TEXTILE COMPLEX."
+	PrintClear "'WHEN OLD PHLAN WAS OVERRUN, A FAMILY TREASURE WAS HIDDEN IN THE WESTERN BUILDING OF THE TEXTILE COMPLEX."
 	Gosub PressToContinue
-	Print "'THE FAITHFUL SERVANT SENT TO FETCH IT NEVER RETURNED.  THE COMPLEX IS JUST SOUTH OF PODOL PLAZA.  BRING THE TREASURE TO ME AND YOU WILL BE WELL REWARDED.'"
+	PrintClear "'THE FAITHFUL SERVANT SENT TO FETCH IT NEVER RETURNED.  THE COMPLEX IS JUST SOUTH OF PODOL PLAZA.  BRING THE TREASURE TO ME AND YOU WILL BE WELL REWARDED.'"
 	Gosub PressToContinue
 	Save 255 CadornaCommission
 	Gosub ClearPicture
@@ -652,9 +652,9 @@ CadornaZhentilMission:
 	Exit
 	Save 55 Portrait
 	Picture 1
-	Print "'IT IS IMPERATIVE THAT A MESSAGE BE DELIVERED TO THE ZHENTIL OUTPOST TO THE WEST.  I AM SENDING YOU AS DIPLOMATIC ENVOYS."
+	PrintClear "'IT IS IMPERATIVE THAT A MESSAGE BE DELIVERED TO THE ZHENTIL OUTPOST TO THE WEST.  I AM SENDING YOU AS DIPLOMATIC ENVOYS."
 	Gosub PressToContinue
-	Print "'WHEN YOU GET TO ZHENTIAL KEEP, PRESENT THIS PACKET TO ITS COMMANDANT.  DO NOT BREAK THE SEALS OR YOU WILL BE SEIZED AS SPIES.'"
+	PrintClear "'WHEN YOU GET TO ZHENTIAL KEEP, PRESENT THIS PACKET TO ITS COMMANDANT.  DO NOT BREAK THE SEALS OR YOU WILL BE SEIZED AS SPIES.'"
 	Gosub PressToContinue
 	Save 255 ZhentilMission
 	Return
@@ -665,9 +665,9 @@ UrslingenRoom:
 	Exit
 	Save 16 Portrait
 	Picture 7
-	Print "'THANK YOU FOR COMING.  I MUST BE BRIEF FOR OUR NEED IS URGENT.  OUR ONE CHANCE TO DEFEAT THE ENEMY IS THROUGH AN ASSAULT ON THE CASTLE. TO DO THIS, WE MUST FIRST SECURE STOJANOW GATE."
+	PrintClear "'THANK YOU FOR COMING.  I MUST BE BRIEF FOR OUR NEED IS URGENT.  OUR ONE CHANCE TO DEFEAT THE ENEMY IS THROUGH AN ASSAULT ON THE CASTLE. TO DO THIS, WE MUST FIRST SECURE STOJANOW GATE."
 	Gosub PressToContinue
-	Print "'THE GATE IS TOO STRONG TO BE TAKEN BY STORM. A SMALL BAND MUST SLIP INSIDE AND HOLD UNTIL RELIEVED. YOU ARE THE BEST AND THE BRAVEST. THE COUNCIL HAS INSTRUCTED ME TO ENTRUST THE TASK TO YOU.'"
+	PrintClear "'THE GATE IS TOO STRONG TO BE TAKEN BY STORM. A SMALL BAND MUST SLIP INSIDE AND HOLD UNTIL RELIEVED. YOU ARE THE BEST AND THE BRAVEST. THE COUNCIL HAS INSTRUCTED ME TO ENTRUST THE TASK TO YOU.'"
 	Gosub PressToContinue
 	Save 255 UrslingenGateMission
 	Return
@@ -678,9 +678,9 @@ CouncilChambers:
 	Exit
 	Save 16 Portrait
 	Picture 2
-	Print "IN THE COUNCIL CHAMBERS, THE ENTIRE CITY COUNCIL IS WAITING FOR YOU. THE LORD HIGH MAYOR, ULRICH EBERHARD, SPEAKS: 'OUR FORCES ARE MARSHALLED FOR THE ASSAULT ON VALJEVO CASTLE."
+	PrintClear "IN THE COUNCIL CHAMBERS, THE ENTIRE CITY COUNCIL IS WAITING FOR YOU. THE LORD HIGH MAYOR, ULRICH EBERHARD, SPEAKS: 'OUR FORCES ARE MARSHALLED FOR THE ASSAULT ON VALJEVO CASTLE."
 	Gosub PressToContinue
-	Print "'IT IS THE UNANIMOUS REQUEST OF THE COUNCIL THAT YOU LEAD THE ATTACK. YOUR SKILL AND BRAVERY HAVE WON THE ADMIRATION OF ALL PHLAN.  WE LOOK TO YOU TO HELP US WIN OUR FREEDOM.'"
+	PrintClear "'IT IS THE UNANIMOUS REQUEST OF THE COUNCIL THAT YOU LEAD THE ATTACK. YOUR SKILL AND BRAVERY HAVE WON THE ADMIRATION OF ALL PHLAN.  WE LOOK TO YOU TO HELP US WIN OUR FREEDOM.'"
 	Gosub PressToContinue
 	Save 255 FinalAttackMeeting
 	Return
@@ -695,7 +695,7 @@ CouncilGuard:
 	Save 57 Portrait
 	SetupMonster 27 1 1
 	Approach
-	Print "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
+	PrintClear "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 LeaveHall FightGuards
 
@@ -718,13 +718,13 @@ FightGuards:
 	Combat
 	Save 1 FoughtWatch
 	Save 1 HallGuardsFought
-	Print "THE REMAINING GUARDS DECIDE TO LEAVE YOU ALONE."
+	PrintClear "THE REMAINING GUARDS DECIDE TO LEAVE YOU ALONE."
 	Exit
 
 GuardEscort:
 	Save 57 Portrait
 	Picture 1
-	Print "THE GUARD CAPTAIN STEPS FORWARD. 'PLEASE LET US SHOW YOU THE WAY.'"
+	PrintClear "THE GUARD CAPTAIN STEPS FORWARD. 'PLEASE LET US SHOW YOU THE WAY.'"
 	Gosub PressToContinue
 	Gosub ClearPicture
 	Save 0 Facing
@@ -783,13 +783,29 @@ SetPlatinum:
 	Return
 
 AddGems:
-	Arith Scratch9 Scratch4 Scratch4
+	Add Scratch9 Scratch4 Scratch4
 	Return
 
 AddJewelry:
-	Arith Scratch9 Scratch5 Scratch5
+	Add Scratch9 Scratch5 Scratch5
 	Return
 
 AddItems:
-	Arith Scratch9 Scratch6 Scratch6
+	Add Scratch9 Scratch6 Scratch6
 	Return
+
+RewardTable1:
+	Data 250 0 250 0 0 0 0 0 0 1 250 0 0 0 0 50
+	Data 0 0 0 0 0 250 0
+
+RewardTable2:
+	Data 200 250 99 0 80 90 100 110 120 0 200 0 80 250 0 0
+	Data 0 0 0 0 0 50 125
+
+RewardTable3:
+	Data 0 0 3 25 0 0 0 0 0 0 0 15 3 0 7 15
+	Data 25 6 20 0 200 0 0
+
+RewardTable4:
+	Data 0 3 0 5 0 0 0 0 0 0 0 25 0 15 5 5
+	Data 0 2 0 10 100 1 0 255

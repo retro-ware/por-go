@@ -178,6 +178,9 @@ func (l *Loader) File(name string) *File {
 
 // Block loads block id from archive name; nil if either is missing.
 func (l *Loader) Block(name string, id int) []byte {
+	if l == nil {
+		return nil
+	}
 	if l.amiga != nil {
 		k := amigaKey{name, id}
 		l.mu.Lock()

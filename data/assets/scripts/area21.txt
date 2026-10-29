@@ -3,7 +3,7 @@ event0:
 	Compare LeftMap 0
 	IfEq
 	Goto EnterDone
-	Print "DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?"
+	PrintClear "DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 BoardBoat StayAtKeep
 
@@ -14,7 +14,7 @@ BoardBoat:
 	Picture 41
 
 SailToPhlan:
-	Print "YOU BOARD A BOAT."
+	PrintClear "YOU BOARD A BOAT."
 	Gosub PressToContinue
 	Save 15 PartyX
 	Save 1 PartyY
@@ -26,14 +26,14 @@ StayAtKeep:
 	Save 255 HoldMove
 
 EnterDone:
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	Exit
 
 event1:
 	Save SkyColor21 Sky
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	RedrawView
-	Print ""
+	PrintClear ""
 	Picture 255
 	Save 0 Scratch6
 	Save 0 AuxCounter
@@ -45,7 +45,7 @@ FindCellLoop:
 	Compare AuxCounter 19
 	IfGt
 	Exit
-	Arith 1 AuxCounter AuxCounter
+	Add 1 AuxCounter AuxCounter
 	Goto FindCellLoop
 
 CellDispatch:
@@ -77,7 +77,7 @@ event4:
 	Save SkyColor21 Sky
 	Save 10 SkyInside
 	LoadFiles 21 2 255
-	LoadFiles 1 5 9
+	LoadPieces 1 5 9
 	Compare ArrivedAtKeep 0
 	IfNe
 	Exit
@@ -86,7 +86,7 @@ event4:
 	Save 8 PartyX
 	Save 14 PartyY
 	Call CallRedraw
-	Print "THE BOAT DISEMBARKS YOU AT SOKAL KEEP."
+	PrintClear "THE BOAT DISEMBARKS YOU AT SOKAL KEEP."
 	Gosub PressToContinue
 	Compare RestChance ViewFlags
 	IfEq
@@ -101,14 +101,14 @@ DeadElf:
 	Compare ElfBodyHacked 255
 	IfEq
 	Goto ElfLooted
-	Print "THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT."
+	PrintClear "THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT."
 	Gosub PressToContinue
 	Compare Search 1
 	IfNe
 	Goto ElfMenu
 
 ElfScroll:
-	Print "IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ..."
+	PrintClear "IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ..."
 	Gosub PressToContinue
 	LoadFiles 255 16 255
 	ClearBox
@@ -117,10 +117,10 @@ ElfScroll:
 	Protection ElfScrollLine2
 	NewLine
 	Protection ElfScrollLine3
-	Print "...THE LAST PART IS EATEN AWAY."
+	PrintClear "...THE LAST PART IS EATEN AWAY."
 	LoadFiles 255 2 255
 	Gosub PressToContinue
-	LoadFiles 1 5 9
+	LoadPieces 1 5 9
 	Goto ElfDone
 
 ElfMenu:
@@ -129,16 +129,16 @@ ElfMenu:
 
 TalkToElf:
 	Parlay 0 0 0 0 0 Scratch1
-	Print "THE ELF IS LONG DEAD."
+	PrintClear "THE ELF IS LONG DEAD."
 	Goto ElfDone
 
 HackElf:
-	Print "YOU HACK THE BODY TO BITS."
+	PrintClear "YOU HACK THE BODY TO BITS."
 	Save 255 ElfBodyHacked
 	Goto ElfDone
 
 ElfLooted:
-	Print "YOU SEE THE PITIFUL REMAINS OF A DEAD ELF.  EVERYTHING OF VALUE HAS BEEN TAKEN OR DESTROYED."
+	PrintClear "YOU SEE THE PITIFUL REMAINS OF A DEAD ELF.  EVERYTHING OF VALUE HAS BEEN TAKEN OR DESTROYED."
 
 ElfDone:
 	Picture 255
@@ -148,7 +148,7 @@ KeepGates:
 	Compare Scratch3 0
 	IfNe
 	Exit
-	Print "YOU STAND BELOW THE ROTTING REMAINS OF THE ONCE-MIGHTY GATES OF SOKAL KEEP."
+	PrintClear "YOU STAND BELOW THE ROTTING REMAINS OF THE ONCE-MIGHTY GATES OF SOKAL KEEP."
 	Save 1 Scratch3
 	Compare FerranFreed 255
 	IfEq
@@ -182,7 +182,7 @@ UndeadPatrol:
 	Compare PatrolPassword 0
 	IfEq
 	Goto PatrolMenu
-	Print "AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?"
+	PrintClear "AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 PatrolLeaves PatrolFight
 
@@ -192,26 +192,26 @@ PatrolMenu:
 
 PatrolParlay:
 	Parlay 0 0 0 0 0 Scratch1
-	Print "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
+	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
 	NewLine
-	InputString 7 str AuxMonsterName
+	InputString 7 $AuxMonsterName
 	Compare FerranFreed 255
 	IfEq
-	Save "SAMOSUD" str AuxText
+	Save "SAMOSUD" $AuxText
 	IfNe
-	Save "SHESTNI" str AuxText
-	Compare str AuxMonsterName str AuxText
+	Save "SHESTNI" $AuxText
+	Compare $AuxMonsterName $AuxText
 	IfNe
 	Goto WrongPassword
 	Save 1 PatrolPassword
 
 PatrolLeaves:
-	Print "THE UNDEAD LEAVE."
+	PrintClear "THE UNDEAD LEAVE."
 	Picture 255
 	Exit
 
 WrongPassword:
-	Print "THEY DIDN'T LIKE THAT WORD."
+	PrintClear "THEY DIDN'T LIKE THAT WORD."
 
 PatrolFight:
 	Save 3 Scratch1
@@ -220,7 +220,7 @@ PatrolFight:
 	Goto LoadEncounter
 
 PatrolBeaten:
-	Arith 1 PatrolsFought21 PatrolsFought21
+	Add 1 PatrolsFought21 PatrolsFought21
 	Exit
 
 Stable:
@@ -230,7 +230,7 @@ Stable:
 	Compare StableSeen21 0
 	IfNe
 	Exit
-	Print "UNWHOLESOME MOLD AND FUNGI COVER THE DECAYING RUINS OF THE KEEP'S STABLE.  A PUTRID SMELL OF SICKNESS RISES AS YOU ENTER THE BUILDING."
+	PrintClear "UNWHOLESOME MOLD AND FUNGI COVER THE DECAYING RUINS OF THE KEEP'S STABLE.  A PUTRID SMELL OF SICKNESS RISES AS YOU ENTER THE BUILDING."
 	Save 1 StableSeen21
 	Exit
 
@@ -241,7 +241,7 @@ FungusRoom:
 	Compare FungusRoomSeen 0
 	IfGt
 	Exit
-	Print "A THICK CARPET OF FUNGUS COVERS THE FLOOR OF THIS ROOM."
+	PrintClear "A THICK CARPET OF FUNGUS COVERS THE FLOOR OF THIS ROOM."
 	Save 1 FungusRoomSeen
 	Exit
 
@@ -252,7 +252,7 @@ Smithy:
 	Compare SmithySeen 0
 	IfGt
 	Goto SmithyFrogCheck
-	Print "A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY."
+	PrintClear "A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY."
 	Save 1 SmithySeen
 
 SmithyFrogCheck:
@@ -265,7 +265,7 @@ SmithyFrogCheck:
 	Compare SmithyFrogs 1
 	IfGt
 	Goto FrogsMenu
-	Arith 1 SmithyFrogs SmithyFrogs
+	Add 1 SmithyFrogs SmithyFrogs
 	Exit
 
 FrogsMenu:
@@ -274,7 +274,7 @@ FrogsMenu:
 
 FrogsParlay:
 	Parlay 0 0 0 0 0 Scratch1
-	Print "CROAK!"
+	PrintClear "CROAK!"
 
 FrogsFight:
 	Save 0 Scratch1
@@ -293,7 +293,7 @@ SmithyHammer:
 	Compare Search 1
 	IfNe
 	Exit
-	Print "AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER."
+	PrintClear "AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER."
 	Print " DO YOU TAKE IT?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 TakeHammer ClearExit
@@ -317,8 +317,8 @@ Barracks:
 	Save 0 BarracksVisits
 	Compare BarracksVisits 1
 	IfLt
-	Print "THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED."
-	Arith 1 BarracksVisits BarracksVisits
+	PrintClear "THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED."
+	Add 1 BarracksVisits BarracksVisits
 	Compare BarracksVisits 4
 	IfGe
 	Goto HauntsRise
@@ -329,7 +329,7 @@ HauntsRise:
 	IfEq
 	Goto HauntsMenu
 	Save 255 HauntsSeen
-	Print "A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING."
+	PrintClear "A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING."
 	Gosub PressToContinue
 
 HauntsMenu:
@@ -337,19 +337,19 @@ HauntsMenu:
 	OnGoto Scratch1 4 ClearExit HauntsWail RunAway HauntsParlay
 
 HauntsWail:
-	Print "'WOE, WOOOE, OH WOE,' THE FIGURES CRY PITEOUSLY."
+	PrintClear "'WOE, WOOOE, OH WOE,' THE FIGURES CRY PITEOUSLY."
 	Goto ClearExit
 
 HauntsParlay:
 	Parlay 0 0 0 0 0 Scratch1
-	Print "WHAT DO YOU SAY? (TYPE A SINGLE WORD)."
+	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)."
 	NewLine
-	InputString 3 str AuxMonsterName
-	Save "LUX" str AuxText
-	Compare str AuxMonsterName str AuxText
+	InputString 3 $AuxMonsterName
+	Save "LUX" $AuxText
+	Compare $AuxMonsterName $AuxText
 	IfEq
 	Goto HauntsAppease
-	Print "WRONG WORD. "
+	PrintClear "WRONG WORD. "
 	Picture 255
 	Print "THE MOANING CONTINUES."
 
@@ -361,9 +361,9 @@ BarracksSearch:
 	Goto DiaryGems
 
 HauntsAppease:
-	Print "THE HAUNTS BURST INTO A CHORUS OF HOWLS, MOANS, COMPLAINTS, WAILS, AND OTHER LAMENTATIONS OVER THEIR FATE AND THE FATE OF THEIR FAMILIES. THEY WERE THE ORIGINAL DEFENDERS OF THE KEEP,"
+	PrintClear "THE HAUNTS BURST INTO A CHORUS OF HOWLS, MOANS, COMPLAINTS, WAILS, AND OTHER LAMENTATIONS OVER THEIR FATE AND THE FATE OF THEIR FAMILIES. THEY WERE THE ORIGINAL DEFENDERS OF THE KEEP,"
 	Gosub PressToContinue
-	Print "BEFORE THE CLERIC'S SPELLS INADVERTENTLY BOUND THEM TO THIS PLACE. ONE SPIRIT'S VOICE RISES ABOVE THE REST, 'AN ACCOUNT OF OUR TRIALS IS WITHIN THE DIARY.' HE POINTS TO A FLOORBOARD."
+	PrintClear "BEFORE THE CLERIC'S SPELLS INADVERTENTLY BOUND THEM TO THIS PLACE. ONE SPIRIT'S VOICE RISES ABOVE THE REST, 'AN ACCOUNT OF OUR TRIALS IS WITHIN THE DIARY.' HE POINTS TO A FLOORBOARD."
 	Gosub PressToContinue
 	Picture 255
 	Save 5 Scratch1
@@ -376,9 +376,9 @@ DiaryGems:
 	Compare Scratch1 5
 	IfNe
 	Exit
-	Print "BENEATH A FLOORBOARD YOU FIND SOME GEMS AND A FEW PAGES OF A DIARY.  YOU COPY THESE PAGES INTO YOUR JOURNAL AS ENTRY 3."
+	PrintClear "BENEATH A FLOORBOARD YOU FIND SOME GEMS AND A FEW PAGES OF A DIARY.  YOU COPY THESE PAGES INTO YOUR JOURNAL AS ENTRY 3."
 	Gosub PressToContinue
-	Print "DO YOU TAKE THE GEMS?"
+	PrintClear "DO YOU TAKE THE GEMS?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 TakeGems ClearExit
 
@@ -394,7 +394,7 @@ Insects:
 	IfEq
 	Exit
 	SetupMonster 18 0 18
-	Print "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
+	PrintClear "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
 	Save 25 AuxMember
 	Gosub PressToContinue
 	PartySurprise Scratch1 Scratch2
@@ -416,7 +416,7 @@ OrcRaid:
 	IfEq
 	Goto EmptyHall
 	SetupMonster 6 1 6
-	Print "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
+	PrintClear "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
 	Gosub PressToContinue
 	Save 5 Scratch1
 	Save 2 AuxPartyStrength
@@ -425,7 +425,7 @@ OrcRaid:
 
 OrcRaidDone:
 	Save 255 OrcRaidBeaten
-	Print "ON A HOBGOBLIN BODY, YOU FIND A NOTE THAT YOU COPY INTO YOUR JOURNAL AS ENTRY 57."
+	PrintClear "ON A HOBGOBLIN BODY, YOU FIND A NOTE THAT YOU COPY INTO YOUR JOURNAL AS ENTRY 57."
 	Save 10 Scratch5
 	Exit
 
@@ -438,7 +438,7 @@ EmptyHall:
 	Compare Scratch5 10
 	IfEq
 	Exit
-	Print "THE HALL IS EMPTY, SAVE FOR SIGNS OF A RECENT BATTLE."
+	PrintClear "THE HALL IS EMPTY, SAVE FOR SIGNS OF A RECENT BATTLE."
 	Save 10 Scratch5
 	Exit
 
@@ -448,7 +448,7 @@ Armory:
 	Save 0 ArmorySeen
 	Compare ArmorySeen 1
 	IfLt
-	Print "YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS."
+	PrintClear "YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS."
 	Save 1 ArmorySeen
 	Exit
 
@@ -458,7 +458,7 @@ HiddenRoom:
 	IfGt
 	Save 0 HiddenRoomSeen
 	IfLt
-	Print "PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. "
+	PrintClear "PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. "
 	Save 1 HiddenRoomSeen
 	Compare MagicGearTaken 255
 	IfLt
@@ -469,14 +469,14 @@ GearStands:
 	Compare MagicGearTaken 255
 	IfEq
 	Exit
-	Print "SPECIAL STANDS IN THE NORTHWESTERN CORNER HOLD EQUIPMENT."
+	PrintClear "SPECIAL STANDS IN THE NORTHWESTERN CORNER HOLD EQUIPMENT."
 	Exit
 
 MagicGear:
 	Compare MagicGearTaken 255
 	IfEq
 	Exit
-	Print "ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. "
+	PrintClear "ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. "
 	Print "DO YOU TAKE IT?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 TakeGear ClearExit
@@ -500,7 +500,7 @@ Chapel:
 	Compare ChapelSeen 0
 	IfGt
 	Exit
-	Print "THIS WAS ONCE THE CHAPEL OF THE KEEP.  INSIDE THE DOORWAY ARE THE DRIED HUSKS OF TWO ORCS, THEIR FACES TWISTED WITH TERROR.  A LARGE ALTAR DOMINATES THE SOUTHERN WALL."
+	PrintClear "THIS WAS ONCE THE CHAPEL OF THE KEEP.  INSIDE THE DOORWAY ARE THE DRIED HUSKS OF TWO ORCS, THEIR FACES TWISTED WITH TERROR.  A LARGE ALTAR DOMINATES THE SOUTHERN WALL."
 	Save 1 ChapelSeen
 	Exit
 
@@ -516,44 +516,44 @@ FerranSpirit:
 
 FerranParlay:
 	Parlay 0 0 0 0 0 Scratch1
-	Print "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
+	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
 	NewLine
-	InputString 3 str AuxMonsterName
-	Save "LUX" str AuxText
-	Compare str AuxMonsterName str AuxText
+	InputString 3 $AuxMonsterName
+	Save "LUX" $AuxText
+	Compare $AuxMonsterName $AuxText
 	IfEq
 	Goto FerranSpeaks
 	IfEq
 	Goto FerranSpeaks
 	Save 255 FerranFaded
-	Print "THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY."
+	PrintClear "THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY."
 	Picture 255
 	Exit
 
 FerranSpeaks:
 	Picture 19
-	Print "THE SHAPE SPEAKS, 'I AM THE LIFE FORM OF FERRAN MARTINEZ, BOUND WITH THE UNDEAD SPIRITS OF ALL WHO DIE WITHIN THESE WALLS TO GUARD THE KEEP. TELL ME, HAS THE CITY BEEN FREED?'"
+	PrintClear "THE SHAPE SPEAKS, 'I AM THE LIFE FORM OF FERRAN MARTINEZ, BOUND WITH THE UNDEAD SPIRITS OF ALL WHO DIE WITHIN THESE WALLS TO GUARD THE KEEP. TELL ME, HAS THE CITY BEEN FREED?'"
 	NewLine
 	Print "DO YOU: "
 	HMenu Scratch1 3 "TELL THE TRUTH?" "LIE?" "RUN AWAY?"
 	OnGoto Scratch1 3 TellFerranTruth LieToFerran RunAway
 
 LieToFerran:
-	Print "'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY."
+	PrintClear "'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY."
 	Save 255 LiedToFerran
 	Picture 255
 	Exit
 
 TellFerranTruth:
-	Print "FERRAN SPEAKS: 'THE CITY FELL LONG AGO TO THE UNBLESSED CREATURES IMBUED WITH THE MIGHT OF A MAGICAL POOL.  CHIEF AMONG THESE WERE TYRANTHRAXUS, EDRANKA, AND TORATH."
+	PrintClear "FERRAN SPEAKS: 'THE CITY FELL LONG AGO TO THE UNBLESSED CREATURES IMBUED WITH THE MIGHT OF A MAGICAL POOL.  CHIEF AMONG THESE WERE TYRANTHRAXUS, EDRANKA, AND TORATH."
 	Gosub PressToContinue
-	Print "WITH THEIR POWERS THEY RULED AND UNITED ALL ELSE, DRIVING FORWARD TO DESTROY US ALL. THE SAGE MENDOR WORKED HARD TO GATHER RECORD OF ALL THESE THINGS, BUT THEY ARE LOST NOW, HIS LIBRARY OVERRUN."
+	PrintClear "WITH THEIR POWERS THEY RULED AND UNITED ALL ELSE, DRIVING FORWARD TO DESTROY US ALL. THE SAGE MENDOR WORKED HARD TO GATHER RECORD OF ALL THESE THINGS, BUT THEY ARE LOST NOW, HIS LIBRARY OVERRUN."
 	Gosub PressToContinue
-	Print ""
+	PrintClear ""
 	Compare MagicGearTaken 255
 	IfEq
 	Goto FerranPassword
-	Print "TO FIND HELP FOR YOUR BATTLES, YOU SHOULD PASS THROUGH THE ILLUSIONARY WALL IN THE ARMORY OF THIS KEEP."
+	PrintClear "TO FIND HELP FOR YOUR BATTLES, YOU SHOULD PASS THROUGH THE ILLUSIONARY WALL IN THE ARMORY OF THIS KEEP."
 
 FerranPassword:
 	Print "TO PASS MY GUARDS ON THE WAY OUT, SPEAK THE WORD 'SAMOSUD'.  NOW WE ARE FREED, OUR DUTY DONE!' FERRAN FADES AWAY."
@@ -586,7 +586,7 @@ RunAway:
 	Random 3 AuxTemp9
 	GetTable FleeXTable AuxTemp9 PartyX
 	GetTable FleeYTable AuxTemp9 PartyY
-	Print ""
+	PrintClear ""
 	Call CallRedraw
 
 ClearExit:
@@ -626,8 +626,8 @@ LoadEncounterGroup:
 	Compare AuxPartyStrength 0
 	IfEq
 	Goto EncounterCombat
-	Arith 1 Scratch1 Scratch1
-	Arith 1 AuxPartyStrength AuxPartyStrength
+	Add 1 Scratch1 Scratch1
+	Sub 1 AuxPartyStrength AuxPartyStrength
 	Goto LoadEncounter
 
 EncounterCombat:
@@ -635,5 +635,34 @@ EncounterCombat:
 	Combat
 	Gosub FleeIfLost
 	OnGoto Scratch1 8 FrogsBeaten InsectsDone FerranBeaten ClearExit PatrolBeaten ClearExit ClearExit OrcRaidDone
-	Gosub 2
-	Exit
+	Exit // extra: the original runs on into data at AEF6
+
+EncMonsterDistTable:
+	Data 2 0 2 0 0 1 1 1
+
+EncMonsterTable:
+	Data 38 39 19 34 35 6 5 4
+
+EncMoraleTable:
+	Data 50 99 99 99 99 50 50 50
+
+EncCountTable:
+	Data 4 2 1 6 6 15 4 31
+
+EncPictureTable:
+	Data 37 18 17 34 35 6 5 4
+
+ElfScrollLine1:
+	Data 86 87 107 108 113 114 0
+
+ElfScrollLine2:
+	Data 103 104 64 65 88 89 92 93 103 104 107 108 70 71 0
+
+ElfScrollLine3:
+	Data 103 104 78 79 72 73 103 104 105 106 90 91 80 81 0
+
+FleeXTable:
+	Data 7 8 11 4
+
+FleeYTable:
+	Data 14 13 11 11 1

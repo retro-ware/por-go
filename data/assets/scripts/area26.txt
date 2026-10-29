@@ -86,35 +86,35 @@ ProbeTableLoop:
 	Save 255 HoldMove
 	IfEq
 	Return
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Goto ProbeTableLoop
 
 ProbeNW:
-	Arith 1 ProbeX ProbeX
+	Sub 1 ProbeX ProbeX
 
 ProbeN:
-	Arith 1 ProbeY ProbeY
+	Sub 1 ProbeY ProbeY
 	Return
 
 ProbeNE:
-	Arith 1 ProbeY ProbeY
+	Sub 1 ProbeY ProbeY
 
 ProbeE:
-	Arith 1 ProbeX ProbeX
+	Add 1 ProbeX ProbeX
 	Return
 
 ProbeSE:
-	Arith 1 ProbeX ProbeX
+	Add 1 ProbeX ProbeX
 
 ProbeS:
-	Arith 1 ProbeY ProbeY
+	Add 1 ProbeY ProbeY
 	Return
 
 ProbeSW:
-	Arith 1 ProbeY ProbeY
+	Add 1 ProbeY ProbeY
 
 ProbeW:
-	Arith 1 ProbeX ProbeX
+	Sub 1 ProbeX ProbeX
 	Return
 
 event1:
@@ -144,12 +144,12 @@ SiteRowLoop:
 	Compare Scratch2 MapY
 	IfEq
 	Goto SiteRowFound
-	Arith 1 Scratch1 Scratch1
-	Arith Scratch3 Scratch4 Scratch4
+	Add 1 Scratch1 Scratch1
+	Add Scratch3 Scratch4 Scratch4
 	Goto SiteRowLoop
 
 SiteRowFound:
-	Arith Scratch4 Scratch3 Scratch3
+	Add Scratch4 Scratch3 Scratch3
 
 SiteColumnLoop:
 	Compare Scratch4 Scratch3
@@ -159,7 +159,7 @@ SiteColumnLoop:
 	Compare Scratch5 MapX
 	IfEq
 	Goto SiteDispatch
-	Arith 1 Scratch4 Scratch4
+	Add 1 Scratch4 Scratch4
 	Goto SiteColumnLoop
 
 SiteDispatch:
@@ -170,7 +170,7 @@ AbandonedCamp:
 	Compare CampFound 0
 	IfNe
 	Goto Done
-	Print "YOU FIND A RECENTLY ABBANDONED CAMP."
+	PrintClear "YOU FIND A RECENTLY ABBANDONED CAMP."
 	Save 1 CampFound
 	Goto Done
 
@@ -182,7 +182,7 @@ NomadCamp:
 	Call CallClearView
 	Picture 30
 	Save 1 Mark4Off
-	Print "YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?"
+	PrintClear "YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterNomadCamp Done
 
@@ -194,7 +194,7 @@ CityNorthEdge:
 	ClearBox
 	Call CallClearView
 	Picture 40
-	Print "YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?"
+	PrintClear "YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?"
 	HMenu Scratch1 3 "CITY" "GRAVEYARD" "LEAVE"
 	OnGoto Scratch1 3 EnterNorthGate EnterGraveyard Done
 
@@ -218,7 +218,7 @@ CityEastEdge:
 	ClearBox
 	Call CallClearView
 	Picture 40
-	Print "YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?"
+	PrintClear "YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?"
 	HMenu Scratch1 4 "NORTH" "SOUTH" "BOAT" "LEAVE"
 	OnGoto Scratch1 4 EnterEastNorth EnterEastSouth BoatToCivilized Done
 
@@ -250,7 +250,7 @@ CityWestEdge:
 	ClearBox
 	Call CallClearView
 	Picture 40
-	Print "YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?"
+	PrintClear "YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?"
 	HMenu Scratch1 3 "NORTH" "SOUTH" "LEAVE"
 	OnGoto Scratch1 3 EnterWestNorth EnterWestSouth Done
 
@@ -271,7 +271,7 @@ EnterWestSouth:
 	NewECL 2
 
 HiddenRowboat:
-	Print "YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?"
+	PrintClear "YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 PyramidFront Done
 
@@ -283,7 +283,7 @@ PyramidFront:
 	ClearBox
 	Call CallClearView
 	Picture 36
-	Print "YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?"
+	PrintClear "YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "ENTER" "GO BACK"
 	OnGoto Scratch1 2 EnterPyramid PyramidGoBack
 
@@ -301,7 +301,7 @@ BoatHome:
 	ClearBox
 	Call CallClearView
 	Picture 41
-	Print "THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?"
+	PrintClear "THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?"
 	HMenu Scratch1 2 "TAKE BOAT" "STAY"
 	OnGoto Scratch1 2 BoatToCivilized Done
 
@@ -339,30 +339,30 @@ StartEncounter:
 	Surprise Scratch1 Scratch2 Scratch4 Scratch5
 	Compare Scratch5 9
 	IfEq
-	AndOr Surprise 1 Surprise
+	And Surprise 1 Surprise
 	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseThem FaceToFace
 
 SpotGroup:
-	Print "YOU SPOT A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "YOU SPOT A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 4 "" "" "" AuxEncTemp AuxEncTemp
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
 PartySurprised:
-	Print "YOU ARE SURPRISED BY A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 99 99
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
 SurpriseThem:
-	Print "YOU SURPRISE A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "YOU SURPRISE A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 2 2 1 1 "" "" "" 0 0
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
 FaceToFace:
-	Print "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
-	Print str AuxMonsterName
+	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
+	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 0 0
 	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
 
@@ -392,14 +392,14 @@ EncounterParlay:
 	Goto FriendlyGreet
 	Parlay 30 30 30 5 60 Scratch1
 	Random 30 Scratch2
-	Arith Scratch1 Scratch2 Scratch1
-	Arith Scratch1 SelReaction Scratch1
-	Arith Scratch1 AuxEncBonus Scratch1
+	Add Scratch1 Scratch2 Scratch1
+	Add Scratch1 SelReaction Scratch1
+	Add Scratch1 AuxEncBonus Scratch1
 	Compare Scratch1 140
 	IfLt
 	Goto ParlayConvince
-	Print "THE "
-	Print str AuxMonsterName
+	PrintClear "THE "
+	Print $AuxMonsterName
 	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
 	Goto Done
 
@@ -407,25 +407,25 @@ ParlayConvince:
 	Compare Scratch1 100
 	IfLt
 	Goto ParlayInsulted
-	Print "YOU CONVINCE THE "
-	Print str AuxMonsterName
+	PrintClear "YOU CONVINCE THE "
+	Print $AuxMonsterName
 	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
 	Goto Done
 
 ParlayInsulted:
-	Print "YOU HAVE INSULTED THE "
-	Print str AuxMonsterName
+	PrintClear "YOU HAVE INSULTED THE "
+	Print $AuxMonsterName
 	Print "."
 	Print "THE "
-	Print str AuxMonsterName
+	Print $AuxMonsterName
 	Print " ATTACK YOU IMMEDIATELY!"
 	Goto EncounterFight
 
 FriendlyGreet:
-	Print "THE "
-	Print str AuxMonsterName
+	PrintClear "THE "
+	Print $AuxMonsterName
 	Print " GREET YOU AND YOU EXCHANGE PLESANTRIES.  THE "
-	Print str AuxMonsterName
+	Print $AuxMonsterName
 	Print " THEN LEAVE AND BID YOU GOOD DAY."
 	Goto Done
 
@@ -434,12 +434,12 @@ LairFound:
 	Compare Scratch6 1
 	IfEq
 	Goto RuinedHuts
-	Print "YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?"
+	PrintClear "YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterLair Done
 
 RuinedHuts:
-	Print "YOU HAVE FOUND SOME RUINED HUTS.  WILL YOU INVESTIGATE?"
+	PrintClear "YOU HAVE FOUND SOME RUINED HUTS.  WILL YOU INVESTIGATE?"
 	HMenu Scratch1 2 "INVESTIGATE" "LEAVE"
 	OnGoto Scratch1 2 EnterLair Done
 
@@ -480,103 +480,103 @@ LairLoad:
 	NewECL 26
 
 LairCellDispatch:
-	AndOr Cell 127 Scratch10
+	And Cell 127 Scratch10
 	OnGoto Scratch10 11 Done GroveEdge SplashingPool DisplacerAmbush ChainedKobolds StenchWest MutantLizardHut LizardHut LargeLizardMen StirgeSwarm LeaveLairAsk
 
 GroveEdge:
-	Print "YOU ARE AT THE EDGE OF THE GROVE."
+	PrintClear "YOU ARE AT THE EDGE OF THE GROVE."
 	Exit
 
 SplashingPool:
-	AndOr LairFightFlags 1 Scratch1
+	And LairFightFlags 1 Scratch1
 	IfNe
 	Exit
-	Print "NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?"
+	PrintClear "NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?"
 	HMenu Scratch1 2 "APPROACH" "LEAVE"
 	OnGoto Scratch1 2 PoolLizardMen Done
 
 PoolLizardMen:
 	SetupMonster 57 0 57
-	Print "YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!"
+	PrintClear "YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!"
 	Gosub PressReturn
 	ClearMonsters
 	LoadMonster 57 6 57
 	Combat
-	AndOr LairFightFlags 1 LairFightFlags
+	Or LairFightFlags 1 LairFightFlags
 	Exit
 
 DisplacerAmbush:
-	AndOr LairFightFlags 2 Scratch1
+	And LairFightFlags 2 Scratch1
 	IfNe
 	Exit
 	SetupMonster 68 0 68
-	Print "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
+	PrintClear "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
 	Save 1 Surprise
 	ClearMonsters
 	LoadMonster 68 2 68
 	Combat
-	AndOr LairFightFlags 2 LairFightFlags
+	Or LairFightFlags 2 LairFightFlags
 	Exit
 
 ChainedKobolds:
-	AndOr LairFightFlags 4 Scratch1
+	And LairFightFlags 4 Scratch1
 	IfNe
 	Exit
 	SetupMonster 0 0 0
-	Print "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
+	PrintClear "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
 	HMenu Scratch1 3 "RELEASE" "ATTACK" "LEAVE"
 	OnGoto Scratch1 3 ReleaseKobolds KillKobolds StepBack
 
 ReleaseKobolds:
-	Print "YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR."
-	AndOr 4 LairFightFlags LairFightFlags
+	PrintClear "YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR."
+	Or 4 LairFightFlags LairFightFlags
 	Picture 255
 	Exit
 
 KillKobolds:
-	Print "YOU COLDLY KILL THE DEFENSELESS KOBOLDS."
-	AndOr 4 LairFightFlags LairFightFlags
+	PrintClear "YOU COLDLY KILL THE DEFENSELESS KOBOLDS."
+	Or 4 LairFightFlags LairFightFlags
 
 StenchWest:
-	Print "AN AWFUL STENCH IS COMING FROM THE WEST."
+	PrintClear "AN AWFUL STENCH IS COMING FROM THE WEST."
 	Exit
 
 MutantLizardHut:
-	AndOr LairFightFlags 8 Scratch1
+	And LairFightFlags 8 Scratch1
 	IfNe
 	Exit
 	SetupMonster 57 0 57
-	Print "YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY."
+	PrintClear "YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY."
 	ClearMonsters
 	LoadMonster 58 2 57
 	Combat
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr LairFightFlags 8 LairFightFlags
+	Or LairFightFlags 8 LairFightFlags
 	Exit
 
 LizardHut:
-	AndOr LairFightFlags 16 Scratch1
+	And LairFightFlags 16 Scratch1
 	IfNe
 	Exit
 	SetupMonster 57 0 57
-	Print "INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY."
+	PrintClear "INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY."
 	ClearMonsters
 	LoadMonster 57 4 57
 	Combat
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr LairFightFlags 16 LairFightFlags
+	Or LairFightFlags 16 LairFightFlags
 	Exit
 
 LargeLizardMen:
-	AndOr LairFightFlags 32 LairFightFlags
+	And LairFightFlags 32 LairFightFlags
 	IfNe
 	Exit
 	SetupMonster 57 0 57
-	Print "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
+	PrintClear "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
 	Save 252 MonsterHit
 	ClearMonsters
 	LoadMonster 57 4 57
@@ -585,7 +585,7 @@ LargeLizardMen:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr LairFightFlags 32 LairFightFlags
+	Or LairFightFlags 32 LairFightFlags
 	Exit
 
 StirgeSwarm:
@@ -593,7 +593,7 @@ StirgeSwarm:
 	IfNe
 	Goto StirgeTimerTick
 	SetupMonster 61 0 61
-	Print "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
+	PrintClear "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
 	Random 30 Scratch1
 	Compare Scratch1 6
 	IfLt
@@ -609,11 +609,11 @@ StirgeTimerTick:
 	IfEq
 	Save 0 LairRespawnTimer
 	IfNe
-	Arith 1 LairRespawnTimer LairRespawnTimer
+	Sub 1 LairRespawnTimer LairRespawnTimer
 	Exit
 
 LeaveLairAsk:
-	Print "YOU ARE ABOUT TO LEAVE THIS AREA.  DO YOU WANT TO RETURN?"
+	PrintClear "YOU ARE ABOUT TO LEAVE THIS AREA.  DO YOU WANT TO RETURN?"
 	HMenu Scratch1 2 "RETURN" "LEAVE"
 	OnGoto Scratch1 2 StepBack LeaveLair
 
@@ -653,19 +653,19 @@ PickEncounter:
 	GetTable LeaderIdTable EncounterKind AuxPartyStrength
 	GetTable StrengthDivTable EncounterKind AuxCounter
 	PartyStrength Scratch1
-	Arith Scratch1 AuxCounter Scratch1
+	Div Scratch1 AuxCounter Scratch1
 	Random 5 Scratch2
 	OnGoto Scratch2 5 CountThird CountHalf CountHalf CountHalf CountLeaders
 
 CountThird:
-	Arith Scratch1 3 Scratch1
+	Div Scratch1 3 Scratch1
 	Compare Scratch1 0
 	IfLe
 	Save 1 Scratch1
 	Goto CountLeaders
 
 CountHalf:
-	Arith Scratch1 2 Scratch1
+	Div Scratch1 2 Scratch1
 	Compare Scratch1 0
 	IfLe
 	Save 1 Scratch1
@@ -682,54 +682,54 @@ LeaderLoop:
 	Compare Scratch3 AuxMenuChoice
 	IfLt
 	Goto CapMonsterCount
-	Arith 1 LeaderCount LeaderCount
-	Arith AuxMenuChoice Scratch3 Scratch3
+	Add 1 LeaderCount LeaderCount
+	Sub AuxMenuChoice Scratch3 Scratch3
 	Goto LeaderLoop
 
 CapMonsterCount:
 	Compare Scratch1 56
 	IfGe
-	Arith LeaderCount 56 Scratch1
+	Sub LeaderCount 56 Scratch1
 	Save Scratch1 MonsterCount
 	Return
 
 PickKobolds:
-	Save "KOBOLDS" str AuxMonsterName
+	Save "KOBOLDS" $AuxMonsterName
 	Save 0 EncounterKind
 	Return
 
 PickDisplacers:
-	Save "DISPLACER BEASTS" str AuxMonsterName
+	Save "DISPLACER BEASTS" $AuxMonsterName
 	Save 1 EncounterKind
 	Return
 
 PickDriders:
-	Save "DRIDERS" str AuxMonsterName
+	Save "DRIDERS" $AuxMonsterName
 	Save 2 EncounterKind
 	Return
 
 PickStirges:
-	Save "STIRGES" str AuxMonsterName
+	Save "STIRGES" $AuxMonsterName
 	Save 3 EncounterKind
 	Return
 
 PickLizardMen:
-	Save "LIZARD MEN" str AuxMonsterName
+	Save "LIZARD MEN" $AuxMonsterName
 	Save 4 EncounterKind
 	Return
 
 PickBandits:
-	Save "BANDITS" str AuxMonsterName
+	Save "BANDITS" $AuxMonsterName
 	Save 5 EncounterKind
 	Return
 
 PickNomads:
-	Save "NOMADS" str AuxMonsterName
+	Save "NOMADS" $AuxMonsterName
 	Save 6 EncounterKind
 	Return
 
 PickMerchants:
-	Save "MERCHANTS" str AuxMonsterName
+	Save "MERCHANTS" $AuxMonsterName
 	Save 7 EncounterKind
 	Return
 
@@ -738,7 +738,7 @@ PressReturn:
 	Return
 
 Done:
-	Print " "
+	PrintClear " "
 	RedrawView
 	Picture 255
 	Gosub PatchPyramidTiles
@@ -758,7 +758,7 @@ RiverRowLoop:
 	IfEq
 	Goto RiverDrawEnd
 	GetTable RiverRowTable Scratch1 Scratch7
-	Arith 8 Scratch7 Scratch3
+	Mul 8 Scratch7 &Scratch3
 	Save 0 Scratch6
 
 RiverTileLoop:
@@ -769,17 +769,17 @@ RiverTileLoop:
 	IfLe
 	GetTable RiverTileTable Scratch2 Scratch5
 	IfLe
-	Arith 1 Scratch2 Scratch2
+	Add 1 Scratch2 Scratch2
 	IfGt
 	GetTable RiverTileTable2 RiverTileIndex Scratch5
 	IfGt
-	Arith 1 RiverTileIndex RiverTileIndex
-	Arith Scratch6 Scratch3 RiverTileOffset
+	Add 1 RiverTileIndex RiverTileIndex
+	Add Scratch6 &Scratch3 &RiverTileOffset
 	Compare RiverOpen 0
 	IfEq
-	SaveTable Scratch5 MapPatchA RiverTileOffset
-	SaveTable Scratch5 MapPatchB RiverTileOffset
-	Arith 1 Scratch6 Scratch6
+	SaveTable Scratch5 MapPatchA &RiverTileOffset
+	SaveTable Scratch5 MapPatchB &RiverTileOffset
+	Add 1 Scratch6 Scratch6
 	Goto RiverTileLoop
 
 RiverRowDone:
@@ -789,7 +789,7 @@ RiverRowDone:
 	Compare RiverState 1
 	IfEq
 	Gosub RiverAnimFrame
-	Arith 1 Scratch1 Scratch1
+	Add 1 Scratch1 Scratch1
 	Goto RiverRowLoop
 
 RiverDrawEnd:
@@ -797,7 +797,7 @@ RiverDrawEnd:
 	Return
 
 RiverAnimFrame:
-	Arith 1 RiverFrame RiverFrame
+	Add 1 RiverFrame RiverFrame
 	Compare RiverFrame 2
 	IfNe
 	Return
@@ -807,7 +807,7 @@ RiverDelayLoop:
 	Compare DelayCounter 100
 	IfEq
 	Goto RiverFrameShow
-	Arith 1 DelayCounter DelayCounter
+	Add 1 DelayCounter DelayCounter
 	Goto RiverDelayLoop
 
 RiverFrameShow:
@@ -832,7 +832,7 @@ RiverFrameReset:
 	Return
 
 LandRecovers:
-	Print "AS YOU LEAVE THE SORCERER'S PYRAMID BEHIND YOU CAN SEE THAT THE LAND IS ALREADY BEGINNING TO RECOVER FROM THE ALCHEMICAL POLLUTION CAUSED BY THE PYRAMID."
+	PrintClear "AS YOU LEAVE THE SORCERER'S PYRAMID BEHIND YOU CAN SEE THAT THE LAND IS ALREADY BEGINNING TO RECOVER FROM THE ALCHEMICAL POLLUTION CAUSED BY THE PYRAMID."
 	Gosub PressReturn
 	Save 7 MapX
 	Save 17 MapY
@@ -884,7 +884,7 @@ CheckMarker4:
 	Compare Mark4 0
 	IfNe
 	Goto ShowMarker4
-	AndOr MarkFlags4 8 Scratch9
+	And MarkFlags4 8 Scratch9
 	IfNe
 	Goto ShowMarker4
 	Compare Mark4Off 0
@@ -897,6 +897,65 @@ ShowMarker4:
 	Save 57 ProbeCell
 	Call CallLookAhead
 	Return
+
+MapEventTable1:
+	Data 39 43 44 46 62 66 67 73 75 76 77 78 80 84 87 89
+	Data 92 93 95 99 104 105 106 110 111 116 117 118 119
+
+MapEventTable2:
+	Data 39 43 44 46 67 73 75 76 77 78 80 84 99 105 106 119
+	Data 87 22 6 10
+
+SiteYTable:
+	Data 10 11 12 26 27 28 14 16 29
+
+SiteXTable:
+	Data 12 13 11 12 13 12 13 12 13 13 11 6 6 7
+
+SiteRangeTable:
+	Data 2 3 2 2 1 1 1 1 1
+
+SiteKindTable:
+	Data 0 0 0 1 0 0 0 2 2 3 4 5 6 7
+
+SurpriseTable1:
+	Data 0 0 0 0 0 0 0 0
+
+SurpriseTable2:
+	Data 0 0 0 0 0 0 0 0
+
+StrengthDivTable:
+	Data 1 6 7 2 3 2 1 1
+
+LeaderEveryTable:
+	Data 40 0 0 0 0 20 30 30 3 0 0 0 0 1 1 1
+
+EncounterParam2:
+	Data 30 0 1 0 20 20 50 50
+
+EncounterParam3:
+	Data 0 0 0 0 0 0 0 0
+
+MonsterIdTable:
+	Data 123 68 69 61 57 97 40 98
+
+MonsterPicTable:
+	Data 0 68 69 61 57 11 12 14
+
+EncounterParam5:
+	Data 0 68 69 61 57 15 11 12
+
+MoraleTable:
+	Data 40 60 60 60 50 60 60 0
+
+EncounterParam7:
+	Data 6 15 12 18 6 9 9 9
+
+LeaderIdTable:
+	Data 1 68 69 61 57 53 53 53
+
+LeaderPicTable:
+	Data 1 68 69 61 57 11 11 11
 
 event2:
 	Compare In3D 1
@@ -932,6 +991,34 @@ LairSetup:
 	Save 1 In3D
 	Save 255 NoCoords
 	Save 8 SkyInside
-	LoadFiles 7 8 23
+	LoadPieces 7 8 23
 	LoadFiles 26 2 255
 	Exit
+
+RiverRowTable:
+	Data 133 185 191 220 221 223 224 226 242 234 236 239 242 244 245 246
+	Data 247 72 73 98 104 105 106 120 123 126 127 128 129 130 161 162
+	Data 163 173 198 225
+
+RiverTileTable:
+	Data 223 151 151 151 149 149 149 149 254 249 249 249 229 230 230 150
+	Data 149 149 149 149 149 85 85 85 127 111 95 91 87 86 85 85
+	Data 38 38 198 198 242 242 252 252 85 85 85 85 84 83 79 63
+	Data 84 83 79 63 255 255 255 255 255 255 255 255 247 217 102 153
+	Data 253 253 246 246 246 253 189 125 125 127 159 159 159 127 125 125
+	Data 86 245 255 255 255 95 165 106 102 165 95 255 255 255 245 86
+	Data 253 253 246 246 246 253 189 125 253 253 255 127 127 157 101 154
+	Data 166 153 118 253 253 253 127 127 169 154 101 159 127 255 253 253
+	Data 127 127 255 253 253 118 154 166 187 234 187 238 171 14 74 78
+	Data 186 235 174 187 235 14 74 64 59 142 163 142 35 142 43 186
+	Data 238 171 238 186 174 235 186 235 238 171 239 186 238 186 187 238
+	Data 187 234 187 238 171 238 170 238 171 174 235 170 171 186 170 238
+	Data 187 238 11 34 163 136 160 136 238 170 234 186 174 234 187 238
+	Data 187 234 139 34 168 40 162 139 234 187 160 136 202 42 8 34
+	Data 8 50 62 243 200 42 166 153
+
+RiverTileTable2:
+	Data 139 34 163 142 35 162 139 46 154 122 234 110 186 234 186 238
+	Data 170 187 170 170 238 171 170 187 174 170 171 186 174 235 174 187
+	Data 159 131 135 132 133 161 168 170 255 255 255 253 253 246 217 102
+	Data 255 255 255 255 255 247 217 106 255

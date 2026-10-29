@@ -1,6 +1,6 @@
 FleeNorth:
 	Random 3 Scratch1
-	Arith Scratch1 4 Scratch1
+	Add Scratch1 4 Scratch1
 	Goto MoveToTableSpot
 
 FleeSouth:
@@ -13,9 +13,19 @@ MoveToTableSpot:
 	Save 255 HoldMove
 	Goto Done
 
+DestX:
+	Data 5 1 8 9 0 1 8 11 15 12
+
+DestY:
+	Data 11 10 14 8 0 3 6 1 7 15
+
+DestFacing:
+	Data 3 2 1 2 2 1 0 0 1 3 17 128 12 16 248 25
+	Data 61 88 20 4 177 96 37 79 192
+
 YesNoMenu:
 	HMenu Scratch10 2 "YES" "NO"
-	Print " "
+	PrintClear " "
 	Compare Scratch10 0
 	Return
 
@@ -24,11 +34,11 @@ TeleportFlash:
 
 PressReturn:
 	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	Print " "
+	PrintClear " "
 	Return
 
 SearchSecretDoor:
-	AndOr Scratch1 SecretDoorBits Scratch10
+	And Scratch1 SecretDoorBits Scratch10
 	IfNe
 	Goto SecretDoorFound
 	Save 0 Scratch10
@@ -41,29 +51,29 @@ CheckMemberFinds:
 	Save 1 Scratch9
 	Compare Search 0
 	IfEq
-	Arith 1 Scratch9 Scratch9
+	Sub 1 Scratch9 Scratch9
 	Compare SelRace 2
 	IfEq
-	Arith 1 Scratch9 Scratch9
+	Add 1 Scratch9 Scratch9
 	Compare SelRace 4
 	IfEq
-	Arith 1 Scratch9 Scratch9
+	Add 1 Scratch9 Scratch9
 	Random 5 Scratch8
 	Compare Scratch8 Scratch9
 	IfGt
 	Goto NextMember
 
 SecretDoorFound:
-	AndOr Scratch1 SecretDoorBits SecretDoorBits
-	Print "A SECRET DOOR IS FOUND"
+	Or Scratch1 SecretDoorBits SecretDoorBits
+	PrintClear "A SECRET DOOR IS FOUND"
 	GetTable ByFacing9B22 Facing Scratch10
-	Arith Scratch10 Scratch2 Scratch2
+	Add Scratch10 Scratch2 Scratch2
 	GetTable Table9B1B Scratch2 Scratch2
 	OnGoto Scratch2 4 DoorInFront DoorToRight DoorBehind DoorToLeft
 	Goto PressReturn
 
 NextMember:
-	Arith Scratch10 1 Scratch10
+	Add Scratch10 1 Scratch10
 	Compare Scratch10 8
 	IfLt
 	Goto CheckMemberFinds
@@ -85,14 +95,20 @@ DoorToLeft:
 	Print " TO YOUR LEFT."
 	Return
 
+Table9B1B:
+	Data 0 1 2 3 0 1 2
+
+ByFacing9B22:
+	Data 0 3 2 1
+
 event0:
-	AndOr Cell 31 Scratch1
+	And Cell 31 Scratch1
 	IfEq
 	Exit
 	Compare Scratch1 11
 	IfGt
 	Exit
-	Arith 1 Scratch1 Scratch1
+	Sub 1 Scratch1 Scratch1
 	GetTable Table9C95 Scratch1 Scratch10
 	Compare Scratch10 Facing
 	IfNe
@@ -100,11 +116,19 @@ event0:
 	Goto CheckSecretPassage
 
 event1:
-	AndOr Cell 31 Scratch10
+	And Cell 31 Scratch10
 	GetTable Table9B91 Scratch10 Scratch2
 	GetTable Table9BA4 Scratch10 Scratch1
 	OnGoto Scratch2 7 RandomEncounter SecretDoorSpot PriestRoom TyrmorCorpse RockRoom TeleporterSquare Done
-	Exit
+	Exit // extra: the original runs on into data at 9B91
+
+Table9B91:
+	Data 0 1 1 1 1 1 1 1 1 1 1 1 2 3 4 5
+	Data 5 5 6
+
+Table9BA4:
+	Data 0 0 1 2 3 4 5 6 7 8 9 10 0 0 0 0
+	Data 4 0 0
 
 event2:
 	Save 0 RestEvery
@@ -116,7 +140,7 @@ event2:
 	Compare PartyY 8
 	IfLt
 	Save NorthGroupsBeaten Scratch10
-	AndOr Scratch10 63 Scratch10
+	And Scratch10 63 Scratch10
 	Compare Scratch10 63
 	IfEq
 	Exit
@@ -144,7 +168,7 @@ event4:
 	Save 0 PartyY
 	Save 2 Facing
 	Save 15 PartyX
-	LoadFiles 1 3 255
+	LoadPieces 1 3 255
 	Exit
 
 SecretDoorSpot:
@@ -155,28 +179,34 @@ SecretDoorSpot:
 
 CheckSecretPassage:
 	GetTable Table9CA0 Scratch1 Scratch1
-	AndOr SecretDoorBits Scratch1 Scratch10
+	And SecretDoorBits Scratch1 Scratch10
 	IfNe
 	Goto PassageLeave
 	Save 255 HoldMove
 	Exit
 
 PassageLeave:
-	AndOr Cell 31 Scratch10
+	And Cell 31 Scratch10
 	Compare Scratch10 3
 	IfLt
 	Goto LeaveToArea26
 	Exit
 
+Table9C95:
+	Data 0 2 2 1 1 1 1 0 3 3 3
+
+Table9CA0:
+	Data 1 2 4 8 16 32 64 4 8 32 64
+
 PriestRoom:
-	AndOr SecretDoorBits 128 Scratch10
+	And SecretDoorBits 128 Scratch10
 	IfNe
 	Goto HoleInWall
-	AndOr SouthGroupsBeaten 64 Scratch10
+	And SouthGroupsBeaten 64 Scratch10
 	IfNe
 	Exit
 	Save 0 Surprise
-	Print "YOU SEE A HUMAN PRIEST."
+	PrintClear "YOU SEE A HUMAN PRIEST."
 	Gosub PressReturn
 	Save 1 MaxDist
 
@@ -193,18 +223,18 @@ PriestEncounter:
 	Compare Scratch10 0
 	IfNe
 	Goto PriestPeace
-	Print "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
+	PrintClear "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
 	Gosub YesNoMenu
 	IfNe
 	Goto PriestEncounter
-	Print "YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE."
+	PrintClear "YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE."
 	RedrawView
 	Call CallRedraw
 	Gosub PressReturn
-	AndOr SecretDoorBits 128 SecretDoorBits
+	Or SecretDoorBits 128 SecretDoorBits
 
 HoleInWall:
-	Print "THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?"
+	PrintClear "THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?"
 	Gosub YesNoMenu
 	IfEq
 	Goto LeaveToArea26
@@ -215,45 +245,45 @@ PriestFlee:
 	Goto MoveToTableSpot
 
 PriestPeace:
-	Print "PEACE BROTHER. YOU, TOO, ARE ONE OF MY FLOCK. I HAVE BUT RECENTLY PRAYED FOR ANOTHER OF MY FLOCK AND MAY PRAY NO MORE."
+	PrintClear "PEACE BROTHER. YOU, TOO, ARE ONE OF MY FLOCK. I HAVE BUT RECENTLY PRAYED FOR ANOTHER OF MY FLOCK AND MAY PRAY NO MORE."
 	Gosub PressReturn
 	Goto PriestEncounter
 
 TyrmorCorpse:
-	Print "YOU FIND THE CORPSE OF A MAN. THE BODY HAS BEEN STRIPPED OF WEAPONS AND ARMOR, AS WELL AS ANY USEFUL GEAR."
+	PrintClear "YOU FIND THE CORPSE OF A MAN. THE BODY HAS BEEN STRIPPED OF WEAPONS AND ARMOR, AS WELL AS ANY USEFUL GEAR."
 	Gosub PressReturn
 	CompareAnd TyrmorJournalFound 0 Search 1
 	IfNe
 	Goto RandomEncounter
-	Print "HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26."
+	PrintClear "HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26."
 	Save 1 TyrmorJournalFound
 	Gosub PressReturn
 	Goto RandomEncounter
 
 RockRoom:
-	Print "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
+	PrintClear "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
 	Gosub PressReturn
-	AndOr TeleporterRockFlags 2 Scratch10
+	And TeleporterRockFlags 2 Scratch10
 	IfNe
 	Goto RockRoomMenu
 	OnGoto Search 2 StepOnTeleporter FeelTingle
 
 StepOnTeleporter:
 	Gosub TeleportFlash
-	AndOr TeleporterRockFlags 2 TeleporterRockFlags
-	AndOr TeleporterRockFlags 1 Scratch10
+	Or TeleporterRockFlags 2 TeleporterRockFlags
+	And TeleporterRockFlags 1 Scratch10
 	IfEq
 	Goto TeleportToArea23
 	Save 0 Scratch1
-	AndOr TeleporterRockFlags 254 TeleporterRockFlags
+	And TeleporterRockFlags 254 TeleporterRockFlags
 	Goto MoveToTableSpot
 
 FeelTingle:
-	Print "AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA."
+	PrintClear "AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA."
 
 RockRoomMenu:
 	HMenu Scratch10 3 "GO BACK" "MOVE ON" "THROW A ROCK"
-	Print " "
+	PrintClear " "
 	OnGoto Scratch10 3 RockGoBack StepOnTeleporter ThrowRock
 
 RockGoBack:
@@ -261,27 +291,27 @@ RockGoBack:
 	Goto MoveToTableSpot
 
 ThrowRock:
-	Print "YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!"
+	PrintClear "YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!"
 	Gosub PressReturn
-	Print " "
+	PrintClear " "
 	Gosub ToggleTeleporter
-	AndOr TeleporterRockFlags 2 TeleporterRockFlags
+	Or TeleporterRockFlags 2 TeleporterRockFlags
 	Goto RockRoomMenu
 
 ToggleTeleporter:
-	AndOr TeleporterRockFlags 1 Scratch10
+	And TeleporterRockFlags 1 Scratch10
 	IfEq
 	Goto SetTeleporterBit
-	AndOr TeleporterRockFlags 254 TeleporterRockFlags
+	And TeleporterRockFlags 254 TeleporterRockFlags
 	Return
 
 SetTeleporterBit:
-	AndOr TeleporterRockFlags 1 TeleporterRockFlags
+	Or TeleporterRockFlags 1 TeleporterRockFlags
 	Return
 
 TeleporterSquare:
 	Gosub TeleportFlash
-	AndOr Cell 31 Scratch10
+	And Cell 31 Scratch10
 	Compare Scratch10 17
 	IfEq
 	Goto ExitToArea23
@@ -305,7 +335,7 @@ RandomEncounter:
 	Exit
 	Random 5 Scratch7
 	GetTable Table9CA0 Scratch7 Scratch10
-	AndOr Scratch3 Scratch10 Scratch10
+	And Scratch3 Scratch10 Scratch10
 	IfNe
 	Exit
 
@@ -313,29 +343,29 @@ StartGroupEncounter:
 	Save Scratch7 Scratch6
 	Compare PartyY 8
 	IfLt
-	Arith 7 Scratch7 Scratch7
+	Add 7 Scratch7 Scratch7
 	Gosub LoadGroupData
 	PartySurprise Scratch4 Scratch5
 	Save 2 Scratch3
 	Surprise Scratch4 Scratch5 AuxMonster AuxEncResult
 	OnGoto Surprise 4 SayYouSee SaySurprisedBy SayYouSurprise SayYouSee
-	Print str AuxTemp9
+	Print $AuxTemp9
 	Gosub PressReturn
 	OnGoto AuxEncResult2 3 FriendlyGroupMenu HungryGroupMenu FlyingGroupMenu
 
 SayYouSee:
-	Print "YOU SEE"
+	PrintClear "YOU SEE"
 	Return
 
 SaySurprisedBy:
-	Print "YOU ARE SURPRISED BY"
-	Arith AuxMenuChoice 3 AuxMenuChoice
+	PrintClear "YOU ARE SURPRISED BY"
+	Add AuxMenuChoice 3 AuxMenuChoice
 	Save 0 Scratch3
 	Return
 
 SayYouSurprise:
-	Print "YOU SURPRISE"
-	Arith 3 AuxMenuChoice AuxMenuChoice
+	PrintClear "YOU SURPRISE"
+	Sub 3 AuxMenuChoice AuxMenuChoice
 	Return
 
 FriendlyGroupMenu:
@@ -373,11 +403,11 @@ FightGroup:
 	Compare PartyY 8
 	IfLt
 	Goto MarkNorthBeaten
-	AndOr SouthGroupsBeaten Scratch7 SouthGroupsBeaten
+	Or SouthGroupsBeaten Scratch7 SouthGroupsBeaten
 	Exit
 
 MarkNorthBeaten:
-	AndOr NorthGroupsBeaten Scratch7 NorthGroupsBeaten
+	Or NorthGroupsBeaten Scratch7 NorthGroupsBeaten
 	Exit
 
 ForcedEncounter:
@@ -389,7 +419,7 @@ ForcedEncounter:
 PickUnbeatenGroup:
 	Random 5 Scratch7
 	GetTable Table9CA0 Scratch7 Scratch10
-	AndOr Scratch3 Scratch10 Scratch10
+	And Scratch3 Scratch10 Scratch10
 	IfNe
 	Goto PickUnbeatenGroup
 	Goto StartGroupEncounter
@@ -409,52 +439,82 @@ LoadGroupData:
 	OnGoto Scratch7 13 HumanFightersText DisplacerBeastsText DwarvenFightersText LizardMenText DridersText GauntMenText GroupTextDone InsectsText DridersText BullMenText ElvesText KoboldsText HumanFightersText
 
 HumanFightersText:
-	Save " A BAND OF HUMAN FIGHTERS." str AuxTemp9
+	Save " A BAND OF HUMAN FIGHTERS." $AuxTemp9
 	Return
 
 DisplacerBeastsText:
-	Save " DISPLACER BEASTS." str AuxTemp9
+	Save " DISPLACER BEASTS." $AuxTemp9
 	Return
 
 DwarvenFightersText:
-	Save " DWARVEN FIGHTERS." str AuxTemp9
+	Save " DWARVEN FIGHTERS." $AuxTemp9
 	Return
 
 LizardMenText:
-	Save " A TRIO OF LIZARD MEN." str AuxTemp9
+	Save " A TRIO OF LIZARD MEN." $AuxTemp9
 	Return
 
 DridersText:
-	Save " VISCIOUS LOOKING DRIDERS." str AuxTemp9
+	Save " VISCIOUS LOOKING DRIDERS." $AuxTemp9
 	Return
 
 GauntMenText:
-	Save " SOME GAUNT MEN IN POORLY FITTING LEATHER." str AuxTemp9
+	Save " SOME GAUNT MEN IN POORLY FITTING LEATHER." $AuxTemp9
 
 GroupTextDone:
 	Return
 
 InsectsText:
-	Save " LARGE INSECTS WITH RUSTY RED FEATHERS." str AuxTemp9
+	Save " LARGE INSECTS WITH RUSTY RED FEATHERS." $AuxTemp9
 	Return
 
 BullMenText:
-	Save " SOME LARGE BULL HEADED MEN." str AuxTemp9
+	Save " SOME LARGE BULL HEADED MEN." $AuxTemp9
 	Return
 
 ElvesText:
-	Save " A GROUP OF EMACIATED ELVES." str AuxTemp9
+	Save " A GROUP OF EMACIATED ELVES." $AuxTemp9
 	Return
 
 KoboldsText:
-	Save " SOME HUNGRY LOOKING KOBOLDS." str AuxTemp9
+	Save " SOME HUNGRY LOOKING KOBOLDS." $AuxTemp9
 	Return
+
+GroupTable8:
+	Data 15 68 13 57 69 11 12 61 69 62 24 0 15
+
+GroupTable0:
+	Data 6 68 6 57 69 8 30 61 69 62 2 0 6
+
+GroupMonsterTable:
+	Data 75 68 76 57 69 77 78 61 69 62 79 123 80
+
+GroupTable1:
+	Data 6 15 6 6 12 12 9 18 12 12 12 9 9
+
+GroupCountTable:
+	Data 3 3 3 3 3 3 1 20 3 3 3 3 3
+
+GroupTable3:
+	Data 11 68 11 57 69 12 13 61 69 62 14 0 11
+
+GroupSurpriseTable1:
+	Data 0 0 0 0 0 0 0 0 0 0 2 0 0
+
+GroupSurpriseTable2:
+	Data 0 0 0 0 0 0 0 0 0 1 0 0 0
+
+GroupTable6:
+	Data 0 1 0 1 1 0 0 2 1 1 0 1 0
+
+GroupPortraitTable:
+	Data 57 255 13 255 255 6 16 255 255 255 11 255 54
 
 LeaveToArea26:
 	NewECL 26
 
 TeleportToArea23:
-	AndOr TeleporterRockFlags 1 TeleporterRockFlags
+	Or TeleporterRockFlags 1 TeleporterRockFlags
 	Save 4 PartyX
 	Save 15 PartyY
 	Save 0 Facing

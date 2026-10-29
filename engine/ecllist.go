@@ -5,6 +5,7 @@ import (
 	"io"
 	"reflect"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -25,56 +26,137 @@ func ListECL(code []byte, w io.Writer) {
 	}
 }
 
-// ScriptECL writes one ECL block as a script: one command and its
-// operands per line, jump targets as labels (event0..event4 for the
-// entry points; the others by their names in names, L_XXXX unnamed),
-// variables by their names in names (script address -> name; an unnamed
-// one stays [XXXX]). For
-// cmd/eclscript.
-func ScriptECL(code []byte, w io.Writer, names map[int]string) {
+// ScriptECL writes one ECL block as a script (the format ParseScript
+// reads): one command and its operands per line, jump targets as labels
+// (event0..event4 for the entry points; the others by their names in
+// names, L_XXXX unnamed), variables by their names in names (script
+// address -> name; an unnamed one stays [XXXX]), and the tables inside
+// the code image as Data lines under their labels. For cmd/eclscript.
+func ScriptECL(code []byte, w io.Writer, names map[int]string) error {
 	events, lines, jumps := walkECL(code)
-	label := map[int]string{}
-	for pc := range jumps {
-		label[pc] = fmt.Sprintf("L_%04X", pc)
+	end := eclBase + len(code)
+	labels := map[int][]string{}
+	name := func(pc int, def string) string {
 		if n := names[pc]; n != "" {
-			label[pc] = n
+			return n
+		}
+		return def
+	}
+	for pc := range jumps {
+		if _, ok := lines[pc]; !ok {
+			return fmt.Errorf("a jump to %04X, which is not code", pc)
+		}
+		labels[pc] = []string{name(pc, fmt.Sprintf("L_%04X", pc))}
+	}
+	for pc := range lines {
+		if _, ok := labels[pc]; !ok && names[pc] != "" {
+			labels[pc] = []string{names[pc]} // a named place no jump goes to (a native script's)
 		}
 	}
 	for i, pc := range events {
-		label[pc] = fmt.Sprintf("event%d", i) // an event entry wins over a jump label
+		if _, ok := labels[pc]; ok && strings.HasPrefix(labels[pc][0], "event") {
+			labels[pc] = append(labels[pc], fmt.Sprintf("event%d", i))
+		} else {
+			labels[pc] = []string{fmt.Sprintf("event%d", i)} // an event entry wins over a jump label
+		}
 	}
-	for i, pc := range sortedPCs(lines) {
-		l := lines[pc]
-		if n, ok := label[pc]; ok {
-			if i > 0 {
+	// the tables run from their address to the next code or table
+	tables := eclTables(lines, end)
+	code2 := map[int]bool{}
+	for pc, l := range lines {
+		for a := pc; a < l.next; a++ {
+			if code2[a] {
+				return fmt.Errorf("instructions overlap at %04X", a)
+			}
+			code2[a] = true
+		}
+	}
+	var pcs []int
+	for pc := range lines {
+		pcs = append(pcs, pc)
+	}
+	for pc := range tables {
+		if code2[pc] {
+			return fmt.Errorf("the table at %04X is code", pc)
+		}
+		pcs = append(pcs, pc)
+		labels[pc] = []string{name(pc, fmt.Sprintf("T_%04X", pc))}
+	}
+	sort.Ints(pcs)
+	first := true
+	for _, pc := range pcs {
+		if ls, ok := labels[pc]; ok {
+			if !first {
 				fmt.Fprintln(w)
 			}
-			fmt.Fprintf(w, "%s:\n", n)
+			for _, n := range ls {
+				fmt.Fprintf(w, "%s:\n", n)
+			}
 		}
-		args := l.args
-		args = append([]string(nil), args...)
-		jumped := map[string]bool{}
-		for _, t := range l.targets {
-			for j, a := range args {
-				if a == fmt.Sprintf("[%04X]", t) {
-					args[j], jumped[a] = label[t], true
+		first = false
+		if tables[pc] {
+			a := pc
+			for a < end && !code2[a] && (a == pc || !tables[a]) {
+				a++
+			}
+			for i := pc; i < a; i += 16 {
+				var bs []string
+				for j := i; j < a && j < i+16; j++ {
+					bs = append(bs, fmt.Sprint(code[j-eclBase]))
 				}
+				fmt.Fprintf(w, "\tData %s\n", strings.Join(bs, " "))
 			}
+			continue
 		}
+		l := lines[pc]
+		args := append([]string(nil), l.args...)
 		for j, a := range args {
+			pre, rest := "", a
+			if strings.HasPrefix(a, "&") || strings.HasPrefix(a, "$") {
+				pre, rest = a[:1], a[1:]
+			}
 			var v int
-			if _, err := fmt.Sscanf(a, "[%04X]", &v); err == nil && len(a) == 6 && !jumped[a] && names[v] != "" {
-				args[j] = names[v]
-			} else if _, err := fmt.Sscanf(a, "str[%04X]", &v); err == nil && names[v] != "" {
-				args[j] = "str " + names[v]
+			if _, err := fmt.Sscanf(rest, "[%04X]", &v); err != nil || len(rest) != 6 {
+				continue
+			}
+			if slices.Contains(l.targets, v) {
+				args[j] = pre + labels[v][0]
+			} else if tables[v] {
+				args[j] = pre + labels[v][0]
+			} else if n := names[v]; n != "" {
+				args[j] = pre + n
 			}
 		}
-		name := strings.TrimPrefix(l.name, "op")
-		if l.name == "opIf" {
-			name = []string{"IfEq", "IfNe", "IfLt", "IfGt", "IfLe", "IfGe"}[l.op-0x16]
+		fmt.Fprintf(w, "\t%s\n", strings.TrimSpace(eclOpName(l.op)+" "+strings.Join(args, " ")))
+		switch l.name {
+		case "opGoto", "opExit", "opReturn", "opNewECL":
+		default:
+			if _, ok := lines[l.next]; !ok {
+				fmt.Fprintf(w, "\tExit // extra: the original runs on into data at %04X\n", l.next)
+			}
 		}
-		fmt.Fprintf(w, "\t%s\n", strings.TrimSpace(name+" "+strings.Join(args, " ")))
 	}
+	return nil
+}
+
+// eclOpName is the script name of opcode op: its handler's name without
+// "op", or the opcode's own where several share a handler.
+func eclOpName(op byte) string {
+	if n, ok := eclOpNames[op]; ok {
+		return n
+	}
+	if int(op) >= len(eclOps) || eclOps[op] == nil {
+		return fmt.Sprintf("Op%02X", op)
+	}
+	n := runtime.FuncForPC(reflect.ValueOf(eclOps[op]).Pointer()).Name()
+	n = strings.TrimSuffix(strings.TrimPrefix(n, "por/engine.(*Engine)."), "-fm")
+	return strings.TrimPrefix(n, "op")
+}
+
+var eclOpNames = map[byte]string{
+	0x04: "Add", 0x05: "Sub", 0x06: "Div", 0x07: "Mul", 0x11: "Print", 0x12: "PrintClear",
+	0x16: "IfEq", 0x17: "IfNe", 0x18: "IfLt", 0x19: "IfGt", 0x1A: "IfLe", 0x1B: "IfGe",
+	0x21: "LoadFiles", 0x37: "LoadPieces", 0x2F: "And", 0x30: "Or",
 }
 
 // ScriptVarNames are the names of the script words the engine itself
@@ -123,11 +205,42 @@ type eclLine struct {
 	name, text string
 	args       []string
 	targets    []int
+	next       int // the address after it
 }
 
 // walkECL decodes the code reachable from the five event entry points:
 // the entry addresses, the instructions by address and the jump targets.
+// Flow never enters the tables (eclTables), which a plain walk would
+// decode as code where an instruction runs on into one.
 func walkECL(code []byte) ([]int, map[int]eclLine, map[int]bool) {
+	tables := map[int]bool{}
+	for {
+		events, lines, jumps := walkFrom(code, tables)
+		more := eclTables(lines, eclBase+len(code))
+		if len(more) == len(tables) {
+			return events, lines, jumps
+		}
+		tables = more
+	}
+}
+
+// eclTables are the table addresses inside the code image (GetTable's
+// and Protection's first operand) of the decoded lines.
+func eclTables(lines map[int]eclLine, end int) map[int]bool {
+	t := map[int]bool{}
+	for _, l := range lines {
+		if l.name != "opGetTable" && l.name != "opProtection" || len(l.args) == 0 {
+			continue
+		}
+		var a int
+		if _, err := fmt.Sscanf(l.args[0], "[%04X]", &a); err == nil && a >= eclBase && a < end {
+			t[a] = true
+		}
+	}
+	return t
+}
+
+func walkFrom(code []byte, tables map[int]bool) ([]int, map[int]eclLine, map[int]bool) {
 	e := &Engine{ecl: make([]byte, 0x1E00)}
 	copy(e.ecl, code)
 	end := eclBase + len(code)
@@ -143,11 +256,11 @@ func walkECL(code []byte) ([]int, map[int]eclLine, map[int]bool) {
 	for len(work) > 0 {
 		pc := work[len(work)-1]
 		work = work[:len(work)-1]
-		if _, seen := lines[pc]; seen || pc < eclBase || pc >= end {
+		if _, seen := lines[pc]; seen || pc < eclBase || pc >= end || tables[pc] {
 			continue
 		}
 		name, text, next, targets, args := e.eclDecode(pc)
-		lines[pc] = eclLine{e.eclByte(pc), name, text, args, targets}
+		lines[pc] = eclLine{e.eclByte(pc), name, text, args, targets, next}
 		for _, t := range targets {
 			jumps[t] = true
 		}
@@ -156,7 +269,7 @@ func walkECL(code []byte) ([]int, map[int]eclLine, map[int]bool) {
 		case "opGoto", "opExit", "opReturn", "opNewECL", "?":
 		case "opIf":
 			work = append(work, next)
-			if n2, _, after, _, _ := e.eclDecode(next); n2 != "?" {
+			if n2, _, after, _, _ := e.eclDecode(next); n2 != "?" && !tables[next] {
 				work = append(work, after)
 			}
 		default:
@@ -209,9 +322,12 @@ func (e *Engine) eclDecode(pc int) (string, string, int, []int, []string) {
 			case 1, 2, 3:
 				e.eclPC++
 				e.es.argHi[i] = e.eclByte(e.eclPC)
-				if t == 2 {
+				switch t {
+				case 2:
 					args = append(args, fmt.Sprintf("#%04X", e.ArgAddr(i)))
-				} else {
+				case 3:
+					args = append(args, fmt.Sprintf("&[%04X]", e.ArgAddr(i)))
+				default:
 					args = append(args, fmt.Sprintf("[%04X]", e.ArgAddr(i)))
 				}
 			case 0x80:
@@ -225,7 +341,7 @@ func (e *Engine) eclDecode(pc int) (string, string, int, []int, []string) {
 				k++
 				e.eclPC++
 				e.es.argHi[i] = e.eclByte(e.eclPC)
-				args = append(args, fmt.Sprintf("str[%04X]", e.ArgAddr(i)))
+				args = append(args, fmt.Sprintf("$[%04X]", e.ArgAddr(i)))
 			default:
 				args = append(args, fmt.Sprintf("?%02X:%02X", t, lo))
 			}

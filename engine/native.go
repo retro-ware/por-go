@@ -7,27 +7,24 @@ import (
 
 // Native scripts (extra): stretches of the ECL scripts rewritten in Go,
 // where the script's own logic cannot follow the port (one party purse in
-// gold and copper). RunECL runs one instead of the opcodes at its address;
+// gold and copper). RunECL runs one instead of the commands at its label;
 // it leaves eclPC at the label the script would have gone on to.
 
 type scriptAt struct {
-	disk, area byte // ECL<disk>.DAX block area
-	pc         int
+	area  int    // the area script
+	label string // its label
 }
 
 var nativeScripts = map[scriptAt]func(*Engine){
-	{3, 0, 0xA501}: (*Engine).tavernGamble,
+	{0, "TavernGamble"}: (*Engine).tavernGamble,
 }
 
-func (e *Engine) nativeScript() func(*Engine) {
-	return nativeScripts[scriptAt{byte(e.set), e.gs.areaKind, e.eclPC}]
-}
+func (e *Engine) nativeScript() func(*Engine) { return e.native[e.eclPC] }
 
-// New Phlan's tavern game labels (ECL3 block 0).
-const (
-	tavernTalk  = 0xA3B1 // "pickpocket" check, tavern tales
-	tavernLeave = 0xAE6D // clear the visit flags, close the picture, exit
-)
+// New Phlan's tavern game labels (area 0): TavernEvent is the "pickpocket"
+// check and tavern tales, ResetVisits clears the visit flags, closes the
+// picture and exits.
+func (e *Engine) scriptLabel(l string) int { return e.script.Labels[l] }
 
 // tavernHouseLimit is the original 1000 platinum in gold.
 const tavernHouseLimit = 5000
@@ -40,7 +37,7 @@ const tavernHouseLimit = 5000
 func (e *Engine) tavernGamble() {
 	if e.selected().Okay == 0 { // [6C00] is 1 for an okay member
 		e.scriptText(true, "NO ONE IS WILLING TO GAMBLE WITH SOMEONE WHO LOOKS THAT BAD.")
-		e.eclPC = tavernTalk
+		e.eclPC = e.scriptLabel("TavernEvent")
 		return
 	}
 	for again := true; again; {
@@ -61,7 +58,7 @@ func (e *Engine) tavernGamble() {
 		e.scriptText(true, "WILL YOU GO AGAIN?")
 		again = e.scriptMenu("~YES ~NO") == 0
 	}
-	e.eclPC = tavernLeave
+	e.eclPC = e.scriptLabel("ResetVisits")
 }
 
 // pressReturn is the scripts' one-item "PRESS <RETURN>" menu (opHMenu).

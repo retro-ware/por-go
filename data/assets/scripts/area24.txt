@@ -10,7 +10,7 @@ event0:
 	Save Facing Scratch10
 	Compare 31 Geo
 	IfEq
-	Arith 4 Scratch10 Scratch10
+	Add 4 Scratch10 Scratch10
 	Call CallStepForward
 	Save 255 HoldMove
 	GetTable Table99A8 Scratch10 Scratch1
@@ -33,8 +33,14 @@ event0:
 Done:
 	Exit
 
+Table99A8:
+	Data 255 31 255 255 14 26 255 24
+
+Table99B0:
+	Data 255 255 255 255 14 26 255 255
+
 event1:
-	AndOr Cell 127 Scratch7
+	And Cell 127 Scratch7
 	Save 0 Scratch1
 	Compare Geo 31
 	IfNe
@@ -55,11 +61,11 @@ MansionEntry:
 	Goto OrcsConfused
 	SetupMonster 4 2 4
 	Gosub ApproachTwice
-	Print "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF FOUL ORCS.  THEY SNARL AT YOU AND ATTACK!"
+	PrintClear "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF FOUL ORCS.  THEY SNARL AT YOU AND ATTACK!"
 	Goto FightEntryOrcs
 
 OrcsConfused:
-	Print "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF ORCS WHO ARE SURPRISED THAT YOU'RE HERE.  WITH CONFUSED LOOKS ON THEIR FACES THEY STARE AT YOU"
+	PrintClear "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF ORCS WHO ARE SURPRISED THAT YOU'RE HERE.  WITH CONFUSED LOOKS ON THEIR FACES THEY STARE AT YOU"
 	EncounterMenu 2 1 4 Scratch1 1 1 1 1 1 "" "" "" 0 0
 	OnGoto Scratch1 4 ExitEvent FightEntryOrcs FightEntryOrcs FightEntryOrcs
 
@@ -73,7 +79,7 @@ FightEntryOrcs:
 	IfGt
 	Goto StepBack
 	Save 254 QuestEntryOrcs
-	Arith 3 Scratch7 Scratch1
+	Sub 3 Scratch7 Scratch1
 	OnGoto Scratch1 3 GreatHall BodiesRoom ExitEvent
 
 MansionRoom:
@@ -84,11 +90,11 @@ RubbleRoom:
 	IfEq
 	Goto ExitEvent
 	Save 1 LastRoomVisited
-	Print "YOU ARE IN A ROOM FILLED WITH RUBBLE AND WASTE."
+	PrintClear "YOU ARE IN A ROOM FILLED WITH RUBBLE AND WASTE."
 	Compare Search 0
 	IfEq
 	Goto ExitEvent
-	AndOr MansionRoomBits 1 Scratch1
+	And MansionRoomBits 1 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
@@ -97,7 +103,7 @@ RubbleRoom:
 	OnGoto Scratch1 2 TakeTapestry ExitEvent
 
 TakeTapestry:
-	AndOr MansionRoomBits 1 MansionRoomBits
+	Or MansionRoomBits 1 MansionRoomBits
 	Save 4 Scratch1
 	Goto GiveTreasure
 
@@ -106,8 +112,8 @@ DiningRoom:
 	IfEq
 	Goto ExitEvent
 	Save 2 LastRoomVisited
-	Print "YOU ARE IN THE REMAINS OF A ONCE GREAT DINING ROOM.  FURNITURE LIES BURNED AND BROKEN THROUGHOUT THE ROOM.  "
-	AndOr MansionRoomBits 2 Scratch1
+	PrintClear "YOU ARE IN THE REMAINS OF A ONCE GREAT DINING ROOM.  FURNITURE LIES BURNED AND BROKEN THROUGHOUT THE ROOM.  "
+	And MansionRoomBits 2 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
@@ -120,7 +126,7 @@ DiningRoom:
 	OnGoto Scratch2 2 TakeSkeletonJewelry ExitEvent
 
 TakeSkeletonJewelry:
-	AndOr MansionRoomBits 2 MansionRoomBits
+	Or MansionRoomBits 2 MansionRoomBits
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 3 255
 	Combat
@@ -130,9 +136,9 @@ GreatHall:
 	Compare LastRoomVisited 3
 	IfEq
 	Goto ExitEvent
-	Print "BEFORE YOU IS A GREAT HALL.  THE FLOOR IS LITTERED WITH ORC TRASH AND THE WALLS HAVE CRUDE BLACK HANDS PAINTED ON THEM.  "
+	PrintClear "BEFORE YOU IS A GREAT HALL.  THE FLOOR IS LITTERED WITH ORC TRASH AND THE WALLS HAVE CRUDE BLACK HANDS PAINTED ON THEM.  "
 	Save 3 LastRoomVisited
-	AndOr MansionRoomBits 4 Scratch1
+	And MansionRoomBits 4 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
@@ -145,7 +151,7 @@ GreatHall:
 	OnGoto Scratch3 2 OpenHallTrapDoor ExitEvent
 
 OpenHallTrapDoor:
-	AndOr MansionRoomBits 4 MansionRoomBits
+	Or MansionRoomBits 4 MansionRoomBits
 	Save 6 Scratch1
 	Goto GiveTreasure
 
@@ -153,9 +159,9 @@ BodiesRoom:
 	Compare LastRoomVisited 4
 	IfEq
 	Goto ExitEvent
-	Print "YOU ARE IN A ROOM THAT IS FILLED WITH THE DEAD BODIES OF THE ORC'S PREVIOUS VICTIMS.  "
+	PrintClear "YOU ARE IN A ROOM THAT IS FILLED WITH THE DEAD BODIES OF THE ORC'S PREVIOUS VICTIMS.  "
 	Save 4 LastRoomVisited
-	AndOr MansionRoomBits 8 Scratch1
+	And MansionRoomBits 8 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
@@ -167,19 +173,19 @@ BodiesRoom:
 	OnGoto Scratch2 2 TakeBodiesJewelry ExitEvent
 
 TakeBodiesJewelry:
-	AndOr MansionRoomBits 8 MansionRoomBits
+	Or MansionRoomBits 8 MansionRoomBits
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 3 255
 	Combat
 	Goto ExitEvent
 
 OgreAndOrcs:
-	AndOr MansionRoomBits 16 Scratch1
+	And MansionRoomBits 16 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
 	SetupMonster 8 0 8
-	Print "AS YOU ENTER THE ROOM YOU SEE SIX ORCS LED BY A LARGE OGRE.  THEY LUNGE FOWARD AND ATTACK."
+	PrintClear "AS YOU ENTER THE ROOM YOU SEE SIX ORCS LED BY A LARGE OGRE.  THEY LUNGE FOWARD AND ATTACK."
 	ClearMonsters
 	LoadMonster 4 6 4
 	LoadMonster 8 1 8
@@ -188,41 +194,41 @@ OgreAndOrcs:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr MansionRoomBits 16 MansionRoomBits
-	Print "YOU FIND A PIECE OF PAPER ON THE FLOOR IN THE ROOM.  YOU PLACE IT IN YOUR JOURNAL UNDER ENTRY 53"
+	Or MansionRoomBits 16 MansionRoomBits
+	PrintClear "YOU FIND A PIECE OF PAPER ON THE FLOOR IN THE ROOM.  YOU PLACE IT IN YOUR JOURNAL UNDER ENTRY 53"
 	Goto ExitEvent
 
 GoblinSlaves:
-	AndOr MansionRoomBits 32 Scratch1
+	And MansionRoomBits 32 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
 	SetupMonster 2 0 2
-	Print "IN THIS ROOM ARE SOME GOBLIN SLAVES THAT ARE COWERING IN THE CORNER.  THEY ALL SCREAM 'PLEASE DON'T KILL US.'  WHAT WILL YOU DO?"
+	PrintClear "IN THIS ROOM ARE SOME GOBLIN SLAVES THAT ARE COWERING IN THE CORNER.  THEY ALL SCREAM 'PLEASE DON'T KILL US.'  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "KILL THEM" "LET THEM GO"
 	OnGoto Scratch1 2 KillGoblins FreeGoblins
 
 KillGoblins:
-	Print "YOU COLDLY KILL THE DEFENCELESS GOBLINS."
-	AndOr MansionRoomBits 32 MansionRoomBits
+	PrintClear "YOU COLDLY KILL THE DEFENCELESS GOBLINS."
+	Or MansionRoomBits 32 MansionRoomBits
 	Goto ExitEvent
 
 FreeGoblins:
-	Print "YOU LET THE GOBLINS GO.  AS THEY LEAVE ONE OF THEM SAYS 'TO ENTER THE TEMPLE YOU NEED A HOLY SYMBOL OF BANE.'"
-	AndOr MansionRoomBits 32 MansionRoomBits
+	PrintClear "YOU LET THE GOBLINS GO.  AS THEY LEAVE ONE OF THEM SAYS 'TO ENTER THE TEMPLE YOU NEED A HOLY SYMBOL OF BANE.'"
+	Or MansionRoomBits 32 MansionRoomBits
 	Goto ExitEvent
 
 OutsideMansion:
-	Print "YOU STAND OUTSIDE A LARGE MANSION.  ON THE WALLS OF THE MANSION ARE CRUDE BLACK HAND PRINTS."
+	PrintClear "YOU STAND OUTSIDE A LARGE MANSION.  ON THE WALLS OF THE MANSION ARE CRUDE BLACK HAND PRINTS."
 	Goto ExitEvent
 
 OrcGuardRoom:
-	AndOr MansionFightBits 1 Scratch1
+	And MansionFightBits 1 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto ExitEvent
 	SetupMonster 4 0 4
-	Print "YOU ENTER INTO A FILTHY ROOM.  EIGHT ORC GUARDS ATTACK YOU IMMEDIATELY."
+	PrintClear "YOU ENTER INTO A FILTHY ROOM.  EIGHT ORC GUARDS ATTACK YOU IMMEDIATELY."
 	ClearMonsters
 	Save 80 Morale
 	LoadMonster 4 6 4
@@ -231,7 +237,7 @@ OrcGuardRoom:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr MansionFightBits 1 MansionFightBits
+	Or MansionFightBits 1 MansionFightBits
 	Goto ExitEvent
 
 HayBeds:
@@ -239,17 +245,17 @@ HayBeds:
 	IfEq
 	Goto ExitEvent
 	Save 1 LastMansionRoom
-	Print "YOU ENTER A ROOM THAT HAS SOME CRUDE HAY BEDS. WHAT WILL YOU DO?"
+	PrintClear "YOU ENTER A ROOM THAT HAS SOME CRUDE HAY BEDS. WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "SEARCH THE BEDS" "LEAVE THEM"
 	OnGoto Scratch1 2 SearchBeds ExitEvent
 
 SearchBeds:
-	AndOr MansionFightBits 2 Scratch1
+	And MansionFightBits 2 Scratch1
 	Compare Scratch1 0
 	IfNe
 	Goto BedsEmpty
 	SetupMonster 4 0 4
-	Print "AS YOU SEARCH THE BEDS A GROUP OF ORCS COMES INTO THE ROOM.  THEY ATTACK IMMEDIATELY."
+	PrintClear "AS YOU SEARCH THE BEDS A GROUP OF ORCS COMES INTO THE ROOM.  THEY ATTACK IMMEDIATELY."
 	ClearMonsters
 	LoadMonster 4 8 4
 	Save 80 Morale
@@ -257,12 +263,12 @@ SearchBeds:
 	Compare CombatEnd 128
 	IfGt
 	Goto StepBack
-	AndOr MansionFightBits 2 MansionFightBits
-	Print "YOU FINISH SEARCHING THE BEDS BUT YOU FIND NOTHING BUT LICE AND HAIR."
+	Or MansionFightBits 2 MansionFightBits
+	PrintClear "YOU FINISH SEARCHING THE BEDS BUT YOU FIND NOTHING BUT LICE AND HAIR."
 	Goto ExitEvent
 
 BedsEmpty:
-	Print "YOU SEARCH THE BEDS BUT FIND NOTHING."
+	PrintClear "YOU SEARCH THE BEDS BUT FIND NOTHING."
 	Goto ExitEvent
 
 CellRoom:
@@ -270,11 +276,11 @@ CellRoom:
 	IfEq
 	Goto ExitEvent
 	Save 2 LastMansionRoom
-	Print "YOU ENTER A ROOM THAT HAS BEEN COVERTED INTO A CELL."
+	PrintClear "YOU ENTER A ROOM THAT HAS BEEN COVERTED INTO A CELL."
 	Goto ExitEvent
 
 ScratchedMessage:
-	Print "ON THE WALL HERE IS A POORLY SCRATCHED OUT MESSAGE.  YOU CAN BARELEY MAKE OUT THE WORDS"
+	PrintClear "ON THE WALL HERE IS A POORLY SCRATCHED OUT MESSAGE.  YOU CAN BARELEY MAKE OUT THE WORDS"
 	NewLine
 	Print "'NORTH WALL.  RI  T FRONT GLAS . SE'"
 	Goto ExitEvent
@@ -297,7 +303,7 @@ TempleEntrance:
 	IfGt
 	Goto ExitAmbush
 	SetupMonster 4 0 4
-	Print "YOU STAND IN FRONT OF THE ENTRANCE TO A LARGE SHADOWY TEMPLE.  AN OLD BLIND DECREPIT ORC STANDS OUTSIDE WITH EIGHT ORC GUARDS."
+	PrintClear "YOU STAND IN FRONT OF THE ENTRANCE TO A LARGE SHADOWY TEMPLE.  AN OLD BLIND DECREPIT ORC STANDS OUTSIDE WITH EIGHT ORC GUARDS."
 	Compare OrcsKnowParty 1
 	IfEq
 	Goto GuardsLetYouIn
@@ -307,7 +313,7 @@ TempleEntrance:
 	OnGoto Scratch1 3 BlindOrcChecks BackOffOnce FightTempleGuards
 
 BackOffOnce:
-	Print "AS YOU BACK AWAY THE BLIND ORC SAYS, 'I MUST CHECK IF YOU ARE WORTHY TO ENTER THE TEMPLE OF BANE, DO NEED NOT BE AFRAID.'"
+	PrintClear "AS YOU BACK AWAY THE BLIND ORC SAYS, 'I MUST CHECK IF YOU ARE WORTHY TO ENTER THE TEMPLE OF BANE, DO NEED NOT BE AFRAID.'"
 	HMenu Scratch1 3 "LET HIM CHECK" "BACK OFF AGAIN" "ATTACK"
 	OnGoto Scratch1 3 BlindOrcChecks BackOffTwice FightTempleGuards
 
@@ -319,11 +325,11 @@ BlindOrcChecks:
 	FindItem 74
 	IfEq
 	Goto HolySymbolWelcome
-	Print "THE OLD BLIND ORC PAWS THE PARTY AS IF LOOKING FOR SOMETHING.  AFTER A CAREFULL PAWING, HE BACKS AWAY AND YELLS 'GUARDS, IN THE NAME OF BANE, KILL THESE UNBELIEVERS!'"
+	PrintClear "THE OLD BLIND ORC PAWS THE PARTY AS IF LOOKING FOR SOMETHING.  AFTER A CAREFULL PAWING, HE BACKS AWAY AND YELLS 'GUARDS, IN THE NAME OF BANE, KILL THESE UNBELIEVERS!'"
 	Goto FightTempleGuards
 
 BackOffTwice:
-	Print "AS YOU BACK AWAY AGAIN THE OLD BLIND ORC IS CONVINCED YOU ARE NOT WORSHIPPERS.  HE GRUNTS AN ORDER TO ATTACK."
+	PrintClear "AS YOU BACK AWAY AGAIN THE OLD BLIND ORC IS CONVINCED YOU ARE NOT WORSHIPPERS.  HE GRUNTS AN ORDER TO ATTACK."
 
 FightTempleGuards:
 	ClearMonsters
@@ -337,7 +343,7 @@ FightTempleGuards:
 	Goto ExitEvent
 
 HolySymbolWelcome:
-	Print "THE OLD BLIND ORC PAWS THE CHARACTERS LOOKING FOR SOMETHING.  FINDING THE LEATHER HOLY SYMBOL, HE SMILES THEN GRUNTS 'WELCOME TO THE TEMPLE OF BANE, SUPREME GOD OF THE REALMS.'"
+	PrintClear "THE OLD BLIND ORC PAWS THE CHARACTERS LOOKING FOR SOMETHING.  FINDING THE LEATHER HOLY SYMBOL, HE SMILES THEN GRUNTS 'WELCOME TO THE TEMPLE OF BANE, SUPREME GOD OF THE REALMS.'"
 	Goto ExitEvent
 
 TempleInside:
@@ -351,7 +357,7 @@ TempleInside:
 	OnGoto Scratch7 7 ExitEvent TrapDoorOne TrapDoorTwo TrapDoorThree ExitEvent ExitEvent ExitEvent
 
 TrapDoorOne:
-	AndOr TempleTreasureBits 1 Scratch2
+	And TempleTreasureBits 1 Scratch2
 	Compare Scratch2 0
 	IfNe
 	Goto ExitEvent
@@ -363,12 +369,12 @@ TrapDoorOne:
 	Compare Scratch3 1
 	IfEq
 	Goto ExitEvent
-	AndOr 1 TempleTreasureBits TempleTreasureBits
+	Or 1 TempleTreasureBits TempleTreasureBits
 	Save 8 Scratch1
 	Goto GiveTreasure
 
 TrapDoorTwo:
-	AndOr TempleTreasureBits 2 Scratch2
+	And TempleTreasureBits 2 Scratch2
 	Compare Scratch2 0
 	IfNe
 	Goto ExitEvent
@@ -380,12 +386,12 @@ TrapDoorTwo:
 	Compare Scratch3 1
 	IfEq
 	Goto ExitEvent
-	AndOr TempleTreasureBits 2 TempleTreasureBits
+	Or TempleTreasureBits 2 TempleTreasureBits
 	Save 9 Scratch1
 	Goto GiveTreasure
 
 TrapDoorThree:
-	AndOr TempleTreasureBits 4 Scratch2
+	And TempleTreasureBits 4 Scratch2
 	Compare Scratch2 0
 	IfNe
 	Goto ExitEvent
@@ -397,12 +403,12 @@ TrapDoorThree:
 	Compare Scratch3 1
 	IfEq
 	Goto ExitEvent
-	AndOr TempleTreasureBits 4 TempleTreasureBits
+	Or TempleTreasureBits 4 TempleTreasureBits
 	Save 17 Scratch1
 	Goto GiveTreasure
 
 AskOpenTrapDoor:
-	Print "ON THE FLOOR YOU FIND A TRAP DOOR.  WILL YOU OPEN IT?"
+	PrintClear "ON THE FLOOR YOU FIND A TRAP DOOR.  WILL YOU OPEN IT?"
 	HMenu Scratch3 2 "OPEN TRAPDOOR" "LEAVE TRAPDOOR"
 	Return
 
@@ -410,7 +416,7 @@ BloodyAltar:
 	Compare AltarDestroyed 1
 	IfEq
 	Goto AltarRemains
-	Print "IN FRONT OF YOU IS AN ALTAR THAT IS SMEARED WITH BLOOD AND COVERED WITH CRUDE BLACK HAND PRINTS.  WHAT WILL YOU DO?"
+	PrintClear "IN FRONT OF YOU IS AN ALTAR THAT IS SMEARED WITH BLOOD AND COVERED WITH CRUDE BLACK HAND PRINTS.  WHAT WILL YOU DO?"
 	HMenu Scratch1 2 "DESTROY ALTAR" "LEAVE IT"
 	OnGoto Scratch1 2 DestroyAltar ExitEvent
 
@@ -418,7 +424,7 @@ DestroyAltar:
 	Compare QuestTempleOfBane 254
 	IfGe
 	Goto AltarGone
-	Print "AS YOU DESTROY THE ALTAR, THE TEMPLE DOORS FLY OPEN AND A SCREAMING HORDE OF ORCS LED BY A HALF-ORC CLERIC ATTACK.  YOU TURN TO FACE THEM."
+	PrintClear "AS YOU DESTROY THE ALTAR, THE TEMPLE DOORS FLY OPEN AND A SCREAMING HORDE OF ORCS LED BY A HALF-ORC CLERIC ATTACK.  YOU TURN TO FACE THEM."
 	Save 3 Facing
 	Call CallRedraw
 	SetupMonster 4 2 4
@@ -427,12 +433,12 @@ DestroyAltar:
 	Goto FightHalfOrcCleric
 
 AltarGone:
-	Print "YOU DESTROY THE EVIL ALTAR AND THE UNEASY FEELING LEAVES YOU."
+	PrintClear "YOU DESTROY THE EVIL ALTAR AND THE UNEASY FEELING LEAVES YOU."
 	Save 1 AltarDestroyed
 	Goto ExitEvent
 
 AltarRemains:
-	Print "THE REMAINS OF AN EVIL ALTAR ARE NEARBY."
+	PrintClear "THE REMAINS OF AN EVIL ALTAR ARE NEARBY."
 	Goto ExitEvent
 
 GiveTreasure:
@@ -450,12 +456,12 @@ CheckAllLooted:
 
 ExitAmbush:
 	SetupMonster 4 0 4
-	Print "AS YOU EXIT THE TEMPLE YOU ARE ATTACKED BY A VERY LARGE GROUP OF ORCS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THE UNBELIEVING TOADS.  KILL THEM OR SUFFER MY WRATH!'"
+	PrintClear "AS YOU EXIT THE TEMPLE YOU ARE ATTACKED BY A VERY LARGE GROUP OF ORCS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THE UNBELIEVING TOADS.  KILL THEM OR SUFFER MY WRATH!'"
 	Goto FightHalfOrcCleric
 
 LootAmbush:
 	SetupMonster 4 0 4
-	Print "THE MINUTE YOU FIND THE TREASURE A LARGE GROUP OF ORCS CHARGE THROUGH THE TEMPLE DOORS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THESE SCUM WHO WOULD STEAL FROM OUR TEMPLE.'"
+	PrintClear "THE MINUTE YOU FIND THE TREASURE A LARGE GROUP OF ORCS CHARGE THROUGH THE TEMPLE DOORS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THESE SCUM WHO WOULD STEAL FROM OUR TEMPLE.'"
 
 FightHalfOrcCleric:
 	Save 99 Morale
@@ -469,19 +475,19 @@ FightHalfOrcCleric:
 	IfGt
 	Goto StepBack
 	Save 254 QuestTempleOfBane
-	Print "ON THE DEAD BODY OF THE HALF-ORC CLERIC YOU FIND A PIECE OF PAPER.  YOU PUT THE PAPER IN YOUR JOURNAL UNDER ENTRY 25."
+	PrintClear "ON THE DEAD BODY OF THE HALF-ORC CLERIC YOU FIND A PIECE OF PAPER.  YOU PUT THE PAPER IN YOUR JOURNAL UNDER ENTRY 25."
 	Delay
 	Delay
 	Save 0 Scratch2
 
 FindDirten:
 	LoadCharacter Scratch2
-	Compare str SelName "DIRTEN"
+	Compare $SelName "DIRTEN"
 	IfEq
 	Goto DirtenFound
 
 NextMember:
-	Arith 1 Scratch2 Scratch2
+	Add 1 Scratch2 Scratch2
 	Compare Scratch2 8
 	IfLt
 	Goto FindDirten
@@ -494,12 +500,12 @@ DirtenFound:
 	Compare SelStatus 127
 	IfGt
 	Goto DirtenLeaves
-	Print "DIRTEN SAYS, 'THANK YOU FOR HELPING US REGAIN OUR TEMPLE.  I MUST STAY HERE NOW.  I BID YOU FAREWELL.'"
+	PrintClear "DIRTEN SAYS, 'THANK YOU FOR HELPING US REGAIN OUR TEMPLE.  I MUST STAY HERE NOW.  I BID YOU FAREWELL.'"
 
 DirtenLeaves:
 	Save 0 SelName
 	Save 0 SelStatus
-	Arith 128 Scratch2 Scratch2
+	Add 128 Scratch2 Scratch2
 	LoadCharacter Scratch2
 	Goto ExitEvent
 
@@ -514,17 +520,17 @@ CheckMemberFinds:
 	Save Search AuxSearchTries
 	Compare SelRace 2
 	IfEq
-	Arith 1 AuxSearchTries AuxSearchTries
+	Add 1 AuxSearchTries AuxSearchTries
 	Compare SelRace 4
 	IfEq
-	Arith 1 AuxSearchTries AuxSearchTries
+	Add 1 AuxSearchTries AuxSearchTries
 	Random 5 AuxSearchTarget
 	Compare AuxSearchTries AuxSearchTarget
 	IfGt
 	Goto SecretFound
 
 NextSearcher:
-	Arith 1 AuxText AuxText
+	Add 1 AuxText AuxText
 	Compare AuxText 8
 	IfLt
 	Goto CheckMemberFinds
@@ -568,15 +574,15 @@ StartEncounter:
 	OnGoto Surprise 4 SpotGroup SurprisedByGroup SurpriseGroup FaceToFace
 
 SpotGroup:
-	Print "YOU SPOT A GROUP OF "
-	Print str AuxCounter
+	PrintClear "YOU SPOT A GROUP OF "
+	Print $AuxCounter
 	Print "."
 	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 2 3 0 1 4 "" "" "THE MONSTERS STAND READY" AuxEncChoice AuxEncChoice2
 	Save 130 AuxEncValue
 	OnGoto Scratch1 4 ExitEvent FightGroup StepBack IntimidateGroup
 
 OrcPatrol:
-	Print "YOU SEE A GROUP OF FOUR ORCS WHOSE SHIELDS BEAR A BLACK HAND ON A RED FIELD.  THEY CAUTIOSLY LOOK YOU OVER."
+	PrintClear "YOU SEE A GROUP OF FOUR ORCS WHOSE SHIELDS BEAR A BLACK HAND ON A RED FIELD.  THEY CAUTIOSLY LOOK YOU OVER."
 	HMenu Scratch1 1 "PRESS <RETURN> TO CONTINUE"
 	Save 4 EncounterCount1
 	Save 0 EncounterTemp
@@ -590,8 +596,8 @@ SurprisedByGroup:
 	IfEq
 	Goto OrcPatrol
 	SetupMonster AuxEncMonster 0 AuxEncDist
-	Print "YOU ARE SURPRISED BY "
-	Print str AuxCounter
+	PrintClear "YOU ARE SURPRISED BY "
+	Print $AuxCounter
 	Print "."
 	Goto FightGroup
 
@@ -600,8 +606,8 @@ OrcsSawParty:
 	Goto ExitEvent
 
 SurpriseGroup:
-	Print "YOU SPOT A GROUP OF "
-	Print str AuxCounter
+	PrintClear "YOU SPOT A GROUP OF "
+	Print $AuxCounter
 	Print "."
 	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 1 1 1 1 1 "YOU HAVE SURPRISED THEM." "" "" AuxEncChoice AuxEncChoice2
 	Save 50 AuxEncValue
@@ -614,8 +620,8 @@ OrcsSurprisedMenu:
 	OnGoto Scratch1 4 ExitEvent PartySurprises StepBack FightGroup
 
 FaceToFace:
-	Print "YOU ARE SUDDENLY FACE TO FACE WITH A GROUP OF "
-	Print str AuxCounter
+	PrintClear "YOU ARE SUDDENLY FACE TO FACE WITH A GROUP OF "
+	Print $AuxCounter
 	Print "."
 	EncounterMenu AuxEncMonster 0 AuxEncDist Scratch1 1 1 1 1 1 "THEY ARE AS SURPRISED AS YOU." "" "" AuxEncChoice AuxEncChoice2
 	Save 50 AuxEncValue
@@ -626,7 +632,7 @@ PartySurprises:
 
 FightGroup:
 	Save AuxEncMorale Morale
-	Arith 1 AuxSightText Scratch4
+	Add 1 AuxSightText Scratch4
 	ClearMonsters
 	LoadMonster AuxSightText EncounterCount1 AuxEncDist
 	Compare EncounterCount2 0
@@ -663,31 +669,31 @@ StepBack:
 IntimidateGroup:
 	Parlay 30 30 30 5 60 Scratch1
 	Random 30 Scratch2
-	Arith Scratch1 Scratch2 Scratch1
-	Arith Scratch1 SelReaction Scratch1
-	Arith Scratch1 AuxEncBonus Scratch1
+	Add Scratch1 Scratch2 Scratch1
+	Add Scratch1 SelReaction Scratch1
+	Add Scratch1 AuxEncBonus Scratch1
 	Compare Scratch1 140
 	IfLt
 	Goto NonbelieversLeave
-	Print "YOU INTIMIDATE THE MONSTERS SO MUCH THEY RUN AWAY!"
+	PrintClear "YOU INTIMIDATE THE MONSTERS SO MUCH THEY RUN AWAY!"
 	Goto ExitEvent
 
 NonbelieversLeave:
 	Compare Scratch1 100
 	IfLt
 	Goto GetOuttaHere
-	Print "'WE GOTTA KEEP ALL YOU NONBELIVERS OUTA HERE' THE MONSTERS SAY AS THEY BEGIN TO LEAVE.  'SO HIT THE ROAD YA BUMS.'  THE MONSTERS TURN AND LEAVE."
+	PrintClear "'WE GOTTA KEEP ALL YOU NONBELIVERS OUTA HERE' THE MONSTERS SAY AS THEY BEGIN TO LEAVE.  'SO HIT THE ROAD YA BUMS.'  THE MONSTERS TURN AND LEAVE."
 	Goto ExitEvent
 
 GetOuttaHere:
 	Compare Scratch1 75
 	IfLt
 	Goto TeachLesson
-	Print "'GET OUTA HERE BEFORE WE MAKE YOU LEAVE' THE MONSTERS YELL.  'AND YOU WONT COME BACK IF YOU KNOW WHATS GOOD FER YA'  THE MONSTERS THEN LEAVE."
+	PrintClear "'GET OUTA HERE BEFORE WE MAKE YOU LEAVE' THE MONSTERS YELL.  'AND YOU WONT COME BACK IF YOU KNOW WHATS GOOD FER YA'  THE MONSTERS THEN LEAVE."
 	Goto ExitEvent
 
 TeachLesson:
-	Print "THE MONSTERS SCREAM 'OH YEAH, WELL I GUESS WERE JUST GONNA HAVE TO TEACH YOUSE GUYS A LESSON OR TWO'  THEY RUSH FOWARD TO ATTACK."
+	PrintClear "THE MONSTERS SCREAM 'OH YEAH, WELL I GUESS WERE JUST GONNA HAVE TO TEACH YOUSE GUYS A LESSON OR TWO'  THEY RUSH FOWARD TO ATTACK."
 	Goto FightGroup
 
 ParlayOrcPatrol:
@@ -695,15 +701,15 @@ ParlayOrcPatrol:
 	OnGoto Scratch1 3 PatrolHarmless PatrolThreatens PatrolKnowsTreasure
 
 PatrolHarmless:
-	Print "THE ORCS YELL OUT, 'WE HAVE ORDERS TO CHECK OUT SUSPICIOUS INDIVIDUALS, BUT YOUSE GUYS LOOK HARMLESS ENOUGH.'  AFTER TALKING THE FOUR ORCS WANDER AWAY."
+	PrintClear "THE ORCS YELL OUT, 'WE HAVE ORDERS TO CHECK OUT SUSPICIOUS INDIVIDUALS, BUT YOUSE GUYS LOOK HARMLESS ENOUGH.'  AFTER TALKING THE FOUR ORCS WANDER AWAY."
 	Goto OrcsSawParty
 
 PatrolThreatens:
-	Print "IN A DEEP THREATENING VOICE ONE OF THE ORCS SAYS 'YOU MOLES BETTER WATCH YOUR STEP OR YOU SHALL FEEL THE WRATH OF BANE!'  AFTER SAYING THIS HE SPITS AND LEAVES."
+	PrintClear "IN A DEEP THREATENING VOICE ONE OF THE ORCS SAYS 'YOU MOLES BETTER WATCH YOUR STEP OR YOU SHALL FEEL THE WRATH OF BANE!'  AFTER SAYING THIS HE SPITS AND LEAVES."
 	Goto OrcsSawParty
 
 PatrolKnowsTreasure:
-	Print "ONE OF THE ORCS SAYS, 'OH, YEAH YOUSE THEM GUYS WHO KNOW WHERE DE TREASURE IS.  WE NOT SUPPOSED TO KILL YOU YET.'  THE ORCS THEN WANDER AWAY."
+	PrintClear "ONE OF THE ORCS SAYS, 'OH, YEAH YOUSE THEM GUYS WHO KNOW WHERE DE TREASURE IS.  WE NOT SUPPOSED TO KILL YOU YET.'  THE ORCS THEN WANDER AWAY."
 	Goto OrcsSawParty
 
 PickEncounter:
@@ -712,28 +718,28 @@ PickEncounter:
 	OnGoto Scratch1 10 PickPatrolOrcs PickPatrolOrcs PickPatrolOrcs PickPatrolOrcs PickOrcs PickOrcs PickGoblins PickGoblins PickHobgoblins PickOgres
 
 PickGoblins:
-	Save "GOBLINS" str AuxCounter
+	Save "GOBLINS" $AuxCounter
 	Save 0 AuxEncIndex
 	Goto LoadEncounterData
 
 PickPatrolOrcs:
-	Save "ORCS" str AuxCounter
+	Save "ORCS" $AuxCounter
 	Save 1 EncounterIsOrcs
 	Save 1 AuxEncIndex
 	Goto LoadEncounterData
 
 PickOrcs:
-	Save "ORCS" str AuxCounter
+	Save "ORCS" $AuxCounter
 	Save 1 AuxEncIndex
 	Goto LoadEncounterData
 
 PickHobgoblins:
-	Save "HOBGOBLINS" str AuxCounter
+	Save "HOBGOBLINS" $AuxCounter
 	Save 2 AuxEncIndex
 	Goto LoadEncounterData
 
 PickOgres:
-	Save "OGRES" str AuxCounter
+	Save "OGRES" $AuxCounter
 	Save 3 AuxEncIndex
 	Goto LoadEncounterData
 
@@ -757,7 +763,7 @@ LoadEncounterData:
 	IfEq
 	Goto OrcPatrol
 	PartyStrength Scratch1
-	Arith Scratch1 AuxEncTblA Scratch1
+	Div Scratch1 AuxEncTblA Scratch1
 	Compare Scratch1 4
 	IfLt
 	Save 4 Scratch1
@@ -765,11 +771,11 @@ LoadEncounterData:
 	OnGoto Scratch4 5 AddThree AddTwo AddTwo AddTwo CountGroups
 
 AddThree:
-	Arith Scratch1 3 Scratch1
+	Div Scratch1 3 Scratch1
 	Goto CountGroups
 
 AddTwo:
-	Arith Scratch1 2 Scratch1
+	Div Scratch1 2 Scratch1
 	Goto CountGroups
 
 CountGroups:
@@ -779,8 +785,8 @@ CountGroupsLoop:
 	Compare Scratch3 AuxEncTblB
 	IfLt
 	Goto ClampGroupSize
-	Arith AuxEncTblC Scratch2 Scratch2
-	Arith AuxEncTblB Scratch3 Scratch3
+	Add AuxEncTblC Scratch2 Scratch2
+	Sub AuxEncTblB Scratch3 Scratch3
 	Goto CountGroupsLoop
 
 ClampGroupSize:
@@ -789,7 +795,7 @@ ClampGroupSize:
 	Gosub SetSecondGroup
 	Compare Scratch1 56
 	IfGt
-	Arith Scratch2 56 Scratch1
+	Sub Scratch2 56 Scratch1
 	Save Scratch1 EncounterCount1
 	Return
 
@@ -803,6 +809,45 @@ ApproachTwice:
 	Delay
 	Approach
 	Return
+
+EncDistTable:
+	Data 2 2 2 2
+
+EncMonsterTable:
+	Data 2 4 6 8
+
+EncPictureTable:
+	Data 2 4 6 8
+
+EncTable4:
+	Data 2 4 6 8
+
+EncMoraleTable:
+	Data 50 55 60 80
+
+EncTable6:
+	Data 6 9 9 9
+
+EncTable7:
+	Data 6 9 9 9
+
+EncStrengthAdjTable:
+	Data 1 1 2 6
+
+EncGroupStepTable:
+	Data 40 30 20 11
+
+EncGroupIncTable:
+	Data 5 4 3 1
+
+EncTable11:
+	Data 0 0 0 0
+
+EncTable12:
+	Data 0 0 0 0
+
+EncTable13:
+	Data 20 10 10 0
 
 event2:
 	Compare QuestTempleOfBane 254
@@ -821,7 +866,7 @@ RestDangerous:
 	Exit
 
 event3:
-	Print "WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY ORCS."
+	PrintClear "WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY ORCS."
 	SetupMonster 4 0 4
 	ClearMonsters
 	LoadMonster 4 10 4
@@ -833,7 +878,7 @@ event4:
 	Compare Hours 14
 	IfGe
 	Save 8 Scratch6
-	LoadFiles 1 3 5
+	LoadPieces 1 3 5
 	Save Scratch6 Sky
 	Save 10 SkyInside
 	Compare Geo 24

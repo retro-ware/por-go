@@ -1,5 +1,5 @@
 event4:
-	LoadFiles 17 18 255
+	LoadPieces 17 18 255
 	LoadFiles 13 2 255
 	Save 1 NoCoords
 	Save 8 SkyInside
@@ -15,11 +15,11 @@ event0:
 	Exit
 
 event1:
-	AndOr Cell 127 Scratch1
+	And Cell 127 Scratch1
 	OnGoto Scratch1 29 KoboldAmbush WaterPit MineTailings KoboldTruce NetTrap SpikeTrap DrunkenKobold Done HearVoices ThroneRoom SearchNorthWall KingInPit BrassBottle CrudeBarracks FatimaRoom PrisonCell RubbleSlope WyvernCharges CrippledKobold LivingAreas KingsQuarters RatLarder MessTables RuinedBallista Done Done WyvernNest KoboldHoard AskLeave
 
 AskLeave:
-	Print "DO YOU WANT TO LEAVE?"
+	PrintClear "DO YOU WANT TO LEAVE?"
 	HMenu Scratch1 2 "YES" "NO"
 	Compare Scratch1 1
 	IfEq
@@ -28,12 +28,12 @@ AskLeave:
 
 FindFatima:
 	LoadCharacter Scratch2
-	Compare str SelName "PRINCESS FATIMA"
+	Compare $SelName "PRINCESS FATIMA"
 	IfEq
 	Goto FatimaFound
 
 NextMember:
-	Arith 1 Scratch2 Scratch2
+	Add 1 Scratch2 Scratch2
 	Compare Scratch2 8
 	IfLt
 	Goto FindFatima
@@ -46,12 +46,12 @@ FatimaFound:
 	Compare SelStatus 127
 	IfGt
 	Goto FatimaLeaves
-	Print "THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'"
+	PrintClear "THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'"
 
 FatimaLeaves:
 	Save 0 SelName
 	Save 0 SelStatus
-	Arith 128 Scratch2 Scratch2
+	Add 128 Scratch2 Scratch2
 	LoadCharacter Scratch2
 	NewECL 27
 
@@ -63,17 +63,17 @@ WaterPit:
 	Compare Scratch10 1
 	IfEq
 	Goto CrossPit
-	Print str SelName
+	PrintClear $SelName
 	Print " FALLS INTO A POOL OF WATER."
 	Gosub PressReturn
-	Print "SOME ITEMS WERE LOST RECOVERING "
-	Print str SelName
+	PrintClear "SOME ITEMS WERE LOST RECOVERING "
+	Print $SelName
 	Rob 0 20 20
 	Save 1 PoolPitDone
 	Exit
 
 CrossPit:
-	Print "YOU CROSS OVER A PIT."
+	PrintClear "YOU CROSS OVER A PIT."
 	Save 1 PoolPitDone
 	Exit
 
@@ -81,7 +81,7 @@ MineTailings:
 	Compare TailingsFound 1
 	IfEq
 	Exit
-	Print "YOU FIND A PILE OF MINE TAILINGS."
+	PrintClear "YOU FIND A PILE OF MINE TAILINGS."
 	Compare Search 0
 	IfEq
 	Exit
@@ -97,31 +97,31 @@ KoboldTruce:
 	Goto DeadfallTrap
 	SetupMonster 0 2 0
 	Save 1 KoboldTruceState
-	Print "A KOBOLD APPROACHES WAVING A WHITE FLAG."
+	PrintClear "A KOBOLD APPROACHES WAVING A WHITE FLAG."
 	Delay
 	Approach
 	Delay
 	Approach
-	Print "THE KOBOLD BOWS AND SAYS,'YOU ARE QUITE DANGEROUS, WE WILL PAY FOR A TRUCE.'"
+	PrintClear "THE KOBOLD BOWS AND SAYS,'YOU ARE QUITE DANGEROUS, WE WILL PAY FOR A TRUCE.'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "AGREE" "REFUSE" "KILL IT"
 	OnGoto Scratch1 3 TruceAgreed TruceRefused KoboldCriesOut
 
 TruceAgreed:
-	Print "'I AM TO ESCORT YOU TO OUR TREASURE.'"
+	PrintClear "'I AM TO ESCORT YOU TO OUR TREASURE.'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "FOLLOW" "REFUSE" "KILL IT"
 	OnGoto Scratch1 3 FollowGuide TruceRefused KoboldCriesOut
 
 TruceRefused:
 	Picture 255
-	Print "THE KOBOLD RETREATS, THEN STRIKES THE WALL."
+	PrintClear "THE KOBOLD RETREATS, THEN STRIKES THE WALL."
 	Gosub PressReturn
 	Goto RoofCollapses
 
 KoboldCriesOut:
 	Picture 255
-	Print "THE KOBOLD CRIES OUT, 'I'LL NOT GO ALONE!'"
+	PrintClear "THE KOBOLD CRIES OUT, 'I'LL NOT GO ALONE!'"
 	Gosub PressReturn
 	Goto RoofCollapses
 
@@ -135,10 +135,10 @@ DeadfallTrap:
 	Goto DisarmDeadfall
 
 RoofCollapses:
-	Print "THE ROOF COLLAPSES."
+	PrintClear "THE ROOF COLLAPSES."
 	Damage 192 2 6 0 1
 	SetupMonster 0 0 0
-	Print "BEFORE YOU RECOVER, KOBOLDS ARRIVE."
+	PrintClear "BEFORE YOU RECOVER, KOBOLDS ARRIVE."
 	Save 25 Morale
 	Save 1 Surprise
 	Save 2 MonsterHit
@@ -154,12 +154,12 @@ RoofCollapses:
 	Exit
 
 DisarmDeadfall:
-	Print "YOU DISARM A DEADFALL TRAP."
+	PrintClear "YOU DISARM A DEADFALL TRAP."
 	Save 2 KoboldTruceState
 	Exit
 
 DescribeTimbers:
-	Print "TIMBERS LINE THE WALLS HERE. A BOULDER BLOCKS THE FAR END."
+	PrintClear "TIMBERS LINE THE WALLS HERE. A BOULDER BLOCKS THE FAR END."
 	Return
 
 NetTrap:
@@ -174,7 +174,7 @@ NetTrap:
 	IfEq
 	Goto DisarmNet
 	SetupMonster 0 0 0
-	Print "A NET ENTANGLES YOU."
+	PrintClear "A NET ENTANGLES YOU."
 	Save 50 Morale
 	Save 1 Surprise
 	Save 2 MonsterHit
@@ -190,7 +190,7 @@ NetTrap:
 	Exit
 
 DisarmNet:
-	Print "YOU DISARM A NET TRAP."
+	PrintClear "YOU DISARM A NET TRAP."
 	Save 1 NetTrapDone
 	Exit
 
@@ -203,13 +203,13 @@ SpikeTrap:
 	Compare Scratch10 1
 	IfEq
 	Goto DisarmSpikes
-	Print "SPIKES SPRING OUT AND IMPALE YOU."
+	PrintClear "SPIKES SPRING OUT AND IMPALE YOU."
 	Damage 128 2 4 0 Scratch4
 	Save 1 SpikeTrapDone
 	Exit
 
 DisarmSpikes:
-	Print "YOU DISARM A SPIKE TRAP."
+	PrintClear "YOU DISARM A SPIKE TRAP."
 	Save 1 SpikeTrapDone
 	Exit
 
@@ -218,32 +218,32 @@ DrunkenKobold:
 	IfNe
 	Exit
 	SetupMonster 0 0 0
-	Print "A DRUNKEN KOBOLD LIES HERE."
+	PrintClear "A DRUNKEN KOBOLD LIES HERE."
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "SLIP PAST" "WAKE IT" "KILL IT"
 	OnGoto Scratch1 3 SlipPast WakeKobold KillDrunkKobold
 
 SlipPast:
-	Print "YOU SLIP BY WITH EASE."
+	PrintClear "YOU SLIP BY WITH EASE."
 	Exit
 
 WakeKobold:
-	Print "HE LOOKS CONFUSED,'OH, THE ENVOYS. DO YOU WISH AN ESCORT TO THE KING?'"
+	PrintClear "HE LOOKS CONFUSED,'OH, THE ENVOYS. DO YOU WISH AN ESCORT TO THE KING?'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "YES" "NO" "KILL IT"
 	OnGoto Scratch1 3 FollowToKing KoboldSleeps KillDrunkKobold
 
 FollowToKing:
-	Print "'THEN FOLLOW ME.'"
+	PrintClear "'THEN FOLLOW ME.'"
 	Save 1 HeardVoices
 	Goto GuideToKing
 
 KoboldSleeps:
-	Print "THE KOBOLD PROMPTLY RETURNS TO SLEEP."
+	PrintClear "THE KOBOLD PROMPTLY RETURNS TO SLEEP."
 	Exit
 
 KillDrunkKobold:
-	Print "THE KOBOLD DIES."
+	PrintClear "THE KOBOLD DIES."
 	Save 2 DrunkKoboldState
 	Exit
 
@@ -251,7 +251,7 @@ HearVoices:
 	CompareAnd 0 KoboldKingState 0 HeardVoices
 	IfNe
 	Exit
-	Print "YOU HEAR THE VOICES OF HUMANS AND KOBOLDS."
+	PrintClear "YOU HEAR THE VOICES OF HUMANS AND KOBOLDS."
 	Save 1 HeardVoices
 	Exit
 
@@ -265,10 +265,10 @@ KoboldHorde:
 	Save 0 Facing
 	Call CallRedraw
 	SetupMonster 0 2 0
-	Print "BEFORE YOU IS A HORDE OF KOBOLDS. BEHIND THEM ARE TWO MEN AND AN ANCIENT KOBOLD ON A WOODEN THRONE."
+	PrintClear "BEFORE YOU IS A HORDE OF KOBOLDS. BEHIND THEM ARE TWO MEN AND AN ANCIENT KOBOLD ON A WOODEN THRONE."
 	Approach
 	Gosub PressReturn
-	Print "ONE SAYS,'THESE MEN ARE ENEMIES. DEFEAT THEM AND MY LORD SHALL BE MOST GENEROUS.' THE KING LOOKS AT HIM, AND THEN AT YOU. HE SMILES AND SCREAMS, 'KILL THEM!'"
+	PrintClear "ONE SAYS,'THESE MEN ARE ENEMIES. DEFEAT THEM AND MY LORD SHALL BE MOST GENEROUS.' THE KING LOOKS AT HIM, AND THEN AT YOU. HE SMILES AND SCREAMS, 'KILL THEM!'"
 
 FightHorde:
 	SetupMonster 0 0 0
@@ -278,12 +278,12 @@ FightHorde:
 	LoadMonster 0 35 0
 	LoadMonster 1 11 1
 	Save PartyCount Scratch2
-	Arith 4 PartyCount Scratch3
+	Add 4 PartyCount Scratch3
 
 MakeMembersHostile:
 	LoadCharacter Scratch2
 	Save 178 SelControl
-	Arith 1 Scratch2 Scratch2
+	Add 1 Scratch2 Scratch2
 	Compare Scratch2 Scratch3
 	IfLt
 	Goto MakeMembersHostile
@@ -294,7 +294,7 @@ MakeMembersHostile:
 	Goto OfferSurrender
 
 BallistaFire:
-	Print "THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE."
+	PrintClear "THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE."
 	Damage 7 2 6 0 57
 	SetupMonster 0 1 0
 	Approach
@@ -313,11 +313,11 @@ EnvoysFight:
 	Compare KoboldKingState 2
 	IfNe
 	Goto EnvoysRematch
-	Print "THE MEN SNEER AT THE KING AND ONE SAYS,'LET US SHOW YOU HOW WARRIORS FIGHT.'"
+	PrintClear "THE MEN SNEER AT THE KING AND ONE SAYS,'LET US SHOW YOU HOW WARRIORS FIGHT.'"
 	Goto FightEnvoys
 
 EnvoysRematch:
-	Print "THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'"
+	PrintClear "THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'"
 
 FightEnvoys:
 	Save 69 Portrait
@@ -335,24 +335,24 @@ FightEnvoys:
 	Compare CombatEnd 128
 	IfGt
 	Goto EscapeKobolds
-	Print "THE KING HAS ESCAPED DURING THE FIGHT."
+	PrintClear "THE KING HAS ESCAPED DURING THE FIGHT."
 	Save 4 KoboldKingState
 	Exit
 
 OfferSurrender:
-	Arith 1 KoboldKingState KingFightTemp
+	Sub 1 KoboldKingState KingFightTemp
 	OnGoto KingFightTemp 2 SurrenderOrDie DeathOrPrison
 
 SurrenderOrDie:
-	Print "KOBOLDS BLOCK ALL THE EXITS."
+	PrintClear "KOBOLDS BLOCK ALL THE EXITS."
 	Delay
-	Print "THE KING CALLS OUT,'YOU SEEM VALUABLE. SURRENDER OR DIE.'"
+	PrintClear "THE KING CALLS OUT,'YOU SEEM VALUABLE. SURRENDER OR DIE.'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 2 "SURRENDER" "FIGHT"
 	OnGoto Scratch1 2 Surrender FightHorde
 
 DeathOrPrison:
-	Print "THE BALLISTA ARE RELOADED. THE KING CALLS OUT,'DEATH OR IMPRISONMENT.'"
+	PrintClear "THE BALLISTA ARE RELOADED. THE KING CALLS OUT,'DEATH OR IMPRISONMENT.'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 2 "SURRENDER" "FIGHT"
 	OnGoto Scratch1 2 Surrender BallistaFire
@@ -372,24 +372,24 @@ CheckMemberFinds:
 	Save Search AuxSearchCount
 	Compare SelRace 4
 	IfEq
-	Arith 1 AuxSearchCount AuxSearchCount
+	Add 1 AuxSearchCount AuxSearchCount
 	Compare SelRace 2
 	IfEq
-	Arith 1 AuxSearchCount AuxSearchCount
+	Add 1 AuxSearchCount AuxSearchCount
 	Random 5 AuxRoll
 	Compare AuxSearchCount AuxRoll
 	IfGt
 	Goto SecretDoorFound
 
 NextSearcher:
-	Arith 1 AuxMember AuxMember
+	Add 1 AuxMember AuxMember
 	Compare AuxMember 8
 	IfLt
 	Goto CheckMemberFinds
 	Exit
 
 SecretDoorFound:
-	Print "YOU FIND A SECRET DOOR IN THE NORTH WALL."
+	PrintClear "YOU FIND A SECRET DOOR IN THE NORTH WALL."
 	Save 2 SecretDoorNorth
 	Exit
 
@@ -400,7 +400,7 @@ KingsQuarters:
 	Compare KoboldKingState 4
 	IfNe
 	Exit
-	Print "YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS."
+	PrintClear "YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS."
 	SetupMonster 0 0 0
 	Save 100 Morale
 	ClearMonsters
@@ -416,7 +416,7 @@ KingInPit:
 	Compare KoboldKingState 5
 	IfNe
 	Exit
-	Print "THE KING, PANICKED, HAS FALLEN INTO HIS OWN SPIKED PIT AND DIED."
+	PrintClear "THE KING, PANICKED, HAS FALLEN INTO HIS OWN SPIKED PIT AND DIED."
 	Save 6 KoboldKingState
 	Save 254 QuestKobolds
 	Exit
@@ -427,21 +427,21 @@ BrassBottle:
 	Exit
 	Save 2 Facing
 	Call CallRedraw
-	Print "YOU SEE A BRASS BOTTLE JAMMED INTO A CRACK HERE."
+	PrintClear "YOU SEE A BRASS BOTTLE JAMMED INTO A CRACK HERE."
 	Gosub WhatDoYouDo
 	HMenu Scratch1 2 "LEAVE IT" "PULL IT OUT"
 	OnGoto Scratch1 2 Done PullBottle
 
 PullBottle:
-	Print "AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID."
+	PrintClear "AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID."
 	SetupMonster 70 0 70
-	Print "'I AM THE EFREETI SAMIR AHWAHL. YOU ARE NOT MY MASTER. ARE YOU, PERCHANCE, VAMPIRES?'"
+	PrintClear "'I AM THE EFREETI SAMIR AHWAHL. YOU ARE NOT MY MASTER. ARE YOU, PERCHANCE, VAMPIRES?'"
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "YES" "NO" "ATTACK IT"
 	OnGoto Scratch1 3 EfreetiAttacks EfreetiReturns FightEfreeti
 
 EfreetiReturns:
-	Print "'FOOLS, SUMMON ME ONLY WHEN A VAMPIRE IS NEAR OR FACE MY WRATH.' HE RETURNS TO THE BOTTLE."
+	PrintClear "'FOOLS, SUMMON ME ONLY WHEN A VAMPIRE IS NEAR OR FACE MY WRATH.' HE RETURNS TO THE BOTTLE."
 	RedrawView
 	Call CallRedraw
 	Delay
@@ -452,7 +452,7 @@ EfreetiReturns:
 	Exit
 
 EfreetiAttacks:
-	Print "'DIE HAPPY FIENDS, YOUR DEATHS SHALL BE MY FREEDOM.'"
+	PrintClear "'DIE HAPPY FIENDS, YOUR DEATHS SHALL BE MY FREEDOM.'"
 
 FightEfreeti:
 	Save 100 Morale
@@ -466,7 +466,7 @@ CrudeBarracks:
 	Compare BarracksSeen 0
 	IfNe
 	Exit
-	Print "YOU ARE IN A CRUDE BARRACKS. ON ONE WALL IS A CRUDE MAP."
+	PrintClear "YOU ARE IN A CRUDE BARRACKS. ON ONE WALL IS A CRUDE MAP."
 	Gosub JournalEntry
 	Print "28."
 	Save 1 BarracksSeen
@@ -479,7 +479,7 @@ FatimaRoom:
 	Compare Facing 0
 	IfEq
 	Goto MeetFatima
-	Print "YOU HEAR MUFFLED SOUNDS AND TURN TO INVESTIGATE."
+	PrintClear "YOU HEAR MUFFLED SOUNDS AND TURN TO INVESTIGATE."
 	Gosub PressReturn
 	Save 0 Facing
 	Call CallRedraw
@@ -487,13 +487,13 @@ FatimaRoom:
 MeetFatima:
 	Save 67 Portrait
 	SetupMonster 16 0 37
-	Print "IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU."
+	PrintClear "IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU."
 	Gosub PressReturn
-	Print "'I AM PRINCESS FATIMA.' THE PRINCESS CONTINUES."
+	PrintClear "'I AM PRINCESS FATIMA.' THE PRINCESS CONTINUES."
 	Gosub JournalEntry
 	Print "16."
 	Gosub PressReturn
-	Print "SHE OFFERS TO JOIN YOUR BAND."
+	PrintClear "SHE OFFERS TO JOIN YOUR BAND."
 	Gosub WhatDoYouDo
 	HMenu Scratch1 3 "YES" "NO" "ATTACK HER"
 	OnGoto Scratch1 3 FatimaJoins FatimaGoesAlone AttackFatima
@@ -514,11 +514,11 @@ FatimaJoins:
 	Compare PartyCount 8
 	IfNe
 	Goto AddFatima
-	Print "'YOUR GROUP IS TOO LARGE.'"
+	PrintClear "'YOUR GROUP IS TOO LARGE.'"
 	Gosub PressReturn
 
 FatimaGoesAlone:
-	Print "SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES."
+	PrintClear "SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES."
 	Save 1 FatimaMet
 	Save 255 Portrait
 	Exit
@@ -534,7 +534,7 @@ PrisonCell:
 	Compare PrisonCellSeen 0
 	IfNe
 	Exit
-	Print "THIS WAS A PRISON CELL. BROKEN BINDINGS AND SIX DEAD KOBOLDS ARE STREWN ON THE FLOOR."
+	PrintClear "THIS WAS A PRISON CELL. BROKEN BINDINGS AND SIX DEAD KOBOLDS ARE STREWN ON THE FLOOR."
 	Save 1 PrisonCellSeen
 	Exit
 
@@ -545,7 +545,7 @@ RubbleSlope:
 	Compare 1 RubbleSlopeUsed
 	IfEq
 	Exit
-	Print "YOU TUMBLE DOWN A STEEP, LOOSE SLOPE, MAKING A LOUD CLATTER."
+	PrintClear "YOU TUMBLE DOWN A STEEP, LOOSE SLOPE, MAKING A LOUD CLATTER."
 	Gosub PressReturn
 	Save 1 RubbleSlopeUsed
 	Goto WyvernLands
@@ -554,7 +554,7 @@ SlopeAskClimb:
 	Compare 1 RubbleSlopeUsed
 	IfEq
 	Exit
-	Print "THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?"
+	PrintClear "THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 ClimbSlope SlopeStepBack
 
@@ -565,7 +565,7 @@ SlopeStepBack:
 	Exit
 
 ClimbSlope:
-	Print "YOU DISLODGE A NUMBER OF ROCKS."
+	PrintClear "YOU DISLODGE A NUMBER OF ROCKS."
 	Delay
 	Save 1 RubbleSlopeUsed
 
@@ -573,7 +573,7 @@ WyvernLands:
 	Compare WyvernState 0
 	IfNe
 	Exit
-	Print "THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU."
+	PrintClear "THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU."
 	Save 1 Facing
 	Call CallRedraw
 	SetupMonster 121 2 121
@@ -595,7 +595,7 @@ WyvernCharges:
 	IfNe
 	Exit
 	SetupMonster 121 2 121
-	Print "BEFORE YOU LIES A HUGE WYVERN. IT RISES UP AND CHARGES."
+	PrintClear "BEFORE YOU LIES A HUGE WYVERN. IT RISES UP AND CHARGES."
 	Approach
 	Delay
 	Approach
@@ -611,35 +611,35 @@ CrippledKobold:
 	CompareAnd CrippledKoboldMet 0 Search 1
 	IfNe
 	Exit
-	Print "HIDDEN IN A NARROW CREVICE IS AN OLD CRIPPLED KOBOLD. IT CROAKS WEAKLY FOR WATER."
+	PrintClear "HIDDEN IN A NARROW CREVICE IS AN OLD CRIPPLED KOBOLD. IT CROAKS WEAKLY FOR WATER."
 	Gosub WhatDoYouDo
 	Save 1 CrippledKoboldMet
 	HMenu Scratch1 3 "GIVE IT WATER" "THREATEN IT" "KILL IT"
 	OnGoto Scratch1 3 GiveWater ThreatenKobold KillKobold
 
 GiveWater:
-	Print "WHEN YOU GIVE IT WATER, IT CRAWLS OUT AND TELLS YOU ITS TALE."
+	PrintClear "WHEN YOU GIVE IT WATER, IT CRAWLS OUT AND TELLS YOU ITS TALE."
 	Gosub JournalEntry
 	Print "20."
 	Gosub PressReturn
-	Print "AFTER IT IS DONE, IT LEAVES."
+	PrintClear "AFTER IT IS DONE, IT LEAVES."
 	Gosub WhatDoYouDo
 	HMenu Scratch1 2 "LET IT LEAVE" "KILL IT"
 	OnGoto Scratch1 2 Done KillKobold
 
 ThreatenKobold:
-	Print "THE KOBOLD RETREATS AROUND A BEND."
+	PrintClear "THE KOBOLD RETREATS AROUND A BEND."
 	Exit
 
 KillKobold:
-	Print "YOU CUT DOWN THE KOBOLD."
+	PrintClear "YOU CUT DOWN THE KOBOLD."
 	Exit
 
 LivingAreas:
 	CompareAnd LivingAreaSeen 0 KoboldKingState 0
 	IfNe
 	Exit
-	Print "THIS IS THE LIVING AREAS. FEMALE AND CHILD KOBOLDS FLEE."
+	PrintClear "THIS IS THE LIVING AREAS. FEMALE AND CHILD KOBOLDS FLEE."
 	Save 1 LivingAreaSeen
 	Exit
 
@@ -647,7 +647,7 @@ RatLarder:
 	Compare LarderSeen13 0
 	IfNe
 	Exit
-	Print "RATS ARE HUNG HERE TO AGE. MOLDY ROOTS LIE IN PILES."
+	PrintClear "RATS ARE HUNG HERE TO AGE. MOLDY ROOTS LIE IN PILES."
 	Save 1 LarderSeen13
 	Exit
 
@@ -655,7 +655,7 @@ MessTables:
 	Compare MessHallSeen 0
 	IfNe
 	Exit
-	Print "HERE CRUDE TABLES, LITTERED WITH BONES, ARE SCATTERED AROUND."
+	PrintClear "HERE CRUDE TABLES, LITTERED WITH BONES, ARE SCATTERED AROUND."
 	Save 1 MessHallSeen
 	Exit
 
@@ -663,14 +663,14 @@ RuinedBallista:
 	CompareAnd PartyX PrevX PartyY PrevY
 	IfEq
 	Exit
-	Print "A RUINED BALLISTA LIES HERE."
+	PrintClear "A RUINED BALLISTA LIES HERE."
 	Exit
 
 WyvernNest:
 	Compare WyvernState 1
 	IfNe
 	Exit
-	Print "AMONGST A NEST OF LOGS YOU FIND SOME TREASURE."
+	PrintClear "AMONGST A NEST OF LOGS YOU FIND SOME TREASURE."
 	ClearMonsters
 	Treasure 0 #03E8 #01F4 #03E8 0 2 2 130
 	Combat
@@ -681,7 +681,7 @@ KoboldHoard:
 	Compare KoboldKingState 6
 	IfNe
 	Exit
-	Print "STREWN ACROSS THE FLOOR IS THE ACCUMULATED WEALTH OF THE KOBOLD COMMUNITY."
+	PrintClear "STREWN ACROSS THE FLOOR IS THE ACCUMULATED WEALTH OF THE KOBOLD COMMUNITY."
 	ClearMonsters
 	Treasure #C350 0 0 0 0 6 2 43
 	Combat
@@ -709,14 +709,14 @@ MemberFindsTrap:
 	Goto TrapFound
 
 NextTrapFinder:
-	Arith 1 AuxMember AuxMember
+	Add 1 AuxMember AuxMember
 	Compare AuxMember 8
 	IfLt
 	Goto MemberFindsTrap
 	Goto TrapNotDisarmed
 
 TrapFound:
-	Print "YOU FIND A TRAP, BUT THE TUNNEL IS TOO NARROW TO AVOID IT."
+	PrintClear "YOU FIND A TRAP, BUT THE TUNNEL IS TOO NARROW TO AVOID IT."
 	Gosub WhatDoYouDo
 	HMenu AuxMember 3 "DISARM IT" "GO ON" "LEAVE"
 	OnGoto AuxMember 3 DisarmTrap TrapNotDisarmed TrapBackOff
@@ -757,7 +757,7 @@ GuideStep:
 	Compare Scratch1 4
 	IfEq
 	Goto Done
-	Arith 1 Scratch6 Scratch6
+	Add 1 Scratch6 Scratch6
 	Goto GuideStep
 
 WalkSteps:
@@ -777,54 +777,54 @@ WalkStepLoop:
 	OnGoto Facing 4 StepNorthY StepEastX StepSouthY StepWestX
 	Call CallRedraw
 	Delay
-	Arith 1 Scratch2 Scratch2
+	Add 1 Scratch2 Scratch2
 	Goto WalkStepLoop
 
 StepNorthY:
-	Arith 1 PartyY PartyY
+	Sub 1 PartyY PartyY
 	Return
 
 StepEastX:
-	Arith 1 PartyX PartyX
+	Add 1 PartyX PartyX
 	Return
 
 StepSouthY:
-	Arith 1 PartyY PartyY
+	Add 1 PartyY PartyY
 	Return
 
 StepWestX:
-	Arith 1 PartyX PartyX
+	Sub 1 PartyX PartyX
 
 GuideReturn:
 	Return
 
 KoboldTapsWall:
-	Print "THE KOBOLD PAUSES, IDLY TAPS THE WALL, THEN PROCEEDS."
+	PrintClear "THE KOBOLD PAUSES, IDLY TAPS THE WALL, THEN PROCEEDS."
 	Gosub PressReturn
 	Return
 
 BoulderLever:
-	Print "A BOULDER BLOCKS OFF THE PASSAGE. USING A LEVER, THE KOBOLD DISLODGES IT AND PROCEEDS. DO YOU?"
+	PrintClear "A BOULDER BLOCKS OFF THE PASSAGE. USING A LEVER, THE KOBOLD DISLODGES IT AND PROCEEDS. DO YOU?"
 	HMenu Scratch8 2 "YES" "NO"
 	OnGoto Scratch8 2 GuideReturn KoboldGone
 
 KoboldGone:
-	Print "THE KOBOLD DISAPPEARS BEYOND THE BOULDER."
+	PrintClear "THE KOBOLD DISAPPEARS BEYOND THE BOULDER."
 	Exit
 
 ClamberDown:
-	Print "YOU CLAMBER NOISILY DOWN A SLOPE OF RUBBLE."
+	PrintClear "YOU CLAMBER NOISILY DOWN A SLOPE OF RUBBLE."
 	Delay
 	Compare WyvernState 0
 	IfNe
 	Goto TreasureAhead
-	Print "AT THE BOTTOM THE KOBOLD DIVES BENEATH SOME RUBBLE."
+	PrintClear "AT THE BOTTOM THE KOBOLD DIVES BENEATH SOME RUBBLE."
 	Delay
 	Save 1 RubbleSlopeUsed
 	Goto WyvernLands
 
 TreasureAhead:
-	Print "'JUST AROUND THE CORNER IS OUR TREASURE. TAKE WHAT YOU WISH AND LEAVE US. GOOD DAY.'"
+	PrintClear "'JUST AROUND THE CORNER IS OUR TREASURE. TAKE WHAT YOU WISH AND LEAVE US. GOOD DAY.'"
 	Gosub WhatDoYouDo
 	HMenu Scratch8 2 "LET IT GO" "KILL IT"
 	OnGoto Scratch8 2 Done KillKobold
@@ -841,11 +841,11 @@ KingGuideStep:
 	Compare Scratch1 3
 	IfEq
 	Goto Done
-	Arith 1 Scratch6 Scratch6
+	Add 1 Scratch6 Scratch6
 	Goto KingGuideStep
 
 EnvoysAnnounced:
-	Print "THE KOBOLD CALLS OUT,'THE ENVOYS ARE HERE, GREAT KING.' AN AGED VOICE REPLIES 'SEND THEM FORWARD.' YOUR GUIDE, HOWEVER, HAS FALLEN INTO A STUPOR."
+	PrintClear "THE KOBOLD CALLS OUT,'THE ENVOYS ARE HERE, GREAT KING.' AN AGED VOICE REPLIES 'SEND THEM FORWARD.' YOUR GUIDE, HOWEVER, HAS FALLEN INTO A STUPOR."
 	Exit
 
 Surrender:
@@ -853,7 +853,7 @@ Surrender:
 	Save 3 PartyY
 	Save 3 Facing
 	Call CallRedraw
-	Print "THE KOBOLDS HERD YOU TOWARD YOUR PRISON. SOME NAB BITS OF YOUR EQUIPMENT AND LEAVE."
+	PrintClear "THE KOBOLDS HERD YOU TOWARD YOUR PRISON. SOME NAB BITS OF YOUR EQUIPMENT AND LEAVE."
 	Rob 1 25 10
 	Save 22 Scratch6
 
@@ -863,7 +863,7 @@ PrisonWalkStep:
 	Gosub WalkSteps
 	GetTable GuidePathEvent Scratch6 Scratch1
 	OnGoto Scratch1 2 GuideReturn ReachPrison
-	Arith 1 Scratch6 Scratch6
+	Add 1 Scratch6 Scratch6
 	Goto PrisonWalkStep
 
 ReachPrison:
@@ -872,7 +872,7 @@ ReachPrison:
 	Goto ThrownInCell
 	Save 67 Portrait
 	SetupMonster 0 0 37
-	Print "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
+	PrintClear "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
 	AddNPC 104 100
 	ClearMonsters
 	LoadMonster 0 10 0
@@ -881,7 +881,7 @@ ReachPrison:
 	Compare PartyCount 8
 	IfEq
 	Goto FatimaJournal
-	Print "WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE."
+	PrintClear "WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE."
 	Gosub JournalEntry
 	Print "16"
 
@@ -896,7 +896,7 @@ EscapeKobolds:
 	GetTable EscapeXTable Scratch1 PartyX
 	GetTable EscapeYTable Scratch1 PartyY
 	Call CallRedraw
-	Print "THE KOBOLDS CHASE FOR A WHILE, BUT YOU ESCAPE."
+	PrintClear "THE KOBOLDS CHASE FOR A WHILE, BUT YOU ESCAPE."
 	Exit
 
 KoboldAmbush:
@@ -906,16 +906,16 @@ KoboldAmbush:
 	Save 20 Scratch1
 	Compare 0 KoboldKingState
 	IfNe
-	Arith 100 Scratch1 Scratch1
+	Add 100 Scratch1 Scratch1
 	Compare 1 Search
 	IfNe
-	Arith 40 Scratch1 Scratch1
+	Add 40 Scratch1 Scratch1
 	Random Scratch1 Scratch2
 	Compare 1 Scratch2
 	IfNe
 	Exit
 	SetupMonster 0 0 0
-	Print "KOBOLDS SEEM TO BOIL UP FROM NOWHERE."
+	PrintClear "KOBOLDS SEEM TO BOIL UP FROM NOWHERE."
 	Gosub PressReturn
 	Save 30 Morale
 	Save 2 MonsterHit
@@ -949,7 +949,7 @@ RestRareEncounter:
 event3:
 	Save 0 RestChance
 	SetupMonster 0 2 0
-	Print "KOBOLDS APPEAR AND BOMBARD YOU WITH ROCKS."
+	PrintClear "KOBOLDS APPEAR AND BOMBARD YOU WITH ROCKS."
 	Damage 7 1 4 1 50
 	RedrawView
 	Call CallRedraw
@@ -961,7 +961,7 @@ WhatDoYouDo:
 	Return
 
 ThrownInCell:
-	Print "YOU ARE THROWN INTO A CELL BEREFT OF EQUIPMENT."
+	PrintClear "YOU ARE THROWN INTO A CELL BEREFT OF EQUIPMENT."
 	Rob 1 100 255
 	Save 0 PartyX
 	Save 0 PartyY
@@ -975,3 +975,21 @@ PressReturn:
 JournalEntry:
 	Print " YOU RECORD IT IN YOUR JOURNAL UNDER ENTRY "
 	Return
+
+GuidePathEvent:
+	Data 0 0 0 0 0 0 0 0 0 1 2 3 4 1 2 0
+	Data 0 0 0 0 0 3 0 0 1
+
+GuidePathMove:
+	Data 0 1 0 1 0 2 0 2 0 3 1 1 1 1 1 1
+	Data 0 2 0 2 0 2 3 0 1
+
+GuidePathFacing:
+	Data 1 1 0 0 3 3 0 0 1 1 1 1 1 3 3 3
+	Data 0 0 3 3 0 0 3 0 0
+
+EscapeXTable:
+	Data 0 6 1 9 7 6
+
+EscapeYTable:
+	Data 12 12 14 11 10 11 255

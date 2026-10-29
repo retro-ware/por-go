@@ -67,7 +67,9 @@ func main() {
 				seen[n] = a
 			}
 			var out bytes.Buffer
-			engine.ScriptECL(b[2:], &out, names)
+			if err := engine.ScriptECL(b[2:], &out, names); err != nil {
+				log.Fatalf("%s: %v", area, err)
+			}
 			if err := os.WriteFile(filepath.Join(dir, area+".txt"), out.Bytes(), 0o644); err != nil {
 				log.Fatal(err)
 			}

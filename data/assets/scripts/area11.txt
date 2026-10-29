@@ -5,14 +5,14 @@ event0:
 	Save 8 Scratch5
 	Save Scratch5 Sky
 	Save 10 SkyInside
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	Exit
 
 event1:
-	Print ""
+	PrintClear ""
 	Picture 255
 	Save 255 Portrait
-	AndOr 127 Cell Scratch10
+	And 127 Cell Scratch10
 	Compare Scratch10 0
 	IfEq
 	Goto LeaveArea
@@ -25,7 +25,7 @@ FindCellLoop:
 	Compare AuxCounter 18
 	IfGt
 	Exit
-	Arith 1 AuxCounter AuxCounter
+	Add 1 AuxCounter AuxCounter
 	Goto FindCellLoop
 
 event2:
@@ -50,39 +50,39 @@ event3:
 	Delay
 	Approach
 	Delay
-	Print "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
+	PrintClear "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
 	HMenu Scratch1 2 "GO" "FIGHT"
 	OnGoto Scratch1 2 ClearAndExit FightWatch
 
 event4:
 	LoadFiles 0 0 0
-	LoadFiles 127 127 127
+	LoadPieces 127 127 127
 	Compare RestChance 255
 	IfEq
 	Exit
 	Goto NoRestHere
 
 CellDispatch:
-	Arith 10 AuxCounter AuxCounter
+	Sub 10 AuxCounter AuxCounter
 	Compare TrainerCooldown 0
 	IfNe
-	Arith 1 TrainerCooldown TrainerCooldown
+	Sub 1 TrainerCooldown TrainerCooldown
 	OnGoto AuxCounter 9 ReadNotices ReadDoorSign ClericTrainer MagicUserTrainer EnterArena FightersSign FighterTrainer ThiefTrainer RoguesSign
 
 ReadNotices:
 	Compare NoticesRead 0
 	IfGt
 	Exit
-	Print "NOTICES FOR TEACHERS AND STUDENTS ARE POSTED ON THE WALLS.  A NOTE DIRECTS MAGIC USERS AND CLERICS TO GO NORTH AND FIGHTERS AND 'ROGUES' TO GO EAST."
-	Arith 1 NoticesRead NoticesRead
+	PrintClear "NOTICES FOR TEACHERS AND STUDENTS ARE POSTED ON THE WALLS.  A NOTE DIRECTS MAGIC USERS AND CLERICS TO GO NORTH AND FIGHTERS AND 'ROGUES' TO GO EAST."
+	Add 1 NoticesRead NoticesRead
 	Exit
 
 ReadDoorSign:
 	Compare DoorSignRead 0
 	IfGt
 	Exit
-	Print "A SIGN ON THE WALL DIRECTS MAGIC USERS TO GO THROUGH THE EAST DOOR AND CLERICS TO GO THROUGH THE WEST DOOR."
-	Arith 1 DoorSignRead DoorSignRead
+	PrintClear "A SIGN ON THE WALL DIRECTS MAGIC USERS TO GO THROUGH THE EAST DOOR AND CLERICS TO GO THROUGH THE WEST DOOR."
+	Add 1 DoorSignRead DoorSignRead
 	Exit
 
 ClericTrainer:
@@ -93,7 +93,7 @@ ClericTrainer:
 	Save 16 Portrait
 	Picture 4
 	Save 114 Scratch4
-	Save "CLERICS " str AuxMonsterName
+	Save "CLERICS " $AuxMonsterName
 	Goto AskTrain
 
 MagicUserTrainer:
@@ -104,14 +104,14 @@ MagicUserTrainer:
 	Save 16 Portrait
 	Picture 2
 	Save 113 Scratch4
-	Save "MAGIC USERS " str AuxMonsterName
+	Save "MAGIC USERS " $AuxMonsterName
 	Goto AskTrain
 
 EnterArena:
 	Compare ArenaEntered 0
 	IfGt
 	Goto ClearAndExit
-	Print "THE ROOM IS FILLED WITH DUELING PAIRS."
+	PrintClear "THE ROOM IS FILLED WITH DUELING PAIRS."
 	Gosub PressReturn
 	Save 1 ArenaEntered
 	Save 9 Portrait
@@ -124,7 +124,7 @@ EnterArena:
 	Compare DuelOffered 0
 	IfGt
 	Goto OfferPartner
-	Print "THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'"
+	PrintClear "THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 ChooseDuelist OfferPartner
 
@@ -133,7 +133,7 @@ ChooseDuelist:
 	Compare SelControl 128
 	IfLt
 	Goto StartDuel
-	Print "I CANNOT ARRANGE SUCH A DUEL."
+	PrintClear "I CANNOT ARRANGE SUCH A DUEL."
 	Exit
 
 StartDuel:
@@ -147,7 +147,7 @@ OfferPartner:
 	Compare PartnerDeclined 0
 	IfNe
 	Exit
-	Print "'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'"
+	PrintClear "'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 RollHireling DeclinePartner
 
@@ -155,7 +155,7 @@ RollHireling:
 	Compare PartnerTries 7
 	IfGt
 	Goto NoHirelingLeft
-	Arith 1 PartnerTries PartnerTries
+	Add 1 PartnerTries PartnerTries
 	Random 250 Scratch1
 	Compare Scratch1 20
 	IfLt
@@ -183,7 +183,7 @@ RollHireling:
 	Goto HireTheurgist
 
 NoHirelingLeft:
-	Print "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
+	PrintClear "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
 	Save 8 PartnerTries
 	Picture 255
 	Save 255 Portrait
@@ -191,63 +191,63 @@ NoHirelingLeft:
 
 HireAcolyte:
 	Save 0 Scratch2
-	Save "ACOLYTE" str AuxMonsterName
+	Save "ACOLYTE" $AuxMonsterName
 	Goto OfferHireling
 
 HireWarrior:
 	Save 1 Scratch2
-	Save "WARRIOR" str AuxMonsterName
+	Save "WARRIOR" $AuxMonsterName
 	Goto OfferHireling
 
 HireEvoker:
 	Save 2 Scratch2
-	Save "EVOKER" str AuxMonsterName
+	Save "EVOKER" $AuxMonsterName
 	Goto OfferHireling
 
 HireSwordsman:
 	Save 3 Scratch2
-	Save "SWORDSMAN" str AuxMonsterName
+	Save "SWORDSMAN" $AuxMonsterName
 	Goto OfferHireling
 
 HireRobber:
 	Save 4 Scratch2
-	Save "ROBBER" str AuxMonsterName
+	Save "ROBBER" $AuxMonsterName
 	Goto OfferHireling
 
 HireCurate:
 	Save 5 Scratch2
-	Save "CURATE" str AuxMonsterName
+	Save "CURATE" $AuxMonsterName
 	Goto OfferHireling
 
 HireHero:
 	Save 6 Scratch2
-	Save "HERO" str AuxMonsterName
+	Save "HERO" $AuxMonsterName
 	Goto OfferHireling
 
 HireTheurgist:
 	Save 7 Scratch2
-	Save "THEURGIST" str AuxMonsterName
+	Save "THEURGIST" $AuxMonsterName
 
 OfferHireling:
 	Compare Scratch2 1
 	IfLe
-	Save "1 SHARE" str AuxText
+	Save "1 SHARE" $AuxText
 	Compare Scratch2 2
 	IfEq
-	Save "2 SHARES" str AuxText
+	Save "2 SHARES" $AuxText
 	Compare Scratch2 3
 	IfGe
-	Save "3 SHARES " str AuxText
+	Save "3 SHARES " $AuxText
 	Compare Scratch2 4
 	IfGe
-	Save " PLUS A PICK OF SPECIAL ITEMS" str AuxTreasureText
+	Save " PLUS A PICK OF SPECIAL ITEMS" $AuxTreasureText
 	Compare Scratch2 5
 	IfGt
-	Save "4 SHARES " str AuxText
-	Print "'THERE IS A FINE "
-	Print str AuxMonsterName
+	Save "4 SHARES " $AuxText
+	PrintClear "'THERE IS A FINE "
+	Print $AuxMonsterName
 	Print " WHO WILL JOIN YOU FOR "
-	Print str AuxText
+	Print $AuxText
 	Print ". IS THIS ACCEPTABLE?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 AcceptHireling ConsiderAnother
@@ -255,12 +255,12 @@ OfferHireling:
 AcceptHireling:
 	Gosub CheckPartyFull
 	GetTable HirelingTable Scratch2 Scratch1
-	Arith Scratch2 5 Scratch2
-	Arith 50 Scratch2 Scratch2
+	Mul Scratch2 5 Scratch2
+	Add 50 Scratch2 Scratch2
 	AddNPC Scratch1 Scratch2
 
 ConsiderAnother:
-	Print "'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'"
+	PrintClear "'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 RollHireling DeclinePartner
 
@@ -271,7 +271,7 @@ DeclinePartner:
 	Exit
 
 FightersSign:
-	Print "A SIGN ON THE NORTH DOOR READS 'FIGHTERS'."
+	PrintClear "A SIGN ON THE NORTH DOOR READS 'FIGHTERS'."
 	Exit
 
 FighterTrainer:
@@ -282,7 +282,7 @@ FighterTrainer:
 	Save 16 Portrait
 	Picture 1
 	Save 120 Scratch4
-	Save "FIGHTERS " str AuxMonsterName
+	Save "FIGHTERS " $AuxMonsterName
 	Goto AskTrain
 
 ThiefTrainer:
@@ -293,17 +293,17 @@ ThiefTrainer:
 	Save 16 Portrait
 	Picture 8
 	Save 116 Scratch4
-	Save "THIEVES " str AuxMonsterName
+	Save "THIEVES " $AuxMonsterName
 	Goto AskTrain
 
 RoguesSign:
-	Print "A SIGN ON THE NORTH DOOR READS 'ROGUES'."
+	PrintClear "A SIGN ON THE NORTH DOOR READS 'ROGUES'."
 	Exit
 
 AskTrain:
 	Save Scratch4 PartyExp
-	Print "'WE TRAIN ONLY "
-	Print str AuxMonsterName
+	PrintClear "'WE TRAIN ONLY "
+	Print $AuxMonsterName
 	Print "HERE. DO YOU WANT TO TRAIN?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 OpenTraining ClearAndExit
@@ -354,7 +354,7 @@ CheckPartyFull:
 	Compare PartyCount 8
 	IfLt
 	Return
-	Print "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
+	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
 	Gosub PressReturn
 	Goto ClearAndExit
 
@@ -363,10 +363,19 @@ EjectParty:
 	Random 4 AuxMember
 	GetTable EjectXTable AuxMember PartyX
 	GetTable EjectYTable AuxMember PartyY
-	Print ""
+	PrintClear ""
 	Call CallRedraw
 	NewECL 0
 
 PressReturn:
 	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
+
+EjectXTable:
+	Data 3 10 2 12
+
+EjectYTable:
+	Data 11 10 0 3
+
+HirelingTable:
+	Data 108 103 122 36 111 112 109 110 0
