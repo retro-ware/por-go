@@ -401,7 +401,16 @@ func (e *Engine) memorizeMenu() {
 	for {
 		e.buildSpellList(1)
 		var sel *ListNode
+		e.ext.campBar = true // F1-F8 and the cards switch the member, as the camp bar
 		p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, planBottom, e.spellList, false, &redraw, &index, &sel)
+		e.ext.campBar = false
+		if p.ID == PickRelist { // another member: their plan, once this one is set
+			e.planSpells(c)
+			e.DisplayPartyList()
+			e.spellList = nil
+			e.memorizeMenu()
+			return
+		}
 		if sel == nil {
 			break
 		}
