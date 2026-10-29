@@ -105,9 +105,10 @@ type inventory struct {
 	lines  []hit           // the items' rectangles (canvas)
 	dollAt image.Rectangle
 	arrows [2]image.Rectangle
-	hover  image.Point // the pointer (canvas)
-	member int         // View.Inventory.Member
-	count  int         // party members
+	face   image.Rectangle // the portrait: Shift-click takes the next head
+	hover  image.Point     // the pointer (canvas)
+	member int             // View.Inventory.Member
+	count  int             // party members
 
 	held      bool        // the left button was down last frame
 	press     *hit        // the item the button went down on
@@ -453,7 +454,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 
 	// the member: name, portrait between the arrows, hit points (the shop: its goods)
 	lx, lw := 8, (leftCells-2)*8
-	inv.arrows = [2]image.Rectangle{}
+	inv.arrows, inv.face = [2]image.Rectangle{}, image.Rectangle{}
 	inv.dollAt = image.Rectangle{}
 	if shop {
 		inv.drawTabs(&inv.wares, lx, busy)
@@ -569,6 +570,7 @@ func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bott
 		if f := p.face(m.Head); f != nil {
 			r := image.Rect(lx+(lw-portraitSize)/2, 20+oy, lx+(lw+portraitSize)/2, 20+oy+portraitSize)
 			draw.Draw(inv.px, r, f, f.Bounds().Min, draw.Src)
+			inv.face = r
 		}
 		hp := "HP " + strconv.Itoa(m.HP) + "/" + strconv.Itoa(m.MaxHP)
 		inv.text(hp, lx+(lw-8*len(hp))/2, 70+oy, green)
@@ -940,6 +942,10 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 				inv.step(2*i - 1)
 				return
 			}
+		}
+		if inv.hover.In(inv.face) && gpu.IsKeyPressed(gpu.KeyShift) { // Shift-click on the portrait: the next head
+			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActHead})
+			return
 		}
 		for _, pn := range []*pane{&inv.list, &inv.wares} {
 			for i, r := range pn.tabs {
