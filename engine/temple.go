@@ -189,7 +189,10 @@ func (e *Engine) templeHeal() {
 		e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colWhite, "")
 		var sel *ListNode
 		const heal Choice = 0
-		switch e.ListMenu("", Bar{{"Heal", heal}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 15, list, false, &redraw, &index, &sel).ID {
+		e.ext.campBar = true // (extra) F1-F8 and the cards switch the member healed, as camp's bars
+		p := e.ListMenu("", Bar{{"Heal", heal}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 15, list, false, &redraw, &index, &sel)
+		e.ext.campBar = false
+		switch p.ID {
 		case heal, PickEnter:
 			switch index {
 			case 0:
@@ -220,18 +223,21 @@ func (e *Engine) templeHeal() {
 
 // Temple = ovr05:0D09.
 func (e *Engine) Temple() {
+	greeting := e.ext.cells // extra: the priests' greeting stays, no "Party money" line over it (the inventory shows the purse), as the shop
 	e.beginFlag = 1
 	e.DrawMainScreen()
+	e.keepPane(greeting)
 	e.DisplayPartyList()
 	for leave := false; !leave; {
-		e.shopMoney()
 		const (
 			heal Choice = iota
 			view
 			appraise
 			exit
 		)
+		e.ext.campBar = true // (extra) F1-F8 and the cards switch the member, as camp's bars
 		p := e.DisplayInput("", Bar{{"Heal", heal}, {"View", view}, {"Appraise", appraise}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		e.ext.campBar = false
 		switch p.ID {
 		case heal:
 			e.templeHeal()
@@ -248,6 +254,7 @@ func (e *Engine) Temple() {
 				e.partyKeypad(p)
 			}
 		}
+		e.keepPane(greeting)
 		e.DisplayPartyList()
 	}
 }

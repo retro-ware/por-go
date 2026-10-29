@@ -139,14 +139,6 @@ func (e *Engine) showMoney() {
 	}
 }
 
-// shopMoney (extra) puts the party's gold under the shop's and temple's menus.
-func (e *Engine) shopMoney() {
-	e.ClearBox(1, 21, winRight, winBottom)
-	e.DisplayString(1, 21, colYellow, e.moneyLine())
-}
-
-func (e *Engine) moneyLine() string { return "Party money " + moneyText(e.purse.gold, e.purse.copper) }
-
 // randomItemClass = ovr22:0FD2: d20 1-14 → 1, 15-19 → 2, 20 → 3.
 func (e *Engine) randomItemClass() int {
 	switch r := e.Dice(1, 20); {

@@ -418,8 +418,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 			return false
 		}
 		p.send(engine.ActPick, p.sel)
-	case k == 27:
-		p.menu = false
+	case k == 27: // the game leaves the menu (its Exit item): hiding the popup alone left the game waiting in it
+		p.send(engine.ActClose, 0)
+	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: the member the bar is for (camp, the temple)
+		return false
 	default:
 		for _, it := range m.Items { // a hotkey still picks its item
 			if c := byte(k); k < 128 && (c == it.Key || c-'a'+'A' == it.Key) {

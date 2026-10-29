@@ -40,6 +40,7 @@ func (e *Engine) DevScene(name string) func() {
 				e.party[2].Items = append(e.party[2].Items, e.RandomItem(0x32), e.RandomItem(0x05))
 			}
 			e.Shop()
+			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
 	case "temple":
@@ -48,12 +49,14 @@ func (e *Engine) DevScene(name string) func() {
 			e.purse.gold = 10000
 			c.HP = 1
 			e.Temple()
+			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
 	case "appraise":
 		return func() {
 			e.purse.gems, e.purse.jewelry = 3, 2
 			e.Shop()
+			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
 	case "combat", "wildcombat", "castfight", "missile": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: the Ranged button for everyone (a sling, a bow and arrows, javelins in the Missiles slot)

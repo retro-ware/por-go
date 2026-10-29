@@ -223,13 +223,13 @@ TempleOfTyr:
     $AuxText = "MAD MAN"
     FindMemberByName()
     if PartyMemberFound != 0 { PriestWarnsMadMan() }
-    goto SeekHealingAsk
+    goto TempleHealing
 
 TempleOfSune:
     ShowPortrait(BlondWoman, GreyApron2)
     if FoughtWatch > 0 { goto RefuseService }
     Text("YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE.")
-    goto SeekHealingAsk
+    goto TempleHealing
 
 RiverView:
     Text("YOU WALK NEAR THE ")
@@ -464,13 +464,7 @@ HealerTemple:
     ShowPortrait(NoseguardHelmet, PlateArmor)
     if FoughtWatch > 0 { goto WatchFightsBack }
     Text("THE PRIESTS OF TEMPUS BID YOU WELCOME.")
-    goto SeekHealingAsk
-
-SeekHealingAsk:
-    Print("' DO YOU SEEK HEALING?'")
-    YesNoMenu()
-    goto [TempleHealing, MustLeave][Scratch1]
-    goto MustLeave
+    goto TempleHealing
 
 MustLeave:
     Text("THEN YOU MUST LEAVE.")
