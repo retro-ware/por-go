@@ -355,8 +355,6 @@ func (e *Engine) ItemsMenu() bool {
 			if e.beginFlag != 5 { // in combat the inventory is the fighter's
 				e.selectMember(a.N)
 			}
-		case a.Kind == ActHead: // extra: the portrait changes in play (the original only at creation and training)
-			c.PortHead = c.PortHead%0xE + 1 // 1..14, as training's head pick
 		case a.Kind >= ActSpells && a.Kind <= ActCure:
 			if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {
 				e.snap.invOn = false // they show on the game's own screens

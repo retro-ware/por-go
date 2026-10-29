@@ -944,7 +944,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 			}
 		}
 		if inv.hover.In(inv.face) && gpu.IsKeyPressed(gpu.KeyShift) { // Shift-click on the portrait: the next head
-			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActHead})
+			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActHead, N: inv.member})
 			return
 		}
 		for _, pn := range []*pane{&inv.list, &inv.wares} {

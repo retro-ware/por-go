@@ -305,7 +305,11 @@ func (p *Presenter) Click(x, y int) bool {
 	if !p.fight {
 		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
-				p.send(engine.ActMember, i)
+				if gpu.IsKeyPressed(gpu.KeyShift) { // Shift-click: the next head
+					p.send(engine.ActHead, i)
+				} else {
+					p.send(engine.ActMember, i)
+				}
 				return true
 			}
 		}

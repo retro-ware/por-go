@@ -90,6 +90,11 @@ func (e *Engine) extraAct(a Action) bool {
 			return false
 		}
 		e.SlotMenu(false)
+	case ActHead: // extra: the portrait changes in play (the original only at creation and training)
+		if a.N >= 0 && a.N < len(e.party) {
+			c := e.party[a.N]
+			c.PortHead = c.PortHead%0xE + 1 // 1..14, as training's head pick
+		}
 	default:
 		return false
 	}
