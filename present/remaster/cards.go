@@ -163,6 +163,11 @@ func (p *Presenter) label(dst *gpu.Image, s string, x, y int) {
 // window is Blobber's text window (its Esc menu, the options, prompts) as
 // the game's own menu box.
 func (p *Presenter) window(screen *gpu.Image, title string, lines []string, sel int, bottom bool) {
+	p.keyWindow(screen, title, lines, nil, sel, bottom)
+}
+
+// keyWindow is window with the lines' hotkeys (keys[i] in lines[i]) in white.
+func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, keys []byte, sel int, bottom bool) {
 	w := len(title)
 	for _, l := range lines {
 		w = max(w, len(l))
@@ -179,6 +184,6 @@ func (p *Presenter) window(screen *gpu.Image, title string, lines []string, sel 
 	}
 	rects := slices.Clone(p.menuRects) // not the game's menu: its clicks stay
 	defer func() { p.menuRects = rects }()
-	p.drawMenu(screen, p.glyph, title, lines, nil, sel, float64(k), b.Dx()/2, top)
+	p.drawMenu(screen, p.glyph, title, lines, keys, sel, float64(k), b.Dx()/2, top)
 	p.winRects = slices.Clone(p.menuRects) // its lines, for the Esc menu's mouse
 }
