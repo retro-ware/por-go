@@ -3,8 +3,10 @@ package remaster
 import (
 	"image"
 	"image/color"
+	"strings"
 
 	"gpu"
+	"gpu/vector"
 
 	"por/engine"
 )
@@ -44,7 +46,7 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 		dst.DrawImage(p.logo, op)
 	}
 	sel := -1
-	if v.Menu != nil {
+	if v.Menu != nil && !v.MainAsk {
 		sel = v.Menu.Sel
 	}
 	p.drawMenu(dst, p.glyph, "", v.MainMenu, keys, sel, mk, b.Dx()/2, top+lh+gap)
@@ -53,10 +55,27 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
+	if v.MainAsk && v.Menu != nil { // a question pops up over it (Quit to DOS)
+		var lines []string
+		for _, it := range v.Menu.Items {
+			lines = append(lines, it.Text)
+		}
+		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false) // the menu dims under it
+		p.window(dst, strings.TrimSpace(v.Menu.Prompt)+"?", lines, v.Menu.Sel, false)
+	}
+	p.ask = v.MainAsk
 }
 
 // mainClick takes a click on the main menu: a function or a portrait.
 func (p *Presenter) mainClick(x, y int) bool {
+	if p.ask {
+		for i, r := range p.winRects {
+			if image.Pt(x, y).In(r) {
+				p.send(engine.ActPick, i)
+			}
+		}
+		return true
+	}
 	for i, r := range p.cards {
 		if image.Pt(x, y).In(r) {
 			p.send(engine.ActMember, i)
@@ -78,7 +97,11 @@ func (p *Presenter) mainHover(x, y int) {
 		return
 	}
 	p.pointer = image.Pt(x, y)
-	for i, r := range p.menuRects {
+	rects := p.menuRects
+	if p.ask {
+		rects = p.winRects
+	}
+	for i, r := range rects {
 		if p.pointer.In(r) {
 			p.send(engine.ActSelect, i)
 		}

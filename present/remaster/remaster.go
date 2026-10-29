@@ -42,6 +42,7 @@ type Presenter struct {
 	labels    map[string]*gpu.Image       // card labels in the game's font
 	glyph     func(byte) [8]byte          // the game's font
 	main      bool                        // the main menu is up (mainmenu.go)
+	ask       bool                        // ... with a question over it
 	logo      *gpu.Image                  // View.Logo on the GPU ...
 	logoSrc   image.Image                 // ... uploaded from this
 	cards     []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)

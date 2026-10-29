@@ -229,6 +229,7 @@ func (e *Engine) PartyMenu() {
 			}
 		}
 		p := e.DisplayInput("", shown, colLightMagenta, colBlack, colBlack, true, false) // extra: no "Choose a function"
+		list := e.snap.main
 		e.snap.main = nil
 		e.regionCut(mark)
 		e.ext.onSelect = nil
@@ -301,7 +302,10 @@ func (e *Engine) PartyMenu() {
 			}
 		case mExit:
 			if enabled[mExit] {
-				if e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ") {
+				e.snap.main, e.snap.mainAsk = list, true // extra: the question pops up over the main menu
+				quit := e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ")
+				e.snap.main, e.snap.mainAsk = nil, false
+				if quit {
 					for e.lettered() && !e.saved && len(e.party) > 0 {
 						e.SaveGame()
 					}
