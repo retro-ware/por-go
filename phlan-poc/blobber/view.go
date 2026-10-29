@@ -109,7 +109,7 @@ func (v *View) OpenOptions() {
 }
 
 // OptionsOpen reports whether the Esc menu is up.
-func (v *View) OptionsOpen() bool { return v.g.menu }
+func (v *View) OptionsOpen() bool { return v.g != nil && v.g.menu }
 
 // UpdateOptions runs the Esc menu for one frame: arrows and Enter pick and
 // change, Esc goes back to the root or closes it. Quit exits the program.
