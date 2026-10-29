@@ -289,15 +289,9 @@ GeneralShop:
     if FoughtWatch > 0 { goto RefuseService }
     ShowPortrait(BlackBeard, ShopkeeperApron)
     Text("THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'")
-    YesNoMenu()
-    goto [GeneralShopBrowse, ResetVisits][Scratch1]
-    goto GeneralShopBrowse
-
-GeneralShopBrowse:
     ClearMonsters()
     OpenShop(HolyWaterVial, SilverHolySymbolOfSune, IronHolySymbolOfTempus, WoodenHolySymbolOfTyr, FlaskOfOil, SilverMirror, BrassMirror)
-    Picture(None)
-    exit
+    goto ResetVisits
 
 TavernEnter:
     if TavernEntered > 0 { goto PickpocketRoll }
@@ -442,30 +436,18 @@ ArmorShop:
     ShowPortrait(CurlyBlondYouth, GreyApron3)
     if FoughtWatch > 0 { goto RefuseService }
     Text("THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'")
-    YesNoMenu()
-    goto [ArmorShopBrowse, ResetVisits][Scratch1]
-    goto ArmorShopBrowse
-
-ArmorShopBrowse:
     ClearMonsters()
     OpenShop(BrassDragonFigurine, GoldChain, PearlNecklace, GoldLightningFigurine, JewelledSilverWings, SilverDragonStatuette, GoldScarab, EmeraldBroach, PlatinumSphere, FineOpalPendant, DiamondNecklace)
-    Picture(None)
-    exit
+    goto ResetVisits
 
 WeaponShop:
     EnterBuildingOnce()
     ShowPortrait(BlackBeard, ShopkeeperApron)
     if FoughtWatch > 0 { goto RefuseService }
     Text("THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'")
-    YesNoMenu()
-    goto [WeaponShopBrowse, ResetVisits][Scratch1]
-    goto WeaponShopBrowse
-
-WeaponShopBrowse:
     ClearMonsters()
     OpenShop(Shield, PlateMail, BandedMail, SplintMail, ChainMail, ScaleMail, RingMail, StuddedLeatherArmor, PaddedArmor, LeatherArmor, Arrow*10, LightCrossbow, Sling, ShortBow, LongBow, CompositeShortBow, CompositeLongBow, Voulge, Trident, TwoHandedSword, ShortSword, LongSword, BroadSword, BastardSword, QuarterStaff, Spetum, Spear, Scimitar, Ranseur, Quarrel*20, AwlPike, MilitaryPick, Partisan, MorningStar, Mace, JoStick, Javelin*2, Hammer, LucernHammer, Halberd, GuisarmeVoulge, Guisarme, GlaiveGuisarme, Glaive, MilitaryFork, Flail, FauchardFork, Fauchard, Dart*4, Dagger, Club, BoStick, BillGuisarme, BecDeCorbin, Bardiche, HandAxe, BattleAxe)
-    Picture(None)
-    exit
+    goto ResetVisits
 
 SilverShop:
     if Building2Entered != 0 { exit }
@@ -473,15 +455,9 @@ SilverShop:
     ShowPortrait(CurlyBlondYouth, GreyApron3)
     if FoughtWatch > 0 { goto RefuseService }
     Text("THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'")
-    YesNoMenu()
-    goto [SilverShopBrowse, ResetVisits][Scratch1]
-    goto SilverShopBrowse
-
-SilverShopBrowse:
     ClearMonsters()
     OpenShop(FineCompositeLongBow, SilverRing, SilverPlateMail, SilverChainMail, SilverQuarrel, SilverArrow*20, SilverDagger, SilverTwoHandedSword, SilverShortSword, SilverLongSword, SilverBroadSword, SilverBastardSword, SilverMace)
-    Picture(None)
-    exit
+    goto ResetVisits
 
 HealerTemple:
     if Combat1Won != 0 { exit }
