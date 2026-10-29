@@ -647,7 +647,6 @@ func (e *Engine) forgetSpell(sp byte) {
 	if c == nil {
 		return
 	}
-	e.noteSpells(c)
 	for i := 0; i <= 0x14; i++ {
 		if c.Memorized[i] == sp {
 			c.Memorized[i] = 0

@@ -215,7 +215,7 @@ func (e *Engine) SaveCharacter(c *Character, name string) {
 	for _, f := range []struct {
 		ext string
 		b   []byte
-	}{{".itm", writeRecords(e.savedItems(c, name))}, {".spc", writeRecords(affectRecords(c.Affects))}} {
+	}{{".itm", writeRecords(e.savedItems(c, name))}, {".spc", writeRecords(affectRecords(c.Affects))}, {".mem", bytes.TrimRight(c.Plan[:], "\x00")}} {
 		p := e.savePath(base + f.ext)
 		os.Remove(p)
 		if len(f.b) > 0 {
@@ -281,6 +281,14 @@ func (e *Engine) LoadCharacter(name string, c *Character, useSav bool) bool {
 		c.Affects = readAffects(b)
 	}
 	c.Portrait = readPNG(e.savePath(nm + ".png"))
+	c.Plan = [21]byte{}
+	if b, err := os.ReadFile(e.savePath(nm + ".mem")); err == nil {
+		copy(c.Plan[:], b)
+	} else { // a save from before the plan: the spells held are the plan
+		for i, v := range c.Memorized {
+			c.Plan[i] = v & 0x7F
+		}
+	}
 	e.ClearKeyboard()
 	return true
 }

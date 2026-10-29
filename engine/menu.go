@@ -483,7 +483,7 @@ func (m *menuBar) move(d int) (Pick, bool) {
 		}
 		return m.step(up)
 	case d == DirLeft || d == DirRight:
-		if x.choosing { // members (the remaster's cards; its box has no items to step)
+		if x.choosing || x.picker { // members (the remaster's cards; its box has no items to step); a list without words
 			return key(d)
 		}
 		return m.step(d == DirLeft)

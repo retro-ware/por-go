@@ -88,6 +88,8 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		}
 	case k == KeyF9:
 		p.send(engine.ActSlots, 0)
+	case k == 8: // Backspace: as Left (memorizing: one less)
+		p.send(engine.ActMove, engine.DirLeft)
 	case k&0xFF == 0:
 		if d, ok := scanDir[k]; ok {
 			p.send(engine.ActMove, d)

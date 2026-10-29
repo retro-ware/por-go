@@ -330,6 +330,11 @@ func (e *Engine) ListMenu(title string, menu Bar, promptColour, normal, hi, x1, 
 				if hasNext {
 					e.lmPageScroll(c, true)
 				}
+			case DirLeft, DirRight: // (extra) no words to step: the caller's (memorizeMenu)
+				if len(menu) == 0 {
+					*selected = c.nth(*index)
+					return p
+				}
 			}
 		case PickRelist: // (extra) the caller rebuilds the list (another member: F1-F8)
 			*selected = nil

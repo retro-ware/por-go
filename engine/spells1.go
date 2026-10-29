@@ -36,19 +36,11 @@ func (e *Engine) spellName(spell int) string { return spellNames[spell] }
 // buildSpellList (mode 1 cast, 2 memorize, 3 scribe, 4 learn) and returns
 // the chosen spell, 0 for none. For mode 3 DS:6B80 is the scroll chosen.
 func (e *Engine) spellMenu(mode int, index *int) byte {
-	const (
-		do Choice = iota // the mode's word
-		clearIt
-	)
+	const do Choice = iota // the mode's word
 	var menu Bar
 	switch mode {
 	case 1:
 		menu = Bar{{"Cast", do}}
-	case 2:
-		menu = Bar{{"Memorize", do}}
-		if hasPending(e.selected()) { // extra
-			menu = append(menu, Entry{"Clear", clearIt})
-		}
 	case 3:
 		menu = Bar{{"Scribe", do}}
 	case 4:
@@ -59,9 +51,6 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 		title = "Choose Spell: "
 	}
 	y2 := 0x16
-	if mode == 2 {
-		y2 = 0xF
-	}
 	showExit := mode != 4
 	redraw := false
 	if *index < 0 {
@@ -69,7 +58,7 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 		redraw = true
 		*index = 0
 	}
-	if mode == 4 || mode == 1 || mode == 2 { // extra: 2, the counts of the chosen spells change
+	if mode == 4 || mode == 1 {
 		redraw = true
 	}
 	var sel *ListNode
@@ -81,7 +70,19 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 			break
 		}
 	}
-	// the number of entries (not headers) before the selected one
+	var res byte
+	if key != NoPick { // set {0, 'E'} at cs:006A
+		res = e.listedSpell(sel)
+	}
+	if idx := e.listedIndex(sel); mode == 3 && idx < len(e.spellItems) {
+		e.usedScroll = e.spellItems[idx]
+	}
+	e.spellList = nil // ovr26:11F3 frees the list
+	return res
+}
+
+// listedIndex: the number of entries (not headers) of the list before sel.
+func (e *Engine) listedIndex(sel *ListNode) int {
 	idx := 0
 	for _, n := range e.spellList {
 		if n == sel {
@@ -91,18 +92,15 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 			idx++
 		}
 	}
-	e.spellCleared = key == clearIt
-	var res byte
-	if key != NoPick { // set {0, 'E'} at cs:006A
-		if idx < len(e.spellIDs) {
-			res = e.spellIDs[idx]
-		}
+	return idx
+}
+
+// listedSpell: the spell of the list's line sel, 0 for none.
+func (e *Engine) listedSpell(sel *ListNode) byte {
+	if idx := e.listedIndex(sel); sel != nil && idx < len(e.spellIDs) {
+		return e.spellIDs[idx]
 	}
-	if mode == 3 && idx < len(e.spellItems) {
-		e.usedScroll = e.spellItems[idx]
-	}
-	e.spellList = nil // ovr26:11F3 frees the list
-	return res
+	return 0
 }
 
 // addSpellLine = ovr23:028D (spell): appends the spell to the menu list,
@@ -186,11 +184,18 @@ func (e *Engine) buildSpellList(kind int) bool {
 		for i := 1; i <= 0x37; i++ {
 			if c.SpellBook[i-1] != 0 {
 				e.addSpellLine(byte(i))
-				// extra: how many are chosen to be memorized
-				if n := bytes.Count(c.Memorized[:], []byte{byte(i) | 0x80}); n > 0 {
+				// extra: how often it is memorized on a rest (memorizeMenu)
+				if n := bytes.Count(c.Plan[:], []byte{byte(i)}); n > 0 {
 					l := e.spellList[len(e.spellList)-1]
 					l.Text = cut(fmt.Sprintf("%-30s x%d", l.Text, n), 0x25)
 				}
+			}
+		}
+		for i, l := range e.spellList { // extra: the level headers carry the slots planned
+			if l.Flag != 0 && i+1 < len(e.spellList) {
+				s := e.spellIDs[e.listedIndex(e.spellList[i+1])]
+				lvl, cls := e.spellLevel(s), e.spellClass(s)
+				l.Text = cut(fmt.Sprintf("%s  %d/%d", l.Text, e.planned(c, lvl, cls), c.spellSlot(int(cls), int(lvl))), textCols)
 			}
 		}
 	case 2:

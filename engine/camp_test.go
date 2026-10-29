@@ -20,27 +20,17 @@ func TestSkyHour(t *testing.T) {
 	}
 }
 
-func TestRestoreSpells(t *testing.T) {
-	was := [21]byte{3, 3, 1, 0x29, 0x85} // two cures, bless, a 2nd level spell, one pending
-	now := [21]byte{0x29, 3, 0x83}       // one cure left, bless replaced
-	want := [21]byte{3, 0x83, 0x81, 0x29, 0x85}
-	if got := restoreSpells(was, now); got != want {
-		t.Fatalf("got %x, want %x", got[:5], want[:5])
-	}
-}
-
-// A cast spell is remembered and comes back as one to memorize again.
-func TestRelearnUsedSpells(t *testing.T) {
+// The planned spells c does not hold are set to be memorized on the next
+// rest, as far as the free slots go; what c holds stays.
+func TestPlanSpells(t *testing.T) {
 	e := &Engine{}
 	c := &Character{}
-	c.Memorized[0], c.Memorized[1] = spCureLightWounds, spCureLightWounds
-	e.party = []*Character{c}
-	e.forgetSpell(spCureLightWounds)
-	if c.Memorized[0] != 0 || c.Memorized[1] != spCureLightWounds {
-		t.Fatalf("cast: %v", c.Memorized[:2])
-	}
-	r := restoreSpells(e.ext.learned[c], c.Memorized)
-	if r[0]|r[1] != 3|0x80 || r[0]&r[1] != 3 { // one kept, one to memorize
-		t.Errorf("relearn: %#x %#x, want 0x3 and 0x83", r[0], r[1])
+	c.SpellSlots[0] = 3 // three 1st-level cleric spells
+	c.Plan = [21]byte{spCureLightWounds, spCureLightWounds, spCureLightWounds}
+	c.Memorized = [21]byte{spBless, spCureLightWounds | 0x80}
+	e.planSpells(c)
+	want := [21]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, spBless, spCureLightWounds | 0x80, spCureLightWounds | 0x80}
+	if c.Memorized != want {
+		t.Fatalf("got %x, want %x", c.Memorized, want)
 	}
 }

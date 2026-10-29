@@ -12,6 +12,7 @@ import (
 type Character struct {
 	charRecord
 	Portrait image.Image // extra: a PNG dropped on the sheet, shown everywhere in place of the paper-doll head (saved as NAME.png beside the record; nil: none)
+	Plan     [21]byte    // extra: the spells memorized on every rest (camp.go memorizeMenu; saved as NAME.mem)
 	Items    []*Item     // list at +0xC8 (0x3F-byte nodes)
 	Affects  []*Affect   // list at +0x7F (9-byte nodes)
 	Combat   *CombatInfo // block at +0x108 while fighting

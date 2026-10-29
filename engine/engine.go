@@ -102,7 +102,6 @@ type Engine struct {
 	itemsRedraw          bool                         // DS:6821
 	usingItem            bool                         // DS:6DBF
 	usedScroll           *Item                        // DS:6B80
-	spellCleared         bool                         // (extra) the last spell menu closed on Clear
 	rv                   ruleVars                     // DS:6814..682A rule globals
 	near                 []nearEntry                  // DS:6716 combatants near a square
 	nearList             []nearEntry                  // DS:671B copy kept by checkAffect

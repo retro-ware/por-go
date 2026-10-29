@@ -58,7 +58,6 @@ type extras struct {
 	typing        bool                    // InputString is waiting
 	modal         int                     // help or overview shown: any key closes
 	enemiesOnly   bool                    // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
-	learned       map[*Character][21]byte // the spells each caster held before using some (camp.go noteSpells)
 	picker        bool                    // the list has no menu words: a click picks (listmenu.go)
 	floor         int                     // regions below belong to the screen under the modal one
 	menuFloor     int                     // menu bars open under the modal screen

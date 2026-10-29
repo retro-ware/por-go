@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"slices"
 	"strconv"
 )
@@ -60,11 +61,6 @@ func (e *Engine) studyTime(c *Character) int {
 }
 
 // clearMemorize = ovr16:0159 (char): forget the spells still to be memorised.
-// hasPending: spells are chosen to be memorized.
-func hasPending(c *Character) bool {
-	return slices.ContainsFunc(c.Memorized[:], func(v byte) bool { return v > 0x7F })
-}
-
 func clearMemorize(c *Character) {
 	for i := 0; i <= 0x14; i++ {
 		if c.Memorized[i] > 0x7F {
@@ -91,19 +87,6 @@ func (e *Engine) clearStudy() {
 		clearMemorize(c)
 		e.clearScribe(c)
 	}
-}
-
-// slotsLeft = ovr16:025C (level, class): spells of the level the selected
-// character may still memorise (+0xB1 + 3*class + level holds the total).
-func (e *Engine) slotsLeft(level, class byte) int {
-	c := e.selected()
-	n := 0
-	for i := 0; i <= 0x14; i++ {
-		if s := c.Memorized[i]; s > 0 && e.spellLevel(s) == level && e.spellClass(s) == class {
-			n++
-		}
-	}
-	return int(byte(int(c.spellSlot(int(class), int(level))) - n))
 }
 
 // canStudy = ovr16:036C (mode 1 cast, 2 memorize, 3 scribe): area +0x1CA
@@ -143,56 +126,13 @@ func (e *Engine) CastMenu() {
 	}
 }
 
-// memorizeInfo = ovr16:05A4: "can memorize:" with the free slots per class
-// and level in the message box; false when there are none at all.
-func (e *Engine) memorizeInfo() bool {
-	c := e.selected()
-	var grid [2][4]string
-	var has [2]bool
-	any := false
-	for cls := 0; cls <= 1; cls++ {
-		for lvl := 1; lvl <= 3; lvl++ {
-			s := strconv.Itoa(int(int8(e.slotsLeft(byte(lvl), byte(cls)))))
-			if len(s) > 2 {
-				s = s[:2]
-			}
-			grid[cls][lvl] = s
-			if c.spellSlot(cls, lvl) == 0 {
-				grid[cls][lvl] = " "
-			} else {
-				has[cls] = true
-				any = true
-			}
-		}
-	}
-	if !any {
-		return false
-	}
-	e.CharMessage(c, "can memorize:", false)
-	row := 3
-	for cls := 0; cls <= 1; cls++ {
-		if !has[cls] {
-			continue
-		}
-		label := "    Cleric Spells:"
-		if cls == 1 {
-			label = "Magic-User Spells:"
-		}
-		e.DisplayString(1, row+0x11, colLightGreen, label)
-		x := 0x14 // ovr16:0723: [bp-0x41]=0x13, passed +1
-		for lvl := 1; lvl <= 3; lvl++ {
-			e.DisplayString(x, row+0x11, colLightGreen, grid[cls][lvl])
-			x += 3
-		}
-		row++
-	}
-	return true
-}
-
 // restMenu = ovr16:077A (var interrupted): the longest study time of the
 // party becomes the proposed rest time, then rest (ovr21:0C9A).
 func (e *Engine) restMenu() (interrupted bool) {
 	for {
+		for _, c := range e.party { // extra: the planned spells are learned on any rest
+			e.planSpells(c)
+		}
 		// extra: rest for a purpose instead of setting days, hours and minutes
 		dayNight, until := "Night", 20*60
 		if !e.isDay() {
@@ -258,18 +198,18 @@ const spellCureLight = 3
 // healParty (extra) is the later games' Fix: clerics cast their Cure Light
 // Wounds on the most wounded; while that is not enough they memorize Cure
 // Light Wounds in every first-level slot, rest to learn it and cast again.
-// Then they rest to learn their own spells again, and natural healing (1 HP
-// a day) does the rest.
+// Then they rest to learn their planned spells (Plan) again, and natural
+// healing (1 HP a day) does the rest.
 func (e *Engine) healParty() (interrupted bool) {
-	saved := map[*Character][21]byte{}
+	var clerics []*Character
 	for _, c := range e.party {
 		if c.spellSlot(clsCleric, 1) > 0 && c.SpellBook[spellCureLight-1] != 0 {
-			saved[c] = c.Memorized
+			clerics = append(clerics, c)
 		}
 	}
 	e.castCures()
-	for len(saved) > 0 && e.healMinutes() > 0 && !interrupted && e.spellsAllowed() {
-		for c := range saved {
+	for len(clerics) > 0 && e.healMinutes() > 0 && !interrupted && e.spellsAllowed() {
+		for _, c := range clerics {
 			e.memorizeCures(c)
 		}
 		before := e.healMinutes()
@@ -280,26 +220,17 @@ func (e *Engine) healParty() (interrupted bool) {
 			break // the cures do not help (nobody could cast)
 		}
 	}
-	if len(saved) > 0 && !interrupted {
-		for c, m := range saved { // relearn what was cast or replaced, nothing else
-			r := restoreSpells(m, c.Memorized)
-			for i, v := range m {
-				if v > 0x7F {
-					r[i] = 0
+	if len(clerics) > 0 && !interrupted {
+		for _, c := range clerics { // the cures left make way for the planned spells
+			for i, v := range c.Memorized {
+				if v == spellCureLight {
+					c.Memorized[i] = 0
 				}
 			}
-			c.Memorized = r
+			e.planSpells(c)
 		}
 		if most := e.partyStudy(); most > 0 {
 			interrupted = e.restFor(most, nil)
-		}
-	}
-	for c, m := range saved {
-		if interrupted { // the rest is left to be memorized
-			c.Memorized = restoreSpells(m, c.Memorized)
-		} else {
-			c.Memorized = m // exactly the spells of before
-			e.setLearned(c, m)
 		}
 	}
 	if !interrupted && e.healMinutes() > 0 {
@@ -308,25 +239,44 @@ func (e *Engine) healParty() (interrupted bool) {
 	return interrupted
 }
 
-// restoreSpells: the spells of was, those no longer in now (cast or
-// replaced) to be memorized again.
-func restoreSpells(was, now [21]byte) [21]byte {
-	left := map[byte]int{}
-	for _, v := range now {
-		if v > 0 && v < 0x80 {
-			left[v]++
+// planSpells (extra): the spells of c.Plan that c does not hold are set to
+// be memorized on the next rest, as far as the free slots go.
+func (e *Engine) planSpells(c *Character) {
+	clearMemorize(c)
+	held := map[byte]int{}
+	for _, v := range c.Memorized {
+		if v != 0 {
+			held[v]++
 		}
 	}
-	for i, v := range was {
-		if v > 0 && v < 0x80 {
-			if left[v] > 0 {
-				left[v]--
-			} else {
-				was[i] = v | 0x80
+	free := map[byte]int{} // per level and class, lazily from the slots
+	for _, s := range c.Plan {
+		if s == 0 {
+			continue
+		}
+		if held[s] > 0 {
+			held[s]--
+			continue
+		}
+		lvl, cls := e.spellLevel(s), e.spellClass(s)
+		k := 3*cls + lvl
+		if _, ok := free[k]; !ok {
+			free[k] = int(c.spellSlot(int(cls), int(lvl)))
+			for _, v := range c.Memorized {
+				if v != 0 && e.spellLevel(v) == lvl && e.spellClass(v) == cls {
+					free[k]--
+				}
 			}
 		}
+		if free[k] <= 0 {
+			continue
+		}
+		free[k]--
+		if i := slices.Index(c.Memorized[:], 0); i >= 0 {
+			c.Memorized[i] = s | 0x80
+		}
 	}
-	return was
+	e.sortSpells(c)
 }
 
 // memorizeCures replaces c's first-level cleric spells by Cure Light
@@ -416,10 +366,9 @@ func (e *Engine) healMinutes() int {
 	return days*24*60 - e.camp.heal*5
 }
 
-// sortSpells = ovr16:0824: the selected character's spell slots in spell
-// order (empty slots first).
-func (e *Engine) sortSpells() {
-	c := e.selected()
+// sortSpells = ovr16:0824 (char): c's spell slots in spell order (empty
+// slots first).
+func (e *Engine) sortSpells(c *Character) {
 	s := c.Memorized[:]
 	for i := 0; i <= 0x13; i++ {
 		for j := i; j <= 0x14; j++ {
@@ -430,79 +379,58 @@ func (e *Engine) sortSpells() {
 	}
 }
 
-// noteSpells (extra): before c first uses a spell, the spells it holds are
-// remembered, so that Memorize can offer to learn the used ones again.
-func (e *Engine) noteSpells(c *Character) {
-	if _, ok := e.ext.learned[c]; !ok {
-		e.setLearned(c, c.Memorized)
-	}
-}
+// planBottom is the last row of the memorize list: its border is on the
+// prompt row, nothing is left below it.
+const planBottom = promptRow - 1
 
-func (e *Engine) setLearned(c *Character, m [21]byte) {
-	if e.ext.learned == nil {
-		e.ext.learned = map[*Character][21]byte{}
-	}
-	e.ext.learned[c] = m
-}
-
-// relearnSpells (extra): offer to memorize again the spells c used since
-// they were learned, when nothing else is waiting to be memorized.
-func (e *Engine) relearnSpells(c *Character) {
-	was, ok := e.ext.learned[c]
-	if !ok || slices.ContainsFunc(c.Memorized[:], func(v byte) bool { return v > 0x7F }) {
-		return
-	}
-	r := restoreSpells(was, c.Memorized)
-	if !slices.ContainsFunc(r[:], func(v byte) bool { return v > 0x7F }) {
-		return // nothing used
-	}
-	if e.YesNo(colYellow, colLightGreen, colWhite, "Relearn the spells used? ") {
-		c.Memorized = r
-		e.sortSpells()
-	}
-}
-
-// memorizeMenu = ovr16:090A.
+// memorizeMenu = ovr16:090A, remade (extra): one list of the spell book
+// with how often each spell is memorized on every rest (c.Plan). Enter,
+// Space, Right and a click add one, Backspace and Left take one away;
+// Esc closes. The plan stays until the player changes it: each rest fills
+// up the same spells (planSpells).
 func (e *Engine) memorizeMenu() {
 	if !e.canStudy(2) {
 		return
 	}
-	e.relearnSpells(e.selected())
-	// extra: no "Spells to be memorized" list and "Memorize These Spells?"
-	// before or after: the book's list marks the chosen spells, Clear drops them
-	done, drew := false, false
-	index := -1
-	var any bool
-	for !done {
-		done = !e.memorizeInfo()
-		if done {
-			c := e.selected()
-			e.CharMessage(c, "cannot memorize any spells", true)
-			continue
+	c := e.selected()
+	e.DrawBoxTitled(1, 1, winRight, 1, 0, colBlack, "")
+	e.displayName(c, 1, 1, true)
+	e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells to memorize")
+	e.DrawBoxTitled(1, 3, winRight, planBottom, 0, colBlack, "")
+	redraw, index := true, 0
+	for {
+		e.buildSpellList(1)
+		var sel *ListNode
+		p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, planBottom, e.spellList, false, &redraw, &index, &sel)
+		if sel == nil {
+			break
 		}
-		spell := e.SpellList(1, 2, &index, &any)
-		drew = true
-		if e.spellCleared { // extra: Clear drops the chosen spells
-			clearMemorize(e.selected())
-			continue
-		}
-		if spell == 0 {
-			done = true
-			continue
-		}
-		if e.slotsLeft(e.spellLevel(spell), e.spellClass(spell)) > 0 { // unsigned test (jbe) in the original
-			c := e.selected()
-			k := 0
-			for c.Memorized[k] != 0 {
-				k++
+		s := e.listedSpell(sel)
+		if p.ID == PickMove && p.Dir == DirLeft {
+			if i := bytes.LastIndexByte(c.Plan[:], s); i >= 0 {
+				c.Plan[i] = 0
 			}
-			c.Memorized[k] = spell + 0x80
-			e.sortSpells()
+		} else if e.planned(c, e.spellLevel(s), e.spellClass(s)) < int(c.spellSlot(int(e.spellClass(s)), int(e.spellLevel(s)))) {
+			if i := slices.Index(c.Plan[:], 0); i >= 0 {
+				c.Plan[i] = s
+			}
+		}
+		redraw = true
+	}
+	e.spellList = nil
+	e.planSpells(c)
+	e.DrawMainScreen()
+}
+
+// planned: how many spells of the level and class c's plan holds.
+func (e *Engine) planned(c *Character, lvl, cls byte) int {
+	n := 0
+	for _, v := range c.Plan {
+		if v != 0 && e.spellLevel(v) == lvl && e.spellClass(v) == cls {
+			n++
 		}
 	}
-	if drew {
-		e.DrawMainScreen()
-	}
+	return n
 }
 
 // scribeMenu = ovr16:0B5B.
@@ -669,27 +597,6 @@ func (e *Engine) displayAffects(title string, members []*Character) {
 	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel)
 }
 
-// magicMenu = ovr16:13F1 (var interrupted).
-func (e *Engine) magicMenu(interrupted *bool) {
-	for key := magicRest; !*interrupted && key != NoPick && key != magicExit; {
-		// the original's Display is left out: the View page shows the spell effects
-		var again bool
-		if key, again = e.campInput("", append(e.magicCommands(), Entry{"Rest", magicRest}, Entry{"Exit", magicExit})); again {
-			continue
-		}
-		switch key {
-		case magicCast:
-			e.CastMenu()
-		case magicMemorize:
-			e.memorizeMenu()
-		case magicScribe:
-			e.scribeMenu()
-		case magicRest:
-			*interrupted = e.restMenu()
-		}
-	}
-}
-
 // campInput (extra) waits on a camp menu bar. The keypad and F1-F8 pick
 // the member the menu is for; again is set when the menu is to be rebuilt.
 func (e *Engine) campInput(prompt string, menu Bar) (key Choice, again bool) {
@@ -706,13 +613,13 @@ func (e *Engine) campInput(prompt string, menu Bar) (key Choice, again bool) {
 	return p.ID, true // not an item: the menu loops go on
 }
 
-// The items of the Magic menu.
+// The spell items of the camp menu.
 const (
 	magicCast Choice = iota
 	magicMemorize
 	magicScribe
-	magicRest
-	magicExit
+	campHeal // extra: a paladin's powers (view.go)
+	campCure
 )
 
 // magicCommands (extra): the Magic menu items the selected member can use.
@@ -927,17 +834,19 @@ func (e *Engine) CampMenu() bool {
 	e.clearStudy()
 	interrupted := false
 	const (
-		view Choice = iota
-		magic
+		view Choice = campCure + 1 + iota
 		rest
 		alter
 		exit
 	)
 	for key := view; !interrupted && key != NoPick && key != exit; {
-		var menu Bar
-		menu = append(menu, Entry{"View", view}) // (extra) no Save: F9 saves (slots.go)
-		if len(e.magicCommands()) > 0 {
-			menu = append(menu, Entry{"Magic", magic})
+		// extra: no Magic sub-menu, its commands and a paladin's powers are
+		// on the camp bar; no Save: F9 saves (slots.go)
+		menu := append(Bar{{"View", view}}, e.magicCommands()...)
+		if c := e.selected(); e.paladinCan(c, affLaidOnHands) {
+			menu = append(menu, Entry{"Heal", campHeal})
+		} else if e.paladinCan(c, affCuredDisease) {
+			menu = append(menu, Entry{"Cure", campCure}) // never beside Cast: a paladin casts no spells
 		}
 		menu = append(menu, Entry{"Rest", rest}, Entry{"Alter", alter}, Entry{"Exit", exit})
 		var again bool
@@ -947,8 +856,16 @@ func (e *Engine) CampMenu() bool {
 		switch key {
 		case view:
 			e.ViewCharacter()
-		case magic:
-			e.magicMenu(&interrupted)
+		case magicCast:
+			e.CastMenu()
+		case magicMemorize:
+			e.memorizeMenu()
+		case magicScribe:
+			e.scribeMenu()
+		case campHeal:
+			e.paladinHeal(e.selected())
+		case campCure:
+			e.paladinCure(e.selected())
 		case rest:
 			interrupted = e.restMenu()
 		case alter:
@@ -1075,9 +992,6 @@ func (e *Engine) memorizeOne(c *Character, check *bool) int {
 			continue
 		}
 		c.Memorized[i] -= 0x80
-		if !slices.ContainsFunc(c.Memorized[:], func(v byte) bool { return v > 0x7F }) {
-			e.setLearned(c, c.Memorized) // extra: the full set, to relearn (memorizeMenu)
-		}
 		e.showRest(0)
 		e.announceCast(c, "has memorized", int(c.Memorized[i]))
 		*check = true
