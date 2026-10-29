@@ -170,6 +170,13 @@ type Inventory struct {
 	Throw  bool                // combat: unreadied throwables can be thrown (ActThrow)
 	Sell   bool                // a shop buys them (ActSell)
 	Switch bool                // ActMember shows another member (not in combat)
+	Powers []Power             // what the member can do besides items (the View menu's)
+}
+
+// Power is a member's action of the View menu the inventory offers too.
+type Power struct {
+	Name string
+	Kind ActKind
 }
 
 // InvItem is one item of the inventory.
@@ -196,6 +203,7 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		Throw:  e.beginFlag == 5 && c.Okay != 0,
 		Sell:   !hired && e.beginFlag == 1,
 		Switch: e.beginFlag != 5,
+		Powers: e.powers(c),
 	}
 	for i, it := range items {
 		e.ItemName(c, it, 0, 0, false, false)

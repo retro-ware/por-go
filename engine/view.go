@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -203,27 +204,12 @@ func (e *Engine) ViewCharacter() bool {
 	}
 	for key != NoPick && key != exit && !quit {
 		c := e.viewChar()
-		spells := false
-		for i := 0; i <= 0x14; i++ {
-			if c.Memorized[i] > 0 {
-				spells = true
-			}
-		}
 		var menu Bar
 		if len(e.carried(c)) > 0 {
 			menu = append(menu, Entry{"Items", items})
 		}
-		if spells {
-			menu = append(menu, Entry{"Spells", spellsIt})
-		}
-		if !e.effectsFit(c) {
-			menu = append(menu, Entry{"Magic", magic}) // extra: all of the spell effects
-		}
-		if e.paladinCan(c, affLaidOnHands) {
-			menu = append(menu, Entry{"Heal", heal})
-		}
-		if e.paladinCan(c, affCuredDisease) {
-			menu = append(menu, Entry{"Cure", cure})
+		for _, p := range e.powers(c) {
+			menu = append(menu, Entry{p.Name, map[ActKind]Choice{ActSpells: spellsIt, ActMagic: magic, ActHeal: heal, ActCure: cure}[p.Kind]})
 		}
 		menu = append(menu, Entry{"Exit", exit})
 		e.ext.viewing = true // F1..F8 switch members (extras.go)
@@ -236,14 +222,13 @@ func (e *Engine) ViewCharacter() bool {
 				key = exit
 			}
 		case spellsIt:
-			idx := -1
-			e.SpellList(0, 0, &idx, &spells)
+			e.power(c, ActSpells)
 		case magic:
-			e.displayAffects("Magic", []*Character{c})
+			e.power(c, ActMagic)
 		case heal:
-			e.paladinHeal(c)
+			e.power(c, ActHeal)
 		case cure:
-			e.paladinCure(c)
+			e.power(c, ActCure)
 		}
 		if !quit && key >= items && key <= cure {
 			e.CharacterSheet()
@@ -369,6 +354,12 @@ func (e *Engine) ItemsMenu() bool {
 		case a.Kind == ActMember:
 			if a.N >= 0 && a.N < len(e.party) && e.beginFlag != 5 { // in combat the inventory is the fighter's
 				e.partySel = a.N
+			}
+		case a.Kind >= ActSpells && a.Kind <= ActCure:
+			if slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
+				e.snap.invOn = false // they show on the game's own screens
+				e.power(c, a.Kind)
+				e.snap.invOn = true
 			}
 		case it == nil:
 		case a.Kind == ActReady:
@@ -652,4 +643,38 @@ func (e *Engine) SpellList(kind, mode int, index *int, any *bool) byte {
 		e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells "+title)
 	}
 	return e.spellMenu(mode, index)
+}
+
+// powers is what c can do besides items: the View menu's Spells, Magic,
+// Heal and Cure (the inventory offers them too).
+func (e *Engine) powers(c *Character) []Power {
+	var ps []Power
+	if slices.ContainsFunc(c.Memorized[:0x15], func(s byte) bool { return s > 0 }) {
+		ps = append(ps, Power{"Spells", ActSpells})
+	}
+	if !e.effectsFit(c) {
+		ps = append(ps, Power{"Magic", ActMagic}) // extra: all of the spell effects
+	}
+	if e.paladinCan(c, affLaidOnHands) {
+		ps = append(ps, Power{"Heal", ActHeal})
+	}
+	if e.paladinCan(c, affCuredDisease) {
+		ps = append(ps, Power{"Cure", ActCure})
+	}
+	return ps
+}
+
+// power carries out one of c's powers.
+func (e *Engine) power(c *Character, k ActKind) {
+	switch k {
+	case ActSpells:
+		idx, any := -1, true
+		e.SpellList(0, 0, &idx, &any)
+	case ActMagic:
+		e.displayAffects("Magic", []*Character{c})
+	case ActHeal:
+		e.paladinHeal(c)
+	case ActCure:
+		e.paladinCure(c)
+	}
 }

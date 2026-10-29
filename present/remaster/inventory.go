@@ -269,7 +269,11 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 	if in.Sell {
 		w = append(w, word{text: "Sell", act: engine.ActSell, on: it != nil})
 	}
-	return append(w, word{text: "Look", act: actLook, on: it != nil}, word{text: "Exit", act: engine.ActClose, on: true})
+	w = append(w, word{text: "Look", act: actLook, on: it != nil})
+	for _, pw := range in.Powers {
+		w = append(w, word{text: pw.Name, act: pw.Kind, on: true})
+	}
+	return append(w, word{text: "Exit", act: engine.ActClose, on: true})
 }
 
 // actLook is the menu's Look, which the screen shows itself.
@@ -352,7 +356,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 
 	// the party inventory: its title and fill, the lines, the scroll bar
-	rx, rr := leftCells*8+8, (cw-1)*8
+	rx, rr := leftCells*8, (cw-1)*8 // a cell inside the shared divider
 	inv.text("Party Items", rx, 8, white)
 	fillc := green
 	if len(in.Pool) >= in.Cap {
@@ -471,8 +475,8 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.img.WritePixels(inv.px.Pix)
 	drawBorder(inv.img, t, gpu.GeoM{}, leftCells, ch-1)
 	var g gpu.GeoM
-	g.Translate(leftCells*8, 0)
-	drawBorder(inv.img, t, g, cw-leftCells, ch-1)
+	g.Translate((leftCells-1)*8, 0) // the boxes share the divider
+	drawBorder(inv.img, t, g, cw-leftCells+1, ch-1)
 	if box != nil {
 		var g gpu.GeoM
 		g.Translate(float64(br.Min.X), float64(br.Min.Y))
@@ -550,7 +554,7 @@ func (inv *inventory) do(k engine.ActKind) {
 	it := itemAt(inv.view, inv.sel)
 	switch {
 	case k == engine.ActNone:
-	case k == engine.ActClose:
+	case k == engine.ActClose, k >= engine.ActSpells && k <= engine.ActCure:
 		inv.acts = append(inv.acts, engine.Action{Kind: k})
 	case it == nil:
 	case k == actLook:
