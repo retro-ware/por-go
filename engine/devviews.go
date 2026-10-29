@@ -1,6 +1,9 @@
 package engine
 
-import "os"
+import (
+	"os"
+	"slices"
+)
 
 // DevView is a named screen the snap tool can render (development aid).
 type DevView struct {
@@ -62,6 +65,7 @@ func (e *Engine) DevScene(name string) func() {
 				for _, c := range e.party {
 					c.Memorized[0] = spCureLightWounds
 				}
+				e.selected().Portrait = readPNG(os.Getenv("POR_PNG")) // the sheet's portrait, when POR_PNG is set
 			}
 			// Block 1 exists only in MON2CHA; take the first monster of
 			// the current set (DS:5376) so any save can start a fight.
@@ -108,6 +112,15 @@ func (e *Engine) DevScene(name string) func() {
 			e.ViewCharacter()
 			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot list: no portrait on it
 			e.lootTake()
+			e.DrawMainScreen()
+		}
+	case "sheetcast": // the sheet's Spells with the PNG at POR_PNG as the portrait: the list is a page of its own (no portrait overlay, no tall row)
+		return func() {
+			e.selectMember(slices.IndexFunc(e.party, func(c *Character) bool { return c.Status == statusOkay }))
+			c := e.selected()
+			c.Portrait = readPNG(os.Getenv("POR_PNG"))
+			c.Memorized[0] = spCureLightWounds
+			e.ViewCharacter()
 			e.DrawMainScreen()
 		}
 	case "cast", "castko": // Cast on the command bar with Cure Light Wounds memorized; castko with the selected member unconscious
