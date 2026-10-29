@@ -98,6 +98,7 @@ type Unit struct {
 	Party      bool
 	Facing     int         // 0..7
 	Icon       image.Image // the combat icon, facing and pose (striking) as the original draws it
+	IconSize   image.Point // the built icon's size in pixels, 24 a square: what the figure's size and footprint follow (a PNG icon keeps it at its own resolution)
 	Active     bool        // whose turn it is
 	Name       string
 	HP, AC     int
@@ -174,10 +175,12 @@ func (e *Engine) battle() *Battle {
 				u.Squares = append(u.Squares, image.Pt(u.X+dx, u.Y+dy))
 			}
 		}
+		u.IconSize = image.Pt(24, 24)
+		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
+			u.Icon, u.IconSize = e.picRGBA(im, 0, u.Facing > 3, -1), image.Pt(im.Width*8, im.Height)
+		}
 		if im := c.iconPNG(int(s.poses[i]&1), u.Facing > 3); im != nil { // the dropped PNG (iconpng.go)
 			u.Icon = im
-		} else if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
-			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}
 		b.Units = append(b.Units, u)
 	}

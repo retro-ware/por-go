@@ -400,9 +400,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 				[4]float32{0.95 * pulse, 0.72 * pulse, 0.2 * pulse, 1}, 0.9))
 		}
 		f := p.figure(u.Icon)
-		ib := u.Icon.Bounds()
+		ib := iconSize(u)
 		size := sq * .92
-		half := size * float32(ib.Dy()) / float32(max(ib.Dx(), ib.Dy())) / 2
+		half := size * float32(ib.Y) / float32(max(ib.X, ib.Y)) / 2
 		// the attacker lunges at its target; the target flashes red and sheds sparks when hit, grey ones when missed
 		tint = [4]float32{1, 1, 1, 1}
 		if t := p.strikeT; t < lunge {
@@ -522,8 +522,17 @@ func (p *Presenter) unitAt(u engine.Unit, dt float64) (x, z, sq float32) {
 	k := 1 - math.Exp(-dt*7) // per call: Draw asks twice a frame (shadow, figurine), so half a step each
 	at[0] += (c[0] - at[0]) * k
 	at[1] += (c[1] - at[1]) * k
-	ib := u.Icon.Bounds()
-	return float32(at[0]), float32(at[1]), float32(max(ib.Dx(), ib.Dy())) / tilePx
+	ib := iconSize(u)
+	return float32(at[0]), float32(at[1]), float32(max(ib.X, ib.Y)) / tilePx
+}
+
+// iconSize is the size the figure's footprint follows: the built icon's
+// (IconSize), else the picture's own.
+func iconSize(u engine.Unit) image.Point {
+	if u.IconSize != (image.Point{}) {
+		return u.IconSize
+	}
+	return u.Icon.Bounds().Size()
 }
 
 // sync brings the atlas and the board up to b.
