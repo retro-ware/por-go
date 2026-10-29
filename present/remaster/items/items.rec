@@ -1,10 +1,10 @@
 # Item icons: internal_name is the base item type in hex, or type:word for the
 # items of a type named by one of their words. icon is the cell of atlas.png
-# (32x32, 24 a row). Edit with: remapper 32 32 atlas.png items.rec
+# (16x16, 24 a row; the iron weapons from 912). Edit with: remapper 16 16 atlas.png items.rec
 
 internal_name: 01
 name: Battle Axe
-icon: 59
+icon: 1154
 
 internal_name: 02
 name: Hand Axe
@@ -16,7 +16,7 @@ icon: 249
 
 internal_name: 04
 name: Bec De Corbin
-icon: 888
+icon: 1237
 
 internal_name: 05
 name: Bill-Guisarme
@@ -40,7 +40,7 @@ icon: 221
 
 internal_name: 0A
 name: Fauchard
-icon: 280
+icon: 929
 
 internal_name: 0B
 name: Fauchard-Fork
@@ -72,11 +72,11 @@ icon: 360
 
 internal_name: 12
 name: Halberd
-icon: 361
+icon: 1001
 
 internal_name: 13
 name: Lucern Hammer
-icon: 772
+icon: 1175
 
 internal_name: 14
 name: Hammer
@@ -88,7 +88,7 @@ icon: 788
 
 internal_name: 16
 name: Jo Stick
-icon: 810
+icon: 930
 
 internal_name: 17
 name: Mace
@@ -104,7 +104,7 @@ icon: 611
 
 internal_name: 1A
 name: Military Pick
-icon: 888
+icon: 1165
 
 internal_name: 1B
 name: Awl Pike
@@ -112,15 +112,15 @@ icon: 358
 
 internal_name: 1C
 name: Quarrel
-icon: 633
+icon: 951
 
 internal_name: 1D
 name: Ranseur
-icon: 52
+icon: 977
 
 internal_name: 1E
 name: Scimitar
-icon: 698
+icon: 948
 
 internal_name: 1F
 name: Spear
@@ -136,7 +136,7 @@ icon: 813
 
 internal_name: 22
 name: Bastard Sword
-icon: 487
+icon: 918
 
 internal_name: 23
 name: Broad Sword
@@ -156,7 +156,7 @@ icon: 871
 
 internal_name: 27
 name: Trident
-icon: 52
+icon: 934
 
 internal_name: 28
 name: Voulge
@@ -164,7 +164,7 @@ icon: 249
 
 internal_name: 29
 name: Composite Long Bow
-icon: 116
+icon: 1172
 
 internal_name: 2A
 name: Composite Short Bow
@@ -180,7 +180,7 @@ icon: 743
 
 internal_name: 2D
 name: Heavy Crossbow
-icon: 403
+icon: 1197
 
 internal_name: 2E
 name: Light Crossbow
@@ -196,7 +196,7 @@ icon: 461
 
 internal_name: 33
 name: Padded Armor
-icon: 472
+icon: 462
 
 internal_name: 34
 name: Studded Leather Armor
@@ -276,7 +276,7 @@ icon: 323
 
 internal_name: 46:Figurine
 name: Brass Dragon / Gold Lightning Figurine
-icon: 240
+icon: 390
 
 internal_name: 46:Necklace
 name: Diamond/Pearl Necklace
@@ -288,7 +288,7 @@ icon: 505
 
 internal_name: 46:Decanter
 name: Electrum Decanter
-icon: 755
+icon: 567
 
 internal_name: 46:Broach
 name: Emerald Broach / Silver Brooch
@@ -308,7 +308,7 @@ icon: 887
 
 internal_name: 46:Chain
 name: Gold Chain
-icon: 434
+icon: 546
 
 internal_name: 46:Scarab
 name: Gold/Silver Scarab
@@ -316,15 +316,15 @@ icon: 829
 
 internal_name: 46:Statuette
 name: Gold/Silver Dragon Statuette
-icon: 817
+icon: 391
 
 internal_name: 46:Incense
 name: Incense / Bag of Holding
-icon: 61
+icon: 25
 
 internal_name: 46:Bowl
 name: Jewel Studded Bowl
-icon: 74
+icon: 568
 
 internal_name: 46:Wings
 name: Jewelled Silver Wings
@@ -356,7 +356,7 @@ icon: 392
 
 internal_name: 46:Ointment
 name: Keoghtum's Ointment
-icon: 702
+icon: 343
 
 internal_name: 47
 name: Potion
@@ -376,7 +376,7 @@ icon: 788
 
 internal_name: 48
 name: Curio
-icon: 817
+icon: 410
 
 internal_name: 48:Chain
 name: Chain of Bone
@@ -384,7 +384,7 @@ icon: 255
 
 internal_name: 48:Brazier
 name: Copper Brazier
-icon: 344
+icon: 479
 
 internal_name: 48:Tapestry
 name: (Fungus Covered) Tapestry
@@ -400,7 +400,7 @@ icon: 183
 
 internal_name: 48:Statuette
 name: Stone Statuette
-icon: 402
+icon: 392
 
 internal_name: 49
 name: Arrow
@@ -420,7 +420,7 @@ icon: 34
 
 internal_name: 4D
 name: Bracers
-icon: 122
+icon: 480
 
 internal_name: 4E
 name: Wand
@@ -432,7 +432,7 @@ icon: 887
 
 internal_name: 52
 name: Efreeti Bottle
-icon: 259
+icon: 342
 
 internal_name: 54
 name: Potion of Giant Strength
@@ -460,7 +460,7 @@ icon: 659
 
 internal_name: 5B
 name: Pass
-icon: 900
+icon: 720
 
 internal_name: 5C
 name: Cloak of Displacement

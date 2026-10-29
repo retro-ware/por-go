@@ -44,7 +44,7 @@ const (
 	leftCells  = 17 // the doll box's width in cells, with its border
 	rowH       = 20 // a party inventory line: a whole icon high
 	listTop    = 24 // the first line, under the box's title
-	atlasCell  = 32
+	atlasCell  = 16
 	atlasCols  = 24
 	wheelPause = 60 * time.Millisecond // the quickest the wheel scrolls a line
 )
@@ -272,16 +272,15 @@ func (inv *inventory) icon(it *engine.InvItem) int {
 	return -1
 }
 
-// drawIcon draws the middle of the item's atlas cell, unscaled, in r (the
-// icons are about 16 pixels in the middle of their 32 pixel cells).
+// drawIcon draws the item's atlas cell, unscaled, in the middle of r.
 func (inv *inventory) drawIcon(it *engine.InvItem, r image.Rectangle) {
 	n := inv.icon(it)
 	if n < 0 {
 		inv.text("?", r.Min.X+r.Dx()/2-4, r.Min.Y+r.Dy()/2-4, gray)
 		return
 	}
-	mid := image.Pt(n%atlasCols*atlasCell+atlasCell/2, n/atlasCols*atlasCell+atlasCell/2)
-	draw.Draw(inv.px, r, inv.atlas, mid.Sub(image.Pt(r.Dx()/2, r.Dy()/2)), draw.Over)
+	at := r.Min.Add(image.Pt(r.Dx()-atlasCell, r.Dy()-atlasCell).Div(2))
+	draw.Draw(inv.px, image.Rectangle{at, at.Add(image.Pt(atlasCell, atlasCell))}, inv.atlas, image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell), draw.Over)
 }
 
 // text draws s in the game's font at (x, y).
