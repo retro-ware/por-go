@@ -1,4 +1,4 @@
-# Builds por-go for Windows, macOS and Linux when a v* tag is pushed and
+# Builds por-go for Windows (10+ and 7), macOS (Apple silicon and Intel) and Linux when a v* tag is pushed and
 # publishes the binaries as that tag's GitHub release (no game data: players
 # bring their own files, see the README).
 name: release
@@ -18,12 +18,17 @@ permissions:
 jobs:
   build:
     strategy:
-      matrix:
+      matrix: # all cross-compiled: no cgo
         include:
-          - { os: ubuntu-latest, target: linux-amd64 }
-          - { os: windows-latest, target: windows-amd64 }
-          - { os: macos-latest, target: macos-universal }
-    runs-on: ${{ matrix.os }}
+          - { target: linux-amd64, goos: linux, goarch: amd64 }
+          - { target: windows-amd64, goos: windows, goarch: amd64 }
+          - { target: windows7-amd64, goos: windows, goarch: amd64, win7: true }
+          - { target: macos-arm64, goos: darwin, goarch: arm64 }
+          - { target: macos-amd64, goos: darwin, goarch: amd64 }
+    runs-on: ubuntu-latest
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
     outputs:
       gameimport: ${{ steps.gi.outputs.tag }}
     steps:
@@ -49,33 +54,30 @@ jobs:
           git -C ../gameimport checkout -q "$tag"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-go@v5
+        if: ${{ !matrix.win7 }}
         with:
           go-version-file: go.mod
-      - name: Linux libraries (GLFW, audio)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config
+      - name: Go for Windows 7 (go-legacy-win7; Go dropped Windows 7 in 1.21)
+        if: ${{ matrix.win7 }}
+        run: |
+          v=1.26.10-1 sum=39f0d5efcc3a8bf1ed54532706f3b2f0403db5b63f0693a486673f7f5a8daad4 # pinned: a third-party toolchain
+          curl -fsSLo go.tgz "https://github.com/thongtech/go-legacy-win7/releases/download/v$v/go-legacy-win7-$v.linux_amd64.tar.gz"
+          echo "$sum  go.tgz" | sha256sum -c
+          tar xzf go.tgz -C "$RUNNER_TEMP" && rm go.tgz
+          echo "$RUNNER_TEMP/go-legacy-win7/bin" >> "$GITHUB_PATH"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
       - name: Build
-        shell: bash
         run: |
           set -e
+          go version
           out=por-go-${TAG}-${{ matrix.target }}
           mkdir "$out"
-          case "${{ matrix.target }}" in
-            windows-*)
-              go build -trimpath -ldflags "-s -w -H windowsgui" -o "$out/por.exe" ./cmd/por
-              (cd ../gameimport && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -H windowsgui" -o "$OLDPWD/$out/gameimport.exe" ./cmd/gameimport) ;;
-            macos-*)
-              GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o por-arm64 ./cmd/por
-              GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o por-amd64 ./cmd/por
-              lipo -create -output "$out/por" por-arm64 por-amd64
-              for a in arm64 amd64; do (cd ../gameimport && CGO_ENABLED=0 GOARCH=$a go build -trimpath -ldflags "-s -w" -o "$OLDPWD/gameimport-$a" ./cmd/gameimport); done
-              lipo -create -output "$out/gameimport" gameimport-arm64 gameimport-amd64 ;;
-            *)
-              go build -trimpath -ldflags "-s -w" -o "$out/por" ./cmd/por
-              (cd ../gameimport && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$OLDPWD/$out/gameimport" ./cmd/gameimport) ;;
-          esac
+          exe= ld="-s -w"
+          if [ "$GOOS" = windows ]; then exe=.exe ld="$ld -H windowsgui"; fi
+          go build -trimpath -ldflags "$ld" -o "$out/por$exe" ./cmd/por
+          (cd ../gameimport && go build -trimpath -ldflags "$ld" -o "$OLDPWD/$out/gameimport$exe" ./cmd/gameimport)
           cp README.md import.toml "$out/"; [ -f LICENSE ] && cp LICENSE "$out/" || true
-          if [ "${{ runner.os }}" = Windows ]; then 7z a -bd "$out.zip" "$out" >/dev/null; echo "ASSET=$out.zip" >> "$GITHUB_ENV"
+          if [ "$GOOS" = windows ]; then zip -qr "$out.zip" "$out"; echo "ASSET=$out.zip" >> "$GITHUB_ENV"
           else tar czf "$out.tar.gz" "$out"; echo "ASSET=$out.tar.gz" >> "$GITHUB_ENV"; fi
       - uses: actions/upload-artifact@v4
         with:
@@ -94,4 +96,4 @@ jobs:
           GAMEIMPORT_TAG: ${{ needs.build.outputs.gameimport }}
         run: |
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" \
-            --notes "Binaries for Windows, macOS (universal) and Linux. No game data is included: run gameimport (${GAMEIMPORT_TAG}) beside por to bring in your own copy of the game, see the README." *.zip *.tar.gz
+            --notes "Binaries for Windows 10+ (windows-amd64), Windows 7 (windows7-amd64), macOS on Apple silicon (macos-arm64) and Intel (macos-amd64), and Linux. No game data is included: run gameimport (${GAMEIMPORT_TAG}) beside por to bring in your own copy of the game, see the README." *.zip *.tar.gz
