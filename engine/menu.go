@@ -321,7 +321,7 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 			return m.hotkey('V')
 		case m.allowExtra && !e.ext.list && e.beginFlag != 5: // a menu stepping the member with Home/End
 			e.selectMember(n)
-			return m.outcome(Pick{ID: PickRelist})
+			return m.outcome(Pick{ID: PickRelist, Dir: DirNone})
 		}
 	case ActText:
 	default:
@@ -337,7 +337,7 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 		case ActLead: // a card's left click, F1-F8 (extra): the member the command bar acts for
 			if n := a.N; e.ext.inCommand && n >= 0 && n < len(e.party) {
 				e.selectMember(n)
-				return m.outcome(Pick{ID: PickRelist})
+				return m.outcome(Pick{ID: PickRelist, Dir: DirNone})
 			}
 		case ActSpells, ActMagic, ActHeal, ActCure: // a card's context menu (extra): member N's power, as a command
 			if n := a.N; e.ext.inCommand && n >= 0 && n < len(e.party) && slices.ContainsFunc(e.powers(e.party[n]), func(p Power) bool { return p.Kind == a.Kind }) {
@@ -518,7 +518,7 @@ func (m *menuBar) member(n int) (Pick, bool) {
 			return Pick{}, false
 		}
 		e.selectMember(n)
-		return m.outcome(Pick{ID: PickRelist})
+		return m.outcome(Pick{ID: PickRelist, Dir: DirNone})
 	case e.ext.inCommand || strings.Contains(m.menu, "View"):
 		e.selectMember(n)
 		e.ext.toItems = true

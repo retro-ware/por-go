@@ -63,18 +63,19 @@ const (
 
 // Directions of ActMove.
 const (
-	DirUp      = iota // walk on, the line or item before
-	DirDown           // a step back, the next line or item
-	DirLeft           // turn left, the item before
-	DirRight          // turn right, the next item
-	DirHome           // the member or line before
-	DirEnd            // the next member or line
-	DirPgUp           // the page before
-	DirPgDn           // the next page
-	DirCentre         // keypad 5
-	DirBack           // the item before (,)
-	DirOn             // the next item (.)
-	DirWheelUp        // the wheel: the highlight, line or page before
+	DirNone    = iota - 1 // no direction: a pick that is not a move (PickRelist), which Dir switches must not read as DirUp
+	DirUp                 // walk on, the line or item before
+	DirDown               // a step back, the next line or item
+	DirLeft               // turn left, the item before
+	DirRight              // turn right, the next item
+	DirHome               // the member or line before
+	DirEnd                // the next member or line
+	DirPgUp               // the page before
+	DirPgDn               // the next page
+	DirCentre             // keypad 5
+	DirBack               // the item before (,)
+	DirOn                 // the next item (.)
+	DirWheelUp            // the wheel: the highlight, line or page before
 	DirWheelDown
 )
 
