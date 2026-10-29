@@ -79,9 +79,18 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 	}
 	newRefs := refs[e.ext.refsShown:]
 	e.ext.refsShown = len(refs)
+	if lines := journalLines(newRefs); len(lines) > 0 {
+		e.showJournal(lines)
+	}
+}
+
+// journalLines lays out the texts titled titles for the pager: "\x00" marks
+// a title (a blank line under it), "\x01" a picture and "\x02" the rows it
+// covers.
+func journalLines(titles []string) []string {
 	j := loadJournal()
 	var lines []string
-	for _, t := range newRefs {
+	for _, t := range titles {
 		paras, ok := j[t]
 		if !ok {
 			continue
@@ -89,7 +98,7 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 		if len(lines) > 0 {
 			lines = append(lines, "")
 		}
-		lines = append(lines, "\x00"+t)
+		lines = append(lines, "\x00"+t, "")
 		for _, p := range paras {
 			switch {
 			case p == "":
@@ -109,15 +118,17 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 			}
 		}
 	}
-	if len(lines) > 0 {
-		e.showJournal(lines)
-	}
+	return lines
 }
 
-// The pager: the text inside a full-screen box, jrRows lines a page.
+// The pager: the text inside a full-screen box, jrRows lines a page from
+// row jrTop (under the journal's title and a blank row) to row 21; row 22
+// stays blank (the remaster repeats it to fill a 4:3 window), row 23 is
+// the "press a key" line.
 const (
 	jrWidth = 0x24
-	jrRows  = 0x15
+	jrRows  = 19
+	jrTop   = 3
 )
 
 // wrapText breaks s into lines of at most w characters at spaces.
@@ -144,7 +155,9 @@ func wrapText(s string, w int) []string {
 
 // showJournal pages through lines ("\x00" marks a title) until the last
 // page or Esc, then puts the screen back. On a page with a tall picture,
-// Up and Down (and the wheel) scroll it.
+// Up and Down (and the wheel) scroll it. The box is the whole page, and the
+// remaster's 4:3 window too: the blank row 22 repeats (tallRow), so the
+// text and its pictures keep their rows.
 func (e *Engine) showJournal(lines []string) {
 	off := e.modalOn()
 	e.ext.paging = true
@@ -153,18 +166,18 @@ func (e *Engine) showJournal(lines []string) {
 	pages := journalPages(lines)
 	draw := func(p, off int) (maxOff int) {
 		e.setOverlays(nil)
-		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Adventurer's Journal")
-		e.ClearCells(2, 2, 37, 23)
+		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Adventurer's Journal") // the border runs round the page
+		e.snap.tallRow = 22
 		page := pages[p]
 		for i, l := range page {
 			switch {
 			case strings.HasPrefix(l, "\x00"):
-				e.DisplayString(2, 2+i, colYellow, l[1:])
+				e.DisplayString(2, jrTop+i, colYellow, l[1:])
 				e.speak(strings.ReplaceAll(l[1:], " ", "_")) // per page: the Enter that turns it silences the last one
 			case strings.HasPrefix(l, "\x01"):
-				maxOff = max(maxOff, e.drawPicture(journalPicture(l[1:]), 2*8+jrWidth*4, (2+i)*8, pictureRows(page[i:])*8, off))
+				maxOff = max(maxOff, e.drawPicture(journalPicture(l[1:]), 2*8+jrWidth*4, (jrTop+i)*8, pictureRows(page[i:])*8, off))
 			case l != "\x02":
-				e.DisplayString(2, 2+i, colWhite, l)
+				e.DisplayString(2, jrTop+i, colWhite, l)
 			}
 		}
 		more := "press a key"
@@ -201,13 +214,14 @@ func (e *Engine) showJournal(lines []string) {
 		}
 	}
 	e.setOverlays(nil)
+	e.snap.tallRow = 0
 	restore()
 }
 
 func (e *Engine) setOverlays(o []Overlay) { e.pg.overlays = o }
 
 // journalPages cuts lines into pages of at most jrRows; a page does not
-// start with a blank line or end with a title, and a picture is not split:
+// start or end with a blank line or end with a title, and a picture is not split:
 // one that overruns the page shrinks into the rows left when they hold
 // half of it (it stays sharp, at the window's resolution), else it starts
 // the next page.
@@ -231,7 +245,7 @@ func journalPages(lines []string) [][]string {
 		for n < len(lines) && n > 1 && lines[n] == "\x02" { // back to the picture's first row
 			n--
 		}
-		if n < len(lines) && n > 1 && strings.HasPrefix(lines[n-1], "\x00") {
+		for n < len(lines) && n > 1 && (lines[n-1] == "" || strings.HasPrefix(lines[n-1], "\x00")) {
 			n--
 		}
 		if n > 0 {
@@ -260,13 +274,13 @@ var pictures = map[string]image.Image{} // the engine goroutine's alone
 
 // pictureSize is the screen area a picture covers: the scans are 300 dpi,
 // shown at about 90 screen pixels an inch, at most the text width wide
-// and, unless taller than wide (those scroll), 19 rows high (with a title
-// and a line it fills a page).
+// and, unless taller than wide (those scroll), 17 rows high (with a title,
+// the blank line under it and a line it fills a page).
 func pictureSize(im image.Image) (w, h int) {
 	b := im.Bounds()
 	s := min(0.3, float64(jrWidth*8)/float64(b.Dx()))
 	if !tall(im) {
-		s = min(s, 152/float64(b.Dy()))
+		s = min(s, 136/float64(b.Dy()))
 	}
 	return int(float64(b.Dx()) * s), int(float64(b.Dy()) * s)
 }

@@ -38,12 +38,12 @@ func TestJournalPagesShrinkPicture(t *testing.T) {
 		}
 		return l
 	}
-	// 9 rows of text leave 12: over half of 19, so the picture shrinks in.
+	// 9 rows of text leave 10: over half of 19, so the picture shrinks in.
 	p := journalPages(append(fill(9), pic(19)...))
-	if len(p) != 1 || pictureRows(p[0][9:]) != 12 {
+	if len(p) != 1 || pictureRows(p[0][9:]) != 10 {
 		t.Fatalf("shrink: %d pages, %q", len(p), p)
 	}
-	// 12 rows leave 9: too little, the picture starts the next page whole.
+	// 12 rows leave 7: too little, the picture starts the next page whole.
 	p = journalPages(append(fill(12), pic(19)...))
 	if len(p) != 2 || pictureRows(p[1]) != 19 {
 		t.Fatalf("next page: %d pages, %q", len(p), p)

@@ -17,6 +17,7 @@ type scriptAt struct {
 
 var nativeScripts = map[scriptAt]func(*Engine){
 	{0, "TavernGamble"}: (*Engine).tavernGamble,
+	{0, "TavernTale"}:   (*Engine).tavernTale,
 }
 
 func (e *Engine) nativeScript() func(*Engine) { return e.native[e.eclPC] }
@@ -90,4 +91,18 @@ func tavernSpin(gold, wager uint32, r int) (uint32, string) {
 		return gold, "IT'S BLUE.  YOU WIN."
 	}
 	return gold - wager, "RED. SORRY, YOU LOSE."
+}
+
+// tavernTale = ECL3 block 0 TavernTale: the original printed "YOU OVERHEAR
+// TAVERN TALE n" for the player to look up; the port shows (and voices)
+// the tale itself, so that line is gone. Then one in three a drunken brawl.
+func (e *Engine) tavernTale() {
+	n := e.Random(22) + 1
+	e.scriptText(true, "")
+	e.showJournal(journalLines([]string{"Tavern Tale " + strconv.Itoa(n)}))
+	if e.Random(3) == 1 {
+		e.eclPC = e.scriptLabel("DrunkenBrawl")
+		return
+	}
+	e.opExit()
 }

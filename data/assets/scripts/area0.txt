@@ -323,13 +323,7 @@ TavernEvent:
     goto TavernTale
 
 TavernTale:
-    Text("YOU OVERHEAR TAVERN TALE ")
-    Scratch6 = Random(22)
-    Scratch6 += 1
-    Print(Scratch6)
-    WaitReturnPressed()
-    AuxRoll = Random(3)
-    if AuxRoll == 1 { goto DrunkenBrawl }
+    # engine/native.go tavernTale runs here: the tale itself is shown (the original printed "YOU OVERHEAR TAVERN TALE n"), then one in three a DrunkenBrawl
     exit
 
 GamblerGame:
