@@ -31,8 +31,7 @@ func decodeWall(name string) image.Image {
 }
 
 // wallTexture loads assets/walls/<name>.png (once), or nil when there is none; a painted texture
-// replaces the generated one for its material character. Its relief comes from NAME_normal.png
-// when there is one (OpenGL convention, green up), else from its brightness.
+// replaces the generated one for its material character.
 func wallTexture(name string) *gpu.Image {
 	if t, ok := wallCache[name]; ok {
 		return t
@@ -44,15 +43,6 @@ func wallTexture(name string) *gpu.Image {
 	}
 	t := gpu.NewImageFromImage(img)
 	wallCache[name] = t
-	if nm := decodeWall(name + "_normal"); nm != nil && nm.Bounds().Size() == img.Bounds().Size() {
-		normalSlopes(t, nm)
-	} else if !strings.HasSuffix(name, "_light") { // painted: the brightness stands in for the height
-		b := img.Bounds()
-		addSlopes(t, b.Dx(), b.Dy(), func(x, y int) float64 {
-			r, g, bl, _ := img.At(b.Min.X+x, b.Min.Y+y).RGBA()
-			return (0.299*float64(r) + 0.587*float64(g) + 0.114*float64(bl)) / 65535
-		})
-	}
 	return t
 }
 
@@ -79,7 +69,7 @@ func Flats(kind string) []string {
 	var out []string
 	entries, _ := wallFS.ReadDir("assets/walls")
 	for _, e := range entries {
-		if n, ok := strings.CutPrefix(e.Name(), kind+"_"); ok && !strings.HasSuffix(n, "_normal.png") {
+		if n, ok := strings.CutPrefix(e.Name(), kind+"_"); ok {
 			out = append(out, strings.TrimSuffix(n, ".png"))
 		}
 	}

@@ -6,7 +6,6 @@ package blobber
 // floor and ceiling.
 
 import (
-	"image"
 	"image/color"
 	"math"
 
@@ -14,48 +13,6 @@ import (
 )
 
 var fogCol = color.RGBA{0x16, 0x10, 0x23, 255}
-
-// slopes holds each wall, floor and ceiling texture's slope map for the normal mapping: red and
-// green are the height's slope along u and v, 0.5 flat.
-var slopes = map[*gpu.Image]*gpu.Image{}
-
-// addSlopes makes img's slope map from its w×h height field (wrapping, like the texture).
-func addSlopes(img *gpu.Image, w, h int, height func(x, y int) float64) {
-	at := func(x, y int) float64 { return height((x+w)%w, (y+h)%h) }
-	pix := make([]byte, 4*w*h)
-	for y := range h {
-		for x := range w {
-			i := 4 * (y*w + x)
-			pix[i] = u8(128 + 127*(at(x+1, y)-at(x-1, y)))
-			pix[i+1] = u8(128 + 127*(at(x, y+1)-at(x, y-1)))
-			pix[i+3] = 255
-		}
-	}
-	s := gpu.NewImage(w, h)
-	s.WritePixels(pix)
-	slopes[img] = s
-}
-
-// normalSlopes makes img's slope map from normal map nm: a normal (x, y up, z) leans the height by
-// -x/z along u and y/z along v (v runs down), halved to the scale addSlopes' height differences have.
-func normalSlopes(img *gpu.Image, nm image.Image) {
-	b := nm.Bounds()
-	w, h := b.Dx(), b.Dy()
-	pix := make([]byte, 4*w*h)
-	for y := range h {
-		for x := range w {
-			r, g, bl, _ := nm.At(b.Min.X+x, b.Min.Y+y).RGBA()
-			nx, ny, nz := float64(r)/32767.5-1, float64(g)/32767.5-1, math.Max(float64(bl)/32767.5-1, 0.2)
-			i := 4 * (y*w + x)
-			pix[i] = u8(128 + 127*math.Max(-1, math.Min(1, -nx/nz*0.5)))
-			pix[i+1] = u8(128 + 127*math.Max(-1, math.Min(1, ny/nz*0.5)))
-			pix[i+3] = 255
-		}
-	}
-	s := gpu.NewImage(w, h)
-	s.WritePixels(pix)
-	slopes[img] = s
-}
 
 // mat is a wall material: its front texture, the generated ones' left and right lit variants
 // (nil for painted textures, which use img on every face), and an optional light map.
@@ -177,12 +134,6 @@ struct Uniforms {
 	Center: vec2f, // screen centre
 	Focal: f32,
 	Px: f32,      // screen pixels per view pixel of theirs (500 wide), for the checker dither
-	HasBump: f32, // 1 when image 1 is a slope map
-	Bump: f32,    // normal mapping strength
-	T: vec3f,     // the face's u and v directions and normal, in camera space (x right, y down, z ahead)
-	B: vec3f,
-	N: vec3f,
-	Lamp: vec3f,  // the moving light reaching this face most, in camera space
 	Haze: f32,    // distance fog: cells to full haze (0 = none)
 	HazeCol: vec3f, // the sky's colour at the horizon
 }
@@ -224,11 +175,6 @@ fn shade(c0: vec3f, dark: f32, inc: f32) -> vec3f {
 	return mix(c, fog, clamp(clamp((dark - 0.7) / 0.3, 0.0, 1.0) * 0.6 + inc, 0.0, 1.0));
 }
 
-// relief is how much slopes s turn the surface toward light direction l, relative to the flat face.
-fn relief(s: vec2f, l: vec3f) -> f32 {
-	return (s.x * dot(l, u.T) + s.y * dot(l, u.B)) / max(dot(u.N, l), 0.3);
-}
-
 fn Fragment(dstPos: vec4f, srcPos: vec2f, color: vec4f, custom: vec4f) -> vec4f {
 	let z = 1.0 / custom.z;
 	let uv = custom.xy * z;
@@ -253,74 +199,11 @@ fn Fragment(dstPos: vec4f, srcPos: vec2f, color: vec4f, custom: vec4f) -> vec4f 
 	}
 	// the moving lights (vertex colour) push the darkness back and tint what they reach
 	let near = clamp(max(color.r, max(color.g, color.b)), 0.0, 1.0);
-	if (u.HasBump > 0.0) {
-		// normal mapping, lit by the torch at the eye: a slope facing the light brightens, one facing
-		// away darkens, by how far the tilt turns the surface toward the light relative to the flat face
-		// (linear in the slope, so on average the surface keeps its brightness)
-		let s = imageSrc1At(imageSrc0Origin() + fract(uv) * imageSrc0Size()).rg * 2.0 - 1.0;
-		// the torch, and where a lantern reaches, that lantern
-		let r = mix(relief(s, normalize(u.Torch - p)), relief(s, normalize(u.Lamp - p)), near);
-		rgb *= clamp(1.0 + u.Bump * r, 0.4, 1.6);
-	}
 	let dark = (1.0 - torch(p, chk)) * (1.0 - 0.7 * lit) * (1.0 - near);
 	let o = shade(rgb * mix(u.Warm, vec3f(1.0), max(lit, near)), dark, u.Inc * (1.0 - lit) * (1.0 - near)) + rgb * color.rgb * 0.3;
 	return vec4f(haze(o, p) * c.a, c.a);
 }
 `
-
-// frame is face f's u and v directions and its normal toward the eye, in camera space.
-func frame(c cam, f *face) (t, b, n []float32, ok bool) {
-	p0, p1, p3 := f.v[0], f.v[1], f.v[3]
-	e1 := [3]float64{p1.x - p0.x, p1.y - p0.y, p1.z - p0.z}
-	e2 := [3]float64{p3.x - p0.x, p3.y - p0.y, p3.z - p0.z}
-	du1, dv1, du2, dv2 := p1.u-p0.u, p1.v-p0.v, p3.u-p0.u, p3.v-p0.v
-	det := du1*dv2 - du2*dv1
-	if math.Abs(det) < 1e-9 {
-		return nil, nil, nil, false
-	}
-	var tv, bv [3]float64
-	for i := range 3 {
-		tv[i] = (e1[i]*dv2 - e2[i]*dv1) / det
-		bv[i] = (e2[i]*du1 - e1[i]*du2) / det
-	}
-	// to camera space (y stays), unit length
-	cs := func(v [3]float64) [3]float64 {
-		r := [3]float64{v[0]*c.rtx + v[2]*c.rtz, v[1], v[0]*c.fwx + v[2]*c.fwz}
-		l := math.Hypot(math.Hypot(r[0], r[1]), r[2])
-		return [3]float64{r[0] / l, r[1] / l, r[2] / l}
-	}
-	tv, bv = cs(tv), cs(bv)
-	nv := [3]float64{tv[1]*bv[2] - tv[2]*bv[1], tv[2]*bv[0] - tv[0]*bv[2], tv[0]*bv[1] - tv[1]*bv[0]}
-	nl := math.Hypot(math.Hypot(nv[0], nv[1]), nv[2])
-	dx, dz := p0.x-c.x, p0.z-c.z
-	if nv[0]*(dx*c.rtx+dz*c.rtz)+nv[1]*p0.y+nv[2]*(dx*c.fwx+dz*c.fwz) > 0 { // facing away: flip toward the eye
-		nl = -nl
-	}
-	f32 := func(v [3]float64, l float64) []float32 {
-		return []float32{float32(v[0] / l), float32(v[1] / l), float32(v[2] / l)}
-	}
-	return f32(tv, 1), f32(bv, 1), f32(nv, nl), true
-}
-
-// lamp is the moving light that reaches face f's centre most, in camera space (the eye when none does).
-func lamp(c cam, f *face) []float32 {
-	var x, y, z float64
-	for _, v := range f.v {
-		x, y, z = x+v.x/4, y+v.y/4, z+v.z/4
-	}
-	best, out := 0.0, []float32{0, 0, 0}
-	for _, e := range ents {
-		if e.light <= 0 {
-			continue
-		}
-		d := (x-e.x)*(x-e.x) + (y-e.y)*(y-e.y) + (z-e.z)*(z-e.z)
-		if a := e.light / (1 + 0.5*d*d/e.light); a > best { // as light() weighs it
-			dx, dz := e.x-c.x, e.z-c.z
-			best, out = a, []float32{float32(dx*c.rtx + dz*c.rtz), float32(e.y), float32(dx*c.fwx + dz*c.fwz)}
-		}
-	}
-	return out
-}
 
 // hazeCells is how far the distance fog reaches full strength (phlan-poc: past the map, out to the horizon).
 const hazeCells = 128
@@ -355,19 +238,11 @@ func (g *Game) faceOptions(c cam, f *face) *gpu.DrawTrianglesShaderOptions {
 		"Torch": []float32{float32(tp[0]), float32(tp[1]), float32(tp[2])}, "Warm": warm,
 		"Haze": float32(0), "HazeCol": hazeCol(),
 		"Center": []float32{float32(W) / 2, float32(H) / 2}, "Focal": float32(focal), "Px": float32(math.Max(1, float64(W)/500))}
-	if openSky && Settings.Haze {
+	if openSky {
 		u["Haze"] = float32(hazeCells)
 	}
 	if m := f.m; m != nil && m.lit != nil && Settings.LightMaps {
 		op.Images[2], u["HasLit"] = m.lit, float32(1)
-	}
-	if f.mode == modeShaded {
-		if t, b, n, ok := frame(c, f); ok { // the normal is for the torch's Lambert term too
-			u["T"], u["B"], u["N"] = t, b, n
-			if s := slopes[f.tex]; s != nil && Settings.NormalMaps {
-				op.Images[1], u["HasBump"], u["Bump"], u["Lamp"] = s, float32(1), float32(bump*2), lamp(c, f)
-			}
-		}
 	}
 	if f.mode == modeGlow {
 		op.Blend = gpu.BlendLighter

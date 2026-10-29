@@ -54,6 +54,7 @@ const (
 	ActMagic             // inventory: the spell effects on the member
 	ActHeal              // inventory: a paladin lays on hands
 	ActCure              // inventory: a paladin cures disease
+	ActMainMenu          // drop the game in play for the party menu (the pause menu's Back to Main Menu)
 )
 
 // Directions of ActMove.
@@ -114,11 +115,16 @@ func (e *Engine) Idle() bool { return e.acts.state.Load() == waiting && len(e.ac
 // nextAct publishes the View and blocks for the next action.
 func (e *Engine) nextAct() Action {
 	e.publish()
-	e.pace(waiting)
-	a := <-e.acts.ch
-	e.pace(working)
-	e.acts.taken++
-	return a
+	for {
+		e.pace(waiting)
+		a := <-e.acts.ch
+		e.pace(working)
+		e.acts.taken++
+		if a.Kind != ActMainMenu {
+			return a
+		}
+		e.mainMenu()
+	}
 }
 
 // sleep pauses the engine goroutine for ms milliseconds.

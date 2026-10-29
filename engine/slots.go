@@ -54,6 +54,9 @@ func (e *Engine) adventure() {
 func (e *Engine) guardedRun(start func()) (reload bool) {
 	defer func() {
 		if r := recover(); r != nil {
+			if _, ok := r.(toMainMenu); ok {
+				return // reload false: the party menu, as when the party is lost
+			}
 			if _, ok := r.(slotLoaded); !ok {
 				panic(r)
 			}

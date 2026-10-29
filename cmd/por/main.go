@@ -399,7 +399,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	blobber.Voice = eng.ToggleVoice // the voice-over switch on the Esc options page
+	blobber.Voice = eng.ToggleVoice // the voice-over switch on the Esc menu's Audio page
+	blobber.OnSaveLoad = func() { eng.Act(engine.Action{Kind: engine.ActSlots}) } // as F9
+	blobber.OnMainMenu = eng.MainMenu
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {
 		go func() {
 			<-ready // in the browser: after the first click or key

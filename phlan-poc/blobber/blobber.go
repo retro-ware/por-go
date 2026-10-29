@@ -451,7 +451,6 @@ func genStone(bw, bh int, offset bool, base, mortar [3]float64, lx, ly float64) 
 		}
 	}
 	img := gpu.NewImageFromImage(px)
-	addSlopes(img, tex, tex, func(x, y int) float64 { return h[y*tex+x] })
 	return img
 }
 
@@ -862,9 +861,6 @@ func (g *Game) updateActors(dt float64) {
 	for _, a := range actors {
 		if a.t < 1 {
 			a.t = math.Min(1, a.t+dt/0.3)
-			if !Settings.SmoothMonsters {
-				a.t = 1
-			}
 		}
 		if !a.animate(dt) {
 			live = append(live, a)
@@ -1095,13 +1091,15 @@ type Game struct {
 	cool    float64 // without smooth movement: seconds until a held key moves again
 	time    float64
 	// settings
-	dither, smooth, menu, options, atlasView, help bool
-	debug                                          bool
-	follow                                         bool // driven by a View: moves come from the host, never the keyboard
-	torch                                          float64
-	sel                                            int
-	scene                                          *gpu.Image
-	shader, texShader                              *gpu.Shader
+	dither, smooth, menu, atlasView, help, quit bool
+	page                                        string    // the Esc menu's settings page shown, "" the root
+	confirm                                     *question // the yes/no the Esc menu asks, or nil
+	debug                                       bool
+	follow                                      bool // driven by a View: moves come from the host, never the keyboard
+	torch                                       float64
+	sel                                         int
+	scene                                       *gpu.Image
+	shader, texShader                           *gpu.Shader
 }
 
 var dirs = [4][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
@@ -1219,9 +1217,7 @@ func (g *Game) Update() error {
 		}
 	}
 	if KeyJustPressed(gpu.KeyEscape) || gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) {
-		if g.options { // Esc in Options goes back to the menu
-			g.options, g.sel = false, 0
-		} else {
+		if !g.back() { // Esc in a page goes back to the root
 			g.menu, g.sel = !g.menu, 0 // Esc opens the menu (Quit is in it) and closes it again
 		}
 	}
@@ -1332,104 +1328,156 @@ func (g *Game) tween() {
 	}
 }
 
-// updateMenu reports true when Quit was chosen.
+// updateMenu runs the Esc menu for one frame and reports true when Quit was confirmed.
 func (g *Game) updateMenu() bool {
-	n := len(g.menuItems())
+	items := g.menuOptions()
+	n := len(items)
 	if KeyRepeated(gpu.KeyUp) {
 		g.sel = (g.sel + n - 1) % n
 	}
 	if KeyRepeated(gpu.KeyDown) {
 		g.sel = (g.sel + 1) % n
 	}
-	pick := KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace)
-	if !g.options {
+	g.sel %= n
+	d, ok := 0, KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace)
+	if g.page != "" && g.confirm == nil { // Left and Right step a page's settings
 		switch {
-		case !pick:
-		case g.sel == 0:
-			g.options, g.sel = true, 0
-		case g.sel == 1 && OnTeleportMenu != nil:
-			g.menu = false
-			OnTeleportMenu()
-		case g.sel == 2:
-			return true
+		case KeyJustPressed(gpu.KeyLeft):
+			d, ok = -1, true
+		case KeyJustPressed(gpu.KeyRight):
+			d, ok = 1, true
 		}
+	}
+	if !ok {
 		return false
 	}
-	if pick || KeyJustPressed(gpu.KeyLeft) || KeyJustPressed(gpu.KeyRight) {
-		switch g.sel {
-		case 0:
-			g.smooth = !g.smooth
-		case 1:
-			Settings.Fluid = !Settings.Fluid
-		case 2:
-			Settings.Haze = !Settings.Haze
-		case 3: // slider: Left slower, Right / Enter faster (Enter wraps round to the slowest)
-			sp := Settings.Speed + 0.25
-			if KeyJustPressed(gpu.KeyLeft) {
-				sp = math.Max(minSpeed, Settings.Speed-0.25)
-			} else if sp > maxSpeed {
-				sp = minSpeed
-				if KeyJustPressed(gpu.KeyRight) {
-					sp = maxSpeed
-				}
-			}
-			Settings.Speed = sp
-		case 4:
-			Settings.SmoothMonsters = !Settings.SmoothMonsters
-		case 5:
-			g.dither = !g.dither
-		case 6:
-			Settings.NormalMaps = !Settings.NormalMaps
-		case 7:
-			Settings.LightMaps = !Settings.LightMaps
-		case 8:
-			g.torch = math.Mod(g.torch, 1.5) + 0.5 // 0.5 → 1 → 1.5 → 0.5
-		case 9:
-			gpu.SetFullscreen(!gpu.IsFullscreen())
-		case 10:
-			Settings.MapOff = !Settings.MapOff
-		case 11:
-			Settings.MapSmall = !Settings.MapSmall
-		case 12: // slider as Walk speed: Left more translucent, Right / Enter more opaque (Enter wraps)
-			a := Settings.MapAlpha + 0.1
-			if KeyJustPressed(gpu.KeyLeft) {
-				a = math.Max(minAlpha, Settings.MapAlpha-0.1)
-			} else if a > 1.05 {
-				a = minAlpha
-				if KeyJustPressed(gpu.KeyRight) {
-					a = 1
-				}
-			}
-			Settings.MapAlpha = math.Round(math.Min(a, 1)*10) / 10
-		case 13:
-			Voice(true)
-		}
+	items[g.sel].change(g, d)
+	if g.page != "" {
 		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, gpu.IsFullscreen(), g.torch
 		if OnSettings != nil {
 			OnSettings(Settings)
 		}
 	}
-	return false
+	return g.quit
 }
 
-// menuItems are the Esc menu's lines, or its Options page's.
-func (g *Game) menuItems() []string {
-	if g.options {
-		bar := int(math.Round((Settings.Speed - minSpeed) / 0.25))
-		items := []string{"Smooth movement:   " + onOff(g.smooth), "Fluid movement:    " + onOff(Settings.Fluid), "Distance fog:      " + onOff(Settings.Haze),
-			"Walk speed:        " + strings.Repeat("#", bar+1) + strings.Repeat("-", int((maxSpeed-minSpeed)/0.25)-bar) + fmt.Sprintf(" %.2fx", Settings.Speed),
-			"Smooth monsters:   " + onOff(Settings.SmoothMonsters), "Dithered darkness: " + onOff(g.dither), "Normal mapping:    " + onOff(Settings.NormalMaps),
-			"Light maps:        " + onOff(Settings.LightMaps),
-			fmt.Sprintf("Torch intensity:   %.1f", g.torch), "Fullscreen:        " + onOff(gpu.IsFullscreen()),
-			"Minimap:           " + onOff(!Settings.MapOff), "Minimap size:      " + map[bool]string{false: "Normal", true: "Small"}[Settings.MapSmall]}
-		ab := int(math.Round((Settings.MapAlpha - minAlpha) / 0.1))
-		items = append(items, "Minimap opacity:   "+strings.Repeat("#", ab+1)+strings.Repeat("-", int(math.Round((1-minAlpha)/0.1))-ab)+fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100))
-		if Voice != nil {
-			items = append(items, "Voice-over:        "+onOff(Voice(false)))
-		}
-		return items
+// back is Esc in the menu: a page or a question goes back to the root (true), the root closes (false).
+func (g *Game) back() bool {
+	if g.page == "" && g.confirm == nil {
+		return false
 	}
-	return []string{"Options", "Teleport to level", "Quit game"}
+	g.page, g.confirm, g.sel = "", nil, 0
+	return true
+}
+
+// menuLine is one line of the Esc menu: change runs it (d: 0 Enter, -1 Left, 1 Right); value, when
+// set, is shown after the label.
+type menuLine struct {
+	label  string
+	value  func(g *Game) string
+	change func(g *Game, d int)
+}
+
+func flip(p *bool) func(*Game, int) { return func(*Game, int) { *p = !*p } }
+
+// step moves v by s within lo..hi: Left down, Right up, Enter up and round to lo past hi.
+func step(v, lo, hi, s float64, d int) float64 {
+	switch {
+	case d < 0:
+		v -= s
+	case v+s > hi+s/2:
+		if d == 0 {
+			return lo
+		}
+	default:
+		v += s
+	}
+	return math.Round(math.Max(lo, math.Min(hi, v))/s) * s
+}
+
+// bar draws v in lo..hi (step s) as a slider.
+func bar(v, lo, hi, s float64) string {
+	i, n := int(math.Round((v-lo)/s)), int(math.Round((hi-lo)/s))
+	return strings.Repeat("#", i+1) + strings.Repeat("-", n-i)
+}
+
+func onOffOf(p *bool) func(*Game) string { return func(*Game) string { return onOff(*p) } }
+
+// menuOptions are the lines of the menu page shown: the root, a settings page, or a yes/no question.
+func (g *Game) menuOptions() []menuLine {
+	if g.confirm != nil {
+		do := g.confirm.do
+		return []menuLine{{label: "No", change: func(g *Game, _ int) { g.back() }},
+			{label: "Yes", change: func(g *Game, _ int) { g.back(); do() }}}
+	}
+	switch g.page {
+	case "Graphics":
+		return []menuLine{
+			{"Fullscreen", func(*Game) string { return onOff(gpu.IsFullscreen()) }, func(*Game, int) { gpu.SetFullscreen(!gpu.IsFullscreen()) }},
+			{"Dithered darkness", func(g *Game) string { return onOff(g.dither) }, func(g *Game, _ int) { g.dither = !g.dither }},
+			{"Light maps", onOffOf(&Settings.LightMaps), flip(&Settings.LightMaps)},
+			{"Torch intensity", func(g *Game) string { return fmt.Sprintf("%.1f", g.torch) }, func(g *Game, d int) { g.torch = step(g.torch, 0.5, 1.5, 0.5, d) }},
+		}
+	case "Audio":
+		return []menuLine{{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }}}
+	case "Gameplay":
+		return []menuLine{
+			{"Smooth movement", func(g *Game) string { return onOff(g.smooth) }, func(g *Game, _ int) { g.smooth = !g.smooth }},
+			{"Fluid movement", onOffOf(&Settings.Fluid), flip(&Settings.Fluid)},
+			{"Walk speed", func(*Game) string {
+				return bar(Settings.Speed, minSpeed, maxSpeed, 0.25) + fmt.Sprintf(" %.2fx", Settings.Speed)
+			}, func(_ *Game, d int) { Settings.Speed = step(Settings.Speed, minSpeed, maxSpeed, 0.25, d) }},
+			{"Minimap", func(*Game) string { return onOff(!Settings.MapOff) }, flip(&Settings.MapOff)},
+			{"Minimap size", func(*Game) string { return map[bool]string{false: "Normal", true: "Small"}[Settings.MapSmall] }, flip(&Settings.MapSmall)},
+			{"Minimap opacity", func(*Game) string {
+				return bar(Settings.MapAlpha, minAlpha, 1, 0.1) + fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100)
+			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
+		}
+	}
+	page := func(p string) menuLine {
+		return menuLine{label: p, change: func(g *Game, _ int) { g.page, g.sel = p, 0 }}
+	}
+	ask := func(label, q string, do func()) menuLine {
+		return menuLine{label: label, change: func(g *Game, _ int) { g.confirm, g.sel = &question{q, do}, 0 }}
+	}
+	o := []menuLine{{label: "Resume", change: func(g *Game, _ int) { g.menu = false }}, page("Graphics")}
+	if Voice != nil {
+		o = append(o, page("Audio"))
+	}
+	o = append(o, page("Gameplay"))
+	if OnSaveLoad != nil {
+		o = append(o, menuLine{label: "Save / Load", change: func(g *Game, _ int) { g.menu = false; OnSaveLoad() }})
+	}
+	if OnTeleportMenu != nil {
+		o = append(o, menuLine{label: "Teleport to level", change: func(g *Game, _ int) { g.menu = false; OnTeleportMenu() }})
+	}
+	if OnMainMenu != nil {
+		o = append(o, ask("Back to Main Menu", "Back to the main menu? Unsaved progress is lost.", func() { g.menu = false; OnMainMenu() }))
+	}
+	return append(o, ask("Quit", "Quit the game? Unsaved progress is lost.", func() { g.quit = true }))
+}
+
+// question is a yes/no the menu asks before do.
+type question struct {
+	q  string
+	do func()
+}
+
+// OnSaveLoad, when set, adds "Save / Load" to the Esc menu (the host's save slots); OnMainMenu
+// adds "Back to Main Menu" (asked first).
+var OnSaveLoad, OnMainMenu func()
+
+// menuItems are the lines of the menu page shown.
+func (g *Game) menuItems() []string {
+	var out []string
+	for _, o := range g.menuOptions() {
+		s := o.label
+		if o.value != nil {
+			s = fmt.Sprintf("%-19s%s", o.label+":", o.value(g))
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 // ---------- rendering ----------
@@ -2056,12 +2104,12 @@ func onOff(b bool) string {
 }
 
 func (g *Game) drawMenu(screen *gpu.Image) {
-	items, title, hint := g.menuItems(), "MENU", "Enter picks, Esc closes"
-	if g.options {
-		title, hint = "OPTIONS", "Enter changes, Esc goes back"
-		if g.follow {
-			hint = "Enter changes, Esc closes"
-		}
+	items, title, hint := g.menuItems(), "PAUSED", "Enter picks, Esc closes"
+	switch {
+	case g.confirm != nil:
+		title, hint = g.confirm.q, "Enter picks, Esc goes back"
+	case g.page != "":
+		title, hint = strings.ToUpper(g.page), "Enter or Left / Right change, Esc goes back"
 	}
 	if Window != nil {
 		Window(screen, title, append(items, "", hint), g.sel, false)
@@ -2190,13 +2238,13 @@ var (
 	msgUntil float64
 )
 
-// Options are the settings on the Options page.
+// Options are the settings on the Esc menu's pages.
 type Options struct {
-	Smooth, Fluid, Haze, Dither, Fullscreen, SmoothMonsters, NormalMaps, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
-	Torch                                                                          float64
-	Speed                                                                          float64 // walk and turn speed, minSpeed to maxSpeed times the normal
-	MapOff, MapSmall                                                               bool    // the host's minimap: hidden; half its size
-	MapAlpha                                                                       float64 // the minimap's opacity, minAlpha to 1
+	Smooth, Fluid, Dither, Fullscreen, LightMaps bool // Fluid: a held key walks or turns on without slowing at each cell
+	Torch                                        float64
+	Speed                                        float64 // walk and turn speed, minSpeed to maxSpeed times the normal
+	MapOff, MapSmall                             bool    // the host's minimap: hidden; half its size
+	MapAlpha                                     float64 // the minimap's opacity, minAlpha to 1
 }
 
 const minAlpha = 0.2
@@ -2206,9 +2254,9 @@ const minSpeed, maxSpeed = 0.5, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Haze: true, Dither: true, SmoothMonsters: true, LightMaps: true, Torch: 1, Speed: 1, MapAlpha: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, LightMaps: true, Torch: 1, Speed: 1, MapAlpha: 1}
 	OnSettings func(Options)
-	// Voice, when set, adds a "Voice-over" line to the options: it toggles
+	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
 	// the voice first when toggle, then reports whether it is on.
 	Voice func(toggle bool) bool
 )

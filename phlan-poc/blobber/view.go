@@ -1,11 +1,14 @@
 package blobber
 
-import "gpu"
+import (
+	"gpu"
+	"os"
+)
 
 // View is the renderer for a host that owns the game loop and the rules
 // (the remastered Pool of Radiance): it draws a Scene from a Camera the host
 // moves, into the host's image, and animates each step and turn. Nothing
-// here reads the keyboard but the options page (UpdateOptions).
+// here reads the keyboard but the Esc menu (UpdateOptions).
 //
 // ponytail: one View per process; the scene and camera live in package
 // state shared with Run's Game. Make them per-View when two views must
@@ -98,21 +101,29 @@ func (v *View) Flow(held, ready bool) bool {
 // Fluid reports whether held keys are paced by Flow.
 func (v *View) Fluid() bool { return Settings.Fluid && v.g.smooth }
 
-// OpenOptions shows Blobber's options page (smooth movement, speed, the
-// look); while OptionsOpen, UpdateOptions reads the keyboard for it.
-func (v *View) OpenOptions() { v.g.menu, v.g.options, v.g.sel = true, true, 0 }
+// OpenOptions opens the Esc (pause) menu at its root; while OptionsOpen,
+// UpdateOptions reads the keyboard and the gamepads for it.
+func (v *View) OpenOptions() {
+	v.g.menu, v.g.page, v.g.confirm, v.g.sel = true, "", nil, 0
+	pollPads(0) // a pad button held from opening it counts as pressed only once it goes down again
+}
 
-// OptionsOpen reports whether the options page is up.
+// OptionsOpen reports whether the Esc menu is up.
 func (v *View) OptionsOpen() bool { return v.g.menu }
 
-// UpdateOptions runs the options page for one frame: arrows and Enter
-// change settings, Esc closes it.
+// UpdateOptions runs the Esc menu for one frame: arrows and Enter pick and
+// change, Esc goes back to the root or closes it. Quit exits the program.
 func (v *View) UpdateOptions() {
+	pollPads(0)
 	if KeyJustPressed(gpu.KeyEscape) {
-		v.g.menu = false
+		if !v.g.back() {
+			v.g.menu = false
+		}
 		return
 	}
-	v.g.updateMenu()
+	if v.g.updateMenu() {
+		os.Exit(0)
+	}
 }
 
 // Update advances the animation by one tick (1/60 s).
