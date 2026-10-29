@@ -519,9 +519,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	var g gpu.GeoM
 	g.Translate(float64(split-1)*8, 0) // the boxes share the divider
 	drawBorder(inv.img, t, g, cw-split+1, ch-1)
-	if shop {
-		inv.money(in, rr)
+	if shop { // the headings on the top border, the party's money on the bottom one
+		inv.onBorder(lx, 0, true, []string{"Shop"}, []color.RGBA{white})
+		inv.onBorder(rr, (ch-1)*8-8, false, []string{strconv.Itoa(in.Gold) + "g", strconv.Itoa(in.Copper) + "c"}, []color.RGBA{col(14), col(6)})
 	}
+	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
 	if box != nil { // over the borders, in the middle
 		inv.panel(t, box, func(w, h int) image.Point { return image.Pt((inv.w-w)/2/8*8, (inv.h-h)/2/8*8) })
 	} else if !inv.dragging {
@@ -583,20 +585,29 @@ func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bott
 	}
 }
 
-// money writes the party's gold and copper on the top border, at the
-// right box's right end.
-func (inv *inventory) money(in *engine.Inventory, rr int) {
-	g, c := strconv.Itoa(in.Gold)+"g", strconv.Itoa(in.Copper)+"c"
-	w := 8 * (len(g) + len(c) + 3)
+// onBorder draws texts in their colours, a space apart on black, over
+// the borders with the right end at x (left end when left), at row y.
+func (inv *inventory) onBorder(x, y int, left bool, texts []string, cols []color.RGBA) {
+	n := len(texts) + 1
+	for _, t := range texts {
+		n += len(t)
+	}
+	w := 8 * n
 	px := image.NewRGBA(image.Rect(0, 0, w, 8))
 	draw.Draw(px, px.Rect, image.Black, image.Point{}, draw.Src)
-	drawText(px, inv.glyph, g, 8, 0, col(14))
-	drawText(px, inv.glyph, c, 8*(len(g)+2), 0, col(6))
+	at := 8
+	for i, t := range texts {
+		drawText(px, inv.glyph, t, at, 0, cols[i])
+		at += 8 * (len(t) + 1)
+	}
 	m := gpu.NewImage(w, 8)
 	defer m.Deallocate()
 	m.WritePixels(px.Pix)
+	if !left {
+		x -= w
+	}
 	op := &gpu.DrawImageOptions{}
-	op.GeoM.Translate(float64(rr-w), 0)
+	op.GeoM.Translate(float64(x), float64(y))
 	inv.img.DrawImage(m, op)
 }
 
