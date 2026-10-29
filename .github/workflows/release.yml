@@ -23,12 +23,30 @@ jobs:
           - { os: windows-latest, target: windows-amd64 }
           - { os: macos-latest, target: macos-universal }
     runs-on: ${{ matrix.os }}
+    outputs:
+      gameimport: ${{ steps.gi.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
-      - name: wgpu fork (go.mod replaces github.com/gogpu/wgpu with ../gogpu-wgpu)
-        run: git clone --depth 1 https://github.com/memmaker/wgpu.git ../gogpu-wgpu
+      - name: Sibling repos go.mod replaces (../gogpu-wgpu, ../goffi, ../goplay/third_party/gogpu)
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.RETRO_WARE_TOKEN }} # read access to the private retro-ware repos
+        run: |
+          git clone --depth 1 https://github.com/memmaker/wgpu.git ../gogpu-wgpu
+          git clone --depth 1 https://github.com/memmaker/goffi.git ../goffi
+          git clone --depth 1 "https://x-access-token:$TOKEN@github.com/retro-ware/goplay.git" ../goplay
+      - id: gi
+        name: gameimport, its latest release tag (go.mod replaces it with ../gameimport; the importer ships beside por)
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.RETRO_WARE_TOKEN }}
+        run: |
+          git clone "https://x-access-token:$TOKEN@github.com/retro-ware/gameimport.git" ../gameimport
+          tag=$(git -C ../gameimport describe --tags --abbrev=0)
+          git -C ../gameimport checkout -q "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -42,14 +60,20 @@ jobs:
           out=por-go-${TAG}-${{ matrix.target }}
           mkdir "$out"
           case "${{ matrix.target }}" in
-            windows-*) go build -trimpath -ldflags "-s -w -H windowsgui" -o "$out/por.exe" ./cmd/por ;;
+            windows-*)
+              go build -trimpath -ldflags "-s -w -H windowsgui" -o "$out/por.exe" ./cmd/por
+              (cd ../gameimport && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -H windowsgui" -o "$OLDPWD/$out/gameimport.exe" ./cmd/gameimport) ;;
             macos-*)
               CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o por-arm64 ./cmd/por
               CGO_ENABLED=1 GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o por-amd64 ./cmd/por
-              lipo -create -output "$out/por" por-arm64 por-amd64 ;;
-            *) go build -trimpath -ldflags "-s -w" -o "$out/por" ./cmd/por ;;
+              lipo -create -output "$out/por" por-arm64 por-amd64
+              for a in arm64 amd64; do (cd ../gameimport && CGO_ENABLED=0 GOARCH=$a go build -trimpath -ldflags "-s -w" -o "$OLDPWD/gameimport-$a" ./cmd/gameimport); done
+              lipo -create -output "$out/gameimport" gameimport-arm64 gameimport-amd64 ;;
+            *)
+              go build -trimpath -ldflags "-s -w" -o "$out/por" ./cmd/por
+              (cd ../gameimport && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$OLDPWD/$out/gameimport" ./cmd/gameimport) ;;
           esac
-          cp README.md "$out/"; [ -f LICENSE ] && cp LICENSE "$out/" || true
+          cp README.md import.toml "$out/"; [ -f LICENSE ] && cp LICENSE "$out/" || true
           if [ "${{ runner.os }}" = Windows ]; then 7z a -bd "$out.zip" "$out" >/dev/null; echo "ASSET=$out.zip" >> "$GITHUB_ENV"
           else tar czf "$out.tar.gz" "$out"; echo "ASSET=$out.tar.gz" >> "$GITHUB_ENV"; fi
       - uses: actions/upload-artifact@v4
@@ -66,6 +90,7 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
+          GAMEIMPORT_TAG: ${{ needs.build.outputs.gameimport }}
         run: |
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" \
-            --notes "Binaries for Windows, macOS (universal) and Linux. No game data is included: bring your own copy of the game, see the README." *.zip *.tar.gz
+            --notes "Binaries for Windows, macOS (universal) and Linux. No game data is included: run gameimport (${GAMEIMPORT_TAG}) beside por to bring in your own copy of the game, see the README." *.zip *.tar.gz

@@ -17,7 +17,7 @@ if [ ! -f START.EXE ]; then
 fi
 mkdir -p bin
 go build -o bin/por ./cmd/por
-data=bin/amiga
+data=bin/amiga/data
 mkdir -p "$data"
 for f in "$root"/*; do # every run, so new files show up too
 	[ -f "$f" ] && ln -sf "$f" "$data/"
@@ -28,4 +28,4 @@ if [ "$1" = remaster ]; then
 	shift
 	export POR_REMASTER=1
 fi
-exec bin/por -data "$data" "$@"
+cd bin/amiga && exec ../por "$@" # por reads ./data

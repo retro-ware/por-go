@@ -1,6 +1,6 @@
 // Command por runs Pool of Radiance on top of the original data files.
 //
-//	por [-data DIR] [-scale N]
+//	por [-scale N]
 //
 // Gamepad (standard layout): D-pad or left stick move and turn, A picks the
 // highlighted menu item, B is Escape, LB/RB move the menu highlight, LT/RT
@@ -12,16 +12,17 @@
 // the right button is Escape. "?" lists the keys; F1-F8 open the inventory
 // of party member 1-8.
 //
-// DIR must hold the DOS game files (TITLE.DAX, 8X8D1.DAX, GAME data ...);
-// it defaults to $GOPLAY_DATA, else the parent of the executable's module
-// directory, i.e. the folder this source tree sits in. With -import SRC
-// (used by the goplay web page) the install found under SRC is copied into
-// DIR with a COVER.PNG, and the program exits.
+// The DOS game files (TITLE.DAX, 8X8D1.DAX, GAME data ...) are read from
+// data/ in the working directory; gameimport (shipped beside por, driven by
+// import.toml) puts them there. With -import SRC -data DIR (goplay setup) the
+// install found under SRC is copied into DIR with a COVER.PNG, and the
+// program exits.
 package main
 
 import (
 	"blobber"
 	"flag"
+	"fmt"
 	"image"
 	"image/png"
 	"log"
@@ -45,7 +46,7 @@ type game struct {
 	scr      *ega.Screen
 	eng      *engine.Engine
 	remaster remaster.Presenter
-	queue    []uint16           // keys still to send, one each time the engine waits (sendKeys)
+	queue    []uint16 // keys still to send, one each time the engine waits (sendKeys)
 
 	pads    []gpu.GamepadID // input buffers, reused each tick
 	pressed []gpu.Key
@@ -54,11 +55,11 @@ type game struct {
 	stickDir  uint16 // left stick direction being held
 	stickHeld int    // ticks it has been held
 
-	dsf   float64      // device scale factor of the last Layout
+	dsf   float64       // device scale factor of the last Layout
 	pic   remaster.Rect // where the picture is drawn, in device pixels
-	wheel float64      // wheel movement not yet sent as a step
-	sent  bool         // input went to the engine this tick
-	ticks int          // Update calls, counted only for POR_SHOT
+	wheel float64       // wheel movement not yet sent as a step
+	sent  bool          // input went to the engine this tick
+	ticks int           // Update calls, counted only for POR_SHOT
 }
 
 // tps: Update runs 120 times a second, so a key waits at most ~8 ms before
@@ -402,11 +403,18 @@ func biosKey(k gpu.Key) (uint16, bool) {
 var speaker, voice *oto.Player // kept from the garbage collector
 
 func main() {
-	dir := flag.String("data", os.Getenv("GOPLAY_DATA"), "directory with the original game files")
+	dir := flag.String("data", "", "where -import and -import-disk2 write (goplay)")
 	scale := flag.Int("scale", 3, "window scale")
 	imp := flag.String("import", "", "copy the game found under this directory into -data, then exit (goplay)")
 	imp2 := flag.String("import-disk2", "", "convert the Amiga graphics from the .adf disks under this directory into -data/DISK2, then exit (goplay)")
+	cover := flag.Bool("cover", false, "write data/COVER.PNG from data/TITLE.DAX, then exit (gameimport)")
 	flag.Parse()
+	if *cover {
+		if err := writeCover("data"); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if *imp2 != "" {
 		if *dir == "" {
 			log.Fatal("-import-disk2 needs -data")
@@ -425,18 +433,13 @@ func main() {
 		}
 		return
 	}
-	if _, err := os.Stat(filepath.Join("data", "TITLE.DAX")); *dir == "" && err == nil {
-		*dir = "data" // goplay: started in games/por with no arguments
-	}
-	if *dir == "" {
-		exe, _ := os.Executable()
-		*dir = filepath.Dir(exe)
-		if _, err := os.Stat(filepath.Join(*dir, "TITLE.DAX")); err != nil {
-			*dir = filepath.Join("..")
-		}
+	if _, err := os.Stat(filepath.Join("data", "TITLE.DAX")); err != nil {
+		wd, _ := os.Getwd()
+		fmt.Fprintf(os.Stderr, "No Pool of Radiance data in %s.\nRun gameimport, or copy the DOS game files (TITLE.DAX, 8X8D1.DAX, ...) there yourself.\n", filepath.Join(wd, "data"))
+		os.Exit(1)
 	}
 	scr := ega.New()
-	eng, err := engine.New(*dir, scr)
+	eng, err := engine.New("data", scr)
 	if err != nil {
 		log.Fatal(err)
 	}

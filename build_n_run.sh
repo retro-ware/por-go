@@ -32,4 +32,5 @@ if [ "$1" = remaster ]; then
 	export POR_REMASTER=1
 fi
 go build -o bin/por ./cmd/por
-exec bin/por -data "$root" "$@"
+ln -sfn "$root" bin/data # por reads ./data
+cd bin && exec ./por "$@"

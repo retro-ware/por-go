@@ -1,0 +1,21 @@
+# Read by gameimport (shipped beside por): it asks for the game and copies it into data/.
+game = "Pool of Radiance"
+
+[[source]]
+name     = "Pool of Radiance for DOS"
+describe = "The SSI DOS release: its folder, the floppies' files, a zip, a CD image or the GOG installer."
+markers  = ["TITLE.DAX", "8X8D1.DAX"]
+exclude  = ["SKY.DAX", "BIGPIC1.DAX"] # Curse of the Azure Bonds
+files    = ["*.DAX", "POOL.CFG", "ITEMS", "SAVE/*", "FONTS/*.F8"]
+dest     = "data"
+upper    = true
+run      = ["./por", "-cover"]
+
+[[source]]
+name     = "the Amiga disks"
+optional = true
+describe = "The Amiga release's .adf disk images (loose or zipped). por then shows the Amiga graphics and plays its sound."
+markers  = ["*.ADF"]
+files    = ["*.ADF"]
+dest     = "data/ADF"
+run      = ["./por", "-import-disk2", "data/ADF", "-data", "data"]
