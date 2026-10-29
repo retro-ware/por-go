@@ -47,14 +47,14 @@ var hotkeys = map[string]struct {
 	key   uint16
 	label string
 }{"Attack": {'f', "F"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
-	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Yes": {'y', "Y"}, "No": {'n', "N"}} // Cancel: Esc, unshown
+	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Flee": {'r', "R"}, "Yes": {'y', "Y"}, "No": {'n', "N"}} // Cancel: Esc, unshown
 
 // leftArrow is the glyph drawn for "\x1b" (Backspace): the game's font has none.
 var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
 
 // actWords are the bar's words for the turn's actions.
 var actWords = map[engine.ActKind]string{engine.ActAttack: "Attack", engine.ActGuard: "Guard", engine.ActItems: "Items",
-	engine.ActCast: "Cast", engine.ActTurn: "Turn", engine.ActBandage: "Bandage", engine.ActWait: "Wait", engine.ActEnd: "End", engine.ActQuick: "Quick"}
+	engine.ActCast: "Cast", engine.ActTurn: "Turn", engine.ActBandage: "Bandage", engine.ActWait: "Wait", engine.ActEnd: "End", engine.ActQuick: "Quick", engine.ActFlee: "Flee"}
 
 // hotkey is the button whose hotkey is k (nil: none).
 func (b *bar) hotkey(k uint16) *barItem {

@@ -175,8 +175,24 @@ func (e *Engine) playerTurn(c *Character) {
 			done = true
 		case ActEnd: // Done's Quit
 			done = e.clearCombatInfo(c)
+		case ActFlee: // moveAttack (ovr09:09DF): a step off the map, "Flee:" answered Yes
+			if d := e.fleeDir(c); d >= 0 && e.ask("Flee?") {
+				e.combatTurn(c, byte(d), 0, false)
+				done = e.tryFlee(c)
+			}
 		}
 	}
+}
+
+// fleeDir is a direction in which c's next step leaves the map (moveAttack
+// offers Flee there), or -1.
+func (e *Engine) fleeDir(c *Character) int {
+	for d := 0; d < 8; d++ {
+		if who, g := e.groundAt(c, d); who == 0 && g == 0 {
+			return d
+		}
+	}
+	return -1
 }
 
 // turnChoices = ovr09:0666 (combatMenu)'s offer, published as the View's
@@ -216,6 +232,9 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	can(ActWait)
 	can(ActEnd)
 	can(ActQuick)
+	if ci.Moves > 1 && e.fleeDir(c) >= 0 {
+		can(ActFlee)
+	}
 	reach := map[[2]int][]int{}
 	if ci.Moves > 0 {
 		reach = e.moveReach(c)

@@ -34,6 +34,7 @@ const (
 	ActAim             // combat, aiming: take square X, Y
 	ActPoint           // combat, aiming: the pointer is on square X, Y (the preview follows)
 	ActYes             // combat: yes to Battle.Ask (ActClose: no)
+	ActFlee            // combat: step off the map's edge and try to run away (Turn offers it at the edge)
 )
 
 // Action is one thing the player did on a remastered screen.
