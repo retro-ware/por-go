@@ -1,11 +1,11 @@
 event0:
-	Save 11 Scratch6
-	if Hours >= 14: Save 8 Scratch6
-	Save Scratch6 Sky
-	Save 10 SkyInside
+	Scratch6 = 11
+	if Hours >= 14: Scratch6 = 8
+	Sky = Scratch6
+	SkyInside = 10
 	if LeftMap == 0: Exit
-	Save 253 QuestZhentilOutpost
-	Save 255 Portrait
+	QuestZhentilOutpost = 253
+	Portrait = 255
 	NewECL Mountains
 
 Table994C:
@@ -24,16 +24,16 @@ event1:
 	if AlarmLevel != 0: Goto AlarmCheck
 
 CellDispatch:
-	And Cell 127 Scratch7
-	OnGoto Scratch7 6 Done EscortIn RestrictedGuards QuartersEnter ClimbableWall DwarfAttackCheck
+	Scratch7 = Cell & 127
+	OnGoto Scratch7 Done EscortIn RestrictedGuards QuartersEnter ClimbableWall DwarfAttackCheck
 
 AlarmCheck:
 	if OutpostConquered != 0: Goto CellDispatch
-	Random 14 Scratch1
+	Scratch1 = Random 14
 	if Scratch1 >= AlarmLevel: Goto CellDispatch
-	Mul 5 AlarmLevel Scratch1
-	Add 1 AlarmLevel AlarmLevel
-	Save 57 Portrait
+	Scratch1 = 5 * AlarmLevel
+	AlarmLevel += 1
+	Portrait = 57
 	if Scratch1 > 30: Goto DwarfAndCommandant
 	if Scratch1 == 10 {
 		PrintClear "THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS."
@@ -54,21 +54,21 @@ EscortIn:
 	if EscortedIn != 0: Goto FrontGateCheck
 	PrintClear "YOU ARE BEING ESCORTED INTO ZHENTIL OUTPOST."
 	Gosub PressReturn
-	Save 0 Scratch6
-	Save 128 EscortedIn
+	Scratch6 = 0
+	EscortedIn = 128
 
 EscortStep:
-	GetTable RouteStepTable Scratch6 Scratch1
-	GetTable DestFacing Scratch6 Facing
+	Scratch1 = RouteStepTable[Scratch6]
+	Facing = DestFacing[Scratch6]
 	Gosub WalkSteps
-	GetTable Table994C Scratch6 Scratch1
-	OnGoto Scratch1 7 TourNothing TourInnerWall TourToKeep CommandantOffice TourBarracks TourWatchTowers TourQuarters
+	Scratch1 = Table994C[Scratch6]
+	OnGosub Scratch1 TourNothing TourInnerWall TourToKeep CommandantOffice TourBarracks TourWatchTowers TourQuarters
 	if Scratch1 == 6: Goto Done
-	Add 1 Scratch6 Scratch6
+	Scratch6 += 1
 	Goto EscortStep
 
 WalkSteps:
-	Save 1 Scratch2
+	Scratch2 = 1
 	if Scratch1 == 0 {
 		Call CallRedraw
 		Delay
@@ -77,26 +77,26 @@ WalkSteps:
 
 WalkStepLoop:
 	if Scratch2 > Scratch1: Return
-	OnGoto Facing 4 StepNorth StepEast StepSouth StepWest
+	OnGosub Facing StepNorth StepEast StepSouth StepWest
 	Call CallRedraw
 	Delay
-	Add 1 Scratch2 Scratch2
+	Scratch2 += 1
 	Goto WalkStepLoop
 
 StepNorth:
-	Sub 1 PartyY PartyY
+	PartyY -= 1
 	Return
 
 StepEast:
-	Add 1 PartyX PartyX
+	PartyX += 1
 	Return
 
 StepSouth:
-	Add 1 PartyY PartyY
+	PartyY += 1
 	Return
 
 StepWest:
-	Sub 1 PartyX PartyX
+	PartyX -= 1
 
 TourNothing:
 	Return
@@ -117,11 +117,11 @@ CommandantOffice:
 	Gosub PressReturn
 	PrintClear "AFTER SKIMMING THROUGH THE PAPERS THE COMMANDANT SAYS, 'I WELCOME YOU AND HOPE YOU WILL JOIN ME FOR DINNER TONIGHT.'  HE TELLS A GUARD TO GIVE YOU A TOUR OF THE OUTPOST."
 	Gosub PressReturn
-	Save 1 InvitedToDinner
+	InvitedToDinner = 1
 	Return
 
 TourBarracks:
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=1 body=6
 	PrintClear "THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'"
 	RedrawView
@@ -143,37 +143,37 @@ TourQuarters:
 	SetupMonster Fighter16 distance=1 closeup=6
 	PrintClear "THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES."
 	RedrawView
-	Save 255 Portrait
+	Portrait = 255
 	Return
 
 RestrictedGuards:
+	alias Choice = Scratch1
 	if QuestZhentilOutpost != 0 || AttackedGuards != 0: Goto Done
 	if NightInQuarters == 1: Goto Done
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=0 body=6
 	PrintClear "THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?"
-	HMenu Scratch1 3 "RETURN" "ATTACK" "BRIBE"
-	OnGoto Scratch1 3 BackToQuarters AttackGuards AngeredGuards
+	Choice = Menu "RETURN" -> BackToQuarters "ATTACK" -> AttackGuards "BRIBE" -> AngeredGuards
 
 BackToQuarters:
 	PrintClear "YOU GO BACK TO YOUR QUARTERS."
-	Save 5 PartyX
-	Save 0 PartyY
-	Save 1 Facing
+	PartyX = 5
+	PartyY = 0
+	Facing = 1
 	Call CallRedraw
 	Goto Done
 
 AngeredGuards:
+	alias Choice = Scratch1
 	PrintClear "YOU'VE ANGERED THE GUARDS.  THEY DEMAND THAT YOU RETURN TO YOUR QUARTERS.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "GO BACK INSIDE." "ATTACK GUARDS."
-	OnGoto Scratch1 2 BackToQuarters AttackGuards
+	Choice = Menu "GO BACK INSIDE." -> BackToQuarters "ATTACK GUARDS." -> AttackGuards
 
 AttackGuards:
-	Save 0 AlarmFightScore
+	AlarmFightScore = 0
 	PrintClear "YOU ATTACK THE GUARDS.  THE GUARDS SOUND AN ALARM AND ATTACK."
-	Save 1 AttackedGuards
-	Save 75 Morale
-	Save 57 Portrait
+	AttackedGuards = 1
+	Morale = 75
+	Portrait = 57
 	SetupMonster Fighter16 distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
@@ -187,21 +187,21 @@ FleeStopped:
 	Goto GuardWaveFight
 
 SurrenderOrDie:
+	alias Choice = Scratch1
 	SetupMonster Fighter16 distance=2 closeup=6
 	PrintClear "MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "SURRENDER" "ATTACK"
-	OnGoto Scratch1 2 Surrender GuardWaveFight
+	Choice = Menu "SURRENDER" -> Surrender "ATTACK" -> GuardWaveFight
 
 Surrender:
 	PrintClear "YOU SURRENDER.  THEY STRIP YOU OF ALL POSSESSIONS AND TOSS YOU OUT INTO THE WILDERNESS.'"
 
 StripAndExpel:
 	Rob 1 100 255
-	Save 255 Portrait
+	Portrait = 255
 	NewECL Mountains
 
 GuardWaveFight:
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
@@ -209,7 +209,7 @@ GuardWaveFight:
 	LoadMonster Corporal count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto RunForGate
-	Add 20 AlarmFightScore AlarmFightScore
+	AlarmFightScore += 20
 	if AlarmFightScore >= 40: Goto Done
 	PrintClear "MORE GUARDS RUSH UP TO ATTACK."
 	Goto GuardWaveFight
@@ -220,7 +220,7 @@ DwarfAttackCheck:
 DwarfAndCommandant:
 	if OutpostConquered != 0: Exit
 	PrintClear "A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK"
-	Save 13 Portrait
+	Portrait = 13
 	SetupMonster SmallFighter distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
@@ -229,10 +229,10 @@ DwarfAndCommandant:
 	LoadMonster Corporal count=12 icon=11
 	LoadMonster Guard count=25 icon=11
 	Combat
-	Save 1 OutpostFought
+	OutpostFought = 1
 	if CombatEnd > 128: Goto RunForGate
 	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
-	Save 255 Portrait
+	Portrait = 255
 	SetupMonster Fighter16 distance=2 closeup=50
 	Gosub ApproachTwice
 	ClearMonsters
@@ -243,16 +243,16 @@ DwarfAndCommandant:
 	Combat
 	if CombatEnd > 128: Goto RunForGate
 	PrintClear "AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY."
-	Save 1 QuestZhentilOutpost
-	Save 1 OutpostConquered
+	QuestZhentilOutpost = 1
+	OutpostConquered = 1
 	Goto Done
 
 RunForGate:
-	Save 7 PartyX
-	Save 0 PartyY
-	Save 0 Facing
+	PartyX = 7
+	PartyY = 0
+	Facing = 0
 	Call CallRedraw
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=2 body=11
 	PrintClear "YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS."
 	ClearMonsters
@@ -267,31 +267,32 @@ CaughtFleeing:
 	Goto StripAndExpel
 
 QuartersEnter:
+	alias Choice = Scratch1
 	if GivenQuarters != 1: Goto RelaxOrWalk
 	if NightInQuarters != 0: Goto Done
-	Save 1 NightInQuarters
+	NightInQuarters = 1
 	PrintClear "IT IS NIGHT AND YOU ARE IN YOUR QUARTERS."
 	Delay
-	VMenu Scratch1 "HOW DO YOU SPEND THE NIGHT?" 2 "GOTO SLEEP" "SLEEP WITH A WATCH"
-	OnGoto Scratch1 2 SleepNoWatch SleepWithWatch
+	Choice = VMenu "HOW DO YOU SPEND THE NIGHT?" "GOTO SLEEP" "SLEEP WITH A WATCH"
+	OnGoto Choice SleepNoWatch SleepWithWatch
 
 SleepNoWatch:
 	Delay
-	Add 2 Hours Hours
+	Hours += 2
 	PrintClear "YOU ARE ATTACKED BY FOUR GUARDS IN YOUR SLEEP"
 	Damage 1 8 4 8 53
-	Save 80 Morale
+	Morale = 80
 	Goto NightAmbush
 
 SleepWithWatch:
 	Delay
-	Add 2 Hours Hours
+	Hours += 2
 	PrintClear "YOU WAIT IN YOUR ROOM FOR ABOUT TWO HOURS WHEN SUDDENLY FOUR ARMED GUARDS BURST IN AND ATTACK YOU."
 	Gosub PressReturn
-	Save 70 Morale
+	Morale = 70
 
 NightAmbush:
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=0 body=6
 	ClearMonsters
 	LoadMonster Aides count=4 icon=11
@@ -300,15 +301,15 @@ NightAmbush:
 	Goto MoreMenAttack
 
 NightFleeGuards:
-	Save 3 Facing
-	Save 1 Scratch1
+	Facing = 3
+	Scratch1 = 1
 	Gosub WalkSteps
 	PrintClear "YOU RUN INTO SOME MORE GUARDS."
 	Goto SecondWaveFight
 
 MoreMenAttack:
 	PrintClear "AS YOU DEFEAT THE GUARDS SOME MORE MEN RUN IN AND ATTACK."
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=0 body=6
 	ClearMonsters
 
@@ -318,21 +319,21 @@ SecondWaveFight:
 	Combat
 	if CombatEnd > 128: Goto RanAndHid
 	PrintClear "AN ALARM GOES OFF IN THE DISTANCE."
-	Save 1 AlarmLevel
+	AlarmLevel = 1
 	Goto Done
 
 RanAndHid:
 	PrintClear "YOU MANAGE TO RUN AWAY AND HIDE.  YOU HEAR AN ALARM IN THE DISTANCE AS GUARDS ARE ISSUING OUT OF BARRACKS."
-	Save 3 PartyX
-	Save 12 PartyY
+	PartyX = 3
+	PartyY = 12
 	Call CallRedraw
-	Save 1 AlarmLevel
+	AlarmLevel = 1
 	Goto Done
 
 RelaxOrWalk:
+	alias Choice = Scratch1
 	PrintClear "YOU ARE IN YOUR QUARTERS.  WILL YOU WALK AROUND OR WILL YOU JUST RELAX UNTIL DINNER?"
-	HMenu Scratch1 2 "WALK AROUND" "RELAX"
-	OnGoto Scratch1 2 Done EscortToDinner
+	Choice = Menu "WALK AROUND" -> Done "RELAX" -> EscortToDinner
 	Exit // extra: the original runs on into data at A6C9
 
 WalkStepTable:
@@ -342,16 +343,17 @@ WalkFacingTable:
 	Data 3 2 2 1 1 2 2 3 3 2 2
 
 EscortToDinner:
-	Save 14 Hours
-	Save 8 Sky
+	Hours = 14
+	Sky = 8
 	PrintClear "AT DUSK A GUARD COMES BY TO ESCORT YOU TO DINNER."
-	Save 0 Scratch6
+	Scratch6 = 0
 
 DinnerWalkStep:
-	GetTable WalkStepTable Scratch6 Scratch1
-	GetTable WalkFacingTable Scratch6 Facing
+	alias WalkStep = Scratch1
+	WalkStep = WalkStepTable[Scratch6]
+	Facing = WalkFacingTable[Scratch6]
 	Gosub WalkSteps
-	Add 1 Scratch6 Scratch6
+	Scratch6 += 1
 	if Scratch6 <= 10: Goto DinnerWalkStep
 	ShowPortrait 255 50
 	PrintClear "YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE."
@@ -359,40 +361,40 @@ DinnerWalkStep:
 	PrintClear "THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?"
 
 DinnerTopicMenu:
-	HMenu Scratch1 4 "NOTHING" "CITY" "MAGIC" "POLITICS"
-	OnGoto Scratch1 4 TopicNothing TopicCity TopicMagic TopicPolitics
+	alias Choice = Scratch1
+	Choice = Menu "NOTHING" -> TopicNothing "CITY" -> TopicCity "MAGIC" -> TopicMagic "POLITICS" -> TopicPolitics
 
 TopicCity:
+	alias Choice = Scratch1
 	PrintClear "ARE YOU GOING TO TALK ABOUT NEW OR OLD PHLAN?"
-	HMenu Scratch1 2 "NEW" "OLD"
-	OnGoto Scratch1 2 TalkNewPhlan TalkOldPhlan
+	Choice = Menu "NEW" -> TalkNewPhlan "OLD" -> TalkOldPhlan
 
 TopicNothing:
+	alias Choice = Scratch1
 	if TopicsDiscussed != 0: Goto ConversationDies
 	PrintClear "THE CONVERSATION BEGINS TO DIE DOWN.  THE COMMANDANT  STARTS A CONVERSATION BY SAYING 'WELL, ARE YOU HAVING MUCH TROUBLE WITH THE CREATURES FROM OLD PHLAN?'"
-	HMenu Scratch1 2 "TALK" "SAY LITTLE OR NOTHING"
-	OnGoto Scratch1 2 TalkOldPhlan ConversationDies
+	Choice = Menu "TALK" -> TalkOldPhlan "SAY LITTLE OR NOTHING" -> ConversationDies
 
 ConversationDies:
 	PrintClear "THE CONVERSATION COMPLETELY DIES AND EVERYONE IS STARING AT EACH OTHER.  THE COMMANDANT EXCUSES HIMSELF AND LEAVES.  A GUARD TAKES YOU BACK TO YOUR QUARTERS."
 	Goto EscortToQuarters
 
 TyranthraxusTrouble:
+	alias Choice = Scratch1
 	PrintClear "THE COMMANDANT SAYS 'I EXPECT THERE WOULD BE TROUBLE; I'VE HEARD TYRANTHRAXUS IS A POWERFUL FIRE DEMON.  YOUR CITY'S DEFENCES MUST BE QUITE STRONG, HOW STRONG ARE THEY?'"
-	HMenu Scratch1 4 "DON'T TALK" "STRONG" "AVERAGE" "WEAK"
-	OnGoto Scratch1 4 NoAnswer ForcesStrong ForcesAverage ForcesWeak
+	Choice = Menu "DON'T TALK" -> NoAnswer "STRONG" -> ForcesStrong "AVERAGE" -> ForcesAverage "WEAK" -> ForcesWeak
 
 NoTyranthraxusTrouble:
+	alias Choice = Scratch1
 	PrintClear "THE COMMANDANT IS SURPRISED THAT YOUR CITY IS HAVING NO TROUBLE WITH TYRANTHRAXUS.  HE THEN SAYS, 'YOUR TOWN DEFENSES MUST BE STRONG IN ORDER TO HANDLE HIM.  HOW STRONG ARE THEY?'"
-	HMenu Scratch1 4 "DON'T TALK" "STRONG" "AVERAGE" "WEAK"
-	OnGoto Scratch1 4 NoAnswer ForcesStrong ForcesAverage ForcesWeak
+	Choice = Menu "DON'T TALK" -> NoAnswer "STRONG" -> ForcesStrong "AVERAGE" -> ForcesAverage "WEAK" -> ForcesWeak
 
 TalkNewPhlan:
+	alias Choice = Scratch1
 	if TalkedNewPhlan != 0: Goto ConversationStale
-	Save 1 TalkedNewPhlan
+	TalkedNewPhlan = 1
 	PrintClear "AS YOU TALK ABOUT NEW PHLAN THE COMMANDANT LISTENS CAREFULLY.  THE COMMANDANT SAYS 'IS IT TRUE THAT THE REAL POWER IN NEW PHLAN IS BISHOP BRACCIO?'"
-	HMenu Scratch1 3 "YES" "NO" "DON'T KNOW"
-	OnGoto Scratch1 3 BraccioIsPower BraccioNotPower DontKnowAnswer
+	Choice = Menu "YES" -> BraccioIsPower "NO" -> BraccioNotPower "DON'T KNOW" -> DontKnowAnswer
 
 BraccioIsPower:
 	PrintClear "YOU SAY THAT BISHOP BRACCIO IS THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'PHLAN MUST BE A CITY OF FOOLS IF A BISHOP OF TYR HAS POWER!'"
@@ -407,27 +409,27 @@ DontKnowAnswer:
 	Goto TopicDone
 
 TalkOldPhlan:
+	alias Choice = Scratch1
 	if TalkedOldPhlan != 0: Goto ConversationStale
-	Save 1 TalkedOldPhlan
+	TalkedOldPhlan = 1
 	PrintClear "AS YOU TALK ABOUT OLD PHLAN'S INHABITANTS THE COMMANDANT SAYS 'I KNOW A LEGEND ABOUT A FIRE BEING CALLED TIRANTIKUS.  I BELIEVE, THAT TIRANTIKUS AND TYRANTHRAXUS ARE ONE AND THE SAME'."
 	Gosub PressReturn
 	PrintClear "YOU CONTINUE TO TALK ABOUT OLD PHLAN AND THE COMMANDANT SAYS 'IS NEW PHLAN HAVING ANY TROUBLE WITH TYRANTHRAXUS?'"
-	HMenu Scratch1 3 "DON'T TALK" "TROUBLE" "NO TROUBLE"
-	OnGoto Scratch1 3 TopicNothing TyranthraxusTrouble NoTyranthraxusTrouble
+	Choice = Menu "DON'T TALK" -> TopicNothing "TROUBLE" -> TyranthraxusTrouble "NO TROUBLE" -> NoTyranthraxusTrouble
 
 TopicMagic:
+	alias Choice = Scratch1
 	if AdvisorAsked != 0: Goto ConversationStale
-	Save 1 AdvisorAsked
+	AdvisorAsked = 1
 	PrintClear "ONE OF THE COMMANDANT'S ADVISORS ASKS YOU IF YOU'VE HEARD OF ANY UNIQUE MAGICAL ITEMS OR PLACES?"
-	HMenu Scratch1 3 "DON'T TALK" "LIE" "MENTION POOL OF RADIANCE"
-	OnGoto Scratch1 3 TopicNothing LieAboutMagic MentionPool
+	Choice = Menu "DON'T TALK" -> TopicNothing "LIE" -> LieAboutMagic "MENTION POOL OF RADIANCE" -> MentionPool
 
 TopicPolitics:
+	alias Choice = Scratch1
 	if TalkedPolitics != 0: Goto ConversationStale
-	Save 1 TalkedPolitics
+	TalkedPolitics = 1
 	PrintClear "AS YOU MENTION POLITICS THE COMMANDANT SAYS 'I'VE HEARD THAT PHLAN'S TOWN COUNCIL IS CORRUPT, SPECIFICALLY ULRICH EBERHARD.  IS THIS TRUE?"
-	HMenu Scratch1 3 "YES" "NO" "DON'T KNOW"
-	OnGoto Scratch1 3 EberhardCorrupt EberhardHonest DontKnowAnswer
+	Choice = Menu "YES" -> EberhardCorrupt "NO" -> EberhardHonest "DON'T KNOW" -> DontKnowAnswer
 
 EberhardCorrupt:
 	PrintClear "YOU SAY THAT ULRICH EBERHARD IS CORRUPT AND HE RESPONDS BY SAYING 'I WOULD ADVISE YOU TO BE CAREFUL WHEN DEALING WITH THE TOWN COUNCIL.'"
@@ -465,7 +467,7 @@ TopicDone:
 	Gosub PressReturn
 	if TopicsDiscussed == 2: Goto CommandantLeaves
 	PrintClear "YOU CONTINUE YOUR CONVERSATION WITH THE COMMANDANT.  WHAT WILL BE YOUR NEXT TOPIC OF DISSCUSION?"
-	Add 1 TopicsDiscussed TopicsDiscussed
+	TopicsDiscussed += 1
 	Goto DinnerTopicMenu
 
 ConversationStale:
@@ -483,23 +485,24 @@ QuartersFacingTable:
 	Data 0 1 1 0 0 3 3 0 0 1 1
 
 EscortToQuarters:
-	Save 0 Scratch6
-	Save 1 GivenQuarters
+	Scratch6 = 0
+	GivenQuarters = 1
 
 QuartersWalkStep:
-	GetTable QuartersStepTable Scratch6 Scratch1
-	GetTable QuartersFacingTable Scratch6 Facing
+	alias QuartersStep = Scratch1
+	QuartersStep = QuartersStepTable[Scratch6]
+	Facing = QuartersFacingTable[Scratch6]
 	Gosub WalkSteps
-	Add 1 Scratch6 Scratch6
+	Scratch6 += 1
 	if Scratch6 <= 10: Goto QuartersWalkStep
 	PrintClear "YOU ARRIVE BACK AT YOUR QUARTERS."
 	Delay
 	Goto QuartersEnter
 
 ClimbableWall:
+	alias Choice = Scratch1
 	PrintClear "THE WALL IS CLIMBABLE HERE, WILL YOU SCALE OVER IT?"
-	HMenu Scratch1 2 "CLIMB OVER WALL" "LEAVE"
-	OnGoto Scratch1 2 ClimbOverWall Done
+	Choice = Menu "CLIMB OVER WALL" -> ClimbOverWall "LEAVE" -> Done
 
 ClimbOverWall:
 	PrintClear "YOU CLIMB OVER THE WALL AND LEAVE THE OUTPOST."
@@ -508,13 +511,13 @@ ClimbOverWall:
 FrontGateCheck:
 	if QuestZhentilOutpost != 0: Goto NearFrontGate
 	if ReachedGate != 0: Goto Done
-	Save 1 ReachedGate
+	ReachedGate = 1
 	PrintClear "THE COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE!"
 	Gosub PressReturn
-	Random 99 Scratch1
+	Scratch1 = Random 99
 	if Scratch1 >= 75: Goto NearFrontGate
 	PrintClear "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Fighter16 distance=2 body=6
 	Gosub ApproachTwice
 	ClearMonsters
@@ -539,12 +542,13 @@ ApproachTwice:
 	Return
 
 LeaveOutpost:
-	Save 253 QuestZhentilOutpost
-	Save 255 Portrait
+	QuestZhentilOutpost = 253
+	Portrait = 255
 	NewECL Mountains
 
 PressReturn:
-	HMenu Scratch8 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	alias Choice = Scratch8
+	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	Return
 
 event2:
@@ -552,41 +556,41 @@ event2:
 	if AttackedGuards == 0: Goto RestCheckNight
 
 RestAlarmed:
-	Save 100 RestChance
-	Save 1 RestEvery
+	RestChance = 100
+	RestEvery = 1
 	Exit
 
 RestCheckNight:
 	if QuestZhentilOutpost != 0: Goto RestNormal
 	if NightInQuarters != 0: Goto RestAlarmed
-	Save 168 RestEvery
-	Save 100 RestChance
+	RestEvery = 168
+	RestChance = 100
 	Exit
 
 RestNormal:
-	Save 0 RestEvery
-	Save 1 RestChance
+	RestEvery = 0
+	RestChance = 1
 	Exit
 
 event3:
-	Save 0 RestChance
+	RestChance = 0
 	if NightInQuarters == 0: Goto EscortToDinner
-	Save 57 Portrait
+	Portrait = 57
 	Goto GuardsSpotYou
 
 event4:
-	Save 11 Scratch6
-	LoadPieces 1 2 9
-	LoadFiles 28 2 255
-	if Hours >= 14: Save 8 Scratch6
-	Save Scratch6 Sky
-	Save 10 SkyInside
-	Save 0 NoCoords
+	Scratch6 = 11
+	LoadWalls 1 2 9
+	LoadMap 28 unused=2 icons=255
+	if Hours >= 14: Scratch6 = 8
+	Sky = Scratch6
+	SkyInside = 10
+	NoCoords = 0
 	if AreaKind == 28: Exit
-	Save 7 PartyX
-	Save 0 PartyY
-	Save 2 Facing
-	Save 2 EntryPoint
+	PartyX = 7
+	PartyY = 0
+	Facing = 2
+	EntryPoint = 2
 	Call CallRedraw
-	Save 0 Hours
+	Hours = 0
 	Exit

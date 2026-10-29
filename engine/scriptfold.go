@@ -47,6 +47,7 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 	var out []srcLine
 	var last []string // the last test's operands and its kind ("Compare" or "CompareAnd")
 	inBlock, guard := false, ""
+	alias := map[string]string{} // the section's
 	for n, line := range strings.Split(text, "\n") {
 		n++
 		toks, err := scriptTokens(line)
@@ -60,9 +61,21 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 			if inBlock {
 				return nil, fmt.Errorf("%d: a label inside an if block", n)
 			}
+			alias = map[string]string{}
 			out = append(out, srcLine{n: n, toks: toks[:1], label: true})
 			continue
 		}
+		if toks[0] == "alias" {
+			if len(toks) != 4 || toks[2] != "=" {
+				return nil, fmt.Errorf("%d: want alias Name = Variable", n)
+			}
+			if _, ok := alias[toks[3]]; ok {
+				return nil, fmt.Errorf("%d: alias of an alias", n)
+			}
+			alias[toks[1]] = toks[3]
+			continue
+		}
+		unalias(toks, alias)
 		emit := func(t ...string) { out = append(out, srcLine{n: n, toks: t}) }
 		// the command parts of the line, split at ; { }
 		for len(toks) > 0 {
@@ -124,7 +137,7 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 					emit(guard)
 					emit(c...)
 				}
-				if slices.Contains(flagSetters, toks[0]) {
+				if slices.ContainsFunc(expandMacro(toks[:i], names), func(c []string) bool { return slices.Contains(flagSetters, c[0]) }) {
 					last = nil
 				}
 				toks = toks[i:]
@@ -133,7 +146,9 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 				if i < 0 {
 					i = len(toks)
 				}
-				if slices.Contains(flagSetters, t) || strings.HasPrefix(t, "If") {
+				if slices.ContainsFunc(expandMacro(toks[:i], names), func(c []string) bool {
+					return slices.Contains(flagSetters, c[0]) || strings.HasPrefix(c[0], "If")
+				}) {
 					last = nil // the flags are no longer the last if's
 				}
 				for _, c := range expandMacro(toks[:i], names) {
@@ -157,7 +172,12 @@ func unfoldScript(text string, names *ScriptNames) ([]srcLine, error) {
 //	SetMapXY X Y      Save X MapX, Save Y MapY
 //	EnterArea Name    Save <its set> SymbolSet, NewECL Name
 //	ShowPortrait H B  Save H Portrait, Picture B (a HEAD and BODY picture)
+//
+// and the assignments (scriptassign.go).
 func expandMacro(c []string, names *ScriptNames) [][]string {
+	if a := expandAssign(c); a != nil {
+		return a
+	}
 	switch {
 	case c[0] == "SetMapXY" && len(c) == 3:
 		return [][]string{{"Save", c[1], "MapX"}, {"Save", c[2], "MapY"}}
@@ -342,7 +362,7 @@ func foldScript(text string, names *ScriptNames) string {
 		}
 		i = j - 1
 	}
-	return strings.Join(nameValues(foldMacros(out, names.Areas), names), "\n") + "\n"
+	return strings.Join(aliasScratch(assignLines(foldMenus(nameValues(foldMacros(out, names.Areas), names)))), "\n") + "\n"
 }
 
 // nameValues writes the numbers of the commands' operands of a kind

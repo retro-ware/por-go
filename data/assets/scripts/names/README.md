@@ -19,4 +19,5 @@ scripts, and also:
 
 A command's operand of a kind (`LoadMonster`'s monster and icon,
 `Picture`, `SetupMonster`'s sprite and picture, `FindItem`'s item,
-`ShowPortrait`'s head and body) reads as the name of its value.
+`ShowPortrait`'s head and body, `LoadMap`'s map, `LoadWalls`' wall sets)
+reads as the name of its value. `../README.md` explains the commands.

@@ -1,7 +1,7 @@
 event0:
 	if InLair == 255: Exit
 	if MapY <= 2: Gosub NorthEdgeHold
-	OnGoto FacingRaw 8 CheckBlockedMove CheckEastEdge CheckEastEdge CheckEastEdge CheckBlockedMove CheckWestEdge CheckWestEdge CheckWestEdge
+	OnGoto FacingRaw CheckBlockedMove CheckEastEdge CheckEastEdge CheckEastEdge CheckBlockedMove CheckWestEdge CheckWestEdge CheckWestEdge
 
 CheckEastEdge:
 	if MapX == 15: Gosub EastEdgeExit
@@ -15,85 +15,85 @@ CheckBlockedMove:
 	Exit
 
 NorthEdgeHold:
-	OnGoto FacingRaw 8 HoldMoving HoldMoving NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit HoldMoving
+	OnGoto FacingRaw HoldMoving HoldMoving NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit HoldMoving
 
 HoldMoving:
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 EastEdgeExit:
-	OnGoto FacingRaw 8 NoEdgeExit ExitToArea27 ExitToArea27 EastEdgeRowCheck NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit
+	OnGoto FacingRaw NoEdgeExit ExitToArea27 ExitToArea27 EastEdgeRowCheck NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit
 
 NoEdgeExit:
 	Return
 
 ExitToArea27:
-	Save 3 MapX
+	MapX = 3
 	EnterArea Quagmire
 
 WestEdgeExit:
-	OnGoto FacingRaw 8 NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit WestEdgeRowCheck ExitToArea25 ExitToArea25
+	OnGoto FacingRaw NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit WestEdgeRowCheck ExitToArea25 ExitToArea25
 
 ExitToArea25:
-	Save 14 MapX
+	MapX = 14
 	EnterArea Mountains
 
 EastEdgeRowCheck:
 	if MapY != 25: Goto ExitToArea27
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 WestEdgeRowCheck:
 	if MapY != 31: Goto ExitToArea25
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 ProbeAheadBlocked:
-	Save MapX ProbeX
-	Save MapY ProbeY
-	OnGoto FacingRaw 8 ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
+	ProbeX = MapX
+	ProbeY = MapY
+	OnGosub FacingRaw ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
 	Call CallUnknownC01B
-	Save 0 Scratch1
-	Save 28 Scratch3
-	if Boss >= 254: Save 19 Scratch3
+	Scratch1 = 0
+	Scratch3 = 28
+	if Boss >= 254: Scratch3 = 19
 
 ProbeTableLoop:
 	if Scratch1 > Scratch3: Return
-	GetTable MapEventTable1 Scratch1 Scratch2
-	if Scratch3 == 19: GetTable MapEventTable2 Scratch1 Scratch2
+	Scratch2 = MapEventTable1[Scratch1]
+	if Scratch3 == 19: Scratch2 = MapEventTable2[Scratch1]
 	if ProbeWall == Scratch2 {
-		Save 255 HoldMove
+		HoldMove = 255
 		Return
 	}
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Goto ProbeTableLoop
 
 ProbeNW:
-	Sub 1 ProbeX ProbeX
+	ProbeX -= 1
 
 ProbeN:
-	Sub 1 ProbeY ProbeY
+	ProbeY -= 1
 	Return
 
 ProbeNE:
-	Sub 1 ProbeY ProbeY
+	ProbeY -= 1
 
 ProbeE:
-	Add 1 ProbeX ProbeX
+	ProbeX += 1
 	Return
 
 ProbeSE:
-	Add 1 ProbeX ProbeX
+	ProbeX += 1
 
 ProbeS:
-	Add 1 ProbeY ProbeY
+	ProbeY += 1
 	Return
 
 ProbeSW:
-	Add 1 ProbeY ProbeY
+	ProbeY += 1
 
 ProbeW:
-	Sub 1 ProbeX ProbeX
+	ProbeX -= 1
 	Return
 
 event1:
@@ -105,131 +105,136 @@ event1:
 	Goto RiverOpened
 
 FindSite:
-	Save 0 Scratch4
-	Save 0 Scratch1
+	Scratch4 = 0
+	Scratch1 = 0
 
 SiteRowLoop:
+	alias SiteY = Scratch2
+	alias SiteRange = Scratch3
 	if Scratch1 >= 9: Goto RandomEncounterCheck
-	GetTable SiteRangeTable Scratch1 Scratch3
-	GetTable SiteYTable Scratch1 Scratch2
-	if Scratch2 == MapY: Goto SiteRowFound
-	Add 1 Scratch1 Scratch1
-	Add Scratch3 Scratch4 Scratch4
+	SiteRange = SiteRangeTable[Scratch1]
+	SiteY = SiteYTable[Scratch1]
+	if SiteY == MapY: Goto SiteRowFound
+	Scratch1 += 1
+	Scratch4 += SiteRange
 	Goto SiteRowLoop
 
 SiteRowFound:
-	Add Scratch4 Scratch3 Scratch3
+	Scratch3 += Scratch4
 
 SiteColumnLoop:
+	alias SiteX = Scratch5
 	if Scratch4 >= Scratch3: Goto RandomEncounterCheck
-	GetTable SiteXTable Scratch4 Scratch5
-	if Scratch5 == MapX: Goto SiteDispatch
-	Add 1 Scratch4 Scratch4
+	SiteX = SiteXTable[Scratch4]
+	if SiteX == MapX: Goto SiteDispatch
+	Scratch4 += 1
 	Goto SiteColumnLoop
 
 SiteDispatch:
-	GetTable SiteKindTable Scratch4 Scratch1
-	OnGoto Scratch1 8 AbandonedCamp NomadCampEvent CityNorthEdge CityEastEdge CityWestEdge HiddenRowboat PyramidFront BoatHome
+	alias SiteKind = Scratch1
+	SiteKind = SiteKindTable[Scratch4]
+	OnGoto SiteKind AbandonedCamp NomadCampEvent CityNorthEdge CityEastEdge CityWestEdge HiddenRowboat PyramidFront BoatHome
 
 AbandonedCamp:
 	if CampFound != 0: Goto Done
 	PrintClear "YOU FIND A RECENTLY ABBANDONED CAMP."
-	Save 1 CampFound
+	CampFound = 1
 	Goto Done
 
 NomadCampEvent:
+	alias Choice = Scratch1
 	if NomadCampSeen != 0: Goto Done
 	ClearBox
 	Call CallClearView
 	Picture Forest
-	Save 1 Mark4Off
+	Mark4Off = 1
 	PrintClear "YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?"
-	HMenu Scratch1 2 "ENTER" "LEAVE"
-	OnGoto Scratch1 2 EnterNomadCamp Done
+	Choice = Menu "ENTER" -> EnterNomadCamp "LEAVE" -> Done
 
 EnterNomadCamp:
 	Gosub Enter3DSetup
 	NewECL NomadCamp
 
 CityNorthEdge:
+	alias Choice = Scratch1
 	ClearBox
 	Call CallClearView
 	Picture Harbor
 	PrintClear "YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?"
-	HMenu Scratch1 3 "CITY" "GRAVEYARD" "LEAVE"
-	OnGoto Scratch1 3 EnterNorthGate EnterGraveyard Done
+	Choice = Menu "CITY" -> EnterNorthGate "GRAVEYARD" -> EnterGraveyard "LEAVE" -> Done
 
 EnterNorthGate:
 	Gosub Enter3DSetup
-	Save 4 PartyX
-	Save 0 PartyY
-	Save 2 Facing
+	PartyX = 4
+	PartyY = 0
+	Facing = 2
 	EnterArea CadornaTextileHouse
 
 EnterGraveyard:
 	Gosub Enter3DSetup
-	Save 0 PartyX
-	Save 4 PartyY
-	Save 3 Facing
+	PartyX = 0
+	PartyY = 4
+	Facing = 3
 	EnterArea ValhingenGraveyard
 
 CityEastEdge:
+	alias Choice = Scratch1
 	ClearBox
 	Call CallClearView
 	Picture Harbor
 	PrintClear "YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?"
-	HMenu Scratch1 4 "NORTH" "SOUTH" "BOAT" "LEAVE"
-	OnGoto Scratch1 4 EnterEastNorth EnterEastSouth BoatToCivilized Done
+	Choice = Menu "NORTH" -> EnterEastNorth "SOUTH" -> EnterEastSouth "BOAT" -> BoatToCivilized "LEAVE" -> Done
 
 EnterEastNorth:
 	Gosub Enter3DSetup
-	Save 15 PartyX
-	Save 4 PartyY
-	Save 3 Facing
+	PartyX = 15
+	PartyY = 4
+	Facing = 3
 	EnterArea CadornaTextileHouse
 
 EnterEastSouth:
 	Gosub Enter3DSetup
-	Save 15 PartyX
-	Save 4 PartyY
-	Save 3 Facing
+	PartyX = 15
+	PartyY = 4
+	Facing = 3
 	EnterArea TempleOfBane
 
 BoatToCivilized:
 	Gosub Enter3DSetup
-	Save 15 PartyX
-	Save 1 PartyY
-	Save 3 Facing
+	PartyX = 15
+	PartyY = 1
+	Facing = 3
 	EnterArea NewPhlan
 
 CityWestEdge:
+	alias Choice = Scratch1
 	ClearBox
 	Call CallClearView
 	Picture Harbor
 	PrintClear "YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?"
-	HMenu Scratch1 3 "NORTH" "SOUTH" "LEAVE"
-	OnGoto Scratch1 3 EnterWestNorth EnterWestSouth Done
+	Choice = Menu "NORTH" -> EnterWestNorth "SOUTH" -> EnterWestSouth "LEAVE" -> Done
 
 EnterWestNorth:
 	Gosub Enter3DSetup
-	Save 0 PartyX
-	Save 4 PartyY
-	Save 3 Facing
+	PartyX = 0
+	PartyY = 4
+	Facing = 3
 	EnterArea PodolPlaza
 
 EnterWestSouth:
 	Gosub Enter3DSetup
-	Save 0 PartyX
-	Save 4 PartyY
-	Save 3 Facing
+	PartyX = 0
+	PartyY = 4
+	Facing = 3
 	EnterArea HobgoblinBarracks
 
 HiddenRowboat:
+	alias Choice = Scratch1
 	PrintClear "YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 PyramidFront Done
+	Choice = Menu "YES" -> PyramidFront "NO" -> Done
 
 PyramidFront:
+	alias Choice = Scratch1
 	SetMapXY 6 16
 	Call CallRedraw
 	Delay
@@ -237,82 +242,83 @@ PyramidFront:
 	Call CallClearView
 	Picture Pyramid
 	PrintClear "YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ENTER" "GO BACK"
-	OnGoto Scratch1 2 EnterPyramid PyramidGoBack
+	Choice = Menu "ENTER" -> EnterPyramid "GO BACK" -> PyramidGoBack
 
 EnterPyramid:
 	Gosub Enter3DSetup
 	NewECL LizardManSwamp
 
 PyramidGoBack:
-	Save 14 MapY
+	MapY = 14
 	Call CallRedraw
 	Picture None
 	Goto Done
 
 BoatHome:
+	alias Choice = Scratch1
 	ClearBox
 	Call CallClearView
 	Picture Ship
 	PrintClear "THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?"
-	HMenu Scratch1 2 "TAKE BOAT" "STAY"
-	OnGoto Scratch1 2 BoatToCivilized Done
+	Choice = Menu "TAKE BOAT" -> BoatToCivilized "STAY" -> Done
 
 Enter3DSetup:
 	Picture None
 	ClearBox
-	Save 1 In3D
-	Save 127 WallSlot1
-	Save 127 WallSlot1B
-	Save 127 WallSlot2
-	Save 127 WallSlot2B
-	Save 127 WallSlot3
-	Save 127 WallSlot3B
-	LoadFiles 127 127 127
+	In3D = 1
+	WallSlot1 = 127
+	WallSlot1B = 127
+	WallSlot2 = 127
+	WallSlot2B = 127
+	WallSlot3 = 127
+	WallSlot3B = 127
+	LoadMap Unchanged unused=127 icons=127
 	Return
 
 RandomEncounterCheck:
 	if MapX == 6 && MapY == 16: Exit
-	Random 19 Scratch1
-	Save 0 ForcedEncounter
+	Scratch1 = Random 19
+	ForcedEncounter = 0
 	if Scratch1 != 0: Goto Done
 
 StartEncounter:
+	alias SurpriseTable1Entry = Scratch4
+	alias SurpriseTable2Entry = Scratch5
 	Gosub PickEncounter
 	if Scratch1 == 20 && ForcedEncounter == 0: Goto LairFound
-	GetTable SurpriseTable1 EncounterKind Scratch4
-	GetTable SurpriseTable2 EncounterKind Scratch5
+	SurpriseTable1Entry = SurpriseTable1[EncounterKind]
+	SurpriseTable2Entry = SurpriseTable2[EncounterKind]
 	PartySurprise Scratch1 Scratch2
-	Surprise Scratch1 Scratch2 Scratch4 Scratch5
-	if Scratch5 == 9: And Surprise 1 Surprise
-	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseThem FaceToFace
+	Surprise Scratch1 Scratch2 SurpriseTable1Entry SurpriseTable2Entry
+	if SurpriseTable2Entry == 9: Surprise = Surprise & 1
+	OnGoto Surprise SpotGroup PartySurprised SurpriseThem FaceToFace
 
 SpotGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 4 "" "" "" AuxEncTemp AuxEncTemp
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 PartySurprised:
 	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 99 99
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 SurpriseThem:
 	PrintClear "YOU SURPRISE A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 2 2 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 FaceToFace:
 	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 EncounterFight:
-	Save AuxEncResult2 Morale
+	Morale = AuxEncResult2
 	ClearMonsters
 	LoadMonster AuxMonster count=MonsterCount icon=AuxTemp9
 	if LeaderCount == 0: Goto EncounterCombat
@@ -328,10 +334,10 @@ EncounterParlay:
 	if AuxMember == 0: Goto EncounterFight
 	if AuxMember == 50: Goto FriendlyGreet
 	Parlay 30 30 30 5 60 Scratch1
-	Random 30 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	Add Scratch1 SelReaction Scratch1
-	Add Scratch1 AuxEncBonus Scratch1
+	Scratch2 = Random 30
+	Scratch1 = Scratch1 + Scratch2
+	Scratch1 = Scratch1 + SelReaction
+	Scratch1 = Scratch1 + AuxEncBonus
 	if Scratch1 < 140: Goto ParlayConvince
 	PrintClear "THE "
 	Print $AuxMonsterName
@@ -363,67 +369,66 @@ FriendlyGreet:
 	Goto Done
 
 LairFound:
-	Random 2 Scratch6
+	alias Choice = Scratch1
+	Scratch6 = Random 2
 	if Scratch6 == 1: Goto RuinedHuts
 	PrintClear "YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?"
-	HMenu Scratch1 2 "ENTER" "LEAVE"
-	OnGoto Scratch1 2 EnterLair Done
+	Choice = Menu "ENTER" -> EnterLair "LEAVE" -> Done
 
 RuinedHuts:
+	alias Choice = Scratch1
 	PrintClear "YOU HAVE FOUND SOME RUINED HUTS.  WILL YOU INVESTIGATE?"
-	HMenu Scratch1 2 "INVESTIGATE" "LEAVE"
-	OnGoto Scratch1 2 EnterLair Done
+	Choice = Menu "INVESTIGATE" -> EnterLair "LEAVE" -> Done
 
 EnterLair:
-	Save 255 InLair
-	OnGoto Scratch6 3 LairStartA LairStartB LairStartC
+	InLair = 255
+	OnGoto Scratch6 LairStartA LairStartB LairStartC
 
 LairStartA:
-	Save 2 LairStartX26
-	Save 3 LairStartY26
+	LairStartX26 = 2
+	LairStartY26 = 3
 	Goto LairLoad
 
 LairStartB:
-	Save 10 LairStartX26
-	Save 13 LairStartY26
+	LairStartX26 = 10
+	LairStartY26 = 13
 	Goto LairLoad
 
 LairStartC:
-	Save 13 LairStartX26
-	Save 6 LairStartY26
+	LairStartX26 = 13
+	LairStartY26 = 6
 
 LairLoad:
-	Save 1 In3D
-	Save MapX SavedMapX
-	Save MapY SavedMapY
-	Save 135 WallSlot1
-	Save 135 WallSlot1B
-	Save 136 WallSlot2
-	Save 136 WallSlot2B
-	Save 151 WallSlot3
-	Save 151 WallSlot3B
-	LoadFiles 26 2 255
-	Save 11 SkyInside
-	Save LairStartX26 PartyX
-	Save LairStartY26 PartyY
+	In3D = 1
+	SavedMapX = MapX
+	SavedMapY = MapY
+	WallSlot1 = 135
+	WallSlot1B = 135
+	WallSlot2 = 136
+	WallSlot2B = 136
+	WallSlot3 = 151
+	WallSlot3B = 151
+	LoadMap 26 unused=2 icons=255
+	SkyInside = 11
+	PartyX = LairStartX26
+	PartyY = LairStartY26
 	ClearBox
 	Call CallRedraw
 	NewECL Wilderness
 
 LairCellDispatch:
-	And Cell 127 Scratch10
-	OnGoto Scratch10 11 Done GroveEdge SplashingPool DisplacerAmbush ChainedKobolds StenchWest MutantLizardHut LizardHut LargeLizardMen StirgeSwarm LeaveLairAsk
+	Scratch10 = Cell & 127
+	OnGoto Scratch10 Done GroveEdge SplashingPool DisplacerAmbush ChainedKobolds StenchWest MutantLizardHut LizardHut LargeLizardMen StirgeSwarm LeaveLairAsk
 
 GroveEdge:
 	PrintClear "YOU ARE AT THE EDGE OF THE GROVE."
 	Exit
 
 SplashingPool:
-	And LairFightFlags 1 Scratch1
+	Scratch1 = LairFightFlags & 1
 	if 0 != Scratch1: Exit
 	PrintClear "NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?"
-	HMenu Scratch1 2 "APPROACH" "LEAVE"
-	OnGoto Scratch1 2 PoolLizardMen Done
+	Scratch1 = Menu "APPROACH" -> PoolLizardMen "LEAVE" -> Done
 
 PoolLizardMen:
 	SetupMonster Lizardman distance=0 closeup=Lizardman
@@ -432,45 +437,44 @@ PoolLizardMen:
 	ClearMonsters
 	LoadMonster Lizardman count=6 icon=57
 	Combat
-	Or LairFightFlags 1 LairFightFlags
+	LairFightFlags = LairFightFlags | 1
 	Exit
 
 DisplacerAmbush:
-	And LairFightFlags 2 Scratch1
+	Scratch1 = LairFightFlags & 2
 	if 0 != Scratch1: Exit
 	SetupMonster DisplacerBeast distance=0 closeup=DisplacerBeast
 	PrintClear "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
-	Save 1 Surprise
+	Surprise = 1
 	ClearMonsters
 	LoadMonster DisplacerBeast count=2 icon=DisplacerBeast
 	Combat
-	Or LairFightFlags 2 LairFightFlags
+	LairFightFlags = LairFightFlags | 2
 	Exit
 
 ChainedKobolds:
-	And LairFightFlags 4 Scratch1
+	Scratch1 = LairFightFlags & 4
 	if 0 != Scratch1: Exit
 	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
-	HMenu Scratch1 3 "RELEASE" "ATTACK" "LEAVE"
-	OnGoto Scratch1 3 ReleaseKobolds KillKobolds StepBack
+	Scratch1 = Menu "RELEASE" -> ReleaseKobolds "ATTACK" -> KillKobolds "LEAVE" -> StepBack
 
 ReleaseKobolds:
 	PrintClear "YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR."
-	Or 4 LairFightFlags LairFightFlags
+	LairFightFlags = 4 | LairFightFlags
 	Picture None
 	Exit
 
 KillKobolds:
 	PrintClear "YOU COLDLY KILL THE DEFENSELESS KOBOLDS."
-	Or 4 LairFightFlags LairFightFlags
+	LairFightFlags = 4 | LairFightFlags
 
 StenchWest:
 	PrintClear "AN AWFUL STENCH IS COMING FROM THE WEST."
 	Exit
 
 MutantLizardHut:
-	And LairFightFlags 8 Scratch1
+	Scratch1 = LairFightFlags & 8
 	if 0 != Scratch1: Exit
 	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY."
@@ -478,11 +482,11 @@ MutantLizardHut:
 	LoadMonster MutantLizMan count=2 icon=57
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or LairFightFlags 8 LairFightFlags
+	LairFightFlags = LairFightFlags | 8
 	Exit
 
 LizardHut:
-	And LairFightFlags 16 Scratch1
+	Scratch1 = LairFightFlags & 16
 	if 0 != Scratch1: Exit
 	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY."
@@ -490,49 +494,49 @@ LizardHut:
 	LoadMonster Lizardman count=4 icon=57
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or LairFightFlags 16 LairFightFlags
+	LairFightFlags = LairFightFlags | 16
 	Exit
 
 LargeLizardMen:
-	And LairFightFlags 32 LairFightFlags
+	LairFightFlags = LairFightFlags & 32
 	if 0 != LairFightFlags: Exit
 	SetupMonster Lizardman distance=0 closeup=Lizardman
 	PrintClear "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
-	Save 252 MonsterHit
+	MonsterHit = 252
 	ClearMonsters
 	LoadMonster Lizardman count=4 icon=57
 	Combat
-	Save 0 MonsterHit
+	MonsterHit = 0
 	if CombatEnd > 128: Goto StepBack
-	Or LairFightFlags 32 LairFightFlags
+	LairFightFlags = LairFightFlags | 32
 	Exit
 
 StirgeSwarm:
 	if LairRespawnTimer != 0: Goto StirgeTimerTick
 	SetupMonster Stirge distance=0 closeup=Stirge
 	PrintClear "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
-	Random 30 Scratch1
-	if Scratch1 < 6: Save 6 Scratch1
+	Scratch1 = Random 30
+	if Scratch1 < 6: Scratch1 = 6
 	ClearMonsters
 	LoadMonster Stirge count=6 icon=Stirge
 	Combat
-	Save 3 LairRespawnTimer
+	LairRespawnTimer = 3
 	Exit
 
 StirgeTimerTick:
-	if LairRespawnTimer == 1: Save 0 LairRespawnTimer
-	also if LairRespawnTimer != 1: Sub 1 LairRespawnTimer LairRespawnTimer
+	if LairRespawnTimer == 1: LairRespawnTimer = 0
+	also if LairRespawnTimer != 1: LairRespawnTimer -= 1
 	Exit
 
 LeaveLairAsk:
+	alias Choice = Scratch1
 	PrintClear "YOU ARE ABOUT TO LEAVE THIS AREA.  DO YOU WANT TO RETURN?"
-	HMenu Scratch1 2 "RETURN" "LEAVE"
-	OnGoto Scratch1 2 StepBack LeaveLair
+	Choice = Menu "RETURN" -> StepBack "LEAVE" -> LeaveLair
 
 LeaveLair:
-	Save 0 In3D
-	LoadFiles 5 5 0
-	Save 0 InLair
+	In3D = 0
+	LoadMap 5 unused=5 icons=0
+	InLair = 0
 	Call CallRedraw
 	NewECL Wilderness
 
@@ -540,101 +544,102 @@ FightDone:
 	Exit
 
 StepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 
 RedrawExit:
 	Call CallRedraw
 	Exit
 
 PickEncounter:
-	Random 20 Scratch1
+	Scratch1 = Random 20
 	if Scratch1 == 20 && ForcedEncounter == 0: Return
-	Random 17 Scratch1
-	OnGoto Scratch1 18 PickKobolds PickKobolds PickKobolds PickKobolds PickDisplacers PickDisplacers PickDriders PickStirges PickStirges PickStirges PickLizardMen PickLizardMen PickLizardMen PickBandits PickNomads PickNomads PickMerchants PickMerchants
-	GetTable MonsterPicTable EncounterKind AuxTemp9
-	GetTable LeaderPicTable EncounterKind AuxParlay
-	GetTable EncounterParam2 EncounterKind AuxMember
-	GetTable EncounterParam3 EncounterKind AuxRoll
-	GetTable MonsterIdTable EncounterKind AuxMonster
-	GetTable EncounterParam5 EncounterKind AuxEncResult
-	GetTable MoraleTable EncounterKind AuxEncResult2
-	GetTable EncounterParam7 EncounterKind AuxEncTemp
-	GetTable LeaderIdTable EncounterKind AuxPartyStrength
-	GetTable StrengthDivTable EncounterKind AuxCounter
+	Scratch1 = Random 17
+	OnGosub Scratch1 PickKobolds PickKobolds PickKobolds PickKobolds PickDisplacers PickDisplacers PickDriders PickStirges PickStirges PickStirges PickLizardMen PickLizardMen PickLizardMen PickBandits PickNomads PickNomads PickMerchants PickMerchants
+	AuxTemp9 = MonsterPicTable[EncounterKind]
+	AuxParlay = LeaderPicTable[EncounterKind]
+	AuxMember = EncounterParam2[EncounterKind]
+	AuxRoll = EncounterParam3[EncounterKind]
+	AuxMonster = MonsterIdTable[EncounterKind]
+	AuxEncResult = EncounterParam5[EncounterKind]
+	AuxEncResult2 = MoraleTable[EncounterKind]
+	AuxEncTemp = EncounterParam7[EncounterKind]
+	AuxPartyStrength = LeaderIdTable[EncounterKind]
+	AuxCounter = StrengthDivTable[EncounterKind]
 	PartyStrength Scratch1
-	Div Scratch1 AuxCounter Scratch1
-	Random 5 Scratch2
-	OnGoto Scratch2 5 CountThird CountHalf CountHalf CountHalf CountLeaders
+	Scratch1 = Scratch1 / AuxCounter
+	Scratch2 = Random 5
+	OnGoto Scratch2 CountThird CountHalf CountHalf CountHalf CountLeaders
 
 CountThird:
-	Div Scratch1 3 Scratch1
-	if Scratch1 <= 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 3
+	if Scratch1 <= 0: Scratch1 = 1
 	Goto CountLeaders
 
 CountHalf:
-	Div Scratch1 2 Scratch1
-	if Scratch1 <= 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 2
+	if Scratch1 <= 0: Scratch1 = 1
 
 CountLeaders:
-	Save 0 LeaderCount
-	Save Scratch1 Scratch3
-	GetTable LeaderEveryTable EncounterKind AuxMenuChoice
+	LeaderCount = 0
+	Scratch3 = Scratch1
+	AuxMenuChoice = LeaderEveryTable[EncounterKind]
 	if AuxMenuChoice == 0: Goto CapMonsterCount
 
 LeaderLoop:
 	if Scratch3 < AuxMenuChoice: Goto CapMonsterCount
-	Add 1 LeaderCount LeaderCount
-	Sub AuxMenuChoice Scratch3 Scratch3
+	LeaderCount += 1
+	Scratch3 -= AuxMenuChoice
 	Goto LeaderLoop
 
 CapMonsterCount:
-	if Scratch1 >= 56: Sub LeaderCount 56 Scratch1
-	Save Scratch1 MonsterCount
+	if Scratch1 >= 56: Scratch1 = 56 - LeaderCount
+	MonsterCount = Scratch1
 	Return
 
 PickKobolds:
-	Save "KOBOLDS" $AuxMonsterName
-	Save 0 EncounterKind
+	$AuxMonsterName = "KOBOLDS"
+	EncounterKind = 0
 	Return
 
 PickDisplacers:
-	Save "DISPLACER BEASTS" $AuxMonsterName
-	Save 1 EncounterKind
+	$AuxMonsterName = "DISPLACER BEASTS"
+	EncounterKind = 1
 	Return
 
 PickDriders:
-	Save "DRIDERS" $AuxMonsterName
-	Save 2 EncounterKind
+	$AuxMonsterName = "DRIDERS"
+	EncounterKind = 2
 	Return
 
 PickStirges:
-	Save "STIRGES" $AuxMonsterName
-	Save 3 EncounterKind
+	$AuxMonsterName = "STIRGES"
+	EncounterKind = 3
 	Return
 
 PickLizardMen:
-	Save "LIZARD MEN" $AuxMonsterName
-	Save 4 EncounterKind
+	$AuxMonsterName = "LIZARD MEN"
+	EncounterKind = 4
 	Return
 
 PickBandits:
-	Save "BANDITS" $AuxMonsterName
-	Save 5 EncounterKind
+	$AuxMonsterName = "BANDITS"
+	EncounterKind = 5
 	Return
 
 PickNomads:
-	Save "NOMADS" $AuxMonsterName
-	Save 6 EncounterKind
+	$AuxMonsterName = "NOMADS"
+	EncounterKind = 6
 	Return
 
 PickMerchants:
-	Save "MERCHANTS" $AuxMonsterName
-	Save 7 EncounterKind
+	$AuxMonsterName = "MERCHANTS"
+	EncounterKind = 7
 	Return
 
 PressReturn:
-	HMenu Scratch8 1 "HIT <RETURN> OR BUTTON TO CONTINUE"
+	alias Choice = Scratch8
+	Choice = Menu "HIT <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 Done:
@@ -645,40 +650,41 @@ Done:
 	Exit
 
 DrawRiver:
-	Save 0 Scratch1
-	Save 0 Scratch2
-	Save 0 RiverTileIndex
+	Scratch1 = 0
+	Scratch2 = 0
+	RiverTileIndex = 0
 
 RiverDrawBegin:
 	Call CallBeginDraw
-	Save 0 RiverFrame
+	RiverFrame = 0
 
 RiverRowLoop:
+	alias RiverRow = Scratch7
 	if Scratch1 == 36: Goto RiverDrawEnd
-	GetTable RiverRowTable Scratch1 Scratch7
-	Mul 8 Scratch7 &Scratch3
-	Save 0 Scratch6
+	RiverRow = RiverRowTable[Scratch1]
+	&Scratch3 = 8 * RiverRow
+	Scratch6 = 0
 
 RiverTileLoop:
 	if Scratch6 == 8: Goto RiverRowDone
 	if Scratch2 <= 231 {
-		GetTable RiverTileTable Scratch2 Scratch5
-		Add 1 Scratch2 Scratch2
+		Scratch5 = RiverTileTable[Scratch2]
+		Scratch2 += 1
 	}
 	also if Scratch2 > 231 {
-		GetTable RiverTileTable2 RiverTileIndex Scratch5
-		Add 1 RiverTileIndex RiverTileIndex
+		Scratch5 = RiverTileTable2[RiverTileIndex]
+		RiverTileIndex += 1
 	}
-	Add Scratch6 &Scratch3 &RiverTileOffset
-	if RiverOpen == 0: SaveTable Scratch5 MapPatchA &RiverTileOffset
-	SaveTable Scratch5 MapPatchB &RiverTileOffset
-	Add 1 Scratch6 Scratch6
+	&RiverTileOffset = Scratch6 + &Scratch3
+	if RiverOpen == 0: MapPatchA[&RiverTileOffset] = Scratch5
+	MapPatchB[&RiverTileOffset] = Scratch5
+	Scratch6 += 1
 	Goto RiverTileLoop
 
 RiverRowDone:
 	if Scratch1 == 8 && RiverOpen == 0: Goto RiverDrawEnd
 	if RiverState == 1: Gosub RiverAnimFrame
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Goto RiverRowLoop
 
 RiverDrawEnd:
@@ -686,13 +692,13 @@ RiverDrawEnd:
 	Return
 
 RiverAnimFrame:
-	Add 1 RiverFrame RiverFrame
+	RiverFrame += 1
 	if RiverFrame != 2: Return
-	Save 0 DelayCounter
+	DelayCounter = 0
 
 RiverDelayLoop:
 	if DelayCounter == 100: Goto RiverFrameShow
-	Add 1 DelayCounter DelayCounter
+	DelayCounter += 1
 	Goto RiverDelayLoop
 
 RiverFrameShow:
@@ -708,7 +714,7 @@ RiverRowCheck29:
 	Call CallUnknownC009
 
 RiverFrameReset:
-	Save 0 RiverFrame
+	RiverFrame = 0
 	Call CallBeginDraw
 	Return
 
@@ -717,57 +723,57 @@ LandRecovers:
 	Gosub PressReturn
 	SetMapXY 7 17
 	Call CallRedraw
-	Save 9 Scratch1
-	Save 72 Scratch2
-	Save 0 UnknownD015
-	Save 1 RiverState
+	Scratch1 = 9
+	Scratch2 = 72
+	UnknownD015 = 0
+	RiverState = 1
 	Goto RiverDrawBegin
 
 RiverOpened:
-	Save 255 RiverOpen
-	Save 255 RiverState
-	Save 16 MapY
-	Save 6 MapX
+	RiverOpen = 255
+	RiverState = 255
+	MapY = 16
+	MapX = 6
 	Delay
 	Goto PyramidFront
 
 PatchPyramidTiles:
 	if Boss < 254: Goto CheckMarker4
-	Save 5 ProbeX
-	Save 16 ProbeY
-	Save 75 ProbeCell
+	ProbeX = 5
+	ProbeY = 16
+	ProbeCell = 75
 	Call CallLookAhead
-	Save 6 ProbeX
-	Save 16 ProbeY
-	Save 87 ProbeCell
+	ProbeX = 6
+	ProbeY = 16
+	ProbeCell = 87
 	Call CallLookAhead
-	Save 7 ProbeX
-	Save 16 ProbeY
-	Save 22 ProbeCell
+	ProbeX = 7
+	ProbeY = 16
+	ProbeCell = 22
 	Call CallLookAhead
-	Save 5 ProbeX
-	Save 17 ProbeY
-	Save 6 ProbeCell
+	ProbeX = 5
+	ProbeY = 17
+	ProbeCell = 6
 	Call CallLookAhead
-	Save 6 ProbeX
-	Save 17 ProbeY
-	Save 6 ProbeCell
+	ProbeX = 6
+	ProbeY = 17
+	ProbeCell = 6
 	Call CallLookAhead
-	Save 7 ProbeX
-	Save 17 ProbeY
-	Save 10 ProbeCell
+	ProbeX = 7
+	ProbeY = 17
+	ProbeCell = 10
 	Call CallLookAhead
 
 CheckMarker4:
 	if Mark4 != 0: Goto ShowMarker4
-	And MarkFlags4 8 Scratch9
+	Scratch9 = MarkFlags4 & 8
 	if 0 != Scratch9: Goto ShowMarker4
 	if Mark4Off != 0: Return
 
 ShowMarker4:
-	Save 12 ProbeX
-	Save 11 ProbeY
-	Save 57 ProbeCell
+	ProbeX = 12
+	ProbeY = 11
+	ProbeCell = 57
 	Call CallLookAhead
 	Return
 
@@ -832,34 +838,34 @@ LeaderPicTable:
 
 event2:
 	if In3D == 1: Goto NoRest3D
-	Save 10 RestChance
-	Save 96 RestEvery
+	RestChance = 10
+	RestEvery = 96
 	Exit
 
 NoRest3D:
-	Save 0 RestEvery
+	RestEvery = 0
 	Exit
 
 event3:
-	Save 1 ForcedEncounter
+	ForcedEncounter = 1
 	Goto StartEncounter
 
 event4:
 	if InLair == 255: Goto LairSetup
-	Save 0 In3D
-	Save 0 NoCoords
-	LoadFiles 5 5 0
+	In3D = 0
+	NoCoords = 0
+	LoadMap 5 unused=5 icons=0
 	if Boss < 254: Exit
 	Gosub DrawRiver
 	Gosub PatchPyramidTiles
 	Exit
 
 LairSetup:
-	Save 1 In3D
-	Save 255 NoCoords
-	Save 8 SkyInside
-	LoadPieces 7 8 23
-	LoadFiles 26 2 255
+	In3D = 1
+	NoCoords = 255
+	SkyInside = 8
+	LoadWalls 7 8 23
+	LoadMap 26 unused=2 icons=255
 	Exit
 
 RiverRowTable:

@@ -1,92 +1,92 @@
 event0:
-	Save 8 Sky
-	Save 9 SkyInside
+	Sky = 8
+	SkyInside = 9
 	if LeftMap == 0: Goto InsideEnter
-	Save SavedGroundShade SetGroundShade
-	Save 0 WallSplitA
-	Save 0 WallSplitB
+	SetGroundShade = SavedGroundShade
+	WallSplitA = 0
+	WallSplitB = 0
 	EnterArea Wilderness
 
 InsideEnter:
-	Save "THE SPECTRE HAS NOTICED YOU." $AuxMonsterName
-	And 127 Cell Scratch10
+	$AuxMonsterName = "THE SPECTRE HAS NOTICED YOU."
+	Scratch10 = 127 & Cell
 	if MysticManState < 3: Goto VampireBlocksMove
 	Exit
 
 VampireBlocksMove:
 	if VampireState == 255: Exit
-	if Scratch10 == 29 && Facing == 0: Save 255 HoldMove
+	if Scratch10 == 29 && Facing == 0: HoldMove = 255
 	Exit
 
 event1:
-	Save 0 Surprise
-	Save 0 MaxDist
-	Save 101 Morale
-	Save 0 Scratch6
-	And 127 Cell Scratch10
+	Surprise = 0
+	MaxDist = 0
+	Morale = 101
+	Scratch6 = 0
+	Scratch10 = 127 & Cell
 	if VampireState >= 254: Exit
-	Save 0 AuxCounter
+	AuxCounter = 0
 
 FindCellLoop:
 	if AuxCounter == Scratch10: Goto CellDispatch
 	if AuxCounter > 29: Exit
-	Add 1 AuxCounter AuxCounter
+	AuxCounter += 1
 	Goto FindCellLoop
 
 CellDispatch:
-	OnGoto AuxCounter 30 Done Cell1Event SkeletonPatrol SkeletonAmbush GiantSkeletonApproach GiantSkeletonLair ZombiePatrol GiantZombieApproach GiantZombieLair WightPatrol WightBossWarning WightBossApproach WightBossLair BoneTowerView FumesDamage SkeletonLairEntry FurTowerView ClothingChamber ZombieLairEntry Monster114Ambush LightningTowerView GlassChamberSting WightLairEntry BrassDoorsView GiftVoice BlackCrypt MysticManMeet PitStairs VampireLair MysticManHint
+	OnGoto AuxCounter Done Cell1Event SkeletonPatrol SkeletonAmbush GiantSkeletonApproach GiantSkeletonLair ZombiePatrol GiantZombieApproach GiantZombieLair WightPatrol WightBossWarning WightBossApproach WightBossLair BoneTowerView FumesDamage SkeletonLairEntry FurTowerView ClothingChamber ZombieLairEntry Monster114Ambush LightningTowerView GlassChamberSting WightLairEntry BrassDoorsView GiftVoice BlackCrypt MysticManMeet PitStairs VampireLair MysticManHint
 	Exit
 
 event2:
 	if VampireState >= 254: Goto NoRestHere
-	Save 1 RestEvery
-	Save 4 RestChance
+	RestEvery = 1
+	RestChance = 4
 	Exit
 
 NoRestHere:
-	Save 0 RestEvery
-	Save 0 RestChance
+	RestEvery = 0
+	RestChance = 0
 	Exit
 
 event3:
-	Save 0 RestChance
+	RestChance = 0
 	Goto GhoulPack
 
 event4:
-	Save 1 WallSplitA
-	Save 1 WallSplitB
-	LoadFiles 10 2 255
-	LoadPieces 21 22 20
-	Save 8 SetSkyShade
-	if VisitStage == 0: Save SetGroundShade SavedGroundShade
-	Save 11 SetGroundShade
+	WallSplitA = 1
+	WallSplitB = 1
+	LoadMap 10 unused=2 icons=255
+	LoadWalls 21 22 20
+	SetSkyShade = 8
+	if VisitStage == 0: SavedGroundShade = SetGroundShade
+	SetGroundShade = 11
 	Call CallRedraw
-	Save 0 NoCoords
+	NoCoords = 0
 	if VisitStage > 0: Exit
-	Save 72 SoundParamA
-	Save 189 SoundParamB
-	Save 4 PartyY
-	Save 0 PartyX
-	Save 1 Facing
-	Add 1 VisitStage VisitStage
+	SoundParamA = 72
+	SoundParamB = 189
+	PartyY = 4
+	PartyX = 0
+	Facing = 1
+	VisitStage += 1
 	PartyStrength PartyPower
-	Div PartyPower 2 PartyPower
-	if UndeadKillTable < PartyPower: Sub UndeadKillTable PartyPower SkeletonGroup
-	also if UndeadKillTable >= PartyPower: Save 0 SkeletonGroup
-	also if UndeadKillTable == PartyPower: Save 1 SkeletonsGone
-	Save SkeletonGroup SkeletonCount
-	Div PartyPower 2 PartyPower
-	if ZombieStrength < PartyPower: Sub ZombieStrength PartyPower ZombieGroup
-	also if ZombieStrength >= PartyPower: Save 0 ZombieGroup
-	also if ZombieStrength == PartyPower: Save 1 ZombiesGone
-	Save ZombieGroup ZombieCount
-	Div PartyPower 2 PartyPower
-	if WightStrength < PartyPower: Sub WightStrength PartyPower WightGroup
-	also if WightStrength >= PartyPower: Save 0 WightGroup
-	also if WightStrength == PartyPower: Save 1 WightsGone
-	Save WightGroup WightCount
-	Save WightCount WightsTotal
-	if WightGroup > 4: Save 4 WightGroup
+	PartyPower = PartyPower / 2
+	if UndeadKillTable < PartyPower: SkeletonGroup = PartyPower - UndeadKillTable
+	also if UndeadKillTable >= PartyPower: SkeletonGroup = 0
+	also if UndeadKillTable == PartyPower: SkeletonsGone = 1
+	SkeletonCount = SkeletonGroup
+	PartyPower = PartyPower / 2
+	if ZombieStrength < PartyPower: ZombieGroup = PartyPower - ZombieStrength
+	also if ZombieStrength >= PartyPower: ZombieGroup = 0
+	also if ZombieStrength == PartyPower: ZombiesGone = 1
+	ZombieCount = ZombieGroup
+	PartyPower = PartyPower / 2
+	if WightStrength < PartyPower: WightGroup = PartyPower - WightStrength
+	also if WightStrength >= PartyPower: WightGroup = 0
+	also if WightStrength == PartyPower: WightsGone = 1
+	WightCount = WightGroup
+	WightsTotal = WightCount
+	if WightGroup > 4: WightGroup = 4
 	if RestChance == 255: Goto NoRestHere
 
 Done:
@@ -96,33 +96,33 @@ Cell1Event:
 	if VisitStage > 1: Exit
 	PrintClear ""
 	if Hours < 14: Print "THE SKY DARKENS. "
-	Save 8 Sky
+	Sky = 8
 	Call CallRedraw
 	Print "FIERCE GUSTS OF WIND HOWL PAST AND THE GROUND SHAKES AS PEALS OF THUNDER ROCK THE LAND.  THE SWIRLING MURK HIDES WHAT LIES AHEAD."
 	Gosub PressReturn
-	Save 15 Sky
+	Sky = 15
 	Call CallRedraw
-	Save 8 Sky
+	Sky = 8
 	Call CallRedraw
-	Save 10 Sound
+	Sound = 10
 	Call CallSound
 	PrintClear "UNTIL AN EXPLOSION OF LIGHTNING REVEALS THE NIGHTMARE SCENE OF A GRAVEYARD TURNED UPSIDE DOWN."
-	Add 1 VisitStage VisitStage
+	VisitStage += 1
 	Exit
 
 SkeletonPatrol:
 	if UndeadKillTable == 255: Exit
 	if SkeletonGroup == 0: Exit
-	Random 9 Scratch1
+	Scratch1 = Random 9
 	if 8 > Scratch1: Exit
-	Save " SKELETONS." $AuxMonsterName
-	Save SkeletonGroup Scratch7
-	Save 0 Scratch9
+	$AuxMonsterName = " SKELETONS."
+	Scratch7 = SkeletonGroup
+	Scratch9 = 0
 	Goto RandomEncounter
 
 SkeletonsBeaten:
-	Sub Beaten SkeletonGroup SkeletonGroup
-	Add Beaten UndeadKillTable UndeadKillTable
+	SkeletonGroup -= Beaten
+	UndeadKillTable += Beaten
 	Exit
 
 SkeletonAttack:
@@ -134,17 +134,17 @@ SkeletonAttack:
 SkeletonAmbush:
 	if SkeletonAmbushDone > 0: Exit
 	if SkeletonCount == 0: Exit
-	Save 8 Scratch9
+	Scratch9 = 8
 	SetupMonster Skeleton distance=0 closeup=11
 	PrintClear "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
 	Gosub PressReturn
-	Save 34 Scratch5
-	Save 34 Scratch3
-	Save SkeletonCount Scratch7
+	Scratch5 = 34
+	Scratch3 = 34
+	Scratch7 = SkeletonCount
 	Goto StartFight
 
 SkeletonAmbushOver:
-	Add 1 SkeletonAmbushDone SkeletonAmbushDone
+	SkeletonAmbushDone += 1
 	Exit
 
 GiantSkeletonApproach:
@@ -153,24 +153,24 @@ GiantSkeletonApproach:
 	Gosub SkeletonsApproach
 	PrintClear "THE ENCLAVE IS GUARDED BY A SKELETON ARMY!"
 	Gosub PressReturn
-	Save 3 Scratch9
-	Save 1 Scratch6
+	Scratch9 = 3
+	Scratch6 = 1
 	Gosub RandomEncounter
-	Save 15 Scratch7
+	Scratch7 = 15
 	Goto StartFight
 
 GiantSkeletonStep:
-	Add 1 GiantSkeletonState GiantSkeletonState
+	GiantSkeletonState += 1
 	Exit
 
 GiantSkeletonLair:
 	if UndeadKillTable == 255: Goto SkeletonTreasure
 	if GiantSkeletonState > 9: Goto SkeletonTreasure
-	Save 0 Scratch7
+	Scratch7 = 0
 	PrintClear "YOU FIND A GIANT SKELETON"
 	if SkeletonCount < 17: Goto GiantSkeletonFight
 	Print " AND ITS RETAINERS."
-	Save SkeletonCount Scratch7
+	Scratch7 = SkeletonCount
 
 GiantSkeletonFight:
 	Gosub SkeletonsApproach
@@ -180,37 +180,37 @@ GiantSkeletonFight:
 	if Scratch7 != 0: LoadMonster Skeleton count=Scratch7 icon=Skeleton
 	Combat
 	Gosub CheckFled
-	Add 10 GiantSkeletonState GiantSkeletonState
-	Add 1 GiantSkeletonsKilled GiantSkeletonsKilled
+	GiantSkeletonState += 10
+	GiantSkeletonsKilled += 1
 
 SkeletonTreasure:
 	if SkeletonTreasureTaken == 255: Exit
 	if Search != 1: Exit
 	PrintClear "YOU FIND A MARBLE CHEST.  OPEN IT?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 TakeSkeletonTreasure Done
+	OnGoto Scratch1 TakeSkeletonTreasure Done
 
 TakeSkeletonTreasure:
 	ClearMonsters
 	Treasure 0 28 0 69 0 10 12 59 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells
 	Combat
-	Save 255 SkeletonTreasureTaken
+	SkeletonTreasureTaken = 255
 	Exit
 
 ZombiePatrol:
 	if ZombieStrength == 255: Exit
 	if ZombieGroup == 0: Exit
-	Random 9 Scratch1
-	if Search == 1: Add 2 Scratch1 Scratch1
+	Scratch1 = Random 9
+	if Search == 1: Scratch1 += 2
 	if Scratch1 > 7: Exit
-	Save " ZOMBIES." $AuxMonsterName
-	Save ZombieGroup Scratch7
-	Save 1 Scratch9
+	$AuxMonsterName = " ZOMBIES."
+	Scratch7 = ZombieGroup
+	Scratch9 = 1
 	Goto RandomEncounter
 
 ZombiesBeaten:
-	Sub Beaten ZombieGroup ZombieGroup
-	Add Beaten ZombieStrength ZombieStrength
+	ZombieGroup -= Beaten
+	ZombieStrength += Beaten
 	Exit
 
 ZombieAttack:
@@ -225,14 +225,14 @@ GiantZombieApproach:
 	Gosub ZombiesApproach
 	PrintClear "ZOMBIES SHUFFLE DOWN THE STAIRS!"
 	Gosub PressReturn
-	Save 4 Scratch9
-	Save 1 Scratch6
+	Scratch9 = 4
+	Scratch6 = 1
 	Gosub RandomEncounter
-	Save 25 Scratch7
+	Scratch7 = 25
 	Goto StartFight
 
 GiantZombieStep:
-	Add 1 GiantZombieState GiantZombieState
+	GiantZombieState += 1
 	Exit
 
 GiantZombieLair:
@@ -241,46 +241,46 @@ GiantZombieLair:
 	PrintClear "A ZOMBIE WITH GRAY, LEATHERY-HARD SKIN GAZES AT YOU WITH HATE-FILLED EYES."
 	Gosub PressReturn
 	Gosub ZombiesApproach
-	Save 0 Scratch1
-	if ZombieCount >= 16: Save 15 Scratch1
+	Scratch1 = 0
+	if ZombieCount >= 16: Scratch1 = 15
 	ClearMonsters
 	LoadMonster JujuZombie count=1 icon=35
 	if Scratch1 != 0: LoadMonster Zombie count=Scratch1 icon=35
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 10 GiantZombieState GiantZombieState
-	Add 1 GiantZombiesKilled GiantZombiesKilled
+	GiantZombieState += 10
+	GiantZombiesKilled += 1
 
 ZombieTreasure:
 	if ZombieTreasureTaken == 255: Exit
 	PrintClear "VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 TakeZombieTreasure Done
+	OnGoto Scratch1 TakeZombieTreasure Done
 
 TakeZombieTreasure:
 	ClearMonsters
 	Treasure 0 #0122 0 110 0 0 0 28 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Wand of Lightning Bolt, Potion of Healing
 	Combat
-	Save 255 ZombieTreasureTaken
+	ZombieTreasureTaken = 255
 	Exit
 
 WightPatrol:
 	if WightStrength == 255: Exit
 	if WightGroup == 0: Exit
-	Random 9 Scratch1
-	if Search == 1: Add 2 Scratch1 Scratch1
+	Scratch1 = Random 9
+	if Search == 1: Scratch1 += 2
 	if Scratch1 < 8: Exit
-	Save " WIGHTS." $AuxMonsterName
-	Save WightGroup Scratch7
-	Save 2 Scratch9
+	$AuxMonsterName = " WIGHTS."
+	Scratch7 = WightGroup
+	Scratch9 = 2
 	Goto RandomEncounter
 
 WightGroupFight:
-	Add WightGroup WightStrength WightStrength
-	Sub WightGroup WightsTotal WightsTotal
-	Save WightsTotal WightGroup
-	if WightGroup > 4: Save 4 WightGroup
+	WightStrength += WightGroup
+	WightsTotal -= WightGroup
+	WightGroup = WightsTotal
+	if WightGroup > 4: WightGroup = 4
 	Exit
 
 WightAttack:
@@ -298,11 +298,11 @@ WightBossWarning:
 	Gosub PressReturn
 	PrintClear "DO YOU LEAVE?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 BackAwayFromWights WightBossApproach
+	OnGoto Scratch1 BackAwayFromWights WightBossApproach
 
 BackAwayFromWights:
-	Save 14 PartyX
-	Save 3 Facing
+	PartyX = 14
+	Facing = 3
 	Exit
 
 WightBossApproach:
@@ -311,29 +311,29 @@ WightBossApproach:
 	Gosub WightsApproach
 	Gosub PressReturn
 	PrintClear "YOU ARE ATTACKED BY WIGHTS."
-	Save 5 Scratch9
-	Save 1 Scratch6
+	Scratch9 = 5
+	Scratch6 = 1
 	Gosub RandomEncounter
-	Save 4 Scratch7
+	Scratch7 = 4
 	Goto StartFight
 
 WightBossStep:
-	Add 1 WightBossState WightBossState
+	WightBossState += 1
 	Exit
 
 WightBossLair:
+	alias Choice = Scratch1
 	if WightBossState > 9: Goto WightTreasure
 	if WightStrength == 255: Goto WightTreasure
 	SetupMonster Ghost distance=1 closeup=Ghost
 	Approach
 	PrintClear "IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?"
-	HMenu Scratch1 2 "LEAVE" "STAY"
-	OnGoto Scratch1 2 LeaveWightLair FightWightBoss
+	Choice = Menu "LEAVE" -> LeaveWightLair "STAY" -> FightWightBoss
 
 LeaveWightLair:
-	Save 15 PartyX
-	Save 6 PartyY
-	Save 0 Facing
+	PartyX = 15
+	PartyY = 6
+	Facing = 0
 	Goto RedrawExit
 
 FightWightBoss:
@@ -342,20 +342,20 @@ FightWightBoss:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 10 WightBossState WightBossState
-	Add 1 WightBossesKilled WightBossesKilled
+	WightBossState += 10
+	WightBossesKilled += 1
 
 WightTreasure:
 	if WightTreasureTaken == 255: Exit
 	PrintClear "IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 StripWarriorBody Done
+	OnGoto Scratch1 StripWarriorBody Done
 
 StripWarriorBody:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 26 // Clerical Scroll With 2 Spells, Sling Of Seeking +2, Hammer +3, Potion Extra Healing, Magic User Scroll With 3 Spells
 	Combat
-	Save 255 WightTreasureTaken
+	WightTreasureTaken = 255
 	Exit
 
 BoneTowerView:
@@ -370,14 +370,14 @@ BoneTowerCheck:
 	Gosub SkeletonsApproach
 	PrintClear "A SMALL ARMY OF SKELETONS RUSHES FROM THE TOWER."
 	Gosub PressReturn
-	Save 6 Scratch9
-	Save 1 Scratch6
+	Scratch9 = 6
+	Scratch6 = 1
 	Gosub RandomEncounter
-	Save 30 Scratch7
+	Scratch7 = 30
 	Goto StartFight
 
 BoneTowerSeenSet:
-	Add 1 Event5Seen Event5Seen
+	Event5Seen += 1
 
 FumesDoorway:
 	if Facing != 0: PrintClear "NOXIOUS FUMES POUR FROM THE TOWER DOORWAY, MAKING IT IMPOSSIBLE TO SEE INSIDE."
@@ -387,7 +387,7 @@ FumesDamage:
 	if FumesDamaged > 0: Exit
 	PrintClear "NOXIOUS FUMES TEAR AT YOUR THROAT AS YOU CRUNCH THROUGH PILES OF DRIED BONES."
 	Damage 195 10 1 0 0
-	Add 1 FumesDamaged FumesDamaged
+	FumesDamaged += 1
 	Exit
 
 SkeletonLairEntry:
@@ -398,10 +398,10 @@ SkeletonLairEntry:
 
 SkeletonMakerMenu:
 	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 " YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." "" "" 0 0
-	OnGoto Scratch1 4 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
+	OnGoto Scratch1 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
 
 SkeletonMakerSurprised:
-	Save 2 Surprise
+	Surprise = 2
 	Goto FightSkeletonMaker
 
 SkeletonMakerNotices:
@@ -414,10 +414,10 @@ FightSkeletonMaker:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 1 SkeletonLairDone SkeletonLairDone
-	if UndeadKillTable > 249: Save 249 UndeadKillTable
-	Add 5 UndeadKillTable UndeadKillTable
-	Add 1 LairsCleared LairsCleared
+	SkeletonLairDone += 1
+	if UndeadKillTable > 249: UndeadKillTable = 249
+	UndeadKillTable += 5
+	LairsCleared += 1
 	Exit
 
 FurTowerView:
@@ -429,14 +429,14 @@ FurTowerCheck:
 	Gosub ZombiesApproach
 	Gosub PressReturn
 	PrintClear "THE TOWER DOOR SWINGS OPEN AND A SMALL ARMY OF ZOMBIES SHUFFLES OUT.  THE DOOR CLOSES WITH A CLAMOR OF LOCKS FALLING INTO PLACE."
-	Save 7 Scratch9
-	Save 1 Scratch6
+	Scratch9 = 7
+	Scratch6 = 1
 	Gosub RandomEncounter
-	Save 15 Scratch7
+	Scratch7 = 15
 	Goto StartFight
 
 FurTowerSeenSet:
-	Add 1 FurTowerSeen FurTowerSeen
+	FurTowerSeen += 1
 	Exit
 
 ClothingChamber:
@@ -451,10 +451,10 @@ ZombieLairEntry:
 
 ZombieMakerMenu:
 	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 "IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." "" "" 0 0
-	OnGoto Scratch1 4 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
+	OnGoto Scratch1 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
 
 ZombieMakerSurprised:
-	Save 2 Surprise
+	Surprise = 2
 	Goto FightZombieMaker
 
 ZombieMakerNotices:
@@ -467,10 +467,10 @@ FightZombieMaker:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 1 ZombieLairDone ZombieLairDone
-	if ZombieStrength > 249: Save 249 ZombieStrength
-	Add 5 ZombieStrength ZombieStrength
-	Add 1 LairsCleared LairsCleared
+	ZombieLairDone += 1
+	if ZombieStrength > 249: ZombieStrength = 249
+	ZombieStrength += 5
+	LairsCleared += 1
 	Exit
 
 Monster114Ambush:
@@ -480,12 +480,12 @@ Monster114Ambush:
 	PrintClear "WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI."
 	Gosub PressReturn
 	PartyStrength Scratch1
-	Div Scratch1 16 Scratch1
-	if Scratch1 == 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 16
+	if Scratch1 == 0: Scratch1 = 1
 	ClearMonsters
 	LoadMonster Mummy count=Scratch1 icon=Mummy
 	Combat
-	Add 1 Monster114Fought Monster114Fought
+	Monster114Fought += 1
 	Exit
 
 LightningTowerView:
@@ -496,14 +496,14 @@ LightningTowerView:
 	Print " WIGHTS APPEAR FROM BEHIND THE TOWER."
 	Gosub WightsApproach
 	Gosub PressReturn
-	Save 9 Scratch9
+	Scratch9 = 9
 	ClearMonsters
 	LoadMonster Wight count=WightCount icon=Wight
 	Goto FightGroup
 
 LightningTowerSeenSet:
-	Add 1 LightningTowerFought LightningTowerFought
-	Add WightCount WightStrength WightStrength
+	LightningTowerFought += 1
+	WightStrength += WightCount
 	Exit
 
 WarningDoor:
@@ -518,7 +518,7 @@ GlassChamberSting:
 	also if StungInChamber >= 1: Exit
 	Gosub PressReturn
 	Damage 202 4 1 0 2
-	Add 1 StungInChamber StungInChamber
+	StungInChamber += 1
 	Exit
 
 WightLairEntry:
@@ -529,10 +529,10 @@ WightLairEntry:
 
 WightMakerMenu:
 	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 "YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." "" "" 0 0
-	OnGoto Scratch1 4 Done WightMakerSurprised FleeRandomly WightMakerNotices
+	OnGoto Scratch1 Done WightMakerSurprised FleeRandomly WightMakerNotices
 
 WightMakerSurprised:
-	Save 2 Surprise
+	Surprise = 2
 	Goto FightWightMaker
 
 WightMakerNotices:
@@ -545,12 +545,12 @@ FightWightMaker:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 1 WightLairDone WightLairDone
-	if WightStrength > 249: Save 249 WightStrength
-	Add 5 WightStrength WightStrength
-	Add 1 LairsCleared LairsCleared
+	WightLairDone += 1
+	if WightStrength > 249: WightStrength = 249
+	WightStrength += 5
+	LairsCleared += 1
 	if MysticManState >= 250: Exit
-	Add 1 MysticManState MysticManState
+	MysticManState += 1
 	Exit
 
 BrassDoorsView:
@@ -568,10 +568,10 @@ BrassDoorsFight:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 1 TowerFightDone TowerFightDone
-	Add 2 LairsCleared LairsCleared
+	TowerFightDone += 1
+	LairsCleared += 2
 	if MysticManState >= 250: Exit
-	Add 2 MysticManState MysticManState
+	MysticManState += 2
 	Exit
 
 KnightPanel:
@@ -586,13 +586,14 @@ GiftVoice:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 29 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Ring of Fire Resistance, and 2 more
 	Combat
-	Add 1 Treasure29Taken Treasure29Taken
+	Treasure29Taken += 1
 	Exit
 
 MysticManMeet:
+	alias Choice = Scratch1
 	if MysticManState < 3: Exit
 	if MysticManState > 249: Exit
-	Save 0 Portrait
+	Portrait = 0
 	SetupMonster Fighter14 distance=2 body=2
 	Gosub ApproachTwice
 	PrintClear "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
@@ -600,15 +601,14 @@ MysticManMeet:
 	PrintClear "'HAIL, NOBLE ADVENTURERS,' HE CALLS. 'I WOULD ASK YOU TO HELP ME END THIS FOUL UNDEAD CURSE.'"
 	Gosub PressReturn
 	PrintClear "DO YOU LET HIM JOIN THE PARTY OR SEND HIM AWAY?"
-	HMenu Scratch1 2 "LET HIM JOIN" "SEND HIM AWAY"
-	OnGoto Scratch1 2 MysticManJoins MysticManAttacks
+	Choice = Menu "LET HIM JOIN" -> MysticManJoins "SEND HIM AWAY" -> MysticManAttacks
 
 MysticManJoins:
 	if PartyCount > 7: Goto PartyTooLarge
-	Save 250 MysticManState
+	MysticManState = 250
 	PrintClear "'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS."
 	AddNPC Level6Mu24 99
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 PartyTooLarge:
@@ -616,15 +616,15 @@ PartyTooLarge:
 	Exit
 
 MysticManAttacks:
-	Save 1 Surprise
+	Surprise = 1
 	PrintClear "'THEN DIE YOU SCUM,' THE MAN SPITS."
-	Save 255 Portrait
+	Portrait = 255
 	ClearMonsters
 	LoadMonster Level6Mu24 count=1 icon=Level6Mu
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Save 255 MysticManState
+	MysticManState = 255
 	Exit
 
 BlackCrypt:
@@ -634,7 +634,7 @@ BlackCrypt:
 	Gosub PressReturn
 	PrintClear "DO YOU READ THE SCROLL?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 ScrollToJournal CoffinAsk
+	OnGoto Scratch1 ScrollToJournal CoffinAsk
 
 ScrollToJournal:
 	PrintClear "THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43."
@@ -643,12 +643,12 @@ ScrollToJournal:
 CoffinAsk:
 	PrintClear "DO YOU WANT TO DO ANYTHING WITH THE COFFIN?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 CoffinMenu Done
+	OnGoto Scratch1 CoffinMenu Done
 
 CoffinMenu:
+	alias Choice = Scratch1
 	PrintClear "WHAT DO YOU WANT TO DO TO IT?"
-	HMenu Scratch1 3 "EXAMINE" "SANCTIFY" "OVERTURN"
-	OnGoto Scratch1 3 ExamineCoffin SanctifyCoffin OverturnCoffin
+	Choice = Menu "EXAMINE" -> ExamineCoffin "SANCTIFY" -> SanctifyCoffin "OVERTURN" -> OverturnCoffin
 
 ExamineCoffin:
 	PrintClear "YOU FIND NOTHING."
@@ -656,7 +656,7 @@ ExamineCoffin:
 
 SanctifyCoffin:
 	PrintClear "YOU SCATTER THE DUST AND PLACE WHAT HOLY ITEMS YOU CAN SPARE INSIDE."
-	Save 251 CryptState
+	CryptState = 251
 	Exit
 
 OverturnCoffin:
@@ -690,8 +690,8 @@ FightVampire:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Save 255 VampireState
-	Save 254 QuestGraveyard
+	VampireState = 255
+	QuestGraveyard = 254
 	Exit
 
 ReloadVampire:
@@ -703,45 +703,45 @@ PitStairs:
 	if VampireFought > 0: Exit
 	PrintClear "WOODEN STAIRS LEAD INTO A PIT.  DO YOU GO DOWN?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 DescendPit Done
+	OnGoto Scratch1 DescendPit Done
 
 DescendPit:
-	Save 14 PartyX
-	Save 3 Facing
+	PartyX = 14
+	Facing = 3
 	Call CallRedraw
 	if VampireState > 255: Exit
 
 VampireLair:
 	if VampireState >= 250: Goto VampireTreasure
-	Save 15 Sky
+	Sky = 15
 	Call CallRedraw
 	PrintClear "THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH."
 	SetupMonster Vampire distance=1 closeup=Vampire
 	Approach
 	Gosub PressReturn
-	if MysticManState == 250: Save 1 Scratch1
-	also if MysticManState != 250: Save 0 Scratch1
+	if MysticManState == 250: Scratch1 = 1
+	also if MysticManState != 250: Scratch1 = 0
 	ClearMonsters
 	LoadMonster Vampire23 count=1 icon=Vampire
 	LoadMonster Wolf count=50 icon=Wolf
 	if Carried 82 {
 		LoadMonster Efreeti70 count=1 icon=Efreeti
-		Save 255 VampireGuardLoaded
+		VampireGuardLoaded = 255
 	}
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	Add 1 VampireFought VampireFought
-	Save 255 MysticManState
-	Save 250 VampireState
-	if UndeadKillTable > 249: Save 249 UndeadKillTable
-	Add 5 UndeadKillTable UndeadKillTable
-	if ZombieStrength > 249: Save 249 ZombieStrength
-	Add 5 ZombieStrength ZombieStrength
-	if WightStrength > 249: Save 249 WightStrength
-	Add 5 WightStrength WightStrength
-	Add 5 LairsCleared LairsCleared
-	Save 8 Sky
+	VampireFought += 1
+	MysticManState = 255
+	VampireState = 250
+	if UndeadKillTable > 249: UndeadKillTable = 249
+	UndeadKillTable += 5
+	if ZombieStrength > 249: ZombieStrength = 249
+	ZombieStrength += 5
+	if WightStrength > 249: WightStrength = 249
+	WightStrength += 5
+	LairsCleared += 5
+	Sky = 8
 	PrintClear "THE VAMPIRE TURNS INTO A VAPOR CLOUD AND FLOATS AWAY."
 	Exit
 
@@ -750,13 +750,13 @@ VampireTreasure:
 	if Search != 1: Exit
 	PrintClear "YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 TakeVampireTreasure Done
+	OnGoto Scratch1 TakeVampireTreasure Done
 
 TakeVampireTreasure:
 	ClearMonsters
 	Treasure 0 0 0 #2328 0 12 0 30 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Clerical Scroll With 2 Spells, and 2 more
 	Combat
-	Save 255 VampireTreasureTaken
+	VampireTreasureTaken = 255
 	Exit
 
 GhoulPack:
@@ -766,11 +766,11 @@ GhoulPack:
 	Approach
 	PrintClear "A PACK OF HUNGRY GHOULS LOPES TOWARD YOU."
 	Gosub PressReturn
-	Random 2 Scratch1
-	Add 1 Scratch1 Scratch1
+	Scratch1 = Random 2
+	Scratch1 += 1
 	PartyStrength Scratch8
-	Div Scratch8 Scratch1 Scratch1
-	if Scratch1 == 0: Save 1 Scratch1
+	Scratch1 = Scratch8 / Scratch1
+	if Scratch1 == 0: Scratch1 = 1
 	ClearMonsters
 	LoadMonster Ghoul count=Scratch1 icon=Ghoul
 	Combat
@@ -781,15 +781,18 @@ MysticManHint:
 	Exit
 
 RandomEncounter:
-	GetTable GroupDistTable Scratch9 MonsterDist
-	GetTable GroupTable1 Scratch9 Scratch3
-	GetTable GroupTable2 Scratch9 Scratch4
-	GetTable GroupTable3 Scratch9 Scratch5
+	alias GroupTable1Entry = Scratch3
+	alias GroupTable2Entry = Scratch4
+	alias GroupTable3Entry = Scratch5
+	MonsterDist = GroupDistTable[Scratch9]
+	GroupTable1Entry = GroupTable1[Scratch9]
+	GroupTable2Entry = GroupTable2[Scratch9]
+	GroupTable3Entry = GroupTable3[Scratch9]
 	if Scratch6 == 1: Return
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 0 0
 	if Surprise != 1: Goto SurpriseCheck
-	OnGoto Scratch9 3 SkeletonAttack ZombieAttack WightAttack
+	OnGoto Scratch9 SkeletonAttack ZombieAttack WightAttack
 
 SurpriseCheck:
 	if Surprise > 2: Goto PartyConfronted
@@ -797,19 +800,19 @@ SurpriseCheck:
 	also if Surprise < 2: Goto FindUndead
 
 PartyConfronted:
-	Save 0 MaxDist
-	Save "YOU ARE SUDDENLY CONFRONTED BY " $AuxText
-	Save $AuxMonsterName $AuxNameCopy7
+	MaxDist = 0
+	$AuxText = "YOU ARE SUDDENLY CONFRONTED BY "
+	$AuxNameCopy7 = $AuxMonsterName
 	Goto EncounterChoice
 
 PartySneaksUp:
-	Save "YOU HAVE MANAGED TO SNEAK UP ON SOME " $AuxText
-	Save $AuxMonsterName $AuxNameCopy8
+	$AuxText = "YOU HAVE MANAGED TO SNEAK UP ON SOME "
+	$AuxNameCopy8 = $AuxMonsterName
 	EncounterMenu Scratch5 MonsterDist Scratch5 Scratch1 1 0 2 3 4 $AuxText "" "" 0 0
-	OnGoto Scratch1 4 Done StartFight FleeRandomly PartyNoticed
+	OnGoto Scratch1 Done StartFight FleeRandomly PartyNoticed
 
 PartyNoticed:
-	Save 0 Surprise
+	Surprise = 0
 	PrintClear "YOU ARE NOTICED."
 	Goto EncounterChoice
 
@@ -818,15 +821,15 @@ FindUndead:
 
 EncounterChoice:
 	EncounterMenu Scratch5 MonsterDist Scratch5 Scratch1 1 1 1 1 4 "" "" "" Scratch4 Scratch4
-	OnGoto Scratch1 4 Done StartFight FleeRandomly ParlayFails
+	OnGoto Scratch1 Done StartFight FleeRandomly ParlayFails
 
 ParlayFails:
 	Parlay 0 0 0 0 0 Scratch1
 	PrintClear "THEY DON'T LISTEN."
 
 StartFight:
-	Save 0 Beaten
-	if Scratch7 == 0: Save 1 Scratch7
+	Beaten = 0
+	if Scratch7 == 0: Scratch7 = 1
 	ClearMonsters
 	LoadMonster Scratch3 count=Scratch7 icon=Scratch5
 	if Scratch3 == 20: Goto LoadRandomUndead
@@ -835,35 +838,35 @@ FightGroup:
 	Combat
 	Gosub CheckFled
 	if Scratch1 == 2: Goto FleeRandomly
-	OnGoto Scratch9 10 SkeletonsBeaten ZombiesBeaten WightGroupFight GiantSkeletonStep GiantZombieStep WightBossStep BoneTowerSeenSet FurTowerSeenSet SkeletonAmbushOver LightningTowerSeenSet
+	OnGoto Scratch9 SkeletonsBeaten ZombiesBeaten WightGroupFight GiantSkeletonStep GiantZombieStep WightBossStep BoneTowerSeenSet FurTowerSeenSet SkeletonAmbushOver LightningTowerSeenSet
 
 CheckFled:
-	Save 0 Scratch1
-	if CombatEnd > 128: Save 2 Scratch1
+	Scratch1 = 0
+	if CombatEnd > 128: Scratch1 = 2
 	Return
 
 FleeRandomly:
-	Random 3 Facing
-	Random 4 Scratch1
-	GetTable FleeXTable Scratch1 PartyX
-	GetTable FleeYTable Scratch1 PartyY
-	Save 1 NoCoords
+	Facing = Random 3
+	Scratch1 = Random 4
+	PartyX = FleeXTable[Scratch1]
+	PartyY = FleeYTable[Scratch1]
+	NoCoords = 1
 
 RedrawExit:
 	Call CallRedraw
 	Exit
 
 LoadRandomUndead:
-	Mul Scratch7 4 Scratch6
+	Scratch6 = Scratch7 * 4
 	LoadMonster Zombie count=Scratch6 icon=35
-	Random 4 Scratch1
+	Scratch1 = Random 4
 	if Scratch1 < 2: LoadMonster JujuZombie count=2 icon=35
 	also if Scratch1 > 2: LoadMonster Ghoul count=2 icon=Ghoul
 	also if Scratch1 == 2: LoadMonster Mummy count=1 icon=Mummy
 	Goto FightGroup
 
 PressReturn:
-	HMenu AuxMonster 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	AuxMonster = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 SkeletonsApproach:
@@ -884,7 +887,8 @@ ApproachTwice:
 	Return
 
 YesNoMenu:
-	HMenu Scratch1 2 "YES" "NO"
+	alias Choice = Scratch1
+	Choice = Menu "YES" "NO"
 	Return
 
 GroupDistTable:

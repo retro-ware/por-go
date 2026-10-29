@@ -180,3 +180,9 @@ Icon 8 70 Efreeti
 Icon 8 73 Gnoll
 Icon 8 120 WildBoar
 Icon 8 121 Wyvern
+
+# LoadMap's map (a GEO block) and LoadWalls' wall sets (WALLDEF blocks)
+Map 0 255 Keep
+Map 0 127 Unchanged
+Walls 0 255 None
+Walls 0 127 Reset

@@ -1,26 +1,26 @@
 RollSurprise:
 	PartySurprise Scratch8 Scratch9
-	And CastleFlags 1 Scratch10
-	if 0 != Scratch10: Add 1 Scratch9 Scratch9
+	Scratch10 = CastleFlags & 1
+	if 0 != Scratch10: Scratch9 += 1
 	Surprise Scratch8 Scratch9 0 0
-	if AlarmEndHour != 0: And Surprise 1 Surprise
-	if Surprise == 3: Save 0 Surprise
+	if AlarmEndHour != 0: Surprise = Surprise & 1
+	if Surprise == 3: Surprise = 0
 	Compare Surprise 1
 	Return
 
 CheckAlarmSounding:
 	if AlarmEndHour < 1: Return
-	Save Hours AuxRoll
-	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	AuxRoll = Hours
+	if Hours == 0 && AlarmHour == 23: AuxRoll = 24
 	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
 	if TenMinutes < AlarmMinute: Goto AlarmStillOn
-	Save 0 AlarmEndHour
+	AlarmEndHour = 0
 	Compare 0 1
 	Return
 
 AlarmStillOn:
 	if Search == 1: Goto SayAlarmSounding
-	Random 9 AuxRoll
+	AuxRoll = Random 9
 	if AuxRoll != 0: Goto AlarmActive
 
 SayAlarmSounding:
@@ -34,42 +34,44 @@ AlarmActive:
 StartAlarm:
 	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Delay
-	Save Hours AlarmHour
-	Save TenMinutes AlarmMinute
-	Add 1 AlarmHour AlarmEndHour
+	AlarmHour = Hours
+	AlarmMinute = TenMinutes
+	AlarmEndHour = 1 + AlarmHour
 	Return
 
 AskTakeIt:
 	Print "DO YOU TAKE IT?"
 
 YesNoMenu:
-	HMenu Scratch10 2 "YES" "NO"
+	alias Choice = Scratch10
+	Choice = Menu "YES" "NO"
 	PrintClear " "
-	Compare Scratch10 0
+	Compare Choice 0
 	Return
 
 PressReturn:
-	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	alias Choice = Scratch9
+	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	PrintClear " "
 	Return
 
 SetSkyByHour:
-	Save 11 Scratch1
-	Save 9 SkyInside
-	if Hours >= 14: Save 8 Scratch1
-	Save Scratch1 Sky
+	Scratch1 = 11
+	SkyInside = 9
+	if Hours >= 14: Scratch1 = 8
+	Sky = Scratch1
 	Return
 
 event0:
-	And CastleRoomFlags 127 CastleRoomFlags
+	CastleRoomFlags = CastleRoomFlags & 127
 	if LeftMap == 0: Goto OnStep
-	if Geo == 3: GetTable ByFacing9AEB Facing Scratch10
-	if Geo == 4: GetTable ByFacing9AEF Facing Scratch10
-	if Geo == 5: GetTable ByFacing9AF3 Facing Scratch10
-	if Geo == 6: GetTable ByFacing9AF7 Facing Scratch10
-	LoadFiles Scratch10 2 255
+	if Geo == 3: Scratch10 = ByFacing9AEB[Facing]
+	if Geo == 4: Scratch10 = ByFacing9AEF[Facing]
+	if Geo == 5: Scratch10 = ByFacing9AF3[Facing]
+	if Geo == 6: Scratch10 = ByFacing9AF7[Facing]
+	LoadMap Scratch10 unused=2 icons=255
 	Call CallStepForward
-	Save 255 HoldMove
+	HoldMove = 255
 	Exit
 
 ByFacing9AEB:
@@ -86,7 +88,7 @@ ByFacing9AF7:
 
 OnStep:
 	Gosub SetSkyByHour
-	And Cell 31 Scratch1
+	Scratch1 = Cell & 31
 	if Scratch1 == 21 && Facing == 3: Goto CastleGate
 	if Scratch1 == 22 && Facing == 1: Goto CastleGate
 	if Scratch1 == 4 && Facing == 1: Goto GoUpstairs
@@ -101,34 +103,34 @@ ThornHedge:
 	Print " AS YOU SLICE THROUGH SOMEONE IS PRICKED BY A THORN."
 	Damage 128 1 1 200 0
 	Call CallStepForward
-	Save 255 HoldMove
+	HoldMove = 255
 	Exit
 
 event1:
 	Gosub CheckAlarmSounding
 	IfLt
 	Goto SpecialSquare
-	And Cell 64 Scratch10
+	Scratch10 = Cell & 64
 	if 0 != Scratch10: Goto SpecialSquare
-	Save 2 Scratch1
-	if Search != 1: Save 20 Scratch1
-	Random Scratch1 Scratch10
+	Scratch1 = 2
+	if Search != 1: Scratch1 = 20
+	Scratch10 = Random Scratch1
 	if Scratch10 == 0: Goto event3
 
 SpecialSquare:
-	And Cell 31 Scratch1
+	Scratch1 = Cell & 31
 	if Scratch1 > 29: NewECL 3
 	if Scratch1 > 20: Exit
-	OnGoto Scratch1 8 Done HarmlessMage ArguingGiants GateGiants Done ThroneRoom TowerTrolls Disorient
+	OnGoto Scratch1 Done HarmlessMage ArguingGiants GateGiants Done ThroneRoom TowerTrolls Disorient
 
 event2:
-	Save 0 RestEvery
-	Save 10 RestChance
+	RestEvery = 0
+	RestChance = 10
 	if AlarmEndHour == 0: Exit
-	And Cell 64 Scratch10
+	Scratch10 = Cell & 64
 	if 0 != Scratch10: Exit
-	Save 1 RestEvery
-	Save 17 RestChance
+	RestEvery = 1
+	RestChance = 17
 
 Done:
 	RedrawView
@@ -137,18 +139,18 @@ Done:
 
 event4:
 	Gosub SetSkyByHour
-	Save 1 NoCoords
+	NoCoords = 1
 	Exit
 
 Disorient:
-	And CastleRoomFlags 128 Scratch10
+	Scratch10 = CastleRoomFlags & 128
 	if 0 != Scratch10: Exit
 	PrintClear "YOU FEEL A SUDDEN DISORIENTATION."
-	Random 3 Scratch10
-	Add 3 Scratch10 Scratch1
-	GetTable DestX Scratch10 PartyX
-	GetTable DestY Scratch10 PartyY
-	LoadFiles Scratch1 2 255
+	Scratch10 = Random 3
+	Scratch1 = 3 + Scratch10
+	PartyX = DestX[Scratch10]
+	PartyY = DestY[Scratch10]
+	LoadMap Scratch1 unused=2 icons=255
 	Call CallRedraw
 	Exit
 
@@ -159,29 +161,29 @@ DestY:
 	Data 11 10 4 5
 
 FledCombat:
-	Save 129 CombatEnd
+	CombatEnd = 129
 
 AfterCombat:
 	if CombatEnd == 0: Return
 	Gosub StartAlarm
-	And CastleFlags 254 CastleFlags
+	CastleFlags = CastleFlags & 254
 	if CombatEnd != 129: Return
 
 StepBack:
-	Save 255 HoldMove
-	Save PrevX PartyX
-	Save PrevY PartyY
-	Add Facing 2 Facing
-	if Facing > 3: Sub 4 Facing Facing
+	HoldMove = 255
+	PartyX = PrevX
+	PartyY = PrevY
+	Facing = Facing + 2
+	if Facing > 3: Facing -= 4
 	Goto Done
 
 GateGiants:
-	And CastleDeedFlags 32 Scratch10
+	Scratch10 = CastleDeedFlags & 32
 	if 0 != Scratch10: Exit
 	Gosub RollSurprise
 	IfGt
 	Goto SurpriseGiants
-	Save 0 Surprise
+	Surprise = 0
 	PrintClear "THREE GIANTS STEP UP TO YOU."
 	Goto GiantsMenu
 
@@ -191,14 +193,14 @@ SurpriseGiants:
 GiantsMenu:
 	Delay
 	EncounterMenu 55 2 55 Scratch10 0 4 0 4 4 "THEY HOLD THEIR WEAPONS READY." "" "" 12 12
-	OnGoto Scratch10 3 Done FightGiants FledCombat
+	OnGoto Scratch10 Done FightGiants FledCombat
 	Parlay 0 1 1 1 0 Scratch10
-	OnGoto Scratch10 1 WhoSentYou
+	OnGoto Scratch10 WhoSentYou
 	PrintClear "'ALL RIGHT, THEN. WHAT TODAY'S PASSWORD?'"
 
 AskPassword:
 	InputString 6 $AuxInputText
-	Random 4 Scratch10
+	Scratch10 = Random 4
 	if Scratch10 == 0: Goto NoPasswordAttack
 	PrintClear "'WRONG! GUESS AGAIN!"
 	Goto AskPassword
@@ -219,30 +221,30 @@ WrongMasterName:
 
 FightGiants:
 	Delay
-	Save 60 Morale
+	Morale = 60
 	RedrawView
 	ClearMonsters
 	LoadMonster HillGiant count=3 icon=HillGiant
 	Combat
 	Gosub AfterCombat
-	Or CastleDeedFlags 32 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 32
 	Exit
 
 TowerTrolls:
-	And CastleFlags2 64 Scratch10
+	Scratch10 = CastleFlags2 & 64
 	if 0 != Scratch10: Exit
 	PrintClear "YOU HAVE ENTERED THE REMAINS OF A TOWER. "
 	Delay
 	Gosub RollSurprise
-	OnGoto Surprise 3 TrollsMenu TrollsCharge TrollsUnawareMenu
+	OnGoto Surprise TrollsMenu TrollsCharge TrollsUnawareMenu
 
 TrollsMenu:
 	EncounterMenu 31 2 31 Scratch10 0 0 0 1 0 "YOU SEE A PACK OF TROLLS." "" "" 12 12
-	OnGoto Scratch10 4 Done FightTrolls StepBack FightTrolls
+	OnGoto Scratch10 Done FightTrolls StepBack FightTrolls
 
 TrollsUnawareMenu:
 	EncounterMenu 31 2 31 Scratch10 0 1 1 1 0 "YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU." "" "" 10 10
-	OnGoto Scratch10 4 Done FightTrolls StepBack FightTrolls
+	OnGoto Scratch10 Done FightTrolls StepBack FightTrolls
 
 TrollsCharge:
 	SetupMonster GreenBrute distance=2 closeup=GreenBrute
@@ -253,24 +255,24 @@ TrollsCharge:
 	Approach
 
 FightTrolls:
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Troll count=8 icon=Troll
 	Combat
 	Gosub AfterCombat
-	Or CastleFlags2 64 CastleFlags2
+	CastleFlags2 = CastleFlags2 | 64
 	Exit
 
 CastleGate:
 	if AlarmEndHour == 0: Exit
-	Save 64 Scratch1
-	if Scratch10 == 22: Save 128 Scratch1
-	And BaneTempleFlags Scratch1 Scratch10
+	Scratch1 = 64
+	if Scratch10 == 22: Scratch1 = 128
+	Scratch10 = BaneTempleFlags & Scratch1
 	if 0 != Scratch10: Goto GateRecognizesYou
-	And BaneTempleFlags 3 Scratch10
+	Scratch10 = BaneTempleFlags & 3
 	if 0 != Scratch10: Goto GateCallsThief
-	VMenu Scratch10 "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" 2 "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
-	OnGoto Scratch10 2 GivePassword BouldersThrown
+	Scratch10 = VMenu "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
+	OnGoto Scratch10 GivePassword BouldersThrown
 
 GateRecognizesYou:
 	PrintClear "YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'"
@@ -282,7 +284,7 @@ GateCallsThief:
 BouldersThrown:
 	Gosub PressReturn
 	Gosub StartAlarm
-	Or BaneTempleFlags Scratch1 BaneTempleFlags
+	BaneTempleFlags = BaneTempleFlags | Scratch1
 	PrintClear "A VOLLEY OF BOULDERS ARE THROWN AT YOU..."
 	Gosub PressReturn
 	Damage 12 2 6 0 48
@@ -294,7 +296,7 @@ GivePassword:
 	if $AuxInputText != "RHODIA": Goto WrongPassword
 	PrintClear "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
 	Call CallStepForward
-	Save 255 HoldMove
+	HoldMove = 255
 	Exit
 
 WrongPassword:
@@ -302,71 +304,73 @@ WrongPassword:
 	Exit
 
 HarmlessMage:
-	And CastleFlags2 4 Scratch10
+	Scratch10 = CastleFlags2 & 4
 	if 0 != Scratch10: Exit
-	Save 55 Portrait
+	Portrait = 55
 	EncounterMenu 12 2 31 Scratch10 2 4 1 4 4 "YOU SEE A HARMLESS, MIDDLE AGED MAN." "" "" 12 12
-	Save 255 Portrait
-	OnGoto Scratch10 3 MageFlees MageBegs StepBack
+	Portrait = 255
+	OnGoto Scratch10 MageFlees MageBegs StepBack
 
 MageBegs:
+	alias Choice = Scratch10
 	PrintClear "'WAIT! I WAS JUST A MAGE SEARCHING FOR KNOWLEDGE WHEN TYRANTHRAXUS CAPTURED ME. I'VE BEEN FORCED TO WORK FOR HIM. SPARE ME AND I WILL LEAVE, NEVER TO RETURN!'"
-	HMenu Scratch10 2 "LET HIM GO" "ATTACK HIM"
-	OnGoto Scratch10 1 MageFlees
+	Choice = Menu "LET HIM GO" "ATTACK HIM"
+	OnGoto Choice MageFlees
 	PrintClear "'WAIT! PLEASE! I'LL GIVE YOU ALL MY NOTES! HERE THEY ARE!'"
-	HMenu Scratch10 2 "LET HIM GO" "ATTACK HIM"
-	OnGoto Scratch10 1 MageGivesNotes
-	Save 50 Morale
-	Save 0 Surprise
+	Choice = Menu "LET HIM GO" "ATTACK HIM"
+	OnGoto Choice MageGivesNotes
+	Morale = 50
+	Surprise = 0
 	ClearMonsters
 	LoadMonster AlHyamDazid count=1 icon=14
 	Combat
 	Gosub AfterCombat
-	Or CastleFlags2 4 CastleFlags2
+	CastleFlags2 = CastleFlags2 | 4
 	Exit
 
 MageFlees:
 	PrintClear "HE SCRAMBLES OUT THE DOOR."
-	Or CastleFlags2 4 CastleFlags2
+	CastleFlags2 = CastleFlags2 | 4
 	Goto Done
 
 MageGivesNotes:
 	PrintClear "HE QUICKLY LEAVES. YOU ARE LEFT WITH THE NOTES OF AL-HYAM DHAZID, WHICH TELL QUITE A LOT ABOUT THE POOL OF RADIANCE. YOU COPY THEM INTO YOUR JOURNAL AS ENTRY 30."
 	Gosub PressReturn
-	Or CastleFlags2 4 CastleFlags2
+	CastleFlags2 = CastleFlags2 | 4
 	Goto Done
 
 GoUpstairs:
 	PrintClear "YOU GO UPSTAIRS."
-	Save 5 PartyX
-	Save 7 PartyY
+	PartyX = 5
+	PartyY = 7
 	NewECL ValjevoCastle7
 
 ArguingGiants:
-	And CadornaQuartersFlags 128 Scratch10
+	Scratch10 = CadornaQuartersFlags & 128
 	if 0 != Scratch10: Exit
 	SetupMonster FireGiant distance=1 closeup=FireGiant
-	And BaneTempleFlags 3 Scratch10
+	Scratch10 = BaneTempleFlags & 3
 	if 0 != Scratch10: Goto GiantsCallThief
-	And CastleFlags 1 Scratch10
+	Scratch10 = CastleFlags & 1
 	if 0 != Scratch10: Goto FrogsAndToads
 	if AlarmEndHour != 0: Goto GiantsSpotIntruders
 
 FrogsAndToads:
+	alias Choice = Scratch10
 	PrintClear "THIS TOWER IS OCCUPIED BY FOUR GIANTS. AS YOU COME IN THEY ARE IN THE MIDST OF AN ARGUMENT. THE BIGGEST ONE TURNS TO YOU AND SAYS, 'THEM LOOK SMART. THEM TELL US.'"
 	Gosub PressReturn
 	PrintClear "'FROGS AND TOADS NOT SAME THING. THEY NOT SAME, THEY DIF... THEY NOT SAME! ME RIGHT?'"
-	HMenu Scratch10 4 "YES" "NO" "ATTACK" "LEAVE"
-	OnGoto Scratch10 3 AnswerYes AnswerNo FightArguingGiants
+	Choice = Menu "YES" "NO" "ATTACK" "LEAVE"
+	OnGoto Choice AnswerYes AnswerNo FightArguingGiants
 	PrintClear "AS YOU QUICKLY LEAVE THE ROOM, YOU HEAR ONE OF THE GIANTS SAY, 'AH, US RIGHT. THEM JUST AFRAID TO SAY 'CAUSE KNOW YOU SMASH 'EM.' THE ARGUMENT RESUMES."
 	Goto StepBack
 
 AnswerNo:
+	alias Choice = Scratch10
 	PrintClear "AS THE OTHER GIANTS BURST INTO HOWLS OF LAUGHTER THE ONE WHO TALKED TO YOU TURNS RED AND SAYS, 'YOU LIE! YOU LIE TO MAKE ME FOOL! I SMASH YOU!'"
 	Gosub PressReturn
 	PrintClear "BEFORE HE CAN ATTACK THE OTHERS GRAB HIM AND SAY, 'YOU BETTER GO LITTLE MEN."
-	HMenu Scratch10 2 "STAY" "LEAVE"
-	OnGoto Scratch10 2 GiantsAttackAnyway StepBack
+	Choice = Menu "STAY" -> GiantsAttackAnyway "LEAVE" -> StepBack
 
 AnswerYes:
 	PrintClear "AS THE GIANT TURNS IN TRIUMPH TO HIS COMPANIONS, THE OTHERS PICK UP THEIR CLUBS. 'WHAT THEY KNOW? WE KNOCK DUMB LITTLE MEN'S BRAINS OUT!'"
@@ -379,13 +383,13 @@ GiantsAttackAnyway:
 
 FightArguingGiants:
 	Gosub PressReturn
-	Save 0 Surprise
-	Save 50 Morale
+	Surprise = 0
+	Morale = 50
 	ClearMonsters
 	LoadMonster FireGiant count=4 icon=FireGiant
 	Combat
 	Gosub AfterCombat
-	Or CadornaQuartersFlags 128 CadornaQuartersFlags
+	CadornaQuartersFlags = CadornaQuartersFlags | 128
 	Exit
 
 GiantsCallThief:
@@ -400,22 +404,22 @@ GiantsRaiseAlarm:
 	Goto FightArguingGiants
 
 ThroneRoom:
-	And CastleFlags 64 Scratch10
+	Scratch10 = CastleFlags & 64
 	if 0 != Scratch10: Exit
 	PrintClear "YOU ENTER A CHAMBER WHICH IS LAVISHLY APPOINTED WITH HANGINGS, CARPETS AND FURNITURE. SITTING ON A THRONE IS A POWERFUL LOOKING MAN CLAD IN BARBARIC SPLENDOR."
 	Gosub PressReturn
-	Save 54 Portrait
+	Portrait = 54
 	SetupMonster Fighter16 distance=1 body=1
 	PrintClear "'WHAT IS YOUR BUSINESS WITH TYRANTHRAXUS, LORD OF PHLAN?'"
 	Approach
 	Delay
 	EncounterMenu 16 0 1 Scratch10 0 0 1 0 4 "" "" "" 0 0
-	Save 255 Portrait
-	OnGoto Scratch10 3 Done FightImpostor FledCombat
+	Portrait = 255
+	OnGoto Scratch10 Done FightImpostor FledCombat
 	Parlay 0 1 2 2 3 Scratch10
-	OnGoto Scratch10 3 ArrogantKnave HeavyCrown BegoneOrWrath
+	OnGoto Scratch10 ArrogantKnave HeavyCrown BegoneOrWrath
 	PartyStrength Scratch10
-	Add SelReaction Scratch10 Scratch10
+	Scratch10 += SelReaction
 	if Scratch10 >= 85: Goto ArrogantKnave
 	PrintClear "HE SEEMS TO COLLAPSE. 'ALL RIGHT. I'M NOT TYRANTHRAXUS. HE JUST HIRED ME TO IMPERSONATE HIM. IT'S NOT A BAD LIFE, BUT, HEY! I CAN TELL WHICH WAY THE WIND'S BLOWING.'"
 	Gosub PressReturn
@@ -424,7 +428,7 @@ ThroneRoom:
 	IfNe
 	Goto FightImpostor
 	PrintClear "HE RUNS OUT OF THE HALL. THERE IS TREASURE ALL ABOUT. "
-	Or CastleFlags 64 CastleFlags
+	CastleFlags = CastleFlags | 64
 	Gosub AskTakeIt
 	IfNe
 	Goto Done
@@ -451,24 +455,24 @@ BegoneOrWrath:
 FightImpostor:
 	Delay
 	Gosub StartAlarm
-	Save 0 Surprise
-	Save 60 Morale
+	Surprise = 0
+	Morale = 60
 	ClearMonsters
 	LoadMonster Tyranithraxus92 count=1 icon=ThLvlFighter
 	LoadMonster ThLvlThief93 count=2 icon=12
 	Treasure 0 0 0 0 0 8 1 255
 	Combat
 	Gosub AfterCombat
-	Or CastleFlags 64 CastleFlags
+	CastleFlags = CastleFlags | 64
 	Exit
 
 event3:
 	Gosub RollSurprise
 	EncounterMenu 60 2 60 Scratch10 0 3 0 3 0 "YOU SEE GIANT SNAKES." "" "" 15 15
-	OnGoto Scratch10 3 Done FightSnakes StepBack
+	OnGoto Scratch10 Done FightSnakes StepBack
 
 FightSnakes:
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster GiantSnake count=4 icon=GiantSnake
 	Combat

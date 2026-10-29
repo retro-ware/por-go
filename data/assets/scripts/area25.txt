@@ -7,102 +7,107 @@ event0:
 	Exit
 
 EdgeNorth:
-	OnGoto FacingRaw 8 BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove
+	OnGoto FacingRaw BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove
 
 EdgeWest:
-	OnGoto FacingRaw 8 EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove BlockMove BlockMove
+	OnGoto FacingRaw EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove BlockMove BlockMove
 
 BlockMove:
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 EdgeEast:
-	OnGoto FacingRaw 8 EdgeOk ExitToCity ExitToCity EdgeEastCorner EdgeOk EdgeOk EdgeOk EdgeOk
+	OnGoto FacingRaw EdgeOk ExitToCity ExitToCity EdgeEastCorner EdgeOk EdgeOk EdgeOk EdgeOk
 
 EdgeOk:
 	Return
 
 ExitToCity:
-	Save 3 MapX
+	MapX = 3
 	EnterArea Wilderness
 
 EdgeEastCorner:
 	if MapY != 31: Goto ExitToCity
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 CheckTerrainAhead:
-	Save MapX ProbeX
-	Save MapY ProbeY
-	OnGoto FacingRaw 8 ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
+	ProbeX = MapX
+	ProbeY = MapY
+	OnGosub FacingRaw ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
 	Call CallUnknownC01B
-	Save 0 Scratch1
+	Scratch1 = 0
 
 CheckTerrainLoop:
+	alias BlockedTerrainEntry = Scratch2
 	if Scratch1 == 8: Return
-	GetTable BlockedTerrain Scratch1 Scratch2
-	if ProbeWall == Scratch2 {
-		Save 255 HoldMove
+	BlockedTerrainEntry = BlockedTerrain[Scratch1]
+	if ProbeWall == BlockedTerrainEntry {
+		HoldMove = 255
 		Return
 	}
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Goto CheckTerrainLoop
 
 ProbeNW:
-	Sub 1 ProbeX ProbeX
+	ProbeX -= 1
 
 ProbeN:
-	Sub 1 ProbeY ProbeY
+	ProbeY -= 1
 	Return
 
 ProbeNE:
-	Sub 1 ProbeY ProbeY
+	ProbeY -= 1
 
 ProbeE:
-	Add 1 ProbeX ProbeX
+	ProbeX += 1
 	Return
 
 ProbeSE:
-	Add 1 ProbeX ProbeX
+	ProbeX += 1
 
 ProbeS:
-	Add 1 ProbeY ProbeY
+	ProbeY += 1
 	Return
 
 ProbeSW:
-	Add 1 ProbeY ProbeY
+	ProbeY += 1
 
 ProbeW:
-	Sub 1 ProbeX ProbeX
+	ProbeX -= 1
 	Return
 
 event1:
 	if InLair == 255: Goto LairCell
-	Save 0 Scratch1
-	Save 0 Scratch4
+	Scratch1 = 0
+	Scratch4 = 0
 
 FindSiteRow:
+	alias SiteRowYEntry = Scratch2
+	alias SiteRowEndEntry = Scratch3
 	if Scratch1 >= 8: Goto RollEncounter
-	GetTable SiteRowEnd Scratch1 Scratch3
-	GetTable SiteRowY Scratch1 Scratch2
-	if Scratch2 == MapY: Goto SiteRowFound
-	Add 1 Scratch1 Scratch1
-	Add Scratch3 Scratch4 Scratch4
+	SiteRowEndEntry = SiteRowEnd[Scratch1]
+	SiteRowYEntry = SiteRowY[Scratch1]
+	if SiteRowYEntry == MapY: Goto SiteRowFound
+	Scratch1 += 1
+	Scratch4 += SiteRowEndEntry
 	Goto FindSiteRow
 
 SiteRowFound:
-	Add Scratch4 Scratch3 Scratch3
+	Scratch3 += Scratch4
 
 FindSiteX:
+	alias SiteXEntry = Scratch5
 	if Scratch4 >= Scratch3: Goto RollEncounter
-	GetTable SiteX Scratch4 Scratch5
-	if Scratch5 == MapX: Goto SiteFound
-	Add 1 Scratch4 Scratch4
+	SiteXEntry = SiteX[Scratch4]
+	if SiteXEntry == MapX: Goto SiteFound
+	Scratch4 += 1
 	Goto FindSiteX
 
 SiteFound:
-	GetTable SiteKind Scratch4 Scratch1
-	OnGoto Scratch1 8 SiteNone DragonInDistance DragonCaveEvent AnkhegAmbush SlaverCaravan BuccaneerBaseSite GuardsRideBy OutpostRiders
+	alias SiteKindEntry = Scratch1
+	SiteKindEntry = SiteKind[Scratch4]
+	OnGoto SiteKindEntry SiteNone DragonInDistance DragonCaveEvent AnkhegAmbush SlaverCaravan BuccaneerBaseSite GuardsRideBy OutpostRiders
 
 SiteNone:
 	Exit
@@ -110,7 +115,7 @@ SiteNone:
 DragonInDistance:
 	if DragonSeen != 0: Goto Done
 	PrintClear "OFF IN THE DISTANCE YOU SEE A LARGE DRAGON FLYING THROUGH THE AIR.  AS YOU WATCH, HE SWOOPS DOWN BEHIND A MOUNTAIN AND DISAPPEARS."
-	Save 1 DragonSeen
+	DragonSeen = 1
 	Goto Done
 
 DragonCaveEvent:
@@ -119,16 +124,16 @@ DragonCaveEvent:
 	Picture Mountains
 	if DragonSeen == 255: Goto LargeCave
 	PrintClear "AS YOU HIKE THROUGH THE MOUNTAINS, A LARGE DRAGON FLYS ABOVE YOU.  IT CIRCLES THEN SWOOPS DOWN AND LANDS IN FRONT OF A CAVE.  IT DISAPPEARS INTO A CAVE."
-	Save 255 DragonSeen
+	DragonSeen = 255
 	Goto CaveMenu
 
 LargeCave:
 	PrintClear "AS YOU HIKE THROUGH THE MOUNTAINS YOU SEE A LARGE CAVE."
 
 CaveMenu:
+	alias Choice = Scratch1
 	Print " WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ENTER CAVE" "IGNORE CAVE"
-	OnGoto Scratch1 2 EnterDragonCave DoneMarkKeep
+	Choice = Menu "ENTER CAVE" -> EnterDragonCave "IGNORE CAVE" -> DoneMarkKeep
 
 EnterDragonCave:
 	PrintClear "YOU ENTER THE CAVE."
@@ -139,31 +144,31 @@ AnkhegAmbush:
 	if AnkhegsDefeated != 0: Goto Done
 	SetupMonster Ankheg distance=1 closeup=Ankheg
 	PrintClear "AS YOU WALK THROUGH THIS AREA TWO ANHKHEGS ERUPT FROM THE GROUND BENEATH YOU."
-	Save 90 Morale
+	Morale = 90
 	ClearMonsters
 	LoadMonster Ahnkheg count=2 icon=Ahnkheg
 	ClearBox
 	Combat
 	if CombatEnd > 128: Goto ExitEvent
-	Save 1 AnkhegsDefeated
+	AnkhegsDefeated = 1
 	Exit
 
 SlaverCaravan:
 	if Mark3 != 255: Goto Done
 	if QuestBivant != 0 || SlaverCaravanSeen != 0: Goto Done
 	PrintClear "A SMALL CARAVAN OF SLAVERS RIDE BY YOU TOWARD THE BUCCANEER BASE."
-	Save 1 SlaverCaravanSeen
+	SlaverCaravanSeen = 1
 	Goto Done
 
 BuccaneerBaseSite:
+	alias Choice = Scratch1
 	if Mark3 != 255: Goto Done
 	if QuestBivant != 0: Goto Done
 	ClearBox
 	Call CallClearView
 	Picture Arena
 	PrintClear "YOU HAVE REACHED THE BUCCANEER BASE.  A BAND OF BUCCANEERS RIDE OUT TO ESCORT YOU IN.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ENTER" "LEAVE"
-	OnGoto Scratch1 2 EnterBuccaneerBase DoneMarkKeep
+	Choice = Menu "ENTER" -> EnterBuccaneerBase "LEAVE" -> DoneMarkKeep
 
 EnterBuccaneerBase:
 	Gosub LeaveWilderness
@@ -172,23 +177,23 @@ EnterBuccaneerBase:
 GuardsRideBy:
 	if GuardsRideBySeen != 0: Goto Done
 	PrintClear "A GROUP OF ARMED GUARDS RIDE BY."
-	Save 1 GuardsRideBySeen
+	GuardsRideBySeen = 1
 	Goto Done
 
 OutpostRiders:
+	alias Choice = Scratch1
 	if ZhentilMission != 255: Goto KeepRiders
 	if QuestZhentilOutpost > 253: Goto KeepRiders
 	also if QuestZhentilOutpost == 253 {
-		Save 1 GuardsRideBySeen
-		Save 254 QuestZhentilOutpost
+		GuardsRideBySeen = 1
+		QuestZhentilOutpost = 254
 		Goto Done
 	}
 	ClearBox
 	Call CallClearView
 	Picture Castle
 	PrintClear "A GROUP OF MEN ON HORSEBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS, 'ARE YOU THE DIPLOMATIC ENVOYS FROM NEW PHLAN?'  WHAT WILL YOU SAY?"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 EscortToOutpost DenyEnvoy
+	Choice = Menu "YES" -> EscortToOutpost "NO" -> DenyEnvoy
 
 DenyEnvoy:
 	PrintClear "AFTER SAYING NO, THE RIDERS RETURN TO THE OUTPOST.  BEFORE LEAVING, THEIR LEADER SAYS, 'YOU ARE TRESSPASSING ON PRIVATE LAND.  I ADVISE YOU TO LEAVE.'"
@@ -200,13 +205,13 @@ EscortToOutpost:
 	NewECL ZhentilOutpost
 
 KeepRiders:
+	alias Choice = Scratch1
 	if KeepRidersFought != 0: Goto Done
 	ClearBox
 	Call CallClearView
 	Picture Castle
 	PrintClear "AS YOU APPROACH THE KEEP, A GROUP OF ARMED MEN ON HORESBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS 'YOU ARE TRESSPASSING ON PRIVATE LAND; LEAVE NOW OR FACE THE CONSQUENCES!'"
-	HMenu Scratch1 2 "STAY" "LEAVE"
-	OnGoto Scratch1 2 FightKeepRiders ExitEvent
+	Choice = Menu "STAY" -> FightKeepRiders "LEAVE" -> ExitEvent
 
 FightKeepRiders:
 	SetupMonster Fighter16 distance=2 closeup=0
@@ -215,66 +220,68 @@ FightKeepRiders:
 	LoadMonster Corporal count=12 icon=11
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Save 255 KeepRidersFought
+	KeepRidersFought = 255
 	Exit
 
 LeaveWilderness:
 	Picture None
 	ClearBox
-	Save 127 WallSlot1
-	Save 127 WallSlot1B
-	Save 127 WallSlot2
-	Save 127 WallSlot2B
-	Save 127 WallSlot3
-	Save 127 WallSlot3B
-	Save 1 In3D
-	LoadFiles 127 127 127
+	WallSlot1 = 127
+	WallSlot1B = 127
+	WallSlot2 = 127
+	WallSlot2B = 127
+	WallSlot3 = 127
+	WallSlot3B = 127
+	In3D = 1
+	LoadMap Unchanged unused=127 icons=127
 	Return
 
 RollEncounter:
-	Random 19 Scratch1
-	Save 0 ForceEncounter25
+	Scratch1 = Random 19
+	ForceEncounter25 = 0
 	if Scratch1 != 0: Goto Done
 
 RandomEncounter:
+	alias EncSurpriseAEntry = Scratch4
+	alias EncSurpriseBEntry = Scratch5
 	Gosub PickEncounter
 	if Scratch1 == 20 && ForceEncounter25 == 0: Goto SmallDarkCave
-	GetTable EncSurpriseA EncounterType25 Scratch4
-	GetTable EncSurpriseB EncounterType25 Scratch5
+	EncSurpriseAEntry = EncSurpriseA[EncounterType25]
+	EncSurpriseBEntry = EncSurpriseB[EncounterType25]
 	PartySurprise Scratch1 Scratch2
-	Surprise Scratch1 Scratch2 Scratch4 Scratch5
-	if Scratch5 == 9: And Surprise 1 Surprise
-	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseGroup FaceToFace
+	Surprise Scratch1 Scratch2 EncSurpriseAEntry EncSurpriseBEntry
+	if EncSurpriseBEntry == 9: Surprise = Surprise & 1
+	OnGoto Surprise SpotGroup PartySurprised SurpriseGroup FaceToFace
 
 SpotGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 4 "" "" "" AuxEncTemp AuxEncTemp
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 PartySurprised:
 	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
 	Print $AuxMonsterName
 	Print "."
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 99 99
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 SurpriseGroup:
 	PrintClear "YOU SURPRISE A GROUP OF "
 	Print $AuxMonsterName
 	Print "."
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 2 2 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 FaceToFace:
 	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
 	Print $AuxMonsterName
 	Print "."
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 EncounterFight:
-	Save AuxEncResult2 Morale
+	Morale = AuxEncResult2
 	ClearMonsters
 	LoadMonster AuxMonster count=EncounterCount25 icon=AuxTemp9
 	if EncounterExtraCount25 == 0: Goto StartCombat
@@ -290,10 +297,10 @@ EncounterParlay:
 	if AuxMember == 0: Goto EncounterFight
 	if AuxMember == 50: Goto FriendlyGroup
 	Parlay 20 10 50 0 30 Scratch1
-	Random 30 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	Add Scratch1 SelReaction Scratch1
-	Add Scratch1 AuxEncBonus Scratch1
+	Scratch2 = Random 30
+	Scratch1 = Scratch1 + Scratch2
+	Scratch1 = Scratch1 + SelReaction
+	Scratch1 = Scratch1 + AuxEncBonus
 	if Scratch1 < 140: Goto ParlayConvince
 	PrintClear "THE "
 	Print $AuxMonsterName
@@ -325,95 +332,94 @@ FriendlyGroup:
 	Goto Done
 
 SmallDarkCave:
+	alias Choice = Scratch1
 	PrintClear "YOU HAVE FOUND A SMALL DARK CAVE.  WILL YOU ENTER?"
-	HMenu Scratch1 2 "ENTER" "LEAVE"
-	OnGoto Scratch1 2 EnterLair Done
+	Choice = Menu "ENTER" -> EnterLair "LEAVE" -> Done
 
 EnterLair:
-	Save 255 InLair
-	Random 3 Scratch6
-	OnGoto Scratch6 4 LairStartA LairStartB LairStartC LairStartD
+	InLair = 255
+	Scratch6 = Random 3
+	OnGoto Scratch6 LairStartA LairStartB LairStartC LairStartD
 
 LairStartA:
-	Save 15 LairStartX25
-	Save 3 LairStartY25
+	LairStartX25 = 15
+	LairStartY25 = 3
 	Goto LoadLair
 
 LairStartB:
-	Save 0 LairStartX25
-	Save 2 LairStartY25
+	LairStartX25 = 0
+	LairStartY25 = 2
 	Goto LoadLair
 
 LairStartC:
-	Save 0 LairStartX25
-	Save 9 LairStartY25
+	LairStartX25 = 0
+	LairStartY25 = 9
 	Goto LoadLair
 
 LairStartD:
-	Save 11 LairStartX25
-	Save 15 LairStartY25
+	LairStartX25 = 11
+	LairStartY25 = 15
 	Goto LoadLair
 
 LoadLair:
-	Save 1 In3D
-	Save 145 WallSlot1
-	Save 145 WallSlot1B
-	Save 145 WallSlot2
-	Save 145 WallSlot2B
-	Save 145 WallSlot3
-	Save 145 WallSlot3B
-	LoadFiles 25 2 255
-	Save LairStartX25 PartyX
-	Save LairStartY25 PartyY
-	Save 8 SkyInside
+	In3D = 1
+	WallSlot1 = 145
+	WallSlot1B = 145
+	WallSlot2 = 145
+	WallSlot2B = 145
+	WallSlot3 = 145
+	WallSlot3B = 145
+	LoadMap 25 unused=2 icons=255
+	PartyX = LairStartX25
+	PartyY = LairStartY25
+	SkyInside = 8
 	ClearBox
 	Call CallRedraw
 	NewECL Mountains
 
 LairCell:
-	And Cell 127 Scratch10
-	OnGoto Scratch10 15 Done TwoBoars BoarSow ThreeBoars DwarfRemains SoftGround AnkhegVictims AnkhegLunges SnakeSkin GiganticSnake SnakeFalls ThriKreenBlock ThriKreenWarriors ThriKreenChest PassageOutside
+	Scratch10 = Cell & 127
+	OnGoto Scratch10 Done TwoBoars BoarSow ThreeBoars DwarfRemains SoftGround AnkhegVictims AnkhegLunges SnakeSkin GiganticSnake SnakeFalls ThriKreenBlock ThriKreenWarriors ThriKreenChest PassageOutside
 
 TwoBoars:
-	And DragonCaveFlags 1 Scratch1
+	Scratch1 = DragonCaveFlags & 1
 	if 0 != Scratch1: Exit
 	SetupMonster WildBoar distance=0 closeup=WildBoar
 	PrintClear "OUT OF THE SHADOWS, TWO LARGE WILD BOARS CHARGE."
 	ClearMonsters
 	LoadMonster WildBoar count=2 icon=WildBoar
 	Combat
-	Or DragonCaveFlags 1 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 1
 	Exit
 
 BoarSow:
-	And DragonCaveFlags 2 Scratch1
+	Scratch1 = DragonCaveFlags & 2
 	if 0 != Scratch1: Exit
 	SetupMonster WildBoar distance=1 closeup=WildBoar
 	PrintClear "NEAR YOU IS A LARGE, WILD BOAR SOW FEEDING HER YOUNG.  AS YOU NEAR SHE GROWLS A WARNING TO STAY AWAY.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "APPROACH" "LEAVE"
-	OnGoto Scratch1 2 ApproachSow Done
+	Scratch1 = Menu "APPROACH" -> ApproachSow "LEAVE" -> Done
 
 ApproachSow:
 	PrintClear "AS YOU APPROACH HER HAIR BRISTLES AND SHE ATTACKS!"
-	Save 100 Morale
-	Save 252 MonsterHit
+	Morale = 100
+	MonsterHit = 252
 	ClearMonsters
 	LoadMonster WildBoar count=1 icon=WildBoar
 	Combat
-	Save 0 MonsterHit
+	MonsterHit = 0
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags 4 Scratch1
+	Scratch1 = DragonCaveFlags | 4
 	Exit
 
 ThreeBoars:
-	And DragonCaveFlags 4 Scratch1
+	Scratch1 = DragonCaveFlags & 4
 	if 0 != Scratch1: Exit
 	SetupMonster WildBoar distance=0 closeup=WildBoar
 	PrintClear "AT THE END OF THE PASSAGEWAY ARE THREE LARGE WILD BOARS.  THEY CHARGE AT YOU AND ATTACK!"
 	ClearMonsters
 	LoadMonster WildBoar count=3 icon=WildBoar
 	Combat
-	Or DragonCaveFlags 4 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 4
 	Exit
 
 DwarfRemains:
@@ -425,17 +431,17 @@ SoftGround:
 	Exit
 
 AnkhegVictims:
-	And DragonCaveFlags 8 Scratch1
+	Scratch1 = DragonCaveFlags & 8
 	if 0 != Scratch1: Exit
 	PrintClear "THE REMAINS OF SEVERAL OF THE ANHKHEG'S VICTIM.  ADMIST THE DEBRIS IS SOME TREASURE."
 	ClearMonsters
 	Treasure #1388 #07D0 #01F4 0 0 1 0 255
 	Combat
-	Or DragonCaveFlags 8 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 8
 	Exit
 
 AnkhegLunges:
-	And DragonCaveFlags 16 Scratch1
+	Scratch1 = DragonCaveFlags & 16
 	if 0 != Scratch1: Exit
 	SetupMonster Ankheg distance=1 closeup=Ankheg
 	PrintClear "FROM THE SOUTH, A LARGE ANHKHEG LUNGES OUT AND ATTACKS THE PARTY."
@@ -443,7 +449,7 @@ AnkhegLunges:
 	LoadMonster Ahnkheg count=1 icon=Ahnkheg
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags 16 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 16
 	Exit
 
 SnakeSkin:
@@ -451,7 +457,7 @@ SnakeSkin:
 	Exit
 
 GiganticSnake:
-	And DragonCaveFlags 32 Scratch1
+	Scratch1 = DragonCaveFlags & 32
 	if 0 != Scratch1: Exit
 	SetupMonster GiantSnake distance=1 closeup=GiantSnake
 	PrintClear "A GIGANTIC SNAKE LIES IN FRONT OF YOU.  IT REARS AND ATTACKS."
@@ -459,40 +465,39 @@ GiganticSnake:
 	LoadMonster GiantSnake count=1 icon=GiantSnake
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags 32 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 32
 	Exit
 
 SnakeFalls:
-	And DragonCaveFlags 64 Scratch1
+	Scratch1 = DragonCaveFlags & 64
 	if 0 != Scratch1: Exit
-	Save 1 Surprise
+	Surprise = 1
 	SetupMonster GiantSnake distance=0 closeup=GiantSnake
 	PrintClear "AS YOU WALK INTO THIS ROOM A GIANT SNAKE FALLS ON TOP OF THE PARTY."
 	ClearMonsters
 	LoadMonster GiantSnake count=1 icon=GiantSnake
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags 64 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 64
 	Exit
 
 ThriKreenBlock:
-	And DragonCaveFlags 128 Scratch1
+	Scratch1 = DragonCaveFlags & 128
 	if 0 != Scratch1: Exit
 	SetupMonster ThriKreen distance=0 closeup=ThriKreen
 	PrintClear "THERE ARE TWO THRI-KREEN HERE.  THEY BLOCK THE PASSAGE WITH THEIR BODIES.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "LEAVE" "ATTACK"
-	OnGoto Scratch1 2 StepBack AttackThriKreen
+	Scratch1 = Menu "LEAVE" -> StepBack "ATTACK" -> AttackThriKreen
 
 AttackThriKreen:
 	ClearMonsters
 	LoadMonster ThriKreen count=2 icon=ThriKreen
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags 128 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 128
 	Exit
 
 ThriKreenWarriors:
-	And DragonCaveFlags2 1 Scratch1
+	Scratch1 = DragonCaveFlags2 & 1
 	if 0 != Scratch1: Exit
 	SetupMonster ThriKreen distance=0 closeup=ThriKreen
 	PrintClear "BEFORE YOU ARE THREE THRI-KREEN WARRIORS.  THEY ATTACK YOU IMMEDIATELY."
@@ -500,11 +505,11 @@ ThriKreenWarriors:
 	LoadMonster ThriKreen count=3 icon=ThriKreen
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags2 1 DragonCaveFlags2
+	DragonCaveFlags2 = DragonCaveFlags2 | 1
 	Exit
 
 ThriKreenChest:
-	And DragonCaveFlags2 2 Scratch1
+	Scratch1 = DragonCaveFlags2 & 2
 	if 0 != Scratch1: Exit
 	SetupMonster ThriKreen distance=0 closeup=ThriKreen
 	PrintClear "YOU ENTER A CAVE ROOM WITH FOUR THRI-KREEN WARRIORS IN IT.  ON THE FLOOR IS A CHEST WITH TREASURE IN IT.  AS YOU ENTER THEY ATTACK."
@@ -513,18 +518,18 @@ ThriKreenChest:
 	Treasure 0 #07D0 0 #03E8 0 3 1 129 // 1 random items
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or DragonCaveFlags2 2 DragonCaveFlags2
+	DragonCaveFlags2 = DragonCaveFlags2 | 2
 	Exit
 
 PassageOutside:
+	alias Choice = Scratch1
 	PrintClear "YOU HAVE FOUND A PASSAGE WHICH LEADS OUTSIDE.  WILL YOU TAKE IT?"
-	HMenu Scratch1 2 "LEAVE CAVE" "STAY IN"
-	OnGoto Scratch1 2 LeaveLair Done
+	Choice = Menu "LEAVE CAVE" -> LeaveLair "STAY IN" -> Done
 
 LeaveLair:
-	Save 0 In3D
-	LoadFiles 4 4 0
-	Save 0 InLair
+	In3D = 0
+	LoadMap 4 unused=4 icons=0
+	InLair = 0
 	Call CallRedraw
 	NewECL Mountains
 
@@ -536,111 +541,111 @@ RedrawExit:
 	Exit
 
 StepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
 	Exit
 
 PickEncounter:
-	Random 20 Scratch1
+	Scratch1 = Random 20
 	if Scratch1 == 20 && ForceEncounter25 == 0: Return
-	Random 19 Scratch1
-	OnGoto Scratch1 20 PickBoars PickBoars PickBoars PickMantis PickTigers PickTigers PickTigers PickThriKreens PickThriKreens PickAnkheg PickCentaurs PickCentaurs PickSoldiers PickSoldiers PickThieves BuccaneerBaseSite PickQuicklings PickQuicklings PickSnakes PickSnakes
-	GetTable EncData9 EncounterType25 AuxTemp9
-	GetTable EncData2 EncounterType25 AuxMember
-	GetTable EncData3 EncounterType25 AuxRoll
-	GetTable EncMonster EncounterType25 AuxMonster
-	GetTable EncData5 EncounterType25 AuxEncResult
-	GetTable EncMorale EncounterType25 AuxEncResult2
-	GetTable EncData7 EncounterType25 AuxEncTemp
-	GetTable EncMonster2 EncounterType25 AuxPartyStrength
-	GetTable EncStrength EncounterType25 AuxCounter
+	Scratch1 = Random 19
+	OnGosub Scratch1 PickBoars PickBoars PickBoars PickMantis PickTigers PickTigers PickTigers PickThriKreens PickThriKreens PickAnkheg PickCentaurs PickCentaurs PickSoldiers PickSoldiers PickThieves BuccaneerBaseSite PickQuicklings PickQuicklings PickSnakes PickSnakes
+	AuxTemp9 = EncData9[EncounterType25]
+	AuxMember = EncData2[EncounterType25]
+	AuxRoll = EncData3[EncounterType25]
+	AuxMonster = EncMonster[EncounterType25]
+	AuxEncResult = EncData5[EncounterType25]
+	AuxEncResult2 = EncMorale[EncounterType25]
+	AuxEncTemp = EncData7[EncounterType25]
+	AuxPartyStrength = EncMonster2[EncounterType25]
+	AuxCounter = EncStrength[EncounterType25]
 	PartyStrength Scratch1
-	Div Scratch1 AuxCounter Scratch1
-	Random 5 Scratch2
-	OnGoto Scratch2 5 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
+	Scratch1 = Scratch1 / AuxCounter
+	Scratch2 = Random 5
+	OnGoto Scratch2 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
 
 GroupSizeLarge:
-	Div Scratch1 3 Scratch1
-	if Scratch1 <= 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 3
+	if Scratch1 <= 0: Scratch1 = 1
 	Goto SplitGroups
 
 GroupSizeMedium:
-	Div Scratch1 2 Scratch1
-	if Scratch1 <= 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 2
+	if Scratch1 <= 0: Scratch1 = 1
 
 SplitGroups:
-	Save 0 EncounterExtraCount25
-	Save Scratch1 Scratch3
-	GetTable EncGroupSize EncounterType25 AuxMenuChoice
+	EncounterExtraCount25 = 0
+	Scratch3 = Scratch1
+	AuxMenuChoice = EncGroupSize[EncounterType25]
 	if AuxMenuChoice == 0: Goto CapGroupSize
 
 SplitGroupsLoop:
 	if Scratch3 < AuxMenuChoice: Goto CapGroupSize
-	Add 1 EncounterExtraCount25 EncounterExtraCount25
-	Sub AuxMenuChoice Scratch3 Scratch3
+	EncounterExtraCount25 += 1
+	Scratch3 -= AuxMenuChoice
 	Goto SplitGroupsLoop
 
 CapGroupSize:
-	if Scratch1 >= 56: Sub Scratch2 56 Scratch1
-	Save Scratch1 EncounterCount25
+	if Scratch1 >= 56: Scratch1 = 56 - Scratch2
+	EncounterCount25 = Scratch1
 	Return
 
 PickQuicklings:
-	Save "QUICKLINGS" $AuxMonsterName
-	Save 0 EncounterType25
+	$AuxMonsterName = "QUICKLINGS"
+	EncounterType25 = 0
 	Return
 
 PickBoars:
-	Save "WILD BOARS" $AuxMonsterName
-	Save 1 EncounterType25
+	$AuxMonsterName = "WILD BOARS"
+	EncounterType25 = 1
 	Return
 
 PickMantis:
-	Save "GIANT MANTIS" $AuxMonsterName
-	Save 2 EncounterType25
+	$AuxMonsterName = "GIANT MANTIS"
+	EncounterType25 = 2
 	Return
 
 PickTigers:
-	Save "TIGERS" $AuxMonsterName
-	Save 3 EncounterType25
+	$AuxMonsterName = "TIGERS"
+	EncounterType25 = 3
 	Return
 
 PickThriKreens:
-	Save "THRI-KREENS" $AuxMonsterName
-	Save 4 EncounterType25
+	$AuxMonsterName = "THRI-KREENS"
+	EncounterType25 = 4
 	Return
 
 PickAnkheg:
-	Save "ANHKHEG" $AuxMonsterName
-	Save 5 EncounterType25
+	$AuxMonsterName = "ANHKHEG"
+	EncounterType25 = 5
 	Return
 
 PickCentaurs:
-	Save "CENTAURS" $AuxMonsterName
-	Save 6 EncounterType25
+	$AuxMonsterName = "CENTAURS"
+	EncounterType25 = 6
 	Return
 
 PickSoldiers:
-	Save "SOLDIERS" $AuxMonsterName
-	Save 7 EncounterType25
+	$AuxMonsterName = "SOLDIERS"
+	EncounterType25 = 7
 	Return
 
 PickThieves:
-	Save "THIEVES" $AuxMonsterName
-	Save 8 EncounterType25
+	$AuxMonsterName = "THIEVES"
+	EncounterType25 = 8
 	Return
 
 PickSnakes:
-	Save "GIANT SNAKES" $AuxMonsterName
-	Save 10 EncounterType25
+	$AuxMonsterName = "GIANT SNAKES"
+	EncounterType25 = 10
 	Return
 
 MarkKeepOnMap:
 	if Mark3 == 255: Return
-	Save 12 ProbeX
-	Save 31 ProbeY
-	Save 97 ProbeCell
+	ProbeX = 12
+	ProbeY = 31
+	ProbeCell = 97
 	Call CallLookAhead
 	Return
 
@@ -711,30 +716,30 @@ EncMonster2:
 
 event2:
 	if In3D == 1: Goto RestInside
-	Save 10 RestChance
-	Save 96 RestEvery
+	RestChance = 10
+	RestEvery = 96
 	Exit
 
 RestInside:
-	Save 0 RestEvery
+	RestEvery = 0
 	Exit
 
 event3:
-	Save 1 ForceEncounter25
+	ForceEncounter25 = 1
 	Goto RandomEncounter
 
 event4:
 	if InLair == 255: Goto LoadLairFiles
-	Save 0 In3D
-	Save 0 NoCoords
-	LoadFiles 4 4 0
+	In3D = 0
+	NoCoords = 0
+	LoadMap 4 unused=4 icons=0
 	Gosub MarkKeepOnMap
 	Exit
 
 LoadLairFiles:
-	Save 1 In3D
-	Save 255 NoCoords
-	LoadPieces 17 17 17
-	LoadFiles 25 2 255
-	Save 8 SkyInside
+	In3D = 1
+	NoCoords = 255
+	LoadWalls 17 17 17
+	LoadMap 25 unused=2 icons=255
+	SkyInside = 8
 	Exit

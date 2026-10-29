@@ -1,10 +1,10 @@
 event0:
-	Save 11 Scratch8
-	if Hours >= 14: Save 8 Scratch8
-	Save Scratch8 Sky
-	Save 10 SkyInside
+	Scratch8 = 11
+	if Hours >= 14: Scratch8 = 8
+	Sky = Scratch8
+	SkyInside = 10
 	if LeftMap == 0: Exit
-	OnGoto Facing 4 ExitNorthToSlums ExitEastToSlums ExitSouth ExitWest
+	OnGoto Facing ExitNorthToSlums ExitEastToSlums ExitSouth ExitWest
 
 ExitNorthToSlums:
 	SetMapXY 13 26
@@ -22,13 +22,14 @@ ExitWest:
 	Exit
 
 event1:
-	And Cell 127 Scratch7
-	OnGoto Scratch7 21 Done BackstabThief BackstabThief DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare LootRoom LootRoom LootRoom LootRoom LootRoom LootRoom ThievesFlee ThiefAmbush FloorFiles JailCell SlateMazeNW MapMazeNE
+	Scratch7 = Cell & 127
+	OnGoto Scratch7 Done BackstabThief BackstabThief DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare LootRoom LootRoom LootRoom LootRoom LootRoom LootRoom ThievesFlee ThiefAmbush FloorFiles JailCell SlateMazeNW MapMazeNE
 
 DoorTrapSquare:
-	Sub 3 Scratch7 Scratch9
-	GetTable TrapSquareDone Scratch9 Scratch10
-	if Scratch10 == 1: Goto Done
+	alias TrapSquareDoneEntry = Scratch10
+	Scratch9 = Scratch7 - 3
+	TrapSquareDoneEntry = TrapSquareDone[Scratch9]
+	if TrapSquareDoneEntry == 1: Goto Done
 	if TrapSquareDone6 == 0: Goto DoorTrapCheck
 	if Scratch9 == 3: Goto DoorTrapOutcome
 
@@ -36,16 +37,16 @@ DoorTrapCheck:
 	Gosub CheckTrap
 
 DoorTrapOutcome:
-	OnGoto TrapResult 3 DoorTrapSprung Done DoorTrapDisarmed
+	OnGoto TrapResult DoorTrapSprung Done DoorTrapDisarmed
 
 DoorTrapDisarmed:
-	SaveTable 1 TrapSquareDone Scratch9
-	if TrapSquareDone6 != 0: Save 2 TrapSquareDone3
+	TrapSquareDone[Scratch9] = 1
+	if TrapSquareDone6 != 0: TrapSquareDone3 = 2
 	Goto Done
 
 DoorTrapSprung:
-	OnGoto Scratch9 6 ScythingBlade PoisonGasGlass ScythingBlade ScythingBlade BladedNet ScythingBlade
-	SaveTable 1 TrapSquareDone Scratch9
+	OnGosub Scratch9 ScythingBlade PoisonGasGlass ScythingBlade ScythingBlade BladedNet ScythingBlade
+	TrapSquareDone[Scratch9] = 1
 	Goto Done
 
 ScythingBlade:
@@ -67,63 +68,64 @@ BladedNet:
 	Return
 
 BackstabThief:
+	alias Choice = Scratch4
 	if QuestKovelThieves != 0: Goto Done
 	if Scratch7 == LastBackstabCell: Goto Done
 	if ThievesKilled >= 21: Goto Done
-	Save 32 Portrait
+	Portrait = 32
 	SetupMonster Swordsman11 distance=2 body=8
 	Delay
 	Approach
 	Delay
 	Approach
-	Save Scratch7 LastBackstabCell
+	LastBackstabCell = Scratch7
 	PrintClear "AS YOU ENTER THE ROOM A THIEF WITH A SWORD COMES OUT OF NOWHERE"
-	Random 99 Scratch1
-	if ThievesKilled >= 12: Sub 5 Scratch1 Scratch1
+	Scratch1 = Random 99
+	if ThievesKilled >= 12: Scratch1 -= 5
 	if Scratch1 < 30: Goto ThiefBackstabs
 	Print ".  HE TRIES TO ATTACK THE PARTY BUT YOU STOP HIM.  WHAT WILL YOU DO?"
-	HMenu Scratch4 2 "ATTACK HIM" "LET HIM GO"
-	OnGoto Scratch4 2 AttackThief Done
+	Choice = Menu "ATTACK HIM" -> AttackThief "LET HIM GO" -> Done
 
 ThiefBackstabs:
 	Print ", BACKSTABS A PARTY MEMBER THEN DISAPPEARS THROUGH THE WALL."
 	Delay
-	Save 2 Scratch1
-	if ThievesKilled >= 12: Save 3 Scratch1
+	Scratch1 = 2
+	if ThievesKilled >= 12: Scratch1 = 3
 	Damage 1 Scratch1 8 0 70
 	Goto Done
 
 AttackThief:
 	ClearMonsters
-	Save 30 Morale
+	Morale = 30
 	if ThievesKilled >= 18: LoadMonster ThLvlThief51 count=1 icon=12
 	also if ThievesKilled < 18: LoadMonster StLvlThief count=1 icon=12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
-	Add 1 ThievesKilled ThievesKilled
+	ThievesKilled += 1
 	Goto Done
 
 LootRoom:
-	Sub 9 Scratch7 Scratch9
-	GetTable LootRoomDone Scratch9 Scratch10
-	if Scratch10 == 1: Goto Done
-	OnGoto Scratch9 6 LootPile CabinetsMenu RugsAndTapestries WoodenCabinet CasketTable WeaponPile
+	alias LootRoomDoneEntry = Scratch10
+	Scratch9 = Scratch7 - 9
+	LootRoomDoneEntry = LootRoomDone[Scratch9]
+	if LootRoomDoneEntry == 1: Goto Done
+	OnGoto Scratch9 LootPile CabinetsMenu RugsAndTapestries WoodenCabinet CasketTable WeaponPile
 
 LootPile:
-	And RoomsLooted 1 Scratch1
+	Scratch1 = RoomsLooted & 1
 	if 0 != Scratch1: Goto Done
 	PrintClear "PILED HERE IS VARIOUS LOOT.  THERE IS A WIDE VARIETY OF NICK NACKS FROM TARNISHED BRONZE CANDLESTICKS TO ONE OR TWO USEFUL ITEMS."
 	Delay
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 56 // Electrum Decanter, Silver Scarab, Incense, Silver Mirror, Leather Armor +4, Short Sword +2
 	Combat
-	Or 1 RoomsLooted RoomsLooted
+	RoomsLooted = 1 | RoomsLooted
 	Goto Done
 
 CabinetsMenu:
+	alias Choice = Scratch10
 	PrintClear "IN FRONT OF YOU ARE THREE CABINETS.  WHICH ONE WILL YOU EXAMINE?"
-	HMenu Scratch10 4 "A" "B" "C" "LEAVE"
-	OnGoto Scratch10 4 CabinetA CabinetB CabinetC Done
+	Choice = Menu "A" -> CabinetA "B" -> CabinetB "C" -> CabinetC "LEAVE" -> Done
 	if CabinetALock == 1: Goto Done
 	if CabinetBLock == 1: Goto Done
 	if CabinetCLock == 1: Goto Done
@@ -131,21 +133,21 @@ CabinetsMenu:
 
 CabinetA:
 	if CabinetALock == 1: Goto CabinetEmpty
-	Save 0 Scratch2
+	Scratch2 = 0
 	Gosub LockedMenu
 	if CabinetALock != 0: Goto CabinetsMenu
 	PrintClear "INSIDE THE CABINET YOU FIND SOME FILES.  YOU STUFF THE PAPERS INTO YOUR JOURNAL UNDER ENTRIES 23 AND 14."
 	Delay
-	Save 1 CabinetALock
+	CabinetALock = 1
 	Goto CabinetsMenu
 
 LockedMenu:
-	Save 0 LockAttempt
+	LockAttempt = 0
 	PrintClear "IT IS LOCKED.  HOW WILL YOU OPEN THE LOCK?"
 
 OpenLockMenu:
-	HMenu Scratch1 4 "PICK" "BREAK" "CAST KNOCK" "LEAVE"
-	OnGoto Scratch1 4 PickLock BreakLock CastKnock LeaveLock
+	alias Choice = Scratch1
+	Choice = Menu "PICK" -> PickLock "BREAK" -> BreakLock "CAST KNOCK" -> CastKnock "LEAVE" -> LeaveLock
 
 CastKnock:
 	Spell 31 Scratch5 Scratch6
@@ -155,23 +157,23 @@ CastKnock:
 
 KnockOpens:
 	LoadCharacter Scratch6
-	SaveTable 0 SelMemorized Scratch5
+	SelMemorized[Scratch5] = 0
 	PrintClear $SelName
 	Print " CASTS A KNOCK SPELL AND OPENS THE LOCK."
-	Add 128 Scratch6 Scratch6
+	Scratch6 += 128
 	LoadCharacter Scratch6
-	SaveTable 0 CabinetALock Scratch2
+	CabinetALock[Scratch2] = 0
 	Return
 
 PickLock:
-	GetTable CabinetALock Scratch2 Scratch3
+	Scratch3 = CabinetALock[Scratch2]
 	if Scratch3 == 2: Goto LockTooComplex
 	Who "WHO WILL TRY TO PICK THE LOCK?"
-	Save SelPickPockets Scratch1
-	Random 99 Scratch3
+	Scratch1 = SelPickPockets
+	Scratch3 = Random 99
 	if Scratch3 >= Scratch1: Goto PickLockFails
 	PrintClear "YOU PICK THE LOCK!"
-	SaveTable 0 CabinetALock Scratch2
+	CabinetALock[Scratch2] = 0
 	Return
 
 LockTooComplex:
@@ -182,17 +184,17 @@ LockTooComplex:
 PickLockFails:
 	PrintClear "YOU TRY TO PICK THE LOCK BUT IT IS TOO COMPLEX FOR YOU TO PICK.  YOU FAIL MISERABLY."
 	Delay
-	SaveTable 2 CabinetALock Scratch2
+	CabinetALock[Scratch2] = 2
 	Goto LockedMenu
 
 BreakLock:
 	PrintClear "WITH ONE MIGHTY SWING YOU SMASH OPEN THE LOCK MAKING ENOUGH NOISE TO WAKE THE DEAD."
 	Delay
-	SaveTable 0 CabinetALock Scratch2
+	CabinetALock[Scratch2] = 0
 	Return
 
 LeaveLock:
-	SaveTable 3 CabinetALock Scratch2
+	CabinetALock[Scratch2] = 3
 	Return
 
 CabinetEmpty:
@@ -201,30 +203,30 @@ CabinetEmpty:
 
 CabinetB:
 	if CabinetBLock == 1: Goto CabinetEmpty
-	Save 1 Scratch2
+	Scratch2 = 1
 	Gosub LockedMenu
 	if CabinetBLock != 0: Goto CabinetsMenu
 	PrintClear "INSIDE THE CABINET YOU FIND FIFTEEN SACKS FILLED WITH SILVER PIECES."
 	ClearMonsters
 	Treasure 0 #05DC 0 0 0 0 0 255
 	Combat
-	Save 1 CabinetBLock
+	CabinetBLock = 1
 	Goto CabinetsMenu
 
 CabinetC:
 	if CabinetCLock == 1: Goto CabinetEmpty
 	Gosub CheckTrap
-	OnGoto TrapResult 3 CabinetCNeedle CabinetCAvoidTrap CabinetCOpen
+	OnGoto TrapResult CabinetCNeedle CabinetCAvoidTrap CabinetCOpen
 
 CabinetCOpen:
-	Save 2 Scratch2
+	Scratch2 = 2
 	Gosub LockedMenu
 	if CabinetCLock != 0: Goto CabinetsMenu
 	PrintClear "INSIDE THE CABINET YOU FIND EIGHTEEN SACKS FILLED WITH GOLD PIECES."
 	ClearMonsters
 	Treasure 0 0 0 #0708 0 0 0 255
 	Combat
-	Save 1 CabinetCLock
+	CabinetCLock = 1
 	Goto CabinetsMenu
 
 CabinetCNeedle:
@@ -239,36 +241,35 @@ CabinetCAvoidTrap:
 	Goto CabinetsMenu
 
 RugsAndTapestries:
-	And 4 RoomsLooted Scratch1
+	Scratch1 = 4 & RoomsLooted
 	if 0 > Scratch1: Goto Done
 	PrintClear "YOU SEE A WIDE COLLECTION OF RUGS AND TAPESTRIES.  TWO OF THEM LOOK EXTRAORDINARY WHILE THE OTHERS LOOK AVERAGE."
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 24 // 2 Fine Tapestry, 26 Huge Tapestry
 	Combat
-	Or 4 RoomsLooted RoomsLooted
+	RoomsLooted = 4 | RoomsLooted
 	Goto Done
 
 WoodenCabinet:
-	And 8 RoomsLooted Scratch1
+	Scratch1 = 8 & RoomsLooted
 	if Scratch1 > 0: Goto Done
 	PrintClear "IN FRONT OF YOU IS A WOODEN CABINET.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "EXAMINE THE CABINET" "LEAVE IT"
-	OnGoto Scratch1 2 ExamineCabinet Done
+	Scratch1 = Menu "EXAMINE THE CABINET" -> ExamineCabinet "LEAVE IT" -> Done
 
 ExamineCabinet:
 	if ScrollCaseLock == 1: Goto ScrollCabinetEmpty
 	Gosub CheckTrap
-	OnGoto TrapResult 3 ScrollCabinetGas ScrollCabinetAvoidTrap ScrollCabinetOpen
+	OnGoto TrapResult ScrollCabinetGas ScrollCabinetAvoidTrap ScrollCabinetOpen
 
 ScrollCabinetOpen:
-	Save 3 Scratch2
+	Scratch2 = 3
 	Gosub LockedMenu
 	if ScrollCaseLock != 0: Goto WoodenCabinet
 	PrintClear "YOU FIND A WIDE VARIETY OF SCROLLS IN SCROLL CASES."
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 25 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Clerical Scroll With 3 Spells, Clerical Scroll With 3 Spells, and 2 more
 	Combat
-	Or 8 RoomsLooted RoomsLooted
+	RoomsLooted = 8 | RoomsLooted
 	Goto Done
 
 ScrollCabinetEmpty:
@@ -287,26 +288,26 @@ ScrollCabinetAvoidTrap:
 	Goto WoodenCabinet
 
 CasketTable:
+	alias Choice = Scratch1
 	PrintClear "BEFORE YOU IS A TABLE WITH FOUR SMALL CASKETS ON TOP OF IT.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "SEARCH A CASKET" "LEAVE"
-	OnGoto Scratch1 2 ChooseCasket Done
+	Choice = Menu "SEARCH A CASKET" -> ChooseCasket "LEAVE" -> Done
 
 ChooseCasket:
+	alias Choice = Scratch1
 	PrintClear "WHICH CASKET WILL YOU SEARCH?"
-	HMenu Scratch1 4 "A" "B" "C" "D"
-	OnGoto Scratch1 4 CasketA CasketB CasketC CasketD
+	Choice = Menu "A" -> CasketA "B" -> CasketB "C" -> CasketC "D" -> CasketD
 
 CasketA:
-	And 1 CasketsLooted Scratch1
+	Scratch1 = 1 & CasketsLooted
 	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
-	OnGoto TrapResult 3 CasketANeedle CasketAvoidTrap CasketAOpen
+	OnGoto TrapResult CasketANeedle CasketAvoidTrap CasketAOpen
 
 CasketAOpen:
-	Save 4 Scratch2
+	Scratch2 = 4
 	Gosub LockedMenu
 	if CasketGemsLock != 0: Goto CasketTable
-	Or 1 CasketsLooted CasketsLooted
+	CasketsLooted = 1 | CasketsLooted
 	PrintClear "YOU FIND A POUCH OF SMALL GEMS."
 	ClearMonsters
 	Treasure 0 0 0 0 0 12 0 255
@@ -325,16 +326,16 @@ CasketAvoidTrap:
 	Goto CasketTable
 
 CasketB:
-	And 2 CasketsLooted Scratch1
+	Scratch1 = 2 & CasketsLooted
 	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
-	OnGoto TrapResult 3 CasketBDart CasketAvoidTrap CasketBOpen
+	OnGoto TrapResult CasketBDart CasketAvoidTrap CasketBOpen
 
 CasketBOpen:
-	Save 5 Scratch2
+	Scratch2 = 5
 	Gosub LockedMenu
 	if CasketJewelryLock != 0: Goto CasketTable
-	Or 2 CasketsLooted CasketsLooted
+	CasketsLooted = 2 | CasketsLooted
 	PrintClear "INSIDE THE CASKET IS A VARIETY OF GOLD CHAINS, PENDANTS AND JEWELRY."
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 1 255
@@ -348,16 +349,16 @@ CasketBDart:
 	Goto CasketBOpen
 
 CasketC:
-	And 4 CasketsLooted Scratch1
+	Scratch1 = 4 & CasketsLooted
 	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
-	OnGoto TrapResult 3 CasketCPowder CasketAvoidTrap CasketCOpen
+	OnGoto TrapResult CasketCPowder CasketAvoidTrap CasketCOpen
 
 CasketCOpen:
-	Save 6 Scratch2
+	Scratch2 = 6
 	Gosub LockedMenu
 	if CasketBigGemsLock != 0: Goto CasketTable
-	Or 4 CasketsLooted CasketsLooted
+	CasketsLooted = 4 | CasketsLooted
 	PrintClear "INSIDE THE CASKET ARE SOME BEAUTIFUL GEMS."
 	ClearMonsters
 	Treasure 0 0 0 0 0 3 0 255
@@ -371,20 +372,20 @@ CasketCPowder:
 	Goto CasketCOpen
 
 CasketD:
-	And 8 CasketsLooted Scratch1
+	Scratch1 = 8 & CasketsLooted
 	if 0 != Scratch1: Goto CasketEmpty
 	Gosub CheckTrap
-	OnGoto TrapResult 3 CasketDDarts CasketAvoidTrap CasketDOpen
+	OnGoto TrapResult CasketDDarts CasketAvoidTrap CasketDOpen
 
 CasketDOpen:
-	Save 7 Scratch2
+	Scratch2 = 7
 	Gosub LockedMenu
 	if CasketPearlsLock != 0: Goto CasketTable
 	PrintClear "THE CASKET IS FILLED WITH TINY PEARLS!"
 	ClearMonsters
 	Treasure 0 0 0 0 0 20 0 255
 	Combat
-	Or CasketsLooted 8 CasketsLooted
+	CasketsLooted = CasketsLooted | 8
 	Goto Done
 
 CasketDDarts:
@@ -398,18 +399,17 @@ CasketEmpty:
 	Goto CasketTable
 
 WeaponPile:
-	And RoomsLooted 32 Scratch1
+	Scratch1 = RoomsLooted & 32
 	if 0 != Scratch1: Goto Done
 	PrintClear "INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?"
-	HMenu Scratch1 3 "TAKE SOME" "SEARCH THEM" "LEAVE THEM"
-	OnGoto Scratch1 3 TakeWeapons SearchWeapons LeaveWeapons
+	Scratch1 = Menu "TAKE SOME" -> TakeWeapons "SEARCH THEM" -> SearchWeapons "LEAVE THEM" -> LeaveWeapons
 
 TakeWeapons:
 	if 0 == WeaponPileGasDone: Goto WeaponPileAmbush
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
 	Combat
-	Or 32 RoomsLooted RoomsLooted
+	RoomsLooted = 32 | RoomsLooted
 	Goto Done
 
 LeaveWeapons:
@@ -419,52 +419,52 @@ LeaveWeapons:
 
 SearchWeapons:
 	Gosub CheckTrap
-	OnGoto TrapResult 3 WeaponPileAmbush WeaponTrapBypassed WeaponTrapDisarmed
+	OnGoto TrapResult WeaponPileAmbush WeaponTrapBypassed WeaponTrapDisarmed
 
 WeaponTrapDisarmed:
-	Save 1 WeaponPileGasDone
+	WeaponPileGasDone = 1
 	Goto TakeWeapons
 
 WeaponPileAmbush:
 	if ThievesKilled >= 18 {
-		Save 1 WeaponPileGasDone
+		WeaponPileGasDone = 1
 		Goto HarmlessGas
 	}
-	Save 71 Portrait
+	Portrait = 71
 	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!"
 	Delay
-	Add 5 ThievesKilled Scratch1
+	Scratch1 = 5 + ThievesKilled
 	if Scratch1 >= 21: Goto AmbushManyMasters
 	if Scratch1 <= 12: Goto AmbushFewThieves
-	Sub 12 Scratch1 Scratch2
-	Sub Scratch2 5 Scratch3
+	Scratch2 = Scratch1 - 12
+	Scratch3 = 5 - Scratch2
 	Goto AmbushFight
 
 AmbushManyMasters:
-	Sub 21 Scratch1 Scratch2
-	Sub Scratch2 5 Scratch2
+	Scratch2 = Scratch1 - 21
+	Scratch2 = 5 - Scratch2
 	Goto AmbushFight
 
 AmbushFewThieves:
-	Save 5 Scratch3
-	Save 0 Scratch2
+	Scratch3 = 5
+	Scratch2 = 0
 
 AmbushFight:
-	Random 3 Scratch1
-	Add 2 Scratch1 Scratch1
-	Save 0 Scratch10
+	Scratch1 = Random 3
+	Scratch1 += 2
+	Scratch10 = 0
 	ClearMonsters
-	Save 1 Surprise
-	Save 1 WeaponPileGasDone
+	Surprise = 1
+	WeaponPileGasDone = 1
 	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
 	if Scratch2 != 0: LoadMonster ThLvlThief51 count=Scratch2 icon=12
 	if Scratch3 != 0: LoadMonster StLvlThief count=Scratch3 icon=12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
-	Add Scratch2 ThievesKilled ThievesKilled
-	Add Scratch3 ThievesKilled ThievesKilled
-	Or RoomsLooted 32 RoomsLooted
+	ThievesKilled += Scratch2
+	ThievesKilled += Scratch3
+	RoomsLooted = RoomsLooted | 32
 	Goto Done
 
 WeaponTrapBypassed:
@@ -475,48 +475,48 @@ WeaponTrapBypassed:
 HarmlessGas:
 	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN EXTREMELY BAD SMELLING GAS FILLS THE ROOM.  THE SMELL IS DISGUSTING BUT HARMLESS ENOUGH."
 	Delay
-	Save 1 WeaponPileGasDone
+	WeaponPileGasDone = 1
 	Goto WeaponPile
 
 ThievesFlee:
+	alias Choice = Scratch1
 	if ThiefChaseDone != 0: Goto Done
-	Save 255 ThiefChaseDone
-	Save 44 Portrait
+	ThiefChaseDone = 255
+	Portrait = 44
 	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 ChaseThieves Done
+	Choice = Menu "YES" -> ChaseThieves "NO" -> Done
 
 ChaseThieves:
-	Save 0 Scratch6
+	Scratch6 = 0
 
 ChaseStep:
-	GetTable ChaseSteps Scratch6 Scratch1
-	GetTable ChaseFacing Scratch6 Facing
+	Scratch1 = ChaseSteps[Scratch6]
+	Facing = ChaseFacing[Scratch6]
 	Gosub WalkSteps
 	if Scratch6 == 3: Goto ThievesSplit
 	if Scratch6 == 11: Goto CatchGuildMaster
 	if Scratch6 == 15: Goto ChaseEnd
 
 ChaseNextStep:
-	Add 1 Scratch6 Scratch6
+	Scratch6 += 1
 	Goto ChaseStep
 
 ThievesSplit:
+	alias Choice = Scratch1
 	PrintClear "AS YOU ENTER THIS ROOM THE TWO THIEVES SPLIT; ONE GOING THROUGH THE EAST DOOR, THE OTHER GOING THROUGH THE SOUTH.  WHICH PATH WILL YOU TAKE?"
-	HMenu Scratch1 3 "SOUTH" "EAST" "DON'T FOLLOW"
-	OnGoto Scratch1 3 ChaseSouth ChaseNextStep Done
+	Choice = Menu "SOUTH" -> ChaseSouth "EAST" -> ChaseNextStep "DON'T FOLLOW" -> Done
 
 ChaseSouth:
-	Add 8 Scratch6 Scratch6
+	Scratch6 += 8
 	Goto ChaseNextStep
 
 CatchGuildMaster:
-	Save 44 Portrait
+	alias Choice = Scratch1
+	Portrait = 44
 	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ATTACK" "RELEASE"
-	OnGoto Scratch1 2 AttackThief ReleaseGuildMaster
+	Choice = Menu "ATTACK" -> AttackThief "RELEASE" -> ReleaseGuildMaster
 
 ReleaseGuildMaster:
 	PrintClear "AFTER YOU RELEASE HIM THE THIEF SLOWLY WALKS TOWARD THE FAR DOOR THANKING YOU ALL THE WAY.  PARTWAY THROUGH THE DOOR HE SAYS, 'SUCKERS', THEN SPRINTS AWAY."
@@ -527,42 +527,42 @@ ChaseEnd:
 
 ThiefAmbush:
 	if GuildAmbushDone != 0: Goto Done
-	Save 44 Portrait
+	Portrait = 44
 	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES."
-	Save 1 Surprise
-	Save 60 Morale
+	Surprise = 1
+	Morale = 60
 	ClearMonsters
 	LoadMonster StLvlThief count=15 icon=12
 	LoadMonster ThLvlThief51 count=3 icon=12
 	Combat
 	if CombatEnd > 128: Goto FleeBack
-	Add 15 ThievesKilled ThievesKilled
-	Save 1 GuildAmbushDone
+	ThievesKilled += 15
+	GuildAmbushDone = 1
 	Goto Done
 
 FloorFiles:
-	And FilesFound 1 Scratch1
+	Scratch1 = FilesFound & 1
 	if 0 != Scratch1: Goto Done
 	PrintClear "ON THE FLOOR HERE YOU FIND SOME IMPORTANT LOOKING FILES.  YOU STUFF THE FILES INTO YOUR JOURNAL UNDER ENTRIES 38 AND 51."
 	Delay
-	Or FilesFound 1 FilesFound
+	FilesFound = FilesFound | 1
 	Goto Done
 
 JailCell:
-	And FilesFound 2 Scratch1
+	Scratch1 = FilesFound & 2
 	if 0 == Scratch1: Goto JailThugs
 	PrintClear "YOU ARE IN A ROOM THAT HAS BEEN CONVERTED TO A JAIL CELL.  IT IS EMPTY."
 	Goto Done
 
 JailThugs:
-	Save 32 Portrait
+	Portrait = 32
 	SetupMonster Swordsman11 distance=0 body=8
 	PrintClear "YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU."
 	ClearMonsters
 	LoadMonster StLvlThief count=10 icon=12
 	Combat
-	Or FilesFound 2 FilesFound
+	FilesFound = FilesFound | 2
 	if CombatEnd > 128: Goto FleeBack
 	ShowPortrait 16 8
 	PrintClear "YOU RUSH TO HELP THE OLD THIEF BUT IT'S TOO LATE.  BEFORE HE DIES HE SAYS, 'THE BOSS HAS ALLIES EVERYWHERE.  TAKE THESE PAPERS.  THEY MAY HELP.'  HE THEN DIES."
@@ -572,23 +572,23 @@ JailThugs:
 	Goto Done
 
 SlateMazeNW:
-	And FilesFound 4 Scratch1
+	Scratch1 = FilesFound & 4
 	if 0 != Scratch1: Goto Done
-	Or FilesFound 4 FilesFound
+	FilesFound = FilesFound | 4
 	PrintClear "ON A NEARBY WALL IS A SLATE.  DRAWN ON THE SLATE IS A COMPLEX MAZE WITH THE WORDS 'NW CASTLE' UNDER IT.  YOU COPY THE CASTLE INTO YOUR JOURNAL UNDER JOURNAL ENTRY 41."
 	Delay
 	Goto Done
 
 MapMazeNE:
-	And FilesFound 8 Scratch1
+	Scratch1 = FilesFound & 8
 	if 0 != Scratch1: Goto Done
-	Or FilesFound 8 FilesFound
+	FilesFound = FilesFound | 8
 	PrintClear "ON THE FLOOR IS A CRUDE MAP.  IT IS A MAP OF A COMPLEX MAZE WITH THE WORDS 'NE CASTLE' UNDER IT.  YOU TAKE THE MAP AND PUT IT IN YOUR JOURNAL UNDER JOURNAL ENTRY 29."
 	Delay
 	Goto Done
 
 WalkSteps:
-	Save 1 Scratch2
+	Scratch2 = 1
 	if Scratch1 == 0 {
 		Call CallRedraw
 		Delay
@@ -597,57 +597,58 @@ WalkSteps:
 
 WalkStepLoop:
 	if Scratch2 > Scratch1: Return
-	OnGoto Facing 4 StepNorth StepEast StepSouth StepWest
+	OnGosub Facing StepNorth StepEast StepSouth StepWest
 	Call CallRedraw
 	Delay
-	Add 1 Scratch2 Scratch2
+	Scratch2 += 1
 	Goto WalkStepLoop
 
 StepNorth:
-	Sub 1 PartyY PartyY
+	PartyY -= 1
 	Return
 
 StepEast:
-	Add 1 PartyX PartyX
+	PartyX += 1
 	Return
 
 StepSouth:
-	Add 1 PartyY PartyY
+	PartyY += 1
 	Return
 
 StepWest:
-	Sub 1 PartyX PartyX
+	PartyX -= 1
 	Return
 
 Done:
 	if ThievesKilled >= 21: Gosub MarkGuildCleared
 	RedrawView
 	Picture None
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 MarkGuildCleared:
 	if QuestKovelThieves >= 254: Return
-	Save 254 QuestKovelThieves
+	QuestKovelThieves = 254
 	Return
 
 PressToContinue:
-	HMenu Scratch1 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	alias Choice = Scratch1
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 FleeBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
-	Save SavedGeo14 Geo
+	PartyX = PrevX
+	PartyY = PrevY
+	Geo = SavedGeo14
 	Exit
 
 CheckTrap:
 	CheckParty SelFindTraps 0 Scratch1 Scratch2 Scratch3 Scratch4
 	CheckParty 0 19 Scratch1 Scratch1 Scratch1 Scratch8
 	if Scratch8 != 0: Goto MagicDetectsTrap
-	Random 99 Scratch1
+	Scratch1 = Random 99
 	if Scratch1 < Scratch2: Goto PartyDetectsTrap
-	Save 0 TrapResult
+	TrapResult = 0
 	Return
 
 MagicDetectsTrap:
@@ -660,25 +661,25 @@ PartyDetectsTrap:
 	Delay
 
 TrapMenu:
+	alias Choice = Scratch1
 	PrintClear "WHAT DO YOU WANT TO DO?"
-	HMenu Scratch1 2 "AVOID TRAP" "DISARM TRAP"
-	OnGoto Scratch1 2 AvoidTrap DisarmTrap
+	Choice = Menu "AVOID TRAP" -> AvoidTrap "DISARM TRAP" -> DisarmTrap
 
 DisarmTrap:
 	Who "WHO WILL DISARM THE TRAP?"
-	Random 99 Scratch1
+	Scratch1 = Random 99
 	if Scratch1 >= Scratch2: Goto DisarmFails
 	PrintClear "YOU DEACTIVATE THE TRAP"
-	Save 2 TrapResult
+	TrapResult = 2
 	Delay
 	Return
 
 AvoidTrap:
-	Save 1 TrapResult
+	TrapResult = 1
 	Return
 
 DisarmFails:
-	Save 0 TrapResult
+	TrapResult = 0
 	Return
 
 ChaseSteps:
@@ -688,25 +689,25 @@ ChaseFacing:
 	Data 1 1 2 2 1 1 0 0 1 1 0 0 3 3 2 2
 
 event2:
-	Save 1 RestEvery
-	Save 99 RestChance
+	RestEvery = 1
+	RestChance = 99
 	if QuestKovelThieves < 254: Exit
-	Save 0 RestEvery
-	Save 1 RestChance
+	RestEvery = 0
+	RestChance = 1
 	Exit
 
 event3:
-	Save 0 RestChance
+	RestChance = 0
 	PrintClear "WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY THREE THIEVES WITH SLINGS.  THEY LAUNCH THEIR BULLETS AT THE PARTY AND THEN RUN, DISAPPERING FROM SIGHT."
 	Delay
 	Damage 3 1 4 1 50
 	Exit
 
 event4:
-	Save 11 Scratch8
-	Save 10 SkyInside
-	if Hours >= 14: Save 8 Scratch8
-	Save Scratch8 Sky
-	LoadPieces 1 3 5
-	LoadFiles 14 2 255
+	Scratch8 = 11
+	SkyInside = 10
+	if Hours >= 14: Scratch8 = 8
+	Sky = Scratch8
+	LoadWalls 1 3 5
+	LoadMap 14 unused=2 icons=255
 	Exit

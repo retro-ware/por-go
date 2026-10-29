@@ -1,39 +1,40 @@
 event0:
-	Save 11 Scratch5
-	if Hours >= 14: Save 8 Scratch5
-	Save Scratch5 Sky
-	Save 10 SkyInside
-	And 127 Cell Scratch10
+	Scratch5 = 11
+	if Hours >= 14: Scratch5 = 8
+	Sky = Scratch5
+	SkyInside = 10
+	Scratch10 = 127 & Cell
 	Exit
 
 event1:
 	PrintClear ""
 	Picture None
-	Save 255 Portrait
-	And 127 Cell Scratch10
+	Portrait = 255
+	Scratch10 = 127 & Cell
 	if Scratch10 == 0: Goto LeaveArea
-	Save 10 AuxCounter
+	AuxCounter = 10
 
 FindCellLoop:
 	if AuxCounter == Scratch10: Goto CellDispatch
 	if AuxCounter > 18: Exit
-	Add 1 AuxCounter AuxCounter
+	AuxCounter += 1
 	Goto FindCellLoop
 
 event2:
 	if FoughtWatch != 0: Goto NoRestHere
-	Save 1 RestEvery
-	Save 101 RestChance
+	RestEvery = 1
+	RestChance = 101
 	Exit
 
 NoRestHere:
-	Save 0 RestEvery
-	Save 0 RestChance
+	RestEvery = 0
+	RestChance = 0
 	Exit
 
 event3:
-	Save 0 RestChance
-	Save 57 Portrait
+	alias Choice = Scratch1
+	RestChance = 0
+	Portrait = 57
 	SetupMonster ArmoredFighter distance=2 body=1
 	Delay
 	Approach
@@ -41,54 +42,53 @@ event3:
 	Approach
 	Delay
 	PrintClear "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
-	HMenu Scratch1 2 "GO" "FIGHT"
-	OnGoto Scratch1 2 ClearAndExit FightWatch
+	Choice = Menu "GO" -> ClearAndExit "FIGHT" -> FightWatch
 
 event4:
-	LoadFiles 0 0 0
-	LoadPieces 127 127 127
+	LoadMap 0 unused=0 icons=0
+	LoadWalls Reset Reset Reset
 	if RestChance == 255: Exit
 	Goto NoRestHere
 
 CellDispatch:
-	Sub 10 AuxCounter AuxCounter
-	if TrainerCooldown != 0: Sub 1 TrainerCooldown TrainerCooldown
-	OnGoto AuxCounter 9 ReadNotices ReadDoorSign ClericTrainer MagicUserTrainer EnterArena FightersSign FighterTrainer ThiefTrainer RoguesSign
+	AuxCounter -= 10
+	if TrainerCooldown != 0: TrainerCooldown -= 1
+	OnGoto AuxCounter ReadNotices ReadDoorSign ClericTrainer MagicUserTrainer EnterArena FightersSign FighterTrainer ThiefTrainer RoguesSign
 
 ReadNotices:
 	if NoticesRead > 0: Exit
 	PrintClear "NOTICES FOR TEACHERS AND STUDENTS ARE POSTED ON THE WALLS.  A NOTE DIRECTS MAGIC USERS AND CLERICS TO GO NORTH AND FIGHTERS AND 'ROGUES' TO GO EAST."
-	Add 1 NoticesRead NoticesRead
+	NoticesRead += 1
 	Exit
 
 ReadDoorSign:
 	if DoorSignRead > 0: Exit
 	PrintClear "A SIGN ON THE WALL DIRECTS MAGIC USERS TO GO THROUGH THE EAST DOOR AND CLERICS TO GO THROUGH THE WEST DOOR."
-	Add 1 DoorSignRead DoorSignRead
+	DoorSignRead += 1
 	Exit
 
 ClericTrainer:
 	if TrainerCooldown > 0: Exit
-	Save 2 TrainerCooldown
+	TrainerCooldown = 2
 	ShowPortrait 16 4
-	Save 114 Scratch4
-	Save "CLERICS " $AuxMonsterName
+	Scratch4 = 114
+	$AuxMonsterName = "CLERICS "
 	Goto AskTrain
 
 MagicUserTrainer:
 	if TrainerCooldown > 0: Exit
-	Save 2 TrainerCooldown
+	TrainerCooldown = 2
 	ShowPortrait 16 2
-	Save 113 Scratch4
-	Save "MAGIC USERS " $AuxMonsterName
+	Scratch4 = 113
+	$AuxMonsterName = "MAGIC USERS "
 	Goto AskTrain
 
 EnterArena:
 	if ArenaEntered > 0: Goto ClearAndExit
 	PrintClear "THE ROOM IS FILLED WITH DUELING PAIRS."
 	Gosub PressReturn
-	Save 1 ArenaEntered
-	Save 9 Portrait
+	ArenaEntered = 1
+	Portrait = 9
 	SetupMonster Fighter16 distance=2 body=1
 	Delay
 	Approach
@@ -98,7 +98,7 @@ EnterArena:
 	if DuelOffered > 0: Goto OfferPartner
 	PrintClear "THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 ChooseDuelist OfferPartner
+	OnGoto Scratch1 ChooseDuelist OfferPartner
 
 ChooseDuelist:
 	Who "WHO WILL DUEL?"
@@ -113,16 +113,16 @@ StartDuel:
 	Exit
 
 OfferPartner:
-	Save 1 DuelOffered
+	DuelOffered = 1
 	if PartnerDeclined != 0: Exit
 	PrintClear "'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 RollHireling DeclinePartner
+	OnGoto Scratch1 RollHireling DeclinePartner
 
 RollHireling:
 	if PartnerTries > 7: Goto NoHirelingLeft
-	Add 1 PartnerTries PartnerTries
-	Random 250 Scratch1
+	PartnerTries += 1
+	Scratch1 = Random 250
 	if Scratch1 < 20: Goto HireAcolyte
 	if Scratch1 < 70: Goto HireWarrior
 	if Scratch1 < 110: Goto HireEvoker
@@ -134,80 +134,81 @@ RollHireling:
 
 NoHirelingLeft:
 	PrintClear "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
-	Save 8 PartnerTries
+	PartnerTries = 8
 	Picture None
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 HireAcolyte:
-	Save 0 Scratch2
-	Save "ACOLYTE" $AuxMonsterName
+	Scratch2 = 0
+	$AuxMonsterName = "ACOLYTE"
 	Goto OfferHireling
 
 HireWarrior:
-	Save 1 Scratch2
-	Save "WARRIOR" $AuxMonsterName
+	Scratch2 = 1
+	$AuxMonsterName = "WARRIOR"
 	Goto OfferHireling
 
 HireEvoker:
-	Save 2 Scratch2
-	Save "EVOKER" $AuxMonsterName
+	Scratch2 = 2
+	$AuxMonsterName = "EVOKER"
 	Goto OfferHireling
 
 HireSwordsman:
-	Save 3 Scratch2
-	Save "SWORDSMAN" $AuxMonsterName
+	Scratch2 = 3
+	$AuxMonsterName = "SWORDSMAN"
 	Goto OfferHireling
 
 HireRobber:
-	Save 4 Scratch2
-	Save "ROBBER" $AuxMonsterName
+	Scratch2 = 4
+	$AuxMonsterName = "ROBBER"
 	Goto OfferHireling
 
 HireCurate:
-	Save 5 Scratch2
-	Save "CURATE" $AuxMonsterName
+	Scratch2 = 5
+	$AuxMonsterName = "CURATE"
 	Goto OfferHireling
 
 HireHero:
-	Save 6 Scratch2
-	Save "HERO" $AuxMonsterName
+	Scratch2 = 6
+	$AuxMonsterName = "HERO"
 	Goto OfferHireling
 
 HireTheurgist:
-	Save 7 Scratch2
-	Save "THEURGIST" $AuxMonsterName
+	Scratch2 = 7
+	$AuxMonsterName = "THEURGIST"
 
 OfferHireling:
-	if Scratch2 <= 1: Save "1 SHARE" $AuxText
-	if Scratch2 == 2: Save "2 SHARES" $AuxText
-	if Scratch2 >= 3: Save "3 SHARES " $AuxText
-	if Scratch2 >= 4: Save " PLUS A PICK OF SPECIAL ITEMS" $AuxTreasureText
-	if Scratch2 > 5: Save "4 SHARES " $AuxText
+	if Scratch2 <= 1: $AuxText = "1 SHARE"
+	if Scratch2 == 2: $AuxText = "2 SHARES"
+	if Scratch2 >= 3: $AuxText = "3 SHARES "
+	if Scratch2 >= 4: $AuxTreasureText = " PLUS A PICK OF SPECIAL ITEMS"
+	if Scratch2 > 5: $AuxText = "4 SHARES "
 	PrintClear "'THERE IS A FINE "
 	Print $AuxMonsterName
 	Print " WHO WILL JOIN YOU FOR "
 	Print $AuxText
 	Print ". IS THIS ACCEPTABLE?'"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 AcceptHireling ConsiderAnother
+	OnGoto Scratch1 AcceptHireling ConsiderAnother
 
 AcceptHireling:
+	alias Hireling = Scratch1
 	Gosub CheckPartyFull
-	GetTable HirelingTable Scratch2 Scratch1
-	Mul Scratch2 5 Scratch2
-	Add 50 Scratch2 Scratch2
-	AddNPC Scratch1 Scratch2
+	Hireling = HirelingTable[Scratch2]
+	Scratch2 = Scratch2 * 5
+	Scratch2 += 50
+	AddNPC Hireling Scratch2
 
 ConsiderAnother:
 	PrintClear "'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 RollHireling DeclinePartner
+	OnGoto Scratch1 RollHireling DeclinePartner
 
 DeclinePartner:
-	Save 1 PartnerDeclined
+	PartnerDeclined = 1
 	Picture None
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 FightersSign:
@@ -216,18 +217,18 @@ FightersSign:
 
 FighterTrainer:
 	if TrainerCooldown > 0: Exit
-	Save 2 TrainerCooldown
+	TrainerCooldown = 2
 	ShowPortrait 16 1
-	Save 120 Scratch4
-	Save "FIGHTERS " $AuxMonsterName
+	Scratch4 = 120
+	$AuxMonsterName = "FIGHTERS "
 	Goto AskTrain
 
 ThiefTrainer:
 	if TrainerCooldown > 0: Exit
-	Save 2 TrainerCooldown
+	TrainerCooldown = 2
 	ShowPortrait 16 8
-	Save 116 Scratch4
-	Save "THIEVES " $AuxMonsterName
+	Scratch4 = 116
+	$AuxMonsterName = "THIEVES "
 	Goto AskTrain
 
 RoguesSign:
@@ -235,12 +236,12 @@ RoguesSign:
 	Exit
 
 AskTrain:
-	Save Scratch4 PartyExp
+	PartyExp = Scratch4
 	PrintClear "'WE TRAIN ONLY "
 	Print $AuxMonsterName
 	Print "HERE. DO YOU WANT TO TRAIN?'"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 OpenTraining ClearAndExit
+	OnGoto Scratch1 OpenTraining ClearAndExit
 
 OpenTraining:
 	Program 0
@@ -248,17 +249,17 @@ OpenTraining:
 	Exit
 
 FightWatch:
-	Save 0 WatchCombatDone11
-	Save 50 Morale
+	WatchCombatDone11 = 0
+	Morale = 50
 	ClearMonsters
 	LoadMonster Level3Mu count=2 icon=Level3Mu
 	LoadMonster ThLvlFighter84 count=12 icon=11
 	LoadMonster Aides count=12 icon=ThLvlFighter
 	LoadMonster Nomad count=12 icon=Nomad
 	Combat
-	Save 1 WatchCombatDone11
+	WatchCombatDone11 = 1
 	Gosub AfterWatchFight
-	Save 1 FoughtWatch
+	FoughtWatch = 1
 	Exit
 
 LeaveArea:
@@ -269,15 +270,16 @@ AfterWatchFight:
 	if WatchCombatDone11 > 0: Return
 
 ClearAndExit:
-	Save 0 Temp1
-	Save 0 Temp2
-	Save 0 Temp3
+	Temp1 = 0
+	Temp2 = 0
+	Temp3 = 0
 	Picture None
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 YesNoMenu:
-	HMenu Scratch1 2 "YES" "NO"
+	alias Choice = Scratch1
+	Choice = Menu "YES" "NO"
 	Return
 
 CheckPartyFull:
@@ -287,16 +289,16 @@ CheckPartyFull:
 	Goto ClearAndExit
 
 EjectParty:
-	Random 3 Facing
-	Random 4 AuxMember
-	GetTable EjectXTable AuxMember PartyX
-	GetTable EjectYTable AuxMember PartyY
+	Facing = Random 3
+	AuxMember = Random 4
+	PartyX = EjectXTable[AuxMember]
+	PartyY = EjectYTable[AuxMember]
 	PrintClear ""
 	Call CallRedraw
 	NewECL NewPhlan
 
 PressReturn:
-	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	AuxMenuChoice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 EjectXTable:

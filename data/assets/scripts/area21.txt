@@ -3,7 +3,7 @@ event0:
 	if LeftMap == 0: Goto EnterDone
 	PrintClear "DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 BoardBoat StayAtKeep
+	OnGoto Scratch1 BoardBoat StayAtKeep
 
 BoardBoat:
 	if SkyColor21 == 8: Goto SailToPhlan
@@ -12,66 +12,66 @@ BoardBoat:
 SailToPhlan:
 	PrintClear "YOU BOARD A BOAT."
 	Gosub PressToContinue
-	Save 15 PartyX
-	Save 1 PartyY
-	Save 3 Facing
+	PartyX = 15
+	PartyY = 1
+	Facing = 3
 	EnterArea NewPhlan
 
 StayAtKeep:
-	Save 255 HoldMove
+	HoldMove = 255
 
 EnterDone:
-	And 127 Cell Scratch10
+	Scratch10 = 127 & Cell
 	Exit
 
 event1:
-	Save SkyColor21 Sky
-	And 127 Cell Scratch10
+	Sky = SkyColor21
+	Scratch10 = 127 & Cell
 	RedrawView
 	PrintClear ""
 	Picture None
-	Save 0 Scratch6
-	Save 0 AuxCounter
+	Scratch6 = 0
+	AuxCounter = 0
 
 FindCellLoop:
 	if AuxCounter == Scratch10: Goto CellDispatch
 	if AuxCounter > 19: Exit
-	Add 1 AuxCounter AuxCounter
+	AuxCounter += 1
 	Goto FindCellLoop
 
 CellDispatch:
-	OnGoto AuxCounter 20 ClearExit DeadElf KeepGates PatrolRoad Stable FungusRoom Smithy Barracks Insects OrcRaid Armory Chapel FerranSpirit HiddenRoom GearStands SmithyHammer BarracksSearch MagicGear CoordsOff EmptyHallCheck
+	OnGoto AuxCounter ClearExit DeadElf KeepGates PatrolRoad Stable FungusRoom Smithy Barracks Insects OrcRaid Armory Chapel FerranSpirit HiddenRoom GearStands SmithyHammer BarracksSearch MagicGear CoordsOff EmptyHallCheck
 	Exit
 
 event2:
 	if PatrolsFought21 > 4: Goto NoRest
-	Save 2 RestEvery
-	Save 1 RestChance
+	RestEvery = 2
+	RestChance = 1
 	Exit
 
 NoRest:
-	Save 0 RestEvery
-	Save 0 RestChance
+	RestEvery = 0
+	RestChance = 0
 	Exit
 
 event3:
-	Save 0 RestChance
-	Save 0 Scratch5
-	Save 0 Scratch3
-	Save 0 Scratch6
+	RestChance = 0
+	Scratch5 = 0
+	Scratch3 = 0
+	Scratch6 = 0
 	Goto UndeadPatrol
 
 event4:
 	Gosub SetSky
-	Save SkyColor21 Sky
-	Save 10 SkyInside
-	LoadFiles 21 2 255
-	LoadPieces 1 5 9
+	Sky = SkyColor21
+	SkyInside = 10
+	LoadMap 21 unused=2 icons=255
+	LoadWalls 1 5 9
 	if ArrivedAtKeep != 0: Exit
-	Save 1 ArrivedAtKeep
-	Save 0 Facing
-	Save 8 PartyX
-	Save 14 PartyY
+	ArrivedAtKeep = 1
+	Facing = 0
+	PartyX = 8
+	PartyY = 14
 	Call CallRedraw
 	PrintClear "THE BOAT DISEMBARKS YOU AT SOKAL KEEP."
 	Gosub PressToContinue
@@ -89,7 +89,7 @@ DeadElf:
 ElfScroll:
 	PrintClear "IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ..."
 	Gosub PressToContinue
-	LoadFiles 255 16 255
+	LoadMap Keep unused=16 icons=255
 	ClearBox
 	Protection ElfScrollLine1
 	NewLine
@@ -97,14 +97,15 @@ ElfScroll:
 	NewLine
 	Protection ElfScrollLine3
 	PrintClear "...THE LAST PART IS EATEN AWAY."
-	LoadFiles 255 2 255
+	LoadMap Keep unused=2 icons=255
 	Gosub PressToContinue
-	LoadPieces 1 5 9
+	LoadWalls 1 5 9
 	Goto ElfDone
 
 ElfMenu:
-	VMenu Scratch1 "WHAT DO YOU DO?" 4 "LEAVE" "SEARCH" "ATTACK" "TALK"
-	OnGoto Scratch1 4 ClearExit ElfScroll HackElf TalkToElf
+	alias Choice = Scratch1
+	Choice = VMenu "WHAT DO YOU DO?" "LEAVE" "SEARCH" "ATTACK" "TALK"
+	OnGoto Choice ClearExit ElfScroll HackElf TalkToElf
 
 TalkToElf:
 	Parlay 0 0 0 0 0 Scratch1
@@ -113,7 +114,7 @@ TalkToElf:
 
 HackElf:
 	PrintClear "YOU HACK THE BODY TO BITS."
-	Save 255 ElfBodyHacked
+	ElfBodyHacked = 255
 	Goto ElfDone
 
 ElfLooted:
@@ -126,20 +127,20 @@ ElfDone:
 KeepGates:
 	if Scratch3 != 0: Exit
 	PrintClear "YOU STAND BELOW THE ROTTING REMAINS OF THE ONCE-MIGHTY GATES OF SOKAL KEEP."
-	Save 1 Scratch3
+	Scratch3 = 1
 	if FerranFreed == 255: Exit
 	Print " ECHOING FOOTSTEPS ARE DIMLY HEARD WITHIN THE KEEP.  TO THE WEST RISES A MOUND OF REEDS."
 	Exit
 
 PatrolRoad:
-	Save 0 Scratch5
-	Save 0 Scratch3
-	if PatrolsFought21 > 5: Save 0 PatrolsFought21
+	Scratch5 = 0
+	Scratch3 = 0
+	if PatrolsFought21 > 5: PatrolsFought21 = 0
 	if PatrolsFought21 < 4: Goto PatrolRoll
 	Exit
 
 PatrolRoll:
-	Random 5 Scratch1
+	Scratch1 = Random 5
 	if 3 != Scratch1: Exit
 
 UndeadPatrol:
@@ -151,21 +152,21 @@ UndeadPatrol:
 	if PatrolPassword == 0: Goto PatrolMenu
 	PrintClear "AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 PatrolLeaves PatrolFight
+	OnGoto Scratch1 PatrolLeaves PatrolFight
 
 PatrolMenu:
 	EncounterMenu 34 0 34 Scratch1 0 3 0 1 4 "A PACK OF UNDEAD SUDDENLY APPEARS." "" "" 0 0
-	OnGoto Scratch1 4 ClearExit PatrolFight RunAway PatrolParlay
+	OnGoto Scratch1 ClearExit PatrolFight RunAway PatrolParlay
 
 PatrolParlay:
 	Parlay 0 0 0 0 0 Scratch1
 	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
 	NewLine
 	InputString 7 $AuxMonsterName
-	if FerranFreed == 255: Save "SAMOSUD" $AuxText
-	also if FerranFreed != 255: Save "SHESTNI" $AuxText
+	if FerranFreed == 255: $AuxText = "SAMOSUD"
+	also if FerranFreed != 255: $AuxText = "SHESTNI"
 	if $AuxMonsterName != $AuxText: Goto WrongPassword
-	Save 1 PatrolPassword
+	PatrolPassword = 1
 
 PatrolLeaves:
 	PrintClear "THE UNDEAD LEAVE."
@@ -176,58 +177,58 @@ WrongPassword:
 	PrintClear "THEY DIDN'T LIKE THAT WORD."
 
 PatrolFight:
-	Save 3 Scratch1
-	Save 1 AuxPartyStrength
-	Save 0 Surprise
+	Scratch1 = 3
+	AuxPartyStrength = 1
+	Surprise = 0
 	Goto LoadEncounter
 
 PatrolBeaten:
-	Add 1 PatrolsFought21 PatrolsFought21
+	PatrolsFought21 += 1
 	Exit
 
 Stable:
-	if StableSeen21 > 1: Save 0 StableSeen21
+	if StableSeen21 > 1: StableSeen21 = 0
 	if StableSeen21 != 0: Exit
 	PrintClear "UNWHOLESOME MOLD AND FUNGI COVER THE DECAYING RUINS OF THE KEEP'S STABLE.  A PUTRID SMELL OF SICKNESS RISES AS YOU ENTER THE BUILDING."
-	Save 1 StableSeen21
+	StableSeen21 = 1
 	Exit
 
 FungusRoom:
-	if FungusRoomSeen > 1: Save 0 FungusRoomSeen
+	if FungusRoomSeen > 1: FungusRoomSeen = 0
 	if FungusRoomSeen > 0: Exit
 	PrintClear "A THICK CARPET OF FUNGUS COVERS THE FLOOR OF THIS ROOM."
-	Save 1 FungusRoomSeen
+	FungusRoomSeen = 1
 	Exit
 
 Smithy:
-	if SmithySeen > 1: Save 0 SmithySeen
+	if SmithySeen > 1: SmithySeen = 0
 	if SmithySeen > 0: Goto SmithyFrogCheck
 	PrintClear "A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY."
-	Save 1 SmithySeen
+	SmithySeen = 1
 
 SmithyFrogCheck:
 	if SmithyFrogs == 255: Exit
-	if SmithyFrogs > 2: Save 0 SmithyFrogs
+	if SmithyFrogs > 2: SmithyFrogs = 0
 	if SmithyFrogs > 1: Goto FrogsMenu
-	Add 1 SmithyFrogs SmithyFrogs
+	SmithyFrogs += 1
 	Exit
 
 FrogsMenu:
 	EncounterMenu 37 2 37 Scratch1 0 0 0 0 4 "THE CROAKING RISES IN VOLUME." "" "" 0 0
-	OnGoto Scratch1 4 ClearExit FrogsFight RunAway FrogsParlay
+	OnGoto Scratch1 ClearExit FrogsFight RunAway FrogsParlay
 
 FrogsParlay:
 	Parlay 0 0 0 0 0 Scratch1
 	PrintClear "CROAK!"
 
 FrogsFight:
-	Save 0 Scratch1
-	Save 0 Surprise
-	Save 0 AuxPartyStrength
+	Scratch1 = 0
+	Surprise = 0
+	AuxPartyStrength = 0
 	Goto LoadEncounter
 
 FrogsBeaten:
-	Save 255 SmithyFrogs
+	SmithyFrogs = 255
 	Exit
 
 SmithyHammer:
@@ -236,33 +237,33 @@ SmithyHammer:
 	PrintClear "AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER."
 	Print " DO YOU TAKE IT?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 TakeHammer ClearExit
+	OnGoto Scratch1 TakeHammer ClearExit
 
 TakeHammer:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 19 // Hammer +1
 	Combat
-	Save 255 HammerTaken
+	HammerTaken = 255
 	Exit
 
 Barracks:
 	if FerranFreed == 255: Goto BarracksSearch
 	if HauntsAppeased == 255: Goto BarracksSearch
-	if BarracksVisits > 5: Save 0 BarracksVisits
+	if BarracksVisits > 5: BarracksVisits = 0
 	if BarracksVisits < 1: PrintClear "THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED."
-	Add 1 BarracksVisits BarracksVisits
+	BarracksVisits += 1
 	if BarracksVisits >= 4: Goto HauntsRise
 	Exit
 
 HauntsRise:
 	if HauntsSeen == 255: Goto HauntsMenu
-	Save 255 HauntsSeen
+	HauntsSeen = 255
 	PrintClear "A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING."
 	Gosub PressToContinue
 
 HauntsMenu:
 	EncounterMenu 17 2 17 Scratch1 1 1 1 1 4 "GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL" "" "" 0 0
-	OnGoto Scratch1 4 ClearExit HauntsWail RunAway HauntsParlay
+	OnGoto Scratch1 ClearExit HauntsWail RunAway HauntsParlay
 
 HauntsWail:
 	PrintClear "'WOE, WOOOE, OH WOE,' THE FIGURES CRY PITEOUSLY."
@@ -273,7 +274,7 @@ HauntsParlay:
 	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)."
 	NewLine
 	InputString 3 $AuxMonsterName
-	Save "LUX" $AuxText
+	$AuxText = "LUX"
 	if $AuxMonsterName == $AuxText: Goto HauntsAppease
 	PrintClear "WRONG WORD. "
 	Picture None
@@ -281,7 +282,7 @@ HauntsParlay:
 
 BarracksSearch:
 	if Search != 1: Exit
-	Random 9 Scratch1
+	Scratch1 = Random 9
 	Goto DiaryGems
 
 HauntsAppease:
@@ -290,8 +291,8 @@ HauntsAppease:
 	PrintClear "BEFORE THE CLERIC'S SPELLS INADVERTENTLY BOUND THEM TO THIS PLACE. ONE SPIRIT'S VOICE RISES ABOVE THE REST, 'AN ACCOUNT OF OUR TRIALS IS WITHIN THE DIARY.' HE POINTS TO A FLOORBOARD."
 	Gosub PressToContinue
 	Picture None
-	Save 5 Scratch1
-	Save 255 HauntsAppeased
+	Scratch1 = 5
+	HauntsAppeased = 255
 
 DiaryGems:
 	if DiaryGemsTaken == 255: Exit
@@ -300,30 +301,30 @@ DiaryGems:
 	Gosub PressToContinue
 	PrintClear "DO YOU TAKE THE GEMS?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 TakeGems ClearExit
+	OnGoto Scratch1 TakeGems ClearExit
 
 TakeGems:
 	ClearMonsters
 	Treasure 0 0 0 0 0 5 0 255
 	Combat
-	Save 255 DiaryGemsTaken
+	DiaryGemsTaken = 255
 	Exit
 
 Insects:
 	if InsectsBeaten == 255: Exit
 	SetupMonster Scorpion distance=0 closeup=Scorpion
 	PrintClear "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
-	Save 25 AuxMember
+	AuxMember = 25
 	Gosub PressToContinue
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 6 1
-	Save 1 Scratch1
-	Save 0 AuxPartyStrength
-	Save 0 Surprise
+	Scratch1 = 1
+	AuxPartyStrength = 0
+	Surprise = 0
 	Goto LoadEncounter
 
 InsectsDone:
-	Save 255 InsectsBeaten
+	InsectsBeaten = 255
 	Exit
 
 OrcRaid:
@@ -332,15 +333,15 @@ OrcRaid:
 	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
 	PrintClear "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
 	Gosub PressToContinue
-	Save 5 Scratch1
-	Save 2 AuxPartyStrength
-	Save 0 Surprise
+	Scratch1 = 5
+	AuxPartyStrength = 2
+	Surprise = 0
 	Goto LoadEncounter
 
 OrcRaidDone:
-	Save 255 OrcRaidBeaten
+	OrcRaidBeaten = 255
 	PrintClear "ON A HOBGOBLIN BODY, YOU FIND A NOTE THAT YOU COPY INTO YOUR JOURNAL AS ENTRY 57."
-	Save 10 Scratch5
+	Scratch5 = 10
 	Exit
 
 EmptyHallCheck:
@@ -349,20 +350,20 @@ EmptyHallCheck:
 EmptyHall:
 	if Scratch5 == 10: Exit
 	PrintClear "THE HALL IS EMPTY, SAVE FOR SIGNS OF A RECENT BATTLE."
-	Save 10 Scratch5
+	Scratch5 = 10
 	Exit
 
 Armory:
-	if ArmorySeen > 1: Save 0 ArmorySeen
+	if ArmorySeen > 1: ArmorySeen = 0
 	if ArmorySeen < 1: PrintClear "YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS."
-	Save 1 ArmorySeen
+	ArmorySeen = 1
 	Exit
 
 HiddenRoom:
-	Save 0 NoCoords
-	if HiddenRoomSeen > 1: Save 0 HiddenRoomSeen
+	NoCoords = 0
+	if HiddenRoomSeen > 1: HiddenRoomSeen = 0
 	also if HiddenRoomSeen < 1: PrintClear "PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. "
-	Save 1 HiddenRoomSeen
+	HiddenRoomSeen = 1
 	if MagicGearTaken < 255: Print "THERE IS A GLOW IN THE NORTHWESTERN CORNER OF THE ROOM."
 	Exit
 
@@ -376,59 +377,59 @@ MagicGear:
 	PrintClear "ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. "
 	Print "DO YOU TAKE IT?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 TakeGear ClearExit
+	OnGoto Scratch1 TakeGear ClearExit
 
 TakeGear:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 21 // Mace +2, Chain Mail +1, Long Sword +1, Shield +1
 	Combat
-	Save 255 MagicGearTaken
+	MagicGearTaken = 255
 	Exit
 
 CoordsOff:
-	Save 1 NoCoords
+	NoCoords = 1
 	Exit
 
 Chapel:
-	Save 0 Scratch5
-	if ChapelSeen > 1: Save 0 ChapelSeen
+	Scratch5 = 0
+	if ChapelSeen > 1: ChapelSeen = 0
 	if ChapelSeen > 0: Exit
 	PrintClear "THIS WAS ONCE THE CHAPEL OF THE KEEP.  INSIDE THE DOORWAY ARE THE DRIED HUSKS OF TWO ORCS, THEIR FACES TWISTED WITH TERROR.  A LARGE ALTAR DOMINATES THE SOUTHERN WALL."
-	Save 1 ChapelSeen
+	ChapelSeen = 1
 	Exit
 
 FerranSpirit:
 	if FerranFaded == 255: Exit
 	if FerranFreed == 255: Exit
 	EncounterMenu 17 0 19 Scratch1 0 3 1 1 4 "A PALE FORM RISES BEFORE YOU." "" "" 0 0
-	OnGoto Scratch1 4 ClearExit FerranFight RunAway FerranParlay
+	OnGoto Scratch1 ClearExit FerranFight RunAway FerranParlay
 
 FerranParlay:
 	Parlay 0 0 0 0 0 Scratch1
 	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
 	NewLine
 	InputString 3 $AuxMonsterName
-	Save "LUX" $AuxText
+	$AuxText = "LUX"
 	if $AuxMonsterName == $AuxText {
 		Goto FerranSpeaks
 		Goto FerranSpeaks
 	}
-	Save 255 FerranFaded
+	FerranFaded = 255
 	PrintClear "THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY."
 	Picture None
 	Exit
 
 FerranSpeaks:
+	alias Choice = Scratch1
 	Picture HoodedMan
 	PrintClear "THE SHAPE SPEAKS, 'I AM THE LIFE FORM OF FERRAN MARTINEZ, BOUND WITH THE UNDEAD SPIRITS OF ALL WHO DIE WITHIN THESE WALLS TO GUARD THE KEEP. TELL ME, HAS THE CITY BEEN FREED?'"
 	NewLine
 	Print "DO YOU: "
-	HMenu Scratch1 3 "TELL THE TRUTH?" "LIE?" "RUN AWAY?"
-	OnGoto Scratch1 3 TellFerranTruth LieToFerran RunAway
+	Choice = Menu "TELL THE TRUTH?" -> TellFerranTruth "LIE?" -> LieToFerran "RUN AWAY?" -> RunAway
 
 LieToFerran:
 	PrintClear "'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY."
-	Save 255 LiedToFerran
+	LiedToFerran = 255
 	Picture None
 	Exit
 
@@ -444,21 +445,21 @@ TellFerranTruth:
 FerranPassword:
 	Print "TO PASS MY GUARDS ON THE WAY OUT, SPEAK THE WORD 'SAMOSUD'.  NOW WE ARE FREED, OUR DUTY DONE!' FERRAN FADES AWAY."
 	Gosub PressToContinue
-	Save 0 PatrolPassword
-	Save 255 FerranFreed
-	Save 254 QuestSokalKeep
+	PatrolPassword = 0
+	FerranFreed = 255
+	QuestSokalKeep = 254
 	Picture None
 	Exit
 
 FerranFight:
-	Save 2 Scratch1
-	Save 0 AuxPartyStrength
-	Save 0 Surprise
+	Scratch1 = 2
+	AuxPartyStrength = 0
+	Surprise = 0
 	Goto LoadEncounter
 
 FerranBeaten:
-	Save 255 FerranFreed
-	Save 254 QuestSokalKeep
+	FerranFreed = 255
+	QuestSokalKeep = 254
 	Exit
 
 FleeIfLost:
@@ -466,10 +467,10 @@ FleeIfLost:
 	Return
 
 RunAway:
-	Random 3 Facing
-	Random 3 AuxTemp9
-	GetTable FleeXTable AuxTemp9 PartyX
-	GetTable FleeYTable AuxTemp9 PartyY
+	Facing = Random 3
+	AuxTemp9 = Random 3
+	PartyX = FleeXTable[AuxTemp9]
+	PartyY = FleeYTable[AuxTemp9]
 	PrintClear ""
 	Call CallRedraw
 
@@ -478,41 +479,42 @@ ClearExit:
 	Exit
 
 PressToContinue:
-	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	AuxMenuChoice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 YesNoMenu:
-	HMenu Scratch1 2 "YES" "NO"
+	alias Choice = Scratch1
+	Choice = Menu "YES" "NO"
 	Return
 
 SetSky:
-	Save 11 SkyColor21
-	if Hours >= 14: Save 8 SkyColor21
-	Save SkyColor21 Sky
+	SkyColor21 = 11
+	if Hours >= 14: SkyColor21 = 8
+	Sky = SkyColor21
 	Return
 
 LoadEncounter:
-	GetTable EncMonsterDistTable Scratch1 MonsterDist
-	GetTable EncMonsterTable Scratch1 AuxRoll
-	GetTable EncMoraleTable Scratch1 AuxMonster
-	GetTable EncCountTable Scratch1 AuxEncResult
-	GetTable EncPictureTable Scratch1 AuxEncResult2
+	MonsterDist = EncMonsterDistTable[Scratch1]
+	AuxRoll = EncMonsterTable[Scratch1]
+	AuxMonster = EncMoraleTable[Scratch1]
+	AuxEncResult = EncCountTable[Scratch1]
+	AuxEncResult2 = EncPictureTable[Scratch1]
 	if Scratch6 != 0: Goto LoadEncounterGroup
 	ClearMonsters
-	Save 1 Scratch6
+	Scratch6 = 1
 
 LoadEncounterGroup:
 	LoadMonster AuxRoll count=AuxEncResult icon=AuxEncResult2
 	if AuxPartyStrength == 0: Goto EncounterCombat
-	Add 1 Scratch1 Scratch1
-	Sub 1 AuxPartyStrength AuxPartyStrength
+	Scratch1 += 1
+	AuxPartyStrength -= 1
 	Goto LoadEncounter
 
 EncounterCombat:
-	Save AuxMonster Morale
+	Morale = AuxMonster
 	Combat
 	Gosub FleeIfLost
-	OnGoto Scratch1 8 FrogsBeaten InsectsDone FerranBeaten ClearExit PatrolBeaten ClearExit ClearExit OrcRaidDone
+	OnGoto Scratch1 FrogsBeaten InsectsDone FerranBeaten ClearExit PatrolBeaten ClearExit ClearExit OrcRaidDone
 	Exit // extra: the original runs on into data at AEF6
 
 EncMonsterDistTable:

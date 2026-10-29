@@ -1,15 +1,15 @@
 event2:
 	if PatrolsBeaten >= 64: Gosub RestSafe
-	Save 2 RestEvery
-	Save 16 RestChance
-	if Cell == 132: Save 0 RestEvery
-	if Cell == 138: Save 0 RestEvery
-	if PodalPlazaCleared > 253: Save 0 RestEvery
+	RestEvery = 2
+	RestChance = 16
+	if Cell == 132: RestEvery = 0
+	if Cell == 138: RestEvery = 0
+	if PodalPlazaCleared > 253: RestEvery = 0
 	Exit
 
 RestSafe:
-	Save 1 RestEvery
-	Save 99 RestChance
+	RestEvery = 1
+	RestChance = 99
 	Return
 
 event3:
@@ -18,26 +18,26 @@ event3:
 	Goto PatrolFight
 
 event4:
-	LoadFiles 18 2 255
-	LoadPieces 1 3 5
-	Save 0 NoCoords
+	LoadMap 18 unused=2 icons=255
+	LoadWalls 1 3 5
+	NoCoords = 0
 	if AreaKind == 18: Exit
 	if QuestPodalAuction != 1: Goto ResetPatrols
-	Save 64 PatrolsBeaten
-	Save 0 DisguiseState
+	PatrolsBeaten = 64
+	DisguiseState = 0
 	Exit
 
 ResetPatrols:
-	if PodalPlazaCleared < 254: Save 0 PatrolsBeaten
-	Save 255 DisguiseState
+	if PodalPlazaCleared < 254: PatrolsBeaten = 0
+	DisguiseState = 255
 	Exit
 
 event0:
 	if LeftMap == 0: Goto PlazaApproach
 	Call CallStepForward
-	Save 255 HoldMove
-	Save 0 NoCoords
-	OnGoto Facing 4 ExitNorth ExitEast ExitSouth ExitWest
+	HoldMove = 255
+	NoCoords = 0
+	OnGoto Facing ExitNorth ExitEast ExitSouth ExitWest
 
 ExitNorth:
 	EnterArea StojanowGate
@@ -53,19 +53,20 @@ ExitWest:
 	EnterArea Wilderness
 
 PlazaApproach:
-	if Hours < 14: Save 11 Sky
-	also if Hours >= 14: Save 8 Sky
+	alias Choice = Scratch1
+	if Hours < 14: Sky = 11
+	also if Hours >= 14: Sky = 8
 	if DisguiseState != 0: Exit
-	VMenu Scratch1 "THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?" 3 "STRIDE BOLDLY FORWARD!" "DISGUISE PARTY AS MONSTERS." "SNEAK, REMAINING UNSEEN"
-	GetTable DisguiseChoiceTable Scratch1 DisguiseState
+	Choice = VMenu "THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?" "STRIDE BOLDLY FORWARD!" "DISGUISE PARTY AS MONSTERS." "SNEAK, REMAINING UNSEEN"
+	DisguiseState = DisguiseChoiceTable[Choice]
 	Exit
 
 event1:
-	And Cell 127 Scratch1
-	OnGoto Scratch1 12 StreetSquare AuctionStart TavernEnter ThePittSign IlmaterTemple BaneShrine RobedOrc AbandonedShop DecayedBuilding RememberBuilding Done Done
+	Scratch1 = Cell & 127
+	OnGoto Scratch1 StreetSquare AuctionStart TavernEnter ThePittSign IlmaterTemple BaneShrine RobedOrc AbandonedShop DecayedBuilding RememberBuilding Done Done
 
 StreetSquare:
-	Random 25 Scratch1
+	Scratch1 = Random 25
 	if PatrolsBeaten < 64: Goto StreetSquareEarly
 	if Scratch1 < 3: Goto OverhearRumor
 	if Scratch1 > 21: Goto PatrolMeet
@@ -92,8 +93,8 @@ PatrolMeet:
 	Approach
 	Delay
 	if DisguiseState == 2: Goto SneakPast
-	Random 1 Scratch1
-	OnGoto Scratch1 2 PatrolGlare PatrolCheckOut
+	Scratch1 = Random 1
+	OnGoto Scratch1 PatrolGlare PatrolCheckOut
 
 PatrolGlare:
 	Print "THEY GLARE AT YOUR PARTY, "
@@ -105,46 +106,46 @@ PatrolCheckOut:
 DisguiseCheck:
 	Delay
 	Approach
-	Save 5 Scratch10
-	Save 0 Scratch1
+	Scratch10 = 5
+	Scratch1 = 0
 
 DisguiseCheckMember:
 	LoadCharacter Scratch1
 	if SelRace == 7: Goto DisguiseCheckNext
-	Add 5 Scratch10 Scratch10
+	Scratch10 += 5
 
 DisguiseCheckNext:
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	if Scratch1 < 8: Goto DisguiseCheckMember
-	Random 100 Scratch9
+	Scratch9 = Random 100
 	if Scratch9 > Scratch10: Goto PatrolWalkOn
 
 PatrolDemandWho:
 	Print "AND DEMAND, 'WHO ARE YOU?'"
 	Approach
 	Parlay 0 1 2 3 4 Scratch1
-	OnGoto Scratch1 5 PatrolGrumble HereForBoss SettlersKillThem SettlersKillThem PatrolGrumble
+	OnGoto Scratch1 PatrolGrumble HereForBoss SettlersKillThem SettlersKillThem PatrolGrumble
 
 SettlersKillThem:
 	PrintClear "THEY YELL 'SETTLERS! KILL THEM!'"
 	Goto PatrolFight
 
 HereForBoss:
-	Random 30 Scratch1
+	Scratch1 = Random 30
 	if SelReaction < Scratch1: Goto SettlersKillThem
 	PrintClear "'OH, YOU'RE HERE FOR THE BOSS.'"
 	Goto Done
 
 PatrolGrumble:
-	Random 50 Scratch1
+	Scratch1 = Random 50
 	PartyStrength Scratch2
 	if Scratch2 < Scratch1: Goto SettlersKillThem
 	PrintClear "THEY GRUMBLE AND MOVE ON."
 	Goto Done
 
 PatrolWalkOn:
-	Random 1 Scratch1
-	OnGoto Scratch1 2 WalkOn LaughWalkOn
+	Scratch1 = Random 1
+	OnGoto Scratch1 WalkOn LaughWalkOn
 
 WalkOn:
 	Print "AND WALK ON."
@@ -155,9 +156,9 @@ LaughWalkOn:
 	Goto Done
 
 SneakPast:
-	Random 5 Scratch1
+	Scratch1 = Random 5
 	Gosub PressToContinue
-	OnGoto Scratch1 6 PatrolDemandWho StopTheyMoveOn StopTheyMoveOn SlipPast SlipPast SlipPast
+	OnGoto Scratch1 PatrolDemandWho StopTheyMoveOn StopTheyMoveOn SlipPast SlipPast SlipPast
 
 SlipPast:
 	PrintClear "YOUR PARTY SLIPS PAST THEM."
@@ -168,16 +169,16 @@ StopTheyMoveOn:
 	Goto Done
 
 PatrolEncounterMenu:
-	Save 2 EncMenuMode
-	if PatrolsBeaten >= 64: Save 0 EncMenuMode
+	EncMenuMode = 2
+	if PatrolsBeaten >= 64: EncMenuMode = 0
 	Gosub SpotPatrol
 	EncounterMenu EncMonster EncMenuMode EncMonster Scratch1 2 3 0 1 4 "THE MONSTERS STAND READY" "THE MONSTERS PREPARE" "" EncDistance EncDistance
-	Save 100 Morale
-	OnGoto Scratch1 4 Done PatrolFight PartyFlees PatrolParlay
+	Morale = 100
+	OnGoto Scratch1 Done PatrolFight PartyFlees PatrolParlay
 
 PatrolFight:
 	Gosub LoadPatrol
-	Save EncMorale Morale
+	Morale = EncMorale
 	Combat
 	Gosub CountPatrolBeaten
 	if Cell < 127: Goto CoverBlown
@@ -186,7 +187,7 @@ PatrolFight:
 
 CountPatrolBeaten:
 	if PatrolsBeaten >= 64: Return
-	Add 1 PatrolsBeaten PatrolsBeaten
+	PatrolsBeaten += 1
 	Return
 
 Done:
@@ -196,18 +197,18 @@ Done:
 
 PartyFlees:
 	PrintClear "THE PARTY RUNS AND ESCAPES."
-	Random 3 Facing
-	Random 7 Scratch1
-	Save 255 Portrait
-	GetTable RandomExitX Scratch1 PartyX
-	Save Scratch1 PartyY
+	Facing = Random 3
+	Scratch1 = Random 7
+	Portrait = 255
+	PartyX = RandomExitX[Scratch1]
+	PartyY = Scratch1
 	Call CallRedraw
-	Save 1 NoCoords
+	NoCoords = 1
 
 CoverBlown:
 	if DisguiseState == 0: Exit
 	if DisguiseState == 255: Exit
-	Save 255 DisguiseState
+	DisguiseState = 255
 	Gosub PressToContinue
 	PrintClear "YOUR COVER IS BLOWN."
 	Goto Done
@@ -215,12 +216,12 @@ CoverBlown:
 PatrolParlay:
 	if DisguiseState == 255 && PatrolsBeaten == 64: Goto PatrolFight
 	Parlay 10 20 20 20 30 Scratch1
-	Random 50 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	Mul SelReaction 2 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	GetTable EncParlayTable EncType Scratch2
-	Add Scratch1 Scratch2 Scratch1
+	Scratch2 = Random 50
+	Scratch1 = Scratch1 + Scratch2
+	Scratch2 = SelReaction * 2
+	Scratch1 = Scratch1 + Scratch2
+	Scratch2 = EncParlayTable[EncType]
+	Scratch1 = Scratch1 + Scratch2
 	if Scratch1 < 112: Goto ParlayMoveIt
 	PrintClear "'WE'LL LET YOU OFF THIS TIME.' THE MONSTERS SCUTTLE AWAY."
 	Goto Done
@@ -235,59 +236,59 @@ ParlayTeachLesson:
 	Goto PatrolFight
 
 RollPatrol:
-	Random 8 Scratch1
-	Save 0 EncExtraCount
-	GetTable EncTypeTable Scratch1 EncType
-	GetTable EncParlayTable EncType EncParlayMod
-	GetTable EncMonsterTable EncType EncMonster
-	OnGoto Scratch1 9 PatrolGoblins PatrolGoblins PatrolGoblins PatrolGoblins PatrolOrcs PatrolOrcs PatrolOrcs PatrolHobgoblins PatrolOgres
+	Scratch1 = Random 8
+	EncExtraCount = 0
+	EncType = EncTypeTable[Scratch1]
+	EncParlayMod = EncParlayTable[EncType]
+	EncMonster = EncMonsterTable[EncType]
+	OnGoto Scratch1 PatrolGoblins PatrolGoblins PatrolGoblins PatrolGoblins PatrolOrcs PatrolOrcs PatrolOrcs PatrolHobgoblins PatrolOgres
 
 PatrolGoblins:
-	Save " GOBLINS" $AuxCounter
+	$AuxCounter = " GOBLINS"
 	Goto RollPatrolCount
 
 PatrolOrcs:
-	Save " ORCS" $AuxCounter
+	$AuxCounter = " ORCS"
 	Goto RollPatrolCount
 
 PatrolHobgoblins:
-	Save " HOBGOBLINS" $AuxCounter
+	$AuxCounter = " HOBGOBLINS"
 	Goto RollPatrolCount
 
 PatrolOgres:
-	Save " OGRES" $AuxCounter
+	$AuxCounter = " OGRES"
 
 RollPatrolCount:
 	PartyStrength Scratch1
-	GetTable EncStrengthTable EncType Scratch2
-	Div Scratch1 Scratch2 Scratch1
-	Div Scratch1 3 Scratch1
-	Random Scratch1 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	if 64 == PatrolsBeaten && 255 == DisguiseState: Mul 2 Scratch1 Scratch1
-	if Scratch1 < 2: Save 2 Scratch1
-	GetTable EncMinCountTable EncType Scratch2
+	Scratch2 = EncStrengthTable[EncType]
+	Scratch1 = Scratch1 / Scratch2
+	Scratch1 = Scratch1 / 3
+	Scratch2 = Random Scratch1
+	Scratch1 = Scratch1 + Scratch2
+	if 64 == PatrolsBeaten && 255 == DisguiseState: Scratch1 = 2 * Scratch1
+	if Scratch1 < 2: Scratch1 = 2
+	Scratch2 = EncMinCountTable[EncType]
 	if Scratch1 < Scratch2: Goto SetPatrolCount
-	GetTable EncExtraTable EncType EncExtraCount
-	if Scratch1 > 50: Save 50 Scratch1
+	EncExtraCount = EncExtraTable[EncType]
+	if Scratch1 > 50: Scratch1 = 50
 
 SetPatrolCount:
-	Save Scratch1 EncCount
-	GetTable EncDistanceTable EncType EncDistance
+	EncCount = Scratch1
+	EncDistance = EncDistanceTable[EncType]
 	Return
 
 LoadPatrol:
 	ClearMonsters
-	Add EncCount EncExtraCount Scratch1
+	Scratch1 = EncCount + EncExtraCount
 	PrintClear Scratch1
 	Print $AuxCounter
 	Print " RUSH TO ATTACK."
-	GetTable EncMonsterTable EncType Scratch1
+	Scratch1 = EncMonsterTable[EncType]
 	LoadMonster Scratch1 count=EncCount icon=Scratch1
-	GetTable EncMoraleTable EncType EncMorale
+	EncMorale = EncMoraleTable[EncType]
 	if EncExtraCount == 0: Return
-	Add EncMorale 10 EncMorale
-	Add 1 Scratch1 Scratch1
+	EncMorale = EncMorale + 10
+	Scratch1 += 1
 	LoadMonster Scratch1 count=EncExtraCount icon=Scratch1
 	Return
 
@@ -298,7 +299,7 @@ SpotPatrol:
 	Return
 
 OverhearRumor:
-	if OverheardIndex == 5: Sub 5 OverheardIndex OverheardIndex
+	if OverheardIndex == 5: OverheardIndex -= 5
 	if DisguiseState >= 254: Goto Done
 	Gosub RollPatrol
 	SetupMonster EncMonster distance=2 closeup=EncMonster
@@ -308,10 +309,10 @@ OverhearRumor:
 	Delay
 	Print $AuxCounter
 	Print " SAY, "
-	Save OverheardIndex Scratch1
-	Add 1 OverheardIndex OverheardIndex
+	Scratch1 = OverheardIndex
+	OverheardIndex += 1
 	Approach
-	OnGoto Scratch1 5 RumorBoss RumorOgres RumorBaneTemple RumorLard RumorBidder
+	OnGoto Scratch1 RumorBoss RumorOgres RumorBaneTemple RumorLard RumorBidder
 
 RumorBoss:
 	Print "'DO YOU THINK HE'LL REALLY SHOW UP -- THE BOSS I MEAN?'"
@@ -334,23 +335,26 @@ RumorBaneTemple:
 	Goto Done
 
 AuctionStart:
-	Save 0 NoCoords
+	alias Choice = Scratch1
+	NoCoords = 0
 	if DisguiseState > 253: Exit
 	Picture OldMan
 	PrintClear "THE AUCTIONEER CRIES 'CREATURES OF ALL AGES, WELCOME TO THIS AUCTION FOR AN ITEM BOTH MAGICAL AND POWERFUL!'"
 	Gosub PressToContinue
 	PrintClear "THE AUCTIONEER HAS EITHER A WAND OR STAFF."
 	Gosub PressToContinue
-	VMenu Scratch1 "DO YOU WISH TO:" 4 "STAND AND LISTEN" "MOVE IN CLOSER" "LISTEN TO COMMENTS" "LEAVE"
-	OnGoto Scratch1 4 AuctionBidding MoveCloser AuctionComments AuctionLeave
+	Choice = VMenu "DO YOU WISH TO:" "STAND AND LISTEN" "MOVE IN CLOSER" "LISTEN TO COMMENTS" "LEAVE"
+	OnGoto Choice AuctionBidding MoveCloser AuctionComments AuctionLeave
 
 AuctionBidding:
+	alias Choice = Scratch1
 	PrintClear "THE BIDDING ESCALATES TO 5,000 GOLD PIECES -- HIGH BID FROM A MAN IN PLAIN CLOTHES, NEXT TO AN OGRE."
 	Gosub PressToContinue
-	VMenu Scratch1 "DO YOU WISH TO:" 3 "MAKE A BID" "WAIT FOR WINNER" "TRY TO LEAVE"
-	OnGoto Scratch1 3 MakeBid WaitForWinner AuctionLeave
+	Choice = VMenu "DO YOU WISH TO:" "MAKE A BID" "WAIT FOR WINNER" "TRY TO LEAVE"
+	OnGoto Choice MakeBid WaitForWinner AuctionLeave
 
 MakeBid:
+	alias Choice = Scratch1
 	PrintClear "YOU UP THE BID. MONSTERS NEARBY TURN, STARE,"
 	Gosub RollSuspicion
 	if 255 == DisguiseState: Goto AuctionCancelled
@@ -359,8 +363,8 @@ MakeBid:
 	Gosub PressToContinue
 	PrintClear "THERE IS MASS CONFUSION. SUDDENLY, THE OGRE SPRINTS FROM THE DARKNESS."
 	Gosub PressToContinue
-	VMenu Scratch1 "DO YOU:" 3 "FOLLOW THE OGRE" "MOVE QUIETLY AWAY" "LOOK FOR THE MAN IN PLAIN CLOTHES"
-	OnGoto Scratch1 3 FollowOgre AuctionLeave LookForGarwin
+	Choice = VMenu "DO YOU:" "FOLLOW THE OGRE" "MOVE QUIETLY AWAY" "LOOK FOR THE MAN IN PLAIN CLOTHES"
+	OnGoto Choice FollowOgre AuctionLeave LookForGarwin
 
 FollowOgre:
 	PrintClear "THE OGRE IS TACKLED AND SEARCHED. HE DOESN'T HAVE THE ITEM ON HIM."
@@ -398,8 +402,8 @@ MoveCloser:
 	Goto AuctionBidding
 
 AuctionComments:
-	Random 1 Scratch1
-	OnGoto Scratch1 2 CommentIllumination CommentCommand
+	Scratch1 = Random 1
+	OnGoto Scratch1 CommentIllumination CommentCommand
 
 CommentIllumination:
 	PrintClear "'IT'S A WAND OF ILLUMINATION. WHO CARES, I SEE IN THE DARK ANYWAY!'"
@@ -416,21 +420,21 @@ AuctionCancelled:
 	Gosub PressToContinue
 	PrintClear "'THE AUCTION IS CANCELLED!' YELLS THE AUCTIONEER AS HE FLEES."
 	Gosub PressToContinue
-	Save 255 DisguiseState
-	Save 254 QuestPodalAuction
+	DisguiseState = 255
+	QuestPodalAuction = 254
 	Goto PatrolEncounterMenu
 
 AuctionOver:
 	Gosub PressToContinue
 	PrintClear "THE AUCTION OVER, THE MONSTERS GRUMBLE AND TURN AWAY.'"
-	Save 254 DisguiseState
-	Save 254 QuestPodalAuction
+	DisguiseState = 254
+	QuestPodalAuction = 254
 	Goto Done
 
 RollSuspicion:
-	if DisguiseState == 2: Save 255 DisguiseState
-	Random 5 Scratch2
-	if Scratch2 == 0: Save 255 DisguiseState
+	if DisguiseState == 2: DisguiseState = 255
+	Scratch2 = Random 5
+	if Scratch2 == 0: DisguiseState = 255
 	Return
 
 MonstersTurnAway:
@@ -441,15 +445,15 @@ MonstersTurnAway:
 TavernEnter:
 	if TavernState != 0: Goto TavernCrowd
 	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster ShieldBearer distance=0 body=3
 	Print "YOU OPENED THE DOOR INTO A DRUNK BUCCANEER."
 	Gosub PressToContinue
 	PrintClear "HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?"
 
 BuccaneerMenu:
-	HMenu Scratch1 4 "CHALLENGE" "ATTACK" "FLEE" "BRIBE"
-	OnGoto Scratch1 4 ChallengeBuccaneer PatronsAttack PartyFlees BribeBuccaneer
+	alias Choice = Scratch1
+	Choice = Menu "CHALLENGE" -> ChallengeBuccaneer "ATTACK" -> PatronsAttack "FLEE" -> PartyFlees "BRIBE" -> BribeBuccaneer
 
 ChallengeBuccaneer:
 	Who "WHO WILL CHALLENGE THE BUCCANEER?"
@@ -462,108 +466,110 @@ DuelBuccaneer:
 	Call CallDuelB
 	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
 	Combat
-	Save 1 TavernState
+	TavernState = 1
 	if CombatEnd > 128: Goto BuccaneerPaid
 	PrintClear "THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING."
 	Gosub PressToContinue
-	Save 255 Portrait
+	Portrait = 255
 	Goto TavernCrowd
 
 BuccaneerPaid:
 	PrintClear "THE BUCCANEER SMILES.'THAT IS SUFFICIENT PAYMENT.' HE LEAVES."
 	Gosub PressToContinue
 	Picture None
-	Save 255 Portrait
+	Portrait = 255
 	Goto TavernCrowd
 
 PatronsAttack:
 	PrintClear "YOUR ACTIONS ANGER THE PATRONS AND THEY ATTACK."
-	Save 30 Morale
+	Morale = 30
 	ClearMonsters
 	LoadMonster Hobgoblin count=4 icon=Hobgoblin
 	LoadMonster GoblinGuard count=12 icon=GoblinGuard
 	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
 	LoadMonster Orc4 count=8 icon=Orc
 	Combat
-	Save 255 Portrait
+	Portrait = 255
 	if CombatEnd > 128: Goto PartyFlees
-	Save 2 TavernState
+	TavernState = 2
 	Goto BarDestroyed
 
 BribeBuccaneer:
+	alias Choice = Scratch1
 	PrintClear "'A TENTH OF YOUR MONEY THEN.'DO YOU ACCEPT?"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 PayBribe BuccaneerMenu
+	Choice = Menu "YES" -> PayBribe "NO" -> BuccaneerMenu
 
 PayBribe:
 	Rob 1 10 10
 	Goto BuccaneerPaid
 
 TavernCrowd:
+	alias Choice = Scratch1
 	if TavernState > 1: Goto BarDestroyed
 	SetupMonster Goblin distance=0 closeup=Goblin
 	PrintClear "THE CREATURES IGNORE YOU FOR THE MOMENT."
 	Gosub PressToContinue
-	VMenu Scratch1 "WHAT DO YOU DO?" 4 "MIX WITH MONSTERS" "DRINK HEAVILY" "ATTACK" "LEAVE"
-	OnGoto Scratch1 4 MixWithMonsters DrinkHeavily PatronsAttack StepBack
+	Choice = VMenu "WHAT DO YOU DO?" "MIX WITH MONSTERS" "DRINK HEAVILY" "ATTACK" "LEAVE"
+	OnGoto Choice MixWithMonsters DrinkHeavily PatronsAttack StepBack
 
 MixWithMonsters:
+	alias Choice = Scratch1
 	if DisguiseState == 2: Goto PatronsAttack
 	if DisguiseState == 255: Goto PatronsAttack
 	PrintClear "MONSTERS INSULT YOUR ABILITIES AND PARENTAGE."
 	Gosub PressToContinue
-	VMenu Scratch1 "WHAT DO YOU DO?" 4 "ATTACK" "TRY TO LEAVE" "INSULT BACK" "JOIN IN HEAVY DRINKING"
-	OnGoto Scratch1 4 FreeForAll PatronsAttack FreeForAll DrinkHeavily
+	Choice = VMenu "WHAT DO YOU DO?" "ATTACK" "TRY TO LEAVE" "INSULT BACK" "JOIN IN HEAVY DRINKING"
+	OnGoto Choice FreeForAll PatronsAttack FreeForAll DrinkHeavily
 
 DrinkHeavily:
-	Save 2 PartyX
-	Save 10 PartyY
-	Save 2 Facing
+	PartyX = 2
+	PartyY = 10
+	Facing = 2
 	Call CallRedraw
 	Rob 1 100 50
-	Save 1 NoCoords
+	NoCoords = 1
 	PrintClear "YOU HAD A GREAT TIME UNTIL YOU ALL PASSED OUT. YOUR PURSE IS MISSING."
-	if PatrolsBeaten >= 64: Save 255 DisguiseState
+	if PatrolsBeaten >= 64: DisguiseState = 255
 	Exit
 
 StepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
 	Exit
 
 FreeForAll:
 	PrintClear "YOUR ACTIONS TRIGGER A FREE FOR ALL."
 	Gosub PressToContinue
-	Save 50 Morale
+	Morale = 50
 	ClearMonsters
 	LoadMonster GoblinGuard count=25 icon=GoblinGuard
 	LoadMonster Hobgoblin count=20 icon=Hobgoblin
 	LoadMonster Ogre count=5 icon=Ogre
-	Save 0 Scratch2
+	Scratch2 = 0
 
 FreeForAllMember:
-	Random 44 Scratch1
-	Add 8 Scratch1 Scratch1
-	Add 1 Scratch2 Scratch2
+	Scratch1 = Random 44
+	Scratch1 += 8
+	Scratch2 += 1
 	LoadCharacter Scratch1
-	Save 128 SelSide
-	Save 178 SelControl
-	Or 128 Scratch1 Scratch1
+	SelSide = 128
+	SelControl = 178
+	Scratch1 = 128 | Scratch1
 	LoadCharacter Scratch1
 	if Scratch2 < 21: Goto FreeForAllMember
 	Combat
 	if CombatEnd > 128: Goto PartyFlees
-	Save 2 TavernState
+	TavernState = 2
 
 BarDestroyed:
 	if TavernState > 2: Exit
 	PrintClear "THE BAR LOOKS LIKE IT WAS DESTROYED BY EXPERTS."
-	Save 3 TavernState
+	TavernState = 3
 	Exit
 
 ThePittSign:
-	Save 0 NoCoords
+	NoCoords = 0
 	PrintClear "OVER THIS DOOR IS A CRUDE SIGN SAYING, 'THE PITT.'"
 	Exit
 
@@ -572,36 +578,37 @@ IlmaterTemple:
 	PrintClear "THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE."
 
 IlmaterHealer:
+	alias Choice = Scratch1
 	ShowPortrait 48 25
 	PrintClear "A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 Heal RestHere
+	Choice = Menu "YES" -> Heal "NO" -> RestHere
 
 Heal:
-	Save 1 Temple
+	Temple = 1
 	ClearMonsters
 	Combat
 
 RestHere:
 	PrintClear "'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES."
 	Picture None
-	Save 255 Portrait
-	Save 4 LastBuildingCell
+	Portrait = 255
+	LastBuildingCell = 4
 	Exit
 
 BaneShrine:
-	Save 0 NoCoords
+	NoCoords = 0
 	PrintClear "THIS IS A SMALL SHRINE. SYMBOLS OF BANE HAVE REPLACED THOSE OF ILMATER."
 	Exit
 
 RobedOrc:
+	alias Choice = Scratch1
 	if BaneRecruiterState != 0: Goto BaneMeeting
 	SetupMonster Orc distance=1 closeup=Orc
 	PrintClear "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
-	HMenu Scratch1 3 "LEAVE" "GREET" "ATTACK"
+	Choice = Menu "LEAVE" "GREET" "ATTACK"
 	if DisguiseState == 255: Goto AttackOrc
 	if DisguiseState == 2: Goto AttackOrc
-	OnGoto Scratch1 3 StepBack GreetOrc AttackOrc
+	OnGoto Choice StepBack GreetOrc AttackOrc
 
 GreetOrc:
 	PrintClear "THE ORC SMILES CROOKEDLY.'GREETINGS FROM BANE."
@@ -609,8 +616,8 @@ GreetOrc:
 	Print " WE ARE RECRUITING CREATURES FOR OUR TEMPLE TO THE NORTHEAST. ARE YOU INTERESTED?'"
 
 RecruitMenu:
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 AcceptRecruit DeclineRecruit
+	alias Choice = Scratch1
+	Choice = Menu "YES" -> AcceptRecruit "NO" -> DeclineRecruit
 
 RecruitRecover:
 	Print " WE ARE HIRING CREATURES TO RECOVER OUR TEMPLE. ARE YOU INTERESTED?'"
@@ -620,10 +627,10 @@ AcceptRecruit:
 	PrintClear "'MEET HERE IN TWO HOURS. YOU MAY MEET HIGH PRIEST MACE.' HE ESCORTS YOU OUT."
 
 SetMeetHour:
-	Save 1 BaneRecruiterState
-	Save Hours BaneMeetHour
-	Add 2 BaneMeetHour BaneMeetHour
-	if BaneMeetHour > 23: Sub 24 BaneMeetHour BaneMeetHour
+	BaneRecruiterState = 1
+	BaneMeetHour = Hours
+	BaneMeetHour += 2
+	if BaneMeetHour > 23: BaneMeetHour -= 24
 	Goto StepBack
 
 DeclineRecruit:
@@ -636,29 +643,29 @@ BaneMeeting:
 	SetupMonster Orc distance=1 closeup=Orc
 	PrintClear "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
 	Gosub PressToContinue
-	Save 50 Morale
+	Morale = 50
 	ClearMonsters
 	LoadMonster Orc4 count=8 icon=Orc
 	LoadMonster OrcLeader5 count=1 icon=OrcLeader
 	LoadMonster Ogre count=3 icon=Ogre
 	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
-	Save 2 BaneRecruiterState
+	BaneRecruiterState = 2
 	if CombatEnd > 128: Goto PartyFlees
 	Exit
 
 AttackOrc:
-	Save 90 Morale
+	Morale = 90
 	ClearMonsters
 	LoadMonster OrcLeader5 count=1 icon=OrcLeader
 	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
-	Save 2 BaneRecruiterState
+	BaneRecruiterState = 2
 	if CombatEnd > 128: Goto PartyFlees
 	Exit
 
 RememberBuilding:
-	Save Cell LastBuildingCell
+	LastBuildingCell = Cell
 	Exit
 
 AbandonedShop:
@@ -672,12 +679,13 @@ DecayedBuilding:
 	Goto RememberBuilding
 
 PressToContinue:
-	HMenu Scratch2 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	alias Choice = Scratch2
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 SlumsCleared9:
-	if PatrolsBeaten == 9: Save 254 PodalPlazaCleared
-	Save 10 PatrolsBeaten
+	if PatrolsBeaten == 9: PodalPlazaCleared = 254
+	PatrolsBeaten = 10
 	Exit
 
 DisguiseChoiceTable:

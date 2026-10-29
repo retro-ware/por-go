@@ -3,7 +3,7 @@ event0:
 
 event1:
 	Picture Cave
-	And DragonCaveFlags 128 Scratch2
+	Scratch2 = DragonCaveFlags & 128
 	if Scratch2 != 1: Goto CheckCaveState
 
 EmptyCaveLeave:
@@ -11,22 +11,23 @@ EmptyCaveLeave:
 	NewECL Mountains
 
 CheckCaveState:
-	And DragonCaveFlags 2 Scratch2
+	Scratch2 = DragonCaveFlags & 2
 	if 0 != Scratch2: Goto EmptyCaveLeave
-	And DragonCaveFlags 1 Scratch2
+	Scratch2 = DragonCaveFlags & 1
 	if Scratch2 != 1: Goto MagicMouthAsks
 	if Carried 82: Goto BottleRecovered
 
 MagicMouthAsks:
+	alias Choice = Scratch1
 	PrintClear "AS YOU ARE ENTERING THE CAVE, A MAGIC MOUTH APPEARS ON ONE OF THE WALLS.  IN A BOOMING VOICE IT SAYS, 'WHO ENTERS THE HOME OF DIOGENES?  SPEAK NOW AND DECLARE YOUR INTENT!'"
-	HMenu Scratch1 2 "STATE NAME AND INTENT" "LEAVE"
-	OnGoto Scratch1 2 StateIntentMenu LeaveCave
+	Choice = Menu "STATE NAME AND INTENT" -> StateIntentMenu "LEAVE" -> LeaveCave
 
 StateIntentMenu:
+	alias Choice = Scratch1
 	PrintClear "WHAT WILL YOU SAY IS YOUR REASON FOR BEING HERE?"
 	Gosub PressReturn
-	VMenu Scratch1 "DRAGON'S CAVE" 4 "ASK DRAGON FOR ADVICE" "CHALLENGE EVIL LEADER OF OLD PHLAN" "PLEDGE PARTY TO DRAGON'S SERVICE" "OFFER A GIFT"
-	OnGoto Scratch1 4 AskAdvice ChallengeDragon PledgeService OfferGift
+	Choice = VMenu "DRAGON'S CAVE" "ASK DRAGON FOR ADVICE" "CHALLENGE EVIL LEADER OF OLD PHLAN" "PLEDGE PARTY TO DRAGON'S SERVICE" "OFFER A GIFT"
+	OnGoto Choice AskAdvice ChallengeDragon PledgeService OfferGift
 
 PledgeService:
 	Picture GreyDragon
@@ -37,16 +38,16 @@ PledgeService:
 DragonFliesOff:
 	Gosub PressReturn
 	PrintClear "AFTER SPEAKING, THE DRAGON FLYS THROUGH AN OPENNING IN THE CEILING OF THE CAVE.  YOU EXIT THE CAVE TO CONTINUE YOUR QUEST."
-	Or DragonCaveFlags 1 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 1
 	Goto LeaveCave
 
 ChallengeDragon:
+	alias Choice = Scratch1
 	Picture GreyDragon
 	PrintClear "YOU HEAR A ROAR THEN A GREAT FLAPPING SOUND.  A STRONG RUSH OF AIR BATTERS THE PARTY AS A LARGE SILVER DRAGON LANDS BEFORE THE ADVENTURERS.  IN A BOOMING VOICE IT SAYS..."
 	Gosub PressReturn
 	PrintClear "'YOU FOOLS.  I AM A GOOD SILVER DRAGON NOT THE EVIL LEADER OF PHLAN.  DON'T YOU KNOW THAT WE METALLIC DRAGONS ARE GOOD CREATURES?'  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "APOLOGIZE" "SLAY DRAGON"
-	OnGoto Scratch1 2 ApologizeToDragon DragonFleesUp
+	Choice = Menu "APOLOGIZE" -> ApologizeToDragon "SLAY DRAGON" -> DragonFleesUp
 
 ApologizeToDragon:
 	PrintClear "AFTER HEARING YOUR APOLOGY THE DRAGON SAYS, 'THOUGH YOU ARE FOOLISH I BELIEVE YOUR ACTS ARE NOBLE.  I WILL HELP YOU WITH YOUR QUEST TO CLEANSE THE CITY OF PHLAN FROM EVIL.'"
@@ -55,22 +56,22 @@ ApologizeToDragon:
 	Goto DragonFliesOff
 
 DragonFleesUp:
+	alias Choice = Scratch1
 	PrintClear "AS YOU READY YOUR WEAPONS TO ATTACK.  THE DRAGON TAKES FLIGHT AND ROARS, 'EVIL CREATURES, BEGONE FROM MY LAIR.'  HE THEN FLIES UP THROUGH A HOLE IN THE CEILING."
 	Gosub PressReturn
 	PrintClear "YOU MAY EASILY FOLLOW THE DRAGON BY CLIMBING UP A WALL AND THEN THROUGH THE HOLE IN THE CEILING.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "FOLLOW DRAGON" "LEAVE"
-	OnGoto Scratch1 2 FollowDragonUp LeaveCave
+	Choice = Menu "FOLLOW DRAGON" -> FollowDragonUp "LEAVE" -> LeaveCave
 
 FollowDragonUp:
+	alias Choice = Scratch1
 	PrintClear "YOU CLIMB TO THE SECOND LEVEL OF THE DRAGON'S DEN.  THERE IS THE DRAGON WAITING FOR YOU.  HE LOOKS EXTREMELY MAD!  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ATTACK" "LEAVE"
-	OnGoto Scratch1 2 AttackDragonFireball LeaveCave
+	Choice = Menu "ATTACK" -> AttackDragonFireball "LEAVE" -> LeaveCave
 
 AttackDragonFireball:
 	PrintClear "YOU TRY TO ATTACK THE DRAGON BUT SEEM TO BE FROZEN IN TIME.  THE DRAGON THROWS A FIREBALL IN THE MIDDLE OF THE PARTY AND THEN DISAPPEARS.  YOU HAVE A STRANGE FEELING THAT YOU JUST MADE A BIG MISTAKE."
 	Damage 192 11 6 0 4
 	PrintClear "AFTER RECOVERING FROM THE FIREBALL YOU SEARCH THE REST OF THE LAIR AND FIND NOTHING OF INTREST."
-	Or DragonCaveFlags 128 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 128
 	Goto LeaveCave
 
 AskAdvice:
@@ -95,24 +96,25 @@ BottleRecovered:
 	PrintClear "'THAT BOTTLE CONTAINS A POWERFUL EFREET WHO WAS SUMMONED TO KILL VAMPIRES.  HE WILL BE A VALUABLE ALLY IN OLD PHLAN.  IN VALHINGEN GRAVEYARD THERE IS A VAMPIRE.'"
 	Gosub PressReturn
 	PrintClear "'WHEN YOU MEET THE VAMPIRE USE THE BOTTLE AND YOU MAY HAVE A CHANCE IN DEFEATING HIM.  I WISH YOU LUCK.'  AFTER SPEAKING DIOGENES FLIES THROUGH A HOLE IN THE CEILING AND DISSAPPEARS."
-	Or DragonCaveFlags 2 DragonCaveFlags
+	DragonCaveFlags = DragonCaveFlags | 2
 	Goto LeaveCave
 
 LeaveCave:
 	NewECL Mountains
 
 PressReturn:
-	HMenu Scratch1 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	alias Choice = Scratch1
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 event2:
-	Save 0 RestEvery
-	Save 1 SelMemorized13
+	RestEvery = 0
+	SelMemorized13 = 1
 	Exit
 
 event3:
 	Exit
 
 event4:
-	Save 1 In3D
+	In3D = 1
 	Exit

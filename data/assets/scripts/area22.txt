@@ -1,16 +1,16 @@
 FleeNorth:
-	Random 3 Scratch1
-	Add Scratch1 4 Scratch1
+	Scratch1 = Random 3
+	Scratch1 = Scratch1 + 4
 	Goto MoveToTableSpot
 
 FleeSouth:
-	Random 3 Scratch1
+	Scratch1 = Random 3
 
 MoveToTableSpot:
-	GetTable DestX Scratch1 PartyX
-	GetTable DestY Scratch1 PartyY
-	GetTable DestFacing Scratch1 Facing
-	Save 255 HoldMove
+	PartyX = DestX[Scratch1]
+	PartyY = DestY[Scratch1]
+	Facing = DestFacing[Scratch1]
+	HoldMove = 255
 	Goto Done
 
 DestX:
@@ -24,45 +24,48 @@ DestFacing:
 	Data 61 88 20 4 177 96 37 79 192
 
 YesNoMenu:
-	HMenu Scratch10 2 "YES" "NO"
+	alias Choice = Scratch10
+	Choice = Menu "YES" "NO"
 	PrintClear " "
-	Compare Scratch10 0
+	Compare Choice 0
 	Return
 
 TeleportFlash:
 	Print "AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH, AND YOU SUDDENLY FIND YOURSELVES ELSEWHERE."
 
 PressReturn:
-	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	alias Choice = Scratch9
+	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	PrintClear " "
 	Return
 
 SearchSecretDoor:
-	And Scratch1 SecretDoorBits Scratch10
+	Scratch10 = Scratch1 & SecretDoorBits
 	if 0 != Scratch10: Goto SecretDoorFound
-	Save 0 Scratch10
+	Scratch10 = 0
 
 CheckMemberFinds:
 	LoadCharacter Scratch10
 	if SelStatus == 0: Goto NextMember
-	Save 1 Scratch9
-	if Search == 0: Sub 1 Scratch9 Scratch9
-	if SelRace == 2: Add 1 Scratch9 Scratch9
-	if SelRace == 4: Add 1 Scratch9 Scratch9
-	Random 5 Scratch8
+	Scratch9 = 1
+	if Search == 0: Scratch9 -= 1
+	if SelRace == 2: Scratch9 += 1
+	if SelRace == 4: Scratch9 += 1
+	Scratch8 = Random 5
 	if Scratch8 > Scratch9: Goto NextMember
 
 SecretDoorFound:
-	Or Scratch1 SecretDoorBits SecretDoorBits
+	alias ByFacing9B22Entry = Scratch10
+	SecretDoorBits = Scratch1 | SecretDoorBits
 	PrintClear "A SECRET DOOR IS FOUND"
-	GetTable ByFacing9B22 Facing Scratch10
-	Add Scratch10 Scratch2 Scratch2
-	GetTable Table9B1B Scratch2 Scratch2
-	OnGoto Scratch2 4 DoorInFront DoorToRight DoorBehind DoorToLeft
+	ByFacing9B22Entry = ByFacing9B22[Facing]
+	Scratch2 += ByFacing9B22Entry
+	Scratch2 = Table9B1B[Scratch2]
+	OnGosub Scratch2 DoorInFront DoorToRight DoorBehind DoorToLeft
 	Goto PressReturn
 
 NextMember:
-	Add Scratch10 1 Scratch10
+	Scratch10 = Scratch10 + 1
 	if Scratch10 < 8: Goto CheckMemberFinds
 	Return
 
@@ -89,19 +92,19 @@ ByFacing9B22:
 	Data 0 3 2 1
 
 event0:
-	And Cell 31 Scratch1
+	Scratch1 = Cell & 31
 	if 0 == Scratch1: Exit
 	if Scratch1 > 11: Exit
-	Sub 1 Scratch1 Scratch1
-	GetTable Table9C95 Scratch1 Scratch10
+	Scratch1 -= 1
+	Scratch10 = Table9C95[Scratch1]
 	if Scratch10 != Facing: Exit
 	Goto CheckSecretPassage
 
 event1:
-	And Cell 31 Scratch10
-	GetTable Table9B91 Scratch10 Scratch2
-	GetTable Table9BA4 Scratch10 Scratch1
-	OnGoto Scratch2 7 RandomEncounter SecretDoorSpot PriestRoom TyrmorCorpse RockRoom TeleporterSquare Done
+	Scratch10 = Cell & 31
+	Scratch2 = Table9B91[Scratch10]
+	Scratch1 = Table9BA4[Scratch10]
+	OnGoto Scratch2 RandomEncounter SecretDoorSpot PriestRoom TyrmorCorpse RockRoom TeleporterSquare Done
 	Exit // extra: the original runs on into data at 9B91
 
 Table9B91:
@@ -113,15 +116,15 @@ Table9BA4:
 	Data 4 0 0
 
 event2:
-	Save 0 RestEvery
-	Save 10 RestChance
+	RestEvery = 0
+	RestChance = 10
 	if PartyX == 15: Exit
-	Save SouthGroupsBeaten Scratch10
-	if PartyY < 8: Save NorthGroupsBeaten Scratch10
-	And Scratch10 63 Scratch10
+	Scratch10 = SouthGroupsBeaten
+	if PartyY < 8: Scratch10 = NorthGroupsBeaten
+	Scratch10 = Scratch10 & 63
 	if Scratch10 == 63: Exit
-	Save 2 RestEvery
-	Save 33 RestChance
+	RestEvery = 2
+	RestChance = 33
 
 Done:
 	RedrawView
@@ -132,32 +135,32 @@ event3:
 	Goto ForcedEncounter
 
 event4:
-	Save 1 NoCoords
-	Save 9 SkyInside
+	NoCoords = 1
+	SkyInside = 9
 	if AreaKind == 22: Exit
-	LoadFiles 22 2 255
+	LoadMap 22 unused=2 icons=255
 	if AreaKind == 23: Exit
-	Save 0 PartyY
-	Save 2 Facing
-	Save 15 PartyX
-	LoadPieces 1 3 255
+	PartyY = 0
+	Facing = 2
+	PartyX = 15
+	LoadWalls 1 3 None
 	Exit
 
 SecretDoorSpot:
-	GetTable Table9C95 Scratch1 Scratch2
-	GetTable Table9CA0 Scratch1 Scratch1
+	Scratch2 = Table9C95[Scratch1]
+	Scratch1 = Table9CA0[Scratch1]
 	Gosub SearchSecretDoor
 	Goto RandomEncounter
 
 CheckSecretPassage:
-	GetTable Table9CA0 Scratch1 Scratch1
-	And SecretDoorBits Scratch1 Scratch10
+	Scratch1 = Table9CA0[Scratch1]
+	Scratch10 = SecretDoorBits & Scratch1
 	if 0 != Scratch10: Goto PassageLeave
-	Save 255 HoldMove
+	HoldMove = 255
 	Exit
 
 PassageLeave:
-	And Cell 31 Scratch10
+	Scratch10 = Cell & 31
 	if Scratch10 < 3: Goto LeaveToArea26
 	Exit
 
@@ -168,25 +171,25 @@ Table9CA0:
 	Data 1 2 4 8 16 32 64 4 8 32 64
 
 PriestRoom:
-	And SecretDoorBits 128 Scratch10
+	Scratch10 = SecretDoorBits & 128
 	if 0 != Scratch10: Goto HoleInWall
-	And SouthGroupsBeaten 64 Scratch10
+	Scratch10 = SouthGroupsBeaten & 64
 	if 0 != Scratch10: Exit
-	Save 0 Surprise
+	Surprise = 0
 	PrintClear "YOU SEE A HUMAN PRIEST."
 	Gosub PressReturn
-	Save 1 MaxDist
+	MaxDist = 1
 
 PriestEncounter:
-	Save 6 Scratch7
+	Scratch7 = 6
 	Gosub LoadGroupData
 	EncounterMenu AuxPartyStrength MaxDist AuxCounter Scratch10 0 4 1 4 4 "HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." "" "" 9 9
-	Save 255 Portrait
-	Save 6 Scratch6
-	OnGoto Scratch10 3 Done FightGroup PriestFlee
+	Portrait = 255
+	Scratch6 = 6
+	OnGoto Scratch10 Done FightGroup PriestFlee
 	Parlay 0 0 1 1 0 Scratch10
-	OnGoto Scratch10 1 PriestPeace
-	Random 2 Scratch10
+	OnGoto Scratch10 PriestPeace
+	Scratch10 = Random 2
 	if Scratch10 != 0: Goto PriestPeace
 	PrintClear "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
 	Gosub YesNoMenu
@@ -196,7 +199,7 @@ PriestEncounter:
 	RedrawView
 	Call CallRedraw
 	Gosub PressReturn
-	Or SecretDoorBits 128 SecretDoorBits
+	SecretDoorBits = SecretDoorBits | 128
 
 HoleInWall:
 	PrintClear "THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?"
@@ -206,7 +209,7 @@ HoleInWall:
 	Goto Done
 
 PriestFlee:
-	Save 9 Scratch1
+	Scratch1 = 9
 	Goto MoveToTableSpot
 
 PriestPeace:
@@ -219,36 +222,37 @@ TyrmorCorpse:
 	Gosub PressReturn
 	if TyrmorJournalFound != 0 || Search != 1: Goto RandomEncounter
 	PrintClear "HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26."
-	Save 1 TyrmorJournalFound
+	TyrmorJournalFound = 1
 	Gosub PressReturn
 	Goto RandomEncounter
 
 RockRoom:
 	PrintClear "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
 	Gosub PressReturn
-	And TeleporterRockFlags 2 Scratch10
+	Scratch10 = TeleporterRockFlags & 2
 	if 0 != Scratch10: Goto RockRoomMenu
-	OnGoto Search 2 StepOnTeleporter FeelTingle
+	OnGoto Search StepOnTeleporter FeelTingle
 
 StepOnTeleporter:
 	Gosub TeleportFlash
-	Or TeleporterRockFlags 2 TeleporterRockFlags
-	And TeleporterRockFlags 1 Scratch10
+	TeleporterRockFlags = TeleporterRockFlags | 2
+	Scratch10 = TeleporterRockFlags & 1
 	if 0 == Scratch10: Goto TeleportToArea23
-	Save 0 Scratch1
-	And TeleporterRockFlags 254 TeleporterRockFlags
+	Scratch1 = 0
+	TeleporterRockFlags = TeleporterRockFlags & 254
 	Goto MoveToTableSpot
 
 FeelTingle:
 	PrintClear "AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA."
 
 RockRoomMenu:
-	HMenu Scratch10 3 "GO BACK" "MOVE ON" "THROW A ROCK"
+	alias Choice = Scratch10
+	Choice = Menu "GO BACK" "MOVE ON" "THROW A ROCK"
 	PrintClear " "
-	OnGoto Scratch10 3 RockGoBack StepOnTeleporter ThrowRock
+	OnGoto Choice RockGoBack StepOnTeleporter ThrowRock
 
 RockGoBack:
-	Save 8 Scratch1
+	Scratch1 = 8
 	Goto MoveToTableSpot
 
 ThrowRock:
@@ -256,49 +260,49 @@ ThrowRock:
 	Gosub PressReturn
 	PrintClear " "
 	Gosub ToggleTeleporter
-	Or TeleporterRockFlags 2 TeleporterRockFlags
+	TeleporterRockFlags = TeleporterRockFlags | 2
 	Goto RockRoomMenu
 
 ToggleTeleporter:
-	And TeleporterRockFlags 1 Scratch10
+	Scratch10 = TeleporterRockFlags & 1
 	if 0 == Scratch10: Goto SetTeleporterBit
-	And TeleporterRockFlags 254 TeleporterRockFlags
+	TeleporterRockFlags = TeleporterRockFlags & 254
 	Return
 
 SetTeleporterBit:
-	Or TeleporterRockFlags 1 TeleporterRockFlags
+	TeleporterRockFlags = TeleporterRockFlags | 1
 	Return
 
 TeleporterSquare:
 	Gosub TeleportFlash
-	And Cell 31 Scratch10
+	Scratch10 = Cell & 31
 	if Scratch10 == 17: Goto ExitToArea23
 	Goto MoveToTableSpot
 
 RandomEncounter:
 	if PartyX == 15: Exit
-	Save SouthGroupsBeaten Scratch3
-	if PartyY < 8: Save NorthGroupsBeaten Scratch3
-	Save 2 Scratch10
-	if Search == 0: Save 20 Scratch10
-	Random Scratch10 Scratch10
+	Scratch3 = SouthGroupsBeaten
+	if PartyY < 8: Scratch3 = NorthGroupsBeaten
+	Scratch10 = 2
+	if Search == 0: Scratch10 = 20
+	Scratch10 = Random Scratch10
 	if Scratch10 != 0: Exit
-	Random 5 Scratch7
-	GetTable Table9CA0 Scratch7 Scratch10
-	And Scratch3 Scratch10 Scratch10
+	Scratch7 = Random 5
+	Scratch10 = Table9CA0[Scratch7]
+	Scratch10 = Scratch3 & Scratch10
 	if 0 != Scratch10: Exit
 
 StartGroupEncounter:
-	Save Scratch7 Scratch6
-	if PartyY < 8: Add 7 Scratch7 Scratch7
+	Scratch6 = Scratch7
+	if PartyY < 8: Scratch7 += 7
 	Gosub LoadGroupData
 	PartySurprise Scratch4 Scratch5
-	Save 2 Scratch3
+	Scratch3 = 2
 	Surprise Scratch4 Scratch5 AuxMonster AuxEncResult
-	OnGoto Surprise 4 SayYouSee SaySurprisedBy SayYouSurprise SayYouSee
+	OnGosub Surprise SayYouSee SaySurprisedBy SayYouSurprise SayYouSee
 	Print $AuxTemp9
 	Gosub PressReturn
-	OnGoto AuxEncResult2 3 FriendlyGroupMenu HungryGroupMenu FlyingGroupMenu
+	OnGoto AuxEncResult2 FriendlyGroupMenu HungryGroupMenu FlyingGroupMenu
 
 SayYouSee:
 	PrintClear "YOU SEE"
@@ -306,13 +310,13 @@ SayYouSee:
 
 SaySurprisedBy:
 	PrintClear "YOU ARE SURPRISED BY"
-	Add AuxMenuChoice 3 AuxMenuChoice
-	Save 0 Scratch3
+	AuxMenuChoice = AuxMenuChoice + 3
+	Scratch3 = 0
 	Return
 
 SayYouSurprise:
 	PrintClear "YOU SURPRISE"
-	Sub 3 AuxMenuChoice AuxMenuChoice
+	AuxMenuChoice -= 3
 	Return
 
 FriendlyGroupMenu:
@@ -327,9 +331,9 @@ FlyingGroupMenu:
 	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 0 "THEY FLY TOWARD YOU." "" "" AuxMenuChoice AuxMenuChoice
 
 EncounterOutcome:
-	Save 255 Portrait
-	if Scratch3 == 3: Save 1 Surprise
-	OnGoto Scratch3 4 Done FightGroup FleeEncounter FightGroup
+	Portrait = 255
+	if Scratch3 == 3: Surprise = 1
+	OnGoto Scratch3 Done FightGroup FleeEncounter FightGroup
 
 FleeEncounter:
 	if PartyY < 8: Goto FleeNorth
@@ -340,80 +344,80 @@ FightGroup:
 	LoadMonster AuxEncTemp count=AuxMember icon=AuxRoll
 	Combat
 	if CombatEnd == 129: Goto FleeEncounter
-	GetTable Table9CA0 Scratch6 Scratch7
+	Scratch7 = Table9CA0[Scratch6]
 	if PartyY < 8: Goto MarkNorthBeaten
-	Or SouthGroupsBeaten Scratch7 SouthGroupsBeaten
+	SouthGroupsBeaten = SouthGroupsBeaten | Scratch7
 	Exit
 
 MarkNorthBeaten:
-	Or NorthGroupsBeaten Scratch7 NorthGroupsBeaten
+	NorthGroupsBeaten = NorthGroupsBeaten | Scratch7
 	Exit
 
 ForcedEncounter:
-	Save SouthGroupsBeaten Scratch3
-	if PartyY < 8: Save NorthGroupsBeaten Scratch3
+	Scratch3 = SouthGroupsBeaten
+	if PartyY < 8: Scratch3 = NorthGroupsBeaten
 
 PickUnbeatenGroup:
-	Random 5 Scratch7
-	GetTable Table9CA0 Scratch7 Scratch10
-	And Scratch3 Scratch10 Scratch10
+	Scratch7 = Random 5
+	Scratch10 = Table9CA0[Scratch7]
+	Scratch10 = Scratch3 & Scratch10
 	if 0 != Scratch10: Goto PickUnbeatenGroup
 	Goto StartGroupEncounter
 
 LoadGroupData:
-	GetTable GroupTable0 Scratch7 AuxCounter
-	GetTable GroupTable1 Scratch7 AuxMenuChoice
-	GetTable GroupCountTable Scratch7 AuxMember
-	GetTable GroupTable3 Scratch7 AuxRoll
-	GetTable GroupSurpriseTable1 Scratch7 AuxMonster
-	GetTable GroupSurpriseTable2 Scratch7 AuxEncResult
-	GetTable GroupTable6 Scratch7 AuxEncResult2
-	GetTable GroupMonsterTable Scratch7 AuxEncTemp
-	GetTable GroupTable8 Scratch7 AuxPartyStrength
-	GetTable GroupPortraitTable Scratch7 Portrait
-	Save 100 Morale
-	OnGoto Scratch7 13 HumanFightersText DisplacerBeastsText DwarvenFightersText LizardMenText DridersText GauntMenText GroupTextDone InsectsText DridersText BullMenText ElvesText KoboldsText HumanFightersText
+	AuxCounter = GroupTable0[Scratch7]
+	AuxMenuChoice = GroupTable1[Scratch7]
+	AuxMember = GroupCountTable[Scratch7]
+	AuxRoll = GroupTable3[Scratch7]
+	AuxMonster = GroupSurpriseTable1[Scratch7]
+	AuxEncResult = GroupSurpriseTable2[Scratch7]
+	AuxEncResult2 = GroupTable6[Scratch7]
+	AuxEncTemp = GroupMonsterTable[Scratch7]
+	AuxPartyStrength = GroupTable8[Scratch7]
+	Portrait = GroupPortraitTable[Scratch7]
+	Morale = 100
+	OnGoto Scratch7 HumanFightersText DisplacerBeastsText DwarvenFightersText LizardMenText DridersText GauntMenText GroupTextDone InsectsText DridersText BullMenText ElvesText KoboldsText HumanFightersText
 
 HumanFightersText:
-	Save " A BAND OF HUMAN FIGHTERS." $AuxTemp9
+	$AuxTemp9 = " A BAND OF HUMAN FIGHTERS."
 	Return
 
 DisplacerBeastsText:
-	Save " DISPLACER BEASTS." $AuxTemp9
+	$AuxTemp9 = " DISPLACER BEASTS."
 	Return
 
 DwarvenFightersText:
-	Save " DWARVEN FIGHTERS." $AuxTemp9
+	$AuxTemp9 = " DWARVEN FIGHTERS."
 	Return
 
 LizardMenText:
-	Save " A TRIO OF LIZARD MEN." $AuxTemp9
+	$AuxTemp9 = " A TRIO OF LIZARD MEN."
 	Return
 
 DridersText:
-	Save " VISCIOUS LOOKING DRIDERS." $AuxTemp9
+	$AuxTemp9 = " VISCIOUS LOOKING DRIDERS."
 	Return
 
 GauntMenText:
-	Save " SOME GAUNT MEN IN POORLY FITTING LEATHER." $AuxTemp9
+	$AuxTemp9 = " SOME GAUNT MEN IN POORLY FITTING LEATHER."
 
 GroupTextDone:
 	Return
 
 InsectsText:
-	Save " LARGE INSECTS WITH RUSTY RED FEATHERS." $AuxTemp9
+	$AuxTemp9 = " LARGE INSECTS WITH RUSTY RED FEATHERS."
 	Return
 
 BullMenText:
-	Save " SOME LARGE BULL HEADED MEN." $AuxTemp9
+	$AuxTemp9 = " SOME LARGE BULL HEADED MEN."
 	Return
 
 ElvesText:
-	Save " A GROUP OF EMACIATED ELVES." $AuxTemp9
+	$AuxTemp9 = " A GROUP OF EMACIATED ELVES."
 	Return
 
 KoboldsText:
-	Save " SOME HUNGRY LOOKING KOBOLDS." $AuxTemp9
+	$AuxTemp9 = " SOME HUNGRY LOOKING KOBOLDS."
 	Return
 
 GroupTable8:
@@ -450,14 +454,14 @@ LeaveToArea26:
 	NewECL Wilderness
 
 TeleportToArea23:
-	Or TeleporterRockFlags 1 TeleporterRockFlags
-	Save 4 PartyX
-	Save 15 PartyY
-	Save 0 Facing
+	TeleporterRockFlags = TeleporterRockFlags | 1
+	PartyX = 4
+	PartyY = 15
+	Facing = 0
 	NewECL LizardManVillage
 
 ExitToArea23:
-	Save 0 PartyX
-	Save 12 PartyY
-	Save 0 Facing
+	PartyX = 0
+	PartyY = 12
+	Facing = 0
 	NewECL LizardManVillage

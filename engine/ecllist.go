@@ -167,7 +167,7 @@ func eclOpName(op byte) string {
 var eclOpNames = map[byte]string{
 	0x04: "Add", 0x05: "Sub", 0x06: "Div", 0x07: "Mul", 0x11: "Print", 0x12: "PrintClear",
 	0x16: "IfEq", 0x17: "IfNe", 0x18: "IfLt", 0x19: "IfGt", 0x1A: "IfLe", 0x1B: "IfGe",
-	0x21: "LoadFiles", 0x37: "LoadPieces", 0x2F: "And", 0x30: "Or",
+	0x21: "LoadMap", 0x37: "LoadWalls", 0x25: "OnGoto", 0x26: "OnGosub", 0x2F: "And", 0x30: "Or",
 }
 
 // ScriptVarNames are the names of the script words the engine itself

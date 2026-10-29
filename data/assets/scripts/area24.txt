@@ -1,19 +1,19 @@
 event0:
-	Save 11 Scratch6
-	if Hours >= 14: Save 8 Scratch6
-	Save Scratch6 Sky
+	Scratch6 = 11
+	if Hours >= 14: Scratch6 = 8
+	Sky = Scratch6
 	if LeftMap == 0: Exit
-	Save Facing Scratch10
-	if 31 == Geo: Add 4 Scratch10 Scratch10
+	Scratch10 = Facing
+	if 31 == Geo: Scratch10 += 4
 	Call CallStepForward
-	Save 255 HoldMove
-	GetTable Table99A8 Scratch10 Scratch1
-	if Scratch1 == 26: Save 7 SymbolSet
-	if Scratch1 == 14: Save 3 SymbolSet
-	LoadFiles Scratch1 2 255
+	HoldMove = 255
+	Scratch1 = Table99A8[Scratch10]
+	if Scratch1 == 26: SymbolSet = 7
+	if Scratch1 == 14: SymbolSet = 3
+	LoadMap Scratch1 unused=2 icons=255
 	if Scratch10 == 1: Goto Done
 	if Scratch10 == 7: Goto Done
-	GetTable Table99B0 Scratch10 Scratch5
+	Scratch5 = Table99B0[Scratch10]
 	NewECL Scratch5
 
 Done:
@@ -26,15 +26,15 @@ Table99B0:
 	Data 255 255 255 255 14 26 255 255
 
 event1:
-	And Cell 127 Scratch7
-	Save 0 Scratch1
+	Scratch7 = Cell & 127
+	Scratch1 = 0
 	if Geo != 31: Goto TempleSquare
-	OnGoto Scratch7 13 RandomEncounter MansionRoom MansionRoom MansionEntry MansionEntry MansionEntry OgreAndOrcs GoblinSlaves OutsideMansion OrcGuardRoom HayBeds CellRoom ScratchedMessage
+	OnGoto Scratch7 RandomEncounter MansionRoom MansionRoom MansionEntry MansionEntry MansionEntry OgreAndOrcs GoblinSlaves OutsideMansion OrcGuardRoom HayBeds CellRoom ScratchedMessage
 
 MansionEntry:
 	if QuestEntryOrcs != 0: Goto MansionRoom
-	if OrcsKnowParty == 1: Save 20 AuxMonsterCount
-	also if OrcsKnowParty != 1: Save 10 AuxMonsterCount
+	if OrcsKnowParty == 1: AuxMonsterCount = 20
+	also if OrcsKnowParty != 1: AuxMonsterCount = 10
 	if Carried 74: Goto OrcsConfused
 	SetupMonster Orc distance=2 closeup=Orc
 	Gosub ApproachTwice
@@ -44,123 +44,121 @@ MansionEntry:
 OrcsConfused:
 	PrintClear "AS YOU ENTER THE BUILDING YOU SEE A LARGE GROUP OF ORCS WHO ARE SURPRISED THAT YOU'RE HERE.  WITH CONFUSED LOOKS ON THEIR FACES THEY STARE AT YOU"
 	EncounterMenu 2 1 4 Scratch1 1 1 1 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 ExitEvent FightEntryOrcs FightEntryOrcs FightEntryOrcs
+	OnGoto Scratch1 ExitEvent FightEntryOrcs FightEntryOrcs FightEntryOrcs
 
 FightEntryOrcs:
 	ClearMonsters
 	LoadMonster Orc4 count=AuxMonsterCount icon=Orc
-	Save 99 Morale
+	Morale = 99
 	Combat
-	Save 0 Scratch10
+	Scratch10 = 0
 	if CombatEnd > 128: Goto StepBack
-	Save 254 QuestEntryOrcs
-	Sub 3 Scratch7 Scratch1
-	OnGoto Scratch1 3 GreatHall BodiesRoom ExitEvent
+	QuestEntryOrcs = 254
+	Scratch1 = Scratch7 - 3
+	OnGoto Scratch1 GreatHall BodiesRoom ExitEvent
 
 MansionRoom:
-	OnGoto Scratch7 6 ExitEvent RubbleRoom DiningRoom GreatHall BodiesRoom ExitEvent
+	OnGoto Scratch7 ExitEvent RubbleRoom DiningRoom GreatHall BodiesRoom ExitEvent
 
 RubbleRoom:
 	if LastRoomVisited == 1: Goto ExitEvent
-	Save 1 LastRoomVisited
+	LastRoomVisited = 1
 	PrintClear "YOU ARE IN A ROOM FILLED WITH RUBBLE AND WASTE."
 	if Search == 0: Goto ExitEvent
-	And MansionRoomBits 1 Scratch1
+	Scratch1 = MansionRoomBits & 1
 	if Scratch1 != 0: Goto ExitEvent
 	Print "  IN THE RUBBLE YOU SPOT A BEAUTIFUL TAPESTRY.  WILL YOU TAKE IT?"
-	HMenu Scratch1 2 "TAKE" "LEAVE"
-	OnGoto Scratch1 2 TakeTapestry ExitEvent
+	Scratch1 = Menu "TAKE" -> TakeTapestry "LEAVE" -> ExitEvent
 
 TakeTapestry:
-	Or MansionRoomBits 1 MansionRoomBits
-	Save 4 Scratch1
+	MansionRoomBits = MansionRoomBits | 1
+	Scratch1 = 4
 	Goto GiveTreasure
 
 DiningRoom:
+	alias Choice = Scratch2
 	if LastRoomVisited == 2: Goto ExitEvent
-	Save 2 LastRoomVisited
+	LastRoomVisited = 2
 	PrintClear "YOU ARE IN THE REMAINS OF A ONCE GREAT DINING ROOM.  FURNITURE LIES BURNED AND BROKEN THROUGHOUT THE ROOM.  "
-	And MansionRoomBits 2 Scratch1
+	Scratch1 = MansionRoomBits & 2
 	if Scratch1 != 0: Goto ExitEvent
 	if Search == 0: Goto ExitEvent
 	NewLine
 	Print "UNDERNEATH A BROKEN TABLE YOU FIND A CRUSHED SKELETON.  IT HAS SOME JEWELRY ON IT; WILL YOU TAKE IT?"
-	HMenu Scratch2 2 "TAKE" "LEAVE"
-	OnGoto Scratch2 2 TakeSkeletonJewelry ExitEvent
+	Choice = Menu "TAKE" -> TakeSkeletonJewelry "LEAVE" -> ExitEvent
 
 TakeSkeletonJewelry:
-	Or MansionRoomBits 2 MansionRoomBits
+	MansionRoomBits = MansionRoomBits | 2
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 3 255
 	Combat
 	Goto ExitEvent
 
 GreatHall:
+	alias Choice = Scratch3
 	if LastRoomVisited == 3: Goto ExitEvent
 	PrintClear "BEFORE YOU IS A GREAT HALL.  THE FLOOR IS LITTERED WITH ORC TRASH AND THE WALLS HAVE CRUDE BLACK HANDS PAINTED ON THEM.  "
-	Save 3 LastRoomVisited
-	And MansionRoomBits 4 Scratch1
+	LastRoomVisited = 3
+	Scratch1 = MansionRoomBits & 4
 	if Scratch1 != 0: Goto ExitEvent
 	Gosub SearchFindSecret
 	if AuxFlag != 1: Goto ExitEvent
 	Print "YOU FIND A TRAP DOOR.  WILL YOU OPEN IT?"
-	HMenu Scratch3 2 "OPEN" "LEAVE"
-	OnGoto Scratch3 2 OpenHallTrapDoor ExitEvent
+	Choice = Menu "OPEN" -> OpenHallTrapDoor "LEAVE" -> ExitEvent
 
 OpenHallTrapDoor:
-	Or MansionRoomBits 4 MansionRoomBits
-	Save 6 Scratch1
+	MansionRoomBits = MansionRoomBits | 4
+	Scratch1 = 6
 	Goto GiveTreasure
 
 BodiesRoom:
+	alias Choice = Scratch2
 	if LastRoomVisited == 4: Goto ExitEvent
 	PrintClear "YOU ARE IN A ROOM THAT IS FILLED WITH THE DEAD BODIES OF THE ORC'S PREVIOUS VICTIMS.  "
-	Save 4 LastRoomVisited
-	And MansionRoomBits 8 Scratch1
+	LastRoomVisited = 4
+	Scratch1 = MansionRoomBits & 8
 	if Scratch1 != 0: Goto ExitEvent
 	if Search == 0: Goto ExitEvent
 	Print "ADMIST THE BODIES YOU FIND SOME JEWELRY.  WILL YOU TAKE IT?"
-	HMenu Scratch2 2 "TAKE" "LEAVE"
-	OnGoto Scratch2 2 TakeBodiesJewelry ExitEvent
+	Choice = Menu "TAKE" -> TakeBodiesJewelry "LEAVE" -> ExitEvent
 
 TakeBodiesJewelry:
-	Or MansionRoomBits 8 MansionRoomBits
+	MansionRoomBits = MansionRoomBits | 8
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 3 255
 	Combat
 	Goto ExitEvent
 
 OgreAndOrcs:
-	And MansionRoomBits 16 Scratch1
+	Scratch1 = MansionRoomBits & 16
 	if Scratch1 != 0: Goto ExitEvent
 	SetupMonster Barbarian distance=0 closeup=Barbarian
 	PrintClear "AS YOU ENTER THE ROOM YOU SEE SIX ORCS LED BY A LARGE OGRE.  THEY LUNGE FOWARD AND ATTACK."
 	ClearMonsters
 	LoadMonster Orc4 count=6 icon=Orc
 	LoadMonster Ogre count=1 icon=Ogre
-	Save 80 Morale
+	Morale = 80
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or MansionRoomBits 16 MansionRoomBits
+	MansionRoomBits = MansionRoomBits | 16
 	PrintClear "YOU FIND A PIECE OF PAPER ON THE FLOOR IN THE ROOM.  YOU PLACE IT IN YOUR JOURNAL UNDER ENTRY 53"
 	Goto ExitEvent
 
 GoblinSlaves:
-	And MansionRoomBits 32 Scratch1
+	Scratch1 = MansionRoomBits & 32
 	if Scratch1 != 0: Goto ExitEvent
 	SetupMonster Goblin distance=0 closeup=Goblin
 	PrintClear "IN THIS ROOM ARE SOME GOBLIN SLAVES THAT ARE COWERING IN THE CORNER.  THEY ALL SCREAM 'PLEASE DON'T KILL US.'  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "KILL THEM" "LET THEM GO"
-	OnGoto Scratch1 2 KillGoblins FreeGoblins
+	Scratch1 = Menu "KILL THEM" -> KillGoblins "LET THEM GO" -> FreeGoblins
 
 KillGoblins:
 	PrintClear "YOU COLDLY KILL THE DEFENCELESS GOBLINS."
-	Or MansionRoomBits 32 MansionRoomBits
+	MansionRoomBits = MansionRoomBits | 32
 	Goto ExitEvent
 
 FreeGoblins:
 	PrintClear "YOU LET THE GOBLINS GO.  AS THEY LEAVE ONE OF THEM SAYS 'TO ENTER THE TEMPLE YOU NEED A HOLY SYMBOL OF BANE.'"
-	Or MansionRoomBits 32 MansionRoomBits
+	MansionRoomBits = MansionRoomBits | 32
 	Goto ExitEvent
 
 OutsideMansion:
@@ -168,37 +166,37 @@ OutsideMansion:
 	Goto ExitEvent
 
 OrcGuardRoom:
-	And MansionFightBits 1 Scratch1
+	Scratch1 = MansionFightBits & 1
 	if Scratch1 != 0: Goto ExitEvent
 	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "YOU ENTER INTO A FILTHY ROOM.  EIGHT ORC GUARDS ATTACK YOU IMMEDIATELY."
 	ClearMonsters
-	Save 80 Morale
+	Morale = 80
 	LoadMonster Orc4 count=6 icon=Orc
 	LoadMonster OrcLeader5 count=2 icon=OrcLeader
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or MansionFightBits 1 MansionFightBits
+	MansionFightBits = MansionFightBits | 1
 	Goto ExitEvent
 
 HayBeds:
+	alias Choice = Scratch1
 	if LastMansionRoom == 1: Goto ExitEvent
-	Save 1 LastMansionRoom
+	LastMansionRoom = 1
 	PrintClear "YOU ENTER A ROOM THAT HAS SOME CRUDE HAY BEDS. WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "SEARCH THE BEDS" "LEAVE THEM"
-	OnGoto Scratch1 2 SearchBeds ExitEvent
+	Choice = Menu "SEARCH THE BEDS" -> SearchBeds "LEAVE THEM" -> ExitEvent
 
 SearchBeds:
-	And MansionFightBits 2 Scratch1
+	Scratch1 = MansionFightBits & 2
 	if Scratch1 != 0: Goto BedsEmpty
 	SetupMonster Orc distance=0 closeup=Orc
 	PrintClear "AS YOU SEARCH THE BEDS A GROUP OF ORCS COMES INTO THE ROOM.  THEY ATTACK IMMEDIATELY."
 	ClearMonsters
 	LoadMonster Orc4 count=8 icon=Orc
-	Save 80 Morale
+	Morale = 80
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or MansionFightBits 2 MansionFightBits
+	MansionFightBits = MansionFightBits | 2
 	PrintClear "YOU FINISH SEARCHING THE BEDS BUT YOU FIND NOTHING BUT LICE AND HAIR."
 	Goto ExitEvent
 
@@ -208,7 +206,7 @@ BedsEmpty:
 
 CellRoom:
 	if LastMansionRoom == 2: Goto ExitEvent
-	Save 2 LastMansionRoom
+	LastMansionRoom = 2
 	PrintClear "YOU ENTER A ROOM THAT HAS BEEN COVERTED INTO A CELL."
 	Goto ExitEvent
 
@@ -219,11 +217,11 @@ ScratchedMessage:
 	Goto ExitEvent
 
 TempleSquare:
-	Save 0 Scratch1
-	OnGoto Scratch7 8 RandomEncounter TempleInside TempleInside TempleInside TempleEntrance SetGuardsPassed ExitEvent TempleInside
+	Scratch1 = 0
+	OnGoto Scratch7 RandomEncounter TempleInside TempleInside TempleInside TempleEntrance SetGuardsPassed ExitEvent TempleInside
 
 SetGuardsPassed:
-	Save 2 TempleGuardState
+	TempleGuardState = 2
 	Goto ExitEvent
 
 TempleEntrance:
@@ -234,14 +232,13 @@ TempleEntrance:
 	PrintClear "YOU STAND IN FRONT OF THE ENTRANCE TO A LARGE SHADOWY TEMPLE.  AN OLD BLIND DECREPIT ORC STANDS OUTSIDE WITH EIGHT ORC GUARDS."
 	if OrcsKnowParty == 1: Goto GuardsLetYouIn
 	Print "  THE AGED ORC COMES GRASPING TOWARD YOU.  WILL YOU LET HIM TOUCH YOU?"
-	Save 0 Scratch1
-	HMenu Scratch1 3 "LET HIM TOUCH YOU" "BACK OFF" "ATTACK"
-	OnGoto Scratch1 3 BlindOrcChecks BackOffOnce FightTempleGuards
+	Scratch1 = 0
+	Scratch1 = Menu "LET HIM TOUCH YOU" -> BlindOrcChecks "BACK OFF" -> BackOffOnce "ATTACK" -> FightTempleGuards
 
 BackOffOnce:
+	alias Choice = Scratch1
 	PrintClear "AS YOU BACK AWAY THE BLIND ORC SAYS, 'I MUST CHECK IF YOU ARE WORTHY TO ENTER THE TEMPLE OF BANE, DO NEED NOT BE AFRAID.'"
-	HMenu Scratch1 3 "LET HIM CHECK" "BACK OFF AGAIN" "ATTACK"
-	OnGoto Scratch1 3 BlindOrcChecks BackOffTwice FightTempleGuards
+	Choice = Menu "LET HIM CHECK" -> BlindOrcChecks "BACK OFF AGAIN" -> BackOffTwice "ATTACK" -> FightTempleGuards
 
 GuardsLetYouIn:
 	Print "  AS YOU APPROACH THEY MOVE, ALLOWING YOU ENTRANCE INTO THE TEMPLE."
@@ -258,10 +255,10 @@ BackOffTwice:
 FightTempleGuards:
 	ClearMonsters
 	LoadMonster Orc4 count=8 icon=Orc
-	Save 99 Morale
+	Morale = 99
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Save 1 TempleGuardState
+	TempleGuardState = 1
 	Goto ExitEvent
 
 HolySymbolWelcome:
@@ -271,66 +268,67 @@ HolySymbolWelcome:
 TempleInside:
 	if Scratch7 == 7: Goto BloodyAltar
 	if Search != 1: Goto ExitEvent
-	Save 1 TempleSearchFlag
-	OnGoto Scratch7 7 ExitEvent TrapDoorOne TrapDoorTwo TrapDoorThree ExitEvent ExitEvent ExitEvent
+	TempleSearchFlag = 1
+	OnGoto Scratch7 ExitEvent TrapDoorOne TrapDoorTwo TrapDoorThree ExitEvent ExitEvent ExitEvent
 
 TrapDoorOne:
-	And TempleTreasureBits 1 Scratch2
+	Scratch2 = TempleTreasureBits & 1
 	if Scratch2 != 0: Goto ExitEvent
 	Gosub SearchFindSecret
 	if AuxFlag != 1: Goto ExitEvent
 	Gosub AskOpenTrapDoor
 	if Scratch3 == 1: Goto ExitEvent
-	Or 1 TempleTreasureBits TempleTreasureBits
-	Save 8 Scratch1
+	TempleTreasureBits = 1 | TempleTreasureBits
+	Scratch1 = 8
 	Goto GiveTreasure
 
 TrapDoorTwo:
-	And TempleTreasureBits 2 Scratch2
+	Scratch2 = TempleTreasureBits & 2
 	if Scratch2 != 0: Goto ExitEvent
 	Gosub SearchFindSecret
 	if AuxFlag != 1: Goto ExitEvent
 	Gosub AskOpenTrapDoor
 	if Scratch3 == 1: Goto ExitEvent
-	Or TempleTreasureBits 2 TempleTreasureBits
-	Save 9 Scratch1
+	TempleTreasureBits = TempleTreasureBits | 2
+	Scratch1 = 9
 	Goto GiveTreasure
 
 TrapDoorThree:
-	And TempleTreasureBits 4 Scratch2
+	Scratch2 = TempleTreasureBits & 4
 	if Scratch2 != 0: Goto ExitEvent
 	Gosub SearchFindSecret
 	if AuxFlag != 1: Goto ExitEvent
 	Gosub AskOpenTrapDoor
 	if Scratch3 == 1: Goto ExitEvent
-	Or TempleTreasureBits 4 TempleTreasureBits
-	Save 17 Scratch1
+	TempleTreasureBits = TempleTreasureBits | 4
+	Scratch1 = 17
 	Goto GiveTreasure
 
 AskOpenTrapDoor:
+	alias Choice = Scratch3
 	PrintClear "ON THE FLOOR YOU FIND A TRAP DOOR.  WILL YOU OPEN IT?"
-	HMenu Scratch3 2 "OPEN TRAPDOOR" "LEAVE TRAPDOOR"
+	Choice = Menu "OPEN TRAPDOOR" "LEAVE TRAPDOOR"
 	Return
 
 BloodyAltar:
+	alias Choice = Scratch1
 	if AltarDestroyed == 1: Goto AltarRemains
 	PrintClear "IN FRONT OF YOU IS AN ALTAR THAT IS SMEARED WITH BLOOD AND COVERED WITH CRUDE BLACK HAND PRINTS.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "DESTROY ALTAR" "LEAVE IT"
-	OnGoto Scratch1 2 DestroyAltar ExitEvent
+	Choice = Menu "DESTROY ALTAR" -> DestroyAltar "LEAVE IT" -> ExitEvent
 
 DestroyAltar:
 	if QuestTempleOfBane >= 254: Goto AltarGone
 	PrintClear "AS YOU DESTROY THE ALTAR, THE TEMPLE DOORS FLY OPEN AND A SCREAMING HORDE OF ORCS LED BY A HALF-ORC CLERIC ATTACK.  YOU TURN TO FACE THEM."
-	Save 3 Facing
+	Facing = 3
 	Call CallRedraw
 	SetupMonster Orc distance=2 closeup=Orc
 	Gosub ApproachTwice
-	Save 1 AltarDestroyed
+	AltarDestroyed = 1
 	Goto FightHalfOrcCleric
 
 AltarGone:
 	PrintClear "YOU DESTROY THE EVIL ALTAR AND THE UNEASY FEELING LEAVES YOU."
-	Save 1 AltarDestroyed
+	AltarDestroyed = 1
 	Goto ExitEvent
 
 AltarRemains:
@@ -342,7 +340,7 @@ GiveTreasure:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 Scratch1
 	Combat
-	OnGoto TempleSearchFlag 2 ExitEvent CheckAllLooted
+	OnGoto TempleSearchFlag ExitEvent CheckAllLooted
 
 CheckAllLooted:
 	if TempleTreasureBits == 7 && QuestTempleOfBane == 0: Goto LootAmbush
@@ -358,7 +356,7 @@ LootAmbush:
 	PrintClear "THE MINUTE YOU FIND THE TREASURE A LARGE GROUP OF ORCS CHARGE THROUGH THE TEMPLE DOORS.  LEADING THEM IS A HALF-ORC WHO IS SCREAMING 'KILL!  KILL, THESE SCUM WHO WOULD STEAL FROM OUR TEMPLE.'"
 
 FightHalfOrcCleric:
-	Save 99 Morale
+	Morale = 99
 	ClearMonsters
 	LoadMonster OrcLeader5 count=5 icon=OrcLeader
 	LoadMonster Mace count=1 icon=Mace
@@ -366,18 +364,18 @@ FightHalfOrcCleric:
 	LoadMonster Orc4 count=30 icon=Orc
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Save 254 QuestTempleOfBane
+	QuestTempleOfBane = 254
 	PrintClear "ON THE DEAD BODY OF THE HALF-ORC CLERIC YOU FIND A PIECE OF PAPER.  YOU PUT THE PAPER IN YOUR JOURNAL UNDER ENTRY 25."
 	Delay
 	Delay
-	Save 0 Scratch2
+	Scratch2 = 0
 
 FindDirten:
 	LoadCharacter Scratch2
 	if $SelName == "DIRTEN": Goto DirtenFound
 
 NextMember:
-	Add 1 Scratch2 Scratch2
+	Scratch2 += 1
 	if Scratch2 < 8: Goto FindDirten
 	Goto ExitEvent
 
@@ -387,32 +385,32 @@ DirtenFound:
 	PrintClear "DIRTEN SAYS, 'THANK YOU FOR HELPING US REGAIN OUR TEMPLE.  I MUST STAY HERE NOW.  I BID YOU FAREWELL.'"
 
 DirtenLeaves:
-	Save 0 SelName
-	Save 0 SelStatus
-	Add 128 Scratch2 Scratch2
+	SelName = 0
+	SelStatus = 0
+	Scratch2 += 128
 	LoadCharacter Scratch2
 	Goto ExitEvent
 
 SearchFindSecret:
-	Save 0 AuxText
+	AuxText = 0
 
 CheckMemberFinds:
 	LoadCharacter AuxText
 	if SelStatus != 1: Goto NextSearcher
-	Save Search AuxSearchTries
-	if SelRace == 2: Add 1 AuxSearchTries AuxSearchTries
-	if SelRace == 4: Add 1 AuxSearchTries AuxSearchTries
-	Random 5 AuxSearchTarget
+	AuxSearchTries = Search
+	if SelRace == 2: AuxSearchTries += 1
+	if SelRace == 4: AuxSearchTries += 1
+	AuxSearchTarget = Random 5
 	if AuxSearchTries > AuxSearchTarget: Goto SecretFound
 
 NextSearcher:
-	Add 1 AuxText AuxText
+	AuxText += 1
 	if AuxText < 8: Goto CheckMemberFinds
-	Save 0 AuxFlag
+	AuxFlag = 0
 	Return
 
 SecretFound:
-	Save 1 AuxFlag
+	AuxFlag = 1
 	Return
 
 RandomEncounter:
@@ -423,7 +421,7 @@ CheckEntryCleared:
 	if QuestEntryOrcs >= 254: Goto ExitEvent
 
 RollEncounter:
-	Random 59 Scratch1
+	Scratch1 = Random 59
 	if Search < 1: Goto RollNoSearch
 	if Scratch1 > 49: Goto StartEncounter
 
@@ -435,25 +433,26 @@ StartEncounter:
 	Gosub PickEncounter
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 AuxEncSurpriseA AuxEncSurpriseB
-	OnGoto Surprise 4 SpotGroup SurprisedByGroup SurpriseGroup FaceToFace
+	OnGoto Surprise SpotGroup SurprisedByGroup SurpriseGroup FaceToFace
 
 SpotGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxCounter
 	Print "."
 	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 2 3 0 1 4 "" "" "THE MONSTERS STAND READY" AuxEncChoice AuxEncChoice2
-	Save 130 AuxEncValue
-	OnGoto Scratch1 4 ExitEvent FightGroup StepBack IntimidateGroup
+	AuxEncValue = 130
+	OnGoto Scratch1 ExitEvent FightGroup StepBack IntimidateGroup
 
 OrcPatrol:
+	alias Choice = Scratch1
 	PrintClear "YOU SEE A GROUP OF FOUR ORCS WHOSE SHIELDS BEAR A BLACK HAND ON A RED FIELD.  THEY CAUTIOSLY LOOK YOU OVER."
-	HMenu Scratch1 1 "PRESS <RETURN> TO CONTINUE"
-	Save 4 EncounterCount1
-	Save 0 EncounterTemp
-	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 0 1 1 1 4 "" "" "THE ORCS READY THEIR SPEARS" AuxEncChoice AuxEncChoice2
-	Save 10 AuxEncValue
-	Save 4 AuxEncDist
-	OnGoto Scratch1 4 OrcsSawParty FightGroup OrcsSawParty ParlayOrcPatrol
+	Choice = Menu "PRESS <RETURN> TO CONTINUE"
+	EncounterCount1 = 4
+	EncounterTemp = 0
+	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Choice 0 1 1 1 4 "" "" "THE ORCS READY THEIR SPEARS" AuxEncChoice AuxEncChoice2
+	AuxEncValue = 10
+	AuxEncDist = 4
+	OnGoto Choice OrcsSawParty FightGroup OrcsSawParty ParlayOrcPatrol
 
 SurprisedByGroup:
 	if 1 == EncounterIsOrcs: Goto OrcPatrol
@@ -464,7 +463,7 @@ SurprisedByGroup:
 	Goto FightGroup
 
 OrcsSawParty:
-	Save 1 OrcsKnowParty
+	OrcsKnowParty = 1
 	Goto ExitEvent
 
 SurpriseGroup:
@@ -472,27 +471,27 @@ SurpriseGroup:
 	Print $AuxCounter
 	Print "."
 	EncounterMenu AuxEncMonster MonsterDist AuxEncDist Scratch1 1 1 1 1 1 "YOU HAVE SURPRISED THEM." "" "" AuxEncChoice AuxEncChoice2
-	Save 50 AuxEncValue
+	AuxEncValue = 50
 	if 1 == EncounterIsOrcs: Goto OrcsSurprisedMenu
-	OnGoto Scratch1 4 ExitEvent PartySurprises ExitEvent IntimidateGroup
+	OnGoto Scratch1 ExitEvent PartySurprises ExitEvent IntimidateGroup
 
 OrcsSurprisedMenu:
-	OnGoto Scratch1 4 ExitEvent PartySurprises StepBack FightGroup
+	OnGoto Scratch1 ExitEvent PartySurprises StepBack FightGroup
 
 FaceToFace:
 	PrintClear "YOU ARE SUDDENLY FACE TO FACE WITH A GROUP OF "
 	Print $AuxCounter
 	Print "."
 	EncounterMenu AuxEncMonster 0 AuxEncDist Scratch1 1 1 1 1 1 "THEY ARE AS SURPRISED AS YOU." "" "" AuxEncChoice AuxEncChoice2
-	Save 50 AuxEncValue
-	OnGoto Scratch1 4 ExitEvent FightGroup StepBack FightGroup
+	AuxEncValue = 50
+	OnGoto Scratch1 ExitEvent FightGroup StepBack FightGroup
 
 PartySurprises:
-	Save 2 Surprise
+	Surprise = 2
 
 FightGroup:
-	Save AuxEncMorale Morale
-	Add 1 AuxSightText Scratch4
+	Morale = AuxEncMorale
+	Scratch4 = 1 + AuxSightText
 	ClearMonsters
 	LoadMonster AuxSightText count=EncounterCount1 icon=AuxEncDist
 	if EncounterCount2 == 0: Goto GroupCombat
@@ -501,29 +500,29 @@ FightGroup:
 GroupCombat:
 	if EncounterIsOrcs == 1: Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
 	Combat
-	if EncounterIsOrcs == 1 && CombatEnd == 1: Save 1 OrcsKnowParty
+	if EncounterIsOrcs == 1 && CombatEnd == 1: OrcsKnowParty = 1
 	if CombatEnd > 128: Goto StepBack
 
 ExitEvent:
-	Save 0 TempleSearchFlag
+	TempleSearchFlag = 0
 	RedrawView
 	Picture None
-	Save Geo SavedGeo24
+	SavedGeo24 = Geo
 	Exit
 
 StepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
-	Save SavedGeo24 Geo
+	PartyX = PrevX
+	PartyY = PrevY
+	Geo = SavedGeo24
 	Call CallRedraw
 	Goto ExitEvent
 
 IntimidateGroup:
 	Parlay 30 30 30 5 60 Scratch1
-	Random 30 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	Add Scratch1 SelReaction Scratch1
-	Add Scratch1 AuxEncBonus Scratch1
+	Scratch2 = Random 30
+	Scratch1 = Scratch1 + Scratch2
+	Scratch1 = Scratch1 + SelReaction
+	Scratch1 = Scratch1 + AuxEncBonus
 	if Scratch1 < 140: Goto NonbelieversLeave
 	PrintClear "YOU INTIMIDATE THE MONSTERS SO MUCH THEY RUN AWAY!"
 	Goto ExitEvent
@@ -544,7 +543,7 @@ TeachLesson:
 
 ParlayOrcPatrol:
 	Parlay 1 2 0 0 1 Scratch1
-	OnGoto Scratch1 3 PatrolHarmless PatrolThreatens PatrolKnowsTreasure
+	OnGoto Scratch1 PatrolHarmless PatrolThreatens PatrolKnowsTreasure
 
 PatrolHarmless:
 	PrintClear "THE ORCS YELL OUT, 'WE HAVE ORDERS TO CHECK OUT SUSPICIOUS INDIVIDUALS, BUT YOUSE GUYS LOOK HARMLESS ENOUGH.'  AFTER TALKING THE FOUR ORCS WANDER AWAY."
@@ -559,84 +558,84 @@ PatrolKnowsTreasure:
 	Goto OrcsSawParty
 
 PickEncounter:
-	Save 0 EncounterIsOrcs
-	Random 9 Scratch1
-	OnGoto Scratch1 10 PickPatrolOrcs PickPatrolOrcs PickPatrolOrcs PickPatrolOrcs PickOrcs PickOrcs PickGoblins PickGoblins PickHobgoblins PickOgres
+	EncounterIsOrcs = 0
+	Scratch1 = Random 9
+	OnGoto Scratch1 PickPatrolOrcs PickPatrolOrcs PickPatrolOrcs PickPatrolOrcs PickOrcs PickOrcs PickGoblins PickGoblins PickHobgoblins PickOgres
 
 PickGoblins:
-	Save "GOBLINS" $AuxCounter
-	Save 0 AuxEncIndex
+	$AuxCounter = "GOBLINS"
+	AuxEncIndex = 0
 	Goto LoadEncounterData
 
 PickPatrolOrcs:
-	Save "ORCS" $AuxCounter
-	Save 1 EncounterIsOrcs
-	Save 1 AuxEncIndex
+	$AuxCounter = "ORCS"
+	EncounterIsOrcs = 1
+	AuxEncIndex = 1
 	Goto LoadEncounterData
 
 PickOrcs:
-	Save "ORCS" $AuxCounter
-	Save 1 AuxEncIndex
+	$AuxCounter = "ORCS"
+	AuxEncIndex = 1
 	Goto LoadEncounterData
 
 PickHobgoblins:
-	Save "HOBGOBLINS" $AuxCounter
-	Save 2 AuxEncIndex
+	$AuxCounter = "HOBGOBLINS"
+	AuxEncIndex = 2
 	Goto LoadEncounterData
 
 PickOgres:
-	Save "OGRES" $AuxCounter
-	Save 3 AuxEncIndex
+	$AuxCounter = "OGRES"
+	AuxEncIndex = 3
 	Goto LoadEncounterData
 
 LoadEncounterData:
-	GetTable EncDistTable AuxEncIndex MonsterDist
-	GetTable EncMonsterTable AuxEncIndex AuxSightText
-	GetTable EncPictureTable AuxEncIndex AuxEncMonster
-	GetTable EncTable4 AuxEncIndex AuxEncDist
-	GetTable EncMoraleTable AuxEncIndex AuxEncMorale
-	GetTable EncTable6 AuxEncIndex AuxEncChoice
-	GetTable EncTable7 AuxEncIndex AuxEncChoice2
-	GetTable EncStrengthAdjTable AuxEncIndex AuxEncTblA
-	GetTable EncGroupStepTable AuxEncIndex AuxEncTblB
-	GetTable EncGroupIncTable AuxEncIndex AuxEncTblC
-	GetTable EncTable11 AuxEncIndex AuxEncSurpriseA
-	GetTable EncTable12 AuxEncIndex AuxEncSurpriseB
-	GetTable EncTable13 AuxEncIndex AuxEncBonus
-	Save 0 Scratch2
-	Save 0 EncounterCount2
+	MonsterDist = EncDistTable[AuxEncIndex]
+	AuxSightText = EncMonsterTable[AuxEncIndex]
+	AuxEncMonster = EncPictureTable[AuxEncIndex]
+	AuxEncDist = EncTable4[AuxEncIndex]
+	AuxEncMorale = EncMoraleTable[AuxEncIndex]
+	AuxEncChoice = EncTable6[AuxEncIndex]
+	AuxEncChoice2 = EncTable7[AuxEncIndex]
+	AuxEncTblA = EncStrengthAdjTable[AuxEncIndex]
+	AuxEncTblB = EncGroupStepTable[AuxEncIndex]
+	AuxEncTblC = EncGroupIncTable[AuxEncIndex]
+	AuxEncSurpriseA = EncTable11[AuxEncIndex]
+	AuxEncSurpriseB = EncTable12[AuxEncIndex]
+	AuxEncBonus = EncTable13[AuxEncIndex]
+	Scratch2 = 0
+	EncounterCount2 = 0
 	if 1 == EncounterIsOrcs: Goto OrcPatrol
 	PartyStrength Scratch1
-	Div Scratch1 AuxEncTblA Scratch1
-	if Scratch1 < 4: Save 4 Scratch1
-	Random 9 Scratch4
-	OnGoto Scratch4 5 AddThree AddTwo AddTwo AddTwo CountGroups
+	Scratch1 = Scratch1 / AuxEncTblA
+	if Scratch1 < 4: Scratch1 = 4
+	Scratch4 = Random 9
+	OnGoto Scratch4 AddThree AddTwo AddTwo AddTwo CountGroups
 
 AddThree:
-	Div Scratch1 3 Scratch1
+	Scratch1 = Scratch1 / 3
 	Goto CountGroups
 
 AddTwo:
-	Div Scratch1 2 Scratch1
+	Scratch1 = Scratch1 / 2
 	Goto CountGroups
 
 CountGroups:
-	Save Scratch1 Scratch3
+	Scratch3 = Scratch1
 
 CountGroupsLoop:
 	if Scratch3 < AuxEncTblB: Goto ClampGroupSize
-	Add AuxEncTblC Scratch2 Scratch2
-	Sub AuxEncTblB Scratch3 Scratch3
+	Scratch2 += AuxEncTblC
+	Scratch3 -= AuxEncTblB
 	Goto CountGroupsLoop
 
 ClampGroupSize:
 	if Scratch1 >= AuxEncTblB: Gosub SetSecondGroup
-	if Scratch1 > 56: Sub Scratch2 56 Scratch1
-	Save Scratch1 EncounterCount1
+	if Scratch1 > 56: Scratch1 = 56 - Scratch2
+	EncounterCount1 = Scratch1
 	Return
 
 SetSecondGroup:
-	Save Scratch2 EncounterCount2
+	EncounterCount2 = Scratch2
 	Return
 
 ApproachTwice:
@@ -688,13 +687,13 @@ EncTable13:
 event2:
 	if QuestTempleOfBane < 254: Goto RestDangerous
 	if QuestEntryOrcs < 254: Goto RestDangerous
-	Save 1 RestEvery
-	Save 0 RestChance
+	RestEvery = 1
+	RestChance = 0
 	Exit
 
 RestDangerous:
-	Save 4 RestEvery
-	Save 50 RestChance
+	RestEvery = 4
+	RestChance = 50
 	Exit
 
 event3:
@@ -706,15 +705,15 @@ event3:
 	Exit
 
 event4:
-	Save 11 Scratch6
-	if Hours >= 14: Save 8 Scratch6
-	LoadPieces 1 3 5
-	Save Scratch6 Sky
-	Save 10 SkyInside
+	Scratch6 = 11
+	if Hours >= 14: Scratch6 = 8
+	LoadWalls 1 3 5
+	Sky = Scratch6
+	SkyInside = 10
 	if Geo != 24: Goto LoadOutdoorWalls
-	LoadFiles 24 2 255
+	LoadMap 24 unused=2 icons=255
 	Exit
 
 LoadOutdoorWalls:
-	LoadFiles 31 2 255
+	LoadMap 31 unused=2 icons=255
 	Exit

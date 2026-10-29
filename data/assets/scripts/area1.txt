@@ -1,9 +1,9 @@
 event0:
-	Save 11 Scratch6
-	if Hours >= 14: Save 8 Scratch6
-	Save Scratch6 Sky
+	Scratch6 = 11
+	if Hours >= 14: Scratch6 = 8
+	Sky = Scratch6
 	if LeftMap == 0: Exit
-	if QuestBivant == 1: Save 254 QuestBivant
+	if QuestBivant == 1: QuestBivant = 254
 	NewECL Mountains
 
 event1:
@@ -12,46 +12,46 @@ event1:
 
 CheckAnimals:
 	if AnimalsLoose == 0: Goto DispatchCell
-	And Cell 128 Scratch1
+	Scratch1 = Cell & 128
 	if Scratch1 != 0: Goto CheckRecapture
 	PrintClear "ANIMALS ARE RUNNING ALL OVER THE COMPOUND."
 
 CheckRecapture:
 	if BaseAlerted != 0: Goto DispatchCell
-	Add 1 StampedeTimer StampedeTimer
-	if Search != 0: Add 9 StampedeTimer StampedeTimer
+	StampedeTimer += 1
+	if Search != 0: StampedeTimer += 9
 	if StampedeTimer >= 60: Gosub RecaptureAnimals
 
 DispatchCell:
-	And Cell 127 Scratch10
+	Scratch10 = Cell & 127
 	if AnimalsLoose != 0: Goto DispatchCellStampede
-	OnGoto Scratch10 13 Done MainGateEnter MerchantsCamp SlavePenOutside CaptainDoorGuards CaptainRoom SeedyManPass GuardTower BarracksEnter AnimalPenPacked AnimalPenGate SlavePenGateCheck InsideSlavePen
+	OnGoto Scratch10 Done MainGateEnter MerchantsCamp SlavePenOutside CaptainDoorGuards CaptainRoom SeedyManPass GuardTower BarracksEnter AnimalPenPacked AnimalPenGate SlavePenGateCheck InsideSlavePen
 
 DispatchCellStampede:
-	OnGoto Scratch10 13 Done MainGateEmpty MerchantsCamp SlavePenOutsideStampede CaptainDoorGuards CaptainRoom Done GuardTower EmptyBarracks AnimalPensEmpty AnimalPenDoorOpen SlavePenGate InsideSlavePen
+	OnGoto Scratch10 Done MainGateEmpty MerchantsCamp SlavePenOutsideStampede CaptainDoorGuards CaptainRoom Done GuardTower EmptyBarracks AnimalPensEmpty AnimalPenDoorOpen SlavePenGate InsideSlavePen
 
 RecaptureAnimals:
 	PrintClear "THE ANIMALS HAVE BEEN CAPTURED."
-	Save 0 AnimalsLoose
-	Save 0 StampedeTimer
+	AnimalsLoose = 0
+	StampedeTimer = 0
 	Return
 
 GuardsHuntBoy:
 	if BoyBought != 0: Goto CheckAnimals
 	if BaseAlerted != 0: Goto CheckAnimals
-	Add 1 GuardSpotChance GuardSpotChance
-	Random 11 Scratch1
-	if AnimalsLoose != 0: Add 1 Scratch1 Scratch1
+	GuardSpotChance += 1
+	Scratch1 = Random 11
+	if AnimalsLoose != 0: Scratch1 += 1
 	if Scratch1 > GuardSpotChance: Goto CheckAnimals
-	Add 1 GuardPatrolCount GuardSpotChance
-	Save 6 Portrait
+	GuardSpotChance = 1 + GuardPatrolCount
+	Portrait = 6
 	SetupMonster Fighter16 distance=2 body=3
 	Delay
 	Approach
 	Delay
 	Approach
-	Save 255 Portrait
-	OnGoto GuardPatrolCount 4 GuardsSpotBoy AlarmRunForGate AnotherWaveAttacks CaptainAppears
+	Portrait = 255
+	OnGoto GuardPatrolCount GuardsSpotBoy AlarmRunForGate AnotherWaveAttacks CaptainAppears
 
 GuardsSpotBoy:
 	PrintClear "SOME OF THE GUARDS SPOT YOU WITH THE BOY."
@@ -59,7 +59,7 @@ GuardsSpotBoy:
 	LoadMonster Buccaneer count=20 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
-	Add 1 GuardPatrolCount GuardPatrolCount
+	GuardPatrolCount += 1
 	Goto CheckAnimals
 
 AlarmRunForGate:
@@ -69,7 +69,7 @@ AlarmRunForGate:
 	LoadMonster Buccaneer count=30 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
-	Add 1 GuardPatrolCount GuardPatrolCount
+	GuardPatrolCount += 1
 	Goto CheckAnimals
 
 AnotherWaveAttacks:
@@ -79,23 +79,23 @@ AnotherWaveAttacks:
 	LoadMonster Buccaneer count=40 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
-	Add 1 GuardPatrolCount GuardPatrolCount
+	GuardPatrolCount += 1
 	Goto CheckAnimals
 
 MainGateEnter:
 	if EnteredBase != 0: Goto MainGateCheck
 	PrintClear "YOU ARE JUST INSIDE THE MAIN GATE OF THE BUCCANEER'S BASE.  YOU ARE BEING TAKEN TO THE CENTER OF THE BASE WHERE THE MERCHANTS MAKE CAMP."
-	Save 1 EnteredBase
-	Save 2 Cell
-	Save 0 Scratch3
-	Save 2 Facing
+	EnteredBase = 1
+	Cell = 2
+	Scratch3 = 0
+	Facing = 2
 
 EscortToCampLoop:
 	if Scratch3 == 10: Goto MerchantsCamp
-	Add 1 PartyY PartyY
+	PartyY += 1
 	Call CallRedraw
 	Gosub DelayLoop
-	Add 1 Scratch3 Scratch3
+	Scratch3 += 1
 	Goto EscortToCampLoop
 
 MainGateCheck:
@@ -114,29 +114,30 @@ MainGateEmpty:
 
 GateGuardsAttack:
 	if GateGuardsDefeated != 0: Goto Done
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=0 body=3
-	Save 255 Portrait
+	Portrait = 255
 	PrintClear "SOME GUARDS RUSH FOWARD AND ATTACK."
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Buccaneer count=8 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeToCamp
-	Save 1 GateGuardsDefeated
+	GateGuardsDefeated = 1
 	Exit
 
 MerchantsCamp:
-	Save 2 Scratch10
+	Scratch10 = 2
 	PrintClear "YOU ARE IN THE MERCHANTS' CAMP AREA."
 	Goto Done
 
 SlavePenOutside:
+	alias Choice = Scratch1
 	if WallAhead != 8: Goto Done
 	if QuestBivant != 0: Goto SlavePenOutsideSeen
 	if SlavePenSeen > 0: Goto SlavePenOutsideSeen
 	if SlavePenBlocked != 0: Goto SlavePenOutsideSeen
-	Save 1 SlavePenSeen
+	SlavePenSeen = 1
 	Picture Prisoners
 	PrintClear "YOU ARE JUST OUTSIDE A PEN FOR HOLDING SLAVES.  THE PEOPLE HERE ARE WORN AND BEATEN, DESTINED TO A LIFE OF SLAVERY.  AROUND THE PEN THERE ARE MANY GUARDS AND SLEAZY MERCHANTS LOOKING AT THE SLAVES."
 	Gosub PressToContinue
@@ -144,20 +145,20 @@ SlavePenOutside:
 	Gosub PressToContinue
 	PrintClear "'THAT YOUNG BOY WILL BRING A GOOD PRICE AT ZHENTIL KEEP.  I THINK I SHALL BUY HIM.'"
 	Gosub PressToContinue
-	VMenu Scratch1 "WHAT WILL YOU DO?" 4 "PUNCH MERCHANT" "AGREE" "SAY NOTHING" "RESCUE BOY"
-	OnGoto Scratch1 4 PunchMerchant AgreeWithMerchant Done RescueBoyMenu
+	Choice = VMenu "WHAT WILL YOU DO?" "PUNCH MERCHANT" "AGREE" "SAY NOTHING" "RESCUE BOY"
+	OnGoto Choice PunchMerchant AgreeWithMerchant Done RescueBoyMenu
 
 PunchMerchant:
 	PrintClear "YOU PUNCH THE MERCHANT IN THE NOSE AND HE FALLS TO THE GROUND, BADLY BLEEDING.  THE MERCHANT YELLS FOR HIS GUARDS AND THEY COME RUNNING."
-	Save 60 Morale
+	Morale = 60
 	Gosub ClearPicture
-	Save 1 Portrait
+	Portrait = 1
 	SetupMonster Fighter16 distance=2 body=1
 	Delay
 	Approach
 	Delay
 	Approach
-	Save 255 Portrait
+	Portrait = 255
 	ClearMonsters
 	LoadMonster Buccaneer count=6 icon=11
 	Combat
@@ -169,8 +170,8 @@ PunchMerchant:
 
 FleeToCamp:
 	PrintClear "YOU RUN AWAY FROM THE BATTLE BACK TO THE MERCHANT'S AREA.  FROM BEHIND YOU HEAR PEOPLE CALLING YOU NAMES LIKE 'PANSY' AND 'WIMP.'"
-	Save 8 PartyX
-	Save 10 PartyY
+	PartyX = 8
+	PartyY = 10
 	Call CallRedraw
 	Goto Done
 
@@ -179,38 +180,39 @@ AgreeWithMerchant:
 	Goto Done
 
 RescueBoyMenu:
+	alias Choice = Scratch1
 	PrintClear "YOU IGNORE THE SLEAZY MERCHANT AND CONCENTRATE ON RESCUING THE BOY."
-	VMenu Scratch1 "HOW WILL YOU RESCUE THE BOY?" 3 "SNEAK INTO PEN" "ATTACK GUARDS" "DO NOT RESCUE BOY NOW"
-	OnGoto Scratch1 3 SneakToPenGate AttackPenGuards Done
+	Choice = VMenu "HOW WILL YOU RESCUE THE BOY?" "SNEAK INTO PEN" "ATTACK GUARDS" "DO NOT RESCUE BOY NOW"
+	OnGoto Choice SneakToPenGate AttackPenGuards Done
 
 SneakToPenGate:
 	PrintClear "YOU MOVE THROUGH THE CROWD NONCHALANTLY UNTIL YOU ARE NEAR THE FRONT GATE OF THE SLAVE PEN."
-	Save 2 Facing
-	Save 7 PartyX
-	Save 6 PartyY
+	Facing = 2
+	PartyX = 7
+	PartyY = 6
 	Call CallRedraw
 	if PenGuardsDefeated != 0: Goto Done
 
 PenGateGuards:
-	Save 6 Portrait
+	alias Choice = Scratch1
+	Portrait = 6
 	SetupMonster Fighter16 distance=0 body=3
 	PrintClear "YOU ARE NEAR THE FRONT GATE TO THE SLAVE PEN.  TWO GUARDS GUARD THE DOOR.  WHAT WILL YOU DO?"
-	HMenu Scratch1 3 "ATTACK" "TRY TO SNEAK BY" "LEAVE"
-	OnGoto Scratch1 3 AttackPenGuards SneakPastFails StepBack
+	Choice = Menu "ATTACK" -> AttackPenGuards "TRY TO SNEAK BY" -> SneakPastFails "LEAVE" -> StepBack
 
 AttackPenGuards:
 	Gosub ClearPicture
 	PrintClear "YOU ATTACK THE GUARDS."
-	Save 65 Morale
+	Morale = 65
 	ClearMonsters
 	LoadMonster Buccaneer count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
-	Save 1 PenGuardsDefeated
+	PenGuardsDefeated = 1
 	Goto Done
 
 CutOffWithBoy:
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=2 body=3
 	Delay
 	Approach
@@ -219,7 +221,7 @@ CutOffWithBoy:
 	PrintClear "YOU TRY TO RUN FROM THE GUARDS BUT ARE CUT OFF BY NEW ARRIVALS.  THE YOUNG BOY IS SLOWING YOU DOWN.  IF YOU RUN AGAIN YOU WILL LEAVE HIM BEHIND."
 
 BuccaneerWaves:
-	Save 80 Morale
+	Morale = 80
 	ClearMonsters
 	LoadMonster Buccaneer count=20 icon=11
 	LoadMonster RdLvlFighter count=1 icon=11
@@ -239,7 +241,7 @@ BuccaneerWaves:
 	if CombatEnd > 128: Goto FleeLeaveBoy
 	SetupMonster Fighter16 distance=2 closeup=3
 	PrintClear "AFTER DEFEATING THE LAST, WAVE YOU SEE ANOTHER WAVE ATTACK FROM THE SOUTH OF THE COMPOUND."
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster ThLvlFighter101 count=1 icon=11
 	LoadMonster RdLvlFighter count=2 icon=11
@@ -248,17 +250,17 @@ BuccaneerWaves:
 	if CombatEnd > 128: Goto FleeLeaveBoy
 
 CaptainAppears:
+	alias Choice = Scratch1
 	if CaptainKilled != 0: Goto FinalWave
 	PrintClear "THE SLAVES CHEER YOUR VICTORY.  A LARGE GROUP OF BUCCANEERS STANDS IN DISBELIEF.  THE BUCCANEERS PART AS A LARGE MAN IN GLEAMING CHAIN MAIL STEPS FORTH.  THE SLAVES FALL SILENT."
-	Save 9 Portrait
+	Portrait = 9
 	SetupMonster Fighter16 distance=2 body=5
 	Delay
 	Approach
 	Delay
 	Approach
 	PrintClear "THE CAPTAIN SAYS 'YOU HAVE FOUGHT WELL.  YOU MAY RANSOM YOURSELVES OR DIE!'  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "SURRENDER" "ATTACK"
-	OnGoto Scratch1 2 SurrenderToCaptain AttackCaptain
+	Choice = Menu "SURRENDER" -> SurrenderToCaptain "ATTACK" -> AttackCaptain
 
 SurrenderToCaptain:
 	PrintClear "THE CAPTAIN SAYS 'YOU HAVE CHOSEN WISELY.'  SOME OF THE BUCCANEERS COME FORWARD AND STRIP YOU OF SOME OF YOUR ITEMS AND MONEY.  THEY ESCORT YOU OUT OF THE COMPOUND."
@@ -267,7 +269,7 @@ SurrenderToCaptain:
 
 AttackCaptain:
 	PrintClear "YOU THROW CAUTION TO THE WIND AND ATTACK.  THE CAPTAIN SMILES AND THEN RUSHES TO BATTLE."
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Captain count=1 icon=Captain
 
@@ -277,15 +279,15 @@ FinalBattle:
 	Combat
 	if CombatEnd > 128: Goto FleeLeaveBoy
 	PrintClear "AFTER DEFEATING THE LAST OF THE BUCCANNEERS THE REST SURRENDER OR FLEE.  YOU RESCUE THE SLAVES AND CAPTURE THE FORT."
-	Save 255 BaseCaptured
-	Save 254 QuestBivant
+	BaseCaptured = 255
+	QuestBivant = 254
 	Goto Done
 
 FinalWave:
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=2 body=3
 	PrintClear "THE LAST OF THE BUCCANNEERS FORM INTO A FINAL WAVE AND ATTACK."
-	Save 60 Morale
+	Morale = 60
 	ClearMonsters
 	Goto FinalBattle
 
@@ -293,14 +295,14 @@ FleeLeaveBoy:
 	PrintClear "YOU RUN FROM THE BATTLE AND OUT THE OUTPOST GATE.  THE YOUNG BOY COULD NOT KEEP UP AND WAS LEFT BEHIND."
 
 LeaveBase:
-	Save 128 QuestBivant
-	Save 128 BaseCaptured
+	QuestBivant = 128
+	BaseCaptured = 128
 	NewECL Mountains
 
 SneakPastFails:
+	alias Choice = Scratch1
 	PrintClear "YOU TRY TO SNEAK UP PAST THE GUARDS BUT THEY ARE TOO ALERT.  YOU CANNOT GET BY THE GUARDS INTO THE SLAVE PEN.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ATTACK GUARDS" "LEAVE"
-	OnGoto Scratch1 2 AttackPenGuards StepBack
+	Choice = Menu "ATTACK GUARDS" -> AttackPenGuards "LEAVE" -> StepBack
 
 SlavePenOutsideSeen:
 	PrintClear "YOU ARE JUST OUTSIDE THE SLAVE PEN."
@@ -311,7 +313,7 @@ SlavePenOutsideStampede:
 	if SlavePenBlocked != 0: Goto SlavePenUnguarded
 	if QuestBivant != 0: Goto SlavePenUnguarded
 	PrintClear "YOU ARE JUST OUTSIDE THE SLAVE PEN.  AMOUNG THE SLAVES IS A YOUNG BOY WITH A HEART-SHAPED BIRTHMARK."
-	Save 1 SlavePenSeen
+	SlavePenSeen = 1
 	Goto Done
 
 SlavePenUnguarded:
@@ -320,33 +322,33 @@ SlavePenUnguarded:
 
 QuartersAlarm:
 	PrintClear "AS YOU APPROACH THE CAPTAIN'S QUARTERS THE ELITE GUARDS SOUND AN ALARM AND GUARDS RUSH FORTH AND ATTACK."
-	Save 6 Portrait
+	Portrait = 6
 	Goto BuccaneerWaves
 
 CaptainDoorGuards:
+	alias Choice = Scratch1
 	if BaseAlerted != 0: Goto Done
 	if DoorGuardsKilled != 0: Goto Done
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=0 body=3
-	Save 255 Portrait
+	Portrait = 255
 	if QuestBivant >= 254: Goto QuartersAlarm
 	PrintClear "STANDING IN FRONT OF THE DOOR ARE TWO LARGE GUARDS.  ONE OF THEM SAYS 'DO YOU HAVE A PASS TO SEE THE CAPTAIN?'  WHAT WILL YOU DO?"
-	HMenu Scratch1 4 "SHOW PASS" "LEAVE" "BRIBE" "ATTACK"
-	OnGoto Scratch1 4 ShowPass LeaveDoorGuards BribeRefused AttackDoorGuards
+	Choice = Menu "SHOW PASS" -> ShowPass "LEAVE" -> LeaveDoorGuards "BRIBE" -> BribeRefused "ATTACK" -> AttackDoorGuards
 
 BribeRefused:
+	alias Choice = Scratch1
 	PrintClear "YOU OFFER THE GUARDS SOME MONEY BUT THEY REFUSE.  ONE OF THE GUARDS SAYS 'GET OTTA' HERE YA SCUM'"
-	HMenu Scratch1 2 "ATTACK" "LEAVE"
-	OnGoto Scratch1 2 AttackDoorGuards LeaveDoorGuards
+	Choice = Menu "ATTACK" -> AttackDoorGuards "LEAVE" -> LeaveDoorGuards
 
 AttackDoorGuards:
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster ThLvlFighter41 count=2 icon=11
 	Combat
 	if CombatEnd > 128: Goto CutOffWithBoy
 	PrintClear "YOU KILL THE GUARDS BUT ARE CAUGHT DOING IT.  A LARGE GROUP OF GUARDS RUN TOWARD YOU AND ATTACK."
-	Save 1 DoorGuardsKilled
+	DoorGuardsKilled = 1
 	Goto BuccaneerWaves
 
 ShowPass:
@@ -359,83 +361,83 @@ NoPass:
 	Goto CaptainDoorGuards
 
 CaptainRoom:
+	alias Choice = Scratch1
 	if BaseAlerted != 0: Goto Done
 	if CaptainFightDone != 0: Goto Done
 	if CaptainKilled == 1: Goto Done
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=0 body=3
 	PrintClear "YOU ENTER A ROOM WITH FOUR GUARDS IN GLEAMING CHAIN MAIL.  AS YOU ENTER, ONE OF THEM GOES THROUGH THE SOUTH DOOR AND RETURNS WITH THE BUCCANEER CAPTAIN."
 	Gosub PressToContinue
-	Save 9 Portrait
+	Portrait = 9
 	SetupMonster Fighter16 distance=0 body=5
 	PrintClear "THE CAPTAIN LOOKS YOU OVER AND SAYS 'WHAT DO YOU WANT?'"
-	HMenu Scratch1 3 "ATTACK" "MENTION YOUNG BOY" "LEAVE"
-	OnGoto Scratch1 3 CaptainFight MentionBoy StepBack
+	Choice = Menu "ATTACK" -> CaptainFight "MENTION YOUNG BOY" -> MentionBoy "LEAVE" -> StepBack
 
 CaptainFight:
 	PrintClear "YOU DRAW YOUR WEAPONS AND ATTACK.  THE CAPTAIN DRAWS HIS SWORD AND YELLS FOR HIS GUARDS TO ATTACK!"
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Captain count=1 icon=Captain
 	LoadMonster ThLvlFighter41 count=4 icon=11
 	Combat
 	if CombatEnd > 128: Goto FleeQuarters
 	PrintClear "YOU KILL THE CAPTAIN."
-	Save 1 CaptainKilled
+	CaptainKilled = 1
 	Goto Done
 
 FleeQuarters:
-	Save 7 PartyX
-	Save 11 PartyY
-	Save 0 Facing
+	PartyX = 7
+	PartyY = 11
+	Facing = 0
 	Call CallRedraw
 	PrintClear "YOU HAVE RUN OUTSIDE THE CAPTAINS QUARTERS.  AN ALARM GOES OFF IN THE DISTANCE.  YOU SEE A LARGE GROUP OF ANGRY BUCCANEERS CHARGING TOWARD YOU!"
 	Goto BuccaneerWaves
 
 MentionBoy:
+	alias Choice = Scratch1
 	PrintClear "YOU MENTION THE YOUNG BOY IN THE SLAVE PEN AND THE CAPTAIN SEEMS INTERESTED.  HE SAYS 'I CAN LET YOU BUY THE YOUNG BOY BUT IT WILL COST YOU ALOT!'  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "BUY THE BOY" "ATTACK"
-	OnGoto Scratch1 2 BuyTheBoy CaptainFight
+	Choice = Menu "BUY THE BOY" -> BuyTheBoy "ATTACK" -> CaptainFight
 
 BuyTheBoy:
 	PrintClear "THE CAPTAIN SAYS 'YOU HAVE MADE A GOOD DEAL.'  AFTER TALKING THE CAPTAIN MAKES A MOTION AND THE BOY IS BROUGHT TO YOU."
-	Save 1 QuestBivant
+	QuestBivant = 1
 	Rob 1 75 10
 	Gosub PressToContinue
-	Save 1 BoyBought
+	BoyBought = 1
 	PrintClear "THE CAPTAIN THEN LEAVES THE ROOM AND YOU ARE ESCORTED BACK OUTSIDE."
-	Save 7 PartyX
-	Save 11 PartyY
-	Save 0 Facing
+	PartyX = 7
+	PartyY = 11
+	Facing = 0
 	Call CallRedraw
 	Goto Done
 
 SeedyManPass:
+	alias Choice = Scratch2
 	if PassBought != 0: Goto Done
 	if QuestBivant >= 254: Goto Done
-	Save 10 Portrait
+	Portrait = 10
 	SetupMonster Fighter16 distance=0 body=9
 	PrintClear "THERE IS A SEEDY LITTLE MAN HERE WHO WHISPERS 'PSSST, BUDDY.  WANT TO BUY A PASS TO SEE THE CAPTAIN?'"
-	HMenu Scratch2 2 "BUY PASS" "LEAVE"
-	OnGoto Scratch2 2 BuyPass Done
+	Choice = Menu "BUY PASS" -> BuyPass "LEAVE" -> Done
 
 BuyPass:
 	PrintClear "YOU BUY THE PASS.  THE SEEDY LITTLE MAN DISAPPEARS AROUND A CORNER."
 	Rob 0 25 0
-	Save 255 PassBought
+	PassBought = 255
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 57 // Pass
 	Combat
 	Goto Done
 
 GuardTower:
+	alias Choice = Scratch2
 	if BaseAlerted != 0: Goto Done
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=0 body=3
 	if QuestBivant >= 254: Goto TowerGuardsAttack
 	PrintClear "YOU HAVE ENTERED ONE OF THE GUARD TOWERS.  INSIDE ARE FOUR BUCCANEERS.  ONE OF THEM SAYS 'THIS IS A RESTRICTED AREA, LEAVE NOW!'  WHAT WILL YOU DO?"
-	HMenu Scratch2 2 "ATTACK" "LEAVE"
-	OnGoto Scratch2 2 AttackTowerGuards StepBack
+	Choice = Menu "ATTACK" -> AttackTowerGuards "LEAVE" -> StepBack
 
 TowerGuardsAttack:
 	PrintClear "THE TOWER GUARDS ATTACK."
@@ -445,7 +447,7 @@ AttackTowerGuards:
 	PrintClear "YOU ATTACK THE TOWER GUARDS."
 
 TowerFight:
-	Save 60 Morale
+	Morale = 60
 	ClearMonsters
 	LoadMonster Buccaneer count=4 icon=11
 	Combat
@@ -453,13 +455,13 @@ TowerFight:
 	Goto Done
 
 BarracksEnter:
+	alias Choice = Scratch1
 	if BaseAlerted != 0: Goto Done
-	Save 6 Portrait
+	Portrait = 6
 	SetupMonster Fighter16 distance=0 body=3
 	if QuestBivant >= 254: Goto BarracksGuardsAttack
 	PrintClear "YOU ENTER A BARRACKS FILED WITH TWENTY BUCCANEERS.  ONE OF THE BUCCANEERS SAYS 'THIS AREA IS OFF LIMITS.  LEAVE NOW.' WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "ATTACK" "LEAVE"
-	OnGoto Scratch1 2 AttackBarracks StepBack
+	Choice = Menu "ATTACK" -> AttackBarracks "LEAVE" -> StepBack
 
 BarracksGuardsAttack:
 	PrintClear "THE GUARDS IN THE BARRACKS ATTACK."
@@ -469,7 +471,7 @@ AttackBarracks:
 	PrintClear "YOU ATTACK THE BUCCANEERS."
 
 BarracksFight:
-	Save 70 Morale
+	Morale = 70
 	ClearMonsters
 	LoadMonster Buccaneer count=20 icon=11
 	Combat
@@ -489,17 +491,17 @@ AnimalPensEmpty:
 	Goto Done
 
 AnimalPenGate:
+	alias Choice = Scratch1
 	if BaseAlerted != 0: Goto AnimalPensEmpty
 	PrintClear "YOU ARE AT THE GATE TO THE ANIMAL PENS.  THE ANIMALS ARE RESTLESS.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "RELEASE ANIMALS" "LEAVE"
-	OnGoto Scratch1 2 ReleaseAnimals Done
+	Choice = Menu "RELEASE ANIMALS" -> ReleaseAnimals "LEAVE" -> Done
 
 ReleaseAnimals:
 	PrintClear "AS SOON AS YOU OPEN THE GATE THE ANIMALS INSIDE CHARGE OUT.  THEY STAMPEDE ACROSS THE COMPOUND."
 	Gosub PressToContinue
 	if BaseAlerted != 0: Goto Done
 	PrintClear "THERE IS MASS CONFUSION AS THE ANIMALS RUN AROUND THE COMPOUND.  GUARDS ARE LEAVING THEIR POSTS IN ORDER TO CONTROL THE ANIMALS."
-	Save 255 AnimalsLoose
+	AnimalsLoose = 255
 	Goto Done
 
 AnimalPenDoorOpen:
@@ -515,49 +517,50 @@ SlavePenGate:
 	Goto Done
 
 InsideSlavePen:
+	alias Choice = Scratch1
 	if SlavePenBlocked != 0: Goto Done
 	ShowPortrait 255 42
 	PrintClear "YOU ARE IN THE SLAVE PEN.  STANDING NEAR YOU IS THE YOUNG BOY.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "GET HIM" "LEAVE"
-	OnGoto Scratch1 2 TakeBoy StepBack
+	Choice = Menu "GET HIM" -> TakeBoy "LEAVE" -> StepBack
 
 TakeBoy:
 	PrintClear "YOU TAKE THE YOUNG BOY AND LEAVE.  THE OTHER SLAVES ALSO RUN OUT THE SLAVE PEN."
-	Save 254 QuestBivant
-	Save 7 PartyX
-	Save 6 PartyY
-	Save 0 Facing
+	QuestBivant = 254
+	PartyX = 7
+	PartyY = 6
+	Facing = 0
 	Call CallRedraw
 	Goto Done
 
 Done:
 	Picture None
 	RedrawView
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 LeaveDoorGuards:
 	if PrevY != 12: Goto StepBack
-	Save 10 PartyY
+	PartyY = 10
 	Call CallRedraw
 	Goto Done
 
 StepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
 	Goto Done
 
 PressToContinue:
-	HMenu Scratch2 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	alias Choice = Scratch2
+	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	Return
 
 DelayLoop:
-	Save 0 Scratch4
+	Scratch4 = 0
 
 DelayLoopNext:
 	if Scratch4 > 200: Return
-	Add 1 Scratch4 Scratch4
+	Scratch4 += 1
 	Goto DelayLoopNext
 
 ClearPicture:
@@ -571,34 +574,34 @@ event2:
 	if QuestBivant >= 254: Goto RestDangerous
 
 RestSafe:
-	Save 1 RestChance
-	Save 0 RestEvery
+	RestChance = 1
+	RestEvery = 0
 	Exit
 
 RestDangerous:
-	Save 100 RestChance
-	Save 5 RestEvery
+	RestChance = 100
+	RestEvery = 5
 	Exit
 
 event3:
 	if QuestBivant >= 254: Goto GuardsSpotBoy
-	Save 0 RestChance
+	RestChance = 0
 	PrintClear "A GUARD COMES BY AND SAYS 'IF YOU WISH TO CAMP, GO TO THE MERCHANTS AREA!'"
 	Exit
 
 event4:
 	if AreaKind == 1: Goto LoadAreaFiles
-	Save 0 PartyY
-	Save 8 PartyX
-	Save 2 Facing
+	PartyY = 0
+	PartyX = 8
+	Facing = 2
 	Call CallRedraw
-	Save 0 Scratch1
+	Scratch1 = 0
 
 LoadAreaFiles:
-	LoadPieces 2 6 6
-	LoadFiles 1 2 255
-	Save 11 Scratch6
-	if Hours >= 14: Save 8 Scratch6
-	Save Scratch6 Sky
-	Save 10 SkyInside
+	LoadWalls 2 6 6
+	LoadMap 1 unused=2 icons=255
+	Scratch6 = 11
+	if Hours >= 14: Scratch6 = 8
+	Sky = Scratch6
+	SkyInside = 10
 	Exit

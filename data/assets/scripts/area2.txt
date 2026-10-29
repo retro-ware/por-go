@@ -1,16 +1,16 @@
 event4:
-	Save 11 Sky
-	Save 8 SkyInside
-	LoadFiles 2 2 255
-	LoadPieces 1 3 20
+	Sky = 11
+	SkyInside = 8
+	LoadMap 2 unused=2 icons=255
+	LoadWalls 1 3 20
 	if AreaKind == 2: Exit
-	Save 0 NoCoords
+	NoCoords = 0
 	Exit
 
 event2:
-	Save 12 RestEvery
-	Save 6 RestChance
-	if TextileHouseCleared > 253: Save 0 RestEvery
+	RestEvery = 12
+	RestChance = 6
+	if TextileHouseCleared > 253: RestEvery = 0
 	Exit
 
 event3:
@@ -19,8 +19,8 @@ event3:
 event0:
 	if LeftMap == 0: Exit
 	Call CallStepForward
-	Save 255 HoldMove
-	OnGoto Facing 4 ExitNorth ExitEast Done ExitWest
+	HoldMove = 255
+	OnGoto Facing ExitNorth ExitEast Done ExitWest
 
 ExitNorth:
 	EnterArea PodolPlaza
@@ -29,34 +29,34 @@ ExitEast:
 	EnterArea MendorsLibrary
 
 ExitWest:
-	Save 7 SymbolSet
+	SymbolSet = 7
 	SetMapXY 11 28
 	NewECL Wilderness
 
 event1:
-	And 127 Cell Scratch10
+	Scratch10 = 127 & Cell
 	PrintClear " "
-	OnGoto Scratch10 25 RandomEncounterRoll CourtyardAmbush Barracks StenchRoom DeterioratedRoom TapestryRoom Nursery CarvedWall GraffitiRoom Done Done Done DarkObject DeadHobgoblin Kitchen SmokingFire Larder SmallDarkRoom GrishnakTemple BloodRoom SecretDoorHint OgreChief RandomEncounterRoll DiaryPage ThievesWell
+	OnGoto Scratch10 RandomEncounterRoll CourtyardAmbush Barracks StenchRoom DeterioratedRoom TapestryRoom Nursery CarvedWall GraffitiRoom Done Done Done DarkObject DeadHobgoblin Kitchen SmokingFire Larder SmallDarkRoom GrishnakTemple BloodRoom SecretDoorHint OgreChief RandomEncounterRoll DiaryPage ThievesWell
 
 Done:
 	Exit
 
 RandomEncounterRoll:
-	Save 5 Scratch1
-	if Search != 1: Save 30 Scratch1
-	Random Scratch1 Scratch1
+	Scratch1 = 5
+	if Search != 1: Scratch1 = 30
+	Scratch1 = Random Scratch1
 	if 1 != Scratch1: Exit
 
 RandomEncounter:
-	Save 18 Scratch1
+	Scratch1 = 18
 	if Scratch10 == 22 && IronBoxFound == 0: Goto PickEncounter
 	if TextileHouseCleared > 253: Exit
-	Random 10 Scratch1
-	Add EncounterCount Scratch1 Scratch1
+	Scratch1 = Random 10
+	Scratch1 += EncounterCount
 	if EncounterCount == 9 && IronBoxFound == 0: Exit
-	Add 1 EncounterCount EncounterCount
+	EncounterCount += 1
 	if EncounterCount != 10 || IronBoxFound != 255: Goto PickEncounter
-	Save 254 TextileHouseCleared
+	TextileHouseCleared = 254
 	Exit
 
 PickEncounter:
@@ -64,7 +64,7 @@ PickEncounter:
 	if Scratch1 > 12: Goto SkeletalForce
 	if Scratch1 > 7: Goto GhoulsAttack
 	if Scratch1 > 3: Goto ScorpionsApproach
-	Save 60 Morale
+	Morale = 60
 	SetupMonster GiantFrog distance=0 closeup=GiantFrog
 	PrintClear "EVIL LOOKING FROGS BOIL UP FROM BELOW."
 	Gosub PressToContinue
@@ -75,7 +75,7 @@ PickEncounter:
 	Exit
 
 HobgoblinsCharge:
-	Save 60 Morale
+	Morale = 60
 	SetupMonster Hobgoblin distance=2 closeup=Hobgoblin
 	PrintClear "HOBGOBLINS CHARGE SCREAMING."
 	Gosub PressToContinue
@@ -87,7 +87,7 @@ HobgoblinsCharge:
 	Exit
 
 SkeletalForce:
-	Save 100 Morale
+	Morale = 100
 	SetupMonster Skeleton distance=2 closeup=Skeleton
 	PrintClear "A SKELETAL FORCE SPOTS YOU AND ATTACKS."
 	Gosub PressToContinue
@@ -100,7 +100,7 @@ SkeletalForce:
 	Exit
 
 GhoulsAttack:
-	Save 100 Morale
+	Morale = 100
 	SetupMonster Ghoul distance=2 closeup=Ghoul
 	PrintClear "SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU."
 	Gosub PressToContinue
@@ -113,7 +113,7 @@ GhoulsAttack:
 
 ScorpionsApproach:
 	SetupMonster Scorpion distance=1 closeup=Scorpion
-	Save 50 Morale
+	Morale = 50
 	PrintClear "SCORPIONS APPROACH HUNGRILY."
 	Gosub PressToContinue
 	ClearMonsters
@@ -127,14 +127,14 @@ CourtyardAmbush:
 	if HobgoblinTempleState != 0: Exit
 	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
 	PrintClear "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
-	Save 60 Morale
+	Morale = 60
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster Hobgoblin count=12 icon=Hobgoblin
 	LoadMonster HobgoblinLdr count=2 icon=HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto ChasedOut
-	Save 1 HobgoblinTempleState
+	HobgoblinTempleState = 1
 	PrintClear "THINGS SEEM STRANGELY QUIET. THE DRUM HAS FADED TO SILENCE."
 	Exit
 
@@ -142,57 +142,57 @@ ChasedOut:
 	PrintClear "YOU ARE CHASED OUT INTO THE STREETS."
 
 EjectToStreet:
-	Random 1 Scratch2
-	OnGoto Scratch2 2 EjectWest EjectEast
+	Scratch2 = Random 1
+	OnGoto Scratch2 EjectWest EjectEast
 
 EjectWest:
-	Save 4 PartyX
-	Save 2 PartyY
+	PartyX = 4
+	PartyY = 2
 	Exit
 
 EjectEast:
-	Save 12 PartyX
-	Save 2 PartyY
+	PartyX = 12
+	PartyY = 2
 	Exit
 
 Barracks:
 	if BarracksSeen != 0: Exit
 	PrintClear "THIS CAVERNOUS BUILDING SERVES AS A BARRACKS."
-	Save 14 AuxCounter
-	Save 3 AuxMember
+	AuxCounter = 14
+	AuxMember = 3
 	Goto HobgoblinEncounter
 
 MarkBarracksSeen:
-	Save 255 BarracksSeen
+	BarracksSeen = 255
 	Exit
 
 StenchRoom:
 	if StenchRoomSeen != 0: Exit
 	PrintClear "YOU ARE APPALLED BY THE STENCH IN THIS DAMP BUILDING."
-	Save 255 StenchRoomSeen
+	StenchRoomSeen = 255
 	Exit
 
 DeterioratedRoom:
 	if DeterioratedRoomSeen != 0: Exit
 	PrintClear "YOU ARE IN A DETERIORATED BUILDING."
-	Save 255 DeterioratedRoomSeen
+	DeterioratedRoomSeen = 255
 	Exit
 
 TapestryRoom:
 	if TapestryRoomSeen != 0: Exit
 	PrintClear "WHEN YOU ENTER, A FEW FADED, MOTHEATEN TAPESTRIES FLUTTER MOURNFULLY."
-	Save 10 AuxCounter
-	Save 2 AuxMember
+	AuxCounter = 10
+	AuxMember = 2
 	Goto HobgoblinEncounter
 
 MarkTapestrySeen:
-	Save 255 TapestryRoomSeen
+	TapestryRoomSeen = 255
 	Exit
 
 Nursery:
 	if NurserySeen != 0: Exit
 	PrintClear "SEVERAL BABY HOBGOBLINS FLEE, SCREAMING IN FEAR!"
-	Save 255 NurserySeen
+	NurserySeen = 255
 	Gosub PressToContinue
 	PrintClear "THE FLOOR IS SLIPPERY FROM DUNG AND REEKS OF URINE."
 	Exit
@@ -207,12 +207,12 @@ CarvedWall:
 GraffitiRoom:
 	if GraffitiRoomSeen != 0: Exit
 	PrintClear "GRAFFITI COVERS THE WALLS IN MEANINGLESS ABANDON."
-	Save 12 AuxCounter
-	Save 2 AuxMember
+	AuxCounter = 12
+	AuxMember = 2
 	Goto HobgoblinEncounter
 
 MarkGraffitiSeen:
-	Save 255 GraffitiRoomSeen
+	GraffitiRoomSeen = 255
 	Exit
 
 DarkObject:
@@ -231,8 +231,7 @@ DeadHobgoblin:
 BodyMenu:
 	Gosub PressToContinue
 	PrintClear "WHAT DO YOU DO WITH THE BODY?"
-	HMenu AuxParlayChoice 3 "SEARCH" "DESTROY" "LEAVE"
-	OnGoto AuxParlayChoice 3 SearchBody DestroyBody Done
+	AuxParlayChoice = Menu "SEARCH" -> SearchBody "DESTROY" -> DestroyBody "LEAVE" -> Done
 
 SearchBody:
 	PrintClear "YOU FIND NOTHING OF ANY VALUE."
@@ -240,13 +239,13 @@ SearchBody:
 
 DestroyBody:
 	PrintClear "YOU DESTROY EVERYTHING OF VALUE."
-	Save 255 SkullcrusherLootDestroyed
+	SkullcrusherLootDestroyed = 255
 	Exit
 
 Kitchen:
 	if KitchenSeen != 0: Exit
 	PrintClear "A SIMPLE KITCHEN, A FEW CLAY BOWLS ADORN THE FLOOR."
-	Save 255 KitchenSeen
+	KitchenSeen = 255
 	Exit
 
 SmokingFire:
@@ -256,14 +255,14 @@ SmokingFire:
 Larder:
 	if LarderSeen2 != 0: Exit
 	PrintClear "BREAD AND MEAT LIE ABOUT, AS WELL AS PIECES OF HUMAN ANATOMY."
-	Save 255 LarderSeen2
+	LarderSeen2 = 255
 	Exit
 
 SmallDarkRoom:
 	PrintClear "YOU ARE IN A VERY SMALL, DARK ROOM."
 	if PrisonerState == 255: Exit
 	if PrisonerState == 128: Goto FreeManMenu
-	Save 32 Portrait
+	Portrait = 32
 	SetupMonster Fighter14 distance=0 body=3
 	Print "A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47."
 
@@ -272,17 +271,15 @@ PrisonerContinue:
 
 PrisonerMenu:
 	PrintClear "WHAT DO YOU DO WITH THE MAN?"
-	HMenu AuxParlayChoice 4 "FREE" "ATTACK" "PARLAY" "LEAVE"
-	OnGoto AuxParlayChoice 4 FreeMenu KillPrisoner ParlayPrisoner LeavePrisoner
+	AuxParlayChoice = Menu "FREE" -> FreeMenu "ATTACK" -> KillPrisoner "PARLAY" -> ParlayPrisoner "LEAVE" -> LeavePrisoner
 
 LeavePrisoner:
-	Save 255 Portrait
+	Portrait = 255
 	Goto Done
 
 FreeMenu:
 	PrintClear "HOW WILL YOU FREE HIM?"
-	HMenu AuxParlayChoice 4 "UNLOCK" "PICK LOCK" "BREAK CHAINS" "LEAVE"
-	OnGoto AuxParlayChoice 4 UnlockChains PickLockFails ChainsHold PrisonerMenu
+	AuxParlayChoice = Menu "UNLOCK" -> UnlockChains "PICK LOCK" -> PickLockFails "BREAK CHAINS" -> ChainsHold "LEAVE" -> PrisonerMenu
 
 UnlockChains:
 	if Carried 75: Goto KeyOpensLocks
@@ -291,7 +288,7 @@ UnlockChains:
 
 KeyOpensLocks:
 	PrintClear "THE BRASS KEY YOU FOUND OPENS ALL OF THE PADLOCKS."
-	Save 128 PrisonerState
+	PrisonerState = 128
 	Goto FreeManContinue
 
 PickLockFails:
@@ -305,14 +302,14 @@ ChainsHold:
 KillPrisoner:
 	PrintClear "THE MAN DIES A CRUEL DEATH."
 	Gosub PressToContinue
-	Save 255 PrisonerState
-	Save 255 Portrait
+	PrisonerState = 255
+	Portrait = 255
 	Call CallRedraw
 	Exit
 
 ParlayPrisoner:
 	Parlay 0 1 2 3 4 AuxParlayChoice
-	OnGoto AuxParlayChoice 5 WhatsYourProblem DontFoolMe AlmostKilledLeader FreeMeHelp WordsDontBreak
+	OnGoto AuxParlayChoice WhatsYourProblem DontFoolMe AlmostKilledLeader FreeMeHelp WordsDontBreak
 
 WhatsYourProblem:
 	PrintClear " 'WHATS YOUR PROBLEM?'"
@@ -339,16 +336,15 @@ FreeManContinue:
 
 FreeManMenu:
 	PrintClear "THERE IS A FREE MAN HERE. WHAT DO YOU DO?"
-	HMenu AuxParlayChoice 5 "ATTACK" "WAIT" "FLEE" "PARLAY" "LEAVE"
-	OnGoto AuxParlayChoice 5 FightFreeMan FreeManWaits FleeRoom ParlayFreeMan LeavePrisoner
+	AuxParlayChoice = Menu "ATTACK" -> FightFreeMan "WAIT" -> FreeManWaits "FLEE" -> FleeRoom "PARLAY" -> ParlayFreeMan "LEAVE" -> LeavePrisoner
 
 FightFreeMan:
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Skullcrusher count=1 icon=Skullcrusher
 	Combat
-	Save 255 PrisonerState
-	Save 255 Portrait
+	PrisonerState = 255
+	Portrait = 255
 	Exit
 
 FreeManWaits:
@@ -357,22 +353,21 @@ FreeManWaits:
 
 FleeRoom:
 	PrintClear "YOU FLEE THE ROOM."
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 ParlayFreeMan:
 	Parlay 0 0 0 0 1 AuxParlayChoice
-	OnGoto AuxParlayChoice 2 ServantThanks DislikeTone
+	OnGoto AuxParlayChoice ServantThanks DislikeTone
 
 ServantThanks:
 	PrintClear "'THANKS FOR FREEING ME. I'M LORD CADORNA'S SERVANT."
 	Gosub PressToContinue
 	PrintClear "ADD HIM TO YOUR PARTY?"
-	HMenu AuxParlayChoice 2 "YES" "NO"
-	OnGoto AuxParlayChoice 2 AddSkullcrusher SkullcrusherLeaves
+	AuxParlayChoice = Menu "YES" -> AddSkullcrusher "NO" -> SkullcrusherLeaves
 
 AddSkullcrusher:
 	if PartyCount != 8: Goto SkullcrusherJoins
@@ -383,15 +378,15 @@ SkullcrusherJoins:
 	PrintClear "'GREAT! MY NAME IS SKULLCRUSHER. THERE'S A SECRET DOOR TO THE SOUTHEAST. THAT'S WHERE I MET THE HOBGOBLIN LEADER.'"
 	AddNPC Skullcrusher 100
 	Gosub PressToContinue
-	Save 255 PrisonerState
-	Save 255 Portrait
+	PrisonerState = 255
+	Portrait = 255
 	Call CallRedraw
 	Exit
 
 SkullcrusherLeaves:
 	PrintClear "'OH WELL.' HE LEAVES."
-	Save 255 PrisonerState
-	Save 255 Portrait
+	PrisonerState = 255
+	Portrait = 255
 	Exit
 
 DislikeTone:
@@ -405,7 +400,7 @@ GrishnakTemple:
 	SetupMonster Hobgoblin distance=0 closeup=9
 	PrintClear "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
 	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Grishnak count=1 icon=Grishnak
 	LoadMonster HobgoblinLdr count=3 icon=HobgoblinLdr
@@ -413,7 +408,7 @@ GrishnakTemple:
 	Treasure 100 20 30 40 8 0 0 38 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Quarter Staff, Potion of Healing, and 2 more
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
-	Save 2 HobgoblinTempleState
+	HobgoblinTempleState = 2
 	Exit
 
 BloodRoom:
@@ -429,8 +424,9 @@ SecretDoorHint:
 	Exit
 
 OgreChief:
+	alias Choice = Scratch1
 	if IronBoxFound != 0: Exit
-	Save 2 Facing
+	Facing = 2
 	Call CallRedraw
 	PrintClear "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
 	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
@@ -438,25 +434,24 @@ OgreChief:
 	Gosub PressToContinue
 	PrintClear "'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'"
 	Gosub PressToContinue
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Ogre count=1 icon=Ogre
 	LoadMonster Hobgoblin count=18 icon=Hobgoblin
 	LoadMonster HobgoblinLdr count=4 icon=HobgoblinLdr
 	Combat
 	if CombatEnd > 128: Goto HobgoblinsChase
-	Save 255 IronBoxFound
+	IronBoxFound = 255
 	PrintClear "YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?"
-	HMenu Scratch1 2 "OPEN IT" "TAKE IT UNOPENED"
-	OnGoto Scratch1 2 OpenBox TakeBoxUnopened
+	Choice = Menu "OPEN IT" -> OpenBox "TAKE IT UNOPENED" -> TakeBoxUnopened
 
 TakeBoxUnopened:
-	Save 1 IronBoxState
+	IronBoxState = 1
 	Exit
 
 OpenBox:
-	Save 128 IronBoxState
-	Save 1 RestalDealDone
+	IronBoxState = 128
+	RestalDealDone = 1
 	ClearMonsters
 	Treasure #01C2 20 0 0 #0190 8 4 39 // Gauntlets of Ogre Power, Gold Banded Wand, Jewel Studded Bowl, Jewelled Dragon Statuette, Ring
 	Combat
@@ -471,7 +466,7 @@ HobgoblinEncounter:
 
 HobgoblinFight:
 	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
-	Save 60 Morale
+	Morale = 60
 	Gosub PressToContinue
 	ClearMonsters
 	LoadMonster Hobgoblin count=AuxCounter icon=Hobgoblin
@@ -484,47 +479,47 @@ HobgoblinFight:
 	Exit
 
 FindSkullcrusher:
-	Save 0 Scratch2
-	Save 0 Scratch3
+	Scratch2 = 0
+	Scratch3 = 0
 
 FindSkullcrusherLoop:
 	LoadCharacter Scratch2
 	if $SelName == "SKULLCRUSHER": Goto SkullcrusherFound
-	Add 1 Scratch2 Scratch2
+	Scratch2 += 1
 	if Scratch2 != 9: Goto FindSkullcrusherLoop
 	Goto FindSkullcrusherDone
 
 SkullcrusherFound:
 	if SelStatus != 1: Goto FindSkullcrusherDone
-	Save 255 Scratch3
+	Scratch3 = 255
 
 FindSkullcrusherDone:
 	Return
 
 HobgoblinsChase:
 	PrintClear "THE HOBGOBLINS GIVE CHASE, BUT YOU ESCAPE."
-	Random 3 Scratch2
-	Save 1 NoCoords
-	OnGoto Scratch2 4 EscapeSpot1 EscapeSpot2 EscapeSpot3 EscapeSpot4
+	Scratch2 = Random 3
+	NoCoords = 1
+	OnGoto Scratch2 EscapeSpot1 EscapeSpot2 EscapeSpot3 EscapeSpot4
 
 EscapeSpot1:
-	Save 4 PartyX
-	Save 11 PartyY
+	PartyX = 4
+	PartyY = 11
 	Goto EscapeRedraw
 
 EscapeSpot2:
-	Save 8 PartyX
-	Save 8 PartyY
+	PartyX = 8
+	PartyY = 8
 	Goto EscapeRedraw
 
 EscapeSpot3:
-	Save 4 PartyX
-	Save 14 PartyY
+	PartyX = 4
+	PartyY = 14
 	Goto EscapeRedraw
 
 EscapeSpot4:
-	Save 12 PartyX
-	Save 13 PartyY
+	PartyX = 12
+	PartyY = 13
 
 EscapeRedraw:
 	Call CallRedraw
@@ -533,17 +528,18 @@ EscapeRedraw:
 DiaryPage:
 	if 1 == DiaryEntry11Found: Exit
 	PrintClear "YOU FIND A PAGE FROM A DIARY AND PLACE IT IN YOUR JOURNAL UNDER ENTRY 11."
-	Save 1 DiaryEntry11Found
+	DiaryEntry11Found = 1
 	Exit
 
 PressToContinue:
-	HMenu Scratch1 1 "PRESS <RETURN> OR BUTTON TO CONTINUE."
+	alias Choice = Scratch1
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE."
 	Return
 
 ThievesWell:
+	alias Choice = Scratch1
 	PrintClear "ON THE WELL IS A NOTE,'THIEVES ONLY.' THE WELL HAS NO RUNGS OR ROPE AND SEEMS VERY DEEP. ONLY A SKILLFUL CLIMBER COULD SURVIVE THE DESCENT. WHAT DO YOU DO?"
-	HMenu Scratch1 2 "LEAVE" "CLIMB DOWN"
-	OnGoto Scratch1 2 Done ChooseClimber
+	Choice = Menu "LEAVE" -> Done "CLIMB DOWN" -> ChooseClimber
 
 ChooseClimber:
 	Who "WHO WILL CLIMB DOWN?"
@@ -553,29 +549,31 @@ ChooseClimber:
 	Goto ChooseClimber
 
 ClimbDown:
-	Save 0 PartyX
-	Save 1 Facing
+	PartyX = 0
+	Facing = 1
 	Call CallRedraw
 	Gosub PressToContinue
-	Random 99 Scratch1
+	Scratch1 = Random 99
 	if Scratch1 < SelThiefSkill6: Goto MeetRestal
 	PrintClear "YOU BEGIN A LONG FALL."
 	Gosub PressToContinue
-	Save 0 Scratch1
+	Scratch1 = 0
 
 FeatherFallScan:
-	GetTable EffectTable Scratch1 Scratch2
-	if Scratch2 == 27: Goto FeatherFallCheck
+	alias Effect = Scratch2
+	Effect = EffectTable[Scratch1]
+	if Effect == 27: Goto FeatherFallCheck
 
 FeatherFallNext:
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	if Scratch1 == 64: Goto HitStoneFloor
 	Goto FeatherFallScan
 
 FeatherFallCheck:
-	Add 64 Scratch1 Scratch2
-	GetTable EffectTable Scratch2 Scratch3
-	if Scratch3 != SelPartyIndex2: Goto FeatherFallNext
+	alias Effect = Scratch3
+	Scratch2 = 64 + Scratch1
+	Effect = EffectTable[Scratch2]
+	if Effect != SelPartyIndex2: Goto FeatherFallNext
 	PrintClear "YOU FLOAT DOWN THE WELL."
 	Gosub PressToContinue
 	PrintClear "FROM AN ARCHWAY AT THE BOTTOM COME ARROWS."
@@ -588,8 +586,8 @@ HitStoneFloor:
 	Gosub PressToContinue
 	Damage 160 15 6 0 128
 	if SelStatus == 1: Goto LaughingThief
-	Save 1 PartyX
-	Save 3 Facing
+	PartyX = 1
+	Facing = 3
 	Call CallRedraw
 	PrintClear "YOUR FRIEND FLOATS OUT OF THE WELL."
 	Exit
@@ -602,6 +600,7 @@ LaughingThief:
 	Exit
 
 MeetRestal:
+	alias Choice = Scratch1
 	Gosub ShowThief
 	PrintClear "AN OLD THIEF STANDS HERE.'WELCOME TO MY GUILD. I AM RESTAL.' HE BOWS LOW."
 	Gosub PressToContinue
@@ -610,51 +609,50 @@ MeetRestal:
 	if QuestCadornaPayment == 255: Goto RestalFarewell
 	if RestalDealDone == 1: Goto RestalFarewell
 	PrintClear "'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 DuplicateSeal RestalFarewell
+	Choice = Menu "YES" -> DuplicateSeal "NO" -> RestalFarewell
 
 DuplicateSeal:
 	ClearMonsters
 	Treasure 0 0 0 0 200 4 2 39 // Gauntlets of Ogre Power, Gold Banded Wand, Jewel Studded Bowl, Jewelled Dragon Statuette, Ring
 	Combat
-	Save 1 RestalDealDone
-	Save 1 IronBoxState
+	RestalDealDone = 1
+	IronBoxState = 1
 
 RestalFarewell:
 	PrintClear "THE OLD THIEF LAUGHS, 'PERHAPS WE SHALL MEET AGAIN.'"
 	Gosub RingLiftsYou
 	Gosub LeaveWell
-	Save 1 RestalDealDone
+	RestalDealDone = 1
 	Exit
 
 TextileHouseOffer:
+	alias Choice = Scratch1
 	PrintClear "'YOU ARE SEEKING THE TEXTILE HOUSE. WE CAN GET YOU IN UNSEEN AND POSSIBLY HELP YOU WITH THE TREASURE. INTERESTED?'"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 Blindfold RestalFarewell
+	Choice = Menu "YES" -> Blindfold "NO" -> RestalFarewell
 
 Blindfold:
+	alias Choice = Scratch1
 	PrintClear "A ROPE IS TOSSED UP AND THE REST OF THE PARTY COMES DOWN. THE OLD THIEF SAYS 'OUR RULES REQUIRE YOU TO BE BLINDFOLDED IN OUR GUILD HOUSE, OKAY?'"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 BlindfoldedWalk RestalFarewell
+	Choice = Menu "YES" -> BlindfoldedWalk "NO" -> RestalFarewell
 
 BlindfoldedWalk:
 	PrintClear "YOU ARE BLINDFOLDED AND TAKEN ON A LONG, TWISTING WALK, THEN UP A LADDER.'ONLY MEET US AT THE MAIN WELL.'"
-	Save 6 PartyX
-	Save 11 PartyY
-	Save 0 Facing
-	Save 1 HobgoblinTempleState
+	PartyX = 6
+	PartyY = 11
+	Facing = 0
+	HobgoblinTempleState = 1
 	Call CallRedraw
-	Save 255 Portrait
+	Portrait = 255
 	Exit
 
 ShowThief:
-	Save 3 Facing
+	Facing = 3
 	Call CallRedraw
 	ShowPortrait 52 8
 	Return
 
 LeaveWell:
-	Save 1 PartyX
+	PartyX = 1
 	ShowPortrait 255 255
 	Call CallRedraw
 	Return

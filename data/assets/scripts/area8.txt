@@ -1,8 +1,8 @@
 event0:
-	Save 11 SkyColor8
-	if Hours >= 14: Save 8 SkyColor8
-	Save SkyColor8 Sky
-	And 127 Cell Scratch10
+	SkyColor8 = 11
+	if Hours >= 14: SkyColor8 = 8
+	Sky = SkyColor8
+	Scratch10 = 127 & Cell
 	Gosub CheckQuestOver
 	if Scratch10 == 29 && Facing == 2: Goto CheckSouthDoor
 	if Scratch10 == 29 && Facing == 1: Goto CheckEastDoor
@@ -11,7 +11,7 @@ event0:
 WayBlocked:
 	if HallGuardsFought != 0: Exit
 	PrintClear "THE WAY IS BLOCKED."
-	Save 255 HoldMove
+	HoldMove = 255
 	Goto CouncilGuard
 
 CheckSouthDoor:
@@ -25,41 +25,41 @@ CheckEastDoor:
 event1:
 	PrintClear ""
 	Gosub ClearPicture
-	And 127 Cell Scratch10
+	Scratch10 = 127 & Cell
 	Gosub CheckQuestOver
-	Save 26 CellEventIndex
+	CellEventIndex = 26
 
 FindCellEvent:
 	if CellEventIndex == Scratch10: Goto CellEvents
 	if CellEventIndex > 34: Exit
-	Add 1 CellEventIndex CellEventIndex
+	CellEventIndex += 1
 	Goto FindCellEvent
 
 event2:
 	Gosub CheckQuestOver
 	if FoughtWatch != 0: Goto NoRestHere
-	Save 1 RestEvery
-	Save 101 RestChance
+	RestEvery = 1
+	RestChance = 101
 	Exit
 
 NoRestHere:
-	Save 0 RestEvery
-	Save 0 RestChance
+	RestEvery = 0
+	RestChance = 0
 	Exit
 
 event3:
-	Save 0 RestChance
+	RestChance = 0
 	Goto CouncilGuard
 
 event4:
-	LoadFiles 0 0 0
-	LoadPieces 127 127 127
+	LoadMap 0 unused=0 icons=0
+	LoadWalls Reset Reset Reset
 	if RestChance == 255: Exit
 	Goto NoRestHere
 
 CellEvents:
-	Sub 26 CellEventIndex CellEventIndex
-	OnGoto CellEventIndex 9 ExitToArea0 EnterCityHall OutsideClerkOffice ClerkOffice CadornaChambers CadornaZhentilMission UrslingenRoom CouncilChambers GuardPost
+	CellEventIndex -= 26
+	OnGosub CellEventIndex ExitToArea0 EnterCityHall OutsideClerkOffice ClerkOffice CadornaChambers CadornaZhentilMission UrslingenRoom CouncilChambers GuardPost
 	Gosub ClearPicture
 	Exit
 
@@ -69,17 +69,17 @@ ExitToArea0:
 EnterCityHall:
 	Gosub CheckQuestOver
 	if HallEntered > 0: Exit
-	Add 1 HallEntered HallEntered
+	HallEntered += 1
 	Delay
-	Save 2 Facing
+	Facing = 2
 	Call CallRedraw
 	if IronBoxState == 128: Goto CadornaConfronts
 	PrintClear "YOU ENTER THE CITY HALL.  AS YOU FACE DOWN THE HALLWAY, YOU SEE A GUARDED DOOR."
 	Return
 
 CadornaConfronts:
-	Save 255 QuestCadornaPayment
-	Save 255 IronBoxState
+	QuestCadornaPayment = 255
+	IronBoxState = 255
 	if QuestCadornaTraitor >= 254: Exit
 	ShowPortrait 55 31
 	PrintClear "COUNCILMAN CADORNA CONFRONTS YOU. 'YOU HAVE TAKEN MY FAMILY TREASURE. I DON'T FORGET SUCH THINGS.' HE STRIDES OFF."
@@ -89,7 +89,7 @@ CadornaConfronts:
 OutsideClerkOffice:
 	Gosub CheckQuestOver
 	PrintClear "YOU ARE OUTSIDE THE CLERK'S OFFICE. GUARDS POSTED AROUND A DOOR IN THE SOUTH WALL WATCH YOU CLOSELY."
-	Save 0 ClerkTalkedThisVisit
+	ClerkTalkedThisVisit = 0
 	Return
 
 ClerkOffice:
@@ -97,25 +97,27 @@ ClerkOffice:
 	if ClerkTalkedThisVisit != 0: Exit
 	Gosub ShowClerk
 	if ClerkMet > 0: Goto BackSoSoon
-	Save 1 ClerkMet
-	Save 1 ClerkTalkedThisVisit
+	ClerkMet = 1
+	ClerkTalkedThisVisit = 1
 	PrintClear "AT YOUR ENTRY, THE COUNCIL CLERK BEGINS LOOKING THROUGH A STACK OF PAPERS.  'BEFORE I CAN OFFER ANY COMMISSIONS, I MUST SEE IF YOU ARE DUE A CURRENT REWARD."
 	Gosub PressToContinue
-	Save 0 Scratch1
-	Save 0 RewardKind
-	Save 255 Scratch7
-	Save 0 Scratch4
-	Save 0 Scratch5
-	Save 0 Scratch6
+	Scratch1 = 0
+	RewardKind = 0
+	Scratch7 = 255
+	Scratch4 = 0
+	Scratch5 = 0
+	Scratch6 = 0
 
 UndeadRewardLoop:
-	GetTable UndeadKillTable Scratch1 Scratch2
-	GetTable UndeadPaidTable Scratch1 Scratch8
-	Sub Scratch8 Scratch2 Scratch9
-	if Scratch9 > 0: Save 1 RewardKind
-	OnGoto Scratch1 7 SetPlatinum AddGems AddJewelry AddItems AddGems AddJewelry AddItems
-	SaveTable Scratch2 UndeadPaidTable Scratch1
-	Add 1 Scratch1 Scratch1
+	alias UndeadKill = Scratch2
+	alias UndeadPaid = Scratch8
+	UndeadKill = UndeadKillTable[Scratch1]
+	UndeadPaid = UndeadPaidTable[Scratch1]
+	Scratch9 = UndeadKill - UndeadPaid
+	if Scratch9 > 0: RewardKind = 1
+	OnGosub Scratch1 SetPlatinum AddGems AddJewelry AddItems AddGems AddJewelry AddItems
+	UndeadPaidTable[Scratch1] = UndeadKill
+	Scratch1 += 1
 	if Scratch1 < 7: Goto UndeadRewardLoop
 	if RewardKind != 1: Goto BivantPenalty
 	PrintClear "'WE HAVE BEEN INFORMED YOU HAVE ELIMINATED SOME UNDEAD FROM THE GRAVEYARD."
@@ -126,50 +128,51 @@ BivantPenalty:
 	Goto ClearingRewards
 
 ScanQuests:
-	Save 0 Scratch1
-	Save 0 RewardKind
+	Scratch1 = 0
+	RewardKind = 0
 
 ScanQuestLoop:
-	Save 255 Scratch7
-	GetTable QuestBandits Scratch1 Scratch2
-	if Scratch2 == 254: Goto ClerkSpeaks
+	alias QuestBandit = Scratch2
+	Scratch7 = 255
+	QuestBandit = QuestBandits[Scratch1]
+	if QuestBandit == 254: Goto ClerkSpeaks
 
 NextQuest:
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Gosub CheckQuestOver
 	if Scratch1 > 25: Goto GraveyardNotice
 	Goto ScanQuestLoop
 
 ClerkSpeaks:
 	PrintClear "THE CLERK SPEAKS. '"
-	OnGoto Scratch1 26 NorrisBonus SokalKeepBonus TempleAreaCleared BivantRescued DiscoursesValuable DescriptionsAmuse MapsHelp HistoriesUseful RecordsInsight SmallValue PodalPlazaSuccess GraveyardPrize KovelThievesGone StojonowCleared SwiftReturn LizardmenGone KoboldsGone NomadCampNews CadornaPaid GateTaken QuestOver SlumsCleared NoRewardText TempleOfBaneLoot CadornaTraitorNotice CadornaDeadNotice
+	OnGosub Scratch1 NorrisBonus SokalKeepBonus TempleAreaCleared BivantRescued DiscoursesValuable DescriptionsAmuse MapsHelp HistoriesUseful RecordsInsight SmallValue PodalPlazaSuccess GraveyardPrize KovelThievesGone StojonowCleared SwiftReturn LizardmenGone KoboldsGone NomadCampNews CadornaPaid GateTaken QuestOver SlumsCleared NoRewardText TempleOfBaneLoot CadornaTraitorNotice CadornaDeadNotice
 	if Scratch1 > 22: Goto MarkQuestPaid
 	Goto LoadReward
 
 ClearingRewards:
-	And LibraryEventFlags 96 Scratch1
+	Scratch1 = LibraryEventFlags & 96
 	if Scratch1 != 96: Goto CheckPodalPlaza
 	if LibraryRewardGiven == 255: Goto CheckPodalPlaza
-	Save "LIBRARY.'" $AuxText
-	Save 255 LibraryRewardGiven
+	$AuxText = "LIBRARY.'"
+	LibraryRewardGiven = 255
 	Goto ClearingReward
 
 CheckPodalPlaza:
 	if PodalPlazaCleared != 254: Goto CheckTextileHouse
-	Save "PODAL PLAZA.'" $AuxText
-	Save 255 PodalPlazaCleared
+	$AuxText = "PODAL PLAZA.'"
+	PodalPlazaCleared = 255
 	Goto ClearingReward
 
 CheckTextileHouse:
 	if TextileHouseCleared != 254: Goto ToScanQuests
-	Save "CADORNA TEXTILE HOUSE.'" $AuxText
-	Save 255 TextileHouseCleared
+	$AuxText = "CADORNA TEXTILE HOUSE.'"
+	TextileHouseCleared = 255
 
 ClearingReward:
 	PrintClear "'THERE IS A REWARD FOR CLEARING THE "
 	Print $AuxText
-	Save 10 Scratch1
-	Save 2 RewardKind
+	Scratch1 = 10
+	RewardKind = 2
 	Goto LoadReward
 
 ToScanQuests:
@@ -179,19 +182,23 @@ CheckBivantBungled:
 	if QuestBivant != 128: Return
 	PrintClear "'BY THE WAY, YOUR BUNGLING THE BIVANT RESCUE HAS COST US.'"
 	Gosub PressToContinue
-	Save 255 QuestBivant
+	QuestBivant = 255
 	Return
 
 LoadReward:
-	GetTable RewardTable1 Scratch1 Scratch3
-	GetTable RewardTable2 Scratch1 Scratch4
-	GetTable RewardTable3 Scratch1 Scratch5
-	GetTable RewardTable4 Scratch1 Scratch6
+	alias RewardTable1Entry = Scratch3
+	alias RewardTable2Entry = Scratch4
+	alias RewardTable3Entry = Scratch5
+	alias RewardTable4Entry = Scratch6
+	RewardTable1Entry = RewardTable1[Scratch1]
+	RewardTable2Entry = RewardTable2[Scratch1]
+	RewardTable3Entry = RewardTable3[Scratch1]
+	RewardTable4Entry = RewardTable4[Scratch1]
 
 GiveReward:
 	Print " HERE IS YOUR REWARD.'"
-	HMenu AuxCounter 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Save 0 FoughtWatch
+	AuxCounter = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	FoughtWatch = 0
 	ClearMonsters
 	Treasure 0 0 0 Scratch3 Scratch4 Scratch5 Scratch6 Scratch7
 	Combat
@@ -200,7 +207,7 @@ GiveReward:
 	also if RewardKind > 1: Goto ClearingRewards
 
 MarkQuestPaid:
-	SaveTable 255 QuestBandits Scratch1
+	QuestBandits[Scratch1] = 255
 	if Scratch1 != 20: Goto NextQuest
 	Gosub ClearPicture
 	Gosub CheckQuestOver
@@ -208,12 +215,12 @@ MarkQuestPaid:
 
 NorrisBonus:
 	Print "THE COUNCIL HAS AWARDED A BONUS FOR YOUR ELIMINATING NORRIS THE GRAY."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 SokalKeepBonus:
 	Print "WITH SOKAL KEEP IN OUR HANDS, WE CAN USE BOATS TO BYPASS THE BARREN RIVER."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 TempleAreaCleared:
@@ -222,7 +229,7 @@ TempleAreaCleared:
 
 BivantRescued:
 	Print "BIVANT WAS DELIGHTED WITH THE CHILD'S RESCUE.  THEY LEFT SOME TRINKETS FOR YOU."
-	Save 51 Scratch7
+	Scratch7 = 51
 	Return
 
 DiscoursesValuable:
@@ -251,42 +258,42 @@ SmallValue:
 
 PodalPlazaSuccess:
 	Print "YOUR SUCCESS AT PODAL PLAZA IS NOTED."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 GraveyardPrize:
 	Print "THE COUNCIL HAS VOTED A SPECIAL PRIZE FOR ENDING THE GRAVEYARD MENACE."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 KovelThievesGone:
 	Print "THE COUNCIL WAS PLEASED BY THE ELIMINATION OF THE THIEVES IN KOVEL MANSION."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 StojonowCleared:
 	Print "WITH THE CLEARING OF THE STOJONOW RIVER, WE CAN OPEN UP THE HINTERLANDS FOR TRADE."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 SwiftReturn:
 	Print "WE WERE PLEASANTLY SURPRISED THAT YOU COMPLETED YOUR MISSION SO SWIFTLY.  CADORNA WAS WAGERING YOUR RETURN WOULD BE MUCH DELAYED."
-	Save 254 QuestCadornaTraitor
+	QuestCadornaTraitor = 254
 	Return
 
 LizardmenGone:
 	Print "YOUR ELIMINATION OF THE LIZARDMEN MENACE HAS GREATLY IMPROVED OUR STRATEGIC POSITION."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 KoboldsGone:
 	Print "THIS LOSS OF THE KOBOLD FORCES WILL BE A MAJOR BLOW TO THE ENEMY."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 NomadCampNews:
 	Print "WE WERE MUCH RELIEVED BY THE NEWS YOU BRING FROM THE NOMAD CAMP."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 CadornaPaid:
@@ -304,7 +311,7 @@ QuestOver:
 
 SlumsCleared:
 	Print "YOUR CLEARING OF THE SLUM AREAS PERMITS US TO EXPAND."
-	Add 1 CouncilFavor CouncilFavor
+	CouncilFavor += 1
 	Return
 
 NoRewardText:
@@ -342,14 +349,14 @@ GraveyardDanger:
 	Gosub PressToContinue
 	PrintClear "'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 AcceptGraveyard OfferCommissions
+	OnGoto Scratch1 AcceptGraveyard OfferCommissions
 
 AcceptGraveyard:
 	PrintClear "'EXCELLENT.'"
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 51 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Two-Handed Sword +1 +3 vs Undead
 	Combat
-	Save 255 GraveyardNoticeGiven
+	GraveyardNoticeGiven = 255
 	Gosub ShowClerk
 	Goto OfferCommissions
 
@@ -362,23 +369,23 @@ OfferCommissions:
 
 BackSoSoon:
 	if ClerkTalkedThisVisit != 0: Exit
-	Save 1 ClerkTalkedThisVisit
+	ClerkTalkedThisVisit = 1
 	Gosub ShowClerk
 	PrintClear "'BACK SO SOON? I CAN ONLY REPEAT THE EARLIER OFFERS: '"
 
 ListOffers:
 	Gosub PressToContinue
-	Save 0 Scratch1
+	Scratch1 = 0
 
 OfferLoop:
 	if OffersListed > 2: Goto OffersDone
 	if Scratch1 == 16: Goto MarkCadornaTraitor
-	OnGoto Scratch1 16 OfferSlums OfferSokalKeep OfferBooks OfferPodalAuction OfferCadorna OfferBishop OfferKovelMansion OfferNomads OfferKobolds OfferNone OfferRiverPollution OfferLizardmen OfferBivant OfferZhentilMission OfferUrslingen OfferCouncilMeeting
-	Add 1 OffersListed OffersListed
+	OnGosub Scratch1 OfferSlums OfferSokalKeep OfferBooks OfferPodalAuction OfferCadorna OfferBishop OfferKovelMansion OfferNomads OfferKobolds OfferNone OfferRiverPollution OfferLizardmen OfferBivant OfferZhentilMission OfferUrslingen OfferCouncilMeeting
+	OffersListed += 1
 	Gosub PressToContinue
 
 NextOffer:
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Goto OfferLoop
 
 OfferSlums:
@@ -399,7 +406,7 @@ OfferBooks:
 OfferPodalAuction:
 	if QuestPodalAuction == 255: Goto NextOffer
 	PrintClear "A WEAPON OF GREAT POWER IS TO BE AUCTIONED TO OUR ENEMIES. THIS AUCTION IS TO BE HELD IN PODAL PLAZA.  FIND OUT WHAT THE WEAPON IS AND RETURN.'"
-	Save 1 QuestPodalAuction
+	QuestPodalAuction = 1
 	Return
 
 OfferCadorna:
@@ -407,7 +414,7 @@ OfferCadorna:
 	if QuestCadornaTraitor >= 254: Goto NextOffer
 	if QuestCadornaPayment == 255: Goto NextOffer
 	PrintClear "JUNIOR COUNCILMAN CADORNA HAS A SPECIAL COMMISSION FOR YOU.  HIS CHAMBERS ARE THROUGH THE EAST DOOR.'"
-	Save 254 CadornaCommission
+	CadornaCommission = 254
 	Return
 
 OfferBishop:
@@ -415,7 +422,7 @@ OfferBishop:
 	if BishopSummons > 253: Goto NextOffer
 	if QuestTempleOfBane == 255: Goto NextOffer
 	PrintClear "YOU ARE SUMMONED BY THE BISHOP OF BRACCIO OF TYR. REPORT TO HIM AT TYR'S TEMPLE.'"
-	Save 254 BishopSummons
+	BishopSummons = 254
 	Return
 
 OfferKovelMansion:
@@ -451,7 +458,7 @@ OfferBivant:
 	if QuestSokalKeep != 255: Goto NextOffer
 	if QuestBivant != 0: Goto NextOffer
 	PrintClear "THE HEIR TO THE HOUSE OF BIVANT MUST BE RESCUED.  WE WILL PAY GENEROUSLY FOR HIS SAFE RETURN.'"
-	Save 255 Mark3
+	Mark3 = 255
 	Return
 
 OfferZhentilMission:
@@ -460,20 +467,20 @@ OfferZhentilMission:
 	if CadornaCommission != 255: Goto NextOffer
 	if QuestZhentilOutpost == 255: Goto NextOffer
 	PrintClear "LORD CADORNA HAS A DELICATE DIPLOMATIC MISSION THAT REQUIRES YOUR PARTICULAR SKILLS.  YOU ARE SUMMONED TO HIS CHAMBERS. GO THROUGH THE SOUTH DOOR.'"
-	Save 254 ZhentilMission
+	ZhentilMission = 254
 	Return
 
 OfferZhentilMessage:
 	PrintClear "WE NEED YOU TO DELIVER A MESSAGE TO THE ZHENTIL KEEP TO THE WEST. BE CAREFUL, THE TRAITOR CADORNA MAY HAVE TAMPERED WITH THE MESSAGE PACKET BEFORE HE FLED.'"
-	Save 255 ZhentilMission
+	ZhentilMission = 255
 	Return
 
 OfferUrslingen:
 	if QuestGateTaken >= 254: Goto NextOffer
 	if QuestCadornaTraitor < 254: Goto NextOffer
 	PrintClear "LORD URSLINGEN WISHES URGENTLY TO SPEAK WITH YOU.  GO THROUGH THE SOUTH DOOR OF THE TRAITOR CADORNA'S OLD QUARTERS.'"
-	Or CadornaQuartersFlags 8 CadornaQuartersFlags
-	Save 254 UrslingenGateMission
+	CadornaQuartersFlags = CadornaQuartersFlags | 8
+	UrslingenGateMission = 254
 	Return
 
 OfferCouncilMeeting:
@@ -481,13 +488,13 @@ OfferCouncilMeeting:
 	if QuestGateTaken != 255: Goto OffersDone
 	if QuestTyranthraxus == 255: Goto NextOffer
 	PrintClear "YOU ARE SUMMONED TO A SPECIAL COUNCIL MEETING.  YOU ARE TO BE AWARDED A VALUABLE COMMISSION. THE CITY GUARDS WILL SHOW YOU THE WAY.'"
-	Save 254 FinalAttackMeeting
+	FinalAttackMeeting = 254
 	Gosub PressToContinue
 	Goto GuardEscort
 
 MarkCadornaTraitor:
 	if QuestCadornaTraitor >= 254: Goto OffersDone
-	Save 254 QuestCadornaTraitor
+	QuestCadornaTraitor = 254
 
 OffersDone:
 	PrintClear "'THESE ARE ALL OF THE COMMISSIONS CURRENTLY AVAILABLE.'"
@@ -502,7 +509,7 @@ CadornaChambers:
 	Gosub PressToContinue
 	PrintClear "'THE FAITHFUL SERVANT SENT TO FETCH IT NEVER RETURNED.  THE COMPLEX IS JUST SOUTH OF PODOL PLAZA.  BRING THE TREASURE TO ME AND YOU WILL BE WELL REWARDED.'"
 	Gosub PressToContinue
-	Save 255 CadornaCommission
+	CadornaCommission = 255
 	Gosub ClearPicture
 	Exit
 
@@ -514,7 +521,7 @@ CadornaZhentilMission:
 	Gosub PressToContinue
 	PrintClear "'WHEN YOU GET TO ZHENTIAL KEEP, PRESENT THIS PACKET TO ITS COMMANDANT.  DO NOT BREAK THE SEALS OR YOU WILL BE SEIZED AS SPIES.'"
 	Gosub PressToContinue
-	Save 255 ZhentilMission
+	ZhentilMission = 255
 	Return
 
 UrslingenRoom:
@@ -524,7 +531,7 @@ UrslingenRoom:
 	Gosub PressToContinue
 	PrintClear "'THE GATE IS TOO STRONG TO BE TAKEN BY STORM. A SMALL BAND MUST SLIP INSIDE AND HOLD UNTIL RELIEVED. YOU ARE THE BEST AND THE BRAVEST. THE COUNCIL HAS INSTRUCTED ME TO ENTRUST THE TASK TO YOU.'"
 	Gosub PressToContinue
-	Save 255 UrslingenGateMission
+	UrslingenGateMission = 255
 	Return
 
 CouncilChambers:
@@ -534,7 +541,7 @@ CouncilChambers:
 	Gosub PressToContinue
 	PrintClear "'IT IS THE UNANIMOUS REQUEST OF THE COUNCIL THAT YOU LEAD THE ATTACK. YOUR SKILL AND BRAVERY HAVE WON THE ADMIRATION OF ALL PHLAN.  WE LOOK TO YOU TO HELP US WIN OUR FREEDOM.'"
 	Gosub PressToContinue
-	Save 255 FinalAttackMeeting
+	FinalAttackMeeting = 255
 	Return
 
 GuardPost:
@@ -542,32 +549,32 @@ GuardPost:
 
 CouncilGuard:
 	if HallGuardsFought != 0: Exit
-	Save 57 Portrait
+	Portrait = 57
 	SetupMonster Swordsman27 distance=1 body=1
 	Approach
 	PrintClear "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
 	Gosub YesNoMenu
-	OnGoto Scratch1 2 LeaveHall FightGuards
+	OnGoto Scratch1 LeaveHall FightGuards
 
 LeaveHall:
-	Save 0 Facing
-	Save 4 PartyX
-	Save 5 PartyY
+	Facing = 0
+	PartyX = 4
+	PartyY = 5
 	Call CallRedraw
 	Exit
 
 FightGuards:
 	PartyStrength Scratch1
-	Save 99 Morale
-	Save 1 Surprise
+	Morale = 99
+	Surprise = 1
 	ClearMonsters
 	LoadMonster Level3Mu count=3 icon=Level3Mu
 	LoadMonster Aides count=6 icon=11
 	LoadMonster ThLvlFighter85 count=5 icon=ThLvlFighter
 	LoadMonster Corporal count=Scratch1 icon=Nomad
 	Combat
-	Save 1 FoughtWatch
-	Save 1 HallGuardsFought
+	FoughtWatch = 1
+	HallGuardsFought = 1
 	PrintClear "THE REMAINING GUARDS DECIDE TO LEAVE YOU ALONE."
 	Exit
 
@@ -576,26 +583,27 @@ GuardEscort:
 	PrintClear "THE GUARD CAPTAIN STEPS FORWARD. 'PLEASE LET US SHOW YOU THE WAY.'"
 	Gosub PressToContinue
 	Gosub ClearPicture
-	Save 0 Facing
+	Facing = 0
 	Gosub EscortStep
-	Save 3 Facing
+	Facing = 3
 	Gosub EscortStep
-	Save 4 PartyX
+	PartyX = 4
 	Gosub EscortStep
-	Save 2 Facing
+	Facing = 2
 	Gosub EscortStep
-	Save 6 PartyY
+	PartyY = 6
 	Gosub EscortStep
-	Save 7 PartyY
+	PartyY = 7
 	Gosub EscortStep
-	Save 1 Facing
+	Facing = 1
 	Gosub EscortStep
-	Save 5 PartyX
+	PartyX = 5
 	Call CallRedraw
 	Exit
 
 YesNoMenu:
-	HMenu Scratch1 2 "YES" "NO"
+	alias Choice = Scratch1
+	Choice = Menu "YES" "NO"
 	Return
 
 ShowClerk:
@@ -604,7 +612,7 @@ ShowClerk:
 
 EscortStep:
 	Call CallRedraw
-	Save 8 Sound
+	Sound = 8
 	Call CallSound
 	Delay
 
@@ -618,23 +626,23 @@ CheckQuestOver:
 	Goto NoRestHere
 
 PressToContinue:
-	HMenu AuxCounter 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	AuxCounter = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
 	Return
 
 SetPlatinum:
-	Save Scratch9 Scratch3
+	Scratch3 = Scratch9
 	Return
 
 AddGems:
-	Add Scratch9 Scratch4 Scratch4
+	Scratch4 += Scratch9
 	Return
 
 AddJewelry:
-	Add Scratch9 Scratch5 Scratch5
+	Scratch5 += Scratch9
 	Return
 
 AddItems:
-	Add Scratch9 Scratch6 Scratch6
+	Scratch6 += Scratch9
 	Return
 
 RewardTable1:

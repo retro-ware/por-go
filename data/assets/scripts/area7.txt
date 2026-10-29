@@ -1,35 +1,37 @@
 YesNoMenu:
-	HMenu Scratch10 2 "YES" "NO"
+	alias Choice = Scratch10
+	Choice = Menu "YES" "NO"
 	PrintClear " "
-	Compare Scratch10 0
+	Compare Choice 0
 	Return
 
 PressToContinue:
-	HMenu Scratch9 1 "PRESS BUTTON OR RETURN TO CONTINUE"
+	alias Choice = Scratch9
+	Choice = Menu "PRESS BUTTON OR RETURN TO CONTINUE"
 	PrintClear " "
 	Return
 
 SetSky:
-	Save 9 SkyInside
-	Save 8 Sky
+	SkyInside = 9
+	Sky = 8
 	Return
 
 event0:
 	Gosub SetSky
-	And Cell 127 Scratch2
-	Save 0 Scratch1
+	Scratch2 = Cell & 127
+	Scratch1 = 0
 
 StairsScanLoop:
-	GetTable Table99D8 Scratch1 Scratch3
-	GetTable Table99E0 Scratch1 Scratch4
+	Scratch3 = Table99D8[Scratch1]
+	Scratch4 = Table99E0[Scratch1]
 	if Scratch2 == Scratch3 && Scratch4 == Facing: Goto StairsDispatch
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	if Scratch1 < 8: Goto StairsScanLoop
 	Exit
 
 StairsDispatch:
-	GetTable Table99E8 Scratch1 Scratch3
-	OnGoto Scratch3 3 StairsDown StairsUp HoldAtSecretDoor
+	Scratch3 = Table99E8[Scratch1]
+	OnGoto Scratch3 StairsDown StairsUp HoldAtSecretDoor
 	Exit // extra: the original runs on into data at 99D8
 
 Table99D8:
@@ -42,22 +44,22 @@ Table99E8:
 	Data 0 0 1 0 1 1 0 2
 
 event1:
-	And Cell 127 Scratch1
-	OnGoto Scratch1 11 RedrawExit SecretDoorCheck RedrawExit RedrawExit TrapDoorRoom StatueRoom BenchRoom MerchantRoom AudienceHall RedrawExit GenheerisLeaves
+	Scratch1 = Cell & 127
+	OnGoto Scratch1 RedrawExit SecretDoorCheck RedrawExit RedrawExit TrapDoorRoom StatueRoom BenchRoom MerchantRoom AudienceHall RedrawExit GenheerisLeaves
 
 event2:
-	Save 0 RestEvery
-	Save 10 RestChance
+	RestEvery = 0
+	RestChance = 10
 
 event3:
 	Exit
 
 event4:
 	Gosub SetSky
-	Save 1 NoCoords
+	NoCoords = 1
 	if TyranthraxusDefeated == 1: Goto LeaveCastle
 	if AreaKind == 7: Exit
-	LoadFiles 7 2 255
+	LoadMap 7 unused=2 icons=255
 	Exit
 
 StairsDown:
@@ -68,12 +70,12 @@ StairsUp:
 	PrintClear "DO YOU WANT TO GO UP THESE STAIRS?"
 
 TakeStairsMenu:
-	Save 255 HoldMove
+	HoldMove = 255
 	Gosub YesNoMenu
 	IfNe
 	Exit
-	GetTable DestX Scratch1 PartyX
-	GetTable DestY Scratch1 PartyY
+	PartyX = DestX[Scratch1]
+	PartyY = DestY[Scratch1]
 	if Scratch1 == 0: Goto DescendToArea5
 
 RedrawExit:
@@ -82,7 +84,7 @@ RedrawExit:
 	Exit
 
 DescendToArea5:
-	LoadFiles 3 2 255
+	LoadMap 3 unused=2 icons=255
 	NewECL ValjevoGrounds
 
 DestX:
@@ -92,34 +94,34 @@ DestY:
 	Data 15 7 4 6 7 6 8
 
 HoldAtSecretDoor:
-	And SearchTowerFlags 8 Scratch10
-	if 0 == Scratch10: Save 255 HoldMove
+	Scratch10 = SearchTowerFlags & 8
+	if 0 == Scratch10: HoldMove = 255
 	Exit
 
 SecretDoorCheck:
-	And SearchTowerFlags 8 Scratch10
+	Scratch10 = SearchTowerFlags & 8
 	if 0 != Scratch10: Goto SecretDoorFound
-	Save 0 Scratch9
+	Scratch9 = 0
 
 SecretDoorRoll:
 	LoadCharacter Scratch10
 	if SelStatus == 0: Goto SecretDoorNextMember
-	Save 1 Scratch9
-	if Search == 0: Sub 1 Scratch9 Scratch9
-	if SelRace == 2: Add 1 Scratch9 Scratch9
-	if SelRace == 4: Add 1 Scratch9 Scratch9
-	Random 5 Scratch8
+	Scratch9 = 1
+	if Search == 0: Scratch9 -= 1
+	if SelRace == 2: Scratch9 += 1
+	if SelRace == 4: Scratch9 += 1
+	Scratch8 = Random 5
 	if Scratch8 <= Scratch9: Goto SecretDoorFound
 
 SecretDoorNextMember:
-	Add Scratch10 1 Scratch10
+	Scratch10 = Scratch10 + 1
 	if Scratch10 < 8: Goto SecretDoorRoll
 	Exit
 
 SecretDoorFound:
-	Or SearchTowerFlags 8 SearchTowerFlags
+	SearchTowerFlags = SearchTowerFlags | 8
 	PrintClear "A SECRET DOOR IS FOUND "
-	OnGoto Facing 4 DirFront DirLeft DirBehind DirRight
+	OnGosub Facing DirFront DirLeft DirBehind DirRight
 	Gosub PressToContinue
 	Exit
 
@@ -148,10 +150,10 @@ TrapDoorRoom:
 ChooseOpener:
 	Who "WHO WILL OPEN IT?"
 	if SelStatus != 1: Goto ChooseOpener
-	And SearchTowerFlags 16 Scratch10
+	Scratch10 = SearchTowerFlags & 16
 	if 0 != Scratch10: Goto SawStatues
-	Random 19 Scratch10
-	Add 1 Scratch10 Scratch10
+	Scratch10 = Random 19
+	Scratch10 += 1
 	if Scratch10 >= SelSaveVsPetrify: Goto OpenerPetrified
 
 SawStatues:
@@ -161,8 +163,8 @@ SawStatues:
 	Goto JumpTrapDoor
 
 OpenerPetrified:
-	Save 135 SelStatus
-	Add SelPartyIndex 128 Scratch1
+	SelStatus = 135
+	Scratch1 = SelPartyIndex + 128
 	PrintClear "WITH A SCREAM OF HORROR "
 	Print $SelName
 	Print " TURNS TO STONE."
@@ -176,69 +178,69 @@ JumpTrapDoor:
 	PrintClear "THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR..."
 	Gosub PressToContinue
 	Damage 224 3 6 0 0
-	Save 11 PartyX
-	Save 5 PartyY
+	PartyX = 11
+	PartyY = 5
 	Call CallRedraw
 
 StatueRoom:
 	if StatueRoomSeen != 0: Goto MedusaMenu
 	PrintClear "YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR."
 	Gosub PressToContinue
-	Save 1 StatueRoomSeen
+	StatueRoomSeen = 1
 
 MedusaMenu:
-	And SearchTowerFlags 16 Scratch10
+	Scratch10 = SearchTowerFlags & 16
 	if 0 != Scratch10: Exit
 	EncounterMenu 49 1 49 Scratch10 0 3 0 3 0 "A MEDUSA COMES RUNNING TOWARD YOU." "" "" 9 9
-	OnGoto Scratch10 3 RedrawExit MedusaFight RetreatFromMedusa
+	OnGoto Scratch10 RedrawExit MedusaFight RetreatFromMedusa
 
 MedusaFight:
-	Save 0 Surprise
-	Save 100 Morale
+	Surprise = 0
+	Morale = 100
 	ClearMonsters
 	LoadMonster Medusa count=1 icon=Medusa
 	Combat
 	if CombatEnd == 129: Goto RetreatFromMedusa
-	Or SearchTowerFlags 16 SearchTowerFlags
+	SearchTowerFlags = SearchTowerFlags | 16
 	Exit
 
 RetreatFromMedusa:
-	Save 5 PartyX
-	Save 7 PartyY
-	Save 3 Facing
+	PartyX = 5
+	PartyY = 7
+	Facing = 3
 	Goto RedrawExit
 
 BenchRoom:
 	if BenchRoomSeen != 0: Goto MessengerThief
 	PrintClear "YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES."
-	Save 1 BenchRoomSeen
+	BenchRoomSeen = 1
 
 MessengerThief:
-	And GenheerisFlags 16 Scratch10
+	Scratch10 = GenheerisFlags & 16
 	if 0 != Scratch10: Exit
-	And SearchTowerFlags 96 Scratch10
+	Scratch10 = SearchTowerFlags & 96
 	if 0 != Scratch10: Exit
 	Print " WAITING HERE IS A MAN PLAYING WITH A DAGGER."
-	And BaneTempleFlags 3 Scratch10
+	Scratch10 = BaneTempleFlags & 3
 	if 0 != Scratch10: Goto ThiefAttacks
 	Print " AS YOU COME IN HE NODS AT YOU."
 	Gosub PressToContinue
-	Save 70 Portrait
+	Portrait = 70
 	EncounterMenu 11 2 8 Scratch10 0 1 1 1 1 "HE STARES MOODILY AT HIS FEET." "" "" 12 12
-	Save 255 Portrait
-	OnGoto Scratch10 3 RedrawExit ThiefFight RetreatFromThief
+	Portrait = 255
+	OnGoto Scratch10 RedrawExit ThiefFight RetreatFromThief
 	Parlay 1 1 1 1 0 Scratch10
-	OnGoto Scratch10 1 ThiefFight
+	OnGoto Scratch10 ThiefFight
 	PrintClear "'HEY LOOK, COULD YOU KEEP QUIET? I JUST GOT BACK FROM THE NORTH AND I'M TIRED. OKAY?' A MOMENT LATER A VOICE FROM CALLS FROM THE OTHER DOORWAY, 'MESSENGER!'"
 	Gosub PressToContinue
-	Or SearchTowerFlags 64 SearchTowerFlags
+	SearchTowerFlags = SearchTowerFlags | 64
 	PrintClear "THE MAN GETS UP WITH A SIGH AND GOES INTO THE OFFICE. A MINUTE LATER HE COMES OUT PUTTING PAPERS INTO A POUCH AND GOES OUT THE DOOR. THE VOICE CALLS, 'MESSENGER!'"
 	Goto RedrawExit
 
 RetreatFromThief:
-	Save 3 PartyX
-	Save 6 PartyY
-	Save 1 Facing
+	PartyX = 3
+	PartyY = 6
+	Facing = 1
 	Goto RedrawExit
 
 ThiefAttacks:
@@ -246,182 +248,183 @@ ThiefAttacks:
 	Delay
 
 ThiefFight:
-	Save 100 Morale
-	Save 0 Surprise
+	Morale = 100
+	Surprise = 0
 	ClearMonsters
 	LoadMonster StLvlThief count=1 icon=12
 	Combat
 	if CombatEnd == 129: Goto RetreatFromThief
-	Or SearchTowerFlags 32 SearchTowerFlags
+	SearchTowerFlags = SearchTowerFlags | 32
 	Exit
 
 MerchantRoom:
 	if MerchantRoomSeen != 0: Goto GenheerisAtDesk
 	PrintClear "YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT."
-	Save 1 MerchantRoomSeen
+	MerchantRoomSeen = 1
 
 GenheerisAtDesk:
-	And GenheerisFlags 16 Scratch10
+	Scratch10 = GenheerisFlags & 16
 	if 0 != Scratch10: Exit
-	And GenheerisFlags 3 Scratch10
+	Scratch10 = GenheerisFlags & 3
 	if 0 != Scratch10: Exit
 	Print " A MIDDLE AGED MAN IN ROBES LOOKS UP FROM A DESK."
 	Gosub PressToContinue
-	And SearchTowerFlags 32 Scratch10
+	Scratch10 = SearchTowerFlags & 32
 	if 0 != Scratch10: Goto GenheerisOffer
-	Save 59 Portrait
+	Portrait = 59
 	EncounterMenu 24 1 31 Scratch10 0 4 1 4 4 "'SO WHAT MESSAGE FROM TYRANTHRAXUS REQUIRES ALL OF YOU TO DELIVER IT?'" "" "" 0 0
-	Save 255 Portrait
-	OnGoto Scratch10 3 RedrawExit GenheerisOffer RetreatFromThief
+	Portrait = 255
+	OnGoto Scratch10 RedrawExit GenheerisOffer RetreatFromThief
 	Parlay 0 0 1 1 0 Scratch10
-	OnGoto Scratch10 1 GenheerisOffer
+	OnGoto Scratch10 GenheerisOffer
 	PrintClear "'TELL AL-HYAM DHAZID TO EXECUTE PHASE 2 OF PLAN A. DISMISSED.'"
-	HMenu Scratch10 2 "LEAVE" "STAY"
-	OnGoto Scratch10 1 RetreatFromGenheeris
+	Scratch10 = Menu "LEAVE" "STAY"
+	OnGoto Scratch10 RetreatFromGenheeris
 
 GenheerisOffer:
-	Save 59 Portrait
+	Portrait = 59
 	SetupMonster Mage distance=0 body=31
 	PrintClear "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
 	Gosub PressToContinue
 	if PartyCount == 8: Goto GenheerisDeal
 	PrintClear "'IN FACT I WILL JOIN YOU. IS IT A DEAL?'"
 	Gosub YesNoMenu
-	Save 255 Portrait
+	Portrait = 255
 	IfNe
 	Goto GenheerisFight
 	PrintClear "GOOD."
 	AddNPC Genheeris 100
-	Or GenheerisFlags 1 GenheerisFlags
+	GenheerisFlags = GenheerisFlags | 1
 	Goto RedrawExit
 
 GenheerisDeal:
 	PrintClear "'IS IT A DEAL?"
 	Gosub YesNoMenu
-	Save 255 Portrait
+	Portrait = 255
 	IfNe
 	Goto GenheerisFight
-	Or GenheerisFlags 2 GenheerisFlags
+	GenheerisFlags = GenheerisFlags | 2
 	PrintClear "'GOOD. I WILL NOTIFY SOME OTHERS. YOU GO KILL HIM.' HE QUICKLY GETS UP AND LEAVES THE ROOM."
 	Goto RedrawExit
 
 GenheerisFight:
-	Save 0 Surprise
-	Save 100 Morale
+	Surprise = 0
+	Morale = 100
 	ClearMonsters
 	LoadMonster Genheeris count=1 icon=14
 	Combat
-	Or GenheerisFlags 2 GenheerisFlags
+	GenheerisFlags = GenheerisFlags | 2
 	if CombatEnd != 129: Exit
 
 RetreatFromGenheeris:
-	Save 2 PartyX
-	Save 6 PartyY
-	Save 2 Facing
+	PartyX = 2
+	PartyY = 6
+	Facing = 2
 	Goto RedrawExit
 
 GenheerisLeaves:
-	And GenheerisFlags 1 Scratch10
+	Scratch10 = GenheerisFlags & 1
 	if 0 == Scratch10: Exit
-	And GenheerisFlags 252 GenheerisFlags
-	Or GenheerisFlags 2 GenheerisFlags
-	Save 0 AuxCounter
+	GenheerisFlags = GenheerisFlags & 252
+	GenheerisFlags = GenheerisFlags | 2
+	AuxCounter = 0
 
 FindGenheerisLoop:
 	LoadCharacter AuxCounter
 	if SelStatus != 1: Goto FindGenheerisNext
 	if "GENHEERIS" != $SelName: Goto FindGenheerisNext
-	Save 0 SelStatus
-	Save 0 SelName
-	Add 128 AuxCounter AuxCounter
+	SelStatus = 0
+	SelName = 0
+	AuxCounter += 128
 	LoadCharacter AuxCounter
 	Exit
 
 FindGenheerisNext:
-	Add 1 AuxCounter AuxCounter
+	AuxCounter += 1
 	if AuxCounter < PartyCount: Goto FindGenheerisLoop
 	Exit
 
 AudienceHall:
-	And GenheerisFlags 8 Scratch10
+	Scratch10 = GenheerisFlags & 8
 	if 0 != Scratch10: Goto HallGuards
 	PrintClear "YOU ARE IN THE AUDIENCE HALL OF TYRANTHRAXUS, CONQUEROR OF PHLAN. THE CEILING HAS BEEN TORN AWAY LEAVING THE ENTIRE SECTION OF THE TOWER OPEN TO THE SKY."
 	Gosub PressToContinue
 	PrintClear "IN THE CENTER OF THE ROOM IS A GLOWING POOL. AN ANCIENT BRONZE DRAGON, SURROUNDED BY A FIERY AURA, RISES FROM WHERE IT WAS COILED NEARBY."
 	Gosub PressToContinue
 	Call CallRedraw
-	Or GenheerisFlags 8 GenheerisFlags
+	GenheerisFlags = GenheerisFlags | 8
 
 HallGuards:
-	And GenheerisFlags 4 Scratch10
+	Scratch10 = GenheerisFlags & 4
 	if 0 != Scratch10: Goto DragonOffer
-	Save 12 Portrait
+	Portrait = 12
 	EncounterMenu 16 0 1 Scratch10 0 0 0 0 0 "TWO GUARDS MOVE TO BAR YOUR PATH. THE DRAGON LOOKS AT YOU WITH MALEVOLENCE. 'GUARDS, KILL THESE PESTS.'" "" "" 9 9
-	Save 255 Portrait
-	OnGoto Scratch10 2 RedrawExit GuardsFight
+	Portrait = 255
+	OnGoto Scratch10 RedrawExit GuardsFight
 
 RetreatFromHall:
-	Save 3 PartyX
-	Save 6 PartyY
-	Save 0 Facing
+	PartyX = 3
+	PartyY = 6
+	Facing = 0
 	Goto RedrawExit
 
 GuardsFight:
-	Save 0 Surprise
-	Save 100 Morale
+	Surprise = 0
+	Morale = 100
 	ClearMonsters
 	LoadMonster ThLvlFighter85 count=12 icon=ThLvlFighter
 	Combat
 	if CombatEnd == 129: Goto RetreatFromHall
-	Or GenheerisFlags 4 GenheerisFlags
+	GenheerisFlags = GenheerisFlags | 4
 
 DragonOffer:
-	And GenheerisFlags 16 Scratch10
+	Scratch10 = GenheerisFlags & 16
 	if 0 != Scratch10: Goto RedrawExit
 	Picture BrownDragon
 	PrintClear "THE DRAGON LOOKS AT YOU WITH INTEREST. 'YOU ARE INDEED MIGHTY WARRIORS. EVEN SO, THERE IS NO HOPE OF YOUR SUCCESS. BUT YOU INTEREST ME.'"
 	Gosub PressToContinue
 	PrintClear "'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'"
 	Gosub PressToContinue
-	Save 0 AuxCounter
+	AuxCounter = 0
 
 VoteLoop:
+	alias Choice = Scratch10
 	LoadCharacter AuxCounter
 	if SelStatus != 1: Goto VoteNext
 	if SelControl >= 128: Goto NpcVote
 	PrintClear $SelName
 	Print " HOW DO YOU VOTE?"
-	HMenu Scratch10 2 "ATTACK" "JOIN TYRANTHRAXUS"
-	OnGoto Scratch10 1 SaveVote
-	Save 129 SelSide
-	Save 178 SelControl
+	Choice = Menu "ATTACK" "JOIN TYRANTHRAXUS"
+	OnGoto Choice SaveVote
+	SelSide = 129
+	SelControl = 178
 	Goto SaveVote
 
 NpcVote:
 	if "GENHEERIS" == $SelName: Goto VoteNext
-	if SelAlignment == 2: Save 129 SelSide
-	if SelAlignment == 5: Save 129 SelSide
-	if SelAlignment == 8: Save 129 SelSide
+	if SelAlignment == 2: SelSide = 129
+	if SelAlignment == 5: SelSide = 129
+	if SelAlignment == 8: SelSide = 129
 
 SaveVote:
-	Add 128 AuxCounter Scratch1
+	Scratch1 = 128 + AuxCounter
 	LoadCharacter Scratch1
 
 VoteNext:
-	Add 1 AuxCounter AuxCounter
+	AuxCounter += 1
 	if AuxCounter < PartyCount: Goto VoteLoop
-	Save 3 EncounterParamA
-	Save 9 EncounterParamB
-	Save 1 MaxDist
-	Save 0 Surprise
-	Save 100 Morale
+	EncounterParamA = 3
+	EncounterParamB = 9
+	MaxDist = 1
+	Surprise = 0
+	Morale = 100
 	ClearMonsters
 	LoadMonster Tyranithraxus66 count=1 icon=Tyranithraxus
 	Combat
 	if CombatEnd == 129: Goto RetreatFromHall
-	if QuestTyranthraxus != 255: Save 254 QuestTyranthraxus
-	Or GenheerisFlags 16 TowerEndFlags
-	Save 1 TyranthraxusDefeated
+	if QuestTyranthraxus != 255: QuestTyranthraxus = 254
+	TowerEndFlags = GenheerisFlags | 16
+	TyranthraxusDefeated = 1
 	Program 8
 
 LeaveCastle:
@@ -429,11 +432,11 @@ LeaveCastle:
 	Gosub PressToContinue
 	PrintClear "FINALLY YOU ENTER THE CIVILIZED AREA OF PHLAN."
 	Delay
-	Save 0 WallSplitA
-	Save 0 WallSplitB
-	Save 0 PartyX
-	Save 4 PartyY
-	Save 1 Facing
-	Save 3 SymbolSet
-	Save 0 TyranthraxusDefeated
+	WallSplitA = 0
+	WallSplitB = 0
+	PartyX = 0
+	PartyY = 4
+	Facing = 1
+	SymbolSet = 3
+	TyranthraxusDefeated = 0
 	NewECL NewPhlan

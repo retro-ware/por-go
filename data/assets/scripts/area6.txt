@@ -6,33 +6,33 @@ AskUseDisguise:
 	PrintClear "WILL YOU USE THE CLOTHING AS A DISGUISE?"
 	Gosub YesNoMenu
 	IfEq
-	Or CastleFlags 1 CastleFlags
-	And CastleFlags 1 Scratch10
+	CastleFlags = CastleFlags | 1
+	Scratch10 = CastleFlags & 1
 	Return
 
 CheckPatrolSurprise:
 	PartySurprise Scratch8 Scratch9
-	And CastleFlags 1 Scratch10
-	if 0 != Scratch10: Add 1 Scratch9 Scratch9
+	Scratch10 = CastleFlags & 1
+	if 0 != Scratch10: Scratch9 += 1
 	Surprise Scratch8 Scratch9 0 0
-	if AlarmEndHour != 0: And Surprise 1 Surprise
-	if Surprise == 3: Save 0 Surprise
+	if AlarmEndHour != 0: Surprise = Surprise & 1
+	if Surprise == 3: Surprise = 0
 	Compare Surprise 1
 	Return
 
 CheckAlarmExpired:
 	if AlarmEndHour < 1: Return
-	Save Hours AuxRoll
-	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	AuxRoll = Hours
+	if Hours == 0 && AlarmHour == 23: AuxRoll = 24
 	if AuxRoll < AlarmEndHour: Goto AlarmStillRinging
 	if TenMinutes < AlarmMinute: Goto AlarmStillRinging
-	Save 0 AlarmEndHour
+	AlarmEndHour = 0
 	Compare 0 1
 	Return
 
 AlarmStillRinging:
 	if Search == 1: Goto PrintAlarmSounding
-	Random 9 AuxRoll
+	AuxRoll = Random 9
 	if 0 != AuxRoll: Goto AlarmReturnActive
 
 PrintAlarmSounding:
@@ -46,75 +46,77 @@ AlarmReturnActive:
 StartAlarm:
 	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Delay
-	Save Hours AlarmHour
-	Save TenMinutes AlarmMinute
-	Add 1 AlarmHour AlarmEndHour
+	AlarmHour = Hours
+	AlarmMinute = TenMinutes
+	AlarmEndHour = 1 + AlarmHour
 	Return
 
 AskTakeIt:
 	Print "DO YOU TAKE IT?"
 
 YesNoMenu:
-	HMenu Scratch10 2 "YES" "NO"
+	alias Choice = Scratch10
+	Choice = Menu "YES" "NO"
 	PrintClear " "
-	Compare Scratch10 0
+	Compare Choice 0
 	Return
 
 PressToContinue:
-	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	alias Choice = Scratch9
+	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	PrintClear " "
 	Return
 
 SetSkyByTime:
-	Save 11 Scratch1
-	Save 9 SkyInside
-	if Hours >= 14: Save 8 Scratch1
-	Save Scratch1 Sky
+	Scratch1 = 11
+	SkyInside = 9
+	if Hours >= 14: Scratch1 = 8
+	Sky = Scratch1
 	Return
 
 event0:
 	Gosub SetSkyByTime
-	And CastleRoomFlags 127 CastleRoomFlags
-	And BaneTempleFlags 3 Scratch10
-	if 0 != Scratch10: And CastleFlags 254 CastleFlags
+	CastleRoomFlags = CastleRoomFlags & 127
+	Scratch10 = BaneTempleFlags & 3
+	if 0 != Scratch10: CastleFlags = CastleFlags & 254
 	if LeftMap == 0: Exit
-	Save 3 Scratch1
+	Scratch1 = 3
 	if Facing != 2: Goto StepOutToCity
-	Save 9 Scratch1
-	Save 2 SymbolSet
-	Save 0 WallSplitA
-	Save 0 WallSplitB
+	Scratch1 = 9
+	SymbolSet = 2
+	WallSplitA = 0
+	WallSplitB = 0
 
 StepOutToCity:
 	Call CallStepForward
-	Save 255 HoldMove
+	HoldMove = 255
 	NewECL Scratch1
 
 event1:
 	Gosub CheckAlarmExpired
 	IfLt
 	Goto DispatchCell
-	And Cell 64 Scratch10
+	Scratch10 = Cell & 64
 	if 0 != Scratch10: Goto DispatchCell
-	Save 2 Scratch1
-	if Search == 0: Save 20 Scratch1
-	And Cell 32 Scratch10
-	if 0 != Scratch10: Add Scratch1 Scratch1 Scratch1
-	Random Scratch1 Scratch10
+	Scratch1 = 2
+	if Search == 0: Scratch1 = 20
+	Scratch10 = Cell & 32
+	if 0 != Scratch10: Scratch1 += Scratch1
+	Scratch10 = Random Scratch1
 	if Scratch10 == 0: Goto GiantPatrol
 
 DispatchCell:
-	And Cell 31 Scratch1
-	OnGoto Scratch1 9 Done LaundryEnter SmithyEnter Done Smokehouse BaneTempleEnter Done CoalStoreroom AltarEnter
+	Scratch1 = Cell & 31
+	OnGoto Scratch1 Done LaundryEnter SmithyEnter Done Smokehouse BaneTempleEnter Done CoalStoreroom AltarEnter
 
 event2:
-	Save 0 RestEvery
-	Save 10 RestChance
+	RestEvery = 0
+	RestChance = 10
 	if AlarmEndHour == 0: Exit
-	And Cell 64 Scratch10
+	Scratch10 = Cell & 64
 	if 0 != Scratch10: Exit
-	Save 1 RestEvery
-	Save 17 RestChance
+	RestEvery = 1
+	RestChance = 17
 
 Done:
 	RedrawView
@@ -126,22 +128,22 @@ event3:
 
 event4:
 	Gosub SetSkyByTime
-	Save 1 NoCoords
+	NoCoords = 1
 	if AreaKind == 6: Exit
-	Save 1 WallSplitA
-	Save 1 WallSplitB
-	LoadFiles 6 2 255
-	LoadPieces 24 25 1
+	WallSplitA = 1
+	WallSplitB = 1
+	LoadMap 6 unused=2 icons=255
+	LoadWalls 24 25 1
 	Exit
 
 LaundryEnter:
-	And CastleDeedFlags 3 Scratch10
+	Scratch10 = CastleDeedFlags & 3
 	if 0 != Scratch10: Exit
 	PrintClear "YOU ENTER A BUILDING WHERE WOMEN ARE WASHING CLOTHES. AS YOU COME IN, THEY RETREAT TO THE CORNER LOOKING FEARFULLY AT YOU."
 	Gosub PressToContinue
 	PrintClear "YOU HEAR ONE OF THEM WHISPER, 'THEY DON'T BELONG HERE; THEY MUST HAVE COME TO KILL TYRANTHRAXUS'. A HALF-ORC WOMAN STEPS FORWARD 'WHAT DO YOU WANT OF US?'"
 	Parlay 0 1 1 1 2 Scratch1
-	OnGoto Scratch1 2 LaundryOfferDisguise LaundryOfferDisguise
+	OnGoto Scratch1 LaundryOfferDisguise LaundryOfferDisguise
 	PrintClear "'PLEASE DON'T KILL US,' SHE SAYS. 'IF YOU DON'T WE WILL GIVE YOU THESE CLOTHES TO USE AS A DISGUISE. WE SWEAR WE WON'T SAY ANYTHING!"
 	Gosub AskUseDisguise
 	IfEq
@@ -162,15 +164,16 @@ LaundryPutOnClothes:
 	PrintClear "THEY HELP YOU PUT ON THE CLOTHES. 'HAVE NO FEAR."
 
 LaundryKeepSilence:
+	alias Choice = Scratch10
 	Print " WE WILL KEEP SILENCE.'"
-	Or CastleDeedFlags 2 CastleDeedFlags
-	HMenu Scratch10 3 "TIE THEM UP" "KILL THEM" "LEAVE"
-	OnGoto Scratch10 2 LaundryTieUp LaundryKillWomen
-	OnGoto Scratch1 2 LaundryDropDisguise LaundryLeave
+	CastleDeedFlags = CastleDeedFlags | 2
+	Choice = Menu "TIE THEM UP" "KILL THEM" "LEAVE"
+	OnGoto Choice LaundryTieUp LaundryKillWomen
+	OnGoto Scratch1 LaundryDropDisguise LaundryLeave
 	Goto FleeAfterCombat
 
 LaundryDropDisguise:
-	And CastleFlags 254 CastleFlags
+	CastleFlags = CastleFlags & 254
 
 LaundryLeave:
 	Goto BackOut
@@ -180,9 +183,9 @@ LaundryTieUp:
 	Goto BackOut
 
 LaundryKillWomen:
-	Or CastleDeedFlags 1 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 1
 	PrintClear "THE WOMEN SHRIEK AND FLEE BEFORE YOU AS YOU CHOP THEM DOWN. THE HALF-ORC WOMAN WITH HATE IN HER EYES SNARLS 'HEROES! HAH!' THEN HER EYES GLAZE AS SHE DIES."
-	Random 4 Scratch10
+	Scratch10 = Random 4
 	if Scratch10 != 0: Goto BackOut
 	PrintClear "IT SEEMS THAT THEIR SCREAMS WERE HEARD..."
 	Delay
@@ -190,23 +193,23 @@ LaundryKillWomen:
 
 SmithyEnter:
 	PrintClear "YOU ARE IN A SMITHY."
-	And CastleDeedFlags 8 Scratch10
+	Scratch10 = CastleDeedFlags & 8
 	if 0 != Scratch10: Goto SmithyArmorPile
 	if Hours > 14: Goto SmithyArmorPile
 	Print " THE SMITH (A HUMAN) AND THREE FIRE GIANTS ARE WORKING ON A SUIT OF ARMOR. PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR."
-	Save 13 Portrait
+	Portrait = 13
 	Gosub PressToContinue
 	EncounterMenu 12 2 9 Scratch10 0 1 1 1 4 "THE SMITH LOOKS UP FROM HIS WORK. 'WHAT DO YOU NEED?'" "THE SMITH IGNORES YOU AS HE HAMMERS ON A GREAVE." "" 9 9
-	Save 255 Portrait
-	OnGoto Scratch10 3 Done SmithyAttack BackOut
+	Portrait = 255
+	OnGoto Scratch10 Done SmithyAttack BackOut
 	Parlay 0 1 2 2 1 Scratch10
-	OnGoto Scratch10 2 SmithyNoOrders SmithyExposed
+	OnGoto Scratch10 SmithyNoOrders SmithyExposed
 	PrintClear "THE SMITHY WIPES HIS BROW AND SAYS, 'NO, YOU NEVER GET TOTALLY USED TO THE HEAT, BUT IT'S NOT THAT BAD. NOW, IF YOU'LL EXCUSE ME I NEED TO GET BACK TO WORK.'"
 	Goto Done
 
 SmithyExposed:
 	PrintClear "WHAT? EVERYONE KNOWS THAT... HEY, YOU DON'T BELONG HERE!"
-	Save 0 Surprise
+	Surprise = 0
 	Goto SmithyFight
 
 SmithyNoOrders:
@@ -214,54 +217,54 @@ SmithyNoOrders:
 	Goto Done
 
 SmithyArmorPile:
-	And CastleDeedFlags 4 Scratch10
+	Scratch10 = CastleDeedFlags & 4
 	if 0 != Scratch10: Exit
 	PrintClear "PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR. "
 	Gosub AskTakeIt
 	IfNe
 	Exit
-	Or CastleDeedFlags 4 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 4
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 33 // Sling, Shield, Plate Mail, Banded Mail, Splint Mail, Chain Mail, and 52 more
 	Combat
 	Exit
 
 SmithyAttack:
-	Save 2 Surprise
+	Surprise = 2
 
 SmithyFight:
-	Save 30 Morale
+	Morale = 30
 	ClearMonsters
 	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
 	LoadMonster FireGiant count=3 icon=FireGiant
 	Treasure 0 0 0 20 0 0 0 255
 	Combat
 	Gosub AfterCombat
-	Or CastleDeedFlags 8 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 8
 	Exit
 
 CoalStoreroom:
-	And CastleDeedFlags 16 Scratch10
+	Scratch10 = CastleDeedFlags & 16
 	if 0 != Scratch10: Exit
 	PrintClear "YOU ARE IN A STOREROOM FULL OF COAL."
-	Or CastleDeedFlags 16 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 16
 	Exit
 
 Smokehouse:
-	And CastleDeedFlags 64 Scratch10
+	Scratch10 = CastleDeedFlags & 64
 	if 0 != Scratch10: Exit
 	PrintClear "YOU ARE IN A STANDARD MEAT SMOKEHOUSE... WELL MAYBE NOT QUITE STANDARD. YOU FEEL A LITTLE SICK AS YOU LOOK AT THE MEAT. THE SMELL AND THE SMOKE DON'T HELP EITHER."
-	Or CastleDeedFlags 64 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 64
 	Exit
 
 BaneTempleEnter:
 	PrintClear "YOU ARE IN A BUILDING THAT WAS ONCE A BARRACKS BUT HAS NOW BEEN CONVERTED TO A TEMPLE OF BANE. AT THE FAR END OF THE ROOM IS A CRUDE ALTER."
-	And CastleDeedFlags 128 Scratch10
+	Scratch10 = CastleDeedFlags & 128
 	if 0 != Scratch10: Exit
-	Save 0 Facing
+	Facing = 0
 	Call CallRedraw
 	Gosub PressToContinue
-	Save 14 Portrait
+	Portrait = 14
 	SetupMonster ShieldFighter distance=2 body=7
 	PrintClear "A PRIEST AND TWO ACOLYTES TURN FROM THE ALTER, 'WELCOME MY CHILDREN. COME FORWARD AND ACCEPT THE BLESSING OF LORD BANE.'"
 	Approach
@@ -269,19 +272,20 @@ BaneTempleEnter:
 	Approach
 
 PriestMenu:
-	HMenu Scratch10 4 "ACCEPT BLESSING" "TALK" "LEAVE" "KILL THEM"
-	Save 255 Portrait
-	OnGoto Scratch10 3 AcceptBlessing PriestTalk PriestUnmasks
+	alias Choice = Scratch10
+	Choice = Menu "ACCEPT BLESSING" "TALK" "LEAVE" "KILL THEM"
+	Portrait = 255
+	OnGoto Choice AcceptBlessing PriestTalk PriestUnmasks
 
 PriestFight:
-	Save 100 Morale
-	Save 0 Surprise
+	Morale = 100
+	Surprise = 0
 	ClearMonsters
 	LoadMonster Level5Cleric count=1 icon=13
 	LoadMonster StLvlCleric count=2 icon=13
 	Combat
 	Gosub AfterCombat
-	Or CastleDeedFlags 128 CastleDeedFlags
+	CastleDeedFlags = CastleDeedFlags | 128
 	Exit
 
 AgonyByRace:
@@ -290,23 +294,24 @@ AgonyByRace:
 AcceptBlessing:
 	PrintClear "YOU GO FORWARD AND KNEEL. 'IN THE NAME OF LORD BANE, GOD OF GODS, I BLESS YOU.'"
 	Gosub PressToContinue
-	Save 0 Scratch1
+	Scratch1 = 0
 
 BlessMemberLoop:
+	alias AgonyByRaceEntry = Scratch10
 	LoadCharacter Scratch1
 	if SelStatus != 1: Goto BlessNextMember
-	GetTable AgonyByRace SelAlignment Scratch10
-	OnGoto Scratch10 1 BlessNextMember
+	AgonyByRaceEntry = AgonyByRace[SelAlignment]
+	OnGoto AgonyByRaceEntry BlessNextMember
 	PrintClear $SelName
 	Print " DOUBLES UP IN AGONY."
 	Delay
-	Or BaneTempleFlags 4 BaneTempleFlags
+	BaneTempleFlags = BaneTempleFlags | 4
 	Damage 160 2 10 2 128
 
 BlessNextMember:
-	Add Scratch1 1 Scratch1
+	Scratch1 = Scratch1 + 1
 	if Scratch1 < 8: Goto BlessMemberLoop
-	And BaneTempleFlags 4 Scratch10
+	Scratch10 = BaneTempleFlags & 4
 	if 0 == Scratch10: Goto Done
 
 PriestUnmasks:
@@ -319,25 +324,25 @@ PriestUnmasks:
 	Goto PriestFight
 
 PriestTalk:
-	And BaneTempleFlags 8 Scratch10
+	Scratch10 = BaneTempleFlags & 8
 	if 0 == Scratch10: Goto PriestTalkFirst
 	PrintClear "'I HAVE NO MORE TIME TO TALK WITH YOU, THE LORD BANE REQUIRES MY CONSTANT DEVOTION. COME, BEFORE YOU LEAVE ACCEPT THE BLESSING OF OUR LORD."
 	Goto PriestMenu
 
 PriestTalkFirst:
 	PrintClear "'HIS IMMENSITY, TYRANTHRAXUS, HAS SEEN FIT TO ESTABLISH THIS TEMPLE TO OUR LORD BANE. THEREFORE IT IS RIGHT THAT YOU ACCEPT THE LORD BANE'S BLESSING.'"
-	Or BaneTempleFlags 8 BaneTempleFlags
+	BaneTempleFlags = BaneTempleFlags | 8
 	Goto PriestMenu
 
 AltarEnter:
 	PrintClear "YOU ARE BEFORE THE ALTER. "
-	And BaneTempleFlags 1 Scratch10
+	Scratch10 = BaneTempleFlags & 1
 	if 0 != Scratch10: Goto AltarSwords
 	Print "NEAR IT IS THE OFFERING BOX WITH SOME CHANGE IN IT. "
 	Gosub AskTakeIt
 	IfNe
 	Goto AltarBoxLeft
-	Or BaneTempleFlags 1 BaneTempleFlags
+	BaneTempleFlags = BaneTempleFlags | 1
 	ClearMonsters
 	Treasure 0 37 0 0 0 0 0 255
 	Combat
@@ -349,87 +354,87 @@ AltarBoxLeft:
 	PrintClear ""
 
 AltarSwords:
-	And BaneTempleFlags 2 Scratch10
+	Scratch10 = BaneTempleFlags & 2
 	if 0 != Scratch10: Exit
 	PrintClear "BEHIND THE ALTER ARE TWO CROSSED SWORDS. DO YOU TAKE THEM?"
 	Gosub YesNoMenu
 	IfNe
 	Exit
-	Or BaneTempleFlags 2 BaneTempleFlags
-	And CastleFlags 254 CastleFlags
+	BaneTempleFlags = BaneTempleFlags | 2
+	CastleFlags = CastleFlags & 254
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 35 // Long Sword +3, Long Sword +3
 	Combat
 	Exit
 
 FleeAfterCombat:
-	Save 129 CombatEnd
+	CombatEnd = 129
 
 AfterCombat:
 	if CombatEnd == 0: Return
 	Gosub StartAlarm
-	And CastleFlags 254 CastleFlags
+	CastleFlags = CastleFlags & 254
 	if CombatEnd != 129: Return
 
 BackOut:
-	Save 255 HoldMove
-	Save PrevX PartyX
-	Save PrevY PartyY
-	Add Facing 2 Facing
-	if Facing > 3: Sub 4 Facing Facing
+	HoldMove = 255
+	PartyX = PrevX
+	PartyY = PrevY
+	Facing = Facing + 2
+	if Facing > 3: Facing -= 4
 	Goto Done
 
 GiantPatrol:
-	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
-	Save 9 Portrait
+	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
+	Portrait = 9
 	SetupMonster Fighter16 distance=2 body=1
 	Gosub CheckPatrolSurprise
 	IfNe
 	Goto PatrolSighted
 	PrintClear $AuxEncText
 	Print " SURPRISES YOU."
-	And BaneTempleFlags 3 Scratch10
+	Scratch10 = BaneTempleFlags & 3
 	if 0 != Scratch10: Goto PatrolBlasphemers
-	And CastleFlags 1 Scratch10
+	Scratch10 = CastleFlags & 1
 	if 0 != Scratch10: Goto PatrolQuestion
 	Print " 'THAT'S THEM! GET THEM!'"
 	Goto PatrolEncounterMenu
 
 PatrolBlasphemers:
 	Print "'BLASPHEMERS! GET THEM!'"
-	Save 255 Portrait
+	Portrait = 255
 	Goto PatrolFight
 
 PatrolSighted:
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
-	And BaneTempleFlags 3 Scratch10
+	Scratch10 = BaneTempleFlags & 3
 	if 0 == Scratch10: Goto PatrolCheckDisguise
 	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
 	Goto PatrolEncounterMenu
 
 PatrolCheckDisguise:
-	And CastleFlags 1 Scratch10
+	Scratch10 = CastleFlags & 1
 	if 0 != Scratch10: Goto PatrolQuestion
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
 
 PatrolEncounterMenu:
 	Gosub PressToContinue
 	EncounterMenu 16 2 1 Scratch10 0 0 0 1 0 "THEY ADVANCE, WEAPONS READY" "" "" 12 9
-	Save 255 Portrait
-	OnGoto Scratch10 4 Done PatrolFight FleeAfterCombat PatrolFight
+	Portrait = 255
+	OnGoto Scratch10 Done PatrolFight FleeAfterCombat PatrolFight
 
 PatrolQuestion:
-	Save 0 Surprise
+	Surprise = 0
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
 	Gosub PressToContinue
 	EncounterMenu 16 2 1 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
-	Save 255 Portrait
-	OnGoto Scratch10 3 Done PatrolFight FleeAfterCombat
+	Portrait = 255
+	OnGoto Scratch10 Done PatrolFight FleeAfterCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
 	Parlay 0 1 1 2 0 Scratch10
-	OnGoto Scratch10 2 PatrolAskAuthority PatrolIntruders
+	OnGoto Scratch10 PatrolAskAuthority PatrolIntruders
 	PrintClear "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
 	InputString 6 $AuxInputText
 	Compare "HARASH" $AuxInputText
@@ -456,8 +461,8 @@ PatrolIntruders:
 
 PatrolFight:
 	Delay
-	Save 60 Morale
-	Save 255 Portrait
+	Morale = 60
+	Portrait = 255
 	Delay
 	RedrawView
 	ClearMonsters

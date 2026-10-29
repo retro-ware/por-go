@@ -33,6 +33,8 @@ var operandKinds = map[string][]string{
 	"SetupMonster": {"Sprite", "", "Picture"},
 	"FindItem":     {"Item"},
 	"ShowPortrait": {"Head", "Body"},
+	"LoadMap":      {"Map"},
+	"LoadWalls":    {"Walls", "Walls", "Walls"},
 }
 
 // operandLabels name the commands' operands in the script, as label=value
@@ -42,6 +44,7 @@ var operandKinds = map[string][]string{
 var operandLabels = map[string][]string{
 	"LoadMonster":  {"", "count", "icon"},
 	"SetupMonster": {"", "distance", "closeup|body"},
+	"LoadMap":      {"", "unused", "icons"},
 }
 
 // ReadScriptValues adds the values of a values file, if there is one.

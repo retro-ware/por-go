@@ -7,41 +7,41 @@ BugbearsApproach:
 	Return
 
 CheckGarrisonsBeaten:
-	And GateFlags 4 Scratch10
+	Scratch10 = GateFlags & 4
 	if 0 == Scratch10: Return
-	And GateFlags 8 Scratch10
+	Scratch10 = GateFlags & 8
 	Return
 
 SetSkyByHour:
-	Save 11 Scratch1
-	Save 9 SkyInside
-	if Hours >= 14: Save 8 Scratch1
-	Save Scratch1 Sky
+	Scratch1 = 11
+	SkyInside = 9
+	if Hours >= 14: Scratch1 = 8
+	Sky = Scratch1
 	Return
 
 PayMoney:
-	Save 0 &Scratch2
-	Save 0 Scratch1
+	&Scratch2 = 0
+	Scratch1 = 0
 
 CheckMemberMoney:
 	LoadCharacter Scratch1
 	Gosub CheckMemberOk
 	IfNe
 	Goto NextPayer
-	Div &SelCopper 10 &Scratch6
-	Add &SelSilver &Scratch6 &Scratch6
-	Div &Scratch6 10 &Scratch6
-	Add &SelElectrum &Scratch6 &Scratch6
-	Div &Scratch6 2 &Scratch6
-	Add &SelGold &Scratch6 &Scratch6
-	Div &Scratch6 5 &Scratch6
-	Add &SelPlatinum &Scratch6 &Scratch6
+	&Scratch6 = &SelCopper / 10
+	&Scratch6 += &SelSilver
+	&Scratch6 = &Scratch6 / 10
+	&Scratch6 += &SelElectrum
+	&Scratch6 = &Scratch6 / 2
+	&Scratch6 += &SelGold
+	&Scratch6 = &Scratch6 / 5
+	&Scratch6 += &SelPlatinum
 	if &Scratch6 >= &Scratch4: Goto TakeCoins
-	Add &Scratch6 &Scratch2 &Scratch2
+	&Scratch2 += &Scratch6
 	if &Scratch2 >= &Scratch4: Goto TakeCoins
 
 NextPayer:
-	Add Scratch1 1 Scratch1
+	Scratch1 = Scratch1 + 1
 	if Scratch1 < 8: Goto CheckMemberMoney
 	PrintClear "YOU DON'T HAVE ENOUGH MONEY!"
 	Gosub PressReturn
@@ -49,69 +49,71 @@ NextPayer:
 	Return
 
 TakeCoins:
-	Save 195 Scratch10
+	Scratch10 = 195
 	Gosub TakeCoinKind
 	IfEq
 	Return
-	Save 4 Scratch2
+	Scratch2 = 4
 	Gosub ScaleCost
-	Save 193 Scratch10
+	Scratch10 = 193
 	Gosub TakeCoinKind
 	IfEq
 	Return
-	Save 1 Scratch2
+	Scratch2 = 1
 	Gosub ScaleCost
-	Save 191 Scratch10
+	Scratch10 = 191
 	Gosub TakeCoinKind
 	IfEq
 	Return
-	Save 9 Scratch2
+	Scratch2 = 9
 	Gosub ScaleCost
-	Save 189 Scratch10
+	Scratch10 = 189
 	Gosub TakeCoinKind
 	IfEq
 	Return
-	Save 9 Scratch2
+	Scratch2 = 9
 	Gosub ScaleCost
-	Save 187 Scratch10
+	Scratch10 = 187
 	Gosub TakeCoinKind
 	Compare 0 0
 	Return
 
 ScaleCost:
-	Save &Scratch4 &Scratch6
+	&Scratch6 = &Scratch4
 
 ScaleCostLoop:
-	Add &Scratch6 &Scratch4 &Scratch4
-	Sub 1 Scratch2 Scratch2
+	&Scratch4 += &Scratch6
+	Scratch2 -= 1
 	if Scratch2 > 0: Goto ScaleCostLoop
 	Return
 
 TakeCoinKind:
-	Save 0 Scratch1
+	Scratch1 = 0
 
 TakeFromMember:
+	alias SelNameEntry = Scratch6
+	alias SelName2Entry = Scratch7
 	LoadCharacter Scratch1
 	Gosub CheckMemberOk
 	IfNe
 	Goto NextCoinMember
-	GetTable SelName Scratch10 Scratch6
-	GetTable SelName2 Scratch10 Scratch7
-	Save &Scratch6 &Scratch8
+	SelNameEntry = SelName[Scratch10]
+	SelName2Entry = SelName2[Scratch10]
+	&Scratch8 = &SelNameEntry
 	if &Scratch8 < &Scratch4: Goto DeductCoins
-	Save &Scratch4 &Scratch8
+	&Scratch8 = &Scratch4
 
 DeductCoins:
-	Sub &Scratch8 &Scratch6 &Scratch6
-	SaveTable Scratch6 SelName Scratch10
-	SaveTable Scratch7 SelName2 Scratch10
-	Sub &Scratch8 &Scratch4 &Scratch4
-	Or Scratch1 128 Scratch2
+	&Scratch6 -= &Scratch8
+	SelName[Scratch10] = Scratch6
+	SelName2[Scratch10] = Scratch7
+	&Scratch4 -= &Scratch8
+	Scratch2 = Scratch1 | 128
 	LoadCharacter Scratch2
 	if Scratch4 == 0: Return
 
 NextCoinMember:
-	Add Scratch1 1 Scratch1
+	Scratch1 = Scratch1 + 1
 	if Scratch1 < 8: Goto TakeFromMember
 	Compare Scratch4 0
 	Return
@@ -131,17 +133,17 @@ MemberNotOk:
 
 CheckAlarmSounding:
 	if AlarmEndHour < 1: Return
-	Save Hours AuxRoll
-	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	AuxRoll = Hours
+	if Hours == 0 && AlarmHour == 23: AuxRoll = 24
 	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
 	if TenMinutes < AlarmMinute: Goto AlarmStillOn
-	Save 0 AlarmEndHour
+	AlarmEndHour = 0
 	Compare 0 1
 	Return
 
 AlarmStillOn:
 	if Search == 1: Goto SayAlarmSounding
-	Random 9 AuxRoll
+	AuxRoll = Random 9
 	if 0 != AuxRoll: Goto AlarmActive
 
 SayAlarmSounding:
@@ -154,31 +156,33 @@ AlarmActive:
 
 StartAlarm:
 	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
-	Save Hours AlarmHour
-	Save TenMinutes AlarmMinute
-	Add 1 AuxCounter AlarmEndHour
+	AlarmHour = Hours
+	AlarmMinute = TenMinutes
+	AlarmEndHour = 1 + AuxCounter
 	Delay
 	Return
 
 YesNoMenu:
-	HMenu Scratch10 2 "YES" "NO"
+	alias Choice = Scratch10
+	Choice = Menu "YES" "NO"
 	PrintClear " "
-	Compare Scratch10 0
+	Compare Choice 0
 	Return
 
 PressReturn:
-	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	alias Choice = Scratch9
+	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
 	PrintClear " "
 	Return
 
 event0:
 	if LeftMap == 0: Goto OnStep
-	Save 5 SymbolSet
-	Save 6 Scratch1
+	SymbolSet = 5
+	Scratch1 = 6
 	if PartyY == 0: Goto LeaveArea
-	Save 18 Scratch1
-	Save 1 SymbolSet
-	Save 0 AlarmEndHour
+	Scratch1 = 18
+	SymbolSet = 1
+	AlarmEndHour = 0
 
 LeaveArea:
 	Call CallStepForward
@@ -186,19 +190,19 @@ LeaveArea:
 
 OnStep:
 	Gosub SetSkyByHour
-	Save 0 Scratch5
-	And Cell 31 Scratch1
+	Scratch5 = 0
+	Scratch1 = Cell & 31
 
 MatchDoorSpot:
-	GetTable Table9D10 Scratch5 Scratch9
-	GetTable Table9D18 Scratch5 Scratch8
+	Scratch9 = Table9D10[Scratch5]
+	Scratch8 = Table9D18[Scratch5]
 	if Scratch1 == Scratch9 && Facing == Scratch8: Goto DoorSpotAction
-	Add Scratch5 1 Scratch5
+	Scratch5 = Scratch5 + 1
 	if Scratch5 < 8: Goto MatchDoorSpot
 	Exit
 
 DoorSpotAction:
-	OnGoto Scratch5 8 AskDownstairs AskDownstairs TowerDoor TowerDoor AskUpstairs AskUpstairs MarkWestTowerUsed MarkEastTowerUsed
+	OnGoto Scratch5 AskDownstairs AskDownstairs TowerDoor TowerDoor AskUpstairs AskUpstairs MarkWestTowerUsed MarkEastTowerUsed
 	Exit // extra: the original runs on into data at 9D10
 
 Table9D10:
@@ -212,41 +216,41 @@ event1:
 	IfLt
 	Goto SpecialSquare
 	if PartyY > 6: Goto SpecialSquare
-	And Cell 64 Scratch10
+	Scratch10 = Cell & 64
 	if 0 != Scratch10: Goto SpecialSquare
-	Save 2 Scratch1
-	if Search == 0: Save 20 Scratch1
-	And Cell 32 Scratch10
-	if 0 != Scratch10: Add Scratch1 Scratch1 Scratch1
-	Random Scratch1 Scratch1
+	Scratch1 = 2
+	if Search == 0: Scratch1 = 20
+	Scratch10 = Cell & 32
+	if 0 != Scratch10: Scratch1 += Scratch1
+	Scratch1 = Random Scratch1
 	if Scratch1 == 0: Goto event3
 
 SpecialSquare:
-	And Cell 31 Scratch1
-	OnGoto Scratch1 14 Done MageGuardRoom FighterGuardRoom NearWall StojanowGateEvent GateEntrance WallSquare Done BugbearsBehindGate WagonTrader GateTowerSquare GateTowerSquare Done MonstersBehindWall
+	Scratch1 = Cell & 31
+	OnGoto Scratch1 Done MageGuardRoom FighterGuardRoom NearWall StojanowGateEvent GateEntrance WallSquare Done BugbearsBehindGate WagonTrader GateTowerSquare GateTowerSquare Done MonstersBehindWall
 
 event3:
-	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" $AuxEncText
-	Save 8 Portrait
-	Save 0 Surprise
+	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
+	Portrait = 8
+	Surprise = 0
 	PrintClear "YOU SEE A"
 	Print $AuxSightText
-	And CastleFlags 1 Scratch10
+	Scratch10 = CastleFlags & 1
 	if 0 != Scratch10: Goto PatrolMenu
 	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
 	Gosub PressReturn
 	EncounterMenu 16 2 5 Scratch10 0 0 0 0 0 "THEY ADVANCE, WEAPONS READY" "" "" 9 9
-	Save 255 Portrait
-	OnGoto Scratch10 4 Done FightPatrol FledCombat FightPatrol
+	Portrait = 255
+	OnGoto Scratch10 Done FightPatrol FledCombat FightPatrol
 
 PatrolMenu:
 	Gosub PressReturn
 	EncounterMenu 16 2 5 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
-	Save 255 Portrait
-	OnGoto Scratch10 3 Done FightPatrol FledCombat
+	Portrait = 255
+	OnGoto Scratch10 Done FightPatrol FledCombat
 	PrintClear "WHAT ARE YOU DOING HERE?"
 	Parlay 0 1 1 2 0 Scratch10
-	OnGoto Scratch10 2 AskAuthority PatrolSpotsIntruders
+	OnGoto Scratch10 AskAuthority PatrolSpotsIntruders
 	PrintClear "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
 	InputString 6 $AuxInputText
 	Compare "HARASH" $AuxInputText
@@ -272,7 +276,7 @@ PatrolSpotsIntruders:
 	PrintClear "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
 
 FightPatrol:
-	Save 60 Morale
+	Morale = 60
 	Delay
 	ClearMonsters
 	LoadMonster ThLvlFighter75 count=1 icon=Aides
@@ -282,29 +286,29 @@ FightPatrol:
 	Exit
 
 FledCombat:
-	Save 129 CombatEnd
+	CombatEnd = 129
 
 AfterCombat:
 	if CombatEnd == 0: Return
 	Gosub StartAlarm
-	And CastleFlags 254 CastleFlags
+	CastleFlags = CastleFlags & 254
 	if CombatEnd != 129: Return
-	Save 255 HoldMove
-	Save PrevX PartyX
-	Save PrevY PartyY
-	Add Facing 2 Facing
-	if Facing > 3: Sub 4 Facing Facing
+	HoldMove = 255
+	PartyX = PrevX
+	PartyY = PrevY
+	Facing = Facing + 2
+	if Facing > 3: Facing -= 4
 	Goto Done
 
 event2:
-	Save 0 RestEvery
-	Save 10 RestChance
+	RestEvery = 0
+	RestChance = 10
 	if AlarmEndHour == 0: Exit
-	And Cell 64 Scratch10
+	Scratch10 = Cell & 64
 	if 0 != Scratch10: Exit
 	if PartyY > 6: Exit
-	Save 1 RestEvery
-	Save 17 RestChance
+	RestEvery = 1
+	RestChance = 17
 
 Done:
 	RedrawView
@@ -313,10 +317,10 @@ Done:
 
 event4:
 	Gosub SetSkyByHour
-	Save 0 NoCoords
+	NoCoords = 0
 	if AreaKind == 9: Exit
-	LoadFiles 9 2 255
-	LoadPieces 1 9 23
+	LoadMap 9 unused=2 icons=255
+	LoadWalls 1 9 23
 	Exit
 
 AskDownstairs:
@@ -328,9 +332,9 @@ AskUpstairs:
 	Goto AskStairs
 
 TowerDoor:
-	Save 1 Scratch1
-	if Scratch5 == 3: Save 2 Scratch1
-	And GateFlags Scratch1 Scratch10
+	Scratch1 = 1
+	if Scratch5 == 3: Scratch1 = 2
+	Scratch10 = GateFlags & Scratch1
 	if 0 != Scratch10: Goto TakeStairs
 	Gosub CheckGarrisonsBeaten
 	IfNe
@@ -346,12 +350,12 @@ AskStairs:
 	Goto StairsRedraw
 
 TakeStairs:
-	GetTable TowerExitXTable Scratch5 PartyX
-	GetTable TowerExitYTable Scratch5 PartyY
-	GetTable TowerExitCellTable Scratch5 Cell
+	PartyX = TowerExitXTable[Scratch5]
+	PartyY = TowerExitYTable[Scratch5]
+	Cell = TowerExitCellTable[Scratch5]
 
 StairsRedraw:
-	Save 255 HoldMove
+	HoldMove = 255
 	Call CallRedraw
 	Goto event1
 
@@ -365,30 +369,30 @@ TowerExitCellTable:
 	Data 10 11 12 0 1 2
 
 MageGuardRoom:
-	And GuardRoomSeenBits 1 Scratch10
+	Scratch10 = GuardRoomSeenBits & 1
 	if 0 != Scratch10: Goto MageAndEttins
 	Gosub DescribeGuardRoom
-	Or GuardRoomSeenBits 1 GuardRoomSeenBits
+	GuardRoomSeenBits = GuardRoomSeenBits | 1
 
 MageAndEttins:
-	And GateFlags 4 Scratch10
+	Scratch10 = GateFlags & 4
 	if 0 != Scratch10: Exit
 	Gosub DescribeEttins
-	Save 52 Portrait
+	Portrait = 52
 	PrintClear "YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'"
 	Gosub PressReturn
 	EncounterMenu 24 1 31 Scratch10 0 1 1 1 0 "THEY SEEM UNAWARE OF YOU." "" "" 0 0
-	Save 255 Portrait
+	Portrait = 255
 	RedrawView
-	OnGoto Scratch10 2 Done FightMageGuards
+	OnGoto Scratch10 Done FightMageGuards
 
 MageFlee:
-	Save 0 Scratch5
+	Scratch5 = 0
 	Goto TakeStairs
 
 FightMageGuards:
-	Save 2 Surprise
-	Save 50 Morale
+	Surprise = 2
+	Morale = 50
 	Gosub StartAlarm
 	ClearMonsters
 	LoadMonster ThLvlMu count=1 icon=Level6Mu
@@ -396,34 +400,34 @@ FightMageGuards:
 	LoadMonster Ettin count=3 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto MageFlee
-	Or GateFlags 4 GateFlags
+	GateFlags = GateFlags | 4
 	Exit
 
 FighterGuardRoom:
-	And GuardRoomSeenBits 2 Scratch10
+	Scratch10 = GuardRoomSeenBits & 2
 	if 0 != Scratch10: Goto FighterAndEttins
 	Gosub DescribeGuardRoom
-	Or GuardRoomSeenBits 2 GuardRoomSeenBits
+	GuardRoomSeenBits = GuardRoomSeenBits | 2
 
 FighterAndEttins:
-	And GateFlags 8 Scratch10
+	Scratch10 = GateFlags & 8
 	if 0 != Scratch10: Exit
 	Gosub DescribeEttins
-	Save 11 Portrait
+	Portrait = 11
 	PrintClear "YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'"
 	Gosub PressReturn
 	EncounterMenu 24 1 2 Scratch10 0 1 1 1 0 "THEY SEEM UNAWARE OF YOU." "" "" 0 0
-	Save 255 Portrait
+	Portrait = 255
 	RedrawView
-	OnGoto Scratch10 2 Done FightFighterGuards
+	OnGoto Scratch10 Done FightFighterGuards
 
 FighterFlee:
-	Save 1 Scratch5
+	Scratch5 = 1
 	Goto TakeStairs
 
 FightFighterGuards:
-	Save 2 Surprise
-	Save 50 Morale
+	Surprise = 2
+	Morale = 50
 	Gosub StartAlarm
 	ClearMonsters
 	LoadMonster Level6Mu24 count=1 icon=Level6Mu
@@ -431,34 +435,34 @@ FightFighterGuards:
 	LoadMonster Ettin count=3 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto FighterFlee
-	Or GateFlags 8 GateFlags
+	GateFlags = GateFlags | 8
 	Exit
 
 GateTowerSquare:
 	Gosub CheckAlarmSounding
 	IfLt
 	Exit
-	Save 0 Scratch2
-	And Cell 1 Scratch1
-	OnGoto Scratch1 1 EastTowerCheck
-	And GateFlags 4 Scratch9
-	if 0 == Scratch9: Or Scratch2 2 Scratch2
-	And GateFlags 8 Scratch10
-	if 0 == Scratch10: Or Scratch2 1 Scratch2
+	Scratch2 = 0
+	Scratch1 = Cell & 1
+	OnGoto Scratch1 EastTowerCheck
+	Scratch9 = GateFlags & 4
+	if 0 == Scratch9: Scratch2 = Scratch2 | 2
+	Scratch10 = GateFlags & 8
+	if 0 == Scratch10: Scratch2 = Scratch2 | 1
 	Goto TowersCharge
 
 EastTowerCheck:
-	And GateFlags 8 Scratch9
-	if 0 == Scratch9: Or Scratch2 2 Scratch2
-	And GateFlags 4 Scratch10
-	if 0 == Scratch10: Or Scratch2 1 Scratch2
+	Scratch9 = GateFlags & 8
+	if 0 == Scratch9: Scratch2 = Scratch2 | 2
+	Scratch10 = GateFlags & 4
+	if 0 == Scratch10: Scratch2 = Scratch2 | 1
 
 TowersCharge:
-	Save 1 Scratch3
-	Save 0 MaxDist
-	OnGoto Scratch2 3 Done NearTowerCharges FarTowerCharges
+	Scratch3 = 1
+	MaxDist = 0
+	OnGoto Scratch2 Done NearTowerCharges FarTowerCharges
 	PrintClear "MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER. AT THE SAME TIME MONSTERS BURST ON YOU FROM THE TOWER NEXT TO YOU."
-	Save 2 Scratch3
+	Scratch3 = 2
 	Goto TowerMonstersMenu
 
 NearTowerCharges:
@@ -467,79 +471,80 @@ NearTowerCharges:
 
 FarTowerCharges:
 	PrintClear "MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER."
-	Save 1 MaxDist
+	MaxDist = 1
 
 TowerMonstersMenu:
-	Save 11 Portrait
+	Portrait = 11
 	Gosub PressReturn
 	EncounterMenu 24 MaxDist 2 Scratch10 0 0 0 0 0 "" "" "" 12 6
-	Save 255 Portrait
+	Portrait = 255
 	RedrawView
-	OnGoto Scratch10 2 Done FightTowerMonsters
+	OnGoto Scratch10 Done FightTowerMonsters
 
 FleeToArea6:
 	Gosub StartAlarm
-	Save 4 PartyX
-	Save 15 PartyY
-	Save 0 Facing
+	PartyX = 4
+	PartyY = 15
+	Facing = 0
 	NewECL ValjevoCastle6
 
 FightTowerMonsters:
 	PartySurprise Scratch9 Scratch10
-	Save 80 Morale
-	And GateFlags 8 Scratch10
+	Morale = 80
+	Scratch10 = GateFlags & 8
 	Surprise Scratch9 Scratch10 1 1
-	Save 24 Scratch4
-	And GateFlags 8 Scratch10
-	if 0 != Scratch10: Save 89 Scratch4
+	Scratch4 = 24
+	Scratch10 = GateFlags & 8
+	if 0 != Scratch10: Scratch4 = 89
 	Gosub StartAlarm
 	ClearMonsters
 	LoadMonster Scratch4 count=Scratch3 icon=Level6Mu
 	LoadMonster Aides count=Scratch3 icon=Aides
-	Mul Scratch3 3 Scratch3
+	Scratch3 = Scratch3 * 3
 	LoadMonster Ettin count=Scratch3 icon=Ettin
 	Combat
 	if CombatEnd == 129: Goto FleeToArea6
 
 GarrisonSlain:
-	Or GateFlags 12 GateFlags
-	And GateFlags 16 Scratch10
+	GateFlags = GateFlags | 12
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Goto GateTaken
 	PrintClear "YOU HAVE SLAIN THE GARRISON. NOW IF YOU CAN BUT SLAY THE OUTSIDE GUARDS QUICKLY BEFORE THE ENEMY ARRIVES THE GATE WILL BE YOURS!"
 	Exit
 
 GateTaken:
-	Or GateFlags 3 GateFlags
+	GateFlags = GateFlags | 3
 	PrintClear "YOU HAVE TAKEN THE GATE! YOU OPEN THE GREAT PORTALS AS 20  HUMAN AND DEMI-HUMAN GUARDS IMMEDIATELY TAKE POSSESSION OF THE GUARD TOWERS."
-	if QuestGateTaken != 255: Save 254 QuestGateTaken
+	if QuestGateTaken != 255: QuestGateTaken = 254
 	Exit
 
 NearWall:
 	Gosub CheckGarrisonsBeaten
 	IfNe
 	Exit
-	OnGoto BugbearWarnings 3 FirstWallWarning SecondWallWarning BugbearsPunch
+	OnGoto BugbearWarnings FirstWallWarning SecondWallWarning BugbearsPunch
 
 BugbearsDemand:
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Goto ArrowSlits
 	Gosub BugbearsApproach
 	PrintClear "A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'"
 
 BugbearsMenu:
-	HMenu Scratch10 3 "FLEE" "SURRENDER" "ATTACK"
-	OnGoto Scratch10 2 PushedBack SurrenderToBugbears
+	alias Choice = Scratch10
+	Choice = Menu "FLEE" "SURRENDER" "ATTACK"
+	OnGoto Choice PushedBack SurrenderToBugbears
 
 FightBugbears:
-	Save 0 Surprise
-	Save 60 Morale
+	Surprise = 0
+	Morale = 60
 	Gosub StartAlarm
-	Save 3 BugbearWarnings
+	BugbearWarnings = 3
 	ClearMonsters
 	LoadMonster Bugbear count=16 icon=Bugbear
 	Combat
 	if CombatEnd == 129: Goto PushedBack
-	Or GateFlags 16 GateFlags
+	GateFlags = GateFlags | 16
 	Exit
 
 SurrenderToBugbears:
@@ -547,36 +552,37 @@ SurrenderToBugbears:
 	Rob 1 100 20
 
 PushedBack:
-	Save 2 Facing
-	Save 14 PartyY
+	Facing = 2
+	PartyY = 14
 	RedrawView
 	if PartyX < 9: Goto PushedWest
-	Save 11 PartyX
+	PartyX = 11
 	Goto PushedRedraw
 
 PushedWest:
-	Save 4 PartyX
+	PartyX = 4
 
 PushedRedraw:
-	Save 255 HoldMove
+	HoldMove = 255
 	Goto Done
 
 FirstWallWarning:
 	PrintClear "A VOICE FROM THE TOWER YELLS 'STAY AWAY FROM THE WALL!'"
-	Save 2 BugbearWarnings
+	BugbearWarnings = 2
 	Exit
 
 SecondWallWarning:
 	PrintClear "A VOICE YELLS DOWN, 'WE SAID STAY AWAY FROM THE WALL. THAT INCLUDES THE TOWER!'"
-	Save 3 BugbearWarnings
+	BugbearWarnings = 3
 	Exit
 
 BugbearsPunch:
+	alias Choice = Scratch10
 	Gosub BugbearsApproach
 	PrintClear "THE GROUP OF BUGBEARS COME OVER, 'WE WARNED YOU! WHAT'S THE MATTER? CAN'T YOU UNDERSTAND COMMON? I GUESS I'LL HAVE TO TEACH YOU.' THE LEADER SWINGS AT YOU."
-	Save 3 BugbearWarnings
-	HMenu Scratch10 2 "ATTACK" "TAKE THE PUNCH"
-	OnGoto Scratch10 1 FightBugbears
+	BugbearWarnings = 3
+	Choice = Menu "ATTACK" "TAKE THE PUNCH"
+	OnGoto Choice FightBugbears
 	Damage 160 1 3 0 0
 	PrintClear "'NOW BEAT IT BEFORE WE GET SERIOUS.'"
 	Goto Done
@@ -591,63 +597,63 @@ ArrowSlits:
 	Exit
 
 StojanowGateEvent:
-	if BugbearWarnings == 2: Save 1 BugbearWarnings
-	And GateFlags 32 Scratch10
+	if BugbearWarnings == 2: BugbearWarnings = 1
+	Scratch10 = GateFlags & 32
 	if 0 != Scratch10: Goto WatchWagonMan
 	PrintClear "BEFORE YOU IS STOJANOW GATE. THIS ANCIENT EDIFICE IS BUILT ACROSS THE BEND OF THE RIVER, THUS ISOLATING THE OLD TOWN AND THE CASTLE FROM THE REST OF THE CITY."
 	Gosub PressReturn
 	PrintClear "THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS."
 	Gosub PressReturn
-	Or GateFlags 32 GateFlags
+	GateFlags = GateFlags | 32
 
 WatchWagonMan:
 	if Facing != 0 || Search != 1: Exit
 	if Hours >= 5: Exit
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Exit
 	PrintClear "BEFORE THE GATE YOU CAN MAKE OUT A MAN WITH A WAGON OF GOODS WHO IS TALKING TO TWO OF THE BUGBEARS. THE MAN HANDS SOMETHING TO THE BUGBEARS AND THE GATES OPEN."
 	Gosub PressReturn
 	Exit
 
 GateEntrance:
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Goto ArrowSlits
-	And GateFlags 64 Scratch10
+	Scratch10 = GateFlags & 64
 	if 0 == Scratch10: Goto NearWall
 	if BugbearWarnings == 3: Goto ImpostorsApproach
-	Random 9 Scratch10
+	Scratch10 = Random 9
 	if Scratch10 <= BugbearWarnings: Goto ImpostorsApproach
 	Gosub BugbearsApproach
 	PrintClear "A BUGBEAR WALKS UP TO YOU. 'OKAY, LETS HAVE THE 15 GOLD.' DO YOU PAY HIM?"
 	Gosub YesNoMenu
 	IfEq
 	Goto PayToll
-	Random 9 Scratch10
+	Scratch10 = Random 9
 	if Scratch10 <= BugbearWarnings: Goto ImpostorsAccused
 
 BugbearsSendAway:
 	PrintClear "'ALL RIGHT, GET OUT OF HERE THEN. COME BACK WHEN YOU'VE LEARNED THE RULES.'"
-	Save 3 BugbearWarnings
+	BugbearWarnings = 3
 	Goto Done
 
 PayToll:
-	Save 3 &Scratch4
+	&Scratch4 = 3
 	Gosub PayMoney
 	IfNe
 	Goto BugbearsSendAway
 	PrintClear "THE BUGBEAR TAKES THE MONEY AND THE GATE OPENS. YOU PROCEED THROUGH."
 	RedrawView
 	Picture None
-	Save 0 Facing
-	Save 8 PartyX
-	Save 9 PartyY
+	Facing = 0
+	PartyX = 8
+	PartyY = 9
 
 WalkThroughGate:
-	Sub 1 PartyY PartyY
+	PartyY -= 1
 	Call CallRedraw
 	Delay
 	if PartyY > 5: Goto WalkThroughGate
-	Save 255 HoldMove
+	HoldMove = 255
 	Exit
 
 ImpostorsApproach:
@@ -658,7 +664,7 @@ ImpostorsAccused:
 	Goto BugbearsMenu
 
 WallSquare:
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Goto ArrowSlits
 	Goto BugbearsDemand
 
@@ -666,52 +672,52 @@ BugbearsBehindGate:
 	Gosub CheckGarrisonsBeaten
 	IfEq
 	Exit
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Exit
 	EncounterMenu 63 1 63 Scratch10 0 0 0 0 0 "BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." "" "" 9 9
-	OnGoto Scratch10 3 Done FightGateBugbears FleeToArea6
+	OnGoto Scratch10 Done FightGateBugbears FleeToArea6
 
 FightGateBugbears:
-	Save 2 Surprise
-	Save 60 Morale
+	Surprise = 2
+	Morale = 60
 	Gosub StartAlarm
-	Save 3 BugbearWarnings
+	BugbearWarnings = 3
 	ClearMonsters
 	LoadMonster Bugbear count=16 icon=Bugbear
 	Combat
 	if CombatEnd == 129: Goto FleeToArea6
-	Or GateFlags 16 GateFlags
+	GateFlags = GateFlags | 16
 	Goto GarrisonSlain
 
 WagonTrader:
 	if Hours >= 14: Exit
-	And GateFlags 64 Scratch10
+	Scratch10 = GateFlags & 64
 	if 0 != Scratch10: Exit
 	if WagonManMet != 0: Exit
 	Gosub CheckGarrisonsBeaten
 	IfEq
 	Goto WagonPasses
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 != Scratch10: Exit
 
 WagonPasses:
+	alias Choice = Scratch10
 	PrintClear "A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH."
 	Gosub PressReturn
-	Save 1 WagonManMet
-	Save 5 Portrait
-	EncounterMenu 12 0 9 Scratch10 0 3 3 3 4 "" "" "" 0 0
-	Save 255 Portrait
-	OnGoto Scratch10 3 Done KillTrader Done
+	WagonManMet = 1
+	Portrait = 5
+	EncounterMenu 12 0 9 Choice 0 3 3 3 4 "" "" "" 0 0
+	Portrait = 255
+	OnGoto Choice Done KillTrader Done
 	PrintClear "'WHY SURE I'LL SELL YOU MY WAGON. ALL IT'LL COST YOU IS 250 GOLD PIECES. HOW ABOUT IT?'"
 	Gosub YesNoMenu
 	IfEq
 	Goto BuyWagon
 	PrintClear "'SORRY, THAT'S MY FINAL OFFER. TAKE IT OR LEAVE IT."
-	HMenu Scratch10 2 "TAKE IT" "LEAVE IT"
-	OnGoto Scratch10 2 BuyWagon Done
+	Choice = Menu "TAKE IT" -> BuyWagon "LEAVE IT" -> Done
 
 BuyWagon:
-	Save 50 &Scratch4
+	&Scratch4 = 50
 	Gosub PayMoney
 	IfNe
 	Goto NoMoneyForWagon
@@ -723,7 +729,7 @@ BuyWagon:
 	Gosub PressReturn
 
 GotWagon:
-	Or GateFlags 64 GateFlags
+	GateFlags = GateFlags | 64
 	Goto Done
 
 NoMoneyForWagon:
@@ -738,19 +744,19 @@ MonstersBehindWall:
 	Gosub CheckGarrisonsBeaten
 	IfNe
 	Exit
-	And GateFlags 16 Scratch10
+	Scratch10 = GateFlags & 16
 	if 0 == Scratch10: Exit
 	PrintClear "A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL"
-	Save 11 Portrait
+	Portrait = 11
 	Gosub PressReturn
 	EncounterMenu 24 1 2 Scratch10 0 0 0 0 0 "THEY RUSH TOWARD YOU" "" "" 12 12
-	Save 255 Portrait
+	Portrait = 255
 	RedrawView
-	OnGoto Scratch10 3 Done FightWallMonsters PushedBack
+	OnGoto Scratch10 Done FightWallMonsters PushedBack
 
 FightWallMonsters:
-	Save 0 Surprise
-	Save 80 Morale
+	Surprise = 0
+	Morale = 80
 	Gosub StartAlarm
 	ClearMonsters
 	LoadMonster Level6Mu24 count=2 icon=Level6Mu
@@ -761,11 +767,11 @@ FightWallMonsters:
 	Goto GarrisonSlain
 
 MarkWestTowerUsed:
-	Or GateFlags 1 GateFlags
+	GateFlags = GateFlags | 1
 	Exit
 
 MarkEastTowerUsed:
-	Or GateFlags 2 GateFlags
+	GateFlags = GateFlags | 2
 	Exit
 
 DescribeGuardRoom:

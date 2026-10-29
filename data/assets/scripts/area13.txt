@@ -1,31 +1,32 @@
 event4:
-	LoadPieces 17 18 255
-	LoadFiles 13 2 255
-	Save 1 NoCoords
-	Save 8 SkyInside
+	LoadWalls 17 18 None
+	LoadMap 13 unused=2 icons=255
+	NoCoords = 1
+	SkyInside = 8
 	Exit
 
 event0:
 	if Facing != 0 || Cell != 152: Exit
-	if KoboldKingState == 0: Save 255 HoldMove
+	if KoboldKingState == 0: HoldMove = 255
 	Exit
 
 event1:
-	And Cell 127 Scratch1
-	OnGoto Scratch1 29 KoboldAmbush WaterPit MineTailings KoboldTruce NetTrap SpikeTrap DrunkenKobold Done HearVoices ThroneRoom SearchNorthWall KingInPit BrassBottle CrudeBarracks FatimaRoom PrisonCell RubbleSlope WyvernCharges CrippledKobold LivingAreas KingsQuarters RatLarder MessTables RuinedBallista Done Done WyvernNest KoboldHoard AskLeave
+	Scratch1 = Cell & 127
+	OnGoto Scratch1 KoboldAmbush WaterPit MineTailings KoboldTruce NetTrap SpikeTrap DrunkenKobold Done HearVoices ThroneRoom SearchNorthWall KingInPit BrassBottle CrudeBarracks FatimaRoom PrisonCell RubbleSlope WyvernCharges CrippledKobold LivingAreas KingsQuarters RatLarder MessTables RuinedBallista Done Done WyvernNest KoboldHoard AskLeave
 
 AskLeave:
+	alias Choice = Scratch1
 	PrintClear "DO YOU WANT TO LEAVE?"
-	HMenu Scratch1 2 "YES" "NO"
-	if Scratch1 == 1: Exit
-	Save 0 Scratch2
+	Choice = Menu "YES" "NO"
+	if Choice == 1: Exit
+	Scratch2 = 0
 
 FindFatima:
 	LoadCharacter Scratch2
 	if $SelName == "PRINCESS FATIMA": Goto FatimaFound
 
 NextMember:
-	Add 1 Scratch2 Scratch2
+	Scratch2 += 1
 	if Scratch2 < 8: Goto FindFatima
 	NewECL Quagmire
 
@@ -35,9 +36,9 @@ FatimaFound:
 	PrintClear "THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'"
 
 FatimaLeaves:
-	Save 0 SelName
-	Save 0 SelStatus
-	Add 128 Scratch2 Scratch2
+	SelName = 0
+	SelStatus = 0
+	Scratch2 += 128
 	LoadCharacter Scratch2
 	NewECL Quagmire
 
@@ -51,28 +52,29 @@ WaterPit:
 	PrintClear "SOME ITEMS WERE LOST RECOVERING "
 	Print $SelName
 	Rob 0 20 20
-	Save 1 PoolPitDone
+	PoolPitDone = 1
 	Exit
 
 CrossPit:
 	PrintClear "YOU CROSS OVER A PIT."
-	Save 1 PoolPitDone
+	PoolPitDone = 1
 	Exit
 
 MineTailings:
 	if TailingsFound == 1: Exit
 	PrintClear "YOU FIND A PILE OF MINE TAILINGS."
 	if Search == 0: Exit
-	Save 1 TailingsFound
+	TailingsFound = 1
 	Print "IN IT IS A KOBOLD'S CRUDE DRAWING."
 	Gosub JournalEntry
 	Print "42."
 	Exit
 
 KoboldTruce:
+	alias Choice = Scratch1
 	if KoboldTruceState != 0: Goto DeadfallTrap
 	SetupMonster Kobold distance=2 closeup=Kobold
-	Save 1 KoboldTruceState
+	KoboldTruceState = 1
 	PrintClear "A KOBOLD APPROACHES WAVING A WHITE FLAG."
 	Delay
 	Approach
@@ -80,14 +82,13 @@ KoboldTruce:
 	Approach
 	PrintClear "THE KOBOLD BOWS AND SAYS,'YOU ARE QUITE DANGEROUS, WE WILL PAY FOR A TRUCE.'"
 	Gosub WhatDoYouDo
-	HMenu Scratch1 3 "AGREE" "REFUSE" "KILL IT"
-	OnGoto Scratch1 3 TruceAgreed TruceRefused KoboldCriesOut
+	Choice = Menu "AGREE" -> TruceAgreed "REFUSE" -> TruceRefused "KILL IT" -> KoboldCriesOut
 
 TruceAgreed:
+	alias Choice = Scratch1
 	PrintClear "'I AM TO ESCORT YOU TO OUR TREASURE.'"
 	Gosub WhatDoYouDo
-	HMenu Scratch1 3 "FOLLOW" "REFUSE" "KILL IT"
-	OnGoto Scratch1 3 FollowGuide TruceRefused KoboldCriesOut
+	Choice = Menu "FOLLOW" -> FollowGuide "REFUSE" -> TruceRefused "KILL IT" -> KoboldCriesOut
 
 TruceRefused:
 	Picture None
@@ -111,21 +112,21 @@ RoofCollapses:
 	Damage 192 2 6 0 1
 	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "BEFORE YOU RECOVER, KOBOLDS ARRIVE."
-	Save 25 Morale
-	Save 1 Surprise
-	Save 2 MonsterHit
-	Save 254 PartyHit
-	Save 252 PartyMove
+	Morale = 25
+	Surprise = 1
+	MonsterHit = 2
+	PartyHit = 254
+	PartyMove = 252
 	ClearMonsters
 	LoadMonster Kobold0 count=20 icon=Kobold
 	Combat
-	Save 2 KoboldTruceState
+	KoboldTruceState = 2
 	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
 DisarmDeadfall:
 	PrintClear "YOU DISARM A DEADFALL TRAP."
-	Save 2 KoboldTruceState
+	KoboldTruceState = 2
 	Exit
 
 DescribeTimbers:
@@ -139,59 +140,59 @@ NetTrap:
 	if Scratch10 == 1: Goto DisarmNet
 	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "A NET ENTANGLES YOU."
-	Save 50 Morale
-	Save 1 Surprise
-	Save 2 MonsterHit
-	Save 254 PartyHit
-	Save 252 PartyMove
+	Morale = 50
+	Surprise = 1
+	MonsterHit = 2
+	PartyHit = 254
+	PartyMove = 252
 	ClearMonsters
 	LoadMonster Kobold0 count=20 icon=Kobold
 	Combat
-	Save 1 NetTrapDone
+	NetTrapDone = 1
 	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
 DisarmNet:
 	PrintClear "YOU DISARM A NET TRAP."
-	Save 1 NetTrapDone
+	NetTrapDone = 1
 	Exit
 
 SpikeTrap:
 	if SpikeTrapDone == 1: Exit
-	Save 0 Scratch4
+	Scratch4 = 0
 	Gosub CheckTrap
 	if Scratch10 == 1: Goto DisarmSpikes
 	PrintClear "SPIKES SPRING OUT AND IMPALE YOU."
 	Damage 128 2 4 0 Scratch4
-	Save 1 SpikeTrapDone
+	SpikeTrapDone = 1
 	Exit
 
 DisarmSpikes:
 	PrintClear "YOU DISARM A SPIKE TRAP."
-	Save 1 SpikeTrapDone
+	SpikeTrapDone = 1
 	Exit
 
 DrunkenKobold:
+	alias Choice = Scratch1
 	if 0 != KoboldKingState || 255 != DrunkKoboldState: Exit
 	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "A DRUNKEN KOBOLD LIES HERE."
 	Gosub WhatDoYouDo
-	HMenu Scratch1 3 "SLIP PAST" "WAKE IT" "KILL IT"
-	OnGoto Scratch1 3 SlipPast WakeKobold KillDrunkKobold
+	Choice = Menu "SLIP PAST" -> SlipPast "WAKE IT" -> WakeKobold "KILL IT" -> KillDrunkKobold
 
 SlipPast:
 	PrintClear "YOU SLIP BY WITH EASE."
 	Exit
 
 WakeKobold:
+	alias Choice = Scratch1
 	PrintClear "HE LOOKS CONFUSED,'OH, THE ENVOYS. DO YOU WISH AN ESCORT TO THE KING?'"
 	Gosub WhatDoYouDo
-	HMenu Scratch1 3 "YES" "NO" "KILL IT"
-	OnGoto Scratch1 3 FollowToKing KoboldSleeps KillDrunkKobold
+	Choice = Menu "YES" -> FollowToKing "NO" -> KoboldSleeps "KILL IT" -> KillDrunkKobold
 
 FollowToKing:
 	PrintClear "'THEN FOLLOW ME.'"
-	Save 1 HeardVoices
+	HeardVoices = 1
 	Goto GuideToKing
 
 KoboldSleeps:
@@ -200,21 +201,21 @@ KoboldSleeps:
 
 KillDrunkKobold:
 	PrintClear "THE KOBOLD DIES."
-	Save 2 DrunkKoboldState
+	DrunkKoboldState = 2
 	Exit
 
 HearVoices:
 	if 0 != KoboldKingState || 0 != HeardVoices: Exit
 	PrintClear "YOU HEAR THE VOICES OF HUMANS AND KOBOLDS."
-	Save 1 HeardVoices
+	HeardVoices = 1
 	Exit
 
 ThroneRoom:
 	if KoboldKingState >= 5: Exit
-	OnGoto KoboldKingState 5 KoboldHorde FightHorde BallistaFire EnvoysFight Done
+	OnGoto KoboldKingState KoboldHorde FightHorde BallistaFire EnvoysFight Done
 
 KoboldHorde:
-	Save 0 Facing
+	Facing = 0
 	Call CallRedraw
 	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "BEFORE YOU IS A HORDE OF KOBOLDS. BEHIND THEM ARE TWO MEN AND AN ANCIENT KOBOLD ON A WOODEN THRONE."
@@ -224,21 +225,21 @@ KoboldHorde:
 
 FightHorde:
 	SetupMonster Kobold distance=0 closeup=Kobold
-	Save 70 Morale
+	Morale = 70
 	ClearMonsters
 	LoadMonster Troll count=4 icon=Troll
 	LoadMonster Kobold0 count=35 icon=Kobold
 	LoadMonster KoboldLeader1 count=11 icon=KoboldLeader
-	Save PartyCount Scratch2
-	Add 4 PartyCount Scratch3
+	Scratch2 = PartyCount
+	Scratch3 = 4 + PartyCount
 
 MakeMembersHostile:
 	LoadCharacter Scratch2
-	Save 178 SelControl
-	Add 1 Scratch2 Scratch2
+	SelControl = 178
+	Scratch2 += 1
 	if Scratch2 < Scratch3: Goto MakeMembersHostile
 	Combat
-	Save 1 KoboldKingState
+	KoboldKingState = 1
 	if CombatEnd > 128: Goto OfferSurrender
 
 BallistaFire:
@@ -246,13 +247,13 @@ BallistaFire:
 	Damage 7 2 6 0 57
 	SetupMonster Kobold distance=1 closeup=Kobold
 	Approach
-	Save 60 Morale
+	Morale = 60
 	ClearMonsters
 	LoadMonster WildBoar count=5 icon=WildBoar
 	LoadMonster Kobold0 count=45 icon=Kobold
 	LoadMonster KoboldLeader1 count=8 icon=KoboldLeader
 	Combat
-	Save 2 KoboldKingState
+	KoboldKingState = 2
 	if CombatEnd > 128: Goto OfferSurrender
 
 EnvoysFight:
@@ -264,63 +265,63 @@ EnvoysRematch:
 	PrintClear "THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'"
 
 FightEnvoys:
-	Save 69 Portrait
+	Portrait = 69
 	SetupMonster Fighter16 distance=1 body=1
 	Approach
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Troll count=2 icon=Troll
 	LoadMonster WildBoar count=2 icon=WildBoar
 	LoadMonster Kobold0 count=8 icon=Kobold
 	LoadMonster Envoy count=2 icon=11
 	Combat
-	Save 255 Portrait
-	Save 3 KoboldKingState
+	Portrait = 255
+	KoboldKingState = 3
 	if CombatEnd > 128: Goto EscapeKobolds
 	PrintClear "THE KING HAS ESCAPED DURING THE FIGHT."
-	Save 4 KoboldKingState
+	KoboldKingState = 4
 	Exit
 
 OfferSurrender:
-	Sub 1 KoboldKingState KingFightTemp
-	OnGoto KingFightTemp 2 SurrenderOrDie DeathOrPrison
+	KingFightTemp = KoboldKingState - 1
+	OnGoto KingFightTemp SurrenderOrDie DeathOrPrison
 
 SurrenderOrDie:
+	alias Choice = Scratch1
 	PrintClear "KOBOLDS BLOCK ALL THE EXITS."
 	Delay
 	PrintClear "THE KING CALLS OUT,'YOU SEEM VALUABLE. SURRENDER OR DIE.'"
 	Gosub WhatDoYouDo
-	HMenu Scratch1 2 "SURRENDER" "FIGHT"
-	OnGoto Scratch1 2 Surrender FightHorde
+	Choice = Menu "SURRENDER" -> Surrender "FIGHT" -> FightHorde
 
 DeathOrPrison:
+	alias Choice = Scratch1
 	PrintClear "THE BALLISTA ARE RELOADED. THE KING CALLS OUT,'DEATH OR IMPRISONMENT.'"
 	Gosub WhatDoYouDo
-	HMenu Scratch1 2 "SURRENDER" "FIGHT"
-	OnGoto Scratch1 2 Surrender BallistaFire
+	Choice = Menu "SURRENDER" -> Surrender "FIGHT" -> BallistaFire
 
 SearchNorthWall:
 	if Facing != 0: Exit
-	Save 255 HoldMove
-	Save 0 AuxMember
+	HoldMove = 255
+	AuxMember = 0
 
 CheckMemberFinds:
 	LoadCharacter AuxMember
 	if SelStatus != 1: Goto NextSearcher
-	Save Search AuxSearchCount
-	if SelRace == 4: Add 1 AuxSearchCount AuxSearchCount
-	if SelRace == 2: Add 1 AuxSearchCount AuxSearchCount
-	Random 5 AuxRoll
+	AuxSearchCount = Search
+	if SelRace == 4: AuxSearchCount += 1
+	if SelRace == 2: AuxSearchCount += 1
+	AuxRoll = Random 5
 	if AuxSearchCount > AuxRoll: Goto SecretDoorFound
 
 NextSearcher:
-	Add 1 AuxMember AuxMember
+	AuxMember += 1
 	if AuxMember < 8: Goto CheckMemberFinds
 	Exit
 
 SecretDoorFound:
 	PrintClear "YOU FIND A SECRET DOOR IN THE NORTH WALL."
-	Save 2 SecretDoorNorth
+	SecretDoorNorth = 2
 	Exit
 
 Done:
@@ -330,39 +331,39 @@ KingsQuarters:
 	if KoboldKingState != 4: Exit
 	PrintClear "YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS."
 	SetupMonster Kobold distance=0 closeup=Kobold
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Troll count=3 icon=Troll
 	LoadMonster WildBoar count=3 icon=WildBoar
 	LoadMonster Kobold0 count=20 icon=Kobold
 	LoadMonster KoboldLeader1 count=4 icon=KoboldLeader
 	Combat
-	Save 5 KoboldKingState
+	KoboldKingState = 5
 	Exit
 
 KingInPit:
 	if KoboldKingState != 5: Exit
 	PrintClear "THE KING, PANICKED, HAS FALLEN INTO HIS OWN SPIKED PIT AND DIED."
-	Save 6 KoboldKingState
-	Save 254 QuestKobolds
+	KoboldKingState = 6
+	QuestKobolds = 254
 	Exit
 
 BrassBottle:
+	alias Choice = Scratch1
 	if Search != 1 || EfreetiBottleDone != 0: Exit
-	Save 2 Facing
+	Facing = 2
 	Call CallRedraw
 	PrintClear "YOU SEE A BRASS BOTTLE JAMMED INTO A CRACK HERE."
 	Gosub WhatDoYouDo
-	HMenu Scratch1 2 "LEAVE IT" "PULL IT OUT"
-	OnGoto Scratch1 2 Done PullBottle
+	Choice = Menu "LEAVE IT" -> Done "PULL IT OUT" -> PullBottle
 
 PullBottle:
+	alias Choice = Scratch1
 	PrintClear "AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID."
 	SetupMonster Efreeti distance=0 closeup=Efreeti
 	PrintClear "'I AM THE EFREETI SAMIR AHWAHL. YOU ARE NOT MY MASTER. ARE YOU, PERCHANCE, VAMPIRES?'"
 	Gosub WhatDoYouDo
-	HMenu Scratch1 3 "YES" "NO" "ATTACK IT"
-	OnGoto Scratch1 3 EfreetiAttacks EfreetiReturns FightEfreeti
+	Choice = Menu "YES" -> EfreetiAttacks "NO" -> EfreetiReturns "ATTACK IT" -> FightEfreeti
 
 EfreetiReturns:
 	PrintClear "'FOOLS, SUMMON ME ONLY WHEN A VAMPIRE IS NEAR OR FACE MY WRATH.' HE RETURNS TO THE BOTTLE."
@@ -372,18 +373,18 @@ EfreetiReturns:
 	ClearMonsters
 	Treasure 0 0 0 0 0 0 0 50 // Efreeti Bottle
 	Combat
-	Save 1 EfreetiBottleDone
+	EfreetiBottleDone = 1
 	Exit
 
 EfreetiAttacks:
 	PrintClear "'DIE HAPPY FIENDS, YOUR DEATHS SHALL BE MY FREEDOM.'"
 
 FightEfreeti:
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Efreeti124 count=1 icon=Efreeti
 	Combat
-	Save 1 EfreetiBottleDone
+	EfreetiBottleDone = 1
 	Exit
 
 CrudeBarracks:
@@ -391,7 +392,7 @@ CrudeBarracks:
 	PrintClear "YOU ARE IN A CRUDE BARRACKS. ON ONE WALL IS A CRUDE MAP."
 	Gosub JournalEntry
 	Print "28."
-	Save 1 BarracksSeen
+	BarracksSeen = 1
 	Exit
 
 FatimaRoom:
@@ -399,11 +400,12 @@ FatimaRoom:
 	if Facing == 0: Goto MeetFatima
 	PrintClear "YOU HEAR MUFFLED SOUNDS AND TURN TO INVESTIGATE."
 	Gosub PressReturn
-	Save 0 Facing
+	Facing = 0
 	Call CallRedraw
 
 MeetFatima:
-	Save 67 Portrait
+	alias Choice = Scratch1
+	Portrait = 67
 	SetupMonster Fighter16 distance=0 body=37
 	PrintClear "IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU."
 	Gosub PressReturn
@@ -413,16 +415,15 @@ MeetFatima:
 	Gosub PressReturn
 	PrintClear "SHE OFFERS TO JOIN YOUR BAND."
 	Gosub WhatDoYouDo
-	HMenu Scratch1 3 "YES" "NO" "ATTACK HER"
-	OnGoto Scratch1 3 FatimaJoins FatimaGoesAlone AttackFatima
+	Choice = Menu "YES" -> FatimaJoins "NO" -> FatimaGoesAlone "ATTACK HER" -> AttackFatima
 
 AttackFatima:
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster PrincessFatima count=1 icon=11
 	Combat
-	Save 1 FatimaMet
-	Save 255 Portrait
+	FatimaMet = 1
+	Portrait = 255
 	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
@@ -433,20 +434,20 @@ FatimaJoins:
 
 FatimaGoesAlone:
 	PrintClear "SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES."
-	Save 1 FatimaMet
-	Save 255 Portrait
+	FatimaMet = 1
+	Portrait = 255
 	Exit
 
 AddFatima:
 	AddNPC PrincessFatima 100
-	Save 1 FatimaMet
+	FatimaMet = 1
 	ShowPortrait 255 255
 	Exit
 
 PrisonCell:
 	if PrisonCellSeen != 0: Exit
 	PrintClear "THIS WAS A PRISON CELL. BROKEN BINDINGS AND SIX DEAD KOBOLDS ARE STREWN ON THE FLOOR."
-	Save 1 PrisonCellSeen
+	PrisonCellSeen = 1
 	Exit
 
 RubbleSlope:
@@ -454,30 +455,30 @@ RubbleSlope:
 	if 1 == RubbleSlopeUsed: Exit
 	PrintClear "YOU TUMBLE DOWN A STEEP, LOOSE SLOPE, MAKING A LOUD CLATTER."
 	Gosub PressReturn
-	Save 1 RubbleSlopeUsed
+	RubbleSlopeUsed = 1
 	Goto WyvernLands
 
 SlopeAskClimb:
+	alias Choice = Scratch1
 	if 1 == RubbleSlopeUsed: Exit
 	PrintClear "THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?"
-	HMenu Scratch1 2 "YES" "NO"
-	OnGoto Scratch1 2 ClimbSlope SlopeStepBack
+	Choice = Menu "YES" -> ClimbSlope "NO" -> SlopeStepBack
 
 SlopeStepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
 	Exit
 
 ClimbSlope:
 	PrintClear "YOU DISLODGE A NUMBER OF ROCKS."
 	Delay
-	Save 1 RubbleSlopeUsed
+	RubbleSlopeUsed = 1
 
 WyvernLands:
 	if WyvernState != 0: Exit
 	PrintClear "THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU."
-	Save 1 Facing
+	Facing = 1
 	Call CallRedraw
 	SetupMonster Wyvern distance=2 closeup=Wyvern
 	Delay
@@ -485,12 +486,12 @@ WyvernLands:
 	Delay
 	Approach
 	Gosub PressReturn
-	Save 1 Surprise
-	Save 100 Morale
+	Surprise = 1
+	Morale = 100
 	ClearMonsters
 	LoadMonster Wyvern count=1 icon=Wyvern
 	Combat
-	Save 1 WyvernState
+	WyvernState = 1
 	Exit
 
 WyvernCharges:
@@ -501,30 +502,30 @@ WyvernCharges:
 	Delay
 	Approach
 	Gosub PressReturn
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster Wyvern count=1 icon=Wyvern
 	Combat
-	Save 1 WyvernState
+	WyvernState = 1
 	Exit
 
 CrippledKobold:
+	alias Choice = Scratch1
 	if CrippledKoboldMet != 0 || Search != 1: Exit
 	PrintClear "HIDDEN IN A NARROW CREVICE IS AN OLD CRIPPLED KOBOLD. IT CROAKS WEAKLY FOR WATER."
 	Gosub WhatDoYouDo
-	Save 1 CrippledKoboldMet
-	HMenu Scratch1 3 "GIVE IT WATER" "THREATEN IT" "KILL IT"
-	OnGoto Scratch1 3 GiveWater ThreatenKobold KillKobold
+	CrippledKoboldMet = 1
+	Choice = Menu "GIVE IT WATER" -> GiveWater "THREATEN IT" -> ThreatenKobold "KILL IT" -> KillKobold
 
 GiveWater:
+	alias Choice = Scratch1
 	PrintClear "WHEN YOU GIVE IT WATER, IT CRAWLS OUT AND TELLS YOU ITS TALE."
 	Gosub JournalEntry
 	Print "20."
 	Gosub PressReturn
 	PrintClear "AFTER IT IS DONE, IT LEAVES."
 	Gosub WhatDoYouDo
-	HMenu Scratch1 2 "LET IT LEAVE" "KILL IT"
-	OnGoto Scratch1 2 Done KillKobold
+	Choice = Menu "LET IT LEAVE" -> Done "KILL IT" -> KillKobold
 
 ThreatenKobold:
 	PrintClear "THE KOBOLD RETREATS AROUND A BEND."
@@ -537,19 +538,19 @@ KillKobold:
 LivingAreas:
 	if LivingAreaSeen != 0 || KoboldKingState != 0: Exit
 	PrintClear "THIS IS THE LIVING AREAS. FEMALE AND CHILD KOBOLDS FLEE."
-	Save 1 LivingAreaSeen
+	LivingAreaSeen = 1
 	Exit
 
 RatLarder:
 	if LarderSeen13 != 0: Exit
 	PrintClear "RATS ARE HUNG HERE TO AGE. MOLDY ROOTS LIE IN PILES."
-	Save 1 LarderSeen13
+	LarderSeen13 = 1
 	Exit
 
 MessTables:
 	if MessHallSeen != 0: Exit
 	PrintClear "HERE CRUDE TABLES, LITTERED WITH BONES, ARE SCATTERED AROUND."
-	Save 1 MessHallSeen
+	MessHallSeen = 1
 	Exit
 
 RuinedBallista:
@@ -563,7 +564,7 @@ WyvernNest:
 	ClearMonsters
 	Treasure 0 #03E8 #01F4 #03E8 0 2 2 130 // 2 random items
 	Combat
-	Save 2 WyvernState
+	WyvernState = 2
 	Exit
 
 KoboldHoard:
@@ -572,67 +573,66 @@ KoboldHoard:
 	ClearMonsters
 	Treasure #C350 0 0 0 0 6 2 43 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, 25 Dust Covered Boots, 5 Rotting Leather Saddle, Silver Brooch, 6 Fungus Covered Tapestry, and 4 more
 	Combat
-	Save 7 KoboldKingState
+	KoboldKingState = 7
 	Exit
 
 CheckTrap:
 	CheckParty 0 19 Scratch1 Scratch1 Scratch1 Scratch1
 	if Scratch1 == 1: Goto TrapFound
 	if Search != 1: Goto TrapNotDisarmed
-	Save 0 AuxMember
+	AuxMember = 0
 
 MemberFindsTrap:
 	LoadCharacter AuxMember
 	if SelStatus != 1: Goto NextTrapFinder
-	Random 99 AuxRoll
+	AuxRoll = Random 99
 	if SelFindTraps > AuxRoll: Goto TrapFound
 
 NextTrapFinder:
-	Add 1 AuxMember AuxMember
+	AuxMember += 1
 	if AuxMember < 8: Goto MemberFindsTrap
 	Goto TrapNotDisarmed
 
 TrapFound:
 	PrintClear "YOU FIND A TRAP, BUT THE TUNNEL IS TOO NARROW TO AVOID IT."
 	Gosub WhatDoYouDo
-	HMenu AuxMember 3 "DISARM IT" "GO ON" "LEAVE"
-	OnGoto AuxMember 3 DisarmTrap TrapNotDisarmed TrapBackOff
+	AuxMember = Menu "DISARM IT" -> DisarmTrap "GO ON" -> TrapNotDisarmed "LEAVE" -> TrapBackOff
 
 DisarmTrap:
 	Who "WHO WILL DISARM THE TRAP?"
 	if SelStatus != 1: Goto TrapNotDisarmed
-	Save 128 Scratch4
-	Random 99 AuxRoll
+	Scratch4 = 128
+	AuxRoll = Random 99
 	if SelFindTraps < AuxRoll: Goto TrapNotDisarmed
-	Save 1 Scratch10
+	Scratch10 = 1
 	Return
 
 TrapNotDisarmed:
-	Save 0 Scratch10
+	Scratch10 = 0
 	Return
 
 TrapBackOff:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
 	Exit
 
 FollowGuide:
 	Picture None
-	Save 0 Scratch6
+	Scratch6 = 0
 
 GuideStep:
-	GetTable GuidePathMove Scratch6 Scratch1
-	GetTable GuidePathFacing Scratch6 Facing
+	Scratch1 = GuidePathMove[Scratch6]
+	Facing = GuidePathFacing[Scratch6]
 	Gosub WalkSteps
-	GetTable GuidePathEvent Scratch6 Scratch1
-	OnGoto Scratch1 5 GuideReturn KoboldTapsWall KoboldTapsWall BoulderLever ClamberDown
+	Scratch1 = GuidePathEvent[Scratch6]
+	OnGosub Scratch1 GuideReturn KoboldTapsWall KoboldTapsWall BoulderLever ClamberDown
 	if Scratch1 == 4: Goto Done
-	Add 1 Scratch6 Scratch6
+	Scratch6 += 1
 	Goto GuideStep
 
 WalkSteps:
-	Save 1 Scratch2
+	Scratch2 = 1
 	if Scratch1 == 0 {
 		Call CallRedraw
 		Delay
@@ -641,26 +641,26 @@ WalkSteps:
 
 WalkStepLoop:
 	if Scratch2 > Scratch1: Return
-	OnGoto Facing 4 StepNorthY StepEastX StepSouthY StepWestX
+	OnGosub Facing StepNorthY StepEastX StepSouthY StepWestX
 	Call CallRedraw
 	Delay
-	Add 1 Scratch2 Scratch2
+	Scratch2 += 1
 	Goto WalkStepLoop
 
 StepNorthY:
-	Sub 1 PartyY PartyY
+	PartyY -= 1
 	Return
 
 StepEastX:
-	Add 1 PartyX PartyX
+	PartyX += 1
 	Return
 
 StepSouthY:
-	Add 1 PartyY PartyY
+	PartyY += 1
 	Return
 
 StepWestX:
-	Sub 1 PartyX PartyX
+	PartyX -= 1
 
 GuideReturn:
 	Return
@@ -671,9 +671,9 @@ KoboldTapsWall:
 	Return
 
 BoulderLever:
+	alias Choice = Scratch8
 	PrintClear "A BOULDER BLOCKS OFF THE PASSAGE. USING A LEVER, THE KOBOLD DISLODGES IT AND PROCEEDS. DO YOU?"
-	HMenu Scratch8 2 "YES" "NO"
-	OnGoto Scratch8 2 GuideReturn KoboldGone
+	Choice = Menu "YES" -> GuideReturn "NO" -> KoboldGone
 
 KoboldGone:
 	PrintClear "THE KOBOLD DISAPPEARS BEYOND THE BOULDER."
@@ -685,26 +685,26 @@ ClamberDown:
 	if WyvernState != 0: Goto TreasureAhead
 	PrintClear "AT THE BOTTOM THE KOBOLD DIVES BENEATH SOME RUBBLE."
 	Delay
-	Save 1 RubbleSlopeUsed
+	RubbleSlopeUsed = 1
 	Goto WyvernLands
 
 TreasureAhead:
+	alias Choice = Scratch8
 	PrintClear "'JUST AROUND THE CORNER IS OUR TREASURE. TAKE WHAT YOU WISH AND LEAVE US. GOOD DAY.'"
 	Gosub WhatDoYouDo
-	HMenu Scratch8 2 "LET IT GO" "KILL IT"
-	OnGoto Scratch8 2 Done KillKobold
+	Choice = Menu "LET IT GO" -> Done "KILL IT" -> KillKobold
 
 GuideToKing:
-	Save 13 Scratch6
+	Scratch6 = 13
 
 KingGuideStep:
-	GetTable GuidePathMove Scratch6 Scratch1
-	GetTable GuidePathFacing Scratch6 Facing
+	Scratch1 = GuidePathMove[Scratch6]
+	Facing = GuidePathFacing[Scratch6]
 	Gosub WalkSteps
-	GetTable GuidePathEvent Scratch6 Scratch1
-	OnGoto Scratch1 4 GuideReturn KoboldTapsWall KoboldTapsWall EnvoysAnnounced
+	Scratch1 = GuidePathEvent[Scratch6]
+	OnGosub Scratch1 GuideReturn KoboldTapsWall KoboldTapsWall EnvoysAnnounced
 	if Scratch1 == 3: Goto Done
-	Add 1 Scratch6 Scratch6
+	Scratch6 += 1
 	Goto KingGuideStep
 
 EnvoysAnnounced:
@@ -712,64 +712,64 @@ EnvoysAnnounced:
 	Exit
 
 Surrender:
-	Save 4 PartyX
-	Save 3 PartyY
-	Save 3 Facing
+	PartyX = 4
+	PartyY = 3
+	Facing = 3
 	Call CallRedraw
 	PrintClear "THE KOBOLDS HERD YOU TOWARD YOUR PRISON. SOME NAB BITS OF YOUR EQUIPMENT AND LEAVE."
 	Rob 1 25 10
-	Save 22 Scratch6
+	Scratch6 = 22
 
 PrisonWalkStep:
-	GetTable GuidePathMove Scratch6 Scratch1
-	GetTable GuidePathFacing Scratch6 Facing
+	Scratch1 = GuidePathMove[Scratch6]
+	Facing = GuidePathFacing[Scratch6]
 	Gosub WalkSteps
-	GetTable GuidePathEvent Scratch6 Scratch1
-	OnGoto Scratch1 2 GuideReturn ReachPrison
-	Add 1 Scratch6 Scratch6
+	Scratch1 = GuidePathEvent[Scratch6]
+	OnGosub Scratch1 GuideReturn ReachPrison
+	Scratch6 += 1
 	Goto PrisonWalkStep
 
 ReachPrison:
 	if 1 == FatimaMet: Goto ThrownInCell
-	Save 67 Portrait
+	Portrait = 67
 	SetupMonster Kobold distance=0 body=37
 	PrintClear "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
 	AddNPC PrincessFatima 100
 	ClearMonsters
 	LoadMonster Kobold0 count=10 icon=Kobold
 	Combat
-	Save 255 Portrait
+	Portrait = 255
 	if PartyCount == 8: Goto FatimaJournal
 	PrintClear "WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE."
 	Gosub JournalEntry
 	Print "16"
 
 FatimaJournal:
-	Save 1 FatimaMet
+	FatimaMet = 1
 	if CombatEnd < 128: Exit
 
 EscapeKobolds:
-	Random 5 Scratch1
-	GetTable EscapeXTable Scratch1 PartyX
-	GetTable EscapeYTable Scratch1 PartyY
+	Scratch1 = Random 5
+	PartyX = EscapeXTable[Scratch1]
+	PartyY = EscapeYTable[Scratch1]
 	Call CallRedraw
 	PrintClear "THE KOBOLDS CHASE FOR A WHILE, BUT YOU ESCAPE."
 	Exit
 
 KoboldAmbush:
 	if 255 == DrunkKoboldState && 0 == WyvernState: Exit
-	Save 20 Scratch1
-	if 0 != KoboldKingState: Add 100 Scratch1 Scratch1
-	if 1 != Search: Add 40 Scratch1 Scratch1
-	Random Scratch1 Scratch2
+	Scratch1 = 20
+	if 0 != KoboldKingState: Scratch1 += 100
+	if 1 != Search: Scratch1 += 40
+	Scratch2 = Random Scratch1
 	if 1 != Scratch2: Exit
 	SetupMonster Kobold distance=0 closeup=Kobold
 	PrintClear "KOBOLDS SEEM TO BOIL UP FROM NOWHERE."
 	Gosub PressReturn
-	Save 30 Morale
-	Save 2 MonsterHit
-	Save 252 PartyMove
-	Save 254 PartyHit
+	Morale = 30
+	MonsterHit = 2
+	PartyMove = 252
+	PartyHit = 254
 	ClearMonsters
 	LoadMonster Kobold0 count=15 icon=Kobold
 	LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
@@ -780,17 +780,17 @@ KoboldAmbush:
 event2:
 	if 255 == DrunkKoboldState && 0 == WyvernState: Exit
 	if 0 != KoboldKingState: Goto RestRareEncounter
-	Save 1 RestEvery
-	Save 100 RestChance
+	RestEvery = 1
+	RestChance = 100
 	Exit
 
 RestRareEncounter:
-	Save 96 RestEvery
-	Save 5 RestChance
+	RestEvery = 96
+	RestChance = 5
 	Exit
 
 event3:
-	Save 0 RestChance
+	RestChance = 0
 	SetupMonster Kobold distance=2 closeup=Kobold
 	PrintClear "KOBOLDS APPEAR AND BOMBARD YOU WITH ROCKS."
 	Damage 7 1 4 1 50
@@ -806,13 +806,14 @@ WhatDoYouDo:
 ThrownInCell:
 	PrintClear "YOU ARE THROWN INTO A CELL BEREFT OF EQUIPMENT."
 	Rob 1 100 255
-	Save 0 PartyX
-	Save 0 PartyY
+	PartyX = 0
+	PartyY = 0
 	Call CallRedraw
 	Exit
 
 PressReturn:
-	HMenu Scratch1 1 "PRESS <RETURN> OR BUTTON TO CONTINUE."
+	alias Choice = Scratch1
+	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE."
 	Return
 
 JournalEntry:

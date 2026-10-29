@@ -2,17 +2,17 @@ event0:
 	if InLair == 255: Exit
 	if MapY <= 2: Gosub EdgeNorth
 	if MapX >= 15: Gosub EdgeEast
-	OnGoto FacingRaw 8 CheckTerrain CheckTerrain CheckTerrain CheckTerrain CheckTerrain CheckWestEdge CheckWestEdge CheckWestEdge
+	OnGoto FacingRaw CheckTerrain CheckTerrain CheckTerrain CheckTerrain CheckTerrain CheckWestEdge CheckWestEdge CheckWestEdge
 
 EdgeNorth:
-	OnGoto FacingRaw 8 BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove
+	OnGoto FacingRaw BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove
 
 BlockMove:
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 EdgeEast:
-	OnGoto FacingRaw 8 EdgeOk BlockMove BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk
+	OnGoto FacingRaw EdgeOk BlockMove BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk
 
 CheckWestEdge:
 	if MapX == 2: Gosub EdgeWest
@@ -22,107 +22,112 @@ CheckTerrain:
 	Exit
 
 EdgeWest:
-	OnGoto FacingRaw 8 EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk EdgeWestCorner ExitToCity ExitToCity
+	OnGoto FacingRaw EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk EdgeWestCorner ExitToCity ExitToCity
 
 EdgeOk:
 	Return
 
 ExitToCity:
-	Save 7 SymbolSet
-	Save 14 MapX
+	SymbolSet = 7
+	MapX = 14
 	NewECL Wilderness
 
 EdgeWestCorner:
 	if MapY != 31: Goto ExitToCity
-	Save 255 HoldMove
+	HoldMove = 255
 	Return
 
 CheckTerrainAhead:
-	Save MapX ProbeX
-	Save MapY ProbeY
-	OnGoto FacingRaw 8 ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
+	ProbeX = MapX
+	ProbeY = MapY
+	OnGosub FacingRaw ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
 	Call CallUnknownC01B
-	Save 0 Scratch1
-	Save 8 Scratch3
+	Scratch1 = 0
+	Scratch3 = 8
 
 CheckTerrainLoop:
+	alias BlockedTerrainEntry = Scratch2
 	if Scratch1 == Scratch3: Return
-	GetTable BlockedTerrain Scratch1 Scratch2
-	if ProbeWall == Scratch2 {
-		Save 255 HoldMove
+	BlockedTerrainEntry = BlockedTerrain[Scratch1]
+	if ProbeWall == BlockedTerrainEntry {
+		HoldMove = 255
 		Return
 	}
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Goto CheckTerrainLoop
 
 ProbeNW:
-	Sub 1 ProbeX ProbeX
+	ProbeX -= 1
 
 ProbeN:
-	Sub 1 ProbeY ProbeY
+	ProbeY -= 1
 	Return
 
 ProbeNE:
-	Sub 1 ProbeY ProbeY
+	ProbeY -= 1
 
 ProbeE:
-	Add 1 ProbeX ProbeX
+	ProbeX += 1
 	Return
 
 ProbeSE:
-	Add 1 ProbeX ProbeX
+	ProbeX += 1
 
 ProbeS:
-	Add 1 ProbeY ProbeY
+	ProbeY += 1
 	Return
 
 ProbeSW:
-	Add 1 ProbeY ProbeY
+	ProbeY += 1
 
 ProbeW:
-	Sub 1 ProbeX ProbeX
+	ProbeX -= 1
 	Return
 
 event1:
 	if InLair == 255: Goto LairCell
-	Save 0 Scratch1
-	Save 0 Scratch4
+	Scratch1 = 0
+	Scratch4 = 0
 
 FindSiteRow:
+	alias SiteRowYEntry = Scratch2
+	alias SiteRowEndEntry = Scratch3
 	if Scratch1 >= 5: Goto RollEncounter
-	GetTable SiteRowEnd Scratch1 Scratch3
-	GetTable SiteRowY Scratch1 Scratch2
-	if Scratch2 == MapY: Goto SiteRowFound
-	Add 1 Scratch1 Scratch1
-	Add Scratch3 Scratch4 Scratch4
+	SiteRowEndEntry = SiteRowEnd[Scratch1]
+	SiteRowYEntry = SiteRowY[Scratch1]
+	if SiteRowYEntry == MapY: Goto SiteRowFound
+	Scratch1 += 1
+	Scratch4 += SiteRowEndEntry
 	Goto FindSiteRow
 
 SiteRowFound:
-	Add Scratch4 Scratch3 Scratch3
+	Scratch3 += Scratch4
 
 FindSiteX:
+	alias SiteXEntry = Scratch5
 	if Scratch4 >= Scratch3: Goto RollEncounter
-	GetTable SiteX Scratch4 Scratch5
-	if Scratch5 == MapX: Goto SiteFound
-	Add 1 Scratch4 Scratch4
+	SiteXEntry = SiteX[Scratch4]
+	if SiteXEntry == MapX: Goto SiteFound
+	Scratch4 += 1
 	Goto FindSiteX
 
 SiteFound:
-	GetTable SiteKind Scratch4 Scratch1
-	OnGoto Scratch1 4 RuinedCastle KoboldHorde TwoCaves BoatDock
+	alias SiteKindEntry = Scratch1
+	SiteKindEntry = SiteKind[Scratch4]
+	OnGoto SiteKindEntry RuinedCastle KoboldHorde TwoCaves BoatDock
 
 RuinedCastle:
-	Or 1 MarkFlags57 MarkFlags57
-	Save 11 ProbeX
-	Save 8 ProbeY
-	Save 113 ProbeCell
+	alias Choice = Scratch1
+	MarkFlags57 = 1 | MarkFlags57
+	ProbeX = 11
+	ProbeY = 8
+	ProbeCell = 113
 	Call CallLookAhead
 	ClearBox
 	Call CallClearView
 	Picture Swamp
 	PrintClear "YOU FIND A RUINED CASTLE SURROUNDED BY QUICKSAND.   AN OLD WORN DRAWBRIDGE IS THE ONLY SAFE WAY ACROSS THE QUAGMIRE.  WILL YOU ENTER THE RUINED CASTLE?"
-	HMenu Scratch1 2 "ENTER" "LEAVE"
-	OnGoto Scratch1 2 EnterCastle Done
+	Choice = Menu "ENTER" -> EnterCastle "LEAVE" -> Done
 
 EnterCastle:
 	Gosub LeaveWilderness
@@ -132,7 +137,7 @@ KoboldHorde:
 	if QuestKobolds != 0: Exit
 	if KoboldHordeDefeated != 0: Exit
 	SetupMonster Kobold distance=0 closeup=Kobold
-	Save 50 Morale
+	Morale = 50
 	PrintClear "A SCREAMING HORDE OF KOBOLDS ATTACKS THE PARTY."
 	ClearMonsters
 	ClearBox
@@ -140,11 +145,11 @@ KoboldHorde:
 	LoadMonster KoboldLeader1 count=5 icon=KoboldLeader
 	Combat
 	if CombatEnd > 128: Goto ExitEvent
-	Save 255 KoboldHordeDefeated
+	KoboldHordeDefeated = 255
 	Exit
 
 TwoCaves:
-	And MarkFlags57 2 Scratch1
+	Scratch1 = MarkFlags57 & 2
 	if 0 == Scratch1: Goto KoboldsEnterCave
 	ClearBox
 	Call CallClearView
@@ -153,103 +158,105 @@ TwoCaves:
 	Goto CaveMenu
 
 KoboldsEnterCave:
-	Or MarkFlags57 2 MarkFlags57
-	Save 6 ProbeX
-	Save 15 ProbeY
-	Save 73 ProbeCell
+	MarkFlags57 = MarkFlags57 | 2
+	ProbeX = 6
+	ProbeY = 15
+	ProbeCell = 73
 	Call CallLookAhead
 	ClearBox
 	Picture Hill
 	PrintClear "YOU SEE A SMALL GROUP OF KOBOLDS ENTERING A SMALL,   CONCEALED CAVE.  A LARGER, MORE NOTICEABLE CAVE LIES JUST EAST OF THE SMALL HIDDEN, CAVE.  WHAT CAVE WILL YOU ENTER?"
 
 CaveMenu:
-	HMenu Scratch1 3 "LARGE" "SMALL" "EXIT"
-	OnGoto Scratch1 3 EnterLargeCave EnterSmallCave Done
+	alias Choice = Scratch1
+	Choice = Menu "LARGE" -> EnterLargeCave "SMALL" -> EnterSmallCave "EXIT" -> Done
 
 EnterLargeCave:
 	Gosub LeaveWilderness
-	Save 10 PartyX
-	Save 255 TookLargeCave
+	PartyX = 10
+	TookLargeCave = 255
 	Goto EnterKoboldCaves
 
 EnterSmallCave:
 	Gosub LeaveWilderness
-	Save 6 PartyX
-	Save 0 TookLargeCave
+	PartyX = 6
+	TookLargeCave = 0
 
 EnterKoboldCaves:
-	Save 15 PartyY
-	Save 0 Facing
+	PartyY = 15
+	Facing = 0
 	NewECL KoboldCaves
 
 BoatDock:
+	alias Choice = Scratch1
 	ClearBox
 	Call CallClearView
 	Picture Ship
 	PrintClear "THERE IS A BOAT DOCKED HERE THAT WILL RETURN YOU TO THE CIVILIZED SECTION OF PHLAN.  WILL YOU TAKE IT?"
-	HMenu Scratch1 2 "TAKE BOAT" "STAY"
-	OnGoto Scratch1 2 TakeBoat Done
+	Choice = Menu "TAKE BOAT" -> TakeBoat "STAY" -> Done
 
 TakeBoat:
 	Gosub LeaveWilderness
-	Save 15 PartyX
-	Save 1 PartyY
+	PartyX = 15
+	PartyY = 1
 	EnterArea NewPhlan
 
 LeaveWilderness:
 	Picture None
 	ClearBox
-	Save 1 In3D
-	Save 127 WallSlot1
-	Save 127 WallSlot1B
-	Save 127 WallSlot2
-	Save 127 WallSlot2B
-	Save 127 WallSlot3
-	Save 127 WallSlot3B
-	LoadFiles 127 127 127
+	In3D = 1
+	WallSlot1 = 127
+	WallSlot1B = 127
+	WallSlot2 = 127
+	WallSlot2B = 127
+	WallSlot3 = 127
+	WallSlot3B = 127
+	LoadMap Unchanged unused=127 icons=127
 	Return
 
 RollEncounter:
-	Random 19 Scratch1
-	Save 0 ForceEncounter27
+	Scratch1 = Random 19
+	ForceEncounter27 = 0
 	if Scratch1 != 0: Goto Done
 
 RandomEncounter:
+	alias EncSurpriseAEntry = Scratch4
+	alias EncSurpriseBEntry = Scratch5
 	Gosub PickEncounter
 	if Scratch1 == 20 && ForceEncounter27 == 0: Goto SmallDarkCave
-	GetTable EncSurpriseA EncounterType27 Scratch4
-	GetTable EncSurpriseB EncounterType27 Scratch5
+	EncSurpriseAEntry = EncSurpriseA[EncounterType27]
+	EncSurpriseBEntry = EncSurpriseB[EncounterType27]
 	PartySurprise Scratch1 Scratch2
-	Surprise Scratch1 Scratch2 Scratch4 Scratch5
-	if Scratch5 == 9: And Surprise 1 Surprise
-	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseGroup FaceToFace
+	Surprise Scratch1 Scratch2 EncSurpriseAEntry EncSurpriseBEntry
+	if EncSurpriseBEntry == 9: Surprise = Surprise & 1
+	OnGoto Surprise SpotGroup PartySurprised SurpriseGroup FaceToFace
 
 SpotGroup:
 	PrintClear "YOU SPOT A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 4 "" "" "" AuxEncTemp AuxEncTemp
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 PartySurprised:
 	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 99 99
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 SurpriseGroup:
 	PrintClear "YOU SURPRISE A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 2 2 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 FaceToFace:
 	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
 	Print $AuxMonsterName
 	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 0 0
-	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
 
 EncounterFight:
-	Save AuxEncResult2 Morale
+	Morale = AuxEncResult2
 	ClearMonsters
 	LoadMonster AuxMonster count=EncounterCount27 icon=AuxMonster
 	if EncounterExtraCount27 == 0: Goto StartCombat
@@ -265,10 +272,10 @@ EncounterParlay:
 	if AuxMember == 0: Goto EncounterFight
 	if AuxMember == 50: Goto FriendlyGroup
 	Parlay 20 20 5 5 30 Scratch1
-	Random 30 Scratch2
-	Add Scratch1 Scratch2 Scratch1
-	Add Scratch1 SelReaction Scratch1
-	Add Scratch1 AuxEncBonus Scratch1
+	Scratch2 = Random 30
+	Scratch1 = Scratch1 + Scratch2
+	Scratch1 = Scratch1 + SelReaction
+	Scratch1 = Scratch1 + AuxEncBonus
 	if Scratch1 < 120: Goto ParlayConvince
 	PrintClear "THE "
 	Print $AuxMonsterName
@@ -300,53 +307,53 @@ FriendlyGroup:
 	Goto Done
 
 SmallDarkCave:
+	alias Choice = Scratch1
 	PrintClear "YOU HAVE FOUND A SMALL, DARK CAVE.  WILL YOU ENTER?"
-	HMenu Scratch1 2 "ENTER" "LEAVE"
-	OnGoto Scratch1 2 EnterLair Done
+	Choice = Menu "ENTER" -> EnterLair "LEAVE" -> Done
 
 EnterLair:
-	Random 3 Scratch6
-	Save 255 InLair
-	OnGoto Scratch6 4 LairStartA LairStartB LairStartC LairStartD
+	Scratch6 = Random 3
+	InLair = 255
+	OnGoto Scratch6 LairStartA LairStartB LairStartC LairStartD
 
 LairStartA:
-	Save 0 LairStartX27
-	Save 3 LairStartY27
+	LairStartX27 = 0
+	LairStartY27 = 3
 	Goto LoadLair
 
 LairStartB:
-	Save 6 LairStartX27
-	Save 15 LairStartY27
+	LairStartX27 = 6
+	LairStartY27 = 15
 	Goto LoadLair
 
 LairStartC:
-	Save 12 LairStartX27
-	Save 15 LairStartY27
+	LairStartX27 = 12
+	LairStartY27 = 15
 	Goto LoadLair
 
 LairStartD:
-	Save 11 LairStartX27
-	Save 0 LairStartY27
+	LairStartX27 = 11
+	LairStartY27 = 0
 
 LoadLair:
-	Save 1 In3D
-	Save 145 WallSlot1
-	Save 145 WallSlot1B
-	Save 145 WallSlot2
-	Save 145 WallSlot2B
-	Save 145 WallSlot3
-	Save 145 WallSlot3B
-	LoadFiles 27 2 255
-	Save LairStartX27 PartyX
-	Save LairStartY27 PartyY
+	In3D = 1
+	WallSlot1 = 145
+	WallSlot1B = 145
+	WallSlot2 = 145
+	WallSlot2B = 145
+	WallSlot3 = 145
+	WallSlot3B = 145
+	LoadMap 27 unused=2 icons=255
+	PartyX = LairStartX27
+	PartyY = LairStartY27
 	ClearBox
-	Save 8 SkyInside
+	SkyInside = 8
 	Call CallRedraw
 	NewECL Quagmire
 
 LairCell:
-	And Cell 127 Scratch10
-	OnGoto Scratch10 18 Done HalflingRemains WyvernTreasure FerociousWyvern TerribleWyvern FourLizards HumanBones LizardsAndMinotaurs LairTreasure TwoLizards GnollAttack GnollAttack ElfRemains GnollsAndTrolls GnollsAndTrolls MadKobolds MadKobolds PassageOutside
+	Scratch10 = Cell & 127
+	OnGoto Scratch10 Done HalflingRemains WyvernTreasure FerociousWyvern TerribleWyvern FourLizards HumanBones LizardsAndMinotaurs LairTreasure TwoLizards GnollAttack GnollAttack ElfRemains GnollsAndTrolls GnollsAndTrolls MadKobolds MadKobolds PassageOutside
 
 HalflingRemains:
 	PrintClear "LYING HERE ARE THE PARTIALLY EATEN REMAINS OF A HALFING."
@@ -354,64 +361,64 @@ HalflingRemains:
 	Goto Done
 
 WyvernTreasure:
-	And WyvernLairFlags 1 Scratch1
+	Scratch1 = WyvernLairFlags & 1
 	if 0 != Scratch1: Exit
 	PrintClear "YOU HAVE FOUND THE WYVERN'S TREASURE!"
 	ClearMonsters
 	Treasure #1388 #1770 #07D0 #03E8 0 3 3 129 // 1 random items
 	Combat
-	Or WyvernLairFlags 1 WyvernLairFlags
+	WyvernLairFlags = WyvernLairFlags | 1
 	Exit
 
 FerociousWyvern:
-	And WyvernLairFlags 2 Scratch1
+	Scratch1 = WyvernLairFlags & 2
 	if 0 != Scratch1: Exit
 	SetupMonster Wyvern distance=2 closeup=Wyvern
 	Approach
 	Approach
 	PrintClear "YOU HAVE STUMBLED ACROSS A FEROCIOUS WYVERN.  IT CHARGES AND ATTACKS!"
-	Save 100 Morale
-	And WyvernLairFlags 4 Scratch1
-	if 0 == Scratch1: Save 254 MonsterHit
+	Morale = 100
+	Scratch1 = WyvernLairFlags & 4
+	if 0 == Scratch1: MonsterHit = 254
 	ClearMonsters
 	LoadMonster Wyvern count=1 icon=Wyvern
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or WyvernLairFlags 2 WyvernLairFlags
-	Save 0 MonsterHit
+	WyvernLairFlags = WyvernLairFlags | 2
+	MonsterHit = 0
 	Exit
 
 TerribleWyvern:
-	And WyvernLairFlags 4 Scratch1
+	Scratch1 = WyvernLairFlags & 4
 	if 0 != Scratch1: Exit
 	SetupMonster Wyvern distance=2 closeup=Wyvern
 	Approach
 	Approach
 	PrintClear "A TERRIBLE WYVERN CHARGES TO ATTACK THE PARTY!"
-	Save 100 Morale
-	And WyvernLairFlags 2 Scratch1
-	if 0 == Scratch1: Save 254 MonsterHit
+	Morale = 100
+	Scratch1 = WyvernLairFlags & 2
+	if 0 == Scratch1: MonsterHit = 254
 	ClearMonsters
 	LoadMonster Wyvern count=1 icon=Wyvern
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or WyvernLairFlags 4 WyvernLairFlags
-	Save 0 MonsterHit
+	WyvernLairFlags = WyvernLairFlags | 4
+	MonsterHit = 0
 	Exit
 
 FourLizards:
-	And WyvernLairFlags 8 Scratch1
+	Scratch1 = WyvernLairFlags & 8
 	if 0 != Scratch1: Exit
 	SetupMonster GiantLizard distance=2 closeup=GiantLizard
 	Approach
 	Approach
 	PrintClear "FOUR GIANT LIZARDS RUN UP AND ATTACK THE PARTY!"
-	Save 60 Morale
+	Morale = 60
 	ClearMonsters
 	LoadMonster GiantLizard count=4 icon=GiantLizard
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or WyvernLairFlags 8 WyvernLairFlags
+	WyvernLairFlags = WyvernLairFlags | 8
 	Exit
 
 HumanBones:
@@ -420,52 +427,52 @@ HumanBones:
 	Exit
 
 LizardsAndMinotaurs:
-	And WyvernLairFlags 16 Scratch1
+	Scratch1 = WyvernLairFlags & 16
 	if 0 != Scratch1: Exit
 	SetupMonster GiantLizard distance=0 closeup=GiantLizard
 	PrintClear "YOU ENTER A CHAMBER WITH FOUR GIANT LIZARDS AND TWO MINOTAURS.  THE MINOTAURS ORDER THE LIZARDS TO ATTACK."
-	Save 70 Morale
+	Morale = 70
 	ClearMonsters
 	LoadMonster GiantLizard count=4 icon=GiantLizard
 	LoadMonster Minotaur count=2 icon=Minotaur
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or WyvernLairFlags 16 WyvernLairFlags
+	WyvernLairFlags = WyvernLairFlags | 16
 	Exit
 
 LairTreasure:
-	And WyvernLairFlags 32 Scratch1
+	Scratch1 = WyvernLairFlags & 32
 	if 0 != Scratch1: Exit
 	PrintClear "YOU HAVE FOUND SOME TREASURE."
 	ClearMonsters
 	Treasure #1770 #0FA0 #0BB8 0 0 0 0 129 // 1 random items
 	Combat
-	Or WyvernLairFlags 32 WyvernLairFlags
+	WyvernLairFlags = WyvernLairFlags | 32
 	Exit
 
 TwoLizards:
-	And WyvernLairFlags 64 Scratch1
+	Scratch1 = WyvernLairFlags & 64
 	if 0 != Scratch1: Exit
 	SetupMonster GiantLizard distance=0 closeup=GiantLizard
 	PrintClear "GUARDING THIS CHAMBER ARE TWO GIANT LIZARDS.  AS YOU APPROACH, THEY ATTACK."
-	Save 100 Morale
+	Morale = 100
 	ClearMonsters
 	LoadMonster GiantLizard count=2 icon=GiantLizard
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or WyvernLairFlags 64 WyvernLairFlags
+	WyvernLairFlags = WyvernLairFlags | 64
 	Exit
 
 GnollAttack:
-	Random 7 Scratch1
+	Scratch1 = Random 7
 	if Scratch1 > 0: Exit
 	SetupMonster Gnoll distance=2 closeup=Gnoll
 	Approach
 	Approach
 	PrintClear "YOU ARE ATTACKED BY SOME GNOLLS."
-	Random 30 Scratch1
-	Add 4 Scratch1 Scratch1
-	Save 60 Morale
+	Scratch1 = Random 30
+	Scratch1 += 4
+	Morale = 60
 	ClearMonsters
 	LoadMonster Gnoll count=Scratch1 icon=Gnoll
 	Combat
@@ -478,31 +485,31 @@ ElfRemains:
 	Exit
 
 GnollsAndTrolls:
-	And WyvernLairFlags 128 Scratch1
+	Scratch1 = WyvernLairFlags & 128
 	if 0 != Scratch1: Exit
 	SetupMonster Gnoll distance=0 closeup=Gnoll
 	PrintClear "IN THIS ROOM ARE SOME GNOLLS AND TROLLS.  THEY ATTACK YOU IMMEDIATELY."
-	Save 75 Morale
+	Morale = 75
 	ClearMonsters
 	LoadMonster Gnoll count=12 icon=Gnoll
 	LoadMonster Troll count=4 icon=Troll
 	Combat
 	if CombatEnd > 128: Goto StepBack
-	Or WyvernLairFlags 128 WyvernLairFlags
+	WyvernLairFlags = WyvernLairFlags | 128
 	Exit
 
 MadKobolds:
-	Random 7 Scratch1
+	Scratch1 = Random 7
 	if Scratch1 > 0: Exit
 	SetupMonster Kobold distance=2 closeup=Kobold
 	Approach
 	Approach
-	Save 50 Morale
-	Save 0 Scratch2
+	Morale = 50
+	Scratch2 = 0
 	PrintClear "YOU ARE ATTACKED BY A GROUP OF MAD KOBOLDS."
-	Random 40 Scratch1
-	Add 10 Scratch1 Scratch1
-	if Scratch1 >= 40: Save 3 Scratch2
+	Scratch1 = Random 40
+	Scratch1 += 10
+	if Scratch1 >= 40: Scratch2 = 3
 	ClearMonsters
 	LoadMonster Kobold0 count=Scratch1 icon=Kobold
 	if Scratch2 != 0: LoadMonster KoboldLeader1 count=Scratch2 icon=Kobold
@@ -510,13 +517,13 @@ MadKobolds:
 	Exit
 
 PassageOutside:
+	alias Choice = Scratch1
 	PrintClear "YOU FIND A PASSAGEWAY GOING OUT.  WHAT WILL YOU DO?"
-	HMenu Scratch1 2 "STAY" "LEAVE"
-	OnGoto Scratch1 2 Done LeaveLair
+	Choice = Menu "STAY" -> Done "LEAVE" -> LeaveLair
 
 LeaveLair:
-	Save 0 In3D
-	Save 0 InLair
+	In3D = 0
+	InLair = 0
 	NewECL Quagmire
 
 ExitEvent:
@@ -527,98 +534,98 @@ RedrawExit:
 	Exit
 
 StepBack:
-	Save PrevX PartyX
-	Save PrevY PartyY
+	PartyX = PrevX
+	PartyY = PrevY
 	Call CallRedraw
 	Exit
 
 PickEncounter:
-	Random 20 Scratch1
+	Scratch1 = Random 20
 	if Scratch1 == 20 && ForceEncounter27 == 0: Return
-	Random 19 Scratch1
-	OnGoto Scratch1 20 PickKobolds PickKobolds PickKobolds PickKobolds PickGnolls PickGnolls PickGnolls PickLizardMen PickLizardMen PickLizardMen PickGiantLizards PickGiantLizards PickHippogriffs PickHippogriffs PickWyverns PickTrolls PickTrolls PickPhaseSpiders PickMinotaurs PickMinotaurs
-	GetTable EncData2 EncounterType27 AuxMember
-	GetTable EncData3 EncounterType27 AuxRoll
-	GetTable EncMonster EncounterType27 AuxMonster
-	GetTable EncData5 EncounterType27 AuxEncResult
-	GetTable EncMorale EncounterType27 AuxEncResult2
-	GetTable EncData7 EncounterType27 AuxEncTemp
-	GetTable EncMonster2 EncounterType27 AuxPartyStrength
-	GetTable EncStrength EncounterType27 AuxCounter
+	Scratch1 = Random 19
+	OnGosub Scratch1 PickKobolds PickKobolds PickKobolds PickKobolds PickGnolls PickGnolls PickGnolls PickLizardMen PickLizardMen PickLizardMen PickGiantLizards PickGiantLizards PickHippogriffs PickHippogriffs PickWyverns PickTrolls PickTrolls PickPhaseSpiders PickMinotaurs PickMinotaurs
+	AuxMember = EncData2[EncounterType27]
+	AuxRoll = EncData3[EncounterType27]
+	AuxMonster = EncMonster[EncounterType27]
+	AuxEncResult = EncData5[EncounterType27]
+	AuxEncResult2 = EncMorale[EncounterType27]
+	AuxEncTemp = EncData7[EncounterType27]
+	AuxPartyStrength = EncMonster2[EncounterType27]
+	AuxCounter = EncStrength[EncounterType27]
 	PartyStrength Scratch1
-	Div Scratch1 AuxCounter Scratch1
-	Random 5 Scratch2
-	OnGoto Scratch2 5 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
+	Scratch1 = Scratch1 / AuxCounter
+	Scratch2 = Random 5
+	OnGoto Scratch2 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
 
 GroupSizeLarge:
-	Div Scratch1 3 Scratch1
-	if Scratch1 <= 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 3
+	if Scratch1 <= 0: Scratch1 = 1
 	Goto SplitGroups
 
 GroupSizeMedium:
-	Div Scratch1 2 Scratch1
-	if Scratch1 <= 0: Save 1 Scratch1
+	Scratch1 = Scratch1 / 2
+	if Scratch1 <= 0: Scratch1 = 1
 
 SplitGroups:
-	Save 0 EncounterExtraCount27
-	Save Scratch1 Scratch3
-	GetTable EncGroupSize EncounterType27 AuxMenuChoice
+	EncounterExtraCount27 = 0
+	Scratch3 = Scratch1
+	AuxMenuChoice = EncGroupSize[EncounterType27]
 	if AuxMenuChoice == 0: Goto CapGroupSize
 
 SplitGroupsLoop:
 	if Scratch3 < AuxMenuChoice: Goto CapGroupSize
-	Add 1 EncounterExtraCount27 EncounterExtraCount27
-	Sub AuxMenuChoice Scratch3 Scratch3
+	EncounterExtraCount27 += 1
+	Scratch3 -= AuxMenuChoice
 	Goto SplitGroupsLoop
 
 CapGroupSize:
-	if Scratch1 >= 56: Sub EncounterExtraCount27 56 Scratch1
-	Save Scratch1 EncounterCount27
+	if Scratch1 >= 56: Scratch1 = 56 - EncounterExtraCount27
+	EncounterCount27 = Scratch1
 	Return
 
 PickKobolds:
-	Save "KOBOLDS" $AuxMonsterName
-	Save 0 EncounterType27
+	$AuxMonsterName = "KOBOLDS"
+	EncounterType27 = 0
 	Return
 
 PickGnolls:
-	Save "GNOLLS" $AuxMonsterName
-	Save 1 EncounterType27
+	$AuxMonsterName = "GNOLLS"
+	EncounterType27 = 1
 	Return
 
 PickLizardMen:
-	Save "LIZARD MEN" $AuxMonsterName
-	Save 2 EncounterType27
+	$AuxMonsterName = "LIZARD MEN"
+	EncounterType27 = 2
 	Return
 
 PickGiantLizards:
-	Save "GIANT LIZARDS" $AuxMonsterName
-	Save 3 EncounterType27
+	$AuxMonsterName = "GIANT LIZARDS"
+	EncounterType27 = 3
 	Return
 
 PickHippogriffs:
-	Save "HIPPOGRIFFS" $AuxMonsterName
-	Save 4 EncounterType27
+	$AuxMonsterName = "HIPPOGRIFFS"
+	EncounterType27 = 4
 	Return
 
 PickWyverns:
-	Save "WYVERNS" $AuxMonsterName
-	Save 5 EncounterType27
+	$AuxMonsterName = "WYVERNS"
+	EncounterType27 = 5
 	Return
 
 PickTrolls:
-	Save "TROLLS" $AuxMonsterName
-	Save 6 EncounterType27
+	$AuxMonsterName = "TROLLS"
+	EncounterType27 = 6
 	Return
 
 PickPhaseSpiders:
-	Save "PHASE SPIDERS" $AuxMonsterName
-	Save 7 EncounterType27
+	$AuxMonsterName = "PHASE SPIDERS"
+	EncounterType27 = 7
 	Return
 
 PickMinotaurs:
-	Save "MINOTAURS" $AuxMonsterName
-	Save 8 EncounterType27
+	$AuxMonsterName = "MINOTAURS"
+	EncounterType27 = 8
 	Return
 
 Done:
@@ -629,52 +636,54 @@ Done:
 	Exit
 
 MarkSitesOnMap:
-	And MarkFlags57 1 Scratch1
+	Scratch1 = MarkFlags57 & 1
 	if 0 != Scratch1: Goto MarkCavesSite
-	Save 11 ProbeX
-	Save 8 ProbeY
-	Save 34 ProbeCell
+	ProbeX = 11
+	ProbeY = 8
+	ProbeCell = 34
 	Call CallLookAhead
 
 MarkCavesSite:
-	And MarkFlags57 2 Scratch1
+	Scratch1 = MarkFlags57 & 2
 	if 0 != Scratch1: Goto MarkThirdSite
-	Save 6 ProbeX
-	Save 15 ProbeY
-	Save 48 ProbeCell
+	ProbeX = 6
+	ProbeY = 15
+	ProbeCell = 48
 	Call CallLookAhead
 
 MarkThirdSite:
-	And MarkFlags57 4 Scratch1
+	Scratch1 = MarkFlags57 & 4
 	if 0 != Scratch1: Return
-	Save 7 ProbeX
-	Save 23 ProbeY
-	Save 17 ProbeCell
+	ProbeX = 7
+	ProbeY = 23
+	ProbeCell = 17
 	Call CallLookAhead
 	Return
 
 PatchMap:
-	Save 0 Scratch1
-	Save 0 Scratch2
+	Scratch1 = 0
+	Scratch2 = 0
 	Call CallBeginDraw
 
 PatchMapRow:
+	alias MapPatchBaseEntry = Scratch7
 	if Scratch1 == 5: Goto PatchMapDone
-	GetTable MapPatchBase Scratch1 Scratch7
-	Mul 8 Scratch7 &Scratch3
-	Save 0 Scratch6
+	MapPatchBaseEntry = MapPatchBase[Scratch1]
+	&Scratch3 = 8 * MapPatchBaseEntry
+	Scratch6 = 0
 
 PatchMapCell:
+	alias MapPatchValue = Scratch5
 	if Scratch6 == 8: Goto PatchMapNextRow
-	GetTable MapPatchValues Scratch2 Scratch5
-	Add 1 Scratch2 Scratch2
-	Add Scratch6 &Scratch3 &MapCellIndex
-	SaveTable Scratch5 MapPatchB &MapCellIndex
-	Add 1 Scratch6 Scratch6
+	MapPatchValue = MapPatchValues[Scratch2]
+	Scratch2 += 1
+	&MapCellIndex = Scratch6 + &Scratch3
+	MapPatchB[&MapCellIndex] = MapPatchValue
+	Scratch6 += 1
 	Goto PatchMapCell
 
 PatchMapNextRow:
-	Add 1 Scratch1 Scratch1
+	Scratch1 += 1
 	Goto PatchMapRow
 
 PatchMapDone:
@@ -732,33 +741,33 @@ EncMonster2:
 
 event2:
 	if In3D == 1: Goto RestInside
-	Save 10 RestChance
-	Save 96 RestEvery
+	RestChance = 10
+	RestEvery = 96
 	Exit
 
 RestInside:
-	Save 0 RestEvery
+	RestEvery = 0
 	Exit
 
 event3:
-	Save 1 ForceEncounter27
+	ForceEncounter27 = 1
 	Goto RandomEncounter
 
 event4:
 	if InLair == 255: Goto LoadLairFiles
-	Save 0 In3D
-	Save 0 NoCoords
-	LoadFiles 6 6 0
+	In3D = 0
+	NoCoords = 0
+	LoadMap 6 unused=6 icons=0
 	if Boss >= 254: Gosub PatchMap
 	Gosub MarkSitesOnMap
 	Exit
 
 LoadLairFiles:
-	Save 1 In3D
-	Save 255 NoCoords
-	LoadPieces 17 17 17
-	LoadFiles 27 2 255
-	Save 8 SkyInside
+	In3D = 1
+	NoCoords = 255
+	LoadWalls 17 17 17
+	LoadMap 27 unused=2 icons=255
+	SkyInside = 8
 	Exit
 
 MapPatchBase:
