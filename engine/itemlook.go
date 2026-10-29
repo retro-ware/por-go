@@ -154,7 +154,5 @@ func (e *Engine) lookItem(it *Item) {
 			e.DisplayString(3, y1+3+i, colLightGreen, s)
 		}
 	}
-	e.overlay(CellRect{1, y1, winRight, y2})
 	e.PromptRow24(colLightMagenta, "Press any key")
-	e.overlay(CellRect{})
 }

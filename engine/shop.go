@@ -95,17 +95,6 @@ func (e *Engine) shopBuy() {
 			} else {
 				top := e.listTop // extra: back on the same page of the list
 				e.ItemsMenu()
-				for e.ext.switchTo { // extra: F1-F8 in the inventory open the next member's
-					e.ext.switchTo, e.ext.toItems = false, false
-					if n := len(e.ext.later); n > 0 && e.ext.later[n-1] == 'V' {
-						e.ext.later = e.ext.later[:n-1] // the queued View
-					}
-					if len(e.carried(e.selected())) == 0 {
-						e.BottomMessage("No items")
-						break
-					}
-					e.ItemsMenu()
-				}
 				e.listTop = top
 			}
 			continue

@@ -98,6 +98,7 @@ type Engine struct {
 	port                 portrait                     // DS:6B00.. HEAD/BODY portrait
 	eclFile              string                       // DS:547C
 	ext                  extras                       // convenience features (extras.go)
+	acts                 acts                         // the remastered screens' actions (act.go)
 	snap                 snapState                    // the View published for other presenters (snapshot.go)
 	ac                   afterCombat                  // ovr06 globals
 	camp                 campState                    // ovr16/ovr21 globals
@@ -183,6 +184,7 @@ func New(dir string, scr *ega.Screen) (*Engine, error) {
 		return nil, err
 	}
 	e := &Engine{L: l, S: scr, set: 1, start: time.Now()}
+	e.acts.ch = make(chan Action, 16)
 	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: dir, SaveDir: filepath.Join(dir, "SAVE"), FullIntro: true}
 	if p := l.Path("POOL.CFG"); p != "" {
 		f, err := os.Open(p)
@@ -320,6 +322,7 @@ func (e *Engine) ReadKey() uint16 {
 		return e.tr.readKey(e)
 	}
 	e.ext.skip = false
+	e.actsDone()
 	for e.release(); len(e.ext.ahead) == 0; e.release() {
 		if e.ext.menu == 0 {
 			e.showHint()

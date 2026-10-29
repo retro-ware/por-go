@@ -76,6 +76,7 @@ func (g *game) Update() error {
 		g.ticks++
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
 			g.push(shotKeys[k-1])
+			g.act()
 			g.settle()
 		}
 		return nil
@@ -89,6 +90,7 @@ func (g *game) Update() error {
 		g.gamepad(id)
 	}
 	g.mouse()
+	g.act()
 	if g.sent {
 		g.settle()
 	}
@@ -101,6 +103,14 @@ func (g *game) push(k uint16) {
 	g.sendKeys(ks)
 	if !taken {
 		g.sendKeys([]uint16{k})
+	}
+}
+
+// act sends the screens' actions to the game.
+func (g *game) act() {
+	for _, a := range g.remaster.Actions() {
+		g.eng.Act(a)
+		g.sent = true
 	}
 }
 
@@ -125,7 +135,7 @@ func (g *game) sendKeys(ks []uint16) {
 // later). Gosched, not Sleep: in the browser the engine shares the thread.
 func (g *game) settle() {
 	t0 := time.Now()
-	for n := 0; !g.scr.Settled() && time.Since(t0) < 8*time.Millisecond; n++ {
+	for n := 0; (!g.scr.Settled() || g.eng.Busy()) && time.Since(t0) < 8*time.Millisecond; n++ {
 		if n < 50 {
 			runtime.Gosched()
 		} else {
@@ -191,7 +201,7 @@ func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
 	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game
 		_, dy := gpu.Wheel()
-		g.sendKeys(g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy))
+		g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy)
 		return
 	}
 	g.remaster.Hover(mx, my)
@@ -311,7 +321,7 @@ func (g *game) gamepad(id gpu.GamepadID) {
 func (g *game) Draw(dst *gpu.Image) {
 	text, at := g.eng.Note()
 	note := classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
-	if g.remaster.Inventory(dst, g.scr, note, g.eng.View()) { // the inventory screen
+	if g.remaster.Inventory(dst, note, g.eng.View()) { // the inventory screen
 		g.pic = classic.Rect{}
 	} else {
 		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())

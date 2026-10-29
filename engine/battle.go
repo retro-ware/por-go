@@ -266,10 +266,6 @@ const KeyViewMember = 0xC600
 // (the classic view's W A S D and Home: the remaster pans its own camera).
 const KeyPan = 0xC800
 
-// KeyItem + i picks line i of the inventory's item list (the remastered
-// inventory: View.Inventory's Index); the next key acts on it.
-const KeyItem = 0xCA00
-
 // unitDrawn / unitHidden track what the page shows of combatant i.
 func (e *Engine) unitDrawn(i int, pose byte) {
 	if e.snap.poses == nil {

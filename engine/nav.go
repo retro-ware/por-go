@@ -105,13 +105,6 @@ func (e *Engine) translate(k uint16) uint16 {
 		}
 		return 0
 	}
-	if k >= KeyItem && k < KeyItem+0x100 { // the remastered inventory picked an item
-		if !e.ext.items {
-			return 0
-		}
-		e.ext.itemPick = int(k-KeyItem) + 1
-		return keyRelist
-	}
 	if k >= KeyPan && k <= KeyPan+4 {
 		if e.beginFlag == 5 && e.cmapUp() && e.ext.modal == 0 {
 			switch d := int(k - KeyPan); {
@@ -182,7 +175,7 @@ func (e *Engine) translate(k uint16) uint16 {
 		return 0
 	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
 		return e.viewKey(int(k-KeyF1) >> 8)
-	case (k == 'p' || k == 'P') && (e.ext.viewing || e.ext.items):
+	case (k == 'p' || k == 'P') && e.ext.viewing:
 		return e.sheetKey()
 	case k >= KeyMouse:
 		cell := int(k & 0x3FF)
@@ -399,9 +392,6 @@ func (e *Engine) hintText() string {
 		h := "↑↓ wheel, click=line|Enter, click again=choose|PgUp PgDn=page|← →=highlight"
 		if x.picker {
 			h = "↑↓ wheel, hover=line|Enter, click=choose|PgUp PgDn=page"
-		}
-		if x.items {
-			h += "|P=character|F1-F8=member"
 		}
 		if x.buying {
 			h += "|F1-F8=who gets it"

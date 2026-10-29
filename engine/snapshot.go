@@ -122,8 +122,7 @@ func (e *Engine) View() View {
 // snapState is the engine's side of the seam.
 type snapState struct {
 	view       atomic.Pointer[View]
-	inv        *Inventory             // the inventory screen ItemsMenu shows (nil when it is not up)
-	invSel     *int                   // its list's highlighted line
+	invOn      bool                   // ItemsMenu waits: View.Inventory is up
 	win        Window                 // set by whatever drew into the view window last
 	frame      []byte                 // the frame's border pixels as DrawMainFrame left them
 	heads      map[int]image.Image    // decoded HEAD blocks by id
@@ -212,10 +211,9 @@ func (e *Engine) publish() {
 	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText {
 		v.Map = e.mapImage(mapCell)
 	}
-	if s.inv != nil {
-		inv := *s.inv
-		inv.Sel = *s.invSel
-		v.Inventory = &inv
+	if s.invOn {
+		c := e.selected()
+		v.Inventory = e.inventoryView(c, e.carried(c))
 	}
 	if m := s.menu; m != nil {
 		c := *m

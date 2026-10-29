@@ -126,11 +126,7 @@ type extras struct {
 	floor         int                     // regions below belong to the screen under the modal one
 	menuFloor     int                     // menu bars open under the modal screen
 	viewing       bool                    // the View page's own menu is waiting
-	items         bool                    // the inventory's item list is waiting
-	itemPick      int                     // KeyItem: the list line (+1) the inventory goes to
 	toItems       bool                    // the next View opens on the inventory (F1-F8)
-	toSheet       bool                    // P left the inventory for the View page
-	switchTo      bool                    // F1-F8 left the inventory for another member
 	throwing      *Item                   // combat: Throw left the inventory to aim this item
 	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
 	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
@@ -273,12 +269,11 @@ func (e *Engine) viewKey(n int) uint16 {
 		return 0
 	}
 	switch {
-	case e.ext.viewing || e.ext.items:
-		if n == e.partySel { // already theirs: P switches pages
+	case e.ext.viewing:
+		if n == e.partySel {
 			return 0
 		}
-		e.partySel, e.ext.toItems = n, e.ext.items // the same page for member n
-		e.ext.switchTo = e.ext.items
+		e.partySel = n // the View page for member n
 		e.ext.later = append(e.ext.later, 'V')
 		return 'E'
 	case e.ext.campBar: // camp: F1-F8 pick the member the menu is for
@@ -303,9 +298,6 @@ func (e *Engine) viewKey(n int) uint16 {
 // sheetKey: P toggles between the View page and the inventory.
 func (e *Engine) sheetKey() uint16 {
 	switch {
-	case e.ext.items:
-		e.ext.toSheet = true
-		return 'E'
 	case len(e.carried(e.selected())) > 0:
 		return 'I'
 	}

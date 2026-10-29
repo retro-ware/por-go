@@ -167,6 +167,10 @@ func (e *Engine) refuse(s string) { e.bottomMessage(s, colLightRed) }
 // bottomMessage: BottomMessage with the colour of the combat status row.
 func (e *Engine) bottomMessage(s string, colour int) {
 	s = cut(s, textCols)
+	if e.snap.invOn { // extra: over the remastered inventory, its note
+		e.say(s)
+		return
+	}
 	if e.beginFlag == 5 && e.cmap != nil { // extra: in combat on the status row; the menu row stays, the text until the panel comes back
 		e.ClearCells(0, messageRow, lastCol, messageRow)
 		e.DisplayString(0, messageRow, colour, s)

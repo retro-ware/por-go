@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -24,9 +25,8 @@ import (
 // paper doll on the left, the party inventory on the right, in the
 // original's font, colours and box borders. Everything is drawn 1:1 on one
 // canvas that is scaled whole to the window, so all pixels are the same
-// size. It draws engine.View.Inventory in both modes and only sends keys:
-// KeyItem picks a line, the menu's own keys act on it; the menu row and
-// the boxes the game shows over the list (Look, Drop) are the original's.
+// size. It draws engine.View.Inventory and acts through engine.Action: the
+// menu row, the Look box and the Drop and Sell questions are its own.
 
 var (
 	//go:embed doll/doll.png
@@ -91,7 +91,12 @@ type inventory struct {
 	glyph       func(byte) [8]byte
 
 	shown  bool            // the last frame was the inventory
-	busy   bool            // the game asks something over it (no item menu)
+	sel    int             // the highlighted item (InvItem.Index), -1 for none
+	look   *engine.InvItem // the Look box is up for it
+	ask    *engine.Action  // a Drop or Sell waits for Yes
+	view   *engine.Inventory
+	acts   []engine.Action // to send (Presenter.Actions)
+	words  []word          // the menu row's words, or the question's Yes and No
 	k      int             // canvas scale
 	at     image.Point     // canvas top left on screen
 	w, h   int             // canvas size
@@ -99,14 +104,13 @@ type inventory struct {
 	rows   int             // party inventory lines shown
 	n      int             // party inventory lines
 	lines  []hit           // the items' rectangles (canvas)
-	bar    image.Rectangle // the menu row (40 cells)
 	scroll image.Rectangle // the scroll bar
 	dollAt image.Rectangle
 	arrows [2]image.Rectangle
 	hover  image.Point // the pointer (canvas)
 	member int         // View.Inventory.Member
 	count  int         // party members
-	seen   int         // the Sel the list last scrolled to
+	seen   int         // the sel the list last scrolled to
 
 	held      bool        // the left button was down last frame
 	press     *hit        // the item the button went down on
@@ -225,20 +229,74 @@ func (inv *inventory) outline(r image.Rectangle, c color.RGBA) {
 // upTo is s in at most n characters.
 func upTo(s string, n int) string { return s[:min(len(s), max(0, n))] }
 
+// word is a choice on the menu row (or a question's Yes and No): its
+// text, the action it sends and where it is (canvas).
+type word struct {
+	text string
+	act  engine.ActKind
+	on   bool // it does something now
+	r    image.Rectangle
+}
+
+// itemAt is the inventory's item with Index i, nil if none.
+func itemAt(in *engine.Inventory, i int) *engine.InvItem {
+	for _, it := range in.Doll {
+		if it != nil && it.Index == i {
+			return it
+		}
+	}
+	for k := range in.Pool {
+		if in.Pool[k].Index == i {
+			return &in.Pool[k]
+		}
+	}
+	return nil
+}
+
+// menu is the menu row for the highlighted item.
+func (inv *inventory) menu(in *engine.Inventory) []word {
+	it := itemAt(in, inv.sel)
+	if inv.ask != nil {
+		return []word{{text: "Yes", act: inv.ask.Kind, on: true}, {text: "No", act: engine.ActNone, on: true}}
+	}
+	w := []word{{text: "Ready", act: engine.ActReady, on: it != nil && it.Slot}}
+	if in.Throw {
+		w = append(w, word{text: "Throw", act: engine.ActThrow, on: it != nil && it.Throw})
+	}
+	if in.Use {
+		w = append(w, word{text: "Use", act: engine.ActUse, on: it != nil && it.Use})
+	}
+	w = append(w, word{text: "Drop", act: engine.ActDrop, on: it != nil})
+	if in.Sell {
+		w = append(w, word{text: "Sell", act: engine.ActSell, on: it != nil})
+	}
+	return append(w, word{text: "Look", act: actLook, on: it != nil}, word{text: "Exit", act: engine.ActClose, on: true})
+}
+
+// actLook is the menu's Look, which the screen shows itself.
+const actLook engine.ActKind = -1
+
 // Inventory draws the inventory screen when the game shows it, and
 // reports whether it did.
-func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note, v engine.View) bool {
+func (p *Presenter) Inventory(dst *gpu.Image, note classic.Note, v engine.View) bool {
 	inv := &p.inv
 	inv.shown = false
 	in := v.Inventory
 	if in == nil {
+		inv.look, inv.ask, inv.view = nil, nil, nil
 		return false
 	}
 	inv.load()
-	inv.shown, inv.member, inv.count, inv.glyph = true, in.Member, len(v.Party), note.Glyph
-	inv.busy = v.Menu == nil || !hasKey(v.Menu, 'E') || in.Over != (engine.CellRect{})
+	if inv.view == nil || in.Member != inv.member {
+		inv.sel, inv.top = -1, 0 // a new member: nothing highlighted
+	}
+	inv.shown, inv.member, inv.count, inv.glyph, inv.view = true, in.Member, len(v.Party), note.Glyph, in
+	if itemAt(in, inv.sel) == nil {
+		inv.sel = -1
+	}
+	busy := inv.look != nil || inv.ask != nil
 	p.setup(note, v)
-	frame, t := p.Classic.Frame(scr, note), p.border.tiles
+	t := p.border.tiles
 
 	b := dst.Bounds()
 	inv.k = max(1, min(b.Dx()/invW, b.Dy()/invH))
@@ -271,7 +329,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 	}
 	ab := image.Rect(-8, -8, 24, 16) // "<-" and "->" with room round them for the pointer
 	inv.arrows = [2]image.Rectangle{ab.Add(image.Pt(lx+4, 38+oy)), ab.Add(image.Pt(lx+lw-20, 38+oy))}
-	if inv.count > 1 {
+	if inv.count > 1 && in.Switch {
 		inv.text("<-", lx+4, 38+oy, green)
 		inv.text("->", lx+lw-20, 38+oy, green)
 	}
@@ -287,9 +345,9 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 			inv.lines = append(inv.lines, hit{r: box, item: *it, doll: true})
 		}
 		switch {
-		case it != nil && it.Index == in.Sel:
+		case it != nil && it.Index == inv.sel:
 			inv.outline(box, col(14)) // yellow: the boxes are white-edged
-		case inv.hover.In(box) && !inv.busy:
+		case inv.hover.In(box) && !busy:
 			inv.outline(box, cyan)
 		}
 	}
@@ -305,12 +363,12 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 	inv.text(s, rr-8*len(s), 8, fillc)
 	inv.n, inv.rows = len(in.Pool), max(1, (bottom-listTop)/rowH)
 	for i, it := range in.Pool { // keep a newly highlighted line in sight (the wheel scrolls freely)
-		if it.Index == in.Sel && in.Sel != inv.seen {
+		if it.Index == inv.sel && inv.sel != inv.seen {
 			inv.top = min(inv.top, i)
 			inv.top = max(inv.top, i-inv.rows+1)
 		}
 	}
-	inv.seen = in.Sel
+	inv.seen = inv.sel
 	inv.top = max(0, min(inv.top, inv.n-inv.rows))
 	tr := rr // the lines' right edge: the scroll bar's left
 	if inv.n > inv.rows {
@@ -322,9 +380,9 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 		y := listTop + (i-inv.top)*rowH
 		r := image.Rect(rx, y, tr, y+rowH)
 		switch {
-		case it.Index == in.Sel:
+		case it.Index == inv.sel:
 			inv.fill(r, blue)
-		case inv.hover.In(r) && !inv.busy:
+		case inv.hover.In(r) && !busy:
 			inv.outline(r, dark)
 		}
 		inv.drawIcon(it, image.Rect(rx, y, rx+rowH, y+rowH))
@@ -354,27 +412,80 @@ func (p *Presenter) Inventory(dst *gpu.Image, scr *ega.Screen, note classic.Note
 		inv.drawIcon(&inv.press.item, image.Rectangle{inv.hover, inv.hover}.Inset(-rowH/2))
 	}
 
-	// onto the GPU: the boxes' borders, the menu row, the game's boxes over it
+	// the menu row under the boxes: a note, else the choices
+	rowY := (ch-1)*8 + 0
+	inv.words = inv.menu(in)
+	if note.Show && note.Text != "" {
+		inv.words = nil
+		inv.text(upTo(note.Text, cw), (inv.w-8*min(len(note.Text), cw))/2, rowY, col(14))
+	}
+	x := 0
+	for _, w := range inv.words {
+		x += 8 * (len(w.text) + 1)
+	}
+	x = (inv.w - x + 8) / 2
+	for i := range inv.words {
+		w := &inv.words[i]
+		w.r = image.Rect(x-4, rowY-2, x+8*len(w.text)+4, rowY+10)
+		c, hc := green, white
+		switch {
+		case !w.on:
+			c, hc = dark, dark
+		case inv.hover.In(w.r):
+			inv.fill(w.r, blue)
+		}
+		inv.text(w.text[:1], x, rowY, hc)
+		inv.text(w.text[1:], x+8, rowY, c)
+		x += 8 * (len(w.text) + 1)
+	}
+
+	// the Look box or the question over the list
+	var box []string
+	switch it := itemAt(in, inv.sel); {
+	case inv.look != nil:
+		box = append([]string{strings.TrimSpace(inv.look.Name), ""}, inv.look.Look...)
+	case inv.ask != nil && it != nil && inv.ask.Kind == engine.ActDrop:
+		box = []string{"Your " + strings.TrimSpace(it.Name), "will be gone forever.", "", "Drop it?"}
+	case inv.ask != nil && it != nil:
+		box = []string{"I'll give you " + it.Price, "for your " + strings.TrimSpace(it.Name) + ".", "", "Is it a deal?"}
+	}
+	var br image.Rectangle
+	if box != nil {
+		bw := 0
+		for _, l := range box {
+			bw = max(bw, len(l))
+		}
+		bw = min(bw, cw-6)
+		br = image.Rect(0, 0, (bw+2)*8, (len(box)+2)*8)
+		br = br.Add(image.Pt((inv.w-br.Dx())/2/8*8, (inv.h-br.Dy())/2/8*8))
+		inv.fill(br, color.RGBA{A: 255})
+		for i, l := range box {
+			c := green
+			if i == 0 {
+				c = cyan
+			}
+			inv.text(upTo(l, bw), br.Min.X+8, br.Min.Y+8+8*i, c)
+		}
+	}
+
+	// onto the GPU: the boxes' borders, then the box's
 	inv.img.WritePixels(inv.px.Pix)
 	drawBorder(inv.img, t, gpu.GeoM{}, leftCells, ch-1)
 	var g gpu.GeoM
 	g.Translate(leftCells*8, 0)
 	drawBorder(inv.img, t, g, cw-leftCells, ch-1)
-	pr := engine.PromptRows.Pixels()
-	inv.bar = pr.Sub(pr.Min).Add(image.Pt((inv.w-pr.Dx())/2, (ch-1)*8))
-	op := &gpu.DrawImageOptions{}
-	op.GeoM.Translate(float64(inv.bar.Min.X), float64(inv.bar.Min.Y))
-	inv.img.DrawImage(frame.SubImage(pr).(*gpu.Image), op)
-	if in.Over != (engine.CellRect{}) {
-		drawBox(inv.img, frame, t, in.Over, 1, inv.w/2, inv.h/2)
-	} else if !inv.dragging && !inv.busy {
+	if box != nil {
+		var g gpu.GeoM
+		g.Translate(float64(br.Min.X), float64(br.Min.Y))
+		drawBorder(inv.img, t, g, br.Dx()/8, br.Dy()/8)
+	} else if !inv.dragging {
 		inv.tooltip(t, in)
 	}
 
 	// onto the screen at the whole scale
 	inv.at = image.Pt((b.Dx()-inv.k*inv.w)/2, (b.Dy()-inv.k*inv.h)/2)
 	dst.Fill(color.Black)
-	op = &gpu.DrawImageOptions{}
+	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(float64(inv.k), float64(inv.k))
 	op.GeoM.Translate(float64(inv.at.X), float64(inv.at.Y))
 	dst.DrawImage(inv.img, op)
@@ -424,29 +535,119 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 	inv.img.DrawImage(inv.tip, op)
 }
 
-func hasKey(m *engine.Menu, k byte) bool {
-	for _, it := range m.Items {
-		if it.Key == k {
-			return true
-		}
-	}
-	return false
-}
-
 // InventoryShown: the last frame was the inventory screen (its mouse
 // input goes to InventoryMouse, not the game's text cells).
 func (p *Presenter) InventoryShown() bool { return p.inv.shown }
 
-// InventoryMouse is the keys for the pointer at screen pixel (x, y) with
-// the left button down or not, the right one just pressed and the wheel's
-// movement. A click on an item readies or removes it (picks it when it
-// has no slot), dragging it onto the doll or off it does the same; a right
-// click looks at it. The arrows are the previous and next member (F1-F8),
-// the menu row is the game's own; the wheel and the scroll bar scroll.
-func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) []uint16 {
+// Actions hands over the actions the screens made since the last call.
+func (p *Presenter) Actions() []engine.Action {
+	a := p.inv.acts
+	p.inv.acts = nil
+	return a
+}
+
+// do runs a menu choice on the highlighted item.
+func (inv *inventory) do(k engine.ActKind) {
+	it := itemAt(inv.view, inv.sel)
+	switch {
+	case k == engine.ActNone:
+	case k == engine.ActClose:
+		inv.acts = append(inv.acts, engine.Action{Kind: k})
+	case it == nil:
+	case k == actLook:
+		inv.look = it
+	case inv.ask == nil && (k == engine.ActDrop || k == engine.ActSell):
+		inv.ask = &engine.Action{Kind: k, N: it.Index}
+		return
+	default:
+		inv.acts = append(inv.acts, engine.Action{Kind: k, N: it.Index})
+	}
+	inv.ask = nil
+}
+
+// step shows the member d places on (the arrows, Left and Right).
+func (inv *inventory) step(d int) {
+	if inv.count > 1 && inv.view.Switch {
+		inv.acts = append(inv.acts, engine.Action{Kind: engine.ActMember, N: (inv.member + inv.count + d) % inv.count})
+	}
+}
+
+// inventoryKey handles a key on the inventory screen; false leaves it to
+// the game (F9, ?, Ctrl-F).
+func (p *Presenter) inventoryKey(k uint16) bool {
 	inv := &p.inv
-	if inv.k == 0 {
-		return nil
+	if inv.look != nil { // any key closes the Look box
+		inv.look = nil
+		return true
+	}
+	if inv.ask != nil {
+		switch {
+		case k == 'y' || k == 'Y' || k == 13:
+			inv.do(inv.ask.Kind)
+		default:
+			inv.ask = nil
+		}
+		return true
+	}
+	order := make([]int, 0, 32) // the items as the screen shows them: the doll, then the list
+	for _, it := range inv.view.Doll {
+		if it != nil {
+			order = append(order, it.Index)
+		}
+	}
+	for _, it := range inv.view.Pool {
+		order = append(order, it.Index)
+	}
+	step := func(d int) {
+		if len(order) == 0 {
+			return
+		}
+		i := slices.Index(order, inv.sel)
+		if i < 0 && d < 0 {
+			i = 0
+		}
+		inv.sel = order[(i+d+len(order))%len(order)]
+	}
+	switch {
+	case k == 27:
+		inv.do(engine.ActClose)
+	case k == 0x4800:
+		step(-1)
+	case k == 0x5000:
+		step(1)
+	case k == 0x4B00:
+		inv.step(-1)
+	case k == 0x4D00:
+		inv.step(1)
+	case k == 13:
+		inv.do(engine.ActReady)
+	case k >= engine.KeyF1 && k <= engine.KeyF1+7<<8 && k&0xFF == 0:
+		if n := int(k-engine.KeyF1) >> 8; n < inv.count && inv.view.Switch {
+			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActMember, N: n})
+		}
+	case k > ' ' && k < 128:
+		for _, w := range inv.menu(inv.view) {
+			if w.on && strings.EqualFold(w.text[:1], string(rune(k))) {
+				inv.do(w.act)
+			}
+		}
+	default:
+		return false
+	}
+	return true
+}
+
+// InventoryMouse handles the pointer at screen pixel (x, y) with the left
+// button down or not, the right one just pressed and the wheel's movement.
+// A click on an item highlights it; a click on a highlighted item with a
+// slot readies or removes it, as does dragging it onto the doll or off it;
+// a right click looks at it. The arrows are the previous and next member,
+// the menu row acts on the highlighted item; the wheel and the scroll bar
+// scroll.
+func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
+	inv := &p.inv
+	if inv.k == 0 || inv.view == nil {
+		return
 	}
 	inv.hover = image.Pt((x-inv.at.X)/inv.k, (y-inv.at.Y)/inv.k)
 	pressed, released := down && !inv.held, !down && inv.held
@@ -465,20 +666,18 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) []
 		inv.wheel = 0
 	}
 
-	cell := func() uint16 {
-		return engine.MouseKey(engine.MouseLeft, (inv.hover.X-inv.bar.Min.X)/8, engine.PromptRows.Y1)
-	}
-	if inv.busy { // a question or a box of the game's: its row, else any click (press a key)
+	if inv.look != nil || inv.ask != nil { // a box: its Yes and No, else any click closes it
 		inv.press, inv.dragging, inv.scrolling = nil, false, false
-		switch {
-		case pressed && inv.hover.In(inv.bar):
-			return []uint16{cell()}
-		case pressed:
-			return []uint16{engine.MouseKey(engine.MouseLeft, 0, 0)}
-		case right:
-			return []uint16{engine.MouseKey(engine.MouseRight, 0, 0)}
+		if pressed || right {
+			for _, w := range inv.words {
+				if inv.hover.In(w.r) && pressed {
+					inv.do(w.act)
+					return
+				}
+			}
+			inv.look, inv.ask = nil, nil
 		}
-		return nil
+		return
 	}
 	if inv.scrolling && down && inv.scroll.Dy() > 0 {
 		inv.top = (inv.hover.Y-inv.scroll.Min.Y)*inv.n/inv.scroll.Dy() - inv.rows/2
@@ -491,22 +690,28 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) []
 	if right {
 		for _, l := range inv.lines {
 			if inv.hover.In(l.r) {
-				return []uint16{engine.KeyItem + uint16(l.item.Index), 'L'}
+				inv.sel = l.item.Index
+				inv.do(actLook)
+				return
 			}
 		}
-		return []uint16{engine.MouseKey(engine.MouseRight, 0, 0)}
+		inv.do(engine.ActClose)
+		return
 	}
 	if pressed {
-		switch {
-		case inv.hover.In(inv.bar):
-			return []uint16{cell()}
-		case inv.hover.In(inv.scroll):
+		for _, w := range inv.words {
+			if inv.hover.In(w.r) && w.on {
+				inv.do(w.act)
+				return
+			}
+		}
+		if inv.hover.In(inv.scroll) {
 			inv.scrolling = true
 		}
 		for i, r := range inv.arrows {
-			if inv.hover.In(r) && inv.count > 1 {
-				n := (inv.member + inv.count + 2*i - 1) % inv.count
-				return []uint16{engine.KeyF1 + uint16(n)<<8}
+			if inv.hover.In(r) {
+				inv.step(2*i - 1)
+				return
 			}
 		}
 		for _, l := range inv.lines {
@@ -514,24 +719,23 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) []
 				inv.press, inv.pressAt = &l, inv.hover
 			}
 		}
-		return nil
+		return
 	}
 	if !released {
-		return nil
+		return
 	}
 	h, drag := inv.press, inv.dragging
 	inv.press, inv.dragging, inv.scrolling = nil, false, false
 	if h == nil {
-		return nil
+		return
 	}
-	pick := engine.KeyItem + uint16(h.item.Index)
+	was := inv.sel
+	inv.sel = h.item.Index
 	switch {
-	case !drag && !h.item.Slot: // nothing to ready: pick it for the menu
-		return []uint16{pick}
+	case !drag && (was != h.item.Index || !h.item.Slot): // a click highlights it
 	case !drag,
 		h.doll && !inv.hover.In(inv.dollAt), // off the doll
 		!h.doll && inv.hover.In(inv.dollAt): // onto it
-		return []uint16{pick, 'R'}
+		inv.do(engine.ActReady)
 	}
-	return nil
 }

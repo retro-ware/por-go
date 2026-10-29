@@ -160,42 +160,50 @@ func (e *Engine) poolText() string {
 }
 
 // Inventory is the inventory screen (ItemsMenu) as the remastered one
-// draws it. Its items are the menu's list lines (Index); KeyItem + Index
-// picks one and the menu's keys act on it.
+// draws it. Its items' Index is what an Action's N names.
 type Inventory struct {
 	Member int                 // index into View.Party
 	Doll   [DollSlots]*InvItem // the readied items by doll slot
 	Pool   []InvItem           // the party inventory
 	Cap    int                 // the party inventory's slots
-	Sel    int                 // the highlighted line (Index)
-	Over   CellRect            // a box of the game's screen shown over it (Look, Drop): its border cells; zero for none
-}
-
-// overlay shows box r of the game's screen over the inventory screen.
-func (e *Engine) overlay(r CellRect) {
-	if e.snap.inv != nil {
-		e.snap.inv.Over = r
-	}
+	Use    bool                // items can be used here (ActUse)
+	Throw  bool                // combat: unreadied throwables can be thrown (ActThrow)
+	Sell   bool                // a shop buys them (ActSell)
+	Switch bool                // ActMember shows another member (not in combat)
 }
 
 // InvItem is one item of the inventory.
 type InvItem struct {
-	Index int      // its line in the menu's list
+	Index int      // its place in the member's items (Action.N)
 	Name  string   // as the list shows it
 	Type  byte     // base item type
 	Words []string // the item's name words, known or not (for its icon)
 	Count int
-	Slot  bool // it has a doll slot (it can be readied)
-	Wrong bool // the member's class cannot ready it
+	Slot  bool     // it has a doll slot (it can be readied)
+	Wrong bool     // the member's class cannot ready it
+	Use   bool     // it has a use (a scroll, a spell of its own)
+	Throw bool     // it can be thrown
+	Look  []string // what it does (the shop's Look text)
+	Price string   // what selling it pays
 }
 
 // inventoryView builds the snapshot of the inventory screen.
 func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
-	v := &Inventory{Member: slices.Index(e.party, c), Cap: e.poolCap()}
+	hired := c.Control >= 0x80 && c.Okay != 0 && c.Status != statusAnimated
+	v := &Inventory{Member: slices.Index(e.party, c), Cap: e.poolCap(),
+		Use: c.Okay != 0 && e.area.NoMagic == 0 && (e.beginFlag == 2 || e.beginFlag == 3 || e.beginFlag == 4 ||
+			e.beginFlag == 5 && c.Combat != nil && c.Combat.CanUse != 0),
+		Throw:  e.beginFlag == 5 && c.Okay != 0,
+		Sell:   !hired && e.beginFlag == 1,
+		Switch: e.beginFlag != 5,
+	}
 	for i, it := range items {
 		e.ItemName(c, it, 0, 0, false, false)
+		v2 := sellValue(it)
 		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
-			Wrong: dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0}
+			Wrong: dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0,
+			Use:   e.usable(it), Throw: it.Readied == 0 && e.throwableItem(it),
+			Look: e.itemLines(it), Price: moneyText(v2/200, v2%200)}
 		for _, w := range it.Words {
 			if w != 0 {
 				x.Words = append(x.Words, itemWords[w])

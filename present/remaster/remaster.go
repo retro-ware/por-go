@@ -194,6 +194,9 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 // opens the renderer's options. It returns the keys to send instead and
 // whether k was taken.
 func (p *Presenter) Key(k uint16, v engine.View) ([]uint16, bool) {
+	if v.Inventory != nil && p.inv.view != nil {
+		return nil, p.inventoryKey(k)
+	}
 	if p.fight {
 		return p.battle.Key(k)
 	}

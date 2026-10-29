@@ -73,8 +73,8 @@ func (e *Engine) unwindReset() {
 	x := &e.ext
 	x.inCommand, x.padHot, x.onSelect, x.menu, x.list, x.choosing = false, 0, nil, 0, false, false
 	x.quick, x.ahead, x.later, x.regions, x.jump, x.raw = nil, nil, nil, nil, nil, ""
-	x.typing, x.modal, x.floor, x.viewing, x.items, x.toItems, x.toSheet = false, 0, 0, false, false, false, false
-	x.switchTo, x.buying, x.campBar, x.selSet, x.skip, x.paging = false, false, false, false, false, false
+	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
+	x.buying, x.campBar, x.selSet, x.skip, x.paging = false, false, false, false, false
 	x.fullMap, x.walk, x.back, x.aoe, x.picker, x.enemiesOnly, x.aimMarks = false, nil, false, 0, false, false, nil
 	x.hiddenKeys, x.throwing, x.menuFloor, x.panel = "", nil, 0, nil
 	e.partySel = 0 // a defer on the way out may have put back the old party's index

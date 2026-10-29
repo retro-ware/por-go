@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -296,16 +295,12 @@ func (e *Engine) paladinCure(c *Character) {
 	e.DisplayMessageWait(colLightGreen, t.Name()+" is cured")
 }
 
-// inventory runs ItemsMenu for ViewCharacter (extra:
-// leave reports that the View page should close too: F1-F8 switched to
-// another member, or Esc in an inventory F1-F8 opened, unless P came back
-// to the View page).
+// inventory runs ItemsMenu for ViewCharacter (extra: leave reports that
+// the View page should close too: the inventory was opened straight (F1-F8,
+// I), or Throw left it to aim).
 func (e *Engine) inventory(direct bool) (quit, leave bool) {
-	e.ext.toSheet, e.ext.switchTo = false, false
 	quit = e.ItemsMenu()
-	leave = !quit && (e.ext.switchTo || direct && !e.ext.toSheet || e.ext.throwing != nil)
-	e.ext.toSheet, e.ext.switchTo = false, false
-	return quit, leave
+	return quit, !quit && (direct || e.ext.throwing != nil)
 }
 
 // canLoseItem = ovr20:0D70 (item): readied items must be unreadied first;
@@ -344,143 +339,70 @@ func (e *Engine) SheetPortrait() {
 
 // ItemsMenu = ovr20:0EF8: the character's items with Ready, Use, Trade,
 // Drop, Halve, Join, Sell and Id. Returns true when the View should end
-// (an item was used in combat).
+// (an item was used in combat). extra: the remastered inventory screen
+// draws it (View.Inventory) and acts through Act: no Halve, Join, Trade
+// or Id (unreadied items are the party's), Throw in combat, F1-F8 or the
+// screen's arrows show another member outside combat; Drop and Sell come
+// already confirmed.
 func (e *Engine) ItemsMenu() bool {
-	c := e.selected()
-	e.ApplyItems(c) // port: ItemCount may be stale (shop Inv for a buyer never viewed)
-	key := byte(' ')
-	var it *Item
-	index := 0
-	redraw, full := true, true
-	quit := false
-	for key != 0 && key != 'E' && !quit {
-		items := e.carried(c) // extra: the readied items, then the party inventory
-		count := len(items)
-		if count == 0 {
-			break
+	e.snap.invOn = true
+	defer func() { e.snap.invOn = false }()
+	for {
+		c := e.selected()
+		e.ApplyItems(c) // port: ItemCount may be stale (shop Inv for a buyer never viewed)
+		items := e.carried(c)
+		a := e.act()
+		var it *Item
+		if a.N >= 0 && a.N < len(items) {
+			it = items[a.N]
 		}
-		hired := c.Control >= 0x80 && c.Okay != 0 && c.Status != statusAnimated
-		menu := "Ready"
-		if e.beginFlag == 5 && c.Okay != 0 {
-			menu += " Throw" // extra: an unreadied throwable item, aimed at once
-		}
-		if c.Okay != 0 && e.area.NoMagic == 0 &&
-			(e.beginFlag == 2 || e.beginFlag == 3 || e.beginFlag == 4 ||
-				e.beginFlag == 5 && c.Combat != nil && c.Combat.CanUse != 0) {
-			menu += " Use"
-		}
-		menu += " Drop" // extra: no Halve, Join or Trade: unreadied items are the party's
-		if !hired && e.beginFlag == 1 {
-			menu += " Sell"
-		}
-		menu += " Look" // extra: what the item does, as the shop's Look
-		menu = cut(menu, textCols)
-		list := make([]*ListNode, len(items))
-		for i, x := range items {
-			e.ItemName(c, x, 0, 0, true, false)
-			list[i] = &ListNode{Text: x.Name()}
-			if !e.isScroll(x) && !(x.Spells[1] > 0 && x.Spells[2] < 0x80) {
-				list[i].Without = []string{"Use"} // extra: Use only for an item that has a use
+		switch inv := e.inventoryView(c, items); {
+		case a.Kind == ActClose:
+			return false
+		case a.Kind == ActMember:
+			if a.N >= 0 && a.N < len(e.party) && e.beginFlag != 5 { // in combat the inventory is the fighter's
+				e.partySel = a.N
 			}
-			if x.Readied != 0 || !e.throwableItem(x) {
-				list[i].Without = append(list[i].Without, "Throw")
+		case it == nil:
+		case a.Kind == ActReady:
+			e.readyItem(it)
+		case a.Kind == ActUse && inv.Use && e.usable(it):
+			if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
+				e.refuse("Must be Readied")
+				break
 			}
-			if x.Readied == 0 && dollSlot(e, c, x) < 0 {
-				list[i].Without = append(list[i].Without, "Ready")
+			e.snap.invOn = false // its targets and spells show on the game's own screens
+			quit := e.useItem(it)
+			e.snap.invOn = true
+			if quit && e.beginFlag == 5 {
+				return true
 			}
-		}
-		if i := e.ext.itemPick; i > 0 { // extra: the remastered inventory picked a line (KeyItem)
-			index, redraw, e.ext.itemPick = min(i-1, len(list)-1), true, 0
-		}
-		e.snap.inv, e.snap.invSel = e.inventoryView(c, items), &index
-		if full || e.itemsRedraw {
-			e.ClearScreen()
-			e.DrawBorder(1, 1, winRight, winBottom, 0)
-			e.displayName(c, 1, 1, true)
-			e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Items")
-			e.DrawBoxTitled(1, 3, winRight, winBottom, 0, colBlack, "")
-			e.DisplayString(1, 3, colWhite, "Ready Item")
-			redraw, full, e.itemsRedraw = true, false, false
-		}
-		var sel *ListNode
-		e.ext.items = true // P and F1-F8 (extras.go)
-		key = e.ListMenu("", menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, 22, list, true, &redraw, &index, &sel)
-		e.ext.items = false
-		it = nil
-		for i, n := range list {
-			if n == sel {
-				it = items[i]
+		case a.Kind == ActThrow && inv.Throw:
+			switch {
+			case it.Readied != 0 || !e.throwableItem(it):
+			case len(e.throwTargets(c, it)) == 0: // extra: nobody to throw it at
+				e.refuse("No target in range")
+			default:
+				e.ext.throwing = it
+				return false
 			}
-		}
-		if it != nil {
-			switch key {
-			case 'R':
-				e.readyItem(it)
-			case 'U':
-				if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
-					e.refuse("Must be Readied")
-					key = ' '
-				} else if e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80 {
-					inv := e.snap.inv // extra: its targets and spells show on the game's own screens
-					e.snap.inv = nil
-					quit = e.useItem(it)
-					e.snap.inv = inv
-					if e.beginFlag != 5 {
-						quit = false
-					}
-					if !quit {
-						full = true
-					}
-				}
-			case 'T':
-				switch {
-				case it.Readied != 0 || !e.throwableItem(it):
-				case e.beginFlag == 5 && len(e.throwTargets(c, it)) == 0: // extra: nobody to throw it at
-					e.refuse("No target in range")
-					key = ' '
-				default:
-					e.ext.throwing = it
-					key = 'E'
-				}
-			case 'L':
-				e.lookItem(it)
-				full = true
-			case 'D':
-				if e.canLoseItem(it) {
-					e.ItemName(c, it, 0, 0, false, false)
-					e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "Your "+it.Name()+"will be gone forever")
-					e.overlay(CellRect{1, 21, winRight, winBottom}.Framed())
-					if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Drop It? ") == 'Y' {
-						e.RemoveItem(e.selected(), it)
-						redraw = true
-					}
-					e.ClearCells(1, 21, winRight, winBottom)
-					e.overlay(CellRect{})
-				} else {
-					key = ' '
-				}
-			case 'S':
-				if e.canLoseItem(it) {
-					inv := e.snap.inv
-					e.snap.inv = nil
-					e.sellItem(it)
-					e.snap.inv = inv
-				} else {
-					key = ' '
-				}
+		case a.Kind == ActDrop:
+			if e.canLoseItem(it) {
+				e.RemoveItem(c, it)
+			}
+		case a.Kind == ActSell && inv.Sell:
+			if e.canLoseItem(it) {
+				e.RemoveItem(c, it)
+				e.purse.addCopper(sellValue(it))
+				e.say("Sold!")
 			}
 		}
 		e.ApplyItems(c) // 146F: also reached with nothing selected
-		if i := slices.Index(e.carried(c), it); i >= 0 && it != nil {
-			index = i // extra: the highlight stays on the item Ready moved between the lists
-		}
-		if len(e.carried(c)) != count || key == 'R' { // extra: Ready moves the item between the lists
-			redraw = true
-		}
 	}
-	e.snap.inv = nil
-	return quit
 }
+
+// usable: the item has a Use (a scroll, or a spell of its own).
+func (e *Engine) usable(it *Item) bool { return e.isScroll(it) || it.Spells[1] > 0 && it.Spells[2] < 0x80 }
 
 // readyItem = ovr20:14D0 (item): ready or unready, with the reasons it
 // cannot be readied and the item's own effect (+0x3E > 0x7F).
@@ -660,25 +582,16 @@ func (e *Engine) spellRec(spell byte, k int) byte {
 	return spellTable[spell][k]
 }
 
-// sellItem = ovr20:1CEE (item): half the value (a twentieth per piece
-// of a stack), paid into the party's purse. extra: the halves are kept as
-// copper where the original dropped them.
-func (e *Engine) sellItem(it *Item) {
-	v := uint32(it.Price) * 100 // copper
+// sellValue = ovr20:1CEE (item): what selling it pays, in copper (200 a
+// gold piece, so half the value; a twentieth per piece of a stack).
+// extra: the halves are kept as copper where the original dropped them.
+func sellValue(it *Item) uint32 {
+	v := uint32(it.Price) * 100
 	if it.Count > 1 {
 		// (the arrows/quarrels branch of the original can never be taken)
 		v = uint32(it.Count) * v / 0x14
 	}
-	e.ItemName(e.viewChar(), it, 0, 0, false, false)
-	e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true,
-		"I'll give you "+moneyText(v/200, v%200)+" for your "+it.Name())
-
-	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") == 'Y' {
-		e.BottomMessage("Sold!")
-		e.RemoveItem(e.selected(), it)
-		e.purse.addCopper(v)
-	}
-	e.ClearCells(1, 21, winRight, winBottom)
+	return v
 }
 
 // identifyItem = ovr20:1F52 (item, redraw): 200 gp shows the hidden words.
