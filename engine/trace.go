@@ -103,7 +103,7 @@ func picID(im *dax.Image, frame int) string {
 // pageSet mirrors a write to the original's drawing page DS:4A20 (shown at
 // screen pixel 8,8; wider in combat), so Flip can hash the page as the
 // emulator does and sprites can restore what they hid. It keeps the whole
-// pixel: Amiga pixels (ega.AmigaBase up) lost their palette slot to & 15,
+// pixel: Amiga pixels (pal.AmigaBase up) lost their palette slot to & 15,
 // and the restored floor came back EGA light red.
 func (e *Engine) pageSet(x, y int, c uint8) {
 	if x >= 0 && y >= 0 && x < pageStride && y < 168 {
@@ -127,7 +127,8 @@ func (e *Engine) SetPaletteColor(colour, index int) {
 	if e.Trace != nil {
 		e.Trace("0464:2A0D", "SetPaletteColor", index, colour) // Pascal order: (index, colour)
 	}
-	e.S.SetPalette(index, colour)
+	e.pal[index&15] = uint8(colour & 15)
+	e.S.SetPalette(index, colour) // ponytail: mirrored for the classic frame until it goes
 }
 
 // TraceState is the heap records in the layout of the emulator's dump

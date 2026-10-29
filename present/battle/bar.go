@@ -11,8 +11,8 @@ import (
 
 	"gpu"
 
-	"por/ega"
 	"por/engine"
+	"por/pal"
 )
 
 // The action bar, XCOM style: one button per menu item along the bottom
@@ -216,7 +216,7 @@ func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
 
 // barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
 func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int) *image.RGBA {
-	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
+	rgb := pal.EGA
 	im := image.NewRGBA(image.Rect(0, 0, w, h))
 	textOn := func(im *image.RGBA, s string, x, y, scale int, c color.RGBA) {
 		for i := 0; i < len(s); i++ {

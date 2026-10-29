@@ -13,11 +13,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/retro-ware/gameimport"
 	"por/adf"
 	"por/amiga"
 	"por/dax"
-	"por/ega"
+	"por/pal"
+
+	"github.com/retro-ware/gameimport"
 )
 
 // importGame (-import, for goplay) finds a Pool of Radiance install
@@ -90,14 +91,14 @@ func writeCover(dst string) error {
 		return errors.New("TITLE.DAX has no title picture")
 	}
 	im := dax.ParseImage(b, false, 0)
-	pal := make(color.Palette, 16)
-	for i, c := range ega.Palette {
-		pal[i] = color.RGBA{c[0], c[1], c[2], 255}
+	cp := make(color.Palette, 16)
+	for i := range cp {
+		cp[i] = pal.EGA(i)
 	}
-	img := image.NewPaletted(image.Rect(0, 0, ega.W, ega.H), pal)
+	img := image.NewPaletted(image.Rect(0, 0, pal.W, pal.H), cp)
 	d, w := im.Frame(0), im.Width*8
-	for y := 0; y < im.Height && y < ega.H; y++ {
-		for x := 0; x < w && x < ega.W; x++ {
+	for y := 0; y < im.Height && y < pal.H; y++ {
+		for x := 0; x < w && x < pal.W; x++ {
 			img.SetColorIndex(x, y, d[y*w+x]&15)
 		}
 	}
@@ -117,15 +118,15 @@ func writeCover(dst string) error {
 // ponytail: 8X8D (the 3D-view symbols) stays DOS; the Amiga set is laid out
 // for its own wall renderer and does not match WALLDEF's symbol numbers.
 var amigaGfx = map[string]struct {
-	slot   byte // ega.Amiga palette
+	slot   byte // pal.Amiga palette
 	split  bool
 	sprite bool // animation block (PIC/FINAL frames XORed against the first)
 }{
-	"icon": {ega.AmigaTerrain, false, false}, "comspr": {ega.AmigaTerrain, false, false}, "cpic": {ega.AmigaTerrain, false, false},
-	"bacpac": {ega.AmigaTerrain, true, false}, "sqrpaci": {ega.AmigaTerrain, true, false}, "wildcom": {ega.AmigaTerrain, true, false},
-	"dungcom": {ega.AmigaTerrain, true, false}, "randcom": {ega.AmigaTerrain, true, false},
-	"head": {ega.AmigaPortrait, false, false}, "body": {ega.AmigaPortrait, false, false}, "chead": {ega.AmigaTerrain, false, false}, "cbody": {ega.AmigaTerrain, false, false},
-	"pic": {ega.AmigaView, false, true}, "final": {ega.AmigaView, false, true}, "sprit": {ega.AmigaPortrait, false, true},
+	"icon": {pal.AmigaTerrain, false, false}, "comspr": {pal.AmigaTerrain, false, false}, "cpic": {pal.AmigaTerrain, false, false},
+	"bacpac": {pal.AmigaTerrain, true, false}, "sqrpaci": {pal.AmigaTerrain, true, false}, "wildcom": {pal.AmigaTerrain, true, false},
+	"dungcom": {pal.AmigaTerrain, true, false}, "randcom": {pal.AmigaTerrain, true, false},
+	"head": {pal.AmigaPortrait, false, false}, "body": {pal.AmigaPortrait, false, false}, "chead": {pal.AmigaTerrain, false, false}, "cbody": {pal.AmigaTerrain, false, false},
+	"pic": {pal.AmigaView, false, true}, "final": {pal.AmigaView, false, true}, "sprit": {pal.AmigaPortrait, false, true},
 }
 
 // importDisk2 (-import-disk2, goplay drive B) finds the Amiga Pool of

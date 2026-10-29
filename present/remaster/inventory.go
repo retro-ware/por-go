@@ -16,8 +16,8 @@ import (
 
 	"gpu"
 
-	"por/ega"
 	"por/engine"
+	"por/pal"
 	"por/present/classic"
 )
 
@@ -50,7 +50,7 @@ const (
 )
 
 func col(i int) color.RGBA {
-	c := ega.Palette[i]
+	c := pal.Palette[i]
 	return color.RGBA{c[0], c[1], c[2], 255}
 }
 

@@ -19,6 +19,7 @@ import (
 
 	"por/ega"
 	"por/engine"
+	"por/pal"
 	"por/present/battle"
 	"por/present/classic"
 )
@@ -121,7 +122,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	// the picture at the top, the text in the middle, an answer's menu right under it
 	pic, txt := engine.InnerWindow.Framed(), engine.TextPane.Framed()
 	ph, th := float64(pic.Pixels().Dy()), float64(txt.Pixels().Dy())
-	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/ega.W))))
+	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/pal.W))))
 	cx, cy := (b.Min.X+b.Max.X)/2, b.Dy()/2
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
@@ -162,7 +163,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 	}
 	if note.Show { // the toast (font name ...): the strip Frame wrote it into
 		n := min(len(note.Text)+2, 40) * 8
-		r := image.Rect((ega.W-n)/2, 4, (ega.W+n)/2, 12)
+		r := image.Rect((pal.W-n)/2, 4, (pal.W+n)/2, 12)
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(k, k)
 		op.GeoM.Translate(float64(dst.Bounds().Dx())/2-k*float64(n)/2, k*4)
@@ -435,7 +436,7 @@ func (p *Presenter) animate() {
 // least 1): pixels stay square.
 func scale(dst *gpu.Image) float64 {
 	b := dst.Bounds()
-	return float64(max(1, min(b.Dx()/ega.W, b.Dy()/ega.H)))
+	return float64(max(1, min(b.Dx()/pal.W, b.Dy()/pal.H)))
 }
 
 // drawBox copies box r of the classic frame onto dst at scale k, centred

@@ -14,6 +14,7 @@ import (
 
 	"por/dax"
 	"por/ega"
+	"por/pal"
 )
 
 // Config mirrors POOL.CFG: graphics letter, sound letter, game dir, save dir,
@@ -33,6 +34,7 @@ const maxCombatants = 0x48
 type Engine struct {
 	L         *dax.Loader
 	S         *ega.Screen
+	pal       pal.Regs // EGA palette registers (SetPaletteColor)
 	Cfg       Config
 	tempSel   *Character             // selectTemp: selected but not in the party
 	page      [pageStride * 168]byte // DS:4A20 drawing page contents (pageSet)
@@ -183,7 +185,7 @@ func New(dir string, scr *ega.Screen) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{L: l, S: scr, set: 1, start: time.Now()}
+	e := &Engine{L: l, S: scr, pal: pal.Identity, set: 1, start: time.Now()}
 	e.acts.ch = make(chan Action, 16)
 	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: dir, SaveDir: filepath.Join(dir, "SAVE"), FullIntro: true}
 	if p := l.Path("POOL.CFG"); p != "" {

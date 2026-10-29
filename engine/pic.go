@@ -2,7 +2,7 @@ package engine
 
 import (
 	"por/dax"
-	"por/ega"
+	"por/pal"
 	"strconv"
 )
 
@@ -65,7 +65,7 @@ func (e *Engine) DrawPicture(x, y int, im *dax.Image, frame int) {
 // draws as 0, 17..AmigaBase-1 are skipped, off-screen is clipped), leaving
 // out pixels equal to mask; with page the drawing page gets the raw pixel.
 func (e *Engine) blit(x0, y0, w, h int, d []byte, mask int, page bool) {
-	cx0, cx1 := max(-x0, 0), min(ega.W-x0, w) // columns on screen
+	cx0, cx1 := max(-x0, 0), min(pal.W-x0, w) // columns on screen
 	for r := 0; r < h; r++ {
 		y := y0 + r
 		for c := 0; c < w; c++ {
@@ -76,14 +76,14 @@ func (e *Engine) blit(x0, y0, w, h int, d []byte, mask int, page bool) {
 			if page {
 				e.pageSet(x0+c-8, y-8, p)
 			}
-			if c < cx0 || c >= cx1 || y < 0 || y >= ega.H {
+			if c < cx0 || c >= cx1 || y < 0 || y >= pal.H {
 				continue
 			}
 			if p == 16 {
 				p = 0
 			}
-			if p < 16 || p >= ega.AmigaBase {
-				e.S.Pix[y*ega.W+x0+c] = p
+			if p < 16 || p >= pal.AmigaBase {
+				e.S.Pix[y*pal.W+x0+c] = p
 			}
 		}
 	}

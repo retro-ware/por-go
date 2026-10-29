@@ -6,10 +6,9 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"por/pal"
 	"sort"
 	"strings"
-
-	"por/ega"
 )
 
 // The full-screen map (extra): M on the command bar
@@ -352,7 +351,7 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 
 // doorColour is a light brown (Amiga palette 0xA84): it stands out
 // against the white walls and the grey, black and blue floors.
-const doorColour = ega.AmigaBase + 16*ega.AmigaPortrait + 6
+const doorColour = pal.AmigaBase + 16*pal.AmigaPortrait + 6
 
 // canvas is what drawMap draws on: the screen, or an off-screen picture.
 type canvas interface {
@@ -427,7 +426,7 @@ func (e *Engine) mapImage(cell int) image.Image {
 	e.drawMap(p, 0, 0, cell, m, letter)
 	out := image.NewRGBA(image.Rect(0, 0, n, n))
 	for i, c := range p.pix {
-		out.SetRGBA(i%n, i/n, e.S.RGBA(c))
+		out.SetRGBA(i%n, i/n, e.pal.RGBA(c))
 	}
 	return out
 }

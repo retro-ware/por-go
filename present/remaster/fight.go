@@ -2,14 +2,13 @@ package remaster
 
 import (
 	"image"
-	"image/color"
 	"strconv"
 	"strings"
 
 	"gpu"
 
-	"por/ega"
 	"por/engine"
+	"por/pal"
 )
 
 // The combat screen's own rows (extra): the original's two rows under the
@@ -70,7 +69,7 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, glyph func(byte) [8]byte, b *e
 	for i := 3; i < len(im.Pix); i += 4 {
 		im.Pix[i] = 255
 	}
-	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
+	rgb := pal.EGA
 	x := 8
 	put := func(s string, c int, y int) {
 		s = s[:min(len(s), max(0, (w-8-x)/8))]

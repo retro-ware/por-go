@@ -3,10 +3,9 @@ package engine
 import (
 	"image"
 	"image/color"
+	"por/pal"
 	"strings"
 	"sync/atomic"
-
-	"por/ega"
 )
 
 // The read-only seam for presenters other than the classic screen: a View
@@ -161,7 +160,7 @@ func (e *Engine) frameDrawn() {
 	e.S.Lock()
 	s.frame = s.frame[:0]
 	for _, p := range s.border {
-		s.frame = append(s.frame, e.S.Pix[p[1]*ega.W+p[0]])
+		s.frame = append(s.frame, e.S.Pix[p[1]*pal.W+p[0]])
 	}
 	e.S.Unlock()
 }
@@ -221,7 +220,7 @@ func (e *Engine) publish() {
 	e.S.Lock()
 	v.MainFrame = len(s.frame) > 0
 	for i, p := range s.border {
-		if i < len(s.frame) && e.S.Pix[p[1]*ega.W+p[0]] != s.frame[i] {
+		if i < len(s.frame) && e.S.Pix[p[1]*pal.W+p[0]] != s.frame[i] {
 			v.MainFrame = false
 			break
 		}
@@ -229,7 +228,7 @@ func (e *Engine) publish() {
 	in := TextPane.Pixels()
 	for y := in.Min.Y; y < in.Max.Y && !v.TextShown; y++ {
 		for x := in.Min.X; x < in.Max.X; x++ {
-			if e.S.Pix[y*ega.W+x] != 0 {
+			if e.S.Pix[y*pal.W+x] != 0 {
 				v.TextShown = true
 				break
 			}
@@ -283,10 +282,10 @@ func (e *Engine) toRGBA(d []byte, w, h int, dst *image.RGBA, x, y int) *image.RG
 			p = 0
 			fallthrough
 		case p < 16:
-			c := ega.Palette[p]
+			c := pal.Palette[p]
 			dst.SetRGBA(x+i%w, y+i/w, color.RGBA{c[0], c[1], c[2], 255})
-		case p >= ega.AmigaBase:
-			dst.SetRGBA(x+i%w, y+i/w, e.S.RGBA(p))
+		case p >= pal.AmigaBase:
+			dst.SetRGBA(x+i%w, y+i/w, e.pal.RGBA(p))
 		}
 	}
 	return dst

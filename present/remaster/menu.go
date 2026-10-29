@@ -3,11 +3,10 @@ package remaster
 import (
 	"image"
 	"image/color"
+	"por/pal"
 	"strings"
 
 	"gpu"
-
-	"por/ega"
 )
 
 // drawMenu draws a vertical menu in the original's look: a box with the
@@ -30,7 +29,7 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 		}
 		p.menuImg, p.menuBuf = gpu.NewImage(cw*8, ch*8), make([]byte, cw*8*ch*8*4)
 	}
-	rgb := func(i int) color.RGBA { c := ega.Palette[i]; return color.RGBA{c[0], c[1], c[2], 255} }
+	rgb := pal.EGA
 	green, blue, white := rgb(10), rgb(1), rgb(15)
 	clear(p.menuBuf)
 	for i := 3; i < len(p.menuBuf); i += 4 {

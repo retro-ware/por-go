@@ -134,7 +134,7 @@ func (e *Engine) battle() *Battle {
 		}
 	}
 	ground := groundColour(e.sqrpaci[0])
-	b.Floor = e.S.RGBA(ground)
+	b.Floor = e.pal.RGBA(ground)
 	b.Tiles = make([]image.Image, 0x100)
 	for t, im := range e.sqrpaci {
 		for f := 0; im != nil && f < min(im.Count, 0x80); f++ {
@@ -225,7 +225,7 @@ func (e *Engine) picRGBA(im *dax.Image, f int, flip bool, ground int) image.Imag
 			out.SetRGBA(x, i/w, color.RGBA{})
 			continue
 		}
-		out.SetRGBA(x, i/w, e.S.RGBA(p))
+		out.SetRGBA(x, i/w, e.pal.RGBA(p))
 	}
 	s.pics[k] = out
 	return out

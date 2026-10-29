@@ -37,6 +37,7 @@ import (
 
 	"por/ega"
 	"por/engine"
+	"por/pal"
 	"por/present/classic"
 	"por/present/remaster"
 )
@@ -238,8 +239,8 @@ func (g *game) cell(x, y float64) (int, int, bool) {
 	if p.W <= 0 || x < p.X || y < p.Y || x >= p.X+p.W || y >= p.Y+p.H {
 		return 0, 0, false
 	}
-	px := int((x - p.X) * ega.W / p.W)
-	py := int((y - p.Y) * ega.H / p.H)
+	px := int((x - p.X) * pal.W / p.W)
+	py := int((y - p.Y) * pal.H / p.H)
 	return px / 8, py / 8, true
 }
 
@@ -467,7 +468,7 @@ func main() {
 
 	g := &game{scr: scr, eng: eng, dsf: 1}
 	g.remaster.Classic = &g.classic
-	gpu.SetWindowSize(ega.W*(*scale), ega.H*(*scale)*6/5) // 4:3 like a CRT
+	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale)*6/5) // 4:3 like a CRT
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
 	gpu.SetTPS(tps)

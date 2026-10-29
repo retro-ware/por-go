@@ -11,6 +11,7 @@ import (
 	"gpu"
 
 	"por/ega"
+	"por/pal"
 )
 
 // Rect is where the picture lands on the window, in device pixels.
@@ -32,7 +33,7 @@ type Presenter struct {
 
 	// the frame last converted into buf: an unchanged one is not converted
 	// or uploaded again
-	last    [ega.W * ega.H]uint8
+	last    [pal.W * pal.H]uint8
 	lastPal [16]uint8
 	lastSat float64
 	lut     [256]color.RGBA // colour of each index under lastPal
@@ -55,7 +56,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note Note) Rect {
 	pw, ph := scale*4, scale*3
 	pic := Rect{(W - pw) / 2, (H - ph) / 2, pw, ph}
 	op := &gpu.DrawImageOptions{}
-	op.GeoM.Scale(pw/ega.W, ph/ega.H)
+	op.GeoM.Scale(pw/pal.W, ph/pal.H)
 	op.GeoM.Translate(pic.X, pic.Y)
 	dst.DrawImage(p.img, op)
 	p.drawOverlays(dst, pic)
@@ -66,15 +67,15 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note Note) Rect {
 // returns it; the remaster crops its windows from it. The image is reused.
 func (p *Presenter) Frame(scr *ega.Screen, note Note) *gpu.Image {
 	if p.img == nil {
-		p.img, p.buf = gpu.NewImage(ega.W, ega.H), make([]byte, ega.W*ega.H*4)
+		p.img, p.buf = gpu.NewImage(pal.W, pal.H), make([]byte, pal.W*pal.H*4)
 	}
 	scr.Lock()
 	vis := scr.Visible()
-	palChanged := scr.Pal != p.lastPal || ega.AmigaSaturation != p.lastSat
+	palChanged := scr.Pal != p.lastPal || pal.AmigaSaturation != p.lastSat
 	upload := !p.drawn || palChanged || note.Show || p.noted || *vis != p.last
 	if upload {
 		if !p.drawn || palChanged {
-			p.lastPal, p.lastSat = scr.Pal, ega.AmigaSaturation
+			p.lastPal, p.lastSat = scr.Pal, pal.AmigaSaturation
 			for i := range p.lut {
 				p.lut[i] = scr.RGBA(uint8(i))
 			}
@@ -123,8 +124,8 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, pic Rect) {
 		b := o.Part()
 		im = im.SubImage(b).(*gpu.Image) // drawn from its own top left
 		op := &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
-		op.GeoM.Scale(float64(o.At.Dx())*pw/ega.W/float64(b.Dx()), float64(o.At.Dy())*ph/ega.H/float64(b.Dy()))
-		op.GeoM.Translate(pic.X+float64(o.At.Min.X)*pw/ega.W, pic.Y+float64(o.At.Min.Y)*ph/ega.H)
+		op.GeoM.Scale(float64(o.At.Dx())*pw/pal.W/float64(b.Dx()), float64(o.At.Dy())*ph/pal.H/float64(b.Dy()))
+		op.GeoM.Translate(pic.X+float64(o.At.Min.X)*pw/pal.W, pic.Y+float64(o.At.Min.Y)*ph/pal.H)
 		dst.DrawImage(im, op)
 	}
 }
@@ -146,7 +147,7 @@ func (p *Presenter) drawNote(n Note) {
 				if gl[r]&(0x80>>b) != 0 {
 					c = fg
 				}
-				o := ((r+4)*ega.W + x0 + i*8 + b) * 4
+				o := ((r+4)*pal.W + x0 + i*8 + b) * 4
 				p.buf[o], p.buf[o+1], p.buf[o+2] = c.R, c.G, c.B
 			}
 		}

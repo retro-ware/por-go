@@ -24,6 +24,7 @@ import (
 
 	"por/ega"
 	"por/engine"
+	"por/pal"
 )
 
 func main() {
@@ -121,9 +122,9 @@ func main() {
 }
 
 func writePNG(scr *ega.Screen, path string) {
-	img := image.NewRGBA(image.Rect(0, 0, ega.W, ega.H))
+	img := image.NewRGBA(image.Rect(0, 0, pal.W, pal.H))
 	for i, c := range scr.Pix {
-		img.Set(i%ega.W, i/ega.W, scr.RGBA(c))
+		img.Set(i%pal.W, i/pal.W, scr.RGBA(c))
 	}
 	f, err := os.Create(path)
 	if err != nil {

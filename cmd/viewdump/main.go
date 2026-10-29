@@ -20,7 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"por/dax"
-	"por/ega"
+	"por/pal"
 )
 
 // The engine's tables (engine/geo.go, engine/pic.go), unexported there.
@@ -120,7 +120,7 @@ func writeWall(path string, def []byte, sets [4]*dax.Image, scale int, ground bo
 	img := image.NewNRGBA(image.Rect(0, 0, partW[nearFront]*8*scale, partH[nearFront]*8*scale))
 	if ground {
 		for _, band := range groundRows {
-			p := ega.Palette[band.colour]
+			p := pal.Palette[band.colour]
 			r := image.Rect(0, band.from*scale, img.Rect.Dx(), img.Rect.Dy())
 			draw.Draw(img, r, image.NewUniform(color.NRGBA{p[0], p[1], p[2], 255}), image.Point{}, draw.Src)
 		}
@@ -143,7 +143,7 @@ func writeWall(path string, def []byte, sets [4]*dax.Image, scale int, ground bo
 				if c >= dax.Clear {
 					continue
 				}
-				p := ega.Palette[c&15]
+				p := pal.Palette[c&15]
 				col := color.NRGBA{p[0], p[1], p[2], 255}
 				x, y := ox+cx*8+j%8, cy*8+j/8
 				for sy := range scale {

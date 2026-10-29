@@ -15,12 +15,13 @@ import (
 
 	"por/ega"
 	"por/engine"
+	"por/pal"
 )
 
 func dump(s *ega.Screen, name string) {
-	img := image.NewRGBA(image.Rect(0, 0, ega.W, ega.H))
+	img := image.NewRGBA(image.Rect(0, 0, pal.W, pal.H))
 	for i, c := range s.Pix {
-		img.Set(i%ega.W, i/ega.W, s.RGBA(c))
+		img.Set(i%pal.W, i/pal.W, s.RGBA(c))
 	}
 	f, err := os.Create(name)
 	if err != nil {
@@ -37,10 +38,10 @@ func dump(s *ega.Screen, name string) {
 // window that size shows them (box-averaged).
 func dumpHi(s *ega.Screen, name string) {
 	const k = 4
-	img := image.NewRGBA(image.Rect(0, 0, ega.W*k, ega.H*k))
-	for y := range ega.H * k {
-		for x := range ega.W * k {
-			img.Set(x, y, s.RGBA(s.Pix[y/k*ega.W+x/k]))
+	img := image.NewRGBA(image.Rect(0, 0, pal.W*k, pal.H*k))
+	for y := range pal.H * k {
+		for x := range pal.W * k {
+			img.Set(x, y, s.RGBA(s.Pix[y/k*pal.W+x/k]))
 		}
 	}
 	for _, o := range s.Overlays {

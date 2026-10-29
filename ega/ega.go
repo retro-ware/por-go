@@ -5,40 +5,16 @@ package ega
 import (
 	"image"
 	"image/color"
+
+	"por/pal"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
 const (
-	W = 320
-	H = 200
-)
-
-// Palette is the standard 16-colour EGA/CGA palette (RGB).
-var Palette = [16][3]uint8{
-	{0, 0, 0}, {0, 0, 173}, {0, 173, 0}, {0, 173, 173},
-	{173, 0, 0}, {173, 0, 173}, {173, 82, 0}, {173, 173, 173},
-	{82, 82, 82}, {82, 82, 255}, {82, 255, 82}, {82, 255, 255},
-	{255, 82, 82}, {255, 82, 255}, {255, 255, 82}, {255, 255, 255},
-}
-
-// Amiga holds the Amiga Pool of Radiance palettes (12-bit RGB, from the
-// program's data at 0x54080, 0x54040 and 0x54020). Pixel values from AmigaBase up
-// are colour AmigaBase+16*slot+index of these, drawn in their own RGB.
-var Amiga = [3][16]uint16{
-	AmigaView:     {0x000, 0x124, 0x953, 0xb97, 0xecb, 0x710, 0xa42, 0xdb0, 0xff5, 0x074, 0x053, 0x369, 0x555, 0x777, 0xaaa, 0xfff},
-	AmigaPortrait: {0x000, 0xdb9, 0xb97, 0x964, 0x521, 0x742, 0xa84, 0xcb6, 0xff9, 0x007, 0x44b, 0x444, 0x555, 0x777, 0xaaa, 0xfff},
-	AmigaTerrain:  {0x000, 0x06b, 0x096, 0x0aa, 0x000, 0x940, 0xb44, 0xfaa, 0xfe9, 0x59f, 0x0d8, 0x5ff, 0x555, 0x777, 0xaaa, 0xfff},
-}
-
-// Amiga palette slots: PIC/FINAL pictures; portraits; the area map,
-// combat ground tiles and combat icons.
-const (
-	AmigaView = iota
-	AmigaPortrait
-	AmigaTerrain
-	AmigaBase = 32
+	W = pal.W
+	H = pal.H
 )
 
 // Overlay is a picture the window draws over the screen at its own
@@ -144,12 +120,12 @@ func New() *Screen {
 func (s *Screen) Lock()   { s.mu.Lock() }
 func (s *Screen) Unlock() { s.mu.Unlock() }
 
-// Set writes one pixel; 17..AmigaBase-1 are ignored (transparent).
+// Set writes one pixel; 17..pal.AmigaBase-1 are ignored (transparent).
 func (s *Screen) Set(x, y int, c uint8) {
 	if c == 16 { // dax.Clear: a masked-out pixel drawn plain
 		c = 0
 	}
-	if (c < 16 || c >= AmigaBase) && x >= 0 && x < W && y >= 0 && y < H {
+	if (c < 16 || c >= pal.AmigaBase) && x >= 0 && x < W && y >= 0 && y < H {
 		s.Pix[y*W+x] = c
 	}
 }
@@ -167,7 +143,7 @@ func (s *Screen) Fill(x0, y0, x1, y1 int, c uint8) {
 	if c == 16 {
 		c = 0
 	}
-	if c >= 16 && c < AmigaBase { // transparent: Set ignores it
+	if c >= 16 && c < pal.AmigaBase { // transparent: Set ignores it
 		return
 	}
 	x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, W), min(y1, H)
@@ -180,24 +156,7 @@ func (s *Screen) Fill(x0, y0, x1, y1 int, c uint8) {
 }
 
 // RGBA returns the displayed colour of palette register i.
-func (s *Screen) RGBA(i uint8) color.RGBA {
-	if i >= AmigaBase {
-		c := Amiga[int(i-AmigaBase)/16%len(Amiga)][i%16]
-		return saturate(float64(c>>8&15)*17, float64(c>>4&15)*17, float64(c&15)*17)
-	}
-	p := Palette[s.Pal[i&15]&15]
-	return color.RGBA{p[0], p[1], p[2], 255}
-}
-
-// AmigaSaturation scales the Amiga colours' distance from grey, to sit
-// closer to the vivid EGA set (1 = the Amiga's own values).
-var AmigaSaturation = 1.4
-
-func saturate(r, g, b float64) color.RGBA {
-	l := 0.299*r + 0.587*g + 0.114*b
-	f := func(v float64) uint8 { return uint8(max(0, min(255, l+(v-l)*AmigaSaturation)) + 0.5) }
-	return color.RGBA{f(r), f(g), f(b), 255}
-}
+func (s *Screen) RGBA(i uint8) color.RGBA { r := pal.Regs(s.Pal); return r.RGBA(i) }
 
 // SetPalette remaps palette register index to EGA colour.
 func (s *Screen) SetPalette(index, colour int) {

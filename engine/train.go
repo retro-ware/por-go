@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"por/dax"
-	"por/ega"
+	"por/pal"
 )
 
 // ovr17 (second half): Modify, Train and Add on the party screen, the
@@ -671,7 +671,7 @@ func recolourIcon(im *dax.Image, to [16]byte) {
 		switch {
 		case v < 16 && int(v) != im.Mask:
 			im.Data[k] = f[v]
-		case v >= ega.AmigaBase:
+		case v >= pal.AmigaBase:
 			im.Data[k] = v&^0xF | am[v&0xF]
 		}
 	}
