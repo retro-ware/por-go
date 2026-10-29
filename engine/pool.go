@@ -203,7 +203,11 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		Throw:  e.beginFlag == 5 && c.Okay != 0,
 		Sell:   !hired && e.beginFlag == 1,
 		Switch: e.beginFlag != 5,
-		Powers: e.powers(c),
+	}
+	for _, p := range e.powers(c) {
+		if p.Kind != ActSpells || !v.Sell { // no spells in a shop
+			v.Powers = append(v.Powers, p)
+		}
 	}
 	for i, it := range items {
 		e.ItemName(c, it, 0, 0, false, false)

@@ -356,7 +356,7 @@ func (e *Engine) ItemsMenu() bool {
 				e.partySel = a.N
 			}
 		case a.Kind >= ActSpells && a.Kind <= ActCure:
-			if slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
+			if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {
 				e.snap.invOn = false // they show on the game's own screens
 				e.power(c, a.Kind)
 				e.snap.invOn = true
