@@ -27,7 +27,7 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 		if v > o {
 			sign = "+"
 		}
-		return " (" + sign + strconv.FormatFloat(v-o, 'f', -1, 64) + ")"
+		return " (" + sign + strings.TrimSuffix(strconv.FormatFloat(v-o, 'f', 1, 64), ".0") + ")" // one decimal at most
 	}
 	dice := func(n, d byte, bonus int8) string {
 		s := strconv.Itoa(int(n)) + "d" + strconv.Itoa(int(d))
