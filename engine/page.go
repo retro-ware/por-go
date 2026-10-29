@@ -131,9 +131,15 @@ func (e *Engine) clearPage() {
 	clear(e.pg.layers)
 	e.pg.layers = e.pg.layers[:0]
 	e.pg.frameUp = false
-	e.pg.overlays = nil
-	e.snap.portrait, e.snap.sheet = CellRect{}, false
+	e.newPage()
 	e.ext.cells = [25][40]textCell{}
+}
+
+// newPage ends what belongs to the page being replaced: the sheet's
+// portrait overlay and box, and the tall layout.
+func (e *Engine) newPage() {
+	e.pg.overlays = nil
+	e.snap.portrait, e.snap.tallRow = CellRect{}, 0
 }
 
 // pageView fills v's page from the layers and cells.

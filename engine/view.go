@@ -28,8 +28,8 @@ func (e *Engine) CharacterSheet() {
 	c := e.selected()
 	e.view.char = c
 	e.ClearScreen()
-	e.snap.sheet = true // the remaster stretches the sheet (drawSheet)
 	e.DrawBorder(1, 1, winRight, winBottom, 0)
+	e.snap.tallRow = 13 // the remaster fills a 4:3 window: the blank row under the ability scores repeats
 	e.displayName(c, 1, 1, false)
 	if c.Control > 0x7F {
 		e.DisplayString(len(c.Name())+3, 1, colLightGreen, "(NPC)")

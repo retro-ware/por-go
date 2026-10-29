@@ -75,17 +75,16 @@ func (p *Presenter) drawSlots(dst *gpu.Image, v engine.View, note Note) Rect {
 	return p.drawTall(dst, v, note, from, nil)
 }
 
-// drawSheet draws a character sheet (View.Sheet) over 30 rows: its box
-// grows by five blank rows (row 13, under the ability scores) so the page
-// fills a 4:3 window.
-func (p *Presenter) drawSheet(dst *gpu.Image, v engine.View, note Note) Rect {
+// drawTallPage draws a page over 30 rows so it fills a 4:3 window: its
+// blank row View.TallRow repeats five times (the sheet, the loot list).
+func (p *Presenter) drawTallPage(dst *gpu.Image, v engine.View, note Note) Rect {
 	var from [tallRows]int
 	for y := range from {
-		switch {
-		case y <= 13:
+		switch r := v.TallRow; {
+		case y <= r:
 			from[y] = y
-		case y < 19:
-			from[y] = 13
+		case y <= r+5:
+			from[y] = r
 		default:
 			from[y] = y - 5
 		}

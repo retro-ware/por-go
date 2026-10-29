@@ -70,6 +70,9 @@ func (e *Engine) fillCells(x1, y1, x2, y2 int) {
 // DrawBorder = 03F1:0000: draw a frame around the cell rectangle using
 // symbols 0x114+style*3 (+0 corner, +1 vertical, +2 horizontal).
 func (e *Engine) DrawBorder(x1, y1, x2, y2, style int) {
+	if x1 <= 1 && y1 <= 1 { // a new page: the sheet's extras end with it
+		e.newPage()
+	}
 	x1, y1, x2, y2 = x1-1, y1-1, x2+1, y2+1
 	base := 0x114 + style*3
 	e.Put8x8Symbol(x1, y1, base)

@@ -319,6 +319,10 @@ const lootTakeItem Choice = 0
 // lootList = ovr06:0B14 (var index, var item): the treasure in a "Loot" box.
 func (e *Engine) lootList(index *int, item **Item) Pick {
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Loot")
+	e.snap.tallRow = 22 // the remaster fills a 4:3 window: the list's last row repeats while it is blank, else the row under the name
+	if len(e.run.treasure) >= 19 {
+		e.snap.tallRow = 3
+	}
 	if c := e.selected(); c != nil { // extra: who takes (F1-F8, a portrait change it)
 		e.displayName(c, 2, 2, false)
 		w := e.poolText() // extra: the party inventory's slots, against the window's right edge

@@ -109,10 +109,10 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil
 		return p.drawCredits(dst, v, note)
 	}
-	if v.Slots || v.Sheet {
+	if v.Slots || v.TallRow > 0 {
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil
-		if v.Sheet {
-			return p.drawSheet(dst, v, note)
+		if v.TallRow > 0 {
+			return p.drawTallPage(dst, v, note)
 		}
 		return p.drawSlots(dst, v, note)
 	}

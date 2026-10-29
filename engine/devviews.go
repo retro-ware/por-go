@@ -106,6 +106,8 @@ func (e *Engine) DevScene(name string) func() {
 		return func() {
 			e.selected().Portrait = readPNG(os.Getenv("POR_PNG"))
 			e.ViewCharacter()
+			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot list: no portrait on it
+			e.lootTake()
 			e.DrawMainScreen()
 		}
 	case "cast", "castko": // Cast on the command bar with Cure Light Wounds memorized; castko with the selected member unconscious
