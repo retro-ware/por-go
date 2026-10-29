@@ -468,8 +468,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	if len(in.Pool) >= in.Cap {
 		fillc = red
 	}
-	s := strconv.Itoa(len(in.Pool)) + "/" + strconv.Itoa(in.Cap)
-	inv.text(s, rr-8*len(s), 8, fillc)
+	fill := strconv.Itoa(len(in.Pool)) + "/" + strconv.Itoa(in.Cap)
 	inv.drawPane(&inv.list, inv.list.shown(in.Pool), inv.sel, false, shop, busy, rx, rr, bottom)
 
 	// an item dragged under the pointer
@@ -524,6 +523,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		inv.onBorder(rr, (ch-1)*8-8, false, []string{strconv.Itoa(in.Gold) + "g", strconv.Itoa(in.Copper) + "c"}, []color.RGBA{col(14), col(6)})
 	}
 	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
+	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})
 	if box != nil { // over the borders, in the middle
 		inv.panel(t, box, func(w, h int) image.Point { return image.Pt((inv.w-w)/2/8*8, (inv.h-h)/2/8*8) })
 	} else if !inv.dragging {
