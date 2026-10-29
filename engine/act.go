@@ -59,6 +59,7 @@ const (
 	ActBuy               // shop inventory: buy ware N (Inventory.Wares)
 	ActHead              // member N's next paper-doll head (N < 0: the selected member); Shift-click on the sheet's portrait
 	ActPortrait          // the PNG at Text is member N's portrait (N < 0: the selected member); a file dropped on the sheet
+	ActIcon              // the PNG at Text is the member's combat icon; a file dropped on the icon editor (View.IconDrop)
 )
 
 // Directions of ActMove.

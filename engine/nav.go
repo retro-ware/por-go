@@ -105,6 +105,10 @@ func (e *Engine) extraAct(a Action) bool {
 		if e.ext.viewing {
 			e.SheetPortrait()
 		}
+	case ActIcon: // extra: the icon editor takes the PNG while it is up
+		if f := e.snap.iconDrop; f != nil {
+			f(readPNG(a.Text))
+		}
 	default:
 		return false
 	}

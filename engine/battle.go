@@ -174,7 +174,9 @@ func (e *Engine) battle() *Battle {
 				u.Squares = append(u.Squares, image.Pt(u.X+dx, u.Y+dy))
 			}
 		}
-		if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
+		if im := c.iconPNG(int(s.poses[i]&1), u.Facing > 3); im != nil { // the dropped PNG (iconpng.go)
+			u.Icon = im
+		} else if im := e.icons[c.Order][s.poses[i]&1]; im != nil {
 			u.Icon = e.picRGBA(im, 0, u.Facing > 3, -1)
 		}
 		b.Units = append(b.Units, u)

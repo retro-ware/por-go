@@ -224,12 +224,18 @@ func (e *Engine) SaveCharacter(c *Character, name string) {
 			}
 		}
 	}
-	p := e.savePath(base + ".png") // extra: the dropped portrait
-	os.Remove(p)
-	if c.Portrait != nil {
-		if f, err := os.Create(p); err == nil {
-			png.Encode(f, c.Portrait)
-			f.Close()
+	for _, f := range []struct { // extra: the dropped portrait and combat icon
+		ext string
+		im  image.Image
+	}{{".png", c.Portrait}, {".icon.png", c.Icon}} {
+		p := e.savePath(base + f.ext)
+		os.Remove(p)
+		if f.im == nil {
+			continue
+		}
+		if w, err := os.Create(p); err == nil {
+			png.Encode(w, f.im)
+			w.Close()
 		} else {
 			e.fileError("write", p)
 		}
@@ -281,6 +287,10 @@ func (e *Engine) LoadCharacter(name string, c *Character, useSav bool) bool {
 		c.Affects = readAffects(b)
 	}
 	c.Portrait = readPNG(e.savePath(nm + ".png"))
+	c.Icon, c.iconPoses = nil, [2][2]image.Image{}
+	if im := readPNG(e.savePath(nm + ".icon.png")); im != nil {
+		c.setIconPNG(im)
+	}
 	c.Plan = [21]byte{}
 	if b, err := os.ReadFile(e.savePath(nm + ".mem")); err == nil {
 		copy(c.Plan[:], b)

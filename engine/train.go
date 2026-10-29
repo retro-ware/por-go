@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"image"
 	"os"
 	"slices"
 	"strconv"
@@ -618,13 +619,18 @@ func (e *Engine) choosePortrait() {
 // iconPane = ovr17:34DF (x, y) nested in the icon editor: the two poses
 // of the icon in slot 0xC at icon square (x,y), on a cleared 12 cell
 // panel (on EGA over the slot 0x19 background icons).
-func (e *Engine) iconPane(x, y int) {
+// png (extra): a dropped PNG stands in for the icon: the pane stays bare
+// under its overlay (iconEditor).
+func (e *Engine) iconPane(x, y int, png bool) {
 	if e.Cfg.Graphics != 'E' && e.Cfg.Graphics != 'T' { // DS:4A1E == 0 (1 EGA, 2 Tandy)
 		e.FillRect(x*3, y*0x18, 0xC, 0x18, 3)
 	} else {
 		e.FillRect(x*3, y*0x18, 0xC, 0x18, 0)
 		e.drawIcon(x, y, 0, 0, 0x19)
 		e.drawIcon(x+3, y, 0, 1, 0x19)
+	}
+	if png {
+		return
 	}
 	e.drawIcon(x, y, 0, 0, 0xC)
 	e.drawIcon(x+3, y, 0, 1, 0xC)
@@ -710,6 +716,24 @@ func (e *Engine) iconEditor() {
 	var state, parent, part int // parent and part are uninitialised until set
 	var sub, key Choice
 	var face bool
+	old := c.Icon // extra: a dropped PNG (iconpng.go) shows over the panes, the old one above the new
+	show := func() {
+		var o []Overlay
+		for y, im := range map[int]image.Image{2: old, 4: c.Icon} {
+			for p := 0; p < 2 && im != nil; p++ {
+				o = append(o, Overlay{Img: iconPose(im, p, false), At: iconBox(y, p)})
+			}
+		}
+		e.pg.overlays = o
+	}
+	e.snap.iconDrop = func(im image.Image) {
+		if im == nil || !c.setIconPNG(im) {
+			e.say("Not a PNG, square or twice as wide as high")
+			return
+		}
+		show()
+	}
+	defer func() { e.snap.iconDrop, e.pg.overlays = nil, nil }()
 	for {
 		e.BuildCharIcon(c, false) // ovr18:0482
 		state = 1
@@ -721,13 +745,14 @@ func (e *Engine) iconEditor() {
 		c.Order = order
 		head, weapon, size := c.IconHead, c.IconBody, c.IconSize
 		e.iconCopy(order, 0xC, true)
-		e.iconPane(1, 2)
+		e.iconPane(1, 2, old != nil)
+		show()
 		e.DisplayString(8, 6, colWhite, "old")
 		e.DisplayString(3, 10, colWhite, "ready   action")
 		e.DisplayString(8, 12, colWhite, "new")
 		e.DisplayString(3, 16, colWhite, "ready   action")
 		for {
-			e.iconPane(1, 4)
+			e.iconPane(1, 4, c.Icon != nil)
 			m := iconMenus[state]
 			switch state {
 			case 3:

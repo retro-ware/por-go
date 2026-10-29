@@ -94,6 +94,7 @@ type View struct {
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
+	IconDrop  bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
 	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActMove Up/Down steps, Enter takes the candidate
 	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
@@ -165,6 +166,7 @@ type snapState struct {
 	cmapOn       bool                   // the combat map is set up (cmapShown) and shown
 	sheetOn      bool                   // a character sheet is up over the combat map
 	portrait     CellRect               // the sheet's portrait box while a sheet is up
+	iconDrop     func(image.Image)      // the icon editor takes a dropped PNG while it is up (nil elsewhere)
 	tallRow      int                    // View.TallRow
 	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
 	effects      []effect               // sprites on the combat page
@@ -222,6 +224,7 @@ func (e *Engine) publish() {
 		}
 	}
 	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.TallRow, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, s.credits, s.slots, s.tallRow, e.ext.choosing, s.spellPick
+	v.IconDrop = s.iconDrop != nil
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {
