@@ -53,6 +53,8 @@ func (e *Engine) itemLines(it *Item) []string {
 			}
 		}
 		switch {
+		case typ == itemArrow || typ == itemQuarrel: // before the flags: quarrels carry the crossbows' 0x80
+			add("Ammunition")
 		case flags&0x14 == 0x14:
 			add("Thrown, or used in melee")
 		case flags&0x10 != 0:
@@ -61,8 +63,6 @@ func (e *Engine) itemLines(it *Item) []string {
 			add("Needs quarrels")
 		case flags&1 != 0 && flags&8 != 0:
 			add("Needs arrows")
-		case typ == itemArrow || typ == itemQuarrel:
-			add("Ammunition")
 		}
 		if flags&4 != 0 {
 			add("Strength adds to hit, damage")

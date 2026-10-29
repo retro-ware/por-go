@@ -203,8 +203,13 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.menuSel = v.Menu.Sel
 		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
-	if note.Show { // the toast: the bottom line pageImage wrote it on, boxed along the bottom edge
-		drawBox(dst, frame, p.border.tiles, engine.CellRect{X1: 1, Y1: 24, X2: 38, Y2: 24}.Framed(), pk, cx, b.Dy()-int(pk*12))
+	if note.Show { // the toast: pageImage's bottom line (yellow on black) on a black band along the very bottom of the screen, no border
+		h := int(pk * 8)
+		dst.SubImage(image.Rect(b.Min.X, b.Max.Y-h, b.Max.X, b.Max.Y)).(*gpu.Image).Fill(color.Black)
+		op := &gpu.DrawImageOptions{}
+		op.GeoM.Scale(pk, pk)
+		op.GeoM.Translate(float64(cx)-pk*float64(pal.W)/2, float64(b.Max.Y-h))
+		dst.DrawImage(frame.SubImage(image.Rect(0, pal.H-8, pal.W, pal.H)).(*gpu.Image), op)
 	}
 	return Rect{}
 }
