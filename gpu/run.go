@@ -2,6 +2,7 @@ package gpu
 
 import (
 	"errors"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogpu/gogpu"
@@ -28,6 +29,7 @@ var win struct {
 	resize   bool
 	unfocus  bool // keep updating while unfocused (always on here)
 	full     bool
+	toFull   atomic.Int32 // a fullscreen change for the main thread: 1 off, 2 on
 	fps      float64
 	frames   int
 	fpsStart time.Time
@@ -68,8 +70,8 @@ func IsFullscreen() bool                         { return win.full }
 
 func SetFullscreen(on bool) {
 	win.full = on
-	if win.app != nil {
-		win.app.SetFullscreen(on)
+	if win.app != nil { // AppKit wants it on the main thread: OnUpdate applies it
+		win.toFull.Store(map[bool]int32{false: 1, true: 2}[on])
 	}
 }
 
@@ -105,6 +107,11 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 	app := gogpu.NewApp(cfg)
 	win.app = app
 	initInput(app)
+	app.OnUpdate(func(float64) { // the main thread
+		if f := win.toFull.Swap(0); f != 0 {
+			app.SetFullscreen(f == 2)
+		}
+	})
 	var (
 		screen *Image
 		last   time.Time
