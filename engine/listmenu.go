@@ -240,18 +240,18 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 			*index = i
 			e.lmDrawRow(c, *index, true)
 		}
-		r := region{x0: x1, y0: y1, x1: x2, y1: y2, click: func(_, cy int) uint16 {
+		r := region{x0: x1, y0: y1, x1: x2, y1: y2, click: func(_, cy int) Action {
 			i := at(cy)
 			if i < 0 {
-				return 0
+				return Action{}
 			}
 			if i == *index || menu == "" {
 				*index = i
 				clicked = true
-				return 13
+				return Action{Kind: ActContinue}
 			}
 			move(i)
-			return keyNone
+			return Action{Kind: actRedraw}
 		}}
 		r.hover = func(_, cy int) {
 			{
@@ -326,9 +326,9 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 				if hasNext {
 					e.lmPageScroll(c, true)
 				}
-			case keyRelist >> 8: // (extra) the caller rebuilds the list (another member: F1-F8)
+			case menuRelist: // (extra) the caller rebuilds the list (another member: F1-F8)
 				*selected = nil
-				return keyRelist >> 8
+				return menuRelist
 			}
 			continue
 		}

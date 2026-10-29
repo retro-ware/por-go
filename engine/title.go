@@ -27,7 +27,7 @@ func (e *Engine) Title() {
 				}
 			}
 		}
-		if e.keyWaiting() || e.Ticks() >= end {
+		if e.keyHit() || e.Ticks() >= end {
 			break
 		}
 		e.idle()

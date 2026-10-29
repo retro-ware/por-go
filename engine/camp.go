@@ -733,7 +733,7 @@ func (e *Engine) campInput(prompt, menu string) (key byte, again bool) {
 	if !extra {
 		return key, false
 	}
-	if key != keyRelist>>8 {
+	if key != menuRelist {
 		e.partyKeypad(key)
 	}
 	e.DisplayPartyList()
@@ -1191,7 +1191,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 		if r[4] == 0 && r[3] == 0 && r[2] == 0 && r[1] == 0 || stop() {
 			break
 		}
-		if e.keyWaiting() {
+		if e.keyHit() {
 			e.showRest(0)
 			if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ") == 'Y' {
 				done = true

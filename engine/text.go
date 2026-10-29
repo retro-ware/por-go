@@ -199,8 +199,7 @@ func (e *Engine) skipText() bool {
 	if e.msgDelay == 0 {
 		return false
 	}
-	if !e.ext.skip && e.KeyPressed() {
-		e.ext.ahead = e.ext.ahead[1:]
+	if !e.ext.skip && e.keyHit() {
 		e.ext.skip = true
 	}
 	return e.ext.skip

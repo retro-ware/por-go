@@ -2,7 +2,6 @@ package engine
 
 import (
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -51,11 +50,10 @@ type extras struct {
 	aoeSpell  int                 // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
-	ahead         []uint16                // translated keys not yet read
+	held          Action                  // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
 	nav           navCtx                  // the waiting menu
 	regions       []region                // clickable parts of the screen
 	castCancelled bool                    // CastSpell: the player cancelled the aim (the turn goes on)
-	acted         bool                    // a region's click acted itself: DisplayInput hands back (keyNone) to its caller
 	raw           bool                    // the screen reads the arrows itself
 	typing        bool                    // InputString is waiting
 	modal         int                     // help or overview shown: any key closes
@@ -69,7 +67,6 @@ type extras struct {
 	throwing      *Item                   // combat: Throw left the inventory to aim this item
 	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
 	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
-	later         []uint16                // keys handed to the game one at a time (Engine.readKey)
 	sels          map[string]int          // the highlighted item each menu was left with
 	listWord      map[string]byte         // a list menu's highlighted word, by its hot letter, kept across pages
 	selSet        bool                    // the caller set the highlight (YesNo): keep it
@@ -171,73 +168,15 @@ func (e *Engine) rosterPanel() {
 	e.drawPartyList()
 }
 
-// extraKey handles a convenience key while the command bar waits.
-// It reports whether the key was used.
-func (e *Engine) extraKey(k byte) bool {
-	if !e.ext.inCommand {
-		return false
+// toggleMinimap (Tab on the command bar) puts the minimap over the
+// roster or takes it away, where the game's Area map was allowed.
+func (e *Engine) toggleMinimap() {
+	if !e.minimapAllowed() {
+		e.DisplayMessageWait(colYellow, "Not Here")
+		return
 	}
-	switch k {
-	case 9: // Tab
-		if !e.minimapAllowed() {
-			e.DisplayMessageWait(colYellow, "Not Here")
-			return true
-		}
-		e.ext.minimap = !e.ext.minimap
-		e.rosterPanel()
-		return true
-	case 'p', 'P':
-		e.PartyOverview()
-		return true
-	case 'm', 'M':
-		e.FullMap()
-		return true
-	}
-	return false
-}
-
-// viewKey: F1..F8 (n = 0..7) on the command bar or in a menu with View
-// select member n and open their inventory (View, starting on Items). On
-// the View page or in the inventory they switch to member n (Exit, then
-// View again), staying on the page they were on. Not in combat, where View is the fighter's.
-func (e *Engine) viewKey(n int) uint16 {
-	if n >= len(e.party) || e.beginFlag == 5 || e.ext.menu == 0 {
-		return 0
-	}
-	switch {
-	case e.ext.viewing:
-		if n == e.partySel {
-			return 0
-		}
-		e.partySel = n // the View page for member n
-		e.ext.later = append(e.ext.later, 'V')
-		return 'E'
-	case e.ext.campBar: // camp: F1-F8 pick the member the menu is for
-		if n == e.partySel {
-			return 0
-		}
-		e.partySel = n
-		return keyRelist
-	case e.ext.buying: // the shop's Buy list: F1-F8 pick the buyer
-		if n == e.partySel {
-			return 0
-		}
-		e.partySel = n
-		return keyRelist
-	case e.ext.inCommand || strings.Contains(e.ext.nav.menu, "View"):
-		e.partySel, e.ext.toItems = n, true
-		return 'V'
-	}
-	return 0
-}
-
-// sheetKey: P toggles between the View page and the inventory.
-func (e *Engine) sheetKey() uint16 {
-	switch {
-	case len(e.carried(e.selected())) > 0:
-		return 'I'
-	}
-	return 0
+	e.ext.minimap = !e.ext.minimap
+	e.rosterPanel()
 }
 
 // statusName = DS:1047 + 0xD*n, the status words. extra: dead with the
@@ -376,10 +315,10 @@ func (e *Engine) Help() {
 			more := "page " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
 			e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		}
-		switch e.readKey() {
-		case 27:
+		switch a := e.anyKey(); {
+		case a.Kind == ActClose:
 			p = len(pages)
-		case 0x4800, 0x4900, 0x4B00: // Up, PgUp, Left
+		case a.Kind == ActMove && (a.N == DirUp || a.N == DirPgUp || a.N == DirLeft):
 			p = max(p-1, 0)
 		default:
 			p++

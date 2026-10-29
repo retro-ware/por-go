@@ -180,16 +180,20 @@ func (e *Engine) showJournal(lines []string) {
 	for p := 0; p < len(pages); p++ {
 		for off := 0; ; {
 			maxOff := draw(p, off)
-			k := e.readKey()
-			if k == 27 {
+			a := e.input()
+			if !e.pressed(a) {
+				continue
+			}
+			up, down := a.Kind == ActMove && a.N == DirUp, a.Kind == ActMove && a.N == DirDown
+			if a.Kind == ActClose {
 				p = len(pages)
 				break
 			}
-			if maxOff > 0 && k == 0x4800 {
+			if maxOff > 0 && up {
 				off = max(off-16, 0)
 				continue
 			}
-			if maxOff > 0 && k == 0x5000 && off < maxOff { // at the bottom, Down pages on
+			if maxOff > 0 && down && off < maxOff { // at the bottom, Down pages on
 				off = min(off+16, maxOff)
 				continue
 			}

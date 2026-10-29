@@ -347,7 +347,7 @@ func (e *Engine) lootTake() {
 	for len(e.run.treasure) > 0 {
 		var it *Item
 		key := e.lootList(&index, &it)
-		if key == keyRelist>>8 {
+		if key == menuRelist {
 			continue // F1-F8 picked another taker
 		}
 		if key != 'T' && key != 13 || it == nil {

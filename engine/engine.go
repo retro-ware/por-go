@@ -43,8 +43,6 @@ type Engine struct {
 	set   Set           // DS:5376: the data set the current area reads
 	start time.Time
 
-	pendingScan byte // readKey: scan code waiting after a 0 byte
-	draining    bool // readKeyByte is dropping typed-ahead keys
 	msgDelay    byte // DS:49E2, message delay factor (ovr12 sets 1)
 	menuSel     int  // DS:6B2B, DisplayInput selection
 	menuExtra   bool // DS:6B2C
@@ -278,49 +276,6 @@ func (e *Engine) Delay(ms int) {
 	e.pace(working)
 }
 
-// KeyPressed / readKey / ClearKeyboard = 0A40:02FD, BIOS read, 0899:0104:
-// the keys are the original's, made from the presenter's actions (nav.go).
-func (e *Engine) KeyPressed() bool {
-	e.walkFeed()
-	e.publish()
-	for len(e.ext.ahead) == 0 && len(e.acts.ch) > 0 { // nav.go: an action becomes the game's key as it is seen
-		e.feed(e.nextAct())
-	}
-	e.release()
-	return len(e.ext.ahead) > 0
-}
-
-func (e *Engine) readKey() uint16 {
-	e.ext.skip = false
-	e.actsDone()
-	for e.release(); len(e.ext.ahead) == 0; e.release() {
-		e.feed(e.nextAct())
-	}
-	k := e.ext.ahead[0]
-	e.ext.ahead = e.ext.ahead[1:]
-	return k
-}
-
-// feed turns an action (nav.go) into the key the game will read.
-func (e *Engine) feed(a Action) {
-	if a.Kind == ActContinue || a.Kind == ActClose { // Enter or Esc silences the voice-over
-		e.stopVoice()
-	}
-	if k := e.actKey(a); k != 0 {
-		e.ext.ahead = append(e.ext.ahead, k)
-	}
-}
-
-// release hands the game the next of the keys a translated key left to
-// follow it, once the keys before are read. Not while readKeyByte drains
-// typed-ahead keys, which would keep only the last.
-func (e *Engine) release() {
-	if len(e.ext.ahead) == 0 && len(e.ext.later) > 0 && !e.draining {
-		e.ext.ahead = append(e.ext.ahead, e.ext.later[0])
-		e.ext.later = e.ext.later[1:]
-	}
-}
-
 // ClearKeyboard does nothing: the original's drain loop is dead code (0899:0104 jumps straight to its exit).
 func (e *Engine) ClearKeyboard() {}
 
@@ -328,7 +283,7 @@ func (e *Engine) ClearKeyboard() {}
 // flush the keyboard.
 func (e *Engine) WaitSeconds(n int) {
 	end := e.Ticks() + int64(n)*100
-	for e.Ticks() < end && !e.keyWaiting() {
+	for e.Ticks() < end && !e.keyHit() {
 		e.idle()
 	}
 	e.ClearKeyboard()

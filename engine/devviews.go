@@ -99,7 +99,7 @@ func (e *Engine) DevScene(name string) func() {
 				}
 				e.msgRow++
 			}
-			e.readKey()
+			e.anyKey()
 		}
 	case "inventory": // member 1 fully equipped, a party inventory to scroll
 		return func() {

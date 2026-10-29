@@ -186,7 +186,7 @@ func (e *Engine) PartyMenu() {
 			row := 0
 			item := func(hot byte, w int) {
 				e.addRegion(region{x0: 2, y0: 12 + row, x1: 1 + w, y1: 12 + row,
-					click: func(int, int) uint16 { return uint16(hot) },
+					click: func(int, int) Action { return Action{Kind: actHotkey, N: int(hot)} },
 					hover: func(int, int) { e.ext.nav.hot(hot) }})
 				row++
 			}
@@ -327,12 +327,12 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 		e.DisplayPartyList() // 00BA:0767 (who)
 		mark := e.regionMark()
 		{ // extra (nav.go): click a member to select it
-			e.addRegion(region{x0: 0, y0: 0, x1: 0x27, y1: 0x17, click: func(cx, cy int) uint16 {
+			e.addRegion(region{x0: 0, y0: 0, x1: 0x27, y1: 0x17, click: func(cx, cy int) Action {
 				if i := e.rosterRow(cx, cy); i >= 0 {
 					who = e.party[i]
-					return 'S'
+					return Action{Kind: actHotkey, N: 'S'}
 				}
-				return 0
+				return Action{}
 			}})
 		}
 		key, extra := e.DisplayInput(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844

@@ -139,10 +139,10 @@ func (e *Engine) fileError(verb, path string) {
 }
 
 // PromptRow24 = 0709:0BF5: clear row 24, show, wait for a key.
-func (e *Engine) PromptRow24(colour int, s string) byte {
+func (e *Engine) PromptRow24(colour int, s string) {
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colour, s)
-	return e.readKeyByte()
+	e.anyKey()
 }
 
 // BuildCharList = ovr18:0010: names from charlist.txt, "* " for party members.

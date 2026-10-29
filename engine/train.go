@@ -107,8 +107,8 @@ func (e *Engine) ModifyCharacter() {
 			e.modifyDraw(idx, false)
 			idx = i
 		}
-		e.addRegion(region{x0: 0, y0: 7, x1: 0xB, y1: 12, click: func(_, cy int) uint16 { pick(cy - 7); return keyNone }})
-		e.addRegion(region{x0: 0, y0: 0x12, x1: 0xB, y1: 0x12, click: func(int, int) uint16 { pick(6); return keyNone }})
+		e.addRegion(region{x0: 0, y0: 7, x1: 0xB, y1: 12, click: func(_, cy int) Action { pick(cy - 7); return Action{Kind: actRedraw} }})
+		e.addRegion(region{x0: 0, y0: 0x12, x1: 0xB, y1: 0x12, click: func(int, int) Action { pick(6); return Action{Kind: actRedraw} }})
 		key, extra := e.DisplayInput("Modify character: ", "Keep Raise Lower Exit", colLightMagenta, colLightGreen, colWhite, true, false)
 		e.regionCut(mark)
 		switch {

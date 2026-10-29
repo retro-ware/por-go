@@ -173,86 +173,250 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 	if len(prompt) > 0 {
 		e.DisplayString(0, promptRow, promptColour, prompt)
 	}
-	extra := false
 	e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) // 048B; redrawn only on a move
 	e.menuRegions(prompt, menu, start, end, normal, highlight, allowExtra)
+	redraw := func() { e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) }
+	m := &menuBar{e: e, menu: menu, start: start, count: count, allowExtra: allowExtra, allowEnter: allowEnter, redraw: redraw}
 	for {
 		// The input timeout DS:6B2E..6B32 is never set by the game.
 		e.animateWhileWaiting()
-		if !e.keyWaiting() { // 0566
+		if !e.inputReady() { // 0566
 			e.idle()
 			continue
 		}
-		k := e.readKeyByte()
-		if k == 0 {
-			k = e.readKeyByte()
-			if e.ext.acted { // extra: a click did its action itself (nav.go keyNone)
-				e.ext.acted = false
-				return byte(keyNone >> 8), false
-			}
-			if allowExtra {
-				e.menuExtra = true
-				return k, true
-			}
-			continue
-		}
-		switch k {
-		case 27:
-			return 0, false
-		case 13:
-			if allowEnter {
-				return 13, false
-			}
-			continue
-		case ',':
-			if e.menuSel == 1 {
-				e.menuSel = count
-			} else {
-				e.menuSel--
-			}
-			e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight)
-			continue
-		case '.':
-			if e.menuSel == count {
-				e.menuSel = 1
-			} else {
-				e.menuSel++
-			}
-			e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight)
-			continue
-		}
-		k = upper(k)
-		done := false
-		if k == ' ' {
-			done = true
-		} else if isHotkey(k) {
-			for i := 1; i <= len(menu); i++ {
-				if menu[i-1] != k {
-					continue
-				}
-				done = true
-				for j := 1; j < len(start); j++ {
-					if start[j] == i {
-						e.menuSel = j
-						e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) // ovr26:0685
-						break
-					}
-				}
-			}
-		}
-		if allowExtra && (k >= '1' && k <= '9' || k == '\\') {
-			if k == '\\' {
-				k = '7' // 0899:06AD stores 0x37 itself, not the keypad table entry (original quirk)
-			} else {
-				k = keypadMap[k-'1']
-			}
-			extra, done = true, true
-		}
-		if done {
-			e.menuExtra = extra
-			return k, extra
+		if k, x, ok := m.decide(e.input()); ok {
+			e.menuExtra = x
+			return k, x
 		}
 	}
+}
+
+// menuBar is the menu bar DisplayInput waits on.
+type menuBar struct {
+	e                      *Engine
+	menu                   string
+	start                  []int
+	count                  int
+	allowExtra, allowEnter bool
+	redraw                 func()
+}
+
+// decide = the key handling of ovr26:03BD, on actions: what the menu hands
+// back for a, if it ends the wait (ok).
+func (m *menuBar) decide(a Action) (k byte, extra, ok bool) {
+	e := m.e
+	switch a.Kind {
+	case ActPick:
+		if mn := e.snap.menu; mn != nil && a.N >= 0 && a.N < len(mn.Items) {
+			return m.hotkey(mn.Items[a.N].Key)
+		}
+	case actHotkey:
+		return m.hotkey(byte(a.N))
+	case ActSelect:
+		if mn := e.snap.menu; mn != nil && a.N >= 0 && a.N < len(mn.Items) && e.ext.nav.hot != nil {
+			e.ext.nav.hot(mn.Items[a.N].Key)
+		}
+	case actRedraw:
+		return m.scan(menuRedraw)
+	case ActContinue:
+		if e.enterPicks() {
+			return m.hotkey(e.ext.padHot)
+		}
+		return m.enter()
+	case ActClose: // picks the Exit item of a menu that has one, so it always backs out
+		if e.ext.modal == 0 && !e.ext.inCommand && e.ext.nav.exit {
+			return m.hotkey('E')
+		}
+		return 0, false, true
+	case ActMove:
+		return m.move(a.N)
+	case ActMember: // a portrait: that member's View page, or the member a list or bar is for
+		switch n := a.N; {
+		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
+		case e.ext.inCommand:
+			e.partySel = n
+			return m.hotkey('V')
+		case e.ext.campBar || e.ext.buying:
+			return m.member(n)
+		}
+	case ActText:
+	default:
+		if e.ext.modal > 0 { // the slot screen's bar: any other action is Enter
+			if a.Kind == ActSlots {
+				return m.scan(menuSlots)
+			}
+			return m.enter()
+		}
+		switch a.Kind {
+		case ActInventory:
+			return m.member(a.N)
+		case ActOverview: // P: the overview, on the View page the items
+			switch {
+			case e.ext.viewing:
+				if len(e.carried(e.selected())) > 0 {
+					return m.hotkey('I')
+				}
+			case e.ext.inCommand:
+				e.PartyOverview()
+			default:
+				return m.hotkey('P')
+			}
+		case ActMap:
+			switch {
+			case e.ext.fullMap && !e.ext.typing: // M closes the map it opened
+				return m.hotkey('E')
+			case e.ext.inCommand:
+				e.FullMap()
+			default:
+				return m.hotkey('M')
+			}
+		case ActMinimap:
+			if e.ext.inCommand {
+				e.toggleMinimap()
+			}
+		}
+	}
+	return 0, false, false
+}
+
+// hotkey = ovr26:062A..06C2: the item with hotkey k; with the keypad
+// allowed a digit is the keypad's key.
+func (m *menuBar) hotkey(k byte) (byte, bool, bool) {
+	k = upper(k)
+	done, extra := k == ' ', false
+	if isHotkey(k) {
+		for i := 1; i <= len(m.menu); i++ {
+			if m.menu[i-1] != k {
+				continue
+			}
+			done = true
+			for j := 1; j < len(m.start); j++ {
+				if m.start[j] == i {
+					m.e.menuSel = j
+					m.redraw() // ovr26:0685
+					break
+				}
+			}
+		}
+	}
+	if m.allowExtra && (k >= '1' && k <= '9' || k == '\\') {
+		if k == '\\' {
+			k = '7' // 0899:06AD stores 0x37 itself, not the keypad table entry (original quirk)
+		} else {
+			k = keypadMap[k-'1']
+		}
+		extra, done = true, true
+	}
+	return k, extra, done
+}
+
+// scan hands back an extended key's scan letter where the menu takes them.
+func (m *menuBar) scan(c byte) (byte, bool, bool) { return c, true, m.allowExtra }
+
+// enter is Enter, taken by a menu with colours.
+func (m *menuBar) enter() (byte, bool, bool) { return 13, false, m.allowEnter }
+
+// step moves the highlight back or on, round the ends.
+func (m *menuBar) step(back bool) (byte, bool, bool) {
+	e := m.e
+	switch {
+	case back && e.menuSel == 1:
+		e.menuSel = m.count
+	case back:
+		e.menuSel--
+	case e.menuSel == m.count:
+		e.menuSel = 1
+	default:
+		e.menuSel++
+	}
+	m.redraw()
+	return 0, false, false
+}
+
+// move gives ActMove its meaning: the highlight (Left/Up back, Right/Down
+// on), or in lists and member selection the lines and members, or the
+// keypad's keys for menus that take them.
+func (m *menuBar) move(d int) (byte, bool, bool) {
+	x := m.e.ext
+	key := func(d int) (byte, bool, bool) {
+		switch d {
+		case DirBack:
+			return m.step(true)
+		case DirOn:
+			return m.step(false)
+		}
+		return m.scan(dirScan[d])
+	}
+	if d < 0 || d > DirWheelDown {
+		return 0, false, false
+	}
+	up := d == DirUp || d == DirWheelUp
+	switch {
+	case x.modal > 0: // a bar of the modal screen's own
+		switch d {
+		case DirWheelUp, DirWheelDown:
+			return 0, false, false
+		case DirUp, DirLeft:
+			return m.step(true)
+		case DirDown, DirRight:
+			return m.step(false)
+		}
+		return key(d)
+	case d >= DirWheelUp: // the pagers: back, on
+		line := DirDown
+		if up {
+			line = DirUp
+		}
+		switch {
+		case x.paging:
+			return key(line)
+		case x.raw:
+			return 0, false, false
+		case x.list || x.choosing:
+			return key(line)
+		}
+		return m.step(up)
+	case x.inCommand || x.raw:
+		return key(d)
+	case d == DirUp || d == DirDown:
+		if x.list || x.choosing {
+			return key(d) // lines and members
+		}
+		return m.step(up)
+	case d == DirLeft || d == DirRight:
+		return m.step(d == DirLeft)
+	}
+	return key(d)
+}
+
+// member: F1..F8 (n = 0..7) on the command bar or in a menu with View
+// select member n and open their inventory (View, starting on Items). On
+// the View page or in the inventory they switch to member n (Exit, then
+// View again), staying on the page they were on. Not in combat, where View is the fighter's.
+func (m *menuBar) member(n int) (byte, bool, bool) {
+	e := m.e
+	if n < 0 || n >= len(e.party) || e.beginFlag == 5 {
+		return 0, false, false
+	}
+	switch {
+	case e.ext.viewing:
+		if n == e.partySel {
+			return 0, false, false
+		}
+		e.partySel = n // the View page for member n
+		e.ext.held = Action{Kind: actHotkey, N: 'V'}
+		return m.hotkey('E')
+	case e.ext.campBar || e.ext.buying: // camp: F1-F8 pick the member the menu is for; the shop's Buy list: the buyer
+		if n == e.partySel {
+			return 0, false, false
+		}
+		e.partySel = n
+		return m.scan(menuRelist)
+	case e.ext.inCommand || strings.Contains(m.menu, "View"):
+		e.partySel, e.ext.toItems = n, true
+		return m.hotkey('V')
+	}
+	return 0, false, false
 }
 
 // menuRegions (extra, nav.go): the items of the menu bar highlight under
@@ -282,7 +446,7 @@ func (e *Engine) menuRegions(prompt, menu string, start, end []int, normal, high
 		j, hot := j, menu[start[j]-1]
 		a, b := itemSpan(menu, start, end, j)
 		e.addRegion(region{x0: len(prompt) + a - 1, y0: 24, x1: len(prompt) + b - 1, y1: 24,
-			click: func(int, int) uint16 { return uint16(hot) },
+			click: func(int, int) Action { return Action{Kind: actHotkey, N: int(hot)} },
 			hover: func(int, int) { sel(j) }})
 	}
 }

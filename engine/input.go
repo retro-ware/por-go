@@ -2,45 +2,6 @@ package engine
 
 import "strings"
 
-// keyWaiting = 0A40:02FD as Turbo Pascal's Crt has it: true while the
-// scan code of an extended key is still to be read, else the BIOS check.
-// keyWaiting = Turbo Pascal KeyPressed: a pending scan code counts.
-func (e *Engine) keyWaiting() bool { return e.pendingScan != 0 || e.KeyPressed() }
-
-// crtReadKey = 0A40:030F, Turbo Pascal's ReadKey: an extended key (zero
-// ASCII) reads as 0, then its scan code on the next call. The convenience
-// actions (nav.go) are turned into keys by
-// actKey and never reach the game as such.
-func (e *Engine) crtReadKey() byte {
-	if e.pendingScan != 0 {
-		c := e.pendingScan
-		e.pendingScan = 0
-		return c
-	}
-	k := e.readKey()
-	if k&0xFF == 0 {
-		e.pendingScan = byte(k >> 8)
-		return 0
-	}
-	return byte(k)
-}
-
-// readKeyByte = 0899:0059: one key as the game reads it. Ctrl-S toggles the
-// sound; with the STING parameter Ctrl-D toggles the debug display and
-// Ctrl-C quits. After a non-zero key, keys typed ahead are drained and the
-// last one wins.
-func (e *Engine) readKeyByte() byte {
-	k := e.crtReadKey() // Ctrl-S is ActSound; the STING debug keys (Ctrl-D, Ctrl-C) are not sent
-	if k != 0 {
-		e.draining = true
-		for e.keyWaiting() {
-			k = e.crtReadKey()
-		}
-		e.draining = false
-	}
-	return k
-}
-
 // DisplaySpaces = 0709:05EB (x, y, colour, count): count blank cells.
 func (e *Engine) DisplaySpaces(x, y, colour, count int) {
 	if x > lastCol || y > promptRow {

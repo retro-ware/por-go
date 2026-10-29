@@ -405,8 +405,7 @@ func (e *Engine) CreateCharacter() {
 				e.ClearRow24()
 				e.DisplayString(0, promptRow, colYellow, "Rolling "+strconv.Itoa(tries)+"... any key stops")
 				e.Delay(16) // let the window draw and see keys
-				if e.keyWaiting() {
-					e.readKeyByte()
+				if e.keyHit() {
 					stop = true
 				}
 			}

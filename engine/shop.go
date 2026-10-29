@@ -82,7 +82,7 @@ func (e *Engine) shopBuy() {
 	for {
 		var it *Item
 		key := e.shopList(&index, &it)
-		if key == keyRelist>>8 {
+		if key == menuRelist {
 			continue // F1-F8 picked another buyer
 		}
 		if key == 'L' { // extra: what the item does

@@ -3,9 +3,8 @@ package engine
 import "strings"
 
 // Navigation that works the same way on every screen (not in the DOS
-// game). The presenter sends typed actions; they become the keys the
-// ported routines read (Engine.readKey), so those only ever see keys the
-// original understood:
+// game). The presenter sends typed actions; the ported routines read them
+// (Engine.input) and decide on their meaning (DisplayInput for menu bars):
 //
 //   - in menus ActMove moves the highlight (Left/Up back, Right/Down on);
 //     in menus that take the keypad, Up/Down step the selected member
@@ -14,22 +13,24 @@ import "strings"
 //   - the clickable parts of the screen are published as View.Spots: the
 //     presenter sends ActHover and ActSpot for them
 
-// keyNone is an extended key no routine acts on: a click that moved a
-// cursor itself returns it, so the waiting menu loops and redraws.
-const keyNone = 0xFE00
+// Outcomes of a click (region.click) besides the presenter's actions.
+const (
+	actHotkey ActKind = -1 // pick the item of the waiting menu bar whose hotkey is N
+	actRedraw ActKind = -2 // the click moved a cursor itself: the waiting menu hands back (menuRedraw) to be drawn again
+)
 
-// keyRelist (extra) makes a list menu hand back to its caller to be built
-// again (extras.go viewKey on the shop's Buy list).
-const keyRelist = 0xFD00
+// What DisplayInput hands back besides the menu's hotkeys and the keypad's
+// scan letters (extra true).
+const (
+	menuRedraw byte = 0xFE // actRedraw
+	menuRelist byte = 0xFD // the caller rebuilds the list for another member (F1-F8)
+	menuSlots  byte = 0x43 // F9 on a menu bar of the slot screen (YesNo ignores it)
+)
 
-// keyF9 is the key the slot screen closes on (ActSlots).
-const keyF9 = 0x4300
-
-// dirKey is the BIOS key of each ActMove direction (0: the wheel's and the
-// bar's own).
-var dirKey = [...]uint16{DirUp: 0x4800, DirDown: 0x5000, DirLeft: 0x4B00, DirRight: 0x4D00,
-	DirHome: 0x4700, DirEnd: 0x4F00, DirPgUp: 0x4900, DirPgDn: 0x5100, DirCentre: 0x4C00,
-	DirBack: ',', DirOn: '.', DirWheelUp: 0, DirWheelDown: 0}
+// dirScan is the scan letter DisplayInput hands back (extra) for each
+// ActMove direction the menu bar does not use itself.
+var dirScan = [...]byte{DirUp: 0x48, DirDown: 0x50, DirLeft: 0x4B, DirRight: 0x4D,
+	DirHome: 0x47, DirEnd: 0x4F, DirPgUp: 0x49, DirPgDn: 0x51, DirCentre: 0x4C}
 
 // navCtx describes the menu that is waiting (displayInput keeps one per call).
 type navCtx struct {
@@ -47,7 +48,7 @@ func menuHasExit(menu string) bool {
 // published as a View spot.
 type region struct {
 	x0, y0, x1, y1 int
-	click          func(cx, cy int) uint16 // the key the click stands for (0: none)
+	click          func(cx, cy int) Action // what the click stands for (ActNone: nothing)
 	hover          func(cx, cy int)        // optional: the pointer came onto it
 }
 
@@ -107,18 +108,47 @@ func (e *Engine) extraAct(a Action) bool {
 	return true
 }
 
-// actKey turns an action into the key the game reads, or 0 when it was
-// used up here.
-func (e *Engine) actKey(a Action) uint16 {
+// input waits for the next action a ported routine reads. The extras
+// (extraAct), the pointer and clicks are handled here: a click comes back
+// as what it stands for.
+func (e *Engine) input() Action {
+	e.ext.skip = false
+	e.actsDone()
+	for {
+		if a := e.ext.held; a.Kind != ActNone {
+			e.ext.held = Action{}
+			return a
+		}
+		if a := e.take(e.nextAct()); a.Kind != ActNone {
+			return a
+		}
+	}
+}
+
+// inputReady reports, without waiting, whether input has an action.
+func (e *Engine) inputReady() bool {
+	e.walkFeed()
+	e.publish()
+	for e.ext.held.Kind == ActNone && len(e.acts.ch) > 0 {
+		e.ext.held = e.take(e.nextAct())
+	}
+	return e.ext.held.Kind != ActNone
+}
+
+// take does what a does on every screen; ActNone when it is used up.
+func (e *Engine) take(a Action) Action {
+	if a.Kind == ActContinue || a.Kind == ActClose { // Enter or Esc silences the voice-over
+		e.stopVoice()
+	}
 	switch a.Kind {
 	case ActSpot, ActHover:
 		i := e.ext.floor + a.N
 		if i < e.ext.floor || i >= len(e.ext.regions) {
-			return 0
+			return Action{}
 		}
 		r := e.ext.regions[i]
 		if a.X < r.x0 || a.X > r.x1 || a.Y < r.y0 || a.Y > r.y1 { // made on a screen since gone
-			return 0
+			return Action{}
 		}
 		if a.Kind == ActSpot {
 			return r.click(a.X, a.Y)
@@ -126,94 +156,46 @@ func (e *Engine) actKey(a Action) uint16 {
 		if r.hover != nil {
 			r.hover(a.X, a.Y)
 		}
-		return 0
-	case ActMember: // a portrait: that member's View page, or the member a list or bar is for
-		switch n := a.N; {
-		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
-		case e.ext.inCommand:
-			e.partySel = n
-			return 'V'
-		case e.ext.campBar || e.ext.buying:
-			return e.viewKey(n)
-		}
-		return 0
-	case ActPick:
-		if m := e.snap.menu; m != nil && a.N >= 0 && a.N < len(m.Items) {
-			return uint16(m.Items[a.N].Key)
-		}
-		return 0
-	case ActSelect:
-		if m := e.snap.menu; m != nil && a.N >= 0 && a.N < len(m.Items) && e.ext.nav.hot != nil {
-			e.ext.nav.hot(m.Items[a.N].Key)
-		}
-		return 0
+		return Action{}
 	}
 	if e.extraAct(a) {
-		return 0
+		return Action{}
 	}
-	if e.ext.modal > 0 { // help and overview: any action closes
-		bar := e.ext.menu > e.ext.menuFloor // a menu bar of the screen's own (the slot screen's Overwrite? Yes No)
-		switch a.Kind {
-		case ActClose:
-			return 27
-		case ActSlots:
-			return keyF9
-		case ActFont, ActSound, ActText:
-			return 0
-		case ActMove:
-			switch {
-			case a.N >= DirWheelUp:
-				return 0
-			case bar && (a.N == DirUp || a.N == DirLeft):
-				return ','
-			case bar && (a.N == DirDown || a.N == DirRight):
-				return '.'
-			}
-			return dirKey[a.N]
-		case ActContinue:
-			if bar && e.enterPicks() {
-				return uint16(e.ext.padHot)
-			}
-		}
-		return 13
-	}
+	return a
+}
+
+// pressed: a answers "press a key". On a modal screen (help, overview)
+// the screen-wide actions close it too.
+func (e *Engine) pressed(a Action) bool {
 	switch a.Kind {
-	case ActInventory:
-		return e.viewKey(a.N)
-	case ActOverview:
-		if e.ext.viewing {
-			return e.sheetKey()
-		}
-		if e.extraKey('P') {
-			return 0
-		}
-		return 'P'
-	case ActMap:
-		if e.ext.fullMap && !e.ext.typing { // M closes the map it opened
-			return 'E'
-		}
-		if e.extraKey('M') {
-			return 0
-		}
-		return 'M'
-	case ActMinimap:
-		if e.extraKey(9) {
-			return 0
-		}
-		return 9
+	case ActContinue, ActClose, ActPick, actHotkey, ActOverview, ActMap, ActMinimap:
+		return true
 	case ActMove:
-		if a.N >= 0 && a.N < len(dirKey) {
-			return e.moveKey(a.N)
-		}
-	case ActClose:
-		return e.escKey()
-	case ActContinue:
-		if e.enterPicks() {
-			return uint16(e.ext.padHot)
-		}
-		return 13
+		return a.N < DirWheelUp
+	case ActInventory, ActHelp, ActSlots:
+		return e.ext.modal > 0
 	}
-	return 0
+	return false
+}
+
+// anyKey waits for "press a key" and returns the action that answered.
+func (e *Engine) anyKey() Action {
+	for {
+		if a := e.input(); e.pressed(a) {
+			return a
+		}
+	}
+}
+
+// keyHit uses up the actions waiting and reports whether one was a key
+// (the original's KeyPressed polls).
+func (e *Engine) keyHit() bool {
+	for e.inputReady() {
+		if e.pressed(e.input()) {
+			return true
+		}
+	}
+	return false
 }
 
 // enterPicks: Enter confirms the highlighted item of a menu bar. Lists,
@@ -222,56 +204,6 @@ func (e *Engine) actKey(a Action) uint16 {
 func (e *Engine) enterPicks() bool {
 	x := e.ext
 	return x.menu > 0 && x.padHot != 0 && !x.list && !x.choosing && !x.typing && !x.raw
-}
-
-// moveKey gives a move its meaning on the screen: walking, a line, a
-// member or the menu's highlight.
-func (e *Engine) moveKey(d int) uint16 {
-	if d == DirWheelUp || d == DirWheelDown { // the pagers: back, on, or scroll a picture
-		up := d == DirWheelUp
-		switch {
-		case e.ext.paging && up:
-			return 0x4800
-		case e.ext.paging:
-			return 0x5000
-		case e.ext.menu == 0 || e.ext.raw:
-			return 0
-		case e.ext.list || e.ext.choosing:
-			if up {
-				return 0x4800
-			}
-			return 0x5000
-		case up:
-			return ','
-		}
-		return '.'
-	}
-	k := dirKey[d]
-	if e.ext.menu == 0 || e.ext.inCommand || e.ext.raw {
-		return k
-	}
-	back := k == 0x4800 || k == 0x4B00
-	switch k {
-	case 0x4800, 0x5000:
-		if e.ext.list || e.ext.choosing {
-			return k // lines and members
-		}
-	case 0x4B00, 0x4D00:
-	default:
-		return k
-	}
-	if back {
-		return ','
-	}
-	return '.'
-}
-
-// escKey: Esc picks the Exit item of a menu that has one.
-func (e *Engine) escKey() uint16 {
-	if e.ext.menu > 0 && !e.ext.inCommand && e.ext.nav.exit {
-		return 'E'
-	}
-	return 27
 }
 
 // rosterRow is the party member listed at cell (cx, cy), or -1.
@@ -291,15 +223,15 @@ func (e *Engine) rosterRow(cx, cy int) int {
 }
 
 // rosterClick selects the member clicked in the roster. It sets the one
-// before and sends End (next member), so the menu's own keypad handling
-// runs (partyKeypad, the redraw).
-func (e *Engine) rosterClick(cx, cy int) uint16 {
+// before and moves to the next member (End), so the menu's own keypad
+// handling runs (partyKeypad, the redraw).
+func (e *Engine) rosterClick(cx, cy int) Action {
 	i := e.rosterRow(cx, cy)
 	if i < 0 {
-		return 0
+		return Action{}
 	}
 	e.partySel = (i + len(e.party) - 1) % len(e.party)
-	return 0x4F00
+	return Action{Kind: ActMove, N: DirEnd}
 }
 
 // rosterRegion makes the roster clickable for a menu that takes the keypad.
@@ -315,7 +247,7 @@ func (e *Engine) rosterRegion() {
 // the roster selects.
 func (e *Engine) commandRegions() {
 	if e.ext.minimap && e.minimapAllowed() && e.beginFlag != 0 {
-		e.addRegion(region{x0: 0x11, y0: 1, x1: 0x26, y1: 0xE, click: func(int, int) uint16 { e.FullMap(); return 0 }})
+		e.addRegion(region{x0: 0x11, y0: 1, x1: 0x26, y1: 0xE, click: func(int, int) Action { e.FullMap(); return Action{} }})
 		return
 	}
 	if len(e.party) > 0 {

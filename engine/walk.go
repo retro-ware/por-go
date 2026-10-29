@@ -53,7 +53,7 @@ func (e *Engine) startWalk(tx, ty int) bool {
 // walkFeed hands the command bar the walk's next key when it is time.
 func (e *Engine) walkFeed() {
 	w := e.ext.walk
-	if w == nil || len(e.ext.ahead) > 0 || e.draining || e.pendingScan != 0 { // the last key is still being read
+	if w == nil || e.ext.held.Kind != ActNone { // the last step is still being read
 		return
 	}
 	stop := func() { e.ext.walk = nil }
@@ -77,16 +77,16 @@ func (e *Engine) walkFeed() {
 		return
 	}
 	w.last = time.Now()
-	k := uint16(0x4800) // Up: a step ahead
+	step := DirUp // a step ahead
 	switch (d - e.facing + 8) % 8 {
 	case 0:
 		w.ex, w.ey = e.posX+dirDX[d], e.posY+dirDY[d]
 	case 6:
-		k, w.ef = 0x4B00, (e.facing+6)%8 // Left
+		step, w.ef = DirLeft, (e.facing+6)%8
 	default:
-		k, w.ef = 0x4D00, (e.facing+2)%8 // Right (twice to turn round)
+		step, w.ef = DirRight, (e.facing+2)%8 // twice to turn round
 	}
-	e.ext.ahead = append(e.ext.ahead, k)
+	e.ext.held = Action{Kind: ActMove, N: step}
 }
 
 // walkDir is the direction (0 2 4 6) of the first step on the shortest

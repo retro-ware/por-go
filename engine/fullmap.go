@@ -201,26 +201,26 @@ func (e *Engine) FullMap() {
 	m := e.labels()
 	mark := e.regionMark()
 	defer e.regionCut(mark)
-	e.addRegion(region{x0: fmX / 8, y0: fmY / 8, x1: (fmX + 16*fmCell - 1) / 8, y1: (fmY + 16*fmCell - 1) / 8, click: func(tx, ty int) uint16 {
+	e.addRegion(region{x0: fmX / 8, y0: fmY / 8, x1: (fmX + 16*fmCell - 1) / 8, y1: (fmY + 16*fmCell - 1) / 8, click: func(tx, ty int) Action {
 		x, y := (tx*8+4-fmX)/fmCell, (ty*8+4-fmY)/fmCell
 		if !onMap(x, y) {
-			return 0
+			return Action{}
 		}
 		if x == cx && y == cy {
-			return 'L' // a second click names the square
+			return Action{Kind: actHotkey, N: 'L'} // a second click names the square
 		}
 		cx, cy = x, y
-		return keyNone
+		return Action{Kind: actRedraw}
 	}})
 	texts := []string(nil)
 	var firstSq map[string]int
-	e.addRegion(region{x0: fmLegend, y0: 2, x1: 0x27, y1: 2 + fmRows - 1, click: func(_, y int) uint16 {
+	e.addRegion(region{x0: fmLegend, y0: 2, x1: 0x27, y1: 2 + fmRows - 1, click: func(_, y int) Action {
 		if i := y - 2; i < len(texts) {
 			s := firstSq[texts[i]]
 			cx, cy = s&15, s>>4
-			return keyNone
+			return Action{Kind: actRedraw}
 		}
-		return 0
+		return Action{}
 	}})
 	defer e.rawArrows()()
 	for {

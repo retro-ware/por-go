@@ -72,13 +72,12 @@ func (e *Engine) guardedRun(start func()) (reload bool) {
 func (e *Engine) unwindReset() {
 	x := &e.ext
 	x.inCommand, x.padHot, x.onSelect, x.menu, x.list, x.choosing = false, 0, nil, 0, false, false
-	x.quick, x.ahead, x.later, x.regions, x.raw = nil, nil, nil, nil, false
+	x.quick, x.held, x.regions, x.raw = nil, Action{}, nil, false
 	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
 	x.buying, x.campBar, x.selSet, x.skip, x.paging = false, false, false, false, false
 	x.fullMap, x.walk, x.back, x.aoe, x.picker, x.enemiesOnly = false, nil, false, 0, false, false
 	x.throwing, x.menuFloor, x.panel, e.snap.typing = nil, 0, nil, nil
 	e.partySel = 0 // a defer on the way out may have put back the old party's index
-	e.pendingScan, e.draining = 0, false
 	e.loadedGame = e.beginFlag != 0 // DS:49F8, as the party menu's Load
 }
 
@@ -238,16 +237,17 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		first = 1
 	}
 	sel, top := first, 0
-	type key struct {
+	type word struct {
 		label string
-		k     uint16
+		a     Action // what a click on it does
 	}
-	footer := []key{{"L=load", 'L'}, {"D=delete", 'D'}, {"Esc=back", 27}}
+	load, del := Action{Kind: actHotkey, N: 'L'}, Action{Kind: actHotkey, N: 'D'}
+	footer := []word{{"L=load", load}, {"D=delete", del}, {"Esc=back", Action{Kind: ActClose}}}
 	switch {
 	case canSave:
-		footer = append([]key{{"Enter=save", 13}}, footer...)
+		footer = append([]word{{"Enter=save", Action{Kind: ActContinue}}}, footer...)
 	case loadOnly:
-		footer = append([]key{{"Enter=load", 13}}, footer[1:]...)
+		footer = append([]word{{"Enter=load", Action{Kind: ActContinue}}}, footer[1:]...)
 	}
 	for {
 		list := e.slots()
@@ -278,16 +278,16 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		// extra (nav.go): a click selects a line, a second one is Enter; the
 		// keys in the footer are clicked by their words
 		mark := e.regionMark()
-		e.addRegion(region{x0: 2, y0: 3, x1: 0x25, y1: 3 + slotRows - 1, click: func(_, cy int) uint16 {
+		e.addRegion(region{x0: 2, y0: 3, x1: 0x25, y1: 3 + slotRows - 1, click: func(_, cy int) Action {
 			i := top + cy - 3
 			if i >= rows {
-				return 0
+				return Action{}
 			}
 			if i == sel {
-				return 13
+				return Action{Kind: ActContinue}
 			}
 			sel = i
-			return keyNone
+			return Action{Kind: actRedraw}
 		}})
 		x, gap := 2, 0x24
 		for _, f := range footer {
@@ -296,31 +296,35 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		gap /= len(footer) - 1 // spread over the row inside the frame
 		for _, f := range footer {
 			e.DisplayString(x, 22, colYellow, f.label)
-			e.addRegion(region{x0: x, y0: 0x16, x1: x + len(f.label) - 1, y1: 0x16, click: func(int, int) uint16 { return f.k }})
+			e.addRegion(region{x0: x, y0: 0x16, x1: x + len(f.label) - 1, y1: 0x16, click: func(int, int) Action { return f.a }})
 			x += len(f.label) + gap
 		}
 		outer := e.snap.menu // extra: the footer's letters as a menu (ActPick)
 		e.snap.menu, e.snap.own = &Menu{}, true
 		for _, f := range footer {
-			if f.k != 13 && f.k != 27 {
-				e.snap.menu.Items = append(e.snap.menu.Items, MenuItem{Text: f.label, Key: byte(f.k)})
+			if f.a.Kind == actHotkey {
+				e.snap.menu.Items = append(e.snap.menu.Items, MenuItem{Text: f.label, Key: byte(f.a.N)})
 			}
 		}
-		k := e.readKey()
+		a := e.input()
+		if m := e.snap.menu; a.Kind == ActPick && a.N >= 0 && a.N < len(m.Items) {
+			a = Action{Kind: actHotkey, N: int(m.Items[a.N].Key)}
+		}
 		e.snap.menu, e.snap.own = outer, false
 		e.regionCut(mark)
 		cur := ""
 		if sel >= first && sel < rows {
 			cur = list[sel-first].name
 		}
+		enter := a.Kind == ActContinue
 		switch {
-		case k == 27 || k == keyF9:
+		case a.Kind == ActClose || a.Kind == ActSlots:
 			return false
-		case k == 0x4800:
+		case a.Kind == ActMove && a.N == DirUp:
 			sel--
-		case k == 0x5000:
+		case a.Kind == ActMove && a.N == DirDown:
 			sel++
-		case k == 13 && canSave && cur == "": // New Slot
+		case enter && canSave && cur == "": // New Slot
 			name := slotName(e.inputLine("Save as: ", 0xA, 0x14)) // extra: the case as typed
 			if name == "" {
 				continue
@@ -334,16 +338,16 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			}
 			e.saveTo(name)
 			sel = first
-		case k == 13 && canSave:
+		case enter && canSave:
 			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+cur+"? ", textCols)) == 'Y' {
 				e.saveTo(cur)
 				sel = first
 			}
-		case (k == 'd' || k == 'D') && cur != "":
+		case a == del && cur != "":
 			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Delete "+cur+"? ", textCols)) == 'Y' {
 				os.RemoveAll(filepath.Join(e.slotRoot(), cur))
 			}
-		case (k == 'l' || k == 'L' || k == 13 && loadOnly) && cur != "":
+		case (a == load || enter && loadOnly) && cur != "":
 			if e.beginFlag == 5 {
 				e.combatViewLeave()
 			}
