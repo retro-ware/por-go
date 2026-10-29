@@ -72,6 +72,9 @@ func (g *game) Update() error {
 			g.act()
 			g.settle()
 		}
+		if os.Getenv("POR_POINTER") != "" {
+			g.mouse()
+		}
 		return nil
 	}
 	if g.remaster.Options() { // the renderer's options page has the keyboard
@@ -174,6 +177,9 @@ func (g *game) keys() {
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
 func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
+	if pt := os.Getenv("POR_POINTER"); shot != "" && pt != "" { // POR_SHOT: the pointer at x,y (screen pixels)
+		fmt.Sscanf(pt, "%d,%d", &mx, &my)
+	}
 	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game
 		_, dy := gpu.Wheel()
 		g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy)
@@ -285,7 +291,7 @@ func (g *game) Draw(dst *gpu.Image) {
 // one every quarter second, and exits; for full size checks of the
 // presenters. The window opens unfocused and ignores the user's input
 // meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
-// first adventuring prompt. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
+// first adventuring prompt. POR_POINTER=x,y puts the pointer there. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
 // arrows.
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
 
