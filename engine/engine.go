@@ -36,11 +36,9 @@ type Engine struct {
 	S         *ega.Screen
 	pal       pal.Regs // EGA palette registers (SetPaletteColor)
 	Cfg       Config
-	tempSel   *Character             // selectTemp: selected but not in the party
-	page      [pageStride * 168]byte // DS:4A20 drawing page contents (pageSet)
-	pageDraw  bool                   // drawing the 3D view: the original draws into page DS:4A20, one cell up and left of the screen
-	RandSeed  uint32                 // DS:4428, Turbo Pascal RandSeed
-	FixedSeed *uint32                // if set, Randomize uses it instead of the clock (POR_SEED)
+	tempSel   *Character // selectTemp: selected but not in the party
+	RandSeed  uint32     // DS:4428, Turbo Pascal RandSeed
+	FixedSeed *uint32    // if set, Randomize uses it instead of the clock (POR_SEED)
 
 	font  []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph
 	sym   [5]*dax.Image // DS:5E3A symbol sets
@@ -127,7 +125,6 @@ type Engine struct {
 	bodyIndex            byte                         // DS:70C7
 	icons                [maxCombatants][2]*dax.Image // DS:5E5A, ready and action pose per slot
 	spr                  *dax.Image                   // DS:6E36, 4 frame missile/hit sprite
-	sprUnder             []byte                       // DS:4A24, background saved by a sprite draw
 	place                placement                    // DS:4440..4658 combat start formations
 	terrain              byte                         // DS:465A wilderness square of the battle
 	clouds               []*cloud                     // DS:6DBB lingering spell areas

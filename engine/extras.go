@@ -209,9 +209,7 @@ const (
 // view it shows every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
 	e.ClearCells(17, 1, winRight, 14)
-	e.S.Lock()
-	defer e.S.Unlock()
-	e.drawMap(e.S, mmX, mmY, mmCell, e.labels(), nil)
+	e.mapPage(mmX, mmY, mmCell, e.labels(), nil)
 }
 
 // rosterPanel redraws the panel the minimap shares with the roster.
@@ -345,10 +343,8 @@ func (e *Engine) PartyOverview() {
 				w = 0x20
 			}
 		}
-		e.S.Lock()
 		e.fill(px, py, px+0x20*4, py+3, 8)
 		e.fill(px, py, px+w*4, py+3, uint8(hpc))
-		e.S.Unlock()
 		y += 2
 	}
 	e.PromptRow24(colWhite, "press any key to continue")

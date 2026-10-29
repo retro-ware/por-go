@@ -80,7 +80,6 @@ func (e *Engine) loadFont() {
 // the text on screen and shows the font's name for a moment.
 func (e *Engine) cycleFont(step int) {
 	n := len(e.ext.fonts) + 1
-	e.S.Lock()
 	e.ext.font = (e.ext.font + step + n) % n
 	e.ext.note, e.ext.noteAt = e.FontName(), time.Now()
 	for y := range e.ext.cells {
@@ -92,28 +91,11 @@ func (e *Engine) cycleFont(step int) {
 			e.paintChar(x, y, int(c.colour), int(c.bg), c.c, c.upcase)
 		}
 	}
-	e.S.Unlock()
 	name := ""
 	if e.ext.font > 0 {
 		name = e.ext.fonts[e.ext.font-1].name
 	}
 	os.WriteFile(filepath.Join(e.L.Dir, fontFile), []byte(name+"\n"), 0o644)
-}
-
-// cellShows: the cell still holds the glyph drawChar put there.
-func (e *Engine) cellShows(x, y int, c *textCell) bool {
-	for r := 0; r < 8; r++ {
-		for b := 0; b < 8; b++ {
-			want := c.bg
-			if c.glyph[r]&(0x80>>b) != 0 {
-				want = c.colour
-			}
-			if e.S.Get(x*8+b, y*8+r) != want {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 // FontName is the current font's name ("Pool of Radiance" for the game's).

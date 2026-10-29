@@ -2,7 +2,6 @@ package engine
 
 import (
 	"por/dax"
-	"por/pal"
 	"strconv"
 )
 
@@ -47,38 +46,7 @@ func (e *Engine) DrawPicture(x, y int, im *dax.Image, frame int) {
 	}
 	d := im.Frame(frame)
 	w := im.Width * 8
-	e.S.Lock()
-	defer e.S.Unlock()
-	e.blit(x*8, y*8, w, im.Height, d, -1, false)
 	e.picture(x*8, y*8, w, im.Height, d, -1)
-}
-
-// blit writes h rows of w pixels at pixel (x0,y0) with ega.Set's rules (16
-// draws as 0, 17..AmigaBase-1 are skipped, off-screen is clipped), leaving
-// out pixels equal to mask; with page the drawing page gets the raw pixel.
-func (e *Engine) blit(x0, y0, w, h int, d []byte, mask int, page bool) {
-	cx0, cx1 := max(-x0, 0), min(pal.W-x0, w) // columns on screen
-	for r := 0; r < h; r++ {
-		y := y0 + r
-		for c := 0; c < w; c++ {
-			p := d[r*w+c]
-			if int(p) == mask {
-				continue
-			}
-			if page {
-				e.pageSet(x0+c-8, y-8, p)
-			}
-			if c < cx0 || c >= cx1 || y < 0 || y >= pal.H {
-				continue
-			}
-			if p == 16 {
-				p = 0
-			}
-			if p < 16 || p >= pal.AmigaBase {
-				e.S.Pix[y*pal.W+x0+c] = p
-			}
-		}
-	}
 }
 
 // Put8x8Symbol = ovr35:015D Put8x8Symbol(x, y, id) without overlay: copy
@@ -126,12 +94,9 @@ func (e *Engine) DrawPictureMasked(x, y int, im *dax.Image, frame, mode int) {
 	}
 	d := im.Frame(frame)
 	w := im.Width * 8
-	e.S.Lock()
-	defer e.S.Unlock()
 	m := -1
 	if masked {
 		m = im.Mask
 	}
-	e.blit(x*8, y*8, w, im.Height, d, m, e.pageDraw)
 	e.picture(x*8, y*8, w, im.Height, d, m)
 }

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"image"
+	"slices"
 
 	"strings"
 
@@ -39,7 +40,6 @@ const pageCells = 21 // the drawing page, 21x21 cells (outside combat)
 const (
 	viewW, viewH = 12, 7
 	pageCol      = 2
-	pageStride   = viewW * 24 // e.page row length in pixels
 )
 
 // pageGeom is where the drawing page sits on screen and how wide it is.
@@ -88,84 +88,23 @@ func (e *Engine) blitPage(x, y int, im *dax.Image, frame int, masked, under bool
 	if im == nil || frame >= im.Count {
 		return
 	}
-	d := im.Frame(frame)
-	w := im.Width * 8
-	x0, pw := e.pageGeom()
-	e.S.Lock()
-	defer e.S.Unlock()
-	if under && len(e.sprUnder) != w*im.Height {
-		e.sprUnder = make([]byte, w*im.Height)
+	m := -1
+	if masked {
+		m = im.Mask
 	}
-	for r := 0; r < im.Height; r++ {
-		for c := 0; c < w; c++ {
-			px, py := x*8+c, y*8+r
-			if px < 0 || py < 0 || px >= pw || py >= pageCells*8 {
-				continue
-			}
-			if under { // (off the page the buffer keeps what it had)
-				e.sprUnder[r*w+c] = e.page[py*pageStride+px]
-			}
-			if p := d[r*w+c]; !masked || int(p) != im.Mask {
-				e.S.Set(x0+px, 8+py, p)
-				e.pageSet(px, py, p)
-			}
-		}
-	}
-}
-
-// drawEdges (extra): the one-cell strips left and right of the combat page
-// show the ground of the squares just outside the view, so the map reaches
-// the frame. Ground only: what stands there is out of view.
-func (e *Engine) drawEdges(row int) {
 	x0, pw := e.pageGeom()
-	for _, col := range []int{-1, viewW} {
-		mx, my := e.cmap.viewX+col, e.cmap.viewY+row
-		t := e.tileOf(mx, my) // off the map: bare floor
-		im, f := e.sqrpaci[0], int(t)
-		if t > 0x7F {
-			im, f = e.sqrpaci[1], int(t&0x7F)
-		}
-		if im == nil || f >= im.Count {
-			continue
-		}
-		d, w := im.Frame(f), im.Width*8
-		from, sx := w-8, x0-8 // the square's last cell, left of the page
-		if col == viewW {
-			from, sx = 0, x0+pw // its first cell, right of the page
-		}
-		e.S.Lock()
-		for r := 0; r < im.Height; r++ {
-			for c := 0; c < 8; c++ {
-				e.S.Set(sx+c, 8+row*24+r, d[r*w+from+c])
-			}
-		}
-		e.S.Unlock()
+	e.picture(x0+x*8, 8+y*8, im.Width*8, im.Height, im.Frame(frame), m)
+	l := &e.pg.layers[len(e.pg.layers)-1]
+	l.clip = image.Rect(x0, 8, x0+pw, 8+pageCells*8)
+	if under {
+		e.pg.under = l.id
 	}
 }
 
 // restoreUnder = 0464:0D71 (DS:4A24, mode 0): put back what the last
-// sprite hid.
+// sprite hid (its layer goes).
 func (e *Engine) restoreUnder(x, y int, im *dax.Image) {
-	if im == nil {
-		return
-	}
-	w := im.Width * 8
-	if len(e.sprUnder) != w*im.Height {
-		e.sprUnder = make([]byte, w*im.Height)
-	}
-	x0, pw := e.pageGeom()
-	e.S.Lock()
-	defer e.S.Unlock()
-	for r := 0; r < im.Height; r++ {
-		for c := 0; c < w; c++ {
-			px, py := x*8+c, y*8+r
-			if px < 0 || py < 0 || px >= pw || py >= pageCells*8 {
-				continue
-			}
-			e.S.Set(x0+px, 8+py, e.sprUnder[r*w+c])
-			e.pageSet(px, py, e.sprUnder[r*w+c])
-		}
-	}
+	e.pg.layers = slices.DeleteFunc(e.pg.layers, func(l layer) bool { return l.id == e.pg.under })
 }
 
 // drawTile = ovr33:00F1 (x, y, tile, page): a ground tile from the tile
@@ -479,7 +418,6 @@ func (e *Engine) recentre(x, y, r int) bool {
 		for col := 0; col < viewW; col++ {
 			e.drawTile(col*3, row*3, e.tileOf(e.cmap.viewX+col, e.cmap.viewY+row))
 		}
-		e.drawEdges(row)
 	}
 	e.cmapShown()
 	e.updateScreenPos()

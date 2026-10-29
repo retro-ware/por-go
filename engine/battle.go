@@ -207,8 +207,8 @@ type picKey struct {
 // colours 0 and 8), Clear pixels (and with ground, colour 0) transparent. Cached per picture and palette.
 func (e *Engine) picRGBA(im *dax.Image, f int, flip bool, ground int) image.Image {
 	s := &e.snap
-	if s.pics == nil || s.picsPal != e.S.Pal {
-		s.pics, s.picsPal = map[picKey]image.Image{}, e.S.Pal
+	if s.pics == nil || s.picsPal != e.pal {
+		s.pics, s.picsPal = map[picKey]image.Image{}, e.pal
 	}
 	k := picKey{string(im.Frame(f)), im.Width, flip, ground}
 	if out, ok := s.pics[k]; ok {

@@ -49,8 +49,10 @@ type layer struct {
 	w      int
 	mask   int
 	fill   uint8
-	opaque bool        // it hides everything under it
-	img    image.Image // d in the colours of pageState.pal (nil: not converted yet)
+	opaque bool            // it hides everything under it
+	img    image.Image     // d in the colours of pageState.pal (nil: not converted yet)
+	clip   image.Rectangle // drawn only inside (empty: all of it)
+	id     uint64
 }
 
 type pageState struct {
@@ -59,6 +61,8 @@ type pageState struct {
 	held     int      // Hold depth: the page is not published meanwhile
 	frameUp  bool     // DrawMainFrame's boxes are still whole
 	pal      pal.Regs // the palette the layers' images are in
+	ids      uint64   // layers drawn
+	under    uint64   // the sprite whose layer restoreUnder takes away
 }
 
 // draw records l over the page: layers it hides go, and text cells it
@@ -79,6 +83,8 @@ func (e *Engine) draw(l layer) {
 		clear(pg.layers[len(keep):])
 		pg.layers = keep
 	}
+	pg.ids++
+	l.id = pg.ids
 	pg.layers = append(pg.layers, l)
 	for y := r.Min.Y / 8; y <= (r.Max.Y-1)/8; y++ {
 		for x := r.Min.X / 8; x <= (r.Max.X-1)/8; x++ {
@@ -104,7 +110,6 @@ func (e *Engine) fill(x0, y0, x1, y1 int, c uint8) {
 	if c >= 16 && c < pal.AmigaBase {
 		return
 	}
-	e.S.Fill(x0, y0, x1, y1, c)
 	e.draw(layer{at: image.Rect(x0, y0, x1, y1), fill: c, opaque: true})
 }
 
@@ -140,7 +145,12 @@ func (e *Engine) pageView(v *View) {
 		if l.img == nil || stale {
 			l.img = e.layerRGBA(*l)
 		}
-		v.Page = append(v.Page, Sprite{l.img, l.at})
+		s := Sprite{l.img, l.at}
+		if !l.clip.Empty() {
+			s.At = l.at.Intersect(l.clip)
+			s.Img = l.img.(*image.RGBA).SubImage(s.At.Sub(l.at.Min))
+		}
+		v.Page = append(v.Page, s)
 	}
 	for y := range e.ext.cells {
 		for x, c := range e.ext.cells[y] {

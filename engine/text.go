@@ -34,28 +34,16 @@ func (e *Engine) drawChar(x, y, colour, bg int, ch byte, upcase bool) {
 	if x > lastCol || y > promptRow || e.font == nil {
 		return
 	}
-	e.S.Lock()
-	defer e.S.Unlock()
 	e.paintChar(x, y, colour, bg, ch, upcase)
 }
 
-// paintChar draws the glyph (fonts.go picks it) with the screen locked.
+// paintChar puts the glyph (fonts.go picks it) into the cell.
 func (e *Engine) paintChar(x, y, colour, bg int, ch byte, upcase bool) {
 	g, ok := e.glyph(ch, upcase)
 	if !ok {
 		return
 	}
 	e.ext.cells[y][x] = textCell{set: true, upcase: upcase, c: ch, colour: byte(colour), bg: byte(bg), glyph: g}
-	for r := 0; r < 8; r++ {
-		bits := g[r]
-		for b := 0; b < 8; b++ {
-			c := uint8(bg)
-			if bits&(0x80>>b) != 0 {
-				c = uint8(colour)
-			}
-			e.S.Set(x*8+b, y*8+r, c)
-		}
-	}
 }
 
 // DisplayString = 0709:0626 displayString(x, y, colour, str): characters
@@ -76,9 +64,7 @@ func (e *Engine) ClearCells(x1, y1, x2, y2 int) {
 
 // fillCells = 0709:00B7 (x1, y1, x2, y2, page, 0) for both EGA pages.
 func (e *Engine) fillCells(x1, y1, x2, y2 int) {
-	e.S.Lock()
 	e.fill(x1*8, y1*8, x2*8+8, y2*8+8, 0)
-	e.S.Unlock()
 }
 
 // DrawBorder = 03F1:0000: draw a frame around the cell rectangle using

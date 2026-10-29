@@ -132,7 +132,7 @@ type snapState struct {
 	cursor   image.Point            // drawCursor's last square
 	cursorOn bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
 	pics     map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
-	picsPal  [16]uint8
+	picsPal  pal.Regs
 	cmapOn   bool                   // the combat map is set up (cmapShown) and shown
 	sheetOn  bool                   // a character sheet is up over the combat map
 	dungeon  bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)

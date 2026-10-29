@@ -132,14 +132,7 @@ func (e *Engine) drawSky() {
 func (e *Engine) FillRect(x, y, w, h int, colour byte) {
 	// The original fills the drawing page DS:4A20, one cell up and left
 	// of the screen.
-	e.S.Lock()
 	e.fill(x*8+8, y+8, (x+w)*8+8, y+h+8, colour)
-	e.S.Unlock()
-	for py := y; py < y+h; py++ {
-		for px := x * 8; px < (x+w)*8; px++ {
-			e.pageSet(px, py, colour)
-		}
-	}
 }
 
 // drawWallPart = ovr30:0211 (x, y, wall, part): blit one part of a wall
@@ -164,12 +157,8 @@ func (e *Engine) drawWallPart(x, y int, wall byte, part int) {
 // to the left and to the right.
 func (e *Engine) Draw3DView(x, y, dir int) {
 	e.snap.win = WinThreeD
-	e.S.Hold()
 	e.pg.held++
-	e.pageDraw = true
-	defer func() { e.pageDraw = false }()
-	defer func() { e.pg.held-- }()
-	defer e.S.Release() // 0464:1B52 via the near thunk ovr30:05F3: show the finished frame
+	defer func() { e.pg.held-- }() // 0464:1B52 via the near thunk ovr30:05F3: show the finished frame
 	e.drawSky()
 	left, right, back := (dir+6)%8, (dir+2)%8, (dir+4)%8
 	cx, cy := x+2*dirDX[dir], y+2*dirDY[dir]

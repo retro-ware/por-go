@@ -175,22 +175,9 @@ const (
 
 // saveScreen keeps the picture and its text cells; the func puts them back.
 func (e *Engine) saveScreen() func() {
-	var saved [0x140 * 0xC8]uint8
-	e.S.Lock()
-	for i := range saved {
-		saved[i] = e.S.Get(i%0x140, i/0x140)
-	}
 	cells, pg := e.ext.cells, e.pg
 	pg.layers = append([]layer(nil), pg.layers...)
-	e.S.Unlock()
-	return func() {
-		e.S.Lock()
-		for i, c := range saved {
-			e.S.Set(i%0x140, i/0x140, c)
-		}
-		e.ext.cells, e.pg = cells, pg
-		e.S.Unlock()
-	}
+	return func() { e.ext.cells, e.pg = cells, pg }
 }
 
 // FullMap shows the full-screen map until Exit. It runs from the command
@@ -339,9 +326,7 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 		info += " " + l.text
 	}
 	e.DisplayString(1, messageRow, colLightCyan, cut(info, 0x26))
-	e.S.Lock()
-	defer e.S.Unlock()
-	e.drawMap(e.S, fmX, fmY, fmCell, m, letter)
+	e.mapPage(fmX, fmY, fmCell, m, letter)
 	px, py := fmX+cx*fmCell, fmY+cy*fmCell
 	e.fill(px, py, px+fmCell, py+1, 14)
 	e.fill(px, py+fmCell-1, px+fmCell, py+fmCell, 14)
@@ -354,7 +339,7 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 // against the white walls and the grey, black and blue floors.
 const doorColour = pal.AmigaBase + 16*pal.AmigaPortrait + 6
 
-// canvas is what drawMap draws on: the screen, or an off-screen picture.
+// canvas is what drawMap draws on.
 type canvas interface {
 	Fill(x0, y0, x1, y1 int, c uint8)
 }
@@ -412,6 +397,14 @@ func (p *pixels) Fill(x0, y0, x1, y1 int, c uint8) {
 			p.pix[y*p.w+x] = c
 		}
 	}
+}
+
+// mapPage draws the map on the page at ox, oy (drawMap's arguments).
+func (e *Engine) mapPage(ox, oy, cell int, labels map[int]mapLabel, letter map[string]byte) {
+	n := 16 * cell
+	p := &pixels{n, n, make([]uint8, n*n)}
+	e.drawMap(p, 0, 0, cell, labels, letter)
+	e.picture(ox, oy, n, n, p.pix, -1)
 }
 
 // mapImage is drawMap off screen, cell pixels a square, in the screen's
