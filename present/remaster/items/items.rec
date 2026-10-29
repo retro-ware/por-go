@@ -1,10 +1,10 @@
 # Item icons: internal_name is the base item type in hex, or type:word for the
 # items of a type named by one of their words. icon is the cell of atlas.png
-# (16x16, 24 a row). Edit with: remapper 16 16 atlas.png items.rec
+# (20x20, 24 a row). Edit with: remapper 20 20 atlas.png items.rec
 
 internal_name: 01
 name: Battle Axe
-icon: 924
+icon: 920
 
 internal_name: 02
 name: Hand Axe
@@ -12,19 +12,19 @@ icon: 44
 
 internal_name: 03
 name: Bardiche
-icon: 181
+icon: 180
 
 internal_name: 04
 name: Bec De Corbin
-icon: 1007
+icon: 1061
 
 internal_name: 05
 name: Bill-Guisarme
-icon: 445
+icon: 441
 
 internal_name: 06
 name: Bo Stick
-icon: 604
+icon: 600
 
 internal_name: 07
 name: Club
@@ -36,139 +36,139 @@ icon: 155
 
 internal_name: 09
 name: Dart
-icon: 162
+icon: 161
 
 internal_name: 0A
 name: Fauchard
-icon: 699
+icon: 695
 
 internal_name: 0B
 name: Fauchard-Fork
-icon: 262
+icon: 261
 
 internal_name: 0C
 name: Flail
-icon: 212
+icon: 211
 
 internal_name: 0D
 name: Military Fork
-icon: 476
+icon: 472
 
 internal_name: 0E
 name: Glaive
-icon: 261
+icon: 260
 
 internal_name: 0F
 name: Glaive-Guisarme
-icon: 445
+icon: 441
 
 internal_name: 10
 name: Guisarme
-icon: 445
+icon: 441
 
 internal_name: 11
 name: Guisarme-Voulge
-icon: 262
+icon: 261
 
 internal_name: 12
 name: Halberd
-icon: 771
+icon: 767
 
 internal_name: 13
 name: Lucern Hammer
-icon: 945
+icon: 941
 
 internal_name: 14
 name: Hammer
-icon: 265
+icon: 264
 
 internal_name: 15
 name: Javelin
-icon: 588
+icon: 584
 
 internal_name: 16
 name: Jo Stick
-icon: 700
+icon: 696
 
 internal_name: 17
 name: Mace
-icon: 361
+icon: 359
 
 internal_name: 18
 name: Morning Star
-icon: 362
+icon: 360
 
 internal_name: 19
 name: Partisan
-icon: 444
+icon: 440
 
 internal_name: 1A
 name: Military Pick
-icon: 935
+icon: 931
 
 internal_name: 1B
 name: Awl Pike
-icon: 260
+icon: 259
 
 internal_name: 1C
 name: Quarrel
-icon: 721
+icon: 717
 
 internal_name: 1D
 name: Ranseur
-icon: 747
+icon: 743
 
 internal_name: 1E
 name: Scimitar
-icon: 718
+icon: 714
 
 internal_name: 1F
 name: Spear
-icon: 587
+icon: 583
 
 internal_name: 20
 name: Spetum
-icon: 476
+icon: 472
 
 internal_name: 21
 name: Quarter Staff
-icon: 608
+icon: 604
 
 internal_name: 22
 name: Bastard Sword
-icon: 688
+icon: 684
 
 internal_name: 23
 name: Broad Sword
-icon: 575
+icon: 571
 
 internal_name: 24
 name: Long Sword
-icon: 355
+icon: 353
 
 internal_name: 25
 name: Short Sword
-icon: 557
+icon: 553
 
 internal_name: 26
 name: Two-Handed Sword
-icon: 654
+icon: 650
 
 internal_name: 27
 name: Trident
-icon: 704
+icon: 700
 
 internal_name: 28
 name: Voulge
-icon: 181
+icon: 180
 
 internal_name: 29
 name: Composite Long Bow
-icon: 942
+icon: 938
 
 internal_name: 2A
 name: Composite Short Bow
-icon: 192
+icon: 191
 
 internal_name: 2B
 name: Long Bow
@@ -176,11 +176,11 @@ icon: 85
 
 internal_name: 2C
 name: Short Bow
-icon: 556
+icon: 552
 
 internal_name: 2D
 name: Heavy Crossbow
-icon: 967
+icon: 963
 
 internal_name: 2E
 name: Light Crossbow
@@ -188,27 +188,27 @@ icon: 148
 
 internal_name: 2F
 name: Sling
-icon: 578
+icon: 574
 
 internal_name: 32
 name: Leather Armor
-icon: 338
+icon: 336
 
 internal_name: 33
 name: Padded Armor
-icon: 339
+icon: 337
 
 internal_name: 34
 name: Studded Leather Armor
-icon: 339
+icon: 337
 
 internal_name: 35
 name: Ring Mail
-icon: 482
+icon: 478
 
 internal_name: 36
 name: Scale Mail
-icon: 522
+icon: 518
 
 internal_name: 37
 name: Chain Mail
@@ -224,35 +224,35 @@ icon: 54
 
 internal_name: 3A
 name: Plate Mail
-icon: 436
+icon: 432
 
 internal_name: 3B
 name: Shield
-icon: 547
+icon: 543
 
 internal_name: 3D
 name: Magic User Scroll
-icon: 529
+icon: 525
 
 internal_name: 3E
 name: Clerical Scroll
-icon: 531
+icon: 527
 
 internal_name: 3F
 name: Gauntlets of Ogre Power
-icon: 227
+icon: 226
 
 internal_name: 40
 name: Helm
-icon: 271
+icon: 270
 
 internal_name: 41
 name: Belt
-icon: 258
+icon: 257
 
 internal_name: 42
 name: Robe
-icon: 489
+icon: 485
 
 internal_name: 43
 name: Cloak
@@ -268,31 +268,31 @@ icon: 84
 
 internal_name: 45
 name: Ring
-icon: 478
+icon: 474
 
 internal_name: 46
 name: Valuable (generic)
-icon: 232
+icon: 231
 
 internal_name: 46:Figurine
 name: Brass Dragon / Gold Lightning Figurine
-icon: 285
+icon: 284
 
 internal_name: 46:Necklace
 name: Diamond/Pearl Necklace
-icon: 395
+icon: 392
 
 internal_name: 46:Dust
 name: Dust of Disappearance
-icon: 368
+icon: 366
 
 internal_name: 46:Decanter
 name: Electrum Decanter
-icon: 408
+icon: 404
 
 internal_name: 46:Broach
 name: Emerald Broach / Silver Brooch
-icon: 386
+icon: 383
 
 internal_name: 46:Pendant
 name: Fine Opal Pendant
@@ -300,23 +300,23 @@ icon: 22
 
 internal_name: 46:Tapestry
 name: Fine/Huge Tapestry
-icon: 560
+icon: 556
 
 internal_name: 46:Wand
 name: Gold Banded Wand
-icon: 666
+icon: 662
 
 internal_name: 46:Chain
 name: Gold Chain
-icon: 394
+icon: 391
 
 internal_name: 46:Scarab
 name: Gold/Silver Scarab
-icon: 620
+icon: 616
 
 internal_name: 46:Statuette
 name: Gold/Silver Dragon Statuette
-icon: 286
+icon: 285
 
 internal_name: 46:Incense
 name: Incense / Bag of Holding
@@ -324,11 +324,11 @@ icon: 20
 
 internal_name: 46:Bowl
 name: Jewel Studded Bowl
-icon: 409
+icon: 405
 
 internal_name: 46:Wings
 name: Jewelled Silver Wings
-icon: 443
+icon: 439
 
 internal_name: 46:Manual
 name: Manual of Bodily Health
@@ -336,63 +336,63 @@ icon: 0
 
 internal_name: 46:Potion
 name: Potion (in 46)
-icon: 448
+icon: 444
 
 internal_name: 46:Sheet
 name: Sheet of Gold
-icon: 243
+icon: 242
 
 internal_name: 46:Sphere
 name: Platinum Sphere
-icon: 624
+icon: 620
 
 internal_name: 46:Ring
 name: Silver Ring
-icon: 567
+icon: 563
 
 internal_name: 46:Holy Symbol
 name: Woods Holy Symbol
-icon: 287
+icon: 286
 
 internal_name: 46:Ointment
 name: Keoghtum's Ointment
-icon: 248
+icon: 247
 
 internal_name: 47
 name: Potion
-icon: 454
+icon: 450
 
 internal_name: 47:Mirror
 name: Brass / Silver Mirror
-icon: 387
+icon: 384
 
 internal_name: 47:Holy Symbol
 name: Holy Symbol (Tempus/Sune/Tyr/Wooden)
-icon: 283
+icon: 282
 
 internal_name: 47:Javelin
 name: Javelin of Lightning
-icon: 588
+icon: 584
 
 internal_name: 48
 name: Curio
-icon: 298
+icon: 297
 
 internal_name: 48:Chain
 name: Chain of Bone
-icon: 186
+icon: 185
 
 internal_name: 48:Brazier
 name: Copper Brazier
-icon: 350
+icon: 348
 
 internal_name: 48:Tapestry
 name: (Fungus Covered) Tapestry
-icon: 560
+icon: 556
 
 internal_name: 48:Saddle
 name: Rotting Leather Saddle
-icon: 292
+icon: 291
 
 internal_name: 48:Rug
 name: Rotting Rug
@@ -400,7 +400,7 @@ icon: 131
 
 internal_name: 48:Statuette
 name: Stone Statuette
-icon: 287
+icon: 286
 
 internal_name: 49
 name: Arrow
@@ -408,7 +408,7 @@ icon: 38
 
 internal_name: 4A
 name: Leather Holy Symbol
-icon: 284
+icon: 283
 
 internal_name: 4B
 name: Brass Key
@@ -420,23 +420,23 @@ icon: 29
 
 internal_name: 4D
 name: Bracers
-icon: 351
+icon: 88
 
 internal_name: 4E
 name: Wand
-icon: 664
+icon: 660
 
 internal_name: 4F
 name: Wand of Magic Missiles
-icon: 666
+icon: 662
 
 internal_name: 52
 name: Efreeti Bottle
-icon: 247
+icon: 246
 
 internal_name: 54
 name: Potion of Giant Strength
-icon: 450
+icon: 446
 
 internal_name: 55
 name: Holy Water vial
@@ -444,23 +444,23 @@ icon: 125
 
 internal_name: 56
 name: Flask of Oil
-icon: 404
+icon: 400
 
 internal_name: 57
 name: Boulder
-icon: 495
+icon: 491
 
 internal_name: 58
 name: Giant Boulder
-icon: 497
+icon: 493
 
 internal_name: 5A
 name: Ring of Feather Falling
-icon: 486
+icon: 482
 
 internal_name: 5B
 name: Pass
-icon: 534
+icon: 530
 
 internal_name: 5C
 name: Cloak of Displacement
@@ -468,5 +468,5 @@ icon: 128
 
 internal_name: 5D
 name: Ring of Protection
-icon: 485
+icon: 481
 
