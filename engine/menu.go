@@ -451,6 +451,8 @@ func (m *menuBar) move(d int) (Pick, bool) {
 	}
 	up := d == DirUp || d == DirWheelUp
 	switch {
+	case x.raw: // the screen reads the arrows itself (the full map's cursor)
+		return key(d)
 	case x.modal > 0: // a bar of the modal screen's own
 		switch d {
 		case DirWheelUp, DirWheelDown:

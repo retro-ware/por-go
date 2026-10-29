@@ -164,11 +164,12 @@ func legend(m map[int]mapLabel) (texts []string, letter map[string]byte, kind ma
 	return texts, letter, kind
 }
 
-// Full map geometry: 16x16 squares of fmCell pixels; the legend is to the
+// Full map geometry: 16x16 squares of fmCell pixels, the page's height
+// under the title row and above the message row; the legend is to the
 // right, from text column fmLegend.
 const (
-	fmCell   = 10
-	fmX, fmY = 8, 16
+	fmCell   = 11
+	fmX, fmY = 0, 8
 	fmLegend = 0x16
 	fmRows   = 0x15 // legend lines: rows 2..0x16
 )
@@ -188,9 +189,11 @@ func (e *Engine) FullMap() {
 		return
 	}
 	restore := e.saveScreen()
+	off := e.modalOn() // the command bar's regions under it take no hover or click
 	inCommand, sel := e.ext.inCommand, e.menuSel
 	e.ext.inCommand, e.ext.fullMap = false, true
 	defer func() {
+		off()
 		restore()
 		e.ext.inCommand, e.menuSel, e.ext.fullMap = inCommand, sel, false
 	}()

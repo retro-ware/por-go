@@ -129,7 +129,7 @@ type Typing struct {
 // MapCell is the size of a square in View.Map, in pixels.
 const MapCell = mapCell
 
-const mapCell = fmCell
+const mapCell = 10
 
 // View returns the last published snapshot; safe from any goroutine.
 func (e *Engine) View() View {
