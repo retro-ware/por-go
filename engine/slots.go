@@ -88,7 +88,6 @@ func (e *Engine) slotRoot() string { return filepath.Join(e.Cfg.SaveDir, "saves"
 
 // slots lists the saved games, newest first.
 func (e *Engine) slots() []slot {
-	e.adoptLettered()
 	ents, _ := os.ReadDir(e.slotRoot())
 	var out []slot
 	for _, en := range ents {
@@ -100,52 +99,6 @@ func (e *Engine) slots() []slot {
 	slices.SortFunc(out, func(a, b slot) int { return b.at.Compare(a.at) })
 	return out
 }
-
-// adoptLettered copies each savgam<L>.dat in the save directory, with its
-// CHRDAT<L>* files, into the slot "GAME <L>" as SAVGAMA.DAT, once (the
-// marker saves/.lettered): the originals stay for the emulator harness, and
-// a deleted slot stays deleted. The party file names inside the save stay as
-// they are; loadSlot finds them in the folder.
-func (e *Engine) adoptLettered() {
-	mark := filepath.Join(e.slotRoot(), ".lettered")
-	if _, err := os.Stat(mark); err == nil || e.Cfg.SaveDir == "" {
-		return
-	}
-	ents, _ := os.ReadDir(e.Cfg.SaveDir)
-	for _, en := range ents {
-		up := strings.ToUpper(en.Name())
-		if len(up) != 11 || !strings.HasPrefix(up, "SAVGAM") || !strings.HasSuffix(up, ".DAT") || up[6] < 'A' || up[6] > 'J' {
-			continue
-		}
-		dir := filepath.Join(e.slotRoot(), "GAME "+up[6:7])
-		if _, err := os.Stat(dir); err == nil {
-			continue // a slot of that name exists already
-		}
-		os.MkdirAll(dir, 0o755)
-		copyFile(filepath.Join(e.Cfg.SaveDir, en.Name()), filepath.Join(dir, "SAVGAMA.DAT"))
-		for _, f := range ents {
-			if strings.HasPrefix(strings.ToUpper(f.Name()), "CHRDAT"+up[6:7]) {
-				copyFile(filepath.Join(e.Cfg.SaveDir, f.Name()), filepath.Join(dir, f.Name()))
-			}
-		}
-	}
-	os.MkdirAll(e.slotRoot(), 0o755)
-	os.WriteFile(mark, nil, 0o644)
-}
-
-// copyFile copies src to dst with src's time (the slot list sorts by it).
-func copyFile(src, dst string) {
-	b, err := os.ReadFile(src)
-	st, err2 := os.Stat(src)
-	if err != nil || err2 != nil || os.WriteFile(dst, b, 0o644) != nil {
-		return
-	}
-	os.Chtimes(dst, st.ModTime(), st.ModTime())
-}
-
-// lettered: the original's Save and Load (savgam<L>.dat) instead of the
-// slot screen; only the retired trace harness used them.
-func (e *Engine) lettered() bool { return false }
 
 // slotName keeps what a folder name may hold.
 func slotName(s string) string {
@@ -173,7 +126,6 @@ func (e *Engine) SlotIndex(name string) int {
 
 // LoadSlotNamed loads the slot without the screen (tests).
 func (e *Engine) LoadSlotNamed(name string) bool {
-	e.adoptLettered()
 	return e.loadFrom(name)
 }
 
@@ -186,7 +138,7 @@ const voicedFile = "VOICED.GOB"
 // loadFrom loads the slot and its explored squares (none for a slot saved
 // before they were kept).
 func (e *Engine) loadFrom(name string) (ok bool) {
-	e.inSlot(name, func() { ok = e.loadSlot('A') })
+	e.inSlot(name, func() { ok = e.loadSlot() })
 	if !ok {
 		return false
 	}
@@ -207,7 +159,7 @@ func (e *Engine) saveTo(name string) {
 	// complete (a fresh folder: no stale CHRDAT files of a bigger party)
 	tmp := "." + name + ".saving"
 	os.RemoveAll(filepath.Join(e.slotRoot(), tmp))
-	e.inSlot(tmp, func() { e.saveSlot('A') })
+	e.inSlot(tmp, func() { e.saveSlot() })
 	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, seenFile)); err == nil {
 		gob.NewEncoder(f).Encode(e.ext.seen)
 		f.Close()

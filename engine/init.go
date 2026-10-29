@@ -17,7 +17,6 @@ func (e *Engine) Init() {
 	e.msgDelay = 1                                            // DS:49E2
 	e.set = 1                                                 // DS:5376 = 1
 	e.viewMode, e.prevViewMode = 1, 1
-	e.saved = false
 	e.viewBit0, e.viewBit1 = 1, 1                // DS:49F5/49F6
 	e.listTop = 1                                // DS:6B29
 	e.mapPairA[1], e.mapPairA[2] = -1, -1        // DS:6AAE+4i, i = 2..3

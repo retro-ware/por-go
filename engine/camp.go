@@ -959,8 +959,7 @@ func (e *Engine) CampMenu() bool {
 	e.clearStudy()
 	interrupted := false
 	const (
-		save Choice = iota
-		view
+		view Choice = iota
 		magic
 		rest
 		alter
@@ -968,10 +967,7 @@ func (e *Engine) CampMenu() bool {
 	)
 	for key := view; !interrupted && key != NoPick && key != exit; {
 		var menu Bar
-		if e.lettered() { // (extra) else no Save: F9 saves (slots.go)
-			menu = append(menu, Entry{"Save", save})
-		}
-		menu = append(menu, Entry{"View", view})
+		menu = append(menu, Entry{"View", view}) // (extra) no Save: F9 saves (slots.go)
 		if len(e.magicCommands()) > 0 {
 			menu = append(menu, Entry{"Magic", magic})
 		}
@@ -981,11 +977,6 @@ func (e *Engine) CampMenu() bool {
 			continue
 		}
 		switch key {
-		case save:
-			e.SaveGame()
-			if e.YesNo(colYellow, colLightGreen, colWhite, "Quit TO DOS ") {
-				e.Exit()
-			}
 		case view:
 			e.ViewCharacter()
 		case magic:

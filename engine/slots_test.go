@@ -16,30 +16,6 @@ func TestSlotName(t *testing.T) {
 	}
 }
 
-func TestAdoptLettered(t *testing.T) {
-	dir := t.TempDir()
-	for _, f := range []string{"savgamB.dat", "CHRDATB1.SAV", "CHRDATB1.ITM", "CHRDATA1.SAV", "ROSTER.SAV"} {
-		os.WriteFile(filepath.Join(dir, f), nil, 0o644)
-	}
-	e := &Engine{}
-	e.Cfg.SaveDir = dir
-	if got := e.slots(); len(got) != 1 || got[0].name != "GAME B" {
-		t.Fatalf("slots = %v, want GAME B", got)
-	}
-	for _, f := range []string{"saves/GAME B/SAVGAMA.DAT", "saves/GAME B/CHRDATB1.SAV", "saves/GAME B/CHRDATB1.ITM", "savgamB.dat", "CHRDATB1.SAV", "CHRDATA1.SAV"} {
-		if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
-			t.Errorf("%s missing", f)
-		}
-	}
-	if _, err := os.Stat(filepath.Join(dir, "saves/GAME B/CHRDATA1.SAV")); err == nil {
-		t.Error("another letter's party was copied")
-	}
-	os.RemoveAll(filepath.Join(dir, "saves/GAME B"))
-	if got := e.slots(); len(got) != 0 {
-		t.Errorf("a deleted slot came back: %v", got)
-	}
-}
-
 // An F9 save leaves the area block as it was: saveSlot packs the wall slots
 // into area+0x3F4.., and area+0x3FE is the view animation flag.
 func TestSaveToKeepsArea(t *testing.T) {

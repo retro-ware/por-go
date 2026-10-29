@@ -141,7 +141,6 @@ func (e *Engine) Encamp() {
 		e.RunECL(e.es.events[3])
 	}
 	e.Redraw()
-	e.saved = false
 }
 
 // CommandInput = ovr15:0989: the adventuring command bar, until a command

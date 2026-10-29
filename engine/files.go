@@ -382,43 +382,10 @@ func (e *Engine) eraseRosterCopies(c *Character, nested bool) {
 	}
 }
 
-// LoadGame = ovr18:1602.
-func (e *Engine) LoadGame() {
-	var menu Bar
-	for i := range Choice(10) {
-		if e.fileExists(e.savePath("savgam" + string(slotLetter(i)) + ".dat")) {
-			menu = append(menu, Entry{string(slotLetter(i)), i})
-		}
-	}
-	if menu == nil {
-		return
-	}
-	var key Choice
-	for {
-		key = e.DisplayInput("Load Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID
-		if key >= 0 && e.fileExists(e.savePath("savgam"+string(slotLetter(key))+".dat")) {
-			break
-		}
-		if key == NoPick {
-			return
-		}
-	}
-	e.loadSlot(slotLetter(key))
-	e.oldWalls()
-}
-
-// slotLetter names the lettered save game i (A..J: savgamA.dat ...).
-func slotLetter(i Choice) byte { return 'A' + byte(i) }
-
-// oldWalls is the original's overlap, kept for the lettered saves of traced
-// runs: the last wall slot's word at area+0x3FE is also the view animation
-// flag, so after a save or load the view picture cycles on every poll until
-// a menu returns (an empty slot packs 0xFFFF).
-func (e *Engine) oldWalls() { e.viewAnim = e.fileWallsB[2] }
-
-// loadSlot is LoadGame after the prompt: savgam<key>.dat and its party.
-func (e *Engine) loadSlot(key byte) bool {
-	path := e.savePath("savgam" + string(key) + ".dat")
+// loadSlot is the original's LoadGame (ovr18:1602) after the prompt: a
+// slot's SAVGAMA.DAT and its party (CHRDATA1..).
+func (e *Engine) loadSlot() bool {
+	path := e.savePath("savgama.dat")
 	b, err := os.ReadFile(path)
 	var f saveFile
 	n := 0
@@ -435,7 +402,6 @@ func (e *Engine) loadSlot(key byte) bool {
 	e.area = f.Area
 	wallsA, wallsB := e.area.WallsA, e.area.WallsB
 	e.area.WallsA, e.area.WallsB = [3]uint16{}, [3]uint16{}
-	e.fileWallsA, e.fileWallsB = wallsA, wallsB
 	e.game, e.aux = f.Game, f.Aux
 	e.posX, e.posY, e.facing = int(f.X), int(f.Y), int(f.Facing)
 	e.pos3, e.pos4 = f.Pos3, f.Pos4
@@ -486,28 +452,9 @@ func (e *Engine) loadSlot(key byte) bool {
 	return true
 }
 
-// SaveGame = ovr18:1D58.
-func (e *Engine) SaveGame() {
-	var menu Bar
-	for i := range Choice(10) {
-		menu = append(menu, Entry{string(slotLetter(i)), i})
-	}
-	var key Choice
-	for {
-		key = e.DisplayInput("Save Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, e.beginFlag == 2).ID // ovr18:1D8B
-		if key == NoPick || key >= 0 {
-			break
-		}
-	}
-	if key == NoPick {
-		return
-	}
-	e.saveSlot(slotLetter(key))
-	e.oldWalls()
-}
-
-// saveSlot is SaveGame after the prompt.
-func (e *Engine) saveSlot(key byte) {
+// saveSlot is the original's SaveGame (ovr18:1D58) after the prompt, into
+// the slot folder (saveTo).
+func (e *Engine) saveSlot() {
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colLightGreen, "Saving...Please Wait")
 	e.area.MsgDelay = uint16(e.msgDelay)
@@ -518,7 +465,6 @@ func (e *Engine) saveSlot(key byte) {
 		f.Area.WallsA[i] = uint16(e.mapPairA[i])
 		f.Area.WallsB[i] = uint16(e.mapPairB[i])
 	}
-	e.fileWallsA, e.fileWallsB = f.Area.WallsA, f.Area.WallsB
 	// the original's script image, for DOS saves (the engine reloads the
 	// text script)
 	if b := e.L.Block(e.set.file("ECL"), int(e.gs.areaKind)); len(b) >= 2 {
@@ -527,7 +473,7 @@ func (e *Engine) saveSlot(key byte) {
 	f.X, f.Y, f.Facing, f.Pos3, f.Pos4 = byte(e.posX), byte(e.posY), byte(e.facing), e.pos3, e.pos4
 	f.ViewMode, f.BeginFlag, f.Count = byte(e.viewMode), e.beginFlag, byte(len(e.party))
 	for i := range e.party {
-		f.Names[i].Set("CHRDAT" + string(key) + strconv.Itoa(i+1))
+		f.Names[i].Set("CHRDATA" + strconv.Itoa(i+1))
 	}
 	b, err := binary.Append(nil, binary.LittleEndian, &f)
 	if err != nil {
@@ -535,14 +481,13 @@ func (e *Engine) saveSlot(key byte) {
 	}
 	b = appendPurse(b, e.purse)
 	os.MkdirAll(e.Cfg.SaveDir, 0o755)
-	path := e.savePath("savgam" + string(key) + ".dat")
+	path := e.savePath("savgama.dat")
 	if err := os.WriteFile(path, b, 0o644); err != nil {
 		e.fileError("write", path)
 	}
 	for i, c := range e.party {
-		e.SaveCharacter(c, "CHRDAT"+string(key)+strconv.Itoa(i+1))
+		e.SaveCharacter(c, "CHRDATA"+strconv.Itoa(i+1))
 		e.eraseRosterCopies(c, false)
 	}
-	e.saved = true
 	e.ClearRow24()
 }

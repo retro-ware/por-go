@@ -1235,13 +1235,13 @@ var iconMenus = [6]Bar{
 }
 
 // partyMenu is the party menu (DS:0619, 0x2A bytes each: name, enabled).
-var partyMenu = [11]struct {
+var partyMenu = [10]struct { // (extra) without "Save Current Game": F9 saves (slots.go)
 	name    string
 	enabled bool
 }{
 	{"Create Character", true}, {"Drop Character", false}, {"Modify Character", false},
 	{"Train Character", false}, {"View Character", false}, {"Add Character", true},
-	{"Remove Character from Party", false}, {"Load Game", true}, {"Save Current Game", false},
+	{"Remove Character from Party", false}, {"Load Game", true},
 	{"BEGIN Adventuring", false}, {"Exit to DOS", true},
 }
 

@@ -130,7 +130,6 @@ func (e *Engine) PartyMenu() {
 		mForget
 		mRemove
 		mLoad
-		mSave
 		mBegin
 		mExit
 	)
@@ -147,10 +146,10 @@ func (e *Engine) PartyMenu() {
 					enabled[mTrain] = true // never cleared here, only without a party
 				}
 				enabled[mView], enabled[mRemove] = true, true
-				enabled[mLoad], enabled[mForget] = false, false      // (extra) the list fills the box
-				enabled[mSave], enabled[mBegin] = e.lettered(), true // (extra) F9 saves (slots.go)
+				enabled[mLoad], enabled[mForget] = false, false // (extra) the list fills the box
+				enabled[mBegin] = true                          // (extra) no Save: F9 saves (slots.go)
 			} else {
-				for _, m := range []int{mDrop, mModify, mTrain, mView, mRemove, mSave, mBegin} {
+				for _, m := range []int{mDrop, mModify, mTrain, mView, mRemove, mBegin} {
 					enabled[m] = false
 				}
 				enabled[mLoad], enabled[mForget] = true, true
@@ -162,7 +161,7 @@ func (e *Engine) PartyMenu() {
 		const mQuick = mExit + 1
 		enabled[mQuick] = len(e.party) == 0
 		var vis []int // extra: the enabled functions in the remaster's order
-		for _, i := range []int{mLoad, mQuick, mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mSave, mBegin, mExit} {
+		for _, i := range []int{mLoad, mQuick, mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mBegin, mExit} {
 			if enabled[i] {
 				vis = append(vis, i)
 			}
@@ -212,9 +211,6 @@ func (e *Engine) PartyMenu() {
 			}
 			continue
 		}
-		if p.ID != mExit && p.ID != mSave {
-			e.saved = false // DS:557D
-		}
 		switch p.ID {
 		case mCreate:
 			if enabled[mCreate] {
@@ -251,19 +247,11 @@ func (e *Engine) PartyMenu() {
 			}
 		case mLoad:
 			if enabled[mLoad] {
-				if e.lettered() {
-					e.LoadGame()
-				} else {
-					e.SlotMenu(true) // (extra) the F9 screen, loading only
-				}
+				e.SlotMenu(true) // (extra) the F9 screen, loading only
 				if e.beginFlag != 0 {
 					e.loadedGame = true // DS:49F8
 					return
 				}
-			}
-		case mSave:
-			if enabled[mSave] && len(e.party) > 0 {
-				e.SaveGame()
 			}
 		case mBegin:
 			if enabled[mBegin] && len(e.party) > 0 {
@@ -277,9 +265,6 @@ func (e *Engine) PartyMenu() {
 				quit := e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ")
 				e.snap.main, e.snap.mainAsk = nil, false
 				if quit {
-					for e.lettered() && !e.saved && len(e.party) > 0 {
-						e.SaveGame()
-					}
 					e.Exit()
 				}
 			}

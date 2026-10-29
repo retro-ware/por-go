@@ -54,7 +54,6 @@ type Engine struct {
 	rosterNone bool         // ... or no one (who = nil)
 	beginFlag  byte         // DS:49F3
 	loadedGame bool         // DS:49F8
-	saved      bool         // DS:557D
 	debug      bool         // DS:470C
 
 	game               gameVars              // DS:49D6 record (vars.go)
@@ -76,12 +75,9 @@ type Engine struct {
 	// viewAnim = area+0x3FE: nonzero cycles the view picture on every poll
 	// (ovr26:03BD), cleared by displayInput (ovr26:06D8). No script sets it;
 	// in the original only save/load wrote it, packing the last wall slot
-	// there (the lettered LoadGame/SaveGame of traced runs still do: oldWalls).
-	viewAnim uint16
-	// fileWallsA/B = area+0x3F4..0x3FD as last saved or loaded: the original
-	// keeps them in the area record, so the trace's area dump shows them.
-	fileWallsA, fileWallsB [3]uint16
-	loadingMonster         bool // DS:557C
+	// there (an original bug the port leaves out: nothing sets it).
+	viewAnim       uint16
+	loadingMonster bool // DS:557C
 
 	es                   eclState                     // ovr08/ovr04 interpreter state
 	msgRow, msgCol       int                          // DS:5E25 / 5E24 text-block cursor

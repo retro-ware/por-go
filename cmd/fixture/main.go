@@ -37,6 +37,7 @@ func main() {
 	block := flag.Int("block", -1, "ECL block to enter (-1 keeps the saved area)")
 	x := flag.Int("x", -1, "party x")
 	y := flag.Int("y", -1, "party y")
+	slot := flag.String("slot", "", "the named save (data/save/saves/NAME) to start from")
 	dir := flag.Int("dir", -1, "facing 0 N, 2 E, 4 S, 6 W")
 	geo := flag.Int("geo", -1, "GEO block to load (default: the ECL block)")
 	walls := flag.String("walls", "", "WALLDEF blocks of wall slots 1,2,3 (255 none)")
@@ -44,8 +45,8 @@ func main() {
 	var vars sets
 	flag.Var(&vars, "set", "VAR=VAL, hex, repeatable")
 	flag.Parse()
-	if *out == "" {
-		log.Fatal("-out is required")
+	if *out == "" || *slot == "" {
+		log.Fatal("-out and -slot are required")
 	}
 	root := *data
 	if root == "" {
@@ -57,7 +58,7 @@ func main() {
 			}
 		}
 	}
-	sv, err := os.ReadFile(filepath.Join(root, engine.SaveDir, "SAVGAMA.DAT"))
+	sv, err := os.ReadFile(filepath.Join(root, engine.SaveDir, "saves", *slot, "SAVGAMA.DAT"))
 	if err != nil {
 		log.Fatal(err)
 	}
