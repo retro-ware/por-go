@@ -361,6 +361,17 @@ func (e *Engine) ItemsMenu() bool {
 				e.power(c, a.Kind)
 				e.snap.invOn = true
 			}
+		case a.Kind == ActBuy && e.snap.shop: // N is a ware, not one of items
+			if a.N >= 0 && a.N < len(e.run.treasure) {
+				w := e.run.treasure[a.N]
+				switch {
+				case uint32(w.Price) > e.purse.gold:
+					e.refuse("Not enough Money.")
+				case !e.buyItem(w):
+					e.purse.gold -= uint32(w.Price)
+					e.say("Bought!")
+				}
+			}
 		case it == nil:
 		case a.Kind == ActReady:
 			e.swapReady(c, it)
@@ -387,17 +398,6 @@ func (e *Engine) ItemsMenu() bool {
 		case a.Kind == ActDrop:
 			if e.canLoseItem(it) {
 				e.RemoveItem(c, it)
-			}
-		case a.Kind == ActBuy && e.snap.shop:
-			if a.N >= 0 && a.N < len(e.run.treasure) {
-				w := e.run.treasure[a.N]
-				switch {
-				case uint32(w.Price) > e.purse.gold:
-					e.refuse("Not enough Money.")
-				case !e.buyItem(w):
-					e.purse.gold -= uint32(w.Price)
-					e.say("Bought!")
-				}
 			}
 		case a.Kind == ActSell && inv.Sell:
 			if e.canLoseItem(it) {
