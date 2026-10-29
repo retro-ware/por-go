@@ -69,7 +69,7 @@ const tps = 120
 
 func (g *game) Update() error {
 	g.sent = false
-	if len(g.queue) > 0 && g.scr.Idle() {
+	if len(g.queue) > 0 && g.eng.Idle() {
 		g.scr.PushKey(g.queue[0])
 		g.queue, g.sent = g.queue[1:], true
 	}
@@ -136,7 +136,7 @@ func (g *game) sendKeys(ks []uint16) {
 // later). Gosched, not Sleep: in the browser the engine shares the thread.
 func (g *game) settle() {
 	t0 := time.Now()
-	for n := 0; (!g.scr.Settled() || g.eng.Busy()) && time.Since(t0) < 8*time.Millisecond; n++ {
+	for n := 0; !g.eng.Settled() && time.Since(t0) < 8*time.Millisecond; n++ {
 		if n < 50 {
 			runtime.Gosched()
 		} else {
@@ -164,7 +164,7 @@ func (g *game) keys() {
 		}
 	}
 	var send bool
-	send, paced = g.remaster.Flow(held, g.scr.Idle())
+	send, paced = g.remaster.Flow(held, g.eng.Idle())
 	if send {
 		g.push(held)
 	}
@@ -172,7 +172,7 @@ func (g *game) keys() {
 		if i < 8 && paced {
 			continue
 		}
-		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) && g.scr.Idle() {
+		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) && g.eng.Idle() {
 			code, _ := biosKey(k)
 			g.push(code)
 		}

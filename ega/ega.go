@@ -8,8 +8,6 @@ import (
 
 	"por/pal"
 	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const (
@@ -47,36 +45,8 @@ type Screen struct {
 	mouse int    // text cell under the pointer + 1, 0 outside the screen
 	hint  string // key hint for the window's status line
 
-	state atomic.Int32 // what the engine goroutine does: Working, Waiting, Pausing
-
 	Overlays []Overlay // drawn over the picture; set and read under Lock
 }
-
-// Engine states (SetState): the window draws a key's result once the engine
-// is done with it (Settled).
-const (
-	Working = iota // handling input
-	Waiting        // waiting for input
-	Pausing        // a deliberate delay (Delay)
-)
-
-// SetState records what the engine does now (no screen: tests).
-func (s *Screen) SetState(st int32) {
-	if s != nil {
-		s.state.Store(st)
-	}
-}
-
-// Settled reports whether the engine has taken the keys sent and finished with them, or
-// pauses on purpose; the picture is worth drawing.
-func (s *Screen) Settled() bool {
-	st := s.state.Load()
-	return st == Pausing || st == Waiting && len(s.Keys) == 0
-}
-
-// Idle reports whether the engine waits for input and none is queued (held keys repeat
-// only then, so they never pile up).
-func (s *Screen) Idle() bool { return s.state.Load() == Waiting && len(s.Keys) == 0 }
 
 // Hold freezes what the window shows until the matching Release, so a
 // picture built in several passes (the 3D view) appears at once like the
@@ -168,14 +138,6 @@ func (s *Screen) SetPalette(index, colour int) {
 // KeyPressed reports whether a key is waiting (INT 16h/01h).
 func (s *Screen) KeyPressed() bool { return len(s.Keys) > 0 }
 
-// ReadKey blocks for the next key (INT 16h/00h).
-func (s *Screen) ReadKey() uint16 {
-	s.state.Store(Waiting)
-	k := <-s.Keys
-	s.state.Store(Working)
-	return k
-}
-
 // PushKey enqueues a key from the window layer.
 func (s *Screen) PushKey(k uint16) {
 	select {
@@ -220,11 +182,4 @@ func (s *Screen) Hint() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.hint
-}
-
-// Delay sleeps; the engine calls this instead of busy-waiting on the timer.
-func Delay(ms int) {
-	if ms > 0 {
-		time.Sleep(time.Duration(ms) * time.Millisecond)
-	}
 }

@@ -3,8 +3,6 @@ package engine
 import (
 	"sync/atomic"
 	"time"
-
-	"por/ega"
 )
 
 // Actions (extra): the remastered screens act on the game through typed
@@ -51,6 +49,43 @@ type acts struct {
 	pending atomic.Int32 // sent and not yet done
 	taken   int32        // received by the engine goroutine, done once it waits again
 	waiting atomic.Bool  // a screen waits in act: actions sent meanwhile are its
+	state   atomic.Int32 // what the engine goroutine does (pace)
+}
+
+// Engine states (pace): the window draws a key's result once the engine
+// is done with it (Settled).
+const (
+	working = iota // handling input
+	waiting        // waiting for input
+	pausing        // a deliberate delay (Delay)
+)
+
+// pace records what the engine goroutine does now.
+func (e *Engine) pace(st int32) { e.acts.state.Store(st) }
+
+// Settled reports whether the engine has taken the keys and actions sent
+// and finished with them, or pauses on purpose; the picture is worth drawing.
+func (e *Engine) Settled() bool {
+	st := e.acts.state.Load()
+	return (st == pausing || st == waiting && !e.S.KeyPressed()) && !e.Busy()
+}
+
+// Idle reports whether the engine waits for input and none is queued (held
+// keys repeat only then, so they never pile up).
+func (e *Engine) Idle() bool { return e.acts.state.Load() == waiting && !e.S.KeyPressed() }
+
+// readKey blocks for the next key from the window.
+func (e *Engine) readKey() uint16 {
+	e.pace(waiting)
+	defer e.pace(working)
+	return <-e.S.Keys
+}
+
+// sleep pauses the engine goroutine for ms milliseconds.
+func sleep(ms int) {
+	if ms > 0 {
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	}
 }
 
 // done counts the actions taken as finished: the engine waits again.
@@ -85,14 +120,14 @@ func (e *Engine) act() Action {
 	defer e.acts.waiting.Store(false)
 	for {
 		e.publish()
-		e.S.SetState(ega.Waiting)
+		e.pace(waiting)
 		select {
 		case a := <-e.acts.ch:
-			e.S.SetState(ega.Working)
+			e.pace(working)
 			e.acts.taken++
 			return a
 		case k := <-e.S.Keys:
-			e.S.SetState(ega.Working)
+			e.pace(working)
 			e.translate(k) // the extras act; the key itself is no answer
 		}
 	}

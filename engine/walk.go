@@ -58,7 +58,7 @@ func (e *Engine) walkFeed() {
 	}
 	stop := func() { e.ext.walk = nil }
 	if e.S.KeyPressed() { // any key stops the walk and is used up
-		e.S.ReadKey()
+		e.readKey()
 		stop()
 		return
 	}

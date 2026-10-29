@@ -30,13 +30,13 @@ func TestView(t *testing.T) {
 	}
 	keys := func(ks ...uint16) engine.View {
 		for _, k := range ks {
-			for !scr.Idle() {
+			for !e.Idle() {
 				time.Sleep(10 * time.Millisecond)
 			}
 			scr.PushKey(k)
 			time.Sleep(50 * time.Millisecond)
 		}
-		for !scr.Idle() {
+		for !e.Idle() {
 			time.Sleep(10 * time.Millisecond)
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -104,7 +104,7 @@ func TestBattleView(t *testing.T) {
 func keyWait(e *engine.Engine, scr *ega.Screen, k uint16) engine.View {
 	scr.PushKey(k)
 	time.Sleep(50 * time.Millisecond)
-	for !scr.Idle() {
+	for !e.Idle() {
 		time.Sleep(10 * time.Millisecond)
 	}
 	time.Sleep(100 * time.Millisecond)
@@ -136,7 +136,7 @@ func battleView(t *testing.T) (*engine.Engine, *ega.Screen, engine.View) {
 	}
 	var v engine.View
 	for _, k := range append(ks, 13, ' ', ' ', ' ', ' ', ' ', ' ') {
-		for !scr.Idle() {
+		for !e.Idle() {
 			time.Sleep(10 * time.Millisecond)
 		}
 		if v = e.View(); v.Battle != nil {

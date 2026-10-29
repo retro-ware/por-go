@@ -300,9 +300,9 @@ func (e *Engine) Delay(ms int) {
 	if e.beginFlag == 5 || e.snap.win == WinThreeD { // the remastered 3D views animate with the page: combat's moves and hits, a script walking the party (the intro's tour)
 		e.publish()
 	}
-	e.S.SetState(ega.Pausing)
-	ega.Delay(ms)
-	e.S.SetState(ega.Working)
+	e.pace(pausing)
+	sleep(ms)
+	e.pace(working)
 }
 
 // KeyPressed / ReadKey / ClearKeyboard = 0A40:02FD, BIOS read, 0899:0104.
@@ -313,7 +313,7 @@ func (e *Engine) KeyPressed() bool {
 	e.walkFeed()
 	e.publish()
 	for len(e.ext.ahead) == 0 && e.S.KeyPressed() { // nav.go: translate as the key is seen
-		e.feed(e.S.ReadKey())
+		e.feed(e.readKey())
 	}
 	e.release()
 	return len(e.ext.ahead) > 0
@@ -330,7 +330,7 @@ func (e *Engine) ReadKey() uint16 {
 			e.showHint()
 		}
 		e.publish()
-		e.feed(e.S.ReadKey())
+		e.feed(e.readKey())
 	}
 	k := e.ext.ahead[0]
 	e.ext.ahead = e.ext.ahead[1:]
@@ -377,7 +377,7 @@ func (e *Engine) idle() {
 	e.ext.skip = false
 	if e.tr == nil {
 		e.actsDone() // an action taken last is done too
-		e.S.SetState(ega.Waiting)
-		ega.Delay(1)
+		e.pace(waiting)
+		sleep(1)
 	}
 }
