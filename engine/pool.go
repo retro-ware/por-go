@@ -128,8 +128,7 @@ const (
 	DollBoots
 	DollRing1
 	DollRing2
-	DollArrows
-	DollBolts
+	DollArrows // the Missiles slot: arrows, quarrels or a thrown weapon beside the weapon in hand
 	DollBracers
 	DollSlots
 )
@@ -138,10 +137,8 @@ const (
 // that cannot be readied (no slot: it is used straight from the pool).
 func dollSlot(e *Engine, c *Character, it *Item) int {
 	switch s := int(e.base(it.Type).Slot); {
-	case it.Type == itemArrow || it.Readied == 2 || e.missileSlot(c, it): // the Missiles slot (extra): arrows, or a thrown weapon beside the weapon
+	case it.Type == itemArrow || it.Type == itemQuarrel || it.Readied == 2 || e.missileSlot(c, it): // the Missiles slot (extra)
 		return DollArrows
-	case it.Type == itemQuarrel:
-		return DollBolts
 	case it.Type == itemBracers:
 		return DollBracers
 	case s <= 8:
@@ -252,7 +249,7 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 // ammunition), what is worn, else the rest (rings among them).
 func itemKind(e *Engine, c *Character, it *Item) ItemKind {
 	switch d := dollSlot(e, c, it); {
-	case d == DollWeapon || d == DollArrows || d == DollBolts:
+	case d == DollWeapon || d == DollArrows:
 		return KindWeapon
 	case d >= 0 && d != DollRing1 && d != DollRing2:
 		return KindArmor

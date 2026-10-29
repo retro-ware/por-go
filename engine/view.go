@@ -445,12 +445,22 @@ func (e *Engine) missileSlot(c *Character, it *Item) bool {
 	return it.Readied == 0 && e.throwableItem(it) && c.Slots[slotWeapon] != nil && c.Slots[slotWeapon] != it
 }
 
-// missile (extra) is the thrown weapon in c's Missiles slot (ActRanged throws it), or nil.
+// missile (extra) is what c's Ranged action shoots: the thrown weapon in the
+// Missiles slot, the ammunition the launcher in hand takes, or a launcher
+// that needs none (a sling); nil when there is nothing to shoot.
 func (e *Engine) missile(c *Character) *Item {
 	if m := c.Slots[slotArrows]; m != nil && m.Readied == 2 {
 		return m
 	}
-	return nil
+	w := c.Slots[slotWeapon]
+	var ammo *Item
+	if w == nil || e.base(w.Type).Usage&8 == 0 || !e.ammoFor(c, &ammo) { // not a launcher, or without its ammunition
+		return nil
+	}
+	if ammo == nil {
+		return w
+	}
+	return ammo
 }
 
 // inTheWay is the readied item of c whose slot it would take (readyItem's
@@ -524,11 +534,12 @@ func (e *Engine) readyItem(it *Item) {
 			why = 2
 		}
 	}
-	if (typ == itemArrow || missile) && c.Slots[slotArrows] != nil {
-		why, slot = 2, slotArrows
-	}
-	if typ == itemQuarrel && c.Slots[slotBolts] != nil {
-		why, slot = 2, slotBolts
+	if typ == itemArrow || typ == itemQuarrel || missile { // the Missiles slot (extra) holds one of arrows, quarrels or a thrown weapon
+		for _, s := range []int{slotArrows, slotBolts} {
+			if c.Slots[s] != nil {
+				why, slot = 2, s
+			}
+		}
 	}
 	if typ == itemBracers { // extra: the bracers have a doll slot of their own
 		for _, o := range c.Items {

@@ -56,15 +56,34 @@ func (e *Engine) DevScene(name string) func() {
 			e.Shop()
 			e.DrawMainScreen()
 		}
-	case "combat", "wildcombat", "castfight", "missile": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: a javelin in every member's Missiles slot (the Ranged button)
+	case "combat", "wildcombat", "castfight", "missile": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: the Ranged button for everyone (a sling, a bow and arrows, javelins in the Missiles slot)
 		return func() {
 			if name == "missile" {
+				launchers := []itemType{itemSling, itemShortBow} // the first two who may: a sling, a bow with arrows (hands freed)
 				for i, c := range e.party {
 					e.selectMember(i)
 					e.ApplyItems(c)
-					if c.Slots[slotWeapon] != nil {
+					if c.Slots[slotWeapon] == nil || c.Status != statusOkay {
+						continue
+					}
+					if len(launchers) > 0 && e.base(launchers[0]).Classes&c.ClassMask != 0 {
+						for _, s := range []int{slotWeapon, slotShield} {
+							if c.Slots[s] != nil {
+								e.readyItem(c.Slots[s])
+								e.ApplyItems(c)
+							}
+						}
+						e.readyItem(e.AddItemCopy(c, e.RandomItem(launchers[0])))
+						e.ApplyItems(c)
+						if launchers[0] == itemShortBow {
+							e.readyItem(e.AddItemCopy(c, e.RandomItem(itemArrow)))
+						}
+						launchers = launchers[1:]
+					}
+					if c.Slots[slotWeapon] == nil || e.base(c.Slots[slotWeapon].Type).Usage&8 == 0 { // else a javelin beside the weapon
 						e.readyItem(e.AddItemCopy(c, e.RandomItem(itemJavelin)))
 					}
+					e.ApplyItems(c)
 				}
 				e.selectMember(0)
 			}

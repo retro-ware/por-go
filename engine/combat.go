@@ -143,7 +143,7 @@ func (e *Engine) playerTurn(c *Character) {
 			done = e.ItemsMenu() // ovr20:0EF8 (var done)
 			e.setSpeed(c)
 		case ActRanged:
-			done = e.throwMissile(c)
+			done = e.rangedAttack(c)
 		case ActCast:
 			if slices.ContainsFunc(turn.Spells, func(s Spell) bool { return s.ID == a.N }) {
 				var ok bool
@@ -197,7 +197,7 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	t := &Turn{Unit: e.combatIndex(c), Moves: int(ci.Moves >> 1)}
 	can := func(k ActKind) { t.Can = append(t.Can, k) }
 	can(ActAttack)
-	if m := e.missile(c); m != nil { // extra: the Missiles slot's thrown weapon
+	if m := e.missile(c); m != nil { // extra: a thrown weapon in the Missiles slot, or a launcher with its ammunition
 		can(ActRanged)
 		t.Missile = e.invItem(c, m)
 	}
@@ -517,38 +517,47 @@ func (e *Engine) throwableItem(it *Item) bool {
 	return e.base(it.Type).Range > 1 && e.base(it.Type).Usage&0x10 != 0 // thrown: also darts and javelins, used up
 }
 
-// throwMissile (extra): ActRanged takes the Missiles slot's weapon in hand
-// in place of the weapon, aims as Aim does, then readies the weapon again.
-// Nothing changes when the swap fails or the aim is given up.
-func (e *Engine) throwMissile(c *Character) (done bool) {
+// rangedAttack (extra): ActRanged shoots the launcher in hand at a foe in
+// its range, or takes the Missiles slot's thrown weapon in hand, throws it
+// as Attack does (playerAim at a foe in its range) and puts the weapon back.
+func (e *Engine) rangedAttack(c *Character) (done bool) {
 	it, w := e.missile(c), c.Slots[slotWeapon]
 	if it == nil {
 		return false
+	}
+	thrown := it.Readied == 2
+	if !thrown {
+		it = w // the launcher shoots
 	}
 	if len(e.throwTargets(c, it)) == 0 { // as Attack's "No foe in reach"
 		e.refuse("No target in range")
 		return false
 	}
-	saved := e.partySel
-	for i, p := range e.party {
-		if p == c {
-			e.partySel = i // readyItem works on the selected member
+	if thrown {
+		saved := e.partySel
+		for i, p := range e.party {
+			if p == c {
+				e.partySel = i // readyItem works on the selected member
+			}
 		}
-	}
-	defer func() { e.partySel = saved }()
-	if w != nil {
-		e.readyItem(w)
-		if w.Readied != 0 { // cursed
-			return false
+		defer func() { e.partySel = saved }()
+		if w != nil {
+			e.readyItem(w)
+			if w.Readied != 0 { // cursed
+				return false
+			}
+			e.ApplyItems(c) // free the weapon's hands: readyItem counts c.Hands
 		}
-		e.ApplyItems(c) // free the weapon's hands: readyItem counts c.Hands
+		it.Readied = 1 // in hand (the weapon's hands are free)
+		e.ApplyItems(c)
 	}
-	it.Readied = 1 // in hand (the weapon's hands are free)
-	e.ApplyItems(c)
 	var aim aimTarget
 	e.ext.enemiesOnly = true
 	e.playerAim(c, 0xFF, 1, 0, &done, &aim)
 	e.ext.enemiesOnly = false
+	if !thrown {
+		return done
+	}
 	if slices.Contains(c.Items, it) { // not the last one thrown
 		it.Readied = 2
 	}
