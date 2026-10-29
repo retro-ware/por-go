@@ -20,6 +20,9 @@ import (
 // the main menu first comes up, then the menu fades in over it.
 const titleHold, titleFade = 2 * time.Second, 1500 * time.Millisecond
 
+// titleDim is how far the picture darkens under the menu (0 not, 1 black).
+const titleDim = 0.6
+
 // drawMain draws the main menu.
 func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	dst.Fill(color.Black)
@@ -44,6 +47,8 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 		p.mainAt = time.Now()
 	}
 	a := float32(time.Since(p.mainAt)-titleHold) / float32(titleFade)
+	dim := uint8(titleDim * 255 * min(max(a, 0), 1)) // the picture darkens as the menu comes, so the lettering reads
+	vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: dim}, false)
 	if a >= 1 {
 		p.drawMainUI(dst, v)
 		return
