@@ -871,7 +871,20 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		d := inv.hover.Sub(inv.pressAt)
 		inv.dragging = d.X*d.X+d.Y*d.Y > 9
 	}
-	if right {
+	if right { // in the shop a right click buys a ware or sells an item; else it closes the screen
+		if inv.view.Wares != nil {
+			for _, l := range inv.lines {
+				if inv.hover.In(l.r) && !l.doll {
+					inv.choose(l.ware, l.item.Index)
+					if l.ware {
+						inv.do(engine.ActBuy)
+					} else if inv.view.Sell {
+						inv.do(engine.ActSell)
+					}
+					return
+				}
+			}
+		}
 		inv.do(engine.ActClose)
 		return
 	}
@@ -916,18 +929,19 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 	if h == nil {
 		return
 	}
-	if h.ware { // a click highlights a ware, a second one or a drag onto the party's items buys it
+	partySide := inv.hover.X >= inv.list.at.Min.X // dropped on the party's side of the divider
+	if h.ware { // a click highlights a ware, a second one or a drag over to the party's items buys it
 		was := inv.ware
 		inv.choose(true, h.item.Index)
-		if !drag && was == h.item.Index || drag && inv.hover.In(inv.list.at) {
+		if !drag && was == h.item.Index || drag && partySide {
 			inv.do(engine.ActBuy)
 		}
 		return
 	}
 	was := inv.sel
 	inv.choose(false, h.item.Index)
-	if inv.view.Wares != nil { // the shop: a drag onto the goods sells
-		if drag && inv.hover.In(inv.wares.at) {
+	if inv.view.Wares != nil { // the shop: a drag over to the goods sells
+		if drag && !partySide && inv.view.Sell {
 			inv.do(engine.ActSell)
 		}
 		return
