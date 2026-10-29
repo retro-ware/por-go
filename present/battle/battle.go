@@ -284,7 +284,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	// an effect lights its surroundings in its own colour
 	var glows []*figure
 	for _, f := range b.Effects {
-		g := p.figure(f.Pic)
+		g := p.figure(f.Pic, 0)
 		glows = append(glows, g)
 		light.Point = [4]float32{float32(f.X) + .5, 1.1, float32(f.Y) + .5, 3.5}
 		light.PointColor = [4]float32{g.glow[0], g.glow[1], g.glow[2], 1.6}
@@ -399,8 +399,8 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 			dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.86, pedestal*.5, sq*.86),
 				[4]float32{0.95 * pulse, 0.72 * pulse, 0.2 * pulse, 1}, 0.9))
 		}
-		f := p.figure(u.Icon)
 		ib := iconSize(u)
+		f := p.figure(u.Icon, max(ib.X, ib.Y))
 		size := sq * .92
 		half := size * float32(ib.Y) / float32(max(ib.X, ib.Y)) / 2
 		// the attacker lunges at its target; the target flashes red and sheds sparks when hit, grey ones when missed
@@ -590,14 +590,20 @@ func (p *Presenter) sync(b *engine.Battle) {
 }
 
 // figure is the extruded mesh for a picture (cached).
-func (p *Presenter) figure(pic image.Image) *figure {
+// texels: the width of the sprite the picture stands for (0: its own),
+// which sets the slab's thickness (extrude).
+func (p *Presenter) figure(pic image.Image, texels int) *figure {
 	if f, ok := p.figs[pic]; ok {
 		return f
 	}
 	if p.figs == nil {
 		p.figs = map[image.Image]*figure{}
 	}
-	f := &figure{gpu.NewMesh(extrude(pic)), gpu.NewImageFromImage(pic), averageColour(pic)}
+	if texels == 0 {
+		b := pic.Bounds()
+		texels = max(b.Dx(), b.Dy())
+	}
+	f := &figure{gpu.NewMesh(extrude(pic, texels)), gpu.NewImageFromImage(pic), averageColour(pic)}
 	p.figs[pic] = f
 	return f
 }

@@ -87,7 +87,7 @@ func mapMesh(g *[25][50]engine.Square, dungeon bool, empty func(int) bool, tiles
 			case stand:
 				uv := tileUV(g[z][x].Tile)
 				u0, v0, du, dv := uv[3][0], uv[3][1], uv[1][0]-uv[3][0], uv[1][1]-uv[3][1]
-				for _, v := range extrude(tiles[g[z][x].Tile]) {
+				for _, v := range extrude(tiles[g[z][x].Tile], tilePx) {
 					v.X, v.Y, v.Z = v.X+fx+.5, v.Y+.5, v.Z+fz+.5
 					v.U, v.V = u0+v.U*du, v0+v.V*dv
 					vs = append(vs, v)

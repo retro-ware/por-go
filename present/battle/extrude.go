@@ -15,8 +15,10 @@ const alphaCut = 128
 // draws items: front and back are quads with the whole sprite (the mesh
 // shader discards transparent texels), and every opaque texel on an edge
 // gets side faces in its own colour. The slab fits the unit square keeping
-// the aspect ratio, centred on the origin, front facing +Z.
-func extrude(img image.Image) []gpu.MeshVertex {
+// the aspect ratio, centred on the origin, front facing +Z. Its thickness
+// is half a texel of a sprite texels wide: a sharper picture standing in
+// for one (a PNG icon) is as thick as the original would be.
+func extrude(img image.Image, texels int) []gpu.MeshVertex {
 	b := img.Bounds()
 	w, h := b.Dx(), b.Dy()
 	if w == 0 || h == 0 {
@@ -24,7 +26,7 @@ func extrude(img image.Image) []gpu.MeshVertex {
 	}
 	px := float32(1) / float32(max(w, h))
 	x0, y0 := -float32(w)*px/2, float32(h)*px/2
-	t := px / 2
+	t := 1 / float32(2*max(texels, 1))
 	opaque := func(x, y int) bool {
 		if x < 0 || y < 0 || x >= w || y >= h {
 			return false
