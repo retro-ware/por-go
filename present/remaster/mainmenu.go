@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"strings"
+	"time"
 
 	"gpu"
 	"gpu/vector"
@@ -15,9 +16,53 @@ import (
 // black, the functions under it in a box wrapped round them, the party's
 // cards where the 3D view has them.
 
+// The Amiga painted title (View.Backdrop) shows alone for titleHold when
+// the main menu first comes up, then the menu fades in over it.
+const titleHold, titleFade = 2 * time.Second, 1500 * time.Millisecond
+
 // drawMain draws the main menu.
 func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	dst.Fill(color.Black)
+	b := dst.Bounds()
+	if v.Backdrop == nil {
+		p.drawMainUI(dst, v)
+		return
+	}
+	if p.backdropSrc != v.Backdrop {
+		if p.backdrop != nil {
+			p.backdrop.Deallocate()
+		}
+		p.backdrop, p.backdropSrc = gpu.NewImageFromImage(v.Backdrop), v.Backdrop
+	}
+	bb := v.Backdrop.Bounds()
+	k := min(float64(b.Dx())/float64(bb.Dx()), float64(b.Dy())/float64(bb.Dy())) // fit, keeping the aspect
+	op := &gpu.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate((float64(b.Dx())-float64(bb.Dx())*k)/2, (float64(b.Dy())-float64(bb.Dy())*k)/2)
+	dst.DrawImage(p.backdrop, op)
+	if p.mainAt.IsZero() {
+		p.mainAt = time.Now()
+	}
+	a := float32(time.Since(p.mainAt)-titleHold) / float32(titleFade)
+	if a >= 1 {
+		p.drawMainUI(dst, v)
+		return
+	}
+	if p.layer == nil || p.layer.Bounds() != b {
+		if p.layer != nil {
+			p.layer.Deallocate()
+		}
+		p.layer = gpu.NewImage(b.Dx(), b.Dy())
+	}
+	p.layer.Clear()
+	p.drawMainUI(p.layer, v)
+	lo := &gpu.DrawImageOptions{}
+	lo.ColorScale.ScaleAlpha(max(a, 0))
+	dst.DrawImage(p.layer, lo)
+}
+
+// drawMainUI draws the main menu's lettering, functions and cards.
+func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 	b := dst.Bounds()
 	mk := scale(dst)
 	keys := make([]byte, len(v.MainMenu))
@@ -57,11 +102,12 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	}
 	if v.MainAsk && v.Menu != nil { // a question pops up over it (Quit to DOS)
 		var lines []string
+		var keys []byte
 		for _, it := range v.Menu.Items {
-			lines = append(lines, it.Text)
+			lines, keys = append(lines, it.Text), append(keys, it.Key)
 		}
 		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false) // the menu dims under it
-		p.window(dst, strings.TrimSpace(v.Menu.Prompt)+"?", lines, v.Menu.Sel, false)
+		p.keyWindow(dst, strings.TrimSpace(v.Menu.Prompt)+"?", lines, keys, v.Menu.Sel, false)
 	}
 	p.ask = v.MainAsk
 }

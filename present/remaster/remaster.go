@@ -29,49 +29,54 @@ import (
 type Presenter struct {
 	pg page // the original's screen, drawn from the View
 
-	view      *blobber.View
-	failed    bool                        // the renderer could not start: classic from then on
-	scenes    map[string]*blobber.Scene   // parsed maps by name
-	shown     string                      // the scene the view shows
-	last      time.Time                   // when the animation last advanced
-	ticks     float64                     // animation time not yet run, in 1/60 s ticks
-	border    borders                     // the game's window border
-	bars      *gpu.Image                  // bars.png
-	cardImgs  []*gpu.Image                // the cards, drawn at scale 1
-	faceImgs  map[image.Image]*gpu.Image  // the faces on the GPU
-	labels    map[string]*gpu.Image       // card labels in the game's font
-	glyph     func(byte) [8]byte          // the game's font
-	main      bool                        // the main menu is up (mainmenu.go)
-	ask       bool                        // ... with a question over it
-	logo      *gpu.Image                  // View.Logo on the GPU ...
-	logoSrc   image.Image                 // ... uploaded from this
-	cards     []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
-	faces     map[image.Image]image.Image // card art cropped from each paper-doll head
-	inside    bool                        // the view has the inside ceiling
-	active    bool                        // the last frame was drawn remastered
-	menu      bool                        // the vertical menu is open
-	sel       int                         // its highlighted item
-	asked     string                      // the question menu last opened by itself (menuID)
-	mapImg    *gpu.Image                  // View.Map on the GPU
-	mapSrc    image.Image                 // the View.Map it holds
-	menuRects []image.Rectangle           // the vertical menu's items on screen, as last drawn
-	winRects  []image.Rectangle           // the Esc menu's lines on screen, as last drawn
-	menuSel   int                         // the game's own choice in it
-	noMenu    bool                        // nothing to pick: any click answers
-	rows      []shownRows                 // the original's rows on screen, as last drawn
-	pointer   image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
-	menuImg   *gpu.Image                  // the vertical menu, drawn at scale 1
-	menuBuf   []byte                      // its pixels
-	battle    battle.Presenter            // the combat map in 3D
-	mapBottom int                         // screen rows above this are the 3D map
-	fight     bool                        // the last frame was the 3D combat map
-	inv       inventory                   // the inventory screen (inventory.go)
-	fightView *engine.Battle              // the combat map last drawn
-	fightLog  bool                        // the battle Log is up (fight.go)
-	rowsImg   *gpu.Image                  // the combat rows, drawn at scale 1
-	typing    bool                        // a line is being typed (input.go) ...
-	typed     string                      // ... and reads this
-	hovered   [3]int                      // the spot and cell the pointer was last on (Mouse)
+	view        *blobber.View
+	failed      bool                        // the renderer could not start: classic from then on
+	scenes      map[string]*blobber.Scene   // parsed maps by name
+	shown       string                      // the scene the view shows
+	last        time.Time                   // when the animation last advanced
+	ticks       float64                     // animation time not yet run, in 1/60 s ticks
+	border      borders                     // the game's window border
+	bars        *gpu.Image                  // bars.png
+	cardImgs    []*gpu.Image                // the cards, drawn at scale 1
+	faceImgs    map[image.Image]*gpu.Image  // the faces on the GPU
+	labels      map[string]*gpu.Image       // card labels in the game's font
+	glyph       func(byte) [8]byte          // the game's font
+	main        bool                        // the main menu is up (mainmenu.go)
+	ask         bool                        // ... with a question over it
+	logo        *gpu.Image                  // View.Logo on the GPU ...
+	logoSrc     image.Image                 // ... uploaded from this
+	backdrop    *gpu.Image                  // View.Backdrop on the GPU ...
+	backdropSrc image.Image                 // ... uploaded from this
+	mainAt      time.Time                   // when the main menu first showed the backdrop
+	layer       *gpu.Image                  // the main menu drawn for its fade in
+	creditImg   *gpu.Image                  // the credits, spread (credits.go)
+	cards       []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
+	faces       map[image.Image]image.Image // card art cropped from each paper-doll head
+	inside      bool                        // the view has the inside ceiling
+	active      bool                        // the last frame was drawn remastered
+	menu        bool                        // the vertical menu is open
+	sel         int                         // its highlighted item
+	asked       string                      // the question menu last opened by itself (menuID)
+	mapImg      *gpu.Image                  // View.Map on the GPU
+	mapSrc      image.Image                 // the View.Map it holds
+	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
+	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
+	menuSel     int                         // the game's own choice in it
+	noMenu      bool                        // nothing to pick: any click answers
+	rows        []shownRows                 // the original's rows on screen, as last drawn
+	pointer     image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
+	menuImg     *gpu.Image                  // the vertical menu, drawn at scale 1
+	menuBuf     []byte                      // its pixels
+	battle      battle.Presenter            // the combat map in 3D
+	mapBottom   int                         // screen rows above this are the 3D map
+	fight       bool                        // the last frame was the 3D combat map
+	inv         inventory                   // the inventory screen (inventory.go)
+	fightView   *engine.Battle              // the combat map last drawn
+	fightLog    bool                        // the battle Log is up (fight.go)
+	rowsImg     *gpu.Image                  // the combat rows, drawn at scale 1
+	typing      bool                        // a line is being typed (input.go) ...
+	typed       string                      // ... and reads this
+	hovered     [3]int                      // the spot and cell the pointer was last on (Mouse)
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -91,6 +96,10 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.shown, p.active, p.menu = "", false, false
 		p.drawMain(dst, v)
 		return Rect{}
+	}
+	if v.Credits {
+		p.shown, p.active, p.menu, p.cards = "", false, false, nil
+		return p.drawCredits(dst, v, note)
 	}
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText) {

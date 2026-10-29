@@ -2,7 +2,11 @@ package engine
 
 import (
 	"image"
+	"image/color"
 	"image/draw"
+	"image/png"
+	"os"
+	"path/filepath"
 
 	"por/pal"
 )
@@ -50,8 +54,13 @@ func (e *Engine) Credits() {
 	for _, t := range creditLines {
 		e.DisplayString(t.x, t.y, t.c, t.s)
 	}
+	e.snap.credits = true // extra: the remaster spreads them over the screen
 	e.WaitSeconds(10)
+	e.snap.credits = false
 }
+
+// RemasterCredit is the remaster's own line under the credits (View.Credits).
+const RemasterCredit = "Opionionated Remaster directed by Felix Ruzzoli using Claude"
 
 var creditLines = []struct {
 	x, y, c int
@@ -101,6 +110,24 @@ const (
 	logoBottom = 160 // under the subtitle
 )
 
+// The subtitle in the Amiga intro's colours: gold (0xF90) with a dark red
+// (0x600) outline, the intro's credits palette entries 2 and 1.
+var subGold, subRed = color.RGBA{0xff, 0x99, 0, 0xff}, color.RGBA{0x66, 0, 0, 0xff}
+
+// titleBackdrop is the Amiga painted title (DISK2/TITLE.PNG, written by
+// -import-disk2), nil without it.
+func (e *Engine) titleBackdrop() image.Image {
+	if e.snap.backdropRead {
+		return e.snap.backdrop
+	}
+	e.snap.backdropRead = true
+	if f, err := os.Open(filepath.Join(e.L.Dir, "DISK2", "TITLE.PNG")); err == nil {
+		e.snap.backdrop, _ = png.Decode(f)
+		f.Close()
+	}
+	return e.snap.backdrop
+}
+
 // titleLogo cuts the lettering out of TITLE picture 2 (nil if missing).
 func (e *Engine) titleLogo() image.Image {
 	if e.snap.logo != nil {
@@ -116,9 +143,25 @@ func (e *Engine) titleLogo() image.Image {
 	for i, c := range im.Frame(0) {
 		x, y := i%w, i/w
 		c &= 15
-		if y < logoSub && (c == colYellow || c == colLightBlue) || y >= logoSub && y < logoBottom && c == colLightMagenta {
+		if y < logoSub && (c == colYellow || c == colLightBlue) {
 			out.Set(x, y, pal.EGA(int(c)))
 			r = r.Union(image.Rect(x, y, x+1, y+1))
+		} else if y >= logoSub && y < logoBottom && c == colLightMagenta {
+			out.Set(x, y, subGold)
+			r = r.Union(image.Rect(x-1, y-1, x+2, y+2))
+		}
+	}
+	for y := logoSub - 1; y <= logoBottom; y++ { // the outline round the gold
+		for x := 0; x < w; x++ {
+			if out.RGBAAt(x, y).A != 0 {
+				continue
+			}
+			for _, d := range [...]image.Point{{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}} {
+				if out.RGBAAt(x+d.X, y+d.Y) == subGold {
+					out.Set(x, y, subRed)
+					break
+				}
+			}
 		}
 	}
 	cut := image.NewRGBA(image.Rect(0, 0, r.Dx(), r.Dy()))

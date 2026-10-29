@@ -95,6 +95,8 @@ type View struct {
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
 	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
+	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
+	Credits   bool           // the page is Credits (the remaster adds RemasterCredit)
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
@@ -133,40 +135,43 @@ func (e *Engine) View() View {
 
 // snapState is the engine's side of the seam.
 type snapState struct {
-	view     atomic.Pointer[View]
-	seq      uint64                 // Views published
-	invOn    bool                   // ItemsMenu waits: View.Inventory is up
-	main     []string               // PartyMenu waits: View.MainMenu
-	mainAsk  bool                   // ... and asks View.Menu over it
-	logo     image.Image            // titleLogo, once cut
-	win      Window                 // set by whatever drew into the view window last
-	heads    map[int]image.Image    // decoded HEAD blocks by id
-	tiles    [3]image.Image         // View.Border, once decoded
-	typing   *Typing                // the line being typed (typed)
-	own      bool                   // menu is a modal screen's own (slots), not the one under it
-	menu     *Menu                  // the innermost DisplayInput's menu (Sel unset)
-	cursor   image.Point            // drawCursor's last square
-	cursorOn bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
-	pics     map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
-	picsPal  pal.Regs
-	cmapOn   bool                   // the combat map is set up (cmapShown) and shown
-	sheetOn  bool                   // a character sheet is up over the combat map
-	dungeon  bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
-	effects  []effect               // sprites on the combat page
-	marks    []image.Point          // squares markReach framed
-	reach    []image.Point          // squares a click on the main combat menu walks to
-	paths    map[image.Point][]Step // the walk to each of them
-	hits     map[int]int            // each of targets' chance to be hit, in percent
-	area     []image.Point          // squares aoeMarks covers
-	skipped  []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
-	aimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can)
-	turn     *Turn                  // the player's turn waits in act
-	ask      string                 // a yes/no question waits in act (ask)
-	targets  []int                  // combatants ActAttack takes; aiming: the foes to cycle through
-	hidden   map[int]bool           // combatants whose icon is off the page (falling, hiding)
-	poses    map[int]byte           // the pose each combatant was last drawn in
-	strike   Strike                 // the last weapon attack (From/To filled in by battle)
-	striker  [2]*Character          // its attacker and target
+	view         atomic.Pointer[View]
+	seq          uint64      // Views published
+	invOn        bool        // ItemsMenu waits: View.Inventory is up
+	main         []string    // PartyMenu waits: View.MainMenu
+	mainAsk      bool        // ... and asks View.Menu over it
+	credits      bool        // Credits waits: View.Credits
+	logo         image.Image // titleLogo, once cut
+	backdrop     image.Image // titleBackdrop, once read
+	backdropRead bool
+	win          Window                 // set by whatever drew into the view window last
+	heads        map[int]image.Image    // decoded HEAD blocks by id
+	tiles        [3]image.Image         // View.Border, once decoded
+	typing       *Typing                // the line being typed (typed)
+	own          bool                   // menu is a modal screen's own (slots), not the one under it
+	menu         *Menu                  // the innermost DisplayInput's menu (Sel unset)
+	cursor       image.Point            // drawCursor's last square
+	cursorOn     bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
+	pics         map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
+	picsPal      pal.Regs
+	cmapOn       bool                   // the combat map is set up (cmapShown) and shown
+	sheetOn      bool                   // a character sheet is up over the combat map
+	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
+	effects      []effect               // sprites on the combat page
+	marks        []image.Point          // squares markReach framed
+	reach        []image.Point          // squares a click on the main combat menu walks to
+	paths        map[image.Point][]Step // the walk to each of them
+	hits         map[int]int            // each of targets' chance to be hit, in percent
+	area         []image.Point          // squares aoeMarks covers
+	skipped      []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
+	aimWhy       string                 // aiming: why the aimed square cannot be taken ("" when it can)
+	turn         *Turn                  // the player's turn waits in act
+	ask          string                 // a yes/no question waits in act (ask)
+	targets      []int                  // combatants ActAttack takes; aiming: the foes to cycle through
+	hidden       map[int]bool           // combatants whose icon is off the page (falling, hiding)
+	poses        map[int]byte           // the pose each combatant was last drawn in
+	strike       Strike                 // the last weapon attack (From/To filled in by battle)
+	striker      [2]*Character          // its attacker and target
 }
 
 // publish builds a View from the engine's state (on the engine goroutine)
@@ -199,10 +204,10 @@ func (e *Engine) publish() {
 		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
 		v.Menu = &c
 		if e.ext.modal == 0 && s.main != nil {
-			v.MainMenu, v.Logo, v.MainAsk = s.main, e.titleLogo(), s.mainAsk
+			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots = s.typing, e.spots()
+	v.Typing, v.Spots, v.Credits = s.typing, e.spots(), s.credits
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {

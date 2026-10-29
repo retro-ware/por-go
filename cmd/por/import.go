@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
 	"errors"
 	"image"
 	"image/color"
@@ -135,6 +136,7 @@ var amigaGfx = map[string]struct {
 func importDisk2(src, dst string) error {
 	var disk []adf.File
 	var snd []byte // disk 1's program: the Amiga sound players and samples
+	var title image.Image // disk 1's intro: the painted title
 	look := func(img []byte) bool {
 		_, files, err := adf.Read(img)
 		if err != nil {
@@ -144,6 +146,9 @@ func importDisk2(src, dst string) error {
 		for _, f := range files {
 			if strings.EqualFold(f.Path, "program") && snd == nil {
 				snd = amiga.Image(f.Data)
+			}
+			if strings.EqualFold(f.Path, "intro") && title == nil {
+				title = amiga.Title(f.Data)
 			}
 			if _, ok := amigaGfx[strings.TrimSuffix(strings.ToLower(f.Path), ".dax")]; ok {
 				n++
@@ -195,6 +200,13 @@ func importDisk2(src, dst string) error {
 	}
 	if snd != nil {
 		if err := os.WriteFile(filepath.Join(out, "SOUND.BIN"), snd, 0o644); err != nil {
+			return err
+		}
+	}
+	if title != nil {
+		var b bytes.Buffer
+		png.Encode(&b, title)
+		if err := os.WriteFile(filepath.Join(out, "TITLE.PNG"), b.Bytes(), 0o644); err != nil {
 			return err
 		}
 	}
