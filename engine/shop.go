@@ -1,69 +1,39 @@
 package engine
 
-import (
-	"strconv"
-	"strings"
-)
+import "strconv"
 
 // The shop, ported from ovr07. ECL COMBAT with the shop flag (game +0x6D8)
 // set runs Shop instead of a fight; the goods are the treasure list.
 
-// The words of the shop's Buy list.
-const (
-	shopBuyIt Choice = iota
-	shopLook
-	shopInv
-)
-
-// shopList = ovr07:0030 (var index, var list, var item, var key): the goods
-// with their prices right-aligned in a 30-character field, in a "Shop" box.
-// extra: the field runs to the box's right edge, so longer names fit.
-func (e *Engine) shopList(index *int, item **Item) Pick {
-	list := make([]*ListNode, len(e.run.treasure))
-	for i, it := range e.run.treasure {
+// shopBrowse (extra; the original's Buy list, ovr07:0361): the inventory
+// screen with the goods beside the party inventory; ActBuy buys one into
+// the party inventory, paid from the party's gold, Sell sells.
+func (e *Engine) shopBrowse() {
+	for _, it := range e.run.treasure {
 		if it.Price == 0 {
 			it.Price = 1
 		}
-		price := strconv.Itoa(int(it.Price))
-		if len(price) > 0x10 {
-			price = price[:0x10]
-		}
-		const w = 0x24 // columns 2..0x25, one in from the frame (the original: 1..0x1E)
-		line := []byte(strings.Repeat(" ", w))
-		copy(line[w-len(price):], price)
-		copy(line, cut(it.Name(), w-1-len(price))) // extra: the name stops before the price
-		list[i] = &ListNode{Text: string(line)}
-		list[i].Dim = !e.canUseItem(e.selected(), it) // extra: what the buyer cannot use is grey and passed over
 	}
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Shop")
-	gold := strconv.Itoa(int(e.purse.gold)) + "g" // extra: on the frame, the g under the prices' last digit
-	e.DisplayString(winRight-len(gold), messageRow, colYellow, gold)
-	if c := e.selected(); len(e.party) > 0 { // extra: who is buying (F1-F8 change it)
-		e.displayName(c, 2, 2, false) // over the items; the class over the prices
-		cls := cut(className(c.Class), 0x23-len(c.Name()))
-		e.DisplayString(winRight-len(cls), 2, colLightCyan, cls)
-	}
-	redraw := true
-	var sel *ListNode
-	if len(list) > 0 { // extra: the cursor starts on something the buyer can use
-		for k := 0; k < len(list) && list[*index%len(list)].Dim; k++ {
-			*index = (*index + 1) % len(list)
-		}
-		*index %= len(list)
-	}
-	e.ext.buying = true
-	key := e.ListMenu("Items: ", Bar{{"Buy", shopBuyIt}, {"Look", shopLook}, {"Inv", shopInv}}, colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 22, list, true, &redraw, index, &sel)
-	e.ext.buying = false
-	*item = nil
-	for i, n := range list {
-		if n == sel {
-			*item = e.run.treasure[i]
-		}
-	}
-	for _, it := range e.run.treasure {
+	e.snap.shop = true
+	defer func() { e.snap.shop = false }()
+	e.ItemsMenu()
+}
+
+// shopWares adds the goods and the party's money to the inventory view.
+func (e *Engine) shopWares(v *Inventory, c *Character) {
+	v.Gold, v.Copper = int(e.purse.gold), int(e.purse.copper)
+	v.Wares = []InvItem{}
+	for i, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
+		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
+			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it), Price: strconv.Itoa(int(it.Price)) + " gold"}
+		for _, w := range it.Words {
+			if w != 0 {
+				x.Words = append(x.Words, itemWords[w])
+			}
+		}
+		v.Wares = append(v.Wares, x)
 	}
-	return key
 }
 
 // buyItem = ovr07:0239 (item, var overloaded): a copy goes to the
@@ -71,50 +41,12 @@ func (e *Engine) shopList(index *int, item **Item) Pick {
 func (e *Engine) buyItem(it *Item) (overloaded bool) {
 	c := e.selected()
 	if e.overloaded(it, c) {
-		e.BottomMessage("OverLoaded")
+		e.refuse("No room in the party items") // extra: over the inventory screen (the original: OverLoaded)
 		return true
 	}
 	e.AddItemCopy(c, it)
 	e.ApplyItems(c)
 	return false
-}
-
-// shopBuy = ovr07:0361: pick goods until Exit, paid from the party's gold.
-func (e *Engine) shopBuy() {
-	// extra: the list opens at its top on the first item (the original,
-	// ovr07:037C, starts on the second, with the top left where the last
-	// list had it)
-	index := 0
-	e.listTop = 0
-	for {
-		var it *Item
-		key := e.shopList(&index, &it)
-		switch key.ID {
-		case PickRelist:
-			continue // F1-F8 picked another buyer
-		case shopLook: // extra: what the item does
-			e.lookItem(it)
-			continue
-		case shopInv: // extra: the buyer's own items
-			if len(e.carried(e.selected())) == 0 {
-				e.BottomMessage("No items")
-			} else {
-				top := e.listTop // extra: back on the same page of the list
-				e.ItemsMenu()
-				e.listTop = top
-			}
-			continue
-		}
-		if key.ID != shopBuyIt && key.ID != PickEnter || it == nil {
-			return
-		}
-		price := uint32(it.Price)
-		if price > e.purse.gold {
-			e.BottomMessage("Not enough Money.")
-		} else if !e.buyItem(it) {
-			e.purse.gold -= price
-		}
-	}
 }
 
 // Shop = ovr07:053E.
@@ -142,7 +74,7 @@ func (e *Engine) Shop() {
 		redraw := false
 		switch p.ID {
 		case browse:
-			e.shopBuy()
+			e.shopBrowse()
 			redraw = true
 		case appraise:
 			redraw = e.Appraise()

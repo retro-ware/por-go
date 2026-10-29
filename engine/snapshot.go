@@ -139,6 +139,7 @@ type snapState struct {
 	view         atomic.Pointer[View]
 	seq          uint64      // Views published
 	invOn        bool        // ItemsMenu waits: View.Inventory is up
+	shop         bool        // ... as the shop's Browse: View.Inventory.Wares
 	main         []string    // PartyMenu waits: View.MainMenu
 	mainAsk      bool        // ... and asks View.Menu over it
 	credits      bool        // Credits waits: View.Credits
@@ -200,6 +201,9 @@ func (e *Engine) publish() {
 	if s.invOn {
 		c := e.selected()
 		v.Inventory = e.inventoryView(c, e.carried(c))
+		if s.shop {
+			e.shopWares(v.Inventory, c)
+		}
 	}
 	if m := s.menu; m != nil && (e.ext.modal == 0 || e.ext.menu > e.ext.menuFloor || s.own) { // not the menu under help or the overview
 		c := *m

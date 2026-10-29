@@ -55,6 +55,7 @@ const (
 	ActHeal              // inventory: a paladin lays on hands
 	ActCure              // inventory: a paladin cures disease
 	ActMainMenu          // drop the game in play for the party menu (the pause menu's Back to Main Menu)
+	ActBuy               // shop inventory: buy ware N (Inventory.Wares)
 )
 
 // Directions of ActMove.

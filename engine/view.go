@@ -388,6 +388,17 @@ func (e *Engine) ItemsMenu() bool {
 			if e.canLoseItem(it) {
 				e.RemoveItem(c, it)
 			}
+		case a.Kind == ActBuy && e.snap.shop:
+			if a.N >= 0 && a.N < len(e.run.treasure) {
+				w := e.run.treasure[a.N]
+				switch {
+				case uint32(w.Price) > e.purse.gold:
+					e.refuse("Not enough Money.")
+				case !e.buyItem(w):
+					e.purse.gold -= uint32(w.Price)
+					e.say("Bought!")
+				}
+			}
 		case a.Kind == ActSell && inv.Sell:
 			if e.canLoseItem(it) {
 				e.RemoveItem(c, it)

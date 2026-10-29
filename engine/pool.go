@@ -171,6 +171,9 @@ type Inventory struct {
 	Sell   bool                // a shop buys them (ActSell)
 	Switch bool                // ActMember shows another member (not in combat)
 	Powers []Power             // what the member can do besides items (the View menu's)
+	Wares  []InvItem           // the shop's goods (Browse; nil elsewhere): Index is ActBuy's N, Price what it costs
+	Gold   int                 // the party's money, with Wares
+	Copper int
 }
 
 // Power is a member's action of the View menu the inventory offers too.
