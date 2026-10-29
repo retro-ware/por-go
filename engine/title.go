@@ -1,5 +1,12 @@
 package engine
 
+import (
+	"image"
+	"image/draw"
+
+	"por/pal"
+)
+
 // Title = ovr02:0626 title_screen.
 func (e *Engine) Title() {
 	e.Music(1) // the Amiga intro, 0x2B580
@@ -83,4 +90,39 @@ var creditLines = []struct {
 	{2, 0x16, 0xe, "testing:"},
 	{0xb, 0x16, 0xb, "joel billings,steve salyer"},
 	{2, 0x17, 0xb, "james kucera,robert daly,rick white"},
+}
+
+// Title logo (extra): the remastered main menu shows the title picture's
+// lettering on black. The second TITLE picture paints "Pool of Radiance"
+// in yellow with a light blue shadow over a stone wall, and the subtitle
+// under it in light magenta; only those colours are kept.
+const (
+	logoSub    = 108 // the subtitle's first row
+	logoBottom = 160 // under the subtitle
+)
+
+// titleLogo cuts the lettering out of TITLE picture 2 (nil if missing).
+func (e *Engine) titleLogo() image.Image {
+	if e.snap.logo != nil {
+		return e.snap.logo
+	}
+	im := e.LoadPic("TITLE", 2)
+	if im == nil {
+		return nil
+	}
+	w := im.Width * 8
+	out := image.NewRGBA(image.Rect(0, 0, w, min(im.Height, logoBottom)))
+	var r image.Rectangle // the lettering's extent
+	for i, c := range im.Frame(0) {
+		x, y := i%w, i/w
+		c &= 15
+		if y < logoSub && (c == colYellow || c == colLightBlue) || y >= logoSub && y < logoBottom && c == colLightMagenta {
+			out.Set(x, y, pal.EGA(int(c)))
+			r = r.Union(image.Rect(x, y, x+1, y+1))
+		}
+	}
+	cut := image.NewRGBA(image.Rect(0, 0, r.Dx(), r.Dy()))
+	draw.Draw(cut, cut.Bounds(), out, r.Min, draw.Src)
+	e.snap.logo = cut
+	return cut
 }

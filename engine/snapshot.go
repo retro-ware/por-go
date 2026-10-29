@@ -93,6 +93,8 @@ type View struct {
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
+	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
+	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
 
@@ -133,6 +135,8 @@ type snapState struct {
 	view     atomic.Pointer[View]
 	seq      uint64                 // Views published
 	invOn    bool                   // ItemsMenu waits: View.Inventory is up
+	main     []string               // PartyMenu waits: View.MainMenu
+	logo     image.Image            // titleLogo, once cut
 	win      Window                 // set by whatever drew into the view window last
 	heads    map[int]image.Image    // decoded HEAD blocks by id
 	tiles    [3]image.Image         // View.Border, once decoded
@@ -192,6 +196,9 @@ func (e *Engine) publish() {
 		c := *m
 		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
 		v.Menu = &c
+		if e.ext.modal == 0 && s.main != nil {
+			v.MainMenu, v.Logo = s.main, e.titleLogo()
+		}
 	}
 	v.Typing, v.Spots = s.typing, e.spots()
 	e.pageView(v)

@@ -41,6 +41,9 @@ type Presenter struct {
 	faceImgs  map[image.Image]*gpu.Image  // the faces on the GPU
 	labels    map[string]*gpu.Image       // card labels in the game's font
 	glyph     func(byte) [8]byte          // the game's font
+	main      bool                        // the main menu is up (mainmenu.go)
+	logo      *gpu.Image                  // View.Logo on the GPU ...
+	logoSrc   image.Image                 // ... uploaded from this
 	cards     []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
 	faces     map[image.Image]image.Image // card art cropped from each paper-doll head
 	inside    bool                        // the view has the inside ceiling
@@ -81,6 +84,11 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.fightView = v.Battle
 		p.battle.Draw(dst, v.Battle)
 		p.drawFight(dst, note.Glyph, v)
+		return Rect{}
+	}
+	if p.main = v.MainMenu != nil; p.main {
+		p.shown, p.active, p.menu = "", false, false
+		p.drawMain(dst, v)
 		return Rect{}
 	}
 	sc := p.scene(v)
@@ -245,6 +253,9 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 // portrait, an action bar button, or an item of the vertical menu. It
 // reports whether it was taken.
 func (p *Presenter) Click(x, y int) bool {
+	if p.main {
+		return p.mainClick(x, y)
+	}
 	if !p.fight {
 		for i, r := range p.cards { // a portrait: that member's View page on the command bar, else the member a bar is for
 			if image.Pt(x, y).In(r) && p.active {
@@ -273,6 +284,10 @@ func (p *Presenter) Click(x, y int) bool {
 
 // Hover moves the vertical menu's highlight to the item under screen pixel (x, y).
 func (p *Presenter) Hover(x, y int) {
+	if p.main {
+		p.mainHover(x, y)
+		return
+	}
 	if p.fight {
 		for i, r := range p.menuRects {
 			if p.battle.Picking && image.Pt(x, y).In(r) {

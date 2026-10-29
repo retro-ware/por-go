@@ -219,7 +219,17 @@ func (e *Engine) PartyMenu() {
 				e.rosterRegion()
 			}
 		}
-		p := e.DisplayInput("Choose a function ", shown, colLightMagenta, colBlack, colBlack, true, false)
+		e.snap.main = nil // the remaster's main menu: the functions in list order
+		for i := range names {
+			if enabled[i] {
+				e.snap.main = append(e.snap.main, names[i])
+				if i == mCreate && quick {
+					e.snap.main = append(e.snap.main, "Quickstart")
+				}
+			}
+		}
+		p := e.DisplayInput("", shown, colLightMagenta, colBlack, colBlack, true, false) // extra: no "Choose a function"
+		e.snap.main = nil
 		e.regionCut(mark)
 		e.ext.onSelect = nil
 		e.ClearRow24()
