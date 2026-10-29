@@ -187,8 +187,12 @@ type sound struct {
 // DOS sound numbers.
 var amigaFx = [...]int{5, 9, 8, 10, 12, 11, 6, 11, 4, 7, 0}
 
-// Music = the Amiga's playMusic: 1 title and camp, 2 battle, 3 party menu, 5 party killed,
-// 0 stop. The DOS game has no music.
+// Music = the Amiga's playMusic (0x62E54): 1 title and camp (loops), 2 battle, 3 party
+// menu, 5 party killed (one-shot jingles of ~7.7 s), 0 stop. These are its only nine
+// callers; songs 4 (15 s jingle), 6 and 7 (looping) are in the player's data but the
+// program never starts them, and any effect takes the channels from the music. The
+// battle song is the word at 0x8A8C0 (2, never written) unless the byte at 0x8D2D1
+// (never written, so 0) is set. The DOS game has no music.
 func (e *Engine) Music(n int) {
 	s := &e.snd
 	s.mu.Lock()
