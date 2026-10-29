@@ -1,8 +1,9 @@
 // Command eclscript translates ECL byte code into readable scripts:
-// `eclscript DIR` (DIR is data/assets/scripts) writes every area script of the ECL<n>.DAX files (in data/dos;
-// run it from the repo root, as cmd/ecl) to
-// DIR/area<BLOCK>.txt, one command and its operands per line, jump
-// targets as labels. A block found on several disks is written once.
+// `eclscript DIR` (DIR is data/assets/scripts) writes every area script
+// of the ECL<n>.DAX files (in data/dos; run it from the repo root, as
+// cmd/ecl) to DIR/area<BLOCK>.txt in the form DIR/README.md describes
+// (engine.DecodeScript, engine.WriteScript). A block found on several
+// disks is written once.
 //
 // Variables are named from the engine's own names (engine.ScriptVarNames)
 // and the names files DIR/names/global.txt (every area) and

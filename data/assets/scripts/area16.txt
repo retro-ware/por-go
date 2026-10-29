@@ -1,582 +1,551 @@
-SetSky:
-	SkyInside = 8
-	Scratch10 = 11
-	if Hours > 13: Scratch10 = 8
-	Sky = Scratch10
-	Return
+def SetSky() {
+    SkyInside = 8
+    Scratch10 = 11
+    if Hours > 13 { Scratch10 = 8 }
+    Sky = Scratch10
+    return
+}
 
-FindPoolCell:
-	Scratch10 = 0
-	Scratch7 = Cell & 127
+def FindPoolCell() {
+    Scratch10 = 0
+    Scratch7 = Cell & ~Inside
 
-FindPoolCellLoop:
-	alias PoolCell = Scratch9
-	PoolCell = PoolCellTable[Scratch10]
-	if PoolCell == Scratch7: Return
-	Scratch10 += 1
-	if Scratch10 < 13: Goto FindPoolCellLoop
-	Compare 1 0
-	Return
+    FindPoolCellLoop:
+    Scratch9 = PoolCellTable[Scratch10]
+    if Scratch9 == Scratch7 { return }
+    Scratch10 += 1
+    if Scratch10 < 13 { goto FindPoolCellLoop }
+    Compare(1, 0)
+    return
+}
 
-CapLizardCounts:
-	Scratch8 = 0
-	if LizardMenKilled < 50: Scratch8 = 50 - LizardMenKilled
-	Scratch5 = Table9A09[Scratch7]
-	if Scratch5 > Scratch8: Scratch5 = Scratch8
-	Scratch8 = 0
-	if GiantLizardsKilled < 10: Scratch8 = 10 - PoolTreasureTaken
-	Scratch4 = Table9A0E[Scratch7]
-	if Scratch4 > Scratch8: Scratch4 = Scratch8
-	Return
+def CapLizardCounts() {
+    Scratch8 = 0
+    if LizardMenKilled < 50 { Scratch8 = 50 - LizardMenKilled }
+    Scratch5 = Table9A09[Scratch7]
+    if Scratch5 > Scratch8 { Scratch5 = Scratch8 }
+    Scratch8 = 0
+    if GiantLizardsKilled < 10 { Scratch8 = 10 - PoolTreasureTaken }
+    Scratch4 = Table9A0E[Scratch7]
+    if Scratch4 > Scratch8 { Scratch4 = Scratch8 }
+    return
+}
 
-CountLizardKills:
-	Scratch1 = Table9A09[Scratch7]
-	Scratch6 = LizardMenKilled
-	Gosub AddKills
-	LizardMenKilled = Scratch6
-	Scratch1 = Table9A0E[Scratch7]
-	Scratch6 = GiantLizardsKilled
-	Gosub AddKills
-	GiantLizardsKilled = Scratch6
-	Return
+def CountLizardKills() {
+    Scratch1 = Table9A09[Scratch7]
+    Scratch6 = LizardMenKilled
+    AddKills()
+    LizardMenKilled = Scratch6
+    Scratch1 = Table9A0E[Scratch7]
+    Scratch6 = GiantLizardsKilled
+    AddKills()
+    GiantLizardsKilled = Scratch6
+    return
+}
 
-Table9A09:
-	Data 2 0 20 5 0
+def AddKills() {
+    if Scratch1 < Beaten { goto AddKillsCapped }
+    Scratch1 = Beaten
 
-Table9A0E:
-	Data 1 3 4 0 10
+    AddKillsCapped:
+    Beaten -= Scratch1
+    Scratch6 += Scratch1
+    return
+}
 
-AddKills:
-	if Scratch1 < Beaten: Goto AddKillsCapped
-	Scratch1 = Beaten
-
-AddKillsCapped:
-	Beaten -= Scratch1
-	Scratch6 += Scratch1
-	Return
-
-TakeItMenu:
-	Print " DO YOU TAKE IT?"
+def TakeItMenu() {
+    Print(" DO YOU TAKE IT?")
+} # falls into YesNoMenu
 
 YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
 
-PressToContinue:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	PrintClear " "
-	Return
+def PressToContinue() {
+    Scratch9 = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    Text(" ")
+    return
+}
 
-event0:
-	Gosub SetSky
-	Scratch10 = 0
-	Scratch7 = Cell & 127
+on move {
+    SetSky()
+    Scratch10 = 0
+    Scratch7 = Cell & ~Inside
 
-BlockScanLoop:
-	Scratch9 = Table9B00[Scratch10]
-	Scratch8 = Table9B0C[Scratch10]
-	if Scratch9 == Scratch7 && Scratch8 == Facing: Goto BlockDispatch
-	Scratch10 = Scratch10 + 1
-	if Scratch10 < 12: Goto BlockScanLoop
-	Exit
+    BlockScanLoop:
+    Scratch9 = Table9B00[Scratch10]
+    Scratch8 = Table9B0C[Scratch10]
+    if Scratch9 == Scratch7 and Scratch8 == Facing { goto BlockDispatch }
+    Scratch10 = Scratch10 + 1
+    if Scratch10 < 12 { goto BlockScanLoop }
+    exit
 
-BlockDispatch:
-	Scratch2 = Table9B18[Scratch10]
-	Scratch1 = Table9B24[Scratch10]
-	OnGoto Scratch2 MoatBlocks LeaveRuins TunnelSlopesUp StairsUp
-	Exit // extra: the original runs on into data at 9B00
+    BlockDispatch:
+    Scratch2 = Table9B18[Scratch10]
+    Scratch1 = Table9B24[Scratch10]
+    goto [MoatBlocks, LeaveRuins, TunnelSlopesUp, StairsUp][Scratch2]
+    exit # the original runs on into data at 9B00
+}
 
-Table9B00:
-	Data 11 12 13 14 15 17 18 19 20 21 22 23
+on step {
+    Scratch10 = 0
+    Scratch7 = Cell & ~Inside
 
-Table9B0C:
-	Data 1 0 3 2 2 0 1 0 0 2 3 0
+    EventScanLoop:
+    Scratch9 = Table9B96[Scratch10]
+    if Scratch9 == Scratch7 { goto EventDispatch }
+    Scratch10 = Scratch10 + 1
+    if Scratch10 < 22 { goto EventScanLoop }
+    exit
 
-Table9B18:
-	Data 0 0 0 0 1 2 2 2 2 2 2 3
+    EventDispatch:
+    Scratch2 = Table9BAC[Scratch10]
+    Scratch1 = Table9BC2[Scratch10]
+    goto [RuinedBuilding, SearchForTunnel, CentralKeep, LShapedBuilding, FindTreasure, PoolLizardmen][Scratch2]
+    exit # the original runs on into data at 9B96
+}
 
-Table9B24:
-	Data 0 1 2 3 4 0 1 2 3 4 5 6
-
-event1:
-	Scratch10 = 0
-	Scratch7 = Cell & 127
-
-EventScanLoop:
-	Scratch9 = Table9B96[Scratch10]
-	if Scratch9 == Scratch7: Goto EventDispatch
-	Scratch10 = Scratch10 + 1
-	if Scratch10 < 22: Goto EventScanLoop
-	Exit
-
-EventDispatch:
-	Scratch2 = Table9BAC[Scratch10]
-	Scratch1 = Table9BC2[Scratch10]
-	OnGoto Scratch2 RuinedBuilding SearchForTunnel CentralKeep LShapedBuilding FindTreasure PoolLizardmen
-	Exit // extra: the original runs on into data at 9B96
-
-Table9B96:
-	Data 1 2 4 5 6 7 8 9 10 3 16 24 25 26 27 28
-	Data 29 30 31 32 33 34
-
-Table9BAC:
-	Data 0 1 1 1 2 2 2 2 2 3 4 5 5 5 5 5
-	Data 5 5 5 5 5 5
-
-Table9BC2:
-	Data 0 0 1 2 3 4 5 6 0 0 0 0 1 2 3 4
-	Data 5 6 7 1 2 5
-
-event2:
-	RestEvery = 0
-	RestChance = 10
+on camp {
+    RestEvery = 0
+    RestChance = 10
+} # falls into RedrawExit
 
 RedrawExit:
-	RedrawView
-	Call CallRedraw
+    RedrawView()
+    CallRedraw()
 
-event3:
-	Exit
+on rest {
+    exit
+}
 
-event4:
-	Gosub SetSky
-	NoMagic = 1
-	NoCoords = 1
-	if AreaKind == 16: Exit
-	PartyX = 8
-	PartyY = 14
-	Facing = North
-	LoadMap 16 unused=2 icons=255
-	LoadWalls 9 20 23
-	PrintClear "YOU SENSE AN ANTI-MAGIC SHELL AROUND YOU."
-	Gosub PressToContinue
-	PrintClear " "
-	Exit
+on load {
+    SetSky()
+    NoMagic = 1
+    NoCoords = 1
+    if AreaKind == YarashsPyramid { exit }
+    PartyX = 8
+    PartyY = 14
+    Facing = North
+    LoadMap(16, unused=2, icons=255)
+    LoadWalls(9, 20, 23)
+    Text("YOU SENSE AN ANTI-MAGIC SHELL AROUND YOU.")
+    PressToContinue()
+    Text(" ")
+    exit
+}
 
 MoatBlocks:
-	HoldMove = SkipMove
-	PrintClear "AHEAD OF YOU IS A MOAT FILLED WITH SLUDGE AND THORNS. YOU CANNOT PROCEED BECAUSE THE MUD WOULD SURELY DRAG YOU DOWN TO YOUR DEATH."
-	Exit
+    HoldMove = SkipMove
+    Text("AHEAD OF YOU IS A MOAT FILLED WITH SLUDGE AND THORNS. YOU CANNOT PROCEED BECAUSE THE MUD WOULD SURELY DRAG YOU DOWN TO YOUR DEATH.")
+    exit
 
 LeaveRuins:
-	RedrawView
-	Picture None
-	if QuestLizardmen == Rewarded: Goto GotoArea27
-	if LizardMenKilled >= 40: QuestLizardmen = RewardDue
+    RedrawView()
+    Picture(None)
+    if QuestLizardmen == Rewarded { goto GotoArea27 }
+    if LizardMenKilled >= 40 { QuestLizardmen = RewardDue }
 
-GotoArea27:
-	NewECL Quagmire
+    GotoArea27:
+    NewECL(Quagmire)
 
 SearchForTunnel:
-	if Scratch1 == 6: Goto BlockedStairs
-	if Search == 0: Exit
-	PrintClear "SEARCHING THROUGH THE "
-	OnGosub Scratch10 WordRubble WordSwamp WordSwamp WordRubble WordRubble
-	Print " YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?"
+    if Scratch1 == 6 { goto BlockedStairs }
+    if Search == NotSearching { exit }
+    Text("SEARCHING THROUGH THE ")
+    gosub [WordRubble, WordSwamp, WordSwamp, WordRubble, WordRubble][Scratch10]
+    Print(" YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?")
 
 GoDownMenu:
-	if Ask YesNoMenu == "NO": Exit
-	PartyX = DestX[Scratch1]
-	PartyY = DestY[Scratch1]
-	Facing = DestFacing[Scratch1]
-	LoadMap 30 unused=2 icons=255
-	LoadWalls 9 17 23
-	EncountersDone = 254 | EncountersDone
-	BuildingsSeen = 254 | BuildingsSeen
-	RedrawView
-	HoldMove = SkipMove
-	Call CallRedraw
-	Scratch7 = 4
-	Gosub CapLizardCounts
-	if Scratch4 < 2: Exit
-	SetupMonster GiantLizard distance=1 closeup=GiantLizard
-	PrintClear "YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!"
-	Surprise = NoSurprise
-	Morale = 100
-	Approach
-	Delay
-	PartyHit = 254
-	PartyMove = 252
-	ClearMonsters
-	LoadMonster GiantLizard count=Scratch4 icon=GiantLizard
-	Combat
-	Gosub CountLizardKills
-	Exit
+    if YesNoMenu() == "NO" { exit }
+    PartyX = DestX[Scratch1]
+    PartyY = DestY[Scratch1]
+    Facing = DestFacing[Scratch1]
+    LoadMap(30, unused=2, icons=255)
+    LoadWalls(9, 17, 23)
+    EncountersDone = 254 | EncountersDone
+    BuildingsSeen = 254 | BuildingsSeen
+    RedrawView()
+    HoldMove = SkipMove
+    CallRedraw()
+    Scratch7 = 4
+    CapLizardCounts()
+    if Scratch4 < 2 { exit }
+    SetupMonster(GiantLizard, distance=1, closeup=GiantLizard)
+    Text("YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!")
+    Surprise = NoSurprise
+    Morale = 100
+    Approach()
+    Delay()
+    PartyHit = 254
+    PartyMove = 252
+    ClearMonsters()
+    LoadMonster(GiantLizard, count=Scratch4, icon=GiantLizard)
+    Combat()
+    CountLizardKills()
+    exit
 
 BlockedStairs:
-	Print "YOU FIND AN OLD AND PARTIALLY BLOCKED SET OF STAIRS LEADING DOWN INTO THE DARK. DO YOU TAKE THEM?"
-	Goto GoDownMenu
+    Print("YOU FIND AN OLD AND PARTIALLY BLOCKED SET OF STAIRS LEADING DOWN INTO THE DARK. DO YOU TAKE THEM?")
+    goto GoDownMenu
 
-WordRubble:
-	Print "RUBBLE"
-	Return
+def WordRubble() {
+    Print("RUBBLE")
+    return
+}
 
-WordSwamp:
-	Print "SWAMP"
-	Return
-
-DestX:
-	Data 1 13 4 4 10 7 10
-
-DestY:
-	Data 7 1 15 5 4 10 8
-
-DestFacing:
-	Data 2 2 0 2 3 1 2
+def WordSwamp() {
+    Print("SWAMP")
+    return
+}
 
 FindTreasure:
-	Scratch10 = EncountersDone & 1
-	if Scratch10 != 0 || Search != 1: Exit
-	PrintClear "YOU FIND SOME TREASURE!"
-	Gosub TakeItMenu
-	IfNe
-	Exit
-	EncountersDone |= 1
-	ClearMonsters
-	Treasure 0 0 0 #03E8 0 1 1 255
-	Combat
-	Exit
+    Scratch10 = EncountersDone & TreasureFound
+    if Scratch10 != 0 or Search != Searching { exit }
+    Text("YOU FIND SOME TREASURE!")
+    if TakeItMenu() == "NO" { exit }
+    EncountersDone |= TreasureFound
+    ClearMonsters()
+    Treasure(gold=1000, gems=1, jewelry=1)
+    Combat()
+    exit
 
 OldLizardman:
-	if OldLizardmanFlags lacks StillToMeet: Goto BuildingEncounter
-	PrintClear "AN OLD LIZARDMAN APPEARS BEFORE YOU, HAND RAISED IN A GESTURE OF PEACE."
-	Delay
-	EncounterMenu Lizardman distance=0 closeup=NoPicture13 result=Scratch10 combat=Attack wait=Talk flee=Talk advance=Talk parlay=Talk near="HE LOOKS AT YOU PATIENTLY." escape=6 strength=6
-	OnGoto Scratch10 PushBack SlayOldLizardman PushBack AskFriendWord
+    if OldLizardmanFlags lacks StillToMeet { goto BuildingEncounter }
+    Text("AN OLD LIZARDMAN APPEARS BEFORE YOU, HAND RAISED IN A GESTURE OF PEACE.")
+    Delay()
+    EncounterMenu(Lizardman, distance=0, closeup=NoPicture13, result=Scratch10, combat=Attack, wait=Talk,
+        flee=Talk, advance=Talk, parlay=Talk, near="HE LOOKS AT YOU PATIENTLY.", escape=6,
+        strength=6)
+    goto [PushBack, SlayOldLizardman, PushBack, AskFriendWord][Scratch10]
 
 SlayOldLizardman:
-	PrintClear "YOU LASH OUT WITH YOUR WEAPON DEALING ONE SWIFT, DEADLY BLOW. THE OLD LIZARD MAN TOTTERS FOR A MOMENT WITH A SURPRISED LOOK ON HIS FACE, AND THEN COLLAPSES."
+    Text("YOU LASH OUT WITH YOUR WEAPON DEALING ONE SWIFT, DEADLY BLOW. THE OLD LIZARD MAN TOTTERS FOR A MOMENT WITH A SURPRISED LOOK ON HIS FACE, AND THEN COLLAPSES.")
 
 OldLizardmanGone:
-	RedrawView
-	Call CallRedraw
-	Delay
-	Delay
-	OldLizardmanFlags &= ~StillToMeet
-	OldLizardmanFlags |= MetOrKilled
+    RedrawView()
+    CallRedraw()
+    Delay()
+    Delay()
+    OldLizardmanFlags &= ~StillToMeet
+    OldLizardmanFlags |= MetOrKilled
 
 BuildingEncounter:
-	OnGoto Scratch9 LizardPatrol GiantLizards JavelinAmbush
+    goto [LizardPatrol, GiantLizards, JavelinAmbush][Scratch9]
 
 PushBack:
-	PartyX = 8
-	PartyY = 12
-	Facing = South
+    PartyX = 8
+    PartyY = 12
+    Facing = South
 
 HoldRedrawExit:
-	HoldMove = SkipMove
-	Goto RedrawExit
+    HoldMove = SkipMove
+    goto RedrawExit
 
 AskFriendWord:
-	PrintClear "A GROUP OF HUMANS WERE DESCRIBED TO ME BY THREE OF OUR PEOPLE WHOM THEY RESCUED. IF YOU ARE THEY YOU WILL HAVE BEEN SHOWN OUR TRIBAL FRIEND-WORD."
-	Gosub PressToContinue
+    Text("A GROUP OF HUMANS WERE DESCRIBED TO ME BY THREE OF OUR PEOPLE WHOM THEY RESCUED. IF YOU ARE THEY YOU WILL HAVE BEEN SHOWN OUR TRIBAL FRIEND-WORD.")
+    PressToContinue()
 
-FriendWordInput:
-	PrintClear "WHAT IS IT?"
-	$Scratch1 = InputString 6
-	PrintClear "DO YOU REALLY MEAN "
-	Print $Scratch1
-	Print "?"
-	if Ask YesNoMenu == "NO": Goto FriendWordInput
-	if $Scratch1 == "SAVIOR": Goto OldLizardmanStory
-	PrintClear "'YOU ARE NOT THEY WHO RESCUED MY CHILDREN, BUT ARE MURDEROUS PIRATES! THEN YOU ARE NOT SAFE HERE!' HE DISAPPEARS WITH AMAZING SPEED INTO THE WILDERNESS AROUND YOU."
-	Goto OldLizardmanGone
+    FriendWordInput:
+    Text("WHAT IS IT?")
+    $Scratch1 = InputString(6)
+    Text("DO YOU REALLY MEAN ")
+    Print($Scratch1)
+    Print("?")
+    if YesNoMenu() == "NO" { goto FriendWordInput }
+    if $Scratch1 == "SAVIOR" { goto OldLizardmanStory }
+    Text("'YOU ARE NOT THEY WHO RESCUED MY CHILDREN, BUT ARE MURDEROUS PIRATES! THEN YOU ARE NOT SAFE HERE!' HE DISAPPEARS WITH AMAZING SPEED INTO THE WILDERNESS AROUND YOU.")
+    goto OldLizardmanGone
 
-OldLizardmanStory:
-	PrintClear "THE OLD LIZARD MAN RECOGNIZES THE WORD AND HIS LIPS PART IN A TOOTHY GRIN. YOU ALL GATHER CLOSE AS HE BEGINS HIS STORY."
-	Delay
-	Delay
-	PrintClear "ONE OF YOU BUSILY SCRIBBLE IT INTO THE JOURNAL AS ENTRY 31."
-	Gosub PressToContinue
-	PrintClear "FROM NEARBY A GROUP OF LIZARD MEN APPEAR. ONE LARGER THAN THE REST MOVES TO THE FRONT, 'YOUR TIME IS THROUGH OLD ONE. YOUR CLAWS ARE BLUNT.'"
-	Gosub PressToContinue
-	PrintClear "'FACE ME OR FIND SOME FOOL TO CHAMPION YOU!' THE OLD LIZARD MAN TURNS TO YOU AND SAYS, 'OUR CAUSE IS ONE. WILL YOU CHAMPION ME?'"
-	if Ask YesNoMenu == "NO": Goto RefuseChampion
-	Scratch1 = SelPartyIndex2
-	Scratch2 = 0
+    OldLizardmanStory:
+    Text("THE OLD LIZARD MAN RECOGNIZES THE WORD AND HIS LIPS PART IN A TOOTHY GRIN. YOU ALL GATHER CLOSE AS HE BEGINS HIS STORY.")
+    Delay()
+    Delay()
+    Text("ONE OF YOU BUSILY SCRIBBLE IT INTO THE JOURNAL AS ENTRY 31.")
+    PressToContinue()
+    Text("FROM NEARBY A GROUP OF LIZARD MEN APPEAR. ONE LARGER THAN THE REST MOVES TO THE FRONT, 'YOUR TIME IS THROUGH OLD ONE. YOUR CLAWS ARE BLUNT.'")
+    PressToContinue()
+    Text("'FACE ME OR FIND SOME FOOL TO CHAMPION YOU!' THE OLD LIZARD MAN TURNS TO YOU AND SAYS, 'OUR CAUSE IS ONE. WILL YOU CHAMPION ME?'")
+    if YesNoMenu() == "NO" { goto RefuseChampion }
+    Scratch1 = SelPartyIndex2
+    Scratch2 = 0
 
-ChooseChampion:
-	Who "WHO WILL BE MY CHAMPION?"
-	if SelStatus == Okay: Goto ChampionDuel
-	PrintClear "PLEASE, BE SERIOUS."
-	Delay
-	Goto ChooseChampion
+    ChooseChampion:
+    Who("WHO WILL BE MY CHAMPION?")
+    if SelStatus == Okay { goto ChampionDuel }
+    Text("PLEASE, BE SERIOUS.")
+    Delay()
+    goto ChooseChampion
 
-ChampionDuel:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	Call CallDuelB
-	LoadMonster Drythh count=1 icon=Lizardman
-	Combat
-	if CombatEnd == PartyFled: Goto ChampionLost
-	if QuestLizardmen != Rewarded: QuestLizardmen = RewardDue
-	PrintClear "SEEING THEIR LEADER FALL, THE OTHER LIZARD MEN WITHDRAW. THE OLD LIZARD MAN TURNS TO YOU, 'YOU HAVE DONE ME GREAT SERVICE. REST ASSURED THAT MY PEOPLE WILL NOT JOIN TYRANTHRAXUS.'"
-	Gosub PressToContinue
-	PrintClear "'STILL MY PEOPLE STILL ARE HOSTILE TO STRANGERS. I THINK IT IS BEST IF YOU LEAVE.' HE TURNS AND DISAPPEARS INTO THE WILDERNESS."
-	Gosub PressToContinue
-	EncountersDone = 255
-	Exit
+    ChampionDuel:
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    CallDuelB()
+    LoadMonster(Drythh, count=1, icon=Lizardman)
+    Combat()
+    if CombatEnd == PartyFled { goto ChampionLost }
+    if QuestLizardmen != Rewarded { QuestLizardmen = RewardDue }
+    Text("SEEING THEIR LEADER FALL, THE OTHER LIZARD MEN WITHDRAW. THE OLD LIZARD MAN TURNS TO YOU, 'YOU HAVE DONE ME GREAT SERVICE. REST ASSURED THAT MY PEOPLE WILL NOT JOIN TYRANTHRAXUS.'")
+    PressToContinue()
+    Text("'STILL MY PEOPLE STILL ARE HOSTILE TO STRANGERS. I THINK IT IS BEST IF YOU LEAVE.' HE TURNS AND DISAPPEARS INTO THE WILDERNESS.")
+    PressToContinue()
+    EncountersDone = 255
+    exit
 
-ChampionLost:
-	PrintClear "DRYTHH TURNS TO HIS CONFIDENT FOLLOWERS, 'KILL THEM!'"
-	Goto DrythhAttacks
+    ChampionLost:
+    Text("DRYTHH TURNS TO HIS CONFIDENT FOLLOWERS, 'KILL THEM!'")
+    goto DrythhAttacks
 
-RefuseChampion:
-	PrintClear "'THEN I MUST FIGHT HIM MYSELF.' THE COMBAT IS EXTREMELY SHORT IN DURATION. WHEN IT IS FINISHED DRYTHH TURNS TO HIS FOLLOWERS, 'KILL THEM!'"
+    RefuseChampion:
+    Text("'THEN I MUST FIGHT HIM MYSELF.' THE COMBAT IS EXTREMELY SHORT IN DURATION. WHEN IT IS FINISHED DRYTHH TURNS TO HIS FOLLOWERS, 'KILL THEM!'")
 
-DrythhAttacks:
-	Gosub PressToContinue
-	Picture None
-	OldLizardmanFlags &= ~StillToMeet
-	OldLizardmanFlags |= MetOrKilled
-	EncounterMenu Lizardman distance=1 closeup=Lizardman result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=6 strength=6
-	OnGoto Scratch10 RedrawExit DrythhFight PushBack
+    DrythhAttacks:
+    PressToContinue()
+    Picture(None)
+    OldLizardmanFlags &= ~StillToMeet
+    OldLizardmanFlags |= MetOrKilled
+    EncounterMenu(Lizardman, distance=1, closeup=Lizardman, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, escape=6, strength=6)
+    goto [RedrawExit, DrythhFight, PushBack][Scratch10]
 
 DrythhFight:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster Drythh count=1 icon=Lizardman
-	LoadMonster Lizardman count=12 icon=Lizardman
-	Combat
-	if CombatEnd == PartyFled: Goto PushBack
-	Exit
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Drythh, count=1, icon=Lizardman)
+    LoadMonster(Lizardman, count=12, icon=Lizardman)
+    Combat()
+    if CombatEnd == PartyFled { goto PushBack }
+    exit
 
 RuinedBuilding:
-	if BuildingsSeen has RubbleBuilding: Goto RuinedBuildingCheck
-	PrintClear "YOU ENTER A BUILDING WHOSE WALLS ARE MORE OR LESS INTACT, THOUGH THE ROOF HAS FALLEN IN. RUBBLE MAKES PASSAGE DIFFICULT."
-	Delay
-	BuildingsSeen |= RubbleBuilding
+    if BuildingsSeen has RubbleBuilding { goto RuinedBuildingCheck }
+    Text("YOU ENTER A BUILDING WHOSE WALLS ARE MORE OR LESS INTACT, THOUGH THE ROOF HAS FALLEN IN. RUBBLE MAKES PASSAGE DIFFICULT.")
+    Delay()
+    BuildingsSeen |= RubbleBuilding
 
-RuinedBuildingCheck:
-	if EncountersDone has 2: Exit
-	Scratch9 = 0
-	Goto OldLizardman
+    RuinedBuildingCheck:
+    if EncountersDone has RubbleBuildingFight { exit }
+    Scratch9 = 0
+    goto OldLizardman
 
 LizardPatrol:
-	PartySurprise Scratch8 Scratch9
-	Surprise Scratch8 Scratch9 0 1
-	if Surprise == PartyIsSurprised: Goto LizardPatrolAmbush
-	Surprise = NoSurprise
-	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU." escape=15 strength=6
-	OnGoto Scratch10 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
+    PartySurprise(Scratch8, Scratch9)
+    Surprise(Scratch8, Scratch9, 0, 1)
+    if Surprise == PartyIsSurprised { goto LizardPatrolAmbush }
+    Surprise = NoSurprise
+    EncounterMenu(Lizardman, distance=2, closeup=Lizardman, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack,
+        near="2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU.", escape=15, strength=6)
+    goto [RedrawExit, LizardPatrolFight, PushBack, LizardPatrolFight][Scratch10]
 
-LizardPatrolAmbush:
-	SetupMonster Lizardman distance=1 closeup=Lizardman
-	PrintClear "SUDDENLY YOU ARE ATTACKED BY TWO LIZARD MEN AND A GIANT LIZARD!"
-	Delay
-	Approach
-	Surprise = PartyIsSurprised
+    LizardPatrolAmbush:
+    SetupMonster(Lizardman, distance=1, closeup=Lizardman)
+    Text("SUDDENLY YOU ARE ATTACKED BY TWO LIZARD MEN AND A GIANT LIZARD!")
+    Delay()
+    Approach()
+    Surprise = PartyIsSurprised
 
 LizardPatrolFight:
-	Scratch7 = 0
-	Morale = 100
-	RedrawView
-	Picture None
-	ClearMonsters
-	LoadMonster Lizardman count=2 icon=Lizardman
-	LoadMonster GiantLizard count=1 icon=GiantLizard
+    Scratch7 = 0
+    Morale = 100
+    RedrawView()
+    Picture(None)
+    ClearMonsters()
+    LoadMonster(Lizardman, count=2, icon=Lizardman)
+    LoadMonster(GiantLizard, count=1, icon=GiantLizard)
 
 LizardCombat:
-	Combat
-	Gosub CountLizardKills
-	if CombatEnd == PartyFled: Goto PushBack
+    Combat()
+    CountLizardKills()
+    if CombatEnd == PartyFled { goto PushBack }
 
 MarkEncounterDone:
-	alias EncounterBit = Scratch1
-	EncounterBit = EncounterBitTable[Scratch7]
-	EncountersDone |= EncounterBit
-	Exit
-
-EncounterBitTable:
-	Data 2 8 4
+    Scratch1 = EncounterBitTable[Scratch7]
+    EncountersDone |= Scratch1
+    exit
 
 CentralKeep:
-	if BuildingsSeen has CentralKeepSeen: Goto CentralKeepCheck
-	PrintClear "YOU ENTER THE REMAINS OF THE CENTRAL KEEP. THE CEILING AND WALLS HAVE COLLAPSED TO THE POINT WHERE THE INTERIOR IS CHOKED WITH RUBBLE."
-	BuildingsSeen |= CentralKeepSeen
-	Delay
+    if BuildingsSeen has CentralKeepSeen { goto CentralKeepCheck }
+    Text("YOU ENTER THE REMAINS OF THE CENTRAL KEEP. THE CEILING AND WALLS HAVE COLLAPSED TO THE POINT WHERE THE INTERIOR IS CHOKED WITH RUBBLE.")
+    BuildingsSeen |= CentralKeepSeen
+    Delay()
 
-CentralKeepCheck:
-	Scratch9 = 2
-	if EncountersDone lacks 4: Goto OldLizardman
-	if Scratch1 == 0: Exit
-	Goto SearchForTunnel
+    CentralKeepCheck:
+    Scratch9 = 2
+    if EncountersDone lacks CentralKeepFight { goto OldLizardman }
+    if Scratch1 == 0 { exit }
+    goto SearchForTunnel
 
 JavelinAmbush:
-	Surprise = NoSurprise
-	Morale = 50
-	Scratch7 = 2
-	Gosub CapLizardCounts
-	if Scratch5 < 2: Goto MarkEncounterDone
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "SUDDENLY LIZARD MEN JUMP UP FROM WHERE THEY WERE HIDING AND THROW JAVELINS AT YOU."
-	if Scratch4 > 1: Print " AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS."
-	Delay
-	Damage Scratch5 1 6 0 42
-	PartyHit = 253
-	PartyMove = 252
-	ClearMonsters
-	LoadMonster Lizardman count=Scratch5 icon=Lizardman
-	if Scratch4 != 0: LoadMonster GiantLizard count=Scratch4 icon=GiantLizard
-	Goto LizardCombat
+    Surprise = NoSurprise
+    Morale = 50
+    Scratch7 = 2
+    CapLizardCounts()
+    if Scratch5 < 2 { goto MarkEncounterDone }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("SUDDENLY LIZARD MEN JUMP UP FROM WHERE THEY WERE HIDING AND THROW JAVELINS AT YOU.")
+    if Scratch4 > 1 { Print(" AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS.") }
+    Delay()
+    Damage(Scratch5, 1, 6, 0, 42)
+    PartyHit = 253
+    PartyMove = 252
+    ClearMonsters()
+    LoadMonster(Lizardman, count=Scratch5, icon=Lizardman)
+    if Scratch4 != 0 { LoadMonster(GiantLizard, count=Scratch4, icon=GiantLizard) }
+    goto LizardCombat
 
 LShapedBuilding:
-	if BuildingsSeen has LShapedSeen: Goto LShapedBuildingCheck
-	PrintClear "YOU HAVE ENTERED AN L-SHAPED BUILDING. IT IS REASONALBLY INTACT... THERE ARE EVEN PORTIONS OF ROOF OVERHEAD!"
-	Delay
-	BuildingsSeen |= LShapedSeen
+    if BuildingsSeen has LShapedSeen { goto LShapedBuildingCheck }
+    Text("YOU HAVE ENTERED AN L-SHAPED BUILDING. IT IS REASONALBLY INTACT... THERE ARE EVEN PORTIONS OF ROOF OVERHEAD!")
+    Delay()
+    BuildingsSeen |= LShapedSeen
 
-LShapedBuildingCheck:
-	if EncountersDone has 8: Exit
-	Scratch9 = 1
-	Goto OldLizardman
+    LShapedBuildingCheck:
+    if EncountersDone has LShapedBuildingFight { exit }
+    Scratch9 = 1
+    goto OldLizardman
 
 GiantLizards:
-	PartySurprise Scratch8 Scratch9
-	Surprise Scratch8 Scratch9 0 0
-	if Surprise == PartyIsSurprised: Goto GiantLizardsAmbush
-	Surprise = NoSurprise
-	EncounterMenu GiantLizard distance=2 closeup=GiantLizard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="3 GIANT LIZARDS CHARGE TOWARD YOU." escape=15 strength=15
-	OnGoto Scratch10 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
+    PartySurprise(Scratch8, Scratch9)
+    Surprise(Scratch8, Scratch9, 0, 0)
+    if Surprise == PartyIsSurprised { goto GiantLizardsAmbush }
+    Surprise = NoSurprise
+    EncounterMenu(GiantLizard, distance=2, closeup=GiantLizard, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, near="3 GIANT LIZARDS CHARGE TOWARD YOU.",
+        escape=15, strength=15)
+    goto [RedrawExit, GiantLizardsFight, PushBack, GiantLizardsFight][Scratch10]
 
-GiantLizardsAmbush:
-	SetupMonster GiantLizard distance=1 closeup=GiantLizard
-	Delay
-	Approach
-	PrintClear "SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!"
-	Surprise = PartyIsSurprised
+    GiantLizardsAmbush:
+    SetupMonster(GiantLizard, distance=1, closeup=GiantLizard)
+    Delay()
+    Approach()
+    Text("SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!")
+    Surprise = PartyIsSurprised
 
 GiantLizardsFight:
-	Scratch7 = 1
-	Morale = 100
-	ClearMonsters
-	LoadMonster GiantLizard count=3 icon=GiantLizard
-	Goto LizardCombat
+    Scratch7 = 1
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(GiantLizard, count=3, icon=GiantLizard)
+    goto LizardCombat
 
 StairsUp:
-	PrintClear "YOU FIND A SET OF STAIRS LEADING UP."
-	Goto GoUpMenu
+    Text("YOU FIND A SET OF STAIRS LEADING UP.")
+    goto GoUpMenu
 
 TunnelSlopesUp:
-	PrintClear "THE TUNNEL BEGINS TO SLOPE UP."
+    Text("THE TUNNEL BEGINS TO SLOPE UP.")
 
 GoUpMenu:
-	Print " DO YOU GO UP?"
-	HoldMove = SkipMove
-	if Ask YesNoMenu == "NO": Exit
-	PartyX = UpExitXTable[Scratch1]
-	PartyY = UpExitYTable[Scratch1]
-	LoadMap 16 unused=2 icons=255
-	LoadWalls 9 20 23
-	Goto HoldRedrawExit
-
-UpExitXTable:
-	Data 10 9 6 3 5 7 9
-
-UpExitYTable:
-	Data 4 6 6 7 12 9 8
+    Print(" DO YOU GO UP?")
+    HoldMove = SkipMove
+    if YesNoMenu() == "NO" { exit }
+    PartyX = UpExitXTable[Scratch1]
+    PartyY = UpExitYTable[Scratch1]
+    LoadMap(16, unused=2, icons=255)
+    LoadWalls(9, 20, 23)
+    goto HoldRedrawExit
 
 PoolLizardmen:
-	Scratch7 = 3
-	Gosub CapLizardCounts
-	Scratch8 = 1
-	if Scratch5 < 3: Goto DeepPool
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. "
-	Delay
-	Damage Scratch5 1 6 0 44
-	if BuildingsSeen lacks PoolLizardsDived: Goto LizardmenDive
-	PartySurprise Scratch8 Scratch9
-	Surprise Scratch8 Scratch9 0 0
-	if Surprise == PartyIsSurprised: Goto LizardmenDive
-	Surprise = MonstersAreSurprised
-	EncounterMenu Lizardman distance=0 closeup=Lizardman result=Scratch10 combat=Flee wait=Flee flee=Flee advance=Flee parlay=Flee near="THEY TURN TO DIVE BACK IN THE WATER." escape=0 strength=0
-	OnGoto Scratch10 LizardmenDive PoolLizardmenFight
+    Scratch7 = 3
+    CapLizardCounts()
+    Scratch8 = 1
+    if Scratch5 < 3 { goto DeepPool }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. ")
+    Delay()
+    Damage(Scratch5, 1, 6, 0, 44)
+    if BuildingsSeen lacks PoolLizardsDived { goto LizardmenDive }
+    PartySurprise(Scratch8, Scratch9)
+    Surprise(Scratch8, Scratch9, 0, 0)
+    if Surprise == PartyIsSurprised { goto LizardmenDive }
+    Surprise = MonstersAreSurprised
+    EncounterMenu(Lizardman, distance=0, closeup=Lizardman, result=Scratch10, combat=Flee, wait=Flee,
+        flee=Flee, advance=Flee, parlay=Flee, near="THEY TURN TO DIVE BACK IN THE WATER.", escape=0,
+        strength=0)
+    goto [LizardmenDive, PoolLizardmenFight][Scratch10]
 
 LizardmenDive:
-	Scratch8 = 0
-	BuildingsSeen |= PoolLizardsDived
-	PrintClear "BEFORE YOU CAN REACT THEY TURN AND DIVE BACK INTO THE WATER."
-	Delay
-	Goto DeepPool
+    Scratch8 = 0
+    BuildingsSeen |= PoolLizardsDived
+    Text("BEFORE YOU CAN REACT THEY TURN AND DIVE BACK INTO THE WATER.")
+    Delay()
+    goto DeepPool
 
 PoolLizardmenFight:
-	PrintClear "BEFORE THEY CAN RETURN TO THE WATER YOU ENGAGE THEM. THEY TURN AND FIGHT FANATICALLY."
-	Morale = 100
-	PartyHit = 254
-	PartyMove = 252
-	ClearMonsters
-	LoadMonster Lizardman count=Scratch5 icon=Lizardman
-	Combat
-	Gosub CountLizardKills
-	Scratch8 = 1
-	if CombatEnd != PartyFled: Goto DeepPool
-	Gosub FindPoolCell
-	IfNe
-	Exit
-	PartyX = PoolExitXTable[Scratch10]
-	PartyY = PoolExitYTable[Scratch10]
-	Facing = PoolExitFacingTable[Scratch10]
-	Goto HoldRedrawExit
-
-PoolCellTable:
-	Data 24 25 26 27 28 29 30 31 32 33 34
-
-PoolExitXTable:
-	Data 6 4 4 10 10 9 7 7 4 10 12
-
-PoolExitYTable:
-	Data 5 7 9 10 10 4 5 5 13 10 3
-
-PoolExitFacingTable:
-	Data 2 0 0 0 0 1 2 0 2 0 0
-
-PoolTreasureBitTable:
-	Data 1 2 4 8 16 32 64 128 2 4 32
-
-PoolTreasureTable:
-	Data 255 255 255 31 31 32 255 255 255 255 31
+    Text("BEFORE THEY CAN RETURN TO THE WATER YOU ENGAGE THEM. THEY TURN AND FIGHT FANATICALLY.")
+    Morale = 100
+    PartyHit = 254
+    PartyMove = 252
+    ClearMonsters()
+    LoadMonster(Lizardman, count=Scratch5, icon=Lizardman)
+    Combat()
+    CountLizardKills()
+    Scratch8 = 1
+    if CombatEnd != PartyFled { goto DeepPool }
+    FindPoolCell()
+    if (!=) { exit }
+    PartyX = PoolExitXTable[Scratch10]
+    PartyY = PoolExitYTable[Scratch10]
+    Facing = PoolExitFacingTable[Scratch10]
+    goto HoldRedrawExit
 
 DeepPool:
-	RedrawView
-	Picture None
-	PrintClear "YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?"
-	if Ask YesNoMenu == "NO": Exit
-	OnGoto Scratch8 PoolGuarded PoolSearch
+    RedrawView()
+    Picture(None)
+    Text("YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?")
+    if YesNoMenu() == "NO" { exit }
+    goto [PoolGuarded, PoolSearch][Scratch8]
 
 PoolGuarded:
-	PrintClear "YOU DIVE INTO THE POOL AND BEGIN TO SEARCH BY TOUCH. SUDDENLY BEFORE YOUR CLOUDED VISION YOU SEE SOME LIZARD MEN..."
-	Delay
-	Damage 5 2 2 0 48
-	Damage 5 1 8 0 48
-	PrintClear "YOU MANAGE TO GET OUT OF THE POOL BEFORE THEY FINISH YOU OFF."
-	Exit
+    Text("YOU DIVE INTO THE POOL AND BEGIN TO SEARCH BY TOUCH. SUDDENLY BEFORE YOUR CLOUDED VISION YOU SEE SOME LIZARD MEN...")
+    Delay()
+    Damage(5, 2, 2, 0, 48)
+    Damage(5, 1, 8, 0, 48)
+    Text("YOU MANAGE TO GET OUT OF THE POOL BEFORE THEY FINISH YOU OFF.")
+    exit
 
 PoolSearch:
-	alias PoolTreasure = Scratch3
-	alias PoolTreasureBit = Scratch1
-	Gosub FindPoolCell
-	Scratch5 = Scratch10
-	PoolTreasureBit = PoolTreasureBitTable[Scratch10]
-	if PoolTreasureTaken has PoolTreasureBit: Goto PoolEmpty
-	PrintClear "YOU FIND SOME TREASURE."
-	Gosub TakeItMenu
-	IfNe
-	Exit
-	PoolTreasure = PoolTreasureTable[Scratch5]
-	PoolTreasureTaken |= PoolTreasureBit
-	ClearMonsters
-	Treasure 0 #03E8 0 #03E8 0 1 0 PoolTreasure
-	Combat
-	Exit
+    FindPoolCell()
+    Scratch5 = Scratch10
+    Scratch1 = PoolTreasureBitTable[Scratch10]
+    if PoolTreasureTaken has Scratch1 { goto PoolEmpty }
+    Text("YOU FIND SOME TREASURE.")
+    if TakeItMenu() == "NO" { exit }
+    Scratch3 = PoolTreasureTable[Scratch5]
+    PoolTreasureTaken |= Scratch1
+    ClearMonsters()
+    Treasure(silver=1000, gold=1000, gems=1, items=Scratch3)
+    Combat()
+    exit
 
-PoolEmpty:
-	PrintClear "YOU SEARCH UNTIL YOU FEEL THE PULSE POUNDING IN YOUR EARS. NOTHING IS FOUND. WITH THAT YOU RESURFACE."
-	Delay
-	Exit
+    PoolEmpty:
+    Text("YOU SEARCH UNTIL YOU FEEL THE PULSE POUNDING IN YOUR EARS. NOTHING IS FOUND. WITH THAT YOU RESURFACE.")
+    Delay()
+    exit
+
+# tables
+Table9A09 = [2, 0, 20, 5, 0]
+Table9A0E = [1, 3, 4, 0, 10]
+Table9B00 = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23]
+Table9B0C = [1, 0, 3, 2, 2, 0, 1, 0, 0, 2, 3, 0]
+Table9B18 = [0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 3]
+Table9B24 = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 5, 6]
+Table9B96 = [1, 2, 4, 5, 6, 7, 8, 9, 10, 3, 16, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+Table9BAC = [0, 1, 1, 1, 2, 2, 2, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+Table9BC2 = [0, 0, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 1, 2, 5]
+DestX = [1, 13, 4, 4, 10, 7, 10]
+DestY = [7, 1, 15, 5, 4, 10, 8]
+DestFacing = [2, 2, 0, 2, 3, 1, 2]
+EncounterBitTable = [2, 8, 4]
+UpExitXTable = [10, 9, 6, 3, 5, 7, 9]
+UpExitYTable = [4, 6, 6, 7, 12, 9, 8]
+PoolCellTable = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+PoolExitXTable = [6, 4, 4, 10, 10, 9, 7, 7, 4, 10, 12]
+PoolExitYTable = [5, 7, 9, 10, 10, 4, 5, 5, 13, 10, 3]
+PoolExitFacingTable = [2, 0, 0, 0, 0, 1, 2, 0, 2, 0, 0]
+PoolTreasureBitTable = [1, 2, 4, 8, 16, 32, 64, 128, 2, 4, 32]
+PoolTreasureTable = [255, 255, 255, 31, 31, 32, 255, 255, 255, 255, 31]

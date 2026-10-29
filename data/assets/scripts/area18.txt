@@ -1,719 +1,713 @@
-event2:
-	if PatrolsBeaten >= 64: Gosub RestSafe
-	RestEvery = 2
-	RestChance = 16
-	if Cell == 132: RestEvery = 0
-	if Cell == 138: RestEvery = 0
-	if PodalPlazaCleared > 253: RestEvery = 0
-	Exit
+on camp {
+    if PatrolsBeaten >= 64 { RestSafe() }
+    RestEvery = 2
+    RestChance = 16
+    if Cell == 132 { RestEvery = 0 }
+    if Cell == 138 { RestEvery = 0 }
+    if PodalPlazaCleared > 253 { RestEvery = 0 }
+    exit
+}
 
-RestSafe:
-	RestEvery = 1
-	RestChance = 99
-	Return
+def RestSafe() {
+    RestEvery = 1
+    RestChance = 99
+    return
+}
 
-event3:
-	Gosub RollPatrol
-	SetupMonster EncMonster distance=2 closeup=EncMonster
-	Goto PatrolFight
+on rest {
+    RollPatrol()
+    SetupMonster(EncMonster, distance=2, closeup=EncMonster)
+    goto PatrolFight
+}
 
-event4:
-	LoadMap 18 unused=2 icons=255
-	LoadWalls 1 3 5
-	NoCoords = 0
-	if AreaKind == 18: Exit
-	if QuestPodalAuction != AuctionOn: Goto ResetPatrols
-	PatrolsBeaten = 64
-	DisguiseState = NotChosen
-	Exit
+on load {
+    LoadMap(18, unused=2, icons=255)
+    LoadWalls(1, 3, 5)
+    NoCoords = 0
+    if AreaKind == PodolPlaza { exit }
+    if QuestPodalAuction != AuctionOn { goto ResetPatrols }
+    PatrolsBeaten = 64
+    DisguiseState = NotChosen
+    exit
 
-ResetPatrols:
-	if PodalPlazaCleared < RewardDue: PatrolsBeaten = 0
-	DisguiseState = CoverBroken
-	Exit
+    ResetPatrols:
+    if PodalPlazaCleared < RewardDue { PatrolsBeaten = 0 }
+    DisguiseState = CoverBroken
+    exit
+}
 
-event0:
-	if LeftMap == 0: Goto PlazaApproach
-	Call CallStepForward
-	HoldMove = SkipMove
-	NoCoords = 0
-	OnGoto Facing ExitNorth ExitEast ExitSouth ExitWest
+on move {
+    if LeftMap == 0 { goto PlazaApproach }
+    CallStepForward()
+    HoldMove = SkipMove
+    NoCoords = 0
+    goto [ExitNorth, ExitEast, ExitSouth, ExitWest][Facing]
+} # falls into ExitNorth
 
 ExitNorth:
-	EnterArea StojanowGate
+    EnterArea(StojanowGate)
 
 ExitEast:
-	EnterArea KutosWell
+    EnterArea(KutosWell)
 
 ExitSouth:
-	EnterArea HobgoblinBarracks
+    EnterArea(HobgoblinBarracks)
 
 ExitWest:
-	SetMapXY 11 28
-	EnterArea Wilderness
+    MapX = 11
+    MapY = 28
+    EnterArea(Wilderness)
 
 PlazaApproach:
-	alias Choice = Scratch1
-	if Hours < 14: Sky = 11
-	also if Hours >= 14: Sky = 8
-	if DisguiseState != NotChosen: Exit
-	Choice = VMenu "THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?" "STRIDE BOLDLY FORWARD!" "DISGUISE PARTY AS MONSTERS." "SNEAK, REMAINING UNSEEN"
-	DisguiseState = DisguiseChoiceTable[Choice]
-	Exit
+    if Hours < 14 {
+        Sky = 11
+    } else {
+        Sky = 8
+    }
+    if DisguiseState != NotChosen { exit }
+    Scratch1 = VMenu("THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?", "STRIDE BOLDLY FORWARD!",
+        "DISGUISE PARTY AS MONSTERS.", "SNEAK, REMAINING UNSEEN")
+    DisguiseState = DisguiseChoiceTable[Scratch1]
+    exit
 
-event1:
-	Scratch1 = Cell & 127
-	OnGoto Scratch1 StreetSquare AuctionStart TavernEnter ThePittSign IlmaterTemple BaneShrine RobedOrc AbandonedShop DecayedBuilding RememberBuilding Done Done
+on step {
+    Scratch1 = Cell & ~Inside
+    goto [StreetSquare, AuctionStart, TavernEnter, ThePittSign, IlmaterTemple, BaneShrine, RobedOrc,
+        AbandonedShop, DecayedBuilding, RememberBuilding, Done, Done][Scratch1]
+} # falls into StreetSquare
 
 StreetSquare:
-	Scratch1 = Random 25
-	if PatrolsBeaten < 64: Goto StreetSquareEarly
-	if Scratch1 < 3: Goto OverhearRumor
-	if Scratch1 > 21: Goto PatrolMeet
-	if Search == 1: Compare Scratch1 16
-	IfGt
-	Goto PatrolMeet
-	Goto Done
+    Scratch1 = Random(25)
+    if PatrolsBeaten < 64 { goto StreetSquareEarly }
+    if Scratch1 < 3 { goto OverhearRumor }
+    if Scratch1 > 21 { goto PatrolMeet }
+    if Search == Searching { Compare(Scratch1, 16) }
+    if Scratch1 > 16 { goto PatrolMeet }
+    goto Done
 
-StreetSquareEarly:
-	if PatrolsBeaten >= 9: Goto SlumsCleared9
-	if Scratch1 == 0: Goto PatrolMeet
-	if Search == 1: Compare Scratch1 18
-	IfGt
-	Goto PatrolMeet
-	Goto Done
+    StreetSquareEarly:
+    if PatrolsBeaten >= 9 { goto SlumsCleared9 }
+    if Scratch1 == 0 { goto PatrolMeet }
+    if Search == Searching { Compare(Scratch1, 18) }
+    if Scratch1 > 18 { goto PatrolMeet }
+    goto Done
 
-PatrolMeet:
-	Gosub RollPatrol
-	if DisguiseState == CoverBroken: Goto PatrolEncounterMenu
-	if DisguiseState == NotChosen: Goto PatrolEncounterMenu
-	SetupMonster EncMonster distance=2 closeup=EncMonster
-	Delay
-	Gosub SpotPatrol
-	Approach
-	Delay
-	if DisguiseState == Disguised: Goto SneakPast
-	Scratch1 = Random 1
-	OnGoto Scratch1 PatrolGlare PatrolCheckOut
+    PatrolMeet:
+    RollPatrol()
+    if DisguiseState == CoverBroken { goto PatrolEncounterMenu }
+    if DisguiseState == NotChosen { goto PatrolEncounterMenu }
+    SetupMonster(EncMonster, distance=2, closeup=EncMonster)
+    Delay()
+    SpotPatrol()
+    Approach()
+    Delay()
+    if DisguiseState == Disguised { goto SneakPast }
+    Scratch1 = Random(1)
+    goto [PatrolGlare, PatrolCheckOut][Scratch1]
 
 PatrolGlare:
-	Print "THEY GLARE AT YOUR PARTY, "
-	Goto DisguiseCheck
+    Print("THEY GLARE AT YOUR PARTY, ")
+    goto DisguiseCheck
 
 PatrolCheckOut:
-	Print "THEY CHECK OUT YOUR PARTY, "
+    Print("THEY CHECK OUT YOUR PARTY, ")
 
 DisguiseCheck:
-	Delay
-	Approach
-	Scratch10 = 5
-	Scratch1 = 0
+    Delay()
+    Approach()
+    Scratch10 = 5
+    Scratch1 = 0
 
 DisguiseCheckMember:
-	SelectMember Scratch1
-	if SelRace == Human: Goto DisguiseCheckNext
-	Scratch10 += 5
+    SelectMember(Scratch1)
+    if SelRace == Human { goto DisguiseCheckNext }
+    Scratch10 += 5
 
-DisguiseCheckNext:
-	Scratch1 += 1
-	if Scratch1 < 8: Goto DisguiseCheckMember
-	Scratch9 = Random 100
-	if Scratch9 > Scratch10: Goto PatrolWalkOn
+    DisguiseCheckNext:
+    Scratch1 += 1
+    if Scratch1 < 8 { goto DisguiseCheckMember }
+    Scratch9 = Random(100)
+    if Scratch9 > Scratch10 { goto PatrolWalkOn }
 
 PatrolDemandWho:
-	Print "AND DEMAND, 'WHO ARE YOU?'"
-	Approach
-	Scratch1 = Parlay 0 1 2 3 4
-	OnGoto Scratch1 PatrolGrumble HereForBoss SettlersKillThem SettlersKillThem PatrolGrumble
+    Print("AND DEMAND, 'WHO ARE YOU?'")
+    Approach()
+    Scratch1 = Parlay(0, 1, 2, 3, 4)
+    goto [PatrolGrumble, HereForBoss, SettlersKillThem, SettlersKillThem, PatrolGrumble][Scratch1]
 
 SettlersKillThem:
-	PrintClear "THEY YELL 'SETTLERS! KILL THEM!'"
-	Goto PatrolFight
+    Text("THEY YELL 'SETTLERS! KILL THEM!'")
+    goto PatrolFight
 
 HereForBoss:
-	Scratch1 = Random 30
-	if SelReaction < Scratch1: Goto SettlersKillThem
-	PrintClear "'OH, YOU'RE HERE FOR THE BOSS.'"
-	Goto Done
+    Scratch1 = Random(30)
+    if SelReaction < Scratch1 { goto SettlersKillThem }
+    Text("'OH, YOU'RE HERE FOR THE BOSS.'")
+    goto Done
 
 PatrolGrumble:
-	Scratch1 = Random 50
-	Scratch2 = PartyStrength
-	if Scratch2 < Scratch1: Goto SettlersKillThem
-	PrintClear "THEY GRUMBLE AND MOVE ON."
-	Goto Done
+    Scratch1 = Random(50)
+    Scratch2 = PartyStrength()
+    if Scratch2 < Scratch1 { goto SettlersKillThem }
+    Text("THEY GRUMBLE AND MOVE ON.")
+    goto Done
 
 PatrolWalkOn:
-	Scratch1 = Random 1
-	OnGoto Scratch1 WalkOn LaughWalkOn
+    Scratch1 = Random(1)
+    goto [WalkOn, LaughWalkOn][Scratch1]
 
 WalkOn:
-	Print "AND WALK ON."
-	Goto Done
+    Print("AND WALK ON.")
+    goto Done
 
 LaughWalkOn:
-	Print "LAUGH TO THEMSELVES AND WALK ON."
-	Goto Done
+    Print("LAUGH TO THEMSELVES AND WALK ON.")
+    goto Done
 
 SneakPast:
-	Scratch1 = Random 5
-	Gosub PressToContinue
-	OnGoto Scratch1 PatrolDemandWho StopTheyMoveOn StopTheyMoveOn SlipPast SlipPast SlipPast
+    Scratch1 = Random(5)
+    PressToContinue()
+    goto [PatrolDemandWho, StopTheyMoveOn, StopTheyMoveOn, SlipPast, SlipPast, SlipPast][Scratch1]
 
 SlipPast:
-	PrintClear "YOUR PARTY SLIPS PAST THEM."
-	Goto Done
+    Text("YOUR PARTY SLIPS PAST THEM.")
+    goto Done
 
 StopTheyMoveOn:
-	PrintClear "YOU STOP, AND THEY MOVE ON."
-	Goto Done
+    Text("YOU STOP, AND THEY MOVE ON.")
+    goto Done
 
 PatrolEncounterMenu:
-	EncMenuMode = 2
-	if PatrolsBeaten >= 64: EncMenuMode = 0
-	Gosub SpotPatrol
-	EncounterMenu EncMonster distance=EncMenuMode closeup=EncMonster result=Scratch1 combat=Flee wait=Approach flee=Attack advance=Mirror parlay=Talk near="THE MONSTERS STAND READY" mid="THE MONSTERS PREPARE" escape=EncDistance strength=EncDistance
-	Morale = 100
-	OnGoto Scratch1 Done PatrolFight PartyFlees PatrolParlay
+    EncMenuMode = 2
+    if PatrolsBeaten >= 64 { EncMenuMode = 0 }
+    SpotPatrol()
+    EncounterMenu(EncMonster, distance=EncMenuMode, closeup=EncMonster, result=Scratch1, combat=Flee, wait=3,
+        flee=Attack, advance=Mirror, parlay=Talk, near="THE MONSTERS STAND READY",
+        mid="THE MONSTERS PREPARE", escape=EncDistance, strength=EncDistance)
+    Morale = 100
+    goto [Done, PatrolFight, PartyFlees, PatrolParlay][Scratch1]
 
 PatrolFight:
-	Gosub LoadPatrol
-	Morale = EncMorale
-	Combat
-	Gosub CountPatrolBeaten
-	if Cell < 127: Goto CoverBlown
-	if CombatEnd > PartyDied: Goto PartyFlees
-	Goto Done
+    LoadPatrol()
+    Morale = EncMorale
+    Combat()
+    CountPatrolBeaten()
+    if Cell < 127 { goto CoverBlown }
+    if CombatEnd > PartyDied { goto PartyFlees }
+    goto Done
 
-CountPatrolBeaten:
-	if PatrolsBeaten >= 64: Return
-	PatrolsBeaten += 1
-	Return
+def CountPatrolBeaten() {
+    if PatrolsBeaten >= 64 { return }
+    PatrolsBeaten += 1
+    return
+}
 
 Done:
-	RedrawView
-	Picture None
-	Exit
+    RedrawView()
+    Picture(None)
+    exit
 
 PartyFlees:
-	PrintClear "THE PARTY RUNS AND ESCAPES."
-	Facing = Random 3
-	Scratch1 = Random 7
-	Portrait = None
-	PartyX = RandomExitX[Scratch1]
-	PartyY = Scratch1
-	Call CallRedraw
-	NoCoords = 1
+    Text("THE PARTY RUNS AND ESCAPES.")
+    Facing = Random(3)
+    Scratch1 = Random(7)
+    Portrait = None
+    PartyX = RandomExitX[Scratch1]
+    PartyY = Scratch1
+    CallRedraw()
+    NoCoords = 1
 
 CoverBlown:
-	if DisguiseState == NotChosen: Exit
-	if DisguiseState == CoverBroken: Exit
-	DisguiseState = CoverBroken
-	Gosub PressToContinue
-	PrintClear "YOUR COVER IS BLOWN."
-	Goto Done
+    if DisguiseState == NotChosen { exit }
+    if DisguiseState == CoverBroken { exit }
+    DisguiseState = CoverBroken
+    PressToContinue()
+    Text("YOUR COVER IS BLOWN.")
+    goto Done
 
 PatrolParlay:
-	if DisguiseState == CoverBroken && PatrolsBeaten == 64: Goto PatrolFight
-	Scratch1 = Parlay 10 20 20 20 30
-	Scratch2 = Random 50
-	Scratch1 = Scratch1 + Scratch2
-	Scratch2 = SelReaction * 2
-	Scratch1 = Scratch1 + Scratch2
-	Scratch2 = EncParlayTable[EncType]
-	Scratch1 = Scratch1 + Scratch2
-	if Scratch1 < 112: Goto ParlayMoveIt
-	PrintClear "'WE'LL LET YOU OFF THIS TIME.' THE MONSTERS SCUTTLE AWAY."
-	Goto Done
+    if DisguiseState == CoverBroken and PatrolsBeaten == 64 { goto PatrolFight }
+    Scratch1 = Parlay(10, 20, 20, 20, 30)
+    Scratch2 = Random(50)
+    Scratch1 = Scratch1 + Scratch2
+    Scratch2 = SelReaction * 2
+    Scratch1 = Scratch1 + Scratch2
+    Scratch2 = EncParlayTable[EncType]
+    Scratch1 = Scratch1 + Scratch2
+    if Scratch1 < 112 { goto ParlayMoveIt }
+    Text("'WE'LL LET YOU OFF THIS TIME.' THE MONSTERS SCUTTLE AWAY.")
+    goto Done
 
-ParlayMoveIt:
-	if Scratch1 < 90: Goto ParlayTeachLesson
-	PrintClear "'MOVE IT, TROLL-BAIT!' THEY SNARL AND MOVE OFF."
-	Goto Done
+    ParlayMoveIt:
+    if Scratch1 < 90 { goto ParlayTeachLesson }
+    Text("'MOVE IT, TROLL-BAIT!' THEY SNARL AND MOVE OFF.")
+    goto Done
 
-ParlayTeachLesson:
-	PrintClear "'WE'RE GONNA HAVE TA TEACH YOU A LESSON!'"
-	Goto PatrolFight
+    ParlayTeachLesson:
+    Text("'WE'RE GONNA HAVE TA TEACH YOU A LESSON!'")
+    goto PatrolFight
 
-RollPatrol:
-	Scratch1 = Random 8
-	EncExtraCount = 0
-	EncType = EncTypeTable[Scratch1]
-	EncParlayMod = EncParlayTable[EncType]
-	EncMonster = EncMonsterTable[EncType]
-	OnGoto Scratch1 PatrolGoblins PatrolGoblins PatrolGoblins PatrolGoblins PatrolOrcs PatrolOrcs PatrolOrcs PatrolHobgoblins PatrolOgres
+def RollPatrol() {
+    Scratch1 = Random(8)
+    EncExtraCount = 0
+    EncType = EncTypeTable[Scratch1]
+    EncParlayMod = EncParlayTable[EncType]
+    EncMonster = EncMonsterTable[EncType]
+    goto [PatrolGoblins, PatrolGoblins, PatrolGoblins, PatrolGoblins, PatrolOrcs, PatrolOrcs,
+        PatrolOrcs, PatrolHobgoblins, PatrolOgres][Scratch1]
+} # falls into PatrolGoblins
 
 PatrolGoblins:
-	$AuxCounter = " GOBLINS"
-	Goto RollPatrolCount
+    $AuxCounter = " GOBLINS"
+    goto RollPatrolCount
 
 PatrolOrcs:
-	$AuxCounter = " ORCS"
-	Goto RollPatrolCount
+    $AuxCounter = " ORCS"
+    goto RollPatrolCount
 
 PatrolHobgoblins:
-	$AuxCounter = " HOBGOBLINS"
-	Goto RollPatrolCount
+    $AuxCounter = " HOBGOBLINS"
+    goto RollPatrolCount
 
 PatrolOgres:
-	$AuxCounter = " OGRES"
+    $AuxCounter = " OGRES"
 
 RollPatrolCount:
-	Scratch1 = PartyStrength
-	Scratch2 = EncStrengthTable[EncType]
-	Scratch1 = Scratch1 / Scratch2
-	Scratch1 = Scratch1 / 3
-	Scratch2 = Random Scratch1
-	Scratch1 = Scratch1 + Scratch2
-	if 64 == PatrolsBeaten && CoverBroken == DisguiseState: Scratch1 = 2 * Scratch1
-	if Scratch1 < 2: Scratch1 = 2
-	Scratch2 = EncMinCountTable[EncType]
-	if Scratch1 < Scratch2: Goto SetPatrolCount
-	EncExtraCount = EncExtraTable[EncType]
-	if Scratch1 > 50: Scratch1 = 50
+    Scratch1 = PartyStrength()
+    Scratch2 = EncStrengthTable[EncType]
+    Scratch1 = Scratch1 / Scratch2
+    Scratch1 = Scratch1 / 3
+    Scratch2 = Random(Scratch1)
+    Scratch1 = Scratch1 + Scratch2
+    if 64 == PatrolsBeaten and CoverBroken == DisguiseState { Scratch1 = 2 * Scratch1 }
+    if Scratch1 < 2 { Scratch1 = 2 }
+    Scratch2 = EncMinCountTable[EncType]
+    if Scratch1 < Scratch2 { goto SetPatrolCount }
+    EncExtraCount = EncExtraTable[EncType]
+    if Scratch1 > 50 { Scratch1 = 50 }
 
-SetPatrolCount:
-	EncCount = Scratch1
-	EncDistance = EncDistanceTable[EncType]
-	Return
+    SetPatrolCount:
+    EncCount = Scratch1
+    EncDistance = EncDistanceTable[EncType]
+    return
 
-LoadPatrol:
-	ClearMonsters
-	Scratch1 = EncCount + EncExtraCount
-	PrintClear Scratch1
-	Print $AuxCounter
-	Print " RUSH TO ATTACK."
-	Scratch1 = EncMonsterTable[EncType]
-	LoadMonster Scratch1 count=EncCount icon=Scratch1
-	EncMorale = EncMoraleTable[EncType]
-	if EncExtraCount == 0: Return
-	EncMorale = EncMorale + 10
-	Scratch1 += 1
-	LoadMonster Scratch1 count=EncExtraCount icon=Scratch1
-	Return
+def LoadPatrol() {
+    ClearMonsters()
+    Scratch1 = EncCount + EncExtraCount
+    Text(Scratch1)
+    Print($AuxCounter)
+    Print(" RUSH TO ATTACK.")
+    Scratch1 = EncMonsterTable[EncType]
+    LoadMonster(Scratch1, count=EncCount, icon=Scratch1)
+    EncMorale = EncMoraleTable[EncType]
+    if EncExtraCount == 0 { return }
+    EncMorale = EncMorale + 10
+    Scratch1 += 1
+    LoadMonster(Scratch1, count=EncExtraCount, icon=Scratch1)
+    return
+}
 
-SpotPatrol:
-	PrintClear "YOU SPOT A GROUP OF"
-	Print $AuxCounter
-	Print ". "
-	Return
+def SpotPatrol() {
+    Text("YOU SPOT A GROUP OF")
+    Print($AuxCounter)
+    Print(". ")
+    return
+}
 
 OverhearRumor:
-	if OverheardIndex == 5: OverheardIndex -= 5
-	if DisguiseState >= AuctionEnded: Goto Done
-	Gosub RollPatrol
-	SetupMonster EncMonster distance=2 closeup=EncMonster
-	Delay
-	PrintClear "AS YOU MOVE YOU OVERHEAR SOME"
-	Approach
-	Delay
-	Print $AuxCounter
-	Print " SAY, "
-	Scratch1 = OverheardIndex
-	OverheardIndex += 1
-	Approach
-	OnGoto Scratch1 RumorBoss RumorOgres RumorBaneTemple RumorLard RumorBidder
+    if OverheardIndex == 5 { OverheardIndex -= 5 }
+    if DisguiseState >= AuctionEnded { goto Done }
+    RollPatrol()
+    SetupMonster(EncMonster, distance=2, closeup=EncMonster)
+    Delay()
+    Text("AS YOU MOVE YOU OVERHEAR SOME")
+    Approach()
+    Delay()
+    Print($AuxCounter)
+    Print(" SAY, ")
+    Scratch1 = OverheardIndex
+    OverheardIndex += AboutOgres
+    Approach()
+    goto [RumorBoss, RumorOgres, RumorBaneTemple, RumorLard, RumorBidder][Scratch1]
 
 RumorBoss:
-	Print "'DO YOU THINK HE'LL REALLY SHOW UP -- THE BOSS I MEAN?'"
-	Goto Done
+    Print("'DO YOU THINK HE'LL REALLY SHOW UP -- THE BOSS I MEAN?'")
+    goto Done
 
 RumorOgres:
-	Print "'MORE OGRES ON THE STREET, SINCE THE GIANTS TOOK OVER THE CASTLE.'"
-	Goto Done
+    Print("'MORE OGRES ON THE STREET, SINCE THE GIANTS TOOK OVER THE CASTLE.'")
+    goto Done
 
 RumorLard:
-	Print "'HE MELTED INTO A PUDDLE OF LARD WHEN HE TOUCHED THE THING!'"
-	Goto Done
+    Print("'HE MELTED INTO A PUDDLE OF LARD WHEN HE TOUCHED THE THING!'")
+    goto Done
 
 RumorBidder:
-	Print "'THE BOSS WILL BE THE GUY BIDDING UP THE PRICE.'"
-	Goto Done
+    Print("'THE BOSS WILL BE THE GUY BIDDING UP THE PRICE.'")
+    goto Done
 
 RumorBaneTemple:
-	Print "'THE PLAZA'S BANE TEMPLE IS RECRUITING FOR MACE AGAIN. GRISHNAK WON'T BE HAPPY.'"
-	Goto Done
+    Print("'THE PLAZA'S BANE TEMPLE IS RECRUITING FOR MACE AGAIN. GRISHNAK WON'T BE HAPPY.'")
+    goto Done
 
 AuctionStart:
-	alias Choice = Scratch1
-	NoCoords = 0
-	if DisguiseState > 253: Exit
-	Picture OldMan
-	PrintClear "THE AUCTIONEER CRIES 'CREATURES OF ALL AGES, WELCOME TO THIS AUCTION FOR AN ITEM BOTH MAGICAL AND POWERFUL!'"
-	Gosub PressToContinue
-	PrintClear "THE AUCTIONEER HAS EITHER A WAND OR STAFF."
-	Gosub PressToContinue
-	Choice = VMenu "DO YOU WISH TO:" "STAND AND LISTEN" "MOVE IN CLOSER" "LISTEN TO COMMENTS" "LEAVE"
-	OnGoto Choice AuctionBidding MoveCloser AuctionComments AuctionLeave
+    NoCoords = 0
+    if DisguiseState > 253 { exit }
+    Picture(OldMan)
+    Text("THE AUCTIONEER CRIES 'CREATURES OF ALL AGES, WELCOME TO THIS AUCTION FOR AN ITEM BOTH MAGICAL AND POWERFUL!'")
+    PressToContinue()
+    Text("THE AUCTIONEER HAS EITHER A WAND OR STAFF.")
+    PressToContinue()
+    Scratch1 = VMenu("DO YOU WISH TO:", "STAND AND LISTEN", "MOVE IN CLOSER", "LISTEN TO COMMENTS", "LEAVE")
+    goto [AuctionBidding, MoveCloser, AuctionComments, AuctionLeave][Scratch1]
 
 AuctionBidding:
-	alias Choice = Scratch1
-	PrintClear "THE BIDDING ESCALATES TO 5,000 GOLD PIECES -- HIGH BID FROM A MAN IN PLAIN CLOTHES, NEXT TO AN OGRE."
-	Gosub PressToContinue
-	Choice = VMenu "DO YOU WISH TO:" "MAKE A BID" "WAIT FOR WINNER" "TRY TO LEAVE"
-	OnGoto Choice MakeBid WaitForWinner AuctionLeave
+    Text("THE BIDDING ESCALATES TO 5,000 GOLD PIECES -- HIGH BID FROM A MAN IN PLAIN CLOTHES, NEXT TO AN OGRE.")
+    PressToContinue()
+    Scratch1 = VMenu("DO YOU WISH TO:", "MAKE A BID", "WAIT FOR WINNER", "TRY TO LEAVE")
+    goto [MakeBid, WaitForWinner, AuctionLeave][Scratch1]
 
 MakeBid:
-	alias Choice = Scratch1
-	PrintClear "YOU UP THE BID. MONSTERS NEARBY TURN, STARE,"
-	Gosub RollSuspicion
-	if CoverBroken == DisguiseState: Goto AuctionCancelled
-	Gosub MonstersTurnAway
-	PrintClear "THE MAN THEN SPEAKS A WORD AND THE AUCTIONEER'S BLOCK IS ENVELOPED IN DARKNESS."
-	Gosub PressToContinue
-	PrintClear "THERE IS MASS CONFUSION. SUDDENLY, THE OGRE SPRINTS FROM THE DARKNESS."
-	Gosub PressToContinue
-	Choice = VMenu "DO YOU:" "FOLLOW THE OGRE" "MOVE QUIETLY AWAY" "LOOK FOR THE MAN IN PLAIN CLOTHES"
-	OnGoto Choice FollowOgre AuctionLeave LookForGarwin
+    Text("YOU UP THE BID. MONSTERS NEARBY TURN, STARE,")
+    RollSuspicion()
+    if CoverBroken == DisguiseState { goto AuctionCancelled }
+    MonstersTurnAway()
+    Text("THE MAN THEN SPEAKS A WORD AND THE AUCTIONEER'S BLOCK IS ENVELOPED IN DARKNESS.")
+    PressToContinue()
+    Text("THERE IS MASS CONFUSION. SUDDENLY, THE OGRE SPRINTS FROM THE DARKNESS.")
+    PressToContinue()
+    Scratch1 = VMenu("DO YOU:", "FOLLOW THE OGRE", "MOVE QUIETLY AWAY", "LOOK FOR THE MAN IN PLAIN CLOTHES")
+    goto [FollowOgre, AuctionLeave, LookForGarwin][Scratch1]
 
 FollowOgre:
-	PrintClear "THE OGRE IS TACKLED AND SEARCHED. HE DOESN'T HAVE THE ITEM ON HIM."
-	Gosub PressToContinue
-	PrintClear "THE MONSTERS LOOK AROUND FOR A SCAPEGOAT. THEIR EYES FALL UPON YOUR PARTY, THEN THEY "
-	Gosub RollSuspicion
-	if CoverBroken == DisguiseState: Goto AuctionCancelled
-	Gosub MonstersTurnAway
-	Goto AuctionOver
+    Text("THE OGRE IS TACKLED AND SEARCHED. HE DOESN'T HAVE THE ITEM ON HIM.")
+    PressToContinue()
+    Text("THE MONSTERS LOOK AROUND FOR A SCAPEGOAT. THEIR EYES FALL UPON YOUR PARTY, THEN THEY ")
+    RollSuspicion()
+    if CoverBroken == DisguiseState { goto AuctionCancelled }
+    MonstersTurnAway()
+    goto AuctionOver
 
 LookForGarwin:
-	PrintClear "'GARWIN, I'LL GET YOU!' CRIES THE AUCTIONEER. HOWEVER, THE MAN HAS ESCAPED IN THE CONFUSION."
-	Goto AuctionOver
+    Text("'GARWIN, I'LL GET YOU!' CRIES THE AUCTIONEER. HOWEVER, THE MAN HAS ESCAPED IN THE CONFUSION.")
+    goto AuctionOver
 
 WaitForWinner:
-	PrintClear "'GOING... GOING... GONE!' THE AUCTIONEER CRIES."
-	Gosub PressToContinue
-	PrintClear "A MAN AND OGRE EXCHANGE THE WAND AND A LARGE BAG, THEN DISAPPEAR INTO THE CROWD."
-	Goto AuctionOver
+    Text("'GOING... GOING... GONE!' THE AUCTIONEER CRIES.")
+    PressToContinue()
+    Text("A MAN AND OGRE EXCHANGE THE WAND AND A LARGE BAG, THEN DISAPPEAR INTO THE CROWD.")
+    goto AuctionOver
 
 AuctionLeave:
-	PrintClear "AS YOU MOVE AWAY THE MONSTERS GLANCE YOUR WAY, "
-	Gosub RollSuspicion
-	if CoverBroken == DisguiseState: Goto AuctionCancelled
-	Gosub MonstersTurnAway
-	PrintClear "THE AUCTION ENDS. YOU DON'T SEE WHO BOUGHT THE ITEM."
-	Goto AuctionOver
+    Text("AS YOU MOVE AWAY THE MONSTERS GLANCE YOUR WAY, ")
+    RollSuspicion()
+    if CoverBroken == DisguiseState { goto AuctionCancelled }
+    MonstersTurnAway()
+    Text("THE AUCTION ENDS. YOU DON'T SEE WHO BOUGHT THE ITEM.")
+    goto AuctionOver
 
 MoveCloser:
-	PrintClear "THE MONSTERS SHOOT YOU ANGRY LOOKS, "
-	Gosub RollSuspicion
-	if CoverBroken == DisguiseState: Goto AuctionCancelled
-	Gosub MonstersTurnAway
-	PrintClear "YOU NOW SEE THE WAND ISN'T A MAJOR ARTIFACT, IT'S ONLY A WAND OF FEAR!"
-	Goto AuctionBidding
+    Text("THE MONSTERS SHOOT YOU ANGRY LOOKS, ")
+    RollSuspicion()
+    if CoverBroken == DisguiseState { goto AuctionCancelled }
+    MonstersTurnAway()
+    Text("YOU NOW SEE THE WAND ISN'T A MAJOR ARTIFACT, IT'S ONLY A WAND OF FEAR!")
+    goto AuctionBidding
 
 AuctionComments:
-	Scratch1 = Random 1
-	OnGoto Scratch1 CommentIllumination CommentCommand
+    Scratch1 = Random(1)
+    goto [CommentIllumination, CommentCommand][Scratch1]
 
 CommentIllumination:
-	PrintClear "'IT'S A WAND OF ILLUMINATION. WHO CARES, I SEE IN THE DARK ANYWAY!'"
-	Gosub PressToContinue
-	Goto AuctionBidding
+    Text("'IT'S A WAND OF ILLUMINATION. WHO CARES, I SEE IN THE DARK ANYWAY!'")
+    PressToContinue()
+    goto AuctionBidding
 
 CommentCommand:
-	PrintClear "'IT'S A STAFF OF COMMAND. I COULD HAVE MY OWN ARMY!'"
-	Gosub PressToContinue
-	Goto AuctionBidding
+    Text("'IT'S A STAFF OF COMMAND. I COULD HAVE MY OWN ARMY!'")
+    PressToContinue()
+    goto AuctionBidding
 
 AuctionCancelled:
-	Print " AND YELL 'SETTLERS! KILL THEM!'"
-	Gosub PressToContinue
-	PrintClear "'THE AUCTION IS CANCELLED!' YELLS THE AUCTIONEER AS HE FLEES."
-	Gosub PressToContinue
-	DisguiseState = CoverBroken
-	QuestPodalAuction = RewardDue
-	Goto PatrolEncounterMenu
+    Print(" AND YELL 'SETTLERS! KILL THEM!'")
+    PressToContinue()
+    Text("'THE AUCTION IS CANCELLED!' YELLS THE AUCTIONEER AS HE FLEES.")
+    PressToContinue()
+    DisguiseState = CoverBroken
+    QuestPodalAuction = RewardDue
+    goto PatrolEncounterMenu
 
 AuctionOver:
-	Gosub PressToContinue
-	PrintClear "THE AUCTION OVER, THE MONSTERS GRUMBLE AND TURN AWAY.'"
-	DisguiseState = AuctionEnded
-	QuestPodalAuction = RewardDue
-	Goto Done
+    PressToContinue()
+    Text("THE AUCTION OVER, THE MONSTERS GRUMBLE AND TURN AWAY.'")
+    DisguiseState = AuctionEnded
+    QuestPodalAuction = RewardDue
+    goto Done
 
-RollSuspicion:
-	if DisguiseState == Disguised: DisguiseState = CoverBroken
-	Scratch2 = Random 5
-	if Scratch2 == 0: DisguiseState = CoverBroken
-	Return
+def RollSuspicion() {
+    if DisguiseState == Disguised { DisguiseState = CoverBroken }
+    Scratch2 = Random(5)
+    if Scratch2 == 0 { DisguiseState = CoverBroken }
+    return
+}
 
-MonstersTurnAway:
-	Print "GRUMBLE, AND TURN AWAY."
-	Gosub PressToContinue
-	Return
+def MonstersTurnAway() {
+    Print("GRUMBLE, AND TURN AWAY.")
+    PressToContinue()
+    return
+}
 
 TavernEnter:
-	if TavernState != FirstVisit: Goto TavernCrowd
-	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
-	Portrait = LongHaired
-	SetupMonster ShieldBearer distance=0 body=BareChest
-	Print "YOU OPENED THE DOOR INTO A DRUNK BUCCANEER."
-	Gosub PressToContinue
-	PrintClear "HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?"
+    if TavernState != FirstVisit { goto TavernCrowd }
+    Text("YOU HAVE ENTERED A CROWDED TAVERN.")
+    Portrait = LongHaired
+    SetupMonster(ShieldBearer, distance=0, body=BareChest)
+    Print("YOU OPENED THE DOOR INTO A DRUNK BUCCANEER.")
+    PressToContinue()
+    Text("HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?")
 
 BuccaneerMenu:
-	alias Choice = Scratch1
-	Choice = Menu "CHALLENGE" -> ChallengeBuccaneer "ATTACK" -> PatronsAttack "FLEE" -> PartyFlees "BRIBE" -> BribeBuccaneer
+    Scratch1 = Menu("CHALLENGE", "ATTACK", "FLEE", "BRIBE")
+    goto [ChallengeBuccaneer, PatronsAttack, PartyFlees, BribeBuccaneer][Scratch1]
 
 ChallengeBuccaneer:
-	Who "WHO WILL CHALLENGE THE BUCCANEER?"
-	if SelStatus > Died: Goto DuelBuccaneer
-	PrintClear "THAT ONE IS UNACCEPTABLE. CHOOSE ANOTHER."
-	Goto ChallengeBuccaneer
+    Who("WHO WILL CHALLENGE THE BUCCANEER?")
+    if SelStatus > Died { goto DuelBuccaneer }
+    Text("THAT ONE IS UNACCEPTABLE. CHOOSE ANOTHER.")
+    goto ChallengeBuccaneer
 
-DuelBuccaneer:
-	ClearMonsters
-	Call CallDuelB
-	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
-	Combat
-	TavernState = BrawlBegun
-	if CombatEnd > PartyDied: Goto BuccaneerPaid
-	PrintClear "THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING."
-	Gosub PressToContinue
-	Portrait = None
-	Goto TavernCrowd
+    DuelBuccaneer:
+    ClearMonsters()
+    CallDuelB()
+    LoadMonster(ThLvlFighter41, count=1, icon=ThLvlFighter)
+    Combat()
+    TavernState = BrawlBegun
+    if CombatEnd > PartyDied { goto BuccaneerPaid }
+    Text("THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING.")
+    PressToContinue()
+    Portrait = None
+    goto TavernCrowd
 
 BuccaneerPaid:
-	PrintClear "THE BUCCANEER SMILES.'THAT IS SUFFICIENT PAYMENT.' HE LEAVES."
-	Gosub PressToContinue
-	Picture None
-	Portrait = None
-	Goto TavernCrowd
+    Text("THE BUCCANEER SMILES.'THAT IS SUFFICIENT PAYMENT.' HE LEAVES.")
+    PressToContinue()
+    Picture(None)
+    Portrait = None
+    goto TavernCrowd
 
 PatronsAttack:
-	PrintClear "YOUR ACTIONS ANGER THE PATRONS AND THEY ATTACK."
-	Morale = 30
-	ClearMonsters
-	LoadMonster Hobgoblin count=4 icon=Hobgoblin
-	LoadMonster GoblinGuard count=12 icon=GoblinGuard
-	LoadMonster ThLvlFighter41 count=1 icon=ThLvlFighter
-	LoadMonster Orc4 count=8 icon=Orc
-	Combat
-	Portrait = None
-	if CombatEnd > PartyDied: Goto PartyFlees
-	TavernState = BrawlWon
-	Goto BarDestroyed
+    Text("YOUR ACTIONS ANGER THE PATRONS AND THEY ATTACK.")
+    Morale = 30
+    ClearMonsters()
+    LoadMonster(Hobgoblin, count=4, icon=Hobgoblin)
+    LoadMonster(GoblinGuard, count=12, icon=GoblinGuard)
+    LoadMonster(ThLvlFighter41, count=1, icon=ThLvlFighter)
+    LoadMonster(Orc4, count=8, icon=Orc)
+    Combat()
+    Portrait = None
+    if CombatEnd > PartyDied { goto PartyFlees }
+    TavernState = BrawlWon
+    goto BarDestroyed
 
 BribeBuccaneer:
-	alias Choice = Scratch1
-	PrintClear "'A TENTH OF YOUR MONEY THEN.'DO YOU ACCEPT?"
-	Choice = Menu "YES" -> PayBribe "NO" -> BuccaneerMenu
+    Text("'A TENTH OF YOUR MONEY THEN.'DO YOU ACCEPT?")
+    Scratch1 = Menu("YES", "NO")
+    goto [PayBribe, BuccaneerMenu][Scratch1]
 
 PayBribe:
-	Rob 1 10 10
-	Goto BuccaneerPaid
+    Rob(1, 10, 10)
+    goto BuccaneerPaid
 
 TavernCrowd:
-	alias Choice = Scratch1
-	if TavernState > BrawlBegun: Goto BarDestroyed
-	SetupMonster Goblin distance=0 closeup=Goblin
-	PrintClear "THE CREATURES IGNORE YOU FOR THE MOMENT."
-	Gosub PressToContinue
-	Choice = VMenu "WHAT DO YOU DO?" "MIX WITH MONSTERS" "DRINK HEAVILY" "ATTACK" "LEAVE"
-	OnGoto Choice MixWithMonsters DrinkHeavily PatronsAttack StepBack
+    if TavernState > BrawlBegun { goto BarDestroyed }
+    SetupMonster(Goblin, distance=0, closeup=Goblin)
+    Text("THE CREATURES IGNORE YOU FOR THE MOMENT.")
+    PressToContinue()
+    Scratch1 = VMenu("WHAT DO YOU DO?", "MIX WITH MONSTERS", "DRINK HEAVILY", "ATTACK", "LEAVE")
+    goto [MixWithMonsters, DrinkHeavily, PatronsAttack, StepBack][Scratch1]
 
 MixWithMonsters:
-	alias Choice = Scratch1
-	if DisguiseState == Disguised: Goto PatronsAttack
-	if DisguiseState == CoverBroken: Goto PatronsAttack
-	PrintClear "MONSTERS INSULT YOUR ABILITIES AND PARENTAGE."
-	Gosub PressToContinue
-	Choice = VMenu "WHAT DO YOU DO?" "ATTACK" "TRY TO LEAVE" "INSULT BACK" "JOIN IN HEAVY DRINKING"
-	OnGoto Choice FreeForAll PatronsAttack FreeForAll DrinkHeavily
+    if DisguiseState == Disguised { goto PatronsAttack }
+    if DisguiseState == CoverBroken { goto PatronsAttack }
+    Text("MONSTERS INSULT YOUR ABILITIES AND PARENTAGE.")
+    PressToContinue()
+    Scratch1 = VMenu("WHAT DO YOU DO?", "ATTACK", "TRY TO LEAVE", "INSULT BACK", "JOIN IN HEAVY DRINKING")
+    goto [FreeForAll, PatronsAttack, FreeForAll, DrinkHeavily][Scratch1]
 
 DrinkHeavily:
-	PartyX = 2
-	PartyY = 10
-	Facing = South
-	Call CallRedraw
-	Rob 1 100 50
-	NoCoords = 1
-	PrintClear "YOU HAD A GREAT TIME UNTIL YOU ALL PASSED OUT. YOUR PURSE IS MISSING."
-	if PatrolsBeaten >= 64: DisguiseState = CoverBroken
-	Exit
+    PartyX = 2
+    PartyY = 10
+    Facing = South
+    CallRedraw()
+    Rob(1, 100, 50)
+    NoCoords = 1
+    Text("YOU HAD A GREAT TIME UNTIL YOU ALL PASSED OUT. YOUR PURSE IS MISSING.")
+    if PatrolsBeaten >= 64 { DisguiseState = CoverBroken }
+    exit
 
 StepBack:
-	PartyX = PrevX
-	PartyY = PrevY
-	Call CallRedraw
-	Exit
+    PartyX = PrevX
+    PartyY = PrevY
+    CallRedraw()
+    exit
 
 FreeForAll:
-	PrintClear "YOUR ACTIONS TRIGGER A FREE FOR ALL."
-	Gosub PressToContinue
-	Morale = 50
-	ClearMonsters
-	LoadMonster GoblinGuard count=25 icon=GoblinGuard
-	LoadMonster Hobgoblin count=20 icon=Hobgoblin
-	LoadMonster Ogre count=5 icon=Ogre
-	Scratch2 = 0
+    Text("YOUR ACTIONS TRIGGER A FREE FOR ALL.")
+    PressToContinue()
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(GoblinGuard, count=25, icon=GoblinGuard)
+    LoadMonster(Hobgoblin, count=20, icon=Hobgoblin)
+    LoadMonster(Ogre, count=5, icon=Ogre)
+    Scratch2 = 0
 
-FreeForAllMember:
-	Scratch1 = Random 44
-	Scratch1 += 8
-	Scratch2 += 1
-	SelectMember Scratch1
-	SelSide = PartyControlled
-	SelControl = NPCMember
-	Scratch1 = 128 | Scratch1
-	SelectMember Scratch1
-	if Scratch2 < 21: Goto FreeForAllMember
-	Combat
-	if CombatEnd > PartyDied: Goto PartyFlees
-	TavernState = BrawlWon
+    FreeForAllMember:
+    Scratch1 = Random(44)
+    Scratch1 += 8
+    Scratch2 += 1
+    SelectMember(Scratch1)
+    SelSide = PartyControlled
+    SelControl = NPCMember
+    Scratch1 = 128 | Scratch1
+    SelectMember(Scratch1)
+    if Scratch2 < 21 { goto FreeForAllMember }
+    Combat()
+    if CombatEnd > PartyDied { goto PartyFlees }
+    TavernState = BrawlWon
 
 BarDestroyed:
-	if TavernState > BrawlWon: Exit
-	PrintClear "THE BAR LOOKS LIKE IT WAS DESTROYED BY EXPERTS."
-	TavernState = BarWrecked
-	Exit
+    if TavernState > BrawlWon { exit }
+    Text("THE BAR LOOKS LIKE IT WAS DESTROYED BY EXPERTS.")
+    TavernState = BarWrecked
+    exit
 
 ThePittSign:
-	NoCoords = 0
-	PrintClear "OVER THIS DOOR IS A CRUDE SIGN SAYING, 'THE PITT.'"
-	Exit
+    NoCoords = 0
+    Text("OVER THIS DOOR IS A CRUDE SIGN SAYING, 'THE PITT.'")
+    exit
 
 IlmaterTemple:
-	if LastBuildingCell != 4: Goto IlmaterHealer
-	PrintClear "THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE."
+    if LastBuildingCell != 4 { goto IlmaterHealer }
+    Text("THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE.")
 
-IlmaterHealer:
-	alias Choice = Scratch1
-	ShowPortrait SilverHairedWoman BlueCape
-	PrintClear "A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?"
-	Choice = Menu "YES" -> Heal "NO" -> RestHere
+    IlmaterHealer:
+    ShowPortrait(SilverHairedWoman, BlueCape)
+    Text("A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?")
+    Scratch1 = Menu("YES", "NO")
+    goto [Heal, RestHere][Scratch1]
 
 Heal:
-	Temple = 1
-	ClearMonsters
-	Combat
+    Temple = 1
+    ClearMonsters()
+    Combat()
 
 RestHere:
-	PrintClear "'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES."
-	Picture None
-	Portrait = None
-	LastBuildingCell = 4
-	Exit
+    Text("'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES.")
+    Picture(None)
+    Portrait = None
+    LastBuildingCell = 4
+    exit
 
 BaneShrine:
-	NoCoords = 0
-	PrintClear "THIS IS A SMALL SHRINE. SYMBOLS OF BANE HAVE REPLACED THOSE OF ILMATER."
-	Exit
+    NoCoords = 0
+    Text("THIS IS A SMALL SHRINE. SYMBOLS OF BANE HAVE REPLACED THOSE OF ILMATER.")
+    exit
 
 RobedOrc:
-	alias Choice = Scratch1
-	if BaneRecruiterState != NotMet: Goto BaneMeeting
-	SetupMonster Orc distance=1 closeup=Orc
-	PrintClear "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
-	Choice = Menu "LEAVE" "GREET" "ATTACK"
-	if DisguiseState == CoverBroken: Goto AttackOrc
-	if DisguiseState == Disguised: Goto AttackOrc
-	OnGoto Choice StepBack GreetOrc AttackOrc
+    if BaneRecruiterState != NotMet { goto BaneMeeting }
+    SetupMonster(Orc, distance=1, closeup=Orc)
+    Text("A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?")
+    Scratch1 = Menu("LEAVE", "GREET", "ATTACK")
+    if DisguiseState == CoverBroken { goto AttackOrc }
+    if DisguiseState == Disguised { goto AttackOrc }
+    goto [StepBack, GreetOrc, AttackOrc][Scratch1]
 
 GreetOrc:
-	PrintClear "THE ORC SMILES CROOKEDLY.'GREETINGS FROM BANE."
-	if QuestTempleOfBane != 0: Goto RecruitRecover
-	Print " WE ARE RECRUITING CREATURES FOR OUR TEMPLE TO THE NORTHEAST. ARE YOU INTERESTED?'"
+    Text("THE ORC SMILES CROOKEDLY.'GREETINGS FROM BANE.")
+    if QuestTempleOfBane != 0 { goto RecruitRecover }
+    Print(" WE ARE RECRUITING CREATURES FOR OUR TEMPLE TO THE NORTHEAST. ARE YOU INTERESTED?'")
 
 RecruitMenu:
-	alias Choice = Scratch1
-	Choice = Menu "YES" -> AcceptRecruit "NO" -> DeclineRecruit
+    Scratch1 = Menu("YES", "NO")
+    goto [AcceptRecruit, DeclineRecruit][Scratch1]
 
 RecruitRecover:
-	Print " WE ARE HIRING CREATURES TO RECOVER OUR TEMPLE. ARE YOU INTERESTED?'"
-	Goto RecruitMenu
+    Print(" WE ARE HIRING CREATURES TO RECOVER OUR TEMPLE. ARE YOU INTERESTED?'")
+    goto RecruitMenu
 
 AcceptRecruit:
-	PrintClear "'MEET HERE IN TWO HOURS. YOU MAY MEET HIGH PRIEST MACE.' HE ESCORTS YOU OUT."
+    Text("'MEET HERE IN TWO HOURS. YOU MAY MEET HIGH PRIEST MACE.' HE ESCORTS YOU OUT.")
 
 SetMeetHour:
-	BaneRecruiterState = MeetingSet
-	BaneMeetHour = Hours
-	BaneMeetHour += 2
-	if BaneMeetHour > 23: BaneMeetHour -= 24
-	Goto StepBack
+    BaneRecruiterState = MeetingSet
+    BaneMeetHour = Hours
+    BaneMeetHour += 2
+    if BaneMeetHour > 23 { BaneMeetHour -= 24 }
+    goto StepBack
 
 DeclineRecruit:
-	PrintClear "'IF YOU CHANGE YOUR MIND, RETURN IN TWO HOURS.' HE ESCORTS YOU OUT."
-	Goto SetMeetHour
+    Text("'IF YOU CHANGE YOUR MIND, RETURN IN TWO HOURS.' HE ESCORTS YOU OUT.")
+    goto SetMeetHour
 
 BaneMeeting:
-	if BaneRecruiterState != MeetingSet: Exit
-	if BaneMeetHour >= Hours: Exit
-	SetupMonster Orc distance=1 closeup=Orc
-	PrintClear "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
-	Gosub PressToContinue
-	Morale = 50
-	ClearMonsters
-	LoadMonster Orc4 count=8 icon=Orc
-	LoadMonster OrcLeader5 count=1 icon=OrcLeader
-	LoadMonster Ogre count=3 icon=Ogre
-	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
-	Combat
-	BaneRecruiterState = AmbushFought
-	if CombatEnd > PartyDied: Goto PartyFlees
-	Exit
+    if BaneRecruiterState != MeetingSet { exit }
+    if BaneMeetHour >= Hours { exit }
+    SetupMonster(Orc, distance=1, closeup=Orc)
+    Text("MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP.")
+    PressToContinue()
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(Orc4, count=8, icon=Orc)
+    LoadMonster(OrcLeader5, count=1, icon=OrcLeader)
+    LoadMonster(Ogre, count=3, icon=Ogre)
+    Treasure(items=[LeatherHolySymbol*6])
+    Combat()
+    BaneRecruiterState = AmbushFought
+    if CombatEnd > PartyDied { goto PartyFlees }
+    exit
 
 AttackOrc:
-	Morale = 90
-	ClearMonsters
-	LoadMonster OrcLeader5 count=1 icon=OrcLeader
-	Treasure 0 0 0 0 0 0 0 22 // 6 Leather Holy Symbol
-	Combat
-	BaneRecruiterState = AmbushFought
-	if CombatEnd > PartyDied: Goto PartyFlees
-	Exit
+    Morale = 90
+    ClearMonsters()
+    LoadMonster(OrcLeader5, count=1, icon=OrcLeader)
+    Treasure(items=[LeatherHolySymbol*6])
+    Combat()
+    BaneRecruiterState = AmbushFought
+    if CombatEnd > PartyDied { goto PartyFlees }
+    exit
 
 RememberBuilding:
-	LastBuildingCell = Cell
-	Exit
+    LastBuildingCell = Cell
+    exit
 
 AbandonedShop:
-	if 137 == LastBuildingCell: Exit
-	PrintClear "AN ABANDONED SHOP. BROKEN SHELVES ARE ALL THAT REMAIN."
-	Goto RememberBuilding
+    if 137 == LastBuildingCell { exit }
+    Text("AN ABANDONED SHOP. BROKEN SHELVES ARE ALL THAT REMAIN.")
+    goto RememberBuilding
 
 DecayedBuilding:
-	if 137 == LastBuildingCell: Exit
-	PrintClear "A DECAYED BUILDING LEFT TO THE RATS."
-	Goto RememberBuilding
+    if 137 == LastBuildingCell { exit }
+    Text("A DECAYED BUILDING LEFT TO THE RATS.")
+    goto RememberBuilding
 
-PressToContinue:
-	alias Choice = Scratch2
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def PressToContinue() {
+    Scratch2 = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
 SlumsCleared9:
-	if PatrolsBeaten == 9: PodalPlazaCleared = RewardDue
-	PatrolsBeaten = 10
-	Exit
+    if PatrolsBeaten == 9 { PodalPlazaCleared = RewardDue }
+    PatrolsBeaten = 10
+    exit
 
-DisguiseChoiceTable:
-	Data 255 1 2
-
-RandomExitX:
-	Data 4 5 6 7 9 10 11 12
-
-EncTypeTable:
-	Data 0 0 1 1 2 2 3 4 5
-
-EncMonsterTable:
-	Data 2 2 4 4 6 8
-
-EncDistanceTable:
-	Data 6 6 9 9 9 9
-
-EncStrengthTable:
-	Data 1 1 1 1 2 4
-
-EncParlayTable:
-	Data 30 20 20 10 0 0
-
-EncMoraleTable:
-	Data 30 35 40 45 45 50
-
-EncMinCountTable:
-	Data 40 40 30 30 20 11
-
-EncExtraTable:
-	Data 5 5 4 4 3 0 0
+# tables
+DisguiseChoiceTable = [255, 1, 2]
+RandomExitX = [4, 5, 6, 7, 9, 10, 11, 12]
+EncTypeTable = [0, 0, 1, 1, 2, 2, 3, 4, 5]
+EncMonsterTable = [2, 2, 4, 4, 6, 8]
+EncDistanceTable = [6, 6, 9, 9, 9, 9]
+EncStrengthTable = [1, 1, 1, 1, 2, 4]
+EncParlayTable = [30, 20, 20, 10, 0, 0]
+EncMoraleTable = [30, 35, 40, 45, 45, 50]
+EncMinCountTable = [40, 40, 30, 30, 20, 11]
+EncExtraTable = [5, 5, 4, 4, 3, 0, 0]

@@ -1,840 +1,851 @@
-event4:
-	LoadWalls 17 18 None
-	LoadMap 13 unused=2 icons=255
-	NoCoords = 1
-	SkyInside = 8
-	Exit
+on load {
+    LoadWalls(17, 18, None)
+    LoadMap(13, unused=2, icons=255)
+    NoCoords = 1
+    SkyInside = 8
+    exit
+}
 
-event0:
-	if Facing != North || Cell != 152: Exit
-	if KoboldKingState == 0: HoldMove = SkipMove
-	Exit
+on move {
+    if Facing != North or Cell != 152 { exit }
+    if KoboldKingState == 0 { HoldMove = SkipMove }
+    exit
+}
 
-event1:
-	Scratch1 = Cell & 127
-	OnGoto Scratch1 KoboldAmbush WaterPit MineTailings KoboldTruce NetTrap SpikeTrap DrunkenKobold Done HearVoices ThroneRoom SearchNorthWall KingInPit BrassBottle CrudeBarracks FatimaRoom PrisonCell RubbleSlope WyvernCharges CrippledKobold LivingAreas KingsQuarters RatLarder MessTables RuinedBallista Done Done WyvernNest KoboldHoard AskLeave
+on step {
+    Scratch1 = Cell & ~Inside
+    goto [KoboldAmbush, WaterPit, MineTailings, KoboldTruce, NetTrap, SpikeTrap, DrunkenKobold, Done,
+        HearVoices, ThroneRoom, SearchNorthWall, KingInPit, BrassBottle, CrudeBarracks, FatimaRoom,
+        PrisonCell, RubbleSlope, WyvernCharges, CrippledKobold, LivingAreas, KingsQuarters,
+        RatLarder, MessTables, RuinedBallista, Done, Done, WyvernNest, KoboldHoard, AskLeave][Scratch1]
+} # falls into AskLeave
 
 AskLeave:
-	alias Choice = Scratch1
-	PrintClear "DO YOU WANT TO LEAVE?"
-	Choice = Menu "YES" "NO"
-	if Choice == 1: Exit
-	Scratch2 = 0
+    Text("DO YOU WANT TO LEAVE?")
+    Scratch1 = Menu("YES", "NO")
+    if Scratch1 == 1 { exit }
+    Scratch2 = 0
 
 FindFatima:
-	SelectMember Scratch2
-	if $SelName == "PRINCESS FATIMA": Goto FatimaFound
+    SelectMember(Scratch2)
+    if $SelName == "PRINCESS FATIMA" { goto FatimaFound }
 
 NextMember:
-	Scratch2 += 1
-	if Scratch2 < 8: Goto FindFatima
-	NewECL Quagmire
+    Scratch2 += 1
+    if Scratch2 < 8 { goto FindFatima }
+    NewECL(Quagmire)
 
 FatimaFound:
-	if SelControl < 128: Goto NextMember
-	if SelStatus > 127: Goto FatimaLeaves
-	PrintClear "THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'"
+    if SelControl < 128 { goto NextMember }
+    if SelStatus > 127 { goto FatimaLeaves }
+    Text("THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'")
 
-FatimaLeaves:
-	SelName = 0
-	SelStatus = Died
-	Scratch2 += 128
-	SelectMember Scratch2
-	NewECL Quagmire
+    FatimaLeaves:
+    SelName = 0
+    SelStatus = Died
+    Scratch2 += 128
+    SelectMember(Scratch2)
+    NewECL(Quagmire)
 
 WaterPit:
-	if PoolPitDone == 1: Exit
-	Gosub CheckTrap
-	if Scratch10 == 1: Goto CrossPit
-	PrintClear $SelName
-	Print " FALLS INTO A POOL OF WATER."
-	Gosub WaitReturnPressed
-	PrintClear "SOME ITEMS WERE LOST RECOVERING "
-	Print $SelName
-	Rob 0 20 20
-	PoolPitDone = 1
-	Exit
+    if PoolPitDone == 1 { exit }
+    CheckTrap()
+    if Scratch10 == 1 { goto CrossPit }
+    Text($SelName)
+    Print(" FALLS INTO A POOL OF WATER.")
+    WaitReturnPressed()
+    Text("SOME ITEMS WERE LOST RECOVERING ")
+    Print($SelName)
+    Rob(0, 20, 20)
+    PoolPitDone = 1
+    exit
 
-CrossPit:
-	PrintClear "YOU CROSS OVER A PIT."
-	PoolPitDone = 1
-	Exit
+    CrossPit:
+    Text("YOU CROSS OVER A PIT.")
+    PoolPitDone = 1
+    exit
 
 MineTailings:
-	if TailingsFound == 1: Exit
-	PrintClear "YOU FIND A PILE OF MINE TAILINGS."
-	if Search == 0: Exit
-	TailingsFound = 1
-	Print "IN IT IS A KOBOLD'S CRUDE DRAWING."
-	Gosub JournalEntry
-	Print "42."
-	Exit
+    if TailingsFound == 1 { exit }
+    Text("YOU FIND A PILE OF MINE TAILINGS.")
+    if Search == NotSearching { exit }
+    TailingsFound = 1
+    Print("IN IT IS A KOBOLD'S CRUDE DRAWING.")
+    JournalEntry()
+    Print("42.")
+    exit
 
 KoboldTruce:
-	alias Choice = Scratch1
-	if KoboldTruceState != 0: Goto DeadfallTrap
-	SetupMonster Kobold distance=2 closeup=Kobold
-	KoboldTruceState = WhiteFlagMet
-	PrintClear "A KOBOLD APPROACHES WAVING A WHITE FLAG."
-	Delay
-	Approach
-	Delay
-	Approach
-	PrintClear "THE KOBOLD BOWS AND SAYS,'YOU ARE QUITE DANGEROUS, WE WILL PAY FOR A TRUCE.'"
-	Gosub WhatDoYouDo
-	Choice = Menu "AGREE" -> TruceAgreed "REFUSE" -> TruceRefused "KILL IT" -> KoboldCriesOut
+    if KoboldTruceState != 0 { goto DeadfallTrap }
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    KoboldTruceState = WhiteFlagMet
+    Text("A KOBOLD APPROACHES WAVING A WHITE FLAG.")
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Text("THE KOBOLD BOWS AND SAYS,'YOU ARE QUITE DANGEROUS, WE WILL PAY FOR A TRUCE.'")
+    WhatDoYouDo()
+    Scratch1 = Menu("AGREE", "REFUSE", "KILL IT")
+    goto [TruceAgreed, TruceRefused, KoboldCriesOut][Scratch1]
 
 TruceAgreed:
-	alias Choice = Scratch1
-	PrintClear "'I AM TO ESCORT YOU TO OUR TREASURE.'"
-	Gosub WhatDoYouDo
-	Choice = Menu "FOLLOW" -> FollowGuide "REFUSE" -> TruceRefused "KILL IT" -> KoboldCriesOut
+    Text("'I AM TO ESCORT YOU TO OUR TREASURE.'")
+    WhatDoYouDo()
+    Scratch1 = Menu("FOLLOW", "REFUSE", "KILL IT")
+    goto [FollowGuide, TruceRefused, KoboldCriesOut][Scratch1]
 
 TruceRefused:
-	Picture None
-	PrintClear "THE KOBOLD RETREATS, THEN STRIKES THE WALL."
-	Gosub WaitReturnPressed
-	Goto RoofCollapses
+    Picture(None)
+    Text("THE KOBOLD RETREATS, THEN STRIKES THE WALL.")
+    WaitReturnPressed()
+    goto RoofCollapses
 
 KoboldCriesOut:
-	Picture None
-	PrintClear "THE KOBOLD CRIES OUT, 'I'LL NOT GO ALONE!'"
-	Gosub WaitReturnPressed
-	Goto RoofCollapses
+    Picture(None)
+    Text("THE KOBOLD CRIES OUT, 'I'LL NOT GO ALONE!'")
+    WaitReturnPressed()
+    goto RoofCollapses
 
 DeadfallTrap:
-	if KoboldTruceState != WhiteFlagMet: Exit
-	Gosub CheckTrap
-	if Scratch10 == 1: Goto DisarmDeadfall
+    if KoboldTruceState != WhiteFlagMet { exit }
+    CheckTrap()
+    if Scratch10 == 1 { goto DisarmDeadfall }
 
 RoofCollapses:
-	PrintClear "THE ROOF COLLAPSES."
-	Damage 192 2 6 0 1
-	SetupMonster Kobold distance=0 closeup=Kobold
-	PrintClear "BEFORE YOU RECOVER, KOBOLDS ARRIVE."
-	Morale = 25
-	Surprise = PartyIsSurprised
-	MonsterHit = 2
-	PartyHit = 254
-	PartyMove = 252
-	ClearMonsters
-	LoadMonster Kobold0 count=20 icon=Kobold
-	Combat
-	KoboldTruceState = DeadfallSprung
-	if CombatEnd > PartyDied: Goto EscapeKobolds
-	Exit
+    Text("THE ROOF COLLAPSES.")
+    Damage(192, 2, 6, 0, 1)
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Text("BEFORE YOU RECOVER, KOBOLDS ARRIVE.")
+    Morale = 25
+    Surprise = PartyIsSurprised
+    MonsterHit = 2
+    PartyHit = 254
+    PartyMove = 252
+    ClearMonsters()
+    LoadMonster(Kobold0, count=20, icon=Kobold)
+    Combat()
+    KoboldTruceState = DeadfallSprung
+    if CombatEnd > PartyDied { goto EscapeKobolds }
+    exit
 
 DisarmDeadfall:
-	PrintClear "YOU DISARM A DEADFALL TRAP."
-	KoboldTruceState = DeadfallSprung
-	Exit
+    Text("YOU DISARM A DEADFALL TRAP.")
+    KoboldTruceState = DeadfallSprung
+    exit
 
-DescribeTimbers:
-	PrintClear "TIMBERS LINE THE WALLS HERE. A BOULDER BLOCKS THE FAR END."
-	Return
+def DescribeTimbers() {
+    Text("TIMBERS LINE THE WALLS HERE. A BOULDER BLOCKS THE FAR END.")
+    return
+}
 
 NetTrap:
-	if Facing == East: Gosub DescribeTimbers
-	if 1 == NetTrapDone: Exit
-	Gosub CheckTrap
-	if Scratch10 == 1: Goto DisarmNet
-	SetupMonster Kobold distance=0 closeup=Kobold
-	PrintClear "A NET ENTANGLES YOU."
-	Morale = 50
-	Surprise = PartyIsSurprised
-	MonsterHit = 2
-	PartyHit = 254
-	PartyMove = 252
-	ClearMonsters
-	LoadMonster Kobold0 count=20 icon=Kobold
-	Combat
-	NetTrapDone = 1
-	if CombatEnd > PartyDied: Goto EscapeKobolds
-	Exit
+    if Facing == East { DescribeTimbers() }
+    if 1 == NetTrapDone { exit }
+    CheckTrap()
+    if Scratch10 == 1 { goto DisarmNet }
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Text("A NET ENTANGLES YOU.")
+    Morale = 50
+    Surprise = PartyIsSurprised
+    MonsterHit = 2
+    PartyHit = 254
+    PartyMove = 252
+    ClearMonsters()
+    LoadMonster(Kobold0, count=20, icon=Kobold)
+    Combat()
+    NetTrapDone = 1
+    if CombatEnd > PartyDied { goto EscapeKobolds }
+    exit
 
-DisarmNet:
-	PrintClear "YOU DISARM A NET TRAP."
-	NetTrapDone = 1
-	Exit
+    DisarmNet:
+    Text("YOU DISARM A NET TRAP.")
+    NetTrapDone = 1
+    exit
 
 SpikeTrap:
-	if SpikeTrapDone == 1: Exit
-	Scratch4 = 0
-	Gosub CheckTrap
-	if Scratch10 == 1: Goto DisarmSpikes
-	PrintClear "SPIKES SPRING OUT AND IMPALE YOU."
-	Damage 128 2 4 0 Scratch4
-	SpikeTrapDone = 1
-	Exit
+    if SpikeTrapDone == 1 { exit }
+    Scratch4 = 0
+    CheckTrap()
+    if Scratch10 == 1 { goto DisarmSpikes }
+    Text("SPIKES SPRING OUT AND IMPALE YOU.")
+    Damage(128, 2, 4, 0, Scratch4)
+    SpikeTrapDone = 1
+    exit
 
-DisarmSpikes:
-	PrintClear "YOU DISARM A SPIKE TRAP."
-	SpikeTrapDone = 1
-	Exit
+    DisarmSpikes:
+    Text("YOU DISARM A SPIKE TRAP.")
+    SpikeTrapDone = 1
+    exit
 
 DrunkenKobold:
-	alias Choice = Scratch1
-	if 0 != KoboldKingState || Present != DrunkKoboldState: Exit
-	SetupMonster Kobold distance=0 closeup=Kobold
-	PrintClear "A DRUNKEN KOBOLD LIES HERE."
-	Gosub WhatDoYouDo
-	Choice = Menu "SLIP PAST" -> SlipPast "WAKE IT" -> WakeKobold "KILL IT" -> KillDrunkKobold
+    if 0 != KoboldKingState or Present != DrunkKoboldState { exit }
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Text("A DRUNKEN KOBOLD LIES HERE.")
+    WhatDoYouDo()
+    Scratch1 = Menu("SLIP PAST", "WAKE IT", "KILL IT")
+    goto [SlipPast, WakeKobold, KillDrunkKobold][Scratch1]
 
 SlipPast:
-	PrintClear "YOU SLIP BY WITH EASE."
-	Exit
+    Text("YOU SLIP BY WITH EASE.")
+    exit
 
 WakeKobold:
-	alias Choice = Scratch1
-	PrintClear "HE LOOKS CONFUSED,'OH, THE ENVOYS. DO YOU WISH AN ESCORT TO THE KING?'"
-	Gosub WhatDoYouDo
-	Choice = Menu "YES" -> FollowToKing "NO" -> KoboldSleeps "KILL IT" -> KillDrunkKobold
+    Text("HE LOOKS CONFUSED,'OH, THE ENVOYS. DO YOU WISH AN ESCORT TO THE KING?'")
+    WhatDoYouDo()
+    Scratch1 = Menu("YES", "NO", "KILL IT")
+    goto [FollowToKing, KoboldSleeps, KillDrunkKobold][Scratch1]
 
 FollowToKing:
-	PrintClear "'THEN FOLLOW ME.'"
-	HeardVoices = 1
-	Goto GuideToKing
+    Text("'THEN FOLLOW ME.'")
+    HeardVoices = 1
+    goto GuideToKing
 
 KoboldSleeps:
-	PrintClear "THE KOBOLD PROMPTLY RETURNS TO SLEEP."
-	Exit
+    Text("THE KOBOLD PROMPTLY RETURNS TO SLEEP.")
+    exit
 
 KillDrunkKobold:
-	PrintClear "THE KOBOLD DIES."
-	DrunkKoboldState = Killed
-	Exit
+    Text("THE KOBOLD DIES.")
+    DrunkKoboldState = Killed
+    exit
 
 HearVoices:
-	if 0 != KoboldKingState || 0 != HeardVoices: Exit
-	PrintClear "YOU HEAR THE VOICES OF HUMANS AND KOBOLDS."
-	HeardVoices = 1
-	Exit
+    if 0 != KoboldKingState or 0 != HeardVoices { exit }
+    Text("YOU HEAR THE VOICES OF HUMANS AND KOBOLDS.")
+    HeardVoices = 1
+    exit
 
 ThroneRoom:
-	if KoboldKingState >= 5: Exit
-	OnGoto KoboldKingState KoboldHorde FightHorde BallistaFire EnvoysFight Done
+    if KoboldKingState >= GuardsFought { exit }
+    goto [KoboldHorde, FightHorde, BallistaFire, EnvoysFight, Done][KoboldKingState]
 
 KoboldHorde:
-	Facing = North
-	Call CallRedraw
-	SetupMonster Kobold distance=2 closeup=Kobold
-	PrintClear "BEFORE YOU IS A HORDE OF KOBOLDS. BEHIND THEM ARE TWO MEN AND AN ANCIENT KOBOLD ON A WOODEN THRONE."
-	Approach
-	Gosub WaitReturnPressed
-	PrintClear "ONE SAYS,'THESE MEN ARE ENEMIES. DEFEAT THEM AND MY LORD SHALL BE MOST GENEROUS.' THE KING LOOKS AT HIM, AND THEN AT YOU. HE SMILES AND SCREAMS, 'KILL THEM!'"
+    Facing = North
+    CallRedraw()
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Text("BEFORE YOU IS A HORDE OF KOBOLDS. BEHIND THEM ARE TWO MEN AND AN ANCIENT KOBOLD ON A WOODEN THRONE.")
+    Approach()
+    WaitReturnPressed()
+    Text("ONE SAYS,'THESE MEN ARE ENEMIES. DEFEAT THEM AND MY LORD SHALL BE MOST GENEROUS.' THE KING LOOKS AT HIM, AND THEN AT YOU. HE SMILES AND SCREAMS, 'KILL THEM!'")
 
 FightHorde:
-	SetupMonster Kobold distance=0 closeup=Kobold
-	Morale = 70
-	ClearMonsters
-	LoadMonster Troll count=4 icon=Troll
-	LoadMonster Kobold0 count=35 icon=Kobold
-	LoadMonster KoboldLeader1 count=11 icon=KoboldLeader
-	Scratch2 = PartyCount
-	Scratch3 = 4 + PartyCount
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Morale = 70
+    ClearMonsters()
+    LoadMonster(Troll, count=4, icon=Troll)
+    LoadMonster(Kobold0, count=35, icon=Kobold)
+    LoadMonster(KoboldLeader1, count=11, icon=KoboldLeader)
+    Scratch2 = PartyCount
+    Scratch3 = 4 + PartyCount
 
-MakeMembersHostile:
-	SelectMember Scratch2
-	SelControl = NPCMember
-	Scratch2 += 1
-	if Scratch2 < Scratch3: Goto MakeMembersHostile
-	Combat
-	KoboldKingState = 1
-	if CombatEnd > PartyDied: Goto OfferSurrender
+    MakeMembersHostile:
+    SelectMember(Scratch2)
+    SelControl = NPCMember
+    Scratch2 += 1
+    if Scratch2 < Scratch3 { goto MakeMembersHostile }
+    Combat()
+    KoboldKingState = HordeFought
+    if CombatEnd > PartyDied { goto OfferSurrender }
 
 BallistaFire:
-	PrintClear "THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE."
-	Damage 7 2 6 0 57
-	SetupMonster Kobold distance=1 closeup=Kobold
-	Approach
-	Morale = 60
-	ClearMonsters
-	LoadMonster WildBoar count=5 icon=WildBoar
-	LoadMonster Kobold0 count=45 icon=Kobold
-	LoadMonster KoboldLeader1 count=8 icon=KoboldLeader
-	Combat
-	KoboldKingState = 2
-	if CombatEnd > PartyDied: Goto OfferSurrender
+    Text("THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE.")
+    Damage(7, 2, 6, 0, 57)
+    SetupMonster(Kobold, distance=1, closeup=Kobold)
+    Approach()
+    Morale = 60
+    ClearMonsters()
+    LoadMonster(WildBoar, count=5, icon=WildBoar)
+    LoadMonster(Kobold0, count=45, icon=Kobold)
+    LoadMonster(KoboldLeader1, count=8, icon=KoboldLeader)
+    Combat()
+    KoboldKingState = BallistaFired
+    Compare(CombatEnd, 128)
+    if CombatEnd > PartyDied { goto OfferSurrender }
 
 EnvoysFight:
-	if KoboldKingState != 2: Goto EnvoysRematch
-	PrintClear "THE MEN SNEER AT THE KING AND ONE SAYS,'LET US SHOW YOU HOW WARRIORS FIGHT.'"
-	Goto FightEnvoys
+    if KoboldKingState != BallistaFired { goto EnvoysRematch }
+    Text("THE MEN SNEER AT THE KING AND ONE SAYS,'LET US SHOW YOU HOW WARRIORS FIGHT.'")
+    goto FightEnvoys
 
-EnvoysRematch:
-	PrintClear "THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'"
+    EnvoysRematch:
+    Text("THE TWO ENVOYS WAIT AT THE THRONE. THEY SMILE. 'A REMATCH THEN. PREPARE FOR DEATH.'")
 
-FightEnvoys:
-	Portrait = Fanged
-	SetupMonster Fighter16 distance=1 body=PlateArmor
-	Approach
-	Morale = 100
-	ClearMonsters
-	LoadMonster Troll count=2 icon=Troll
-	LoadMonster WildBoar count=2 icon=WildBoar
-	LoadMonster Kobold0 count=8 icon=Kobold
-	LoadMonster Envoy count=2 icon=11
-	Combat
-	Portrait = None
-	KoboldKingState = 3
-	if CombatEnd > PartyDied: Goto EscapeKobolds
-	PrintClear "THE KING HAS ESCAPED DURING THE FIGHT."
-	KoboldKingState = KingEscaped
-	Exit
+    FightEnvoys:
+    Portrait = Fanged
+    SetupMonster(Fighter16, distance=1, body=PlateArmor)
+    Approach()
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Troll, count=2, icon=Troll)
+    LoadMonster(WildBoar, count=2, icon=WildBoar)
+    LoadMonster(Kobold0, count=8, icon=Kobold)
+    LoadMonster(Envoy, count=2, icon=11)
+    Combat()
+    Portrait = None
+    KoboldKingState = EnvoysFought
+    if CombatEnd > PartyDied { goto EscapeKobolds }
+    Text("THE KING HAS ESCAPED DURING THE FIGHT.")
+    KoboldKingState = KingEscaped
+    exit
 
 OfferSurrender:
-	KingFightTemp = KoboldKingState - 1
-	OnGoto KingFightTemp SurrenderOrDie DeathOrPrison
+    KingFightTemp = KoboldKingState - HordeFought
+    goto [SurrenderOrDie, DeathOrPrison][KingFightTemp]
 
 SurrenderOrDie:
-	alias Choice = Scratch1
-	PrintClear "KOBOLDS BLOCK ALL THE EXITS."
-	Delay
-	PrintClear "THE KING CALLS OUT,'YOU SEEM VALUABLE. SURRENDER OR DIE.'"
-	Gosub WhatDoYouDo
-	Choice = Menu "SURRENDER" -> Surrender "FIGHT" -> FightHorde
+    Text("KOBOLDS BLOCK ALL THE EXITS.")
+    Delay()
+    Text("THE KING CALLS OUT,'YOU SEEM VALUABLE. SURRENDER OR DIE.'")
+    WhatDoYouDo()
+    Scratch1 = Menu("SURRENDER", "FIGHT")
+    goto [Surrender, FightHorde][Scratch1]
 
 DeathOrPrison:
-	alias Choice = Scratch1
-	PrintClear "THE BALLISTA ARE RELOADED. THE KING CALLS OUT,'DEATH OR IMPRISONMENT.'"
-	Gosub WhatDoYouDo
-	Choice = Menu "SURRENDER" -> Surrender "FIGHT" -> BallistaFire
+    Text("THE BALLISTA ARE RELOADED. THE KING CALLS OUT,'DEATH OR IMPRISONMENT.'")
+    WhatDoYouDo()
+    Scratch1 = Menu("SURRENDER", "FIGHT")
+    goto [Surrender, BallistaFire][Scratch1]
 
 SearchNorthWall:
-	if Facing != North: Exit
-	HoldMove = SkipMove
-	AuxMember = 0
+    if Facing != North { exit }
+    HoldMove = SkipMove
+    AuxMember = 0
 
 CheckMemberFinds:
-	SelectMember AuxMember
-	if SelStatus != Okay: Goto NextSearcher
-	AuxSearchCount = Search
-	if SelRace == HalfElf: AuxSearchCount += 1
-	if SelRace == Elf: AuxSearchCount += 1
-	AuxRoll = Random 5
-	if AuxSearchCount > AuxRoll: Goto SecretDoorFound
+    SelectMember(AuxMember)
+    if SelStatus != Okay { goto NextSearcher }
+    AuxSearchCount = Search
+    if SelRace == HalfElf { AuxSearchCount += 1 }
+    if SelRace == Elf { AuxSearchCount += 1 }
+    AuxRoll = Random(5)
+    if AuxSearchCount > AuxRoll { goto SecretDoorFound }
 
-NextSearcher:
-	AuxMember += 1
-	if AuxMember < 8: Goto CheckMemberFinds
-	Exit
+    NextSearcher:
+    AuxMember += 1
+    if AuxMember < 8 { goto CheckMemberFinds }
+    exit
 
-SecretDoorFound:
-	PrintClear "YOU FIND A SECRET DOOR IN THE NORTH WALL."
-	SecretDoorNorth = 2
-	Exit
+    SecretDoorFound:
+    Text("YOU FIND A SECRET DOOR IN THE NORTH WALL.")
+    SecretDoorNorth = Found
+    exit
 
 Done:
-	Exit
+    exit
 
 KingsQuarters:
-	if KoboldKingState != KingEscaped: Exit
-	PrintClear "YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS."
-	SetupMonster Kobold distance=0 closeup=Kobold
-	Morale = 100
-	ClearMonsters
-	LoadMonster Troll count=3 icon=Troll
-	LoadMonster WildBoar count=3 icon=WildBoar
-	LoadMonster Kobold0 count=20 icon=Kobold
-	LoadMonster KoboldLeader1 count=4 icon=KoboldLeader
-	Combat
-	KoboldKingState = 5
-	Exit
+    if KoboldKingState != KingEscaped { exit }
+    Text("YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS.")
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Troll, count=3, icon=Troll)
+    LoadMonster(WildBoar, count=3, icon=WildBoar)
+    LoadMonster(Kobold0, count=20, icon=Kobold)
+    LoadMonster(KoboldLeader1, count=4, icon=KoboldLeader)
+    Combat()
+    KoboldKingState = GuardsFought
+    exit
 
 KingInPit:
-	if KoboldKingState != 5: Exit
-	PrintClear "THE KING, PANICKED, HAS FALLEN INTO HIS OWN SPIKED PIT AND DIED."
-	KoboldKingState = KingDied
-	QuestKobolds = RewardDue
-	Exit
+    if KoboldKingState != GuardsFought { exit }
+    Text("THE KING, PANICKED, HAS FALLEN INTO HIS OWN SPIKED PIT AND DIED.")
+    KoboldKingState = KingDied
+    QuestKobolds = RewardDue
+    exit
 
 BrassBottle:
-	alias Choice = Scratch1
-	if Search != 1 || EfreetiBottleDone != 0: Exit
-	Facing = South
-	Call CallRedraw
-	PrintClear "YOU SEE A BRASS BOTTLE JAMMED INTO A CRACK HERE."
-	Gosub WhatDoYouDo
-	Choice = Menu "LEAVE IT" -> Done "PULL IT OUT" -> PullBottle
+    if Search != Searching or EfreetiBottleDone != 0 { exit }
+    Facing = South
+    CallRedraw()
+    Text("YOU SEE A BRASS BOTTLE JAMMED INTO A CRACK HERE.")
+    WhatDoYouDo()
+    Scratch1 = Menu("LEAVE IT", "PULL IT OUT")
+    goto [Done, PullBottle][Scratch1]
 
 PullBottle:
-	alias Choice = Scratch1
-	PrintClear "AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID."
-	SetupMonster Efreeti distance=0 closeup=Efreeti
-	PrintClear "'I AM THE EFREETI SAMIR AHWAHL. YOU ARE NOT MY MASTER. ARE YOU, PERCHANCE, VAMPIRES?'"
-	Gosub WhatDoYouDo
-	Choice = Menu "YES" -> EfreetiAttacks "NO" -> EfreetiReturns "ATTACK IT" -> FightEfreeti
+    Text("AS YOU PULL, THE STOPPER COMES LOOSE AND SMOKE BILLOWS OUT, FORMING INTO A GIANT, REDDISH HUMANOID.")
+    SetupMonster(Efreeti, distance=0, closeup=Efreeti)
+    Text("'I AM THE EFREETI SAMIR AHWAHL. YOU ARE NOT MY MASTER. ARE YOU, PERCHANCE, VAMPIRES?'")
+    WhatDoYouDo()
+    Scratch1 = Menu("YES", "NO", "ATTACK IT")
+    goto [EfreetiAttacks, EfreetiReturns, FightEfreeti][Scratch1]
 
 EfreetiReturns:
-	PrintClear "'FOOLS, SUMMON ME ONLY WHEN A VAMPIRE IS NEAR OR FACE MY WRATH.' HE RETURNS TO THE BOTTLE."
-	RedrawView
-	Call CallRedraw
-	Delay
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 50 // Efreeti Bottle
-	Combat
-	EfreetiBottleDone = 1
-	Exit
+    Text("'FOOLS, SUMMON ME ONLY WHEN A VAMPIRE IS NEAR OR FACE MY WRATH.' HE RETURNS TO THE BOTTLE.")
+    RedrawView()
+    CallRedraw()
+    Delay()
+    ClearMonsters()
+    Treasure(items=[EfreetiBottle])
+    Combat()
+    EfreetiBottleDone = 1
+    exit
 
 EfreetiAttacks:
-	PrintClear "'DIE HAPPY FIENDS, YOUR DEATHS SHALL BE MY FREEDOM.'"
+    Text("'DIE HAPPY FIENDS, YOUR DEATHS SHALL BE MY FREEDOM.'")
 
 FightEfreeti:
-	Morale = 100
-	ClearMonsters
-	LoadMonster Efreeti124 count=1 icon=Efreeti
-	Combat
-	EfreetiBottleDone = 1
-	Exit
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Efreeti124, count=1, icon=Efreeti)
+    Combat()
+    EfreetiBottleDone = 1
+    exit
 
 CrudeBarracks:
-	if BarracksSeen != 0: Exit
-	PrintClear "YOU ARE IN A CRUDE BARRACKS. ON ONE WALL IS A CRUDE MAP."
-	Gosub JournalEntry
-	Print "28."
-	BarracksSeen = 1
-	Exit
+    if BarracksSeen != 0 { exit }
+    Text("YOU ARE IN A CRUDE BARRACKS. ON ONE WALL IS A CRUDE MAP.")
+    JournalEntry()
+    Print("28.")
+    BarracksSeen = 1
+    exit
 
 FatimaRoom:
-	if FatimaMet != 0: Exit
-	if Facing == North: Goto MeetFatima
-	PrintClear "YOU HEAR MUFFLED SOUNDS AND TURN TO INVESTIGATE."
-	Gosub WaitReturnPressed
-	Facing = North
-	Call CallRedraw
+    if FatimaMet != 0 { exit }
+    if Facing == North { goto MeetFatima }
+    Text("YOU HEAR MUFFLED SOUNDS AND TURN TO INVESTIGATE.")
+    WaitReturnPressed()
+    Facing = North
+    CallRedraw()
 
-MeetFatima:
-	alias Choice = Scratch1
-	Portrait = BlueHaired
-	SetupMonster Fighter16 distance=0 body=BlueDressKnife
-	PrintClear "IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU."
-	Gosub WaitReturnPressed
-	PrintClear "'I AM PRINCESS FATIMA.' THE PRINCESS CONTINUES."
-	Gosub JournalEntry
-	Print "16."
-	Gosub WaitReturnPressed
-	PrintClear "SHE OFFERS TO JOIN YOUR BAND."
-	Gosub WhatDoYouDo
-	Choice = Menu "YES" -> FatimaJoins "NO" -> FatimaGoesAlone "ATTACK HER" -> AttackFatima
+    MeetFatima:
+    Portrait = BlueHaired
+    SetupMonster(Fighter16, distance=0, body=BlueDressKnife)
+    Text("IN THIS ROOM IS A YOUNG WOMAN IN BARBARIAN FINERY. SHE DROPS A KOBOLD SHE WAS STRANGLING WHEN SHE SEES YOU.")
+    WaitReturnPressed()
+    Text("'I AM PRINCESS FATIMA.' THE PRINCESS CONTINUES.")
+    JournalEntry()
+    Print("16.")
+    WaitReturnPressed()
+    Text("SHE OFFERS TO JOIN YOUR BAND.")
+    WhatDoYouDo()
+    Scratch1 = Menu("YES", "NO", "ATTACK HER")
+    goto [FatimaJoins, FatimaGoesAlone, AttackFatima][Scratch1]
 
 AttackFatima:
-	Morale = 100
-	ClearMonsters
-	LoadMonster PrincessFatima count=1 icon=11
-	Combat
-	FatimaMet = 1
-	Portrait = None
-	if CombatEnd > PartyDied: Goto EscapeKobolds
-	Exit
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(PrincessFatima, count=1, icon=11)
+    Combat()
+    FatimaMet = 1
+    Portrait = None
+    if CombatEnd > PartyDied { goto EscapeKobolds }
+    exit
 
 FatimaJoins:
-	if PartyCount != 8: Goto AddFatima
-	PrintClear "'YOUR GROUP IS TOO LARGE.'"
-	Gosub WaitReturnPressed
+    if PartyCount != 8 { goto AddFatima }
+    Text("'YOUR GROUP IS TOO LARGE.'")
+    WaitReturnPressed()
 
 FatimaGoesAlone:
-	PrintClear "SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES."
-	FatimaMet = 1
-	Portrait = None
-	Exit
+    Text("SHE SMILES.'SO I SHALL CUT MY OWN WAY OUT. GOOD HUNTING.' SHE LEAVES.")
+    FatimaMet = 1
+    Portrait = None
+    exit
 
 AddFatima:
-	AddNPC PrincessFatima 100
-	FatimaMet = 1
-	ShowPortrait None None
-	Exit
+    AddNPC(PrincessFatima, 100)
+    FatimaMet = 1
+    ShowPortrait(None, None)
+    exit
 
 PrisonCell:
-	if PrisonCellSeen != 0: Exit
-	PrintClear "THIS WAS A PRISON CELL. BROKEN BINDINGS AND SIX DEAD KOBOLDS ARE STREWN ON THE FLOOR."
-	PrisonCellSeen = 1
-	Exit
+    if PrisonCellSeen != 0 { exit }
+    Text("THIS WAS A PRISON CELL. BROKEN BINDINGS AND SIX DEAD KOBOLDS ARE STREWN ON THE FLOOR.")
+    PrisonCellSeen = 1
+    exit
 
 RubbleSlope:
-	if Facing != East: Goto SlopeAskClimb
-	if 1 == RubbleSlopeUsed: Exit
-	PrintClear "YOU TUMBLE DOWN A STEEP, LOOSE SLOPE, MAKING A LOUD CLATTER."
-	Gosub WaitReturnPressed
-	RubbleSlopeUsed = 1
-	Goto WyvernLands
+    if Facing != East { goto SlopeAskClimb }
+    if 1 == RubbleSlopeUsed { exit }
+    Text("YOU TUMBLE DOWN A STEEP, LOOSE SLOPE, MAKING A LOUD CLATTER.")
+    WaitReturnPressed()
+    RubbleSlopeUsed = 1
+    goto WyvernLands
 
-SlopeAskClimb:
-	alias Choice = Scratch1
-	if 1 == RubbleSlopeUsed: Exit
-	PrintClear "THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?"
-	Choice = Menu "YES" -> ClimbSlope "NO" -> SlopeStepBack
+    SlopeAskClimb:
+    if 1 == RubbleSlopeUsed { exit }
+    Text("THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?")
+    Scratch1 = Menu("YES", "NO")
+    goto [ClimbSlope, SlopeStepBack][Scratch1]
 
 SlopeStepBack:
-	PartyX = PrevX
-	PartyY = PrevY
-	Call CallRedraw
-	Exit
+    PartyX = PrevX
+    PartyY = PrevY
+    CallRedraw()
+    exit
 
 ClimbSlope:
-	PrintClear "YOU DISLODGE A NUMBER OF ROCKS."
-	Delay
-	RubbleSlopeUsed = 1
+    Text("YOU DISLODGE A NUMBER OF ROCKS.")
+    Delay()
+    RubbleSlopeUsed = 1
 
 WyvernLands:
-	if WyvernState != 0: Exit
-	PrintClear "THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU."
-	Facing = East
-	Call CallRedraw
-	SetupMonster Wyvern distance=2 closeup=Wyvern
-	Delay
-	Approach
-	Delay
-	Approach
-	Gosub WaitReturnPressed
-	Surprise = PartyIsSurprised
-	Morale = 100
-	ClearMonsters
-	LoadMonster Wyvern count=1 icon=Wyvern
-	Combat
-	WyvernState = WyvernKilled
-	Exit
+    if WyvernState != 0 { exit }
+    Text("THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU.")
+    Facing = East
+    CallRedraw()
+    SetupMonster(Wyvern, distance=2, closeup=Wyvern)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    WaitReturnPressed()
+    Surprise = PartyIsSurprised
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Wyvern, count=1, icon=Wyvern)
+    Combat()
+    WyvernState = WyvernKilled
+    exit
 
 WyvernCharges:
-	if WyvernState != 0: Exit
-	SetupMonster Wyvern distance=2 closeup=Wyvern
-	PrintClear "BEFORE YOU LIES A HUGE WYVERN. IT RISES UP AND CHARGES."
-	Approach
-	Delay
-	Approach
-	Gosub WaitReturnPressed
-	Morale = 100
-	ClearMonsters
-	LoadMonster Wyvern count=1 icon=Wyvern
-	Combat
-	WyvernState = WyvernKilled
-	Exit
+    if WyvernState != 0 { exit }
+    SetupMonster(Wyvern, distance=2, closeup=Wyvern)
+    Text("BEFORE YOU LIES A HUGE WYVERN. IT RISES UP AND CHARGES.")
+    Approach()
+    Delay()
+    Approach()
+    WaitReturnPressed()
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Wyvern, count=1, icon=Wyvern)
+    Combat()
+    WyvernState = WyvernKilled
+    exit
 
 CrippledKobold:
-	alias Choice = Scratch1
-	if CrippledKoboldMet != 0 || Search != 1: Exit
-	PrintClear "HIDDEN IN A NARROW CREVICE IS AN OLD CRIPPLED KOBOLD. IT CROAKS WEAKLY FOR WATER."
-	Gosub WhatDoYouDo
-	CrippledKoboldMet = 1
-	Choice = Menu "GIVE IT WATER" -> GiveWater "THREATEN IT" -> ThreatenKobold "KILL IT" -> KillKobold
+    if CrippledKoboldMet != 0 or Search != Searching { exit }
+    Text("HIDDEN IN A NARROW CREVICE IS AN OLD CRIPPLED KOBOLD. IT CROAKS WEAKLY FOR WATER.")
+    WhatDoYouDo()
+    CrippledKoboldMet = 1
+    Scratch1 = Menu("GIVE IT WATER", "THREATEN IT", "KILL IT")
+    goto [GiveWater, ThreatenKobold, KillKobold][Scratch1]
 
 GiveWater:
-	alias Choice = Scratch1
-	PrintClear "WHEN YOU GIVE IT WATER, IT CRAWLS OUT AND TELLS YOU ITS TALE."
-	Gosub JournalEntry
-	Print "20."
-	Gosub WaitReturnPressed
-	PrintClear "AFTER IT IS DONE, IT LEAVES."
-	Gosub WhatDoYouDo
-	Choice = Menu "LET IT LEAVE" -> Done "KILL IT" -> KillKobold
+    Text("WHEN YOU GIVE IT WATER, IT CRAWLS OUT AND TELLS YOU ITS TALE.")
+    JournalEntry()
+    Print("20.")
+    WaitReturnPressed()
+    Text("AFTER IT IS DONE, IT LEAVES.")
+    WhatDoYouDo()
+    Scratch1 = Menu("LET IT LEAVE", "KILL IT")
+    goto [Done, KillKobold][Scratch1]
 
 ThreatenKobold:
-	PrintClear "THE KOBOLD RETREATS AROUND A BEND."
-	Exit
+    Text("THE KOBOLD RETREATS AROUND A BEND.")
+    exit
 
 KillKobold:
-	PrintClear "YOU CUT DOWN THE KOBOLD."
-	Exit
+    Text("YOU CUT DOWN THE KOBOLD.")
+    exit
 
 LivingAreas:
-	if LivingAreaSeen != 0 || KoboldKingState != 0: Exit
-	PrintClear "THIS IS THE LIVING AREAS. FEMALE AND CHILD KOBOLDS FLEE."
-	LivingAreaSeen = 1
-	Exit
+    if LivingAreaSeen != 0 or KoboldKingState != 0 { exit }
+    Text("THIS IS THE LIVING AREAS. FEMALE AND CHILD KOBOLDS FLEE.")
+    LivingAreaSeen = 1
+    exit
 
 RatLarder:
-	if LarderSeen13 != 0: Exit
-	PrintClear "RATS ARE HUNG HERE TO AGE. MOLDY ROOTS LIE IN PILES."
-	LarderSeen13 = 1
-	Exit
+    if LarderSeen13 != 0 { exit }
+    Text("RATS ARE HUNG HERE TO AGE. MOLDY ROOTS LIE IN PILES.")
+    LarderSeen13 = 1
+    exit
 
 MessTables:
-	if MessHallSeen != 0: Exit
-	PrintClear "HERE CRUDE TABLES, LITTERED WITH BONES, ARE SCATTERED AROUND."
-	MessHallSeen = 1
-	Exit
+    if MessHallSeen != 0 { exit }
+    Text("HERE CRUDE TABLES, LITTERED WITH BONES, ARE SCATTERED AROUND.")
+    MessHallSeen = 1
+    exit
 
 RuinedBallista:
-	if PartyX == PrevX && PartyY == PrevY: Exit
-	PrintClear "A RUINED BALLISTA LIES HERE."
-	Exit
+    if PartyX == PrevX and PartyY == PrevY { exit }
+    Text("A RUINED BALLISTA LIES HERE.")
+    exit
 
 WyvernNest:
-	if WyvernState != WyvernKilled: Exit
-	PrintClear "AMONGST A NEST OF LOGS YOU FIND SOME TREASURE."
-	ClearMonsters
-	Treasure 0 #03E8 #01F4 #03E8 0 2 2 130 // 2 random items
-	Combat
-	WyvernState = NestTreasureTaken
-	Exit
+    if WyvernState != WyvernKilled { exit }
+    Text("AMONGST A NEST OF LOGS YOU FIND SOME TREASURE.")
+    ClearMonsters()
+    Treasure(silver=1000, electrum=500, gold=1000, gems=2, jewelry=2, items=Random(2))
+    Combat()
+    WyvernState = NestTreasureTaken
+    exit
 
 KoboldHoard:
-	if KoboldKingState != KingDied: Exit
-	PrintClear "STREWN ACROSS THE FLOOR IS THE ACCUMULATED WEALTH OF THE KOBOLD COMMUNITY."
-	ClearMonsters
-	Treasure #C350 0 0 0 0 6 2 43 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, 25 Dust Covered Boots, 5 Rotting Leather Saddle, Silver Brooch, 6 Fungus Covered Tapestry, and 4 more
-	Combat
-	KoboldKingState = ThroneTreasureTaken
-	Exit
+    if KoboldKingState != KingDied { exit }
+    Text("STREWN ACROSS THE FLOOR IS THE ACCUMULATED WEALTH OF THE KOBOLD COMMUNITY.")
+    ClearMonsters()
+    Treasure(copper=50000, gems=6, jewelry=2, items=[MagicUserScrollWith3Spells, MagicUserScrollWith3Spells, DustCoveredBoots*25, RottingLeatherSaddle*5, SilverBrooch, FungusCoveredTapestry*6, SilverMirror, CopperBrazier*3, RottingRug*6, ChainOfBone*50])
+    Combat()
+    KoboldKingState = ThroneTreasureTaken
+    exit
 
-CheckTrap:
-	CheckParty 0 19 Scratch1 Scratch1 Scratch1 Scratch1
-	if Scratch1 == 1: Goto TrapFound
-	if Search != 1: Goto TrapNotDisarmed
-	AuxMember = 0
+def CheckTrap() {
+    CheckParty(0, 19, Scratch1, Scratch1, Scratch1, Scratch1)
+    if Scratch1 == 1 { goto TrapFound }
+    if Search != Searching { goto TrapNotDisarmed }
+    AuxMember = 0
+} # falls into MemberFindsTrap
 
 MemberFindsTrap:
-	SelectMember AuxMember
-	if SelStatus != Okay: Goto NextTrapFinder
-	AuxRoll = Random 99
-	if SelFindTraps > AuxRoll: Goto TrapFound
+    SelectMember(AuxMember)
+    if SelStatus != Okay { goto NextTrapFinder }
+    AuxRoll = Random(99)
+    if SelFindTraps > AuxRoll { goto TrapFound }
 
-NextTrapFinder:
-	AuxMember += 1
-	if AuxMember < 8: Goto MemberFindsTrap
-	Goto TrapNotDisarmed
+    NextTrapFinder:
+    AuxMember += 1
+    if AuxMember < 8 { goto MemberFindsTrap }
+    goto TrapNotDisarmed
 
 TrapFound:
-	alias Choice = AuxMember
-	PrintClear "YOU FIND A TRAP, BUT THE TUNNEL IS TOO NARROW TO AVOID IT."
-	Gosub WhatDoYouDo
-	Choice = Menu "DISARM IT" -> DisarmTrap "GO ON" -> TrapNotDisarmed "LEAVE" -> TrapBackOff
+    Text("YOU FIND A TRAP, BUT THE TUNNEL IS TOO NARROW TO AVOID IT.")
+    WhatDoYouDo()
+    AuxMember = Menu("DISARM IT", "GO ON", "LEAVE")
+    goto [DisarmTrap, TrapNotDisarmed, TrapBackOff][AuxMember]
 
 DisarmTrap:
-	Who "WHO WILL DISARM THE TRAP?"
-	if SelStatus != Okay: Goto TrapNotDisarmed
-	Scratch4 = 128
-	AuxRoll = Random 99
-	if SelFindTraps < AuxRoll: Goto TrapNotDisarmed
-	Scratch10 = 1
-	Return
+    Who("WHO WILL DISARM THE TRAP?")
+    if SelStatus != Okay { goto TrapNotDisarmed }
+    Scratch4 = 128
+    AuxRoll = Random(99)
+    if SelFindTraps < AuxRoll { goto TrapNotDisarmed }
+    Scratch10 = 1
+    return
 
 TrapNotDisarmed:
-	Scratch10 = 0
-	Return
+    Scratch10 = 0
+    return
 
 TrapBackOff:
-	PartyX = PrevX
-	PartyY = PrevY
-	Call CallRedraw
-	Exit
+    PartyX = PrevX
+    PartyY = PrevY
+    CallRedraw()
+    exit
 
 FollowGuide:
-	Picture None
-	Scratch6 = 0
+    Picture(None)
+    Scratch6 = 0
 
-GuideStep:
-	Scratch1 = GuidePathMove[Scratch6]
-	Facing = GuidePathFacing[Scratch6]
-	Gosub WalkSteps
-	Scratch1 = GuidePathEvent[Scratch6]
-	OnGosub Scratch1 GuideReturn KoboldTapsWall KoboldTapsWall BoulderLever ClamberDown
-	if Scratch1 == 4: Goto Done
-	Scratch6 += 1
-	Goto GuideStep
+    GuideStep:
+    Scratch1 = GuidePathMove[Scratch6]
+    Facing = GuidePathFacing[Scratch6]
+    WalkSteps()
+    Scratch1 = GuidePathEvent[Scratch6]
+    gosub [GuideReturn, KoboldTapsWall, KoboldTapsWall, BoulderLever, ClamberDown][Scratch1]
+    if Scratch1 == 4 { goto Done }
+    Scratch6 += 1
+    goto GuideStep
 
-WalkSteps:
-	Scratch2 = 1
-	if Scratch1 == 0 {
-		Call CallRedraw
-		Delay
-		Return
-	}
+def WalkSteps() {
+    Scratch2 = 1
+    if Scratch1 == 0 {
+        CallRedraw()
+        Delay()
+        return
+    }
 
-WalkStepLoop:
-	if Scratch2 > Scratch1: Return
-	OnGosub Facing StepNorthY StepEastX StepSouthY StepWestX
-	Call CallRedraw
-	Delay
-	Scratch2 += 1
-	Goto WalkStepLoop
+    WalkStepLoop:
+    if Scratch2 > Scratch1 { return }
+    gosub [StepNorthY, StepEastX, StepSouthY, StepWestX][Facing]
+    CallRedraw()
+    Delay()
+    Scratch2 += 1
+    goto WalkStepLoop
+}
 
-StepNorthY:
-	PartyY -= 1
-	Return
+def StepNorthY() {
+    PartyY -= 1
+    return
+}
 
-StepEastX:
-	PartyX += 1
-	Return
+def StepEastX() {
+    PartyX += 1
+    return
+}
 
-StepSouthY:
-	PartyY += 1
-	Return
+def StepSouthY() {
+    PartyY += 1
+    return
+}
 
-StepWestX:
-	PartyX -= 1
+def StepWestX() {
+    PartyX -= 1
+} # falls into GuideReturn
 
 GuideReturn:
-	Return
+    return
 
-KoboldTapsWall:
-	PrintClear "THE KOBOLD PAUSES, IDLY TAPS THE WALL, THEN PROCEEDS."
-	Gosub WaitReturnPressed
-	Return
+def KoboldTapsWall() {
+    Text("THE KOBOLD PAUSES, IDLY TAPS THE WALL, THEN PROCEEDS.")
+    WaitReturnPressed()
+    return
+}
 
-BoulderLever:
-	alias Choice = Scratch8
-	PrintClear "A BOULDER BLOCKS OFF THE PASSAGE. USING A LEVER, THE KOBOLD DISLODGES IT AND PROCEEDS. DO YOU?"
-	Choice = Menu "YES" -> GuideReturn "NO" -> KoboldGone
+def BoulderLever() {
+    Text("A BOULDER BLOCKS OFF THE PASSAGE. USING A LEVER, THE KOBOLD DISLODGES IT AND PROCEEDS. DO YOU?")
+    Scratch8 = Menu("YES", "NO")
+    goto [GuideReturn, KoboldGone][Scratch8]
+} # falls into KoboldGone
 
 KoboldGone:
-	PrintClear "THE KOBOLD DISAPPEARS BEYOND THE BOULDER."
-	Exit
+    Text("THE KOBOLD DISAPPEARS BEYOND THE BOULDER.")
+    exit
 
-ClamberDown:
-	PrintClear "YOU CLAMBER NOISILY DOWN A SLOPE OF RUBBLE."
-	Delay
-	if WyvernState != 0: Goto TreasureAhead
-	PrintClear "AT THE BOTTOM THE KOBOLD DIVES BENEATH SOME RUBBLE."
-	Delay
-	RubbleSlopeUsed = 1
-	Goto WyvernLands
+def ClamberDown() {
+    Text("YOU CLAMBER NOISILY DOWN A SLOPE OF RUBBLE.")
+    Delay()
+    if WyvernState != 0 { goto TreasureAhead }
+    Text("AT THE BOTTOM THE KOBOLD DIVES BENEATH SOME RUBBLE.")
+    Delay()
+    RubbleSlopeUsed = 1
+    goto WyvernLands
 
-TreasureAhead:
-	alias Choice = Scratch8
-	PrintClear "'JUST AROUND THE CORNER IS OUR TREASURE. TAKE WHAT YOU WISH AND LEAVE US. GOOD DAY.'"
-	Gosub WhatDoYouDo
-	Choice = Menu "LET IT GO" -> Done "KILL IT" -> KillKobold
+    TreasureAhead:
+    Text("'JUST AROUND THE CORNER IS OUR TREASURE. TAKE WHAT YOU WISH AND LEAVE US. GOOD DAY.'")
+    WhatDoYouDo()
+    Scratch8 = Menu("LET IT GO", "KILL IT")
+    goto [Done, KillKobold][Scratch8]
+} # falls into GuideToKing
 
 GuideToKing:
-	Scratch6 = 13
+    Scratch6 = 13
 
-KingGuideStep:
-	Scratch1 = GuidePathMove[Scratch6]
-	Facing = GuidePathFacing[Scratch6]
-	Gosub WalkSteps
-	Scratch1 = GuidePathEvent[Scratch6]
-	OnGosub Scratch1 GuideReturn KoboldTapsWall KoboldTapsWall EnvoysAnnounced
-	if Scratch1 == 3: Goto Done
-	Scratch6 += 1
-	Goto KingGuideStep
+    KingGuideStep:
+    Scratch1 = GuidePathMove[Scratch6]
+    Facing = GuidePathFacing[Scratch6]
+    WalkSteps()
+    Scratch1 = GuidePathEvent[Scratch6]
+    gosub [GuideReturn, KoboldTapsWall, KoboldTapsWall, EnvoysAnnounced][Scratch1]
+    if Scratch1 == 3 { goto Done }
+    Scratch6 += 1
+    goto KingGuideStep
 
-EnvoysAnnounced:
-	PrintClear "THE KOBOLD CALLS OUT,'THE ENVOYS ARE HERE, GREAT KING.' AN AGED VOICE REPLIES 'SEND THEM FORWARD.' YOUR GUIDE, HOWEVER, HAS FALLEN INTO A STUPOR."
-	Exit
+def EnvoysAnnounced() {
+    Text("THE KOBOLD CALLS OUT,'THE ENVOYS ARE HERE, GREAT KING.' AN AGED VOICE REPLIES 'SEND THEM FORWARD.' YOUR GUIDE, HOWEVER, HAS FALLEN INTO A STUPOR.")
+    exit
+}
 
 Surrender:
-	PartyX = 4
-	PartyY = 3
-	Facing = West
-	Call CallRedraw
-	PrintClear "THE KOBOLDS HERD YOU TOWARD YOUR PRISON. SOME NAB BITS OF YOUR EQUIPMENT AND LEAVE."
-	Rob 1 25 10
-	Scratch6 = 22
+    PartyX = 4
+    PartyY = 3
+    Facing = West
+    CallRedraw()
+    Text("THE KOBOLDS HERD YOU TOWARD YOUR PRISON. SOME NAB BITS OF YOUR EQUIPMENT AND LEAVE.")
+    Rob(1, 25, 10)
+    Scratch6 = 22
 
-PrisonWalkStep:
-	Scratch1 = GuidePathMove[Scratch6]
-	Facing = GuidePathFacing[Scratch6]
-	Gosub WalkSteps
-	Scratch1 = GuidePathEvent[Scratch6]
-	OnGosub Scratch1 GuideReturn ReachPrison
-	Scratch6 += 1
-	Goto PrisonWalkStep
+    PrisonWalkStep:
+    Scratch1 = GuidePathMove[Scratch6]
+    Facing = GuidePathFacing[Scratch6]
+    WalkSteps()
+    Scratch1 = GuidePathEvent[Scratch6]
+    gosub [GuideReturn, ReachPrison][Scratch1]
+    Scratch6 += 1
+    goto PrisonWalkStep
 
-ReachPrison:
-	if 1 == FatimaMet: Goto ThrownInCell
-	Portrait = BlueHaired
-	SetupMonster Kobold distance=0 body=BlueDressKnife
-	PrintClear "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
-	AddNPC PrincessFatima 100
-	ClearMonsters
-	LoadMonster Kobold0 count=10 icon=Kobold
-	Combat
-	Portrait = None
-	if PartyCount == 8: Goto FatimaJournal
-	PrintClear "WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE."
-	Gosub JournalEntry
-	Print "16"
+def ReachPrison() {
+    if 1 == FatimaMet { goto ThrownInCell }
+    Portrait = BlueHaired
+    SetupMonster(Kobold, distance=0, body=BlueDressKnife)
+    Text("A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'")
+    AddNPC(PrincessFatima, 100)
+    ClearMonsters()
+    LoadMonster(Kobold0, count=10, icon=Kobold)
+    Combat()
+    Portrait = None
+    if PartyCount == 8 { goto FatimaJournal }
+    Text("WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE.")
+    JournalEntry()
+    Print("16")
 
-FatimaJournal:
-	FatimaMet = 1
-	if CombatEnd < PartyDied: Exit
+    FatimaJournal:
+    FatimaMet = 1
+    if CombatEnd < PartyDied { exit }
+} # falls into EscapeKobolds
 
 EscapeKobolds:
-	Scratch1 = Random 5
-	PartyX = EscapeXTable[Scratch1]
-	PartyY = EscapeYTable[Scratch1]
-	Call CallRedraw
-	PrintClear "THE KOBOLDS CHASE FOR A WHILE, BUT YOU ESCAPE."
-	Exit
+    Scratch1 = Random(5)
+    PartyX = EscapeXTable[Scratch1]
+    PartyY = EscapeYTable[Scratch1]
+    CallRedraw()
+    Text("THE KOBOLDS CHASE FOR A WHILE, BUT YOU ESCAPE.")
+    exit
 
 KoboldAmbush:
-	if Present == DrunkKoboldState && 0 == WyvernState: Exit
-	Scratch1 = 20
-	if 0 != KoboldKingState: Scratch1 += 100
-	if 1 != Search: Scratch1 += 40
-	Scratch2 = Random Scratch1
-	if 1 != Scratch2: Exit
-	SetupMonster Kobold distance=0 closeup=Kobold
-	PrintClear "KOBOLDS SEEM TO BOIL UP FROM NOWHERE."
-	Gosub WaitReturnPressed
-	Morale = 30
-	MonsterHit = 2
-	PartyMove = 252
-	PartyHit = 254
-	ClearMonsters
-	LoadMonster Kobold0 count=15 icon=Kobold
-	LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
-	Combat
-	if CombatEnd > PartyDied: Goto EscapeKobolds
-	Exit
+    if Present == DrunkKoboldState and 0 == WyvernState { exit }
+    Scratch1 = 20
+    if 0 != KoboldKingState { Scratch1 += 100 }
+    if Searching != Search { Scratch1 += 40 }
+    Scratch2 = Random(Scratch1)
+    if 1 != Scratch2 { exit }
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Text("KOBOLDS SEEM TO BOIL UP FROM NOWHERE.")
+    WaitReturnPressed()
+    Morale = 30
+    MonsterHit = 2
+    PartyMove = 252
+    PartyHit = 254
+    ClearMonsters()
+    LoadMonster(Kobold0, count=15, icon=Kobold)
+    LoadMonster(KoboldLeader1, count=3, icon=KoboldLeader)
+    Combat()
+    if CombatEnd > PartyDied { goto EscapeKobolds }
+    exit
 
-event2:
-	if Present == DrunkKoboldState && 0 == WyvernState: Exit
-	if 0 != KoboldKingState: Goto RestRareEncounter
-	RestEvery = 1
-	RestChance = 100
-	Exit
+on camp {
+    if Present == DrunkKoboldState and 0 == WyvernState { exit }
+    if 0 != KoboldKingState { goto RestRareEncounter }
+    RestEvery = 1
+    RestChance = 100
+    exit
 
-RestRareEncounter:
-	RestEvery = 96
-	RestChance = 5
-	Exit
+    RestRareEncounter:
+    RestEvery = 96
+    RestChance = 5
+    exit
+}
 
-event3:
-	RestChance = 0
-	SetupMonster Kobold distance=2 closeup=Kobold
-	PrintClear "KOBOLDS APPEAR AND BOMBARD YOU WITH ROCKS."
-	Damage 7 1 4 1 50
-	RedrawView
-	Call CallRedraw
-	Picture None
-	Exit
+on rest {
+    RestChance = 0
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Text("KOBOLDS APPEAR AND BOMBARD YOU WITH ROCKS.")
+    Damage(7, 1, 4, 1, 50)
+    RedrawView()
+    CallRedraw()
+    Picture(None)
+    exit
+}
 
-WhatDoYouDo:
-	Print " WHAT DO YOU DO?"
-	Return
+def WhatDoYouDo() {
+    Print(" WHAT DO YOU DO?")
+    return
+}
 
 ThrownInCell:
-	PrintClear "YOU ARE THROWN INTO A CELL BEREFT OF EQUIPMENT."
-	Rob 1 100 255
-	PartyX = 0
-	PartyY = 0
-	Call CallRedraw
-	Exit
+    Text("YOU ARE THROWN INTO A CELL BEREFT OF EQUIPMENT.")
+    Rob(1, 100, 255)
+    PartyX = 0
+    PartyY = 0
+    CallRedraw()
+    exit
 
-WaitReturnPressed:
-	alias Choice = Scratch1
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE."
-	Return
+def WaitReturnPressed() {
+    Scratch1 = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE.")
+    return
+}
 
-JournalEntry:
-	Print " YOU RECORD IT IN YOUR JOURNAL UNDER ENTRY "
-	Return
+def JournalEntry() {
+    Print(" YOU RECORD IT IN YOUR JOURNAL UNDER ENTRY ")
+    return
+}
 
-GuidePathEvent:
-	Data 0 0 0 0 0 0 0 0 0 1 2 3 4 1 2 0
-	Data 0 0 0 0 0 3 0 0 1
-
-GuidePathMove:
-	Data 0 1 0 1 0 2 0 2 0 3 1 1 1 1 1 1
-	Data 0 2 0 2 0 2 3 0 1
-
-GuidePathFacing:
-	Data 1 1 0 0 3 3 0 0 1 1 1 1 1 3 3 3
-	Data 0 0 3 3 0 0 3 0 0
-
-EscapeXTable:
-	Data 0 6 1 9 7 6
-
-EscapeYTable:
-	Data 12 12 14 11 10 11 255
+# tables
+GuidePathEvent = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 0, 0, 0, 0, 0, 0, 3, 0, 0, 1]
+GuidePathMove = [0, 1, 0, 1, 0, 2, 0, 2, 0, 3, 1, 1, 1, 1, 1, 1, 0, 2, 0, 2, 0, 2, 3, 0, 1]
+GuidePathFacing = [1, 1, 0, 0, 3, 3, 0, 0, 1, 1, 1, 1, 1, 3, 3, 3, 0, 0, 3, 3, 0, 0, 3, 0, 0]
+EscapeXTable = [0, 6, 1, 9, 7, 6]
+EscapeYTable = [12, 12, 14, 11, 10, 11, 255]

@@ -5,25 +5,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 )
 
-// The area event scripts as text (data/assets/scripts/area<N>.txt, written
-// once from the ECL byte code by cmd/eclscript, edited by hand since):
-//
-//	Label:                one or more labels name the next line
-//		Op arg arg ...    one command per line (eclOpName's names)
-//		if A == B: Op ... a test (scriptfold.go)
-//		Data 1 2 3 ...    the bytes of a table (GetTable's)
-//	// comment
-//
-// Operands are a byte (12), a word (#0807, hex), a variable, label or
-// table by name or script address ([4A07]), a variable read through the
-// other operand kind (&Name), a string ("TEXT", Go quoting) or a string
-// variable ($Name). Variables are named by the names files beside the
-// scripts (names/global.txt, names/area<N>.txt) over ScriptVarNames.
+// The area event scripts are text (data/assets/scripts/area<N>.txt,
+// README.md there), written from the ECL byte code by cmd/eclscript
+// (DecodeScript, WriteScript) and parsed at area load (ParseScript).
+// Variables are named by the names files beside the scripts
+// (names/global.txt, names/area<N>.txt) over ScriptVarNames.
 //
 // The engine runs a Script directly: eclPC is an instruction number and
 // FetchArgs hands an instruction's operands to the opcode handlers in the
@@ -38,20 +28,23 @@ type Script struct {
 	Labels map[string]int // a code label's instruction number
 	At     map[int]string // an instruction's first label
 	Data   []byte         // the tables, from eclBase
+	Tables map[string]int // a table's address in Data (eclBase + its offset)
 }
 
 // Instr is one command.
 type Instr struct {
-	Op   byte
-	Args []Arg
-	Line int // in the script file
+	Op      byte
+	Args    []Arg
+	Line    int    // in the script file
+	Comment string // a note from the decoder, written after the command
 }
 
 // Arg is one operand in its byte-code form.
 type Arg struct {
-	Type byte   // 0 byte, 1 and 3 variable, 2 word, 0x80 string, 0x81 string variable
-	N    int    // the value or address (a label's instruction number)
-	S    string // a string's text
+	Type  byte   // 0 byte, 1 and 3 variable, 2 word, 0x80 string, 0x81 string variable
+	N     int    // the value or address (a label's instruction number)
+	S     string // a string's text
+	Label bool   // N is a label's instruction number (a jump's operand)
 }
 
 // scriptDir is where the area scripts are, in the data directory.
@@ -127,216 +120,6 @@ func ReadAreaNames(dir string, area int, labels bool) (*ScriptNames, error) {
 		}
 	}
 	return n, nil
-}
-
-// ParseScript parses a script.
-func ParseScript(text string, names *ScriptNames) (*Script, error) {
-	vars := map[string]int{}
-	for a, n := range names.Vars {
-		vars[n] = a
-	}
-	areas := names.Areas
-	s := &Script{Labels: map[string]int{}, At: map[int]string{}}
-	tables := map[string]int{}
-	ops := map[string]byte{}
-	for op := range 0x40 {
-		ops[eclOpName(byte(op))] = byte(op)
-	}
-	type pending struct {
-		line int
-		args []string
-	}
-	var todo []pending
-	var waiting []string // labels for the next line
-	dataKind := ""       // the kind of the table's entries
-	for _, a := range areas {
-		if _, ok := vars[a.Name]; ok {
-			return nil, fmt.Errorf("%s is an area and a variable", a.Name)
-		}
-	}
-	src, err := unfoldScript(text, names)
-	if err != nil {
-		return nil, err
-	}
-	for _, sl := range src {
-		n, toks := sl.n, sl.toks
-		if sl.label {
-			l := strings.TrimSuffix(toks[0], ":")
-			if _, dup := s.Labels[l]; dup || tables[l] != 0 {
-				return nil, fmt.Errorf("%d: label %s twice", n, l)
-			}
-			waiting = append(waiting, l)
-			continue
-		}
-		if toks[0] == "Data" {
-			for _, l := range waiting {
-				tables[l] = eclBase + len(s.Data)
-				dataKind = tableKind(l)
-			}
-			waiting = nil
-			for _, t := range toks[1:] {
-				if v, ok := valueOf(names.Values, dataKind, names.Set, t); ok && dataKind != "" {
-					t = strconv.Itoa(v)
-				}
-				v, err := strconv.ParseUint(t, 10, 8)
-				if err != nil {
-					return nil, fmt.Errorf("%d: data byte %q", n, t)
-				}
-				s.Data = append(s.Data, byte(v))
-			}
-			continue
-		}
-		op, ok := ops[toks[0]]
-		if !ok {
-			return nil, fmt.Errorf("%d: no command %s", n, toks[0])
-		}
-		for _, l := range waiting {
-			s.Labels[l] = len(s.Code)
-			if _, ok := s.At[len(s.Code)]; !ok {
-				s.At[len(s.Code)] = l
-			}
-		}
-		waiting = nil
-		s.Code = append(s.Code, Instr{Op: op, Line: n})
-		todo = append(todo, pending{n, toks[1:]})
-	}
-	if len(waiting) > 0 {
-		return nil, fmt.Errorf("label %s at the end", waiting[0])
-	}
-	for i := range s.Events {
-		at, ok := s.Labels[fmt.Sprintf("event%d", i)]
-		if !ok {
-			return nil, fmt.Errorf("no event%d", i)
-		}
-		s.Events[i] = at
-	}
-	for _, a := range areas {
-		if _, ok := s.Labels[a.Name]; ok || tables[a.Name] != 0 {
-			return nil, fmt.Errorf("%s is an area and a label", a.Name)
-		}
-	}
-	for i, p := range todo {
-		p.args = withDefaults(eclOpName(s.Code[i].Op), p.args)
-		for j, t := range p.args {
-			if l, v, ok := strings.Cut(t, "="); ok && !strings.HasPrefix(t, `"`) {
-				if k := operandLabels[eclOpName(s.Code[i].Op)]; j >= len(k) || !slices.Contains(strings.Split(k[j], "|"), l) {
-					return nil, fmt.Errorf("%d: %s is not operand %d of %s", p.line, l, j+1, eclOpName(s.Code[i].Op))
-				}
-				t = v
-			}
-			kind := ""
-			if k := operandKinds[eclOpName(s.Code[i].Op)]; j < len(k) {
-				kind = k[j]
-			}
-			if eclOpName(s.Code[i].Op) == "Save" && j == 0 && len(p.args) == 2 && p.args[1] == "Portrait" {
-				kind = "Head"
-			}
-			if v, ok := valueOf(names.Values, kind, names.Set, t); ok {
-				if _, clash := vars[t]; clash {
-					return nil, fmt.Errorf("%d: %s is a %s and a variable", p.line, t, kind)
-				}
-				s.Code[i].Args = append(s.Code[i].Args, Arg{Type: 0, N: v})
-				continue
-			}
-			a, err := scriptArg(t, s.Labels, tables, vars, areas)
-			if err != nil {
-				return nil, fmt.Errorf("%d: %v", p.line, err)
-			}
-			s.Code[i].Args = append(s.Code[i].Args, a)
-		}
-	}
-	return s, nil
-}
-
-// scriptArg is one operand token.
-func scriptArg(t string, labels, tables, vars map[string]int, areas []ScriptArea) (Arg, error) {
-	if strings.HasPrefix(t, `"`) {
-		str, err := strconv.Unquote(t)
-		if err != nil {
-			return Arg{}, fmt.Errorf("string %s", t)
-		}
-		n := (len(str)*6 + 7) / 8 // its length in the byte code, 6 bits a letter
-		return Arg{Type: 0x80, N: n, S: str}, nil
-	}
-	if strings.HasPrefix(t, "#") {
-		v, err := strconv.ParseUint(t[1:], 16, 16)
-		return Arg{Type: 2, N: int(v)}, err
-	}
-	if t[0] >= '0' && t[0] <= '9' {
-		v, err := strconv.ParseUint(t, 10, 8)
-		return Arg{Type: 0, N: int(v)}, err
-	}
-	typ := byte(1)
-	switch t[0] {
-	case '&':
-		typ, t = 3, t[1:]
-	case '$':
-		typ, t = 0x81, t[1:]
-	}
-	if strings.HasPrefix(t, "[") && strings.HasSuffix(t, "]") {
-		v, err := strconv.ParseUint(t[1:len(t)-1], 16, 16)
-		return Arg{Type: typ, N: int(v)}, err
-	}
-	if i, ok := labels[t]; ok {
-		return Arg{Type: typ, N: i}, nil
-	}
-	if a, ok := tables[t]; ok {
-		return Arg{Type: typ, N: a}, nil
-	}
-	if a, ok := vars[t]; ok {
-		return Arg{Type: typ, N: a}, nil
-	}
-	for _, a := range areas {
-		if a.Name == t && typ == 1 {
-			return Arg{Type: 0, N: a.ID}, nil
-		}
-	}
-	return Arg{}, fmt.Errorf("no label, table or variable %s", t)
-}
-
-// scriptTokens splits a line at spaces outside strings, without its
-// // comment.
-func scriptTokens(line string) ([]string, error) {
-	var toks []string
-	cur, quoted, esc := "", false, false
-	flush := func() {
-		if cur != "" {
-			toks = append(toks, cur)
-		}
-		cur = ""
-	}
-	for i := 0; i < len(line); i++ {
-		c := line[i]
-		switch {
-		case quoted:
-			cur += string(c)
-			if esc {
-				esc = false
-			} else if c == '\\' {
-				esc = true
-			} else if c == '"' {
-				quoted = false
-			}
-		case c == '"':
-			quoted = true
-			cur += string(c)
-		case c == '/' && strings.HasPrefix(line[i:], "//"):
-			flush()
-			return toks, nil
-		case c == ' ' || c == '\t' || c == '\r':
-			flush()
-		case c == '{' || c == '}' || c == ';' || c == ':':
-			flush()
-			toks = append(toks, string(c))
-		default:
-			cur += string(c)
-		}
-	}
-	if quoted {
-		return nil, fmt.Errorf("unterminated string")
-	}
-	flush()
-	return toks, nil
 }
 
 // ReadScriptNames adds the "XXXX Name" lines of a names file, if there is

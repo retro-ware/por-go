@@ -1,753 +1,756 @@
-BugbearsApproach:
-	SetupMonster Bugbear distance=2 closeup=Bugbear
-	Delay
-	Approach
-	Delay
-	Approach
-	Return
+def BugbearsApproach() {
+    SetupMonster(Bugbear, distance=2, closeup=Bugbear)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    return
+}
 
-CheckGarrisonsBeaten:
-	if GateFlags lacks WestGarrisonSlain: Return
-	Scratch10 = GateFlags & EastGarrisonSlain
-	Return
+def CheckGarrisonsBeaten() {
+    if GateFlags lacks WestGarrisonSlain { return }
+    Scratch10 = GateFlags & EastGarrisonSlain
+    return
+}
 
-SetSkyByHour:
-	Scratch1 = 11
-	SkyInside = 9
-	if Hours >= 14: Scratch1 = 8
-	Sky = Scratch1
-	Return
+def SetSkyByHour() {
+    Scratch1 = 11
+    SkyInside = 9
+    if Hours >= 14 { Scratch1 = 8 }
+    Sky = Scratch1
+    return
+}
 
-PayMoney:
-	&Scratch2 = 0
-	Scratch1 = 0
+def PayMoney() {
+    &Scratch2 = 0
+    Scratch1 = 0
+} # falls into CheckMemberMoney
 
 CheckMemberMoney:
-	SelectMember Scratch1
-	Gosub CheckMemberOk
-	IfNe
-	Goto NextPayer
-	&Scratch6 = &SelCopper / 10
-	&Scratch6 += &SelSilver
-	&Scratch6 = &Scratch6 / 10
-	&Scratch6 += &SelElectrum
-	&Scratch6 = &Scratch6 / 2
-	&Scratch6 += &SelGold
-	&Scratch6 = &Scratch6 / 5
-	&Scratch6 += &SelPlatinum
-	if &Scratch6 >= &Scratch4: Goto TakeCoins
-	&Scratch2 += &Scratch6
-	if &Scratch2 >= &Scratch4: Goto TakeCoins
+    SelectMember(Scratch1)
+    CheckMemberOk()
+    if 0 != 0 { goto NextPayer }
+    &Scratch6 = &SelCopper / 10
+    &Scratch6 += &SelSilver
+    &Scratch6 = &Scratch6 / 10
+    &Scratch6 += &SelElectrum
+    &Scratch6 = &Scratch6 / 2
+    &Scratch6 += &SelGold
+    &Scratch6 = &Scratch6 / 5
+    &Scratch6 += &SelPlatinum
+    if &Scratch6 >= &Scratch4 { goto TakeCoins }
+    &Scratch2 += &Scratch6
+    if &Scratch2 >= &Scratch4 { goto TakeCoins }
 
-NextPayer:
-	Scratch1 = Scratch1 + 1
-	if Scratch1 < 8: Goto CheckMemberMoney
-	PrintClear "YOU DON'T HAVE ENOUGH MONEY!"
-	Gosub WaitReturnPressed
-	Compare 0 1
-	Return
+    NextPayer:
+    Scratch1 = Scratch1 + 1
+    if Scratch1 < 8 { goto CheckMemberMoney }
+    Text("YOU DON'T HAVE ENOUGH MONEY!")
+    WaitReturnPressed()
+    Compare(0, 1)
+    return
 
-TakeCoins:
-	Scratch10 = 195
-	Gosub TakeCoinKind
-	IfEq
-	Return
-	Scratch2 = 4
-	Gosub ScaleCost
-	Scratch10 = 193
-	Gosub TakeCoinKind
-	IfEq
-	Return
-	Scratch2 = 1
-	Gosub ScaleCost
-	Scratch10 = 191
-	Gosub TakeCoinKind
-	IfEq
-	Return
-	Scratch2 = 9
-	Gosub ScaleCost
-	Scratch10 = 189
-	Gosub TakeCoinKind
-	IfEq
-	Return
-	Scratch2 = 9
-	Gosub ScaleCost
-	Scratch10 = 187
-	Gosub TakeCoinKind
-	Compare 0 0
-	Return
+    TakeCoins:
+    Scratch10 = 195
+    TakeCoinKind()
+    if Scratch4 == 0 { return }
+    Scratch2 = 4
+    ScaleCost()
+    Scratch10 = 193
+    TakeCoinKind()
+    if Scratch4 == 0 { return }
+    Scratch2 = 1
+    ScaleCost()
+    Scratch10 = 191
+    TakeCoinKind()
+    if Scratch4 == 0 { return }
+    Scratch2 = 9
+    ScaleCost()
+    Scratch10 = 189
+    TakeCoinKind()
+    if Scratch4 == 0 { return }
+    Scratch2 = 9
+    ScaleCost()
+    Scratch10 = 187
+    TakeCoinKind()
+    Compare(0, 0)
+    return
 
-ScaleCost:
-	&Scratch6 = &Scratch4
+def ScaleCost() {
+    &Scratch6 = &Scratch4
 
-ScaleCostLoop:
-	&Scratch4 += &Scratch6
-	Scratch2 -= 1
-	if Scratch2 > 0: Goto ScaleCostLoop
-	Return
+    ScaleCostLoop:
+    &Scratch4 += &Scratch6
+    Scratch2 -= 1
+    if Scratch2 > 0 { goto ScaleCostLoop }
+    return
+}
 
-TakeCoinKind:
-	Scratch1 = 0
+def TakeCoinKind() {
+    Scratch1 = 0
+} # falls into TakeFromMember
 
 TakeFromMember:
-	alias SelName2Entry = Scratch7
-	alias SelNameEntry = Scratch6
-	SelectMember Scratch1
-	Gosub CheckMemberOk
-	IfNe
-	Goto NextCoinMember
-	SelNameEntry = SelName[Scratch10]
-	SelName2Entry = SelName2[Scratch10]
-	&Scratch8 = &SelNameEntry
-	if &Scratch8 < &Scratch4: Goto DeductCoins
-	&Scratch8 = &Scratch4
+    SelectMember(Scratch1)
+    CheckMemberOk()
+    if 0 != 0 { goto NextCoinMember }
+    Scratch6 = SelName[Scratch10]
+    Scratch7 = SelName2[Scratch10]
+    &Scratch8 = &Scratch6
+    if &Scratch8 < &Scratch4 { goto DeductCoins }
+    &Scratch8 = &Scratch4
 
-DeductCoins:
-	&Scratch6 -= &Scratch8
-	SelName[Scratch10] = Scratch6
-	SelName2[Scratch10] = Scratch7
-	&Scratch4 -= &Scratch8
-	Scratch2 = Scratch1 | 128
-	SelectMember Scratch2
-	if Scratch4 == 0: Return
+    DeductCoins:
+    &Scratch6 -= &Scratch8
+    SelName[Scratch10] = Scratch6
+    SelName2[Scratch10] = Scratch7
+    &Scratch4 -= &Scratch8
+    Scratch2 = Scratch1 | 128
+    SelectMember(Scratch2)
+    if Scratch4 == 0 { return }
 
-NextCoinMember:
-	Scratch1 = Scratch1 + 1
-	if Scratch1 < 8: Goto TakeFromMember
-	Compare Scratch4 0
-	Return
+    NextCoinMember:
+    Scratch1 = Scratch1 + 1
+    if Scratch1 < 8 { goto TakeFromMember }
+    Compare(Scratch4, 0)
+    return
 
-CheckMemberOk:
-	if SelStatus == Died: Goto MemberNotOk
-	if SelStatus != Okay: Goto MemberOk
-	if SelControl >= 128: Goto MemberNotOk
+def CheckMemberOk() {
+    if SelStatus == Died { goto MemberNotOk }
+    if SelStatus != Okay { goto MemberOk }
+    if SelControl >= 128 { goto MemberNotOk }
 
-MemberOk:
-	Compare 0 0
-	Return
+    MemberOk:
+    Compare(0, 0)
+    return
 
-MemberNotOk:
-	Compare 0 1
-	Return
+    MemberNotOk:
+    Compare(0, 1)
+    return
+}
 
-CheckAlarmSounding:
-	if AlarmEndHour < 1: Return
-	AuxRoll = Hours
-	if Hours == 0 && AlarmHour == 23: AuxRoll = 24
-	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
-	if TenMinutes < AlarmMinute: Goto AlarmStillOn
-	AlarmEndHour = 0
-	Compare 0 1
-	Return
+def CheckAlarmSounding() {
+    if AlarmEndHour < 1 { return }
+    AuxRoll = Hours
+    if Hours == 0 and AlarmHour == 23 { AuxRoll = 24 }
+    if AuxRoll < AlarmEndHour { goto AlarmStillOn }
+    if TenMinutes < AlarmMinute { goto AlarmStillOn }
+    AlarmEndHour = 0
+    Compare(0, 1)
+    return
 
-AlarmStillOn:
-	if Search == 1: Goto SayAlarmSounding
-	AuxRoll = Random 9
-	if 0 != AuxRoll: Goto AlarmActive
+    AlarmStillOn:
+    if Search == Searching { goto SayAlarmSounding }
+    AuxRoll = Random(9)
+    if 0 != AuxRoll { goto AlarmActive }
 
-SayAlarmSounding:
-	PrintClear "AN ALARM IS SOUNDING."
-	Delay
+    SayAlarmSounding:
+    Text("AN ALARM IS SOUNDING.")
+    Delay()
 
-AlarmActive:
-	Compare 1 0
-	Return
+    AlarmActive:
+    Compare(1, 0)
+    return
+}
 
-StartAlarm:
-	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
-	AlarmHour = Hours
-	AlarmMinute = TenMinutes
-	AlarmEndHour = 1 + AuxCounter
-	Delay
-	Return
+def StartAlarm() {
+    if AlarmEndHour == 0 { Text("AN ALARM STARTS RINGING!") }
+    AlarmHour = Hours
+    AlarmMinute = TenMinutes
+    AlarmEndHour = 1 + AuxCounter
+    Delay()
+    return
+}
 
-YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
+def YesNoMenu() {
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
+}
 
 WaitReturnPressed:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	PrintClear " "
-	Return
+    Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    Text(" ")
+    return
 
-event0:
-	if LeftMap == 0: Goto OnStep
-	SymbolSet = 5
-	Scratch1 = 6
-	if PartyY == 0: Goto LeaveArea
-	Scratch1 = 18
-	SymbolSet = 1
-	AlarmEndHour = 0
+on move {
+    if LeftMap == 0 { goto OnStep }
+    SymbolSet = 5
+    Scratch1 = 6
+    if PartyY == 0 { goto LeaveArea }
+    Scratch1 = 18
+    SymbolSet = 1
+    AlarmEndHour = 0
 
-LeaveArea:
-	Call CallStepForward
-	NewECL Scratch1
+    LeaveArea:
+    CallStepForward()
+    NewECL(Scratch1)
 
-OnStep:
-	Gosub SetSkyByHour
-	Scratch5 = 0
-	Scratch1 = Cell & 31
+    OnStep:
+    SetSkyByHour()
+    Scratch5 = 0
+    Scratch1 = Cell & 31
 
-MatchDoorSpot:
-	Scratch9 = Table9D10[Scratch5]
-	Scratch8 = Table9D18[Scratch5]
-	if Scratch1 == Scratch9 && Facing == Scratch8: Goto DoorSpotAction
-	Scratch5 = Scratch5 + 1
-	if Scratch5 < 8: Goto MatchDoorSpot
-	Exit
+    MatchDoorSpot:
+    Scratch9 = Table9D10[Scratch5]
+    Scratch8 = Table9D18[Scratch5]
+    if Scratch1 == Scratch9 and Facing == Scratch8 { goto DoorSpotAction }
+    Scratch5 = Scratch5 + 1
+    if Scratch5 < 8 { goto MatchDoorSpot }
+    exit
 
-DoorSpotAction:
-	OnGoto Scratch5 AskDownstairs AskDownstairs TowerDoor TowerDoor AskUpstairs AskUpstairs MarkWestTowerUsed MarkEastTowerUsed
-	Exit // extra: the original runs on into data at 9D10
+    DoorSpotAction:
+    goto [AskDownstairs, AskDownstairs, TowerDoor, TowerDoor, AskUpstairs, AskUpstairs,
+        MarkWestTowerUsed, MarkEastTowerUsed][Scratch5]
+    exit # the original runs on into data at 9D10
+}
 
-Table9D10:
-	Data 1 2 7 8 10 11 12 13
+on step {
+    L_9D20:
+    CheckAlarmSounding()
+    if (<) { goto SpecialSquare }
+    if PartyY > 6 { goto SpecialSquare }
+    if Cell has Special { goto SpecialSquare }
+    Scratch1 = 2
+    if Search == NotSearching { Scratch1 = 20 }
+    if Cell has 32 { Scratch1 += Scratch1 }
+    Scratch1 = Random(Scratch1)
+    if Scratch1 == 0 { goto L_9DB4 }
 
-Table9D18:
-	Data 0 0 0 0 2 2 2 2
+    SpecialSquare:
+    Scratch1 = Cell & 31
+    goto [Done, MageGuardRoom, FighterGuardRoom, NearWall, StojanowGateEvent, GateEntrance, WallSquare,
+        Done, BugbearsBehindGate, WagonTrader, GateTowerSquare, GateTowerSquare, Done,
+        MonstersBehindWall][Scratch1]
+} # falls into L_9DB4
 
-event1:
-	Gosub CheckAlarmSounding
-	IfLt
-	Goto SpecialSquare
-	if PartyY > 6: Goto SpecialSquare
-	if Cell has 64: Goto SpecialSquare
-	Scratch1 = 2
-	if Search == 0: Scratch1 = 20
-	if Cell has 32: Scratch1 += Scratch1
-	Scratch1 = Random Scratch1
-	if Scratch1 == 0: Goto event3
+on rest {
+    L_9DB4:
+    $AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
+    Portrait = GrinningBlond
+    Surprise = NoSurprise
+    Text("YOU SEE A")
+    Print($AuxSightText)
+    if CastleFlags has Disguised { goto PatrolMenu }
+    Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
+    WaitReturnPressed()
+    EncounterMenu(Fighter16, distance=2, body=HeraldTabard, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, near="THEY ADVANCE, WEAPONS READY", escape=9,
+        strength=9)
+    Portrait = None
+    goto [Done, FightPatrol, FledCombat, FightPatrol][Scratch10]
 
-SpecialSquare:
-	Scratch1 = Cell & 31
-	OnGoto Scratch1 Done MageGuardRoom FighterGuardRoom NearWall StojanowGateEvent GateEntrance WallSquare Done BugbearsBehindGate WagonTrader GateTowerSquare GateTowerSquare Done MonstersBehindWall
-
-event3:
-	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
-	Portrait = GrinningBlond
-	Surprise = NoSurprise
-	PrintClear "YOU SEE A"
-	Print $AuxSightText
-	if CastleFlags has Disguised: Goto PatrolMenu
-	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
-	Gosub WaitReturnPressed
-	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=9 strength=9
-	Portrait = None
-	OnGoto Scratch10 Done FightPatrol FledCombat FightPatrol
-
-PatrolMenu:
-	Gosub WaitReturnPressed
-	EncounterMenu Fighter16 distance=2 body=HeraldTabard result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
-	Portrait = None
-	OnGoto Scratch10 Done FightPatrol FledCombat
-	PrintClear "WHAT ARE YOU DOING HERE?"
-	Scratch10 = Parlay 0 1 1 2 0
-	OnGoto Scratch10 AskAuthority PatrolSpotsIntruders
-	PrintClear "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
-	$AuxInputText = InputString 6
-	Compare "HARASH" $AuxInputText
-	Goto CheckAnswer
+    PatrolMenu:
+    WaitReturnPressed()
+    EncounterMenu(Fighter16, distance=2, body=HeraldTabard, result=Scratch10, combat=Attack, wait=3,
+        flee=Attack, advance=3, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'",
+        mid="THE LEADER ADVANCES.", escape=12, strength=9)
+    Portrait = None
+    goto [Done, FightPatrol, FledCombat][Scratch10]
+    Text("WHAT ARE YOU DOING HERE?")
+    Scratch10 = Parlay(0, 1, 1, 2, 0)
+    goto [AskAuthority, PatrolSpotsIntruders][Scratch10]
+    Text("'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'")
+    $AuxInputText = InputString(6)
+    Compare("HARASH", $AuxInputText)
+    goto CheckAnswer
+}
 
 AskAuthority:
-	PrintClear "'I'M SORRY, SIR, THERE'S AN ALERT. "
-	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
-	$AuxInputText = InputString 12
-	Compare "TYRANTHRAXUS" $AuxInputText
+    Text("'I'M SORRY, SIR, THERE'S AN ALERT. ")
+    Print("ON WHOSE AUTHORITY ARE YOU HERE?'")
+    $AuxInputText = InputString(12)
+    Compare("TYRANTHRAXUS", $AuxInputText)
 
 CheckAnswer:
-	IfEq
-	Goto PatrolLeaves
-	PrintClear "'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'"
-	Goto FightPatrol
+    if "TYRANTHRAXUS" == $AuxInputText { goto PatrolLeaves }
+    Text("'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'")
+    goto FightPatrol
 
-PatrolLeaves:
-	PrintClear "WITH A NOD OF THE HEAD YOU ARE LEFT ALONE."
-	Exit
+    PatrolLeaves:
+    Text("WITH A NOD OF THE HEAD YOU ARE LEFT ALONE.")
+    exit
 
 PatrolSpotsIntruders:
-	PrintClear "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
+    Text("'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'")
 
 FightPatrol:
-	Morale = 60
-	Delay
-	ClearMonsters
-	LoadMonster ThLvlFighter75 count=1 icon=Aides
-	LoadMonster HillGiant count=5 icon=HillGiant
-	Combat
-	Gosub AfterCombat
-	Exit
+    Morale = 60
+    Delay()
+    ClearMonsters()
+    LoadMonster(ThLvlFighter75, count=1, icon=Aides)
+    LoadMonster(HillGiant, count=5, icon=HillGiant)
+    Combat()
+    AfterCombat()
+    exit
 
 FledCombat:
-	CombatEnd = PartyFled
+    CombatEnd = PartyFled
 
 AfterCombat:
-	if CombatEnd == FightOver: Return
-	Gosub StartAlarm
-	CastleFlags &= ~Disguised
-	if CombatEnd != PartyFled: Return
-	HoldMove = SkipMove
-	PartyX = PrevX
-	PartyY = PrevY
-	Facing = Facing + 2
-	if Facing > West: Facing -= 4
-	Goto Done
+    if CombatEnd == FightOver { return }
+    StartAlarm()
+    CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
+    if CombatEnd != PartyFled { return }
+    HoldMove = SkipMove
+    PartyX = PrevX
+    PartyY = PrevY
+    Facing = Facing + South
+    if Facing > West { Facing -= 4 }
+    goto Done
 
-event2:
-	RestEvery = 0
-	RestChance = 10
-	if AlarmEndHour == 0: Exit
-	if Cell has 64: Exit
-	if PartyY > 6: Exit
-	RestEvery = 1
-	RestChance = 17
+on camp {
+    RestEvery = 0
+    RestChance = 10
+    if AlarmEndHour == 0 { exit }
+    if Cell has Special { exit }
+    if PartyY > 6 { exit }
+    RestEvery = 1
+    RestChance = 17
+} # falls into Done
 
 Done:
-	RedrawView
-	Call CallRedraw
-	Exit
+    RedrawView()
+    CallRedraw()
+    exit
 
-event4:
-	Gosub SetSkyByHour
-	NoCoords = 0
-	if AreaKind == 9: Exit
-	LoadMap 9 unused=2 icons=255
-	LoadWalls 1 9 23
-	Exit
+on load {
+    SetSkyByHour()
+    NoCoords = 0
+    if AreaKind == StojanowGate { exit }
+    LoadMap(9, unused=2, icons=255)
+    LoadWalls(1, 9, 23)
+    exit
+}
 
 AskDownstairs:
-	PrintClear "DO YOU WANT TO GO DOWNSTAIRS?"
-	Goto AskStairs
+    Text("DO YOU WANT TO GO DOWNSTAIRS?")
+    goto AskStairs
 
 AskUpstairs:
-	PrintClear "DO YOU WANT TO GO UPSTAIRS?"
-	Goto AskStairs
+    Text("DO YOU WANT TO GO UPSTAIRS?")
+    goto AskStairs
 
 TowerDoor:
-	Scratch1 = 1
-	if Scratch5 == 3: Scratch1 = 2
-	if GateFlags has Scratch1: Goto TakeStairs
-	Gosub CheckGarrisonsBeaten
-	IfNe
-	Exit
-	PrintClear "FROM THE TOP OF THE GATE COMES A VOLLEY OF ROCKS."
-	Gosub WaitReturnPressed
-	Damage 16 1 6 0 43
-	Exit
+    Scratch1 = 1
+    if Scratch5 == 3 { Scratch1 = 2 }
+    if GateFlags has Scratch1 { goto TakeStairs }
+    CheckGarrisonsBeaten()
+    if Scratch10 != 0 { exit }
+    Text("FROM THE TOP OF THE GATE COMES A VOLLEY OF ROCKS.")
+    WaitReturnPressed()
+    Damage(16, 1, 6, 0, 43)
+    exit
 
 AskStairs:
-	if Ask YesNoMenu == "NO": Goto StairsRedraw
+    if YesNoMenu() == "NO" { goto StairsRedraw }
 
 TakeStairs:
-	PartyX = TowerExitXTable[Scratch5]
-	PartyY = TowerExitYTable[Scratch5]
-	Cell = TowerExitCellTable[Scratch5]
+    PartyX = TowerExitXTable[Scratch5]
+    PartyY = TowerExitYTable[Scratch5]
+    Cell = TowerExitCellTable[Scratch5]
 
 StairsRedraw:
-	HoldMove = SkipMove
-	Call CallRedraw
-	Goto event1
-
-TowerExitXTable:
-	Data 4 11 7 7 4 11
-
-TowerExitYTable:
-	Data 5 5 8 6 7 7
-
-TowerExitCellTable:
-	Data 10 11 12 0 1 2
+    HoldMove = SkipMove
+    CallRedraw()
+    goto L_9D20
 
 MageGuardRoom:
-	if GuardRoomSeenBits has Tower1Seen: Goto MageAndEttins
-	Gosub DescribeGuardRoom
-	GuardRoomSeenBits |= Tower1Seen
+    if GuardRoomSeenBits has Tower1Seen { goto MageAndEttins }
+    DescribeGuardRoom()
+    GuardRoomSeenBits |= Tower1Seen
 
-MageAndEttins:
-	if GateFlags has WestGarrisonSlain: Exit
-	Gosub DescribeEttins
-	Portrait = BlondElder
-	PrintClear "YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'"
-	Gosub WaitReturnPressed
-	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." escape=0 strength=0
-	Portrait = None
-	RedrawView
-	OnGoto Scratch10 Done FightMageGuards
+    MageAndEttins:
+    if GateFlags has WestGarrisonSlain { exit }
+    DescribeEttins()
+    Portrait = BlondElder
+    Text("YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'")
+    WaitReturnPressed()
+    EncounterMenu(Mage, distance=1, body=MerchantCoat, result=Scratch10, combat=Attack, wait=Mirror,
+        flee=Mirror, advance=Mirror, parlay=Attack, near="THEY SEEM UNAWARE OF YOU.", escape=0,
+        strength=0)
+    Portrait = None
+    RedrawView()
+    goto [Done, FightMageGuards][Scratch10]
 
 MageFlee:
-	Scratch5 = 0
-	Goto TakeStairs
+    Scratch5 = 0
+    goto TakeStairs
 
 FightMageGuards:
-	Surprise = MonstersAreSurprised
-	Morale = 50
-	Gosub StartAlarm
-	ClearMonsters
-	LoadMonster ThLvlMu count=1 icon=Level6Mu
-	LoadMonster Aides count=1 icon=Aides
-	LoadMonster Ettin count=3 icon=Ettin
-	Combat
-	if CombatEnd == PartyFled: Goto MageFlee
-	GateFlags |= WestGarrisonSlain
-	Exit
+    Surprise = MonstersAreSurprised
+    Morale = 50
+    StartAlarm()
+    ClearMonsters()
+    LoadMonster(ThLvlMu, count=1, icon=Level6Mu)
+    LoadMonster(Aides, count=1, icon=Aides)
+    LoadMonster(Ettin, count=3, icon=Ettin)
+    Combat()
+    if CombatEnd == PartyFled { goto MageFlee }
+    GateFlags |= WestGarrisonSlain
+    exit
 
 FighterGuardRoom:
-	if GuardRoomSeenBits has Tower2Seen: Goto FighterAndEttins
-	Gosub DescribeGuardRoom
-	GuardRoomSeenBits |= Tower2Seen
+    if GuardRoomSeenBits has Tower2Seen { goto FighterAndEttins }
+    DescribeGuardRoom()
+    GuardRoomSeenBits |= Tower2Seen
 
-FighterAndEttins:
-	if GateFlags has EastGarrisonSlain: Exit
-	Gosub DescribeEttins
-	Portrait = SandyHaired
-	PrintClear "YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'"
-	Gosub WaitReturnPressed
-	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Attack near="THEY SEEM UNAWARE OF YOU." escape=0 strength=0
-	Portrait = None
-	RedrawView
-	OnGoto Scratch10 Done FightFighterGuards
+    FighterAndEttins:
+    if GateFlags has EastGarrisonSlain { exit }
+    DescribeEttins()
+    Portrait = SandyHaired
+    Text("YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'")
+    WaitReturnPressed()
+    EncounterMenu(Mage, distance=1, body=NobleRobe, result=Scratch10, combat=Attack, wait=Mirror, flee=Mirror,
+        advance=Mirror, parlay=Attack, near="THEY SEEM UNAWARE OF YOU.", escape=0, strength=0)
+    Portrait = None
+    RedrawView()
+    goto [Done, FightFighterGuards][Scratch10]
 
 FighterFlee:
-	Scratch5 = 1
-	Goto TakeStairs
+    Scratch5 = 1
+    goto TakeStairs
 
 FightFighterGuards:
-	Surprise = MonstersAreSurprised
-	Morale = 50
-	Gosub StartAlarm
-	ClearMonsters
-	LoadMonster Level6Mu24 count=1 icon=Level6Mu
-	LoadMonster Aides count=1 icon=Aides
-	LoadMonster Ettin count=3 icon=Ettin
-	Combat
-	if CombatEnd == PartyFled: Goto FighterFlee
-	GateFlags |= EastGarrisonSlain
-	Exit
+    Surprise = MonstersAreSurprised
+    Morale = 50
+    StartAlarm()
+    ClearMonsters()
+    LoadMonster(Level6Mu24, count=1, icon=Level6Mu)
+    LoadMonster(Aides, count=1, icon=Aides)
+    LoadMonster(Ettin, count=3, icon=Ettin)
+    Combat()
+    if CombatEnd == PartyFled { goto FighterFlee }
+    GateFlags |= EastGarrisonSlain
+    exit
 
 GateTowerSquare:
-	Gosub CheckAlarmSounding
-	IfLt
-	Exit
-	Scratch2 = 0
-	Scratch1 = Cell & 1
-	OnGoto Scratch1 EastTowerCheck
-	Scratch9 = GateFlags & WestGarrisonSlain
-	if 0 == Scratch9: Scratch2 |= 2
-	if GateFlags lacks EastGarrisonSlain: Scratch2 |= 1
-	Goto TowersCharge
+    CheckAlarmSounding()
+    if (<) { exit }
+    Scratch2 = 0
+    Scratch1 = Cell & 1
+    goto [EastTowerCheck][Scratch1]
+    Scratch9 = GateFlags & WestGarrisonSlain
+    if Scratch9 == 0 { Scratch2 |= 2 }
+    if GateFlags lacks EastGarrisonSlain { Scratch2 |= 1 }
+    goto TowersCharge
 
 EastTowerCheck:
-	Scratch9 = GateFlags & EastGarrisonSlain
-	if 0 == Scratch9: Scratch2 |= 2
-	if GateFlags lacks WestGarrisonSlain: Scratch2 |= 1
+    Scratch9 = GateFlags & EastGarrisonSlain
+    if Scratch9 == 0 { Scratch2 |= 2 }
+    if GateFlags lacks WestGarrisonSlain { Scratch2 |= 1 }
 
 TowersCharge:
-	Scratch3 = 1
-	MaxDist = 0
-	OnGoto Scratch2 Done NearTowerCharges FarTowerCharges
-	PrintClear "MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER. AT THE SAME TIME MONSTERS BURST ON YOU FROM THE TOWER NEXT TO YOU."
-	Scratch3 = 2
-	Goto TowerMonstersMenu
+    Scratch3 = 1
+    MaxDist = 0
+    goto [Done, NearTowerCharges, FarTowerCharges][Scratch2]
+    Text("MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER. AT THE SAME TIME MONSTERS BURST ON YOU FROM THE TOWER NEXT TO YOU.")
+    Scratch3 = 2
+    goto TowerMonstersMenu
 
 NearTowerCharges:
-	PrintClear "MONSTERS THUNDER DOWN THE STEPS OF THE TOWER NEXT TO YOU."
-	Goto TowerMonstersMenu
+    Text("MONSTERS THUNDER DOWN THE STEPS OF THE TOWER NEXT TO YOU.")
+    goto TowerMonstersMenu
 
 FarTowerCharges:
-	PrintClear "MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER."
-	MaxDist = 1
+    Text("MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER.")
+    MaxDist = 1
 
 TowerMonstersMenu:
-	Portrait = SandyHaired
-	Gosub WaitReturnPressed
-	EncounterMenu Mage distance=MaxDist body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=6
-	Portrait = None
-	RedrawView
-	OnGoto Scratch10 Done FightTowerMonsters
+    Portrait = SandyHaired
+    WaitReturnPressed()
+    EncounterMenu(Mage, distance=MaxDist, body=NobleRobe, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, escape=12, strength=6)
+    Portrait = None
+    RedrawView()
+    goto [Done, FightTowerMonsters][Scratch10]
 
 FleeToArea6:
-	Gosub StartAlarm
-	PartyX = 4
-	PartyY = 15
-	Facing = North
-	NewECL ValjevoCastle6
+    StartAlarm()
+    PartyX = 4
+    PartyY = 15
+    Facing = North
+    NewECL(ValjevoCastle6)
 
 FightTowerMonsters:
-	PartySurprise Scratch9 Scratch10
-	Morale = 80
-	Scratch10 = GateFlags & EastGarrisonSlain
-	Surprise Scratch9 Scratch10 1 1
-	Scratch4 = 24
-	if GateFlags has EastGarrisonSlain: Scratch4 = 89
-	Gosub StartAlarm
-	ClearMonsters
-	LoadMonster Scratch4 count=Scratch3 icon=Level6Mu
-	LoadMonster Aides count=Scratch3 icon=Aides
-	Scratch3 = Scratch3 * 3
-	LoadMonster Ettin count=Scratch3 icon=Ettin
-	Combat
-	if CombatEnd == PartyFled: Goto FleeToArea6
+    PartySurprise(Scratch9, Scratch10)
+    Morale = 80
+    Scratch10 = GateFlags & EastGarrisonSlain
+    Surprise(Scratch9, Scratch10, 1, 1)
+    Scratch4 = 24
+    if GateFlags has EastGarrisonSlain { Scratch4 = 89 }
+    StartAlarm()
+    ClearMonsters()
+    LoadMonster(Scratch4, count=Scratch3, icon=Level6Mu)
+    LoadMonster(Aides, count=Scratch3, icon=Aides)
+    Scratch3 = Scratch3 * 3
+    LoadMonster(Ettin, count=Scratch3, icon=Ettin)
+    Combat()
+    if CombatEnd == PartyFled { goto FleeToArea6 }
 
 GarrisonSlain:
-	GateFlags |= WestGarrisonSlain+EastGarrisonSlain
-	if GateFlags has OutsideGuardsSlain: Goto GateTaken
-	PrintClear "YOU HAVE SLAIN THE GARRISON. NOW IF YOU CAN BUT SLAY THE OUTSIDE GUARDS QUICKLY BEFORE THE ENEMY ARRIVES THE GATE WILL BE YOURS!"
-	Exit
+    GateFlags |= WestGarrisonSlain|EastGarrisonSlain
+    if GateFlags has OutsideGuardsSlain { goto GateTaken }
+    Text("YOU HAVE SLAIN THE GARRISON. NOW IF YOU CAN BUT SLAY THE OUTSIDE GUARDS QUICKLY BEFORE THE ENEMY ARRIVES THE GATE WILL BE YOURS!")
+    exit
 
-GateTaken:
-	GateFlags |= WestSideCleared+EastSideCleared
-	PrintClear "YOU HAVE TAKEN THE GATE! YOU OPEN THE GREAT PORTALS AS 20  HUMAN AND DEMI-HUMAN GUARDS IMMEDIATELY TAKE POSSESSION OF THE GUARD TOWERS."
-	if QuestGateTaken != Rewarded: QuestGateTaken = RewardDue
-	Exit
+    GateTaken:
+    GateFlags |= SouthDoorCleared|NorthDoorCleared
+    Text("YOU HAVE TAKEN THE GATE! YOU OPEN THE GREAT PORTALS AS 20  HUMAN AND DEMI-HUMAN GUARDS IMMEDIATELY TAKE POSSESSION OF THE GUARD TOWERS.")
+    if QuestGateTaken != Rewarded { QuestGateTaken = RewardDue }
+    exit
 
 NearWall:
-	Gosub CheckGarrisonsBeaten
-	IfNe
-	Exit
-	OnGoto BugbearWarnings FirstWallWarning SecondWallWarning BugbearsPunch
+    CheckGarrisonsBeaten()
+    if Scratch10 != 0 { exit }
+    goto [FirstWallWarning, SecondWallWarning, BugbearsPunch][BugbearWarnings]
 
 BugbearsDemand:
-	if GateFlags has OutsideGuardsSlain: Goto ArrowSlits
-	Gosub BugbearsApproach
-	PrintClear "A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'"
+    if GateFlags has OutsideGuardsSlain { goto ArrowSlits }
+    BugbearsApproach()
+    Text("A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'")
 
 BugbearsMenu:
-	alias Choice = Scratch10
-	Choice = Menu "FLEE" "SURRENDER" "ATTACK"
-	OnGoto Choice PushedBack SurrenderToBugbears
+    Scratch10 = Menu("FLEE", "SURRENDER", "ATTACK")
+    goto [PushedBack, SurrenderToBugbears][Scratch10]
 
 FightBugbears:
-	Surprise = NoSurprise
-	Morale = 60
-	Gosub StartAlarm
-	BugbearWarnings = 3
-	ClearMonsters
-	LoadMonster Bugbear count=16 icon=Bugbear
-	Combat
-	if CombatEnd == PartyFled: Goto PushedBack
-	GateFlags |= OutsideGuardsSlain
-	Exit
+    Surprise = NoSurprise
+    Morale = 60
+    StartAlarm()
+    BugbearWarnings = Suspicious
+    ClearMonsters()
+    LoadMonster(Bugbear, count=16, icon=Bugbear)
+    Combat()
+    if CombatEnd == PartyFled { goto PushedBack }
+    GateFlags |= OutsideGuardsSlain
+    exit
 
 SurrenderToBugbears:
-	PrintClear "THE BUGBEARS STRIP YOU OF ANYTHING REMOTELY VALUABLE AND SEND YOU ON YOUR WAY."
-	Rob 1 100 20
+    Text("THE BUGBEARS STRIP YOU OF ANYTHING REMOTELY VALUABLE AND SEND YOU ON YOUR WAY.")
+    Rob(1, 100, 20)
 
 PushedBack:
-	Facing = South
-	PartyY = 14
-	RedrawView
-	if PartyX < 9: Goto PushedWest
-	PartyX = 11
-	Goto PushedRedraw
+    Facing = South
+    PartyY = 14
+    RedrawView()
+    if PartyX < 9 { goto PushedWest }
+    PartyX = 11
+    goto PushedRedraw
 
-PushedWest:
-	PartyX = 4
+    PushedWest:
+    PartyX = 4
 
-PushedRedraw:
-	HoldMove = SkipMove
-	Goto Done
+    PushedRedraw:
+    HoldMove = SkipMove
+    goto Done
 
 FirstWallWarning:
-	PrintClear "A VOICE FROM THE TOWER YELLS 'STAY AWAY FROM THE WALL!'"
-	BugbearWarnings = 2
-	Exit
+    Text("A VOICE FROM THE TOWER YELLS 'STAY AWAY FROM THE WALL!'")
+    BugbearWarnings = 2
+    exit
 
 SecondWallWarning:
-	PrintClear "A VOICE YELLS DOWN, 'WE SAID STAY AWAY FROM THE WALL. THAT INCLUDES THE TOWER!'"
-	BugbearWarnings = 3
-	Exit
+    Text("A VOICE YELLS DOWN, 'WE SAID STAY AWAY FROM THE WALL. THAT INCLUDES THE TOWER!'")
+    BugbearWarnings = Suspicious
+    exit
 
 BugbearsPunch:
-	alias Choice = Scratch10
-	Gosub BugbearsApproach
-	PrintClear "THE GROUP OF BUGBEARS COME OVER, 'WE WARNED YOU! WHAT'S THE MATTER? CAN'T YOU UNDERSTAND COMMON? I GUESS I'LL HAVE TO TEACH YOU.' THE LEADER SWINGS AT YOU."
-	BugbearWarnings = 3
-	Choice = Menu "ATTACK" "TAKE THE PUNCH"
-	OnGoto Choice FightBugbears
-	Damage 160 1 3 0 0
-	PrintClear "'NOW BEAT IT BEFORE WE GET SERIOUS.'"
-	Goto Done
+    BugbearsApproach()
+    Text("THE GROUP OF BUGBEARS COME OVER, 'WE WARNED YOU! WHAT'S THE MATTER? CAN'T YOU UNDERSTAND COMMON? I GUESS I'LL HAVE TO TEACH YOU.' THE LEADER SWINGS AT YOU.")
+    BugbearWarnings = Suspicious
+    Scratch10 = Menu("ATTACK", "TAKE THE PUNCH")
+    goto [FightBugbears][Scratch10]
+    Damage(160, 1, 3, 0, 0)
+    Text("'NOW BEAT IT BEFORE WE GET SERIOUS.'")
+    goto Done
 
 ArrowSlits:
-	Gosub CheckGarrisonsBeaten
-	IfNe
-	Exit
-	PrintClear "FROM ARROW SLITS IN THE TOWER ARE SHOT A COUPLE ARROWS."
-	Gosub WaitReturnPressed
-	Damage 2 1 6 0 44
-	Exit
+    CheckGarrisonsBeaten()
+    if Scratch10 != 0 { exit }
+    Text("FROM ARROW SLITS IN THE TOWER ARE SHOT A COUPLE ARROWS.")
+    WaitReturnPressed()
+    Damage(2, 1, 6, 0, 44)
+    exit
 
 StojanowGateEvent:
-	if BugbearWarnings == 2: BugbearWarnings = 1
-	if GateFlags has GateSeen: Goto WatchWagonMan
-	PrintClear "BEFORE YOU IS STOJANOW GATE. THIS ANCIENT EDIFICE IS BUILT ACROSS THE BEND OF THE RIVER, THUS ISOLATING THE OLD TOWN AND THE CASTLE FROM THE REST OF THE CITY."
-	Gosub WaitReturnPressed
-	PrintClear "THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS."
-	Gosub WaitReturnPressed
-	GateFlags |= GateSeen
+    if BugbearWarnings == 2 { BugbearWarnings = 1 }
+    if GateFlags has GateSeen { goto WatchWagonMan }
+    Text("BEFORE YOU IS STOJANOW GATE. THIS ANCIENT EDIFICE IS BUILT ACROSS THE BEND OF THE RIVER, THUS ISOLATING THE OLD TOWN AND THE CASTLE FROM THE REST OF THE CITY.")
+    WaitReturnPressed()
+    Text("THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS.")
+    WaitReturnPressed()
+    GateFlags |= GateSeen
 
-WatchWagonMan:
-	if Facing != North || Search != 1: Exit
-	if Hours >= 5: Exit
-	if GateFlags has OutsideGuardsSlain: Exit
-	PrintClear "BEFORE THE GATE YOU CAN MAKE OUT A MAN WITH A WAGON OF GOODS WHO IS TALKING TO TWO OF THE BUGBEARS. THE MAN HANDS SOMETHING TO THE BUGBEARS AND THE GATES OPEN."
-	Gosub WaitReturnPressed
-	Exit
+    WatchWagonMan:
+    if Facing != North or Search != Searching { exit }
+    if Hours >= 5 { exit }
+    if GateFlags has OutsideGuardsSlain { exit }
+    Text("BEFORE THE GATE YOU CAN MAKE OUT A MAN WITH A WAGON OF GOODS WHO IS TALKING TO TWO OF THE BUGBEARS. THE MAN HANDS SOMETHING TO THE BUGBEARS AND THE GATES OPEN.")
+    WaitReturnPressed()
+    exit
 
 GateEntrance:
-	if GateFlags has OutsideGuardsSlain: Goto ArrowSlits
-	if GateFlags lacks WagonOwned: Goto NearWall
-	if BugbearWarnings == 3: Goto ImpostorsApproach
-	Scratch10 = Random 9
-	if Scratch10 <= BugbearWarnings: Goto ImpostorsApproach
-	Gosub BugbearsApproach
-	PrintClear "A BUGBEAR WALKS UP TO YOU. 'OKAY, LETS HAVE THE 15 GOLD.' DO YOU PAY HIM?"
-	if Ask YesNoMenu == "YES": Goto PayToll
-	Scratch10 = Random 9
-	if Scratch10 <= BugbearWarnings: Goto ImpostorsAccused
+    if GateFlags has OutsideGuardsSlain { goto ArrowSlits }
+    if GateFlags lacks WagonOwned { goto NearWall }
+    if BugbearWarnings == Suspicious { goto ImpostorsApproach }
+    Scratch10 = Random(9)
+    if Scratch10 <= BugbearWarnings { goto ImpostorsApproach }
+    BugbearsApproach()
+    Text("A BUGBEAR WALKS UP TO YOU. 'OKAY, LETS HAVE THE 15 GOLD.' DO YOU PAY HIM?")
+    if YesNoMenu() == "YES" { goto PayToll }
+    Scratch10 = Random(9)
+    if Scratch10 <= BugbearWarnings { goto ImpostorsAccused }
 
 BugbearsSendAway:
-	PrintClear "'ALL RIGHT, GET OUT OF HERE THEN. COME BACK WHEN YOU'VE LEARNED THE RULES.'"
-	BugbearWarnings = 3
-	Goto Done
+    Text("'ALL RIGHT, GET OUT OF HERE THEN. COME BACK WHEN YOU'VE LEARNED THE RULES.'")
+    BugbearWarnings = Suspicious
+    goto Done
 
 PayToll:
-	&Scratch4 = 3
-	Gosub PayMoney
-	IfNe
-	Goto BugbearsSendAway
-	PrintClear "THE BUGBEAR TAKES THE MONEY AND THE GATE OPENS. YOU PROCEED THROUGH."
-	RedrawView
-	Picture None
-	Facing = North
-	PartyX = 8
-	PartyY = 9
+    &Scratch4 = 3
+    PayMoney()
+    if 0 != 1 { goto BugbearsSendAway }
+    Text("THE BUGBEAR TAKES THE MONEY AND THE GATE OPENS. YOU PROCEED THROUGH.")
+    RedrawView()
+    Picture(None)
+    Facing = North
+    PartyX = 8
+    PartyY = 9
 
-WalkThroughGate:
-	PartyY -= 1
-	Call CallRedraw
-	Delay
-	if PartyY > 5: Goto WalkThroughGate
-	HoldMove = SkipMove
-	Exit
+    WalkThroughGate:
+    PartyY -= 1
+    CallRedraw()
+    Delay()
+    if PartyY > 5 { goto WalkThroughGate }
+    HoldMove = SkipMove
+    exit
 
 ImpostorsApproach:
-	Gosub BugbearsApproach
+    BugbearsApproach()
 
 ImpostorsAccused:
-	PrintClear "'HEY, WAIT A MINUTE. THEY ARE IMPOSTERS! ALL RIGHT, THROW DOWN YOUR WEAPONS!'"
-	Goto BugbearsMenu
+    Text("'HEY, WAIT A MINUTE. THEY ARE IMPOSTERS! ALL RIGHT, THROW DOWN YOUR WEAPONS!'")
+    goto BugbearsMenu
 
 WallSquare:
-	if GateFlags has OutsideGuardsSlain: Goto ArrowSlits
-	Goto BugbearsDemand
+    if GateFlags has OutsideGuardsSlain { goto ArrowSlits }
+    goto BugbearsDemand
 
 BugbearsBehindGate:
-	Gosub CheckGarrisonsBeaten
-	IfEq
-	Exit
-	if GateFlags has OutsideGuardsSlain: Exit
-	EncounterMenu Bugbear distance=1 closeup=Bugbear result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." escape=9 strength=9
-	OnGoto Scratch10 Done FightGateBugbears FleeToArea6
+    CheckGarrisonsBeaten()
+    if Scratch10 == 0 { exit }
+    if GateFlags has OutsideGuardsSlain { exit }
+    EncounterMenu(Bugbear, distance=1, closeup=Bugbear, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack,
+        near="BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE.", escape=9, strength=9)
+    goto [Done, FightGateBugbears, FleeToArea6][Scratch10]
 
 FightGateBugbears:
-	Surprise = MonstersAreSurprised
-	Morale = 60
-	Gosub StartAlarm
-	BugbearWarnings = 3
-	ClearMonsters
-	LoadMonster Bugbear count=16 icon=Bugbear
-	Combat
-	if CombatEnd == PartyFled: Goto FleeToArea6
-	GateFlags |= OutsideGuardsSlain
-	Goto GarrisonSlain
+    Surprise = MonstersAreSurprised
+    Morale = 60
+    StartAlarm()
+    BugbearWarnings = Suspicious
+    ClearMonsters()
+    LoadMonster(Bugbear, count=16, icon=Bugbear)
+    Combat()
+    if CombatEnd == PartyFled { goto FleeToArea6 }
+    GateFlags |= OutsideGuardsSlain
+    goto GarrisonSlain
 
 WagonTrader:
-	if Hours >= 14: Exit
-	if GateFlags has WagonOwned: Exit
-	if WagonManMet != 0: Exit
-	Gosub CheckGarrisonsBeaten
-	IfEq
-	Goto WagonPasses
-	if GateFlags has OutsideGuardsSlain: Exit
+    if Hours >= 14 { exit }
+    if GateFlags has WagonOwned { exit }
+    if WagonManMet != 0 { exit }
+    CheckGarrisonsBeaten()
+    if Scratch10 == 0 { goto WagonPasses }
+    if GateFlags has OutsideGuardsSlain { exit }
 
-WagonPasses:
-	alias Choice = Scratch10
-	PrintClear "A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH."
-	Gosub WaitReturnPressed
-	WagonManMet = 1
-	Portrait = BrownHaired
-	EncounterMenu Man12 distance=0 body=ShopkeeperApron result=Choice combat=Attack wait=Approach flee=Approach advance=Approach parlay=Talk escape=0 strength=0
-	Portrait = None
-	OnGoto Choice Done KillTrader Done
-	PrintClear "'WHY SURE I'LL SELL YOU MY WAGON. ALL IT'LL COST YOU IS 250 GOLD PIECES. HOW ABOUT IT?'"
-	if Ask YesNoMenu == "YES": Goto BuyWagon
-	PrintClear "'SORRY, THAT'S MY FINAL OFFER. TAKE IT OR LEAVE IT."
-	Choice = Menu "TAKE IT" -> BuyWagon "LEAVE IT" -> Done
+    WagonPasses:
+    Text("A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH.")
+    WaitReturnPressed()
+    WagonManMet = 1
+    Portrait = BrownHaired
+    EncounterMenu(Man12, distance=0, body=ShopkeeperApron, result=Scratch10, combat=Attack, wait=3, flee=3,
+        advance=3, parlay=Talk, escape=0, strength=0)
+    Portrait = None
+    goto [Done, KillTrader, Done][Scratch10]
+    Text("'WHY SURE I'LL SELL YOU MY WAGON. ALL IT'LL COST YOU IS 250 GOLD PIECES. HOW ABOUT IT?'")
+    if YesNoMenu() == "YES" { goto BuyWagon }
+    Text("'SORRY, THAT'S MY FINAL OFFER. TAKE IT OR LEAVE IT.")
+    Scratch10 = Menu("TAKE IT", "LEAVE IT")
+    goto [BuyWagon, Done][Scratch10]
 
 BuyWagon:
-	&Scratch4 = 50
-	Gosub PayMoney
-	IfNe
-	Goto NoMoneyForWagon
-	PrintClear "'PLEASURE DOING BUSINESS WITH YOU. HERE'S YOUR WAGON.'"
-	Gosub WaitReturnPressed
-	PrintClear "'OH, BY THE WAY. BETTER BEWARE OF THE GUARDS. EVER SINCE THE GIANTS MOVED INTO THE CASTLE AREA, BUGBEARS HAVE BEEN STUCK GUARDING THE GATE. AND THEY HATE IT.'"
-	Gosub WaitReturnPressed
-	PrintClear "'NOT ONLY THAT THEY'RE AFRAID OF THEM ETTIN. MAKES 'EM REAL JUMPY. WOULDN'T GIVE 'EM NO BACK TALK IF I WERE YOU.'"
-	Gosub WaitReturnPressed
+    &Scratch4 = 50
+    PayMoney()
+    if 0 != 1 { goto NoMoneyForWagon }
+    Text("'PLEASURE DOING BUSINESS WITH YOU. HERE'S YOUR WAGON.'")
+    WaitReturnPressed()
+    Text("'OH, BY THE WAY. BETTER BEWARE OF THE GUARDS. EVER SINCE THE GIANTS MOVED INTO THE CASTLE AREA, BUGBEARS HAVE BEEN STUCK GUARDING THE GATE. AND THEY HATE IT.'")
+    WaitReturnPressed()
+    Text("'NOT ONLY THAT THEY'RE AFRAID OF THEM ETTIN. MAKES 'EM REAL JUMPY. WOULDN'T GIVE 'EM NO BACK TALK IF I WERE YOU.'")
+    WaitReturnPressed()
 
 GotWagon:
-	GateFlags |= WagonOwned
-	Goto Done
+    GateFlags |= WagonOwned
+    goto Done
 
 NoMoneyForWagon:
-	PrintClear "'SORRY, YOU DON'T GOT THE MONEY, FRIEND. WELL SEE YOU AROUND."
-	Goto Done
+    Text("'SORRY, YOU DON'T GOT THE MONEY, FRIEND. WELL SEE YOU AROUND.")
+    goto Done
 
 KillTrader:
-	PrintClear "YOU QUICKLY KILL THE TRADER AND GRAB HIS WAGON."
-	Goto GotWagon
+    Text("YOU QUICKLY KILL THE TRADER AND GRAB HIS WAGON.")
+    goto GotWagon
 
 MonstersBehindWall:
-	Gosub CheckGarrisonsBeaten
-	IfNe
-	Exit
-	if GateFlags lacks OutsideGuardsSlain: Exit
-	PrintClear "A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL"
-	Portrait = SandyHaired
-	Gosub WaitReturnPressed
-	EncounterMenu Mage distance=1 body=NobleRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="THEY RUSH TOWARD YOU" escape=12 strength=12
-	Portrait = None
-	RedrawView
-	OnGoto Scratch10 Done FightWallMonsters PushedBack
+    CheckGarrisonsBeaten()
+    if Scratch10 != 0 { exit }
+    if GateFlags lacks OutsideGuardsSlain { exit }
+    Text("A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL")
+    Portrait = SandyHaired
+    WaitReturnPressed()
+    EncounterMenu(Mage, distance=1, body=NobleRobe, result=Scratch10, combat=Attack, wait=Attack, flee=Attack,
+        advance=Attack, parlay=Attack, near="THEY RUSH TOWARD YOU", escape=12, strength=12)
+    Portrait = None
+    RedrawView()
+    goto [Done, FightWallMonsters, PushedBack][Scratch10]
 
 FightWallMonsters:
-	Surprise = NoSurprise
-	Morale = 80
-	Gosub StartAlarm
-	ClearMonsters
-	LoadMonster Level6Mu24 count=2 icon=Level6Mu
-	LoadMonster Aides count=2 icon=Aides
-	LoadMonster Ettin count=6 icon=Ettin
-	Combat
-	if CombatEnd == PartyFled: Goto PushedBack
-	Goto GarrisonSlain
+    Surprise = NoSurprise
+    Morale = 80
+    StartAlarm()
+    ClearMonsters()
+    LoadMonster(Level6Mu24, count=2, icon=Level6Mu)
+    LoadMonster(Aides, count=2, icon=Aides)
+    LoadMonster(Ettin, count=6, icon=Ettin)
+    Combat()
+    if CombatEnd == PartyFled { goto PushedBack }
+    goto GarrisonSlain
 
 MarkWestTowerUsed:
-	GateFlags |= WestSideCleared
-	Exit
+    GateFlags |= SouthDoorCleared
+    exit
 
 MarkEastTowerUsed:
-	GateFlags |= EastSideCleared
-	Exit
+    GateFlags |= NorthDoorCleared
+    exit
 
-DescribeGuardRoom:
-	PrintClear "YOU ENTER A GUARD ROOM. THERE ARE TABLES, CHAIRS, AND BEDS HERE. ALL BUT TWO OF THE BEDS ARE 14 FEET LONG!"
-	Goto WaitReturnPressed
+def DescribeGuardRoom() {
+    Text("YOU ENTER A GUARD ROOM. THERE ARE TABLES, CHAIRS, AND BEDS HERE. ALL BUT TWO OF THE BEDS ARE 14 FEET LONG!")
+    goto WaitReturnPressed
+}
 
-DescribeEttins:
-	PrintClear "THERE ARE TWO HUMANS AND THREE ETTIN IN THE ROOM."
-	Goto WaitReturnPressed
+def DescribeEttins() {
+    Text("THERE ARE TWO HUMANS AND THREE ETTIN IN THE ROOM.")
+    goto WaitReturnPressed
+}
+
+# tables
+Table9D10 = [1, 2, 7, 8, 10, 11, 12, 13]
+Table9D18 = [0, 0, 0, 0, 2, 2, 2, 2]
+TowerExitXTable = [4, 11, 7, 7, 4, 11]
+TowerExitYTable = [5, 5, 8, 6, 7, 7]
+TowerExitCellTable = [10, 11, 12, 0, 1, 2]

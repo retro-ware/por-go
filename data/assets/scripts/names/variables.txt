@@ -1,574 +1,798 @@
-SelSide 0 0 PlayerControlled  # engine ecl.go 0x10C: 0 party, 0x80 party side auto (NPC), 0x81 monster side; area7 vote SelSide = 129 joins Tyranthraxus
-SelSide 0 128 PartyControlled  # engine ecl.go 0x10C: 0 party, 0x80 party side auto (NPC), 0x81 monster side; area7 vote SelSide = 129 joins Tyranthraxus
-SelSide 0 129 MonsterSide  # engine ecl.go 0x10C: 0 party, 0x80 party side auto (NPC), 0x81 monster side; area7 vote SelSide = 129 joins Tyranthraxus
-
-SelControl 0 178 NPCMember  # engine Control (>0xB2 minus 0x32), < 0x80 player-run; Save 178 when an NPC joins (areas 0, 7, 13, 18)
-
-SelStatus 0 0 Died  # engine ecl.go off 0x100: reads 1 okay / 0x80 not; write 0 sets memberDied, 0x87 statusStoned
-SelStatus 0 1 Okay  # engine ecl.go off 0x100: reads 1 okay / 0x80 not; write 0 sets memberDied, 0x87 statusStoned
-SelStatus 0 128 NotOkay  # engine ecl.go off 0x100: reads 1 okay / 0x80 not; write 0 sets memberDied, 0x87 statusStoned
-SelStatus 0 135 Stoned  # engine ecl.go off 0x100: reads 1 okay / 0x80 not; write 0 sets memberDied, 0x87 statusStoned
-
-SelRace 0 0 RaceMonster  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 1 Dwarf  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 2 Elf  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 3 Gnome  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 4 HalfElf  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 5 Halfling  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 6 HalfOrc  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-SelRace 0 7 Human  # engine char.go race order (DS:0F03 names); scripts test 2/4 elf search bonus, 7 human
-
-SelAlignment 0 0 LawfulGood  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 1 LawfulNeutral  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 2 LawfulEvil  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 3 NeutralGood  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 4 TrueNeutral  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 5 NeutralEvil  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 6 ChaoticGood  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 7 ChaoticNeutral  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-SelAlignment 0 8 ChaoticEvil  # engine tables.go alignment names in order; area7 NPCs of 2/5/8 (evil) side with Tyranthraxus
-
-Facing 0 0 North  # engine ecl.go reads e.facing>>1; geo.go dirDX/dirDY index 0 north (dy -1), 2 east, 4 south, 6 west
-Facing 0 1 East  # engine ecl.go reads e.facing>>1; geo.go dirDX/dirDY index 0 north (dy -1), 2 east, 4 south, 6 west
-Facing 0 2 South  # engine ecl.go reads e.facing>>1; geo.go dirDX/dirDY index 0 north (dy -1), 2 east, 4 south, 6 west
-Facing 0 3 West  # engine ecl.go reads e.facing>>1; geo.go dirDX/dirDY index 0 north (dy -1), 2 east, 4 south, 6 west
-
-Surprise 0 0 NoSurprise  # 2); vars.go bit side+1 surprised
-Surprise 0 1 PartyIsSurprised  # 2); vars.go bit side+1 surprised
-Surprise 0 2 MonstersAreSurprised  # 2); vars.go bit side+1 surprised
-
-CombatEnd 0 0 FightOver  # engine aftercombat.go: AfterCombat sets 0, 0x80 the party died (The END), 0x81 it fled; scripts test >128 / ==129 for fled
-CombatEnd 0 128 PartyDied  # engine aftercombat.go: AfterCombat sets 0, 0x80 the party died (The END), 0x81 it fled; scripts test >128 / ==129 for fled
-CombatEnd 0 129 PartyFled  # engine aftercombat.go: AfterCombat sets 0, 0x80 the party died (The END), 0x81 it fled; scripts test >128 / ==129 for fled
-
-HoldMove 0 255 SkipMove  # engine vars.go: >= 0xFF the next move is skipped
-
-In3D 0 0 Overland  # engine vars.go: nonzero a 3D area, zero the overland map
-In3D 0 1 Dungeon3D  # engine vars.go: nonzero a 3D area, zero the overland map
-
-InLair 0 0 OutsideLair  # names: 255 while inside a 3D lair sub-map, 0 on leaving
-InLair 0 255 InsideLair  # names: 255 while inside a 3D lair sub-map, 0 on leaving
-
-MarkFlags4 0 1 FeastAccepted  # 8 after the kobold raid is won; engine vars.go bit 3 shows area map mark 4 (area26 &8), same event
-MarkFlags4 0 2 AttackedNomadAlly  # 8 after the kobold raid is won; engine vars.go bit 3 shows area map mark 4 (area26 &8), same event
-MarkFlags4 0 4 FoughtTribe  # 8 after the kobold raid is won; engine vars.go bit 3 shows area map mark 4 (area26 &8), same event
-MarkFlags4 0 8 KoboldRaidWon  # 8 after the kobold raid is won; engine vars.go bit 3 shows area map mark 4 (area26 &8), same event
-
-CastleFlags 0 1 Disguised  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 2 HallSeen  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 4 PatrolTalkedAway  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 8 LooseStoneFound  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 16 SleepingGiantsFought  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 32 SwordInWell  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 64 FakeTyranthraxus  # 16 after the sleeping giants wake (loose board creaks)
-CastleFlags 0 128 GiantsPassed  # 16 after the sleeping giants wake (loose board creaks)
-
-CastleFlags2 0 2 CadornaAlong  # names comment (areas 3, 4, 5)
-CastleFlags2 0 4 CaptiveMage  # names comment (areas 3, 4, 5)
-CastleFlags2 0 8 OverseerFight  # names comment (areas 3, 4, 5)
-CastleFlags2 0 16 FourGiants  # names comment (areas 3, 4, 5)
-CastleFlags2 0 32 PasswordsRead  # names comment (areas 3, 4, 5)
-CastleFlags2 0 64 TowerTrollsMet  # names comment (areas 3, 4, 5)
-CastleFlags2 0 128 WritingShown  # names comment (areas 3, 4, 5)
-
-CastleRoomFlags 0 1 KitchenOverseer  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 2 Scribes  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 4 EmptyScriptorium  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 8 CadornaEvidenceFound  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 16 TyranthraxusNote  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 32 BarbarianReportSeen  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 64 BarracksGiantsMet  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-CastleRoomFlags 0 128 VisitFlag  # names comment: area4 bits 1-64, area5 bit 128 per-visit flag cleared at event0 (no conflict)
-
-CastleDeedFlags 0 1 WasherwomenKilled  # names comment (area6; 32 area5)
-CastleDeedFlags 0 2 WomenSilenced  # names comment (area6; 32 area5)
-CastleDeedFlags 0 4 SmithyLoot  # names comment (area6; 32 area5)
-CastleDeedFlags 0 8 SmithyFought  # names comment (area6; 32 area5)
-CastleDeedFlags 0 16 CoalStore  # names comment (area6; 32 area5)
-CastleDeedFlags 0 32 PasswordGiants  # names comment (area6; 32 area5)
-CastleDeedFlags 0 64 SmokehouseDone  # names comment (area6; 32 area5)
-CastleDeedFlags 0 128 BaneTempleFight  # names comment (area6; 32 area5)
-
-BaneTempleFlags 0 1 OfferingBoxStolen  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 2 CrossedSwordsStolen  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 4 DoubledInAgony  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 8 PriestBlessing  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 16 CobwebRoom  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 32 CeilingCavedIn  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 64 GateForced1  # names comment; 64/128 one per gate (guess which gate)
-BaneTempleFlags 0 128 GateForced2  # names comment; 64/128 one per gate (guess which gate)
-
-CadornaQuartersFlags 0 8 SouthDoorOpen  # names comment (8 set by Urslingen's summons area8; 128 area5); low bits per-Scratch1 fights left unnamed
-CadornaQuartersFlags 0 16 CadornaReleased  # names comment (8 set by Urslingen's summons area8; 128 area5); low bits per-Scratch1 fights left unnamed
-CadornaQuartersFlags 0 32 CadornaKilled  # names comment (8 set by Urslingen's summons area8; 128 area5); low bits per-Scratch1 fights left unnamed
-CadornaQuartersFlags 0 64 QuartersFightDone  # names comment (8 set by Urslingen's summons area8; 128 area5); low bits per-Scratch1 fights left unnamed
-CadornaQuartersFlags 0 128 FrogsAndToadsGiants  # names comment (8 set by Urslingen's summons area8; 128 area5); low bits per-Scratch1 fights left unnamed
-
-SearchTowerFlags 0 8 SecretDoor  # names comment area7; area3 per-Scratch1 bits only via a table, no conflict
-SearchTowerFlags 0 16 MedusaKilled  # names comment area7; area3 per-Scratch1 bits only via a table, no conflict
-SearchTowerFlags 0 32 MessengerKilled  # names comment area7; area3 per-Scratch1 bits only via a table, no conflict
-SearchTowerFlags 0 64 MessengerLeft  # names comment area7; area3 per-Scratch1 bits only via a table, no conflict
-
-GenheerisFlags 0 1 GenheerisJoined  # names comment (area7)
-GenheerisFlags 0 2 GenheerisLeft  # names comment (area7)
-GenheerisFlags 0 4 GuardsBeaten  # names comment (area7)
-GenheerisFlags 0 8 AudienceHallSeen  # names comment (area7)
-GenheerisFlags 0 16 DragonDone  # names comment (area7)
-
-GateFlags 0 1 WestSideCleared  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-GateFlags 0 2 EastSideCleared  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-GateFlags 0 4 WestGarrisonSlain  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-GateFlags 0 8 EastGarrisonSlain  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-GateFlags 0 16 OutsideGuardsSlain  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-GateFlags 0 32 GateSeen  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-GateFlags 0 64 WagonOwned  # names comment: 1/2 tower sides cleared, 4/8 garrisons slain (which tower is west/east: guess)
-
-GuardRoomSeenBits 0 1 Tower1Seen  # names comment: bits 1/2 guard room text shown in each tower
-GuardRoomSeenBits 0 2 Tower2Seen  # names comment: bits 1/2 guard room text shown in each tower
-
-LibraryEventFlags 0 1 MadFighterGone  # 64 for the reward
-LibraryEventFlags 0 2 FighterJoined  # 64 for the reward
-LibraryEventFlags 0 32 SpectreBeaten  # 64 for the reward
-LibraryEventFlags 0 64 ReptileBeaten  # 64 for the reward
-LibraryEventFlags 0 128 KoboldsDone  # 64 for the reward
-
-BooksFoundFlags 0 1 Fyerdetha  # names comment (area15)
-BooksFoundFlags 0 2 Urgund  # names comment (area15)
-BooksFoundFlags 0 4 LexGeographicaBook  # names comment (area15)
-BooksFoundFlags 0 8 HistoryNorth  # names comment (area15)
-BooksFoundFlags 0 16 ArtsOfWarBook  # names comment (area15)
-BooksFoundFlags 0 32 Jar  # names comment (area15)
-BooksFoundFlags 0 64 TrashBookTaken  # names comment (area15)
-BooksFoundFlags 0 128 NamedBookTaken  # names comment (area15)
-
-TeleporterRockFlags 0 1 RocksThrown  # names comment: bit 1 toggled by throwing rocks, bit 2 teleporter flash / rocks room known
-TeleporterRockFlags 0 2 TeleporterKnown  # names comment: bit 1 toggled by throwing rocks, bit 2 teleporter flash / rocks room known
-
-CasketsLooted 0 1 GemsCasket  # names comment: four caskets taken
-CasketsLooted 0 2 JewelryCasket  # names comment: four caskets taken
-CasketsLooted 0 4 BigGemsCasket  # names comment: four caskets taken
-CasketsLooted 0 8 PearlsCasket  # names comment: four caskets taken
-
-RoomsLooted 0 1 LootPileTaken  # names comment
-RoomsLooted 0 4 Rugs  # names comment
-RoomsLooted 0 8 Scrolls  # names comment
-RoomsLooted 0 32 WeaponPileTaken  # names comment
-
-FilesFound 0 1 Files  # names comment: 1 files j38/51, 4 NW castle slate, 8 NE castle map
-FilesFound 0 2 JailCellFight  # names comment: 1 files j38/51, 4 NW castle slate, 8 NE castle map
-FilesFound 0 4 CastleSlate  # names comment: 1 files j38/51, 4 NW castle slate, 8 NE castle map
-FilesFound 0 8 CastleMap  # names comment: 1 files j38/51, 4 NW castle slate, 8 NE castle map
-
-OldLizardmanFlags 0 1 StillToMeet  # names comment
-OldLizardmanFlags 0 2 MetOrKilled  # names comment
-
-BuildingsSeen 0 1 PoolLizardsDived  # names comment
-BuildingsSeen 0 2 RubbleBuilding  # names comment
-BuildingsSeen 0 4 CentralKeepSeen  # names comment
-BuildingsSeen 0 8 LShapedSeen  # names comment
-
-TempleTreasureBits 0 1 Spot1  # names comment: temple treasure spots found
-TempleTreasureBits 0 2 Spot2  # names comment: temple treasure spots found
-TempleTreasureBits 0 4 Spot3  # names comment: temple treasure spots found
-
-MansionRoomBits 0 1 Tapestry  # names comment
-MansionRoomBits 0 2 SkeletonJewelry  # names comment
-MansionRoomBits 0 4 TrapDoor  # names comment
-MansionRoomBits 0 8 BodyJewelry  # names comment
-MansionRoomBits 0 16 OgreFight  # names comment
-MansionRoomBits 0 32 GoblinSlavesMet  # names comment
-
-MansionFightBits 0 1 OrcGuardsFight  # names comment
-MansionFightBits 0 2 HayBedOrcsFight  # names comment
-
-RoomsVisited 0 1 LizardMen  # names comment (area23)
-RoomsVisited 0 2 TortureRoomSeen  # names comment (area23)
-RoomsVisited 0 4 Vats  # names comment (area23)
-RoomsVisited 0 8 CombatRoom  # names comment (area23)
-RoomsVisited 0 16 Lab  # names comment (area23)
-RoomsVisited 0 32 Notebook  # names comment (area23)
-RoomsVisited 0 64 PasswordDoorRoom  # names comment (area23)
-RoomsVisited 0 128 Fountain  # names comment (area23)
-
-RoomsVisited2 0 4 PortraitFight  # names comment; bits 1/2 skipped: freed slaves / pump fight vs junk-room treasure by Scratch1 conflict
-RoomsVisited2 0 64 YarashDeskSearched  # names comment; bits 1/2 skipped: freed slaves / pump fight vs junk-room treasure by Scratch1 conflict
-RoomsVisited2 0 128 DeskPapers  # names comment; bits 1/2 skipped: freed slaves / pump fight vs junk-room treasure by Scratch1 conflict
-
-WyvernLairFlags 0 1 WyvernTreasureTaken  # names comment; 8/16/64 unnamed fights skipped
-WyvernLairFlags 0 2 Wyvern1  # names comment; 8/16/64 unnamed fights skipped
-WyvernLairFlags 0 4 Wyvern2  # names comment; 8/16/64 unnamed fights skipped
-WyvernLairFlags 0 32 Treasure  # names comment; 8/16/64 unnamed fights skipped
-WyvernLairFlags 0 128 LastFight  # names comment; 8/16/64 unnamed fights skipped
-
-WildFlags 0 1 WellRungs  # names comment (area29)
-WildFlags 0 2 SpiritWarning  # names comment (area29)
-WildFlags 0 4 SearchedTreasure  # names comment (area29)
-WildFlags 0 8 FightWon  # names comment (area29)
-WildFlags 0 16 NailedDoorForced  # names comment (area29)
-
-LairFightFlags 0 4 KoboldPrisoners  # names comment: 4 kobold prisoners freed/killed; others unnamed lair fights
-
-DragonCaveFlags 0 8 AnkhegRemains  # area25 names: ankheg remains = 8; area19 bits 1/2/128 (dragon spoke, Diogenes told, attacked) conflict with area25 lair-fight bits, skipped
-
-SecretDoorBits 0 128 PriestFreed  # names comment: bit 128 priest freed through the chiseled hole
-
-ArmoryVisited 0 1 Visited  # names comment
-
-PatrolsFought3 0 1 PatrolsFought  # names comment
-
-QuestBandits 0 254 RewardDue  # names: QuestTable 254 reward due, 255 rewarded
-QuestBandits 0 255 Rewarded  # names: QuestTable 254 reward due, 255 rewarded
-
-QuestSokalKeep 0 254 RewardDue  # QuestTable
-QuestSokalKeep 0 255 Rewarded  # QuestTable
-
-QuestEntryOrcs 0 254 RewardDue  # QuestTable
-QuestEntryOrcs 0 255 Rewarded  # QuestTable
-
-QuestBivant 0 1 BoyPurchased  # QuestTable; area1 1 bought, 128 bungled
-QuestBivant 0 128 Bungled  # QuestTable; area1 1 bought, 128 bungled
-QuestBivant 0 254 RewardDue  # QuestTable; area1 1 bought, 128 bungled
-QuestBivant 0 255 Rewarded  # QuestTable; area1 1 bought, 128 bungled
-
-QuestBookFyerdetha 0 254 RewardDue  # QuestTable
-QuestBookFyerdetha 0 255 Rewarded  # QuestTable
-
-QuestBookUrgund 0 254 RewardDue  # QuestTable
-QuestBookUrgund 0 255 Rewarded  # QuestTable
-
-QuestBookLexGeographica 0 254 RewardDue  # QuestTable
-QuestBookLexGeographica 0 255 Rewarded  # QuestTable
-
-QuestBookHistoryNorth 0 254 RewardDue  # QuestTable
-QuestBookHistoryNorth 0 255 Rewarded  # QuestTable
-
-QuestBookArtsOfWar 0 254 RewardDue  # QuestTable
-QuestBookArtsOfWar 0 255 Rewarded  # QuestTable
-
-QuestBookNamed 0 254 RewardDue  # QuestTable
-QuestBookNamed 0 255 Rewarded  # QuestTable
-
-QuestPodalAuction 0 1 AuctionOn  # QuestTable; area18 1 auction on
-QuestPodalAuction 0 254 RewardDue  # QuestTable; area18 1 auction on
-QuestPodalAuction 0 255 Rewarded  # QuestTable; area18 1 auction on
-
-QuestGraveyard 0 254 RewardDue  # QuestTable
-QuestGraveyard 0 255 Rewarded  # QuestTable
-
-QuestKovelThieves 0 254 RewardDue  # QuestTable
-QuestKovelThieves 0 255 Rewarded  # QuestTable
-
-QuestZhentilOutpost 0 1 CommandantKilled  # QuestTable; area28 1 commandant killed, 253 left
-QuestZhentilOutpost 0 253 LeftOutpost  # QuestTable; area28 1 commandant killed, 253 left
-QuestZhentilOutpost 0 254 RewardDue  # QuestTable; area28 1 commandant killed, 253 left
-QuestZhentilOutpost 0 255 Rewarded  # QuestTable; area28 1 commandant killed, 253 left
-
-QuestLizardmen 0 254 RewardDue  # QuestTable
-QuestLizardmen 0 255 Rewarded  # QuestTable
-
-QuestKobolds 0 254 RewardDue  # QuestTable
-QuestKobolds 0 255 Rewarded  # QuestTable
-
-QuestNomads 0 254 RewardDue  # QuestTable
-QuestNomads 0 255 Rewarded  # QuestTable
-
-QuestCadornaPayment 0 254 RewardDue  # QuestTable
-QuestCadornaPayment 0 255 Rewarded  # QuestTable
-
-QuestGateTaken 0 254 RewardDue  # QuestTable
-QuestGateTaken 0 255 Rewarded  # QuestTable
-
-QuestTyranthraxus 0 254 RewardDue  # QuestTable; 255 = game won
-QuestTyranthraxus 0 255 Rewarded  # QuestTable; 255 = game won
-
-QuestSlums 0 254 RewardDue  # QuestTable (counts wins to 25 first)
-QuestSlums 0 255 Rewarded  # QuestTable (counts wins to 25 first)
-
-QuestTempleOfBane 0 254 RewardDue  # QuestTable
-QuestTempleOfBane 0 255 Rewarded  # QuestTable
-
-QuestCadornaTraitor 0 254 RewardDue  # QuestTable
-QuestCadornaTraitor 0 255 Rewarded  # QuestTable
-
-QuestCadornaDead 0 254 RewardDue  # QuestTable
-QuestCadornaDead 0 255 Rewarded  # QuestTable
-
-TextileHouseCleared 0 254 RewardDue  # names: 254 after 10 encounters, 255 reward given by the clerk
-TextileHouseCleared 0 255 Rewarded  # names: 254 after 10 encounters, 255 reward given by the clerk
-
-PodalPlazaCleared 0 254 RewardDue  # names: 254 when PatrolsBeaten reaches 9, 255 reward given
-PodalPlazaCleared 0 255 Rewarded  # names: 254 when PatrolsBeaten reaches 9, 255 reward given
-
-CadornaCommission 0 254 Offered  # names comment
-CadornaCommission 0 255 CommissionGiven  # names comment
-
-ZhentilMission 0 254 Summoned  # names comment
-ZhentilMission 0 255 PacketReceived  # names comment
-
-BishopSummons 0 254 Summoned  # names comment
-
-UrslingenGateMission 0 254 Summoned  # names comment
-UrslingenGateMission 0 255 MissionGiven  # names comment
-
-FinalAttackMeeting 0 254 Summoned  # names comment
-FinalAttackMeeting 0 255 AskedToLead  # names comment
-
-DirtenState 0 128 AskedToAccompany  # names comment
-DirtenState 0 255 DirtenJoined  # names comment
-
-IronBoxState 0 1 CarriedUnopened  # names comment
-IronBoxState 0 128 Opened  # names comment
-IronBoxState 0 255 HandedIn  # names comment
-
-BaseCaptured 0 128 FledWithoutBoy  # names comment
-BaseCaptured 0 255 Captured  # names comment
-
-VampireState 0 250 FledAsVapor  # names comment
-VampireState 0 255 Slain  # names comment
-
-MysticManState 0 250 MysticJoined  # names comment
-MysticManState 0 255 Finished  # names comment
-
-CryptState 0 251 HolyItemsPlaced  # names comment
-
-ZombieStrength 0 255 Destroyed  # names comment
-
-WightStrength 0 255 Destroyed  # names comment
-
-UndeadKillTable 0 255 Destroyed  # names comment: entry 255 destroyed
-
-SmithyFrogs 0 255 FrogsDefeated  # names comment
-
-DisguiseState 0 0 NotChosen  # names comment (area18)
-DisguiseState 0 1 Bold  # names comment (area18)
-DisguiseState 0 2 Disguised  # names comment (area18)
-DisguiseState 0 254 AuctionEnded  # names comment (area18)
-DisguiseState 0 255 CoverBroken  # names comment (area18)
-
-TavernState 0 0 FirstVisit  # names comment
-TavernState 0 1 BrawlBegun  # names comment
-TavernState 0 2 BrawlWon  # names comment
-TavernState 0 3 BarWrecked  # names comment
-
-BaneRecruiterState 0 0 NotMet  # names comment
-BaneRecruiterState 0 1 MeetingSet  # names comment
-BaneRecruiterState 0 2 AmbushFought  # names comment
-
-KoboldKingState 0 4 KingEscaped  # names comment (0..7 progress; other steps unnamed)
-KoboldKingState 0 6 KingDied  # names comment (0..7 progress; other steps unnamed)
-KoboldKingState 0 7 ThroneTreasureTaken  # names comment (0..7 progress; other steps unnamed)
-
-WyvernState 0 1 WyvernKilled  # names comment
-WyvernState 0 2 NestTreasureTaken  # names comment
-
-KoboldTruceState 0 1 WhiteFlagMet  # names comment
-KoboldTruceState 0 2 DeadfallSprung  # names comment
-
-DrunkKoboldState 0 2 Killed  # names comment
-DrunkKoboldState 0 255 Present  # names comment
-
-PrisonerState 0 128 PadlocksOpened  # names comment
-PrisonerState 0 255 DealtWith  # names comment
-
-HobgoblinTempleState 0 0 DrumFightPending  # names comment
-HobgoblinTempleState 0 1 CourtyardWon  # names comment
-HobgoblinTempleState 0 2 GrishnakDefeated  # names comment
-
-OhloQuestState 0 250 SentForPotion  # names comment
-OhloQuestState 0 255 Finished  # names comment
-
-OhloPotionState 0 250 PackageReceived  # names comment
-OhloPotionState 0 255 OhloFought  # names comment
-
-FortuneTellerState 0 251 Visited  # names comment
-FortuneTellerState 0 255 Murdered  # names comment
-
-HobgoblinGoldState 0 250 HobgoblinsBeaten  # names comment
-HobgoblinGoldState 0 255 ValuablesTaken  # names comment
-
-BanditTreasureState 0 250 TreasureWaits  # names comment: 250 after the gang falls, 255 taken or robbed
-BanditTreasureState 0 255 TreasureGone  # names comment: 250 after the gang falls, 255 taken or robbed
-
-DragonSeen 0 1 SeenFlying  # names comment
-DragonSeen 0 255 SeenLanding  # names comment
-
-RiverState 0 1 Flowing  # names comment
-RiverState 0 255 Opened  # names comment
-
-TookLargeCave 0 0 SmallCave  # names comment
-TookLargeCave 0 255 LargeCaveTaken  # names comment
-
-EscortedIn 0 128 Escorted  # names: 128 at "ESCORTED INTO ZHENTIL OUTPOST"
-
-BonesRoomState 0 0 Unseen  # names comment
-BonesRoomState 0 1 BonesShown  # names comment
-BonesRoomState 0 2 JarFound  # names comment
-
-TrapResult 0 0 Sprung  # names comment
-TrapResult 0 1 Avoided  # names comment
-TrapResult 0 2 Disarmed  # names comment
-
-RewardKind 0 0 NoReward  # names comment (clerk, area8)
-RewardKind 0 1 UndeadBounty  # names comment (clerk, area8)
-RewardKind 0 2 ClearedAreaReward  # names comment (clerk, area8)
-
-GroundKind 0 0 Surface  # names comment
-GroundKind 0 1 ByTheWell  # names comment
-GroundKind 0 2 WellBottom  # names comment
-
-EncounterKind 0 0 Kobolds  # names comment (area26)
-EncounterKind 0 1 DisplacerBeasts  # names comment (area26)
-EncounterKind 0 2 Driders  # names comment (area26)
-EncounterKind 0 3 Stirges  # names comment (area26)
-EncounterKind 0 4 LizardMen  # names comment (area26)
-EncounterKind 0 5 Bandits  # names comment (area26)
-EncounterKind 0 6 Nomads  # names comment (area26)
-EncounterKind 0 7 Merchants  # names comment (area26)
-
-CampStage 0 1 Lodged  # names comment (0 means both not started and done, left unnamed)
-CampStage 0 2 Games  # names comment (0 means both not started and done, left unnamed)
-CampStage 0 3 HeadmanRequest  # names comment (0 means both not started and done, left unnamed)
-
-CabinetALock 0 1 Looted  # names comment: lock state table (index 0-7) 1 looted, 2 too complex, 3 left
-CabinetALock 0 2 TooComplex  # names comment: lock state table (index 0-7) 1 looted, 2 too complex, 3 left
-CabinetALock 0 3 LeftAlone  # names comment: lock state table (index 0-7) 1 looted, 2 too complex, 3 left
-
-CabinetBLock 0 1 Looted  # same lock state table as CabinetALock
-CabinetBLock 0 2 TooComplex  # same lock state table as CabinetALock
-CabinetBLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-CabinetCLock 0 1 Looted  # same lock state table as CabinetALock
-CabinetCLock 0 2 TooComplex  # same lock state table as CabinetALock
-CabinetCLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-ScrollCaseLock 0 1 Looted  # same lock state table as CabinetALock
-ScrollCaseLock 0 2 TooComplex  # same lock state table as CabinetALock
-ScrollCaseLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-CasketGemsLock 0 1 Looted  # same lock state table as CabinetALock
-CasketGemsLock 0 2 TooComplex  # same lock state table as CabinetALock
-CasketGemsLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-CasketJewelryLock 0 1 Looted  # same lock state table as CabinetALock
-CasketJewelryLock 0 2 TooComplex  # same lock state table as CabinetALock
-CasketJewelryLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-CasketBigGemsLock 0 1 Looted  # same lock state table as CabinetALock
-CasketBigGemsLock 0 2 TooComplex  # same lock state table as CabinetALock
-CasketBigGemsLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-CasketPearlsLock 0 1 Looted  # same lock state table as CabinetALock
-CasketPearlsLock 0 2 TooComplex  # same lock state table as CabinetALock
-CasketPearlsLock 0 3 LeftAlone  # same lock state table as CabinetALock
-
-AlertedGuardsFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-AnimalsLoose 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-BanditsDone 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-BarracksSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-BoothManDone 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-CatacombAmbushDone 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-CatacombSpot1Done 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-CatacombSpot2Done 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-DeterioratedRoomSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-DiaryGemsTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-ElfBodyHacked 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-EmptyRoomSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-FerranFaded 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-FerranFreed 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-FloorChestTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-GoblinTrainerFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-GraffitiRoomSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-GrainSackFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-GraveyardNoticeGiven 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-GuardsInterceptFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-HammerTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-HauntsAppeased 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-HauntsSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-HempMarketSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-InsectsBeaten 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-IronBoxFound 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-KeepRidersFought 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-KitchenSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-KoboldBandDone 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-KoboldHordeDefeated 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-KoboldsFed 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-LarderSeen2 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-LeadersMeetingFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-LeatherBagOpened 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-LibraryRewardGiven 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-LiedToFerran 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-MagicGearTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-NurserySeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-OrcHomeFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-OrcPapersFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-OrcRaidBeaten 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-PassBought 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-RopeGuildEntered 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-SecretDoorFound 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-SkeletonTreasureTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-SkullcrusherLootDestroyed 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-SlumsEntered 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-StenchRoomSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-StorageRoomSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-TapestryRoomSeen 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-ThiefChaseDone 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-TreasureRoomFight 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-VampireGuardLoaded 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-VampireTreasureTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-WightTreasureTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
-
-ZombieTreasureTaken 0 255 Completed  # names/area*.txt: set 255 after the event; 255 = done flag
+# Names for the values and flag bits of the script variables:
+# `VarName 0 Number Name  # note`, VarName as in names/global.txt or
+# names/area<N>.txt, 0 = every data set. Each group has one comment
+# saying where its names come from (engine file, names/*.txt comment,
+# script area). Bit-flag variables name single bits only.
+
+# engine ecl.go, word 0x10C: 0 the player's own member, 0x80 a party
+# member the computer runs (NPC), 0x81 on the monsters' side (area7)
+SelSide 0 0 PlayerControlled
+SelSide 0 128 PartyControlled
+SelSide 0 129 MonsterSide
+
+# engine Control: < 0x80 player-run; scripts Save 178 when an NPC joins
+SelControl 0 178 NPCMember
+
+# engine ecl.go, word 0x100: reads 1 okay / 0x80 not; writing 0 kills the
+# member, 0x87 petrifies (area7)
+SelStatus 0 0 Died
+SelStatus 0 1 Okay
+SelStatus 0 128 NotOkay
+SelStatus 0 135 Stoned
+
+# engine char.go race order
+SelRace 0 0 RaceMonster
+SelRace 0 1 Dwarf
+SelRace 0 2 Elf
+SelRace 0 3 Gnome
+SelRace 0 4 HalfElf
+SelRace 0 5 Halfling
+SelRace 0 6 HalfOrc
+SelRace 0 7 Human
+
+# engine tables.go alignment names in order
+SelAlignment 0 0 LawfulGood
+SelAlignment 0 1 LawfulNeutral
+SelAlignment 0 2 LawfulEvil
+SelAlignment 0 3 NeutralGood
+SelAlignment 0 4 TrueNeutral
+SelAlignment 0 5 NeutralEvil
+SelAlignment 0 6 ChaoticGood
+SelAlignment 0 7 ChaoticNeutral
+SelAlignment 0 8 ChaoticEvil
+
+# engine ecl.go reads facing>>1; geo.go direction 0 north, 2 east, 4 south, 6 west
+Facing 0 0 North
+Facing 0 1 East
+Facing 0 2 South
+Facing 0 3 West
+
+# engine eclops.go opSurprise: 0 nobody, 1 the party, 2 the monsters, 3 both
+# (vars.go: bit side+1 = that side is surprised)
+Surprise 0 0 NoSurprise
+Surprise 0 1 PartyIsSurprised
+Surprise 0 2 MonstersAreSurprised
+Surprise 0 3 BothSurprised
+
+# engine aftercombat.go: AfterCombat sets 0, 0x80 when the party died
+# (The END), 0x81 when it fled; scripts test > 128 / == 129
+CombatEnd 0 0 FightOver
+CombatEnd 0 128 PartyDied
+CombatEnd 0 129 PartyFled
+
+# engine vars.go: >= 0xFF skips the next move
+HoldMove 0 255 SkipMove
+
+# engine vars.go: nonzero a 3D area, zero the overland map
+In3D 0 0 Overland
+In3D 0 1 Dungeon3D
+
+# names/global.txt: 255 inside a 3D lair sub-map, 0 on leaving (areas 25-27)
+InLair 0 0 OutsideLair
+InLair 0 255 InsideLair
+
+# engine game.go toggles bit 0 on the Search command; scripts test == 1 / == 0
+Search 0 0 NotSearching
+Search 0 1 Searching
+
+# engine screen.go: a map cell > 0x7F is lit as inside (SkyInside); castle
+# areas 3-6, 9 branch to their room events on bit 64 (RoomEvents,
+# SpecialSquare, DispatchCell) and skip rest encounters there. Bit 32
+# (halves the encounter odds there) is left unnamed.
+Cell 0 64 Special
+Cell 0 128 Inside
+
+# engine vars.go: != 0xFF shows area map mark 3
+Mark3 0 255 Hidden
+
+# engine vars.go: > 0xFD shows marks 8/9, 0xFE plays EndgameHook(1) (the
+# river clears). area23 FlagBossAngry sets 254 after the Yarash fight; area26
+# then draws the flowing river, area0 the clean Stojanow. 255 is tested
+# (area8, area23) but never written, so it is unnamed.
+Boss 0 254 YarashBeaten
+
+# engine vars.go: bit 3 shows area map mark 4; the bits' meaning from area17
+# (nomad camp): 1 the feast accepted, 2 a nomad ally attacked, 4 the tribe
+# fought, 8 the kobold raid on the camp won (also read in area26)
+MarkFlags4 0 1 FeastAccepted
+MarkFlags4 0 2 AttackedNomadAlly
+MarkFlags4 0 4 FoughtTribe
+MarkFlags4 0 8 KoboldRaidWon
+
+# engine vars.go: bit 0 clear shows area map mark 7, bit 1 clear mark 5;
+# area27 sets 1 at RuinedCastle (the castle site found), 2 at TwoCaves
+# (the caves found). Bit 4 is only tested (MarkSitesOnMap), never set.
+MarkFlags57 0 1 CastleFound
+MarkFlags57 0 2 CavesFound
+
+# names/global.txt 4A65 (castle areas 3-6, 9): 1 disguised/unnoticed,
+# cleared when caught; area3: 2 hall seen, 4 patrol talked away, 8 loose
+# stone treasure found, 16 the sleeping giants fought, 32 sword in the
+# well, 128 the door giants passed; area5: 64 the fake Tyranthraxus
+CastleFlags 0 1 Disguised
+CastleFlags 0 2 HallSeen
+CastleFlags 0 4 PatrolTalkedAway
+CastleFlags 0 8 LooseStoneFound
+CastleFlags 0 16 SleepingGiantsFought
+CastleFlags 0 32 SwordInWell
+CastleFlags 0 64 FakeTyranthraxus
+CastleFlags 0 128 GiantsPassed
+
+# names/global.txt 4A66 (areas 3, 4, 5)
+CastleFlags2 0 2 CadornaAlong
+CastleFlags2 0 4 CaptiveMage
+CastleFlags2 0 8 OverseerFight
+CastleFlags2 0 16 FourGiants
+CastleFlags2 0 32 PasswordsRead
+CastleFlags2 0 64 TowerTrollsMet
+CastleFlags2 0 128 WritingShown
+
+# names/global.txt 4A67: area4 bits 1-64; 128 a per-visit flag cleared at
+# event0 (area5)
+CastleRoomFlags 0 1 KitchenOverseer
+CastleRoomFlags 0 2 Scribes
+CastleRoomFlags 0 4 EmptyScriptorium
+CastleRoomFlags 0 8 CadornaEvidenceFound
+CastleRoomFlags 0 16 TyranthraxusNote
+CastleRoomFlags 0 32 BarbarianReportSeen
+CastleRoomFlags 0 64 BarracksGiantsMet
+CastleRoomFlags 0 128 VisitFlag
+
+# names/global.txt 4A69 (area6; 32 area5)
+CastleDeedFlags 0 1 WasherwomenKilled
+CastleDeedFlags 0 2 WomenSilenced
+CastleDeedFlags 0 4 SmithyLoot
+CastleDeedFlags 0 8 SmithyFought
+CastleDeedFlags 0 16 CoalStore
+CastleDeedFlags 0 32 PasswordGiants
+CastleDeedFlags 0 64 SmokehouseDone
+CastleDeedFlags 0 128 BaneTempleFight
+
+# names/global.txt 4A6A: 1-8 area6, 16-32 area3; 64/128 the gate forced
+# (boulder volley): each area has one gate, area3's (MainGate, cell 30
+# facing east, bit 64) and area5's (CastleGate, cell 22 facing east, bit
+# 128); the other cell each checks is not on its map (GEO5 blocks 3, 5)
+BaneTempleFlags 0 1 OfferingBoxStolen
+BaneTempleFlags 0 2 CrossedSwordsStolen
+BaneTempleFlags 0 4 DoubledInAgony
+BaneTempleFlags 0 8 PriestBlessing
+BaneTempleFlags 0 16 CobwebRoom
+BaneTempleFlags 0 32 CeilingCavedIn
+BaneTempleFlags 0 64 Castle3GateForced
+BaneTempleFlags 0 128 GroundsGateForced
+
+# names/global.txt 4A6B: 8 set by Urslingen's summons (area8), 16-64 area3,
+# 128 area5; the low per-Scratch1 fight bits are unnamed
+CadornaQuartersFlags 0 8 SouthDoorOpen
+CadornaQuartersFlags 0 16 CadornaReleased
+CadornaQuartersFlags 0 32 CadornaKilled
+CadornaQuartersFlags 0 64 QuartersFightDone
+CadornaQuartersFlags 0 128 FrogsAndToadsGiants
+
+# names/global.txt 4A6C (area7); area3 uses per-Scratch1 bits from a table
+SearchTowerFlags 0 8 SecretDoor
+SearchTowerFlags 0 16 MedusaKilled
+SearchTowerFlags 0 32 MessengerKilled
+SearchTowerFlags 0 64 MessengerLeft
+
+# names/area7.txt 4A6D
+GenheerisFlags 0 1 GenheerisJoined
+GenheerisFlags 0 2 GenheerisLeft
+GenheerisFlags 0 4 GuardsBeaten
+GenheerisFlags 0 8 AudienceHallSeen
+GenheerisFlags 0 16 DragonDone
+
+# names/area9.txt 4A77 and the GEO2 block 9 map: the gate passage runs
+# north at x 7-8 (cells 6, 7, 12, 8, 13 from y 10 to 6); 1/2 let the party
+# through the south door (cell 7, TowerDoor) / north door (cell 8) without
+# the rock volley, set walking back south at cells 12/13 (the labels
+# MarkWestTowerUsed/MarkEastTowerUsed) and both at GateTaken; 4 the mage's
+# garrison in the west tower (cell 1, stairs to x 4), 8 the fighter's in
+# the east tower (cell 2, stairs to x 11)
+GateFlags 0 1 SouthDoorCleared
+GateFlags 0 2 NorthDoorCleared
+GateFlags 0 4 WestGarrisonSlain
+GateFlags 0 8 EastGarrisonSlain
+GateFlags 0 16 OutsideGuardsSlain
+GateFlags 0 32 GateSeen
+GateFlags 0 64 WagonOwned
+
+# names/area9.txt 4A01: 1 the west tower's guard room (MageGuardRoom),
+# 2 the east tower's (FighterGuardRoom)
+GuardRoomSeenBits 0 1 Tower1Seen
+GuardRoomSeenBits 0 2 Tower2Seen
+
+# names/global.txt 4A31 (area15); 32|64 tested for the library reward (area8);
+# the other bits are the gold foil boxes by carrel (CarrelFoilBitTable)
+LibraryEventFlags 0 1 MadFighterGone
+LibraryEventFlags 0 2 FighterJoined
+LibraryEventFlags 0 32 SpectreBeaten
+LibraryEventFlags 0 64 ReptileBeaten
+LibraryEventFlags 0 128 KoboldsDone
+
+# names/area15.txt 4A2F
+BooksFoundFlags 0 1 Fyerdetha
+BooksFoundFlags 0 2 Urgund
+BooksFoundFlags 0 4 LexGeographicaBook
+BooksFoundFlags 0 8 HistoryNorth
+BooksFoundFlags 0 16 ArtsOfWarBook
+BooksFoundFlags 0 32 Jar
+BooksFoundFlags 0 64 TrashBookTaken
+BooksFoundFlags 0 128 NamedBookTaken
+
+# names/global.txt 4A4D (areas 22, 23)
+TeleporterRockFlags 0 1 RocksThrown
+TeleporterRockFlags 0 2 TeleporterKnown
+
+# names/area14.txt 4A46
+CasketsLooted 0 1 GemsCasket
+CasketsLooted 0 2 JewelryCasket
+CasketsLooted 0 4 BigGemsCasket
+CasketsLooted 0 8 PearlsCasket
+
+# names/area14.txt 4A47
+RoomsLooted 0 1 LootPileTaken
+RoomsLooted 0 4 Rugs
+RoomsLooted 0 8 Scrolls
+RoomsLooted 0 32 WeaponPileTaken
+
+# names/area14.txt 4A48
+FilesFound 0 1 Files
+FilesFound 0 2 JailCellFight
+FilesFound 0 4 CastleSlate
+FilesFound 0 8 CastleMap
+
+# names/area16.txt 4A52
+OldLizardmanFlags 0 1 StillToMeet
+OldLizardmanFlags 0 2 MetOrKilled
+
+# names/area16.txt 4A61
+BuildingsSeen 0 1 PoolLizardsDived
+BuildingsSeen 0 2 RubbleBuilding
+BuildingsSeen 0 4 CentralKeepSeen
+BuildingsSeen 0 8 LShapedSeen
+
+# names/area16.txt 4A60: 1 the treasure found (FindTreasure); the building
+# fights by EncounterBitTable (Data 2 8 4) and the checks RuinedBuildingCheck
+# (2), LShapedBuildingCheck (8), CentralKeepCheck (4). 255 (all, after
+# championing the old lizard man) is a combination.
+EncountersDone 0 1 TreasureFound
+EncountersDone 0 2 RubbleBuildingFight
+EncountersDone 0 4 CentralKeepFight
+EncountersDone 0 8 LShapedBuildingFight
+
+# names/area24.txt 4A2D
+TempleTreasureBits 0 1 Spot1
+TempleTreasureBits 0 2 Spot2
+TempleTreasureBits 0 4 Spot3
+
+# names/area24.txt 4A2E
+MansionRoomBits 0 1 Tapestry
+MansionRoomBits 0 2 SkeletonJewelry
+MansionRoomBits 0 4 TrapDoor
+MansionRoomBits 0 8 BodyJewelry
+MansionRoomBits 0 16 OgreFight
+MansionRoomBits 0 32 GoblinSlavesMet
+
+# names/area24.txt 4A44
+MansionFightBits 0 1 OrcGuardsFight
+MansionFightBits 0 2 HayBedOrcsFight
+
+# names/area23.txt 4A51
+RoomsVisited 0 1 LizardMen
+RoomsVisited 0 2 TortureRoomSeen
+RoomsVisited 0 4 Vats
+RoomsVisited 0 8 CombatRoom
+RoomsVisited 0 16 Lab
+RoomsVisited 0 32 Notebook
+RoomsVisited 0 64 PasswordDoorRoom
+RoomsVisited 0 128 Fountain
+
+# names/area23.txt 4A52: PumpingRoom sets 1 when the slaves are freed, 2
+# after fighting them; the three junk storerooms (cells 19-21) use bits
+# 8/16/32 from Table9BBB, so they do not overlap
+RoomsVisited2 0 1 SlavesFreed
+RoomsVisited2 0 2 SlavesFought
+RoomsVisited2 0 4 PortraitFight
+RoomsVisited2 0 8 JunkRoom1Looted
+RoomsVisited2 0 16 JunkRoom2Looted
+RoomsVisited2 0 32 JunkRoom3Looted
+RoomsVisited2 0 64 YarashDeskSearched
+RoomsVisited2 0 128 DeskPapers
+
+# names/area22.txt 4A4B
+SecretDoorBits 0 128 PriestFreed
+
+# names/area22.txt 4A4C/4A4E: a wandering group's bit is Table9CA0[kind]
+# (1 2 4 8 16 for Random 5) and its monsters GroupMonsterTable[kind] (south)
+# or [kind+7] (north); the priest's group (PriestEncounter, kind 6, bit 64)
+# is marked in the south half
+SouthGroupsBeaten 0 1 Fighters
+SouthGroupsBeaten 0 2 DisplacerBeasts
+SouthGroupsBeaten 0 4 DwarfFighters
+SouthGroupsBeaten 0 8 LizardMen
+SouthGroupsBeaten 0 16 Driders
+SouthGroupsBeaten 0 64 PriestFought
+
+NorthGroupsBeaten 0 1 Stirges
+NorthGroupsBeaten 0 2 Driders
+NorthGroupsBeaten 0 4 Minotaurs
+NorthGroupsBeaten 0 8 DianeGroup
+NorthGroupsBeaten 0 16 Kobolds
+
+# names/area27.txt 4A13 and the lair sections: 8 FourLizards, 16
+# LizardsAndMinotaurs, 64 TwoLizards, 128 GnollsAndTrolls
+WyvernLairFlags 0 1 WyvernTreasureTaken
+WyvernLairFlags 0 2 Wyvern1
+WyvernLairFlags 0 4 Wyvern2
+WyvernLairFlags 0 8 FourLizardsFought
+WyvernLairFlags 0 16 MinotaursFought
+WyvernLairFlags 0 32 Treasure
+WyvernLairFlags 0 64 TwoLizardsFought
+WyvernLairFlags 0 128 LastFight
+
+# names/area26.txt 4A13 and the lair sections: 1 PoolLizardMen, 2
+# DisplacerAmbush, 4 ChainedKobolds freed or killed, 8 MutantLizardHut,
+# 16 LizardHut, 32 LargeLizardMen
+LairFightFlags 0 1 PoolFight
+LairFightFlags 0 2 DisplacersFought
+LairFightFlags 0 4 KoboldPrisoners
+LairFightFlags 0 8 MutantsFought
+LairFightFlags 0 16 HutLizardMenFought
+LairFightFlags 0 32 LargeLizardMenFought
+
+# names/area25.txt 4A13 (the mountain lair) and its sections: 1 TwoBoars,
+# 2 BoarSow (tested; the sow fight ORs 4 into Scratch1 and never stores
+# it), 4 ThreeBoars, 8 AnkhegVictims treasure, 16 AnkhegLunges, 32
+# GiganticSnake, 64 SnakeFalls, 128 ThriKreenBlock
+DragonCaveFlags 0 1 TwoBoarsFought
+DragonCaveFlags 0 2 SowFought
+DragonCaveFlags 0 4 ThreeBoarsFought
+DragonCaveFlags 0 8 AnkhegRemains
+DragonCaveFlags 0 16 AnkhegFought
+DragonCaveFlags 0 32 GiantSnakeFought
+DragonCaveFlags 0 64 FallingSnakeFought
+DragonCaveFlags 0 128 ThriKreenPairFought
+
+# names/area25.txt 4A14: 1 ThriKreenWarriors, 2 ThriKreenChest
+DragonCaveFlags2 0 1 ThriKreenWarriorsFought
+DragonCaveFlags2 0 2 ThriKreenChestFought
+
+# names/area19.txt 4A87 (the dragon's cave): 1 set at DragonFliesOff after
+# the dragon's quest talk, 2 at BottleRecovered when Diogenes explains the
+# efreet bottle, 128 at AttackDragonFireball
+DragonTalkFlags 0 1 DragonSpoke
+DragonTalkFlags 0 2 EfreetTold
+DragonTalkFlags 0 128 DragonAttacked
+
+# names/area29.txt 4A23
+WildFlags 0 1 WellRungs
+WildFlags 0 2 SpiritWarning
+WildFlags 0 4 SearchedTreasure
+WildFlags 0 8 FightWon
+WildFlags 0 16 NailedDoorForced
+
+# names/area4.txt 4A00
+ArmoryVisited 0 1 Visited
+
+# names/area3.txt 4A00
+PatrolsFought3 0 1 PatrolsFought
+
+# names/global.txt QuestTable 4AA6-4ABF: 254 reward due, 255 rewarded by the
+# clerk (area8); QuestBivant area1: 1 the boy bought, 128 bungled;
+# QuestPodalAuction area18: 1 the auction on; QuestZhentilOutpost area28:
+# 1 the commandant killed, 253 left the outpost
+QuestBandits 0 254 RewardDue
+QuestBandits 0 255 Rewarded
+
+QuestSokalKeep 0 254 RewardDue
+QuestSokalKeep 0 255 Rewarded
+
+QuestEntryOrcs 0 254 RewardDue
+QuestEntryOrcs 0 255 Rewarded
+
+QuestBivant 0 1 BoyPurchased
+QuestBivant 0 128 Bungled
+QuestBivant 0 254 RewardDue
+QuestBivant 0 255 Rewarded
+
+QuestBookFyerdetha 0 254 RewardDue
+QuestBookFyerdetha 0 255 Rewarded
+
+QuestBookUrgund 0 254 RewardDue
+QuestBookUrgund 0 255 Rewarded
+
+QuestBookLexGeographica 0 254 RewardDue
+QuestBookLexGeographica 0 255 Rewarded
+
+QuestBookHistoryNorth 0 254 RewardDue
+QuestBookHistoryNorth 0 255 Rewarded
+
+QuestBookArtsOfWar 0 254 RewardDue
+QuestBookArtsOfWar 0 255 Rewarded
+
+QuestBookNamed 0 254 RewardDue
+QuestBookNamed 0 255 Rewarded
+
+QuestPodalAuction 0 1 AuctionOn
+QuestPodalAuction 0 254 RewardDue
+QuestPodalAuction 0 255 Rewarded
+
+QuestGraveyard 0 254 RewardDue
+QuestGraveyard 0 255 Rewarded
+
+QuestKovelThieves 0 254 RewardDue
+QuestKovelThieves 0 255 Rewarded
+
+QuestZhentilOutpost 0 1 CommandantKilled
+QuestZhentilOutpost 0 253 LeftOutpost
+QuestZhentilOutpost 0 254 RewardDue
+QuestZhentilOutpost 0 255 Rewarded
+
+QuestLizardmen 0 254 RewardDue
+QuestLizardmen 0 255 Rewarded
+
+QuestKobolds 0 254 RewardDue
+QuestKobolds 0 255 Rewarded
+
+QuestNomads 0 254 RewardDue
+QuestNomads 0 255 Rewarded
+
+QuestCadornaPayment 0 254 RewardDue
+QuestCadornaPayment 0 255 Rewarded
+
+QuestGateTaken 0 254 RewardDue
+QuestGateTaken 0 255 Rewarded
+
+QuestTyranthraxus 0 254 RewardDue
+QuestTyranthraxus 0 255 Rewarded  # the game won
+
+QuestSlums 0 254 RewardDue  # counts wins to 25 first
+QuestSlums 0 255 Rewarded
+
+QuestTempleOfBane 0 254 RewardDue
+QuestTempleOfBane 0 255 Rewarded
+
+QuestCadornaTraitor 0 254 RewardDue
+QuestCadornaTraitor 0 255 Rewarded
+
+QuestCadornaDead 0 254 RewardDue
+QuestCadornaDead 0 255 Rewarded
+
+# names/global.txt 4AE6/4AE7: area-cleared reward words, 254 when the area
+# is cleared, 255 the reward given by the clerk (area8)
+TextileHouseCleared 0 254 RewardDue
+TextileHouseCleared 0 255 Rewarded
+
+PodalPlazaCleared 0 254 RewardDue
+PodalPlazaCleared 0 255 Rewarded
+
+# names/global.txt 4A97, 4A98, 4A9B; names/area8.txt 4A99, 4A9A (summons
+# by the council, area8)
+CadornaCommission 0 254 Offered
+CadornaCommission 0 255 CommissionGiven
+
+ZhentilMission 0 254 Summoned
+ZhentilMission 0 255 PacketReceived
+
+BishopSummons 0 254 Summoned
+
+UrslingenGateMission 0 254 Summoned
+UrslingenGateMission 0 255 MissionGiven
+
+FinalAttackMeeting 0 254 Summoned
+FinalAttackMeeting 0 255 AskedToLead
+
+# names/area0.txt 4A9C
+DirtenState 0 128 AskedToAccompany
+DirtenState 0 255 DirtenJoined
+
+# names/global.txt 4AC8 (areas 0, 2, 8)
+IronBoxState 0 1 CarriedUnopened
+IronBoxState 0 128 Opened
+IronBoxState 0 255 HandedIn
+
+# names/area1.txt 4A8B
+BaseCaptured 0 128 FledWithoutBoy
+BaseCaptured 0 255 Captured
+
+# names/area10.txt 4A41, 4A42, 4A43, 4A3A, 4A3B; names/global.txt 4A39
+VampireState 0 250 FledAsVapor
+VampireState 0 255 Slain
+
+MysticManState 0 250 MysticJoined
+MysticManState 0 255 Finished
+
+CryptState 0 251 HolyItemsPlaced
+
+ZombieStrength 0 255 Destroyed
+
+WightStrength 0 255 Destroyed
+
+UndeadKillTable 0 255 Destroyed
+
+# names/area21.txt 4A0E: counts visits until the frogs attack, 255 after
+SmithyFrogs 0 255 FrogsDefeated
+
+# names/area18.txt 4A35, 4A37, 4A38
+DisguiseState 0 0 NotChosen
+DisguiseState 0 1 Bold
+DisguiseState 0 2 Disguised
+DisguiseState 0 254 AuctionEnded
+DisguiseState 0 255 CoverBroken
+
+TavernState 0 0 FirstVisit
+TavernState 0 1 BrawlBegun
+TavernState 0 2 BrawlWon
+TavernState 0 3 BarWrecked
+
+BaneRecruiterState 0 0 NotMet
+BaneRecruiterState 0 1 MeetingSet
+BaneRecruiterState 0 2 AmbushFought
+
+# names/area13.txt 4A8D and the throne room sections: 1 set at FightHorde
+# (the kobold horde fought), 2 at BallistaFire, 3 at FightEnvoys, 4 the
+# king escaped, 5 at KingsQuarters (his guards fought), 6 the king died in
+# his pit, 7 the throne treasure taken
+KoboldKingState 0 1 HordeFought
+KoboldKingState 0 2 BallistaFired
+KoboldKingState 0 3 EnvoysFought
+KoboldKingState 0 4 KingEscaped
+KoboldKingState 0 5 GuardsFought
+KoboldKingState 0 6 KingDied
+KoboldKingState 0 7 ThroneTreasureTaken
+
+# names/area13.txt 4A8E, 4A03, 4AC7
+WyvernState 0 1 WyvernKilled
+WyvernState 0 2 NestTreasureTaken
+
+KoboldTruceState 0 1 WhiteFlagMet
+KoboldTruceState 0 2 DeadfallSprung
+
+DrunkKoboldState 0 2 Killed
+DrunkKoboldState 0 255 Present
+
+# names/area13.txt 4A0B: set 2 at SecretDoorFound ("A SECRET DOOR IN THE NORTH WALL")
+SecretDoorNorth 0 2 Found
+
+# names/area2.txt 4A73, 4A74
+PrisonerState 0 128 PadlocksOpened
+PrisonerState 0 255 DealtWith
+
+HobgoblinTempleState 0 0 DrumFightPending
+HobgoblinTempleState 0 1 CourtyardWon
+HobgoblinTempleState 0 2 GrishnakDefeated
+
+# names/area20.txt 4A04, 4A81, 4A0B, 4ACE; 4A07/4A08 are set 250 once seen
+OhloQuestState 0 250 SentForPotion
+OhloQuestState 0 255 Finished
+
+OhloPotionState 0 250 PackageReceived
+OhloPotionState 0 255 OhloFought
+
+FortuneTellerState 0 251 Visited
+FortuneTellerState 0 255 Murdered
+
+HobgoblinGoldState 0 250 HobgoblinsBeaten
+HobgoblinGoldState 0 255 ValuablesTaken
+
+DirtyRoomSeen 0 250 Yes
+
+StableSeen20 0 250 Yes
+
+# names/area29.txt 4A0F, 4ADB, 4A10, 4A1A
+BanditTreasureState 0 250 TreasureWaits
+BanditTreasureState 0 255 TreasureGone
+
+GroundKind 0 0 Surface
+GroundKind 0 1 ByTheWell
+GroundKind 0 2 WellBottom
+
+InWell 0 1 DownTheWell
+
+EncounterMode 0 200 Forced  # event3 sets 200: the encounter is face to face, no surprise roll
+
+# names/area25.txt 4AA1
+DragonSeen 0 1 SeenFlying
+DragonSeen 0 255 SeenLanding
+
+# names/area26.txt 4A9A
+RiverState 0 1 Flowing
+RiverState 0 255 Opened
+
+# names/area27.txt 4AC7
+TookLargeCave 0 0 SmallCave
+TookLargeCave 0 255 LargeCaveTaken
+
+# names/area28.txt 4A18
+EscortedIn 0 128 Escorted
+
+# names/area15.txt 4A04
+BonesRoomState 0 0 Unseen
+BonesRoomState 0 1 BonesShown
+BonesRoomState 0 2 JarFound
+
+# names/area14.txt 4A13
+TrapResult 0 0 Sprung
+TrapResult 0 1 Avoided
+TrapResult 0 2 Disarmed
+
+# names/area8.txt 4A00 (the clerk)
+RewardKind 0 0 NoReward
+RewardKind 0 1 UndeadBounty
+RewardKind 0 2 ClearedAreaReward
+
+# names/area26.txt 4A00
+EncounterKind 0 0 Kobolds
+EncounterKind 0 1 DisplacerBeasts
+EncounterKind 0 2 Driders
+EncounterKind 0 3 Stirges
+EncounterKind 0 4 LizardMen
+EncounterKind 0 5 Bandits
+EncounterKind 0 6 Nomads
+EncounterKind 0 7 Merchants
+
+# names/area25.txt 4A00, the Pick* sections (PickQuicklings .. PickSnakes)
+EncounterType25 0 0 Quicklings
+EncounterType25 0 1 WildBoars
+EncounterType25 0 2 GiantMantis
+EncounterType25 0 3 Tigers
+EncounterType25 0 4 ThriKreens
+EncounterType25 0 5 Ankhegs
+EncounterType25 0 6 Centaurs
+EncounterType25 0 7 Soldiers
+EncounterType25 0 8 Thieves
+EncounterType25 0 10 GiantSnakeGroup
+
+# names/area27.txt 4A00, the Pick* sections (PickKobolds .. PickMinotaurs)
+EncounterType27 0 0 Kobolds
+EncounterType27 0 1 Gnolls
+EncounterType27 0 2 LizardMen
+EncounterType27 0 3 GiantLizardGroup
+EncounterType27 0 4 Hippogriffs
+EncounterType27 0 5 Wyverns
+EncounterType27 0 6 Trolls
+EncounterType27 0 7 PhaseSpiders
+EncounterType27 0 8 Minotaurs
+
+# names/area17.txt 4A7D; 0 is both not started and done, so it is unnamed
+CampStage 0 1 Lodged
+CampStage 0 2 Games
+CampStage 0 3 HeadmanRequest
+
+# names/area24.txt 4A01, 4A0A, 4A0F and the room sections (RubbleRoom,
+# DiningRoom, GreatHall, BodiesRoom; HayBeds, CellRoom; FightTempleGuards
+# sets 1, SetGuardsPassed 2 on the square past the entrance)
+LastRoomVisited 0 1 InRubbleRoom
+LastRoomVisited 0 2 InDiningRoom
+LastRoomVisited 0 3 InGreatHall
+LastRoomVisited 0 4 InBodiesRoom
+
+LastMansionRoom 0 1 InHayBedsRoom
+LastMansionRoom 0 2 InCellRoom
+
+TempleGuardState 0 1 GuardsFought
+TempleGuardState 0 2 GuardsPassed
+
+# names/area4.txt 4A68: ReportByProgress's OnGoto; RedWizardsReport sets 1,
+# TyranthraxusPattern 2 (3 is never written)
+ReportsFound 0 1 RedWizardsFound
+ReportsFound 0 2 PatternFound
+
+# names/area23.txt 4A50: Menu "BLUE" "COPPER" "SILVER" "GOLD"
+DialColor 0 0 Blue
+DialColor 0 1 Copper
+DialColor 0 2 Silver
+DialColor 0 3 Gold
+
+# names/area18.txt 4A36: OverhearRumor's OnGoto (RumorBoss .. RumorBidder)
+OverheardIndex 0 0 AboutTheBoss
+OverheardIndex 0 1 AboutOgres
+OverheardIndex 0 2 AboutBaneTemple
+OverheardIndex 0 3 AboutLard
+OverheardIndex 0 4 AboutTheBidder
+
+# names/area9.txt 4A78: at 3 the bugbears take the party for impostors
+# (GateEntrance -> ImpostorsApproach); set after the second warning, the
+# punch, a fight or being sent away. 1/2 (warned once) are unnamed.
+BugbearWarnings 0 3 Suspicious
+
+# names/area10.txt 4A00: +1 at the first entry, +1 after the storm text (Cell1Event)
+VisitStage 0 0 NotEntered
+VisitStage 0 1 Entered
+VisitStage 0 2 StormShown
+
+# names/area14.txt 4AEA-4AF1: the lock state table, 1 looted, 2 too complex, 3 left
+CabinetALock 0 1 Looted
+CabinetALock 0 2 TooComplex
+CabinetALock 0 3 LeftAlone
+
+CabinetBLock 0 1 Looted
+CabinetBLock 0 2 TooComplex
+CabinetBLock 0 3 LeftAlone
+
+CabinetCLock 0 1 Looted
+CabinetCLock 0 2 TooComplex
+CabinetCLock 0 3 LeftAlone
+
+ScrollCaseLock 0 1 Looted
+ScrollCaseLock 0 2 TooComplex
+ScrollCaseLock 0 3 LeftAlone
+
+CasketGemsLock 0 1 Looted
+CasketGemsLock 0 2 TooComplex
+CasketGemsLock 0 3 LeftAlone
+
+CasketJewelryLock 0 1 Looted
+CasketJewelryLock 0 2 TooComplex
+CasketJewelryLock 0 3 LeftAlone
+
+CasketBigGemsLock 0 1 Looted
+CasketBigGemsLock 0 2 TooComplex
+CasketBigGemsLock 0 3 LeftAlone
+
+CasketPearlsLock 0 1 Looted
+CasketPearlsLock 0 2 TooComplex
+CasketPearlsLock 0 3 LeftAlone
+
+# names/area*.txt booleans: only ever set to 255 and compared with 0 or 255
+# (BarracksSeen: area2's; area13's uses 1)
+AlertedGuardsFight 0 255 Yes
+AnimalsLoose 0 255 Yes
+BanditsDone 0 255 Yes
+BarracksSeen 0 255 Yes
+BoothManDone 0 255 Yes
+CatacombAmbushDone 0 255 Yes
+CatacombSpot1Done 0 255 Yes
+CatacombSpot2Done 0 255 Yes
+DeterioratedRoomSeen 0 255 Yes
+DiaryGemsTaken 0 255 Yes
+ElfBodyHacked 0 255 Yes
+ElfScrollTaken 0 255 Yes
+EmptyRoomSeen 0 255 Yes
+FerranFaded 0 255 Yes
+FerranFreed 0 255 Yes
+FloorChestTaken 0 255 Yes
+GoblinTrainerFight 0 255 Yes
+GraffitiRoomSeen 0 255 Yes
+GrainSackFight 0 255 Yes
+GraveyardNoticeGiven 0 255 Yes
+GuardsInterceptFight 0 255 Yes
+HallEmptyFlag 0 255 Yes
+HammerTaken 0 255 Yes
+HauntsAppeased 0 255 Yes
+HauntsSeen 0 255 Yes
+HempMarketSeen 0 255 Yes
+InsectsBeaten 0 255 Yes
+IronBoxFound 0 255 Yes
+KeepRidersFought 0 255 Yes
+KitchenSeen 0 255 Yes
+KoboldBandDone 0 255 Yes
+KoboldHordeDefeated 0 255 Yes
+KoboldsFed 0 255 Yes
+LarderSeen2 0 255 Yes
+LeadersMeetingFight 0 255 Yes
+LeatherBagOpened 0 255 Yes
+LibraryRewardGiven 0 255 Yes
+LiedToFerran 0 255 Yes
+MagicGearTaken 0 255 Yes
+NurserySeen 0 255 Yes
+OrcHomeFight 0 255 Yes
+OrcPapersFight 0 255 Yes
+OrcRaidBeaten 0 255 Yes
+PassBought 0 255 Yes
+RiverOpen 0 255 Yes
+RopeGuildEntered 0 255 Yes
+SecretDoorFound 0 255 Yes
+SkeletonTreasureTaken 0 255 Yes
+SkullcrusherLootDestroyed 0 255 Yes
+SlumsEntered 0 255 Yes
+StenchRoomSeen 0 255 Yes
+StorageRoomSeen 0 255 Yes
+TapestryRoomSeen 0 255 Yes
+ThiefChaseDone 0 255 Yes
+TreasureRoomFight 0 255 Yes
+VampireGuardLoaded 0 255 Yes
+VampireTreasureTaken 0 255 Yes
+WightTreasureTaken 0 255 Yes
+ZombieTreasureTaken 0 255 Yes

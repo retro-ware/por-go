@@ -1,307 +1,316 @@
-event0:
-	Scratch5 = 11
-	if Hours >= 14: Scratch5 = 8
-	Sky = Scratch5
-	SkyInside = 10
-	Scratch10 = 127 & Cell
-	Exit
+on move {
+    Scratch5 = 11
+    if Hours >= 14 { Scratch5 = 8 }
+    Sky = Scratch5
+    SkyInside = 10
+    Scratch10 = ~Inside & Cell
+    exit
+}
 
-event1:
-	PrintClear ""
-	Picture None
-	Portrait = None
-	Scratch10 = 127 & Cell
-	if Scratch10 == 0: Goto LeaveArea
-	AuxCounter = 10
+on step {
+    Text("")
+    Picture(None)
+    Portrait = None
+    Scratch10 = ~Inside & Cell
+    Compare(Scratch10, 0)
+    if Scratch10 == 0 { goto LeaveArea }
+    AuxCounter = 10
 
-FindCellLoop:
-	if AuxCounter == Scratch10: Goto CellDispatch
-	if AuxCounter > 18: Exit
-	AuxCounter += 1
-	Goto FindCellLoop
+    FindCellLoop:
+    if AuxCounter == Scratch10 { goto CellDispatch }
+    if AuxCounter > 18 { exit }
+    AuxCounter += 1
+    goto FindCellLoop
+}
 
-event2:
-	if FoughtWatch != 0: Goto NoRestHere
-	RestEvery = 1
-	RestChance = 101
-	Exit
+on camp {
+    if FoughtWatch != 0 { goto NoRestHere }
+    RestEvery = 1
+    RestChance = 101
+    exit
+}
 
 NoRestHere:
-	RestEvery = 0
-	RestChance = 0
-	Exit
+    RestEvery = 0
+    RestChance = 0
+    exit
 
-event3:
-	alias Choice = Scratch1
-	RestChance = 0
-	Portrait = NoseguardHelmet
-	SetupMonster ArmoredFighter distance=2 body=PlateArmor
-	Delay
-	Approach
-	Delay
-	Approach
-	Delay
-	PrintClear "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
-	Choice = Menu "GO" -> ClearAndExit "FIGHT" -> FightWatch
+on rest {
+    RestChance = 0
+    Portrait = NoseguardHelmet
+    SetupMonster(ArmoredFighter, distance=2, body=PlateArmor)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Delay()
+    Text("YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?")
+    Scratch1 = Menu("GO", "FIGHT")
+    goto [ClearAndExit, FightWatch][Scratch1]
+} # falls into event4
 
-event4:
-	LoadMap 0 unused=0 icons=0
-	LoadWalls Reset Reset Reset
-	if RestChance == 255: Exit
-	Goto NoRestHere
+on load {
+    LoadMap(0, unused=0, icons=0)
+    LoadWalls(Reset, Reset, Reset)
+    if RestChance == 255 { exit }
+    goto NoRestHere
+}
 
 CellDispatch:
-	AuxCounter -= 10
-	if TrainerCooldown != 0: TrainerCooldown -= 1
-	OnGoto AuxCounter ReadNotices ReadDoorSign ClericTrainer MagicUserTrainer EnterArena FightersSign FighterTrainer ThiefTrainer RoguesSign
+    AuxCounter -= 10
+    if TrainerCooldown != 0 { TrainerCooldown -= 1 }
+    goto [ReadNotices, ReadDoorSign, ClericTrainer, MagicUserTrainer, EnterArena, FightersSign,
+        FighterTrainer, ThiefTrainer, RoguesSign][AuxCounter]
 
 ReadNotices:
-	if NoticesRead > 0: Exit
-	PrintClear "NOTICES FOR TEACHERS AND STUDENTS ARE POSTED ON THE WALLS.  A NOTE DIRECTS MAGIC USERS AND CLERICS TO GO NORTH AND FIGHTERS AND 'ROGUES' TO GO EAST."
-	NoticesRead += 1
-	Exit
+    if NoticesRead > 0 { exit }
+    Text("NOTICES FOR TEACHERS AND STUDENTS ARE POSTED ON THE WALLS.  A NOTE DIRECTS MAGIC USERS AND CLERICS TO GO NORTH AND FIGHTERS AND 'ROGUES' TO GO EAST.")
+    NoticesRead += 1
+    exit
 
 ReadDoorSign:
-	if DoorSignRead > 0: Exit
-	PrintClear "A SIGN ON THE WALL DIRECTS MAGIC USERS TO GO THROUGH THE EAST DOOR AND CLERICS TO GO THROUGH THE WEST DOOR."
-	DoorSignRead += 1
-	Exit
+    if DoorSignRead > 0 { exit }
+    Text("A SIGN ON THE WALL DIRECTS MAGIC USERS TO GO THROUGH THE EAST DOOR AND CLERICS TO GO THROUGH THE WEST DOOR.")
+    DoorSignRead += 1
+    exit
 
 ClericTrainer:
-	if TrainerCooldown > 0: Exit
-	TrainerCooldown = 2
-	ShowPortrait DarkBeard ClericMace
-	Scratch4 = 114
-	$AuxMonsterName = "CLERICS "
-	Goto AskTrain
+    if TrainerCooldown > 0 { exit }
+    TrainerCooldown = 2
+    ShowPortrait(DarkBeard, ClericMace)
+    Scratch4 = 114
+    $AuxMonsterName = "CLERICS "
+    goto AskTrain
 
 MagicUserTrainer:
-	if TrainerCooldown > 0: Exit
-	TrainerCooldown = 2
-	ShowPortrait DarkBeard NobleRobe
-	Scratch4 = 113
-	$AuxMonsterName = "MAGIC USERS "
-	Goto AskTrain
+    if TrainerCooldown > 0 { exit }
+    TrainerCooldown = 2
+    ShowPortrait(DarkBeard, NobleRobe)
+    Scratch4 = 113
+    $AuxMonsterName = "MAGIC USERS "
+    goto AskTrain
 
 EnterArena:
-	if ArenaEntered > 0: Goto ClearAndExit
-	PrintClear "THE ROOM IS FILLED WITH DUELING PAIRS."
-	Gosub WaitReturnPressed
-	ArenaEntered = 1
-	Portrait = Bearded
-	SetupMonster Fighter16 distance=2 body=PlateArmor
-	Delay
-	Approach
-	Delay
-	Approach
-	Delay
-	if DuelOffered > 0: Goto OfferPartner
-	PrintClear "THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'"
-	Ask YesNoMenu "YES" -> ChooseDuelist "NO" -> OfferPartner
+    if ArenaEntered > 0 { goto ClearAndExit }
+    Text("THE ROOM IS FILLED WITH DUELING PAIRS.")
+    WaitReturnPressed()
+    ArenaEntered = 1
+    Portrait = Bearded
+    SetupMonster(Fighter16, distance=2, body=PlateArmor)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Delay()
+    if DuelOffered > 0 { goto OfferPartner }
+    Text("THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'")
+    YesNoMenu()
+    goto [ChooseDuelist, OfferPartner][Scratch1]
 
 ChooseDuelist:
-	Who "WHO WILL DUEL?"
-	if SelControl < 128: Goto StartDuel
-	PrintClear "I CANNOT ARRANGE SUCH A DUEL."
-	Exit
+    Who("WHO WILL DUEL?")
+    if SelControl < 128 { goto StartDuel }
+    Text("I CANNOT ARRANGE SUCH A DUEL.")
+    exit
 
-StartDuel:
-	ClearMonsters
-	Call CallDuelA
-	Combat
-	Exit
+    StartDuel:
+    ClearMonsters()
+    CallDuelA()
+    Combat()
+    exit
 
 OfferPartner:
-	DuelOffered = 1
-	if PartnerDeclined != 0: Exit
-	PrintClear "'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'"
-	Ask YesNoMenu "YES" -> RollHireling "NO" -> DeclinePartner
+    DuelOffered = 1
+    if PartnerDeclined != 0 { exit }
+    Text("'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'")
+    YesNoMenu()
+    goto [RollHireling, DeclinePartner][Scratch1]
 
 RollHireling:
-	if PartnerTries > 7: Goto NoHirelingLeft
-	PartnerTries += 1
-	Scratch1 = Random 250
-	if Scratch1 < 20: Goto HireAcolyte
-	if Scratch1 < 70: Goto HireWarrior
-	if Scratch1 < 110: Goto HireEvoker
-	if Scratch1 < 140: Goto HireSwordsman
-	if Scratch1 < 170: Goto HireRobber
-	if Scratch1 < 195: Goto HireCurate
-	if Scratch1 < 220: Goto HireHero
-	if Scratch1 < 240: Goto HireTheurgist
+    if PartnerTries > 7 { goto NoHirelingLeft }
+    PartnerTries += 1
+    Scratch1 = Random(250)
+    if Scratch1 < 20 { goto HireAcolyte }
+    if Scratch1 < 70 { goto HireWarrior }
+    if Scratch1 < 110 { goto HireEvoker }
+    if Scratch1 < 140 { goto HireSwordsman }
+    if Scratch1 < 170 { goto HireRobber }
+    if Scratch1 < 195 { goto HireCurate }
+    if Scratch1 < 220 { goto HireHero }
+    if Scratch1 < 240 { goto HireTheurgist }
 
-NoHirelingLeft:
-	PrintClear "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
-	PartnerTries = 8
-	Picture None
-	Portrait = None
-	Exit
+    NoHirelingLeft:
+    Text("'THERE IS NO ONE WHO WILL GO WITH YOU.'")
+    PartnerTries = 8
+    Picture(None)
+    Portrait = None
+    exit
 
-HireAcolyte:
-	Scratch2 = 0
-	$AuxMonsterName = "ACOLYTE"
-	Goto OfferHireling
+    HireAcolyte:
+    Scratch2 = 0
+    $AuxMonsterName = "ACOLYTE"
+    goto OfferHireling
 
-HireWarrior:
-	Scratch2 = 1
-	$AuxMonsterName = "WARRIOR"
-	Goto OfferHireling
+    HireWarrior:
+    Scratch2 = 1
+    $AuxMonsterName = "WARRIOR"
+    goto OfferHireling
 
-HireEvoker:
-	Scratch2 = 2
-	$AuxMonsterName = "EVOKER"
-	Goto OfferHireling
+    HireEvoker:
+    Scratch2 = 2
+    $AuxMonsterName = "EVOKER"
+    goto OfferHireling
 
-HireSwordsman:
-	Scratch2 = 3
-	$AuxMonsterName = "SWORDSMAN"
-	Goto OfferHireling
+    HireSwordsman:
+    Scratch2 = 3
+    $AuxMonsterName = "SWORDSMAN"
+    goto OfferHireling
 
-HireRobber:
-	Scratch2 = 4
-	$AuxMonsterName = "ROBBER"
-	Goto OfferHireling
+    HireRobber:
+    Scratch2 = 4
+    $AuxMonsterName = "ROBBER"
+    goto OfferHireling
 
-HireCurate:
-	Scratch2 = 5
-	$AuxMonsterName = "CURATE"
-	Goto OfferHireling
+    HireCurate:
+    Scratch2 = 5
+    $AuxMonsterName = "CURATE"
+    goto OfferHireling
 
-HireHero:
-	Scratch2 = 6
-	$AuxMonsterName = "HERO"
-	Goto OfferHireling
+    HireHero:
+    Scratch2 = 6
+    $AuxMonsterName = "HERO"
+    goto OfferHireling
 
-HireTheurgist:
-	Scratch2 = 7
-	$AuxMonsterName = "THEURGIST"
+    HireTheurgist:
+    Scratch2 = 7
+    $AuxMonsterName = "THEURGIST"
 
-OfferHireling:
-	if Scratch2 <= 1: $AuxText = "1 SHARE"
-	if Scratch2 == 2: $AuxText = "2 SHARES"
-	if Scratch2 >= 3: $AuxText = "3 SHARES "
-	if Scratch2 >= 4: $AuxTreasureText = " PLUS A PICK OF SPECIAL ITEMS"
-	if Scratch2 > 5: $AuxText = "4 SHARES "
-	PrintClear "'THERE IS A FINE "
-	Print $AuxMonsterName
-	Print " WHO WILL JOIN YOU FOR "
-	Print $AuxText
-	Print ". IS THIS ACCEPTABLE?'"
-	Ask YesNoMenu "YES" -> AcceptHireling "NO" -> ConsiderAnother
+    OfferHireling:
+    if Scratch2 <= 1 { $AuxText = "1 SHARE" }
+    if Scratch2 == 2 { $AuxText = "2 SHARES" }
+    if Scratch2 >= 3 { $AuxText = "3 SHARES " }
+    if Scratch2 >= 4 { $AuxTreasureText = " PLUS A PICK OF SPECIAL ITEMS" }
+    if Scratch2 > 5 { $AuxText = "4 SHARES " }
+    Text("'THERE IS A FINE ")
+    Print($AuxMonsterName)
+    Print(" WHO WILL JOIN YOU FOR ")
+    Print($AuxText)
+    Print(". IS THIS ACCEPTABLE?'")
+    YesNoMenu()
+    goto [AcceptHireling, ConsiderAnother][Scratch1]
 
 AcceptHireling:
-	alias Hireling = Scratch1
-	Gosub CheckPartyFull
-	Hireling = HirelingTable[Scratch2]
-	Scratch2 = Scratch2 * 5
-	Scratch2 += 50
-	AddNPC Hireling Scratch2
+    CheckPartyFull()
+    Scratch1 = HirelingTable[Scratch2]
+    Scratch2 = Scratch2 * 5
+    Scratch2 += 50
+    AddNPC(Scratch1, Scratch2)
 
 ConsiderAnother:
-	PrintClear "'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'"
-	Ask YesNoMenu "YES" -> RollHireling "NO" -> DeclinePartner
+    Text("'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'")
+    YesNoMenu()
+    goto [RollHireling, DeclinePartner][Scratch1]
 
 DeclinePartner:
-	PartnerDeclined = 1
-	Picture None
-	Portrait = None
-	Exit
+    PartnerDeclined = 1
+    Picture(None)
+    Portrait = None
+    exit
 
 FightersSign:
-	PrintClear "A SIGN ON THE NORTH DOOR READS 'FIGHTERS'."
-	Exit
+    Text("A SIGN ON THE NORTH DOOR READS 'FIGHTERS'.")
+    exit
 
 FighterTrainer:
-	if TrainerCooldown > 0: Exit
-	TrainerCooldown = 2
-	ShowPortrait DarkBeard PlateArmor
-	Scratch4 = 120
-	$AuxMonsterName = "FIGHTERS "
-	Goto AskTrain
+    if TrainerCooldown > 0 { exit }
+    TrainerCooldown = 2
+    ShowPortrait(DarkBeard, PlateArmor)
+    Scratch4 = 120
+    $AuxMonsterName = "FIGHTERS "
+    goto AskTrain
 
 ThiefTrainer:
-	if TrainerCooldown > 0: Exit
-	TrainerCooldown = 2
-	ShowPortrait DarkBeard RogueDagger
-	Scratch4 = 116
-	$AuxMonsterName = "THIEVES "
-	Goto AskTrain
+    if TrainerCooldown > 0 { exit }
+    TrainerCooldown = 2
+    ShowPortrait(DarkBeard, RogueDagger)
+    Scratch4 = 116
+    $AuxMonsterName = "THIEVES "
+    goto AskTrain
 
 RoguesSign:
-	PrintClear "A SIGN ON THE NORTH DOOR READS 'ROGUES'."
-	Exit
+    Text("A SIGN ON THE NORTH DOOR READS 'ROGUES'.")
+    exit
 
 AskTrain:
-	PartyExp = Scratch4
-	PrintClear "'WE TRAIN ONLY "
-	Print $AuxMonsterName
-	Print "HERE. DO YOU WANT TO TRAIN?'"
-	Ask YesNoMenu "YES" -> OpenTraining "NO" -> ClearAndExit
+    PartyExp = Scratch4
+    Text("'WE TRAIN ONLY ")
+    Print($AuxMonsterName)
+    Print("HERE. DO YOU WANT TO TRAIN?'")
+    YesNoMenu()
+    goto [OpenTraining, ClearAndExit][Scratch1]
 
 OpenTraining:
-	Program 0
-	Picture None
-	Exit
+    Program(0)
+    Picture(None)
+    exit
 
 FightWatch:
-	WatchCombatDone11 = 0
-	Morale = 50
-	ClearMonsters
-	LoadMonster Level3Mu count=2 icon=Level3Mu
-	LoadMonster ThLvlFighter84 count=12 icon=11
-	LoadMonster Aides count=12 icon=ThLvlFighter
-	LoadMonster Nomad count=12 icon=Nomad
-	Combat
-	WatchCombatDone11 = 1
-	Gosub AfterWatchFight
-	FoughtWatch = 1
-	Exit
+    WatchCombatDone11 = 0
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(Level3Mu, count=2, icon=Level3Mu)
+    LoadMonster(ThLvlFighter84, count=12, icon=11)
+    LoadMonster(Aides, count=12, icon=ThLvlFighter)
+    LoadMonster(Nomad, count=12, icon=Nomad)
+    Combat()
+    WatchCombatDone11 = 1
+    AfterWatchFight()
+    FoughtWatch = 1
+    exit
 
 LeaveArea:
-	NewECL NewPhlan
+    NewECL(NewPhlan)
 
-AfterWatchFight:
-	if CombatEnd > PartyDied: Goto EjectParty
-	if WatchCombatDone11 > 0: Return
+def AfterWatchFight() {
+    if CombatEnd > PartyDied { goto EjectParty }
+    if WatchCombatDone11 > 0 { return }
+} # falls into ClearAndExit
 
 ClearAndExit:
-	Temp1 = 0
-	Temp2 = 0
-	Temp3 = 0
-	Picture None
-	Portrait = None
-	Exit
+    Temp1 = 0
+    Temp2 = 0
+    Temp3 = 0
+    Picture(None)
+    Portrait = None
+    exit
 
-YesNoMenu:
-	alias Choice = Scratch1
-	Choice = Menu "YES" "NO"
-	Return
+def YesNoMenu() {
+    Scratch1 = Menu("YES", "NO")
+    return
+}
 
-CheckPartyFull:
-	if PartyCount < 8: Return
-	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
-	Gosub WaitReturnPressed
-	Goto ClearAndExit
+def CheckPartyFull() {
+    if PartyCount < 8 { return }
+    Text("'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'")
+    WaitReturnPressed()
+    goto ClearAndExit
+}
 
 EjectParty:
-	Facing = Random 3
-	AuxMember = Random 4
-	PartyX = EjectXTable[AuxMember]
-	PartyY = EjectYTable[AuxMember]
-	PrintClear ""
-	Call CallRedraw
-	NewECL NewPhlan
+    Facing = Random(3)
+    AuxMember = Random(4)
+    PartyX = EjectXTable[AuxMember]
+    PartyY = EjectYTable[AuxMember]
+    Text("")
+    CallRedraw()
+    NewECL(NewPhlan)
 
-WaitReturnPressed:
-	alias Choice = AuxMenuChoice
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def WaitReturnPressed() {
+    AuxMenuChoice = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
-EjectXTable:
-	Data 3 10 2 12
-
-EjectYTable:
-	Data 11 10 0 3
-
-HirelingTable:
-	Data 108 103 122 36 111 112 109 110 0
+# tables
+EjectXTable = [3, 10, 2, 12]
+EjectYTable = [11, 10, 0, 3]
+HirelingTable = [108, 103, 122, 36, 111, 112, 109, 110, 0]

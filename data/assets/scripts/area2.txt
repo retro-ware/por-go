@@ -1,667 +1,680 @@
-event4:
-	Sky = 11
-	SkyInside = 8
-	LoadMap 2 unused=2 icons=255
-	LoadWalls 1 3 20
-	if AreaKind == 2: Exit
-	NoCoords = 0
-	Exit
+on load {
+    Sky = 11
+    SkyInside = 8
+    LoadMap(2, unused=2, icons=255)
+    LoadWalls(1, 3, 20)
+    if AreaKind == HobgoblinBarracks { exit }
+    NoCoords = 0
+    exit
+}
 
-event2:
-	RestEvery = 12
-	RestChance = 6
-	if TextileHouseCleared > 253: RestEvery = 0
-	Exit
+on camp {
+    RestEvery = 12
+    RestChance = 6
+    if TextileHouseCleared > 253 { RestEvery = 0 }
+    exit
+}
 
-event3:
-	Goto RandomEncounter
+on rest {
+    goto RandomEncounter
+}
 
-event0:
-	if LeftMap == 0: Exit
-	Call CallStepForward
-	HoldMove = SkipMove
-	OnGoto Facing ExitNorth ExitEast Done ExitWest
+on move {
+    if LeftMap == 0 { exit }
+    CallStepForward()
+    HoldMove = SkipMove
+    goto [ExitNorth, ExitEast, Done, ExitWest][Facing]
+} # falls into ExitNorth
 
 ExitNorth:
-	EnterArea PodolPlaza
+    EnterArea(PodolPlaza)
 
 ExitEast:
-	EnterArea MendorsLibrary
+    EnterArea(MendorsLibrary)
 
 ExitWest:
-	SymbolSet = 7
-	SetMapXY 11 28
-	NewECL Wilderness
+    SymbolSet = 7
+    MapX = 11
+    MapY = 28
+    NewECL(Wilderness)
 
-event1:
-	Scratch10 = 127 & Cell
-	PrintClear " "
-	OnGoto Scratch10 RandomEncounterRoll CourtyardAmbush Barracks StenchRoom DeterioratedRoom TapestryRoom Nursery CarvedWall GraffitiRoom Done Done Done DarkObject DeadHobgoblin Kitchen SmokingFire Larder SmallDarkRoom GrishnakTemple BloodRoom SecretDoorHint OgreChief RandomEncounterRoll DiaryPage ThievesWell
+on step {
+    Scratch10 = ~Inside & Cell
+    Text(" ")
+    goto [RandomEncounterRoll, CourtyardAmbush, Barracks, StenchRoom, DeterioratedRoom, TapestryRoom,
+        Nursery, CarvedWall, GraffitiRoom, Done, Done, Done, DarkObject, DeadHobgoblin, Kitchen,
+        SmokingFire, Larder, SmallDarkRoom, GrishnakTemple, BloodRoom, SecretDoorHint, OgreChief,
+        RandomEncounterRoll, DiaryPage, ThievesWell][Scratch10]
+} # falls into Done
 
 Done:
-	Exit
+    exit
 
 RandomEncounterRoll:
-	Scratch1 = 5
-	if Search != 1: Scratch1 = 30
-	Scratch1 = Random Scratch1
-	if 1 != Scratch1: Exit
+    Scratch1 = 5
+    if Search != Searching { Scratch1 = 30 }
+    Scratch1 = Random(Scratch1)
+    if 1 != Scratch1 { exit }
 
 RandomEncounter:
-	Scratch1 = 18
-	if Scratch10 == 22 && IronBoxFound == 0: Goto PickEncounter
-	if TextileHouseCleared > 253: Exit
-	Scratch1 = Random 10
-	Scratch1 += EncounterCount
-	if EncounterCount == 9 && IronBoxFound == 0: Exit
-	EncounterCount += 1
-	if EncounterCount != 10 || IronBoxFound != Completed: Goto PickEncounter
-	TextileHouseCleared = RewardDue
-	Exit
+    Scratch1 = 18
+    if Scratch10 == 22 and IronBoxFound == 0 { goto PickEncounter }
+    if TextileHouseCleared > 253 { exit }
+    Scratch1 = Random(10)
+    Scratch1 += EncounterCount
+    if EncounterCount == 9 and IronBoxFound == 0 { exit }
+    EncounterCount += 1
+    if EncounterCount != 10 or IronBoxFound != Yes { goto PickEncounter }
+    TextileHouseCleared = RewardDue
+    exit
 
-PickEncounter:
-	if Scratch1 > 17: Goto HobgoblinsCharge
-	if Scratch1 > 12: Goto SkeletalForce
-	if Scratch1 > 7: Goto GhoulsAttack
-	if Scratch1 > 3: Goto ScorpionsApproach
-	Morale = 60
-	SetupMonster GiantFrog distance=0 closeup=GiantFrog
-	PrintClear "EVIL LOOKING FROGS BOIL UP FROM BELOW."
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster PoisonousFrog count=8 icon=PoisonousFrog
-	Combat
-	if CombatEnd > PartyDied: Goto EjectToStreet
-	Exit
+    PickEncounter:
+    if Scratch1 > 17 { goto HobgoblinsCharge }
+    if Scratch1 > 12 { goto SkeletalForce }
+    if Scratch1 > 7 { goto GhoulsAttack }
+    if Scratch1 > 3 { goto ScorpionsApproach }
+    Morale = 60
+    SetupMonster(GiantFrog, distance=0, closeup=GiantFrog)
+    Text("EVIL LOOKING FROGS BOIL UP FROM BELOW.")
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(PoisonousFrog, count=8, icon=PoisonousFrog)
+    Combat()
+    if CombatEnd > PartyDied { goto EjectToStreet }
+    exit
 
-HobgoblinsCharge:
-	Morale = 60
-	SetupMonster Hobgoblin distance=2 closeup=Hobgoblin
-	PrintClear "HOBGOBLINS CHARGE SCREAMING."
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster Hobgoblin count=8 icon=Hobgoblin
-	LoadMonster HobgoblinLdr count=1 icon=HobgoblinLdr
-	Combat
-	if CombatEnd > PartyDied: Goto EjectToStreet
-	Exit
+    HobgoblinsCharge:
+    Morale = 60
+    SetupMonster(Hobgoblin, distance=2, closeup=Hobgoblin)
+    Text("HOBGOBLINS CHARGE SCREAMING.")
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(Hobgoblin, count=8, icon=Hobgoblin)
+    LoadMonster(HobgoblinLdr, count=1, icon=HobgoblinLdr)
+    Combat()
+    if CombatEnd > PartyDied { goto EjectToStreet }
+    exit
 
-SkeletalForce:
-	Morale = 100
-	SetupMonster Skeleton distance=2 closeup=Skeleton
-	PrintClear "A SKELETAL FORCE SPOTS YOU AND ATTACKS."
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster Wight count=1 icon=Wight
-	LoadMonster Skeleton count=10 icon=Skeleton
-	LoadMonster Zombie count=8 icon=35
-	Combat
-	if CombatEnd > PartyDied: Goto EjectToStreet
-	Exit
+    SkeletalForce:
+    Morale = 100
+    SetupMonster(Skeleton, distance=2, closeup=Skeleton)
+    Text("A SKELETAL FORCE SPOTS YOU AND ATTACKS.")
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(Wight, count=1, icon=Wight)
+    LoadMonster(Skeleton, count=10, icon=Skeleton)
+    LoadMonster(Zombie, count=8, icon=35)
+    Combat()
+    if CombatEnd > PartyDied { goto EjectToStreet }
+    exit
 
-GhoulsAttack:
-	Morale = 100
-	SetupMonster Ghoul distance=2 closeup=Ghoul
-	PrintClear "SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU."
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster Wight count=1 icon=Wight
-	LoadMonster Ghoul count=5 icon=Ghoul
-	Combat
-	if CombatEnd > PartyDied: Goto EjectToStreet
-	Exit
+    GhoulsAttack:
+    Morale = 100
+    SetupMonster(Ghoul, distance=2, closeup=Ghoul)
+    Text("SOME GHOULS DECIDE TO ADD YOU TO THEIR MENU.")
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(Wight, count=1, icon=Wight)
+    LoadMonster(Ghoul, count=5, icon=Ghoul)
+    Combat()
+    if CombatEnd > PartyDied { goto EjectToStreet }
+    exit
 
-ScorpionsApproach:
-	SetupMonster Scorpion distance=1 closeup=Scorpion
-	Morale = 50
-	PrintClear "SCORPIONS APPROACH HUNGRILY."
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster LargeScorpion count=3 icon=18
-	LoadMonster HugeScorpion count=1 icon=18
-	Combat
-	if CombatEnd > PartyDied: Goto EjectToStreet
-	Exit
+    ScorpionsApproach:
+    SetupMonster(Scorpion, distance=1, closeup=Scorpion)
+    Morale = 50
+    Text("SCORPIONS APPROACH HUNGRILY.")
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(LargeScorpion, count=3, icon=18)
+    LoadMonster(HugeScorpion, count=1, icon=18)
+    Combat()
+    if CombatEnd > PartyDied { goto EjectToStreet }
+    exit
 
 CourtyardAmbush:
-	if HobgoblinTempleState != DrumFightPending: Exit
-	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
-	PrintClear "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
-	Morale = 60
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster Hobgoblin count=12 icon=Hobgoblin
-	LoadMonster HobgoblinLdr count=2 icon=HobgoblinLdr
-	Combat
-	if CombatEnd > PartyDied: Goto ChasedOut
-	HobgoblinTempleState = CourtyardWon
-	PrintClear "THINGS SEEM STRANGELY QUIET. THE DRUM HAS FADED TO SILENCE."
-	Exit
+    if HobgoblinTempleState != DrumFightPending { exit }
+    SetupMonster(Hobgoblin, distance=0, closeup=Hobgoblin)
+    Text("YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK.")
+    Morale = 60
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(Hobgoblin, count=12, icon=Hobgoblin)
+    LoadMonster(HobgoblinLdr, count=2, icon=HobgoblinLdr)
+    Combat()
+    if CombatEnd > PartyDied { goto ChasedOut }
+    HobgoblinTempleState = CourtyardWon
+    Text("THINGS SEEM STRANGELY QUIET. THE DRUM HAS FADED TO SILENCE.")
+    exit
 
-ChasedOut:
-	PrintClear "YOU ARE CHASED OUT INTO THE STREETS."
+    ChasedOut:
+    Text("YOU ARE CHASED OUT INTO THE STREETS.")
 
 EjectToStreet:
-	Scratch2 = Random 1
-	OnGoto Scratch2 EjectWest EjectEast
+    Scratch2 = Random(1)
+    goto [EjectWest, EjectEast][Scratch2]
 
 EjectWest:
-	PartyX = 4
-	PartyY = 2
-	Exit
+    PartyX = 4
+    PartyY = 2
+    exit
 
 EjectEast:
-	PartyX = 12
-	PartyY = 2
-	Exit
+    PartyX = 12
+    PartyY = 2
+    exit
 
 Barracks:
-	if BarracksSeen != 0: Exit
-	PrintClear "THIS CAVERNOUS BUILDING SERVES AS A BARRACKS."
-	AuxCounter = 14
-	AuxMember = 3
-	Goto HobgoblinEncounter
+    if BarracksSeen != 0 { exit }
+    Text("THIS CAVERNOUS BUILDING SERVES AS A BARRACKS.")
+    AuxCounter = 14
+    AuxMember = 3
+    goto HobgoblinEncounter
 
 MarkBarracksSeen:
-	BarracksSeen = Completed
-	Exit
+    BarracksSeen = Yes
+    exit
 
 StenchRoom:
-	if StenchRoomSeen != 0: Exit
-	PrintClear "YOU ARE APPALLED BY THE STENCH IN THIS DAMP BUILDING."
-	StenchRoomSeen = Completed
-	Exit
+    if StenchRoomSeen != 0 { exit }
+    Text("YOU ARE APPALLED BY THE STENCH IN THIS DAMP BUILDING.")
+    StenchRoomSeen = Yes
+    exit
 
 DeterioratedRoom:
-	if DeterioratedRoomSeen != 0: Exit
-	PrintClear "YOU ARE IN A DETERIORATED BUILDING."
-	DeterioratedRoomSeen = Completed
-	Exit
+    if DeterioratedRoomSeen != 0 { exit }
+    Text("YOU ARE IN A DETERIORATED BUILDING.")
+    DeterioratedRoomSeen = Yes
+    exit
 
 TapestryRoom:
-	if TapestryRoomSeen != 0: Exit
-	PrintClear "WHEN YOU ENTER, A FEW FADED, MOTHEATEN TAPESTRIES FLUTTER MOURNFULLY."
-	AuxCounter = 10
-	AuxMember = 2
-	Goto HobgoblinEncounter
+    if TapestryRoomSeen != 0 { exit }
+    Text("WHEN YOU ENTER, A FEW FADED, MOTHEATEN TAPESTRIES FLUTTER MOURNFULLY.")
+    AuxCounter = 10
+    AuxMember = 2
+    goto HobgoblinEncounter
 
 MarkTapestrySeen:
-	TapestryRoomSeen = Completed
-	Exit
+    TapestryRoomSeen = Yes
+    exit
 
 Nursery:
-	if NurserySeen != 0: Exit
-	PrintClear "SEVERAL BABY HOBGOBLINS FLEE, SCREAMING IN FEAR!"
-	NurserySeen = Completed
-	Gosub PressToContinue
-	PrintClear "THE FLOOR IS SLIPPERY FROM DUNG AND REEKS OF URINE."
-	Exit
+    if NurserySeen != 0 { exit }
+    Text("SEVERAL BABY HOBGOBLINS FLEE, SCREAMING IN FEAR!")
+    NurserySeen = Yes
+    PressToContinue()
+    Text("THE FLOOR IS SLIPPERY FROM DUNG AND REEKS OF URINE.")
+    exit
 
 CarvedWall:
-	PrintClear "'SKULLCRUSHER WAS HERE' IS CARVED INTO THE NORTH WALL."
-	Gosub FindSkullcrusher
-	if Scratch3 != 255: Exit
-	Print " SKULLCRUSHER PROUDLY POINTS OUT HIS HANDIWORK."
-	Exit
+    Text("'SKULLCRUSHER WAS HERE' IS CARVED INTO THE NORTH WALL.")
+    FindSkullcrusher()
+    if Scratch3 != 255 { exit }
+    Print(" SKULLCRUSHER PROUDLY POINTS OUT HIS HANDIWORK.")
+    exit
 
 GraffitiRoom:
-	if GraffitiRoomSeen != 0: Exit
-	PrintClear "GRAFFITI COVERS THE WALLS IN MEANINGLESS ABANDON."
-	AuxCounter = 12
-	AuxMember = 2
-	Goto HobgoblinEncounter
+    if GraffitiRoomSeen != 0 { exit }
+    Text("GRAFFITI COVERS THE WALLS IN MEANINGLESS ABANDON.")
+    AuxCounter = 12
+    AuxMember = 2
+    goto HobgoblinEncounter
 
 MarkGraffitiSeen:
-	GraffitiRoomSeen = Completed
-	Exit
+    GraffitiRoomSeen = Yes
+    exit
 
 DarkObject:
-	if SkullcrusherLootDestroyed != 0: Exit
-	PrintClear "YOU CAN BARELY SEE A DARK OBJECT TO THE WEST."
-	Delay
-	Exit
+    if SkullcrusherLootDestroyed != 0 { exit }
+    Text("YOU CAN BARELY SEE A DARK OBJECT TO THE WEST.")
+    Delay()
+    exit
 
 DeadHobgoblin:
-	if SkullcrusherLootDestroyed != 0: Exit
-	PrintClear "YOU SEE A DEAD HOBGOBLIN WITH ITS HEAD CRUSHED. WRITTEN IN BLOOD IS A MESSAGE: 'SKULLCRUSHER WAS HERE.'"
-	Gosub FindSkullcrusher
-	if Scratch3 != 255: Goto BodyMenu
-	Print "SKULLCRUSHER LAUGHS AND CRACKS HIS KNUCKLES."
+    if SkullcrusherLootDestroyed != 0 { exit }
+    Text("YOU SEE A DEAD HOBGOBLIN WITH ITS HEAD CRUSHED. WRITTEN IN BLOOD IS A MESSAGE: 'SKULLCRUSHER WAS HERE.'")
+    FindSkullcrusher()
+    if Scratch3 != 255 { goto BodyMenu }
+    Print("SKULLCRUSHER LAUGHS AND CRACKS HIS KNUCKLES.")
 
 BodyMenu:
-	alias Choice = AuxParlayChoice
-	Gosub PressToContinue
-	PrintClear "WHAT DO YOU DO WITH THE BODY?"
-	Choice = Menu "SEARCH" -> SearchBody "DESTROY" -> DestroyBody "LEAVE" -> Done
+    PressToContinue()
+    Text("WHAT DO YOU DO WITH THE BODY?")
+    AuxParlayChoice = Menu("SEARCH", "DESTROY", "LEAVE")
+    goto [SearchBody, DestroyBody, Done][AuxParlayChoice]
 
 SearchBody:
-	PrintClear "YOU FIND NOTHING OF ANY VALUE."
-	Goto BodyMenu
+    Text("YOU FIND NOTHING OF ANY VALUE.")
+    goto BodyMenu
 
 DestroyBody:
-	PrintClear "YOU DESTROY EVERYTHING OF VALUE."
-	SkullcrusherLootDestroyed = Completed
-	Exit
+    Text("YOU DESTROY EVERYTHING OF VALUE.")
+    SkullcrusherLootDestroyed = Yes
+    exit
 
 Kitchen:
-	if KitchenSeen != 0: Exit
-	PrintClear "A SIMPLE KITCHEN, A FEW CLAY BOWLS ADORN THE FLOOR."
-	KitchenSeen = Completed
-	Exit
+    if KitchenSeen != 0 { exit }
+    Text("A SIMPLE KITCHEN, A FEW CLAY BOWLS ADORN THE FLOOR.")
+    KitchenSeen = Yes
+    exit
 
 SmokingFire:
-	PrintClear "THE REMAINS OF A SMOKING FIRE."
-	Exit
+    Text("THE REMAINS OF A SMOKING FIRE.")
+    exit
 
 Larder:
-	if LarderSeen2 != 0: Exit
-	PrintClear "BREAD AND MEAT LIE ABOUT, AS WELL AS PIECES OF HUMAN ANATOMY."
-	LarderSeen2 = Completed
-	Exit
+    if LarderSeen2 != 0 { exit }
+    Text("BREAD AND MEAT LIE ABOUT, AS WELL AS PIECES OF HUMAN ANATOMY.")
+    LarderSeen2 = Yes
+    exit
 
 SmallDarkRoom:
-	PrintClear "YOU ARE IN A VERY SMALL, DARK ROOM."
-	if PrisonerState == DealtWith: Exit
-	if PrisonerState == PadlocksOpened: Goto FreeManMenu
-	Portrait = Moustached
-	SetupMonster Fighter14 distance=0 body=BareChest
-	Print "A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47."
+    Text("YOU ARE IN A VERY SMALL, DARK ROOM.")
+    if PrisonerState == DealtWith { exit }
+    if PrisonerState == PadlocksOpened { goto FreeManMenu }
+    Portrait = Moustached
+    SetupMonster(Fighter14, distance=0, body=BareChest)
+    Print("A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47.")
 
 PrisonerContinue:
-	Gosub PressToContinue
+    PressToContinue()
 
 PrisonerMenu:
-	alias Choice = AuxParlayChoice
-	PrintClear "WHAT DO YOU DO WITH THE MAN?"
-	Choice = Menu "FREE" -> FreeMenu "ATTACK" -> KillPrisoner "PARLAY" -> ParlayPrisoner "LEAVE" -> LeavePrisoner
+    Text("WHAT DO YOU DO WITH THE MAN?")
+    AuxParlayChoice = Menu("FREE", "ATTACK", "PARLAY", "LEAVE")
+    goto [FreeMenu, KillPrisoner, ParlayPrisoner, LeavePrisoner][AuxParlayChoice]
 
 LeavePrisoner:
-	Portrait = None
-	Goto Done
+    Portrait = None
+    goto Done
 
 FreeMenu:
-	alias Choice = AuxParlayChoice
-	PrintClear "HOW WILL YOU FREE HIM?"
-	Choice = Menu "UNLOCK" -> UnlockChains "PICK LOCK" -> PickLockFails "BREAK CHAINS" -> ChainsHold "LEAVE" -> PrisonerMenu
+    Text("HOW WILL YOU FREE HIM?")
+    AuxParlayChoice = Menu("UNLOCK", "PICK LOCK", "BREAK CHAINS", "LEAVE")
+    goto [UnlockChains, PickLockFails, ChainsHold, PrisonerMenu][AuxParlayChoice]
 
 UnlockChains:
-	if Carried 75: Goto KeyOpensLocks
-	PrintClear "YOU HAVE NO KEY TO UNLOCK THE PADLOCKS."
-	Goto PrisonerContinue
+    if Carried(BrassKey) { goto KeyOpensLocks }
+    Text("YOU HAVE NO KEY TO UNLOCK THE PADLOCKS.")
+    goto PrisonerContinue
 
-KeyOpensLocks:
-	PrintClear "THE BRASS KEY YOU FOUND OPENS ALL OF THE PADLOCKS."
-	PrisonerState = PadlocksOpened
-	Goto FreeManContinue
+    KeyOpensLocks:
+    Text("THE BRASS KEY YOU FOUND OPENS ALL OF THE PADLOCKS.")
+    PrisonerState = PadlocksOpened
+    goto FreeManContinue
 
 PickLockFails:
-	PrintClear "NO ONE IS ABLE TO PICK ALL THE PADLOCKS."
-	Goto PrisonerContinue
+    Text("NO ONE IS ABLE TO PICK ALL THE PADLOCKS.")
+    goto PrisonerContinue
 
 ChainsHold:
-	PrintClear "DESPITE GREAT EFFORT, THE CHAINS HOLD."
-	Goto PrisonerContinue
+    Text("DESPITE GREAT EFFORT, THE CHAINS HOLD.")
+    goto PrisonerContinue
 
 KillPrisoner:
-	PrintClear "THE MAN DIES A CRUEL DEATH."
-	Gosub PressToContinue
-	PrisonerState = DealtWith
-	Portrait = None
-	Call CallRedraw
-	Exit
+    Text("THE MAN DIES A CRUEL DEATH.")
+    PressToContinue()
+    PrisonerState = DealtWith
+    Portrait = None
+    CallRedraw()
+    exit
 
 ParlayPrisoner:
-	AuxParlayChoice = Parlay 0 1 2 3 4
-	OnGoto AuxParlayChoice WhatsYourProblem DontFoolMe AlmostKilledLeader FreeMeHelp WordsDontBreak
+    AuxParlayChoice = Parlay(0, 1, 2, 3, 4)
+    goto [WhatsYourProblem, DontFoolMe, AlmostKilledLeader, FreeMeHelp, WordsDontBreak][AuxParlayChoice]
 
 WhatsYourProblem:
-	PrintClear " 'WHATS YOUR PROBLEM?'"
-	Goto PrisonerContinue
+    Text(" 'WHATS YOUR PROBLEM?'")
+    goto PrisonerContinue
 
 DontFoolMe:
-	PrintClear " 'DON'T TRY TO FOOL ME.' HE GROWLS."
-	Goto PrisonerContinue
+    Text(" 'DON'T TRY TO FOOL ME.' HE GROWLS.")
+    goto PrisonerContinue
 
 AlmostKilledLeader:
-	PrintClear " 'I ALMOST KILLED THE LEADER OF THESE SCUMMY HOBGOBLINS, BUT THE REST JUMPED ME!'"
-	Goto PrisonerContinue
+    Text(" 'I ALMOST KILLED THE LEADER OF THESE SCUMMY HOBGOBLINS, BUT THE REST JUMPED ME!'")
+    goto PrisonerContinue
 
 FreeMeHelp:
-	PrintClear " 'FREE ME AND I'LL HELP YOU.'"
-	Goto PrisonerContinue
+    Text(" 'FREE ME AND I'LL HELP YOU.'")
+    goto PrisonerContinue
 
 WordsDontBreak:
-	PrintClear " 'WORDS DON'T BREAK CHAINS!' HE SNARLS."
-	Goto PrisonerContinue
+    Text(" 'WORDS DON'T BREAK CHAINS!' HE SNARLS.")
+    goto PrisonerContinue
 
 FreeManContinue:
-	Gosub PressToContinue
+    PressToContinue()
 
 FreeManMenu:
-	alias Choice = AuxParlayChoice
-	PrintClear "THERE IS A FREE MAN HERE. WHAT DO YOU DO?"
-	Choice = Menu "ATTACK" -> FightFreeMan "WAIT" -> FreeManWaits "FLEE" -> FleeRoom "PARLAY" -> ParlayFreeMan "LEAVE" -> LeavePrisoner
+    Text("THERE IS A FREE MAN HERE. WHAT DO YOU DO?")
+    AuxParlayChoice = Menu("ATTACK", "WAIT", "FLEE", "PARLAY", "LEAVE")
+    goto [FightFreeMan, FreeManWaits, FleeRoom, ParlayFreeMan, LeavePrisoner][AuxParlayChoice]
 
 FightFreeMan:
-	Morale = 100
-	ClearMonsters
-	LoadMonster Skullcrusher count=1 icon=Skullcrusher
-	Combat
-	PrisonerState = DealtWith
-	Portrait = None
-	Exit
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Skullcrusher, count=1, icon=Skullcrusher)
+    Combat()
+    PrisonerState = DealtWith
+    Portrait = None
+    exit
 
 FreeManWaits:
-	PrintClear "THE MAN WAITS IMPATIENTLY."
-	Goto FreeManContinue
+    Text("THE MAN WAITS IMPATIENTLY.")
+    goto FreeManContinue
 
 FleeRoom:
-	PrintClear "YOU FLEE THE ROOM."
-	PartyX = PrevX
-	PartyY = PrevY
-	Call CallRedraw
-	Portrait = None
-	Exit
+    Text("YOU FLEE THE ROOM.")
+    PartyX = PrevX
+    PartyY = PrevY
+    CallRedraw()
+    Portrait = None
+    exit
 
 ParlayFreeMan:
-	AuxParlayChoice = Parlay 0 0 0 0 1
-	OnGoto AuxParlayChoice ServantThanks DislikeTone
+    AuxParlayChoice = Parlay(0, 0, 0, 0, 1)
+    goto [ServantThanks, DislikeTone][AuxParlayChoice]
 
 ServantThanks:
-	alias Choice = AuxParlayChoice
-	PrintClear "'THANKS FOR FREEING ME. I'M LORD CADORNA'S SERVANT."
-	Gosub PressToContinue
-	PrintClear "ADD HIM TO YOUR PARTY?"
-	Choice = Menu "YES" -> AddSkullcrusher "NO" -> SkullcrusherLeaves
+    Text("'THANKS FOR FREEING ME. I'M LORD CADORNA'S SERVANT.")
+    PressToContinue()
+    Text("ADD HIM TO YOUR PARTY?")
+    AuxParlayChoice = Menu("YES", "NO")
+    goto [AddSkullcrusher, SkullcrusherLeaves][AuxParlayChoice]
 
 AddSkullcrusher:
-	if PartyCount != 8: Goto SkullcrusherJoins
-	PrintClear "THERE IS NO ROOM IN YOUR PARTY FOR HIM."
-	Goto SkullcrusherLeaves
+    if PartyCount != 8 { goto SkullcrusherJoins }
+    Text("THERE IS NO ROOM IN YOUR PARTY FOR HIM.")
+    goto SkullcrusherLeaves
 
-SkullcrusherJoins:
-	PrintClear "'GREAT! MY NAME IS SKULLCRUSHER. THERE'S A SECRET DOOR TO THE SOUTHEAST. THAT'S WHERE I MET THE HOBGOBLIN LEADER.'"
-	AddNPC Skullcrusher 100
-	Gosub PressToContinue
-	PrisonerState = DealtWith
-	Portrait = None
-	Call CallRedraw
-	Exit
+    SkullcrusherJoins:
+    Text("'GREAT! MY NAME IS SKULLCRUSHER. THERE'S A SECRET DOOR TO THE SOUTHEAST. THAT'S WHERE I MET THE HOBGOBLIN LEADER.'")
+    AddNPC(Skullcrusher, 100)
+    PressToContinue()
+    PrisonerState = DealtWith
+    Portrait = None
+    CallRedraw()
+    exit
 
 SkullcrusherLeaves:
-	PrintClear "'OH WELL.' HE LEAVES."
-	PrisonerState = DealtWith
-	Portrait = None
-	Exit
+    Text("'OH WELL.' HE LEAVES.")
+    PrisonerState = DealtWith
+    Portrait = None
+    exit
 
 DislikeTone:
-	PrintClear "'I DON'T LIKE YOUR TONE.'"
-	Goto FightFreeMan
+    Text("'I DON'T LIKE YOUR TONE.'")
+    goto FightFreeMan
 
 GrishnakTemple:
-	if HobgoblinTempleState != CourtyardWon: Exit
-	PrintClear "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
-	Gosub PressToContinue
-	SetupMonster Hobgoblin distance=0 closeup=Shaman
-	PrintClear "ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'"
-	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
-	Morale = 100
-	ClearMonsters
-	LoadMonster Grishnak count=1 icon=Grishnak
-	LoadMonster HobgoblinLdr count=3 icon=HobgoblinLdr
-	LoadMonster Hobgoblin count=12 icon=Hobgoblin
-	Treasure 100 20 30 40 8 0 0 38 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Quarter Staff, Potion of Healing, and 2 more
-	Combat
-	if CombatEnd > PartyDied: Goto HobgoblinsChase
-	HobgoblinTempleState = GrishnakDefeated
-	Exit
+    if HobgoblinTempleState != CourtyardWon { exit }
+    Text("YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET.")
+    PressToContinue()
+    SetupMonster(Hobgoblin, distance=0, closeup=Shaman)
+    Text("ATOP A SMALL BONE ALTAR, STANDS AN ANCIENT, HOBGOBLIN. SHE SCREAMS 'I AM THE MIGHTY GRISHNAK! YOU HAVE INTERRUPTED MY UNHOLY RITES! FEEL MY INFERNAL WRATH!'")
+    SetupMonster(Hobgoblin, distance=0, closeup=Hobgoblin)
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Grishnak, count=1, icon=Grishnak)
+    LoadMonster(HobgoblinLdr, count=3, icon=HobgoblinLdr)
+    LoadMonster(Hobgoblin, count=12, icon=Hobgoblin)
+    Treasure(copper=100, silver=20, electrum=30, gold=40, platinum=8, items=[MagicUserScrollWith3Spells, MagicUserScrollWith3Spells, ScaleArmor, StoneStatuette, QuarterStaff, PotionOfHealing, BrassKey, CursedNecklace])
+    Combat()
+    if CombatEnd > PartyDied { goto HobgoblinsChase }
+    HobgoblinTempleState = GrishnakDefeated
+    exit
 
 BloodRoom:
-	PrintClear "THIS ROOM HAS HAD BLOOD SMEARED ON THE FLOOR AND WALLS IN A RITUAL, UNHOLY MANNER."
-	Exit
+    Text("THIS ROOM HAS HAD BLOOD SMEARED ON THE FLOOR AND WALLS IN A RITUAL, UNHOLY MANNER.")
+    exit
 
 SecretDoorHint:
-	Gosub FindSkullcrusher
-	if Scratch3 != 255: Exit
-	if 0 != IronBoxFound: Exit
-	PrintClear "'IN THE EAST WALL IS THE SECRET DOOR.' SAYS SKULLCRUSHER.'IF WE GO THROUGH WE CAN SURPRISE THEM.'"
-	Gosub PressToContinue
-	Exit
+    FindSkullcrusher()
+    if Scratch3 != 255 { exit }
+    if 0 != IronBoxFound { exit }
+    Text("'IN THE EAST WALL IS THE SECRET DOOR.' SAYS SKULLCRUSHER.'IF WE GO THROUGH WE CAN SURPRISE THEM.'")
+    PressToContinue()
+    exit
 
 OgreChief:
-	alias Choice = Scratch1
-	if IronBoxFound != 0: Exit
-	Facing = South
-	Call CallRedraw
-	PrintClear "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
-	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
-	PrintClear "YOU SEE THE CHIEF OF THE HOBGOBLINS, A HUGE OGRE. AS YOU ENTER, HE RISES TO HIS FULL, TEN FEET OF HEIGHT; HIS HEAD WREATHED IN THE FLICKERING SHADOWS."
-	Gosub PressToContinue
-	PrintClear "'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'"
-	Gosub PressToContinue
-	Morale = 100
-	ClearMonsters
-	LoadMonster Ogre count=1 icon=Ogre
-	LoadMonster Hobgoblin count=18 icon=Hobgoblin
-	LoadMonster HobgoblinLdr count=4 icon=HobgoblinLdr
-	Combat
-	if CombatEnd > PartyDied: Goto HobgoblinsChase
-	IronBoxFound = Completed
-	PrintClear "YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?"
-	Choice = Menu "OPEN IT" -> OpenBox "TAKE IT UNOPENED" -> TakeBoxUnopened
+    if IronBoxFound != 0 { exit }
+    Facing = South
+    CallRedraw()
+    Text("THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES.")
+    SetupMonster(Hobgoblin, distance=1, closeup=Hobgoblin)
+    Text("YOU SEE THE CHIEF OF THE HOBGOBLINS, A HUGE OGRE. AS YOU ENTER, HE RISES TO HIS FULL, TEN FEET OF HEIGHT; HIS HEAD WREATHED IN THE FLICKERING SHADOWS.")
+    PressToContinue()
+    Text("'PUNY CREATURES,' HE BELLOWS.'I ALLOWED YOU TO TOY WITH MY MINIONS, BUT NOW I'LL CRUSH THE LIFE FROM YOUR LIMBS.'")
+    PressToContinue()
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Ogre, count=1, icon=Ogre)
+    LoadMonster(Hobgoblin, count=18, icon=Hobgoblin)
+    LoadMonster(HobgoblinLdr, count=4, icon=HobgoblinLdr)
+    Combat()
+    if CombatEnd > PartyDied { goto HobgoblinsChase }
+    IronBoxFound = Yes
+    Text("YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?")
+    Scratch1 = Menu("OPEN IT", "TAKE IT UNOPENED")
+    goto [OpenBox, TakeBoxUnopened][Scratch1]
 
 TakeBoxUnopened:
-	IronBoxState = CarriedUnopened
-	Exit
+    IronBoxState = CarriedUnopened
+    exit
 
 OpenBox:
-	IronBoxState = Opened
-	RestalDealDone = 1
-	ClearMonsters
-	Treasure #01C2 20 0 0 #0190 8 4 39 // Gauntlets of Ogre Power, Gold Banded Wand, Jewel Studded Bowl, Jewelled Dragon Statuette, Ring
-	Combat
-	Exit
+    IronBoxState = Opened
+    RestalDealDone = 1
+    ClearMonsters()
+    Treasure(copper=450, silver=20, platinum=400, gems=8, jewelry=4, items=[GauntletsOfOgrePower, GoldBandedWand, JewelStuddedBowl, JewelledDragonStatuette, Ring])
+    Combat()
+    exit
 
 HobgoblinEncounter:
-	Gosub PressToContinue
-	EncounterMenu Hobgoblin distance=2 closeup=Hobgoblin result=AuxMenuChoice combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="YOU ENCOUNTER HOBGOBLINS!" escape=7 strength=7
-	if AuxMenuChoice == 1: Goto HobgoblinFight
-	if AuxMenuChoice == 2: Goto HobgoblinsChase
-	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
+    PressToContinue()
+    EncounterMenu(Hobgoblin, distance=2, closeup=Hobgoblin, result=AuxMenuChoice, combat=Attack, wait=3,
+        flee=Attack, advance=Mirror, parlay=Talk, near="YOU ENCOUNTER HOBGOBLINS!", escape=7,
+        strength=7)
+    if AuxMenuChoice == 1 { goto HobgoblinFight }
+    if AuxMenuChoice == 2 { goto HobgoblinsChase }
+    Text("THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!")
 
-HobgoblinFight:
-	SetupMonster Hobgoblin distance=0 closeup=Hobgoblin
-	Morale = 60
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster Hobgoblin count=AuxCounter icon=Hobgoblin
-	LoadMonster HobgoblinLdr count=AuxMember icon=HobgoblinLdr
-	Combat
-	if CombatEnd > PartyDied: Goto HobgoblinsChase
-	if Scratch10 == 2: Goto MarkBarracksSeen
-	if Scratch10 == 5: Goto MarkTapestrySeen
-	if Scratch10 == 8: Goto MarkGraffitiSeen
-	Exit
+    HobgoblinFight:
+    SetupMonster(Hobgoblin, distance=0, closeup=Hobgoblin)
+    Morale = 60
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(Hobgoblin, count=AuxCounter, icon=Hobgoblin)
+    LoadMonster(HobgoblinLdr, count=AuxMember, icon=HobgoblinLdr)
+    Combat()
+    if CombatEnd > PartyDied { goto HobgoblinsChase }
+    if Scratch10 == 2 { goto MarkBarracksSeen }
+    if Scratch10 == 5 { goto MarkTapestrySeen }
+    if Scratch10 == 8 { goto MarkGraffitiSeen }
+    exit
 
-FindSkullcrusher:
-	Scratch2 = 0
-	Scratch3 = 0
+def FindSkullcrusher() {
+    Scratch2 = 0
+    Scratch3 = 0
 
-FindSkullcrusherLoop:
-	SelectMember Scratch2
-	if $SelName == "SKULLCRUSHER": Goto SkullcrusherFound
-	Scratch2 += 1
-	if Scratch2 != 9: Goto FindSkullcrusherLoop
-	Goto FindSkullcrusherDone
+    FindSkullcrusherLoop:
+    SelectMember(Scratch2)
+    if $SelName == "SKULLCRUSHER" { goto SkullcrusherFound }
+    Scratch2 += 1
+    if Scratch2 != 9 { goto FindSkullcrusherLoop }
+    goto FindSkullcrusherDone
 
-SkullcrusherFound:
-	if SelStatus != Okay: Goto FindSkullcrusherDone
-	Scratch3 = 255
+    SkullcrusherFound:
+    if SelStatus != Okay { goto FindSkullcrusherDone }
+    Scratch3 = 255
 
-FindSkullcrusherDone:
-	Return
+    FindSkullcrusherDone:
+    return
+}
 
 HobgoblinsChase:
-	PrintClear "THE HOBGOBLINS GIVE CHASE, BUT YOU ESCAPE."
-	Scratch2 = Random 3
-	NoCoords = 1
-	OnGoto Scratch2 EscapeSpot1 EscapeSpot2 EscapeSpot3 EscapeSpot4
+    Text("THE HOBGOBLINS GIVE CHASE, BUT YOU ESCAPE.")
+    Scratch2 = Random(3)
+    NoCoords = 1
+    goto [EscapeSpot1, EscapeSpot2, EscapeSpot3, EscapeSpot4][Scratch2]
 
 EscapeSpot1:
-	PartyX = 4
-	PartyY = 11
-	Goto EscapeRedraw
+    PartyX = 4
+    PartyY = 11
+    goto EscapeRedraw
 
 EscapeSpot2:
-	PartyX = 8
-	PartyY = 8
-	Goto EscapeRedraw
+    PartyX = 8
+    PartyY = 8
+    goto EscapeRedraw
 
 EscapeSpot3:
-	PartyX = 4
-	PartyY = 14
-	Goto EscapeRedraw
+    PartyX = 4
+    PartyY = 14
+    goto EscapeRedraw
 
 EscapeSpot4:
-	PartyX = 12
-	PartyY = 13
+    PartyX = 12
+    PartyY = 13
 
 EscapeRedraw:
-	Call CallRedraw
-	Exit
+    CallRedraw()
+    exit
 
 DiaryPage:
-	if 1 == DiaryEntry11Found: Exit
-	PrintClear "YOU FIND A PAGE FROM A DIARY AND PLACE IT IN YOUR JOURNAL UNDER ENTRY 11."
-	DiaryEntry11Found = 1
-	Exit
+    if 1 == DiaryEntry11Found { exit }
+    Text("YOU FIND A PAGE FROM A DIARY AND PLACE IT IN YOUR JOURNAL UNDER ENTRY 11.")
+    DiaryEntry11Found = 1
+    exit
 
-PressToContinue:
-	alias Choice = Scratch1
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE."
-	Return
+def PressToContinue() {
+    Scratch1 = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE.")
+    return
+}
 
 ThievesWell:
-	alias Choice = Scratch1
-	PrintClear "ON THE WELL IS A NOTE,'THIEVES ONLY.' THE WELL HAS NO RUNGS OR ROPE AND SEEMS VERY DEEP. ONLY A SKILLFUL CLIMBER COULD SURVIVE THE DESCENT. WHAT DO YOU DO?"
-	Choice = Menu "LEAVE" -> Done "CLIMB DOWN" -> ChooseClimber
+    Text("ON THE WELL IS A NOTE,'THIEVES ONLY.' THE WELL HAS NO RUNGS OR ROPE AND SEEMS VERY DEEP. ONLY A SKILLFUL CLIMBER COULD SURVIVE THE DESCENT. WHAT DO YOU DO?")
+    Scratch1 = Menu("LEAVE", "CLIMB DOWN")
+    goto [Done, ChooseClimber][Scratch1]
 
 ChooseClimber:
-	Who "WHO WILL CLIMB DOWN?"
-	if SelStatus == Okay: Goto ClimbDown
-	PrintClear "THAT ONE IS NOT WELL ENOUGH TO CLIMB."
-	Gosub PressToContinue
-	Goto ChooseClimber
+    Who("WHO WILL CLIMB DOWN?")
+    if SelStatus == Okay { goto ClimbDown }
+    Text("THAT ONE IS NOT WELL ENOUGH TO CLIMB.")
+    PressToContinue()
+    goto ChooseClimber
 
-ClimbDown:
-	PartyX = 0
-	Facing = East
-	Call CallRedraw
-	Gosub PressToContinue
-	Scratch1 = Random 99
-	if Scratch1 < SelThiefSkill6: Goto MeetRestal
-	PrintClear "YOU BEGIN A LONG FALL."
-	Gosub PressToContinue
-	Scratch1 = 0
+    ClimbDown:
+    PartyX = 0
+    Facing = East
+    CallRedraw()
+    PressToContinue()
+    Scratch1 = Random(99)
+    if Scratch1 < SelThiefSkill6 { goto MeetRestal }
+    Text("YOU BEGIN A LONG FALL.")
+    PressToContinue()
+    Scratch1 = 0
 
 FeatherFallScan:
-	alias Effect = Scratch2
-	Effect = EffectTable[Scratch1]
-	if Effect == 27: Goto FeatherFallCheck
+    Scratch2 = EffectTable[Scratch1]
+    if Scratch2 == 27 { goto FeatherFallCheck }
 
 FeatherFallNext:
-	Scratch1 += 1
-	if Scratch1 == 64: Goto HitStoneFloor
-	Goto FeatherFallScan
+    Scratch1 += 1
+    if Scratch1 == 64 { goto HitStoneFloor }
+    goto FeatherFallScan
 
 FeatherFallCheck:
-	alias Effect = Scratch3
-	Scratch2 = 64 + Scratch1
-	Effect = EffectTable[Scratch2]
-	if Effect != SelPartyIndex2: Goto FeatherFallNext
-	PrintClear "YOU FLOAT DOWN THE WELL."
-	Gosub PressToContinue
-	PrintClear "FROM AN ARCHWAY AT THE BOTTOM COME ARROWS."
-	Gosub PressToContinue
-	Damage 8 1 6 0 50
-	Goto LaughingThief
+    Scratch2 = 64 + Scratch1
+    Scratch3 = EffectTable[Scratch2]
+    if Scratch3 != SelPartyIndex2 { goto FeatherFallNext }
+    Text("YOU FLOAT DOWN THE WELL.")
+    PressToContinue()
+    Text("FROM AN ARCHWAY AT THE BOTTOM COME ARROWS.")
+    PressToContinue()
+    Damage(8, 1, 6, 0, 50)
+    goto LaughingThief
 
 HitStoneFloor:
-	PrintClear "YOU HIT AN UNYIELDING STONE FLOOR."
-	Gosub PressToContinue
-	Damage 160 15 6 0 128
-	if SelStatus == Okay: Goto LaughingThief
-	PartyX = 1
-	Facing = West
-	Call CallRedraw
-	PrintClear "YOUR FRIEND FLOATS OUT OF THE WELL."
-	Exit
+    Text("YOU HIT AN UNYIELDING STONE FLOOR.")
+    PressToContinue()
+    Damage(160, 15, 6, 0, 128)
+    if SelStatus == Okay { goto LaughingThief }
+    PartyX = 1
+    Facing = West
+    CallRedraw()
+    Text("YOUR FRIEND FLOATS OUT OF THE WELL.")
+    exit
 
 LaughingThief:
-	Gosub ShowThief
-	PrintClear "HERE IS A LAUGHING THIEF."
-	Gosub RingLiftsYou
-	Gosub LeaveWell
-	Exit
+    ShowThief()
+    Text("HERE IS A LAUGHING THIEF.")
+    RingLiftsYou()
+    LeaveWell()
+    exit
 
 MeetRestal:
-	alias Choice = Scratch1
-	Gosub ShowThief
-	PrintClear "AN OLD THIEF STANDS HERE.'WELCOME TO MY GUILD. I AM RESTAL.' HE BOWS LOW."
-	Gosub PressToContinue
-	if CadornaCommission != CommissionGiven: Goto RestalFarewell
-	if IronBoxState == 0: Goto TextileHouseOffer
-	if QuestCadornaPayment == Rewarded: Goto RestalFarewell
-	if RestalDealDone == 1: Goto RestalFarewell
-	PrintClear "'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'"
-	Choice = Menu "YES" -> DuplicateSeal "NO" -> RestalFarewell
+    ShowThief()
+    Text("AN OLD THIEF STANDS HERE.'WELCOME TO MY GUILD. I AM RESTAL.' HE BOWS LOW.")
+    PressToContinue()
+    if CadornaCommission != CommissionGiven { goto RestalFarewell }
+    if IronBoxState == 0 { goto TextileHouseOffer }
+    if QuestCadornaPayment == Rewarded { goto RestalFarewell }
+    if RestalDealDone == 1 { goto RestalFarewell }
+    Text("'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'")
+    Scratch1 = Menu("YES", "NO")
+    goto [DuplicateSeal, RestalFarewell][Scratch1]
 
 DuplicateSeal:
-	ClearMonsters
-	Treasure 0 0 0 0 200 4 2 39 // Gauntlets of Ogre Power, Gold Banded Wand, Jewel Studded Bowl, Jewelled Dragon Statuette, Ring
-	Combat
-	RestalDealDone = 1
-	IronBoxState = CarriedUnopened
+    ClearMonsters()
+    Treasure(platinum=200, gems=4, jewelry=2, items=[GauntletsOfOgrePower, GoldBandedWand, JewelStuddedBowl, JewelledDragonStatuette, Ring])
+    Combat()
+    RestalDealDone = 1
+    IronBoxState = CarriedUnopened
 
 RestalFarewell:
-	PrintClear "THE OLD THIEF LAUGHS, 'PERHAPS WE SHALL MEET AGAIN.'"
-	Gosub RingLiftsYou
-	Gosub LeaveWell
-	RestalDealDone = 1
-	Exit
+    Text("THE OLD THIEF LAUGHS, 'PERHAPS WE SHALL MEET AGAIN.'")
+    RingLiftsYou()
+    LeaveWell()
+    RestalDealDone = 1
+    exit
 
 TextileHouseOffer:
-	alias Choice = Scratch1
-	PrintClear "'YOU ARE SEEKING THE TEXTILE HOUSE. WE CAN GET YOU IN UNSEEN AND POSSIBLY HELP YOU WITH THE TREASURE. INTERESTED?'"
-	Choice = Menu "YES" -> Blindfold "NO" -> RestalFarewell
+    Text("'YOU ARE SEEKING THE TEXTILE HOUSE. WE CAN GET YOU IN UNSEEN AND POSSIBLY HELP YOU WITH THE TREASURE. INTERESTED?'")
+    Scratch1 = Menu("YES", "NO")
+    goto [Blindfold, RestalFarewell][Scratch1]
 
 Blindfold:
-	alias Choice = Scratch1
-	PrintClear "A ROPE IS TOSSED UP AND THE REST OF THE PARTY COMES DOWN. THE OLD THIEF SAYS 'OUR RULES REQUIRE YOU TO BE BLINDFOLDED IN OUR GUILD HOUSE, OKAY?'"
-	Choice = Menu "YES" -> BlindfoldedWalk "NO" -> RestalFarewell
+    Text("A ROPE IS TOSSED UP AND THE REST OF THE PARTY COMES DOWN. THE OLD THIEF SAYS 'OUR RULES REQUIRE YOU TO BE BLINDFOLDED IN OUR GUILD HOUSE, OKAY?'")
+    Scratch1 = Menu("YES", "NO")
+    goto [BlindfoldedWalk, RestalFarewell][Scratch1]
 
 BlindfoldedWalk:
-	PrintClear "YOU ARE BLINDFOLDED AND TAKEN ON A LONG, TWISTING WALK, THEN UP A LADDER.'ONLY MEET US AT THE MAIN WELL.'"
-	PartyX = 6
-	PartyY = 11
-	Facing = North
-	HobgoblinTempleState = CourtyardWon
-	Call CallRedraw
-	Portrait = None
-	Exit
+    Text("YOU ARE BLINDFOLDED AND TAKEN ON A LONG, TWISTING WALK, THEN UP A LADDER.'ONLY MEET US AT THE MAIN WELL.'")
+    PartyX = 6
+    PartyY = 11
+    Facing = North
+    HobgoblinTempleState = CourtyardWon
+    CallRedraw()
+    Portrait = None
+    exit
 
-ShowThief:
-	Facing = West
-	Call CallRedraw
-	ShowPortrait BlondElder RogueDagger
-	Return
+def ShowThief() {
+    Facing = West
+    CallRedraw()
+    ShowPortrait(BlondElder, RogueDagger)
+    return
+}
 
-LeaveWell:
-	PartyX = 1
-	ShowPortrait None None
-	Call CallRedraw
-	Return
+def LeaveWell() {
+    PartyX = 1
+    ShowPortrait(None, None)
+    CallRedraw()
+    return
+}
 
-RingLiftsYou:
-	Print " HE POINTS HIS RING AT YOU AND YOU RISE UP AND OUT THE WELL."
-	Return
+def RingLiftsYou() {
+    Print(" HE POINTS HIS RING AT YOU AND YOU RISE UP AND OUT THE WELL.")
+    return
+}

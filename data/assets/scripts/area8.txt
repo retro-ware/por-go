@@ -1,662 +1,716 @@
-event0:
-	SkyColor8 = 11
-	if Hours >= 14: SkyColor8 = 8
-	Sky = SkyColor8
-	Scratch10 = 127 & Cell
-	Gosub CheckQuestOver
-	if Scratch10 == 29 && Facing == South: Goto CheckSouthDoor
-	if Scratch10 == 29 && Facing == East: Goto CheckEastDoor
-	Exit
+on move {
+    SkyColor8 = 11
+    if Hours >= 14 { SkyColor8 = 8 }
+    Sky = SkyColor8
+    Scratch10 = ~Inside & Cell
+    CheckQuestOver()
+    if Scratch10 == 29 and Facing == South { goto CheckSouthDoor }
+    if Scratch10 == 29 and Facing == East { goto CheckEastDoor }
+    exit
+}
 
 WayBlocked:
-	if HallGuardsFought != 0: Exit
-	PrintClear "THE WAY IS BLOCKED."
-	HoldMove = SkipMove
-	Goto CouncilGuard
+    if HallGuardsFought != 0 { exit }
+    Text("THE WAY IS BLOCKED.")
+    HoldMove = SkipMove
+    goto CouncilGuard
 
 CheckSouthDoor:
-	if ZhentilMission < Summoned: Goto WayBlocked
-	Exit
+    if ZhentilMission < Summoned { goto WayBlocked }
+    exit
 
 CheckEastDoor:
-	if CadornaCommission < Offered: Goto WayBlocked
-	Exit
+    if CadornaCommission < Offered { goto WayBlocked }
+    exit
 
-event1:
-	PrintClear ""
-	Gosub ClearPicture
-	Scratch10 = 127 & Cell
-	Gosub CheckQuestOver
-	CellEventIndex = 26
+on step {
+    Text("")
+    ClearPicture()
+    Scratch10 = ~Inside & Cell
+    CheckQuestOver()
+    CellEventIndex = 26
 
-FindCellEvent:
-	if CellEventIndex == Scratch10: Goto CellEvents
-	if CellEventIndex > 34: Exit
-	CellEventIndex += 1
-	Goto FindCellEvent
+    FindCellEvent:
+    if CellEventIndex == Scratch10 { goto CellEvents }
+    if CellEventIndex > 34 { exit }
+    CellEventIndex += 1
+    goto FindCellEvent
+}
 
-event2:
-	Gosub CheckQuestOver
-	if FoughtWatch != 0: Goto NoRestHere
-	RestEvery = 1
-	RestChance = 101
-	Exit
+on camp {
+    CheckQuestOver()
+    if FoughtWatch != 0 { goto NoRestHere }
+    RestEvery = 1
+    RestChance = 101
+    exit
+}
 
 NoRestHere:
-	RestEvery = 0
-	RestChance = 0
-	Exit
+    RestEvery = 0
+    RestChance = 0
+    exit
 
-event3:
-	RestChance = 0
-	Goto CouncilGuard
+on rest {
+    RestChance = 0
+    goto CouncilGuard
+}
 
-event4:
-	LoadMap 0 unused=0 icons=0
-	LoadWalls Reset Reset Reset
-	if RestChance == 255: Exit
-	Goto NoRestHere
+on load {
+    LoadMap(0, unused=0, icons=0)
+    LoadWalls(Reset, Reset, Reset)
+    if RestChance == 255 { exit }
+    goto NoRestHere
+}
 
 CellEvents:
-	CellEventIndex -= 26
-	OnGosub CellEventIndex ExitToArea0 EnterCityHall OutsideClerkOffice ClerkOffice CadornaChambers CadornaZhentilMission UrslingenRoom CouncilChambers GuardPost
-	Gosub ClearPicture
-	Exit
+    CellEventIndex -= 26
+    gosub [ExitToArea0, EnterCityHall, OutsideClerkOffice, ClerkOffice, CadornaChambers,
+        CadornaZhentilMission, UrslingenRoom, CouncilChambers, GuardPost][CellEventIndex]
+    ClearPicture()
+    exit
 
 ExitToArea0:
-	NewECL NewPhlan
+    NewECL(NewPhlan)
 
-EnterCityHall:
-	Gosub CheckQuestOver
-	if HallEntered > 0: Exit
-	HallEntered += 1
-	Delay
-	Facing = South
-	Call CallRedraw
-	if IronBoxState == Opened: Goto CadornaConfronts
-	PrintClear "YOU ENTER THE CITY HALL.  AS YOU FACE DOWN THE HALLWAY, YOU SEE A GUARDED DOOR."
-	Return
+def EnterCityHall() {
+    CheckQuestOver()
+    if HallEntered > 0 { exit }
+    HallEntered += 1
+    Delay()
+    Facing = South
+    CallRedraw()
+    if IronBoxState == Opened { goto CadornaConfronts }
+    Text("YOU ENTER THE CITY HALL.  AS YOU FACE DOWN THE HALLWAY, YOU SEE A GUARDED DOOR.")
+    return
 
-CadornaConfronts:
-	QuestCadornaPayment = Rewarded
-	IronBoxState = HandedIn
-	if QuestCadornaTraitor >= RewardDue: Exit
-	ShowPortrait GoldCirclet MerchantCoat
-	PrintClear "COUNCILMAN CADORNA CONFRONTS YOU. 'YOU HAVE TAKEN MY FAMILY TREASURE. I DON'T FORGET SUCH THINGS.' HE STRIDES OFF."
-	Gosub ClearPicture
-	Exit
+    CadornaConfronts:
+    QuestCadornaPayment = Rewarded
+    IronBoxState = HandedIn
+    if QuestCadornaTraitor >= RewardDue { exit }
+    ShowPortrait(GoldCirclet, MerchantCoat)
+    Text("COUNCILMAN CADORNA CONFRONTS YOU. 'YOU HAVE TAKEN MY FAMILY TREASURE. I DON'T FORGET SUCH THINGS.' HE STRIDES OFF.")
+    ClearPicture()
+    exit
+}
 
-OutsideClerkOffice:
-	Gosub CheckQuestOver
-	PrintClear "YOU ARE OUTSIDE THE CLERK'S OFFICE. GUARDS POSTED AROUND A DOOR IN THE SOUTH WALL WATCH YOU CLOSELY."
-	ClerkTalkedThisVisit = 0
-	Return
+def OutsideClerkOffice() {
+    CheckQuestOver()
+    Text("YOU ARE OUTSIDE THE CLERK'S OFFICE. GUARDS POSTED AROUND A DOOR IN THE SOUTH WALL WATCH YOU CLOSELY.")
+    ClerkTalkedThisVisit = 0
+    return
+}
 
-ClerkOffice:
-	Gosub CheckQuestOver
-	if ClerkTalkedThisVisit != 0: Exit
-	Gosub ShowClerk
-	if ClerkMet > 0: Goto BackSoSoon
-	ClerkMet = 1
-	ClerkTalkedThisVisit = 1
-	PrintClear "AT YOUR ENTRY, THE COUNCIL CLERK BEGINS LOOKING THROUGH A STACK OF PAPERS.  'BEFORE I CAN OFFER ANY COMMISSIONS, I MUST SEE IF YOU ARE DUE A CURRENT REWARD."
-	Gosub PressToContinue
-	Scratch1 = 0
-	RewardKind = NoReward
-	Scratch7 = 255
-	Scratch4 = 0
-	Scratch5 = 0
-	Scratch6 = 0
+def ClerkOffice() {
+    CheckQuestOver()
+    if ClerkTalkedThisVisit != 0 { exit }
+    ShowClerk()
+    if ClerkMet > 0 { goto BackSoSoon }
+    ClerkMet = 1
+    ClerkTalkedThisVisit = 1
+    Text("AT YOUR ENTRY, THE COUNCIL CLERK BEGINS LOOKING THROUGH A STACK OF PAPERS.  'BEFORE I CAN OFFER ANY COMMISSIONS, I MUST SEE IF YOU ARE DUE A CURRENT REWARD.")
+    PressToContinue()
+    Scratch1 = 0
+    RewardKind = NoReward
+    Scratch7 = 255
+    Scratch4 = 0
+    Scratch5 = 0
+    Scratch6 = 0
 
-UndeadRewardLoop:
-	alias UndeadKill = Scratch2
-	alias UndeadPaid = Scratch8
-	UndeadKill = UndeadKillTable[Scratch1]
-	UndeadPaid = UndeadPaidTable[Scratch1]
-	Scratch9 = UndeadKill - UndeadPaid
-	if Scratch9 > 0: RewardKind = UndeadBounty
-	OnGosub Scratch1 SetPlatinum AddGems AddJewelry AddItems AddGems AddJewelry AddItems
-	UndeadPaidTable[Scratch1] = UndeadKill
-	Scratch1 += 1
-	if Scratch1 < 7: Goto UndeadRewardLoop
-	if RewardKind != UndeadBounty: Goto BivantPenalty
-	PrintClear "'WE HAVE BEEN INFORMED YOU HAVE ELIMINATED SOME UNDEAD FROM THE GRAVEYARD."
-	Goto GiveReward
+    UndeadRewardLoop:
+    Scratch2 = UndeadKillTable[Scratch1]
+    Scratch8 = UndeadPaidTable[Scratch1]
+    Scratch9 = Scratch2 - Scratch8
+    if Scratch9 > 0 { RewardKind = UndeadBounty }
+    gosub [SetPlatinum, AddGems, AddJewelry, AddItems, AddGems, AddJewelry, AddItems][Scratch1]
+    UndeadPaidTable[Scratch1] = Scratch2
+    Scratch1 += 1
+    if Scratch1 < 7 { goto UndeadRewardLoop }
+    if RewardKind != UndeadBounty { goto BivantPenalty }
+    Text("'WE HAVE BEEN INFORMED YOU HAVE ELIMINATED SOME UNDEAD FROM THE GRAVEYARD.")
+    goto GiveReward
+}
 
 BivantPenalty:
-	Gosub CheckBivantBungled
-	Goto ClearingRewards
+    CheckBivantBungled()
+    goto ClearingRewards
 
 ScanQuests:
-	Scratch1 = 0
-	RewardKind = NoReward
+    Scratch1 = 0
+    RewardKind = NoReward
 
 ScanQuestLoop:
-	alias QuestBandit = Scratch2
-	Scratch7 = 255
-	QuestBandit = QuestBandits[Scratch1]
-	if QuestBandit == 254: Goto ClerkSpeaks
+    Scratch7 = 255
+    Scratch2 = QuestBandits[Scratch1]
+    if Scratch2 == 254 { goto ClerkSpeaks }
 
 NextQuest:
-	Scratch1 += 1
-	Gosub CheckQuestOver
-	if Scratch1 > 25: Goto GraveyardNotice
-	Goto ScanQuestLoop
+    Scratch1 += 1
+    CheckQuestOver()
+    if Scratch1 > 25 { goto GraveyardNotice }
+    goto ScanQuestLoop
 
 ClerkSpeaks:
-	PrintClear "THE CLERK SPEAKS. '"
-	OnGosub Scratch1 NorrisBonus SokalKeepBonus TempleAreaCleared BivantRescued DiscoursesValuable DescriptionsAmuse MapsHelp HistoriesUseful RecordsInsight SmallValue PodalPlazaSuccess GraveyardPrize KovelThievesGone StojonowCleared SwiftReturn LizardmenGone KoboldsGone NomadCampNews CadornaPaid GateTaken QuestOver SlumsCleared NoRewardText TempleOfBaneLoot CadornaTraitorNotice CadornaDeadNotice
-	if Scratch1 > 22: Goto MarkQuestPaid
-	Goto LoadReward
+    Text("THE CLERK SPEAKS. '")
+    gosub [NorrisBonus, SokalKeepBonus, TempleAreaCleared, BivantRescued, DiscoursesValuable,
+        DescriptionsAmuse, MapsHelp, HistoriesUseful, RecordsInsight, SmallValue, PodalPlazaSuccess,
+        GraveyardPrize, KovelThievesGone, StojonowCleared, SwiftReturn, LizardmenGone, KoboldsGone,
+        NomadCampNews, CadornaPaid, GateTaken, QuestOver, SlumsCleared, NoRewardText,
+        TempleOfBaneLoot, CadornaTraitorNotice, CadornaDeadNotice][Scratch1]
+    if Scratch1 > 22 { goto MarkQuestPaid }
+    goto LoadReward
 
 ClearingRewards:
-	Scratch1 = LibraryEventFlags & SpectreBeaten+ReptileBeaten
-	if Scratch1 != 96: Goto CheckPodalPlaza
-	if LibraryRewardGiven == Completed: Goto CheckPodalPlaza
-	$AuxText = "LIBRARY.'"
-	LibraryRewardGiven = Completed
-	Goto ClearingReward
+    Scratch1 = LibraryEventFlags & SpectreBeaten|ReptileBeaten
+    if Scratch1 != 96 { goto CheckPodalPlaza }
+    if LibraryRewardGiven == Yes { goto CheckPodalPlaza }
+    $AuxText = "LIBRARY.'"
+    LibraryRewardGiven = Yes
+    goto ClearingReward
 
-CheckPodalPlaza:
-	if PodalPlazaCleared != RewardDue: Goto CheckTextileHouse
-	$AuxText = "PODAL PLAZA.'"
-	PodalPlazaCleared = Rewarded
-	Goto ClearingReward
+    CheckPodalPlaza:
+    if PodalPlazaCleared != RewardDue { goto CheckTextileHouse }
+    $AuxText = "PODAL PLAZA.'"
+    PodalPlazaCleared = Rewarded
+    goto ClearingReward
 
-CheckTextileHouse:
-	if TextileHouseCleared != RewardDue: Goto ToScanQuests
-	$AuxText = "CADORNA TEXTILE HOUSE.'"
-	TextileHouseCleared = Rewarded
+    CheckTextileHouse:
+    if TextileHouseCleared != RewardDue { goto ToScanQuests }
+    $AuxText = "CADORNA TEXTILE HOUSE.'"
+    TextileHouseCleared = Rewarded
 
-ClearingReward:
-	PrintClear "'THERE IS A REWARD FOR CLEARING THE "
-	Print $AuxText
-	Scratch1 = 10
-	RewardKind = ClearedAreaReward
-	Goto LoadReward
+    ClearingReward:
+    Text("'THERE IS A REWARD FOR CLEARING THE ")
+    Print($AuxText)
+    Scratch1 = 10
+    RewardKind = ClearedAreaReward
+    goto LoadReward
 
-ToScanQuests:
-	Goto ScanQuests
+    ToScanQuests:
+    goto ScanQuests
 
-CheckBivantBungled:
-	if QuestBivant != Bungled: Return
-	PrintClear "'BY THE WAY, YOUR BUNGLING THE BIVANT RESCUE HAS COST US.'"
-	Gosub PressToContinue
-	QuestBivant = Rewarded
-	Return
+def CheckBivantBungled() {
+    if QuestBivant != Bungled { return }
+    Text("'BY THE WAY, YOUR BUNGLING THE BIVANT RESCUE HAS COST US.'")
+    PressToContinue()
+    QuestBivant = Rewarded
+    return
+}
 
 LoadReward:
-	alias RewardTable1Entry = Scratch3
-	alias RewardTable2Entry = Scratch4
-	alias RewardTable3Entry = Scratch5
-	alias RewardTable4Entry = Scratch6
-	RewardTable1Entry = RewardTable1[Scratch1]
-	RewardTable2Entry = RewardTable2[Scratch1]
-	RewardTable3Entry = RewardTable3[Scratch1]
-	RewardTable4Entry = RewardTable4[Scratch1]
+    Scratch3 = RewardTable1[Scratch1]
+    Scratch4 = RewardTable2[Scratch1]
+    Scratch5 = RewardTable3[Scratch1]
+    Scratch6 = RewardTable4[Scratch1]
 
 GiveReward:
-	alias Choice = AuxCounter
-	Print " HERE IS YOUR REWARD.'"
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	FoughtWatch = 0
-	ClearMonsters
-	Treasure 0 0 0 Scratch3 Scratch4 Scratch5 Scratch6 Scratch7
-	Combat
-	if Scratch1 != 20: Gosub ShowClerk
-	if RewardKind == UndeadBounty: Goto BivantPenalty
-	also if RewardKind > UndeadBounty: Goto ClearingRewards
+    Print(" HERE IS YOUR REWARD.'")
+    AuxCounter = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    FoughtWatch = 0
+    ClearMonsters()
+    Treasure(gold=Scratch3, platinum=Scratch4, gems=Scratch5, jewelry=Scratch6, items=Scratch7)
+    Combat()
+    if Scratch1 != 20 { ShowClerk() }
+    if RewardKind == UndeadBounty { goto BivantPenalty }
+    if RewardKind > UndeadBounty { goto ClearingRewards }
 
 MarkQuestPaid:
-	QuestBandits[Scratch1] = 255
-	if Scratch1 != 20: Goto NextQuest
-	Gosub ClearPicture
-	Gosub CheckQuestOver
-	Exit
+    QuestBandits[Scratch1] = 255
+    if Scratch1 != 20 { goto NextQuest }
+    ClearPicture()
+    CheckQuestOver()
+    exit
 
-NorrisBonus:
-	Print "THE COUNCIL HAS AWARDED A BONUS FOR YOUR ELIMINATING NORRIS THE GRAY."
-	CouncilFavor += 1
-	Return
+def NorrisBonus() {
+    Print("THE COUNCIL HAS AWARDED A BONUS FOR YOUR ELIMINATING NORRIS THE GRAY.")
+    CouncilFavor += 1
+    return
+}
 
-SokalKeepBonus:
-	Print "WITH SOKAL KEEP IN OUR HANDS, WE CAN USE BOATS TO BYPASS THE BARREN RIVER."
-	CouncilFavor += 1
-	Return
+def SokalKeepBonus() {
+    Print("WITH SOKAL KEEP IN OUR HANDS, WE CAN USE BOATS TO BYPASS THE BARREN RIVER.")
+    CouncilFavor += 1
+    return
+}
 
-TempleAreaCleared:
-	Print "YOU HAVE CLEARED THE AREA NEXT TO THE EVIL TEMPLE."
-	Return
+def TempleAreaCleared() {
+    Print("YOU HAVE CLEARED THE AREA NEXT TO THE EVIL TEMPLE.")
+    return
+}
 
-BivantRescued:
-	Print "BIVANT WAS DELIGHTED WITH THE CHILD'S RESCUE.  THEY LEFT SOME TRINKETS FOR YOU."
-	Scratch7 = 51
-	Return
+def BivantRescued() {
+    Print("BIVANT WAS DELIGHTED WITH THE CHILD'S RESCUE.  THEY LEFT SOME TRINKETS FOR YOU.")
+    Scratch7 = 51
+    return
+}
 
-DiscoursesValuable:
-	Print "WE FIND THESE DISCOURSES VALUABLE."
-	Return
+def DiscoursesValuable() {
+    Print("WE FIND THESE DISCOURSES VALUABLE.")
+    return
+}
 
-DescriptionsAmuse:
-	Print "THE COUNCIL WILL BE AMUSED BY THE DESCRIPTIONS."
-	Return
+def DescriptionsAmuse() {
+    Print("THE COUNCIL WILL BE AMUSED BY THE DESCRIPTIONS.")
+    return
+}
 
-MapsHelp:
-	Print "THESE MAPS SHOULD HELP US TO LOCATE SEVERAL LEGENDARY BUILDINGS."
-	Return
+def MapsHelp() {
+    Print("THESE MAPS SHOULD HELP US TO LOCATE SEVERAL LEGENDARY BUILDINGS.")
+    return
+}
 
-HistoriesUseful:
-	Print "THESE HISTORIES CONTAIN MUCH USEFUL INFORMATION."
-	Return
+def HistoriesUseful() {
+    Print("THESE HISTORIES CONTAIN MUCH USEFUL INFORMATION.")
+    return
+}
 
-RecordsInsight:
-	Print "THE RECORDS PROVIDE INSIGHTS INTO MUCH THAT WAS PUZZLING."
-	Return
+def RecordsInsight() {
+    Print("THE RECORDS PROVIDE INSIGHTS INTO MUCH THAT WAS PUZZLING.")
+    return
+}
 
-SmallValue:
-	Print "THIS MATERIAL IS OF SMALL VALUE."
-	Return
+def SmallValue() {
+    Print("THIS MATERIAL IS OF SMALL VALUE.")
+    return
+}
 
-PodalPlazaSuccess:
-	Print "YOUR SUCCESS AT PODAL PLAZA IS NOTED."
-	CouncilFavor += 1
-	Return
+def PodalPlazaSuccess() {
+    Print("YOUR SUCCESS AT PODAL PLAZA IS NOTED.")
+    CouncilFavor += 1
+    return
+}
 
-GraveyardPrize:
-	Print "THE COUNCIL HAS VOTED A SPECIAL PRIZE FOR ENDING THE GRAVEYARD MENACE."
-	CouncilFavor += 1
-	Return
+def GraveyardPrize() {
+    Print("THE COUNCIL HAS VOTED A SPECIAL PRIZE FOR ENDING THE GRAVEYARD MENACE.")
+    CouncilFavor += 1
+    return
+}
 
-KovelThievesGone:
-	Print "THE COUNCIL WAS PLEASED BY THE ELIMINATION OF THE THIEVES IN KOVEL MANSION."
-	CouncilFavor += 1
-	Return
+def KovelThievesGone() {
+    Print("THE COUNCIL WAS PLEASED BY THE ELIMINATION OF THE THIEVES IN KOVEL MANSION.")
+    CouncilFavor += 1
+    return
+}
 
-StojonowCleared:
-	Print "WITH THE CLEARING OF THE STOJONOW RIVER, WE CAN OPEN UP THE HINTERLANDS FOR TRADE."
-	CouncilFavor += 1
-	Return
+def StojonowCleared() {
+    Print("WITH THE CLEARING OF THE STOJONOW RIVER, WE CAN OPEN UP THE HINTERLANDS FOR TRADE.")
+    CouncilFavor += 1
+    return
+}
 
-SwiftReturn:
-	Print "WE WERE PLEASANTLY SURPRISED THAT YOU COMPLETED YOUR MISSION SO SWIFTLY.  CADORNA WAS WAGERING YOUR RETURN WOULD BE MUCH DELAYED."
-	QuestCadornaTraitor = RewardDue
-	Return
+def SwiftReturn() {
+    Print("WE WERE PLEASANTLY SURPRISED THAT YOU COMPLETED YOUR MISSION SO SWIFTLY.  CADORNA WAS WAGERING YOUR RETURN WOULD BE MUCH DELAYED.")
+    QuestCadornaTraitor = RewardDue
+    return
+}
 
-LizardmenGone:
-	Print "YOUR ELIMINATION OF THE LIZARDMEN MENACE HAS GREATLY IMPROVED OUR STRATEGIC POSITION."
-	CouncilFavor += 1
-	Return
+def LizardmenGone() {
+    Print("YOUR ELIMINATION OF THE LIZARDMEN MENACE HAS GREATLY IMPROVED OUR STRATEGIC POSITION.")
+    CouncilFavor += 1
+    return
+}
 
-KoboldsGone:
-	Print "THIS LOSS OF THE KOBOLD FORCES WILL BE A MAJOR BLOW TO THE ENEMY."
-	CouncilFavor += 1
-	Return
+def KoboldsGone() {
+    Print("THIS LOSS OF THE KOBOLD FORCES WILL BE A MAJOR BLOW TO THE ENEMY.")
+    CouncilFavor += 1
+    return
+}
 
-NomadCampNews:
-	Print "WE WERE MUCH RELIEVED BY THE NEWS YOU BRING FROM THE NOMAD CAMP."
-	CouncilFavor += 1
-	Return
+def NomadCampNews() {
+    Print("WE WERE MUCH RELIEVED BY THE NEWS YOU BRING FROM THE NOMAD CAMP.")
+    CouncilFavor += 1
+    return
+}
 
-CadornaPaid:
-	Print "COUNCILMAN CADORNA LEFT THIS PAYMENT FOR SOME SERVICE YOU HAD RENDERED."
-	Return
+def CadornaPaid() {
+    Print("COUNCILMAN CADORNA LEFT THIS PAYMENT FOR SOME SERVICE YOU HAD RENDERED.")
+    return
+}
 
-GateTaken:
-	if QuestTyranthraxus >= RewardDue: Return
-	Print "YOUR TAKING THE GATE WILL ENABLE OUR FORCES TO ASSAULT THE ENEMY STRONGHOLD. RETURN THERE TO LEAD THE ATTACK."
-	Return
+def GateTaken() {
+    if QuestTyranthraxus >= RewardDue { return }
+    Print("YOUR TAKING THE GATE WILL ENABLE OUR FORCES TO ASSAULT THE ENEMY STRONGHOLD. RETURN THERE TO LEAD THE ATTACK.")
+    return
+}
 
-QuestOver:
-	Print "CONGRATULATIONS! YOUR QUEST IS OVER! TYRANTHRAXUS IS DEFEATED! PHLAN IS FREE! IF YOU WISH, YOU MAY CONTINUE TO HELP US CLEAR ANY REMAINING MONSTERS. ALL PHLAN SALUTES YOU!"
-	Return
+def QuestOver() {
+    Print("CONGRATULATIONS! YOUR QUEST IS OVER! TYRANTHRAXUS IS DEFEATED! PHLAN IS FREE! IF YOU WISH, YOU MAY CONTINUE TO HELP US CLEAR ANY REMAINING MONSTERS. ALL PHLAN SALUTES YOU!")
+    return
+}
 
-SlumsCleared:
-	Print "YOUR CLEARING OF THE SLUM AREAS PERMITS US TO EXPAND."
-	CouncilFavor += 1
-	Return
+def SlumsCleared() {
+    Print("YOUR CLEARING OF THE SLUM AREAS PERMITS US TO EXPAND.")
+    CouncilFavor += 1
+    return
+}
 
-NoRewardText:
-	Return
+def NoRewardText() {
+    return
+}
 
-TempleOfBaneLoot:
-	Print "CONGRATULATIONS, YOU MAY KEEP ALL YOU FOUND IN THE TEMPLE OF BANE AS A REWARD.'"
-	Gosub PressToContinue
-	Return
+def TempleOfBaneLoot() {
+    Print("CONGRATULATIONS, YOU MAY KEEP ALL YOU FOUND IN THE TEMPLE OF BANE AS A REWARD.'")
+    PressToContinue()
+    return
+}
 
-CadornaTraitorNotice:
-	Print "PORPHYRYS CADORNA IS A TRAITOR TO THE CITY. IF YOU FIND HIM, KILL HIM.'"
-	Gosub PressToContinue
-	Return
+def CadornaTraitorNotice() {
+    Print("PORPHYRYS CADORNA IS A TRAITOR TO THE CITY. IF YOU FIND HIM, KILL HIM.'")
+    PressToContinue()
+    return
+}
 
-CadornaDeadNotice:
-	Print "THE COUNCIL HAS NOTED THE PASSING OF THE TRAITOR CADORNA.'"
-	Gosub PressToContinue
-	Return
+def CadornaDeadNotice() {
+    Print("THE COUNCIL HAS NOTED THE PASSING OF THE TRAITOR CADORNA.'")
+    PressToContinue()
+    return
+}
 
 GraveyardNotice:
-	if CouncilFavor < 4: Goto OfferCommissions
-	if QuestGraveyard == Rewarded: Goto OfferCommissions
-	Scratch1 = PartyStrength
-	if Scratch1 < 19: Goto OfferCommissions
-	if GraveyardNoticeGiven == Completed: Goto OfferCommissions
-	PrintClear "PUTTING DOWN THE PAPERS, SHE SAYS, 'I MUST BRING TO YOUR ATTENTION THE FOLLOWING CONCERNING VALHINGEN GRAVEYARD: '"
-	Gosub PressToContinue
-	if Scratch1 > 36: Goto GraveyardDanger
-	PrintClear "THE UNDEAD ARE CROSSING THE RIVER IN HORDES AND KILLING OR CARRYING OFF OUR SETTLERS.  THE COUNCIL DEMANDS THESE ATTACKS BE STOPPED. A GENEROUS REWARD IS OFFERED.'"
-	Goto GraveyardContinue
+    if CouncilFavor < 4 { goto OfferCommissions }
+    if QuestGraveyard == Rewarded { goto OfferCommissions }
+    Scratch1 = PartyStrength()
+    if Scratch1 < 19 { goto OfferCommissions }
+    if GraveyardNoticeGiven == Yes { goto OfferCommissions }
+    Text("PUTTING DOWN THE PAPERS, SHE SAYS, 'I MUST BRING TO YOUR ATTENTION THE FOLLOWING CONCERNING VALHINGEN GRAVEYARD: '")
+    PressToContinue()
+    if Scratch1 > 36 { goto GraveyardDanger }
+    Text("THE UNDEAD ARE CROSSING THE RIVER IN HORDES AND KILLING OR CARRYING OFF OUR SETTLERS.  THE COUNCIL DEMANDS THESE ATTACKS BE STOPPED. A GENEROUS REWARD IS OFFERED.'")
+    goto GraveyardContinue
 
-GraveyardDanger:
-	PrintClear "UNDEAD FROM THE GRAVEYARD HAVE GROWN MORE DANGEROUS THAN ALL OF THE OTHER FORCES WHICH CONFRONT US."
-	Gosub PressToContinue
-	PrintClear "'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'"
-	Ask YesNoMenu "YES" -> AcceptGraveyard "NO" -> OfferCommissions
+    GraveyardDanger:
+    Text("UNDEAD FROM THE GRAVEYARD HAVE GROWN MORE DANGEROUS THAN ALL OF THE OTHER FORCES WHICH CONFRONT US.")
+    PressToContinue()
+    Text("'I HAVE BEEN AUTHORIZED TO GIVE YOU AN ENCHANTED WEAPON IF YOU ACCEPT THE COMMISSION TO END THE GRAVEYARD MENACE.  DO YOU ACCEPT?'")
+    YesNoMenu()
+    goto [AcceptGraveyard, OfferCommissions][Scratch1]
 
 AcceptGraveyard:
-	PrintClear "'EXCELLENT.'"
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 51 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Two-Handed Sword +1 +3 vs Undead
-	Combat
-	GraveyardNoticeGiven = Completed
-	Gosub ShowClerk
-	Goto OfferCommissions
+    Text("'EXCELLENT.'")
+    ClearMonsters()
+    Treasure(items=[ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, TwoHandedSword13VsUndead])
+    Combat()
+    GraveyardNoticeGiven = Yes
+    ShowClerk()
+    goto OfferCommissions
 
 GraveyardContinue:
-	Gosub PressToContinue
+    PressToContinue()
 
 OfferCommissions:
-	PrintClear "THE CLERK SHUFFLES THROUGH HER PAPERS. 'ON THE MATTER OF COMMISSION,' SHE SAYS, 'I CAN OFFER THE FOLLOWING: '"
-	Goto ListOffers
+    Text("THE CLERK SHUFFLES THROUGH HER PAPERS. 'ON THE MATTER OF COMMISSION,' SHE SAYS, 'I CAN OFFER THE FOLLOWING: '")
+    goto ListOffers
 
 BackSoSoon:
-	if ClerkTalkedThisVisit != 0: Exit
-	ClerkTalkedThisVisit = 1
-	Gosub ShowClerk
-	PrintClear "'BACK SO SOON? I CAN ONLY REPEAT THE EARLIER OFFERS: '"
+    if ClerkTalkedThisVisit != 0 { exit }
+    ClerkTalkedThisVisit = 1
+    ShowClerk()
+    Text("'BACK SO SOON? I CAN ONLY REPEAT THE EARLIER OFFERS: '")
 
 ListOffers:
-	Gosub PressToContinue
-	Scratch1 = 0
+    PressToContinue()
+    Scratch1 = 0
 
 OfferLoop:
-	if OffersListed > 2: Goto OffersDone
-	if Scratch1 == 16: Goto MarkCadornaTraitor
-	OnGosub Scratch1 OfferSlums OfferSokalKeep OfferBooks OfferPodalAuction OfferCadorna OfferBishop OfferKovelMansion OfferNomads OfferKobolds OfferNone OfferRiverPollution OfferLizardmen OfferBivant OfferZhentilMission OfferUrslingen OfferCouncilMeeting
-	OffersListed += 1
-	Gosub PressToContinue
+    if OffersListed > 2 { goto OffersDone }
+    if Scratch1 == 16 { goto MarkCadornaTraitor }
+    gosub [OfferSlums, OfferSokalKeep, OfferBooks, OfferPodalAuction, OfferCadorna, OfferBishop,
+        OfferKovelMansion, OfferNomads, OfferKobolds, OfferNone, OfferRiverPollution, OfferLizardmen,
+        OfferBivant, OfferZhentilMission, OfferUrslingen, OfferCouncilMeeting][Scratch1]
+    OffersListed += 1
+    PressToContinue()
 
 NextOffer:
-	Scratch1 += 1
-	Goto OfferLoop
+    Scratch1 += 1
+    goto OfferLoop
 
-OfferSlums:
-	if QuestSlums == Rewarded: Goto NextOffer
-	PrintClear "THE SLUMS IMMEDIATELY TO OUR WEST NEED TO BE CLEARED OF MONSTERS.'"
-	Return
+def OfferSlums() {
+    if QuestSlums == Rewarded { goto NextOffer }
+    Text("THE SLUMS IMMEDIATELY TO OUR WEST NEED TO BE CLEARED OF MONSTERS.'")
+    return
+}
 
-OfferSokalKeep:
-	if QuestSokalKeep == Rewarded: Goto NextOffer
-	PrintClear "SOKAL KEEP ON THORN ISLAND MUST BE CLEARED.'"
-	Return
+def OfferSokalKeep() {
+    if QuestSokalKeep == Rewarded { goto NextOffer }
+    Text("SOKAL KEEP ON THORN ISLAND MUST BE CLEARED.'")
+    return
+}
 
-OfferBooks:
-	if LibraryRewardGiven == Completed: Goto NextOffer
-	PrintClear "THE COUNCIL IS OFFERING A REWARD FOR BOOKS, MAPS, TOMES, ETC. WHICH PROVIDE USEFUL INFORMATION ABOUT PHLAN BEFORE THE FALL.  THE REWARD IS TIED TO THE VALUE OF THE INFORMATION.'"
-	Return
+def OfferBooks() {
+    if LibraryRewardGiven == Yes { goto NextOffer }
+    Text("THE COUNCIL IS OFFERING A REWARD FOR BOOKS, MAPS, TOMES, ETC. WHICH PROVIDE USEFUL INFORMATION ABOUT PHLAN BEFORE THE FALL.  THE REWARD IS TIED TO THE VALUE OF THE INFORMATION.'")
+    return
+}
 
-OfferPodalAuction:
-	if QuestPodalAuction == Rewarded: Goto NextOffer
-	PrintClear "A WEAPON OF GREAT POWER IS TO BE AUCTIONED TO OUR ENEMIES. THIS AUCTION IS TO BE HELD IN PODAL PLAZA.  FIND OUT WHAT THE WEAPON IS AND RETURN.'"
-	QuestPodalAuction = AuctionOn
-	Return
+def OfferPodalAuction() {
+    if QuestPodalAuction == Rewarded { goto NextOffer }
+    Text("A WEAPON OF GREAT POWER IS TO BE AUCTIONED TO OUR ENEMIES. THIS AUCTION IS TO BE HELD IN PODAL PLAZA.  FIND OUT WHAT THE WEAPON IS AND RETURN.'")
+    QuestPodalAuction = AuctionOn
+    return
+}
 
-OfferCadorna:
-	if CadornaCommission == CommissionGiven: Goto NextOffer
-	if QuestCadornaTraitor >= RewardDue: Goto NextOffer
-	if QuestCadornaPayment == Rewarded: Goto NextOffer
-	PrintClear "JUNIOR COUNCILMAN CADORNA HAS A SPECIAL COMMISSION FOR YOU.  HIS CHAMBERS ARE THROUGH THE EAST DOOR.'"
-	CadornaCommission = Offered
-	Return
+def OfferCadorna() {
+    if CadornaCommission == CommissionGiven { goto NextOffer }
+    if QuestCadornaTraitor >= RewardDue { goto NextOffer }
+    if QuestCadornaPayment == Rewarded { goto NextOffer }
+    Text("JUNIOR COUNCILMAN CADORNA HAS A SPECIAL COMMISSION FOR YOU.  HIS CHAMBERS ARE THROUGH THE EAST DOOR.'")
+    CadornaCommission = Offered
+    return
+}
 
-OfferBishop:
-	if QuestSokalKeep != Rewarded: Goto NextOffer
-	if BishopSummons > 253: Goto NextOffer
-	if QuestTempleOfBane == Rewarded: Goto NextOffer
-	PrintClear "YOU ARE SUMMONED BY THE BISHOP OF BRACCIO OF TYR. REPORT TO HIM AT TYR'S TEMPLE.'"
-	BishopSummons = Summoned
-	Return
+def OfferBishop() {
+    if QuestSokalKeep != Rewarded { goto NextOffer }
+    if BishopSummons > 253 { goto NextOffer }
+    if QuestTempleOfBane == Rewarded { goto NextOffer }
+    Text("YOU ARE SUMMONED BY THE BISHOP OF BRACCIO OF TYR. REPORT TO HIM AT TYR'S TEMPLE.'")
+    BishopSummons = Summoned
+    return
+}
 
-OfferKovelMansion:
-	if QuestSokalKeep != Rewarded: Goto NextOffer
-	if QuestKovelThieves == Rewarded: Goto NextOffer
-	PrintClear "A LARGE GROUP OF THIEVES OPERATES OUT OF THE OLD KOVEL MANSION. THE COUNCIL WILL PAY TO HAVE THEM CLEANED OUT.'"
-	Return
+def OfferKovelMansion() {
+    if QuestSokalKeep != Rewarded { goto NextOffer }
+    if QuestKovelThieves == Rewarded { goto NextOffer }
+    Text("A LARGE GROUP OF THIEVES OPERATES OUT OF THE OLD KOVEL MANSION. THE COUNCIL WILL PAY TO HAVE THEM CLEANED OUT.'")
+    return
+}
 
-OfferNomads:
-	if QuestNomads == Rewarded: Goto NextOffer
-	PrintClear "FIND THE NOMADS AND STOP THEM FROM JOINING FORCES WITH OUR ENEMIES.'"
-	Return
+def OfferNomads() {
+    if QuestNomads == Rewarded { goto NextOffer }
+    Text("FIND THE NOMADS AND STOP THEM FROM JOINING FORCES WITH OUR ENEMIES.'")
+    return
+}
 
-OfferKobolds:
-	if QuestKobolds == Rewarded: Goto NextOffer
-	PrintClear "A LARGE TRIBE OF KOBOLDS IS BEING RECRUITED BY THE ENEMY.  MAKE SURE THEY DON'T JOIN THE ENEMY FORCES.'"
-	Return
+def OfferKobolds() {
+    if QuestKobolds == Rewarded { goto NextOffer }
+    Text("A LARGE TRIBE OF KOBOLDS IS BEING RECRUITED BY THE ENEMY.  MAKE SURE THEY DON'T JOIN THE ENEMY FORCES.'")
+    return
+}
 
-OfferNone:
-	Goto NextOffer
+def OfferNone() {
+    goto NextOffer
+}
 
-OfferRiverPollution:
-	if Boss == 255: Goto NextOffer
-	PrintClear "FIND THE SOURCE OF THE RIVER'S POLLUTION AND END IT.'"
-	Return
+def OfferRiverPollution() {
+    if Boss == 255 { goto NextOffer }
+    Text("FIND THE SOURCE OF THE RIVER'S POLLUTION AND END IT.'")
+    return
+}
 
-OfferLizardmen:
-	if QuestLizardmen == Rewarded: Goto NextOffer
-	PrintClear "A TRIBE OF LIZARDMEN IS PREPARING TO JOIN THE ENEMY.  PREVENT THIS.'"
-	Return
+def OfferLizardmen() {
+    if QuestLizardmen == Rewarded { goto NextOffer }
+    Text("A TRIBE OF LIZARDMEN IS PREPARING TO JOIN THE ENEMY.  PREVENT THIS.'")
+    return
+}
 
-OfferBivant:
-	if QuestSokalKeep != Rewarded: Goto NextOffer
-	if QuestBivant != 0: Goto NextOffer
-	PrintClear "THE HEIR TO THE HOUSE OF BIVANT MUST BE RESCUED.  WE WILL PAY GENEROUSLY FOR HIS SAFE RETURN.'"
-	Mark3 = 255
-	Return
+def OfferBivant() {
+    if QuestSokalKeep != Rewarded { goto NextOffer }
+    if QuestBivant != 0 { goto NextOffer }
+    Text("THE HEIR TO THE HOUSE OF BIVANT MUST BE RESCUED.  WE WILL PAY GENEROUSLY FOR HIS SAFE RETURN.'")
+    Mark3 = Hidden
+    return
+}
 
-OfferZhentilMission:
-	if ZhentilMission == PacketReceived: Goto NextOffer
-	if QuestCadornaTraitor >= RewardDue: Goto OfferZhentilMessage
-	if CadornaCommission != CommissionGiven: Goto NextOffer
-	if QuestZhentilOutpost == Rewarded: Goto NextOffer
-	PrintClear "LORD CADORNA HAS A DELICATE DIPLOMATIC MISSION THAT REQUIRES YOUR PARTICULAR SKILLS.  YOU ARE SUMMONED TO HIS CHAMBERS. GO THROUGH THE SOUTH DOOR.'"
-	ZhentilMission = Summoned
-	Return
+def OfferZhentilMission() {
+    if ZhentilMission == PacketReceived { goto NextOffer }
+    if QuestCadornaTraitor >= RewardDue { goto OfferZhentilMessage }
+    if CadornaCommission != CommissionGiven { goto NextOffer }
+    if QuestZhentilOutpost == Rewarded { goto NextOffer }
+    Text("LORD CADORNA HAS A DELICATE DIPLOMATIC MISSION THAT REQUIRES YOUR PARTICULAR SKILLS.  YOU ARE SUMMONED TO HIS CHAMBERS. GO THROUGH THE SOUTH DOOR.'")
+    ZhentilMission = Summoned
+    return
 
-OfferZhentilMessage:
-	PrintClear "WE NEED YOU TO DELIVER A MESSAGE TO THE ZHENTIL KEEP TO THE WEST. BE CAREFUL, THE TRAITOR CADORNA MAY HAVE TAMPERED WITH THE MESSAGE PACKET BEFORE HE FLED.'"
-	ZhentilMission = PacketReceived
-	Return
+    OfferZhentilMessage:
+    Text("WE NEED YOU TO DELIVER A MESSAGE TO THE ZHENTIL KEEP TO THE WEST. BE CAREFUL, THE TRAITOR CADORNA MAY HAVE TAMPERED WITH THE MESSAGE PACKET BEFORE HE FLED.'")
+    ZhentilMission = PacketReceived
+    return
+}
 
-OfferUrslingen:
-	if QuestGateTaken >= RewardDue: Goto NextOffer
-	if QuestCadornaTraitor < RewardDue: Goto NextOffer
-	PrintClear "LORD URSLINGEN WISHES URGENTLY TO SPEAK WITH YOU.  GO THROUGH THE SOUTH DOOR OF THE TRAITOR CADORNA'S OLD QUARTERS.'"
-	CadornaQuartersFlags |= SouthDoorOpen
-	UrslingenGateMission = Summoned
-	Return
+def OfferUrslingen() {
+    if QuestGateTaken >= RewardDue { goto NextOffer }
+    if QuestCadornaTraitor < RewardDue { goto NextOffer }
+    Text("LORD URSLINGEN WISHES URGENTLY TO SPEAK WITH YOU.  GO THROUGH THE SOUTH DOOR OF THE TRAITOR CADORNA'S OLD QUARTERS.'")
+    CadornaQuartersFlags |= SouthDoorOpen
+    UrslingenGateMission = Summoned
+    return
+}
 
-OfferCouncilMeeting:
-	if FinalAttackMeeting >= Summoned: Goto OffersDone
-	if QuestGateTaken != Rewarded: Goto OffersDone
-	if QuestTyranthraxus == Rewarded: Goto NextOffer
-	PrintClear "YOU ARE SUMMONED TO A SPECIAL COUNCIL MEETING.  YOU ARE TO BE AWARDED A VALUABLE COMMISSION. THE CITY GUARDS WILL SHOW YOU THE WAY.'"
-	FinalAttackMeeting = Summoned
-	Gosub PressToContinue
-	Goto GuardEscort
+def OfferCouncilMeeting() {
+    if FinalAttackMeeting >= Summoned { goto OffersDone }
+    if QuestGateTaken != Rewarded { goto OffersDone }
+    if QuestTyranthraxus == Rewarded { goto NextOffer }
+    Text("YOU ARE SUMMONED TO A SPECIAL COUNCIL MEETING.  YOU ARE TO BE AWARDED A VALUABLE COMMISSION. THE CITY GUARDS WILL SHOW YOU THE WAY.'")
+    FinalAttackMeeting = Summoned
+    PressToContinue()
+    goto GuardEscort
+}
 
 MarkCadornaTraitor:
-	if QuestCadornaTraitor >= RewardDue: Goto OffersDone
-	QuestCadornaTraitor = RewardDue
+    if QuestCadornaTraitor >= RewardDue { goto OffersDone }
+    QuestCadornaTraitor = RewardDue
 
 OffersDone:
-	PrintClear "'THESE ARE ALL OF THE COMMISSIONS CURRENTLY AVAILABLE.'"
-	Gosub ClearPicture
-	Exit
+    Text("'THESE ARE ALL OF THE COMMISSIONS CURRENTLY AVAILABLE.'")
+    ClearPicture()
+    exit
 
-CadornaChambers:
-	if QuestCadornaTraitor >= Rewarded: Exit
-	if CadornaCommission != Offered: Exit
-	ShowPortrait GoldCirclet MerchantCoat
-	PrintClear "'WHEN OLD PHLAN WAS OVERRUN, A FAMILY TREASURE WAS HIDDEN IN THE WESTERN BUILDING OF THE TEXTILE COMPLEX."
-	Gosub PressToContinue
-	PrintClear "'THE FAITHFUL SERVANT SENT TO FETCH IT NEVER RETURNED.  THE COMPLEX IS JUST SOUTH OF PODOL PLAZA.  BRING THE TREASURE TO ME AND YOU WILL BE WELL REWARDED.'"
-	Gosub PressToContinue
-	CadornaCommission = CommissionGiven
-	Gosub ClearPicture
-	Exit
+def CadornaChambers() {
+    if QuestCadornaTraitor >= Rewarded { exit }
+    if CadornaCommission != Offered { exit }
+    ShowPortrait(GoldCirclet, MerchantCoat)
+    Text("'WHEN OLD PHLAN WAS OVERRUN, A FAMILY TREASURE WAS HIDDEN IN THE WESTERN BUILDING OF THE TEXTILE COMPLEX.")
+    PressToContinue()
+    Text("'THE FAITHFUL SERVANT SENT TO FETCH IT NEVER RETURNED.  THE COMPLEX IS JUST SOUTH OF PODOL PLAZA.  BRING THE TREASURE TO ME AND YOU WILL BE WELL REWARDED.'")
+    PressToContinue()
+    CadornaCommission = CommissionGiven
+    ClearPicture()
+    exit
+}
 
-CadornaZhentilMission:
-	Gosub CheckQuestOver
-	if ZhentilMission != Summoned: Exit
-	ShowPortrait GoldCirclet PlateArmor
-	PrintClear "'IT IS IMPERATIVE THAT A MESSAGE BE DELIVERED TO THE ZHENTIL OUTPOST TO THE WEST.  I AM SENDING YOU AS DIPLOMATIC ENVOYS."
-	Gosub PressToContinue
-	PrintClear "'WHEN YOU GET TO ZHENTIAL KEEP, PRESENT THIS PACKET TO ITS COMMANDANT.  DO NOT BREAK THE SEALS OR YOU WILL BE SEIZED AS SPIES.'"
-	Gosub PressToContinue
-	ZhentilMission = PacketReceived
-	Return
+def CadornaZhentilMission() {
+    CheckQuestOver()
+    if ZhentilMission != Summoned { exit }
+    ShowPortrait(GoldCirclet, PlateArmor)
+    Text("'IT IS IMPERATIVE THAT A MESSAGE BE DELIVERED TO THE ZHENTIL OUTPOST TO THE WEST.  I AM SENDING YOU AS DIPLOMATIC ENVOYS.")
+    PressToContinue()
+    Text("'WHEN YOU GET TO ZHENTIAL KEEP, PRESENT THIS PACKET TO ITS COMMANDANT.  DO NOT BREAK THE SEALS OR YOU WILL BE SEIZED AS SPIES.'")
+    PressToContinue()
+    ZhentilMission = PacketReceived
+    return
+}
 
-UrslingenRoom:
-	if UrslingenGateMission != Summoned: Exit
-	ShowPortrait DarkBeard MailCloak
-	PrintClear "'THANK YOU FOR COMING.  I MUST BE BRIEF FOR OUR NEED IS URGENT.  OUR ONE CHANCE TO DEFEAT THE ENEMY IS THROUGH AN ASSAULT ON THE CASTLE. TO DO THIS, WE MUST FIRST SECURE STOJANOW GATE."
-	Gosub PressToContinue
-	PrintClear "'THE GATE IS TOO STRONG TO BE TAKEN BY STORM. A SMALL BAND MUST SLIP INSIDE AND HOLD UNTIL RELIEVED. YOU ARE THE BEST AND THE BRAVEST. THE COUNCIL HAS INSTRUCTED ME TO ENTRUST THE TASK TO YOU.'"
-	Gosub PressToContinue
-	UrslingenGateMission = MissionGiven
-	Return
+def UrslingenRoom() {
+    if UrslingenGateMission != Summoned { exit }
+    ShowPortrait(DarkBeard, MailCloak)
+    Text("'THANK YOU FOR COMING.  I MUST BE BRIEF FOR OUR NEED IS URGENT.  OUR ONE CHANCE TO DEFEAT THE ENEMY IS THROUGH AN ASSAULT ON THE CASTLE. TO DO THIS, WE MUST FIRST SECURE STOJANOW GATE.")
+    PressToContinue()
+    Text("'THE GATE IS TOO STRONG TO BE TAKEN BY STORM. A SMALL BAND MUST SLIP INSIDE AND HOLD UNTIL RELIEVED. YOU ARE THE BEST AND THE BRAVEST. THE COUNCIL HAS INSTRUCTED ME TO ENTRUST THE TASK TO YOU.'")
+    PressToContinue()
+    UrslingenGateMission = MissionGiven
+    return
+}
 
-CouncilChambers:
-	if FinalAttackMeeting != Summoned: Exit
-	ShowPortrait DarkBeard NobleRobe
-	PrintClear "IN THE COUNCIL CHAMBERS, THE ENTIRE CITY COUNCIL IS WAITING FOR YOU. THE LORD HIGH MAYOR, ULRICH EBERHARD, SPEAKS: 'OUR FORCES ARE MARSHALLED FOR THE ASSAULT ON VALJEVO CASTLE."
-	Gosub PressToContinue
-	PrintClear "'IT IS THE UNANIMOUS REQUEST OF THE COUNCIL THAT YOU LEAD THE ATTACK. YOUR SKILL AND BRAVERY HAVE WON THE ADMIRATION OF ALL PHLAN.  WE LOOK TO YOU TO HELP US WIN OUR FREEDOM.'"
-	Gosub PressToContinue
-	FinalAttackMeeting = AskedToLead
-	Return
+def CouncilChambers() {
+    if FinalAttackMeeting != Summoned { exit }
+    ShowPortrait(DarkBeard, NobleRobe)
+    Text("IN THE COUNCIL CHAMBERS, THE ENTIRE CITY COUNCIL IS WAITING FOR YOU. THE LORD HIGH MAYOR, ULRICH EBERHARD, SPEAKS: 'OUR FORCES ARE MARSHALLED FOR THE ASSAULT ON VALJEVO CASTLE.")
+    PressToContinue()
+    Text("'IT IS THE UNANIMOUS REQUEST OF THE COUNCIL THAT YOU LEAD THE ATTACK. YOUR SKILL AND BRAVERY HAVE WON THE ADMIRATION OF ALL PHLAN.  WE LOOK TO YOU TO HELP US WIN OUR FREEDOM.'")
+    PressToContinue()
+    FinalAttackMeeting = AskedToLead
+    return
+}
 
-GuardPost:
-	Gosub CheckQuestOver
+def GuardPost() {
+    CheckQuestOver()
+} # falls into CouncilGuard
 
 CouncilGuard:
-	if HallGuardsFought != 0: Exit
-	Portrait = NoseguardHelmet
-	SetupMonster Swordsman27 distance=1 body=PlateArmor
-	Approach
-	PrintClear "YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?"
-	Ask YesNoMenu "YES" -> LeaveHall "NO" -> FightGuards
+    if HallGuardsFought != 0 { exit }
+    Portrait = NoseguardHelmet
+    SetupMonster(Swordsman27, distance=1, body=PlateArmor)
+    Approach()
+    Text("YOU ARE INTERCEPTED BY THE COUNCIL GUARD. 'HALT.  YOUR PRESENCE IS NOT AUTHORIZED.  LEAVE.'  DO YOU LEAVE?")
+    YesNoMenu()
+    goto [LeaveHall, FightGuards][Scratch1]
 
 LeaveHall:
-	Facing = North
-	PartyX = 4
-	PartyY = 5
-	Call CallRedraw
-	Exit
+    Facing = North
+    PartyX = 4
+    PartyY = 5
+    CallRedraw()
+    exit
 
 FightGuards:
-	Scratch1 = PartyStrength
-	Morale = 99
-	Surprise = PartyIsSurprised
-	ClearMonsters
-	LoadMonster Level3Mu count=3 icon=Level3Mu
-	LoadMonster Aides count=6 icon=11
-	LoadMonster ThLvlFighter85 count=5 icon=ThLvlFighter
-	LoadMonster Corporal count=Scratch1 icon=Nomad
-	Combat
-	FoughtWatch = 1
-	HallGuardsFought = 1
-	PrintClear "THE REMAINING GUARDS DECIDE TO LEAVE YOU ALONE."
-	Exit
+    Scratch1 = PartyStrength()
+    Morale = 99
+    Surprise = PartyIsSurprised
+    ClearMonsters()
+    LoadMonster(Level3Mu, count=3, icon=Level3Mu)
+    LoadMonster(Aides, count=6, icon=11)
+    LoadMonster(ThLvlFighter85, count=5, icon=ThLvlFighter)
+    LoadMonster(Corporal, count=Scratch1, icon=Nomad)
+    Combat()
+    FoughtWatch = 1
+    HallGuardsFought = 1
+    Text("THE REMAINING GUARDS DECIDE TO LEAVE YOU ALONE.")
+    exit
 
 GuardEscort:
-	ShowPortrait NoseguardHelmet PlateArmor
-	PrintClear "THE GUARD CAPTAIN STEPS FORWARD. 'PLEASE LET US SHOW YOU THE WAY.'"
-	Gosub PressToContinue
-	Gosub ClearPicture
-	Facing = North
-	Gosub EscortStep
-	Facing = West
-	Gosub EscortStep
-	PartyX = 4
-	Gosub EscortStep
-	Facing = South
-	Gosub EscortStep
-	PartyY = 6
-	Gosub EscortStep
-	PartyY = 7
-	Gosub EscortStep
-	Facing = East
-	Gosub EscortStep
-	PartyX = 5
-	Call CallRedraw
-	Exit
+    ShowPortrait(NoseguardHelmet, PlateArmor)
+    Text("THE GUARD CAPTAIN STEPS FORWARD. 'PLEASE LET US SHOW YOU THE WAY.'")
+    PressToContinue()
+    ClearPicture()
+    Facing = North
+    EscortStep()
+    Facing = West
+    EscortStep()
+    PartyX = 4
+    EscortStep()
+    Facing = South
+    EscortStep()
+    PartyY = 6
+    EscortStep()
+    PartyY = 7
+    EscortStep()
+    Facing = East
+    EscortStep()
+    PartyX = 5
+    CallRedraw()
+    exit
 
-YesNoMenu:
-	alias Choice = Scratch1
-	Choice = Menu "YES" "NO"
-	Return
+def YesNoMenu() {
+    Scratch1 = Menu("YES", "NO")
+    return
+}
 
-ShowClerk:
-	ShowPortrait BraidedWoman BandedArmor
-	Return
+def ShowClerk() {
+    ShowPortrait(BraidedWoman, BandedArmor)
+    return
+}
 
-EscortStep:
-	Call CallRedraw
-	Sound = 8
-	Call CallSound
-	Delay
+def EscortStep() {
+    CallRedraw()
+    Sound = 8
+    CallSound()
+    Delay()
+} # falls into ClearPicture
 
 ClearPicture:
-	ShowPortrait None None
-	Return
+    ShowPortrait(None, None)
+    return
 
-CheckQuestOver:
-	if QuestTyranthraxus != Rewarded: Return
-	if 26 == Scratch10: Goto ExitToArea0
-	Goto NoRestHere
+def CheckQuestOver() {
+    if QuestTyranthraxus != Rewarded { return }
+    if 26 == Scratch10 { goto ExitToArea0 }
+    goto NoRestHere
+}
 
-PressToContinue:
-	alias Choice = AuxCounter
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def PressToContinue() {
+    AuxCounter = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
-SetPlatinum:
-	Scratch3 = Scratch9
-	Return
+def SetPlatinum() {
+    Scratch3 = Scratch9
+    return
+}
 
-AddGems:
-	Scratch4 += Scratch9
-	Return
+def AddGems() {
+    Scratch4 += Scratch9
+    return
+}
 
-AddJewelry:
-	Scratch5 += Scratch9
-	Return
+def AddJewelry() {
+    Scratch5 += Scratch9
+    return
+}
 
-AddItems:
-	Scratch6 += Scratch9
-	Return
+def AddItems() {
+    Scratch6 += Scratch9
+    return
+}
 
-RewardTable1:
-	Data 250 0 250 0 0 0 0 0 0 1 250 0 0 0 0 50
-	Data 0 0 0 0 0 250 0
-
-RewardTable2:
-	Data 200 250 99 0 80 90 100 110 120 0 200 0 80 250 0 0
-	Data 0 0 0 0 0 50 125
-
-RewardTable3:
-	Data 0 0 3 25 0 0 0 0 0 0 0 15 3 0 7 15
-	Data 25 6 20 0 200 0 0
-
-RewardTable4:
-	Data 0 3 0 5 0 0 0 0 0 0 0 25 0 15 5 5
-	Data 0 2 0 10 100 1 0 255
+# tables
+RewardTable1 = [250, 0, 250, 0, 0, 0, 0, 0, 0, 1, 250, 0, 0, 0, 0, 50, 0, 0, 0, 0, 0, 250, 0]
+RewardTable2 = [200, 250, 99, 0, 80, 90, 100, 110, 120, 0, 200, 0, 80, 250, 0, 0, 0, 0, 0, 0, 0, 50, 125]
+RewardTable3 = [0, 0, 3, 25, 0, 0, 0, 0, 0, 0, 0, 15, 3, 0, 7, 15, 25, 6, 20, 0, 200, 0, 0]
+RewardTable4 = [0, 3, 0, 5, 0, 0, 0, 0, 0, 0, 0, 25, 0, 15, 5, 5, 0, 2, 0, 10, 100, 1, 0, 255]

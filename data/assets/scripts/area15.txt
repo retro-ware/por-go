@@ -1,532 +1,534 @@
 FleeBack:
-	PartyX = DestX[Scratch10]
-	PartyY = DestY[Scratch10]
-	Facing = DestFacing[Scratch10]
-	HoldMove = SkipMove
-	Goto RedrawExit
+    PartyX = DestX[Scratch10]
+    PartyY = DestY[Scratch10]
+    Facing = DestFacing[Scratch10]
+    HoldMove = SkipMove
+    goto RedrawExit
 
-DestX:
-	Data 7 5 9 9
+def ShortPause() {
+    AuxMember = MsgDelay
+    MsgDelay = 5
+    Delay()
+    MsgDelay = AuxMember
+    return
+}
 
-DestY:
-	Data 9 5 9 11
+def TakeItMenu() {
+    PressToContinue()
+    Text("DO YOU TAKE IT?")
+    if YesNoMenu() == "NO" { exit }
+    return
+}
 
-DestFacing:
-	Data 1 2 0 0
-
-ShortPause:
-	AuxMember = MsgDelay
-	MsgDelay = 5
-	Delay
-	MsgDelay = AuxMember
-	Return
-
-TakeItMenu:
-	Gosub PressToContinue
-	PrintClear "DO YOU TAKE IT?"
-	if Ask YesNoMenu == "NO": Exit
-	Return
-
-YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
+def YesNoMenu() {
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
+}
 
 PressToContinue:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	PrintClear " "
-	Return
+    Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    Text(" ")
+    return
 
-ExitUnlessSearchNew:
-	if Scratch3 != 0 || Search != 1: Exit
-	Return
+def ExitUnlessSearchNew() {
+    if Scratch3 != 0 or Search != Searching { exit }
+    return
+}
 
-SetSky:
-	Scratch10 = 11
-	if Hours >= 14: Scratch10 = 8
-	Sky = Scratch10
-	SkyInside = 9
-	Return
+def SetSky() {
+    Scratch10 = 11
+    if Hours >= 14 { Scratch10 = 8 }
+    Sky = Scratch10
+    SkyInside = 9
+    return
+}
 
-event0:
-	Gosub SetSky
-	if LeftMap != 0: Goto LeaveArea
-	if Cell lacks 64: Exit
-	Scratch10 = 1 & Cell
-	Scratch8 = Table9B07[Scratch10]
-	if Scratch8 != Facing: Exit
-	if LibraryEventFlags has SpectreBeaten: Exit
-	if BooksFoundFlags lacks Fyerdetha+Urgund+LexGeographicaBook+HistoryNorth+ArtsOfWarBook+NamedBookTaken: Exit
-	SetupMonster Spectre distance=0 closeup=Spectre
-	PrintClear "A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU."
-	Gosub ShortPause
-	Morale = 100
-	PartySurprise Scratch2 Scratch3
-	Surprise Scratch2 Scratch3 2 2
-	if Surprise == MonstersAreSurprised: Surprise = NoSurprise
-	ClearMonsters
-	LoadMonster Spectre count=1 icon=Spectre
-	Combat
-	if CombatEnd == PartyFled: Goto FleeFromBasilisk
-	LibraryEventFlags |= SpectreBeaten
+on move {
+    SetSky()
+    if LeftMap != 0 { goto LeaveArea }
+    if Cell lacks Special { exit }
+    Scratch10 = 1 & Cell
+    Scratch8 = Table9B07[Scratch10]
+    if Scratch8 != Facing { exit }
+    if LibraryEventFlags has SpectreBeaten { exit }
+    if BooksFoundFlags lacks Fyerdetha|Urgund|LexGeographicaBook|HistoryNorth|ArtsOfWarBook|NamedBookTaken {
+        exit
+    }
+    SetupMonster(Spectre, distance=0, closeup=Spectre)
+    Text("A SPECTRE SUDDENLY APPEARS BEFORE YOU. 'THIEF! I DEFENDED THESE BOOKS IN LIFE AND I WILL DEFEND THEM IN DEATH!' IT ATTACKS YOU.")
+    ShortPause()
+    Morale = 100
+    PartySurprise(Scratch2, Scratch3)
+    Surprise(Scratch2, Scratch3, 2, 2)
+    if Surprise == MonstersAreSurprised { Surprise = NoSurprise }
+    ClearMonsters()
+    LoadMonster(Spectre, count=1, icon=Spectre)
+    Combat()
+    if CombatEnd == PartyFled { goto FleeFromBasilisk }
+    LibraryEventFlags |= SpectreBeaten
+} # falls into RedrawExit
 
 RedrawExit:
-	RedrawView
-	Call CallRedraw
-	Exit
+    RedrawView()
+    CallRedraw()
+    exit
 
 LeaveArea:
-	alias ByFacing9B09Entry = Scratch7
-	Call CallStepForward
-	ByFacing9B09Entry = ByFacing9B09[Facing]
-	SymbolSet = SymbolSets[Facing]
-	NewECL ByFacing9B09Entry
+    CallStepForward()
+    Scratch7 = ByFacing9B09[Facing]
+    SymbolSet = SymbolSets[Facing]
+    NewECL(Scratch7)
 
-Table9B07:
-	Data 2 0
+on step {
+    Scratch10 = Cell & 31
+    Scratch2 = Table9B5B[Scratch10]
+    Scratch1 = Table9B6E[Scratch10]
+    goto [StacksEnter, BonesRoom, BenchChamber, FrescoRoom, WritingHall, MadFighter, StudyRoom,
+        TrashBook, CarrelsRoom, SmallDeskRoom, StoreroomEnter, RedrawExit, GardenEnter][Scratch2]
+    exit # the original runs on into data at 9B5B
+}
 
-ByFacing9B09:
-	Data 29 0 0 2
+on camp {
+    RestEvery = 0
+    RestChance = 10
+} # falls into event3
 
-SymbolSets:
-	Data 8 0 0 4
+on rest {
+    exit
+}
 
-event1:
-	Scratch10 = Cell & 31
-	Scratch2 = Table9B5B[Scratch10]
-	Scratch1 = Table9B6E[Scratch10]
-	OnGoto Scratch2 StacksEnter BonesRoom BenchChamber FrescoRoom WritingHall MadFighter StudyRoom TrashBook CarrelsRoom SmallDeskRoom StoreroomEnter RedrawExit GardenEnter
-	Exit // extra: the original runs on into data at 9B5B
-
-Table9B5B:
-	Data 11 12 0 0 0 0 2 2 1 3 4 5 6 7 8 8
-	Data 8 9 10
-
-Table9B6E:
-	Data 0 0 0 1 2 3 1 2 0 0 0 0 0 0 0 1
-	Data 2 0 0
-
-event2:
-	RestEvery = 0
-	RestChance = 10
-
-event3:
-	Exit
-
-event4:
-	Gosub SetSky
-	if AreaKind == 15: Exit
-	SelIcon = 18
-	LoadMap 15 unused=2 icons=255
-	LoadWalls 1 19 23
-	Exit
+on load {
+    SetSky()
+    if AreaKind == MendorsLibrary { exit }
+    SelIcon = 18
+    LoadMap(15, unused=2, icons=255)
+    LoadWalls(1, 19, 23)
+    exit
+}
 
 GardenEnter:
-	if GardenVisits != 0: Goto GardenWalk
-	PrintClear "YOU SEE WHAT ONCE WAS A GARDEN, NOW-WEED FILLED. THE PLEASANT POND HAS BECOME A SWAMP."
-	Gosub ShortPause
-	GardenVisits = 1
+    if GardenVisits != 0 { goto GardenWalk }
+    Text("YOU SEE WHAT ONCE WAS A GARDEN, NOW-WEED FILLED. THE PLEASANT POND HAS BECOME A SWAMP.")
+    ShortPause()
+    GardenVisits = 1
 
-GardenWalk:
-	if GardenVisits > 7: Exit
-	Scratch9 = 5
-	Scratch10 = Random 25
-	if Scratch10 > 6: Exit
-	PartySurprise Scratch6 Scratch7
-	Scratch8 = 0
-	if Search != 1: Scratch8 = 2
-	Surprise Scratch6 Scratch7 0 Scratch8
-	PrintClear "AS YOU MOVE THROUGH THE GARDEN "
-	GardenVisits += 1
-	OnGoto Surprise SlimeAvoided SlimeStepped
+    GardenWalk:
+    if GardenVisits > 7 { exit }
+    Scratch9 = 5
+    Scratch10 = Random(25)
+    if Scratch10 > 6 { exit }
+    PartySurprise(Scratch6, Scratch7)
+    Scratch8 = 0
+    if Search != Searching { Scratch8 = 2 }
+    Surprise(Scratch6, Scratch7, 0, Scratch8)
+    Text("AS YOU MOVE THROUGH THE GARDEN ")
+    GardenVisits += 1
+    goto [SlimeAvoided, SlimeStepped][Surprise]
 
 SlimeAvoided:
-	Print "YOU SEE A STRANGE GREEN PLANT GROWTH WHICH YOU RECOGNIZE AS GREEN SLIME. YOU CAREFULLY MOVE AROUND IT."
-	Gosub ShortPause
-	Exit
+    Print("YOU SEE A STRANGE GREEN PLANT GROWTH WHICH YOU RECOGNIZE AS GREEN SLIME. YOU CAREFULLY MOVE AROUND IT.")
+    ShortPause()
+    exit
 
 SlimeStepped:
-	PrintClear "YOU STEP INTO A STRANGE GREEN PLANT GROWTH... IT'S GREEN SLIME! QUICKLY, YOU SCRAPE IT OFF, TAKING A GOOD DEAL OF DAMAGE."
-	Gosub ShortPause
-	Damage 160 1 4 0 0
-	PrintClear "YOU NOW CAREFULLY AVOID THE GREEN SLIME."
-	Gosub ShortPause
-	Exit
+    Text("YOU STEP INTO A STRANGE GREEN PLANT GROWTH... IT'S GREEN SLIME! QUICKLY, YOU SCRAPE IT OFF, TAKING A GOOD DEAL OF DAMAGE.")
+    ShortPause()
+    Damage(160, 1, 4, 0, 0)
+    Text("YOU NOW CAREFULLY AVOID THE GREEN SLIME.")
+    ShortPause()
+    exit
 
 StacksEnter:
-	alias StacksSignSeenEntry = Scratch2
-	StacksSignSeenEntry = StacksSignSeen[Scratch1]
-	if StacksSignSeenEntry != 0: Goto StacksSearch
-	PrintClear "THESE ARE THE LIBRARY STACKS. OLD AND MOLDERING BOOKS ARE STORED ON SHELVES. A SIGN OVER THE ENTRANCE READS "
-	OnGosub Scratch1 SignPhilosophy SignMathematics SignHistory SignRhetoric
-	Gosub PressToContinue
-	StacksSignSeen[Scratch1] = 1
+    Scratch2 = StacksSignSeen[Scratch1]
+    if Scratch2 != 0 { goto StacksSearch }
+    Text("THESE ARE THE LIBRARY STACKS. OLD AND MOLDERING BOOKS ARE STORED ON SHELVES. A SIGN OVER THE ENTRANCE READS ")
+    gosub [SignPhilosophy, SignMathematics, SignHistory, SignRhetoric][Scratch1]
+    PressToContinue()
+    StacksSignSeen[Scratch1] = 1
 
-StacksSearch:
-	if Scratch1 == 3: Goto BasiliskLair
-	if Search == 0: Exit
-	PrintClear "AS YOU SEARCH THE ROOM YOU SCAN RANDOM BOOKS."
-	Gosub ShortPause
-	OnGoto Scratch1 PhilosophyBooks MathNothing HistoryBooks RhetoricNothing
+    StacksSearch:
+    if Scratch1 == 3 { goto BasiliskLair }
+    if Search == NotSearching { exit }
+    Text("AS YOU SEARCH THE ROOM YOU SCAN RANDOM BOOKS.")
+    ShortPause()
+    goto [PhilosophyBooks, MathNothing, HistoryBooks, RhetoricNothing][Scratch1]
 
 SignRhetoric:
-	Print "RHETORIC."
-	Return
+    Print("RHETORIC.")
+    return
 
-SignPhilosophy:
-	Print "PHILOSOPHY."
-	Return
+def SignPhilosophy() {
+    Print("PHILOSOPHY.")
+    return
+}
 
-SignMathematics:
-	Print "MATHEMATICS."
-	Return
+def SignMathematics() {
+    Print("MATHEMATICS.")
+    return
+}
 
-SignHistory:
-	Print "HISTORY."
-	Return
+def SignHistory() {
+    Print("HISTORY.")
+    return
+}
 
 RhetoricNothing:
-	PrintClear "YOU FIND SPEECHES FROM FAMOUS MURDER TRIALS, PUBLIC DEBATES, ETC., BUT NOTHING OF INTEREST."
-	Gosub ShortPause
-	PrintClear ""
-	Exit
+    Text("YOU FIND SPEECHES FROM FAMOUS MURDER TRIALS, PUBLIC DEBATES, ETC., BUT NOTHING OF INTEREST.")
+    ShortPause()
+    Text("")
+    exit
 
 MathNothing:
-	PrintClear "YOU FIND ESSAYS ON GEOMETRY, METAMAGICAL MATH, UNIVERSAL GEOMETRY, ETC., BUT NOTHING USEFUL."
-	Gosub ShortPause
-	PrintClear ""
-	Exit
+    Text("YOU FIND ESSAYS ON GEOMETRY, METAMAGICAL MATH, UNIVERSAL GEOMETRY, ETC., BUT NOTHING USEFUL.")
+    ShortPause()
+    Text("")
+    exit
 
 PhilosophyBooks:
-	Scratch3 = Random 11
-	OnGoto Scratch3 FyerdethaBook UrgundBook NamedBook
-	PrintClear "YOU FIND WORKS ON NATURAL PHILOSOPHY, THEORIES OF ART, AND THE SUPERNATURAL SCIENCES. IT IS VERY BORING."
-	Gosub ShortPause
-	PrintClear ""
-	Exit
+    Scratch3 = Random(11)
+    goto [FyerdethaBook, UrgundBook, NamedBook][Scratch3]
+    Text("YOU FIND WORKS ON NATURAL PHILOSOPHY, THEORIES OF ART, AND THE SUPERNATURAL SCIENCES. IT IS VERY BORING.")
+    ShortPause()
+    Text("")
+    exit
 
 FyerdethaBook:
-	if BooksFoundFlags has Fyerdetha: Goto PhilosophyBooks
-	PrintClear "YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7."
-	Gosub TakeItMenu
-	BooksFoundFlags |= Fyerdetha
-	if QuestBookFyerdetha != Rewarded: QuestBookFyerdetha = RewardDue
-	Exit
+    if BooksFoundFlags has Fyerdetha { goto PhilosophyBooks }
+    Text("YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7.")
+    TakeItMenu()
+    BooksFoundFlags |= Fyerdetha
+    if QuestBookFyerdetha != Rewarded { QuestBookFyerdetha = RewardDue }
+    exit
 
 UrgundBook:
-	if BooksFoundFlags has Urgund: Goto PhilosophyBooks
-	PrintClear "YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL."
-	Gosub TakeItMenu
-	BooksFoundFlags |= Urgund
-	if QuestBookUrgund != Rewarded: QuestBookUrgund = RewardDue
-	Exit
+    if BooksFoundFlags has Urgund { goto PhilosophyBooks }
+    Text("YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL.")
+    TakeItMenu()
+    BooksFoundFlags |= Urgund
+    if QuestBookUrgund != Rewarded { QuestBookUrgund = RewardDue }
+    exit
 
 NamedBook:
-	if NamedBooksFound >= 5: Goto PhilosophyBooks
-	PrintClear "YOU FIND A BOOK ENTITLED "
-	OnGosub NamedBooksFound TitleMeditations TitleHarmonyOfRock TitleStromPoetics TitleChroniclesArram TitleNatureOfWriting
-	NamedBooksFound += 1
-	Gosub TakeItMenu
-	BooksFoundFlags = NamedBookTaken | BooksFoundFlags
-	if QuestBookNamed != Rewarded: QuestBookNamed = RewardDue
-	Exit
+    if NamedBooksFound >= 5 { goto PhilosophyBooks }
+    Text("YOU FIND A BOOK ENTITLED ")
+    gosub [TitleMeditations, TitleHarmonyOfRock, TitleStromPoetics, TitleChroniclesArram, TitleNatureOfWriting][NamedBooksFound]
+    NamedBooksFound += 1
+    TakeItMenu()
+    BooksFoundFlags = NamedBookTaken | BooksFoundFlags
+    if QuestBookNamed != Rewarded { QuestBookNamed = RewardDue }
+    exit
 
-TitleMeditations:
-	Print "MEDITATIONS."
-	Return
+def TitleMeditations() {
+    Print("MEDITATIONS.")
+    return
+}
 
-TitleHarmonyOfRock:
-	Print "THE HARMONY OF THE ROCK."
-	Return
+def TitleHarmonyOfRock() {
+    Print("THE HARMONY OF THE ROCK.")
+    return
+}
 
-TitleStromPoetics:
-	Print "STROM'S DISCUSSIONS OF POETICS."
-	Return
+def TitleStromPoetics() {
+    Print("STROM'S DISCUSSIONS OF POETICS.")
+    return
+}
 
-TitleChroniclesArram:
-	Print "CHRONICLES OF ARRAM."
-	Return
+def TitleChroniclesArram() {
+    Print("CHRONICLES OF ARRAM.")
+    return
+}
 
-TitleNatureOfWriting:
-	Print "DISCOURSE ON THE NATURE OF WRITING."
-	Return
+def TitleNatureOfWriting() {
+    Print("DISCOURSE ON THE NATURE OF WRITING.")
+    return
+}
 
 HistoryBooks:
-	Scratch3 = Random 17
-	OnGoto Scratch3 LexGeographica HistoryOfNorth ArtsOfWar
-	PrintClear "YOU FIND VARIOUS BOOKS WHICH ARE SO FILLED WITH MYTH THAT YOU DON'T FIND ANYTHING USEFUL."
-	Gosub ShortPause
-	PrintClear ""
-	Exit
+    Scratch3 = Random(17)
+    goto [LexGeographica, HistoryOfNorth, ArtsOfWar][Scratch3]
+    Text("YOU FIND VARIOUS BOOKS WHICH ARE SO FILLED WITH MYTH THAT YOU DON'T FIND ANYTHING USEFUL.")
+    ShortPause()
+    Text("")
+    exit
 
 LexGeographica:
-	if BooksFoundFlags has LexGeographicaBook: Goto HistoryBooks
-	PrintClear "YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL."
-	Gosub TakeItMenu
-	BooksFoundFlags |= LexGeographicaBook
-	if QuestBookLexGeographica != Rewarded: QuestBookLexGeographica = RewardDue
-	Exit
+    if BooksFoundFlags has LexGeographicaBook { goto HistoryBooks }
+    Text("YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL.")
+    TakeItMenu()
+    BooksFoundFlags |= LexGeographicaBook
+    if QuestBookLexGeographica != Rewarded { QuestBookLexGeographica = RewardDue }
+    exit
 
 HistoryOfNorth:
-	if BooksFoundFlags has HistoryNorth: Goto HistoryBooks
-	PrintClear "YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8."
-	Gosub TakeItMenu
-	if QuestBookHistoryNorth != Rewarded: QuestBookHistoryNorth = RewardDue
-	BooksFoundFlags |= HistoryNorth
-	Exit
+    if BooksFoundFlags has HistoryNorth { goto HistoryBooks }
+    Text("YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8.")
+    TakeItMenu()
+    if QuestBookHistoryNorth != Rewarded { QuestBookHistoryNorth = RewardDue }
+    BooksFoundFlags |= HistoryNorth
+    exit
 
 ArtsOfWar:
-	if BooksFoundFlags has ArtsOfWarBook: Goto HistoryBooks
-	PrintClear "YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21."
-	Gosub TakeItMenu
-	if QuestBookArtsOfWar != Rewarded: QuestBookArtsOfWar = RewardDue
-	BooksFoundFlags |= ArtsOfWarBook
-	Exit
+    if BooksFoundFlags has ArtsOfWarBook { goto HistoryBooks }
+    Text("YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21.")
+    TakeItMenu()
+    if QuestBookArtsOfWar != Rewarded { QuestBookArtsOfWar = RewardDue }
+    BooksFoundFlags |= ArtsOfWarBook
+    exit
 
 BasiliskLair:
-	if LibraryEventFlags has ReptileBeaten: Exit
-	SetupMonster Basilisk distance=2 closeup=Basilisk
-	PartySurprise Scratch6 Scratch7
-	Surprise Scratch6 Scratch7 0 0
-	OnGoto Surprise BasiliskSeen BasiliskSurprisesUs BasiliskUnaware BasiliskWaking
+    if LibraryEventFlags has ReptileBeaten { exit }
+    SetupMonster(Basilisk, distance=2, closeup=Basilisk)
+    PartySurprise(Scratch6, Scratch7)
+    Surprise(Scratch6, Scratch7, 0, 0)
+    goto [BasiliskSeen, BasiliskSurprisesUs, BasiliskUnaware, BasiliskWaking][Surprise]
 
 BasiliskSeen:
-	PrintClear "AMID THE LITTER OF THE ROOM YOU SEE A DULL BROWN REPTILIAN MONSTER."
+    Text("AMID THE LITTER OF THE ROOM YOU SEE A DULL BROWN REPTILIAN MONSTER.")
 
 BasiliskMenu:
-	Surprise = NoSurprise
-	Gosub ShortPause
-	EncounterMenu Basilisk distance=MaxDist closeup=Basilisk result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="IT HISSES AT YOU." escape=0 strength=0
-	PrintClear " "
-	OnGoto Scratch10 RedrawExit BasiliskFight FleeFromBasilisk BasiliskFight
+    Surprise = NoSurprise
+    ShortPause()
+    EncounterMenu(Basilisk, distance=MaxDist, closeup=Basilisk, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, near="IT HISSES AT YOU.", escape=0, strength=0)
+    Text(" ")
+    goto [RedrawExit, BasiliskFight, FleeFromBasilisk, BasiliskFight][Scratch10]
 
 BasiliskSurprisesUs:
-	PrintClear "YOU HEAR A HISS. AS YOU LOOK DOWN YOU SUDDENLY SEE A DULL BROWN REPTILIAN MONSTER."
-	Gosub ShortPause
-	Approach
-	Gosub ShortPause
-	Approach
-	Goto BasiliskFight
+    Text("YOU HEAR A HISS. AS YOU LOOK DOWN YOU SUDDENLY SEE A DULL BROWN REPTILIAN MONSTER.")
+    ShortPause()
+    Approach()
+    ShortPause()
+    Approach()
+    goto BasiliskFight
 
 BasiliskUnaware:
-	alias Choice = Scratch10
-	PrintClear "YOU SEE A DULL BROWN REPTILIAN MONSTER. IT DOESN'T SEEM AWARE OF YOU."
-	Choice = Menu "COMBAT" "WAIT" "FLEE" "APPROACH"
-	PrintClear " "
-	OnGoto Choice BasiliskFight BasiliskMenu FleeFromBasilisk
-	Approach
-	Goto BasiliskMenu
+    Text("YOU SEE A DULL BROWN REPTILIAN MONSTER. IT DOESN'T SEEM AWARE OF YOU.")
+    Scratch10 = Menu("COMBAT", "WAIT", "FLEE", "APPROACH")
+    Text(" ")
+    goto [BasiliskFight, BasiliskMenu, FleeFromBasilisk][Scratch10]
+    Approach()
+    goto BasiliskMenu
 
 BasiliskWaking:
-	PrintClear "SUDDENLY, YOU SPOT A DULL BROWN REPTILIAN MONSTER WHICH IS JUST COMING AWAKE."
-	Goto BasiliskMenu
+    Text("SUDDENLY, YOU SPOT A DULL BROWN REPTILIAN MONSTER WHICH IS JUST COMING AWAKE.")
+    goto BasiliskMenu
 
 FleeFromBasilisk:
-	Scratch10 = 1
-	Goto FleeBack
+    Scratch10 = 1
+    goto FleeBack
 
 BasiliskFight:
-	Morale = 100
-	ClearMonsters
-	LoadMonster Basilisk count=1 icon=Basilisk
-	Treasure 0 0 0 0 0 0 0 3 // Clerical Scroll With 2 Spells, Cloak of Displacement, Potion of Healing, Potion of Giant Strength
-	Combat
-	if CombatEnd == PartyFled: Goto FleeFromBasilisk
-	LibraryEventFlags |= ReptileBeaten
-	Exit
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Basilisk, count=1, icon=Basilisk)
+    Treasure(items=[ClericalScrollWith2Spells, CloakOfDisplacement, PotionOfHealing, PotionOfGiantStrength])
+    Combat()
+    if CombatEnd == PartyFled { goto FleeFromBasilisk }
+    LibraryEventFlags |= ReptileBeaten
+    exit
 
 BonesRoom:
-	if BonesRoomState == BonesShown: Goto BonesJar
-	also if BonesRoomState > BonesShown: Exit
-	PrintClear "YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK."
-	Gosub ShortPause
-	BonesRoomState = BonesShown
+    if BonesRoomState == BonesShown { goto BonesJar }
+    if BonesRoomState > BonesShown { exit }
+    Text("YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK.")
+    ShortPause()
+    BonesRoomState = BonesShown
 
-BonesJar:
-	Scratch3 = BooksFoundFlags & Jar
-	Gosub ExitUnlessSearchNew
-	BonesRoomState = JarFound
-	PrintClear "YOU SEE A JAR UNDER THE FLOORBOARDS."
-	Gosub TakeItMenu
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 5 // Potion Extra Healing, Potion Extra Healing, Potion Extra Healing
-	Combat
-	BooksFoundFlags |= Jar
-	Exit
+    BonesJar:
+    Scratch3 = BooksFoundFlags & Jar
+    ExitUnlessSearchNew()
+    BonesRoomState = JarFound
+    Text("YOU SEE A JAR UNDER THE FLOORBOARDS.")
+    TakeItMenu()
+    ClearMonsters()
+    Treasure(items=[PotionExtraHealing, PotionExtraHealing, PotionExtraHealing])
+    Combat()
+    BooksFoundFlags |= Jar
+    exit
 
 BenchChamber:
-	if BenchChamberSeen has Scratch1: Exit
-	PrintClear "YOU SEE A CHAMBER FILLED WITH ROTTED FURNITURE AND BENCHES."
-	BenchChamberSeen |= Scratch1
-	Exit
+    if BenchChamberSeen has Scratch1 { exit }
+    Text("YOU SEE A CHAMBER FILLED WITH ROTTED FURNITURE AND BENCHES.")
+    BenchChamberSeen |= Scratch1
+    exit
 
 FrescoRoom:
-	if FrescoRoomSeen != 0: Exit
-	PrintClear "YOU SEE AN EMPTY ROOM. THE ONLY FEATURE IS A SERIES OF FRESCOES ON THE WALLS OF LEARNED MEN AND THE HEAVENLY PATRONS OF ART AND LEARNING. YOU GET A FEELING OF PEACE."
-	FrescoRoomSeen = 1
-	Exit
+    if FrescoRoomSeen != 0 { exit }
+    Text("YOU SEE AN EMPTY ROOM. THE ONLY FEATURE IS A SERIES OF FRESCOES ON THE WALLS OF LEARNED MEN AND THE HEAVENLY PATRONS OF ART AND LEARNING. YOU GET A FEELING OF PEACE.")
+    FrescoRoomSeen = 1
+    exit
 
 WritingHall:
-	if WritingHallSeen != 0: Exit
-	PrintClear "YOU ENTER A HALL WHICH IS FILLED WITH ROWS OF WRITING TABLES AND HIGH STOOLS. ROTTED MOUNDS OF PARCHMENT LITTER THE FLOOR."
-	WritingHallSeen = 1
-	Exit
+    if WritingHallSeen != 0 { exit }
+    Text("YOU ENTER A HALL WHICH IS FILLED WITH ROWS OF WRITING TABLES AND HIGH STOOLS. ROTTED MOUNDS OF PARCHMENT LITTER THE FLOOR.")
+    WritingHallSeen = 1
+    exit
 
 MadFighter:
-	if LibraryEventFlags has MadFighterGone+FighterJoined: Exit
-	SetupMonster ArmoredFighter distance=0 closeup=MadMan
-	PrintClear "YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'"
+    if LibraryEventFlags has MadFighterGone|FighterJoined { exit }
+    SetupMonster(ArmoredFighter, distance=0, closeup=MadMan)
+    Text("YOU FIND A FIGHTER WITH BATTERED ARMOR AND WILD EYES COWERING IN THE CORNER. 'YAI! MERCY! MERCY!' HE CRIES. AND THEN AS SUDDENLY, 'DIE! DIE YOU SLIME FROM THE PIT!'")
 
 MadFighterMenu:
-	alias Choice = Scratch10
-	Choice = Menu "COMBAT" "WAIT" "FLEE" "PARLAY" "IGNORE"
-	PrintClear " "
-	OnGoto Choice MadFighterFight MadFighterWait FleeFromMadman MadFighterParlay
-	PrintClear "WATCHING YOU WARILY, HE INCHES AWAY. WHEN HE IS OUT OF SWORD'S REACH HE SCRAMBLES TO HIS FEET AND FLEES THE ROOM."
-	Gosub ShortPause
-	Gosub ShortPause
-	LibraryEventFlags |= MadFighterGone
-	Goto RedrawExit
+    Scratch10 = Menu("COMBAT", "WAIT", "FLEE", "PARLAY", "IGNORE")
+    Text(" ")
+    goto [MadFighterFight, MadFighterWait, FleeFromMadman, MadFighterParlay][Scratch10]
+    Text("WATCHING YOU WARILY, HE INCHES AWAY. WHEN HE IS OUT OF SWORD'S REACH HE SCRAMBLES TO HIS FEET AND FLEES THE ROOM.")
+    ShortPause()
+    ShortPause()
+    LibraryEventFlags |= MadFighterGone
+    goto RedrawExit
 
 MadFighterWait:
-	Gosub MadmanRaves
-	Goto MadFighterMenu
+    MadmanRaves()
+    goto MadFighterMenu
 
 FleeFromMadman:
-	Scratch10 = 2
-	Goto FleeBack
+    Scratch10 = 2
+    goto FleeBack
 
 MadFighterParlay:
-	Scratch10 = Parlay 0 1 2 3 4
-	PrintClear " "
-	OnGoto Scratch10 MadFighterWait MadFighterWait InviteMadman MadFighterWait MadFighterFight
+    Scratch10 = Parlay(0, 1, 2, 3, 4)
+    Text(" ")
+    goto [MadFighterWait, MadFighterWait, InviteMadman, MadFighterWait, MadFighterFight][Scratch10]
 
 InviteMadman:
-	Gosub MadmanRaves
-	if PartyCount == 8: Goto MadFighterMenu
-	PrintClear "YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?"
-	if Ask YesNoMenu == "NO": Goto MadFighterMenu
-	PrintClear "HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?"
-	if Ask YesNoMenu == "NO": Goto MadFighterParlay
-	PrintClear "HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU."
-	LibraryEventFlags |= FighterJoined
-	AddNPC MadMan 0
-	Goto RedrawExit
+    MadmanRaves()
+    if PartyCount == 8 { goto MadFighterMenu }
+    Text("YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?")
+    if YesNoMenu() == "NO" { goto MadFighterMenu }
+    Text("HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?")
+    if YesNoMenu() == "NO" { goto MadFighterParlay }
+    Text("HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU.")
+    LibraryEventFlags |= FighterJoined
+    AddNPC(MadMan, 0)
+    goto RedrawExit
 
-MadmanRaves:
-	PrintClear "THE MAN SCREAMS WHILE FROTHING AT THE MOUTH, "
-	Scratch9 = Random 3
-	OnGosub Scratch9 RaveFire RaveCastle RaveHill RaveNotHuman
-	Goto PressToContinue
+def MadmanRaves() {
+    Text("THE MAN SCREAMS WHILE FROTHING AT THE MOUTH, ")
+    Scratch9 = Random(3)
+    gosub [RaveFire, RaveCastle, RaveHill, RaveNotHuman][Scratch9]
+    goto PressToContinue
+}
 
-RaveFire:
-	Print "'HE IS WRAPPED IN FIRE AND SO CRUEL!'"
-	Return
+def RaveFire() {
+    Print("'HE IS WRAPPED IN FIRE AND SO CRUEL!'")
+    return
+}
 
-RaveCastle:
-	Print "'THE BIG ONE, THE EVIL ONE IN THE CASTLE OF FLOWERS -- HE IS COMING! IT IS COMING!'"
-	Return
+def RaveCastle() {
+    Print("'THE BIG ONE, THE EVIL ONE IN THE CASTLE OF FLOWERS -- HE IS COMING! IT IS COMING!'")
+    return
+}
 
-RaveHill:
-	Print "'DON'T GO THERE! DON'T GO ON THE HILL!'"
-	Return
+def RaveHill() {
+    Print("'DON'T GO THERE! DON'T GO ON THE HILL!'")
+    return
+}
 
-RaveNotHuman:
-	Print "'HE IS NOT HUMAN I TELL YOU! NOT AT ALL!'"
-	Return
+def RaveNotHuman() {
+    Print("'HE IS NOT HUMAN I TELL YOU! NOT AT ALL!'")
+    return
+}
 
 MadFighterFight:
-	Morale = 0
-	Surprise = NoSurprise
-	ClearMonsters
-	LoadMonster MadMan count=1 icon=Aides
-	Combat
-	if CombatEnd == PartyFled: Goto FleeFromMadman
-	LibraryEventFlags |= MadFighterGone
-	Exit
+    Morale = 0
+    Surprise = NoSurprise
+    ClearMonsters()
+    LoadMonster(MadMan, count=1, icon=Aides)
+    Combat()
+    if CombatEnd == PartyFled { goto FleeFromMadman }
+    LibraryEventFlags |= MadFighterGone
+    exit
 
 StudyRoom:
-	if StudySeen != 0: Exit
-	PrintClear "THIS ROOM WAS ONCE A STUDY. IT IS NOW A SHATTERED RUIN."
-	StudySeen = 1
-	Exit
+    if StudySeen != 0 { exit }
+    Text("THIS ROOM WAS ONCE A STUDY. IT IS NOW A SHATTERED RUIN.")
+    StudySeen = 1
+    exit
 
 TrashBook:
-	Scratch3 = BooksFoundFlags & TrashBookTaken
-	Gosub ExitUnlessSearchNew
-	PrintClear "BURIED AMID ALL THE TRASH YOU SEE A BOOK."
-	Gosub TakeItMenu
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 1 // Manual of Bodily Health
-	Combat
-	BooksFoundFlags |= TrashBookTaken
-	Exit
+    Scratch3 = BooksFoundFlags & TrashBookTaken
+    ExitUnlessSearchNew()
+    Text("BURIED AMID ALL THE TRASH YOU SEE A BOOK.")
+    TakeItMenu()
+    ClearMonsters()
+    Treasure(items=[ManualOfBodilyHealth])
+    Combat()
+    BooksFoundFlags |= TrashBookTaken
+    exit
 
 CarrelsRoom:
-	alias CarrelsSeenEntry = Scratch10
-	CarrelsSeenEntry = CarrelsSeen[Scratch1]
-	IfNe
-	Goto CarrelsFoil
-	PrintClear "YOU ARE IN THE ILLUMINATORS CARRELS. ALL THEIR EQUIPMENT HAS DECAYED AND LIES ROTTING ON THE FLOOR."
-	CarrelsSeen[Scratch1] = 1
+    Scratch10 = CarrelsSeen[Scratch1]
+    if (!=) { goto CarrelsFoil }
+    Text("YOU ARE IN THE ILLUMINATORS CARRELS. ALL THEIR EQUIPMENT HAS DECAYED AND LIES ROTTING ON THE FLOOR.")
+    CarrelsSeen[Scratch1] = 1
 
-CarrelsFoil:
-	alias CarrelFoilBit = Scratch2
-	CarrelFoilBit = CarrelFoilBitTable[Scratch1]
-	Scratch3 = LibraryEventFlags & CarrelFoilBit
-	Gosub ExitUnlessSearchNew
-	Scratch3 = Random 1
-	if Scratch3 != 0: Exit
-	PrintClear "AMID THE TRASH YOU FIND A BOX WHICH CONTAINS GOLD FOIL."
-	Gosub TakeItMenu
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 2 // 3 Sheet of Gold
-	Combat
-	LibraryEventFlags |= CarrelFoilBit
-	Exit
-
-CarrelFoilBitTable:
-	Data 4 8 16
+    CarrelsFoil:
+    Scratch2 = CarrelFoilBitTable[Scratch1]
+    Scratch3 = LibraryEventFlags & Scratch2
+    ExitUnlessSearchNew()
+    Scratch3 = Random(1)
+    if Scratch3 != 0 { exit }
+    Text("AMID THE TRASH YOU FIND A BOX WHICH CONTAINS GOLD FOIL.")
+    TakeItMenu()
+    ClearMonsters()
+    Treasure(items=[SheetOfGold*3])
+    Combat()
+    LibraryEventFlags |= Scratch2
+    exit
 
 SmallDeskRoom:
-	PrintClear "YOU ARE IN A SMALL ROOM HAVING LITTLE MORE THAN A BENCH AND A SMALL DESK."
-	Exit
+    Text("YOU ARE IN A SMALL ROOM HAVING LITTLE MORE THAN A BENCH AND A SMALL DESK.")
+    exit
 
 StoreroomEnter:
-	PrintClear ""
-	if StoreroomSeen != 0: Goto KoboldTable
-	PrintClear "YOU HAVE ENTERED A STOREROOM FULL OF SUPPLIES TOO OLD TO BE USEFUL.  "
-	StoreroomSeen = 1
+    Text("")
+    if StoreroomSeen != 0 { goto KoboldTable }
+    Text("YOU HAVE ENTERED A STOREROOM FULL OF SUPPLIES TOO OLD TO BE USEFUL.  ")
+    StoreroomSeen = 1
 
-KoboldTable:
-	if LibraryEventFlags has KoboldsDone: Exit
-	Print "LOOKING UP FROM A TABLE ARE FIVE KOBOLDS."
-	Gosub ShortPause
-	EncounterMenu Kobold distance=2 closeup=Kobold result=Scratch4 combat=Flee wait=Talk flee=Attack advance=Talk parlay=Talk near="THEY PLEAD FOR MERCY." mid="THEY STAND ARMS RAISED IN SURRENDER." far=" " escape=6 strength=6
-	PrintClear " "
-	OnGoto Scratch4 RedrawExit KoboldFight FleeFromKobolds KoboldsPlead
+    KoboldTable:
+    if LibraryEventFlags has KoboldsDone { exit }
+    Print("LOOKING UP FROM A TABLE ARE FIVE KOBOLDS.")
+    ShortPause()
+    EncounterMenu(Kobold, distance=2, closeup=Kobold, result=Scratch4, combat=Flee, wait=Talk, flee=Attack,
+        advance=Talk, parlay=Talk, near="THEY PLEAD FOR MERCY.",
+        mid="THEY STAND ARMS RAISED IN SURRENDER.", far=" ", escape=6, strength=6)
+    Text(" ")
+    goto [RedrawExit, KoboldFight, FleeFromKobolds, KoboldsPlead][Scratch4]
 
 FleeFromKobolds:
-	Scratch10 = 3
-	Goto FleeBack
+    Scratch10 = 3
+    goto FleeBack
 
 KoboldsPlead:
-	PrintClear "ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?"
-	if Ask YesNoMenu == "NO": Goto KoboldFight
-	PrintClear "THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10."
-	LibraryEventFlags |= KoboldsDone
-	Gosub PressToContinue
-	Goto RedrawExit
+    Text("ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?")
+    if YesNoMenu() == "NO" { goto KoboldFight }
+    Text("THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10.")
+    LibraryEventFlags |= KoboldsDone
+    PressToContinue()
+    goto RedrawExit
 
 KoboldFight:
-	Morale = 10
-	Surprise = NoSurprise
-	ClearMonsters
-	LoadMonster Kobold0 count=5 icon=Kobold
-	Combat
-	if CombatEnd == PartyFled: Goto FleeFromKobolds
-	LibraryEventFlags |= KoboldsDone
-	Exit
+    Morale = 10
+    Surprise = NoSurprise
+    ClearMonsters()
+    LoadMonster(Kobold0, count=5, icon=Kobold)
+    Combat()
+    if CombatEnd == PartyFled { goto FleeFromKobolds }
+    LibraryEventFlags |= KoboldsDone
+    exit
+
+# tables
+DestX = [7, 5, 9, 9]
+DestY = [9, 5, 9, 11]
+DestFacing = [1, 2, 0, 0]
+Table9B07 = [2, 0]
+ByFacing9B09 = [29, 0, 0, 2]
+SymbolSets = [8, 0, 0, 4]
+Table9B5B = [11, 12, 0, 0, 0, 0, 2, 2, 1, 3, 4, 5, 6, 7, 8, 8, 8, 9, 10]
+Table9B6E = [0, 0, 0, 1, 2, 3, 1, 2, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]
+CarrelFoilBitTable = [4, 8, 16]

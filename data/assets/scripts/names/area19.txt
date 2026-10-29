@@ -1,1 +1,1 @@
-4A87 DragonCaveFlags  # bits: 128 entered/attacked dragon, 1 dragon spoke and left, 2 Diogenes told of efreet bottle
+4A87 DragonTalkFlags  # bits: 1 the dragon spoke and flew off, 2 Diogenes told of the efreet bottle, 128 the dragon attacked (fireball); area25 uses the same word for its lair fights (DragonCaveFlags)

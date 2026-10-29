@@ -1,421 +1,428 @@
-YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
+def YesNoMenu() {
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
+}
 
-PressToContinue:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR RETURN TO CONTINUE"
-	PrintClear " "
-	Return
+def PressToContinue() {
+    Scratch9 = Menu("PRESS BUTTON OR RETURN TO CONTINUE")
+    Text(" ")
+    return
+}
 
-SetSky:
-	SkyInside = 9
-	Sky = 8
-	Return
+def SetSky() {
+    SkyInside = 9
+    Sky = 8
+    return
+}
 
-event0:
-	Gosub SetSky
-	Scratch2 = Cell & 127
+on move {
+    SetSky()
+    Scratch2 = Cell & ~Inside
+    for Scratch1 = 0 while Scratch1 < 8 {
+        Scratch3 = Table99D8[Scratch1]
+        Scratch4 = Table99E0[Scratch1]
+        if Scratch2 == Scratch3 and Scratch4 == Facing { goto StairsDispatch }
+    }
+    exit
 
-StairsScanLoop:
-	for Scratch1 = 0 to 7
-		Scratch3 = Table99D8[Scratch1]
-		Scratch4 = Table99E0[Scratch1]
-		if Scratch2 == Scratch3 && Scratch4 == Facing: Goto StairsDispatch
-	next
-	Exit
+    StairsDispatch:
+    Scratch3 = Table99E8[Scratch1]
+    goto [StairsDown, StairsUp, HoldAtSecretDoor][Scratch3]
+    exit # the original runs on into data at 99D8
+}
 
-StairsDispatch:
-	Scratch3 = Table99E8[Scratch1]
-	OnGoto Scratch3 StairsDown StairsUp HoldAtSecretDoor
-	Exit // extra: the original runs on into data at 99D8
+on step {
+    Scratch1 = Cell & ~Inside
+    goto [RedrawExit, SecretDoorCheck, RedrawExit, RedrawExit, TrapDoorRoom, StatueRoom, BenchRoom,
+        MerchantRoom, AudienceHall, RedrawExit, GenheerisLeaves][Scratch1]
+} # falls into event2
 
-Table99D8:
-	Data 1 1 2 3 5 8 9 1
+on camp {
+    RestEvery = 0
+    RestChance = 10
+} # falls into event3
 
-Table99E0:
-	Data 3 1 0 2 3 0 2 0
+on rest {
+    exit
+}
 
-Table99E8:
-	Data 0 0 1 0 1 1 0 2
-
-event1:
-	Scratch1 = Cell & 127
-	OnGoto Scratch1 RedrawExit SecretDoorCheck RedrawExit RedrawExit TrapDoorRoom StatueRoom BenchRoom MerchantRoom AudienceHall RedrawExit GenheerisLeaves
-
-event2:
-	RestEvery = 0
-	RestChance = 10
-
-event3:
-	Exit
-
-event4:
-	Gosub SetSky
-	NoCoords = 1
-	if TyranthraxusDefeated == 1: Goto LeaveCastle
-	if AreaKind == 7: Exit
-	LoadMap 7 unused=2 icons=255
-	Exit
+on load {
+    SetSky()
+    NoCoords = 1
+    if TyranthraxusDefeated == 1 { goto LeaveCastle }
+    if AreaKind == ValjevoCastle7 { exit }
+    LoadMap(7, unused=2, icons=255)
+    exit
+}
 
 StairsDown:
-	PrintClear "DO YOU WANT TO GO DOWN THESE STAIRS?"
-	Goto TakeStairsMenu
+    Text("DO YOU WANT TO GO DOWN THESE STAIRS?")
+    goto TakeStairsMenu
 
 StairsUp:
-	PrintClear "DO YOU WANT TO GO UP THESE STAIRS?"
+    Text("DO YOU WANT TO GO UP THESE STAIRS?")
 
 TakeStairsMenu:
-	HoldMove = SkipMove
-	if Ask YesNoMenu == "NO": Exit
-	PartyX = DestX[Scratch1]
-	PartyY = DestY[Scratch1]
-	if Scratch1 == 0: Goto DescendToArea5
+    HoldMove = SkipMove
+    if YesNoMenu() == "NO" { exit }
+    PartyX = DestX[Scratch1]
+    PartyY = DestY[Scratch1]
+    if Scratch1 == 0 { goto DescendToArea5 }
 
 RedrawExit:
-	RedrawView
-	Call CallRedraw
-	Exit
+    RedrawView()
+    CallRedraw()
+    exit
 
 DescendToArea5:
-	LoadMap 3 unused=2 icons=255
-	NewECL ValjevoGrounds
-
-DestX:
-	Data 13 11 5 5 5 3 3
-
-DestY:
-	Data 15 7 4 6 7 6 8
+    LoadMap(3, unused=2, icons=255)
+    NewECL(ValjevoGrounds)
 
 HoldAtSecretDoor:
-	if SearchTowerFlags lacks SecretDoor: HoldMove = SkipMove
-	Exit
+    if SearchTowerFlags lacks SecretDoor { HoldMove = SkipMove }
+    exit
 
 SecretDoorCheck:
-	if SearchTowerFlags has SecretDoor: Goto SecretDoorFound
-	Scratch9 = 0
+    if SearchTowerFlags has SecretDoor { goto SecretDoorFound }
+    Scratch9 = 0
 
 SecretDoorRoll:
-	SelectMember Scratch10
-	if SelStatus == Died: Goto SecretDoorNextMember
-	Scratch9 = 1
-	if Search == 0: Scratch9 -= 1
-	if SelRace == Elf: Scratch9 += 1
-	if SelRace == HalfElf: Scratch9 += 1
-	Scratch8 = Random 5
-	if Scratch8 <= Scratch9: Goto SecretDoorFound
+    SelectMember(Scratch10)
+    if SelStatus == Died { goto SecretDoorNextMember }
+    Scratch9 = 1
+    if Search == NotSearching { Scratch9 -= 1 }
+    if SelRace == Elf { Scratch9 += 1 }
+    if SelRace == HalfElf { Scratch9 += 1 }
+    Scratch8 = Random(5)
+    if Scratch8 <= Scratch9 { goto SecretDoorFound }
 
-SecretDoorNextMember:
-	Scratch10 = Scratch10 + 1
-	if Scratch10 < 8: Goto SecretDoorRoll
-	Exit
+    SecretDoorNextMember:
+    Scratch10 = Scratch10 + 1
+    if Scratch10 < 8 { goto SecretDoorRoll }
+    exit
 
 SecretDoorFound:
-	SearchTowerFlags |= SecretDoor
-	PrintClear "A SECRET DOOR IS FOUND "
-	OnGosub Facing DirFront DirLeft DirBehind DirRight
-	Gosub PressToContinue
-	Exit
+    SearchTowerFlags |= SecretDoor
+    Text("A SECRET DOOR IS FOUND ")
+    gosub [DirFront, DirLeft, DirBehind, DirRight][Facing]
+    PressToContinue()
+    exit
 
-DirFront:
-	Print "IN FRONT OF YOU."
-	Return
+def DirFront() {
+    Print("IN FRONT OF YOU.")
+    return
+}
 
-DirLeft:
-	Print "TO YOUR LEFT."
-	Return
+def DirLeft() {
+    Print("TO YOUR LEFT.")
+    return
+}
 
-DirBehind:
-	Print "BEHIND YOU."
-	Return
+def DirBehind() {
+    Print("BEHIND YOU.")
+    return
+}
 
-DirRight:
-	Print "TO YOUR RIGHT."
-	Return
+def DirRight() {
+    Print("TO YOUR RIGHT.")
+    return
+}
 
 TrapDoorRoom:
-	PrintClear "YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?"
-	if Ask YesNoMenu == "NO": Exit
+    Text("YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?")
+    if YesNoMenu() == "NO" { exit }
 
-ChooseOpener:
-	Who "WHO WILL OPEN IT?"
-	if SelStatus != Okay: Goto ChooseOpener
-	if SearchTowerFlags has MedusaKilled: Goto SawStatues
-	Scratch10 = Random 19
-	Scratch10 += 1
-	if Scratch10 >= SelSaveVsPetrify: Goto OpenerPetrified
+    ChooseOpener:
+    Who("WHO WILL OPEN IT?")
+    if SelStatus != Okay { goto ChooseOpener }
+    if SearchTowerFlags has MedusaKilled { goto SawStatues }
+    Scratch10 = Random(19)
+    Scratch10 += 1
+    if Scratch10 >= SelSaveVsPetrify { goto OpenerPetrified }
 
-SawStatues:
-	PrintClear "QUICKLY LOOKING AWAY, "
-	Print $SelName
-	Print " SAYS, 'I SAW BROKEN REMAINS OF STATUES... HEADS WITH FACES FULL OF TERROR."
-	Goto JumpTrapDoor
+    SawStatues:
+    Text("QUICKLY LOOKING AWAY, ")
+    Print($SelName)
+    Print(" SAYS, 'I SAW BROKEN REMAINS OF STATUES... HEADS WITH FACES FULL OF TERROR.")
+    goto JumpTrapDoor
 
-OpenerPetrified:
-	SelStatus = Stoned
-	Scratch1 = SelPartyIndex + 128
-	PrintClear "WITH A SCREAM OF HORROR "
-	Print $SelName
-	Print " TURNS TO STONE."
-	SelectMember Scratch1
+    OpenerPetrified:
+    SelStatus = Stoned
+    Scratch1 = SelPartyIndex + 128
+    Text("WITH A SCREAM OF HORROR ")
+    Print($SelName)
+    Print(" TURNS TO STONE.")
+    SelectMember(Scratch1)
 
-JumpTrapDoor:
-	Print " DO YOU WANT TO JUMP THROUGH THE TRAP DOOR?"
-	if Ask YesNoMenu == "NO": Exit
-	PrintClear "THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR..."
-	Gosub PressToContinue
-	Damage 224 3 6 0 0
-	PartyX = 11
-	PartyY = 5
-	Call CallRedraw
+    JumpTrapDoor:
+    Print(" DO YOU WANT TO JUMP THROUGH THE TRAP DOOR?")
+    if YesNoMenu() == "NO" { exit }
+    Text("THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR...")
+    PressToContinue()
+    Damage(224, 3, 6, 0, 0)
+    PartyX = 11
+    PartyY = 5
+    CallRedraw()
 
 StatueRoom:
-	if StatueRoomSeen != 0: Goto MedusaMenu
-	PrintClear "YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR."
-	Gosub PressToContinue
-	StatueRoomSeen = 1
+    if StatueRoomSeen != 0 { goto MedusaMenu }
+    Text("YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR.")
+    PressToContinue()
+    StatueRoomSeen = 1
 
-MedusaMenu:
-	if SearchTowerFlags has MedusaKilled: Exit
-	EncounterMenu Blank distance=1 closeup=Blank result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="A MEDUSA COMES RUNNING TOWARD YOU." escape=9 strength=9
-	OnGoto Scratch10 RedrawExit MedusaFight RetreatFromMedusa
+    MedusaMenu:
+    if SearchTowerFlags has MedusaKilled { exit }
+    EncounterMenu(Blank, distance=1, closeup=Blank, result=Scratch10, combat=Attack, wait=3, flee=Attack,
+        advance=3, parlay=Attack, near="A MEDUSA COMES RUNNING TOWARD YOU.", escape=9, strength=9)
+    goto [RedrawExit, MedusaFight, RetreatFromMedusa][Scratch10]
 
 MedusaFight:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster Medusa count=1 icon=Medusa
-	Combat
-	if CombatEnd == PartyFled: Goto RetreatFromMedusa
-	SearchTowerFlags |= MedusaKilled
-	Exit
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Medusa, count=1, icon=Medusa)
+    Combat()
+    if CombatEnd == PartyFled { goto RetreatFromMedusa }
+    SearchTowerFlags |= MedusaKilled
+    exit
 
 RetreatFromMedusa:
-	PartyX = 5
-	PartyY = 7
-	Facing = West
-	Goto RedrawExit
+    PartyX = 5
+    PartyY = 7
+    Facing = West
+    goto RedrawExit
 
 BenchRoom:
-	if BenchRoomSeen != 0: Goto MessengerThief
-	PrintClear "YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES."
-	BenchRoomSeen = 1
+    if BenchRoomSeen != 0 { goto MessengerThief }
+    Text("YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES.")
+    BenchRoomSeen = 1
 
-MessengerThief:
-	if GenheerisFlags has DragonDone: Exit
-	if SearchTowerFlags has MessengerKilled+MessengerLeft: Exit
-	Print " WAITING HERE IS A MAN PLAYING WITH A DAGGER."
-	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto ThiefAttacks
-	Print " AS YOU COME IN HE NODS AT YOU."
-	Gosub PressToContinue
-	Portrait = ShortBeard
-	EncounterMenu Swordsman11 distance=2 body=RogueDagger result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Mirror near="HE STARES MOODILY AT HIS FEET." escape=12 strength=12
-	Portrait = None
-	OnGoto Scratch10 RedrawExit ThiefFight RetreatFromThief
-	Scratch10 = Parlay 1 1 1 1 0
-	OnGoto Scratch10 ThiefFight
-	PrintClear "'HEY LOOK, COULD YOU KEEP QUIET? I JUST GOT BACK FROM THE NORTH AND I'M TIRED. OKAY?' A MOMENT LATER A VOICE FROM CALLS FROM THE OTHER DOORWAY, 'MESSENGER!'"
-	Gosub PressToContinue
-	SearchTowerFlags |= MessengerLeft
-	PrintClear "THE MAN GETS UP WITH A SIGH AND GOES INTO THE OFFICE. A MINUTE LATER HE COMES OUT PUTTING PAPERS INTO A POUCH AND GOES OUT THE DOOR. THE VOICE CALLS, 'MESSENGER!'"
-	Goto RedrawExit
+    MessengerThief:
+    if GenheerisFlags has DragonDone { exit }
+    if SearchTowerFlags has MessengerKilled|MessengerLeft { exit }
+    Print(" WAITING HERE IS A MAN PLAYING WITH A DAGGER.")
+    if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto ThiefAttacks }
+    Print(" AS YOU COME IN HE NODS AT YOU.")
+    PressToContinue()
+    Portrait = ShortBeard
+    EncounterMenu(Swordsman11, distance=2, body=RogueDagger, result=Scratch10, combat=Attack, wait=Mirror,
+        flee=Mirror, advance=Mirror, parlay=Mirror, near="HE STARES MOODILY AT HIS FEET.", escape=12,
+        strength=12)
+    Portrait = None
+    goto [RedrawExit, ThiefFight, RetreatFromThief][Scratch10]
+    Scratch10 = Parlay(1, 1, 1, 1, 0)
+    goto [ThiefFight][Scratch10]
+    Text("'HEY LOOK, COULD YOU KEEP QUIET? I JUST GOT BACK FROM THE NORTH AND I'M TIRED. OKAY?' A MOMENT LATER A VOICE FROM CALLS FROM THE OTHER DOORWAY, 'MESSENGER!'")
+    PressToContinue()
+    SearchTowerFlags |= MessengerLeft
+    Text("THE MAN GETS UP WITH A SIGH AND GOES INTO THE OFFICE. A MINUTE LATER HE COMES OUT PUTTING PAPERS INTO A POUCH AND GOES OUT THE DOOR. THE VOICE CALLS, 'MESSENGER!'")
+    goto RedrawExit
 
 RetreatFromThief:
-	PartyX = 3
-	PartyY = 6
-	Facing = East
-	Goto RedrawExit
+    PartyX = 3
+    PartyY = 6
+    Facing = East
+    goto RedrawExit
 
 ThiefAttacks:
-	PrintClear "THE THIEF SHOUTS 'BLASPHEMERS!' AND ATTACKS."
-	Delay
+    Text("THE THIEF SHOUTS 'BLASPHEMERS!' AND ATTACKS.")
+    Delay()
 
 ThiefFight:
-	Morale = 100
-	Surprise = NoSurprise
-	ClearMonsters
-	LoadMonster StLvlThief count=1 icon=12
-	Combat
-	if CombatEnd == PartyFled: Goto RetreatFromThief
-	SearchTowerFlags |= MessengerKilled
-	Exit
+    Morale = 100
+    Surprise = NoSurprise
+    ClearMonsters()
+    LoadMonster(StLvlThief, count=1, icon=12)
+    Combat()
+    if CombatEnd == PartyFled { goto RetreatFromThief }
+    SearchTowerFlags |= MessengerKilled
+    exit
 
 MerchantRoom:
-	if MerchantRoomSeen != 0: Goto GenheerisAtDesk
-	PrintClear "YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT."
-	MerchantRoomSeen = 1
+    if MerchantRoomSeen != 0 { goto GenheerisAtDesk }
+    Text("YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT.")
+    MerchantRoomSeen = 1
 
-GenheerisAtDesk:
-	if GenheerisFlags has DragonDone: Exit
-	if GenheerisFlags has GenheerisJoined+GenheerisLeft: Exit
-	Print " A MIDDLE AGED MAN IN ROBES LOOKS UP FROM A DESK."
-	Gosub PressToContinue
-	if SearchTowerFlags has MessengerKilled: Goto GenheerisOffer
-	Portrait = GreyBeard
-	EncounterMenu Mage distance=1 body=MerchantCoat result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="'SO WHAT MESSAGE FROM TYRANTHRAXUS REQUIRES ALL OF YOU TO DELIVER IT?'" escape=0 strength=0
-	Portrait = None
-	OnGoto Scratch10 RedrawExit GenheerisOffer RetreatFromThief
-	Scratch10 = Parlay 0 0 1 1 0
-	OnGoto Scratch10 GenheerisOffer
-	PrintClear "'TELL AL-HYAM DHAZID TO EXECUTE PHASE 2 OF PLAN A. DISMISSED.'"
-	Scratch10 = Menu "LEAVE" "STAY"
-	OnGoto Scratch10 RetreatFromGenheeris
+    GenheerisAtDesk:
+    if GenheerisFlags has DragonDone { exit }
+    if GenheerisFlags has GenheerisJoined|GenheerisLeft { exit }
+    Print(" A MIDDLE AGED MAN IN ROBES LOOKS UP FROM A DESK.")
+    PressToContinue()
+    if SearchTowerFlags has MessengerKilled { goto GenheerisOffer }
+    Portrait = GreyBeard
+    EncounterMenu(Mage, distance=1, body=MerchantCoat, result=Scratch10, combat=Attack, wait=Talk, flee=Mirror,
+        advance=Talk, parlay=Talk,
+        near="'SO WHAT MESSAGE FROM TYRANTHRAXUS REQUIRES ALL OF YOU TO DELIVER IT?'", escape=0,
+        strength=0)
+    Portrait = None
+    goto [RedrawExit, GenheerisOffer, RetreatFromThief][Scratch10]
+    Scratch10 = Parlay(0, 0, 1, 1, 0)
+    goto [GenheerisOffer][Scratch10]
+    Text("'TELL AL-HYAM DHAZID TO EXECUTE PHASE 2 OF PLAN A. DISMISSED.'")
+    Scratch10 = Menu("LEAVE", "STAY")
+    goto [RetreatFromGenheeris][Scratch10]
 
 GenheerisOffer:
-	Portrait = GreyBeard
-	SetupMonster Mage distance=0 body=MerchantCoat
-	PrintClear "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
-	Gosub PressToContinue
-	if PartyCount == 8: Goto GenheerisDeal
-	PrintClear "'IN FACT I WILL JOIN YOU. IS IT A DEAL?'"
-	Gosub YesNoMenu
-	Portrait = None
-	IfNe
-	Goto GenheerisFight
-	PrintClear "GOOD."
-	AddNPC Genheeris 100
-	GenheerisFlags |= GenheerisJoined
-	Goto RedrawExit
+    Portrait = GreyBeard
+    SetupMonster(Mage, distance=0, body=MerchantCoat)
+    Text("A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'")
+    PressToContinue()
+    if PartyCount == 8 { goto GenheerisDeal }
+    Text("'IN FACT I WILL JOIN YOU. IS IT A DEAL?'")
+    YesNoMenu()
+    Portrait = None
+    if Scratch10 != 0 { goto GenheerisFight }
+    Text("GOOD.")
+    AddNPC(Genheeris, 100)
+    GenheerisFlags |= GenheerisJoined
+    goto RedrawExit
 
-GenheerisDeal:
-	PrintClear "'IS IT A DEAL?"
-	Gosub YesNoMenu
-	Portrait = None
-	IfNe
-	Goto GenheerisFight
-	GenheerisFlags |= GenheerisLeft
-	PrintClear "'GOOD. I WILL NOTIFY SOME OTHERS. YOU GO KILL HIM.' HE QUICKLY GETS UP AND LEAVES THE ROOM."
-	Goto RedrawExit
+    GenheerisDeal:
+    Text("'IS IT A DEAL?")
+    YesNoMenu()
+    Portrait = None
+    if Scratch10 != 0 { goto GenheerisFight }
+    GenheerisFlags |= GenheerisLeft
+    Text("'GOOD. I WILL NOTIFY SOME OTHERS. YOU GO KILL HIM.' HE QUICKLY GETS UP AND LEAVES THE ROOM.")
+    goto RedrawExit
 
-GenheerisFight:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster Genheeris count=1 icon=14
-	Combat
-	GenheerisFlags |= GenheerisLeft
-	if CombatEnd != PartyFled: Exit
+    GenheerisFight:
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Genheeris, count=1, icon=14)
+    Combat()
+    GenheerisFlags |= GenheerisLeft
+    if CombatEnd != PartyFled { exit }
 
 RetreatFromGenheeris:
-	PartyX = 2
-	PartyY = 6
-	Facing = South
-	Goto RedrawExit
+    PartyX = 2
+    PartyY = 6
+    Facing = South
+    goto RedrawExit
 
 GenheerisLeaves:
-	if GenheerisFlags lacks GenheerisJoined: Exit
-	GenheerisFlags &= ~GenheerisJoined+GenheerisLeft
-	GenheerisFlags |= GenheerisLeft
-	AuxCounter = 0
+    if GenheerisFlags lacks GenheerisJoined { exit }
+    GenheerisFlags &= ~(GenheerisJoined|GenheerisLeft)
+    GenheerisFlags |= GenheerisLeft
+    AuxCounter = 0
 
 FindGenheerisLoop:
-	SelectMember AuxCounter
-	if SelStatus != Okay: Goto FindGenheerisNext
-	if "GENHEERIS" != $SelName: Goto FindGenheerisNext
-	SelStatus = Died
-	SelName = 0
-	AuxCounter += 128
-	SelectMember AuxCounter
-	Exit
+    SelectMember(AuxCounter)
+    if SelStatus != Okay { goto FindGenheerisNext }
+    if "GENHEERIS" != $SelName { goto FindGenheerisNext }
+    SelStatus = Died
+    SelName = 0
+    AuxCounter += 128
+    SelectMember(AuxCounter)
+    exit
 
-FindGenheerisNext:
-	AuxCounter += 1
-	if AuxCounter < PartyCount: Goto FindGenheerisLoop
-	Exit
+    FindGenheerisNext:
+    AuxCounter += 1
+    if AuxCounter < PartyCount { goto FindGenheerisLoop }
+    exit
 
 AudienceHall:
-	if GenheerisFlags has AudienceHallSeen: Goto HallGuards
-	PrintClear "YOU ARE IN THE AUDIENCE HALL OF TYRANTHRAXUS, CONQUEROR OF PHLAN. THE CEILING HAS BEEN TORN AWAY LEAVING THE ENTIRE SECTION OF THE TOWER OPEN TO THE SKY."
-	Gosub PressToContinue
-	PrintClear "IN THE CENTER OF THE ROOM IS A GLOWING POOL. AN ANCIENT BRONZE DRAGON, SURROUNDED BY A FIERY AURA, RISES FROM WHERE IT WAS COILED NEARBY."
-	Gosub PressToContinue
-	Call CallRedraw
-	GenheerisFlags |= AudienceHallSeen
+    if GenheerisFlags has AudienceHallSeen { goto HallGuards }
+    Text("YOU ARE IN THE AUDIENCE HALL OF TYRANTHRAXUS, CONQUEROR OF PHLAN. THE CEILING HAS BEEN TORN AWAY LEAVING THE ENTIRE SECTION OF THE TOWER OPEN TO THE SKY.")
+    PressToContinue()
+    Text("IN THE CENTER OF THE ROOM IS A GLOWING POOL. AN ANCIENT BRONZE DRAGON, SURROUNDED BY A FIERY AURA, RISES FROM WHERE IT WAS COILED NEARBY.")
+    PressToContinue()
+    CallRedraw()
+    GenheerisFlags |= AudienceHallSeen
 
-HallGuards:
-	if GenheerisFlags has GuardsBeaten: Goto DragonOffer
-	Portrait = GoldCapBeard
-	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack near="TWO GUARDS MOVE TO BAR YOUR PATH. THE DRAGON LOOKS AT YOU WITH MALEVOLENCE. 'GUARDS, KILL THESE PESTS.'" escape=9 strength=9
-	Portrait = None
-	OnGoto Scratch10 RedrawExit GuardsFight
+    HallGuards:
+    if GenheerisFlags has GuardsBeaten { goto DragonOffer }
+    Portrait = GoldCapBeard
+    EncounterMenu(Fighter16, distance=0, body=PlateArmor, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack,
+        near="TWO GUARDS MOVE TO BAR YOUR PATH. THE DRAGON LOOKS AT YOU WITH MALEVOLENCE. 'GUARDS, KILL THESE PESTS.'",
+        escape=9, strength=9)
+    Portrait = None
+    goto [RedrawExit, GuardsFight][Scratch10]
 
 RetreatFromHall:
-	PartyX = 3
-	PartyY = 6
-	Facing = North
-	Goto RedrawExit
+    PartyX = 3
+    PartyY = 6
+    Facing = North
+    goto RedrawExit
 
 GuardsFight:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster ThLvlFighter85 count=12 icon=ThLvlFighter
-	Combat
-	if CombatEnd == PartyFled: Goto RetreatFromHall
-	GenheerisFlags |= GuardsBeaten
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(ThLvlFighter85, count=12, icon=ThLvlFighter)
+    Combat()
+    if CombatEnd == PartyFled { goto RetreatFromHall }
+    GenheerisFlags |= GuardsBeaten
 
 DragonOffer:
-	if GenheerisFlags has DragonDone: Goto RedrawExit
-	Picture BrownDragon
-	PrintClear "THE DRAGON LOOKS AT YOU WITH INTEREST. 'YOU ARE INDEED MIGHTY WARRIORS. EVEN SO, THERE IS NO HOPE OF YOUR SUCCESS. BUT YOU INTEREST ME.'"
-	Gosub PressToContinue
-	PrintClear "'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'"
-	Gosub PressToContinue
-	AuxCounter = 0
+    if GenheerisFlags has DragonDone { goto RedrawExit }
+    Picture(BrownDragon)
+    Text("THE DRAGON LOOKS AT YOU WITH INTEREST. 'YOU ARE INDEED MIGHTY WARRIORS. EVEN SO, THERE IS NO HOPE OF YOUR SUCCESS. BUT YOU INTEREST ME.'")
+    PressToContinue()
+    Text("'IF YOU JOIN ME I WILL MAKE YOU THE COMMANDERS OF THE ARMIES THAT WILL SWEEP THE MOONSEA. I CAN NOT BE DEFEATED, YOU KNOW. WILL YOU JOIN ME?'")
+    PressToContinue()
+    AuxCounter = 0
 
 VoteLoop:
-	alias Choice = Scratch10
-	SelectMember AuxCounter
-	if SelStatus != Okay: Goto VoteNext
-	if SelControl >= 128: Goto NpcVote
-	PrintClear $SelName
-	Print " HOW DO YOU VOTE?"
-	Choice = Menu "ATTACK" "JOIN TYRANTHRAXUS"
-	OnGoto Choice SaveVote
-	SelSide = MonsterSide
-	SelControl = NPCMember
-	Goto SaveVote
+    SelectMember(AuxCounter)
+    if SelStatus != Okay { goto VoteNext }
+    if SelControl >= 128 { goto NpcVote }
+    Text($SelName)
+    Print(" HOW DO YOU VOTE?")
+    Scratch10 = Menu("ATTACK", "JOIN TYRANTHRAXUS")
+    goto [SaveVote][Scratch10]
+    SelSide = MonsterSide
+    SelControl = NPCMember
+    goto SaveVote
 
-NpcVote:
-	if "GENHEERIS" == $SelName: Goto VoteNext
-	if SelAlignment == LawfulEvil: SelSide = MonsterSide
-	if SelAlignment == NeutralEvil: SelSide = MonsterSide
-	if SelAlignment == ChaoticEvil: SelSide = MonsterSide
+    NpcVote:
+    if "GENHEERIS" == $SelName { goto VoteNext }
+    if SelAlignment == LawfulEvil { SelSide = MonsterSide }
+    if SelAlignment == NeutralEvil { SelSide = MonsterSide }
+    if SelAlignment == ChaoticEvil { SelSide = MonsterSide }
 
 SaveVote:
-	Scratch1 = 128 + AuxCounter
-	SelectMember Scratch1
+    Scratch1 = 128 + AuxCounter
+    SelectMember(Scratch1)
 
 VoteNext:
-	AuxCounter += 1
-	if AuxCounter < PartyCount: Goto VoteLoop
-	EncounterParamA = 3
-	EncounterParamB = 9
-	MaxDist = 1
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster Tyranithraxus66 count=1 icon=Tyranithraxus
-	Combat
-	if CombatEnd == PartyFled: Goto RetreatFromHall
-	if QuestTyranthraxus != Rewarded: QuestTyranthraxus = RewardDue
-	TowerEndFlags = GenheerisFlags | DragonDone
-	TyranthraxusDefeated = 1
-	Program 8
+    AuxCounter += 1
+    if AuxCounter < PartyCount { goto VoteLoop }
+    EncounterParamA = 3
+    EncounterParamB = 9
+    MaxDist = 1
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Tyranithraxus66, count=1, icon=Tyranithraxus)
+    Combat()
+    if CombatEnd == PartyFled { goto RetreatFromHall }
+    if QuestTyranthraxus != Rewarded { QuestTyranthraxus = RewardDue }
+    TowerEndFlags = GenheerisFlags | DragonDone
+    TyranthraxusDefeated = 1
+    Program(8)
 
 LeaveCastle:
-	PrintClear "KNOWING THAT TYRANTHRAXUS HAS FINALLY BEEN DEFEATED, YOU LEAVE THE CASTLE. MOVING THROUGH THE STREETS YOU CATCH OCCASIONAL GLIMPSES OF MONSTERS IN HIDING. NONE ATTACK."
-	Gosub PressToContinue
-	PrintClear "FINALLY YOU ENTER THE CIVILIZED AREA OF PHLAN."
-	Delay
-	WallSplitA = 0
-	WallSplitB = 0
-	PartyX = 0
-	PartyY = 4
-	Facing = East
-	SymbolSet = 3
-	TyranthraxusDefeated = 0
-	NewECL NewPhlan
+    Text("KNOWING THAT TYRANTHRAXUS HAS FINALLY BEEN DEFEATED, YOU LEAVE THE CASTLE. MOVING THROUGH THE STREETS YOU CATCH OCCASIONAL GLIMPSES OF MONSTERS IN HIDING. NONE ATTACK.")
+    PressToContinue()
+    Text("FINALLY YOU ENTER THE CIVILIZED AREA OF PHLAN.")
+    Delay()
+    WallSplitA = 0
+    WallSplitB = 0
+    PartyX = 0
+    PartyY = 4
+    Facing = East
+    SymbolSet = 3
+    TyranthraxusDefeated = 0
+    NewECL(NewPhlan)
+
+# tables
+Table99D8 = [1, 1, 2, 3, 5, 8, 9, 1]
+Table99E0 = [3, 1, 0, 2, 3, 0, 2, 0]
+Table99E8 = [0, 0, 1, 0, 1, 1, 0, 2]
+DestX = [13, 11, 5, 5, 5, 3, 3]
+DestY = [15, 7, 4, 6, 7, 6, 8]

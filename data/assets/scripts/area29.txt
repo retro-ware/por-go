@@ -1,678 +1,677 @@
-event0:
-	alias ExitAreaByFacingEntry = Scratch10
-	Gosub UpdateSky
-	if LeftMap == 0: Goto CheckEntry
-	Call CallStepForward
-	HoldMove = SkipMove
-	SymbolSet = ExitSymbolSetByFacing[Facing]
-	ExitAreaByFacingEntry = ExitAreaByFacing[Facing]
-	NoCoords = 0
-	NewECL ExitAreaByFacingEntry
+on move {
+    UpdateSky()
+    if LeftMap == 0 { goto CheckEntry }
+    CallStepForward()
+    HoldMove = SkipMove
+    SymbolSet = ExitSymbolSetByFacing[Facing]
+    Scratch10 = ExitAreaByFacing[Facing]
+    NoCoords = 0
+    NewECL(Scratch10)
 
-CheckEntry:
-	Scratch10 = 127 & Cell
-	if Scratch10 != 1: Goto CheckSecretDoorBlock
-	GroundKind = Surface
-	Gosub UpdateSky
+    CheckEntry:
+    Scratch10 = ~Inside & Cell
+    if Scratch10 != 1 { goto CheckSecretDoorBlock }
+    GroundKind = Surface
+    UpdateSky()
 
-CheckSecretDoorBlock:
-	if SecretDoorFound == Completed: Goto CheckNailedDoor
-	if Scratch10 == 6 && Facing == North: HoldMove = SkipMove
-	if Scratch10 == 7 && Facing == South: HoldMove = SkipMove
+    CheckSecretDoorBlock:
+    if SecretDoorFound == Yes { goto CheckNailedDoor }
+    if Scratch10 == 6 and Facing == North { HoldMove = SkipMove }
+    if Scratch10 == 7 and Facing == South { HoldMove = SkipMove }
 
-CheckNailedDoor:
-	alias ExitCellByFacingEntry = Scratch9
-	if Scratch10 == 21 && Facing == South: Goto NailedDoor
-	ExitCellByFacingEntry = ExitCellByFacing[Facing]
-	if ExitCellByFacingEntry != Scratch10: Goto CheckWellAmbush
-	AuxMember = WildFlags & WellRungs
-	if 0 == AuxMember: Goto WellPlaza
-	GroundKind = ByTheWell
-	Gosub UpdateSky
+    CheckNailedDoor:
+    if Scratch10 == 21 and Facing == South { goto NailedDoor }
+    Scratch9 = ExitCellByFacing[Facing]
+    if Scratch9 != Scratch10 { goto CheckWellAmbush }
+    AuxMember = WildFlags & WellRungs
+    if AuxMember == 0 { goto WellPlaza }
+    GroundKind = ByTheWell
+    UpdateSky()
 
-CheckWellAmbush:
-	Gosub ExitIfWellCleared
-	Scratch2 = PartyX
-	Scratch4 = PartyY
-	Call CallStepForward
-	Call CallLookAhead
-	Scratch1 = Cell & 127
-	PartyX = Scratch2
-	PartyY = Scratch4
-	Call CallLookAhead
-	if Scratch1 != 3: Exit
-	Scratch4 = 1
-	Scratch2 = 1
-	Goto WaitingKobolds
+    CheckWellAmbush:
+    ExitIfWellCleared()
+    Scratch2 = PartyX
+    Scratch4 = PartyY
+    CallStepForward()
+    CallLookAhead()
+    Scratch1 = Cell & ~Inside
+    PartyX = Scratch2
+    PartyY = Scratch4
+    CallLookAhead()
+    if Scratch1 != 3 { exit }
+    Scratch4 = 1
+    Scratch2 = 1
+    goto WaitingKobolds
+}
 
-event1:
-	alias CellEvent = AuxCounter
-	EncounterMode = 0
-	PrintClear ""
-	Scratch10 = 127 & Cell
-	Scratch1 = 0
-	Scratch2 = 2
-	CellEvent = CellEventTable[Scratch10]
-	OnGoto CellEvent Done RandomEncounterRoll WellPlaza KutosWellEvent WellApproach PlazaWander SicklyKobolds LizardPatrol SeerWoman NorthWallDoor SouthWallDoor HiddenCatacombs CatacombSniper1 CatacombSniper2 BanditTreasure NorrisBandits
+on step {
+    L_9A23:
+    EncounterMode = 0
+    Text("")
+    Scratch10 = ~Inside & Cell
+    Scratch1 = 0
+    Scratch2 = 2
+    AuxCounter = CellEventTable[Scratch10]
+    goto [Done, RandomEncounterRoll, WellPlaza, KutosWellEvent, WellApproach, PlazaWander,
+        SicklyKobolds, LizardPatrol, SeerWoman, NorthWallDoor, SouthWallDoor, HiddenCatacombs,
+        CatacombSniper1, CatacombSniper2, BanditTreasure, NorrisBandits][AuxCounter]
+} # falls into KutosWellEvent
 
 KutosWellEvent:
-	if InWell != 0: Goto WellSecretDoor
-	if Scratch10 == 2: AuxEncChoice = 0
-	if Scratch10 == 5: AuxEncChoice = 2
-	if Scratch10 == 16: AuxEncChoice = 3
-	if Scratch10 == 17: AuxEncChoice = 1
-	if AuxEncChoice != Facing: Goto NearWell
-	PrintClear "BEFORE YOU LIES KUTO'S WELL.  IT IS A SOURCE OF WATER IN ALL SEASONS."
-	Goto ArrowRain
+    if InWell != 0 { goto WellSecretDoor }
+    if Scratch10 == 2 { AuxEncChoice = 0 }
+    if Scratch10 == 5 { AuxEncChoice = 2 }
+    if Scratch10 == 16 { AuxEncChoice = 3 }
+    if Scratch10 == 17 { AuxEncChoice = 1 }
+    if AuxEncChoice != Facing { goto NearWell }
+    Text("BEFORE YOU LIES KUTO'S WELL.  IT IS A SOURCE OF WATER IN ALL SEASONS.")
+    goto ArrowRain
 
-SaySouth:
-	Print "SOUTH"
-	Return
+def SaySouth() {
+    Print("SOUTH")
+    return
+}
 
-SayWest:
-	Print "WEST"
-	Return
+def SayWest() {
+    Print("WEST")
+    return
+}
 
-SayNorth:
-	Print "NORTH"
-	Return
+def SayNorth() {
+    Print("NORTH")
+    return
+}
 
-SayEast:
-	Print "EAST"
-	Return
+def SayEast() {
+    Print("EAST")
+    return
+}
 
 NearWell:
-	PrintClear "YOU ARE JUST "
-	OnGosub AuxEncChoice SaySouth SayWest SayNorth SayEast
-	Print " OF KUTO'S WELL."
+    Text("YOU ARE JUST ")
+    gosub [SaySouth, SayWest, SayNorth, SayEast][AuxEncChoice]
+    Print(" OF KUTO'S WELL.")
 
 ArrowRain:
-	Gosub ExitIfWellCleared
-	PartySurprise AuxMember AuxRoll
-	Surprise AuxMember AuxRoll 6 2
-	if Search != 1: Exit
-	Damage 9 1 6 0 41
-	PrintClear "A RAIN OF ARROWS POURS OVER YOU."
-	if Surprise != PartyIsSurprised: Goto MonstersAttack
-	Exit
+    ExitIfWellCleared()
+    PartySurprise(AuxMember, AuxRoll)
+    Surprise(AuxMember, AuxRoll, 6, 2)
+    if Search != Searching { exit }
+    Damage(9, 1, 6, 0, 41)
+    Text("A RAIN OF ARROWS POURS OVER YOU.")
+    if Surprise != PartyIsSurprised { goto MonstersAttack }
+    exit
 
 RandomEncounterRoll:
-	if InWell != 0: Exit
-	if EncounterCount > 10: Exit
-	if 0 != Scratch10: Exit
-	AuxSightText = Random 10
-	if Search == 1: AuxSightText += 2
-	if AuxSightText > 9: Goto CheckEncounterCount
-	Exit
+    if InWell != 0 { exit }
+    if EncounterCount > 10 { exit }
+    if 0 != Scratch10 { exit }
+    AuxSightText = Random(10)
+    if Search == Searching { AuxSightText += 2 }
+    if AuxSightText > 9 { goto CheckEncounterCount }
+    exit
 
-event2:
-	Call CallLookAhead
-	RestEvery = 0
-	RestChance = 100
-	if InWell != 1: Goto PlazaRest
-	if Cell == 16: Exit
-	if BanditsDone != Completed: RestEvery = 1
-	Exit
+on camp {
+    CallLookAhead()
+    RestEvery = 0
+    RestChance = 100
+    if InWell != DownTheWell { goto PlazaRest }
+    if Cell == 16 { exit }
+    if BanditsDone != Yes { RestEvery = 1 }
+    exit
 
-PlazaRest:
-	if EncounterCount >= 10: Exit
-	if Cell == 1: Exit
-	RestEvery = 12
-	RestChance = 12
-	Exit
+    PlazaRest:
+    if EncounterCount >= 10 { exit }
+    if Cell == 1 { exit }
+    RestEvery = 12
+    RestChance = 12
+    exit
+}
 
-event3:
-	if InWell != 0: Goto NorrisBandits
-	EncounterMode = 200
-	Surprise = NoSurprise
-	Goto RandomEncounter
+on rest {
+    if InWell != 0 { goto NorrisBandits }
+    EncounterMode = Forced
+    Surprise = NoSurprise
+    goto RandomEncounter
+}
 
-event4:
-	Gosub UpdateSky
-	NoCoords = 0
-	if 1 == InWell: Goto LoadWellFiles
-	LoadMap 29 unused=2 icons=255
-	LoadWalls 3 20 1
-	Exit
+on load {
+    UpdateSky()
+    NoCoords = 0
+    if DownTheWell == InWell { goto LoadWellFiles }
+    LoadMap(29, unused=2, icons=255)
+    LoadWalls(3, 20, 1)
+    exit
 
-LoadWellFiles:
-	LoadMap 32 unused=2 icons=255
-	LoadWalls 18 17 1
-	Exit
+    LoadWellFiles:
+    LoadMap(32, unused=2, icons=255)
+    LoadWalls(18, 17, 1)
+    exit
+}
 
 SouthWallDoor:
-	$AuxMonsterName = "SOUTH WALL."
-	Goto SearchSecretDoor
+    $AuxMonsterName = "SOUTH WALL."
+    goto SearchSecretDoor
 
 NorthWallDoor:
-	$AuxMonsterName = "NORTH WALL."
+    $AuxMonsterName = "NORTH WALL."
 
 SearchSecretDoor:
-	if SecretDoorFound == Completed: Goto SecretDoorSpotted
-	AuxMember = 0
+    if SecretDoorFound == Yes { goto SecretDoorSpotted }
+    AuxMember = 0
 
 SearchMemberLoop:
-	alias SecretDoorChanceByRaceEntry = AuxSearchCount
-	SelectMember AuxMember
-	if SelStatus != Okay: Goto NextSearcher
-	SecretDoorChanceByRaceEntry = SecretDoorChanceByRace[SelRace]
-	SecretDoorChanceByRaceEntry += Search
-	AuxRoll = Random 5
-	if SecretDoorChanceByRaceEntry > AuxRoll: Goto SecretDoorSpotted
+    SelectMember(AuxMember)
+    if SelStatus != Okay { goto NextSearcher }
+    AuxSearchCount = SecretDoorChanceByRace[SelRace]
+    AuxSearchCount += Search
+    AuxRoll = Random(5)
+    if AuxSearchCount > AuxRoll { goto SecretDoorSpotted }
 
-NextSearcher:
-	AuxMember += 1
-	if AuxMember < 8: Goto SearchMemberLoop
-	Exit
+    NextSearcher:
+    AuxMember += 1
+    if AuxMember < 8 { goto SearchMemberLoop }
+    exit
 
 SecretDoorSpotted:
-	PrintClear "YOU FIND A SECRET DOOR IN THE "
-	Print $AuxMonsterName
-	SecretDoorFound = Completed
-	Exit
+    Text("YOU FIND A SECRET DOOR IN THE ")
+    Print($AuxMonsterName)
+    SecretDoorFound = Yes
+    exit
 
 NorrisBandits:
-	if BanditsDone == Completed: Exit
-	Portrait = EyepatchHelmet
-	SetupMonster Fighter16 distance=2 body=LeatherHarness
-	Delay
-	Approach
-	Delay
-	Approach
-	PrintClear "YOU ARE SURROUNDED BY THE BANDIT BAND OF THE INFAMOUS NORRIS THE  GRAY.  'YOU DARE TO INVADE MY HALLS?', HE SNARLS. 'SURRENDER OR DIE!'"
-	Gosub PressToContinue
-	PrintClear "WHAT DO YOU DO?"
-	AuxMember = Menu "SURRENDER" "FIGHT"
-	Portrait = None
-	OnGoto AuxMember SurrenderToBandits
-	Morale = 70
-	ClearMonsters
-	LoadMonster NorrisTheGray count=1 icon=NorrisTheGray
-	LoadMonster Lizardman count=5 icon=Lizardman
-	LoadMonster KoboldLeader1 count=9 icon=KoboldLeader
-	Combat
-	if CombatEnd > PartyDied: Goto ReleasedAboveGround
-	BanditsDone = Completed
-	QuestBandits = RewardDue
-	PrintClear "ON THE LEADER'S BODY, YOU FIND A CURIOUS MESSAGE THAT YOU PLACE IN YOUR JOURNAL AS ENTRY 50."
-	Gosub PressToContinue
-	PrintClear "YOU HAVE DEFEATED THE DREADED BANDIT GANG AND RID PHLAN OF A GREAT EVIL.  THE HONEST SETTLERS WILL CHEER YOUR DEEDS!"
-	Gosub PressToContinue
-	PrintClear "YOU HAVE ALSO TAKEN POSSESSION OF A HIDEOUT IN WHICH YOU MAY REST UNDISTURBED FROM THE RIGORS OF YOUR QUESTING."
-	BanditTreasureState = TreasureWaits
-	AuxMember = 0
-	Gosub PauseLoop
-	Exit
+    if BanditsDone == Yes { exit }
+    Portrait = EyepatchHelmet
+    SetupMonster(Fighter16, distance=2, body=LeatherHarness)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Text("YOU ARE SURROUNDED BY THE BANDIT BAND OF THE INFAMOUS NORRIS THE  GRAY.  'YOU DARE TO INVADE MY HALLS?', HE SNARLS. 'SURRENDER OR DIE!'")
+    PressToContinue()
+    Text("WHAT DO YOU DO?")
+    AuxMember = Menu("SURRENDER", "FIGHT")
+    Portrait = None
+    goto [SurrenderToBandits][AuxMember]
+    Morale = 70
+    ClearMonsters()
+    LoadMonster(NorrisTheGray, count=1, icon=NorrisTheGray)
+    LoadMonster(Lizardman, count=5, icon=Lizardman)
+    LoadMonster(KoboldLeader1, count=9, icon=KoboldLeader)
+    Combat()
+    if CombatEnd > PartyDied { goto ReleasedAboveGround }
+    BanditsDone = Yes
+    QuestBandits = RewardDue
+    Text("ON THE LEADER'S BODY, YOU FIND A CURIOUS MESSAGE THAT YOU PLACE IN YOUR JOURNAL AS ENTRY 50.")
+    PressToContinue()
+    Text("YOU HAVE DEFEATED THE DREADED BANDIT GANG AND RID PHLAN OF A GREAT EVIL.  THE HONEST SETTLERS WILL CHEER YOUR DEEDS!")
+    PressToContinue()
+    Text("YOU HAVE ALSO TAKEN POSSESSION OF A HIDEOUT IN WHICH YOU MAY REST UNDISTURBED FROM THE RIGORS OF YOUR QUESTING.")
+    BanditTreasureState = TreasureWaits
+    AuxMember = 0
+    PauseLoop()
+    exit
 
 SurrenderToBandits:
-	RedrawView
-	PrintClear "YOU ARE STRIPPED OF ALL VALUABLES AND BLINDFOLDED.  THE BANDITS RELEASE YOU SOMEWHERE ABOVE GROUND."
-	Rob 1 100 100
-	BanditsDone = Completed
-	BanditTreasureState = TreasureGone
+    RedrawView()
+    Text("YOU ARE STRIPPED OF ALL VALUABLES AND BLINDFOLDED.  THE BANDITS RELEASE YOU SOMEWHERE ABOVE GROUND.")
+    Rob(1, 100, 100)
+    BanditsDone = Yes
+    BanditTreasureState = TreasureGone
 
 ReleasedAboveGround:
-	InWell = 0
-	GroundKind = Surface
-	Gosub UpdateSky
-	LoadMap 29 unused=2 icons=255
-	LoadWalls 3 20 1
-	Goto DropOff
+    InWell = 0
+    GroundKind = Surface
+    UpdateSky()
+    LoadMap(29, unused=2, icons=255)
+    LoadWalls(3, 20, 1)
+    goto DropOff
 
 BanditTreasure:
-	if BanditTreasureState != TreasureWaits: Exit
-	PrintClear "YOU HAVE FOUND THE BANDIT'S TREASURE.  DO YOU TAKE IT?"
-	Gosub YesOrExit
-	PrintClear "YOU GRAB THE LOOT."
-	ClearMonsters
-	Treasure 0 #08FC 0 92 0 20 0 255
-	Combat
-	BanditTreasureState = TreasureGone
-	Exit
+    if BanditTreasureState != TreasureWaits { exit }
+    Text("YOU HAVE FOUND THE BANDIT'S TREASURE.  DO YOU TAKE IT?")
+    YesOrExit()
+    Text("YOU GRAB THE LOOT.")
+    ClearMonsters()
+    Treasure(silver=2300, gold=92, gems=20)
+    Combat()
+    BanditTreasureState = TreasureGone
+    exit
 
 HiddenCatacombs:
-	GroundKind = Surface
-	Gosub UpdateSky
-	Call CallRedraw
-	if CatacombAmbushDone == Completed: Exit
-	PrintClear "YOU PASS INTO HIDDEN CATACOMBS. THIS LARGE ROOM IS DIMLY LIT BY SPUTTERING TORCHES. THROUGH THE SMOKE YOU SEE CURTAINS HUNG TO COVER DOORWAYS."
-	Gosub PressToContinue
-	if BanditsDone == Completed: Exit
-	if Facing == North: Goto ArrowVolley
-	SetupMonster Kobold distance=2 closeup=Kobold
-	AuxMember = 25
-	Gosub PauseLoop
+    GroundKind = Surface
+    UpdateSky()
+    CallRedraw()
+    if CatacombAmbushDone == Yes { exit }
+    Text("YOU PASS INTO HIDDEN CATACOMBS. THIS LARGE ROOM IS DIMLY LIT BY SPUTTERING TORCHES. THROUGH THE SMOKE YOU SEE CURTAINS HUNG TO COVER DOORWAYS.")
+    PressToContinue()
+    if BanditsDone == Yes { exit }
+    if Facing == North { goto ArrowVolley }
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    AuxMember = 25
+    PauseLoop()
 
-ArrowVolley:
-	PrintClear "SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP."
-	Delay
-	Damage 4 1 6 0 39
-	CatacombAmbushDone = Completed
-	Gosub PressToContinue
-	Goto Done
+    ArrowVolley:
+    Text("SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP.")
+    Delay()
+    Damage(4, 1, 6, 0, 39)
+    CatacombAmbushDone = Yes
+    PressToContinue()
+    goto Done
 
 CatacombSniper1:
-	if BanditsDone == Completed: Exit
-	if CatacombSpot1Done == Completed: Exit
-	if Facing == North: Gosub SniperArrow
-	IfNe
-	Gosub ShowSniper
-	CatacombSpot1Done = Completed
-	Exit
+    if BanditsDone == Yes { exit }
+    if CatacombSpot1Done == Yes { exit }
+    if Facing == North {
+        SniperArrow()
+    } else {
+        ShowSniper()
+    }
+    CatacombSpot1Done = Yes
+    exit
 
 CatacombSniper2:
-	if BanditsDone == Completed: Exit
-	if CatacombSpot2Done == Completed: Exit
-	if Facing == South: Gosub SniperArrow
-	IfNe
-	Gosub ShowSniper
-	CatacombSpot2Done = Completed
-	Exit
+    if BanditsDone == Yes { exit }
+    if CatacombSpot2Done == Yes { exit }
+    if Facing == South {
+        SniperArrow()
+    } else {
+        ShowSniper()
+    }
+    CatacombSpot2Done = Yes
+    exit
 
-ShowSniper:
-	SetupMonster Kobold distance=2 closeup=Kobold
+def ShowSniper() {
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+} # falls into SniperArrow
 
 SniperArrow:
-	Damage 1 1 6 0 39
-	PrintClear "THROUGH THE SMOKE AND DARKNESS, A DIMLY SEEN FIGURE FIRES AN ARROW INTO THE PARTY.  THE FIGURE FADES AWAY."
-	RedrawView
-	Call CallRedraw
-	Return
+    Damage(1, 1, 6, 0, 39)
+    Text("THROUGH THE SMOKE AND DARKNESS, A DIMLY SEEN FIGURE FIRES AN ARROW INTO THE PARTY.  THE FIGURE FADES AWAY.")
+    RedrawView()
+    CallRedraw()
+    return
 
 WellSecretDoor:
-	GroundKind = WellBottom
-	Gosub UpdateSky
-	Call CallRedraw
-	PrintClear "JUST ABOVE THE WATERLINE, A SECRET DOOR HAS BEEN LEFT AJAR IN THE SOUTH WALL OF THE WELL.  DO YOU WANT TO CLIMB UP THE RUNGS?"
-	Gosub YesOrExit
-	InWell = 0
-	PrintClear "YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL."
-	LoadMap 29 unused=255 icons=255
-	LoadWalls 3 20 1
-	GroundKind = ByTheWell
-	Gosub UpdateSky
-	Call CallRedraw
-	Goto event1
+    GroundKind = WellBottom
+    UpdateSky()
+    CallRedraw()
+    Text("JUST ABOVE THE WATERLINE, A SECRET DOOR HAS BEEN LEFT AJAR IN THE SOUTH WALL OF THE WELL.  DO YOU WANT TO CLIMB UP THE RUNGS?")
+    YesOrExit()
+    InWell = 0
+    Text("YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL.")
+    LoadMap(29, unused=255, icons=255)
+    LoadWalls(3, 20, 1)
+    GroundKind = ByTheWell
+    UpdateSky()
+    CallRedraw()
+    goto L_9A23
 
 WellApproach:
-	Gosub ExitIfWellCleared
-	Scratch2 -= 1
-	if Search == 1: Goto MonstersAttack
-	Exit
+    ExitIfWellCleared()
+    Scratch2 -= 1
+    if Search == Searching { goto MonstersAttack }
+    exit
 
 WaitingKobolds:
-	Gosub ExitIfWellCleared
-	Gosub ShowKobolds
-	PrintClear "YOU STUMBLE ON SOME WAITING KOBOLDS!"
-	Gosub ShortPause
-	Goto WellFight
+    ExitIfWellCleared()
+    ShowKobolds()
+    Text("YOU STUMBLE ON SOME WAITING KOBOLDS!")
+    ShortPause()
+    goto WellFight
 
 WellPlaza:
-	AuxMember = WildFlags & WellRungs
-	if 0 != AuxMember: Goto ClimbDownWell
+    AuxMember = WildFlags & WellRungs
+    if AuxMember != 0 { goto ClimbDownWell }
 
 MonstersAttack:
-	Scratch4 = 0
-	Gosub ShowKobolds
-	PrintClear "MONSTERS FROM THE SURROUNDING BUILDINGS ATTACK YOU."
+    Scratch4 = 0
+    ShowKobolds()
+    Text("MONSTERS FROM THE SURROUNDING BUILDINGS ATTACK YOU.")
 
 WellFight:
-	Gosub ExitIfWellCleared
-	Gosub PressToContinue
-	MaxDist = Scratch2
-	Morale = 67
-	ClearMonsters
-	LoadMonster Kobold0 count=6 icon=Kobold
-	LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
-	Combat
-	if CombatEnd >= PartyDied: Goto AfterCombat
-	if Scratch1 == 250: Goto WellCleared
-	if Scratch4 < 1: PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS."
-	also if Scratch4 == 1: PrintClear "A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS."
-	SetupMonster Kobold distance=2 closeup=Kobold
-	Delay
-	Approach
-	Delay
-	Approach
-	AuxMember = 25
-	Gosub PauseLoop
-	Scratch1 = 250
-	Goto WellFight
+    ExitIfWellCleared()
+    PressToContinue()
+    MaxDist = Scratch2
+    Morale = 67
+    ClearMonsters()
+    LoadMonster(Kobold0, count=6, icon=Kobold)
+    LoadMonster(KoboldLeader1, count=3, icon=KoboldLeader)
+    Combat()
+    if CombatEnd >= PartyDied { goto AfterCombat }
+    if Scratch1 == 250 { goto WellCleared }
+    if Scratch4 < 1 { Text("A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS.") }
+    if Scratch4 == 1 { Text("A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS.") }
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    AuxMember = 25
+    PauseLoop()
+    Scratch1 = 250
+    goto WellFight
 
-WellCleared:
-	WildFlags |= WellRungs
-	Exit
+    WellCleared:
+    WildFlags |= WellRungs
+    exit
 
 CheckEncounterCount:
-	if EncounterCount < 10: Goto RandomEncounter
-	EncounterCount = 255
-	Exit
+    if EncounterCount < 10 { goto RandomEncounter }
+    EncounterCount = 255
+    exit
 
 RandomEncounter:
-	alias EncTable2Entry = Scratch8
-	alias EncTable3Entry = AuxEncResult
-	alias EncTable4Entry = AuxEncResult2
-	alias EncTable5Entry = AuxEncMonster2
-	alias EncTable6Entry = AuxEncTemp
-	Scratch7 = Random 2
-	OnGosub Scratch7 NameGnolls NameKobolds NameLizardmen
-	MonsterDist = EncMonsterDistTable[Scratch7]
-	EncTable2Entry = EncTable2[Scratch7]
-	EncTable3Entry = EncTable3[Scratch7]
-	EncTable4Entry = EncTable4[Scratch7]
-	EncTable5Entry = EncTable5[Scratch7]
-	EncTable6Entry = EncTable6[Scratch7]
-	if EncounterMode == 200: Goto FaceToFace
-	PartySurprise AuxMember AuxRoll
-	Surprise AuxMember AuxRoll 0 0
-	OnGoto Surprise BloodthirstyMonsters SurprisedBy SurprisedParty FaceToFace
+    Scratch7 = Random(2)
+    gosub [NameGnolls, NameKobolds, NameLizardmen][Scratch7]
+    MonsterDist = EncMonsterDistTable[Scratch7]
+    Scratch8 = EncTable2[Scratch7]
+    AuxEncResult = EncTable3[Scratch7]
+    AuxEncResult2 = EncTable4[Scratch7]
+    AuxEncMonster2 = EncTable5[Scratch7]
+    AuxEncTemp = EncTable6[Scratch7]
+    if EncounterMode == Forced { goto FaceToFace }
+    PartySurprise(AuxMember, AuxRoll)
+    Surprise(AuxMember, AuxRoll, 0, 0)
+    goto [BloodthirstyMonsters, SurprisedBy, SurprisedParty, FaceToFace][Surprise]
 
 SurprisedBy:
-	SetupMonster AuxEncMonster2 distance=2 closeup=Scratch8
-	Delay
-	Approach
-	Delay
-	Approach
-	PrintClear "YOU ARE SURPRISED BY "
-	Print $AuxText
-	Gosub PressToContinue
-	MaxDist = 0
-	Gosub EncounterFight
-	Goto AfterCombat
+    SetupMonster(AuxEncMonster2, distance=2, closeup=Scratch8)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Text("YOU ARE SURPRISED BY ")
+    Print($AuxText)
+    PressToContinue()
+    MaxDist = 0
+    EncounterFight()
+    goto AfterCombat
 
-NameGnolls:
-	$AuxText = "GNOLLS "
-	Return
+def NameGnolls() {
+    $AuxText = "GNOLLS "
+    return
+}
 
-NameKobolds:
-	$AuxText = "KOBOLDS. "
-	Return
+def NameKobolds() {
+    $AuxText = "KOBOLDS. "
+    return
+}
 
-NameLizardmen:
-	$AuxText = "LIZARDMEN. "
-	Return
+def NameLizardmen() {
+    $AuxText = "LIZARDMEN. "
+    return
+}
 
 BloodthirstyMonsters:
-	AuxMember = Random 1
-	if AuxMember < 1: Goto AvoidedBy
-	$AuxMonsterName = "YOU SEE SOME BLOODTHIRSTY "
-	$AuxNameCopy2 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
-	AuxEncTemp += 9
-	OnGoto AuxMember Done EncounterFight DropOff EncounterFight
+    AuxMember = Random(1)
+    if AuxMember < 1 { goto AvoidedBy }
+    $AuxMonsterName = "YOU SEE SOME BLOODTHIRSTY "
+    $AuxNameCopy2 = $AuxText
+    EncounterMenu(AuxEncMonster2, distance=MonsterDist, closeup=Scratch8, result=AuxMember, combat=Attack,
+        wait=Attack, flee=Attack, advance=Mirror, parlay=Attack, near=$AuxMonsterName,
+        escape=AuxEncResult, strength=AuxEncResult2)
+    AuxEncTemp += 9
+    goto [Done, EncounterFight, DropOff, EncounterFight][AuxMember]
 
 FaceToFace:
-	$AuxMonsterName = "YOU ARE SUDDENLY FACE TO FACE WITH ARMED "
-	$AuxNameCopy6 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=0 closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Attack advance=Mirror parlay=Talk near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
-	OnGoto AuxMember Done EncounterFight DropOff ParlayMonsters
+    $AuxMonsterName = "YOU ARE SUDDENLY FACE TO FACE WITH ARMED "
+    $AuxNameCopy6 = $AuxText
+    EncounterMenu(AuxEncMonster2, distance=0, closeup=Scratch8, result=AuxMember, combat=Attack, wait=Flee,
+        flee=Attack, advance=Mirror, parlay=Talk, near=$AuxMonsterName, escape=AuxEncResult,
+        strength=AuxEncResult2)
+    goto [Done, EncounterFight, DropOff, ParlayMonsters][AuxMember]
 
 AvoidedBy:
-	$AuxMonsterName = "YOU ARE BEING AVOIDED BY SOME "
-	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
-	AuxEncTemp -= 10
-	OnGoto AuxMember Done EncounterFight DropOff ParlayMonsters
+    $AuxMonsterName = "YOU ARE BEING AVOIDED BY SOME "
+    $AuxNameCopy3 = $AuxText
+    EncounterMenu(AuxEncMonster2, distance=MonsterDist, closeup=Scratch8, result=AuxMember, combat=Attack,
+        wait=Flee, flee=Flee, advance=Mirror, parlay=Talk, near=$AuxMonsterName, escape=AuxEncResult,
+        strength=AuxEncResult2)
+    AuxEncTemp -= 10
+    goto [Done, EncounterFight, DropOff, ParlayMonsters][AuxMember]
 
 SurprisedParty:
-	$AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
-	$AuxNameCopy3 = $AuxText
-	EncounterMenu AuxEncMonster2 distance=MonsterDist closeup=Scratch8 result=AuxMember combat=Attack wait=Flee flee=Flee advance=Mirror parlay=Talk near=$AuxMonsterName escape=AuxEncResult strength=AuxEncResult2
-	AuxEncTemp -= 20
-	OnGoto AuxMember Done FightSurprised Done ParlayMonsters
+    $AuxMonsterName = "YOU HAVE SURPRISED A PARTY OF "
+    $AuxNameCopy3 = $AuxText
+    EncounterMenu(AuxEncMonster2, distance=MonsterDist, closeup=Scratch8, result=AuxMember, combat=Attack,
+        wait=Flee, flee=Flee, advance=Mirror, parlay=Talk, near=$AuxMonsterName, escape=AuxEncResult,
+        strength=AuxEncResult2)
+    AuxEncTemp -= 20
+    goto [Done, FightSurprised, Done, ParlayMonsters][AuxMember]
 
 SicklyKobolds:
-	AuxSightText = Random 20
-	if AuxSightText != 15: Exit
-	if KoboldBandDone == Completed: Exit
-	SetupMonster Kobold distance=2 closeup=Kobold
-	Delay
-	Approach
-	Delay
-	Approach
-	PrintClear "YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE."
-	Gosub PressToContinue
-	EncounterMenu Kobold distance=2 closeup=Kobold result=AuxMember combat=Attack wait=Flee flee=Flee advance=Flee parlay=Talk near="THE KOBOLDS ARE TRYING TO SNEAK OFF." escape=0 strength=0
-	OnGoto AuxMember Done SicklyKoboldsFight DropOff SicklyKoboldsParlay
+    AuxSightText = Random(20)
+    if AuxSightText != 15 { exit }
+    if KoboldBandDone == Yes { exit }
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Text("YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE.")
+    PressToContinue()
+    EncounterMenu(Kobold, distance=2, closeup=Kobold, result=AuxMember, combat=Attack, wait=Flee, flee=Flee,
+        advance=Flee, parlay=Talk, near="THE KOBOLDS ARE TRYING TO SNEAK OFF.", escape=0, strength=0)
+    goto [Done, SicklyKoboldsFight, DropOff, SicklyKoboldsParlay][AuxMember]
 
 SicklyKoboldsFight:
-	Surprise = NoSurprise
-	Morale = 25
-	ClearMonsters
-	LoadMonster Kobold0 count=2 icon=Kobold
-	LoadMonster KoboldLeader1 count=4 icon=KoboldLeader
-	Combat
-	KoboldBandDone = Completed
-	Exit
+    Surprise = NoSurprise
+    Morale = 25
+    ClearMonsters()
+    LoadMonster(Kobold0, count=2, icon=Kobold)
+    LoadMonster(KoboldLeader1, count=4, icon=KoboldLeader)
+    Combat()
+    KoboldBandDone = Yes
+    exit
 
 SicklyKoboldsParlay:
-	alias Choice = AuxMember
-	AuxParlay = Parlay 0 0 0 0 0
-	PrintClear "THE KOBOLDS FAWN ON YOU PATHETICALLY.  'PLEASE, OH PLEASE NOBLE ONES, DON'T HURT US,' THEY BEG.  'WE WERE SENT ON A SCOUTING MISSION BY OUR KING.  RUMORS OF A WONDROUS POOL CAME TO HIM IN HIS LAIR."
-	Gosub PressToContinue
-	PrintClear "WE ARE ALL THAT REMAINS OF THE MIGHTY BAND THAT WAS SENT WEST TO TEST THE TALES.  WE MEAN YOU NO HARM.  WE ONLY SEEK TO RETURN TO OUR FAMILIES.'  (WHAT DO YOU DO?)"
-	Choice = Menu "RELEASE THEM?" "FIGHT?" "QUESTION THEM?"
-	OnGoto Choice KoboldsScamper SicklyKoboldsFight
-	PrintClear "THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)"
-	Choice = Menu "RELEASE THEM?" -> KoboldsScamper "FIGHT THEM?" -> SicklyKoboldsFight
+    AuxParlay = Parlay(0, 0, 0, 0, 0)
+    Text("THE KOBOLDS FAWN ON YOU PATHETICALLY.  'PLEASE, OH PLEASE NOBLE ONES, DON'T HURT US,' THEY BEG.  'WE WERE SENT ON A SCOUTING MISSION BY OUR KING.  RUMORS OF A WONDROUS POOL CAME TO HIM IN HIS LAIR.")
+    PressToContinue()
+    Text("WE ARE ALL THAT REMAINS OF THE MIGHTY BAND THAT WAS SENT WEST TO TEST THE TALES.  WE MEAN YOU NO HARM.  WE ONLY SEEK TO RETURN TO OUR FAMILIES.'  (WHAT DO YOU DO?)")
+    AuxMember = Menu("RELEASE THEM?", "FIGHT?", "QUESTION THEM?")
+    goto [KoboldsScamper, SicklyKoboldsFight][AuxMember]
+    Text("THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)")
+    AuxMember = Menu("RELEASE THEM?", "FIGHT THEM?")
+    goto [KoboldsScamper, SicklyKoboldsFight][AuxMember]
 
 KoboldsScamper:
-	PrintClear "THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL."
-	KoboldBandDone = Completed
-	Goto Done
+    Text("THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL.")
+    KoboldBandDone = Yes
+    goto Done
 
 LizardPatrol:
-	AuxMember = WildFlags & FightWon
-	if 0 != AuxMember: Exit
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!"
-	Gosub PressToContinue
-	Surprise = NoSurprise
-	Morale = 75
-	ClearMonsters
-	LoadMonster Lizardman count=1 icon=Lizardman
-	LoadMonster GiantLizard count=4 icon=GiantLizard
-	Combat
-	if CombatEnd < PartyDied: WildFlags |= FightWon
-	Exit
+    AuxMember = WildFlags & FightWon
+    if AuxMember != 0 { exit }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!")
+    PressToContinue()
+    Surprise = NoSurprise
+    Morale = 75
+    ClearMonsters()
+    LoadMonster(Lizardman, count=1, icon=Lizardman)
+    LoadMonster(GiantLizard, count=4, icon=GiantLizard)
+    Combat()
+    if CombatEnd < PartyDied { WildFlags |= FightWon }
+    exit
 
 NailedDoor:
-	AuxMember = WildFlags & NailedDoorForced
-	if 0 != AuxMember: Exit
-	HoldMove = SkipMove
-	PrintClear "THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?"
-	Gosub YesOrExit
-	PrintClear "THE DOOR IS FREED."
-	WildFlags |= NailedDoorForced
-	HoldMove = 0
-	Exit
+    AuxMember = WildFlags & NailedDoorForced
+    if AuxMember != 0 { exit }
+    HoldMove = SkipMove
+    Text("THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?")
+    YesOrExit()
+    Text("THE DOOR IS FREED.")
+    WildFlags |= NailedDoorForced
+    HoldMove = 0
+    exit
 
 SeerWoman:
-	AuxMember = WildFlags & SpiritWarning
-	if 0 != AuxMember: Goto HiddenArmor
-	Picture WomanInGreen
-	PrintClear "A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE."
-	Gosub PressToContinue
-	PrintClear "AN EVIL SPIRIT FROM AN UNHOLY POOL GUIDES YOUR ENEMIES. IT HIDES BEHIND A FAIR COUNTENANCE. BE NOT DECEIVED.' WITH THAT, THE WOMAN IS GONE."
-	Picture None
-	WildFlags |= SpiritWarning
-	Exit
+    AuxMember = WildFlags & SpiritWarning
+    if AuxMember != 0 { goto HiddenArmor }
+    Picture(WomanInGreen)
+    Text("A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE.")
+    PressToContinue()
+    Text("AN EVIL SPIRIT FROM AN UNHOLY POOL GUIDES YOUR ENEMIES. IT HIDES BEHIND A FAIR COUNTENANCE. BE NOT DECEIVED.' WITH THAT, THE WOMAN IS GONE.")
+    Picture(None)
+    WildFlags |= SpiritWarning
+    exit
 
-HiddenArmor:
-	AuxMember = WildFlags & SearchedTreasure
-	if 0 != AuxMember: Exit
-	if Search != 1: Exit
-	PrintClear "BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?"
-	Gosub YesOrExit
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 58 // Bracers AC 4, Quarter Staff +1, Banded Mail +1
-	Combat
-	WildFlags |= SearchedTreasure
-	Exit
+    HiddenArmor:
+    AuxMember = WildFlags & SearchedTreasure
+    if AuxMember != 0 { exit }
+    if Search != Searching { exit }
+    Text("BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?")
+    YesOrExit()
+    ClearMonsters()
+    Treasure(items=[BracersAc4, QuarterStaff1, BandedMail1])
+    Combat()
+    WildFlags |= SearchedTreasure
+    exit
 
 AfterCombat:
-	if CombatEnd > PartyDied: Goto DropOff
-	if CombatEnd < 1: Goto CountEncounter
-	if Beaten == 0: Exit
+    if CombatEnd > PartyDied { goto DropOff }
+    if CombatEnd < 1 { goto CountEncounter }
+    if Beaten == 0 { exit }
 
-CountEncounter:
-	if EncounterCount != 255: EncounterCount += 1
-	Goto Done
+    CountEncounter:
+    if EncounterCount != 255 { EncounterCount += 1 }
+    goto Done
 
 FightSurprised:
-	Surprise = MonstersAreSurprised
+    Surprise = MonstersAreSurprised
 
 EncounterFight:
-	AuxPartyStrength = PartyStrength
-	AuxTemp9 = 0
-	Morale = AuxEncTemp
-	if Scratch7 < 1: AuxPartyStrength = AuxPartyStrength / 3
-	also if Scratch7 > 1: AuxPartyStrength = AuxPartyStrength / 4
-	also if Scratch7 != 1: Goto LoadEncounter
-	AuxPartyStrength = AuxPartyStrength / 2
-	AuxTemp9 = 3
+    AuxPartyStrength = PartyStrength()
+    AuxTemp9 = 0
+    Morale = AuxEncTemp
+    if Scratch7 < 1 { AuxPartyStrength = AuxPartyStrength / 3 }
+    if Scratch7 > 1 { AuxPartyStrength = AuxPartyStrength / 4 }
+    if Scratch7 != 1 { goto LoadEncounter }
+    AuxPartyStrength = AuxPartyStrength / 2
+    AuxTemp9 = 3
 
-LoadEncounter:
-	if AuxPartyStrength == 0: AuxPartyStrength = 1
-	ClearMonsters
-	if AuxTemp9 != 0: LoadMonster KoboldLeader1 count=3 icon=KoboldLeader
-	LoadMonster Scratch8 count=AuxPartyStrength icon=Scratch8
-	Combat
-	Goto AfterCombat
+    LoadEncounter:
+    if AuxPartyStrength == 0 { AuxPartyStrength = 1 }
+    ClearMonsters()
+    if AuxTemp9 != 0 { LoadMonster(KoboldLeader1, count=3, icon=KoboldLeader) }
+    LoadMonster(Scratch8, count=AuxPartyStrength, icon=Scratch8)
+    Combat()
+    goto AfterCombat
 
 DropOff:
-	Facing = Random 3
-	AuxTemp9 = Random 7
-	NoCoords = 1
-	NoCoords = 1
-	PartyX = DropOffXTable[AuxTemp9]
-	PartyY = DropOffYTable[AuxTemp9]
-	PrintClear ""
-	Call CallRedraw
-	Goto event1
+    Facing = Random(3)
+    AuxTemp9 = Random(7)
+    NoCoords = 1
+    NoCoords = 1
+    PartyX = DropOffXTable[AuxTemp9]
+    PartyY = DropOffYTable[AuxTemp9]
+    Text("")
+    CallRedraw()
+    goto L_9A23
 
 Done:
-	RedrawView
-	Portrait = None
-	Call CallRedraw
-	Exit
+    RedrawView()
+    Portrait = None
+    CallRedraw()
+    exit
 
 ParlayMonsters:
-	Surprise = NoSurprise
-	AuxParlay = Parlay 10 20 20 20 30
-	AuxRoll2 = Random 30
-	AuxParlay = AuxParlay + AuxRoll2
-	AuxParlay = AuxParlay + SelReaction
-	if AuxParlay < 95: Goto MonstersOffended
-	PrintClear "'WE HAVE TO KEEP THIS AREA FREE OF INTRUDERS -- BOSS'S ORDERS.  WE'LL LET YOU GO THIS TIME.  BUT IF YOU COME BACK, YOU'LL FACE BIG TROUBLE.' THE MONSTERS LEAVE."
-	Goto Done
+    Surprise = NoSurprise
+    AuxParlay = Parlay(10, 20, 20, 20, 30)
+    AuxRoll2 = Random(30)
+    AuxParlay = AuxParlay + AuxRoll2
+    AuxParlay = AuxParlay + SelReaction
+    if AuxParlay < 95 { goto MonstersOffended }
+    Text("'WE HAVE TO KEEP THIS AREA FREE OF INTRUDERS -- BOSS'S ORDERS.  WE'LL LET YOU GO THIS TIME.  BUT IF YOU COME BACK, YOU'LL FACE BIG TROUBLE.' THE MONSTERS LEAVE.")
+    goto Done
 
-MonstersOffended:
-	PrintClear "YOU HAVE OFFENDED THE "
-	Print $AuxText
-	Print "THEY ATTACK."
-	if AuxParlay < 65: AuxEncTemp = 99
-	Goto EncounterFight
+    MonstersOffended:
+    Text("YOU HAVE OFFENDED THE ")
+    Print($AuxText)
+    Print("THEY ATTACK.")
+    if AuxParlay < 65 { AuxEncTemp = 99 }
+    goto EncounterFight
 
 ClimbDownWell:
-	PrintClear "RUNGS ARE SET IN THE SIDES OF THE WELL WALL.  DO YOU WANT TO CLIMB DOWN?"
-	Gosub YesOrExit
-	InWell = 1
-	PrintClear "YOU SLOWLY CLIMB DOWN THE SLIPPERY RUNGS."
-	LoadMap 32 unused=2 icons=255
-	LoadWalls 18 17 1
-	Goto WellSecretDoor
+    Text("RUNGS ARE SET IN THE SIDES OF THE WELL WALL.  DO YOU WANT TO CLIMB DOWN?")
+    YesOrExit()
+    InWell = DownTheWell
+    Text("YOU SLOWLY CLIMB DOWN THE SLIPPERY RUNGS.")
+    LoadMap(32, unused=2, icons=255)
+    LoadWalls(18, 17, 1)
+    goto WellSecretDoor
 
 PlazaWander:
-	AuxMember = Random 9
-	if AuxMember == 1: PrintClear "YOU WANDER IN THE PLAZA NEAR KUTO'S WELL."
-	Exit
+    AuxMember = Random(9)
+    if AuxMember == 1 { Text("YOU WANDER IN THE PLAZA NEAR KUTO'S WELL.") }
+    exit
 
-ShortPause:
-	AuxMember = 50
+def ShortPause() {
+    AuxMember = 50
+} # falls into PauseLoop
 
 PauseLoop:
-	AuxMember += 1
-	if AuxMember < 100: Goto PauseLoop
-	Return
+    AuxMember += 1
+    if AuxMember < 100 { goto PauseLoop }
+    return
 
-PressToContinue:
-	alias Choice = AuxMenuChoice
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def PressToContinue() {
+    AuxMenuChoice = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
-UpdateSky:
-	if Hours >= 14: Sky = 8
-	also if Hours < 14: Sky = 11
-	if InWell != 1 {
-		SkyInside = 10
-		SetSkyShade = 65
-	}
-	also if InWell == 1 {
-		SetSkyShade = 8
-		SkyInside = 8
-	}
-	SetGroundShade = GroundShadeTable[GroundKind]
-	Return
+def UpdateSky() {
+    if Hours >= 14 {
+        Sky = 8
+    } else {
+        Sky = 11
+    }
+    if InWell != DownTheWell {
+        SkyInside = 10
+        SetSkyShade = 65
+    } else {
+        SetSkyShade = 8
+        SkyInside = 8
+    }
+    SetGroundShade = GroundShadeTable[GroundKind]
+    return
+}
 
-YesOrExit:
-	alias Choice = AuxMember
-	Choice = Menu "YES" "NO"
-	if Choice == 0: Return
-	Exit
+def YesOrExit() {
+    AuxMember = Menu("YES", "NO")
+    if AuxMember == 0 { return }
+    exit
+}
 
-ShowKobolds:
-	SetupMonster Kobold distance=Scratch2 closeup=Kobold
-	Delay
-	Approach
-	Delay
-	Approach
-	Return
+def ShowKobolds() {
+    SetupMonster(Kobold, distance=Scratch2, closeup=Kobold)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    return
+}
 
-ExitIfWellCleared:
-	AuxMember = WildFlags & WellRungs
-	if 0 != AuxMember: Exit
-	Return
+def ExitIfWellCleared() {
+    AuxMember = WildFlags & WellRungs
+    if AuxMember != 0 { exit }
+    return
+}
 
-EncMonsterDistTable:
-	Data 2 2 2
-
-EncTable2:
-	Data 73 0 57
-
-EncTable3:
-	Data 9 6 12
-
-EncTable4:
-	Data 9 6 12
-
-EncTable5:
-	Data 73 0 57
-
-EncTable6:
-	Data 75 50 90
-
-DropOffXTable:
-	Data 13 2 11 1 13 1 10 6
-
-DropOffYTable:
-	Data 12 9 3 1 7 14 13 5
-
-ExitCellByFacing:
-	Data 2 17 5
-
-ExitSymbolSetByFacing:
-	Data 16 2 2
-
-ExitAreaByFacing:
-	Data 1 20 15 18
-
-CellEventTable:
-	Data 1 2 3 0 4 3 9 10 0 11 12 13 15 14 0 0
-	Data 3 3 5 0 6 7 8
-
-SecretDoorChanceByRace:
-	Data 0 0 1 0 1 0 0 0
-
-GroundShadeTable:
-	Data 9 0 6 0
+# tables
+EncMonsterDistTable = [2, 2, 2]
+EncTable2 = [73, 0, 57]
+EncTable3 = [9, 6, 12]
+EncTable4 = [9, 6, 12]
+EncTable5 = [73, 0, 57]
+EncTable6 = [75, 50, 90]
+DropOffXTable = [13, 2, 11, 1, 13, 1, 10, 6]
+DropOffYTable = [12, 9, 3, 1, 7, 14, 13, 5]
+ExitCellByFacing = [2, 17, 5]
+ExitSymbolSetByFacing = [16, 2, 2]
+ExitAreaByFacing = [1, 20, 15, 18]
+CellEventTable = [1, 2, 3, 0, 4, 3, 9, 10, 0, 11, 12, 13, 15, 14, 0, 0, 3, 3, 5, 0, 6, 7, 8]
+SecretDoorChanceByRace = [0, 0, 1, 0, 1, 0, 0, 0]
+GroundShadeTable = [9, 0, 6, 0]

@@ -18,10 +18,16 @@ scripts, and also:
   portrait heads and bodies, encounter reactions),
   same format; set 0 is every set.
 - `variables.txt`: by hand, the values and flag bits of variables, the
-  variable's name as the kind (`CastleFlags 0 1 Disguised`).
-- `values.txt` also has the shops' stocks, `Stock Set Block Item,Item,...`.
+  variable's name as the kind (`CastleFlags 0 1 Disguised`): a number
+  beside the variable (`CastleFlags |= Disguised`, `if Mode == Disguised`)
+  reads as that name. A group has one comment naming its evidence (the
+  code that reads the variable). A value whose name is also a variable,
+  label, table or command stays a number.
+- `values.txt` also has the shops' stocks, `Stock Set Block Item,Item,...`,
+  which `OpenShop(Item, Item*20, ...)` writes out.
 
 A command's operand of a kind (`LoadMonster`'s monster and icon,
-`Picture`, `SetupMonster`'s sprite and picture, `FindItem`'s item,
-`ShowPortrait`'s head and body, `LoadMap`'s map, `LoadWalls`' wall sets)
-reads as the name of its value. `../README.md` explains the commands.
+`Picture`, `SetupMonster`'s sprite and picture, `Carried`'s item,
+`ShowPortrait`'s head and body, `LoadMap`'s map, `LoadWalls`' wall sets,
+`NewECL`'s area) reads as the name of its value; one without a name stays a
+number. `../README.md` explains the script format and the commands.

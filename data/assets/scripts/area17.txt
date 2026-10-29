@@ -1,730 +1,709 @@
-KoboldEncounterMenu:
-	EncounterMenu Kobold distance=MaxDist closeup=Kobold result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=6 strength=6
-	Return
+def KoboldEncounterMenu() {
+    EncounterMenu(Kobold, distance=MaxDist, closeup=Kobold, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, escape=6, strength=6)
+    return
+}
 
-NomadEncounterMenu:
-	Portrait = NomadBeard
-	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=12
-	Portrait = None
-	Return
+def NomadEncounterMenu() {
+    Portrait = NomadBeard
+    EncounterMenu(Swordsman11, distance=MaxDist, body=WhiteRobe, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, escape=12, strength=12)
+    Portrait = None
+    return
+}
 
-GetCampState:
-	if MarkFlags4 lacks KoboldRaidWon: Goto CampNotHostile
-	Scratch1 = 0
-	if MarkFlags4 has FoughtTribe: Return
-	if MarkFlags4 has AttackedNomadAlly: Scratch1 = 1
-	Return
+def GetCampState() {
+    if MarkFlags4 lacks KoboldRaidWon { goto CampNotHostile }
+    Scratch1 = 0
+    if MarkFlags4 has FoughtTribe { return }
+    if MarkFlags4 has AttackedNomadAlly { Scratch1 = 1 }
+    return
 
-CampNotHostile:
-	Scratch1 = 2
-	if MarkFlags4 lacks FoughtTribe: Goto CampFriendlyCheck
+    CampNotHostile:
+    Scratch1 = 2
+    if MarkFlags4 lacks FoughtTribe { goto CampFriendlyCheck }
+} # falls into CampDayCheck
 
 CampDayCheck:
-	if Hours < 18: Scratch1 = 3
-	Return
+    if Hours < 18 { Scratch1 = 3 }
+    return
 
 CampFriendlyCheck:
-	if MarkFlags4 lacks AttackedNomadAlly: Goto CampByStage
-	if Hours < 18: Scratch1 = 1
-	Return
+    if MarkFlags4 lacks AttackedNomadAlly { goto CampByStage }
+    if Hours < 18 { Scratch1 = 1 }
+    return
 
-CampByStage:
-	OnGoto CampStage StageLodging StageGames StageKoboldWait CampDayCheck
+    CampByStage:
+    goto [StageLodging, StageGames, StageKoboldWait, CampDayCheck][CampStage]
 
 StageLodging:
-	Scratch1 = 4
-	if Cell != 1: Scratch1 = 0
-	Return
+    Scratch1 = 4
+    if Cell != 1 { Scratch1 = 0 }
+    return
 
 StageGames:
-	Scratch1 = 6
-	Goto StageNightCheck
+    Scratch1 = 6
+    goto StageNightCheck
 
 StageKoboldWait:
-	Scratch1 = 7
+    Scratch1 = 7
 
 StageNightCheck:
-	if Hours > 1: Scratch1 = 5
-	Return
+    if Hours > 1 { Scratch1 = 5 }
+    return
 
-SetRestRules:
-	Gosub GetCampState
-	RestEvery = 0
-	RestChance = 10
-	if Scratch1 == 1 && Cell == 4: Scratch1 = 0
-	Scratch10 = RestChanceTable[Scratch1]
-	if Scratch10 == 0: Return
-	RestEvery = 1
-	RestChance = 50
-	if Scratch10 == 1: Return
-	Scratch10 -= Hours
-	RestEvery = Scratch10 * 12
-	RestChance = 100
-	Return
+def SetRestRules() {
+    GetCampState()
+    RestEvery = 0
+    RestChance = 10
+    if Scratch1 == 1 and Cell == 4 { Scratch1 = 0 }
+    Scratch10 = RestChanceTable[Scratch1]
+    if Scratch10 == 0 { return }
+    RestEvery = 1
+    RestChance = 50
+    if Scratch10 == 1 { return }
+    Scratch10 -= Hours
+    RestEvery = Scratch10 * 12
+    RestChance = 100
+    return
+}
 
-MakeAlliesNomads:
-	Scratch1 = PartyCount
-	Scratch4 = NomadAllies + PartyCount
-	if NomadAllies == 0: Return
+def MakeAlliesNomads() {
+    Scratch1 = PartyCount
+    Scratch4 = NomadAllies + PartyCount
+    if NomadAllies == 0 { return }
 
-MakeAlliesLoop:
-	SelectMember Scratch1
-	SelSide = PartyControlled
-	Scratch2 = Scratch1 + 128
-	SelectMember Scratch2
-	Scratch1 = Scratch1 + 1
-	if Scratch1 < Scratch4: Goto MakeAlliesLoop
-	Return
+    MakeAlliesLoop:
+    SelectMember(Scratch1)
+    SelSide = PartyControlled
+    Scratch2 = Scratch1 + 128
+    SelectMember(Scratch2)
+    Scratch1 = Scratch1 + 1
+    if Scratch1 < Scratch4 { goto MakeAlliesLoop }
+    return
+}
 
-CheckAttackedAlly:
-	if AttackedAlly == 0: Return
-	MarkFlags4 |= AttackedNomadAlly
-	MarkFlags4 &= ~FeastAccepted
-	Return
+def CheckAttackedAlly() {
+    if AttackedAlly == 0 { return }
+    MarkFlags4 |= AttackedNomadAlly
+    MarkFlags4 &= ~FeastAccepted
+    return
+}
 
-RollNomadAllies:
-	Call CallLookAhead
-	NomadAllies = 0
-	if MarkFlags4 has FoughtTribe: Goto SizeKoboldBand
-	if Cell == 4: Goto SizeKoboldBand
-	Scratch10 = Random 6
-	NomadAllies = 1 + Scratch10
-	Scratch10 = Random 6
-	Scratch10 += 1
-	NomadAllies += Scratch10
+def RollNomadAllies() {
+    CallLookAhead()
+    NomadAllies = 0
+    if MarkFlags4 has FoughtTribe { goto SizeKoboldBand }
+    if Cell == 4 { goto SizeKoboldBand }
+    Scratch10 = Random(6)
+    NomadAllies = 1 + Scratch10
+    Scratch10 = Random(6)
+    Scratch10 += 1
+    NomadAllies += Scratch10
+} # falls into SizeKoboldBand
 
 SizeKoboldBand:
-	Call CallLookAhead
-	Scratch10 = PartyStrength
-	Scratch9 = 56 - NomadAllies
-	if Scratch10 > Scratch9: Scratch10 = Scratch9
-	Scratch9 = Scratch9 / 2
-	Return
+    CallLookAhead()
+    Scratch10 = PartyStrength()
+    Scratch9 = 56 - NomadAllies
+    if Scratch10 > Scratch9 { Scratch10 = Scratch9 }
+    Scratch9 = Scratch9 / 2
+    return
 
-RetreatOrFight:
-	if PartyX < 11: Goto FindRetreatZone
-	PrintClear "THERE IS NOWHERE LEFT TO RETREAT. YOU MUST FIGHT."
-	Gosub PressToContinue
-	Compare 1 0
-	Return
+def RetreatOrFight() {
+    if PartyX < 11 { goto FindRetreatZone }
+    Text("THERE IS NOWHERE LEFT TO RETREAT. YOU MUST FIGHT.")
+    PressToContinue()
+    Compare(1, 0)
+    return
 
-FindRetreatZone:
-	Scratch10 = 0
+    FindRetreatZone:
+    Scratch10 = 0
+} # falls into RetreatZoneLoop
 
 RetreatZoneLoop:
-	alias ZoneXMax = Scratch7
-	alias ZoneXMin = Scratch9
-	alias ZoneYMax = Scratch6
-	alias ZoneYMin = Scratch8
-	ZoneXMin = ZoneXMinTable[Scratch10]
-	ZoneYMin = ZoneYMinTable[Scratch10]
-	ZoneXMax = ZoneXMaxTable[Scratch10]
-	ZoneYMax = ZoneYMaxTable[Scratch10]
-	if PartyX < ZoneXMin: Goto NextRetreatZone
-	if PartyY < ZoneYMin: Goto NextRetreatZone
-	if PartyX > ZoneXMax: Goto NextRetreatZone
-	if PartyY <= ZoneYMax: Goto RetreatToZone
+    Scratch9 = ZoneXMinTable[Scratch10]
+    Scratch8 = ZoneYMinTable[Scratch10]
+    Scratch7 = ZoneXMaxTable[Scratch10]
+    Scratch6 = ZoneYMaxTable[Scratch10]
+    if PartyX < Scratch9 { goto NextRetreatZone }
+    if PartyY < Scratch8 { goto NextRetreatZone }
+    if PartyX > Scratch7 { goto NextRetreatZone }
+    if PartyY <= Scratch6 { goto RetreatToZone }
 
-NextRetreatZone:
-	Scratch10 += 1
-	if Scratch10 < 12: Goto RetreatZoneLoop
-	Goto ExitToWilderness
+    NextRetreatZone:
+    Scratch10 += 1
+    if Scratch10 < 12 { goto RetreatZoneLoop }
+    goto ExitToWilderness
 
-RetreatToZone:
-	PartyX = ZoneDestXTable[Scratch10]
-	PartyY = ZoneDestYTable[Scratch10]
-	Facing = East
-	RedrawView
-	Call CallRedraw
-	Gosub HearWarCries
-	Compare 1 1
-	Return
+    RetreatToZone:
+    PartyX = ZoneDestXTable[Scratch10]
+    PartyY = ZoneDestYTable[Scratch10]
+    Facing = East
+    RedrawView()
+    CallRedraw()
+    HearWarCries()
+    Compare(1, 1)
+    return
 
-HearWarCries:
-	PrintClear "YOU HEAR WAR CRIES AND THE CLANG OF METAL "
-	OnGosub Facing CriesLeft CriesBehind CriesRight CriesAhead
+def HearWarCries() {
+    Text("YOU HEAR WAR CRIES AND THE CLANG OF METAL ")
+    gosub [CriesLeft, CriesBehind, CriesRight, CriesAhead][Facing]
+} # falls into FaceTheSound
 
 FaceTheSound:
-	if Facing == West: Goto PressToContinue
-	Print " YOU SPIN TO FACE THE SOUND."
-	Gosub PressToContinue
-	Facing = West
-	Call CallRedraw
-	Return
+    if Facing == West { goto PressToContinue }
+    Print(" YOU SPIN TO FACE THE SOUND.")
+    PressToContinue()
+    Facing = West
+    CallRedraw()
+    return
 
-CriesLeft:
-	Print "TO YOUR LEFT."
-	Return
+def CriesLeft() {
+    Print("TO YOUR LEFT.")
+    return
+}
 
-CriesBehind:
-	Print "BEHIND YOU."
-	Return
+def CriesBehind() {
+    Print("BEHIND YOU.")
+    return
+}
 
-CriesRight:
-	Print "TO YOUR RIGHT."
-	Return
+def CriesRight() {
+    Print("TO YOUR RIGHT.")
+    return
+}
 
-CriesAhead:
-	Print "IN FRONT OF YOU."
-	Return
+def CriesAhead() {
+    Print("IN FRONT OF YOU.")
+    return
+}
 
 WalkToHut:
-	Scratch10 = 1
-	if PartyX < 4: Goto WalkToHutStep
-	Scratch1 = PartyY * 12
-	Scratch1 += PartyX
-	Scratch10 = WalkPathToHut[Scratch1]
+    Scratch10 = 1
+    if PartyX < 4 { goto WalkToHutStep }
+    Scratch1 = PartyY * 12
+    Scratch1 += PartyX
+    Scratch10 = WalkPathToHut[Scratch1]
 
-WalkToHutStep:
-	Gosub WalkStep
-	IfNe
-	Goto WalkToHut
-	Return
+    WalkToHutStep:
+    WalkStep()
+    if (!=) { goto WalkToHut }
+    return
 
 WalkToClearing:
-	Scratch10 = 1
-	if PartyX < 4: Goto WalkToClearingStep
-	Scratch1 = PartyY * 12
-	Scratch1 += PartyX
-	Scratch10 = WalkPathToClearing[Scratch1]
+    Scratch10 = 1
+    if PartyX < 4 { goto WalkToClearingStep }
+    Scratch1 = PartyY * 12
+    Scratch1 += PartyX
+    Scratch10 = WalkPathToClearing[Scratch1]
 
-WalkToClearingStep:
-	Gosub WalkStep
-	IfNe
-	Goto WalkToClearing
-	Return
+    WalkToClearingStep:
+    WalkStep()
+    if (!=) { goto WalkToClearing }
+    return
 
-WalkStep:
-	Clock 1
-	Gosub SetSky
-	if Scratch10 == 255: Return
-	if Scratch10 == Facing: Call CallStepForward
-	Facing = Scratch10
-	Call CallRedraw
-	Delay
-	Delay
-	Compare 1 0
-	Return
+def WalkStep() {
+    Clock(1)
+    SetSky()
+    if Scratch10 == 255 { return }
+    if Scratch10 == Facing { CallStepForward() }
+    Facing = Scratch10
+    CallRedraw()
+    Delay()
+    Delay()
+    Compare(1, 0)
+    return
+}
 
-YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
+def YesNoMenu() {
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
+}
 
 PressToContinue:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	PrintClear " "
-	Return
+    Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    Text(" ")
+    return
 
-SetSky:
-	AuxText = 11
-	if Hours >= 14: AuxText = 8
-	Sky = AuxText
-	SkyInside = 13
-	Return
+def SetSky() {
+    AuxText = 11
+    if Hours >= 14 { AuxText = 8 }
+    Sky = AuxText
+    SkyInside = 13
+    return
+}
 
-ShowNomads:
-	Portrait = NomadBeard
-	SetupMonster Swordsman11 distance=2 body=WhiteRobe
+def ShowNomads() {
+    Portrait = NomadBeard
+    SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
+} # falls into ApproachPause
 
 ApproachPause:
-	Delay
-	Approach
-	Return
+    Delay()
+    Approach()
+    return
 
-ApproachTwice:
-	Gosub ApproachPause
+def ApproachTwice() {
+    ApproachPause()
+} # falls into ApproachHidePortrait
 
 ApproachHidePortrait:
-	Gosub ApproachPause
-	Portrait = None
-	Return
+    ApproachPause()
+    Portrait = None
+    return
 
-event0:
-	if LeftMap == 0: Goto CheckLodgingExit
-	PrintClear "THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?"
-	if Ask YesNoMenu == "YES": Goto ExitToWilderness
-	HoldMove = SkipMove
+on move {
+    if LeftMap == 0 { goto CheckLodgingExit }
+    Text("THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?")
+    if YesNoMenu() == "YES" { goto ExitToWilderness }
+    HoldMove = SkipMove
 
-CheckLodgingExit:
-	Gosub SetSky
-	Gosub SetRestRules
-	if MarkFlags4 has FoughtTribe: Exit
-	Scratch1 = Cell & 127
-	if Scratch1 > 1: Exit
-	if CampStage != Lodged: Exit
-	if WallAhead != 2: Exit
-	Goto GuardEscort
+    CheckLodgingExit:
+    SetSky()
+    SetRestRules()
+    if MarkFlags4 has FoughtTribe { exit }
+    Scratch1 = Cell & ~Inside
+    if Scratch1 > 1 { exit }
+    if CampStage != Lodged { exit }
+    if WallAhead != 2 { exit }
+    goto GuardEscort
+}
 
-event1:
-	Gosub SetRestRules
-	Scratch10 = Random 3
-	if Scratch10 == 0: Goto RoomEvents
-	if Scratch1 == 1: Exit
-	if Scratch1 == 2: Exit
+on step {
+    SetRestRules()
+    Scratch10 = Random(3)
+    if Scratch10 == 0 { goto RoomEvents }
+    if Scratch1 == 1 { exit }
+    if Scratch1 == 2 { exit }
+} # falls into RoomEvents
 
 RoomEvents:
-	OnGoto Scratch1 Done NomadsHostile KoboldRaid Done CampOutskirts Done MorningGreeting HeadmanAsks
+    goto [Done, NomadsHostile, KoboldRaid, Done, CampOutskirts, Done, MorningGreeting, HeadmanAsks][Scratch1]
 
-event3:
-	Gosub SetSky
-	Gosub SetRestRules
-	Goto RoomEvents
+on rest {
+    SetSky()
+    SetRestRules()
+    goto RoomEvents
+}
 
-event2:
-	Gosub SetRestRules
+on camp {
+    SetRestRules()
+} # falls into Done
 
 Done:
-	RedrawView
-	Call CallRedraw
-	Exit
+    RedrawView()
+    CallRedraw()
+    exit
 
-event4:
-	NoCoords = 1
-	Gosub SetSky
-	if AreaKind == 17: Exit
-	LoadMap 17 unused=2 icons=255
-	LoadWalls 7 8 23
-	PartyX = 1
-	PartyY = 14
-	Facing = East
-	Exit
+on load {
+    NoCoords = 1
+    SetSky()
+    if AreaKind == NomadCamp { exit }
+    LoadMap(17, unused=2, icons=255)
+    LoadWalls(7, 8, 23)
+    PartyX = 1
+    PartyY = 14
+    Facing = East
+    exit
+}
 
 CampOutskirts:
-	if MarkFlags4 has FeastAccepted: Exit
-	if Hours <= 14: Goto NomadsGather
-	Scratch10 = Random 99
-	if Scratch10 >= 50: Goto NomadsGather
-	PrintClear "YOU TRIP ON A WIRE TO THE ACCOMPANIMENT OF BELLS TINKLING. AFTER A MOMENT THERE IS A COMMOTION AHEAD OF YOU."
-	Scratch10 = Menu "FLEE" "ADVANCE CAUTIOUSLY" "ATTACK"
-	OnGoto Scratch10 ExitToWilderness NomadsGather
-	PrintClear "YOU CHARGE INTO A GROUP OF SCRUFFY LOOKING NOMADS."
-	Gosub ShowNomads
+    if MarkFlags4 has FeastAccepted { exit }
+    if Hours <= 14 { goto NomadsGather }
+    Scratch10 = Random(99)
+    if Scratch10 >= 50 { goto NomadsGather }
+    Text("YOU TRIP ON A WIRE TO THE ACCOMPANIMENT OF BELLS TINKLING. AFTER A MOMENT THERE IS A COMMOTION AHEAD OF YOU.")
+    Scratch10 = Menu("FLEE", "ADVANCE CAUTIOUSLY", "ATTACK")
+    goto [ExitToWilderness, NomadsGather][Scratch10]
+    Text("YOU CHARGE INTO A GROUP OF SCRUFFY LOOKING NOMADS.")
+    ShowNomads()
 
 NomadFightNoSurprise:
-	Surprise = NoSurprise
+    Surprise = NoSurprise
 
 NomadFight:
-	Morale = 100
-	MarkFlags4 |= AttackedNomadAlly
-	NomadAllies = 0
-	Gosub SizeKoboldBand
-	Scratch9 = Scratch9 / 2
-	ClearMonsters
-	LoadMonster Nomad count=Scratch9 icon=Nomad
-	Combat
-	Gosub CheckFled
-	NomadFightCount = NomadFightCount + 1
-	Exit
+    Morale = 100
+    MarkFlags4 |= AttackedNomadAlly
+    NomadAllies = 0
+    SizeKoboldBand()
+    Scratch9 = Scratch9 / 2
+    ClearMonsters()
+    LoadMonster(Nomad, count=Scratch9, icon=Nomad)
+    Combat()
+    CheckFled()
+    NomadFightCount = NomadFightCount + 1
+    exit
 
 NomadsHostile:
-	Portrait = NomadBeard
-	SetupMonster Swordsman11 distance=2 body=WhiteRobe
-	Portrait = None
-	OnGoto NomadFightCount NomadsSpotYou NomadsSpotYou NomadsSpotYou HeadmanRallies
+    Portrait = NomadBeard
+    SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
+    Portrait = None
+    goto [NomadsSpotYou, NomadsSpotYou, NomadsSpotYou, HeadmanRallies][NomadFightCount]
 
 NomadsSpotYou:
-	PrintClear "A GROUP OF NOMADS SPOT YOU. THEY SHOUT AND CHARGE. AS THEY COME CLOSER THEIR NUMBERS SWELL WITH ARRIVALS."
-	Gosub PressToContinue
-	Gosub NomadEncounterMenu
-	OnGoto Scratch10 Done NomadFightNoSurprise ExitToWilderness
+    Text("A GROUP OF NOMADS SPOT YOU. THEY SHOUT AND CHARGE. AS THEY COME CLOSER THEIR NUMBERS SWELL WITH ARRIVALS.")
+    PressToContinue()
+    NomadEncounterMenu()
+    goto [Done, NomadFightNoSurprise, ExitToWilderness][Scratch10]
 
 HeadmanRallies:
-	PrintClear "THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE."
-	Gosub PressToContinue
-	Portrait = NomadElder
-	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=12
-	Portrait = None
-	OnGoto Scratch10 Done TribeFight ExitToWilderness
+    Text("THE HEROIC DEATHS OF THOSE YOU HAVE JUST BATTLED HAS BOUGHT TIME FOR THE HEADMAN TO RALLY HIS PEOPLE. WITH A TREMENDOUS CRY HE LEADS HIS TRIBE INTO BATTLE.")
+    PressToContinue()
+    Portrait = NomadElder
+    EncounterMenu(Swordsman11, distance=MaxDist, body=WhiteRobe, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, escape=12, strength=12)
+    Portrait = None
+    goto [Done, TribeFight, ExitToWilderness][Scratch10]
 
 TribeFight:
-	Surprise = NoSurprise
-	Morale = 100
-	MonsterHit = 254
-	ClearMonsters
-	LoadMonster ThLvlFighter41 count=5 icon=ThLvlFighter
-	LoadMonster Hassad count=1 icon=Hassad
-	LoadMonster Shaman count=1 icon=Shaman
-	LoadMonster Nomad count=49 icon=Nomad
-	Treasure 0 0 0 #1388 0 0 0 255
+    Surprise = NoSurprise
+    Morale = 100
+    MonsterHit = 254
+    ClearMonsters()
+    LoadMonster(ThLvlFighter41, count=5, icon=ThLvlFighter)
+    LoadMonster(Hassad, count=1, icon=Hassad)
+    LoadMonster(Shaman, count=1, icon=Shaman)
+    LoadMonster(Nomad, count=49, icon=Nomad)
+    Treasure(gold=5000)
 
 TribeCombat:
-	Combat
-	Gosub CheckFled
-	MarkFlags4 |= FoughtTribe
-	Exit
+    Combat()
+    CheckFled()
+    MarkFlags4 |= FoughtTribe
+    exit
 
-CheckFled:
-	if CombatEnd != PartyFled: Return
+def CheckFled() {
+    if CombatEnd != PartyFled { return }
+} # falls into LeaveCamp
 
 LeaveCamp:
-	Mark4 = 1
+    Mark4 = 1
 
 ExitToWilderness:
-	RedrawView
-	Call CallRedraw
-	Portrait = None
-	if MarkFlags4 has FoughtTribe: Goto MarkLeftCamp
-	Scratch10 = MarkFlags4 & FeastAccepted
-	if Scratch10 != 1: Goto LoadWilderness
+    RedrawView()
+    CallRedraw()
+    Portrait = None
+    if MarkFlags4 has FoughtTribe { goto MarkLeftCamp }
+    Scratch10 = MarkFlags4 & FeastAccepted
+    if Scratch10 != 1 { goto LoadWilderness }
 
-MarkLeftCamp:
-	if QuestNomads != Rewarded: QuestNomads = RewardDue
+    MarkLeftCamp:
+    if QuestNomads != Rewarded { QuestNomads = RewardDue }
 
-LoadWilderness:
-	NewECL Wilderness
+    LoadWilderness:
+    NewECL(Wilderness)
 
 NomadsGather:
-	if MarkFlags4 has AttackedNomadAlly: Goto NomadsHostile
-	Portrait = NomadBeard
-	SetupMonster Swordsman11 distance=2 body=WhiteRobe
-	PrintClear "A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN."
-	Gosub ApproachPause
-	PrintClear "ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP."
-	Gosub ApproachPause
-	PrintClear "YOU CAN SEE CHILDREN PEERING OUT OF THE TENT OPENINGS, ONLY TO BE PUSHED BACK INSIDE BY THEIR MOTHERS."
-	Gosub PressToContinue
-	EncounterMenu Swordsman11 distance=0 body=WhiteRobe result=Scratch10 combat=Attack wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE." escape=12 strength=12
-	Portrait = None
-	OnGoto Scratch10 Done NomadFightNoSurprise ExitToWilderness
-	ShowPortrait NomadElder WhiteRobe
-	SetupMonster Swordsman11 distance=0 body=WhiteRobe
-	Portrait = None
-	PrintClear "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
-	Gosub PressToContinue
-	$AuxCounter = "TOMORROW"
-	if Hours < 14: $AuxCounter = "TONIGHT"
-	PrintClear "THE BIGGEST NOMAD, APPARENTLY THE CHIEF OR HEADMAN, ACKNOWLEDGES YOU WITH A NOD, 'WE WILL GIVE A FEAST IN YOUR HONOR "
-	Print $AuxCounter
-	Print ". WILL YOU JOIN US?'"
-	if Ask YesNoMenu == "YES": Goto AcceptFeast
-	PrintClear "'THEN YOU MUST LEAVE US,' HE RESPONDS WITH AS MUCH DIGNITY AS HE CAN MUSTER. DO YOU LEAVE?"
-	if Ask YesNoMenu == "YES": Goto LeaveCamp
-	PrintClear "'YOUR INSULTS ARE TOO MANY! KILL THEM!'"
-	Surprise = PartyIsSurprised
-	Goto NomadFight
+    if MarkFlags4 has AttackedNomadAlly { goto NomadsHostile }
+    Portrait = NomadBeard
+    SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
+    Text("A CROWD OF SCRUFFY LOOKING NOMADS GATHERS AS HIDDEN SENTRIES GIVE WORD OF YOUR APPROACH. THERE ARE ABOUT AN EQUAL NUMBER OF MEN AND WOMEN.")
+    ApproachPause()
+    Text("ALL THE NOMADS HOLD THEIR SWORDS AT THE READY, WATCHING YOU WARILY. MORE NOMADS APPEAR FROM OUT OF TENTS IN THE CAMP.")
+    ApproachPause()
+    Text("YOU CAN SEE CHILDREN PEERING OUT OF THE TENT OPENINGS, ONLY TO BE PUSHED BACK INSIDE BY THEIR MOTHERS.")
+    PressToContinue()
+    EncounterMenu(Swordsman11, distance=0, body=WhiteRobe, result=Scratch10, combat=Attack, wait=Mirror,
+        flee=Mirror, advance=Mirror, parlay=Talk,
+        near="THE NOMADS WAIT FOR YOU TO MAKE THE FIRST MOVE.", escape=12, strength=12)
+    Portrait = None
+    goto [Done, NomadFightNoSurprise, ExitToWilderness][Scratch10]
+    ShowPortrait(NomadElder, WhiteRobe)
+    SetupMonster(Swordsman11, distance=0, body=WhiteRobe)
+    Portrait = None
+    Text("THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM.")
+    PressToContinue()
+    $AuxCounter = "TOMORROW"
+    if Hours < 14 { $AuxCounter = "TONIGHT" }
+    Text("THE BIGGEST NOMAD, APPARENTLY THE CHIEF OR HEADMAN, ACKNOWLEDGES YOU WITH A NOD, 'WE WILL GIVE A FEAST IN YOUR HONOR ")
+    Print($AuxCounter)
+    Print(". WILL YOU JOIN US?'")
+    if YesNoMenu() == "YES" { goto AcceptFeast }
+    Text("'THEN YOU MUST LEAVE US,' HE RESPONDS WITH AS MUCH DIGNITY AS HE CAN MUSTER. DO YOU LEAVE?")
+    if YesNoMenu() == "YES" { goto LeaveCamp }
+    Text("'YOUR INSULTS ARE TOO MANY! KILL THEM!'")
+    Surprise = PartyIsSurprised
+    goto NomadFight
 
-AcceptFeast:
-	MarkFlags4 |= FeastAccepted
-	if Hours < 14: Goto CampGames
-	PrintClear "'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS."
-	Gosub PressToContinue
-	CampStage = Lodged
+    AcceptFeast:
+    MarkFlags4 |= FeastAccepted
+    if Hours < 14 { goto CampGames }
+    Text("'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS.")
+    PressToContinue()
+    CampStage = Lodged
 
 LodgingRest:
-	RedrawView
-	Gosub WalkToHut
-	PrintClear "'HERE YOU MAY REST.'"
-	Gosub PressToContinue
-	Gosub SetRestRules
-	RestSaveX = PartyX
-	RestSaveY = PartyY
-	RestSaveFacing = Facing
-	Program 9
+    RedrawView()
+    WalkToHut()
+    Text("'HERE YOU MAY REST.'")
+    PressToContinue()
+    SetRestRules()
+    RestSaveX = PartyX
+    RestSaveY = PartyY
+    RestSaveFacing = Facing
+    Program(9)
 
 MorningGreeting:
-	Portrait = NomadElder
-	SetupMonster Swordsman11 distance=2 body=WhiteRobe
-	Portrait = None
-	Gosub ApproachHidePortrait
-	PrintClear "THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'"
-	Gosub ApproachHidePortrait
+    Portrait = NomadElder
+    SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
+    Portrait = None
+    ApproachHidePortrait()
+    Text("THE HEADMAN WALKS UP TO YOU WITH HIS GUARDS. 'GOOD MORNING. THERE ARE CELEBRATIONS PLANNED TODAY.'")
+    ApproachHidePortrait()
 
 CampGames:
-	CampStage = Games
-	PrintClear "'COME, LET THERE BE GAMES FOR OUR GUESTS.' HE LEADS YOU TO THE CAMP'S CENTRAL CLEARING."
-	RedrawView
-	Gosub WalkToClearing
-	Facing = East
-	Call CallRedraw
-	PrintClear "YOU ARE TREATED AS HONORED GUESTS FOR THE REST OF THE DAY. THERE ARE CONTESTS OF STRENGTH AND SKILL IN YOUR HONOR."
-	Gosub PressToContinue
-	Sky = 8
-	Call CallRedraw
-	PrintClear "AS NIGHT FALLS, THE NOMADS BUILD A HUGE CAMPFIRE IN THE CENTER OF THE CAMP. THE WHOLE TRIBE GATHERS FOR THE FEAST. AFTER THE FEAST THERE IS DANCING AND WILD CELEBRATIONS."
-	Gosub PressToContinue
-	ShowPortrait NomadElder WhiteRobe
-	Portrait = None
-	PrintClear "DURING THE FESTIVITIES THE CHIEF (HIS TONGUE LOOSENED BY DRINK) TELLS YOU OF THE DANGERS OF THE REGION. YOU MAKE HASSAD AHWAL'S TALK ENTRY 55 IN YOUR JOURNAL."
-	Gosub PressToContinue
-	PrintClear "THE HEADMAN SEEMS VERY UNEASY AS HE CONTINUES TO SPEAK. HE PRACTICALLY BEGS YOU TO STAY FOR A FEW MORE DAYS, RATHER THAN LEAVE IN THE MORNING AS YOU PLANNED."
-	Gosub PressToContinue
-	PrintClear "'MY SCOUTS HAVE SEEN EVIDENCE OF A LARGE BAND OF KOBOLDS IN THE VICINITY. I WORRY ABOUT MY PEOPLE. IF YOU WOULD STAY UNTIL THEY PASS I WOULD APPRECIATE IT."
-	Gosub PressToContinue
-	PrintClear "'PLEASE THINK ABOUT IT OVERNIGHT.' AFTER A WHILE THE FESTIVITIES END AND YOU ARE ESCORTED TO YOUR LODGING. "
-	Gosub PressToContinue
-	Hours = 18
-	Goto LodgingRest
+    CampStage = Games
+    Text("'COME, LET THERE BE GAMES FOR OUR GUESTS.' HE LEADS YOU TO THE CAMP'S CENTRAL CLEARING.")
+    RedrawView()
+    WalkToClearing()
+    Facing = East
+    CallRedraw()
+    Text("YOU ARE TREATED AS HONORED GUESTS FOR THE REST OF THE DAY. THERE ARE CONTESTS OF STRENGTH AND SKILL IN YOUR HONOR.")
+    PressToContinue()
+    Sky = 8
+    CallRedraw()
+    Text("AS NIGHT FALLS, THE NOMADS BUILD A HUGE CAMPFIRE IN THE CENTER OF THE CAMP. THE WHOLE TRIBE GATHERS FOR THE FEAST. AFTER THE FEAST THERE IS DANCING AND WILD CELEBRATIONS.")
+    PressToContinue()
+    ShowPortrait(NomadElder, WhiteRobe)
+    Portrait = None
+    Text("DURING THE FESTIVITIES THE CHIEF (HIS TONGUE LOOSENED BY DRINK) TELLS YOU OF THE DANGERS OF THE REGION. YOU MAKE HASSAD AHWAL'S TALK ENTRY 55 IN YOUR JOURNAL.")
+    PressToContinue()
+    Text("THE HEADMAN SEEMS VERY UNEASY AS HE CONTINUES TO SPEAK. HE PRACTICALLY BEGS YOU TO STAY FOR A FEW MORE DAYS, RATHER THAN LEAVE IN THE MORNING AS YOU PLANNED.")
+    PressToContinue()
+    Text("'MY SCOUTS HAVE SEEN EVIDENCE OF A LARGE BAND OF KOBOLDS IN THE VICINITY. I WORRY ABOUT MY PEOPLE. IF YOU WOULD STAY UNTIL THEY PASS I WOULD APPRECIATE IT.")
+    PressToContinue()
+    Text("'PLEASE THINK ABOUT IT OVERNIGHT.' AFTER A WHILE THE FESTIVITIES END AND YOU ARE ESCORTED TO YOUR LODGING. ")
+    PressToContinue()
+    Hours = 18
+    goto LodgingRest
 
 GuardEscort:
-	alias Choice = Scratch10
-	Gosub ShowNomads
-	Print "A GUARD APPEARS BEFORE YOU, 'YOU MUST HAVE MADE A MISTAKE. ALLOW ME TO ESCORT YOU TO YOUR LODGING.'"
-	Choice = Menu "FOLLOW THE GUARD" "ATTACK THE GUARD"
-	OnGoto Choice LodgingRest
-	PrintClear "AS THE GUARD TURNS TO ESCORT YOU BACK TO YOUR TENT, YOU SMILE AND STICK HIM IN THE BACK. WITH A CHOKED CRY HE COLLAPSES."
-	Gosub PressToContinue
-	RedrawView
-	Call CallRedraw
-	PrintClear "HOWEVER, AWAKENED BY THE TALK SOMEONE IN THE TENT HAS SEEN YOUR ACT AND A SCREAM GOES OUT 'TREACHERY! THEY HAVE SLAIN SAMIR!' THE CAMP BEGINS TO STIR."
-	Gosub PressToContinue
-	Surprise = MonstersAreSurprised
-	MaxDist = 2
-	Gosub NomadEncounterMenu
-	OnGoto Choice Done NomadFight ExitToWilderness
+    ShowNomads()
+    Print("A GUARD APPEARS BEFORE YOU, 'YOU MUST HAVE MADE A MISTAKE. ALLOW ME TO ESCORT YOU TO YOUR LODGING.'")
+    Scratch10 = Menu("FOLLOW THE GUARD", "ATTACK THE GUARD")
+    goto [LodgingRest][Scratch10]
+    Text("AS THE GUARD TURNS TO ESCORT YOU BACK TO YOUR TENT, YOU SMILE AND STICK HIM IN THE BACK. WITH A CHOKED CRY HE COLLAPSES.")
+    PressToContinue()
+    RedrawView()
+    CallRedraw()
+    Text("HOWEVER, AWAKENED BY THE TALK SOMEONE IN THE TENT HAS SEEN YOUR ACT AND A SCREAM GOES OUT 'TREACHERY! THEY HAVE SLAIN SAMIR!' THE CAMP BEGINS TO STIR.")
+    PressToContinue()
+    Surprise = MonstersAreSurprised
+    MaxDist = 2
+    NomadEncounterMenu()
+    goto [Done, NomadFight, ExitToWilderness][Scratch10]
 
 HeadmanAsks:
-	alias Choice = Scratch10
-	Portrait = NomadElder
-	SetupMonster Swordsman11 distance=2 body=WhiteRobe
-	Sky = 11
-	Gosub ApproachTwice
-	CampStage = HeadmanRequest
-	PrintClear "THE HEADMAN COMES TO YOU AND SAYS, 'ABOUT MY REQUEST OF LAST NIGHT, WHAT IS YOUR DECISION?'"
-	Choice = Menu "STAY AND FIGHT" "LEAVE"
-	OnGoto Choice StayAndFight
-	PrintClear "LOOKING DISAPPOINTED THE HEADMAN SAYS, 'GOOD LUCK IN YOUR TRAVELS.'"
-	Goto LeaveCamp
+    Portrait = NomadElder
+    SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
+    Sky = 11
+    ApproachTwice()
+    CampStage = HeadmanRequest
+    Text("THE HEADMAN COMES TO YOU AND SAYS, 'ABOUT MY REQUEST OF LAST NIGHT, WHAT IS YOUR DECISION?'")
+    Scratch10 = Menu("STAY AND FIGHT", "LEAVE")
+    goto [StayAndFight][Scratch10]
+    Text("LOOKING DISAPPOINTED THE HEADMAN SAYS, 'GOOD LUCK IN YOUR TRAVELS.'")
+    goto LeaveCamp
 
 StayAndFight:
-	PrintClear "'I AND MY PEOPLE THANK YOU. AND KNOW THAT WE HAVE HONOR. YOU SHALL BE RICHLY REWARDED FOR YOUR GENEROUS AID.'"
-	Gosub PressToContinue
-	PrintClear "'YOU MAY WANDER AS YOU WILL OR YOU MAY STAY HERE AND REST AND STUDY. FORGIVE ME, I MUST SEE TO MY PEOPLE.' HE LEAVES."
-	Goto Done
-
-RestChanceTable:
-	Data 0 1 1 18 0 24 0 0
-
-ZoneXMinTable:
-	Data 0 4 8 0 0 0 4 8 4 8 4 8
-
-ZoneYMinTable:
-	Data 0 0 0 4 8 12 4 4 8 8 12 12
-
-ZoneXMaxTable:
-	Data 3 7 11 3 3 3 7 11 7 11 7 11
-
-ZoneYMaxTable:
-	Data 3 3 3 7 11 15 7 7 11 11 15 15
-
-ZoneDestXTable:
-	Data 4 7 11 4 4 4 8 13 8 13 8 10
-
-ZoneDestYTable:
-	Data 4 4 4 6 10 12 7 6
-
-WalkPathToHut:
-	Data 10 9 11 11 2 2 2 2 2 2 2 2 2 2 2 2
-	Data 2 2 2 2 2 2 2 3 3 3 3 3 2 2 2 2
-	Data 2 2 2 3 3 3 3 3 2 2 2 2 1 2 2 3
-	Data 3 3 3 3 2 2 2 2 0 2 2 2 3 3 3 3
-	Data 2 1 2 2 2 1 2 3 3 3 3 3 2 3 2 2
-	Data 2 2 2 1 2 3 3 3 1 2 2 1 1 2 2 2
-	Data 3 3 3 3 1 1 2 2 2 2 2 2 1 2 3 3
-	Data 1 1 2 1 2 2 2 2 3 3 3 3 2 3 1 1
-	Data 1 2 2 3 3 3 3 3 1 1 2 3 1 2 3 0
-	Data 0 1 0 3 1 1 1 1 0 255 0 3 3 3 3 3
-	Data 1 1 1 1 0 1 0 2 0 0 0 3 0 1 0 0
-	Data 0 0 0 3 1 1 3 3 0 0 0 0 0 0 0 0
-
-WalkPathToClearing:
-	Data 0 0 0 0 2 2 2 2 2 2 2 2 2 2 2 2
-	Data 2 2 2 2 2 2 2 3 3 3 3 3 2 2 2 2
-	Data 2 2 2 3 3 3 3 3 2 2 2 2 1 2 2 3
-	Data 3 3 3 3 2 2 2 2 0 2 2 2 3 3 3 3
-	Data 1 1 2 2 2 1 2 3 3 3 3 3 2 3 2 2
-	Data 2 2 2 1 2 3 3 3 1 1 1 1 1 2 2 2
-	Data 3 3 3 3 1 1 2 2 2 2 2 2 1 2 3 3
-	Data 1 1 2 1 2 255 3 3 3 3 3 3 2 3 1 1
-	Data 1 0 0 3 3 3 3 3 1 1 0 3 1 0 3 0
-	Data 0 1 0 3 1 1 1 1 0 0 0 3 3 3 3 3
-	Data 1 1 1 1 0 1 0 2 0 0 0 3 0 1 0 0
-	Data 0 0 0 3 1 1 3 3 0 0 0 0 0 0 0 0
-	Data 0 0 0 0
+    Text("'I AND MY PEOPLE THANK YOU. AND KNOW THAT WE HAVE HONOR. YOU SHALL BE RICHLY REWARDED FOR YOUR GENEROUS AID.'")
+    PressToContinue()
+    Text("'YOU MAY WANDER AS YOU WILL OR YOU MAY STAY HERE AND REST AND STUDY. FORGIVE ME, I MUST SEE TO MY PEOPLE.' HE LEAVES.")
+    goto Done
 
 KoboldRaid:
-	if Cell lacks 128: Goto RaidCries
-	PartyY -= 1
-	Facing = East
-	PrintClear "THE SOUND OF WAR CRIES DRAWS YOU OUT OF THE HUT. "
-	Gosub FaceTheSound
-	Goto RaidByStage
+    if Cell lacks Inside { goto RaidCries }
+    PartyY -= 1
+    Facing = East
+    Text("THE SOUND OF WAR CRIES DRAWS YOU OUT OF THE HUT. ")
+    FaceTheSound()
+    goto RaidByStage
 
-RaidCries:
-	Gosub HearWarCries
+    RaidCries:
+    HearWarCries()
 
-RaidByStage:
-	if MarkFlags4 has FoughtTribe: Goto HostileRaid
-	if Cell == 4: Goto HostileRaid
-	OnGoto KoboldRaidStage KoboldHorde KoboldsMelee KoboldsMelee KoboldLeader
+    RaidByStage:
+    if MarkFlags4 has FoughtTribe { goto HostileRaid }
+    if Cell == 4 { goto HostileRaid }
+    goto [KoboldHorde, KoboldsMelee, KoboldsMelee, KoboldLeader][KoboldRaidStage]
 
 KoboldHorde:
-	SetupMonster Kobold distance=2 closeup=Kobold
-	KoboldRaidStage = 1
-	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS."
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    KoboldRaidStage = 1
+    Text("A HORDE OF KOBOLDS IS ATTACKING THE CAMP. A LONE SENTRY CHARGES BUT IS QUICKLY CUT DOWN. A FAMILY EMERGES FROM A HUT AND CHARGES THE KOBOLDS.")
 
 KoboldEncounter:
-	Gosub PressToContinue
-	Gosub KoboldEncounterMenu
-	OnGoto Scratch10 Done KoboldFightAllied
-	Gosub RetreatOrFight
-	IfEq
-	Goto KoboldRaid
+    PressToContinue()
+    KoboldEncounterMenu()
+    goto [Done, KoboldFightAllied][Scratch10]
+    RetreatOrFight()
+    if 1 == 0 { goto KoboldRaid }
 
 KoboldFightAllied:
-	Gosub RollNomadAllies
+    RollNomadAllies()
 
 KoboldFight:
-	Surprise = NoSurprise
-	Morale = 80
-	ClearMonsters
-	if NomadAllies == 0: Goto LoadKobolds
-	LoadMonster Nomad count=NomadAllies icon=Nomad
+    Surprise = NoSurprise
+    Morale = 80
+    ClearMonsters()
+    if NomadAllies == 0 { goto LoadKobolds }
+    LoadMonster(Nomad, count=NomadAllies, icon=Nomad)
 
-LoadKobolds:
-	LoadMonster Kobold0 count=Scratch9 icon=Kobold
-	LoadMonster Kobold123 count=Scratch9 icon=Kobold
-	if MarkFlags4 lacks AttackedNomadAlly: Gosub MakeAlliesNomads
-	Combat
-	Gosub CheckAttackedAlly
-	if CombatEnd != PartyFled: Goto KoboldWaveDone
-	Gosub RetreatOrFight
-	Goto KoboldRaid
+    LoadKobolds:
+    LoadMonster(Kobold0, count=Scratch9, icon=Kobold)
+    LoadMonster(Kobold123, count=Scratch9, icon=Kobold)
+    if MarkFlags4 lacks AttackedNomadAlly { MakeAlliesNomads() }
+    Combat()
+    CheckAttackedAlly()
+    if CombatEnd != PartyFled { goto KoboldWaveDone }
+    RetreatOrFight()
+    goto KoboldRaid
 
-KoboldWaveDone:
-	KoboldRaidStage = KoboldRaidStage + 1
-	Gosub SetRestRules
-	Exit
+    KoboldWaveDone:
+    KoboldRaidStage = KoboldRaidStage + 1
+    SetRestRules()
+    exit
 
 KoboldsMelee:
-	SetupMonster Kobold distance=2 closeup=Kobold
-	PrintClear "AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. "
-	if MarkFlags4 lacks AttackedNomadAlly: Goto KoboldEncounter
-	PrintClear "THE NOMADS SEE YOU AND SHOUT, 'THE FILTHY TRAITORS! GET THEM!' THE KOBOLDS, SEEING AN OPPORTUNITY, JOIN WITH THEM."
-	Goto KoboldEncounter
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Text("AHEAD YOU SEE A LARGE GROUP OF KOBOLDS ENGAGED IN MELEE WITH SOME NOMADS. ")
+    if MarkFlags4 lacks AttackedNomadAlly { goto KoboldEncounter }
+    Text("THE NOMADS SEE YOU AND SHOUT, 'THE FILTHY TRAITORS! GET THEM!' THE KOBOLDS, SEEING AN OPPORTUNITY, JOIN WITH THEM.")
+    goto KoboldEncounter
 
 KoboldLeader:
-	alias Choice = Scratch10
-	if MarkFlags4 has AttackedNomadAlly: Goto NomadBetrayal
-	SetupMonster Kobold distance=2 closeup=Kobold
-	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK."
-	Gosub PressToContinue
-	PrintClear "'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'"
-	Choice = Menu "DESTROY THE KOBOLDS" "FLEE"
-	OnGoto Choice FinishTogether
-	PrintClear "THE HEADMAN SNEERS, 'COWARDS!' HE TURNS TO THE TWO GUARDS STILL LIVING AND YELLS, 'FOR HYRNKA!' HE AND HIS TWO GUARDS CHARGE INTO THE PACK."
-	Gosub PressToContinue
-	PrintClear "AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS."
-	Gosub PressToContinue
-	RedrawView
-	ShowPortrait NomadElder WhiteRobe
-	Portrait = None
-	PrintClear "WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'"
-	Gosub PressToContinue
-	MarkFlags4 |= KoboldRaidWon
-	CampStage = 0
-	ClearMonsters
-	Treasure 0 0 0 #01F4 0 0 0 255
-	Combat
-	PrintClear "'NOW LEAVE. WE HAVE OUR WOUNDED TO LOOK TO.'"
-	Goto ExitToWilderness
+    if MarkFlags4 has AttackedNomadAlly { goto NomadBetrayal }
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Text("YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER. THE HEADMAN WALKS UP AND SLAPS YOU ON THE BACK.")
+    PressToContinue()
+    Text("'WELL DONE! WHAT SAY WE FINISH THIS TOGETHER?'")
+    Scratch10 = Menu("DESTROY THE KOBOLDS", "FLEE")
+    goto [FinishTogether][Scratch10]
+    Text("THE HEADMAN SNEERS, 'COWARDS!' HE TURNS TO THE TWO GUARDS STILL LIVING AND YELLS, 'FOR HYRNKA!' HE AND HIS TWO GUARDS CHARGE INTO THE PACK.")
+    PressToContinue()
+    Text("AS THEY REACH THE PACK A FLURRY OF ARROWS STRIKE THEM. UNDAUNTED THEY STRIKE. KOBOLDS DIE LIKE FLIES AROUND THESE HEROES. A GUARD FALLS WITH A SCORE OF WOUNDS.")
+    PressToContinue()
+    RedrawView()
+    ShowPortrait(NomadElder, WhiteRobe)
+    Portrait = None
+    Text("WITHIN TEN MINUTES THE KOBOLDS BREAK, HALF THEIR NUMBER DEAD. THE CHIEF COMES BACK, 'I PROMISED YOU REWARD FOR YOUR AID. SO IT SHALL BE... EQUAL TO YOUR HONOR.'")
+    PressToContinue()
+    MarkFlags4 |= KoboldRaidWon
+    CampStage = 0
+    ClearMonsters()
+    Treasure(gold=500)
+    Combat()
+    Text("'NOW LEAVE. WE HAVE OUR WOUNDED TO LOOK TO.'")
+    goto ExitToWilderness
 
 FinishTogether:
-	PrintClear "'THEN LET US DO IT!'"
-	NomadAllies = 3
+    Text("'THEN LET US DO IT!'")
+    NomadAllies = 3
 
 KoboldLeaderFight:
-	Surprise = NoSurprise
-	Morale = 50
-	Delay
-	ClearMonsters
-	if MarkFlags4 has FoughtTribe: Goto LoadKoboldLeader
-	LoadMonster Hassad count=1 icon=Hassad
-	LoadMonster ThLvlFighter41 count=2 icon=ThLvlFighter
-	Gosub MakeAlliesNomads
+    Surprise = NoSurprise
+    Morale = 50
+    Delay()
+    ClearMonsters()
+    if MarkFlags4 has FoughtTribe { goto LoadKoboldLeader }
+    LoadMonster(Hassad, count=1, icon=Hassad)
+    LoadMonster(ThLvlFighter41, count=2, icon=ThLvlFighter)
+    MakeAlliesNomads()
 
-LoadKoboldLeader:
-	Treasure 0 0 0 #0BB8 0 0 0 255
-	LoadMonster Kobold0 count=27 icon=Kobold
-	LoadMonster Kobold123 count=26 icon=Kobold
-	Combat
-	Gosub CheckAttackedAlly
-	if MarkFlags4 has AttackedNomadAlly: Goto BetrayedOrFled
-	if CombatEnd != PartyFled: Goto RaidWon
+    LoadKoboldLeader:
+    Treasure(gold=3000)
+    LoadMonster(Kobold0, count=27, icon=Kobold)
+    LoadMonster(Kobold123, count=26, icon=Kobold)
+    Combat()
+    CheckAttackedAlly()
+    if MarkFlags4 has AttackedNomadAlly { goto BetrayedOrFled }
+    if CombatEnd != PartyFled { goto RaidWon }
 
-BetrayedOrFled:
-	MarkFlags4 |= FeastAccepted+FoughtTribe
-	Goto ExitToWilderness
+    BetrayedOrFled:
+    MarkFlags4 |= FeastAccepted|FoughtTribe
+    goto ExitToWilderness
 
-RaidWon:
-	MarkFlags4 |= KoboldRaidWon
-	CampStage = 0
-	if MarkFlags4 has FoughtTribe: Exit
-	if MarkFlags4 has AttackedNomadAlly: Exit
-	ShowPortrait NomadMoustache WhiteRobe
-	Portrait = None
-	PrintClear "THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'"
-	ClearMonsters
-	Treasure 0 0 0 #1388 0 0 0 37 // Wand of Magic Missiles, Two-Handed Sword +2
-	Combat
-	PrintClear "'NOW PLEASE LEAVE US TO OUR MOURNING. IT IS A PERSONAL THING FOR OUR PEOPLE.'"
-	Goto ExitToWilderness
+    RaidWon:
+    MarkFlags4 |= KoboldRaidWon
+    CampStage = 0
+    if MarkFlags4 has FoughtTribe { exit }
+    if MarkFlags4 has AttackedNomadAlly { exit }
+    ShowPortrait(NomadMoustache, WhiteRobe)
+    Portrait = None
+    Text("THE SHAMAN WALKS UP TO YOU. 'YOU FOUGHT AS THE HEROES OF LEGEND. A REWARD WAS PROMISED AND SO SHALL IT BE.'")
+    ClearMonsters()
+    Treasure(gold=5000, items=[WandOfMagicMissiles, TwoHandedSword2])
+    Combat()
+    Text("'NOW PLEASE LEAVE US TO OUR MOURNING. IT IS A PERSONAL THING FOR OUR PEOPLE.'")
+    goto ExitToWilderness
 
 HostileRaid:
-	NomadAllies = 0
-	OnGoto KoboldRaidStage HostileHorde HostileBand HostileBand HostileLeader
+    NomadAllies = 0
+    goto [HostileHorde, HostileBand, HostileBand, HostileLeader][KoboldRaidStage]
 
 HostileHorde:
-	SetupMonster Kobold distance=2 closeup=Kobold
-	KoboldRaidStage = 1
-	PrintClear "A HORDE OF KOBOLDS IS ATTACKING THE CAMP."
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    KoboldRaidStage = 1
+    Text("A HORDE OF KOBOLDS IS ATTACKING THE CAMP.")
 
 HostileEncounter:
-	Gosub PressToContinue
-	Gosub SizeKoboldBand
-	Gosub KoboldEncounterMenu
-	OnGoto Scratch10 Done KoboldFight
-	Gosub RetreatOrFight
-	Goto KoboldRaid
+    PressToContinue()
+    SizeKoboldBand()
+    KoboldEncounterMenu()
+    goto [Done, KoboldFight][Scratch10]
+    RetreatOrFight()
+    goto KoboldRaid
 
 HostileBand:
-	SetupMonster Kobold distance=2 closeup=Kobold
-	PrintClear "ADVANCING ON YOU IS A LARGE BAND OF KOBOLDS WITH BLOOD LUST IN THEIR EYES."
-	Goto HostileEncounter
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Text("ADVANCING ON YOU IS A LARGE BAND OF KOBOLDS WITH BLOOD LUST IN THEIR EYES.")
+    goto HostileEncounter
 
 HostileLeader:
-	if MarkFlags4 lacks FoughtTribe: Goto KoboldLeader
-	SetupMonster Kobold distance=2 closeup=Kobold
-	PrintClear "YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER."
-	Gosub PressToContinue
-	Gosub KoboldEncounterMenu
-	OnGoto Scratch10 Done KoboldLeaderFight
-	Gosub RetreatOrFight
-	Goto KoboldRaid
+    if MarkFlags4 lacks FoughtTribe { goto KoboldLeader }
+    SetupMonster(Kobold, distance=2, closeup=Kobold)
+    Text("YOU SEE A HUGE GROUP OF KOBOLDS MOVING RELUNCTANTLY FORWARD UNDER THE CURSES OF THEIR LEADER.")
+    PressToContinue()
+    KoboldEncounterMenu()
+    goto [Done, KoboldLeaderFight][Scratch10]
+    RetreatOrFight()
+    goto KoboldRaid
 
 NomadBetrayal:
-	Portrait = NomadElder
-	SetupMonster Swordsman11 distance=2 body=WhiteRobe
-	PrintClear "JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK."
-	Gosub PressToContinue
-	EncounterMenu Swordsman11 distance=MaxDist body=WhiteRobe result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Attack escape=12 strength=12
-	Portrait = None
-	OnGoto Scratch10 Done BetrayalFight
-	Gosub RetreatOrFight
-	Goto KoboldRaid
+    Portrait = NomadElder
+    SetupMonster(Swordsman11, distance=2, body=WhiteRobe)
+    Text("JUST AS YOU THINK YOURSELVES FREE OF DANGER, THE HEADMAN, HIS SHAMAN AND GUARDS ATTACK WITH CRIES OF 'FOUL TRAITORS!' AT THE SAME TIME KOBOLDS ATTACK.")
+    PressToContinue()
+    EncounterMenu(Swordsman11, distance=MaxDist, body=WhiteRobe, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Attack, escape=12, strength=12)
+    Portrait = None
+    goto [Done, BetrayalFight][Scratch10]
+    RetreatOrFight()
+    goto KoboldRaid
 
 BetrayalFight:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster ThLvlFighter41 count=5 icon=ThLvlFighter
-	LoadMonster Hassad count=1 icon=Hassad
-	LoadMonster Shaman count=1 icon=Shaman
-	LoadMonster Kobold123 count=49 icon=Kobold
-	MonsterHit = 255
-	MarkFlags4 |= KoboldRaidWon
-	Treasure 0 0 0 #1F40 0 0 0 255
-	Goto TribeCombat
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(ThLvlFighter41, count=5, icon=ThLvlFighter)
+    LoadMonster(Hassad, count=1, icon=Hassad)
+    LoadMonster(Shaman, count=1, icon=Shaman)
+    LoadMonster(Kobold123, count=49, icon=Kobold)
+    MonsterHit = 255
+    MarkFlags4 |= KoboldRaidWon
+    Treasure(gold=8000)
+    goto TribeCombat
+
+# tables
+RestChanceTable = [0, 1, 1, 18, 0, 24, 0, 0]
+ZoneXMinTable = [0, 4, 8, 0, 0, 0, 4, 8, 4, 8, 4, 8]
+ZoneYMinTable = [0, 0, 0, 4, 8, 12, 4, 4, 8, 8, 12, 12]
+ZoneXMaxTable = [3, 7, 11, 3, 3, 3, 7, 11, 7, 11, 7, 11]
+ZoneYMaxTable = [3, 3, 3, 7, 11, 15, 7, 7, 11, 11, 15, 15]
+ZoneDestXTable = [4, 7, 11, 4, 4, 4, 8, 13, 8, 13, 8, 10]
+ZoneDestYTable = [4, 4, 4, 6, 10, 12, 7, 6]
+WalkPathToHut = [10, 9, 11, 11, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 0, 2, 2, 2, 3, 3, 3, 3, 2, 1, 2, 2, 2, 1, 2, 3, 3, 3, 3, 3, 2, 3, 2, 2, 2, 2, 2, 1, 2, 3, 3, 3, 1, 2, 2, 1, 1, 2, 2, 2, 3, 3, 3, 3, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 3, 3, 1, 1, 2, 1, 2, 2, 2, 2, 3, 3, 3, 3, 2, 3, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 1, 1, 2, 3, 1, 2, 3, 0, 0, 1, 0, 3, 1, 1, 1, 1, 0, 255, 0, 3, 3, 3, 3, 3, 1, 1, 1, 1, 0, 1, 0, 2, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 3, 1, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0]
+WalkPathToClearing = [0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 0, 2, 2, 2, 3, 3, 3, 3, 1, 1, 2, 2, 2, 1, 2, 3, 3, 3, 3, 3, 2, 3, 2, 2, 2, 2, 2, 1, 2, 3, 3, 3, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 3, 3, 1, 1, 2, 1, 2, 255, 3, 3, 3, 3, 3, 3, 2, 3, 1, 1, 1, 0, 0, 3, 3, 3, 3, 3, 1, 1, 0, 3, 1, 0, 3, 0, 0, 1, 0, 3, 1, 1, 1, 1, 0, 0, 0, 3, 3, 3, 3, 3, 1, 1, 1, 1, 0, 1, 0, 2, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 3, 1, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

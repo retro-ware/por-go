@@ -1,595 +1,594 @@
-event0:
-	Scratch6 = 11
-	if Hours >= 14: Scratch6 = 8
-	Sky = Scratch6
-	SkyInside = 10
-	if LeftMap == 0: Exit
-	QuestZhentilOutpost = LeftOutpost
-	Portrait = None
-	NewECL Mountains
+on move {
+    Scratch6 = 11
+    if Hours >= 14 { Scratch6 = 8 }
+    Sky = Scratch6
+    SkyInside = 10
+    if LeftMap == 0 { exit }
+    QuestZhentilOutpost = LeftOutpost
+    Portrait = None
+    NewECL(Mountains)
+}
 
-Table994C:
-	Data 1 2 0 0 0 0 3 0 0 0 0 0 0 4 0 0
-	Data 0 0 5 0 0 0 0 0 6
-
-RouteStepTable:
-	Data 2 3 2 0 1 0 1 1 0 1 0 3 0 2 0 0
-	Data 2 0 2 0 3 0 2 0 1
-
-DestFacing:
-	Data 2 2 2 3 3 2 2 0 1 1 0 0 3 3 2 1
-	Data 1 0 0 3 3 0 0 1 1
-
-event1:
-	if AlarmLevel != 0: Goto AlarmCheck
+on step {
+    if AlarmLevel != 0 { goto AlarmCheck }
+} # falls into CellDispatch
 
 CellDispatch:
-	Scratch7 = Cell & 127
-	OnGoto Scratch7 Done EscortIn RestrictedGuards QuartersEnter ClimbableWall DwarfAttackCheck
+    Scratch7 = Cell & ~Inside
+    goto [Done, EscortIn, RestrictedGuards, QuartersEnter, ClimbableWall, DwarfAttackCheck][Scratch7]
 
 AlarmCheck:
-	if OutpostConquered != 0: Goto CellDispatch
-	Scratch1 = Random 14
-	if Scratch1 >= AlarmLevel: Goto CellDispatch
-	Scratch1 = 5 * AlarmLevel
-	AlarmLevel += 1
-	Portrait = NoseguardHelmet
-	if Scratch1 > 30: Goto DwarfAndCommandant
-	if Scratch1 == 10 {
-		PrintClear "THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS."
-		Goto CellDispatch
-	}
+    if OutpostConquered != 0 { goto CellDispatch }
+    Scratch1 = Random(14)
+    if Scratch1 >= AlarmLevel { goto CellDispatch }
+    Scratch1 = 5 * AlarmLevel
+    AlarmLevel += 1
+    Portrait = NoseguardHelmet
+    if Scratch1 > 30 { goto DwarfAndCommandant }
+    if Scratch1 == 10 {
+        Text("THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS.")
+        goto CellDispatch
+    }
 
 GuardsSpotYou:
-	SetupMonster Fighter16 distance=2 body=LeatherHarness
-	Gosub ApproachTwice
-	PrintClear "SOME GUARDS SPOT YOU AND ATTACK."
-	ClearMonsters
-	LoadMonster Guard count=Scratch1 icon=11
-	LoadMonster Corporal count=AlarmLevel icon=11
-	Combat
-	Goto CellDispatch
+    SetupMonster(Fighter16, distance=2, body=LeatherHarness)
+    ApproachTwice()
+    Text("SOME GUARDS SPOT YOU AND ATTACK.")
+    ClearMonsters()
+    LoadMonster(Guard, count=Scratch1, icon=11)
+    LoadMonster(Corporal, count=AlarmLevel, icon=11)
+    Combat()
+    goto CellDispatch
 
 EscortIn:
-	if EscortedIn != 0: Goto FrontGateCheck
-	PrintClear "YOU ARE BEING ESCORTED INTO ZHENTIL OUTPOST."
-	Gosub WaitReturnPressed
-	Scratch6 = 0
-	EscortedIn = Escorted
+    if EscortedIn != 0 { goto FrontGateCheck }
+    Text("YOU ARE BEING ESCORTED INTO ZHENTIL OUTPOST.")
+    WaitReturnPressed()
+    Scratch6 = 0
+    EscortedIn = Escorted
 
-EscortStep:
-	Scratch1 = RouteStepTable[Scratch6]
-	Facing = DestFacing[Scratch6]
-	Gosub WalkSteps
-	Scratch1 = Table994C[Scratch6]
-	OnGosub Scratch1 TourNothing TourInnerWall TourToKeep CommandantOffice TourBarracks TourWatchTowers TourQuarters
-	if Scratch1 == 6: Goto Done
-	Scratch6 += 1
-	Goto EscortStep
+    EscortStep:
+    Scratch1 = RouteStepTable[Scratch6]
+    Facing = DestFacing[Scratch6]
+    WalkSteps()
+    Scratch1 = Table994C[Scratch6]
+    gosub [TourNothing, TourInnerWall, TourToKeep, CommandantOffice, TourBarracks, TourWatchTowers,
+        TourQuarters][Scratch1]
+    if Scratch1 == 6 { goto Done }
+    Scratch6 += 1
+    goto EscortStep
 
-WalkSteps:
-	Scratch2 = 1
-	if Scratch1 == 0 {
-		Call CallRedraw
-		Delay
-		Return
-	}
+def WalkSteps() {
+    Scratch2 = 1
+    if Scratch1 == 0 {
+        CallRedraw()
+        Delay()
+        return
+    }
 
-WalkStepLoop:
-	if Scratch2 > Scratch1: Return
-	OnGosub Facing StepNorth StepEast StepSouth StepWest
-	Call CallRedraw
-	Delay
-	Scratch2 += 1
-	Goto WalkStepLoop
+    WalkStepLoop:
+    if Scratch2 > Scratch1 { return }
+    gosub [StepNorth, StepEast, StepSouth, StepWest][Facing]
+    CallRedraw()
+    Delay()
+    Scratch2 += 1
+    goto WalkStepLoop
+}
 
-StepNorth:
-	PartyY -= 1
-	Return
+def StepNorth() {
+    PartyY -= 1
+    return
+}
 
-StepEast:
-	PartyX += 1
-	Return
+def StepEast() {
+    PartyX += 1
+    return
+}
 
-StepSouth:
-	PartyY += 1
-	Return
+def StepSouth() {
+    PartyY += 1
+    return
+}
 
-StepWest:
-	PartyX -= 1
+def StepWest() {
+    PartyX -= 1
+} # falls into TourNothing
 
 TourNothing:
-	Return
+    return
 
-TourInnerWall:
-	PrintClear "FROM HERE YOU SEE A LARGE INNER WALL AROUND THE CENTRAL KEEP.  THIS AREA IS BUSY WITH MEN ENTERING AND LEAVING BARRACKS."
-	Gosub WaitReturnPressed
-	Return
+def TourInnerWall() {
+    Text("FROM HERE YOU SEE A LARGE INNER WALL AROUND THE CENTRAL KEEP.  THIS AREA IS BUSY WITH MEN ENTERING AND LEAVING BARRACKS.")
+    WaitReturnPressed()
+    return
+}
 
-TourToKeep:
-	PrintClear "YOU ARE LED TOWARD THE CENTRAL KEEP."
-	Gosub WaitReturnPressed
-	Return
+def TourToKeep() {
+    Text("YOU ARE LED TOWARD THE CENTRAL KEEP.")
+    WaitReturnPressed()
+    return
+}
 
-CommandantOffice:
-	Picture EyepatchMan
-	PrintClear "YOU ARE INSIDE THE COMMANDANT'S OFFICE.  HE GREETS YOU AND YOU HAND HIM THE PAPERS."
-	Gosub WaitReturnPressed
-	PrintClear "AFTER SKIMMING THROUGH THE PAPERS THE COMMANDANT SAYS, 'I WELCOME YOU AND HOPE YOU WILL JOIN ME FOR DINNER TONIGHT.'  HE TELLS A GUARD TO GIVE YOU A TOUR OF THE OUTPOST."
-	Gosub WaitReturnPressed
-	InvitedToDinner = 1
-	Return
+def CommandantOffice() {
+    Picture(50)
+    Text("YOU ARE INSIDE THE COMMANDANT'S OFFICE.  HE GREETS YOU AND YOU HAND HIM THE PAPERS.")
+    WaitReturnPressed()
+    Text("AFTER SKIMMING THROUGH THE PAPERS THE COMMANDANT SAYS, 'I WELCOME YOU AND HOPE YOU WILL JOIN ME FOR DINNER TONIGHT.'  HE TELLS A GUARD TO GIVE YOU A TOUR OF THE OUTPOST.")
+    WaitReturnPressed()
+    InvitedToDinner = 1
+    return
+}
 
-TourBarracks:
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=1 body=LeatherHarness
-	PrintClear "THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'"
-	RedrawView
-	Gosub WaitReturnPressed
-	Return
+def TourBarracks() {
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=1, body=LeatherHarness)
+    Text("THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'")
+    RedrawView()
+    WaitReturnPressed()
+    return
+}
 
-TourWatchTowers:
-	SetupMonster Fighter16 distance=1 body=LeatherHarness
-	PrintClear "'HERE YOU SEE ONE OF OUR FINE WATCH TOWERS WHICH WERE BUILT BY THE FINEST STONE MASONS IN THE LAND.'"
-	Gosub WaitReturnPressed
-	PrintClear "'FROM HERE YOU CAN ALSO SEE OUR SOLIDLY BUILT OUTSIDE WALL.  THIS WALL HAS SURVIVED MANY ATTACKS, INCLUDING ONE FROM A DRAGON.'"
-	Gosub WaitReturnPressed
-	PrintClear "THE GUARD SAYS 'THAT CONCLUDES THE TOUR.  I WILL SHOW YOU TO YOUR QUARTERS.'"
-	RedrawView
-	Gosub WaitReturnPressed
-	Return
+def TourWatchTowers() {
+    SetupMonster(Fighter16, distance=1, body=LeatherHarness)
+    Text("'HERE YOU SEE ONE OF OUR FINE WATCH TOWERS WHICH WERE BUILT BY THE FINEST STONE MASONS IN THE LAND.'")
+    WaitReturnPressed()
+    Text("'FROM HERE YOU CAN ALSO SEE OUR SOLIDLY BUILT OUTSIDE WALL.  THIS WALL HAS SURVIVED MANY ATTACKS, INCLUDING ONE FROM A DRAGON.'")
+    WaitReturnPressed()
+    Text("THE GUARD SAYS 'THAT CONCLUDES THE TOUR.  I WILL SHOW YOU TO YOUR QUARTERS.'")
+    RedrawView()
+    WaitReturnPressed()
+    return
+}
 
-TourQuarters:
-	SetupMonster Fighter16 distance=1 body=LeatherHarness
-	PrintClear "THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES."
-	RedrawView
-	Portrait = None
-	Return
+def TourQuarters() {
+    SetupMonster(Fighter16, distance=1, body=LeatherHarness)
+    Text("THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES.")
+    RedrawView()
+    Portrait = None
+    return
+}
 
 RestrictedGuards:
-	alias Choice = Scratch1
-	if QuestZhentilOutpost != 0 || AttackedGuards != 0: Goto Done
-	if NightInQuarters == 1: Goto Done
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=0 body=LeatherHarness
-	PrintClear "THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?"
-	Choice = Menu "RETURN" -> BackToQuarters "ATTACK" -> AttackGuards "BRIBE" -> AngeredGuards
+    if QuestZhentilOutpost != 0 or AttackedGuards != 0 { goto Done }
+    if NightInQuarters == 1 { goto Done }
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=0, body=LeatherHarness)
+    Text("THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?")
+    Scratch1 = Menu("RETURN", "ATTACK", "BRIBE")
+    goto [BackToQuarters, AttackGuards, AngeredGuards][Scratch1]
 
 BackToQuarters:
-	PrintClear "YOU GO BACK TO YOUR QUARTERS."
-	PartyX = 5
-	PartyY = 0
-	Facing = East
-	Call CallRedraw
-	Goto Done
+    Text("YOU GO BACK TO YOUR QUARTERS.")
+    PartyX = 5
+    PartyY = 0
+    Facing = East
+    CallRedraw()
+    goto Done
 
 AngeredGuards:
-	alias Choice = Scratch1
-	PrintClear "YOU'VE ANGERED THE GUARDS.  THEY DEMAND THAT YOU RETURN TO YOUR QUARTERS.  WHAT WILL YOU DO?"
-	Choice = Menu "GO BACK INSIDE." -> BackToQuarters "ATTACK GUARDS." -> AttackGuards
+    Text("YOU'VE ANGERED THE GUARDS.  THEY DEMAND THAT YOU RETURN TO YOUR QUARTERS.  WHAT WILL YOU DO?")
+    Scratch1 = Menu("GO BACK INSIDE.", "ATTACK GUARDS.")
+    goto [BackToQuarters, AttackGuards][Scratch1]
 
 AttackGuards:
-	AlarmFightScore = 0
-	PrintClear "YOU ATTACK THE GUARDS.  THE GUARDS SOUND AN ALARM AND ATTACK."
-	AttackedGuards = 1
-	Morale = 75
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=2 body=LeatherHarness
-	Gosub ApproachTwice
-	ClearMonsters
-	LoadMonster Guard count=4 icon=11
-	Combat
-	if CombatEnd > PartyDied: Goto FleeStopped
-	Goto SurrenderOrDie
+    AlarmFightScore = 0
+    Text("YOU ATTACK THE GUARDS.  THE GUARDS SOUND AN ALARM AND ATTACK.")
+    AttackedGuards = 1
+    Morale = 75
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=2, body=LeatherHarness)
+    ApproachTwice()
+    ClearMonsters()
+    LoadMonster(Guard, count=4, icon=11)
+    Combat()
+    if CombatEnd > PartyDied { goto FleeStopped }
+    goto SurrenderOrDie
 
-FleeStopped:
-	PrintClear "YOU TRY TO FLEE BUT ARE STOPPED BY SOME GUARDS."
-	Goto GuardWaveFight
+    FleeStopped:
+    Text("YOU TRY TO FLEE BUT ARE STOPPED BY SOME GUARDS.")
+    goto GuardWaveFight
 
-SurrenderOrDie:
-	alias Choice = Scratch1
-	SetupMonster Fighter16 distance=2 body=LeatherHarness
-	PrintClear "MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?"
-	Choice = Menu "SURRENDER" -> Surrender "ATTACK" -> GuardWaveFight
+    SurrenderOrDie:
+    SetupMonster(Fighter16, distance=2, body=LeatherHarness)
+    Text("MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?")
+    Scratch1 = Menu("SURRENDER", "ATTACK")
+    goto [Surrender, GuardWaveFight][Scratch1]
 
 Surrender:
-	PrintClear "YOU SURRENDER.  THEY STRIP YOU OF ALL POSSESSIONS AND TOSS YOU OUT INTO THE WILDERNESS.'"
+    Text("YOU SURRENDER.  THEY STRIP YOU OF ALL POSSESSIONS AND TOSS YOU OUT INTO THE WILDERNESS.'")
 
 StripAndExpel:
-	Rob 1 100 255
-	Portrait = None
-	NewECL Mountains
+    Rob(1, 100, 255)
+    Portrait = None
+    NewECL(Mountains)
 
 GuardWaveFight:
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=2 body=LeatherHarness
-	Gosub ApproachTwice
-	ClearMonsters
-	LoadMonster Guard count=16 icon=11
-	LoadMonster Corporal count=4 icon=11
-	Combat
-	if CombatEnd > PartyDied: Goto RunForGate
-	AlarmFightScore += 20
-	if AlarmFightScore >= 40: Goto Done
-	PrintClear "MORE GUARDS RUSH UP TO ATTACK."
-	Goto GuardWaveFight
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=2, body=LeatherHarness)
+    ApproachTwice()
+    ClearMonsters()
+    LoadMonster(Guard, count=16, icon=11)
+    LoadMonster(Corporal, count=4, icon=11)
+    Combat()
+    if CombatEnd > PartyDied { goto RunForGate }
+    AlarmFightScore += 20
+    if AlarmFightScore >= 40 { goto Done }
+    Text("MORE GUARDS RUSH UP TO ATTACK.")
+    goto GuardWaveFight
 
 DwarfAttackCheck:
-	if AttackedGuards != 1 || OutpostFought != 0: Goto Done
+    if AttackedGuards != 1 or OutpostFought != 0 { goto Done }
 
 DwarfAndCommandant:
-	if OutpostConquered != 0: Exit
-	PrintClear "A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK"
-	Portrait = WhiteBeard
-	SetupMonster SmallFighter distance=2 body=LeatherHarness
-	Gosub ApproachTwice
-	ClearMonsters
-	LoadMonster DwarvenFighter count=1 icon=DwarvenFighter
-	LoadMonster Aides count=10 icon=11
-	LoadMonster Corporal count=12 icon=11
-	LoadMonster Guard count=25 icon=11
-	Combat
-	OutpostFought = 1
-	if CombatEnd > PartyDied: Goto RunForGate
-	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
-	Portrait = None
-	SetupMonster Fighter16 distance=2 closeup=EyepatchMan
-	Gosub ApproachTwice
-	ClearMonsters
-	LoadMonster AlHyamDazid count=1 icon=AlHyamDazid
-	LoadMonster Commandant count=1 icon=Captain
-	LoadMonster Corporal count=24 icon=11
-	LoadMonster Aides count=20 icon=11
-	Combat
-	if CombatEnd > PartyDied: Goto RunForGate
-	PrintClear "AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY."
-	QuestZhentilOutpost = CommandantKilled
-	OutpostConquered = 1
-	Goto Done
+    if OutpostConquered != 0 { exit }
+    Text("A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK")
+    Portrait = WhiteBeard
+    SetupMonster(SmallFighter, distance=2, body=LeatherHarness)
+    ApproachTwice()
+    ClearMonsters()
+    LoadMonster(DwarvenFighter, count=1, icon=DwarvenFighter)
+    LoadMonster(Aides, count=10, icon=11)
+    LoadMonster(Corporal, count=12, icon=11)
+    LoadMonster(Guard, count=25, icon=11)
+    Combat()
+    OutpostFought = 1
+    if CombatEnd > PartyDied { goto RunForGate }
+    Text("A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK.")
+    Portrait = None
+    SetupMonster(Fighter16, distance=2, closeup=EyepatchMan)
+    ApproachTwice()
+    ClearMonsters()
+    LoadMonster(AlHyamDazid, count=1, icon=AlHyamDazid)
+    LoadMonster(Commandant, count=1, icon=Captain)
+    LoadMonster(Corporal, count=24, icon=11)
+    LoadMonster(Aides, count=20, icon=11)
+    Combat()
+    Compare(CombatEnd, 128)
+    if CombatEnd > PartyDied { goto RunForGate }
+    Text("AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY.")
+    QuestZhentilOutpost = CommandantKilled
+    OutpostConquered = 1
+    goto Done
 
 RunForGate:
-	PartyX = 7
-	PartyY = 0
-	Facing = North
-	Call CallRedraw
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=2 body=NoBody11
-	PrintClear "YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS."
-	ClearMonsters
-	LoadMonster Guard count=6 icon=11
-	Combat
-	if CombatEnd > PartyDied: Goto CaughtFleeing
-	PrintClear "YOU ESCAPE FROM THE OUTPOST."
-	NewECL Mountains
+    PartyX = 7
+    PartyY = 0
+    Facing = North
+    CallRedraw()
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=2, body=NoBody11)
+    Text("YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS.")
+    ClearMonsters()
+    LoadMonster(Guard, count=6, icon=11)
+    Combat()
+    if CombatEnd > PartyDied { goto CaughtFleeing }
+    Text("YOU ESCAPE FROM THE OUTPOST.")
+    NewECL(Mountains)
 
-CaughtFleeing:
-	PrintClear "YOU TRY TO RUN BUT ARE CAUGHT.  YOU ARE CAPTURED, STRIPPED AND TOSSED OUT INTO THE WILDERNESS."
-	Goto StripAndExpel
+    CaughtFleeing:
+    Text("YOU TRY TO RUN BUT ARE CAUGHT.  YOU ARE CAPTURED, STRIPPED AND TOSSED OUT INTO THE WILDERNESS.")
+    goto StripAndExpel
 
 QuartersEnter:
-	alias Choice = Scratch1
-	if GivenQuarters != 1: Goto RelaxOrWalk
-	if NightInQuarters != 0: Goto Done
-	NightInQuarters = 1
-	PrintClear "IT IS NIGHT AND YOU ARE IN YOUR QUARTERS."
-	Delay
-	Choice = VMenu "HOW DO YOU SPEND THE NIGHT?" "GOTO SLEEP" "SLEEP WITH A WATCH"
-	OnGoto Choice SleepNoWatch SleepWithWatch
+    if GivenQuarters != 1 { goto RelaxOrWalk }
+    if NightInQuarters != 0 { goto Done }
+    NightInQuarters = 1
+    Text("IT IS NIGHT AND YOU ARE IN YOUR QUARTERS.")
+    Delay()
+    Scratch1 = VMenu("HOW DO YOU SPEND THE NIGHT?", "GOTO SLEEP", "SLEEP WITH A WATCH")
+    goto [SleepNoWatch, SleepWithWatch][Scratch1]
 
 SleepNoWatch:
-	Delay
-	Hours += 2
-	PrintClear "YOU ARE ATTACKED BY FOUR GUARDS IN YOUR SLEEP"
-	Damage 1 8 4 8 53
-	Morale = 80
-	Goto NightAmbush
+    Delay()
+    Hours += 2
+    Text("YOU ARE ATTACKED BY FOUR GUARDS IN YOUR SLEEP")
+    Damage(1, 8, 4, 8, 53)
+    Morale = 80
+    goto NightAmbush
 
 SleepWithWatch:
-	Delay
-	Hours += 2
-	PrintClear "YOU WAIT IN YOUR ROOM FOR ABOUT TWO HOURS WHEN SUDDENLY FOUR ARMED GUARDS BURST IN AND ATTACK YOU."
-	Gosub WaitReturnPressed
-	Morale = 70
+    Delay()
+    Hours += 2
+    Text("YOU WAIT IN YOUR ROOM FOR ABOUT TWO HOURS WHEN SUDDENLY FOUR ARMED GUARDS BURST IN AND ATTACK YOU.")
+    WaitReturnPressed()
+    Morale = 70
 
 NightAmbush:
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=0 body=LeatherHarness
-	ClearMonsters
-	LoadMonster Aides count=4 icon=11
-	Combat
-	if CombatEnd > PartyDied: Goto NightFleeGuards
-	Goto MoreMenAttack
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=0, body=LeatherHarness)
+    ClearMonsters()
+    LoadMonster(Aides, count=4, icon=11)
+    Combat()
+    if CombatEnd > PartyDied { goto NightFleeGuards }
+    goto MoreMenAttack
 
-NightFleeGuards:
-	Facing = West
-	Scratch1 = 1
-	Gosub WalkSteps
-	PrintClear "YOU RUN INTO SOME MORE GUARDS."
-	Goto SecondWaveFight
+    NightFleeGuards:
+    Facing = West
+    Scratch1 = 1
+    WalkSteps()
+    Text("YOU RUN INTO SOME MORE GUARDS.")
+    goto SecondWaveFight
 
-MoreMenAttack:
-	PrintClear "AS YOU DEFEAT THE GUARDS SOME MORE MEN RUN IN AND ATTACK."
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=0 body=LeatherHarness
-	ClearMonsters
+    MoreMenAttack:
+    Text("AS YOU DEFEAT THE GUARDS SOME MORE MEN RUN IN AND ATTACK.")
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=0, body=LeatherHarness)
+    ClearMonsters()
 
-SecondWaveFight:
-	LoadMonster Corporal count=5 icon=11
-	LoadMonster Aides count=6 icon=11
-	Combat
-	if CombatEnd > PartyDied: Goto RanAndHid
-	PrintClear "AN ALARM GOES OFF IN THE DISTANCE."
-	AlarmLevel = 1
-	Goto Done
+    SecondWaveFight:
+    LoadMonster(Corporal, count=5, icon=11)
+    LoadMonster(Aides, count=6, icon=11)
+    Combat()
+    if CombatEnd > PartyDied { goto RanAndHid }
+    Text("AN ALARM GOES OFF IN THE DISTANCE.")
+    AlarmLevel = 1
+    goto Done
 
-RanAndHid:
-	PrintClear "YOU MANAGE TO RUN AWAY AND HIDE.  YOU HEAR AN ALARM IN THE DISTANCE AS GUARDS ARE ISSUING OUT OF BARRACKS."
-	PartyX = 3
-	PartyY = 12
-	Call CallRedraw
-	AlarmLevel = 1
-	Goto Done
+    RanAndHid:
+    Text("YOU MANAGE TO RUN AWAY AND HIDE.  YOU HEAR AN ALARM IN THE DISTANCE AS GUARDS ARE ISSUING OUT OF BARRACKS.")
+    PartyX = 3
+    PartyY = 12
+    CallRedraw()
+    AlarmLevel = 1
+    goto Done
 
 RelaxOrWalk:
-	alias Choice = Scratch1
-	PrintClear "YOU ARE IN YOUR QUARTERS.  WILL YOU WALK AROUND OR WILL YOU JUST RELAX UNTIL DINNER?"
-	Choice = Menu "WALK AROUND" -> Done "RELAX" -> EscortToDinner
-	Exit // extra: the original runs on into data at A6C9
-
-WalkStepTable:
-	Data 1 0 2 0 3 0 5 0 1 0 1
-
-WalkFacingTable:
-	Data 3 2 2 1 1 2 2 3 3 2 2
+    Text("YOU ARE IN YOUR QUARTERS.  WILL YOU WALK AROUND OR WILL YOU JUST RELAX UNTIL DINNER?")
+    Scratch1 = Menu("WALK AROUND", "RELAX")
+    goto [Done, EscortToDinner][Scratch1]
+    exit # the original runs on into data at A6C9
 
 EscortToDinner:
-	Hours = 14
-	Sky = 8
-	PrintClear "AT DUSK A GUARD COMES BY TO ESCORT YOU TO DINNER."
-
-DinnerWalkStep:
-	alias WalkStep = Scratch1
-	for Scratch6 = 0 while Scratch6 <= 10
-		WalkStep = WalkStepTable[Scratch6]
-		Facing = WalkFacingTable[Scratch6]
-		Gosub WalkSteps
-	next
-	ShowPortrait None 50
-	PrintClear "YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE."
-	Gosub WaitReturnPressed
-	PrintClear "THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?"
+    Hours = 14
+    Sky = 8
+    Text("AT DUSK A GUARD COMES BY TO ESCORT YOU TO DINNER.")
+    for Scratch6 = 0 to 10 {
+        Scratch1 = WalkStepTable[Scratch6]
+        Facing = WalkFacingTable[Scratch6]
+        WalkSteps()
+    }
+    ShowPortrait(None, 50)
+    Text("YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE.")
+    WaitReturnPressed()
+    Text("THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?")
 
 DinnerTopicMenu:
-	alias Choice = Scratch1
-	Choice = Menu "NOTHING" -> TopicNothing "CITY" -> TopicCity "MAGIC" -> TopicMagic "POLITICS" -> TopicPolitics
+    Scratch1 = Menu("NOTHING", "CITY", "MAGIC", "POLITICS")
+    goto [TopicNothing, TopicCity, TopicMagic, TopicPolitics][Scratch1]
 
 TopicCity:
-	alias Choice = Scratch1
-	PrintClear "ARE YOU GOING TO TALK ABOUT NEW OR OLD PHLAN?"
-	Choice = Menu "NEW" -> TalkNewPhlan "OLD" -> TalkOldPhlan
+    Text("ARE YOU GOING TO TALK ABOUT NEW OR OLD PHLAN?")
+    Scratch1 = Menu("NEW", "OLD")
+    goto [TalkNewPhlan, TalkOldPhlan][Scratch1]
 
 TopicNothing:
-	alias Choice = Scratch1
-	if TopicsDiscussed != 0: Goto ConversationDies
-	PrintClear "THE CONVERSATION BEGINS TO DIE DOWN.  THE COMMANDANT  STARTS A CONVERSATION BY SAYING 'WELL, ARE YOU HAVING MUCH TROUBLE WITH THE CREATURES FROM OLD PHLAN?'"
-	Choice = Menu "TALK" -> TalkOldPhlan "SAY LITTLE OR NOTHING" -> ConversationDies
+    if TopicsDiscussed != 0 { goto ConversationDies }
+    Text("THE CONVERSATION BEGINS TO DIE DOWN.  THE COMMANDANT  STARTS A CONVERSATION BY SAYING 'WELL, ARE YOU HAVING MUCH TROUBLE WITH THE CREATURES FROM OLD PHLAN?'")
+    Scratch1 = Menu("TALK", "SAY LITTLE OR NOTHING")
+    goto [TalkOldPhlan, ConversationDies][Scratch1]
 
 ConversationDies:
-	PrintClear "THE CONVERSATION COMPLETELY DIES AND EVERYONE IS STARING AT EACH OTHER.  THE COMMANDANT EXCUSES HIMSELF AND LEAVES.  A GUARD TAKES YOU BACK TO YOUR QUARTERS."
-	Goto EscortToQuarters
+    Text("THE CONVERSATION COMPLETELY DIES AND EVERYONE IS STARING AT EACH OTHER.  THE COMMANDANT EXCUSES HIMSELF AND LEAVES.  A GUARD TAKES YOU BACK TO YOUR QUARTERS.")
+    goto EscortToQuarters
 
 TyranthraxusTrouble:
-	alias Choice = Scratch1
-	PrintClear "THE COMMANDANT SAYS 'I EXPECT THERE WOULD BE TROUBLE; I'VE HEARD TYRANTHRAXUS IS A POWERFUL FIRE DEMON.  YOUR CITY'S DEFENCES MUST BE QUITE STRONG, HOW STRONG ARE THEY?'"
-	Choice = Menu "DON'T TALK" -> NoAnswer "STRONG" -> ForcesStrong "AVERAGE" -> ForcesAverage "WEAK" -> ForcesWeak
+    Text("THE COMMANDANT SAYS 'I EXPECT THERE WOULD BE TROUBLE; I'VE HEARD TYRANTHRAXUS IS A POWERFUL FIRE DEMON.  YOUR CITY'S DEFENCES MUST BE QUITE STRONG, HOW STRONG ARE THEY?'")
+    Scratch1 = Menu("DON'T TALK", "STRONG", "AVERAGE", "WEAK")
+    goto [NoAnswer, ForcesStrong, ForcesAverage, ForcesWeak][Scratch1]
 
 NoTyranthraxusTrouble:
-	alias Choice = Scratch1
-	PrintClear "THE COMMANDANT IS SURPRISED THAT YOUR CITY IS HAVING NO TROUBLE WITH TYRANTHRAXUS.  HE THEN SAYS, 'YOUR TOWN DEFENSES MUST BE STRONG IN ORDER TO HANDLE HIM.  HOW STRONG ARE THEY?'"
-	Choice = Menu "DON'T TALK" -> NoAnswer "STRONG" -> ForcesStrong "AVERAGE" -> ForcesAverage "WEAK" -> ForcesWeak
+    Text("THE COMMANDANT IS SURPRISED THAT YOUR CITY IS HAVING NO TROUBLE WITH TYRANTHRAXUS.  HE THEN SAYS, 'YOUR TOWN DEFENSES MUST BE STRONG IN ORDER TO HANDLE HIM.  HOW STRONG ARE THEY?'")
+    Scratch1 = Menu("DON'T TALK", "STRONG", "AVERAGE", "WEAK")
+    goto [NoAnswer, ForcesStrong, ForcesAverage, ForcesWeak][Scratch1]
 
 TalkNewPhlan:
-	alias Choice = Scratch1
-	if TalkedNewPhlan != 0: Goto ConversationStale
-	TalkedNewPhlan = 1
-	PrintClear "AS YOU TALK ABOUT NEW PHLAN THE COMMANDANT LISTENS CAREFULLY.  THE COMMANDANT SAYS 'IS IT TRUE THAT THE REAL POWER IN NEW PHLAN IS BISHOP BRACCIO?'"
-	Choice = Menu "YES" -> BraccioIsPower "NO" -> BraccioNotPower "DON'T KNOW" -> DontKnowAnswer
+    if TalkedNewPhlan != 0 { goto ConversationStale }
+    TalkedNewPhlan = 1
+    Text("AS YOU TALK ABOUT NEW PHLAN THE COMMANDANT LISTENS CAREFULLY.  THE COMMANDANT SAYS 'IS IT TRUE THAT THE REAL POWER IN NEW PHLAN IS BISHOP BRACCIO?'")
+    Scratch1 = Menu("YES", "NO", "DON'T KNOW")
+    goto [BraccioIsPower, BraccioNotPower, DontKnowAnswer][Scratch1]
 
 BraccioIsPower:
-	PrintClear "YOU SAY THAT BISHOP BRACCIO IS THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'PHLAN MUST BE A CITY OF FOOLS IF A BISHOP OF TYR HAS POWER!'"
-	Goto TopicDone
+    Text("YOU SAY THAT BISHOP BRACCIO IS THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'PHLAN MUST BE A CITY OF FOOLS IF A BISHOP OF TYR HAS POWER!'")
+    goto TopicDone
 
 BraccioNotPower:
-	PrintClear "YOU SAY THAT BISHOP BRACCIO IS NOT THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'THE CITIZENS OF PHLAN ARE WISE TO NOT FOLLOW AN IDIOT FROM THE TEMPLE OF TYR!'"
-	Goto TopicDone
+    Text("YOU SAY THAT BISHOP BRACCIO IS NOT THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'THE CITIZENS OF PHLAN ARE WISE TO NOT FOLLOW AN IDIOT FROM THE TEMPLE OF TYR!'")
+    goto TopicDone
 
 DontKnowAnswer:
-	PrintClear "YOU SAY THAT YOU DON'T KNOW ANYTHING ABOUT THAT MATTER AND THE COMMANDANT RESPONDS BY SAYING 'YES, OF COURSE YOU DON'T.'"
-	Goto TopicDone
+    Text("YOU SAY THAT YOU DON'T KNOW ANYTHING ABOUT THAT MATTER AND THE COMMANDANT RESPONDS BY SAYING 'YES, OF COURSE YOU DON'T.'")
+    goto TopicDone
 
 TalkOldPhlan:
-	alias Choice = Scratch1
-	if TalkedOldPhlan != 0: Goto ConversationStale
-	TalkedOldPhlan = 1
-	PrintClear "AS YOU TALK ABOUT OLD PHLAN'S INHABITANTS THE COMMANDANT SAYS 'I KNOW A LEGEND ABOUT A FIRE BEING CALLED TIRANTIKUS.  I BELIEVE, THAT TIRANTIKUS AND TYRANTHRAXUS ARE ONE AND THE SAME'."
-	Gosub WaitReturnPressed
-	PrintClear "YOU CONTINUE TO TALK ABOUT OLD PHLAN AND THE COMMANDANT SAYS 'IS NEW PHLAN HAVING ANY TROUBLE WITH TYRANTHRAXUS?'"
-	Choice = Menu "DON'T TALK" -> TopicNothing "TROUBLE" -> TyranthraxusTrouble "NO TROUBLE" -> NoTyranthraxusTrouble
+    if TalkedOldPhlan != 0 { goto ConversationStale }
+    TalkedOldPhlan = 1
+    Text("AS YOU TALK ABOUT OLD PHLAN'S INHABITANTS THE COMMANDANT SAYS 'I KNOW A LEGEND ABOUT A FIRE BEING CALLED TIRANTIKUS.  I BELIEVE, THAT TIRANTIKUS AND TYRANTHRAXUS ARE ONE AND THE SAME'.")
+    WaitReturnPressed()
+    Text("YOU CONTINUE TO TALK ABOUT OLD PHLAN AND THE COMMANDANT SAYS 'IS NEW PHLAN HAVING ANY TROUBLE WITH TYRANTHRAXUS?'")
+    Scratch1 = Menu("DON'T TALK", "TROUBLE", "NO TROUBLE")
+    goto [TopicNothing, TyranthraxusTrouble, NoTyranthraxusTrouble][Scratch1]
 
 TopicMagic:
-	alias Choice = Scratch1
-	if AdvisorAsked != 0: Goto ConversationStale
-	AdvisorAsked = 1
-	PrintClear "ONE OF THE COMMANDANT'S ADVISORS ASKS YOU IF YOU'VE HEARD OF ANY UNIQUE MAGICAL ITEMS OR PLACES?"
-	Choice = Menu "DON'T TALK" -> TopicNothing "LIE" -> LieAboutMagic "MENTION POOL OF RADIANCE" -> MentionPool
+    if AdvisorAsked != 0 { goto ConversationStale }
+    AdvisorAsked = 1
+    Text("ONE OF THE COMMANDANT'S ADVISORS ASKS YOU IF YOU'VE HEARD OF ANY UNIQUE MAGICAL ITEMS OR PLACES?")
+    Scratch1 = Menu("DON'T TALK", "LIE", "MENTION POOL OF RADIANCE")
+    goto [TopicNothing, LieAboutMagic, MentionPool][Scratch1]
 
 TopicPolitics:
-	alias Choice = Scratch1
-	if TalkedPolitics != 0: Goto ConversationStale
-	TalkedPolitics = 1
-	PrintClear "AS YOU MENTION POLITICS THE COMMANDANT SAYS 'I'VE HEARD THAT PHLAN'S TOWN COUNCIL IS CORRUPT, SPECIFICALLY ULRICH EBERHARD.  IS THIS TRUE?"
-	Choice = Menu "YES" -> EberhardCorrupt "NO" -> EberhardHonest "DON'T KNOW" -> DontKnowAnswer
+    if TalkedPolitics != 0 { goto ConversationStale }
+    TalkedPolitics = 1
+    Text("AS YOU MENTION POLITICS THE COMMANDANT SAYS 'I'VE HEARD THAT PHLAN'S TOWN COUNCIL IS CORRUPT, SPECIFICALLY ULRICH EBERHARD.  IS THIS TRUE?")
+    Scratch1 = Menu("YES", "NO", "DON'T KNOW")
+    goto [EberhardCorrupt, EberhardHonest, DontKnowAnswer][Scratch1]
 
 EberhardCorrupt:
-	PrintClear "YOU SAY THAT ULRICH EBERHARD IS CORRUPT AND HE RESPONDS BY SAYING 'I WOULD ADVISE YOU TO BE CAREFUL WHEN DEALING WITH THE TOWN COUNCIL.'"
-	Goto TopicDone
+    Text("YOU SAY THAT ULRICH EBERHARD IS CORRUPT AND HE RESPONDS BY SAYING 'I WOULD ADVISE YOU TO BE CAREFUL WHEN DEALING WITH THE TOWN COUNCIL.'")
+    goto TopicDone
 
 EberhardHonest:
-	PrintClear "YOU SAY THAT ULRICH EBERHARD IS A LOYAL HONEST MAN.  THE COMMANDANT SMIRKS AND SAYS 'YES, OF COURSE HE IS.'"
-	Goto TopicDone
+    Text("YOU SAY THAT ULRICH EBERHARD IS A LOYAL HONEST MAN.  THE COMMANDANT SMIRKS AND SAYS 'YES, OF COURSE HE IS.'")
+    goto TopicDone
 
 ForcesStrong:
-	PrintClear "YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE STRONG.  HE SEEMS IMPRESSED, AND SAYS 'IT SOUNDS LIKE YOUR CITY CAN HANDLE THAT FIRE DEMON TYRANTHRAXUS'"
-	Goto TopicDone
+    Text("YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE STRONG.  HE SEEMS IMPRESSED, AND SAYS 'IT SOUNDS LIKE YOUR CITY CAN HANDLE THAT FIRE DEMON TYRANTHRAXUS'")
+    goto TopicDone
 
 ForcesAverage:
-	PrintClear "YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE CAPABLE.  HE LOOKS AT YOU AND SAYS, 'I HOPE, FOR YOUR SAKE, THAT YOUR CITY'S FORCES CAN DEFEND THEMSELVES FROM TYRANTHRAXUS'S HORDE.'"
-	Goto TopicDone
+    Text("YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE CAPABLE.  HE LOOKS AT YOU AND SAYS, 'I HOPE, FOR YOUR SAKE, THAT YOUR CITY'S FORCES CAN DEFEND THEMSELVES FROM TYRANTHRAXUS'S HORDE.'")
+    goto TopicDone
 
 ForcesWeak:
-	PrintClear "YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE WEAK.  HE SMILES AND SAYS, 'I HOPE THAT PHLAN CAN DEFEND ITSELF.'"
-	Goto TopicDone
+    Text("YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE WEAK.  HE SMILES AND SAYS, 'I HOPE THAT PHLAN CAN DEFEND ITSELF.'")
+    goto TopicDone
 
 NoAnswer:
-	PrintClear "AS YOU DON'T ANSWER THE LAST QUESTION THE COMMANDANT SMILES SLIGHTLY AND SAYS, 'I SEE THAT YOU ARE NOT FOOLISH AND LOOSE TONGUED.'"
-	Goto TopicDone
+    Text("AS YOU DON'T ANSWER THE LAST QUESTION THE COMMANDANT SMILES SLIGHTLY AND SAYS, 'I SEE THAT YOU ARE NOT FOOLISH AND LOOSE TONGUED.'")
+    goto TopicDone
 
 LieAboutMagic:
-	PrintClear "YOU MAKE UP STORIES ABOUT WONDERFUL MAGICAL ITEMS AND PLACES.  YOU CAPTIVATE EVERYONE SITTING AROUND YOU."
-	Goto TopicDone
+    Text("YOU MAKE UP STORIES ABOUT WONDERFUL MAGICAL ITEMS AND PLACES.  YOU CAPTIVATE EVERYONE SITTING AROUND YOU.")
+    goto TopicDone
 
 MentionPool:
-	PrintClear "AS YOU MENTION THE POOL OF RADIANCE THE COMMANDANT TELLS YOU A STORY ABOUT THAT VERY POOL.  YOU ENJOY THE STORY AND COPY IT INTO YOUR JOURNAL UNDER ENTRY 46."
-	Goto TopicDone
+    Text("AS YOU MENTION THE POOL OF RADIANCE THE COMMANDANT TELLS YOU A STORY ABOUT THAT VERY POOL.  YOU ENJOY THE STORY AND COPY IT INTO YOUR JOURNAL UNDER ENTRY 46.")
+    goto TopicDone
 
 TopicDone:
-	Gosub WaitReturnPressed
-	if TopicsDiscussed == 2: Goto CommandantLeaves
-	PrintClear "YOU CONTINUE YOUR CONVERSATION WITH THE COMMANDANT.  WHAT WILL BE YOUR NEXT TOPIC OF DISSCUSION?"
-	TopicsDiscussed += 1
-	Goto DinnerTopicMenu
+    WaitReturnPressed()
+    if TopicsDiscussed == 2 { goto CommandantLeaves }
+    Text("YOU CONTINUE YOUR CONVERSATION WITH THE COMMANDANT.  WHAT WILL BE YOUR NEXT TOPIC OF DISSCUSION?")
+    TopicsDiscussed += 1
+    goto DinnerTopicMenu
 
 ConversationStale:
-	PrintClear "THE CONVERSATION GOES STALE AND THE COMMANDANT EXCUSES HIMSELF FROM THE TABLE.  YOU ARE ESCORTED BACK TO YOUR QUARTERS."
-	Goto EscortToQuarters
+    Text("THE CONVERSATION GOES STALE AND THE COMMANDANT EXCUSES HIMSELF FROM THE TABLE.  YOU ARE ESCORTED BACK TO YOUR QUARTERS.")
+    goto EscortToQuarters
 
 CommandantLeaves:
-	PrintClear "YOU TALK A LITTLE WHILE LONGER THEN THE COMMANDANT STATES THAT HE HAS OTHER DUTIES TO ATTEND TO.  HE BIDS YOU GOOD NIGHT."
-	Goto EscortToQuarters
-
-QuartersStepTable:
-	Data 1 0 1 0 5 0 3 0 2 0 1
-
-QuartersFacingTable:
-	Data 0 1 1 0 0 3 3 0 0 1 1
+    Text("YOU TALK A LITTLE WHILE LONGER THEN THE COMMANDANT STATES THAT HE HAS OTHER DUTIES TO ATTEND TO.  HE BIDS YOU GOOD NIGHT.")
+    goto EscortToQuarters
 
 EscortToQuarters:
-	Scratch6 = 0
-	GivenQuarters = 1
+    Scratch6 = 0
+    GivenQuarters = 1
 
-QuartersWalkStep:
-	alias QuartersStep = Scratch1
-	QuartersStep = QuartersStepTable[Scratch6]
-	Facing = QuartersFacingTable[Scratch6]
-	Gosub WalkSteps
-	Scratch6 += 1
-	if Scratch6 <= 10: Goto QuartersWalkStep
-	PrintClear "YOU ARRIVE BACK AT YOUR QUARTERS."
-	Delay
-	Goto QuartersEnter
+    QuartersWalkStep:
+    Scratch1 = QuartersStepTable[Scratch6]
+    Facing = QuartersFacingTable[Scratch6]
+    WalkSteps()
+    Scratch6 += 1
+    if Scratch6 <= 10 { goto QuartersWalkStep }
+    Text("YOU ARRIVE BACK AT YOUR QUARTERS.")
+    Delay()
+    goto QuartersEnter
 
 ClimbableWall:
-	alias Choice = Scratch1
-	PrintClear "THE WALL IS CLIMBABLE HERE, WILL YOU SCALE OVER IT?"
-	Choice = Menu "CLIMB OVER WALL" -> ClimbOverWall "LEAVE" -> Done
+    Text("THE WALL IS CLIMBABLE HERE, WILL YOU SCALE OVER IT?")
+    Scratch1 = Menu("CLIMB OVER WALL", "LEAVE")
+    goto [ClimbOverWall, Done][Scratch1]
 
 ClimbOverWall:
-	PrintClear "YOU CLIMB OVER THE WALL AND LEAVE THE OUTPOST."
-	Goto LeaveOutpost
+    Text("YOU CLIMB OVER THE WALL AND LEAVE THE OUTPOST.")
+    goto LeaveOutpost
 
 FrontGateCheck:
-	if QuestZhentilOutpost != 0: Goto NearFrontGate
-	if ReachedGate != 0: Goto Done
-	ReachedGate = 1
-	PrintClear "THE COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE!"
-	Gosub WaitReturnPressed
-	Scratch1 = Random 99
-	if Scratch1 >= 75: Goto NearFrontGate
-	PrintClear "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
-	Portrait = NoseguardHelmet
-	SetupMonster Fighter16 distance=2 body=LeatherHarness
-	Gosub ApproachTwice
-	ClearMonsters
-	LoadMonster Guard count=11 icon=11
-	Combat
-	Goto Done
+    if QuestZhentilOutpost != 0 { goto NearFrontGate }
+    if ReachedGate != 0 { goto Done }
+    ReachedGate = 1
+    Text("THE COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE!")
+    WaitReturnPressed()
+    Scratch1 = Random(99)
+    if Scratch1 >= 75 { goto NearFrontGate }
+    Text("OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY.")
+    Portrait = NoseguardHelmet
+    SetupMonster(Fighter16, distance=2, body=LeatherHarness)
+    ApproachTwice()
+    ClearMonsters()
+    LoadMonster(Guard, count=11, icon=11)
+    Combat()
+    goto Done
 
-NearFrontGate:
-	PrintClear "YOU ARE NEAR THE FRONT GATE."
-	Goto Done
+    NearFrontGate:
+    Text("YOU ARE NEAR THE FRONT GATE.")
+    goto Done
 
 Done:
-	RedrawView
-	Picture None
-	Exit
+    RedrawView()
+    Picture(None)
+    exit
 
-ApproachTwice:
-	Delay
-	Approach
-	Delay
-	Approach
-	Return
+def ApproachTwice() {
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    return
+}
 
 LeaveOutpost:
-	QuestZhentilOutpost = LeftOutpost
-	Portrait = None
-	NewECL Mountains
+    QuestZhentilOutpost = LeftOutpost
+    Portrait = None
+    NewECL(Mountains)
 
-WaitReturnPressed:
-	alias Choice = Scratch8
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	Return
+def WaitReturnPressed() {
+    Scratch8 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    return
+}
 
-event2:
-	if QuestZhentilOutpost != 0: Goto RestCheckNight
-	if AttackedGuards == 0: Goto RestCheckNight
+on camp {
+    if QuestZhentilOutpost != 0 { goto RestCheckNight }
+    if AttackedGuards == 0 { goto RestCheckNight }
+} # falls into RestAlarmed
 
 RestAlarmed:
-	RestChance = 100
-	RestEvery = 1
-	Exit
+    RestChance = 100
+    RestEvery = 1
+    exit
 
 RestCheckNight:
-	if QuestZhentilOutpost != 0: Goto RestNormal
-	if NightInQuarters != 0: Goto RestAlarmed
-	RestEvery = 168
-	RestChance = 100
-	Exit
+    if QuestZhentilOutpost != 0 { goto RestNormal }
+    if NightInQuarters != 0 { goto RestAlarmed }
+    RestEvery = 168
+    RestChance = 100
+    exit
 
-RestNormal:
-	RestEvery = 0
-	RestChance = 1
-	Exit
+    RestNormal:
+    RestEvery = 0
+    RestChance = 1
+    exit
 
-event3:
-	RestChance = 0
-	if NightInQuarters == 0: Goto EscortToDinner
-	Portrait = NoseguardHelmet
-	Goto GuardsSpotYou
+on rest {
+    RestChance = 0
+    if NightInQuarters == 0 { goto EscortToDinner }
+    Portrait = NoseguardHelmet
+    goto GuardsSpotYou
+}
 
-event4:
-	Scratch6 = 11
-	LoadWalls 1 2 9
-	LoadMap 28 unused=2 icons=255
-	if Hours >= 14: Scratch6 = 8
-	Sky = Scratch6
-	SkyInside = 10
-	NoCoords = 0
-	if AreaKind == 28: Exit
-	PartyX = 7
-	PartyY = 0
-	Facing = South
-	EntryPoint = 2
-	Call CallRedraw
-	Hours = 0
-	Exit
+on load {
+    Scratch6 = 11
+    LoadWalls(1, 2, 9)
+    LoadMap(28, unused=2, icons=255)
+    if Hours >= 14 { Scratch6 = 8 }
+    Sky = Scratch6
+    SkyInside = 10
+    NoCoords = 0
+    if AreaKind == ZhentilOutpost { exit }
+    PartyX = 7
+    PartyY = 0
+    Facing = South
+    EntryPoint = 2
+    CallRedraw()
+    Hours = 0
+    exit
+}
+
+# tables
+Table994C = [1, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 6]
+RouteStepTable = [2, 3, 2, 0, 1, 0, 1, 1, 0, 1, 0, 3, 0, 2, 0, 0, 2, 0, 2, 0, 3, 0, 2, 0, 1]
+DestFacing = [2, 2, 2, 3, 3, 2, 2, 0, 1, 1, 0, 0, 3, 3, 2, 1, 1, 0, 0, 3, 3, 0, 0, 1, 1]
+WalkStepTable = [1, 0, 2, 0, 3, 0, 5, 0, 1, 0, 1]
+WalkFacingTable = [3, 2, 2, 1, 1, 2, 2, 3, 3, 2, 2]
+QuartersStepTable = [1, 0, 1, 0, 5, 0, 3, 0, 2, 0, 1]
+QuartersFacingTable = [0, 1, 1, 0, 0, 3, 3, 0, 0, 1, 1]

@@ -1,803 +1,798 @@
-event0:
-	Scratch3 = 0
-	Scratch5 = 11
-	if Hours >= 14: Scratch5 = 8
-	Sky = Scratch5
-	SkyInside = 10
-	if LeftMap == 0: Goto InsideTown
-	LeavingTown = 1
-	Call CallStepForward
-	HoldMove = SkipMove
-	LoadMap Keep unused=255 icons=127
-	EnterArea Slums
+on move {
+    Scratch3 = 0
+    Scratch5 = 11
+    if Hours >= 14 { Scratch5 = 8 }
+    Sky = Scratch5
+    SkyInside = 10
+    if LeftMap == 0 { goto InsideTown }
+    LeavingTown = 1
+    CallStepForward()
+    HoldMove = SkipMove
+    LoadMap(Keep, unused=255, icons=127)
+    EnterArea(Slums)
 
-InsideTown:
-	Scratch10 = 127 & Cell
-	if QuestTyranthraxus >= RewardDue: Exit
-	if Scratch5 != 8: Exit
-	if Scratch10 == 0 && WallAhead == 9: Goto LockedDoor
-	if Scratch10 == 4 && WallAhead == 7: Goto LockedDoor
-	if Scratch10 == 26 && WallAhead == 11: Goto LockedDoor
-	Exit
+    InsideTown:
+    Scratch10 = ~Inside & Cell
+    if QuestTyranthraxus >= RewardDue { exit }
+    if Scratch5 != 8 { exit }
+    if Scratch10 == 0 and WallAhead == 9 { goto LockedDoor }
+    if Scratch10 == 4 and WallAhead == 7 { goto LockedDoor }
+    if Scratch10 == 26 and WallAhead == 11 { goto LockedDoor }
+    exit
 
-LockedDoor:
-	PrintClear "THE DOOR IS LOCKED.  DO YOU WANT TO BREAK IN?"
-	Ask YesNoMenu "YES" -> WatchResponds "NO" -> StayOutside
+    LockedDoor:
+    Text("THE DOOR IS LOCKED.  DO YOU WANT TO BREAK IN?")
+    YesNoMenu()
+    goto [WatchResponds, StayOutside][Scratch1]
+} # falls into StayOutside
 
 StayOutside:
-	HoldMove = SkipMove
-	Exit
+    HoldMove = SkipMove
+    exit
 
-event1:
-	PrintClear ""
-	Picture None
-	Portrait = None
-	Scratch10 = 127 & Cell
-	if TourDone < 1: Exit
-	PartyMemberFound = 0
-	Scratch1 = Random 19
-	if Scratch1 == 19 {
-		$AuxText = "MAD MAN"
-		Gosub FindMemberByName
-	}
-	if PartyMemberFound != 0: Goto MadManAttacks
-	AuxCounter = 0
+on step {
+    Text("")
+    Picture(None)
+    Portrait = None
+    Scratch10 = ~Inside & Cell
+    if TourDone < 1 { exit }
+    PartyMemberFound = 0
+    Scratch1 = Random(19)
+    if Scratch1 == 19 {
+        $AuxText = "MAD MAN"
+        FindMemberByName()
+    }
+    if PartyMemberFound != 0 { goto MadManAttacks }
+    AuxCounter = 0
 
-FindCellLoop:
-	if AuxCounter == Scratch10: Goto CellDispatch
-	if AuxCounter > 27: Exit
-	AuxCounter += 1
-	Goto FindCellLoop
+    FindCellLoop:
+    if AuxCounter == Scratch10 { goto CellDispatch }
+    if AuxCounter > 27 { exit }
+    AuxCounter += 1
+    goto FindCellLoop
+}
 
-event2:
-	Gosub SetNoRest
-	Exit
+on camp {
+    SetNoRest()
+    exit
+}
 
-SetNoRest:
-	if QuestTyranthraxus >= RewardDue: Goto NoRestHere
-	if TrainerVisited != 0: Goto NoRestHere
-	RestEvery = 1
-	RestChance = 101
-	Return
+def SetNoRest() {
+    if QuestTyranthraxus >= RewardDue { goto NoRestHere }
+    if TrainerVisited != 0 { goto NoRestHere }
+    RestEvery = 1
+    RestChance = 101
+    return
+}
 
 NoRestHere:
-	RestEvery = 0
-	RestChance = 0
-	Return
+    RestEvery = 0
+    RestChance = 0
+    return
 
-event3:
-	alias Choice = Scratch1
-	RestChance = 0
-	Gosub WatchApproaches
-	PrintClear "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
-	Choice = Menu "GO" -> ResetVisits "STAY" -> FightWatch
+on rest {
+    RestChance = 0
+    WatchApproaches()
+    Text("YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?")
+    Scratch1 = Menu("GO", "STAY")
+    goto [ResetVisits, FightWatch][Scratch1]
+} # falls into event4
 
-event4:
-	BoatDestination = 0
-	LeavingTown = 0
-	NoCoords = 0
-	NoCoords = 0
-	LoadMap 0 unused=0 icons=0
-	LoadWalls Reset Reset Reset
-	if RestChance != 255: Gosub NoRestHere
-	if TownEntered == 0: Gosub NoRestHere
-	TownEntered = 1
-	SoundParamA = 72
-	SoundParamB = 189
-	if TourDone < 1: Goto CityTour
-	Exit
+on load {
+    BoatDestination = 0
+    LeavingTown = 0
+    NoCoords = 0
+    NoCoords = 0
+    LoadMap(0, unused=0, icons=0)
+    LoadWalls(Reset, Reset, Reset)
+    if RestChance != 255 { NoRestHere() }
+    if TownEntered == 0 { NoRestHere() }
+    TownEntered = 1
+    SoundParamA = 72
+    SoundParamB = 189
+    if TourDone < 1 { goto CityTour }
+    exit
+}
 
 CellDispatch:
-	OnGoto AuxCounter ResetVisits PierBoat HarborMaster GatewaySouth ResetVisits TempleOfBaneEvent TempleOfTyr TempleOfSune RiverView InnRest ToArea11A ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ToArea11B ResetVisits GeneralShop TavernEnter ArmorShop WeaponShop SilverShop HealerTemple UnsettledGateway CityHallOutside ToArea8
+    goto [ResetVisits, PierBoat, HarborMaster, GatewaySouth, ResetVisits, TempleOfBaneEvent,
+        TempleOfTyr, TempleOfSune, RiverView, InnRest, ToArea11A, ResetVisits, ResetVisits,
+        ResetVisits, ResetVisits, ResetVisits, ResetVisits, ToArea11B, ResetVisits, GeneralShop,
+        TavernEnter, ArmorShop, WeaponShop, SilverShop, HealerTemple, UnsettledGateway,
+        CityHallOutside, ToArea8][AuxCounter]
 
 PierBoat:
-	if BoatPassageBought == 0: Exit
-	if Hours > 14: Goto BoardBoat
-	Picture Ship
+    if BoatPassageBought == 0 { exit }
+    if Hours > 14 { goto BoardBoat }
+    Picture(Ship)
 
-BoardBoat:
-	LeavingTown = 1
-	PrintClear "YOU BOARD A BOAT."
-	Gosub WaitReturnPressed
-	OnBoat = 1
-	LoadMap Keep unused=255 icons=127
-	if BoatDestination == 0 {
-		EnterArea SokalKeep
-	}
-	if BoatDestination < 2: Goto SailToArea27
-	also if BoatDestination > 2: Goto SailToArea26
-	SetMapXY 7 29
-	EnterArea Wilderness
+    BoardBoat:
+    LeavingTown = 1
+    Text("YOU BOARD A BOAT.")
+    WaitReturnPressed()
+    OnBoat = 1
+    LoadMap(Keep, unused=255, icons=127)
+    if BoatDestination == 0 { EnterArea(SokalKeep) }
+    if BoatDestination < 2 { goto SailToArea27 }
+    if BoatDestination > 2 { goto SailToArea26 }
+    MapX = 7
+    MapY = 29
+    EnterArea(Wilderness)
 
-SailToArea26:
-	SetMapXY 13 27
-	EnterArea Wilderness
+    SailToArea26:
+    MapX = 13
+    MapY = 27
+    EnterArea(Wilderness)
 
-SailToArea27:
-	SetMapXY 9 29
-	EnterArea Quagmire
+    SailToArea27:
+    MapX = 9
+    MapY = 29
+    EnterArea(Quagmire)
 
 HarborMaster:
-	if Facing != North: Exit
-	if BoatPassageBought == 1: Exit
-	ShowPortrait DarkBeard MailCloak
-	if QuestSokalKeep < RewardDue: Goto OnlyBoatOut
-	PrintClear "THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'"
-	BoatDestination = Menu "SOKAL" -> BuyPassage "EAST" -> BuyPassage "WEST" -> BuyPassage "BAY" -> BuyPassage "NONE" -> ResetVisits
+    if Facing != North { exit }
+    if BoatPassageBought == 1 { exit }
+    ShowPortrait(DarkBeard, MailCloak)
+    if QuestSokalKeep < RewardDue { goto OnlyBoatOut }
+    Text("THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'")
+    BoatDestination = Menu("SOKAL", "EAST", "WEST", "BAY", "NONE")
+    goto [BuyPassage, BuyPassage, BuyPassage, BuyPassage, ResetVisits][BoatDestination]
 
 BuyPassage:
-	Gosub PayPlatinum
-	BoatPassageBought = 1
-	PrintClear "'CATCH THE BOAT AT THE END OF THE PIER.'"
-	Picture None
-	Exit
+    PayPlatinum()
+    BoatPassageBought = 1
+    Text("'CATCH THE BOAT AT THE END OF THE PIER.'")
+    Picture(None)
+    exit
 
 OnlyBoatOut:
-	PrintClear "'BY ORDER OF THE CITY COUNCIL,' THE HARBOR MASTER SAYS, 'THE ONLY BOAT OUT IS GOING TO SOKAL KEEP.  YOU CAN CATCH IT AT THE END OF THE PIER.'"
-	Gosub WaitReturnPressed
-	Picture None
-	BoatDestination = 0
-	BoatPassageBought = 1
-	Exit
+    Text("'BY ORDER OF THE CITY COUNCIL,' THE HARBOR MASTER SAYS, 'THE ONLY BOAT OUT IS GOING TO SOKAL KEEP.  YOU CAN CATCH IT AT THE END OF THE PIER.'")
+    WaitReturnPressed()
+    Picture(None)
+    BoatDestination = 0
+    BoatPassageBought = 1
+    exit
 
 GatewaySouth:
-	if IronBoxState == CarriedUnopened: Goto WatchTakesTreasure
-	if Facing == South: Exit
-	PrintClear "TO THE NORTH IS THE PASSENGER DOCK."
-	Exit
+    if IronBoxState == CarriedUnopened { goto WatchTakesTreasure }
+    if Facing == South { exit }
+    Text("TO THE NORTH IS THE PASSENGER DOCK.")
+    exit
 
 TempleOfBaneEvent:
-	alias Choice = AuxMenuChoice
-	if DirtenState == DirtenJoined: Exit
-	if BishopSummons == Summoned: Goto BishopAudience
-	if DirtenState == AskedToAccompany: Goto BishopAudience
-	ShowPortrait GrinningBlond ClericMace
-	PrintClear "THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?"
-	Choice = Menu "LEAVE" -> LeaveBishop "FORCE YOUR WAY PAST" -> WatchResponds
+    if DirtenState == DirtenJoined { exit }
+    if BishopSummons == Summoned { goto BishopAudience }
+    if DirtenState == AskedToAccompany { goto BishopAudience }
+    ShowPortrait(GrinningBlond, ClericMace)
+    Text("THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?")
+    AuxMenuChoice = Menu("LEAVE", "FORCE YOUR WAY PAST")
+    goto [LeaveBishop, WatchResponds][AuxMenuChoice]
 
-BishopAudience:
-	if DirtenState == AskedToAccompany: Goto DirtenStudy
-	ShowPortrait WhiteBeard PlateArmor
-	PrintClear "YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR."
-	Gosub WaitReturnPressed
-	ShowPortrait BlondHeadband ClericMace
-	PrintClear "'HE IS BOUND TO RECOVER THE TEMPLE WHICH HAS BEEN DESECRATED TO BANE.  GO WITH HIM ACROSS THE RIVER AND HELP HIM TO CLEANSE THE TEMPLE.  IN PAYMENT, YOU MAY KEEP THE HIDDEN TREASURES.'"
-	Goto AccompanyDirtenAsk
+    BishopAudience:
+    Compare(DirtenState, 128)
+    if DirtenState == AskedToAccompany { goto DirtenStudy }
+    ShowPortrait(WhiteBeard, PlateArmor)
+    Text("YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR.")
+    WaitReturnPressed()
+    ShowPortrait(BlondHeadband, ClericMace)
+    Text("'HE IS BOUND TO RECOVER THE TEMPLE WHICH HAS BEEN DESECRATED TO BANE.  GO WITH HIM ACROSS THE RIVER AND HELP HIM TO CLEANSE THE TEMPLE.  IN PAYMENT, YOU MAY KEEP THE HIDDEN TREASURES.'")
+    goto AccompanyDirtenAsk
 
-DirtenStudy:
-	ShowPortrait BlondHeadband ClericMace
-	PrintClear "YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'"
+    DirtenStudy:
+    ShowPortrait(BlondHeadband, ClericMace)
+    Text("YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'")
 
-AccompanyDirtenAsk:
-	Gosub WaitReturnPressed
-	PrintClear "'WILL YOU ACCOMPANY DIRTEN?'"
-	DirtenState = AskedToAccompany
-	Ask YesNoMenu "YES" -> DirtenJoins "NO" -> DeclineDirten
+    AccompanyDirtenAsk:
+    WaitReturnPressed()
+    Text("'WILL YOU ACCOMPANY DIRTEN?'")
+    DirtenState = AskedToAccompany
+    YesNoMenu()
+    goto [DirtenJoins, DeclineDirten][Scratch1]
 
 DirtenJoins:
-	Gosub CheckPartySize
-	AddNPC Dirten 99
-	DirtenState = DirtenJoined
-	Picture None
-	Return
+    CheckPartySize()
+    AddNPC(Dirten, 99)
+    DirtenState = DirtenJoined
+    Picture(None)
+    return
 
 DeclineDirten:
-	Picture None
-	Exit
+    Picture(None)
+    exit
 
 LeaveBishop:
-	PartyX = 11
-	Call CallRedraw
-	Exit
+    PartyX = 11
+    CallRedraw()
+    exit
 
 TempleOfTyr:
-	ShowPortrait ScowlingBlond NobleRobe
-	if FoughtWatch > 0: Goto RefuseService
-	PrintClear "THE PRIESTS OF TYR WELCOME YOU TO THE TEMPLE."
-	$AuxText = "MAD MAN"
-	Gosub FindMemberByName
-	if PartyMemberFound != 0: Gosub PriestWarnsMadMan
-	Goto SeekHealingAsk
+    ShowPortrait(ScowlingBlond, NobleRobe)
+    if FoughtWatch > 0 { goto RefuseService }
+    Text("THE PRIESTS OF TYR WELCOME YOU TO THE TEMPLE.")
+    $AuxText = "MAD MAN"
+    FindMemberByName()
+    if PartyMemberFound != 0 { PriestWarnsMadMan() }
+    goto SeekHealingAsk
 
 TempleOfSune:
-	ShowPortrait BlondWoman GreyApron2
-	if FoughtWatch > 0: Goto RefuseService
-	PrintClear "YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE."
-	Goto SeekHealingAsk
+    ShowPortrait(BlondWoman, GreyApron2)
+    if FoughtWatch > 0 { goto RefuseService }
+    Text("YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE.")
+    goto SeekHealingAsk
 
 RiverView:
-	PrintClear "YOU WALK NEAR THE "
-	if Boss >= 245: Goto StojanowRiver
-	Print "POISONOUS BARREN RIVER."
-	Exit
+    Text("YOU WALK NEAR THE ")
+    if Boss >= 245 { goto StojanowRiver }
+    Print("POISONOUS BARREN RIVER.")
+    exit
 
-StojanowRiver:
-	Print "BEAUTIFUL STOJANOW RIVER."
-	Exit
+    StojanowRiver:
+    Print("BEAUTIFUL STOJANOW RIVER.")
+    exit
 
 InnRest:
-	if TrainerVisited != 0: Exit
-	ShowPortrait CurlyHairedWoman GreyApron2
-	if FoughtWatch != 0: Goto RefuseService
-	PrintClear "'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'"
-	Ask YesNoMenu "YES" -> PayForRest "NO" -> MustLeave
+    if TrainerVisited != 0 { exit }
+    ShowPortrait(CurlyHairedWoman, GreyApron2)
+    if FoughtWatch != 0 { goto RefuseService }
+    Text("'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'")
+    YesNoMenu()
+    goto [PayForRest, MustLeave][Scratch1]
 
 PayForRest:
-	Gosub PayPlatinum
-	Gosub SetNoRest
-	Program 9
-	Picture None
-	Exit
+    PayPlatinum()
+    SetNoRest()
+    Program(9)
+    Picture(None)
+    exit
 
 PayPlatinum:
-	Who "WHO WILL PAY?"
-	if SelControl < 128: Goto CheckPlatinum
-	PrintClear "THAT PERSON WON'T PAY."
-	Delay
-	Goto PayPlatinum
+    Who("WHO WILL PAY?")
+    if SelControl < 128 { goto CheckPlatinum }
+    Text("THAT PERSON WON'T PAY.")
+    Delay()
+    goto PayPlatinum
 
-CheckPlatinum:
-	if 1 > &SelPlatinum: Goto NotEnoughPlatinum
-	&SelPlatinum -= 1
-	Scratch1 = 128 + SelPartyIndex2
-	SelectMember Scratch1
-	TrainerVisited = 1
-	Return
+    CheckPlatinum:
+    if 1 > &SelPlatinum { goto NotEnoughPlatinum }
+    &SelPlatinum -= 1
+    Scratch1 = 128 + SelPartyIndex2
+    SelectMember(Scratch1)
+    TrainerVisited = 1
+    return
 
-NotEnoughPlatinum:
-	PrintClear "YOU DON'T HAVE ENOUGH PLATINUM."
-	Delay
-	Picture None
-	Exit
+    NotEnoughPlatinum:
+    Text("YOU DON'T HAVE ENOUGH PLATINUM.")
+    Delay()
+    Picture(None)
+    exit
 
 ToArea11A:
-	NewECL TrainingHall
+    NewECL(TrainingHall)
 
 ToArea11B:
-	NewECL TrainingHall
+    NewECL(TrainingHall)
 
 GeneralShop:
-	Gosub EnterBuildingOnce
-	if FoughtWatch > 0: Goto RefuseService
-	ShowPortrait BlackBeard ShopkeeperApron
-	PrintClear "THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
-	Ask YesNoMenu "YES" -> GeneralShopBrowse "NO" -> ResetVisits
+    EnterBuildingOnce()
+    if FoughtWatch > 0 { goto RefuseService }
+    ShowPortrait(BlackBeard, ShopkeeperApron)
+    Text("THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'")
+    YesNoMenu()
+    goto [GeneralShopBrowse, ResetVisits][Scratch1]
 
 GeneralShopBrowse:
-	ClearMonsters
-	OpenShop
-		stock HolyWaterVial SilverHolySymbolOfSune IronHolySymbolOfTempus WoodenHolySymbolOfTyr FlaskOfOil SilverMirror
-		stock BrassMirror
-	Picture None
-	Exit
+    ClearMonsters()
+    OpenShop(HolyWaterVial, SilverHolySymbolOfSune, IronHolySymbolOfTempus, WoodenHolySymbolOfTyr, FlaskOfOil, SilverMirror, BrassMirror)
+    Picture(None)
+    exit
 
 TavernEnter:
-	if TavernEntered > 0: Goto PickpocketRoll
-	TavernEntered = 1
-	PrintClear "YOU ARE IN A TAVERN.  THE AIR IS FILLED WITH SMOKE AND GOSSIP.  PEOPLE ARE GAMBLING AT THE TABLES."
-	Gosub WaitReturnPressed
+    if TavernEntered > 0 { goto PickpocketRoll }
+    TavernEntered = 1
+    Text("YOU ARE IN A TAVERN.  THE AIR IS FILLED WITH SMOKE AND GOSSIP.  PEOPLE ARE GAMBLING AT THE TABLES.")
+    WaitReturnPressed()
 
-PickpocketRoll:
-	Scratch1 = Random 255
-	if Scratch1 > 25: Goto TavernEvent
-	Rob 1 20 5
-	Scratch1 = Random 1
-	if Scratch1 != 0: Goto TavernEvent
-	PrintClear "YOU FEEL A LIGHT TOUCH ON YOUR PURSE.  DO YOU IGNORE IT OR GRAB THE OFFENDING HAND?"
-	Scratch1 = Menu "IGNORE" -> TavernEvent "GRAB" -> DrunkenBrawl
+    PickpocketRoll:
+    Scratch1 = Random(255)
+    if Scratch1 > 25 { goto TavernEvent }
+    Rob(1, 20, 5)
+    Scratch1 = Random(1)
+    if Scratch1 != 0 { goto TavernEvent }
+    Text("YOU FEEL A LIGHT TOUCH ON YOUR PURSE.  DO YOU IGNORE IT OR GRAB THE OFFENDING HAND?")
+    Scratch1 = Menu("IGNORE", "GRAB")
+    goto [TavernEvent, DrunkenBrawl][Scratch1]
 
 TavernEvent:
-	if Scratch1 == 1 {
-		PrintClear "YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET."
-		Gosub WaitReturnPressed
-	}
-	Picture None
-	PrintClear " DOES ANYONE WANT TO GAMBLE?"
-	Ask YesNoMenu "YES" -> GamblerGame "NO" -> TavernTale
+    if Scratch1 == 1 {
+        Text("YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET.")
+        WaitReturnPressed()
+    }
+    Picture(None)
+    Text(" DOES ANYONE WANT TO GAMBLE?")
+    YesNoMenu()
+    goto [GamblerGame, TavernTale][Scratch1]
 
 TavernTale:
-	PrintClear "YOU OVERHEAR TAVERN TALE "
-	Scratch6 = Random 22
-	Scratch6 += 1
-	Print Scratch6
-	Gosub WaitReturnPressed
-	AuxRoll = Random 3
-	if AuxRoll == 1: Goto DrunkenBrawl
-	Exit
+    Text("YOU OVERHEAR TAVERN TALE ")
+    Scratch6 = Random(22)
+    Scratch6 += 1
+    Print(Scratch6)
+    WaitReturnPressed()
+    AuxRoll = Random(3)
+    if AuxRoll == 1 { goto DrunkenBrawl }
+    exit
 
 GamblerGame:
-	ShowPortrait GrinningBlond MailCloak
-	PrintClear "'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'"
-	Gosub WaitReturnPressed
-	Who "WHO WILL GAMBLE?"
+    ShowPortrait(GrinningBlond, MailCloak)
+    Text("'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'")
+    WaitReturnPressed()
+    Who("WHO WILL GAMBLE?")
 
-TavernGamble:
-	if SelStatus != Okay: Goto TooHurtToGamble
-	GamblerIndex = SelPartyIndex
-	&GamblerPlatinum = &SelPlatinum
+    TavernGamble:
+    if SelStatus != Okay { goto TooHurtToGamble }
+    GamblerIndex = SelPartyIndex
+    &GamblerPlatinum = &SelPlatinum
 
 WagerPrompt:
-	PrintClear "YOU HAVE "
-	Print &GamblerPlatinum
-	Print " PP."
-	Gosub WaitReturnPressed
-	PrintClear "HOW MANY PLATINUM PIECES WILL YOU WAGER? (HOUSE LIMIT IS 1000)"
-	&Wager = InputNumber 4
-	if &GamblerPlatinum < &Wager: Goto WagerRefused
-	if &Wager > #03E8: Goto WagerRefused
-	if &Wager == 0: Goto WagerRefused
-	Scratch9 = Random 9
-	if Scratch9 >= 8 {
-		PrintClear "IT'S GREEN.  YOU GET DOUBLE YOUR MONEY BACK."
-		&GamblerPlatinum += &Wager
-		Goto GambleAgainAsk
-	}
-	if Scratch9 > 2 {
-		PrintClear "IT'S BLUE.  YOU WIN."
-		Goto GambleAgainAsk
-	}
-	PrintClear "RED. SORRY, YOU LOSE."
-	&GamblerPlatinum -= &Wager
+    Text("YOU HAVE ")
+    Print(&GamblerPlatinum)
+    Print(" PP.")
+    WaitReturnPressed()
+    Text("HOW MANY PLATINUM PIECES WILL YOU WAGER? (HOUSE LIMIT IS 1000)")
+    &Wager = InputNumber(4)
+    if &GamblerPlatinum < &Wager { goto WagerRefused }
+    if &Wager > 1000 { goto WagerRefused }
+    if &Wager == 0 { goto WagerRefused }
+    Scratch9 = Random(9)
+    if Scratch9 >= 8 {
+        Text("IT'S GREEN.  YOU GET DOUBLE YOUR MONEY BACK.")
+        &GamblerPlatinum += &Wager
+        goto GambleAgainAsk
+    }
+    if Scratch9 > 2 {
+        Text("IT'S BLUE.  YOU WIN.")
+        goto GambleAgainAsk
+    }
+    Text("RED. SORRY, YOU LOSE.")
+    &GamblerPlatinum -= &Wager
 
 GambleAgainAsk:
-	Gosub WaitReturnPressed
-	PrintClear "WILL YOU GO AGAIN?"
-	Ask YesNoMenu "YES" -> WagerPrompt "NO"
-	SelectMember GamblerIndex
-	&SelPlatinum = &GamblerPlatinum
-	Wager = 128 + GamblerIndex
-	SelectMember Wager
-	Goto ResetVisits
+    WaitReturnPressed()
+    Text("WILL YOU GO AGAIN?")
+    YesNoMenu()
+    goto [WagerPrompt][Scratch1]
+    SelectMember(GamblerIndex)
+    &SelPlatinum = &GamblerPlatinum
+    Wager = 128 + GamblerIndex
+    SelectMember(Wager)
+    goto ResetVisits
 
 TooHurtToGamble:
-	PrintClear "NO ONE IS WILLING TO GAMBLE WITH SOMEONE WHO LOOKS THAT BAD."
-	Goto TavernEvent
+    Text("NO ONE IS WILLING TO GAMBLE WITH SOMEONE WHO LOOKS THAT BAD.")
+    goto TavernEvent
 
 WagerRefused:
-	PrintClear "I CAN'T ACCEPT THAT WAGER."
-	Goto GambleAgainAsk
+    Text("I CAN'T ACCEPT THAT WAGER.")
+    goto GambleAgainAsk
 
 DrunkenBrawl:
-	alias Icon1 = AuxRoll2
-	alias Icon2 = AuxTempC
-	alias Icon3 = AuxSearchCount
-	alias Icon4 = AuxEncText
-	alias Monster1 = AuxEncResult
-	alias Monster2 = AuxEncResult2
-	alias Monster3 = AuxEncTemp
-	alias Monster4 = AuxTemp9
-	Portrait = WhiteHaired
-	SetupMonster Fighter7 distance=2 body=MailCloak
-	PrintClear "A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE."
-	Gosub WaitReturnPressed
-	AuxMonster = Random 1
-	Scratch2 = PartyStrength
-	if Scratch2 > 24: AuxMonster += 1
-	if Scratch2 > 50: AuxMonster += 1
-	Monster1 = DuelMonsters[AuxMonster]
-	Icon1 = DuelIcons[AuxMonster]
-	AuxMonster += 1
-	Monster2 = DuelMonsters[AuxMonster]
-	Icon2 = DuelIcons[AuxMonster]
-	AuxMonster += 1
-	Monster3 = DuelMonsters[AuxMonster]
-	Icon3 = DuelIcons[AuxMonster]
-	AuxPartyStrength = Random 3
-	Monster4 = DuelMonsters[AuxPartyStrength]
-	Icon4 = DuelIcons[AuxPartyStrength]
-	NoLoot = 1
-	Duel = 1
-	Morale = 50
-	ClearMonsters
-	LoadMonster Monster1 count=11 icon=Icon1
-	LoadMonster Monster2 count=11 icon=Icon2
-	LoadMonster Monster3 count=11 icon=Icon3
-	LoadMonster Monster4 count=13 icon=Icon4
-
-BrawlFight:
-	alias Choice = AuxParlay
-	for Scratch1 = 41 to 53
-		SelectMember Scratch1
-		SelSide = PartyControlled
-		SelControl = NPCMember
-		AuxTemp9 = 128 + Scratch1
-		SelectMember AuxTemp9
-	next
-	Combat
-	if CombatEnd > PartyDied: Goto RunAway
-	Gosub WatchApproaches
-	PrintClear "THE CITY WATCH CHARGES IN. DO YOU RUN AWAY OR STAY TO CONFRONT THEM?"
-	Choice = Menu "STAY" -> WatchResponds "RUN" -> RunAway
+    Portrait = WhiteHaired
+    SetupMonster(Fighter7, distance=2, body=MailCloak)
+    Text("A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE.")
+    WaitReturnPressed()
+    AuxMonster = Random(1)
+    Scratch2 = PartyStrength()
+    if Scratch2 > 24 { AuxMonster += 1 }
+    if Scratch2 > 50 { AuxMonster += 1 }
+    AuxEncResult = DuelMonsters[AuxMonster]
+    AuxRoll2 = DuelIcons[AuxMonster]
+    AuxMonster += 1
+    AuxEncResult2 = DuelMonsters[AuxMonster]
+    AuxTempC = DuelIcons[AuxMonster]
+    AuxMonster += 1
+    AuxEncTemp = DuelMonsters[AuxMonster]
+    AuxSearchCount = DuelIcons[AuxMonster]
+    AuxPartyStrength = Random(3)
+    AuxTemp9 = DuelMonsters[AuxPartyStrength]
+    AuxEncText = DuelIcons[AuxPartyStrength]
+    NoLoot = 1
+    Duel = 1
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(AuxEncResult, count=11, icon=AuxRoll2)
+    LoadMonster(AuxEncResult2, count=11, icon=AuxTempC)
+    LoadMonster(AuxEncTemp, count=11, icon=AuxSearchCount)
+    LoadMonster(AuxTemp9, count=13, icon=AuxEncText)
+    for Scratch1 = 41 while Scratch1 < 54 {
+        SelectMember(Scratch1)
+        SelSide = PartyControlled
+        SelControl = NPCMember
+        AuxTemp9 = 128 + Scratch1
+        SelectMember(AuxTemp9)
+    }
+    Combat()
+    if CombatEnd > PartyDied { goto RunAway }
+    WatchApproaches()
+    Text("THE CITY WATCH CHARGES IN. DO YOU RUN AWAY OR STAY TO CONFRONT THEM?")
+    AuxParlay = Menu("STAY", "RUN")
+    goto [WatchResponds, RunAway][AuxParlay]
 
 ArmorShop:
-	Gosub EnterBuildingOnce
-	ShowPortrait CurlyBlondYouth GreyApron3
-	if FoughtWatch > 0: Goto RefuseService
-	PrintClear "THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
-	Ask YesNoMenu "YES" -> ArmorShopBrowse "NO" -> ResetVisits
+    EnterBuildingOnce()
+    ShowPortrait(CurlyBlondYouth, GreyApron3)
+    if FoughtWatch > 0 { goto RefuseService }
+    Text("THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'")
+    YesNoMenu()
+    goto [ArmorShopBrowse, ResetVisits][Scratch1]
 
 ArmorShopBrowse:
-	ClearMonsters
-	OpenShop
-		stock BrassDragonFigurine GoldChain PearlNecklace GoldLightningFigurine JewelledSilverWings SilverDragonStatuette
-		stock GoldScarab EmeraldBroach PlatinumSphere FineOpalPendant DiamondNecklace
-	Picture None
-	Exit
+    ClearMonsters()
+    OpenShop(BrassDragonFigurine, GoldChain, PearlNecklace, GoldLightningFigurine, JewelledSilverWings, SilverDragonStatuette, GoldScarab, EmeraldBroach, PlatinumSphere, FineOpalPendant, DiamondNecklace)
+    Picture(None)
+    exit
 
 WeaponShop:
-	Gosub EnterBuildingOnce
-	ShowPortrait BlackBeard ShopkeeperApron
-	if FoughtWatch > 0: Goto RefuseService
-	PrintClear "THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'"
-	Ask YesNoMenu "YES" -> WeaponShopBrowse "NO" -> ResetVisits
+    EnterBuildingOnce()
+    ShowPortrait(BlackBeard, ShopkeeperApron)
+    if FoughtWatch > 0 { goto RefuseService }
+    Text("THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'")
+    YesNoMenu()
+    goto [WeaponShopBrowse, ResetVisits][Scratch1]
 
 WeaponShopBrowse:
-	ClearMonsters
-	OpenShop
-		stock Shield PlateMail BandedMail SplintMail ChainMail ScaleMail
-		stock RingMail StuddedLeatherArmor PaddedArmor LeatherArmor Arrow*10 LightCrossbow
-		stock Sling ShortBow LongBow CompositeShortBow CompositeLongBow Voulge
-		stock Trident TwoHandedSword ShortSword LongSword BroadSword BastardSword
-		stock QuarterStaff Spetum Spear Scimitar Ranseur Quarrel*20
-		stock AwlPike MilitaryPick Partisan MorningStar Mace JoStick
-		stock Javelin*2 Hammer LucernHammer Halberd GuisarmeVoulge Guisarme
-		stock GlaiveGuisarme Glaive MilitaryFork Flail FauchardFork Fauchard
-		stock Dart*4 Dagger Club BoStick BillGuisarme BecDeCorbin
-		stock Bardiche HandAxe BattleAxe
-	Picture None
-	Exit
+    ClearMonsters()
+    OpenShop(Shield, PlateMail, BandedMail, SplintMail, ChainMail, ScaleMail, RingMail, StuddedLeatherArmor, PaddedArmor, LeatherArmor, Arrow*10, LightCrossbow, Sling, ShortBow, LongBow, CompositeShortBow, CompositeLongBow, Voulge, Trident, TwoHandedSword, ShortSword, LongSword, BroadSword, BastardSword, QuarterStaff, Spetum, Spear, Scimitar, Ranseur, Quarrel*20, AwlPike, MilitaryPick, Partisan, MorningStar, Mace, JoStick, Javelin*2, Hammer, LucernHammer, Halberd, GuisarmeVoulge, Guisarme, GlaiveGuisarme, Glaive, MilitaryFork, Flail, FauchardFork, Fauchard, Dart*4, Dagger, Club, BoStick, BillGuisarme, BecDeCorbin, Bardiche, HandAxe, BattleAxe)
+    Picture(None)
+    exit
 
 SilverShop:
-	if Building2Entered != 0: Exit
-	Building2Entered = 1
-	ShowPortrait CurlyBlondYouth GreyApron3
-	if FoughtWatch > 0: Goto RefuseService
-	PrintClear "THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'"
-	Ask YesNoMenu "YES" -> SilverShopBrowse "NO" -> ResetVisits
+    if Building2Entered != 0 { exit }
+    Building2Entered = 1
+    ShowPortrait(CurlyBlondYouth, GreyApron3)
+    if FoughtWatch > 0 { goto RefuseService }
+    Text("THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'")
+    YesNoMenu()
+    goto [SilverShopBrowse, ResetVisits][Scratch1]
 
 SilverShopBrowse:
-	ClearMonsters
-	OpenShop
-		stock FineCompositeLongBow SilverRing SilverPlateMail SilverChainMail SilverQuarrel SilverArrow*20
-		stock SilverDagger SilverTwoHandedSword SilverShortSword SilverLongSword SilverBroadSword SilverBastardSword
-		stock SilverMace
-	Picture None
-	Exit
+    ClearMonsters()
+    OpenShop(FineCompositeLongBow, SilverRing, SilverPlateMail, SilverChainMail, SilverQuarrel, SilverArrow*20, SilverDagger, SilverTwoHandedSword, SilverShortSword, SilverLongSword, SilverBroadSword, SilverBastardSword, SilverMace)
+    Picture(None)
+    exit
 
 HealerTemple:
-	if Combat1Won != 0: Exit
-	ShowPortrait NoseguardHelmet PlateArmor
-	if FoughtWatch > 0: Goto WatchFightsBack
-	PrintClear "THE PRIESTS OF TEMPUS BID YOU WELCOME."
-	Goto SeekHealingAsk
+    if Combat1Won != 0 { exit }
+    ShowPortrait(NoseguardHelmet, PlateArmor)
+    if FoughtWatch > 0 { goto WatchFightsBack }
+    Text("THE PRIESTS OF TEMPUS BID YOU WELCOME.")
+    goto SeekHealingAsk
 
 SeekHealingAsk:
-	Print "' DO YOU SEEK HEALING?'"
-	Ask YesNoMenu "YES" -> TempleHealing "NO" -> MustLeave
+    Print("' DO YOU SEEK HEALING?'")
+    YesNoMenu()
+    goto [TempleHealing, MustLeave][Scratch1]
 
 MustLeave:
-	PrintClear "THEN YOU MUST LEAVE."
-	PartyX = PrevX
-	PartyY = PrevY
-	Portrait = None
-	Call CallRedraw
-	Exit
+    Text("THEN YOU MUST LEAVE.")
+    PartyX = PrevX
+    PartyY = PrevY
+    Portrait = None
+    CallRedraw()
+    exit
 
 TempleHealing:
-	ClearMonsters
-	OpenTemple
-	ShowPortrait None None
-	Exit
+    ClearMonsters()
+    OpenTemple()
+    ShowPortrait(None, None)
+    exit
 
 WatchFightsBack:
-	SetupMonster Fighter16 distance=0 body=PlateArmor
-	PrintClear "YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!"
-	Morale = 99
-	ClearMonsters
-	LoadMonster ThLvlCleric count=12 icon=12
-	LoadMonster ThLvlFighter41 count=20 icon=11
-	LoadMonster ThLvlFighter85 count=20 icon=ThLvlFighter
-	Combat
-	if CombatEnd == 1: Combat1Won = 1
-	Exit
+    SetupMonster(Fighter16, distance=0, body=PlateArmor)
+    Text("YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!")
+    Morale = 99
+    ClearMonsters()
+    LoadMonster(ThLvlCleric, count=12, icon=12)
+    LoadMonster(ThLvlFighter41, count=20, icon=11)
+    LoadMonster(ThLvlFighter85, count=20, icon=ThLvlFighter)
+    Combat()
+    if CombatEnd == 1 { Combat1Won = 1 }
+    exit
 
 UnsettledGateway:
-	PrintClear "YOU ARE BY THE GATEWAY TO THE UNSETTLED AREAS. THE CITY WATCH EYES YOU SUSPICIOUSLY."
-	if IronBoxState == CarriedUnopened: Goto WatchTakesTreasure
-	Exit
+    Text("YOU ARE BY THE GATEWAY TO THE UNSETTLED AREAS. THE CITY WATCH EYES YOU SUSPICIOUSLY.")
+    if IronBoxState == CarriedUnopened { goto WatchTakesTreasure }
+    exit
 
 WatchTakesTreasure:
-	Gosub WaitReturnPressed
-	PrintClear "THE CITY WATCH STOPS YOU AND REMOVES CADORNA'S TREASURE FROM YOUR KEEPING.  THEY TELL YOU YOUR REWARD WAITS WITH THE CITY CLERK."
-	QuestCadornaPayment = RewardDue
-	IronBoxState = HandedIn
-	Exit
+    WaitReturnPressed()
+    Text("THE CITY WATCH STOPS YOU AND REMOVES CADORNA'S TREASURE FROM YOUR KEEPING.  THEY TELL YOU YOUR REWARD WAITS WITH THE CITY CLERK.")
+    QuestCadornaPayment = RewardDue
+    IronBoxState = HandedIn
+    exit
 
 CityHallOutside:
-	PartyMemberFound = 0
-	$AuxRomanNum = "LIX."
-	$AuxText = "SKULLCRUSHER"
-	Gosub FindMemberByName
-	if PartyMemberFound == 1: Goto SkullcrusherLeaves
-	if CityHallSeen != 0: Exit
-	CityHallSeen = 1
-	PrintClear "YOU ARE OUTSIDE THE CITY HALL. THE CITY CLERK WAITS INSIDE TO AWARD COMMISSIONS."
-	if Scratch10 != 26 || WallAhead != 11: Exit
-	Gosub WaitReturnPressed
-	PrintClear "PROCLAMATIONS ARE POSTED ON THE WALLS, IN YOUR JOURNAL YOU NOTE "
-	if CouncilFavor == 0: Goto OldProclamations
-	ProclamationIndex = CouncilFavor - 1
-	OnGosub ProclamationIndex Proclamation1 Proclamation2 Proclamation3 Proclamation4 Proclamation5 Proclamation6 Proclamation7 Proclamation8 Proclamation9
-	Print "PROCLAMATION"
-	Print $AuxRomanNum
-	Exit
+    PartyMemberFound = 0
+    $AuxRomanNum = "LIX."
+    $AuxText = "SKULLCRUSHER"
+    FindMemberByName()
+    if PartyMemberFound == 1 { goto SkullcrusherLeaves }
+    if CityHallSeen != 0 { exit }
+    CityHallSeen = 1
+    Text("YOU ARE OUTSIDE THE CITY HALL. THE CITY CLERK WAITS INSIDE TO AWARD COMMISSIONS.")
+    if Scratch10 != 26 or WallAhead != 11 { exit }
+    WaitReturnPressed()
+    Text("PROCLAMATIONS ARE POSTED ON THE WALLS, IN YOUR JOURNAL YOU NOTE ")
+    if CouncilFavor == 0 { goto OldProclamations }
+    ProclamationIndex = CouncilFavor - 1
+    gosub [Proclamation1, Proclamation2, Proclamation3, Proclamation4, Proclamation5, Proclamation6,
+        Proclamation7, Proclamation8, Proclamation9][ProclamationIndex]
+    Print("PROCLAMATION")
+    Print($AuxRomanNum)
+    exit
 
-OldProclamations:
-	Print "PROCLAMATIONS LXIV, LXXVIII, CIX, AND LIX."
-	Exit
+    OldProclamations:
+    Print("PROCLAMATIONS LXIV, LXXVIII, CIX, AND LIX.")
+    exit
 
-Proclamation1:
-	$AuxRomanNum = "CI."
-	Return
+def Proclamation1() {
+    $AuxRomanNum = "CI."
+    return
+}
 
-Proclamation2:
-	$AuxRomanNum = "CXXVI AND CX."
-	Return
+def Proclamation2() {
+    $AuxRomanNum = "CXXVI AND CX."
+    return
+}
 
-Proclamation3:
-	$AuxRomanNum = "CXXXIV."
-	Return
+def Proclamation3() {
+    $AuxRomanNum = "CXXXIV."
+    return
+}
 
-Proclamation4:
-	$AuxRomanNum = "CLIV."
-	Return
+def Proclamation4() {
+    $AuxRomanNum = "CLIV."
+    return
+}
 
-Proclamation5:
-	$AuxRomanNum = "CXIV."
-	Return
+def Proclamation5() {
+    $AuxRomanNum = "CXIV."
+    return
+}
 
-Proclamation6:
-	$AuxRomanNum = "CCIV."
-	Return
+def Proclamation6() {
+    $AuxRomanNum = "CCIV."
+    return
+}
 
-Proclamation7:
-	$AuxRomanNum = "CXXIX."
-	Return
+def Proclamation7() {
+    $AuxRomanNum = "CXXIX."
+    return
+}
 
-Proclamation8:
-	$AuxRomanNum = "CCI."
-	Return
+def Proclamation8() {
+    $AuxRomanNum = "CCI."
+    return
+}
 
-Proclamation9:
-	$AuxRomanNum = "CXIV."
-	Return
+def Proclamation9() {
+    $AuxRomanNum = "CXIV."
+    return
+}
 
 SkullcrusherLeaves:
-	PrintClear "SKULLCRUSHER SPEAKS, 'I MUST GO TO MY MASTER NOW.' "
-	SelStatus = Died
-	SelName = 0
-	AuxMember += 128
-	SelectMember AuxMember
-	Print "HE LEAVES."
-	Gosub WaitReturnPressed
-	Goto CityHallOutside
+    Text("SKULLCRUSHER SPEAKS, 'I MUST GO TO MY MASTER NOW.' ")
+    SelStatus = Died
+    SelName = 0
+    AuxMember += 128
+    SelectMember(AuxMember)
+    Print("HE LEAVES.")
+    WaitReturnPressed()
+    goto CityHallOutside
 
 ToArea8:
-	NewECL CityHall
+    NewECL(CityHall)
 
 WatchResponds:
-	alias Choice = Scratch1
-	Gosub WatchApproaches
-	PrintClear "THE CITY WATCH RESPONDS TO THE NOISE.  DO YOU STAY TO FIGHT THEM OR RUN AWAY?"
-	Choice = Menu "STAY" -> FightWatch "RUN" -> RunAway
+    WatchApproaches()
+    Text("THE CITY WATCH RESPONDS TO THE NOISE.  DO YOU STAY TO FIGHT THEM OR RUN AWAY?")
+    Scratch1 = Menu("STAY", "RUN")
+    goto [FightWatch, RunAway][Scratch1]
 
 FightWatch:
-	WatchCombatDone0 = 0
-	Morale = 50
-	ClearMonsters
-	LoadMonster Level3Mu count=2 icon=Level3Mu
-	LoadMonster ThLvlFighter84 count=12 icon=ThLvlFighter
-	LoadMonster Aides count=12 icon=11
-	LoadMonster Nomad count=12 icon=Nomad
-	Combat
-	WatchCombatDone0 = 1
-	Gosub AfterWatchFight
-	FoughtWatch = 1
-	Exit
+    WatchCombatDone0 = 0
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(Level3Mu, count=2, icon=Level3Mu)
+    LoadMonster(ThLvlFighter84, count=12, icon=ThLvlFighter)
+    LoadMonster(Aides, count=12, icon=11)
+    LoadMonster(Nomad, count=12, icon=Nomad)
+    Combat()
+    WatchCombatDone0 = 1
+    AfterWatchFight()
+    FoughtWatch = 1
+    exit
 
 RefuseService:
-	PrintClear "'DUE TO YOUR VICIOUS ATTACK ON THOSE WHO PROTECT US, WE REFUSE YOU ALL SERVICE.'"
-	Exit
+    Text("'DUE TO YOUR VICIOUS ATTACK ON THOSE WHO PROTECT US, WE REFUSE YOU ALL SERVICE.'")
+    exit
 
-YesNoMenu:
-	alias Choice = Scratch1
-	Choice = Menu "YES" "NO"
-	Return
+def YesNoMenu() {
+    Scratch1 = Menu("YES", "NO")
+    return
+}
 
 ResetVisits:
-	TrainerVisited = 0
-	BuildingEntered = 0
-	TavernEntered = 0
-	Building2Entered = 0
-	Picture None
-	Exit
+    TrainerVisited = 0
+    BuildingEntered = 0
+    TavernEntered = 0
+    Building2Entered = 0
+    Picture(None)
+    exit
 
-EnterBuildingOnce:
-	if BuildingEntered != 0: Exit
-	BuildingEntered = 1
-	Return
+def EnterBuildingOnce() {
+    if BuildingEntered != 0 { exit }
+    BuildingEntered = 1
+    return
+}
 
-AfterWatchFight:
-	if CombatEnd > PartyDied: Goto RunAway
-	if WatchCombatDone0 > 0: Return
+def AfterWatchFight() {
+    if CombatEnd > PartyDied { goto RunAway }
+    if WatchCombatDone0 > 0 { return }
+} # falls into CheckPartySize
 
 CheckPartySize:
-	if PartyCount < 8: Return
-	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
-	Gosub WaitReturnPressed
-	Picture None
-	Exit
+    if PartyCount < 8 { return }
+    Text("'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'")
+    WaitReturnPressed()
+    Picture(None)
+    exit
 
 RunAway:
-	Facing = Random 3
-	AuxMember = Random 3
-	PartyX = EjectXTable[AuxMember]
-	PartyY = EjectYTable[AuxMember]
-	PrintClear ""
-	Call CallRedraw
-	Exit
+    Facing = Random(3)
+    AuxMember = Random(3)
+    PartyX = EjectXTable[AuxMember]
+    PartyY = EjectYTable[AuxMember]
+    Text("")
+    CallRedraw()
+    exit
 
-WaitReturnPressed:
-	alias Choice = AuxMenuChoice
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def WaitReturnPressed() {
+    AuxMenuChoice = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
-WatchApproaches:
-	Portrait = Bearded
-	SetupMonster Swordsman27 distance=2 body=MailCloak
-	Delay
-	Approach
-	Delay
-	Approach
-	Delay
-	Return
+def WatchApproaches() {
+    Portrait = Bearded
+    SetupMonster(Swordsman27, distance=2, body=MailCloak)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Delay()
+    return
+}
 
-FindMemberByName:
-	AuxMember = 0
+def FindMemberByName() {
+    AuxMember = 0
+} # falls into FindMemberLoop
 
 FindMemberLoop:
-	SelectMember AuxMember
-	if SelStatus > 127: Goto NextMember
-	if $SelName == $AuxText: Goto MemberFound
+    SelectMember(AuxMember)
+    if SelStatus > 127 { goto NextMember }
+    if $SelName == $AuxText { goto MemberFound }
 
 NextMember:
-	AuxMember += 1
-	if AuxMember < 8: Goto FindMemberLoop
-	Return
+    AuxMember += 1
+    if AuxMember < 8 { goto FindMemberLoop }
+    return
 
 MemberFound:
-	if SelControl < 128: Goto NextMember
-	PartyMemberFound = 1
-	Return
+    if SelControl < 128 { goto NextMember }
+    PartyMemberFound = 1
+    return
 
 MadManAttacks:
-	PrintClear "THE MAD MAN SUDDENLY BEGINS TO SCREAM AND ATTACK EVERYONE WITHIN ARM'S REACH."
-	Gosub WaitReturnPressed
-	Goto WatchResponds
+    Text("THE MAD MAN SUDDENLY BEGINS TO SCREAM AND ATTACK EVERYONE WITHIN ARM'S REACH.")
+    WaitReturnPressed()
+    goto WatchResponds
 
-PriestWarnsMadMan:
-	PrintClear "AN AGED PRIEST APPROACHES, POINTING AT THE MAD MAN, HE SPEAKS, 'THAT MAN URGENTLY NEEDS OUR CARE.  DROP HIM FROM YOUR PARTY OR HE WILL BRING YOU TO GRIEF.  WE WILL CARE FOR HIM.'"
-	Gosub WaitReturnPressed
-	Return
+def PriestWarnsMadMan() {
+    Text("AN AGED PRIEST APPROACHES, POINTING AT THE MAD MAN, HE SPEAKS, 'THAT MAN URGENTLY NEEDS OUR CARE.  DROP HIM FROM YOUR PARTY OR HE WILL BRING YOU TO GRIEF.  WE WILL CARE FOR HIM.'")
+    WaitReturnPressed()
+    return
+}
 
 CityTour:
-	TourDone = 1
-	Scratch5 = 11
-	if Hours > 14: Scratch5 = 8
-	Sky = Scratch5
-	PartyX = 15
-	PartyY = 1
-	Facing = West
-	Call CallRedraw
-	Portrait = GrinningBlond
-	SetupMonster Man12 distance=2 body=ShopkeeperApron
-	Delay
-	Approach
-	Delay
-	Approach
-	Delay
-	PrintClear "'GREETINGS, COURAGEOUS ONES, I AM ROLF, APPOINTED BY THE COUNCIL TO INTRODUCE NEWCOMERS TO THE FAIR CITY OF PHLAN. IF YOU WILL ACCOMPANY ME, I WILL START THE TOUR.'"
-	Gosub WaitReturnPressed
-	RedrawView
-	Picture None
-	Scratch1 = 0
+    TourDone = 1
+    Scratch5 = 11
+    if Hours > 14 { Scratch5 = 8 }
+    Sky = Scratch5
+    PartyX = 15
+    PartyY = 1
+    Facing = West
+    CallRedraw()
+    Portrait = GrinningBlond
+    SetupMonster(Man12, distance=2, body=ShopkeeperApron)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Delay()
+    Text("'GREETINGS, COURAGEOUS ONES, I AM ROLF, APPOINTED BY THE COUNCIL TO INTRODUCE NEWCOMERS TO THE FAIR CITY OF PHLAN. IF YOU WILL ACCOMPANY ME, I WILL START THE TOUR.'")
+    WaitReturnPressed()
+    RedrawView()
+    Picture(None)
+    Scratch1 = 0
 
-TourStopLoop:
-	alias TourStopKind = Scratch4
-	alias TourStopXEntry = Scratch2
-	alias TourStopYEntry = Scratch3
-	PrintClear ""
-	TourStopXEntry = TourStopX[Scratch1]
-	TourStopYEntry = TourStopY[Scratch1]
-	Facing = TourStopFacing[Scratch1]
-	TourStopKind = TourStopKinds[Scratch1]
-	Gosub MoveToTourStop
-	OnGosub TourStopKind TourStopNone TourTempleOfTyr TourPassengerDock TourTrainingSchools TourCityHall TourSuneTemple TourEnd
-	if TourStopKind == 6: Goto ResetVisits
-	Scratch1 += 1
-	Goto TourStopLoop
+    TourStopLoop:
+    Text("")
+    Scratch2 = TourStopX[Scratch1]
+    Scratch3 = TourStopY[Scratch1]
+    Facing = TourStopFacing[Scratch1]
+    Scratch4 = TourStopKinds[Scratch1]
+    MoveToTourStop()
+    gosub [TourStopNone, TourTempleOfTyr, TourPassengerDock, TourTrainingSchools, TourCityHall,
+        TourSuneTemple, TourEnd][Scratch4]
+    if Scratch4 == 6 { goto ResetVisits }
+    Scratch1 += 1
+    goto TourStopLoop
 
-MoveToTourStop:
-	PartyX = Scratch2
-	PartyY = Scratch3
-	Call CallRedraw
-	Sound = 8
-	Call CallSound
-	Delay
+def MoveToTourStop() {
+    PartyX = Scratch2
+    PartyY = Scratch3
+    CallRedraw()
+    Sound = 8
+    CallSound()
+    Delay()
+} # falls into TourStopNone
 
 TourStopNone:
-	Return
+    return
 
-TourTempleOfTyr:
-	PrintClear "'YOU NOW FACE AN ENTRANCE TO THE TEMPLE OF TYR.  THERE ARE THREE TEMPLES IN PHLAN: TYR'S, SUNE'S, AND TEMPUS. TYR'S IS THE LARGEST AND HOUSES BISHOP BRACCIO. IF YOU WILL TURN AROUND NOW, '"
-	Gosub WaitReturnPressed
-	Return
+def TourTempleOfTyr() {
+    Text("'YOU NOW FACE AN ENTRANCE TO THE TEMPLE OF TYR.  THERE ARE THREE TEMPLES IN PHLAN: TYR'S, SUNE'S, AND TEMPUS. TYR'S IS THE LARGEST AND HOUSES BISHOP BRACCIO. IF YOU WILL TURN AROUND NOW, '")
+    WaitReturnPressed()
+    return
+}
 
-TourPassengerDock:
-	PrintClear "'YOU WILL SEE THE ENTRANCE TO THE PASSENGER DOCK AREA WE JUST DEPARTED.  FEW SHIPS DARE THE PERILOUS PASSAGE HERE, BUT THE COUNCIL IS DEVELOPING A PLAN TO OPEN UP THE SEA LANES.  PLEASE FOLLOW ME.'"
-	Gosub WaitReturnPressed
-	Return
+def TourPassengerDock() {
+    Text("'YOU WILL SEE THE ENTRANCE TO THE PASSENGER DOCK AREA WE JUST DEPARTED.  FEW SHIPS DARE THE PERILOUS PASSAGE HERE, BUT THE COUNCIL IS DEVELOPING A PLAN TO OPEN UP THE SEA LANES.  PLEASE FOLLOW ME.'")
+    WaitReturnPressed()
+    return
+}
 
-TourTrainingSchools:
-	PrintClear "'BEHIND THESE DOORS ARE THE SPECIAL TRAINING SCHOOLS  WHERE ADVENTURERS INCREASE THEIR SKILLS. LET US NOW GO TO THE CITY'S MOST IMPORTANT BUILDING.'"
-	Gosub WaitReturnPressed
-	Return
+def TourTrainingSchools() {
+    Text("'BEHIND THESE DOORS ARE THE SPECIAL TRAINING SCHOOLS  WHERE ADVENTURERS INCREASE THEIR SKILLS. LET US NOW GO TO THE CITY'S MOST IMPORTANT BUILDING.'")
+    WaitReturnPressed()
+    return
+}
 
-TourCityHall:
-	PrintClear "'WE ARE JUST OUTSIDE THE CITY HALL. PROCLAMATIONS ARE POSTED ON THESE WALLS. INSIDE, THE CITY CLERK AWARDS THE COUNCIL'S COMMISSIONS.  COMMISSIONS ARE THE QUICKEST WAY TO FAME AND FORTUNE.'"
-	Gosub WaitReturnPressed
-	Return
+def TourCityHall() {
+    Text("'WE ARE JUST OUTSIDE THE CITY HALL. PROCLAMATIONS ARE POSTED ON THESE WALLS. INSIDE, THE CITY CLERK AWARDS THE COUNCIL'S COMMISSIONS.  COMMISSIONS ARE THE QUICKEST WAY TO FAME AND FORTUNE.'")
+    WaitReturnPressed()
+    return
+}
 
-TourSuneTemple:
-	PrintClear "'ON YOUR RIGHT IS ONE OF THE ENTRANCE'S TO SUNE'S TEMPLE. AS WITH ALL PHLAN'S TEMPLES, VARIOUS CLERICAL SERVICES ARE OFFERED INSIDE.  ON YOUR LEFT IS AN ENTRANCE TO THE CITY PARK.'"
-	Gosub WaitReturnPressed
-	Return
+def TourSuneTemple() {
+    Text("'ON YOUR RIGHT IS ONE OF THE ENTRANCE'S TO SUNE'S TEMPLE. AS WITH ALL PHLAN'S TEMPLES, VARIOUS CLERICAL SERVICES ARE OFFERED INSIDE.  ON YOUR LEFT IS AN ENTRANCE TO THE CITY PARK.'")
+    WaitReturnPressed()
+    return
+}
 
-TourEnd:
-	PrintClear "'BEYOND THIS GATE ARE THE MONSTER-RIDDEN AREAS OF THE OLD CITY WE ARE SLOWLY PREPARING FOR SETTLEMENT.  THE COUNCIL OFFERS A GENEROUS REWARD TO THOSE WHO CLEAR AREAS OF MONSTERS."
-	Gosub WaitReturnPressed
-	PrintClear "'OUR TOUR IS ENDED. AGAIN, LET ME URGE YOU TO APPLY TO THE CITY CLERK FOR A COMMISSION.  GOOD-BYE AND GOOD FORTUNE.' (YOU ARE ON YOUR OWN NOW)"
-	Gosub WaitReturnPressed
-	Return
+def TourEnd() {
+    Text("'BEYOND THIS GATE ARE THE MONSTER-RIDDEN AREAS OF THE OLD CITY WE ARE SLOWLY PREPARING FOR SETTLEMENT.  THE COUNCIL OFFERS A GENEROUS REWARD TO THOSE WHO CLEAR AREAS OF MONSTERS.")
+    WaitReturnPressed()
+    Text("'OUR TOUR IS ENDED. AGAIN, LET ME URGE YOU TO APPLY TO THE CITY CLERK FOR A COMMISSION.  GOOD-BYE AND GOOD FORTUNE.' (YOU ARE ON YOUR OWN NOW)")
+    WaitReturnPressed()
+    return
+}
 
-TourStopKinds:
-	Data 0 0 0 0 0 1 0 2 0 0 0 0 0 0 0 0
-	Data 0 0 0 0 3 0 0 0 0 4 0 0 0 0 0 0
-	Data 5 6
-
-TourStopX:
-	Data 14 13 12 11 11 11 11 11 11 10 10 10 10 9 8 7
-	Data 6 5 5 5 5 5 5 5 4 4 4 3 2 2 2 2
-	Data 1 0
-
-TourStopY:
-	Data 1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3
-	Data 3 3 3 2 2 2 3 3 3 3 3 3 3 3 4 4
-	Data 4 4
-
-TourStopFacing:
-	Data 3 3 3 3 2 2 3 0 3 3 2 2 3 3 3 3
-	Data 3 3 0 0 1 2 2 3 3 2 3 3 3 2 2 3
-	Data 3 3
-
-EjectXTable:
-	Data 3 10 2 12
-
-EjectYTable:
-	Data 11 10 0 3
-
-DuelMonsters:
-	Data Nomad StLvlThief Corporal Aides ThLvlFighter41 ThLvlThief51
-
-DuelIcons:
-	Data 11 13 ThLvlFighter Nomad 11 24 144
+# tables
+TourStopKinds = [0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 5, 6]
+TourStopX = [14, 13, 12, 11, 11, 11, 11, 11, 11, 10, 10, 10, 10, 9, 8, 7, 6, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 3, 2, 2, 2, 2, 1, 0]
+TourStopY = [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4]
+TourStopFacing = [3, 3, 3, 3, 2, 2, 3, 0, 3, 3, 2, 2, 3, 3, 3, 3, 3, 3, 0, 0, 1, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 3, 3, 3]
+EjectXTable = [3, 10, 2, 12]
+EjectYTable = [11, 10, 0, 3]
+DuelMonsters = [Nomad, StLvlThief, Corporal, Aides, ThLvlFighter41, ThLvlThief51]
+DuelIcons = [11, 13, ThLvlFighter, Nomad, 11, 24, 144]

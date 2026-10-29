@@ -1,903 +1,950 @@
-event0:
-	Sky = 8
-	SkyInside = 9
-	if LeftMap == 0: Goto InsideEnter
-	SetGroundShade = SavedGroundShade
-	WallSplitA = 0
-	WallSplitB = 0
-	EnterArea Wilderness
+on move {
+    Sky = 8
+    SkyInside = 9
+    if LeftMap == 0 { goto InsideEnter }
+    SetGroundShade = SavedGroundShade
+    WallSplitA = 0
+    WallSplitB = 0
+    EnterArea(Wilderness)
 
-InsideEnter:
-	$AuxMonsterName = "THE SPECTRE HAS NOTICED YOU."
-	Scratch10 = 127 & Cell
-	if MysticManState < 3: Goto VampireBlocksMove
-	Exit
+    InsideEnter:
+    $AuxMonsterName = "THE SPECTRE HAS NOTICED YOU."
+    Scratch10 = ~Inside & Cell
+    if MysticManState < 3 { goto VampireBlocksMove }
+    exit
 
-VampireBlocksMove:
-	if VampireState == Slain: Exit
-	if Scratch10 == 29 && Facing == North: HoldMove = SkipMove
-	Exit
+    VampireBlocksMove:
+    if VampireState == Slain { exit }
+    if Scratch10 == 29 and Facing == North { HoldMove = SkipMove }
+    exit
+}
 
-event1:
-	Surprise = NoSurprise
-	MaxDist = 0
-	Morale = 101
-	Scratch6 = 0
-	Scratch10 = 127 & Cell
-	if VampireState >= 254: Exit
-	AuxCounter = 0
+on step {
+    Surprise = NoSurprise
+    MaxDist = 0
+    Morale = 101
+    Scratch6 = 0
+    Scratch10 = ~Inside & Cell
+    if VampireState >= 254 { exit }
+    AuxCounter = 0
 
-FindCellLoop:
-	if AuxCounter == Scratch10: Goto CellDispatch
-	if AuxCounter > 29: Exit
-	AuxCounter += 1
-	Goto FindCellLoop
+    FindCellLoop:
+    if AuxCounter == Scratch10 { goto CellDispatch }
+    if AuxCounter > 29 { exit }
+    AuxCounter += 1
+    goto FindCellLoop
 
-CellDispatch:
-	OnGoto AuxCounter Done Cell1Event SkeletonPatrol SkeletonAmbush GiantSkeletonApproach GiantSkeletonLair ZombiePatrol GiantZombieApproach GiantZombieLair WightPatrol WightBossWarning WightBossApproach WightBossLair BoneTowerView FumesDamage SkeletonLairEntry FurTowerView ClothingChamber ZombieLairEntry Monster114Ambush LightningTowerView GlassChamberSting WightLairEntry BrassDoorsView GiftVoice BlackCrypt MysticManMeet PitStairs VampireLair MysticManHint
-	Exit
+    CellDispatch:
+    goto [Done, Cell1Event, SkeletonPatrol, SkeletonAmbush, GiantSkeletonApproach, GiantSkeletonLair,
+        ZombiePatrol, GiantZombieApproach, GiantZombieLair, WightPatrol, WightBossWarning,
+        WightBossApproach, WightBossLair, BoneTowerView, FumesDamage, SkeletonLairEntry,
+        FurTowerView, ClothingChamber, ZombieLairEntry, Monster114Ambush, LightningTowerView,
+        GlassChamberSting, WightLairEntry, BrassDoorsView, GiftVoice, BlackCrypt, MysticManMeet,
+        PitStairs, VampireLair, MysticManHint][AuxCounter]
+    exit
+}
 
-event2:
-	if VampireState >= 254: Goto NoRestHere
-	RestEvery = 1
-	RestChance = 4
-	Exit
+on camp {
+    if VampireState >= 254 { goto NoRestHere }
+    RestEvery = 1
+    RestChance = 4
+    exit
+}
 
 NoRestHere:
-	RestEvery = 0
-	RestChance = 0
-	Exit
+    RestEvery = 0
+    RestChance = 0
+    exit
 
-event3:
-	RestChance = 0
-	Goto GhoulPack
+on rest {
+    RestChance = 0
+    goto GhoulPack
+}
 
-event4:
-	WallSplitA = 1
-	WallSplitB = 1
-	LoadMap 10 unused=2 icons=255
-	LoadWalls 21 22 20
-	SetSkyShade = 8
-	if VisitStage == 0: SavedGroundShade = SetGroundShade
-	SetGroundShade = 11
-	Call CallRedraw
-	NoCoords = 0
-	if VisitStage > 0: Exit
-	SoundParamA = 72
-	SoundParamB = 189
-	PartyY = 4
-	PartyX = 0
-	Facing = East
-	VisitStage += 1
-	PartyPower = PartyStrength
-	PartyPower = PartyPower / 2
-	if UndeadKillTable < PartyPower: SkeletonGroup = PartyPower - UndeadKillTable
-	also if UndeadKillTable >= PartyPower: SkeletonGroup = 0
-	also if UndeadKillTable == PartyPower: SkeletonsGone = 1
-	SkeletonCount = SkeletonGroup
-	PartyPower = PartyPower / 2
-	if ZombieStrength < PartyPower: ZombieGroup = PartyPower - ZombieStrength
-	also if ZombieStrength >= PartyPower: ZombieGroup = 0
-	also if ZombieStrength == PartyPower: ZombiesGone = 1
-	ZombieCount = ZombieGroup
-	PartyPower = PartyPower / 2
-	if WightStrength < PartyPower: WightGroup = PartyPower - WightStrength
-	also if WightStrength >= PartyPower: WightGroup = 0
-	also if WightStrength == PartyPower: WightsGone = 1
-	WightCount = WightGroup
-	WightsTotal = WightCount
-	if WightGroup > 4: WightGroup = 4
-	if RestChance == 255: Goto NoRestHere
+on load {
+    WallSplitA = 1
+    WallSplitB = 1
+    LoadMap(10, unused=2, icons=255)
+    LoadWalls(21, 22, 20)
+    SetSkyShade = 8
+    if VisitStage == NotEntered { SavedGroundShade = SetGroundShade }
+    SetGroundShade = 11
+    CallRedraw()
+    NoCoords = 0
+    Compare(VisitStage, 0)
+    if VisitStage > NotEntered { exit }
+    SoundParamA = 72
+    SoundParamB = 189
+    PartyY = 4
+    PartyX = 0
+    Facing = East
+    VisitStage += Entered
+    PartyPower = PartyStrength()
+    PartyPower = PartyPower / 2
+    if UndeadKillTable < PartyPower {
+        SkeletonGroup = PartyPower - UndeadKillTable
+    } else {
+        SkeletonGroup = 0
+    }
+    if UndeadKillTable == PartyPower { SkeletonsGone = 1 }
+    SkeletonCount = SkeletonGroup
+    PartyPower = PartyPower / 2
+    if ZombieStrength < PartyPower {
+        ZombieGroup = PartyPower - ZombieStrength
+    } else {
+        ZombieGroup = 0
+    }
+    if ZombieStrength == PartyPower { ZombiesGone = 1 }
+    ZombieCount = ZombieGroup
+    PartyPower = PartyPower / 2
+    if WightStrength < PartyPower {
+        WightGroup = PartyPower - WightStrength
+    } else {
+        WightGroup = 0
+    }
+    if WightStrength == PartyPower { WightsGone = 1 }
+    WightCount = WightGroup
+    WightsTotal = WightCount
+    if WightGroup > 4 { WightGroup = 4 }
+    if RestChance == 255 { goto NoRestHere }
+} # falls into Done
 
 Done:
-	Exit
+    exit
 
 Cell1Event:
-	if VisitStage > 1: Exit
-	PrintClear ""
-	if Hours < 14: Print "THE SKY DARKENS. "
-	Sky = 8
-	Call CallRedraw
-	Print "FIERCE GUSTS OF WIND HOWL PAST AND THE GROUND SHAKES AS PEALS OF THUNDER ROCK THE LAND.  THE SWIRLING MURK HIDES WHAT LIES AHEAD."
-	Gosub WaitReturnPressed
-	Sky = 15
-	Call CallRedraw
-	Sky = 8
-	Call CallRedraw
-	Sound = 10
-	Call CallSound
-	PrintClear "UNTIL AN EXPLOSION OF LIGHTNING REVEALS THE NIGHTMARE SCENE OF A GRAVEYARD TURNED UPSIDE DOWN."
-	VisitStage += 1
-	Exit
+    if VisitStage > Entered { exit }
+    Text("")
+    if Hours < 14 { Print("THE SKY DARKENS. ") }
+    Sky = 8
+    CallRedraw()
+    Print("FIERCE GUSTS OF WIND HOWL PAST AND THE GROUND SHAKES AS PEALS OF THUNDER ROCK THE LAND.  THE SWIRLING MURK HIDES WHAT LIES AHEAD.")
+    WaitReturnPressed()
+    Sky = 15
+    CallRedraw()
+    Sky = 8
+    CallRedraw()
+    Sound = 10
+    CallSound()
+    Text("UNTIL AN EXPLOSION OF LIGHTNING REVEALS THE NIGHTMARE SCENE OF A GRAVEYARD TURNED UPSIDE DOWN.")
+    VisitStage += Entered
+    exit
 
 SkeletonPatrol:
-	if UndeadKillTable == Destroyed: Exit
-	if SkeletonGroup == 0: Exit
-	Scratch1 = Random 9
-	if 8 > Scratch1: Exit
-	$AuxMonsterName = " SKELETONS."
-	Scratch7 = SkeletonGroup
-	Scratch9 = 0
-	Goto RandomEncounter
+    if UndeadKillTable == Destroyed { exit }
+    if SkeletonGroup == 0 { exit }
+    Scratch1 = Random(9)
+    if 8 > Scratch1 { exit }
+    $AuxMonsterName = " SKELETONS."
+    Scratch7 = SkeletonGroup
+    Scratch9 = 0
+    goto RandomEncounter
 
 SkeletonsBeaten:
-	SkeletonGroup -= Beaten
-	UndeadKillTable += Beaten
-	Exit
+    SkeletonGroup -= Beaten
+    UndeadKillTable += Beaten
+    exit
 
 SkeletonAttack:
-	Gosub SkeletonsApproach
-	PrintClear "SKELETONS SILENTLY ATTACK."
-	Gosub WaitReturnPressed
-	Goto StartFight
+    SkeletonsApproach()
+    Text("SKELETONS SILENTLY ATTACK.")
+    WaitReturnPressed()
+    goto StartFight
 
 SkeletonAmbush:
-	if SkeletonAmbushDone > 0: Exit
-	if SkeletonCount == 0: Exit
-	Scratch9 = 8
-	SetupMonster Skeleton distance=0 closeup=Tombstone
-	PrintClear "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
-	Gosub WaitReturnPressed
-	Scratch5 = 34
-	Scratch3 = 34
-	Scratch7 = SkeletonCount
-	Goto StartFight
+    if SkeletonAmbushDone > 0 { exit }
+    if SkeletonCount == 0 { exit }
+    Scratch9 = 8
+    SetupMonster(Skeleton, distance=0, closeup=Tombstone)
+    Text("CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN.")
+    WaitReturnPressed()
+    Scratch5 = 34
+    Scratch3 = 34
+    Scratch7 = SkeletonCount
+    goto StartFight
 
 SkeletonAmbushOver:
-	SkeletonAmbushDone += 1
-	Exit
+    SkeletonAmbushDone += 1
+    exit
 
 GiantSkeletonApproach:
-	if GiantSkeletonState > 0: Exit
-	if UndeadKillTable == Destroyed: Exit
-	Gosub SkeletonsApproach
-	PrintClear "THE ENCLAVE IS GUARDED BY A SKELETON ARMY!"
-	Gosub WaitReturnPressed
-	Scratch9 = 3
-	Scratch6 = 1
-	Gosub RandomEncounter
-	Scratch7 = 15
-	Goto StartFight
+    if GiantSkeletonState > 0 { exit }
+    if UndeadKillTable == Destroyed { exit }
+    SkeletonsApproach()
+    Text("THE ENCLAVE IS GUARDED BY A SKELETON ARMY!")
+    WaitReturnPressed()
+    Scratch9 = 3
+    Scratch6 = 1
+    RandomEncounter()
+    Scratch7 = 15
+    goto StartFight
 
 GiantSkeletonStep:
-	GiantSkeletonState += 1
-	Exit
+    GiantSkeletonState += 1
+    exit
 
 GiantSkeletonLair:
-	if UndeadKillTable == Destroyed: Goto SkeletonTreasure
-	if GiantSkeletonState > 9: Goto SkeletonTreasure
-	Scratch7 = 0
-	PrintClear "YOU FIND A GIANT SKELETON"
-	if SkeletonCount < 17: Goto GiantSkeletonFight
-	Print " AND ITS RETAINERS."
-	Scratch7 = SkeletonCount
+    if UndeadKillTable == Destroyed { goto SkeletonTreasure }
+    if GiantSkeletonState > 9 { goto SkeletonTreasure }
+    Scratch7 = 0
+    Text("YOU FIND A GIANT SKELETON")
+    if SkeletonCount < 17 { goto GiantSkeletonFight }
+    Print(" AND ITS RETAINERS.")
+    Scratch7 = SkeletonCount
 
-GiantSkeletonFight:
-	Gosub SkeletonsApproach
-	Gosub WaitReturnPressed
-	ClearMonsters
-	LoadMonster GiantSkeleton count=1 icon=GiantSkeleton
-	if Scratch7 != 0: LoadMonster Skeleton count=Scratch7 icon=Skeleton
-	Combat
-	Gosub CheckFled
-	GiantSkeletonState += 10
-	GiantSkeletonsKilled += 1
+    GiantSkeletonFight:
+    SkeletonsApproach()
+    WaitReturnPressed()
+    ClearMonsters()
+    LoadMonster(GiantSkeleton, count=1, icon=GiantSkeleton)
+    if Scratch7 != 0 { LoadMonster(Skeleton, count=Scratch7, icon=Skeleton) }
+    Combat()
+    CheckFled()
+    GiantSkeletonState += 10
+    GiantSkeletonsKilled += 1
 
-SkeletonTreasure:
-	if SkeletonTreasureTaken == Completed: Exit
-	if Search != 1: Exit
-	PrintClear "YOU FIND A MARBLE CHEST.  OPEN IT?"
-	Ask YesNoMenu "YES" -> TakeSkeletonTreasure "NO" -> Done
+    SkeletonTreasure:
+    if SkeletonTreasureTaken == Yes { exit }
+    if Search != Searching { exit }
+    Text("YOU FIND A MARBLE CHEST.  OPEN IT?")
+    YesNoMenu()
+    goto [TakeSkeletonTreasure, Done][Scratch1]
 
 TakeSkeletonTreasure:
-	ClearMonsters
-	Treasure 0 28 0 69 0 10 12 59 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells
-	Combat
-	SkeletonTreasureTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(silver=28, gold=69, gems=10, jewelry=12, items=[ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells])
+    Combat()
+    SkeletonTreasureTaken = Yes
+    exit
 
 ZombiePatrol:
-	if ZombieStrength == Destroyed: Exit
-	if ZombieGroup == 0: Exit
-	Scratch1 = Random 9
-	if Search == 1: Scratch1 += 2
-	if Scratch1 > 7: Exit
-	$AuxMonsterName = " ZOMBIES."
-	Scratch7 = ZombieGroup
-	Scratch9 = 1
-	Goto RandomEncounter
+    if ZombieStrength == Destroyed { exit }
+    if ZombieGroup == 0 { exit }
+    Scratch1 = Random(9)
+    if Search == Searching { Scratch1 += 2 }
+    if Scratch1 > 7 { exit }
+    $AuxMonsterName = " ZOMBIES."
+    Scratch7 = ZombieGroup
+    Scratch9 = 1
+    goto RandomEncounter
 
 ZombiesBeaten:
-	ZombieGroup -= Beaten
-	ZombieStrength += Beaten
-	Exit
+    ZombieGroup -= Beaten
+    ZombieStrength += Beaten
+    exit
 
 ZombieAttack:
-	Gosub ZombiesApproach
-	PrintClear "LUMBERING FIGURES REACH FOR YOU."
-	Gosub WaitReturnPressed
-	Goto StartFight
+    ZombiesApproach()
+    Text("LUMBERING FIGURES REACH FOR YOU.")
+    WaitReturnPressed()
+    goto StartFight
 
 GiantZombieApproach:
-	if ZombieStrength == Destroyed: Exit
-	if GiantZombieState > 0: Exit
-	Gosub ZombiesApproach
-	PrintClear "ZOMBIES SHUFFLE DOWN THE STAIRS!"
-	Gosub WaitReturnPressed
-	Scratch9 = 4
-	Scratch6 = 1
-	Gosub RandomEncounter
-	Scratch7 = 25
-	Goto StartFight
+    if ZombieStrength == Destroyed { exit }
+    if GiantZombieState > 0 { exit }
+    ZombiesApproach()
+    Text("ZOMBIES SHUFFLE DOWN THE STAIRS!")
+    WaitReturnPressed()
+    Scratch9 = 4
+    Scratch6 = 1
+    RandomEncounter()
+    Scratch7 = 25
+    goto StartFight
 
 GiantZombieStep:
-	GiantZombieState += 1
-	Exit
+    GiantZombieState += 1
+    exit
 
 GiantZombieLair:
-	if GiantZombieState > 10: Goto ZombieTreasure
-	if ZombieStrength == Destroyed: Goto ZombieTreasure
-	PrintClear "A ZOMBIE WITH GRAY, LEATHERY-HARD SKIN GAZES AT YOU WITH HATE-FILLED EYES."
-	Gosub WaitReturnPressed
-	Gosub ZombiesApproach
-	Scratch1 = 0
-	if ZombieCount >= 16: Scratch1 = 15
-	ClearMonsters
-	LoadMonster JujuZombie count=1 icon=35
-	if Scratch1 != 0: LoadMonster Zombie count=Scratch1 icon=35
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	GiantZombieState += 10
-	GiantZombiesKilled += 1
+    if GiantZombieState > 10 { goto ZombieTreasure }
+    if ZombieStrength == Destroyed { goto ZombieTreasure }
+    Text("A ZOMBIE WITH GRAY, LEATHERY-HARD SKIN GAZES AT YOU WITH HATE-FILLED EYES.")
+    WaitReturnPressed()
+    ZombiesApproach()
+    Scratch1 = 0
+    if ZombieCount >= 16 { Scratch1 = 15 }
+    ClearMonsters()
+    LoadMonster(JujuZombie, count=1, icon=35)
+    if Scratch1 != 0 { LoadMonster(Zombie, count=Scratch1, icon=35) }
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    GiantZombieState += 10
+    GiantZombiesKilled += 1
 
-ZombieTreasure:
-	if ZombieTreasureTaken == Completed: Exit
-	PrintClear "VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?"
-	Ask YesNoMenu "YES" -> TakeZombieTreasure "NO" -> Done
+    ZombieTreasure:
+    if ZombieTreasureTaken == Yes { exit }
+    Text("VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?")
+    YesNoMenu()
+    goto [TakeZombieTreasure, Done][Scratch1]
 
 TakeZombieTreasure:
-	ClearMonsters
-	Treasure 0 #0122 0 110 0 0 0 28 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Wand of Lightning Bolt, Potion of Healing
-	Combat
-	ZombieTreasureTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(silver=290, gold=110, items=[ClericalScrollWith2Spells, ClericalScrollWith2Spells, WandOfLightningBolt, PotionOfHealing])
+    Combat()
+    ZombieTreasureTaken = Yes
+    exit
 
 WightPatrol:
-	if WightStrength == Destroyed: Exit
-	if WightGroup == 0: Exit
-	Scratch1 = Random 9
-	if Search == 1: Scratch1 += 2
-	if Scratch1 < 8: Exit
-	$AuxMonsterName = " WIGHTS."
-	Scratch7 = WightGroup
-	Scratch9 = 2
-	Goto RandomEncounter
+    if WightStrength == Destroyed { exit }
+    if WightGroup == 0 { exit }
+    Scratch1 = Random(9)
+    if Search == Searching { Scratch1 += 2 }
+    if Scratch1 < 8 { exit }
+    $AuxMonsterName = " WIGHTS."
+    Scratch7 = WightGroup
+    Scratch9 = 2
+    goto RandomEncounter
 
 WightGroupFight:
-	WightStrength += WightGroup
-	WightsTotal -= WightGroup
-	WightGroup = WightsTotal
-	if WightGroup > 4: WightGroup = 4
-	Exit
+    WightStrength += WightGroup
+    WightsTotal -= WightGroup
+    WightGroup = WightsTotal
+    if WightGroup > 4 { WightGroup = 4 }
+    exit
 
 WightAttack:
-	Gosub WightsApproach
-	PrintClear "DARK, BENT CREATURES RUSH SWIFTLY AT YOU."
-	Gosub WaitReturnPressed
-	Goto StartFight
+    WightsApproach()
+    Text("DARK, BENT CREATURES RUSH SWIFTLY AT YOU.")
+    WaitReturnPressed()
+    goto StartFight
 
 WightBossWarning:
-	if WightStrength == Destroyed: Exit
-	if WightBossState > 0: Exit
-	PrintClear "YOU STAND BEFORE A HUGE TOWER. THE SINGLE ENTRANCE IS LOCKED AND STRONGLY BUILT."
-	Gosub WaitReturnPressed
-	PrintClear "WARNING VOICES CRY FROM WITHIN.  'WE ARE THE SPIRITS OF THOSE WHO FOUGHT THE DRAGONS.  LEAVE US OR DIE.'"
-	Gosub WaitReturnPressed
-	PrintClear "DO YOU LEAVE?"
-	Ask YesNoMenu "YES" -> BackAwayFromWights "NO" -> WightBossApproach
+    if WightStrength == Destroyed { exit }
+    if WightBossState > 0 { exit }
+    Text("YOU STAND BEFORE A HUGE TOWER. THE SINGLE ENTRANCE IS LOCKED AND STRONGLY BUILT.")
+    WaitReturnPressed()
+    Text("WARNING VOICES CRY FROM WITHIN.  'WE ARE THE SPIRITS OF THOSE WHO FOUGHT THE DRAGONS.  LEAVE US OR DIE.'")
+    WaitReturnPressed()
+    Text("DO YOU LEAVE?")
+    YesNoMenu()
+    goto [BackAwayFromWights, WightBossApproach][Scratch1]
 
 BackAwayFromWights:
-	PartyX = 14
-	Facing = West
-	Exit
+    PartyX = 14
+    Facing = West
+    exit
 
 WightBossApproach:
-	if WightBossState > 0: Exit
-	if WightStrength == Destroyed: Exit
-	Gosub WightsApproach
-	Gosub WaitReturnPressed
-	PrintClear "YOU ARE ATTACKED BY WIGHTS."
-	Scratch9 = 5
-	Scratch6 = 1
-	Gosub RandomEncounter
-	Scratch7 = 4
-	Goto StartFight
+    if WightBossState > 0 { exit }
+    if WightStrength == Destroyed { exit }
+    WightsApproach()
+    WaitReturnPressed()
+    Text("YOU ARE ATTACKED BY WIGHTS.")
+    Scratch9 = 5
+    Scratch6 = 1
+    RandomEncounter()
+    Scratch7 = 4
+    goto StartFight
 
 WightBossStep:
-	WightBossState += 1
-	Exit
+    WightBossState += 1
+    exit
 
 WightBossLair:
-	alias Choice = Scratch1
-	if WightBossState > 9: Goto WightTreasure
-	if WightStrength == Destroyed: Goto WightTreasure
-	SetupMonster Ghost distance=1 closeup=Ghost
-	Approach
-	PrintClear "IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?"
-	Choice = Menu "LEAVE" -> LeaveWightLair "STAY" -> FightWightBoss
+    if WightBossState > 9 { goto WightTreasure }
+    if WightStrength == Destroyed { goto WightTreasure }
+    SetupMonster(Ghost, distance=1, closeup=Ghost)
+    Approach()
+    Text("IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?")
+    Scratch1 = Menu("LEAVE", "STAY")
+    goto [LeaveWightLair, FightWightBoss][Scratch1]
 
 LeaveWightLair:
-	PartyX = 15
-	PartyY = 6
-	Facing = North
-	Goto RedrawExit
+    PartyX = 15
+    PartyY = 6
+    Facing = North
+    goto RedrawExit
 
 FightWightBoss:
-	ClearMonsters
-	LoadMonster Wraith count=1 icon=Wraith
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	WightBossState += 10
-	WightBossesKilled += 1
+    ClearMonsters()
+    LoadMonster(Wraith, count=1, icon=Wraith)
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    WightBossState += 10
+    WightBossesKilled += 1
 
 WightTreasure:
-	if WightTreasureTaken == Completed: Exit
-	PrintClear "IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?"
-	Ask YesNoMenu "YES" -> StripWarriorBody "NO" -> Done
+    if WightTreasureTaken == Yes { exit }
+    Text("IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?")
+    YesNoMenu()
+    goto [StripWarriorBody, Done][Scratch1]
 
 StripWarriorBody:
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 26 // Clerical Scroll With 2 Spells, Sling Of Seeking +2, Hammer +3, Potion Extra Healing, Magic User Scroll With 3 Spells
-	Combat
-	WightTreasureTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(items=[ClericalScrollWith2Spells, SlingOfSeeking2, Hammer3, PotionExtraHealing, MagicUserScrollWith3Spells])
+    Combat()
+    WightTreasureTaken = Yes
+    exit
 
 BoneTowerView:
-	if Facing != South: Goto BoneTowerCheck
-	PrintClear "A TOWER STANDS CLEARLY ABOVE ALL CRYPTS IN THE AREA.  HUGE PILES OF HUMAN BONES ARE STREWN ABOUT."
-	Gosub WaitReturnPressed
+    if Facing != South { goto BoneTowerCheck }
+    Text("A TOWER STANDS CLEARLY ABOVE ALL CRYPTS IN THE AREA.  HUGE PILES OF HUMAN BONES ARE STREWN ABOUT.")
+    WaitReturnPressed()
 
-BoneTowerCheck:
-	if Event5Seen > 0: Goto FumesDoorway
-	if UndeadKillTable == Destroyed: Exit
-	if SkeletonCount < 1: Exit
-	Gosub SkeletonsApproach
-	PrintClear "A SMALL ARMY OF SKELETONS RUSHES FROM THE TOWER."
-	Gosub WaitReturnPressed
-	Scratch9 = 6
-	Scratch6 = 1
-	Gosub RandomEncounter
-	Scratch7 = 30
-	Goto StartFight
+    BoneTowerCheck:
+    if Event5Seen > 0 { goto FumesDoorway }
+    if UndeadKillTable == Destroyed { exit }
+    if SkeletonCount < 1 { exit }
+    SkeletonsApproach()
+    Text("A SMALL ARMY OF SKELETONS RUSHES FROM THE TOWER.")
+    WaitReturnPressed()
+    Scratch9 = 6
+    Scratch6 = 1
+    RandomEncounter()
+    Scratch7 = 30
+    goto StartFight
 
 BoneTowerSeenSet:
-	Event5Seen += 1
+    Event5Seen += 1
 
 FumesDoorway:
-	if Facing != North: PrintClear "NOXIOUS FUMES POUR FROM THE TOWER DOORWAY, MAKING IT IMPOSSIBLE TO SEE INSIDE."
-	Exit
+    if Facing != North {
+        Text("NOXIOUS FUMES POUR FROM THE TOWER DOORWAY, MAKING IT IMPOSSIBLE TO SEE INSIDE.")
+    }
+    exit
 
 FumesDamage:
-	if FumesDamaged > 0: Exit
-	PrintClear "NOXIOUS FUMES TEAR AT YOUR THROAT AS YOU CRUNCH THROUGH PILES OF DRIED BONES."
-	Damage 195 10 1 0 0
-	FumesDamaged += 1
-	Exit
+    if FumesDamaged > 0 { exit }
+    Text("NOXIOUS FUMES TEAR AT YOUR THROAT AS YOU CRUNCH THROUGH PILES OF DRIED BONES.")
+    Damage(195, 10, 1, 0, 0)
+    FumesDamaged += 1
+    exit
 
 SkeletonLairEntry:
-	if SkeletonLairDone > 0: Exit
-	if UndeadKillTable == Destroyed: Exit
-	if SkeletonCount != 0: Goto SkeletonMakerMenu
-	if SkeletonsGone == 0: Exit
+    if SkeletonLairDone > 0 { exit }
+    if UndeadKillTable == Destroyed { exit }
+    if SkeletonCount != 0 { goto SkeletonMakerMenu }
+    if SkeletonsGone == 0 { exit }
 
-SkeletonMakerMenu:
-	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." escape=0 strength=0
-	OnGoto Scratch1 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
+    SkeletonMakerMenu:
+    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=3, flee=Flee,
+        advance=3, parlay=Talk, near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS.",
+        escape=0, strength=0)
+    goto [Done, SkeletonMakerSurprised, FleeRandomly, SkeletonMakerNotices][Scratch1]
 
 SkeletonMakerSurprised:
-	Surprise = MonstersAreSurprised
-	Goto FightSkeletonMaker
+    Surprise = MonstersAreSurprised
+    goto FightSkeletonMaker
 
 SkeletonMakerNotices:
-	PrintClear $AuxMonsterName
+    Text($AuxMonsterName)
 
 FightSkeletonMaker:
-	ClearMonsters
-	LoadMonster Spectre count=1 icon=Spectre
-	Treasure 0 0 0 #07D0 #022B 0 3 255
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	SkeletonLairDone += 1
-	if UndeadKillTable > 249: UndeadKillTable = 249
-	UndeadKillTable += 5
-	LairsCleared += 1
-	Exit
+    ClearMonsters()
+    LoadMonster(Spectre, count=1, icon=Spectre)
+    Treasure(gold=2000, platinum=555, jewelry=3)
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    SkeletonLairDone += 1
+    if UndeadKillTable > 249 { UndeadKillTable = 249 }
+    UndeadKillTable += 5
+    LairsCleared += 1
+    exit
 
 FurTowerView:
-	if Facing == North: Goto FurTowerCheck
-	PrintClear "ALL AROUND THE TOWER, PILES OF HAIR AND FUR COVER THE AREA."
+    if Facing == North { goto FurTowerCheck }
+    Text("ALL AROUND THE TOWER, PILES OF HAIR AND FUR COVER THE AREA.")
 
-FurTowerCheck:
-	if FurTowerSeen > 0: Exit
-	Gosub ZombiesApproach
-	Gosub WaitReturnPressed
-	PrintClear "THE TOWER DOOR SWINGS OPEN AND A SMALL ARMY OF ZOMBIES SHUFFLES OUT.  THE DOOR CLOSES WITH A CLAMOR OF LOCKS FALLING INTO PLACE."
-	Scratch9 = 7
-	Scratch6 = 1
-	Gosub RandomEncounter
-	Scratch7 = 15
-	Goto StartFight
+    FurTowerCheck:
+    if FurTowerSeen > 0 { exit }
+    ZombiesApproach()
+    WaitReturnPressed()
+    Text("THE TOWER DOOR SWINGS OPEN AND A SMALL ARMY OF ZOMBIES SHUFFLES OUT.  THE DOOR CLOSES WITH A CLAMOR OF LOCKS FALLING INTO PLACE.")
+    Scratch9 = 7
+    Scratch6 = 1
+    RandomEncounter()
+    Scratch7 = 15
+    goto StartFight
 
 FurTowerSeenSet:
-	FurTowerSeen += 1
-	Exit
+    FurTowerSeen += 1
+    exit
 
 ClothingChamber:
-	PrintClear "THE CHAMBER IS FILLED WITH USELESS CLOTHING AND RUSTING ARMOR."
-	Exit
+    Text("THE CHAMBER IS FILLED WITH USELESS CLOTHING AND RUSTING ARMOR.")
+    exit
 
 ZombieLairEntry:
-	if ZombieLairDone > 0: Exit
-	if ZombieStrength == Destroyed: Exit
-	if ZombieCount != 0: Goto ZombieMakerMenu
-	if ZombiesGone == 0: Exit
+    if ZombieLairDone > 0 { exit }
+    if ZombieStrength == Destroyed { exit }
+    if ZombieCount != 0 { goto ZombieMakerMenu }
+    if ZombiesGone == 0 { exit }
 
-ZombieMakerMenu:
-	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." escape=0 strength=0
-	OnGoto Scratch1 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
+    ZombieMakerMenu:
+    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=3, flee=Flee,
+        advance=3, parlay=Talk,
+        near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES.",
+        escape=0, strength=0)
+    goto [Done, ZombieMakerSurprised, FleeRandomly, ZombieMakerNotices][Scratch1]
 
 ZombieMakerSurprised:
-	Surprise = MonstersAreSurprised
-	Goto FightZombieMaker
+    Surprise = MonstersAreSurprised
+    goto FightZombieMaker
 
 ZombieMakerNotices:
-	PrintClear $AuxMonsterName
+    Text($AuxMonsterName)
 
 FightZombieMaker:
-	ClearMonsters
-	LoadMonster Spectre count=1 icon=Spectre
-	Treasure 0 0 0 #0457 #021E 13 0 255
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	ZombieLairDone += 1
-	if ZombieStrength > 249: ZombieStrength = 249
-	ZombieStrength += 5
-	LairsCleared += 1
-	Exit
+    ClearMonsters()
+    LoadMonster(Spectre, count=1, icon=Spectre)
+    Treasure(gold=1111, platinum=542, gems=13)
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    ZombieLairDone += 1
+    if ZombieStrength > 249 { ZombieStrength = 249 }
+    ZombieStrength += 5
+    LairsCleared += 1
+    exit
 
 Monster114Ambush:
-	if Monster114Fought > 0: Exit
-	SetupMonster Mummy distance=1 closeup=Mummy
-	Approach
-	PrintClear "WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI."
-	Gosub WaitReturnPressed
-	Scratch1 = PartyStrength
-	Scratch1 = Scratch1 / 16
-	if Scratch1 == 0: Scratch1 = 1
-	ClearMonsters
-	LoadMonster Mummy count=Scratch1 icon=Mummy
-	Combat
-	Monster114Fought += 1
-	Exit
+    if Monster114Fought > 0 { exit }
+    SetupMonster(Mummy, distance=1, closeup=Mummy)
+    Approach()
+    Text("WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI.")
+    WaitReturnPressed()
+    Scratch1 = PartyStrength()
+    Scratch1 = Scratch1 / 16
+    if Scratch1 == 0 { Scratch1 = 1 }
+    ClearMonsters()
+    LoadMonster(Mummy, count=Scratch1, icon=Mummy)
+    Combat()
+    Monster114Fought += 1
+    exit
 
 LightningTowerView:
-	if Facing == South: PrintClear "THE AIR AROUND THE TOWER IS CHARGED WITH STATIC ELECTRICITY AND BALL LIGHTNING. "
-	if LightningTowerFought > 0: Goto WarningDoor
-	if WightStrength == Destroyed: Goto WarningDoor
-	if WightCount == 0: Goto WarningDoor
-	Print " WIGHTS APPEAR FROM BEHIND THE TOWER."
-	Gosub WightsApproach
-	Gosub WaitReturnPressed
-	Scratch9 = 9
-	ClearMonsters
-	LoadMonster Wight count=WightCount icon=Wight
-	Goto FightGroup
+    if Facing == South {
+        Text("THE AIR AROUND THE TOWER IS CHARGED WITH STATIC ELECTRICITY AND BALL LIGHTNING. ")
+    }
+    if LightningTowerFought > 0 { goto WarningDoor }
+    if WightStrength == Destroyed { goto WarningDoor }
+    if WightCount == 0 { goto WarningDoor }
+    Print(" WIGHTS APPEAR FROM BEHIND THE TOWER.")
+    WightsApproach()
+    WaitReturnPressed()
+    Scratch9 = 9
+    ClearMonsters()
+    LoadMonster(Wight, count=WightCount, icon=Wight)
+    goto FightGroup
 
 LightningTowerSeenSet:
-	LightningTowerFought += 1
-	WightStrength += WightCount
-	Exit
+    LightningTowerFought += 1
+    WightStrength += WightCount
+    exit
 
 WarningDoor:
-	if Facing == South: PrintClear "WRITTEN ON THE DOOR (IN THE COMMON TONGUE) IS: 'DO NOT OPEN THIS DOOR. A GREAT EVIL HAS BEEN LAID TO REST HERE.'"
-	also if Facing != South: Exit
-	if Search == 1: PrintClear "THERE ARE LARGE SILVER HOLY SYMBOLS UP AND DOWN THE CRACK IN THE DOORWAY."
-	Exit
+    if Facing == South {
+        Text("WRITTEN ON THE DOOR (IN THE COMMON TONGUE) IS: 'DO NOT OPEN THIS DOOR. A GREAT EVIL HAS BEEN LAID TO REST HERE.'")
+    } else {
+        exit
+    }
+    if Search == Searching {
+        Text("THERE ARE LARGE SILVER HOLY SYMBOLS UP AND DOWN THE CRACK IN THE DOORWAY.")
+    }
+    exit
 
 GlassChamberSting:
-	PrintClear "THE LOWER CHAMBER IS FILLED WITH GLASS AND FUR OBJECTS OF ALL TYPES. "
-	if StungInChamber < 1: Print "A SHARP CRACK SPLITS THE AIR AND YOU ARE STUNG."
-	also if StungInChamber >= 1: Exit
-	Gosub WaitReturnPressed
-	Damage 202 4 1 0 2
-	StungInChamber += 1
-	Exit
+    Text("THE LOWER CHAMBER IS FILLED WITH GLASS AND FUR OBJECTS OF ALL TYPES. ")
+    if StungInChamber < 1 {
+        Print("A SHARP CRACK SPLITS THE AIR AND YOU ARE STUNG.")
+    } else {
+        exit
+    }
+    WaitReturnPressed()
+    Damage(202, 4, 1, 0, 2)
+    StungInChamber += 1
+    exit
 
 WightLairEntry:
-	if WightLairDone > 0: Exit
-	if WightStrength == Destroyed: Exit
-	if WightCount != 0: Goto WightMakerMenu
-	if WightsGone == 0: Exit
+    if WightLairDone > 0 { exit }
+    if WightStrength == Destroyed { exit }
+    if WightCount != 0 { goto WightMakerMenu }
+    if WightsGone == 0 { exit }
 
-WightMakerMenu:
-	EncounterMenu Spectre distance=0 closeup=Spectre result=Scratch1 combat=Mirror wait=Approach flee=Flee advance=Approach parlay=Talk near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." escape=0 strength=0
-	OnGoto Scratch1 Done WightMakerSurprised FleeRandomly WightMakerNotices
+    WightMakerMenu:
+    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=3, flee=Flee,
+        advance=3, parlay=Talk, near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT.", escape=0,
+        strength=0)
+    goto [Done, WightMakerSurprised, FleeRandomly, WightMakerNotices][Scratch1]
 
 WightMakerSurprised:
-	Surprise = MonstersAreSurprised
-	Goto FightWightMaker
+    Surprise = MonstersAreSurprised
+    goto FightWightMaker
 
 WightMakerNotices:
-	PrintClear $AuxMonsterName
+    Text($AuxMonsterName)
 
 FightWightMaker:
-	ClearMonsters
-	LoadMonster Spectre count=1 icon=Spectre
-	Treasure 0 0 0 #07D0 #022B 0 3 255
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	WightLairDone += 1
-	if WightStrength > 249: WightStrength = 249
-	WightStrength += 5
-	LairsCleared += 1
-	if MysticManState >= MysticJoined: Exit
-	MysticManState += 1
-	Exit
+    ClearMonsters()
+    LoadMonster(Spectre, count=1, icon=Spectre)
+    Treasure(gold=2000, platinum=555, jewelry=3)
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    WightLairDone += 1
+    if WightStrength > 249 { WightStrength = 249 }
+    WightStrength += 5
+    LairsCleared += 1
+    if MysticManState >= MysticJoined { exit }
+    MysticManState += 1
+    exit
 
 BrassDoorsView:
-	if Facing != South: Goto BrassDoorsFight
-	PrintClear "IN THE ENTRY IS SET A HUGE PAIR OF BRASS DOORS."
-	Gosub WaitReturnPressed
+    if Facing != South { goto BrassDoorsFight }
+    Text("IN THE ENTRY IS SET A HUGE PAIR OF BRASS DOORS.")
+    WaitReturnPressed()
 
-BrassDoorsFight:
-	if TowerFightDone > 0: Goto KnightPanel
-	PrintClear "SHADOWY FORMS FLOW FROM BETWEEN THE DOORS AND ATTACK."
-	SetupMonster Spectre distance=2 closeup=Spectre
-	Approach
-	ClearMonsters
-	LoadMonster Spectre count=2 icon=Spectre
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	TowerFightDone += 1
-	LairsCleared += 2
-	if MysticManState >= MysticJoined: Exit
-	MysticManState += 2
-	Exit
+    BrassDoorsFight:
+    if TowerFightDone > 0 { goto KnightPanel }
+    Text("SHADOWY FORMS FLOW FROM BETWEEN THE DOORS AND ATTACK.")
+    SetupMonster(Spectre, distance=2, closeup=Spectre)
+    Approach()
+    ClearMonsters()
+    LoadMonster(Spectre, count=2, icon=Spectre)
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    TowerFightDone += 1
+    LairsCleared += 2
+    if MysticManState >= MysticJoined { exit }
+    MysticManState += 2
+    exit
 
-KnightPanel:
-	if Facing != North: PrintClear "IN THE MIDDLE OF A DOOR IS A PANEL OF A POWERFUL KNIGHT FIGHTING SEVERAL UNDEAD."
-	Exit
+    KnightPanel:
+    if Facing != North {
+        Text("IN THE MIDDLE OF A DOOR IS A PANEL OF A POWERFUL KNIGHT FIGHTING SEVERAL UNDEAD.")
+    }
+    exit
 
 GiftVoice:
-	if Treasure29Taken > 0: Exit
-	PrintClear "A VOICE SPEAKS, 'COME, MY BRAVE ADVENTURERS.  YOU MUST TAKE MY GIFTS TO BETTER FIGHT THE EVIL THAT HAS COME TO THE CITY.'"
-	Gosub WaitReturnPressed
-	PrintClear "FROM THE MAGICALLY-LIT TOMB OF A BRAVE KNIGHT, A BODY RISES FROM ITS RESTING PLACE TO LAY WEAPONS BEFORE THE PARTY."
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 29 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Ring of Fire Resistance, and 2 more
-	Combat
-	Treasure29Taken += 1
-	Exit
+    if Treasure29Taken > 0 { exit }
+    Text("A VOICE SPEAKS, 'COME, MY BRAVE ADVENTURERS.  YOU MUST TAKE MY GIFTS TO BETTER FIGHT THE EVIL THAT HAS COME TO THE CITY.'")
+    WaitReturnPressed()
+    Text("FROM THE MAGICALLY-LIT TOMB OF A BRAVE KNIGHT, A BODY RISES FROM ITS RESTING PLACE TO LAY WEAPONS BEFORE THE PARTY.")
+    ClearMonsters()
+    Treasure(items=[ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, Shield1, RingOfFireResistance, LongSword2, PlateMail2])
+    Combat()
+    Treasure29Taken += 1
+    exit
 
 MysticManMeet:
-	alias Choice = Scratch1
-	if MysticManState < 3: Exit
-	if MysticManState > 249: Exit
-	Portrait = BlondHeadband
-	SetupMonster Fighter14 distance=2 body=NobleRobe
-	Gosub ApproachTwice
-	PrintClear "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
-	Gosub WaitReturnPressed
-	PrintClear "'HAIL, NOBLE ADVENTURERS,' HE CALLS. 'I WOULD ASK YOU TO HELP ME END THIS FOUL UNDEAD CURSE.'"
-	Gosub WaitReturnPressed
-	PrintClear "DO YOU LET HIM JOIN THE PARTY OR SEND HIM AWAY?"
-	Choice = Menu "LET HIM JOIN" -> MysticManJoins "SEND HIM AWAY" -> MysticManAttacks
+    if MysticManState < 3 { exit }
+    if MysticManState > 249 { exit }
+    Portrait = BlondHeadband
+    SetupMonster(Fighter14, distance=2, body=NobleRobe)
+    ApproachTwice()
+    Text("YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES.")
+    WaitReturnPressed()
+    Text("'HAIL, NOBLE ADVENTURERS,' HE CALLS. 'I WOULD ASK YOU TO HELP ME END THIS FOUL UNDEAD CURSE.'")
+    WaitReturnPressed()
+    Text("DO YOU LET HIM JOIN THE PARTY OR SEND HIM AWAY?")
+    Scratch1 = Menu("LET HIM JOIN", "SEND HIM AWAY")
+    goto [MysticManJoins, MysticManAttacks][Scratch1]
 
 MysticManJoins:
-	if PartyCount > 7: Goto PartyTooLarge
-	MysticManState = MysticJoined
-	PrintClear "'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS."
-	AddNPC Level6Mu24 99
-	Portrait = None
-	Exit
+    if PartyCount > 7 { goto PartyTooLarge }
+    MysticManState = MysticJoined
+    Text("'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS.")
+    AddNPC(Level6Mu24, 99)
+    Portrait = None
+    exit
 
-PartyTooLarge:
-	PrintClear "YOUR PARTY IS TOO LARGE FOR ME TO JOIN."
-	Exit
+    PartyTooLarge:
+    Text("YOUR PARTY IS TOO LARGE FOR ME TO JOIN.")
+    exit
 
 MysticManAttacks:
-	Surprise = PartyIsSurprised
-	PrintClear "'THEN DIE YOU SCUM,' THE MAN SPITS."
-	Portrait = None
-	ClearMonsters
-	LoadMonster Level6Mu24 count=1 icon=Level6Mu
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	MysticManState = Finished
-	Exit
+    Surprise = PartyIsSurprised
+    Text("'THEN DIE YOU SCUM,' THE MAN SPITS.")
+    Portrait = None
+    ClearMonsters()
+    LoadMonster(Level6Mu24, count=1, icon=Level6Mu)
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    MysticManState = Finished
+    exit
 
 BlackCrypt:
-	if CryptState > 250: Goto DustyCryptRemains
-	if VampireState == FledAsVapor: Goto VampireGuardsApproach
-	PrintClear "INSIDE THE RUINS OF A BLACK MARBLE CRYPT IS A COFFIN FILLED WITH DUST.  AMONG THE PILES OF DUST ARE SEVERAL BROKEN CROSSES, VIALS OF SPILLED HOLY WATER, AND A SCROLL."
-	Gosub WaitReturnPressed
-	PrintClear "DO YOU READ THE SCROLL?"
-	Ask YesNoMenu "YES" -> ScrollToJournal "NO" -> CoffinAsk
+    if CryptState > 250 { goto DustyCryptRemains }
+    if VampireState == FledAsVapor { goto VampireGuardsApproach }
+    Text("INSIDE THE RUINS OF A BLACK MARBLE CRYPT IS A COFFIN FILLED WITH DUST.  AMONG THE PILES OF DUST ARE SEVERAL BROKEN CROSSES, VIALS OF SPILLED HOLY WATER, AND A SCROLL.")
+    WaitReturnPressed()
+    Text("DO YOU READ THE SCROLL?")
+    YesNoMenu()
+    goto [ScrollToJournal, CoffinAsk][Scratch1]
 
 ScrollToJournal:
-	PrintClear "THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43."
-	Gosub WaitReturnPressed
+    Text("THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43.")
+    WaitReturnPressed()
 
 CoffinAsk:
-	PrintClear "DO YOU WANT TO DO ANYTHING WITH THE COFFIN?"
-	Ask YesNoMenu "YES" -> CoffinMenu "NO" -> Done
+    Text("DO YOU WANT TO DO ANYTHING WITH THE COFFIN?")
+    YesNoMenu()
+    goto [CoffinMenu, Done][Scratch1]
 
 CoffinMenu:
-	alias Choice = Scratch1
-	PrintClear "WHAT DO YOU WANT TO DO TO IT?"
-	Choice = Menu "EXAMINE" -> ExamineCoffin "SANCTIFY" -> SanctifyCoffin "OVERTURN" -> OverturnCoffin
+    Text("WHAT DO YOU WANT TO DO TO IT?")
+    Scratch1 = Menu("EXAMINE", "SANCTIFY", "OVERTURN")
+    goto [ExamineCoffin, SanctifyCoffin, OverturnCoffin][Scratch1]
 
 ExamineCoffin:
-	PrintClear "YOU FIND NOTHING."
-	Exit
+    Text("YOU FIND NOTHING.")
+    exit
 
 SanctifyCoffin:
-	PrintClear "YOU SCATTER THE DUST AND PLACE WHAT HOLY ITEMS YOU CAN SPARE INSIDE."
-	CryptState = HolyItemsPlaced
-	Exit
+    Text("YOU SCATTER THE DUST AND PLACE WHAT HOLY ITEMS YOU CAN SPARE INSIDE.")
+    CryptState = HolyItemsPlaced
+    exit
 
 OverturnCoffin:
-	PrintClear "THE COFFIN MAKES A MESS ON THE FLOOR."
-	Exit
+    Text("THE COFFIN MAKES A MESS ON THE FLOOR.")
+    exit
 
 DustyCryptRemains:
-	PrintClear "YOU ARE IN THE DUSTY REMAINS OF A BLACK MARBLE CRYPT."
-	if VampireState == FledAsVapor: Goto VampireGuardsApproach
-	Exit
+    Text("YOU ARE IN THE DUSTY REMAINS OF A BLACK MARBLE CRYPT.")
+    if VampireState == FledAsVapor { goto VampireGuardsApproach }
+    exit
 
 VampireGuardsApproach:
-	SetupMonster Vampire distance=2 closeup=Vampire
-	Delay
-	Approach
-	Delay
-	Approach
-	PrintClear "THERE IS A VAMPIRE HERE."
-	Gosub WaitReturnPressed
-	if CryptState == HolyItemsPlaced: Goto ReloadVampire
-	if VampireFought > 0: Goto ReloadVampire
-	ClearMonsters
-	LoadMonster Vampire23 count=1 icon=Vampire
-	LoadMonster Wolf count=15 icon=Wolf
+    SetupMonster(Vampire, distance=2, closeup=Vampire)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    Text("THERE IS A VAMPIRE HERE.")
+    WaitReturnPressed()
+    if CryptState == HolyItemsPlaced { goto ReloadVampire }
+    if VampireFought > 0 { goto ReloadVampire }
+    ClearMonsters()
+    LoadMonster(Vampire23, count=1, icon=Vampire)
+    LoadMonster(Wolf, count=15, icon=Wolf)
 
 VampireFightLoop:
-	if !Carried 82: Goto FightVampire
-	if VampireGuardLoaded != Completed: LoadMonster Efreeti70 count=1 icon=Efreeti
+    if not Carried(EfreetiBottle) { goto FightVampire }
+    if VampireGuardLoaded != Yes { LoadMonster(Efreeti70, count=1, icon=Efreeti) }
 
-FightVampire:
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	VampireState = Slain
-	QuestGraveyard = RewardDue
-	Exit
+    FightVampire:
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    VampireState = Slain
+    QuestGraveyard = RewardDue
+    exit
 
 ReloadVampire:
-	ClearMonsters
-	LoadMonster Vampire105 count=1 icon=Vampire
-	Goto VampireFightLoop
+    ClearMonsters()
+    LoadMonster(Vampire105, count=1, icon=Vampire)
+    goto VampireFightLoop
 
 PitStairs:
-	if VampireFought > 0: Exit
-	PrintClear "WOODEN STAIRS LEAD INTO A PIT.  DO YOU GO DOWN?"
-	Ask YesNoMenu "YES" -> DescendPit "NO" -> Done
+    if VampireFought > 0 { exit }
+    Text("WOODEN STAIRS LEAD INTO A PIT.  DO YOU GO DOWN?")
+    YesNoMenu()
+    goto [DescendPit, Done][Scratch1]
 
 DescendPit:
-	PartyX = 14
-	Facing = West
-	Call CallRedraw
-	if VampireState > Slain: Exit
+    PartyX = 14
+    Facing = West
+    CallRedraw()
+    if VampireState > Slain { exit }
 
 VampireLair:
-	if VampireState >= FledAsVapor: Goto VampireTreasure
-	Sky = 15
-	Call CallRedraw
-	PrintClear "THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH."
-	SetupMonster Vampire distance=1 closeup=Vampire
-	Approach
-	Gosub WaitReturnPressed
-	if MysticManState == MysticJoined: Scratch1 = 1
-	also if MysticManState != MysticJoined: Scratch1 = 0
-	ClearMonsters
-	LoadMonster Vampire23 count=1 icon=Vampire
-	LoadMonster Wolf count=50 icon=Wolf
-	if Carried 82 {
-		LoadMonster Efreeti70 count=1 icon=Efreeti
-		VampireGuardLoaded = Completed
-	}
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	VampireFought += 1
-	MysticManState = Finished
-	VampireState = FledAsVapor
-	if UndeadKillTable > 249: UndeadKillTable = 249
-	UndeadKillTable += 5
-	if ZombieStrength > 249: ZombieStrength = 249
-	ZombieStrength += 5
-	if WightStrength > 249: WightStrength = 249
-	WightStrength += 5
-	LairsCleared += 5
-	Sky = 8
-	PrintClear "THE VAMPIRE TURNS INTO A VAPOR CLOUD AND FLOATS AWAY."
-	Exit
+    if VampireState >= FledAsVapor { goto VampireTreasure }
+    Sky = 15
+    CallRedraw()
+    Text("THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH.")
+    SetupMonster(Vampire, distance=1, closeup=Vampire)
+    Approach()
+    WaitReturnPressed()
+    if MysticManState == MysticJoined {
+        Scratch1 = 1
+    } else {
+        Scratch1 = 0
+    }
+    ClearMonsters()
+    LoadMonster(Vampire23, count=1, icon=Vampire)
+    LoadMonster(Wolf, count=50, icon=Wolf)
+    if Carried(EfreetiBottle) {
+        LoadMonster(Efreeti70, count=1, icon=Efreeti)
+        VampireGuardLoaded = Yes
+    }
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    VampireFought += 1
+    MysticManState = Finished
+    VampireState = FledAsVapor
+    if UndeadKillTable > 249 { UndeadKillTable = 249 }
+    UndeadKillTable += 5
+    if ZombieStrength > 249 { ZombieStrength = 249 }
+    ZombieStrength += 5
+    if WightStrength > 249 { WightStrength = 249 }
+    WightStrength += 5
+    LairsCleared += 5
+    Sky = 8
+    Text("THE VAMPIRE TURNS INTO A VAPOR CLOUD AND FLOATS AWAY.")
+    exit
 
-VampireTreasure:
-	if VampireTreasureTaken == Completed: Exit
-	if Search != 1: Exit
-	PrintClear "YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?"
-	Ask YesNoMenu "YES" -> TakeVampireTreasure "NO" -> Done
+    VampireTreasure:
+    if VampireTreasureTaken == Yes { exit }
+    if Search != Searching { exit }
+    Text("YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?")
+    YesNoMenu()
+    goto [TakeVampireTreasure, Done][Scratch1]
 
 TakeVampireTreasure:
-	ClearMonsters
-	Treasure 0 0 0 #2328 0 12 0 30 // Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Clerical Scroll With 2 Spells, Shield +1, Clerical Scroll With 2 Spells, and 2 more
-	Combat
-	VampireTreasureTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(gold=9000, gems=12, items=[ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, ClericalScrollWith2Spells, Shield1, ClericalScrollWith2Spells, PotionOfHealing*3, WandOfMagicMissiles])
+    Combat()
+    VampireTreasureTaken = Yes
+    exit
 
 GhoulPack:
-	SetupMonster Ghoul distance=2 closeup=Ghoul
-	Approach
-	Delay
-	Approach
-	PrintClear "A PACK OF HUNGRY GHOULS LOPES TOWARD YOU."
-	Gosub WaitReturnPressed
-	Scratch1 = Random 2
-	Scratch1 += 1
-	Scratch8 = PartyStrength
-	Scratch1 = Scratch8 / Scratch1
-	if Scratch1 == 0: Scratch1 = 1
-	ClearMonsters
-	LoadMonster Ghoul count=Scratch1 icon=Ghoul
-	Combat
-	Exit
+    SetupMonster(Ghoul, distance=2, closeup=Ghoul)
+    Approach()
+    Delay()
+    Approach()
+    Text("A PACK OF HUNGRY GHOULS LOPES TOWARD YOU.")
+    WaitReturnPressed()
+    Scratch1 = Random(2)
+    Scratch1 += 1
+    Scratch8 = PartyStrength()
+    Scratch1 = Scratch8 / Scratch1
+    if Scratch1 == 0 { Scratch1 = 1 }
+    ClearMonsters()
+    LoadMonster(Ghoul, count=Scratch1, icon=Ghoul)
+    Combat()
+    exit
 
 MysticManHint:
-	if Facing == North && MysticManState == MysticJoined: PrintClear "THE MYSTIC MAN SPEAKS, 'THE VAMPIRE IS BEHIND THE NORTHERN WALL.'"
-	Exit
+    if Facing == North and MysticManState == MysticJoined {
+        Text("THE MYSTIC MAN SPEAKS, 'THE VAMPIRE IS BEHIND THE NORTHERN WALL.'")
+    }
+    exit
 
 RandomEncounter:
-	alias GroupTable1Entry = Scratch3
-	alias GroupTable2Entry = Scratch4
-	alias GroupTable3Entry = Scratch5
-	MonsterDist = GroupDistTable[Scratch9]
-	GroupTable1Entry = GroupTable1[Scratch9]
-	GroupTable2Entry = GroupTable2[Scratch9]
-	GroupTable3Entry = GroupTable3[Scratch9]
-	if Scratch6 == 1: Return
-	PartySurprise Scratch1 Scratch2
-	Surprise Scratch1 Scratch2 0 0
-	if Surprise != PartyIsSurprised: Goto SurpriseCheck
-	OnGoto Scratch9 SkeletonAttack ZombieAttack WightAttack
+    MonsterDist = GroupDistTable[Scratch9]
+    Scratch3 = GroupTable1[Scratch9]
+    Scratch4 = GroupTable2[Scratch9]
+    Scratch5 = GroupTable3[Scratch9]
+    if Scratch6 == 1 { return }
+    PartySurprise(Scratch1, Scratch2)
+    Surprise(Scratch1, Scratch2, 0, 0)
+    if Surprise != PartyIsSurprised { goto SurpriseCheck }
+    goto [SkeletonAttack, ZombieAttack, WightAttack][Scratch9]
 
-SurpriseCheck:
-	if Surprise > MonstersAreSurprised: Goto PartyConfronted
-	also if Surprise == MonstersAreSurprised: Goto PartySneaksUp
-	also if Surprise < MonstersAreSurprised: Goto FindUndead
+    SurpriseCheck:
+    if Surprise > MonstersAreSurprised { goto PartyConfronted }
+    if Surprise == MonstersAreSurprised { goto PartySneaksUp }
+    if Surprise < MonstersAreSurprised { goto FindUndead }
 
-PartyConfronted:
-	MaxDist = 0
-	$AuxText = "YOU ARE SUDDENLY CONFRONTED BY "
-	$AuxNameCopy7 = $AuxMonsterName
-	Goto EncounterChoice
+    PartyConfronted:
+    MaxDist = 0
+    $AuxText = "YOU ARE SUDDENLY CONFRONTED BY "
+    $AuxNameCopy7 = $AuxMonsterName
+    goto EncounterChoice
 
-PartySneaksUp:
-	$AuxText = "YOU HAVE MANAGED TO SNEAK UP ON SOME "
-	$AuxNameCopy8 = $AuxMonsterName
-	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Attack flee=Flee advance=Approach parlay=Talk near=$AuxText escape=0 strength=0
-	OnGoto Scratch1 Done StartFight FleeRandomly PartyNoticed
+    PartySneaksUp:
+    $AuxText = "YOU HAVE MANAGED TO SNEAK UP ON SOME "
+    $AuxNameCopy8 = $AuxMonsterName
+    EncounterMenu(Scratch5, distance=MonsterDist, closeup=Scratch5, result=Scratch1, combat=Mirror,
+        wait=Attack, flee=Flee, advance=3, parlay=Talk, near=$AuxText, escape=0, strength=0)
+    goto [Done, StartFight, FleeRandomly, PartyNoticed][Scratch1]
 
 PartyNoticed:
-	Surprise = NoSurprise
-	PrintClear "YOU ARE NOTICED."
-	Goto EncounterChoice
+    Surprise = NoSurprise
+    Text("YOU ARE NOTICED.")
+    goto EncounterChoice
 
 FindUndead:
-	PrintClear "YOU FIND SOME UNDEAD."
+    Text("YOU FIND SOME UNDEAD.")
 
 EncounterChoice:
-	EncounterMenu Scratch5 distance=MonsterDist closeup=Scratch5 result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk escape=Scratch4 strength=Scratch4
-	OnGoto Scratch1 Done StartFight FleeRandomly ParlayFails
+    EncounterMenu(Scratch5, distance=MonsterDist, closeup=Scratch5, result=Scratch1, combat=Mirror,
+        wait=Mirror, flee=Mirror, advance=Mirror, parlay=Talk, escape=Scratch4, strength=Scratch4)
+    goto [Done, StartFight, FleeRandomly, ParlayFails][Scratch1]
 
 ParlayFails:
-	Scratch1 = Parlay 0 0 0 0 0
-	PrintClear "THEY DON'T LISTEN."
+    Scratch1 = Parlay(0, 0, 0, 0, 0)
+    Text("THEY DON'T LISTEN.")
 
 StartFight:
-	Beaten = 0
-	if Scratch7 == 0: Scratch7 = 1
-	ClearMonsters
-	LoadMonster Scratch3 count=Scratch7 icon=Scratch5
-	if Scratch3 == 20: Goto LoadRandomUndead
+    Beaten = 0
+    if Scratch7 == 0 { Scratch7 = 1 }
+    ClearMonsters()
+    LoadMonster(Scratch3, count=Scratch7, icon=Scratch5)
+    if Scratch3 == 20 { goto LoadRandomUndead }
 
 FightGroup:
-	Combat
-	Gosub CheckFled
-	if Scratch1 == 2: Goto FleeRandomly
-	OnGoto Scratch9 SkeletonsBeaten ZombiesBeaten WightGroupFight GiantSkeletonStep GiantZombieStep WightBossStep BoneTowerSeenSet FurTowerSeenSet SkeletonAmbushOver LightningTowerSeenSet
+    Combat()
+    CheckFled()
+    if Scratch1 == 2 { goto FleeRandomly }
+    goto [SkeletonsBeaten, ZombiesBeaten, WightGroupFight, GiantSkeletonStep, GiantZombieStep,
+        WightBossStep, BoneTowerSeenSet, FurTowerSeenSet, SkeletonAmbushOver, LightningTowerSeenSet][Scratch9]
 
 CheckFled:
-	Scratch1 = 0
-	if CombatEnd > PartyDied: Scratch1 = 2
-	Return
+    Scratch1 = 0
+    if CombatEnd > PartyDied { Scratch1 = 2 }
+    return
 
 FleeRandomly:
-	Facing = Random 3
-	Scratch1 = Random 4
-	PartyX = FleeXTable[Scratch1]
-	PartyY = FleeYTable[Scratch1]
-	NoCoords = 1
+    Facing = Random(3)
+    Scratch1 = Random(4)
+    PartyX = FleeXTable[Scratch1]
+    PartyY = FleeYTable[Scratch1]
+    NoCoords = 1
 
 RedrawExit:
-	Call CallRedraw
-	Exit
+    CallRedraw()
+    exit
 
 LoadRandomUndead:
-	Scratch6 = Scratch7 * 4
-	LoadMonster Zombie count=Scratch6 icon=35
-	Scratch1 = Random 4
-	if Scratch1 < 2: LoadMonster JujuZombie count=2 icon=35
-	also if Scratch1 > 2: LoadMonster Ghoul count=2 icon=Ghoul
-	also if Scratch1 == 2: LoadMonster Mummy count=1 icon=Mummy
-	Goto FightGroup
+    Scratch6 = Scratch7 * 4
+    LoadMonster(Zombie, count=Scratch6, icon=35)
+    Scratch1 = Random(4)
+    if Scratch1 < 2 { LoadMonster(JujuZombie, count=2, icon=35) }
+    if Scratch1 > 2 { LoadMonster(Ghoul, count=2, icon=Ghoul) }
+    if Scratch1 == 2 { LoadMonster(Mummy, count=1, icon=Mummy) }
+    goto FightGroup
 
-WaitReturnPressed:
-	alias Choice = AuxMonster
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def WaitReturnPressed() {
+    AuxMonster = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
-SkeletonsApproach:
-	SetupMonster Skeleton distance=2 closeup=Skeleton
-	Goto ApproachTwice
+def SkeletonsApproach() {
+    SetupMonster(Skeleton, distance=2, closeup=Skeleton)
+    goto ApproachTwice
+}
 
-ZombiesApproach:
-	SetupMonster Zombie distance=2 closeup=Zombie
-	Goto ApproachTwice
+def ZombiesApproach() {
+    SetupMonster(Zombie, distance=2, closeup=Zombie)
+    goto ApproachTwice
+}
 
-WightsApproach:
-	SetupMonster Troll distance=2 closeup=Troll
+def WightsApproach() {
+    SetupMonster(Troll, distance=2, closeup=Troll)
+} # falls into ApproachTwice
 
 ApproachTwice:
-	Approach
-	Delay
-	Approach
-	Return
+    Approach()
+    Delay()
+    Approach()
+    return
 
-YesNoMenu:
-	alias Choice = Scratch1
-	Choice = Menu "YES" "NO"
-	Return
+def YesNoMenu() {
+    Scratch1 = Menu("YES", "NO")
+    return
+}
 
-GroupDistTable:
-	Data 2 2 2 0 0 0 0 0 0
-
-GroupTable1:
-	Data 34 35 20 34 35 20 34 35 34
-
-GroupTable2:
-	Data 12 6 12 12 6 12 12 6 12
-
-GroupTable3:
-	Data 34 35 20 34 35 20 34 35 34
-
-FleeXTable:
-	Data 1 1 7 14 14
-
-FleeYTable:
-	Data 6 9 4 6 9 0
+# tables
+GroupDistTable = [2, 2, 2, 0, 0, 0, 0, 0, 0]
+GroupTable1 = [34, 35, 20, 34, 35, 20, 34, 35, 34]
+GroupTable2 = [12, 6, 12, 12, 6, 12, 12, 6, 12]
+GroupTable3 = [34, 35, 20, 34, 35, 20, 34, 35, 34]
+FleeXTable = [1, 1, 7, 14, 14]
+FleeYTable = [6, 9, 4, 6, 9, 0]

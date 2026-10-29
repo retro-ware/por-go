@@ -1,688 +1,699 @@
-RollSurprise:
-	PartySurprise Scratch8 Scratch9
-	if CastleFlags has Disguised: Scratch9 += 1
-	Surprise Scratch8 Scratch9 0 0
-	if AlarmEndHour != 0: Surprise &= PartyIsSurprised
-	if Surprise == 3: Surprise = NoSurprise
-	Compare Surprise 1
-	Return
+def RollSurprise() {
+    PartySurprise(Scratch8, Scratch9)
+    if CastleFlags has Disguised { Scratch9 += 1 }
+    Surprise(Scratch8, Scratch9, 0, 0)
+    if AlarmEndHour != 0 { Surprise &= PartyIsSurprised }
+    if Surprise == BothSurprised { Surprise = NoSurprise }
+    Compare(Surprise, 1)
+    return
+}
 
-CheckAlarm:
-	if AlarmEndHour < 1: Return
-	AuxRoll = Hours
-	if Hours == 0 && AlarmHour == 23: AuxRoll = 24
-	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
-	if TenMinutes < AlarmMinute: Goto AlarmStillOn
-	AlarmEndHour = 0
-	Compare 0 1
-	Return
+def CheckAlarm() {
+    if AlarmEndHour < 1 { return }
+    AuxRoll = Hours
+    if Hours == 0 and AlarmHour == 23 { AuxRoll = 24 }
+    if AuxRoll < AlarmEndHour { goto AlarmStillOn }
+    if TenMinutes < AlarmMinute { goto AlarmStillOn }
+    AlarmEndHour = 0
+    Compare(0, 1)
+    return
 
-AlarmStillOn:
-	if Search == 1: Goto AlarmSounding
-	AuxRoll = Random 9
-	if 0 != AuxRoll: Goto AlarmOnReturn
+    AlarmStillOn:
+    if Search == Searching { goto AlarmSounding }
+    AuxRoll = Random(9)
+    if 0 != AuxRoll { goto AlarmOnReturn }
 
-AlarmSounding:
-	PrintClear "AN ALARM IS SOUNDING."
-	Delay
+    AlarmSounding:
+    Text("AN ALARM IS SOUNDING.")
+    Delay()
 
-AlarmOnReturn:
-	Compare 1 0
-	Return
+    AlarmOnReturn:
+    Compare(1, 0)
+    return
+}
 
-DelayRaiseAlarm:
-	Delay
+def DelayRaiseAlarm() {
+    Delay()
+} # falls into RaiseAlarm
 
 RaiseAlarm:
-	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
-	Delay
-	AlarmHour = Hours
-	AlarmMinute = TenMinutes
-	AlarmEndHour = 1 + AlarmHour
-	Return
+    if AlarmEndHour == 0 { Text("AN ALARM STARTS RINGING!") }
+    Delay()
+    AlarmHour = Hours
+    AlarmMinute = TenMinutes
+    AlarmEndHour = 1 + AlarmHour
+    return
 
-TakeItMenu:
-	Print "DO YOU TAKE IT?"
+def TakeItMenu() {
+    Print("DO YOU TAKE IT?")
+} # falls into YesNoMenu
 
 YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
 
-PressToContinue:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	PrintClear " "
-	Return
+def PressToContinue() {
+    Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    Text(" ")
+    return
+}
 
-SetSky:
-	Scratch1 = 11
-	SkyInside = 9
-	if Hours >= 14: Scratch1 = 8
-	Sky = Scratch1
-	Return
+def SetSky() {
+    Scratch1 = 11
+    SkyInside = 9
+    if Hours >= 14 { Scratch1 = 8 }
+    Sky = Scratch1
+    return
+}
 
-event0:
-	alias ByFacing9AA6Entry = Scratch1
-	CastleRoomFlags &= ~VisitFlag
-	if LeftMap == 0: Goto CheckWallEvents
-	ByFacing9AA6Entry = ByFacing9AA6[Facing]
-	Call CallStepForward
-	NewECL ByFacing9AA6Entry
+on move {
+    CastleRoomFlags &= KitchenOverseer|Scribes|EmptyScriptorium|CadornaEvidenceFound|TyranthraxusNote|BarbarianReportSeen|BarracksGiantsMet
+    if LeftMap == 0 { goto CheckWallEvents }
+    Scratch1 = ByFacing9AA6[Facing]
+    CallStepForward()
+    NewECL(Scratch1)
 
-ByFacing9AA6:
-	Data 4 4 6 6
+    CheckWallEvents:
+    SetSky()
+    Scratch10 = Cell & 31
+    if Facing == East and Scratch10 == 30 { goto MainGate }
+    if Facing == West and Scratch10 == 31 { goto MainGate }
+    if Facing == North and Scratch10 == 17 { goto WellDive }
+    exit
+}
 
-CheckWallEvents:
-	Gosub SetSky
-	Scratch10 = Cell & 31
-	if Facing == East && Scratch10 == 30: Goto MainGate
-	if Facing == West && Scratch10 == 31: Goto MainGate
-	if Facing == North && Scratch10 == 17: Goto WellDive
-	Exit
+on step {
+    CheckAlarm()
+    if (<) { goto RoomEvents }
+    if Cell has Special { goto RoomEvents }
+    Scratch1 = 2
+    if Search == NotSearching { Scratch1 = 20 }
+    if Cell has 32 { Scratch1 += Scratch1 }
+    Scratch10 = Random(Scratch1)
+    Compare(Scratch10, 0)
+    if Scratch10 == 0 { goto L_9C7C }
 
-event1:
-	Gosub CheckAlarm
-	IfLt
-	Goto RoomEvents
-	if Cell has 64: Goto RoomEvents
-	Scratch1 = 2
-	if Search == 0: Scratch1 = 20
-	if Cell has 32: Scratch1 += Scratch1
-	Scratch10 = Random Scratch1
-	if Scratch10 == 0: Goto event3
+    RoomEvents:
+    Scratch1 = Cell & 31
+    if Scratch1 > 22 { exit }
+    Scratch2 = Table9B99[Scratch1]
+    Scratch1 = Table9BB0[Scratch1]
+    goto [Done, FighterBuilding, ArmedManAttacks, DiningHall, GiantApartment, LooseStoneTreasure,
+        Latrine, BucketRoom, GiantQuarters, FindTreasure, CobwebBuilding, CeilingCaves, DoorGiants,
+        WellView, CadornaCell, GiantSnakes, GiantsBarWay, ExitToArea5][Scratch2]
+    exit # the original runs on into data at 9B99
+}
 
-RoomEvents:
-	Scratch1 = Cell & 31
-	if Scratch1 > 22: Exit
-	Scratch2 = Table9B99[Scratch1]
-	Scratch1 = Table9BB0[Scratch1]
-	OnGoto Scratch2 Done FighterBuilding ArmedManAttacks DiningHall GiantApartment LooseStoneTreasure Latrine BucketRoom GiantQuarters FindTreasure CobwebBuilding CeilingCaves DoorGiants WellView CadornaCell GiantSnakes GiantsBarWay ExitToArea5
-	Exit // extra: the original runs on into data at 9B99
-
-Table9B99:
-	Data 0 1 2 3 4 5 6 7 8 9 10 11 8 9 12 8
-	Data 9 13 14 15 16 17 17
-
-Table9BB0:
-	Data 0 0 0 0 0 0 0 0 1 1 0 0 2 2 0 4
-	Data 4 0 0 0 0 0 0
-
-event2:
-	RestEvery = 0
-	RestChance = 10
-	if AlarmEndHour == 0: Exit
-	if Cell has 64: Exit
-	RestEvery = 1
-	RestChance = 17
+on camp {
+    RestEvery = 0
+    RestChance = 10
+    if AlarmEndHour == 0 { exit }
+    if Cell has Special { exit }
+    RestEvery = 1
+    RestChance = 17
+} # falls into Done
 
 Done:
-	RedrawView
-	Call CallRedraw
-	Exit
+    RedrawView()
+    CallRedraw()
+    exit
 
-event4:
-	alias ByFacing9C24Entry = Scratch10
-	Gosub SetSky
-	NoCoords = 1
-	if AreaKind == 3: Exit
-	ByFacing9C24Entry = ByFacing9C24[Facing]
-	LoadMap ByFacing9C24Entry unused=2 icons=255
-	LoadWalls 24 25 1
-	Exit
-
-ByFacing9C24:
-	Data 3 5 5 3
+on load {
+    SetSky()
+    NoCoords = 1
+    if AreaKind == ValjevoCastle3 { exit }
+    Scratch10 = ByFacing9C24[Facing]
+    LoadMap(Scratch10, unused=2, icons=255)
+    LoadWalls(24, 25, 1)
+    exit
+}
 
 FleeCombat:
-	CombatEnd = PartyFled
+    CombatEnd = PartyFled
 
 AfterCombat:
-	if CombatEnd == FightOver: Return
-	Gosub RaiseAlarm
-	CastleFlags &= ~Disguised
-	if CombatEnd != PartyFled: Return
+    if CombatEnd == FightOver { return }
+    RaiseAlarm()
+    CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
+    if CombatEnd != PartyFled { return }
 
 StepBack:
-	HoldMove = SkipMove
-	PartyX = PrevX
-	PartyY = PrevY
-	Facing = Facing + 2
-	if Facing > West: Facing -= 4
-	Goto Done
+    HoldMove = SkipMove
+    PartyX = PrevX
+    PartyY = PrevY
+    Facing = Facing + South
+    if Facing > West { Facing -= 4 }
+    goto Done
 
-event3:
-	$AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
-	Portrait = Bearded
-	SetupMonster Fighter16 distance=2 body=PlateArmor
-	if Gosub RollSurprise then Surprise != PartyIsSurprised: Goto PatrolSighted
-	PrintClear $AuxEncText
-	Print " SURPRISES YOU."
-	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto BlasphemersAttack
-	if CastleFlags has Disguised: Goto PatrolQuestions
-	Print " 'THAT'S THEM! GET THEM!'"
-	Goto PatrolAdvances
+on rest {
+    L_9C7C:
+    $AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
+    Portrait = Bearded
+    SetupMonster(Fighter16, distance=2, body=PlateArmor)
+    RollSurprise()
+    if Surprise != PartyIsSurprised { goto PatrolSighted }
+    Text($AuxEncText)
+    Print(" SURPRISES YOU.")
+    if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto BlasphemersAttack }
+    if CastleFlags has Disguised { goto PatrolQuestions }
+    Print(" 'THAT'S THEM! GET THEM!'")
+    goto PatrolAdvances
 
-BlasphemersAttack:
-	Print "'BLASPHEMERS! GET THEM!'"
-	Portrait = None
-	Goto PatrolFight
+    BlasphemersAttack:
+    Print("'BLASPHEMERS! GET THEM!'")
+    Portrait = None
+    goto PatrolFight
 
-PatrolSighted:
-	PrintClear "YOU SEE A"
-	Print $AuxSightText
-	if BaneTempleFlags lacks OfferingBoxStolen+CrossedSwordsStolen: Goto PatrolNoAlarm
-	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
-	Goto PatrolAdvances
+    PatrolSighted:
+    Text("YOU SEE A")
+    Print($AuxSightText)
+    if BaneTempleFlags lacks OfferingBoxStolen|CrossedSwordsStolen { goto PatrolNoAlarm }
+    Print(". THE LEADER YELLS 'SACRILEGIOUS SCUM!'")
+    goto PatrolAdvances
 
-PatrolNoAlarm:
-	if CastleFlags has Disguised: Goto PatrolQuestions
+    PatrolNoAlarm:
+    if CastleFlags has Disguised { goto PatrolQuestions }
+} # falls into PatrolSeesYou
 
 PatrolSeesYou:
-	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
+    Print(". THE LEADER SEES YOU. 'THAT'S THEM!'")
 
 PatrolAdvances:
-	Gosub PressToContinue
-	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THEY ADVANCE, WEAPONS READY" escape=12 strength=9
-	Portrait = None
-	OnGoto Scratch10 Done PatrolFight FleeCombat PatrolFight
+    PressToContinue()
+    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Attack, near="THEY ADVANCE, WEAPONS READY", escape=12,
+        strength=9)
+    Portrait = None
+    goto [Done, PatrolFight, FleeCombat, PatrolFight][Scratch10]
 
 PatrolQuestions:
-	Surprise = NoSurprise
-	PrintClear "YOU SEE A"
-	Print $AuxSightText
-	Delay
-	EncounterMenu Fighter16 distance=2 body=PlateArmor result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="'WHAT ARE YOU DOING HERE?'" mid="THE LEADER ADVANCES." escape=12 strength=9
-	Portrait = None
-	OnGoto Scratch10 Done PatrolFight FleeCombat
-	PrintClear "WHAT ARE YOU DOING HERE?"
-	Scratch10 = Parlay 0 1 1 2 0
-	OnGosub Scratch10 AskAuthority PatrolIntruders AskPassword
+    Surprise = NoSurprise
+    Text("YOU SEE A")
+    Print($AuxSightText)
+    Delay()
+    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=3, flee=Attack,
+        advance=3, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'", mid="THE LEADER ADVANCES.",
+        escape=12, strength=9)
+    Portrait = None
+    goto [Done, PatrolFight, FleeCombat][Scratch10]
+    Text("WHAT ARE YOU DOING HERE?")
+    Scratch10 = Parlay(0, 1, 1, 2, 0)
+    gosub [AskAuthority, PatrolIntruders, AskPassword][Scratch10]
 
 PatrolFight:
-	Delay
-	Morale = 60
-	Portrait = None
-	Delay
-	RedrawView
-	ClearMonsters
-	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
-	LoadMonster HillGiant count=5 icon=HillGiant
-	Combat
-	Gosub AfterCombat
-	Exit
+    Delay()
+    Morale = 60
+    Portrait = None
+    Delay()
+    RedrawView()
+    ClearMonsters()
+    LoadMonster(ThLvlFighter75, count=1, icon=ThLvlFighter)
+    LoadMonster(HillGiant, count=5, icon=HillGiant)
+    Combat()
+    AfterCombat()
+    exit
 
-PatrolIntruders:
-	PrintClear "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
-	Return
+def PatrolIntruders() {
+    Text("'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'")
+    return
+}
 
-AskPassword:
-	PrintClear "'ALL RIGHT THEN. WHAT IS TODAY'S PASSWORD?'"
-	$AuxInputText = InputString 6
-	Compare "HARASH" $AuxInputText
-	Goto CheckAnswer
+def AskPassword() {
+    Text("'ALL RIGHT THEN. WHAT IS TODAY'S PASSWORD?'")
+    $AuxInputText = InputString(6)
+    Compare("HARASH", $AuxInputText)
+    goto CheckAnswer
+}
 
-AskAuthority:
-	PrintClear "'I'M SORRY, SIR, THERE'S AN ALERT. "
-	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
-	NewLine
-	$AuxInputText = InputString 12
-	Compare "TYRANTHRAXUS" $AuxInputText
+def AskAuthority() {
+    Text("'I'M SORRY, SIR, THERE'S AN ALERT. ")
+    Print("ON WHOSE AUTHORITY ARE YOU HERE?'")
+    NewLine()
+    $AuxInputText = InputString(12)
+    Compare("TYRANTHRAXUS", $AuxInputText)
+} # falls into CheckAnswer
 
 CheckAnswer:
-	IfNe
-	Goto Imposters
-	PrintClear "WITH A NOD OF THE HEAD YOU ARE LEFT ALONE."
-	Goto Done
+    if "TYRANTHRAXUS" != $AuxInputText { goto Imposters }
+    Text("WITH A NOD OF THE HEAD YOU ARE LEFT ALONE.")
+    goto Done
 
-Imposters:
-	PrintClear "'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'"
-	Return
+    Imposters:
+    Text("'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'")
+    return
 
 ArmedManAttacks:
-	if PatrolsFought3 has PatrolsFought: Exit
-	Portrait = GoldCapBeard
-	SetupMonster Fighter16 distance=0 body=PlateArmor
-	Portrait = None
-	PrintClear "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
-	Gosub DelayRaiseAlarm
-	Morale = 50
-	ClearMonsters
-	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
-	Combat
-	Gosub AfterCombat
-	PatrolsFought3 |= PatrolsFought
-	Exit
+    if PatrolsFought3 has PatrolsFought { exit }
+    Portrait = GoldCapBeard
+    SetupMonster(Fighter16, distance=0, body=PlateArmor)
+    Portrait = None
+    Text("YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU.")
+    DelayRaiseAlarm()
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(ThLvlFighter75, count=1, icon=ThLvlFighter)
+    Combat()
+    AfterCombat()
+    PatrolsFought3 |= PatrolsFought
+    exit
 
 FighterBuilding:
-	if PatrolsFought3 has PatrolsFought: Exit
-	if AlarmEndHour != 0: Goto DoorSlams
-	if CastleFlags has Disguised: Goto FighterConfronts
+    if PatrolsFought3 has PatrolsFought { exit }
+    if AlarmEndHour != 0 { goto DoorSlams }
+    if CastleFlags has Disguised { goto FighterConfronts }
 
-DoorSlams:
-	PrintClear "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
-	Gosub DelayRaiseAlarm
-	Exit
+    DoorSlams:
+    Text("THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. ")
+    DelayRaiseAlarm()
+    exit
 
-FighterConfronts:
-	Surprise = NoSurprise
-	PrintClear "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
-	Portrait = GoldCapBeard
-	Delay
-	EncounterMenu Fighter16 distance=0 body=PlateArmor result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT ARE YOU DOING HERE?'" escape=9 strength=9
-	Portrait = None
-	OnGoto Scratch10 Done FighterHitsButton FleeCombat
-	PrintClear "'WHAT ARE YOU DOING HERE?' HE REPEATS."
-	Scratch10 = Parlay 0 2 2 1 0
-	if Scratch10 == 2: Goto FighterRetreats
-	PrintClear ""
-	OnGosub Scratch10 AskAuthority AskPassword
+    FighterConfronts:
+    Surprise = NoSurprise
+    Text("A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU.")
+    Portrait = GoldCapBeard
+    Delay()
+    EncounterMenu(Fighter16, distance=0, body=PlateArmor, result=Scratch10, combat=Attack, wait=Talk,
+        flee=Attack, advance=Talk, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'", escape=9,
+        strength=9)
+    Portrait = None
+    goto [Done, FighterHitsButton, FleeCombat][Scratch10]
+    Text("'WHAT ARE YOU DOING HERE?' HE REPEATS.")
+    Scratch10 = Parlay(0, 2, 2, 1, 0)
+    if Scratch10 == 2 { goto FighterRetreats }
+    Text("")
+    gosub [AskAuthority, AskPassword][Scratch10]
 
 FighterHitsButton:
-	alias Choice = Scratch10
-	PrintClear "HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'"
-	Choice = Menu "STAY AND FIGHT" "RUN"
-	Gosub RaiseAlarm
-	OnGoto Choice FighterFight FleeCombat
+    Text("HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'")
+    Scratch10 = Menu("STAY AND FIGHT", "RUN")
+    RaiseAlarm()
+    goto [FighterFight, FleeCombat][Scratch10]
 
 FighterFight:
-	Morale = 100
-	ClearMonsters
-	LoadMonster ThLvlFighter75 count=1 icon=ThLvlFighter
-	Combat
-	Gosub AfterCombat
-	PatrolsFought3 |= PatrolsFought
-	Portrait = Bearded
-	SetupMonster Fighter16 distance=2 body=PlateArmor
-	PrintClear "A PATROL ROUNDS THE CORNER.."
-	Goto PatrolSeesYou
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(ThLvlFighter75, count=1, icon=ThLvlFighter)
+    Combat()
+    AfterCombat()
+    PatrolsFought3 |= PatrolsFought
+    Portrait = Bearded
+    SetupMonster(Fighter16, distance=2, body=PlateArmor)
+    Text("A PATROL ROUNDS THE CORNER..")
+    goto PatrolSeesYou
 
 FighterRetreats:
-	PrintClear "HE QUICKLY RETREATS THROUGH THE DOOR AND SLAMS IT, YELLING, 'INTRUDERS!'"
-	Gosub DelayRaiseAlarm
-	Goto Done
+    Text("HE QUICKLY RETREATS THROUGH THE DOOR AND SLAMS IT, YELLING, 'INTRUDERS!'")
+    DelayRaiseAlarm()
+    goto Done
 
 DiningHall:
-	if CastleFlags has HallSeen: Exit
-	PrintClear "YOU ARE IN A HALL WITH LONG TABLES, BENCHES AND A GREAT HEARTH AT ONE END. IN THE CORNERS ARE HEAPS OF GARBAGE BEING PICKED OVER BY SOME RATS WHICH FLEE AT YOUR ENTRANCE."
-	Delay
-	CastleFlags |= HallSeen
-	Exit
+    if CastleFlags has HallSeen { exit }
+    Text("YOU ARE IN A HALL WITH LONG TABLES, BENCHES AND A GREAT HEARTH AT ONE END. IN THE CORNERS ARE HEAPS OF GARBAGE BEING PICKED OVER BY SOME RATS WHICH FLEE AT YOUR ENTRANCE.")
+    Delay()
+    CastleFlags |= HallSeen
+    exit
 
 GiantApartment:
-	if CastleFlags has PatrolTalkedAway: Exit
-	Surprise = NoSurprise
-	Facing = East
-	PrintClear "AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM."
-	Call CallRedraw
-	Gosub PressToContinue
-	EncounterMenu HillGiant distance=1 closeup=HillGiant result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS." mid="THE GIANTS ARE WALKING TOWARD YOU." escape=12 strength=12
-	OnGoto Scratch10 Done ApartmentFight FleeCombat
-	PrintClear "'HEY, WHAT DO YOU THINK YOU'RE DOING?'"
-	Scratch10 = Parlay 0 0 0 1 0
-	PrintClear "'OH... OKAY.' AND WITH THAT THEY LEAVE."
-	CastleFlags |= PatrolTalkedAway
-	Goto Done
+    if CastleFlags has PatrolTalkedAway { exit }
+    Surprise = NoSurprise
+    Facing = East
+    Text("AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM.")
+    CallRedraw()
+    PressToContinue()
+    EncounterMenu(HillGiant, distance=1, closeup=HillGiant, result=Scratch10, combat=Attack, wait=3,
+        flee=Attack, advance=3, parlay=Talk,
+        near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS.",
+        mid="THE GIANTS ARE WALKING TOWARD YOU.", escape=12, strength=12)
+    goto [Done, ApartmentFight, FleeCombat][Scratch10]
+    Text("'HEY, WHAT DO YOU THINK YOU'RE DOING?'")
+    Scratch10 = Parlay(0, 0, 0, 1, 0)
+    Text("'OH... OKAY.' AND WITH THAT THEY LEAVE.")
+    CastleFlags |= PatrolTalkedAway
+    goto Done
 
 ApartmentFight:
-	Morale = 50
-	ClearMonsters
-	LoadMonster HillGiant count=2 icon=HillGiant
-	Combat
-	Gosub AfterCombat
-	CastleFlags |= PatrolTalkedAway
-	Exit
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(HillGiant, count=2, icon=HillGiant)
+    Combat()
+    AfterCombat()
+    CastleFlags |= PatrolTalkedAway
+    exit
 
 LooseStoneTreasure:
-	Scratch10 = CastleFlags & LooseStoneFound
-	if Scratch10 != 0 || Search != 1: Exit
-	PrintClear "UNDER A LOOSE STONE YOU FIND SOME TREASURE. "
-	Gosub TakeItMenu
-	IfNe
-	Exit
-	CastleFlags |= LooseStoneFound
-	ClearMonsters
-	Treasure 0 0 0 200 0 0 0 34 // Potion of Speed
-	Combat
-	Exit
+    Scratch10 = CastleFlags & LooseStoneFound
+    if Scratch10 != 0 or Search != Searching { exit }
+    Text("UNDER A LOOSE STONE YOU FIND SOME TREASURE. ")
+    if TakeItMenu() == "NO" { exit }
+    CastleFlags |= LooseStoneFound
+    ClearMonsters()
+    Treasure(gold=200, items=[PotionOfSpeed])
+    Combat()
+    exit
 
 Latrine:
-	PrintClear "YOU ENTER A LATRINE. THE LACK OF BAD SMELL GIVES YOU A GENERAL IDEA OF THE LEVEL OF SANITATION PRACTICED BY THE INHABITANTS OF THE AREA."
-	Exit
+    Text("YOU ENTER A LATRINE. THE LACK OF BAD SMELL GIVES YOU A GENERAL IDEA OF THE LEVEL OF SANITATION PRACTICED BY THE INHABITANTS OF THE AREA.")
+    exit
 
 BucketRoom:
-	if CastleFlags has SleepingGiantsFought: Exit
-	Scratch5 = 2
-	if Hours < 14: Scratch5 = 4
-	if Gosub RollSurprise then Surprise > PartyIsSurprised: Goto SleepingGiants
-	Surprise = PartyIsSurprised
-	if Search == 1: Goto BucketNoticed
-	PrintClear "AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS."
-	Gosub PressToContinue
-	Damage 1 1 4 0 50
-	Goto BucketGiantsCharge
+    if CastleFlags has SleepingGiantsFought { exit }
+    Scratch5 = 2
+    if Hours < 14 { Scratch5 = 4 }
+    RollSurprise()
+    if Surprise > PartyIsSurprised { goto SleepingGiants }
+    Surprise = PartyIsSurprised
+    if Search == Searching { goto BucketNoticed }
+    Text("AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS.")
+    PressToContinue()
+    Damage(1, 1, 4, 0, 50)
+    goto BucketGiantsCharge
 
-BucketNoticed:
-	PrintClear "BEFORE YOU OPEN THE DOOR ALL THE WAY, YOU NOTICE A BUCKET ABOVE THE DOOR. YOU KICK THE DOOR OPEN LETTING THE BUCKET FALL HARMLESSLY TO THE GROUND."
-	Gosub PressToContinue
-	Surprise = NoSurprise
+    BucketNoticed:
+    Text("BEFORE YOU OPEN THE DOOR ALL THE WAY, YOU NOTICE A BUCKET ABOVE THE DOOR. YOU KICK THE DOOR OPEN LETTING THE BUCKET FALL HARMLESSLY TO THE GROUND.")
+    PressToContinue()
+    Surprise = NoSurprise
 
-BucketGiantsCharge:
-	EncounterMenu FireGiant distance=2 closeup=FireGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!" escape=12 strength=12
-	OnGoto Scratch10 Done SleepingGiantsFight FleeCombat
+    BucketGiantsCharge:
+    EncounterMenu(FireGiant, distance=2, closeup=FireGiant, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Attack,
+        near="THE GIANTS WHO PLACED THE BUCKET THERE CHARGE!", escape=12, strength=12)
+    goto [Done, SleepingGiantsFight, FleeCombat][Scratch10]
 
-SleepingGiants:
-	alias Choice = Scratch10
-	SetupMonster FireGiant distance=1 closeup=FireGiant
-	PrintClear "AS YOU ENTER THE ROOM YOU SEE SOME SLEEPING GIANTS."
-	Choice = Menu "SNEAK OUT QUIETLY" "ATTACK AS THEY SLEEP"
-	OnGoto Choice StepBack
-	Approach
-	PrintClear "AS YOU SNEAK TOWARD THEM A LOOSE BOARD CREAKS. THE GIANTS GET TO THEIR FEET SHAKING THE SLEEP FROM THEIR EYES."
+    SleepingGiants:
+    SetupMonster(FireGiant, distance=1, closeup=FireGiant)
+    Text("AS YOU ENTER THE ROOM YOU SEE SOME SLEEPING GIANTS.")
+    Scratch10 = Menu("SNEAK OUT QUIETLY", "ATTACK AS THEY SLEEP")
+    goto [StepBack][Scratch10]
+    Approach()
+    Text("AS YOU SNEAK TOWARD THEM A LOOSE BOARD CREAKS. THE GIANTS GET TO THEIR FEET SHAKING THE SLEEP FROM THEIR EYES.")
 
 SleepingGiantsFight:
-	Morale = 100
-	Gosub PressToContinue
-	ClearMonsters
-	LoadMonster FireGiant count=Scratch5 icon=FireGiant
-	Treasure 0 0 0 #012C 0 0 0 255
-	Combat
-	Gosub AfterCombat
-	CastleFlags |= SleepingGiantsFought
-	Exit
+    Morale = 100
+    PressToContinue()
+    ClearMonsters()
+    LoadMonster(FireGiant, count=Scratch5, icon=FireGiant)
+    Treasure(gold=300)
+    Combat()
+    AfterCombat()
+    CastleFlags |= SleepingGiantsFought
+    exit
 
 GiantQuarters:
-	if CadornaQuartersFlags has Scratch1: Exit
-	if Hours >= 14: Exit
-	if Gosub RollSurprise then Surprise > PartyIsSurprised: Goto WakingGiants
-	Surprise = NoSurprise
-	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR." escape=12 strength=12
-	OnGoto Scratch10 Done ArmoringGiants FleeCombat
+    if CadornaQuartersFlags has Scratch1 { exit }
+    if Hours >= 14 { exit }
+    RollSurprise()
+    if Surprise > PartyIsSurprised { goto WakingGiants }
+    Surprise = NoSurprise
+    EncounterMenu(HillGiant, distance=2, closeup=HillGiant, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Attack,
+        near="YOU SEE SOME GIANTS PUTTING ON THEIR ARMOR.", escape=12, strength=12)
+    goto [Done, ArmoringGiants, FleeCombat][Scratch10]
 
 ArmoringGiants:
-	PartyHit = 2
-	Goto QuartersFight
+    PartyHit = 2
+    goto QuartersFight
 
 WakingGiants:
-	EncounterMenu HillGiant distance=2 closeup=HillGiant result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE SOME GIANTS STRUGGLING OUT OF BED." escape=9 strength=9
-	OnGoto Scratch10 Done WakingGiantsHit FleeCombat
+    EncounterMenu(HillGiant, distance=2, closeup=HillGiant, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Attack,
+        near="YOU SEE SOME GIANTS STRUGGLING OUT OF BED.", escape=9, strength=9)
+    goto [Done, WakingGiantsHit, FleeCombat][Scratch10]
 
 WakingGiantsHit:
-	PartyHit = 5
+    PartyHit = 5
 
 QuartersFight:
-	Morale = 40
-	ClearMonsters
-	LoadMonster HillGiant count=8 icon=HillGiant
-	Combat
-	Gosub AfterCombat
-	CadornaQuartersFlags |= Scratch1
-	Exit
+    Morale = 40
+    ClearMonsters()
+    LoadMonster(HillGiant, count=8, icon=HillGiant)
+    Combat()
+    AfterCombat()
+    CadornaQuartersFlags |= Scratch1
+    exit
 
 FindTreasure:
-	Scratch10 = SearchTowerFlags & Scratch1
-	if Scratch10 != 0 || Search != 1: Exit
-	PrintClear "YOU FIND SOME TREASURE. "
-	Gosub TakeItMenu
-	IfNe
-	Exit
-	SearchTowerFlags |= Scratch1
-	ClearMonsters
-	Treasure 0 0 0 11 0 0 0 255
-	Combat
-	Exit
+    Scratch10 = SearchTowerFlags & Scratch1
+    if Scratch10 != 0 or Search != Searching { exit }
+    Text("YOU FIND SOME TREASURE. ")
+    if TakeItMenu() == "NO" { exit }
+    SearchTowerFlags |= Scratch1
+    ClearMonsters()
+    Treasure(gold=11)
+    Combat()
+    exit
 
 MainGate:
-	alias Choice = Scratch10
-	Scratch1 = 64
-	if Choice == 31: Scratch1 = 128
-	if BaneTempleFlags has Scratch1: Goto GateRecognized
-	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto GateThief
-	Choice = VMenu "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
-	OnGoto Choice GivePassword BoulderVolley
+    Scratch1 = 64
+    if Scratch10 == 31 { Scratch1 = 128 }
+    if BaneTempleFlags has Scratch1 { goto GateRecognized }
+    if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto GateThief }
+    Scratch10 = VMenu("A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'", "GIVE THE PASSWORD", "FORCE THE GATE OPEN")
+    goto [GivePassword, BoulderVolley][Scratch10]
 
-GateRecognized:
-	PrintClear "YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'"
-	Goto BoulderVolley
+    GateRecognized:
+    Text("YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'")
+    goto BoulderVolley
 
-GateThief:
-	PrintClear "YOU HEAR A DEEP VOICE,'THIEF! YOU STOLE FROM LORDBANE!'"
+    GateThief:
+    Text("YOU HEAR A DEEP VOICE,'THIEF! YOU STOLE FROM LORDBANE!'")
 
 BoulderVolley:
-	Gosub DelayRaiseAlarm
-	BaneTempleFlags |= Scratch1
-	PrintClear "A VOLLEY OF BOULDERS ARE THROWN AT YOU..."
-	Delay
-	Damage 12 2 6 0 48
-	Exit
+    DelayRaiseAlarm()
+    BaneTempleFlags |= Scratch1
+    Text("A VOLLEY OF BOULDERS ARE THROWN AT YOU...")
+    Delay()
+    Damage(12, 2, 6, 0, 48)
+    exit
 
 GivePassword:
-	if CastleFlags2 lacks CadornaAlong: Goto EnterPassword
-	LoadMap Keep unused=16 icons=255
-	PrintClear ""
-	Protection ProtectionStart
-	PrintClear "CADORNA HANDS YOU A SLIP OF PAPER AND WHISPERS, 'HERE IS TODAY'S GATE PASSWORD.'"
-	NewLine
-	Protection ProtectionEnd
-	LoadMap Keep unused=2 icons=255
-	Gosub PressToContinue
-	LoadWalls 24 25 1
+    if CastleFlags2 lacks CadornaAlong { goto EnterPassword }
+    LoadMap(Keep, unused=16, icons=255)
+    Text("")
+    Protection(ProtectionStart)
+    Text("CADORNA HANDS YOU A SLIP OF PAPER AND WHISPERS, 'HERE IS TODAY'S GATE PASSWORD.'")
+    NewLine()
+    Protection(ProtectionEnd)
+    LoadMap(Keep, unused=2, icons=255)
+    PressToContinue()
+    LoadWalls(24, 25, 1)
 
-EnterPassword:
-	PrintClear "WHAT PASSWORD DO YOU GIVE? "
-	$AuxInputText = InputString 6
-	if $AuxInputText != "RHODIA": Goto WrongPassword
-	PrintClear "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
-	Call CallStepForward
-	HoldMove = SkipMove
-	Exit
+    EnterPassword:
+    Text("WHAT PASSWORD DO YOU GIVE? ")
+    $AuxInputText = InputString(6)
+    if $AuxInputText != "RHODIA" { goto WrongPassword }
+    Text("'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE.")
+    CallStepForward()
+    HoldMove = SkipMove
+    exit
 
-WrongPassword:
-	PrintClear "'HAH! HAH! YOU'RE DUMB! THAT'S NOT THE PASSWORD!'"
-	Exit
-
-ProtectionEnd:
-	Data 138 128 135 124 129 121 0
-
-ProtectionStart:
-	Data 0
+    WrongPassword:
+    Text("'HAH! HAH! YOU'RE DUMB! THAT'S NOT THE PASSWORD!'")
+    exit
 
 CobwebBuilding:
-	if BaneTempleFlags has CobwebRoom: Exit
-	PrintClear "YOU ARE IN A DESERTED BUILDING. THERE ARE NOTHING BUT VERY LARGE COBWEBS HERE."
-	Delay
-	BaneTempleFlags |= CobwebRoom
-	Exit
+    if BaneTempleFlags has CobwebRoom { exit }
+    Text("YOU ARE IN A DESERTED BUILDING. THERE ARE NOTHING BUT VERY LARGE COBWEBS HERE.")
+    Delay()
+    BaneTempleFlags |= CobwebRoom
+    exit
 
 CeilingCaves:
-	if BaneTempleFlags has CeilingCavedIn: Exit
-	PrintClear "AS YOU PUSH THE DOOR OPEN THE CEILING CAVES IN."
-	Delay
-	Damage 1 2 6 0 50
-	BaneTempleFlags |= CeilingCavedIn
-	Exit
+    if BaneTempleFlags has CeilingCavedIn { exit }
+    Text("AS YOU PUSH THE DOOR OPEN THE CEILING CAVES IN.")
+    Delay()
+    Damage(1, 2, 6, 0, 50)
+    BaneTempleFlags |= CeilingCavedIn
+    exit
 
 DoorGiants:
-	if CastleFlags has GiantsPassed: Exit
-	if CastleFlags has Disguised: Exit
-	Facing = East
-	Call CallRedraw
-	PrintClear "TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR."
+    if CastleFlags has GiantsPassed { exit }
+    if CastleFlags has Disguised { exit }
+    Facing = East
+    CallRedraw()
+    Text("TWO GIANTS COME BOUNDING OUT OF A DOORWAY. ONE STAYS BY THE DOOR.")
 
 DoorGiantsChallenge:
-	SetupMonster HillGiant distance=0 closeup=HillGiant
-	if BaneTempleFlags has OfferingBoxStolen+CrossedSwordsStolen: Goto TempleThieves
-	EncounterMenu HillGiant distance=0 closeup=HillGiant result=Scratch10 combat=Attack wait=Talk flee=Attack advance=Talk parlay=Talk near="'WHAT PASSWORD?'" escape=12 strength=12
-	OnGoto Scratch10 Done DoorGiantsFight FleeCombat
-	Scratch10 = Parlay 0 1 1 1 1
-	OnGoto Scratch10 WhoSentYou
-	PrintClear "'TELL ME PASSWORD OR I KILL YOU. NOW!'"
-	NewLine
-	$AuxInputText = InputString 6
-	if "HARASH" != $AuxInputText: Goto WrongAnswerDinner
-	PrintClear "'OKAY, BUT NO HANGING AROUND.'"
-	Goto Done
+    SetupMonster(HillGiant, distance=0, closeup=HillGiant)
+    if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto TempleThieves }
+    EncounterMenu(HillGiant, distance=0, closeup=HillGiant, result=Scratch10, combat=Attack, wait=Talk,
+        flee=Attack, advance=Talk, parlay=Talk, near="'WHAT PASSWORD?'", escape=12, strength=12)
+    goto [Done, DoorGiantsFight, FleeCombat][Scratch10]
+    Scratch10 = Parlay(0, 1, 1, 1, 1)
+    goto [WhoSentYou][Scratch10]
+    Text("'TELL ME PASSWORD OR I KILL YOU. NOW!'")
+    NewLine()
+    $AuxInputText = InputString(6)
+    if "HARASH" != $AuxInputText { goto WrongAnswerDinner }
+    Text("'OKAY, BUT NO HANGING AROUND.'")
+    goto Done
 
 WhoSentYou:
-	PrintClear "THE GIANT HESITATES, 'WHO SENT YOU?'"
-	NewLine
-	$AuxInputText = InputString 12
-	if "TYRANTHRAXUS" != $AuxInputText: Goto WrongAnswerDinner
-	PrintClear "'SORRY ME NOT KNOW! JUST DOING JOB! YOU GO NOW.'"
-	Goto Done
+    Text("THE GIANT HESITATES, 'WHO SENT YOU?'")
+    NewLine()
+    $AuxInputText = InputString(12)
+    if "TYRANTHRAXUS" != $AuxInputText { goto WrongAnswerDinner }
+    Text("'SORRY ME NOT KNOW! JUST DOING JOB! YOU GO NOW.'")
+    goto Done
 
 TempleThieves:
-	Print "THEY RAISE THEIR CLUBS. 'YOU STOLE FROM LORD BANE'S TEMPLE!'"
-	Goto DoorGiantsFight
+    Print("THEY RAISE THEIR CLUBS. 'YOU STOLE FROM LORD BANE'S TEMPLE!'")
+    goto DoorGiantsFight
 
 WrongAnswerDinner:
-	PrintClear "'WRONG ANSWER, DINNER!'"
+    Text("'WRONG ANSWER, DINNER!'")
 
 DoorGiantsFight:
-	Gosub RaiseAlarm
-	Surprise = NoSurprise
-	Morale = 50
-	ClearMonsters
-	LoadMonster HillGiant count=2 icon=HillGiant
-	Combat
-	Gosub AfterCombat
-	CastleFlags |= GiantsPassed
-	Exit
+    RaiseAlarm()
+    Surprise = NoSurprise
+    Morale = 50
+    ClearMonsters()
+    LoadMonster(HillGiant, count=2, icon=HillGiant)
+    Combat()
+    AfterCombat()
+    CastleFlags |= GiantsPassed
+    exit
 
 GiantsBarWay:
-	if CastleFlags has GiantsPassed: Exit
-	PrintClear "TWO GIANTS STAND BARRING YOUR WAY."
-	Goto DoorGiantsChallenge
+    if CastleFlags has GiantsPassed { exit }
+    Text("TWO GIANTS STAND BARRING YOUR WAY.")
+    goto DoorGiantsChallenge
 
 WellView:
-	PrintClear "BEFORE YOU IS A WELL FILLED WITH WATER."
-	Exit
+    Text("BEFORE YOU IS A WELL FILLED WITH WATER.")
+    exit
 
 WellDive:
-	PrintClear "THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?"
+    Text("THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?")
 
 DiveMenu:
-	if Ask YesNoMenu == "NO": Exit
+    if YesNoMenu() == "NO" { exit }
 
-ChooseDiver:
-	Who "WHO WILL DIVE IN?"
-	if SelStatus != Okay: Goto ChooseDiver
-	Scratch4 = 0
-	if SelCon < 12: Goto NoBottom
-	Scratch10 = Random 20
-	if Scratch10 > SelCon: Goto NoBottom
-	PrintClear "YOU REACH THE BOTTOM AND FEEL AROUND... "
-	Delay
-	if CastleFlags has SwordInWell: Goto OnlyMud
-	Print "AND YOU FIND A SWORD! "
-	Gosub TakeItMenu
-	IfEq
-	Scratch4 = 3
-	Goto RunningOutOfAir
+    ChooseDiver:
+    Who("WHO WILL DIVE IN?")
+    if SelStatus != Okay { goto ChooseDiver }
+    Scratch4 = 0
+    if SelCon < 12 { goto NoBottom }
+    Scratch10 = Random(20)
+    if Scratch10 > SelCon { goto NoBottom }
+    Text("YOU REACH THE BOTTOM AND FEEL AROUND... ")
+    Delay()
+    if CastleFlags has SwordInWell { goto OnlyMud }
+    Print("AND YOU FIND A SWORD! ")
+    if TakeItMenu() == "YES" { Scratch4 = 3 }
+    goto RunningOutOfAir
 
-NoBottom:
-	PrintClear "YOU SWIM DOWN UNTIL YOU FEEL YOUR PULSE BEATING IN YOUR EARS. YOU DON'T REACH THE BOTTOM."
-	Goto RunningOutOfAir
+    NoBottom:
+    Text("YOU SWIM DOWN UNTIL YOU FEEL YOUR PULSE BEATING IN YOUR EARS. YOU DON'T REACH THE BOTTOM.")
+    goto RunningOutOfAir
 
-OnlyMud:
-	Print "ASIDE FROM A LAYER OF MUD, YOU DON'T FIND ANYTHING."
+    OnlyMud:
+    Print("ASIDE FROM A LAYER OF MUD, YOU DON'T FIND ANYTHING.")
 
-RunningOutOfAir:
-	Delay
-	Scratch9 = 0
-	if SelMove < 12: Scratch9 = 12 - SelMove
-	Scratch10 = Random 19
-	Scratch10 += Scratch9
-	PrintClear "YOU ARE RUNNING OUT OF AIR... "
-	Delay
-	if Scratch10 > SelCon: Goto BreatheWater
-	Print "YOU BREAK THE SURFACE GASPING FOR AIR."
-	Delay
-	Goto TryAgain
+    RunningOutOfAir:
+    Delay()
+    Scratch9 = 0
+    if SelMove < 12 { Scratch9 = 12 - SelMove }
+    Scratch10 = Random(19)
+    Scratch10 += Scratch9
+    Text("YOU ARE RUNNING OUT OF AIR... ")
+    Delay()
+    if Scratch10 > SelCon { goto BreatheWater }
+    Print("YOU BREAK THE SURFACE GASPING FOR AIR.")
+    Delay()
+    goto TryAgain
 
-BreatheWater:
-	Print "YOU BREAK THE SURFACE JUST AS YOU BREATHE IN SOME WATER."
-	Delay
-	Damage 160 1 6 0 128
+    BreatheWater:
+    Print("YOU BREAK THE SURFACE JUST AS YOU BREATHE IN SOME WATER.")
+    Delay()
+    Damage(160, 1, 6, 0, 128)
 
-TryAgain:
-	if Scratch4 != 0: Goto TakeSword
-	PrintClear "TRY AGAIN?"
-	Goto DiveMenu
+    TryAgain:
+    if Scratch4 != 0 { goto TakeSword }
+    Text("TRY AGAIN?")
+    goto DiveMenu
 
-TakeSword:
-	CastleFlags |= SwordInWell
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 36 // Long Sword +2 Flame Tongue
-	Combat
-	Exit
+    TakeSword:
+    CastleFlags |= SwordInWell
+    ClearMonsters()
+    Treasure(items=[LongSword2FlameTongue])
+    Combat()
+    exit
 
 CadornaCell:
-	if CastleFlags2 has CadornaAlong: Exit
-	if CadornaQuartersFlags lacks SouthDoorOpen: Exit
-	if CadornaQuartersFlags has CadornaReleased+CadornaKilled: Exit
-	Picture ChainedPrisoner
-	PrintClear "THIS IS A SMALL CELL. CHAINED TO THE WALL IS A MAN BEATEN TO WITHIN AN INCH OF HIS LIFE. AS YOU OPEN THE DOOR HE LOOKS UP AND YOU FEEL A SHOCK... THE MAN IS PORPHYRYS CADORNA."
-	Gosub PressToContinue
-	PrintClear "'IN THE NAME OF CHANTUA, HELP ME, PLEASE! BY ALL THAT'S MERCIFUL HELP ME.' HE BEGINS TO COUGH."
-	Scratch4 = 0
+    if CastleFlags2 has CadornaAlong { exit }
+    if CadornaQuartersFlags lacks SouthDoorOpen { exit }
+    if CadornaQuartersFlags has CadornaReleased|CadornaKilled { exit }
+    Picture(ChainedPrisoner)
+    Text("THIS IS A SMALL CELL. CHAINED TO THE WALL IS A MAN BEATEN TO WITHIN AN INCH OF HIS LIFE. AS YOU OPEN THE DOOR HE LOOKS UP AND YOU FEEL A SHOCK... THE MAN IS PORPHYRYS CADORNA.")
+    PressToContinue()
+    Text("'IN THE NAME OF CHANTUA, HELP ME, PLEASE! BY ALL THAT'S MERCIFUL HELP ME.' HE BEGINS TO COUGH.")
+    Scratch4 = 0
 
 CadornaMenu:
-	alias Choice = Scratch10
-	Choice = Menu "RELEASE HIM" "LEAVE HIM" "KILL HIM"
-	OnGoto Choice ReleaseCadorna LeaveCadorna
-	if Scratch4 has 1: Goto KillCadorna
+    Scratch10 = Menu("RELEASE HIM", "LEAVE HIM", "KILL HIM")
+    goto [ReleaseCadorna, LeaveCadorna][Scratch10]
+    if Scratch4 has 1 { goto KillCadorna }
 
 CadornaPleads:
-	PrintClear "'WAIT!' HE SHRIEKS. 'I KNOW HOW TO GET THROUGH THE MAIN GATES. I CAN HELP YOU.'"
-	Scratch4 |= 1
-	Goto CadornaMenu
+    Text("'WAIT!' HE SHRIEKS. 'I KNOW HOW TO GET THROUGH THE MAIN GATES. I CAN HELP YOU.'")
+    Scratch4 |= 1
+    goto CadornaMenu
 
 KillCadorna:
-	PrintClear "WITH A QUICK STROKE YOU RELEASE HIM FROM THIS PAIN... TO ALL THE PAIN TO COME."
-	QuestCadornaDead = RewardDue
-	CadornaQuartersFlags |= CadornaKilled
-	Goto Done
+    Text("WITH A QUICK STROKE YOU RELEASE HIM FROM THIS PAIN... TO ALL THE PAIN TO COME.")
+    QuestCadornaDead = RewardDue
+    CadornaQuartersFlags |= CadornaKilled
+    goto Done
 
 LeaveCadorna:
-	if Scratch4 has 2: Goto LeaveAgain
-	PrintClear "'WAIT DON'T LEAVE ME HERE. IF YOU DO I'LL RAISE THE ALARM.'"
-	Scratch4 |= 2
-	Goto CadornaMenu
+    if Scratch4 has 2 { goto LeaveAgain }
+    Text("'WAIT DON'T LEAVE ME HERE. IF YOU DO I'LL RAISE THE ALARM.'")
+    Scratch4 |= 2
+    goto CadornaMenu
 
-LeaveAgain:
-	if Scratch4 lacks 1: Goto CadornaPleads
-	if Scratch4 has 4: Goto CadornaScreams
-	PrintClear "'I KNOW THE WAY THROUGH THE HEDGE... LEFT RIGHT RIGHT... FOR CHANTUA'S SAKE! DON'T LEAVE ME!'"
-	Scratch4 |= 4
-	Goto CadornaMenu
+    LeaveAgain:
+    if Scratch4 lacks 1 { goto CadornaPleads }
+    if Scratch4 has 4 { goto CadornaScreams }
+    Text("'I KNOW THE WAY THROUGH THE HEDGE... LEFT RIGHT RIGHT... FOR CHANTUA'S SAKE! DON'T LEAVE ME!'")
+    Scratch4 |= 4
+    goto CadornaMenu
 
-CadornaScreams:
-	PrintClear "YOU LEAVE. BEHIND YOU ARE HIS SCREAMS, 'INTRUDERS! INTRUDERS!'"
-	Goto FleeCombat
+    CadornaScreams:
+    Text("YOU LEAVE. BEHIND YOU ARE HIS SCREAMS, 'INTRUDERS! INTRUDERS!'")
+    goto FleeCombat
 
 ReleaseCadorna:
-	PrintClear "'THANK YOU! THANK YOU! I JUST THOUGHT THAT THE POOL WAS HERE! THERE WAS NOWHERE ELSE TO GO! I HAVE NOWHERE TO GO. TAKE ME WITH YOU?'"
-	CadornaQuartersFlags |= CadornaReleased
-	if Ask YesNoMenu == "YES": CastleFlags2 |= CadornaAlong
-	Goto StepBack
+    Text("'THANK YOU! THANK YOU! I JUST THOUGHT THAT THE POOL WAS HERE! THERE WAS NOWHERE ELSE TO GO! I HAVE NOWHERE TO GO. TAKE ME WITH YOU?'")
+    CadornaQuartersFlags |= CadornaReleased
+    if YesNoMenu() == "YES" { CastleFlags2 |= CadornaAlong }
+    goto StepBack
 
 GiantSnakes:
-	if CadornaQuartersFlags has QuartersFightDone: Exit
-	Gosub RollSurprise
-	EncounterMenu GiantSnake distance=2 closeup=GiantSnake result=Scratch10 combat=Attack wait=Attack flee=Attack advance=Mirror parlay=Attack near="YOU SEE GIANT SNAKES." escape=15 strength=15
-	OnGoto Scratch10 Done SnakesFight StepBack
+    if CadornaQuartersFlags has QuartersFightDone { exit }
+    RollSurprise()
+    EncounterMenu(GiantSnake, distance=2, closeup=GiantSnake, result=Scratch10, combat=Attack, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Attack, near="YOU SEE GIANT SNAKES.", escape=15,
+        strength=15)
+    goto [Done, SnakesFight, StepBack][Scratch10]
 
 SnakesFight:
-	Morale = 100
-	ClearMonsters
-	LoadMonster GiantSnake count=5 icon=GiantSnake
-	Combat
-	Gosub AfterCombat
-	CadornaQuartersFlags |= QuartersFightDone
-	Exit
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(GiantSnake, count=5, icon=GiantSnake)
+    Combat()
+    AfterCombat()
+    CadornaQuartersFlags |= QuartersFightDone
+    exit
 
 ExitToArea5:
-	NewECL ValjevoGrounds
+    NewECL(ValjevoGrounds)
+
+# tables
+ByFacing9AA6 = [4, 4, 6, 6]
+Table9B99 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 8, 9, 12, 8, 9, 13, 14, 15, 16, 17, 17]
+Table9BB0 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 2, 0, 4, 4, 0, 0, 0, 0, 0, 0]
+ByFacing9C24 = [3, 5, 5, 3]
+ProtectionEnd = [138, 128, 135, 124, 129, 121, 0]
+ProtectionStart = [0]

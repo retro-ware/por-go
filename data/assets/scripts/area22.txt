@@ -1,463 +1,439 @@
 FleeNorth:
-	Scratch1 = Random 3
-	Scratch1 = Scratch1 + 4
-	Goto MoveToTableSpot
+    Scratch1 = Random(3)
+    Scratch1 = Scratch1 + 4
+    goto MoveToTableSpot
 
 FleeSouth:
-	Scratch1 = Random 3
+    Scratch1 = Random(3)
 
 MoveToTableSpot:
-	PartyX = DestX[Scratch1]
-	PartyY = DestY[Scratch1]
-	Facing = DestFacing[Scratch1]
-	HoldMove = SkipMove
-	Goto Done
+    PartyX = DestX[Scratch1]
+    PartyY = DestY[Scratch1]
+    Facing = DestFacing[Scratch1]
+    HoldMove = SkipMove
+    goto Done
 
-DestX:
-	Data 5 1 8 9 0 1 8 11 15 12
+def YesNoMenu() {
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
+}
 
-DestY:
-	Data 11 10 14 8 0 3 6 1 7 15
-
-DestFacing:
-	Data 3 2 1 2 2 1 0 0 1 3 17 128 12 16 248 25
-	Data 61 88 20 4 177 96 37 79 192
-
-YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
-
-TeleportFlash:
-	Print "AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH, AND YOU SUDDENLY FIND YOURSELVES ELSEWHERE."
+def TeleportFlash() {
+    Print("AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH, AND YOU SUDDENLY FIND YOURSELVES ELSEWHERE.")
+} # falls into WaitReturnPressed
 
 WaitReturnPressed:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	PrintClear " "
-	Return
+    Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    Text(" ")
+    return
 
-SearchSecretDoor:
-	if Scratch1 has SecretDoorBits: Goto SecretDoorFound
-	Scratch10 = 0
+def SearchSecretDoor() {
+    if Scratch1 has SecretDoorBits { goto SecretDoorFound }
+    Scratch10 = 0
+} # falls into CheckMemberFinds
 
 CheckMemberFinds:
-	SelectMember Scratch10
-	if SelStatus == Died: Goto NextMember
-	Scratch9 = 1
-	if Search == 0: Scratch9 -= 1
-	if SelRace == Elf: Scratch9 += 1
-	if SelRace == HalfElf: Scratch9 += 1
-	Scratch8 = Random 5
-	if Scratch8 > Scratch9: Goto NextMember
+    SelectMember(Scratch10)
+    if SelStatus == Died { goto NextMember }
+    Scratch9 = 1
+    if Search == NotSearching { Scratch9 -= 1 }
+    if SelRace == Elf { Scratch9 += 1 }
+    if SelRace == HalfElf { Scratch9 += 1 }
+    Scratch8 = Random(5)
+    if Scratch8 > Scratch9 { goto NextMember }
 
 SecretDoorFound:
-	alias ByFacing9B22Entry = Scratch10
-	SecretDoorBits = Scratch1 | SecretDoorBits
-	PrintClear "A SECRET DOOR IS FOUND"
-	ByFacing9B22Entry = ByFacing9B22[Facing]
-	Scratch2 += ByFacing9B22Entry
-	Scratch2 = Table9B1B[Scratch2]
-	OnGosub Scratch2 DoorInFront DoorToRight DoorBehind DoorToLeft
-	Goto WaitReturnPressed
+    SecretDoorBits = Scratch1 | SecretDoorBits
+    Text("A SECRET DOOR IS FOUND")
+    Scratch10 = ByFacing9B22[Facing]
+    Scratch2 += Scratch10
+    Scratch2 = Table9B1B[Scratch2]
+    gosub [DoorInFront, DoorToRight, DoorBehind, DoorToLeft][Scratch2]
+    goto WaitReturnPressed
 
 NextMember:
-	Scratch10 = Scratch10 + 1
-	if Scratch10 < 8: Goto CheckMemberFinds
-	Return
+    Scratch10 = Scratch10 + 1
+    if Scratch10 < 8 { goto CheckMemberFinds }
+    return
 
-DoorInFront:
-	Print " IN FRONT OF YOU."
-	Return
+def DoorInFront() {
+    Print(" IN FRONT OF YOU.")
+    return
+}
 
-DoorToRight:
-	Print " TO YOUR RIGHT."
-	Return
+def DoorToRight() {
+    Print(" TO YOUR RIGHT.")
+    return
+}
 
-DoorBehind:
-	Print " BEHIND YOU."
-	Return
+def DoorBehind() {
+    Print(" BEHIND YOU.")
+    return
+}
 
-DoorToLeft:
-	Print " TO YOUR LEFT."
-	Return
+def DoorToLeft() {
+    Print(" TO YOUR LEFT.")
+    return
+}
 
-Table9B1B:
-	Data 0 1 2 3 0 1 2
+on move {
+    Scratch1 = Cell & 31
+    if Scratch1 == 0 { exit }
+    if Scratch1 > 11 { exit }
+    Scratch1 -= 1
+    Scratch10 = Table9C95[Scratch1]
+    if Scratch10 != Facing { exit }
+    goto CheckSecretPassage
+}
 
-ByFacing9B22:
-	Data 0 3 2 1
+on step {
+    Scratch10 = Cell & 31
+    Scratch2 = Table9B91[Scratch10]
+    Scratch1 = Table9BA4[Scratch10]
+    goto [RandomEncounter, SecretDoorSpot, PriestRoom, TyrmorCorpse, RockRoom, TeleporterSquare, Done][Scratch2]
+    exit # the original runs on into data at 9B91
+}
 
-event0:
-	Scratch1 = Cell & 31
-	if 0 == Scratch1: Exit
-	if Scratch1 > 11: Exit
-	Scratch1 -= 1
-	Scratch10 = Table9C95[Scratch1]
-	if Scratch10 != Facing: Exit
-	Goto CheckSecretPassage
-
-event1:
-	Scratch10 = Cell & 31
-	Scratch2 = Table9B91[Scratch10]
-	Scratch1 = Table9BA4[Scratch10]
-	OnGoto Scratch2 RandomEncounter SecretDoorSpot PriestRoom TyrmorCorpse RockRoom TeleporterSquare Done
-	Exit // extra: the original runs on into data at 9B91
-
-Table9B91:
-	Data 0 1 1 1 1 1 1 1 1 1 1 1 2 3 4 5
-	Data 5 5 6
-
-Table9BA4:
-	Data 0 0 1 2 3 4 5 6 7 8 9 10 0 0 0 0
-	Data 4 0 0
-
-event2:
-	RestEvery = 0
-	RestChance = 10
-	if PartyX == 15: Exit
-	Scratch10 = SouthGroupsBeaten
-	if PartyY < 8: Scratch10 = NorthGroupsBeaten
-	Scratch10 &= 63
-	if Scratch10 == 63: Exit
-	RestEvery = 2
-	RestChance = 33
+on camp {
+    RestEvery = 0
+    RestChance = 10
+    if PartyX == 15 { exit }
+    Scratch10 = SouthGroupsBeaten
+    if PartyY < 8 { Scratch10 = NorthGroupsBeaten }
+    Scratch10 &= 63
+    if Scratch10 == 63 { exit }
+    RestEvery = 2
+    RestChance = 33
+} # falls into Done
 
 Done:
-	RedrawView
-	Call CallRedraw
-	Exit
+    RedrawView()
+    CallRedraw()
+    exit
 
-event3:
-	Goto ForcedEncounter
+on rest {
+    goto ForcedEncounter
+}
 
-event4:
-	NoCoords = 1
-	SkyInside = 9
-	if AreaKind == 22: Exit
-	LoadMap 22 unused=2 icons=255
-	if AreaKind == 23: Exit
-	PartyY = 0
-	Facing = South
-	PartyX = 15
-	LoadWalls 1 3 None
-	Exit
+on load {
+    NoCoords = 1
+    SkyInside = 9
+    if AreaKind == LizardManSwamp { exit }
+    LoadMap(22, unused=2, icons=255)
+    if AreaKind == LizardManVillage { exit }
+    PartyY = 0
+    Facing = South
+    PartyX = 15
+    LoadWalls(1, 3, None)
+    exit
+}
 
 SecretDoorSpot:
-	Scratch2 = Table9C95[Scratch1]
-	Scratch1 = Table9CA0[Scratch1]
-	Gosub SearchSecretDoor
-	Goto RandomEncounter
+    Scratch2 = Table9C95[Scratch1]
+    Scratch1 = Table9CA0[Scratch1]
+    SearchSecretDoor()
+    goto RandomEncounter
 
 CheckSecretPassage:
-	Scratch1 = Table9CA0[Scratch1]
-	if SecretDoorBits has Scratch1: Goto PassageLeave
-	HoldMove = SkipMove
-	Exit
+    Scratch1 = Table9CA0[Scratch1]
+    if SecretDoorBits has Scratch1 { goto PassageLeave }
+    HoldMove = SkipMove
+    exit
 
-PassageLeave:
-	Scratch10 = Cell & 31
-	if Scratch10 < 3: Goto LeaveToArea26
-	Exit
-
-Table9C95:
-	Data 0 2 2 1 1 1 1 0 3 3 3
-
-Table9CA0:
-	Data 1 2 4 8 16 32 64 4 8 32 64
+    PassageLeave:
+    Scratch10 = Cell & 31
+    if Scratch10 < 3 { goto LeaveToArea26 }
+    exit
 
 PriestRoom:
-	if SecretDoorBits has PriestFreed: Goto HoleInWall
-	if SouthGroupsBeaten has 64: Exit
-	Surprise = NoSurprise
-	PrintClear "YOU SEE A HUMAN PRIEST."
-	Gosub WaitReturnPressed
-	MaxDist = 1
+    if SecretDoorBits has PriestFreed { goto HoleInWall }
+    if SouthGroupsBeaten has PriestFought { exit }
+    Surprise = NoSurprise
+    Text("YOU SEE A HUMAN PRIEST.")
+    WaitReturnPressed()
+    MaxDist = 1
 
 PriestEncounter:
-	Scratch7 = 6
-	Gosub LoadGroupData
-	EncounterMenu AuxPartyStrength distance=MaxDist closeup=AuxCounter result=Scratch10 combat=Attack wait=Talk flee=Mirror advance=Talk parlay=Talk near="HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." escape=9 strength=9
-	Portrait = None
-	Scratch6 = 6
-	OnGoto Scratch10 Done FightGroup PriestFlee
-	Scratch10 = Parlay 0 0 1 1 0
-	OnGoto Scratch10 PriestPeace
-	Scratch10 = Random 2
-	if Scratch10 != 0: Goto PriestPeace
-	PrintClear "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
-	if Ask YesNoMenu == "NO": Goto PriestEncounter
-	PrintClear "YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE."
-	RedrawView
-	Call CallRedraw
-	Gosub WaitReturnPressed
-	SecretDoorBits |= PriestFreed
+    Scratch7 = 6
+    LoadGroupData()
+    EncounterMenu(AuxPartyStrength, distance=MaxDist, closeup=AuxCounter, result=Scratch10, combat=Attack,
+        wait=Talk, flee=Mirror, advance=Talk, parlay=Talk,
+        near="HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION.", escape=9, strength=9)
+    Portrait = None
+    Scratch6 = 6
+    goto [Done, FightGroup, PriestFlee][Scratch10]
+    Scratch10 = Parlay(0, 0, 1, 1, 0)
+    goto [PriestPeace][Scratch10]
+    Scratch10 = Random(2)
+    Compare(Scratch10, 0)
+    if Scratch10 != 0 { goto PriestPeace }
+    Text("I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?")
+    if YesNoMenu() == "NO" { goto PriestEncounter }
+    Text("YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE.")
+    RedrawView()
+    CallRedraw()
+    WaitReturnPressed()
+    SecretDoorBits |= PriestFreed
 
 HoleInWall:
-	PrintClear "THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?"
-	if Ask YesNoMenu == "YES": Goto LeaveToArea26
-	Goto Done
+    Text("THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?")
+    if YesNoMenu() == "YES" { goto LeaveToArea26 }
+    goto Done
 
 PriestFlee:
-	Scratch1 = 9
-	Goto MoveToTableSpot
+    Scratch1 = 9
+    goto MoveToTableSpot
 
 PriestPeace:
-	PrintClear "PEACE BROTHER. YOU, TOO, ARE ONE OF MY FLOCK. I HAVE BUT RECENTLY PRAYED FOR ANOTHER OF MY FLOCK AND MAY PRAY NO MORE."
-	Gosub WaitReturnPressed
-	Goto PriestEncounter
+    Text("PEACE BROTHER. YOU, TOO, ARE ONE OF MY FLOCK. I HAVE BUT RECENTLY PRAYED FOR ANOTHER OF MY FLOCK AND MAY PRAY NO MORE.")
+    WaitReturnPressed()
+    goto PriestEncounter
 
 TyrmorCorpse:
-	PrintClear "YOU FIND THE CORPSE OF A MAN. THE BODY HAS BEEN STRIPPED OF WEAPONS AND ARMOR, AS WELL AS ANY USEFUL GEAR."
-	Gosub WaitReturnPressed
-	if TyrmorJournalFound != 0 || Search != 1: Goto RandomEncounter
-	PrintClear "HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26."
-	TyrmorJournalFound = 1
-	Gosub WaitReturnPressed
-	Goto RandomEncounter
+    Text("YOU FIND THE CORPSE OF A MAN. THE BODY HAS BEEN STRIPPED OF WEAPONS AND ARMOR, AS WELL AS ANY USEFUL GEAR.")
+    WaitReturnPressed()
+    if TyrmorJournalFound != 0 or Search != Searching { goto RandomEncounter }
+    Text("HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26.")
+    TyrmorJournalFound = 1
+    WaitReturnPressed()
+    goto RandomEncounter
 
 RockRoom:
-	PrintClear "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
-	Gosub WaitReturnPressed
-	if TeleporterRockFlags has TeleporterKnown: Goto RockRoomMenu
-	OnGoto Search StepOnTeleporter FeelTingle
+    Text("YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. ")
+    WaitReturnPressed()
+    if TeleporterRockFlags has TeleporterKnown { goto RockRoomMenu }
+    goto [StepOnTeleporter, FeelTingle][Search]
 
 StepOnTeleporter:
-	Gosub TeleportFlash
-	TeleporterRockFlags |= TeleporterKnown
-	if TeleporterRockFlags lacks RocksThrown: Goto TeleportToArea23
-	Scratch1 = 0
-	TeleporterRockFlags &= ~RocksThrown
-	Goto MoveToTableSpot
+    TeleportFlash()
+    TeleporterRockFlags |= TeleporterKnown
+    if TeleporterRockFlags lacks RocksThrown { goto TeleportToArea23 }
+    Scratch1 = 0
+    TeleporterRockFlags &= ~RocksThrown
+    goto MoveToTableSpot
 
 FeelTingle:
-	PrintClear "AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA."
+    Text("AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA.")
 
 RockRoomMenu:
-	alias Choice = Scratch10
-	Choice = Menu "GO BACK" "MOVE ON" "THROW A ROCK"
-	PrintClear " "
-	OnGoto Choice RockGoBack StepOnTeleporter ThrowRock
+    Scratch10 = Menu("GO BACK", "MOVE ON", "THROW A ROCK")
+    Text(" ")
+    goto [RockGoBack, StepOnTeleporter, ThrowRock][Scratch10]
 
 RockGoBack:
-	Scratch1 = 8
-	Goto MoveToTableSpot
+    Scratch1 = 8
+    goto MoveToTableSpot
 
 ThrowRock:
-	PrintClear "YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!"
-	Gosub WaitReturnPressed
-	PrintClear " "
-	Gosub ToggleTeleporter
-	TeleporterRockFlags |= TeleporterKnown
-	Goto RockRoomMenu
+    Text("YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!")
+    WaitReturnPressed()
+    Text(" ")
+    ToggleTeleporter()
+    TeleporterRockFlags |= TeleporterKnown
+    goto RockRoomMenu
 
-ToggleTeleporter:
-	if TeleporterRockFlags lacks RocksThrown: Goto SetTeleporterBit
-	TeleporterRockFlags &= ~RocksThrown
-	Return
+def ToggleTeleporter() {
+    if TeleporterRockFlags lacks RocksThrown { goto SetTeleporterBit }
+    TeleporterRockFlags &= ~RocksThrown
+    return
 
-SetTeleporterBit:
-	TeleporterRockFlags |= RocksThrown
-	Return
+    SetTeleporterBit:
+    TeleporterRockFlags |= RocksThrown
+    return
+}
 
 TeleporterSquare:
-	Gosub TeleportFlash
-	Scratch10 = Cell & 31
-	if Scratch10 == 17: Goto ExitToArea23
-	Goto MoveToTableSpot
+    TeleportFlash()
+    Scratch10 = Cell & 31
+    if Scratch10 == 17 { goto ExitToArea23 }
+    goto MoveToTableSpot
 
 RandomEncounter:
-	if PartyX == 15: Exit
-	Scratch3 = SouthGroupsBeaten
-	if PartyY < 8: Scratch3 = NorthGroupsBeaten
-	Scratch10 = 2
-	if Search == 0: Scratch10 = 20
-	Scratch10 = Random Scratch10
-	if Scratch10 != 0: Exit
-	Scratch7 = Random 5
-	Scratch10 = Table9CA0[Scratch7]
-	if Scratch3 has Scratch10: Exit
+    if PartyX == 15 { exit }
+    Scratch3 = SouthGroupsBeaten
+    if PartyY < 8 { Scratch3 = NorthGroupsBeaten }
+    Scratch10 = 2
+    if Search == NotSearching { Scratch10 = 20 }
+    Scratch10 = Random(Scratch10)
+    if Scratch10 != 0 { exit }
+    Scratch7 = Random(5)
+    Scratch10 = Table9CA0[Scratch7]
+    if Scratch3 has Scratch10 { exit }
 
 StartGroupEncounter:
-	Scratch6 = Scratch7
-	if PartyY < 8: Scratch7 += 7
-	Gosub LoadGroupData
-	PartySurprise Scratch4 Scratch5
-	Scratch3 = 2
-	Surprise Scratch4 Scratch5 AuxMonster AuxEncResult
-	OnGosub Surprise SayYouSee SaySurprisedBy SayYouSurprise SayYouSee
-	Print $AuxTemp9
-	Gosub WaitReturnPressed
-	OnGoto AuxEncResult2 FriendlyGroupMenu HungryGroupMenu FlyingGroupMenu
+    Scratch6 = Scratch7
+    if PartyY < 8 { Scratch7 += 7 }
+    LoadGroupData()
+    PartySurprise(Scratch4, Scratch5)
+    Scratch3 = 2
+    Surprise(Scratch4, Scratch5, AuxMonster, AuxEncResult)
+    gosub [SayYouSee, SaySurprisedBy, SayYouSurprise, SayYouSee][Surprise]
+    Print($AuxTemp9)
+    WaitReturnPressed()
+    goto [FriendlyGroupMenu, HungryGroupMenu, FlyingGroupMenu][AuxEncResult2]
 
 SayYouSee:
-	PrintClear "YOU SEE"
-	Return
+    Text("YOU SEE")
+    return
 
-SaySurprisedBy:
-	PrintClear "YOU ARE SURPRISED BY"
-	AuxMenuChoice = AuxMenuChoice + 3
-	Scratch3 = 0
-	Return
+def SaySurprisedBy() {
+    Text("YOU ARE SURPRISED BY")
+    AuxMenuChoice = AuxMenuChoice + 3
+    Scratch3 = 0
+    return
+}
 
-SayYouSurprise:
-	PrintClear "YOU SURPRISE"
-	AuxMenuChoice -= 3
-	Return
+def SayYouSurprise() {
+    Text("YOU SURPRISE")
+    AuxMenuChoice -= 3
+    return
+}
 
 FriendlyGroupMenu:
-	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Talk near="THEY SMILE AT YOU." mid="THEY WAVE AND SAY 'SAVED!'" far="THE LEADER WAVES AND CALLS TO YOU." escape=AuxMenuChoice strength=AuxMenuChoice
-	Goto EncounterOutcome
+    EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
+        wait=3, flee=Attack, advance=3, parlay=Talk, near="THEY SMILE AT YOU.",
+        mid="THEY WAVE AND SAY 'SAVED!'", far="THE LEADER WAVES AND CALLS TO YOU.",
+        escape=AuxMenuChoice, strength=AuxMenuChoice)
+    goto EncounterOutcome
 
 HungryGroupMenu:
-	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="ONE LICKS ITS LIPS." escape=AuxMenuChoice strength=AuxMenuChoice
-	Goto EncounterOutcome
+    EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
+        wait=3, flee=Attack, advance=3, parlay=Attack, near="ONE LICKS ITS LIPS.",
+        escape=AuxMenuChoice, strength=AuxMenuChoice)
+    goto EncounterOutcome
 
 FlyingGroupMenu:
-	EncounterMenu AuxPartyStrength distance=Scratch3 closeup=AuxCounter result=Scratch3 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack near="THEY FLY TOWARD YOU." escape=AuxMenuChoice strength=AuxMenuChoice
+    EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
+        wait=3, flee=Attack, advance=3, parlay=Attack, near="THEY FLY TOWARD YOU.",
+        escape=AuxMenuChoice, strength=AuxMenuChoice)
 
 EncounterOutcome:
-	Portrait = None
-	if Scratch3 == 3: Surprise = PartyIsSurprised
-	OnGoto Scratch3 Done FightGroup FleeEncounter FightGroup
+    Portrait = None
+    if Scratch3 == 3 { Surprise = PartyIsSurprised }
+    goto [Done, FightGroup, FleeEncounter, FightGroup][Scratch3]
 
 FleeEncounter:
-	if PartyY < 8: Goto FleeNorth
-	Goto FleeSouth
+    if PartyY < 8 { goto FleeNorth }
+    goto FleeSouth
 
 FightGroup:
-	ClearMonsters
-	LoadMonster AuxEncTemp count=AuxMember icon=AuxRoll
-	Combat
-	if CombatEnd == PartyFled: Goto FleeEncounter
-	Scratch7 = Table9CA0[Scratch6]
-	if PartyY < 8: Goto MarkNorthBeaten
-	SouthGroupsBeaten |= Scratch7
-	Exit
+    ClearMonsters()
+    LoadMonster(AuxEncTemp, count=AuxMember, icon=AuxRoll)
+    Combat()
+    if CombatEnd == PartyFled { goto FleeEncounter }
+    Scratch7 = Table9CA0[Scratch6]
+    if PartyY < 8 { goto MarkNorthBeaten }
+    SouthGroupsBeaten |= Scratch7
+    exit
 
-MarkNorthBeaten:
-	NorthGroupsBeaten |= Scratch7
-	Exit
+    MarkNorthBeaten:
+    NorthGroupsBeaten |= Scratch7
+    exit
 
 ForcedEncounter:
-	Scratch3 = SouthGroupsBeaten
-	if PartyY < 8: Scratch3 = NorthGroupsBeaten
+    Scratch3 = SouthGroupsBeaten
+    if PartyY < 8 { Scratch3 = NorthGroupsBeaten }
 
-PickUnbeatenGroup:
-	Scratch7 = Random 5
-	Scratch10 = Table9CA0[Scratch7]
-	if Scratch3 has Scratch10: Goto PickUnbeatenGroup
-	Goto StartGroupEncounter
+    PickUnbeatenGroup:
+    Scratch7 = Random(5)
+    Scratch10 = Table9CA0[Scratch7]
+    if Scratch3 has Scratch10 { goto PickUnbeatenGroup }
+    goto StartGroupEncounter
 
-LoadGroupData:
-	alias GroupCount = AuxMember
-	alias GroupMonster = AuxEncTemp
-	alias GroupSurpriseTable1Entry = AuxMonster
-	alias GroupSurpriseTable2Entry = AuxEncResult
-	alias GroupTable0Entry = AuxCounter
-	alias GroupTable1Entry = AuxMenuChoice
-	alias GroupTable3Entry = AuxRoll
-	alias GroupTable6Entry = AuxEncResult2
-	alias GroupTable8Entry = AuxPartyStrength
-	GroupTable0Entry = GroupTable0[Scratch7]
-	GroupTable1Entry = GroupTable1[Scratch7]
-	GroupCount = GroupCountTable[Scratch7]
-	GroupTable3Entry = GroupTable3[Scratch7]
-	GroupSurpriseTable1Entry = GroupSurpriseTable1[Scratch7]
-	GroupSurpriseTable2Entry = GroupSurpriseTable2[Scratch7]
-	GroupTable6Entry = GroupTable6[Scratch7]
-	GroupMonster = GroupMonsterTable[Scratch7]
-	GroupTable8Entry = GroupTable8[Scratch7]
-	Portrait = GroupPortraitTable[Scratch7]
-	Morale = 100
-	OnGoto Scratch7 HumanFightersText DisplacerBeastsText DwarvenFightersText LizardMenText DridersText GauntMenText GroupTextDone InsectsText DridersText BullMenText ElvesText KoboldsText HumanFightersText
+def LoadGroupData() {
+    AuxCounter = GroupTable0[Scratch7]
+    AuxMenuChoice = GroupTable1[Scratch7]
+    AuxMember = GroupCountTable[Scratch7]
+    AuxRoll = GroupTable3[Scratch7]
+    AuxMonster = GroupSurpriseTable1[Scratch7]
+    AuxEncResult = GroupSurpriseTable2[Scratch7]
+    AuxEncResult2 = GroupTable6[Scratch7]
+    AuxEncTemp = GroupMonsterTable[Scratch7]
+    AuxPartyStrength = GroupTable8[Scratch7]
+    Portrait = GroupPortraitTable[Scratch7]
+    Morale = 100
+    goto [HumanFightersText, DisplacerBeastsText, DwarvenFightersText, LizardMenText, DridersText,
+        GauntMenText, GroupTextDone, InsectsText, DridersText, BullMenText, ElvesText, KoboldsText,
+        HumanFightersText][Scratch7]
+} # falls into HumanFightersText
 
 HumanFightersText:
-	$AuxTemp9 = " A BAND OF HUMAN FIGHTERS."
-	Return
+    $AuxTemp9 = " A BAND OF HUMAN FIGHTERS."
+    return
 
 DisplacerBeastsText:
-	$AuxTemp9 = " DISPLACER BEASTS."
-	Return
+    $AuxTemp9 = " DISPLACER BEASTS."
+    return
 
 DwarvenFightersText:
-	$AuxTemp9 = " DWARVEN FIGHTERS."
-	Return
+    $AuxTemp9 = " DWARVEN FIGHTERS."
+    return
 
 LizardMenText:
-	$AuxTemp9 = " A TRIO OF LIZARD MEN."
-	Return
+    $AuxTemp9 = " A TRIO OF LIZARD MEN."
+    return
 
 DridersText:
-	$AuxTemp9 = " VISCIOUS LOOKING DRIDERS."
-	Return
+    $AuxTemp9 = " VISCIOUS LOOKING DRIDERS."
+    return
 
 GauntMenText:
-	$AuxTemp9 = " SOME GAUNT MEN IN POORLY FITTING LEATHER."
+    $AuxTemp9 = " SOME GAUNT MEN IN POORLY FITTING LEATHER."
 
 GroupTextDone:
-	Return
+    return
 
 InsectsText:
-	$AuxTemp9 = " LARGE INSECTS WITH RUSTY RED FEATHERS."
-	Return
+    $AuxTemp9 = " LARGE INSECTS WITH RUSTY RED FEATHERS."
+    return
 
 BullMenText:
-	$AuxTemp9 = " SOME LARGE BULL HEADED MEN."
-	Return
+    $AuxTemp9 = " SOME LARGE BULL HEADED MEN."
+    return
 
 ElvesText:
-	$AuxTemp9 = " A GROUP OF EMACIATED ELVES."
-	Return
+    $AuxTemp9 = " A GROUP OF EMACIATED ELVES."
+    return
 
 KoboldsText:
-	$AuxTemp9 = " SOME HUNGRY LOOKING KOBOLDS."
-	Return
-
-GroupTable8:
-	Data 15 68 13 57 69 11 12 61 69 62 24 0 15
-
-GroupTable0:
-	Data 6 68 6 57 69 8 30 61 69 62 2 0 6
-
-GroupMonsterTable:
-	Data 75 68 76 57 69 77 78 61 69 62 79 123 80
-
-GroupTable1:
-	Data 6 15 6 6 12 12 9 18 12 12 12 9 9
-
-GroupCountTable:
-	Data 3 3 3 3 3 3 1 20 3 3 3 3 3
-
-GroupTable3:
-	Data 11 68 11 57 69 12 13 61 69 62 14 0 11
-
-GroupSurpriseTable1:
-	Data 0 0 0 0 0 0 0 0 0 0 2 0 0
-
-GroupSurpriseTable2:
-	Data 0 0 0 0 0 0 0 0 0 1 0 0 0
-
-GroupTable6:
-	Data 0 1 0 1 1 0 0 2 1 1 0 1 0
-
-GroupPortraitTable:
-	Data 57 255 13 255 255 6 16 255 255 255 11 255 54
+    $AuxTemp9 = " SOME HUNGRY LOOKING KOBOLDS."
+    return
 
 LeaveToArea26:
-	NewECL Wilderness
+    NewECL(Wilderness)
 
 TeleportToArea23:
-	TeleporterRockFlags |= RocksThrown
-	PartyX = 4
-	PartyY = 15
-	Facing = North
-	NewECL LizardManVillage
+    TeleporterRockFlags |= RocksThrown
+    PartyX = 4
+    PartyY = 15
+    Facing = North
+    NewECL(LizardManVillage)
 
 ExitToArea23:
-	PartyX = 0
-	PartyY = 12
-	Facing = North
-	NewECL LizardManVillage
+    PartyX = 0
+    PartyY = 12
+    Facing = North
+    NewECL(LizardManVillage)
+
+# tables
+DestX = [5, 1, 8, 9, 0, 1, 8, 11, 15, 12]
+DestY = [11, 10, 14, 8, 0, 3, 6, 1, 7, 15]
+DestFacing = [3, 2, 1, 2, 2, 1, 0, 0, 1, 3, 17, 128, 12, 16, 248, 25, 61, 88, 20, 4, 177, 96, 37, 79, 192]
+Table9B1B = [0, 1, 2, 3, 0, 1, 2]
+ByFacing9B22 = [0, 3, 2, 1]
+Table9B91 = [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 6]
+Table9BA4 = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 0, 0, 4, 0, 0]
+Table9C95 = [0, 2, 2, 1, 1, 1, 1, 0, 3, 3, 3]
+Table9CA0 = [1, 2, 4, 8, 16, 32, 64, 4, 8, 32, 64]
+GroupTable8 = [15, 68, 13, 57, 69, 11, 12, 61, 69, 62, 24, 0, 15]
+GroupTable0 = [6, 68, 6, 57, 69, 8, 30, 61, 69, 62, 2, 0, 6]
+GroupMonsterTable = [75, 68, 76, 57, 69, 77, 78, 61, 69, 62, 79, 123, 80]
+GroupTable1 = [6, 15, 6, 6, 12, 12, 9, 18, 12, 12, 12, 9, 9]
+GroupCountTable = [3, 3, 3, 3, 3, 3, 1, 20, 3, 3, 3, 3, 3]
+GroupTable3 = [11, 68, 11, 57, 69, 12, 13, 61, 69, 62, 14, 0, 11]
+GroupSurpriseTable1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0]
+GroupSurpriseTable2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
+GroupTable6 = [0, 1, 0, 1, 1, 0, 0, 2, 1, 1, 0, 1, 0]
+GroupPortraitTable = [57, 255, 13, 255, 255, 6, 16, 255, 255, 255, 11, 255, 54]

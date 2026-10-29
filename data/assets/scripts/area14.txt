@@ -1,713 +1,734 @@
-event0:
-	Scratch8 = 11
-	if Hours >= 14: Scratch8 = 8
-	Sky = Scratch8
-	SkyInside = 10
-	if LeftMap == 0: Exit
-	OnGoto Facing ExitNorthToSlums ExitEastToSlums ExitSouth ExitWest
+on move {
+    Scratch8 = 11
+    if Hours >= 14 { Scratch8 = 8 }
+    Sky = Scratch8
+    SkyInside = 10
+    if LeftMap == 0 { exit }
+    goto [ExitNorthToSlums, ExitEastToSlums, ExitSouth, ExitWest][Facing]
+} # falls into ExitNorthToSlums
 
 ExitNorthToSlums:
-	SetMapXY 13 26
-	EnterArea Wilderness
+    MapX = 13
+    MapY = 26
+    EnterArea(Wilderness)
 
 ExitEastToSlums:
-	SetMapXY 13 27
-	EnterArea Wilderness
+    MapX = 13
+    MapY = 27
+    EnterArea(Wilderness)
 
 ExitSouth:
-	Call CallStepForward
-	EnterArea TempleOfBane
+    CallStepForward()
+    EnterArea(TempleOfBane)
 
 ExitWest:
-	Exit
+    exit
 
-event1:
-	Scratch7 = Cell & 127
-	OnGoto Scratch7 Done BackstabThief BackstabThief DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare LootRoom LootRoom LootRoom LootRoom LootRoom LootRoom ThievesFlee ThiefAmbush FloorFiles JailCell SlateMazeNW MapMazeNE
+on step {
+    Scratch7 = Cell & ~Inside
+    goto [Done, BackstabThief, BackstabThief, DoorTrapSquare, DoorTrapSquare, DoorTrapSquare,
+        DoorTrapSquare, DoorTrapSquare, DoorTrapSquare, LootRoom, LootRoom, LootRoom, LootRoom,
+        LootRoom, LootRoom, ThievesFlee, ThiefAmbush, FloorFiles, JailCell, SlateMazeNW, MapMazeNE][Scratch7]
+} # falls into DoorTrapSquare
 
 DoorTrapSquare:
-	alias TrapSquareDoneEntry = Scratch10
-	Scratch9 = Scratch7 - 3
-	TrapSquareDoneEntry = TrapSquareDone[Scratch9]
-	if TrapSquareDoneEntry == 1: Goto Done
-	if TrapSquareDone6 == 0: Goto DoorTrapCheck
-	if Scratch9 == 3: Goto DoorTrapOutcome
+    Scratch9 = Scratch7 - 3
+    Scratch10 = TrapSquareDone[Scratch9]
+    if Scratch10 == 1 { goto Done }
+    if TrapSquareDone6 == 0 { goto DoorTrapCheck }
+    if Scratch9 == 3 { goto DoorTrapOutcome }
 
-DoorTrapCheck:
-	Gosub CheckTrap
+    DoorTrapCheck:
+    CheckTrap()
 
-DoorTrapOutcome:
-	OnGoto TrapResult DoorTrapSprung Done DoorTrapDisarmed
+    DoorTrapOutcome:
+    goto [DoorTrapSprung, Done, DoorTrapDisarmed][TrapResult]
 
 DoorTrapDisarmed:
-	TrapSquareDone[Scratch9] = 1
-	if TrapSquareDone6 != 0: TrapSquareDone3 = 2
-	Goto Done
+    TrapSquareDone[Scratch9] = 1
+    if TrapSquareDone6 != 0 { TrapSquareDone3 = 2 }
+    goto Done
 
 DoorTrapSprung:
-	OnGosub Scratch9 ScythingBlade PoisonGasGlass ScythingBlade ScythingBlade BladedNet ScythingBlade
-	TrapSquareDone[Scratch9] = 1
-	Goto Done
+    gosub [ScythingBlade, PoisonGasGlass, ScythingBlade, ScythingBlade, BladedNet, ScythingBlade][Scratch9]
+    TrapSquareDone[Scratch9] = 1
+    goto Done
 
-ScythingBlade:
-	PrintClear "A SCYTHING BLADE DROPS ACROSS THE DOORWAY, DAMAGING ONE OF THE CHARACTERS."
-	Delay
-	Damage 1 1 6 0 60
-	Return
+def ScythingBlade() {
+    Text("A SCYTHING BLADE DROPS ACROSS THE DOORWAY, DAMAGING ONE OF THE CHARACTERS.")
+    Delay()
+    Damage(1, 1, 6, 0, 60)
+    return
+}
 
-PoisonGasGlass:
-	PrintClear "THE PARTY HEARS THE CRACKING OF GLASS.  A POISONOUS GAS FILLS THE AIR!"
-	Delay
-	Damage 129 1 3 0 0
-	Return
+def PoisonGasGlass() {
+    Text("THE PARTY HEARS THE CRACKING OF GLASS.  A POISONOUS GAS FILLS THE AIR!")
+    Delay()
+    Damage(129, 1, 3, 0, 0)
+    return
+}
 
-BladedNet:
-	PrintClear "AFTER THE PARTY ENTERS THE ROOM A NET LACED WITH SHARP BLADES FALLS ON THE PARTY."
-	Delay
-	Damage 129 1 6 0 4
-	Return
+def BladedNet() {
+    Text("AFTER THE PARTY ENTERS THE ROOM A NET LACED WITH SHARP BLADES FALLS ON THE PARTY.")
+    Delay()
+    Damage(129, 1, 6, 0, 4)
+    return
+}
 
 BackstabThief:
-	alias Choice = Scratch4
-	if QuestKovelThieves != 0: Goto Done
-	if Scratch7 == LastBackstabCell: Goto Done
-	if ThievesKilled >= 21: Goto Done
-	Portrait = Moustached
-	SetupMonster Swordsman11 distance=2 body=RogueDagger
-	Delay
-	Approach
-	Delay
-	Approach
-	LastBackstabCell = Scratch7
-	PrintClear "AS YOU ENTER THE ROOM A THIEF WITH A SWORD COMES OUT OF NOWHERE"
-	Scratch1 = Random 99
-	if ThievesKilled >= 12: Scratch1 -= 5
-	if Scratch1 < 30: Goto ThiefBackstabs
-	Print ".  HE TRIES TO ATTACK THE PARTY BUT YOU STOP HIM.  WHAT WILL YOU DO?"
-	Choice = Menu "ATTACK HIM" -> AttackThief "LET HIM GO" -> Done
+    if QuestKovelThieves != 0 { goto Done }
+    if Scratch7 == LastBackstabCell { goto Done }
+    if ThievesKilled >= 21 { goto Done }
+    Portrait = Moustached
+    SetupMonster(Swordsman11, distance=2, body=RogueDagger)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    LastBackstabCell = Scratch7
+    Text("AS YOU ENTER THE ROOM A THIEF WITH A SWORD COMES OUT OF NOWHERE")
+    Scratch1 = Random(99)
+    if ThievesKilled >= 12 { Scratch1 -= 5 }
+    if Scratch1 < 30 { goto ThiefBackstabs }
+    Print(".  HE TRIES TO ATTACK THE PARTY BUT YOU STOP HIM.  WHAT WILL YOU DO?")
+    Scratch4 = Menu("ATTACK HIM", "LET HIM GO")
+    goto [AttackThief, Done][Scratch4]
 
-ThiefBackstabs:
-	Print ", BACKSTABS A PARTY MEMBER THEN DISAPPEARS THROUGH THE WALL."
-	Delay
-	Scratch1 = 2
-	if ThievesKilled >= 12: Scratch1 = 3
-	Damage 1 Scratch1 8 0 70
-	Goto Done
+    ThiefBackstabs:
+    Print(", BACKSTABS A PARTY MEMBER THEN DISAPPEARS THROUGH THE WALL.")
+    Delay()
+    Scratch1 = 2
+    if ThievesKilled >= 12 { Scratch1 = 3 }
+    Damage(1, Scratch1, 8, 0, 70)
+    goto Done
 
 AttackThief:
-	ClearMonsters
-	Morale = 30
-	if ThievesKilled >= 18: LoadMonster ThLvlThief51 count=1 icon=12
-	also if ThievesKilled < 18: LoadMonster StLvlThief count=1 icon=12
-	Combat
-	if CombatEnd > PartyDied: Goto FleeBack
-	ThievesKilled += 1
-	Goto Done
+    ClearMonsters()
+    Morale = 30
+    if ThievesKilled >= 18 {
+        LoadMonster(ThLvlThief51, count=1, icon=12)
+    } else {
+        LoadMonster(StLvlThief, count=1, icon=12)
+    }
+    Combat()
+    if CombatEnd > PartyDied { goto FleeBack }
+    ThievesKilled += 1
+    goto Done
 
 LootRoom:
-	alias LootRoomDoneEntry = Scratch10
-	Scratch9 = Scratch7 - 9
-	LootRoomDoneEntry = LootRoomDone[Scratch9]
-	if LootRoomDoneEntry == 1: Goto Done
-	OnGoto Scratch9 LootPile CabinetsMenu RugsAndTapestries WoodenCabinet CasketTable WeaponPile
+    Scratch9 = Scratch7 - 9
+    Scratch10 = LootRoomDone[Scratch9]
+    if Scratch10 == 1 { goto Done }
+    goto [LootPile, CabinetsMenu, RugsAndTapestries, WoodenCabinet, CasketTable, WeaponPile][Scratch9]
 
 LootPile:
-	Scratch1 = RoomsLooted & LootPileTaken
-	if 0 != Scratch1: Goto Done
-	PrintClear "PILED HERE IS VARIOUS LOOT.  THERE IS A WIDE VARIETY OF NICK NACKS FROM TARNISHED BRONZE CANDLESTICKS TO ONE OR TWO USEFUL ITEMS."
-	Delay
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 56 // Electrum Decanter, Silver Scarab, Incense, Silver Mirror, Leather Armor +4, Short Sword +2
-	Combat
-	RoomsLooted = LootPileTaken | RoomsLooted
-	Goto Done
+    Scratch1 = RoomsLooted & LootPileTaken
+    if Scratch1 != 0 { goto Done }
+    Text("PILED HERE IS VARIOUS LOOT.  THERE IS A WIDE VARIETY OF NICK NACKS FROM TARNISHED BRONZE CANDLESTICKS TO ONE OR TWO USEFUL ITEMS.")
+    Delay()
+    ClearMonsters()
+    Treasure(items=[ElectrumDecanter, SilverScarab, Incense, SilverMirror, LeatherArmor4, ShortSword2])
+    Combat()
+    RoomsLooted = LootPileTaken | RoomsLooted
+    goto Done
 
 CabinetsMenu:
-	alias Choice = Scratch10
-	PrintClear "IN FRONT OF YOU ARE THREE CABINETS.  WHICH ONE WILL YOU EXAMINE?"
-	Choice = Menu "A" -> CabinetA "B" -> CabinetB "C" -> CabinetC "LEAVE" -> Done
-	if CabinetALock == Looted: Goto Done
-	if CabinetBLock == Looted: Goto Done
-	if CabinetCLock == Looted: Goto Done
-	Goto Done
+    Text("IN FRONT OF YOU ARE THREE CABINETS.  WHICH ONE WILL YOU EXAMINE?")
+    Scratch10 = Menu("A", "B", "C", "LEAVE")
+    goto [CabinetA, CabinetB, CabinetC, Done][Scratch10]
+    if CabinetALock == Looted { goto Done }
+    if CabinetBLock == Looted { goto Done }
+    if CabinetCLock == Looted { goto Done }
+    goto Done
 
 CabinetA:
-	if CabinetALock == Looted: Goto CabinetEmpty
-	Scratch2 = 0
-	Gosub LockedMenu
-	if CabinetALock != 0: Goto CabinetsMenu
-	PrintClear "INSIDE THE CABINET YOU FIND SOME FILES.  YOU STUFF THE PAPERS INTO YOUR JOURNAL UNDER ENTRIES 23 AND 14."
-	Delay
-	CabinetALock = Looted
-	Goto CabinetsMenu
+    if CabinetALock == Looted { goto CabinetEmpty }
+    Scratch2 = 0
+    LockedMenu()
+    if CabinetALock != 0 { goto CabinetsMenu }
+    Text("INSIDE THE CABINET YOU FIND SOME FILES.  YOU STUFF THE PAPERS INTO YOUR JOURNAL UNDER ENTRIES 23 AND 14.")
+    Delay()
+    CabinetALock = Looted
+    goto CabinetsMenu
 
 LockedMenu:
-	LockAttempt = 0
-	PrintClear "IT IS LOCKED.  HOW WILL YOU OPEN THE LOCK?"
+    LockAttempt = 0
+    Text("IT IS LOCKED.  HOW WILL YOU OPEN THE LOCK?")
 
 OpenLockMenu:
-	alias Choice = Scratch1
-	Choice = Menu "PICK" -> PickLock "BREAK" -> BreakLock "CAST KNOCK" -> CastKnock "LEAVE" -> LeaveLock
+    Scratch1 = Menu("PICK", "BREAK", "CAST KNOCK", "LEAVE")
+    goto [PickLock, BreakLock, CastKnock, LeaveLock][Scratch1]
 
 CastKnock:
-	Spell 31 Scratch5 Scratch6
-	if Scratch5 != 255: Goto KnockOpens
-	PrintClear "NO ONE IN THE PARTY HAS THE KNOCK SPELL!  HOW WILL YOU OPEN THE LOCK?"
-	Goto OpenLockMenu
+    Spell(31, Scratch5, Scratch6)
+    if Scratch5 != 255 { goto KnockOpens }
+    Text("NO ONE IN THE PARTY HAS THE KNOCK SPELL!  HOW WILL YOU OPEN THE LOCK?")
+    goto OpenLockMenu
 
-KnockOpens:
-	SelectMember Scratch6
-	SelMemorized[Scratch5] = 0
-	PrintClear $SelName
-	Print " CASTS A KNOCK SPELL AND OPENS THE LOCK."
-	Scratch6 += 128
-	SelectMember Scratch6
-	CabinetALock[Scratch2] = 0
-	Return
+    KnockOpens:
+    SelectMember(Scratch6)
+    SelMemorized[Scratch5] = 0
+    Text($SelName)
+    Print(" CASTS A KNOCK SPELL AND OPENS THE LOCK.")
+    Scratch6 += 128
+    SelectMember(Scratch6)
+    CabinetALock[Scratch2] = 0
+    return
 
 PickLock:
-	Scratch3 = CabinetALock[Scratch2]
-	if Scratch3 == 2: Goto LockTooComplex
-	Who "WHO WILL TRY TO PICK THE LOCK?"
-	Scratch1 = SelPickPockets
-	Scratch3 = Random 99
-	if Scratch3 >= Scratch1: Goto PickLockFails
-	PrintClear "YOU PICK THE LOCK!"
-	CabinetALock[Scratch2] = 0
-	Return
+    Scratch3 = CabinetALock[Scratch2]
+    if Scratch3 == 2 { goto LockTooComplex }
+    Who("WHO WILL TRY TO PICK THE LOCK?")
+    Scratch1 = SelPickPockets
+    Scratch3 = Random(99)
+    if Scratch3 >= Scratch1 { goto PickLockFails }
+    Text("YOU PICK THE LOCK!")
+    CabinetALock[Scratch2] = 0
+    return
 
-LockTooComplex:
-	PrintClear "YOU HAVE ALREADY TRIED TO PICK THIS LOCK AND HAVE FOUND THAT IT IS TOO COMPLEX FOR YOU TO HANDLE."
-	Delay
-	Goto LockedMenu
+    LockTooComplex:
+    Text("YOU HAVE ALREADY TRIED TO PICK THIS LOCK AND HAVE FOUND THAT IT IS TOO COMPLEX FOR YOU TO HANDLE.")
+    Delay()
+    goto LockedMenu
 
-PickLockFails:
-	PrintClear "YOU TRY TO PICK THE LOCK BUT IT IS TOO COMPLEX FOR YOU TO PICK.  YOU FAIL MISERABLY."
-	Delay
-	CabinetALock[Scratch2] = 2
-	Goto LockedMenu
+    PickLockFails:
+    Text("YOU TRY TO PICK THE LOCK BUT IT IS TOO COMPLEX FOR YOU TO PICK.  YOU FAIL MISERABLY.")
+    Delay()
+    CabinetALock[Scratch2] = 2
+    goto LockedMenu
 
 BreakLock:
-	PrintClear "WITH ONE MIGHTY SWING YOU SMASH OPEN THE LOCK MAKING ENOUGH NOISE TO WAKE THE DEAD."
-	Delay
-	CabinetALock[Scratch2] = 0
-	Return
+    Text("WITH ONE MIGHTY SWING YOU SMASH OPEN THE LOCK MAKING ENOUGH NOISE TO WAKE THE DEAD.")
+    Delay()
+    CabinetALock[Scratch2] = 0
+    return
 
 LeaveLock:
-	CabinetALock[Scratch2] = 3
-	Return
+    CabinetALock[Scratch2] = 3
+    return
 
 CabinetEmpty:
-	PrintClear "THIS CABINET IS EMPTY."
-	Goto CabinetsMenu
+    Text("THIS CABINET IS EMPTY.")
+    goto CabinetsMenu
 
 CabinetB:
-	if CabinetBLock == Looted: Goto CabinetEmpty
-	Scratch2 = 1
-	Gosub LockedMenu
-	if CabinetBLock != 0: Goto CabinetsMenu
-	PrintClear "INSIDE THE CABINET YOU FIND FIFTEEN SACKS FILLED WITH SILVER PIECES."
-	ClearMonsters
-	Treasure 0 #05DC 0 0 0 0 0 255
-	Combat
-	CabinetBLock = Looted
-	Goto CabinetsMenu
+    if CabinetBLock == Looted { goto CabinetEmpty }
+    Scratch2 = 1
+    LockedMenu()
+    if CabinetBLock != 0 { goto CabinetsMenu }
+    Text("INSIDE THE CABINET YOU FIND FIFTEEN SACKS FILLED WITH SILVER PIECES.")
+    ClearMonsters()
+    Treasure(silver=1500)
+    Combat()
+    CabinetBLock = Looted
+    goto CabinetsMenu
 
 CabinetC:
-	if CabinetCLock == Looted: Goto CabinetEmpty
-	Gosub CheckTrap
-	OnGoto TrapResult CabinetCNeedle CabinetCAvoidTrap CabinetCOpen
+    if CabinetCLock == Looted { goto CabinetEmpty }
+    CheckTrap()
+    goto [CabinetCNeedle, CabinetCAvoidTrap, CabinetCOpen][TrapResult]
 
 CabinetCOpen:
-	Scratch2 = 2
-	Gosub LockedMenu
-	if CabinetCLock != 0: Goto CabinetsMenu
-	PrintClear "INSIDE THE CABINET YOU FIND EIGHTEEN SACKS FILLED WITH GOLD PIECES."
-	ClearMonsters
-	Treasure 0 0 0 #0708 0 0 0 255
-	Combat
-	CabinetCLock = Looted
-	Goto CabinetsMenu
+    Scratch2 = 2
+    LockedMenu()
+    if CabinetCLock != 0 { goto CabinetsMenu }
+    Text("INSIDE THE CABINET YOU FIND EIGHTEEN SACKS FILLED WITH GOLD PIECES.")
+    ClearMonsters()
+    Treasure(gold=1800)
+    Combat()
+    CabinetCLock = Looted
+    goto CabinetsMenu
 
 CabinetCNeedle:
-	PrintClear "AS YOU TRY TO DEACTIVATE THE TRAP YOU MANAGE TO SET IT OFF.  A LARGE NEEDLE SHOOTS OUT OF A HIDDEN COMPARTMENT HITTING A PARTY MEMBER."
-	Delay
-	Damage 1 1 8 0 80
-	Goto CabinetCOpen
+    Text("AS YOU TRY TO DEACTIVATE THE TRAP YOU MANAGE TO SET IT OFF.  A LARGE NEEDLE SHOOTS OUT OF A HIDDEN COMPARTMENT HITTING A PARTY MEMBER.")
+    Delay()
+    Damage(1, 1, 8, 0, 80)
+    goto CabinetCOpen
 
 CabinetCAvoidTrap:
-	PrintClear "YOU AVOID THE TRAP BY NOT OPENNING THE CABINET."
-	Delay
-	Goto CabinetsMenu
+    Text("YOU AVOID THE TRAP BY NOT OPENNING THE CABINET.")
+    Delay()
+    goto CabinetsMenu
 
 RugsAndTapestries:
-	Scratch1 = 4 & RoomsLooted
-	if 0 > Scratch1: Goto Done
-	PrintClear "YOU SEE A WIDE COLLECTION OF RUGS AND TAPESTRIES.  TWO OF THEM LOOK EXTRAORDINARY WHILE THE OTHERS LOOK AVERAGE."
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 24 // 2 Fine Tapestry, 26 Huge Tapestry
-	Combat
-	RoomsLooted = Rugs | RoomsLooted
-	Goto Done
+    Scratch1 = Rugs & RoomsLooted
+    if Scratch1 < 0 { goto Done }
+    Text("YOU SEE A WIDE COLLECTION OF RUGS AND TAPESTRIES.  TWO OF THEM LOOK EXTRAORDINARY WHILE THE OTHERS LOOK AVERAGE.")
+    ClearMonsters()
+    Treasure(items=[FineTapestry*2, HugeTapestry*26])
+    Combat()
+    RoomsLooted = Rugs | RoomsLooted
+    goto Done
 
 WoodenCabinet:
-	Scratch1 = 8 & RoomsLooted
-	if Scratch1 > 0: Goto Done
-	PrintClear "IN FRONT OF YOU IS A WOODEN CABINET.  WHAT WILL YOU DO?"
-	Scratch1 = Menu "EXAMINE THE CABINET" -> ExamineCabinet "LEAVE IT" -> Done
+    Scratch1 = Scrolls & RoomsLooted
+    Compare(Scratch1, 0)
+    if Scratch1 > 0 { goto Done }
+    Text("IN FRONT OF YOU IS A WOODEN CABINET.  WHAT WILL YOU DO?")
+    Scratch1 = Menu("EXAMINE THE CABINET", "LEAVE IT")
+    goto [ExamineCabinet, Done][Scratch1]
 
 ExamineCabinet:
-	if ScrollCaseLock == Looted: Goto ScrollCabinetEmpty
-	Gosub CheckTrap
-	OnGoto TrapResult ScrollCabinetGas ScrollCabinetAvoidTrap ScrollCabinetOpen
+    if ScrollCaseLock == Looted { goto ScrollCabinetEmpty }
+    CheckTrap()
+    goto [ScrollCabinetGas, ScrollCabinetAvoidTrap, ScrollCabinetOpen][TrapResult]
 
 ScrollCabinetOpen:
-	Scratch2 = 3
-	Gosub LockedMenu
-	if ScrollCaseLock != 0: Goto WoodenCabinet
-	PrintClear "YOU FIND A WIDE VARIETY OF SCROLLS IN SCROLL CASES."
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 25 // Magic User Scroll With 3 Spells, Magic User Scroll With 3 Spells, Scale Armor, Stone Statuette, Clerical Scroll With 3 Spells, Clerical Scroll With 3 Spells, and 2 more
-	Combat
-	RoomsLooted = Scrolls | RoomsLooted
-	Goto Done
+    Scratch2 = 3
+    LockedMenu()
+    if ScrollCaseLock != 0 { goto WoodenCabinet }
+    Text("YOU FIND A WIDE VARIETY OF SCROLLS IN SCROLL CASES.")
+    ClearMonsters()
+    Treasure(items=[MagicUserScrollWith3Spells, MagicUserScrollWith3Spells, ScaleArmor, StoneStatuette, ClericalScrollWith3Spells, ClericalScrollWith3Spells, MagicUserScrollWith3Spells, MagicUserScrollWith3Spells])
+    Combat()
+    RoomsLooted = Scrolls | RoomsLooted
+    goto Done
 
 ScrollCabinetEmpty:
-	PrintClear "THIS CABINET IS EMPTY."
-	Goto WoodenCabinet
+    Text("THIS CABINET IS EMPTY.")
+    goto WoodenCabinet
 
 ScrollCabinetGas:
-	PrintClear "AS YOU ATTEMPT TO DISARM THE TRAP, IT GOES OFF IN YOUR FACE!  A CLOUD OF POISONOUS YELLOW GAS FILLS THE ROOM."
-	Delay
-	Damage 192 2 6 0 0
-	Goto ScrollCabinetOpen
+    Text("AS YOU ATTEMPT TO DISARM THE TRAP, IT GOES OFF IN YOUR FACE!  A CLOUD OF POISONOUS YELLOW GAS FILLS THE ROOM.")
+    Delay()
+    Damage(192, 2, 6, 0, 0)
+    goto ScrollCabinetOpen
 
 ScrollCabinetAvoidTrap:
-	PrintClear "YOU AVOID THE TRAP BY NOT OPENING THE CABINET!"
-	Delay
-	Goto WoodenCabinet
+    Text("YOU AVOID THE TRAP BY NOT OPENING THE CABINET!")
+    Delay()
+    goto WoodenCabinet
 
 CasketTable:
-	alias Choice = Scratch1
-	PrintClear "BEFORE YOU IS A TABLE WITH FOUR SMALL CASKETS ON TOP OF IT.  WHAT WILL YOU DO?"
-	Choice = Menu "SEARCH A CASKET" -> ChooseCasket "LEAVE" -> Done
+    Text("BEFORE YOU IS A TABLE WITH FOUR SMALL CASKETS ON TOP OF IT.  WHAT WILL YOU DO?")
+    Scratch1 = Menu("SEARCH A CASKET", "LEAVE")
+    goto [ChooseCasket, Done][Scratch1]
 
 ChooseCasket:
-	alias Choice = Scratch1
-	PrintClear "WHICH CASKET WILL YOU SEARCH?"
-	Choice = Menu "A" -> CasketA "B" -> CasketB "C" -> CasketC "D" -> CasketD
+    Text("WHICH CASKET WILL YOU SEARCH?")
+    Scratch1 = Menu("A", "B", "C", "D")
+    goto [CasketA, CasketB, CasketC, CasketD][Scratch1]
 
 CasketA:
-	Scratch1 = 1 & CasketsLooted
-	if 0 != Scratch1: Goto CasketEmpty
-	Gosub CheckTrap
-	OnGoto TrapResult CasketANeedle CasketAvoidTrap CasketAOpen
+    Scratch1 = GemsCasket & CasketsLooted
+    if Scratch1 != 0 { goto CasketEmpty }
+    CheckTrap()
+    goto [CasketANeedle, CasketAvoidTrap, CasketAOpen][TrapResult]
 
 CasketAOpen:
-	Scratch2 = 4
-	Gosub LockedMenu
-	if CasketGemsLock != 0: Goto CasketTable
-	CasketsLooted = GemsCasket | CasketsLooted
-	PrintClear "YOU FIND A POUCH OF SMALL GEMS."
-	ClearMonsters
-	Treasure 0 0 0 0 0 12 0 255
-	Combat
-	Goto Done
+    Scratch2 = 4
+    LockedMenu()
+    if CasketGemsLock != 0 { goto CasketTable }
+    CasketsLooted = GemsCasket | CasketsLooted
+    Text("YOU FIND A POUCH OF SMALL GEMS.")
+    ClearMonsters()
+    Treasure(gems=12)
+    Combat()
+    goto Done
 
 CasketANeedle:
-	PrintClear "AS YOU ATTEMPT TO DEACTIVATE THE TRAP YOU SET IT OFF.  A POSIONED NEEDLE SHOOTS OUT AND PLUNGES INTO A PARTY MEMBER."
-	Delay
-	Damage 129 1 4 0 0
-	Goto CasketAOpen
+    Text("AS YOU ATTEMPT TO DEACTIVATE THE TRAP YOU SET IT OFF.  A POSIONED NEEDLE SHOOTS OUT AND PLUNGES INTO A PARTY MEMBER.")
+    Delay()
+    Damage(129, 1, 4, 0, 0)
+    goto CasketAOpen
 
 CasketAvoidTrap:
-	PrintClear "YOU AVOID THE TRAP BY NOT OPENING THE CASKET."
-	Delay
-	Goto CasketTable
+    Text("YOU AVOID THE TRAP BY NOT OPENING THE CASKET.")
+    Delay()
+    goto CasketTable
 
 CasketB:
-	Scratch1 = 2 & CasketsLooted
-	if 0 != Scratch1: Goto CasketEmpty
-	Gosub CheckTrap
-	OnGoto TrapResult CasketBDart CasketAvoidTrap CasketBOpen
+    Scratch1 = JewelryCasket & CasketsLooted
+    if Scratch1 != 0 { goto CasketEmpty }
+    CheckTrap()
+    goto [CasketBDart, CasketAvoidTrap, CasketBOpen][TrapResult]
 
 CasketBOpen:
-	Scratch2 = 5
-	Gosub LockedMenu
-	if CasketJewelryLock != 0: Goto CasketTable
-	CasketsLooted = JewelryCasket | CasketsLooted
-	PrintClear "INSIDE THE CASKET IS A VARIETY OF GOLD CHAINS, PENDANTS AND JEWELRY."
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 1 255
-	Combat
-	Goto Done
+    Scratch2 = 5
+    LockedMenu()
+    if CasketJewelryLock != 0 { goto CasketTable }
+    CasketsLooted = JewelryCasket | CasketsLooted
+    Text("INSIDE THE CASKET IS A VARIETY OF GOLD CHAINS, PENDANTS AND JEWELRY.")
+    ClearMonsters()
+    Treasure(jewelry=1)
+    Combat()
+    goto Done
 
 CasketBDart:
-	PrintClear "AS YOU EXAMINE THE CASKET A TRAP GOES OFF.  A DART SHOOTS OUT AND HITS ONE OF THE PARTY MEMBERS."
-	Delay
-	Damage 160 1 3 0 0
-	Goto CasketBOpen
+    Text("AS YOU EXAMINE THE CASKET A TRAP GOES OFF.  A DART SHOOTS OUT AND HITS ONE OF THE PARTY MEMBERS.")
+    Delay()
+    Damage(160, 1, 3, 0, 0)
+    goto CasketBOpen
 
 CasketC:
-	Scratch1 = 4 & CasketsLooted
-	if 0 != Scratch1: Goto CasketEmpty
-	Gosub CheckTrap
-	OnGoto TrapResult CasketCPowder CasketAvoidTrap CasketCOpen
+    Scratch1 = BigGemsCasket & CasketsLooted
+    if Scratch1 != 0 { goto CasketEmpty }
+    CheckTrap()
+    goto [CasketCPowder, CasketAvoidTrap, CasketCOpen][TrapResult]
 
 CasketCOpen:
-	Scratch2 = 6
-	Gosub LockedMenu
-	if CasketBigGemsLock != 0: Goto CasketTable
-	CasketsLooted = BigGemsCasket | CasketsLooted
-	PrintClear "INSIDE THE CASKET ARE SOME BEAUTIFUL GEMS."
-	ClearMonsters
-	Treasure 0 0 0 0 0 3 0 255
-	Combat
-	Goto Done
+    Scratch2 = 6
+    LockedMenu()
+    if CasketBigGemsLock != 0 { goto CasketTable }
+    CasketsLooted = BigGemsCasket | CasketsLooted
+    Text("INSIDE THE CASKET ARE SOME BEAUTIFUL GEMS.")
+    ClearMonsters()
+    Treasure(gems=3)
+    Combat()
+    goto Done
 
 CasketCPowder:
-	PrintClear "AS YOU SEARCH THE CASKET, YOU ACCIDENTLY SET OFF A TRAP.  A NOXIOUS POWDER SPRAYS INTO THE AIR DAMAGING THE PARTY."
-	Delay
-	Damage 192 1 6 0 0
-	Goto CasketCOpen
+    Text("AS YOU SEARCH THE CASKET, YOU ACCIDENTLY SET OFF A TRAP.  A NOXIOUS POWDER SPRAYS INTO THE AIR DAMAGING THE PARTY.")
+    Delay()
+    Damage(192, 1, 6, 0, 0)
+    goto CasketCOpen
 
 CasketD:
-	Scratch1 = 8 & CasketsLooted
-	if 0 != Scratch1: Goto CasketEmpty
-	Gosub CheckTrap
-	OnGoto TrapResult CasketDDarts CasketAvoidTrap CasketDOpen
+    Scratch1 = PearlsCasket & CasketsLooted
+    if Scratch1 != 0 { goto CasketEmpty }
+    CheckTrap()
+    goto [CasketDDarts, CasketAvoidTrap, CasketDOpen][TrapResult]
 
 CasketDOpen:
-	Scratch2 = 7
-	Gosub LockedMenu
-	if CasketPearlsLock != 0: Goto CasketTable
-	PrintClear "THE CASKET IS FILLED WITH TINY PEARLS!"
-	ClearMonsters
-	Treasure 0 0 0 0 0 20 0 255
-	Combat
-	CasketsLooted |= PearlsCasket
-	Goto Done
+    Scratch2 = 7
+    LockedMenu()
+    if CasketPearlsLock != 0 { goto CasketTable }
+    Text("THE CASKET IS FILLED WITH TINY PEARLS!")
+    ClearMonsters()
+    Treasure(gems=20)
+    Combat()
+    CasketsLooted |= PearlsCasket
+    goto Done
 
 CasketDDarts:
-	PrintClear "AS YOU SEARCH THE CASKET YOU TRIGGER A TRAP.  FROM A SECRET COMPARTMENT IN THE WALL, A SHOWER OF DARTS RAINS DOWN UPON THE PARTY."
-	Delay
-	Damage 12 1 4 0 50
-	Goto CasketDOpen
+    Text("AS YOU SEARCH THE CASKET YOU TRIGGER A TRAP.  FROM A SECRET COMPARTMENT IN THE WALL, A SHOWER OF DARTS RAINS DOWN UPON THE PARTY.")
+    Delay()
+    Damage(12, 1, 4, 0, 50)
+    goto CasketDOpen
 
 CasketEmpty:
-	PrintClear "THIS CASKET IS EMPTY."
-	Goto CasketTable
+    Text("THIS CASKET IS EMPTY.")
+    goto CasketTable
 
 WeaponPile:
-	Scratch1 = RoomsLooted & WeaponPileTaken
-	if 0 != Scratch1: Goto Done
-	PrintClear "INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?"
-	Scratch1 = Menu "TAKE SOME" -> TakeWeapons "SEARCH THEM" -> SearchWeapons "LEAVE THEM" -> LeaveWeapons
+    Scratch1 = RoomsLooted & WeaponPileTaken
+    if Scratch1 != 0 { goto Done }
+    Text("INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?")
+    Scratch1 = Menu("TAKE SOME", "SEARCH THEM", "LEAVE THEM")
+    goto [TakeWeapons, SearchWeapons, LeaveWeapons][Scratch1]
 
 TakeWeapons:
-	if 0 == WeaponPileGasDone: Goto WeaponPileAmbush
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
-	Combat
-	RoomsLooted = WeaponPileTaken | RoomsLooted
-	Goto Done
+    if 0 == WeaponPileGasDone { goto WeaponPileAmbush }
+    ClearMonsters()
+    Treasure(items=[BroadSword2Cursed, ChainMail1, Shield2, ShortSword1, Scimitar1, MorningStar1, Hammer1, Dagger1, Dagger1])
+    Combat()
+    RoomsLooted = WeaponPileTaken | RoomsLooted
+    goto Done
 
 LeaveWeapons:
-	PrintClear "YOU LEAVE THE WEAPONS ALONE."
-	Delay
-	Goto Done
+    Text("YOU LEAVE THE WEAPONS ALONE.")
+    Delay()
+    goto Done
 
 SearchWeapons:
-	Gosub CheckTrap
-	OnGoto TrapResult WeaponPileAmbush WeaponTrapBypassed WeaponTrapDisarmed
+    CheckTrap()
+    goto [WeaponPileAmbush, WeaponTrapBypassed, WeaponTrapDisarmed][TrapResult]
 
 WeaponTrapDisarmed:
-	WeaponPileGasDone = 1
-	Goto TakeWeapons
+    WeaponPileGasDone = 1
+    goto TakeWeapons
 
 WeaponPileAmbush:
-	if ThievesKilled >= 18 {
-		WeaponPileGasDone = 1
-		Goto HarmlessGas
-	}
-	Portrait = WhiteHairedScowl
-	SetupMonster Swordsman11 distance=0 body=RogueDagger
-	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!"
-	Delay
-	Scratch1 = 5 + ThievesKilled
-	if Scratch1 >= 21: Goto AmbushManyMasters
-	if Scratch1 <= 12: Goto AmbushFewThieves
-	Scratch2 = Scratch1 - 12
-	Scratch3 = 5 - Scratch2
-	Goto AmbushFight
+    if ThievesKilled >= 18 {
+        WeaponPileGasDone = 1
+        goto HarmlessGas
+    }
+    Portrait = WhiteHairedScowl
+    SetupMonster(Swordsman11, distance=0, body=RogueDagger)
+    Text("AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!")
+    Delay()
+    Scratch1 = 5 + ThievesKilled
+    if Scratch1 >= 21 { goto AmbushManyMasters }
+    if Scratch1 <= 12 { goto AmbushFewThieves }
+    Scratch2 = Scratch1 - 12
+    Scratch3 = 5 - Scratch2
+    goto AmbushFight
 
-AmbushManyMasters:
-	Scratch2 = Scratch1 - 21
-	Scratch2 = 5 - Scratch2
-	Goto AmbushFight
+    AmbushManyMasters:
+    Scratch2 = Scratch1 - 21
+    Scratch2 = 5 - Scratch2
+    goto AmbushFight
 
-AmbushFewThieves:
-	Scratch3 = 5
-	Scratch2 = 0
+    AmbushFewThieves:
+    Scratch3 = 5
+    Scratch2 = 0
 
-AmbushFight:
-	Scratch1 = Random 3
-	Scratch1 += 2
-	Scratch10 = 0
-	ClearMonsters
-	Surprise = PartyIsSurprised
-	WeaponPileGasDone = 1
-	Treasure 0 0 0 0 0 0 0 27 // Broad Sword -2 Cursed, Chain Mail +1, Shield +2, Short Sword +1, Scimitar +1, Morning Star +1, and 3 more
-	if Scratch2 != 0: LoadMonster ThLvlThief51 count=Scratch2 icon=12
-	if Scratch3 != 0: LoadMonster StLvlThief count=Scratch3 icon=12
-	Combat
-	if CombatEnd > PartyDied: Goto FleeBack
-	ThievesKilled += Scratch2
-	ThievesKilled += Scratch3
-	RoomsLooted |= WeaponPileTaken
-	Goto Done
+    AmbushFight:
+    Scratch1 = Random(3)
+    Scratch1 += 2
+    Scratch10 = 0
+    ClearMonsters()
+    Surprise = PartyIsSurprised
+    WeaponPileGasDone = 1
+    Treasure(items=[BroadSword2Cursed, ChainMail1, Shield2, ShortSword1, Scimitar1, MorningStar1, Hammer1, Dagger1, Dagger1])
+    if Scratch2 != 0 { LoadMonster(ThLvlThief51, count=Scratch2, icon=12) }
+    if Scratch3 != 0 { LoadMonster(StLvlThief, count=Scratch3, icon=12) }
+    Combat()
+    if CombatEnd > PartyDied { goto FleeBack }
+    ThievesKilled += Scratch2
+    ThievesKilled += Scratch3
+    RoomsLooted |= WeaponPileTaken
+    goto Done
 
 WeaponTrapBypassed:
-	PrintClear "YOU BYPASS THE TRAP BY NOT FOOLING WITH ANY OF THE WEAPONS."
-	Delay
-	Goto WeaponPile
+    Text("YOU BYPASS THE TRAP BY NOT FOOLING WITH ANY OF THE WEAPONS.")
+    Delay()
+    goto WeaponPile
 
 HarmlessGas:
-	PrintClear "AS YOU NEAR THE PILE OF WEAPONS AN EXTREMELY BAD SMELLING GAS FILLS THE ROOM.  THE SMELL IS DISGUSTING BUT HARMLESS ENOUGH."
-	Delay
-	WeaponPileGasDone = 1
-	Goto WeaponPile
+    Text("AS YOU NEAR THE PILE OF WEAPONS AN EXTREMELY BAD SMELLING GAS FILLS THE ROOM.  THE SMELL IS DISGUSTING BUT HARMLESS ENOUGH.")
+    Delay()
+    WeaponPileGasDone = 1
+    goto WeaponPile
 
 ThievesFlee:
-	alias Choice = Scratch1
-	if ThiefChaseDone != 0: Goto Done
-	ThiefChaseDone = Completed
-	Portrait = BlueMohawk
-	SetupMonster Swordsman11 distance=0 body=RogueDagger
-	PrintClear "AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?"
-	Choice = Menu "YES" -> ChaseThieves "NO" -> Done
+    if ThiefChaseDone != 0 { goto Done }
+    ThiefChaseDone = Yes
+    Portrait = BlueMohawk
+    SetupMonster(Swordsman11, distance=0, body=RogueDagger)
+    Text("AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?")
+    Scratch1 = Menu("YES", "NO")
+    goto [ChaseThieves, Done][Scratch1]
 
 ChaseThieves:
-	Scratch6 = 0
+    Scratch6 = 0
 
 ChaseStep:
-	Scratch1 = ChaseSteps[Scratch6]
-	Facing = ChaseFacing[Scratch6]
-	Gosub WalkSteps
-	if Scratch6 == 3: Goto ThievesSplit
-	if Scratch6 == 11: Goto CatchGuildMaster
-	if Scratch6 == 15: Goto ChaseEnd
+    Scratch1 = ChaseSteps[Scratch6]
+    Facing = ChaseFacing[Scratch6]
+    WalkSteps()
+    if Scratch6 == 3 { goto ThievesSplit }
+    if Scratch6 == 11 { goto CatchGuildMaster }
+    if Scratch6 == 15 { goto ChaseEnd }
 
 ChaseNextStep:
-	Scratch6 += 1
-	Goto ChaseStep
+    Scratch6 += 1
+    goto ChaseStep
 
 ThievesSplit:
-	alias Choice = Scratch1
-	PrintClear "AS YOU ENTER THIS ROOM THE TWO THIEVES SPLIT; ONE GOING THROUGH THE EAST DOOR, THE OTHER GOING THROUGH THE SOUTH.  WHICH PATH WILL YOU TAKE?"
-	Choice = Menu "SOUTH" -> ChaseSouth "EAST" -> ChaseNextStep "DON'T FOLLOW" -> Done
+    Text("AS YOU ENTER THIS ROOM THE TWO THIEVES SPLIT; ONE GOING THROUGH THE EAST DOOR, THE OTHER GOING THROUGH THE SOUTH.  WHICH PATH WILL YOU TAKE?")
+    Scratch1 = Menu("SOUTH", "EAST", "DON'T FOLLOW")
+    goto [ChaseSouth, ChaseNextStep, Done][Scratch1]
 
 ChaseSouth:
-	Scratch6 += 8
-	Goto ChaseNextStep
+    Scratch6 += 8
+    goto ChaseNextStep
 
 CatchGuildMaster:
-	alias Choice = Scratch1
-	Portrait = BlueMohawk
-	SetupMonster Swordsman11 distance=0 body=RogueDagger
-	PrintClear "YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?"
-	Choice = Menu "ATTACK" -> AttackThief "RELEASE" -> ReleaseGuildMaster
+    Portrait = BlueMohawk
+    SetupMonster(Swordsman11, distance=0, body=RogueDagger)
+    Text("YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?")
+    Scratch1 = Menu("ATTACK", "RELEASE")
+    goto [AttackThief, ReleaseGuildMaster][Scratch1]
 
 ReleaseGuildMaster:
-	PrintClear "AFTER YOU RELEASE HIM THE THIEF SLOWLY WALKS TOWARD THE FAR DOOR THANKING YOU ALL THE WAY.  PARTWAY THROUGH THE DOOR HE SAYS, 'SUCKERS', THEN SPRINTS AWAY."
-	Goto Done
+    Text("AFTER YOU RELEASE HIM THE THIEF SLOWLY WALKS TOWARD THE FAR DOOR THANKING YOU ALL THE WAY.  PARTWAY THROUGH THE DOOR HE SAYS, 'SUCKERS', THEN SPRINTS AWAY.")
+    goto Done
 
 ChaseEnd:
-	if ThievesKilled > 15: Goto CatchGuildMaster
+    if ThievesKilled > 15 { goto CatchGuildMaster }
 
 ThiefAmbush:
-	if GuildAmbushDone != 0: Goto Done
-	Portrait = BlueMohawk
-	SetupMonster Swordsman11 distance=0 body=RogueDagger
-	PrintClear "AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES."
-	Surprise = PartyIsSurprised
-	Morale = 60
-	ClearMonsters
-	LoadMonster StLvlThief count=15 icon=12
-	LoadMonster ThLvlThief51 count=3 icon=12
-	Combat
-	if CombatEnd > PartyDied: Goto FleeBack
-	ThievesKilled += 15
-	GuildAmbushDone = 1
-	Goto Done
+    if GuildAmbushDone != 0 { goto Done }
+    Portrait = BlueMohawk
+    SetupMonster(Swordsman11, distance=0, body=RogueDagger)
+    Text("AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES.")
+    Surprise = PartyIsSurprised
+    Morale = 60
+    ClearMonsters()
+    LoadMonster(StLvlThief, count=15, icon=12)
+    LoadMonster(ThLvlThief51, count=3, icon=12)
+    Combat()
+    if CombatEnd > PartyDied { goto FleeBack }
+    ThievesKilled += 15
+    GuildAmbushDone = 1
+    goto Done
 
 FloorFiles:
-	Scratch1 = FilesFound & Files
-	if 0 != Scratch1: Goto Done
-	PrintClear "ON THE FLOOR HERE YOU FIND SOME IMPORTANT LOOKING FILES.  YOU STUFF THE FILES INTO YOUR JOURNAL UNDER ENTRIES 38 AND 51."
-	Delay
-	FilesFound |= Files
-	Goto Done
+    Scratch1 = FilesFound & Files
+    if Scratch1 != 0 { goto Done }
+    Text("ON THE FLOOR HERE YOU FIND SOME IMPORTANT LOOKING FILES.  YOU STUFF THE FILES INTO YOUR JOURNAL UNDER ENTRIES 38 AND 51.")
+    Delay()
+    FilesFound |= Files
+    goto Done
 
 JailCell:
-	Scratch1 = FilesFound & JailCellFight
-	if 0 == Scratch1: Goto JailThugs
-	PrintClear "YOU ARE IN A ROOM THAT HAS BEEN CONVERTED TO A JAIL CELL.  IT IS EMPTY."
-	Goto Done
+    Scratch1 = FilesFound & JailCellFight
+    if Scratch1 == 0 { goto JailThugs }
+    Text("YOU ARE IN A ROOM THAT HAS BEEN CONVERTED TO A JAIL CELL.  IT IS EMPTY.")
+    goto Done
 
-JailThugs:
-	Portrait = Moustached
-	SetupMonster Swordsman11 distance=0 body=RogueDagger
-	PrintClear "YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU."
-	ClearMonsters
-	LoadMonster StLvlThief count=10 icon=12
-	Combat
-	FilesFound |= JailCellFight
-	if CombatEnd > PartyDied: Goto FleeBack
-	ShowPortrait DarkBeard RogueDagger
-	PrintClear "YOU RUSH TO HELP THE OLD THIEF BUT IT'S TOO LATE.  BEFORE HE DIES HE SAYS, 'THE BOSS HAS ALLIES EVERYWHERE.  TAKE THESE PAPERS.  THEY MAY HELP.'  HE THEN DIES."
-	Gosub PressToContinue
-	PrintClear "YOU COPY THE PAPERS INTO YOUR JOURNAL UNDER JOURNAL ENTRY 48."
-	Delay
-	Goto Done
+    JailThugs:
+    Portrait = Moustached
+    SetupMonster(Swordsman11, distance=0, body=RogueDagger)
+    Text("YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU.")
+    ClearMonsters()
+    LoadMonster(StLvlThief, count=10, icon=12)
+    Combat()
+    FilesFound |= JailCellFight
+    if CombatEnd > PartyDied { goto FleeBack }
+    ShowPortrait(DarkBeard, RogueDagger)
+    Text("YOU RUSH TO HELP THE OLD THIEF BUT IT'S TOO LATE.  BEFORE HE DIES HE SAYS, 'THE BOSS HAS ALLIES EVERYWHERE.  TAKE THESE PAPERS.  THEY MAY HELP.'  HE THEN DIES.")
+    PressToContinue()
+    Text("YOU COPY THE PAPERS INTO YOUR JOURNAL UNDER JOURNAL ENTRY 48.")
+    Delay()
+    goto Done
 
 SlateMazeNW:
-	Scratch1 = FilesFound & CastleSlate
-	if 0 != Scratch1: Goto Done
-	FilesFound |= CastleSlate
-	PrintClear "ON A NEARBY WALL IS A SLATE.  DRAWN ON THE SLATE IS A COMPLEX MAZE WITH THE WORDS 'NW CASTLE' UNDER IT.  YOU COPY THE CASTLE INTO YOUR JOURNAL UNDER JOURNAL ENTRY 41."
-	Delay
-	Goto Done
+    Scratch1 = FilesFound & CastleSlate
+    if Scratch1 != 0 { goto Done }
+    FilesFound |= CastleSlate
+    Text("ON A NEARBY WALL IS A SLATE.  DRAWN ON THE SLATE IS A COMPLEX MAZE WITH THE WORDS 'NW CASTLE' UNDER IT.  YOU COPY THE CASTLE INTO YOUR JOURNAL UNDER JOURNAL ENTRY 41.")
+    Delay()
+    goto Done
 
 MapMazeNE:
-	Scratch1 = FilesFound & CastleMap
-	if 0 != Scratch1: Goto Done
-	FilesFound |= CastleMap
-	PrintClear "ON THE FLOOR IS A CRUDE MAP.  IT IS A MAP OF A COMPLEX MAZE WITH THE WORDS 'NE CASTLE' UNDER IT.  YOU TAKE THE MAP AND PUT IT IN YOUR JOURNAL UNDER JOURNAL ENTRY 29."
-	Delay
-	Goto Done
+    Scratch1 = FilesFound & CastleMap
+    if Scratch1 != 0 { goto Done }
+    FilesFound |= CastleMap
+    Text("ON THE FLOOR IS A CRUDE MAP.  IT IS A MAP OF A COMPLEX MAZE WITH THE WORDS 'NE CASTLE' UNDER IT.  YOU TAKE THE MAP AND PUT IT IN YOUR JOURNAL UNDER JOURNAL ENTRY 29.")
+    Delay()
+    goto Done
 
-WalkSteps:
-	Scratch2 = 1
-	if Scratch1 == 0 {
-		Call CallRedraw
-		Delay
-		Return
-	}
+def WalkSteps() {
+    Scratch2 = 1
+    if Scratch1 == 0 {
+        CallRedraw()
+        Delay()
+        return
+    }
 
-WalkStepLoop:
-	if Scratch2 > Scratch1: Return
-	OnGosub Facing StepNorth StepEast StepSouth StepWest
-	Call CallRedraw
-	Delay
-	Scratch2 += 1
-	Goto WalkStepLoop
+    WalkStepLoop:
+    if Scratch2 > Scratch1 { return }
+    gosub [StepNorth, StepEast, StepSouth, StepWest][Facing]
+    CallRedraw()
+    Delay()
+    Scratch2 += 1
+    goto WalkStepLoop
+}
 
-StepNorth:
-	PartyY -= 1
-	Return
+def StepNorth() {
+    PartyY -= 1
+    return
+}
 
-StepEast:
-	PartyX += 1
-	Return
+def StepEast() {
+    PartyX += 1
+    return
+}
 
-StepSouth:
-	PartyY += 1
-	Return
+def StepSouth() {
+    PartyY += 1
+    return
+}
 
-StepWest:
-	PartyX -= 1
-	Return
+def StepWest() {
+    PartyX -= 1
+    return
+}
 
 Done:
-	if ThievesKilled >= 21: Gosub MarkGuildCleared
-	RedrawView
-	Picture None
-	Portrait = None
-	Exit
+    if ThievesKilled >= 21 { MarkGuildCleared() }
+    RedrawView()
+    Picture(None)
+    Portrait = None
+    exit
 
-MarkGuildCleared:
-	if QuestKovelThieves >= RewardDue: Return
-	QuestKovelThieves = RewardDue
-	Return
+def MarkGuildCleared() {
+    if QuestKovelThieves >= RewardDue { return }
+    QuestKovelThieves = RewardDue
+    return
+}
 
-PressToContinue:
-	alias Choice = Scratch1
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def PressToContinue() {
+    Scratch1 = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
 FleeBack:
-	PartyX = PrevX
-	PartyY = PrevY
-	Geo = SavedGeo14
-	Exit
+    PartyX = PrevX
+    PartyY = PrevY
+    Geo = SavedGeo14
+    exit
 
-CheckTrap:
-	CheckParty SelFindTraps 0 Scratch1 Scratch2 Scratch3 Scratch4
-	CheckParty 0 19 Scratch1 Scratch1 Scratch1 Scratch8
-	if Scratch8 != 0: Goto MagicDetectsTrap
-	Scratch1 = Random 99
-	if Scratch1 < Scratch2: Goto PartyDetectsTrap
-	TrapResult = Sprung
-	Return
+def CheckTrap() {
+    CheckParty(SelFindTraps, 0, Scratch1, Scratch2, Scratch3, Scratch4)
+    CheckParty(0, 19, Scratch1, Scratch1, Scratch1, Scratch8)
+    if Scratch8 != 0 { goto MagicDetectsTrap }
+    Scratch1 = Random(99)
+    if Scratch1 < Scratch2 { goto PartyDetectsTrap }
+    TrapResult = Sprung
+    return
 
-MagicDetectsTrap:
-	PrintClear "YOUR MAGIC DETECTS A TRAP!"
-	Delay
-	Goto TrapMenu
+    MagicDetectsTrap:
+    Text("YOUR MAGIC DETECTS A TRAP!")
+    Delay()
+    goto TrapMenu
 
-PartyDetectsTrap:
-	PrintClear "YOUR PARTY DETECTS A TRAP!"
-	Delay
+    PartyDetectsTrap:
+    Text("YOUR PARTY DETECTS A TRAP!")
+    Delay()
 
-TrapMenu:
-	alias Choice = Scratch1
-	PrintClear "WHAT DO YOU WANT TO DO?"
-	Choice = Menu "AVOID TRAP" -> AvoidTrap "DISARM TRAP" -> DisarmTrap
+    TrapMenu:
+    Text("WHAT DO YOU WANT TO DO?")
+    Scratch1 = Menu("AVOID TRAP", "DISARM TRAP")
+    goto [AvoidTrap, DisarmTrap][Scratch1]
+} # falls into DisarmTrap
 
 DisarmTrap:
-	Who "WHO WILL DISARM THE TRAP?"
-	Scratch1 = Random 99
-	if Scratch1 >= Scratch2: Goto DisarmFails
-	PrintClear "YOU DEACTIVATE THE TRAP"
-	TrapResult = Disarmed
-	Delay
-	Return
+    Who("WHO WILL DISARM THE TRAP?")
+    Scratch1 = Random(99)
+    if Scratch1 >= Scratch2 { goto DisarmFails }
+    Text("YOU DEACTIVATE THE TRAP")
+    TrapResult = Disarmed
+    Delay()
+    return
 
 AvoidTrap:
-	TrapResult = Avoided
-	Return
+    TrapResult = Avoided
+    return
 
 DisarmFails:
-	TrapResult = Sprung
-	Return
+    TrapResult = Sprung
+    return
 
-ChaseSteps:
-	Data 0 3 0 3 0 2 0 1 0 2 0 2 0 1 0 5
+on camp {
+    RestEvery = 1
+    RestChance = 99
+    if QuestKovelThieves < RewardDue { exit }
+    RestEvery = 0
+    RestChance = 1
+    exit
+}
 
-ChaseFacing:
-	Data 1 1 2 2 1 1 0 0 1 1 0 0 3 3 2 2
+on rest {
+    RestChance = 0
+    Text("WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY THREE THIEVES WITH SLINGS.  THEY LAUNCH THEIR BULLETS AT THE PARTY AND THEN RUN, DISAPPERING FROM SIGHT.")
+    Delay()
+    Damage(3, 1, 4, 1, 50)
+    exit
+}
 
-event2:
-	RestEvery = 1
-	RestChance = 99
-	if QuestKovelThieves < RewardDue: Exit
-	RestEvery = 0
-	RestChance = 1
-	Exit
+on load {
+    Scratch8 = 11
+    SkyInside = 10
+    if Hours >= 14 { Scratch8 = 8 }
+    Sky = Scratch8
+    LoadWalls(1, 3, 5)
+    LoadMap(14, unused=2, icons=255)
+    exit
+}
 
-event3:
-	RestChance = 0
-	PrintClear "WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY THREE THIEVES WITH SLINGS.  THEY LAUNCH THEIR BULLETS AT THE PARTY AND THEN RUN, DISAPPERING FROM SIGHT."
-	Delay
-	Damage 3 1 4 1 50
-	Exit
-
-event4:
-	Scratch8 = 11
-	SkyInside = 10
-	if Hours >= 14: Scratch8 = 8
-	Sky = Scratch8
-	LoadWalls 1 3 5
-	LoadMap 14 unused=2 icons=255
-	Exit
+# tables
+ChaseSteps = [0, 3, 0, 3, 0, 2, 0, 1, 0, 2, 0, 2, 0, 1, 0, 5]
+ChaseFacing = [1, 1, 2, 2, 1, 1, 0, 0, 1, 1, 0, 0, 3, 3, 2, 2]

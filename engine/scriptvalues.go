@@ -37,6 +37,7 @@ var operandKinds = map[string][]string{
 	"ShowPortrait":  {"Head", "Body"},
 	"LoadMap":       {"Map"},
 	"LoadWalls":     {"Walls", "Walls", "Walls"},
+	"NewECL":        {"Area"},
 }
 
 // operandLabels name the commands' operands in the script, as label=value

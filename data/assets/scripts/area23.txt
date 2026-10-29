@@ -1,507 +1,498 @@
 TeleportToDest:
-	PartyX = DestX[Scratch1]
-	PartyY = DestY[Scratch1]
-	Facing = DestFacing[Scratch1]
-	HoldMove = SkipMove
-	RedrawView
-	Call CallRedraw
-	if Scratch1 == 3: Goto LizardMenGroup
-	Exit
+    PartyX = DestX[Scratch1]
+    PartyY = DestY[Scratch1]
+    Facing = DestFacing[Scratch1]
+    HoldMove = SkipMove
+    RedrawView()
+    CallRedraw()
+    if Scratch1 == 3 { goto LizardMenGroup }
+    exit
 
-DestX:
-	Data 0 0 3 3 4 6 7 11 12 14 15 0 14 13
+def YesNoMenu() {
+    Scratch10 = Menu("YES", "NO")
+    Text(" ")
+    Compare(Scratch10, 0)
+    return
+}
 
-DestY:
-	Data 0 4 8 13 9 0 0 3 3 13 12 3 12 3
-
-DestFacing:
-	Data 0 0 0 2 2 2 2 2 3 2 3 2 3 1 17 128
-	Data 12 16 248 25 61 88 20 4 177 96 37 79 192
-
-YesNoMenu:
-	alias Choice = Scratch10
-	Choice = Menu "YES" "NO"
-	PrintClear " "
-	Compare Choice 0
-	Return
-
-FlashTeleport:
-	Print "AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH AND YOU SUDDENLY FIND YOURSELF ELSEWHERE."
+def FlashTeleport() {
+    Print("AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH AND YOU SUDDENLY FIND YOURSELF ELSEWHERE.")
+} # falls into WaitReturnPressed
 
 WaitReturnPressed:
-	alias Choice = Scratch9
-	Choice = Menu "PRESS BUTTON OR <RETURN> TO CONTINUE"
-	PrintClear " "
-	Return
+    Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
+    Text(" ")
+    return
 
-SearchSecretDoor:
-	if Scratch1 has SecretDoorsFound: Goto SecretDoorFound
-	Scratch10 = 0
+def SearchSecretDoor() {
+    if Scratch1 has SecretDoorsFound { goto SecretDoorFound }
+    Scratch10 = 0
+} # falls into SearchMemberLoop
 
 SearchMemberLoop:
-	SelectMember Scratch10
-	if SelStatus == Died: Goto NextSearcher
-	Scratch9 = Search
-	if SelRace == Elf: Scratch9 += 1
-	if SelRace == HalfElf: Scratch9 += 1
-	Scratch8 = Random 5
-	if Scratch8 > Scratch9: Goto NextSearcher
+    SelectMember(Scratch10)
+    if SelStatus == Died { goto NextSearcher }
+    Scratch9 = Search
+    if SelRace == Elf { Scratch9 += 1 }
+    if SelRace == HalfElf { Scratch9 += 1 }
+    Scratch8 = Random(5)
+    if Scratch8 > Scratch9 { goto NextSearcher }
 
 SecretDoorFound:
-	alias ByFacing9B0FEntry = Scratch10
-	SecretDoorsFound = Scratch1 | SecretDoorsFound
-	PrintClear "A SECRET DOOR IS FOUND "
-	ByFacing9B0FEntry = ByFacing9B0F[Facing]
-	Scratch2 += ByFacing9B0FEntry
-	Scratch2 = Table9B08[Scratch2]
-	OnGosub Scratch2 DoorInFront DoorToRight DoorBehind DoorToLeft
-	Goto WaitReturnPressed
+    SecretDoorsFound = Scratch1 | SecretDoorsFound
+    Text("A SECRET DOOR IS FOUND ")
+    Scratch10 = ByFacing9B0F[Facing]
+    Scratch2 += Scratch10
+    Scratch2 = Table9B08[Scratch2]
+    gosub [DoorInFront, DoorToRight, DoorBehind, DoorToLeft][Scratch2]
+    goto WaitReturnPressed
 
 NextSearcher:
-	Scratch10 = Scratch10 + 1
-	if Scratch10 < 8: Goto SearchMemberLoop
-	Return
+    Scratch10 = Scratch10 + 1
+    if Scratch10 < 8 { goto SearchMemberLoop }
+    return
 
-DoorInFront:
-	Print "IN FRONT OF YOU."
-	Return
+def DoorInFront() {
+    Print("IN FRONT OF YOU.")
+    return
+}
 
-DoorToRight:
-	Print "TO YOUR RIGHT."
-	Return
+def DoorToRight() {
+    Print("TO YOUR RIGHT.")
+    return
+}
 
-DoorBehind:
-	Print "BEHIND YOU."
-	Return
+def DoorBehind() {
+    Print("BEHIND YOU.")
+    return
+}
 
-DoorToLeft:
-	Print "TO YOUR LEFT."
-	Return
+def DoorToLeft() {
+    Print("TO YOUR LEFT.")
+    return
+}
 
-Table9B08:
-	Data 0 1 2 3 0 1 2
+on move {
+    Scratch1 = Cell & 31
+    if Scratch1 == 0 { exit }
+    if Scratch1 > 10 { exit }
+    Scratch1 -= 1
+    Scratch10 = Table9C40[Scratch1]
+    if Scratch10 != Facing { exit }
+    goto BlockUnfoundDoor
+}
 
-ByFacing9B0F:
-	Data 0 3 2 1
+on step {
+    Scratch10 = Cell & 31
+    Scratch2 = Table9B9F[Scratch10]
+    Scratch1 = Table9BBB[Scratch10]
+    goto [RedrawExit, CheckSecretDoor, RockRoom, FlashTeleportCell, DialTeleport, LizardMenGroup,
+        TortureRoom, VatRoom, VatLizardAmbush, AlchemistLab, FindNotebook, JunkStoreroom,
+        PasswordDoor, FountainChamber, PumpingRoom, AncientMage, ColorDial, YarashDesk][Scratch2]
+    exit # the original runs on into data at 9B9F
+}
 
-event0:
-	Scratch1 = Cell & 31
-	if 0 == Scratch1: Exit
-	if Scratch1 > 10: Exit
-	Scratch1 -= 1
-	Scratch10 = Table9C40[Scratch1]
-	if Scratch10 != Facing: Exit
-	Goto BlockUnfoundDoor
-
-event1:
-	Scratch10 = Cell & 31
-	Scratch2 = Table9B9F[Scratch10]
-	Scratch1 = Table9BBB[Scratch10]
-	OnGoto Scratch2 RedrawExit CheckSecretDoor RockRoom FlashTeleportCell DialTeleport LizardMenGroup TortureRoom VatRoom VatLizardAmbush AlchemistLab FindNotebook JunkStoreroom PasswordDoor FountainChamber PumpingRoom AncientMage ColorDial YarashDesk
-	Exit // extra: the original runs on into data at 9B9F
-
-Table9B9F:
-	Data 0 9 1 1 9 1 5 1 6 1 7 2 2 2 3 3
-	Data 4 8 10 11 11 11 12 13 14 15 16 17
-
-Table9BBB:
-	Data 0 0 1 2 3 4 5 6 7 8 9 0 1 2 3 5
-	Data 0 0 0 8 16 32 0 0 0 0 0 0
-
-event2:
-	RestEvery = 0
-	RestChance = 10
+on camp {
+    RestEvery = 0
+    RestChance = 10
+} # falls into RedrawExit
 
 RedrawExit:
-	RedrawView
-	Call CallRedraw
+    RedrawView()
+    CallRedraw()
 
-event3:
-	Portrait = None
-	Exit
+on rest {
+    Portrait = None
+    exit
+}
 
-event4:
-	if AreaKind == 23: Exit
-	NoCoords = 1
-	SkyInside = 9
-	LoadMap 23 unused=2 icons=255
-	Exit
+on load {
+    if AreaKind == LizardManVillage { exit }
+    NoCoords = 1
+    SkyInside = 9
+    LoadMap(23, unused=2, icons=255)
+    exit
+}
 
 CheckSecretDoor:
-	Scratch2 = Table9C40[Scratch1]
-	Scratch1 = Table9C4A[Scratch1]
-	Gosub SearchSecretDoor
-	Exit
+    Scratch2 = Table9C40[Scratch1]
+    Scratch1 = Table9C4A[Scratch1]
+    SearchSecretDoor()
+    exit
 
 BlockUnfoundDoor:
-	Scratch1 = Table9C4A[Scratch1]
-	if SecretDoorsFound lacks Scratch1: HoldMove = SkipMove
-	Exit
-
-Table9C40:
-	Data 3 1 3 1 2 0 2 0 1 3
-
-Table9C4A:
-	Data 1 1 2 2 4 4 8 8 16 16
+    Scratch1 = Table9C4A[Scratch1]
+    if SecretDoorsFound lacks Scratch1 { HoldMove = SkipMove }
+    exit
 
 RockRoom:
-	PrintClear "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
-	Gosub WaitReturnPressed
-	if TeleporterRockFlags has TeleporterKnown: Goto RockRoomMenu
-	OnGoto Search RockRoomTeleport TingleNearBareArea
+    Text("YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. ")
+    WaitReturnPressed()
+    if TeleporterRockFlags has TeleporterKnown { goto RockRoomMenu }
+    goto [RockRoomTeleport, TingleNearBareArea][Search]
 
 RockRoomTeleport:
-	Gosub FlashTeleport
-	TeleporterRockFlags |= TeleporterKnown
-	if TeleporterRockFlags lacks RocksThrown: Goto RockTeleportAlt
-	Gosub ToggleRockFlag
-	Scratch1 = Table9CE7[Scratch1]
-	if Scratch1 == 255: Goto ExitToArea22North
-	Goto TeleportToDest
+    FlashTeleport()
+    TeleporterRockFlags |= TeleporterKnown
+    if TeleporterRockFlags lacks RocksThrown { goto RockTeleportAlt }
+    ToggleRockFlag()
+    Scratch1 = Table9CE7[Scratch1]
+    if Scratch1 == 255 { goto ExitToArea22North }
+    goto TeleportToDest
 
-RockTeleportAlt:
-	Gosub ToggleRockFlag
-	Scratch1 = Table9CEA[Scratch1]
-	Goto TeleportToDest
-
-Table9CE7:
-	Data 13 255 12
-
-Table9CEA:
-	Data 0 7 1
+    RockTeleportAlt:
+    ToggleRockFlag()
+    Scratch1 = Table9CEA[Scratch1]
+    goto TeleportToDest
 
 TingleNearBareArea:
-	PrintClear "AS YOU CAREFULLY SEARCH THE ROOM YOU FEEL A STRANGE TINGLE AS YOU GET CLOSE TO A BARE AREA."
+    Text("AS YOU CAREFULLY SEARCH THE ROOM YOU FEEL A STRANGE TINGLE AS YOU GET CLOSE TO A BARE AREA.")
 
 RockRoomMenu:
-	alias Choice = Scratch10
-	Choice = Menu "GO BACK" "MOVE ON" "THROW A ROCK"
-	PrintClear " "
-	OnGoto Choice GoBack RockRoomTeleport ThrowRock
+    Scratch10 = Menu("GO BACK", "MOVE ON", "THROW A ROCK")
+    Text(" ")
+    goto [GoBack, RockRoomTeleport, ThrowRock][Scratch10]
 
 GoBack:
-	Scratch1 = Cell & 63
-	Goto TeleportToDest
+    Scratch1 = Cell & ~(Special|Inside)
+    goto TeleportToDest
 
 ThrowRock:
-	PrintClear "YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!"
-	Gosub ToggleRockFlag
-	TeleporterRockFlags |= TeleporterKnown
-	Goto RockRoomMenu
+    Text("YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!")
+    ToggleRockFlag()
+    TeleporterRockFlags |= TeleporterKnown
+    goto RockRoomMenu
 
-ToggleRockFlag:
-	if TeleporterRockFlags lacks RocksThrown: Goto SetRockFlag
-	TeleporterRockFlags &= ~RocksThrown
-	Return
+def ToggleRockFlag() {
+    if TeleporterRockFlags lacks RocksThrown { goto SetRockFlag }
+    TeleporterRockFlags &= ~RocksThrown
+    return
 
-SetRockFlag:
-	TeleporterRockFlags |= RocksThrown
-	Return
+    SetRockFlag:
+    TeleporterRockFlags |= RocksThrown
+    return
+}
 
 FlashTeleportCell:
-	Gosub FlashTeleport
-	Goto TeleportToDest
+    FlashTeleport()
+    goto TeleportToDest
 
 DialTeleport:
-	Gosub FlashTeleport
-	if DialColor == 0: Goto ExitToArea22South
-	Scratch1 = Table9DFA[DialColor]
-	Goto TeleportToDest
+    FlashTeleport()
+    if DialColor == Blue { goto ExitToArea22South }
+    Scratch1 = Table9DFA[DialColor]
+    goto TeleportToDest
 
-Table9DFA:
-	Data 0 4 6 9
-
-ExitToArea22South:
-	PartyY = 8
-	Goto LeaveToArea22
+    ExitToArea22South:
+    PartyY = 8
+    goto LeaveToArea22
 
 ExitToArea22North:
-	PartyY = 7
+    PartyY = 7
 
 LeaveToArea22:
-	PartyX = 15
-	Facing = East
-	NewECL LizardManSwamp
+    PartyX = 15
+    Facing = East
+    NewECL(LizardManSwamp)
 
 LizardMenGroup:
-	if RoomsVisited has LizardMen: Goto CheckSecretDoor
-	Surprise = NoSurprise
-	PrintClear "YOU SEE A GROUP OF FIVE LIZARD MEN. THEY HISS AT YOU."
-	Gosub WaitReturnPressed
-	Scratch3 = 6
-	if SecretDoorsFound lacks 4: Scratch3 = 30
-	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Approach flee=Mirror advance=Mirror parlay=Talk near="THEY ARE WARY, BUT NOT HOSTILE." mid="STANDING READY THEIR LEADER SAYS 'YOU MUST BE THE SERVANTS OF YARASH!'" far="THEIR LEADER SAYS 'FOUL SERVANTS OF YARASH!'" escape=Scratch3 strength=Scratch3
-	RoomsVisited |= LizardMen
-	OnGoto Scratch10 RedrawExit LizardMenAttack AfterLizardFight
-	Scratch10 = Parlay 15 15 30 50 0
-	Scratch10 = Scratch10 + SelReaction
-	if Scratch10 < 75: Goto LizardMenAttack
-	PrintClear "'SINCE YOU ARE NOT THE SERVANTS OF YARASH, WE WILL NOT KILL YOU. THE ENEMY OF MY ENEMY IS NOT MY ENEMY!'"
-	Goto RedrawExit
+    if RoomsVisited has LizardMen { goto CheckSecretDoor }
+    Surprise = NoSurprise
+    Text("YOU SEE A GROUP OF FIVE LIZARD MEN. THEY HISS AT YOU.")
+    WaitReturnPressed()
+    Scratch3 = 6
+    if SecretDoorsFound lacks 4 { Scratch3 = 30 }
+    EncounterMenu(Lizardman, distance=2, closeup=Lizardman, result=Scratch10, combat=Attack, wait=3,
+        flee=Mirror, advance=Mirror, parlay=Talk, near="THEY ARE WARY, BUT NOT HOSTILE.",
+        mid="STANDING READY THEIR LEADER SAYS 'YOU MUST BE THE SERVANTS OF YARASH!'",
+        far="THEIR LEADER SAYS 'FOUL SERVANTS OF YARASH!'", escape=Scratch3, strength=Scratch3)
+    RoomsVisited |= LizardMen
+    goto [RedrawExit, LizardMenAttack, AfterLizardFight][Scratch10]
+    Scratch10 = Parlay(15, 15, 30, 50, 0)
+    Scratch10 = Scratch10 + SelReaction
+    if Scratch10 < 75 { goto LizardMenAttack }
+    Text("'SINCE YOU ARE NOT THE SERVANTS OF YARASH, WE WILL NOT KILL YOU. THE ENEMY OF MY ENEMY IS NOT MY ENEMY!'")
+    goto RedrawExit
 
 LizardMenAttack:
-	PrintClear "'MUTILATING SCUM! WE WILL DIE BEFORE WE LET YOU TWIST US AS YOU HAVE OUR OTHER PEOPLE! BUT YOU WILL DIE FIRST!'"
-	Gosub WaitReturnPressed
-	Morale = 60
-	ClearMonsters
-	LoadMonster Lizardman count=5 icon=57
-	Combat
-	if CombatEnd != PartyFled: Exit
+    Text("'MUTILATING SCUM! WE WILL DIE BEFORE WE LET YOU TWIST US AS YOU HAVE OUR OTHER PEOPLE! BUT YOU WILL DIE FIRST!'")
+    WaitReturnPressed()
+    Morale = 60
+    ClearMonsters()
+    LoadMonster(Lizardman, count=5, icon=57)
+    Combat()
+    if CombatEnd != PartyFled { exit }
 
 AfterLizardFight:
-	Scratch1 = 2
-	Goto TeleportToDest
+    Scratch1 = 2
+    goto TeleportToDest
 
 TortureRoom:
-	if RoomsVisited has TortureRoomSeen: Goto CheckSecretDoor
-	PrintClear "YOU HAVE ENTERED A ROOM FILLED WITH A HORRIBLE ASSORTMENT OF TORTURE INSTUMENTS. IN THE CENTER IS A LARGE TABLE WITH METAL RESTRAINTS."
-	Gosub WaitReturnPressed
-	PrintClear "THE WALLS ARE LINED WITH FLASKS AND BOTTLES CONTAINING POWDERS, OILS, OINTMENTS, AND DRAUGHTS. THESE ARE SURELY OF AN ALCHEMICAL NATURE."
-	RoomsVisited |= TortureRoomSeen
-	Exit
+    if RoomsVisited has TortureRoomSeen { goto CheckSecretDoor }
+    Text("YOU HAVE ENTERED A ROOM FILLED WITH A HORRIBLE ASSORTMENT OF TORTURE INSTUMENTS. IN THE CENTER IS A LARGE TABLE WITH METAL RESTRAINTS.")
+    WaitReturnPressed()
+    Text("THE WALLS ARE LINED WITH FLASKS AND BOTTLES CONTAINING POWDERS, OILS, OINTMENTS, AND DRAUGHTS. THESE ARE SURELY OF AN ALCHEMICAL NATURE.")
+    RoomsVisited |= TortureRoomSeen
+    exit
 
 VatRoom:
-	if RoomsVisited has Vats: Goto CheckSecretDoor
-	PrintClear "YOU HAVE ENTERED A ROOM FILLED WITH LARGE VATS WITH THE SAME OILY BLACK STUFF THAT FLOWS FROM THE FOUNTAIN. THE CHAMBER STINKS. ON THE WALLS ARE SHELVES OF BOTTLES AND FLASKS."
-	RoomsVisited |= Vats
-	Exit
+    if RoomsVisited has Vats { goto CheckSecretDoor }
+    Text("YOU HAVE ENTERED A ROOM FILLED WITH LARGE VATS WITH THE SAME OILY BLACK STUFF THAT FLOWS FROM THE FOUNTAIN. THE CHAMBER STINKS. ON THE WALLS ARE SHELVES OF BOTTLES AND FLASKS.")
+    RoomsVisited |= Vats
+    exit
 
 VatLizardAmbush:
-	Scratch10 = RoomsVisited & CombatRoom
-	if Scratch10 != 0 || Search != 1: Exit
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PartySurprise Scratch8 Scratch9
-	Surprise Scratch8 Scratch9 4 1
-	PrintClear "AS YOU ARE POKING AROUND IN THE VATS, A PAIN CRAZED LIZARD MAN SURFACES AND ATTACKS YOU! TWO OTHERS QUICKLY JOIN HIM FROM OTHER VATS."
-	Gosub WaitReturnPressed
-	ClearMonsters
-	LoadMonster MutantLizMan count=3 icon=57
-	Combat
-	if CombatEnd == PartyFled: Goto AfterLizardFight
-	RoomsVisited |= CombatRoom
-	Exit
+    Scratch10 = RoomsVisited & CombatRoom
+    if Scratch10 != 0 or Search != Searching { exit }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    PartySurprise(Scratch8, Scratch9)
+    Surprise(Scratch8, Scratch9, 4, 1)
+    Text("AS YOU ARE POKING AROUND IN THE VATS, A PAIN CRAZED LIZARD MAN SURFACES AND ATTACKS YOU! TWO OTHERS QUICKLY JOIN HIM FROM OTHER VATS.")
+    WaitReturnPressed()
+    ClearMonsters()
+    LoadMonster(MutantLizMan, count=3, icon=57)
+    Combat()
+    if CombatEnd == PartyFled { goto AfterLizardFight }
+    RoomsVisited |= CombatRoom
+    exit
 
 AlchemistLab:
-	if RoomsVisited has Lab: Goto CheckSecretDoor
-	PrintClear "YOU HAVE ENTERED WHAT LOOKS LIKE AN ORDINARY ALCHEMISTS LAB... RECENTLY USED."
-	RoomsVisited |= Lab
-	Exit
+    if RoomsVisited has Lab { goto CheckSecretDoor }
+    Text("YOU HAVE ENTERED WHAT LOOKS LIKE AN ORDINARY ALCHEMISTS LAB... RECENTLY USED.")
+    RoomsVisited |= Lab
+    exit
 
 FindNotebook:
-	Scratch10 = RoomsVisited & Notebook
-	if Scratch10 != 0 || Search != 1: Exit
-	PrintClear "YOU FIND A NOTEBOOK. A TYPICAL ENTRY READS, 'SUBJECT 213: PROGRESSING WELL, SCARS HEALING, UNABLE TO TALK YET. SUBJECT 214: DIED WHEN TREATED, FAILED AGAIN...'"
-	RoomsVisited |= Notebook
-	Exit
+    Scratch10 = RoomsVisited & Notebook
+    if Scratch10 != 0 or Search != Searching { exit }
+    Text("YOU FIND A NOTEBOOK. A TYPICAL ENTRY READS, 'SUBJECT 213: PROGRESSING WELL, SCARS HEALING, UNABLE TO TALK YET. SUBJECT 214: DIED WHEN TREATED, FAILED AGAIN...'")
+    RoomsVisited |= Notebook
+    exit
 
 JunkStoreroom:
-	PrintClear "YOU ARE IN A STOREROOM HOLDING A VAST COLLECTION OF MAGICAL JUNK."
-	Scratch10 = RoomsVisited2 & Scratch1
-	if Scratch10 != 0 || Search != 1: Exit
-	Print " HOWEVER, HIDDEN AMIDST ALL THIS JUNK YOU FIND SOME TREASURE."
-	Gosub WaitReturnPressed
-	RoomsVisited2 |= Scratch1
-	ClearMonsters
-	Treasure 0 #04B0 0 #0190 0 0 0 131 // 3 random items
-	Combat
-	Exit
+    Text("YOU ARE IN A STOREROOM HOLDING A VAST COLLECTION OF MAGICAL JUNK.")
+    Scratch10 = RoomsVisited2 & Scratch1
+    if Scratch10 != 0 or Search != Searching { exit }
+    Print(" HOWEVER, HIDDEN AMIDST ALL THIS JUNK YOU FIND SOME TREASURE.")
+    WaitReturnPressed()
+    RoomsVisited2 |= Scratch1
+    ClearMonsters()
+    Treasure(silver=1200, gold=400, items=Random(3))
+    Combat()
+    exit
 
 PasswordDoor:
-	Scratch10 = RoomsVisited & PasswordDoorRoom
-	if Scratch10 != 0 || Facing != East: Exit
+    Scratch10 = RoomsVisited & PasswordDoorRoom
+    if Scratch10 != 0 or Facing != East { exit }
 
-AskPassword:
-	LoadMap Keep unused=16 icons=255
-	PrintClear ""
-	Protection PasswordRunes
-	PrintClear "YOU SEE A SIGN OVER THE DOOR IN FRONT OF YOU. IT SAYS, 'DON'T FORGET THE PASSWORD'. THIS IS FOLLOWED BY SIX DWARVISH RUNES..."
-	NewLine
-	Protection PasswordRunesEnd
-	LoadMap Keep unused=2 icons=255
-	Gosub WaitReturnPressed
-	LoadWalls 1 3 None
-	PrintClear "YOU QUICKLY TRANSLATE THEM AND SAY...?"
-	NewLine
-	$Scratch1 = InputString 6
-	PrintClear "DO YOU REALLY MEAN "
-	Print $Scratch1
-	Print "?"
-	if Ask YesNoMenu == "NO": Goto AskPassword
-	if $Scratch1 == "NOKNOK": Goto RedrawExit
-	PrintClear "SUDDENLY A HIDDEN DOOR BURSTS OPEN AND A HORRIBLE MONSTER BURSTS FORTH SHOUTING 'KIAIAIAIAIAIAIAI!' IT WADES INTO YOU TEARING YOU APART WITH 3-INCH LONG CLAWS."
-	Gosub WaitReturnPressed
-	Damage 224 1 1 200 0
-	RoomsVisited |= PasswordDoorRoom
-	Exit
-
-PasswordRunesEnd:
-	Data 134 135 131 134 135 131 0
-
-PasswordRunes:
-	Data 0
+    AskPassword:
+    LoadMap(Keep, unused=16, icons=255)
+    Text("")
+    Protection(PasswordRunes)
+    Text("YOU SEE A SIGN OVER THE DOOR IN FRONT OF YOU. IT SAYS, 'DON'T FORGET THE PASSWORD'. THIS IS FOLLOWED BY SIX DWARVISH RUNES...")
+    NewLine()
+    Protection(PasswordRunesEnd)
+    LoadMap(Keep, unused=2, icons=255)
+    WaitReturnPressed()
+    LoadWalls(1, 3, None)
+    Text("YOU QUICKLY TRANSLATE THEM AND SAY...?")
+    NewLine()
+    $Scratch1 = InputString(6)
+    Text("DO YOU REALLY MEAN ")
+    Print($Scratch1)
+    Print("?")
+    if YesNoMenu() == "NO" { goto AskPassword }
+    if $Scratch1 == "NOKNOK" { goto RedrawExit }
+    Text("SUDDENLY A HIDDEN DOOR BURSTS OPEN AND A HORRIBLE MONSTER BURSTS FORTH SHOUTING 'KIAIAIAIAIAIAIAI!' IT WADES INTO YOU TEARING YOU APART WITH 3-INCH LONG CLAWS.")
+    WaitReturnPressed()
+    Damage(224, 1, 1, 200, 0)
+    RoomsVisited |= PasswordDoorRoom
+    exit
 
 FountainChamber:
-	Scratch10 = RoomsVisited & Fountain
-	if Scratch10 != 0 || Facing != East: Exit
-	Picture Sewers
-	PrintClear "YOU HAVE ENTERED THE FOUNTAIN CHAMBER. IN THE CENTER OF THE ROOM A COLUMN OF BLACK FOUL WATER JETS UP THROUGH A CLEAR PIPE AND OUT THE ROOF."
-	Gosub WaitReturnPressed
-	PrintClear "ANOTHER PIPE, RUNNING FROM THE WALL ACROSS AND TO YOUR RIGHT, PUMPS IN STREAMS OF THE FOUL LIQUID. ALL ABOUT THE ROOM ARE VALVES, GAUGES, PETCOCKS, AND PIPES."
-	Scratch3 = 0
-	Scratch4 = 0
+    Scratch10 = RoomsVisited & Fountain
+    if Scratch10 != 0 or Facing != East { exit }
+    Picture(Sewers)
+    Text("YOU HAVE ENTERED THE FOUNTAIN CHAMBER. IN THE CENTER OF THE ROOM A COLUMN OF BLACK FOUL WATER JETS UP THROUGH A CLEAR PIPE AND OUT THE ROOF.")
+    WaitReturnPressed()
+    Text("ANOTHER PIPE, RUNNING FROM THE WALL ACROSS AND TO YOUR RIGHT, PUMPS IN STREAMS OF THE FOUL LIQUID. ALL ABOUT THE ROOM ARE VALVES, GAUGES, PETCOCKS, AND PIPES.")
+    Scratch3 = 0
+    Scratch4 = 0
 
 FountainMenu:
-	alias Choice = Scratch1
-	Gosub WaitReturnPressed
-	PrintClear "WHAT DO YOU DO?"
-	Choice = Menu "MOVE QUICKLY AWAY" "DESTROY THE EQUIPMENT"
-	OnGoto Choice MoveAway
-	if Scratch4 != 0: Scratch4 += 1
-	if Scratch4 > 3: Goto FountainExplodes
+    WaitReturnPressed()
+    Text("WHAT DO YOU DO?")
+    Scratch1 = Menu("MOVE QUICKLY AWAY", "DESTROY THE EQUIPMENT")
+    goto [MoveAway][Scratch1]
+    if Scratch4 != 0 { Scratch4 += 1 }
+    if Scratch4 > 3 { goto FountainExplodes }
 
-DestroyEquipment:
-	Scratch3 = Scratch3 + 1
-	if Scratch3 >= 10: Goto AllEquipmentDestroyed
-	Scratch10 = Random 9
-	if Scratch10 == 0: Scratch4 += 1
-	if Scratch4 == 0: Goto DestroyEquipment
-	PrintClear "YOU HEAR A WHINING FROM THE PIPES THE BLACK LIQUID IS BUBBLING. HOWEVER, NOT ALL THE EQUIPMENT IS YET DESTROYED."
-	Goto FountainMenu
+    DestroyEquipment:
+    Scratch3 = Scratch3 + 1
+    if Scratch3 >= 10 { goto AllEquipmentDestroyed }
+    Scratch10 = Random(9)
+    if Scratch10 == 0 { Scratch4 += 1 }
+    if Scratch4 == 0 { goto DestroyEquipment }
+    Text("YOU HEAR A WHINING FROM THE PIPES THE BLACK LIQUID IS BUBBLING. HOWEVER, NOT ALL THE EQUIPMENT IS YET DESTROYED.")
+    goto FountainMenu
 
-AllEquipmentDestroyed:
-	PrintClear "YOU HAVE DESTROYED THE LAST PIECE OF EQUIPMENT. "
-	Gosub MarkFountainDone
-	if Scratch4 == 0: Goto RedrawExit
-	Print "THE WHINE SUBSIDES AS THE PRESSURE IS RELEASED."
-	Goto RedrawExit
+    AllEquipmentDestroyed:
+    Text("YOU HAVE DESTROYED THE LAST PIECE OF EQUIPMENT. ")
+    MarkFountainDone()
+    if Scratch4 == 0 { goto RedrawExit }
+    Print("THE WHINE SUBSIDES AS THE PRESSURE IS RELEASED.")
+    goto RedrawExit
 
 MoveAway:
-	if Scratch4 == 0: Goto FountainDone
-	Gosub MarkFountainDone
-	if Scratch4 >= 3: Goto RunTooLate
-	PrintClear "YOU RUN FOR THE EXIT. AS YOU SLAM THE DOOR BEHIND YOU, YOU HEAR AN ENORMOUS EXPLOSION. THE EQUIPMENT IS NOW CERTAINLY DESTROYED."
-	Gosub WaitReturnPressed
-	Goto TeleportToDest
+    if Scratch4 == 0 { goto FountainDone }
+    MarkFountainDone()
+    if Scratch4 >= 3 { goto RunTooLate }
+    Text("YOU RUN FOR THE EXIT. AS YOU SLAM THE DOOR BEHIND YOU, YOU HEAR AN ENORMOUS EXPLOSION. THE EQUIPMENT IS NOW CERTAINLY DESTROYED.")
+    WaitReturnPressed()
+    goto TeleportToDest
 
-RunTooLate:
-	PrintClear "YOU START TO RUN FOR THE EXIT... YOU DON'T MAKE IT."
-	Gosub WaitReturnPressed
+    RunTooLate:
+    Text("YOU START TO RUN FOR THE EXIT... YOU DON'T MAKE IT.")
+    WaitReturnPressed()
 
 FountainExplodes:
-	Gosub MarkFountainDone
-	PrintClear "THERE IS AN ENORMOUS EXPLOSION! BITS OF PIPE AND OTHER PLUMBING FIXTURES FLY IN ALL DIRECTIONS."
-	Facing = West
-	Gosub WaitReturnPressed
-	Damage 224 3 10 0 0
+    MarkFountainDone()
+    Text("THERE IS AN ENORMOUS EXPLOSION! BITS OF PIPE AND OTHER PLUMBING FIXTURES FLY IN ALL DIRECTIONS.")
+    Facing = West
+    WaitReturnPressed()
+    Damage(224, 3, 10, 0, 0)
 
 FountainDone:
-	Goto RedrawExit
+    goto RedrawExit
 
 PumpingRoom:
-	if RoomsVisited2 has 3: Exit
-	PrintClear "YOU HAVE ENTERED A PUMPING ROOM. WORKING AS SLAVES IN THIS ROOM ARE THREE LIZARD MEN WITH WHIP CUTS ACROSS THEIR BACK WHO ARE SHACKLED TO THE WALL BY LONG CHAINS."
-	Gosub WaitReturnPressed
-	PrintClear "TWO OF THEM ARE POURING BARRELS OF THE BLACK CONTAMINANT INTO A LARGE VAT. THE OTHER IS WORKING A BELLOWS PUMP."
-	Gosub WaitReturnPressed
-	EncounterMenu Lizardman distance=2 closeup=Lizardman result=Scratch10 combat=Attack wait=Approach flee=Mirror advance=Approach parlay=Talk near="THEY RECOIL IN FEAR" escape=0 strength=0
-	OnGoto Scratch10 RedrawExit SlavesAttack TeleportToDest
-	Scratch10 = Parlay 0 0 1 1 0
-	OnGoto Scratch10 SlavesAttack
-	PrintClear "AS YOU FREE THEM THEY TELL YOU ALL ABOUT WHAT YARASH IS DOING AND HOW YOU CAN GET HELP FROM THEIR TRIBE IN THE SWAMP. YOU COPY ALL THEY SAY AS ENTRY 35 OF YOUR JOURNAL."
-	Gosub WaitReturnPressed
-	RoomsVisited2 |= 1
-	Goto RedrawExit
+    if RoomsVisited2 has SlavesFreed|SlavesFought { exit }
+    Text("YOU HAVE ENTERED A PUMPING ROOM. WORKING AS SLAVES IN THIS ROOM ARE THREE LIZARD MEN WITH WHIP CUTS ACROSS THEIR BACK WHO ARE SHACKLED TO THE WALL BY LONG CHAINS.")
+    WaitReturnPressed()
+    Text("TWO OF THEM ARE POURING BARRELS OF THE BLACK CONTAMINANT INTO A LARGE VAT. THE OTHER IS WORKING A BELLOWS PUMP.")
+    WaitReturnPressed()
+    EncounterMenu(Lizardman, distance=2, closeup=Lizardman, result=Scratch10, combat=Attack, wait=3,
+        flee=Mirror, advance=3, parlay=Talk, near="THEY RECOIL IN FEAR", escape=0, strength=0)
+    goto [RedrawExit, SlavesAttack, TeleportToDest][Scratch10]
+    Scratch10 = Parlay(0, 0, 1, 1, 0)
+    goto [SlavesAttack][Scratch10]
+    Text("AS YOU FREE THEM THEY TELL YOU ALL ABOUT WHAT YARASH IS DOING AND HOW YOU CAN GET HELP FROM THEIR TRIBE IN THE SWAMP. YOU COPY ALL THEY SAY AS ENTRY 35 OF YOUR JOURNAL.")
+    WaitReturnPressed()
+    RoomsVisited2 |= SlavesFreed
+    goto RedrawExit
 
 SlavesAttack:
-	PrintClear "THE LIZARD MEN'S FEAR CHANGES TO RAGE AND THEY THROW THEIR BARRELS OF CONTAMINANT ON THE PARTY."
-	Gosub WaitReturnPressed
-	Damage 128 1 1 200 0
-	Damage 128 1 1 200 0
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster Lizardman count=3 icon=57
-	Combat
-	Scratch1 = 0
-	if CombatEnd == PartyFled: Goto TeleportToDest
-	RoomsVisited2 |= 2
-	Exit
+    Text("THE LIZARD MEN'S FEAR CHANGES TO RAGE AND THEY THROW THEIR BARRELS OF CONTAMINANT ON THE PARTY.")
+    WaitReturnPressed()
+    Damage(128, 1, 1, 200, 0)
+    Damage(128, 1, 1, 200, 0)
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Lizardman, count=3, icon=57)
+    Combat()
+    Scratch1 = 0
+    if CombatEnd == PartyFled { goto TeleportToDest }
+    RoomsVisited2 |= SlavesFought
+    exit
 
 AncientMage:
-	if RoomsVisited2 has PortraitFight: Exit
-	Portrait = Elder
-	SetupMonster Mage distance=2 body=WhiteRobe
-	PrintClear "AN ANCIENT MAGE LOOKS UP FROM HIS STUDIES, 'AH, GOOD, I NEED MORE SPECIMENS AS CONTROLS.' HE TURNS TO HIS MUTATED GUARDS, 'SUBDUE THEM!'"
-	Gosub WaitReturnPressed
-	EncounterMenu Mage distance=2 body=WhiteRobe result=Scratch10 combat=Attack wait=Approach flee=Attack advance=Approach parlay=Attack escape=12 strength=12
-	Portrait = None
-	OnGoto Scratch10 RedrawExit FightMage TeleportToDest
+    if RoomsVisited2 has PortraitFight { exit }
+    Portrait = Elder
+    SetupMonster(Mage, distance=2, body=WhiteRobe)
+    Text("AN ANCIENT MAGE LOOKS UP FROM HIS STUDIES, 'AH, GOOD, I NEED MORE SPECIMENS AS CONTROLS.' HE TURNS TO HIS MUTATED GUARDS, 'SUBDUE THEM!'")
+    WaitReturnPressed()
+    EncounterMenu(Mage, distance=2, body=WhiteRobe, result=Scratch10, combat=Attack, wait=3, flee=Attack,
+        advance=3, parlay=Attack, escape=12, strength=12)
+    Portrait = None
+    goto [RedrawExit, FightMage, TeleportToDest][Scratch10]
 
 FightMage:
-	Surprise = NoSurprise
-	Morale = 100
-	ClearMonsters
-	LoadMonster Yarash count=1 icon=Shaman
-	LoadMonster MutantLizMan count=6 icon=57
-	Combat
-	Scratch1 = 0
-	if CombatEnd == PartyFled: Goto TeleportToDest
-	RoomsVisited2 |= PortraitFight
-	Gosub FlagBossAngry
-	Exit
+    Surprise = NoSurprise
+    Morale = 100
+    ClearMonsters()
+    LoadMonster(Yarash, count=1, icon=Shaman)
+    LoadMonster(MutantLizMan, count=6, icon=57)
+    Combat()
+    Scratch1 = 0
+    if CombatEnd == PartyFled { goto TeleportToDest }
+    RoomsVisited2 |= PortraitFight
+    FlagBossAngry()
+    exit
 
-MarkFountainDone:
-	RoomsVisited |= Fountain
+def MarkFountainDone() {
+    RoomsVisited |= Fountain
+} # falls into FlagBossAngry
 
 FlagBossAngry:
-	if Boss != 255: Boss = 254
-	Return
+    if Boss != 255 { Boss = YarashBeaten }
+    return
 
 ColorDial:
-	PrintClear "YOU SEE A DIAL THAT CAN BE SET TO FOUR DIFFERENT COLORS: BLUE, COPPER, SILVER, AND GOLD. IT IS CURRENTLY SET TO "
-	OnGosub DialColor DialBlue DialCopper DialSilver DialGold
-	Print " DO YOU WISH TO CHANGE THE SETTING?"
-	if Ask YesNoMenu == "NO": Exit
-	PrintClear "CHANGE TO WHAT SETTING?"
-	DialColor = Menu "BLUE" "COPPER" "SILVER" "GOLD"
-	Exit
+    Text("YOU SEE A DIAL THAT CAN BE SET TO FOUR DIFFERENT COLORS: BLUE, COPPER, SILVER, AND GOLD. IT IS CURRENTLY SET TO ")
+    gosub [DialBlue, DialCopper, DialSilver, DialGold][DialColor]
+    Print(" DO YOU WISH TO CHANGE THE SETTING?")
+    if YesNoMenu() == "NO" { exit }
+    Text("CHANGE TO WHAT SETTING?")
+    DialColor = Menu("BLUE", "COPPER", "SILVER", "GOLD")
+    exit
 
-DialBlue:
-	Print "BLUE."
-	Return
+def DialBlue() {
+    Print("BLUE.")
+    return
+}
 
-DialCopper:
-	Print "COPPER."
-	Return
+def DialCopper() {
+    Print("COPPER.")
+    return
+}
 
-DialSilver:
-	Print "SILVER."
-	Return
+def DialSilver() {
+    Print("SILVER.")
+    return
+}
 
-DialGold:
-	Print "GOLD."
-	Return
+def DialGold() {
+    Print("GOLD.")
+    return
+}
 
 YarashDesk:
-	if RoomsVisited2 has YarashDeskSearched: Goto SearchDeskPapers
-	PrintClear "THIS IS THE DESK OF YARASH. ON IT IS A LITTER OF PAPERS."
-	RoomsVisited2 |= YarashDeskSearched
-	Gosub WaitReturnPressed
+    if RoomsVisited2 has YarashDeskSearched { goto SearchDeskPapers }
+    Text("THIS IS THE DESK OF YARASH. ON IT IS A LITTER OF PAPERS.")
+    RoomsVisited2 |= YarashDeskSearched
+    WaitReturnPressed()
 
-SearchDeskPapers:
-	if RoomsVisited2 has DeskPapers: Exit
-	if Search == 0: Exit
-	RoomsVisited2 |= DeskPapers
-	PrintClear "AMONG THE PAPERS ON THE DESK YOU FIND THE FOLLOWING AND SLIP THEM INTO YOUR JOURNAL:"
-	Gosub WaitReturnPressed
-	PrintClear "A LETTER FROM THE BOSS, TELLING YARASH TO JOIN OR DIE. (ENTRY 33)"
-	Gosub WaitReturnPressed
-	PrintClear "AN UNSENT REPLY TO THIS LETTER. (ENTRY 49)"
-	Gosub WaitReturnPressed
-	PrintClear "A MESSAGE TO THE BUCCANEERS OFFERING A BOUNTY FOR A REAL SAHUAGIN. (ENTRY 27)"
-	Gosub WaitReturnPressed
-	PrintClear "A WARNING TO AN AGENT ABOUT THE DANGERS IN THE MOUNTAINS TO THE NORTHWEST. (ENTRY 56)"
-	Gosub WaitReturnPressed
-	PrintClear "A NOTE TO A TRAPPER ABOUT KOBOLDS AND HOBGOBLINS. (ENTRY 40)"
-	Gosub WaitReturnPressed
-	Exit
+    SearchDeskPapers:
+    if RoomsVisited2 has DeskPapers { exit }
+    if Search == NotSearching { exit }
+    RoomsVisited2 |= DeskPapers
+    Text("AMONG THE PAPERS ON THE DESK YOU FIND THE FOLLOWING AND SLIP THEM INTO YOUR JOURNAL:")
+    WaitReturnPressed()
+    Text("A LETTER FROM THE BOSS, TELLING YARASH TO JOIN OR DIE. (ENTRY 33)")
+    WaitReturnPressed()
+    Text("AN UNSENT REPLY TO THIS LETTER. (ENTRY 49)")
+    WaitReturnPressed()
+    Text("A MESSAGE TO THE BUCCANEERS OFFERING A BOUNTY FOR A REAL SAHUAGIN. (ENTRY 27)")
+    WaitReturnPressed()
+    Text("A WARNING TO AN AGENT ABOUT THE DANGERS IN THE MOUNTAINS TO THE NORTHWEST. (ENTRY 56)")
+    WaitReturnPressed()
+    Text("A NOTE TO A TRAPPER ABOUT KOBOLDS AND HOBGOBLINS. (ENTRY 40)")
+    WaitReturnPressed()
+    exit
+
+# tables
+DestX = [0, 0, 3, 3, 4, 6, 7, 11, 12, 14, 15, 0, 14, 13]
+DestY = [0, 4, 8, 13, 9, 0, 0, 3, 3, 13, 12, 3, 12, 3]
+DestFacing = [0, 0, 0, 2, 2, 2, 2, 2, 3, 2, 3, 2, 3, 1, 17, 128, 12, 16, 248, 25, 61, 88, 20, 4, 177, 96, 37, 79, 192]
+Table9B08 = [0, 1, 2, 3, 0, 1, 2]
+ByFacing9B0F = [0, 3, 2, 1]
+Table9B9F = [0, 9, 1, 1, 9, 1, 5, 1, 6, 1, 7, 2, 2, 2, 3, 3, 4, 8, 10, 11, 11, 11, 12, 13, 14, 15, 16, 17]
+Table9BBB = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 5, 0, 0, 0, 8, 16, 32, 0, 0, 0, 0, 0, 0]
+Table9C40 = [3, 1, 3, 1, 2, 0, 2, 0, 1, 3]
+Table9C4A = [1, 1, 2, 2, 4, 4, 8, 8, 16, 16]
+Table9CE7 = [13, 255, 12]
+Table9CEA = [0, 7, 1]
+Table9DFA = [0, 4, 6, 9]
+PasswordRunesEnd = [134, 135, 131, 134, 135, 131, 0]
+PasswordRunes = [0]

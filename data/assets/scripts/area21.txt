@@ -1,548 +1,555 @@
-event0:
-	Gosub SetSky
-	if LeftMap == 0: Goto EnterDone
-	PrintClear "DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?"
-	Ask YesNoMenu "YES" -> BoardBoat "NO" -> StayAtKeep
+on move {
+    SetSky()
+    if LeftMap == 0 { goto EnterDone }
+    Text("DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?")
+    YesNoMenu()
+    goto [BoardBoat, StayAtKeep][Scratch1]
+} # falls into BoardBoat
 
 BoardBoat:
-	if SkyColor21 == 8: Goto SailToPhlan
-	Picture Ship
+    if SkyColor21 == 8 { goto SailToPhlan }
+    Picture(Ship)
 
-SailToPhlan:
-	PrintClear "YOU BOARD A BOAT."
-	Gosub PressToContinue
-	PartyX = 15
-	PartyY = 1
-	Facing = West
-	EnterArea NewPhlan
+    SailToPhlan:
+    Text("YOU BOARD A BOAT.")
+    PressToContinue()
+    PartyX = 15
+    PartyY = 1
+    Facing = West
+    EnterArea(NewPhlan)
 
 StayAtKeep:
-	HoldMove = SkipMove
+    HoldMove = SkipMove
 
 EnterDone:
-	Scratch10 = 127 & Cell
-	Exit
+    Scratch10 = ~Inside & Cell
+    exit
 
-event1:
-	Sky = SkyColor21
-	Scratch10 = 127 & Cell
-	RedrawView
-	PrintClear ""
-	Picture None
-	Scratch6 = 0
-	AuxCounter = 0
+on step {
+    Sky = SkyColor21
+    Scratch10 = ~Inside & Cell
+    RedrawView()
+    Text("")
+    Picture(None)
+    Scratch6 = 0
+    AuxCounter = 0
 
-FindCellLoop:
-	if AuxCounter == Scratch10: Goto CellDispatch
-	if AuxCounter > 19: Exit
-	AuxCounter += 1
-	Goto FindCellLoop
+    FindCellLoop:
+    if AuxCounter == Scratch10 { goto CellDispatch }
+    if AuxCounter > 19 { exit }
+    AuxCounter += 1
+    goto FindCellLoop
 
-CellDispatch:
-	OnGoto AuxCounter ClearExit DeadElf KeepGates PatrolRoad Stable FungusRoom Smithy Barracks Insects OrcRaid Armory Chapel FerranSpirit HiddenRoom GearStands SmithyHammer BarracksSearch MagicGear CoordsOff EmptyHallCheck
-	Exit
+    CellDispatch:
+    goto [ClearExit, DeadElf, KeepGates, PatrolRoad, Stable, FungusRoom, Smithy, Barracks, Insects,
+        OrcRaid, Armory, Chapel, FerranSpirit, HiddenRoom, GearStands, SmithyHammer, BarracksSearch,
+        MagicGear, CoordsOff, EmptyHallCheck][AuxCounter]
+    exit
+}
 
-event2:
-	if PatrolsFought21 > 4: Goto NoRest
-	RestEvery = 2
-	RestChance = 1
-	Exit
+on camp {
+    if PatrolsFought21 > 4 { goto NoRest }
+    RestEvery = 2
+    RestChance = 1
+    exit
+}
 
 NoRest:
-	RestEvery = 0
-	RestChance = 0
-	Exit
+    RestEvery = 0
+    RestChance = 0
+    exit
 
-event3:
-	RestChance = 0
-	Scratch5 = 0
-	Scratch3 = 0
-	Scratch6 = 0
-	Goto UndeadPatrol
+on rest {
+    RestChance = 0
+    Scratch5 = 0
+    Scratch3 = 0
+    Scratch6 = 0
+    goto UndeadPatrol
+}
 
-event4:
-	Gosub SetSky
-	Sky = SkyColor21
-	SkyInside = 10
-	LoadMap 21 unused=2 icons=255
-	LoadWalls 1 5 9
-	if ArrivedAtKeep != 0: Exit
-	ArrivedAtKeep = 1
-	Facing = North
-	PartyX = 8
-	PartyY = 14
-	Call CallRedraw
-	PrintClear "THE BOAT DISEMBARKS YOU AT SOKAL KEEP."
-	Gosub PressToContinue
-	if RestChance == ViewFlags: Exit
-	Goto NoRest
+on load {
+    SetSky()
+    Sky = SkyColor21
+    SkyInside = 10
+    LoadMap(21, unused=2, icons=255)
+    LoadWalls(1, 5, 9)
+    if ArrivedAtKeep != 0 { exit }
+    ArrivedAtKeep = 1
+    Facing = North
+    PartyX = 8
+    PartyY = 14
+    CallRedraw()
+    Text("THE BOAT DISEMBARKS YOU AT SOKAL KEEP.")
+    PressToContinue()
+    if RestChance == ViewFlags { exit }
+    goto NoRest
+}
 
 DeadElf:
-	Picture Bones
-	if ElfScrollTaken == 255: Goto ElfLooted
-	if ElfBodyHacked == Completed: Goto ElfLooted
-	PrintClear "THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT."
-	Gosub PressToContinue
-	if Search != 1: Goto ElfMenu
+    Picture(Bones)
+    if ElfScrollTaken == Yes { goto ElfLooted }
+    if ElfBodyHacked == Yes { goto ElfLooted }
+    Text("THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT.")
+    PressToContinue()
+    if Search != Searching { goto ElfMenu }
 
 ElfScroll:
-	PrintClear "IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ..."
-	Gosub PressToContinue
-	LoadMap Keep unused=16 icons=255
-	ClearBox
-	Protection ElfScrollLine1
-	NewLine
-	Protection ElfScrollLine2
-	NewLine
-	Protection ElfScrollLine3
-	PrintClear "...THE LAST PART IS EATEN AWAY."
-	LoadMap Keep unused=2 icons=255
-	Gosub PressToContinue
-	LoadWalls 1 5 9
-	Goto ElfDone
+    Text("IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ...")
+    PressToContinue()
+    LoadMap(Keep, unused=16, icons=255)
+    ClearBox()
+    Protection(ElfScrollLine1)
+    NewLine()
+    Protection(ElfScrollLine2)
+    NewLine()
+    Protection(ElfScrollLine3)
+    Text("...THE LAST PART IS EATEN AWAY.")
+    LoadMap(Keep, unused=2, icons=255)
+    PressToContinue()
+    LoadWalls(1, 5, 9)
+    goto ElfDone
 
 ElfMenu:
-	alias Choice = Scratch1
-	Choice = VMenu "WHAT DO YOU DO?" "LEAVE" "SEARCH" "ATTACK" "TALK"
-	OnGoto Choice ClearExit ElfScroll HackElf TalkToElf
+    Scratch1 = VMenu("WHAT DO YOU DO?", "LEAVE", "SEARCH", "ATTACK", "TALK")
+    goto [ClearExit, ElfScroll, HackElf, TalkToElf][Scratch1]
 
 TalkToElf:
-	Scratch1 = Parlay 0 0 0 0 0
-	PrintClear "THE ELF IS LONG DEAD."
-	Goto ElfDone
+    Scratch1 = Parlay(0, 0, 0, 0, 0)
+    Text("THE ELF IS LONG DEAD.")
+    goto ElfDone
 
 HackElf:
-	PrintClear "YOU HACK THE BODY TO BITS."
-	ElfBodyHacked = Completed
-	Goto ElfDone
+    Text("YOU HACK THE BODY TO BITS.")
+    ElfBodyHacked = Yes
+    goto ElfDone
 
 ElfLooted:
-	PrintClear "YOU SEE THE PITIFUL REMAINS OF A DEAD ELF.  EVERYTHING OF VALUE HAS BEEN TAKEN OR DESTROYED."
+    Text("YOU SEE THE PITIFUL REMAINS OF A DEAD ELF.  EVERYTHING OF VALUE HAS BEEN TAKEN OR DESTROYED.")
 
 ElfDone:
-	Picture None
-	Exit
+    Picture(None)
+    exit
 
 KeepGates:
-	if Scratch3 != 0: Exit
-	PrintClear "YOU STAND BELOW THE ROTTING REMAINS OF THE ONCE-MIGHTY GATES OF SOKAL KEEP."
-	Scratch3 = 1
-	if FerranFreed == Completed: Exit
-	Print " ECHOING FOOTSTEPS ARE DIMLY HEARD WITHIN THE KEEP.  TO THE WEST RISES A MOUND OF REEDS."
-	Exit
+    if Scratch3 != 0 { exit }
+    Text("YOU STAND BELOW THE ROTTING REMAINS OF THE ONCE-MIGHTY GATES OF SOKAL KEEP.")
+    Scratch3 = 1
+    if FerranFreed == Yes { exit }
+    Print(" ECHOING FOOTSTEPS ARE DIMLY HEARD WITHIN THE KEEP.  TO THE WEST RISES A MOUND OF REEDS.")
+    exit
 
 PatrolRoad:
-	Scratch5 = 0
-	Scratch3 = 0
-	if PatrolsFought21 > 5: PatrolsFought21 = 0
-	if PatrolsFought21 < 4: Goto PatrolRoll
-	Exit
+    Scratch5 = 0
+    Scratch3 = 0
+    if PatrolsFought21 > 5 { PatrolsFought21 = 0 }
+    if PatrolsFought21 < 4 { goto PatrolRoll }
+    exit
 
-PatrolRoll:
-	Scratch1 = Random 5
-	if 3 != Scratch1: Exit
+    PatrolRoll:
+    Scratch1 = Random(5)
+    if 3 != Scratch1 { exit }
 
 UndeadPatrol:
-	SetupMonster Skeleton distance=2 closeup=Skeleton
-	Delay
-	Approach
-	Delay
-	Approach
-	if PatrolPassword == 0: Goto PatrolMenu
-	PrintClear "AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?"
-	Ask YesNoMenu "YES" -> PatrolLeaves "NO" -> PatrolFight
+    SetupMonster(Skeleton, distance=2, closeup=Skeleton)
+    Delay()
+    Approach()
+    Delay()
+    Approach()
+    if PatrolPassword == 0 { goto PatrolMenu }
+    Text("AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?")
+    YesNoMenu()
+    goto [PatrolLeaves, PatrolFight][Scratch1]
 
-PatrolMenu:
-	EncounterMenu Skeleton distance=0 closeup=Skeleton result=Scratch1 combat=Attack wait=Approach flee=Attack advance=Mirror parlay=Talk near="A PACK OF UNDEAD SUDDENLY APPEARS." escape=0 strength=0
-	OnGoto Scratch1 ClearExit PatrolFight RunAway PatrolParlay
+    PatrolMenu:
+    EncounterMenu(Skeleton, distance=0, closeup=Skeleton, result=Scratch1, combat=Attack, wait=3, flee=Attack,
+        advance=Mirror, parlay=Talk, near="A PACK OF UNDEAD SUDDENLY APPEARS.", escape=0, strength=0)
+    goto [ClearExit, PatrolFight, RunAway, PatrolParlay][Scratch1]
 
 PatrolParlay:
-	Scratch1 = Parlay 0 0 0 0 0
-	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
-	NewLine
-	$AuxMonsterName = InputString 7
-	if FerranFreed == Completed: $AuxText = "SAMOSUD"
-	also if FerranFreed != Completed: $AuxText = "SHESTNI"
-	if $AuxMonsterName != $AuxText: Goto WrongPassword
-	PatrolPassword = 1
+    Scratch1 = Parlay(0, 0, 0, 0, 0)
+    Text("WHAT DO YOU SAY? (TYPE A SINGLE WORD)")
+    NewLine()
+    $AuxMonsterName = InputString(7)
+    if FerranFreed == Yes {
+        $AuxText = "SAMOSUD"
+    } else {
+        $AuxText = "SHESTNI"
+    }
+    if $AuxMonsterName != $AuxText { goto WrongPassword }
+    PatrolPassword = 1
 
 PatrolLeaves:
-	PrintClear "THE UNDEAD LEAVE."
-	Picture None
-	Exit
+    Text("THE UNDEAD LEAVE.")
+    Picture(None)
+    exit
 
 WrongPassword:
-	PrintClear "THEY DIDN'T LIKE THAT WORD."
+    Text("THEY DIDN'T LIKE THAT WORD.")
 
 PatrolFight:
-	Scratch1 = 3
-	AuxPartyStrength = 1
-	Surprise = NoSurprise
-	Goto LoadEncounter
+    Scratch1 = 3
+    AuxPartyStrength = 1
+    Surprise = NoSurprise
+    goto LoadEncounter
 
 PatrolBeaten:
-	PatrolsFought21 += 1
-	Exit
+    PatrolsFought21 += 1
+    exit
 
 Stable:
-	if StableSeen21 > 1: StableSeen21 = 0
-	if StableSeen21 != 0: Exit
-	PrintClear "UNWHOLESOME MOLD AND FUNGI COVER THE DECAYING RUINS OF THE KEEP'S STABLE.  A PUTRID SMELL OF SICKNESS RISES AS YOU ENTER THE BUILDING."
-	StableSeen21 = 1
-	Exit
+    if StableSeen21 > 1 { StableSeen21 = 0 }
+    if StableSeen21 != 0 { exit }
+    Text("UNWHOLESOME MOLD AND FUNGI COVER THE DECAYING RUINS OF THE KEEP'S STABLE.  A PUTRID SMELL OF SICKNESS RISES AS YOU ENTER THE BUILDING.")
+    StableSeen21 = 1
+    exit
 
 FungusRoom:
-	if FungusRoomSeen > 1: FungusRoomSeen = 0
-	if FungusRoomSeen > 0: Exit
-	PrintClear "A THICK CARPET OF FUNGUS COVERS THE FLOOR OF THIS ROOM."
-	FungusRoomSeen = 1
-	Exit
+    if FungusRoomSeen > 1 { FungusRoomSeen = 0 }
+    if FungusRoomSeen > 0 { exit }
+    Text("A THICK CARPET OF FUNGUS COVERS THE FLOOR OF THIS ROOM.")
+    FungusRoomSeen = 1
+    exit
 
 Smithy:
-	if SmithySeen > 1: SmithySeen = 0
-	if SmithySeen > 0: Goto SmithyFrogCheck
-	PrintClear "A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY."
-	SmithySeen = 1
+    if SmithySeen > 1 { SmithySeen = 0 }
+    if SmithySeen > 0 { goto SmithyFrogCheck }
+    Text("A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY.")
+    SmithySeen = 1
 
-SmithyFrogCheck:
-	if SmithyFrogs == FrogsDefeated: Exit
-	if SmithyFrogs > 2: SmithyFrogs = 0
-	if SmithyFrogs > 1: Goto FrogsMenu
-	SmithyFrogs += 1
-	Exit
+    SmithyFrogCheck:
+    if SmithyFrogs == FrogsDefeated { exit }
+    if SmithyFrogs > 2 { SmithyFrogs = 0 }
+    if SmithyFrogs > 1 { goto FrogsMenu }
+    SmithyFrogs += 1
+    exit
 
-FrogsMenu:
-	EncounterMenu GiantFrog distance=2 closeup=GiantFrog result=Scratch1 combat=Attack wait=Attack flee=Attack advance=Attack parlay=Talk near="THE CROAKING RISES IN VOLUME." escape=0 strength=0
-	OnGoto Scratch1 ClearExit FrogsFight RunAway FrogsParlay
+    FrogsMenu:
+    EncounterMenu(GiantFrog, distance=2, closeup=GiantFrog, result=Scratch1, combat=Attack, wait=Attack,
+        flee=Attack, advance=Attack, parlay=Talk, near="THE CROAKING RISES IN VOLUME.", escape=0,
+        strength=0)
+    goto [ClearExit, FrogsFight, RunAway, FrogsParlay][Scratch1]
 
 FrogsParlay:
-	Scratch1 = Parlay 0 0 0 0 0
-	PrintClear "CROAK!"
+    Scratch1 = Parlay(0, 0, 0, 0, 0)
+    Text("CROAK!")
 
 FrogsFight:
-	Scratch1 = 0
-	Surprise = NoSurprise
-	AuxPartyStrength = 0
-	Goto LoadEncounter
+    Scratch1 = 0
+    Surprise = NoSurprise
+    AuxPartyStrength = 0
+    goto LoadEncounter
 
 FrogsBeaten:
-	SmithyFrogs = FrogsDefeated
-	Exit
+    SmithyFrogs = FrogsDefeated
+    exit
 
 SmithyHammer:
-	if HammerTaken == Completed: Exit
-	if Search != 1: Exit
-	PrintClear "AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER."
-	Print " DO YOU TAKE IT?"
-	Ask YesNoMenu "YES" -> TakeHammer "NO" -> ClearExit
+    if HammerTaken == Yes { exit }
+    if Search != Searching { exit }
+    Text("AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER.")
+    Print(" DO YOU TAKE IT?")
+    YesNoMenu()
+    goto [TakeHammer, ClearExit][Scratch1]
 
 TakeHammer:
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 19 // Hammer +1
-	Combat
-	HammerTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(items=[Hammer1])
+    Combat()
+    HammerTaken = Yes
+    exit
 
 Barracks:
-	if FerranFreed == Completed: Goto BarracksSearch
-	if HauntsAppeased == Completed: Goto BarracksSearch
-	if BarracksVisits > 5: BarracksVisits = 0
-	if BarracksVisits < 1: PrintClear "THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED."
-	BarracksVisits += 1
-	if BarracksVisits >= 4: Goto HauntsRise
-	Exit
+    if FerranFreed == Yes { goto BarracksSearch }
+    if HauntsAppeased == Yes { goto BarracksSearch }
+    if BarracksVisits > 5 { BarracksVisits = 0 }
+    if BarracksVisits < 1 {
+        Text("THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED.")
+    }
+    BarracksVisits += 1
+    if BarracksVisits >= 4 { goto HauntsRise }
+    exit
 
-HauntsRise:
-	if HauntsSeen == Completed: Goto HauntsMenu
-	HauntsSeen = Completed
-	PrintClear "A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING."
-	Gosub PressToContinue
+    HauntsRise:
+    if HauntsSeen == Yes { goto HauntsMenu }
+    HauntsSeen = Yes
+    Text("A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING.")
+    PressToContinue()
 
-HauntsMenu:
-	EncounterMenu Spectre distance=2 closeup=Spectre result=Scratch1 combat=Mirror wait=Mirror flee=Mirror advance=Mirror parlay=Talk near="GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL" escape=0 strength=0
-	OnGoto Scratch1 ClearExit HauntsWail RunAway HauntsParlay
+    HauntsMenu:
+    EncounterMenu(Spectre, distance=2, closeup=Spectre, result=Scratch1, combat=Mirror, wait=Mirror,
+        flee=Mirror, advance=Mirror, parlay=Talk,
+        near="GHOSTLY SHAPES SCREECH OUT A DREADFUL KEENING HOWL", escape=0, strength=0)
+    goto [ClearExit, HauntsWail, RunAway, HauntsParlay][Scratch1]
 
 HauntsWail:
-	PrintClear "'WOE, WOOOE, OH WOE,' THE FIGURES CRY PITEOUSLY."
-	Goto ClearExit
+    Text("'WOE, WOOOE, OH WOE,' THE FIGURES CRY PITEOUSLY.")
+    goto ClearExit
 
 HauntsParlay:
-	Scratch1 = Parlay 0 0 0 0 0
-	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)."
-	NewLine
-	$AuxMonsterName = InputString 3
-	$AuxText = "LUX"
-	if $AuxMonsterName == $AuxText: Goto HauntsAppease
-	PrintClear "WRONG WORD. "
-	Picture None
-	Print "THE MOANING CONTINUES."
+    Scratch1 = Parlay(0, 0, 0, 0, 0)
+    Text("WHAT DO YOU SAY? (TYPE A SINGLE WORD).")
+    NewLine()
+    $AuxMonsterName = InputString(3)
+    $AuxText = "LUX"
+    if $AuxMonsterName == $AuxText { goto HauntsAppease }
+    Text("WRONG WORD. ")
+    Picture(None)
+    Print("THE MOANING CONTINUES.")
 
 BarracksSearch:
-	if Search != 1: Exit
-	Scratch1 = Random 9
-	Goto DiaryGems
+    if Search != Searching { exit }
+    Scratch1 = Random(9)
+    goto DiaryGems
 
 HauntsAppease:
-	PrintClear "THE HAUNTS BURST INTO A CHORUS OF HOWLS, MOANS, COMPLAINTS, WAILS, AND OTHER LAMENTATIONS OVER THEIR FATE AND THE FATE OF THEIR FAMILIES. THEY WERE THE ORIGINAL DEFENDERS OF THE KEEP,"
-	Gosub PressToContinue
-	PrintClear "BEFORE THE CLERIC'S SPELLS INADVERTENTLY BOUND THEM TO THIS PLACE. ONE SPIRIT'S VOICE RISES ABOVE THE REST, 'AN ACCOUNT OF OUR TRIALS IS WITHIN THE DIARY.' HE POINTS TO A FLOORBOARD."
-	Gosub PressToContinue
-	Picture None
-	Scratch1 = 5
-	HauntsAppeased = Completed
+    Text("THE HAUNTS BURST INTO A CHORUS OF HOWLS, MOANS, COMPLAINTS, WAILS, AND OTHER LAMENTATIONS OVER THEIR FATE AND THE FATE OF THEIR FAMILIES. THEY WERE THE ORIGINAL DEFENDERS OF THE KEEP,")
+    PressToContinue()
+    Text("BEFORE THE CLERIC'S SPELLS INADVERTENTLY BOUND THEM TO THIS PLACE. ONE SPIRIT'S VOICE RISES ABOVE THE REST, 'AN ACCOUNT OF OUR TRIALS IS WITHIN THE DIARY.' HE POINTS TO A FLOORBOARD.")
+    PressToContinue()
+    Picture(None)
+    Scratch1 = 5
+    HauntsAppeased = Yes
 
 DiaryGems:
-	if DiaryGemsTaken == Completed: Exit
-	if Scratch1 != 5: Exit
-	PrintClear "BENEATH A FLOORBOARD YOU FIND SOME GEMS AND A FEW PAGES OF A DIARY.  YOU COPY THESE PAGES INTO YOUR JOURNAL AS ENTRY 3."
-	Gosub PressToContinue
-	PrintClear "DO YOU TAKE THE GEMS?"
-	Ask YesNoMenu "YES" -> TakeGems "NO" -> ClearExit
+    if DiaryGemsTaken == Yes { exit }
+    if Scratch1 != 5 { exit }
+    Text("BENEATH A FLOORBOARD YOU FIND SOME GEMS AND A FEW PAGES OF A DIARY.  YOU COPY THESE PAGES INTO YOUR JOURNAL AS ENTRY 3.")
+    PressToContinue()
+    Text("DO YOU TAKE THE GEMS?")
+    YesNoMenu()
+    goto [TakeGems, ClearExit][Scratch1]
 
 TakeGems:
-	ClearMonsters
-	Treasure 0 0 0 0 0 5 0 255
-	Combat
-	DiaryGemsTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(gems=5)
+    Combat()
+    DiaryGemsTaken = Yes
+    exit
 
 Insects:
-	if InsectsBeaten == Completed: Exit
-	SetupMonster Scorpion distance=0 closeup=Scorpion
-	PrintClear "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
-	AuxMember = 25
-	Gosub PressToContinue
-	PartySurprise Scratch1 Scratch2
-	Surprise Scratch1 Scratch2 6 1
-	Scratch1 = 1
-	AuxPartyStrength = 0
-	Surprise = NoSurprise
-	Goto LoadEncounter
+    if InsectsBeaten == Yes { exit }
+    SetupMonster(Scorpion, distance=0, closeup=Scorpion)
+    Text("THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING.")
+    AuxMember = 25
+    PressToContinue()
+    PartySurprise(Scratch1, Scratch2)
+    Surprise(Scratch1, Scratch2, 6, 1)
+    Scratch1 = 1
+    AuxPartyStrength = 0
+    Surprise = NoSurprise
+    goto LoadEncounter
 
 InsectsDone:
-	InsectsBeaten = Completed
-	Exit
+    InsectsBeaten = Yes
+    exit
 
 OrcRaid:
-	if FerranFreed == Completed: Goto EmptyHall
-	if OrcRaidBeaten == Completed: Goto EmptyHall
-	SetupMonster Hobgoblin distance=1 closeup=Hobgoblin
-	PrintClear "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
-	Gosub PressToContinue
-	Scratch1 = 5
-	AuxPartyStrength = 2
-	Surprise = NoSurprise
-	Goto LoadEncounter
+    if FerranFreed == Yes { goto EmptyHall }
+    if OrcRaidBeaten == Yes { goto EmptyHall }
+    SetupMonster(Hobgoblin, distance=1, closeup=Hobgoblin)
+    Text("A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU.")
+    PressToContinue()
+    Scratch1 = 5
+    AuxPartyStrength = 2
+    Surprise = NoSurprise
+    goto LoadEncounter
 
 OrcRaidDone:
-	OrcRaidBeaten = Completed
-	PrintClear "ON A HOBGOBLIN BODY, YOU FIND A NOTE THAT YOU COPY INTO YOUR JOURNAL AS ENTRY 57."
-	Scratch5 = 10
-	Exit
+    OrcRaidBeaten = Yes
+    Text("ON A HOBGOBLIN BODY, YOU FIND A NOTE THAT YOU COPY INTO YOUR JOURNAL AS ENTRY 57.")
+    Scratch5 = 10
+    exit
 
 EmptyHallCheck:
-	if HallEmptyFlag != 255: Exit
+    if HallEmptyFlag != Yes { exit }
 
 EmptyHall:
-	if Scratch5 == 10: Exit
-	PrintClear "THE HALL IS EMPTY, SAVE FOR SIGNS OF A RECENT BATTLE."
-	Scratch5 = 10
-	Exit
+    if Scratch5 == 10 { exit }
+    Text("THE HALL IS EMPTY, SAVE FOR SIGNS OF A RECENT BATTLE.")
+    Scratch5 = 10
+    exit
 
 Armory:
-	if ArmorySeen > 1: ArmorySeen = 0
-	if ArmorySeen < 1: PrintClear "YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS."
-	ArmorySeen = 1
-	Exit
+    if ArmorySeen > 1 { ArmorySeen = 0 }
+    Compare(ArmorySeen, 1)
+    if ArmorySeen < 1 {
+        Text("YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS.")
+    }
+    ArmorySeen = 1
+    exit
 
 HiddenRoom:
-	NoCoords = 0
-	if HiddenRoomSeen > 1: HiddenRoomSeen = 0
-	also if HiddenRoomSeen < 1: PrintClear "PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. "
-	HiddenRoomSeen = 1
-	if MagicGearTaken < Completed: Print "THERE IS A GLOW IN THE NORTHWESTERN CORNER OF THE ROOM."
-	Exit
+    NoCoords = 0
+    if HiddenRoomSeen > 1 { HiddenRoomSeen = 0 }
+    if HiddenRoomSeen < 1 {
+        Text("PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. ")
+    }
+    HiddenRoomSeen = 1
+    if MagicGearTaken < Yes { Print("THERE IS A GLOW IN THE NORTHWESTERN CORNER OF THE ROOM.") }
+    exit
 
 GearStands:
-	if MagicGearTaken == Completed: Exit
-	PrintClear "SPECIAL STANDS IN THE NORTHWESTERN CORNER HOLD EQUIPMENT."
-	Exit
+    if MagicGearTaken == Yes { exit }
+    Text("SPECIAL STANDS IN THE NORTHWESTERN CORNER HOLD EQUIPMENT.")
+    exit
 
 MagicGear:
-	if MagicGearTaken == Completed: Exit
-	PrintClear "ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. "
-	Print "DO YOU TAKE IT?"
-	Ask YesNoMenu "YES" -> TakeGear "NO" -> ClearExit
+    if MagicGearTaken == Yes { exit }
+    Text("ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. ")
+    Print("DO YOU TAKE IT?")
+    YesNoMenu()
+    goto [TakeGear, ClearExit][Scratch1]
 
 TakeGear:
-	ClearMonsters
-	Treasure 0 0 0 0 0 0 0 21 // Mace +2, Chain Mail +1, Long Sword +1, Shield +1
-	Combat
-	MagicGearTaken = Completed
-	Exit
+    ClearMonsters()
+    Treasure(items=[Mace2, ChainMail1, LongSword1, Shield1])
+    Combat()
+    MagicGearTaken = Yes
+    exit
 
 CoordsOff:
-	NoCoords = 1
-	Exit
+    NoCoords = 1
+    exit
 
 Chapel:
-	Scratch5 = 0
-	if ChapelSeen > 1: ChapelSeen = 0
-	if ChapelSeen > 0: Exit
-	PrintClear "THIS WAS ONCE THE CHAPEL OF THE KEEP.  INSIDE THE DOORWAY ARE THE DRIED HUSKS OF TWO ORCS, THEIR FACES TWISTED WITH TERROR.  A LARGE ALTAR DOMINATES THE SOUTHERN WALL."
-	ChapelSeen = 1
-	Exit
+    Scratch5 = 0
+    if ChapelSeen > 1 { ChapelSeen = 0 }
+    if ChapelSeen > 0 { exit }
+    Text("THIS WAS ONCE THE CHAPEL OF THE KEEP.  INSIDE THE DOORWAY ARE THE DRIED HUSKS OF TWO ORCS, THEIR FACES TWISTED WITH TERROR.  A LARGE ALTAR DOMINATES THE SOUTHERN WALL.")
+    ChapelSeen = 1
+    exit
 
 FerranSpirit:
-	if FerranFaded == Completed: Exit
-	if FerranFreed == Completed: Exit
-	EncounterMenu Spectre distance=0 closeup=HoodedMan result=Scratch1 combat=Attack wait=Approach flee=Mirror advance=Mirror parlay=Talk near="A PALE FORM RISES BEFORE YOU." escape=0 strength=0
-	OnGoto Scratch1 ClearExit FerranFight RunAway FerranParlay
+    if FerranFaded == Yes { exit }
+    if FerranFreed == Yes { exit }
+    EncounterMenu(Spectre, distance=0, closeup=HoodedMan, result=Scratch1, combat=Attack, wait=3, flee=Mirror,
+        advance=Mirror, parlay=Talk, near="A PALE FORM RISES BEFORE YOU.", escape=0, strength=0)
+    goto [ClearExit, FerranFight, RunAway, FerranParlay][Scratch1]
 
 FerranParlay:
-	Scratch1 = Parlay 0 0 0 0 0
-	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
-	NewLine
-	$AuxMonsterName = InputString 3
-	$AuxText = "LUX"
-	if $AuxMonsterName == $AuxText {
-		Goto FerranSpeaks
-		Goto FerranSpeaks
-	}
-	FerranFaded = Completed
-	PrintClear "THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY."
-	Picture None
-	Exit
+    Scratch1 = Parlay(0, 0, 0, 0, 0)
+    Text("WHAT DO YOU SAY? (TYPE A SINGLE WORD)")
+    NewLine()
+    $AuxMonsterName = InputString(3)
+    $AuxText = "LUX"
+    if $AuxMonsterName == $AuxText {
+        goto FerranSpeaks
+        goto FerranSpeaks
+    }
+    FerranFaded = Yes
+    Text("THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY.")
+    Picture(None)
+    exit
 
-FerranSpeaks:
-	alias Choice = Scratch1
-	Picture HoodedMan
-	PrintClear "THE SHAPE SPEAKS, 'I AM THE LIFE FORM OF FERRAN MARTINEZ, BOUND WITH THE UNDEAD SPIRITS OF ALL WHO DIE WITHIN THESE WALLS TO GUARD THE KEEP. TELL ME, HAS THE CITY BEEN FREED?'"
-	NewLine
-	Print "DO YOU: "
-	Choice = Menu "TELL THE TRUTH?" -> TellFerranTruth "LIE?" -> LieToFerran "RUN AWAY?" -> RunAway
+    FerranSpeaks:
+    Picture(HoodedMan)
+    Text("THE SHAPE SPEAKS, 'I AM THE LIFE FORM OF FERRAN MARTINEZ, BOUND WITH THE UNDEAD SPIRITS OF ALL WHO DIE WITHIN THESE WALLS TO GUARD THE KEEP. TELL ME, HAS THE CITY BEEN FREED?'")
+    NewLine()
+    Print("DO YOU: ")
+    Scratch1 = Menu("TELL THE TRUTH?", "LIE?", "RUN AWAY?")
+    goto [TellFerranTruth, LieToFerran, RunAway][Scratch1]
 
 LieToFerran:
-	PrintClear "'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY."
-	LiedToFerran = Completed
-	Picture None
-	Exit
+    Text("'YOU LIE,' THE SPIRIT MOANS AS IT FADES AWAY.")
+    LiedToFerran = Yes
+    Picture(None)
+    exit
 
 TellFerranTruth:
-	PrintClear "FERRAN SPEAKS: 'THE CITY FELL LONG AGO TO THE UNBLESSED CREATURES IMBUED WITH THE MIGHT OF A MAGICAL POOL.  CHIEF AMONG THESE WERE TYRANTHRAXUS, EDRANKA, AND TORATH."
-	Gosub PressToContinue
-	PrintClear "WITH THEIR POWERS THEY RULED AND UNITED ALL ELSE, DRIVING FORWARD TO DESTROY US ALL. THE SAGE MENDOR WORKED HARD TO GATHER RECORD OF ALL THESE THINGS, BUT THEY ARE LOST NOW, HIS LIBRARY OVERRUN."
-	Gosub PressToContinue
-	PrintClear ""
-	if MagicGearTaken == Completed: Goto FerranPassword
-	PrintClear "TO FIND HELP FOR YOUR BATTLES, YOU SHOULD PASS THROUGH THE ILLUSIONARY WALL IN THE ARMORY OF THIS KEEP."
+    Text("FERRAN SPEAKS: 'THE CITY FELL LONG AGO TO THE UNBLESSED CREATURES IMBUED WITH THE MIGHT OF A MAGICAL POOL.  CHIEF AMONG THESE WERE TYRANTHRAXUS, EDRANKA, AND TORATH.")
+    PressToContinue()
+    Text("WITH THEIR POWERS THEY RULED AND UNITED ALL ELSE, DRIVING FORWARD TO DESTROY US ALL. THE SAGE MENDOR WORKED HARD TO GATHER RECORD OF ALL THESE THINGS, BUT THEY ARE LOST NOW, HIS LIBRARY OVERRUN.")
+    PressToContinue()
+    Text("")
+    if MagicGearTaken == Yes { goto FerranPassword }
+    Text("TO FIND HELP FOR YOUR BATTLES, YOU SHOULD PASS THROUGH THE ILLUSIONARY WALL IN THE ARMORY OF THIS KEEP.")
 
-FerranPassword:
-	Print "TO PASS MY GUARDS ON THE WAY OUT, SPEAK THE WORD 'SAMOSUD'.  NOW WE ARE FREED, OUR DUTY DONE!' FERRAN FADES AWAY."
-	Gosub PressToContinue
-	PatrolPassword = 0
-	FerranFreed = Completed
-	QuestSokalKeep = RewardDue
-	Picture None
-	Exit
+    FerranPassword:
+    Print("TO PASS MY GUARDS ON THE WAY OUT, SPEAK THE WORD 'SAMOSUD'.  NOW WE ARE FREED, OUR DUTY DONE!' FERRAN FADES AWAY.")
+    PressToContinue()
+    PatrolPassword = 0
+    FerranFreed = Yes
+    QuestSokalKeep = RewardDue
+    Picture(None)
+    exit
 
 FerranFight:
-	Scratch1 = 2
-	AuxPartyStrength = 0
-	Surprise = NoSurprise
-	Goto LoadEncounter
+    Scratch1 = 2
+    AuxPartyStrength = 0
+    Surprise = NoSurprise
+    goto LoadEncounter
 
 FerranBeaten:
-	FerranFreed = Completed
-	QuestSokalKeep = RewardDue
-	Exit
+    FerranFreed = Yes
+    QuestSokalKeep = RewardDue
+    exit
 
-FleeIfLost:
-	if CombatEnd > PartyDied: Goto RunAway
-	Return
+def FleeIfLost() {
+    if CombatEnd > PartyDied { goto RunAway }
+    return
+}
 
 RunAway:
-	Facing = Random 3
-	AuxTemp9 = Random 3
-	PartyX = FleeXTable[AuxTemp9]
-	PartyY = FleeYTable[AuxTemp9]
-	PrintClear ""
-	Call CallRedraw
+    Facing = Random(3)
+    AuxTemp9 = Random(3)
+    PartyX = FleeXTable[AuxTemp9]
+    PartyY = FleeYTable[AuxTemp9]
+    Text("")
+    CallRedraw()
 
 ClearExit:
-	Picture None
-	Exit
+    Picture(None)
+    exit
 
-PressToContinue:
-	alias Choice = AuxMenuChoice
-	Choice = Menu "PRESS <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def PressToContinue() {
+    AuxMenuChoice = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
-YesNoMenu:
-	alias Choice = Scratch1
-	Choice = Menu "YES" "NO"
-	Return
+def YesNoMenu() {
+    Scratch1 = Menu("YES", "NO")
+    return
+}
 
-SetSky:
-	SkyColor21 = 11
-	if Hours >= 14: SkyColor21 = 8
-	Sky = SkyColor21
-	Return
+def SetSky() {
+    SkyColor21 = 11
+    if Hours >= 14 { SkyColor21 = 8 }
+    Sky = SkyColor21
+    return
+}
 
 LoadEncounter:
-	alias EncCount = AuxEncResult
-	alias EncMonster = AuxRoll
-	alias EncMorale = AuxMonster
-	alias EncPicture = AuxEncResult2
-	MonsterDist = EncMonsterDistTable[Scratch1]
-	EncMonster = EncMonsterTable[Scratch1]
-	EncMorale = EncMoraleTable[Scratch1]
-	EncCount = EncCountTable[Scratch1]
-	EncPicture = EncPictureTable[Scratch1]
-	if Scratch6 != 0: Goto LoadEncounterGroup
-	ClearMonsters
-	Scratch6 = 1
+    MonsterDist = EncMonsterDistTable[Scratch1]
+    AuxRoll = EncMonsterTable[Scratch1]
+    AuxMonster = EncMoraleTable[Scratch1]
+    AuxEncResult = EncCountTable[Scratch1]
+    AuxEncResult2 = EncPictureTable[Scratch1]
+    if Scratch6 != 0 { goto LoadEncounterGroup }
+    ClearMonsters()
+    Scratch6 = 1
 
-LoadEncounterGroup:
-	LoadMonster AuxRoll count=AuxEncResult icon=AuxEncResult2
-	if AuxPartyStrength == 0: Goto EncounterCombat
-	Scratch1 += 1
-	AuxPartyStrength -= 1
-	Goto LoadEncounter
+    LoadEncounterGroup:
+    LoadMonster(AuxRoll, count=AuxEncResult, icon=AuxEncResult2)
+    if AuxPartyStrength == 0 { goto EncounterCombat }
+    Scratch1 += 1
+    AuxPartyStrength -= 1
+    goto LoadEncounter
 
-EncounterCombat:
-	Morale = AuxMonster
-	Combat
-	Gosub FleeIfLost
-	OnGoto Scratch1 FrogsBeaten InsectsDone FerranBeaten ClearExit PatrolBeaten ClearExit ClearExit OrcRaidDone
-	Exit // extra: the original runs on into data at AEF6
+    EncounterCombat:
+    Morale = AuxMonster
+    Combat()
+    FleeIfLost()
+    goto [FrogsBeaten, InsectsDone, FerranBeaten, ClearExit, PatrolBeaten, ClearExit, ClearExit, OrcRaidDone][Scratch1]
+    exit # the original runs on into data at AEF6
 
-EncMonsterDistTable:
-	Data 2 0 2 0 0 1 1 1
-
-EncMonsterTable:
-	Data 38 39 19 34 35 6 5 4
-
-EncMoraleTable:
-	Data 50 99 99 99 99 50 50 50
-
-EncCountTable:
-	Data 4 2 1 6 6 15 4 31
-
-EncPictureTable:
-	Data 37 18 17 34 35 6 5 4
-
-ElfScrollLine1:
-	Data 86 87 107 108 113 114 0
-
-ElfScrollLine2:
-	Data 103 104 64 65 88 89 92 93 103 104 107 108 70 71 0
-
-ElfScrollLine3:
-	Data 103 104 78 79 72 73 103 104 105 106 90 91 80 81 0
-
-FleeXTable:
-	Data 7 8 11 4
-
-FleeYTable:
-	Data 14 13 11 11 1
+# tables
+EncMonsterDistTable = [2, 0, 2, 0, 0, 1, 1, 1]
+EncMonsterTable = [38, 39, 19, 34, 35, 6, 5, 4]
+EncMoraleTable = [50, 99, 99, 99, 99, 50, 50, 50]
+EncCountTable = [4, 2, 1, 6, 6, 15, 4, 31]
+EncPictureTable = [37, 18, 17, 34, 35, 6, 5, 4]
+ElfScrollLine1 = [86, 87, 107, 108, 113, 114, 0]
+ElfScrollLine2 = [103, 104, 64, 65, 88, 89, 92, 93, 103, 104, 107, 108, 70, 71, 0]
+ElfScrollLine3 = [103, 104, 78, 79, 72, 73, 103, 104, 105, 106, 90, 91, 80, 81, 0]
+FleeXTable = [7, 8, 11, 4]
+FleeYTable = [14, 13, 11, 11, 1]

@@ -1,907 +1,870 @@
-event0:
-	if InLair == InsideLair: Exit
-	if MapY <= 2: Gosub NorthEdgeHold
-	OnGoto FacingRaw CheckBlockedMove CheckEastEdge CheckEastEdge CheckEastEdge CheckBlockedMove CheckWestEdge CheckWestEdge CheckWestEdge
+on move {
+    if InLair == InsideLair { exit }
+    if MapY <= 2 { NorthEdgeHold() }
+    goto [CheckBlockedMove, CheckEastEdge, CheckEastEdge, CheckEastEdge, CheckBlockedMove,
+        CheckWestEdge, CheckWestEdge, CheckWestEdge][FacingRaw]
+} # falls into CheckEastEdge
 
 CheckEastEdge:
-	if MapX == 15: Gosub EastEdgeExit
-	Goto CheckBlockedMove
+    if MapX == 15 { EastEdgeExit() }
+    goto CheckBlockedMove
 
 CheckWestEdge:
-	if MapX == 2: Gosub WestEdgeExit
+    if MapX == 2 { WestEdgeExit() }
 
 CheckBlockedMove:
-	Gosub ProbeAheadBlocked
-	Exit
+    ProbeAheadBlocked()
+    exit
 
-NorthEdgeHold:
-	OnGoto FacingRaw HoldMoving HoldMoving NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit HoldMoving
+def NorthEdgeHold() {
+    goto [HoldMoving, HoldMoving, NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, HoldMoving][FacingRaw]
+} # falls into HoldMoving
 
 HoldMoving:
-	HoldMove = SkipMove
-	Return
+    HoldMove = SkipMove
+    return
 
-EastEdgeExit:
-	OnGoto FacingRaw NoEdgeExit ExitToArea27 ExitToArea27 EastEdgeRowCheck NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit
+def EastEdgeExit() {
+    goto [NoEdgeExit, ExitToArea27, ExitToArea27, EastEdgeRowCheck, NoEdgeExit, NoEdgeExit, NoEdgeExit,
+        NoEdgeExit][FacingRaw]
+} # falls into NoEdgeExit
 
 NoEdgeExit:
-	Return
+    return
 
 ExitToArea27:
-	MapX = 3
-	EnterArea Quagmire
+    MapX = 3
+    EnterArea(Quagmire)
 
-WestEdgeExit:
-	OnGoto FacingRaw NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit NoEdgeExit WestEdgeRowCheck ExitToArea25 ExitToArea25
+def WestEdgeExit() {
+    goto [NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, NoEdgeExit, WestEdgeRowCheck, ExitToArea25,
+        ExitToArea25][FacingRaw]
+} # falls into ExitToArea25
 
 ExitToArea25:
-	MapX = 14
-	EnterArea Mountains
+    MapX = 14
+    EnterArea(Mountains)
 
 EastEdgeRowCheck:
-	if MapY != 25: Goto ExitToArea27
-	HoldMove = SkipMove
-	Return
+    if MapY != 25 { goto ExitToArea27 }
+    HoldMove = SkipMove
+    return
 
 WestEdgeRowCheck:
-	if MapY != 31: Goto ExitToArea25
-	HoldMove = SkipMove
-	Return
+    if MapY != 31 { goto ExitToArea25 }
+    HoldMove = SkipMove
+    return
 
-ProbeAheadBlocked:
-	ProbeX = MapX
-	ProbeY = MapY
-	OnGosub FacingRaw ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
-	Call CallUnknownC01B
-	Scratch1 = 0
-	Scratch3 = 28
-	if Boss >= 254: Scratch3 = 19
+def ProbeAheadBlocked() {
+    ProbeX = MapX
+    ProbeY = MapY
+    gosub [ProbeN, ProbeNE, ProbeE, ProbeSE, ProbeS, ProbeSW, ProbeW, ProbeNW][FacingRaw]
+    CallUnknownC01B()
+    Scratch1 = 0
+    Scratch3 = 28
+    if Boss >= YarashBeaten { Scratch3 = 19 }
 
-ProbeTableLoop:
-	if Scratch1 > Scratch3: Return
-	Scratch2 = MapEventTable1[Scratch1]
-	if Scratch3 == 19: Scratch2 = MapEventTable2[Scratch1]
-	if ProbeWall == Scratch2 {
-		HoldMove = SkipMove
-		Return
-	}
-	Scratch1 += 1
-	Goto ProbeTableLoop
+    ProbeTableLoop:
+    if Scratch1 > Scratch3 { return }
+    Scratch2 = MapEventTable1[Scratch1]
+    if Scratch3 == 19 { Scratch2 = MapEventTable2[Scratch1] }
+    if ProbeWall == Scratch2 {
+        HoldMove = SkipMove
+        return
+    }
+    Scratch1 += 1
+    goto ProbeTableLoop
+}
 
-ProbeNW:
-	ProbeX -= 1
+def ProbeNW() {
+    ProbeX -= 1
+} # falls into ProbeN
 
 ProbeN:
-	ProbeY -= 1
-	Return
+    ProbeY -= 1
+    return
 
-ProbeNE:
-	ProbeY -= 1
+def ProbeNE() {
+    ProbeY -= 1
+} # falls into ProbeE
 
 ProbeE:
-	ProbeX += 1
-	Return
+    ProbeX += 1
+    return
 
-ProbeSE:
-	ProbeX += 1
+def ProbeSE() {
+    ProbeX += 1
+} # falls into ProbeS
 
 ProbeS:
-	ProbeY += 1
-	Return
+    ProbeY += 1
+    return
 
-ProbeSW:
-	ProbeY += 1
+def ProbeSW() {
+    ProbeY += 1
+} # falls into ProbeW
 
 ProbeW:
-	ProbeX -= 1
-	Return
+    ProbeX -= 1
+    return
 
-event1:
-	if InLair == InsideLair: Goto LairCellDispatch
-	if Boss < 254: Goto FindSite
-	if RiverOpen != 0: Goto FindSite
-	Gosub LandRecovers
-	Delay
-	Goto RiverOpened
+on step {
+    if InLair == InsideLair { goto LairCellDispatch }
+    if Boss < YarashBeaten { goto FindSite }
+    if RiverOpen != 0 { goto FindSite }
+    LandRecovers()
+    Delay()
+    goto RiverOpened
 
-FindSite:
-	Scratch4 = 0
-	Scratch1 = 0
+    FindSite:
+    Scratch4 = 0
+    Scratch1 = 0
 
-SiteRowLoop:
-	alias SiteRange = Scratch3
-	alias SiteY = Scratch2
-	if Scratch1 >= 9: Goto RandomEncounterCheck
-	SiteRange = SiteRangeTable[Scratch1]
-	SiteY = SiteYTable[Scratch1]
-	if SiteY == MapY: Goto SiteRowFound
-	Scratch1 += 1
-	Scratch4 += SiteRange
-	Goto SiteRowLoop
+    SiteRowLoop:
+    if Scratch1 >= 9 { goto RandomEncounterCheck }
+    Scratch3 = SiteRangeTable[Scratch1]
+    Scratch2 = SiteYTable[Scratch1]
+    if Scratch2 == MapY { goto SiteRowFound }
+    Scratch1 += 1
+    Scratch4 += Scratch3
+    goto SiteRowLoop
 
-SiteRowFound:
-	Scratch3 += Scratch4
+    SiteRowFound:
+    Scratch3 += Scratch4
 
-SiteColumnLoop:
-	alias SiteX = Scratch5
-	if Scratch4 >= Scratch3: Goto RandomEncounterCheck
-	SiteX = SiteXTable[Scratch4]
-	if SiteX == MapX: Goto SiteDispatch
-	Scratch4 += 1
-	Goto SiteColumnLoop
+    SiteColumnLoop:
+    if Scratch4 >= Scratch3 { goto RandomEncounterCheck }
+    Scratch5 = SiteXTable[Scratch4]
+    if Scratch5 == MapX { goto SiteDispatch }
+    Scratch4 += 1
+    goto SiteColumnLoop
 
-SiteDispatch:
-	alias SiteKind = Scratch1
-	SiteKind = SiteKindTable[Scratch4]
-	OnGoto SiteKind AbandonedCamp NomadCampEvent CityNorthEdge CityEastEdge CityWestEdge HiddenRowboat PyramidFront BoatHome
+    SiteDispatch:
+    Scratch1 = SiteKindTable[Scratch4]
+    goto [AbandonedCamp, NomadCampEvent, CityNorthEdge, CityEastEdge, CityWestEdge, HiddenRowboat,
+        PyramidFront, BoatHome][Scratch1]
+} # falls into AbandonedCamp
 
 AbandonedCamp:
-	if CampFound != 0: Goto Done
-	PrintClear "YOU FIND A RECENTLY ABBANDONED CAMP."
-	CampFound = 1
-	Goto Done
+    if CampFound != 0 { goto Done }
+    Text("YOU FIND A RECENTLY ABBANDONED CAMP.")
+    CampFound = 1
+    goto Done
 
 NomadCampEvent:
-	alias Choice = Scratch1
-	if NomadCampSeen != 0: Goto Done
-	ClearBox
-	Call CallClearView
-	Picture Forest
-	Mark4Off = 1
-	PrintClear "YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?"
-	Choice = Menu "ENTER" -> EnterNomadCamp "LEAVE" -> Done
+    if NomadCampSeen != 0 { goto Done }
+    ClearBox()
+    CallClearView()
+    Picture(Forest)
+    Mark4Off = 1
+    Text("YOU HAVE STUMBLED UPON A LARGE NOMAD CAMP.  WILL YOU ENTER IT?")
+    Scratch1 = Menu("ENTER", "LEAVE")
+    goto [EnterNomadCamp, Done][Scratch1]
 
 EnterNomadCamp:
-	Gosub Enter3DSetup
-	NewECL NomadCamp
+    Enter3DSetup()
+    NewECL(NomadCamp)
 
 CityNorthEdge:
-	alias Choice = Scratch1
-	ClearBox
-	Call CallClearView
-	Picture Harbor
-	PrintClear "YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?"
-	Choice = Menu "CITY" -> EnterNorthGate "GRAVEYARD" -> EnterGraveyard "LEAVE" -> Done
+    ClearBox()
+    CallClearView()
+    Picture(Harbor)
+    Text("YOU ARE ON THE NORTH EDGE OF THE CITY.  WILL YOU ENTER THE NORTHERN CITY GATES OR ENTER THE GRAVEYARD?")
+    Scratch1 = Menu("CITY", "GRAVEYARD", "LEAVE")
+    goto [EnterNorthGate, EnterGraveyard, Done][Scratch1]
 
 EnterNorthGate:
-	Gosub Enter3DSetup
-	PartyX = 4
-	PartyY = 0
-	Facing = South
-	EnterArea CadornaTextileHouse
+    Enter3DSetup()
+    PartyX = 4
+    PartyY = 0
+    Facing = South
+    EnterArea(CadornaTextileHouse)
 
 EnterGraveyard:
-	Gosub Enter3DSetup
-	PartyX = 0
-	PartyY = 4
-	Facing = West
-	EnterArea ValhingenGraveyard
+    Enter3DSetup()
+    PartyX = 0
+    PartyY = 4
+    Facing = West
+    EnterArea(ValhingenGraveyard)
 
 CityEastEdge:
-	alias Choice = Scratch1
-	ClearBox
-	Call CallClearView
-	Picture Harbor
-	PrintClear "YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?"
-	Choice = Menu "NORTH" -> EnterEastNorth "SOUTH" -> EnterEastSouth "BOAT" -> BoatToCivilized "LEAVE" -> Done
+    ClearBox()
+    CallClearView()
+    Picture(Harbor)
+    Text("YOU ARE ON THE EASTERN EDGE OF THE CITY.  THERE ARE  NORTH AND SOUTH ENTRANCES INTO THE CITY AND A SMALL BOAT THAT YOU CAN TAKE TO THE CIVILISED AREA.  WHICH ROUTE WILL YOU TAKE?")
+    Scratch1 = Menu("NORTH", "SOUTH", "BOAT", "LEAVE")
+    goto [EnterEastNorth, EnterEastSouth, BoatToCivilized, Done][Scratch1]
 
 EnterEastNorth:
-	Gosub Enter3DSetup
-	PartyX = 15
-	PartyY = 4
-	Facing = West
-	EnterArea CadornaTextileHouse
+    Enter3DSetup()
+    PartyX = 15
+    PartyY = 4
+    Facing = West
+    EnterArea(CadornaTextileHouse)
 
 EnterEastSouth:
-	Gosub Enter3DSetup
-	PartyX = 15
-	PartyY = 4
-	Facing = West
-	EnterArea TempleOfBane
+    Enter3DSetup()
+    PartyX = 15
+    PartyY = 4
+    Facing = West
+    EnterArea(TempleOfBane)
 
 BoatToCivilized:
-	Gosub Enter3DSetup
-	PartyX = 15
-	PartyY = 1
-	Facing = West
-	EnterArea NewPhlan
+    Enter3DSetup()
+    PartyX = 15
+    PartyY = 1
+    Facing = West
+    EnterArea(NewPhlan)
 
 CityWestEdge:
-	alias Choice = Scratch1
-	ClearBox
-	Call CallClearView
-	Picture Harbor
-	PrintClear "YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?"
-	Choice = Menu "NORTH" -> EnterWestNorth "SOUTH" -> EnterWestSouth "LEAVE" -> Done
+    ClearBox()
+    CallClearView()
+    Picture(Harbor)
+    Text("YOU ARE ON THE WESTERN EDGE OF THE CITY.  THERE ARE TWO ENTERANCES INTO THE CITY, A NORTH ENTRANCE AND A SOUTH ENTRANCE.  WHICH ENTRANCE WILL YOU TAKE?")
+    Scratch1 = Menu("NORTH", "SOUTH", "LEAVE")
+    goto [EnterWestNorth, EnterWestSouth, Done][Scratch1]
 
 EnterWestNorth:
-	Gosub Enter3DSetup
-	PartyX = 0
-	PartyY = 4
-	Facing = West
-	EnterArea PodolPlaza
+    Enter3DSetup()
+    PartyX = 0
+    PartyY = 4
+    Facing = West
+    EnterArea(PodolPlaza)
 
 EnterWestSouth:
-	Gosub Enter3DSetup
-	PartyX = 0
-	PartyY = 4
-	Facing = West
-	EnterArea HobgoblinBarracks
+    Enter3DSetup()
+    PartyX = 0
+    PartyY = 4
+    Facing = West
+    EnterArea(HobgoblinBarracks)
 
 HiddenRowboat:
-	alias Choice = Scratch1
-	PrintClear "YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?"
-	Choice = Menu "YES" -> PyramidFront "NO" -> Done
+    Text("YOU HAVE FOUND A ROWBOAT HIDDEN AMOUNGST THE REEDS.  WILL YOU TAKE IT TO THE PYRAMID?")
+    Scratch1 = Menu("YES", "NO")
+    goto [PyramidFront, Done][Scratch1]
 
 PyramidFront:
-	alias Choice = Scratch1
-	SetMapXY 6 16
-	Call CallRedraw
-	Delay
-	ClearBox
-	Call CallClearView
-	Picture Pyramid
-	PrintClear "YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?"
-	Choice = Menu "ENTER" -> EnterPyramid "GO BACK" -> PyramidGoBack
+    MapX = 6
+    MapY = 16
+    CallRedraw()
+    Delay()
+    ClearBox()
+    CallClearView()
+    Picture(Pyramid)
+    Text("YOU ARE IN FRONT OF A MAGNIFICENT PYRAMID.  YOU HAVE FOUND A SECRET DOOR THAT LEADS INTO THE PYRAMID.  WHAT WILL YOU DO?")
+    Scratch1 = Menu("ENTER", "GO BACK")
+    goto [EnterPyramid, PyramidGoBack][Scratch1]
 
 EnterPyramid:
-	Gosub Enter3DSetup
-	NewECL LizardManSwamp
+    Enter3DSetup()
+    NewECL(LizardManSwamp)
 
 PyramidGoBack:
-	MapY = 14
-	Call CallRedraw
-	Picture None
-	Goto Done
+    MapY = 14
+    CallRedraw()
+    Picture(None)
+    goto Done
 
 BoatHome:
-	alias Choice = Scratch1
-	ClearBox
-	Call CallClearView
-	Picture Ship
-	PrintClear "THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?"
-	Choice = Menu "TAKE BOAT" -> BoatToCivilized "STAY" -> Done
+    ClearBox()
+    CallClearView()
+    Picture(Ship)
+    Text("THERE IS A BOAT HERE THAT WILL TAKE YOU BACK TO THE CIVILISED SECTION OF PHLAN.  WILL YOU TAKE IT?")
+    Scratch1 = Menu("TAKE BOAT", "STAY")
+    goto [BoatToCivilized, Done][Scratch1]
 
 Enter3DSetup:
-	Picture None
-	ClearBox
-	In3D = Dungeon3D
-	WallSlot1 = 127
-	WallSlot1B = 127
-	WallSlot2 = 127
-	WallSlot2B = 127
-	WallSlot3 = 127
-	WallSlot3B = 127
-	LoadMap Unchanged unused=127 icons=127
-	Return
+    Picture(None)
+    ClearBox()
+    In3D = Dungeon3D
+    WallSlot1 = Reset
+    WallSlot1B = 127
+    WallSlot2 = Reset
+    WallSlot2B = 127
+    WallSlot3 = Reset
+    WallSlot3B = 127
+    LoadMap(Unchanged, unused=127, icons=127)
+    return
 
 RandomEncounterCheck:
-	if MapX == 6 && MapY == 16: Exit
-	Scratch1 = Random 19
-	ForcedEncounter = 0
-	if Scratch1 != 0: Goto Done
+    if MapX == 6 and MapY == 16 { exit }
+    Scratch1 = Random(19)
+    ForcedEncounter = 0
+    if Scratch1 != 0 { goto Done }
 
 StartEncounter:
-	alias SurpriseTable1Entry = Scratch4
-	alias SurpriseTable2Entry = Scratch5
-	Gosub PickEncounter
-	if Scratch1 == 20 && ForcedEncounter == 0: Goto LairFound
-	SurpriseTable1Entry = SurpriseTable1[EncounterKind]
-	SurpriseTable2Entry = SurpriseTable2[EncounterKind]
-	PartySurprise Scratch1 Scratch2
-	Surprise Scratch1 Scratch2 SurpriseTable1Entry SurpriseTable2Entry
-	if SurpriseTable2Entry == 9: Surprise &= PartyIsSurprised
-	OnGoto Surprise SpotGroup PartySurprised SurpriseThem FaceToFace
+    PickEncounter()
+    if Scratch1 == 20 and ForcedEncounter == 0 { goto LairFound }
+    Scratch4 = SurpriseTable1[EncounterKind]
+    Scratch5 = SurpriseTable2[EncounterKind]
+    PartySurprise(Scratch1, Scratch2)
+    Surprise(Scratch1, Scratch2, Scratch4, Scratch5)
+    if Scratch5 == 9 { Surprise &= PartyIsSurprised }
+    goto [SpotGroup, PartySurprised, SurpriseThem, FaceToFace][Surprise]
 
 SpotGroup:
-	PrintClear "YOU SPOT A GROUP OF "
-	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Talk escape=AuxEncTemp strength=AuxEncTemp
-	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
+    Text("YOU SPOT A GROUP OF ")
+    Print($AuxMonsterName)
+    EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Talk, escape=AuxEncTemp, strength=AuxEncTemp)
+    goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
 
 PartySurprised:
-	PrintClear "YOU ARE SURPRISED BY A GROUP OF "
-	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Mirror escape=99 strength=99
-	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
+    Text("YOU ARE SURPRISED BY A GROUP OF ")
+    Print($AuxMonsterName)
+    EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Mirror, escape=99, strength=99)
+    goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
 
 SurpriseThem:
-	PrintClear "YOU SURPRISE A GROUP OF "
-	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Flee flee=Flee advance=Mirror parlay=Mirror escape=0 strength=0
-	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
+    Text("YOU SURPRISE A GROUP OF ")
+    Print($AuxMonsterName)
+    EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Flee,
+        flee=Flee, advance=Mirror, parlay=Mirror, escape=0, strength=0)
+    goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
 
 FaceToFace:
-	PrintClear "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
-	Print $AuxMonsterName
-	EncounterMenu AuxEncResult distance=AuxRoll closeup=Kobold result=Scratch1 combat=Mirror wait=Attack flee=Attack advance=Mirror parlay=Mirror escape=0 strength=0
-	OnGoto Scratch1 Done EncounterFight RedrawExit EncounterParlay
+    Text("SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF ")
+    Print($AuxMonsterName)
+    EncounterMenu(AuxEncResult, distance=AuxRoll, closeup=Kobold, result=Scratch1, combat=Mirror, wait=Attack,
+        flee=Attack, advance=Mirror, parlay=Mirror, escape=0, strength=0)
+    goto [Done, EncounterFight, RedrawExit, EncounterParlay][Scratch1]
 
 EncounterFight:
-	Morale = AuxEncResult2
-	ClearMonsters
-	LoadMonster AuxMonster count=MonsterCount icon=AuxTemp9
-	if LeaderCount == 0: Goto EncounterCombat
-	LoadMonster AuxPartyStrength count=LeaderCount icon=AuxParlay
+    Morale = AuxEncResult2
+    ClearMonsters()
+    LoadMonster(AuxMonster, count=MonsterCount, icon=AuxTemp9)
+    if LeaderCount == 0 { goto EncounterCombat }
+    LoadMonster(AuxPartyStrength, count=LeaderCount, icon=AuxParlay)
 
-EncounterCombat:
-	ClearBox
-	Combat
-	if CombatEnd > PartyDied: Goto FightDone
-	Exit
+    EncounterCombat:
+    ClearBox()
+    Combat()
+    if CombatEnd > PartyDied { goto FightDone }
+    exit
 
 EncounterParlay:
-	if AuxMember == 0: Goto EncounterFight
-	if AuxMember == 50: Goto FriendlyGreet
-	Scratch1 = Parlay 30 30 30 5 60
-	Scratch2 = Random 30
-	Scratch1 = Scratch1 + Scratch2
-	Scratch1 = Scratch1 + SelReaction
-	Scratch1 = Scratch1 + AuxEncBonus
-	if Scratch1 < 140: Goto ParlayConvince
-	PrintClear "THE "
-	Print $AuxMonsterName
-	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
-	Goto Done
+    if AuxMember == 0 { goto EncounterFight }
+    if AuxMember == 50 { goto FriendlyGreet }
+    Scratch1 = Parlay(30, 30, 30, 5, 60)
+    Scratch2 = Random(30)
+    Scratch1 = Scratch1 + Scratch2
+    Scratch1 = Scratch1 + SelReaction
+    Scratch1 = Scratch1 + AuxEncBonus
+    if Scratch1 < 140 { goto ParlayConvince }
+    Text("THE ")
+    Print($AuxMonsterName)
+    Print(" FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT.")
+    goto Done
 
-ParlayConvince:
-	if Scratch1 < 100: Goto ParlayInsulted
-	PrintClear "YOU CONVINCE THE "
-	Print $AuxMonsterName
-	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
-	Goto Done
+    ParlayConvince:
+    if Scratch1 < 100 { goto ParlayInsulted }
+    Text("YOU CONVINCE THE ")
+    Print($AuxMonsterName)
+    Print(" THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY.")
+    goto Done
 
-ParlayInsulted:
-	PrintClear "YOU HAVE INSULTED THE "
-	Print $AuxMonsterName
-	Print "."
-	Print "THE "
-	Print $AuxMonsterName
-	Print " ATTACK YOU IMMEDIATELY!"
-	Goto EncounterFight
+    ParlayInsulted:
+    Text("YOU HAVE INSULTED THE ")
+    Print($AuxMonsterName)
+    Print(".")
+    Print("THE ")
+    Print($AuxMonsterName)
+    Print(" ATTACK YOU IMMEDIATELY!")
+    goto EncounterFight
 
-FriendlyGreet:
-	PrintClear "THE "
-	Print $AuxMonsterName
-	Print " GREET YOU AND YOU EXCHANGE PLESANTRIES.  THE "
-	Print $AuxMonsterName
-	Print " THEN LEAVE AND BID YOU GOOD DAY."
-	Goto Done
+    FriendlyGreet:
+    Text("THE ")
+    Print($AuxMonsterName)
+    Print(" GREET YOU AND YOU EXCHANGE PLESANTRIES.  THE ")
+    Print($AuxMonsterName)
+    Print(" THEN LEAVE AND BID YOU GOOD DAY.")
+    goto Done
 
 LairFound:
-	alias Choice = Scratch1
-	Scratch6 = Random 2
-	if Scratch6 == 1: Goto RuinedHuts
-	PrintClear "YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?"
-	Choice = Menu "ENTER" -> EnterLair "LEAVE" -> Done
+    Scratch6 = Random(2)
+    if Scratch6 == 1 { goto RuinedHuts }
+    Text("YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?")
+    Scratch1 = Menu("ENTER", "LEAVE")
+    goto [EnterLair, Done][Scratch1]
 
-RuinedHuts:
-	alias Choice = Scratch1
-	PrintClear "YOU HAVE FOUND SOME RUINED HUTS.  WILL YOU INVESTIGATE?"
-	Choice = Menu "INVESTIGATE" -> EnterLair "LEAVE" -> Done
+    RuinedHuts:
+    Text("YOU HAVE FOUND SOME RUINED HUTS.  WILL YOU INVESTIGATE?")
+    Scratch1 = Menu("INVESTIGATE", "LEAVE")
+    goto [EnterLair, Done][Scratch1]
 
 EnterLair:
-	InLair = InsideLair
-	OnGoto Scratch6 LairStartA LairStartB LairStartC
+    InLair = InsideLair
+    goto [LairStartA, LairStartB, LairStartC][Scratch6]
 
 LairStartA:
-	LairStartX26 = 2
-	LairStartY26 = 3
-	Goto LairLoad
+    LairStartX26 = 2
+    LairStartY26 = 3
+    goto LairLoad
 
 LairStartB:
-	LairStartX26 = 10
-	LairStartY26 = 13
-	Goto LairLoad
+    LairStartX26 = 10
+    LairStartY26 = 13
+    goto LairLoad
 
 LairStartC:
-	LairStartX26 = 13
-	LairStartY26 = 6
+    LairStartX26 = 13
+    LairStartY26 = 6
 
 LairLoad:
-	In3D = Dungeon3D
-	SavedMapX = MapX
-	SavedMapY = MapY
-	WallSlot1 = 135
-	WallSlot1B = 135
-	WallSlot2 = 136
-	WallSlot2B = 136
-	WallSlot3 = 151
-	WallSlot3B = 151
-	LoadMap 26 unused=2 icons=255
-	SkyInside = 11
-	PartyX = LairStartX26
-	PartyY = LairStartY26
-	ClearBox
-	Call CallRedraw
-	NewECL Wilderness
+    In3D = Dungeon3D
+    SavedMapX = MapX
+    SavedMapY = MapY
+    WallSlot1 = 135
+    WallSlot1B = 135
+    WallSlot2 = 136
+    WallSlot2B = 136
+    WallSlot3 = 151
+    WallSlot3B = 151
+    LoadMap(26, unused=2, icons=255)
+    SkyInside = 11
+    PartyX = LairStartX26
+    PartyY = LairStartY26
+    ClearBox()
+    CallRedraw()
+    NewECL(Wilderness)
 
 LairCellDispatch:
-	Scratch10 = Cell & 127
-	OnGoto Scratch10 Done GroveEdge SplashingPool DisplacerAmbush ChainedKobolds StenchWest MutantLizardHut LizardHut LargeLizardMen StirgeSwarm LeaveLairAsk
+    Scratch10 = Cell & ~Inside
+    goto [Done, GroveEdge, SplashingPool, DisplacerAmbush, ChainedKobolds, StenchWest, MutantLizardHut,
+        LizardHut, LargeLizardMen, StirgeSwarm, LeaveLairAsk][Scratch10]
 
 GroveEdge:
-	PrintClear "YOU ARE AT THE EDGE OF THE GROVE."
-	Exit
+    Text("YOU ARE AT THE EDGE OF THE GROVE.")
+    exit
 
 SplashingPool:
-	Scratch1 = LairFightFlags & 1
-	if 0 != Scratch1: Exit
-	PrintClear "NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?"
-	Scratch1 = Menu "APPROACH" -> PoolLizardMen "LEAVE" -> Done
+    Scratch1 = LairFightFlags & PoolFight
+    if Scratch1 != 0 { exit }
+    Text("NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?")
+    Scratch1 = Menu("APPROACH", "LEAVE")
+    goto [PoolLizardMen, Done][Scratch1]
 
 PoolLizardMen:
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!"
-	Gosub WaitReturnPressed
-	ClearMonsters
-	LoadMonster Lizardman count=6 icon=57
-	Combat
-	LairFightFlags |= 1
-	Exit
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!")
+    WaitReturnPressed()
+    ClearMonsters()
+    LoadMonster(Lizardman, count=6, icon=57)
+    Combat()
+    LairFightFlags |= PoolFight
+    exit
 
 DisplacerAmbush:
-	Scratch1 = LairFightFlags & 2
-	if 0 != Scratch1: Exit
-	SetupMonster DisplacerBeast distance=0 closeup=DisplacerBeast
-	PrintClear "AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS."
-	Surprise = PartyIsSurprised
-	ClearMonsters
-	LoadMonster DisplacerBeast count=2 icon=DisplacerBeast
-	Combat
-	LairFightFlags |= 2
-	Exit
+    Scratch1 = LairFightFlags & DisplacersFought
+    if Scratch1 != 0 { exit }
+    SetupMonster(DisplacerBeast, distance=0, closeup=DisplacerBeast)
+    Text("AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS.")
+    Surprise = PartyIsSurprised
+    ClearMonsters()
+    LoadMonster(DisplacerBeast, count=2, icon=DisplacerBeast)
+    Combat()
+    LairFightFlags |= DisplacersFought
+    exit
 
 ChainedKobolds:
-	Scratch1 = LairFightFlags & KoboldPrisoners
-	if 0 != Scratch1: Exit
-	SetupMonster Kobold distance=0 closeup=Kobold
-	PrintClear "AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?"
-	Scratch1 = Menu "RELEASE" -> ReleaseKobolds "ATTACK" -> KillKobolds "LEAVE" -> StepBack
+    Scratch1 = LairFightFlags & KoboldPrisoners
+    if Scratch1 != 0 { exit }
+    SetupMonster(Kobold, distance=0, closeup=Kobold)
+    Text("AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?")
+    Scratch1 = Menu("RELEASE", "ATTACK", "LEAVE")
+    goto [ReleaseKobolds, KillKobolds, StepBack][Scratch1]
 
 ReleaseKobolds:
-	PrintClear "YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR."
-	LairFightFlags = KoboldPrisoners | LairFightFlags
-	Picture None
-	Exit
+    Text("YOU RELEASE THE KOBOLDS AND THEY THANK YOU.  ONE OF THEM SAYS, 'WATCH OUT FOR THE MUTANT LIZARD MEN, THEY'RE KILLERS!'  THEY THEN RUN OUT THE DOOR.")
+    LairFightFlags = KoboldPrisoners | LairFightFlags
+    Picture(None)
+    exit
 
 KillKobolds:
-	PrintClear "YOU COLDLY KILL THE DEFENSELESS KOBOLDS."
-	LairFightFlags = KoboldPrisoners | LairFightFlags
+    Text("YOU COLDLY KILL THE DEFENSELESS KOBOLDS.")
+    LairFightFlags = KoboldPrisoners | LairFightFlags
 
 StenchWest:
-	PrintClear "AN AWFUL STENCH IS COMING FROM THE WEST."
-	Exit
+    Text("AN AWFUL STENCH IS COMING FROM THE WEST.")
+    exit
 
 MutantLizardHut:
-	Scratch1 = LairFightFlags & 8
-	if 0 != Scratch1: Exit
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY."
-	ClearMonsters
-	LoadMonster MutantLizMan count=2 icon=57
-	Combat
-	if CombatEnd > PartyDied: Goto StepBack
-	LairFightFlags |= 8
-	Exit
+    Scratch1 = LairFightFlags & MutantsFought
+    if Scratch1 != 0 { exit }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY.")
+    ClearMonsters()
+    LoadMonster(MutantLizMan, count=2, icon=57)
+    Combat()
+    if CombatEnd > PartyDied { goto StepBack }
+    LairFightFlags |= MutantsFought
+    exit
 
 LizardHut:
-	Scratch1 = LairFightFlags & 16
-	if 0 != Scratch1: Exit
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY."
-	ClearMonsters
-	LoadMonster Lizardman count=4 icon=57
-	Combat
-	if CombatEnd > PartyDied: Goto StepBack
-	LairFightFlags |= 16
-	Exit
+    Scratch1 = LairFightFlags & HutLizardMenFought
+    if Scratch1 != 0 { exit }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY.")
+    ClearMonsters()
+    LoadMonster(Lizardman, count=4, icon=57)
+    Combat()
+    if CombatEnd > PartyDied { goto StepBack }
+    LairFightFlags |= HutLizardMenFought
+    exit
 
 LargeLizardMen:
-	LairFightFlags &= 32
-	if 0 != LairFightFlags: Exit
-	SetupMonster Lizardman distance=0 closeup=Lizardman
-	PrintClear "IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK."
-	MonsterHit = 252
-	ClearMonsters
-	LoadMonster Lizardman count=4 icon=57
-	Combat
-	MonsterHit = 0
-	if CombatEnd > PartyDied: Goto StepBack
-	LairFightFlags |= 32
-	Exit
+    LairFightFlags &= LargeLizardMenFought
+    if LairFightFlags != 0 { exit }
+    SetupMonster(Lizardman, distance=0, closeup=Lizardman)
+    Text("IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK.")
+    MonsterHit = 252
+    ClearMonsters()
+    LoadMonster(Lizardman, count=4, icon=57)
+    Combat()
+    MonsterHit = 0
+    if CombatEnd > PartyDied { goto StepBack }
+    LairFightFlags |= LargeLizardMenFought
+    exit
 
 StirgeSwarm:
-	if LairRespawnTimer != 0: Goto StirgeTimerTick
-	SetupMonster Stirge distance=0 closeup=Stirge
-	PrintClear "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
-	Scratch1 = Random 30
-	if Scratch1 < 6: Scratch1 = 6
-	ClearMonsters
-	LoadMonster Stirge count=6 icon=Stirge
-	Combat
-	LairRespawnTimer = 3
-	Exit
+    if LairRespawnTimer != 0 { goto StirgeTimerTick }
+    SetupMonster(Stirge, distance=0, closeup=Stirge)
+    Text("A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!")
+    Scratch1 = Random(30)
+    if Scratch1 < 6 { Scratch1 = 6 }
+    ClearMonsters()
+    LoadMonster(Stirge, count=6, icon=Stirge)
+    Combat()
+    LairRespawnTimer = 3
+    exit
 
-StirgeTimerTick:
-	if LairRespawnTimer == 1: LairRespawnTimer = 0
-	also if LairRespawnTimer != 1: LairRespawnTimer -= 1
-	Exit
+    StirgeTimerTick:
+    if LairRespawnTimer == 1 {
+        LairRespawnTimer = 0
+    } else {
+        LairRespawnTimer -= 1
+    }
+    exit
 
 LeaveLairAsk:
-	alias Choice = Scratch1
-	PrintClear "YOU ARE ABOUT TO LEAVE THIS AREA.  DO YOU WANT TO RETURN?"
-	Choice = Menu "RETURN" -> StepBack "LEAVE" -> LeaveLair
+    Text("YOU ARE ABOUT TO LEAVE THIS AREA.  DO YOU WANT TO RETURN?")
+    Scratch1 = Menu("RETURN", "LEAVE")
+    goto [StepBack, LeaveLair][Scratch1]
 
 LeaveLair:
-	In3D = Overland
-	LoadMap 5 unused=5 icons=0
-	InLair = OutsideLair
-	Call CallRedraw
-	NewECL Wilderness
+    In3D = Overland
+    LoadMap(5, unused=5, icons=0)
+    InLair = OutsideLair
+    CallRedraw()
+    NewECL(Wilderness)
 
 FightDone:
-	Exit
+    exit
 
 StepBack:
-	PartyX = PrevX
-	PartyY = PrevY
+    PartyX = PrevX
+    PartyY = PrevY
 
 RedrawExit:
-	Call CallRedraw
-	Exit
+    CallRedraw()
+    exit
 
-PickEncounter:
-	alias EncounterParam2Entry = AuxMember
-	alias EncounterParam3Entry = AuxRoll
-	alias EncounterParam5Entry = AuxEncResult
-	alias EncounterParam7Entry = AuxEncTemp
-	alias LeaderId = AuxPartyStrength
-	alias LeaderPic = AuxParlay
-	alias MonsterId = AuxMonster
-	alias MonsterPic = AuxTemp9
-	alias StrengthDiv = AuxCounter
-	Scratch1 = Random 20
-	if Scratch1 == 20 && ForcedEncounter == 0: Return
-	Scratch1 = Random 17
-	OnGosub Scratch1 PickKobolds PickKobolds PickKobolds PickKobolds PickDisplacers PickDisplacers PickDriders PickStirges PickStirges PickStirges PickLizardMen PickLizardMen PickLizardMen PickBandits PickNomads PickNomads PickMerchants PickMerchants
-	MonsterPic = MonsterPicTable[EncounterKind]
-	LeaderPic = LeaderPicTable[EncounterKind]
-	EncounterParam2Entry = EncounterParam2[EncounterKind]
-	EncounterParam3Entry = EncounterParam3[EncounterKind]
-	MonsterId = MonsterIdTable[EncounterKind]
-	EncounterParam5Entry = EncounterParam5[EncounterKind]
-	AuxEncResult2 = MoraleTable[EncounterKind]
-	EncounterParam7Entry = EncounterParam7[EncounterKind]
-	LeaderId = LeaderIdTable[EncounterKind]
-	StrengthDiv = StrengthDivTable[EncounterKind]
-	Scratch1 = PartyStrength
-	Scratch1 = Scratch1 / StrengthDiv
-	Scratch2 = Random 5
-	OnGoto Scratch2 CountThird CountHalf CountHalf CountHalf CountLeaders
+def PickEncounter() {
+    Scratch1 = Random(20)
+    if Scratch1 == 20 and ForcedEncounter == 0 { return }
+    Scratch1 = Random(17)
+    gosub [PickKobolds, PickKobolds, PickKobolds, PickKobolds, PickDisplacers, PickDisplacers,
+        PickDriders, PickStirges, PickStirges, PickStirges, PickLizardMen, PickLizardMen,
+        PickLizardMen, PickBandits, PickNomads, PickNomads, PickMerchants, PickMerchants][Scratch1]
+    AuxTemp9 = MonsterPicTable[EncounterKind]
+    AuxParlay = LeaderPicTable[EncounterKind]
+    AuxMember = EncounterParam2[EncounterKind]
+    AuxRoll = EncounterParam3[EncounterKind]
+    AuxMonster = MonsterIdTable[EncounterKind]
+    AuxEncResult = EncounterParam5[EncounterKind]
+    AuxEncResult2 = MoraleTable[EncounterKind]
+    AuxEncTemp = EncounterParam7[EncounterKind]
+    AuxPartyStrength = LeaderIdTable[EncounterKind]
+    AuxCounter = StrengthDivTable[EncounterKind]
+    Scratch1 = PartyStrength()
+    Scratch1 = Scratch1 / AuxCounter
+    Scratch2 = Random(5)
+    goto [CountThird, CountHalf, CountHalf, CountHalf, CountLeaders][Scratch2]
+} # falls into CountThird
 
 CountThird:
-	Scratch1 = Scratch1 / 3
-	if Scratch1 <= 0: Scratch1 = 1
-	Goto CountLeaders
+    Scratch1 = Scratch1 / 3
+    if Scratch1 <= 0 { Scratch1 = 1 }
+    goto CountLeaders
 
 CountHalf:
-	Scratch1 = Scratch1 / 2
-	if Scratch1 <= 0: Scratch1 = 1
+    Scratch1 = Scratch1 / 2
+    if Scratch1 <= 0 { Scratch1 = 1 }
 
 CountLeaders:
-	alias LeaderEvery = AuxMenuChoice
-	LeaderCount = 0
-	Scratch3 = Scratch1
-	LeaderEvery = LeaderEveryTable[EncounterKind]
-	if LeaderEvery == 0: Goto CapMonsterCount
+    LeaderCount = 0
+    Scratch3 = Scratch1
+    AuxMenuChoice = LeaderEveryTable[EncounterKind]
+    if AuxMenuChoice == 0 { goto CapMonsterCount }
 
-LeaderLoop:
-	if Scratch3 < AuxMenuChoice: Goto CapMonsterCount
-	LeaderCount += 1
-	Scratch3 -= AuxMenuChoice
-	Goto LeaderLoop
+    LeaderLoop:
+    if Scratch3 < AuxMenuChoice { goto CapMonsterCount }
+    LeaderCount += 1
+    Scratch3 -= AuxMenuChoice
+    goto LeaderLoop
 
-CapMonsterCount:
-	if Scratch1 >= 56: Scratch1 = 56 - LeaderCount
-	MonsterCount = Scratch1
-	Return
+    CapMonsterCount:
+    if Scratch1 >= 56 { Scratch1 = 56 - LeaderCount }
+    MonsterCount = Scratch1
+    return
 
-PickKobolds:
-	$AuxMonsterName = "KOBOLDS"
-	EncounterKind = Kobolds
-	Return
+def PickKobolds() {
+    $AuxMonsterName = "KOBOLDS"
+    EncounterKind = Kobolds
+    return
+}
 
-PickDisplacers:
-	$AuxMonsterName = "DISPLACER BEASTS"
-	EncounterKind = DisplacerBeasts
-	Return
+def PickDisplacers() {
+    $AuxMonsterName = "DISPLACER BEASTS"
+    EncounterKind = DisplacerBeasts
+    return
+}
 
-PickDriders:
-	$AuxMonsterName = "DRIDERS"
-	EncounterKind = Driders
-	Return
+def PickDriders() {
+    $AuxMonsterName = "DRIDERS"
+    EncounterKind = Driders
+    return
+}
 
-PickStirges:
-	$AuxMonsterName = "STIRGES"
-	EncounterKind = Stirges
-	Return
+def PickStirges() {
+    $AuxMonsterName = "STIRGES"
+    EncounterKind = Stirges
+    return
+}
 
-PickLizardMen:
-	$AuxMonsterName = "LIZARD MEN"
-	EncounterKind = LizardMen
-	Return
+def PickLizardMen() {
+    $AuxMonsterName = "LIZARD MEN"
+    EncounterKind = LizardMen
+    return
+}
 
-PickBandits:
-	$AuxMonsterName = "BANDITS"
-	EncounterKind = Bandits
-	Return
+def PickBandits() {
+    $AuxMonsterName = "BANDITS"
+    EncounterKind = Bandits
+    return
+}
 
-PickNomads:
-	$AuxMonsterName = "NOMADS"
-	EncounterKind = Nomads
-	Return
+def PickNomads() {
+    $AuxMonsterName = "NOMADS"
+    EncounterKind = Nomads
+    return
+}
 
-PickMerchants:
-	$AuxMonsterName = "MERCHANTS"
-	EncounterKind = Merchants
-	Return
+def PickMerchants() {
+    $AuxMonsterName = "MERCHANTS"
+    EncounterKind = Merchants
+    return
+}
 
-WaitReturnPressed:
-	alias Choice = Scratch8
-	Choice = Menu "HIT <RETURN> OR BUTTON TO CONTINUE"
-	Return
+def WaitReturnPressed() {
+    Scratch8 = Menu("HIT <RETURN> OR BUTTON TO CONTINUE")
+    return
+}
 
 Done:
-	PrintClear " "
-	RedrawView
-	Picture None
-	Gosub PatchPyramidTiles
-	Exit
+    Text(" ")
+    RedrawView()
+    Picture(None)
+    PatchPyramidTiles()
+    exit
 
-DrawRiver:
-	Scratch1 = 0
-	Scratch2 = 0
-	RiverTileIndex = 0
+def DrawRiver() {
+    Scratch1 = 0
+    Scratch2 = 0
+    RiverTileIndex = 0
+} # falls into RiverDrawBegin
 
 RiverDrawBegin:
-	Call CallBeginDraw
-	RiverFrame = 0
+    CallBeginDraw()
+    RiverFrame = 0
 
 RiverRowLoop:
-	alias RiverRow = Scratch7
-	if Scratch1 == 36: Goto RiverDrawEnd
-	RiverRow = RiverRowTable[Scratch1]
-	&Scratch3 = 8 * RiverRow
-	Scratch6 = 0
+    if Scratch1 == 36 { goto RiverDrawEnd }
+    Scratch7 = RiverRowTable[Scratch1]
+    &Scratch3 = 8 * Scratch7
+    Scratch6 = 0
 
-RiverTileLoop:
-	if Scratch6 == 8: Goto RiverRowDone
-	if Scratch2 <= 231 {
-		Scratch5 = RiverTileTable[Scratch2]
-		Scratch2 += 1
-	}
-	also if Scratch2 > 231 {
-		Scratch5 = RiverTileTable2[RiverTileIndex]
-		RiverTileIndex += 1
-	}
-	&RiverTileOffset = Scratch6 + &Scratch3
-	if RiverOpen == 0: MapPatchA[&RiverTileOffset] = Scratch5
-	MapPatchB[&RiverTileOffset] = Scratch5
-	Scratch6 += 1
-	Goto RiverTileLoop
+    RiverTileLoop:
+    if Scratch6 == 8 { goto RiverRowDone }
+    if Scratch2 <= 231 {
+        Scratch5 = RiverTileTable[Scratch2]
+        Scratch2 += 1
+    } else {
+        Scratch5 = RiverTileTable2[RiverTileIndex]
+        RiverTileIndex += 1
+    }
+    &RiverTileOffset = Scratch6 + &Scratch3
+    if RiverOpen == 0 { MapPatchA[&RiverTileOffset] = Scratch5 }
+    MapPatchB[&RiverTileOffset] = Scratch5
+    Scratch6 += 1
+    goto RiverTileLoop
 
-RiverRowDone:
-	if Scratch1 == 8 && RiverOpen == 0: Goto RiverDrawEnd
-	if RiverState == Flowing: Gosub RiverAnimFrame
-	Scratch1 += 1
-	Goto RiverRowLoop
+    RiverRowDone:
+    if Scratch1 == 8 and RiverOpen == 0 { goto RiverDrawEnd }
+    if RiverState == Flowing { RiverAnimFrame() }
+    Scratch1 += 1
+    goto RiverRowLoop
 
-RiverDrawEnd:
-	Call CallEndDraw
-	Return
+    RiverDrawEnd:
+    CallEndDraw()
+    return
 
-RiverAnimFrame:
-	RiverFrame += 1
-	if RiverFrame != 2: Return
-	DelayCounter = 0
+def RiverAnimFrame() {
+    RiverFrame += 1
+    if RiverFrame != 2 { return }
+    DelayCounter = 0
 
-RiverDelayLoop:
-	if DelayCounter == 100: Goto RiverFrameShow
-	DelayCounter += 1
-	Goto RiverDelayLoop
+    RiverDelayLoop:
+    if DelayCounter == 100 { goto RiverFrameShow }
+    DelayCounter += 1
+    goto RiverDelayLoop
 
-RiverFrameShow:
-	Call CallEndDraw
-	if Scratch1 > 21: Goto RiverRowCheck29
+    RiverFrameShow:
+    CallEndDraw()
+    if Scratch1 > 21 { goto RiverRowCheck29 }
+} # falls into RiverCallC003
 
 RiverCallC003:
-	Call CallUnknownC003
-	Goto RiverFrameReset
+    CallUnknownC003()
+    goto RiverFrameReset
 
 RiverRowCheck29:
-	if Scratch1 > 29: Goto RiverCallC003
-	Call CallUnknownC009
+    if Scratch1 > 29 { goto RiverCallC003 }
+    CallUnknownC009()
 
 RiverFrameReset:
-	RiverFrame = 0
-	Call CallBeginDraw
-	Return
+    RiverFrame = 0
+    CallBeginDraw()
+    return
 
-LandRecovers:
-	PrintClear "AS YOU LEAVE THE SORCERER'S PYRAMID BEHIND YOU CAN SEE THAT THE LAND IS ALREADY BEGINNING TO RECOVER FROM THE ALCHEMICAL POLLUTION CAUSED BY THE PYRAMID."
-	Gosub WaitReturnPressed
-	SetMapXY 7 17
-	Call CallRedraw
-	Scratch1 = 9
-	Scratch2 = 72
-	UnknownD015 = 0
-	RiverState = Flowing
-	Goto RiverDrawBegin
+def LandRecovers() {
+    Text("AS YOU LEAVE THE SORCERER'S PYRAMID BEHIND YOU CAN SEE THAT THE LAND IS ALREADY BEGINNING TO RECOVER FROM THE ALCHEMICAL POLLUTION CAUSED BY THE PYRAMID.")
+    WaitReturnPressed()
+    MapX = 7
+    MapY = 17
+    CallRedraw()
+    Scratch1 = 9
+    Scratch2 = 72
+    UnknownD015 = 0
+    RiverState = Flowing
+    goto RiverDrawBegin
+}
 
 RiverOpened:
-	RiverOpen = 255
-	RiverState = Opened
-	MapY = 16
-	MapX = 6
-	Delay
-	Goto PyramidFront
+    RiverOpen = Yes
+    RiverState = Opened
+    MapY = 16
+    MapX = 6
+    Delay()
+    goto PyramidFront
 
-PatchPyramidTiles:
-	if Boss < 254: Goto CheckMarker4
-	ProbeX = 5
-	ProbeY = 16
-	ProbeCell = 75
-	Call CallLookAhead
-	ProbeX = 6
-	ProbeY = 16
-	ProbeCell = 87
-	Call CallLookAhead
-	ProbeX = 7
-	ProbeY = 16
-	ProbeCell = 22
-	Call CallLookAhead
-	ProbeX = 5
-	ProbeY = 17
-	ProbeCell = 6
-	Call CallLookAhead
-	ProbeX = 6
-	ProbeY = 17
-	ProbeCell = 6
-	Call CallLookAhead
-	ProbeX = 7
-	ProbeY = 17
-	ProbeCell = 10
-	Call CallLookAhead
+def PatchPyramidTiles() {
+    if Boss < YarashBeaten { goto CheckMarker4 }
+    ProbeX = 5
+    ProbeY = 16
+    ProbeCell = 75
+    CallLookAhead()
+    ProbeX = 6
+    ProbeY = 16
+    ProbeCell = 87
+    CallLookAhead()
+    ProbeX = 7
+    ProbeY = 16
+    ProbeCell = 22
+    CallLookAhead()
+    ProbeX = 5
+    ProbeY = 17
+    ProbeCell = 6
+    CallLookAhead()
+    ProbeX = 6
+    ProbeY = 17
+    ProbeCell = 6
+    CallLookAhead()
+    ProbeX = 7
+    ProbeY = 17
+    ProbeCell = 10
+    CallLookAhead()
 
-CheckMarker4:
-	if Mark4 != 0: Goto ShowMarker4
-	Scratch9 = MarkFlags4 & KoboldRaidWon
-	if 0 != Scratch9: Goto ShowMarker4
-	if Mark4Off != 0: Return
+    CheckMarker4:
+    if Mark4 != 0 { goto ShowMarker4 }
+    Scratch9 = MarkFlags4 & KoboldRaidWon
+    if Scratch9 != 0 { goto ShowMarker4 }
+    if Mark4Off != 0 { return }
 
-ShowMarker4:
-	ProbeX = 12
-	ProbeY = 11
-	ProbeCell = 57
-	Call CallLookAhead
-	Return
+    ShowMarker4:
+    ProbeX = 12
+    ProbeY = 11
+    ProbeCell = 57
+    CallLookAhead()
+    return
+}
 
-MapEventTable1:
-	Data 39 43 44 46 62 66 67 73 75 76 77 78 80 84 87 89
-	Data 92 93 95 99 104 105 106 110 111 116 117 118 119
+on camp {
+    if In3D == Dungeon3D { goto NoRest3D }
+    RestChance = 10
+    RestEvery = 96
+    exit
 
-MapEventTable2:
-	Data 39 43 44 46 67 73 75 76 77 78 80 84 99 105 106 119
-	Data 87 22 6 10
+    NoRest3D:
+    RestEvery = 0
+    exit
+}
 
-SiteYTable:
-	Data 10 11 12 26 27 28 14 16 29
+on rest {
+    ForcedEncounter = 1
+    goto StartEncounter
+}
 
-SiteXTable:
-	Data 12 13 11 12 13 12 13 12 13 13 11 6 6 7
+on load {
+    if InLair == InsideLair { goto LairSetup }
+    In3D = Overland
+    NoCoords = 0
+    LoadMap(5, unused=5, icons=0)
+    if Boss < YarashBeaten { exit }
+    DrawRiver()
+    PatchPyramidTiles()
+    exit
 
-SiteRangeTable:
-	Data 2 3 2 2 1 1 1 1 1
+    LairSetup:
+    In3D = Dungeon3D
+    NoCoords = 255
+    SkyInside = 8
+    LoadWalls(7, 8, 23)
+    LoadMap(26, unused=2, icons=255)
+    exit
+}
 
-SiteKindTable:
-	Data 0 0 0 1 0 0 0 2 2 3 4 5 6 7
-
-SurpriseTable1:
-	Data 0 0 0 0 0 0 0 0
-
-SurpriseTable2:
-	Data 0 0 0 0 0 0 0 0
-
-StrengthDivTable:
-	Data 1 6 7 2 3 2 1 1
-
-LeaderEveryTable:
-	Data 40 0 0 0 0 20 30 30 3 0 0 0 0 1 1 1
-
-EncounterParam2:
-	Data 30 0 1 0 20 20 50 50
-
-EncounterParam3:
-	Data 0 0 0 0 0 0 0 0
-
-MonsterIdTable:
-	Data 123 68 69 61 57 97 40 98
-
-MonsterPicTable:
-	Data 0 68 69 61 57 11 12 14
-
-EncounterParam5:
-	Data 0 68 69 61 57 15 11 12
-
-MoraleTable:
-	Data 40 60 60 60 50 60 60 0
-
-EncounterParam7:
-	Data 6 15 12 18 6 9 9 9
-
-LeaderIdTable:
-	Data 1 68 69 61 57 53 53 53
-
-LeaderPicTable:
-	Data 1 68 69 61 57 11 11 11
-
-event2:
-	if In3D == Dungeon3D: Goto NoRest3D
-	RestChance = 10
-	RestEvery = 96
-	Exit
-
-NoRest3D:
-	RestEvery = 0
-	Exit
-
-event3:
-	ForcedEncounter = 1
-	Goto StartEncounter
-
-event4:
-	if InLair == InsideLair: Goto LairSetup
-	In3D = Overland
-	NoCoords = 0
-	LoadMap 5 unused=5 icons=0
-	if Boss < 254: Exit
-	Gosub DrawRiver
-	Gosub PatchPyramidTiles
-	Exit
-
-LairSetup:
-	In3D = Dungeon3D
-	NoCoords = 255
-	SkyInside = 8
-	LoadWalls 7 8 23
-	LoadMap 26 unused=2 icons=255
-	Exit
-
-RiverRowTable:
-	Data 133 185 191 220 221 223 224 226 242 234 236 239 242 244 245 246
-	Data 247 72 73 98 104 105 106 120 123 126 127 128 129 130 161 162
-	Data 163 173 198 225
-
-RiverTileTable:
-	Data 223 151 151 151 149 149 149 149 254 249 249 249 229 230 230 150
-	Data 149 149 149 149 149 85 85 85 127 111 95 91 87 86 85 85
-	Data 38 38 198 198 242 242 252 252 85 85 85 85 84 83 79 63
-	Data 84 83 79 63 255 255 255 255 255 255 255 255 247 217 102 153
-	Data 253 253 246 246 246 253 189 125 125 127 159 159 159 127 125 125
-	Data 86 245 255 255 255 95 165 106 102 165 95 255 255 255 245 86
-	Data 253 253 246 246 246 253 189 125 253 253 255 127 127 157 101 154
-	Data 166 153 118 253 253 253 127 127 169 154 101 159 127 255 253 253
-	Data 127 127 255 253 253 118 154 166 187 234 187 238 171 14 74 78
-	Data 186 235 174 187 235 14 74 64 59 142 163 142 35 142 43 186
-	Data 238 171 238 186 174 235 186 235 238 171 239 186 238 186 187 238
-	Data 187 234 187 238 171 238 170 238 171 174 235 170 171 186 170 238
-	Data 187 238 11 34 163 136 160 136 238 170 234 186 174 234 187 238
-	Data 187 234 139 34 168 40 162 139 234 187 160 136 202 42 8 34
-	Data 8 50 62 243 200 42 166 153
-
-RiverTileTable2:
-	Data 139 34 163 142 35 162 139 46 154 122 234 110 186 234 186 238
-	Data 170 187 170 170 238 171 170 187 174 170 171 186 174 235 174 187
-	Data 159 131 135 132 133 161 168 170 255 255 255 253 253 246 217 102
-	Data 255 255 255 255 255 247 217 106 255
+# tables
+MapEventTable1 = [39, 43, 44, 46, 62, 66, 67, 73, 75, 76, 77, 78, 80, 84, 87, 89, 92, 93, 95, 99, 104, 105, 106, 110, 111, 116, 117, 118, 119]
+MapEventTable2 = [39, 43, 44, 46, 67, 73, 75, 76, 77, 78, 80, 84, 99, 105, 106, 119, 87, 22, 6, 10]
+SiteYTable = [10, 11, 12, 26, 27, 28, 14, 16, 29]
+SiteXTable = [12, 13, 11, 12, 13, 12, 13, 12, 13, 13, 11, 6, 6, 7]
+SiteRangeTable = [2, 3, 2, 2, 1, 1, 1, 1, 1]
+SiteKindTable = [0, 0, 0, 1, 0, 0, 0, 2, 2, 3, 4, 5, 6, 7]
+SurpriseTable1 = [0, 0, 0, 0, 0, 0, 0, 0]
+SurpriseTable2 = [0, 0, 0, 0, 0, 0, 0, 0]
+StrengthDivTable = [1, 6, 7, 2, 3, 2, 1, 1]
+LeaderEveryTable = [40, 0, 0, 0, 0, 20, 30, 30, 3, 0, 0, 0, 0, 1, 1, 1]
+EncounterParam2 = [30, 0, 1, 0, 20, 20, 50, 50]
+EncounterParam3 = [0, 0, 0, 0, 0, 0, 0, 0]
+MonsterIdTable = [123, 68, 69, 61, 57, 97, 40, 98]
+MonsterPicTable = [0, 68, 69, 61, 57, 11, 12, 14]
+EncounterParam5 = [0, 68, 69, 61, 57, 15, 11, 12]
+MoraleTable = [40, 60, 60, 60, 50, 60, 60, 0]
+EncounterParam7 = [6, 15, 12, 18, 6, 9, 9, 9]
+LeaderIdTable = [1, 68, 69, 61, 57, 53, 53, 53]
+LeaderPicTable = [1, 68, 69, 61, 57, 11, 11, 11]
+RiverRowTable = [133, 185, 191, 220, 221, 223, 224, 226, 242, 234, 236, 239, 242, 244, 245, 246, 247, 72, 73, 98, 104, 105, 106, 120, 123, 126, 127, 128, 129, 130, 161, 162, 163, 173, 198, 225]
+RiverTileTable = [223, 151, 151, 151, 149, 149, 149, 149, 254, 249, 249, 249, 229, 230, 230, 150, 149, 149, 149, 149, 149, 85, 85, 85, 127, 111, 95, 91, 87, 86, 85, 85, 38, 38, 198, 198, 242, 242, 252, 252, 85, 85, 85, 85, 84, 83, 79, 63, 84, 83, 79, 63, 255, 255, 255, 255, 255, 255, 255, 255, 247, 217, 102, 153, 253, 253, 246, 246, 246, 253, 189, 125, 125, 127, 159, 159, 159, 127, 125, 125, 86, 245, 255, 255, 255, 95, 165, 106, 102, 165, 95, 255, 255, 255, 245, 86, 253, 253, 246, 246, 246, 253, 189, 125, 253, 253, 255, 127, 127, 157, 101, 154, 166, 153, 118, 253, 253, 253, 127, 127, 169, 154, 101, 159, 127, 255, 253, 253, 127, 127, 255, 253, 253, 118, 154, 166, 187, 234, 187, 238, 171, 14, 74, 78, 186, 235, 174, 187, 235, 14, 74, 64, 59, 142, 163, 142, 35, 142, 43, 186, 238, 171, 238, 186, 174, 235, 186, 235, 238, 171, 239, 186, 238, 186, 187, 238, 187, 234, 187, 238, 171, 238, 170, 238, 171, 174, 235, 170, 171, 186, 170, 238, 187, 238, 11, 34, 163, 136, 160, 136, 238, 170, 234, 186, 174, 234, 187, 238, 187, 234, 139, 34, 168, 40, 162, 139, 234, 187, 160, 136, 202, 42, 8, 34, 8, 50, 62, 243, 200, 42, 166, 153]
+RiverTileTable2 = [139, 34, 163, 142, 35, 162, 139, 46, 154, 122, 234, 110, 186, 234, 186, 238, 170, 187, 170, 170, 238, 171, 170, 187, 174, 170, 171, 186, 174, 235, 174, 187, 159, 131, 135, 132, 133, 161, 168, 170, 255, 255, 255, 253, 253, 246, 217, 102, 255, 255, 255, 255, 255, 247, 217, 106, 255]
