@@ -53,8 +53,10 @@ func (e *Engine) buyItem(it *Item) (overloaded bool) {
 
 // Shop = ovr07:053E.
 func (e *Engine) Shop() {
+	greeting := e.ext.cells // extra: the merchant's greeting comes back after each redraw (the original cleared it)
 	e.beginFlag = 1
 	e.DrawMainScreen()
+	e.keepPane(greeting)
 	e.DisplayPartyList()
 	for _, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
@@ -70,8 +72,7 @@ func (e *Engine) Shop() {
 		e.ext.sels = map[string]int{}
 	}
 	e.ext.sels[menu.String()] = 1 // extra: a new visit starts on Browse, not where the last one left
-	for leave := false; !leave; {
-		e.shopMoney()
+	for leave := false; !leave; { // extra: no "Party money" line: it wrote over the merchant's greeting (the inventory shows the purse)
 		p := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 		redraw := false
 		switch p.ID {
@@ -91,8 +92,20 @@ func (e *Engine) Shop() {
 		}
 		if redraw {
 			e.DrawMainScreen()
+			e.keepPane(greeting)
 		}
 		e.DisplayPartyList()
+	}
+}
+
+// keepPane (extra) puts the text pane's cells back as they were in cells.
+func (e *Engine) keepPane(cells [25][40]textCell) {
+	for y := msgTop; y <= winBottom; y++ {
+		for x := 1; x <= winRight; x++ {
+			if c := cells[y][x]; c.set {
+				e.drawChar(x, y, int(c.colour), int(c.bg), c.c, c.upcase)
+			}
+		}
 	}
 }
 
@@ -142,7 +155,7 @@ func (e *Engine) identifyMenu() bool {
 		}
 		if len(list) == 0 {
 			if index == 0 {
-				e.BottomMessage("No unknown items")
+				e.BottomMessage("Nothing to identify")
 				return false
 			}
 			return true

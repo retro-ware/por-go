@@ -231,7 +231,7 @@ func (e *Engine) Appraise() (any bool) {
 	c := e.selected()
 	p := &e.purse
 	if p.gems == 0 && p.jewelry == 0 {
-		e.BottomMessage("No Gems or Jewelry")
+		e.BottomMessage("Nothing to appraise")
 		return false
 	}
 	for done := false; !done; {

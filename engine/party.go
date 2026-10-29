@@ -334,7 +334,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 		if p.extra() {
 			i := e.partyIndex(who)
 			switch p.Dir {
-			case DirEnd, DirDown: // next, wrapping to the first (Down is an extra)
+			case DirEnd, DirDown, DirRight: // next, wrapping to the first (Down and Right are extras)
 				if who == nil {
 					// nil^.next reads 0000:0104 (the INT 41h vector, garbage in
 					// the original); the harness pins it to nil, and nil wraps to
@@ -345,7 +345,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 				} else {
 					who = e.party[0]
 				}
-			case DirHome, DirUp: // previous, wrapping to the last (Up is an extra)
+			case DirHome, DirUp, DirLeft: // previous, wrapping to the last (Up and Left are extras)
 				if i > 0 {
 					who = e.party[i-1]
 				} else {

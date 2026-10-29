@@ -165,20 +165,15 @@ func (e *Engine) BottomMessage(s string) { e.bottomMessage(s, colLightGreen) }
 func (e *Engine) refuse(s string) { e.bottomMessage(s, colLightRed) }
 
 // bottomMessage: BottomMessage with the colour of the combat status row.
+// Extra: in combat the message goes to the View's Log, elsewhere it is the
+// window's note (a toast the remaster shows on every page; the original's
+// row 24 is under the text box there, and its delay held the game).
 func (e *Engine) bottomMessage(s string, colour int) {
 	s = cut(s, textCols)
-	if e.snap.invOn { // extra: over the remastered inventory, its note
-		e.say(s)
-		return
-	}
-	if e.beginFlag == 5 && e.cmap != nil { // extra: in combat the View's Log
+	if e.beginFlag == 5 && e.cmap != nil {
 		e.combatSay(nil, s, true)
 		e.MsgDelay()
 		return
 	}
-	e.ClearCells(0, promptRow, lastCol, promptRow)
-	e.DisplayString(0, promptRow, colLightGreen, s)
-	e.MsgDelay()
-	e.MsgDelay() // port: shown twice as long as the original, too quick to read
-	e.ClearCells(0, promptRow, lastCol, promptRow)
+	e.say(s)
 }
