@@ -10,8 +10,7 @@
 // Mouse: pointing at a menu item highlights it, a click picks it (and list
 // lines, party members, combat squares); the wheel moves the highlight and
 // the right button is Escape. "?" lists the keys; F1-F8 open the inventory
-// of party member 1-8. F10 switches between the original screen and the
-// remastered one (present/remaster; POR_REMASTER=1 starts in it).
+// of party member 1-8.
 //
 // DIR must hold the DOS game files (TITLE.DAX, 8X8D1.DAX, GAME data ...);
 // it defaults to $GOPLAY_DATA, else the parent of the executable's module
@@ -30,7 +29,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ebitengine/oto/v3"
@@ -43,12 +41,11 @@ import (
 )
 
 type game struct {
-	scr        *ega.Screen
-	eng        *engine.Engine
-	classic    classic.Presenter
-	remaster   remaster.Presenter // draws through classic where it has no remaster
-	remastered bool               // F10: the remastered screen instead of the original's
-	queue      []uint16           // keys still to send, one each time the engine waits (sendKeys)
+	scr      *ega.Screen
+	eng      *engine.Engine
+	classic  classic.Presenter
+	remaster remaster.Presenter // draws through classic where it has no remaster yet
+	queue    []uint16           // keys still to send, one each time the engine waits (sendKeys)
 
 	pads    []gpu.GamepadID // input buffers, reused each tick
 	pressed []gpu.Key
@@ -78,17 +75,12 @@ func (g *game) Update() error {
 	if shot != "" { // the user's input never reaches a capture, only the scripted keys
 		g.ticks++
 		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
-			if c := shotKeys[k-1]; c == shotF10 {
-				g.remastered = !g.remastered
-				g.remaster.Switched()
-			} else {
-				g.push(c)
-				g.settle()
-			}
+			g.push(shotKeys[k-1])
+			g.settle()
 		}
 		return nil
 	}
-	if g.remastered && g.remaster.Options() { // the renderer's options page has the keyboard
+	if g.remaster.Options() { // the renderer's options page has the keyboard
 		g.remaster.UpdateOptions()
 		return nil
 	}
@@ -105,18 +97,11 @@ func (g *game) Update() error {
 
 // push sends a key to the engine.
 func (g *game) push(k uint16) {
-	if g.remastered {
-		ks, taken := g.remaster.Key(k, g.eng.View())
-		g.sendKeys(ks)
-		if taken {
-			return
-		}
-	}
-	ks := []uint16{k}
-	if !g.remastered {
-		ks = classicCombatKey(k, g.eng.View())
-	}
+	ks, taken := g.remaster.Key(k, g.eng.View())
 	g.sendKeys(ks)
+	if !taken {
+		g.sendKeys([]uint16{k})
+	}
 }
 
 // sendKeys sends ks to the engine: the first at once, the others one at a
@@ -133,40 +118,6 @@ func (g *game) sendKeys(ks []uint16) {
 	}
 	g.scr.PushKey(ks[0])
 	g.queue, g.sent = append(g.queue, ks[1:]...), true
-}
-
-// classicCombatKey gives classic combat the remaster's controls (present/battle
-// Key) where the original has none: W A S D scroll the map and Home brings
-// whose turn it is back to the middle; aiming, Tab and Shift-Tab cycle the
-// targets and Enter takes the aimed one. Other keys pass unchanged.
-func classicCombatKey(k uint16, v engine.View) []uint16 {
-	if v.Battle == nil {
-		return []uint16{k}
-	}
-	if d := strings.IndexByte("wdsaWDSA", byte(k)); k < 128 && d >= 0 {
-		return []uint16{engine.KeyPan + uint16(d%4)}
-	}
-	if v.Menu == nil { // Move's steps: Home is keypad 7
-		return []uint16{k}
-	}
-	aiming, take := false, uint16(0)
-	for _, it := range v.Menu.Items {
-		aiming = aiming || it.Text == "Next" || it.Text == "Center"
-		if it.Text == "Attack" {
-			take = uint16(it.Key)
-		}
-	}
-	switch {
-	case k == 0x4700:
-		return []uint16{engine.KeyPan + 4}
-	case k == 9 && aiming && gpu.IsKeyPressed(gpu.KeyShift):
-		return []uint16{'P'}
-	case k == 9 && aiming:
-		return []uint16{'N'}
-	case k == 13 && aiming && take != 0:
-		return []uint16{take}
-	}
-	return []uint16{k}
 }
 
 // settle gives the engine up to 8 ms to finish with the keys just sent, so
@@ -194,18 +145,17 @@ var repeatKeys = []gpu.Key{
 // keys passes the keyboard to the engine.
 func (g *game) keys() {
 	paced := false
-	if g.remastered { // fluid movement: the view asks for the held move as the last one ends
-		var held uint16
-		for _, k := range repeatKeys[:8] {
-			if gpu.KeyPressDuration(k) > 0 {
-				held, _ = biosKey(k)
-			}
+	// fluid movement: the view asks for the held move as the last one ends
+	var held uint16
+	for _, k := range repeatKeys[:8] {
+		if gpu.KeyPressDuration(k) > 0 {
+			held, _ = biosKey(k)
 		}
-		var send bool
-		send, paced = g.remaster.Flow(held, g.scr.Idle())
-		if send {
-			g.push(held)
-		}
+	}
+	var send bool
+	send, paced = g.remaster.Flow(held, g.scr.Idle())
+	if send {
+		g.push(held)
 	}
 	for i, k := range repeatKeys {
 		if i < 8 && paced {
@@ -217,10 +167,7 @@ func (g *game) keys() {
 		}
 	}
 	for _, k := range gpu.AppendJustPressedKeys(g.pressed[:0]) {
-		if k == gpu.KeyF10 { // never the game's: only how it is shown changes
-			g.remastered = !g.remastered
-			g.remaster.Switched()
-		} else if code, ok := biosKey(k); ok {
+		if code, ok := biosKey(k); ok {
 			g.push(code)
 		} else if k == gpu.KeyF && gpu.IsKeyPressed(gpu.KeyControl) && gpu.IsKeyPressed(gpu.KeyShift) {
 			g.push(engine.KeyFontPrev) // Ctrl-F next font, Ctrl-Shift-F the one before
@@ -247,10 +194,8 @@ func (g *game) mouse() {
 		g.sendKeys(g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy))
 		return
 	}
-	if g.remastered {
-		g.remaster.Hover(mx, my)
-	}
-	if g.remastered && gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
+	g.remaster.Hover(mx, my)
+	if gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) {
 		if ks, ok := g.remaster.Click(mx, my); ok { // an action bar button, a menu item
 			g.sendKeys(ks)
 			return
@@ -261,7 +206,7 @@ func (g *game) mouse() {
 			return
 		}
 	}
-	if g.remastered && g.scr.Idle() { // pointing at a square: aiming previews it
+	if g.scr.Idle() { // pointing at a square: aiming previews it
 		if x, y, ok := g.remaster.Square(mx, my); ok && image.Pt(x+1, y+1) != g.over {
 			g.over = image.Pt(x+1, y+1)
 			g.scr.PushKey(engine.HoverKey(x, y))
@@ -289,7 +234,7 @@ func (g *game) mouse() {
 // cell is the text cell (40x25) of the picture under device pixel (x, y).
 func (g *game) cell(x, y float64) (int, int, bool) {
 	p := g.pic
-	if p.W <= 0 && g.remastered {
+	if p.W <= 0 {
 		return g.remaster.Cell(int(x), int(y))
 	}
 	if p.W <= 0 || x < p.X || y < p.Y || x >= p.X+p.W || y >= p.Y+p.H {
@@ -366,14 +311,10 @@ func (g *game) gamepad(id gpu.GamepadID) {
 func (g *game) Draw(dst *gpu.Image) {
 	text, at := g.eng.Note()
 	note := classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
-	if g.remaster.Inventory(dst, g.scr, note, g.eng.View()) { // the inventory screen, in both modes
+	if g.remaster.Inventory(dst, g.scr, note, g.eng.View()) { // the inventory screen
 		g.pic = classic.Rect{}
-	} else if g.remastered {
-		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())
 	} else {
-		g.pic = g.classic.Draw(dst, g.scr, note)
-		mx, my := gpu.CursorPosition()
-		g.classic.DrawBattle(dst, g.pic, g.eng.View().Battle, mx, my) // the remaster's targeting previews over the map
+		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())
 	}
 	if shot != "" && g.ticks > 30*(len(shotKeys)+4) {
 		saveShot(dst)
@@ -385,13 +326,11 @@ func (g *game) Draw(dst *gpu.Image) {
 // presenters. The window opens unfocused and ignores the user's input
 // meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
 // first adventuring prompt. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
-// arrows, \T F10 (switch the presenter).
+// arrows.
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
 
-const shotF10 = 0xFFFF // in shotKeys: not a key for the engine
-
 func scriptKeys(s string) []uint16 {
-	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00, 'T': shotF10}
+	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00}
 	var out []uint16
 	for i := 0; i < len(s); i++ {
 		if c, ok := esc[s[min(i+1, len(s)-1)]]; s[i] == '\\' && i+1 < len(s) && ok {
@@ -528,7 +467,7 @@ func main() {
 	}
 	go eng.Run()
 
-	g := &game{scr: scr, eng: eng, dsf: 1, remastered: os.Getenv("POR_REMASTER") != ""}
+	g := &game{scr: scr, eng: eng, dsf: 1}
 	g.remaster.Classic = &g.classic
 	gpu.SetWindowSize(ega.W*(*scale), ega.H*(*scale)*6/5) // 4:3 like a CRT
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
