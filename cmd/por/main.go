@@ -22,6 +22,7 @@ package main
 
 import (
 	"blobber"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"image"
@@ -435,7 +436,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	blobber.Voice = eng.ToggleVoice                                               // the voice-over switch on the Esc menu's Audio page
+	blobber.Voice = eng.ToggleVoice                                 // the voice-over switch on the Esc menu's Audio page
+	settingsFile := filepath.Join(eng.Cfg.SaveDir, "SETTINGS.JSON") // the Esc menu's options (minimap, picture box, speed, fullscreen ...) kept across runs
+	if b, err := os.ReadFile(settingsFile); err == nil {
+		json.Unmarshal(b, &blobber.Settings)
+	}
+	blobber.OnSettings = func(o blobber.Options) {
+		b, _ := json.MarshalIndent(o, "", " ")
+		os.MkdirAll(eng.Cfg.SaveDir, 0o755)
+		os.WriteFile(settingsFile, b, 0o644)
+	}
 	blobber.OnSaveLoad = func() { eng.Act(engine.Action{Kind: engine.ActSlots}) } // as F9
 	blobber.OnMainMenu = eng.MainMenu
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {
@@ -466,7 +476,7 @@ func main() {
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
 	gpu.SetTPS(tps)
-	gpu.SetFullscreen(os.Getenv("GOPLAY_FULLSCREEN") == "1") // goplay starts games fullscreen
+	gpu.SetFullscreen(os.Getenv("GOPLAY_FULLSCREEN") == "1" || blobber.Settings.Fullscreen) // goplay starts games fullscreen
 	if shot != "" {
 		gpu.SetRunnableOnUnfocused(true)
 	}

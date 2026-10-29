@@ -34,9 +34,24 @@ func voiceKey(s string) string {
 	return strconv.FormatUint(h.Sum64(), 16)
 }
 
-func (e *Engine) voiceOn() bool {
-	_, err := os.Stat(filepath.Join(e.Cfg.SaveDir, voiceOffFile))
-	return err != nil
+func (e *Engine) voiceOn() bool { return !e.marked(voiceOffFile) }
+
+// marked reports whether the marker file name exists in the save folder: a
+// switch the player set (VOICE.OFF, SOUND.OFF, MINIMAP.ON) kept across runs.
+func (e *Engine) marked(name string) bool {
+	_, err := os.Stat(filepath.Join(e.Cfg.SaveDir, name))
+	return err == nil
+}
+
+// mark creates or removes the marker file name in the save folder.
+func (e *Engine) mark(name string, on bool) {
+	p := filepath.Join(e.Cfg.SaveDir, name)
+	if !on {
+		os.Remove(p)
+		return
+	}
+	os.MkdirAll(e.Cfg.SaveDir, 0o755)
+	os.WriteFile(p, nil, 0o644)
 }
 
 // ToggleVoice switches the voice when toggle and reports whether it is on.
@@ -48,14 +63,10 @@ func (e *Engine) ToggleVoice(toggle bool) bool {
 }
 
 func (e *Engine) setVoiceOn(on bool) {
-	p := filepath.Join(e.Cfg.SaveDir, voiceOffFile)
-	if on {
-		os.Remove(p)
-		return
+	e.mark(voiceOffFile, !on)
+	if !on {
+		e.stopVoice()
 	}
-	os.MkdirAll(e.Cfg.SaveDir, 0o755)
-	os.WriteFile(p, nil, 0o644)
-	e.stopVoice()
 }
 
 // speak queues the text's recording, unless the voice is off, there is no

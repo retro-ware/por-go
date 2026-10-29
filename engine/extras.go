@@ -166,6 +166,9 @@ func (e *Engine) rosterPanel() {
 	e.drawPartyList()
 }
 
+// minimapFile in the save folder marks the minimap as switched on (Tab).
+const minimapFile = "MINIMAP.ON"
+
 // toggleMinimap (Tab on the command bar) puts the minimap over the
 // roster or takes it away, where the game's Area map was allowed.
 func (e *Engine) toggleMinimap() {
@@ -174,6 +177,7 @@ func (e *Engine) toggleMinimap() {
 		return
 	}
 	e.ext.minimap = !e.ext.minimap
+	e.mark(minimapFile, e.ext.minimap)
 	e.rosterPanel()
 }
 

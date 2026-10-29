@@ -214,6 +214,7 @@ func New(dir string) (*Engine, error) {
 	e.port = portrait{headID: 0xFF, bodyID: 0xFF}
 	e.loadFont()
 	e.loadNotes()
+	e.ext.minimap = e.marked(minimapFile)
 	return e, nil
 }
 

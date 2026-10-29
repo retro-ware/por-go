@@ -339,6 +339,9 @@ func (e *Engine) SoundReader() *sound {
 	default:
 		s.typ = sndNone
 	}
+	if e.marked(soundOffFile) { // Ctrl-S from the last run
+		s.saved, s.typ = s.typ, sndNone
+	}
 	s.wait = 100 // soundWait(100) at start-up
 	s.on = true
 	if img, err := os.ReadFile(filepath.Join(e.data, AmigaDir, "SOUND.BIN")); err == nil && len(img) == amiga.End-amiga.Base {
@@ -633,12 +636,16 @@ func (s *sound) unhook() {
 	s.snSilence()
 }
 
+// soundOffFile in the save folder marks the sound as switched off (Ctrl-S).
+const soundOffFile = "SOUND.OFF"
+
 // soundToggle = 0899:006E (Ctrl-S in the key reader): sound on means
 // remember DS:5372 in DS:5373, stop the song (PlaySound(sndStop))
 // and set 5372 to sndNone, which mutes every driver call; off again restores the
 // saved type (the set test [0,1] always holds) and resets the driver.
 func (e *Engine) soundToggle() {
 	s := &e.snd
+	defer func() { e.mark(soundOffFile, s.typ == sndNone) }()
 	if s.typ != sndNone {
 		s.saved = s.typ
 		e.PlaySound(sndStop)
