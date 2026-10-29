@@ -230,12 +230,7 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 			Wrong: dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0,
 			Use:   e.usable(it), Throw: it.Readied == 0 && e.throwableItem(it),
 			Look: e.itemLines(it), Price: moneyText(v2/200, v2%200)}
-		switch d := dollSlot(e, c, it); {
-		case d == DollWeapon || d == DollArrows || d == DollBolts:
-			x.Kind = KindWeapon
-		case d >= 0 && d != DollRing1 && d != DollRing2:
-			x.Kind = KindArmor
-		}
+		x.Kind = itemKind(e, c, it)
 		for _, w := range it.Words {
 			if w != 0 {
 				x.Words = append(x.Words, itemWords[w])
@@ -249,7 +244,26 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		}
 		v.Pool = append(v.Pool, x)
 	}
-	slices.SortStableFunc(v.Pool, func(a, b InvItem) int { // extra: by kind, the strongest first, then by name
+	e.sortItems(v.Pool, items)
+	return v
+}
+
+// itemKind is the item's tab: what the weapon hand holds (and its
+// ammunition), what is worn, else the rest (rings among them).
+func itemKind(e *Engine, c *Character, it *Item) ItemKind {
+	switch d := dollSlot(e, c, it); {
+	case d == DollWeapon || d == DollArrows || d == DollBolts:
+		return KindWeapon
+	case d >= 0 && d != DollRing1 && d != DollRing2:
+		return KindArmor
+	}
+	return KindMisc
+}
+
+// sortItems orders a list of items (InvItem.Index into items) by kind
+// (the base item's slot), the strongest first, then by name (extra).
+func (e *Engine) sortItems(list []InvItem, items []*Item) {
+	slices.SortStableFunc(list, func(a, b InvItem) int {
 		ia, ib := items[a.Index], items[b.Index]
 		if d := int(e.base(ia.Type).Slot) - int(e.base(ib.Type).Slot); d != 0 {
 			return d
@@ -259,7 +273,6 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		}
 		return strings.Compare(a.Name, b.Name)
 	})
-	return v
 }
 
 // strength orders items of a kind: twice the average damage of a weapon,

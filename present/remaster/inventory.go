@@ -100,8 +100,6 @@ type inventory struct {
 	at     image.Point     // canvas top left on screen
 	w, h   int             // canvas size
 	list   pane            // the party inventory
-	tab    int             // its tab (tabNames)
-	tabs   [len(tabNames)]image.Rectangle
 	wares  pane            // the shop's goods (Browse)
 	ware   int             // the highlighted ware (InvItem.Index), -1 for none
 	lines  []hit           // the items' rectangles (canvas)
@@ -131,19 +129,35 @@ type hit struct {
 // tabNames are the party inventory's tabs: all, then by engine.ItemKind.
 var tabNames = [...]string{"All", "Weapons", "Armor", "Misc"}
 
-// shownPool is the party inventory the tab shows.
-func (inv *inventory) shownPool() []engine.InvItem {
+// shown is the part of items the pane's tab shows.
+func (pn *pane) shown(items []engine.InvItem) []engine.InvItem {
 	kinds := [...]engine.ItemKind{0, engine.KindWeapon, engine.KindArmor, engine.KindMisc}
-	if inv.tab == 0 {
-		return inv.view.Pool
+	if pn.tab == 0 {
+		return items
 	}
 	var out []engine.InvItem
-	for _, it := range inv.view.Pool {
-		if it.Kind == kinds[inv.tab] {
+	for _, it := range items {
+		if it.Kind == kinds[pn.tab] {
 			out = append(out, it)
 		}
 	}
 	return out
+}
+
+// drawTabs draws the pane's tabs in its title row from x.
+func (inv *inventory) drawTabs(pn *pane, x int, busy bool) {
+	for i, t := range tabNames {
+		pn.tabs[i] = image.Rect(x-2, 6, x+8*len(t)+2, 18)
+		switch {
+		case i == pn.tab:
+			inv.text(t, x, 8, white)
+		case inv.hover.In(pn.tabs[i]) && !busy:
+			inv.text(t, x, 8, green)
+		default:
+			inv.text(t, x, 8, gray)
+		}
+		x += 8*len(t) + 8
+	}
 }
 
 // pane is a scrolled list of items: the party inventory or the shop's goods.
@@ -152,6 +166,8 @@ type pane struct {
 	seen         int             // the highlight the list last scrolled to
 	at           image.Rectangle // the lines' area
 	scroll       image.Rectangle // the scroll bar
+	tab          int             // its tab (tabNames)
+	tabs         [len(tabNames)]image.Rectangle
 }
 
 // clamp keeps the lines shown inside the list.
@@ -438,34 +454,23 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.arrows = [2]image.Rectangle{}
 	inv.dollAt = image.Rectangle{}
 	if shop {
-		inv.text("Shop", lx, 8, white)
-		inv.drawPane(&inv.wares, in.Wares, inv.ware, true, true, busy, lx, (split-1)*8, bottom)
+		inv.drawTabs(&inv.wares, lx, busy)
+		inv.drawPane(&inv.wares, inv.wares.shown(in.Wares), inv.ware, true, true, busy, lx, (split-1)*8, bottom)
 	} else {
+		inv.wares.tabs = [len(tabNames)]image.Rectangle{} // no shop: no tabs to click
 		p.drawMember(in, v, lx, lw, bottom, busy)
 	}
 
 	// the party inventory: its title and fill, the lines, the scroll bar
 	rx, rr := split*8, (cw-1)*8 // a cell inside the shared divider
-	tx := rx
-	for i, t := range tabNames { // the tabs in its title row
-		inv.tabs[i] = image.Rect(tx-2, 6, tx+8*len(t)+2, 18)
-		switch {
-		case i == inv.tab:
-			inv.text(t, tx, 8, white)
-		case inv.hover.In(inv.tabs[i]) && !busy:
-			inv.text(t, tx, 8, green)
-		default:
-			inv.text(t, tx, 8, gray)
-		}
-		tx += 8*len(t) + 8
-	}
+	inv.drawTabs(&inv.list, rx, busy)
 	fillc := green
 	if len(in.Pool) >= in.Cap {
 		fillc = red
 	}
 	s := strconv.Itoa(len(in.Pool)) + "/" + strconv.Itoa(in.Cap)
 	inv.text(s, rr-8*len(s), 8, fillc)
-	inv.drawPane(&inv.list, inv.shownPool(), inv.sel, false, shop, busy, rx, rr, bottom)
+	inv.drawPane(&inv.list, inv.list.shown(in.Pool), inv.sel, false, shop, busy, rx, rr, bottom)
 
 	// an item dragged under the pointer
 	if inv.dragging && inv.press != nil {
@@ -743,7 +748,7 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		i    int
 	}
 	var order []pick // the items as the screen shows them: the goods or the doll, then the list
-	for _, it := range inv.view.Wares {
+	for _, it := range inv.wares.shown(inv.view.Wares) {
 		order = append(order, pick{true, it.Index})
 	}
 	for _, it := range inv.view.Doll {
@@ -751,7 +756,7 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 			order = append(order, pick{false, it.Index})
 		}
 	}
-	for _, it := range inv.shownPool() {
+	for _, it := range inv.list.shown(inv.view.Pool) {
 		order = append(order, pick{false, it.Index})
 	}
 	step := func(d int) {
@@ -767,8 +772,12 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 	switch {
 	case k == 27:
 		inv.do(engine.ActClose)
-	case k == 9: // Tab: the next tab
-		inv.tab = (inv.tab + 1) % len(tabNames)
+	case k == 9: // Tab: the next tab of the highlighted item's list
+		pn := &inv.list
+		if inv.ware >= 0 {
+			pn = &inv.wares
+		}
+		pn.tab, pn.top = (pn.tab+1)%len(tabNames), 0
 	case k == 0x4800:
 		step(-1)
 	case k == 0x5000:
@@ -873,10 +882,12 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 				return
 			}
 		}
-		for i, r := range inv.tabs {
-			if inv.hover.In(r) {
-				inv.tab, inv.list.top = i, 0
-				return
+		for _, pn := range []*pane{&inv.list, &inv.wares} {
+			for i, r := range pn.tabs {
+				if inv.hover.In(r) {
+					pn.tab, pn.top = i, 0
+					return
+				}
 			}
 		}
 		for _, l := range inv.lines {

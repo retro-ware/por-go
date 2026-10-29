@@ -26,7 +26,8 @@ func (e *Engine) shopWares(v *Inventory, c *Character) {
 	for i, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
 		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
-			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it), Price: strconv.Itoa(int(it.Price)) + " gold"}
+			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it), Price: strconv.Itoa(int(it.Price)) + " gold",
+			Kind: itemKind(e, c, it)}
 		for _, w := range it.Words {
 			if w != 0 {
 				x.Words = append(x.Words, itemWords[w])
@@ -34,6 +35,7 @@ func (e *Engine) shopWares(v *Inventory, c *Character) {
 		}
 		v.Wares = append(v.Wares, x)
 	}
+	e.sortItems(v.Wares, e.run.treasure)
 }
 
 // buyItem = ovr07:0239 (item, var overloaded): a copy goes to the
