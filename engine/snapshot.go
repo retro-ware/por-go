@@ -100,6 +100,7 @@ type View struct {
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
 	Credits   bool           // the page is Credits (the remaster adds RemasterCredit)
 	Slots     bool           // the page is the saved games (SlotMenu): the remaster stretches its box
+	Sheet     bool           // the page is a character sheet (CharacterSheet): the remaster stretches its box
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
@@ -162,6 +163,7 @@ type snapState struct {
 	cmapOn       bool                   // the combat map is set up (cmapShown) and shown
 	sheetOn      bool                   // a character sheet is up over the combat map
 	portrait     CellRect               // the sheet's portrait box while a sheet is up
+	sheet        bool                   // the page is a character sheet
 	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
 	effects      []effect               // sprites on the combat page
 	marks        []image.Point          // squares markReach framed
@@ -216,7 +218,7 @@ func (e *Engine) publish() {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.Choosing = s.typing, e.spots(), s.portrait, s.credits, s.slots, e.ext.choosing
+	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.Sheet, v.Choosing = s.typing, e.spots(), s.portrait, s.credits, s.slots, s.sheet, e.ext.choosing
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate
 	for i, c := range e.party {

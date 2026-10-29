@@ -75,6 +75,24 @@ func (p *Presenter) drawSlots(dst *gpu.Image, v engine.View, note Note) Rect {
 	return p.drawTall(dst, v, note, from, nil)
 }
 
+// drawSheet draws a character sheet (View.Sheet) over 30 rows: its box
+// grows by five blank rows (row 13, under the ability scores) so the page
+// fills a 4:3 window.
+func (p *Presenter) drawSheet(dst *gpu.Image, v engine.View, note Note) Rect {
+	var from [tallRows]int
+	for y := range from {
+		switch {
+		case y <= 13:
+			from[y] = y
+		case y < 19:
+			from[y] = 13
+		default:
+			from[y] = y - 5
+		}
+	}
+	return p.drawTall(dst, v, note, from, nil)
+}
+
 // tallRows is a 4:3 screen's height in text rows.
 const tallRows = 30
 
@@ -109,6 +127,7 @@ func (p *Presenter) drawTall(dst *gpu.Image, v engine.View, note Note, from [tal
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate(x0, y0)
 	dst.DrawImage(p.tallImg, op)
+	p.drawOverlays(dst, v.Overlays, Rect{x0, y0, k * w, k * h}) // the sheet's dropped portrait: in rows the rows keep
 	for to, y := range from {
 		at := image.Rect(int(x0), int(y0+k*float64(to*16)), int(x0+k*w), int(y0+k*float64(to*16+16)))
 		p.rows = append(p.rows, shownRows{at, image.Rect(0, y*8, pal.W, y*8+8)})

@@ -2,6 +2,8 @@ package engine
 
 import (
 	"image"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -26,5 +28,19 @@ func TestPortraitRoundTrip(t *testing.T) {
 	e.LoadCharacter("CHRDATA1", &d, true)
 	if d.Portrait != nil {
 		t.Error("the png stayed after the portrait was dropped")
+	}
+}
+
+// A named save carries the party's portraits: CHRDATA<n>.png in the slot.
+func TestPortraitSavedWithSlot(t *testing.T) {
+	e := &Engine{ecl: make([]byte, 0x1E00), set: 1}
+	e.Cfg.SaveDir = t.TempDir()
+	c := &Character{}
+	c.SetName("Yuna")
+	c.Portrait = image.NewRGBA(image.Rect(0, 0, 2, 2))
+	e.party = append(e.party, c)
+	e.saveTo("X")
+	if _, err := os.Stat(filepath.Join(e.slotRoot(), "X", "CHRDATA1.png")); err != nil {
+		t.Error("no portrait in the slot:", err)
 	}
 }

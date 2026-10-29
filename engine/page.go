@@ -132,7 +132,7 @@ func (e *Engine) clearPage() {
 	e.pg.layers = e.pg.layers[:0]
 	e.pg.frameUp = false
 	e.pg.overlays = nil
-	e.snap.portrait = CellRect{}
+	e.snap.portrait, e.snap.sheet = CellRect{}, false
 	e.ext.cells = [25][40]textCell{}
 }
 

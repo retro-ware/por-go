@@ -28,6 +28,7 @@ func (e *Engine) CharacterSheet() {
 	c := e.selected()
 	e.view.char = c
 	e.ClearScreen()
+	e.snap.sheet = true // the remaster stretches the sheet (drawSheet)
 	e.DrawBorder(1, 1, winRight, winBottom, 0)
 	e.displayName(c, 1, 1, false)
 	if c.Control > 0x7F {
