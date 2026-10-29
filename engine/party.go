@@ -115,9 +115,11 @@ func (e *Engine) PartyMenu() {
 	for i, m := range partyMenu {
 		names, enabled = append(names, m.name), append(enabled, m.enabled)
 		if i == 5 { // extra: deletes a saved character, listed after Add
-			names, enabled = append(names, "Forget Saved Character"), append(enabled, true)
+			names, enabled = append(names, "Forget Character"), append(enabled, true)
 		}
 	}
+	names = append(names, "Quick Start") // extra: mQuick, while there is no party
+	enabled = append(enabled, false)
 	const (
 		mCreate = iota
 		mDrop
@@ -157,24 +159,23 @@ func (e *Engine) PartyMenu() {
 		}
 		// The menu bar is hidden here (colours 0); the selection indicator
 		// goes on the list instead, which only offers the enabled entries.
-		quick := len(e.party) == 0 // extra: the quickstart entry, listed under Create
 		const mQuick = mExit + 1
-		var shown Bar
-		for i := range names {
+		enabled[mQuick] = len(e.party) == 0
+		var vis []int // extra: the enabled functions in the remaster's order
+		for _, i := range []int{mLoad, mQuick, mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mSave, mBegin, mExit} {
 			if enabled[i] {
-				shown = append(shown, Entry{names[i][:1], Choice(i)})
-				if i == mCreate && quick {
-					shown = append(shown, Entry{"Q", mQuick}) // in list order, so the arrows step down the list
-				}
+				vis = append(vis, i)
 			}
+		}
+		var shown Bar
+		e.snap.main = nil // the remaster's main menu: the functions in list order
+		for _, i := range vis {
+			shown = append(shown, Entry{names[i][:1], Choice(i)}) // in list order, so the arrows step down the list
+			e.snap.main = append(e.snap.main, names[i])
 		}
 		shown = append(shown, Entry{}) // the original's trailing space
 		drawList := func(hot byte) {
-			row := 0
-			for i := range names {
-				if !enabled[i] {
-					continue
-				}
+			for row, i := range vis {
 				bg := colBlack
 				if names[i][0] == hot {
 					bg = selBg(0xA, 0xF)
@@ -183,49 +184,19 @@ func (e *Engine) PartyMenu() {
 				for j := 1; j < len(names[i]); j++ {
 					e.displayCharBg(2+j, 12+row, colLightGreen, bg, names[i][j], true)
 				}
-				row++
-				if i == mCreate && quick {
-					bg = colBlack
-					if hot == 'Q' {
-						bg = selBg(0xA, 0xF)
-					}
-					e.displayCharBg(2, 12+row, colWhite, bg, 'Q', true)
-					for j, ch := range []byte("uickstart") {
-						e.displayCharBg(3+j, 12+row, colLightGreen, bg, ch, true)
-					}
-					row++
-				}
 			}
 		}
 		e.ext.onSelect = drawList
 		mark := e.regionMark()
 		{ // extra (nav.go): the function list and the roster take clicks
-			row := 0
-			item := func(hot byte, w int) {
-				e.addRegion(region{x0: 2, y0: 12 + row, x1: 1 + w, y1: 12 + row,
+			for row, i := range vis {
+				hot := names[i][0]
+				e.addRegion(region{x0: 2, y0: 12 + row, x1: 1 + len(names[i]), y1: 12 + row,
 					click: func(int, int) Action { return Action{Kind: actHotkey, N: int(hot)} },
 					hover: func(int, int) { e.ext.nav.hot(hot) }})
-				row++
-			}
-			for i := range names {
-				if enabled[i] {
-					item(names[i][0], len(names[i]))
-					if i == mCreate && quick {
-						item('Q', len("Quickstart"))
-					}
-				}
 			}
 			if len(e.party) > 0 {
 				e.rosterRegion()
-			}
-		}
-		e.snap.main = nil // the remaster's main menu: the functions in list order
-		for i := range names {
-			if enabled[i] {
-				e.snap.main = append(e.snap.main, names[i])
-				if i == mCreate && quick {
-					e.snap.main = append(e.snap.main, "Quickstart")
-				}
 			}
 		}
 		p := e.DisplayInput("", shown, colLightMagenta, colBlack, colBlack, true, false) // extra: no "Choose a function"

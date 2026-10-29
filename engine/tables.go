@@ -1239,9 +1239,9 @@ var partyMenu = [11]struct {
 	name    string
 	enabled bool
 }{
-	{"Create New Character", true}, {"Drop Character", false}, {"Modify Character", false},
-	{"Train Character", false}, {"View Character", false}, {"Add Character to Party", true},
-	{"Remove Character from Party", false}, {"Load Saved Game", true}, {"Save Current Game", false},
+	{"Create Character", true}, {"Drop Character", false}, {"Modify Character", false},
+	{"Train Character", false}, {"View Character", false}, {"Add Character", true},
+	{"Remove Character from Party", false}, {"Load Game", true}, {"Save Current Game", false},
 	{"BEGIN Adventuring", false}, {"Exit to DOS", true},
 }
 
