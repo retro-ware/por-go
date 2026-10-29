@@ -19,8 +19,8 @@ import (
 
 // Card layout at scale 1.
 const (
-	portraitSize = 45          // a card's face, a paper-doll head's lit part
 	cardW        = 64          // the border round a 6 cell inside
+	portraitSize = cardW - 16  // a card's face fills the inside of the border, a paper-doll head's lit part
 	frameH       = cardW       // the border holds only the face
 	barY         = frameH + 1  // the hit point bar
 	cardH        = barY + 2*11 // and room for a second bar's row

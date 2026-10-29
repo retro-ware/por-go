@@ -329,9 +329,7 @@ func (e *Engine) SheetPortrait() {
 	e.DrawBoxTitled(box.X1, box.Y1, box.X2, box.Y2, 0, colBlack, "")
 	e.snap.portrait = box  // Shift-click and a dropped PNG land here
 	if c.Portrait != nil { // extra: the dropped PNG, fitted into the box at the window's resolution
-		r := box.Pixels().Inset(8)
-		r.Max.Y = box.Pixels().Max.Y // down to the box's foot: the remaster's rope runs outside the cells
-		e.pg.overlays = []Overlay{{Img: c.Portrait, At: fit(c.Portrait.Bounds(), r)}}
+		e.pg.overlays = []Overlay{{Img: c.Portrait, At: fit(c.Portrait.Bounds(), box.Pixels())}} // the whole box: the remaster's rope runs outside its cells
 		return
 	}
 	e.pg.overlays = nil
