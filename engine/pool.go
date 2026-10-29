@@ -3,6 +3,7 @@ package engine
 import (
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // The party inventory (extra): the party shares one list of every item no
@@ -195,7 +196,17 @@ type InvItem struct {
 	Throw bool     // it can be thrown
 	Look  []string // what it does (the shop's Look text)
 	Price string   // what selling it pays
+	Kind  ItemKind // its party inventory tab
 }
+
+// ItemKind sorts the party inventory into tabs (extra).
+type ItemKind int
+
+const (
+	KindMisc ItemKind = iota
+	KindWeapon
+	KindArmor
+)
 
 // inventoryView builds the snapshot of the inventory screen.
 func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
@@ -219,6 +230,12 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 			Wrong: dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0,
 			Use:   e.usable(it), Throw: it.Readied == 0 && e.throwableItem(it),
 			Look: e.itemLines(it), Price: moneyText(v2/200, v2%200)}
+		switch d := dollSlot(e, c, it); {
+		case d == DollWeapon || d == DollArrows || d == DollBolts:
+			x.Kind = KindWeapon
+		case d >= 0 && d != DollRing1 && d != DollRing2:
+			x.Kind = KindArmor
+		}
 		for _, w := range it.Words {
 			if w != 0 {
 				x.Words = append(x.Words, itemWords[w])
@@ -232,7 +249,28 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		}
 		v.Pool = append(v.Pool, x)
 	}
+	slices.SortStableFunc(v.Pool, func(a, b InvItem) int { // extra: by kind, the strongest first, then by name
+		ia, ib := items[a.Index], items[b.Index]
+		if d := int(e.base(ia.Type).Slot) - int(e.base(ib.Type).Slot); d != 0 {
+			return d
+		}
+		if d := e.strength(ib) - e.strength(ia); d != 0 {
+			return d
+		}
+		return strings.Compare(a.Name, b.Name)
+	})
 	return v
+}
+
+// strength orders items of a kind: twice the average damage of a weapon,
+// twice the armour class of armour, with the magic plus.
+func (e *Engine) strength(it *Item) int {
+	b := e.base(it.Type)
+	plus := int(int8(it.Plus))
+	if b.Protection != 0 {
+		return 2 * (int(b.Protection) - 0x80 + plus)
+	}
+	return int(b.Dice)*(int(b.Sides)+1) + 2*(int(int8(b.Bonus))+plus)
 }
 
 // savedItems is what SaveCharacter writes to the .itm file: in a saved
