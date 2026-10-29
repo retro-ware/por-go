@@ -109,7 +109,7 @@ func (e *Engine) ModifyCharacter() {
 		}
 		e.addRegion(region{x0: 0, y0: 7, x1: 0xB, y1: 12, click: func(_, cy int) Action { pick(cy - 7); return Action{Kind: actRedraw} }})
 		e.addRegion(region{x0: 0, y0: 0x12, x1: 0xB, y1: 0x12, click: func(int, int) Action { pick(6); return Action{Kind: actRedraw} }})
-		key, extra := e.DisplayInput("Modify character: ", "Keep Raise Lower Exit", colLightMagenta, colLightGreen, colWhite, true, false)
+		key, extra := e.displayKey("Modify character: ", "Keep Raise Lower Exit", colLightMagenta, colLightGreen, colWhite, true, false)
 		e.regionCut(mark)
 		switch {
 		case !extra && key == 'R':
@@ -387,7 +387,7 @@ func (e *Engine) TrainCharacter() {
 			e.DisplayString(6, y, colLightGreen, pre+strconv.Itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
 		}
 	}
-	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Do you wish to train? ") != 'Y' {
+	if !e.YesNo(colLightMagenta, colLightGreen, colWhite, "Do you wish to train? ") {
 		return
 	}
 	e.BottomMessage("Congratulations...")
@@ -458,7 +458,7 @@ func (e *Engine) AddCharacter() {
 	count := 0 // uninitialised until the first add in the original
 	for {
 		// The show-exit argument is an uninitialised local; false here.
-		key := e.ListMenu("Add a character: ", "Add Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
+		key := e.listKey("Add a character: ", "Add Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
 		if (key == 0xD || key == 'A') && sel != nil && (sel.Text == "" || sel.Text[0] != '*') {
 			c := &Character{}
 			if e.LoadCharacter(sel.Text, c, false) { // ovr18:0AEC
@@ -541,7 +541,7 @@ func (e *Engine) ForgetCharacter() {
 	index, redraw := 0, true
 	var sel *ListNode
 	for len(list) > 0 {
-		key := e.ListMenu("Forget a character: ", "Forget Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
+		key := e.listKey("Forget a character: ", "Forget Exit", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel)
 		if key == 'E' || key == 0 || key == 0x1B {
 			break
 		}
@@ -549,7 +549,7 @@ func (e *Engine) ForgetCharacter() {
 			continue
 		}
 		redraw = true
-		if e.YesNo(colYellow, colLightGreen, colWhite, cut("Forget "+sel.Text+" forever? ", textCols)) != 'Y' {
+		if !e.YesNo(colYellow, colLightGreen, colWhite, cut("Forget "+sel.Text+" forever? ", textCols)) {
 			continue
 		}
 		base := makeFileName(removeSubstr(sel.Text, "."))
@@ -575,7 +575,7 @@ func (e *Engine) choosePortrait() {
 	head, body := c.PortHead, c.PortBody
 	for {
 		e.SheetPortrait() // ovr29:04F9
-		key, extra := e.DisplayInput("", "Head Body Keep", colBlack, colWhite, colLightGreen, false, false)
+		key, extra := e.displayKey("", "Head Body Keep", colBlack, colWhite, colLightGreen, false, false)
 		if !extra {
 			switch key {
 			case 'H':
@@ -726,7 +726,7 @@ func (e *Engine) iconEditor() {
 			if state == 3 {
 				m = menu3
 			}
-			k, extra := e.DisplayInput("", sizeStr+m, colLightMagenta, colLightGreen, colWhite, false, false)
+			k, extra := e.displayKey("", sizeStr+m, colLightMagenta, colLightGreen, colWhite, false, false)
 			key = k
 			if !extra {
 				done := key == 0 || key == 'E'
@@ -861,7 +861,7 @@ func (e *Engine) iconEditor() {
 			e.LoadIconPic("ICON", 0, 0xB)
 			e.LoadIconPic("ICON", 1, 0xC)
 		}
-		if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is this icon ok? ") == 'Y' {
+		if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is this icon ok? ") {
 			e.Music(3) // Amiga 0x2F33E
 			break
 		}

@@ -188,11 +188,11 @@ func (e *Engine) FullMap() {
 		return
 	}
 	restore := e.saveScreen()
-	inCommand, sel, extra := e.ext.inCommand, e.menuSel, e.menuExtra
+	inCommand, sel := e.ext.inCommand, e.menuSel
 	e.ext.inCommand, e.ext.fullMap = false, true
 	defer func() {
 		restore()
-		e.ext.inCommand, e.menuSel, e.menuExtra, e.ext.fullMap = inCommand, sel, extra, false
+		e.ext.inCommand, e.menuSel, e.ext.fullMap = inCommand, sel, false
 	}()
 	cx, cy := e.posX, e.posY
 	if !onMap(cx, cy) {
@@ -225,27 +225,31 @@ func (e *Engine) FullMap() {
 	defer e.rawArrows()()
 	for {
 		texts, firstSq = e.drawFullMap(m, cx, cy)
-		k, ext := e.DisplayInput("", "Walk Label Remove Exit", colLightMagenta, colLightGreen, colWhite, true, false)
-		if ext {
-			switch k {
-			case 0x48:
+		const (
+			walk Choice = iota
+			label
+			remove
+			exit
+		)
+		p := e.DisplayInput("", Bar{{"Walk", walk}, {"Label", label}, {"Remove", remove}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		switch p.ID {
+		case PickMove:
+			switch p.Dir {
+			case DirUp:
 				cy = max(cy-1, 0)
-			case 0x50:
+			case DirDown:
 				cy = min(cy+1, 15)
-			case 0x4B:
+			case DirLeft:
 				cx = max(cx-1, 0)
-			case 0x4D:
+			case DirRight:
 				cx = min(cx+1, 15)
 			}
-			continue
-		}
-		switch k {
-		case 'W':
+		case walk:
 			if e.startWalk(cx, cy) {
 				return
 			}
 			e.DisplayMessageWait(colYellow, "No known way there")
-		case 'L':
+		case label:
 			old := m[cy<<4|cx]
 			if s, ok := e.labelInput(old.text); ok {
 				if s == "" {
@@ -259,12 +263,12 @@ func (e *Engine) FullMap() {
 				}
 				e.saveNotes()
 			}
-		case 'R':
+		case remove:
 			if _, ok := m[cy<<4|cx]; ok {
 				delete(m, cy<<4|cx)
 				e.saveNotes()
 			}
-		case 'E', 0:
+		case exit, NoPick:
 			return
 		}
 	}

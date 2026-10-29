@@ -45,7 +45,7 @@ func (e *Engine) shopList(index *int, item **Item) byte {
 		*index %= len(list)
 	}
 	e.ext.buying = true
-	key := e.ListMenu("Items: ", "Buy Look Inv", colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 22, list, true, &redraw, index, &sel)
+	key := e.listKey("Items: ", "Buy Look Inv", colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 22, list, true, &redraw, index, &sel)
 	e.ext.buying = false
 	*item = nil
 	for i, n := range list {
@@ -126,7 +126,7 @@ func (e *Engine) Shop() {
 	e.ext.sels[menu] = 1 // extra: a new visit starts on Browse, not where the last one left
 	for leave := false; !leave; {
 		e.shopMoney()
-		key, _ := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
+		key, _ := e.displayKey("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 		appraised := false
 		switch key {
 		case 'B':
@@ -138,7 +138,7 @@ func (e *Engine) Shop() {
 		case 'E':
 			leave = true
 		case 'G', 'O':
-			e.partyKeypad(key)
+			e.partyKeypadKey(key)
 		}
 		if key == 'B' || (key == 'A' || key == 'I') && appraised {
 			e.DrawMainScreen()
@@ -206,7 +206,7 @@ func (e *Engine) identifyMenu() bool {
 		e.DisplayString(winRight-len(gold), messageRow, colYellow, gold)
 		redraw := true
 		var sel *ListNode
-		key := e.ListMenu("", "Id", colLightCyan, colLightGreen, colWhite, 2, 3, 38, 22, list, true, &redraw, &index, &sel)
+		key := e.listKey("", "Id", colLightCyan, colLightGreen, colWhite, 2, 3, 38, 22, list, true, &redraw, &index, &sel)
 		if key != 'I' && key != 13 || sel == nil {
 			return true
 		}

@@ -263,7 +263,7 @@ func (e *Engine) Appraise() (any bool) {
 			menu = cut(menu+"  Jewelry", textCols)
 		}
 		menu = cut(menu+" Exit", textCols)
-		key, _ := e.DisplayInput("Appraise : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
+		key, _ := e.displayKey("Appraise : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 		switch key {
 		case 'G':
 			if p.gems == 0 {
@@ -333,7 +333,7 @@ func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
 	if sellOnly {
 		menu = "Sell"
 	}
-	key, _ := e.DisplayInput("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
+	key, _ := e.displayKey("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 	if key == 'K' && !sellOnly {
 		// extra: the original loses the gem when the item list is empty
 		// (it appends only to its local copy); the port always keeps it.

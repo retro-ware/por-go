@@ -116,14 +116,81 @@ func (e *Engine) drawMenu(prompt, menu string, start, end []int, sel, normal, hi
 	}
 }
 
-// keypadMap = DS:288C: digits 1..9 -> scan-code letters (End Down PgDn
-// Left - Right Home Up PgUp).
-var keypadMap = []byte("OPQK MGHI")
+// keypadDir: the keypad's digits 1..9 (End Down PgDn Left - Right Home Up
+// PgUp, DS:288C) as directions.
+var keypadDir = [...]int{DirEnd, DirDown, DirPgDn, DirLeft, DirCentre, DirRight, DirHome, DirUp, DirPgUp}
+
+// Choice identifies a menu item: each menu numbers its own items (from 0);
+// the negative values are what a menu bar hands back besides an item.
+type Choice int
+
+const (
+	NoPick     Choice = -1 - iota // the wait ended with nothing (Esc on a menu without Exit)
+	PickEnter                     // Enter, where it does not pick the highlighted item
+	PickMove                      // a keypad key the bar does not use itself: Pick.Dir
+	PickRedraw                    // a click moved a cursor itself: draw again (actRedraw)
+	PickRelist                    // another member (F1-F8): the caller rebuilds the list
+	PickSlots                     // F9 on a menu bar of the slot screen
+	PickExit                      // an Exit item (ListMenu ends on it)
+	pickNext                      // ListMenu's Next and Prev
+	pickPrev
+)
+
+// Pick is what a menu bar hands back: the item's Choice or an outcome.
+type Pick struct {
+	ID  Choice
+	Dir int // PickMove: Dir...
+}
+
+// Entry is one word of a menu bar. Its [0-9A-Z] letter is the hotkey: shown
+// lit and typed to pick it; the decision is ID.
+type Entry struct {
+	Word string
+	ID   Choice
+}
+
+// Bar is a menu bar's items.
+type Bar []Entry
+
+func (b Bar) String() string {
+	w := make([]string, len(b))
+	for i, it := range b {
+		w[i] = it.Word
+	}
+	return strings.Join(w, " ")
+}
+
+// ids: the Choice of each menu item, in menuItems order (a word with two
+// hotkeys gives both its ID).
+func (b Bar) ids() []Choice {
+	var ids []Choice
+	for _, it := range b {
+		for i := 0; i < len(it.Word); i++ {
+			if isHotkey(it.Word[i]) {
+				ids = append(ids, it.ID)
+			}
+		}
+	}
+	return ids
+}
+
+// textBar makes a bar of a menu that comes as text (a script's): each word
+// is a choice, numbered by its first hotkey's item.
+func textBar(menu string) Bar {
+	var b Bar
+	n := 0
+	for _, w := range strings.Split(menu, " ") {
+		b = append(b, Entry{w, Choice(n)})
+		n += len(Bar{{Word: w}}.ids())
+	}
+	return b
+}
 
 // DisplayInput = ovr26:03BD (prompt, menu, promptColour, normalColour,
-// highlightColour, allowExtra, anim). Returns the key and whether it was a
-// keypad/extended key. e.menuSel (DS:6B2B) persists between calls.
-func (e *Engine) DisplayInput(prompt, menu string, promptColour, normal, highlight int, allowExtra, anim bool) (byte, bool) {
+// highlightColour, allowExtra, anim): the item picked or what else ended
+// the wait. e.menuSel (DS:6B2B) persists between calls.
+func (e *Engine) DisplayInput(prompt string, bar Bar, promptColour, normal, highlight int, allowExtra, anim bool) Pick {
+	menu := bar.String()
 	last := e.pic.last // [bp-57] is per call: an outer DisplayInput keeps its own
 	// extra: each menu starts where it was left (the original shares one highlight)
 	if e.ext.selSet {
@@ -131,17 +198,17 @@ func (e *Engine) DisplayInput(prompt, menu string, promptColour, normal, highlig
 	} else {
 		e.menuSel = max(e.ext.sels[menu], 1)
 	}
-	k, x := e.displayInput(prompt, menu, promptColour, normal, highlight, allowExtra, anim)
+	p := e.displayInput(prompt, menu, bar.ids(), promptColour, normal, highlight, allowExtra, anim)
 	if e.ext.sels == nil {
 		e.ext.sels = map[string]int{}
 	}
 	e.ext.sels[menu] = e.menuSel
 	e.pic.last = last
 	e.viewAnim = 0 // 06D8 (not deferred: a trace run must stop with the original's state)
-	return k, x
+	return p
 }
 
-func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlight int, allowExtra, anim bool) (byte, bool) {
+func (e *Engine) displayInput(prompt, menu string, ids []Choice, promptColour, normal, highlight int, allowExtra, anim bool) Pick {
 	saved := e.animInput // [bp+0xA], read by the wait loop (animateWhileWaiting)
 	e.animInput = anim
 	defer func() { e.animInput = saved }()
@@ -151,7 +218,6 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 	if len(menu) > 40 {
 		menu = menu[:40]
 	}
-	e.menuExtra = false
 	e.ext.menu++
 	nav, mark := e.ext.nav, e.regionMark()
 	defer func() {
@@ -176,7 +242,7 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 	e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) // 048B; redrawn only on a move
 	e.menuRegions(prompt, menu, start, end, normal, highlight, allowExtra)
 	redraw := func() { e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) }
-	m := &menuBar{e: e, menu: menu, start: start, count: count, allowExtra: allowExtra, allowEnter: allowEnter, redraw: redraw}
+	m := &menuBar{e: e, menu: menu, start: start, ids: ids, count: count, allowExtra: allowExtra, allowEnter: allowEnter, redraw: redraw}
 	for {
 		// The input timeout DS:6B2E..6B32 is never set by the game.
 		e.animateWhileWaiting()
@@ -184,9 +250,8 @@ func (e *Engine) displayInput(prompt, menu string, promptColour, normal, highlig
 			e.idle()
 			continue
 		}
-		if k, x, ok := m.decide(e.input()); ok {
-			e.menuExtra = x
-			return k, x
+		if p, ok := m.decide(e.input()); ok {
+			return p
 		}
 	}
 }
@@ -196,6 +261,7 @@ type menuBar struct {
 	e                      *Engine
 	menu                   string
 	start                  []int
+	ids                    []Choice // each item's Choice
 	count                  int
 	allowExtra, allowEnter bool
 	redraw                 func()
@@ -203,7 +269,7 @@ type menuBar struct {
 
 // decide = the key handling of ovr26:03BD, on actions: what the menu hands
 // back for a, if it ends the wait (ok).
-func (m *menuBar) decide(a Action) (k byte, extra, ok bool) {
+func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 	e := m.e
 	switch a.Kind {
 	case ActPick:
@@ -217,17 +283,17 @@ func (m *menuBar) decide(a Action) (k byte, extra, ok bool) {
 			e.ext.nav.hot(mn.Items[a.N].Key)
 		}
 	case actRedraw:
-		return m.scan(menuRedraw)
+		return m.outcome(Pick{ID: PickRedraw})
 	case ActContinue:
 		if e.enterPicks() {
-			return m.hotkey(e.ext.padHot)
+			return m.item(e.menuSel)
 		}
 		return m.enter()
 	case ActClose: // picks the Exit item of a menu that has one, so it always backs out
 		if e.ext.modal == 0 && !e.ext.inCommand && e.ext.nav.exit {
 			return m.hotkey('E')
 		}
-		return 0, false, true
+		return Pick{ID: NoPick}, true
 	case ActMove:
 		return m.move(a.N)
 	case ActMember: // a portrait: that member's View page, or the member a list or bar is for
@@ -243,7 +309,7 @@ func (m *menuBar) decide(a Action) (k byte, extra, ok bool) {
 	default:
 		if e.ext.modal > 0 { // the slot screen's bar: any other action is Enter
 			if a.Kind == ActSlots {
-				return m.scan(menuSlots)
+				return m.outcome(Pick{ID: PickSlots})
 			}
 			return m.enter()
 		}
@@ -276,48 +342,53 @@ func (m *menuBar) decide(a Action) (k byte, extra, ok bool) {
 			}
 		}
 	}
-	return 0, false, false
+	return Pick{}, false
 }
 
-// hotkey = ovr26:062A..06C2: the item with hotkey k; with the keypad
-// allowed a digit is the keypad's key.
-func (m *menuBar) hotkey(k byte) (byte, bool, bool) {
+// item picks item j (1-based) of the bar.
+func (m *menuBar) item(j int) (Pick, bool) {
+	if j < 1 || j > len(m.ids) {
+		return Pick{}, false
+	}
+	return Pick{ID: m.ids[j-1]}, true
+}
+
+// hotkey = ovr26:062A..06C2: the item whose hotkey is the letter k (typed,
+// or the item a click or a shortcut stands for); with the keypad allowed a
+// digit is the keypad's key.
+func (m *menuBar) hotkey(k byte) (Pick, bool) {
 	k = upper(k)
-	done, extra := k == ' ', false
-	if isHotkey(k) {
-		for i := 1; i <= len(m.menu); i++ {
-			if m.menu[i-1] != k {
-				continue
-			}
-			done = true
-			for j := 1; j < len(m.start); j++ {
-				if m.start[j] == i {
-					m.e.menuSel = j
-					m.redraw() // ovr26:0685
-					break
-				}
+	if m.allowExtra && k >= '1' && k <= '9' {
+		return Pick{ID: PickMove, Dir: keypadDir[k-'1']}, true
+	}
+	if !isHotkey(k) {
+		return Pick{}, false
+	}
+	j := 0
+	for i := 1; i <= len(m.menu); i++ {
+		if m.menu[i-1] != k {
+			continue
+		}
+		for jj := 1; jj < len(m.start); jj++ {
+			if m.start[jj] == i {
+				j = jj
+				m.e.menuSel = jj
+				m.redraw() // ovr26:0685
+				break
 			}
 		}
 	}
-	if m.allowExtra && (k >= '1' && k <= '9' || k == '\\') {
-		if k == '\\' {
-			k = '7' // 0899:06AD stores 0x37 itself, not the keypad table entry (original quirk)
-		} else {
-			k = keypadMap[k-'1']
-		}
-		extra, done = true, true
-	}
-	return k, extra, done
+	return m.item(j)
 }
 
-// scan hands back an extended key's scan letter where the menu takes them.
-func (m *menuBar) scan(c byte) (byte, bool, bool) { return c, true, m.allowExtra }
+// outcome hands back an extended key's outcome where the menu takes them.
+func (m *menuBar) outcome(p Pick) (Pick, bool) { return p, m.allowExtra }
 
 // enter is Enter, taken by a menu with colours.
-func (m *menuBar) enter() (byte, bool, bool) { return 13, false, m.allowEnter }
+func (m *menuBar) enter() (Pick, bool) { return Pick{ID: PickEnter}, m.allowEnter }
 
 // step moves the highlight back or on, round the ends.
-func (m *menuBar) step(back bool) (byte, bool, bool) {
+func (m *menuBar) step(back bool) (Pick, bool) {
 	e := m.e
 	switch {
 	case back && e.menuSel == 1:
@@ -330,32 +401,32 @@ func (m *menuBar) step(back bool) (byte, bool, bool) {
 		e.menuSel++
 	}
 	m.redraw()
-	return 0, false, false
+	return Pick{}, false
 }
 
 // move gives ActMove its meaning: the highlight (Left/Up back, Right/Down
 // on), or in lists and member selection the lines and members, or the
 // keypad's keys for menus that take them.
-func (m *menuBar) move(d int) (byte, bool, bool) {
+func (m *menuBar) move(d int) (Pick, bool) {
 	x := m.e.ext
-	key := func(d int) (byte, bool, bool) {
+	key := func(d int) (Pick, bool) {
 		switch d {
 		case DirBack:
 			return m.step(true)
 		case DirOn:
 			return m.step(false)
 		}
-		return m.scan(dirScan[d])
+		return m.outcome(Pick{ID: PickMove, Dir: d})
 	}
 	if d < 0 || d > DirWheelDown {
-		return 0, false, false
+		return Pick{}, false
 	}
 	up := d == DirUp || d == DirWheelUp
 	switch {
 	case x.modal > 0: // a bar of the modal screen's own
 		switch d {
 		case DirWheelUp, DirWheelDown:
-			return 0, false, false
+			return Pick{}, false
 		case DirUp, DirLeft:
 			return m.step(true)
 		case DirDown, DirRight:
@@ -371,7 +442,7 @@ func (m *menuBar) move(d int) (byte, bool, bool) {
 		case x.paging:
 			return key(line)
 		case x.raw:
-			return 0, false, false
+			return Pick{}, false
 		case x.list || x.choosing:
 			return key(line)
 		}
@@ -393,30 +464,30 @@ func (m *menuBar) move(d int) (byte, bool, bool) {
 // select member n and open their inventory (View, starting on Items). On
 // the View page or in the inventory they switch to member n (Exit, then
 // View again), staying on the page they were on. Not in combat, where View is the fighter's.
-func (m *menuBar) member(n int) (byte, bool, bool) {
+func (m *menuBar) member(n int) (Pick, bool) {
 	e := m.e
 	if n < 0 || n >= len(e.party) || e.beginFlag == 5 {
-		return 0, false, false
+		return Pick{}, false
 	}
 	switch {
 	case e.ext.viewing:
 		if n == e.partySel {
-			return 0, false, false
+			return Pick{}, false
 		}
 		e.partySel = n // the View page for member n
 		e.ext.held = Action{Kind: actHotkey, N: 'V'}
 		return m.hotkey('E')
 	case e.ext.campBar || e.ext.buying: // camp: F1-F8 pick the member the menu is for; the shop's Buy list: the buyer
 		if n == e.partySel {
-			return 0, false, false
+			return Pick{}, false
 		}
 		e.partySel = n
-		return m.scan(menuRelist)
+		return m.outcome(Pick{ID: PickRelist})
 	case e.ext.inCommand || strings.Contains(m.menu, "View"):
 		e.partySel, e.ext.toItems = n, true
 		return m.hotkey('V')
 	}
-	return 0, false, false
+	return Pick{}, false
 }
 
 // menuRegions (extra, nav.go): the items of the menu bar highlight under
@@ -451,14 +522,53 @@ func (e *Engine) menuRegions(prompt, menu string, start, end []int, normal, high
 	}
 }
 
-// YesNo = ovr26:10D1 (c1, c2, c3, prompt): "Yes No" on row 24, 'N' preselected.
-func (e *Engine) YesNo(c1, c2, c3 int, prompt string) byte {
+// YesNo = ovr26:10D1 (c1, c2, c3, prompt): "Yes No" on row 24, No
+// preselected; true for Yes.
+func (e *Engine) YesNo(c1, c2, c3 int, prompt string) bool {
+	const (
+		yes Choice = iota
+		no
+	)
 	e.menuSel = 2
 	e.ext.selSet = true // (extra) keep the preselected No
 	for {
-		k, _ := e.DisplayInput(prompt, "Yes No", c1, c2, c3, false, false)
-		if k == 'N' || k == 'Y' {
-			return k
+		switch e.DisplayInput(prompt, Bar{{"Yes", yes}, {"No", no}}, c1, c2, c3, false, false).ID {
+		case yes:
+			return true
+		case no:
+			return false
 		}
 	}
+}
+
+// displayKey (transitional): DisplayInput for callers still switching on
+// letters: the item's hotkey, or the old scan letters (extra).
+func (e *Engine) displayKey(prompt, menu string, promptColour, normal, highlight int, allowExtra, anim bool) (byte, bool) {
+	p := e.DisplayInput(prompt, textBar(menu), promptColour, normal, highlight, allowExtra, anim)
+	return legacyKey(menu, p)
+}
+
+func legacyKey(menu string, p Pick) (byte, bool) {
+	switch p.ID {
+	case NoPick:
+		return 0, false
+	case PickEnter:
+		return 13, false
+	case PickMove:
+		if p.Dir == DirCentre {
+			return ' ', true
+		}
+		return dirScan[p.Dir], true
+	case PickRedraw:
+		return menuRedraw, true
+	case PickRelist:
+		return menuRelist, true
+	case PickSlots:
+		return menuSlots, true
+	}
+	start, _ := menuItems(menu)
+	if j := int(p.ID) + 1; j < len(start) && start[j] > 0 {
+		return menu[start[j]-1], false
+	}
+	return 0, false
 }

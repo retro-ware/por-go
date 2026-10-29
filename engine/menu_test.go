@@ -75,26 +75,32 @@ func TestMenuItemsEmpty(t *testing.T) {
 	}
 }
 
-// A menu bar decides on actions: a pick hands back the item's hotkey, Esc
-// the Exit item, Right moves the highlight, the keypad a scan letter.
+// A menu bar decides on actions: a pick hands back the item's Choice, Esc
+// the Exit item, Right moves the highlight, the keypad a direction.
 func TestMenuBarDecide(t *testing.T) {
 	e := &Engine{}
-	menu := "Look Take Exit"
+	const (
+		look Choice = iota
+		take
+		exit
+	)
+	bar := Bar{{"Look", look}, {"Take", take}, {"Exit", exit}}
+	menu := bar.String()
 	start, end := menuItems(menu)
 	e.ext.menu, e.menuSel = 1, 1
 	e.menuShown("", menu, start, end)
 	e.ext.nav = navCtx{menu: menu, exit: menuHasExit(menu)}
-	m := &menuBar{e: e, menu: menu, start: start, count: len(start) - 1, allowExtra: true, allowEnter: true, redraw: func() {}}
-	if k, x, ok := m.decide(Action{Kind: ActPick, N: 1}); k != 'T' || x || !ok || e.menuSel != 2 {
-		t.Errorf("pick: %q %v %v sel %d", k, x, ok, e.menuSel)
+	m := &menuBar{e: e, menu: menu, start: start, ids: bar.ids(), count: len(start) - 1, allowExtra: true, allowEnter: true, redraw: func() {}}
+	if p, ok := m.decide(Action{Kind: ActPick, N: 1}); p.ID != take || !ok || e.menuSel != 2 {
+		t.Errorf("pick: %v %v sel %d", p, ok, e.menuSel)
 	}
-	if k, _, ok := m.decide(Action{Kind: ActClose}); k != 'E' || !ok {
-		t.Errorf("close: %q %v", k, ok)
+	if p, ok := m.decide(Action{Kind: ActClose}); p.ID != exit || !ok {
+		t.Errorf("close: %v %v", p, ok)
 	}
-	if _, _, ok := m.decide(Action{Kind: ActMove, N: DirRight}); ok || e.menuSel != 1 {
+	if _, ok := m.decide(Action{Kind: ActMove, N: DirRight}); ok || e.menuSel != 1 {
 		t.Errorf("right: %v sel %d", ok, e.menuSel)
 	}
-	if k, x, ok := m.decide(Action{Kind: ActMove, N: DirHome}); k != 0x47 || !x || !ok {
-		t.Errorf("home: %#x %v %v", k, x, ok)
+	if p, ok := m.decide(Action{Kind: ActMove, N: DirHome}); p.ID != PickMove || p.Dir != DirHome || !ok {
+		t.Errorf("home: %v %v", p, ok)
 	}
 }

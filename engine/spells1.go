@@ -71,7 +71,7 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 	var sel *ListNode
 	var key byte
 	for {
-		key = e.ListMenu(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel)
+		key = e.listKey(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel)
 		// set {0, 13, 'C', 'E', 'L', 'M', 'S'} at cs:004A
 		if key == 0 || key == 13 || key == 'C' || key == 'E' || key == 'L' || key == 'M' || key == 'S' {
 			break
@@ -369,13 +369,13 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 		if !e.usingItem {
 			e.DisplayString(1, 19, colLightGreen, e.spellName(int(spell)))
 			e.DisplayString(1, 20, colLightGreen, "is a combat-only spell...")
-			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Lose it? ") == 'Y' {
+			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Lose it? ") {
 				e.forgetSpell(spell)
 			}
 		} else {
 			e.DisplayString(1, 19, colLightGreen, "That Item")
 			e.DisplayString(1, 20, colLightGreen, "is a combat-only item...")
-			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Use it? ") == 'Y' {
+			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Use it? ") {
 				*quit = true
 			}
 		}

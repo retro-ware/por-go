@@ -249,7 +249,7 @@ func (e *Engine) hiredShare() {
 			k++
 		}
 	}
-	e.DisplayInput("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
+	e.displayKey("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
 }
 
 // showResult = ovr06:0916 (exp).
@@ -310,7 +310,7 @@ func (e *Engine) showResult(exp int32) {
 			y++
 		}
 	}
-	e.DisplayInput("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
+	e.displayKey("", "press <enter>/<return> to continue", colWhite, colWhite, colWhite, true, false)
 }
 
 // lootList = ovr06:0B14 (var index, var item): the treasure in a "Loot" box.
@@ -330,7 +330,7 @@ func (e *Engine) lootList(index *int, item **Item) byte {
 	redraw := true
 	var sel *ListNode
 	e.ext.buying = true
-	key := e.ListMenu("Items: ", "Take", colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
+	key := e.listKey("Items: ", "Take", colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
 	e.ext.buying = false
 	*item = nil
 	for i, n := range list {

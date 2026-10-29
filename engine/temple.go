@@ -7,7 +7,7 @@ import "strconv"
 
 // templeNotNeeded = ovr05:0013 (message): "<name> is not ..." and the
 // question whether to pay anyway.
-func (e *Engine) templeNotNeeded(msg string) byte {
+func (e *Engine) templeNotNeeded(msg string) bool {
 	c := e.selected()
 	e.CharMessage(c, msg, false)
 	k := e.YesNo(colLightMagenta, colLightGreen, colWhite, "cast cure anyway: ")
@@ -16,18 +16,13 @@ func (e *Engine) templeNotNeeded(msg string) byte {
 }
 
 // templePay = ovr05:00BF (cure, price): the price from the party's gold.
-// 'Y' when paid.
-func (e *Engine) templePay(cure string, price uint16) byte {
+// True when paid.
+func (e *Engine) templePay(cure string, price uint16) bool {
 	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true,
 		cut(cure+" will only cost "+strconv.Itoa(int(price))+" gold pieces.", 0xFF))
 
-	k := e.YesNo(colLightMagenta, colWhite, colLightGreen, "pay for cure ")
-	if k == 'Y' {
-		if !e.pay(uint32(price)) {
-			k = 'N'
-		}
-	}
-	if k == 'Y' {
+	k := e.YesNo(colLightMagenta, colWhite, colLightGreen, "pay for cure ") && e.pay(uint32(price))
+	if k {
 		e.ClearMessageArea()
 		c := e.selected()
 		e.CharMessage(c, "is cured.", true)
@@ -37,11 +32,7 @@ func (e *Engine) templePay(cure string, price uint16) byte {
 
 // templeCure asks "not needed" when needed is false, then for the price.
 func (e *Engine) templeCure(needed bool, notMsg, cure string, price uint16) bool {
-	k := byte('Y')
-	if !needed {
-		k = e.templeNotNeeded(notMsg)
-	}
-	return k == 'Y' && e.templePay(cure, price) == 'Y'
+	return (needed || e.templeNotNeeded(notMsg)) && e.templePay(cure, price)
 }
 
 // cureBlindness = ovr05:0249.
@@ -78,15 +69,15 @@ func (e *Engine) cureWounds(kind int) {
 	c := e.selected()
 	switch kind {
 	case 1:
-		if e.templePay("Cure Light Wounds", 100) == 'Y' {
+		if e.templePay("Cure Light Wounds", 100) {
 			e.Heal(c, e.Dice(1, 8), false)
 		}
 	case 2:
-		if e.templePay("Cure Serious Wounds", 350) == 'Y' {
+		if e.templePay("Cure Serious Wounds", 350) {
 			e.Heal(c, e.Dice(2, 8)+1, false)
 		}
 	case 3:
-		if e.templePay("Cure Critical Wounds", 600) == 'Y' {
+		if e.templePay("Cure Critical Wounds", 600) {
 			e.Heal(c, e.Dice(3, 8)+3, false)
 		}
 	}
@@ -197,9 +188,9 @@ func (e *Engine) templeHeal() {
 		e.DisplayString(1, 1, colWhite, cut(e.selected().Name()+", how can we help you?", textCols))
 		e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colWhite, "")
 		var sel *ListNode
-		key := e.ListMenu("", "Heal Exit", colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 15, list, false, &redraw, &index, &sel)
-		switch {
-		case key == 'H' || key == 13:
+		const heal Choice = 0
+		switch e.ListMenu("", Bar{{"Heal", heal}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 15, list, false, &redraw, &index, &sel).ID {
+		case heal, PickEnter:
 			switch index {
 			case 0:
 				e.cureBlindness()
@@ -218,7 +209,7 @@ func (e *Engine) templeHeal() {
 			case 9:
 				done = true
 			}
-		case key == 0:
+		case NoPick:
 			done = true
 		}
 	}
@@ -234,24 +225,28 @@ func (e *Engine) Temple() {
 	e.DisplayPartyList()
 	for leave := false; !leave; {
 		e.shopMoney()
-		key, extra := e.DisplayInput("", "Heal View Appraise Exit", colLightMagenta, colLightGreen, colWhite, true, false)
-		appraised := false
-		switch key {
-		case 'H':
-			if !extra {
-				e.templeHeal()
-			}
-		case 'V':
+		const (
+			heal Choice = iota
+			view
+			appraise
+			exit
+		)
+		p := e.DisplayInput("", Bar{{"Heal", heal}, {"View", view}, {"Appraise", appraise}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		switch p.ID {
+		case heal:
+			e.templeHeal()
+		case view:
 			e.ViewCharacter()
-		case 'A':
-			appraised = e.Appraise()
-		case 'E':
+		case appraise:
+			if e.Appraise() {
+				e.DrawMainScreen()
+			}
+		case exit:
 			leave = true
-		case 'G', 'O':
-			e.partyKeypad(key)
-		}
-		if key == 'A' && appraised {
-			e.DrawMainScreen()
+		case PickMove:
+			if homeEnd(p) {
+				e.partyKeypad(p)
+			}
 		}
 		e.DisplayPartyList()
 	}

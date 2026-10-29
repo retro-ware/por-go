@@ -675,9 +675,9 @@ func extractHotkeys(menu string) (hot, out string) {
 func (e *Engine) MenuInput(allowEnter bool, c3, c2, c1 int, menu, prompt string) int {
 	hot, shown := extractHotkeys(menu)
 	for {
-		key, extra := e.DisplayInput(prompt, shown, c1, c2, c3, true, e.animInput) // ovr08:16DC: the anim parameter
+		key, extra := e.displayKey(prompt, shown, c1, c2, c3, true, e.animInput) // ovr08:16DC: the anim parameter
 		if extra {
-			e.partyKeypad(key)
+			e.partyKeypadKey(key)
 			e.DisplayPartyList()
 			key = 0
 		}

@@ -331,7 +331,7 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			}
 			// one slot per name in any case (the folders may not tell case apart)
 			if i := slices.IndexFunc(list, func(s slot) bool { return strings.EqualFold(s.name, name) }); i >= 0 {
-				if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+list[i].name+"? ", textCols)) != 'Y' {
+				if !e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+list[i].name+"? ", textCols)) {
 					continue
 				}
 				os.RemoveAll(filepath.Join(e.slotRoot(), list[i].name))
@@ -339,12 +339,12 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			e.saveTo(name)
 			sel = first
 		case enter && canSave:
-			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+cur+"? ", textCols)) == 'Y' {
+			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+cur+"? ", textCols)) {
 				e.saveTo(cur)
 				sel = first
 			}
 		case a == del && cur != "":
-			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Delete "+cur+"? ", textCols)) == 'Y' {
+			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Delete "+cur+"? ", textCols)) {
 				os.RemoveAll(filepath.Join(e.slotRoot(), cur))
 			}
 		case (a == load || enter && loadOnly) && cur != "":

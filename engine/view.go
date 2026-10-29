@@ -218,7 +218,7 @@ func (e *Engine) ViewCharacter() bool {
 		}
 		menu = cut(menu+"Exit", textCols)
 		e.ext.viewing = true // F1..F8 switch members (extras.go)
-		k, extra := e.DisplayInput("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false)
+		k, extra := e.displayKey("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false)
 		e.ext.viewing = false
 		key = k
 		_ = extra
@@ -283,7 +283,7 @@ func (e *Engine) paladinCure(c *Character) {
 	for _, d := range diseases {
 		ill = ill || e.FindAffect(t, d) != nil
 	}
-	if !ill && e.YesNo(colLightMagenta, colLightGreen, colWhite, t.Name()+" is not diseased, cure anyway: ") != 'Y' {
+	if !ill && !e.YesNo(colLightMagenta, colLightGreen, colWhite, t.Name()+" is not diseased, cure anyway: ") {
 		return
 	}
 	e.rv.cure = 1
@@ -317,7 +317,7 @@ func (e *Engine) canLoseItem(it *Item) bool {
 		e.displayName(c, 1, 21, false)
 		e.msgCol, e.msgRow = len(c.Name())+2, 0x15
 		e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, false, " was going to scribe from that scroll")
-		ok = e.YesNo(colLightMagenta, colLightGreen, colWhite, "is it Okay to lose it? ") == 'Y'
+		ok = e.YesNo(colLightMagenta, colLightGreen, colWhite, "is it Okay to lose it? ")
 	default:
 		ok = true
 	}
@@ -599,7 +599,7 @@ func sellValue(it *Item) uint32 {
 // identifyItem = ovr20:1F52 (item, redraw): 200 gp shows the hidden words.
 func (e *Engine) identifyItem(c *Character, it *Item) (redraw bool) {
 	e.ItemName(c, it, 0, 0, false, false)
-	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") == 'Y' && e.pay(200) {
+	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") && e.pay(200) {
 		if it.Hidden == 0 {
 			e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "I can't tell anything new about your "+it.Name())
 		} else {

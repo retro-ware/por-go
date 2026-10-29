@@ -58,7 +58,7 @@ func (e *Engine) CreateCharacter() {
 		index, redraw := 1, true
 		var sel *ListNode
 		for {
-			k := e.ListMenu("", "", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, true, &redraw, &index, &sel)
+			k := e.listKey("", "", colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, true, &redraw, &index, &sel)
 			if k == 0 {
 				return 0, false
 			}
@@ -428,7 +428,7 @@ func (e *Engine) CreateCharacter() {
 		}
 		e.menuSel = 2
 		e.ext.selSet = true
-		k, _ := e.DisplayInput("Keep this character? ", "Yes No Minimal", colLightMagenta, colLightGreen, colWhite, false, false)
+		k, _ := e.displayKey("Keep this character? ", "Yes No Minimal", colLightMagenta, colLightGreen, colWhite, false, false)
 		if k == 'Y' {
 			break
 		}
@@ -484,8 +484,8 @@ func (e *Engine) DropCharacter() {
 		return
 	}
 	c := e.selected()
-	if e.YesNo(colYellow, colLightGreen, colWhite, "Drop "+c.Name()+" forever? ") == 'Y' &&
-		e.YesNo(colYellow, colLightGreen, colWhite, "Are you sure? ") == 'Y' {
+	if e.YesNo(colYellow, colLightGreen, colWhite, "Drop "+c.Name()+" forever? ") &&
+		e.YesNo(colYellow, colLightGreen, colWhite, "Are you sure? ") {
 		if c.Okay == 0 {
 			e.BottomMessage("You dump " + c.Name() + " out back.")
 		} else {

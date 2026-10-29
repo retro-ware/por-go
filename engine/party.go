@@ -67,19 +67,20 @@ func (e *Engine) drawPartyList() {
 
 // partyKeypad = ovr20:27DF (key): Home selects the previous character
 // (wrapping to the last), End the next (wrapping to the first: the original
-// leaves its walker on the head when there is no next), anything else the first.
-func (e *Engine) partyKeypad(k byte) {
+// leaves its walker on the head when there is no next), any other outcome
+// of the menu the first.
+func (e *Engine) partyKeypad(p Pick) {
 	if len(e.party) == 0 {
 		return
 	}
-	switch k {
-	case 'G':
+	switch {
+	case p.ID == PickMove && p.Dir == DirHome:
 		if e.partySel == 0 {
 			e.partySel = len(e.party) - 1
 		} else {
 			e.partySel--
 		}
-	case 'O':
+	case p.ID == PickMove && p.Dir == DirEnd:
 		if e.partySel+1 < len(e.party) {
 			e.partySel++
 		} else {
@@ -87,6 +88,21 @@ func (e *Engine) partyKeypad(k byte) {
 		}
 	default:
 		e.partySel = 0
+	}
+}
+
+// homeEnd: the pick is Home or End (the keys that step the member).
+func homeEnd(p Pick) bool { return p.ID == PickMove && (p.Dir == DirHome || p.Dir == DirEnd) }
+
+// partyKeypadKey (transitional): partyKeypad for a scan letter.
+func (e *Engine) partyKeypadKey(k byte) {
+	switch k {
+	case 'G':
+		e.partyKeypad(Pick{ID: PickMove, Dir: DirHome})
+	case 'O':
+		e.partyKeypad(Pick{ID: PickMove, Dir: DirEnd})
+	default:
+		e.partyKeypad(Pick{ID: NoPick})
 	}
 }
 
@@ -202,13 +218,13 @@ func (e *Engine) PartyMenu() {
 				e.rosterRegion()
 			}
 		}
-		k, extra := e.DisplayInput("Choose a function ", shown, colLightMagenta, colBlack, colBlack, true, false)
+		k, extra := e.displayKey("Choose a function ", shown, colLightMagenta, colBlack, colBlack, true, false)
 		e.regionCut(mark)
 		e.ext.onSelect = nil
 		e.ClearRow24()
 		if extra {
 			if k == 'G' || k == 'O' {
-				e.partyKeypad(k)
+				e.partyKeypadKey(k)
 				e.DisplayPartyList()
 			}
 			continue
@@ -274,7 +290,7 @@ func (e *Engine) PartyMenu() {
 			}
 		case 'E':
 			if enabled[mExit] {
-				if e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ") == 'Y' {
+				if e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ") {
 					for e.lettered() && !e.saved && len(e.party) > 0 {
 						e.SaveGame()
 					}
@@ -335,7 +351,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 				return Action{}
 			}})
 		}
-		key, extra := e.DisplayInput(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
+		key, extra := e.displayKey(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
 		e.regionCut(mark)
 		e.rosterHi, e.rosterNone = nil, false
 		// The exit set (DS 00BA:2C1F) is checked before the extra flag.

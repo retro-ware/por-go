@@ -395,7 +395,7 @@ func (e *Engine) LoadGame() {
 	}
 	var key byte
 	for {
-		key, _ = e.DisplayInput("Load Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
+		key, _ = e.displayKey("Load Which Game: ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
 		if key >= 'A' && key <= 'J' && e.fileExists(e.savePath("savgam"+string(key)+".dat")) {
 			break
 		}
@@ -488,7 +488,7 @@ func (e *Engine) loadSlot(key byte) bool {
 func (e *Engine) SaveGame() {
 	var key byte
 	for {
-		key, _ = e.DisplayInput("Save Which Game: ", "A B C D E F G H I J", colLightMagenta, colLightGreen, colWhite, false, e.beginFlag == 2) // ovr18:1D8B
+		key, _ = e.displayKey("Save Which Game: ", "A B C D E F G H I J", colLightMagenta, colLightGreen, colWhite, false, e.beginFlag == 2) // ovr18:1D8B
 		if key == 0 || key >= 'A' && key <= 'J' {
 			break
 		}

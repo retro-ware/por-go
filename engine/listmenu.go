@@ -1,6 +1,8 @@
 package engine
 
-import "strings"
+import (
+	"slices"
+)
 
 // List menu, ported from ovr26:0D9A (the node count of ovr26:0067 is len(list)).
 
@@ -191,21 +193,20 @@ func (e *Engine) lmPageScroll(c *listMenuCtx, forward bool) {
 
 // ListMenu = ovr26:0D9A. index is 0-based in/out (persists across calls),
 // redraw is set to force a full redraw and is cleared here. Returns the
-// DisplayInput key (0 on exit) and sets *selected to the node under the
-// cursor (nil on exit).
-func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, x2, y2 int,
-	list []*ListNode, showExit bool, redraw *bool, index *int, selected **ListNode) byte {
+// pick (an item, PickEnter, PickRelist; NoPick on exit) and sets *selected
+// to the node under the cursor (nil on exit). An item with ID PickExit
+// ends the list as its own Exit does.
+func (e *Engine) ListMenu(title string, menu Bar, promptColour, normal, hi, x1, y1, x2, y2 int,
+	list []*ListNode, showExit bool, redraw *bool, index *int, selected **ListNode) Pick {
 	if len(title) > 40 {
 		title = title[:40]
-	}
-	if len(menu) > 40 {
-		menu = menu[:40]
 	}
 	if len(list) == 0 {
 		*index = 0
 		*selected = nil
-		return 0
+		return Pick{ID: NoPick}
 	}
+	key := menu.String()
 	e.menuSel = 1 // DS:6B2B
 	c := &listMenuCtx{list: list, index: index, x1: x1, y1: y1, x2: x2, y2: y2,
 		promptColour: promptColour, normal: normal, hi: hi,
@@ -245,7 +246,7 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 			if i < 0 {
 				return Action{}
 			}
-			if i == *index || menu == "" {
+			if i == *index || len(menu) == 0 {
 				*index = i
 				clicked = true
 				return Action{Kind: ActContinue}
@@ -268,81 +269,99 @@ func (e *Engine) ListMenu(title, menu string, promptColour, normal, hi, x1, y1, 
 	for {
 		*redraw = false
 		e.lmDrawRow(c, *index, true)
-		m := menu
+		var m Bar
+		var without []string
 		if p := c.nth(*index); p != nil {
-			for _, w := range p.Without {
-				m = strings.Replace(m, " "+w, "", 1)
+			without = slices.Clone(p.Without)
+		}
+		for _, it := range menu {
+			if i := slices.Index(without, it.Word); i >= 0 {
+				without = slices.Delete(without, i, i+1)
+				continue
 			}
+			m = append(m, it)
 		}
 		hasNext, hasPrev := false, false
 		if c.total-c.rows > e.listTop {
-			m += " Next"
+			m = append(m, Entry{"Next", pickNext})
 			hasNext = true
 		}
 		if e.listTop > c.leadingHdr {
-			m += " Prev"
+			m = append(m, Entry{"Prev", pickPrev})
 			hasPrev = true
 		}
 		if showExit {
-			m += " Exit"
+			m = append(m, Entry{"Exit", PickExit})
 		}
-		start, _ := menuItems(m)
-		if w := e.ext.listWord[menu]; w != 0 { // extra: the same word stays highlighted on every page
-			for j := 1; j < len(start); j++ {
-				if start[j] > 0 && m[start[j]-1] == w { // an empty bar has no words
-					e.ext.selSet, e.menuSel = true, j
-				}
+		ids := m.ids()
+		if w, ok := e.ext.listWord[key]; ok { // extra: the same word stays highlighted on every page
+			if j := slices.Index(ids, w); j >= 0 {
+				e.ext.selSet, e.menuSel = true, j+1
 			}
 		}
-		e.ext.list, e.ext.picker = true, menu == ""
-		key, extra := e.DisplayInput(title, m, promptColour, normal, hi, true, false)
+		e.ext.list, e.ext.picker = true, len(menu) == 0
+		p := e.DisplayInput(title, m, promptColour, normal, hi, true, false)
 		e.ext.list, e.ext.picker = false, false
 		e.lmDrawRow(c, *index, false)
-		if e.menuSel >= 1 && e.menuSel < len(start) && start[e.menuSel] > 0 {
+		if e.menuSel >= 1 && e.menuSel <= len(ids) {
 			if e.ext.listWord == nil {
-				e.ext.listWord = map[string]byte{}
+				e.ext.listWord = map[string]Choice{}
 			}
-			e.ext.listWord[menu] = m[start[e.menuSel]-1]
+			e.ext.listWord[key] = ids[e.menuSel-1]
 		}
 		// extra: Enter picks the highlighted menu word (a click on the line
 		// still takes the first)
-		if key == 13 && !clicked && !extra && menu != "" {
-			if e.menuSel >= 1 && e.menuSel < len(start) && start[e.menuSel] > 0 {
-				key = m[start[e.menuSel]-1]
-			}
+		if p.ID == PickEnter && !clicked && len(menu) > 0 && e.menuSel >= 1 && e.menuSel <= len(ids) {
+			p.ID = ids[e.menuSel-1]
 		}
 		clicked = false
-		if extra {
-			switch key {
-			case 0x47, 0x48: // Home, cursor up
+		switch p.ID {
+		case PickMove:
+			switch p.Dir {
+			case DirHome, DirUp:
 				e.lmMoveCursor(c, false)
-			case 0x4F, 0x50: // End, cursor down
+			case DirEnd, DirDown:
 				e.lmMoveCursor(c, true)
-			case 0x49:
+			case DirPgUp:
 				if hasPrev {
 					e.lmPageScroll(c, false)
 				}
-			case 0x51:
+			case DirPgDn:
 				if hasNext {
 					e.lmPageScroll(c, true)
 				}
-			case menuRelist: // (extra) the caller rebuilds the list (another member: F1-F8)
-				*selected = nil
-				return menuRelist
 			}
-			continue
-		}
-		switch key {
-		case 'P':
-			e.lmPageScroll(c, false)
-		case 'N':
-			e.lmPageScroll(c, true)
-		case 27, 'E', 0:
+		case PickRelist: // (extra) the caller rebuilds the list (another member: F1-F8)
 			*selected = nil
-			return 0
+			return p
+		case PickRedraw, PickSlots:
+		case pickPrev:
+			e.lmPageScroll(c, false)
+		case pickNext:
+			e.lmPageScroll(c, true)
+		case PickExit, NoPick:
+			*selected = nil
+			return Pick{ID: NoPick}
 		default:
 			*selected = c.nth(*index)
-			return key
+			return p
 		}
 	}
+}
+
+// listKey (transitional): ListMenu for callers still switching on letters.
+func (e *Engine) listKey(title, menu string, promptColour, normal, hi, x1, y1, x2, y2 int,
+	list []*ListNode, showExit bool, redraw *bool, index *int, selected **ListNode) byte {
+	b := textBar(menu)
+	if menu == "" {
+		b = nil
+	}
+	for i := range b {
+		if b[i].Word == "Exit" {
+			b[i].ID = PickExit
+		}
+	}
+	p := e.ListMenu(title, b, promptColour, normal, hi, x1, y1, x2, y2, list, showExit, redraw, index, selected)
+	k, _ := legacyKey(menu, p)
+	return k
 }

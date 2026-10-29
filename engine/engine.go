@@ -45,7 +45,6 @@ type Engine struct {
 
 	msgDelay  byte // DS:49E2, message delay factor (ovr12 sets 1)
 	menuSel   int  // DS:6B2B, DisplayInput selection
-	menuExtra bool // DS:6B2C
 
 	party      []*Character // DS:5D96 list head ...
 	pool       []*Item      // extra: the party inventory (pool.go)

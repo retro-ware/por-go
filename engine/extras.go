@@ -68,7 +68,7 @@ type extras struct {
 	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
 	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
 	sels          map[string]int          // the highlighted item each menu was left with
-	listWord      map[string]byte         // a list menu's highlighted word, by its hot letter, kept across pages
+	listWord      map[string]Choice       // a list menu's highlighted word, kept across pages
 	selSet        bool                    // the caller set the highlight (YesNo): keep it
 	skip          bool                    // a key finished the text being printed: no more slow text until input is read
 

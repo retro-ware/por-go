@@ -157,7 +157,7 @@ func (e *Engine) CommandInput() byte {
 				f()
 			}
 			e.ext.inCommand = true
-			k, extra := e.DisplayInput("", e.commandBar(e.commandBar3D()), colLightMagenta, colLightGreen, colWhite, true, false)
+			k, extra := e.displayKey("", e.commandBar(e.commandBar3D()), colLightMagenta, colLightGreen, colWhite, true, false)
 			e.ext.inCommand = false
 			key = k
 			if !extra {
@@ -179,7 +179,7 @@ func (e *Engine) CommandInput() byte {
 				case 'M':
 					e.turn(2, true)
 				default:
-					e.partyKeypad(k)
+					e.partyKeypadKey(k)
 					e.DisplayPartyList()
 				}
 			}
@@ -194,7 +194,7 @@ func (e *Engine) CommandInput() byte {
 		}
 		for done := false; !done; {
 			e.ext.inCommand = true
-			k, extra := e.DisplayInput("", e.commandBar("Cast Inv View Encamp sWeep Search"), colLightMagenta, colLightGreen, colWhite, true, false)
+			k, extra := e.displayKey("", e.commandBar("Cast Inv View Encamp sWeep Search"), colLightMagenta, colLightGreen, colWhite, true, false)
 			e.ext.inCommand = false
 			key = k
 			if !extra {
@@ -211,7 +211,7 @@ func (e *Engine) CommandInput() byte {
 				case 'K':
 					e.facing = 6
 				default:
-					e.partyKeypad(k)
+					e.partyKeypadKey(k)
 					e.DisplayPartyList()
 					done = false
 				}
@@ -383,7 +383,7 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 		e.setDoor(e.posX, e.posY, e.facing, 0)
 		return false
 	}
-	k, _ := e.DisplayInput("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
+	k, _ := e.displayKey("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false)
 	switch k {
 	case 'B':
 		return e.bashDoor()
