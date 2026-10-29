@@ -16,15 +16,14 @@ def ShortPause() {
 def TakeItMenu() {
     PressToContinue()
     Text("DO YOU TAKE IT?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     return
 }
 
 def YesNoMenu() {
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 }
 
 PressToContinue:
@@ -103,8 +102,8 @@ on load {
     SetSky()
     if AreaKind == MendorsLibrary { exit }
     SelIcon = 18
-    LoadMap(15, unused=2, icons=255)
-    LoadWalls(1, 19, 23)
+    LoadMap(MendorsLibrary)
+    LoadWalls(Stone, Library, Marsh)
     exit
 }
 
@@ -330,8 +329,11 @@ BasiliskFight:
     exit
 
 BonesRoom:
-    if BonesRoomState == BonesShown { goto BonesJar }
-    if BonesRoomState > BonesShown { exit }
+    if BonesRoomState == BonesShown {
+        goto BonesJar
+    } else if BonesRoomState > BonesShown {
+        exit
+    }
     Text("YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK.")
     ShortPause()
     BonesRoomState = BonesShown
@@ -398,9 +400,9 @@ InviteMadman:
     MadmanRaves()
     if PartyCount == 8 { goto MadFighterMenu }
     Text("YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?")
-    if YesNoMenu() == "NO" { goto MadFighterMenu }
+    if YesNoMenu() != "YES" { goto MadFighterMenu }
     Text("HE LOOKS RELUCTANT AND SAYS, 'BUT HIS MINIONS ARE THERE. HE WILL COME TOO!' DO YOU INSIST HE COME?")
-    if YesNoMenu() == "NO" { goto MadFighterParlay }
+    if YesNoMenu() != "YES" { goto MadFighterParlay }
     Text("HE STANDS UP, MUTTERING TO HIMSELF, AND JOINS YOU.")
     LibraryEventFlags |= FighterJoined
     AddNPC(MadMan, 0)
@@ -462,7 +464,7 @@ TrashBook:
 
 CarrelsRoom:
     Scratch10 = CarrelsSeen[Scratch1]
-    if (!=) { goto CarrelsFoil }
+    if (!=) { goto CarrelsFoil } # the flags of the jump here
     Text("YOU ARE IN THE ILLUMINATORS CARRELS. ALL THEIR EQUIPMENT HAS DECAYED AND LIES ROTTING ON THE FLOOR.")
     CarrelsSeen[Scratch1] = 1
 
@@ -506,7 +508,7 @@ FleeFromKobolds:
 
 KoboldsPlead:
     Text("ONE OF THE KOBOLDS SAYS, 'IF YOU SPARE OUR LIVES WE WILL TELL YOU ALL WE KNOW ABOUT THIS AREA!' WILL YOU SPARE THEM?")
-    if YesNoMenu() == "NO" { goto KoboldFight }
+    if YesNoMenu() != "YES" { goto KoboldFight }
     Text("THEY DESCRIBE THE SURROUNDING AREA TO YOU. YOU LISTEN CAREFULLY, QUESTION THEM AND FROM THIS, SKETCH A MAP INTO YOUR JOURNAL CALLING IT ENTRY 10.")
     LibraryEventFlags |= KoboldsDone
     PressToContinue()

@@ -15,8 +15,7 @@ def FindPoolCell() {
     if Scratch9 == Scratch7 { return }
     Scratch10 += 1
     if Scratch10 < 13 { goto FindPoolCellLoop }
-    Compare(1, 0)
-    return
+    return 1 != 0
 }
 
 def CapLizardCounts() {
@@ -60,8 +59,7 @@ def TakeItMenu() {
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 
 def PressToContinue() {
     Scratch9 = Menu("PRESS <RETURN> OR BUTTON TO CONTINUE")
@@ -128,8 +126,8 @@ on load {
     PartyX = 8
     PartyY = 14
     Facing = North
-    LoadMap(16, unused=2, icons=255)
-    LoadWalls(9, 20, 23)
+    LoadMap(YarashsPyramid)
+    LoadWalls(BlueTile, Ruins, Marsh)
     Text("YOU SENSE AN ANTI-MAGIC SHELL AROUND YOU.")
     PressToContinue()
     Text(" ")
@@ -158,12 +156,12 @@ SearchForTunnel:
     Print(" YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?")
 
 GoDownMenu:
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     PartyX = DestX[Scratch1]
     PartyY = DestY[Scratch1]
     Facing = DestFacing[Scratch1]
-    LoadMap(30, unused=2, icons=255)
-    LoadWalls(9, 17, 23)
+    LoadMap(PyramidLower)
+    LoadWalls(BlueTile, RedCave, Marsh)
     EncountersDone = 254 | EncountersDone
     BuildingsSeen = 254 | BuildingsSeen
     RedrawView()
@@ -204,7 +202,7 @@ FindTreasure:
     Scratch10 = EncountersDone & TreasureFound
     if Scratch10 != 0 or Search != Searching { exit }
     Text("YOU FIND SOME TREASURE!")
-    if TakeItMenu() == "NO" { exit }
+    if TakeItMenu() != "YES" { exit }
     EncountersDone |= TreasureFound
     ClearMonsters()
     Treasure(gold=1000, gems=1, jewelry=1)
@@ -253,7 +251,7 @@ AskFriendWord:
     Text("DO YOU REALLY MEAN ")
     Print($Scratch1)
     Print("?")
-    if YesNoMenu() == "NO" { goto FriendWordInput }
+    if YesNoMenu() != "YES" { goto FriendWordInput }
     if $Scratch1 == "SAVIOR" { goto OldLizardmanStory }
     Text("'YOU ARE NOT THEY WHO RESCUED MY CHILDREN, BUT ARE MURDEROUS PIRATES! THEN YOU ARE NOT SAFE HERE!' HE DISAPPEARS WITH AMAZING SPEED INTO THE WILDERNESS AROUND YOU.")
     goto OldLizardmanGone
@@ -267,7 +265,7 @@ AskFriendWord:
     Text("FROM NEARBY A GROUP OF LIZARD MEN APPEAR. ONE LARGER THAN THE REST MOVES TO THE FRONT, 'YOUR TIME IS THROUGH OLD ONE. YOUR CLAWS ARE BLUNT.'")
     PressToContinue()
     Text("'FACE ME OR FIND SOME FOOL TO CHAMPION YOU!' THE OLD LIZARD MAN TURNS TO YOU AND SAYS, 'OUR CAUSE IS ONE. WILL YOU CHAMPION ME?'")
-    if YesNoMenu() == "NO" { goto RefuseChampion }
+    if YesNoMenu() != "YES" { goto RefuseChampion }
     Scratch1 = SelPartyIndex2
     Scratch2 = 0
 
@@ -442,11 +440,11 @@ TunnelSlopesUp:
 GoUpMenu:
     Print(" DO YOU GO UP?")
     HoldMove = SkipMove
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     PartyX = UpExitXTable[Scratch1]
     PartyY = UpExitYTable[Scratch1]
-    LoadMap(16, unused=2, icons=255)
-    LoadWalls(9, 20, 23)
+    LoadMap(YarashsPyramid)
+    LoadWalls(BlueTile, Ruins, Marsh)
     goto HoldRedrawExit
 
 PoolLizardmen:
@@ -486,8 +484,7 @@ PoolLizardmenFight:
     CountLizardKills()
     Scratch8 = 1
     if CombatEnd != PartyFled { goto DeepPool }
-    FindPoolCell()
-    if (!=) { exit }
+    if not FindPoolCell() { exit }
     PartyX = PoolExitXTable[Scratch10]
     PartyY = PoolExitYTable[Scratch10]
     Facing = PoolExitFacingTable[Scratch10]
@@ -497,7 +494,7 @@ DeepPool:
     RedrawView()
     Picture(None)
     Text("YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     goto [PoolGuarded, PoolSearch][Scratch8]
 
 PoolGuarded:
@@ -514,7 +511,7 @@ PoolSearch:
     Scratch1 = PoolTreasureBitTable[Scratch10]
     if PoolTreasureTaken has Scratch1 { goto PoolEmpty }
     Text("YOU FIND SOME TREASURE.")
-    if TakeItMenu() == "NO" { exit }
+    if TakeItMenu() != "YES" { exit }
     Scratch3 = PoolTreasureTable[Scratch5]
     PoolTreasureTaken |= Scratch1
     ClearMonsters()

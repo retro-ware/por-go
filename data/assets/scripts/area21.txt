@@ -71,8 +71,8 @@ on load {
     SetSky()
     Sky = SkyColor21
     SkyInside = 10
-    LoadMap(21, unused=2, icons=255)
-    LoadWalls(1, 5, 9)
+    LoadMap(SokalKeep)
+    LoadWalls(Stone, RedBrick, BlueTile)
     if ArrivedAtKeep != 0 { exit }
     ArrivedAtKeep = 1
     Facing = North
@@ -96,7 +96,7 @@ DeadElf:
 ElfScroll:
     Text("IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ...")
     PressToContinue()
-    LoadMap(Keep, unused=16, icons=255)
+    LoadMap(Keep)
     ClearBox()
     Protection(ElfScrollLine1)
     NewLine()
@@ -104,9 +104,9 @@ ElfScroll:
     NewLine()
     Protection(ElfScrollLine3)
     Text("...THE LAST PART IS EATEN AWAY.")
-    LoadMap(Keep, unused=2, icons=255)
+    LoadMap(Keep)
     PressToContinue()
-    LoadWalls(1, 5, 9)
+    LoadWalls(Stone, RedBrick, BlueTile)
     goto ElfDone
 
 ElfMenu:
@@ -161,8 +161,9 @@ UndeadPatrol:
     goto [PatrolLeaves, PatrolFight][Scratch1]
 
     PatrolMenu:
-    EncounterMenu(Skeleton, distance=0, closeup=Skeleton, result=Scratch1, combat=Attack, wait=3, flee=Attack,
-        advance=Mirror, parlay=Talk, near="A PACK OF UNDEAD SUDDENLY APPEARS.", escape=0, strength=0)
+    EncounterMenu(Skeleton, distance=0, closeup=Skeleton, result=Scratch1, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=Mirror, parlay=Talk, near="A PACK OF UNDEAD SUDDENLY APPEARS.",
+        escape=0, strength=0)
     goto [ClearExit, PatrolFight, RunAway, PatrolParlay][Scratch1]
 
 PatrolParlay:
@@ -371,7 +372,6 @@ EmptyHall:
 
 Armory:
     if ArmorySeen > 1 { ArmorySeen = 0 }
-    Compare(ArmorySeen, 1)
     if ArmorySeen < 1 {
         Text("YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS.")
     }
@@ -380,8 +380,9 @@ Armory:
 
 HiddenRoom:
     NoCoords = 0
-    if HiddenRoomSeen > 1 { HiddenRoomSeen = 0 }
-    if HiddenRoomSeen < 1 {
+    if HiddenRoomSeen > 1 {
+        HiddenRoomSeen = 0
+    } else if HiddenRoomSeen < 1 {
         Text("PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. ")
     }
     HiddenRoomSeen = 1
@@ -422,8 +423,9 @@ Chapel:
 FerranSpirit:
     if FerranFaded == Yes { exit }
     if FerranFreed == Yes { exit }
-    EncounterMenu(Spectre, distance=0, closeup=HoodedMan, result=Scratch1, combat=Attack, wait=3, flee=Mirror,
-        advance=Mirror, parlay=Talk, near="A PALE FORM RISES BEFORE YOU.", escape=0, strength=0)
+    EncounterMenu(Spectre, distance=0, closeup=HoodedMan, result=Scratch1, combat=Attack, wait=CloseIn,
+        flee=Mirror, advance=Mirror, parlay=Talk, near="A PALE FORM RISES BEFORE YOU.", escape=0,
+        strength=0)
     goto [ClearExit, FerranFight, RunAway, FerranParlay][Scratch1]
 
 FerranParlay:

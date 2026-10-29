@@ -15,7 +15,6 @@ on step {
 CheckAnimals:
     if AnimalsLoose == 0 { goto DispatchCell }
     Scratch1 = Cell & Inside
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto CheckRecapture }
     Text("ANIMALS ARE RUNNING ALL OVER THE COMPOUND.")
 
@@ -63,7 +62,7 @@ GuardsHuntBoy:
 GuardsSpotBoy:
     Text("SOME OF THE GUARDS SPOT YOU WITH THE BOY.")
     ClearMonsters()
-    LoadMonster(Buccaneer, count=20, icon=11)
+    LoadMonster(Buccaneer, count=20, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     GuardPatrolCount += 1
@@ -72,8 +71,8 @@ GuardsSpotBoy:
 AlarmRunForGate:
     Text("AN ALARM GOES OFF IN THE DISTANCE.  YOUR ONLY HOPE IS TO RUN FOR THE FRONT GATE.")
     ClearMonsters()
-    LoadMonster(RdLvlFighter, count=4, icon=11)
-    LoadMonster(Buccaneer, count=30, icon=11)
+    LoadMonster(RdLvlFighter, count=4, icon=Soldier)
+    LoadMonster(Buccaneer, count=30, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     GuardPatrolCount += 1
@@ -82,8 +81,8 @@ AlarmRunForGate:
 AnotherWaveAttacks:
     Text("ANOTHER WAVE OF MEN ATTACK YOU.")
     ClearMonsters()
-    LoadMonster(RdLvlFighter, count=4, icon=11)
-    LoadMonster(Buccaneer, count=40, icon=11)
+    LoadMonster(RdLvlFighter, count=4, icon=Soldier)
+    LoadMonster(Buccaneer, count=40, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     GuardPatrolCount += 1
@@ -127,7 +126,7 @@ GateGuardsAttack:
     Text("SOME GUARDS RUSH FOWARD AND ATTACK.")
     Morale = 100
     ClearMonsters()
-    LoadMonster(Buccaneer, count=8, icon=11)
+    LoadMonster(Buccaneer, count=8, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeToCamp }
     GateGuardsDefeated = 1
@@ -166,7 +165,7 @@ PunchMerchant:
     Approach()
     Portrait = None
     ClearMonsters()
-    LoadMonster(Buccaneer, count=6, icon=11)
+    LoadMonster(Buccaneer, count=6, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeToCamp }
     Text("AFTER YOU DEFEAT THE GUARDS YOU SEE A CROWD HAS FORMED.  FROM WITHIN THE CROWD A LARGE MAN IN GLEAMING CHAIN MAIL STEPS OUT.  HE SAYS 'THAT WAS AMUSING BUT DO NOT CAUSE ANYMORE TROUBLE!'")
@@ -210,7 +209,7 @@ AttackPenGuards:
     Text("YOU ATTACK THE GUARDS.")
     Morale = 65
     ClearMonsters()
-    LoadMonster(Buccaneer, count=4, icon=11)
+    LoadMonster(Buccaneer, count=4, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     PenGuardsDefeated = 1
@@ -228,8 +227,8 @@ CutOffWithBoy:
 BuccaneerWaves:
     Morale = 80
     ClearMonsters()
-    LoadMonster(Buccaneer, count=20, icon=11)
-    LoadMonster(RdLvlFighter, count=1, icon=11)
+    LoadMonster(Buccaneer, count=20, icon=Soldier)
+    LoadMonster(RdLvlFighter, count=1, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeLeaveBoy }
     SetupMonster(Fighter16, distance=2, body=BareChest)
@@ -239,21 +238,19 @@ BuccaneerWaves:
     Approach()
     Text("AFTER DEFEATING THE FIRST WAVE OF BUCCANEERS,  YOU SEE ANOTHER WAVE FORMING IN THE DISTANCE.  WITH A LOUD ROAR THEY ATTACK YOU IN FULL FORCE.")
     ClearMonsters()
-    LoadMonster(RdLvlFighter, count=1, icon=11)
-    LoadMonster(ThLvlFighter101, count=1, icon=11)
-    LoadMonster(Buccaneer, count=50, icon=11)
+    LoadMonster(RdLvlFighter, count=1, icon=Soldier)
+    LoadMonster(ThLvlFighter101, count=1, icon=Soldier)
+    LoadMonster(Buccaneer, count=50, icon=Soldier)
     Combat()
-    Compare(CombatEnd, 128)
     if CombatEnd > PartyDied { goto FleeLeaveBoy }
     SetupMonster(Fighter16, distance=2, body=BareChest)
     Text("AFTER DEFEATING THE LAST, WAVE YOU SEE ANOTHER WAVE ATTACK FROM THE SOUTH OF THE COMPOUND.")
     Morale = 100
     ClearMonsters()
-    LoadMonster(ThLvlFighter101, count=1, icon=11)
-    LoadMonster(RdLvlFighter, count=2, icon=11)
-    LoadMonster(Buccaneer, count=53, icon=11)
+    LoadMonster(ThLvlFighter101, count=1, icon=Soldier)
+    LoadMonster(RdLvlFighter, count=2, icon=Soldier)
+    LoadMonster(Buccaneer, count=53, icon=Soldier)
     Combat()
-    Compare(CombatEnd, 128)
     if CombatEnd > PartyDied { goto FleeLeaveBoy }
 
 CaptainAppears:
@@ -281,8 +278,8 @@ AttackCaptain:
     LoadMonster(Captain, count=1, icon=Captain)
 
 FinalBattle:
-    LoadMonster(ThLvlFighter41, count=15, icon=11)
-    LoadMonster(Buccaneer, count=40, icon=11)
+    LoadMonster(ThLvlFighter41, count=15, icon=Soldier)
+    LoadMonster(Buccaneer, count=40, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeLeaveBoy }
     Text("AFTER DEFEATING THE LAST OF THE BUCCANNEERS THE REST SURRENDER OR FLEE.  YOU RESCUE THE SLAVES AND CAPTURE THE FORT.")
@@ -351,7 +348,7 @@ BribeRefused:
 AttackDoorGuards:
     Morale = 100
     ClearMonsters()
-    LoadMonster(ThLvlFighter41, count=2, icon=11)
+    LoadMonster(ThLvlFighter41, count=2, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     Text("YOU KILL THE GUARDS BUT ARE CAUGHT DOING IT.  A LARGE GROUP OF GUARDS RUN TOWARD YOU AND ATTACK.")
@@ -386,7 +383,7 @@ CaptainFight:
     Morale = 100
     ClearMonsters()
     LoadMonster(Captain, count=1, icon=Captain)
-    LoadMonster(ThLvlFighter41, count=4, icon=11)
+    LoadMonster(ThLvlFighter41, count=4, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeQuarters }
     Text("YOU KILL THE CAPTAIN.")
@@ -456,7 +453,7 @@ AttackTowerGuards:
 TowerFight:
     Morale = 60
     ClearMonsters()
-    LoadMonster(Buccaneer, count=4, icon=11)
+    LoadMonster(Buccaneer, count=4, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     goto Done
@@ -480,7 +477,7 @@ AttackBarracks:
 BarracksFight:
     Morale = 70
     ClearMonsters()
-    LoadMonster(Buccaneer, count=20, icon=11)
+    LoadMonster(Buccaneer, count=20, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CutOffWithBoy }
     goto BuccaneerWaves
@@ -506,7 +503,6 @@ AnimalPenGate:
 ReleaseAnimals:
     Text("AS SOON AS YOU OPEN THE GATE THE ANIMALS INSIDE CHARGE OUT.  THEY STAMPEDE ACROSS THE COMPOUND.")
     PressToContinue()
-    Compare(BaseAlerted, 0)
     if BaseAlerted != 0 { goto Done }
     Text("THERE IS MASS CONFUSION AS THE ANIMALS RUN AROUND THE COMPOUND.  GUARDS ARE LEAVING THEIR POSTS IN ORDER TO CONTROL THE ANIMALS.")
     AnimalsLoose = Yes
@@ -610,8 +606,8 @@ on load {
     Scratch1 = 0
 
     LoadAreaFiles:
-    LoadWalls(2, 6, 6)
-    LoadMap(1, unused=2, icons=255)
+    LoadWalls(Planks, Palisade, Palisade)
+    LoadMap(BuccaneerBase)
     Scratch6 = 11
     if Hours >= 14 { Scratch6 = 8 }
     Sky = Scratch6

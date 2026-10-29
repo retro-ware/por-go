@@ -10,8 +10,9 @@ import (
 
 // ParseScript parses the script text (README.md beside the scripts) into
 // a Script. The text's labels, sections and blocks lay the commands out
-// one after the other; an if guards each command of its block with an If
-// (and makes its comparison first unless the flags hold it, scriptform.go).
+// one after the other; an if makes its comparison and guards each command
+// of its block with an If (scriptform.go on the forms that test flags set
+// elsewhere).
 func ParseScript(text string, names *ScriptNames) (*Script, error) {
 	p := &parser{names: names, s: &Script{Labels: map[string]int{}, At: map[int]string{}, Tables: map[string]int{}},
 		vars: map[string]int{}, labels: map[string]bool{}, tables: map[string]bool{}}
@@ -76,9 +77,15 @@ type parser struct {
 	tables map[string]bool
 	toks   []tok
 	pos    int
-	fix    []fixup   // jump operands to resolve to their labels
-	elide  []elision // the comparisons an if made, left out where the flags held them
-	depth  int       // in an if block: nothing but statements
+	fix    []fixup // jump operands to resolve to their labels
+	depth  int     // in an if block: nothing but statements
+	// the returns' comparisons and the tests on called sections, matched
+	// by finish
+	section string  // the section a return belongs to: the def's or event's, else the last label's
+	inDef   bool    // in a def's or event's block
+	retOp   []retOp // the operator each return A op B shows (the if's for if A op B { return })
+	rets    []valueRet
+	calls   []*callTest
 }
 
 // fixup is a jump operand waiting for its label's command number.
@@ -87,10 +94,38 @@ type fixup struct {
 	label      string
 }
 
-// elision is a comparison an if made at command at, guarding the Ifs.
-type elision struct {
-	at  int
-	ifs []int
+// retOp is the operator the text shows for the Compare at cmp before a
+// return: if Foo() tests with it.
+type retOp struct {
+	cmp int
+	op  byte
+}
+
+// valueRet is a return X of a section: a Compare X N and a Return, N set
+// by the callers (if Foo() op N), or the Return after D = A & B (cmp -1;
+// the callers test if Foo() op 0).
+type valueRet struct {
+	cmp     int
+	section string
+}
+
+// callTest is an if on a called section's result; its Ifs get their
+// operator once the section's returns are known.
+type callTest struct {
+	label string
+	line  int
+	op    string // "" for Foo() and not Foo()
+	not   bool
+	n     opnd   // the operand compared with (if Foo() op N)
+	ans   string // or the menu answer (if Foo() == "YES")
+	isAns bool
+	ifs   []ifRef
+}
+
+// ifRef is an If of a call test, the else's negated.
+type ifRef struct {
+	instr int
+	neg   bool
 }
 
 // lex splits text into tokens: idents, ints, Go strings, operators,
@@ -220,9 +255,11 @@ func (p *parser) file() error {
 				return fmt.Errorf("no event %s (load, move, step, camp, rest)", name)
 			}
 			p.label(eventLabel(e))
+			p.inDef = true
 			if err := p.braces(); err != nil {
 				return err
 			}
+			p.inDef = false
 		case t.k == tIdent && t.s == "def" && p.toks[p.pos+1].k == tIdent:
 			p.pos++
 			name, _ := p.ident()
@@ -233,9 +270,11 @@ func (p *parser) file() error {
 			if err := p.expect(")"); err != nil {
 				return err
 			}
+			p.inDef = true
 			if err := p.braces(); err != nil {
 				return err
 			}
+			p.inDef = false
 		case t.k == tIdent && p.toks[p.pos+1].is("=") && p.toks[p.pos+2].is("["):
 			p.pos += 3
 			if err := p.table(t.s); err != nil {
@@ -279,6 +318,9 @@ func (p *parser) label(name string) error {
 	p.s.Labels[name] = len(p.s.Code)
 	if _, ok := p.s.At[len(p.s.Code)]; !ok {
 		p.s.At[len(p.s.Code)] = name
+	}
+	if !p.inDef { // a def's or event's own label comes before its block
+		p.section = name
 	}
 	return nil
 }
@@ -355,8 +397,7 @@ func (p *parser) stmt() error {
 		return p.endStmt()
 	case "return":
 		p.pos++
-		p.emit(opReturn)
-		return p.endStmt()
+		return p.ret()
 	case "exit":
 		p.pos++
 		p.emit(opExit)
@@ -372,6 +413,60 @@ func (p *parser) stmt() error {
 }
 
 func (p *parser) isVar(name string) bool { _, ok := p.vars[name]; return ok }
+
+// ret parses what follows return: nothing; A op B (Compare A B, the
+// callers test if Foo() with that operator); X (Compare X N, N from the
+// callers' if Foo() op N; after D = A & B with X its D, the And's own
+// flags).
+func (p *parser) ret() error {
+	if p.endStmt() == nil {
+		p.emit(opReturn)
+		return nil
+	}
+	a, err := p.operand()
+	if err != nil {
+		return err
+	}
+	if o := p.peek(); o.k == tOp && isCmp(o.s) {
+		p.pos++
+		op, _ := ifOf(o.s)
+		x, b, err := p.compared(a, o.s)
+		if err != nil {
+			return err
+		}
+		p.retOp = append(p.retOp, retOp{p.emit(opCompare, x, b), op})
+		p.emit(opReturn)
+		return p.endStmt()
+	}
+	x, err := p.resolve(a, "", "", "")
+	if err != nil {
+		return err
+	}
+	if x.Type != 1 && x.Type != 3 {
+		return fmt.Errorf("return %s: not a variable", a.text())
+	}
+	if l := len(p.s.Code) - 1; l >= 0 && (p.s.Code[l].Op == opAnd || p.s.Code[l].Op == opOr) && len(p.s.Code[l].Args) == 3 && p.s.Code[l].Args[2] == x {
+		p.rets = append(p.rets, valueRet{-1, p.section})
+	} else {
+		p.rets = append(p.rets, valueRet{p.emit(opCompare, x, Arg{}), p.section})
+	}
+	p.emit(opReturn)
+	return p.endStmt()
+}
+
+// compared resolves A op B's operands, each named beside the other.
+func (p *parser) compared(a opnd, op string) (Arg, Arg, error) {
+	an := ""
+	if a.isVar() {
+		an = a.name
+	}
+	b, err := p.value(an, op)
+	if err != nil {
+		return Arg{}, Arg{}, err
+	}
+	x, err := p.resolve(a, "", other2(b, p), op)
+	return x, b, err
+}
 
 // jump notes a jump operand to resolve.
 func (p *parser) jump(instr, arg int, label string) {
@@ -458,7 +553,7 @@ func (p *parser) call(name string) error {
 		return p.endStmt()
 	}
 	switch name {
-	case "ShowPortrait", "EnterArea", "OpenTemple", "OpenShop", "Treasure", "Call":
+	case "ShowPortrait", "EnterArea", "OpenTemple", "OpenShop", "Treasure", "Call", "LoadMap", "Compare":
 		return p.macro(name)
 	}
 	op, ok := commandOp(name)
@@ -658,6 +753,35 @@ func (p *parser) macro(name string) error {
 			return fmt.Errorf("Call(0xADDR)")
 		}
 		p.emit(opCall, Arg{Type: 1, N: a.N})
+	case "Compare": // each operand named beside the other
+		if len(pa) != 2 || pa[0].isList || pa[1].isList {
+			return fmt.Errorf("Compare(A, B)")
+		}
+		an := ""
+		if pa[0].o.isVar() {
+			an = pa[0].o.name
+		}
+		b, err := p.resolve(pa[1].o, "", an, "==")
+		if err != nil {
+			return err
+		}
+		x, err := p.resolve(pa[0].o, "", other2(b, p), "==")
+		if err != nil {
+			return err
+		}
+		p.emit(opCompare, x, b)
+	case "LoadMap": // the byte code's second operand is unused
+		m, err := v(0, "Map")
+		if err != nil || len(pa) > 2 || len(pa) == 2 && pa[1].label != "icons" {
+			return fmt.Errorf("LoadMap(Map, icons=Icons)")
+		}
+		icons := Arg{N: 0xFF}
+		if len(pa) == 2 {
+			if icons, err = v(1, "MapIcons"); err != nil {
+				return err
+			}
+		}
+		p.emit(opLoadMap, m, Arg{N: 0xFF}, icons)
 	case "Treasure":
 		args := make([]Arg, 8)
 		args[7] = Arg{N: 0xFF}
@@ -893,18 +1017,29 @@ func (p *parser) value(beside, op string) (Arg, error) {
 	return p.resolve(o, "", beside, op)
 }
 
-// ifStmt parses if test { ... } [else { ... }] after if.
+// ifHead is an if's test: the If's operator, the comparison's operands
+// when it made a Compare (else if A op B tests them again), or the call
+// test whose operator the called section's returns decide.
+type ifHead struct {
+	op   byte
+	cmp  []Arg
+	call *callTest
+}
+
+// ifStmt parses if test { ... } [else if ... { ... }] [else { ... }]
+// after if. Each statement of a block gets an If before it; an else if's
+// test is (op) or the if's comparison with another operator, an else is
+// the complement of the block before it.
 func (p *parser) ifStmt() error {
-	op, setter, err := p.test()
+	if p.depth > 0 {
+		return fmt.Errorf("an if in an if")
+	}
+	h, err := p.test()
 	if err != nil {
 		return err
 	}
-	var el *elision
-	if setter >= 0 {
-		p.elide = append(p.elide, elision{at: setter})
-		el = &p.elide[len(p.elide)-1]
-	}
-	guard := func(ifop byte) error {
+	first := true // the if's own block, right after its comparison
+	guard := func(ifop byte, call *callTest, neg bool) error {
 		start := len(p.s.Code)
 		p.depth++
 		err := p.braces()
@@ -914,35 +1049,63 @@ func (p *parser) ifStmt() error {
 		}
 		var body []Instr
 		body, p.s.Code = append(body, p.s.Code[start:]...), p.s.Code[:start]
-		for f := range p.fix { // the jumps in the body move behind their Ifs
-			if p.fix[f].instr >= start {
-				p.fix[f].instr = start + 2*(p.fix[f].instr-start) + 1
+		move := func(i *int) { // the body's commands move behind their Ifs
+			if *i >= start {
+				*i = start + 2*(*i-start) + 1
 			}
 		}
+		for f := range p.fix {
+			move(&p.fix[f].instr)
+		}
+		for r := range p.rets {
+			move(&p.rets[r].cmp)
+		}
+		for r := range p.retOp {
+			move(&p.retOp[r].cmp)
+		}
+		if first && len(body) > 0 && body[0].Op == opReturn && h.cmp != nil {
+			p.retOp = append(p.retOp, retOp{start - 1, ifop}) // if A op B { return }: the if's operator is the return's
+		}
+		first = false
 		for _, in := range body {
 			i := p.emit(ifop)
-			if el != nil {
-				el.ifs = append(el.ifs, i)
+			if call != nil {
+				call.ifs = append(call.ifs, ifRef{i, neg})
 			}
 			p.s.Code = append(p.s.Code, in)
 		}
 		return nil
 	}
-	if err := guard(op); err != nil {
+	if err := guard(h.op, h.call, false); err != nil {
 		return err
 	}
-	if p.peek().k == tIdent && p.peek().s == "else" {
+	prev, prevCall := h.op, h.call // the block before: its operator, or the call deciding it
+	for p.peek().k == tIdent && p.peek().s == "else" {
 		p.pos++
-		if err := guard(elseIf(op)); err != nil {
+		if p.peek().k == tIdent && p.peek().s == "if" {
+			p.pos++
+			op, err := p.elseTest(h)
+			if err != nil {
+				return err
+			}
+			if err := guard(op, nil, false); err != nil {
+				return err
+			}
+			prev, prevCall = op, nil
+			continue
+		}
+		if err := guard(elseIf(prev), prevCall, true); err != nil {
 			return err
 		}
+		break
 	}
 	return p.endStmt()
 }
 
-// test parses an if's test: the If opcode and the comparing command it
-// emitted (-1 for none: the flags as they are, or a bit test's And).
-func (p *parser) test() (byte, int, error) {
+// test parses an if's test, emitting its comparison: (op), Carried(X),
+// not Carried(X), Foo() [op N | == "ANS"], not Foo(), D = A & B; D op 0,
+// X has Bits, X lacks Bits, A op B [and C == D | or C != D].
+func (p *parser) test() (ifHead, error) {
 	t := p.peek()
 	switch {
 	case t.is("("): // (==): the flags as they are
@@ -950,62 +1113,64 @@ func (p *parser) test() (byte, int, error) {
 		o := p.next()
 		op, ok := ifOf(o.s)
 		if !ok || !p.accept(")") {
-			return 0, 0, fmt.Errorf("want (==) ... (>=)")
+			return ifHead{}, fmt.Errorf("want (==) ... (>=)")
 		}
-		return op, -1, nil
-	case t.k == tIdent && (t.s == "not" || t.s == "Carried"):
-		op := opIfEq
-		if t.s == "not" {
-			p.pos++
-			op = opIfNe
+		return ifHead{op: op}, nil
+	case t.k == tIdent && t.s == "not":
+		p.pos++
+		n, _ := p.ident()
+		if p.labels[n] && p.accept("(") {
+			if err := p.expect(")"); err != nil {
+				return ifHead{}, err
+			}
+			return p.callHead(n, true)
 		}
-		if n, _ := p.ident(); n != "Carried" || !p.accept("(") {
-			return 0, 0, fmt.Errorf("want Carried(Item)")
+		if n != "Carried" {
+			return ifHead{}, fmt.Errorf("want not Carried(Item) or not Foo()")
 		}
-		pa, err := p.callArgs()
-		if err != nil {
-			return 0, 0, err
-		}
-		if len(pa) != 1 || pa[0].isList {
-			return 0, 0, fmt.Errorf("Carried(Item)")
-		}
-		item, err := p.resolve(pa[0].o, "Item", "", "")
-		if err != nil {
-			return 0, 0, err
-		}
-		return op, p.emit(opFindItem, item), nil
-	case t.k == tIdent && p.labels[t.s] && p.toks[p.pos+1].is("("): // Menu() == "YES"
+		op, err := p.carried()
+		return ifHead{op: elseIf(op)}, err
+	case t.k == tIdent && t.s == "Carried" && p.toks[p.pos+1].is("("):
+		p.pos++
+		op, err := p.carried()
+		return ifHead{op: op}, err
+	case t.k == tIdent && p.labels[t.s] && p.toks[p.pos+1].is("("):
 		p.pos += 3
-		o := p.next()
-		ans := p.next()
-		if !o.is("==") && !o.is("!=") || ans.k != tString {
-			return 0, 0, fmt.Errorf("want %s() == \"ANSWER\"", t.s)
-		}
-		g := p.emit(opGosub, Arg{Type: 1, Label: true})
-		p.jump(g, 0, t.s)
-		c := p.emit(opCompare)
-		p.fix = append(p.fix, fixup{c, -2, t.s + "\x00" + o.s + "\x00" + ans.s}) // the menu's test, once the section is known
-		return opIfEq, c, nil
+		return p.callHead(t.s, false)
 	}
+	start := p.pos
 	a, err := p.operand()
 	if err != nil {
-		return 0, 0, err
+		return ifHead{}, err
+	}
+	if o := p.peek(); o.is("=") || o.is("|=") || o.is("&=") { // D = A & B; D op 0
+		p.pos = start
+		if err := p.assign(); err != nil {
+			return ifHead{}, err
+		}
+		l := len(p.s.Code) - 1
+		if in := p.s.Code[l]; in.Op != opAnd && in.Op != opOr || len(in.Args) != 3 {
+			return ifHead{}, fmt.Errorf("want D = A & B (or |) before ; D op 0")
+		}
+		d, err := p.operand()
+		if err != nil {
+			return ifHead{}, err
+		}
+		o := p.next()
+		op, ok := ifOf(o.s)
+		x, err := p.resolve(d, "", "", "")
+		if z := p.next(); !ok || err != nil || x != p.s.Code[l].Args[2] || z.k != tInt || z.s != "0" {
+			return ifHead{}, fmt.Errorf("want %s op 0 after the assignment", p.arg(p.s.Code[l].Args[2]))
+		}
+		return ifHead{op: flipIf(op)}, nil // the And's flags compare 0 with D
 	}
 	o := p.next()
 	if o.k != tOp && !(o.k == tIdent && (o.s == "has" || o.s == "lacks")) {
-		return 0, 0, fmt.Errorf("want a comparison after %s, have %s", a.text(), o.text())
+		return ifHead{}, fmt.Errorf("want a comparison after %s, have %s", a.text(), o.text())
 	}
-	an := ""
-	if a.isVar() {
-		an = a.name
-	}
-	b, err := p.value(an, o.s)
+	x, b, err := p.compared(a, o.s)
 	if err != nil {
-		return 0, 0, err
-	}
-	x, err := p.resolve(a, "", other2(b, p), o.s)
-	if err != nil {
-		return 0, 0, err
+		return ifHead{}, err
 	}
 	if o.k == tIdent { // X has Bits: Scratch10 = X & Bits, 0 != Scratch10
 		op := opIfNe
@@ -1014,42 +1179,123 @@ func (p *parser) test() (byte, int, error) {
 		}
 		s, ok := p.vars[hasScratch]
 		if !ok {
-			return 0, 0, fmt.Errorf("no variable %s for the bit test", hasScratch)
+			return ifHead{}, fmt.Errorf("no variable %s for the bit test", hasScratch)
 		}
 		p.emit(opAnd, x, b, Arg{Type: 1, N: s})
-		return op, -1, nil
+		return ifHead{op: op}, nil
 	}
 	op, ok := ifOf(o.s)
 	if !ok {
-		return 0, 0, fmt.Errorf("no comparison %s", o.s)
+		return ifHead{}, fmt.Errorf("no comparison %s", o.s)
 	}
 	if w := p.peek(); w.k == tIdent && (w.s == "and" || w.s == "or") {
 		p.pos++
 		if w.s == "and" && op != opIfEq || w.s == "or" && op != opIfNe {
-			return 0, 0, fmt.Errorf("want A == B and C == D, or A != B or C != D")
+			return ifHead{}, fmt.Errorf("want A == B and C == D, or A != B or C != D")
 		}
 		c, err := p.operand()
 		if err != nil {
-			return 0, 0, err
+			return ifHead{}, err
 		}
 		if !p.accept(o.s) {
-			return 0, 0, fmt.Errorf("want %s", o.s)
+			return ifHead{}, fmt.Errorf("want %s", o.s)
 		}
-		cn := ""
-		if c.isVar() {
-			cn = c.name
-		}
-		d, err := p.value(cn, o.s)
+		y, d, err := p.compared(c, o.s)
 		if err != nil {
-			return 0, 0, err
+			return ifHead{}, err
 		}
-		y, err := p.resolve(c, "", other2(d, p), o.s)
-		if err != nil {
-			return 0, 0, err
-		}
-		return op, p.emit(opCompareAnd, x, b, y, d), nil
+		p.emit(opCompareAnd, x, b, y, d)
+		return ifHead{op: op}, nil
 	}
-	return op, p.emit(opCompare, x, b), nil
+	p.emit(opCompare, x, b)
+	return ifHead{op: op, cmp: []Arg{x, b}}, nil
+}
+
+// arg is a's text, for an error.
+func (p *parser) arg(a Arg) string {
+	if n := p.names.Vars[a.N]; (a.Type == 1 || a.Type == 3) && n != "" {
+		return n
+	}
+	return fmt.Sprint(a)
+}
+
+// carried parses (Item) after Carried: FindItem, true with ==.
+func (p *parser) carried() (byte, error) {
+	if err := p.expect("("); err != nil {
+		return 0, err
+	}
+	pa, err := p.callArgs()
+	if err != nil {
+		return 0, err
+	}
+	if len(pa) != 1 || pa[0].isList {
+		return 0, fmt.Errorf("Carried(Item)")
+	}
+	item, err := p.resolve(pa[0].o, "Item", "", "")
+	if err != nil {
+		return 0, err
+	}
+	p.emit(opFindItem, item)
+	return opIfEq, nil
+}
+
+// callHead parses what follows Foo() in a test: nothing (the section's
+// return A op B, not: its complement), op N (its return X compared with
+// N) or == "ANS" (a menu section's answer); the Ifs' operator is set by
+// finish.
+func (p *parser) callHead(name string, not bool) (ifHead, error) {
+	p.jump(p.emit(opGosub, Arg{Type: 1, Label: true}), 0, name)
+	c := &callTest{label: name, line: p.line(), not: not}
+	if o := p.peek(); o.k == tOp && isCmp(o.s) {
+		if not {
+			return ifHead{}, fmt.Errorf("not %s() takes no comparison", name)
+		}
+		p.pos++
+		c.op = o.s
+		if t := p.peek(); t.k == tString {
+			p.pos++
+			c.ans, c.isAns = t.s, true
+		} else if n, err := p.operand(); err != nil {
+			return ifHead{}, err
+		} else {
+			c.n = n
+		}
+	}
+	p.calls = append(p.calls, c)
+	return ifHead{op: opIfEq, call: c}, nil
+}
+
+// isCmp: a comparison operator.
+func isCmp(op string) bool { _, ok := ifOf(op); return ok }
+
+// elseTest parses an else if's test: (op), or the if's comparison with
+// another operator (A op B, the same operands).
+func (p *parser) elseTest(h ifHead) (byte, error) {
+	if p.accept("(") {
+		o := p.next()
+		op, ok := ifOf(o.s)
+		if !ok || !p.accept(")") {
+			return 0, fmt.Errorf("want else if (==) ... (>=)")
+		}
+		return op, nil
+	}
+	a, err := p.operand()
+	if err != nil {
+		return 0, err
+	}
+	o := p.next()
+	op, ok := ifOf(o.s)
+	if !ok {
+		return 0, fmt.Errorf("want a comparison after %s, have %s", a.text(), o.text())
+	}
+	x, b, err := p.compared(a, o.s)
+	if err != nil {
+		return 0, err
+	}
+	if !slices.Equal([]Arg{x, b}, h.cmp) {
+		return 0, fmt.Errorf("an else if tests the if's comparison; this compares something else")
+	}
+	return op, nil
 }
 
 // forStmt parses for X = A to B { } / for X = A while X < B { } after for.
@@ -1279,50 +1525,27 @@ func (p *parser) finish() error {
 			}
 		}
 	}
+	var menus []fixup
 	for _, f := range p.fix {
 		l, ok := p.s.Labels[f.label]
-		if f.arg == -2 { // a menu section's test: its answer
-			name, rest, _ := strings.Cut(f.label, "\x00")
-			op, ans, _ := strings.Cut(rest, "\x00")
-			l, ok = p.s.Labels[name]
-			if !ok {
-				return fmt.Errorf("%d: no label %s", p.s.Code[f.instr].Line, name)
-			}
-			d, items, k, isMenu := p.s.menuOf(l)
-			j := slices.Index(items, ans)
-			if !isMenu || j < 0 {
-				return fmt.Errorf("%d: %s is not a menu section asking %q", p.s.Code[f.instr].Line, name, ans)
-			}
-			p.s.Code[f.instr].Args = []Arg{d, {N: k}}
-			ifop := opIfEq
-			switch {
-			case op == "==" && j == k:
-			case op == "==" && len(items) == 2, op == "!=" && j == k:
-				ifop = opIfNe
-			default:
-				return fmt.Errorf("%d: %s compares its answer with %q", p.s.Code[f.instr].Line, name, items[k])
-			}
-			for _, e := range p.elide {
-				if e.at == f.instr {
-					for _, i := range e.ifs {
-						p.s.Code[i].Op = ifop
-					}
-				}
-			}
-			continue
-		}
 		if !ok {
 			return fmt.Errorf("%d: no label %s", p.s.Code[f.instr].Line, f.label)
 		}
-		if f.arg == -1 { // a menu section's variable
-			d, _, _, isMenu := p.s.menuOf(l)
-			if !isMenu {
-				return fmt.Errorf("%d: %s is not a menu section", p.s.Code[f.instr].Line, f.label)
-			}
-			p.s.Code[f.instr].Args[0] = d
+		if f.arg == -1 { // a menu section's variable, once its return is known
+			menus = append(menus, f)
 			continue
 		}
 		p.s.Code[f.instr].Args[f.arg].N = l
+	}
+	if err := p.callTests(); err != nil {
+		return err
+	}
+	for _, f := range menus {
+		d, _, _, isMenu := p.s.menuOf(p.s.Labels[f.label])
+		if !isMenu {
+			return fmt.Errorf("%d: %s is not a menu section", p.s.Code[f.instr].Line, f.label)
+		}
+		p.s.Code[f.instr].Args[0] = d
 	}
 	for i := range p.s.Events {
 		at, ok := p.s.Labels[eventLabel(i)]
@@ -1331,51 +1554,92 @@ func (p *parser) finish() error {
 		}
 		p.s.Events[i] = at
 	}
-	// the comparisons the flags held already
-	before := scriptFlags(p.s)
-	drop := map[int]bool{}
-	for _, e := range p.elide {
-		in := p.s.Code[e.at]
-		if ok, flipped := before[e.at].holds(in.Op, in.Args); ok {
-			drop[e.at] = true
-			if flipped {
-				for _, i := range e.ifs {
-					p.s.Code[i].Op = flipIf(p.s.Code[i].Op)
-				}
-			}
-		}
-	}
-	if len(drop) == 0 {
-		return nil
-	}
-	index := make([]int, len(p.s.Code)+1)
-	var code []Instr
-	for i, in := range p.s.Code {
-		index[i] = len(code)
-		if !drop[i] {
-			code = append(code, in)
-		}
-	}
-	index[len(p.s.Code)] = len(code)
-	for i := range code {
-		for k, a := range code[i].Args {
-			if a.Label {
-				code[i].Args[k].N = index[a.N]
-			}
-		}
-	}
-	for l, i := range p.s.Labels {
-		p.s.Labels[l] = index[i]
-	}
-	at := map[int]string{}
-	for i, l := range p.s.At {
-		if _, ok := at[index[i]]; !ok || p.s.Labels[l] == index[i] && strings.HasPrefix(at[index[i]], "event") {
-			at[index[i]] = l
-		}
-	}
-	for i := range p.s.Events {
-		p.s.Events[i] = index[p.s.Events[i]]
-	}
-	p.s.Code, p.s.At = code, at
 	return nil
+}
+
+// callTests sets the operator of the Ifs on called sections' results,
+// and the number the sections' return X compare with: if Foo() tests
+// with Foo's return A op B; if Foo() op N with op, N going into Foo's
+// Compare X N (a menu answer "ANS" is its number on the menu); after D =
+// A & B; return D, if Foo() op 0 tests 0 op D.
+func (p *parser) callTests() error {
+	set := map[int]string{} // a return's number, by the call that set it
+	for _, c := range p.calls {
+		op, _ := ifOf(c.op)
+		_, rc := p.s.firstReturn(p.s.Labels[c.label])
+		if c.op == "" {
+			k := slices.IndexFunc(p.retOp, func(r retOp) bool { return r.cmp == rc })
+			if rc < 0 || k < 0 {
+				return fmt.Errorf("%d: %s() returns no comparison (return A op B) to test", c.line, c.label)
+			}
+			op = p.retOp[k].op
+			if c.not {
+				op = elseIf(op)
+			}
+		} else {
+			andRet := rc >= 0 && p.s.Code[rc].Op != opCompare
+			for _, r := range p.rets {
+				if r.section != c.label || r.cmp < 0 {
+					continue
+				}
+				x := p.s.Code[r.cmp].Args[0]
+				var n Arg
+				if c.isAns {
+					d, items := p.menuItems(p.s.Labels[c.label])
+					j := slices.Index(items, c.ans)
+					if j < 0 || d != x {
+						return fmt.Errorf("%d: %s() is not a menu section answering %q", c.line, c.label, c.ans)
+					}
+					n = Arg{N: j}
+				} else {
+					var err error
+					if n, err = p.resolve(c.n, "", p.names.Vars[x.N], c.op); err != nil {
+						return fmt.Errorf("%d: %v", c.line, err)
+					}
+				}
+				if by, ok := set[r.cmp]; ok && p.s.Code[r.cmp].Args[1] != n {
+					return fmt.Errorf("%d: %s() compares %s with %s here and %s at %s", c.line, c.label, p.arg(x), c.n.text(), p.arg(p.s.Code[r.cmp].Args[1]), by)
+				}
+				p.s.Code[r.cmp].Args[1] = n
+				set[r.cmp] = strconv.Itoa(c.line)
+			}
+			if andRet {
+				if c.isAns || !c.n.isNum || c.n.num != 0 {
+					return fmt.Errorf("%d: %s() returns D = A & B: test it against 0", c.line, c.label)
+				}
+				op = flipIf(op)
+			}
+		}
+		for _, f := range c.ifs {
+			if f.neg {
+				p.s.Code[f.instr].Op = elseIf(op)
+			} else {
+				p.s.Code[f.instr].Op = op
+			}
+		}
+	}
+	for _, r := range p.rets {
+		if _, ok := set[r.cmp]; r.cmp >= 0 && !ok {
+			return fmt.Errorf("%d: return %s: no if %s() op N says what it compares with", p.s.Code[r.cmp].Line, p.arg(p.s.Code[r.cmp].Args[0]), r.section)
+		}
+	}
+	return nil
+}
+
+// menuItems is the variable and items of the one-line menu the section
+// at l asks.
+func (p *parser) menuItems(l int) (d Arg, items []string) {
+	for i := l; i < len(p.s.Code); i++ {
+		in := p.s.Code[i]
+		if in.Op == opHMenu && len(in.Args) >= 2 {
+			for _, a := range in.Args[2:] {
+				items = append(items, a.S)
+			}
+			return in.Args[0], items
+		}
+		if isTerminator(in.Op) {
+			break
+		}
+	}
+	return d, nil
 }

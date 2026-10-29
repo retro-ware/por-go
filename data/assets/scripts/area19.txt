@@ -13,8 +13,7 @@ EmptyCaveLeave:
     NewECL(Mountains)
 
 CheckCaveState:
-    Scratch2 = DragonTalkFlags & EfreetTold
-    if Scratch2 != 0 { goto EmptyCaveLeave }
+    if Scratch2 = DragonTalkFlags & EfreetTold; Scratch2 != 0 { goto EmptyCaveLeave }
     Scratch2 = DragonTalkFlags & DragonSpoke
     if Scratch2 != 1 { goto MagicMouthAsks }
     if Carried(EfreetiBottle) { goto BottleRecovered }

@@ -105,8 +105,10 @@ if Gold >= 100 { goto Rich }        one statement
 if Facing == South {                or several
     Sky = 8
     exit
-} else {
+} else if Facing > South {          the same comparison, another operator
     Sky = 9
+} else {                            the complement of the block before
+    Sky = 10
 }
 ```
 
@@ -117,18 +119,28 @@ if Facing == South {                or several
 | `A != B or C != D` | either differs |
 | `Carried(Item)`, `not Carried(Item)` | someone in the party carries it (or nobody does) |
 | `X has Bits`, `X lacks Bits` | some of the bits are set in X, or none (`Scratch10 = X & Bits` and the test on it; Scratch10 keeps the masked bits) |
-| `Ask() == "YES"` | calls section Ask, which asks a `Menu` and returns comparing the answer, and tests the answer |
-| `(==)` | the flags as the last comparison left them (made elsewhere: in a called section with several outcomes, or before a jump here) |
+| `D = A & B; D op 0` | the assignment (also `\|`, `\|=`, `&=`), and its result against 0 |
+| `Foo()` , `not Foo()` | calls section Foo, which ends in `return A op B`: true when that held (or did not) |
+| `Foo() op N` | calls Foo, which ends in `return X`: X against N |
+| `Ask() == "YES"` | calls Ask, which asks a `Menu` and ends in `return X` with the answer: the answer was that item |
+| `(==)` | the flags as they are, with a comment saying what set them (see below) |
 
 A test compares and then guards each statement of its block: in the byte
 code every command of the block has its own If, so a called section in
-the block may change what the statements after it see. The comparison is
-left out when the flags already hold it: after `if A == B { ... }`, `if A
-< B { ... }` is only the If; after `Name()`, a test names the comparison
-the section returned with. `Compare(A, B)` (also `CompareAnd`,
-`FindItem`) is a comparison on its own: a section ends in one for its
-caller to test, and one stands before an `if` where the byte code redid
-it.
+the block may change what the statements after it see. `else if` and
+`else` only add Ifs on the comparison the `if` made, so an `else if`
+names the same operands (or is `(op)`).
+
+The byte code keeps one comparison (the flags) that any later If may
+read. Where a script does that without a comparison of its own, the text
+shows it:
+
+| Form | Meaning |
+|------|---------|
+| `Compare(A, B)` | compare now (also `CompareAnd`, `FindItem`); a later `if (op)` or a caller's `if Foo()` reads it |
+| `if (op) { ... } # A op B` | an If on the flags as they are; the comment is what the text can tell: the comparison that set them, `X op Y if that ran, else A op B` when a guarded statement set them, `the flags as Foo() left them` or `the flags of the jump here` when it cannot |
+| `return A op B` | a section's comparison for its callers (`if Foo()` tests with op, `if not Foo()` with its complement); `return 0 != 1` is a plain true |
+| `return X` | the section's value: `Compare X N` with the N its callers test (`if Foo() op N`, or a menu's answer), or after `X = A & B` the And's own flags (`if Foo() op 0`) |
 
 ## Loops
 
@@ -155,7 +167,7 @@ The body runs at least once; the loop leaves the flags comparing X and B.
 | `RedrawView()` | redraw the 3D view after a picture or sprite |
 | `ClearBox()` | blank the view window for text |
 | `Sky = N`, `SkyInside = N` | the sky colours |
-| `LoadMap(Map, unused=X, icons=Y)` | load map (GEO block) Map; `Keep`/`Unchanged` keep the current one. `unused` is ignored, by the original too. `icons` not 255 loads the wilderness travel icons outdoors |
+| `LoadMap(Map)`, `LoadMap(Map, icons=Overland)` | load map (GEO block) Map; `Keep`/`Unchanged` keep the current one. With `icons` the wilderness travel icons are loaded too (the byte code has a second operand the original never reads, and any icons value but 255; the text leaves them out) |
 | `LoadWalls(A, B, C)` | load the wall sets (WALLDEF blocks) into wall slots 1-3; `None` empties a slot, `Reset` in the first resets them |
 | `Protection(Base)` | draw the glyph string stored in the variables from Base on |
 | `Who("PROMPT")` | choose a party member (the selected member after) |
@@ -186,7 +198,7 @@ Reactions (`EncounterMenu`):
 | `Attack` | fight, whatever the party does (FLEE may get away, see `escape`) |
 | `Mirror` | answer in kind: COMBAT fights, WAIT waits, FLEE lets the party go, ADVANCE closes in, PARLAY talks |
 | `Flee` | run away (a COMBAT makes them fight unless `strength` says otherwise) |
-| `Approach` | come one square closer (COMBAT fights, FLEE lets the party go, PARLAY talks) |
+| `CloseIn` | come one square closer (COMBAT fights, FLEE lets the party go, PARLAY talks) |
 | `Talk` | close in and talk at distance 0 (COMBAT fights, FLEE lets the party go) |
 
 ## Party checks

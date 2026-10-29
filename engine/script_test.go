@@ -53,9 +53,11 @@ func TestScriptRoundTrip(t *testing.T) {
 			}
 			for i := range got.Code {
 				got.Code[i].Line, got.Code[i].Comment = 0, ""
+				plainLoadMap(&got.Code[i])
 			}
 			for i := range want.Code {
 				want.Code[i].Comment = ""
+				plainLoadMap(&want.Code[i])
 			}
 			if out != "" && len(got.Code) != len(want.Code) {
 				back, _ := WriteScript(got, names)
@@ -83,6 +85,18 @@ func TestScriptRoundTrip(t *testing.T) {
 			if !reflect.DeepEqual(got.Tables, want.Tables) || string(got.Data) != string(want.Data) {
 				t.Errorf("area %d: tables differ", block)
 			}
+		}
+	}
+}
+
+// plainLoadMap drops what the original never reads from a LoadMap: its
+// second operand, and which value not 255 the third has (any loads the
+// icons; the script writes it as one name).
+func plainLoadMap(in *Instr) {
+	if in.Op == opLoadMap && len(in.Args) == 3 {
+		in.Args[1] = Arg{}
+		if in.Args[2] != (Arg{N: 0xFF}) {
+			in.Args[2] = Arg{N: 0x7F}
 		}
 	}
 }
@@ -119,6 +133,7 @@ func TestParseForms(t *testing.T) {
 	names := &ScriptNames{Vars: ScriptVarNames(), Values: []ScriptValue{
 		{"Facing", 0, 2, "South"}, {"CastleFlags", 0, 1, "Disguised"}, {"CastleFlags", 0, 2, "HallSeen"},
 		{"Monster", 0, 3, "Kobold"}, {"Icon", 0, 5, "KoboldIcon"}, {"Item", 0, 7, "LongSword"},
+		{"Map", 0, 255, "Keep"}, {"MapIcons", 0, 127, "Overland"},
 	}}
 	names.Vars[0x4A65] = "CastleFlags"
 	for i := 1; i <= 10; i++ {
@@ -139,13 +154,22 @@ on step {
     if Facing < South {
         Sky = 3
         Sky += 1
+    } else if Facing > South {
+        Sky = 4
     } else {
         CastleFlags |= Disguised|HallSeen
     }
     if CastleFlags has Disguised { Done() }
     if Carried(LongSword) { Text("YES") }
-    Scratch1 = Scratch2 & 7
-    if Scratch1 != 0 { Print(Scratch1) }
+    if Scratch1 = Scratch2 & 7; Scratch1 != 0 { Print(Scratch1) }
+    if Done() { exit }
+    if not Done() { Sky = 5 }
+    if Count() >= 2 { exit }
+    if Ask() == "NO" { exit }
+    Compare(Facing, South)
+    Sky = 6
+    if (==) { exit }
+    LoadMap(Keep, icons=Overland)
     for Scratch3 = 0 to 4 { Scratch4 = Kinds[Scratch3] }
     LoadMonster(Kobold, count=8, icon=KoboldIcon)
     goto [Ahead, Later][Scratch1]
@@ -156,7 +180,15 @@ Ahead:
 Later:
     exit
 def Done() {
-    return
+    return Facing == Scratch7
+}
+def Count() {
+    Scratch5 = Random(3)
+    return Scratch5
+}
+def Ask() {
+    Scratch6 = Menu("YES", "NO")
+    return Scratch6
 }
 # tables
 Kinds = [1, 2, 3]
@@ -165,23 +197,37 @@ Kinds = [1, 2, 3]
 	if err != nil {
 		t.Fatal(err)
 	}
-	ahead, done, later, kinds := s.Labels["Ahead"], s.Labels["Done"], s.Labels["Later"], Arg{Type: 1, N: eclBase}
+	ahead, later, kinds := s.Labels["Ahead"], s.Labels["Later"], Arg{Type: 1, N: eclBase}
+	done, count, ask := s.Labels["Done"], s.Labels["Count"], s.Labels["Ask"]
+	call := func(l int) Instr { return Instr{Op: opGosub, Args: []Arg{{Type: 1, N: l, Label: true}}} }
 	want := []Instr{
 		{Op: opExit}, {Op: opExit}, {Op: opExit}, {Op: opExit},
 		{Op: opCompare, Args: []Arg{v("Facing"), {N: 2}}}, {Op: opIfEq}, {Op: opGoto, Args: []Arg{{Type: 1, N: ahead, Label: true}}},
+		{Op: opCompare, Args: []Arg{v("Facing"), {N: 2}}},
 		{Op: opIfLt}, {Op: opSave, Args: []Arg{{N: 3}, v("Sky")}}, {Op: opIfLt}, {Op: opAdd, Args: []Arg{{N: 1}, v("Sky"), v("Sky")}},
-		{Op: opIfGe}, {Op: opOr, Args: []Arg{v("CastleFlags"), {N: 3}, v("CastleFlags")}},
-		{Op: opAnd, Args: []Arg{v("CastleFlags"), {N: 1}, v("Scratch10")}}, {Op: opIfNe}, {Op: opGosub, Args: []Arg{{Type: 1, N: done, Label: true}}},
+		{Op: opIfGt}, {Op: opSave, Args: []Arg{{N: 4}, v("Sky")}},
+		{Op: opIfLe}, {Op: opOr, Args: []Arg{v("CastleFlags"), {N: 3}, v("CastleFlags")}},
+		{Op: opAnd, Args: []Arg{v("CastleFlags"), {N: 1}, v("Scratch10")}}, {Op: opIfNe}, call(done),
 		{Op: opFindItem, Args: []Arg{{N: 7}}}, {Op: opIfEq}, {Op: opPrintClear, Args: []Arg{{Type: 0x80, N: 3, S: "YES"}}},
 		{Op: opAnd, Args: []Arg{v("Scratch2"), {N: 7}, v("Scratch1")}}, {Op: opIfNe}, {Op: opPrint, Args: []Arg{v("Scratch1")}},
+		call(done), {Op: opIfEq}, {Op: opExit},
+		call(done), {Op: opIfNe}, {Op: opSave, Args: []Arg{{N: 5}, v("Sky")}},
+		call(count), {Op: opIfGe}, {Op: opExit},
+		call(ask), {Op: opIfEq}, {Op: opExit},
+		{Op: opCompare, Args: []Arg{v("Facing"), {N: 2}}}, {Op: opSave, Args: []Arg{{N: 6}, v("Sky")}}, {Op: opIfEq}, {Op: opExit},
+		{Op: opLoadMap, Args: []Arg{{N: 255}, {N: 255}, {N: 127}}},
 		{Op: opSave, Args: []Arg{{N: 0}, v("Scratch3")}},
 		{Op: opGetTable, Args: []Arg{kinds, v("Scratch3"), v("Scratch4")}},
 		{Op: opAdd, Args: []Arg{{N: 1}, v("Scratch3"), v("Scratch3")}}, {Op: opCompare, Args: []Arg{v("Scratch3"), {N: 4}}}, {Op: opIfLe},
-		{Op: opGoto, Args: []Arg{{Type: 1, N: 23, Label: true}}},
+		{Op: opGoto, Args: []Arg{{Type: 1, N: 43, Label: true}}},
 		{Op: 0x0B, Args: []Arg{{N: 3}, {N: 8}, {N: 5}}},
 		{Op: opOnGoto, Args: []Arg{v("Scratch1"), {N: 2}, {Type: 1, N: ahead, Label: true}, {Type: 1, N: later, Label: true}}},
 		{Op: opTreasure, Args: []Arg{{}, {}, {}, {N: 5}, {}, {}, {}, {N: 0x82}}}, {Op: opExit},
-		{Op: opExit}, {Op: opReturn},
+		{Op: opExit},
+		{Op: opCompare, Args: []Arg{v("Facing"), v("Scratch7")}}, {Op: opReturn},
+		{Op: opRandom, Args: []Arg{{N: 3}, v("Scratch5")}}, {Op: opCompare, Args: []Arg{v("Scratch5"), {N: 2}}}, {Op: opReturn},
+		{Op: opHMenu, Args: []Arg{v("Scratch6"), {N: 2}, {Type: 0x80, N: 3, S: "YES"}, {Type: 0x80, N: 2, S: "NO"}}},
+		{Op: opCompare, Args: []Arg{v("Scratch6"), {N: 1}}}, {Op: opReturn},
 	}
 	for i := range s.Code {
 		s.Code[i].Line = 0
@@ -202,10 +248,12 @@ Kinds = [1, 2, 3]
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, form := range []string{"if Facing == South { goto Ahead }", "} else {", "CastleFlags |= Disguised|HallSeen",
-		"if CastleFlags has Disguised { Done() }", "if Carried(LongSword) { Text(\"YES\") }", "if Scratch1 != 0 { Print(Scratch1) }",
+	for _, form := range []string{"if Facing == South { goto Ahead }", "} else if Facing > South {", "} else {", "CastleFlags |= Disguised|HallSeen",
+		"if CastleFlags has Disguised { Done() }", "if Carried(LongSword) { Text(\"YES\") }", "if Scratch1 = Scratch2 & 7; Scratch1 != 0 { Print(Scratch1) }",
+		"if Done() { exit }", "if not Done() { Sky = 5 }", "if Count() >= 2 { exit }", "if Ask() == \"NO\" { exit }",
+		"Compare(Facing, South)", "if (==) { exit } # Facing == South", "LoadMap(Keep, icons=Overland)",
 		"for Scratch3 = 0 to 4 {", "LoadMonster(Kobold, count=8, icon=KoboldIcon)", "goto [Ahead, Later][Scratch1]",
-		"Treasure(gold=5, items=Random(2))", "def Done() {", "Kinds = [1, 2, 3]"} {
+		"Treasure(gold=5, items=Random(2))", "def Done() {", "return Facing == Scratch7", "return Scratch5", "return Scratch6", "Kinds = [1, 2, 3]"} {
 		if !strings.Contains(text, form) {
 			t.Errorf("the writer lost %q:\n%s", form, text)
 		}

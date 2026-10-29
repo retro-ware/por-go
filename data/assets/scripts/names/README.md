@@ -15,8 +15,8 @@ scripts, and also:
   (monsters, item types), `Kind Set Number Name`. Do not edit; it is
   rewritten.
 - `pictures.txt`: named numbers by hand (pictures, sprites, combat icons,
-  portrait heads and bodies, encounter reactions),
-  same format; set 0 is every set.
+  portrait heads and bodies, encounter reactions, maps, wall sets,
+  `LoadMap`'s icons), same format; set 0 is every set.
 - `variables.txt`: by hand, the values and flag bits of variables, the
   variable's name as the kind (`CastleFlags 0 1 Disguised`): a number
   beside the variable (`CastleFlags |= Disguised`, `if Mode == Disguised`)

@@ -4,8 +4,7 @@ def RollSurprise() {
     Surprise(Scratch8, Scratch9, 0, 0)
     if AlarmEndHour != 0 { Surprise &= PartyIsSurprised }
     if Surprise == BothSurprised { Surprise = NoSurprise }
-    Compare(Surprise, 1)
-    return
+    return Surprise
 }
 
 def CheckAlarm() {
@@ -15,8 +14,7 @@ def CheckAlarm() {
     if AuxRoll < AlarmEndHour { goto AlarmStillOn }
     if TenMinutes < AlarmMinute { goto AlarmStillOn }
     AlarmEndHour = 0
-    Compare(0, 1)
-    return
+    return 0 < 1
 
     AlarmStillOn:
     if Search == Searching { goto AlarmSounding }
@@ -28,8 +26,7 @@ def CheckAlarm() {
     Delay()
 
     AlarmOnReturn:
-    Compare(1, 0)
-    return
+    return 1 < 0
 }
 
 def DelayRaiseAlarm() {
@@ -47,8 +44,7 @@ RaiseAlarm:
 def YesNoMenu() {
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 }
 
 def PressToContinue() {
@@ -78,14 +74,12 @@ on move {
 }
 
 on step {
-    CheckAlarm()
-    if (<) { goto RoomEvents }
+    if CheckAlarm() { goto RoomEvents }
     if Cell has Special { goto RoomEvents }
     Scratch1 = 2
     if Search == NotSearching { Scratch1 = 20 }
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch10 = Random(Scratch1)
-    Compare(Scratch10, 0)
     if Scratch10 == 0 { goto L_9BD1 }
 
     RoomEvents:
@@ -112,7 +106,7 @@ on load {
     SetSky()
     NoCoords = 1
     if AreaKind == ValjevoCastle4 { exit }
-    LoadMap(4, unused=2, icons=255)
+    LoadMap(ValjevoCastle4)
     exit
 }
 
@@ -138,8 +132,7 @@ on rest {
     $AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
     Portrait = Bearded
     SetupMonster(Fighter16, distance=2, body=PlateArmor)
-    RollSurprise()
-    if Surprise != PartyIsSurprised { goto PatrolSighted }
+    if RollSurprise() != PartyIsSurprised { goto PatrolSighted }
     Text($AuxEncText)
     Print(" SURPRISES YOU.")
     if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto BlasphemersAttack }
@@ -179,9 +172,9 @@ PatrolQuestions:
     Text("YOU SEE A")
     Print($AuxSightText)
     PressToContinue()
-    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=3, flee=Attack,
-        advance=3, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'", mid="THE LEADER ADVANCES.",
-        escape=12, strength=9)
+    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=CloseIn, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'",
+        mid="THE LEADER ADVANCES.", escape=12, strength=9)
     Portrait = None
     goto [Done, PatrolFight, FleeCombat][Scratch10]
     Text("WHAT ARE YOU DOING HERE?")
@@ -223,7 +216,7 @@ AskAuthority:
     Compare("TYRANTHRAXUS", $AuxInputText)
 
 CheckAnswer:
-    if "TYRANTHRAXUS" != $AuxInputText { goto Imposters }
+    if (!=) { goto Imposters } # "TYRANTHRAXUS" != $AuxInputText
     Text("WITH A NOD OF THE HEAD YOU ARE LEFT ALONE.")
     goto Done
 
@@ -286,7 +279,6 @@ FighterFight:
     LoadFighter:
     ClearMonsters()
     LoadMonster(ThLvlFighter84, count=1, icon=ThLvlFighter)
-    Compare(Scratch10, 0)
     if Scratch10 == 0 { LoadMonster(FireGiant, count=4, icon=FireGiant) }
     Combat()
     AfterCombat()
@@ -330,8 +322,8 @@ PigstyBarracks:
     if AlarmEndHour != 0 { goto ThemIntruders }
 
     BarracksGiants:
-    EncounterMenu(FireGiant, distance=2, closeup=FireGiant, result=Scratch10, combat=Attack, wait=3,
-        flee=Attack, advance=3, parlay=Talk, near="THE GIANTS LOOK UP AT YOU.", escape=12,
+    EncounterMenu(FireGiant, distance=2, closeup=FireGiant, result=Scratch10, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=CloseIn, parlay=Talk, near="THE GIANTS LOOK UP AT YOU.", escape=12,
         strength=12)
     goto [Done, GiantsFight, FleeCombat][Scratch10]
     Text("'WHAT YA DOIN' HERE?'")
@@ -350,7 +342,7 @@ ShowPasswords:
     Text("")
     CastleFlags2 |= PasswordsRead
     CastleRoomFlags |= BarracksGiantsMet
-    LoadMap(Keep, unused=16, icons=255)
+    LoadMap(Keep)
     Text("")
     Protection(ProtectionStart)
     Text("TODAY'S PASSWORD IS  ")
@@ -358,9 +350,9 @@ ShowPasswords:
     NewLine()
     Print("THE GATE PASSWORD IS ")
     Protection(ProtectionGatePassword)
-    LoadMap(Keep, unused=2, icons=255)
+    LoadMap(Keep)
     PressToContinue()
-    LoadWalls(24, 25, 1)
+    LoadWalls(Castle, Castle2, Stone)
     goto Done
 
 GetLostWimp:
@@ -401,15 +393,14 @@ Armory:
 
     TakeArmoryLoot:
     Text("DO YOU WANT TO TAKE ANYTHING?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     ClearMonsters()
     Treasure(items=[Sling, Shield, PlateMail, BandedMail, SplintMail, ChainMail, ScaleMail, RingMail, StuddedLeatherArmor, PaddedArmor, LeatherArmor, Arrow*10, LightCrossbow, HeavyCrossbow, ShortBow, LongBow, CompositeShortBow, CompositeLongBow, Voulge, Trident, TwoHandedSword, ShortSword, LongSword, BroadSword, BastardSword, QuarterStaff, Spetum, Spear, Scimitar, Ranseur, Quarrel*20, AwlPike, MilitaryPick, Partisan, MorningStar, Mace, JoStick, Javelin*2, Hammer, LucernHammer, Halberd, GuisarmeVoulge, Guisarme, GlaiveGuisarme, Glaive, MilitaryFork, Flail, FauchardFork, Fauchard, Dart*4, Dagger, Club, BoStick, BillGuisarme, BecDeCorbin, Bardiche, HandAxe, BattleAxe])
     Combat()
     goto TakeArmoryLoot
 
 Kitchen:
-    CastleFlags2 &= WritingShown
-    if CastleFlags2 != 0 { exit }
+    if CastleFlags2 &= WritingShown; CastleFlags2 != 0 { exit }
     Picture(Gnoll)
     Text("YOU ENTER A ROOM THAT REEKS OF SMOKE AND BURNED FOOD. YOU SEE THREE HUMAN SLAVES COOKING MEAT, PEELING POTATOES, AND BEING BEATEN BY VISCIOUS LOOKING GNOLL.")
     PressToContinue()
@@ -428,15 +419,15 @@ FreeSlaves:
     PressToContinue()
     Text("BEFORE I LEAVE LET ME HELP YOU AS BEST I CAN.' HE TAKES A SLIP OF PAPER FROM THE POUCH OF THE DEAD GNOLL. 'HERE, YOU WILL NEED THIS.'")
     PressToContinue()
-    LoadMap(Keep, unused=16, icons=255)
+    LoadMap(Keep)
     Text("")
     Protection(ProtectionStart)
     Text("YOU LOOK AT THE WRITING...")
     NewLine()
     Protection(ProtectionGatePassword)
-    LoadMap(Keep, unused=2, icons=255)
+    LoadMap(Keep)
     PressToContinue()
-    LoadWalls(24, 25, 1)
+    LoadWalls(Castle, Castle2, Stone)
     Text("'IT IS TODAY'S PASSWORD AT THE MAIN GATE INTO THE HEDGE MAZE. ALAS, I CAN NOT HELP YOU WITH THAT FOR I HAVE NOT BEEN INSIDE. BUT I HAVE HEARD THE MAZE IS DEADLY!'")
     PressToContinue()
     CastleFlags2 |= WritingShown
@@ -468,15 +459,15 @@ ScribesHall:
     PressToContinue()
     Portrait = WhiteHaired
     if CastleFlags has Disguised { goto OfficerAsks }
-    EncounterMenu(Mage, distance=2, body=MailCloak, result=Scratch10, combat=Attack, wait=3, flee=Attack,
-        advance=3, parlay=Attack, near="'YOU DON'T BELONG HERE!'", escape=12, strength=12)
+    EncounterMenu(Mage, distance=2, body=MailCloak, result=Scratch10, combat=Attack, wait=CloseIn, flee=Attack,
+        advance=CloseIn, parlay=Attack, near="'YOU DON'T BELONG HERE!'", escape=12, strength=12)
     Portrait = None
     RaiseAlarm()
     goto [Done, OfficersAttack, FleeCombat][Scratch10]
 
     OfficerAsks:
-    EncounterMenu(Mage, distance=2, body=MailCloak, result=Scratch10, combat=Attack, wait=3, flee=Attack,
-        advance=3, parlay=Talk, near="AN OFFICER LOOKS AT YOU, 'WHAT ARE YOU DOING HERE?'",
+    EncounterMenu(Mage, distance=2, body=MailCloak, result=Scratch10, combat=Attack, wait=CloseIn, flee=Attack,
+        advance=CloseIn, parlay=Talk, near="AN OFFICER LOOKS AT YOU, 'WHAT ARE YOU DOING HERE?'",
         escape=12, strength=12)
     Portrait = None
     goto [Done, OfficersAttack, FleeCombat, OfficerParlay][Scratch10]
@@ -492,7 +483,7 @@ OfficersAttack:
     Morale = 100
     Delay()
     ClearMonsters()
-    LoadMonster(Envoy, count=2, icon=14)
+    LoadMonster(Envoy, count=2, icon=Nomad)
     Combat()
     AfterCombat()
     Scratch10 = Random(4)
@@ -543,7 +534,7 @@ RecordsBuilding:
 
 ReadRecordsMenu:
     Print("DO YOU WISH TO SPEND HOURS READING THE RECORDS?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     Scratch10 = Random(1)
     if AlarmEndHour == 0 { goto ReadRecords }
     if Scratch10 == 0 { goto L_9BD1 }
@@ -578,8 +569,7 @@ ScribeArrives:
     Portrait = Goatee
     SetupMonster(Cleric, distance=1, body=WhiteRobe)
     Portrait = None
-    RollSurprise()
-    if Surprise < PartyIsSurprised { goto AmbushScribe }
+    if RollSurprise() < PartyIsSurprised { goto AmbushScribe }
     Text("A SCRIBE WALKS INTO THE ROOM. HE SEES YOU AND LETS OUT A GASP. HE DROPS HIS BOOKS AND RUNS OUT THE DOOR.")
     DelayRaiseAlarm()
     goto Done

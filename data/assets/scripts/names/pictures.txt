@@ -180,12 +180,82 @@ Icon 8 70 Efreeti
 Icon 8 73 Gnoll
 Icon 8 120 WildBoar
 Icon 8 121 Wyvern
+Icon 3 11 Soldier
+Icon 3 12 Rogue
+Icon 4 18 Scorpion
+Icon 4 35 Zombie
+Icon 5 12 Rogue
+Icon 5 13 Cleric
+Icon 5 14 Nomad
+Icon 6 11 Soldier
+Icon 7 57 Lizardman
+Icon 8 11 Noble
 
 # LoadMap's map (a GEO block) and LoadWalls' wall sets (WALLDEF blocks)
 Map 0 255 Keep
 Map 0 127 Unchanged
+# the maps (GEO blocks): an area's own by its name, and the others
+Map 1 18 PodolPlaza
+Map 1 24 TempleOfBane
+Map 2 9 StojanowGate
+Map 2 15 MendorsLibrary
+Map 2 20 Slums
+Map 3 0 NewPhlan
+Map 3 8 CityHall
+Map 3 11 TrainingHall
+Map 3 14 CadornaTextileHouse
+Map 4 2 HobgoblinBarracks
+Map 4 10 ValhingenGraveyard
+Map 4 21 SokalKeep
+Map 5 3 ValjevoCastle3
+Map 5 4 ValjevoCastle4
+Map 5 5 ValjevoGrounds
+Map 5 6 ValjevoCastle6
+Map 5 7 ValjevoCastle7
+Map 6 1 BuccaneerBase
+Map 6 19 DragonCave
+Map 6 25 Mountains
+Map 6 28 ZhentilOutpost
+Map 7 17 NomadCamp
+Map 7 22 LizardManSwamp
+Map 7 23 LizardManVillage
+Map 7 26 Wilderness
+Map 8 13 KoboldCaves
+Map 8 16 YarashsPyramid
+Map 8 27 Quagmire
+Map 8 29 KutosWell
+Map 1 31 TempleOutside     # area24: the temple's surroundings, when the party is outdoors
+Map 6 4 MountainsOverland  # area25: the mountains' wilderness map, travelled with the icons
+Map 7 5 WildernessOverland # area26
+Map 8 6 QuagmireOverland   # area27
+Map 8 30 PyramidLower      # area16: the pyramid's lower level (GoDownMenu)
+Map 8 32 WellBottom        # area29: down Kuto's well
 Walls 0 255 None
 Walls 0 127 Reset
+# the wall sets (WALLDEF blocks), by their look in the view (cmd/viewdump);
+# a 10-wall block (Castle, Graveyard) fills slots 1 and 2, the second operand
+# beside it is skipped (WallSplit), so Castle2 and Graveyard2 are placeholders
+Walls 0 1 Stone
+Walls 0 2 Planks
+Walls 0 3 Overgrown
+Walls 0 4 Plaster
+Walls 0 5 RedBrick
+Walls 0 6 Palisade
+Walls 0 7 Reeds
+Walls 0 8 Trees
+Walls 0 9 BlueTile
+Walls 0 17 RedCave
+Walls 0 18 DeepCave
+Walls 0 19 Library
+Walls 0 20 Ruins
+Walls 0 21 Graveyard
+Walls 0 22 Graveyard2
+Walls 0 23 Marsh
+Walls 0 24 Castle
+Walls 0 25 Castle2
+# LoadMap's icons: any value but 255 loads the overland travel icons
+MapIcons 0 127 Overland
+MapIcons 0 0 Overland
 
 # Portraits (the Amiga HEAD.DAX and BODY.DAX, the same in every set):
 # Portrait = Head, then a Picture or an encounter's close-up is a Body.
@@ -259,7 +329,7 @@ Body 0 37 BlueDressKnife
 Reaction 0 0 Attack
 Reaction 0 1 Mirror
 Reaction 0 2 Flee
-Reaction 0 3 Approach
+Reaction 0 3 CloseIn   # (Approach is a command)
 Reaction 0 4 Talk
 
 # Numbers the scripts use that no data file has (the game draws nothing)

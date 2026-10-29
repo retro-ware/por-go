@@ -114,8 +114,7 @@ def RetreatOrFight() {
     if PartyX < 11 { goto FindRetreatZone }
     Text("THERE IS NOWHERE LEFT TO RETREAT. YOU MUST FIGHT.")
     PressToContinue()
-    Compare(1, 0)
-    return
+    return 1 == 0
 
     FindRetreatZone:
     Scratch10 = 0
@@ -143,8 +142,7 @@ RetreatZoneLoop:
     RedrawView()
     CallRedraw()
     HearWarCries()
-    Compare(1, 1)
-    return
+    return 1 == 1
 
 def HearWarCries() {
     Text("YOU HEAR WAR CRIES AND THE CLANG OF METAL ")
@@ -187,8 +185,7 @@ WalkToHut:
     Scratch10 = WalkPathToHut[Scratch1]
 
     WalkToHutStep:
-    WalkStep()
-    if (!=) { goto WalkToHut }
+    if not WalkStep() { goto WalkToHut }
     return
 
 WalkToClearing:
@@ -199,8 +196,7 @@ WalkToClearing:
     Scratch10 = WalkPathToClearing[Scratch1]
 
     WalkToClearingStep:
-    WalkStep()
-    if (!=) { goto WalkToClearing }
+    if not WalkStep() { goto WalkToClearing }
     return
 
 def WalkStep() {
@@ -212,15 +208,13 @@ def WalkStep() {
     CallRedraw()
     Delay()
     Delay()
-    Compare(1, 0)
-    return
+    return 1 != 0
 }
 
 def YesNoMenu() {
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 }
 
 PressToContinue:
@@ -302,8 +296,8 @@ on load {
     NoCoords = 1
     SetSky()
     if AreaKind == NomadCamp { exit }
-    LoadMap(17, unused=2, icons=255)
-    LoadWalls(7, 8, 23)
+    LoadMap(NomadCamp)
+    LoadWalls(Reeds, Trees, Marsh)
     PartyX = 1
     PartyY = 14
     Facing = East
@@ -539,8 +533,7 @@ KoboldEncounter:
     PressToContinue()
     KoboldEncounterMenu()
     goto [Done, KoboldFightAllied][Scratch10]
-    RetreatOrFight()
-    if 1 == 0 { goto KoboldRaid }
+    if RetreatOrFight() { goto KoboldRaid }
 
 KoboldFightAllied:
     RollNomadAllies()

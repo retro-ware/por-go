@@ -1,8 +1,7 @@
 def YesNoMenu() {
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 }
 
 def PressToContinue() {
@@ -53,7 +52,7 @@ on load {
     NoCoords = 1
     if TyranthraxusDefeated == 1 { goto LeaveCastle }
     if AreaKind == ValjevoCastle7 { exit }
-    LoadMap(7, unused=2, icons=255)
+    LoadMap(ValjevoCastle7)
     exit
 }
 
@@ -66,7 +65,7 @@ StairsUp:
 
 TakeStairsMenu:
     HoldMove = SkipMove
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     PartyX = DestX[Scratch1]
     PartyY = DestY[Scratch1]
     if Scratch1 == 0 { goto DescendToArea5 }
@@ -77,7 +76,7 @@ RedrawExit:
     exit
 
 DescendToArea5:
-    LoadMap(3, unused=2, icons=255)
+    LoadMap(ValjevoCastle3)
     NewECL(ValjevoGrounds)
 
 HoldAtSecretDoor:
@@ -132,7 +131,7 @@ def DirRight() {
 
 TrapDoorRoom:
     Text("YOU ARE IN AN EMPTY ROOM. THE ONLY FEATURE IS A TRAP DOOR IN THE CENTER. DO YOU OPEN IT?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
 
     ChooseOpener:
     Who("WHO WILL OPEN IT?")
@@ -158,7 +157,7 @@ TrapDoorRoom:
 
     JumpTrapDoor:
     Print(" DO YOU WANT TO JUMP THROUGH THE TRAP DOOR?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     Text("THE PARTY JUMPS DOWN THROUGH THE TRAP DOOR...")
     PressToContinue()
     Damage(224, 3, 6, 0, 0)
@@ -174,8 +173,9 @@ StatueRoom:
 
     MedusaMenu:
     if SearchTowerFlags has MedusaKilled { exit }
-    EncounterMenu(Blank, distance=1, closeup=Blank, result=Scratch10, combat=Attack, wait=3, flee=Attack,
-        advance=3, parlay=Attack, near="A MEDUSA COMES RUNNING TOWARD YOU.", escape=9, strength=9)
+    EncounterMenu(Blank, distance=1, closeup=Blank, result=Scratch10, combat=Attack, wait=CloseIn, flee=Attack,
+        advance=CloseIn, parlay=Attack, near="A MEDUSA COMES RUNNING TOWARD YOU.", escape=9,
+        strength=9)
     goto [RedrawExit, MedusaFight, RetreatFromMedusa][Scratch10]
 
 MedusaFight:
@@ -234,7 +234,7 @@ ThiefFight:
     Morale = 100
     Surprise = NoSurprise
     ClearMonsters()
-    LoadMonster(StLvlThief, count=1, icon=12)
+    LoadMonster(StLvlThief, count=1, icon=Rogue)
     Combat()
     if CombatEnd == PartyFled { goto RetreatFromThief }
     SearchTowerFlags |= MessengerKilled
@@ -273,7 +273,7 @@ GenheerisOffer:
     Text("'IN FACT I WILL JOIN YOU. IS IT A DEAL?'")
     YesNoMenu()
     Portrait = None
-    if Scratch10 != 0 { goto GenheerisFight }
+    if (!=) { goto GenheerisFight } # YesNoMenu() != "YES"
     Text("GOOD.")
     AddNPC(Genheeris, 100)
     GenheerisFlags |= GenheerisJoined
@@ -283,7 +283,7 @@ GenheerisOffer:
     Text("'IS IT A DEAL?")
     YesNoMenu()
     Portrait = None
-    if Scratch10 != 0 { goto GenheerisFight }
+    if (!=) { goto GenheerisFight } # YesNoMenu() != "YES"
     GenheerisFlags |= GenheerisLeft
     Text("'GOOD. I WILL NOTIFY SOME OTHERS. YOU GO KILL HIM.' HE QUICKLY GETS UP AND LEAVES THE ROOM.")
     goto RedrawExit
@@ -292,7 +292,7 @@ GenheerisOffer:
     Surprise = NoSurprise
     Morale = 100
     ClearMonsters()
-    LoadMonster(Genheeris, count=1, icon=14)
+    LoadMonster(Genheeris, count=1, icon=Nomad)
     Combat()
     GenheerisFlags |= GenheerisLeft
     if CombatEnd != PartyFled { exit }

@@ -12,7 +12,6 @@ on step {
     Picture(None)
     Portrait = None
     Scratch10 = ~Inside & Cell
-    Compare(Scratch10, 0)
     if Scratch10 == 0 { goto LeaveArea }
     AuxCounter = 10
 
@@ -50,7 +49,7 @@ on rest {
 } # falls into event4
 
 on load {
-    LoadMap(0, unused=0, icons=0)
+    LoadMap(NewPhlan, icons=Overland)
     LoadWalls(Reset, Reset, Reset)
     if RestChance == 255 { exit }
     goto NoRestHere
@@ -259,7 +258,7 @@ FightWatch:
     Morale = 50
     ClearMonsters()
     LoadMonster(Level3Mu, count=2, icon=Level3Mu)
-    LoadMonster(ThLvlFighter84, count=12, icon=11)
+    LoadMonster(ThLvlFighter84, count=12, icon=Soldier)
     LoadMonster(Aides, count=12, icon=ThLvlFighter)
     LoadMonster(Nomad, count=12, icon=Nomad)
     Combat()

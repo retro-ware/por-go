@@ -71,8 +71,8 @@ on load {
     if Hours >= 14 { Scratch5 = 8 }
     Sky = Scratch5
     SkyInside = 9
-    LoadMap(20, unused=2, icons=255)
-    LoadWalls(2, 4, 1)
+    LoadMap(Slums)
+    LoadWalls(Planks, Plaster, Stone)
     if SlumsEntered != Yes { goto RestSafe }
     exit
 }
@@ -550,9 +550,9 @@ InsideRopeGuild:
 PotionBooth:
     if OhloPotionState >= PackageReceived { exit }
     if BoothFightDone != 0 { exit }
-    Compare(BoothManDone, 255)
+    Compare(BoothManDone, Yes)
     ShowPortrait(BrownHaired, ShopkeeperApron)
-    if BoothManDone == Yes {
+    if (==) { # BoothManDone == Yes
         Text("I AM SORRY, BUT I HAVE NOTHING TO SELL NOW.  COME BACK SOME OTHER TIME. ")
         goto BoothMenu
     }
@@ -632,9 +632,12 @@ AfterPatrolFight:
         PatrolsBeaten += 1
         CountSlumsCleared()
     }
-    if (>) { goto Done }
-    if (==) { Compare(Beaten, 0) }
-    if Beaten > 0 {
+    if (>) { # the flags as CountSlumsCleared() left them
+        goto Done
+    } else if (==) {
+        Compare(Beaten, 0)
+    }
+    if (>) { # Beaten > 0
         PatrolsBeaten += 1
         CountSlumsCleared()
     }
@@ -752,9 +755,13 @@ SurrenderToPatrol:
 
 TryRunning:
     CheckParty(SelMove, 0, Scratch9, Scratch1, Scratch1, Scratch1)
-    if AuxEncResult < Scratch1 { goto RunAway }
-    if AuxEncResult > Scratch1 { goto FightPatrol }
-    if AuxEncResult == Scratch1 { Scratch1 = Random(1) }
+    if AuxEncResult < Scratch1 {
+        goto RunAway
+    } else if AuxEncResult > Scratch1 {
+        goto FightPatrol
+    } else if AuxEncResult == Scratch1 {
+        Scratch1 = Random(1)
+    }
     if Scratch1 == 1 { goto RunAway }
     goto FightPatrol
 

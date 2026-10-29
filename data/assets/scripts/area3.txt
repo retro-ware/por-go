@@ -4,8 +4,7 @@ def RollSurprise() {
     Surprise(Scratch8, Scratch9, 0, 0)
     if AlarmEndHour != 0 { Surprise &= PartyIsSurprised }
     if Surprise == BothSurprised { Surprise = NoSurprise }
-    Compare(Surprise, 1)
-    return
+    return Surprise
 }
 
 def CheckAlarm() {
@@ -15,8 +14,7 @@ def CheckAlarm() {
     if AuxRoll < AlarmEndHour { goto AlarmStillOn }
     if TenMinutes < AlarmMinute { goto AlarmStillOn }
     AlarmEndHour = 0
-    Compare(0, 1)
-    return
+    return 0 < 1
 
     AlarmStillOn:
     if Search == Searching { goto AlarmSounding }
@@ -28,8 +26,7 @@ def CheckAlarm() {
     Delay()
 
     AlarmOnReturn:
-    Compare(1, 0)
-    return
+    return 1 < 0
 }
 
 def DelayRaiseAlarm() {
@@ -51,8 +48,7 @@ def TakeItMenu() {
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 
 def PressToContinue() {
     Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
@@ -85,14 +81,12 @@ on move {
 }
 
 on step {
-    CheckAlarm()
-    if (<) { goto RoomEvents }
+    if CheckAlarm() { goto RoomEvents }
     if Cell has Special { goto RoomEvents }
     Scratch1 = 2
     if Search == NotSearching { Scratch1 = 20 }
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch10 = Random(Scratch1)
-    Compare(Scratch10, 0)
     if Scratch10 == 0 { goto L_9C7C }
 
     RoomEvents:
@@ -125,8 +119,8 @@ on load {
     NoCoords = 1
     if AreaKind == ValjevoCastle3 { exit }
     Scratch10 = ByFacing9C24[Facing]
-    LoadMap(Scratch10, unused=2, icons=255)
-    LoadWalls(24, 25, 1)
+    LoadMap(Scratch10)
+    LoadWalls(Castle, Castle2, Stone)
     exit
 }
 
@@ -152,8 +146,7 @@ on rest {
     $AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
     Portrait = Bearded
     SetupMonster(Fighter16, distance=2, body=PlateArmor)
-    RollSurprise()
-    if Surprise != PartyIsSurprised { goto PatrolSighted }
+    if RollSurprise() != PartyIsSurprised { goto PatrolSighted }
     Text($AuxEncText)
     Print(" SURPRISES YOU.")
     if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto BlasphemersAttack }
@@ -193,9 +186,9 @@ PatrolQuestions:
     Text("YOU SEE A")
     Print($AuxSightText)
     Delay()
-    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=3, flee=Attack,
-        advance=3, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'", mid="THE LEADER ADVANCES.",
-        escape=12, strength=9)
+    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=CloseIn, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'",
+        mid="THE LEADER ADVANCES.", escape=12, strength=9)
     Portrait = None
     goto [Done, PatrolFight, FleeCombat][Scratch10]
     Text("WHAT ARE YOU DOING HERE?")
@@ -236,7 +229,7 @@ def AskAuthority() {
 } # falls into CheckAnswer
 
 CheckAnswer:
-    if "TYRANTHRAXUS" != $AuxInputText { goto Imposters }
+    if (!=) { goto Imposters } # "TYRANTHRAXUS" != $AuxInputText
     Text("WITH A NOD OF THE HEAD YOU ARE LEFT ALONE.")
     goto Done
 
@@ -322,8 +315,8 @@ GiantApartment:
     Text("AS YOU BREAK THROUGH THE DOOR INTO A WELL FITTED APARTMENT, TWO GIANTS COME LUMBERING UP TO YOU. YOU TURN TO FACE THEM.")
     CallRedraw()
     PressToContinue()
-    EncounterMenu(HillGiant, distance=1, closeup=HillGiant, result=Scratch10, combat=Attack, wait=3,
-        flee=Attack, advance=3, parlay=Talk,
+    EncounterMenu(HillGiant, distance=1, closeup=HillGiant, result=Scratch10, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=CloseIn, parlay=Talk,
         near="THE GIANTS STAND IN FRONT OF YOU LOOKING SUSPICIOUS.",
         mid="THE GIANTS ARE WALKING TOWARD YOU.", escape=12, strength=12)
     goto [Done, ApartmentFight, FleeCombat][Scratch10]
@@ -346,7 +339,7 @@ LooseStoneTreasure:
     Scratch10 = CastleFlags & LooseStoneFound
     if Scratch10 != 0 or Search != Searching { exit }
     Text("UNDER A LOOSE STONE YOU FIND SOME TREASURE. ")
-    if TakeItMenu() == "NO" { exit }
+    if TakeItMenu() != "YES" { exit }
     CastleFlags |= LooseStoneFound
     ClearMonsters()
     Treasure(gold=200, items=[PotionOfSpeed])
@@ -361,8 +354,7 @@ BucketRoom:
     if CastleFlags has SleepingGiantsFought { exit }
     Scratch5 = 2
     if Hours < 14 { Scratch5 = 4 }
-    RollSurprise()
-    if Surprise > PartyIsSurprised { goto SleepingGiants }
+    if RollSurprise() > PartyIsSurprised { goto SleepingGiants }
     Surprise = PartyIsSurprised
     if Search == Searching { goto BucketNoticed }
     Text("AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS.")
@@ -403,8 +395,7 @@ SleepingGiantsFight:
 GiantQuarters:
     if CadornaQuartersFlags has Scratch1 { exit }
     if Hours >= 14 { exit }
-    RollSurprise()
-    if Surprise > PartyIsSurprised { goto WakingGiants }
+    if RollSurprise() > PartyIsSurprised { goto WakingGiants }
     Surprise = NoSurprise
     EncounterMenu(HillGiant, distance=2, closeup=HillGiant, result=Scratch10, combat=Attack, wait=Attack,
         flee=Attack, advance=Mirror, parlay=Attack,
@@ -437,7 +428,7 @@ FindTreasure:
     Scratch10 = SearchTowerFlags & Scratch1
     if Scratch10 != 0 or Search != Searching { exit }
     Text("YOU FIND SOME TREASURE. ")
-    if TakeItMenu() == "NO" { exit }
+    if TakeItMenu() != "YES" { exit }
     SearchTowerFlags |= Scratch1
     ClearMonsters()
     Treasure(gold=11)
@@ -469,15 +460,15 @@ BoulderVolley:
 
 GivePassword:
     if CastleFlags2 lacks CadornaAlong { goto EnterPassword }
-    LoadMap(Keep, unused=16, icons=255)
+    LoadMap(Keep)
     Text("")
     Protection(ProtectionStart)
     Text("CADORNA HANDS YOU A SLIP OF PAPER AND WHISPERS, 'HERE IS TODAY'S GATE PASSWORD.'")
     NewLine()
     Protection(ProtectionEnd)
-    LoadMap(Keep, unused=2, icons=255)
+    LoadMap(Keep)
     PressToContinue()
-    LoadWalls(24, 25, 1)
+    LoadWalls(Castle, Castle2, Stone)
 
     EnterPassword:
     Text("WHAT PASSWORD DO YOU GIVE? ")
@@ -568,7 +559,7 @@ WellDive:
     Text("THE WATER LOOKS COLD AND DEEP. DO YOU WANT TO DIVE IN?")
 
 DiveMenu:
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
 
     ChooseDiver:
     Who("WHO WILL DIVE IN?")

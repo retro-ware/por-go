@@ -7,7 +7,7 @@ AskUseDisguise:
     Text("WILL YOU USE THE CLOTHING AS A DISGUISE?")
     if YesNoMenu() == "YES" { CastleFlags |= Disguised }
     Scratch10 = CastleFlags & Disguised
-    return
+    return Scratch10
 
 def CheckPatrolSurprise() {
     PartySurprise(Scratch8, Scratch9)
@@ -15,8 +15,7 @@ def CheckPatrolSurprise() {
     Surprise(Scratch8, Scratch9, 0, 0)
     if AlarmEndHour != 0 { Surprise &= PartyIsSurprised }
     if Surprise == BothSurprised { Surprise = NoSurprise }
-    Compare(Surprise, 1)
-    return
+    return Surprise
 }
 
 def CheckAlarmExpired() {
@@ -26,8 +25,7 @@ def CheckAlarmExpired() {
     if AuxRoll < AlarmEndHour { goto AlarmStillRinging }
     if TenMinutes < AlarmMinute { goto AlarmStillRinging }
     AlarmEndHour = 0
-    Compare(0, 1)
-    return
+    return 0 < 1
 
     AlarmStillRinging:
     if Search == Searching { goto PrintAlarmSounding }
@@ -39,8 +37,7 @@ def CheckAlarmExpired() {
     Delay()
 
     AlarmReturnActive:
-    Compare(1, 0)
-    return
+    return 1 < 0
 }
 
 def StartAlarm() {
@@ -59,8 +56,7 @@ def AskTakeIt() {
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 
 def PressToContinue() {
     Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
@@ -97,14 +93,12 @@ on move {
 }
 
 on step {
-    CheckAlarmExpired()
-    if (<) { goto DispatchCell }
+    if CheckAlarmExpired() { goto DispatchCell }
     if Cell has Special { goto DispatchCell }
     Scratch1 = 2
     if Search == NotSearching { Scratch1 = 20 }
     if Cell has 32 { Scratch1 += Scratch1 }
     Scratch10 = Random(Scratch1)
-    Compare(Scratch10, 0)
     if Scratch10 == 0 { goto GiantPatrol }
 
     DispatchCell:
@@ -136,8 +130,8 @@ on load {
     if AreaKind == ValjevoCastle6 { exit }
     WallSplitA = 1
     WallSplitB = 1
-    LoadMap(6, unused=2, icons=255)
-    LoadWalls(24, 25, 1)
+    LoadMap(ValjevoCastle6)
+    LoadWalls(Castle, Castle2, Stone)
     exit
 }
 
@@ -149,16 +143,14 @@ LaundryEnter:
     Scratch1 = Parlay(0, 1, 1, 1, 2)
     goto [LaundryOfferDisguise, LaundryOfferDisguise][Scratch1]
     Text("'PLEASE DON'T KILL US,' SHE SAYS. 'IF YOU DON'T WE WILL GIVE YOU THESE CLOTHES TO USE AS A DISGUISE. WE SWEAR WE WON'T SAY ANYTHING!")
-    AskUseDisguise()
-    if Scratch10 == 0 {
+    if AskUseDisguise() == 0 {
         goto LaundryPutOnClothes
     } else {
         goto LaundryGoodLuck
     }
 
 LaundryOfferDisguise:
-    OfferDisguiseHelp()
-    if Scratch10 == 0 { goto LaundryPutOnClothes }
+    if OfferDisguiseHelp() == 0 { goto LaundryPutOnClothes }
 
 LaundryGoodLuck:
     Text("'WELL THEN, GOOD LUCK. BEST YOU LEAVE BEFORE YOU ARE FOUND HERE.")
@@ -224,7 +216,7 @@ SmithyNoOrders:
 SmithyArmorPile:
     if CastleDeedFlags has SmithyLoot { exit }
     Text("PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR. ")
-    if AskTakeIt() == "NO" { exit }
+    if AskTakeIt() != "YES" { exit }
     CastleDeedFlags |= SmithyLoot
     ClearMonsters()
     Treasure(items=[Sling, Shield, PlateMail, BandedMail, SplintMail, ChainMail, ScaleMail, RingMail, StuddedLeatherArmor, PaddedArmor, LeatherArmor, Arrow*10, LightCrossbow, HeavyCrossbow, ShortBow, LongBow, CompositeShortBow, CompositeLongBow, Voulge, Trident, TwoHandedSword, ShortSword, LongSword, BroadSword, BastardSword, QuarterStaff, Spetum, Spear, Scimitar, Ranseur, Quarrel*20, AwlPike, MilitaryPick, Partisan, MorningStar, Mace, JoStick, Javelin*2, Hammer, LucernHammer, Halberd, GuisarmeVoulge, Guisarme, GlaiveGuisarme, Glaive, MilitaryFork, Flail, FauchardFork, Fauchard, Dart*4, Dagger, Club, BoStick, BillGuisarme, BecDeCorbin, Bardiche, HandAxe, BattleAxe])
@@ -279,8 +271,8 @@ PriestFight:
     Morale = 100
     Surprise = NoSurprise
     ClearMonsters()
-    LoadMonster(Level5Cleric, count=1, icon=13)
-    LoadMonster(StLvlCleric, count=2, icon=13)
+    LoadMonster(Level5Cleric, count=1, icon=Cleric)
+    LoadMonster(StLvlCleric, count=2, icon=Cleric)
     Combat()
     AfterCombat()
     CastleDeedFlags |= BaneTempleFight
@@ -330,7 +322,7 @@ AltarEnter:
     Text("YOU ARE BEFORE THE ALTER. ")
     if BaneTempleFlags has OfferingBoxStolen { goto AltarSwords }
     Print("NEAR IT IS THE OFFERING BOX WITH SOME CHANGE IN IT. ")
-    if AskTakeIt() == "NO" { goto AltarBoxLeft }
+    if AskTakeIt() != "YES" { goto AltarBoxLeft }
     BaneTempleFlags |= OfferingBoxStolen
     ClearMonsters()
     Treasure(silver=37)
@@ -345,7 +337,7 @@ AltarEnter:
     AltarSwords:
     if BaneTempleFlags has CrossedSwordsStolen { exit }
     Text("BEHIND THE ALTER ARE TWO CROSSED SWORDS. DO YOU TAKE THEM?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     BaneTempleFlags |= CrossedSwordsStolen
     CastleFlags &= HallSeen|PatrolTalkedAway|LooseStoneFound|SleepingGiantsFought|SwordInWell|FakeTyranthraxus|GiantsPassed
     ClearMonsters()
@@ -374,8 +366,7 @@ GiantPatrol:
     $AuxEncText = "A PATROL OF GIANTS LED BY A HUMAN FIGHTER"
     Portrait = Bearded
     SetupMonster(Fighter16, distance=2, body=PlateArmor)
-    CheckPatrolSurprise()
-    if Surprise != PartyIsSurprised { goto PatrolSighted }
+    if CheckPatrolSurprise() != PartyIsSurprised { goto PatrolSighted }
     Text($AuxEncText)
     Print(" SURPRISES YOU.")
     if BaneTempleFlags has OfferingBoxStolen|CrossedSwordsStolen { goto PatrolBlasphemers }
@@ -412,9 +403,9 @@ GiantPatrol:
     Text("YOU SEE A")
     Print($AuxSightText)
     PressToContinue()
-    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=3, flee=Attack,
-        advance=3, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'", mid="THE LEADER ADVANCES.",
-        escape=12, strength=9)
+    EncounterMenu(Fighter16, distance=2, body=PlateArmor, result=Scratch10, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=CloseIn, parlay=Talk, near="'WHAT ARE YOU DOING HERE?'",
+        mid="THE LEADER ADVANCES.", escape=12, strength=9)
     Portrait = None
     goto [Done, PatrolFight, FleeAfterCombat][Scratch10]
     Text("WHAT ARE YOU DOING HERE?")
@@ -432,7 +423,7 @@ PatrolAskAuthority:
     Compare("TYRANTHRAXUS", $AuxInputText)
 
 PatrolCheckAnswer:
-    if "TYRANTHRAXUS" != $AuxInputText { goto PatrolImposters }
+    if (!=) { goto PatrolImposters } # "TYRANTHRAXUS" != $AuxInputText
     Text("WITH A NOD OF THE HEAD YOU ARE LEFT ALONE.")
     goto Done
 

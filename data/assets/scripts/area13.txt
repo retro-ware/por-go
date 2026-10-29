@@ -1,6 +1,6 @@
 on load {
-    LoadWalls(17, 18, None)
-    LoadMap(13, unused=2, icons=255)
+    LoadWalls(RedCave, DeepCave, None)
+    LoadMap(KoboldCaves)
     NoCoords = 1
     SkyInside = 8
     exit
@@ -260,7 +260,6 @@ BallistaFire:
     LoadMonster(KoboldLeader1, count=8, icon=KoboldLeader)
     Combat()
     KoboldKingState = BallistaFired
-    Compare(CombatEnd, 128)
     if CombatEnd > PartyDied { goto OfferSurrender }
 
 EnvoysFight:
@@ -280,7 +279,7 @@ EnvoysFight:
     LoadMonster(Troll, count=2, icon=Troll)
     LoadMonster(WildBoar, count=2, icon=WildBoar)
     LoadMonster(Kobold0, count=8, icon=Kobold)
-    LoadMonster(Envoy, count=2, icon=11)
+    LoadMonster(Envoy, count=2, icon=Noble)
     Combat()
     Portrait = None
     KoboldKingState = EnvoysFought
@@ -427,7 +426,7 @@ FatimaRoom:
 AttackFatima:
     Morale = 100
     ClearMonsters()
-    LoadMonster(PrincessFatima, count=1, icon=11)
+    LoadMonster(PrincessFatima, count=1, icon=Noble)
     Combat()
     FatimaMet = 1
     Portrait = None

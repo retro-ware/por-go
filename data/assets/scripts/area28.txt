@@ -35,8 +35,8 @@ GuardsSpotYou:
     ApproachTwice()
     Text("SOME GUARDS SPOT YOU AND ATTACK.")
     ClearMonsters()
-    LoadMonster(Guard, count=Scratch1, icon=11)
-    LoadMonster(Corporal, count=AlarmLevel, icon=11)
+    LoadMonster(Guard, count=Scratch1, icon=Soldier)
+    LoadMonster(Corporal, count=AlarmLevel, icon=Soldier)
     Combat()
     goto CellDispatch
 
@@ -179,7 +179,7 @@ AttackGuards:
     SetupMonster(Fighter16, distance=2, body=LeatherHarness)
     ApproachTwice()
     ClearMonsters()
-    LoadMonster(Guard, count=4, icon=11)
+    LoadMonster(Guard, count=4, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto FleeStopped }
     goto SurrenderOrDie
@@ -207,8 +207,8 @@ GuardWaveFight:
     SetupMonster(Fighter16, distance=2, body=LeatherHarness)
     ApproachTwice()
     ClearMonsters()
-    LoadMonster(Guard, count=16, icon=11)
-    LoadMonster(Corporal, count=4, icon=11)
+    LoadMonster(Guard, count=16, icon=Soldier)
+    LoadMonster(Corporal, count=4, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto RunForGate }
     AlarmFightScore += 20
@@ -227,9 +227,9 @@ DwarfAndCommandant:
     ApproachTwice()
     ClearMonsters()
     LoadMonster(DwarvenFighter, count=1, icon=DwarvenFighter)
-    LoadMonster(Aides, count=10, icon=11)
-    LoadMonster(Corporal, count=12, icon=11)
-    LoadMonster(Guard, count=25, icon=11)
+    LoadMonster(Aides, count=10, icon=Soldier)
+    LoadMonster(Corporal, count=12, icon=Soldier)
+    LoadMonster(Guard, count=25, icon=Soldier)
     Combat()
     OutpostFought = 1
     if CombatEnd > PartyDied { goto RunForGate }
@@ -240,10 +240,9 @@ DwarfAndCommandant:
     ClearMonsters()
     LoadMonster(AlHyamDazid, count=1, icon=AlHyamDazid)
     LoadMonster(Commandant, count=1, icon=Captain)
-    LoadMonster(Corporal, count=24, icon=11)
-    LoadMonster(Aides, count=20, icon=11)
+    LoadMonster(Corporal, count=24, icon=Soldier)
+    LoadMonster(Aides, count=20, icon=Soldier)
     Combat()
-    Compare(CombatEnd, 128)
     if CombatEnd > PartyDied { goto RunForGate }
     Text("AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY.")
     QuestZhentilOutpost = CommandantKilled
@@ -259,7 +258,7 @@ RunForGate:
     SetupMonster(Fighter16, distance=2, body=NoBody11)
     Text("YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS.")
     ClearMonsters()
-    LoadMonster(Guard, count=6, icon=11)
+    LoadMonster(Guard, count=6, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto CaughtFleeing }
     Text("YOU ESCAPE FROM THE OUTPOST.")
@@ -297,7 +296,7 @@ NightAmbush:
     Portrait = NoseguardHelmet
     SetupMonster(Fighter16, distance=0, body=LeatherHarness)
     ClearMonsters()
-    LoadMonster(Aides, count=4, icon=11)
+    LoadMonster(Aides, count=4, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto NightFleeGuards }
     goto MoreMenAttack
@@ -316,8 +315,8 @@ NightAmbush:
     ClearMonsters()
 
     SecondWaveFight:
-    LoadMonster(Corporal, count=5, icon=11)
-    LoadMonster(Aides, count=6, icon=11)
+    LoadMonster(Corporal, count=5, icon=Soldier)
+    LoadMonster(Aides, count=6, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto RanAndHid }
     Text("AN ALARM GOES OFF IN THE DISTANCE.")
@@ -506,7 +505,7 @@ FrontGateCheck:
     SetupMonster(Fighter16, distance=2, body=LeatherHarness)
     ApproachTwice()
     ClearMonsters()
-    LoadMonster(Guard, count=11, icon=11)
+    LoadMonster(Guard, count=11, icon=Soldier)
     Combat()
     goto Done
 
@@ -568,8 +567,8 @@ on rest {
 
 on load {
     Scratch6 = 11
-    LoadWalls(1, 2, 9)
-    LoadMap(28, unused=2, icons=255)
+    LoadWalls(Stone, Planks, BlueTile)
+    LoadMap(ZhentilOutpost)
     if Hours >= 14 { Scratch6 = 8 }
     Sky = Scratch6
     SkyInside = 10

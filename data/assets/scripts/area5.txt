@@ -4,8 +4,7 @@ def RollSurprise() {
     Surprise(Scratch8, Scratch9, 0, 0)
     if AlarmEndHour != 0 { Surprise &= PartyIsSurprised }
     if Surprise == BothSurprised { Surprise = NoSurprise }
-    Compare(Surprise, 1)
-    return
+    return Surprise
 }
 
 def CheckAlarmSounding() {
@@ -15,8 +14,7 @@ def CheckAlarmSounding() {
     if AuxRoll < AlarmEndHour { goto AlarmStillOn }
     if TenMinutes < AlarmMinute { goto AlarmStillOn }
     AlarmEndHour = 0
-    Compare(0, 1)
-    return
+    return 0 < 1
 
     AlarmStillOn:
     if Search == Searching { goto SayAlarmSounding }
@@ -28,8 +26,7 @@ def CheckAlarmSounding() {
     Delay()
 
     AlarmActive:
-    Compare(1, 0)
-    return
+    return 1 < 0
 }
 
 def StartAlarm() {
@@ -48,8 +45,7 @@ def AskTakeIt() {
 YesNoMenu:
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 
 def WaitReturnPressed() {
     Scratch9 = Menu("PRESS BUTTON OR <RETURN> TO CONTINUE")
@@ -68,11 +64,11 @@ def SetSkyByHour() {
 on move {
     CastleRoomFlags &= KitchenOverseer|Scribes|EmptyScriptorium|CadornaEvidenceFound|TyranthraxusNote|BarbarianReportSeen|BarracksGiantsMet
     if LeftMap == 0 { goto OnStep }
-    if Geo == 3 { Scratch10 = ByFacing9AEB[Facing] }
-    if Geo == 4 { Scratch10 = ByFacing9AEF[Facing] }
-    if Geo == 5 { Scratch10 = ByFacing9AF3[Facing] }
-    if Geo == 6 { Scratch10 = ByFacing9AF7[Facing] }
-    LoadMap(Scratch10, unused=2, icons=255)
+    if Geo == ValjevoCastle3 { Scratch10 = ByFacing9AEB[Facing] }
+    if Geo == ValjevoCastle4 { Scratch10 = ByFacing9AEF[Facing] }
+    if Geo == ValjevoGrounds { Scratch10 = ByFacing9AF3[Facing] }
+    if Geo == ValjevoCastle6 { Scratch10 = ByFacing9AF7[Facing] }
+    LoadMap(Scratch10)
     CallStepForward()
     HoldMove = SkipMove
     exit
@@ -88,7 +84,7 @@ on move {
 
     ThornHedge:
     Text("THERE IS A HEDGE WITH POISONOUS THORNS IN THAT DIRECTION. DO YOU WANT TO TRY TO CUT THROUGH?")
-    if YesNoMenu() == "NO" { exit }
+    if YesNoMenu() != "YES" { exit }
     Print(" AS YOU SLICE THROUGH SOMEONE IS PRICKED BY A THORN.")
     Damage(128, 1, 1, 200, 0)
     CallStepForward()
@@ -97,8 +93,7 @@ on move {
 }
 
 on step {
-    CheckAlarmSounding()
-    if (<) { goto SpecialSquare }
+    if CheckAlarmSounding() { goto SpecialSquare }
     if Cell has Special { goto SpecialSquare }
     Scratch1 = 2
     if Search != Searching { Scratch1 = 20 }
@@ -139,7 +134,7 @@ Disorient:
     Scratch1 = 3 + Scratch10
     PartyX = DestX[Scratch10]
     PartyY = DestY[Scratch10]
-    LoadMap(Scratch1, unused=2, icons=255)
+    LoadMap(Scratch1)
     CallRedraw()
     exit
 
@@ -162,8 +157,7 @@ StepBack:
 
 GateGiants:
     if CastleDeedFlags has PasswordGiants { exit }
-    RollSurprise()
-    if Surprise > PartyIsSurprised { goto SurpriseGiants }
+    if RollSurprise() > PartyIsSurprised { goto SurpriseGiants }
     Surprise = NoSurprise
     Text("THREE GIANTS STEP UP TO YOU.")
     goto GiantsMenu
@@ -306,7 +300,7 @@ MageBegs:
     Morale = 50
     Surprise = NoSurprise
     ClearMonsters()
-    LoadMonster(AlHyamDazid, count=1, icon=14)
+    LoadMonster(AlHyamDazid, count=1, icon=Nomad)
     Combat()
     AfterCombat()
     CastleFlags2 |= CaptiveMage
@@ -404,10 +398,10 @@ ThroneRoom:
     Text("HE SEEMS TO COLLAPSE. 'ALL RIGHT. I'M NOT TYRANTHRAXUS. HE JUST HIRED ME TO IMPERSONATE HIM. IT'S NOT A BAD LIFE, BUT, HEY! I CAN TELL WHICH WAY THE WIND'S BLOWING.'")
     WaitReturnPressed()
     Text("'JUST LET ME GO, OKAY?")
-    if YesNoMenu() == "NO" { goto FightImpostor }
+    if YesNoMenu() != "YES" { goto FightImpostor }
     Text("HE RUNS OUT OF THE HALL. THERE IS TREASURE ALL ABOUT. ")
     CastleFlags |= FakeTyranthraxus
-    if AskTakeIt() == "NO" { goto Done }
+    if AskTakeIt() != "YES" { goto Done }
     ClearMonsters()
     Treasure(gems=8, jewelry=1)
     Combat()
@@ -433,7 +427,7 @@ FightImpostor:
     Morale = 60
     ClearMonsters()
     LoadMonster(Tyranithraxus92, count=1, icon=ThLvlFighter)
-    LoadMonster(ThLvlThief93, count=2, icon=12)
+    LoadMonster(ThLvlThief93, count=2, icon=Rogue)
     Treasure(gems=8, jewelry=1)
     Combat()
     AfterCombat()
@@ -443,8 +437,9 @@ FightImpostor:
 on rest {
     L_ABF0:
     RollSurprise()
-    EncounterMenu(GiantSnake, distance=2, closeup=GiantSnake, result=Scratch10, combat=Attack, wait=3,
-        flee=Attack, advance=3, parlay=Attack, near="YOU SEE GIANT SNAKES.", escape=15, strength=15)
+    EncounterMenu(GiantSnake, distance=2, closeup=GiantSnake, result=Scratch10, combat=Attack, wait=CloseIn,
+        flee=Attack, advance=CloseIn, parlay=Attack, near="YOU SEE GIANT SNAKES.", escape=15,
+        strength=15)
     goto [Done, FightSnakes, StepBack][Scratch10]
 } # falls into FightSnakes
 

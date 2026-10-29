@@ -23,8 +23,7 @@ on move {
     if Scratch10 == 21 and Facing == South { goto NailedDoor }
     Scratch9 = ExitCellByFacing[Facing]
     if Scratch9 != Scratch10 { goto CheckWellAmbush }
-    AuxMember = WildFlags & WellRungs
-    if AuxMember == 0 { goto WellPlaza }
+    if AuxMember = WildFlags & WellRungs; AuxMember == 0 { goto WellPlaza }
     GroundKind = ByTheWell
     UpdateSky()
 
@@ -139,13 +138,13 @@ on load {
     UpdateSky()
     NoCoords = 0
     if DownTheWell == InWell { goto LoadWellFiles }
-    LoadMap(29, unused=2, icons=255)
-    LoadWalls(3, 20, 1)
+    LoadMap(KutosWell)
+    LoadWalls(Overgrown, Ruins, Stone)
     exit
 
     LoadWellFiles:
-    LoadMap(32, unused=2, icons=255)
-    LoadWalls(18, 17, 1)
+    LoadMap(WellBottom)
+    LoadWalls(DeepCave, RedCave, Stone)
     exit
 }
 
@@ -223,8 +222,8 @@ ReleasedAboveGround:
     InWell = 0
     GroundKind = Surface
     UpdateSky()
-    LoadMap(29, unused=2, icons=255)
-    LoadWalls(3, 20, 1)
+    LoadMap(KutosWell)
+    LoadWalls(Overgrown, Ruins, Stone)
     goto DropOff
 
 BanditTreasure:
@@ -300,8 +299,8 @@ WellSecretDoor:
     YesOrExit()
     InWell = 0
     Text("YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL.")
-    LoadMap(29, unused=255, icons=255)
-    LoadWalls(3, 20, 1)
+    LoadMap(KutosWell)
+    LoadWalls(Overgrown, Ruins, Stone)
     GroundKind = ByTheWell
     UpdateSky()
     CallRedraw()
@@ -321,8 +320,7 @@ WaitingKobolds:
     goto WellFight
 
 WellPlaza:
-    AuxMember = WildFlags & WellRungs
-    if AuxMember != 0 { goto ClimbDownWell }
+    if AuxMember = WildFlags & WellRungs; AuxMember != 0 { goto ClimbDownWell }
 
 MonstersAttack:
     Scratch4 = 0
@@ -340,8 +338,11 @@ WellFight:
     Combat()
     if CombatEnd >= PartyDied { goto AfterCombat }
     if Scratch1 == 250 { goto WellCleared }
-    if Scratch4 < 1 { Text("A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS.") }
-    if Scratch4 == 1 { Text("A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS.") }
+    if Scratch4 < 1 {
+        Text("A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS.")
+    } else if Scratch4 == 1 {
+        Text("A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS.")
+    }
     SetupMonster(Kobold, distance=2, closeup=Kobold)
     Delay()
     Approach()
@@ -482,8 +483,7 @@ KoboldsScamper:
     goto Done
 
 LizardPatrol:
-    AuxMember = WildFlags & FightWon
-    if AuxMember != 0 { exit }
+    if AuxMember = WildFlags & FightWon; AuxMember != 0 { exit }
     SetupMonster(Lizardman, distance=0, closeup=Lizardman)
     Text("A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!")
     PressToContinue()
@@ -497,8 +497,7 @@ LizardPatrol:
     exit
 
 NailedDoor:
-    AuxMember = WildFlags & NailedDoorForced
-    if AuxMember != 0 { exit }
+    if AuxMember = WildFlags & NailedDoorForced; AuxMember != 0 { exit }
     HoldMove = SkipMove
     Text("THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?")
     YesOrExit()
@@ -508,8 +507,7 @@ NailedDoor:
     exit
 
 SeerWoman:
-    AuxMember = WildFlags & SpiritWarning
-    if AuxMember != 0 { goto HiddenArmor }
+    if AuxMember = WildFlags & SpiritWarning; AuxMember != 0 { goto HiddenArmor }
     Picture(WomanInGreen)
     Text("A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE.")
     PressToContinue()
@@ -519,8 +517,7 @@ SeerWoman:
     exit
 
     HiddenArmor:
-    AuxMember = WildFlags & SearchedTreasure
-    if AuxMember != 0 { exit }
+    if AuxMember = WildFlags & SearchedTreasure; AuxMember != 0 { exit }
     if Search != Searching { exit }
     Text("BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?")
     YesOrExit()
@@ -546,9 +543,13 @@ EncounterFight:
     AuxPartyStrength = PartyStrength()
     AuxTemp9 = 0
     Morale = AuxEncTemp
-    if Scratch7 < 1 { AuxPartyStrength = AuxPartyStrength / 3 }
-    if Scratch7 > 1 { AuxPartyStrength = AuxPartyStrength / 4 }
-    if Scratch7 != 1 { goto LoadEncounter }
+    if Scratch7 < 1 {
+        AuxPartyStrength = AuxPartyStrength / 3
+    } else if Scratch7 > 1 {
+        AuxPartyStrength = AuxPartyStrength / 4
+    } else if Scratch7 != 1 {
+        goto LoadEncounter
+    }
     AuxPartyStrength = AuxPartyStrength / 2
     AuxTemp9 = 3
 
@@ -599,8 +600,8 @@ ClimbDownWell:
     YesOrExit()
     InWell = DownTheWell
     Text("YOU SLOWLY CLIMB DOWN THE SLIPPERY RUNGS.")
-    LoadMap(32, unused=2, icons=255)
-    LoadWalls(18, 17, 1)
+    LoadMap(WellBottom)
+    LoadWalls(DeepCave, RedCave, Stone)
     goto WellSecretDoor
 
 PlazaWander:
@@ -655,8 +656,7 @@ def ShowKobolds() {
 }
 
 def ExitIfWellCleared() {
-    AuxMember = WildFlags & WellRungs
-    if AuxMember != 0 { exit }
+    if AuxMember = WildFlags & WellRungs; AuxMember != 0 { exit }
     return
 }
 

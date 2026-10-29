@@ -154,8 +154,7 @@ KoboldHorde:
     exit
 
 TwoCaves:
-    Scratch1 = MarkFlags57 & CavesFound
-    if Scratch1 == 0 { goto KoboldsEnterCave }
+    if Scratch1 = MarkFlags57 & CavesFound; Scratch1 == 0 { goto KoboldsEnterCave }
     ClearBox()
     CallClearView()
     Picture(Hill)
@@ -216,7 +215,7 @@ def LeaveWilderness() {
     WallSlot2B = 127
     WallSlot3 = Reset
     WallSlot3B = 127
-    LoadMap(Unchanged, unused=127, icons=127)
+    LoadMap(Unchanged, icons=Overland)
     return
 }
 
@@ -351,7 +350,7 @@ LoadLair:
     WallSlot2B = 145
     WallSlot3 = 145
     WallSlot3B = 145
-    LoadMap(27, unused=2, icons=255)
+    LoadMap(Quagmire)
     PartyX = LairStartX27
     PartyY = LairStartY27
     ClearBox()
@@ -371,8 +370,7 @@ HalflingRemains:
     goto Done
 
 WyvernTreasure:
-    Scratch1 = WyvernLairFlags & WyvernTreasureTaken
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & WyvernTreasureTaken; Scratch1 != 0 { exit }
     Text("YOU HAVE FOUND THE WYVERN'S TREASURE!")
     ClearMonsters()
     Treasure(copper=5000, silver=6000, electrum=2000, gold=1000, gems=3, jewelry=3, items=Random(1))
@@ -381,15 +379,13 @@ WyvernTreasure:
     exit
 
 FerociousWyvern:
-    Scratch1 = WyvernLairFlags & Wyvern1
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & Wyvern1; Scratch1 != 0 { exit }
     SetupMonster(Wyvern, distance=2, closeup=Wyvern)
     Approach()
     Approach()
     Text("YOU HAVE STUMBLED ACROSS A FEROCIOUS WYVERN.  IT CHARGES AND ATTACKS!")
     Morale = 100
-    Scratch1 = WyvernLairFlags & Wyvern2
-    if Scratch1 == 0 { MonsterHit = 254 }
+    if Scratch1 = WyvernLairFlags & Wyvern2; Scratch1 == 0 { MonsterHit = 254 }
     ClearMonsters()
     LoadMonster(Wyvern, count=1, icon=Wyvern)
     Combat()
@@ -399,15 +395,13 @@ FerociousWyvern:
     exit
 
 TerribleWyvern:
-    Scratch1 = WyvernLairFlags & Wyvern2
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & Wyvern2; Scratch1 != 0 { exit }
     SetupMonster(Wyvern, distance=2, closeup=Wyvern)
     Approach()
     Approach()
     Text("A TERRIBLE WYVERN CHARGES TO ATTACK THE PARTY!")
     Morale = 100
-    Scratch1 = WyvernLairFlags & Wyvern1
-    if Scratch1 == 0 { MonsterHit = 254 }
+    if Scratch1 = WyvernLairFlags & Wyvern1; Scratch1 == 0 { MonsterHit = 254 }
     ClearMonsters()
     LoadMonster(Wyvern, count=1, icon=Wyvern)
     Combat()
@@ -417,8 +411,7 @@ TerribleWyvern:
     exit
 
 FourLizards:
-    Scratch1 = WyvernLairFlags & FourLizardsFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & FourLizardsFought; Scratch1 != 0 { exit }
     SetupMonster(GiantLizard, distance=2, closeup=GiantLizard)
     Approach()
     Approach()
@@ -437,8 +430,7 @@ HumanBones:
     exit
 
 LizardsAndMinotaurs:
-    Scratch1 = WyvernLairFlags & MinotaursFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & MinotaursFought; Scratch1 != 0 { exit }
     SetupMonster(GiantLizard, distance=0, closeup=GiantLizard)
     Text("YOU ENTER A CHAMBER WITH FOUR GIANT LIZARDS AND TWO MINOTAURS.  THE MINOTAURS ORDER THE LIZARDS TO ATTACK.")
     Morale = 70
@@ -451,8 +443,7 @@ LizardsAndMinotaurs:
     exit
 
 LairTreasure:
-    Scratch1 = WyvernLairFlags & 32
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & 32; Scratch1 != 0 { exit }
     Text("YOU HAVE FOUND SOME TREASURE.")
     ClearMonsters()
     Treasure(copper=6000, silver=4000, electrum=3000, items=Random(1))
@@ -461,8 +452,7 @@ LairTreasure:
     exit
 
 TwoLizards:
-    Scratch1 = WyvernLairFlags & TwoLizardsFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & TwoLizardsFought; Scratch1 != 0 { exit }
     SetupMonster(GiantLizard, distance=0, closeup=GiantLizard)
     Text("GUARDING THIS CHAMBER ARE TWO GIANT LIZARDS.  AS YOU APPROACH, THEY ATTACK.")
     Morale = 100
@@ -495,8 +485,7 @@ ElfRemains:
     exit
 
 GnollsAndTrolls:
-    Scratch1 = WyvernLairFlags & LastFight
-    if Scratch1 != 0 { exit }
+    if Scratch1 = WyvernLairFlags & LastFight; Scratch1 != 0 { exit }
     SetupMonster(Gnoll, distance=0, closeup=Gnoll)
     Text("IN THIS ROOM ARE SOME GNOLLS AND TROLLS.  THEY ATTACK YOU IMMEDIATELY.")
     Morale = 75
@@ -659,24 +648,21 @@ Done:
     exit
 
 def MarkSitesOnMap() {
-    Scratch1 = MarkFlags57 & CastleFound
-    if Scratch1 != 0 { goto MarkCavesSite }
+    if Scratch1 = MarkFlags57 & CastleFound; Scratch1 != 0 { goto MarkCavesSite }
     ProbeX = 11
     ProbeY = 8
     ProbeCell = 34
     CallLookAhead()
 
     MarkCavesSite:
-    Scratch1 = MarkFlags57 & CavesFound
-    if Scratch1 != 0 { goto MarkThirdSite }
+    if Scratch1 = MarkFlags57 & CavesFound; Scratch1 != 0 { goto MarkThirdSite }
     ProbeX = 6
     ProbeY = 15
     ProbeCell = 48
     CallLookAhead()
 
     MarkThirdSite:
-    Scratch1 = MarkFlags57 & 4
-    if Scratch1 != 0 { return }
+    if Scratch1 = MarkFlags57 & 4; Scratch1 != 0 { return }
     ProbeX = 7
     ProbeY = 23
     ProbeCell = 17
@@ -733,7 +719,7 @@ on load {
     if InLair == InsideLair { goto LoadLairFiles }
     In3D = Overland
     NoCoords = 0
-    LoadMap(6, unused=6, icons=0)
+    LoadMap(QuagmireOverland, icons=Overland)
     if Boss >= YarashBeaten { PatchMap() }
     MarkSitesOnMap()
     exit
@@ -741,8 +727,8 @@ on load {
     LoadLairFiles:
     In3D = Dungeon3D
     NoCoords = 255
-    LoadWalls(17, 17, 17)
-    LoadMap(27, unused=2, icons=255)
+    LoadWalls(RedCave, RedCave, RedCave)
+    LoadMap(Quagmire)
     SkyInside = 8
     exit
 }

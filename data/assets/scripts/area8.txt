@@ -56,7 +56,7 @@ on rest {
 }
 
 on load {
-    LoadMap(0, unused=0, icons=0)
+    LoadMap(NewPhlan, icons=Overland)
     LoadWalls(Reset, Reset, Reset)
     if RestChance == 255 { exit }
     goto NoRestHere
@@ -210,8 +210,11 @@ GiveReward:
     Treasure(gold=Scratch3, platinum=Scratch4, gems=Scratch5, jewelry=Scratch6, items=Scratch7)
     Combat()
     if Scratch1 != 20 { ShowClerk() }
-    if RewardKind == UndeadBounty { goto BivantPenalty }
-    if RewardKind > UndeadBounty { goto ClearingRewards }
+    if RewardKind == UndeadBounty {
+        goto BivantPenalty
+    } else if RewardKind > UndeadBounty {
+        goto ClearingRewards
+    }
 
 MarkQuestPaid:
     QuestBandits[Scratch1] = 255
@@ -625,7 +628,7 @@ FightGuards:
     Surprise = PartyIsSurprised
     ClearMonsters()
     LoadMonster(Level3Mu, count=3, icon=Level3Mu)
-    LoadMonster(Aides, count=6, icon=11)
+    LoadMonster(Aides, count=6, icon=Soldier)
     LoadMonster(ThLvlFighter85, count=5, icon=ThLvlFighter)
     LoadMonster(Corporal, count=Scratch1, icon=Nomad)
     Combat()

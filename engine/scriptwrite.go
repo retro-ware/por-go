@@ -61,6 +61,7 @@ func WriteScript(s *Script, names *ScriptNames) (string, error) {
 	}
 	w.before = scriptFlags(s)
 	w.head = s.headSet()
+	w.returnForms()
 	for i := 0; i < len(s.Code); {
 		end := w.blockEnd(i)
 		var idx []int
@@ -149,8 +150,177 @@ type scriptWriter struct {
 	events   map[int]int  // an event's number by its command
 	defs     map[int]bool // the commands that start a def
 	before   []flagState
-	head     []bool // whether a portrait head is up at each command
+	head     []bool            // whether a portrait head is up at each command
+	callOp   map[int]byte      // by a called label: the If of its first tested call
+	retState map[int]flagState // by a called label: the flags it returns with
+	valueDef map[int]bool      // the called labels whose returns are return X
+	retOp    map[int]byte      // by a return's Compare: the operator its callers test
 	b        strings.Builder
+}
+
+// returnForms finds how the called sections return their result: return X
+// (valueDef: the callers compare X, if Foo() op N) when every return
+// compares the same variable with the same number, or else return A op B
+// (if Foo()) with the operator the first tested call uses (retOp, on
+// every return a walk from the called label reaches).
+func (w *scriptWriter) returnForms() {
+	w.callOp, w.retState, w.valueDef, w.retOp = map[int]byte{}, map[int]flagState{}, map[int]bool{}, map[int]byte{}
+	s := w.s
+	var called []int
+	for i, in := range s.Code {
+		if in.Op == opGosub && len(in.Args) == 1 && in.Args[0].Label && i+1 < len(s.Code) && isIf(s.Code[i+1].Op) {
+			if _, ok := w.callOp[in.Args[0].N]; !ok {
+				w.callOp[in.Args[0].N] = s.Code[i+1].Op
+				called = append(called, in.Args[0].N)
+			}
+		}
+	}
+	sort.Ints(called)
+	for _, l := range called {
+		op := w.callOp[l]
+		s.returnsFrom(l, func(_, c int) bool {
+			if c >= 0 && s.Code[c].Op == opCompare {
+				if _, ok := w.retOp[c]; !ok {
+					w.retOp[c] = op
+				}
+			}
+			return false
+		})
+		st, changed := s.returnFlags(l, map[int]bool{})
+		_, c := s.firstReturn(l)
+		if !changed || c < 0 {
+			continue
+		}
+		isVar := func(a Arg) bool { return (a.Type == 1 || a.Type == 3) && !a.Label }
+		in := s.Code[c] // the first return's comparison is the one
+		switch {
+		case st.kind == opCompare && isVar(st.args[0]) && st.args[1].Type != 0x80 && st.args[1].Type != 0x81 && !isVar(st.args[1]) &&
+			in.Op == opCompare && slices.Equal(in.Args, st.args) && w.sectionOf(c) == l, // a return of its own: return X, else return X op N reads better
+			st.kind == opAnd && in.Op != opCompare && in.Args[2] == st.args[1]:
+			w.retState[l], w.valueDef[l] = st, true
+		}
+	}
+}
+
+// textOp is the operator the text shows for the Compare at c before a
+// return: the if's when it is if A op B { return }, else its return A op
+// B's (retOp, == when no call tests it).
+func (w *scriptWriter) textOp(c int) byte {
+	if c+1 < len(w.s.Code) && isIf(w.s.Code[c+1].Op) && !(c > 0 && isIf(w.s.Code[c-1].Op)) {
+		return w.s.Code[c+1].Op
+	}
+	if op, ok := w.retOp[c]; ok {
+		return op
+	}
+	return opIfEq
+}
+
+// sectionEnd is where the section at label l ends for its returns: a
+// def's or event's block, else the next label.
+func (w *scriptWriter) sectionEnd(l int) int {
+	if _, ok := w.events[l]; ok || w.defs[l] {
+		return w.blockEnd(l)
+	}
+	for j := l + 1; j < len(w.s.Code); j++ {
+		if len(w.labelsAt[j]) > 0 {
+			return j
+		}
+	}
+	return len(w.s.Code)
+}
+
+// sectionOf is the label command c's returns belong to: the def's or
+// event's whose block holds c, else the nearest label above.
+func (w *scriptWriter) sectionOf(c int) int {
+	sec := -1
+	for j := c; j >= 0; j-- {
+		if len(w.labelsAt[j]) == 0 {
+			continue
+		}
+		if _, ok := w.events[j]; ok || w.defs[j] {
+			if w.blockEnd(j) > c {
+				return j
+			}
+			return sec
+		}
+		if sec < 0 {
+			sec = j
+		}
+	}
+	return sec
+}
+
+// valueRet: the return after command c (which leaves the flags st) is
+// its section's return X.
+func (w *scriptWriter) valueRet(c int, st flagState) bool {
+	l := w.sectionOf(c)
+	return w.valueDef[l] && w.retState[l].same(st)
+}
+
+// ret writes the return after the Compare at c: return X, or return A op B.
+func (w *scriptWriter) ret(c int) string {
+	in := w.s.Code[c]
+	st := flagState{opCompare, in.Args, c}
+	if w.valueRet(c, st) {
+		return "return " + w.arg(in.Args[0], "", Arg{}, "")
+	}
+	op, ok := w.retOp[c]
+	if !ok {
+		op = opIfEq
+	}
+	return "return " + w.test(st, op)
+}
+
+// callTest writes the test If op makes on what the section at label l
+// returns: Foo() == "YES" (a menu section), Foo() op N (return X), Foo()
+// or not Foo() (return A op B with that operator); "" when there is none.
+func (w *scriptWriter) callTest(l int, op byte) string {
+	name := w.s.At[l] + "()"
+	if _, items, k, ok := w.s.menuOf(l); ok && (op == opIfEq || op == opIfNe) {
+		return fmt.Sprintf("%s %s %q", name, ifOps[op], items[k])
+	}
+	if w.valueDef[l] {
+		st := w.retState[l]
+		if st.kind == opCompare {
+			return fmt.Sprintf("%s %s %s", name, ifOps[op], w.arg(st.args[1], "", st.args[0], ifOps[op]))
+		}
+		return fmt.Sprintf("%s %s 0", name, ifOps[flipIf(op)])
+	}
+	if _, c := w.s.firstReturn(l); c >= 0 && w.s.Code[c].Op == opCompare && !w.valueRet(c, flagState{opCompare, w.s.Code[c].Args, c}) {
+		switch w.textOp(c) {
+		case op:
+			return name
+		case elseIf(op):
+			return "not " + name
+		}
+	}
+	return ""
+}
+
+// flagsComment says where the flags an (op) test reads come from.
+func (w *scriptWriter) flagsComment(i int, op byte) string {
+	st := w.before[i]
+	if st.kind == 0 {
+		if i > 0 && w.s.Code[i-1].Op == opGosub {
+			return "the flags as " + w.s.At[w.s.Code[i-1].Args[0].N] + "() left them"
+		}
+		return "the flags of the jump here"
+	}
+	if in := w.s.Code[st.at]; in.Op == opGosub && len(in.Args) == 1 && in.Args[0].Label { // set by a called section
+		if t := w.callTest(in.Args[0].N, op); t != "" {
+			return t
+		}
+	}
+	t := w.test(st, op)
+	if t == "" {
+		return ""
+	}
+	if st.at > 0 && isIf(w.s.Code[st.at-1].Op) { // set by a guarded command
+		if u := w.test(w.before[st.at], op); u != "" {
+			return t + " if that ran, else " + u
+		}
+	}
+	return t
 }
 
 // blockEnd is where the section starting at command i ends: at the next
@@ -247,6 +417,12 @@ func (w *scriptWriter) stmt(idx []int, k int, guarded bool) ([]string, int, erro
 	}
 	saves := func(name string) bool { return in.Op == opSave && len(in.Args) == 2 && w.varName(in.Args[1]) == name }
 	switch {
+	case in.Op == opCompare && len(in.Args) == 2 && w.adjacent(idx, k, 2, guarded) && op(k+1) == opReturn:
+		return []string{w.ret(i)}, 2, nil
+	case (in.Op == opAnd || in.Op == opOr) && len(in.Args) == 3 && w.adjacent(idx, k, 2, guarded) && op(k+1) == opReturn &&
+		w.valueRet(i, flagState{opAnd, []Arg{{}, in.Args[2]}, i}):
+		s, err := w.simple(i)
+		return []string{s, "return " + w.arg(in.Args[2], "", Arg{}, "")}, 2, err
 	case saves(varPortrait) && w.adjacent(idx, k, 2, guarded) && op(k+1) == opPicture:
 		b := w.s.Code[idx[k+1]].Args[0]
 		return []string{fmt.Sprintf("ShowPortrait(%s, %s)", w.arg(in.Args[0], "Head", Arg{}, ""), w.arg(b, "Body", Arg{}, ""))}, 2, nil
@@ -358,58 +534,63 @@ func (w *scriptWriter) loop(idx []int, k int) ([]string, int, error) {
 	return w.block(head, body, nil), m - k + 1, nil
 }
 
-// block lays out head { body } [else { other }].
-func (w *scriptWriter) block(head string, body, other []string) []string {
-	if len(body) == 1 && other == nil && len(head)+len(body[0]) < 90 && !strings.HasPrefix(head, "for") {
+// elseBlock is an else if / else of a block.
+type elseBlock struct {
+	head string // "else if ..." or "else"
+	body []string
+}
+
+// block lays out head { body } [else ... { other }].
+func (w *scriptWriter) block(head string, body []string, elses []elseBlock) []string {
+	if len(body) == 1 && elses == nil && len(head)+len(body[0]) < 90 && !strings.HasPrefix(head, "for") {
 		return []string{head + " { " + body[0] + " }"}
 	}
 	out := []string{head + " {"}
 	for _, l := range body {
 		out = append(out, indent+l)
 	}
-	if other != nil {
-		out = append(out, "} else {")
-		for _, l := range other {
+	for _, e := range elses {
+		out = append(out, "} "+e.head+" {")
+		for _, l := range e.body {
 			out = append(out, indent+l)
 		}
 	}
 	return append(out, "}")
 }
 
-// ifStmt writes an if at idx[k]: a comparing command and the If after it,
-// a menu section's call and the If on its answer, or an If on the flags
-// as they are; with the commands the same If guards after it, and an else
-// for the opposite If's.
+// ifStmt writes an if at idx[k]: a comparing command and the If after it
+// (if A == B, if X has Bits, if D = A & B; D != 0, if Carried(X)), a
+// section's call and the If on its result (if Foo() == "YES", if Foo() <
+// 2, if Foo(), if not Foo()), or an If on the flags as they are, (==),
+// with a comment saying what they hold. The commands the same If guards
+// after it make the block; further Ifs on the same flags make else if and
+// else blocks, up to a guarded command that sets the flags.
 func (w *scriptWriter) ifStmt(idx []int, k int) ([]string, int, error) {
 	i := idx[k]
 	in := w.s.Code[i]
 	var lines []string
-	test, p := "", k
-	next := w.adjacent(idx, k, 2, false)
+	test, comment, p := "", "", k
+	var head flagState
+	next := w.adjacent(idx, k, 2, false) && isIf(w.s.Code[i+1].Op)
+	raw := func(op byte) error { // the command, then (op)
+		s, err := w.simple(i)
+		lines = append(lines, s)
+		test = "(" + ifOps[op] + ")"
+		return err
+	}
 	switch {
-	case next && isIf(w.s.Code[i+1].Op) && (in.Op == opCompare || in.Op == opCompareAnd || in.Op == opFindItem):
+	case next && (in.Op == opCompare || in.Op == opCompareAnd || in.Op == opFindItem):
 		op := w.s.Code[i+1].Op
-		if ok, _ := w.before[i].holds(in.Op, in.Args); ok {
-			s, err := w.simple(i) // the flags held it already: the parser would leave it out
-			if err != nil {
+		head = flagState{in.Op, in.Args, i}
+		if test = w.test(head, op); test == "" {
+			if err := raw(op); err != nil {
 				return nil, 0, err
 			}
-			lines = append(lines, s)
-		}
-		test = w.test(flagState{in.Op, in.Args, i}, op)
-		if test == "" {
-			if lines == nil {
-				s, err := w.simple(i)
-				if err != nil {
-					return nil, 0, err
-				}
-				lines = append(lines, s)
-			}
-			test = "(" + ifOps[op] + ")"
 		}
 		p = k + 1
-	case next && isIf(w.s.Code[i+1].Op) && (in.Op == opAnd || in.Op == opOr):
+	case next && (in.Op == opAnd || in.Op == opOr) && len(in.Args) == 3:
 		op := w.s.Code[i+1].Op
+		head = flagState{opAnd, []Arg{{}, in.Args[2]}, i}
 		if in.Op == opAnd && w.varName(in.Args[2]) == hasScratch && (op == opIfEq || op == opIfNe) {
 			word := "has"
 			if op == opIfEq {
@@ -421,66 +602,67 @@ func (w *scriptWriter) ifStmt(idx []int, k int) ([]string, int, error) {
 			if err != nil {
 				return nil, 0, err
 			}
-			lines = append(lines, s)
-			test = w.test(w.before[i+1], op)
+			test = s + "; " + w.test(head, op)
 		}
 		p = k + 1
-	case next && isIf(w.s.Code[i+1].Op) && in.Op == opGosub:
+	case next && in.Op == opGosub && len(in.Args) == 1 && in.Args[0].Label:
 		op := w.s.Code[i+1].Op
-		_, items, ans, ok := w.s.menuOf(in.Args[0].N)
-		if !ok || op != opIfEq && op != opIfNe {
-			return nil, 0, nil
-		}
-		if op == opIfEq {
-			test = fmt.Sprintf("%s() == %q", w.arg(in.Args[0], "", Arg{}, ""), items[ans])
-		} else if len(items) == 2 {
-			test = fmt.Sprintf("%s() == %q", w.arg(in.Args[0], "", Arg{}, ""), items[1-ans])
-		} else {
-			test = fmt.Sprintf("%s() != %q", w.arg(in.Args[0], "", Arg{}, ""), items[ans])
+		if test = w.callTest(in.Args[0].N, op); test == "" {
+			if err := raw(op); err != nil {
+				return nil, 0, err
+			}
+			comment = w.flagsComment(i+1, op)
 		}
 		p = k + 1
 	case isIf(in.Op):
-		test = w.test(w.before[i], in.Op)
-		if test == "" {
-			test = "(" + ifOps[in.Op] + ")"
-		}
+		test = "(" + ifOps[in.Op] + ")"
+		comment = w.flagsComment(i, in.Op)
 	default:
 		return nil, 0, nil
 	}
-	// the run of the same If, then of the opposite one
-	run := func(q int, op byte) ([]int, int, error) {
-		var g []int
-		at := w.before[idx[q]].at
-		for q < len(idx) && w.s.Code[idx[q]].Op == op && w.before[idx[q]].at == at && (len(g) == 0 || len(w.labelsAt[idx[q]]) == 0 && idx[q] == idx[q-1]+1) {
-			if q+1 >= len(idx) || idx[q+1] != idx[q]+1 || len(w.labelsAt[idx[q+1]]) > 0 {
-				return nil, 0, fmt.Errorf("an if without its command")
-			}
-			g = append(g, idx[q+1])
-			q += 2
+	// the runs of Ifs on these flags, each with the commands it guards
+	type seg struct {
+		op byte
+		g  []int
+	}
+	var segs []seg
+	q, broken := p, false
+	for q < len(idx) && isIf(w.s.Code[idx[q]].Op) && !broken && (q == p || len(w.labelsAt[idx[q]]) == 0 && idx[q] == idx[q-1]+1) {
+		if q+1 >= len(idx) || idx[q+1] != idx[q]+1 || len(w.labelsAt[idx[q+1]]) > 0 {
+			return nil, 0, fmt.Errorf("an if without its command")
 		}
-		return g, q, nil
+		op := w.s.Code[idx[q]].Op
+		if len(segs) == 0 || segs[len(segs)-1].op != op {
+			segs = append(segs, seg{op, nil})
+		}
+		segs[len(segs)-1].g = append(segs[len(segs)-1].g, idx[q+1])
+		g := idx[q+1] // a guarded command that sets the flags ends the chain
+		broken = g+1 < len(w.before) && w.before[g+1].at != w.before[g].at
+		q += 2
 	}
-	op := w.s.Code[idx[p]].Op
-	g, q, err := run(p, op)
+	body, err := w.stmts(segs[0].g, true)
 	if err != nil {
 		return nil, 0, err
 	}
-	body, err := w.stmts(g, true)
-	if err != nil {
-		return nil, 0, err
-	}
-	var other []string
-	if q < len(idx) && w.s.Code[idx[q]].Op == elseIf(op) && w.before[idx[q]].at == w.before[idx[p]].at && len(w.labelsAt[idx[q]]) == 0 && idx[q] == idx[q-1]+1 {
-		g2, q2, err := run(q, elseIf(op))
+	var elses []elseBlock
+	for n, sg := range segs[1:] {
+		h := "else if (" + ifOps[sg.op] + ")"
+		if n == len(segs)-2 && sg.op == elseIf(segs[n].op) {
+			h = "else"
+		} else if head.kind == opCompare {
+			h = "else if " + w.test(head, sg.op)
+		}
+		b, err := w.stmts(sg.g, true)
 		if err != nil {
 			return nil, 0, err
 		}
-		if other, err = w.stmts(g2, true); err != nil {
-			return nil, 0, err
-		}
-		q = q2
+		elses = append(elses, elseBlock{h, b})
 	}
-	return append(lines, w.block("if "+test, body, other)...), q - k, nil
+	out := w.block("if "+test, body, elses)
+	if comment != "" {
+		out[0] += " # " + comment
+	}
+	return append(lines, out...), q - k, nil
 }
 
 // test writes the test If op makes on the flags st, or "" when the
@@ -567,6 +749,14 @@ func (w *scriptWriter) simple(i int) (string, error) {
 		return fmt.Sprintf("Call(0x%04X)", a[0].N), nil
 	case in.Op == opNewECL && n == 1:
 		return "NewECL(" + w.arg(a[0], "Area", Arg{}, "") + ")", nil
+	case in.Op == opCompare && n == 2:
+		return fmt.Sprintf("Compare(%s, %s)", beside(0, 1, "=="), beside(1, 0, "==")), nil
+	case in.Op == opLoadMap && n == 3: // the second operand is unused, the third is 255 or loads the icons
+		s := "LoadMap(" + w.arg(a[0], "Map", Arg{}, "")
+		if a[2] != (Arg{N: 0xFF}) {
+			s += ", icons=" + w.arg(a[2], "MapIcons", Arg{}, "")
+		}
+		return s + ")", nil
 	case in.Op == opTreasure && n == 8:
 		var parts []string
 		for k, l := range treasureLabels {
@@ -718,8 +908,8 @@ func (w *scriptWriter) number(v int, kind string, other Arg, op string) string {
 	if name == "" || w.taken[strings.Trim(name, "~()")] || strings.ContainsAny(name, "|~") && w.anyTaken(name) {
 		return strconv.Itoa(v)
 	}
-	if _, isArea := w.names.kindValue("Area", name); isArea && kind != "Area" && varKinds[w.varName(other)] != "Area" {
-		return strconv.Itoa(v)
+	if _, isArea := w.names.kindValue("Area", name); isArea && kind == "" && varKinds[w.varName(other)] == "" {
+		return strconv.Itoa(v) // an area's name beside a plain variable would read as the area
 	}
 	return name
 }

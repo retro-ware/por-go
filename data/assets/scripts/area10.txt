@@ -64,17 +64,16 @@ on rest {
 on load {
     WallSplitA = 1
     WallSplitB = 1
-    LoadMap(10, unused=2, icons=255)
-    LoadWalls(21, 22, 20)
+    LoadMap(ValhingenGraveyard)
+    LoadWalls(Graveyard, Graveyard2, Ruins)
     SetSkyShade = 8
     if VisitStage == NotEntered { SavedGroundShade = SetGroundShade }
     SetGroundShade = 11
     CallRedraw()
     NoCoords = 0
-    Compare(VisitStage, 0)
     if VisitStage > NotEntered { exit }
-    SoundParamA = 72
-    SoundParamB = 189
+    UnusedB8 = 72
+    UnusedB9 = 189
     PartyY = 4
     PartyX = 0
     Facing = East
@@ -83,26 +82,29 @@ on load {
     PartyPower = PartyPower / 2
     if UndeadKillTable < PartyPower {
         SkeletonGroup = PartyPower - UndeadKillTable
-    } else {
+    } else if UndeadKillTable >= PartyPower {
         SkeletonGroup = 0
+    } else if UndeadKillTable == PartyPower {
+        SkeletonsGone = 1
     }
-    if UndeadKillTable == PartyPower { SkeletonsGone = 1 }
     SkeletonCount = SkeletonGroup
     PartyPower = PartyPower / 2
     if ZombieStrength < PartyPower {
         ZombieGroup = PartyPower - ZombieStrength
-    } else {
+    } else if ZombieStrength >= PartyPower {
         ZombieGroup = 0
+    } else if ZombieStrength == PartyPower {
+        ZombiesGone = 1
     }
-    if ZombieStrength == PartyPower { ZombiesGone = 1 }
     ZombieCount = ZombieGroup
     PartyPower = PartyPower / 2
     if WightStrength < PartyPower {
         WightGroup = PartyPower - WightStrength
-    } else {
+    } else if WightStrength >= PartyPower {
         WightGroup = 0
+    } else if WightStrength == PartyPower {
+        WightsGone = 1
     }
-    if WightStrength == PartyPower { WightsGone = 1 }
     WightCount = WightGroup
     WightsTotal = WightCount
     if WightGroup > 4 { WightGroup = 4 }
@@ -264,8 +266,8 @@ GiantZombieLair:
     Scratch1 = 0
     if ZombieCount >= 16 { Scratch1 = 15 }
     ClearMonsters()
-    LoadMonster(JujuZombie, count=1, icon=35)
-    if Scratch1 != 0 { LoadMonster(Zombie, count=Scratch1, icon=35) }
+    LoadMonster(JujuZombie, count=1, icon=Zombie)
+    if Scratch1 != 0 { LoadMonster(Zombie, count=Scratch1, icon=Zombie) }
     Combat()
     CheckFled()
     if Scratch1 == 2 { goto FleeRandomly }
@@ -419,9 +421,9 @@ SkeletonLairEntry:
     if SkeletonsGone == 0 { exit }
 
     SkeletonMakerMenu:
-    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=3, flee=Flee,
-        advance=3, parlay=Talk, near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS.",
-        escape=0, strength=0)
+    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=CloseIn,
+        flee=Flee, advance=CloseIn, parlay=Talk,
+        near=" YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS.", escape=0, strength=0)
     goto [Done, SkeletonMakerSurprised, FleeRandomly, SkeletonMakerNotices][Scratch1]
 
 SkeletonMakerSurprised:
@@ -474,8 +476,8 @@ ZombieLairEntry:
     if ZombiesGone == 0 { exit }
 
     ZombieMakerMenu:
-    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=3, flee=Flee,
-        advance=3, parlay=Talk,
+    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=CloseIn,
+        flee=Flee, advance=CloseIn, parlay=Talk,
         near="IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES.",
         escape=0, strength=0)
     goto [Done, ZombieMakerSurprised, FleeRandomly, ZombieMakerNotices][Scratch1]
@@ -565,9 +567,9 @@ WightLairEntry:
     if WightsGone == 0 { exit }
 
     WightMakerMenu:
-    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=3, flee=Flee,
-        advance=3, parlay=Talk, near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT.", escape=0,
-        strength=0)
+    EncounterMenu(Spectre, distance=0, closeup=Spectre, result=Scratch1, combat=Mirror, wait=CloseIn,
+        flee=Flee, advance=CloseIn, parlay=Talk, near="YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT.",
+        escape=0, strength=0)
     goto [Done, WightMakerSurprised, FleeRandomly, WightMakerNotices][Scratch1]
 
 WightMakerSurprised:
@@ -838,9 +840,13 @@ RandomEncounter:
     goto [SkeletonAttack, ZombieAttack, WightAttack][Scratch9]
 
     SurpriseCheck:
-    if Surprise > MonstersAreSurprised { goto PartyConfronted }
-    if Surprise == MonstersAreSurprised { goto PartySneaksUp }
-    if Surprise < MonstersAreSurprised { goto FindUndead }
+    if Surprise > MonstersAreSurprised {
+        goto PartyConfronted
+    } else if Surprise == MonstersAreSurprised {
+        goto PartySneaksUp
+    } else if Surprise < MonstersAreSurprised {
+        goto FindUndead
+    }
 
     PartyConfronted:
     MaxDist = 0
@@ -852,7 +858,7 @@ RandomEncounter:
     $AuxText = "YOU HAVE MANAGED TO SNEAK UP ON SOME "
     $AuxNameCopy8 = $AuxMonsterName
     EncounterMenu(Scratch5, distance=MonsterDist, closeup=Scratch5, result=Scratch1, combat=Mirror,
-        wait=Attack, flee=Flee, advance=3, parlay=Talk, near=$AuxText, escape=0, strength=0)
+        wait=Attack, flee=Flee, advance=CloseIn, parlay=Talk, near=$AuxText, escape=0, strength=0)
     goto [Done, StartFight, FleeRandomly, PartyNoticed][Scratch1]
 
 PartyNoticed:
@@ -904,11 +910,15 @@ RedrawExit:
 
 LoadRandomUndead:
     Scratch6 = Scratch7 * 4
-    LoadMonster(Zombie, count=Scratch6, icon=35)
+    LoadMonster(Zombie, count=Scratch6, icon=Zombie)
     Scratch1 = Random(4)
-    if Scratch1 < 2 { LoadMonster(JujuZombie, count=2, icon=35) }
-    if Scratch1 > 2 { LoadMonster(Ghoul, count=2, icon=Ghoul) }
-    if Scratch1 == 2 { LoadMonster(Mummy, count=1, icon=Mummy) }
+    if Scratch1 < 2 {
+        LoadMonster(JujuZombie, count=2, icon=Zombie)
+    } else if Scratch1 > 2 {
+        LoadMonster(Ghoul, count=2, icon=Ghoul)
+    } else if Scratch1 == 2 {
+        LoadMonster(Mummy, count=1, icon=Mummy)
+    }
     goto FightGroup
 
 def WaitReturnPressed() {

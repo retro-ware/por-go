@@ -283,7 +283,7 @@ Enter3DSetup:
     WallSlot2B = 127
     WallSlot3 = Reset
     WallSlot3B = 127
-    LoadMap(Unchanged, unused=127, icons=127)
+    LoadMap(Unchanged, icons=Overland)
     return
 
 RandomEncounterCheck:
@@ -421,7 +421,7 @@ LairLoad:
     WallSlot2B = 136
     WallSlot3 = 151
     WallSlot3B = 151
-    LoadMap(26, unused=2, icons=255)
+    LoadMap(Wilderness)
     SkyInside = 11
     PartyX = LairStartX26
     PartyY = LairStartY26
@@ -439,8 +439,7 @@ GroveEdge:
     exit
 
 SplashingPool:
-    Scratch1 = LairFightFlags & PoolFight
-    if Scratch1 != 0 { exit }
+    if Scratch1 = LairFightFlags & PoolFight; Scratch1 != 0 { exit }
     Text("NEAR YOU IS A POOL OF WATER.  SOMEONE OR THING IS SPLASHING IN THE POOL.  WILL YOU APPROACH THE POOL?")
     Scratch1 = Menu("APPROACH", "LEAVE")
     goto [PoolLizardMen, Done][Scratch1]
@@ -450,14 +449,13 @@ PoolLizardMen:
     Text("YOU SEE SOME LIZARD MEN SWIMMING IN THE POOL.  UPON SEEING YOU THEY ATTACK!")
     WaitReturnPressed()
     ClearMonsters()
-    LoadMonster(Lizardman, count=6, icon=57)
+    LoadMonster(Lizardman, count=6, icon=Lizardman)
     Combat()
     LairFightFlags |= PoolFight
     exit
 
 DisplacerAmbush:
-    Scratch1 = LairFightFlags & DisplacersFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = LairFightFlags & DisplacersFought; Scratch1 != 0 { exit }
     SetupMonster(DisplacerBeast, distance=0, closeup=DisplacerBeast)
     Text("AS YOU WALK THROUGH THE TRESS YOU ARE AMBUSHED BY TWO DISPLACER BEASTS.")
     Surprise = PartyIsSurprised
@@ -468,8 +466,7 @@ DisplacerAmbush:
     exit
 
 ChainedKobolds:
-    Scratch1 = LairFightFlags & KoboldPrisoners
-    if Scratch1 != 0 { exit }
+    if Scratch1 = LairFightFlags & KoboldPrisoners; Scratch1 != 0 { exit }
     SetupMonster(Kobold, distance=0, closeup=Kobold)
     Text("AS YOU ENTER THE ROOM YOU SEE FOUR KOBOLDS CHAINED TO THE WALL.  ONE OF THEM SAYS 'RELEASE US, OR THE LIZARD MEN WILL EAT US!'  WHAT WILL YOU DO?")
     Scratch1 = Menu("RELEASE", "ATTACK", "LEAVE")
@@ -490,37 +487,34 @@ StenchWest:
     exit
 
 MutantLizardHut:
-    Scratch1 = LairFightFlags & MutantsFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = LairFightFlags & MutantsFought; Scratch1 != 0 { exit }
     SetupMonster(Lizardman, distance=0, closeup=Lizardman)
     Text("YOU ENTER A HUT THAT IS COVERED IN FILTH.  STANDING IN A POOL OF BLACK MUCK ARE TWO HORRIBLY MUTATED LIZARD MEN.  THEY LUNGE OUT AND ATTACK THE PARTY.")
     ClearMonsters()
-    LoadMonster(MutantLizMan, count=2, icon=57)
+    LoadMonster(MutantLizMan, count=2, icon=Lizardman)
     Combat()
     if CombatEnd > PartyDied { goto StepBack }
     LairFightFlags |= MutantsFought
     exit
 
 LizardHut:
-    Scratch1 = LairFightFlags & HutLizardMenFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = LairFightFlags & HutLizardMenFought; Scratch1 != 0 { exit }
     SetupMonster(Lizardman, distance=0, closeup=Lizardman)
     Text("INSIDE THIS HUT ARE FOUR LIZARD MEN.  THEY ATTACK YOU IMMEDIATELY.")
     ClearMonsters()
-    LoadMonster(Lizardman, count=4, icon=57)
+    LoadMonster(Lizardman, count=4, icon=Lizardman)
     Combat()
     if CombatEnd > PartyDied { goto StepBack }
     LairFightFlags |= HutLizardMenFought
     exit
 
 LargeLizardMen:
-    LairFightFlags &= LargeLizardMenFought
-    if LairFightFlags != 0 { exit }
+    if LairFightFlags &= LargeLizardMenFought; LairFightFlags != 0 { exit }
     SetupMonster(Lizardman, distance=0, closeup=Lizardman)
     Text("IN THIS ROOM THERE ARE FOUR LARGE LIZARD MEN.  AS YOU ENTER ONE OF THEM YELLS 'KILL' AND THEY ATTACK.")
     MonsterHit = 252
     ClearMonsters()
-    LoadMonster(Lizardman, count=4, icon=57)
+    LoadMonster(Lizardman, count=4, icon=Lizardman)
     Combat()
     MonsterHit = 0
     if CombatEnd > PartyDied { goto StepBack }
@@ -554,7 +548,7 @@ LeaveLairAsk:
 
 LeaveLair:
     In3D = Overland
-    LoadMap(5, unused=5, icons=0)
+    LoadMap(WildernessOverland, icons=Overland)
     InLair = OutsideLair
     CallRedraw()
     NewECL(Wilderness)
@@ -798,8 +792,7 @@ def PatchPyramidTiles() {
 
     CheckMarker4:
     if Mark4 != 0 { goto ShowMarker4 }
-    Scratch9 = MarkFlags4 & KoboldRaidWon
-    if Scratch9 != 0 { goto ShowMarker4 }
+    if Scratch9 = MarkFlags4 & KoboldRaidWon; Scratch9 != 0 { goto ShowMarker4 }
     if Mark4Off != 0 { return }
 
     ShowMarker4:
@@ -830,7 +823,7 @@ on load {
     if InLair == InsideLair { goto LairSetup }
     In3D = Overland
     NoCoords = 0
-    LoadMap(5, unused=5, icons=0)
+    LoadMap(WildernessOverland, icons=Overland)
     if Boss < YarashBeaten { exit }
     DrawRiver()
     PatchPyramidTiles()
@@ -840,8 +833,8 @@ on load {
     In3D = Dungeon3D
     NoCoords = 255
     SkyInside = 8
-    LoadWalls(7, 8, 23)
-    LoadMap(26, unused=2, icons=255)
+    LoadWalls(Reeds, Trees, Marsh)
+    LoadMap(Wilderness)
     exit
 }
 

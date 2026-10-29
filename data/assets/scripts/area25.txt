@@ -126,7 +126,7 @@ DragonInDistance:
 DragonCaveEvent:
     ClearBox()
     CallClearView()
-    Picture(32)
+    Picture(Mountains)
     if DragonSeen == SeenLanding { goto LargeCave }
     Text("AS YOU HIKE THROUGH THE MOUNTAINS, A LARGE DRAGON FLYS ABOVE YOU.  IT CIRCLES THEN SWOOPS DOWN AND LANDS IN FRONT OF A CAVE.  IT DISAPPEARS INTO A CAVE.")
     DragonSeen = SeenLanding
@@ -187,8 +187,9 @@ GuardsRideBy:
 
 OutpostRiders:
     if ZhentilMission != PacketReceived { goto KeepRiders }
-    if QuestZhentilOutpost > LeftOutpost { goto KeepRiders }
-    if QuestZhentilOutpost == LeftOutpost {
+    if QuestZhentilOutpost > LeftOutpost {
+        goto KeepRiders
+    } else if QuestZhentilOutpost == LeftOutpost {
         GuardsRideBySeen = 1
         QuestZhentilOutpost = RewardDue
         goto Done
@@ -222,7 +223,7 @@ FightKeepRiders:
     SetupMonster(Fighter16, distance=2, closeup=Kobold)
     ClearBox()
     ClearMonsters()
-    LoadMonster(Corporal, count=12, icon=11)
+    LoadMonster(Corporal, count=12, icon=Soldier)
     Combat()
     if CombatEnd > PartyDied { goto StepBack }
     KeepRidersFought = Yes
@@ -238,7 +239,7 @@ def LeaveWilderness() {
     WallSlot3 = Reset
     WallSlot3B = 127
     In3D = Dungeon3D
-    LoadMap(Unchanged, unused=127, icons=127)
+    LoadMap(Unchanged, icons=Overland)
     return
 }
 
@@ -377,7 +378,7 @@ LoadLair:
     WallSlot2B = 145
     WallSlot3 = 145
     WallSlot3B = 145
-    LoadMap(25, unused=2, icons=255)
+    LoadMap(Mountains)
     PartyX = LairStartX25
     PartyY = LairStartY25
     SkyInside = 8
@@ -392,8 +393,7 @@ LairCell:
         PassageOutside][Scratch10]
 
 TwoBoars:
-    Scratch1 = DragonCaveFlags & TwoBoarsFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & TwoBoarsFought; Scratch1 != 0 { exit }
     SetupMonster(WildBoar, distance=0, closeup=WildBoar)
     Text("OUT OF THE SHADOWS, TWO LARGE WILD BOARS CHARGE.")
     ClearMonsters()
@@ -403,8 +403,7 @@ TwoBoars:
     exit
 
 BoarSow:
-    Scratch1 = DragonCaveFlags & SowFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & SowFought; Scratch1 != 0 { exit }
     SetupMonster(WildBoar, distance=1, closeup=WildBoar)
     Text("NEAR YOU IS A LARGE, WILD BOAR SOW FEEDING HER YOUNG.  AS YOU NEAR SHE GROWLS A WARNING TO STAY AWAY.  WHAT WILL YOU DO?")
     Scratch1 = Menu("APPROACH", "LEAVE")
@@ -423,8 +422,7 @@ ApproachSow:
     exit
 
 ThreeBoars:
-    Scratch1 = DragonCaveFlags & ThreeBoarsFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & ThreeBoarsFought; Scratch1 != 0 { exit }
     SetupMonster(WildBoar, distance=0, closeup=WildBoar)
     Text("AT THE END OF THE PASSAGEWAY ARE THREE LARGE WILD BOARS.  THEY CHARGE AT YOU AND ATTACK!")
     ClearMonsters()
@@ -442,8 +440,7 @@ SoftGround:
     exit
 
 AnkhegVictims:
-    Scratch1 = DragonCaveFlags & AnkhegRemains
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & AnkhegRemains; Scratch1 != 0 { exit }
     Text("THE REMAINS OF SEVERAL OF THE ANHKHEG'S VICTIM.  ADMIST THE DEBRIS IS SOME TREASURE.")
     ClearMonsters()
     Treasure(copper=5000, silver=2000, electrum=500, gems=1)
@@ -452,8 +449,7 @@ AnkhegVictims:
     exit
 
 AnkhegLunges:
-    Scratch1 = DragonCaveFlags & AnkhegFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & AnkhegFought; Scratch1 != 0 { exit }
     SetupMonster(Ankheg, distance=1, closeup=Ankheg)
     Text("FROM THE SOUTH, A LARGE ANHKHEG LUNGES OUT AND ATTACKS THE PARTY.")
     ClearMonsters()
@@ -468,8 +464,7 @@ SnakeSkin:
     exit
 
 GiganticSnake:
-    Scratch1 = DragonCaveFlags & GiantSnakeFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & GiantSnakeFought; Scratch1 != 0 { exit }
     SetupMonster(GiantSnake, distance=1, closeup=GiantSnake)
     Text("A GIGANTIC SNAKE LIES IN FRONT OF YOU.  IT REARS AND ATTACKS.")
     ClearMonsters()
@@ -480,8 +475,7 @@ GiganticSnake:
     exit
 
 SnakeFalls:
-    Scratch1 = DragonCaveFlags & FallingSnakeFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & FallingSnakeFought; Scratch1 != 0 { exit }
     Surprise = PartyIsSurprised
     SetupMonster(GiantSnake, distance=0, closeup=GiantSnake)
     Text("AS YOU WALK INTO THIS ROOM A GIANT SNAKE FALLS ON TOP OF THE PARTY.")
@@ -493,8 +487,7 @@ SnakeFalls:
     exit
 
 ThriKreenBlock:
-    Scratch1 = DragonCaveFlags & ThriKreenPairFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags & ThriKreenPairFought; Scratch1 != 0 { exit }
     SetupMonster(ThriKreen, distance=0, closeup=ThriKreen)
     Text("THERE ARE TWO THRI-KREEN HERE.  THEY BLOCK THE PASSAGE WITH THEIR BODIES.  WHAT WILL YOU DO?")
     Scratch1 = Menu("LEAVE", "ATTACK")
@@ -509,8 +502,7 @@ AttackThriKreen:
     exit
 
 ThriKreenWarriors:
-    Scratch1 = DragonCaveFlags2 & ThriKreenWarriorsFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags2 & ThriKreenWarriorsFought; Scratch1 != 0 { exit }
     SetupMonster(ThriKreen, distance=0, closeup=ThriKreen)
     Text("BEFORE YOU ARE THREE THRI-KREEN WARRIORS.  THEY ATTACK YOU IMMEDIATELY.")
     ClearMonsters()
@@ -521,8 +513,7 @@ ThriKreenWarriors:
     exit
 
 ThriKreenChest:
-    Scratch1 = DragonCaveFlags2 & ThriKreenChestFought
-    if Scratch1 != 0 { exit }
+    if Scratch1 = DragonCaveFlags2 & ThriKreenChestFought; Scratch1 != 0 { exit }
     SetupMonster(ThriKreen, distance=0, closeup=ThriKreen)
     Text("YOU ENTER A CAVE ROOM WITH FOUR THRI-KREEN WARRIORS IN IT.  ON THE FLOOR IS A CHEST WITH TREASURE IN IT.  AS YOU ENTER THEY ATTACK.")
     ClearMonsters()
@@ -540,7 +531,7 @@ PassageOutside:
 
 LeaveLair:
     In3D = Overland
-    LoadMap(4, unused=4, icons=0)
+    LoadMap(MountainsOverland, icons=Overland)
     InLair = OutsideLair
     CallRedraw()
     NewECL(Mountains)
@@ -707,15 +698,15 @@ on load {
     if InLair == InsideLair { goto LoadLairFiles }
     In3D = Overland
     NoCoords = 0
-    LoadMap(4, unused=4, icons=0)
+    LoadMap(MountainsOverland, icons=Overland)
     MarkKeepOnMap()
     exit
 
     LoadLairFiles:
     In3D = Dungeon3D
     NoCoords = 255
-    LoadWalls(17, 17, 17)
-    LoadMap(25, unused=2, icons=255)
+    LoadWalls(RedCave, RedCave, RedCave)
+    LoadMap(Mountains)
     SkyInside = 8
     exit
 }

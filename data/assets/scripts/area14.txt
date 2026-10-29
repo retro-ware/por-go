@@ -106,9 +106,9 @@ AttackThief:
     ClearMonsters()
     Morale = 30
     if ThievesKilled >= 18 {
-        LoadMonster(ThLvlThief51, count=1, icon=12)
+        LoadMonster(ThLvlThief51, count=1, icon=Rogue)
     } else {
-        LoadMonster(StLvlThief, count=1, icon=12)
+        LoadMonster(StLvlThief, count=1, icon=Rogue)
     }
     Combat()
     if CombatEnd > PartyDied { goto FleeBack }
@@ -122,8 +122,7 @@ LootRoom:
     goto [LootPile, CabinetsMenu, RugsAndTapestries, WoodenCabinet, CasketTable, WeaponPile][Scratch9]
 
 LootPile:
-    Scratch1 = RoomsLooted & LootPileTaken
-    if Scratch1 != 0 { goto Done }
+    if Scratch1 = RoomsLooted & LootPileTaken; Scratch1 != 0 { goto Done }
     Text("PILED HERE IS VARIOUS LOOT.  THERE IS A WIDE VARIETY OF NICK NACKS FROM TARNISHED BRONZE CANDLESTICKS TO ONE OR TWO USEFUL ITEMS.")
     Delay()
     ClearMonsters()
@@ -251,8 +250,7 @@ CabinetCAvoidTrap:
     goto CabinetsMenu
 
 RugsAndTapestries:
-    Scratch1 = Rugs & RoomsLooted
-    if Scratch1 < 0 { goto Done }
+    if Scratch1 = Rugs & RoomsLooted; Scratch1 < 0 { goto Done }
     Text("YOU SEE A WIDE COLLECTION OF RUGS AND TAPESTRIES.  TWO OF THEM LOOK EXTRAORDINARY WHILE THE OTHERS LOOK AVERAGE.")
     ClearMonsters()
     Treasure(items=[FineTapestry*2, HugeTapestry*26])
@@ -262,7 +260,6 @@ RugsAndTapestries:
 
 WoodenCabinet:
     Scratch1 = Scrolls & RoomsLooted
-    Compare(Scratch1, 0)
     if Scratch1 > 0 { goto Done }
     Text("IN FRONT OF YOU IS A WOODEN CABINET.  WHAT WILL YOU DO?")
     Scratch1 = Menu("EXAMINE THE CABINET", "LEAVE IT")
@@ -310,8 +307,7 @@ ChooseCasket:
     goto [CasketA, CasketB, CasketC, CasketD][Scratch1]
 
 CasketA:
-    Scratch1 = GemsCasket & CasketsLooted
-    if Scratch1 != 0 { goto CasketEmpty }
+    if Scratch1 = GemsCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketANeedle, CasketAvoidTrap, CasketAOpen][TrapResult]
 
@@ -338,8 +334,7 @@ CasketAvoidTrap:
     goto CasketTable
 
 CasketB:
-    Scratch1 = JewelryCasket & CasketsLooted
-    if Scratch1 != 0 { goto CasketEmpty }
+    if Scratch1 = JewelryCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketBDart, CasketAvoidTrap, CasketBOpen][TrapResult]
 
@@ -361,8 +356,7 @@ CasketBDart:
     goto CasketBOpen
 
 CasketC:
-    Scratch1 = BigGemsCasket & CasketsLooted
-    if Scratch1 != 0 { goto CasketEmpty }
+    if Scratch1 = BigGemsCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketCPowder, CasketAvoidTrap, CasketCOpen][TrapResult]
 
@@ -384,8 +378,7 @@ CasketCPowder:
     goto CasketCOpen
 
 CasketD:
-    Scratch1 = PearlsCasket & CasketsLooted
-    if Scratch1 != 0 { goto CasketEmpty }
+    if Scratch1 = PearlsCasket & CasketsLooted; Scratch1 != 0 { goto CasketEmpty }
     CheckTrap()
     goto [CasketDDarts, CasketAvoidTrap, CasketDOpen][TrapResult]
 
@@ -411,8 +404,7 @@ CasketEmpty:
     goto CasketTable
 
 WeaponPile:
-    Scratch1 = RoomsLooted & WeaponPileTaken
-    if Scratch1 != 0 { goto Done }
+    if Scratch1 = RoomsLooted & WeaponPileTaken; Scratch1 != 0 { goto Done }
     Text("INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?")
     Scratch1 = Menu("TAKE SOME", "SEARCH THEM", "LEAVE THEM")
     goto [TakeWeapons, SearchWeapons, LeaveWeapons][Scratch1]
@@ -471,8 +463,8 @@ WeaponPileAmbush:
     Surprise = PartyIsSurprised
     WeaponPileGasDone = 1
     Treasure(items=[BroadSword2Cursed, ChainMail1, Shield2, ShortSword1, Scimitar1, MorningStar1, Hammer1, Dagger1, Dagger1])
-    if Scratch2 != 0 { LoadMonster(ThLvlThief51, count=Scratch2, icon=12) }
-    if Scratch3 != 0 { LoadMonster(StLvlThief, count=Scratch3, icon=12) }
+    if Scratch2 != 0 { LoadMonster(ThLvlThief51, count=Scratch2, icon=Rogue) }
+    if Scratch3 != 0 { LoadMonster(StLvlThief, count=Scratch3, icon=Rogue) }
     Combat()
     if CombatEnd > PartyDied { goto FleeBack }
     ThievesKilled += Scratch2
@@ -546,8 +538,8 @@ ThiefAmbush:
     Surprise = PartyIsSurprised
     Morale = 60
     ClearMonsters()
-    LoadMonster(StLvlThief, count=15, icon=12)
-    LoadMonster(ThLvlThief51, count=3, icon=12)
+    LoadMonster(StLvlThief, count=15, icon=Rogue)
+    LoadMonster(ThLvlThief51, count=3, icon=Rogue)
     Combat()
     if CombatEnd > PartyDied { goto FleeBack }
     ThievesKilled += 15
@@ -555,16 +547,14 @@ ThiefAmbush:
     goto Done
 
 FloorFiles:
-    Scratch1 = FilesFound & Files
-    if Scratch1 != 0 { goto Done }
+    if Scratch1 = FilesFound & Files; Scratch1 != 0 { goto Done }
     Text("ON THE FLOOR HERE YOU FIND SOME IMPORTANT LOOKING FILES.  YOU STUFF THE FILES INTO YOUR JOURNAL UNDER ENTRIES 38 AND 51.")
     Delay()
     FilesFound |= Files
     goto Done
 
 JailCell:
-    Scratch1 = FilesFound & JailCellFight
-    if Scratch1 == 0 { goto JailThugs }
+    if Scratch1 = FilesFound & JailCellFight; Scratch1 == 0 { goto JailThugs }
     Text("YOU ARE IN A ROOM THAT HAS BEEN CONVERTED TO A JAIL CELL.  IT IS EMPTY.")
     goto Done
 
@@ -573,7 +563,7 @@ JailCell:
     SetupMonster(Swordsman11, distance=0, body=RogueDagger)
     Text("YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU.")
     ClearMonsters()
-    LoadMonster(StLvlThief, count=10, icon=12)
+    LoadMonster(StLvlThief, count=10, icon=Rogue)
     Combat()
     FilesFound |= JailCellFight
     if CombatEnd > PartyDied { goto FleeBack }
@@ -585,16 +575,14 @@ JailCell:
     goto Done
 
 SlateMazeNW:
-    Scratch1 = FilesFound & CastleSlate
-    if Scratch1 != 0 { goto Done }
+    if Scratch1 = FilesFound & CastleSlate; Scratch1 != 0 { goto Done }
     FilesFound |= CastleSlate
     Text("ON A NEARBY WALL IS A SLATE.  DRAWN ON THE SLATE IS A COMPLEX MAZE WITH THE WORDS 'NW CASTLE' UNDER IT.  YOU COPY THE CASTLE INTO YOUR JOURNAL UNDER JOURNAL ENTRY 41.")
     Delay()
     goto Done
 
 MapMazeNE:
-    Scratch1 = FilesFound & CastleMap
-    if Scratch1 != 0 { goto Done }
+    if Scratch1 = FilesFound & CastleMap; Scratch1 != 0 { goto Done }
     FilesFound |= CastleMap
     Text("ON THE FLOOR IS A CRUDE MAP.  IT IS A MAP OF A COMPLEX MAZE WITH THE WORDS 'NE CASTLE' UNDER IT.  YOU TAKE THE MAP AND PUT IT IN YOUR JOURNAL UNDER JOURNAL ENTRY 29.")
     Delay()
@@ -724,8 +712,8 @@ on load {
     SkyInside = 10
     if Hours >= 14 { Scratch8 = 8 }
     Sky = Scratch8
-    LoadWalls(1, 3, 5)
-    LoadMap(14, unused=2, icons=255)
+    LoadWalls(Stone, Overgrown, RedBrick)
+    LoadMap(CadornaTextileHouse)
     exit
 }
 

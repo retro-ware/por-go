@@ -16,8 +16,7 @@ MoveToTableSpot:
 def YesNoMenu() {
     Scratch10 = Menu("YES", "NO")
     Text(" ")
-    Compare(Scratch10, 0)
-    return
+    return Scratch10
 }
 
 def TeleportFlash() {
@@ -79,8 +78,7 @@ def DoorToLeft() {
 }
 
 on move {
-    Scratch1 = Cell & 31
-    if Scratch1 == 0 { exit }
+    if Scratch1 = Cell & 31; Scratch1 == 0 { exit }
     if Scratch1 > 11 { exit }
     Scratch1 -= 1
     Scratch10 = Table9C95[Scratch1]
@@ -121,12 +119,12 @@ on load {
     NoCoords = 1
     SkyInside = 9
     if AreaKind == LizardManSwamp { exit }
-    LoadMap(22, unused=2, icons=255)
+    LoadMap(LizardManSwamp)
     if AreaKind == LizardManVillage { exit }
     PartyY = 0
     Facing = South
     PartyX = 15
-    LoadWalls(1, 3, None)
+    LoadWalls(Stone, Overgrown, None)
     exit
 }
 
@@ -167,10 +165,9 @@ PriestEncounter:
     Scratch10 = Parlay(0, 0, 1, 1, 0)
     goto [PriestPeace][Scratch10]
     Scratch10 = Random(2)
-    Compare(Scratch10, 0)
     if Scratch10 != 0 { goto PriestPeace }
     Text("I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?")
-    if YesNoMenu() == "NO" { goto PriestEncounter }
+    if YesNoMenu() != "YES" { goto PriestEncounter }
     Text("YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE.")
     RedrawView()
     CallRedraw()
@@ -293,20 +290,20 @@ def SayYouSurprise() {
 
 FriendlyGroupMenu:
     EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
-        wait=3, flee=Attack, advance=3, parlay=Talk, near="THEY SMILE AT YOU.",
+        wait=CloseIn, flee=Attack, advance=CloseIn, parlay=Talk, near="THEY SMILE AT YOU.",
         mid="THEY WAVE AND SAY 'SAVED!'", far="THE LEADER WAVES AND CALLS TO YOU.",
         escape=AuxMenuChoice, strength=AuxMenuChoice)
     goto EncounterOutcome
 
 HungryGroupMenu:
     EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
-        wait=3, flee=Attack, advance=3, parlay=Attack, near="ONE LICKS ITS LIPS.",
+        wait=CloseIn, flee=Attack, advance=CloseIn, parlay=Attack, near="ONE LICKS ITS LIPS.",
         escape=AuxMenuChoice, strength=AuxMenuChoice)
     goto EncounterOutcome
 
 FlyingGroupMenu:
     EncounterMenu(AuxPartyStrength, distance=Scratch3, closeup=AuxCounter, result=Scratch3, combat=Attack,
-        wait=3, flee=Attack, advance=3, parlay=Attack, near="THEY FLY TOWARD YOU.",
+        wait=CloseIn, flee=Attack, advance=CloseIn, parlay=Attack, near="THEY FLY TOWARD YOU.",
         escape=AuxMenuChoice, strength=AuxMenuChoice)
 
 EncounterOutcome:

@@ -21,8 +21,8 @@ on rest {
 }
 
 on load {
-    LoadMap(18, unused=2, icons=255)
-    LoadWalls(1, 3, 5)
+    LoadMap(PodolPlaza)
+    LoadWalls(Stone, Overgrown, RedBrick)
     NoCoords = 0
     if AreaKind == PodolPlaza { exit }
     if QuestPodalAuction != AuctionOn { goto ResetPatrols }
@@ -82,14 +82,14 @@ StreetSquare:
     if Scratch1 < 3 { goto OverhearRumor }
     if Scratch1 > 21 { goto PatrolMeet }
     if Search == Searching { Compare(Scratch1, 16) }
-    if Scratch1 > 16 { goto PatrolMeet }
+    if (>) { goto PatrolMeet } # Scratch1 > 16 if that ran, else Search > Searching
     goto Done
 
     StreetSquareEarly:
     if PatrolsBeaten >= 9 { goto SlumsCleared9 }
     if Scratch1 == 0 { goto PatrolMeet }
     if Search == Searching { Compare(Scratch1, 18) }
-    if Scratch1 > 18 { goto PatrolMeet }
+    if (>) { goto PatrolMeet } # Scratch1 > 18 if that ran, else Search > Searching
     goto Done
 
     PatrolMeet:
@@ -181,8 +181,8 @@ PatrolEncounterMenu:
     EncMenuMode = 2
     if PatrolsBeaten >= 64 { EncMenuMode = 0 }
     SpotPatrol()
-    EncounterMenu(EncMonster, distance=EncMenuMode, closeup=EncMonster, result=Scratch1, combat=Flee, wait=3,
-        flee=Attack, advance=Mirror, parlay=Talk, near="THE MONSTERS STAND READY",
+    EncounterMenu(EncMonster, distance=EncMenuMode, closeup=EncMonster, result=Scratch1, combat=Flee,
+        wait=CloseIn, flee=Attack, advance=Mirror, parlay=Talk, near="THE MONSTERS STAND READY",
         mid="THE MONSTERS PREPARE", escape=EncDistance, strength=EncDistance)
     Morale = 100
     goto [Done, PatrolFight, PartyFlees, PatrolParlay][Scratch1]

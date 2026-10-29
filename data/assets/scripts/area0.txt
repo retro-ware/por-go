@@ -8,7 +8,7 @@ on move {
     LeavingTown = 1
     CallStepForward()
     HoldMove = SkipMove
-    LoadMap(Keep, unused=255, icons=127)
+    LoadMap(Keep, icons=Overland)
     EnterArea(Slums)
 
     InsideTown:
@@ -83,13 +83,13 @@ on load {
     LeavingTown = 0
     NoCoords = 0
     NoCoords = 0
-    LoadMap(0, unused=0, icons=0)
+    LoadMap(NewPhlan, icons=Overland)
     LoadWalls(Reset, Reset, Reset)
     if RestChance != 255 { NoRestHere() }
     if TownEntered == 0 { NoRestHere() }
     TownEntered = 1
-    SoundParamA = 72
-    SoundParamB = 189
+    UnusedB8 = 72
+    UnusedB9 = 189
     if TourDone < 1 { goto CityTour }
     exit
 }
@@ -111,10 +111,13 @@ PierBoat:
     Text("YOU BOARD A BOAT.")
     WaitReturnPressed()
     OnBoat = 1
-    LoadMap(Keep, unused=255, icons=127)
+    LoadMap(Keep, icons=Overland)
     if BoatDestination == 0 { EnterArea(SokalKeep) }
-    if BoatDestination < 2 { goto SailToArea27 }
-    if BoatDestination > 2 { goto SailToArea26 }
+    if BoatDestination < 2 {
+        goto SailToArea27
+    } else if BoatDestination > 2 {
+        goto SailToArea26
+    }
     MapX = 7
     MapY = 29
     EnterArea(Wilderness)
@@ -169,7 +172,6 @@ TempleOfBaneEvent:
     goto [LeaveBishop, WatchResponds][AuxMenuChoice]
 
     BishopAudience:
-    Compare(DirtenState, 128)
     if DirtenState == AskedToAccompany { goto DirtenStudy }
     ShowPortrait(WhiteBeard, PlateArmor)
     Text("YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR.")
@@ -491,8 +493,8 @@ WatchFightsBack:
     Text("YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!")
     Morale = 99
     ClearMonsters()
-    LoadMonster(ThLvlCleric, count=12, icon=12)
-    LoadMonster(ThLvlFighter41, count=20, icon=11)
+    LoadMonster(ThLvlCleric, count=12, icon=Rogue)
+    LoadMonster(ThLvlFighter41, count=20, icon=Soldier)
     LoadMonster(ThLvlFighter85, count=20, icon=ThLvlFighter)
     Combat()
     if CombatEnd == 1 { Combat1Won = 1 }
@@ -604,7 +606,7 @@ FightWatch:
     ClearMonsters()
     LoadMonster(Level3Mu, count=2, icon=Level3Mu)
     LoadMonster(ThLvlFighter84, count=12, icon=ThLvlFighter)
-    LoadMonster(Aides, count=12, icon=11)
+    LoadMonster(Aides, count=12, icon=Soldier)
     LoadMonster(Nomad, count=12, icon=Nomad)
     Combat()
     WatchCombatDone0 = 1
@@ -795,4 +797,4 @@ TourStopFacing = [3, 3, 3, 3, 2, 2, 3, 0, 3, 3, 2, 2, 3, 3, 3, 3, 3, 3, 0, 0, 1,
 EjectXTable = [3, 10, 2, 12]
 EjectYTable = [11, 10, 0, 3]
 DuelMonsters = [Nomad, StLvlThief, Corporal, Aides, ThLvlFighter41, ThLvlThief51]
-DuelIcons = [11, 13, ThLvlFighter, Nomad, 11, 24, 144]
+DuelIcons = [Soldier, 13, ThLvlFighter, Nomad, Soldier, 24, 144]

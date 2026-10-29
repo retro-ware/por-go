@@ -35,7 +35,7 @@ var operandKinds = map[string][]string{
 	"EncounterMenu": {"Sprite", "", "Picture|Body", "", "Reaction", "Reaction", "Reaction", "Reaction", "Reaction"},
 	"FindItem":      {"Item"},
 	"ShowPortrait":  {"Head", "Body"},
-	"LoadMap":       {"Map"},
+	"LoadMap":       {"Map", "", "MapIcons"},
 	"LoadWalls":     {"Walls", "Walls", "Walls"},
 	"NewECL":        {"Area"},
 }
@@ -47,7 +47,7 @@ var operandKinds = map[string][]string{
 var operandLabels = map[string][]string{
 	"LoadMonster":  {"", "count", "icon"},
 	"SetupMonster": {"", "distance", "closeup|body"},
-	"LoadMap":      {"", "unused", "icons"},
+	"LoadMap":      {"", "", "icons"},
 	"EncounterMenu": {"", "distance", "closeup|body", "result", "combat", "wait", "flee", "advance", "parlay",
 		"near", "mid", "far", "escape", "strength"},
 }

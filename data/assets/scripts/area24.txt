@@ -4,13 +4,13 @@ on move {
     Sky = Scratch6
     if LeftMap == 0 { exit }
     Scratch10 = Facing
-    if 31 == Geo { Scratch10 += 4 }
+    if TempleOutside == Geo { Scratch10 += 4 }
     CallStepForward()
     HoldMove = SkipMove
     Scratch1 = Table99A8[Scratch10]
     if Scratch1 == 26 { SymbolSet = 7 }
     if Scratch1 == 14 { SymbolSet = 3 }
-    LoadMap(Scratch1, unused=2, icons=255)
+    LoadMap(Scratch1)
     if Scratch10 == 1 { goto Done }
     if Scratch10 == 7 { goto Done }
     Scratch5 = Table99B0[Scratch10]
@@ -23,7 +23,7 @@ on move {
 on step {
     Scratch7 = Cell & ~Inside
     Scratch1 = 0
-    if Geo != 31 { goto TempleSquare }
+    if Geo != TempleOutside { goto TempleSquare }
     goto [RandomEncounter, MansionRoom, MansionRoom, MansionEntry, MansionEntry, MansionEntry,
         OgreAndOrcs, GoblinSlaves, OutsideMansion, OrcGuardRoom, HayBeds, CellRoom, ScratchedMessage][Scratch7]
 } # falls into MansionEntry
@@ -67,7 +67,6 @@ RubbleRoom:
     Text("YOU ARE IN A ROOM FILLED WITH RUBBLE AND WASTE.")
     if Search == NotSearching { goto ExitEvent }
     Scratch1 = MansionRoomBits & Tapestry
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     Print("  IN THE RUBBLE YOU SPOT A BEAUTIFUL TAPESTRY.  WILL YOU TAKE IT?")
     Scratch1 = Menu("TAKE", "LEAVE")
@@ -83,7 +82,6 @@ DiningRoom:
     LastRoomVisited = InDiningRoom
     Text("YOU ARE IN THE REMAINS OF A ONCE GREAT DINING ROOM.  FURNITURE LIES BURNED AND BROKEN THROUGHOUT THE ROOM.  ")
     Scratch1 = MansionRoomBits & SkeletonJewelry
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     if Search == NotSearching { goto ExitEvent }
     NewLine()
@@ -103,7 +101,6 @@ GreatHall:
     Text("BEFORE YOU IS A GREAT HALL.  THE FLOOR IS LITTERED WITH ORC TRASH AND THE WALLS HAVE CRUDE BLACK HANDS PAINTED ON THEM.  ")
     LastRoomVisited = InGreatHall
     Scratch1 = MansionRoomBits & TrapDoor
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     SearchFindSecret()
     if AuxFlag != 1 { goto ExitEvent }
@@ -121,7 +118,6 @@ BodiesRoom:
     Text("YOU ARE IN A ROOM THAT IS FILLED WITH THE DEAD BODIES OF THE ORC'S PREVIOUS VICTIMS.  ")
     LastRoomVisited = InBodiesRoom
     Scratch1 = MansionRoomBits & BodyJewelry
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     if Search == NotSearching { goto ExitEvent }
     Print("ADMIST THE BODIES YOU FIND SOME JEWELRY.  WILL YOU TAKE IT?")
@@ -137,7 +133,6 @@ TakeBodiesJewelry:
 
 OgreAndOrcs:
     Scratch1 = MansionRoomBits & OgreFight
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     SetupMonster(Barbarian, distance=0, closeup=Barbarian)
     Text("AS YOU ENTER THE ROOM YOU SEE SIX ORCS LED BY A LARGE OGRE.  THEY LUNGE FOWARD AND ATTACK.")
@@ -153,7 +148,6 @@ OgreAndOrcs:
 
 GoblinSlaves:
     Scratch1 = MansionRoomBits & GoblinSlavesMet
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     SetupMonster(Goblin, distance=0, closeup=Goblin)
     Text("IN THIS ROOM ARE SOME GOBLIN SLAVES THAT ARE COWERING IN THE CORNER.  THEY ALL SCREAM 'PLEASE DON'T KILL US.'  WHAT WILL YOU DO?")
@@ -176,7 +170,6 @@ OutsideMansion:
 
 OrcGuardRoom:
     Scratch1 = MansionFightBits & OrcGuardsFight
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto ExitEvent }
     SetupMonster(Orc, distance=0, closeup=Orc)
     Text("YOU ENTER INTO A FILTHY ROOM.  EIGHT ORC GUARDS ATTACK YOU IMMEDIATELY.")
@@ -198,7 +191,6 @@ HayBeds:
 
 SearchBeds:
     Scratch1 = MansionFightBits & HayBedOrcsFight
-    Compare(Scratch1, 0)
     if Scratch1 != 0 { goto BedsEmpty }
     SetupMonster(Orc, distance=0, closeup=Orc)
     Text("AS YOU SEARCH THE BEDS A GROUP OF ORCS COMES INTO THE ROOM.  THEY ATTACK IMMEDIATELY.")
@@ -238,8 +230,11 @@ SetGuardsPassed:
 
 TempleEntrance:
     if QuestTempleOfBane >= RewardDue { goto ExitEvent }
-    if TempleGuardState == GuardsFought { goto ExitEvent }
-    if TempleGuardState > GuardsFought { goto ExitAmbush }
+    if TempleGuardState == GuardsFought {
+        goto ExitEvent
+    } else if TempleGuardState > GuardsFought {
+        goto ExitAmbush
+    }
     SetupMonster(Orc, distance=0, closeup=Orc)
     Text("YOU STAND IN FRONT OF THE ENTRANCE TO A LARGE SHADOWY TEMPLE.  AN OLD BLIND DECREPIT ORC STANDS OUTSIDE WITH EIGHT ORC GUARDS.")
     if OrcsKnowParty == 1 { goto GuardsLetYouIn }
@@ -286,7 +281,6 @@ TempleInside:
 
 TrapDoorOne:
     Scratch2 = TempleTreasureBits & Spot1
-    Compare(Scratch2, 0)
     if Scratch2 != 0 { goto ExitEvent }
     SearchFindSecret()
     if AuxFlag != 1 { goto ExitEvent }
@@ -298,7 +292,6 @@ TrapDoorOne:
 
 TrapDoorTwo:
     Scratch2 = TempleTreasureBits & Spot2
-    Compare(Scratch2, 0)
     if Scratch2 != 0 { goto ExitEvent }
     SearchFindSecret()
     if AuxFlag != 1 { goto ExitEvent }
@@ -310,7 +303,6 @@ TrapDoorTwo:
 
 TrapDoorThree:
     Scratch2 = TempleTreasureBits & Spot3
-    Compare(Scratch2, 0)
     if Scratch2 != 0 { goto ExitEvent }
     SearchFindSecret()
     if AuxFlag != 1 { goto ExitEvent }
@@ -457,7 +449,7 @@ SpotGroup:
     Print($AuxCounter)
     Print(".")
     EncounterMenu(AuxEncMonster, distance=MonsterDist, closeup=AuxEncDist, result=Scratch1, combat=Flee,
-        wait=3, flee=Attack, advance=Mirror, parlay=Talk, far="THE MONSTERS STAND READY",
+        wait=CloseIn, flee=Attack, advance=Mirror, parlay=Talk, far="THE MONSTERS STAND READY",
         escape=AuxEncChoice, strength=AuxEncChoice2)
     AuxEncValue = 130
     goto [ExitEvent, FightGroup, StepBack, IntimidateGroup][Scratch1]
@@ -698,15 +690,15 @@ on rest {
 on load {
     Scratch6 = 11
     if Hours >= 14 { Scratch6 = 8 }
-    LoadWalls(1, 3, 5)
+    LoadWalls(Stone, Overgrown, RedBrick)
     Sky = Scratch6
     SkyInside = 10
-    if Geo != 24 { goto LoadOutdoorWalls }
-    LoadMap(24, unused=2, icons=255)
+    if Geo != TempleOfBane { goto LoadOutdoorWalls }
+    LoadMap(TempleOfBane)
     exit
 
     LoadOutdoorWalls:
-    LoadMap(31, unused=2, icons=255)
+    LoadMap(TempleOutside)
     exit
 }
 

@@ -37,6 +37,7 @@ const (
 	opIfLe        byte = 0x1A
 	opIfGe        byte = 0x1B
 	opNewECL      byte = 0x20
+	opLoadMap     byte = 0x21
 	opCombat      byte = 0x24
 	opOnGoto      byte = 0x25
 	opOnGosub     byte = 0x26
@@ -109,12 +110,67 @@ func isTerminator(op byte) bool {
 
 // A test (if A == B) reads the comparison flags, which the last comparing
 // command set: Compare, CompareAnd, FindItem, or And/Or (which compare 0
-// with the result). The text does not repeat a comparison the flags
-// already hold: after "if A == B { ... }", "if A < B { ... }" is only the
-// If. What the flags hold is taken from the text: the last comparing
-// command above, through a called section (its state at its return, when
-// every return agrees), and unknown after a goto, exit or return (the
-// flags then come from wherever the script jumped from).
+// with the result). Every if makes its comparison; the forms that test
+// flags set elsewhere say so: else if (the if's comparison), if Foo()
+// (the section's return A op B), if Foo() op N (its return X), if X has
+// Bits and if D = A & B; D op 0 (the And), and (op) for the flags as they
+// are. The flag state is still tracked by the text, for the comments on
+// the last form (flagsComment).
+
+// returnsFrom walks the code a call of the section at label l runs (from
+// l on, following its gotos; an unguarded return, exit or NewECL ends a
+// path) and calls f with each return reached and the command before it
+// (before its If when guarded), until f says to stop.
+func (s *Script) returnsFrom(l int, f func(ret, prev int) bool) {
+	seen := map[int]bool{}
+	var walk func(i int) bool
+	walk = func(i int) bool {
+		for ; i < len(s.Code) && !seen[i]; i++ {
+			seen[i] = true
+			in := s.Code[i]
+			guarded := i > 0 && isIf(s.Code[i-1].Op)
+			switch {
+			case in.Op == opReturn:
+				c := i - 1
+				if guarded {
+					c--
+				}
+				if f(i, c) {
+					return true
+				}
+				if !guarded {
+					return false
+				}
+			case in.Op == opGoto && len(in.Args) == 1 && in.Args[0].Label:
+				if walk(in.Args[0].N) {
+					return true
+				}
+				if !guarded {
+					return false
+				}
+			case (in.Op == opExit || in.Op == opNewECL) && !guarded:
+				return false
+			}
+		}
+		return false
+	}
+	walk(l)
+}
+
+// firstReturn is the first return a call of the section at label l comes
+// back by with a comparing command (Compare, And, Or) before it, and that
+// command; -1 when an unguarded plain return comes first, or none does.
+func (s *Script) firstReturn(l int) (ret, c int) {
+	ret, c = -1, -1
+	s.returnsFrom(l, func(r, p int) bool {
+		if p >= 0 && (s.Code[p].Op == opCompare || (s.Code[p].Op == opAnd || s.Code[p].Op == opOr) && len(s.Code[p].Args) == 3) {
+			ret, c = r, p
+			return true
+		}
+		return r == 0 || !isIf(s.Code[r-1].Op)
+	})
+	return ret, c
+}
 
 // flagState is what the comparison flags hold at a point of the script.
 type flagState struct {

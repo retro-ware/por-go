@@ -1,6 +1,6 @@
 00B1 ProbeCell  # special (unhandled: write ignored, reads 0); area27 sets 113/73/34/48 before Call LookAhead, likely the probed map cell
-00B8 SoundParamA  # special: engine es.scriptVarB8 (stored, unused); area0/10 Save 72 (guess)
-00B9 SoundParamB  # special: engine es.scriptVarB9; area0/10 Save 189 (guess)
+00B8 UnusedB8  # special: the original stores it (DS:84CE) and never reads it; area0/10 set 72
+00B9 UnusedB9  # special: stored at DS:84D0, never read; area0/10 set 189
 00FB ProbeX  # special es.specialFB (reads 0); area25/27 Save MapX then step by facing: square ahead X
 00FC ProbeY  # special es.specialFC; Save MapY then step by facing: square ahead Y
 035F ProbeWall  # special (reads 0, 0x33D is facing); area25-27 compared with a wall table value after Call LookAhead (guess)
