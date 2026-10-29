@@ -67,6 +67,27 @@ func (e *Engine) DevScene(name string) func() {
 			e.AfterCombat()
 			e.DrawMainScreen()
 		}
+	case "parlay": // an encounter's menu, then the talk-style menu a script's Parlay shows after PARLAY
+		return func() { // as opEncounterMenu at distance 0 with a close-up, then the script's Parlay
+			sprite, pic := 1, 1
+			for _, f := range []struct {
+				name string
+				id   *int
+			}{{"SPRIT", &sprite}, {"PIC", &pic}} {
+				if df := e.L.File(e.set.file(f.name)); df != nil && len(df.Entries) > 0 {
+					*f.id = df.Entries[0].ID
+				}
+			}
+			e.es.inEncounterMenu, e.slowText, e.game.Portrait = 1, true, 0xFF
+			e.ShowEncounter(sprite, pic, 0, &e.es.encounterShown)
+			e.msgCol, e.msgRow = 1, 0x11
+			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "A band of kobolds blocks the way.")
+			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "")
+			e.ClearBox(0, promptRow, lastCol, promptRow)
+			e.slowText, e.es.inEncounterMenu = false, 0
+			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
+			e.DrawMainScreen()
+		}
 	case "who": // a member pick on the view, as a script's "Who will search?"
 		return func() { e.SelectCharacter("Who will search?", false, nil) }
 	case "effects":

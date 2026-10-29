@@ -160,7 +160,13 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		pic = engine.ViewWindow.Framed()
 	}
 	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
-		drawBox(dst, frame, p.border.tiles, pic, pk, cx, int(float64(cy)-pk*th/2)/2)
+		pp, py := pk, int(float64(cy)-pk*th/2)/2
+		if v.Window == engine.WinPicture { // the pixel art at twice the pop-ups' scale, as far as the text box and a menu still fit under it; the text box moves down under it
+			pp = max(pk, min(2*pk, float64(int((float64(b.Dy())-pk*(th+7*8))/ph))))
+			py = int(pp*ph/2) + int(pk*4)
+			cy = py + int(pp*ph/2) + int(pk*(4+th/2))
+		}
+		drawBox(dst, frame, p.border.tiles, pic, pp, cx, py)
 	}
 	pane, asking := textPane(v), v.Menu != nil && !v.Command && !noChoice(v)
 	if asking {
