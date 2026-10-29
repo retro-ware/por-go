@@ -1,0 +1,554 @@
+TeleportToDest:
+	GetTable DestX Scratch1 PartyX
+	GetTable DestY Scratch1 PartyY
+	GetTable DestFacing Scratch1 Facing
+	Save 255 HoldMove
+	RedrawView
+	Call CallRedraw
+	Compare Scratch1 3
+	IfEq
+	Goto LizardMenGroup
+	Exit
+
+YesNoMenu:
+	HMenu Scratch10 2 "YES" "NO"
+	Print " "
+	Compare Scratch10 0
+	Return
+
+FlashTeleport:
+	Print "AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH AND YOU SUDDENLY FIND YOURSELF ELSEWHERE."
+
+PressReturn:
+	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	Print " "
+	Return
+
+SearchSecretDoor:
+	AndOr Scratch1 SecretDoorsFound Scratch10
+	IfNe
+	Goto SecretDoorFound
+	Save 0 Scratch10
+
+SearchMemberLoop:
+	LoadCharacter Scratch10
+	Compare SelStatus 0
+	IfEq
+	Goto NextSearcher
+	Save Search Scratch9
+	Compare SelRace 2
+	IfEq
+	Arith 1 Scratch9 Scratch9
+	Compare SelRace 4
+	IfEq
+	Arith 1 Scratch9 Scratch9
+	Random 5 Scratch8
+	Compare Scratch8 Scratch9
+	IfGt
+	Goto NextSearcher
+
+SecretDoorFound:
+	AndOr Scratch1 SecretDoorsFound SecretDoorsFound
+	Print "A SECRET DOOR IS FOUND "
+	GetTable ByFacing9B0F Facing Scratch10
+	Arith Scratch10 Scratch2 Scratch2
+	GetTable Table9B08 Scratch2 Scratch2
+	OnGoto Scratch2 4 DoorInFront DoorToRight DoorBehind DoorToLeft
+	Goto PressReturn
+
+NextSearcher:
+	Arith Scratch10 1 Scratch10
+	Compare Scratch10 8
+	IfLt
+	Goto SearchMemberLoop
+	Return
+
+DoorInFront:
+	Print "IN FRONT OF YOU."
+	Return
+
+DoorToRight:
+	Print "TO YOUR RIGHT."
+	Return
+
+DoorBehind:
+	Print "BEHIND YOU."
+	Return
+
+DoorToLeft:
+	Print "TO YOUR LEFT."
+	Return
+
+event0:
+	AndOr Cell 31 Scratch1
+	IfEq
+	Exit
+	Compare Scratch1 10
+	IfGt
+	Exit
+	Arith 1 Scratch1 Scratch1
+	GetTable Table9C40 Scratch1 Scratch10
+	Compare Scratch10 Facing
+	IfNe
+	Exit
+	Goto BlockUnfoundDoor
+
+event1:
+	AndOr Cell 31 Scratch10
+	GetTable Table9B9F Scratch10 Scratch2
+	GetTable Table9BBB Scratch10 Scratch1
+	OnGoto Scratch2 18 RedrawExit CheckSecretDoor RockRoom FlashTeleportCell DialTeleport LizardMenGroup TortureRoom VatRoom VatLizardAmbush AlchemistLab FindNotebook JunkStoreroom PasswordDoor FountainChamber PumpingRoom AncientMage ColorDial YarashDesk
+	Exit
+
+event2:
+	Save 0 RestEvery
+	Save 10 RestChance
+
+RedrawExit:
+	RedrawView
+	Call CallRedraw
+
+event3:
+	Save 255 Portrait
+	Exit
+
+event4:
+	Compare AreaKind 23
+	IfEq
+	Exit
+	Save 1 NoCoords
+	Save 9 SkyInside
+	LoadFiles 23 2 255
+	Exit
+
+CheckSecretDoor:
+	GetTable Table9C40 Scratch1 Scratch2
+	GetTable Table9C4A Scratch1 Scratch1
+	Gosub SearchSecretDoor
+	Exit
+
+BlockUnfoundDoor:
+	GetTable Table9C4A Scratch1 Scratch1
+	AndOr SecretDoorsFound Scratch1 Scratch10
+	IfEq
+	Save 255 HoldMove
+	Exit
+
+RockRoom:
+	Print "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
+	Gosub PressReturn
+	AndOr TeleporterRockFlags 2 Scratch10
+	IfNe
+	Goto RockRoomMenu
+	OnGoto Search 2 RockRoomTeleport TingleNearBareArea
+
+RockRoomTeleport:
+	Gosub FlashTeleport
+	AndOr TeleporterRockFlags 2 TeleporterRockFlags
+	AndOr TeleporterRockFlags 1 Scratch10
+	IfEq
+	Goto RockTeleportAlt
+	Gosub ToggleRockFlag
+	GetTable Table9CE7 Scratch1 Scratch1
+	Compare Scratch1 255
+	IfEq
+	Goto ExitToArea22North
+	Goto TeleportToDest
+
+RockTeleportAlt:
+	Gosub ToggleRockFlag
+	GetTable Table9CEA Scratch1 Scratch1
+	Goto TeleportToDest
+
+TingleNearBareArea:
+	Print "AS YOU CAREFULLY SEARCH THE ROOM YOU FEEL A STRANGE TINGLE AS YOU GET CLOSE TO A BARE AREA."
+
+RockRoomMenu:
+	HMenu Scratch10 3 "GO BACK" "MOVE ON" "THROW A ROCK"
+	Print " "
+	OnGoto Scratch10 3 GoBack RockRoomTeleport ThrowRock
+
+GoBack:
+	AndOr Cell 63 Scratch1
+	Goto TeleportToDest
+
+ThrowRock:
+	Print "YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!"
+	Gosub ToggleRockFlag
+	AndOr TeleporterRockFlags 2 TeleporterRockFlags
+	Goto RockRoomMenu
+
+ToggleRockFlag:
+	AndOr TeleporterRockFlags 1 Scratch10
+	IfEq
+	Goto SetRockFlag
+	AndOr TeleporterRockFlags 254 TeleporterRockFlags
+	Return
+
+SetRockFlag:
+	AndOr TeleporterRockFlags 1 TeleporterRockFlags
+	Return
+
+FlashTeleportCell:
+	Gosub FlashTeleport
+	Goto TeleportToDest
+
+DialTeleport:
+	Gosub FlashTeleport
+	Compare DialColor 0
+	IfEq
+	Goto ExitToArea22South
+	GetTable Table9DFA DialColor Scratch1
+	Goto TeleportToDest
+
+ExitToArea22South:
+	Save 8 PartyY
+	Goto LeaveToArea22
+
+ExitToArea22North:
+	Save 7 PartyY
+
+LeaveToArea22:
+	Save 15 PartyX
+	Save 1 Facing
+	NewECL 22
+
+LizardMenGroup:
+	AndOr RoomsVisited 1 Scratch10
+	IfNe
+	Goto CheckSecretDoor
+	Save 0 Surprise
+	Print "YOU SEE A GROUP OF FIVE LIZARD MEN. THEY HISS AT YOU."
+	Gosub PressReturn
+	Save 6 Scratch3
+	AndOr SecretDoorsFound 4 Scratch10
+	IfEq
+	Save 30 Scratch3
+	EncounterMenu 57 2 57 Scratch10 0 3 1 1 4 "THEY ARE WARY, BUT NOT HOSTILE." "STANDING READY THEIR LEADER SAYS 'YOU MUST BE THE SERVANTS OF YARASH!'" "THEIR LEADER SAYS 'FOUL SERVANTS OF YARASH!'" Scratch3 Scratch3
+	AndOr RoomsVisited 1 RoomsVisited
+	OnGoto Scratch10 3 RedrawExit LizardMenAttack AfterLizardFight
+	Parlay 15 15 30 50 0 Scratch10
+	Arith Scratch10 SelReaction Scratch10
+	Compare Scratch10 75
+	IfLt
+	Goto LizardMenAttack
+	Print "'SINCE YOU ARE NOT THE SERVANTS OF YARASH, WE WILL NOT KILL YOU. THE ENEMY OF MY ENEMY IS NOT MY ENEMY!'"
+	Goto RedrawExit
+
+LizardMenAttack:
+	Print "'MUTILATING SCUM! WE WILL DIE BEFORE WE LET YOU TWIST US AS YOU HAVE OUR OTHER PEOPLE! BUT YOU WILL DIE FIRST!'"
+	Gosub PressReturn
+	Save 60 Morale
+	ClearMonsters
+	LoadMonster 57 5 57
+	Combat
+	Compare CombatEnd 129
+	IfNe
+	Exit
+
+AfterLizardFight:
+	Save 2 Scratch1
+	Goto TeleportToDest
+
+TortureRoom:
+	AndOr RoomsVisited 2 Scratch10
+	IfNe
+	Goto CheckSecretDoor
+	Print "YOU HAVE ENTERED A ROOM FILLED WITH A HORRIBLE ASSORTMENT OF TORTURE INSTUMENTS. IN THE CENTER IS A LARGE TABLE WITH METAL RESTRAINTS."
+	Gosub PressReturn
+	Print "THE WALLS ARE LINED WITH FLASKS AND BOTTLES CONTAINING POWDERS, OILS, OINTMENTS, AND DRAUGHTS. THESE ARE SURELY OF AN ALCHEMICAL NATURE."
+	AndOr RoomsVisited 2 RoomsVisited
+	Exit
+
+VatRoom:
+	AndOr RoomsVisited 4 Scratch10
+	IfNe
+	Goto CheckSecretDoor
+	Print "YOU HAVE ENTERED A ROOM FILLED WITH LARGE VATS WITH THE SAME OILY BLACK STUFF THAT FLOWS FROM THE FOUNTAIN. THE CHAMBER STINKS. ON THE WALLS ARE SHELVES OF BOTTLES AND FLASKS."
+	AndOr RoomsVisited 4 RoomsVisited
+	Exit
+
+VatLizardAmbush:
+	AndOr RoomsVisited 8 Scratch10
+	CompareAnd Scratch10 0 Search 1
+	IfNe
+	Exit
+	SetupMonster 57 0 57
+	PartySurprise Scratch8 Scratch9
+	Surprise Scratch8 Scratch9 4 1
+	Print "AS YOU ARE POKING AROUND IN THE VATS, A PAIN CRAZED LIZARD MAN SURFACES AND ATTACKS YOU! TWO OTHERS QUICKLY JOIN HIM FROM OTHER VATS."
+	Gosub PressReturn
+	ClearMonsters
+	LoadMonster 58 3 57
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto AfterLizardFight
+	AndOr RoomsVisited 8 RoomsVisited
+	Exit
+
+AlchemistLab:
+	AndOr RoomsVisited 16 Scratch10
+	IfNe
+	Goto CheckSecretDoor
+	Print "YOU HAVE ENTERED WHAT LOOKS LIKE AN ORDINARY ALCHEMISTS LAB... RECENTLY USED."
+	AndOr RoomsVisited 16 RoomsVisited
+	Exit
+
+FindNotebook:
+	AndOr RoomsVisited 32 Scratch10
+	CompareAnd Scratch10 0 Search 1
+	IfNe
+	Exit
+	Print "YOU FIND A NOTEBOOK. A TYPICAL ENTRY READS, 'SUBJECT 213: PROGRESSING WELL, SCARS HEALING, UNABLE TO TALK YET. SUBJECT 214: DIED WHEN TREATED, FAILED AGAIN...'"
+	AndOr RoomsVisited 32 RoomsVisited
+	Exit
+
+JunkStoreroom:
+	Print "YOU ARE IN A STOREROOM HOLDING A VAST COLLECTION OF MAGICAL JUNK."
+	AndOr RoomsVisited2 Scratch1 Scratch10
+	CompareAnd Scratch10 0 Search 1
+	IfNe
+	Exit
+	Print " HOWEVER, HIDDEN AMIDST ALL THIS JUNK YOU FIND SOME TREASURE."
+	Gosub PressReturn
+	AndOr RoomsVisited2 Scratch1 RoomsVisited2
+	ClearMonsters
+	Treasure 0 #04B0 0 #0190 0 0 0 131
+	Combat
+	Exit
+
+PasswordDoor:
+	AndOr RoomsVisited 64 Scratch10
+	CompareAnd Scratch10 0 Facing 1
+	IfNe
+	Exit
+
+AskPassword:
+	LoadFiles 255 16 255
+	Print ""
+	Protection PasswordRunes
+	Print "YOU SEE A SIGN OVER THE DOOR IN FRONT OF YOU. IT SAYS, 'DON'T FORGET THE PASSWORD'. THIS IS FOLLOWED BY SIX DWARVISH RUNES..."
+	NewLine
+	Protection PasswordRunesEnd
+	LoadFiles 255 2 255
+	Gosub PressReturn
+	LoadFiles 1 3 255
+	Print "YOU QUICKLY TRANSLATE THEM AND SAY...?"
+	NewLine
+	InputString 6 str Scratch1
+	Print "DO YOU REALLY MEAN "
+	Print str Scratch1
+	Print "?"
+	Gosub YesNoMenu
+	IfNe
+	Goto AskPassword
+	Compare str Scratch1 "NOKNOK"
+	IfEq
+	Goto RedrawExit
+	Print "SUDDENLY A HIDDEN DOOR BURSTS OPEN AND A HORRIBLE MONSTER BURSTS FORTH SHOUTING 'KIAIAIAIAIAIAIAI!' IT WADES INTO YOU TEARING YOU APART WITH 3-INCH LONG CLAWS."
+	Gosub PressReturn
+	Damage 224 1 1 200 0
+	AndOr RoomsVisited 64 RoomsVisited
+	Exit
+
+FountainChamber:
+	AndOr RoomsVisited 128 Scratch10
+	CompareAnd Scratch10 0 Facing 1
+	IfNe
+	Exit
+	Picture 45
+	Print "YOU HAVE ENTERED THE FOUNTAIN CHAMBER. IN THE CENTER OF THE ROOM A COLUMN OF BLACK FOUL WATER JETS UP THROUGH A CLEAR PIPE AND OUT THE ROOF."
+	Gosub PressReturn
+	Print "ANOTHER PIPE, RUNNING FROM THE WALL ACROSS AND TO YOUR RIGHT, PUMPS IN STREAMS OF THE FOUL LIQUID. ALL ABOUT THE ROOM ARE VALVES, GAUGES, PETCOCKS, AND PIPES."
+	Save 0 Scratch3
+	Save 0 Scratch4
+
+FountainMenu:
+	Gosub PressReturn
+	Print "WHAT DO YOU DO?"
+	HMenu Scratch1 2 "MOVE QUICKLY AWAY" "DESTROY THE EQUIPMENT"
+	OnGoto Scratch1 1 MoveAway
+	Compare Scratch4 0
+	IfNe
+	Arith 1 Scratch4 Scratch4
+	Compare Scratch4 3
+	IfGt
+	Goto FountainExplodes
+
+DestroyEquipment:
+	Arith Scratch3 1 Scratch3
+	Compare Scratch3 10
+	IfGe
+	Goto AllEquipmentDestroyed
+	Random 9 Scratch10
+	Compare Scratch10 0
+	IfEq
+	Arith 1 Scratch4 Scratch4
+	Compare Scratch4 0
+	IfEq
+	Goto DestroyEquipment
+	Print "YOU HEAR A WHINING FROM THE PIPES THE BLACK LIQUID IS BUBBLING. HOWEVER, NOT ALL THE EQUIPMENT IS YET DESTROYED."
+	Goto FountainMenu
+
+AllEquipmentDestroyed:
+	Print "YOU HAVE DESTROYED THE LAST PIECE OF EQUIPMENT. "
+	Gosub MarkFountainDone
+	Compare Scratch4 0
+	IfEq
+	Goto RedrawExit
+	Print "THE WHINE SUBSIDES AS THE PRESSURE IS RELEASED."
+	Goto RedrawExit
+
+MoveAway:
+	Compare Scratch4 0
+	IfEq
+	Goto FountainDone
+	Gosub MarkFountainDone
+	Compare Scratch4 3
+	IfGe
+	Goto RunTooLate
+	Print "YOU RUN FOR THE EXIT. AS YOU SLAM THE DOOR BEHIND YOU, YOU HEAR AN ENORMOUS EXPLOSION. THE EQUIPMENT IS NOW CERTAINLY DESTROYED."
+	Gosub PressReturn
+	Goto TeleportToDest
+
+RunTooLate:
+	Print "YOU START TO RUN FOR THE EXIT... YOU DON'T MAKE IT."
+	Gosub PressReturn
+
+FountainExplodes:
+	Gosub MarkFountainDone
+	Print "THERE IS AN ENORMOUS EXPLOSION! BITS OF PIPE AND OTHER PLUMBING FIXTURES FLY IN ALL DIRECTIONS."
+	Save 3 Facing
+	Gosub PressReturn
+	Damage 224 3 10 0 0
+
+FountainDone:
+	Goto RedrawExit
+
+PumpingRoom:
+	AndOr RoomsVisited2 3 Scratch10
+	IfNe
+	Exit
+	Print "YOU HAVE ENTERED A PUMPING ROOM. WORKING AS SLAVES IN THIS ROOM ARE THREE LIZARD MEN WITH WHIP CUTS ACROSS THEIR BACK WHO ARE SHACKLED TO THE WALL BY LONG CHAINS."
+	Gosub PressReturn
+	Print "TWO OF THEM ARE POURING BARRELS OF THE BLACK CONTAMINANT INTO A LARGE VAT. THE OTHER IS WORKING A BELLOWS PUMP."
+	Gosub PressReturn
+	EncounterMenu 57 2 57 Scratch10 0 3 1 3 4 "THEY RECOIL IN FEAR" "" "" 0 0
+	OnGoto Scratch10 3 RedrawExit SlavesAttack TeleportToDest
+	Parlay 0 0 1 1 0 Scratch10
+	OnGoto Scratch10 1 SlavesAttack
+	Print "AS YOU FREE THEM THEY TELL YOU ALL ABOUT WHAT YARASH IS DOING AND HOW YOU CAN GET HELP FROM THEIR TRIBE IN THE SWAMP. YOU COPY ALL THEY SAY AS ENTRY 35 OF YOUR JOURNAL."
+	Gosub PressReturn
+	AndOr RoomsVisited2 1 RoomsVisited2
+	Goto RedrawExit
+
+SlavesAttack:
+	Print "THE LIZARD MEN'S FEAR CHANGES TO RAGE AND THEY THROW THEIR BARRELS OF CONTAMINANT ON THE PARTY."
+	Gosub PressReturn
+	Damage 128 1 1 200 0
+	Damage 128 1 1 200 0
+	Save 0 Surprise
+	Save 100 Morale
+	ClearMonsters
+	LoadMonster 57 3 57
+	Combat
+	Save 0 Scratch1
+	Compare CombatEnd 129
+	IfEq
+	Goto TeleportToDest
+	AndOr RoomsVisited2 2 RoomsVisited2
+	Exit
+
+AncientMage:
+	AndOr RoomsVisited2 4 Scratch10
+	IfNe
+	Exit
+	Save 56 Portrait
+	SetupMonster 24 2 30
+	Print "AN ANCIENT MAGE LOOKS UP FROM HIS STUDIES, 'AH, GOOD, I NEED MORE SPECIMENS AS CONTROLS.' HE TURNS TO HIS MUTATED GUARDS, 'SUBDUE THEM!'"
+	Gosub PressReturn
+	EncounterMenu 24 2 30 Scratch10 0 3 0 3 0 "" "" "" 12 12
+	Save 255 Portrait
+	OnGoto Scratch10 3 RedrawExit FightMage TeleportToDest
+
+FightMage:
+	Save 0 Surprise
+	Save 100 Morale
+	ClearMonsters
+	LoadMonster 81 1 14
+	LoadMonster 58 6 57
+	Combat
+	Save 0 Scratch1
+	Compare CombatEnd 129
+	IfEq
+	Goto TeleportToDest
+	AndOr RoomsVisited2 4 RoomsVisited2
+	Gosub FlagBossAngry
+	Exit
+
+MarkFountainDone:
+	AndOr RoomsVisited 128 RoomsVisited
+
+FlagBossAngry:
+	Compare Boss 255
+	IfNe
+	Save 254 Boss
+	Return
+
+ColorDial:
+	Print "YOU SEE A DIAL THAT CAN BE SET TO FOUR DIFFERENT COLORS: BLUE, COPPER, SILVER, AND GOLD. IT IS CURRENTLY SET TO "
+	OnGoto DialColor 4 DialBlue DialCopper DialSilver DialGold
+	Print " DO YOU WISH TO CHANGE THE SETTING?"
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	Print "CHANGE TO WHAT SETTING?"
+	HMenu DialColor 4 "BLUE" "COPPER" "SILVER" "GOLD"
+	Exit
+
+DialBlue:
+	Print "BLUE."
+	Return
+
+DialCopper:
+	Print "COPPER."
+	Return
+
+DialSilver:
+	Print "SILVER."
+	Return
+
+DialGold:
+	Print "GOLD."
+	Return
+
+YarashDesk:
+	AndOr RoomsVisited2 64 Scratch10
+	IfNe
+	Goto SearchDeskPapers
+	Print "THIS IS THE DESK OF YARASH. ON IT IS A LITTER OF PAPERS."
+	AndOr RoomsVisited2 64 RoomsVisited2
+	Gosub PressReturn
+
+SearchDeskPapers:
+	AndOr RoomsVisited2 128 Scratch10
+	IfNe
+	Exit
+	Compare Search 0
+	IfEq
+	Exit
+	AndOr RoomsVisited2 128 RoomsVisited2
+	Print "AMONG THE PAPERS ON THE DESK YOU FIND THE FOLLOWING AND SLIP THEM INTO YOUR JOURNAL:"
+	Gosub PressReturn
+	Print "A LETTER FROM THE BOSS, TELLING YARASH TO JOIN OR DIE. (ENTRY 33)"
+	Gosub PressReturn
+	Print "AN UNSENT REPLY TO THIS LETTER. (ENTRY 49)"
+	Gosub PressReturn
+	Print "A MESSAGE TO THE BUCCANEERS OFFERING A BOUNTY FOR A REAL SAHUAGIN. (ENTRY 27)"
+	Gosub PressReturn
+	Print "A WARNING TO AN AGENT ABOUT THE DANGERS IN THE MOUNTAINS TO THE NORTHWEST. (ENTRY 56)"
+	Gosub PressReturn
+	Print "A NOTE TO A TRAPPER ABOUT KOBOLDS AND HOBGOBLINS. (ENTRY 40)"
+	Gosub PressReturn
+	Exit

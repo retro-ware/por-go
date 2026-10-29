@@ -1,0 +1,6 @@
+9AEB ByFacing9AEB  # GetTable base, GetTable [9AEB] Facing [6E82]
+9AEF ByFacing9AEF  # GetTable base, GetTable [9AEF] Facing [6E82]
+9AF3 ByFacing9AF3  # GetTable base, GetTable [9AF3] Facing [6E82]
+9AF7 ByFacing9AF7  # GetTable base, GetTable [9AF7] Facing [6E82]
+9CE1 DestX  # GetTable base, GetTable [9CE1] [6E82] PartyX
+9CE5 DestY  # GetTable base, GetTable [9CE5] [6E82] PartyY

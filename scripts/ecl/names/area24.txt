@@ -1,0 +1,29 @@
+4A01 LastRoomVisited  # 1..4 = rubble room, dining room, great hall, bodies room (room text shown once in a row); area-local reuse
+4A02 AltarDestroyed  # set 1 after destroying the Bane altar; area-local reuse
+4A03 SavedGeo24  # Save Geo before encounter, restored after fleeing; area-local reuse
+4A0A LastMansionRoom  # 1 hay beds room, 2 cell room; area-local reuse
+4A0E EncounterIsOrcs  # 1 when random encounter rolls orcs (black-hand patrol logic), 0 otherwise; area-local reuse
+4A0F TempleGuardState  # 1 guards fought, 2 passed with holy symbol (guess); area-local reuse
+4A18 EncounterCount1  # number of first monster loaded (LoadMonster count); area-local reuse
+4A19 TempleSearchFlag  # 1 while searching temple spots, 0 on exit; OnGoto selects outcome; area-local reuse
+4A1B EncounterCount2  # number of second monster group loaded, 0 if none; area-local reuse
+4A1D EncounterTemp  # set 0 before black-hand patrol menu (guess: scratch); area-local reuse
+4A2A OrcsKnowParty  # set 1 after dealing with an orc patrol; orcs at entrance are confused instead of attacking
+4A2D TempleTreasureBits  # bits 1/2/4 = temple treasure spots found; 7 triggers half-orc ambush
+4A2E MansionRoomBits  # bits 1 tapestry,2 skeleton jewelry,4 trap door,8 body jewelry,16 ogre fight,32 goblin slaves
+4A44 MansionFightBits  # bits 1 orc guards fight, 2 hay bed orcs fight
+99A8 Table99A8  # GetTable base, GetTable [99A8] [6E82] [6E79]
+99B0 Table99B0  # GetTable base, GetTable [99B0] [6E82] [6E7D]
+B607 EncDistTable  # encounter table by kind -> MonsterDist
+B60B EncMonsterTable  # -> 980F monster id
+B60F EncPictureTable  # -> 9823 picture
+B613 EncTable4  # -> 9824 (guess)
+B617 EncMoraleTable  # -> 9825, copied to Morale
+B61B EncTable6  # -> 9810 (guess)
+B61F EncTable7  # -> 9811 (guess)
+B623 EncStrengthAdjTable  # -> 9819, added to PartyStrength
+B627 EncGroupStepTable  # -> 981A, count step
+B62B EncGroupIncTable  # -> 981B, second group increment
+B62F EncTable11  # -> 981C (guess)
+B633 EncTable12  # -> 981D (guess)
+B637 EncTable13  # -> 981E (guess)

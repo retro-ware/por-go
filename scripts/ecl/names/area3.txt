@@ -1,0 +1,7 @@
+4A00 PatrolsFought3  # bit 1 set after the patrol fights (L_9FA5/L_A010), tested to skip them; area-local reuse
+9AA6 ByFacing9AA6  # GetTable base, GetTable [9AA6] Facing [6E79]
+9B99 Table9B99  # GetTable base, GetTable [9B99] [6E79] [6E7A]
+9BB0 Table9BB0  # GetTable base, GetTable [9BB0] [6E79] [6E79]
+9C24 ByFacing9C24  # GetTable base, GetTable [9C24] Facing [6E82]
+AAE7 ProtectionEnd  # Protection operand after the password slip text (copy-protection data in script)
+AAEE ProtectionStart  # Protection operand before Cadorna hands over the password slip

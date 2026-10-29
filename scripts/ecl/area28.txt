@@ -1,0 +1,654 @@
+event0:
+	Save 11 Scratch6
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch6
+	Save Scratch6 Sky
+	Save 10 SkyInside
+	Compare LeftMap 0
+	IfEq
+	Exit
+	Save 253 QuestZhentilOutpost
+	Save 255 Portrait
+	NewECL 25
+
+event1:
+	Compare AlarmLevel 0
+	IfNe
+	Goto AlarmCheck
+
+CellDispatch:
+	AndOr Cell 127 Scratch7
+	OnGoto Scratch7 6 Done EscortIn RestrictedGuards QuartersEnter ClimbableWall DwarfAttackCheck
+
+AlarmCheck:
+	Compare OutpostConquered 0
+	IfNe
+	Goto CellDispatch
+	Random 14 Scratch1
+	Compare Scratch1 AlarmLevel
+	IfGe
+	Goto CellDispatch
+	Arith 5 AlarmLevel Scratch1
+	Arith 1 AlarmLevel AlarmLevel
+	Save 57 Portrait
+	Compare Scratch1 30
+	IfGt
+	Goto DwarfAndCommandant
+	Compare Scratch1 10
+	IfEq
+	Print "THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS."
+	IfEq
+	Goto CellDispatch
+
+GuardsSpotYou:
+	SetupMonster 16 2 6
+	Gosub ApproachTwice
+	Print "SOME GUARDS SPOT YOU AND ATTACK."
+	ClearMonsters
+	LoadMonster 96 Scratch1 11
+	LoadMonster 54 AlarmLevel 11
+	Combat
+	Goto CellDispatch
+
+EscortIn:
+	Compare EscortedIn 0
+	IfNe
+	Goto FrontGateCheck
+	Print "YOU ARE BEING ESCORTED INTO ZHENTIL OUTPOST."
+	Gosub PressReturn
+	Save 0 Scratch6
+	Save 128 EscortedIn
+
+EscortStep:
+	GetTable RouteStepTable Scratch6 Scratch1
+	GetTable DestFacing Scratch6 Facing
+	Gosub WalkSteps
+	GetTable Table994C Scratch6 Scratch1
+	OnGoto Scratch1 7 TourNothing TourInnerWall TourToKeep CommandantOffice TourBarracks TourWatchTowers TourQuarters
+	Compare Scratch1 6
+	IfEq
+	Goto Done
+	Arith 1 Scratch6 Scratch6
+	Goto EscortStep
+
+WalkSteps:
+	Save 1 Scratch2
+	Compare Scratch1 0
+	IfEq
+	Call CallRedraw
+	IfEq
+	Delay
+	IfEq
+	Return
+
+WalkStepLoop:
+	Compare Scratch2 Scratch1
+	IfGt
+	Return
+	OnGoto Facing 4 StepNorth StepEast StepSouth StepWest
+	Call CallRedraw
+	Delay
+	Arith 1 Scratch2 Scratch2
+	Goto WalkStepLoop
+
+StepNorth:
+	Arith 1 PartyY PartyY
+	Return
+
+StepEast:
+	Arith 1 PartyX PartyX
+	Return
+
+StepSouth:
+	Arith 1 PartyY PartyY
+	Return
+
+StepWest:
+	Arith 1 PartyX PartyX
+
+TourNothing:
+	Return
+
+TourInnerWall:
+	Print "FROM HERE YOU SEE A LARGE INNER WALL AROUND THE CENTRAL KEEP.  THIS AREA IS BUSY WITH MEN ENTERING AND LEAVING BARRACKS."
+	Gosub PressReturn
+	Return
+
+TourToKeep:
+	Print "YOU ARE LED TOWARD THE CENTRAL KEEP."
+	Gosub PressReturn
+	Return
+
+CommandantOffice:
+	Picture 50
+	Print "YOU ARE INSIDE THE COMMANDANT'S OFFICE.  HE GREETS YOU AND YOU HAND HIM THE PAPERS."
+	Gosub PressReturn
+	Print "AFTER SKIMMING THROUGH THE PAPERS THE COMMANDANT SAYS, 'I WELCOME YOU AND HOPE YOU WILL JOIN ME FOR DINNER TONIGHT.'  HE TELLS A GUARD TO GIVE YOU A TOUR OF THE OUTPOST."
+	Gosub PressReturn
+	Save 1 InvitedToDinner
+	Return
+
+TourBarracks:
+	Save 57 Portrait
+	SetupMonster 16 1 6
+	Print "THE GUARD GIVING THE TOUR SAYS 'HERE YOU SEE ONE OF OUR FINE BARRACKS.  THERE ARE SIX OF THESE HERE AND EACH CAN HOLD OVER A 100 MEN.'"
+	RedrawView
+	Gosub PressReturn
+	Return
+
+TourWatchTowers:
+	SetupMonster 16 1 6
+	Print "'HERE YOU SEE ONE OF OUR FINE WATCH TOWERS WHICH WERE BUILT BY THE FINEST STONE MASONS IN THE LAND.'"
+	Gosub PressReturn
+	Print "'FROM HERE YOU CAN ALSO SEE OUR SOLIDLY BUILT OUTSIDE WALL.  THIS WALL HAS SURVIVED MANY ATTACKS, INCLUDING ONE FROM A DRAGON.'"
+	Gosub PressReturn
+	Print "THE GUARD SAYS 'THAT CONCLUDES THE TOUR.  I WILL SHOW YOU TO YOUR QUARTERS.'"
+	RedrawView
+	Gosub PressReturn
+	Return
+
+TourQuarters:
+	SetupMonster 16 1 6
+	Print "THE GUARD SAYS 'HERE ARE YOUR QUARTERS.  DO NOT LEAVE THIS AREA.'  HE THEN LEAVES."
+	RedrawView
+	Save 255 Portrait
+	Return
+
+RestrictedGuards:
+	CompareAnd QuestZhentilOutpost 0 AttackedGuards 0
+	IfNe
+	Goto Done
+	Compare NightInQuarters 1
+	IfEq
+	Goto Done
+	Save 57 Portrait
+	SetupMonster 16 0 6
+	Print "THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?"
+	HMenu Scratch1 3 "RETURN" "ATTACK" "BRIBE"
+	OnGoto Scratch1 3 BackToQuarters AttackGuards AngeredGuards
+
+BackToQuarters:
+	Print "YOU GO BACK TO YOUR QUARTERS."
+	Save 5 PartyX
+	Save 0 PartyY
+	Save 1 Facing
+	Call CallRedraw
+	Goto Done
+
+AngeredGuards:
+	Print "YOU'VE ANGERED THE GUARDS.  THEY DEMAND THAT YOU RETURN TO YOUR QUARTERS.  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "GO BACK INSIDE." "ATTACK GUARDS."
+	OnGoto Scratch1 2 BackToQuarters AttackGuards
+
+AttackGuards:
+	Save 0 AlarmFightScore
+	Print "YOU ATTACK THE GUARDS.  THE GUARDS SOUND AN ALARM AND ATTACK."
+	Save 1 AttackedGuards
+	Save 75 Morale
+	Save 57 Portrait
+	SetupMonster 16 2 6
+	Gosub ApproachTwice
+	ClearMonsters
+	LoadMonster 96 4 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto FleeStopped
+	Goto SurrenderOrDie
+
+FleeStopped:
+	Print "YOU TRY TO FLEE BUT ARE STOPPED BY SOME GUARDS."
+	Goto GuardWaveFight
+
+SurrenderOrDie:
+	SetupMonster 16 2 6
+	Print "MORE GUARDS COMMING RUNNING TOWARD YOU.  THEIR LEADER YELLS 'SURRENDER OR DIE!'  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "SURRENDER" "ATTACK"
+	OnGoto Scratch1 2 Surrender GuardWaveFight
+
+Surrender:
+	Print "YOU SURRENDER.  THEY STRIP YOU OF ALL POSSESSIONS AND TOSS YOU OUT INTO THE WILDERNESS.'"
+
+StripAndExpel:
+	Rob 1 100 255
+	Save 255 Portrait
+	NewECL 25
+
+GuardWaveFight:
+	Save 57 Portrait
+	SetupMonster 16 2 6
+	Gosub ApproachTwice
+	ClearMonsters
+	LoadMonster 96 16 11
+	LoadMonster 54 4 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto RunForGate
+	Arith 20 AlarmFightScore AlarmFightScore
+	Compare AlarmFightScore 40
+	IfGe
+	Goto Done
+	Print "MORE GUARDS RUSH UP TO ATTACK."
+	Goto GuardWaveFight
+
+DwarfAttackCheck:
+	CompareAnd AttackedGuards 1 OutpostFought 0
+	IfNe
+	Goto Done
+
+DwarfAndCommandant:
+	Compare OutpostConquered 0
+	IfNe
+	Exit
+	Print "A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK"
+	Save 13 Portrait
+	SetupMonster 13 2 6
+	Gosub ApproachTwice
+	ClearMonsters
+	LoadMonster 48 1 15
+	LoadMonster 53 10 11
+	LoadMonster 54 12 11
+	LoadMonster 96 25 11
+	Combat
+	Save 1 OutpostFought
+	Compare CombatEnd 128
+	IfGt
+	Goto RunForGate
+	Print "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
+	Save 255 Portrait
+	SetupMonster 16 2 50
+	Gosub ApproachTwice
+	ClearMonsters
+	LoadMonster 86 1 14
+	LoadMonster 50 1 16
+	LoadMonster 54 24 11
+	LoadMonster 53 20 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto RunForGate
+	Print "AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY."
+	Save 1 QuestZhentilOutpost
+	Save 1 OutpostConquered
+	Goto Done
+
+RunForGate:
+	Save 7 PartyX
+	Save 0 PartyY
+	Save 0 Facing
+	Call CallRedraw
+	Save 57 Portrait
+	SetupMonster 16 2 11
+	Print "YOU RUN FOR YOUR LIVES AS THE GARRISON CHASES BEHIND YOU.  YOU RUN FOR THE FRONT GATE BUT ARE STOPPED BY SOME GUARDS."
+	ClearMonsters
+	LoadMonster 96 6 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto CaughtFleeing
+	Print "YOU ESCAPE FROM THE OUTPOST."
+	NewECL 25
+
+CaughtFleeing:
+	Print "YOU TRY TO RUN BUT ARE CAUGHT.  YOU ARE CAPTURED, STRIPPED AND TOSSED OUT INTO THE WILDERNESS."
+	Goto StripAndExpel
+
+QuartersEnter:
+	Compare GivenQuarters 1
+	IfNe
+	Goto RelaxOrWalk
+	Compare NightInQuarters 0
+	IfNe
+	Goto Done
+	Save 1 NightInQuarters
+	Print "IT IS NIGHT AND YOU ARE IN YOUR QUARTERS."
+	Delay
+	VMenu Scratch1 "HOW DO YOU SPEND THE NIGHT?" 2 "GOTO SLEEP" "SLEEP WITH A WATCH"
+	OnGoto Scratch1 2 SleepNoWatch SleepWithWatch
+
+SleepNoWatch:
+	Delay
+	Arith 2 Hours Hours
+	Print "YOU ARE ATTACKED BY FOUR GUARDS IN YOUR SLEEP"
+	Damage 1 8 4 8 53
+	Save 80 Morale
+	Goto NightAmbush
+
+SleepWithWatch:
+	Delay
+	Arith 2 Hours Hours
+	Print "YOU WAIT IN YOUR ROOM FOR ABOUT TWO HOURS WHEN SUDDENLY FOUR ARMED GUARDS BURST IN AND ATTACK YOU."
+	Gosub PressReturn
+	Save 70 Morale
+
+NightAmbush:
+	Save 57 Portrait
+	SetupMonster 16 0 6
+	ClearMonsters
+	LoadMonster 53 4 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto NightFleeGuards
+	Goto MoreMenAttack
+
+NightFleeGuards:
+	Save 3 Facing
+	Save 1 Scratch1
+	Gosub WalkSteps
+	Print "YOU RUN INTO SOME MORE GUARDS."
+	Goto SecondWaveFight
+
+MoreMenAttack:
+	Print "AS YOU DEFEAT THE GUARDS SOME MORE MEN RUN IN AND ATTACK."
+	Save 57 Portrait
+	SetupMonster 16 0 6
+	ClearMonsters
+
+SecondWaveFight:
+	LoadMonster 54 5 11
+	LoadMonster 53 6 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto RanAndHid
+	Print "AN ALARM GOES OFF IN THE DISTANCE."
+	Save 1 AlarmLevel
+	Goto Done
+
+RanAndHid:
+	Print "YOU MANAGE TO RUN AWAY AND HIDE.  YOU HEAR AN ALARM IN THE DISTANCE AS GUARDS ARE ISSUING OUT OF BARRACKS."
+	Save 3 PartyX
+	Save 12 PartyY
+	Call CallRedraw
+	Save 1 AlarmLevel
+	Goto Done
+
+RelaxOrWalk:
+	Print "YOU ARE IN YOUR QUARTERS.  WILL YOU WALK AROUND OR WILL YOU JUST RELAX UNTIL DINNER?"
+	HMenu Scratch1 2 "WALK AROUND" "RELAX"
+	OnGoto Scratch1 2 Done EscortToDinner
+	Goto 2
+
+EscortToDinner:
+	Save 14 Hours
+	Save 8 Sky
+	Print "AT DUSK A GUARD COMES BY TO ESCORT YOU TO DINNER."
+	Save 0 Scratch6
+
+DinnerWalkStep:
+	GetTable WalkStepTable Scratch6 Scratch1
+	GetTable WalkFacingTable Scratch6 Facing
+	Gosub WalkSteps
+	Arith 1 Scratch6 Scratch6
+	Compare Scratch6 10
+	IfLe
+	Goto DinnerWalkStep
+	Save 255 Portrait
+	Picture 50
+	Print "YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE."
+	Gosub PressReturn
+	Print "THE COMMANDANT TURNS TO ONE OF THE CHARACTERS AND SAYS, 'SO, HOWS EVERYTHING IN PHLAN?'  WHAT WILL YOU TALK ABOUT?"
+
+DinnerTopicMenu:
+	HMenu Scratch1 4 "NOTHING" "CITY" "MAGIC" "POLITICS"
+	OnGoto Scratch1 4 TopicNothing TopicCity TopicMagic TopicPolitics
+
+TopicCity:
+	Print "ARE YOU GOING TO TALK ABOUT NEW OR OLD PHLAN?"
+	HMenu Scratch1 2 "NEW" "OLD"
+	OnGoto Scratch1 2 TalkNewPhlan TalkOldPhlan
+
+TopicNothing:
+	Compare TopicsDiscussed 0
+	IfNe
+	Goto ConversationDies
+	Print "THE CONVERSATION BEGINS TO DIE DOWN.  THE COMMANDANT  STARTS A CONVERSATION BY SAYING 'WELL, ARE YOU HAVING MUCH TROUBLE WITH THE CREATURES FROM OLD PHLAN?'"
+	HMenu Scratch1 2 "TALK" "SAY LITTLE OR NOTHING"
+	OnGoto Scratch1 2 TalkOldPhlan ConversationDies
+
+ConversationDies:
+	Print "THE CONVERSATION COMPLETELY DIES AND EVERYONE IS STARING AT EACH OTHER.  THE COMMANDANT EXCUSES HIMSELF AND LEAVES.  A GUARD TAKES YOU BACK TO YOUR QUARTERS."
+	Goto EscortToQuarters
+
+TyranthraxusTrouble:
+	Print "THE COMMANDANT SAYS 'I EXPECT THERE WOULD BE TROUBLE; I'VE HEARD TYRANTHRAXUS IS A POWERFUL FIRE DEMON.  YOUR CITY'S DEFENCES MUST BE QUITE STRONG, HOW STRONG ARE THEY?'"
+	HMenu Scratch1 4 "DON'T TALK" "STRONG" "AVERAGE" "WEAK"
+	OnGoto Scratch1 4 NoAnswer ForcesStrong ForcesAverage ForcesWeak
+
+NoTyranthraxusTrouble:
+	Print "THE COMMANDANT IS SURPRISED THAT YOUR CITY IS HAVING NO TROUBLE WITH TYRANTHRAXUS.  HE THEN SAYS, 'YOUR TOWN DEFENSES MUST BE STRONG IN ORDER TO HANDLE HIM.  HOW STRONG ARE THEY?'"
+	HMenu Scratch1 4 "DON'T TALK" "STRONG" "AVERAGE" "WEAK"
+	OnGoto Scratch1 4 NoAnswer ForcesStrong ForcesAverage ForcesWeak
+
+TalkNewPhlan:
+	Compare TalkedNewPhlan 0
+	IfNe
+	Goto ConversationStale
+	Save 1 TalkedNewPhlan
+	Print "AS YOU TALK ABOUT NEW PHLAN THE COMMANDANT LISTENS CAREFULLY.  THE COMMANDANT SAYS 'IS IT TRUE THAT THE REAL POWER IN NEW PHLAN IS BISHOP BRACCIO?'"
+	HMenu Scratch1 3 "YES" "NO" "DON'T KNOW"
+	OnGoto Scratch1 3 BraccioIsPower BraccioNotPower DontKnowAnswer
+
+BraccioIsPower:
+	Print "YOU SAY THAT BISHOP BRACCIO IS THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'PHLAN MUST BE A CITY OF FOOLS IF A BISHOP OF TYR HAS POWER!'"
+	Goto TopicDone
+
+BraccioNotPower:
+	Print "YOU SAY THAT BISHOP BRACCIO IS NOT THE REAL POWER IN PHLAN AND THE COMMANDANT RESPONDS BY SAYING 'THE CITIZENS OF PHLAN ARE WISE TO NOT FOLLOW AN IDIOT FROM THE TEMPLE OF TYR!'"
+	Goto TopicDone
+
+DontKnowAnswer:
+	Print "YOU SAY THAT YOU DON'T KNOW ANYTHING ABOUT THAT MATTER AND THE COMMANDANT RESPONDS BY SAYING 'YES, OF COURSE YOU DON'T.'"
+	Goto TopicDone
+
+TalkOldPhlan:
+	Compare TalkedOldPhlan 0
+	IfNe
+	Goto ConversationStale
+	Save 1 TalkedOldPhlan
+	Print "AS YOU TALK ABOUT OLD PHLAN'S INHABITANTS THE COMMANDANT SAYS 'I KNOW A LEGEND ABOUT A FIRE BEING CALLED TIRANTIKUS.  I BELIEVE, THAT TIRANTIKUS AND TYRANTHRAXUS ARE ONE AND THE SAME'."
+	Gosub PressReturn
+	Print "YOU CONTINUE TO TALK ABOUT OLD PHLAN AND THE COMMANDANT SAYS 'IS NEW PHLAN HAVING ANY TROUBLE WITH TYRANTHRAXUS?'"
+	HMenu Scratch1 3 "DON'T TALK" "TROUBLE" "NO TROUBLE"
+	OnGoto Scratch1 3 TopicNothing TyranthraxusTrouble NoTyranthraxusTrouble
+
+TopicMagic:
+	Compare AdvisorAsked 0
+	IfNe
+	Goto ConversationStale
+	Save 1 AdvisorAsked
+	Print "ONE OF THE COMMANDANT'S ADVISORS ASKS YOU IF YOU'VE HEARD OF ANY UNIQUE MAGICAL ITEMS OR PLACES?"
+	HMenu Scratch1 3 "DON'T TALK" "LIE" "MENTION POOL OF RADIANCE"
+	OnGoto Scratch1 3 TopicNothing LieAboutMagic MentionPool
+
+TopicPolitics:
+	Compare TalkedPolitics 0
+	IfNe
+	Goto ConversationStale
+	Save 1 TalkedPolitics
+	Print "AS YOU MENTION POLITICS THE COMMANDANT SAYS 'I'VE HEARD THAT PHLAN'S TOWN COUNCIL IS CORRUPT, SPECIFICALLY ULRICH EBERHARD.  IS THIS TRUE?"
+	HMenu Scratch1 3 "YES" "NO" "DON'T KNOW"
+	OnGoto Scratch1 3 EberhardCorrupt EberhardHonest DontKnowAnswer
+
+EberhardCorrupt:
+	Print "YOU SAY THAT ULRICH EBERHARD IS CORRUPT AND HE RESPONDS BY SAYING 'I WOULD ADVISE YOU TO BE CAREFUL WHEN DEALING WITH THE TOWN COUNCIL.'"
+	Goto TopicDone
+
+EberhardHonest:
+	Print "YOU SAY THAT ULRICH EBERHARD IS A LOYAL HONEST MAN.  THE COMMANDANT SMIRKS AND SAYS 'YES, OF COURSE HE IS.'"
+	Goto TopicDone
+
+ForcesStrong:
+	Print "YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE STRONG.  HE SEEMS IMPRESSED, AND SAYS 'IT SOUNDS LIKE YOUR CITY CAN HANDLE THAT FIRE DEMON TYRANTHRAXUS'"
+	Goto TopicDone
+
+ForcesAverage:
+	Print "YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE CAPABLE.  HE LOOKS AT YOU AND SAYS, 'I HOPE, FOR YOUR SAKE, THAT YOUR CITY'S FORCES CAN DEFEND THEMSELVES FROM TYRANTHRAXUS'S HORDE.'"
+	Goto TopicDone
+
+ForcesWeak:
+	Print "YOU TELL THE COMMANDANT THAT NEW PHLAN'S FORCES ARE WEAK.  HE SMILES AND SAYS, 'I HOPE THAT PHLAN CAN DEFEND ITSELF.'"
+	Goto TopicDone
+
+NoAnswer:
+	Print "AS YOU DON'T ANSWER THE LAST QUESTION THE COMMANDANT SMILES SLIGHTLY AND SAYS, 'I SEE THAT YOU ARE NOT FOOLISH AND LOOSE TONGUED.'"
+	Goto TopicDone
+
+LieAboutMagic:
+	Print "YOU MAKE UP STORIES ABOUT WONDERFUL MAGICAL ITEMS AND PLACES.  YOU CAPTIVATE EVERYONE SITTING AROUND YOU."
+	Goto TopicDone
+
+MentionPool:
+	Print "AS YOU MENTION THE POOL OF RADIANCE THE COMMANDANT TELLS YOU A STORY ABOUT THAT VERY POOL.  YOU ENJOY THE STORY AND COPY IT INTO YOUR JOURNAL UNDER ENTRY 46."
+	Goto TopicDone
+
+TopicDone:
+	Gosub PressReturn
+	Compare TopicsDiscussed 2
+	IfEq
+	Goto CommandantLeaves
+	Print "YOU CONTINUE YOUR CONVERSATION WITH THE COMMANDANT.  WHAT WILL BE YOUR NEXT TOPIC OF DISSCUSION?"
+	Arith 1 TopicsDiscussed TopicsDiscussed
+	Goto DinnerTopicMenu
+
+ConversationStale:
+	Print "THE CONVERSATION GOES STALE AND THE COMMANDANT EXCUSES HIMSELF FROM THE TABLE.  YOU ARE ESCORTED BACK TO YOUR QUARTERS."
+	Goto EscortToQuarters
+
+CommandantLeaves:
+	Print "YOU TALK A LITTLE WHILE LONGER THEN THE COMMANDANT STATES THAT HE HAS OTHER DUTIES TO ATTEND TO.  HE BIDS YOU GOOD NIGHT."
+	Goto EscortToQuarters
+
+EscortToQuarters:
+	Save 0 Scratch6
+	Save 1 GivenQuarters
+
+QuartersWalkStep:
+	GetTable QuartersStepTable Scratch6 Scratch1
+	GetTable QuartersFacingTable Scratch6 Facing
+	Gosub WalkSteps
+	Arith 1 Scratch6 Scratch6
+	Compare Scratch6 10
+	IfLe
+	Goto QuartersWalkStep
+	Print "YOU ARRIVE BACK AT YOUR QUARTERS."
+	Delay
+	Goto QuartersEnter
+
+ClimbableWall:
+	Print "THE WALL IS CLIMBABLE HERE, WILL YOU SCALE OVER IT?"
+	HMenu Scratch1 2 "CLIMB OVER WALL" "LEAVE"
+	OnGoto Scratch1 2 ClimbOverWall Done
+
+ClimbOverWall:
+	Print "YOU CLIMB OVER THE WALL AND LEAVE THE OUTPOST."
+	Goto LeaveOutpost
+
+FrontGateCheck:
+	Compare QuestZhentilOutpost 0
+	IfNe
+	Goto NearFrontGate
+	Compare ReachedGate 0
+	IfNe
+	Goto Done
+	Save 1 ReachedGate
+	Print "THE COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE!"
+	Gosub PressReturn
+	Random 99 Scratch1
+	Compare Scratch1 75
+	IfGe
+	Goto NearFrontGate
+	Print "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
+	Save 57 Portrait
+	SetupMonster 16 2 6
+	Gosub ApproachTwice
+	ClearMonsters
+	LoadMonster 96 11 11
+	Combat
+	Goto Done
+
+NearFrontGate:
+	Print "YOU ARE NEAR THE FRONT GATE."
+	Goto Done
+
+Done:
+	RedrawView
+	Picture 255
+	Exit
+
+ApproachTwice:
+	Delay
+	Approach
+	Delay
+	Approach
+	Return
+
+LeaveOutpost:
+	Save 253 QuestZhentilOutpost
+	Save 255 Portrait
+	NewECL 25
+
+PressReturn:
+	HMenu Scratch8 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	Return
+
+event2:
+	Compare QuestZhentilOutpost 0
+	IfNe
+	Goto RestCheckNight
+	Compare AttackedGuards 0
+	IfEq
+	Goto RestCheckNight
+
+RestAlarmed:
+	Save 100 RestChance
+	Save 1 RestEvery
+	Exit
+
+RestCheckNight:
+	Compare QuestZhentilOutpost 0
+	IfNe
+	Goto RestNormal
+	Compare NightInQuarters 0
+	IfNe
+	Goto RestAlarmed
+	Save 168 RestEvery
+	Save 100 RestChance
+	Exit
+
+RestNormal:
+	Save 0 RestEvery
+	Save 1 RestChance
+	Exit
+
+event3:
+	Save 0 RestChance
+	Compare NightInQuarters 0
+	IfEq
+	Goto EscortToDinner
+	Save 57 Portrait
+	Goto GuardsSpotYou
+
+event4:
+	Save 11 Scratch6
+	LoadFiles 1 2 9
+	LoadFiles 28 2 255
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch6
+	Save Scratch6 Sky
+	Save 10 SkyInside
+	Save 0 NoCoords
+	Compare AreaKind 28
+	IfEq
+	Exit
+	Save 7 PartyX
+	Save 0 PartyY
+	Save 2 Facing
+	Save 2 EntryPoint
+	Call CallRedraw
+	Save 0 Hours
+	Exit

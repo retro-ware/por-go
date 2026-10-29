@@ -1,0 +1,5 @@
+4A00 ArmoryVisited  # bit 1 set on first entry to the armory; area-local reuse
+4A68 ReportsFound  # 1,2,3: which Tyranthraxus report was found last (OnGoto in L_AFB6)
+A4AA ProtectionPassword  # Protection operand after "TODAY'S PASSWORD IS"
+A4B7 ProtectionGatePassword  # Protection operand after "THE GATE PASSWORD IS" / the writing
+A4BE ProtectionStart  # Protection operand before the password texts

@@ -1,0 +1,17 @@
+4A00 RewardKind  # scratch for the clerk: 1 undead bounty due, 2 cleared-area reward, 0 none; area-local reuse
+4A01 ClerkMet  # set 1 at first talk with the council clerk; later visits get "BACK SO SOON?"; area-local reuse
+4A02 SkyColor8  # event0 scratch: 11 by day, 8 from 14:00, copied to Sky; area-local reuse
+4A03 CellEventIndex  # scratch: counts 26..34 to find the cell's event, then -26 for OnGoto; area-local reuse
+4A04 HallEntered  # +1 on entering the city hall (once); area-local reuse
+4A05 OffersListed  # commissions listed this visit; stops after 3; area-local reuse
+4A06 ClerkTalkedThisVisit  # 1 after talking to the clerk, reset to 0 outside the clerk's office; area-local reuse
+4A07 HallGuardsFought  # set 1 after the city hall guard fight ("THE WAY IS BLOCKED" until then); area-local reuse
+4A8F UndeadPaidTable  # 7-entry table of undead already paid for (SaveTable after payment)
+4A96 GraveyardNoticeGiven  # 255 after the Valhingen graveyard notice and its treasure
+4A99 UrslingenGateMission  # 254 summoned by Urslingen, 255 gate mission given
+4A9A FinalAttackMeeting  # 254 summoned to the special council meeting, 255 asked to lead the attack; area-local reuse
+4AC2 LibraryRewardGiven  # 255 after the library reward
+B5ED RewardTable1  # per-quest Treasure operand 4 (L_9EC2)
+B604 RewardTable2  # per-quest Treasure operand 5
+B61B RewardTable3  # per-quest Treasure operand 6
+B632 RewardTable4  # per-quest Treasure operand 7

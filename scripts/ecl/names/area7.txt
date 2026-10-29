@@ -1,0 +1,11 @@
+4A00 MerchantRoomSeen  # set 1 after "APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT" text; area-local reuse
+4A01 BenchRoomSeen  # set 1 after "ROOM FURNISHED WITH CHAIRS AND BENCHES" text; area-local reuse
+4A02 StatueRoomSeen  # set 1 after "ROOM FILLED WITH BROKEN STATUES" text; area-local reuse
+4A6D GenheerisFlags  # bits: 1 Genheeris joined, 2 he left/fought, 4 guards beaten, 8 audience hall seen, 16 dragon done (read)
+4A72 TowerEndFlags  # set to 4A6D|16 after Tyranthraxus beaten; guess: final-state copy
+4AE0 TyranthraxusDefeated  # set 1 after final fight (Program 8), event4 then plays ending walk to Phlan, cleared
+99D8 Table99D8  # GetTable base, GetTable [99D8] [6E79] [6E7B]
+99E0 Table99E0  # GetTable base, GetTable [99E0] [6E79] [6E7C]
+99E8 Table99E8  # GetTable base, GetTable [99E8] [6E79] [6E7B]
+9ACC DestX  # GetTable base, GetTable [9ACC] [6E79] PartyX
+9AD3 DestY  # GetTable base, GetTable [9AD3] [6E79] PartyY

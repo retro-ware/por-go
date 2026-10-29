@@ -1,0 +1,49 @@
+4A00 VisitStage  # incremented on entry/intro; 0 first visit, intro text when <=1; area-local reuse
+4A01 SkeletonGroup  # skeletons in next roaming group (from 4A39 minus strength), minus Beaten; area-local reuse
+4A02 ZombieGroup  # zombies in next group (from 4A3A), minus Beaten; area-local reuse
+4A03 WightGroup  # wights in next group (from 4A3B), capped 4; area-local reuse
+4A05 SkeletonCount  # copy of 4A01 at entry; giant skeleton retainers when >=17; area-local reuse
+4A06 ZombieCount  # copy of 4A02 at entry; tested >=16 at giant zombie; area-local reuse
+4A07 WightCount  # copy of 4A03; LoadMonster 20 count at tower; area-local reuse
+4A08 SkeletonsGone  # set 1 when skeleton group computes 0; area-local reuse
+4A09 WightsTotal  # running wight total, refills 4A03; area-local reuse
+4A0A ZombiesGone  # set 1 when zombie group computes 0; area-local reuse
+4A0B WightsGone  # set 1 when wight group computes 0; area-local reuse
+4A0D ZombieLairDone  # set after zombie lair fight; area-local reuse
+4A0E SkeletonAmbushDone  # set at L_9D73; area-local reuse
+4A10 Monster114Fought  # set after LoadMonster 114 combat; area-local reuse
+4A12 FumesDamaged  # set after "NOXIOUS FUMES" damage; area-local reuse
+4A13 SkeletonLairDone  # set after skeleton lair fight; area-local reuse
+4A14 WightLairDone  # set after wight lair fight; area-local reuse
+4A15 VampireFought  # set after fighting the vampire; area-local reuse
+4A16 SavedGroundShade  # SetGroundShade saved at first entry, restored on leaving; area-local reuse
+4A18 TowerFightDone  # set after fight at L_AB91; area-local reuse
+4A1B PartyPower  # PartyStrength, halved repeatedly to size undead groups; area-local reuse
+4A1C StungInChamber  # set after "SHARP CRACK ... STUNG"; area-local reuse
+4A3A ZombieStrength  # zombie pool; 255 = destroyed
+4A3B WightStrength  # wight pool; 255 = destroyed
+4A3C LairsCleared  # +1 per lair, +5 vampire (guess: progress score)
+4A3D GiantZombiesKilled  # +1 after giant zombie fight
+4A3E GiantSkeletonsKilled  # +1 after giant skeleton fight
+4A3F WightBossesKilled  # +1 after wight boss fight
+4A41 VampireState  # 250 fled as vapor, 255 slain; >=254 ends spectre events
+4A42 MysticManState  # counts up, 250 joined ("VAMPIRE IN NORTHEAST"), 255 done
+4A43 CryptState  # 251 = holy items placed in the dusty crypt
+4A49 SkeletonTreasureTaken  # 255 after treasure 59
+4A4A VampireTreasureTaken  # 255 after crypt treasure 30
+4A88 ZombieTreasureTaken  # 255 after treasure 28
+4A89 WightTreasureTaken  # 255 after treasure 26
+4AD5 VampireGuardLoaded  # 255 once monster 70 joined vampire fight
+4AF2 GiantSkeletonState  # 1 seen, +10 after fight
+4AF3 GiantZombieState  # 1 seen, +10 after fight
+4AF4 WightBossState  # 1 seen, +10 after fight
+4AF5 Event5Seen  # set at L_A4AA (guess)
+4AF6 FurTowerSeen  # set at L_A6F7 near "HAIR AND FUR"
+4AF7 LightningTowerFought  # set after wights at static tower
+4AF8 Treasure29Taken  # set after treasure 29
+B6C7 GroupDistTable  # GetTable -> MonsterDist by undead kind
+B6D0 GroupTable1  # GetTable -> [6E7B] by undead kind
+B6D9 GroupTable2  # GetTable -> [6E7C] by undead kind
+B6E2 GroupTable3  # GetTable -> [6E7D] by undead kind
+B6EB FleeXTable  # GetTable -> PartyX after defeat
+B6F0 FleeYTable  # GetTable -> PartyY after defeat

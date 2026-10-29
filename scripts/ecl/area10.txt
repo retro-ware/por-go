@@ -1,0 +1,1161 @@
+event0:
+	Save 8 Sky
+	Save 9 SkyInside
+	Compare LeftMap 0
+	IfEq
+	Goto InsideEnter
+	Save SavedGroundShade SetGroundShade
+	Save 0 WallSplitA
+	Save 0 WallSplitB
+	Save 7 SymbolSet
+	NewECL 26
+
+InsideEnter:
+	Save "THE SPECTRE HAS NOTICED YOU." str AuxMonsterName
+	AndOr 127 Cell Scratch10
+	Compare MysticManState 3
+	IfLt
+	Goto VampireBlocksMove
+	Exit
+
+VampireBlocksMove:
+	Compare VampireState 255
+	IfEq
+	Exit
+	CompareAnd Scratch10 29 Facing 0
+	IfEq
+	Save 255 HoldMove
+	Exit
+
+event1:
+	Save 0 Surprise
+	Save 0 MaxDist
+	Save 101 Morale
+	Save 0 Scratch6
+	AndOr 127 Cell Scratch10
+	Compare VampireState 254
+	IfGe
+	Exit
+	Save 0 AuxCounter
+
+FindCellLoop:
+	Compare AuxCounter Scratch10
+	IfEq
+	Goto CellDispatch
+	Compare AuxCounter 29
+	IfGt
+	Exit
+	Arith 1 AuxCounter AuxCounter
+	Goto FindCellLoop
+
+CellDispatch:
+	OnGoto AuxCounter 30 Done Cell1Event SkeletonPatrol SkeletonAmbush GiantSkeletonApproach GiantSkeletonLair ZombiePatrol GiantZombieApproach GiantZombieLair WightPatrol WightBossWarning WightBossApproach WightBossLair BoneTowerView FumesDamage SkeletonLairEntry FurTowerView ClothingChamber ZombieLairEntry Monster114Ambush LightningTowerView GlassChamberSting WightLairEntry BrassDoorsView GiftVoice BlackCrypt MysticManMeet PitStairs VampireLair MysticManHint
+	Exit
+
+event2:
+	Compare VampireState 254
+	IfGe
+	Goto NoRestHere
+	Save 1 RestEvery
+	Save 4 RestChance
+	Exit
+
+NoRestHere:
+	Save 0 RestEvery
+	Save 0 RestChance
+	Exit
+
+event3:
+	Save 0 RestChance
+	Goto GhoulPack
+
+event4:
+	Save 1 WallSplitA
+	Save 1 WallSplitB
+	LoadFiles 10 2 255
+	LoadFiles 21 22 20
+	Save 8 SetSkyShade
+	Compare VisitStage 0
+	IfEq
+	Save SetGroundShade SavedGroundShade
+	Save 11 SetGroundShade
+	Call CallRedraw
+	Save 0 NoCoords
+	Compare VisitStage 0
+	IfGt
+	Exit
+	Save 72 SoundParamA
+	Save 189 SoundParamB
+	Save 4 PartyY
+	Save 0 PartyX
+	Save 1 Facing
+	Arith 1 VisitStage VisitStage
+	PartyStrength PartyPower
+	Arith PartyPower 2 PartyPower
+	Compare UndeadKillTable PartyPower
+	IfLt
+	Arith UndeadKillTable PartyPower SkeletonGroup
+	IfGe
+	Save 0 SkeletonGroup
+	IfEq
+	Save 1 SkeletonsGone
+	Save SkeletonGroup SkeletonCount
+	Arith PartyPower 2 PartyPower
+	Compare ZombieStrength PartyPower
+	IfLt
+	Arith ZombieStrength PartyPower ZombieGroup
+	IfGe
+	Save 0 ZombieGroup
+	IfEq
+	Save 1 ZombiesGone
+	Save ZombieGroup ZombieCount
+	Arith PartyPower 2 PartyPower
+	Compare WightStrength PartyPower
+	IfLt
+	Arith WightStrength PartyPower WightGroup
+	IfGe
+	Save 0 WightGroup
+	IfEq
+	Save 1 WightsGone
+	Save WightGroup WightCount
+	Save WightCount WightsTotal
+	Compare WightGroup 4
+	IfGt
+	Save 4 WightGroup
+	Compare RestChance 255
+	IfEq
+	Goto NoRestHere
+
+Done:
+	Exit
+
+Cell1Event:
+	Compare VisitStage 1
+	IfGt
+	Exit
+	Print ""
+	Compare Hours 14
+	IfLt
+	Print "THE SKY DARKENS. "
+	Save 8 Sky
+	Call CallRedraw
+	Print "FIERCE GUSTS OF WIND HOWL PAST AND THE GROUND SHAKES AS PEALS OF THUNDER ROCK THE LAND.  THE SWIRLING MURK HIDES WHAT LIES AHEAD."
+	Gosub PressReturn
+	Save 15 Sky
+	Call CallRedraw
+	Save 8 Sky
+	Call CallRedraw
+	Save 10 Sound
+	Call CallSound
+	Print "UNTIL AN EXPLOSION OF LIGHTNING REVEALS THE NIGHTMARE SCENE OF A GRAVEYARD TURNED UPSIDE DOWN."
+	Arith 1 VisitStage VisitStage
+	Exit
+
+SkeletonPatrol:
+	Compare UndeadKillTable 255
+	IfEq
+	Exit
+	Compare SkeletonGroup 0
+	IfEq
+	Exit
+	Random 9 Scratch1
+	Compare 8 Scratch1
+	IfGt
+	Exit
+	Save " SKELETONS." str AuxMonsterName
+	Save SkeletonGroup Scratch7
+	Save 0 Scratch9
+	Goto RandomEncounter
+
+SkeletonsBeaten:
+	Arith Beaten SkeletonGroup SkeletonGroup
+	Arith Beaten UndeadKillTable UndeadKillTable
+	Exit
+
+SkeletonAttack:
+	Gosub SkeletonsApproach
+	Print "SKELETONS SILENTLY ATTACK."
+	Gosub PressReturn
+	Goto StartFight
+
+SkeletonAmbush:
+	Compare SkeletonAmbushDone 0
+	IfGt
+	Exit
+	Compare SkeletonCount 0
+	IfEq
+	Exit
+	Save 8 Scratch9
+	SetupMonster 34 0 11
+	Print "CLAWS RISE FROM THE SOIL AND ATTEMPT TO DRAG YOU DOWN."
+	Gosub PressReturn
+	Save 34 Scratch5
+	Save 34 Scratch3
+	Save SkeletonCount Scratch7
+	Goto StartFight
+
+SkeletonAmbushOver:
+	Arith 1 SkeletonAmbushDone SkeletonAmbushDone
+	Exit
+
+GiantSkeletonApproach:
+	Compare GiantSkeletonState 0
+	IfGt
+	Exit
+	Compare UndeadKillTable 255
+	IfEq
+	Exit
+	Gosub SkeletonsApproach
+	Print "THE ENCLAVE IS GUARDED BY A SKELETON ARMY!"
+	Gosub PressReturn
+	Save 3 Scratch9
+	Save 1 Scratch6
+	Gosub RandomEncounter
+	Save 15 Scratch7
+	Goto StartFight
+
+GiantSkeletonStep:
+	Arith 1 GiantSkeletonState GiantSkeletonState
+	Exit
+
+GiantSkeletonLair:
+	Compare UndeadKillTable 255
+	IfEq
+	Goto SkeletonTreasure
+	Compare GiantSkeletonState 9
+	IfGt
+	Goto SkeletonTreasure
+	Save 0 Scratch7
+	Print "YOU FIND A GIANT SKELETON"
+	Compare SkeletonCount 17
+	IfLt
+	Goto GiantSkeletonFight
+	Print " AND ITS RETAINERS."
+	Save SkeletonCount Scratch7
+
+GiantSkeletonFight:
+	Gosub SkeletonsApproach
+	Gosub PressReturn
+	ClearMonsters
+	LoadMonster 22 1 22
+	Compare Scratch7 0
+	IfNe
+	LoadMonster 34 Scratch7 34
+	Combat
+	Gosub CheckFled
+	Arith 10 GiantSkeletonState GiantSkeletonState
+	Arith 1 GiantSkeletonsKilled GiantSkeletonsKilled
+
+SkeletonTreasure:
+	Compare SkeletonTreasureTaken 255
+	IfEq
+	Exit
+	Compare Search 1
+	IfNe
+	Exit
+	Print "YOU FIND A MARBLE CHEST.  OPEN IT?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 TakeSkeletonTreasure Done
+
+TakeSkeletonTreasure:
+	ClearMonsters
+	Treasure 0 28 0 69 0 10 12 59
+	Combat
+	Save 255 SkeletonTreasureTaken
+	Exit
+
+ZombiePatrol:
+	Compare ZombieStrength 255
+	IfEq
+	Exit
+	Compare ZombieGroup 0
+	IfEq
+	Exit
+	Random 9 Scratch1
+	Compare Search 1
+	IfEq
+	Arith 2 Scratch1 Scratch1
+	Compare Scratch1 7
+	IfGt
+	Exit
+	Save " ZOMBIES." str AuxMonsterName
+	Save ZombieGroup Scratch7
+	Save 1 Scratch9
+	Goto RandomEncounter
+
+ZombiesBeaten:
+	Arith Beaten ZombieGroup ZombieGroup
+	Arith Beaten ZombieStrength ZombieStrength
+	Exit
+
+ZombieAttack:
+	Gosub ZombiesApproach
+	Print "LUMBERING FIGURES REACH FOR YOU."
+	Gosub PressReturn
+	Goto StartFight
+
+GiantZombieApproach:
+	Compare ZombieStrength 255
+	IfEq
+	Exit
+	Compare GiantZombieState 0
+	IfGt
+	Exit
+	Gosub ZombiesApproach
+	Print "ZOMBIES SHUFFLE DOWN THE STAIRS!"
+	Gosub PressReturn
+	Save 4 Scratch9
+	Save 1 Scratch6
+	Gosub RandomEncounter
+	Save 25 Scratch7
+	Goto StartFight
+
+GiantZombieStep:
+	Arith 1 GiantZombieState GiantZombieState
+	Exit
+
+GiantZombieLair:
+	Compare GiantZombieState 10
+	IfGt
+	Goto ZombieTreasure
+	Compare ZombieStrength 255
+	IfEq
+	Goto ZombieTreasure
+	Print "A ZOMBIE WITH GRAY, LEATHERY-HARD SKIN GAZES AT YOU WITH HATE-FILLED EYES."
+	Gosub PressReturn
+	Gosub ZombiesApproach
+	Save 0 Scratch1
+	Compare ZombieCount 16
+	IfGe
+	Save 15 Scratch1
+	ClearMonsters
+	LoadMonster 29 1 35
+	Compare Scratch1 0
+	IfNe
+	LoadMonster 35 Scratch1 35
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 10 GiantZombieState GiantZombieState
+	Arith 1 GiantZombiesKilled GiantZombiesKilled
+
+ZombieTreasure:
+	Compare ZombieTreasureTaken 255
+	IfEq
+	Exit
+	Print "VARIOUS OBJECTS ARE SCATTERED ABOUT. WILL YOU PICK THEM UP?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 TakeZombieTreasure Done
+
+TakeZombieTreasure:
+	ClearMonsters
+	Treasure 0 #0122 0 110 0 0 0 28
+	Combat
+	Save 255 ZombieTreasureTaken
+	Exit
+
+WightPatrol:
+	Compare WightStrength 255
+	IfEq
+	Exit
+	Compare WightGroup 0
+	IfEq
+	Exit
+	Random 9 Scratch1
+	Compare Search 1
+	IfEq
+	Arith 2 Scratch1 Scratch1
+	Compare Scratch1 8
+	IfLt
+	Exit
+	Save " WIGHTS." str AuxMonsterName
+	Save WightGroup Scratch7
+	Save 2 Scratch9
+	Goto RandomEncounter
+
+WightGroupFight:
+	Arith WightGroup WightStrength WightStrength
+	Arith WightGroup WightsTotal WightsTotal
+	Save WightsTotal WightGroup
+	Compare WightGroup 4
+	IfGt
+	Save 4 WightGroup
+	Exit
+
+WightAttack:
+	Gosub WightsApproach
+	Print "DARK, BENT CREATURES RUSH SWIFTLY AT YOU."
+	Gosub PressReturn
+	Goto StartFight
+
+WightBossWarning:
+	Compare WightStrength 255
+	IfEq
+	Exit
+	Compare WightBossState 0
+	IfGt
+	Exit
+	Print "YOU STAND BEFORE A HUGE TOWER. THE SINGLE ENTRANCE IS LOCKED AND STRONGLY BUILT."
+	Gosub PressReturn
+	Print "WARNING VOICES CRY FROM WITHIN.  'WE ARE THE SPIRITS OF THOSE WHO FOUGHT THE DRAGONS.  LEAVE US OR DIE.'"
+	Gosub PressReturn
+	Print "DO YOU LEAVE?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 BackAwayFromWights WightBossApproach
+
+BackAwayFromWights:
+	Save 14 PartyX
+	Save 3 Facing
+	Exit
+
+WightBossApproach:
+	Compare WightBossState 0
+	IfGt
+	Exit
+	Compare WightStrength 255
+	IfEq
+	Exit
+	Gosub WightsApproach
+	Gosub PressReturn
+	Print "YOU ARE ATTACKED BY WIGHTS."
+	Save 5 Scratch9
+	Save 1 Scratch6
+	Gosub RandomEncounter
+	Save 4 Scratch7
+	Goto StartFight
+
+WightBossStep:
+	Arith 1 WightBossState WightBossState
+	Exit
+
+WightBossLair:
+	Compare WightBossState 9
+	IfGt
+	Goto WightTreasure
+	Compare WightStrength 255
+	IfEq
+	Goto WightTreasure
+	SetupMonster 21 1 21
+	Approach
+	Print "IN THE CHAMBER IS A SINGLE CRYPT.  FLOATING ABOVE THE CRYPT IS A WRAITH. 'I AM THE PROTECTOR OF THE PALADIN. I GUARD HIS REMAINS FOR ALL ETERNITY.  LEAVE OR SUFFER.'  WHAT DO YOU DO?"
+	HMenu Scratch1 2 "LEAVE" "STAY"
+	OnGoto Scratch1 2 LeaveWightLair FightWightBoss
+
+LeaveWightLair:
+	Save 15 PartyX
+	Save 6 PartyY
+	Save 0 Facing
+	Goto RedrawExit
+
+FightWightBoss:
+	ClearMonsters
+	LoadMonster 21 1 21
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 10 WightBossState WightBossState
+	Arith 1 WightBossesKilled WightBossesKilled
+
+WightTreasure:
+	Compare WightTreasureTaken 255
+	IfEq
+	Exit
+	Print "IN THE CRYPT LIES THE FULLY-EQUIPPED BODY OF A MIGHTY WARRIOR.  DO YOU STRIP THE BODY?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 StripWarriorBody Done
+
+StripWarriorBody:
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 26
+	Combat
+	Save 255 WightTreasureTaken
+	Exit
+
+BoneTowerView:
+	Compare Facing 2
+	IfNe
+	Goto BoneTowerCheck
+	Print "A TOWER STANDS CLEARLY ABOVE ALL CRYPTS IN THE AREA.  HUGE PILES OF HUMAN BONES ARE STREWN ABOUT."
+	Gosub PressReturn
+
+BoneTowerCheck:
+	Compare Event5Seen 0
+	IfGt
+	Goto FumesDoorway
+	Compare UndeadKillTable 255
+	IfEq
+	Exit
+	Compare SkeletonCount 1
+	IfLt
+	Exit
+	Gosub SkeletonsApproach
+	Print "A SMALL ARMY OF SKELETONS RUSHES FROM THE TOWER."
+	Gosub PressReturn
+	Save 6 Scratch9
+	Save 1 Scratch6
+	Gosub RandomEncounter
+	Save 30 Scratch7
+	Goto StartFight
+
+BoneTowerSeenSet:
+	Arith 1 Event5Seen Event5Seen
+
+FumesDoorway:
+	Compare Facing 0
+	IfNe
+	Print "NOXIOUS FUMES POUR FROM THE TOWER DOORWAY, MAKING IT IMPOSSIBLE TO SEE INSIDE."
+	Exit
+
+FumesDamage:
+	Compare FumesDamaged 0
+	IfGt
+	Exit
+	Print "NOXIOUS FUMES TEAR AT YOUR THROAT AS YOU CRUNCH THROUGH PILES OF DRIED BONES."
+	Damage 195 10 1 0 0
+	Arith 1 FumesDamaged FumesDamaged
+	Exit
+
+SkeletonLairEntry:
+	Compare SkeletonLairDone 0
+	IfGt
+	Exit
+	Compare UndeadKillTable 255
+	IfEq
+	Exit
+	Compare SkeletonCount 0
+	IfNe
+	Goto SkeletonMakerMenu
+	Compare SkeletonsGone 0
+	IfEq
+	Exit
+
+SkeletonMakerMenu:
+	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 " YOU SURPRISE A SHADOWY FORM CREATING NEW SKELETONS." "" "" 0 0
+	OnGoto Scratch1 4 Done SkeletonMakerSurprised FleeRandomly SkeletonMakerNotices
+
+SkeletonMakerSurprised:
+	Save 2 Surprise
+	Goto FightSkeletonMaker
+
+SkeletonMakerNotices:
+	Print str AuxMonsterName
+
+FightSkeletonMaker:
+	ClearMonsters
+	LoadMonster 17 1 17
+	Treasure 0 0 0 #07D0 #022B 0 3 255
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 1 SkeletonLairDone SkeletonLairDone
+	Compare UndeadKillTable 249
+	IfGt
+	Save 249 UndeadKillTable
+	Arith 5 UndeadKillTable UndeadKillTable
+	Arith 1 LairsCleared LairsCleared
+	Exit
+
+FurTowerView:
+	Compare Facing 0
+	IfEq
+	Goto FurTowerCheck
+	Print "ALL AROUND THE TOWER, PILES OF HAIR AND FUR COVER THE AREA."
+
+FurTowerCheck:
+	Compare FurTowerSeen 0
+	IfGt
+	Exit
+	Gosub ZombiesApproach
+	Gosub PressReturn
+	Print "THE TOWER DOOR SWINGS OPEN AND A SMALL ARMY OF ZOMBIES SHUFFLES OUT.  THE DOOR CLOSES WITH A CLAMOR OF LOCKS FALLING INTO PLACE."
+	Save 7 Scratch9
+	Save 1 Scratch6
+	Gosub RandomEncounter
+	Save 15 Scratch7
+	Goto StartFight
+
+FurTowerSeenSet:
+	Arith 1 FurTowerSeen FurTowerSeen
+	Exit
+
+ClothingChamber:
+	Print "THE CHAMBER IS FILLED WITH USELESS CLOTHING AND RUSTING ARMOR."
+	Exit
+
+ZombieLairEntry:
+	Compare ZombieLairDone 0
+	IfGt
+	Exit
+	Compare ZombieStrength 255
+	IfEq
+	Exit
+	Compare ZombieCount 0
+	IfNe
+	Goto ZombieMakerMenu
+	Compare ZombiesGone 0
+	IfEq
+	Exit
+
+ZombieMakerMenu:
+	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 "IN A CHAMBER FILLED WITH RUINED PARCHMENTS, YOU SURPRISE A SHAPE THAT IS CREATING ZOMBIES." "" "" 0 0
+	OnGoto Scratch1 4 Done ZombieMakerSurprised FleeRandomly ZombieMakerNotices
+
+ZombieMakerSurprised:
+	Save 2 Surprise
+	Goto FightZombieMaker
+
+ZombieMakerNotices:
+	Print str AuxMonsterName
+
+FightZombieMaker:
+	ClearMonsters
+	LoadMonster 17 1 17
+	Treasure 0 0 0 #0457 #021E 13 0 255
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 1 ZombieLairDone ZombieLairDone
+	Compare ZombieStrength 249
+	IfGt
+	Save 249 ZombieStrength
+	Arith 5 ZombieStrength ZombieStrength
+	Arith 1 LairsCleared LairsCleared
+	Exit
+
+Monster114Ambush:
+	Compare Monster114Fought 0
+	IfGt
+	Exit
+	SetupMonster 114 1 114
+	Approach
+	Print "WITH SLOW, OMINOUS CREAKS, MUMMIES OPEN THEIR SARCOPHOGI."
+	Gosub PressReturn
+	PartyStrength Scratch1
+	Arith Scratch1 16 Scratch1
+	Compare Scratch1 0
+	IfEq
+	Save 1 Scratch1
+	ClearMonsters
+	LoadMonster 114 Scratch1 114
+	Combat
+	Arith 1 Monster114Fought Monster114Fought
+	Exit
+
+LightningTowerView:
+	Compare Facing 2
+	IfEq
+	Print "THE AIR AROUND THE TOWER IS CHARGED WITH STATIC ELECTRICITY AND BALL LIGHTNING. "
+	Compare LightningTowerFought 0
+	IfGt
+	Goto WarningDoor
+	Compare WightStrength 255
+	IfEq
+	Goto WarningDoor
+	Compare WightCount 0
+	IfEq
+	Goto WarningDoor
+	Print " WIGHTS APPEAR FROM BEHIND THE TOWER."
+	Gosub WightsApproach
+	Gosub PressReturn
+	Save 9 Scratch9
+	ClearMonsters
+	LoadMonster 20 WightCount 20
+	Goto FightGroup
+
+LightningTowerSeenSet:
+	Arith 1 LightningTowerFought LightningTowerFought
+	Arith WightCount WightStrength WightStrength
+	Exit
+
+WarningDoor:
+	Compare Facing 2
+	IfEq
+	Print "WRITTEN ON THE DOOR (IN THE COMMON TONGUE) IS: 'DO NOT OPEN THIS DOOR. A GREAT EVIL HAS BEEN LAID TO REST HERE.'"
+	IfNe
+	Exit
+	Compare Search 1
+	IfEq
+	Print "THERE ARE LARGE SILVER HOLY SYMBOLS UP AND DOWN THE CRACK IN THE DOORWAY."
+	Exit
+
+GlassChamberSting:
+	Print "THE LOWER CHAMBER IS FILLED WITH GLASS AND FUR OBJECTS OF ALL TYPES. "
+	Compare StungInChamber 1
+	IfLt
+	Print "A SHARP CRACK SPLITS THE AIR AND YOU ARE STUNG."
+	IfGe
+	Exit
+	Gosub PressReturn
+	Damage 202 4 1 0 2
+	Arith 1 StungInChamber StungInChamber
+	Exit
+
+WightLairEntry:
+	Compare WightLairDone 0
+	IfGt
+	Exit
+	Compare WightStrength 255
+	IfEq
+	Exit
+	Compare WightCount 0
+	IfNe
+	Goto WightMakerMenu
+	Compare WightsGone 0
+	IfEq
+	Exit
+
+WightMakerMenu:
+	EncounterMenu 17 0 17 Scratch1 1 3 2 3 4 "YOU SURPRISE A FIGURE AS IT SUMMONS A WIGHT." "" "" 0 0
+	OnGoto Scratch1 4 Done WightMakerSurprised FleeRandomly WightMakerNotices
+
+WightMakerSurprised:
+	Save 2 Surprise
+	Goto FightWightMaker
+
+WightMakerNotices:
+	Print str AuxMonsterName
+
+FightWightMaker:
+	ClearMonsters
+	LoadMonster 17 1 17
+	Treasure 0 0 0 #07D0 #022B 0 3 255
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 1 WightLairDone WightLairDone
+	Compare WightStrength 249
+	IfGt
+	Save 249 WightStrength
+	Arith 5 WightStrength WightStrength
+	Arith 1 LairsCleared LairsCleared
+	Compare MysticManState 250
+	IfGe
+	Exit
+	Arith 1 MysticManState MysticManState
+	Exit
+
+BrassDoorsView:
+	Compare Facing 2
+	IfNe
+	Goto BrassDoorsFight
+	Print "IN THE ENTRY IS SET A HUGE PAIR OF BRASS DOORS."
+	Gosub PressReturn
+
+BrassDoorsFight:
+	Compare TowerFightDone 0
+	IfGt
+	Goto KnightPanel
+	Print "SHADOWY FORMS FLOW FROM BETWEEN THE DOORS AND ATTACK."
+	SetupMonster 17 2 17
+	Approach
+	ClearMonsters
+	LoadMonster 17 2 17
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 1 TowerFightDone TowerFightDone
+	Arith 2 LairsCleared LairsCleared
+	Compare MysticManState 250
+	IfGe
+	Exit
+	Arith 2 MysticManState MysticManState
+	Exit
+
+KnightPanel:
+	Compare Facing 0
+	IfNe
+	Print "IN THE MIDDLE OF A DOOR IS A PANEL OF A POWERFUL KNIGHT FIGHTING SEVERAL UNDEAD."
+	Exit
+
+GiftVoice:
+	Compare Treasure29Taken 0
+	IfGt
+	Exit
+	Print "A VOICE SPEAKS, 'COME, MY BRAVE ADVENTURERS.  YOU MUST TAKE MY GIFTS TO BETTER FIGHT THE EVIL THAT HAS COME TO THE CITY.'"
+	Gosub PressReturn
+	Print "FROM THE MAGICALLY-LIT TOMB OF A BRAVE KNIGHT, A BODY RISES FROM ITS RESTING PLACE TO LAY WEAPONS BEFORE THE PARTY."
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 29
+	Combat
+	Arith 1 Treasure29Taken Treasure29Taken
+	Exit
+
+MysticManMeet:
+	Compare MysticManState 3
+	IfLt
+	Exit
+	Compare MysticManState 249
+	IfGt
+	Exit
+	Save 0 Portrait
+	SetupMonster 14 2 2
+	Gosub ApproachTwice
+	Print "YOU ARE APPROACHED BY A MAN CLAD IN MYSTIC ROBES."
+	Gosub PressReturn
+	Print "'HAIL, NOBLE ADVENTURERS,' HE CALLS. 'I WOULD ASK YOU TO HELP ME END THIS FOUL UNDEAD CURSE.'"
+	Gosub PressReturn
+	Print "DO YOU LET HIM JOIN THE PARTY OR SEND HIM AWAY?"
+	HMenu Scratch1 2 "LET HIM JOIN" "SEND HIM AWAY"
+	OnGoto Scratch1 2 MysticManJoins MysticManAttacks
+
+MysticManJoins:
+	Compare PartyCount 7
+	IfGt
+	Goto PartyTooLarge
+	Save 250 MysticManState
+	Print "'THE UNDEAD ARE CONTROLLED BY A VAMPIRE WHO LURKS IN THE NORTHEAST CORNER OF THE GRAVEYARD,' THE MAN SAYS."
+	AddNPC 24 99
+	Save 255 Portrait
+	Exit
+
+PartyTooLarge:
+	Print "YOUR PARTY IS TOO LARGE FOR ME TO JOIN."
+	Exit
+
+MysticManAttacks:
+	Save 1 Surprise
+	Print "'THEN DIE YOU SCUM,' THE MAN SPITS."
+	Save 255 Portrait
+	ClearMonsters
+	LoadMonster 24 1 24
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Save 255 MysticManState
+	Exit
+
+BlackCrypt:
+	Compare CryptState 250
+	IfGt
+	Goto DustyCryptRemains
+	Compare VampireState 250
+	IfEq
+	Goto VampireGuardsApproach
+	Print "INSIDE THE RUINS OF A BLACK MARBLE CRYPT IS A COFFIN FILLED WITH DUST.  AMONG THE PILES OF DUST ARE SEVERAL BROKEN CROSSES, VIALS OF SPILLED HOLY WATER, AND A SCROLL."
+	Gosub PressReturn
+	Print "DO YOU READ THE SCROLL?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 ScrollToJournal CoffinAsk
+
+ScrollToJournal:
+	Print "THE SCROLL IS PLACED IN YOUR JOURNAL AS ENTRY 43."
+	Gosub PressReturn
+
+CoffinAsk:
+	Print "DO YOU WANT TO DO ANYTHING WITH THE COFFIN?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 CoffinMenu Done
+
+CoffinMenu:
+	Print "WHAT DO YOU WANT TO DO TO IT?"
+	HMenu Scratch1 3 "EXAMINE" "SANCTIFY" "OVERTURN"
+	OnGoto Scratch1 3 ExamineCoffin SanctifyCoffin OverturnCoffin
+
+ExamineCoffin:
+	Print "YOU FIND NOTHING."
+	Exit
+
+SanctifyCoffin:
+	Print "YOU SCATTER THE DUST AND PLACE WHAT HOLY ITEMS YOU CAN SPARE INSIDE."
+	Save 251 CryptState
+	Exit
+
+OverturnCoffin:
+	Print "THE COFFIN MAKES A MESS ON THE FLOOR."
+	Exit
+
+DustyCryptRemains:
+	Print "YOU ARE IN THE DUSTY REMAINS OF A BLACK MARBLE CRYPT."
+	Compare VampireState 250
+	IfEq
+	Goto VampireGuardsApproach
+	Exit
+
+VampireGuardsApproach:
+	SetupMonster 23 2 23
+	Delay
+	Approach
+	Delay
+	Approach
+	Print "THERE IS A VAMPIRE HERE."
+	Gosub PressReturn
+	Compare CryptState 251
+	IfEq
+	Goto ReloadVampire
+	Compare VampireFought 0
+	IfGt
+	Goto ReloadVampire
+	ClearMonsters
+	LoadMonster 23 1 23
+	LoadMonster 106 15 106
+
+VampireFightLoop:
+	FindItem 82
+	IfNe
+	Goto FightVampire
+	Compare VampireGuardLoaded 255
+	IfNe
+	LoadMonster 70 1 70
+
+FightVampire:
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Save 255 VampireState
+	Save 254 QuestGraveyard
+	Exit
+
+ReloadVampire:
+	ClearMonsters
+	LoadMonster 105 1 23
+	Goto VampireFightLoop
+
+PitStairs:
+	Compare VampireFought 0
+	IfGt
+	Exit
+	Print "WOODEN STAIRS LEAD INTO A PIT.  DO YOU GO DOWN?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 DescendPit Done
+
+DescendPit:
+	Save 14 PartyX
+	Save 3 Facing
+	Call CallRedraw
+	Compare VampireState 255
+	IfGt
+	Exit
+
+VampireLair:
+	Compare VampireState 250
+	IfGe
+	Goto VampireTreasure
+	Save 15 Sky
+	Call CallRedraw
+	Print "THE CHAMBER LIGHTS UP TO REVEAL A TALL, PALE MAN WITH VERY WHITE TEETH."
+	SetupMonster 23 1 23
+	Approach
+	Gosub PressReturn
+	Compare MysticManState 250
+	IfEq
+	Save 1 Scratch1
+	IfNe
+	Save 0 Scratch1
+	ClearMonsters
+	LoadMonster 23 1 23
+	LoadMonster 106 50 106
+	FindItem 82
+	IfEq
+	LoadMonster 70 1 70
+	IfEq
+	Save 255 VampireGuardLoaded
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	Arith 1 VampireFought VampireFought
+	Save 255 MysticManState
+	Save 250 VampireState
+	Compare UndeadKillTable 249
+	IfGt
+	Save 249 UndeadKillTable
+	Arith 5 UndeadKillTable UndeadKillTable
+	Compare ZombieStrength 249
+	IfGt
+	Save 249 ZombieStrength
+	Arith 5 ZombieStrength ZombieStrength
+	Compare WightStrength 249
+	IfGt
+	Save 249 WightStrength
+	Arith 5 WightStrength WightStrength
+	Arith 5 LairsCleared LairsCleared
+	Save 8 Sky
+	Print "THE VAMPIRE TURNS INTO A VAPOR CLOUD AND FLOATS AWAY."
+	Exit
+
+VampireTreasure:
+	Compare VampireTreasureTaken 255
+	IfEq
+	Exit
+	Compare Search 1
+	IfNe
+	Exit
+	Print "YOU FIND THE VAMPIRE'S TREASURE TROVE.  DO YOU TAKE IT?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 TakeVampireTreasure Done
+
+TakeVampireTreasure:
+	ClearMonsters
+	Treasure 0 0 0 #2328 0 12 0 30
+	Combat
+	Save 255 VampireTreasureTaken
+	Exit
+
+GhoulPack:
+	SetupMonster 72 2 72
+	Approach
+	Delay
+	Approach
+	Print "A PACK OF HUNGRY GHOULS LOPES TOWARD YOU."
+	Gosub PressReturn
+	Random 2 Scratch1
+	Arith 1 Scratch1 Scratch1
+	PartyStrength Scratch8
+	Arith Scratch8 Scratch1 Scratch1
+	Compare Scratch1 0
+	IfEq
+	Save 1 Scratch1
+	ClearMonsters
+	LoadMonster 72 Scratch1 72
+	Combat
+	Exit
+
+MysticManHint:
+	CompareAnd Facing 0 MysticManState 250
+	IfEq
+	Print "THE MYSTIC MAN SPEAKS, 'THE VAMPIRE IS BEHIND THE NORTHERN WALL.'"
+	Exit
+
+RandomEncounter:
+	GetTable GroupDistTable Scratch9 MonsterDist
+	GetTable GroupTable1 Scratch9 Scratch3
+	GetTable GroupTable2 Scratch9 Scratch4
+	GetTable GroupTable3 Scratch9 Scratch5
+	Compare Scratch6 1
+	IfEq
+	Return
+	PartySurprise Scratch1 Scratch2
+	Surprise Scratch1 Scratch2 0 0
+	Compare Surprise 1
+	IfNe
+	Goto SurpriseCheck
+	OnGoto Scratch9 3 SkeletonAttack ZombieAttack WightAttack
+
+SurpriseCheck:
+	Compare Surprise 2
+	IfGt
+	Goto PartyConfronted
+	IfEq
+	Goto PartySneaksUp
+	IfLt
+	Goto FindUndead
+
+PartyConfronted:
+	Save 0 MaxDist
+	Save "YOU ARE SUDDENLY CONFRONTED BY " str AuxText
+	Save str AuxMonsterName str AuxNameCopy7
+	Goto EncounterChoice
+
+PartySneaksUp:
+	Save "YOU HAVE MANAGED TO SNEAK UP ON SOME " str AuxText
+	Save str AuxMonsterName str AuxNameCopy8
+	EncounterMenu Scratch5 MonsterDist Scratch5 Scratch1 1 0 2 3 4 str AuxText "" "" 0 0
+	OnGoto Scratch1 4 Done StartFight FleeRandomly PartyNoticed
+
+PartyNoticed:
+	Save 0 Surprise
+	Print "YOU ARE NOTICED."
+	Goto EncounterChoice
+
+FindUndead:
+	Print "YOU FIND SOME UNDEAD."
+
+EncounterChoice:
+	EncounterMenu Scratch5 MonsterDist Scratch5 Scratch1 1 1 1 1 4 "" "" "" Scratch4 Scratch4
+	OnGoto Scratch1 4 Done StartFight FleeRandomly ParlayFails
+
+ParlayFails:
+	Parlay 0 0 0 0 0 Scratch1
+	Print "THEY DON'T LISTEN."
+
+StartFight:
+	Save 0 Beaten
+	Compare Scratch7 0
+	IfEq
+	Save 1 Scratch7
+	ClearMonsters
+	LoadMonster Scratch3 Scratch7 Scratch5
+	Compare Scratch3 20
+	IfEq
+	Goto LoadRandomUndead
+
+FightGroup:
+	Combat
+	Gosub CheckFled
+	Compare Scratch1 2
+	IfEq
+	Goto FleeRandomly
+	OnGoto Scratch9 10 SkeletonsBeaten ZombiesBeaten WightGroupFight GiantSkeletonStep GiantZombieStep WightBossStep BoneTowerSeenSet FurTowerSeenSet SkeletonAmbushOver LightningTowerSeenSet
+
+CheckFled:
+	Save 0 Scratch1
+	Compare CombatEnd 128
+	IfGt
+	Save 2 Scratch1
+	Return
+
+FleeRandomly:
+	Random 3 Facing
+	Random 4 Scratch1
+	GetTable FleeXTable Scratch1 PartyX
+	GetTable FleeYTable Scratch1 PartyY
+	Save 1 NoCoords
+
+RedrawExit:
+	Call CallRedraw
+	Exit
+
+LoadRandomUndead:
+	Arith Scratch7 4 Scratch6
+	LoadMonster 35 Scratch6 35
+	Random 4 Scratch1
+	Compare Scratch1 2
+	IfLt
+	LoadMonster 29 2 35
+	IfGt
+	LoadMonster 72 2 72
+	IfEq
+	LoadMonster 114 1 114
+	Goto FightGroup
+
+PressReturn:
+	HMenu AuxMonster 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Return
+
+SkeletonsApproach:
+	SetupMonster 34 2 34
+	Goto ApproachTwice
+
+ZombiesApproach:
+	SetupMonster 35 2 35
+	Goto ApproachTwice
+
+WightsApproach:
+	SetupMonster 20 2 20
+
+ApproachTwice:
+	Approach
+	Delay
+	Approach
+	Return
+
+YesNoMenu:
+	HMenu Scratch1 2 "YES" "NO"
+	Return

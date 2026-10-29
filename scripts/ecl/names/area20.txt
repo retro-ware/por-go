@@ -1,0 +1,35 @@
+4A00 SlumsEntered  # set 255 after the "entered the monster-crawling slums" text; area-local reuse
+4A04 OhloQuestState  # 250 sent to fetch potion from rope guild, 255 Ohlo fought/finished; area-local reuse
+4A07 DirtyRoomSeen  # set 250 after dirty room text; area-local reuse
+4A08 StableSeen20  # set 250 after unclean stable text; area-local reuse
+4A0A HempMarketSeen  # set 255 after old hemp market rumours; area-local reuse
+4A0B FortuneTellerState  # 251 visited old woman, 255 murdered her (raises patrol odds); area-local reuse
+4A0F StorageRoomSeen  # set 255 after small storage room text; area-local reuse
+4A14 EmptyRoomSeen  # set 255 after large empty room text; area-local reuse
+4A16 PatrolMorale  # set 30..70 per patrol size, copied to Morale, raised on bribes/anger; area-local reuse
+4A17 RopeGuildEntered  # set 255 after rope guild entry text; area-local reuse
+4A18 InRopeGuild  # 1 inside rope guild, 0 just north of its entry; area-local reuse
+4A19 BoothManDone  # set 255 once the booth man talked/fled/gave package; area-local reuse
+4A1D BoothFightDone  # set 1 after fight at the rope guild booth; area-local reuse
+4A1F EventTimer  # 0 in event1, 200 in event3 (guess: step/encounter timer); area-local reuse
+4A80 PatrolsBeaten  # +1 per patrol fight won; >=15 stops patrols; fortune text by value; 0 if woman murdered
+4A81 OhloPotionState  # 250 package received from booth, 255 Ohlo fight done
+4A83 FloorChestTaken  # set 255 after chest under loose floorboard
+4A85 KoboldsFed  # set 255 after feeding kobolds fight
+4ACA OrcPapersFight  # set 255 after orcs arguing over papers fight
+4ACB GoblinTrainerFight  # set 255 after goblin instructor fight
+4ACC LeatherBagOpened  # set 255 after long leather bag fight
+4ACD OrcHomeFight  # set 255 after large orc fight
+4ACE HobgoblinGoldState  # 250 hobgoblins beaten, 255 valuables taken
+4ACF GuardsInterceptFight  # set 255 after guards intercept fight
+4AD0 LeadersMeetingFight  # set 255 after monster leaders gathering fight
+4AD6 TreasureRoomFight  # set 255 after treasure room fight
+4AD8 AlertedGuardsFight  # set 255 after alerted guards fight
+4AD9 GrainSackFight  # set 255 after grain sack monsters fight
+B6E3 PatrolDistTable  # GetTable by patrol kind -> MonsterDist
+B6E6 PatrolMonsterTable  # GetTable by patrol kind -> 6E80, used as SetupMonster monster
+B6E9 PatrolTable3  # GetTable by patrol kind -> 9805 (guess)
+B6EC PatrolTable4  # GetTable by patrol kind -> 9806 (guess)
+B6EF PatrolPictureTable  # GetTable by patrol kind -> 9827, SetupMonster picture (guess)
+B6F2 HideXTable  # index -> PartyX after hiding
+B6F7 HideYTable  # index -> PartyY after hiding

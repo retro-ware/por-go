@@ -1,0 +1,25 @@
+4A01 EncCount  # number of main monsters in the patrol (computed from party strength); area-local reuse
+4A02 EncMonster  # monster id of current patrol (SetupMonster/LoadMonster); area-local reuse
+4A03 EncExtraCount  # number of second-kind monsters in the patrol; area-local reuse
+4A04 EncType  # patrol kind 0-8 rolled from B260, index into encounter tables; area-local reuse
+4A05 EncMenuMode  # EncounterMenu option, 2 normally, 0 once PatrolsBeaten>=64; area-local reuse
+4A08 EncDistance  # per-type value from B26F passed to EncounterMenu (guess: distance); area-local reuse
+4A0A EncMorale  # morale for patrol combat (+10 with a second group); area-local reuse
+4A0B EncParlayMod  # per-type value from B27B (parlay modifier), otherwise unused; area-local reuse
+4A19 BaneMeetHour  # Clock_3 + 2 (mod 24): hour to return to meet the Bane recruiter; area-local reuse
+4A1A LastBuildingCell  # cell of the last abandoned building visited; 4 = Ilmater temple met; area-local reuse
+4A34 PatrolsBeaten  # counter of monster patrols defeated; 9 -> area cleared, 64 = auction mode
+4A35 DisguiseState  # 0 not chosen, 1 bold, 2 disguised, 254 auction over, 255 cover blown
+4A36 OverheardIndex  # which overheard monster rumour (0-4) plays next
+4A37 TavernState  # 0 first visit, 1 brawl begun, 2 brawl won, 3 bar destroyed
+4A38 BaneRecruiterState  # 0 robed orc not met, 1 meeting set, 2 ambush fought
+B255 DisguiseChoiceTable  # menu choice -> DisguiseState
+B258 RandomExitX  # table of X positions party is thrown to after fleeing
+B260 EncTypeTable  # random roll 0-8 -> EncType
+B269 EncMonsterTable  # per-type monster id
+B26F EncDistanceTable  # per-type value -> EncDistance
+B275 EncStrengthTable  # per-type strength divisor
+B27B EncParlayTable  # per-type parlay modifier
+B281 EncMoraleTable  # per-type morale
+B287 EncMinCountTable  # per-type count threshold for adding a second group
+B28D EncExtraTable  # per-type second-group count

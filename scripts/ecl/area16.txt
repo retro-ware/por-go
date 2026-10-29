@@ -1,0 +1,607 @@
+SetSky:
+	Save 8 SkyInside
+	Save 11 Scratch10
+	Compare Hours 13
+	IfGt
+	Save 8 Scratch10
+	Save Scratch10 Sky
+	Return
+
+FindPoolCell:
+	Save 0 Scratch10
+	AndOr Cell 127 Scratch7
+
+FindPoolCellLoop:
+	GetTable PoolCellTable Scratch10 Scratch9
+	Compare Scratch9 Scratch7
+	IfEq
+	Return
+	Arith 1 Scratch10 Scratch10
+	Compare Scratch10 13
+	IfLt
+	Goto FindPoolCellLoop
+	Compare 1 0
+	Return
+
+CapLizardCounts:
+	Save 0 Scratch8
+	Compare LizardMenKilled 50
+	IfLt
+	Arith LizardMenKilled 50 Scratch8
+	GetTable Table9A09 Scratch7 Scratch5
+	Compare Scratch5 Scratch8
+	IfGt
+	Save Scratch8 Scratch5
+	Save 0 Scratch8
+	Compare GiantLizardsKilled 10
+	IfLt
+	Arith PoolTreasureTaken 10 Scratch8
+	GetTable Table9A0E Scratch7 Scratch4
+	Compare Scratch4 Scratch8
+	IfGt
+	Save Scratch8 Scratch4
+	Return
+
+CountLizardKills:
+	GetTable Table9A09 Scratch7 Scratch1
+	Save LizardMenKilled Scratch6
+	Gosub AddKills
+	Save Scratch6 LizardMenKilled
+	GetTable Table9A0E Scratch7 Scratch1
+	Save GiantLizardsKilled Scratch6
+	Gosub AddKills
+	Save Scratch6 GiantLizardsKilled
+	Return
+
+AddKills:
+	Compare Scratch1 Beaten
+	IfLt
+	Goto AddKillsCapped
+	Save Beaten Scratch1
+
+AddKillsCapped:
+	Arith Scratch1 Beaten Beaten
+	Arith Scratch1 Scratch6 Scratch6
+	Return
+
+TakeItMenu:
+	Print " DO YOU TAKE IT?"
+
+YesNoMenu:
+	HMenu Scratch10 2 "YES" "NO"
+	Print " "
+	Compare Scratch10 0
+	Return
+
+PressToContinue:
+	HMenu Scratch9 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Print " "
+	Return
+
+event0:
+	Gosub SetSky
+	Save 0 Scratch10
+	AndOr Cell 127 Scratch7
+
+BlockScanLoop:
+	GetTable Table9B00 Scratch10 Scratch9
+	GetTable Table9B0C Scratch10 Scratch8
+	CompareAnd Scratch9 Scratch7 Scratch8 Facing
+	IfEq
+	Goto BlockDispatch
+	Arith Scratch10 1 Scratch10
+	Compare Scratch10 12
+	IfLt
+	Goto BlockScanLoop
+	Exit
+
+BlockDispatch:
+	GetTable Table9B18 Scratch10 Scratch2
+	GetTable Table9B24 Scratch10 Scratch1
+	OnGoto Scratch2 4 MoatBlocks LeaveRuins TunnelSlopesUp StairsUp
+	LoadMonster ?0C:0D ?0E:0F ?11:12
+	Return
+
+event1:
+	Save 0 Scratch10
+	AndOr Cell 127 Scratch7
+
+EventScanLoop:
+	GetTable Table9B96 Scratch10 Scratch9
+	Compare Scratch9 Scratch7
+	IfEq
+	Goto EventDispatch
+	Arith Scratch10 1 Scratch10
+	Compare Scratch10 22
+	IfLt
+	Goto EventScanLoop
+	Exit
+
+EventDispatch:
+	GetTable Table9BAC Scratch10 Scratch2
+	GetTable Table9BC2 Scratch10 Scratch1
+	OnGoto Scratch2 6 RuinedBuilding SearchForTunnel CentralKeep LShapedBuilding FindTreasure PoolLizardmen
+	Goto #0504
+
+event2:
+	Save 0 RestEvery
+	Save 10 RestChance
+
+RedrawExit:
+	RedrawView
+	Call CallRedraw
+
+event3:
+	Exit
+
+event4:
+	Gosub SetSky
+	Save 1 NoMagic
+	Save 1 NoCoords
+	Compare AreaKind 16
+	IfEq
+	Exit
+	Save 8 PartyX
+	Save 14 PartyY
+	Save 0 Facing
+	LoadFiles 16 2 255
+	LoadFiles 9 20 23
+	Print "YOU SENSE AN ANTI-MAGIC SHELL AROUND YOU."
+	Gosub PressToContinue
+	Print " "
+	Exit
+
+MoatBlocks:
+	Save 255 HoldMove
+	Print "AHEAD OF YOU IS A MOAT FILLED WITH SLUDGE AND THORNS. YOU CANNOT PROCEED BECAUSE THE MUD WOULD SURELY DRAG YOU DOWN TO YOUR DEATH."
+	Exit
+
+LeaveRuins:
+	RedrawView
+	Picture 255
+	Compare QuestLizardmen 255
+	IfEq
+	Goto GotoArea27
+	Compare LizardMenKilled 40
+	IfGe
+	Save 254 QuestLizardmen
+
+GotoArea27:
+	NewECL 27
+
+SearchForTunnel:
+	Compare Scratch1 6
+	IfEq
+	Goto BlockedStairs
+	Compare Search 0
+	IfEq
+	Exit
+	Print "SEARCHING THROUGH THE "
+	OnGoto Scratch10 5 WordRubble WordSwamp WordSwamp WordRubble WordRubble
+	Print " YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?"
+
+GoDownMenu:
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	GetTable DestX Scratch1 PartyX
+	GetTable DestY Scratch1 PartyY
+	GetTable DestFacing Scratch1 Facing
+	LoadFiles 30 2 255
+	LoadFiles 9 17 23
+	AndOr 254 EncountersDone EncountersDone
+	AndOr 254 BuildingsSeen BuildingsSeen
+	RedrawView
+	Save 255 HoldMove
+	Call CallRedraw
+	Save 4 Scratch7
+	Gosub CapLizardCounts
+	Compare Scratch4 2
+	IfLt
+	Exit
+	SetupMonster 59 1 59
+	Print "YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!"
+	Save 0 Surprise
+	Save 100 Morale
+	Approach
+	Delay
+	Save 254 PartyHit
+	Save 252 PartyMove
+	ClearMonsters
+	LoadMonster 59 Scratch4 59
+	Combat
+	Gosub CountLizardKills
+	Exit
+
+BlockedStairs:
+	Print "YOU FIND AN OLD AND PARTIALLY BLOCKED SET OF STAIRS LEADING DOWN INTO THE DARK. DO YOU TAKE THEM?"
+	Goto GoDownMenu
+
+WordRubble:
+	Print "RUBBLE"
+	Return
+
+WordSwamp:
+	Print "SWAMP"
+	Return
+
+FindTreasure:
+	AndOr EncountersDone 1 Scratch10
+	CompareAnd Scratch10 0 Search 1
+	IfNe
+	Exit
+	Print "YOU FIND SOME TREASURE!"
+	Gosub TakeItMenu
+	IfNe
+	Exit
+	AndOr EncountersDone 1 EncountersDone
+	ClearMonsters
+	Treasure 0 0 0 #03E8 0 1 1 255
+	Combat
+	Exit
+
+OldLizardman:
+	AndOr OldLizardmanFlags 1 Scratch10
+	IfEq
+	Goto BuildingEncounter
+	Print "AN OLD LIZARDMAN APPEARS BEFORE YOU, HAND RAISED IN A GESTURE OF PEACE."
+	Delay
+	EncounterMenu 57 0 13 Scratch10 0 4 4 4 4 "HE LOOKS AT YOU PATIENTLY." "" "" 6 6
+	OnGoto Scratch10 4 PushBack SlayOldLizardman PushBack AskFriendWord
+
+SlayOldLizardman:
+	Print "YOU LASH OUT WITH YOUR WEAPON DEALING ONE SWIFT, DEADLY BLOW. THE OLD LIZARD MAN TOTTERS FOR A MOMENT WITH A SURPRISED LOOK ON HIS FACE, AND THEN COLLAPSES."
+
+OldLizardmanGone:
+	RedrawView
+	Call CallRedraw
+	Delay
+	Delay
+	AndOr OldLizardmanFlags 254 OldLizardmanFlags
+	AndOr OldLizardmanFlags 2 OldLizardmanFlags
+
+BuildingEncounter:
+	OnGoto Scratch9 3 LizardPatrol GiantLizards JavelinAmbush
+
+PushBack:
+	Save 8 PartyX
+	Save 12 PartyY
+	Save 2 Facing
+
+HoldRedrawExit:
+	Save 255 HoldMove
+	Goto RedrawExit
+
+AskFriendWord:
+	Print "A GROUP OF HUMANS WERE DESCRIBED TO ME BY THREE OF OUR PEOPLE WHOM THEY RESCUED. IF YOU ARE THEY YOU WILL HAVE BEEN SHOWN OUR TRIBAL FRIEND-WORD."
+	Gosub PressToContinue
+
+FriendWordInput:
+	Print "WHAT IS IT?"
+	InputString 6 str Scratch1
+	Print "DO YOU REALLY MEAN "
+	Print str Scratch1
+	Print "?"
+	Gosub YesNoMenu
+	IfNe
+	Goto FriendWordInput
+	Compare str Scratch1 "SAVIOR"
+	IfEq
+	Goto OldLizardmanStory
+	Print "'YOU ARE NOT THEY WHO RESCUED MY CHILDREN, BUT ARE MURDEROUS PIRATES! THEN YOU ARE NOT SAFE HERE!' HE DISAPPEARS WITH AMAZING SPEED INTO THE WILDERNESS AROUND YOU."
+	Goto OldLizardmanGone
+
+OldLizardmanStory:
+	Print "THE OLD LIZARD MAN RECOGNIZES THE WORD AND HIS LIPS PART IN A TOOTHY GRIN. YOU ALL GATHER CLOSE AS HE BEGINS HIS STORY."
+	Delay
+	Delay
+	Print "ONE OF YOU BUSILY SCRIBBLE IT INTO THE JOURNAL AS ENTRY 31."
+	Gosub PressToContinue
+	Print "FROM NEARBY A GROUP OF LIZARD MEN APPEAR. ONE LARGER THAN THE REST MOVES TO THE FRONT, 'YOUR TIME IS THROUGH OLD ONE. YOUR CLAWS ARE BLUNT.'"
+	Gosub PressToContinue
+	Print "'FACE ME OR FIND SOME FOOL TO CHAMPION YOU!' THE OLD LIZARD MAN TURNS TO YOU AND SAYS, 'OUR CAUSE IS ONE. WILL YOU CHAMPION ME?'"
+	Gosub YesNoMenu
+	IfNe
+	Goto RefuseChampion
+	Save SelPartyIndex2 Scratch1
+	Save 0 Scratch2
+
+ChooseChampion:
+	Who "WHO WILL BE MY CHAMPION?"
+	Compare SelStatus 1
+	IfEq
+	Goto ChampionDuel
+	Print "PLEASE, BE SERIOUS."
+	Delay
+	Goto ChooseChampion
+
+ChampionDuel:
+	Save 0 Surprise
+	Save 100 Morale
+	ClearMonsters
+	Call CallDuelB
+	LoadMonster 95 1 57
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto ChampionLost
+	Compare QuestLizardmen 255
+	IfNe
+	Save 254 QuestLizardmen
+	Print "SEEING THEIR LEADER FALL, THE OTHER LIZARD MEN WITHDRAW. THE OLD LIZARD MAN TURNS TO YOU, 'YOU HAVE DONE ME GREAT SERVICE. REST ASSURED THAT MY PEOPLE WILL NOT JOIN TYRANTHRAXUS.'"
+	Gosub PressToContinue
+	Print "'STILL MY PEOPLE STILL ARE HOSTILE TO STRANGERS. I THINK IT IS BEST IF YOU LEAVE.' HE TURNS AND DISAPPEARS INTO THE WILDERNESS."
+	Gosub PressToContinue
+	Save 255 EncountersDone
+	Exit
+
+ChampionLost:
+	Print "DRYTHH TURNS TO HIS CONFIDENT FOLLOWERS, 'KILL THEM!'"
+	Goto DrythhAttacks
+
+RefuseChampion:
+	Print "'THEN I MUST FIGHT HIM MYSELF.' THE COMBAT IS EXTREMELY SHORT IN DURATION. WHEN IT IS FINISHED DRYTHH TURNS TO HIS FOLLOWERS, 'KILL THEM!'"
+
+DrythhAttacks:
+	Gosub PressToContinue
+	Picture 255
+	AndOr OldLizardmanFlags 254 OldLizardmanFlags
+	AndOr OldLizardmanFlags 2 OldLizardmanFlags
+	EncounterMenu 57 1 57 Scratch10 0 0 0 0 0 "" "" "" 6 6
+	OnGoto Scratch10 3 RedrawExit DrythhFight PushBack
+
+DrythhFight:
+	Save 0 Surprise
+	Save 100 Morale
+	ClearMonsters
+	LoadMonster 95 1 57
+	LoadMonster 57 12 57
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto PushBack
+	Exit
+
+RuinedBuilding:
+	AndOr BuildingsSeen 2 Scratch10
+	IfNe
+	Goto RuinedBuildingCheck
+	Print "YOU ENTER A BUILDING WHOSE WALLS ARE MORE OR LESS INTACT, THOUGH THE ROOF HAS FALLEN IN. RUBBLE MAKES PASSAGE DIFFICULT."
+	Delay
+	AndOr BuildingsSeen 2 BuildingsSeen
+
+RuinedBuildingCheck:
+	AndOr EncountersDone 2 Scratch10
+	IfNe
+	Exit
+	Save 0 Scratch9
+	Goto OldLizardman
+
+LizardPatrol:
+	PartySurprise Scratch8 Scratch9
+	Surprise Scratch8 Scratch9 0 1
+	Compare Surprise 1
+	IfEq
+	Goto LizardPatrolAmbush
+	Save 0 Surprise
+	EncounterMenu 57 2 57 Scratch10 0 0 0 0 0 "2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU." "" "" 15 6
+	OnGoto Scratch10 4 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
+
+LizardPatrolAmbush:
+	SetupMonster 57 1 57
+	Print "SUDDENLY YOU ARE ATTACKED BY TWO LIZARD MEN AND A GIANT LIZARD!"
+	Delay
+	Approach
+	Save 1 Surprise
+
+LizardPatrolFight:
+	Save 0 Scratch7
+	Save 100 Morale
+	RedrawView
+	Picture 255
+	ClearMonsters
+	LoadMonster 57 2 57
+	LoadMonster 59 1 59
+
+LizardCombat:
+	Combat
+	Gosub CountLizardKills
+	Compare CombatEnd 129
+	IfEq
+	Goto PushBack
+
+MarkEncounterDone:
+	GetTable EncounterBitTable Scratch7 Scratch1
+	AndOr EncountersDone Scratch1 EncountersDone
+	Exit
+
+CentralKeep:
+	AndOr BuildingsSeen 4 Scratch10
+	IfNe
+	Goto CentralKeepCheck
+	Print "YOU ENTER THE REMAINS OF THE CENTRAL KEEP. THE CEILING AND WALLS HAVE COLLAPSED TO THE POINT WHERE THE INTERIOR IS CHOKED WITH RUBBLE."
+	AndOr BuildingsSeen 4 BuildingsSeen
+	Delay
+
+CentralKeepCheck:
+	Save 2 Scratch9
+	AndOr EncountersDone 4 Scratch10
+	IfEq
+	Goto OldLizardman
+	Compare Scratch1 0
+	IfEq
+	Exit
+	Goto SearchForTunnel
+
+JavelinAmbush:
+	Save 0 Surprise
+	Save 50 Morale
+	Save 2 Scratch7
+	Gosub CapLizardCounts
+	Compare Scratch5 2
+	IfLt
+	Goto MarkEncounterDone
+	SetupMonster 57 0 57
+	Print "SUDDENLY LIZARD MEN JUMP UP FROM WHERE THEY WERE HIDING AND THROW JAVELINS AT YOU."
+	Compare Scratch4 1
+	IfGt
+	Print " AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS."
+	Delay
+	Damage Scratch5 1 6 0 42
+	Save 253 PartyHit
+	Save 252 PartyMove
+	ClearMonsters
+	LoadMonster 57 Scratch5 57
+	Compare Scratch4 0
+	IfNe
+	LoadMonster 59 Scratch4 59
+	Goto LizardCombat
+
+LShapedBuilding:
+	AndOr BuildingsSeen 8 Scratch10
+	IfNe
+	Goto LShapedBuildingCheck
+	Print "YOU HAVE ENTERED AN L-SHAPED BUILDING. IT IS REASONALBLY INTACT... THERE ARE EVEN PORTIONS OF ROOF OVERHEAD!"
+	Delay
+	AndOr BuildingsSeen 8 BuildingsSeen
+
+LShapedBuildingCheck:
+	AndOr EncountersDone 8 Scratch10
+	IfNe
+	Exit
+	Save 1 Scratch9
+	Goto OldLizardman
+
+GiantLizards:
+	PartySurprise Scratch8 Scratch9
+	Surprise Scratch8 Scratch9 0 0
+	Compare Surprise 1
+	IfEq
+	Goto GiantLizardsAmbush
+	Save 0 Surprise
+	EncounterMenu 59 2 59 Scratch10 0 0 0 0 0 "3 GIANT LIZARDS CHARGE TOWARD YOU." "" "" 15 15
+	OnGoto Scratch10 4 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
+
+GiantLizardsAmbush:
+	SetupMonster 59 1 59
+	Delay
+	Approach
+	Print "SUDDENLY 3 GIANT LIZARDS APPEAR FROM BEHIND A MOUND OF RUBBLE. YOU FREEZE A MOMENT AS THEY CHARGE YOU!"
+	Save 1 Surprise
+
+GiantLizardsFight:
+	Save 1 Scratch7
+	Save 100 Morale
+	ClearMonsters
+	LoadMonster 59 3 59
+	Goto LizardCombat
+
+StairsUp:
+	Print "YOU FIND A SET OF STAIRS LEADING UP."
+	Goto GoUpMenu
+
+TunnelSlopesUp:
+	Print "THE TUNNEL BEGINS TO SLOPE UP."
+
+GoUpMenu:
+	Print " DO YOU GO UP?"
+	Save 255 HoldMove
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	GetTable UpExitXTable Scratch1 PartyX
+	GetTable UpExitYTable Scratch1 PartyY
+	LoadFiles 16 2 255
+	LoadFiles 9 20 23
+	Goto HoldRedrawExit
+
+PoolLizardmen:
+	Save 3 Scratch7
+	Gosub CapLizardCounts
+	Save 1 Scratch8
+	Compare Scratch5 3
+	IfLt
+	Goto DeepPool
+	SetupMonster 57 0 57
+	Print "A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. "
+	Delay
+	Damage Scratch5 1 6 0 44
+	AndOr BuildingsSeen 1 Scratch10
+	IfEq
+	Goto LizardmenDive
+	PartySurprise Scratch8 Scratch9
+	Surprise Scratch8 Scratch9 0 0
+	Compare Surprise 1
+	IfEq
+	Goto LizardmenDive
+	Save 2 Surprise
+	EncounterMenu 57 0 57 Scratch10 2 2 2 2 2 "THEY TURN TO DIVE BACK IN THE WATER." "" "" 0 0
+	OnGoto Scratch10 2 LizardmenDive PoolLizardmenFight
+
+LizardmenDive:
+	Save 0 Scratch8
+	AndOr BuildingsSeen 1 BuildingsSeen
+	Print "BEFORE YOU CAN REACT THEY TURN AND DIVE BACK INTO THE WATER."
+	Delay
+	Goto DeepPool
+
+PoolLizardmenFight:
+	Print "BEFORE THEY CAN RETURN TO THE WATER YOU ENGAGE THEM. THEY TURN AND FIGHT FANATICALLY."
+	Save 100 Morale
+	Save 254 PartyHit
+	Save 252 PartyMove
+	ClearMonsters
+	LoadMonster 57 Scratch5 57
+	Combat
+	Gosub CountLizardKills
+	Save 1 Scratch8
+	Compare CombatEnd 129
+	IfNe
+	Goto DeepPool
+	Gosub FindPoolCell
+	IfNe
+	Exit
+	GetTable PoolExitXTable Scratch10 PartyX
+	GetTable PoolExitYTable Scratch10 PartyY
+	GetTable PoolExitFacingTable Scratch10 Facing
+	Goto HoldRedrawExit
+
+DeepPool:
+	RedrawView
+	Picture 255
+	Print "YOU ARE IN FRONT OF A DEEP POOL OF WATER. DO YOU WISH TO DIVE IN AND SEARCH IT?"
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	OnGoto Scratch8 2 PoolGuarded PoolSearch
+
+PoolGuarded:
+	Print "YOU DIVE INTO THE POOL AND BEGIN TO SEARCH BY TOUCH. SUDDENLY BEFORE YOUR CLOUDED VISION YOU SEE SOME LIZARD MEN..."
+	Delay
+	Damage 5 2 2 0 48
+	Damage 5 1 8 0 48
+	Print "YOU MANAGE TO GET OUT OF THE POOL BEFORE THEY FINISH YOU OFF."
+	Exit
+
+PoolSearch:
+	Gosub FindPoolCell
+	Save Scratch10 Scratch5
+	GetTable PoolTreasureBitTable Scratch10 Scratch1
+	AndOr PoolTreasureTaken Scratch1 Scratch10
+	IfNe
+	Goto PoolEmpty
+	Print "YOU FIND SOME TREASURE."
+	Gosub TakeItMenu
+	IfNe
+	Exit
+	GetTable PoolTreasureTable Scratch5 Scratch3
+	AndOr PoolTreasureTaken Scratch1 PoolTreasureTaken
+	ClearMonsters
+	Treasure 0 #03E8 0 #03E8 0 1 0 Scratch3
+	Combat
+	Exit
+
+PoolEmpty:
+	Print "YOU SEARCH UNTIL YOU FEEL THE PULSE POUNDING IN YOUR EARS. NOTHING IS FOUND. WITH THAT YOU RESURFACE."
+	Delay
+	Exit

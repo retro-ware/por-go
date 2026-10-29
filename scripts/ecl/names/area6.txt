@@ -1,0 +1,1 @@
+A4E4 AgonyByRace  # table indexed by [6BD8] (race?): 1 = character suffers the curse

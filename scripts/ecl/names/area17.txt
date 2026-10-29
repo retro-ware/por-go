@@ -1,0 +1,16 @@
+49C0 RestSaveX  # PartyX saved before resting in the nomad hut (Program 9)
+49C1 RestSaveY  # PartyY saved before resting in the hut
+49C2 RestSaveFacing  # Facing saved before resting in the hut
+4A00 NomadAllies  # nomad helpers fighting with you (random 2d6, 3 after "LET US DO IT!"), loaded as monster 40; area-local reuse
+4A7D CampStage  # nomad camp visit: 1 lodged in hut, 2 games, 3 headman's request, 0 done; OnGoto in L_99CE
+4A7E KoboldRaidStage  # kobold attack on the camp: OnGoto index, set 1 at start, +1 per round
+4A7F NomadFightCount  # +1 after each nomad fight; OnGoto picks the 4th variant
+AC7D RestChanceTable  # GetTable by time-of-day index: 0 no encounters, 1 50%, else hours+12 rest interval
+AC85 ZoneXMinTable  # 12-entry exit-zone bounds: X min (L_9B8D)
+AC91 ZoneYMinTable  # exit-zone bounds: Y min
+AC9D ZoneXMaxTable  # exit-zone bounds: X max
+ACA9 ZoneYMaxTable  # exit-zone bounds: Y max
+ACB5 ZoneDestXTable  # PartyX set from it when inside a zone (L_9BFD)
+ACC1 ZoneDestYTable  # PartyY set from it when inside a zone
+ACC9 WalkPathToHut  # 12-wide cell table of facings walked automatically (L_9CC7, guess: route to the hut)
+AD89 WalkPathToClearing  # 12-wide cell table of facings walked to the central clearing (L_9CFF before the games)

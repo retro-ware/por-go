@@ -1,0 +1,886 @@
+BugbearsApproach:
+	SetupMonster 63 2 63
+	Delay
+	Approach
+	Delay
+	Approach
+	Return
+
+CheckGarrisonsBeaten:
+	AndOr GateFlags 4 Scratch10
+	IfEq
+	Return
+	AndOr GateFlags 8 Scratch10
+	Return
+
+SetSkyByHour:
+	Save 11 Scratch1
+	Save 9 SkyInside
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch1
+	Save Scratch1 Sky
+	Return
+
+PayMoney:
+	Save 0 Scratch2
+	Save 0 Scratch1
+
+CheckMemberMoney:
+	LoadCharacter Scratch1
+	Gosub CheckMemberOk
+	IfNe
+	Goto NextPayer
+	Arith SelCopper 10 Scratch6
+	Arith SelSilver Scratch6 Scratch6
+	Arith Scratch6 10 Scratch6
+	Arith SelElectrum Scratch6 Scratch6
+	Arith Scratch6 2 Scratch6
+	Arith SelGold Scratch6 Scratch6
+	Arith Scratch6 5 Scratch6
+	Arith SelPlatinum Scratch6 Scratch6
+	Compare Scratch6 Scratch4
+	IfGe
+	Goto TakeCoins
+	Arith Scratch6 Scratch2 Scratch2
+	Compare Scratch2 Scratch4
+	IfGe
+	Goto TakeCoins
+
+NextPayer:
+	Arith Scratch1 1 Scratch1
+	Compare Scratch1 8
+	IfLt
+	Goto CheckMemberMoney
+	Print "YOU DON'T HAVE ENOUGH MONEY!"
+	Gosub PressReturn
+	Compare 0 1
+	Return
+
+TakeCoins:
+	Save 195 Scratch10
+	Gosub TakeCoinKind
+	IfEq
+	Return
+	Save 4 Scratch2
+	Gosub ScaleCost
+	Save 193 Scratch10
+	Gosub TakeCoinKind
+	IfEq
+	Return
+	Save 1 Scratch2
+	Gosub ScaleCost
+	Save 191 Scratch10
+	Gosub TakeCoinKind
+	IfEq
+	Return
+	Save 9 Scratch2
+	Gosub ScaleCost
+	Save 189 Scratch10
+	Gosub TakeCoinKind
+	IfEq
+	Return
+	Save 9 Scratch2
+	Gosub ScaleCost
+	Save 187 Scratch10
+	Gosub TakeCoinKind
+	Compare 0 0
+	Return
+
+ScaleCost:
+	Save Scratch4 Scratch6
+
+ScaleCostLoop:
+	Arith Scratch6 Scratch4 Scratch4
+	Arith 1 Scratch2 Scratch2
+	Compare Scratch2 0
+	IfGt
+	Goto ScaleCostLoop
+	Return
+
+TakeCoinKind:
+	Save 0 Scratch1
+
+TakeFromMember:
+	LoadCharacter Scratch1
+	Gosub CheckMemberOk
+	IfNe
+	Goto NextCoinMember
+	GetTable SelName Scratch10 Scratch6
+	GetTable SelName2 Scratch10 Scratch7
+	Save Scratch6 Scratch8
+	Compare Scratch8 Scratch4
+	IfLt
+	Goto DeductCoins
+	Save Scratch4 Scratch8
+
+DeductCoins:
+	Arith Scratch8 Scratch6 Scratch6
+	SaveTable Scratch6 SelName Scratch10
+	SaveTable Scratch7 SelName2 Scratch10
+	Arith Scratch8 Scratch4 Scratch4
+	AndOr Scratch1 128 Scratch2
+	LoadCharacter Scratch2
+	Compare Scratch4 0
+	IfEq
+	Return
+
+NextCoinMember:
+	Arith Scratch1 1 Scratch1
+	Compare Scratch1 8
+	IfLt
+	Goto TakeFromMember
+	Compare Scratch4 0
+	Return
+
+CheckMemberOk:
+	Compare SelStatus 0
+	IfEq
+	Goto MemberNotOk
+	Compare SelStatus 1
+	IfNe
+	Goto MemberOk
+	Compare SelControl 128
+	IfGe
+	Goto MemberNotOk
+
+MemberOk:
+	Compare 0 0
+	Return
+
+MemberNotOk:
+	Compare 0 1
+	Return
+
+CheckAlarmSounding:
+	Compare AlarmEndHour 1
+	IfLt
+	Return
+	Save Hours AuxRoll
+	CompareAnd Hours 0 AlarmHour 23
+	IfEq
+	Save 24 AuxRoll
+	Compare AuxRoll AlarmEndHour
+	IfLt
+	Goto AlarmStillOn
+	Compare TenMinutes AlarmMinute
+	IfLt
+	Goto AlarmStillOn
+	Save 0 AlarmEndHour
+	Compare 0 1
+	Return
+
+AlarmStillOn:
+	Compare Search 1
+	IfEq
+	Goto SayAlarmSounding
+	Random 9 AuxRoll
+	Compare 0 AuxRoll
+	IfNe
+	Goto AlarmActive
+
+SayAlarmSounding:
+	Print "AN ALARM IS SOUNDING."
+	Delay
+
+AlarmActive:
+	Compare 1 0
+	Return
+
+StartAlarm:
+	Compare AlarmEndHour 0
+	IfEq
+	Print "AN ALARM STARTS RINGING!"
+	Save Hours AlarmHour
+	Save TenMinutes AlarmMinute
+	Arith 1 AuxCounter AlarmEndHour
+	Delay
+	Return
+
+YesNoMenu:
+	HMenu Scratch10 2 "YES" "NO"
+	Print " "
+	Compare Scratch10 0
+	Return
+
+PressReturn:
+	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	Print " "
+	Return
+
+event0:
+	Compare LeftMap 0
+	IfEq
+	Goto OnStep
+	Save 5 SymbolSet
+	Save 6 Scratch1
+	Compare PartyY 0
+	IfEq
+	Goto LeaveArea
+	Save 18 Scratch1
+	Save 1 SymbolSet
+	Save 0 AlarmEndHour
+
+LeaveArea:
+	Call CallStepForward
+	NewECL Scratch1
+
+OnStep:
+	Gosub SetSkyByHour
+	Save 0 Scratch5
+	AndOr Cell 31 Scratch1
+
+MatchDoorSpot:
+	GetTable Table9D10 Scratch5 Scratch9
+	GetTable Table9D18 Scratch5 Scratch8
+	CompareAnd Scratch1 Scratch9 Facing Scratch8
+	IfEq
+	Goto DoorSpotAction
+	Arith Scratch5 1 Scratch5
+	Compare Scratch5 8
+	IfLt
+	Goto MatchDoorSpot
+	Exit
+
+DoorSpotAction:
+	OnGoto Scratch5 8 AskDownstairs AskDownstairs TowerDoor TowerDoor AskUpstairs AskUpstairs MarkWestTowerUsed MarkEastTowerUsed
+	Goto #0807
+
+event1:
+	Gosub CheckAlarmSounding
+	IfLt
+	Goto SpecialSquare
+	Compare PartyY 6
+	IfGt
+	Goto SpecialSquare
+	AndOr Cell 64 Scratch10
+	IfNe
+	Goto SpecialSquare
+	Save 2 Scratch1
+	Compare Search 0
+	IfEq
+	Save 20 Scratch1
+	AndOr Cell 32 Scratch10
+	IfNe
+	Arith Scratch1 Scratch1 Scratch1
+	Random Scratch1 Scratch1
+	Compare Scratch1 0
+	IfEq
+	Goto event3
+
+SpecialSquare:
+	AndOr Cell 31 Scratch1
+	OnGoto Scratch1 14 Done MageGuardRoom FighterGuardRoom NearWall StojanowGate GateEntrance WallSquare Done BugbearsBehindGate WagonTrader GateTowerSquare GateTowerSquare Done MonstersBehindWall
+
+event3:
+	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" str AuxEncText
+	Save 8 Portrait
+	Save 0 Surprise
+	Print "YOU SEE A"
+	Print str AuxSightText
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto PatrolMenu
+	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
+	Gosub PressReturn
+	EncounterMenu 16 2 5 Scratch10 0 0 0 0 0 "THEY ADVANCE, WEAPONS READY" "" "" 9 9
+	Save 255 Portrait
+	OnGoto Scratch10 4 Done FightPatrol FledCombat FightPatrol
+
+PatrolMenu:
+	Gosub PressReturn
+	EncounterMenu 16 2 5 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
+	Save 255 Portrait
+	OnGoto Scratch10 3 Done FightPatrol FledCombat
+	Print "WHAT ARE YOU DOING HERE?"
+	Parlay 0 1 1 2 0 Scratch10
+	OnGoto Scratch10 2 AskAuthority PatrolSpotsIntruders
+	Print "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
+	InputString 6 str AuxInputText
+	Compare "HARASH" str AuxInputText
+	Goto CheckAnswer
+
+AskAuthority:
+	Print "'I'M SORRY, SIR, THERE'S AN ALERT. "
+	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
+	InputString 12 str AuxInputText
+	Compare "TYRANTHRAXUS" str AuxInputText
+
+CheckAnswer:
+	IfEq
+	Goto PatrolLeaves
+	Print "'WHAT? I THINK THESE SCUM ARE IMPOSTERS!'"
+	Goto FightPatrol
+
+PatrolLeaves:
+	Print "WITH A NOD OF THE HEAD YOU ARE LEFT ALONE."
+	Exit
+
+PatrolSpotsIntruders:
+	Print "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
+
+FightPatrol:
+	Save 60 Morale
+	Delay
+	ClearMonsters
+	LoadMonster 75 1 11
+	LoadMonster 55 5 55
+	Combat
+	Gosub AfterCombat
+	Exit
+
+FledCombat:
+	Save 129 CombatEnd
+
+AfterCombat:
+	Compare CombatEnd 0
+	IfEq
+	Return
+	Gosub StartAlarm
+	AndOr CastleFlags 254 CastleFlags
+	Compare CombatEnd 129
+	IfNe
+	Return
+	Save 255 HoldMove
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Arith Facing 2 Facing
+	Compare Facing 3
+	IfGt
+	Arith 4 Facing Facing
+	Goto Done
+
+event2:
+	Save 0 RestEvery
+	Save 10 RestChance
+	Compare AlarmEndHour 0
+	IfEq
+	Exit
+	AndOr Cell 64 Scratch10
+	IfNe
+	Exit
+	Compare PartyY 6
+	IfGt
+	Exit
+	Save 1 RestEvery
+	Save 17 RestChance
+
+Done:
+	RedrawView
+	Call CallRedraw
+	Exit
+
+event4:
+	Gosub SetSkyByHour
+	Save 0 NoCoords
+	Compare AreaKind 9
+	IfEq
+	Exit
+	LoadFiles 9 2 255
+	LoadFiles 1 9 23
+	Exit
+
+AskDownstairs:
+	Print "DO YOU WANT TO GO DOWNSTAIRS?"
+	Goto AskStairs
+
+AskUpstairs:
+	Print "DO YOU WANT TO GO UPSTAIRS?"
+	Goto AskStairs
+
+TowerDoor:
+	Save 1 Scratch1
+	Compare Scratch5 3
+	IfEq
+	Save 2 Scratch1
+	AndOr GateFlags Scratch1 Scratch10
+	IfNe
+	Goto TakeStairs
+	Gosub CheckGarrisonsBeaten
+	IfNe
+	Exit
+	Print "FROM THE TOP OF THE GATE COMES A VOLLEY OF ROCKS."
+	Gosub PressReturn
+	Damage 16 1 6 0 43
+	Exit
+
+AskStairs:
+	Gosub YesNoMenu
+	IfNe
+	Goto StairsRedraw
+
+TakeStairs:
+	GetTable TowerExitXTable Scratch5 PartyX
+	GetTable TowerExitYTable Scratch5 PartyY
+	GetTable TowerExitCellTable Scratch5 Cell
+
+StairsRedraw:
+	Save 255 HoldMove
+	Call CallRedraw
+	Goto event1
+
+MageGuardRoom:
+	AndOr GuardRoomSeenBits 1 Scratch10
+	IfNe
+	Goto MageAndEttins
+	Gosub DescribeGuardRoom
+	AndOr GuardRoomSeenBits 1 GuardRoomSeenBits
+
+MageAndEttins:
+	AndOr GateFlags 4 Scratch10
+	IfNe
+	Exit
+	Gosub DescribeEttins
+	Save 52 Portrait
+	Print "YOU OVERHEAR THE MAGE TELL HIS COMPANION, 'HOW MUCH LONGER MUST WE WAIT BEFORE ASSAULTING PHLAN. I AM EAGER TO BECOME A BARON.'"
+	Gosub PressReturn
+	EncounterMenu 24 1 31 Scratch10 0 1 1 1 0 "THEY SEEM UNAWARE OF YOU." "" "" 0 0
+	Save 255 Portrait
+	RedrawView
+	OnGoto Scratch10 2 Done FightMageGuards
+
+MageFlee:
+	Save 0 Scratch5
+	Goto TakeStairs
+
+FightMageGuards:
+	Save 2 Surprise
+	Save 50 Morale
+	Gosub StartAlarm
+	ClearMonsters
+	LoadMonster 89 1 14
+	LoadMonster 53 1 11
+	LoadMonster 71 3 71
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto MageFlee
+	AndOr GateFlags 4 GateFlags
+	Exit
+
+FighterGuardRoom:
+	AndOr GuardRoomSeenBits 2 Scratch10
+	IfNe
+	Goto FighterAndEttins
+	Gosub DescribeGuardRoom
+	AndOr GuardRoomSeenBits 2 GuardRoomSeenBits
+
+FighterAndEttins:
+	AndOr GateFlags 8 Scratch10
+	IfNe
+	Exit
+	Gosub DescribeEttins
+	Save 11 Portrait
+	Print "YOU OVERHEAR THE FIGHTER TELL THE MAGE, 'YOU BETTER WATCH YOUR TALK. THE LAST GUY WHO GAVE THE BOSS LIP WAS THROWN THROUGH THE TRAPDOOR TO THE MEDUSA!'"
+	Gosub PressReturn
+	EncounterMenu 24 1 2 Scratch10 0 1 1 1 0 "THEY SEEM UNAWARE OF YOU." "" "" 0 0
+	Save 255 Portrait
+	RedrawView
+	OnGoto Scratch10 2 Done FightFighterGuards
+
+FighterFlee:
+	Save 1 Scratch5
+	Goto TakeStairs
+
+FightFighterGuards:
+	Save 2 Surprise
+	Save 50 Morale
+	Gosub StartAlarm
+	ClearMonsters
+	LoadMonster 24 1 14
+	LoadMonster 53 1 11
+	LoadMonster 71 3 71
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto FighterFlee
+	AndOr GateFlags 8 GateFlags
+	Exit
+
+GateTowerSquare:
+	Gosub CheckAlarmSounding
+	IfLt
+	Exit
+	Save 0 Scratch2
+	AndOr Cell 1 Scratch1
+	OnGoto Scratch1 1 EastTowerCheck
+	AndOr GateFlags 4 Scratch9
+	IfEq
+	AndOr Scratch2 2 Scratch2
+	AndOr GateFlags 8 Scratch10
+	IfEq
+	AndOr Scratch2 1 Scratch2
+	Goto TowersCharge
+
+EastTowerCheck:
+	AndOr GateFlags 8 Scratch9
+	IfEq
+	AndOr Scratch2 2 Scratch2
+	AndOr GateFlags 4 Scratch10
+	IfEq
+	AndOr Scratch2 1 Scratch2
+
+TowersCharge:
+	Save 1 Scratch3
+	Save 0 MaxDist
+	OnGoto Scratch2 3 Done NearTowerCharges FarTowerCharges
+	Print "MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER. AT THE SAME TIME MONSTERS BURST ON YOU FROM THE TOWER NEXT TO YOU."
+	Save 2 Scratch3
+	Goto TowerMonstersMenu
+
+NearTowerCharges:
+	Print "MONSTERS THUNDER DOWN THE STEPS OF THE TOWER NEXT TO YOU."
+	Goto TowerMonstersMenu
+
+FarTowerCharges:
+	Print "MONSTERS ARE CHARGING TOWARD YOU FROM THE FAR TOWER."
+	Save 1 MaxDist
+
+TowerMonstersMenu:
+	Save 11 Portrait
+	Gosub PressReturn
+	EncounterMenu 24 MaxDist 2 Scratch10 0 0 0 0 0 "" "" "" 12 6
+	Save 255 Portrait
+	RedrawView
+	OnGoto Scratch10 2 Done FightTowerMonsters
+
+FleeToArea6:
+	Gosub StartAlarm
+	Save 4 PartyX
+	Save 15 PartyY
+	Save 0 Facing
+	NewECL 6
+
+FightTowerMonsters:
+	PartySurprise Scratch9 Scratch10
+	Save 80 Morale
+	AndOr GateFlags 8 Scratch10
+	Surprise Scratch9 Scratch10 1 1
+	Save 24 Scratch4
+	AndOr GateFlags 8 Scratch10
+	IfNe
+	Save 89 Scratch4
+	Gosub StartAlarm
+	ClearMonsters
+	LoadMonster Scratch4 Scratch3 14
+	LoadMonster 53 Scratch3 11
+	Arith Scratch3 3 Scratch3
+	LoadMonster 71 Scratch3 71
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto FleeToArea6
+
+GarrisonSlain:
+	AndOr GateFlags 12 GateFlags
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Goto GateTaken
+	Print "YOU HAVE SLAIN THE GARRISON. NOW IF YOU CAN BUT SLAY THE OUTSIDE GUARDS QUICKLY BEFORE THE ENEMY ARRIVES THE GATE WILL BE YOURS!"
+	Exit
+
+GateTaken:
+	AndOr GateFlags 3 GateFlags
+	Print "YOU HAVE TAKEN THE GATE! YOU OPEN THE GREAT PORTALS AS 20  HUMAN AND DEMI-HUMAN GUARDS IMMEDIATELY TAKE POSSESSION OF THE GUARD TOWERS."
+	Compare QuestGateTaken 255
+	IfNe
+	Save 254 QuestGateTaken
+	Exit
+
+NearWall:
+	Gosub CheckGarrisonsBeaten
+	IfNe
+	Exit
+	OnGoto BugbearWarnings 3 FirstWallWarning SecondWallWarning BugbearsPunch
+
+BugbearsDemand:
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Goto ArrowSlits
+	Gosub BugbearsApproach
+	Print "A GROUP OF BUGBEARS APPROACH. 'THROW DOWN YOUR WEAPONS!'"
+
+BugbearsMenu:
+	HMenu Scratch10 3 "FLEE" "SURRENDER" "ATTACK"
+	OnGoto Scratch10 2 PushedBack SurrenderToBugbears
+
+FightBugbears:
+	Save 0 Surprise
+	Save 60 Morale
+	Gosub StartAlarm
+	Save 3 BugbearWarnings
+	ClearMonsters
+	LoadMonster 63 16 63
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto PushedBack
+	AndOr GateFlags 16 GateFlags
+	Exit
+
+SurrenderToBugbears:
+	Print "THE BUGBEARS STRIP YOU OF ANYTHING REMOTELY VALUABLE AND SEND YOU ON YOUR WAY."
+	Rob 1 100 20
+
+PushedBack:
+	Save 2 Facing
+	Save 14 PartyY
+	RedrawView
+	Compare PartyX 9
+	IfLt
+	Goto PushedWest
+	Save 11 PartyX
+	Goto PushedRedraw
+
+PushedWest:
+	Save 4 PartyX
+
+PushedRedraw:
+	Save 255 HoldMove
+	Goto Done
+
+FirstWallWarning:
+	Print "A VOICE FROM THE TOWER YELLS 'STAY AWAY FROM THE WALL!'"
+	Save 2 BugbearWarnings
+	Exit
+
+SecondWallWarning:
+	Print "A VOICE YELLS DOWN, 'WE SAID STAY AWAY FROM THE WALL. THAT INCLUDES THE TOWER!'"
+	Save 3 BugbearWarnings
+	Exit
+
+BugbearsPunch:
+	Gosub BugbearsApproach
+	Print "THE GROUP OF BUGBEARS COME OVER, 'WE WARNED YOU! WHAT'S THE MATTER? CAN'T YOU UNDERSTAND COMMON? I GUESS I'LL HAVE TO TEACH YOU.' THE LEADER SWINGS AT YOU."
+	Save 3 BugbearWarnings
+	HMenu Scratch10 2 "ATTACK" "TAKE THE PUNCH"
+	OnGoto Scratch10 1 FightBugbears
+	Damage 160 1 3 0 0
+	Print "'NOW BEAT IT BEFORE WE GET SERIOUS.'"
+	Goto Done
+
+ArrowSlits:
+	Gosub CheckGarrisonsBeaten
+	IfNe
+	Exit
+	Print "FROM ARROW SLITS IN THE TOWER ARE SHOT A COUPLE ARROWS."
+	Gosub PressReturn
+	Damage 2 1 6 0 44
+	Exit
+
+StojanowGate:
+	Compare BugbearWarnings 2
+	IfEq
+	Save 1 BugbearWarnings
+	AndOr GateFlags 32 Scratch10
+	IfNe
+	Goto WatchWagonMan
+	Print "BEFORE YOU IS STOJANOW GATE. THIS ANCIENT EDIFICE IS BUILT ACROSS THE BEND OF THE RIVER, THUS ISOLATING THE OLD TOWN AND THE CASTLE FROM THE REST OF THE CITY."
+	Gosub PressReturn
+	Print "THE MAIN WALL RISES 30 FEET WHILE THE TWO WATCHTOWER RISE TO 50 FEET. LOUNGING AROUND THE ENTRANCE ARE A GROUP OF BUGBEARS."
+	Gosub PressReturn
+	AndOr GateFlags 32 GateFlags
+
+WatchWagonMan:
+	CompareAnd Facing 0 Search 1
+	IfNe
+	Exit
+	Compare Hours 5
+	IfGe
+	Exit
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Exit
+	Print "BEFORE THE GATE YOU CAN MAKE OUT A MAN WITH A WAGON OF GOODS WHO IS TALKING TO TWO OF THE BUGBEARS. THE MAN HANDS SOMETHING TO THE BUGBEARS AND THE GATES OPEN."
+	Gosub PressReturn
+	Exit
+
+GateEntrance:
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Goto ArrowSlits
+	AndOr GateFlags 64 Scratch10
+	IfEq
+	Goto NearWall
+	Compare BugbearWarnings 3
+	IfEq
+	Goto ImpostorsApproach
+	Random 9 Scratch10
+	Compare Scratch10 BugbearWarnings
+	IfLe
+	Goto ImpostorsApproach
+	Gosub BugbearsApproach
+	Print "A BUGBEAR WALKS UP TO YOU. 'OKAY, LETS HAVE THE 15 GOLD.' DO YOU PAY HIM?"
+	Gosub YesNoMenu
+	IfEq
+	Goto PayToll
+	Random 9 Scratch10
+	Compare Scratch10 BugbearWarnings
+	IfLe
+	Goto ImpostorsAccused
+
+BugbearsSendAway:
+	Print "'ALL RIGHT, GET OUT OF HERE THEN. COME BACK WHEN YOU'VE LEARNED THE RULES.'"
+	Save 3 BugbearWarnings
+	Goto Done
+
+PayToll:
+	Save 3 Scratch4
+	Gosub PayMoney
+	IfNe
+	Goto BugbearsSendAway
+	Print "THE BUGBEAR TAKES THE MONEY AND THE GATE OPENS. YOU PROCEED THROUGH."
+	RedrawView
+	Picture 255
+	Save 0 Facing
+	Save 8 PartyX
+	Save 9 PartyY
+
+WalkThroughGate:
+	Arith 1 PartyY PartyY
+	Call CallRedraw
+	Delay
+	Compare PartyY 5
+	IfGt
+	Goto WalkThroughGate
+	Save 255 HoldMove
+	Exit
+
+ImpostorsApproach:
+	Gosub BugbearsApproach
+
+ImpostorsAccused:
+	Print "'HEY, WAIT A MINUTE. THEY ARE IMPOSTERS! ALL RIGHT, THROW DOWN YOUR WEAPONS!'"
+	Goto BugbearsMenu
+
+WallSquare:
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Goto ArrowSlits
+	Goto BugbearsDemand
+
+BugbearsBehindGate:
+	Gosub CheckGarrisonsBeaten
+	IfEq
+	Exit
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Exit
+	EncounterMenu 63 1 63 Scratch10 0 0 0 0 0 "BUGBEARS WERE WAITING ON THE OTHER SIDE OF THE GATE." "" "" 9 9
+	OnGoto Scratch10 3 Done FightGateBugbears FleeToArea6
+
+FightGateBugbears:
+	Save 2 Surprise
+	Save 60 Morale
+	Gosub StartAlarm
+	Save 3 BugbearWarnings
+	ClearMonsters
+	LoadMonster 63 16 63
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto FleeToArea6
+	AndOr GateFlags 16 GateFlags
+	Goto GarrisonSlain
+
+WagonTrader:
+	Compare Hours 14
+	IfGe
+	Exit
+	AndOr GateFlags 64 Scratch10
+	IfNe
+	Exit
+	Compare WagonManMet 0
+	IfNe
+	Exit
+	Gosub CheckGarrisonsBeaten
+	IfEq
+	Goto WagonPasses
+	AndOr GateFlags 16 Scratch10
+	IfNe
+	Exit
+
+WagonPasses:
+	Print "A MAN DRIVING A WAGON FULL OF FOOD AND EQUIPMENT STARTS TO DRIVE PAST YOU, GOING NORTH."
+	Gosub PressReturn
+	Save 1 WagonManMet
+	Save 5 Portrait
+	EncounterMenu 12 0 9 Scratch10 0 3 3 3 4 "" "" "" 0 0
+	Save 255 Portrait
+	OnGoto Scratch10 3 Done KillTrader Done
+	Print "'WHY SURE I'LL SELL YOU MY WAGON. ALL IT'LL COST YOU IS 250 GOLD PIECES. HOW ABOUT IT?'"
+	Gosub YesNoMenu
+	IfEq
+	Goto BuyWagon
+	Print "'SORRY, THAT'S MY FINAL OFFER. TAKE IT OR LEAVE IT."
+	HMenu Scratch10 2 "TAKE IT" "LEAVE IT"
+	OnGoto Scratch10 2 BuyWagon Done
+
+BuyWagon:
+	Save 50 Scratch4
+	Gosub PayMoney
+	IfNe
+	Goto NoMoneyForWagon
+	Print "'PLEASURE DOING BUSINESS WITH YOU. HERE'S YOUR WAGON.'"
+	Gosub PressReturn
+	Print "'OH, BY THE WAY. BETTER BEWARE OF THE GUARDS. EVER SINCE THE GIANTS MOVED INTO THE CASTLE AREA, BUGBEARS HAVE BEEN STUCK GUARDING THE GATE. AND THEY HATE IT.'"
+	Gosub PressReturn
+	Print "'NOT ONLY THAT THEY'RE AFRAID OF THEM ETTIN. MAKES 'EM REAL JUMPY. WOULDN'T GIVE 'EM NO BACK TALK IF I WERE YOU.'"
+	Gosub PressReturn
+
+GotWagon:
+	AndOr GateFlags 64 GateFlags
+	Goto Done
+
+NoMoneyForWagon:
+	Print "'SORRY, YOU DON'T GOT THE MONEY, FRIEND. WELL SEE YOU AROUND."
+	Goto Done
+
+KillTrader:
+	Print "YOU QUICKLY KILL THE TRADER AND GRAB HIS WAGON."
+	Goto GotWagon
+
+MonstersBehindWall:
+	Gosub CheckGarrisonsBeaten
+	IfNe
+	Exit
+	AndOr GateFlags 16 Scratch10
+	IfEq
+	Exit
+	Print "A GROUP OF MONSTERS IS WAITING ON THE OTHER SIDE OF THE WALL"
+	Save 11 Portrait
+	Gosub PressReturn
+	EncounterMenu 24 1 2 Scratch10 0 0 0 0 0 "THEY RUSH TOWARD YOU" "" "" 12 12
+	Save 255 Portrait
+	RedrawView
+	OnGoto Scratch10 3 Done FightWallMonsters PushedBack
+
+FightWallMonsters:
+	Save 0 Surprise
+	Save 80 Morale
+	Gosub StartAlarm
+	ClearMonsters
+	LoadMonster 24 2 14
+	LoadMonster 53 2 11
+	LoadMonster 71 6 71
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto PushedBack
+	Goto GarrisonSlain
+
+MarkWestTowerUsed:
+	AndOr GateFlags 1 GateFlags
+	Exit
+
+MarkEastTowerUsed:
+	AndOr GateFlags 2 GateFlags
+	Exit
+
+DescribeGuardRoom:
+	Print "YOU ENTER A GUARD ROOM. THERE ARE TABLES, CHAIRS, AND BEDS HERE. ALL BUT TWO OF THE BEDS ARE 14 FEET LONG!"
+	Goto PressReturn
+
+DescribeEttins:
+	Print "THERE ARE TWO HUMANS AND THREE ETTIN IN THE ROOM."
+	Goto PressReturn

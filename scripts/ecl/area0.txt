@@ -1,0 +1,941 @@
+event0:
+	Save 0 Scratch3
+	Save 11 Scratch5
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch5
+	Save Scratch5 Sky
+	Save 10 SkyInside
+	Compare LeftMap 0
+	IfEq
+	Goto InsideTown
+	Save 1 LeavingTown
+	Call CallStepForward
+	Save 255 HoldMove
+	LoadFiles 255 255 127
+	Save 2 SymbolSet
+	NewECL 20
+
+InsideTown:
+	AndOr 127 Cell Scratch10
+	Compare QuestTyranthraxus 254
+	IfGe
+	Exit
+	Compare Scratch5 8
+	IfNe
+	Exit
+	CompareAnd Scratch10 0 WallAhead 9
+	IfEq
+	Goto LockedDoor
+	CompareAnd Scratch10 4 WallAhead 7
+	IfEq
+	Goto LockedDoor
+	CompareAnd Scratch10 26 WallAhead 11
+	IfEq
+	Goto LockedDoor
+	Exit
+
+LockedDoor:
+	Print "THE DOOR IS LOCKED.  DO YOU WANT TO BREAK IN?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 WatchResponds StayOutside
+
+StayOutside:
+	Save 255 HoldMove
+	Exit
+
+event1:
+	Print ""
+	Picture 255
+	Save 255 Portrait
+	AndOr 127 Cell Scratch10
+	Compare TourDone 1
+	IfLt
+	Exit
+	Save 0 PartyMemberFound
+	Random 19 Scratch1
+	Compare Scratch1 19
+	IfEq
+	Save "MAD MAN" str AuxText
+	IfEq
+	Gosub FindMemberByName
+	Compare PartyMemberFound 0
+	IfNe
+	Goto MadManAttacks
+	Save 0 AuxCounter
+
+FindCellLoop:
+	Compare AuxCounter Scratch10
+	IfEq
+	Goto CellDispatch
+	Compare AuxCounter 27
+	IfGt
+	Exit
+	Arith 1 AuxCounter AuxCounter
+	Goto FindCellLoop
+
+event2:
+	Gosub SetNoRest
+	Exit
+
+SetNoRest:
+	Compare QuestTyranthraxus 254
+	IfGe
+	Goto NoRestHere
+	Compare TrainerVisited 0
+	IfNe
+	Goto NoRestHere
+	Save 1 RestEvery
+	Save 101 RestChance
+	Return
+
+NoRestHere:
+	Save 0 RestEvery
+	Save 0 RestChance
+	Return
+
+event3:
+	Save 0 RestChance
+	Gosub WatchApproaches
+	Print "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
+	HMenu Scratch1 2 "GO" "STAY"
+	OnGoto Scratch1 2 ResetVisits FightWatch
+
+event4:
+	Save 0 BoatDestination
+	Save 0 LeavingTown
+	Save 0 NoCoords
+	Save 0 NoCoords
+	LoadFiles 0 0 0
+	LoadFiles 127 127 127
+	Compare RestChance 255
+	IfNe
+	Gosub NoRestHere
+	Compare TownEntered 0
+	IfEq
+	Gosub NoRestHere
+	Save 1 TownEntered
+	Save 72 SoundParamA
+	Save 189 SoundParamB
+	Compare TourDone 1
+	IfLt
+	Goto CityTour
+	Exit
+
+CellDispatch:
+	OnGoto AuxCounter 28 ResetVisits PierBoat HarborMaster GatewaySouth ResetVisits TempleOfBane TempleOfTyr TempleOfSune RiverView InnRest ToArea11A ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ToArea11B ResetVisits GeneralShop TavernEnter ArmorShop WeaponShop SilverShop HealerTemple UnsettledGateway CityHallOutside ToArea8
+
+PierBoat:
+	Compare BoatPassageBought 0
+	IfEq
+	Exit
+	Compare Hours 14
+	IfGt
+	Goto BoardBoat
+	Picture 41
+
+BoardBoat:
+	Save 1 LeavingTown
+	Print "YOU BOARD A BOAT."
+	Gosub PressReturn
+	Save 1 OnBoat
+	LoadFiles 255 255 127
+	Compare BoatDestination 0
+	IfEq
+	Save 4 SymbolSet
+	IfEq
+	NewECL 21
+	Compare BoatDestination 2
+	IfLt
+	Goto SailToArea27
+	IfGt
+	Goto SailToArea26
+	Save 7 MapX
+	Save 29 MapY
+	Save 7 SymbolSet
+	NewECL 26
+
+SailToArea26:
+	Save 13 MapX
+	Save 27 MapY
+	Save 7 SymbolSet
+	NewECL 26
+
+SailToArea27:
+	Save 9 MapX
+	Save 29 MapY
+	Save 8 SymbolSet
+	NewECL 27
+
+HarborMaster:
+	Compare Facing 0
+	IfNe
+	Exit
+	Compare BoatPassageBought 1
+	IfEq
+	Exit
+	Save 16 Portrait
+	Picture 7
+	Compare QuestSokalKeep 254
+	IfLt
+	Goto OnlyBoatOut
+	Print "THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'"
+	HMenu BoatDestination 5 "SOKAL" "EAST" "WEST" "BAY" "NONE"
+	OnGoto BoatDestination 5 BuyPassage BuyPassage BuyPassage BuyPassage ResetVisits
+
+BuyPassage:
+	Gosub PayPlatinum
+	Save 1 BoatPassageBought
+	Print "'CATCH THE BOAT AT THE END OF THE PIER.'"
+	Picture 255
+	Exit
+
+OnlyBoatOut:
+	Print "'BY ORDER OF THE CITY COUNCIL,' THE HARBOR MASTER SAYS, 'THE ONLY BOAT OUT IS GOING TO SOKAL KEEP.  YOU CAN CATCH IT AT THE END OF THE PIER.'"
+	Gosub PressReturn
+	Picture 255
+	Save 0 BoatDestination
+	Save 1 BoatPassageBought
+	Exit
+
+GatewaySouth:
+	Compare IronBoxState 1
+	IfEq
+	Goto WatchTakesTreasure
+	Compare Facing 2
+	IfEq
+	Exit
+	Print "TO THE NORTH IS THE PASSENGER DOCK."
+	Exit
+
+TempleOfBane:
+	Compare DirtenState 255
+	IfEq
+	Exit
+	Compare BishopSummons 254
+	IfEq
+	Goto BishopAudience
+	Compare DirtenState 128
+	IfEq
+	Goto BishopAudience
+	Save 8 Portrait
+	Picture 4
+	Print "THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?"
+	HMenu AuxMenuChoice 2 "LEAVE" "FORCE YOUR WAY PAST"
+	OnGoto AuxMenuChoice 2 LeaveBishop WatchResponds
+
+BishopAudience:
+	Compare DirtenState 128
+	IfEq
+	Goto DirtenStudy
+	Save 13 Portrait
+	Picture 1
+	Print "YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR."
+	Gosub PressReturn
+	Save 0 Portrait
+	Picture 4
+	Print "'HE IS BOUND TO RECOVER THE TEMPLE WHICH HAS BEEN DESECRATED TO BANE.  GO WITH HIM ACROSS THE RIVER AND HELP HIM TO CLEANSE THE TEMPLE.  IN PAYMENT, YOU MAY KEEP THE HIDDEN TREASURES.'"
+	Goto AccompanyDirtenAsk
+
+DirtenStudy:
+	Save 0 Portrait
+	Picture 4
+	Print "YOU ARE USHERED INTO THE STUDY WHERE DIRTEN WAITS.  'I AM ABOUT TO JOURNEY TO THE TEMPLE, WILL YOU COME WITH ME?'"
+
+AccompanyDirtenAsk:
+	Gosub PressReturn
+	Print "'WILL YOU ACCOMPANY DIRTEN?'"
+	Save 128 DirtenState
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 DirtenJoins DeclineDirten
+
+DirtenJoins:
+	Gosub CheckPartySize
+	AddNPC 107 99
+	Save 255 DirtenState
+	Picture 255
+	Return
+
+DeclineDirten:
+	Picture 255
+	Exit
+
+LeaveBishop:
+	Save 11 PartyX
+	Call CallRedraw
+	Exit
+
+TempleOfTyr:
+	Save 34 Portrait
+	Picture 2
+	Compare FoughtWatch 0
+	IfGt
+	Goto RefuseService
+	Print "THE PRIESTS OF TYR WELCOME YOU TO THE TEMPLE."
+	Save "MAD MAN" str AuxText
+	Gosub FindMemberByName
+	Compare PartyMemberFound 0
+	IfNe
+	Gosub PriestWarnsMadMan
+	Goto SeekHealingAsk
+
+TempleOfSune:
+	Save 22 Portrait
+	Picture 24
+	Compare FoughtWatch 0
+	IfGt
+	Goto RefuseService
+	Print "YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE."
+	Goto SeekHealingAsk
+
+RiverView:
+	Print "YOU WALK NEAR THE "
+	Compare Boss 245
+	IfGe
+	Goto StojanowRiver
+	Print "POISONOUS BARREN RIVER."
+	Exit
+
+StojanowRiver:
+	Print "BEAUTIFUL STOJANOW RIVER."
+	Exit
+
+InnRest:
+	Compare TrainerVisited 0
+	IfNe
+	Exit
+	Save 45 Portrait
+	Picture 24
+	Compare FoughtWatch 0
+	IfNe
+	Goto RefuseService
+	Print "'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 PayForRest MustLeave
+
+PayForRest:
+	Gosub PayPlatinum
+	Gosub SetNoRest
+	Program 9
+	Picture 255
+	Exit
+
+PayPlatinum:
+	Who "WHO WILL PAY?"
+	Compare SelControl 128
+	IfLt
+	Goto CheckPlatinum
+	Print "THAT PERSON WON'T PAY."
+	Delay
+	Goto PayPlatinum
+
+CheckPlatinum:
+	Compare 1 SelPlatinum
+	IfGt
+	Goto NotEnoughPlatinum
+	Arith 1 SelPlatinum SelPlatinum
+	Arith 128 SelPartyIndex2 Scratch1
+	LoadCharacter Scratch1
+	Save 1 TrainerVisited
+	Return
+
+NotEnoughPlatinum:
+	Print "YOU DON'T HAVE ENOUGH PLATINUM."
+	Delay
+	Picture 255
+	Exit
+
+ToArea11A:
+	NewECL 11
+
+ToArea11B:
+	NewECL 11
+
+GeneralShop:
+	Gosub EnterBuildingOnce
+	Compare FoughtWatch 0
+	IfGt
+	Goto RefuseService
+	Save 42 Portrait
+	Picture 9
+	Print "THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 GeneralShopBrowse ResetVisits
+
+GeneralShopBrowse:
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 54
+	Save 1 Shop
+	Save 1 ShopFlag
+	Save 16 ShopKind
+	Combat
+	Picture 255
+	Exit
+
+TavernEnter:
+	Compare TavernEntered 0
+	IfGt
+	Goto PickpocketRoll
+	Save 1 TavernEntered
+	Print "YOU ARE IN A TAVERN.  THE AIR IS FILLED WITH SMOKE AND GOSSIP.  PEOPLE ARE GAMBLING AT THE TABLES."
+	Gosub PressReturn
+
+PickpocketRoll:
+	Random 255 Scratch1
+	Compare Scratch1 25
+	IfGt
+	Goto TavernEvent
+	Rob 1 20 5
+	Random 1 Scratch1
+	Compare Scratch1 0
+	IfNe
+	Goto TavernEvent
+	Print "YOU FEEL A LIGHT TOUCH ON YOUR PURSE.  DO YOU IGNORE IT OR GRAB THE OFFENDING HAND?"
+	HMenu Scratch1 2 "IGNORE" "GRAB"
+	OnGoto Scratch1 2 TavernEvent DrunkenBrawl
+
+TavernEvent:
+	Compare Scratch1 1
+	IfEq
+	Print "YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET."
+	IfEq
+	Gosub PressReturn
+	Picture 255
+	Print " DOES ANYONE WANT TO GAMBLE?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 GamblerGame TavernTale
+
+TavernTale:
+	Print "YOU OVERHEAR TAVERN TALE "
+	Random 22 Scratch6
+	Arith 1 Scratch6 Scratch6
+	Print Scratch6
+	Gosub PressReturn
+	Random 3 AuxRoll
+	Compare AuxRoll 1
+	IfEq
+	Goto DrunkenBrawl
+	Exit
+
+GamblerGame:
+	Save 8 Portrait
+	Picture 7
+	Print "'THE GAME WORKS LIKE THIS.  WE SPIN THIS TOP. IF THE GREEN SIDE COMES UP, YOU GET DOUBLE YOUR MONEY BACK.  IF A BLUE SIDE COMES UP, YOU GET YOUR MONEY BACK.  IF A RED SIDE COMES UP, YOU LOSE.'"
+	Gosub PressReturn
+	Who "WHO WILL GAMBLE?"
+	Compare SelStatus 1
+	IfNe
+	Goto TooHurtToGamble
+	Save SelPartyIndex GamblerIndex
+	Save SelPlatinum GamblerPlatinum
+
+WagerPrompt:
+	Print "YOU HAVE "
+	Print GamblerPlatinum
+	Print " PP."
+	Gosub PressReturn
+	Print "HOW MANY PLATINUM PIECES WILL YOU WAGER? (HOUSE LIMIT IS 1000)"
+	InputNumber 4 Wager
+	Compare GamblerPlatinum Wager
+	IfLt
+	Goto WagerRefused
+	Compare Wager #03E8
+	IfGt
+	Goto WagerRefused
+	Compare Wager 0
+	IfEq
+	Goto WagerRefused
+	Random 9 Scratch9
+	Compare Scratch9 8
+	IfGe
+	Print "IT'S GREEN.  YOU GET DOUBLE YOUR MONEY BACK."
+	IfGe
+	Arith Wager GamblerPlatinum GamblerPlatinum
+	IfGe
+	Goto GambleAgainAsk
+	Compare Scratch9 2
+	IfGt
+	Print "IT'S BLUE.  YOU WIN."
+	IfGt
+	Goto GambleAgainAsk
+	Print "RED. SORRY, YOU LOSE."
+	Arith Wager GamblerPlatinum GamblerPlatinum
+
+GambleAgainAsk:
+	Gosub PressReturn
+	Print "WILL YOU GO AGAIN?"
+	Gosub YesNoMenu
+	OnGoto Scratch1 1 WagerPrompt
+	LoadCharacter GamblerIndex
+	Save GamblerPlatinum SelPlatinum
+	Arith 128 GamblerIndex Wager
+	LoadCharacter Wager
+	Goto ResetVisits
+
+TooHurtToGamble:
+	Print "NO ONE IS WILLING TO GAMBLE WITH SOMEONE WHO LOOKS THAT BAD."
+	Goto TavernEvent
+
+WagerRefused:
+	Print "I CAN'T ACCEPT THAT WAGER."
+	Goto GambleAgainAsk
+
+DrunkenBrawl:
+	Save 53 Portrait
+	SetupMonster 7 2 7
+	Print "A DRUNKEN BRAWL BREAKS OUT. YOU ARE CAUGHT IN THE MIDDLE."
+	Gosub PressReturn
+	Random 1 AuxMonster
+	PartyStrength Scratch2
+	Compare Scratch2 24
+	IfGt
+	Arith 1 AuxMonster AuxMonster
+	Compare Scratch2 50
+	IfGt
+	Arith 1 AuxMonster AuxMonster
+	GetTable DuelMonsterTable AuxMonster AuxEncResult
+	GetTable DuelCountTable AuxMonster AuxRoll2
+	Arith 1 AuxMonster AuxMonster
+	GetTable DuelMonsterTable AuxMonster AuxEncResult2
+	GetTable DuelCountTable AuxMonster AuxTempC
+	Arith 1 AuxMonster AuxMonster
+	GetTable DuelMonsterTable AuxMonster AuxEncTemp
+	GetTable DuelCountTable AuxMonster AuxSearchCount
+	Random 3 AuxPartyStrength
+	GetTable DuelMonsterTable AuxPartyStrength AuxTemp9
+	GetTable DuelCountTable AuxPartyStrength AuxEncText
+	Save 1 NoLoot
+	Save 1 Duel
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster AuxEncResult 11 AuxRoll2
+	LoadMonster AuxEncResult2 11 AuxTempC
+	LoadMonster AuxEncTemp 11 AuxSearchCount
+	LoadMonster AuxTemp9 13 AuxEncText
+	Save 41 Scratch1
+
+BrawlFight:
+	LoadCharacter Scratch1
+	Save 128 SelSide
+	Save 178 SelControl
+	Arith 128 Scratch1 AuxTemp9
+	LoadCharacter AuxTemp9
+	Arith 1 Scratch1 Scratch1
+	Compare Scratch1 54
+	IfLt
+	Goto BrawlFight
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto RunAway
+	Gosub WatchApproaches
+	Print "THE CITY WATCH CHARGES IN. DO YOU RUN AWAY OR STAY TO CONFRONT THEM?"
+	HMenu AuxParlay 2 "STAY" "RUN"
+	OnGoto AuxParlay 2 WatchResponds RunAway
+
+ArmorShop:
+	Gosub EnterBuildingOnce
+	Save 63 Portrait
+	Picture 34
+	Compare FoughtWatch 0
+	IfGt
+	Goto RefuseService
+	Print "THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 ArmorShopBrowse ResetVisits
+
+ArmorShopBrowse:
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 52
+	Save 1 Shop
+	Save 1 ShopFlag
+	Save 16 ShopKind
+	Combat
+	Picture 255
+	Exit
+
+WeaponShop:
+	Gosub EnterBuildingOnce
+	Save 42 Portrait
+	Picture 9
+	Compare FoughtWatch 0
+	IfGt
+	Goto RefuseService
+	Print "THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 WeaponShopBrowse ResetVisits
+
+WeaponShopBrowse:
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 53
+	Save 1 Shop
+	Save 1 ShopFlag
+	Save 16 ShopKind
+	Combat
+	Picture 255
+	Exit
+
+SilverShop:
+	Compare Building2Entered 0
+	IfNe
+	Exit
+	Save 1 Building2Entered
+	Save 63 Portrait
+	Picture 34
+	Compare FoughtWatch 0
+	IfGt
+	Goto RefuseService
+	Print "THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 SilverShopBrowse ResetVisits
+
+SilverShopBrowse:
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 55
+	Save 1 Shop
+	Save 1 ShopFlag
+	Save 16 ShopKind
+	Combat
+	Picture 255
+	Exit
+
+HealerTemple:
+	Compare Combat1Won 0
+	IfNe
+	Exit
+	Save 57 Portrait
+	Picture 1
+	Compare FoughtWatch 0
+	IfGt
+	Goto WatchFightsBack
+	Print "THE PRIESTS OF TEMPUS BID YOU WELCOME."
+	Goto SeekHealingAsk
+
+SeekHealingAsk:
+	Print "' DO YOU SEEK HEALING?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 TempleHealing MustLeave
+
+MustLeave:
+	Print "THEN YOU MUST LEAVE."
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Save 255 Portrait
+	Call CallRedraw
+	Exit
+
+TempleHealing:
+	ClearMonsters
+	Save 1 Temple
+	Combat
+	Save 255 Portrait
+	Picture 255
+	Exit
+
+WatchFightsBack:
+	SetupMonster 16 0 1
+	Print "YOU ATTACKED THE CITY WATCH, YOU WON'T BEAT US SO EASILY!"
+	Save 99 Morale
+	ClearMonsters
+	LoadMonster 83 12 12
+	LoadMonster 41 20 11
+	LoadMonster 85 20 16
+	Combat
+	Compare CombatEnd 1
+	IfEq
+	Save 1 Combat1Won
+	Exit
+
+UnsettledGateway:
+	Print "YOU ARE BY THE GATEWAY TO THE UNSETTLED AREAS. THE CITY WATCH EYES YOU SUSPICIOUSLY."
+	Compare IronBoxState 1
+	IfEq
+	Goto WatchTakesTreasure
+	Exit
+
+WatchTakesTreasure:
+	Gosub PressReturn
+	Print "THE CITY WATCH STOPS YOU AND REMOVES CADORNA'S TREASURE FROM YOUR KEEPING.  THEY TELL YOU YOUR REWARD WAITS WITH THE CITY CLERK."
+	Save 254 QuestCadornaPayment
+	Save 255 IronBoxState
+	Exit
+
+CityHallOutside:
+	Save 0 PartyMemberFound
+	Save "LIX." str AuxRomanNum
+	Save "SKULLCRUSHER" str AuxText
+	Gosub FindMemberByName
+	Compare PartyMemberFound 1
+	IfEq
+	Goto SkullcrusherLeaves
+	Compare CityHallSeen 0
+	IfNe
+	Exit
+	Save 1 CityHallSeen
+	Print "YOU ARE OUTSIDE THE CITY HALL. THE CITY CLERK WAITS INSIDE TO AWARD COMMISSIONS."
+	CompareAnd Scratch10 26 WallAhead 11
+	IfNe
+	Exit
+	Gosub PressReturn
+	Print "PROCLAMATIONS ARE POSTED ON THE WALLS, IN YOUR JOURNAL YOU NOTE "
+	Compare CouncilFavor 0
+	IfEq
+	Goto OldProclamations
+	Arith 1 CouncilFavor ProclamationIndex
+	OnGoto ProclamationIndex 9 Proclamation1 Proclamation2 Proclamation3 Proclamation4 Proclamation5 Proclamation6 Proclamation7 Proclamation8 Proclamation9
+	Print "PROCLAMATION"
+	Print str AuxRomanNum
+	Exit
+
+OldProclamations:
+	Print "PROCLAMATIONS LXIV, LXXVIII, CIX, AND LIX."
+	Exit
+
+Proclamation1:
+	Save "CI." str AuxRomanNum
+	Return
+
+Proclamation2:
+	Save "CXXVI AND CX." str AuxRomanNum
+	Return
+
+Proclamation3:
+	Save "CXXXIV." str AuxRomanNum
+	Return
+
+Proclamation4:
+	Save "CLIV." str AuxRomanNum
+	Return
+
+Proclamation5:
+	Save "CXIV." str AuxRomanNum
+	Return
+
+Proclamation6:
+	Save "CCIV." str AuxRomanNum
+	Return
+
+Proclamation7:
+	Save "CXXIX." str AuxRomanNum
+	Return
+
+Proclamation8:
+	Save "CCI." str AuxRomanNum
+	Return
+
+Proclamation9:
+	Save "CXIV." str AuxRomanNum
+	Return
+
+SkullcrusherLeaves:
+	Print "SKULLCRUSHER SPEAKS, 'I MUST GO TO MY MASTER NOW.' "
+	Save 0 SelStatus
+	Save 0 SelName
+	Arith 128 AuxMember AuxMember
+	LoadCharacter AuxMember
+	Print "HE LEAVES."
+	Gosub PressReturn
+	Goto CityHallOutside
+
+ToArea8:
+	NewECL 8
+
+WatchResponds:
+	Gosub WatchApproaches
+	Print "THE CITY WATCH RESPONDS TO THE NOISE.  DO YOU STAY TO FIGHT THEM OR RUN AWAY?"
+	HMenu Scratch1 2 "STAY" "RUN"
+	OnGoto Scratch1 2 FightWatch RunAway
+
+FightWatch:
+	Save 0 WatchCombatDone0
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster 94 2 14
+	LoadMonster 84 12 16
+	LoadMonster 53 12 11
+	LoadMonster 40 12 15
+	Combat
+	Save 1 WatchCombatDone0
+	Gosub AfterWatchFight
+	Save 1 FoughtWatch
+	Exit
+
+RefuseService:
+	Print "'DUE TO YOUR VICIOUS ATTACK ON THOSE WHO PROTECT US, WE REFUSE YOU ALL SERVICE.'"
+	Exit
+
+YesNoMenu:
+	HMenu Scratch1 2 "YES" "NO"
+	Return
+
+ResetVisits:
+	Save 0 TrainerVisited
+	Save 0 BuildingEntered
+	Save 0 TavernEntered
+	Save 0 Building2Entered
+	Picture 255
+	Exit
+
+EnterBuildingOnce:
+	Compare BuildingEntered 0
+	IfNe
+	Exit
+	Save 1 BuildingEntered
+	Return
+
+AfterWatchFight:
+	Compare CombatEnd 128
+	IfGt
+	Goto RunAway
+	Compare WatchCombatDone0 0
+	IfGt
+	Return
+
+CheckPartySize:
+	Compare PartyCount 8
+	IfLt
+	Return
+	Print "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
+	Gosub PressReturn
+	Picture 255
+	Exit
+
+RunAway:
+	Random 3 Facing
+	Random 3 AuxMember
+	GetTable EjectXTable AuxMember PartyX
+	GetTable EjectYTable AuxMember PartyY
+	Print ""
+	Call CallRedraw
+	Exit
+
+PressReturn:
+	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Return
+
+WatchApproaches:
+	Save 9 Portrait
+	SetupMonster 27 2 7
+	Delay
+	Approach
+	Delay
+	Approach
+	Delay
+	Return
+
+FindMemberByName:
+	Save 0 AuxMember
+
+FindMemberLoop:
+	LoadCharacter AuxMember
+	Compare SelStatus 127
+	IfGt
+	Goto NextMember
+	Compare str SelName str AuxText
+	IfEq
+	Goto MemberFound
+
+NextMember:
+	Arith 1 AuxMember AuxMember
+	Compare AuxMember 8
+	IfLt
+	Goto FindMemberLoop
+	Return
+
+MemberFound:
+	Compare SelControl 128
+	IfLt
+	Goto NextMember
+	Save 1 PartyMemberFound
+	Return
+
+MadManAttacks:
+	Print "THE MAD MAN SUDDENLY BEGINS TO SCREAM AND ATTACK EVERYONE WITHIN ARM'S REACH."
+	Gosub PressReturn
+	Goto WatchResponds
+
+PriestWarnsMadMan:
+	Print "AN AGED PRIEST APPROACHES, POINTING AT THE MAD MAN, HE SPEAKS, 'THAT MAN URGENTLY NEEDS OUR CARE.  DROP HIM FROM YOUR PARTY OR HE WILL BRING YOU TO GRIEF.  WE WILL CARE FOR HIM.'"
+	Gosub PressReturn
+	Return
+
+CityTour:
+	Save 1 TourDone
+	Save 11 Scratch5
+	Compare Hours 14
+	IfGt
+	Save 8 Scratch5
+	Save Scratch5 Sky
+	Save 15 PartyX
+	Save 1 PartyY
+	Save 3 Facing
+	Call CallRedraw
+	Save 8 Portrait
+	SetupMonster 12 2 9
+	Delay
+	Approach
+	Delay
+	Approach
+	Delay
+	Print "'GREETINGS, COURAGEOUS ONES, I AM ROLF, APPOINTED BY THE COUNCIL TO INTRODUCE NEWCOMERS TO THE FAIR CITY OF PHLAN. IF YOU WILL ACCOMPANY ME, I WILL START THE TOUR.'"
+	Gosub PressReturn
+	RedrawView
+	Picture 255
+	Save 0 Scratch1
+
+TourStopLoop:
+	Print ""
+	GetTable TourStopX Scratch1 Scratch2
+	GetTable TourStopY Scratch1 Scratch3
+	GetTable TourStopFacing Scratch1 Facing
+	GetTable TourStopKinds Scratch1 Scratch4
+	Gosub MoveToTourStop
+	OnGoto Scratch4 7 TourStopNone TourTempleOfTyr TourPassengerDock TourTrainingSchools TourCityHall TourSuneTemple TourEnd
+	Compare Scratch4 6
+	IfEq
+	Goto ResetVisits
+	Arith 1 Scratch1 Scratch1
+	Goto TourStopLoop
+
+MoveToTourStop:
+	Save Scratch2 PartyX
+	Save Scratch3 PartyY
+	Call CallRedraw
+	Save 8 Sound
+	Call CallSound
+	Delay
+
+TourStopNone:
+	Return
+
+TourTempleOfTyr:
+	Print "'YOU NOW FACE AN ENTRANCE TO THE TEMPLE OF TYR.  THERE ARE THREE TEMPLES IN PHLAN: TYR'S, SUNE'S, AND TEMPUS. TYR'S IS THE LARGEST AND HOUSES BISHOP BRACCIO. IF YOU WILL TURN AROUND NOW, '"
+	Gosub PressReturn
+	Return
+
+TourPassengerDock:
+	Print "'YOU WILL SEE THE ENTRANCE TO THE PASSENGER DOCK AREA WE JUST DEPARTED.  FEW SHIPS DARE THE PERILOUS PASSAGE HERE, BUT THE COUNCIL IS DEVELOPING A PLAN TO OPEN UP THE SEA LANES.  PLEASE FOLLOW ME.'"
+	Gosub PressReturn
+	Return
+
+TourTrainingSchools:
+	Print "'BEHIND THESE DOORS ARE THE SPECIAL TRAINING SCHOOLS  WHERE ADVENTURERS INCREASE THEIR SKILLS. LET US NOW GO TO THE CITY'S MOST IMPORTANT BUILDING.'"
+	Gosub PressReturn
+	Return
+
+TourCityHall:
+	Print "'WE ARE JUST OUTSIDE THE CITY HALL. PROCLAMATIONS ARE POSTED ON THESE WALLS. INSIDE, THE CITY CLERK AWARDS THE COUNCIL'S COMMISSIONS.  COMMISSIONS ARE THE QUICKEST WAY TO FAME AND FORTUNE.'"
+	Gosub PressReturn
+	Return
+
+TourSuneTemple:
+	Print "'ON YOUR RIGHT IS ONE OF THE ENTRANCE'S TO SUNE'S TEMPLE. AS WITH ALL PHLAN'S TEMPLES, VARIOUS CLERICAL SERVICES ARE OFFERED INSIDE.  ON YOUR LEFT IS AN ENTRANCE TO THE CITY PARK.'"
+	Gosub PressReturn
+	Return
+
+TourEnd:
+	Print "'BEYOND THIS GATE ARE THE MONSTER-RIDDEN AREAS OF THE OLD CITY WE ARE SLOWLY PREPARING FOR SETTLEMENT.  THE COUNCIL OFFERS A GENEROUS REWARD TO THOSE WHO CLEAR AREAS OF MONSTERS."
+	Gosub PressReturn
+	Print "'OUR TOUR IS ENDED. AGAIN, LET ME URGE YOU TO APPLY TO THE CITY CLERK FOR A COMMISSION.  GOOD-BYE AND GOOD FORTUNE.' (YOU ARE ON YOUR OWN NOW)"
+	Gosub PressReturn
+	Return

@@ -27,13 +27,18 @@ func ListECL(code []byte, w io.Writer) {
 
 // ScriptECL writes one ECL block as a script: one command and its
 // operands per line, jump targets as labels (event0..event4 for the
-// entry points, L_XXXX for the others), a blank line after each
-// unconditional end of flow. A development aid (cmd/ecl), like ListECL.
-func ScriptECL(code []byte, w io.Writer) {
+// entry points; the others by their names in names, L_XXXX unnamed),
+// variables by their names in names (script address -> name; an unnamed
+// one stays [XXXX]). For
+// cmd/eclscript.
+func ScriptECL(code []byte, w io.Writer, names map[int]string) {
 	events, lines, jumps := walkECL(code)
 	label := map[int]string{}
 	for pc := range jumps {
 		label[pc] = fmt.Sprintf("L_%04X", pc)
+		if n := names[pc]; n != "" {
+			label[pc] = n
+		}
 	}
 	for i, pc := range events {
 		label[pc] = fmt.Sprintf("event%d", i) // an event entry wins over a jump label
@@ -47,11 +52,21 @@ func ScriptECL(code []byte, w io.Writer) {
 			fmt.Fprintf(w, "%s:\n", n)
 		}
 		args := l.args
+		args = append([]string(nil), args...)
+		jumped := map[string]bool{}
 		for _, t := range l.targets {
 			for j, a := range args {
 				if a == fmt.Sprintf("[%04X]", t) {
-					args[j] = label[t]
+					args[j], jumped[a] = label[t], true
 				}
+			}
+		}
+		for j, a := range args {
+			var v int
+			if _, err := fmt.Sscanf(a, "[%04X]", &v); err == nil && len(a) == 6 && !jumped[a] && names[v] != "" {
+				args[j] = names[v]
+			} else if _, err := fmt.Sscanf(a, "str[%04X]", &v); err == nil && names[v] != "" {
+				args[j] = "str " + names[v]
 			}
 		}
 		name := strings.TrimPrefix(l.name, "op")
@@ -60,6 +75,46 @@ func ScriptECL(code []byte, w io.Writer) {
 		}
 		fmt.Fprintf(w, "\t%s\n", strings.TrimSpace(name+" "+strings.Join(args, " ")))
 	}
+}
+
+// ScriptVarNames are the names of the script words the engine itself
+// uses: the named fields of the area and game records (an array word as
+// Name_i) and the specials (the party's x, y and facing are the same
+// words for reading and writing: eclSpecialLow+0xE3 = eclSpecialHigh). cmd/eclscript starts from these.
+func ScriptVarNames() map[int]string {
+	names := map[int]string{}
+	add := func(base int, rec any) {
+		t := reflect.TypeOf(rec)
+		i := 0
+		for f := range t.NumField() {
+			sf := t.Field(f)
+			n := 1
+			if sf.Type.Kind() == reflect.Array {
+				n = sf.Type.Len()
+			}
+			if !strings.HasPrefix(sf.Name, "V") || sf.Name == "ViewFlags" {
+				for k := range n {
+					name := sf.Name
+					if n > 1 {
+						name = fmt.Sprintf("%s_%d", sf.Name, k)
+					}
+					names[base+i+k] = name
+				}
+			}
+			i += n
+		}
+	}
+	add(areaVarBase, areaVars{})
+	add(gameVarBase, gameVars{})
+	for k, n := range map[int]string{
+		eclSpecialLow + 0xF1: "SetGroundShade", eclSpecialLow + 0xF7: "SetSkyShade",
+		eclSpecialHigh: "PartyX", eclSpecialHigh + 1: "PartyY",
+		eclSpecialHigh + 2: "Facing", eclSpecialHigh + 3: "WallAhead", eclSpecialHigh + 4: "Cell",
+		0x3DE: "Sound", 0x33D: "FacingRaw",
+	} {
+		names[k] = n
+	}
+	return names
 }
 
 // eclLine is one decoded instruction of walkECL.

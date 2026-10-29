@@ -1,0 +1,946 @@
+event0:
+	Save 11 Scratch5
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch5
+	Save Scratch5 Sky
+	Save 9 SkyInside
+	Compare LeftMap 0
+	IfEq
+	Goto StoreCellCode
+	Save 0 NoCoords
+	Call CallStepForward
+	Save 255 HoldMove
+	Compare Facing 1
+	IfEq
+	Save 3 SymbolSet
+	IfEq
+	NewECL 0
+	IfNe
+	Save 8 SymbolSet
+	IfNe
+	NewECL 29
+
+StoreCellCode:
+	AndOr 127 Cell Scratch10
+	Exit
+
+event1:
+	Save 255 Portrait
+	Picture 255
+	Save 0 EventTimer
+	Print ""
+	AndOr 127 Cell Scratch10
+	Save 0 Scratch1
+	Save 0 Scratch2
+	Save 0 Scratch3
+	Save 0 AuxCounter
+
+FindCellCase:
+	Compare AuxCounter Scratch10
+	IfEq
+	Goto CellCaseJump
+	Compare AuxCounter 20
+	IfGt
+	Exit
+	Arith 1 AuxCounter AuxCounter
+	Goto FindCellCase
+
+CellCaseJump:
+	OnGoto AuxCounter 21 SlumsStreet OrcsArguePapers GoblinTrainer OhloRoom DirtyRoom UncleanStable FeedingKobolds HempMarket FortuneTeller OrcHome HobgoblinGold StorageRoom TreasureRoom GuardsIntercept LeadersMeeting AlertedGuards LargeEmptyRoom RopeGuildEntry InsideRopeGuild PotionBooth GrainSack
+
+event2:
+	Compare FortuneTellerState 255
+	IfEq
+	Goto RestDangerous
+	Compare QuestSlums 254
+	IfGe
+	Goto RestSafe
+	Compare Scratch10 0
+	IfEq
+	Goto RestDangerous
+
+RestSafe:
+	Save 0 RestEvery
+	Save 0 RestChance
+	Exit
+
+RestDangerous:
+	Save 24 RestEvery
+	Save 24 RestChance
+	Exit
+
+event3:
+	Save 200 EventTimer
+	Save 0 Surprise
+	PartyStrength AuxPartyStrength
+	Goto ScalePatrol
+
+event4:
+	Compare InRopeGuild 0
+	IfEq
+	Save 0 NoCoords
+	Save 11 Scratch5
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch5
+	Save Scratch5 Sky
+	Save 9 SkyInside
+	LoadFiles 20 2 255
+	LoadFiles 2 4 1
+	Compare SlumsEntered 255
+	IfNe
+	Goto RestSafe
+	Exit
+
+SlumsStreet:
+	PartyStrength AuxPartyStrength
+	Compare QuestSlums 254
+	IfGe
+	Exit
+	Compare SlumsEntered 255
+	IfNe
+	Print "YOU HAVE ENTERED THE MONSTER-CRAWLING SLUMS OF PHLAN.  SMALL, UGLY THINGS SCURRY FROM BENEATH YOUR FEET.  IN THE DISTANCE, AN ALARM SOUNDS."
+	Save 255 SlumsEntered
+	Compare 0 Scratch10
+	IfNe
+	Exit
+	Compare PatrolsBeaten 15
+	IfGe
+	Exit
+	Random 13 AuxSightText
+	Compare Search 1
+	IfEq
+	Arith 4 AuxSightText AuxSightText
+	Compare FortuneTellerState 255
+	IfEq
+	Arith 5 AuxSightText AuxSightText
+	Compare AuxSightText 12
+	IfLe
+	Exit
+
+ScalePatrol:
+	Arith AuxPartyStrength 3 AuxPartyStrength
+	Arith AuxPartyStrength 2 AuxPartyStrength
+	Compare FortuneTellerState 255
+	IfEq
+	Arith 5 AuxPartyStrength AuxPartyStrength
+
+PickPatrol:
+	Random 2 Scratch7
+	OnGoto Scratch7 3 PatrolKobolds PatrolGoblins PatrolOrcs
+
+PatrolKobolds:
+	Save " KOBOLDS. " str AuxText
+	Goto PatrolSurprise
+
+PatrolGoblins:
+	Save " GOBLINS. " str AuxText
+	Goto PatrolSurprise
+
+PatrolOrcs:
+	Save " ORCS. " str AuxText
+
+PatrolSurprise:
+	GetTable PatrolDistTable Scratch7 MonsterDist
+	GetTable PatrolMonsterTable Scratch7 Scratch8
+	GetTable PatrolTable3 Scratch7 AuxEncResult
+	GetTable PatrolTable4 Scratch7 AuxEncResult2
+	GetTable PatrolPictureTable Scratch7 AuxEncMonster2
+	PartySurprise AuxMember AuxRoll
+	Surprise AuxMember AuxRoll 0 0
+	Compare Surprise 1
+	IfNe
+	Goto PatrolApproach
+	SetupMonster AuxEncMonster2 2 Scratch8
+	Approach
+	Delay
+	Approach
+	Print "YOU ARE SURPRISED BY"
+	Compare AuxPartyStrength 18
+	IfGt
+	Print " A BUGBEAR LEADING A PARTY OF"
+	Print str AuxText
+	Gosub PressReturn
+	Save 0 MaxDist
+	Save 70 PatrolMorale
+	Goto FightPatrol
+
+PatrolApproach:
+	Compare Surprise 3
+	IfEq
+	Goto BumpIntoPatrol
+	Compare Surprise 2
+	IfEq
+	Goto SurprisePatrol
+	Random 1 AuxMember
+	Compare AuxMember 1
+	IfLt
+	Goto SpySeedyPatrol
+	Save "YOU ARE BEING APPROACHED BY SOME ANGRY" str AuxMonsterName
+	Save str AuxText str AuxNameCopy5
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Save 60 PatrolMorale
+	OnGoto AuxMember 4 Done FightPatrol RunAway ConversePatrol
+
+BumpIntoPatrol:
+	Save "YOU BUMP INTO SOME " str AuxMonsterName
+	Save str AuxText str AuxNameCopy1
+	EncounterMenu AuxEncMonster2 0 Scratch8 AuxMember 0 2 0 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Save 50 PatrolMorale
+	OnGoto AuxMember 4 Done FightPatrol RunAway ConversePatrol
+
+SpySeedyPatrol:
+	Save "YOU SPY A GROUP OF SEEDY-LOOKING " str AuxMonsterName
+	Save str AuxText str AuxNameCopy4
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Save 40 PatrolMorale
+	OnGoto AuxMember 4 Done FightPatrol RunAway ConversePatrol
+
+SurprisePatrol:
+	Save "YOU HAVE SURPRISED A PARTY OF " str AuxMonsterName
+	Save str AuxText str AuxNameCopy3
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Save 30 PatrolMorale
+	OnGoto AuxMember 4 Done FightPatrol YouHide ConversePatrol
+
+OrcsArguePapers:
+	Compare OrcPapersFight 255
+	IfEq
+	Exit
+	SetupMonster 4 1 4
+	Approach
+	Print "SEVERAL ORCS ARE ARGUING OVER SOME PAPERS."
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 99 Morale
+	ClearMonsters
+	LoadMonster 13 1 4
+	LoadMonster 4 3 4
+	Combat
+	Save 255 OrcPapersFight
+	Gosub CountSlumsCleared
+	Exit
+
+GoblinTrainer:
+	Compare GoblinTrainerFight 255
+	IfEq
+	Exit
+	SetupMonster 2 1 2
+	Approach
+	Print "A HEALTHY-LOOKING GOBLIN IS INSTRUCTING A GROUP OF YOUNG WARRIORS.  HE SMILES AND SAYS, 'I SEE OUR OPPONENTS HAVE ARRIVED.'"
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 60 Morale
+	ClearMonsters
+	LoadMonster 2 8 2
+	LoadMonster 12 1 3
+	Combat
+	Gosub CountSlumsCleared
+	Save 255 GoblinTrainerFight
+	Exit
+
+OhloRoom:
+	Compare OhloQuestState 255
+	IfEq
+	Exit
+	Compare OhloPotionState 255
+	IfEq
+	Exit
+	Save 8 Portrait
+	SetupMonster 24 1 2
+	Compare OhloPotionState 250
+	IfEq
+	Goto OhloWantsPotion
+	Compare OhloQuestState 250
+	IfEq
+	Goto OhloEmptyHanded
+	Print "YOU BURST INTO AN ELEGANTLY PANELLED ROOM. A SMALL MAN SITS HUNCHED OVER A TABLE BY THE EAST WALL. HE SETS DOWN HIS PEN AND GAZES STERNLY AT YOU.  'WELL?', HE DEMANDS.  (WHAT DO YOU DO?)"
+	HMenu AuxMember 3 "LEAVE" "TALK" "ATTACK"
+	OnGoto AuxMember 3 LeaveOhlo TalkToOhlo OhloAttacks
+
+LeaveOhlo:
+	Print "YOU GO BACK OUT THE DOOR."
+	Picture 255
+	Save 255 Portrait
+	Save 14 PartyX
+	Save 10 PartyY
+	Save 1 Facing
+	Goto RedrawAndRecheck
+
+TalkToOhlo:
+	Parlay 0 1 2 3 4 AuxParlay
+	OnGoto AuxParlay 5 OhloAttacks OhloBegone OhloOffersJob OhloOffersJob OhloAttacks
+
+OhloAttacks:
+	Print "'YOU PRESUME TOO MUCH,' THE MAN SAYS QUIETLY.  HE GESTURES."
+	Save 255 OhloQuestState
+	Save 0 Surprise
+	Save 99 Morale
+	ClearMonsters
+	LoadMonster 6 25 6
+	LoadMonster 5 2 5
+	LoadMonster 94 1 94
+	LoadMonster 4 8 4
+	Combat
+	Gosub ClearPortrait
+	Save 255 OhloPotionState
+	Gosub CountSlumsCleared
+	Exit
+
+OhloBegone:
+	Print "'I HAVE NO TIME FOR THE LIKES OF YOU,' THE MAN SAYS AIRILY.  'BEGONE!' (WHAT DO YOU DO?)"
+	HMenu AuxMember 3 "STAY" "LEAVE" "ATTACK"
+	OnGoto AuxMember 3 OhloAttacks LeaveOhlo OhloAttacks
+
+OhloOffersJob:
+	Print "'I MAY HAVE A USE FOR YOU,' THE MAN SAYS. 'SOME TIME AGO, I ORDERED A SPECIAL POTION.  THE POTION IS READY BUT I CAN'T LEAVE TO FETCH IT.  BRING IT HERE, I PAY WELL.' (WHAT DO YOU DO?)"
+	HMenu AuxMenuChoice 2 "ACCEPT THE COMMISSION" "REJECT IT"
+	OnGoto AuxMenuChoice 2 AcceptPotionJob OhloBegone
+
+AcceptPotionJob:
+	Print "'IT WAITS IN A BOOTH IN THE OLD ROPE GUILD BUT A SHORT DISTANCE TO THE SOUTHEAST FROM WHERE YOU NOW STAND.  SPEAK MY NAME, OHLO.'"
+	Gosub PressReturn
+	Save 250 OhloQuestState
+	Goto LeaveOhlo
+
+OhloWantsPotion:
+	Print "'YOU HAVE DONE WELL. GIVE ME THE POTION AND YOU WILL BE REWARDED.' (WHAT DO YOU DO?)"
+	HMenu AuxMenuChoice 3 "GIVE" "ASK FOR MORE MONEY" "REFUSE TO GIVE"
+	OnGoto AuxMenuChoice 3 GivePotion OhloAttacks OhloAttacks
+
+OhloEmptyHanded:
+	Print "'YOU HAVE RETURNED EMPTY HANDED,' HE OBSERVES. 'I HAVE NO TIME FOR YOU NOW.'  HE WAVES HIS HAND."
+	Goto LeaveOhlo
+
+GivePotion:
+	Print "THE MAN TAKES THE POTION AND GULPS IT GREEDILY.  AS YOU WATCH, HE SEEMS TO GROW YOUNGER AND STRONGER. 'EXCELLENT,' HE SMACKS, 'YOUR REWARD.'"
+	ClearMonsters
+	Treasure 0 0 0 0 150 0 1 129
+	Combat
+	Save 255 OhloQuestState
+	Save 255 OhloPotionState
+	Gosub ClearPortrait
+	Gosub CountSlumsCleared
+	Goto LeaveOhlo
+
+DirtyRoom:
+	Compare DirtyRoomSeen 250
+	IfEq
+	Exit
+	Save 250 DirtyRoomSeen
+	Print "THE ROOM IS DIRTY AND HAS A STRONG AND UNPLEASANT ODOR."
+	Exit
+
+UncleanStable:
+	Compare StableSeen20 250
+	IfGe
+	Goto FindLeatherBag
+	Print "YOU HAVE ENTERED A VERY UNCLEAN STABLE.  THERE IS EVIDENCE THAT A LARGE AND UNTIDY ANIMAL HAD LIVED HERE."
+	Save 250 StableSeen20
+
+FindLeatherBag:
+	Compare LeatherBagOpened 255
+	IfEq
+	Exit
+	Compare Search 1
+	IfNe
+	Exit
+	Print "YOU FIND A LONG LEATHER BAG.  WILL YOU OPEN IT?"
+	HMenu AuxMenuChoice 2 "YES" "NO"
+	OnGoto AuxMenuChoice 2 OpenLeatherBag Done
+
+OpenLeatherBag:
+	ClearMonsters
+	Treasure 0 0 0 100 0 2 0 41
+	Combat
+	Save 255 LeatherBagOpened
+	Exit
+
+FeedingKobolds:
+	Compare KoboldsFed 255
+	IfEq
+	Exit
+	SetupMonster 0 1 0
+	Delay
+	Approach
+	Print "YOU INTERRUPT SOME FEEDING KOBOLDS."
+	Gosub PressReturn
+	Save 60 Morale
+	Save 0 Surprise
+	ClearMonsters
+	LoadMonster 11 1 1
+	LoadMonster 0 15 0
+	Combat
+	Gosub CountSlumsCleared
+	Save 255 KoboldsFed
+	Exit
+
+HempMarket:
+	Compare QuestSlums 254
+	IfGe
+	Exit
+	Compare HempMarketSeen 255
+	IfEq
+	Exit
+	Save 255 HempMarketSeen
+	Print "YOU WANDER IN THE OLD HEMP MARKET.  MONSTERS SCURRY AT YOUR APPROACH.  YOU OCCASSIONALLY CATCH SNATCHES OF CONVERSATIONS."
+	Delay
+	Delay
+	Random 2 AuxMember
+	OnGoto AuxMember 3 RumorCatacombs RumorTemple RumorTreasureRoom
+
+RumorCatacombs:
+	Print "... THE GANG IS OPERATING FROM THE CATACOMBS BY THE WELL..."
+	Exit
+
+RumorTemple:
+	Print "... THE TEMPLE OVER THE RIVER IS RUN BY SOME HOT-SHOT ORC..."
+	Exit
+
+RumorTreasureRoom:
+	Print "... THERE IS A SECRET TREASURE ROOM IN THE NW CORNER ..."
+	Exit
+
+FortuneTeller:
+	Compare FortuneTellerState 250
+	IfGt
+	Exit
+	Save 251 FortuneTellerState
+	Save 25 Portrait
+	Picture 13
+	Print "SEATED AT A TABLE IS A RAGGED OLD WOMAN. SHE GREETS YOU. 'WELCOME. FOR THE PRICE OF A FEW COPPERS, I WILL TELL YOUR FORTUNE.' (WHAT DO YOU DO?)"
+	HMenu AuxMenuChoice 3 "ATTACK" "LEAVE" "PAY"
+	OnGoto AuxMenuChoice 3 MurderOldWoman LeaveFortuneShop PayFortune
+
+MurderOldWoman:
+	Print "YOU EASILY MURDER THE OLD WOMAN.  EXCEPT FOR A FEW COPPER PIECES YOU FIND NOTHING OF VALUE.  THE GODS HAVE NOTED YOUR ACTIONS."
+	Save 0 PatrolsBeaten
+	Save 255 FortuneTellerState
+	Gosub PressReturn
+	ClearMonsters
+	Treasure 3 0 0 0 0 0 0 255
+	Combat
+	Gosub ClearPortrait
+	Exit
+
+LeaveFortuneShop:
+	Save 3 PartyX
+	Save 4 PartyY
+	Save 0 Facing
+	Print "YOU LEAVE THE SHOP."
+	Gosub ClearPortrait
+	Goto RedrawAndRecheck
+
+PayFortune:
+	Print "THE WOMAN'S HANDS MAKE MYSTIC PASSAGES WHILE SHE MUTTERS SOME WORDS.  HER VOICE UNDERGOES A STRANGE TRANSFORMATION ..."
+	Gosub PressReturn
+	Compare PatrolsBeaten 25
+	IfLe
+	Goto FortuneBlood
+	Compare PatrolsBeaten 75
+	IfLe
+	Goto FortunePowerful
+	IfGt
+	Goto FortuneNewWays
+
+FortuneBlood:
+	Print "BLOOD AND VIOLENCE ARE WRIT BOLDLY IN YOUR FUTURE.  LOOK FOR FRIENDS WHERE YOU EXPECT ENEMIES AND ENEMIES WHERE YOU EXPECT ALLIES."
+	Goto FortuneFinished
+
+FortunePowerful:
+	Print "A POWERFUL ONE BECOMES AWARE OF YOUR DEEDS AND SEEKS TO DESTROY YOU.  A WEAK ONE SEES YOU AS A PATH TO POWER."
+	Goto FortuneFinished
+
+FortuneNewWays:
+	Print "THE TIME IS NIGH WHEN THE PATHS YOU HAVE TROD WILL EMPTY AND YOU MUST SEEK NEW WAYS.  THE RIDDLE'S ANSWER IS GREAT EVIL USING GREAT GOOD FOR GREAT EVIL."
+
+FortuneFinished:
+	Gosub PressReturn
+	Print "THE TELLING IS FINISHED. (WHAT DO YOU DO?)"
+	HMenu AuxMenuChoice 2 "ATTACK" "LEAVE"
+	OnGoto AuxMenuChoice 2 MurderOldWoman LeaveFortuneShop
+
+OrcHome:
+	Compare OrcHomeFight 255
+	IfEq
+	Exit
+	SetupMonster 4 1 4
+	Approach
+	Print "A LARGE ORC RAISES HIS HEAD AND SNARLS, 'HOW DARE YOU BREAK INTO OUR HOME?'"
+	Gosub PressReturn
+	Save 70 Morale
+	ClearMonsters
+	LoadMonster 15 1 5
+	LoadMonster 14 3 5
+	LoadMonster 4 20 4
+	Combat
+	Gosub CountSlumsCleared
+	Save 255 OrcHomeFight
+	Exit
+
+HobgoblinGold:
+	Compare HobgoblinGoldState 250
+	IfGe
+	Goto SearchValuables
+	SetupMonster 6 1 6
+	Approach
+	Print "SOME HOBGOBLINS ARE ARGUING OVER A PILE OF GOLD.  'THIEVES!' THEY SCREAM WHEN THEY SEE YOU."
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 75 Morale
+	ClearMonsters
+	LoadMonster 6 5 6
+	Combat
+	Save 250 HobgoblinGoldState
+	Gosub CountSlumsCleared
+	Exit
+
+SearchValuables:
+	Compare 255 HobgoblinGoldState
+	IfEq
+	Exit
+	Compare Search 1
+	IfNe
+	Exit
+	Print "YOU FIND A LARGE NUMBER OF VALUABLES."
+	ClearMonsters
+	Treasure 0 0 0 #01F4 50 0 0 40
+	Combat
+	Save 255 HobgoblinGoldState
+	Exit
+
+StorageRoom:
+	Compare StorageRoomSeen 255
+	IfEq
+	Exit
+	Save 255 StorageRoomSeen
+	Print "YOU HAVE ENTERED A SMALL STORAGE ROOM."
+	Exit
+
+TreasureRoom:
+	Compare TreasureRoomFight 255
+	IfEq
+	Exit
+	Print "YOU HAVE STUMBLED INTO A TREASURE ROOM."
+	ClearMonsters
+	Treasure 0 0 #03E8 92 50 4 2 41
+	Combat
+	Save 255 TreasureRoomFight
+	Exit
+
+GuardsIntercept:
+	Compare GuardsInterceptFight 255
+	IfEq
+	Exit
+	SetupMonster 4 1 4
+	Approach
+	Print "GUARDS RUN TO INTERCEPT YOU."
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 60 Morale
+	ClearMonsters
+	LoadMonster 4 30 4
+	LoadMonster 5 4 5
+	Combat
+	Gosub CountSlumsCleared
+	Save 255 GuardsInterceptFight
+	Exit
+
+LeadersMeeting:
+	Compare LeadersMeetingFight 255
+	IfEq
+	Exit
+	SetupMonster 6 1 6
+	Print "YOU INTRUDE ON A GATHERING OF MONSTER LEADERS."
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 80 Morale
+	ClearMonsters
+	LoadMonster 8 1 8
+	LoadMonster 73 2 73
+	LoadMonster 7 2 7
+	Combat
+	Save 255 LeadersMeetingFight
+	Gosub CountSlumsCleared
+	Exit
+
+AlertedGuards:
+	Compare AlertedGuardsFight 255
+	IfEq
+	Exit
+	SetupMonster 2 1 2
+	Approach
+	Print "YOU HAVE ALERTED THE GUARDS."
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 60 Morale
+	ClearMonsters
+	LoadMonster 2 12 2
+	LoadMonster 3 21 3
+	Combat
+	Gosub CountSlumsCleared
+	Save 255 AlertedGuardsFight
+	Exit
+
+LargeEmptyRoom:
+	Compare EmptyRoomSeen 255
+	IfEq
+	Goto LooseFloorboard
+	Save 255 EmptyRoomSeen
+	Print "THIS LARGE ROOM IS APPARENTLY EMPTY."
+	Delay
+
+LooseFloorboard:
+	Compare FloorChestTaken 255
+	IfEq
+	Exit
+	Compare Search 1
+	IfLt
+	Exit
+	Print "YOU FIND A LOOSE FLOORBOARD.  PRYING IT UP, YOU FIND A CHEST HIDDEN BENEATH THE FLOOR.  DO YOU TAKE IT?"
+	HMenu AuxMenuChoice 2 "YES" "NO"
+	OnGoto AuxMenuChoice 2 TakeChest Done
+
+TakeChest:
+	ClearMonsters
+	Treasure 0 0 0 0 200 2 0 42
+	Combat
+	Save 255 FloorChestTaken
+	Exit
+
+RopeGuildEntry:
+	Print "YOU ARE JUST NORTH OF THE ENTRY TO THE OLD ROPE GUILD."
+	Save 0 NoCoords
+	Save 0 InRopeGuild
+	Exit
+
+InsideRopeGuild:
+	Save 1 NoCoords
+	Save 1 InRopeGuild
+	Compare QuestSlums 254
+	IfGe
+	Exit
+	Compare RopeGuildEntered 255
+	IfNe
+	Print "YOU HAVE ENTERED THE MYSTERIOUS BUILDING THAT WAS ONCE THE ROPE GUILD.  MOST WHO VENTURE INTO ITS TWISTY HALLS NEVER RETURN."
+	Save 255 RopeGuildEntered
+	Compare PatrolsBeaten 15
+	IfGe
+	Exit
+	PartyStrength AuxPartyStrength
+	Random 10 AuxSightText
+	Compare FortuneTellerState 255
+	IfEq
+	Arith 10 AuxPartyStrength AuxPartyStrength
+	IfEq
+	Arith 3 AuxSightText AuxSightText
+	Compare Search 1
+	IfEq
+	Arith 2 AuxSightText AuxSightText
+	Compare AuxSightText 9
+	IfGe
+	Goto PickPatrol
+	Exit
+
+PotionBooth:
+	Compare OhloPotionState 250
+	IfGe
+	Exit
+	Compare BoothFightDone 0
+	IfNe
+	Exit
+	Compare BoothManDone 255
+	Save 5 Portrait
+	Picture 9
+	IfEq
+	Print "I AM SORRY, BUT I HAVE NOTHING TO SELL NOW.  COME BACK SOME OTHER TIME. "
+	IfEq
+	Goto BoothMenu
+	Print "A MAN HURRIES FORWARD. 'I AM SORRY, NOBLE ONES, BUT I HAVE NOTHING TO SELL.'"
+
+BoothMenu:
+	Print "(WHAT DO YOU DO?)"
+	HMenu AuxMenuChoice 3 "LEAVE" "ATTACK" "SPEAK"
+	OnGoto AuxMenuChoice 3 LeaveBooth AttackBoothMan SpeakPassword
+
+LeaveBooth:
+	Picture 255
+	Gosub ClearPortrait
+	Save 255 BoothManDone
+	Save 14 PartyX
+	Save 12 PartyY
+	Save 3 Facing
+	Goto RedrawAndRecheck
+
+AttackBoothMan:
+	Print "THE MAN RUNS SCREAMING INTO THE BACK OF THE BOOTH."
+	Gosub ClearPortrait
+	Save 255 BoothManDone
+	SetupMonster 6 2 6
+	Delay
+	Approach
+	Delay
+	Approach
+	Save 99 Morale
+	Save 0 Surprise
+	ClearMonsters
+	LoadMonster 6 15 6
+	LoadMonster 7 4 7
+	Combat
+	Save 1 BoothFightDone
+	Compare OhloPotionState 255
+	IfNe
+	Gosub CountSlumsCleared
+	Exit
+
+SpeakPassword:
+	Print "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
+	NewLine
+	InputString 4 str AuxText
+	Save "OHLO" str AuxMonsterName
+	Compare str AuxMonsterName str AuxText
+	IfNe
+	Print "'I AM SORRY,' THE MAN SAYS, 'I CANNOT HELP YOU.'"
+	IfNe
+	Save 255 BoothManDone
+	IfNe
+	Gosub ClearPortrait
+	IfNe
+	Exit
+	Print "'WAIT A MOMENT,' THE MAN SAYS.  HE HURRIES TO THE BACK OF THE BOOTH AND RETURNS WITH A PACKAGE. 'HERE,' HE SAYS."
+	Save 255 BoothManDone
+	Save 250 OhloPotionState
+	Picture 255
+	Save 255 Portrait
+	Gosub ClearPortrait
+	Exit
+
+GrainSack:
+	Compare GrainSackFight 255
+	IfEq
+	Exit
+	Save 0 Surprise
+	Save 75 Morale
+	SetupMonster 31 0 31
+	Print "SOME MONSTERS ARE TOSSING A SACK OF GRAIN. WHEN THE SACK BREAKS THEY WAIL, 'OH, NO! WHAT CAN WE THROW NOW?' ONE LOOKS YOUR WAY. 'I KNOW,' HE SAYS."
+	Gosub PressReturn
+	ClearMonsters
+	LoadMonster 8 2 8
+	LoadMonster 31 4 31
+	Treasure 0 0 0 30 50 0 1 131
+	Combat
+	Gosub CountSlumsCleared
+	Save 255 GrainSackFight
+	Exit
+
+AfterPatrolFight:
+	Compare CombatEnd 128
+	IfGt
+	Goto RunAway
+	Compare CombatEnd 1
+	IfLt
+	Arith 1 PatrolsBeaten PatrolsBeaten
+	IfLt
+	Gosub CountSlumsCleared
+	IfGt
+	Goto Done
+	IfEq
+	Compare Beaten 0
+	IfGt
+	Arith 1 PatrolsBeaten PatrolsBeaten
+	IfGt
+	Gosub CountSlumsCleared
+	Goto Done
+
+FightPatrol:
+	Compare Scratch8 4
+	IfEq
+	Goto CheckOrcStrength
+	Compare AuxPartyStrength 8
+	IfLt
+	Goto FightPlainPatrol
+	Goto AddLeaders
+
+CheckOrcStrength:
+	Compare AuxPartyStrength 14
+	IfLt
+	Goto FightPlainPatrol
+
+AddLeaders:
+	Arith 1 Scratch8 Scratch3
+	Compare Scratch8 1
+	IfLt
+	Save 3 Scratch2
+	IfGe
+	Save 4 Scratch2
+	Compare AuxPartyStrength 18
+	IfGt
+	Goto FightPatrolWithBugbear
+	Goto FightPatrolWithLeaders
+
+FightPlainPatrol:
+	Save PatrolMorale Morale
+	ClearMonsters
+	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	Combat
+	Goto AfterPatrolFight
+
+FightPatrolWithLeaders:
+	Arith 5 PatrolMorale PatrolMorale
+	Save PatrolMorale Morale
+	ClearMonsters
+	LoadMonster Scratch3 Scratch2 Scratch3
+	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	Combat
+	Goto AfterPatrolFight
+
+FightPatrolWithBugbear:
+	Arith 15 PatrolMorale PatrolMorale
+	Save PatrolMorale Morale
+	ClearMonsters
+	LoadMonster Scratch3 Scratch2 Scratch3
+	LoadMonster 63 1 63
+	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	Combat
+	Goto AfterPatrolFight
+
+YouHide:
+	Print "YOU HIDE."
+	Exit
+
+RunAway:
+	Random 3 Facing
+	Random 4 AuxTemp9
+	GetTable HideXTable AuxTemp9 PartyX
+	GetTable HideYTable AuxTemp9 PartyY
+	Print ""
+
+RedrawAndRecheck:
+	Call CallRedraw
+	Goto event1
+
+Done:
+	Picture 255
+	Exit
+
+ConversePatrol:
+	Save 0 Surprise
+	Print "YOU ARE CONVERSING WITH "
+	Compare AuxPartyStrength 18
+	IfGt
+	Print "A BUGBEAR LEADING"
+	Print "A PARTY OF "
+	Print str AuxText
+	Compare AuxPartyStrength 8
+	IfGt
+	Goto ParlayMidStrength
+	Parlay 10 20 20 20 30 AuxParlay
+	Goto ParlayResult
+
+ParlayMidStrength:
+	Compare AuxPartyStrength 15
+	IfGt
+	Goto ParlayHighStrength
+	Parlay 5 15 15 10 25 AuxParlay
+	Goto ParlayResult
+
+ParlayHighStrength:
+	Parlay 0 10 10 0 15 AuxParlay
+
+ParlayResult:
+	Random 30 AuxRoll2
+	Arith AuxParlay AuxRoll2 AuxParlay
+	Arith AuxParlay SelReaction AuxParlay
+	Compare AuxParlay 75
+	IfLt
+	Goto PatrolAngered
+	Compare AuxParlay 85
+	IfGt
+	Goto PatrolWarnsLeave
+	Print "THE MONSTERS RESPOND, 'DA BOSS DON'T LIKE YOUSE GUYS. GIVE US SUMPTIN AN MAYBE WE'LL FERGET WE SEEN YAS.' (WHAT DO YOU DO?)"
+	HMenu Scratch9 4 "PAY" "SURRENDER" "RUN" "FIGHT"
+	OnGoto Scratch9 4 PayPatrol SurrenderToPatrol TryRunning FightPatrol
+
+PayPatrol:
+	Print "TYPE IN THE NUMBER OF GP YOU OFFER."
+	InputNumber 2 Scratch9
+	Compare Scratch9 AuxPartyStrength
+	IfGe
+	Goto PatrolTakesCoins
+	Print "'WHAT A BUNCH OF CHEAPSKATES,' THE LEADER COMPLAINS. 'LET 'EM HAVE IT BOYS!'"
+	Goto FightPatrol
+
+PatrolTakesCoins:
+	Print "THEY PAW THROUGH YOUR COINS AND LEAVE."
+	Rob 1 50 0
+	Picture 255
+	Exit
+
+SurrenderToPatrol:
+	Print "THE MONSTERS ROB AND BLINDFOLD YOU. YOU ARE KICKED SOUNDLY AND SENT ON YOUR WAY."
+	Rob 1 100 100
+	Gosub PressReturn
+	Goto RunAway
+
+TryRunning:
+	CheckParty SelMove 0 Scratch9 Scratch1 Scratch1 Scratch1
+	Compare AuxEncResult Scratch1
+	IfLt
+	Goto RunAway
+	IfGt
+	Goto FightPatrol
+	IfEq
+	Random 1 Scratch1
+	Compare Scratch1 1
+	IfEq
+	Goto RunAway
+	Goto FightPatrol
+
+PatrolWarnsLeave:
+	Compare AuxParlay 95
+	IfGt
+	Goto PatrolAdvice
+	Print "THE LEADER SPEAKS, 'THE BOSS DON'T ALLOW YOUR KIND IN HIS TERRITORY.  LEAVE NOW OR WE'LL HAVE TO RUN YOU IN.' (WHAT DO YOU DO?)"
+	HMenu Scratch9 4 "FIGHT" "STAY" "LEAVE" "RUN"
+	OnGoto Scratch9 4 FightPatrol FightPatrol Done RunAway
+
+PatrolAdvice:
+	Print "'LET ME GIVE YOU A PIECE OF ADVICE,' THEIR LEADER SAYS.  'STAY AWAY FROM THE TEXTILE HOUSE. THE UNDEAD ARE GOING CRAZY UP THERE.'  THE MONSTERS TURN TO LEAVE. (WHAT DO YOU DO?)"
+	HMenu Scratch9 2 "LET THEM GO" "STOP THEM"
+	OnGoto Scratch9 2 Done StopPatrol
+
+StopPatrol:
+	Print "'HOW DARE YOU INTERFERE WITH THE BOSS'S BUSINESS?' THE LEADER ROARS.  'KILL THEM,' HE ORDERS."
+	Gosub PressReturn
+	Goto FightPatrol
+
+PatrolAngered:
+	Print "YOU HAVE ANGERED THE"
+	Print str AuxText
+	Print "THEY ATTACK."
+	Compare AuxParlay 65
+	IfLt
+	Arith PatrolMorale 20 PatrolMorale
+	Gosub PressReturn
+	Goto FightPatrol
+
+ClearPortrait:
+	Save 255 Portrait
+	Return
+
+CountSlumsCleared:
+	Compare QuestSlums 254
+	IfGe
+	Return
+	Arith 1 QuestSlums QuestSlums
+	Compare QuestSlums 25
+	IfLt
+	Return
+	Save 254 QuestSlums
+	Return
+
+PressReturn:
+	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Print ""
+	Return

@@ -1,0 +1,16 @@
+4A00 EnteredBase  # set 1 after the gate escort to the merchants' center plays; area-local reuse
+4A01 SlavePenSeen  # set 1 after first look at the slave pen / boy with birthmark; area-local reuse
+4A03 PassBought  # set 255 after buying the captain's pass from the seedy man; area-local reuse
+4A04 AnimalsLoose  # 255 after opening the animal pens (stampede); 0 when captured; area-local reuse
+4A05 StampedeTimer  # counts steps (+9 when searching) while animals loose; 60 -> captured; area-local reuse
+4A09 BaseAlerted  # never set here; nonzero skips guards/captain/towers/pens (guess: base on alert); area-local reuse
+4A0A SlavePenBlocked  # never set here; nonzero skips slave pen events (guess); area-local reuse
+4A0E DoorGuardsKilled  # set 1 after killing the captain's door guards; area-local reuse
+4A0F CaptainFightDone  # tested before the captain's room (guess, set elsewhere); area-local reuse
+4A10 BoyBought  # set 1 when the captain sells the boy to the party; area-local reuse
+4A11 PenGuardsDefeated  # set 1 after the fight at the slave pen; area-local reuse
+4A13 GateGuardsDefeated  # set 1 after the fight at the gate (party has the boy); area-local reuse
+4A19 GuardSpotChance  # steps since last guard patrol with the boy; compared to random roll; area-local reuse
+4A1A GuardPatrolCount  # patrols that spotted party with the boy (0-3 picks the fight); area-local reuse
+4A1B CaptainKilled  # set 1 when the captain is killed; area-local reuse
+4A8B BaseCaptured  # 255 fort captured; 128 fled leaving the boy

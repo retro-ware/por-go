@@ -1,0 +1,166 @@
+00B1 ProbeCell  # special (unhandled: write ignored, reads 0); area27 sets 113/73/34/48 before Call LookAhead, likely the probed map cell
+00B8 SoundParamA  # special: engine es.scriptVarB8 (stored, unused); area0/10 Save 72 (guess)
+00B9 SoundParamB  # special: engine es.scriptVarB9; area0/10 Save 189 (guess)
+00FB ProbeX  # special es.specialFB (reads 0); area25/27 Save MapX then step by facing: square ahead X
+00FC ProbeY  # special es.specialFC; Save MapY then step by facing: square ahead Y
+035F ProbeWall  # special (reads 0, 0x33D is facing); area25-27 compared with a wall table value after Call LookAhead (guess)
+0806 CallClearView  # Call target, engine no-op; area25/27 before Picture (guess: clear view)
+2C4E CallBeginDraw  # Call target, engine no-op; area26/27 before a map-patching loop (guess)
+2C51 CallEndDraw  # Call target, engine no-op; area26/27 after the map-patching loop (guess)
+2C90 CallRedraw  # Call target 0xAC91+0x7FFF: refresh cell, redraw view and status line if changed
+49C6 Rounds  # Clock[0]
+49C7 Minutes  # Clock[1]
+49C8 TenMinutes  # Clock[2]
+49C9 Hours  # Clock[3]
+49CA Days  # Clock[4]
+49CB Months  # Clock[5]
+49CC Years  # Clock[6]
+4A31 LibraryEventFlags  # library bits: 1 mad fighter gone/killed, 2 fighter joined, 32 spectre beaten, 64 reptile beaten, 128 kobolds done, others gold foil boxes (area15); 32|64 tested for the library reward (area8)
+4A39 UndeadKillTable  # 7-entry graveyard undead table (4A39-4A3F) summed into the bounty (area8); entry 0 = skeleton pool, 255 destroyed, +5 after lairs (area10)
+4A4D TeleporterRockFlags  # bit 2 teleporter flash / rocks room known, bit 1 toggled by throwing rocks, picks the destination (areas 22, 23)
+4A62 AlarmHour  # Clock_3 when "AN ALARM STARTS RINGING!" (castle areas 3, 4, 5, 6, 9)
+4A63 AlarmMinute  # Clock_2 saved with the alarm (areas 3, 4, 5, 6, 9)
+4A64 AlarmEndHour  # AlarmHour+1; nonzero = alarm sounding, cleared when the time passes (areas 3, 4, 5, 6, 9)
+4A65 CastleFlags  # bit 1 party disguised/unnoticed (surprise bonus), cleared when caught ("THAT'S THEM!") or after fights; area3: 2 hall seen, 4 talked away patrol, 8/16 fights, 32 sword in well, 128 giants passed; area5: 64 fake Tyranthraxus (areas 3, 4, 5, 6, 9)
+4A66 CastleFlags2  # bits: 2 Cadorna taken along, gives gate password (area3); 4 captive mage, 64 tower trolls (area5); 8 overseer fight, 16 four giants, 32 passwords read, 128 writing shown to prisoner (area4)
+4A67 CastleRoomFlags  # bit 128 per-visit flag cleared at event0 (suppresses disorientation teleport, area5); area4: 1 kitchen overseer, 2 scribes, 4 empty scriptorium, 8 Cadorna evidence, 16 Tyranthraxus note, 32 barbarian report, 64 barracks giants (areas 3-6)
+4A69 CastleDeedFlags  # bits: 1 washerwomen killed, 2 women silenced, 4 smithy loot, 8 smithy fight, 16 coal store, 64 smokehouse, 128 Bane temple fight (area6); 32 three password giants (area5)
+4A6A BaneTempleFlags  # bits 1|2 stole from the Bane temple (offering box, crossed swords; set area6) -> "SACRILEGIOUS SCUM"/"BLASPHEMERS!" (areas 3, 4, 5, 7); area6: 4 doubled in agony, 8 priest blessing; area3: 16 cobweb room, 32 ceiling caved in; 64/128 gate forced (per gate, areas 3, 5)
+4A6B CadornaQuartersFlags  # 8 Urslingen summons opens the south door (set area8), 16 Cadorna released, 32 Cadorna killed, 64 fight done, per-6E79 fight bits (area3); 128 frogs-and-toads giants (area5)
+4A6C SearchTowerFlags  # per-6E79 bits for searched treasure fights (area3); area7: 8 secret door, 16 medusa killed, 32 messenger killed, 64 messenger left
+4A97 CadornaCommission  # 254 offered, 255 Cadorna gave the treasure-fetch commission (area8); Restal skips to farewell otherwise (area2)
+4A98 ZhentilMission  # 254 summoned to Cadorna for the diplomatic mission, 255 packet received (area8); 255 = known as envoys at the outpost (area25)
+4A9B BishopSummons  # 254 summoned by the Bishop of Braccio at Tyr's temple (area8); skips his Dirten introduction (area0)
+4A9E InLair  # 255 while inside a 3D lair sub-map, 0 on leaving (areas 25, 26, 27)
+4AA6 QuestBandits  # QuestTable[0] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): bandit gang defeated (area29)
+4AA7 QuestSokalKeep  # QuestTable[1] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Sokal Keep cleared, set when Ferran freed (area21); >=254 opens all boat routes (area0)
+4AA8 QuestEntryOrcs  # QuestTable[2] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): building-entry orc fight won (area24)
+4AA9 QuestBivant  # QuestTable[3] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Bivant heir (boy) rescue: 1 bought, 254 left with boy / fort taken, 128 bungled (area1); skips the buccaneer base (area25)
+4AAA QuestBookFyerdetha  # QuestTable[4] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Fyerdetha passage copied, journal entry 7 (area15)
+4AAB QuestBookUrgund  # QuestTable[5] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Urgund passage copied, journal entry 19 (area15)
+4AAC QuestBookLexGeographica  # QuestTable[6] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Lex Geographica map copied, journal entry 37 (area15)
+4AAD QuestBookHistoryNorth  # QuestTable[7] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): History of the North copied, journal entry 8 (area15)
+4AAE QuestBookArtsOfWar  # QuestTable[8] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Arts of War copied, journal entry 21 (area15)
+4AAF QuestBookNamed  # QuestTable[9] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): named book (4A30 list) taken (area15)
+4AB0 QuestPodalAuction  # QuestTable[10] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Podal Plaza auction: 1 on (PatrolsBeaten=64), 254 over (area18)
+4AB1 QuestGraveyard  # QuestTable[11] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): graveyard menace ended, vampire killed (area10)
+4AB2 QuestKovelThieves  # QuestTable[12] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Kovel mansion thieves, set when ThievesKilled>=21 (area14)
+4AB4 QuestZhentilOutpost  # QuestTable[14] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Cadorna mission done swiftly; 254 escorted to the outpost (area25), 1 commandant killed, 253 left (area28)
+4AB5 QuestLizardmen  # QuestTable[15] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Drythh beaten or 40 lizard men killed (area16)
+4AB6 QuestKobolds  # QuestTable[16] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): kobold tribe: king dies in spiked pit (area13); skips the kobold horde (area27)
+4AB7 QuestNomads  # QuestTable[17] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): nomad camp (set leaving the wilderness, area17)
+4AB8 QuestCadornaPayment  # QuestTable[18] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Cadorna's payment: 254 after the watch takes his treasure (area0); 255 skips Restal's seal offer (area2)
+4AB9 QuestGateTaken  # QuestTable[19] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Stojanow gate taken (area9)
+4ABA QuestTyranthraxus  # QuestTable[20] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Tyranthraxus beaten (area7), 255 = game won; >=254 skips locked doors (area0)
+4ABB QuestSlums  # QuestTable[21] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): slums cleared: +1 per win up to 25, then 254 (area20)
+4ABD QuestTempleOfBane  # QuestTable[23] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): Temple of Bane: half-orc cleric ambush won (area24); Bane recruiters met (area18)
+4ABE QuestCadornaTraitor  # QuestTable[24] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): hard evidence against Cadorna found (area4)
+4ABF QuestCadornaDead  # QuestTable[25] (4AA6-4ABF quest status, 254 reward due, 255 rewarded; clerk in area8): party kills Cadorna
+4AC0 FoughtWatch  # set after the city watch fight: buildings refuse you, no resting (areas 0, 11); 0 after a reward (area8)
+4AC1 CouncilFavor  # +1 per major quest reward, >=4 for the graveyard notice (area8); picks the proclamation list (area0)
+4AC8 IronBoxState  # Cadorna iron box: 1 carried unopened (watch confiscates, area0), 128 opened (area2), 255 handed in (area8)
+4AE6 TextileHouseCleared  # area-cleared reward word: 254 after 10 encounters in the textile house (area2; >253 stops resting/encounters), 255 reward given by the clerk (area8)
+4AE7 PodalPlazaCleared  # area-cleared reward word: 254 when PatrolsBeaten reaches 9 in Podal Plaza (area18; >253 disables rest encounters), 255 reward given by the clerk (area8)
+6300 MapPatchB  # special, write ignored; area26/27 SaveTable base for map patching (overland map bytes in original, guess)
+6B00 SelName  # game word 0: selected character's name (string)
+6B01 SelName2  # word after the name; area9 reads/writes [6B00]/[6B01] as a table pair (guess: name words used as scratch)
+6B18 SelCon  # engine readSpecialGlobal 0x18: Constitution; area3 air check Random 20 vs it
+6B20 SelMemorized  # engine: write to off 0x20..0x70 sets Memorized[off-0x1F]; area14 clears a Knock slot via SaveTable
+6B32 SelMemorized13  # memorized spell slot 0x13; area19 Save 1 (guess)
+6B72 SelRace  # char word; compared with 2/4 (elf, half-elf search bonus area13), 7 (human) area18 (guess)
+6B9B SelSaveVsPetrify  # engine: Saves[1]; area7 Random 19+1 >= it
+6BA5 SelPickPockets  # engine Thief[0]; area14 "WHO WILL TRY TO PICK THE LOCK?" (guess: lock skill)
+6BA7 SelFindTraps  # engine Thief[2]; area13 Random 99 vs it (guess)
+6BAB SelThiefSkill6  # engine Thief[6]; area2 Random 99 vs it (guess)
+6BB8 SelControl  # engine Control (>0xB2 minus 0x32); "WHO WILL PAY?" < 128; Save 178 = NPC joins
+6BBB SelCopper  # engine purse coin 0
+6BBD SelSilver  # engine purse coin 1
+6BBF SelElectrum  # engine purse coin 2
+6BC1 SelGold  # engine purse coin 3
+6BC3 SelPlatinum  # engine purse coin 4; area0 pays 1
+6BD8 SelAlignment  # engine Alignment; area6/7 table by alignment
+6BF2 SelIcon  # char word; area15 Save 18 before LoadFiles (guess)
+6C00 SelStatus  # engine off 0x100: 1 okay / 0x80 not; write 0 = died, 0x87 stoned; area7 Save 135
+6C0C SelSide  # engine 0x10C: 0 party, 0x80 auto party (NPC), 0x81 monster side
+6C1B SelMove  # engine Move; CheckParty/area3 swim
+6DB1 SelPartyIndex  # engine 0x2B1: selected member's party index
+6DB4 SelPartyIndex2  # engine 0x2B4: same as SelPartyIndex
+6DC2 EncounterParamA  # game word before Morale; area7 Save 3 before SetupMonster (guess)
+6DC3 EncounterParamB  # area7 Save 9 (guess)
+6DCF SelReaction  # engine 0x2CF: Charisma reaction adjustment; added to Parlay/Random 30 rolls
+6E22 WallSlot1  # engine 0x322: >0x80 loads walldef v&0x7F into slot 1; area25-27 Save 127/135/145
+6E23 WallSlot1B  # word after slot 1, set with it (guess)
+6E24 WallSlot2  # engine 0x324: walldef into slot 2
+6E25 WallSlot2B  # set with slot 2 (guess)
+6E26 WallSlot3  # engine 0x326: walldef into slot 3
+6E27 WallSlot3B  # set with slot 3 (guess)
+6E6D ShopKind  # word after Shop; area0 Save 16 with Shop=1 before Combat (guess: shop type)
+6E79 Scratch1  # game scratch 0x6E79..0x6E82, cleared by a fresh area; loop counter/temp in every area
+6E7A Scratch2  # game scratch
+6E7B Scratch3  # game scratch
+6E7C Scratch4  # game scratch
+6E7D Scratch5  # game scratch
+6E7E Scratch6  # game scratch
+6E7F Scratch7  # game scratch
+6E80 Scratch8  # game scratch
+6E81 Scratch9  # game scratch
+6E82 Scratch10  # game scratch; Random results, table index
+6EF6 ShopFlag  # area0 Save 1 with Shop=1 before Combat (guess)
+8000 CallDuelA  # Call target 1: DuelSetup(1)
+8001 CallDuelB  # Call target 2: DuelSetup(0)
+9800 AuxCounter  # aux; loop counter, LoadCharacter index, also str (guess general temp)
+9801 AuxMenuChoice  # aux; HMenu result (YES/NO, RETURN)
+9802 AuxMember  # aux; member loop, LoadCharacter, EncounterMenu arg
+9803 AuxRoll  # aux; Random results, saved Clock hour
+9804 AuxMonster  # aux; monster index / Surprise / Morale
+9805 AuxEncResult  # aux; EncounterMenu result / reaction
+9806 AuxEncResult2  # aux; EncounterMenu second result, Morale
+9807 AuxEncTemp  # aux; EncounterMenu/LoadMonster temp
+9808 AuxPartyStrength  # aux; PartyStrength result
+9809 AuxTemp9  # aux; LoadMonster temp; also str of monster description
+980A AuxParlay  # aux; Parlay result plus reaction roll
+980B AuxRoll2  # aux; Random 30 roll, table value
+980C AuxTempC  # aux; area0 table/LoadMonster temp
+980D AuxSearchCount  # aux; Save Search, counter vs roll (area13 search)
+980E AuxEncText  # aux str: encounter description ("A PATROL OF GIANTS...")
+980F AuxSightText  # aux str/roll: "YOU SEE A" + str
+9810 AuxEncChoice  # aux; area24 EncounterMenu result, OnGoto
+9811 AuxEncChoice2  # aux; area24 EncounterMenu second result
+9816 AuxEncValue  # aux; area24 Save 10/50/130 (guess)
+9818 AuxEncIndex  # aux; area24 encounter table index 0..3
+9819 AuxEncTblA  # aux; area24 table by AuxEncIndex
+981A AuxEncTblB  # aux; area24 table by AuxEncIndex
+981B AuxEncTblC  # aux; area24 table by AuxEncIndex
+981C AuxEncSurpriseA  # aux; area24 Surprise arg
+981D AuxEncSurpriseB  # aux; area24 Surprise arg
+981E AuxEncBonus  # aux; added to scratch, areas 24-27
+9822 AuxMonsterCount  # aux; area24 LoadMonster count 10/20
+9823 AuxEncMonster  # aux; area24 SetupMonster/EncounterMenu monster
+9824 AuxEncDist  # aux; area24 SetupMonster distance
+9825 AuxEncMorale  # aux; area24 Save to Morale
+9827 AuxEncMonster2  # aux; area20/29 SetupMonster/EncounterMenu monster
+982C AuxMonsterName  # aux str: monster group name, printed
+9836 AuxInputText  # aux str: InputString (passwords TYRANTHRAXUS, HARASH)
+983F AuxNameCopy1  # aux str copy of AuxText
+9846 AuxNameCopy2  # aux str copy
+984A AuxNameCopy3  # aux str copy
+984D AuxNameCopy4  # aux str copy
+9852 AuxNameCopy5  # aux str copy
+9855 AuxNameCopy6  # aux str copy
+985E AuxRomanNum  # aux str, area0 ("CXIV." etc, proclamation numbers)
+9890 AuxText  # aux str: names ("MAD MAN", "LUX")
+9891 AuxSearchTries  # aux; area24 search counter
+9892 AuxSearchTarget  # aux; area24 Random 5
+9898 AuxTreasureText  # aux str, area11 " PLUS A PICK OF SPECIAL ITEMS"
+989A AuxFlag  # aux; area24 0/1 flag (guess)
+98AF AuxNameCopy7  # aux str copy, area10
+98B4 AuxNameCopy8  # aux str copy, area10
+98FF AuxParlayChoice  # aux; area2 Parlay result, OnGoto (the free man / body)
+BA03 CallSound  # Call target 0x3A04: play sound from SoundVar
+C003 CallUnknownC003  # Call target, engine no-op; area26
+C009 CallUnknownC009  # Call target, engine no-op; area26
+C018 CallLookAhead  # Call target 0x4019: update wall ahead in 3D
+C01B CallUnknownC01B  # Call target, engine no-op; areas 25-27 after Probe setup
+C01E CallStepForward  # Call target 0x401F: StepForward
+D000 MapPatchA  # special, write ignored; area26 SaveTable base for map patching (guess)
+D015 UnknownD015  # special, write ignored; area26 Save 0 (guess)

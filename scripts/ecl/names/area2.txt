@@ -1,0 +1,16 @@
+4900 EffectTable  # GetTable at L_ACF5: entries 0-63 searched for 27, entry+64 compared with 6DB4 (who); guess: active spell-effect table (feather fall in the well)
+4A02 TapestryRoomSeen  # set 255 after "FADED, MOTHEATEN TAPESTRIES" text; area-local reuse
+4A05 SkullcrusherLootDestroyed  # set 255 after "YOU DESTROY EVERYTHING OF VALUE." (dark object / dead hobgoblin); area-local reuse
+4A06 StenchRoomSeen  # set 255 after "APPALLED BY THE STENCH" text; area-local reuse
+4A08 KitchenSeen  # set 255 after "A SIMPLE KITCHEN" text; area-local reuse
+4A09 LarderSeen2  # set 255 after "BREAD AND MEAT LIE ABOUT" text; area-local reuse
+4A0C DeterioratedRoomSeen  # set 255 after "A DETERIORATED BUILDING" text; area-local reuse
+4A0F DiaryEntry11Found  # set 1 when the diary page (journal entry 11) is taken; area-local reuse
+4A17 RestalDealDone  # set 1 after the Restal guild talk (seal duplicate deal / farewell); area-local reuse
+4A73 PrisonerState  # small-room prisoner: 128 padlocks opened by brass key, 255 dealt with (died/joined/left)
+4A74 HobgoblinTempleState  # 0 courtyard drum fight pending, 1 won ("STRANGELY QUIET"), 2 Grishnak defeated
+4A75 IronBoxFound  # set 255 when the Cadorna iron box is found; also blocks the encounter at 22
+4AE1 BarracksSeen  # set 255 after "SERVES AS A BARRACKS" text
+4AE2 NurserySeen  # set 255 after the baby hobgoblins flee
+4AE3 GraffitiRoomSeen  # set 255 after the graffiti text
+4AE4 EncounterCount  # random-encounter counter in L_9A2A, counts to 10

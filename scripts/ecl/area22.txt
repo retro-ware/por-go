@@ -1,0 +1,467 @@
+FleeNorth:
+	Random 3 Scratch1
+	Arith Scratch1 4 Scratch1
+	Goto MoveToTableSpot
+
+FleeSouth:
+	Random 3 Scratch1
+
+MoveToTableSpot:
+	GetTable DestX Scratch1 PartyX
+	GetTable DestY Scratch1 PartyY
+	GetTable DestFacing Scratch1 Facing
+	Save 255 HoldMove
+	Goto Done
+
+YesNoMenu:
+	HMenu Scratch10 2 "YES" "NO"
+	Print " "
+	Compare Scratch10 0
+	Return
+
+TeleportFlash:
+	Print "AS YOU MOVE THROUGH THE ROOM THERE IS A FLASH, AND YOU SUDDENLY FIND YOURSELVES ELSEWHERE."
+
+PressReturn:
+	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	Print " "
+	Return
+
+SearchSecretDoor:
+	AndOr Scratch1 SecretDoorBits Scratch10
+	IfNe
+	Goto SecretDoorFound
+	Save 0 Scratch10
+
+CheckMemberFinds:
+	LoadCharacter Scratch10
+	Compare SelStatus 0
+	IfEq
+	Goto NextMember
+	Save 1 Scratch9
+	Compare Search 0
+	IfEq
+	Arith 1 Scratch9 Scratch9
+	Compare SelRace 2
+	IfEq
+	Arith 1 Scratch9 Scratch9
+	Compare SelRace 4
+	IfEq
+	Arith 1 Scratch9 Scratch9
+	Random 5 Scratch8
+	Compare Scratch8 Scratch9
+	IfGt
+	Goto NextMember
+
+SecretDoorFound:
+	AndOr Scratch1 SecretDoorBits SecretDoorBits
+	Print "A SECRET DOOR IS FOUND"
+	GetTable ByFacing9B22 Facing Scratch10
+	Arith Scratch10 Scratch2 Scratch2
+	GetTable Table9B1B Scratch2 Scratch2
+	OnGoto Scratch2 4 DoorInFront DoorToRight DoorBehind DoorToLeft
+	Goto PressReturn
+
+NextMember:
+	Arith Scratch10 1 Scratch10
+	Compare Scratch10 8
+	IfLt
+	Goto CheckMemberFinds
+	Return
+
+DoorInFront:
+	Print " IN FRONT OF YOU."
+	Return
+
+DoorToRight:
+	Print " TO YOUR RIGHT."
+	Return
+
+DoorBehind:
+	Print " BEHIND YOU."
+	Return
+
+DoorToLeft:
+	Print " TO YOUR LEFT."
+	Return
+
+event0:
+	AndOr Cell 31 Scratch1
+	IfEq
+	Exit
+	Compare Scratch1 11
+	IfGt
+	Exit
+	Arith 1 Scratch1 Scratch1
+	GetTable Table9C95 Scratch1 Scratch10
+	Compare Scratch10 Facing
+	IfNe
+	Exit
+	Goto CheckSecretPassage
+
+event1:
+	AndOr Cell 31 Scratch10
+	GetTable Table9B91 Scratch10 Scratch2
+	GetTable Table9BA4 Scratch10 Scratch1
+	OnGoto Scratch2 7 RandomEncounter SecretDoorSpot PriestRoom TyrmorCorpse RockRoom TeleporterSquare Done
+	Exit
+
+event2:
+	Save 0 RestEvery
+	Save 10 RestChance
+	Compare PartyX 15
+	IfEq
+	Exit
+	Save SouthGroupsBeaten Scratch10
+	Compare PartyY 8
+	IfLt
+	Save NorthGroupsBeaten Scratch10
+	AndOr Scratch10 63 Scratch10
+	Compare Scratch10 63
+	IfEq
+	Exit
+	Save 2 RestEvery
+	Save 33 RestChance
+
+Done:
+	RedrawView
+	Call CallRedraw
+	Exit
+
+event3:
+	Goto ForcedEncounter
+
+event4:
+	Save 1 NoCoords
+	Save 9 SkyInside
+	Compare AreaKind 22
+	IfEq
+	Exit
+	LoadFiles 22 2 255
+	Compare AreaKind 23
+	IfEq
+	Exit
+	Save 0 PartyY
+	Save 2 Facing
+	Save 15 PartyX
+	LoadFiles 1 3 255
+	Exit
+
+SecretDoorSpot:
+	GetTable Table9C95 Scratch1 Scratch2
+	GetTable Table9CA0 Scratch1 Scratch1
+	Gosub SearchSecretDoor
+	Goto RandomEncounter
+
+CheckSecretPassage:
+	GetTable Table9CA0 Scratch1 Scratch1
+	AndOr SecretDoorBits Scratch1 Scratch10
+	IfNe
+	Goto PassageLeave
+	Save 255 HoldMove
+	Exit
+
+PassageLeave:
+	AndOr Cell 31 Scratch10
+	Compare Scratch10 3
+	IfLt
+	Goto LeaveToArea26
+	Exit
+
+PriestRoom:
+	AndOr SecretDoorBits 128 Scratch10
+	IfNe
+	Goto HoleInWall
+	AndOr SouthGroupsBeaten 64 Scratch10
+	IfNe
+	Exit
+	Save 0 Surprise
+	Print "YOU SEE A HUMAN PRIEST."
+	Gosub PressReturn
+	Save 1 MaxDist
+
+PriestEncounter:
+	Save 6 Scratch7
+	Gosub LoadGroupData
+	EncounterMenu AuxPartyStrength MaxDist AuxCounter Scratch10 0 4 1 4 4 "HE SMILES AT YOU AND RAISES HIS HAND IN BENEDICTION." "" "" 9 9
+	Save 255 Portrait
+	Save 6 Scratch6
+	OnGoto Scratch10 3 Done FightGroup PriestFlee
+	Parlay 0 0 1 1 0 Scratch10
+	OnGoto Scratch10 1 PriestPeace
+	Random 2 Scratch10
+	Compare Scratch10 0
+	IfNe
+	Goto PriestPeace
+	Print "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
+	Gosub YesNoMenu
+	IfNe
+	Goto PriestEncounter
+	Print "YOU BREAK THROUGH. THE PRIEST TEARFULLY THANKS YOU AND GOES THROUGH THE HOLE."
+	RedrawView
+	Call CallRedraw
+	Gosub PressReturn
+	AndOr SecretDoorBits 128 SecretDoorBits
+
+HoleInWall:
+	Print "THERE IS A HOLE IN THE WALL THAT LEADS TO THE OUTSIDE. DO YOU GO THROUGH IT?"
+	Gosub YesNoMenu
+	IfEq
+	Goto LeaveToArea26
+	Goto Done
+
+PriestFlee:
+	Save 9 Scratch1
+	Goto MoveToTableSpot
+
+PriestPeace:
+	Print "PEACE BROTHER. YOU, TOO, ARE ONE OF MY FLOCK. I HAVE BUT RECENTLY PRAYED FOR ANOTHER OF MY FLOCK AND MAY PRAY NO MORE."
+	Gosub PressReturn
+	Goto PriestEncounter
+
+TyrmorCorpse:
+	Print "YOU FIND THE CORPSE OF A MAN. THE BODY HAS BEEN STRIPPED OF WEAPONS AND ARMOR, AS WELL AS ANY USEFUL GEAR."
+	Gosub PressReturn
+	CompareAnd TyrmorJournalFound 0 Search 1
+	IfNe
+	Goto RandomEncounter
+	Print "HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26."
+	Save 1 TyrmorJournalFound
+	Gosub PressReturn
+	Goto RandomEncounter
+
+RockRoom:
+	Print "YOU SEE ROCKS SCATTERED ABOUT THE SMOOTH FLAGSTONES. "
+	Gosub PressReturn
+	AndOr TeleporterRockFlags 2 Scratch10
+	IfNe
+	Goto RockRoomMenu
+	OnGoto Search 2 StepOnTeleporter FeelTingle
+
+StepOnTeleporter:
+	Gosub TeleportFlash
+	AndOr TeleporterRockFlags 2 TeleporterRockFlags
+	AndOr TeleporterRockFlags 1 Scratch10
+	IfEq
+	Goto TeleportToArea23
+	Save 0 Scratch1
+	AndOr TeleporterRockFlags 254 TeleporterRockFlags
+	Goto MoveToTableSpot
+
+FeelTingle:
+	Print "AS YOU CAREFULLY SEARCH THE ROOM, YOU FEEL A STRANGE TINGLE WHEN YOU GET CLOSE TO A BARE AREA."
+
+RockRoomMenu:
+	HMenu Scratch10 3 "GO BACK" "MOVE ON" "THROW A ROCK"
+	Print " "
+	OnGoto Scratch10 3 RockGoBack StepOnTeleporter ThrowRock
+
+RockGoBack:
+	Save 8 Scratch1
+	Goto MoveToTableSpot
+
+ThrowRock:
+	Print "YOU THROW A ROCK. SUDDENLY IT DISAPPEARS WITH A FLASH!"
+	Gosub PressReturn
+	Print " "
+	Gosub ToggleTeleporter
+	AndOr TeleporterRockFlags 2 TeleporterRockFlags
+	Goto RockRoomMenu
+
+ToggleTeleporter:
+	AndOr TeleporterRockFlags 1 Scratch10
+	IfEq
+	Goto SetTeleporterBit
+	AndOr TeleporterRockFlags 254 TeleporterRockFlags
+	Return
+
+SetTeleporterBit:
+	AndOr TeleporterRockFlags 1 TeleporterRockFlags
+	Return
+
+TeleporterSquare:
+	Gosub TeleportFlash
+	AndOr Cell 31 Scratch10
+	Compare Scratch10 17
+	IfEq
+	Goto ExitToArea23
+	Goto MoveToTableSpot
+
+RandomEncounter:
+	Compare PartyX 15
+	IfEq
+	Exit
+	Save SouthGroupsBeaten Scratch3
+	Compare PartyY 8
+	IfLt
+	Save NorthGroupsBeaten Scratch3
+	Save 2 Scratch10
+	Compare Search 0
+	IfEq
+	Save 20 Scratch10
+	Random Scratch10 Scratch10
+	Compare Scratch10 0
+	IfNe
+	Exit
+	Random 5 Scratch7
+	GetTable Table9CA0 Scratch7 Scratch10
+	AndOr Scratch3 Scratch10 Scratch10
+	IfNe
+	Exit
+
+StartGroupEncounter:
+	Save Scratch7 Scratch6
+	Compare PartyY 8
+	IfLt
+	Arith 7 Scratch7 Scratch7
+	Gosub LoadGroupData
+	PartySurprise Scratch4 Scratch5
+	Save 2 Scratch3
+	Surprise Scratch4 Scratch5 AuxMonster AuxEncResult
+	OnGoto Surprise 4 SayYouSee SaySurprisedBy SayYouSurprise SayYouSee
+	Print str AuxTemp9
+	Gosub PressReturn
+	OnGoto AuxEncResult2 3 FriendlyGroupMenu HungryGroupMenu FlyingGroupMenu
+
+SayYouSee:
+	Print "YOU SEE"
+	Return
+
+SaySurprisedBy:
+	Print "YOU ARE SURPRISED BY"
+	Arith AuxMenuChoice 3 AuxMenuChoice
+	Save 0 Scratch3
+	Return
+
+SayYouSurprise:
+	Print "YOU SURPRISE"
+	Arith 3 AuxMenuChoice AuxMenuChoice
+	Return
+
+FriendlyGroupMenu:
+	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 4 "THEY SMILE AT YOU." "THEY WAVE AND SAY 'SAVED!'" "THE LEADER WAVES AND CALLS TO YOU." AuxMenuChoice AuxMenuChoice
+	Goto EncounterOutcome
+
+HungryGroupMenu:
+	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 0 "ONE LICKS ITS LIPS." "" "" AuxMenuChoice AuxMenuChoice
+	Goto EncounterOutcome
+
+FlyingGroupMenu:
+	EncounterMenu AuxPartyStrength Scratch3 AuxCounter Scratch3 0 3 0 3 0 "THEY FLY TOWARD YOU." "" "" AuxMenuChoice AuxMenuChoice
+
+EncounterOutcome:
+	Save 255 Portrait
+	Compare Scratch3 3
+	IfEq
+	Save 1 Surprise
+	OnGoto Scratch3 4 Done FightGroup FleeEncounter FightGroup
+
+FleeEncounter:
+	Compare PartyY 8
+	IfLt
+	Goto FleeNorth
+	Goto FleeSouth
+
+FightGroup:
+	ClearMonsters
+	LoadMonster AuxEncTemp AuxMember AuxRoll
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto FleeEncounter
+	GetTable Table9CA0 Scratch6 Scratch7
+	Compare PartyY 8
+	IfLt
+	Goto MarkNorthBeaten
+	AndOr SouthGroupsBeaten Scratch7 SouthGroupsBeaten
+	Exit
+
+MarkNorthBeaten:
+	AndOr NorthGroupsBeaten Scratch7 NorthGroupsBeaten
+	Exit
+
+ForcedEncounter:
+	Save SouthGroupsBeaten Scratch3
+	Compare PartyY 8
+	IfLt
+	Save NorthGroupsBeaten Scratch3
+
+PickUnbeatenGroup:
+	Random 5 Scratch7
+	GetTable Table9CA0 Scratch7 Scratch10
+	AndOr Scratch3 Scratch10 Scratch10
+	IfNe
+	Goto PickUnbeatenGroup
+	Goto StartGroupEncounter
+
+LoadGroupData:
+	GetTable GroupTable0 Scratch7 AuxCounter
+	GetTable GroupTable1 Scratch7 AuxMenuChoice
+	GetTable GroupCountTable Scratch7 AuxMember
+	GetTable GroupTable3 Scratch7 AuxRoll
+	GetTable GroupSurpriseTable1 Scratch7 AuxMonster
+	GetTable GroupSurpriseTable2 Scratch7 AuxEncResult
+	GetTable GroupTable6 Scratch7 AuxEncResult2
+	GetTable GroupMonsterTable Scratch7 AuxEncTemp
+	GetTable GroupTable8 Scratch7 AuxPartyStrength
+	GetTable GroupPortraitTable Scratch7 Portrait
+	Save 100 Morale
+	OnGoto Scratch7 13 HumanFightersText DisplacerBeastsText DwarvenFightersText LizardMenText DridersText GauntMenText GroupTextDone InsectsText DridersText BullMenText ElvesText KoboldsText HumanFightersText
+
+HumanFightersText:
+	Save " A BAND OF HUMAN FIGHTERS." str AuxTemp9
+	Return
+
+DisplacerBeastsText:
+	Save " DISPLACER BEASTS." str AuxTemp9
+	Return
+
+DwarvenFightersText:
+	Save " DWARVEN FIGHTERS." str AuxTemp9
+	Return
+
+LizardMenText:
+	Save " A TRIO OF LIZARD MEN." str AuxTemp9
+	Return
+
+DridersText:
+	Save " VISCIOUS LOOKING DRIDERS." str AuxTemp9
+	Return
+
+GauntMenText:
+	Save " SOME GAUNT MEN IN POORLY FITTING LEATHER." str AuxTemp9
+
+GroupTextDone:
+	Return
+
+InsectsText:
+	Save " LARGE INSECTS WITH RUSTY RED FEATHERS." str AuxTemp9
+	Return
+
+BullMenText:
+	Save " SOME LARGE BULL HEADED MEN." str AuxTemp9
+	Return
+
+ElvesText:
+	Save " A GROUP OF EMACIATED ELVES." str AuxTemp9
+	Return
+
+KoboldsText:
+	Save " SOME HUNGRY LOOKING KOBOLDS." str AuxTemp9
+	Return
+
+LeaveToArea26:
+	NewECL 26
+
+TeleportToArea23:
+	AndOr TeleporterRockFlags 1 TeleporterRockFlags
+	Save 4 PartyX
+	Save 15 PartyY
+	Save 0 Facing
+	NewECL 23
+
+ExitToArea23:
+	Save 0 PartyX
+	Save 12 PartyY
+	Save 0 Facing
+	NewECL 23

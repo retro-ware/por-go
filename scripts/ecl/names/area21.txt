@@ -1,0 +1,35 @@
+4A00 ElfBodyHacked  # set 255 on "YOU HACK THE BODY TO BITS"; 255 -> remains looted text; area-local reuse
+4A01 LiedToFerran  # set 255 when party lies to Ferran's spirit; area-local reuse
+4A02 ArrivedAtKeep  # set 1 after "THE BOAT DISEMBARKS YOU AT SOKAL KEEP" (first entry); area-local reuse
+4A03 PatrolsFought21  # +1 after each undead patrol fight; >4 stops patrols and rest encounters; area-local reuse
+4A05 ChapelSeen  # set 1 after chapel text; area-local reuse
+4A06 SmithySeen  # set 1 after blacksmith's shop text; area-local reuse
+4A07 FungusRoomSeen  # set 1 after "CARPET OF FUNGUS" text; area-local reuse
+4A08 ArmorySeen  # set 1 after old armory text; area-local reuse
+4A09 HiddenRoomSeen  # set 1 after passing the illusionary wall; area-local reuse
+4A0B InsectsBeaten  # set 255 after insect swarm fight; area-local reuse
+4A0D StableSeen21  # set 1 after stable text; area-local reuse
+4A0E SmithyFrogs  # counts smithy visits until frogs attack (>1); 255 after frogs beaten; area-local reuse
+4A0F BarracksVisits  # counter in barracks; >=4 the haunts rise; area-local reuse
+4A10 HauntsSeen  # set 255 after "A MIST RISES ... SHADOWING FIGURES" first shown; area-local reuse
+4A11 HallEmptyFlag  # tested ==255 before "HALL IS EMPTY" text, never set here (guess: set elsewhere/unused); area-local reuse
+4A13 FerranFaded  # set 255 when wrong word given to the pale form; area-local reuse
+4A18 SkyColor21  # 11 day / 8 after Clock_3 14, copied to Sky; 8 skips boat picture; area-local reuse
+4A19 PatrolPassword  # 1 after correct password to undead patrol, cleared when Ferran gives SAMOSUD; nonzero -> "DO YOU GIVE THE PASSWORD?"; area-local reuse
+4A21 MagicGearTaken  # set 255 after taking shield/mace/sword/chainmail in hidden room
+4A25 ElfScrollTaken  # tested ==255 -> elf remains looted; never set here (guess)
+4A26 FerranFreed  # set 255 after Ferran's story / beating him; changes password to SAMOSUD, stops undead
+4A27 HauntsAppeased  # set 255 after saying LUX to the haunts
+4A28 HammerTaken  # set 255 after taking the old hammer in the smithy
+4A29 DiaryGemsTaken  # set 255 after taking gems under the floorboard (journal entry 3)
+4AD7 OrcRaidBeaten  # set 255 after orc/hobgoblin raid (journal entry 57 note)
+AEF6 EncMonsterDistTable  # per encounter -> MonsterDist
+AEFE EncMonsterTable  # per encounter -> monster id (9803)
+AF06 EncMoraleTable  # per encounter -> Morale (9804)
+AF0E EncCountTable  # per encounter -> monster count (9805)
+AF16 EncPictureTable  # per encounter -> LoadMonster 3rd arg (9806), guess picture
+AF1E ElfScrollLine1  # Protection text line 1 of the elf's scroll
+AF25 ElfScrollLine2  # Protection text line 2 of the elf's scroll
+AF34 ElfScrollLine3  # Protection text line 3 of the elf's scroll
+AF43 FleeXTable  # random PartyX after running away
+AF47 FleeYTable  # random PartyY after running away

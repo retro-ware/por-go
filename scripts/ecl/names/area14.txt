@@ -1,0 +1,25 @@
+4A00 TrapSquareDone  # table base, index cell-3 (cells 3-8); 1 = trap there already handled, skip; area-local reuse
+4A03 TrapSquareDone3  # entry 3 of 4A00 table, set to 2 when trap of a guarded square done; area-local reuse
+4A06 TrapSquareDone6  # entry 6 of 4A00 table; tested before running trap check; area-local reuse
+4A07 LastBackstabCell  # cell where the backstabbing thief last appeared, avoids repeat; area-local reuse
+4A08 LootRoomDone  # table base indexed cell-9 (loot rooms); 1 = skip (guess); area-local reuse
+4A13 TrapResult  # set by trap-check sub: 0 sprung, 1 avoided, 2 disarmed; area-local reuse
+4A15 WeaponPileGasDone  # set 1 after weapon-pile gas/thief ambush; 0 = ambush still pending; area-local reuse
+4A16 ThiefChaseDone  # set 255 when the two fleeing thieves event plays; area-local reuse
+4A19 GuildAmbushDone  # set 1 after ambush fight (adds 15 to ThievesKilled); area-local reuse
+4A1A SavedGeo14  # restored into Geo when party flees combat; area-local reuse
+4A1C LockAttempt  # zeroed at start of lock menu, otherwise unused (guess); area-local reuse
+4A45 ThievesKilled  # counter of thieves defeated; >=21 makes area safe
+4A46 CasketsLooted  # bits 1/2/4/8 = four caskets (gems, jewelry, gems, pearls) taken
+4A47 RoomsLooted  # bits: 1 loot pile, 4 rugs, 8 scrolls, 32 weapon pile taken
+4A48 FilesFound  # bits: 1 files j38/51, 2 jail cell fight, 4 NW castle slate, 8 NE castle map
+4AEA CabinetALock  # lock state table base (index 0-7): 0 open, 2 too complex, 3 left, 1 looted (cabinet A files)
+4AEB CabinetBLock  # lock/looted state, cabinet B silver
+4AEC CabinetCLock  # lock/looted state, cabinet C gold
+4AED ScrollCaseLock  # lock state, scroll cases
+4AEE CasketGemsLock  # lock state, small gems casket
+4AEF CasketJewelryLock  # lock state, jewelry casket
+4AF0 CasketBigGemsLock  # lock state, beautiful gems casket
+4AF1 CasketPearlsLock  # lock state, pearls casket
+B4AC ChaseSteps  # table: steps to walk per leg of thief chase
+B4BC ChaseFacing  # table: facing per leg of thief chase

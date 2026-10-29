@@ -15,7 +15,9 @@ import (
 // listings); the Vxxxx arrays are the script-only words, named by the
 // script address of their first word.
 
-// areaVars = the area record (es:[DS:49D2]), reloaded with each area.
+// areaVars = the area record (es:[DS:49D2]). Despite its name it is kept
+// for the whole game (set only by a new or loaded game): areas share its
+// script words, e.g. the quest table the city hall clerk reads.
 type areaVars struct {
 	V4900       [0xC3]uint16
 	MapX, MapY  uint16    // +0x186/+0x188 party square on the area map (ovr15:0818)

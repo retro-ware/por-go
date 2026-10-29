@@ -1,0 +1,27 @@
+4A52 OldLizardmanFlags  # bit1 old lizard man still to meet (tested before he appears), cleared and bit2 set once met/killed; area-local reuse
+4A5D LizardMenKilled  # caps lizard men per ambush (<50), Beaten added via L_99D0; >=40 sets journal marker 4AB5
+4A5E PoolTreasureTaken  # bitmask by pool (AC46): "YOU FIND SOME TREASURE" in deep pool; also oddly read in L_9971 for giant lizard cap (orig bug?)
+4A5F GiantLizardsKilled  # Beaten giant lizards added via L_99D0; caps giant lizard numbers (<10)
+4A60 EncountersDone  # bits per building encounter (A6F2), 1 treasure; 255 after championing old lizard man; bit1 cleared on taking tunnel down
+4A61 BuildingsSeen  # bits: 2 rubble building, 4 central keep, 8 L-shaped building text shown; 1 pool lizards dived away
+9A09 Table9A09  # GetTable base, GetTable [9A09] [6E7F] [6E7D]
+9A0E Table9A0E  # GetTable base, GetTable [9A0E] [6E7F] [6E7C]
+9B00 Table9B00  # GetTable base, GetTable [9B00] [6E82] [6E81]
+9B0C Table9B0C  # GetTable base, GetTable [9B0C] [6E82] [6E80]
+9B18 Table9B18  # GetTable base, GetTable [9B18] [6E82] [6E7A]
+9B24 Table9B24  # GetTable base, GetTable [9B24] [6E82] [6E79]
+9B96 Table9B96  # GetTable base, GetTable [9B96] [6E82] [6E81]
+9BAC Table9BAC  # GetTable base, GetTable [9BAC] [6E82] [6E7A]
+9BC2 Table9BC2  # GetTable base, GetTable [9BC2] [6E82] [6E79]
+9E9D DestX  # GetTable base, GetTable [9E9D] [6E79] PartyX
+9EA4 DestY  # GetTable base, GetTable [9EA4] [6E79] PartyY
+9EAB DestFacing  # GetTable base, GetTable [9EAB] [6E79] Facing
+A6F2 EncounterBitTable  # table by encounter index (6E7F) -> 4A60 bit set after the fight
+AA4C UpExitXTable  # PartyX per up-stairs/tunnel exit
+AA53 UpExitYTable  # PartyY per up-stairs/tunnel exit
+AC1A PoolCellTable  # 13 cell codes searched to find which pool party is at
+AC25 PoolExitXTable  # PartyX after winning pool lizard fight
+AC30 PoolExitYTable  # PartyY after winning pool lizard fight
+AC3B PoolExitFacingTable  # Facing after winning pool lizard fight
+AC46 PoolTreasureBitTable  # per pool -> bit of 4A5E
+AC51 PoolTreasureTable  # per pool -> Treasure item set

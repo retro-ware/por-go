@@ -1,0 +1,543 @@
+RollSurprise:
+	PartySurprise Scratch8 Scratch9
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Arith 1 Scratch9 Scratch9
+	Surprise Scratch8 Scratch9 0 0
+	Compare AlarmEndHour 0
+	IfNe
+	AndOr Surprise 1 Surprise
+	Compare Surprise 3
+	IfEq
+	Save 0 Surprise
+	Compare Surprise 1
+	Return
+
+CheckAlarmSounding:
+	Compare AlarmEndHour 1
+	IfLt
+	Return
+	Save Hours AuxRoll
+	CompareAnd Hours 0 AlarmHour 23
+	IfEq
+	Save 24 AuxRoll
+	Compare AuxRoll AlarmEndHour
+	IfLt
+	Goto AlarmStillOn
+	Compare TenMinutes AlarmMinute
+	IfLt
+	Goto AlarmStillOn
+	Save 0 AlarmEndHour
+	Compare 0 1
+	Return
+
+AlarmStillOn:
+	Compare Search 1
+	IfEq
+	Goto SayAlarmSounding
+	Random 9 AuxRoll
+	Compare AuxRoll 0
+	IfNe
+	Goto AlarmActive
+
+SayAlarmSounding:
+	Print "AN ALARM IS SOUNDING."
+	Delay
+
+AlarmActive:
+	Compare 1 0
+	Return
+
+StartAlarm:
+	Compare AlarmEndHour 0
+	IfEq
+	Print "AN ALARM STARTS RINGING!"
+	Delay
+	Save Hours AlarmHour
+	Save TenMinutes AlarmMinute
+	Arith 1 AlarmHour AlarmEndHour
+	Return
+
+AskTakeIt:
+	Print "DO YOU TAKE IT?"
+
+YesNoMenu:
+	HMenu Scratch10 2 "YES" "NO"
+	Print " "
+	Compare Scratch10 0
+	Return
+
+PressReturn:
+	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	Print " "
+	Return
+
+SetSkyByHour:
+	Save 11 Scratch1
+	Save 9 SkyInside
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch1
+	Save Scratch1 Sky
+	Return
+
+event0:
+	AndOr CastleRoomFlags 127 CastleRoomFlags
+	Compare LeftMap 0
+	IfEq
+	Goto OnStep
+	Compare Geo 3
+	IfEq
+	GetTable ByFacing9AEB Facing Scratch10
+	Compare Geo 4
+	IfEq
+	GetTable ByFacing9AEF Facing Scratch10
+	Compare Geo 5
+	IfEq
+	GetTable ByFacing9AF3 Facing Scratch10
+	Compare Geo 6
+	IfEq
+	GetTable ByFacing9AF7 Facing Scratch10
+	LoadFiles Scratch10 2 255
+	Call CallStepForward
+	Save 255 HoldMove
+	Exit
+
+OnStep:
+	Gosub SetSkyByHour
+	AndOr Cell 31 Scratch1
+	CompareAnd Scratch1 21 Facing 3
+	IfEq
+	Goto CastleGate
+	CompareAnd Scratch1 22 Facing 1
+	IfEq
+	Goto CastleGate
+	CompareAnd Scratch1 4 Facing 1
+	IfEq
+	Goto GoUpstairs
+	Compare WallAhead 7
+	IfEq
+	Goto ThornHedge
+	Compare WallAhead 9
+	IfNe
+	Exit
+
+ThornHedge:
+	Print "THERE IS A HEDGE WITH POISONOUS THORNS IN THAT DIRECTION. DO YOU WANT TO TRY TO CUT THROUGH?"
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	Print " AS YOU SLICE THROUGH SOMEONE IS PRICKED BY A THORN."
+	Damage 128 1 1 200 0
+	Call CallStepForward
+	Save 255 HoldMove
+	Exit
+
+event1:
+	Gosub CheckAlarmSounding
+	IfLt
+	Goto SpecialSquare
+	AndOr Cell 64 Scratch10
+	IfNe
+	Goto SpecialSquare
+	Save 2 Scratch1
+	Compare Search 1
+	IfNe
+	Save 20 Scratch1
+	Random Scratch1 Scratch10
+	Compare Scratch10 0
+	IfEq
+	Goto event3
+
+SpecialSquare:
+	AndOr Cell 31 Scratch1
+	Compare Scratch1 29
+	IfGt
+	NewECL 3
+	Compare Scratch1 20
+	IfGt
+	Exit
+	OnGoto Scratch1 8 Done HarmlessMage ArguingGiants GateGiants Done ThroneRoom TowerTrolls Disorient
+
+event2:
+	Save 0 RestEvery
+	Save 10 RestChance
+	Compare AlarmEndHour 0
+	IfEq
+	Exit
+	AndOr Cell 64 Scratch10
+	IfNe
+	Exit
+	Save 1 RestEvery
+	Save 17 RestChance
+
+Done:
+	RedrawView
+	Call CallRedraw
+	Exit
+
+event4:
+	Gosub SetSkyByHour
+	Save 1 NoCoords
+	Exit
+
+Disorient:
+	AndOr CastleRoomFlags 128 Scratch10
+	IfNe
+	Exit
+	Print "YOU FEEL A SUDDEN DISORIENTATION."
+	Random 3 Scratch10
+	Arith 3 Scratch10 Scratch1
+	GetTable DestX Scratch10 PartyX
+	GetTable DestY Scratch10 PartyY
+	LoadFiles Scratch1 2 255
+	Call CallRedraw
+	Exit
+
+FledCombat:
+	Save 129 CombatEnd
+
+AfterCombat:
+	Compare CombatEnd 0
+	IfEq
+	Return
+	Gosub StartAlarm
+	AndOr CastleFlags 254 CastleFlags
+	Compare CombatEnd 129
+	IfNe
+	Return
+
+StepBack:
+	Save 255 HoldMove
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Arith Facing 2 Facing
+	Compare Facing 3
+	IfGt
+	Arith 4 Facing Facing
+	Goto Done
+
+GateGiants:
+	AndOr CastleDeedFlags 32 Scratch10
+	IfNe
+	Exit
+	Gosub RollSurprise
+	IfGt
+	Goto SurpriseGiants
+	Save 0 Surprise
+	Print "THREE GIANTS STEP UP TO YOU."
+	Goto GiantsMenu
+
+SurpriseGiants:
+	Print "YOU SURPRISE THREE GIANTS!"
+
+GiantsMenu:
+	Delay
+	EncounterMenu 55 2 55 Scratch10 0 4 0 4 4 "THEY HOLD THEIR WEAPONS READY." "" "" 12 12
+	OnGoto Scratch10 3 Done FightGiants FledCombat
+	Parlay 0 1 1 1 0 Scratch10
+	OnGoto Scratch10 1 WhoSentYou
+	Print "'ALL RIGHT, THEN. WHAT TODAY'S PASSWORD?'"
+
+AskPassword:
+	InputString 6 str AuxInputText
+	Random 4 Scratch10
+	Compare Scratch10 0
+	IfEq
+	Goto NoPasswordAttack
+	Print "'WRONG! GUESS AGAIN!"
+	Goto AskPassword
+
+NoPasswordAttack:
+	Print "'WRONG! THERE IS NO PASSWORD! HA! HA! HA!' THE GIANTS ATTACK."
+	Goto FightGiants
+
+WhoSentYou:
+	Print "'OH, YEAH? WHO SEND YOU?'"
+	InputString 12 str AuxInputText
+	Compare "TYRANTHRAXUS" str AuxInputText
+	IfNe
+	Goto WrongMasterName
+	Print "'OH, WE SORRY! JUST DOING JOB! PLEASE NO TELL? WE LET YOU... WE STAY AT POST. MAKE SURE NO ONE GO BY!'"
+	Goto Done
+
+WrongMasterName:
+	Print "'WHO HIM? OH WELL HE NO CAN HELP YOU NOW!'"
+
+FightGiants:
+	Delay
+	Save 60 Morale
+	RedrawView
+	ClearMonsters
+	LoadMonster 55 3 55
+	Combat
+	Gosub AfterCombat
+	AndOr CastleDeedFlags 32 CastleDeedFlags
+	Exit
+
+TowerTrolls:
+	AndOr CastleFlags2 64 Scratch10
+	IfNe
+	Exit
+	Print "YOU HAVE ENTERED THE REMAINS OF A TOWER. "
+	Delay
+	Gosub RollSurprise
+	OnGoto Surprise 3 TrollsMenu TrollsCharge TrollsUnawareMenu
+
+TrollsMenu:
+	EncounterMenu 31 2 31 Scratch10 0 0 0 1 0 "YOU SEE A PACK OF TROLLS." "" "" 12 12
+	OnGoto Scratch10 4 Done FightTrolls StepBack FightTrolls
+
+TrollsUnawareMenu:
+	EncounterMenu 31 2 31 Scratch10 0 1 1 1 0 "YOU SEE A PACK OF TROLLS. THEY SEEM UNAWARE OF YOU." "" "" 10 10
+	OnGoto Scratch10 4 Done FightTrolls StepBack FightTrolls
+
+TrollsCharge:
+	SetupMonster 31 2 31
+	Delay
+	Print "A PACK OF TROLLS CHARGE FROM WHERE THEY WERE HIDING."
+	Approach
+	Gosub PressReturn
+	Approach
+
+FightTrolls:
+	Save 100 Morale
+	ClearMonsters
+	LoadMonster 31 8 31
+	Combat
+	Gosub AfterCombat
+	AndOr CastleFlags2 64 CastleFlags2
+	Exit
+
+CastleGate:
+	Compare AlarmEndHour 0
+	IfEq
+	Exit
+	Save 64 Scratch1
+	Compare Scratch10 22
+	IfEq
+	Save 128 Scratch1
+	AndOr BaneTempleFlags Scratch1 Scratch10
+	IfNe
+	Goto GateRecognizesYou
+	AndOr BaneTempleFlags 3 Scratch10
+	IfNe
+	Goto GateCallsThief
+	VMenu Scratch10 "A DEEP VOICE CALLS DOWN, 'WHAT IS THE PASSWORD?'" 2 "GIVE THE PASSWORD" "FORCE THE GATE OPEN"
+	OnGoto Scratch10 2 GivePassword BouldersThrown
+
+GateRecognizesYou:
+	Print "YOU HEAR A DEEP VOICE, 'HEY, THAT'S THEM GUYS WHO TRIED TO BUST IN!'"
+	Goto BouldersThrown
+
+GateCallsThief:
+	Print "YOU HEAR A DEEP VOICE, 'THIEF! YOU STOLE FROM LORD BANE!'"
+
+BouldersThrown:
+	Gosub PressReturn
+	Gosub StartAlarm
+	AndOr BaneTempleFlags Scratch1 BaneTempleFlags
+	Print "A VOLLEY OF BOULDERS ARE THROWN AT YOU..."
+	Gosub PressReturn
+	Damage 12 2 6 0 48
+	Exit
+
+GivePassword:
+	Print "WHAT PASSWORD DO YOU GIVE? "
+	InputString 6 str AuxInputText
+	Compare str AuxInputText "RHODIA"
+	IfNe
+	Goto WrongPassword
+	Print "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
+	Call CallStepForward
+	Save 255 HoldMove
+	Exit
+
+WrongPassword:
+	Print "'HAH! HAH! YOU'RE DUMB! THAT'S NOT THE PASSWORD!'"
+	Exit
+
+HarmlessMage:
+	AndOr CastleFlags2 4 Scratch10
+	IfNe
+	Exit
+	Save 55 Portrait
+	EncounterMenu 12 2 31 Scratch10 2 4 1 4 4 "YOU SEE A HARMLESS, MIDDLE AGED MAN." "" "" 12 12
+	Save 255 Portrait
+	OnGoto Scratch10 3 MageFlees MageBegs StepBack
+
+MageBegs:
+	Print "'WAIT! I WAS JUST A MAGE SEARCHING FOR KNOWLEDGE WHEN TYRANTHRAXUS CAPTURED ME. I'VE BEEN FORCED TO WORK FOR HIM. SPARE ME AND I WILL LEAVE, NEVER TO RETURN!'"
+	HMenu Scratch10 2 "LET HIM GO" "ATTACK HIM"
+	OnGoto Scratch10 1 MageFlees
+	Print "'WAIT! PLEASE! I'LL GIVE YOU ALL MY NOTES! HERE THEY ARE!'"
+	HMenu Scratch10 2 "LET HIM GO" "ATTACK HIM"
+	OnGoto Scratch10 1 MageGivesNotes
+	Save 50 Morale
+	Save 0 Surprise
+	ClearMonsters
+	LoadMonster 86 1 14
+	Combat
+	Gosub AfterCombat
+	AndOr CastleFlags2 4 CastleFlags2
+	Exit
+
+MageFlees:
+	Print "HE SCRAMBLES OUT THE DOOR."
+	AndOr CastleFlags2 4 CastleFlags2
+	Goto Done
+
+MageGivesNotes:
+	Print "HE QUICKLY LEAVES. YOU ARE LEFT WITH THE NOTES OF AL-HYAM DHAZID, WHICH TELL QUITE A LOT ABOUT THE POOL OF RADIANCE. YOU COPY THEM INTO YOUR JOURNAL AS ENTRY 30."
+	Gosub PressReturn
+	AndOr CastleFlags2 4 CastleFlags2
+	Goto Done
+
+GoUpstairs:
+	Print "YOU GO UPSTAIRS."
+	Save 5 PartyX
+	Save 7 PartyY
+	NewECL 7
+
+ArguingGiants:
+	AndOr CadornaQuartersFlags 128 Scratch10
+	IfNe
+	Exit
+	SetupMonster 56 1 56
+	AndOr BaneTempleFlags 3 Scratch10
+	IfNe
+	Goto GiantsCallThief
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto FrogsAndToads
+	Compare AlarmEndHour 0
+	IfNe
+	Goto GiantsSpotIntruders
+
+FrogsAndToads:
+	Print "THIS TOWER IS OCCUPIED BY FOUR GIANTS. AS YOU COME IN THEY ARE IN THE MIDST OF AN ARGUMENT. THE BIGGEST ONE TURNS TO YOU AND SAYS, 'THEM LOOK SMART. THEM TELL US.'"
+	Gosub PressReturn
+	Print "'FROGS AND TOADS NOT SAME THING. THEY NOT SAME, THEY DIF... THEY NOT SAME! ME RIGHT?'"
+	HMenu Scratch10 4 "YES" "NO" "ATTACK" "LEAVE"
+	OnGoto Scratch10 3 AnswerYes AnswerNo FightArguingGiants
+	Print "AS YOU QUICKLY LEAVE THE ROOM, YOU HEAR ONE OF THE GIANTS SAY, 'AH, US RIGHT. THEM JUST AFRAID TO SAY 'CAUSE KNOW YOU SMASH 'EM.' THE ARGUMENT RESUMES."
+	Goto StepBack
+
+AnswerNo:
+	Print "AS THE OTHER GIANTS BURST INTO HOWLS OF LAUGHTER THE ONE WHO TALKED TO YOU TURNS RED AND SAYS, 'YOU LIE! YOU LIE TO MAKE ME FOOL! I SMASH YOU!'"
+	Gosub PressReturn
+	Print "BEFORE HE CAN ATTACK THE OTHERS GRAB HIM AND SAY, 'YOU BETTER GO LITTLE MEN."
+	HMenu Scratch10 2 "STAY" "LEAVE"
+	OnGoto Scratch10 2 GiantsAttackAnyway StepBack
+
+AnswerYes:
+	Print "AS THE GIANT TURNS IN TRIUMPH TO HIS COMPANIONS, THE OTHERS PICK UP THEIR CLUBS. 'WHAT THEY KNOW? WE KNOCK DUMB LITTLE MEN'S BRAINS OUT!'"
+	Gosub PressReturn
+	Print "'YOU NO HURT THEM. THEM MY BUDDIES!' THEY ARGUE FOR A LITTLE BIT AND THEN ONE SAYS, 'HEY, WHAT WE FIGHTING FOR? IT'S ALL FAULT OF THEM!' 'YEH!' THEY TURN AND ATTACK YOU."
+	Goto FightArguingGiants
+
+GiantsAttackAnyway:
+	Print "'OH WELL. CAN'T LET HERDREK HAVE ALL FUN.' THEY PICK UP THEIR CLUBS AND ATTACK."
+
+FightArguingGiants:
+	Gosub PressReturn
+	Save 0 Surprise
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster 56 4 56
+	Combat
+	Gosub AfterCombat
+	AndOr CadornaQuartersFlags 128 CadornaQuartersFlags
+	Exit
+
+GiantsCallThief:
+	Print "YOU SEE FOUR GIANTS. 'HEY, THEM THE GUYS WHAT STEAL FROM LORD BANE. GET 'EM!'"
+	Goto GiantsRaiseAlarm
+
+GiantsSpotIntruders:
+	Print "YOU SEE FOUR GIANTS. 'THEM THE NOT BELONG HERE! GET THEM!"
+
+GiantsRaiseAlarm:
+	Gosub StartAlarm
+	Goto FightArguingGiants
+
+ThroneRoom:
+	AndOr CastleFlags 64 Scratch10
+	IfNe
+	Exit
+	Print "YOU ENTER A CHAMBER WHICH IS LAVISHLY APPOINTED WITH HANGINGS, CARPETS AND FURNITURE. SITTING ON A THRONE IS A POWERFUL LOOKING MAN CLAD IN BARBARIC SPLENDOR."
+	Gosub PressReturn
+	Save 54 Portrait
+	SetupMonster 16 1 1
+	Print "'WHAT IS YOUR BUSINESS WITH TYRANTHRAXUS, LORD OF PHLAN?'"
+	Approach
+	Delay
+	EncounterMenu 16 0 1 Scratch10 0 0 1 0 4 "" "" "" 0 0
+	Save 255 Portrait
+	OnGoto Scratch10 3 Done FightImpostor FledCombat
+	Parlay 0 1 2 2 3 Scratch10
+	OnGoto Scratch10 3 ArrogantKnave HeavyCrown BegoneOrWrath
+	PartyStrength Scratch10
+	Arith SelReaction Scratch10 Scratch10
+	Compare Scratch10 85
+	IfGe
+	Goto ArrogantKnave
+	Print "HE SEEMS TO COLLAPSE. 'ALL RIGHT. I'M NOT TYRANTHRAXUS. HE JUST HIRED ME TO IMPERSONATE HIM. IT'S NOT A BAD LIFE, BUT, HEY! I CAN TELL WHICH WAY THE WIND'S BLOWING.'"
+	Gosub PressReturn
+	Print "'JUST LET ME GO, OKAY?"
+	Gosub YesNoMenu
+	IfNe
+	Goto FightImpostor
+	Print "HE RUNS OUT OF THE HALL. THERE IS TREASURE ALL ABOUT. "
+	AndOr CastleFlags 64 CastleFlags
+	Gosub AskTakeIt
+	IfNe
+	Goto Done
+	ClearMonsters
+	Treasure 0 0 0 0 0 8 1 255
+	Combat
+	Exit
+
+ArrogantKnave:
+	Print "'ARROGANT KNAVE FEEL THE POWER OF TYRANTHRAXUS!'"
+	Goto FightImpostor
+
+HeavyCrown:
+	Print "'BOY, THIS CROWN IS HEAVY. OH, WELL IT'S A LIVING. WHAT DOES TYRANTHRAXUS WAN... OOPS! GET THEM!"
+	Goto FightImpostor
+
+BegoneOrWrath:
+	Print "'BEGONE OR FEEL THE WRATH AND POWER OF TYRANTHRAXUS!' DO YOU LEAVE?"
+	Gosub YesNoMenu
+	IfEq
+	Goto FledCombat
+	Print "THEN FEEL MY WRATH!"
+
+FightImpostor:
+	Delay
+	Gosub StartAlarm
+	Save 0 Surprise
+	Save 60 Morale
+	ClearMonsters
+	LoadMonster 92 1 11
+	LoadMonster 93 2 12
+	Treasure 0 0 0 0 0 8 1 255
+	Combat
+	Gosub AfterCombat
+	AndOr CastleFlags 64 CastleFlags
+	Exit
+
+event3:
+	Gosub RollSurprise
+	EncounterMenu 60 2 60 Scratch10 0 3 0 3 0 "YOU SEE GIANT SNAKES." "" "" 15 15
+	OnGoto Scratch10 3 Done FightSnakes StepBack
+
+FightSnakes:
+	Save 100 Morale
+	ClearMonsters
+	LoadMonster 60 4 60
+	Combat
+	Compare CombatEnd 129
+	IfEq
+	Goto StepBack
+	Exit

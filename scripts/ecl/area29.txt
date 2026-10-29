@@ -1,0 +1,772 @@
+event0:
+	Gosub UpdateSky
+	Compare LeftMap 0
+	IfEq
+	Goto CheckEntry
+	Call CallStepForward
+	Save 255 HoldMove
+	GetTable ExitSymbolSetByFacing Facing SymbolSet
+	GetTable ExitAreaByFacing Facing Scratch10
+	Save 0 NoCoords
+	NewECL Scratch10
+
+CheckEntry:
+	AndOr 127 Cell Scratch10
+	Compare Scratch10 1
+	IfNe
+	Goto CheckSecretDoorBlock
+	Save 0 GroundKind
+	Gosub UpdateSky
+
+CheckSecretDoorBlock:
+	Compare SecretDoorFound 255
+	IfEq
+	Goto CheckNailedDoor
+	CompareAnd Scratch10 6 Facing 0
+	IfEq
+	Save 255 HoldMove
+	CompareAnd Scratch10 7 Facing 2
+	IfEq
+	Save 255 HoldMove
+
+CheckNailedDoor:
+	CompareAnd Scratch10 21 Facing 2
+	IfEq
+	Goto NailedDoor
+	GetTable ExitCellByFacing Facing Scratch9
+	Compare Scratch9 Scratch10
+	IfNe
+	Goto CheckWellAmbush
+	AndOr WildFlags 1 AuxMember
+	IfEq
+	Goto WellPlaza
+	Save 1 GroundKind
+	Gosub UpdateSky
+
+CheckWellAmbush:
+	Gosub ExitIfWellCleared
+	Save PartyX Scratch2
+	Save PartyY Scratch4
+	Call CallStepForward
+	Call CallLookAhead
+	AndOr Cell 127 Scratch1
+	Save Scratch2 PartyX
+	Save Scratch4 PartyY
+	Call CallLookAhead
+	Compare Scratch1 3
+	IfNe
+	Exit
+	Save 1 Scratch4
+	Save 1 Scratch2
+	Goto WaitingKobolds
+
+event1:
+	Save 0 EncounterMode
+	Print ""
+	AndOr 127 Cell Scratch10
+	Save 0 Scratch1
+	Save 2 Scratch2
+	GetTable CellEventTable Scratch10 AuxCounter
+	OnGoto AuxCounter 16 Done RandomEncounterRoll WellPlaza KutosWell WellApproach PlazaWander SicklyKobolds LizardPatrol SeerWoman NorthWallDoor SouthWallDoor HiddenCatacombs CatacombSniper1 CatacombSniper2 BanditTreasure NorrisBandits
+
+KutosWell:
+	Compare InWell 0
+	IfNe
+	Goto WellSecretDoor
+	Compare Scratch10 2
+	IfEq
+	Save 0 AuxEncChoice
+	Compare Scratch10 5
+	IfEq
+	Save 2 AuxEncChoice
+	Compare Scratch10 16
+	IfEq
+	Save 3 AuxEncChoice
+	Compare Scratch10 17
+	IfEq
+	Save 1 AuxEncChoice
+	Compare AuxEncChoice Facing
+	IfNe
+	Goto NearWell
+	Print "BEFORE YOU LIES KUTO'S WELL.  IT IS A SOURCE OF WATER IN ALL SEASONS."
+	Goto ArrowRain
+
+SaySouth:
+	Print "SOUTH"
+	Return
+
+SayWest:
+	Print "WEST"
+	Return
+
+SayNorth:
+	Print "NORTH"
+	Return
+
+SayEast:
+	Print "EAST"
+	Return
+
+NearWell:
+	Print "YOU ARE JUST "
+	OnGoto AuxEncChoice 4 SaySouth SayWest SayNorth SayEast
+	Print " OF KUTO'S WELL."
+
+ArrowRain:
+	Gosub ExitIfWellCleared
+	PartySurprise AuxMember AuxRoll
+	Surprise AuxMember AuxRoll 6 2
+	Compare Search 1
+	IfNe
+	Exit
+	Damage 9 1 6 0 41
+	Print "A RAIN OF ARROWS POURS OVER YOU."
+	Compare Surprise 1
+	IfNe
+	Goto MonstersAttack
+	Exit
+
+RandomEncounterRoll:
+	Compare InWell 0
+	IfNe
+	Exit
+	Compare EncounterCount 10
+	IfGt
+	Exit
+	Compare 0 Scratch10
+	IfNe
+	Exit
+	Random 10 AuxSightText
+	Compare Search 1
+	IfEq
+	Arith 2 AuxSightText AuxSightText
+	Compare AuxSightText 9
+	IfGt
+	Goto CheckEncounterCount
+	Exit
+
+event2:
+	Call CallLookAhead
+	Save 0 RestEvery
+	Save 100 RestChance
+	Compare InWell 1
+	IfNe
+	Goto PlazaRest
+	Compare Cell 16
+	IfEq
+	Exit
+	Compare BanditsDone 255
+	IfNe
+	Save 1 RestEvery
+	Exit
+
+PlazaRest:
+	Compare EncounterCount 10
+	IfGe
+	Exit
+	Compare Cell 1
+	IfEq
+	Exit
+	Save 12 RestEvery
+	Save 12 RestChance
+	Exit
+
+event3:
+	Compare InWell 0
+	IfNe
+	Goto NorrisBandits
+	Save 200 EncounterMode
+	Save 0 Surprise
+	Goto RandomEncounter
+
+event4:
+	Gosub UpdateSky
+	Save 0 NoCoords
+	Compare 1 InWell
+	IfEq
+	Goto LoadWellFiles
+	LoadFiles 29 2 255
+	LoadFiles 3 20 1
+	Exit
+
+LoadWellFiles:
+	LoadFiles 32 2 255
+	LoadFiles 18 17 1
+	Exit
+
+SouthWallDoor:
+	Save "SOUTH WALL." str AuxMonsterName
+	Goto SearchSecretDoor
+
+NorthWallDoor:
+	Save "NORTH WALL." str AuxMonsterName
+
+SearchSecretDoor:
+	Compare SecretDoorFound 255
+	IfEq
+	Goto SecretDoorSpotted
+	Save 0 AuxMember
+
+SearchMemberLoop:
+	LoadCharacter AuxMember
+	Compare SelStatus 1
+	IfNe
+	Goto NextSearcher
+	GetTable SecretDoorChanceByRace SelRace AuxSearchCount
+	Arith Search AuxSearchCount AuxSearchCount
+	Random 5 AuxRoll
+	Compare AuxSearchCount AuxRoll
+	IfGt
+	Goto SecretDoorSpotted
+
+NextSearcher:
+	Arith 1 AuxMember AuxMember
+	Compare AuxMember 8
+	IfLt
+	Goto SearchMemberLoop
+	Exit
+
+SecretDoorSpotted:
+	Print "YOU FIND A SECRET DOOR IN THE "
+	Print str AuxMonsterName
+	Save 255 SecretDoorFound
+	Exit
+
+NorrisBandits:
+	Compare BanditsDone 255
+	IfEq
+	Exit
+	Save 10 Portrait
+	SetupMonster 16 2 6
+	Delay
+	Approach
+	Delay
+	Approach
+	Print "YOU ARE SURROUNDED BY THE BANDIT BAND OF THE INFAMOUS NORRIS THE  GRAY.  'YOU DARE TO INVADE MY HALLS?', HE SNARLS. 'SURRENDER OR DIE!'"
+	Gosub PressToContinue
+	Print "WHAT DO YOU DO?"
+	HMenu AuxMember 2 "SURRENDER" "FIGHT"
+	Save 255 Portrait
+	OnGoto AuxMember 1 SurrenderToBandits
+	Save 70 Morale
+	ClearMonsters
+	LoadMonster 32 1 7
+	LoadMonster 57 5 57
+	LoadMonster 1 9 1
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto ReleasedAboveGround
+	Save 255 BanditsDone
+	Save 254 QuestBandits
+	Print "ON THE LEADER'S BODY, YOU FIND A CURIOUS MESSAGE THAT YOU PLACE IN YOUR JOURNAL AS ENTRY 50."
+	Gosub PressToContinue
+	Print "YOU HAVE DEFEATED THE DREADED BANDIT GANG AND RID PHLAN OF A GREAT EVIL.  THE HONEST SETTLERS WILL CHEER YOUR DEEDS!"
+	Gosub PressToContinue
+	Print "YOU HAVE ALSO TAKEN POSSESSION OF A HIDEOUT IN WHICH YOU MAY REST UNDISTURBED FROM THE RIGORS OF YOUR QUESTING."
+	Save 250 BanditTreasureState
+	Save 0 AuxMember
+	Gosub PauseLoop
+	Exit
+
+SurrenderToBandits:
+	RedrawView
+	Print "YOU ARE STRIPPED OF ALL VALUABLES AND BLINDFOLDED.  THE BANDITS RELEASE YOU SOMEWHERE ABOVE GROUND."
+	Rob 1 100 100
+	Save 255 BanditsDone
+	Save 255 BanditTreasureState
+
+ReleasedAboveGround:
+	Save 0 InWell
+	Save 0 GroundKind
+	Gosub UpdateSky
+	LoadFiles 29 2 255
+	LoadFiles 3 20 1
+	Goto DropOff
+
+BanditTreasure:
+	Compare BanditTreasureState 250
+	IfNe
+	Exit
+	Print "YOU HAVE FOUND THE BANDIT'S TREASURE.  DO YOU TAKE IT?"
+	Gosub YesOrExit
+	Print "YOU GRAB THE LOOT."
+	ClearMonsters
+	Treasure 0 #08FC 0 92 0 20 0 255
+	Combat
+	Save 255 BanditTreasureState
+	Exit
+
+HiddenCatacombs:
+	Save 0 GroundKind
+	Gosub UpdateSky
+	Call CallRedraw
+	Compare CatacombAmbushDone 255
+	IfEq
+	Exit
+	Print "YOU PASS INTO HIDDEN CATACOMBS. THIS LARGE ROOM IS DIMLY LIT BY SPUTTERING TORCHES. THROUGH THE SMOKE YOU SEE CURTAINS HUNG TO COVER DOORWAYS."
+	Gosub PressToContinue
+	Compare BanditsDone 255
+	IfEq
+	Exit
+	Compare Facing 0
+	IfEq
+	Goto ArrowVolley
+	SetupMonster 0 2 0
+	Save 25 AuxMember
+	Gosub PauseLoop
+
+ArrowVolley:
+	Print "SOME MOVEMENT OCCURS IN THE ROOM'S FAR CORNER AND THEN A VOLLEY OF ARROWS TEARS INTO THE GROUP."
+	Delay
+	Damage 4 1 6 0 39
+	Save 255 CatacombAmbushDone
+	Gosub PressToContinue
+	Goto Done
+
+CatacombSniper1:
+	Compare BanditsDone 255
+	IfEq
+	Exit
+	Compare CatacombSpot1Done 255
+	IfEq
+	Exit
+	Compare Facing 0
+	IfEq
+	Gosub SniperArrow
+	IfNe
+	Gosub ShowSniper
+	Save 255 CatacombSpot1Done
+	Exit
+
+CatacombSniper2:
+	Compare BanditsDone 255
+	IfEq
+	Exit
+	Compare CatacombSpot2Done 255
+	IfEq
+	Exit
+	Compare Facing 2
+	IfEq
+	Gosub SniperArrow
+	IfNe
+	Gosub ShowSniper
+	Save 255 CatacombSpot2Done
+	Exit
+
+ShowSniper:
+	SetupMonster 0 2 0
+
+SniperArrow:
+	Damage 1 1 6 0 39
+	Print "THROUGH THE SMOKE AND DARKNESS, A DIMLY SEEN FIGURE FIRES AN ARROW INTO THE PARTY.  THE FIGURE FADES AWAY."
+	RedrawView
+	Call CallRedraw
+	Return
+
+WellSecretDoor:
+	Save 2 GroundKind
+	Gosub UpdateSky
+	Call CallRedraw
+	Print "JUST ABOVE THE WATERLINE, A SECRET DOOR HAS BEEN LEFT AJAR IN THE SOUTH WALL OF THE WELL.  DO YOU WANT TO CLIMB UP THE RUNGS?"
+	Gosub YesOrExit
+	Save 0 InWell
+	Print "YOU MAKE THE LONG, ARDUOUS CLIMB UP THE WELL."
+	LoadFiles 29 255 255
+	LoadFiles 3 20 1
+	Save 1 GroundKind
+	Gosub UpdateSky
+	Call CallRedraw
+	Goto event1
+
+WellApproach:
+	Gosub ExitIfWellCleared
+	Arith 1 Scratch2 Scratch2
+	Compare Search 1
+	IfEq
+	Goto MonstersAttack
+	Exit
+
+WaitingKobolds:
+	Gosub ExitIfWellCleared
+	Gosub ShowKobolds
+	Print "YOU STUMBLE ON SOME WAITING KOBOLDS!"
+	Gosub ShortPause
+	Goto WellFight
+
+WellPlaza:
+	AndOr WildFlags 1 AuxMember
+	IfNe
+	Goto ClimbDownWell
+
+MonstersAttack:
+	Save 0 Scratch4
+	Gosub ShowKobolds
+	Print "MONSTERS FROM THE SURROUNDING BUILDINGS ATTACK YOU."
+
+WellFight:
+	Gosub ExitIfWellCleared
+	Gosub PressToContinue
+	Save Scratch2 MaxDist
+	Save 67 Morale
+	ClearMonsters
+	LoadMonster 0 6 0
+	LoadMonster 1 3 1
+	Combat
+	Compare CombatEnd 128
+	IfGe
+	Goto AfterCombat
+	Compare Scratch1 250
+	IfEq
+	Goto WellCleared
+	Compare Scratch4 1
+	IfLt
+	Print "A BAND OF KOBOLDS CLIMBS FROM THE WELL AND ATTACKS."
+	IfEq
+	Print "A BAND OF KOBOLDS CLIMBS FROM THE WELL BEHIND YOU AND ATTACKS."
+	SetupMonster 0 2 0
+	Delay
+	Approach
+	Delay
+	Approach
+	Save 25 AuxMember
+	Gosub PauseLoop
+	Save 250 Scratch1
+	Goto WellFight
+
+WellCleared:
+	AndOr WildFlags 1 WildFlags
+	Exit
+
+CheckEncounterCount:
+	Compare EncounterCount 10
+	IfLt
+	Goto RandomEncounter
+	Save 255 EncounterCount
+	Exit
+
+RandomEncounter:
+	Random 2 Scratch7
+	OnGoto Scratch7 3 NameGnolls NameKobolds NameLizardmen
+	GetTable EncMonsterDistTable Scratch7 MonsterDist
+	GetTable EncTable2 Scratch7 Scratch8
+	GetTable EncTable3 Scratch7 AuxEncResult
+	GetTable EncTable4 Scratch7 AuxEncResult2
+	GetTable EncTable5 Scratch7 AuxEncMonster2
+	GetTable EncTable6 Scratch7 AuxEncTemp
+	Compare EncounterMode 200
+	IfEq
+	Goto FaceToFace
+	PartySurprise AuxMember AuxRoll
+	Surprise AuxMember AuxRoll 0 0
+	OnGoto Surprise 4 BloodthirstyMonsters SurprisedBy SurprisedParty FaceToFace
+
+SurprisedBy:
+	SetupMonster AuxEncMonster2 2 Scratch8
+	Delay
+	Approach
+	Delay
+	Approach
+	Print "YOU ARE SURPRISED BY "
+	Print str AuxText
+	Gosub PressToContinue
+	Save 0 MaxDist
+	Gosub EncounterFight
+	Goto AfterCombat
+
+NameGnolls:
+	Save "GNOLLS " str AuxText
+	Return
+
+NameKobolds:
+	Save "KOBOLDS. " str AuxText
+	Return
+
+NameLizardmen:
+	Save "LIZARDMEN. " str AuxText
+	Return
+
+BloodthirstyMonsters:
+	Random 1 AuxMember
+	Compare AuxMember 1
+	IfLt
+	Goto AvoidedBy
+	Save "YOU SEE SOME BLOODTHIRSTY " str AuxMonsterName
+	Save str AuxText str AuxNameCopy2
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Arith 9 AuxEncTemp AuxEncTemp
+	OnGoto AuxMember 4 Done EncounterFight DropOff EncounterFight
+
+FaceToFace:
+	Save "YOU ARE SUDDENLY FACE TO FACE WITH ARMED " str AuxMonsterName
+	Save str AuxText str AuxNameCopy6
+	EncounterMenu AuxEncMonster2 0 Scratch8 AuxMember 0 2 0 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	OnGoto AuxMember 4 Done EncounterFight DropOff ParlayMonsters
+
+AvoidedBy:
+	Save "YOU ARE BEING AVOIDED BY SOME " str AuxMonsterName
+	Save str AuxText str AuxNameCopy3
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Arith 10 AuxEncTemp AuxEncTemp
+	OnGoto AuxMember 4 Done EncounterFight DropOff ParlayMonsters
+
+SurprisedParty:
+	Save "YOU HAVE SURPRISED A PARTY OF " str AuxMonsterName
+	Save str AuxText str AuxNameCopy3
+	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 2 2 1 4 str AuxMonsterName "" "" AuxEncResult AuxEncResult2
+	Arith 20 AuxEncTemp AuxEncTemp
+	OnGoto AuxMember 4 Done FightSurprised Done ParlayMonsters
+
+SicklyKobolds:
+	Random 20 AuxSightText
+	Compare AuxSightText 15
+	IfNe
+	Exit
+	Compare KoboldBandDone 255
+	IfEq
+	Exit
+	SetupMonster 0 2 0
+	Delay
+	Approach
+	Delay
+	Approach
+	Print "YOU SPOT A SMALL BAND OF SICKLY KOBOLDS CAREFULLY PICKING ITS WAY THROUGH THE RUBBLE.  WHEN THEY SPOT YOU, THEY STOP AND STARE IN SURPRISE."
+	Gosub PressToContinue
+	EncounterMenu 0 2 0 AuxMember 0 2 2 2 4 "THE KOBOLDS ARE TRYING TO SNEAK OFF." "" "" 0 0
+	OnGoto AuxMember 4 Done SicklyKoboldsFight DropOff SicklyKoboldsParlay
+
+SicklyKoboldsFight:
+	Save 0 Surprise
+	Save 25 Morale
+	ClearMonsters
+	LoadMonster 0 2 0
+	LoadMonster 1 4 1
+	Combat
+	Save 255 KoboldBandDone
+	Exit
+
+SicklyKoboldsParlay:
+	Parlay 0 0 0 0 0 AuxParlay
+	Print "THE KOBOLDS FAWN ON YOU PATHETICALLY.  'PLEASE, OH PLEASE NOBLE ONES, DON'T HURT US,' THEY BEG.  'WE WERE SENT ON A SCOUTING MISSION BY OUR KING.  RUMORS OF A WONDROUS POOL CAME TO HIM IN HIS LAIR."
+	Gosub PressToContinue
+	Print "WE ARE ALL THAT REMAINS OF THE MIGHTY BAND THAT WAS SENT WEST TO TEST THE TALES.  WE MEAN YOU NO HARM.  WE ONLY SEEK TO RETURN TO OUR FAMILIES.'  (WHAT DO YOU DO?)"
+	HMenu AuxMember 3 "RELEASE THEM?" "FIGHT?" "QUESTION THEM?"
+	OnGoto AuxMember 2 KoboldsScamper SicklyKoboldsFight
+	Print "THE KOBOLDS COLLAPSE INTO A PATHETIC, MEWING HEAP. 'PLEASE, OH PLEASE DON'T HURT US,' THEY WAIL.  'WE KNOW NOTHING.  WE ARE POOR LOST SOULS LOOKING FOR OUR HOMES.' (WHAT DO YOU DO?)"
+	HMenu AuxMember 2 "RELEASE THEM?" "FIGHT THEM?"
+	OnGoto AuxMember 2 KoboldsScamper SicklyKoboldsFight
+
+KoboldsScamper:
+	Print "THE KOBOLDS SCAMPER QUICKLY AWAY.  JUST BEFORE PASSING OUT OF SIGHT, ONE TURNS AND RAISES HIS HAND IN A GESTURE, AS IF TO WAVE FAREWELL."
+	Save 255 KoboldBandDone
+	Goto Done
+
+LizardPatrol:
+	AndOr WildFlags 8 AuxMember
+	IfNe
+	Exit
+	SetupMonster 57 0 57
+	Print "A LIZARDMAN LEADS A PACK OF GIANT LIZARDS ON PATROL BEFORE A DOOR THAT HAS BEEN NAILED CLOSED.  SEEING YOU, THE MONSTERS ATTACK!"
+	Gosub PressToContinue
+	Save 0 Surprise
+	Save 75 Morale
+	ClearMonsters
+	LoadMonster 57 1 57
+	LoadMonster 59 4 59
+	Combat
+	Compare CombatEnd 128
+	IfLt
+	AndOr WildFlags 8 WildFlags
+	Exit
+
+NailedDoor:
+	AndOr WildFlags 16 AuxMember
+	IfNe
+	Exit
+	Save 255 HoldMove
+	Print "THE DOOR HAS BEEN NAILED SHUT.  WILL YOU FORCE IT OPEN?"
+	Gosub YesOrExit
+	Print "THE DOOR IS FREED."
+	AndOr WildFlags 16 WildFlags
+	Save 0 HoldMove
+	Exit
+
+SeerWoman:
+	AndOr WildFlags 2 AuxMember
+	IfNe
+	Goto HiddenArmor
+	Picture 5
+	Print "A WIDE-EYED WOMAN IS SEATED ON A RUG.  AT YOUR ENTRY, SHE STANDS. 'GREETINGS BOLD ONES, I HAVE LONG AWAITED YOUR COMING.  MY TIME HERE IS SHORT FOR THE WORLD ENTERS A NEW AGE."
+	Gosub PressToContinue
+	Print "AN EVIL SPIRIT FROM AN UNHOLY POOL GUIDES YOUR ENEMIES. IT HIDES BEHIND A FAIR COUNTENANCE. BE NOT DECEIVED.' WITH THAT, THE WOMAN IS GONE."
+	Picture 255
+	AndOr WildFlags 2 WildFlags
+	Exit
+
+HiddenArmor:
+	AndOr WildFlags 4 AuxMember
+	IfNe
+	Exit
+	Compare Search 1
+	IfNe
+	Exit
+	Print "BENEATH A RUG YOU FIND A COMPARTMENT CONTAINING ARMS AND ARMOR.  DO YOU TAKE THEM?"
+	Gosub YesOrExit
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 58
+	Combat
+	AndOr WildFlags 4 WildFlags
+	Exit
+
+AfterCombat:
+	Compare CombatEnd 128
+	IfGt
+	Goto DropOff
+	Compare CombatEnd 1
+	IfLt
+	Goto CountEncounter
+	Compare Beaten 0
+	IfEq
+	Exit
+
+CountEncounter:
+	Compare EncounterCount 255
+	IfNe
+	Arith 1 EncounterCount EncounterCount
+	Goto Done
+
+FightSurprised:
+	Save 2 Surprise
+
+EncounterFight:
+	PartyStrength AuxPartyStrength
+	Save 0 AuxTemp9
+	Save AuxEncTemp Morale
+	Compare Scratch7 1
+	IfLt
+	Arith AuxPartyStrength 3 AuxPartyStrength
+	IfGt
+	Arith AuxPartyStrength 4 AuxPartyStrength
+	IfNe
+	Goto LoadEncounter
+	Arith AuxPartyStrength 2 AuxPartyStrength
+	Save 3 AuxTemp9
+
+LoadEncounter:
+	Compare AuxPartyStrength 0
+	IfEq
+	Save 1 AuxPartyStrength
+	ClearMonsters
+	Compare AuxTemp9 0
+	IfNe
+	LoadMonster 1 3 1
+	LoadMonster Scratch8 AuxPartyStrength Scratch8
+	Combat
+	Goto AfterCombat
+
+DropOff:
+	Random 3 Facing
+	Random 7 AuxTemp9
+	Save 1 NoCoords
+	Save 1 NoCoords
+	GetTable DropOffXTable AuxTemp9 PartyX
+	GetTable DropOffYTable AuxTemp9 PartyY
+	Print ""
+	Call CallRedraw
+	Goto event1
+
+Done:
+	RedrawView
+	Save 255 Portrait
+	Call CallRedraw
+	Exit
+
+ParlayMonsters:
+	Save 0 Surprise
+	Parlay 10 20 20 20 30 AuxParlay
+	Random 30 AuxRoll2
+	Arith AuxParlay AuxRoll2 AuxParlay
+	Arith AuxParlay SelReaction AuxParlay
+	Compare AuxParlay 95
+	IfLt
+	Goto MonstersOffended
+	Print "'WE HAVE TO KEEP THIS AREA FREE OF INTRUDERS -- BOSS'S ORDERS.  WE'LL LET YOU GO THIS TIME.  BUT IF YOU COME BACK, YOU'LL FACE BIG TROUBLE.' THE MONSTERS LEAVE."
+	Goto Done
+
+MonstersOffended:
+	Print "YOU HAVE OFFENDED THE "
+	Print str AuxText
+	Print "THEY ATTACK."
+	Compare AuxParlay 65
+	IfLt
+	Save 99 AuxEncTemp
+	Goto EncounterFight
+
+ClimbDownWell:
+	Print "RUNGS ARE SET IN THE SIDES OF THE WELL WALL.  DO YOU WANT TO CLIMB DOWN?"
+	Gosub YesOrExit
+	Save 1 InWell
+	Print "YOU SLOWLY CLIMB DOWN THE SLIPPERY RUNGS."
+	LoadFiles 32 2 255
+	LoadFiles 18 17 1
+	Goto WellSecretDoor
+
+PlazaWander:
+	Random 9 AuxMember
+	Compare AuxMember 1
+	IfEq
+	Print "YOU WANDER IN THE PLAZA NEAR KUTO'S WELL."
+	Exit
+
+ShortPause:
+	Save 50 AuxMember
+
+PauseLoop:
+	Arith 1 AuxMember AuxMember
+	Compare AuxMember 100
+	IfLt
+	Goto PauseLoop
+	Return
+
+PressToContinue:
+	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Return
+
+UpdateSky:
+	Compare Hours 14
+	IfGe
+	Save 8 Sky
+	IfLt
+	Save 11 Sky
+	Compare InWell 1
+	IfNe
+	Save 10 SkyInside
+	IfNe
+	Save 65 SetSkyShade
+	IfEq
+	Save 8 SetSkyShade
+	IfEq
+	Save 8 SkyInside
+	GetTable GroundShadeTable GroundKind SetGroundShade
+	Return
+
+YesOrExit:
+	HMenu AuxMember 2 "YES" "NO"
+	Compare AuxMember 0
+	IfEq
+	Return
+	Exit
+
+ShowKobolds:
+	SetupMonster 0 Scratch2 0
+	Delay
+	Approach
+	Delay
+	Approach
+	Return
+
+ExitIfWellCleared:
+	AndOr WildFlags 1 AuxMember
+	IfNe
+	Exit
+	Return

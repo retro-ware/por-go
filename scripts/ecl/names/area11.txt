@@ -1,0 +1,14 @@
+4A00 NoticesRead  # set after "NOTICES FOR TEACHERS AND STUDENTS" text; area-local reuse
+4A01 DuelOffered  # set at L_9CAC; skips arena master's duel question; area-local reuse
+4A02 DoorSignRead  # set after "MAGIC USERS ... EAST DOOR ... CLERICS WEST DOOR"; area-local reuse
+4A03 WatchCombatDone11  # 0 before city watch fight, 1 after; area-local reuse
+4A05 ArenaEntered  # set at "ROOM IS FILLED WITH DUELING PAIRS"; area-local reuse
+4A07 Temp1  # only cleared on leaving (L_A0A1); guess scratch; area-local reuse
+4A08 PartnerDeclined  # set when party says NO to "SEEK A PARTNER"; area-local reuse
+4A09 TrainerCooldown  # set 2 on meeting a class trainer, counts on each event; blocks trainers while >0 (guess); area-local reuse
+4A0F Temp2  # only cleared on leaving (L_A0A1); guess scratch; area-local reuse
+4A10 PartnerTries  # counts hireling searches, 8 = "NO ONE WHO WILL GO WITH YOU"; area-local reuse
+4A11 Temp3  # only cleared on leaving (L_A0A1); guess scratch; area-local reuse
+A168 EjectXTable  # GetTable -> PartyX after losing to watch
+A16C EjectYTable  # GetTable -> PartyY after losing to watch
+A170 HirelingTable  # GetTable -> AddNPC monster id

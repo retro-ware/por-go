@@ -1,0 +1,27 @@
+49EB LeavingTown  # set 1 before leaving the map / boarding a boat, cleared in event4
+4A01 BoatPassageBought  # set after harbor master sells passage; boat boarding needs it; area-local reuse
+4A03 WatchCombatDone0  # 0 before city watch fight, 1 after; area-local reuse
+4A05 PartyMemberFound  # set by L_AF56 when a party member's name matches str[9890] (MAD MAN, SKULLCRUSHER); area-local reuse
+4A07 TrainerVisited  # set after LoadCharacter at L_A140; cleared on leaving a building; area-local reuse
+4A09 Combat1Won  # set when fight at L_A9D6 ends with CombatEnd 1; area-local reuse
+4A0D Wager  # tavern platinum wager (InputNumber, limit 1000); area-local reuse
+4A0F BuildingEntered  # set once per building visit (L_AE89), cleared on leaving; area-local reuse
+4A10 Building2Entered  # set at L_A945, cleared on leaving; area-local reuse
+4A11 TavernEntered  # set at "YOU ARE IN A TAVERN", cleared on leaving; area-local reuse
+4A13 CityHallSeen  # set at "OUTSIDE THE CITY HALL"; area-local reuse
+4A17 TownEntered  # set 1 in event4 after first entry; area-local reuse
+4A18 ProclamationIndex  # 4AC1+1, OnGoto over proclamation texts; area-local reuse
+4A19 GamblerIndex  # saved character index [6DB1] while gambling; area-local reuse
+4A1A GamblerPlatinum  # gambler's PP during wagering, written back to [6BC3]; area-local reuse
+4A9C DirtenState  # 128 asked to accompany Dirten, 255 Dirten joined
+4AC4 BoatDestination  # HMenu SOKAL/EAST/WEST/BAY/NONE; picks NewECL target
+4AC5 TourDone  # set at Rolf's tour start (L_B071); <1 starts tour
+4AC6 OnBoat  # set 1 on boarding a boat
+B592 TourStopKinds  # GetTable -> [6E7C], OnGoto over tour stops
+B5B4 TourStopX  # GetTable -> [6E7A] tour position
+B5D6 TourStopY  # GetTable -> [6E7B] tour position
+B5F8 TourStopFacing  # GetTable -> Facing
+B61A EjectXTable  # GetTable -> PartyX after losing to watch
+B61E EjectYTable  # GetTable -> PartyY after losing to watch
+B622 DuelMonsterTable  # GetTable -> [9805..9809] tavern brawl monsters (guess)
+B628 DuelCountTable  # GetTable -> [980B..980E] paired counts (guess)

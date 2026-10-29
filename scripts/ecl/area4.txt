@@ -1,0 +1,693 @@
+RollSurprise:
+	PartySurprise Scratch8 Scratch9
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Arith 1 Scratch9 Scratch9
+	Surprise Scratch8 Scratch9 0 0
+	Compare AlarmEndHour 0
+	IfNe
+	AndOr Surprise 1 Surprise
+	Compare Surprise 3
+	IfEq
+	Save 0 Surprise
+	Compare Surprise 1
+	Return
+
+CheckAlarm:
+	Compare AlarmEndHour 1
+	IfLt
+	Return
+	Save Hours AuxRoll
+	CompareAnd Hours 0 AlarmHour 23
+	IfEq
+	Save 24 AuxRoll
+	Compare AuxRoll AlarmEndHour
+	IfLt
+	Goto AlarmStillOn
+	Compare TenMinutes AlarmMinute
+	IfLt
+	Goto AlarmStillOn
+	Save 0 AlarmEndHour
+	Compare 0 1
+	Return
+
+AlarmStillOn:
+	Compare Search 1
+	IfEq
+	Goto AlarmSounding
+	Random 9 AuxRoll
+	Compare AuxRoll 0
+	IfNe
+	Goto AlarmOnReturn
+
+AlarmSounding:
+	Print "AN ALARM IS SOUNDING."
+	Delay
+
+AlarmOnReturn:
+	Compare 1 0
+	Return
+
+DelayRaiseAlarm:
+	Delay
+
+RaiseAlarm:
+	Compare AlarmEndHour 0
+	IfEq
+	Print "AN ALARM STARTS RINGING!"
+	Delay
+	Save Hours AlarmHour
+	Save TenMinutes AlarmMinute
+	Arith 1 AlarmHour AlarmEndHour
+	Return
+
+YesNoMenu:
+	HMenu Scratch10 2 "YES" "NO"
+	Print " "
+	Compare Scratch10 0
+	Return
+
+PressToContinue:
+	HMenu Scratch9 1 "PRESS BUTTON OR <RETURN> TO CONTINUE"
+	Print " "
+	Return
+
+SetSky:
+	Save 11 Scratch1
+	Save 9 SkyInside
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch1
+	Save Scratch1 Sky
+	Return
+
+event0:
+	Gosub SetSky
+	AndOr CastleRoomFlags 127 CastleRoomFlags
+	AndOr BaneTempleFlags 3 Scratch10
+	IfNe
+	AndOr CastleFlags 254 CastleFlags
+	Compare LeftMap 0
+	IfEq
+	Exit
+	Call CallStepForward
+	Save 255 HoldMove
+	NewECL 3
+
+event1:
+	Gosub CheckAlarm
+	IfLt
+	Goto RoomEvents
+	AndOr Cell 64 Scratch10
+	IfNe
+	Goto RoomEvents
+	Save 2 Scratch1
+	Compare Search 0
+	IfEq
+	Save 20 Scratch1
+	AndOr Cell 32 Scratch10
+	IfNe
+	Arith Scratch1 Scratch1 Scratch1
+	Random Scratch1 Scratch10
+	Compare Scratch10 0
+	IfEq
+	Goto event3
+
+RoomEvents:
+	AndOr Cell 31 Scratch1
+	OnGoto Scratch1 10 Done FighterBuilding ArmedManAttacks PigstyBarracks PaperOnGround Armory Done Kitchen RecordsBuilding ScribesHall
+
+event2:
+	Save 0 RestEvery
+	Save 10 RestChance
+	Compare AlarmEndHour 0
+	IfEq
+	Exit
+	AndOr Cell 64 Scratch10
+	IfNe
+	Exit
+	Save 1 RestEvery
+	Save 17 RestChance
+
+Done:
+	RedrawView
+	Call CallRedraw
+	Exit
+
+event4:
+	Gosub SetSky
+	Save 1 NoCoords
+	Compare AreaKind 4
+	IfEq
+	Exit
+	LoadFiles 4 2 255
+	Exit
+
+FleeCombat:
+	Save 129 CombatEnd
+
+AfterCombat:
+	Compare CombatEnd 0
+	IfEq
+	Return
+	Gosub RaiseAlarm
+	AndOr CastleFlags 254 CastleFlags
+	Compare CombatEnd 129
+	IfNe
+	Return
+
+StepBack:
+	Save 255 HoldMove
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Arith Facing 2 Facing
+	Compare Facing 3
+	IfGt
+	Arith 4 Facing Facing
+	Goto Done
+
+event3:
+	Save "A PATROL OF GIANTS LED BY A HUMAN FIGHTER" str AuxEncText
+	Save 9 Portrait
+	SetupMonster 16 2 1
+	Gosub RollSurprise
+	IfNe
+	Goto PatrolSighted
+	Print str AuxEncText
+	Print " SURPRISES YOU."
+	AndOr BaneTempleFlags 3 Scratch10
+	IfNe
+	Goto BlasphemersAttack
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto PatrolQuestions
+	Print " 'THAT'S THEM! GET THEM!'"
+	Goto PatrolAdvances
+
+BlasphemersAttack:
+	Print "'BLASPHEMERS! GET THEM!'"
+	Save 255 Portrait
+	Goto PatrolFight
+
+PatrolSighted:
+	Print "YOU SEE A"
+	Print str AuxSightText
+	AndOr BaneTempleFlags 3 Scratch10
+	IfEq
+	Goto PatrolNoAlarm
+	Print ". THE LEADER YELLS 'SACRILEGIOUS SCUM!'"
+	Goto PatrolAdvances
+
+PatrolNoAlarm:
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto PatrolQuestions
+
+PatrolSeesYou:
+	Print ". THE LEADER SEES YOU. 'THAT'S THEM!'"
+
+PatrolAdvances:
+	Gosub PressToContinue
+	EncounterMenu 16 2 1 Scratch10 0 0 0 1 0 "THEY ADVANCE, WEAPONS READY" "" "" 12 9
+	Save 255 Portrait
+	OnGoto Scratch10 4 Done PatrolFight FleeCombat PatrolFight
+
+PatrolQuestions:
+	Save 0 Surprise
+	Print "YOU SEE A"
+	Print str AuxSightText
+	Gosub PressToContinue
+	EncounterMenu 16 2 1 Scratch10 0 3 0 3 4 "'WHAT ARE YOU DOING HERE?'" "THE LEADER ADVANCES." "" 12 9
+	Save 255 Portrait
+	OnGoto Scratch10 3 Done PatrolFight FleeCombat
+	Print "WHAT ARE YOU DOING HERE?"
+	Parlay 0 1 1 2 0 Scratch10
+	OnGoto Scratch10 3 AlertSorry PatrolIntruders AskPassword
+
+PatrolFight:
+	Delay
+	RedrawView
+	Save 60 Morale
+	Save 255 Portrait
+	ClearMonsters
+	LoadMonster 75 1 11
+	LoadMonster 55 5 55
+	Combat
+	Gosub AfterCombat
+	Exit
+
+PatrolIntruders:
+	Print "'WELL BOYS, I THINK WE HAVE THE INTRUDERS HERE. GET THEM!'"
+	Return
+
+AskPassword:
+	Print "'ALL RIGHT, THEN. WHAT IS TODAY'S PASSWORD?'"
+	InputString 6 str AuxInputText
+	Compare "HARASH" str AuxInputText
+	Goto CheckAnswer
+
+AlertSorry:
+	Print "'I'M SORRY, SIR, THERE'S AN ALERT. "
+
+AskAuthority:
+	Print "ON WHOSE AUTHORITY ARE YOU HERE?'"
+	NewLine
+	InputString 12 str AuxInputText
+	Compare "TYRANTHRAXUS" str AuxInputText
+
+CheckAnswer:
+	IfNe
+	Goto Imposters
+	Print "WITH A NOD OF THE HEAD YOU ARE LEFT ALONE."
+	Goto Done
+
+Imposters:
+	Print "'WHAT? I THINK YOU SCUM ARE IMPOSTERS!'"
+	Return
+
+ArmedManAttacks:
+	AndOr CastleFlags2 8 Scratch10
+	IfNe
+	Exit
+	Save 52 Portrait
+	SetupMonster 16 0 1
+	Save 255 Portrait
+	Print "YOU CONFRONT AN ARMED MAN WHO IMMEDIATELY ATTACKS YOU."
+	Gosub DelayRaiseAlarm
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster 84 1 11
+	Combat
+	Gosub AfterCombat
+	AndOr CastleFlags2 8 CastleFlags2
+	Exit
+
+FighterBuilding:
+	AndOr CastleFlags2 8 Scratch10
+	IfNe
+	Exit
+	Compare AlarmEndHour 0
+	IfNe
+	Goto DoorSlams
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto FighterConfronts
+
+DoorSlams:
+	Print "THE DOOR OF THE BUILDING YOU ARE PASSING SLAMS. "
+	Gosub DelayRaiseAlarm
+	Goto FourGiantsCharge
+
+FighterConfronts:
+	Save 0 Surprise
+	Print "A FIGHTER EMERGES FROM THE BUILDING NEARBY AND CONFRONTS YOU."
+	Save 52 Portrait
+	Gosub PressToContinue
+	EncounterMenu 16 0 1 Scratch10 0 4 0 4 4 "'WHAT ARE YOU DOING HERE?'" "" "" 9 9
+	Save 255 Portrait
+	OnGoto Scratch10 3 Done FighterHitsButton FleeCombat
+	Print "'WHAT ARE YOU DOING HERE?', HE REPEATS."
+	Parlay 0 2 2 1 0 Scratch10
+	Compare Scratch10 2
+	IfEq
+	Goto FighterRetreats
+	Print ""
+	OnGoto Scratch10 2 AskAuthority AskPassword
+
+FighterHitsButton:
+	Print "HE LUNGES FOR THE DOOR AND HITS A BUTTON. THEN HE TURNS AND FACES THE PARTY WITH SWORD DRAWN. 'IN A MOMENT A PATROL WILL BE HERE. IF YOU STAY TO FIGHT ME YOU WILL DIE.'"
+	HMenu Scratch10 2 "STAY AND FIGHT" "RUN"
+	Gosub RaiseAlarm
+	OnGoto Scratch10 2 FighterFight FleeCombat
+
+FighterFight:
+	Save 50 Morale
+	AndOr CastleFlags2 16 Scratch10
+	IfNe
+	Goto LoadFighter
+	Print "AS YOU START TO ATTACK HIM, FOUR GIANTS BURST OUT OF A NEARBY BUILDING."
+
+LoadFighter:
+	ClearMonsters
+	LoadMonster 84 1 11
+	Compare Scratch10 0
+	IfEq
+	LoadMonster 56 4 56
+	Combat
+	Gosub AfterCombat
+	AndOr CastleFlags2 8 CastleFlags2
+	AndOr CastleFlags2 16 CastleFlags2
+	Save 9 Portrait
+	SetupMonster 16 2 1
+	Print "A PATROL ROUNDS THE CORNER.."
+	Goto PatrolSeesYou
+
+FighterRetreats:
+	Print "HE QUICKLY RETREATS THROUGH THE DOOR AND SLAMS IT, YELLING, 'INTRUDERS!'"
+	Gosub DelayRaiseAlarm
+
+FourGiantsCharge:
+	AndOr CastleFlags2 16 Scratch10
+	IfNe
+	Goto Done
+	Print "A GROUP OF FOUR GIANTS CHARGE OUT OF A NEARBY BUILDING."
+	Gosub PressToContinue
+	Picture 255
+	EncounterMenu 56 2 56 Scratch10 0 0 0 1 0 "THEY COME RUNNING TOWARD YOU." "" "" 12 12
+	OnGoto Scratch10 3 Done GiantsFight FleeCombat
+
+GiantsFight:
+	ClearMonsters
+	Save 80 Morale
+	LoadMonster 56 4 56
+	Combat
+	Gosub AfterCombat
+	AndOr CastleFlags2 16 CastleFlags2
+	Exit
+
+PigstyBarracks:
+	Print "YOU ENTER A ROOM THAT MORE RESEMBLES A PIGSTY THAN THE BARRACKS IT IS. "
+	AndOr CastleRoomFlags 64 Scratch10
+	IfNe
+	Exit
+	AndOr CastleFlags2 16 Scratch10
+	IfNe
+	Exit
+	Print "IN THE ROOM ARE FOUR GIANTS."
+	Gosub PressToContinue
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto BarracksGiants
+	Compare AlarmEndHour 0
+	IfNe
+	Goto ThemIntruders
+
+BarracksGiants:
+	EncounterMenu 56 2 56 Scratch10 0 3 0 3 4 "THE GIANTS LOOK UP AT YOU." "" "" 12 12
+	OnGoto Scratch10 3 Done GiantsFight FleeCombat
+	Print "'WHAT YA DOIN' HERE?'"
+	Parlay 0 1 2 2 3 Scratch10
+	OnGoto Scratch10 4 GiantsGivePaper GiantsReadList GetLostWimp ThreatenUs
+
+GiantsGivePaper:
+	Print "'SORRY, SIR. YEAH, WE CAN GET YA TO THE BOSS. THIS PAPER HAS THE PASSWORDS.'"
+	Goto ShowPasswords
+
+GiantsReadList:
+	Print "'WE DO SO KNOW THE PASSWORDS! YOU ALWAYS THINK YOU'RE SO SMART. LET'S SEE IF YOU CAN READ TODAY'S LIST.'"
+
+ShowPasswords:
+	Gosub PressToContinue
+	Print ""
+	AndOr CastleFlags2 32 CastleFlags2
+	AndOr CastleRoomFlags 64 CastleRoomFlags
+	LoadFiles 255 16 255
+	Print ""
+	Protection ProtectionStart
+	Print "TODAY'S PASSWORD IS  "
+	Protection ProtectionPassword
+	NewLine
+	Print "THE GATE PASSWORD IS "
+	Protection ProtectionGatePassword
+	LoadFiles 255 2 255
+	Gosub PressToContinue
+	LoadFiles 24 25 1
+	Goto Done
+
+GetLostWimp:
+	Print "'GET LOST, WIMP! IF YA DON'T BEAT IT WE'LL BEAT YOU! HA! HA!' THE GIANT LEADER POKES THE GIANT NEXT TO HIM, 'BEAT IT, BEAT THEM! GET IT?!'"
+	HMenu Scratch10 2 "STAY" "LEAVE"
+	OnGoto Scratch10 2 SaidGetLost StepBack
+
+SaidGetLost:
+	Print "'I SAID GET LOST!' "
+
+GiantsAdvance:
+	Print "THE GIANT READIES HIS WEAPON AND ADVANCES. THE OTHERS FOLLOW SUIT."
+	Goto GiantsFight
+
+ThreatenUs:
+	Print "'GO AHEAD THREATEN US! TEAR OUT OUR HEARTS! CUT OFF OUR HEADS! SLICE OPEN OUR BELLIES... IF YOU CAN. "
+	Goto GiantsAdvance
+
+ThemIntruders:
+	Print "'HEY LOOK! IT MUST BE THEM INTRUDERS.'"
+	Gosub PressToContinue
+	EncounterMenu 56 2 56 Scratch10 0 0 0 1 0 "'GET EM!'" "" "" 12 12
+	OnGoto Scratch10 4 Done GiantsAdvance FleeCombat GiantsAdvance
+
+PaperOnGround:
+	AndOr CastleFlags2 32 Scratch10
+	IfNe
+	Exit
+	AndOr CastleFlags2 16 Scratch10
+	CompareAnd Scratch10 16 Search 1
+	IfNe
+	Exit
+	Print "ON THE GROUND YOU FIND A PEACE OF PAPER THAT SAYS:"
+	Goto ShowPasswords
+
+Armory:
+	AndOr ArmoryVisited 1 Scratch10
+	IfNe
+	Goto TakeArmoryLoot
+	Print "YOU HAVE ENTERED AN ARMORY. INSIDE IS A LARGE ASSORTMENT OF ARMOR AND WEAPONS."
+	Gosub PressToContinue
+	AndOr ArmoryVisited 1 ArmoryVisited
+
+TakeArmoryLoot:
+	Print "DO YOU WANT TO TAKE ANYTHING?"
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 33
+	Combat
+	Goto TakeArmoryLoot
+
+Kitchen:
+	AndOr CastleFlags2 128 CastleFlags2
+	IfNe
+	Exit
+	Picture 73
+	Print "YOU ENTER A ROOM THAT REEKS OF SMOKE AND BURNED FOOD. YOU SEE THREE HUMAN SLAVES COOKING MEAT, PEELING POTATOES, AND BEING BEATEN BY VISCIOUS LOOKING GNOLL."
+	Gosub PressToContinue
+
+KitchenMenu:
+	VMenu Scratch10 "WHAT DO YOU DO?" 3 "KILL THE OVERSEER AND FREE THE SLAVES" "GO BACK OUTSIDE" "TALK TO THE OVERSEER"
+	OnGoto Scratch10 3 FreeSlaves LeaveKitchen TalkOverseer
+
+FreeSlaves:
+	Print "THE GNOLL TURNS TO FLEE. AS HE RUNS BY, ONE OF THE SLAVES TRIPS HIM. YOU ADVANCE AND CUT THE OVERSEER'S THROAT."
+	Gosub PressToContinue
+	RedrawView
+	Picture 255
+	Print "TWO OF THE SLAVES RUN QUICKLY OUT THE DOOR. THE THIRD APPROACHES YOU WITH TEARS OF GRATITUDE IN HIS EYES. 'I THANK YOU FOR FREEING ME. "
+	Gosub PressToContinue
+	Print "BEFORE I LEAVE LET ME HELP YOU AS BEST I CAN.' HE TAKES A SLIP OF PAPER FROM THE POUCH OF THE DEAD GNOLL. 'HERE, YOU WILL NEED THIS.'"
+	Gosub PressToContinue
+	LoadFiles 255 16 255
+	Print ""
+	Protection ProtectionStart
+	Print "YOU LOOK AT THE WRITING..."
+	NewLine
+	Protection ProtectionGatePassword
+	LoadFiles 255 2 255
+	Gosub PressToContinue
+	LoadFiles 24 25 1
+	Print "'IT IS TODAY'S PASSWORD AT THE MAIN GATE INTO THE HEDGE MAZE. ALAS, I CAN NOT HELP YOU WITH THAT FOR I HAVE NOT BEEN INSIDE. BUT I HAVE HEARD THE MAZE IS DEADLY!'"
+	Gosub PressToContinue
+	AndOr CastleFlags2 128 CastleFlags2
+	Exit
+
+LeaveKitchen:
+	AndOr CastleFlags 1 Scratch10
+	IfEq
+	Goto FleeCombat
+	Goto StepBack
+
+TalkOverseer:
+	AndOr CastleRoomFlags 1 Scratch10
+	IfNe
+	Goto BoilingOil
+	AndOr CastleRoomFlags 1 CastleRoomFlags
+	Print "THE OVERSEER TURNS TOWARD YOU BLUDGEON IN HAND. 'GO ON! GET OUT OF MY KITCHEN OR I'LL THROW BOILING OIL ON YOU!'"
+	Gosub PressToContinue
+	Goto KitchenMenu
+
+BoilingOil:
+	Print "'I SAID GET OUT!' THE GNOLL GRABS A POT FROM THE FIRE AND THROWS ITS CONTENTS AT YOU."
+	Gosub PressToContinue
+	Damage 1 2 6 0 50
+	Goto KitchenMenu
+
+ScribesHall:
+	Save 0 Surprise
+	AndOr CastleRoomFlags 2 Scratch10
+	IfNe
+	Goto SearchReports
+	Compare Hours 17
+	IfGt
+	Goto EmptyScribesHall
+	Compare AlarmEndHour 0
+	IfNe
+	Goto EmptyScribesHall
+	Print "YOU ENTER A BRIGHTLY LIT BUILDING WHICH REEKS OF TALLOW AND LEATHER. YOU SEE SIX SCRIBES BUSILY WRITING DOWN THE REPORTS OF A COUPLE OF OFFICERS."
+	Gosub PressToContinue
+	Save 53 Portrait
+	AndOr CastleFlags 1 Scratch10
+	IfNe
+	Goto OfficerAsks
+	EncounterMenu 24 2 7 Scratch10 0 3 0 3 0 "'YOU DON'T BELONG HERE!'" "" "" 12 12
+	Save 255 Portrait
+	Gosub RaiseAlarm
+	OnGoto Scratch10 3 Done OfficersAttack FleeCombat
+
+OfficerAsks:
+	EncounterMenu 24 2 7 Scratch10 0 3 0 3 4 "AN OFFICER LOOKS AT YOU, 'WHAT ARE YOU DOING HERE?'" "" "" 12 12
+	Save 255 Portrait
+	OnGoto Scratch10 4 Done OfficersAttack FleeCombat OfficerParlay
+
+OfficerParlay:
+	Print "WHAT ARE YOU DOING HERE?"
+	Parlay 0 1 1 2 0 Scratch10
+	Print ""
+	OnGoto Scratch10 3 AskAuthority Imposters AskPassword
+
+OfficersAttack:
+	Print "THE SIX SCRIBES DIVE FOR COVER AS THE TWO OFFICERS ATTACK."
+	Save 100 Morale
+	Delay
+	ClearMonsters
+	LoadMonster 87 2 14
+	Combat
+	Gosub AfterCombat
+	Random 4 Scratch10
+	Compare Scratch10 0
+	IfEq
+	Gosub RaiseAlarm
+	AndOr CastleRoomFlags 2 CastleRoomFlags
+	Exit
+
+EmptyScribesHall:
+	AndOr CastleRoomFlags 4 Scratch10
+	IfNe
+	Exit
+	Print "YOU ENTER A BUILDING WHICH IS FILLED WITH TABLES AND WRITING SUPPLIES. THOUGH EMPTY, THERE ARE SIGNS THAT WORK HAS BEEN DONE HERE RECENTLY."
+	Gosub PressToContinue
+	AndOr CastleRoomFlags 4 CastleRoomFlags
+	Exit
+
+SearchReports:
+	Compare Search 1
+	IfNe
+	Exit
+	Random 9 Scratch9
+	OnGoto Scratch9 3 CadornaEvidence BarbarianReport FlamingAuraNote
+	Print "YOU FIND ASSORTED REPORTS."
+	Exit
+
+CadornaEvidence:
+	AndOr CastleRoomFlags 8 Scratch10
+	IfNe
+	Goto SearchReports
+	AndOr CastleRoomFlags 8 CastleRoomFlags
+	Compare QuestCadornaTraitor 255
+	IfNe
+	Save 254 QuestCadornaTraitor
+	Print "YOU FIND HARD EVIDENCE THAT CADORNA HAS BEEN USING YOU FOR HIS OWN ENDS AND HAS BEEN SEEKING THE POOL OF RADIANCE FOR HIMSELF."
+	Gosub PressToContinue
+	Exit
+
+FlamingAuraNote:
+	AndOr CastleRoomFlags 16 Scratch10
+	IfNe
+	Goto SearchReports
+	AndOr CastleRoomFlags 16 CastleRoomFlags
+	Print "THE FOLLOWING CATCHES YOUR EYE, 'DO NOT BE FOOLED BY OUTWARD FORMS FOR YOU SHALL KNOW ME BY MY FLAMING AURA."
+	NewLine
+	Print "--TYRANTHRAXUS'"
+	Gosub PressToContinue
+	Exit
+
+BarbarianReport:
+	AndOr CastleRoomFlags 32 Scratch10
+	IfNe
+	Goto SearchReports
+	AndOr CastleRoomFlags 32 CastleRoomFlags
+	Print "YOU FIND A REPORT INDICATING THAT THE NORTHERN BARBARIANS ARE READY FOR THE TAKE OVER OF A STRONG LEADER AND THAT THE CHIEF OF THE RAVEN CLAN IS ALLIED TO TYRANTHRAXUS."
+	Gosub PressToContinue
+	Exit
+
+RecordsBuilding:
+	Print "YOU ARE IN A BUILDING FULL OF RECORDS. "
+
+ReadRecordsMenu:
+	Print "DO YOU WISH TO SPEND HOURS READING THE RECORDS?"
+	Gosub YesNoMenu
+	IfNe
+	Exit
+	Random 1 Scratch10
+	Compare AlarmEndHour 0
+	IfEq
+	Goto ReadRecords
+	Compare Scratch10 0
+	IfEq
+	Goto event3
+
+ReadRecords:
+	Compare Hours 17
+	IfGt
+	Goto ReportByProgress
+	Random 19 Scratch10
+	Compare Scratch10 3
+	IfLt
+	Goto ScribeArrives
+
+ReportByProgress:
+	OnGoto ReportsFound 3 RedWizardsReport TyranthraxusPattern NeedClearArea
+
+RedWizardsReport:
+	Save 1 ReportsFound
+	Print "YOU FIND EVIDENCE THAT THE RED WIZARDS OF THAY ARE ALLIED TO TYRANTHRAXUS."
+	Gosub PressToContinue
+	Goto ReadRecords
+
+TyranthraxusPattern:
+	Save 2 ReportsFound
+	Print "YOU ARE FINDING A PATTERN TO TYRANTHRAXUS' ACTIVITIES. AT FIRST TYRANTHRAXUS' FOLLOWERS WERE AN UNSOPHISTICATED HORDE OF ILL ORGANIZED UNHUMANS."
+	Gosub PressToContinue
+	Print "NOW THEY ARE MUCH MORE SINISTER. THE WEB OF CORRUPTION HE HAS SPREAD IS INCREDIBLE IN ITS SCOPE. HIS ULTIMATE GOAL IS TO CONQUER ALL LANDS SOUTH OF THE MOONSEA."
+	Gosub PressToContinue
+	Goto ReadRecords
+
+NeedClearArea:
+	Print "TO FIND ANYTHING MORE YOU WILL HAVE TO SPEND SO MUCH TIME THAT YOU WILL NEED TO CLEAR THE AREA FIRST."
+	Exit
+
+ScribeArrives:
+	Save 72 Portrait
+	SetupMonster 22 1 30
+	Save 255 Portrait
+	Gosub RollSurprise
+	IfLt
+	Goto AmbushScribe
+	Print "A SCRIBE WALKS INTO THE ROOM. HE SEES YOU AND LETS OUT A GASP. HE DROPS HIS BOOKS AND RUNS OUT THE DOOR."
+	Gosub DelayRaiseAlarm
+	Goto Done
+
+AmbushScribe:
+	VMenu Scratch10 "YOU SEE A SCRIBE COMING TOWARD THE BUILDING WITH AN ARM FULL OF BOOKS." 3 "RUN AWAY" "AMBUSH AND KILL HIM" "AMBUSH AND TIE HIM UP"
+	RedrawView
+	Picture 255
+	OnGoto Scratch10 2 FleeCombat KillScribe
+	Print "AS HE COMES THROUGH THE DOOR YOU KNOCK HIM OUT AND DRAG HIS FORM INTO A CORNER."
+	Gosub PressToContinue
+	Print " "
+	Goto ReadRecordsMenu
+
+KillScribe:
+	Print "AS HE COMES THROUGH THE DOOR YOU SLIT HIS THROAT. THE BODY IS DRAGGED INTO A CORNER."
+	Gosub PressToContinue
+	Print " "
+	Goto ReadRecordsMenu

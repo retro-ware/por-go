@@ -1,0 +1,39 @@
+4A00 EncounterKind  # 0 kobolds,1 displacer beasts,2 driders,3 stirges,4 lizard men,5 bandits,6 nomads,7 merchants; indexes B0xx tables; area-local reuse
+4A01 LeaderCount  # number of leader monsters in the random encounter; area-local reuse
+4A02 MonsterCount  # number of regular monsters (LoadMonster [9804] [4A02]); area-local reuse
+4A06 RiverTileIndex  # index into B26E while drawing the river; area-local reuse
+4A09 RiverTileOffset  # SaveTable offset into [D000]/[6300]; area-local reuse
+4A0D DelayCounter  # busy loop 0..100 in L_AE2E; area-local reuse
+4A0E CampFound  # set at "RECENTLY ABBANDONED CAMP"; area-local reuse
+4A0F NomadCampSeen  # tested before "LARGE NOMAD CAMP" (guess: set inside); area-local reuse
+4A13 LairFightFlags  # bits 1,2,8,16,32 lair fights won, 4 kobold prisoners freed/killed; area-local reuse
+4A14 LairRespawnTimer  # 3 after monster 61 fight, counts down; area-local reuse
+4A15 ForcedEncounter  # event3 sets 1 to force a random encounter; area-local reuse
+4A16 SavedMapX  # MapX saved on entering a 3D lair; area-local reuse
+4A17 SavedMapY  # MapY saved on entering a 3D lair; area-local reuse
+4A18 LairStartX26  # PartyX inside the lair (2/10/13); area-local reuse
+4A19 LairStartY26  # PartyY inside the lair (3/13/6); area-local reuse
+4A1E RiverFrame  # counts to 2 in river animation (L_AE2E), reset after; area-local reuse
+4A9A RiverState  # 1 river drawn/flowing, 255 river opened (RiverOpen); area-local reuse
+B019 MapEventTable1  # GetTable -> [6E7A] by index (guess: event coords)
+B036 MapEventTable2  # GetTable -> [6E7A] when [6E7B]=19 (guess)
+B04A SiteYTable  # GetTable -> [6E7A] compared with MapY
+B053 SiteXTable  # GetTable -> [6E7D] compared with MapX
+B061 SiteRangeTable  # GetTable -> [6E7B] (guess: X range per row)
+B06A SiteKindTable  # GetTable -> OnGoto over the 8 sites
+B078 SurpriseTable1  # GetTable by EncounterKind -> Surprise operand
+B080 SurpriseTable2  # GetTable by EncounterKind -> Surprise operand
+B088 StrengthDivTable  # GetTable by EncounterKind -> [9800], divides PartyStrength
+B090 LeaderEveryTable  # GetTable by EncounterKind -> [9801] monsters per leader
+B0A0 EncounterParam2  # GetTable by EncounterKind -> [9802]
+B0A8 EncounterParam3  # GetTable by EncounterKind -> [9803]
+B0B0 MonsterIdTable  # GetTable by EncounterKind -> [9804] LoadMonster id
+B0B8 MonsterPicTable  # GetTable by EncounterKind -> [9809]
+B0C0 EncounterParam5  # GetTable by EncounterKind -> [9805]
+B0C8 MoraleTable  # GetTable by EncounterKind -> [9806] Morale
+B0D0 EncounterParam7  # GetTable by EncounterKind -> [9807]
+B0D8 LeaderIdTable  # GetTable by EncounterKind -> [9808] leader monster id
+B0E0 LeaderPicTable  # GetTable by EncounterKind -> [980A]
+B162 RiverRowTable  # GetTable over 36 river rows -> [6E7F]
+B186 RiverTileTable  # GetTable -> [6E7D] tile
+B26E RiverTileTable2  # GetTable by RiverTileIndex -> [6E7D]

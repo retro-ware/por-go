@@ -1,0 +1,28 @@
+4A00 EncounterType27  # random encounter monster kind 0-8 (kobolds..minotaurs), index into encounter tables; area-local reuse
+4A01 EncounterExtraCount27  # number of second-group monsters loaded (LoadMonster [9808] count); area-local reuse
+4A02 EncounterCount27  # number of main monsters to load, computed from party strength; area-local reuse
+4A09 MapCellIndex  # scratch index into [6300] while copying map tables (guess); area-local reuse
+4A11 KoboldHordeDefeated  # set 255 after the screaming kobold horde fight; area-local reuse
+4A13 WyvernLairFlags  # bits: 1 wyvern treasure, 2/4 the two wyverns, 8/16/64 fights, 32 treasure, 128 last fight; area-local reuse
+4A15 ForceEncounter27  # event3 sets 1 to force a random encounter; 0 normal roll; area-local reuse
+4A18 LairStartX27  # random entry X into 3D lair, copied to PartyX; area-local reuse
+4A19 LairStartY27  # random entry Y into 3D lair, copied to PartyY; area-local reuse
+4AC7 TookLargeCave  # 255 = entered large cave, 0 = small cave; area-local reuse
+AB9E BlockedTerrain  # table of 8 terrain codes that stop movement (HoldMove)
+ABA6 SiteRowY  # table: Y of each special site row
+ABAB SiteX  # table: X of special sites
+ABB4 SiteRowEnd  # table: end index of sites per row
+ABB9 SiteKind  # table: site handler index (castle, kobolds, caves, ...)
+ABC2 EncSurpriseA  # per-encounter-type surprise value
+ABCB EncSurpriseB  # per-encounter-type surprise/distance value
+ABD4 EncStrength  # per-type strength value vs party strength
+ABDD EncGroupSize  # per-type divisor for extra group size
+ABEF EncData2  # per-type encounter record field -> [9802]
+ABF8 EncData3  # per-type field -> [9803]
+AC01 EncMonster  # per-type main monster id -> [9804]
+AC0A EncData5  # per-type field -> [9805]
+AC13 EncMorale  # per-type morale -> [9806]
+AC1C EncData7  # per-type field -> [9807]
+AC25 EncMonster2  # per-type second monster id -> [9808]
+ACA7 MapPatchBase  # table of 5 base offsets into [6300] (guess)
+ACAC MapPatchValues  # table of values written into [6300] (guess)

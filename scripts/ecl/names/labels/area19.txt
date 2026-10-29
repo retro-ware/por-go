@@ -1,0 +1,16 @@
+992C EmptyCaveLeave
+9972 CheckCaveState
+999C MagicMouthAsks
+9A4A StateIntentMenu
+9AEC PledgeService
+9C0D DragonFliesOff
+9C7D ChallengeDragon
+9DA0 ApologizeToDragon
+9EC4 DragonFleesUp
+9FC1 FollowDragonUp
+A046 AttackDragonFireball
+A142 AskAdvice
+A285 OfferGift
+A3C7 BottleRecovered
+A565 LeaveCave
+A568 PressReturn

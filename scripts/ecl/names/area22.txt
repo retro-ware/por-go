@@ -1,0 +1,23 @@
+4A00 TyrmorJournalFound  # set 1 after finding the journal of Tyrmor under the corpse; area-local reuse
+4A4B SecretDoorBits  # bit per secret door found; bit 128 = priest freed through the chiseled hole
+4A4C SouthGroupsBeaten  # bits of wandering groups killed (PartyY>=8 half); all 63 stops encounters
+4A4E NorthGroupsBeaten  # bits of wandering groups killed (PartyY<8 half); all 63 stops encounters
+9955 DestX  # GetTable base, GetTable [9955] [6E79] PartyX
+995F DestY  # GetTable base, GetTable [995F] [6E79] PartyY
+9969 DestFacing  # GetTable base, GetTable [9969] [6E79] Facing
+9B1B Table9B1B  # GetTable base, GetTable [9B1B] [6E7A] [6E7A]
+9B22 ByFacing9B22  # GetTable base, GetTable [9B22] Facing [6E82]
+9B91 Table9B91  # GetTable base, GetTable [9B91] [6E82] [6E7A]
+9BA4 Table9BA4  # GetTable base, GetTable [9BA4] [6E82] [6E79]
+9C95 Table9C95  # GetTable base, GetTable [9C95] [6E79] [6E82]
+9CA0 Table9CA0  # GetTable base, GetTable [9CA0] [6E79] [6E79]
+A58D GroupTable8  # GetTable by group kind -> 9808 (guess)
+A59A GroupTable0  # GetTable by group kind -> 9800 (guess)
+A5A7 GroupMonsterTable  # by group kind -> 9807, LoadMonster monster id
+A5B4 GroupTable1  # by group kind -> 9801 (guess)
+A5C1 GroupCountTable  # by group kind -> 9802, LoadMonster count (guess)
+A5CE GroupTable3  # by group kind -> 9803, LoadMonster arg (guess)
+A5DB GroupSurpriseTable1  # by group kind -> 9804, Surprise arg
+A5E8 GroupSurpriseTable2  # by group kind -> 9805, Surprise arg
+A5F5 GroupTable6  # by group kind -> 9806 (guess)
+A602 GroupPortraitTable  # by group kind -> Portrait

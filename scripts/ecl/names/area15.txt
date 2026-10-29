@@ -1,0 +1,20 @@
+4A00 StacksSignSeen  # table by stack room (6E79): set 1 after printing "LIBRARY STACKS ... SIGN READS"; area-local reuse
+4A04 BonesRoomState  # 0 unseen, 1 room with bones desc shown, 2 jar under floorboards found; area-local reuse
+4A05 BenchChamberSeen  # bitmask by room (6E79): "CHAMBER FILLED WITH ROTTED FURNITURE" printed; area-local reuse
+4A06 FrescoRoomSeen  # set 1 after "EMPTY ROOM ... FRESCOES" text; area-local reuse
+4A07 WritingHallSeen  # set 1 after "HALL ... WRITING TABLES" text; area-local reuse
+4A08 StudySeen  # set 1 after "ONCE A STUDY" text; area-local reuse
+4A09 CarrelsSeen  # table by room (6E79): "ILLUMINATORS CARRELS" text shown; area-local reuse
+4A0C StoreroomSeen  # set 1 after "STOREROOM FULL OF SUPPLIES" text; area-local reuse
+4A2F BooksFoundFlags  # bits: 1 Fyerdetha,2 Urgund,4 Lex Geographica,8 History North,16 Arts of War,32 jar,64 trash book,128 named book; 159 all taken -> spectre appears
+4A30 NamedBooksFound  # counter 0-5 indexing book titles (Meditations ... Nature of Writing)
+4A32 GardenVisits  # 0 first visit text, incremented per slime encounter, stops after 7
+993C DestX  # GetTable base, GetTable [993C] [6E82] PartyX
+9940 DestY  # GetTable base, GetTable [9940] [6E82] PartyY
+9944 DestFacing  # GetTable base, GetTable [9944] [6E82] Facing
+9B07 Table9B07  # GetTable base, GetTable [9B07] [6E82] [6E80]
+9B09 ByFacing9B09  # GetTable base, GetTable [9B09] Facing [6E7F]
+9B0D SymbolSets  # GetTable base, GetTable [9B0D] Facing SymbolSet
+9B5B Table9B5B  # GetTable base, GetTable [9B5B] [6E82] [6E7A]
+9B6E Table9B6E  # GetTable base, GetTable [9B6E] [6E82] [6E79]
+AC77 CarrelFoilBitTable  # table by carrel room -> bit of 4A31 marking its gold foil box taken

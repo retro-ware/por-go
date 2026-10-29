@@ -1,0 +1,26 @@
+4A0F BanditTreasureState  # 250 after the bandit gang falls (treasure waits), 255 taken or robbed; area-local reuse
+4A10 InWell  # 1 after climbing down the well rungs, 0 after climbing up / being released; area-local reuse
+4A12 CatacombAmbushDone  # 255 after the arrow volley in the hidden catacombs; area-local reuse
+4A13 CatacombSpot1Done  # 255 after the event at L_A113 (facing north) (guess); area-local reuse
+4A14 CatacombSpot2Done  # 255 after the event at L_A13A (facing south) (guess); area-local reuse
+4A19 KoboldBandDone  # 255 after the kobold fight or when they scamper away; area-local reuse
+4A1A EncounterMode  # 0 at event1, 200 forces the event3 (bandit) encounter variant; area-local reuse
+4A1F SecretDoorFound  # 255 after "YOU FIND A SECRET DOOR"; area-local reuse
+4A22 EncounterCount  # random encounters so far; 10+ stops them, 255 = done
+4A23 WildFlags  # bits: 1 well rungs found (L_A3D1), 2 spirit woman's warning heard, 4 searched treasure taken, 8 fight won, 16 nailed door forced
+4A24 BanditsDone  # 255 after the bandit gang is beaten or the party robbed
+4ADB GroundKind  # 0 surface, 1 near the well, 2 well bottom; index into AFED ground shades
+AFA2 EncMonsterDistTable  # random encounter table (3 entries): MonsterDist
+AFA5 EncTable2  # random encounter table: value into 6E80
+AFA8 EncTable3  # random encounter table: value into 9805
+AFAB EncTable4  # random encounter table: value into 9806
+AFAE EncTable5  # random encounter table: value into 9827
+AFB1 EncTable6  # random encounter table: value into 9807
+AFB4 DropOffXTable  # 8 random PartyX after the bandits release you
+AFBC DropOffYTable  # 8 random PartyY after release
+AFC4 ExitCellByFacing  # cell that leads out of the map per facing
+AFC7 ExitSymbolSetByFacing  # SymbolSet for the next area per facing
+AFCA ExitAreaByFacing  # NewECL area per facing
+AFCE CellEventTable  # event index per cell (event1 OnGoto)
+AFE5 SecretDoorChanceByRace  # indexed by 6B72 (race), plus Search, vs random 5
+AFED GroundShadeTable  # SetGroundShade per GroundKind (4ADB)

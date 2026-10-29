@@ -1,0 +1,1 @@
+4A87 DragonCaveFlags  # bits: 128 entered/attacked dragon, 1 dragon spoke and left, 2 Diogenes told of efreet bottle

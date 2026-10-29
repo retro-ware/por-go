@@ -1,0 +1,23 @@
+4A00 EntryPoint  # set 2 in event3 before relocating party (guess); area-local reuse
+4A0E AttackedGuards  # set at "YOU ATTACK THE GUARDS"; area-local reuse
+4A0F OutpostFought  # set after the commandant fight; area-local reuse
+4A10 NightInQuarters  # set at "IT IS NIGHT AND YOU ARE IN YOUR QUARTERS"; area-local reuse
+4A13 GivenQuarters  # set at L_B453; needed for the night scene; area-local reuse
+4A14 AlarmFightScore  # +20 per alarm fight, >=40 ends; area-local reuse
+4A17 AlarmLevel  # set 1 on alarm; guard fights grow with it; area-local reuse
+4A18 EscortedIn  # 128 at "ESCORTED INTO ZHENTIL OUTPOST"; area-local reuse
+4A19 TalkedNewPhlan  # topic: power in New Phlan; area-local reuse
+4A1A TalkedOldPhlan  # topic: Tirantikus legend; area-local reuse
+4A1B AdvisorAsked  # topic: magical items / Pool of Radiance; area-local reuse
+4A1C TalkedPolitics  # topic: Ulrich Eberhard; area-local reuse
+4A1D TopicsDiscussed  # counts conversation topics, 2 ends talk; area-local reuse
+4A1E ReachedGate  # set at "COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE"; area-local reuse
+4A59 InvitedToDinner  # set after the commandant reads the papers
+4A5A OutpostConquered  # set after killing the commandant
+994C Table994C  # GetTable base, GetTable [994C] [6E7E] [6E79]
+9965 RouteStepTable  # guess: per-step value of the escort route; GetTable base, GetTable [9965] [6E7E] [6E79]
+997E DestFacing  # GetTable base, GetTable [997E] [6E7E] Facing
+A6C9 WalkStepTable  # GetTable -> [6E79] escort walk steps
+A6D4 WalkFacingTable  # GetTable -> Facing escort walk
+B43D QuartersStepTable  # GetTable -> [6E79] walk to quarters
+B448 QuartersFacingTable  # GetTable -> Facing walk to quarters

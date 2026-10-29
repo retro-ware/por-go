@@ -1,0 +1,839 @@
+event0:
+	Save 11 Scratch8
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch8
+	Save Scratch8 Sky
+	Save 10 SkyInside
+	Compare LeftMap 0
+	IfEq
+	Exit
+	OnGoto Facing 4 ExitNorthToSlums ExitEastToSlums ExitSouth ExitWest
+
+ExitNorthToSlums:
+	Save 13 MapX
+	Save 26 MapY
+	Save 7 SymbolSet
+	NewECL 26
+
+ExitEastToSlums:
+	Save 13 MapX
+	Save 27 MapY
+	Save 7 SymbolSet
+	NewECL 26
+
+ExitSouth:
+	Call CallStepForward
+	Save 1 SymbolSet
+	NewECL 24
+
+ExitWest:
+	Exit
+
+event1:
+	AndOr Cell 127 Scratch7
+	OnGoto Scratch7 21 Done BackstabThief BackstabThief DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare DoorTrapSquare LootRoom LootRoom LootRoom LootRoom LootRoom LootRoom ThievesFlee ThiefAmbush FloorFiles JailCell SlateMazeNW MapMazeNE
+
+DoorTrapSquare:
+	Arith 3 Scratch7 Scratch9
+	GetTable TrapSquareDone Scratch9 Scratch10
+	Compare Scratch10 1
+	IfEq
+	Goto Done
+	Compare TrapSquareDone6 0
+	IfEq
+	Goto DoorTrapCheck
+	Compare Scratch9 3
+	IfEq
+	Goto DoorTrapOutcome
+
+DoorTrapCheck:
+	Gosub CheckTrap
+
+DoorTrapOutcome:
+	OnGoto TrapResult 3 DoorTrapSprung Done DoorTrapDisarmed
+
+DoorTrapDisarmed:
+	SaveTable 1 TrapSquareDone Scratch9
+	Compare TrapSquareDone6 0
+	IfNe
+	Save 2 TrapSquareDone3
+	Goto Done
+
+DoorTrapSprung:
+	OnGoto Scratch9 6 ScythingBlade PoisonGasGlass ScythingBlade ScythingBlade BladedNet ScythingBlade
+	SaveTable 1 TrapSquareDone Scratch9
+	Goto Done
+
+ScythingBlade:
+	Print "A SCYTHING BLADE DROPS ACROSS THE DOORWAY, DAMAGING ONE OF THE CHARACTERS."
+	Delay
+	Damage 1 1 6 0 60
+	Return
+
+PoisonGasGlass:
+	Print "THE PARTY HEARS THE CRACKING OF GLASS.  A POISONOUS GAS FILLS THE AIR!"
+	Delay
+	Damage 129 1 3 0 0
+	Return
+
+BladedNet:
+	Print "AFTER THE PARTY ENTERS THE ROOM A NET LACED WITH SHARP BLADES FALLS ON THE PARTY."
+	Delay
+	Damage 129 1 6 0 4
+	Return
+
+BackstabThief:
+	Compare QuestKovelThieves 0
+	IfNe
+	Goto Done
+	Compare Scratch7 LastBackstabCell
+	IfEq
+	Goto Done
+	Compare ThievesKilled 21
+	IfGe
+	Goto Done
+	Save 32 Portrait
+	SetupMonster 11 2 8
+	Delay
+	Approach
+	Delay
+	Approach
+	Save Scratch7 LastBackstabCell
+	Print "AS YOU ENTER THE ROOM A THIEF WITH A SWORD COMES OUT OF NOWHERE"
+	Random 99 Scratch1
+	Compare ThievesKilled 12
+	IfGe
+	Arith 5 Scratch1 Scratch1
+	Compare Scratch1 30
+	IfLt
+	Goto ThiefBackstabs
+	Print ".  HE TRIES TO ATTACK THE PARTY BUT YOU STOP HIM.  WHAT WILL YOU DO?"
+	HMenu Scratch4 2 "ATTACK HIM" "LET HIM GO"
+	OnGoto Scratch4 2 AttackThief Done
+
+ThiefBackstabs:
+	Print ", BACKSTABS A PARTY MEMBER THEN DISAPPEARS THROUGH THE WALL."
+	Delay
+	Save 2 Scratch1
+	Compare ThievesKilled 12
+	IfGe
+	Save 3 Scratch1
+	Damage 1 Scratch1 8 0 70
+	Goto Done
+
+AttackThief:
+	ClearMonsters
+	Save 30 Morale
+	Compare ThievesKilled 18
+	IfGe
+	LoadMonster 51 1 12
+	IfLt
+	LoadMonster 45 1 12
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto FleeBack
+	Arith 1 ThievesKilled ThievesKilled
+	Goto Done
+
+LootRoom:
+	Arith 9 Scratch7 Scratch9
+	GetTable LootRoomDone Scratch9 Scratch10
+	Compare Scratch10 1
+	IfEq
+	Goto Done
+	OnGoto Scratch9 6 LootPile CabinetsMenu RugsAndTapestries WoodenCabinet CasketTable WeaponPile
+
+LootPile:
+	AndOr RoomsLooted 1 Scratch1
+	IfNe
+	Goto Done
+	Print "PILED HERE IS VARIOUS LOOT.  THERE IS A WIDE VARIETY OF NICK NACKS FROM TARNISHED BRONZE CANDLESTICKS TO ONE OR TWO USEFUL ITEMS."
+	Delay
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 56
+	Combat
+	AndOr 1 RoomsLooted RoomsLooted
+	Goto Done
+
+CabinetsMenu:
+	Print "IN FRONT OF YOU ARE THREE CABINETS.  WHICH ONE WILL YOU EXAMINE?"
+	HMenu Scratch10 4 "A" "B" "C" "LEAVE"
+	OnGoto Scratch10 4 CabinetA CabinetB CabinetC Done
+	Compare CabinetALock 1
+	IfEq
+	Goto Done
+	Compare CabinetBLock 1
+	IfEq
+	Goto Done
+	Compare CabinetCLock 1
+	IfEq
+	Goto Done
+	Goto Done
+
+CabinetA:
+	Compare CabinetALock 1
+	IfEq
+	Goto CabinetEmpty
+	Save 0 Scratch2
+	Gosub LockedMenu
+	Compare CabinetALock 0
+	IfNe
+	Goto CabinetsMenu
+	Print "INSIDE THE CABINET YOU FIND SOME FILES.  YOU STUFF THE PAPERS INTO YOUR JOURNAL UNDER ENTRIES 23 AND 14."
+	Delay
+	Save 1 CabinetALock
+	Goto CabinetsMenu
+
+LockedMenu:
+	Save 0 LockAttempt
+	Print "IT IS LOCKED.  HOW WILL YOU OPEN THE LOCK?"
+
+OpenLockMenu:
+	HMenu Scratch1 4 "PICK" "BREAK" "CAST KNOCK" "LEAVE"
+	OnGoto Scratch1 4 PickLock BreakLock CastKnock LeaveLock
+
+CastKnock:
+	Spell 31 Scratch5 Scratch6
+	Compare Scratch5 255
+	IfNe
+	Goto KnockOpens
+	Print "NO ONE IN THE PARTY HAS THE KNOCK SPELL!  HOW WILL YOU OPEN THE LOCK?"
+	Goto OpenLockMenu
+
+KnockOpens:
+	LoadCharacter Scratch6
+	SaveTable 0 SelMemorized Scratch5
+	Print str SelName
+	Print " CASTS A KNOCK SPELL AND OPENS THE LOCK."
+	Arith 128 Scratch6 Scratch6
+	LoadCharacter Scratch6
+	SaveTable 0 CabinetALock Scratch2
+	Return
+
+PickLock:
+	GetTable CabinetALock Scratch2 Scratch3
+	Compare Scratch3 2
+	IfEq
+	Goto LockTooComplex
+	Who "WHO WILL TRY TO PICK THE LOCK?"
+	Save SelPickPockets Scratch1
+	Random 99 Scratch3
+	Compare Scratch3 Scratch1
+	IfGe
+	Goto PickLockFails
+	Print "YOU PICK THE LOCK!"
+	SaveTable 0 CabinetALock Scratch2
+	Return
+
+LockTooComplex:
+	Print "YOU HAVE ALREADY TRIED TO PICK THIS LOCK AND HAVE FOUND THAT IT IS TOO COMPLEX FOR YOU TO HANDLE."
+	Delay
+	Goto LockedMenu
+
+PickLockFails:
+	Print "YOU TRY TO PICK THE LOCK BUT IT IS TOO COMPLEX FOR YOU TO PICK.  YOU FAIL MISERABLY."
+	Delay
+	SaveTable 2 CabinetALock Scratch2
+	Goto LockedMenu
+
+BreakLock:
+	Print "WITH ONE MIGHTY SWING YOU SMASH OPEN THE LOCK MAKING ENOUGH NOISE TO WAKE THE DEAD."
+	Delay
+	SaveTable 0 CabinetALock Scratch2
+	Return
+
+LeaveLock:
+	SaveTable 3 CabinetALock Scratch2
+	Return
+
+CabinetEmpty:
+	Print "THIS CABINET IS EMPTY."
+	Goto CabinetsMenu
+
+CabinetB:
+	Compare CabinetBLock 1
+	IfEq
+	Goto CabinetEmpty
+	Save 1 Scratch2
+	Gosub LockedMenu
+	Compare CabinetBLock 0
+	IfNe
+	Goto CabinetsMenu
+	Print "INSIDE THE CABINET YOU FIND FIFTEEN SACKS FILLED WITH SILVER PIECES."
+	ClearMonsters
+	Treasure 0 #05DC 0 0 0 0 0 255
+	Combat
+	Save 1 CabinetBLock
+	Goto CabinetsMenu
+
+CabinetC:
+	Compare CabinetCLock 1
+	IfEq
+	Goto CabinetEmpty
+	Gosub CheckTrap
+	OnGoto TrapResult 3 CabinetCNeedle CabinetCAvoidTrap CabinetCOpen
+
+CabinetCOpen:
+	Save 2 Scratch2
+	Gosub LockedMenu
+	Compare CabinetCLock 0
+	IfNe
+	Goto CabinetsMenu
+	Print "INSIDE THE CABINET YOU FIND EIGHTEEN SACKS FILLED WITH GOLD PIECES."
+	ClearMonsters
+	Treasure 0 0 0 #0708 0 0 0 255
+	Combat
+	Save 1 CabinetCLock
+	Goto CabinetsMenu
+
+CabinetCNeedle:
+	Print "AS YOU TRY TO DEACTIVATE THE TRAP YOU MANAGE TO SET IT OFF.  A LARGE NEEDLE SHOOTS OUT OF A HIDDEN COMPARTMENT HITTING A PARTY MEMBER."
+	Delay
+	Damage 1 1 8 0 80
+	Goto CabinetCOpen
+
+CabinetCAvoidTrap:
+	Print "YOU AVOID THE TRAP BY NOT OPENNING THE CABINET."
+	Delay
+	Goto CabinetsMenu
+
+RugsAndTapestries:
+	AndOr 4 RoomsLooted Scratch1
+	IfGt
+	Goto Done
+	Print "YOU SEE A WIDE COLLECTION OF RUGS AND TAPESTRIES.  TWO OF THEM LOOK EXTRAORDINARY WHILE THE OTHERS LOOK AVERAGE."
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 24
+	Combat
+	AndOr 4 RoomsLooted RoomsLooted
+	Goto Done
+
+WoodenCabinet:
+	AndOr 8 RoomsLooted Scratch1
+	Compare Scratch1 0
+	IfGt
+	Goto Done
+	Print "IN FRONT OF YOU IS A WOODEN CABINET.  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "EXAMINE THE CABINET" "LEAVE IT"
+	OnGoto Scratch1 2 ExamineCabinet Done
+
+ExamineCabinet:
+	Compare ScrollCaseLock 1
+	IfEq
+	Goto ScrollCabinetEmpty
+	Gosub CheckTrap
+	OnGoto TrapResult 3 ScrollCabinetGas ScrollCabinetAvoidTrap ScrollCabinetOpen
+
+ScrollCabinetOpen:
+	Save 3 Scratch2
+	Gosub LockedMenu
+	Compare ScrollCaseLock 0
+	IfNe
+	Goto WoodenCabinet
+	Print "YOU FIND A WIDE VARIETY OF SCROLLS IN SCROLL CASES."
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 25
+	Combat
+	AndOr 8 RoomsLooted RoomsLooted
+	Goto Done
+
+ScrollCabinetEmpty:
+	Print "THIS CABINET IS EMPTY."
+	Goto WoodenCabinet
+
+ScrollCabinetGas:
+	Print "AS YOU ATTEMPT TO DISARM THE TRAP, IT GOES OFF IN YOUR FACE!  A CLOUD OF POISONOUS YELLOW GAS FILLS THE ROOM."
+	Delay
+	Damage 192 2 6 0 0
+	Goto ScrollCabinetOpen
+
+ScrollCabinetAvoidTrap:
+	Print "YOU AVOID THE TRAP BY NOT OPENING THE CABINET!"
+	Delay
+	Goto WoodenCabinet
+
+CasketTable:
+	Print "BEFORE YOU IS A TABLE WITH FOUR SMALL CASKETS ON TOP OF IT.  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "SEARCH A CASKET" "LEAVE"
+	OnGoto Scratch1 2 ChooseCasket Done
+
+ChooseCasket:
+	Print "WHICH CASKET WILL YOU SEARCH?"
+	HMenu Scratch1 4 "A" "B" "C" "D"
+	OnGoto Scratch1 4 CasketA CasketB CasketC CasketD
+
+CasketA:
+	AndOr 1 CasketsLooted Scratch1
+	IfNe
+	Goto CasketEmpty
+	Gosub CheckTrap
+	OnGoto TrapResult 3 CasketANeedle CasketAvoidTrap CasketAOpen
+
+CasketAOpen:
+	Save 4 Scratch2
+	Gosub LockedMenu
+	Compare CasketGemsLock 0
+	IfNe
+	Goto CasketTable
+	AndOr 1 CasketsLooted CasketsLooted
+	Print "YOU FIND A POUCH OF SMALL GEMS."
+	ClearMonsters
+	Treasure 0 0 0 0 0 12 0 255
+	Combat
+	Goto Done
+
+CasketANeedle:
+	Print "AS YOU ATTEMPT TO DEACTIVATE THE TRAP YOU SET IT OFF.  A POSIONED NEEDLE SHOOTS OUT AND PLUNGES INTO A PARTY MEMBER."
+	Delay
+	Damage 129 1 4 0 0
+	Goto CasketAOpen
+
+CasketAvoidTrap:
+	Print "YOU AVOID THE TRAP BY NOT OPENING THE CASKET."
+	Delay
+	Goto CasketTable
+
+CasketB:
+	AndOr 2 CasketsLooted Scratch1
+	IfNe
+	Goto CasketEmpty
+	Gosub CheckTrap
+	OnGoto TrapResult 3 CasketBDart CasketAvoidTrap CasketBOpen
+
+CasketBOpen:
+	Save 5 Scratch2
+	Gosub LockedMenu
+	Compare CasketJewelryLock 0
+	IfNe
+	Goto CasketTable
+	AndOr 2 CasketsLooted CasketsLooted
+	Print "INSIDE THE CASKET IS A VARIETY OF GOLD CHAINS, PENDANTS AND JEWELRY."
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 1 255
+	Combat
+	Goto Done
+
+CasketBDart:
+	Print "AS YOU EXAMINE THE CASKET A TRAP GOES OFF.  A DART SHOOTS OUT AND HITS ONE OF THE PARTY MEMBERS."
+	Delay
+	Damage 160 1 3 0 0
+	Goto CasketBOpen
+
+CasketC:
+	AndOr 4 CasketsLooted Scratch1
+	IfNe
+	Goto CasketEmpty
+	Gosub CheckTrap
+	OnGoto TrapResult 3 CasketCPowder CasketAvoidTrap CasketCOpen
+
+CasketCOpen:
+	Save 6 Scratch2
+	Gosub LockedMenu
+	Compare CasketBigGemsLock 0
+	IfNe
+	Goto CasketTable
+	AndOr 4 CasketsLooted CasketsLooted
+	Print "INSIDE THE CASKET ARE SOME BEAUTIFUL GEMS."
+	ClearMonsters
+	Treasure 0 0 0 0 0 3 0 255
+	Combat
+	Goto Done
+
+CasketCPowder:
+	Print "AS YOU SEARCH THE CASKET, YOU ACCIDENTLY SET OFF A TRAP.  A NOXIOUS POWDER SPRAYS INTO THE AIR DAMAGING THE PARTY."
+	Delay
+	Damage 192 1 6 0 0
+	Goto CasketCOpen
+
+CasketD:
+	AndOr 8 CasketsLooted Scratch1
+	IfNe
+	Goto CasketEmpty
+	Gosub CheckTrap
+	OnGoto TrapResult 3 CasketDDarts CasketAvoidTrap CasketDOpen
+
+CasketDOpen:
+	Save 7 Scratch2
+	Gosub LockedMenu
+	Compare CasketPearlsLock 0
+	IfNe
+	Goto CasketTable
+	Print "THE CASKET IS FILLED WITH TINY PEARLS!"
+	ClearMonsters
+	Treasure 0 0 0 0 0 20 0 255
+	Combat
+	AndOr CasketsLooted 8 CasketsLooted
+	Goto Done
+
+CasketDDarts:
+	Print "AS YOU SEARCH THE CASKET YOU TRIGGER A TRAP.  FROM A SECRET COMPARTMENT IN THE WALL, A SHOWER OF DARTS RAINS DOWN UPON THE PARTY."
+	Delay
+	Damage 12 1 4 0 50
+	Goto CasketDOpen
+
+CasketEmpty:
+	Print "THIS CASKET IS EMPTY."
+	Goto CasketTable
+
+WeaponPile:
+	AndOr RoomsLooted 32 Scratch1
+	IfNe
+	Goto Done
+	Print "INSIDE THIS ROOM YOU FIND A LARGE PILE OF WEAPONS AND SHIELDS.  THEY APPEAR TO BE IN GOOD CONDITION AND OF FINE QUALITY.  WHAT WILL YOU DO?"
+	HMenu Scratch1 3 "TAKE SOME" "SEARCH THEM" "LEAVE THEM"
+	OnGoto Scratch1 3 TakeWeapons SearchWeapons LeaveWeapons
+
+TakeWeapons:
+	Compare 0 WeaponPileGasDone
+	IfEq
+	Goto WeaponPileAmbush
+	ClearMonsters
+	Treasure 0 0 0 0 0 0 0 27
+	Combat
+	AndOr 32 RoomsLooted RoomsLooted
+	Goto Done
+
+LeaveWeapons:
+	Print "YOU LEAVE THE WEAPONS ALONE."
+	Delay
+	Goto Done
+
+SearchWeapons:
+	Gosub CheckTrap
+	OnGoto TrapResult 3 WeaponPileAmbush WeaponTrapBypassed WeaponTrapDisarmed
+
+WeaponTrapDisarmed:
+	Save 1 WeaponPileGasDone
+	Goto TakeWeapons
+
+WeaponPileAmbush:
+	Compare ThievesKilled 18
+	IfGe
+	Save 1 WeaponPileGasDone
+	IfGe
+	Goto HarmlessGas
+	Save 71 Portrait
+	SetupMonster 11 0 8
+	Print "AS YOU NEAR THE PILE OF WEAPONS AN AWFUL SMELLING CLOUD OF GAS FORMS.  THIS FOUL SMELLING GAS STUNS THE PARTY ALLOWING A GROUP OF THIEVES TO JUMP OUT OF THE SHADOWS AND ATTACK AT WILL!"
+	Delay
+	Arith 5 ThievesKilled Scratch1
+	Compare Scratch1 21
+	IfGe
+	Goto AmbushManyMasters
+	Compare Scratch1 12
+	IfLe
+	Goto AmbushFewThieves
+	Arith 12 Scratch1 Scratch2
+	Arith Scratch2 5 Scratch3
+	Goto AmbushFight
+
+AmbushManyMasters:
+	Arith 21 Scratch1 Scratch2
+	Arith Scratch2 5 Scratch2
+	Goto AmbushFight
+
+AmbushFewThieves:
+	Save 5 Scratch3
+	Save 0 Scratch2
+
+AmbushFight:
+	Random 3 Scratch1
+	Arith 2 Scratch1 Scratch1
+	Save 0 Scratch10
+	ClearMonsters
+	Save 1 Surprise
+	Save 1 WeaponPileGasDone
+	Treasure 0 0 0 0 0 0 0 27
+	Compare Scratch2 0
+	IfNe
+	LoadMonster 51 Scratch2 12
+	Compare Scratch3 0
+	IfNe
+	LoadMonster 45 Scratch3 12
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto FleeBack
+	Arith Scratch2 ThievesKilled ThievesKilled
+	Arith Scratch3 ThievesKilled ThievesKilled
+	AndOr RoomsLooted 32 RoomsLooted
+	Goto Done
+
+WeaponTrapBypassed:
+	Print "YOU BYPASS THE TRAP BY NOT FOOLING WITH ANY OF THE WEAPONS."
+	Delay
+	Goto WeaponPile
+
+HarmlessGas:
+	Print "AS YOU NEAR THE PILE OF WEAPONS AN EXTREMELY BAD SMELLING GAS FILLS THE ROOM.  THE SMELL IS DISGUSTING BUT HARMLESS ENOUGH."
+	Delay
+	Save 1 WeaponPileGasDone
+	Goto WeaponPile
+
+ThievesFlee:
+	Compare ThiefChaseDone 0
+	IfNe
+	Goto Done
+	Save 255 ThiefChaseDone
+	Save 44 Portrait
+	SetupMonster 11 0 8
+	Print "AS YOU ENTER THE ROOM TWO THIEVES COME OUT OF NOWHERE AND ATTACK THE PARTY.  THEY FAIL MISERABLY AND RUN OUT THE EAST DOOR.  WILL YOU CHASE THEM?"
+	HMenu Scratch1 2 "YES" "NO"
+	OnGoto Scratch1 2 ChaseThieves Done
+
+ChaseThieves:
+	Save 0 Scratch6
+
+ChaseStep:
+	GetTable ChaseSteps Scratch6 Scratch1
+	GetTable ChaseFacing Scratch6 Facing
+	Gosub WalkSteps
+	Compare Scratch6 3
+	IfEq
+	Goto ThievesSplit
+	Compare Scratch6 11
+	IfEq
+	Goto CatchGuildMaster
+	Compare Scratch6 15
+	IfEq
+	Goto ChaseEnd
+
+ChaseNextStep:
+	Arith 1 Scratch6 Scratch6
+	Goto ChaseStep
+
+ThievesSplit:
+	Print "AS YOU ENTER THIS ROOM THE TWO THIEVES SPLIT; ONE GOING THROUGH THE EAST DOOR, THE OTHER GOING THROUGH THE SOUTH.  WHICH PATH WILL YOU TAKE?"
+	HMenu Scratch1 3 "SOUTH" "EAST" "DON'T FOLLOW"
+	OnGoto Scratch1 3 ChaseSouth ChaseNextStep Done
+
+ChaseSouth:
+	Arith 8 Scratch6 Scratch6
+	Goto ChaseNextStep
+
+CatchGuildMaster:
+	Save 44 Portrait
+	SetupMonster 11 0 8
+	Print "YOU HAVE CAUGHT ONE OF THE THIEVES.  THE THIEF BEGS FOR MERCY AND SAYS, 'I AM THE GUILD MASTER.  IF YOU RELEASE ME, MY THIEVES WILL NO LONGER ATTACK YOU!'  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "ATTACK" "RELEASE"
+	OnGoto Scratch1 2 AttackThief ReleaseGuildMaster
+
+ReleaseGuildMaster:
+	Print "AFTER YOU RELEASE HIM THE THIEF SLOWLY WALKS TOWARD THE FAR DOOR THANKING YOU ALL THE WAY.  PARTWAY THROUGH THE DOOR HE SAYS, 'SUCKERS', THEN SPRINTS AWAY."
+	Goto Done
+
+ChaseEnd:
+	Compare ThievesKilled 15
+	IfGt
+	Goto CatchGuildMaster
+
+ThiefAmbush:
+	Compare GuildAmbushDone 0
+	IfNe
+	Goto Done
+	Save 44 Portrait
+	SetupMonster 11 0 8
+	Print "AS YOU ENTER THE ROOM YOU ARE AMBUSHED BY SOME THIEVES."
+	Save 1 Surprise
+	Save 60 Morale
+	ClearMonsters
+	LoadMonster 45 15 12
+	LoadMonster 51 3 12
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto FleeBack
+	Arith 15 ThievesKilled ThievesKilled
+	Save 1 GuildAmbushDone
+	Goto Done
+
+FloorFiles:
+	AndOr FilesFound 1 Scratch1
+	IfNe
+	Goto Done
+	Print "ON THE FLOOR HERE YOU FIND SOME IMPORTANT LOOKING FILES.  YOU STUFF THE FILES INTO YOUR JOURNAL UNDER ENTRIES 38 AND 51."
+	Delay
+	AndOr FilesFound 1 FilesFound
+	Goto Done
+
+JailCell:
+	AndOr FilesFound 2 Scratch1
+	IfEq
+	Goto JailThugs
+	Print "YOU ARE IN A ROOM THAT HAS BEEN CONVERTED TO A JAIL CELL.  IT IS EMPTY."
+	Goto Done
+
+JailThugs:
+	Save 32 Portrait
+	SetupMonster 11 0 8
+	Print "YOU ENTER A ROOM THAT HAS BEEN CONVERTED TO A JAIL.  THERE ARE TEN YOUNG THUGS BEATING AN OLDER THIEF TO DEATH.  ONCE YOU ENTER THEY STOP AND ATTACK YOU."
+	ClearMonsters
+	LoadMonster 45 10 12
+	Combat
+	AndOr FilesFound 2 FilesFound
+	Compare CombatEnd 128
+	IfGt
+	Goto FleeBack
+	Save 16 Portrait
+	Picture 8
+	Print "YOU RUSH TO HELP THE OLD THIEF BUT IT'S TOO LATE.  BEFORE HE DIES HE SAYS, 'THE BOSS HAS ALLIES EVERYWHERE.  TAKE THESE PAPERS.  THEY MAY HELP.'  HE THEN DIES."
+	Gosub PressToContinue
+	Print "YOU COPY THE PAPERS INTO YOUR JOURNAL UNDER JOURNAL ENTRY 48."
+	Delay
+	Goto Done
+
+SlateMazeNW:
+	AndOr FilesFound 4 Scratch1
+	IfNe
+	Goto Done
+	AndOr FilesFound 4 FilesFound
+	Print "ON A NEARBY WALL IS A SLATE.  DRAWN ON THE SLATE IS A COMPLEX MAZE WITH THE WORDS 'NW CASTLE' UNDER IT.  YOU COPY THE CASTLE INTO YOUR JOURNAL UNDER JOURNAL ENTRY 41."
+	Delay
+	Goto Done
+
+MapMazeNE:
+	AndOr FilesFound 8 Scratch1
+	IfNe
+	Goto Done
+	AndOr FilesFound 8 FilesFound
+	Print "ON THE FLOOR IS A CRUDE MAP.  IT IS A MAP OF A COMPLEX MAZE WITH THE WORDS 'NE CASTLE' UNDER IT.  YOU TAKE THE MAP AND PUT IT IN YOUR JOURNAL UNDER JOURNAL ENTRY 29."
+	Delay
+	Goto Done
+
+WalkSteps:
+	Save 1 Scratch2
+	Compare Scratch1 0
+	IfEq
+	Call CallRedraw
+	IfEq
+	Delay
+	IfEq
+	Return
+
+WalkStepLoop:
+	Compare Scratch2 Scratch1
+	IfGt
+	Return
+	OnGoto Facing 4 StepNorth StepEast StepSouth StepWest
+	Call CallRedraw
+	Delay
+	Arith 1 Scratch2 Scratch2
+	Goto WalkStepLoop
+
+StepNorth:
+	Arith 1 PartyY PartyY
+	Return
+
+StepEast:
+	Arith 1 PartyX PartyX
+	Return
+
+StepSouth:
+	Arith 1 PartyY PartyY
+	Return
+
+StepWest:
+	Arith 1 PartyX PartyX
+	Return
+
+Done:
+	Compare ThievesKilled 21
+	IfGe
+	Gosub MarkGuildCleared
+	RedrawView
+	Picture 255
+	Save 255 Portrait
+	Exit
+
+MarkGuildCleared:
+	Compare QuestKovelThieves 254
+	IfGe
+	Return
+	Save 254 QuestKovelThieves
+	Return
+
+PressToContinue:
+	HMenu Scratch1 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Return
+
+FleeBack:
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Save SavedGeo14 Geo
+	Exit
+
+CheckTrap:
+	CheckParty SelFindTraps 0 Scratch1 Scratch2 Scratch3 Scratch4
+	CheckParty 0 19 Scratch1 Scratch1 Scratch1 Scratch8
+	Compare Scratch8 0
+	IfNe
+	Goto MagicDetectsTrap
+	Random 99 Scratch1
+	Compare Scratch1 Scratch2
+	IfLt
+	Goto PartyDetectsTrap
+	Save 0 TrapResult
+	Return
+
+MagicDetectsTrap:
+	Print "YOUR MAGIC DETECTS A TRAP!"
+	Delay
+	Goto TrapMenu
+
+PartyDetectsTrap:
+	Print "YOUR PARTY DETECTS A TRAP!"
+	Delay
+
+TrapMenu:
+	Print "WHAT DO YOU WANT TO DO?"
+	HMenu Scratch1 2 "AVOID TRAP" "DISARM TRAP"
+	OnGoto Scratch1 2 AvoidTrap DisarmTrap
+
+DisarmTrap:
+	Who "WHO WILL DISARM THE TRAP?"
+	Random 99 Scratch1
+	Compare Scratch1 Scratch2
+	IfGe
+	Goto DisarmFails
+	Print "YOU DEACTIVATE THE TRAP"
+	Save 2 TrapResult
+	Delay
+	Return
+
+AvoidTrap:
+	Save 1 TrapResult
+	Return
+
+DisarmFails:
+	Save 0 TrapResult
+	Return
+
+event2:
+	Save 1 RestEvery
+	Save 99 RestChance
+	Compare QuestKovelThieves 254
+	IfLt
+	Exit
+	Save 0 RestEvery
+	Save 1 RestChance
+	Exit
+
+event3:
+	Save 0 RestChance
+	Print "WHILE IN CAMP YOU ARE SUDDENLY ATTACKED BY THREE THIEVES WITH SLINGS.  THEY LAUNCH THEIR BULLETS AT THE PARTY AND THEN RUN, DISAPPERING FROM SIGHT."
+	Delay
+	Damage 3 1 4 1 50
+	Exit
+
+event4:
+	Save 11 Scratch8
+	Save 10 SkyInside
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch8
+	Save Scratch8 Sky
+	LoadFiles 1 3 5
+	LoadFiles 14 2 255
+	Exit

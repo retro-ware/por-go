@@ -1,0 +1,18 @@
+4A4F SecretDoorsFound  # bitmask ANDed with door bit [6E79]; "A SECRET DOOR IS FOUND"; bit 4 tested before lizard men
+4A50 DialColor  # HMenu BLUE/COPPER/SILVER/GOLD; indexes teleport table at L_9DDD
+4A51 RoomsVisited  # bits: 1 lizard men, 2 torture room, 4 vats, 8 combat, 16 lab, 32 notebook, 64 password door monster, 128 fountain
+4A52 RoomsVisited2  # bits: 1 freed lizard slaves, 2 pump room fight, 4 portrait fight, 64 Yarash desk, 128 desk papers; low bits also junk-room treasure by [6E79]; area-local reuse
+9949 DestX  # GetTable base, GetTable [9949] [6E79] PartyX
+9957 DestY  # GetTable base, GetTable [9957] [6E79] PartyY
+9965 DestFacing  # GetTable base, GetTable [9965] [6E7E] [6E79]
+9B08 Table9B08  # GetTable base, GetTable [9B08] [6E7A] [6E7A]
+9B0F ByFacing9B0F  # GetTable base, GetTable [9B0F] Facing [6E82]
+9B9F Table9B9F  # GetTable base, GetTable [9B9F] [6E82] [6E7A]
+9BBB Table9BBB  # GetTable base, GetTable [9BBB] [6E82] [6E79]
+9C40 Table9C40  # GetTable base, GetTable [9C40] [6E79] [6E82]
+9C4A Table9C4A  # GetTable base, GetTable [9C4A] [6E79] [6E79]
+9CE7 Table9CE7  # GetTable base, GetTable [9CE7] [6E79] [6E79]
+9CEA Table9CEA  # GetTable base, GetTable [9CEA] [6E79] [6E79]
+9DFA Table9DFA  # GetTable base, GetTable [9DFA] [4A50] [6E79]
+A56E PasswordRunesEnd  # Protection operand after sign text (guess: rune glyph data)
+A575 PasswordRunes  # Protection operand before "DON'T FORGET THE PASSWORD" (guess: rune glyph data)

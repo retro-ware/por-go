@@ -1,0 +1,797 @@
+event0:
+	Compare InLair 255
+	IfEq
+	Exit
+	Compare MapY 2
+	IfLe
+	Gosub EdgeNorth
+	Compare MapX 2
+	IfLe
+	Gosub EdgeWest
+	Compare MapX 15
+	IfEq
+	Gosub EdgeEast
+	Gosub CheckTerrainAhead
+	Exit
+
+EdgeNorth:
+	OnGoto FacingRaw 8 BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove
+
+EdgeWest:
+	OnGoto FacingRaw 8 EdgeOk EdgeOk EdgeOk EdgeOk EdgeOk BlockMove BlockMove BlockMove
+
+BlockMove:
+	Save 255 HoldMove
+	Return
+
+EdgeEast:
+	OnGoto FacingRaw 8 EdgeOk ExitToCity ExitToCity EdgeEastCorner EdgeOk EdgeOk EdgeOk EdgeOk
+
+EdgeOk:
+	Return
+
+ExitToCity:
+	Save 3 MapX
+	Save 7 SymbolSet
+	NewECL 26
+
+EdgeEastCorner:
+	Compare MapY 31
+	IfNe
+	Goto ExitToCity
+	Save 255 HoldMove
+	Return
+
+CheckTerrainAhead:
+	Save MapX ProbeX
+	Save MapY ProbeY
+	OnGoto FacingRaw 8 ProbeN ProbeNE ProbeE ProbeSE ProbeS ProbeSW ProbeW ProbeNW
+	Call CallUnknownC01B
+	Save 0 Scratch1
+
+CheckTerrainLoop:
+	Compare Scratch1 8
+	IfEq
+	Return
+	GetTable BlockedTerrain Scratch1 Scratch2
+	Compare ProbeWall Scratch2
+	IfEq
+	Save 255 HoldMove
+	IfEq
+	Return
+	Arith 1 Scratch1 Scratch1
+	Goto CheckTerrainLoop
+
+ProbeNW:
+	Arith 1 ProbeX ProbeX
+
+ProbeN:
+	Arith 1 ProbeY ProbeY
+	Return
+
+ProbeNE:
+	Arith 1 ProbeY ProbeY
+
+ProbeE:
+	Arith 1 ProbeX ProbeX
+	Return
+
+ProbeSE:
+	Arith 1 ProbeX ProbeX
+
+ProbeS:
+	Arith 1 ProbeY ProbeY
+	Return
+
+ProbeSW:
+	Arith 1 ProbeY ProbeY
+
+ProbeW:
+	Arith 1 ProbeX ProbeX
+	Return
+
+event1:
+	Compare InLair 255
+	IfEq
+	Goto LairCell
+	Save 0 Scratch1
+	Save 0 Scratch4
+
+FindSiteRow:
+	Compare Scratch1 8
+	IfGe
+	Goto RollEncounter
+	GetTable SiteRowEnd Scratch1 Scratch3
+	GetTable SiteRowY Scratch1 Scratch2
+	Compare Scratch2 MapY
+	IfEq
+	Goto SiteRowFound
+	Arith 1 Scratch1 Scratch1
+	Arith Scratch3 Scratch4 Scratch4
+	Goto FindSiteRow
+
+SiteRowFound:
+	Arith Scratch4 Scratch3 Scratch3
+
+FindSiteX:
+	Compare Scratch4 Scratch3
+	IfGe
+	Goto RollEncounter
+	GetTable SiteX Scratch4 Scratch5
+	Compare Scratch5 MapX
+	IfEq
+	Goto SiteFound
+	Arith 1 Scratch4 Scratch4
+	Goto FindSiteX
+
+SiteFound:
+	GetTable SiteKind Scratch4 Scratch1
+	OnGoto Scratch1 8 SiteNone DragonInDistance DragonCave AnkhegAmbush SlaverCaravan BuccaneerBaseSite GuardsRideBy OutpostRiders
+
+SiteNone:
+	Exit
+
+DragonInDistance:
+	Compare DragonSeen 0
+	IfNe
+	Goto Done
+	Print "OFF IN THE DISTANCE YOU SEE A LARGE DRAGON FLYING THROUGH THE AIR.  AS YOU WATCH, HE SWOOPS DOWN BEHIND A MOUNTAIN AND DISAPPEARS."
+	Save 1 DragonSeen
+	Goto Done
+
+DragonCave:
+	ClearBox
+	Call CallClearView
+	Picture 32
+	Compare DragonSeen 255
+	IfEq
+	Goto LargeCave
+	Print "AS YOU HIKE THROUGH THE MOUNTAINS, A LARGE DRAGON FLYS ABOVE YOU.  IT CIRCLES THEN SWOOPS DOWN AND LANDS IN FRONT OF A CAVE.  IT DISAPPEARS INTO A CAVE."
+	Save 255 DragonSeen
+	Goto CaveMenu
+
+LargeCave:
+	Print "AS YOU HIKE THROUGH THE MOUNTAINS YOU SEE A LARGE CAVE."
+
+CaveMenu:
+	Print " WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "ENTER CAVE" "IGNORE CAVE"
+	OnGoto Scratch1 2 EnterDragonCave DoneMarkKeep
+
+EnterDragonCave:
+	Print "YOU ENTER THE CAVE."
+	Gosub LeaveWilderness
+	NewECL 19
+
+AnkhegAmbush:
+	Compare AnkhegsDefeated 0
+	IfNe
+	Goto Done
+	SetupMonster 65 1 65
+	Print "AS YOU WALK THROUGH THIS AREA TWO ANHKHEGS ERUPT FROM THE GROUND BENEATH YOU."
+	Save 90 Morale
+	ClearMonsters
+	LoadMonster 65 2 65
+	ClearBox
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto ExitEvent
+	Save 1 AnkhegsDefeated
+	Exit
+
+SlaverCaravan:
+	Compare Mark3 255
+	IfNe
+	Goto Done
+	CompareAnd QuestBivant 0 SlaverCaravanSeen 0
+	IfNe
+	Goto Done
+	Print "A SMALL CARAVAN OF SLAVERS RIDE BY YOU TOWARD THE BUCCANEER BASE."
+	Save 1 SlaverCaravanSeen
+	Goto Done
+
+BuccaneerBaseSite:
+	Compare Mark3 255
+	IfNe
+	Goto Done
+	Compare QuestBivant 0
+	IfNe
+	Goto Done
+	ClearBox
+	Call CallClearView
+	Picture 39
+	Print "YOU HAVE REACHED THE BUCCANEER BASE.  A BAND OF BUCCANEERS RIDE OUT TO ESCORT YOU IN.  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "ENTER" "LEAVE"
+	OnGoto Scratch1 2 EnterBuccaneerBase DoneMarkKeep
+
+EnterBuccaneerBase:
+	Gosub LeaveWilderness
+	NewECL 1
+
+GuardsRideBy:
+	Compare GuardsRideBySeen 0
+	IfNe
+	Goto Done
+	Print "A GROUP OF ARMED GUARDS RIDE BY."
+	Save 1 GuardsRideBySeen
+	Goto Done
+
+OutpostRiders:
+	Compare ZhentilMission 255
+	IfNe
+	Goto KeepRiders
+	Compare QuestZhentilOutpost 253
+	IfGt
+	Goto KeepRiders
+	IfEq
+	Save 1 GuardsRideBySeen
+	IfEq
+	Save 254 QuestZhentilOutpost
+	IfEq
+	Goto Done
+	ClearBox
+	Call CallClearView
+	Picture 33
+	Print "A GROUP OF MEN ON HORSEBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS, 'ARE YOU THE DIPLOMATIC ENVOYS FROM NEW PHLAN?'  WHAT WILL YOU SAY?"
+	HMenu Scratch1 2 "YES" "NO"
+	OnGoto Scratch1 2 EscortToOutpost DenyEnvoy
+
+DenyEnvoy:
+	Print "AFTER SAYING NO, THE RIDERS RETURN TO THE OUTPOST.  BEFORE LEAVING, THEIR LEADER SAYS, 'YOU ARE TRESSPASSING ON PRIVATE LAND.  I ADVISE YOU TO LEAVE.'"
+	Goto DoneMarkKeep
+
+EscortToOutpost:
+	Print "THE RIDERS ESCORT YOU INTO THE OUTPOST."
+	Gosub LeaveWilderness
+	NewECL 28
+
+KeepRiders:
+	Compare KeepRidersFought 0
+	IfNe
+	Goto Done
+	ClearBox
+	Call CallClearView
+	Picture 33
+	Print "AS YOU APPROACH THE KEEP, A GROUP OF ARMED MEN ON HORESBACK RIDE OUT TO MEET YOU.  THEIR LEADER SAYS 'YOU ARE TRESSPASSING ON PRIVATE LAND; LEAVE NOW OR FACE THE CONSQUENCES!'"
+	HMenu Scratch1 2 "STAY" "LEAVE"
+	OnGoto Scratch1 2 FightKeepRiders ExitEvent
+
+FightKeepRiders:
+	SetupMonster 16 2 0
+	ClearBox
+	ClearMonsters
+	LoadMonster 54 12 11
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	Save 255 KeepRidersFought
+	Exit
+
+LeaveWilderness:
+	Picture 255
+	ClearBox
+	Save 127 WallSlot1
+	Save 127 WallSlot1B
+	Save 127 WallSlot2
+	Save 127 WallSlot2B
+	Save 127 WallSlot3
+	Save 127 WallSlot3B
+	Save 1 In3D
+	LoadFiles 127 127 127
+	Return
+
+RollEncounter:
+	Random 19 Scratch1
+	Save 0 ForceEncounter25
+	Compare Scratch1 0
+	IfNe
+	Goto Done
+
+RandomEncounter:
+	Gosub PickEncounter
+	CompareAnd Scratch1 20 ForceEncounter25 0
+	IfEq
+	Goto SmallDarkCave
+	GetTable EncSurpriseA EncounterType25 Scratch4
+	GetTable EncSurpriseB EncounterType25 Scratch5
+	PartySurprise Scratch1 Scratch2
+	Surprise Scratch1 Scratch2 Scratch4 Scratch5
+	Compare Scratch5 9
+	IfEq
+	AndOr Surprise 1 Surprise
+	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseGroup FaceToFace
+
+SpotGroup:
+	Print "YOU SPOT A GROUP OF "
+	Print str AuxMonsterName
+	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 4 "" "" "" AuxEncTemp AuxEncTemp
+	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+
+PartySurprised:
+	Print "YOU ARE SURPRISED BY A GROUP OF "
+	Print str AuxMonsterName
+	Print "."
+	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 99 99
+	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+
+SurpriseGroup:
+	Print "YOU SURPRISE A GROUP OF "
+	Print str AuxMonsterName
+	Print "."
+	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 2 2 1 1 "" "" "" 0 0
+	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+
+FaceToFace:
+	Print "SUDDENLY YOU ARE FACE TO FACE WITH A GROUP OF "
+	Print str AuxMonsterName
+	Print "."
+	EncounterMenu AuxEncResult AuxRoll 0 Scratch1 1 0 0 1 1 "" "" "" 0 0
+	OnGoto Scratch1 4 Done EncounterFight RedrawExit EncounterParlay
+
+EncounterFight:
+	Save AuxEncResult2 Morale
+	ClearMonsters
+	LoadMonster AuxMonster EncounterCount25 AuxTemp9
+	Compare EncounterExtraCount25 0
+	IfEq
+	Goto StartCombat
+	LoadMonster AuxPartyStrength EncounterExtraCount25 AuxTemp9
+
+StartCombat:
+	ClearBox
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto ExitEvent
+	Exit
+
+EncounterParlay:
+	Compare AuxMember 0
+	IfEq
+	Goto EncounterFight
+	Compare AuxMember 50
+	IfEq
+	Goto FriendlyGroup
+	Parlay 20 10 50 0 30 Scratch1
+	Random 30 Scratch2
+	Arith Scratch1 Scratch2 Scratch1
+	Arith Scratch1 SelReaction Scratch1
+	Arith Scratch1 AuxEncBonus Scratch1
+	Compare Scratch1 140
+	IfLt
+	Goto ParlayConvince
+	Print "THE "
+	Print str AuxMonsterName
+	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
+	Goto Done
+
+ParlayConvince:
+	Compare Scratch1 100
+	IfLt
+	Goto ParlayInsult
+	Print "YOU CONVINCE THE "
+	Print str AuxMonsterName
+	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
+	Goto Done
+
+ParlayInsult:
+	Print "YOU HAVE INSULTED THE "
+	Print str AuxMonsterName
+	Print "."
+	Print "THE "
+	Print str AuxMonsterName
+	Print " ATTACK YOU IMMEDIATELY!"
+	Goto EncounterFight
+
+FriendlyGroup:
+	Print "THE "
+	Print str AuxMonsterName
+	Print " GREET YOU AND YOU EXCHANGE PLEASANTRIES.  THE "
+	Print str AuxMonsterName
+	Print " THEN LEAVE AND BID YOU GOOD DAY."
+	Goto Done
+
+SmallDarkCave:
+	Print "YOU HAVE FOUND A SMALL DARK CAVE.  WILL YOU ENTER?"
+	HMenu Scratch1 2 "ENTER" "LEAVE"
+	OnGoto Scratch1 2 EnterLair Done
+
+EnterLair:
+	Save 255 InLair
+	Random 3 Scratch6
+	OnGoto Scratch6 4 LairStartA LairStartB LairStartC LairStartD
+
+LairStartA:
+	Save 15 LairStartX25
+	Save 3 LairStartY25
+	Goto LoadLair
+
+LairStartB:
+	Save 0 LairStartX25
+	Save 2 LairStartY25
+	Goto LoadLair
+
+LairStartC:
+	Save 0 LairStartX25
+	Save 9 LairStartY25
+	Goto LoadLair
+
+LairStartD:
+	Save 11 LairStartX25
+	Save 15 LairStartY25
+	Goto LoadLair
+
+LoadLair:
+	Save 1 In3D
+	Save 145 WallSlot1
+	Save 145 WallSlot1B
+	Save 145 WallSlot2
+	Save 145 WallSlot2B
+	Save 145 WallSlot3
+	Save 145 WallSlot3B
+	LoadFiles 25 2 255
+	Save LairStartX25 PartyX
+	Save LairStartY25 PartyY
+	Save 8 SkyInside
+	ClearBox
+	Call CallRedraw
+	NewECL 25
+
+LairCell:
+	AndOr Cell 127 Scratch10
+	OnGoto Scratch10 15 Done TwoBoars BoarSow ThreeBoars DwarfRemains SoftGround AnkhegVictims AnkhegLunges SnakeSkin GiganticSnake SnakeFalls ThriKreenBlock ThriKreenWarriors ThriKreenChest PassageOutside
+
+TwoBoars:
+	AndOr DragonCaveFlags 1 Scratch1
+	IfNe
+	Exit
+	SetupMonster 120 0 120
+	Print "OUT OF THE SHADOWS, TWO LARGE WILD BOARS CHARGE."
+	ClearMonsters
+	LoadMonster 120 2 120
+	Combat
+	AndOr DragonCaveFlags 1 DragonCaveFlags
+	Exit
+
+BoarSow:
+	AndOr DragonCaveFlags 2 Scratch1
+	IfNe
+	Exit
+	SetupMonster 120 1 120
+	Print "NEAR YOU IS A LARGE, WILD BOAR SOW FEEDING HER YOUNG.  AS YOU NEAR SHE GROWLS A WARNING TO STAY AWAY.  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "APPROACH" "LEAVE"
+	OnGoto Scratch1 2 ApproachSow Done
+
+ApproachSow:
+	Print "AS YOU APPROACH HER HAIR BRISTLES AND SHE ATTACKS!"
+	Save 100 Morale
+	Save 252 MonsterHit
+	ClearMonsters
+	LoadMonster 120 1 120
+	Combat
+	Save 0 MonsterHit
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags 4 Scratch1
+	Exit
+
+ThreeBoars:
+	AndOr DragonCaveFlags 4 Scratch1
+	IfNe
+	Exit
+	SetupMonster 120 0 120
+	Print "AT THE END OF THE PASSAGEWAY ARE THREE LARGE WILD BOARS.  THEY CHARGE AT YOU AND ATTACK!"
+	ClearMonsters
+	LoadMonster 120 3 120
+	Combat
+	AndOr DragonCaveFlags 4 DragonCaveFlags
+	Exit
+
+DwarfRemains:
+	Print "LYING ON THE GROUND HERE ARE THE DISSOLVING REMAINS OF A DWARF.  HE IS COVERED IN ACID."
+	Exit
+
+SoftGround:
+	Print "THE GROUND HERE IS SOFT AND FRESHLY CHURNED."
+	Exit
+
+AnkhegVictims:
+	AndOr DragonCaveFlags 8 Scratch1
+	IfNe
+	Exit
+	Print "THE REMAINS OF SEVERAL OF THE ANHKHEG'S VICTIM.  ADMIST THE DEBRIS IS SOME TREASURE."
+	ClearMonsters
+	Treasure #1388 #07D0 #01F4 0 0 1 0 255
+	Combat
+	AndOr DragonCaveFlags 8 DragonCaveFlags
+	Exit
+
+AnkhegLunges:
+	AndOr DragonCaveFlags 16 Scratch1
+	IfNe
+	Exit
+	SetupMonster 65 1 65
+	Print "FROM THE SOUTH, A LARGE ANHKHEG LUNGES OUT AND ATTACKS THE PARTY."
+	ClearMonsters
+	LoadMonster 65 1 65
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags 16 DragonCaveFlags
+	Exit
+
+SnakeSkin:
+	Print "LYING ON THE FLOOR IS A LARGE, SHEDDED SNAKE SKIN."
+	Exit
+
+GiganticSnake:
+	AndOr DragonCaveFlags 32 Scratch1
+	IfNe
+	Exit
+	SetupMonster 60 1 60
+	Print "A GIGANTIC SNAKE LIES IN FRONT OF YOU.  IT REARS AND ATTACKS."
+	ClearMonsters
+	LoadMonster 60 1 60
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags 32 DragonCaveFlags
+	Exit
+
+SnakeFalls:
+	AndOr DragonCaveFlags 64 Scratch1
+	IfNe
+	Exit
+	Save 1 Surprise
+	SetupMonster 60 0 60
+	Print "AS YOU WALK INTO THIS ROOM A GIANT SNAKE FALLS ON TOP OF THE PARTY."
+	ClearMonsters
+	LoadMonster 60 1 60
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags 64 DragonCaveFlags
+	Exit
+
+ThriKreenBlock:
+	AndOr DragonCaveFlags 128 Scratch1
+	IfNe
+	Exit
+	SetupMonster 118 0 118
+	Print "THERE ARE TWO THRI-KREEN HERE.  THEY BLOCK THE PASSAGE WITH THEIR BODIES.  WHAT WILL YOU DO?"
+	HMenu Scratch1 2 "LEAVE" "ATTACK"
+	OnGoto Scratch1 2 StepBack AttackThriKreen
+
+AttackThriKreen:
+	ClearMonsters
+	LoadMonster 118 2 118
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags 128 DragonCaveFlags
+	Exit
+
+ThriKreenWarriors:
+	AndOr DragonCaveFlags2 1 Scratch1
+	IfNe
+	Exit
+	SetupMonster 118 0 118
+	Print "BEFORE YOU ARE THREE THRI-KREEN WARRIORS.  THEY ATTACK YOU IMMEDIATELY."
+	ClearMonsters
+	LoadMonster 118 3 118
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags2 1 DragonCaveFlags2
+	Exit
+
+ThriKreenChest:
+	AndOr DragonCaveFlags2 2 Scratch1
+	IfNe
+	Exit
+	SetupMonster 118 0 118
+	Print "YOU ENTER A CAVE ROOM WITH FOUR THRI-KREEN WARRIORS IN IT.  ON THE FLOOR IS A CHEST WITH TREASURE IN IT.  AS YOU ENTER THEY ATTACK."
+	ClearMonsters
+	LoadMonster 118 4 118
+	Treasure 0 #07D0 0 #03E8 0 3 1 129
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto StepBack
+	AndOr DragonCaveFlags2 2 DragonCaveFlags2
+	Exit
+
+PassageOutside:
+	Print "YOU HAVE FOUND A PASSAGE WHICH LEADS OUTSIDE.  WILL YOU TAKE IT?"
+	HMenu Scratch1 2 "LEAVE CAVE" "STAY IN"
+	OnGoto Scratch1 2 LeaveLair Done
+
+LeaveLair:
+	Save 0 In3D
+	LoadFiles 4 4 0
+	Save 0 InLair
+	Call CallRedraw
+	NewECL 25
+
+ExitEvent:
+	Exit
+
+RedrawExit:
+	Call CallRedraw
+	Exit
+
+StepBack:
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Call CallRedraw
+	Exit
+
+PickEncounter:
+	Random 20 Scratch1
+	CompareAnd Scratch1 20 ForceEncounter25 0
+	IfEq
+	Return
+	Random 19 Scratch1
+	OnGoto Scratch1 20 PickBoars PickBoars PickBoars PickMantis PickTigers PickTigers PickTigers PickThriKreens PickThriKreens PickAnkheg PickCentaurs PickCentaurs PickSoldiers PickSoldiers PickThieves BuccaneerBaseSite PickQuicklings PickQuicklings PickSnakes PickSnakes
+	GetTable EncData9 EncounterType25 AuxTemp9
+	GetTable EncData2 EncounterType25 AuxMember
+	GetTable EncData3 EncounterType25 AuxRoll
+	GetTable EncMonster EncounterType25 AuxMonster
+	GetTable EncData5 EncounterType25 AuxEncResult
+	GetTable EncMorale EncounterType25 AuxEncResult2
+	GetTable EncData7 EncounterType25 AuxEncTemp
+	GetTable EncMonster2 EncounterType25 AuxPartyStrength
+	GetTable EncStrength EncounterType25 AuxCounter
+	PartyStrength Scratch1
+	Arith Scratch1 AuxCounter Scratch1
+	Random 5 Scratch2
+	OnGoto Scratch2 5 GroupSizeLarge GroupSizeMedium GroupSizeMedium GroupSizeMedium SplitGroups
+
+GroupSizeLarge:
+	Arith Scratch1 3 Scratch1
+	Compare Scratch1 0
+	IfLe
+	Save 1 Scratch1
+	Goto SplitGroups
+
+GroupSizeMedium:
+	Arith Scratch1 2 Scratch1
+	Compare Scratch1 0
+	IfLe
+	Save 1 Scratch1
+
+SplitGroups:
+	Save 0 EncounterExtraCount25
+	Save Scratch1 Scratch3
+	GetTable EncGroupSize EncounterType25 AuxMenuChoice
+	Compare AuxMenuChoice 0
+	IfEq
+	Goto CapGroupSize
+
+SplitGroupsLoop:
+	Compare Scratch3 AuxMenuChoice
+	IfLt
+	Goto CapGroupSize
+	Arith 1 EncounterExtraCount25 EncounterExtraCount25
+	Arith AuxMenuChoice Scratch3 Scratch3
+	Goto SplitGroupsLoop
+
+CapGroupSize:
+	Compare Scratch1 56
+	IfGe
+	Arith Scratch2 56 Scratch1
+	Save Scratch1 EncounterCount25
+	Return
+
+PickQuicklings:
+	Save "QUICKLINGS" str AuxMonsterName
+	Save 0 EncounterType25
+	Return
+
+PickBoars:
+	Save "WILD BOARS" str AuxMonsterName
+	Save 1 EncounterType25
+	Return
+
+PickMantis:
+	Save "GIANT MANTIS" str AuxMonsterName
+	Save 2 EncounterType25
+	Return
+
+PickTigers:
+	Save "TIGERS" str AuxMonsterName
+	Save 3 EncounterType25
+	Return
+
+PickThriKreens:
+	Save "THRI-KREENS" str AuxMonsterName
+	Save 4 EncounterType25
+	Return
+
+PickAnkheg:
+	Save "ANHKHEG" str AuxMonsterName
+	Save 5 EncounterType25
+	Return
+
+PickCentaurs:
+	Save "CENTAURS" str AuxMonsterName
+	Save 6 EncounterType25
+	Return
+
+PickSoldiers:
+	Save "SOLDIERS" str AuxMonsterName
+	Save 7 EncounterType25
+	Return
+
+PickThieves:
+	Save "THIEVES" str AuxMonsterName
+	Save 8 EncounterType25
+	Return
+
+PickSnakes:
+	Save "GIANT SNAKES" str AuxMonsterName
+	Save 10 EncounterType25
+	Return
+
+MarkKeepOnMap:
+	Compare Mark3 255
+	IfEq
+	Return
+	Save 12 ProbeX
+	Save 31 ProbeY
+	Save 97 ProbeCell
+	Call CallLookAhead
+	Return
+
+DoneMarkKeep:
+	RedrawView
+	Picture 255
+	Gosub MarkKeepOnMap
+	Exit
+
+Done:
+	RedrawView
+	Picture 255
+	Exit
+
+event2:
+	Compare In3D 1
+	IfEq
+	Goto RestInside
+	Save 10 RestChance
+	Save 96 RestEvery
+	Exit
+
+RestInside:
+	Save 0 RestEvery
+	Exit
+
+event3:
+	Save 1 ForceEncounter25
+	Goto RandomEncounter
+
+event4:
+	Compare InLair 255
+	IfEq
+	Goto LoadLairFiles
+	Save 0 In3D
+	Save 0 NoCoords
+	LoadFiles 4 4 0
+	Gosub MarkKeepOnMap
+	Exit
+
+LoadLairFiles:
+	Save 1 In3D
+	Save 255 NoCoords
+	LoadFiles 17 17 17
+	LoadFiles 25 2 255
+	Save 8 SkyInside
+	Exit

@@ -1,0 +1,9 @@
+4A00 WagonManMet  # set 1 when the wagon driver encounter happens (only once); area-local reuse
+4A01 GuardRoomSeenBits  # bits 1/2 = guard room text shown in each tower; area-local reuse
+4A77 GateFlags  # bits 1/2 tower sides cleared for passage (no rock volley), 4/8 tower garrisons slain, 16 outside guards slain, 32 gate description seen, 64 wagon owned
+4A78 BugbearWarnings  # 1..3 wall warnings from bugbears; 3 = they rob you; compared with random roll
+9D10 Table9D10  # GetTable base, GetTable [9D10] [6E7D] [6E81]
+9D18 Table9D18  # GetTable base, GetTable [9D18] [6E7D] [6E80]
+A196 TowerExitXTable  # by tower index -> PartyX
+A19C TowerExitYTable  # by tower index -> PartyY
+A1A2 TowerExitCellTable  # by tower index -> Cell

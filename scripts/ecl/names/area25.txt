@@ -1,0 +1,30 @@
+4A00 EncounterType25  # random encounter kind 0-10 (quicklings..giant snakes), index into encounter tables; area-local reuse
+4A01 EncounterExtraCount25  # number of second-group monsters loaded; area-local reuse
+4A02 EncounterCount25  # number of main monsters, from party strength; area-local reuse
+4A0F AnkhegsDefeated  # set 1 after the two ankhegs erupting from the ground; area-local reuse
+4A10 SlaverCaravanSeen  # set 1 after the slaver caravan rides by; area-local reuse
+4A11 GuardsRideBySeen  # set 1 after armed guards ride by / envoy refused; area-local reuse
+4A13 DragonCaveFlags  # 3D lair fights/treasures done, bits 1..128 (ankheg remains = 8); area-local reuse
+4A14 DragonCaveFlags2  # more lair fights done, bits 1/2 (monster 118); area-local reuse
+4A15 ForceEncounter25  # event3 sets 1 to force a random encounter; area-local reuse
+4A18 LairStartX25  # random entry X into the 3D cave, copied to PartyX; area-local reuse
+4A19 LairStartY25  # random entry Y into the 3D cave, copied to PartyY; area-local reuse
+4A1A KeepRidersFought  # set 255 after the keep's riders fight (trespassing); area-local reuse
+4AA1 DragonSeen  # 1 = dragon seen flying, 255 = seen landing at cave
+ADCE BlockedTerrain  # table of 8 terrain codes that stop movement (HoldMove)
+ADD6 SiteRowY  # table: Y of each special-site row
+ADDE SiteX  # table: X of special sites
+ADF5 SiteRowEnd  # table: end index of sites per row
+ADFD SiteKind  # table: site handler index
+AE14 EncSurpriseA  # per-encounter-type surprise value
+AE1F EncSurpriseB  # per-encounter-type surprise/distance value
+AE2A EncStrength  # per-type strength vs party strength
+AE35 EncGroupSize  # per-type divisor for extra group size
+AE4B EncData2  # per-type field -> [9802]
+AE56 EncData3  # per-type field -> [9803]
+AE61 EncMonster  # per-type main monster id -> [9804]
+AE6C EncData9  # per-type field -> [9809] (LoadMonster picture)
+AE77 EncData5  # per-type field -> [9805]
+AE82 EncMorale  # per-type morale -> [9806]
+AE8D EncData7  # per-type field -> [9807]
+AE98 EncMonster2  # per-type second monster id -> [9808]

@@ -1,0 +1,25 @@
+4A01 PoolPitDone  # set 1 after falling in pool / crossing pit; area-local reuse
+4A02 TailingsFound  # set 1 after kobold drawing in mine tailings; area-local reuse
+4A03 KoboldTruceState  # 1 white-flag kobold met, 2 deadfall trap sprung/disarmed; area-local reuse
+4A04 NetTrapDone  # set 1 after net trap fight or disarm; area-local reuse
+4A05 SpikeTrapDone  # set 1 after spike trap; area-local reuse
+4A08 HeardVoices  # set 1 by voices text / escort offer of drunk kobold; area-local reuse
+4A0A KingFightTemp  # scratch: KingState+1 for OnGoto; area-local reuse
+4A0B SecretDoorNorth  # set 2 when secret door in north wall found (wall state, guess); area-local reuse
+4A0E BarracksSeen  # set 1 after barracks map text; area-local reuse
+4A0F PrisonCellSeen  # set 1 after prison cell text; area-local reuse
+4A11 LivingAreaSeen  # set 1 after living areas text; area-local reuse
+4A12 LarderSeen13  # set 1 after rats/roots text; area-local reuse
+4A13 MessHallSeen  # set 1 after bone tables text; area-local reuse
+4A18 RubbleSlopeUsed  # set 1 after tumbling/climbing the rubble slope; area-local reuse
+4A8D KoboldKingState  # 0..7 throne fights progress; 4 king escaped, 6 king died, 7 treasure taken
+4A8E WyvernState  # 1 wyvern killed, 2 nest treasure taken
+4AC7 DrunkKoboldState  # 255 drunk kobold present, 2 killed; also gates random encounters; area-local reuse
+4AD3 EfreetiBottleDone  # set 1 after efreeti bottle fight
+4AD4 FatimaMet  # set 1 after princess Fatima joins/leaves/fights
+4AE5 CrippledKoboldMet  # set 1 after crippled kobold found
+B537 GuidePathEvent  # GetTable by step: event kind for kobold guide walk
+B550 GuidePathMove  # GetTable by step into scratch (guide step data, guess)
+B569 GuidePathFacing  # GetTable by step into Facing
+B582 EscapeXTable  # random index -> PartyX on escape
+B588 EscapeYTable  # random index -> PartyY on escape

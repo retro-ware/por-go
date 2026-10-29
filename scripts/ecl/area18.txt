@@ -1,0 +1,832 @@
+event2:
+	Compare PatrolsBeaten 64
+	IfGe
+	Gosub RestSafe
+	Save 2 RestEvery
+	Save 16 RestChance
+	Compare Cell 132
+	IfEq
+	Save 0 RestEvery
+	Compare Cell 138
+	IfEq
+	Save 0 RestEvery
+	Compare PodalPlazaCleared 253
+	IfGt
+	Save 0 RestEvery
+	Exit
+
+RestSafe:
+	Save 1 RestEvery
+	Save 99 RestChance
+	Return
+
+event3:
+	Gosub RollPatrol
+	SetupMonster EncMonster 2 EncMonster
+	Goto PatrolFight
+
+event4:
+	LoadFiles 18 2 255
+	LoadFiles 1 3 5
+	Save 0 NoCoords
+	Compare AreaKind 18
+	IfEq
+	Exit
+	Compare QuestPodalAuction 1
+	IfNe
+	Goto ResetPatrols
+	Save 64 PatrolsBeaten
+	Save 0 DisguiseState
+	Exit
+
+ResetPatrols:
+	Compare PodalPlazaCleared 254
+	IfLt
+	Save 0 PatrolsBeaten
+	Save 255 DisguiseState
+	Exit
+
+event0:
+	Compare LeftMap 0
+	IfEq
+	Goto PlazaApproach
+	Call CallStepForward
+	Save 255 HoldMove
+	Save 0 NoCoords
+	OnGoto Facing 4 ExitNorth ExitEast ExitSouth ExitWest
+
+ExitNorth:
+	Save 2 SymbolSet
+	NewECL 9
+
+ExitEast:
+	Save 8 SymbolSet
+	NewECL 29
+
+ExitSouth:
+	Save 4 SymbolSet
+	NewECL 2
+
+ExitWest:
+	Save 11 MapX
+	Save 28 MapY
+	Save 7 SymbolSet
+	NewECL 26
+
+PlazaApproach:
+	Compare Hours 14
+	IfLt
+	Save 11 Sky
+	IfGe
+	Save 8 Sky
+	Compare DisguiseState 0
+	IfNe
+	Exit
+	VMenu Scratch1 "THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?" 3 "STRIDE BOLDLY FORWARD!" "DISGUISE PARTY AS MONSTERS." "SNEAK, REMAINING UNSEEN"
+	GetTable DisguiseChoiceTable Scratch1 DisguiseState
+	Exit
+
+event1:
+	AndOr Cell 127 Scratch1
+	OnGoto Scratch1 12 StreetSquare AuctionStart TavernEnter ThePittSign IlmaterTemple BaneShrine RobedOrc AbandonedShop DecayedBuilding RememberBuilding Done Done
+
+StreetSquare:
+	Random 25 Scratch1
+	Compare PatrolsBeaten 64
+	IfLt
+	Goto StreetSquareEarly
+	Compare Scratch1 3
+	IfLt
+	Goto OverhearRumor
+	Compare Scratch1 21
+	IfGt
+	Goto PatrolMeet
+	Compare Search 1
+	IfEq
+	Compare Scratch1 16
+	IfGt
+	Goto PatrolMeet
+	Goto Done
+
+StreetSquareEarly:
+	Compare PatrolsBeaten 9
+	IfGe
+	Goto SlumsCleared9
+	Compare Scratch1 0
+	IfEq
+	Goto PatrolMeet
+	Compare Search 1
+	IfEq
+	Compare Scratch1 18
+	IfGt
+	Goto PatrolMeet
+	Goto Done
+
+PatrolMeet:
+	Gosub RollPatrol
+	Compare DisguiseState 255
+	IfEq
+	Goto PatrolEncounterMenu
+	Compare DisguiseState 0
+	IfEq
+	Goto PatrolEncounterMenu
+	SetupMonster EncMonster 2 EncMonster
+	Delay
+	Gosub SpotPatrol
+	Approach
+	Delay
+	Compare DisguiseState 2
+	IfEq
+	Goto SneakPast
+	Random 1 Scratch1
+	OnGoto Scratch1 2 PatrolGlare PatrolCheckOut
+
+PatrolGlare:
+	Print "THEY GLARE AT YOUR PARTY, "
+	Goto DisguiseCheck
+
+PatrolCheckOut:
+	Print "THEY CHECK OUT YOUR PARTY, "
+
+DisguiseCheck:
+	Delay
+	Approach
+	Save 5 Scratch10
+	Save 0 Scratch1
+
+DisguiseCheckMember:
+	LoadCharacter Scratch1
+	Compare SelRace 7
+	IfEq
+	Goto DisguiseCheckNext
+	Arith 5 Scratch10 Scratch10
+
+DisguiseCheckNext:
+	Arith 1 Scratch1 Scratch1
+	Compare Scratch1 8
+	IfLt
+	Goto DisguiseCheckMember
+	Random 100 Scratch9
+	Compare Scratch9 Scratch10
+	IfGt
+	Goto PatrolWalkOn
+
+PatrolDemandWho:
+	Print "AND DEMAND, 'WHO ARE YOU?'"
+	Approach
+	Parlay 0 1 2 3 4 Scratch1
+	OnGoto Scratch1 5 PatrolGrumble HereForBoss SettlersKillThem SettlersKillThem PatrolGrumble
+
+SettlersKillThem:
+	Print "THEY YELL 'SETTLERS! KILL THEM!'"
+	Goto PatrolFight
+
+HereForBoss:
+	Random 30 Scratch1
+	Compare SelReaction Scratch1
+	IfLt
+	Goto SettlersKillThem
+	Print "'OH, YOU'RE HERE FOR THE BOSS.'"
+	Goto Done
+
+PatrolGrumble:
+	Random 50 Scratch1
+	PartyStrength Scratch2
+	Compare Scratch2 Scratch1
+	IfLt
+	Goto SettlersKillThem
+	Print "THEY GRUMBLE AND MOVE ON."
+	Goto Done
+
+PatrolWalkOn:
+	Random 1 Scratch1
+	OnGoto Scratch1 2 WalkOn LaughWalkOn
+
+WalkOn:
+	Print "AND WALK ON."
+	Goto Done
+
+LaughWalkOn:
+	Print "LAUGH TO THEMSELVES AND WALK ON."
+	Goto Done
+
+SneakPast:
+	Random 5 Scratch1
+	Gosub PressToContinue
+	OnGoto Scratch1 6 PatrolDemandWho StopTheyMoveOn StopTheyMoveOn SlipPast SlipPast SlipPast
+
+SlipPast:
+	Print "YOUR PARTY SLIPS PAST THEM."
+	Goto Done
+
+StopTheyMoveOn:
+	Print "YOU STOP, AND THEY MOVE ON."
+	Goto Done
+
+PatrolEncounterMenu:
+	Save 2 EncMenuMode
+	Compare PatrolsBeaten 64
+	IfGe
+	Save 0 EncMenuMode
+	Gosub SpotPatrol
+	EncounterMenu EncMonster EncMenuMode EncMonster Scratch1 2 3 0 1 4 "THE MONSTERS STAND READY" "THE MONSTERS PREPARE" "" EncDistance EncDistance
+	Save 100 Morale
+	OnGoto Scratch1 4 Done PatrolFight PartyFlees PatrolParlay
+
+PatrolFight:
+	Gosub LoadPatrol
+	Save EncMorale Morale
+	Combat
+	Gosub CountPatrolBeaten
+	Compare Cell 127
+	IfLt
+	Goto CoverBlown
+	Compare CombatEnd 128
+	IfGt
+	Goto PartyFlees
+	Goto Done
+
+CountPatrolBeaten:
+	Compare PatrolsBeaten 64
+	IfGe
+	Return
+	Arith 1 PatrolsBeaten PatrolsBeaten
+	Return
+
+Done:
+	RedrawView
+	Picture 255
+	Exit
+
+PartyFlees:
+	Print "THE PARTY RUNS AND ESCAPES."
+	Random 3 Facing
+	Random 7 Scratch1
+	Save 255 Portrait
+	GetTable RandomExitX Scratch1 PartyX
+	Save Scratch1 PartyY
+	Call CallRedraw
+	Save 1 NoCoords
+
+CoverBlown:
+	Compare DisguiseState 0
+	IfEq
+	Exit
+	Compare DisguiseState 255
+	IfEq
+	Exit
+	Save 255 DisguiseState
+	Gosub PressToContinue
+	Print "YOUR COVER IS BLOWN."
+	Goto Done
+
+PatrolParlay:
+	CompareAnd DisguiseState 255 PatrolsBeaten 64
+	IfEq
+	Goto PatrolFight
+	Parlay 10 20 20 20 30 Scratch1
+	Random 50 Scratch2
+	Arith Scratch1 Scratch2 Scratch1
+	Arith SelReaction 2 Scratch2
+	Arith Scratch1 Scratch2 Scratch1
+	GetTable EncParlayTable EncType Scratch2
+	Arith Scratch1 Scratch2 Scratch1
+	Compare Scratch1 112
+	IfLt
+	Goto ParlayMoveIt
+	Print "'WE'LL LET YOU OFF THIS TIME.' THE MONSTERS SCUTTLE AWAY."
+	Goto Done
+
+ParlayMoveIt:
+	Compare Scratch1 90
+	IfLt
+	Goto ParlayTeachLesson
+	Print "'MOVE IT, TROLL-BAIT!' THEY SNARL AND MOVE OFF."
+	Goto Done
+
+ParlayTeachLesson:
+	Print "'WE'RE GONNA HAVE TA TEACH YOU A LESSON!'"
+	Goto PatrolFight
+
+RollPatrol:
+	Random 8 Scratch1
+	Save 0 EncExtraCount
+	GetTable EncTypeTable Scratch1 EncType
+	GetTable EncParlayTable EncType EncParlayMod
+	GetTable EncMonsterTable EncType EncMonster
+	OnGoto Scratch1 9 PatrolGoblins PatrolGoblins PatrolGoblins PatrolGoblins PatrolOrcs PatrolOrcs PatrolOrcs PatrolHobgoblins PatrolOgres
+
+PatrolGoblins:
+	Save " GOBLINS" str AuxCounter
+	Goto RollPatrolCount
+
+PatrolOrcs:
+	Save " ORCS" str AuxCounter
+	Goto RollPatrolCount
+
+PatrolHobgoblins:
+	Save " HOBGOBLINS" str AuxCounter
+	Goto RollPatrolCount
+
+PatrolOgres:
+	Save " OGRES" str AuxCounter
+
+RollPatrolCount:
+	PartyStrength Scratch1
+	GetTable EncStrengthTable EncType Scratch2
+	Arith Scratch1 Scratch2 Scratch1
+	Arith Scratch1 3 Scratch1
+	Random Scratch1 Scratch2
+	Arith Scratch1 Scratch2 Scratch1
+	CompareAnd 64 PatrolsBeaten 255 DisguiseState
+	IfEq
+	Arith 2 Scratch1 Scratch1
+	Compare Scratch1 2
+	IfLt
+	Save 2 Scratch1
+	GetTable EncMinCountTable EncType Scratch2
+	Compare Scratch1 Scratch2
+	IfLt
+	Goto SetPatrolCount
+	GetTable EncExtraTable EncType EncExtraCount
+	Compare Scratch1 50
+	IfGt
+	Save 50 Scratch1
+
+SetPatrolCount:
+	Save Scratch1 EncCount
+	GetTable EncDistanceTable EncType EncDistance
+	Return
+
+LoadPatrol:
+	ClearMonsters
+	Arith EncCount EncExtraCount Scratch1
+	Print Scratch1
+	Print str AuxCounter
+	Print " RUSH TO ATTACK."
+	GetTable EncMonsterTable EncType Scratch1
+	LoadMonster Scratch1 EncCount Scratch1
+	GetTable EncMoraleTable EncType EncMorale
+	Compare EncExtraCount 0
+	IfEq
+	Return
+	Arith EncMorale 10 EncMorale
+	Arith 1 Scratch1 Scratch1
+	LoadMonster Scratch1 EncExtraCount Scratch1
+	Return
+
+SpotPatrol:
+	Print "YOU SPOT A GROUP OF"
+	Print str AuxCounter
+	Print ". "
+	Return
+
+OverhearRumor:
+	Compare OverheardIndex 5
+	IfEq
+	Arith 5 OverheardIndex OverheardIndex
+	Compare DisguiseState 254
+	IfGe
+	Goto Done
+	Gosub RollPatrol
+	SetupMonster EncMonster 2 EncMonster
+	Delay
+	Print "AS YOU MOVE YOU OVERHEAR SOME"
+	Approach
+	Delay
+	Print str AuxCounter
+	Print " SAY, "
+	Save OverheardIndex Scratch1
+	Arith 1 OverheardIndex OverheardIndex
+	Approach
+	OnGoto Scratch1 5 RumorBoss RumorOgres RumorBaneTemple RumorLard RumorBidder
+
+RumorBoss:
+	Print "'DO YOU THINK HE'LL REALLY SHOW UP -- THE BOSS I MEAN?'"
+	Goto Done
+
+RumorOgres:
+	Print "'MORE OGRES ON THE STREET, SINCE THE GIANTS TOOK OVER THE CASTLE.'"
+	Goto Done
+
+RumorLard:
+	Print "'HE MELTED INTO A PUDDLE OF LARD WHEN HE TOUCHED THE THING!'"
+	Goto Done
+
+RumorBidder:
+	Print "'THE BOSS WILL BE THE GUY BIDDING UP THE PRICE.'"
+	Goto Done
+
+RumorBaneTemple:
+	Print "'THE PLAZA'S BANE TEMPLE IS RECRUITING FOR MACE AGAIN. GRISHNAK WON'T BE HAPPY.'"
+	Goto Done
+
+AuctionStart:
+	Save 0 NoCoords
+	Compare DisguiseState 253
+	IfGt
+	Exit
+	Picture 16
+	Print "THE AUCTIONEER CRIES 'CREATURES OF ALL AGES, WELCOME TO THIS AUCTION FOR AN ITEM BOTH MAGICAL AND POWERFUL!'"
+	Gosub PressToContinue
+	Print "THE AUCTIONEER HAS EITHER A WAND OR STAFF."
+	Gosub PressToContinue
+	VMenu Scratch1 "DO YOU WISH TO:" 4 "STAND AND LISTEN" "MOVE IN CLOSER" "LISTEN TO COMMENTS" "LEAVE"
+	OnGoto Scratch1 4 AuctionBidding MoveCloser AuctionComments AuctionLeave
+
+AuctionBidding:
+	Print "THE BIDDING ESCALATES TO 5,000 GOLD PIECES -- HIGH BID FROM A MAN IN PLAIN CLOTHES, NEXT TO AN OGRE."
+	Gosub PressToContinue
+	VMenu Scratch1 "DO YOU WISH TO:" 3 "MAKE A BID" "WAIT FOR WINNER" "TRY TO LEAVE"
+	OnGoto Scratch1 3 MakeBid WaitForWinner AuctionLeave
+
+MakeBid:
+	Print "YOU UP THE BID. MONSTERS NEARBY TURN, STARE,"
+	Gosub RollSuspicion
+	Compare 255 DisguiseState
+	IfEq
+	Goto AuctionCancelled
+	Gosub MonstersTurnAway
+	Print "THE MAN THEN SPEAKS A WORD AND THE AUCTIONEER'S BLOCK IS ENVELOPED IN DARKNESS."
+	Gosub PressToContinue
+	Print "THERE IS MASS CONFUSION. SUDDENLY, THE OGRE SPRINTS FROM THE DARKNESS."
+	Gosub PressToContinue
+	VMenu Scratch1 "DO YOU:" 3 "FOLLOW THE OGRE" "MOVE QUIETLY AWAY" "LOOK FOR THE MAN IN PLAIN CLOTHES"
+	OnGoto Scratch1 3 FollowOgre AuctionLeave LookForGarwin
+
+FollowOgre:
+	Print "THE OGRE IS TACKLED AND SEARCHED. HE DOESN'T HAVE THE ITEM ON HIM."
+	Gosub PressToContinue
+	Print "THE MONSTERS LOOK AROUND FOR A SCAPEGOAT. THEIR EYES FALL UPON YOUR PARTY, THEN THEY "
+	Gosub RollSuspicion
+	Compare 255 DisguiseState
+	IfEq
+	Goto AuctionCancelled
+	Gosub MonstersTurnAway
+	Goto AuctionOver
+
+LookForGarwin:
+	Print "'GARWIN, I'LL GET YOU!' CRIES THE AUCTIONEER. HOWEVER, THE MAN HAS ESCAPED IN THE CONFUSION."
+	Goto AuctionOver
+
+WaitForWinner:
+	Print "'GOING... GOING... GONE!' THE AUCTIONEER CRIES."
+	Gosub PressToContinue
+	Print "A MAN AND OGRE EXCHANGE THE WAND AND A LARGE BAG, THEN DISAPPEAR INTO THE CROWD."
+	Goto AuctionOver
+
+AuctionLeave:
+	Print "AS YOU MOVE AWAY THE MONSTERS GLANCE YOUR WAY, "
+	Gosub RollSuspicion
+	Compare 255 DisguiseState
+	IfEq
+	Goto AuctionCancelled
+	Gosub MonstersTurnAway
+	Print "THE AUCTION ENDS. YOU DON'T SEE WHO BOUGHT THE ITEM."
+	Goto AuctionOver
+
+MoveCloser:
+	Print "THE MONSTERS SHOOT YOU ANGRY LOOKS, "
+	Gosub RollSuspicion
+	Compare 255 DisguiseState
+	IfEq
+	Goto AuctionCancelled
+	Gosub MonstersTurnAway
+	Print "YOU NOW SEE THE WAND ISN'T A MAJOR ARTIFACT, IT'S ONLY A WAND OF FEAR!"
+	Goto AuctionBidding
+
+AuctionComments:
+	Random 1 Scratch1
+	OnGoto Scratch1 2 CommentIllumination CommentCommand
+
+CommentIllumination:
+	Print "'IT'S A WAND OF ILLUMINATION. WHO CARES, I SEE IN THE DARK ANYWAY!'"
+	Gosub PressToContinue
+	Goto AuctionBidding
+
+CommentCommand:
+	Print "'IT'S A STAFF OF COMMAND. I COULD HAVE MY OWN ARMY!'"
+	Gosub PressToContinue
+	Goto AuctionBidding
+
+AuctionCancelled:
+	Print " AND YELL 'SETTLERS! KILL THEM!'"
+	Gosub PressToContinue
+	Print "'THE AUCTION IS CANCELLED!' YELLS THE AUCTIONEER AS HE FLEES."
+	Gosub PressToContinue
+	Save 255 DisguiseState
+	Save 254 QuestPodalAuction
+	Goto PatrolEncounterMenu
+
+AuctionOver:
+	Gosub PressToContinue
+	Print "THE AUCTION OVER, THE MONSTERS GRUMBLE AND TURN AWAY.'"
+	Save 254 DisguiseState
+	Save 254 QuestPodalAuction
+	Goto Done
+
+RollSuspicion:
+	Compare DisguiseState 2
+	IfEq
+	Save 255 DisguiseState
+	Random 5 Scratch2
+	Compare Scratch2 0
+	IfEq
+	Save 255 DisguiseState
+	Return
+
+MonstersTurnAway:
+	Print "GRUMBLE, AND TURN AWAY."
+	Gosub PressToContinue
+	Return
+
+TavernEnter:
+	Compare TavernState 0
+	IfNe
+	Goto TavernCrowd
+	Print "YOU HAVE ENTERED A CROWDED TAVERN."
+	Save 6 Portrait
+	SetupMonster 19 0 3
+	Print "YOU OPENED THE DOOR INTO A DRUNK BUCCANEER."
+	Gosub PressToContinue
+	Print "HE GLARES AT YOU,'ONE OF YOU SHALL PAY FOR THIS INSULT. WHO WILL IT BE?'WHAT DO YOU DO?"
+
+BuccaneerMenu:
+	HMenu Scratch1 4 "CHALLENGE" "ATTACK" "FLEE" "BRIBE"
+	OnGoto Scratch1 4 ChallengeBuccaneer PatronsAttack PartyFlees BribeBuccaneer
+
+ChallengeBuccaneer:
+	Who "WHO WILL CHALLENGE THE BUCCANEER?"
+	Compare SelStatus 0
+	IfGt
+	Goto DuelBuccaneer
+	Print "THAT ONE IS UNACCEPTABLE. CHOOSE ANOTHER."
+	Goto ChallengeBuccaneer
+
+DuelBuccaneer:
+	ClearMonsters
+	Call CallDuelB
+	LoadMonster 41 1 16
+	Combat
+	Save 1 TavernState
+	Compare CombatEnd 128
+	IfGt
+	Goto BuccaneerPaid
+	Print "THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING."
+	Gosub PressToContinue
+	Save 255 Portrait
+	Goto TavernCrowd
+
+BuccaneerPaid:
+	Print "THE BUCCANEER SMILES.'THAT IS SUFFICIENT PAYMENT.' HE LEAVES."
+	Gosub PressToContinue
+	Picture 255
+	Save 255 Portrait
+	Goto TavernCrowd
+
+PatronsAttack:
+	Print "YOUR ACTIONS ANGER THE PATRONS AND THEY ATTACK."
+	Save 30 Morale
+	ClearMonsters
+	LoadMonster 6 4 6
+	LoadMonster 2 12 2
+	LoadMonster 41 1 16
+	LoadMonster 4 8 4
+	Combat
+	Save 255 Portrait
+	Compare CombatEnd 128
+	IfGt
+	Goto PartyFlees
+	Save 2 TavernState
+	Goto BarDestroyed
+
+BribeBuccaneer:
+	Print "'A TENTH OF YOUR MONEY THEN.'DO YOU ACCEPT?"
+	HMenu Scratch1 2 "YES" "NO"
+	OnGoto Scratch1 2 PayBribe BuccaneerMenu
+
+PayBribe:
+	Rob 1 10 10
+	Goto BuccaneerPaid
+
+TavernCrowd:
+	Compare TavernState 1
+	IfGt
+	Goto BarDestroyed
+	SetupMonster 2 0 2
+	Print "THE CREATURES IGNORE YOU FOR THE MOMENT."
+	Gosub PressToContinue
+	VMenu Scratch1 "WHAT DO YOU DO?" 4 "MIX WITH MONSTERS" "DRINK HEAVILY" "ATTACK" "LEAVE"
+	OnGoto Scratch1 4 MixWithMonsters DrinkHeavily PatronsAttack StepBack
+
+MixWithMonsters:
+	Compare DisguiseState 2
+	IfEq
+	Goto PatronsAttack
+	Compare DisguiseState 255
+	IfEq
+	Goto PatronsAttack
+	Print "MONSTERS INSULT YOUR ABILITIES AND PARENTAGE."
+	Gosub PressToContinue
+	VMenu Scratch1 "WHAT DO YOU DO?" 4 "ATTACK" "TRY TO LEAVE" "INSULT BACK" "JOIN IN HEAVY DRINKING"
+	OnGoto Scratch1 4 FreeForAll PatronsAttack FreeForAll DrinkHeavily
+
+DrinkHeavily:
+	Save 2 PartyX
+	Save 10 PartyY
+	Save 2 Facing
+	Call CallRedraw
+	Rob 1 100 50
+	Save 1 NoCoords
+	Print "YOU HAD A GREAT TIME UNTIL YOU ALL PASSED OUT. YOUR PURSE IS MISSING."
+	Compare PatrolsBeaten 64
+	IfGe
+	Save 255 DisguiseState
+	Exit
+
+StepBack:
+	Save PrevX PartyX
+	Save PrevY PartyY
+	Call CallRedraw
+	Exit
+
+FreeForAll:
+	Print "YOUR ACTIONS TRIGGER A FREE FOR ALL."
+	Gosub PressToContinue
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster 2 25 2
+	LoadMonster 6 20 6
+	LoadMonster 8 5 8
+	Save 0 Scratch2
+
+FreeForAllMember:
+	Random 44 Scratch1
+	Arith 8 Scratch1 Scratch1
+	Arith 1 Scratch2 Scratch2
+	LoadCharacter Scratch1
+	Save 128 SelSide
+	Save 178 SelControl
+	AndOr 128 Scratch1 Scratch1
+	LoadCharacter Scratch1
+	Compare Scratch2 21
+	IfLt
+	Goto FreeForAllMember
+	Combat
+	Compare CombatEnd 128
+	IfGt
+	Goto PartyFlees
+	Save 2 TavernState
+
+BarDestroyed:
+	Compare TavernState 2
+	IfGt
+	Exit
+	Print "THE BAR LOOKS LIKE IT WAS DESTROYED BY EXPERTS."
+	Save 3 TavernState
+	Exit
+
+ThePittSign:
+	Save 0 NoCoords
+	Print "OVER THIS DOOR IS A CRUDE SIGN SAYING, 'THE PITT.'"
+	Exit
+
+IlmaterTemple:
+	Compare LastBuildingCell 4
+	IfNe
+	Goto IlmaterHealer
+	Print "THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE."
+
+IlmaterHealer:
+	Save 48 Portrait
+	Picture 25
+	Print "A YOUNG WOMAN COMES FORWARD 'WE PROVIDE HELP FOR THOSE WHO CAN REACH US. ARE YOU IN NEED OF HEALING?"
+	HMenu Scratch1 2 "YES" "NO"
+	OnGoto Scratch1 2 Heal RestHere
+
+Heal:
+	Save 1 Temple
+	ClearMonsters
+	Combat
+
+RestHere:
+	Print "'YOU CAN REST HERE AS LONG AS YOU WISH.' SHE THEN LEAVES."
+	Picture 255
+	Save 255 Portrait
+	Save 4 LastBuildingCell
+	Exit
+
+BaneShrine:
+	Save 0 NoCoords
+	Print "THIS IS A SMALL SHRINE. SYMBOLS OF BANE HAVE REPLACED THOSE OF ILMATER."
+	Exit
+
+RobedOrc:
+	Compare BaneRecruiterState 0
+	IfNe
+	Goto BaneMeeting
+	SetupMonster 4 1 4
+	Print "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
+	HMenu Scratch1 3 "LEAVE" "GREET" "ATTACK"
+	Compare DisguiseState 255
+	IfEq
+	Goto AttackOrc
+	Compare DisguiseState 2
+	IfEq
+	Goto AttackOrc
+	OnGoto Scratch1 3 StepBack GreetOrc AttackOrc
+
+GreetOrc:
+	Print "THE ORC SMILES CROOKEDLY.'GREETINGS FROM BANE."
+	Compare QuestTempleOfBane 0
+	IfNe
+	Goto RecruitRecover
+	Print " WE ARE RECRUITING CREATURES FOR OUR TEMPLE TO THE NORTHEAST. ARE YOU INTERESTED?'"
+
+RecruitMenu:
+	HMenu Scratch1 2 "YES" "NO"
+	OnGoto Scratch1 2 AcceptRecruit DeclineRecruit
+
+RecruitRecover:
+	Print " WE ARE HIRING CREATURES TO RECOVER OUR TEMPLE. ARE YOU INTERESTED?'"
+	Goto RecruitMenu
+
+AcceptRecruit:
+	Print "'MEET HERE IN TWO HOURS. YOU MAY MEET HIGH PRIEST MACE.' HE ESCORTS YOU OUT."
+
+SetMeetHour:
+	Save 1 BaneRecruiterState
+	Save Hours BaneMeetHour
+	Arith 2 BaneMeetHour BaneMeetHour
+	Compare BaneMeetHour 23
+	IfGt
+	Arith 24 BaneMeetHour BaneMeetHour
+	Goto StepBack
+
+DeclineRecruit:
+	Print "'IF YOU CHANGE YOUR MIND, RETURN IN TWO HOURS.' HE ESCORTS YOU OUT."
+	Goto SetMeetHour
+
+BaneMeeting:
+	Compare BaneRecruiterState 1
+	IfNe
+	Exit
+	Compare BaneMeetHour Hours
+	IfGe
+	Exit
+	SetupMonster 4 1 4
+	Print "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
+	Gosub PressToContinue
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster 4 8 4
+	LoadMonster 5 1 5
+	LoadMonster 8 3 8
+	Treasure 0 0 0 0 0 0 0 22
+	Combat
+	Save 2 BaneRecruiterState
+	Compare CombatEnd 128
+	IfGt
+	Goto PartyFlees
+	Exit
+
+AttackOrc:
+	Save 90 Morale
+	ClearMonsters
+	LoadMonster 5 1 5
+	Treasure 0 0 0 0 0 0 0 22
+	Combat
+	Save 2 BaneRecruiterState
+	Compare CombatEnd 128
+	IfGt
+	Goto PartyFlees
+	Exit
+
+RememberBuilding:
+	Save Cell LastBuildingCell
+	Exit
+
+AbandonedShop:
+	Compare 137 LastBuildingCell
+	IfEq
+	Exit
+	Print "AN ABANDONED SHOP. BROKEN SHELVES ARE ALL THAT REMAIN."
+	Goto RememberBuilding
+
+DecayedBuilding:
+	Compare 137 LastBuildingCell
+	IfEq
+	Exit
+	Print "A DECAYED BUILDING LEFT TO THE RATS."
+	Goto RememberBuilding
+
+PressToContinue:
+	HMenu Scratch2 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Return
+
+SlumsCleared9:
+	Compare PatrolsBeaten 9
+	IfEq
+	Save 254 PodalPlazaCleared
+	Save 10 PatrolsBeaten
+	Exit

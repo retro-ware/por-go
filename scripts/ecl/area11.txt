@@ -1,0 +1,372 @@
+event0:
+	Save 11 Scratch5
+	Compare Hours 14
+	IfGe
+	Save 8 Scratch5
+	Save Scratch5 Sky
+	Save 10 SkyInside
+	AndOr 127 Cell Scratch10
+	Exit
+
+event1:
+	Print ""
+	Picture 255
+	Save 255 Portrait
+	AndOr 127 Cell Scratch10
+	Compare Scratch10 0
+	IfEq
+	Goto LeaveArea
+	Save 10 AuxCounter
+
+FindCellLoop:
+	Compare AuxCounter Scratch10
+	IfEq
+	Goto CellDispatch
+	Compare AuxCounter 18
+	IfGt
+	Exit
+	Arith 1 AuxCounter AuxCounter
+	Goto FindCellLoop
+
+event2:
+	Compare FoughtWatch 0
+	IfNe
+	Goto NoRestHere
+	Save 1 RestEvery
+	Save 101 RestChance
+	Exit
+
+NoRestHere:
+	Save 0 RestEvery
+	Save 0 RestChance
+	Exit
+
+event3:
+	Save 0 RestChance
+	Save 57 Portrait
+	SetupMonster 15 2 1
+	Delay
+	Approach
+	Delay
+	Approach
+	Delay
+	Print "YOU ARE ROUSTED BY THE CITY WATCH AND TOLD TO MOVE ALONG. WHAT DO YOU DO?"
+	HMenu Scratch1 2 "GO" "FIGHT"
+	OnGoto Scratch1 2 ClearAndExit FightWatch
+
+event4:
+	LoadFiles 0 0 0
+	LoadFiles 127 127 127
+	Compare RestChance 255
+	IfEq
+	Exit
+	Goto NoRestHere
+
+CellDispatch:
+	Arith 10 AuxCounter AuxCounter
+	Compare TrainerCooldown 0
+	IfNe
+	Arith 1 TrainerCooldown TrainerCooldown
+	OnGoto AuxCounter 9 ReadNotices ReadDoorSign ClericTrainer MagicUserTrainer EnterArena FightersSign FighterTrainer ThiefTrainer RoguesSign
+
+ReadNotices:
+	Compare NoticesRead 0
+	IfGt
+	Exit
+	Print "NOTICES FOR TEACHERS AND STUDENTS ARE POSTED ON THE WALLS.  A NOTE DIRECTS MAGIC USERS AND CLERICS TO GO NORTH AND FIGHTERS AND 'ROGUES' TO GO EAST."
+	Arith 1 NoticesRead NoticesRead
+	Exit
+
+ReadDoorSign:
+	Compare DoorSignRead 0
+	IfGt
+	Exit
+	Print "A SIGN ON THE WALL DIRECTS MAGIC USERS TO GO THROUGH THE EAST DOOR AND CLERICS TO GO THROUGH THE WEST DOOR."
+	Arith 1 DoorSignRead DoorSignRead
+	Exit
+
+ClericTrainer:
+	Compare TrainerCooldown 0
+	IfGt
+	Exit
+	Save 2 TrainerCooldown
+	Save 16 Portrait
+	Picture 4
+	Save 114 Scratch4
+	Save "CLERICS " str AuxMonsterName
+	Goto AskTrain
+
+MagicUserTrainer:
+	Compare TrainerCooldown 0
+	IfGt
+	Exit
+	Save 2 TrainerCooldown
+	Save 16 Portrait
+	Picture 2
+	Save 113 Scratch4
+	Save "MAGIC USERS " str AuxMonsterName
+	Goto AskTrain
+
+EnterArena:
+	Compare ArenaEntered 0
+	IfGt
+	Goto ClearAndExit
+	Print "THE ROOM IS FILLED WITH DUELING PAIRS."
+	Gosub PressReturn
+	Save 1 ArenaEntered
+	Save 9 Portrait
+	SetupMonster 16 2 1
+	Delay
+	Approach
+	Delay
+	Approach
+	Delay
+	Compare DuelOffered 0
+	IfGt
+	Goto OfferPartner
+	Print "THE ARENA MASTER ASKS IF YOU WISH TO DUEL.  'THE DUELS  ARE EVENLY MATCHED AND NORMALLY NOT TO THE DEATH. DO YOU DUEL?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 ChooseDuelist OfferPartner
+
+ChooseDuelist:
+	Who "WHO WILL DUEL?"
+	Compare SelControl 128
+	IfLt
+	Goto StartDuel
+	Print "I CANNOT ARRANGE SUCH A DUEL."
+	Exit
+
+StartDuel:
+	ClearMonsters
+	Call CallDuelA
+	Combat
+	Exit
+
+OfferPartner:
+	Save 1 DuelOffered
+	Compare PartnerDeclined 0
+	IfNe
+	Exit
+	Print "'DO YOU SEEK A PARTNER FOR YOUR ADVENTURING?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 RollHireling DeclinePartner
+
+RollHireling:
+	Compare PartnerTries 7
+	IfGt
+	Goto NoHirelingLeft
+	Arith 1 PartnerTries PartnerTries
+	Random 250 Scratch1
+	Compare Scratch1 20
+	IfLt
+	Goto HireAcolyte
+	Compare Scratch1 70
+	IfLt
+	Goto HireWarrior
+	Compare Scratch1 110
+	IfLt
+	Goto HireEvoker
+	Compare Scratch1 140
+	IfLt
+	Goto HireSwordsman
+	Compare Scratch1 170
+	IfLt
+	Goto HireRobber
+	Compare Scratch1 195
+	IfLt
+	Goto HireCurate
+	Compare Scratch1 220
+	IfLt
+	Goto HireHero
+	Compare Scratch1 240
+	IfLt
+	Goto HireTheurgist
+
+NoHirelingLeft:
+	Print "'THERE IS NO ONE WHO WILL GO WITH YOU.'"
+	Save 8 PartnerTries
+	Picture 255
+	Save 255 Portrait
+	Exit
+
+HireAcolyte:
+	Save 0 Scratch2
+	Save "ACOLYTE" str AuxMonsterName
+	Goto OfferHireling
+
+HireWarrior:
+	Save 1 Scratch2
+	Save "WARRIOR" str AuxMonsterName
+	Goto OfferHireling
+
+HireEvoker:
+	Save 2 Scratch2
+	Save "EVOKER" str AuxMonsterName
+	Goto OfferHireling
+
+HireSwordsman:
+	Save 3 Scratch2
+	Save "SWORDSMAN" str AuxMonsterName
+	Goto OfferHireling
+
+HireRobber:
+	Save 4 Scratch2
+	Save "ROBBER" str AuxMonsterName
+	Goto OfferHireling
+
+HireCurate:
+	Save 5 Scratch2
+	Save "CURATE" str AuxMonsterName
+	Goto OfferHireling
+
+HireHero:
+	Save 6 Scratch2
+	Save "HERO" str AuxMonsterName
+	Goto OfferHireling
+
+HireTheurgist:
+	Save 7 Scratch2
+	Save "THEURGIST" str AuxMonsterName
+
+OfferHireling:
+	Compare Scratch2 1
+	IfLe
+	Save "1 SHARE" str AuxText
+	Compare Scratch2 2
+	IfEq
+	Save "2 SHARES" str AuxText
+	Compare Scratch2 3
+	IfGe
+	Save "3 SHARES " str AuxText
+	Compare Scratch2 4
+	IfGe
+	Save " PLUS A PICK OF SPECIAL ITEMS" str AuxTreasureText
+	Compare Scratch2 5
+	IfGt
+	Save "4 SHARES " str AuxText
+	Print "'THERE IS A FINE "
+	Print str AuxMonsterName
+	Print " WHO WILL JOIN YOU FOR "
+	Print str AuxText
+	Print ". IS THIS ACCEPTABLE?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 AcceptHireling ConsiderAnother
+
+AcceptHireling:
+	Gosub CheckPartyFull
+	GetTable HirelingTable Scratch2 Scratch1
+	Arith Scratch2 5 Scratch2
+	Arith 50 Scratch2 Scratch2
+	AddNPC Scratch1 Scratch2
+
+ConsiderAnother:
+	Print "'WOULD YOU LIKE TO CONSIDER SOMEONE ELSE?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 RollHireling DeclinePartner
+
+DeclinePartner:
+	Save 1 PartnerDeclined
+	Picture 255
+	Save 255 Portrait
+	Exit
+
+FightersSign:
+	Print "A SIGN ON THE NORTH DOOR READS 'FIGHTERS'."
+	Exit
+
+FighterTrainer:
+	Compare TrainerCooldown 0
+	IfGt
+	Exit
+	Save 2 TrainerCooldown
+	Save 16 Portrait
+	Picture 1
+	Save 120 Scratch4
+	Save "FIGHTERS " str AuxMonsterName
+	Goto AskTrain
+
+ThiefTrainer:
+	Compare TrainerCooldown 0
+	IfGt
+	Exit
+	Save 2 TrainerCooldown
+	Save 16 Portrait
+	Picture 8
+	Save 116 Scratch4
+	Save "THIEVES " str AuxMonsterName
+	Goto AskTrain
+
+RoguesSign:
+	Print "A SIGN ON THE NORTH DOOR READS 'ROGUES'."
+	Exit
+
+AskTrain:
+	Save Scratch4 PartyExp
+	Print "'WE TRAIN ONLY "
+	Print str AuxMonsterName
+	Print "HERE. DO YOU WANT TO TRAIN?'"
+	Gosub YesNoMenu
+	OnGoto Scratch1 2 OpenTraining ClearAndExit
+
+OpenTraining:
+	Program 0
+	Picture 255
+	Exit
+
+FightWatch:
+	Save 0 WatchCombatDone11
+	Save 50 Morale
+	ClearMonsters
+	LoadMonster 94 2 14
+	LoadMonster 84 12 11
+	LoadMonster 53 12 16
+	LoadMonster 40 12 15
+	Combat
+	Save 1 WatchCombatDone11
+	Gosub AfterWatchFight
+	Save 1 FoughtWatch
+	Exit
+
+LeaveArea:
+	NewECL 0
+
+AfterWatchFight:
+	Compare CombatEnd 128
+	IfGt
+	Goto EjectParty
+	Compare WatchCombatDone11 0
+	IfGt
+	Return
+
+ClearAndExit:
+	Save 0 Temp1
+	Save 0 Temp2
+	Save 0 Temp3
+	Picture 255
+	Save 255 Portrait
+	Exit
+
+YesNoMenu:
+	HMenu Scratch1 2 "YES" "NO"
+	Return
+
+CheckPartyFull:
+	Compare PartyCount 8
+	IfLt
+	Return
+	Print "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
+	Gosub PressReturn
+	Goto ClearAndExit
+
+EjectParty:
+	Random 3 Facing
+	Random 4 AuxMember
+	GetTable EjectXTable AuxMember PartyX
+	GetTable EjectYTable AuxMember PartyY
+	Print ""
+	Call CallRedraw
+	NewECL 0
+
+PressReturn:
+	HMenu AuxMenuChoice 1 "PRESS <RETURN> OR BUTTON TO CONTINUE"
+	Return
