@@ -3,27 +3,21 @@ event4:
 	Save 8 SkyInside
 	LoadFiles 2 2 255
 	LoadPieces 1 3 20
-	Compare AreaKind 2
-	IfEq
-	Exit
+	if AreaKind == 2: Exit
 	Save 0 NoCoords
 	Exit
 
 event2:
 	Save 12 RestEvery
 	Save 6 RestChance
-	Compare TextileHouseCleared 253
-	IfGt
-	Save 0 RestEvery
+	if TextileHouseCleared > 253: Save 0 RestEvery
 	Exit
 
 event3:
 	Goto RandomEncounter
 
 event0:
-	Compare LeftMap 0
-	IfEq
-	Exit
+	if LeftMap == 0: Exit
 	Call CallStepForward
 	Save 255 HoldMove
 	OnGoto Facing 4 ExitNorth ExitEast Done ExitWest
@@ -52,47 +46,27 @@ Done:
 
 RandomEncounterRoll:
 	Save 5 Scratch1
-	Compare Search 1
-	IfNe
-	Save 30 Scratch1
+	if Search != 1: Save 30 Scratch1
 	Random Scratch1 Scratch1
-	Compare 1 Scratch1
-	IfNe
-	Exit
+	if 1 != Scratch1: Exit
 
 RandomEncounter:
 	Save 18 Scratch1
-	CompareAnd Scratch10 22 IronBoxFound 0
-	IfEq
-	Goto PickEncounter
-	Compare TextileHouseCleared 253
-	IfGt
-	Exit
+	if Scratch10 == 22 && IronBoxFound == 0: Goto PickEncounter
+	if TextileHouseCleared > 253: Exit
 	Random 10 Scratch1
 	Add EncounterCount Scratch1 Scratch1
-	CompareAnd EncounterCount 9 IronBoxFound 0
-	IfEq
-	Exit
+	if EncounterCount == 9 && IronBoxFound == 0: Exit
 	Add 1 EncounterCount EncounterCount
-	CompareAnd EncounterCount 10 IronBoxFound 255
-	IfNe
-	Goto PickEncounter
+	if EncounterCount != 10 || IronBoxFound != 255: Goto PickEncounter
 	Save 254 TextileHouseCleared
 	Exit
 
 PickEncounter:
-	Compare Scratch1 17
-	IfGt
-	Goto HobgoblinsCharge
-	Compare Scratch1 12
-	IfGt
-	Goto SkeletalForce
-	Compare Scratch1 7
-	IfGt
-	Goto GhoulsAttack
-	Compare Scratch1 3
-	IfGt
-	Goto ScorpionsApproach
+	if Scratch1 > 17: Goto HobgoblinsCharge
+	if Scratch1 > 12: Goto SkeletalForce
+	if Scratch1 > 7: Goto GhoulsAttack
+	if Scratch1 > 3: Goto ScorpionsApproach
 	Save 60 Morale
 	SetupMonster 37 0 37
 	PrintClear "EVIL LOOKING FROGS BOIL UP FROM BELOW."
@@ -100,9 +74,7 @@ PickEncounter:
 	ClearMonsters
 	LoadMonster 38 8 37
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto EjectToStreet
+	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 HobgoblinsCharge:
@@ -114,9 +86,7 @@ HobgoblinsCharge:
 	LoadMonster 6 8 6
 	LoadMonster 7 1 7
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto EjectToStreet
+	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 SkeletalForce:
@@ -129,9 +99,7 @@ SkeletalForce:
 	LoadMonster 34 10 34
 	LoadMonster 35 8 35
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto EjectToStreet
+	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 GhoulsAttack:
@@ -143,9 +111,7 @@ GhoulsAttack:
 	LoadMonster 20 1 20
 	LoadMonster 72 5 72
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto EjectToStreet
+	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 ScorpionsApproach:
@@ -157,15 +123,11 @@ ScorpionsApproach:
 	LoadMonster 18 3 18
 	LoadMonster 39 1 18
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto EjectToStreet
+	if CombatEnd > 128: Goto EjectToStreet
 	Exit
 
 CourtyardAmbush:
-	Compare HobgoblinTempleState 0
-	IfNe
-	Exit
+	if HobgoblinTempleState != 0: Exit
 	SetupMonster 6 0 6
 	PrintClear "YOU ARE ENTERING A WEEDY, GARBAGE STREWN COURTYARD. A DRUM BEGINS TO BEAT AND HOBGOBLINS ATTACK."
 	Save 60 Morale
@@ -174,9 +136,7 @@ CourtyardAmbush:
 	LoadMonster 6 12 6
 	LoadMonster 7 2 7
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto ChasedOut
+	if CombatEnd > 128: Goto ChasedOut
 	Save 1 HobgoblinTempleState
 	PrintClear "THINGS SEEM STRANGELY QUIET. THE DRUM HAS FADED TO SILENCE."
 	Exit
@@ -199,9 +159,7 @@ EjectEast:
 	Exit
 
 Barracks:
-	Compare BarracksSeen 0
-	IfNe
-	Exit
+	if BarracksSeen != 0: Exit
 	PrintClear "THIS CAVERNOUS BUILDING SERVES AS A BARRACKS."
 	Save 14 AuxCounter
 	Save 3 AuxMember
@@ -212,25 +170,19 @@ MarkBarracksSeen:
 	Exit
 
 StenchRoom:
-	Compare StenchRoomSeen 0
-	IfNe
-	Exit
+	if StenchRoomSeen != 0: Exit
 	PrintClear "YOU ARE APPALLED BY THE STENCH IN THIS DAMP BUILDING."
 	Save 255 StenchRoomSeen
 	Exit
 
 DeterioratedRoom:
-	Compare DeterioratedRoomSeen 0
-	IfNe
-	Exit
+	if DeterioratedRoomSeen != 0: Exit
 	PrintClear "YOU ARE IN A DETERIORATED BUILDING."
 	Save 255 DeterioratedRoomSeen
 	Exit
 
 TapestryRoom:
-	Compare TapestryRoomSeen 0
-	IfNe
-	Exit
+	if TapestryRoomSeen != 0: Exit
 	PrintClear "WHEN YOU ENTER, A FEW FADED, MOTHEATEN TAPESTRIES FLUTTER MOURNFULLY."
 	Save 10 AuxCounter
 	Save 2 AuxMember
@@ -241,9 +193,7 @@ MarkTapestrySeen:
 	Exit
 
 Nursery:
-	Compare NurserySeen 0
-	IfNe
-	Exit
+	if NurserySeen != 0: Exit
 	PrintClear "SEVERAL BABY HOBGOBLINS FLEE, SCREAMING IN FEAR!"
 	Save 255 NurserySeen
 	Gosub PressToContinue
@@ -253,16 +203,12 @@ Nursery:
 CarvedWall:
 	PrintClear "'SKULLCRUSHER WAS HERE' IS CARVED INTO THE NORTH WALL."
 	Gosub FindSkullcrusher
-	Compare Scratch3 255
-	IfNe
-	Exit
+	if Scratch3 != 255: Exit
 	Print " SKULLCRUSHER PROUDLY POINTS OUT HIS HANDIWORK."
 	Exit
 
 GraffitiRoom:
-	Compare GraffitiRoomSeen 0
-	IfNe
-	Exit
+	if GraffitiRoomSeen != 0: Exit
 	PrintClear "GRAFFITI COVERS THE WALLS IN MEANINGLESS ABANDON."
 	Save 12 AuxCounter
 	Save 2 AuxMember
@@ -273,22 +219,16 @@ MarkGraffitiSeen:
 	Exit
 
 DarkObject:
-	Compare SkullcrusherLootDestroyed 0
-	IfNe
-	Exit
+	if SkullcrusherLootDestroyed != 0: Exit
 	PrintClear "YOU CAN BARELY SEE A DARK OBJECT TO THE WEST."
 	Delay
 	Exit
 
 DeadHobgoblin:
-	Compare SkullcrusherLootDestroyed 0
-	IfNe
-	Exit
+	if SkullcrusherLootDestroyed != 0: Exit
 	PrintClear "YOU SEE A DEAD HOBGOBLIN WITH ITS HEAD CRUSHED. WRITTEN IN BLOOD IS A MESSAGE: 'SKULLCRUSHER WAS HERE.'"
 	Gosub FindSkullcrusher
-	Compare Scratch3 255
-	IfNe
-	Goto BodyMenu
+	if Scratch3 != 255: Goto BodyMenu
 	Print "SKULLCRUSHER LAUGHS AND CRACKS HIS KNUCKLES."
 
 BodyMenu:
@@ -307,9 +247,7 @@ DestroyBody:
 	Exit
 
 Kitchen:
-	Compare KitchenSeen 0
-	IfNe
-	Exit
+	if KitchenSeen != 0: Exit
 	PrintClear "A SIMPLE KITCHEN, A FEW CLAY BOWLS ADORN THE FLOOR."
 	Save 255 KitchenSeen
 	Exit
@@ -319,21 +257,15 @@ SmokingFire:
 	Exit
 
 Larder:
-	Compare LarderSeen2 0
-	IfNe
-	Exit
+	if LarderSeen2 != 0: Exit
 	PrintClear "BREAD AND MEAT LIE ABOUT, AS WELL AS PIECES OF HUMAN ANATOMY."
 	Save 255 LarderSeen2
 	Exit
 
 SmallDarkRoom:
 	PrintClear "YOU ARE IN A VERY SMALL, DARK ROOM."
-	Compare PrisonerState 255
-	IfEq
-	Exit
-	Compare PrisonerState 128
-	IfEq
-	Goto FreeManMenu
+	if PrisonerState == 255: Exit
+	if PrisonerState == 128: Goto FreeManMenu
 	Save 32 Portrait
 	SetupMonster 14 0 3
 	Print "A MUSCULAR MAN LOCKED IN CHAINS LIES HERE. NEAR HIM IS A PAGE THAT YOU PLACE IN YOUR JOURNAL UNDER ENTRY 47."
@@ -448,9 +380,7 @@ ServantThanks:
 	OnGoto AuxParlayChoice 2 AddSkullcrusher SkullcrusherLeaves
 
 AddSkullcrusher:
-	Compare PartyCount 8
-	IfNe
-	Goto SkullcrusherJoins
+	if PartyCount != 8: Goto SkullcrusherJoins
 	PrintClear "THERE IS NO ROOM IN YOUR PARTY FOR HIM."
 	Goto SkullcrusherLeaves
 
@@ -474,9 +404,7 @@ DislikeTone:
 	Goto FightFreeMan
 
 GrishnakTemple:
-	Compare HobgoblinTempleState 1
-	IfNe
-	Exit
+	if HobgoblinTempleState != 1: Exit
 	PrintClear "YOU ARE IN A LARGE ROOM WHICH SERVES AS A CRUDE TEMPLE, AND CAUSES A VAGUE FEELING OF DISQUIET."
 	Gosub PressToContinue
 	SetupMonster 6 0 9
@@ -489,9 +417,7 @@ GrishnakTemple:
 	LoadMonster 6 12 6
 	Treasure 100 20 30 40 8 0 0 38
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto HobgoblinsChase
+	if CombatEnd > 128: Goto HobgoblinsChase
 	Save 2 HobgoblinTempleState
 	Exit
 
@@ -501,20 +427,14 @@ BloodRoom:
 
 SecretDoorHint:
 	Gosub FindSkullcrusher
-	Compare Scratch3 255
-	IfNe
-	Exit
-	Compare 0 IronBoxFound
-	IfNe
-	Exit
+	if Scratch3 != 255: Exit
+	if 0 != IronBoxFound: Exit
 	PrintClear "'IN THE EAST WALL IS THE SECRET DOOR.' SAYS SKULLCRUSHER.'IF WE GO THROUGH WE CAN SURPRISE THEM.'"
 	Gosub PressToContinue
 	Exit
 
 OgreChief:
-	Compare IronBoxFound 0
-	IfNe
-	Exit
+	if IronBoxFound != 0: Exit
 	Save 2 Facing
 	Call CallRedraw
 	PrintClear "THIS ROOM IS DIMLY LIT WITH GUTTERING TORCHES."
@@ -529,9 +449,7 @@ OgreChief:
 	LoadMonster 6 18 6
 	LoadMonster 7 4 7
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto HobgoblinsChase
+	if CombatEnd > 128: Goto HobgoblinsChase
 	Save 255 IronBoxFound
 	PrintClear "YOU FIND AN IRON BOX, ACROSS THE LOCK IS THE SEAL OF THE FAMILY OF CADORNA. OPENING THE BOX WILL DAMAGE THE SEAL BEYOND REPAIR. WHAT DO YOU DO?"
 	HMenu Scratch1 2 "OPEN IT" "TAKE IT UNOPENED"
@@ -552,12 +470,8 @@ OpenBox:
 HobgoblinEncounter:
 	Gosub PressToContinue
 	EncounterMenu 6 2 6 AuxMenuChoice 0 3 0 1 4 "YOU ENCOUNTER HOBGOBLINS!" "" "" 7 7
-	Compare AuxMenuChoice 1
-	IfEq
-	Goto HobgoblinFight
-	Compare AuxMenuChoice 2
-	IfEq
-	Goto HobgoblinsChase
+	if AuxMenuChoice == 1: Goto HobgoblinFight
+	if AuxMenuChoice == 2: Goto HobgoblinsChase
 	PrintClear "THE HOBGOBLINS RESPOND WITH A PIERCING BATTLE CRY!"
 
 HobgoblinFight:
@@ -568,18 +482,10 @@ HobgoblinFight:
 	LoadMonster 6 AuxCounter 6
 	LoadMonster 7 AuxMember 7
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto HobgoblinsChase
-	Compare Scratch10 2
-	IfEq
-	Goto MarkBarracksSeen
-	Compare Scratch10 5
-	IfEq
-	Goto MarkTapestrySeen
-	Compare Scratch10 8
-	IfEq
-	Goto MarkGraffitiSeen
+	if CombatEnd > 128: Goto HobgoblinsChase
+	if Scratch10 == 2: Goto MarkBarracksSeen
+	if Scratch10 == 5: Goto MarkTapestrySeen
+	if Scratch10 == 8: Goto MarkGraffitiSeen
 	Exit
 
 FindSkullcrusher:
@@ -588,19 +494,13 @@ FindSkullcrusher:
 
 FindSkullcrusherLoop:
 	LoadCharacter Scratch2
-	Compare $SelName "SKULLCRUSHER"
-	IfEq
-	Goto SkullcrusherFound
+	if $SelName == "SKULLCRUSHER": Goto SkullcrusherFound
 	Add 1 Scratch2 Scratch2
-	Compare Scratch2 9
-	IfNe
-	Goto FindSkullcrusherLoop
+	if Scratch2 != 9: Goto FindSkullcrusherLoop
 	Goto FindSkullcrusherDone
 
 SkullcrusherFound:
-	Compare SelStatus 1
-	IfNe
-	Goto FindSkullcrusherDone
+	if SelStatus != 1: Goto FindSkullcrusherDone
 	Save 255 Scratch3
 
 FindSkullcrusherDone:
@@ -636,9 +536,7 @@ EscapeRedraw:
 	Exit
 
 DiaryPage:
-	Compare 1 DiaryEntry11Found
-	IfEq
-	Exit
+	if 1 == DiaryEntry11Found: Exit
 	PrintClear "YOU FIND A PAGE FROM A DIARY AND PLACE IT IN YOUR JOURNAL UNDER ENTRY 11."
 	Save 1 DiaryEntry11Found
 	Exit
@@ -654,9 +552,7 @@ ThievesWell:
 
 ChooseClimber:
 	Who "WHO WILL CLIMB DOWN?"
-	Compare SelStatus 1
-	IfEq
-	Goto ClimbDown
+	if SelStatus == 1: Goto ClimbDown
 	PrintClear "THAT ONE IS NOT WELL ENOUGH TO CLIMB."
 	Gosub PressToContinue
 	Goto ChooseClimber
@@ -667,32 +563,24 @@ ClimbDown:
 	Call CallRedraw
 	Gosub PressToContinue
 	Random 99 Scratch1
-	Compare Scratch1 SelThiefSkill6
-	IfLt
-	Goto MeetRestal
+	if Scratch1 < SelThiefSkill6: Goto MeetRestal
 	PrintClear "YOU BEGIN A LONG FALL."
 	Gosub PressToContinue
 	Save 0 Scratch1
 
 FeatherFallScan:
 	GetTable EffectTable Scratch1 Scratch2
-	Compare Scratch2 27
-	IfEq
-	Goto FeatherFallCheck
+	if Scratch2 == 27: Goto FeatherFallCheck
 
 FeatherFallNext:
 	Add 1 Scratch1 Scratch1
-	Compare Scratch1 64
-	IfEq
-	Goto HitStoneFloor
+	if Scratch1 == 64: Goto HitStoneFloor
 	Goto FeatherFallScan
 
 FeatherFallCheck:
 	Add 64 Scratch1 Scratch2
 	GetTable EffectTable Scratch2 Scratch3
-	Compare Scratch3 SelPartyIndex2
-	IfNe
-	Goto FeatherFallNext
+	if Scratch3 != SelPartyIndex2: Goto FeatherFallNext
 	PrintClear "YOU FLOAT DOWN THE WELL."
 	Gosub PressToContinue
 	PrintClear "FROM AN ARCHWAY AT THE BOTTOM COME ARROWS."
@@ -704,9 +592,7 @@ HitStoneFloor:
 	PrintClear "YOU HIT AN UNYIELDING STONE FLOOR."
 	Gosub PressToContinue
 	Damage 160 15 6 0 128
-	Compare SelStatus 1
-	IfEq
-	Goto LaughingThief
+	if SelStatus == 1: Goto LaughingThief
 	Save 1 PartyX
 	Save 3 Facing
 	Call CallRedraw
@@ -724,18 +610,10 @@ MeetRestal:
 	Gosub ShowThief
 	PrintClear "AN OLD THIEF STANDS HERE.'WELCOME TO MY GUILD. I AM RESTAL.' HE BOWS LOW."
 	Gosub PressToContinue
-	Compare CadornaCommission 255
-	IfNe
-	Goto RestalFarewell
-	Compare IronBoxState 0
-	IfEq
-	Goto TextileHouseOffer
-	Compare QuestCadornaPayment 255
-	IfEq
-	Goto RestalFarewell
-	Compare RestalDealDone 1
-	IfEq
-	Goto RestalFarewell
+	if CadornaCommission != 255: Goto RestalFarewell
+	if IronBoxState == 0: Goto TextileHouseOffer
+	if QuestCadornaPayment == 255: Goto RestalFarewell
+	if RestalDealDone == 1: Goto RestalFarewell
 	PrintClear "'WE CAN DUPLICATE THE SEAL ON THAT CHEST -- FOR HALF THE TREASURE -- NO ONE WILL EVER KNOW. INTERESTED?'"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 DuplicateSeal RestalFarewell

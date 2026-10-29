@@ -1,22 +1,14 @@
 event0:
-	Compare InLair 255
-	IfEq
-	Exit
-	Compare MapY 2
-	IfLe
-	Gosub NorthEdgeHold
+	if InLair == 255: Exit
+	if MapY <= 2: Gosub NorthEdgeHold
 	OnGoto FacingRaw 8 CheckBlockedMove CheckEastEdge CheckEastEdge CheckEastEdge CheckBlockedMove CheckWestEdge CheckWestEdge CheckWestEdge
 
 CheckEastEdge:
-	Compare MapX 15
-	IfEq
-	Gosub EastEdgeExit
+	if MapX == 15: Gosub EastEdgeExit
 	Goto CheckBlockedMove
 
 CheckWestEdge:
-	Compare MapX 2
-	IfEq
-	Gosub WestEdgeExit
+	if MapX == 2: Gosub WestEdgeExit
 
 CheckBlockedMove:
 	Gosub ProbeAheadBlocked
@@ -49,16 +41,12 @@ ExitToArea25:
 	NewECL 25
 
 EastEdgeRowCheck:
-	Compare MapY 25
-	IfNe
-	Goto ExitToArea27
+	if MapY != 25: Goto ExitToArea27
 	Save 255 HoldMove
 	Return
 
 WestEdgeRowCheck:
-	Compare MapY 31
-	IfNe
-	Goto ExitToArea25
+	if MapY != 31: Goto ExitToArea25
 	Save 255 HoldMove
 	Return
 
@@ -69,23 +57,16 @@ ProbeAheadBlocked:
 	Call CallUnknownC01B
 	Save 0 Scratch1
 	Save 28 Scratch3
-	Compare Boss 254
-	IfGe
-	Save 19 Scratch3
+	if Boss >= 254: Save 19 Scratch3
 
 ProbeTableLoop:
-	Compare Scratch1 Scratch3
-	IfGt
-	Return
+	if Scratch1 > Scratch3: Return
 	GetTable MapEventTable1 Scratch1 Scratch2
-	Compare Scratch3 19
-	IfEq
-	GetTable MapEventTable2 Scratch1 Scratch2
-	Compare ProbeWall Scratch2
-	IfEq
-	Save 255 HoldMove
-	IfEq
-	Return
+	if Scratch3 == 19: GetTable MapEventTable2 Scratch1 Scratch2
+	if ProbeWall == Scratch2 {
+		Save 255 HoldMove
+		Return
+	}
 	Add 1 Scratch1 Scratch1
 	Goto ProbeTableLoop
 
@@ -118,15 +99,9 @@ ProbeW:
 	Return
 
 event1:
-	Compare InLair 255
-	IfEq
-	Goto LairCellDispatch
-	Compare Boss 254
-	IfLt
-	Goto FindSite
-	Compare RiverOpen 0
-	IfNe
-	Goto FindSite
+	if InLair == 255: Goto LairCellDispatch
+	if Boss < 254: Goto FindSite
+	if RiverOpen != 0: Goto FindSite
 	Gosub LandRecovers
 	Delay
 	Goto RiverOpened
@@ -136,14 +111,10 @@ FindSite:
 	Save 0 Scratch1
 
 SiteRowLoop:
-	Compare Scratch1 9
-	IfGe
-	Goto RandomEncounterCheck
+	if Scratch1 >= 9: Goto RandomEncounterCheck
 	GetTable SiteRangeTable Scratch1 Scratch3
 	GetTable SiteYTable Scratch1 Scratch2
-	Compare Scratch2 MapY
-	IfEq
-	Goto SiteRowFound
+	if Scratch2 == MapY: Goto SiteRowFound
 	Add 1 Scratch1 Scratch1
 	Add Scratch3 Scratch4 Scratch4
 	Goto SiteRowLoop
@@ -152,13 +123,9 @@ SiteRowFound:
 	Add Scratch4 Scratch3 Scratch3
 
 SiteColumnLoop:
-	Compare Scratch4 Scratch3
-	IfGe
-	Goto RandomEncounterCheck
+	if Scratch4 >= Scratch3: Goto RandomEncounterCheck
 	GetTable SiteXTable Scratch4 Scratch5
-	Compare Scratch5 MapX
-	IfEq
-	Goto SiteDispatch
+	if Scratch5 == MapX: Goto SiteDispatch
 	Add 1 Scratch4 Scratch4
 	Goto SiteColumnLoop
 
@@ -167,17 +134,13 @@ SiteDispatch:
 	OnGoto Scratch1 8 AbandonedCamp NomadCamp CityNorthEdge CityEastEdge CityWestEdge HiddenRowboat PyramidFront BoatHome
 
 AbandonedCamp:
-	Compare CampFound 0
-	IfNe
-	Goto Done
+	if CampFound != 0: Goto Done
 	PrintClear "YOU FIND A RECENTLY ABBANDONED CAMP."
 	Save 1 CampFound
 	Goto Done
 
 NomadCamp:
-	Compare NomadCampSeen 0
-	IfNe
-	Goto Done
+	if NomadCampSeen != 0: Goto Done
 	ClearBox
 	Call CallClearView
 	Picture 30
@@ -319,27 +282,19 @@ Enter3DSetup:
 	Return
 
 RandomEncounterCheck:
-	CompareAnd MapX 6 MapY 16
-	IfEq
-	Exit
+	if MapX == 6 && MapY == 16: Exit
 	Random 19 Scratch1
 	Save 0 ForcedEncounter
-	Compare Scratch1 0
-	IfNe
-	Goto Done
+	if Scratch1 != 0: Goto Done
 
 StartEncounter:
 	Gosub PickEncounter
-	CompareAnd Scratch1 20 ForcedEncounter 0
-	IfEq
-	Goto LairFound
+	if Scratch1 == 20 && ForcedEncounter == 0: Goto LairFound
 	GetTable SurpriseTable1 EncounterKind Scratch4
 	GetTable SurpriseTable2 EncounterKind Scratch5
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 Scratch4 Scratch5
-	Compare Scratch5 9
-	IfEq
-	And Surprise 1 Surprise
+	if Scratch5 == 9: And Surprise 1 Surprise
 	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseThem FaceToFace
 
 SpotGroup:
@@ -370,43 +325,31 @@ EncounterFight:
 	Save AuxEncResult2 Morale
 	ClearMonsters
 	LoadMonster AuxMonster MonsterCount AuxTemp9
-	Compare LeaderCount 0
-	IfEq
-	Goto EncounterCombat
+	if LeaderCount == 0: Goto EncounterCombat
 	LoadMonster AuxPartyStrength LeaderCount AuxParlay
 
 EncounterCombat:
 	ClearBox
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto FightDone
+	if CombatEnd > 128: Goto FightDone
 	Exit
 
 EncounterParlay:
-	Compare AuxMember 0
-	IfEq
-	Goto EncounterFight
-	Compare AuxMember 50
-	IfEq
-	Goto FriendlyGreet
+	if AuxMember == 0: Goto EncounterFight
+	if AuxMember == 50: Goto FriendlyGreet
 	Parlay 30 30 30 5 60 Scratch1
 	Random 30 Scratch2
 	Add Scratch1 Scratch2 Scratch1
 	Add Scratch1 SelReaction Scratch1
 	Add Scratch1 AuxEncBonus Scratch1
-	Compare Scratch1 140
-	IfLt
-	Goto ParlayConvince
+	if Scratch1 < 140: Goto ParlayConvince
 	PrintClear "THE "
 	Print $AuxMonsterName
 	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
 	Goto Done
 
 ParlayConvince:
-	Compare Scratch1 100
-	IfLt
-	Goto ParlayInsulted
+	if Scratch1 < 100: Goto ParlayInsulted
 	PrintClear "YOU CONVINCE THE "
 	Print $AuxMonsterName
 	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
@@ -431,9 +374,7 @@ FriendlyGreet:
 
 LairFound:
 	Random 2 Scratch6
-	Compare Scratch6 1
-	IfEq
-	Goto RuinedHuts
+	if Scratch6 == 1: Goto RuinedHuts
 	PrintClear "YOU HAVE FOUND A SMALL WOODED GROVE.  WILL YOU ENTER?"
 	HMenu Scratch1 2 "ENTER" "LEAVE"
 	OnGoto Scratch1 2 EnterLair Done
@@ -550,9 +491,7 @@ MutantLizardHut:
 	ClearMonsters
 	LoadMonster 58 2 57
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 8 LairFightFlags
 	Exit
 
@@ -565,9 +504,7 @@ LizardHut:
 	ClearMonsters
 	LoadMonster 57 4 57
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 16 LairFightFlags
 	Exit
 
@@ -582,22 +519,16 @@ LargeLizardMen:
 	LoadMonster 57 4 57
 	Combat
 	Save 0 MonsterHit
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or LairFightFlags 32 LairFightFlags
 	Exit
 
 StirgeSwarm:
-	Compare LairRespawnTimer 0
-	IfNe
-	Goto StirgeTimerTick
+	if LairRespawnTimer != 0: Goto StirgeTimerTick
 	SetupMonster 61 0 61
 	PrintClear "A SWARM OF STIRGES SWOOPS DOWN AND ATTACKS THE PARTY!"
 	Random 30 Scratch1
-	Compare Scratch1 6
-	IfLt
-	Save 6 Scratch1
+	if Scratch1 < 6: Save 6 Scratch1
 	ClearMonsters
 	LoadMonster 61 6 61
 	Combat
@@ -605,11 +536,8 @@ StirgeSwarm:
 	Exit
 
 StirgeTimerTick:
-	Compare LairRespawnTimer 1
-	IfEq
-	Save 0 LairRespawnTimer
-	IfNe
-	Sub 1 LairRespawnTimer LairRespawnTimer
+	if LairRespawnTimer == 1: Save 0 LairRespawnTimer
+	also if LairRespawnTimer != 1: Sub 1 LairRespawnTimer LairRespawnTimer
 	Exit
 
 LeaveLairAsk:
@@ -637,9 +565,7 @@ RedrawExit:
 
 PickEncounter:
 	Random 20 Scratch1
-	CompareAnd Scratch1 20 ForcedEncounter 0
-	IfEq
-	Return
+	if Scratch1 == 20 && ForcedEncounter == 0: Return
 	Random 17 Scratch1
 	OnGoto Scratch1 18 PickKobolds PickKobolds PickKobolds PickKobolds PickDisplacers PickDisplacers PickDriders PickStirges PickStirges PickStirges PickLizardMen PickLizardMen PickLizardMen PickBandits PickNomads PickNomads PickMerchants PickMerchants
 	GetTable MonsterPicTable EncounterKind AuxTemp9
@@ -659,37 +585,27 @@ PickEncounter:
 
 CountThird:
 	Div Scratch1 3 Scratch1
-	Compare Scratch1 0
-	IfLe
-	Save 1 Scratch1
+	if Scratch1 <= 0: Save 1 Scratch1
 	Goto CountLeaders
 
 CountHalf:
 	Div Scratch1 2 Scratch1
-	Compare Scratch1 0
-	IfLe
-	Save 1 Scratch1
+	if Scratch1 <= 0: Save 1 Scratch1
 
 CountLeaders:
 	Save 0 LeaderCount
 	Save Scratch1 Scratch3
 	GetTable LeaderEveryTable EncounterKind AuxMenuChoice
-	Compare AuxMenuChoice 0
-	IfEq
-	Goto CapMonsterCount
+	if AuxMenuChoice == 0: Goto CapMonsterCount
 
 LeaderLoop:
-	Compare Scratch3 AuxMenuChoice
-	IfLt
-	Goto CapMonsterCount
+	if Scratch3 < AuxMenuChoice: Goto CapMonsterCount
 	Add 1 LeaderCount LeaderCount
 	Sub AuxMenuChoice Scratch3 Scratch3
 	Goto LeaderLoop
 
 CapMonsterCount:
-	Compare Scratch1 56
-	IfGe
-	Sub LeaderCount 56 Scratch1
+	if Scratch1 >= 56: Sub LeaderCount 56 Scratch1
 	Save Scratch1 MonsterCount
 	Return
 
@@ -754,41 +670,30 @@ RiverDrawBegin:
 	Save 0 RiverFrame
 
 RiverRowLoop:
-	Compare Scratch1 36
-	IfEq
-	Goto RiverDrawEnd
+	if Scratch1 == 36: Goto RiverDrawEnd
 	GetTable RiverRowTable Scratch1 Scratch7
 	Mul 8 Scratch7 &Scratch3
 	Save 0 Scratch6
 
 RiverTileLoop:
-	Compare Scratch6 8
-	IfEq
-	Goto RiverRowDone
-	Compare Scratch2 231
-	IfLe
-	GetTable RiverTileTable Scratch2 Scratch5
-	IfLe
-	Add 1 Scratch2 Scratch2
-	IfGt
-	GetTable RiverTileTable2 RiverTileIndex Scratch5
-	IfGt
-	Add 1 RiverTileIndex RiverTileIndex
+	if Scratch6 == 8: Goto RiverRowDone
+	if Scratch2 <= 231 {
+		GetTable RiverTileTable Scratch2 Scratch5
+		Add 1 Scratch2 Scratch2
+	}
+	also if Scratch2 > 231 {
+		GetTable RiverTileTable2 RiverTileIndex Scratch5
+		Add 1 RiverTileIndex RiverTileIndex
+	}
 	Add Scratch6 &Scratch3 &RiverTileOffset
-	Compare RiverOpen 0
-	IfEq
-	SaveTable Scratch5 MapPatchA &RiverTileOffset
+	if RiverOpen == 0: SaveTable Scratch5 MapPatchA &RiverTileOffset
 	SaveTable Scratch5 MapPatchB &RiverTileOffset
 	Add 1 Scratch6 Scratch6
 	Goto RiverTileLoop
 
 RiverRowDone:
-	CompareAnd Scratch1 8 RiverOpen 0
-	IfEq
-	Goto RiverDrawEnd
-	Compare RiverState 1
-	IfEq
-	Gosub RiverAnimFrame
+	if Scratch1 == 8 && RiverOpen == 0: Goto RiverDrawEnd
+	if RiverState == 1: Gosub RiverAnimFrame
 	Add 1 Scratch1 Scratch1
 	Goto RiverRowLoop
 
@@ -798,32 +703,24 @@ RiverDrawEnd:
 
 RiverAnimFrame:
 	Add 1 RiverFrame RiverFrame
-	Compare RiverFrame 2
-	IfNe
-	Return
+	if RiverFrame != 2: Return
 	Save 0 DelayCounter
 
 RiverDelayLoop:
-	Compare DelayCounter 100
-	IfEq
-	Goto RiverFrameShow
+	if DelayCounter == 100: Goto RiverFrameShow
 	Add 1 DelayCounter DelayCounter
 	Goto RiverDelayLoop
 
 RiverFrameShow:
 	Call CallEndDraw
-	Compare Scratch1 21
-	IfGt
-	Goto RiverRowCheck29
+	if Scratch1 > 21: Goto RiverRowCheck29
 
 RiverCallC003:
 	Call CallUnknownC003
 	Goto RiverFrameReset
 
 RiverRowCheck29:
-	Compare Scratch1 29
-	IfGt
-	Goto RiverCallC003
+	if Scratch1 > 29: Goto RiverCallC003
 	Call CallUnknownC009
 
 RiverFrameReset:
@@ -852,9 +749,7 @@ RiverOpened:
 	Goto PyramidFront
 
 PatchPyramidTiles:
-	Compare Boss 254
-	IfLt
-	Goto CheckMarker4
+	if Boss < 254: Goto CheckMarker4
 	Save 5 ProbeX
 	Save 16 ProbeY
 	Save 75 ProbeCell
@@ -881,15 +776,11 @@ PatchPyramidTiles:
 	Call CallLookAhead
 
 CheckMarker4:
-	Compare Mark4 0
-	IfNe
-	Goto ShowMarker4
+	if Mark4 != 0: Goto ShowMarker4
 	And MarkFlags4 8 Scratch9
 	IfNe
 	Goto ShowMarker4
-	Compare Mark4Off 0
-	IfNe
-	Return
+	if Mark4Off != 0: Return
 
 ShowMarker4:
 	Save 12 ProbeX
@@ -958,9 +849,7 @@ LeaderPicTable:
 	Data 1 68 69 61 57 11 11 11
 
 event2:
-	Compare In3D 1
-	IfEq
-	Goto NoRest3D
+	if In3D == 1: Goto NoRest3D
 	Save 10 RestChance
 	Save 96 RestEvery
 	Exit
@@ -974,15 +863,11 @@ event3:
 	Goto StartEncounter
 
 event4:
-	Compare InLair 255
-	IfEq
-	Goto LairSetup
+	if InLair == 255: Goto LairSetup
 	Save 0 In3D
 	Save 0 NoCoords
 	LoadFiles 5 5 0
-	Compare Boss 254
-	IfLt
-	Exit
+	if Boss < 254: Exit
 	Gosub DrawRiver
 	Gosub PatchPyramidTiles
 	Exit

@@ -4,41 +4,25 @@ RollSurprise:
 	IfNe
 	Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	Compare AlarmEndHour 0
-	IfNe
-	And Surprise 1 Surprise
-	Compare Surprise 3
-	IfEq
-	Save 0 Surprise
+	if AlarmEndHour != 0: And Surprise 1 Surprise
+	if Surprise == 3: Save 0 Surprise
 	Compare Surprise 1
 	Return
 
 CheckAlarm:
-	Compare AlarmEndHour 1
-	IfLt
-	Return
+	if AlarmEndHour < 1: Return
 	Save Hours AuxRoll
-	CompareAnd Hours 0 AlarmHour 23
-	IfEq
-	Save 24 AuxRoll
-	Compare AuxRoll AlarmEndHour
-	IfLt
-	Goto AlarmStillOn
-	Compare TenMinutes AlarmMinute
-	IfLt
-	Goto AlarmStillOn
+	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
+	if TenMinutes < AlarmMinute: Goto AlarmStillOn
 	Save 0 AlarmEndHour
 	Compare 0 1
 	Return
 
 AlarmStillOn:
-	Compare Search 1
-	IfEq
-	Goto AlarmSounding
+	if Search == 1: Goto AlarmSounding
 	Random 9 AuxRoll
-	Compare 0 AuxRoll
-	IfNe
-	Goto AlarmOnReturn
+	if 0 != AuxRoll: Goto AlarmOnReturn
 
 AlarmSounding:
 	PrintClear "AN ALARM IS SOUNDING."
@@ -52,9 +36,7 @@ DelayRaiseAlarm:
 	Delay
 
 RaiseAlarm:
-	Compare AlarmEndHour 0
-	IfEq
-	PrintClear "AN ALARM STARTS RINGING!"
+	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Delay
 	Save Hours AlarmHour
 	Save TenMinutes AlarmMinute
@@ -78,17 +60,13 @@ PressToContinue:
 SetSky:
 	Save 11 Scratch1
 	Save 9 SkyInside
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch1
+	if Hours >= 14: Save 8 Scratch1
 	Save Scratch1 Sky
 	Return
 
 event0:
 	And CastleRoomFlags 127 CastleRoomFlags
-	Compare LeftMap 0
-	IfEq
-	Goto CheckWallEvents
+	if LeftMap == 0: Goto CheckWallEvents
 	GetTable ByFacing9AA6 Facing Scratch1
 	Call CallStepForward
 	NewECL Scratch1
@@ -99,15 +77,9 @@ ByFacing9AA6:
 CheckWallEvents:
 	Gosub SetSky
 	And Cell 31 Scratch10
-	CompareAnd Facing 1 Scratch10 30
-	IfEq
-	Goto MainGate
-	CompareAnd Facing 3 Scratch10 31
-	IfEq
-	Goto MainGate
-	CompareAnd Facing 0 Scratch10 17
-	IfEq
-	Goto WellDive
+	if Facing == 1 && Scratch10 == 30: Goto MainGate
+	if Facing == 3 && Scratch10 == 31: Goto MainGate
+	if Facing == 0 && Scratch10 == 17: Goto WellDive
 	Exit
 
 event1:
@@ -118,22 +90,16 @@ event1:
 	IfNe
 	Goto RoomEvents
 	Save 2 Scratch1
-	Compare Search 0
-	IfEq
-	Save 20 Scratch1
+	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
 	IfNe
 	Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Goto event3
+	if Scratch10 == 0: Goto event3
 
 RoomEvents:
 	And Cell 31 Scratch1
-	Compare Scratch1 22
-	IfGt
-	Exit
+	if Scratch1 > 22: Exit
 	GetTable Table9B99 Scratch1 Scratch2
 	GetTable Table9BB0 Scratch1 Scratch1
 	OnGoto Scratch2 18 Done FighterBuilding ArmedManAttacks DiningHall GiantApartment LooseStoneTreasure Latrine BucketRoom GiantQuarters FindTreasure CobwebBuilding CeilingCaves DoorGiants WellView CadornaCell GiantSnakes GiantsBarWay ExitToArea5
@@ -150,9 +116,7 @@ Table9BB0:
 event2:
 	Save 0 RestEvery
 	Save 10 RestChance
-	Compare AlarmEndHour 0
-	IfEq
-	Exit
+	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
 	IfNe
 	Exit
@@ -167,9 +131,7 @@ Done:
 event4:
 	Gosub SetSky
 	Save 1 NoCoords
-	Compare AreaKind 3
-	IfEq
-	Exit
+	if AreaKind == 3: Exit
 	GetTable ByFacing9C24 Facing Scratch10
 	LoadFiles Scratch10 2 255
 	LoadPieces 24 25 1
@@ -182,23 +144,17 @@ FleeCombat:
 	Save 129 CombatEnd
 
 AfterCombat:
-	Compare CombatEnd 0
-	IfEq
-	Return
+	if CombatEnd == 0: Return
 	Gosub RaiseAlarm
 	And CastleFlags 254 CastleFlags
-	Compare CombatEnd 129
-	IfNe
-	Return
+	if CombatEnd != 129: Return
 
 StepBack:
 	Save 255 HoldMove
 	Save PrevX PartyX
 	Save PrevY PartyY
 	Add Facing 2 Facing
-	Compare Facing 3
-	IfGt
-	Sub 4 Facing Facing
+	if Facing > 3: Sub 4 Facing Facing
 	Goto Done
 
 event3:
@@ -320,9 +276,7 @@ FighterBuilding:
 	And PatrolsFought3 1 Scratch10
 	IfNe
 	Exit
-	Compare AlarmEndHour 0
-	IfNe
-	Goto DoorSlams
+	if AlarmEndHour != 0: Goto DoorSlams
 	And CastleFlags 1 Scratch10
 	IfNe
 	Goto FighterConfronts
@@ -342,9 +296,7 @@ FighterConfronts:
 	OnGoto Scratch10 3 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?' HE REPEATS."
 	Parlay 0 2 2 1 0 Scratch10
-	Compare Scratch10 2
-	IfEq
-	Goto FighterRetreats
+	if Scratch10 == 2: Goto FighterRetreats
 	PrintClear ""
 	OnGoto Scratch10 2 AskAuthority AskPassword
 
@@ -408,9 +360,7 @@ ApartmentFight:
 
 LooseStoneTreasure:
 	And CastleFlags 8 Scratch10
-	CompareAnd Scratch10 0 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Search != 1: Exit
 	PrintClear "UNDER A LOOSE STONE YOU FIND SOME TREASURE. "
 	Gosub TakeItMenu
 	IfNe
@@ -430,16 +380,12 @@ BucketRoom:
 	IfNe
 	Exit
 	Save 2 Scratch5
-	Compare Hours 14
-	IfLt
-	Save 4 Scratch5
+	if Hours < 14: Save 4 Scratch5
 	Gosub RollSurprise
 	IfGt
 	Goto SleepingGiants
 	Save 1 Surprise
-	Compare Search 1
-	IfEq
-	Goto BucketNoticed
+	if Search == 1: Goto BucketNoticed
 	PrintClear "AS YOU OPEN THE DOOR A BUCKET OF SAND THAT WAS PROPPED ABOVE THE DOOR FALLS."
 	Gosub PressToContinue
 	Damage 1 1 4 0 50
@@ -477,9 +423,7 @@ GiantQuarters:
 	And CadornaQuartersFlags Scratch1 Scratch10
 	IfNe
 	Exit
-	Compare Hours 14
-	IfGe
-	Exit
+	if Hours >= 14: Exit
 	Gosub RollSurprise
 	IfGt
 	Goto WakingGiants
@@ -509,9 +453,7 @@ QuartersFight:
 
 FindTreasure:
 	And SearchTowerFlags Scratch1 Scratch10
-	CompareAnd Scratch10 0 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Search != 1: Exit
 	PrintClear "YOU FIND SOME TREASURE. "
 	Gosub TakeItMenu
 	IfNe
@@ -524,9 +466,7 @@ FindTreasure:
 
 MainGate:
 	Save 64 Scratch1
-	Compare Scratch10 31
-	IfEq
-	Save 128 Scratch1
+	if Scratch10 == 31: Save 128 Scratch1
 	And BaneTempleFlags Scratch1 Scratch10
 	IfNe
 	Goto GateRecognized
@@ -568,9 +508,7 @@ GivePassword:
 EnterPassword:
 	PrintClear "WHAT PASSWORD DO YOU GIVE? "
 	InputString 6 $AuxInputText
-	Compare $AuxInputText "RHODIA"
-	IfNe
-	Goto WrongPassword
+	if $AuxInputText != "RHODIA": Goto WrongPassword
 	PrintClear "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
 	Call CallStepForward
 	Save 255 HoldMove
@@ -628,9 +566,7 @@ DoorGiantsChallenge:
 	PrintClear "'TELL ME PASSWORD OR I KILL YOU. NOW!'"
 	NewLine
 	InputString 6 $AuxInputText
-	Compare "HARASH" $AuxInputText
-	IfNe
-	Goto WrongAnswerDinner
+	if "HARASH" != $AuxInputText: Goto WrongAnswerDinner
 	PrintClear "'OKAY, BUT NO HANGING AROUND.'"
 	Goto Done
 
@@ -638,9 +574,7 @@ WhoSentYou:
 	PrintClear "THE GIANT HESITATES, 'WHO SENT YOU?'"
 	NewLine
 	InputString 12 $AuxInputText
-	Compare "TYRANTHRAXUS" $AuxInputText
-	IfNe
-	Goto WrongAnswerDinner
+	if "TYRANTHRAXUS" != $AuxInputText: Goto WrongAnswerDinner
 	PrintClear "'SORRY ME NOT KNOW! JUST DOING JOB! YOU GO NOW.'"
 	Goto Done
 
@@ -683,17 +617,11 @@ DiveMenu:
 
 ChooseDiver:
 	Who "WHO WILL DIVE IN?"
-	Compare SelStatus 1
-	IfNe
-	Goto ChooseDiver
+	if SelStatus != 1: Goto ChooseDiver
 	Save 0 Scratch4
-	Compare SelCon 12
-	IfLt
-	Goto NoBottom
+	if SelCon < 12: Goto NoBottom
 	Random 20 Scratch10
-	Compare Scratch10 SelCon
-	IfGt
-	Goto NoBottom
+	if Scratch10 > SelCon: Goto NoBottom
 	PrintClear "YOU REACH THE BOTTOM AND FEEL AROUND... "
 	Delay
 	And CastleFlags 32 Scratch10
@@ -715,16 +643,12 @@ OnlyMud:
 RunningOutOfAir:
 	Delay
 	Save 0 Scratch9
-	Compare SelMove 12
-	IfLt
-	Sub SelMove 12 Scratch9
+	if SelMove < 12: Sub SelMove 12 Scratch9
 	Random 19 Scratch10
 	Add Scratch9 Scratch10 Scratch10
 	PrintClear "YOU ARE RUNNING OUT OF AIR... "
 	Delay
-	Compare Scratch10 SelCon
-	IfGt
-	Goto BreatheWater
+	if Scratch10 > SelCon: Goto BreatheWater
 	Print "YOU BREAK THE SURFACE GASPING FOR AIR."
 	Delay
 	Goto TryAgain
@@ -735,9 +659,7 @@ BreatheWater:
 	Damage 160 1 6 0 128
 
 TryAgain:
-	Compare Scratch4 0
-	IfNe
-	Goto TakeSword
+	if Scratch4 != 0: Goto TakeSword
 	PrintClear "TRY AGAIN?"
 	Goto DiveMenu
 

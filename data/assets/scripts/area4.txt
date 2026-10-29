@@ -4,41 +4,25 @@ RollSurprise:
 	IfNe
 	Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	Compare AlarmEndHour 0
-	IfNe
-	And Surprise 1 Surprise
-	Compare Surprise 3
-	IfEq
-	Save 0 Surprise
+	if AlarmEndHour != 0: And Surprise 1 Surprise
+	if Surprise == 3: Save 0 Surprise
 	Compare Surprise 1
 	Return
 
 CheckAlarm:
-	Compare AlarmEndHour 1
-	IfLt
-	Return
+	if AlarmEndHour < 1: Return
 	Save Hours AuxRoll
-	CompareAnd Hours 0 AlarmHour 23
-	IfEq
-	Save 24 AuxRoll
-	Compare AuxRoll AlarmEndHour
-	IfLt
-	Goto AlarmStillOn
-	Compare TenMinutes AlarmMinute
-	IfLt
-	Goto AlarmStillOn
+	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
+	if TenMinutes < AlarmMinute: Goto AlarmStillOn
 	Save 0 AlarmEndHour
 	Compare 0 1
 	Return
 
 AlarmStillOn:
-	Compare Search 1
-	IfEq
-	Goto AlarmSounding
+	if Search == 1: Goto AlarmSounding
 	Random 9 AuxRoll
-	Compare AuxRoll 0
-	IfNe
-	Goto AlarmOnReturn
+	if AuxRoll != 0: Goto AlarmOnReturn
 
 AlarmSounding:
 	PrintClear "AN ALARM IS SOUNDING."
@@ -52,9 +36,7 @@ DelayRaiseAlarm:
 	Delay
 
 RaiseAlarm:
-	Compare AlarmEndHour 0
-	IfEq
-	PrintClear "AN ALARM STARTS RINGING!"
+	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Delay
 	Save Hours AlarmHour
 	Save TenMinutes AlarmMinute
@@ -75,9 +57,7 @@ PressToContinue:
 SetSky:
 	Save 11 Scratch1
 	Save 9 SkyInside
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch1
+	if Hours >= 14: Save 8 Scratch1
 	Save Scratch1 Sky
 	Return
 
@@ -87,9 +67,7 @@ event0:
 	And BaneTempleFlags 3 Scratch10
 	IfNe
 	And CastleFlags 254 CastleFlags
-	Compare LeftMap 0
-	IfEq
-	Exit
+	if LeftMap == 0: Exit
 	Call CallStepForward
 	Save 255 HoldMove
 	NewECL 3
@@ -102,16 +80,12 @@ event1:
 	IfNe
 	Goto RoomEvents
 	Save 2 Scratch1
-	Compare Search 0
-	IfEq
-	Save 20 Scratch1
+	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
 	IfNe
 	Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Goto event3
+	if Scratch10 == 0: Goto event3
 
 RoomEvents:
 	And Cell 31 Scratch1
@@ -120,9 +94,7 @@ RoomEvents:
 event2:
 	Save 0 RestEvery
 	Save 10 RestChance
-	Compare AlarmEndHour 0
-	IfEq
-	Exit
+	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
 	IfNe
 	Exit
@@ -137,9 +109,7 @@ Done:
 event4:
 	Gosub SetSky
 	Save 1 NoCoords
-	Compare AreaKind 4
-	IfEq
-	Exit
+	if AreaKind == 4: Exit
 	LoadFiles 4 2 255
 	Exit
 
@@ -147,23 +117,17 @@ FleeCombat:
 	Save 129 CombatEnd
 
 AfterCombat:
-	Compare CombatEnd 0
-	IfEq
-	Return
+	if CombatEnd == 0: Return
 	Gosub RaiseAlarm
 	And CastleFlags 254 CastleFlags
-	Compare CombatEnd 129
-	IfNe
-	Return
+	if CombatEnd != 129: Return
 
 StepBack:
 	Save 255 HoldMove
 	Save PrevX PartyX
 	Save PrevY PartyY
 	Add Facing 2 Facing
-	Compare Facing 3
-	IfGt
-	Sub 4 Facing Facing
+	if Facing > 3: Sub 4 Facing Facing
 	Goto Done
 
 event3:
@@ -286,9 +250,7 @@ FighterBuilding:
 	And CastleFlags2 8 Scratch10
 	IfNe
 	Exit
-	Compare AlarmEndHour 0
-	IfNe
-	Goto DoorSlams
+	if AlarmEndHour != 0: Goto DoorSlams
 	And CastleFlags 1 Scratch10
 	IfNe
 	Goto FighterConfronts
@@ -308,9 +270,7 @@ FighterConfronts:
 	OnGoto Scratch10 3 Done FighterHitsButton FleeCombat
 	PrintClear "'WHAT ARE YOU DOING HERE?', HE REPEATS."
 	Parlay 0 2 2 1 0 Scratch10
-	Compare Scratch10 2
-	IfEq
-	Goto FighterRetreats
+	if Scratch10 == 2: Goto FighterRetreats
 	PrintClear ""
 	OnGoto Scratch10 2 AskAuthority AskPassword
 
@@ -330,9 +290,7 @@ FighterFight:
 LoadFighter:
 	ClearMonsters
 	LoadMonster 84 1 11
-	Compare Scratch10 0
-	IfEq
-	LoadMonster 56 4 56
+	if Scratch10 == 0: LoadMonster 56 4 56
 	Combat
 	Gosub AfterCombat
 	Or CastleFlags2 8 CastleFlags2
@@ -378,9 +336,7 @@ PigstyBarracks:
 	And CastleFlags 1 Scratch10
 	IfNe
 	Goto BarracksGiants
-	Compare AlarmEndHour 0
-	IfNe
-	Goto ThemIntruders
+	if AlarmEndHour != 0: Goto ThemIntruders
 
 BarracksGiants:
 	EncounterMenu 56 2 56 Scratch10 0 3 0 3 4 "THE GIANTS LOOK UP AT YOU." "" "" 12 12
@@ -450,9 +406,7 @@ PaperOnGround:
 	IfNe
 	Exit
 	And CastleFlags2 16 Scratch10
-	CompareAnd Scratch10 16 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 16 || Search != 1: Exit
 	PrintClear "ON THE GROUND YOU FIND A PEACE OF PAPER THAT SAYS:"
 	Goto ShowPasswords
 
@@ -535,12 +489,8 @@ ScribesHall:
 	And CastleRoomFlags 2 Scratch10
 	IfNe
 	Goto SearchReports
-	Compare Hours 17
-	IfGt
-	Goto EmptyScribesHall
-	Compare AlarmEndHour 0
-	IfNe
-	Goto EmptyScribesHall
+	if Hours > 17: Goto EmptyScribesHall
+	if AlarmEndHour != 0: Goto EmptyScribesHall
 	PrintClear "YOU ENTER A BRIGHTLY LIT BUILDING WHICH REEKS OF TALLOW AND LEATHER. YOU SEE SIX SCRIBES BUSILY WRITING DOWN THE REPORTS OF A COUPLE OF OFFICERS."
 	Gosub PressToContinue
 	Save 53 Portrait
@@ -572,9 +522,7 @@ OfficersAttack:
 	Combat
 	Gosub AfterCombat
 	Random 4 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Gosub RaiseAlarm
+	if Scratch10 == 0: Gosub RaiseAlarm
 	Or CastleRoomFlags 2 CastleRoomFlags
 	Exit
 
@@ -588,9 +536,7 @@ EmptyScribesHall:
 	Exit
 
 SearchReports:
-	Compare Search 1
-	IfNe
-	Exit
+	if Search != 1: Exit
 	Random 9 Scratch9
 	OnGoto Scratch9 3 CadornaEvidence BarbarianReport FlamingAuraNote
 	PrintClear "YOU FIND ASSORTED REPORTS."
@@ -601,9 +547,7 @@ CadornaEvidence:
 	IfNe
 	Goto SearchReports
 	Or CastleRoomFlags 8 CastleRoomFlags
-	Compare QuestCadornaTraitor 255
-	IfNe
-	Save 254 QuestCadornaTraitor
+	if QuestCadornaTraitor != 255: Save 254 QuestCadornaTraitor
 	PrintClear "YOU FIND HARD EVIDENCE THAT CADORNA HAS BEEN USING YOU FOR HIS OWN ENDS AND HAS BEEN SEEKING THE POOL OF RADIANCE FOR HIMSELF."
 	Gosub PressToContinue
 	Exit
@@ -637,21 +581,13 @@ ReadRecordsMenu:
 	IfNe
 	Exit
 	Random 1 Scratch10
-	Compare AlarmEndHour 0
-	IfEq
-	Goto ReadRecords
-	Compare Scratch10 0
-	IfEq
-	Goto event3
+	if AlarmEndHour == 0: Goto ReadRecords
+	if Scratch10 == 0: Goto event3
 
 ReadRecords:
-	Compare Hours 17
-	IfGt
-	Goto ReportByProgress
+	if Hours > 17: Goto ReportByProgress
 	Random 19 Scratch10
-	Compare Scratch10 3
-	IfLt
-	Goto ScribeArrives
+	if Scratch10 < 3: Goto ScribeArrives
 
 ReportByProgress:
 	OnGoto ReportsFound 3 RedWizardsReport TyranthraxusPattern NeedClearArea

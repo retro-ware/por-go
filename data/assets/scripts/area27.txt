@@ -1,13 +1,7 @@
 event0:
-	Compare InLair 255
-	IfEq
-	Exit
-	Compare MapY 2
-	IfLe
-	Gosub EdgeNorth
-	Compare MapX 15
-	IfGe
-	Gosub EdgeEast
+	if InLair == 255: Exit
+	if MapY <= 2: Gosub EdgeNorth
+	if MapX >= 15: Gosub EdgeEast
 	OnGoto FacingRaw 8 CheckTerrain CheckTerrain CheckTerrain CheckTerrain CheckTerrain CheckWestEdge CheckWestEdge CheckWestEdge
 
 EdgeNorth:
@@ -21,9 +15,7 @@ EdgeEast:
 	OnGoto FacingRaw 8 EdgeOk BlockMove BlockMove BlockMove EdgeOk EdgeOk EdgeOk EdgeOk
 
 CheckWestEdge:
-	Compare MapX 2
-	IfEq
-	Gosub EdgeWest
+	if MapX == 2: Gosub EdgeWest
 
 CheckTerrain:
 	Gosub CheckTerrainAhead
@@ -41,9 +33,7 @@ ExitToCity:
 	NewECL 26
 
 EdgeWestCorner:
-	Compare MapY 31
-	IfNe
-	Goto ExitToCity
+	if MapY != 31: Goto ExitToCity
 	Save 255 HoldMove
 	Return
 
@@ -56,15 +46,12 @@ CheckTerrainAhead:
 	Save 8 Scratch3
 
 CheckTerrainLoop:
-	Compare Scratch1 Scratch3
-	IfEq
-	Return
+	if Scratch1 == Scratch3: Return
 	GetTable BlockedTerrain Scratch1 Scratch2
-	Compare ProbeWall Scratch2
-	IfEq
-	Save 255 HoldMove
-	IfEq
-	Return
+	if ProbeWall == Scratch2 {
+		Save 255 HoldMove
+		Return
+	}
 	Add 1 Scratch1 Scratch1
 	Goto CheckTerrainLoop
 
@@ -97,21 +84,15 @@ ProbeW:
 	Return
 
 event1:
-	Compare InLair 255
-	IfEq
-	Goto LairCell
+	if InLair == 255: Goto LairCell
 	Save 0 Scratch1
 	Save 0 Scratch4
 
 FindSiteRow:
-	Compare Scratch1 5
-	IfGe
-	Goto RollEncounter
+	if Scratch1 >= 5: Goto RollEncounter
 	GetTable SiteRowEnd Scratch1 Scratch3
 	GetTable SiteRowY Scratch1 Scratch2
-	Compare Scratch2 MapY
-	IfEq
-	Goto SiteRowFound
+	if Scratch2 == MapY: Goto SiteRowFound
 	Add 1 Scratch1 Scratch1
 	Add Scratch3 Scratch4 Scratch4
 	Goto FindSiteRow
@@ -120,13 +101,9 @@ SiteRowFound:
 	Add Scratch4 Scratch3 Scratch3
 
 FindSiteX:
-	Compare Scratch4 Scratch3
-	IfGe
-	Goto RollEncounter
+	if Scratch4 >= Scratch3: Goto RollEncounter
 	GetTable SiteX Scratch4 Scratch5
-	Compare Scratch5 MapX
-	IfEq
-	Goto SiteFound
+	if Scratch5 == MapX: Goto SiteFound
 	Add 1 Scratch4 Scratch4
 	Goto FindSiteX
 
@@ -152,12 +129,8 @@ EnterCastle:
 	NewECL 16
 
 KoboldHorde:
-	Compare QuestKobolds 0
-	IfNe
-	Exit
-	Compare KoboldHordeDefeated 0
-	IfNe
-	Exit
+	if QuestKobolds != 0: Exit
+	if KoboldHordeDefeated != 0: Exit
 	SetupMonster 0 0 0
 	Save 50 Morale
 	PrintClear "A SCREAMING HORDE OF KOBOLDS ATTACKS THE PARTY."
@@ -166,9 +139,7 @@ KoboldHorde:
 	LoadMonster 0 25 0
 	LoadMonster 1 5 1
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto ExitEvent
+	if CombatEnd > 128: Goto ExitEvent
 	Save 255 KoboldHordeDefeated
 	Exit
 
@@ -243,22 +214,16 @@ LeaveWilderness:
 RollEncounter:
 	Random 19 Scratch1
 	Save 0 ForceEncounter27
-	Compare Scratch1 0
-	IfNe
-	Goto Done
+	if Scratch1 != 0: Goto Done
 
 RandomEncounter:
 	Gosub PickEncounter
-	CompareAnd Scratch1 20 ForceEncounter27 0
-	IfEq
-	Goto SmallDarkCave
+	if Scratch1 == 20 && ForceEncounter27 == 0: Goto SmallDarkCave
 	GetTable EncSurpriseA EncounterType27 Scratch4
 	GetTable EncSurpriseB EncounterType27 Scratch5
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 Scratch4 Scratch5
-	Compare Scratch5 9
-	IfEq
-	And Surprise 1 Surprise
+	if Scratch5 == 9: And Surprise 1 Surprise
 	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseGroup FaceToFace
 
 SpotGroup:
@@ -289,43 +254,31 @@ EncounterFight:
 	Save AuxEncResult2 Morale
 	ClearMonsters
 	LoadMonster AuxMonster EncounterCount27 AuxMonster
-	Compare EncounterExtraCount27 0
-	IfEq
-	Goto StartCombat
+	if EncounterExtraCount27 == 0: Goto StartCombat
 	LoadMonster AuxPartyStrength EncounterExtraCount27 AuxPartyStrength
 
 StartCombat:
 	ClearBox
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto ExitEvent
+	if CombatEnd > 128: Goto ExitEvent
 	Exit
 
 EncounterParlay:
-	Compare AuxMember 0
-	IfEq
-	Goto EncounterFight
-	Compare AuxMember 50
-	IfEq
-	Goto FriendlyGroup
+	if AuxMember == 0: Goto EncounterFight
+	if AuxMember == 50: Goto FriendlyGroup
 	Parlay 20 20 5 5 30 Scratch1
 	Random 30 Scratch2
 	Add Scratch1 Scratch2 Scratch1
 	Add Scratch1 SelReaction Scratch1
 	Add Scratch1 AuxEncBonus Scratch1
-	Compare Scratch1 120
-	IfLt
-	Goto ParlayConvince
+	if Scratch1 < 120: Goto ParlayConvince
 	PrintClear "THE "
 	Print $AuxMonsterName
 	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
 	Goto Done
 
 ParlayConvince:
-	Compare Scratch1 100
-	IfLt
-	Goto ParlayInsult
+	if Scratch1 < 100: Goto ParlayInsult
 	PrintClear "YOU CONVINCE THE "
 	Print $AuxMonsterName
 	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
@@ -428,9 +381,7 @@ FerociousWyvern:
 	ClearMonsters
 	LoadMonster 121 1 121
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 2 WyvernLairFlags
 	Save 0 MonsterHit
 	Exit
@@ -450,9 +401,7 @@ TerribleWyvern:
 	ClearMonsters
 	LoadMonster 121 1 121
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 4 WyvernLairFlags
 	Save 0 MonsterHit
 	Exit
@@ -469,9 +418,7 @@ FourLizards:
 	ClearMonsters
 	LoadMonster 59 4 59
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 8 WyvernLairFlags
 	Exit
 
@@ -491,9 +438,7 @@ LizardsAndMinotaurs:
 	LoadMonster 59 4 59
 	LoadMonster 62 2 62
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 16 WyvernLairFlags
 	Exit
 
@@ -518,17 +463,13 @@ TwoLizards:
 	ClearMonsters
 	LoadMonster 59 2 59
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 64 WyvernLairFlags
 	Exit
 
 GnollAttack:
 	Random 7 Scratch1
-	Compare Scratch1 0
-	IfGt
-	Exit
+	if Scratch1 > 0: Exit
 	SetupMonster 73 2 73
 	Approach
 	Approach
@@ -539,9 +480,7 @@ GnollAttack:
 	ClearMonsters
 	LoadMonster 73 Scratch1 73
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Exit
 
 ElfRemains:
@@ -560,17 +499,13 @@ GnollsAndTrolls:
 	LoadMonster 73 12 73
 	LoadMonster 31 4 31
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or WyvernLairFlags 128 WyvernLairFlags
 	Exit
 
 MadKobolds:
 	Random 7 Scratch1
-	Compare Scratch1 0
-	IfGt
-	Exit
+	if Scratch1 > 0: Exit
 	SetupMonster 0 2 0
 	Approach
 	Approach
@@ -579,14 +514,10 @@ MadKobolds:
 	PrintClear "YOU ARE ATTACKED BY A GROUP OF MAD KOBOLDS."
 	Random 40 Scratch1
 	Add 10 Scratch1 Scratch1
-	Compare Scratch1 40
-	IfGe
-	Save 3 Scratch2
+	if Scratch1 >= 40: Save 3 Scratch2
 	ClearMonsters
 	LoadMonster 0 Scratch1 0
-	Compare Scratch2 0
-	IfNe
-	LoadMonster 1 Scratch2 0
+	if Scratch2 != 0: LoadMonster 1 Scratch2 0
 	Combat
 	Exit
 
@@ -615,9 +546,7 @@ StepBack:
 
 PickEncounter:
 	Random 20 Scratch1
-	CompareAnd Scratch1 20 ForceEncounter27 0
-	IfEq
-	Return
+	if Scratch1 == 20 && ForceEncounter27 == 0: Return
 	Random 19 Scratch1
 	OnGoto Scratch1 20 PickKobolds PickKobolds PickKobolds PickKobolds PickGnolls PickGnolls PickGnolls PickLizardMen PickLizardMen PickLizardMen PickGiantLizards PickGiantLizards PickHippogriffs PickHippogriffs PickWyverns PickTrolls PickTrolls PickPhaseSpiders PickMinotaurs PickMinotaurs
 	GetTable EncData2 EncounterType27 AuxMember
@@ -635,37 +564,27 @@ PickEncounter:
 
 GroupSizeLarge:
 	Div Scratch1 3 Scratch1
-	Compare Scratch1 0
-	IfLe
-	Save 1 Scratch1
+	if Scratch1 <= 0: Save 1 Scratch1
 	Goto SplitGroups
 
 GroupSizeMedium:
 	Div Scratch1 2 Scratch1
-	Compare Scratch1 0
-	IfLe
-	Save 1 Scratch1
+	if Scratch1 <= 0: Save 1 Scratch1
 
 SplitGroups:
 	Save 0 EncounterExtraCount27
 	Save Scratch1 Scratch3
 	GetTable EncGroupSize EncounterType27 AuxMenuChoice
-	Compare AuxMenuChoice 0
-	IfEq
-	Goto CapGroupSize
+	if AuxMenuChoice == 0: Goto CapGroupSize
 
 SplitGroupsLoop:
-	Compare Scratch3 AuxMenuChoice
-	IfLt
-	Goto CapGroupSize
+	if Scratch3 < AuxMenuChoice: Goto CapGroupSize
 	Add 1 EncounterExtraCount27 EncounterExtraCount27
 	Sub AuxMenuChoice Scratch3 Scratch3
 	Goto SplitGroupsLoop
 
 CapGroupSize:
-	Compare Scratch1 56
-	IfGe
-	Sub EncounterExtraCount27 56 Scratch1
+	if Scratch1 >= 56: Sub EncounterExtraCount27 56 Scratch1
 	Save Scratch1 EncounterCount27
 	Return
 
@@ -755,17 +674,13 @@ PatchMap:
 	Call CallBeginDraw
 
 PatchMapRow:
-	Compare Scratch1 5
-	IfEq
-	Goto PatchMapDone
+	if Scratch1 == 5: Goto PatchMapDone
 	GetTable MapPatchBase Scratch1 Scratch7
 	Mul 8 Scratch7 &Scratch3
 	Save 0 Scratch6
 
 PatchMapCell:
-	Compare Scratch6 8
-	IfEq
-	Goto PatchMapNextRow
+	if Scratch6 == 8: Goto PatchMapNextRow
 	GetTable MapPatchValues Scratch2 Scratch5
 	Add 1 Scratch2 Scratch2
 	Add Scratch6 &Scratch3 &MapCellIndex
@@ -831,9 +746,7 @@ EncMonster2:
 	Data 0 73 57 59 113 121 31 116 62
 
 event2:
-	Compare In3D 1
-	IfEq
-	Goto RestInside
+	if In3D == 1: Goto RestInside
 	Save 10 RestChance
 	Save 96 RestEvery
 	Exit
@@ -847,15 +760,11 @@ event3:
 	Goto RandomEncounter
 
 event4:
-	Compare InLair 255
-	IfEq
-	Goto LoadLairFiles
+	if InLair == 255: Goto LoadLairFiles
 	Save 0 In3D
 	Save 0 NoCoords
 	LoadFiles 6 6 0
-	Compare Boss 254
-	IfGe
-	Gosub PatchMap
+	if Boss >= 254: Gosub PatchMap
 	Gosub MarkSitesOnMap
 	Exit
 

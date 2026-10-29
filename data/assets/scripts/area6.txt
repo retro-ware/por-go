@@ -16,41 +16,25 @@ CheckPatrolSurprise:
 	IfNe
 	Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	Compare AlarmEndHour 0
-	IfNe
-	And Surprise 1 Surprise
-	Compare Surprise 3
-	IfEq
-	Save 0 Surprise
+	if AlarmEndHour != 0: And Surprise 1 Surprise
+	if Surprise == 3: Save 0 Surprise
 	Compare Surprise 1
 	Return
 
 CheckAlarmExpired:
-	Compare AlarmEndHour 1
-	IfLt
-	Return
+	if AlarmEndHour < 1: Return
 	Save Hours AuxRoll
-	CompareAnd Hours 0 AlarmHour 23
-	IfEq
-	Save 24 AuxRoll
-	Compare AuxRoll AlarmEndHour
-	IfLt
-	Goto AlarmStillRinging
-	Compare TenMinutes AlarmMinute
-	IfLt
-	Goto AlarmStillRinging
+	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	if AuxRoll < AlarmEndHour: Goto AlarmStillRinging
+	if TenMinutes < AlarmMinute: Goto AlarmStillRinging
 	Save 0 AlarmEndHour
 	Compare 0 1
 	Return
 
 AlarmStillRinging:
-	Compare Search 1
-	IfEq
-	Goto PrintAlarmSounding
+	if Search == 1: Goto PrintAlarmSounding
 	Random 9 AuxRoll
-	Compare 0 AuxRoll
-	IfNe
-	Goto AlarmReturnActive
+	if 0 != AuxRoll: Goto AlarmReturnActive
 
 PrintAlarmSounding:
 	PrintClear "AN ALARM IS SOUNDING."
@@ -61,9 +45,7 @@ AlarmReturnActive:
 	Return
 
 StartAlarm:
-	Compare AlarmEndHour 0
-	IfEq
-	PrintClear "AN ALARM STARTS RINGING!"
+	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Delay
 	Save Hours AlarmHour
 	Save TenMinutes AlarmMinute
@@ -87,9 +69,7 @@ PressToContinue:
 SetSkyByTime:
 	Save 11 Scratch1
 	Save 9 SkyInside
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch1
+	if Hours >= 14: Save 8 Scratch1
 	Save Scratch1 Sky
 	Return
 
@@ -99,13 +79,9 @@ event0:
 	And BaneTempleFlags 3 Scratch10
 	IfNe
 	And CastleFlags 254 CastleFlags
-	Compare LeftMap 0
-	IfEq
-	Exit
+	if LeftMap == 0: Exit
 	Save 3 Scratch1
-	Compare Facing 2
-	IfNe
-	Goto StepOutToCity
+	if Facing != 2: Goto StepOutToCity
 	Save 9 Scratch1
 	Save 2 SymbolSet
 	Save 0 WallSplitA
@@ -124,16 +100,12 @@ event1:
 	IfNe
 	Goto DispatchCell
 	Save 2 Scratch1
-	Compare Search 0
-	IfEq
-	Save 20 Scratch1
+	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
 	IfNe
 	Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Goto GiantPatrol
+	if Scratch10 == 0: Goto GiantPatrol
 
 DispatchCell:
 	And Cell 31 Scratch1
@@ -142,9 +114,7 @@ DispatchCell:
 event2:
 	Save 0 RestEvery
 	Save 10 RestChance
-	Compare AlarmEndHour 0
-	IfEq
-	Exit
+	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
 	IfNe
 	Exit
@@ -162,9 +132,7 @@ event3:
 event4:
 	Gosub SetSkyByTime
 	Save 1 NoCoords
-	Compare AreaKind 6
-	IfEq
-	Exit
+	if AreaKind == 6: Exit
 	Save 1 WallSplitA
 	Save 1 WallSplitB
 	LoadFiles 6 2 255
@@ -221,9 +189,7 @@ LaundryKillWomen:
 	Or CastleDeedFlags 1 CastleDeedFlags
 	PrintClear "THE WOMEN SHRIEK AND FLEE BEFORE YOU AS YOU CHOP THEM DOWN. THE HALF-ORC WOMAN WITH HATE IN HER EYES SNARLS 'HEROES! HAH!' THEN HER EYES GLAZE AS SHE DIES."
 	Random 4 Scratch10
-	Compare Scratch10 0
-	IfNe
-	Goto BackOut
+	if Scratch10 != 0: Goto BackOut
 	PrintClear "IT SEEMS THAT THEIR SCREAMS WERE HEARD..."
 	Delay
 	Goto FleeAfterCombat
@@ -233,9 +199,7 @@ SmithyEnter:
 	And CastleDeedFlags 8 Scratch10
 	IfNe
 	Goto SmithyArmorPile
-	Compare Hours 14
-	IfGt
-	Goto SmithyArmorPile
+	if Hours > 14: Goto SmithyArmorPile
 	Print " THE SMITH (A HUMAN) AND THREE FIRE GIANTS ARE WORKING ON A SUIT OF ARMOR. PILED UP OUT OF THE WAY ARE AN ASSORTMENT OF WEAPONS AND ARMOR."
 	Save 13 Portrait
 	Gosub PressToContinue
@@ -341,9 +305,7 @@ AcceptBlessing:
 
 BlessMemberLoop:
 	LoadCharacter Scratch1
-	Compare SelStatus 1
-	IfNe
-	Goto BlessNextMember
+	if SelStatus != 1: Goto BlessNextMember
 	GetTable AgonyByRace SelAlignment Scratch10
 	OnGoto Scratch10 1 BlessNextMember
 	PrintClear $SelName
@@ -354,9 +316,7 @@ BlessMemberLoop:
 
 BlessNextMember:
 	Add Scratch1 1 Scratch1
-	Compare Scratch1 8
-	IfLt
-	Goto BlessMemberLoop
+	if Scratch1 < 8: Goto BlessMemberLoop
 	And BaneTempleFlags 4 Scratch10
 	IfEq
 	Goto Done
@@ -421,23 +381,17 @@ FleeAfterCombat:
 	Save 129 CombatEnd
 
 AfterCombat:
-	Compare CombatEnd 0
-	IfEq
-	Return
+	if CombatEnd == 0: Return
 	Gosub StartAlarm
 	And CastleFlags 254 CastleFlags
-	Compare CombatEnd 129
-	IfNe
-	Return
+	if CombatEnd != 129: Return
 
 BackOut:
 	Save 255 HoldMove
 	Save PrevX PartyX
 	Save PrevY PartyY
 	Add Facing 2 Facing
-	Compare Facing 3
-	IfGt
-	Sub 4 Facing Facing
+	if Facing > 3: Sub 4 Facing Facing
 	Goto Done
 
 GiantPatrol:

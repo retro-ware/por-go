@@ -1,16 +1,12 @@
 event0:
 	Gosub SetSky
-	Compare LeftMap 0
-	IfEq
-	Goto EnterDone
+	if LeftMap == 0: Goto EnterDone
 	PrintClear "DO YOU WANT TO TAKE A BOAT BACK TO PHLAN?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 BoardBoat StayAtKeep
 
 BoardBoat:
-	Compare SkyColor21 8
-	IfEq
-	Goto SailToPhlan
+	if SkyColor21 == 8: Goto SailToPhlan
 	Picture 41
 
 SailToPhlan:
@@ -39,12 +35,8 @@ event1:
 	Save 0 AuxCounter
 
 FindCellLoop:
-	Compare AuxCounter Scratch10
-	IfEq
-	Goto CellDispatch
-	Compare AuxCounter 19
-	IfGt
-	Exit
+	if AuxCounter == Scratch10: Goto CellDispatch
+	if AuxCounter > 19: Exit
 	Add 1 AuxCounter AuxCounter
 	Goto FindCellLoop
 
@@ -53,9 +45,7 @@ CellDispatch:
 	Exit
 
 event2:
-	Compare PatrolsFought21 4
-	IfGt
-	Goto NoRest
+	if PatrolsFought21 > 4: Goto NoRest
 	Save 2 RestEvery
 	Save 1 RestChance
 	Exit
@@ -78,9 +68,7 @@ event4:
 	Save 10 SkyInside
 	LoadFiles 21 2 255
 	LoadPieces 1 5 9
-	Compare ArrivedAtKeep 0
-	IfNe
-	Exit
+	if ArrivedAtKeep != 0: Exit
 	Save 1 ArrivedAtKeep
 	Save 0 Facing
 	Save 8 PartyX
@@ -88,24 +76,16 @@ event4:
 	Call CallRedraw
 	PrintClear "THE BOAT DISEMBARKS YOU AT SOKAL KEEP."
 	Gosub PressToContinue
-	Compare RestChance ViewFlags
-	IfEq
-	Exit
+	if RestChance == ViewFlags: Exit
 	Goto NoRest
 
 DeadElf:
 	Picture 3
-	Compare ElfScrollTaken 255
-	IfEq
-	Goto ElfLooted
-	Compare ElfBodyHacked 255
-	IfEq
-	Goto ElfLooted
+	if ElfScrollTaken == 255: Goto ElfLooted
+	if ElfBodyHacked == 255: Goto ElfLooted
 	PrintClear "THE SKELETON OF A LONG-DEAD ELF LIES HIDDEN BY ROCKS AND REEDS.  ITS WEAPONS AND EQUIPMENT ARE BADLY RUSTED AND CORRODED BY SALT, ITS LEATHERS ARE WORM EATEN AND CRUSTED IN DIRT."
 	Gosub PressToContinue
-	Compare Search 1
-	IfNe
-	Goto ElfMenu
+	if Search != 1: Goto ElfMenu
 
 ElfScroll:
 	PrintClear "IN A POUCH ON THE REMAINS IS A CRUMBLING PARCHMENT SCROLL WITH THE WORDS ..."
@@ -145,33 +125,23 @@ ElfDone:
 	Exit
 
 KeepGates:
-	Compare Scratch3 0
-	IfNe
-	Exit
+	if Scratch3 != 0: Exit
 	PrintClear "YOU STAND BELOW THE ROTTING REMAINS OF THE ONCE-MIGHTY GATES OF SOKAL KEEP."
 	Save 1 Scratch3
-	Compare FerranFreed 255
-	IfEq
-	Exit
+	if FerranFreed == 255: Exit
 	Print " ECHOING FOOTSTEPS ARE DIMLY HEARD WITHIN THE KEEP.  TO THE WEST RISES A MOUND OF REEDS."
 	Exit
 
 PatrolRoad:
 	Save 0 Scratch5
 	Save 0 Scratch3
-	Compare PatrolsFought21 5
-	IfGt
-	Save 0 PatrolsFought21
-	Compare PatrolsFought21 4
-	IfLt
-	Goto PatrolRoll
+	if PatrolsFought21 > 5: Save 0 PatrolsFought21
+	if PatrolsFought21 < 4: Goto PatrolRoll
 	Exit
 
 PatrolRoll:
 	Random 5 Scratch1
-	Compare 3 Scratch1
-	IfNe
-	Exit
+	if 3 != Scratch1: Exit
 
 UndeadPatrol:
 	SetupMonster 34 2 34
@@ -179,9 +149,7 @@ UndeadPatrol:
 	Approach
 	Delay
 	Approach
-	Compare PatrolPassword 0
-	IfEq
-	Goto PatrolMenu
+	if PatrolPassword == 0: Goto PatrolMenu
 	PrintClear "AN UNDEAD PATROL CONFRONTS YOU.  DO YOU GIVE THE PASSWORD?"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 PatrolLeaves PatrolFight
@@ -195,14 +163,9 @@ PatrolParlay:
 	PrintClear "WHAT DO YOU SAY? (TYPE A SINGLE WORD)"
 	NewLine
 	InputString 7 $AuxMonsterName
-	Compare FerranFreed 255
-	IfEq
-	Save "SAMOSUD" $AuxText
-	IfNe
-	Save "SHESTNI" $AuxText
-	Compare $AuxMonsterName $AuxText
-	IfNe
-	Goto WrongPassword
+	if FerranFreed == 255: Save "SAMOSUD" $AuxText
+	also if FerranFreed != 255: Save "SHESTNI" $AuxText
+	if $AuxMonsterName != $AuxText: Goto WrongPassword
 	Save 1 PatrolPassword
 
 PatrolLeaves:
@@ -224,47 +187,29 @@ PatrolBeaten:
 	Exit
 
 Stable:
-	Compare StableSeen21 1
-	IfGt
-	Save 0 StableSeen21
-	Compare StableSeen21 0
-	IfNe
-	Exit
+	if StableSeen21 > 1: Save 0 StableSeen21
+	if StableSeen21 != 0: Exit
 	PrintClear "UNWHOLESOME MOLD AND FUNGI COVER THE DECAYING RUINS OF THE KEEP'S STABLE.  A PUTRID SMELL OF SICKNESS RISES AS YOU ENTER THE BUILDING."
 	Save 1 StableSeen21
 	Exit
 
 FungusRoom:
-	Compare FungusRoomSeen 1
-	IfGt
-	Save 0 FungusRoomSeen
-	Compare FungusRoomSeen 0
-	IfGt
-	Exit
+	if FungusRoomSeen > 1: Save 0 FungusRoomSeen
+	if FungusRoomSeen > 0: Exit
 	PrintClear "A THICK CARPET OF FUNGUS COVERS THE FLOOR OF THIS ROOM."
 	Save 1 FungusRoomSeen
 	Exit
 
 Smithy:
-	Compare SmithySeen 1
-	IfGt
-	Save 0 SmithySeen
-	Compare SmithySeen 0
-	IfGt
-	Goto SmithyFrogCheck
+	if SmithySeen > 1: Save 0 SmithySeen
+	if SmithySeen > 0: Goto SmithyFrogCheck
 	PrintClear "A BROKEN HEARTH AND BELLOWS DOMINATES THE COLLAPSED REMAINS OF A BLACKSMITH'S SHOP.  THE FLOOR IS SPONGEY AND DAMP.  THE CROAKING OF FROGS GREETS YOUR ENTRY."
 	Save 1 SmithySeen
 
 SmithyFrogCheck:
-	Compare SmithyFrogs 255
-	IfEq
-	Exit
-	Compare SmithyFrogs 2
-	IfGt
-	Save 0 SmithyFrogs
-	Compare SmithyFrogs 1
-	IfGt
-	Goto FrogsMenu
+	if SmithyFrogs == 255: Exit
+	if SmithyFrogs > 2: Save 0 SmithyFrogs
+	if SmithyFrogs > 1: Goto FrogsMenu
 	Add 1 SmithyFrogs SmithyFrogs
 	Exit
 
@@ -287,12 +232,8 @@ FrogsBeaten:
 	Exit
 
 SmithyHammer:
-	Compare HammerTaken 255
-	IfEq
-	Exit
-	Compare Search 1
-	IfNe
-	Exit
+	if HammerTaken == 255: Exit
+	if Search != 1: Exit
 	PrintClear "AS YOU SEARCH THROUGH THE WRECKED SMITHY, YOU FIND THAT TIME HAS CRUMBLED EVERYTHING WITH THE EXCEPTION OF ONE OLD HAMMER."
 	Print " DO YOU TAKE IT?"
 	Gosub YesNoMenu
@@ -306,28 +247,16 @@ TakeHammer:
 	Exit
 
 Barracks:
-	Compare FerranFreed 255
-	IfEq
-	Goto BarracksSearch
-	Compare HauntsAppeased 255
-	IfEq
-	Goto BarracksSearch
-	Compare BarracksVisits 5
-	IfGt
-	Save 0 BarracksVisits
-	Compare BarracksVisits 1
-	IfLt
-	PrintClear "THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED."
+	if FerranFreed == 255: Goto BarracksSearch
+	if HauntsAppeased == 255: Goto BarracksSearch
+	if BarracksVisits > 5: Save 0 BarracksVisits
+	if BarracksVisits < 1: PrintClear "THIS BUILDING IS FILLED WITH BROKEN AND SPLINTERED WOOD, THE REMAINS OF THE BUNKS AND CHESTS OF THE ORIGINAL DEFENDERS.  IT SEEMS EVERYTHING HAS BEEN WELL LOOTED."
 	Add 1 BarracksVisits BarracksVisits
-	Compare BarracksVisits 4
-	IfGe
-	Goto HauntsRise
+	if BarracksVisits >= 4: Goto HauntsRise
 	Exit
 
 HauntsRise:
-	Compare HauntsSeen 255
-	IfEq
-	Goto HauntsMenu
+	if HauntsSeen == 255: Goto HauntsMenu
 	Save 255 HauntsSeen
 	PrintClear "A MIST RISES AND THICKENS INTO NUMEROUS SHADOWING FIGURES.  FROM THESE FIGURES RISES A LOW MOANING."
 	Gosub PressToContinue
@@ -346,17 +275,13 @@ HauntsParlay:
 	NewLine
 	InputString 3 $AuxMonsterName
 	Save "LUX" $AuxText
-	Compare $AuxMonsterName $AuxText
-	IfEq
-	Goto HauntsAppease
+	if $AuxMonsterName == $AuxText: Goto HauntsAppease
 	PrintClear "WRONG WORD. "
 	Picture 255
 	Print "THE MOANING CONTINUES."
 
 BarracksSearch:
-	Compare Search 1
-	IfNe
-	Exit
+	if Search != 1: Exit
 	Random 9 Scratch1
 	Goto DiaryGems
 
@@ -370,12 +295,8 @@ HauntsAppease:
 	Save 255 HauntsAppeased
 
 DiaryGems:
-	Compare DiaryGemsTaken 255
-	IfEq
-	Exit
-	Compare Scratch1 5
-	IfNe
-	Exit
+	if DiaryGemsTaken == 255: Exit
+	if Scratch1 != 5: Exit
 	PrintClear "BENEATH A FLOORBOARD YOU FIND SOME GEMS AND A FEW PAGES OF A DIARY.  YOU COPY THESE PAGES INTO YOUR JOURNAL AS ENTRY 3."
 	Gosub PressToContinue
 	PrintClear "DO YOU TAKE THE GEMS?"
@@ -390,9 +311,7 @@ TakeGems:
 	Exit
 
 Insects:
-	Compare InsectsBeaten 255
-	IfEq
-	Exit
+	if InsectsBeaten == 255: Exit
 	SetupMonster 18 0 18
 	PrintClear "THE INTERIOR IS OVERRUN WITH INSECTS.  AT YOUR FOOTSTEP, THEY FALL FROM THE WALLS AND CEILING."
 	Save 25 AuxMember
@@ -409,12 +328,8 @@ InsectsDone:
 	Exit
 
 OrcRaid:
-	Compare FerranFreed 255
-	IfEq
-	Goto EmptyHall
-	Compare OrcRaidBeaten 255
-	IfEq
-	Goto EmptyHall
+	if FerranFreed == 255: Goto EmptyHall
+	if OrcRaidBeaten == 255: Goto EmptyHall
 	SetupMonster 6 1 6
 	PrintClear "A LOUD COMMOTION RISES FROM THE COURTYARD.  BASHING OPEN THE DOOR, A LARGE FORCE OF ORCS AND HOBGOBLINS RUSHES YOU."
 	Gosub PressToContinue
@@ -430,52 +345,35 @@ OrcRaidDone:
 	Exit
 
 EmptyHallCheck:
-	Compare HallEmptyFlag 255
-	IfNe
-	Exit
+	if HallEmptyFlag != 255: Exit
 
 EmptyHall:
-	Compare Scratch5 10
-	IfEq
-	Exit
+	if Scratch5 == 10: Exit
 	PrintClear "THE HALL IS EMPTY, SAVE FOR SIGNS OF A RECENT BATTLE."
 	Save 10 Scratch5
 	Exit
 
 Armory:
-	Compare ArmorySeen 1
-	IfGt
-	Save 0 ArmorySeen
-	Compare ArmorySeen 1
-	IfLt
-	PrintClear "YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS."
+	if ArmorySeen > 1: Save 0 ArmorySeen
+	if ArmorySeen < 1: PrintClear "YOU ENTER THE KEEP'S OLD ARMORY.  ALL OF THE WEAPONS AND ARMOR HAVE DECAYED INTO USELESSNESS."
 	Save 1 ArmorySeen
 	Exit
 
 HiddenRoom:
 	Save 0 NoCoords
-	Compare HiddenRoomSeen 1
-	IfGt
-	Save 0 HiddenRoomSeen
-	IfLt
-	PrintClear "PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. "
+	if HiddenRoomSeen > 1: Save 0 HiddenRoomSeen
+	also if HiddenRoomSeen < 1: PrintClear "PASSING THROUGH AN ILLUSIONARY WALL, YOU ENTER A PORTION OF THE KEEP THAT REMAINS UNTOUCHED BY TIME OR RAVAGING ARMIES. "
 	Save 1 HiddenRoomSeen
-	Compare MagicGearTaken 255
-	IfLt
-	Print "THERE IS A GLOW IN THE NORTHWESTERN CORNER OF THE ROOM."
+	if MagicGearTaken < 255: Print "THERE IS A GLOW IN THE NORTHWESTERN CORNER OF THE ROOM."
 	Exit
 
 GearStands:
-	Compare MagicGearTaken 255
-	IfEq
-	Exit
+	if MagicGearTaken == 255: Exit
 	PrintClear "SPECIAL STANDS IN THE NORTHWESTERN CORNER HOLD EQUIPMENT."
 	Exit
 
 MagicGear:
-	Compare MagicGearTaken 255
-	IfEq
-	Exit
+	if MagicGearTaken == 255: Exit
 	PrintClear "ON STANDS ARE A SHIELD, A MACE, A SWORD, AND A SMALL SUIT OF CHAINMAIL.  THE EQUIPMENT HAS NOT BEEN TARNISHED BY THE PASSING YEARS. "
 	Print "DO YOU TAKE IT?"
 	Gosub YesNoMenu
@@ -494,23 +392,15 @@ CoordsOff:
 
 Chapel:
 	Save 0 Scratch5
-	Compare ChapelSeen 1
-	IfGt
-	Save 0 ChapelSeen
-	Compare ChapelSeen 0
-	IfGt
-	Exit
+	if ChapelSeen > 1: Save 0 ChapelSeen
+	if ChapelSeen > 0: Exit
 	PrintClear "THIS WAS ONCE THE CHAPEL OF THE KEEP.  INSIDE THE DOORWAY ARE THE DRIED HUSKS OF TWO ORCS, THEIR FACES TWISTED WITH TERROR.  A LARGE ALTAR DOMINATES THE SOUTHERN WALL."
 	Save 1 ChapelSeen
 	Exit
 
 FerranSpirit:
-	Compare FerranFaded 255
-	IfEq
-	Exit
-	Compare FerranFreed 255
-	IfEq
-	Exit
+	if FerranFaded == 255: Exit
+	if FerranFreed == 255: Exit
 	EncounterMenu 17 0 19 Scratch1 0 3 1 1 4 "A PALE FORM RISES BEFORE YOU." "" "" 0 0
 	OnGoto Scratch1 4 ClearExit FerranFight RunAway FerranParlay
 
@@ -520,11 +410,10 @@ FerranParlay:
 	NewLine
 	InputString 3 $AuxMonsterName
 	Save "LUX" $AuxText
-	Compare $AuxMonsterName $AuxText
-	IfEq
-	Goto FerranSpeaks
-	IfEq
-	Goto FerranSpeaks
+	if $AuxMonsterName == $AuxText {
+		Goto FerranSpeaks
+		Goto FerranSpeaks
+	}
 	Save 255 FerranFaded
 	PrintClear "THE OUTLINE OF A SAD-FACED MAN WAVERS AND FADES AWAY."
 	Picture 255
@@ -550,9 +439,7 @@ TellFerranTruth:
 	PrintClear "WITH THEIR POWERS THEY RULED AND UNITED ALL ELSE, DRIVING FORWARD TO DESTROY US ALL. THE SAGE MENDOR WORKED HARD TO GATHER RECORD OF ALL THESE THINGS, BUT THEY ARE LOST NOW, HIS LIBRARY OVERRUN."
 	Gosub PressToContinue
 	PrintClear ""
-	Compare MagicGearTaken 255
-	IfEq
-	Goto FerranPassword
+	if MagicGearTaken == 255: Goto FerranPassword
 	PrintClear "TO FIND HELP FOR YOUR BATTLES, YOU SHOULD PASS THROUGH THE ILLUSIONARY WALL IN THE ARMORY OF THIS KEEP."
 
 FerranPassword:
@@ -576,9 +463,7 @@ FerranBeaten:
 	Exit
 
 FleeIfLost:
-	Compare CombatEnd 128
-	IfGt
-	Goto RunAway
+	if CombatEnd > 128: Goto RunAway
 	Return
 
 RunAway:
@@ -603,9 +488,7 @@ YesNoMenu:
 
 SetSky:
 	Save 11 SkyColor21
-	Compare Hours 14
-	IfGe
-	Save 8 SkyColor21
+	if Hours >= 14: Save 8 SkyColor21
 	Save SkyColor21 Sky
 	Return
 
@@ -615,17 +498,13 @@ LoadEncounter:
 	GetTable EncMoraleTable Scratch1 AuxMonster
 	GetTable EncCountTable Scratch1 AuxEncResult
 	GetTable EncPictureTable Scratch1 AuxEncResult2
-	Compare Scratch6 0
-	IfNe
-	Goto LoadEncounterGroup
+	if Scratch6 != 0: Goto LoadEncounterGroup
 	ClearMonsters
 	Save 1 Scratch6
 
 LoadEncounterGroup:
 	LoadMonster AuxRoll AuxEncResult AuxEncResult2
-	Compare AuxPartyStrength 0
-	IfEq
-	Goto EncounterCombat
+	if AuxPartyStrength == 0: Goto EncounterCombat
 	Add 1 Scratch1 Scratch1
 	Sub 1 AuxPartyStrength AuxPartyStrength
 	Goto LoadEncounter

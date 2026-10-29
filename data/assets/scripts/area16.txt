@@ -1,9 +1,7 @@
 SetSky:
 	Save 8 SkyInside
 	Save 11 Scratch10
-	Compare Hours 13
-	IfGt
-	Save 8 Scratch10
+	if Hours > 13: Save 8 Scratch10
 	Save Scratch10 Sky
 	Return
 
@@ -13,33 +11,21 @@ FindPoolCell:
 
 FindPoolCellLoop:
 	GetTable PoolCellTable Scratch10 Scratch9
-	Compare Scratch9 Scratch7
-	IfEq
-	Return
+	if Scratch9 == Scratch7: Return
 	Add 1 Scratch10 Scratch10
-	Compare Scratch10 13
-	IfLt
-	Goto FindPoolCellLoop
+	if Scratch10 < 13: Goto FindPoolCellLoop
 	Compare 1 0
 	Return
 
 CapLizardCounts:
 	Save 0 Scratch8
-	Compare LizardMenKilled 50
-	IfLt
-	Sub LizardMenKilled 50 Scratch8
+	if LizardMenKilled < 50: Sub LizardMenKilled 50 Scratch8
 	GetTable Table9A09 Scratch7 Scratch5
-	Compare Scratch5 Scratch8
-	IfGt
-	Save Scratch8 Scratch5
+	if Scratch5 > Scratch8: Save Scratch8 Scratch5
 	Save 0 Scratch8
-	Compare GiantLizardsKilled 10
-	IfLt
-	Sub PoolTreasureTaken 10 Scratch8
+	if GiantLizardsKilled < 10: Sub PoolTreasureTaken 10 Scratch8
 	GetTable Table9A0E Scratch7 Scratch4
-	Compare Scratch4 Scratch8
-	IfGt
-	Save Scratch8 Scratch4
+	if Scratch4 > Scratch8: Save Scratch8 Scratch4
 	Return
 
 CountLizardKills:
@@ -60,9 +46,7 @@ Table9A0E:
 	Data 1 3 4 0 10
 
 AddKills:
-	Compare Scratch1 Beaten
-	IfLt
-	Goto AddKillsCapped
+	if Scratch1 < Beaten: Goto AddKillsCapped
 	Save Beaten Scratch1
 
 AddKillsCapped:
@@ -92,13 +76,9 @@ event0:
 BlockScanLoop:
 	GetTable Table9B00 Scratch10 Scratch9
 	GetTable Table9B0C Scratch10 Scratch8
-	CompareAnd Scratch9 Scratch7 Scratch8 Facing
-	IfEq
-	Goto BlockDispatch
+	if Scratch9 == Scratch7 && Scratch8 == Facing: Goto BlockDispatch
 	Add Scratch10 1 Scratch10
-	Compare Scratch10 12
-	IfLt
-	Goto BlockScanLoop
+	if Scratch10 < 12: Goto BlockScanLoop
 	Exit
 
 BlockDispatch:
@@ -125,13 +105,9 @@ event1:
 
 EventScanLoop:
 	GetTable Table9B96 Scratch10 Scratch9
-	Compare Scratch9 Scratch7
-	IfEq
-	Goto EventDispatch
+	if Scratch9 == Scratch7: Goto EventDispatch
 	Add Scratch10 1 Scratch10
-	Compare Scratch10 22
-	IfLt
-	Goto EventScanLoop
+	if Scratch10 < 22: Goto EventScanLoop
 	Exit
 
 EventDispatch:
@@ -167,9 +143,7 @@ event4:
 	Gosub SetSky
 	Save 1 NoMagic
 	Save 1 NoCoords
-	Compare AreaKind 16
-	IfEq
-	Exit
+	if AreaKind == 16: Exit
 	Save 8 PartyX
 	Save 14 PartyY
 	Save 0 Facing
@@ -188,23 +162,15 @@ MoatBlocks:
 LeaveRuins:
 	RedrawView
 	Picture 255
-	Compare QuestLizardmen 255
-	IfEq
-	Goto GotoArea27
-	Compare LizardMenKilled 40
-	IfGe
-	Save 254 QuestLizardmen
+	if QuestLizardmen == 255: Goto GotoArea27
+	if LizardMenKilled >= 40: Save 254 QuestLizardmen
 
 GotoArea27:
 	NewECL 27
 
 SearchForTunnel:
-	Compare Scratch1 6
-	IfEq
-	Goto BlockedStairs
-	Compare Search 0
-	IfEq
-	Exit
+	if Scratch1 == 6: Goto BlockedStairs
+	if Search == 0: Exit
 	PrintClear "SEARCHING THROUGH THE "
 	OnGoto Scratch10 5 WordRubble WordSwamp WordSwamp WordRubble WordRubble
 	Print " YOU FIND A HIDDEN TUNNEL LEADING DOWN. DO YOU TAKE IT?"
@@ -225,9 +191,7 @@ GoDownMenu:
 	Call CallRedraw
 	Save 4 Scratch7
 	Gosub CapLizardCounts
-	Compare Scratch4 2
-	IfLt
-	Exit
+	if Scratch4 < 2: Exit
 	SetupMonster 59 1 59
 	PrintClear "YOU ARE NO LONGER GOING DOWN. SUDDENLY YOU HEAR A NOISE. THERE ARE GIANT LIZARDS CHARGING! THERE IS NO TIME TO REACT. COMBAT IS UPON YOU!"
 	Save 0 Surprise
@@ -265,9 +229,7 @@ DestFacing:
 
 FindTreasure:
 	And EncountersDone 1 Scratch10
-	CompareAnd Scratch10 0 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Search != 1: Exit
 	PrintClear "YOU FIND SOME TREASURE!"
 	Gosub TakeItMenu
 	IfNe
@@ -323,9 +285,7 @@ FriendWordInput:
 	Gosub YesNoMenu
 	IfNe
 	Goto FriendWordInput
-	Compare $Scratch1 "SAVIOR"
-	IfEq
-	Goto OldLizardmanStory
+	if $Scratch1 == "SAVIOR": Goto OldLizardmanStory
 	PrintClear "'YOU ARE NOT THEY WHO RESCUED MY CHILDREN, BUT ARE MURDEROUS PIRATES! THEN YOU ARE NOT SAFE HERE!' HE DISAPPEARS WITH AMAZING SPEED INTO THE WILDERNESS AROUND YOU."
 	Goto OldLizardmanGone
 
@@ -346,9 +306,7 @@ OldLizardmanStory:
 
 ChooseChampion:
 	Who "WHO WILL BE MY CHAMPION?"
-	Compare SelStatus 1
-	IfEq
-	Goto ChampionDuel
+	if SelStatus == 1: Goto ChampionDuel
 	PrintClear "PLEASE, BE SERIOUS."
 	Delay
 	Goto ChooseChampion
@@ -360,12 +318,8 @@ ChampionDuel:
 	Call CallDuelB
 	LoadMonster 95 1 57
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto ChampionLost
-	Compare QuestLizardmen 255
-	IfNe
-	Save 254 QuestLizardmen
+	if CombatEnd == 129: Goto ChampionLost
+	if QuestLizardmen != 255: Save 254 QuestLizardmen
 	PrintClear "SEEING THEIR LEADER FALL, THE OTHER LIZARD MEN WITHDRAW. THE OLD LIZARD MAN TURNS TO YOU, 'YOU HAVE DONE ME GREAT SERVICE. REST ASSURED THAT MY PEOPLE WILL NOT JOIN TYRANTHRAXUS.'"
 	Gosub PressToContinue
 	PrintClear "'STILL MY PEOPLE STILL ARE HOSTILE TO STRANGERS. I THINK IT IS BEST IF YOU LEAVE.' HE TURNS AND DISAPPEARS INTO THE WILDERNESS."
@@ -395,9 +349,7 @@ DrythhFight:
 	LoadMonster 95 1 57
 	LoadMonster 57 12 57
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto PushBack
+	if CombatEnd == 129: Goto PushBack
 	Exit
 
 RuinedBuilding:
@@ -418,9 +370,7 @@ RuinedBuildingCheck:
 LizardPatrol:
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 1
-	Compare Surprise 1
-	IfEq
-	Goto LizardPatrolAmbush
+	if Surprise == 1: Goto LizardPatrolAmbush
 	Save 0 Surprise
 	EncounterMenu 57 2 57 Scratch10 0 0 0 0 0 "2 LIZARD MEN AND A GIANT LIZARD CHARGE AT YOU." "" "" 15 6
 	OnGoto Scratch10 4 RedrawExit LizardPatrolFight PushBack LizardPatrolFight
@@ -444,9 +394,7 @@ LizardPatrolFight:
 LizardCombat:
 	Combat
 	Gosub CountLizardKills
-	Compare CombatEnd 129
-	IfEq
-	Goto PushBack
+	if CombatEnd == 129: Goto PushBack
 
 MarkEncounterDone:
 	GetTable EncounterBitTable Scratch7 Scratch1
@@ -469,9 +417,7 @@ CentralKeepCheck:
 	And EncountersDone 4 Scratch10
 	IfEq
 	Goto OldLizardman
-	Compare Scratch1 0
-	IfEq
-	Exit
+	if Scratch1 == 0: Exit
 	Goto SearchForTunnel
 
 JavelinAmbush:
@@ -479,23 +425,17 @@ JavelinAmbush:
 	Save 50 Morale
 	Save 2 Scratch7
 	Gosub CapLizardCounts
-	Compare Scratch5 2
-	IfLt
-	Goto MarkEncounterDone
+	if Scratch5 < 2: Goto MarkEncounterDone
 	SetupMonster 57 0 57
 	PrintClear "SUDDENLY LIZARD MEN JUMP UP FROM WHERE THEY WERE HIDING AND THROW JAVELINS AT YOU."
-	Compare Scratch4 1
-	IfGt
-	Print " AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS."
+	if Scratch4 > 1: Print " AT THE SAME TIME GIANT LIZARDS CHARGE OUT OF HIDDEN TUNNELS."
 	Delay
 	Damage Scratch5 1 6 0 42
 	Save 253 PartyHit
 	Save 252 PartyMove
 	ClearMonsters
 	LoadMonster 57 Scratch5 57
-	Compare Scratch4 0
-	IfNe
-	LoadMonster 59 Scratch4 59
+	if Scratch4 != 0: LoadMonster 59 Scratch4 59
 	Goto LizardCombat
 
 LShapedBuilding:
@@ -516,9 +456,7 @@ LShapedBuildingCheck:
 GiantLizards:
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	Compare Surprise 1
-	IfEq
-	Goto GiantLizardsAmbush
+	if Surprise == 1: Goto GiantLizardsAmbush
 	Save 0 Surprise
 	EncounterMenu 59 2 59 Scratch10 0 0 0 0 0 "3 GIANT LIZARDS CHARGE TOWARD YOU." "" "" 15 15
 	OnGoto Scratch10 4 RedrawExit GiantLizardsFight PushBack GiantLizardsFight
@@ -566,9 +504,7 @@ PoolLizardmen:
 	Save 3 Scratch7
 	Gosub CapLizardCounts
 	Save 1 Scratch8
-	Compare Scratch5 3
-	IfLt
-	Goto DeepPool
+	if Scratch5 < 3: Goto DeepPool
 	SetupMonster 57 0 57
 	PrintClear "A GROUP OF LIZARD MEN SLITHER OUT OF THE WATER AND THROW JAVELINS AT YOU. "
 	Delay
@@ -578,9 +514,7 @@ PoolLizardmen:
 	Goto LizardmenDive
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	Compare Surprise 1
-	IfEq
-	Goto LizardmenDive
+	if Surprise == 1: Goto LizardmenDive
 	Save 2 Surprise
 	EncounterMenu 57 0 57 Scratch10 2 2 2 2 2 "THEY TURN TO DIVE BACK IN THE WATER." "" "" 0 0
 	OnGoto Scratch10 2 LizardmenDive PoolLizardmenFight
@@ -602,9 +536,7 @@ PoolLizardmenFight:
 	Combat
 	Gosub CountLizardKills
 	Save 1 Scratch8
-	Compare CombatEnd 129
-	IfNe
-	Goto DeepPool
+	if CombatEnd != 129: Goto DeepPool
 	Gosub FindPoolCell
 	IfNe
 	Exit

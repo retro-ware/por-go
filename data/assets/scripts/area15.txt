@@ -41,33 +41,25 @@ PressToContinue:
 	Return
 
 ExitUnlessSearchNew:
-	CompareAnd Scratch3 0 Search 1
-	IfNe
-	Exit
+	if Scratch3 != 0 || Search != 1: Exit
 	Return
 
 SetSky:
 	Save 11 Scratch10
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch10
+	if Hours >= 14: Save 8 Scratch10
 	Save Scratch10 Sky
 	Save 9 SkyInside
 	Return
 
 event0:
 	Gosub SetSky
-	Compare LeftMap 0
-	IfNe
-	Goto LeaveArea
+	if LeftMap != 0: Goto LeaveArea
 	And Cell 64 Scratch10
 	IfEq
 	Exit
 	And 1 Cell Scratch10
 	GetTable Table9B07 Scratch10 Scratch8
-	Compare Scratch8 Facing
-	IfNe
-	Exit
+	if Scratch8 != Facing: Exit
 	And LibraryEventFlags 32 Scratch10
 	IfNe
 	Exit
@@ -80,15 +72,11 @@ event0:
 	Save 100 Morale
 	PartySurprise Scratch2 Scratch3
 	Surprise Scratch2 Scratch3 2 2
-	Compare Surprise 2
-	IfEq
-	Save 0 Surprise
+	if Surprise == 2: Save 0 Surprise
 	ClearMonsters
 	LoadMonster 17 1 17
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeFromBasilisk
+	if CombatEnd == 129: Goto FleeFromBasilisk
 	Or LibraryEventFlags 32 LibraryEventFlags
 
 RedrawExit:
@@ -135,36 +123,26 @@ event3:
 
 event4:
 	Gosub SetSky
-	Compare AreaKind 15
-	IfEq
-	Exit
+	if AreaKind == 15: Exit
 	Save 18 SelIcon
 	LoadFiles 15 2 255
 	LoadPieces 1 19 23
 	Exit
 
 GardenEnter:
-	Compare GardenVisits 0
-	IfNe
-	Goto GardenWalk
+	if GardenVisits != 0: Goto GardenWalk
 	PrintClear "YOU SEE WHAT ONCE WAS A GARDEN, NOW-WEED FILLED. THE PLEASANT POND HAS BECOME A SWAMP."
 	Gosub ShortPause
 	Save 1 GardenVisits
 
 GardenWalk:
-	Compare GardenVisits 7
-	IfGt
-	Exit
+	if GardenVisits > 7: Exit
 	Save 5 Scratch9
 	Random 25 Scratch10
-	Compare Scratch10 6
-	IfGt
-	Exit
+	if Scratch10 > 6: Exit
 	PartySurprise Scratch6 Scratch7
 	Save 0 Scratch8
-	Compare Search 1
-	IfNe
-	Save 2 Scratch8
+	if Search != 1: Save 2 Scratch8
 	Surprise Scratch6 Scratch7 0 Scratch8
 	PrintClear "AS YOU MOVE THROUGH THE GARDEN "
 	Add 1 GardenVisits GardenVisits
@@ -185,21 +163,15 @@ SlimeStepped:
 
 StacksEnter:
 	GetTable StacksSignSeen Scratch1 Scratch2
-	Compare Scratch2 0
-	IfNe
-	Goto StacksSearch
+	if Scratch2 != 0: Goto StacksSearch
 	PrintClear "THESE ARE THE LIBRARY STACKS. OLD AND MOLDERING BOOKS ARE STORED ON SHELVES. A SIGN OVER THE ENTRANCE READS "
 	OnGoto Scratch1 4 SignPhilosophy SignMathematics SignHistory SignRhetoric
 	Gosub PressToContinue
 	SaveTable 1 StacksSignSeen Scratch1
 
 StacksSearch:
-	Compare Scratch1 3
-	IfEq
-	Goto BasiliskLair
-	Compare Search 0
-	IfEq
-	Exit
+	if Scratch1 == 3: Goto BasiliskLair
+	if Search == 0: Exit
 	PrintClear "AS YOU SEARCH THE ROOM YOU SCAN RANDOM BOOKS."
 	Gosub ShortPause
 	OnGoto Scratch1 4 PhilosophyBooks MathNothing HistoryBooks RhetoricNothing
@@ -247,9 +219,7 @@ FyerdethaBook:
 	PrintClear "YOU FIND FYERDETHA'S DISCOURSES ON POWER. AMONG ALL THE DRY TEXT YOU FIND AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 7."
 	Gosub TakeItMenu
 	Or BooksFoundFlags 1 BooksFoundFlags
-	Compare QuestBookFyerdetha 255
-	IfNe
-	Save 254 QuestBookFyerdetha
+	if QuestBookFyerdetha != 255: Save 254 QuestBookFyerdetha
 	Exit
 
 UrgundBook:
@@ -259,23 +229,17 @@ UrgundBook:
 	PrintClear "YOU FIND URGUND'S DESCRIPTION OF DARKNESS. THIS IS AN ACCOUNT OF HIS IMPRISONMENT IN THE LOWER REALMS. THERE IS A PASSAGE OF INTEREST WHICH YOU COPY AS ENTRY 19 IN YOUR JOURNAL."
 	Gosub TakeItMenu
 	Or BooksFoundFlags 2 BooksFoundFlags
-	Compare QuestBookUrgund 255
-	IfNe
-	Save 254 QuestBookUrgund
+	if QuestBookUrgund != 255: Save 254 QuestBookUrgund
 	Exit
 
 NamedBook:
-	Compare NamedBooksFound 5
-	IfGe
-	Goto PhilosophyBooks
+	if NamedBooksFound >= 5: Goto PhilosophyBooks
 	PrintClear "YOU FIND A BOOK ENTITLED "
 	OnGoto NamedBooksFound 5 TitleMeditations TitleHarmonyOfRock TitleStromPoetics TitleChroniclesArram TitleNatureOfWriting
 	Add 1 NamedBooksFound NamedBooksFound
 	Gosub TakeItMenu
 	Or 128 BooksFoundFlags BooksFoundFlags
-	Compare QuestBookNamed 255
-	IfNe
-	Save 254 QuestBookNamed
+	if QuestBookNamed != 255: Save 254 QuestBookNamed
 	Exit
 
 TitleMeditations:
@@ -313,9 +277,7 @@ LexGeographica:
 	PrintClear "YOU FIND LEX GEOGRAPHICA, AN ATLAS DRAWN BY TOMARUS. IT HAS A MAP OF PHLAN WHICH, THOUGH OLD, STILL COULD BE USEFUL. IT BECOMES ENTRY 37 IN YOUR JOURNAL."
 	Gosub TakeItMenu
 	Or BooksFoundFlags 4 BooksFoundFlags
-	Compare QuestBookLexGeographica 255
-	IfNe
-	Save 254 QuestBookLexGeographica
+	if QuestBookLexGeographica != 255: Save 254 QuestBookLexGeographica
 	Exit
 
 HistoryOfNorth:
@@ -324,9 +286,7 @@ HistoryOfNorth:
 	Goto HistoryBooks
 	PrintClear "YOU FIND THE HISTORY OF THE NORTH. IT IS MOSTLY WRITTEN TO PLEASE A ROYAL LINE. HOWEVER, THERE IS AN INTERESTING PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 8."
 	Gosub TakeItMenu
-	Compare QuestBookHistoryNorth 255
-	IfNe
-	Save 254 QuestBookHistoryNorth
+	if QuestBookHistoryNorth != 255: Save 254 QuestBookHistoryNorth
 	Or BooksFoundFlags 8 BooksFoundFlags
 	Exit
 
@@ -336,9 +296,7 @@ ArtsOfWar:
 	Goto HistoryBooks
 	PrintClear "YOU FIND THE GRAND HISTORIAN'S RECORDS OF THE ARTS OF WAR. IN IT YOU FIND A USEFUL PASSAGE WHICH YOU COPY INTO YOUR JOURNAL AS ENTRY 21."
 	Gosub TakeItMenu
-	Compare QuestBookArtsOfWar 255
-	IfNe
-	Save 254 QuestBookArtsOfWar
+	if QuestBookArtsOfWar != 255: Save 254 QuestBookArtsOfWar
 	Or BooksFoundFlags 16 BooksFoundFlags
 	Exit
 
@@ -391,18 +349,13 @@ BasiliskFight:
 	LoadMonster 26 1 26
 	Treasure 0 0 0 0 0 0 0 3
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeFromBasilisk
+	if CombatEnd == 129: Goto FleeFromBasilisk
 	Or LibraryEventFlags 64 LibraryEventFlags
 	Exit
 
 BonesRoom:
-	Compare BonesRoomState 1
-	IfEq
-	Goto BonesJar
-	IfGt
-	Exit
+	if BonesRoomState == 1: Goto BonesJar
+	also if BonesRoomState > 1: Exit
 	PrintClear "YOU SEE A RUINED ROOM WITH ROTTED FURNITURE. HUMAN BONES LIE SCATTERED ABOUT A DESK."
 	Gosub ShortPause
 	Save 1 BonesRoomState
@@ -428,17 +381,13 @@ BenchChamber:
 	Exit
 
 FrescoRoom:
-	Compare FrescoRoomSeen 0
-	IfNe
-	Exit
+	if FrescoRoomSeen != 0: Exit
 	PrintClear "YOU SEE AN EMPTY ROOM. THE ONLY FEATURE IS A SERIES OF FRESCOES ON THE WALLS OF LEARNED MEN AND THE HEAVENLY PATRONS OF ART AND LEARNING. YOU GET A FEELING OF PEACE."
 	Save 1 FrescoRoomSeen
 	Exit
 
 WritingHall:
-	Compare WritingHallSeen 0
-	IfNe
-	Exit
+	if WritingHallSeen != 0: Exit
 	PrintClear "YOU ENTER A HALL WHICH IS FILLED WITH ROWS OF WRITING TABLES AND HIGH STOOLS. ROTTED MOUNDS OF PARCHMENT LITTER THE FLOOR."
 	Save 1 WritingHallSeen
 	Exit
@@ -475,9 +424,7 @@ MadFighterParlay:
 
 InviteMadman:
 	Gosub MadmanRaves
-	Compare PartyCount 8
-	IfEq
-	Goto MadFighterMenu
+	if PartyCount == 8: Goto MadFighterMenu
 	PrintClear "YOU SEE THE MAN IS QUITE MAD. DO YOU TAKE PITY AND INVITE HIM TO GO WITH YOU?"
 	Gosub YesNoMenu
 	IfNe
@@ -519,16 +466,12 @@ MadFighterFight:
 	ClearMonsters
 	LoadMonster 25 1 11
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeFromMadman
+	if CombatEnd == 129: Goto FleeFromMadman
 	Or LibraryEventFlags 1 LibraryEventFlags
 	Exit
 
 StudyRoom:
-	Compare StudySeen 0
-	IfNe
-	Exit
+	if StudySeen != 0: Exit
 	PrintClear "THIS ROOM WAS ONCE A STUDY. IT IS NOW A SHATTERED RUIN."
 	Save 1 StudySeen
 	Exit
@@ -556,9 +499,7 @@ CarrelsFoil:
 	And LibraryEventFlags Scratch2 Scratch3
 	Gosub ExitUnlessSearchNew
 	Random 1 Scratch3
-	Compare Scratch3 0
-	IfNe
-	Exit
+	if Scratch3 != 0: Exit
 	PrintClear "AMID THE TRASH YOU FIND A BOX WHICH CONTAINS GOLD FOIL."
 	Gosub TakeItMenu
 	ClearMonsters
@@ -576,9 +517,7 @@ SmallDeskRoom:
 
 StoreroomEnter:
 	PrintClear ""
-	Compare StoreroomSeen 0
-	IfNe
-	Goto KoboldTable
+	if StoreroomSeen != 0: Goto KoboldTable
 	PrintClear "YOU HAVE ENTERED A STOREROOM FULL OF SUPPLIES TOO OLD TO BE USEFUL.  "
 	Save 1 StoreroomSeen
 
@@ -612,8 +551,6 @@ KoboldFight:
 	ClearMonsters
 	LoadMonster 0 5 0
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeFromKobolds
+	if CombatEnd == 129: Goto FleeFromKobolds
 	Or LibraryEventFlags 128 LibraryEventFlags
 	Exit

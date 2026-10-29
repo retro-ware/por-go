@@ -16,9 +16,7 @@ CheckGarrisonsBeaten:
 SetSkyByHour:
 	Save 11 Scratch1
 	Save 9 SkyInside
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch1
+	if Hours >= 14: Save 8 Scratch1
 	Save Scratch1 Sky
 	Return
 
@@ -39,19 +37,13 @@ CheckMemberMoney:
 	Add &SelGold &Scratch6 &Scratch6
 	Div &Scratch6 5 &Scratch6
 	Add &SelPlatinum &Scratch6 &Scratch6
-	Compare &Scratch6 &Scratch4
-	IfGe
-	Goto TakeCoins
+	if &Scratch6 >= &Scratch4: Goto TakeCoins
 	Add &Scratch6 &Scratch2 &Scratch2
-	Compare &Scratch2 &Scratch4
-	IfGe
-	Goto TakeCoins
+	if &Scratch2 >= &Scratch4: Goto TakeCoins
 
 NextPayer:
 	Add Scratch1 1 Scratch1
-	Compare Scratch1 8
-	IfLt
-	Goto CheckMemberMoney
+	if Scratch1 < 8: Goto CheckMemberMoney
 	PrintClear "YOU DON'T HAVE ENOUGH MONEY!"
 	Gosub PressReturn
 	Compare 0 1
@@ -93,9 +85,7 @@ ScaleCost:
 ScaleCostLoop:
 	Add &Scratch6 &Scratch4 &Scratch4
 	Sub 1 Scratch2 Scratch2
-	Compare Scratch2 0
-	IfGt
-	Goto ScaleCostLoop
+	if Scratch2 > 0: Goto ScaleCostLoop
 	Return
 
 TakeCoinKind:
@@ -109,9 +99,7 @@ TakeFromMember:
 	GetTable SelName Scratch10 Scratch6
 	GetTable SelName2 Scratch10 Scratch7
 	Save &Scratch6 &Scratch8
-	Compare &Scratch8 &Scratch4
-	IfLt
-	Goto DeductCoins
+	if &Scratch8 < &Scratch4: Goto DeductCoins
 	Save &Scratch4 &Scratch8
 
 DeductCoins:
@@ -121,28 +109,18 @@ DeductCoins:
 	Sub &Scratch8 &Scratch4 &Scratch4
 	Or Scratch1 128 Scratch2
 	LoadCharacter Scratch2
-	Compare Scratch4 0
-	IfEq
-	Return
+	if Scratch4 == 0: Return
 
 NextCoinMember:
 	Add Scratch1 1 Scratch1
-	Compare Scratch1 8
-	IfLt
-	Goto TakeFromMember
+	if Scratch1 < 8: Goto TakeFromMember
 	Compare Scratch4 0
 	Return
 
 CheckMemberOk:
-	Compare SelStatus 0
-	IfEq
-	Goto MemberNotOk
-	Compare SelStatus 1
-	IfNe
-	Goto MemberOk
-	Compare SelControl 128
-	IfGe
-	Goto MemberNotOk
+	if SelStatus == 0: Goto MemberNotOk
+	if SelStatus != 1: Goto MemberOk
+	if SelControl >= 128: Goto MemberNotOk
 
 MemberOk:
 	Compare 0 0
@@ -153,31 +131,19 @@ MemberNotOk:
 	Return
 
 CheckAlarmSounding:
-	Compare AlarmEndHour 1
-	IfLt
-	Return
+	if AlarmEndHour < 1: Return
 	Save Hours AuxRoll
-	CompareAnd Hours 0 AlarmHour 23
-	IfEq
-	Save 24 AuxRoll
-	Compare AuxRoll AlarmEndHour
-	IfLt
-	Goto AlarmStillOn
-	Compare TenMinutes AlarmMinute
-	IfLt
-	Goto AlarmStillOn
+	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
+	if TenMinutes < AlarmMinute: Goto AlarmStillOn
 	Save 0 AlarmEndHour
 	Compare 0 1
 	Return
 
 AlarmStillOn:
-	Compare Search 1
-	IfEq
-	Goto SayAlarmSounding
+	if Search == 1: Goto SayAlarmSounding
 	Random 9 AuxRoll
-	Compare 0 AuxRoll
-	IfNe
-	Goto AlarmActive
+	if 0 != AuxRoll: Goto AlarmActive
 
 SayAlarmSounding:
 	PrintClear "AN ALARM IS SOUNDING."
@@ -188,9 +154,7 @@ AlarmActive:
 	Return
 
 StartAlarm:
-	Compare AlarmEndHour 0
-	IfEq
-	PrintClear "AN ALARM STARTS RINGING!"
+	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Save Hours AlarmHour
 	Save TenMinutes AlarmMinute
 	Add 1 AuxCounter AlarmEndHour
@@ -209,14 +173,10 @@ PressReturn:
 	Return
 
 event0:
-	Compare LeftMap 0
-	IfEq
-	Goto OnStep
+	if LeftMap == 0: Goto OnStep
 	Save 5 SymbolSet
 	Save 6 Scratch1
-	Compare PartyY 0
-	IfEq
-	Goto LeaveArea
+	if PartyY == 0: Goto LeaveArea
 	Save 18 Scratch1
 	Save 1 SymbolSet
 	Save 0 AlarmEndHour
@@ -233,13 +193,9 @@ OnStep:
 MatchDoorSpot:
 	GetTable Table9D10 Scratch5 Scratch9
 	GetTable Table9D18 Scratch5 Scratch8
-	CompareAnd Scratch1 Scratch9 Facing Scratch8
-	IfEq
-	Goto DoorSpotAction
+	if Scratch1 == Scratch9 && Facing == Scratch8: Goto DoorSpotAction
 	Add Scratch5 1 Scratch5
-	Compare Scratch5 8
-	IfLt
-	Goto MatchDoorSpot
+	if Scratch5 < 8: Goto MatchDoorSpot
 	Exit
 
 DoorSpotAction:
@@ -256,23 +212,17 @@ event1:
 	Gosub CheckAlarmSounding
 	IfLt
 	Goto SpecialSquare
-	Compare PartyY 6
-	IfGt
-	Goto SpecialSquare
+	if PartyY > 6: Goto SpecialSquare
 	And Cell 64 Scratch10
 	IfNe
 	Goto SpecialSquare
 	Save 2 Scratch1
-	Compare Search 0
-	IfEq
-	Save 20 Scratch1
+	if Search == 0: Save 20 Scratch1
 	And Cell 32 Scratch10
 	IfNe
 	Add Scratch1 Scratch1 Scratch1
 	Random Scratch1 Scratch1
-	Compare Scratch1 0
-	IfEq
-	Goto event3
+	if Scratch1 == 0: Goto event3
 
 SpecialSquare:
 	And Cell 31 Scratch1
@@ -339,35 +289,25 @@ FledCombat:
 	Save 129 CombatEnd
 
 AfterCombat:
-	Compare CombatEnd 0
-	IfEq
-	Return
+	if CombatEnd == 0: Return
 	Gosub StartAlarm
 	And CastleFlags 254 CastleFlags
-	Compare CombatEnd 129
-	IfNe
-	Return
+	if CombatEnd != 129: Return
 	Save 255 HoldMove
 	Save PrevX PartyX
 	Save PrevY PartyY
 	Add Facing 2 Facing
-	Compare Facing 3
-	IfGt
-	Sub 4 Facing Facing
+	if Facing > 3: Sub 4 Facing Facing
 	Goto Done
 
 event2:
 	Save 0 RestEvery
 	Save 10 RestChance
-	Compare AlarmEndHour 0
-	IfEq
-	Exit
+	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
 	IfNe
 	Exit
-	Compare PartyY 6
-	IfGt
-	Exit
+	if PartyY > 6: Exit
 	Save 1 RestEvery
 	Save 17 RestChance
 
@@ -379,9 +319,7 @@ Done:
 event4:
 	Gosub SetSkyByHour
 	Save 0 NoCoords
-	Compare AreaKind 9
-	IfEq
-	Exit
+	if AreaKind == 9: Exit
 	LoadFiles 9 2 255
 	LoadPieces 1 9 23
 	Exit
@@ -396,9 +334,7 @@ AskUpstairs:
 
 TowerDoor:
 	Save 1 Scratch1
-	Compare Scratch5 3
-	IfEq
-	Save 2 Scratch1
+	if Scratch5 == 3: Save 2 Scratch1
 	And GateFlags Scratch1 Scratch10
 	IfNe
 	Goto TakeStairs
@@ -467,9 +403,7 @@ FightMageGuards:
 	LoadMonster 53 1 11
 	LoadMonster 71 3 71
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto MageFlee
+	if CombatEnd == 129: Goto MageFlee
 	Or GateFlags 4 GateFlags
 	Exit
 
@@ -506,9 +440,7 @@ FightFighterGuards:
 	LoadMonster 53 1 11
 	LoadMonster 71 3 71
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FighterFlee
+	if CombatEnd == 129: Goto FighterFlee
 	Or GateFlags 8 GateFlags
 	Exit
 
@@ -582,9 +514,7 @@ FightTowerMonsters:
 	Mul Scratch3 3 Scratch3
 	LoadMonster 71 Scratch3 71
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeToArea6
+	if CombatEnd == 129: Goto FleeToArea6
 
 GarrisonSlain:
 	Or GateFlags 12 GateFlags
@@ -597,9 +527,7 @@ GarrisonSlain:
 GateTaken:
 	Or GateFlags 3 GateFlags
 	PrintClear "YOU HAVE TAKEN THE GATE! YOU OPEN THE GREAT PORTALS AS 20  HUMAN AND DEMI-HUMAN GUARDS IMMEDIATELY TAKE POSSESSION OF THE GUARD TOWERS."
-	Compare QuestGateTaken 255
-	IfNe
-	Save 254 QuestGateTaken
+	if QuestGateTaken != 255: Save 254 QuestGateTaken
 	Exit
 
 NearWall:
@@ -627,9 +555,7 @@ FightBugbears:
 	ClearMonsters
 	LoadMonster 63 16 63
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto PushedBack
+	if CombatEnd == 129: Goto PushedBack
 	Or GateFlags 16 GateFlags
 	Exit
 
@@ -641,9 +567,7 @@ PushedBack:
 	Save 2 Facing
 	Save 14 PartyY
 	RedrawView
-	Compare PartyX 9
-	IfLt
-	Goto PushedWest
+	if PartyX < 9: Goto PushedWest
 	Save 11 PartyX
 	Goto PushedRedraw
 
@@ -684,9 +608,7 @@ ArrowSlits:
 	Exit
 
 StojanowGate:
-	Compare BugbearWarnings 2
-	IfEq
-	Save 1 BugbearWarnings
+	if BugbearWarnings == 2: Save 1 BugbearWarnings
 	And GateFlags 32 Scratch10
 	IfNe
 	Goto WatchWagonMan
@@ -697,12 +619,8 @@ StojanowGate:
 	Or GateFlags 32 GateFlags
 
 WatchWagonMan:
-	CompareAnd Facing 0 Search 1
-	IfNe
-	Exit
-	Compare Hours 5
-	IfGe
-	Exit
+	if Facing != 0 || Search != 1: Exit
+	if Hours >= 5: Exit
 	And GateFlags 16 Scratch10
 	IfNe
 	Exit
@@ -717,22 +635,16 @@ GateEntrance:
 	And GateFlags 64 Scratch10
 	IfEq
 	Goto NearWall
-	Compare BugbearWarnings 3
-	IfEq
-	Goto ImpostorsApproach
+	if BugbearWarnings == 3: Goto ImpostorsApproach
 	Random 9 Scratch10
-	Compare Scratch10 BugbearWarnings
-	IfLe
-	Goto ImpostorsApproach
+	if Scratch10 <= BugbearWarnings: Goto ImpostorsApproach
 	Gosub BugbearsApproach
 	PrintClear "A BUGBEAR WALKS UP TO YOU. 'OKAY, LETS HAVE THE 15 GOLD.' DO YOU PAY HIM?"
 	Gosub YesNoMenu
 	IfEq
 	Goto PayToll
 	Random 9 Scratch10
-	Compare Scratch10 BugbearWarnings
-	IfLe
-	Goto ImpostorsAccused
+	if Scratch10 <= BugbearWarnings: Goto ImpostorsAccused
 
 BugbearsSendAway:
 	PrintClear "'ALL RIGHT, GET OUT OF HERE THEN. COME BACK WHEN YOU'VE LEARNED THE RULES.'"
@@ -755,9 +667,7 @@ WalkThroughGate:
 	Sub 1 PartyY PartyY
 	Call CallRedraw
 	Delay
-	Compare PartyY 5
-	IfGt
-	Goto WalkThroughGate
+	if PartyY > 5: Goto WalkThroughGate
 	Save 255 HoldMove
 	Exit
 
@@ -792,22 +702,16 @@ FightGateBugbears:
 	ClearMonsters
 	LoadMonster 63 16 63
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeToArea6
+	if CombatEnd == 129: Goto FleeToArea6
 	Or GateFlags 16 GateFlags
 	Goto GarrisonSlain
 
 WagonTrader:
-	Compare Hours 14
-	IfGe
-	Exit
+	if Hours >= 14: Exit
 	And GateFlags 64 Scratch10
 	IfNe
 	Exit
-	Compare WagonManMet 0
-	IfNe
-	Exit
+	if WagonManMet != 0: Exit
 	Gosub CheckGarrisonsBeaten
 	IfEq
 	Goto WagonPasses
@@ -879,9 +783,7 @@ FightWallMonsters:
 	LoadMonster 53 2 11
 	LoadMonster 71 6 71
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto PushedBack
+	if CombatEnd == 129: Goto PushedBack
 	Goto GarrisonSlain
 
 MarkWestTowerUsed:

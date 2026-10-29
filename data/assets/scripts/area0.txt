@@ -1,14 +1,10 @@
 event0:
 	Save 0 Scratch3
 	Save 11 Scratch5
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch5
+	if Hours >= 14: Save 8 Scratch5
 	Save Scratch5 Sky
 	Save 10 SkyInside
-	Compare LeftMap 0
-	IfEq
-	Goto InsideTown
+	if LeftMap == 0: Goto InsideTown
 	Save 1 LeavingTown
 	Call CallStepForward
 	Save 255 HoldMove
@@ -18,21 +14,11 @@ event0:
 
 InsideTown:
 	And 127 Cell Scratch10
-	Compare QuestTyranthraxus 254
-	IfGe
-	Exit
-	Compare Scratch5 8
-	IfNe
-	Exit
-	CompareAnd Scratch10 0 WallAhead 9
-	IfEq
-	Goto LockedDoor
-	CompareAnd Scratch10 4 WallAhead 7
-	IfEq
-	Goto LockedDoor
-	CompareAnd Scratch10 26 WallAhead 11
-	IfEq
-	Goto LockedDoor
+	if QuestTyranthraxus >= 254: Exit
+	if Scratch5 != 8: Exit
+	if Scratch10 == 0 && WallAhead == 9: Goto LockedDoor
+	if Scratch10 == 4 && WallAhead == 7: Goto LockedDoor
+	if Scratch10 == 26 && WallAhead == 11: Goto LockedDoor
 	Exit
 
 LockedDoor:
@@ -49,28 +35,19 @@ event1:
 	Picture 255
 	Save 255 Portrait
 	And 127 Cell Scratch10
-	Compare TourDone 1
-	IfLt
-	Exit
+	if TourDone < 1: Exit
 	Save 0 PartyMemberFound
 	Random 19 Scratch1
-	Compare Scratch1 19
-	IfEq
-	Save "MAD MAN" $AuxText
-	IfEq
-	Gosub FindMemberByName
-	Compare PartyMemberFound 0
-	IfNe
-	Goto MadManAttacks
+	if Scratch1 == 19 {
+		Save "MAD MAN" $AuxText
+		Gosub FindMemberByName
+	}
+	if PartyMemberFound != 0: Goto MadManAttacks
 	Save 0 AuxCounter
 
 FindCellLoop:
-	Compare AuxCounter Scratch10
-	IfEq
-	Goto CellDispatch
-	Compare AuxCounter 27
-	IfGt
-	Exit
+	if AuxCounter == Scratch10: Goto CellDispatch
+	if AuxCounter > 27: Exit
 	Add 1 AuxCounter AuxCounter
 	Goto FindCellLoop
 
@@ -79,12 +56,8 @@ event2:
 	Exit
 
 SetNoRest:
-	Compare QuestTyranthraxus 254
-	IfGe
-	Goto NoRestHere
-	Compare TrainerVisited 0
-	IfNe
-	Goto NoRestHere
+	if QuestTyranthraxus >= 254: Goto NoRestHere
+	if TrainerVisited != 0: Goto NoRestHere
 	Save 1 RestEvery
 	Save 101 RestChance
 	Return
@@ -108,30 +81,20 @@ event4:
 	Save 0 NoCoords
 	LoadFiles 0 0 0
 	LoadPieces 127 127 127
-	Compare RestChance 255
-	IfNe
-	Gosub NoRestHere
-	Compare TownEntered 0
-	IfEq
-	Gosub NoRestHere
+	if RestChance != 255: Gosub NoRestHere
+	if TownEntered == 0: Gosub NoRestHere
 	Save 1 TownEntered
 	Save 72 SoundParamA
 	Save 189 SoundParamB
-	Compare TourDone 1
-	IfLt
-	Goto CityTour
+	if TourDone < 1: Goto CityTour
 	Exit
 
 CellDispatch:
 	OnGoto AuxCounter 28 ResetVisits PierBoat HarborMaster GatewaySouth ResetVisits TempleOfBane TempleOfTyr TempleOfSune RiverView InnRest ToArea11A ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ResetVisits ToArea11B ResetVisits GeneralShop TavernEnter ArmorShop WeaponShop SilverShop HealerTemple UnsettledGateway CityHallOutside ToArea8
 
 PierBoat:
-	Compare BoatPassageBought 0
-	IfEq
-	Exit
-	Compare Hours 14
-	IfGt
-	Goto BoardBoat
+	if BoatPassageBought == 0: Exit
+	if Hours > 14: Goto BoardBoat
 	Picture 41
 
 BoardBoat:
@@ -140,16 +103,12 @@ BoardBoat:
 	Gosub PressReturn
 	Save 1 OnBoat
 	LoadFiles 255 255 127
-	Compare BoatDestination 0
-	IfEq
-	Save 4 SymbolSet
-	IfEq
-	NewECL 21
-	Compare BoatDestination 2
-	IfLt
-	Goto SailToArea27
-	IfGt
-	Goto SailToArea26
+	if BoatDestination == 0 {
+		Save 4 SymbolSet
+		NewECL 21
+	}
+	if BoatDestination < 2: Goto SailToArea27
+	also if BoatDestination > 2: Goto SailToArea26
 	Save 7 MapX
 	Save 29 MapY
 	Save 7 SymbolSet
@@ -168,17 +127,11 @@ SailToArea27:
 	NewECL 27
 
 HarborMaster:
-	Compare Facing 0
-	IfNe
-	Exit
-	Compare BoatPassageBought 1
-	IfEq
-	Exit
+	if Facing != 0: Exit
+	if BoatPassageBought == 1: Exit
 	Save 16 Portrait
 	Picture 7
-	Compare QuestSokalKeep 254
-	IfLt
-	Goto OnlyBoatOut
+	if QuestSokalKeep < 254: Goto OnlyBoatOut
 	PrintClear "THE HARBOR MASTER TELLS YOU BOATS LEAVE FOR THE WEST, THE EAST, SOKAL KEEP, AND THE NORTH SIDE OF THE BAY.  'ROUND TRIP PASSAGE IS 1 PLATINUM PIECE. WHAT PASSAGE CAN I SELL YOU?'"
 	HMenu BoatDestination 5 "SOKAL" "EAST" "WEST" "BAY" "NONE"
 	OnGoto BoatDestination 5 BuyPassage BuyPassage BuyPassage BuyPassage ResetVisits
@@ -199,25 +152,15 @@ OnlyBoatOut:
 	Exit
 
 GatewaySouth:
-	Compare IronBoxState 1
-	IfEq
-	Goto WatchTakesTreasure
-	Compare Facing 2
-	IfEq
-	Exit
+	if IronBoxState == 1: Goto WatchTakesTreasure
+	if Facing == 2: Exit
 	PrintClear "TO THE NORTH IS THE PASSENGER DOCK."
 	Exit
 
 TempleOfBane:
-	Compare DirtenState 255
-	IfEq
-	Exit
-	Compare BishopSummons 254
-	IfEq
-	Goto BishopAudience
-	Compare DirtenState 128
-	IfEq
-	Goto BishopAudience
+	if DirtenState == 255: Exit
+	if BishopSummons == 254: Goto BishopAudience
+	if DirtenState == 128: Goto BishopAudience
 	Save 8 Portrait
 	Picture 4
 	PrintClear "THE TEMPLE GUARDS INFORM YOU THAT THE BISHOP IS NOT RECEIVING VISITORS AT THIS TIME.  WHAT DO YOU DO?"
@@ -225,9 +168,7 @@ TempleOfBane:
 	OnGoto AuxMenuChoice 2 LeaveBishop WatchResponds
 
 BishopAudience:
-	Compare DirtenState 128
-	IfEq
-	Goto DirtenStudy
+	if DirtenState == 128: Goto DirtenStudy
 	Save 13 Portrait
 	Picture 1
 	PrintClear "YOU ARE USHERED INTO THE BISHOP'S STUDY. BISHOP BRACCIO SPEAKS, 'ALLOW ME TO INTRODUCE DIRTEN, PRIEST OF ILMAR."
@@ -268,31 +209,23 @@ LeaveBishop:
 TempleOfTyr:
 	Save 34 Portrait
 	Picture 2
-	Compare FoughtWatch 0
-	IfGt
-	Goto RefuseService
+	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE PRIESTS OF TYR WELCOME YOU TO THE TEMPLE."
 	Save "MAD MAN" $AuxText
 	Gosub FindMemberByName
-	Compare PartyMemberFound 0
-	IfNe
-	Gosub PriestWarnsMadMan
+	if PartyMemberFound != 0: Gosub PriestWarnsMadMan
 	Goto SeekHealingAsk
 
 TempleOfSune:
 	Save 22 Portrait
 	Picture 24
-	Compare FoughtWatch 0
-	IfGt
-	Goto RefuseService
+	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "YOU ARE WELCOMED BY PRIESTESS JOY OF SUNE."
 	Goto SeekHealingAsk
 
 RiverView:
 	PrintClear "YOU WALK NEAR THE "
-	Compare Boss 245
-	IfGe
-	Goto StojanowRiver
+	if Boss >= 245: Goto StojanowRiver
 	Print "POISONOUS BARREN RIVER."
 	Exit
 
@@ -301,14 +234,10 @@ StojanowRiver:
 	Exit
 
 InnRest:
-	Compare TrainerVisited 0
-	IfNe
-	Exit
+	if TrainerVisited != 0: Exit
 	Save 45 Portrait
 	Picture 24
-	Compare FoughtWatch 0
-	IfNe
-	Goto RefuseService
+	if FoughtWatch != 0: Goto RefuseService
 	PrintClear "'IT WILL COST YOU 1 PLATINUM PIECE TO REST HERE.  DO YOU WANT TO STAY?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 PayForRest MustLeave
@@ -322,17 +251,13 @@ PayForRest:
 
 PayPlatinum:
 	Who "WHO WILL PAY?"
-	Compare SelControl 128
-	IfLt
-	Goto CheckPlatinum
+	if SelControl < 128: Goto CheckPlatinum
 	PrintClear "THAT PERSON WON'T PAY."
 	Delay
 	Goto PayPlatinum
 
 CheckPlatinum:
-	Compare 1 &SelPlatinum
-	IfGt
-	Goto NotEnoughPlatinum
+	if 1 > &SelPlatinum: Goto NotEnoughPlatinum
 	Sub 1 &SelPlatinum &SelPlatinum
 	Add 128 SelPartyIndex2 Scratch1
 	LoadCharacter Scratch1
@@ -353,9 +278,7 @@ ToArea11B:
 
 GeneralShop:
 	Gosub EnterBuildingOnce
-	Compare FoughtWatch 0
-	IfGt
-	Goto RefuseService
+	if FoughtWatch > 0: Goto RefuseService
 	Save 42 Portrait
 	Picture 9
 	PrintClear "THE SHOPKEEPER GREETS YOU AND OFFERS YOU ITEMS FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
@@ -373,33 +296,26 @@ GeneralShopBrowse:
 	Exit
 
 TavernEnter:
-	Compare TavernEntered 0
-	IfGt
-	Goto PickpocketRoll
+	if TavernEntered > 0: Goto PickpocketRoll
 	Save 1 TavernEntered
 	PrintClear "YOU ARE IN A TAVERN.  THE AIR IS FILLED WITH SMOKE AND GOSSIP.  PEOPLE ARE GAMBLING AT THE TABLES."
 	Gosub PressReturn
 
 PickpocketRoll:
 	Random 255 Scratch1
-	Compare Scratch1 25
-	IfGt
-	Goto TavernEvent
+	if Scratch1 > 25: Goto TavernEvent
 	Rob 1 20 5
 	Random 1 Scratch1
-	Compare Scratch1 0
-	IfNe
-	Goto TavernEvent
+	if Scratch1 != 0: Goto TavernEvent
 	PrintClear "YOU FEEL A LIGHT TOUCH ON YOUR PURSE.  DO YOU IGNORE IT OR GRAB THE OFFENDING HAND?"
 	HMenu Scratch1 2 "IGNORE" "GRAB"
 	OnGoto Scratch1 2 TavernEvent DrunkenBrawl
 
 TavernEvent:
-	Compare Scratch1 1
-	IfEq
-	PrintClear "YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET."
-	IfEq
-	Gosub PressReturn
+	if Scratch1 == 1 {
+		PrintClear "YOU REALIZE YOU HAVE BEEN VICTIMIZED BY A PICKPOCKET."
+		Gosub PressReturn
+	}
 	Picture 255
 	PrintClear " DOES ANYONE WANT TO GAMBLE?"
 	Gosub YesNoMenu
@@ -412,9 +328,7 @@ TavernTale:
 	Print Scratch6
 	Gosub PressReturn
 	Random 3 AuxRoll
-	Compare AuxRoll 1
-	IfEq
-	Goto DrunkenBrawl
+	if AuxRoll == 1: Goto DrunkenBrawl
 	Exit
 
 GamblerGame:
@@ -425,9 +339,7 @@ GamblerGame:
 	Who "WHO WILL GAMBLE?"
 
 TavernGamble:
-	Compare SelStatus 1
-	IfNe
-	Goto TooHurtToGamble
+	if SelStatus != 1: Goto TooHurtToGamble
 	Save SelPartyIndex GamblerIndex
 	Save &SelPlatinum &GamblerPlatinum
 
@@ -438,28 +350,19 @@ WagerPrompt:
 	Gosub PressReturn
 	PrintClear "HOW MANY PLATINUM PIECES WILL YOU WAGER? (HOUSE LIMIT IS 1000)"
 	InputNumber 4 &Wager
-	Compare &GamblerPlatinum &Wager
-	IfLt
-	Goto WagerRefused
-	Compare &Wager #03E8
-	IfGt
-	Goto WagerRefused
-	Compare &Wager 0
-	IfEq
-	Goto WagerRefused
+	if &GamblerPlatinum < &Wager: Goto WagerRefused
+	if &Wager > #03E8: Goto WagerRefused
+	if &Wager == 0: Goto WagerRefused
 	Random 9 Scratch9
-	Compare Scratch9 8
-	IfGe
-	PrintClear "IT'S GREEN.  YOU GET DOUBLE YOUR MONEY BACK."
-	IfGe
-	Add &Wager &GamblerPlatinum &GamblerPlatinum
-	IfGe
-	Goto GambleAgainAsk
-	Compare Scratch9 2
-	IfGt
-	PrintClear "IT'S BLUE.  YOU WIN."
-	IfGt
-	Goto GambleAgainAsk
+	if Scratch9 >= 8 {
+		PrintClear "IT'S GREEN.  YOU GET DOUBLE YOUR MONEY BACK."
+		Add &Wager &GamblerPlatinum &GamblerPlatinum
+		Goto GambleAgainAsk
+	}
+	if Scratch9 > 2 {
+		PrintClear "IT'S BLUE.  YOU WIN."
+		Goto GambleAgainAsk
+	}
 	PrintClear "RED. SORRY, YOU LOSE."
 	Sub &Wager &GamblerPlatinum &GamblerPlatinum
 
@@ -489,12 +392,8 @@ DrunkenBrawl:
 	Gosub PressReturn
 	Random 1 AuxMonster
 	PartyStrength Scratch2
-	Compare Scratch2 24
-	IfGt
-	Add 1 AuxMonster AuxMonster
-	Compare Scratch2 50
-	IfGt
-	Add 1 AuxMonster AuxMonster
+	if Scratch2 > 24: Add 1 AuxMonster AuxMonster
+	if Scratch2 > 50: Add 1 AuxMonster AuxMonster
 	GetTable DuelMonsterTable AuxMonster AuxEncResult
 	GetTable DuelCountTable AuxMonster AuxRoll2
 	Add 1 AuxMonster AuxMonster
@@ -523,13 +422,9 @@ BrawlFight:
 	Add 128 Scratch1 AuxTemp9
 	LoadCharacter AuxTemp9
 	Add 1 Scratch1 Scratch1
-	Compare Scratch1 54
-	IfLt
-	Goto BrawlFight
+	if Scratch1 < 54: Goto BrawlFight
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto RunAway
+	if CombatEnd > 128: Goto RunAway
 	Gosub WatchApproaches
 	PrintClear "THE CITY WATCH CHARGES IN. DO YOU RUN AWAY OR STAY TO CONFRONT THEM?"
 	HMenu AuxParlay 2 "STAY" "RUN"
@@ -539,9 +434,7 @@ ArmorShop:
 	Gosub EnterBuildingOnce
 	Save 63 Portrait
 	Picture 34
-	Compare FoughtWatch 0
-	IfGt
-	Goto RefuseService
+	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOPKEEPER OFFERS JEWELRY FOR SALE. 'CAN I SHOW YOU SOMETHING?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 ArmorShopBrowse ResetVisits
@@ -560,9 +453,7 @@ WeaponShop:
 	Gosub EnterBuildingOnce
 	Save 42 Portrait
 	Picture 9
-	Compare FoughtWatch 0
-	IfGt
-	Goto RefuseService
+	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SPECIALIZES IN ARMS AND ARMOR. 'CAN I SHOW YOU OUR WARES?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 WeaponShopBrowse ResetVisits
@@ -578,15 +469,11 @@ WeaponShopBrowse:
 	Exit
 
 SilverShop:
-	Compare Building2Entered 0
-	IfNe
-	Exit
+	if Building2Entered != 0: Exit
 	Save 1 Building2Entered
 	Save 63 Portrait
 	Picture 34
-	Compare FoughtWatch 0
-	IfGt
-	Goto RefuseService
+	if FoughtWatch > 0: Goto RefuseService
 	PrintClear "THE SHOP SELLS SILVER ITEMS. 'WOULD YOU LIKE TO SEE OUR SELECTION?'"
 	Gosub YesNoMenu
 	OnGoto Scratch1 2 SilverShopBrowse ResetVisits
@@ -602,14 +489,10 @@ SilverShopBrowse:
 	Exit
 
 HealerTemple:
-	Compare Combat1Won 0
-	IfNe
-	Exit
+	if Combat1Won != 0: Exit
 	Save 57 Portrait
 	Picture 1
-	Compare FoughtWatch 0
-	IfGt
-	Goto WatchFightsBack
+	if FoughtWatch > 0: Goto WatchFightsBack
 	PrintClear "THE PRIESTS OF TEMPUS BID YOU WELCOME."
 	Goto SeekHealingAsk
 
@@ -643,16 +526,12 @@ WatchFightsBack:
 	LoadMonster 41 20 11
 	LoadMonster 85 20 16
 	Combat
-	Compare CombatEnd 1
-	IfEq
-	Save 1 Combat1Won
+	if CombatEnd == 1: Save 1 Combat1Won
 	Exit
 
 UnsettledGateway:
 	PrintClear "YOU ARE BY THE GATEWAY TO THE UNSETTLED AREAS. THE CITY WATCH EYES YOU SUSPICIOUSLY."
-	Compare IronBoxState 1
-	IfEq
-	Goto WatchTakesTreasure
+	if IronBoxState == 1: Goto WatchTakesTreasure
 	Exit
 
 WatchTakesTreasure:
@@ -667,22 +546,14 @@ CityHallOutside:
 	Save "LIX." $AuxRomanNum
 	Save "SKULLCRUSHER" $AuxText
 	Gosub FindMemberByName
-	Compare PartyMemberFound 1
-	IfEq
-	Goto SkullcrusherLeaves
-	Compare CityHallSeen 0
-	IfNe
-	Exit
+	if PartyMemberFound == 1: Goto SkullcrusherLeaves
+	if CityHallSeen != 0: Exit
 	Save 1 CityHallSeen
 	PrintClear "YOU ARE OUTSIDE THE CITY HALL. THE CITY CLERK WAITS INSIDE TO AWARD COMMISSIONS."
-	CompareAnd Scratch10 26 WallAhead 11
-	IfNe
-	Exit
+	if Scratch10 != 26 || WallAhead != 11: Exit
 	Gosub PressReturn
 	PrintClear "PROCLAMATIONS ARE POSTED ON THE WALLS, IN YOUR JOURNAL YOU NOTE "
-	Compare CouncilFavor 0
-	IfEq
-	Goto OldProclamations
+	if CouncilFavor == 0: Goto OldProclamations
 	Sub 1 CouncilFavor ProclamationIndex
 	OnGoto ProclamationIndex 9 Proclamation1 Proclamation2 Proclamation3 Proclamation4 Proclamation5 Proclamation6 Proclamation7 Proclamation8 Proclamation9
 	Print "PROCLAMATION"
@@ -779,24 +650,16 @@ ResetVisits:
 	Exit
 
 EnterBuildingOnce:
-	Compare BuildingEntered 0
-	IfNe
-	Exit
+	if BuildingEntered != 0: Exit
 	Save 1 BuildingEntered
 	Return
 
 AfterWatchFight:
-	Compare CombatEnd 128
-	IfGt
-	Goto RunAway
-	Compare WatchCombatDone0 0
-	IfGt
-	Return
+	if CombatEnd > 128: Goto RunAway
+	if WatchCombatDone0 > 0: Return
 
 CheckPartySize:
-	Compare PartyCount 8
-	IfLt
-	Return
+	if PartyCount < 8: Return
 	PrintClear "'YOUR PARTY IS TOO LARGE TO JOIN AT THIS TIME.  RETURN WHEN IT IS SMALLER.'"
 	Gosub PressReturn
 	Picture 255
@@ -830,24 +693,16 @@ FindMemberByName:
 
 FindMemberLoop:
 	LoadCharacter AuxMember
-	Compare SelStatus 127
-	IfGt
-	Goto NextMember
-	Compare $SelName $AuxText
-	IfEq
-	Goto MemberFound
+	if SelStatus > 127: Goto NextMember
+	if $SelName == $AuxText: Goto MemberFound
 
 NextMember:
 	Add 1 AuxMember AuxMember
-	Compare AuxMember 8
-	IfLt
-	Goto FindMemberLoop
+	if AuxMember < 8: Goto FindMemberLoop
 	Return
 
 MemberFound:
-	Compare SelControl 128
-	IfLt
-	Goto NextMember
+	if SelControl < 128: Goto NextMember
 	Save 1 PartyMemberFound
 	Return
 
@@ -864,9 +719,7 @@ PriestWarnsMadMan:
 CityTour:
 	Save 1 TourDone
 	Save 11 Scratch5
-	Compare Hours 14
-	IfGt
-	Save 8 Scratch5
+	if Hours > 14: Save 8 Scratch5
 	Save Scratch5 Sky
 	Save 15 PartyX
 	Save 1 PartyY
@@ -893,9 +746,7 @@ TourStopLoop:
 	GetTable TourStopKinds Scratch1 Scratch4
 	Gosub MoveToTourStop
 	OnGoto Scratch4 7 TourStopNone TourTempleOfTyr TourPassengerDock TourTrainingSchools TourCityHall TourSuneTemple TourEnd
-	Compare Scratch4 6
-	IfEq
-	Goto ResetVisits
+	if Scratch4 == 6: Goto ResetVisits
 	Add 1 Scratch1 Scratch1
 	Goto TourStopLoop
 

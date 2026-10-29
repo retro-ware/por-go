@@ -1,18 +1,10 @@
 event2:
-	Compare PatrolsBeaten 64
-	IfGe
-	Gosub RestSafe
+	if PatrolsBeaten >= 64: Gosub RestSafe
 	Save 2 RestEvery
 	Save 16 RestChance
-	Compare Cell 132
-	IfEq
-	Save 0 RestEvery
-	Compare Cell 138
-	IfEq
-	Save 0 RestEvery
-	Compare PodalPlazaCleared 253
-	IfGt
-	Save 0 RestEvery
+	if Cell == 132: Save 0 RestEvery
+	if Cell == 138: Save 0 RestEvery
+	if PodalPlazaCleared > 253: Save 0 RestEvery
 	Exit
 
 RestSafe:
@@ -29,27 +21,19 @@ event4:
 	LoadFiles 18 2 255
 	LoadPieces 1 3 5
 	Save 0 NoCoords
-	Compare AreaKind 18
-	IfEq
-	Exit
-	Compare QuestPodalAuction 1
-	IfNe
-	Goto ResetPatrols
+	if AreaKind == 18: Exit
+	if QuestPodalAuction != 1: Goto ResetPatrols
 	Save 64 PatrolsBeaten
 	Save 0 DisguiseState
 	Exit
 
 ResetPatrols:
-	Compare PodalPlazaCleared 254
-	IfLt
-	Save 0 PatrolsBeaten
+	if PodalPlazaCleared < 254: Save 0 PatrolsBeaten
 	Save 255 DisguiseState
 	Exit
 
 event0:
-	Compare LeftMap 0
-	IfEq
-	Goto PlazaApproach
+	if LeftMap == 0: Goto PlazaApproach
 	Call CallStepForward
 	Save 255 HoldMove
 	Save 0 NoCoords
@@ -74,14 +58,9 @@ ExitWest:
 	NewECL 26
 
 PlazaApproach:
-	Compare Hours 14
-	IfLt
-	Save 11 Sky
-	IfGe
-	Save 8 Sky
-	Compare DisguiseState 0
-	IfNe
-	Exit
+	if Hours < 14: Save 11 Sky
+	also if Hours >= 14: Save 8 Sky
+	if DisguiseState != 0: Exit
 	VMenu Scratch1 "THE PLAZA AHEAD IS CROWDED WITH MONSTERS. HOW WILL YOU PROCEDE?" 3 "STRIDE BOLDLY FORWARD!" "DISGUISE PARTY AS MONSTERS." "SNEAK, REMAINING UNSEEN"
 	GetTable DisguiseChoiceTable Scratch1 DisguiseState
 	Exit
@@ -92,52 +71,32 @@ event1:
 
 StreetSquare:
 	Random 25 Scratch1
-	Compare PatrolsBeaten 64
-	IfLt
-	Goto StreetSquareEarly
-	Compare Scratch1 3
-	IfLt
-	Goto OverhearRumor
-	Compare Scratch1 21
-	IfGt
-	Goto PatrolMeet
-	Compare Search 1
-	IfEq
-	Compare Scratch1 16
+	if PatrolsBeaten < 64: Goto StreetSquareEarly
+	if Scratch1 < 3: Goto OverhearRumor
+	if Scratch1 > 21: Goto PatrolMeet
+	if Search == 1: Compare Scratch1 16
 	IfGt
 	Goto PatrolMeet
 	Goto Done
 
 StreetSquareEarly:
-	Compare PatrolsBeaten 9
-	IfGe
-	Goto SlumsCleared9
-	Compare Scratch1 0
-	IfEq
-	Goto PatrolMeet
-	Compare Search 1
-	IfEq
-	Compare Scratch1 18
+	if PatrolsBeaten >= 9: Goto SlumsCleared9
+	if Scratch1 == 0: Goto PatrolMeet
+	if Search == 1: Compare Scratch1 18
 	IfGt
 	Goto PatrolMeet
 	Goto Done
 
 PatrolMeet:
 	Gosub RollPatrol
-	Compare DisguiseState 255
-	IfEq
-	Goto PatrolEncounterMenu
-	Compare DisguiseState 0
-	IfEq
-	Goto PatrolEncounterMenu
+	if DisguiseState == 255: Goto PatrolEncounterMenu
+	if DisguiseState == 0: Goto PatrolEncounterMenu
 	SetupMonster EncMonster 2 EncMonster
 	Delay
 	Gosub SpotPatrol
 	Approach
 	Delay
-	Compare DisguiseState 2
-	IfEq
-	Goto SneakPast
+	if DisguiseState == 2: Goto SneakPast
 	Random 1 Scratch1
 	OnGoto Scratch1 2 PatrolGlare PatrolCheckOut
 
@@ -156,20 +115,14 @@ DisguiseCheck:
 
 DisguiseCheckMember:
 	LoadCharacter Scratch1
-	Compare SelRace 7
-	IfEq
-	Goto DisguiseCheckNext
+	if SelRace == 7: Goto DisguiseCheckNext
 	Add 5 Scratch10 Scratch10
 
 DisguiseCheckNext:
 	Add 1 Scratch1 Scratch1
-	Compare Scratch1 8
-	IfLt
-	Goto DisguiseCheckMember
+	if Scratch1 < 8: Goto DisguiseCheckMember
 	Random 100 Scratch9
-	Compare Scratch9 Scratch10
-	IfGt
-	Goto PatrolWalkOn
+	if Scratch9 > Scratch10: Goto PatrolWalkOn
 
 PatrolDemandWho:
 	Print "AND DEMAND, 'WHO ARE YOU?'"
@@ -183,18 +136,14 @@ SettlersKillThem:
 
 HereForBoss:
 	Random 30 Scratch1
-	Compare SelReaction Scratch1
-	IfLt
-	Goto SettlersKillThem
+	if SelReaction < Scratch1: Goto SettlersKillThem
 	PrintClear "'OH, YOU'RE HERE FOR THE BOSS.'"
 	Goto Done
 
 PatrolGrumble:
 	Random 50 Scratch1
 	PartyStrength Scratch2
-	Compare Scratch2 Scratch1
-	IfLt
-	Goto SettlersKillThem
+	if Scratch2 < Scratch1: Goto SettlersKillThem
 	PrintClear "THEY GRUMBLE AND MOVE ON."
 	Goto Done
 
@@ -225,9 +174,7 @@ StopTheyMoveOn:
 
 PatrolEncounterMenu:
 	Save 2 EncMenuMode
-	Compare PatrolsBeaten 64
-	IfGe
-	Save 0 EncMenuMode
+	if PatrolsBeaten >= 64: Save 0 EncMenuMode
 	Gosub SpotPatrol
 	EncounterMenu EncMonster EncMenuMode EncMonster Scratch1 2 3 0 1 4 "THE MONSTERS STAND READY" "THE MONSTERS PREPARE" "" EncDistance EncDistance
 	Save 100 Morale
@@ -238,18 +185,12 @@ PatrolFight:
 	Save EncMorale Morale
 	Combat
 	Gosub CountPatrolBeaten
-	Compare Cell 127
-	IfLt
-	Goto CoverBlown
-	Compare CombatEnd 128
-	IfGt
-	Goto PartyFlees
+	if Cell < 127: Goto CoverBlown
+	if CombatEnd > 128: Goto PartyFlees
 	Goto Done
 
 CountPatrolBeaten:
-	Compare PatrolsBeaten 64
-	IfGe
-	Return
+	if PatrolsBeaten >= 64: Return
 	Add 1 PatrolsBeaten PatrolsBeaten
 	Return
 
@@ -269,21 +210,15 @@ PartyFlees:
 	Save 1 NoCoords
 
 CoverBlown:
-	Compare DisguiseState 0
-	IfEq
-	Exit
-	Compare DisguiseState 255
-	IfEq
-	Exit
+	if DisguiseState == 0: Exit
+	if DisguiseState == 255: Exit
 	Save 255 DisguiseState
 	Gosub PressToContinue
 	PrintClear "YOUR COVER IS BLOWN."
 	Goto Done
 
 PatrolParlay:
-	CompareAnd DisguiseState 255 PatrolsBeaten 64
-	IfEq
-	Goto PatrolFight
+	if DisguiseState == 255 && PatrolsBeaten == 64: Goto PatrolFight
 	Parlay 10 20 20 20 30 Scratch1
 	Random 50 Scratch2
 	Add Scratch1 Scratch2 Scratch1
@@ -291,16 +226,12 @@ PatrolParlay:
 	Add Scratch1 Scratch2 Scratch1
 	GetTable EncParlayTable EncType Scratch2
 	Add Scratch1 Scratch2 Scratch1
-	Compare Scratch1 112
-	IfLt
-	Goto ParlayMoveIt
+	if Scratch1 < 112: Goto ParlayMoveIt
 	PrintClear "'WE'LL LET YOU OFF THIS TIME.' THE MONSTERS SCUTTLE AWAY."
 	Goto Done
 
 ParlayMoveIt:
-	Compare Scratch1 90
-	IfLt
-	Goto ParlayTeachLesson
+	if Scratch1 < 90: Goto ParlayTeachLesson
 	PrintClear "'MOVE IT, TROLL-BAIT!' THEY SNARL AND MOVE OFF."
 	Goto Done
 
@@ -338,20 +269,12 @@ RollPatrolCount:
 	Div Scratch1 3 Scratch1
 	Random Scratch1 Scratch2
 	Add Scratch1 Scratch2 Scratch1
-	CompareAnd 64 PatrolsBeaten 255 DisguiseState
-	IfEq
-	Mul 2 Scratch1 Scratch1
-	Compare Scratch1 2
-	IfLt
-	Save 2 Scratch1
+	if 64 == PatrolsBeaten && 255 == DisguiseState: Mul 2 Scratch1 Scratch1
+	if Scratch1 < 2: Save 2 Scratch1
 	GetTable EncMinCountTable EncType Scratch2
-	Compare Scratch1 Scratch2
-	IfLt
-	Goto SetPatrolCount
+	if Scratch1 < Scratch2: Goto SetPatrolCount
 	GetTable EncExtraTable EncType EncExtraCount
-	Compare Scratch1 50
-	IfGt
-	Save 50 Scratch1
+	if Scratch1 > 50: Save 50 Scratch1
 
 SetPatrolCount:
 	Save Scratch1 EncCount
@@ -367,9 +290,7 @@ LoadPatrol:
 	GetTable EncMonsterTable EncType Scratch1
 	LoadMonster Scratch1 EncCount Scratch1
 	GetTable EncMoraleTable EncType EncMorale
-	Compare EncExtraCount 0
-	IfEq
-	Return
+	if EncExtraCount == 0: Return
 	Add EncMorale 10 EncMorale
 	Add 1 Scratch1 Scratch1
 	LoadMonster Scratch1 EncExtraCount Scratch1
@@ -382,12 +303,8 @@ SpotPatrol:
 	Return
 
 OverhearRumor:
-	Compare OverheardIndex 5
-	IfEq
-	Sub 5 OverheardIndex OverheardIndex
-	Compare DisguiseState 254
-	IfGe
-	Goto Done
+	if OverheardIndex == 5: Sub 5 OverheardIndex OverheardIndex
+	if DisguiseState >= 254: Goto Done
 	Gosub RollPatrol
 	SetupMonster EncMonster 2 EncMonster
 	Delay
@@ -423,9 +340,7 @@ RumorBaneTemple:
 
 AuctionStart:
 	Save 0 NoCoords
-	Compare DisguiseState 253
-	IfGt
-	Exit
+	if DisguiseState > 253: Exit
 	Picture 16
 	PrintClear "THE AUCTIONEER CRIES 'CREATURES OF ALL AGES, WELCOME TO THIS AUCTION FOR AN ITEM BOTH MAGICAL AND POWERFUL!'"
 	Gosub PressToContinue
@@ -443,9 +358,7 @@ AuctionBidding:
 MakeBid:
 	PrintClear "YOU UP THE BID. MONSTERS NEARBY TURN, STARE,"
 	Gosub RollSuspicion
-	Compare 255 DisguiseState
-	IfEq
-	Goto AuctionCancelled
+	if 255 == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	PrintClear "THE MAN THEN SPEAKS A WORD AND THE AUCTIONEER'S BLOCK IS ENVELOPED IN DARKNESS."
 	Gosub PressToContinue
@@ -459,9 +372,7 @@ FollowOgre:
 	Gosub PressToContinue
 	PrintClear "THE MONSTERS LOOK AROUND FOR A SCAPEGOAT. THEIR EYES FALL UPON YOUR PARTY, THEN THEY "
 	Gosub RollSuspicion
-	Compare 255 DisguiseState
-	IfEq
-	Goto AuctionCancelled
+	if 255 == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	Goto AuctionOver
 
@@ -478,9 +389,7 @@ WaitForWinner:
 AuctionLeave:
 	PrintClear "AS YOU MOVE AWAY THE MONSTERS GLANCE YOUR WAY, "
 	Gosub RollSuspicion
-	Compare 255 DisguiseState
-	IfEq
-	Goto AuctionCancelled
+	if 255 == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	PrintClear "THE AUCTION ENDS. YOU DON'T SEE WHO BOUGHT THE ITEM."
 	Goto AuctionOver
@@ -488,9 +397,7 @@ AuctionLeave:
 MoveCloser:
 	PrintClear "THE MONSTERS SHOOT YOU ANGRY LOOKS, "
 	Gosub RollSuspicion
-	Compare 255 DisguiseState
-	IfEq
-	Goto AuctionCancelled
+	if 255 == DisguiseState: Goto AuctionCancelled
 	Gosub MonstersTurnAway
 	PrintClear "YOU NOW SEE THE WAND ISN'T A MAJOR ARTIFACT, IT'S ONLY A WAND OF FEAR!"
 	Goto AuctionBidding
@@ -526,13 +433,9 @@ AuctionOver:
 	Goto Done
 
 RollSuspicion:
-	Compare DisguiseState 2
-	IfEq
-	Save 255 DisguiseState
+	if DisguiseState == 2: Save 255 DisguiseState
 	Random 5 Scratch2
-	Compare Scratch2 0
-	IfEq
-	Save 255 DisguiseState
+	if Scratch2 == 0: Save 255 DisguiseState
 	Return
 
 MonstersTurnAway:
@@ -541,9 +444,7 @@ MonstersTurnAway:
 	Return
 
 TavernEnter:
-	Compare TavernState 0
-	IfNe
-	Goto TavernCrowd
+	if TavernState != 0: Goto TavernCrowd
 	PrintClear "YOU HAVE ENTERED A CROWDED TAVERN."
 	Save 6 Portrait
 	SetupMonster 19 0 3
@@ -557,9 +458,7 @@ BuccaneerMenu:
 
 ChallengeBuccaneer:
 	Who "WHO WILL CHALLENGE THE BUCCANEER?"
-	Compare SelStatus 0
-	IfGt
-	Goto DuelBuccaneer
+	if SelStatus > 0: Goto DuelBuccaneer
 	PrintClear "THAT ONE IS UNACCEPTABLE. CHOOSE ANOTHER."
 	Goto ChallengeBuccaneer
 
@@ -569,9 +468,7 @@ DuelBuccaneer:
 	LoadMonster 41 1 16
 	Combat
 	Save 1 TavernState
-	Compare CombatEnd 128
-	IfGt
-	Goto BuccaneerPaid
+	if CombatEnd > 128: Goto BuccaneerPaid
 	PrintClear "THE BATTLE IS OVER, THE PATRONS RETURN TO DRINKING."
 	Gosub PressToContinue
 	Save 255 Portrait
@@ -594,9 +491,7 @@ PatronsAttack:
 	LoadMonster 4 8 4
 	Combat
 	Save 255 Portrait
-	Compare CombatEnd 128
-	IfGt
-	Goto PartyFlees
+	if CombatEnd > 128: Goto PartyFlees
 	Save 2 TavernState
 	Goto BarDestroyed
 
@@ -610,9 +505,7 @@ PayBribe:
 	Goto BuccaneerPaid
 
 TavernCrowd:
-	Compare TavernState 1
-	IfGt
-	Goto BarDestroyed
+	if TavernState > 1: Goto BarDestroyed
 	SetupMonster 2 0 2
 	PrintClear "THE CREATURES IGNORE YOU FOR THE MOMENT."
 	Gosub PressToContinue
@@ -620,12 +513,8 @@ TavernCrowd:
 	OnGoto Scratch1 4 MixWithMonsters DrinkHeavily PatronsAttack StepBack
 
 MixWithMonsters:
-	Compare DisguiseState 2
-	IfEq
-	Goto PatronsAttack
-	Compare DisguiseState 255
-	IfEq
-	Goto PatronsAttack
+	if DisguiseState == 2: Goto PatronsAttack
+	if DisguiseState == 255: Goto PatronsAttack
 	PrintClear "MONSTERS INSULT YOUR ABILITIES AND PARENTAGE."
 	Gosub PressToContinue
 	VMenu Scratch1 "WHAT DO YOU DO?" 4 "ATTACK" "TRY TO LEAVE" "INSULT BACK" "JOIN IN HEAVY DRINKING"
@@ -639,9 +528,7 @@ DrinkHeavily:
 	Rob 1 100 50
 	Save 1 NoCoords
 	PrintClear "YOU HAD A GREAT TIME UNTIL YOU ALL PASSED OUT. YOUR PURSE IS MISSING."
-	Compare PatrolsBeaten 64
-	IfGe
-	Save 255 DisguiseState
+	if PatrolsBeaten >= 64: Save 255 DisguiseState
 	Exit
 
 StepBack:
@@ -669,19 +556,13 @@ FreeForAllMember:
 	Save 178 SelControl
 	Or 128 Scratch1 Scratch1
 	LoadCharacter Scratch1
-	Compare Scratch2 21
-	IfLt
-	Goto FreeForAllMember
+	if Scratch2 < 21: Goto FreeForAllMember
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto PartyFlees
+	if CombatEnd > 128: Goto PartyFlees
 	Save 2 TavernState
 
 BarDestroyed:
-	Compare TavernState 2
-	IfGt
-	Exit
+	if TavernState > 2: Exit
 	PrintClear "THE BAR LOOKS LIKE IT WAS DESTROYED BY EXPERTS."
 	Save 3 TavernState
 	Exit
@@ -692,9 +573,7 @@ ThePittSign:
 	Exit
 
 IlmaterTemple:
-	Compare LastBuildingCell 4
-	IfNe
-	Goto IlmaterHealer
+	if LastBuildingCell != 4: Goto IlmaterHealer
 	PrintClear "THIS IS A HIDDEN TEMPLE OF ILMATER. YOU FEEL SAFE HERE."
 
 IlmaterHealer:
@@ -722,25 +601,17 @@ BaneShrine:
 	Exit
 
 RobedOrc:
-	Compare BaneRecruiterState 0
-	IfNe
-	Goto BaneMeeting
+	if BaneRecruiterState != 0: Goto BaneMeeting
 	SetupMonster 4 1 4
 	PrintClear "A ROBED ORC IS SITTING HERE. WHAT DO YOU DO?"
 	HMenu Scratch1 3 "LEAVE" "GREET" "ATTACK"
-	Compare DisguiseState 255
-	IfEq
-	Goto AttackOrc
-	Compare DisguiseState 2
-	IfEq
-	Goto AttackOrc
+	if DisguiseState == 255: Goto AttackOrc
+	if DisguiseState == 2: Goto AttackOrc
 	OnGoto Scratch1 3 StepBack GreetOrc AttackOrc
 
 GreetOrc:
 	PrintClear "THE ORC SMILES CROOKEDLY.'GREETINGS FROM BANE."
-	Compare QuestTempleOfBane 0
-	IfNe
-	Goto RecruitRecover
+	if QuestTempleOfBane != 0: Goto RecruitRecover
 	Print " WE ARE RECRUITING CREATURES FOR OUR TEMPLE TO THE NORTHEAST. ARE YOU INTERESTED?'"
 
 RecruitMenu:
@@ -758,9 +629,7 @@ SetMeetHour:
 	Save 1 BaneRecruiterState
 	Save Hours BaneMeetHour
 	Add 2 BaneMeetHour BaneMeetHour
-	Compare BaneMeetHour 23
-	IfGt
-	Sub 24 BaneMeetHour BaneMeetHour
+	if BaneMeetHour > 23: Sub 24 BaneMeetHour BaneMeetHour
 	Goto StepBack
 
 DeclineRecruit:
@@ -768,12 +637,8 @@ DeclineRecruit:
 	Goto SetMeetHour
 
 BaneMeeting:
-	Compare BaneRecruiterState 1
-	IfNe
-	Exit
-	Compare BaneMeetHour Hours
-	IfGe
-	Exit
+	if BaneRecruiterState != 1: Exit
+	if BaneMeetHour >= Hours: Exit
 	SetupMonster 4 1 4
 	PrintClear "MANY CREATURES HAVE GATHERED. THE ROBED ORC STANDS AND CALLS OUT,'FIRST, TO SHOW YOUR LOYALTIES, KILL THE UNBELIEVERS.' HE POINTS AT YOUR GROUP."
 	Gosub PressToContinue
@@ -785,9 +650,7 @@ BaneMeeting:
 	Treasure 0 0 0 0 0 0 0 22
 	Combat
 	Save 2 BaneRecruiterState
-	Compare CombatEnd 128
-	IfGt
-	Goto PartyFlees
+	if CombatEnd > 128: Goto PartyFlees
 	Exit
 
 AttackOrc:
@@ -797,9 +660,7 @@ AttackOrc:
 	Treasure 0 0 0 0 0 0 0 22
 	Combat
 	Save 2 BaneRecruiterState
-	Compare CombatEnd 128
-	IfGt
-	Goto PartyFlees
+	if CombatEnd > 128: Goto PartyFlees
 	Exit
 
 RememberBuilding:
@@ -807,16 +668,12 @@ RememberBuilding:
 	Exit
 
 AbandonedShop:
-	Compare 137 LastBuildingCell
-	IfEq
-	Exit
+	if 137 == LastBuildingCell: Exit
 	PrintClear "AN ABANDONED SHOP. BROKEN SHELVES ARE ALL THAT REMAIN."
 	Goto RememberBuilding
 
 DecayedBuilding:
-	Compare 137 LastBuildingCell
-	IfEq
-	Exit
+	if 137 == LastBuildingCell: Exit
 	PrintClear "A DECAYED BUILDING LEFT TO THE RATS."
 	Goto RememberBuilding
 
@@ -825,9 +682,7 @@ PressToContinue:
 	Return
 
 SlumsCleared9:
-	Compare PatrolsBeaten 9
-	IfEq
-	Save 254 PodalPlazaCleared
+	if PatrolsBeaten == 9: Save 254 PodalPlazaCleared
 	Save 10 PatrolsBeaten
 	Exit
 

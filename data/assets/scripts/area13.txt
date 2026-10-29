@@ -6,12 +6,8 @@ event4:
 	Exit
 
 event0:
-	CompareAnd Facing 0 Cell 152
-	IfNe
-	Exit
-	Compare KoboldKingState 0
-	IfEq
-	Save 255 HoldMove
+	if Facing != 0 || Cell != 152: Exit
+	if KoboldKingState == 0: Save 255 HoldMove
 	Exit
 
 event1:
@@ -21,31 +17,21 @@ event1:
 AskLeave:
 	PrintClear "DO YOU WANT TO LEAVE?"
 	HMenu Scratch1 2 "YES" "NO"
-	Compare Scratch1 1
-	IfEq
-	Exit
+	if Scratch1 == 1: Exit
 	Save 0 Scratch2
 
 FindFatima:
 	LoadCharacter Scratch2
-	Compare $SelName "PRINCESS FATIMA"
-	IfEq
-	Goto FatimaFound
+	if $SelName == "PRINCESS FATIMA": Goto FatimaFound
 
 NextMember:
 	Add 1 Scratch2 Scratch2
-	Compare Scratch2 8
-	IfLt
-	Goto FindFatima
+	if Scratch2 < 8: Goto FindFatima
 	NewECL 27
 
 FatimaFound:
-	Compare SelControl 128
-	IfLt
-	Goto NextMember
-	Compare SelStatus 127
-	IfGt
-	Goto FatimaLeaves
+	if SelControl < 128: Goto NextMember
+	if SelStatus > 127: Goto FatimaLeaves
 	PrintClear "THE PRINCESS SAYS,'I SHALL GO MY OWN WAY NOW, BUT YOU WILL ALWAYS BE REMEMBERED. GOOD HUNTING.'"
 
 FatimaLeaves:
@@ -56,13 +42,9 @@ FatimaLeaves:
 	NewECL 27
 
 WaterPit:
-	Compare PoolPitDone 1
-	IfEq
-	Exit
+	if PoolPitDone == 1: Exit
 	Gosub CheckTrap
-	Compare Scratch10 1
-	IfEq
-	Goto CrossPit
+	if Scratch10 == 1: Goto CrossPit
 	PrintClear $SelName
 	Print " FALLS INTO A POOL OF WATER."
 	Gosub PressReturn
@@ -78,13 +60,9 @@ CrossPit:
 	Exit
 
 MineTailings:
-	Compare TailingsFound 1
-	IfEq
-	Exit
+	if TailingsFound == 1: Exit
 	PrintClear "YOU FIND A PILE OF MINE TAILINGS."
-	Compare Search 0
-	IfEq
-	Exit
+	if Search == 0: Exit
 	Save 1 TailingsFound
 	Print "IN IT IS A KOBOLD'S CRUDE DRAWING."
 	Gosub JournalEntry
@@ -92,9 +70,7 @@ MineTailings:
 	Exit
 
 KoboldTruce:
-	Compare KoboldTruceState 0
-	IfNe
-	Goto DeadfallTrap
+	if KoboldTruceState != 0: Goto DeadfallTrap
 	SetupMonster 0 2 0
 	Save 1 KoboldTruceState
 	PrintClear "A KOBOLD APPROACHES WAVING A WHITE FLAG."
@@ -126,13 +102,9 @@ KoboldCriesOut:
 	Goto RoofCollapses
 
 DeadfallTrap:
-	Compare KoboldTruceState 1
-	IfNe
-	Exit
+	if KoboldTruceState != 1: Exit
 	Gosub CheckTrap
-	Compare Scratch10 1
-	IfEq
-	Goto DisarmDeadfall
+	if Scratch10 == 1: Goto DisarmDeadfall
 
 RoofCollapses:
 	PrintClear "THE ROOF COLLAPSES."
@@ -148,9 +120,7 @@ RoofCollapses:
 	LoadMonster 0 20 0
 	Combat
 	Save 2 KoboldTruceState
-	Compare CombatEnd 128
-	IfGt
-	Goto EscapeKobolds
+	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
 DisarmDeadfall:
@@ -163,16 +133,10 @@ DescribeTimbers:
 	Return
 
 NetTrap:
-	Compare Facing 1
-	IfEq
-	Gosub DescribeTimbers
-	Compare 1 NetTrapDone
-	IfEq
-	Exit
+	if Facing == 1: Gosub DescribeTimbers
+	if 1 == NetTrapDone: Exit
 	Gosub CheckTrap
-	Compare Scratch10 1
-	IfEq
-	Goto DisarmNet
+	if Scratch10 == 1: Goto DisarmNet
 	SetupMonster 0 0 0
 	PrintClear "A NET ENTANGLES YOU."
 	Save 50 Morale
@@ -184,9 +148,7 @@ NetTrap:
 	LoadMonster 0 20 0
 	Combat
 	Save 1 NetTrapDone
-	Compare CombatEnd 128
-	IfGt
-	Goto EscapeKobolds
+	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
 DisarmNet:
@@ -195,14 +157,10 @@ DisarmNet:
 	Exit
 
 SpikeTrap:
-	Compare SpikeTrapDone 1
-	IfEq
-	Exit
+	if SpikeTrapDone == 1: Exit
 	Save 0 Scratch4
 	Gosub CheckTrap
-	Compare Scratch10 1
-	IfEq
-	Goto DisarmSpikes
+	if Scratch10 == 1: Goto DisarmSpikes
 	PrintClear "SPIKES SPRING OUT AND IMPALE YOU."
 	Damage 128 2 4 0 Scratch4
 	Save 1 SpikeTrapDone
@@ -214,9 +172,7 @@ DisarmSpikes:
 	Exit
 
 DrunkenKobold:
-	CompareAnd 0 KoboldKingState 255 DrunkKoboldState
-	IfNe
-	Exit
+	if 0 != KoboldKingState || 255 != DrunkKoboldState: Exit
 	SetupMonster 0 0 0
 	PrintClear "A DRUNKEN KOBOLD LIES HERE."
 	Gosub WhatDoYouDo
@@ -248,17 +204,13 @@ KillDrunkKobold:
 	Exit
 
 HearVoices:
-	CompareAnd 0 KoboldKingState 0 HeardVoices
-	IfNe
-	Exit
+	if 0 != KoboldKingState || 0 != HeardVoices: Exit
 	PrintClear "YOU HEAR THE VOICES OF HUMANS AND KOBOLDS."
 	Save 1 HeardVoices
 	Exit
 
 ThroneRoom:
-	Compare KoboldKingState 5
-	IfGe
-	Exit
+	if KoboldKingState >= 5: Exit
 	OnGoto KoboldKingState 5 KoboldHorde FightHorde BallistaFire EnvoysFight Done
 
 KoboldHorde:
@@ -284,14 +236,10 @@ MakeMembersHostile:
 	LoadCharacter Scratch2
 	Save 178 SelControl
 	Add 1 Scratch2 Scratch2
-	Compare Scratch2 Scratch3
-	IfLt
-	Goto MakeMembersHostile
+	if Scratch2 < Scratch3: Goto MakeMembersHostile
 	Combat
 	Save 1 KoboldKingState
-	Compare CombatEnd 128
-	IfGt
-	Goto OfferSurrender
+	if CombatEnd > 128: Goto OfferSurrender
 
 BallistaFire:
 	PrintClear "THE KING, FROTHING AT THE MOUTH, CRIES, 'USE THE SECRET WEAPONS.' BALLISTA APPEAR AND FIRE."
@@ -305,14 +253,10 @@ BallistaFire:
 	LoadMonster 1 8 1
 	Combat
 	Save 2 KoboldKingState
-	Compare CombatEnd 128
-	IfGt
-	Goto OfferSurrender
+	if CombatEnd > 128: Goto OfferSurrender
 
 EnvoysFight:
-	Compare KoboldKingState 2
-	IfNe
-	Goto EnvoysRematch
+	if KoboldKingState != 2: Goto EnvoysRematch
 	PrintClear "THE MEN SNEER AT THE KING AND ONE SAYS,'LET US SHOW YOU HOW WARRIORS FIGHT.'"
 	Goto FightEnvoys
 
@@ -332,9 +276,7 @@ FightEnvoys:
 	Combat
 	Save 255 Portrait
 	Save 3 KoboldKingState
-	Compare CombatEnd 128
-	IfGt
-	Goto EscapeKobolds
+	if CombatEnd > 128: Goto EscapeKobolds
 	PrintClear "THE KING HAS ESCAPED DURING THE FIGHT."
 	Save 4 KoboldKingState
 	Exit
@@ -358,34 +300,22 @@ DeathOrPrison:
 	OnGoto Scratch1 2 Surrender BallistaFire
 
 SearchNorthWall:
-	Compare Facing 0
-	IfNe
-	Exit
+	if Facing != 0: Exit
 	Save 255 HoldMove
 	Save 0 AuxMember
 
 CheckMemberFinds:
 	LoadCharacter AuxMember
-	Compare SelStatus 1
-	IfNe
-	Goto NextSearcher
+	if SelStatus != 1: Goto NextSearcher
 	Save Search AuxSearchCount
-	Compare SelRace 4
-	IfEq
-	Add 1 AuxSearchCount AuxSearchCount
-	Compare SelRace 2
-	IfEq
-	Add 1 AuxSearchCount AuxSearchCount
+	if SelRace == 4: Add 1 AuxSearchCount AuxSearchCount
+	if SelRace == 2: Add 1 AuxSearchCount AuxSearchCount
 	Random 5 AuxRoll
-	Compare AuxSearchCount AuxRoll
-	IfGt
-	Goto SecretDoorFound
+	if AuxSearchCount > AuxRoll: Goto SecretDoorFound
 
 NextSearcher:
 	Add 1 AuxMember AuxMember
-	Compare AuxMember 8
-	IfLt
-	Goto CheckMemberFinds
+	if AuxMember < 8: Goto CheckMemberFinds
 	Exit
 
 SecretDoorFound:
@@ -397,9 +327,7 @@ Done:
 	Exit
 
 KingsQuarters:
-	Compare KoboldKingState 4
-	IfNe
-	Exit
+	if KoboldKingState != 4: Exit
 	PrintClear "YOU REACH THE KING'S QUARTERS AND CONFRONT HIS GUARDS."
 	SetupMonster 0 0 0
 	Save 100 Morale
@@ -413,18 +341,14 @@ KingsQuarters:
 	Exit
 
 KingInPit:
-	Compare KoboldKingState 5
-	IfNe
-	Exit
+	if KoboldKingState != 5: Exit
 	PrintClear "THE KING, PANICKED, HAS FALLEN INTO HIS OWN SPIKED PIT AND DIED."
 	Save 6 KoboldKingState
 	Save 254 QuestKobolds
 	Exit
 
 BrassBottle:
-	CompareAnd Search 1 EfreetiBottleDone 0
-	IfNe
-	Exit
+	if Search != 1 || EfreetiBottleDone != 0: Exit
 	Save 2 Facing
 	Call CallRedraw
 	PrintClear "YOU SEE A BRASS BOTTLE JAMMED INTO A CRACK HERE."
@@ -463,9 +387,7 @@ FightEfreeti:
 	Exit
 
 CrudeBarracks:
-	Compare BarracksSeen 0
-	IfNe
-	Exit
+	if BarracksSeen != 0: Exit
 	PrintClear "YOU ARE IN A CRUDE BARRACKS. ON ONE WALL IS A CRUDE MAP."
 	Gosub JournalEntry
 	Print "28."
@@ -473,12 +395,8 @@ CrudeBarracks:
 	Exit
 
 FatimaRoom:
-	Compare FatimaMet 0
-	IfNe
-	Exit
-	Compare Facing 0
-	IfEq
-	Goto MeetFatima
+	if FatimaMet != 0: Exit
+	if Facing == 0: Goto MeetFatima
 	PrintClear "YOU HEAR MUFFLED SOUNDS AND TURN TO INVESTIGATE."
 	Gosub PressReturn
 	Save 0 Facing
@@ -505,15 +423,11 @@ AttackFatima:
 	Combat
 	Save 1 FatimaMet
 	Save 255 Portrait
-	Compare CombatEnd 128
-	IfGt
-	Goto EscapeKobolds
+	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
 FatimaJoins:
-	Compare PartyCount 8
-	IfNe
-	Goto AddFatima
+	if PartyCount != 8: Goto AddFatima
 	PrintClear "'YOUR GROUP IS TOO LARGE.'"
 	Gosub PressReturn
 
@@ -531,29 +445,21 @@ AddFatima:
 	Exit
 
 PrisonCell:
-	Compare PrisonCellSeen 0
-	IfNe
-	Exit
+	if PrisonCellSeen != 0: Exit
 	PrintClear "THIS WAS A PRISON CELL. BROKEN BINDINGS AND SIX DEAD KOBOLDS ARE STREWN ON THE FLOOR."
 	Save 1 PrisonCellSeen
 	Exit
 
 RubbleSlope:
-	Compare Facing 1
-	IfNe
-	Goto SlopeAskClimb
-	Compare 1 RubbleSlopeUsed
-	IfEq
-	Exit
+	if Facing != 1: Goto SlopeAskClimb
+	if 1 == RubbleSlopeUsed: Exit
 	PrintClear "YOU TUMBLE DOWN A STEEP, LOOSE SLOPE, MAKING A LOUD CLATTER."
 	Gosub PressReturn
 	Save 1 RubbleSlopeUsed
 	Goto WyvernLands
 
 SlopeAskClimb:
-	Compare 1 RubbleSlopeUsed
-	IfEq
-	Exit
+	if 1 == RubbleSlopeUsed: Exit
 	PrintClear "THERE IS A STEEP RUBBLED SLOPE. WILL YOU GO UP?"
 	HMenu Scratch1 2 "YES" "NO"
 	OnGoto Scratch1 2 ClimbSlope SlopeStepBack
@@ -570,9 +476,7 @@ ClimbSlope:
 	Save 1 RubbleSlopeUsed
 
 WyvernLands:
-	Compare WyvernState 0
-	IfNe
-	Exit
+	if WyvernState != 0: Exit
 	PrintClear "THE NOISE HAS DISTURBED SOMETHING. WITH A BEATING OF WINGS, A HUGE BEAST LANDS UPON YOU."
 	Save 1 Facing
 	Call CallRedraw
@@ -591,9 +495,7 @@ WyvernLands:
 	Exit
 
 WyvernCharges:
-	Compare WyvernState 0
-	IfNe
-	Exit
+	if WyvernState != 0: Exit
 	SetupMonster 121 2 121
 	PrintClear "BEFORE YOU LIES A HUGE WYVERN. IT RISES UP AND CHARGES."
 	Approach
@@ -608,9 +510,7 @@ WyvernCharges:
 	Exit
 
 CrippledKobold:
-	CompareAnd CrippledKoboldMet 0 Search 1
-	IfNe
-	Exit
+	if CrippledKoboldMet != 0 || Search != 1: Exit
 	PrintClear "HIDDEN IN A NARROW CREVICE IS AN OLD CRIPPLED KOBOLD. IT CROAKS WEAKLY FOR WATER."
 	Gosub WhatDoYouDo
 	Save 1 CrippledKoboldMet
@@ -636,40 +536,30 @@ KillKobold:
 	Exit
 
 LivingAreas:
-	CompareAnd LivingAreaSeen 0 KoboldKingState 0
-	IfNe
-	Exit
+	if LivingAreaSeen != 0 || KoboldKingState != 0: Exit
 	PrintClear "THIS IS THE LIVING AREAS. FEMALE AND CHILD KOBOLDS FLEE."
 	Save 1 LivingAreaSeen
 	Exit
 
 RatLarder:
-	Compare LarderSeen13 0
-	IfNe
-	Exit
+	if LarderSeen13 != 0: Exit
 	PrintClear "RATS ARE HUNG HERE TO AGE. MOLDY ROOTS LIE IN PILES."
 	Save 1 LarderSeen13
 	Exit
 
 MessTables:
-	Compare MessHallSeen 0
-	IfNe
-	Exit
+	if MessHallSeen != 0: Exit
 	PrintClear "HERE CRUDE TABLES, LITTERED WITH BONES, ARE SCATTERED AROUND."
 	Save 1 MessHallSeen
 	Exit
 
 RuinedBallista:
-	CompareAnd PartyX PrevX PartyY PrevY
-	IfEq
-	Exit
+	if PartyX == PrevX && PartyY == PrevY: Exit
 	PrintClear "A RUINED BALLISTA LIES HERE."
 	Exit
 
 WyvernNest:
-	Compare WyvernState 1
-	IfNe
-	Exit
+	if WyvernState != 1: Exit
 	PrintClear "AMONGST A NEST OF LOGS YOU FIND SOME TREASURE."
 	ClearMonsters
 	Treasure 0 #03E8 #01F4 #03E8 0 2 2 130
@@ -678,9 +568,7 @@ WyvernNest:
 	Exit
 
 KoboldHoard:
-	Compare KoboldKingState 6
-	IfNe
-	Exit
+	if KoboldKingState != 6: Exit
 	PrintClear "STREWN ACROSS THE FLOOR IS THE ACCUMULATED WEALTH OF THE KOBOLD COMMUNITY."
 	ClearMonsters
 	Treasure #C350 0 0 0 0 6 2 43
@@ -690,29 +578,19 @@ KoboldHoard:
 
 CheckTrap:
 	CheckParty 0 19 Scratch1 Scratch1 Scratch1 Scratch1
-	Compare Scratch1 1
-	IfEq
-	Goto TrapFound
-	Compare Search 1
-	IfNe
-	Goto TrapNotDisarmed
+	if Scratch1 == 1: Goto TrapFound
+	if Search != 1: Goto TrapNotDisarmed
 	Save 0 AuxMember
 
 MemberFindsTrap:
 	LoadCharacter AuxMember
-	Compare SelStatus 1
-	IfNe
-	Goto NextTrapFinder
+	if SelStatus != 1: Goto NextTrapFinder
 	Random 99 AuxRoll
-	Compare SelFindTraps AuxRoll
-	IfGt
-	Goto TrapFound
+	if SelFindTraps > AuxRoll: Goto TrapFound
 
 NextTrapFinder:
 	Add 1 AuxMember AuxMember
-	Compare AuxMember 8
-	IfLt
-	Goto MemberFindsTrap
+	if AuxMember < 8: Goto MemberFindsTrap
 	Goto TrapNotDisarmed
 
 TrapFound:
@@ -723,14 +601,10 @@ TrapFound:
 
 DisarmTrap:
 	Who "WHO WILL DISARM THE TRAP?"
-	Compare SelStatus 1
-	IfNe
-	Goto TrapNotDisarmed
+	if SelStatus != 1: Goto TrapNotDisarmed
 	Save 128 Scratch4
 	Random 99 AuxRoll
-	Compare SelFindTraps AuxRoll
-	IfLt
-	Goto TrapNotDisarmed
+	if SelFindTraps < AuxRoll: Goto TrapNotDisarmed
 	Save 1 Scratch10
 	Return
 
@@ -754,26 +628,20 @@ GuideStep:
 	Gosub WalkSteps
 	GetTable GuidePathEvent Scratch6 Scratch1
 	OnGoto Scratch1 5 GuideReturn KoboldTapsWall KoboldTapsWall BoulderLever ClamberDown
-	Compare Scratch1 4
-	IfEq
-	Goto Done
+	if Scratch1 == 4: Goto Done
 	Add 1 Scratch6 Scratch6
 	Goto GuideStep
 
 WalkSteps:
 	Save 1 Scratch2
-	Compare Scratch1 0
-	IfEq
-	Call CallRedraw
+	if Scratch1 == 0: Call CallRedraw
 	IfEq
 	Delay
 	IfEq
 	Return
 
 WalkStepLoop:
-	Compare Scratch2 Scratch1
-	IfGt
-	Return
+	if Scratch2 > Scratch1: Return
 	OnGoto Facing 4 StepNorthY StepEastX StepSouthY StepWestX
 	Call CallRedraw
 	Delay
@@ -815,9 +683,7 @@ KoboldGone:
 ClamberDown:
 	PrintClear "YOU CLAMBER NOISILY DOWN A SLOPE OF RUBBLE."
 	Delay
-	Compare WyvernState 0
-	IfNe
-	Goto TreasureAhead
+	if WyvernState != 0: Goto TreasureAhead
 	PrintClear "AT THE BOTTOM THE KOBOLD DIVES BENEATH SOME RUBBLE."
 	Delay
 	Save 1 RubbleSlopeUsed
@@ -838,9 +704,7 @@ KingGuideStep:
 	Gosub WalkSteps
 	GetTable GuidePathEvent Scratch6 Scratch1
 	OnGoto Scratch1 4 GuideReturn KoboldTapsWall KoboldTapsWall EnvoysAnnounced
-	Compare Scratch1 3
-	IfEq
-	Goto Done
+	if Scratch1 == 3: Goto Done
 	Add 1 Scratch6 Scratch6
 	Goto KingGuideStep
 
@@ -867,9 +731,7 @@ PrisonWalkStep:
 	Goto PrisonWalkStep
 
 ReachPrison:
-	Compare 1 FatimaMet
-	IfEq
-	Goto ThrownInCell
+	if 1 == FatimaMet: Goto ThrownInCell
 	Save 67 Portrait
 	SetupMonster 0 0 37
 	PrintClear "A WOMAN APPEARS BEFORE YOU.'I AM THE PRINCESS FATIMA, AID ME IN THIS BATTLE.'"
@@ -878,18 +740,14 @@ ReachPrison:
 	LoadMonster 0 10 0
 	Combat
 	Save 255 Portrait
-	Compare PartyCount 8
-	IfEq
-	Goto FatimaJournal
+	if PartyCount == 8: Goto FatimaJournal
 	PrintClear "WHEN YOU REST, FATIMA TELLS YOU OF HER TRIBE."
 	Gosub JournalEntry
 	Print "16"
 
 FatimaJournal:
 	Save 1 FatimaMet
-	Compare CombatEnd 128
-	IfLt
-	Exit
+	if CombatEnd < 128: Exit
 
 EscapeKobolds:
 	Random 5 Scratch1
@@ -900,20 +758,12 @@ EscapeKobolds:
 	Exit
 
 KoboldAmbush:
-	CompareAnd 255 DrunkKoboldState 0 WyvernState
-	IfEq
-	Exit
+	if 255 == DrunkKoboldState && 0 == WyvernState: Exit
 	Save 20 Scratch1
-	Compare 0 KoboldKingState
-	IfNe
-	Add 100 Scratch1 Scratch1
-	Compare 1 Search
-	IfNe
-	Add 40 Scratch1 Scratch1
+	if 0 != KoboldKingState: Add 100 Scratch1 Scratch1
+	if 1 != Search: Add 40 Scratch1 Scratch1
 	Random Scratch1 Scratch2
-	Compare 1 Scratch2
-	IfNe
-	Exit
+	if 1 != Scratch2: Exit
 	SetupMonster 0 0 0
 	PrintClear "KOBOLDS SEEM TO BOIL UP FROM NOWHERE."
 	Gosub PressReturn
@@ -925,18 +775,12 @@ KoboldAmbush:
 	LoadMonster 0 15 0
 	LoadMonster 1 3 1
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto EscapeKobolds
+	if CombatEnd > 128: Goto EscapeKobolds
 	Exit
 
 event2:
-	CompareAnd 255 DrunkKoboldState 0 WyvernState
-	IfEq
-	Exit
-	Compare 0 KoboldKingState
-	IfNe
-	Goto RestRareEncounter
+	if 255 == DrunkKoboldState && 0 == WyvernState: Exit
+	if 0 != KoboldKingState: Goto RestRareEncounter
 	Save 1 RestEvery
 	Save 100 RestChance
 	Exit

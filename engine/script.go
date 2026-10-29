@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 // The area event scripts as text (data/assets/scripts/area<N>.txt, written
@@ -15,6 +14,7 @@ import (
 //
 //	Label:                one or more labels name the next line
 //		Op arg arg ...    one command per line (eclOpName's names)
+//		if A == B: Op ... a test (scriptfold.go)
 //		Data 1 2 3 ...    the bytes of a table (GetTable's)
 //	// comment
 //
@@ -124,16 +124,13 @@ func ParseScript(text string, vars map[string]int) (*Script, error) {
 	}
 	var todo []pending
 	var waiting []string // labels for the next line
-	for n, line := range strings.Split(text, "\n") {
-		n++
-		toks, err := scriptTokens(line)
-		if err != nil {
-			return nil, fmt.Errorf("%d: %v", n, err)
-		}
-		if len(toks) == 0 {
-			continue
-		}
-		if len(toks) == 1 && strings.HasSuffix(toks[0], ":") && !unicode.IsSpace(rune(line[0])) {
+	src, err := unfoldScript(text)
+	if err != nil {
+		return nil, err
+	}
+	for _, sl := range src {
+		n, toks := sl.n, sl.toks
+		if sl.label {
 			l := strings.TrimSuffix(toks[0], ":")
 			if _, dup := s.Labels[l]; dup || tables[l] != 0 {
 				return nil, fmt.Errorf("%d: label %s twice", n, l)
@@ -263,6 +260,9 @@ func scriptTokens(line string) ([]string, error) {
 			return toks, nil
 		case c == ' ' || c == '\t' || c == '\r':
 			flush()
+		case c == '{' || c == '}' || c == ';' || c == ':':
+			flush()
+			toks = append(toks, string(c))
 		default:
 			cur += string(c)
 		}

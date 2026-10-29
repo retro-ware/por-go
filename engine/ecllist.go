@@ -33,6 +33,16 @@ func ListECL(code []byte, w io.Writer) {
 // address -> name; an unnamed one stays [XXXX]), and the tables inside
 // the code image as Data lines under their labels. For cmd/eclscript.
 func ScriptECL(code []byte, w io.Writer, names map[int]string) error {
+	var b strings.Builder
+	if err := scriptPlain(code, &b, names); err != nil {
+		return err
+	}
+	_, err := io.WriteString(w, foldScript(b.String()))
+	return err
+}
+
+// scriptPlain writes the script with one byte-code command a line.
+func scriptPlain(code []byte, w io.Writer, names map[int]string) error {
 	events, lines, jumps := walkECL(code)
 	end := eclBase + len(code)
 	labels := map[int][]string{}
@@ -247,7 +257,7 @@ func walkFrom(code []byte, tables map[int]bool) ([]int, map[int]eclLine, map[int
 	e.eclPC = eclBase
 	var events []int
 	for i := 0; i < 5; i++ {
-		e.FetchArgs(1)
+		e.fetchByteArgs(1)
 		events = append(events, e.ArgAddr(1))
 	}
 	lines := map[int]eclLine{}
@@ -382,4 +392,20 @@ func (e *Engine) eclDecode(pc int) (string, string, int, []int, []string) {
 	}
 	e.eclPC++
 	return name, fmt.Sprintf("%02X %s %s", op, name, strings.Join(args, " ")), e.eclPC, targets, args
+}
+
+// fetchByteArgs decodes n operands of the byte code at eclPC as the
+// original's FetchArgs (ovr08:0000) did, for walkFrom's event header.
+func (e *Engine) fetchByteArgs(n int) {
+	for i := 1; i <= n; i++ {
+		e.es.argType[i] = e.eclByte(e.eclPC + 1)
+		e.es.argLo[i] = e.eclByte(e.eclPC + 2)
+		e.eclPC += 2
+		switch e.es.argType[i] {
+		case 1, 2, 3, 0x81:
+			e.eclPC++
+			e.es.argHi[i] = e.eclByte(e.eclPC)
+		}
+	}
+	e.eclPC++
 }

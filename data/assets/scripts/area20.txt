@@ -1,25 +1,20 @@
 event0:
 	Save 11 Scratch5
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch5
+	if Hours >= 14: Save 8 Scratch5
 	Save Scratch5 Sky
 	Save 9 SkyInside
-	Compare LeftMap 0
-	IfEq
-	Goto StoreCellCode
+	if LeftMap == 0: Goto StoreCellCode
 	Save 0 NoCoords
 	Call CallStepForward
 	Save 255 HoldMove
-	Compare Facing 1
-	IfEq
-	Save 3 SymbolSet
-	IfEq
-	NewECL 0
-	IfNe
-	Save 8 SymbolSet
-	IfNe
-	NewECL 29
+	if Facing == 1 {
+		Save 3 SymbolSet
+		NewECL 0
+	}
+	also if Facing != 1 {
+		Save 8 SymbolSet
+		NewECL 29
+	}
 
 StoreCellCode:
 	And 127 Cell Scratch10
@@ -37,12 +32,8 @@ event1:
 	Save 0 AuxCounter
 
 FindCellCase:
-	Compare AuxCounter Scratch10
-	IfEq
-	Goto CellCaseJump
-	Compare AuxCounter 20
-	IfGt
-	Exit
+	if AuxCounter == Scratch10: Goto CellCaseJump
+	if AuxCounter > 20: Exit
 	Add 1 AuxCounter AuxCounter
 	Goto FindCellCase
 
@@ -50,15 +41,9 @@ CellCaseJump:
 	OnGoto AuxCounter 21 SlumsStreet OrcsArguePapers GoblinTrainer OhloRoom DirtyRoom UncleanStable FeedingKobolds HempMarket FortuneTeller OrcHome HobgoblinGold StorageRoom TreasureRoom GuardsIntercept LeadersMeeting AlertedGuards LargeEmptyRoom RopeGuildEntry InsideRopeGuild PotionBooth GrainSack
 
 event2:
-	Compare FortuneTellerState 255
-	IfEq
-	Goto RestDangerous
-	Compare QuestSlums 254
-	IfGe
-	Goto RestSafe
-	Compare Scratch10 0
-	IfEq
-	Goto RestDangerous
+	if FortuneTellerState == 255: Goto RestDangerous
+	if QuestSlums >= 254: Goto RestSafe
+	if Scratch10 == 0: Goto RestDangerous
 
 RestSafe:
 	Save 0 RestEvery
@@ -77,54 +62,32 @@ event3:
 	Goto ScalePatrol
 
 event4:
-	Compare InRopeGuild 0
-	IfEq
-	Save 0 NoCoords
+	if InRopeGuild == 0: Save 0 NoCoords
 	Save 11 Scratch5
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch5
+	if Hours >= 14: Save 8 Scratch5
 	Save Scratch5 Sky
 	Save 9 SkyInside
 	LoadFiles 20 2 255
 	LoadPieces 2 4 1
-	Compare SlumsEntered 255
-	IfNe
-	Goto RestSafe
+	if SlumsEntered != 255: Goto RestSafe
 	Exit
 
 SlumsStreet:
 	PartyStrength AuxPartyStrength
-	Compare QuestSlums 254
-	IfGe
-	Exit
-	Compare SlumsEntered 255
-	IfNe
-	PrintClear "YOU HAVE ENTERED THE MONSTER-CRAWLING SLUMS OF PHLAN.  SMALL, UGLY THINGS SCURRY FROM BENEATH YOUR FEET.  IN THE DISTANCE, AN ALARM SOUNDS."
+	if QuestSlums >= 254: Exit
+	if SlumsEntered != 255: PrintClear "YOU HAVE ENTERED THE MONSTER-CRAWLING SLUMS OF PHLAN.  SMALL, UGLY THINGS SCURRY FROM BENEATH YOUR FEET.  IN THE DISTANCE, AN ALARM SOUNDS."
 	Save 255 SlumsEntered
-	Compare 0 Scratch10
-	IfNe
-	Exit
-	Compare PatrolsBeaten 15
-	IfGe
-	Exit
+	if 0 != Scratch10: Exit
+	if PatrolsBeaten >= 15: Exit
 	Random 13 AuxSightText
-	Compare Search 1
-	IfEq
-	Add 4 AuxSightText AuxSightText
-	Compare FortuneTellerState 255
-	IfEq
-	Add 5 AuxSightText AuxSightText
-	Compare AuxSightText 12
-	IfLe
-	Exit
+	if Search == 1: Add 4 AuxSightText AuxSightText
+	if FortuneTellerState == 255: Add 5 AuxSightText AuxSightText
+	if AuxSightText <= 12: Exit
 
 ScalePatrol:
 	Div AuxPartyStrength 3 AuxPartyStrength
 	Mul AuxPartyStrength 2 AuxPartyStrength
-	Compare FortuneTellerState 255
-	IfEq
-	Add 5 AuxPartyStrength AuxPartyStrength
+	if FortuneTellerState == 255: Add 5 AuxPartyStrength AuxPartyStrength
 
 PickPatrol:
 	Random 2 Scratch7
@@ -149,17 +112,13 @@ PatrolSurprise:
 	GetTable PatrolPictureTable Scratch7 AuxEncMonster2
 	PartySurprise AuxMember AuxRoll
 	Surprise AuxMember AuxRoll 0 0
-	Compare Surprise 1
-	IfNe
-	Goto PatrolApproach
+	if Surprise != 1: Goto PatrolApproach
 	SetupMonster AuxEncMonster2 2 Scratch8
 	Approach
 	Delay
 	Approach
 	PrintClear "YOU ARE SURPRISED BY"
-	Compare AuxPartyStrength 18
-	IfGt
-	Print " A BUGBEAR LEADING A PARTY OF"
+	if AuxPartyStrength > 18: Print " A BUGBEAR LEADING A PARTY OF"
 	Print $AuxText
 	Gosub PressReturn
 	Save 0 MaxDist
@@ -167,16 +126,10 @@ PatrolSurprise:
 	Goto FightPatrol
 
 PatrolApproach:
-	Compare Surprise 3
-	IfEq
-	Goto BumpIntoPatrol
-	Compare Surprise 2
-	IfEq
-	Goto SurprisePatrol
+	if Surprise == 3: Goto BumpIntoPatrol
+	if Surprise == 2: Goto SurprisePatrol
 	Random 1 AuxMember
-	Compare AuxMember 1
-	IfLt
-	Goto SpySeedyPatrol
+	if AuxMember < 1: Goto SpySeedyPatrol
 	Save "YOU ARE BEING APPROACHED BY SOME ANGRY" $AuxMonsterName
 	Save $AuxText $AuxNameCopy5
 	EncounterMenu AuxEncMonster2 MonsterDist Scratch8 AuxMember 0 0 0 1 0 $AuxMonsterName "" "" AuxEncResult AuxEncResult2
@@ -205,9 +158,7 @@ SurprisePatrol:
 	OnGoto AuxMember 4 Done FightPatrol YouHide ConversePatrol
 
 OrcsArguePapers:
-	Compare OrcPapersFight 255
-	IfEq
-	Exit
+	if OrcPapersFight == 255: Exit
 	SetupMonster 4 1 4
 	Approach
 	PrintClear "SEVERAL ORCS ARE ARGUING OVER SOME PAPERS."
@@ -223,9 +174,7 @@ OrcsArguePapers:
 	Exit
 
 GoblinTrainer:
-	Compare GoblinTrainerFight 255
-	IfEq
-	Exit
+	if GoblinTrainerFight == 255: Exit
 	SetupMonster 2 1 2
 	Approach
 	PrintClear "A HEALTHY-LOOKING GOBLIN IS INSTRUCTING A GROUP OF YOUNG WARRIORS.  HE SMILES AND SAYS, 'I SEE OUR OPPONENTS HAVE ARRIVED.'"
@@ -241,20 +190,12 @@ GoblinTrainer:
 	Exit
 
 OhloRoom:
-	Compare OhloQuestState 255
-	IfEq
-	Exit
-	Compare OhloPotionState 255
-	IfEq
-	Exit
+	if OhloQuestState == 255: Exit
+	if OhloPotionState == 255: Exit
 	Save 8 Portrait
 	SetupMonster 24 1 2
-	Compare OhloPotionState 250
-	IfEq
-	Goto OhloWantsPotion
-	Compare OhloQuestState 250
-	IfEq
-	Goto OhloEmptyHanded
+	if OhloPotionState == 250: Goto OhloWantsPotion
+	if OhloQuestState == 250: Goto OhloEmptyHanded
 	PrintClear "YOU BURST INTO AN ELEGANTLY PANELLED ROOM. A SMALL MAN SITS HUNCHED OVER A TABLE BY THE EAST WALL. HE SETS DOWN HIS PEN AND GAZES STERNLY AT YOU.  'WELL?', HE DEMANDS.  (WHAT DO YOU DO?)"
 	HMenu AuxMember 3 "LEAVE" "TALK" "ATTACK"
 	OnGoto AuxMember 3 LeaveOhlo TalkToOhlo OhloAttacks
@@ -325,27 +266,19 @@ GivePotion:
 	Goto LeaveOhlo
 
 DirtyRoom:
-	Compare DirtyRoomSeen 250
-	IfEq
-	Exit
+	if DirtyRoomSeen == 250: Exit
 	Save 250 DirtyRoomSeen
 	PrintClear "THE ROOM IS DIRTY AND HAS A STRONG AND UNPLEASANT ODOR."
 	Exit
 
 UncleanStable:
-	Compare StableSeen20 250
-	IfGe
-	Goto FindLeatherBag
+	if StableSeen20 >= 250: Goto FindLeatherBag
 	PrintClear "YOU HAVE ENTERED A VERY UNCLEAN STABLE.  THERE IS EVIDENCE THAT A LARGE AND UNTIDY ANIMAL HAD LIVED HERE."
 	Save 250 StableSeen20
 
 FindLeatherBag:
-	Compare LeatherBagOpened 255
-	IfEq
-	Exit
-	Compare Search 1
-	IfNe
-	Exit
+	if LeatherBagOpened == 255: Exit
+	if Search != 1: Exit
 	PrintClear "YOU FIND A LONG LEATHER BAG.  WILL YOU OPEN IT?"
 	HMenu AuxMenuChoice 2 "YES" "NO"
 	OnGoto AuxMenuChoice 2 OpenLeatherBag Done
@@ -358,9 +291,7 @@ OpenLeatherBag:
 	Exit
 
 FeedingKobolds:
-	Compare KoboldsFed 255
-	IfEq
-	Exit
+	if KoboldsFed == 255: Exit
 	SetupMonster 0 1 0
 	Delay
 	Approach
@@ -377,12 +308,8 @@ FeedingKobolds:
 	Exit
 
 HempMarket:
-	Compare QuestSlums 254
-	IfGe
-	Exit
-	Compare HempMarketSeen 255
-	IfEq
-	Exit
+	if QuestSlums >= 254: Exit
+	if HempMarketSeen == 255: Exit
 	Save 255 HempMarketSeen
 	PrintClear "YOU WANDER IN THE OLD HEMP MARKET.  MONSTERS SCURRY AT YOUR APPROACH.  YOU OCCASSIONALLY CATCH SNATCHES OF CONVERSATIONS."
 	Delay
@@ -403,9 +330,7 @@ RumorTreasureRoom:
 	Exit
 
 FortuneTeller:
-	Compare FortuneTellerState 250
-	IfGt
-	Exit
+	if FortuneTellerState > 250: Exit
 	Save 251 FortuneTellerState
 	Save 25 Portrait
 	Picture 13
@@ -435,14 +360,9 @@ LeaveFortuneShop:
 PayFortune:
 	PrintClear "THE WOMAN'S HANDS MAKE MYSTIC PASSAGES WHILE SHE MUTTERS SOME WORDS.  HER VOICE UNDERGOES A STRANGE TRANSFORMATION ..."
 	Gosub PressReturn
-	Compare PatrolsBeaten 25
-	IfLe
-	Goto FortuneBlood
-	Compare PatrolsBeaten 75
-	IfLe
-	Goto FortunePowerful
-	IfGt
-	Goto FortuneNewWays
+	if PatrolsBeaten <= 25: Goto FortuneBlood
+	if PatrolsBeaten <= 75: Goto FortunePowerful
+	also if PatrolsBeaten > 75: Goto FortuneNewWays
 
 FortuneBlood:
 	PrintClear "BLOOD AND VIOLENCE ARE WRIT BOLDLY IN YOUR FUTURE.  LOOK FOR FRIENDS WHERE YOU EXPECT ENEMIES AND ENEMIES WHERE YOU EXPECT ALLIES."
@@ -462,9 +382,7 @@ FortuneFinished:
 	OnGoto AuxMenuChoice 2 MurderOldWoman LeaveFortuneShop
 
 OrcHome:
-	Compare OrcHomeFight 255
-	IfEq
-	Exit
+	if OrcHomeFight == 255: Exit
 	SetupMonster 4 1 4
 	Approach
 	PrintClear "A LARGE ORC RAISES HIS HEAD AND SNARLS, 'HOW DARE YOU BREAK INTO OUR HOME?'"
@@ -480,9 +398,7 @@ OrcHome:
 	Exit
 
 HobgoblinGold:
-	Compare HobgoblinGoldState 250
-	IfGe
-	Goto SearchValuables
+	if HobgoblinGoldState >= 250: Goto SearchValuables
 	SetupMonster 6 1 6
 	Approach
 	PrintClear "SOME HOBGOBLINS ARE ARGUING OVER A PILE OF GOLD.  'THIEVES!' THEY SCREAM WHEN THEY SEE YOU."
@@ -497,12 +413,8 @@ HobgoblinGold:
 	Exit
 
 SearchValuables:
-	Compare 255 HobgoblinGoldState
-	IfEq
-	Exit
-	Compare Search 1
-	IfNe
-	Exit
+	if 255 == HobgoblinGoldState: Exit
+	if Search != 1: Exit
 	PrintClear "YOU FIND A LARGE NUMBER OF VALUABLES."
 	ClearMonsters
 	Treasure 0 0 0 #01F4 50 0 0 40
@@ -511,17 +423,13 @@ SearchValuables:
 	Exit
 
 StorageRoom:
-	Compare StorageRoomSeen 255
-	IfEq
-	Exit
+	if StorageRoomSeen == 255: Exit
 	Save 255 StorageRoomSeen
 	PrintClear "YOU HAVE ENTERED A SMALL STORAGE ROOM."
 	Exit
 
 TreasureRoom:
-	Compare TreasureRoomFight 255
-	IfEq
-	Exit
+	if TreasureRoomFight == 255: Exit
 	PrintClear "YOU HAVE STUMBLED INTO A TREASURE ROOM."
 	ClearMonsters
 	Treasure 0 0 #03E8 92 50 4 2 41
@@ -530,9 +438,7 @@ TreasureRoom:
 	Exit
 
 GuardsIntercept:
-	Compare GuardsInterceptFight 255
-	IfEq
-	Exit
+	if GuardsInterceptFight == 255: Exit
 	SetupMonster 4 1 4
 	Approach
 	PrintClear "GUARDS RUN TO INTERCEPT YOU."
@@ -548,9 +454,7 @@ GuardsIntercept:
 	Exit
 
 LeadersMeeting:
-	Compare LeadersMeetingFight 255
-	IfEq
-	Exit
+	if LeadersMeetingFight == 255: Exit
 	SetupMonster 6 1 6
 	PrintClear "YOU INTRUDE ON A GATHERING OF MONSTER LEADERS."
 	Gosub PressReturn
@@ -566,9 +470,7 @@ LeadersMeeting:
 	Exit
 
 AlertedGuards:
-	Compare AlertedGuardsFight 255
-	IfEq
-	Exit
+	if AlertedGuardsFight == 255: Exit
 	SetupMonster 2 1 2
 	Approach
 	PrintClear "YOU HAVE ALERTED THE GUARDS."
@@ -584,20 +486,14 @@ AlertedGuards:
 	Exit
 
 LargeEmptyRoom:
-	Compare EmptyRoomSeen 255
-	IfEq
-	Goto LooseFloorboard
+	if EmptyRoomSeen == 255: Goto LooseFloorboard
 	Save 255 EmptyRoomSeen
 	PrintClear "THIS LARGE ROOM IS APPARENTLY EMPTY."
 	Delay
 
 LooseFloorboard:
-	Compare FloorChestTaken 255
-	IfEq
-	Exit
-	Compare Search 1
-	IfLt
-	Exit
+	if FloorChestTaken == 255: Exit
+	if Search < 1: Exit
 	PrintClear "YOU FIND A LOOSE FLOORBOARD.  PRYING IT UP, YOU FIND A CHEST HIDDEN BENEATH THE FLOOR.  DO YOU TAKE IT?"
 	HMenu AuxMenuChoice 2 "YES" "NO"
 	OnGoto AuxMenuChoice 2 TakeChest Done
@@ -618,38 +514,23 @@ RopeGuildEntry:
 InsideRopeGuild:
 	Save 1 NoCoords
 	Save 1 InRopeGuild
-	Compare QuestSlums 254
-	IfGe
-	Exit
-	Compare RopeGuildEntered 255
-	IfNe
-	PrintClear "YOU HAVE ENTERED THE MYSTERIOUS BUILDING THAT WAS ONCE THE ROPE GUILD.  MOST WHO VENTURE INTO ITS TWISTY HALLS NEVER RETURN."
+	if QuestSlums >= 254: Exit
+	if RopeGuildEntered != 255: PrintClear "YOU HAVE ENTERED THE MYSTERIOUS BUILDING THAT WAS ONCE THE ROPE GUILD.  MOST WHO VENTURE INTO ITS TWISTY HALLS NEVER RETURN."
 	Save 255 RopeGuildEntered
-	Compare PatrolsBeaten 15
-	IfGe
-	Exit
+	if PatrolsBeaten >= 15: Exit
 	PartyStrength AuxPartyStrength
 	Random 10 AuxSightText
-	Compare FortuneTellerState 255
-	IfEq
-	Add 10 AuxPartyStrength AuxPartyStrength
-	IfEq
-	Add 3 AuxSightText AuxSightText
-	Compare Search 1
-	IfEq
-	Add 2 AuxSightText AuxSightText
-	Compare AuxSightText 9
-	IfGe
-	Goto PickPatrol
+	if FortuneTellerState == 255 {
+		Add 10 AuxPartyStrength AuxPartyStrength
+		Add 3 AuxSightText AuxSightText
+	}
+	if Search == 1: Add 2 AuxSightText AuxSightText
+	if AuxSightText >= 9: Goto PickPatrol
 	Exit
 
 PotionBooth:
-	Compare OhloPotionState 250
-	IfGe
-	Exit
-	Compare BoothFightDone 0
-	IfNe
-	Exit
+	if OhloPotionState >= 250: Exit
+	if BoothFightDone != 0: Exit
 	Compare BoothManDone 255
 	Save 5 Portrait
 	Picture 9
@@ -689,9 +570,7 @@ AttackBoothMan:
 	LoadMonster 7 4 7
 	Combat
 	Save 1 BoothFightDone
-	Compare OhloPotionState 255
-	IfNe
-	Gosub CountSlumsCleared
+	if OhloPotionState != 255: Gosub CountSlumsCleared
 	Exit
 
 SpeakPassword:
@@ -699,13 +578,11 @@ SpeakPassword:
 	NewLine
 	InputString 4 $AuxText
 	Save "OHLO" $AuxMonsterName
-	Compare $AuxMonsterName $AuxText
-	IfNe
-	PrintClear "'I AM SORRY,' THE MAN SAYS, 'I CANNOT HELP YOU.'"
-	IfNe
-	Save 255 BoothManDone
-	IfNe
-	Gosub ClearPortrait
+	if $AuxMonsterName != $AuxText {
+		PrintClear "'I AM SORRY,' THE MAN SAYS, 'I CANNOT HELP YOU.'"
+		Save 255 BoothManDone
+		Gosub ClearPortrait
+	}
 	IfNe
 	Exit
 	PrintClear "'WAIT A MOMENT,' THE MAN SAYS.  HE HURRIES TO THE BACK OF THE BOOTH AND RETURNS WITH A PACKAGE. 'HERE,' HE SAYS."
@@ -717,9 +594,7 @@ SpeakPassword:
 	Exit
 
 GrainSack:
-	Compare GrainSackFight 255
-	IfEq
-	Exit
+	if GrainSackFight == 255: Exit
 	Save 0 Surprise
 	Save 75 Morale
 	SetupMonster 31 0 31
@@ -735,48 +610,33 @@ GrainSack:
 	Exit
 
 AfterPatrolFight:
-	Compare CombatEnd 128
-	IfGt
-	Goto RunAway
-	Compare CombatEnd 1
-	IfLt
-	Add 1 PatrolsBeaten PatrolsBeaten
-	IfLt
-	Gosub CountSlumsCleared
+	if CombatEnd > 128: Goto RunAway
+	if CombatEnd < 1 {
+		Add 1 PatrolsBeaten PatrolsBeaten
+		Gosub CountSlumsCleared
+	}
 	IfGt
 	Goto Done
 	IfEq
-	Compare Beaten 0
-	IfGt
-	Add 1 PatrolsBeaten PatrolsBeaten
-	IfGt
-	Gosub CountSlumsCleared
+	if Beaten > 0 {
+		Add 1 PatrolsBeaten PatrolsBeaten
+		Gosub CountSlumsCleared
+	}
 	Goto Done
 
 FightPatrol:
-	Compare Scratch8 4
-	IfEq
-	Goto CheckOrcStrength
-	Compare AuxPartyStrength 8
-	IfLt
-	Goto FightPlainPatrol
+	if Scratch8 == 4: Goto CheckOrcStrength
+	if AuxPartyStrength < 8: Goto FightPlainPatrol
 	Goto AddLeaders
 
 CheckOrcStrength:
-	Compare AuxPartyStrength 14
-	IfLt
-	Goto FightPlainPatrol
+	if AuxPartyStrength < 14: Goto FightPlainPatrol
 
 AddLeaders:
 	Add 1 Scratch8 Scratch3
-	Compare Scratch8 1
-	IfLt
-	Save 3 Scratch2
-	IfGe
-	Save 4 Scratch2
-	Compare AuxPartyStrength 18
-	IfGt
-	Goto FightPatrolWithBugbear
+	if Scratch8 < 1: Save 3 Scratch2
+	also if Scratch8 >= 1: Save 4 Scratch2
+	if AuxPartyStrength > 18: Goto FightPatrolWithBugbear
 	Goto FightPatrolWithLeaders
 
 FightPlainPatrol:
@@ -827,21 +687,15 @@ Done:
 ConversePatrol:
 	Save 0 Surprise
 	PrintClear "YOU ARE CONVERSING WITH "
-	Compare AuxPartyStrength 18
-	IfGt
-	Print "A BUGBEAR LEADING"
+	if AuxPartyStrength > 18: Print "A BUGBEAR LEADING"
 	Print "A PARTY OF "
 	Print $AuxText
-	Compare AuxPartyStrength 8
-	IfGt
-	Goto ParlayMidStrength
+	if AuxPartyStrength > 8: Goto ParlayMidStrength
 	Parlay 10 20 20 20 30 AuxParlay
 	Goto ParlayResult
 
 ParlayMidStrength:
-	Compare AuxPartyStrength 15
-	IfGt
-	Goto ParlayHighStrength
+	if AuxPartyStrength > 15: Goto ParlayHighStrength
 	Parlay 5 15 15 10 25 AuxParlay
 	Goto ParlayResult
 
@@ -852,12 +706,8 @@ ParlayResult:
 	Random 30 AuxRoll2
 	Add AuxParlay AuxRoll2 AuxParlay
 	Add AuxParlay SelReaction AuxParlay
-	Compare AuxParlay 75
-	IfLt
-	Goto PatrolAngered
-	Compare AuxParlay 85
-	IfGt
-	Goto PatrolWarnsLeave
+	if AuxParlay < 75: Goto PatrolAngered
+	if AuxParlay > 85: Goto PatrolWarnsLeave
 	PrintClear "THE MONSTERS RESPOND, 'DA BOSS DON'T LIKE YOUSE GUYS. GIVE US SUMPTIN AN MAYBE WE'LL FERGET WE SEEN YAS.' (WHAT DO YOU DO?)"
 	HMenu Scratch9 4 "PAY" "SURRENDER" "RUN" "FIGHT"
 	OnGoto Scratch9 4 PayPatrol SurrenderToPatrol TryRunning FightPatrol
@@ -865,9 +715,7 @@ ParlayResult:
 PayPatrol:
 	PrintClear "TYPE IN THE NUMBER OF GP YOU OFFER."
 	InputNumber 2 Scratch9
-	Compare Scratch9 AuxPartyStrength
-	IfGe
-	Goto PatrolTakesCoins
+	if Scratch9 >= AuxPartyStrength: Goto PatrolTakesCoins
 	PrintClear "'WHAT A BUNCH OF CHEAPSKATES,' THE LEADER COMPLAINS. 'LET 'EM HAVE IT BOYS!'"
 	Goto FightPatrol
 
@@ -885,22 +733,14 @@ SurrenderToPatrol:
 
 TryRunning:
 	CheckParty SelMove 0 Scratch9 Scratch1 Scratch1 Scratch1
-	Compare AuxEncResult Scratch1
-	IfLt
-	Goto RunAway
-	IfGt
-	Goto FightPatrol
-	IfEq
-	Random 1 Scratch1
-	Compare Scratch1 1
-	IfEq
-	Goto RunAway
+	if AuxEncResult < Scratch1: Goto RunAway
+	also if AuxEncResult > Scratch1: Goto FightPatrol
+	also if AuxEncResult == Scratch1: Random 1 Scratch1
+	if Scratch1 == 1: Goto RunAway
 	Goto FightPatrol
 
 PatrolWarnsLeave:
-	Compare AuxParlay 95
-	IfGt
-	Goto PatrolAdvice
+	if AuxParlay > 95: Goto PatrolAdvice
 	PrintClear "THE LEADER SPEAKS, 'THE BOSS DON'T ALLOW YOUR KIND IN HIS TERRITORY.  LEAVE NOW OR WE'LL HAVE TO RUN YOU IN.' (WHAT DO YOU DO?)"
 	HMenu Scratch9 4 "FIGHT" "STAY" "LEAVE" "RUN"
 	OnGoto Scratch9 4 FightPatrol FightPatrol Done RunAway
@@ -919,9 +759,7 @@ PatrolAngered:
 	PrintClear "YOU HAVE ANGERED THE"
 	Print $AuxText
 	Print "THEY ATTACK."
-	Compare AuxParlay 65
-	IfLt
-	Add PatrolMorale 20 PatrolMorale
+	if AuxParlay < 65: Add PatrolMorale 20 PatrolMorale
 	Gosub PressReturn
 	Goto FightPatrol
 
@@ -930,13 +768,9 @@ ClearPortrait:
 	Return
 
 CountSlumsCleared:
-	Compare QuestSlums 254
-	IfGe
-	Return
+	if QuestSlums >= 254: Return
 	Add 1 QuestSlums QuestSlums
-	Compare QuestSlums 25
-	IfLt
-	Return
+	if QuestSlums < 25: Return
 	Save 254 QuestSlums
 	Return
 

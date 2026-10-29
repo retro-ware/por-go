@@ -4,41 +4,25 @@ RollSurprise:
 	IfNe
 	Add 1 Scratch9 Scratch9
 	Surprise Scratch8 Scratch9 0 0
-	Compare AlarmEndHour 0
-	IfNe
-	And Surprise 1 Surprise
-	Compare Surprise 3
-	IfEq
-	Save 0 Surprise
+	if AlarmEndHour != 0: And Surprise 1 Surprise
+	if Surprise == 3: Save 0 Surprise
 	Compare Surprise 1
 	Return
 
 CheckAlarmSounding:
-	Compare AlarmEndHour 1
-	IfLt
-	Return
+	if AlarmEndHour < 1: Return
 	Save Hours AuxRoll
-	CompareAnd Hours 0 AlarmHour 23
-	IfEq
-	Save 24 AuxRoll
-	Compare AuxRoll AlarmEndHour
-	IfLt
-	Goto AlarmStillOn
-	Compare TenMinutes AlarmMinute
-	IfLt
-	Goto AlarmStillOn
+	if Hours == 0 && AlarmHour == 23: Save 24 AuxRoll
+	if AuxRoll < AlarmEndHour: Goto AlarmStillOn
+	if TenMinutes < AlarmMinute: Goto AlarmStillOn
 	Save 0 AlarmEndHour
 	Compare 0 1
 	Return
 
 AlarmStillOn:
-	Compare Search 1
-	IfEq
-	Goto SayAlarmSounding
+	if Search == 1: Goto SayAlarmSounding
 	Random 9 AuxRoll
-	Compare AuxRoll 0
-	IfNe
-	Goto AlarmActive
+	if AuxRoll != 0: Goto AlarmActive
 
 SayAlarmSounding:
 	PrintClear "AN ALARM IS SOUNDING."
@@ -49,9 +33,7 @@ AlarmActive:
 	Return
 
 StartAlarm:
-	Compare AlarmEndHour 0
-	IfEq
-	PrintClear "AN ALARM STARTS RINGING!"
+	if AlarmEndHour == 0: PrintClear "AN ALARM STARTS RINGING!"
 	Delay
 	Save Hours AlarmHour
 	Save TenMinutes AlarmMinute
@@ -75,29 +57,17 @@ PressReturn:
 SetSkyByHour:
 	Save 11 Scratch1
 	Save 9 SkyInside
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch1
+	if Hours >= 14: Save 8 Scratch1
 	Save Scratch1 Sky
 	Return
 
 event0:
 	And CastleRoomFlags 127 CastleRoomFlags
-	Compare LeftMap 0
-	IfEq
-	Goto OnStep
-	Compare Geo 3
-	IfEq
-	GetTable ByFacing9AEB Facing Scratch10
-	Compare Geo 4
-	IfEq
-	GetTable ByFacing9AEF Facing Scratch10
-	Compare Geo 5
-	IfEq
-	GetTable ByFacing9AF3 Facing Scratch10
-	Compare Geo 6
-	IfEq
-	GetTable ByFacing9AF7 Facing Scratch10
+	if LeftMap == 0: Goto OnStep
+	if Geo == 3: GetTable ByFacing9AEB Facing Scratch10
+	if Geo == 4: GetTable ByFacing9AEF Facing Scratch10
+	if Geo == 5: GetTable ByFacing9AF3 Facing Scratch10
+	if Geo == 6: GetTable ByFacing9AF7 Facing Scratch10
 	LoadFiles Scratch10 2 255
 	Call CallStepForward
 	Save 255 HoldMove
@@ -118,21 +88,11 @@ ByFacing9AF7:
 OnStep:
 	Gosub SetSkyByHour
 	And Cell 31 Scratch1
-	CompareAnd Scratch1 21 Facing 3
-	IfEq
-	Goto CastleGate
-	CompareAnd Scratch1 22 Facing 1
-	IfEq
-	Goto CastleGate
-	CompareAnd Scratch1 4 Facing 1
-	IfEq
-	Goto GoUpstairs
-	Compare WallAhead 7
-	IfEq
-	Goto ThornHedge
-	Compare WallAhead 9
-	IfNe
-	Exit
+	if Scratch1 == 21 && Facing == 3: Goto CastleGate
+	if Scratch1 == 22 && Facing == 1: Goto CastleGate
+	if Scratch1 == 4 && Facing == 1: Goto GoUpstairs
+	if WallAhead == 7: Goto ThornHedge
+	if WallAhead != 9: Exit
 
 ThornHedge:
 	PrintClear "THERE IS A HEDGE WITH POISONOUS THORNS IN THAT DIRECTION. DO YOU WANT TO TRY TO CUT THROUGH?"
@@ -153,30 +113,20 @@ event1:
 	IfNe
 	Goto SpecialSquare
 	Save 2 Scratch1
-	Compare Search 1
-	IfNe
-	Save 20 Scratch1
+	if Search != 1: Save 20 Scratch1
 	Random Scratch1 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Goto event3
+	if Scratch10 == 0: Goto event3
 
 SpecialSquare:
 	And Cell 31 Scratch1
-	Compare Scratch1 29
-	IfGt
-	NewECL 3
-	Compare Scratch1 20
-	IfGt
-	Exit
+	if Scratch1 > 29: NewECL 3
+	if Scratch1 > 20: Exit
 	OnGoto Scratch1 8 Done HarmlessMage ArguingGiants GateGiants Done ThroneRoom TowerTrolls Disorient
 
 event2:
 	Save 0 RestEvery
 	Save 10 RestChance
-	Compare AlarmEndHour 0
-	IfEq
-	Exit
+	if AlarmEndHour == 0: Exit
 	And Cell 64 Scratch10
 	IfNe
 	Exit
@@ -216,23 +166,17 @@ FledCombat:
 	Save 129 CombatEnd
 
 AfterCombat:
-	Compare CombatEnd 0
-	IfEq
-	Return
+	if CombatEnd == 0: Return
 	Gosub StartAlarm
 	And CastleFlags 254 CastleFlags
-	Compare CombatEnd 129
-	IfNe
-	Return
+	if CombatEnd != 129: Return
 
 StepBack:
 	Save 255 HoldMove
 	Save PrevX PartyX
 	Save PrevY PartyY
 	Add Facing 2 Facing
-	Compare Facing 3
-	IfGt
-	Sub 4 Facing Facing
+	if Facing > 3: Sub 4 Facing Facing
 	Goto Done
 
 GateGiants:
@@ -260,9 +204,7 @@ GiantsMenu:
 AskPassword:
 	InputString 6 $AuxInputText
 	Random 4 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Goto NoPasswordAttack
+	if Scratch10 == 0: Goto NoPasswordAttack
 	PrintClear "'WRONG! GUESS AGAIN!"
 	Goto AskPassword
 
@@ -273,9 +215,7 @@ NoPasswordAttack:
 WhoSentYou:
 	PrintClear "'OH, YEAH? WHO SEND YOU?'"
 	InputString 12 $AuxInputText
-	Compare "TYRANTHRAXUS" $AuxInputText
-	IfNe
-	Goto WrongMasterName
+	if "TYRANTHRAXUS" != $AuxInputText: Goto WrongMasterName
 	PrintClear "'OH, WE SORRY! JUST DOING JOB! PLEASE NO TELL? WE LET YOU... WE STAY AT POST. MAKE SURE NO ONE GO BY!'"
 	Goto Done
 
@@ -328,13 +268,9 @@ FightTrolls:
 	Exit
 
 CastleGate:
-	Compare AlarmEndHour 0
-	IfEq
-	Exit
+	if AlarmEndHour == 0: Exit
 	Save 64 Scratch1
-	Compare Scratch10 22
-	IfEq
-	Save 128 Scratch1
+	if Scratch10 == 22: Save 128 Scratch1
 	And BaneTempleFlags Scratch1 Scratch10
 	IfNe
 	Goto GateRecognizesYou
@@ -363,9 +299,7 @@ BouldersThrown:
 GivePassword:
 	PrintClear "WHAT PASSWORD DO YOU GIVE? "
 	InputString 6 $AuxInputText
-	Compare $AuxInputText "RHODIA"
-	IfNe
-	Goto WrongPassword
+	if $AuxInputText != "RHODIA": Goto WrongPassword
 	PrintClear "'ALL RIGHT, THEN. PASS!' AND WITH THAT THE GATES SWING OPEN AND YOU PASS THROUGH THE GATE."
 	Call CallStepForward
 	Save 255 HoldMove
@@ -428,9 +362,7 @@ ArguingGiants:
 	And CastleFlags 1 Scratch10
 	IfNe
 	Goto FrogsAndToads
-	Compare AlarmEndHour 0
-	IfNe
-	Goto GiantsSpotIntruders
+	if AlarmEndHour != 0: Goto GiantsSpotIntruders
 
 FrogsAndToads:
 	PrintClear "THIS TOWER IS OCCUPIED BY FOUR GIANTS. AS YOU COME IN THEY ARE IN THE MIDST OF AN ARGUMENT. THE BIGGEST ONE TURNS TO YOU AND SAYS, 'THEM LOOK SMART. THEM TELL US.'"
@@ -497,9 +429,7 @@ ThroneRoom:
 	OnGoto Scratch10 3 ArrogantKnave HeavyCrown BegoneOrWrath
 	PartyStrength Scratch10
 	Add SelReaction Scratch10 Scratch10
-	Compare Scratch10 85
-	IfGe
-	Goto ArrogantKnave
+	if Scratch10 >= 85: Goto ArrogantKnave
 	PrintClear "HE SEEMS TO COLLAPSE. 'ALL RIGHT. I'M NOT TYRANTHRAXUS. HE JUST HIRED ME TO IMPERSONATE HIM. IT'S NOT A BAD LIFE, BUT, HEY! I CAN TELL WHICH WAY THE WIND'S BLOWING.'"
 	Gosub PressReturn
 	PrintClear "'JUST LET ME GO, OKAY?"
@@ -555,7 +485,5 @@ FightSnakes:
 	ClearMonsters
 	LoadMonster 60 4 60
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto StepBack
+	if CombatEnd == 129: Goto StepBack
 	Exit

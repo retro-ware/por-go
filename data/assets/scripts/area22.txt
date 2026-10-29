@@ -45,23 +45,13 @@ SearchSecretDoor:
 
 CheckMemberFinds:
 	LoadCharacter Scratch10
-	Compare SelStatus 0
-	IfEq
-	Goto NextMember
+	if SelStatus == 0: Goto NextMember
 	Save 1 Scratch9
-	Compare Search 0
-	IfEq
-	Sub 1 Scratch9 Scratch9
-	Compare SelRace 2
-	IfEq
-	Add 1 Scratch9 Scratch9
-	Compare SelRace 4
-	IfEq
-	Add 1 Scratch9 Scratch9
+	if Search == 0: Sub 1 Scratch9 Scratch9
+	if SelRace == 2: Add 1 Scratch9 Scratch9
+	if SelRace == 4: Add 1 Scratch9 Scratch9
 	Random 5 Scratch8
-	Compare Scratch8 Scratch9
-	IfGt
-	Goto NextMember
+	if Scratch8 > Scratch9: Goto NextMember
 
 SecretDoorFound:
 	Or Scratch1 SecretDoorBits SecretDoorBits
@@ -74,9 +64,7 @@ SecretDoorFound:
 
 NextMember:
 	Add Scratch10 1 Scratch10
-	Compare Scratch10 8
-	IfLt
-	Goto CheckMemberFinds
+	if Scratch10 < 8: Goto CheckMemberFinds
 	Return
 
 DoorInFront:
@@ -105,14 +93,10 @@ event0:
 	And Cell 31 Scratch1
 	IfEq
 	Exit
-	Compare Scratch1 11
-	IfGt
-	Exit
+	if Scratch1 > 11: Exit
 	Sub 1 Scratch1 Scratch1
 	GetTable Table9C95 Scratch1 Scratch10
-	Compare Scratch10 Facing
-	IfNe
-	Exit
+	if Scratch10 != Facing: Exit
 	Goto CheckSecretPassage
 
 event1:
@@ -133,17 +117,11 @@ Table9BA4:
 event2:
 	Save 0 RestEvery
 	Save 10 RestChance
-	Compare PartyX 15
-	IfEq
-	Exit
+	if PartyX == 15: Exit
 	Save SouthGroupsBeaten Scratch10
-	Compare PartyY 8
-	IfLt
-	Save NorthGroupsBeaten Scratch10
+	if PartyY < 8: Save NorthGroupsBeaten Scratch10
 	And Scratch10 63 Scratch10
-	Compare Scratch10 63
-	IfEq
-	Exit
+	if Scratch10 == 63: Exit
 	Save 2 RestEvery
 	Save 33 RestChance
 
@@ -158,13 +136,9 @@ event3:
 event4:
 	Save 1 NoCoords
 	Save 9 SkyInside
-	Compare AreaKind 22
-	IfEq
-	Exit
+	if AreaKind == 22: Exit
 	LoadFiles 22 2 255
-	Compare AreaKind 23
-	IfEq
-	Exit
+	if AreaKind == 23: Exit
 	Save 0 PartyY
 	Save 2 Facing
 	Save 15 PartyX
@@ -187,9 +161,7 @@ CheckSecretPassage:
 
 PassageLeave:
 	And Cell 31 Scratch10
-	Compare Scratch10 3
-	IfLt
-	Goto LeaveToArea26
+	if Scratch10 < 3: Goto LeaveToArea26
 	Exit
 
 Table9C95:
@@ -220,9 +192,7 @@ PriestEncounter:
 	Parlay 0 0 1 1 0 Scratch10
 	OnGoto Scratch10 1 PriestPeace
 	Random 2 Scratch10
-	Compare Scratch10 0
-	IfNe
-	Goto PriestPeace
+	if Scratch10 != 0: Goto PriestPeace
 	PrintClear "I HAVE A SECRET. I HAVE CHISELED ALMOST ALL THE WAY THROUGH TO THE OUTSIDE. BUT I NO LONGER HAVE THE STRENGTH TO BREAK THROUGH. WILL YOU TRY?"
 	Gosub YesNoMenu
 	IfNe
@@ -252,9 +222,7 @@ PriestPeace:
 TyrmorCorpse:
 	PrintClear "YOU FIND THE CORPSE OF A MAN. THE BODY HAS BEEN STRIPPED OF WEAPONS AND ARMOR, AS WELL AS ANY USEFUL GEAR."
 	Gosub PressReturn
-	CompareAnd TyrmorJournalFound 0 Search 1
-	IfNe
-	Goto RandomEncounter
+	if TyrmorJournalFound != 0 || Search != 1: Goto RandomEncounter
 	PrintClear "HOWEVER, YOU FIND A BOOK UNDER THE BODY. IT IS THE JOURNAL OF TYRMOR.  IT IS FACINATING AND YOU INCLUDE MUCH OF ITS INFORMATION IN YOUR JOURNAL AS ENTRY 26."
 	Save 1 TyrmorJournalFound
 	Gosub PressReturn
@@ -312,27 +280,17 @@ SetTeleporterBit:
 TeleporterSquare:
 	Gosub TeleportFlash
 	And Cell 31 Scratch10
-	Compare Scratch10 17
-	IfEq
-	Goto ExitToArea23
+	if Scratch10 == 17: Goto ExitToArea23
 	Goto MoveToTableSpot
 
 RandomEncounter:
-	Compare PartyX 15
-	IfEq
-	Exit
+	if PartyX == 15: Exit
 	Save SouthGroupsBeaten Scratch3
-	Compare PartyY 8
-	IfLt
-	Save NorthGroupsBeaten Scratch3
+	if PartyY < 8: Save NorthGroupsBeaten Scratch3
 	Save 2 Scratch10
-	Compare Search 0
-	IfEq
-	Save 20 Scratch10
+	if Search == 0: Save 20 Scratch10
 	Random Scratch10 Scratch10
-	Compare Scratch10 0
-	IfNe
-	Exit
+	if Scratch10 != 0: Exit
 	Random 5 Scratch7
 	GetTable Table9CA0 Scratch7 Scratch10
 	And Scratch3 Scratch10 Scratch10
@@ -341,9 +299,7 @@ RandomEncounter:
 
 StartGroupEncounter:
 	Save Scratch7 Scratch6
-	Compare PartyY 8
-	IfLt
-	Add 7 Scratch7 Scratch7
+	if PartyY < 8: Add 7 Scratch7 Scratch7
 	Gosub LoadGroupData
 	PartySurprise Scratch4 Scratch5
 	Save 2 Scratch3
@@ -381,28 +337,20 @@ FlyingGroupMenu:
 
 EncounterOutcome:
 	Save 255 Portrait
-	Compare Scratch3 3
-	IfEq
-	Save 1 Surprise
+	if Scratch3 == 3: Save 1 Surprise
 	OnGoto Scratch3 4 Done FightGroup FleeEncounter FightGroup
 
 FleeEncounter:
-	Compare PartyY 8
-	IfLt
-	Goto FleeNorth
+	if PartyY < 8: Goto FleeNorth
 	Goto FleeSouth
 
 FightGroup:
 	ClearMonsters
 	LoadMonster AuxEncTemp AuxMember AuxRoll
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto FleeEncounter
+	if CombatEnd == 129: Goto FleeEncounter
 	GetTable Table9CA0 Scratch6 Scratch7
-	Compare PartyY 8
-	IfLt
-	Goto MarkNorthBeaten
+	if PartyY < 8: Goto MarkNorthBeaten
 	Or SouthGroupsBeaten Scratch7 SouthGroupsBeaten
 	Exit
 
@@ -412,9 +360,7 @@ MarkNorthBeaten:
 
 ForcedEncounter:
 	Save SouthGroupsBeaten Scratch3
-	Compare PartyY 8
-	IfLt
-	Save NorthGroupsBeaten Scratch3
+	if PartyY < 8: Save NorthGroupsBeaten Scratch3
 
 PickUnbeatenGroup:
 	Random 5 Scratch7

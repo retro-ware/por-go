@@ -22,13 +22,9 @@ event0:
 StairsScanLoop:
 	GetTable Table99D8 Scratch1 Scratch3
 	GetTable Table99E0 Scratch1 Scratch4
-	CompareAnd Scratch2 Scratch3 Scratch4 Facing
-	IfEq
-	Goto StairsDispatch
+	if Scratch2 == Scratch3 && Scratch4 == Facing: Goto StairsDispatch
 	Add 1 Scratch1 Scratch1
-	Compare Scratch1 8
-	IfLt
-	Goto StairsScanLoop
+	if Scratch1 < 8: Goto StairsScanLoop
 	Exit
 
 StairsDispatch:
@@ -59,12 +55,8 @@ event3:
 event4:
 	Gosub SetSky
 	Save 1 NoCoords
-	Compare TyranthraxusDefeated 1
-	IfEq
-	Goto LeaveCastle
-	Compare AreaKind 7
-	IfEq
-	Exit
+	if TyranthraxusDefeated == 1: Goto LeaveCastle
+	if AreaKind == 7: Exit
 	LoadFiles 7 2 255
 	Exit
 
@@ -82,9 +74,7 @@ TakeStairsMenu:
 	Exit
 	GetTable DestX Scratch1 PartyX
 	GetTable DestY Scratch1 PartyY
-	Compare Scratch1 0
-	IfEq
-	Goto DescendToArea5
+	if Scratch1 == 0: Goto DescendToArea5
 
 RedrawExit:
 	RedrawView
@@ -115,29 +105,17 @@ SecretDoorCheck:
 
 SecretDoorRoll:
 	LoadCharacter Scratch10
-	Compare SelStatus 0
-	IfEq
-	Goto SecretDoorNextMember
+	if SelStatus == 0: Goto SecretDoorNextMember
 	Save 1 Scratch9
-	Compare Search 0
-	IfEq
-	Sub 1 Scratch9 Scratch9
-	Compare SelRace 2
-	IfEq
-	Add 1 Scratch9 Scratch9
-	Compare SelRace 4
-	IfEq
-	Add 1 Scratch9 Scratch9
+	if Search == 0: Sub 1 Scratch9 Scratch9
+	if SelRace == 2: Add 1 Scratch9 Scratch9
+	if SelRace == 4: Add 1 Scratch9 Scratch9
 	Random 5 Scratch8
-	Compare Scratch8 Scratch9
-	IfLe
-	Goto SecretDoorFound
+	if Scratch8 <= Scratch9: Goto SecretDoorFound
 
 SecretDoorNextMember:
 	Add Scratch10 1 Scratch10
-	Compare Scratch10 8
-	IfLt
-	Goto SecretDoorRoll
+	if Scratch10 < 8: Goto SecretDoorRoll
 	Exit
 
 SecretDoorFound:
@@ -171,17 +149,13 @@ TrapDoorRoom:
 
 ChooseOpener:
 	Who "WHO WILL OPEN IT?"
-	Compare SelStatus 1
-	IfNe
-	Goto ChooseOpener
+	if SelStatus != 1: Goto ChooseOpener
 	And SearchTowerFlags 16 Scratch10
 	IfNe
 	Goto SawStatues
 	Random 19 Scratch10
 	Add 1 Scratch10 Scratch10
-	Compare Scratch10 SelSaveVsPetrify
-	IfGe
-	Goto OpenerPetrified
+	if Scratch10 >= SelSaveVsPetrify: Goto OpenerPetrified
 
 SawStatues:
 	PrintClear "QUICKLY LOOKING AWAY, "
@@ -210,9 +184,7 @@ JumpTrapDoor:
 	Call CallRedraw
 
 StatueRoom:
-	Compare StatueRoomSeen 0
-	IfNe
-	Goto MedusaMenu
+	if StatueRoomSeen != 0: Goto MedusaMenu
 	PrintClear "YOU ARE IN A ROOM FILLED WITH BROKEN STATUES. A HEAD BROKEN LOOSE FROM THE TORSO SHOWS A FACE FILLED WITH TERROR."
 	Gosub PressToContinue
 	Save 1 StatueRoomSeen
@@ -230,9 +202,7 @@ MedusaFight:
 	ClearMonsters
 	LoadMonster 49 1 49
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto RetreatFromMedusa
+	if CombatEnd == 129: Goto RetreatFromMedusa
 	Or SearchTowerFlags 16 SearchTowerFlags
 	Exit
 
@@ -243,9 +213,7 @@ RetreatFromMedusa:
 	Goto RedrawExit
 
 BenchRoom:
-	Compare BenchRoomSeen 0
-	IfNe
-	Goto MessengerThief
+	if BenchRoomSeen != 0: Goto MessengerThief
 	PrintClear "YOU ARE IN A ROOM FURNISHED WITH CHAIRS AND BENCHES."
 	Save 1 BenchRoomSeen
 
@@ -290,16 +258,12 @@ ThiefFight:
 	ClearMonsters
 	LoadMonster 45 1 12
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto RetreatFromThief
+	if CombatEnd == 129: Goto RetreatFromThief
 	Or SearchTowerFlags 32 SearchTowerFlags
 	Exit
 
 MerchantRoom:
-	Compare MerchantRoomSeen 0
-	IfNe
-	Goto GenheerisAtDesk
+	if MerchantRoomSeen != 0: Goto GenheerisAtDesk
 	PrintClear "YOU ENTER A ROOM FURNISHED AS THE APARTMENT OF A WEALTHY IF ECCENTRIC MERCHANT."
 	Save 1 MerchantRoomSeen
 
@@ -330,9 +294,7 @@ GenheerisOffer:
 	SetupMonster 24 0 31
 	PrintClear "A SUDDEN LOOK OF FEAR COMES OVER HIS FACE. 'IF YOU'VE COME  FROM TYRANTHRAXUS I CAN OFFER A BETTER DEAL. IF YOU KILL HIM INSTEAD OF ME I WILL MAKE YOU ALL GENERALS!'"
 	Gosub PressToContinue
-	Compare PartyCount 8
-	IfEq
-	Goto GenheerisDeal
+	if PartyCount == 8: Goto GenheerisDeal
 	PrintClear "'IN FACT I WILL JOIN YOU. IS IT A DEAL?'"
 	Gosub YesNoMenu
 	Save 255 Portrait
@@ -360,9 +322,7 @@ GenheerisFight:
 	LoadMonster 88 1 14
 	Combat
 	Or GenheerisFlags 2 GenheerisFlags
-	Compare CombatEnd 129
-	IfNe
-	Exit
+	if CombatEnd != 129: Exit
 
 RetreatFromGenheeris:
 	Save 2 PartyX
@@ -380,12 +340,8 @@ GenheerisLeaves:
 
 FindGenheerisLoop:
 	LoadCharacter AuxCounter
-	Compare SelStatus 1
-	IfNe
-	Goto FindGenheerisNext
-	Compare "GENHEERIS" $SelName
-	IfNe
-	Goto FindGenheerisNext
+	if SelStatus != 1: Goto FindGenheerisNext
+	if "GENHEERIS" != $SelName: Goto FindGenheerisNext
 	Save 0 SelStatus
 	Save 0 SelName
 	Add 128 AuxCounter AuxCounter
@@ -394,9 +350,7 @@ FindGenheerisLoop:
 
 FindGenheerisNext:
 	Add 1 AuxCounter AuxCounter
-	Compare AuxCounter PartyCount
-	IfLt
-	Goto FindGenheerisLoop
+	if AuxCounter < PartyCount: Goto FindGenheerisLoop
 	Exit
 
 AudienceHall:
@@ -431,9 +385,7 @@ GuardsFight:
 	ClearMonsters
 	LoadMonster 85 12 11
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto RetreatFromHall
+	if CombatEnd == 129: Goto RetreatFromHall
 	Or GenheerisFlags 4 GenheerisFlags
 
 DragonOffer:
@@ -449,12 +401,8 @@ DragonOffer:
 
 VoteLoop:
 	LoadCharacter AuxCounter
-	Compare SelStatus 1
-	IfNe
-	Goto VoteNext
-	Compare SelControl 128
-	IfGe
-	Goto NpcVote
+	if SelStatus != 1: Goto VoteNext
+	if SelControl >= 128: Goto NpcVote
 	PrintClear $SelName
 	Print " HOW DO YOU VOTE?"
 	HMenu Scratch10 2 "ATTACK" "JOIN TYRANTHRAXUS"
@@ -464,18 +412,10 @@ VoteLoop:
 	Goto SaveVote
 
 NpcVote:
-	Compare "GENHEERIS" $SelName
-	IfEq
-	Goto VoteNext
-	Compare SelAlignment 2
-	IfEq
-	Save 129 SelSide
-	Compare SelAlignment 5
-	IfEq
-	Save 129 SelSide
-	Compare SelAlignment 8
-	IfEq
-	Save 129 SelSide
+	if "GENHEERIS" == $SelName: Goto VoteNext
+	if SelAlignment == 2: Save 129 SelSide
+	if SelAlignment == 5: Save 129 SelSide
+	if SelAlignment == 8: Save 129 SelSide
 
 SaveVote:
 	Add 128 AuxCounter Scratch1
@@ -483,9 +423,7 @@ SaveVote:
 
 VoteNext:
 	Add 1 AuxCounter AuxCounter
-	Compare AuxCounter PartyCount
-	IfLt
-	Goto VoteLoop
+	if AuxCounter < PartyCount: Goto VoteLoop
 	Save 3 EncounterParamA
 	Save 9 EncounterParamB
 	Save 1 MaxDist
@@ -494,12 +432,8 @@ VoteNext:
 	ClearMonsters
 	LoadMonster 66 1 66
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto RetreatFromHall
-	Compare QuestTyranthraxus 255
-	IfNe
-	Save 254 QuestTyranthraxus
+	if CombatEnd == 129: Goto RetreatFromHall
+	if QuestTyranthraxus != 255: Save 254 QuestTyranthraxus
 	Or GenheerisFlags 16 TowerEndFlags
 	Save 1 TyranthraxusDefeated
 	Program 8

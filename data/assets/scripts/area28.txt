@@ -1,13 +1,9 @@
 event0:
 	Save 11 Scratch6
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch6
+	if Hours >= 14: Save 8 Scratch6
 	Save Scratch6 Sky
 	Save 10 SkyInside
-	Compare LeftMap 0
-	IfEq
-	Exit
+	if LeftMap == 0: Exit
 	Save 253 QuestZhentilOutpost
 	Save 255 Portrait
 	NewECL 25
@@ -25,33 +21,24 @@ DestFacing:
 	Data 1 0 0 3 3 0 0 1 1
 
 event1:
-	Compare AlarmLevel 0
-	IfNe
-	Goto AlarmCheck
+	if AlarmLevel != 0: Goto AlarmCheck
 
 CellDispatch:
 	And Cell 127 Scratch7
 	OnGoto Scratch7 6 Done EscortIn RestrictedGuards QuartersEnter ClimbableWall DwarfAttackCheck
 
 AlarmCheck:
-	Compare OutpostConquered 0
-	IfNe
-	Goto CellDispatch
+	if OutpostConquered != 0: Goto CellDispatch
 	Random 14 Scratch1
-	Compare Scratch1 AlarmLevel
-	IfGe
-	Goto CellDispatch
+	if Scratch1 >= AlarmLevel: Goto CellDispatch
 	Mul 5 AlarmLevel Scratch1
 	Add 1 AlarmLevel AlarmLevel
 	Save 57 Portrait
-	Compare Scratch1 30
-	IfGt
-	Goto DwarfAndCommandant
-	Compare Scratch1 10
-	IfEq
-	PrintClear "THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS."
-	IfEq
-	Goto CellDispatch
+	if Scratch1 > 30: Goto DwarfAndCommandant
+	if Scratch1 == 10 {
+		PrintClear "THERE IS GREAT CONFUSION AS THE GUARDS RUN TO THEIR POSTS."
+		Goto CellDispatch
+	}
 
 GuardsSpotYou:
 	SetupMonster 16 2 6
@@ -64,9 +51,7 @@ GuardsSpotYou:
 	Goto CellDispatch
 
 EscortIn:
-	Compare EscortedIn 0
-	IfNe
-	Goto FrontGateCheck
+	if EscortedIn != 0: Goto FrontGateCheck
 	PrintClear "YOU ARE BEING ESCORTED INTO ZHENTIL OUTPOST."
 	Gosub PressReturn
 	Save 0 Scratch6
@@ -78,26 +63,20 @@ EscortStep:
 	Gosub WalkSteps
 	GetTable Table994C Scratch6 Scratch1
 	OnGoto Scratch1 7 TourNothing TourInnerWall TourToKeep CommandantOffice TourBarracks TourWatchTowers TourQuarters
-	Compare Scratch1 6
-	IfEq
-	Goto Done
+	if Scratch1 == 6: Goto Done
 	Add 1 Scratch6 Scratch6
 	Goto EscortStep
 
 WalkSteps:
 	Save 1 Scratch2
-	Compare Scratch1 0
-	IfEq
-	Call CallRedraw
+	if Scratch1 == 0: Call CallRedraw
 	IfEq
 	Delay
 	IfEq
 	Return
 
 WalkStepLoop:
-	Compare Scratch2 Scratch1
-	IfGt
-	Return
+	if Scratch2 > Scratch1: Return
 	OnGoto Facing 4 StepNorth StepEast StepSouth StepWest
 	Call CallRedraw
 	Delay
@@ -168,12 +147,8 @@ TourQuarters:
 	Return
 
 RestrictedGuards:
-	CompareAnd QuestZhentilOutpost 0 AttackedGuards 0
-	IfNe
-	Goto Done
-	Compare NightInQuarters 1
-	IfEq
-	Goto Done
+	if QuestZhentilOutpost != 0 || AttackedGuards != 0: Goto Done
+	if NightInQuarters == 1: Goto Done
 	Save 57 Portrait
 	SetupMonster 16 0 6
 	PrintClear "THERE ARE FOUR GUARDS HERE.  THEIR LEADER SAYS, 'YOU ARE RESTRICTED TO YOUR QUARTERS.   RETURN TO THEM NOW.'  WHAT WILL YOU DO?"
@@ -204,9 +179,7 @@ AttackGuards:
 	ClearMonsters
 	LoadMonster 96 4 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto FleeStopped
+	if CombatEnd > 128: Goto FleeStopped
 	Goto SurrenderOrDie
 
 FleeStopped:
@@ -235,25 +208,17 @@ GuardWaveFight:
 	LoadMonster 96 16 11
 	LoadMonster 54 4 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto RunForGate
+	if CombatEnd > 128: Goto RunForGate
 	Add 20 AlarmFightScore AlarmFightScore
-	Compare AlarmFightScore 40
-	IfGe
-	Goto Done
+	if AlarmFightScore >= 40: Goto Done
 	PrintClear "MORE GUARDS RUSH UP TO ATTACK."
 	Goto GuardWaveFight
 
 DwarfAttackCheck:
-	CompareAnd AttackedGuards 1 OutpostFought 0
-	IfNe
-	Goto Done
+	if AttackedGuards != 1 || OutpostFought != 0: Goto Done
 
 DwarfAndCommandant:
-	Compare OutpostConquered 0
-	IfNe
-	Exit
+	if OutpostConquered != 0: Exit
 	PrintClear "A LARGE GROUP OF MEN LED BY A DWARF RUNS FOWARD TO ATTACK"
 	Save 13 Portrait
 	SetupMonster 13 2 6
@@ -265,9 +230,7 @@ DwarfAndCommandant:
 	LoadMonster 96 25 11
 	Combat
 	Save 1 OutpostFought
-	Compare CombatEnd 128
-	IfGt
-	Goto RunForGate
+	if CombatEnd > 128: Goto RunForGate
 	PrintClear "A LARGE GROUP OF MEN LED BY THE COMMANDANT RUSH FOWARD AND ATTACK."
 	Save 255 Portrait
 	SetupMonster 16 2 50
@@ -278,9 +241,7 @@ DwarfAndCommandant:
 	LoadMonster 54 24 11
 	LoadMonster 53 20 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto RunForGate
+	if CombatEnd > 128: Goto RunForGate
 	PrintClear "AFTER KILLING THE COMMANDANT THE REST OF THE OUTPOST EITHER SURRENDERS OR RUNS AWAY."
 	Save 1 QuestZhentilOutpost
 	Save 1 OutpostConquered
@@ -297,9 +258,7 @@ RunForGate:
 	ClearMonsters
 	LoadMonster 96 6 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto CaughtFleeing
+	if CombatEnd > 128: Goto CaughtFleeing
 	PrintClear "YOU ESCAPE FROM THE OUTPOST."
 	NewECL 25
 
@@ -308,12 +267,8 @@ CaughtFleeing:
 	Goto StripAndExpel
 
 QuartersEnter:
-	Compare GivenQuarters 1
-	IfNe
-	Goto RelaxOrWalk
-	Compare NightInQuarters 0
-	IfNe
-	Goto Done
+	if GivenQuarters != 1: Goto RelaxOrWalk
+	if NightInQuarters != 0: Goto Done
 	Save 1 NightInQuarters
 	PrintClear "IT IS NIGHT AND YOU ARE IN YOUR QUARTERS."
 	Delay
@@ -341,9 +296,7 @@ NightAmbush:
 	ClearMonsters
 	LoadMonster 53 4 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto NightFleeGuards
+	if CombatEnd > 128: Goto NightFleeGuards
 	Goto MoreMenAttack
 
 NightFleeGuards:
@@ -363,9 +316,7 @@ SecondWaveFight:
 	LoadMonster 54 5 11
 	LoadMonster 53 6 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto RanAndHid
+	if CombatEnd > 128: Goto RanAndHid
 	PrintClear "AN ALARM GOES OFF IN THE DISTANCE."
 	Save 1 AlarmLevel
 	Goto Done
@@ -401,9 +352,7 @@ DinnerWalkStep:
 	GetTable WalkFacingTable Scratch6 Facing
 	Gosub WalkSteps
 	Add 1 Scratch6 Scratch6
-	Compare Scratch6 10
-	IfLe
-	Goto DinnerWalkStep
+	if Scratch6 <= 10: Goto DinnerWalkStep
 	Save 255 Portrait
 	Picture 50
 	PrintClear "YOU ARRIVE AT THE OFFICERS MESS AND ARE SEATED WITH THE COMMANDANT AND HIS ADVISORS.  A FINE MEAL OF ROAST BOAR IS SERVED WITH A HEARTY RED WINE."
@@ -420,9 +369,7 @@ TopicCity:
 	OnGoto Scratch1 2 TalkNewPhlan TalkOldPhlan
 
 TopicNothing:
-	Compare TopicsDiscussed 0
-	IfNe
-	Goto ConversationDies
+	if TopicsDiscussed != 0: Goto ConversationDies
 	PrintClear "THE CONVERSATION BEGINS TO DIE DOWN.  THE COMMANDANT  STARTS A CONVERSATION BY SAYING 'WELL, ARE YOU HAVING MUCH TROUBLE WITH THE CREATURES FROM OLD PHLAN?'"
 	HMenu Scratch1 2 "TALK" "SAY LITTLE OR NOTHING"
 	OnGoto Scratch1 2 TalkOldPhlan ConversationDies
@@ -442,9 +389,7 @@ NoTyranthraxusTrouble:
 	OnGoto Scratch1 4 NoAnswer ForcesStrong ForcesAverage ForcesWeak
 
 TalkNewPhlan:
-	Compare TalkedNewPhlan 0
-	IfNe
-	Goto ConversationStale
+	if TalkedNewPhlan != 0: Goto ConversationStale
 	Save 1 TalkedNewPhlan
 	PrintClear "AS YOU TALK ABOUT NEW PHLAN THE COMMANDANT LISTENS CAREFULLY.  THE COMMANDANT SAYS 'IS IT TRUE THAT THE REAL POWER IN NEW PHLAN IS BISHOP BRACCIO?'"
 	HMenu Scratch1 3 "YES" "NO" "DON'T KNOW"
@@ -463,9 +408,7 @@ DontKnowAnswer:
 	Goto TopicDone
 
 TalkOldPhlan:
-	Compare TalkedOldPhlan 0
-	IfNe
-	Goto ConversationStale
+	if TalkedOldPhlan != 0: Goto ConversationStale
 	Save 1 TalkedOldPhlan
 	PrintClear "AS YOU TALK ABOUT OLD PHLAN'S INHABITANTS THE COMMANDANT SAYS 'I KNOW A LEGEND ABOUT A FIRE BEING CALLED TIRANTIKUS.  I BELIEVE, THAT TIRANTIKUS AND TYRANTHRAXUS ARE ONE AND THE SAME'."
 	Gosub PressReturn
@@ -474,18 +417,14 @@ TalkOldPhlan:
 	OnGoto Scratch1 3 TopicNothing TyranthraxusTrouble NoTyranthraxusTrouble
 
 TopicMagic:
-	Compare AdvisorAsked 0
-	IfNe
-	Goto ConversationStale
+	if AdvisorAsked != 0: Goto ConversationStale
 	Save 1 AdvisorAsked
 	PrintClear "ONE OF THE COMMANDANT'S ADVISORS ASKS YOU IF YOU'VE HEARD OF ANY UNIQUE MAGICAL ITEMS OR PLACES?"
 	HMenu Scratch1 3 "DON'T TALK" "LIE" "MENTION POOL OF RADIANCE"
 	OnGoto Scratch1 3 TopicNothing LieAboutMagic MentionPool
 
 TopicPolitics:
-	Compare TalkedPolitics 0
-	IfNe
-	Goto ConversationStale
+	if TalkedPolitics != 0: Goto ConversationStale
 	Save 1 TalkedPolitics
 	PrintClear "AS YOU MENTION POLITICS THE COMMANDANT SAYS 'I'VE HEARD THAT PHLAN'S TOWN COUNCIL IS CORRUPT, SPECIFICALLY ULRICH EBERHARD.  IS THIS TRUE?"
 	HMenu Scratch1 3 "YES" "NO" "DON'T KNOW"
@@ -525,9 +464,7 @@ MentionPool:
 
 TopicDone:
 	Gosub PressReturn
-	Compare TopicsDiscussed 2
-	IfEq
-	Goto CommandantLeaves
+	if TopicsDiscussed == 2: Goto CommandantLeaves
 	PrintClear "YOU CONTINUE YOUR CONVERSATION WITH THE COMMANDANT.  WHAT WILL BE YOUR NEXT TOPIC OF DISSCUSION?"
 	Add 1 TopicsDiscussed TopicsDiscussed
 	Goto DinnerTopicMenu
@@ -555,9 +492,7 @@ QuartersWalkStep:
 	GetTable QuartersFacingTable Scratch6 Facing
 	Gosub WalkSteps
 	Add 1 Scratch6 Scratch6
-	Compare Scratch6 10
-	IfLe
-	Goto QuartersWalkStep
+	if Scratch6 <= 10: Goto QuartersWalkStep
 	PrintClear "YOU ARRIVE BACK AT YOUR QUARTERS."
 	Delay
 	Goto QuartersEnter
@@ -572,19 +507,13 @@ ClimbOverWall:
 	Goto LeaveOutpost
 
 FrontGateCheck:
-	Compare QuestZhentilOutpost 0
-	IfNe
-	Goto NearFrontGate
-	Compare ReachedGate 0
-	IfNe
-	Goto Done
+	if QuestZhentilOutpost != 0: Goto NearFrontGate
+	if ReachedGate != 0: Goto Done
 	Save 1 ReachedGate
 	PrintClear "THE COMMOTION ALLOWS YOU TO GET TO THE FRONT GATE!"
 	Gosub PressReturn
 	Random 99 Scratch1
-	Compare Scratch1 75
-	IfGe
-	Goto NearFrontGate
+	if Scratch1 >= 75: Goto NearFrontGate
 	PrintClear "OUT OF THE COMMOTION A GROUP OF GUARDS ATTACK THE PARTY."
 	Save 57 Portrait
 	SetupMonster 16 2 6
@@ -620,12 +549,8 @@ PressReturn:
 	Return
 
 event2:
-	Compare QuestZhentilOutpost 0
-	IfNe
-	Goto RestCheckNight
-	Compare AttackedGuards 0
-	IfEq
-	Goto RestCheckNight
+	if QuestZhentilOutpost != 0: Goto RestCheckNight
+	if AttackedGuards == 0: Goto RestCheckNight
 
 RestAlarmed:
 	Save 100 RestChance
@@ -633,12 +558,8 @@ RestAlarmed:
 	Exit
 
 RestCheckNight:
-	Compare QuestZhentilOutpost 0
-	IfNe
-	Goto RestNormal
-	Compare NightInQuarters 0
-	IfNe
-	Goto RestAlarmed
+	if QuestZhentilOutpost != 0: Goto RestNormal
+	if NightInQuarters != 0: Goto RestAlarmed
 	Save 168 RestEvery
 	Save 100 RestChance
 	Exit
@@ -650,9 +571,7 @@ RestNormal:
 
 event3:
 	Save 0 RestChance
-	Compare NightInQuarters 0
-	IfEq
-	Goto EscortToDinner
+	if NightInQuarters == 0: Goto EscortToDinner
 	Save 57 Portrait
 	Goto GuardsSpotYou
 
@@ -660,15 +579,11 @@ event4:
 	Save 11 Scratch6
 	LoadPieces 1 2 9
 	LoadFiles 28 2 255
-	Compare Hours 14
-	IfGe
-	Save 8 Scratch6
+	if Hours >= 14: Save 8 Scratch6
 	Save Scratch6 Sky
 	Save 10 SkyInside
 	Save 0 NoCoords
-	Compare AreaKind 28
-	IfEq
-	Exit
+	if AreaKind == 28: Exit
 	Save 7 PartyX
 	Save 0 PartyY
 	Save 2 Facing

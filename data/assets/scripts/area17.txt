@@ -28,18 +28,14 @@ CampNotHostile:
 	Goto CampFriendlyCheck
 
 CampDayCheck:
-	Compare Hours 18
-	IfLt
-	Save 3 Scratch1
+	if Hours < 18: Save 3 Scratch1
 	Return
 
 CampFriendlyCheck:
 	And MarkFlags4 2 Scratch10
 	IfEq
 	Goto CampByStage
-	Compare Hours 18
-	IfLt
-	Save 1 Scratch1
+	if Hours < 18: Save 1 Scratch1
 	Return
 
 CampByStage:
@@ -47,9 +43,7 @@ CampByStage:
 
 StageLodging:
 	Save 4 Scratch1
-	Compare Cell 1
-	IfNe
-	Save 0 Scratch1
+	if Cell != 1: Save 0 Scratch1
 	Return
 
 StageGames:
@@ -60,27 +54,19 @@ StageKoboldWait:
 	Save 7 Scratch1
 
 StageNightCheck:
-	Compare Hours 1
-	IfGt
-	Save 5 Scratch1
+	if Hours > 1: Save 5 Scratch1
 	Return
 
 SetRestRules:
 	Gosub GetCampState
 	Save 0 RestEvery
 	Save 10 RestChance
-	CompareAnd Scratch1 1 Cell 4
-	IfEq
-	Save 0 Scratch1
+	if Scratch1 == 1 && Cell == 4: Save 0 Scratch1
 	GetTable RestChanceTable Scratch1 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Return
+	if Scratch10 == 0: Return
 	Save 1 RestEvery
 	Save 50 RestChance
-	Compare Scratch10 1
-	IfEq
-	Return
+	if Scratch10 == 1: Return
 	Sub Hours Scratch10 Scratch10
 	Mul Scratch10 12 RestEvery
 	Save 100 RestChance
@@ -89,9 +75,7 @@ SetRestRules:
 MakeAlliesNomads:
 	Save PartyCount Scratch1
 	Add NomadAllies PartyCount Scratch4
-	Compare NomadAllies 0
-	IfEq
-	Return
+	if NomadAllies == 0: Return
 
 MakeAlliesLoop:
 	LoadCharacter Scratch1
@@ -99,15 +83,11 @@ MakeAlliesLoop:
 	Add Scratch1 128 Scratch2
 	LoadCharacter Scratch2
 	Add Scratch1 1 Scratch1
-	Compare Scratch1 Scratch4
-	IfLt
-	Goto MakeAlliesLoop
+	if Scratch1 < Scratch4: Goto MakeAlliesLoop
 	Return
 
 CheckAttackedAlly:
-	Compare AttackedAlly 0
-	IfEq
-	Return
+	if AttackedAlly == 0: Return
 	Or MarkFlags4 2 MarkFlags4
 	And MarkFlags4 254 MarkFlags4
 	Return
@@ -118,9 +98,7 @@ RollNomadAllies:
 	And MarkFlags4 4 Scratch10
 	IfNe
 	Goto SizeKoboldBand
-	Compare Cell 4
-	IfEq
-	Goto SizeKoboldBand
+	if Cell == 4: Goto SizeKoboldBand
 	Random 6 Scratch10
 	Add 1 Scratch10 NomadAllies
 	Random 6 Scratch10
@@ -131,16 +109,12 @@ SizeKoboldBand:
 	Call CallLookAhead
 	PartyStrength Scratch10
 	Sub NomadAllies 56 Scratch9
-	Compare Scratch10 Scratch9
-	IfGt
-	Save Scratch9 Scratch10
+	if Scratch10 > Scratch9: Save Scratch9 Scratch10
 	Div Scratch9 2 Scratch9
 	Return
 
 RetreatOrFight:
-	Compare PartyX 11
-	IfLt
-	Goto FindRetreatZone
+	if PartyX < 11: Goto FindRetreatZone
 	PrintClear "THERE IS NOWHERE LEFT TO RETREAT. YOU MUST FIGHT."
 	Gosub PressToContinue
 	Compare 1 0
@@ -154,24 +128,14 @@ RetreatZoneLoop:
 	GetTable ZoneYMinTable Scratch10 Scratch8
 	GetTable ZoneXMaxTable Scratch10 Scratch7
 	GetTable ZoneYMaxTable Scratch10 Scratch6
-	Compare PartyX Scratch9
-	IfLt
-	Goto NextRetreatZone
-	Compare PartyY Scratch8
-	IfLt
-	Goto NextRetreatZone
-	Compare PartyX Scratch7
-	IfGt
-	Goto NextRetreatZone
-	Compare PartyY Scratch6
-	IfLe
-	Goto RetreatToZone
+	if PartyX < Scratch9: Goto NextRetreatZone
+	if PartyY < Scratch8: Goto NextRetreatZone
+	if PartyX > Scratch7: Goto NextRetreatZone
+	if PartyY <= Scratch6: Goto RetreatToZone
 
 NextRetreatZone:
 	Add 1 Scratch10 Scratch10
-	Compare Scratch10 12
-	IfLt
-	Goto RetreatZoneLoop
+	if Scratch10 < 12: Goto RetreatZoneLoop
 	Goto ExitToWilderness
 
 RetreatToZone:
@@ -189,9 +153,7 @@ HearWarCries:
 	OnGoto Facing 4 CriesLeft CriesBehind CriesRight CriesAhead
 
 FaceTheSound:
-	Compare Facing 3
-	IfEq
-	Goto PressToContinue
+	if Facing == 3: Goto PressToContinue
 	Print " YOU SPIN TO FACE THE SOUND."
 	Gosub PressToContinue
 	Save 3 Facing
@@ -216,9 +178,7 @@ CriesAhead:
 
 WalkToHut:
 	Save 1 Scratch10
-	Compare PartyX 4
-	IfLt
-	Goto WalkToHutStep
+	if PartyX < 4: Goto WalkToHutStep
 	Mul PartyY 12 Scratch1
 	Add PartyX Scratch1 Scratch1
 	GetTable WalkPathToHut Scratch1 Scratch10
@@ -231,9 +191,7 @@ WalkToHutStep:
 
 WalkToClearing:
 	Save 1 Scratch10
-	Compare PartyX 4
-	IfLt
-	Goto WalkToClearingStep
+	if PartyX < 4: Goto WalkToClearingStep
 	Mul PartyY 12 Scratch1
 	Add PartyX Scratch1 Scratch1
 	GetTable WalkPathToClearing Scratch1 Scratch10
@@ -247,12 +205,8 @@ WalkToClearingStep:
 WalkStep:
 	Clock 1
 	Gosub SetSky
-	Compare Scratch10 255
-	IfEq
-	Return
-	Compare Scratch10 Facing
-	IfEq
-	Call CallStepForward
+	if Scratch10 == 255: Return
+	if Scratch10 == Facing: Call CallStepForward
 	Save Scratch10 Facing
 	Call CallRedraw
 	Delay
@@ -273,9 +227,7 @@ PressToContinue:
 
 SetSky:
 	Save 11 AuxText
-	Compare Hours 14
-	IfGe
-	Save 8 AuxText
+	if Hours >= 14: Save 8 AuxText
 	Save AuxText Sky
 	Save 13 SkyInside
 	Return
@@ -298,9 +250,7 @@ ApproachHidePortrait:
 	Return
 
 event0:
-	Compare LeftMap 0
-	IfEq
-	Goto CheckLodgingExit
+	if LeftMap == 0: Goto CheckLodgingExit
 	PrintClear "THIS DIRECTION WILL TAKE YOU BACK INTO THE WILDERNESS. DO YOU STILL WANT TO GO THIS WAY?"
 	Gosub YesNoMenu
 	IfEq
@@ -314,29 +264,17 @@ CheckLodgingExit:
 	IfNe
 	Exit
 	And Cell 127 Scratch1
-	Compare Scratch1 1
-	IfGt
-	Exit
-	Compare CampStage 1
-	IfNe
-	Exit
-	Compare WallAhead 2
-	IfNe
-	Exit
+	if Scratch1 > 1: Exit
+	if CampStage != 1: Exit
+	if WallAhead != 2: Exit
 	Goto GuardEscort
 
 event1:
 	Gosub SetRestRules
 	Random 3 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Goto RoomEvents
-	Compare Scratch1 1
-	IfEq
-	Exit
-	Compare Scratch1 2
-	IfEq
-	Exit
+	if Scratch10 == 0: Goto RoomEvents
+	if Scratch1 == 1: Exit
+	if Scratch1 == 2: Exit
 
 RoomEvents:
 	OnGoto Scratch1 8 Done NomadsHostile KoboldRaid Done CampOutskirts Done MorningGreeting HeadmanAsks
@@ -357,9 +295,7 @@ Done:
 event4:
 	Save 1 NoCoords
 	Gosub SetSky
-	Compare AreaKind 17
-	IfEq
-	Exit
+	if AreaKind == 17: Exit
 	LoadFiles 17 2 255
 	LoadPieces 7 8 23
 	Save 1 PartyX
@@ -371,13 +307,9 @@ CampOutskirts:
 	And MarkFlags4 1 Scratch10
 	IfNe
 	Exit
-	Compare Hours 14
-	IfLe
-	Goto NomadsGather
+	if Hours <= 14: Goto NomadsGather
 	Random 99 Scratch10
-	Compare Scratch10 50
-	IfGe
-	Goto NomadsGather
+	if Scratch10 >= 50: Goto NomadsGather
 	PrintClear "YOU TRIP ON A WIRE TO THE ACCOMPANIMENT OF BELLS TINKLING. AFTER A MOMENT THERE IS A COMMOTION AHEAD OF YOU."
 	HMenu Scratch10 3 "FLEE" "ADVANCE CAUTIOUSLY" "ATTACK"
 	OnGoto Scratch10 2 ExitToWilderness NomadsGather
@@ -438,9 +370,7 @@ TribeCombat:
 	Exit
 
 CheckFled:
-	Compare CombatEnd 129
-	IfNe
-	Return
+	if CombatEnd != 129: Return
 
 LeaveCamp:
 	Save 1 Mark4
@@ -453,14 +383,10 @@ ExitToWilderness:
 	IfNe
 	Goto MarkLeftCamp
 	And MarkFlags4 1 Scratch10
-	Compare Scratch10 1
-	IfNe
-	Goto LoadWilderness
+	if Scratch10 != 1: Goto LoadWilderness
 
 MarkLeftCamp:
-	Compare QuestNomads 255
-	IfNe
-	Save 254 QuestNomads
+	if QuestNomads != 255: Save 254 QuestNomads
 
 LoadWilderness:
 	NewECL 26
@@ -487,9 +413,7 @@ NomadsGather:
 	PrintClear "THE BIGGEST, MEANEST, DIRTIEST NOMAD PUSHES HIS WAY TO THE FRONT OF THE CROWD. FIVE OTHER NOMADS STAND AROUND HIM AS IF TO PROTECT HIM."
 	Gosub PressToContinue
 	Save "TOMORROW" $AuxCounter
-	Compare Hours 14
-	IfLt
-	Save "TONIGHT" $AuxCounter
+	if Hours < 14: Save "TONIGHT" $AuxCounter
 	PrintClear "THE BIGGEST NOMAD, APPARENTLY THE CHIEF OR HEADMAN, ACKNOWLEDGES YOU WITH A NOD, 'WE WILL GIVE A FEAST IN YOUR HONOR "
 	Print $AuxCounter
 	Print ". WILL YOU JOIN US?'"
@@ -506,9 +430,7 @@ NomadsGather:
 
 AcceptFeast:
 	Or MarkFlags4 1 MarkFlags4
-	Compare Hours 14
-	IfLt
-	Goto CampGames
+	if Hours < 14: Goto CampGames
 	PrintClear "'YOU MUST BE TIRED FROM YOUR TRAVELS. WE WILL PROVIDE YOU WITH LODGING.' HE LEADS THE WAY TO A HUT WHICH IS HURRIEDLY BEING CLEARED OF ITS OCCUPANTS."
 	Gosub PressToContinue
 	Save 1 CampStage
@@ -660,9 +582,7 @@ RaidByStage:
 	And MarkFlags4 4 Scratch10
 	IfNe
 	Goto HostileRaid
-	Compare Cell 4
-	IfEq
-	Goto HostileRaid
+	if Cell == 4: Goto HostileRaid
 	OnGoto KoboldRaidStage 4 KoboldHorde KoboldsMelee KoboldsMelee KoboldLeader
 
 KoboldHorde:
@@ -685,9 +605,7 @@ KoboldFight:
 	Save 0 Surprise
 	Save 80 Morale
 	ClearMonsters
-	Compare NomadAllies 0
-	IfEq
-	Goto LoadKobolds
+	if NomadAllies == 0: Goto LoadKobolds
 	LoadMonster 40 NomadAllies 12
 
 LoadKobolds:
@@ -698,9 +616,7 @@ LoadKobolds:
 	Gosub MakeAlliesNomads
 	Combat
 	Gosub CheckAttackedAlly
-	Compare CombatEnd 129
-	IfNe
-	Goto KoboldWaveDone
+	if CombatEnd != 129: Goto KoboldWaveDone
 	Gosub RetreatOrFight
 	Goto KoboldRaid
 
@@ -771,9 +687,7 @@ LoadKoboldLeader:
 	And MarkFlags4 2 Scratch10
 	IfNe
 	Goto BetrayedOrFled
-	Compare CombatEnd 129
-	IfNe
-	Goto RaidWon
+	if CombatEnd != 129: Goto RaidWon
 
 BetrayedOrFled:
 	Or MarkFlags4 5 MarkFlags4

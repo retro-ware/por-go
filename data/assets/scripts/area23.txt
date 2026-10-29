@@ -5,9 +5,7 @@ TeleportToDest:
 	Save 255 HoldMove
 	RedrawView
 	Call CallRedraw
-	Compare Scratch1 3
-	IfEq
-	Goto LizardMenGroup
+	if Scratch1 == 3: Goto LizardMenGroup
 	Exit
 
 DestX:
@@ -42,20 +40,12 @@ SearchSecretDoor:
 
 SearchMemberLoop:
 	LoadCharacter Scratch10
-	Compare SelStatus 0
-	IfEq
-	Goto NextSearcher
+	if SelStatus == 0: Goto NextSearcher
 	Save Search Scratch9
-	Compare SelRace 2
-	IfEq
-	Add 1 Scratch9 Scratch9
-	Compare SelRace 4
-	IfEq
-	Add 1 Scratch9 Scratch9
+	if SelRace == 2: Add 1 Scratch9 Scratch9
+	if SelRace == 4: Add 1 Scratch9 Scratch9
 	Random 5 Scratch8
-	Compare Scratch8 Scratch9
-	IfGt
-	Goto NextSearcher
+	if Scratch8 > Scratch9: Goto NextSearcher
 
 SecretDoorFound:
 	Or Scratch1 SecretDoorsFound SecretDoorsFound
@@ -68,9 +58,7 @@ SecretDoorFound:
 
 NextSearcher:
 	Add Scratch10 1 Scratch10
-	Compare Scratch10 8
-	IfLt
-	Goto SearchMemberLoop
+	if Scratch10 < 8: Goto SearchMemberLoop
 	Return
 
 DoorInFront:
@@ -99,14 +87,10 @@ event0:
 	And Cell 31 Scratch1
 	IfEq
 	Exit
-	Compare Scratch1 10
-	IfGt
-	Exit
+	if Scratch1 > 10: Exit
 	Sub 1 Scratch1 Scratch1
 	GetTable Table9C40 Scratch1 Scratch10
-	Compare Scratch10 Facing
-	IfNe
-	Exit
+	if Scratch10 != Facing: Exit
 	Goto BlockUnfoundDoor
 
 event1:
@@ -137,9 +121,7 @@ event3:
 	Exit
 
 event4:
-	Compare AreaKind 23
-	IfEq
-	Exit
+	if AreaKind == 23: Exit
 	Save 1 NoCoords
 	Save 9 SkyInside
 	LoadFiles 23 2 255
@@ -180,9 +162,7 @@ RockRoomTeleport:
 	Goto RockTeleportAlt
 	Gosub ToggleRockFlag
 	GetTable Table9CE7 Scratch1 Scratch1
-	Compare Scratch1 255
-	IfEq
-	Goto ExitToArea22North
+	if Scratch1 == 255: Goto ExitToArea22North
 	Goto TeleportToDest
 
 RockTeleportAlt:
@@ -231,9 +211,7 @@ FlashTeleportCell:
 
 DialTeleport:
 	Gosub FlashTeleport
-	Compare DialColor 0
-	IfEq
-	Goto ExitToArea22South
+	if DialColor == 0: Goto ExitToArea22South
 	GetTable Table9DFA DialColor Scratch1
 	Goto TeleportToDest
 
@@ -268,9 +246,7 @@ LizardMenGroup:
 	OnGoto Scratch10 3 RedrawExit LizardMenAttack AfterLizardFight
 	Parlay 15 15 30 50 0 Scratch10
 	Add Scratch10 SelReaction Scratch10
-	Compare Scratch10 75
-	IfLt
-	Goto LizardMenAttack
+	if Scratch10 < 75: Goto LizardMenAttack
 	PrintClear "'SINCE YOU ARE NOT THE SERVANTS OF YARASH, WE WILL NOT KILL YOU. THE ENEMY OF MY ENEMY IS NOT MY ENEMY!'"
 	Goto RedrawExit
 
@@ -281,9 +257,7 @@ LizardMenAttack:
 	ClearMonsters
 	LoadMonster 57 5 57
 	Combat
-	Compare CombatEnd 129
-	IfNe
-	Exit
+	if CombatEnd != 129: Exit
 
 AfterLizardFight:
 	Save 2 Scratch1
@@ -309,9 +283,7 @@ VatRoom:
 
 VatLizardAmbush:
 	And RoomsVisited 8 Scratch10
-	CompareAnd Scratch10 0 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Search != 1: Exit
 	SetupMonster 57 0 57
 	PartySurprise Scratch8 Scratch9
 	Surprise Scratch8 Scratch9 4 1
@@ -320,9 +292,7 @@ VatLizardAmbush:
 	ClearMonsters
 	LoadMonster 58 3 57
 	Combat
-	Compare CombatEnd 129
-	IfEq
-	Goto AfterLizardFight
+	if CombatEnd == 129: Goto AfterLizardFight
 	Or RoomsVisited 8 RoomsVisited
 	Exit
 
@@ -336,9 +306,7 @@ AlchemistLab:
 
 FindNotebook:
 	And RoomsVisited 32 Scratch10
-	CompareAnd Scratch10 0 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Search != 1: Exit
 	PrintClear "YOU FIND A NOTEBOOK. A TYPICAL ENTRY READS, 'SUBJECT 213: PROGRESSING WELL, SCARS HEALING, UNABLE TO TALK YET. SUBJECT 214: DIED WHEN TREATED, FAILED AGAIN...'"
 	Or RoomsVisited 32 RoomsVisited
 	Exit
@@ -346,9 +314,7 @@ FindNotebook:
 JunkStoreroom:
 	PrintClear "YOU ARE IN A STOREROOM HOLDING A VAST COLLECTION OF MAGICAL JUNK."
 	And RoomsVisited2 Scratch1 Scratch10
-	CompareAnd Scratch10 0 Search 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Search != 1: Exit
 	Print " HOWEVER, HIDDEN AMIDST ALL THIS JUNK YOU FIND SOME TREASURE."
 	Gosub PressReturn
 	Or RoomsVisited2 Scratch1 RoomsVisited2
@@ -359,9 +325,7 @@ JunkStoreroom:
 
 PasswordDoor:
 	And RoomsVisited 64 Scratch10
-	CompareAnd Scratch10 0 Facing 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Facing != 1: Exit
 
 AskPassword:
 	LoadFiles 255 16 255
@@ -382,9 +346,7 @@ AskPassword:
 	Gosub YesNoMenu
 	IfNe
 	Goto AskPassword
-	Compare $Scratch1 "NOKNOK"
-	IfEq
-	Goto RedrawExit
+	if $Scratch1 == "NOKNOK": Goto RedrawExit
 	PrintClear "SUDDENLY A HIDDEN DOOR BURSTS OPEN AND A HORRIBLE MONSTER BURSTS FORTH SHOUTING 'KIAIAIAIAIAIAIAI!' IT WADES INTO YOU TEARING YOU APART WITH 3-INCH LONG CLAWS."
 	Gosub PressReturn
 	Damage 224 1 1 200 0
@@ -399,9 +361,7 @@ PasswordRunes:
 
 FountainChamber:
 	And RoomsVisited 128 Scratch10
-	CompareAnd Scratch10 0 Facing 1
-	IfNe
-	Exit
+	if Scratch10 != 0 || Facing != 1: Exit
 	Picture 45
 	PrintClear "YOU HAVE ENTERED THE FOUNTAIN CHAMBER. IN THE CENTER OF THE ROOM A COLUMN OF BLACK FOUL WATER JETS UP THROUGH A CLEAR PIPE AND OUT THE ROOF."
 	Gosub PressReturn
@@ -414,45 +374,29 @@ FountainMenu:
 	PrintClear "WHAT DO YOU DO?"
 	HMenu Scratch1 2 "MOVE QUICKLY AWAY" "DESTROY THE EQUIPMENT"
 	OnGoto Scratch1 1 MoveAway
-	Compare Scratch4 0
-	IfNe
-	Add 1 Scratch4 Scratch4
-	Compare Scratch4 3
-	IfGt
-	Goto FountainExplodes
+	if Scratch4 != 0: Add 1 Scratch4 Scratch4
+	if Scratch4 > 3: Goto FountainExplodes
 
 DestroyEquipment:
 	Add Scratch3 1 Scratch3
-	Compare Scratch3 10
-	IfGe
-	Goto AllEquipmentDestroyed
+	if Scratch3 >= 10: Goto AllEquipmentDestroyed
 	Random 9 Scratch10
-	Compare Scratch10 0
-	IfEq
-	Add 1 Scratch4 Scratch4
-	Compare Scratch4 0
-	IfEq
-	Goto DestroyEquipment
+	if Scratch10 == 0: Add 1 Scratch4 Scratch4
+	if Scratch4 == 0: Goto DestroyEquipment
 	PrintClear "YOU HEAR A WHINING FROM THE PIPES THE BLACK LIQUID IS BUBBLING. HOWEVER, NOT ALL THE EQUIPMENT IS YET DESTROYED."
 	Goto FountainMenu
 
 AllEquipmentDestroyed:
 	PrintClear "YOU HAVE DESTROYED THE LAST PIECE OF EQUIPMENT. "
 	Gosub MarkFountainDone
-	Compare Scratch4 0
-	IfEq
-	Goto RedrawExit
+	if Scratch4 == 0: Goto RedrawExit
 	Print "THE WHINE SUBSIDES AS THE PRESSURE IS RELEASED."
 	Goto RedrawExit
 
 MoveAway:
-	Compare Scratch4 0
-	IfEq
-	Goto FountainDone
+	if Scratch4 == 0: Goto FountainDone
 	Gosub MarkFountainDone
-	Compare Scratch4 3
-	IfGe
-	Goto RunTooLate
+	if Scratch4 >= 3: Goto RunTooLate
 	PrintClear "YOU RUN FOR THE EXIT. AS YOU SLAM THE DOOR BEHIND YOU, YOU HEAR AN ENORMOUS EXPLOSION. THE EQUIPMENT IS NOW CERTAINLY DESTROYED."
 	Gosub PressReturn
 	Goto TeleportToDest
@@ -499,9 +443,7 @@ SlavesAttack:
 	LoadMonster 57 3 57
 	Combat
 	Save 0 Scratch1
-	Compare CombatEnd 129
-	IfEq
-	Goto TeleportToDest
+	if CombatEnd == 129: Goto TeleportToDest
 	Or RoomsVisited2 2 RoomsVisited2
 	Exit
 
@@ -525,9 +467,7 @@ FightMage:
 	LoadMonster 58 6 57
 	Combat
 	Save 0 Scratch1
-	Compare CombatEnd 129
-	IfEq
-	Goto TeleportToDest
+	if CombatEnd == 129: Goto TeleportToDest
 	Or RoomsVisited2 4 RoomsVisited2
 	Gosub FlagBossAngry
 	Exit
@@ -536,9 +476,7 @@ MarkFountainDone:
 	Or RoomsVisited 128 RoomsVisited
 
 FlagBossAngry:
-	Compare Boss 255
-	IfNe
-	Save 254 Boss
+	if Boss != 255: Save 254 Boss
 	Return
 
 ColorDial:
@@ -580,9 +518,7 @@ SearchDeskPapers:
 	And RoomsVisited2 128 Scratch10
 	IfNe
 	Exit
-	Compare Search 0
-	IfEq
-	Exit
+	if Search == 0: Exit
 	Or RoomsVisited2 128 RoomsVisited2
 	PrintClear "AMONG THE PAPERS ON THE DESK YOU FIND THE FOLLOWING AND SLIP THEM INTO YOUR JOURNAL:"
 	Gosub PressReturn

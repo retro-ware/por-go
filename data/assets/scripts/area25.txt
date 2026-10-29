@@ -1,16 +1,8 @@
 event0:
-	Compare InLair 255
-	IfEq
-	Exit
-	Compare MapY 2
-	IfLe
-	Gosub EdgeNorth
-	Compare MapX 2
-	IfLe
-	Gosub EdgeWest
-	Compare MapX 15
-	IfEq
-	Gosub EdgeEast
+	if InLair == 255: Exit
+	if MapY <= 2: Gosub EdgeNorth
+	if MapX <= 2: Gosub EdgeWest
+	if MapX == 15: Gosub EdgeEast
 	Gosub CheckTerrainAhead
 	Exit
 
@@ -36,9 +28,7 @@ ExitToCity:
 	NewECL 26
 
 EdgeEastCorner:
-	Compare MapY 31
-	IfNe
-	Goto ExitToCity
+	if MapY != 31: Goto ExitToCity
 	Save 255 HoldMove
 	Return
 
@@ -50,15 +40,12 @@ CheckTerrainAhead:
 	Save 0 Scratch1
 
 CheckTerrainLoop:
-	Compare Scratch1 8
-	IfEq
-	Return
+	if Scratch1 == 8: Return
 	GetTable BlockedTerrain Scratch1 Scratch2
-	Compare ProbeWall Scratch2
-	IfEq
-	Save 255 HoldMove
-	IfEq
-	Return
+	if ProbeWall == Scratch2 {
+		Save 255 HoldMove
+		Return
+	}
 	Add 1 Scratch1 Scratch1
 	Goto CheckTerrainLoop
 
@@ -91,21 +78,15 @@ ProbeW:
 	Return
 
 event1:
-	Compare InLair 255
-	IfEq
-	Goto LairCell
+	if InLair == 255: Goto LairCell
 	Save 0 Scratch1
 	Save 0 Scratch4
 
 FindSiteRow:
-	Compare Scratch1 8
-	IfGe
-	Goto RollEncounter
+	if Scratch1 >= 8: Goto RollEncounter
 	GetTable SiteRowEnd Scratch1 Scratch3
 	GetTable SiteRowY Scratch1 Scratch2
-	Compare Scratch2 MapY
-	IfEq
-	Goto SiteRowFound
+	if Scratch2 == MapY: Goto SiteRowFound
 	Add 1 Scratch1 Scratch1
 	Add Scratch3 Scratch4 Scratch4
 	Goto FindSiteRow
@@ -114,13 +95,9 @@ SiteRowFound:
 	Add Scratch4 Scratch3 Scratch3
 
 FindSiteX:
-	Compare Scratch4 Scratch3
-	IfGe
-	Goto RollEncounter
+	if Scratch4 >= Scratch3: Goto RollEncounter
 	GetTable SiteX Scratch4 Scratch5
-	Compare Scratch5 MapX
-	IfEq
-	Goto SiteFound
+	if Scratch5 == MapX: Goto SiteFound
 	Add 1 Scratch4 Scratch4
 	Goto FindSiteX
 
@@ -132,9 +109,7 @@ SiteNone:
 	Exit
 
 DragonInDistance:
-	Compare DragonSeen 0
-	IfNe
-	Goto Done
+	if DragonSeen != 0: Goto Done
 	PrintClear "OFF IN THE DISTANCE YOU SEE A LARGE DRAGON FLYING THROUGH THE AIR.  AS YOU WATCH, HE SWOOPS DOWN BEHIND A MOUNTAIN AND DISAPPEARS."
 	Save 1 DragonSeen
 	Goto Done
@@ -143,9 +118,7 @@ DragonCave:
 	ClearBox
 	Call CallClearView
 	Picture 32
-	Compare DragonSeen 255
-	IfEq
-	Goto LargeCave
+	if DragonSeen == 255: Goto LargeCave
 	PrintClear "AS YOU HIKE THROUGH THE MOUNTAINS, A LARGE DRAGON FLYS ABOVE YOU.  IT CIRCLES THEN SWOOPS DOWN AND LANDS IN FRONT OF A CAVE.  IT DISAPPEARS INTO A CAVE."
 	Save 255 DragonSeen
 	Goto CaveMenu
@@ -164,9 +137,7 @@ EnterDragonCave:
 	NewECL 19
 
 AnkhegAmbush:
-	Compare AnkhegsDefeated 0
-	IfNe
-	Goto Done
+	if AnkhegsDefeated != 0: Goto Done
 	SetupMonster 65 1 65
 	PrintClear "AS YOU WALK THROUGH THIS AREA TWO ANHKHEGS ERUPT FROM THE GROUND BENEATH YOU."
 	Save 90 Morale
@@ -174,30 +145,20 @@ AnkhegAmbush:
 	LoadMonster 65 2 65
 	ClearBox
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto ExitEvent
+	if CombatEnd > 128: Goto ExitEvent
 	Save 1 AnkhegsDefeated
 	Exit
 
 SlaverCaravan:
-	Compare Mark3 255
-	IfNe
-	Goto Done
-	CompareAnd QuestBivant 0 SlaverCaravanSeen 0
-	IfNe
-	Goto Done
+	if Mark3 != 255: Goto Done
+	if QuestBivant != 0 || SlaverCaravanSeen != 0: Goto Done
 	PrintClear "A SMALL CARAVAN OF SLAVERS RIDE BY YOU TOWARD THE BUCCANEER BASE."
 	Save 1 SlaverCaravanSeen
 	Goto Done
 
 BuccaneerBaseSite:
-	Compare Mark3 255
-	IfNe
-	Goto Done
-	Compare QuestBivant 0
-	IfNe
-	Goto Done
+	if Mark3 != 255: Goto Done
+	if QuestBivant != 0: Goto Done
 	ClearBox
 	Call CallClearView
 	Picture 39
@@ -210,26 +171,19 @@ EnterBuccaneerBase:
 	NewECL 1
 
 GuardsRideBy:
-	Compare GuardsRideBySeen 0
-	IfNe
-	Goto Done
+	if GuardsRideBySeen != 0: Goto Done
 	PrintClear "A GROUP OF ARMED GUARDS RIDE BY."
 	Save 1 GuardsRideBySeen
 	Goto Done
 
 OutpostRiders:
-	Compare ZhentilMission 255
-	IfNe
-	Goto KeepRiders
-	Compare QuestZhentilOutpost 253
-	IfGt
-	Goto KeepRiders
-	IfEq
-	Save 1 GuardsRideBySeen
-	IfEq
-	Save 254 QuestZhentilOutpost
-	IfEq
-	Goto Done
+	if ZhentilMission != 255: Goto KeepRiders
+	if QuestZhentilOutpost > 253: Goto KeepRiders
+	also if QuestZhentilOutpost == 253 {
+		Save 1 GuardsRideBySeen
+		Save 254 QuestZhentilOutpost
+		Goto Done
+	}
 	ClearBox
 	Call CallClearView
 	Picture 33
@@ -247,9 +201,7 @@ EscortToOutpost:
 	NewECL 28
 
 KeepRiders:
-	Compare KeepRidersFought 0
-	IfNe
-	Goto Done
+	if KeepRidersFought != 0: Goto Done
 	ClearBox
 	Call CallClearView
 	Picture 33
@@ -263,9 +215,7 @@ FightKeepRiders:
 	ClearMonsters
 	LoadMonster 54 12 11
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Save 255 KeepRidersFought
 	Exit
 
@@ -285,22 +235,16 @@ LeaveWilderness:
 RollEncounter:
 	Random 19 Scratch1
 	Save 0 ForceEncounter25
-	Compare Scratch1 0
-	IfNe
-	Goto Done
+	if Scratch1 != 0: Goto Done
 
 RandomEncounter:
 	Gosub PickEncounter
-	CompareAnd Scratch1 20 ForceEncounter25 0
-	IfEq
-	Goto SmallDarkCave
+	if Scratch1 == 20 && ForceEncounter25 == 0: Goto SmallDarkCave
 	GetTable EncSurpriseA EncounterType25 Scratch4
 	GetTable EncSurpriseB EncounterType25 Scratch5
 	PartySurprise Scratch1 Scratch2
 	Surprise Scratch1 Scratch2 Scratch4 Scratch5
-	Compare Scratch5 9
-	IfEq
-	And Surprise 1 Surprise
+	if Scratch5 == 9: And Surprise 1 Surprise
 	OnGoto Surprise 4 SpotGroup PartySurprised SurpriseGroup FaceToFace
 
 SpotGroup:
@@ -334,43 +278,31 @@ EncounterFight:
 	Save AuxEncResult2 Morale
 	ClearMonsters
 	LoadMonster AuxMonster EncounterCount25 AuxTemp9
-	Compare EncounterExtraCount25 0
-	IfEq
-	Goto StartCombat
+	if EncounterExtraCount25 == 0: Goto StartCombat
 	LoadMonster AuxPartyStrength EncounterExtraCount25 AuxTemp9
 
 StartCombat:
 	ClearBox
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto ExitEvent
+	if CombatEnd > 128: Goto ExitEvent
 	Exit
 
 EncounterParlay:
-	Compare AuxMember 0
-	IfEq
-	Goto EncounterFight
-	Compare AuxMember 50
-	IfEq
-	Goto FriendlyGroup
+	if AuxMember == 0: Goto EncounterFight
+	if AuxMember == 50: Goto FriendlyGroup
 	Parlay 20 10 50 0 30 Scratch1
 	Random 30 Scratch2
 	Add Scratch1 Scratch2 Scratch1
 	Add Scratch1 SelReaction Scratch1
 	Add Scratch1 AuxEncBonus Scratch1
-	Compare Scratch1 140
-	IfLt
-	Goto ParlayConvince
+	if Scratch1 < 140: Goto ParlayConvince
 	PrintClear "THE "
 	Print $AuxMonsterName
 	Print " FALL FOR YOUR SPARKLING PERSONALITY AND WANDER AWAY WITHOUT A FIGHT."
 	Goto Done
 
 ParlayConvince:
-	Compare Scratch1 100
-	IfLt
-	Goto ParlayInsult
+	if Scratch1 < 100: Goto ParlayInsult
 	PrintClear "YOU CONVINCE THE "
 	Print $AuxMonsterName
 	Print " THAT COMBAT IS NOT NECESSARY AND YOU GO ON YOUR WAY."
@@ -472,9 +404,7 @@ ApproachSow:
 	LoadMonster 120 1 120
 	Combat
 	Save 0 MonsterHit
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 4 Scratch1
 	Exit
 
@@ -518,9 +448,7 @@ AnkhegLunges:
 	ClearMonsters
 	LoadMonster 65 1 65
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 16 DragonCaveFlags
 	Exit
 
@@ -537,9 +465,7 @@ GiganticSnake:
 	ClearMonsters
 	LoadMonster 60 1 60
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 32 DragonCaveFlags
 	Exit
 
@@ -553,9 +479,7 @@ SnakeFalls:
 	ClearMonsters
 	LoadMonster 60 1 60
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 64 DragonCaveFlags
 	Exit
 
@@ -572,9 +496,7 @@ AttackThriKreen:
 	ClearMonsters
 	LoadMonster 118 2 118
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags 128 DragonCaveFlags
 	Exit
 
@@ -587,9 +509,7 @@ ThriKreenWarriors:
 	ClearMonsters
 	LoadMonster 118 3 118
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags2 1 DragonCaveFlags2
 	Exit
 
@@ -603,9 +523,7 @@ ThriKreenChest:
 	LoadMonster 118 4 118
 	Treasure 0 #07D0 0 #03E8 0 3 1 129
 	Combat
-	Compare CombatEnd 128
-	IfGt
-	Goto StepBack
+	if CombatEnd > 128: Goto StepBack
 	Or DragonCaveFlags2 2 DragonCaveFlags2
 	Exit
 
@@ -636,9 +554,7 @@ StepBack:
 
 PickEncounter:
 	Random 20 Scratch1
-	CompareAnd Scratch1 20 ForceEncounter25 0
-	IfEq
-	Return
+	if Scratch1 == 20 && ForceEncounter25 == 0: Return
 	Random 19 Scratch1
 	OnGoto Scratch1 20 PickBoars PickBoars PickBoars PickMantis PickTigers PickTigers PickTigers PickThriKreens PickThriKreens PickAnkheg PickCentaurs PickCentaurs PickSoldiers PickSoldiers PickThieves BuccaneerBaseSite PickQuicklings PickQuicklings PickSnakes PickSnakes
 	GetTable EncData9 EncounterType25 AuxTemp9
@@ -657,37 +573,27 @@ PickEncounter:
 
 GroupSizeLarge:
 	Div Scratch1 3 Scratch1
-	Compare Scratch1 0
-	IfLe
-	Save 1 Scratch1
+	if Scratch1 <= 0: Save 1 Scratch1
 	Goto SplitGroups
 
 GroupSizeMedium:
 	Div Scratch1 2 Scratch1
-	Compare Scratch1 0
-	IfLe
-	Save 1 Scratch1
+	if Scratch1 <= 0: Save 1 Scratch1
 
 SplitGroups:
 	Save 0 EncounterExtraCount25
 	Save Scratch1 Scratch3
 	GetTable EncGroupSize EncounterType25 AuxMenuChoice
-	Compare AuxMenuChoice 0
-	IfEq
-	Goto CapGroupSize
+	if AuxMenuChoice == 0: Goto CapGroupSize
 
 SplitGroupsLoop:
-	Compare Scratch3 AuxMenuChoice
-	IfLt
-	Goto CapGroupSize
+	if Scratch3 < AuxMenuChoice: Goto CapGroupSize
 	Add 1 EncounterExtraCount25 EncounterExtraCount25
 	Sub AuxMenuChoice Scratch3 Scratch3
 	Goto SplitGroupsLoop
 
 CapGroupSize:
-	Compare Scratch1 56
-	IfGe
-	Sub Scratch2 56 Scratch1
+	if Scratch1 >= 56: Sub Scratch2 56 Scratch1
 	Save Scratch1 EncounterCount25
 	Return
 
@@ -742,9 +648,7 @@ PickSnakes:
 	Return
 
 MarkKeepOnMap:
-	Compare Mark3 255
-	IfEq
-	Return
+	if Mark3 == 255: Return
 	Save 12 ProbeX
 	Save 31 ProbeY
 	Save 97 ProbeCell
@@ -817,9 +721,7 @@ EncMonster2:
 	Data 10 120 74 119 118 65 67 54 51 100 60
 
 event2:
-	Compare In3D 1
-	IfEq
-	Goto RestInside
+	if In3D == 1: Goto RestInside
 	Save 10 RestChance
 	Save 96 RestEvery
 	Exit
@@ -833,9 +735,7 @@ event3:
 	Goto RandomEncounter
 
 event4:
-	Compare InLair 255
-	IfEq
-	Goto LoadLairFiles
+	if InLair == 255: Goto LoadLairFiles
 	Save 0 In3D
 	Save 0 NoCoords
 	LoadFiles 4 4 0
