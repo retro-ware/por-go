@@ -59,6 +59,7 @@ func (e *Engine) DrawPicture(x, y int, im *dax.Image, frame int) {
 	e.S.Lock()
 	defer e.S.Unlock()
 	e.blit(x*8, y*8, w, im.Height, d, -1, false)
+	e.picture(x*8, y*8, w, im.Height, d, -1)
 }
 
 // blit writes h rows of w pixels at pixel (x0,y0) with ega.Set's rules (16
@@ -148,4 +149,5 @@ func (e *Engine) DrawPictureMasked(x, y int, im *dax.Image, frame, mode int) {
 		m = im.Mask
 	}
 	e.blit(x*8, y*8, w, im.Height, d, m, e.pageDraw)
+	e.picture(x*8, y*8, w, im.Height, d, m)
 }

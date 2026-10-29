@@ -1,7 +1,7 @@
 // Package remaster shows the game with the Blobber renderer: the 3D view
 // fills the window, and the original's windows are laid over it. It only
-// reads the game, through engine.View and the classic frame, so switching
-// to and from it never touches the game's state.
+// reads the game, through engine.View, so drawing never touches the
+// game's state.
 package remaster
 
 import (
@@ -17,18 +17,16 @@ import (
 	"blobber"
 	"blobber/maps"
 
-	"por/ega"
 	"por/engine"
 	"por/pal"
 	"por/present/battle"
-	"por/present/classic"
 )
 
 // Presenter draws the remastered screen. Screens it has no remaster for
-// (no remastered map, combat, sheets, shops, the title) it leaves to
-// Classic, which it shares with the classic mode so its frame is current.
+// (no remastered map, sheets, shops, the title) it draws as the original
+// laid them out, from the View's page (page.go).
 type Presenter struct {
-	Classic *classic.Presenter
+	pg page // the original's screen, drawn from the View
 
 	view      *blobber.View
 	failed    bool                        // the renderer could not start: classic from then on
@@ -68,9 +66,9 @@ type Presenter struct {
 	rowsImg   *gpu.Image                  // the combat rows, drawn at scale 1
 }
 
-// Draw shows the game on dst and returns where the classic picture went
+// Draw shows the game on dst and returns where the whole page went
 // (zero when it is not on screen: the mouse then points at nothing).
-func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v engine.View) classic.Rect {
+func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
 	p.fight = v.Battle != nil && !p.failed
 	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
@@ -79,16 +77,16 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		p.fightView = v.Battle
 		p.battle.Draw(dst, v.Battle)
 		p.drawFight(dst, note.Glyph, v)
-		return classic.Rect{}
+		return Rect{}
 	}
 	sc := p.scene(v)
 	if sc == nil || !v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText) {
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
-		return p.Classic.Draw(dst, scr, note)
+		return p.drawPage(dst, v, note)
 	}
 	p.active = true
-	frame := p.Classic.Frame(scr, note)
+	frame := p.pageImage(v, note)
 	cam := blobber.Camera{X: v.X, Y: v.Y, Dir: int(v.Facing)}
 	if name := areaMaps[v.Area]; name != p.shown {
 		p.view.Show(sc, cam)
@@ -161,7 +159,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		p.menuSel, p.keys = v.Menu.Sel, keys
 		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
 	}
-	if note.Show { // the toast (font name ...): the strip Frame wrote it into
+	if note.Show { // the toast (font name ...): the strip pageImage wrote it into
 		n := min(len(note.Text)+2, 40) * 8
 		r := image.Rect((pal.W-n)/2, 4, (pal.W+n)/2, 12)
 		op := &gpu.DrawImageOptions{}
@@ -169,7 +167,7 @@ func (p *Presenter) Draw(dst *gpu.Image, scr *ega.Screen, note classic.Note, v e
 		op.GeoM.Translate(float64(dst.Bounds().Dx())/2-k*float64(n)/2, k*4)
 		dst.DrawImage(frame.SubImage(r).(*gpu.Image), op)
 	}
-	return classic.Rect{}
+	return Rect{}
 }
 
 // Key takes key k before the game when the remastered view is up: Enter

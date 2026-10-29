@@ -11,7 +11,6 @@ import (
 	"blobber"
 
 	"por/engine"
-	"por/present/classic"
 )
 
 // The party's portrait cards: each member's face in the game's window
@@ -66,7 +65,7 @@ func (b *borders) update(t [3]image.Image) {
 }
 
 // setup takes this frame's font and border tiles from the game.
-func (p *Presenter) setup(note classic.Note, v engine.View) {
+func (p *Presenter) setup(note Note, v engine.View) {
 	p.glyph, blobber.Glyph = note.Glyph, note.Glyph
 	p.border.update(v.Border)
 	if p.faceImgs == nil {

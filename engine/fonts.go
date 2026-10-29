@@ -86,8 +86,7 @@ func (e *Engine) cycleFont(step int) {
 	for y := range e.ext.cells {
 		for x := range e.ext.cells[y] {
 			c := &e.ext.cells[y][x]
-			if !c.set || !e.cellShows(x, y, c) {
-				c.set = false
+			if !c.set {
 				continue
 			}
 			e.paintChar(x, y, int(c.colour), int(c.bg), c.c, c.upcase)

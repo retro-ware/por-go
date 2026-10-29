@@ -93,7 +93,7 @@ func (e *Engine) fillCells(x1, y1, x2, y2 int) {
 		e.Trace("0709:00B7", "FillCells", x1, y1, x2, y2, 1, 0)
 	}
 	e.S.Lock()
-	e.S.Fill(x1*8, y1*8, x2*8+8, y2*8+8, 0)
+	e.fill(x1*8, y1*8, x2*8+8, y2*8+8, 0)
 	e.S.Unlock()
 }
 

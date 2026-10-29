@@ -38,15 +38,13 @@ import (
 	"por/ega"
 	"por/engine"
 	"por/pal"
-	"por/present/classic"
 	"por/present/remaster"
 )
 
 type game struct {
 	scr      *ega.Screen
 	eng      *engine.Engine
-	classic  classic.Presenter
-	remaster remaster.Presenter // draws through classic where it has no remaster yet
+	remaster remaster.Presenter
 	queue    []uint16           // keys still to send, one each time the engine waits (sendKeys)
 
 	pads    []gpu.GamepadID // input buffers, reused each tick
@@ -57,7 +55,7 @@ type game struct {
 	stickHeld int    // ticks it has been held
 
 	dsf   float64      // device scale factor of the last Layout
-	pic   classic.Rect // where the picture is drawn, in device pixels
+	pic   remaster.Rect // where the picture is drawn, in device pixels
 	wheel float64      // wheel movement not yet sent as a step
 	sent  bool         // input went to the engine this tick
 	ticks int          // Update calls, counted only for POR_SHOT
@@ -309,11 +307,11 @@ func (g *game) gamepad(id gpu.GamepadID) {
 
 func (g *game) Draw(dst *gpu.Image) {
 	text, at := g.eng.Note()
-	note := classic.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
+	note := remaster.Note{Text: text, Show: time.Since(at) < 2*time.Second, Glyph: g.eng.Glyph}
 	if g.remaster.Inventory(dst, note, g.eng.View()) { // the inventory screen
-		g.pic = classic.Rect{}
+		g.pic = remaster.Rect{}
 	} else {
-		g.pic = g.remaster.Draw(dst, g.scr, note, g.eng.View())
+		g.pic = g.remaster.Draw(dst, note, g.eng.View())
 	}
 	if shot != "" && g.ticks > 30*(len(shotKeys)+4) {
 		saveShot(dst)
@@ -467,7 +465,6 @@ func main() {
 	go eng.Run()
 
 	g := &game{scr: scr, eng: eng, dsf: 1}
-	g.remaster.Classic = &g.classic
 	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale)*6/5) // 4:3 like a CRT
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")

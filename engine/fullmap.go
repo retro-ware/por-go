@@ -180,14 +180,15 @@ func (e *Engine) saveScreen() func() {
 	for i := range saved {
 		saved[i] = e.S.Get(i%0x140, i/0x140)
 	}
-	cells := e.ext.cells
+	cells, pg := e.ext.cells, e.pg
+	pg.layers = append([]layer(nil), pg.layers...)
 	e.S.Unlock()
 	return func() {
 		e.S.Lock()
 		for i, c := range saved {
 			e.S.Set(i%0x140, i/0x140, c)
 		}
-		e.ext.cells = cells
+		e.ext.cells, e.pg = cells, pg
 		e.S.Unlock()
 	}
 }
@@ -342,10 +343,10 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 	defer e.S.Unlock()
 	e.drawMap(e.S, fmX, fmY, fmCell, m, letter)
 	px, py := fmX+cx*fmCell, fmY+cy*fmCell
-	e.S.Fill(px, py, px+fmCell, py+1, 14)
-	e.S.Fill(px, py+fmCell-1, px+fmCell, py+fmCell, 14)
-	e.S.Fill(px, py, px+1, py+fmCell, 14)
-	e.S.Fill(px+fmCell-1, py, px+fmCell, py+fmCell, 14)
+	e.fill(px, py, px+fmCell, py+1, 14)
+	e.fill(px, py+fmCell-1, px+fmCell, py+fmCell, 14)
+	e.fill(px, py, px+1, py+fmCell, 14)
+	e.fill(px+fmCell-1, py, px+fmCell, py+fmCell, 14)
 	return texts, first
 }
 

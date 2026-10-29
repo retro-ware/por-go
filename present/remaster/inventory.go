@@ -18,7 +18,6 @@ import (
 
 	"por/engine"
 	"por/pal"
-	"por/present/classic"
 )
 
 // The inventory screen (F1-F8, Items): the member's Eye of the Beholder
@@ -278,7 +277,7 @@ const actLook engine.ActKind = -1
 
 // Inventory draws the inventory screen when the game shows it, and
 // reports whether it did.
-func (p *Presenter) Inventory(dst *gpu.Image, note classic.Note, v engine.View) bool {
+func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv := &p.inv
 	inv.shown = false
 	in := v.Inventory

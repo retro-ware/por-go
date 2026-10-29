@@ -346,8 +346,8 @@ func (e *Engine) PartyOverview() {
 			}
 		}
 		e.S.Lock()
-		e.S.Fill(px, py, px+0x20*4, py+3, 8)
-		e.S.Fill(px, py, px+w*4, py+3, uint8(hpc))
+		e.fill(px, py, px+0x20*4, py+3, 8)
+		e.fill(px, py, px+w*4, py+3, uint8(hpc))
 		e.S.Unlock()
 		y += 2
 	}

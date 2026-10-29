@@ -13,6 +13,7 @@ func (e *Engine) ClearScreen() {
 		e.Trace("0709:0CAB", "ClearScreen")
 	}
 	e.fillCells(0, 0, 0x27, 0x18)
+	e.clearPage()
 }
 
 // viewChar = DS:4716, the character on the sheet.

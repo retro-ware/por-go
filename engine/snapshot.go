@@ -88,6 +88,10 @@ type View struct {
 	Battle    *Battle        // the combat map (nil outside combat)
 	Inventory *Inventory     // the inventory screen is up (nil otherwise)
 	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
+	Page      []Sprite       // the screen's pictures, symbols and fills, bottom first (page.go)
+	Text      [25][40]Cell   // the text cells, over Page
+	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
+	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 }
 
 // Menu is the menu bar waiting for a choice on the prompt line.
@@ -119,12 +123,11 @@ func (e *Engine) View() View {
 // snapState is the engine's side of the seam.
 type snapState struct {
 	view     atomic.Pointer[View]
+	seq      uint64                 // Views published
 	invOn    bool                   // ItemsMenu waits: View.Inventory is up
 	win      Window                 // set by whatever drew into the view window last
-	frame    []byte                 // the frame's border pixels as DrawMainFrame left them
 	heads    map[int]image.Image    // decoded HEAD blocks by id
 	tiles    [3]image.Image         // View.Border, once decoded
-	border   [][2]int               // pixel positions of frame
 	menu     *Menu                  // the innermost DisplayInput's menu (Sel unset)
 	cursor   image.Point            // drawCursor's last square
 	cursorOn bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
@@ -150,53 +153,16 @@ type snapState struct {
 	striker  [2]*Character          // its attacker and target
 }
 
-// frameDrawn remembers the frame's border pixels, so publish can tell it is
-// still up (anything full screen draws over it).
-func (e *Engine) frameDrawn() {
-	s := &e.snap
-	if s.border == nil {
-		s.border = frameBorder()
-	}
-	e.S.Lock()
-	s.frame = s.frame[:0]
-	for _, p := range s.border {
-		s.frame = append(s.frame, e.S.Pix[p[1]*pal.W+p[0]])
-	}
-	e.S.Unlock()
-}
-
-// frameBorder lists the pixels of the border cells of the view window and
-// the text pane.
-func frameBorder() [][2]int {
-	cells := map[[2]int]bool{}
-	for _, r := range []CellRect{ViewWindow.Framed(), TextPane.Framed()} {
-		for x := r.X1; x <= r.X2; x++ {
-			cells[[2]int{x, r.Y1}], cells[[2]int{x, r.Y2}] = true, true
-		}
-		for y := r.Y1; y <= r.Y2; y++ {
-			cells[[2]int{r.X1, y}], cells[[2]int{r.X2, y}] = true, true
-		}
-	}
-	var out [][2]int
-	for y := 0; y < 25; y++ { // in a fixed order
-		for x := 0; x < 40; x++ {
-			if cells[[2]int{x, y}] {
-				for py := 0; py < 8; py++ {
-					for px := 0; px < 8; px++ {
-						out = append(out, [2]int{x*8 + px, y*8 + py})
-					}
-				}
-			}
-		}
-	}
-	return out
-}
-
 // publish builds a View from the engine's state (on the engine goroutine)
 // and makes it the current one.
 func (e *Engine) publish() {
+	if e.pg.held > 0 { // the 3D view is half drawn
+		return
+	}
 	s := &e.snap
+	s.seq++
 	v := &View{
+		Seq:    s.seq,
 		Window: s.win,
 		Area:   AreaID(e.area.Geo),
 		X:      e.posX, Y: e.posY,
@@ -217,24 +183,7 @@ func (e *Engine) publish() {
 		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
 		v.Menu = &c
 	}
-	e.S.Lock()
-	v.MainFrame = len(s.frame) > 0
-	for i, p := range s.border {
-		if i < len(s.frame) && e.S.Pix[p[1]*pal.W+p[0]] != s.frame[i] {
-			v.MainFrame = false
-			break
-		}
-	}
-	in := TextPane.Pixels()
-	for y := in.Min.Y; y < in.Max.Y && !v.TextShown; y++ {
-		for x := in.Min.X; x < in.Max.X; x++ {
-			if e.S.Pix[y*pal.W+x] != 0 {
-				v.TextShown = true
-				break
-			}
-		}
-	}
-	e.S.Unlock()
+	e.pageView(v)
 	for i, c := range e.party {
 		v.Party = append(v.Party, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),

@@ -74,7 +74,7 @@ func (e *Engine) DrawMainFrame(inner bool) {
 	if inner {
 		e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
 	}
-	e.frameDrawn()
+	e.pg.frameUp = true
 }
 
 // DrawMainScreen = 00BA:27D9: rebuild the whole screen for DS:49F3.

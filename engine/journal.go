@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"por/ega"
 )
 
 // Journal texts (extra): the game often only names an
@@ -202,11 +200,7 @@ func (e *Engine) showJournal(lines []string) {
 	restore()
 }
 
-func (e *Engine) setOverlays(o []ega.Overlay) {
-	e.S.Lock()
-	e.S.Overlays = o
-	e.S.Unlock()
-}
+func (e *Engine) setOverlays(o []Overlay) { e.pg.overlays = o }
 
 // journalPages cuts lines into pages of at most jrRows; a page does not
 // start with a blank line or end with a title, and a picture is not split:
@@ -305,9 +299,7 @@ func (e *Engine) drawPicture(im image.Image, x, y, maxH, off int) (maxOff int) {
 		w, h = w*maxH/h, maxH
 	}
 	r := image.Rect(x-w/2, y, x-w/2+w, y+h)
-	e.S.Lock()
-	e.S.Fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, 15)
-	e.S.Overlays = append(e.S.Overlays, ega.Overlay{Img: im, Src: src, At: r})
-	e.S.Unlock()
+	e.fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, 15)
+	e.pg.overlays = append(e.pg.overlays, Overlay{Img: im, Src: src, At: r})
 	return maxOff
 }

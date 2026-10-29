@@ -102,6 +102,7 @@ type Engine struct {
 	ext                  extras                       // convenience features (extras.go)
 	acts                 acts                         // the remastered screens' actions (act.go)
 	snap                 snapState                    // the View published for other presenters (snapshot.go)
+	pg                   pageState                    // what is on the screen (page.go)
 	ac                   afterCombat                  // ovr06 globals
 	camp                 campState                    // ovr16/ovr21 globals
 	purse                purse                        // the party's money
