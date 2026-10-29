@@ -95,6 +95,10 @@ func (p *Player) Effect(n int) {
 // Playing tells whether the music player has the channels (else the effects).
 func (p *Player) Playing() bool { return p.rl(0x900cc) != 0 }
 
+// Sounding tells whether a song is going: the music has the channels and
+// its song has not stopped (0xfe ends the one-shot jingles).
+func (p *Player) Sounding() bool { return p.Playing() && p.rb(0x667d5) != 0 }
+
 // Tick is the vertical-blank server at 0x90082.
 func (p *Player) Tick() {
 	if p.rl(0x900cc) != 0 {

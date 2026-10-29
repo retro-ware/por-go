@@ -181,6 +181,7 @@ type sound struct {
 	tandy    bool // Tandy sound chip present (config 'T'): render the SN76489
 	sn       sn76489
 	am       *amiga.Player // DISK2/SOUND.BIN imported: the Amiga players instead
+	music    int           // the Amiga song Music started last
 }
 
 // amigaFx maps PlaySound 2..12 to Amiga effects: the Amiga's effect table parallels the
@@ -201,7 +202,25 @@ func (e *Engine) Music(n int) {
 	if s.am != nil && s.on {
 		s.am.Song(n)
 	}
+	s.music = n
 	s.mu.Unlock()
+}
+
+// areaMusic (extra; the Amiga program never starts songs 4 and 6): the
+// overland map plays song 6, starting it again when an effect or another
+// song took the channels; leaving the map stops it.
+func (e *Engine) areaMusic() {
+	s := &e.snd
+	s.mu.Lock()
+	going := s.am != nil && s.am.Sounding()
+	song := s.music
+	s.mu.Unlock()
+	switch {
+	case e.viewMode > 1 && (song != 6 || !going):
+		e.Music(6)
+	case e.viewMode <= 1 && song == 6:
+		e.Music(0)
+	}
 }
 
 // sn76489 is the Tandy/PCjr sound chip: three square wave tones and a noise
@@ -555,7 +574,9 @@ func (e *Engine) PlaySound(n int) {
 	case sndStop:
 		s.stop()
 	default:
-		if s.am != nil && n >= 2 && n-2 < len(amigaFx) {
+		if s.am != nil && n == sndStep && s.am.Sounding() {
+			// extra: a step does not take the channels from a song
+		} else if s.am != nil && n >= 2 && n-2 < len(amigaFx) {
 			s.am.Effect(amigaFx[n-2])
 		} else if s.typ == sndSpeaker {
 			s.start(&s.speaker, n-1)

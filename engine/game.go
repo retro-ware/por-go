@@ -15,6 +15,7 @@ func (e *Engine) GameLoop() {
 	e.beginFlag = 4
 	r.areaChanged = false
 	e.gs.areaKind = byte(e.area.AreaKind)
+	fresh := !e.loadedGame // extra: a new adventure, not a loaded game
 	if k := e.gs.areaKind; (k == 0x19 || k == 0x1A || k == 0x1B) && e.area.In3D == 0 {
 		e.beginFlag = 3
 	}
@@ -32,6 +33,9 @@ func (e *Engine) GameLoop() {
 			r.needFrame = 0
 		}
 		e.Redraw()
+	}
+	if fresh {
+		e.Music(4) // extra: the party first enters Phlan (the Amiga never plays song 4)
 	}
 	e.area.AreaKind = uint16(e.gs.areaKind)
 	encamp := e.CommandInput()
@@ -147,6 +151,7 @@ func (e *Engine) Encamp() {
 // ends input (Encamp, Search here, a step). True for Encamp.
 func (e *Engine) CommandInput() (encamp bool) {
 	e.game.HoldMove = 0
+	e.areaMusic()
 	e.unback() // a backward step the scripts ended
 	switch {
 	case e.viewMode == 1:
