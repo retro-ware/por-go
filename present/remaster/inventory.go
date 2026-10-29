@@ -378,8 +378,8 @@ func itemAt(in *engine.Inventory, i int) *engine.InvItem {
 // menu is the menu row for the highlighted item.
 func (inv *inventory) menu(in *engine.Inventory) []word {
 	it := itemAt(in, inv.sel)
-	if inv.ask != nil {
-		return []word{{text: "Yes", act: inv.ask.Kind, on: true}, {text: "No", act: engine.ActNone, on: true}}
+	if inv.ask != nil { // the question has its Yes and No
+		return nil
 	}
 	if in.Wares != nil { // the shop: buy a ware, sell an item
 		return []word{{text: "Buy", act: engine.ActBuy, on: wareAt(in, inv.ware) != nil}, {text: "Sell", act: engine.ActSell, on: it != nil && in.Sell},
@@ -507,6 +507,10 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	switch it := itemAt(in, inv.sel); {
 	case inv.ask != nil && it != nil && inv.ask.Kind == engine.ActDrop:
 		box = []string{"Your " + strings.TrimSpace(it.Name), "will be gone forever.", "", "Drop it?"}
+	case inv.ask != nil && inv.ask.Kind == engine.ActBuy:
+		if w := wareAt(in, inv.ware); w != nil {
+			box = []string{strings.TrimSpace(w.Name), "costs " + w.Price + ".", "", "Buy it?"}
+		}
 	case inv.ask != nil && it != nil:
 		box = []string{"I'll give you " + it.Price, "for your " + strings.TrimSpace(it.Name) + ".", "", "Is it a deal?"}
 	}
@@ -524,7 +528,8 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
 	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})
 	if box != nil { // over the borders, in the middle
-		inv.panel(t, box, func(w, h int) image.Point { return image.Pt((inv.w-w)/2/8*8, (inv.h-h)/2/8*8) })
+		inv.words = []word{{text: "Yes", act: inv.ask.Kind, on: true}, {text: "No", act: engine.ActNone, on: true}}
+		inv.panel(t, box, inv.words, func(w, h int) image.Point { return image.Pt((inv.w-w)/2/8*8, (inv.h-h)/2/8*8) })
 	} else if !inv.dragging {
 		inv.tooltip(t, in)
 	}
@@ -649,7 +654,7 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 	if len(lines) == 0 {
 		return
 	}
-	inv.panel(t, lines, func(w, h int) image.Point { // beside the pointer, inside the screen
+	inv.panel(t, lines, nil, func(w, h int) image.Point { // beside the pointer, inside the screen
 		x := max(0, min(inv.hover.X+8, inv.w-w))
 		y := inv.hover.Y + 12
 		if y+h > inv.h {
@@ -660,14 +665,24 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 }
 
 // panel draws lines in a box of the game's border over the canvas (over
-// the boxes' borders), the first line cyan, at(w, h) its top left.
-func (inv *inventory) panel(t [3]*gpu.Image, lines []string, at func(w, h int) image.Point) {
-	cw := 0
+// the boxes' borders), the first line cyan, at(w, h) its top left; words
+// (a question's answers) go in a row of their own under the lines, their
+// rectangles set for the clicks.
+func (inv *inventory) panel(t [3]*gpu.Image, lines []string, words []word, at func(w, h int) image.Point) {
+	cw, ww := 0, -1
 	for _, l := range lines {
 		cw = max(cw, len(l))
 	}
-	cw = min(cw, inv.w/8-2) + 2
-	w, h := cw*8, (len(lines)+2)*8
+	for _, wd := range words {
+		ww += len(wd.text) + 1
+	}
+	cw = min(max(cw, ww), inv.w/8-2) + 2
+	rows := len(lines) + 2
+	if words != nil {
+		rows += 2
+	}
+	w, h := cw*8, rows*8
+	p := at(w, h)
 	if inv.tip == nil || inv.tip.Bounds() != image.Rect(0, 0, w, h) {
 		if inv.tip != nil {
 			inv.tip.Deallocate()
@@ -683,10 +698,21 @@ func (inv *inventory) panel(t [3]*gpu.Image, lines []string, at func(w, h int) i
 		}
 		drawText(px, inv.glyph, upTo(l, cw-2), 8, 8+8*i, c)
 	}
+	x, y := (w-8*ww)/2, 8*(len(lines)+2)
+	for i := range words {
+		wd := &words[i]
+		r := image.Rect(x-4, y-2, x+8*len(wd.text)+4, y+10)
+		wd.r = r.Add(p)
+		if inv.hover.In(wd.r) {
+			draw.Draw(px, r, image.NewUniform(blue), image.Point{}, draw.Src)
+		}
+		drawText(px, inv.glyph, wd.text[:1], x, y, white)
+		drawText(px, inv.glyph, wd.text[1:], x+8, y, green)
+		x += 8 * (len(wd.text) + 1)
+	}
 	inv.tip.WritePixels(px.Pix)
-	drawBorder(inv.tip, t, gpu.GeoM{}, cw, len(lines)+2)
+	drawBorder(inv.tip, t, gpu.GeoM{}, cw, rows)
 	op := &gpu.DrawImageOptions{}
-	p := at(w, h)
 	op.GeoM.Translate(float64(p.X), float64(p.Y))
 	inv.img.DrawImage(inv.tip, op)
 }
@@ -876,7 +902,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 				if inv.hover.In(l.r) && !l.doll {
 					inv.choose(l.ware, l.item.Index)
 					if l.ware {
-						inv.do(engine.ActBuy)
+						inv.ask = &engine.Action{Kind: engine.ActBuy, N: l.item.Index}
 					} else if inv.view.Sell {
 						inv.do(engine.ActSell)
 					}
@@ -942,7 +968,10 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 	if h.ware {                                   // a click highlights a ware, a second one or a drag over to the party's items buys it
 		was := inv.ware
 		inv.choose(true, h.item.Index)
-		if !drag && was == h.item.Index || drag && partySide {
+		switch {
+		case drag && partySide:
+			inv.ask = &engine.Action{Kind: engine.ActBuy, N: h.item.Index} // a drag asks first
+		case !drag && was == h.item.Index:
 			inv.do(engine.ActBuy)
 		}
 		return
