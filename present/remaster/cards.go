@@ -180,4 +180,5 @@ func (p *Presenter) window(screen *gpu.Image, title string, lines []string, sel 
 	rects := slices.Clone(p.menuRects) // not the game's menu: its clicks stay
 	defer func() { p.menuRects = rects }()
 	p.drawMenu(screen, p.glyph, title, lines, nil, sel, float64(k), b.Dx()/2, top)
+	p.winRects = slices.Clone(p.menuRects) // its lines, for the Esc menu's mouse
 }

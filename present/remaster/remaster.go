@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	"log"
+	"math"
 	"time"
 
 	"gpu"
@@ -50,6 +51,7 @@ type Presenter struct {
 	mapImg    *gpu.Image                  // View.Map on the GPU
 	mapSrc    image.Image                 // the View.Map it holds
 	menuRects []image.Rectangle           // the vertical menu's items on screen, as last drawn
+	winRects  []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	menuSel   int                         // the game's own choice in it
 	noMenu    bool                        // nothing to pick: any click answers
 	rows      []shownRows                 // the original's rows on screen, as last drawn
@@ -312,6 +314,19 @@ func (p *Presenter) Options() bool { return p.view != nil && p.view.OptionsOpen(
 
 // UpdateOptions runs the options page for one frame.
 func (p *Presenter) UpdateOptions() { p.view.UpdateOptions() }
+
+// OptionsMouse hands the pointer to the Esc menu: the line under (x, y)
+// highlights, a left click picks or steps it, a right click goes back,
+// the wheel steps a setting.
+func (p *Presenter) OptionsMouse(x, y int, left, right bool, wheel float64) {
+	line := -1
+	for i, r := range p.winRects {
+		if image.Pt(x, y).In(r) {
+			line = i
+		}
+	}
+	p.view.PointOptions(line, left, right, int(math.Copysign(math.Ceil(math.Abs(wheel)), wheel)))
+}
 
 // noChoice reports a question with one answer ("press enter to continue"):
 // a message, not a choice.

@@ -76,6 +76,11 @@ func (g *game) Update() error {
 	}
 	if g.remaster.Options() { // the renderer's options page has the keyboard
 		g.remaster.UpdateOptions()
+		if g.remaster.Options() {
+			mx, my := gpu.CursorPosition()
+			_, dy := gpu.Wheel()
+			g.remaster.OptionsMouse(mx, my, gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy)
+		}
 		return nil
 	}
 	g.keys()
@@ -399,7 +404,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	blobber.Voice = eng.ToggleVoice // the voice-over switch on the Esc menu's Audio page
+	blobber.Voice = eng.ToggleVoice                                               // the voice-over switch on the Esc menu's Audio page
 	blobber.OnSaveLoad = func() { eng.Act(engine.Action{Kind: engine.ActSlots}) } // as F9
 	blobber.OnMainMenu = eng.MainMenu
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {

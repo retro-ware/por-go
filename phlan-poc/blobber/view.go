@@ -104,7 +104,7 @@ func (v *View) Fluid() bool { return Settings.Fluid && v.g.smooth }
 // OpenOptions opens the Esc (pause) menu at its root; while OptionsOpen,
 // UpdateOptions reads the keyboard and the gamepads for it.
 func (v *View) OpenOptions() {
-	v.g.menu, v.g.page, v.g.confirm, v.g.sel = true, "", nil, 0
+	v.g.menu, v.g.page, v.g.confirm, v.g.sel, v.g.lastPoint = true, "", nil, 0, -1
 	pollPads(0) // a pad button held from opening it counts as pressed only once it goes down again
 }
 
@@ -122,6 +122,48 @@ func (v *View) UpdateOptions() {
 		return
 	}
 	if v.g.updateMenu() {
+		os.Exit(0)
+	}
+}
+
+// PointOptions is the mouse on the Esc menu: line (-1: none) is under the
+// pointer and highlights; click picks it (Enter), back goes back (Esc),
+// wheel steps a setting (Left / Right).
+func (v *View) PointOptions(line int, click, back bool, wheel int) {
+	g := v.g
+	if back {
+		if !g.back() {
+			g.menu = false
+		}
+		return
+	}
+	items := g.menuOptions()
+	if line < 0 || line >= len(items) {
+		return
+	}
+	if line != g.lastPoint { // only a move highlights, so the keys keep theirs
+		g.sel, g.lastPoint = line, line
+	}
+	d := 0
+	switch {
+	case click:
+	case wheel != 0 && g.page != "" && g.confirm == nil:
+		d = 1 // wheel up: more
+		if wheel < 0 {
+			d = -1
+		}
+	default:
+		return
+	}
+	g.sel, g.lastPoint = line, -1 // a new page highlights under the pointer once it moves
+	items[line].change(g, d)
+	if g.page != "" {
+		Settings.Smooth, Settings.Dither, Settings.Fullscreen, Settings.Torch = g.smooth, g.dither, gpu.IsFullscreen(), g.torch
+		if OnSettings != nil {
+			OnSettings(Settings)
+		}
+	}
+	if g.quit {
 		os.Exit(0)
 	}
 }

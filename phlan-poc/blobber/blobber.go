@@ -1094,6 +1094,7 @@ type Game struct {
 	dither, smooth, menu, atlasView, help, quit bool
 	page                                        string    // the Esc menu's settings page shown, "" the root
 	confirm                                     *question // the yes/no the Esc menu asks, or nil
+	lastPoint                                   int       // the Esc menu line the mouse was last on (-1 none)
 	debug                                       bool
 	follow                                      bool // driven by a View: moves come from the host, never the keyboard
 	torch                                       float64
