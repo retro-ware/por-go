@@ -147,9 +147,9 @@ func (e *Engine) iconEditor() {
 		exit
 	)
 	// pickPart: a grid of every head (or weapon) on the icon as it is.
-	pickPart := func(pic *byte, name string, n int) {
+	pickPart := func(pic *byte, n int) {
 		was := *pic
-		if i := e.pickGrid(name+": ", "Keep", n, 3, 3, int(was), func(i, x, y int) {
+		if i := e.pickGrid(n, 3, 3, int(was), func(i, x, y int) {
 			*pic = byte(i)
 			build()
 			if im := e.icons[0xC][0]; im != nil {
@@ -193,9 +193,9 @@ func (e *Engine) iconEditor() {
 		e.regionCut(mark)
 		switch p.ID {
 		case headIt:
-			pickPart(&c.IconHead, "Head", 14)
+			pickPart(&c.IconHead, 14)
 		case weaponIt:
-			pickPart(&c.IconBody, "Weapon", 32)
+			pickPart(&c.IconBody, 32)
 		case sizeIt:
 			if c.IconSize == 2 {
 				c.IconSize = 1
