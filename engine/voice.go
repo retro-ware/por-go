@@ -126,6 +126,6 @@ func (v *voice) Read(p []byte) (int, error) {
 		}
 	}
 	clear(p[o:n])
-	scale(p[:n], volume("sfx"))
+	scale(p[:n], volume("voice"))
 	return n, nil
 }

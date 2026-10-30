@@ -1464,6 +1464,12 @@ func bar(v, lo, hi, s float64) string {
 	return strings.Repeat("#", i+1) + strings.Repeat("-", n-i)
 }
 
+// volumeLine is an Audio line stepping *v through 0..1 in tenths, as a slider.
+func volumeLine(label string, v *float64) menuLine {
+	return menuLine{label, func(*Game) string { return bar(*v, 0, 1, 0.1) + fmt.Sprintf(" %3.0f%%", *v*100) },
+		func(_ *Game, d int) { *v = step(*v, 0, 1, 0.1, d) }}
+}
+
 func onOffOf(p *bool) func(*Game) string { return func(*Game) string { return onOff(*p) } }
 
 // menuOptions are the lines of the menu page shown: the root, a settings page, or a yes/no question.
@@ -1486,7 +1492,12 @@ func (g *Game) menuOptions() []menuLine {
 			uiLine("Text box", &Settings.Text),
 		}
 	case "Audio":
-		return []menuLine{{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }}}
+		return []menuLine{
+			{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }},
+			volumeLine("Music volume", &Settings.Music),
+			volumeLine("Effects volume", &Settings.Effects),
+			volumeLine("Voice volume", &Settings.Voice),
+		}
 	case "Gameplay":
 		return []menuLine{
 			{"Smooth movement", func(g *Game) string { return onOff(g.smooth) }, func(g *Game, _ int) { g.smooth = !g.smooth }},
@@ -1923,6 +1934,7 @@ type Options struct {
 	Cards, Map, Pic, Menu, Text       float64 // the host's portraits, minimap, picture box, menus and text box: one of UISteps times their normal size (the host shrinks them as far as the screen needs)
 	Deskew                            bool    // the host's combat maps on a square grid (walls straight) instead of the original's perspective
 	Zoom                              float64 // the host's battle camera: how far one wheel step zooms, minZoom to maxZoom times 15 percent
+	Music, Effects, Voice             float64 // the host's volumes, 0 to 1
 }
 
 const minAlpha = 0.2
@@ -1934,10 +1946,11 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1, Music: 1, Effects: 1, Voice: 1}
 	OnSettings func(Options)
-	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
-	// the voice first when toggle, then reports whether it is on.
+	// Voice, when set, adds the Audio page with its "Voice-over" line (it toggles
+	// the voice first when toggle, then reports whether it is on) and the
+	// Music, Effects and Voice volume sliders.
 	Voice func(toggle bool) bool
 )
 

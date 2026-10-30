@@ -2,4 +2,4 @@
 
 package engine
 
-func volume(string) float64 { return 1 }
+func desk(string) float64 { return 1 }
