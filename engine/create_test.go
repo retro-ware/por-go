@@ -193,7 +193,9 @@ func TestCreateSheet(t *testing.T) {
 	}
 	e.Act(Action{Kind: ActClose})
 	ended("Add")
-	// Modify: the creation sheet on the member, Keep keeps the changes.
+	// Modify: the creation sheet on the member, experienced or not, Keep
+	// keeps the changes.
+	e.party[0].Exp = 500
 	go func() { e.ModifyCharacter(); done <- true }()
 	v = wait()
 	if v.Menu == nil || v.Menu.Items[0].Text != "Roll" || v.IconBox == (CellRect{}) {

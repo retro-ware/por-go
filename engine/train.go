@@ -19,16 +19,13 @@ import (
 func (e *Engine) partyExp() int { return int(e.game.PartyExp) }
 
 // ModifyCharacter = ovr17:209E, redone (extra) as the creation sheet on
-// the selected character, who has no experience yet: Roll, Minimal, the
-// fields and the pictures change it as at the creation; Keep keeps it,
-// Esc puts the old character back. (The original raised and lowered the
-// abilities and hit points within the race and class limits.)
+// the selected character, experienced or not: Roll, Minimal, the fields
+// and the pictures change it as at the creation; Keep keeps it, Esc puts
+// the old character back. (The original raised and lowered the abilities
+// and hit points within the race and class limits, and only for a
+// character without experience.)
 func (e *Engine) ModifyCharacter() {
 	c := e.selected()
-	if int32(c.Exp) > 0 {
-		e.DisplayMessageWait(colYellow, c.Name()+" can't be modified.")
-		return
-	}
 	i, was := e.partySel, *c
 	k := kind{race: c.Race, sex: c.Sex, class: c.Class, align: c.Alignment}
 	n, kept := e.editSheet(c, k, func(_, new *Character) { e.party[i] = new }, "Discard the changes? ")
