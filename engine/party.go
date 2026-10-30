@@ -1,5 +1,7 @@
 package engine
 
+import "strings"
+
 // Party menu, ported from ovr17:0161 and the list display 00BA:0767.
 
 // DisplayPartyList = 00BA:0767 (selected): the roster with AC and HP.
@@ -122,13 +124,19 @@ func (e *Engine) PartyMenu() {
 	var names []string
 	var enabled []bool
 	for i, m := range partyMenu {
-		names, enabled = append(names, m.name), append(enabled, m.enabled)
+		name := strings.TrimSuffix(m.name, " Character") // extra: the Party submenu needs no "Character"
+		if i == 6 {
+			name = "Remove"
+		}
+		names, enabled = append(names, name), append(enabled, m.enabled)
 		if i == 5 { // extra: deletes a saved character, listed after Add
-			names, enabled = append(names, "Forget Character"), append(enabled, true)
+			names, enabled = append(names, "Forget"), append(enabled, true)
 		}
 	}
-	names = append(names, "Quick Start") // extra: mQuick, while there is no party
-	enabled = append(enabled, false)
+	// extra: mQuick while there is no party, mParty (the character
+	// functions' submenu) and mBack (its way back to the main menu)
+	names = append(names, "Quick Start", "Party", "Back")
+	enabled = append(enabled, false, true, true)
 	const (
 		mCreate = iota
 		mDrop
@@ -142,7 +150,7 @@ func (e *Engine) PartyMenu() {
 		mBegin
 		mExit
 	)
-	redraw := true
+	redraw, sub := true, false // sub: the Party submenu is shown
 	e.debug = false
 	e.beginFlag = 0
 	for {
@@ -167,10 +175,18 @@ func (e *Engine) PartyMenu() {
 		}
 		// The menu bar is hidden here (colours 0); the selection indicator
 		// goes on the list instead, which only offers the enabled entries.
-		const mQuick = mExit + 1
+		const (
+			mQuick = mExit + 1 + iota
+			mParty
+			mBack
+		)
 		enabled[mQuick] = len(e.party) == 0
+		order := []int{mBegin, mParty, mLoad, mQuick, mExit} // extra: the remaster's main menu
+		if sub {
+			order = []int{mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mBack}
+		}
 		var vis []int // extra: the enabled functions in the remaster's order
-		for _, i := range []int{mLoad, mQuick, mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mBegin, mExit} {
+		for _, i := range order {
 			if enabled[i] {
 				vis = append(vis, i)
 			}
@@ -281,6 +297,10 @@ func (e *Engine) PartyMenu() {
 			if len(e.party) == 0 {
 				e.QuickStart()
 			}
+		case mParty:
+			sub = true
+		case mBack:
+			sub = false
 		}
 		redraw = true
 	}
