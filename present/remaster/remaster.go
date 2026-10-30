@@ -208,7 +208,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if !p.active {
 		p.ctx = 0
 	}
-	p.fight = v.Battle != nil && !p.failed
+	p.fight = v.Battle != nil // the battle view is the only one: the engine has no combat page
 	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false

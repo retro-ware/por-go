@@ -62,7 +62,6 @@ type pageState struct {
 	frameUp  bool     // DrawMainFrame's boxes are still whole
 	pal      pal.Regs // the palette the layers' images are in
 	ids      uint64   // layers drawn
-	under    uint64   // the sprite whose layer restoreUnder takes away
 }
 
 // draw records l over the page: layers it hides go, and text cells it

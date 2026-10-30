@@ -26,7 +26,7 @@ func (e *Engine) ProgramEight() {
 		e.LoadAnimPic("FINAL", block, false)
 		cur, count := e.pic.cur, len(e.pic.frames) // rec[1] and rec[0]
 		if count > 0 {                             // ovr19:004C: frame 1, unmasked, then 1B52
-			e.drawPage(x-1, y-1, e.pic.frames[0].Image, 0, false, false)
+			e.drawPage(x-1, y-1, e.pic.frames[0].Image, 0, false)
 		}
 		for {
 			var delay int64
@@ -54,7 +54,7 @@ func (e *Engine) ProgramEight() {
 	// page draws FINAL<set> block at page cell (x,y) (0464:0111, 0464:0D71 mode 0).
 	page := func(block, x, y int) {
 		im = e.LoadPic(final, block)
-		e.drawPage(x, y, im, 0, false, false)
+		e.drawPage(x, y, im, 0, false)
 	}
 	say := func(y int, s string) { e.DisplayString(1, y, colLightGreen, s) }
 	// speakAll (extra, voice.go) reads the lines just said aloud as one text.

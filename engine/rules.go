@@ -282,7 +282,6 @@ func (e *Engine) KillCharacter(c *Character, status byte, msg string) {
 	if c.Status != statusRunning {
 		c.HP = 0
 	}
-	e.combatClearIcon(0, 0, idx)
 	e.cpos[idx].size = 0 // DS:5F2A + 4*idx
 	e.combatRedrawMap()
 	if e.clearCombatInfo(c) {

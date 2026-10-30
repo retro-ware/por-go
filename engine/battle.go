@@ -31,7 +31,7 @@ type Battle struct {
 	Skipped  []image.Point          // squares of allies in the area the spell passes over (Bless: an enemy next to them)
 	AimWhy   string                 // aiming: why the aimed square cannot be taken ("" when it can); views draw the aim red
 	Effects  []Effect               // sprites over the map: a missile, a hit, a fall
-	View     image.Point            // top left square the original shows
+	View     image.Point            // top left square of the scrolled view window the original showed (what the camera follows)
 	Strike   Strike                 // the last weapon attack
 }
 

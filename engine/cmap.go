@@ -2,16 +2,16 @@ package engine
 
 import (
 	"image"
-	"slices"
 
 	"strings"
 
 	"por/dax"
 )
 
-// The combat map (ovr31, ovr32, ovr33). Squares are 3x3 cells; the view
-// shows 7x7 squares of the 50x25 map on the drawing page, which appears at
-// screen cell (1,1) (0464:1B52 copies it 8 pixels down and right).
+// The combat map (ovr31, ovr32, ovr33). The original drew 7x7 squares of
+// the 50x25 map on its drawing page, 3x3 cells a square; that page is
+// gone (the battle view draws the map from the snapshot, battle.go), but
+// its scrolling window stays as what the view looks at (Battle.View).
 
 // combatMap is the 0x4E9-byte record at [DS:6716].
 type combatMap struct {
@@ -34,21 +34,9 @@ type body struct {
 
 const pageCells = 21 // the drawing page, 21x21 cells (outside combat)
 
-// The combat view (extra) fills the screen's width: viewW x viewH squares
-// in one box, the page at cell (pageCol, 1); the original showed 7x7 next
-// to a text pane.
-const (
-	viewW, viewH = 12, 7
-	pageCol      = 2
-)
-
-// pageGeom is where the drawing page sits on screen and how wide it is.
-func (e *Engine) pageGeom() (x0, w int) {
-	if e.beginFlag == 5 {
-		return pageCol * 8, viewW * 24
-	}
-	return 8, pageCells * 8
-}
+// The combat view window (extra): viewW x viewH squares, scrolled as the
+// original scrolled its 7x7 (recentre); the battle view's camera follows it.
+const viewW, viewH = 12, 7
 
 // footprint = ovr32:0000 (size, part, var dx, var dy): offset of one square
 // of a combatant that covers several (DS:2844).
@@ -77,14 +65,11 @@ func (e *Engine) tileOf(x, y int) byte {
 	return e.groundInfo(e.cmap.ground[y][x])[3]
 }
 
-// drawPage draws a frame at page cell (x,y), clipped to the page. masked
-// skips the image's mask colour; under (0464:0D71 mode 4) keeps what was
-// there in DS:4A24.
-func (e *Engine) drawPage(x, y int, im *dax.Image, frame int, masked, under bool) {
-	e.blitPage(x, y, im, frame, masked, under)
-}
-
-func (e *Engine) blitPage(x, y int, im *dax.Image, frame int, masked, under bool) {
+// drawPage = 0464:0D71 draws a frame at page cell (x,y), clipped to the
+// page (which starts a cell in). masked skips the image's mask colour.
+// Outside combat only (pictures, animations, the area map, the icon
+// editor): the combat page is gone.
+func (e *Engine) drawPage(x, y int, im *dax.Image, frame int, masked bool) {
 	if im == nil || frame >= im.Count {
 		return
 	}
@@ -92,35 +77,23 @@ func (e *Engine) blitPage(x, y int, im *dax.Image, frame int, masked, under bool
 	if masked {
 		m = im.Mask
 	}
-	x0, pw := e.pageGeom()
-	e.picture(x0+x*8, 8+y*8, im.Width*8, im.Height, im.Frame(frame), m)
-	l := &e.pg.layers[len(e.pg.layers)-1]
-	l.clip = image.Rect(x0, 8, x0+pw, 8+pageCells*8)
-	if under {
-		e.pg.under = l.id
-	}
-}
-
-// restoreUnder = 0464:0D71 (DS:4A24, mode 0): put back what the last
-// sprite hid (its layer goes).
-func (e *Engine) restoreUnder(x, y int, im *dax.Image) {
-	e.pg.layers = slices.DeleteFunc(e.pg.layers, func(l layer) bool { return l.id == e.pg.under })
+	e.picture(8+x*8, 8+y*8, im.Width*8, im.Height, im.Frame(frame), m)
+	e.pg.layers[len(e.pg.layers)-1].clip = image.Rect(8, 8, 8+pageCells*8, 8+pageCells*8)
 }
 
 // drawTile = ovr33:00F1 (x, y, tile, page): a ground tile from the tile
-// sets (DS:5E52, tiles from 0x80 in DS:5E56).
+// sets (DS:5E52, tiles from 0x80 in DS:5E56); the area map's icons.
 func (e *Engine) drawTile(x, y int, t byte) {
 	im, f := e.sqrpaci[0], int(t)
 	if t > 0x7F {
 		im, f = e.sqrpaci[1], int(t&0x7F)
 	}
-	// 0464:08D4 (page DS:4A20, tiles, mode 0, frame, x, y): the same blit
-	// into the page as 0D71 unmasked.
-	e.blitPage(x, y, im, f, false, false)
+	e.drawPage(x, y, im, f, false)
 }
 
-// drawIcon = ovr33:04FC (x, y, dir, pose, slot): a combat icon on screen
-// square (x,y), mirrored when facing directions 4..7.
+// drawIcon = ovr33:04FC (x, y, dir, pose, slot): a combat icon on page
+// square (x,y), mirrored when facing directions 4..7 (the area map's party
+// marker, the icon editor).
 func (e *Engine) drawIcon(x, y int, dir, pose, slot byte) {
 	im := e.icons[slot][pose&1]
 	if im == nil {
@@ -130,7 +103,7 @@ func (e *Engine) drawIcon(x, y int, dir, pose, slot byte) {
 		im = im.Clone()
 		im.FlipLeftToRight()
 	}
-	e.drawPage(x*3, y*3, im, 0, true, false)
+	e.drawPage(x*3, y*3, im, 0, true)
 }
 
 // LoadBackpacIcons = ovr33:0022 (name, first, n): block 1 of the DAX file
@@ -226,16 +199,10 @@ func (e *Engine) hitColours(slot int) {
 }
 
 // drawHitFrame / restoreHitFrame = 0464:0D71 with DS:6E36 (mode 5) and
-// DS:4A24 (mode 0).
-func (e *Engine) drawHitFrame(f, x, y int) {
-	e.showEffect(x, y, f, e.spr)
-	e.drawPage(x, y, e.spr, f, true, true)
-}
-
-func (e *Engine) restoreHitFrame(x, y int) {
-	e.hideEffect(x, y)
-	e.restoreUnder(x, y, e.spr)
-}
+// DS:4A24 (mode 0): the sprite over the map at page thirds (x, y), now only
+// for the snapshot (Battle.Effects).
+func (e *Engine) drawHitFrame(f, x, y int) { e.showEffect(x, y, f, e.spr) }
+func (e *Engine) restoreHitFrame(x, y int) { e.hideEffect(x, y) }
 
 // combatViewEnter = ovr32:0105 / combatViewLeave = ovr32:00E3: the EGA
 // palette entries 0 and 8 swap for the combat screen (EGA only, DS:4A1E == 1).
@@ -261,42 +228,14 @@ func (e *Engine) updateScreenPos() {
 	}
 }
 
-// drawCursor = ovr32:0127 (x, y): the ground under the cursor, the cursor
-// icon and whoever stands there.
+// drawCursor = ovr32:0127 (x, y): the cursor on (x, y), with its icon when
+// cmap.cursor is set (the snapshot's Cursor; the view draws it).
 func (e *Engine) drawCursor(x, y int) {
 	e.snap.cursor, e.snap.cursorOn = image.Pt(x, y), e.cmap.cursor != 0
-	sx, sy := x-e.cmap.viewX, y-e.cmap.viewY
-	for part := 0; part <= 3; part++ {
-		dx, dy, ok := e.footprint(int(e.cmap.cursorSize), part)
-		if !ok || !combatInView(sx+dx, sy+dy) {
-			continue
-		}
-		e.drawTile((sx+dx)*3, (sy+dy)*3, e.tileOf(x+dx, y+dy))
-		if e.cmap.cursor != 0 {
-			e.drawIcon(sx+dx, sy+dy, 0, 0, 0x19)
-		}
-	}
-	e.drawOccupant(x, y)
-}
-
-func (e *Engine) drawOccupant(x, y int) {
-	idx, _ := e.mapAt(x, y)
-	if idx == 0 {
-		return
-	}
-	c := e.combatant(idx)
-	if c != nil && e.combatOnScreen(c, false) {
-		e.unitDrawn(int(idx), 0)
-		e.drawIcon(int(e.combatScreenX[idx]), int(e.combatScreenY[idx]), c.Combat.Facing, 0, c.Order)
-	}
 }
 
 // eraseCursor = ovr32:02D5 (x, y).
-func (e *Engine) eraseCursor(x, y int) {
-	e.snap.cursorOn = false
-	e.combatClearIcon(x-e.cmap.viewX, y-e.cmap.viewY, 0)
-	e.drawOccupant(x, y)
-}
+func (e *Engine) eraseCursor(x, y int) { e.snap.cursorOn = false }
 
 // combatRedrawMap = ovr32:03A0: rebuild the occupancy grid (DS:60DB).
 func (e *Engine) combatRedrawMap() {
@@ -326,30 +265,6 @@ func (e *Engine) mapAt(x, y int) (byte, byte) {
 		return 0, 0
 	}
 	return e.occ[y][x], e.cmap.ground[y][x]
-}
-
-// combatClearIcon = ovr32:052B (x, y, idx): ground tiles over combatant
-// idx (or over the occupant of screen square x,y when idx is 0).
-func (e *Engine) combatClearIcon(sx, sy, idx int) {
-	x, y := sx+e.cmap.viewX, sy+e.cmap.viewY
-	if idx == 0 {
-		i, _ := e.mapAt(x, y)
-		idx = int(i)
-	}
-	if idx == 0 {
-		if combatInView(sx, sy) {
-			e.drawTile(sx*3, sy*3, e.tileOf(x, y))
-		}
-		return
-	}
-	sx, sy = int(e.combatScreenX[idx]), int(e.combatScreenY[idx])
-	x, y = sx+e.cmap.viewX, sy+e.cmap.viewY
-	for part := 0; part <= 3; part++ {
-		dx, dy, ok := e.footprint(int(e.cpos[idx].size), part)
-		if ok && combatInView(sx+dx, sy+dy) {
-			e.drawTile((sx+dx)*3, (sy+dy)*3, e.tileOf(x+dx, y+dy))
-		}
-	}
 }
 
 // combatInView = ovr32:06E9 (x, y): a screen square inside the view.
@@ -384,7 +299,7 @@ func (e *Engine) combatOnScreen(c *Character, all bool) bool {
 }
 
 // recentre = ovr32:07D4 (x, y, margin): scroll the view so (x,y) is at
-// least margin squares inside it (0xFF: always centre); redraws the ground.
+// least margin squares inside it (0xFF: always centre).
 func (e *Engine) recentre(x, y, r int) bool {
 	const half = viewW / 2
 	cx, cy := e.cmap.viewX+half, e.cmap.viewY+3
@@ -414,29 +329,16 @@ func (e *Engine) recentre(x, y, r int) bool {
 		}
 	}
 	e.cmap.viewX, e.cmap.viewY = cx-half, cy-3
-	for row := 0; row < viewH; row++ {
-		for col := 0; col < viewW; col++ {
-			e.drawTile(col*3, row*3, e.tileOf(e.cmap.viewX+col, e.cmap.viewY+row))
-		}
-	}
 	e.cmapShown()
 	e.updateScreenPos()
 	return true
 }
 
 // combatCentre = ovr32:0996 (x, y, margin, dir): bring the square next to
-// (x,y) in direction dir (8 = itself) into view and draw the cursor there.
+// (x,y) in direction dir (8 = itself) into view and put the cursor there.
 func (e *Engine) combatCentre(x, y, r, dir int) {
 	nx, ny := x+dirDX[dir], y+dirDY[dir]
-	if e.recentre(nx, ny, r) {
-		for i := 1; i <= e.ncomb; i++ {
-			c := e.combatant(byte(i))
-			if c != nil && c.Okay != 0 && e.cpos[i].size > 0 && e.combatOnScreen(c, false) {
-				e.unitDrawn(i, 0)
-				e.drawIcon(int(e.combatScreenX[i]), int(e.combatScreenY[i]), c.Combat.Facing, 0, c.Order)
-			}
-		}
-	}
+	e.recentre(nx, ny, r)
 	e.eraseCursor(x, y)
 	if !combatInView(nx-e.cmap.viewX, ny-e.cmap.viewY) {
 		nx = min(max(nx, 0), 0x31)
@@ -445,15 +347,12 @@ func (e *Engine) combatCentre(x, y, r, dir int) {
 	e.drawCursor(nx, ny)
 }
 
-// combatTurn = ovr32:0AF8 (char, dir, pose, hide): face dir and draw the
+// combatTurn = ovr32:0AF8 (char, dir, pose, hide): face dir and show the
 // icon in the given pose (not with hide).
 func (e *Engine) combatTurn(c *Character, dir, pose byte, hide bool) {
 	idx := e.combatIndex(c)
 	if !e.combatOnScreen(c, true) {
 		e.combatCentre(e.combatX(c), e.combatY(c), 3, 8)
-	}
-	if dir>>2 != c.Combat.Facing>>2 || pose != 0 || hide {
-		e.combatClearIcon(0, 0, idx)
 	}
 	c.Combat.Facing = dir
 	if hide {
@@ -461,7 +360,6 @@ func (e *Engine) combatTurn(c *Character, dir, pose byte, hide bool) {
 	}
 	if !hide && e.combatOnScreen(c, true) {
 		e.unitDrawn(idx, pose)
-		e.drawIcon(int(e.combatScreenX[idx]), int(e.combatScreenY[idx]), dir, pose, c.Order)
 	}
 }
 
@@ -530,12 +428,6 @@ func (e *Engine) combatRemoveFromMap(c *Character) {
 	if !e.combatOnScreen(c, true) {
 		e.combatCentre(x, y, 3, 8)
 	}
-	e.combatClearIcon(0, 0, idx)
-	for part := 0; part <= 3; part++ {
-		if dx, dy, ok := e.footprint(int(e.cpos[idx].size), part); ok {
-			e.drawPage((int(e.combatScreenX[idx])+dx)*3, (int(e.combatScreenY[idx])+dy)*3, e.icons[0x18][0], 0, true, true) // DS:5F1A = icon slot 0x18 pose 0
-		}
-	}
 	if c.Combat.Extra == 0 && e.nbodies+1 < len(e.bodies) {
 		e.nbodies++
 		b := &e.bodies[e.nbodies]
@@ -547,7 +439,6 @@ func (e *Engine) combatRemoveFromMap(c *Character) {
 	}
 	e.PlaySound(sndFall)
 	e.MsgDelay()
-	e.combatClearIcon(0, 0, idx)
 	e.cpos[idx].size = 0
 	e.combatRedrawMap()
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 3, 8)

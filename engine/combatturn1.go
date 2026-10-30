@@ -180,7 +180,6 @@ func (e *Engine) stepSquare(c *Character, dir int) {
 			e.combatCentre(int(ox), int(oy), 2, 8)
 		}
 	}
-	e.combatClearIcon(0, 0, idx)
 	e.cpos[idx].x, e.cpos[idx].y = nx, ny
 	e.combatRedrawMap()
 	e.combatCentre(int(nx), int(ny), margin, 8)
