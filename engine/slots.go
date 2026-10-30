@@ -31,8 +31,7 @@ type slot struct {
 // the game loop again on the loaded game.
 func (e *Engine) adventure() {
 	start := func() {
-		e.PartyMenu()                 // ovr17:0161
-		e.SetSkyColours(0xB, 0, 7, 6) // ovr30:0155
+		e.PartyMenu() // ovr17:0161
 	}
 	party := start
 	for {

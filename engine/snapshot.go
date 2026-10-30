@@ -50,12 +50,14 @@ func (r CellRect) Pixels() image.Rectangle {
 // Framed is the box with its border.
 func (r CellRect) Framed() CellRect { return CellRect{r.X1 - 1, r.Y1 - 1, r.X2 + 1, r.Y2 + 1} }
 
-// The insides of the main screen's boxes (DrawMainFrame).
+// The insides of the main screen's boxes (DrawMainFrame). The outer box
+// and the text pane reach the page's edges (setPageSize), as the text
+// drawn into them does.
 var (
-	OuterBox    = CellRect{1, 1, 0x26, 0x16}
+	OuterBox    = CellRect{1, 1, winRight, winBottom}
 	ViewWindow  = CellRect{1, 1, 0xF, 0xF}
 	InnerWindow = CellRect{3, 3, 0xD, 0xD} // the picture frame
-	TextPane    = CellRect{1, 0x11, 0x26, 0x16}
+	TextPane    = CellRect{1, msgTop, winRight, winBottom}
 )
 
 // Member is one party member as the party list shows them.

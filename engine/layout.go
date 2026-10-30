@@ -22,9 +22,8 @@ const (
 
 // The text screen: the original's 40x25, the floor; a larger window gives
 // more cells (resizePage), and every screen lays out to them (textCols,
-// textRows and the rows and columns derived from them). The 3D view's own
-// boxes (ViewWindow, TextPane) keep their places: the remaster draws that
-// screen itself.
+// textRows and the rows and columns derived from them). The view window
+// (ViewWindow) keeps its place; the remaster draws that screen itself.
 const (
 	minCols  = 40
 	minRows  = 25
@@ -48,6 +47,7 @@ var (
 func setPageSize(cols, rows int) {
 	textCols, textRows = max(cols, minCols), max(rows, minRows)
 	lastCol, winRight, winBottom, messageRow, promptRow = textCols-1, textCols-2, textRows-3, textRows-2, textRows-1
+	OuterBox.X2, OuterBox.Y2, TextPane.X2, TextPane.Y2 = winRight, winBottom, winRight, winBottom
 }
 
 // newCells is an empty text cell grid of the page's size.

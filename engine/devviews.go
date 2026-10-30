@@ -5,26 +5,6 @@ import (
 	"slices"
 )
 
-// DevView is a named screen the snap tool can render (development aid).
-type DevView struct {
-	Name string
-	Draw func()
-}
-
-// DevViews returns the views of the loaded game worth checking: the 3D
-// view in all four directions.
-func (e *Engine) DevViews() []DevView {
-	var v []DevView
-	for _, d := range []int{0, 2, 4, 6} {
-		d := d
-		v = append(v, DevView{"nesw"[d/2 : d/2+1], func() {
-			e.ClearCells(0, 0, lastCol, promptRow)
-			e.Draw3DView(e.posX, e.posY, d)
-		}})
-	}
-	return v
-}
-
 // DevScene returns a routine that sets up and runs one screen for a
 // headless check (snap ... game SLOT KEYS SCENE), or nil.
 func (e *Engine) DevScene(name string) func() {

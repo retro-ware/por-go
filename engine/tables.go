@@ -159,10 +159,6 @@ var spellGroups = [10]string{
 	"9th Level",
 }
 
-// sky colour by area sky number (DS:0C26). Numbers 10..15 read on into
-// DS:0C30, the unused row 0 of areaMapMarks (an area with sky 11 crashed).
-var skyColour = [16]byte{0x00, 0x0F, 0x0C, 0x0B, 0x0D, 0x0A, 0x09, 0x0E, 0x00, 0x0F, 0x0C, 0x0B, 0x0D, 0x0A, 0x09, 0x0E}
-
 // area map marks: x, y, - (rows 1..9) (DS:0C30).
 var areaMapMarks = [10][3]uint16{
 	{0x0B0C, 0x0A0D, 0x0E09},

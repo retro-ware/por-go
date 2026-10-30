@@ -5,34 +5,6 @@ import "strconv"
 // The adventure screen: frames, the view window and the status line.
 // Ported from 00BA:272A/27D9/290B and ovr27.
 
-// skyFg = ovr27:00C7, the horizon colour for DS:6F69.
-func skyFg(v byte) byte {
-	switch v {
-	case 8, 0x41:
-		return 0
-	}
-	return 0xF
-}
-
-// skyBand = ovr27:00FB, the band colour for DS:6F69.
-func skyBand(v byte) byte {
-	if v == 8 {
-		return 8
-	}
-	return 7
-}
-
-// skyGround = ovr27:012F, the ground colour for DS:6F68.
-func skyGround(v byte) byte {
-	switch v {
-	case 0xB:
-		return 8
-	case 6:
-		return 1
-	}
-	return 6
-}
-
 // Redraw = ovr27:016D: redraw the view window for the current view mode.
 func (e *Engine) Redraw() {
 	mode := e.viewMode
@@ -42,18 +14,6 @@ func (e *Engine) Redraw() {
 	switch {
 	case mode == 1:
 		e.es.cell = e.MapCell(e.posX, e.posY)
-		sky := e.area.Sky
-		if e.es.cell > 0x7F {
-			sky = e.area.SkyInside
-		}
-		s := e.gs.sky
-		s[0] = skyColour[sky]
-		if e.es.skyChanged != 0 {
-			s[1] = skyFg(e.es.skyShade)
-			s[2] = skyBand(e.es.skyShade)
-			s[3] = skyGround(e.es.groundShade)
-		}
-		e.SetSkyColours(s[0], s[1], s[2], s[3])
 		e.Draw3DView(e.posX, e.posY, e.viewFacing())
 		e.viewDrawn()
 	case mode >= 2 && mode <= 4:

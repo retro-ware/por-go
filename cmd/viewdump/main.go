@@ -1,7 +1,7 @@
 // viewdump [-scale N] [DIR [OUT]]: writes the walls of the 3D view as PNGs
 // into OUT (default DIR/viewdump). Each WALLDEF<n>.DAX block holds chunks of
 // five walls; a wall is the 8x8 symbol ids of the ten view parts
-// (engine/geo.go partBase..partH, far front to near sides). One PNG per
+// (the original ovr30 view parts, far front to near sides). One PNG per
 // wall shows its front face as seen from right in front of it (part 6),
 // assembled from the symbol sets the engine uses: ids up to 0x2D from 8X8D1 block 203, the rest from the
 // wall's own blocks (LoadWalldef). Colour 13 shows the default ground
@@ -108,7 +108,7 @@ func pic(l *dax.Loader, name string, id int) *dax.Image {
 	return dax.ParseImage(b, true, 0xD)
 }
 
-// groundRows: the default colours below the sky (SetSkyColours(0xB, 0, 7,
+// groundRows: the default colours below the sky (the original ovr30:0155 (0xB, 0, 7,
 // 6): horizon, band, ground) by the first wall row each covers; drawSky's
 // page rows less the 24 rows above the near front (view row 16, part row 1).
 var groundRows = [3]struct {

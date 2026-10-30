@@ -6,6 +6,7 @@ package remaster
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -36,7 +37,6 @@ type Presenter struct {
 	pg page // the original's screen, drawn from the View
 
 	view        *blobber.View
-	failed      bool                        // the renderer could not start: classic from then on
 	scenes      map[string]*blobber.Scene   // parsed maps by name
 	shown       string                      // the scene the view shows
 	last        time.Time                   // when the animation last advanced
@@ -691,18 +691,17 @@ func (p *Presenter) drawMap(dst *gpu.Image, m image.Image, n int) {
 	dst.DrawImage(p.mapImg, op)
 }
 
-// scene is the remastered map of the area v shows, or nil.
+// scene is the remastered map of the area v shows, or nil for an area
+// without one (logged once: there is no other view of it).
 func (p *Presenter) scene(v engine.View) *blobber.Scene {
 	name, ok := areaMaps[v.Area]
-	if !ok || p.failed {
-		return nil
+	if !ok {
+		name = fmt.Sprintf("area%d", v.Area)
 	}
 	if p.view == nil {
 		var err error
 		if p.view, err = blobber.NewView(); err != nil {
-			log.Println("remaster:", err)
-			p.failed = true
-			return nil
+			log.Fatalln("remaster:", err)
 		}
 		blobber.Window = p.keyWindow // its menu and options in the game's box
 	}
@@ -721,7 +720,7 @@ func (p *Presenter) scene(v engine.View) *blobber.Scene {
 	if p.scenes == nil {
 		p.scenes = map[string]*blobber.Scene{}
 	}
-	p.scenes[name] = sc // nil too: a broken map stays classic
+	p.scenes[name] = sc // nil too: a missing or broken map is logged once
 	return sc
 }
 
