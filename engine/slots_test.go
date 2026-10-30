@@ -34,6 +34,20 @@ func TestSaveToKeepsArea(t *testing.T) {
 	}
 }
 
+// A save in the first command input after an area change names the area
+// the party is in, not the one it left (the area block still does then).
+func TestSaveToRunningArea(t *testing.T) {
+	e := &Engine{ecl: make([]byte, 0x1E00), set: 1}
+	e.Cfg.SaveDir = t.TempDir()
+	e.area.AreaKind, e.gs.areaKind = 20, 0
+	e.saveTo("X")
+	b, _ := os.ReadFile(filepath.Join(e.slotRoot(), "X", "SAVGAMA.DAT"))
+	s, err := OpenSave(b)
+	if err != nil || s.f.Area.AreaKind != 0 {
+		t.Errorf("saved area %d (%v), want 0, the running one", s.f.Area.AreaKind, err)
+	}
+}
+
 // The named words sit at the offsets the listings use, as the scripts
 // reach them (word i = byte offset 2i), and each record is 0x800 bytes.
 func TestVarOffsets(t *testing.T) {

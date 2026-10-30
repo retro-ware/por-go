@@ -506,6 +506,11 @@ func (e *Engine) saveSlot() {
 	e.area.ViewFlags = uint16(e.viewBit1)*2 + uint16(e.viewBit0)
 	e.game.SymbolSet = uint16(e.set)
 	f := saveFile{Set: byte(e.set), Area: e.area, Game: e.game, Aux: e.aux}
+	// the running area: after an area change the area block still names the
+	// one left (opNewECL; the game loop copies the new one after the next
+	// command), which the original never read back (its save held the
+	// script image) but the port reloads the script from (GameLoop)
+	f.Area.AreaKind = uint16(e.gs.areaKind)
 	for i := range 3 {
 		f.Area.WallsA[i] = uint16(e.mapPairA[i])
 		f.Area.WallsB[i] = uint16(e.mapPairB[i])
