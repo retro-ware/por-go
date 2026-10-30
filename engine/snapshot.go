@@ -110,6 +110,7 @@ type View struct {
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
+	Working   bool           // an action sent is still being carried out: what the View shows is on its way out (a menu still up is not asked again)
 }
 
 // Menu is the menu bar waiting for a choice on the prompt line.
@@ -201,10 +202,11 @@ func (e *Engine) publish() {
 	s := &e.snap
 	s.seq++
 	v := &View{
-		Seq:    s.seq,
-		Window: s.win,
-		Area:   AreaID(e.area.Geo),
-		X:      e.posX, Y: e.posY,
+		Seq:     s.seq,
+		Working: e.Busy(),
+		Window:  s.win,
+		Area:    AreaID(e.area.Geo),
+		X:       e.posX, Y: e.posY,
 		Facing:  Dir(e.viewFacing() / 2 & 3),
 		Day:     e.isDay(),
 		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,

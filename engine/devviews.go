@@ -230,6 +230,22 @@ func (e *Engine) DevScene(name string) func() {
 			}
 			e.ApplyItems(c)
 		}
+	case "lockeddoor": // a locked door ahead that no one can pick (the Pick menu's failure)
+		return func() {
+			for d := 0; d < 8; d += 2 { // face a wall
+				if e.WallAt(e.posX, e.posY, d) != 0 && !e.offMapSolid(e.posX+dirDX[d], e.posY+dirDY[d]) {
+					e.facing = d
+					break
+				}
+			}
+			e.setDoor(e.posX, e.posY, e.facing, 2)
+			e.setDoor(e.posX+dirDX[e.facing], e.posY+dirDY[e.facing], (e.facing+4)%8, 2)
+			e.run.doorTry = [3]byte{1, 1, 1}
+			for _, c := range e.party {
+				c.Thief[1] = 0
+			}
+			e.Redraw()
+		}
 	case "loot":
 		return func() {
 			e.run.treasure = nil

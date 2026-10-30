@@ -404,13 +404,21 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 	}
 	switch e.DisplayInput("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID {
 	case bash:
-		return e.bashDoor()
+		if !e.bashDoor() {
+			e.DisplayMessageWait(colYellow, "The door holds.") // extra: the original only bumped
+			return false
+		}
+		return true
 	case pick:
 		if wizard {
 			e.run.doorTry[1] = 0
 			return false
 		}
-		return e.pickLock()
+		if !e.pickLock() {
+			e.DisplayMessageWait(colYellow, "The lock holds.") // extra: the original only bumped
+			return false
+		}
+		return true
 	case knockIt:
 		return e.knock()
 	}

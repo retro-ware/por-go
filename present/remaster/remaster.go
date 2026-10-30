@@ -317,7 +317,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		drawBox(dst, frame, p.border.tiles, txt, pk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
-		if id := menuID(v.Menu); id != p.asked {
+		if id := menuID(v.Menu); id != p.asked && !v.Working { // not the menu just answered, still up while the engine works on the answer
 			p.asked, p.menu, p.sel = id, true, v.Menu.Sel
 		}
 	} else {
