@@ -417,7 +417,7 @@ func (e *Engine) ItemsMenu() bool {
 			}
 		case it == nil:
 		case a.Kind == ActReady:
-			e.swapReady(c, it)
+			e.readySome(c, it, a.X) // X: that many of the stack (0: all)
 		case a.Kind == ActUse && inv.Use && e.usable(it):
 			if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
 				e.refuse("Must be Readied")
@@ -460,6 +460,45 @@ func (e *Engine) swapReady(c *Character, it *Item) {
 		e.ApplyItems(c) // the slot and hands free
 	}
 	e.readyItem(it)
+}
+
+// readySome (extra): readies or unreadies n of a stack (n 0 or the whole
+// stack: all of it, swapReady), the rest staying where it was; a part
+// readied beside a like readied stack joins it (arrows), so does one
+// unreadied beside a like stack in the party inventory (addToPool).
+func (e *Engine) readySome(c *Character, it *Item, n int) {
+	if n <= 0 || n >= int(it.Count) || it.Count == 0 || it.Spells[0] >= 2 {
+		if o := e.inTheWay(c, it); it.Readied == 0 && o != nil && sameStack(o, it) && int(o.Count)+int(it.Count) <= 0xFF {
+			o.Count += it.Count // a whole stack beside a like readied one: it joins
+			e.RemoveItem(c, it)
+			return
+		}
+		e.swapReady(c, it)
+		return
+	}
+	part := *it
+	part.Count = byte(n)
+	it.Count -= byte(n)
+	if it.Readied != 0 { // n of them go back to the party inventory
+		part.Readied = 0
+		if e.poolFull(&part) {
+			it.Count += byte(n)
+			e.refuse("No room in the party items")
+			return
+		}
+		e.addToPool(&part)
+		return
+	}
+	if o := e.inTheWay(c, &part); o != nil && sameStack(o, &part) && int(o.Count)+n <= 0xFF {
+		o.Count += byte(n)
+		return
+	}
+	e.pool = append(e.pool, &part) // n of them are readied: the part is an item of its own
+	e.swapReady(c, &part)
+	if part.Readied == 0 { // refused: back into the stack
+		e.pool = slices.DeleteFunc(e.pool, func(p *Item) bool { return p == &part })
+		it.Count += byte(n)
+	}
 }
 
 // missileSlot (extra): readied now, the unreadied thrown weapon it would

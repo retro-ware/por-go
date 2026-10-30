@@ -110,6 +110,7 @@ type inventory struct {
 	member  int         // View.Inventory.Member
 	count   int         // party members
 
+	carry     *carried    // the stack on the cursor (a click picked it up), nil for none
 	held      bool        // the left button was down last frame
 	press     *hit        // the item the button went down on
 	pressAt   image.Point // where
@@ -117,6 +118,73 @@ type inventory struct {
 	scrolling *pane       // the button went down on its scroll bar
 	wheel     float64     // wheel movement not yet a line
 	wheeled   time.Time   // the last line the wheel scrolled
+}
+
+// carried is a stack picked up on the cursor: n of the item (by type and
+// name words, so it is found again as its count and Index change), from
+// the doll or the party inventory.
+type carried struct {
+	typ   byte
+	words []string
+	doll  bool
+	n     int
+	icon  engine.InvItem // as it looked when picked up (the icon under the pointer)
+}
+
+// carriedItem is the carried stack's item in the inventory shown, nil when it is gone.
+func (inv *inventory) carriedItem() *engine.InvItem {
+	c := inv.carry
+	if c == nil {
+		return nil
+	}
+	same := func(it *engine.InvItem) bool { return it != nil && it.Type == c.typ && slices.Equal(it.Words, c.words) }
+	if c.doll {
+		for _, it := range inv.view.Doll {
+			if same(it) {
+				return it
+			}
+		}
+		return nil
+	}
+	for k := range inv.view.Pool {
+		if same(&inv.view.Pool[k]) {
+			return &inv.view.Pool[k]
+		}
+	}
+	return nil
+}
+
+// pickUp puts n of the stack h on the cursor (0: all of it).
+func (inv *inventory) pickUp(h *hit, n int) {
+	all := max(h.item.Count, 1)
+	if n <= 0 || n > all {
+		n = all
+	}
+	inv.choose(false, h.item.Index)
+	inv.carry = &carried{typ: h.item.Type, words: h.item.Words, doll: h.doll, n: n, icon: h.item}
+}
+
+// put drops n of the carried stack where the pointer is: onto the doll
+// from the party inventory readies them, into the party inventory from
+// the doll unreadies them (ActReady with the count), back where they came
+// from puts them back; what is left stays on the cursor.
+func (inv *inventory) put(n int) {
+	c, it := inv.carry, inv.carriedItem()
+	if it == nil {
+		inv.carry = nil
+		return
+	}
+	n = max(1, min(n, c.n))
+	if onDoll := inv.hover.In(inv.dollAt); onDoll != c.doll {
+		x := n
+		if n >= max(it.Count, 1) {
+			x = 0 // the whole stack
+		}
+		inv.acts = append(inv.acts, engine.Action{Kind: engine.ActReady, N: it.Index, X: x})
+	}
+	if c.n -= n; c.n <= 0 {
+		inv.carry = nil
+	}
 }
 
 type hit struct {
@@ -418,7 +486,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 	inv.load()
 	if inv.view == nil || in.Member != inv.member {
-		inv.sel, inv.list.top = -1, 0 // a new member: nothing highlighted
+		inv.sel, inv.list.top, inv.carry = -1, 0, nil // a new member: nothing highlighted or on the cursor
 	}
 	if inv.view == nil || (inv.view.Wares == nil) != (in.Wares == nil) {
 		inv.ware, inv.wares.top = -1, 0
@@ -475,9 +543,17 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	fill := strconv.Itoa(len(in.Pool)) + "/" + strconv.Itoa(in.Cap)
 	inv.drawPane(&inv.list, inv.list.shown(in.Pool), inv.sel, false, shop && !in.Loot, busy, rx, rr, bottom) // the shop prices the party's items (it buys them); the loot does not
 
-	// an item dragged under the pointer
+	// an item dragged, or the stack picked up, under the pointer
+	if inv.carry != nil && inv.carriedItem() == nil { // gone (used, dropped, another member)
+		inv.carry = nil
+	}
 	if inv.dragging && inv.press != nil {
 		inv.drawIcon(&inv.press.item, image.Rectangle{inv.hover, inv.hover}.Inset(-rowH/2))
+	} else if c := inv.carry; c != nil {
+		inv.drawIcon(&c.icon, image.Rectangle{inv.hover, inv.hover}.Inset(-rowH/2))
+		if c.n > 1 {
+			inv.text(strconv.Itoa(c.n), inv.hover.X+rowH/2-8*len(strconv.Itoa(c.n))+2, inv.hover.Y+rowH/2-8, white)
+		}
 	}
 
 	// the menu row under the boxes: a note, else the choices
@@ -841,6 +917,8 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		inv.choose(order[(i+d+len(order))%len(order)].ware, order[(i+d+len(order))%len(order)].i)
 	}
 	switch {
+	case k == 27 && inv.carry != nil: // the stack goes back where it was
+		inv.carry = nil
 	case k == 27:
 		inv.do(engine.ActClose)
 	case k == 9: // Tab: the next tab of the highlighted item's list
@@ -879,11 +957,14 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 
 // InventoryMouse handles the pointer at screen pixel (x, y) with the left
 // button down or not, the right one just pressed and the wheel's movement.
-// A click on an item highlights it; a click on a highlighted item with a
-// slot readies or removes it, as does dragging it onto the doll or off it;
-// a right click closes the screen. The arrows are the previous and next member,
-// the menu row acts on the highlighted item; the wheel and the scroll bar
-// scroll.
+// A click on a stack picks the whole of it up on the cursor, the next
+// click drops it: onto the doll it is readied, into the party inventory it
+// is unreadied, back where it came from it is put back; a right click
+// picks up or drops one of a stack, with Shift half of it; Shift-click
+// readies or unreadies the whole stack at once, as does dragging it onto
+// the doll or off it; a right click elsewhere closes the screen. The arrows
+// are the previous and next member, the menu row acts on the highlighted
+// item; the wheel and the scroll bar scroll.
 func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 	inv := &p.inv
 	if inv.k == 0 || inv.view == nil {
@@ -931,7 +1012,29 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		d := inv.hover.Sub(inv.pressAt)
 		inv.dragging = d.X*d.X+d.Y*d.Y > 9
 	}
-	if right { // in the shop a right click buys a ware or sells an item; else it closes the screen
+	shift := gpu.IsKeyPressed(gpu.KeyShift)
+	if right && inv.view.Wares == nil { // a stack on the cursor: one of it (Shift: half) is dropped where the pointer is; else one of the stack under the pointer (Shift: half) is picked up; elsewhere the screen closes
+		switch c := inv.carry; {
+		case c != nil && shift:
+			inv.put(max(1, c.n/2))
+		case c != nil:
+			inv.put(1)
+		default:
+			for _, l := range inv.lines {
+				if inv.hover.In(l.r) {
+					if shift {
+						inv.pickUp(&l, max(1, max(l.item.Count, 1)/2))
+					} else {
+						inv.pickUp(&l, 1)
+					}
+					return
+				}
+			}
+			inv.do(engine.ActClose)
+		}
+		return
+	}
+	if right { // in the shop a right click buys a ware or sells an item
 		if inv.view.Wares != nil {
 			for _, l := range inv.lines {
 				if inv.hover.In(l.r) && !l.doll {
@@ -976,17 +1079,26 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 				}
 			}
 		}
+		if inv.carry != nil && inv.view.Wares == nil { // the stack on the cursor is dropped where the pointer is
+			inv.put(inv.carry.n)
+			return
+		}
 		for _, l := range inv.lines {
 			if !inv.hover.In(l.r) {
 				continue
 			}
-			if inv.view.Wares != nil && !l.doll && gpu.IsKeyPressed(gpu.KeyShift) { // Shift-click: a quick trade, no question
+			if inv.view.Wares != nil && !l.doll && shift { // Shift-click: a quick trade, no question
 				inv.choose(l.ware, l.item.Index)
 				if l.ware {
 					inv.do(engine.ActBuy)
 				} else if inv.view.Sell {
 					inv.acts = append(inv.acts, engine.Action{Kind: engine.ActSell, N: l.item.Index})
 				}
+				return
+			}
+			if inv.view.Wares == nil && shift { // Shift-click: the whole stack is readied or unreadied
+				inv.choose(false, l.item.Index)
+				inv.do(engine.ActReady)
 				return
 			}
 			inv.press, inv.pressAt = &l, inv.hover
@@ -1013,7 +1125,6 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		}
 		return
 	}
-	was := inv.sel
 	inv.choose(false, h.item.Index)
 	if inv.view.Wares != nil { // the shop: a drag over to the goods sells
 		if drag && !partySide && inv.view.Sell {
@@ -1022,10 +1133,10 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		return
 	}
 	switch {
-	case !drag && (was != h.item.Index || !h.item.Slot): // a click highlights it
-	case !drag,
-		h.doll && !inv.hover.In(inv.dollAt), // off the doll
-		!h.doll && inv.hover.In(inv.dollAt): // onto it
+	case !drag: // a click picks the whole stack up on the cursor (the next click drops it)
+		inv.pickUp(h, 0)
+	case h.doll && !inv.hover.In(inv.dollAt), // dragged off the doll
+		!h.doll && inv.hover.In(inv.dollAt): // or onto it: the whole stack
 		inv.do(engine.ActReady)
 	}
 }

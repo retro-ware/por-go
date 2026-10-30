@@ -197,9 +197,10 @@ func (g *game) mouse() {
 	if pts := strings.Split(os.Getenv("POR_POINTER"), ";"); shot != "" && pts[0] != "" { // POR_SHOT: the pointer at x,y (screen pixels)
 		fmt.Sscanf(pts[min(shotPointer, len(pts)-1)], "%d,%d", &mx, &my)
 	}
-	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game
+	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game (a capture's \C is down for one tick: a click)
 		_, dy := gpu.Wheel()
-		g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft), gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight), dy)
+		g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft) || g.leftOnce, gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) || g.rightOnce, dy)
+		g.leftOnce, g.rightOnce = false, false
 		return
 	}
 	g.remaster.Hover(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft))
