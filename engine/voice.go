@@ -16,7 +16,8 @@ import (
 // Voice-over (extra): story texts, journal texts and first visits are read
 // aloud from data/assets/speech/<key>.mp3 (rendered by voice/render.py,
 // 44100 Hz). On unless switched off in the remastered view's Esc options; each text speaks once per save
-// (VOICED.GOB beside SEEN.GOB); Enter or Esc silences it.
+// (VOICED.GOB beside SEEN.GOB); Enter or Esc silences it. The Amiga music is
+// muted while it speaks.
 
 // voiceOffFile in the save folder marks the voice as switched off.
 const voiceOffFile = "VOICE.OFF"
@@ -100,6 +101,13 @@ func (e *Engine) stopVoice() {
 	e.vox.mu.Lock()
 	e.vox.queue = nil
 	e.vox.mu.Unlock()
+}
+
+// speaking reports whether a recording is queued or playing.
+func (v *voice) speaking() bool {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	return len(v.queue) > 0
 }
 
 // VoiceReader is the voice's audio source, in SoundReader's format.

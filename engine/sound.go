@@ -182,6 +182,7 @@ type sound struct {
 	sn       sn76489
 	am       *amiga.Player // data/amiga/SOUND.BIN imported: the Amiga players instead
 	music    int           // the Amiga song Music started last
+	vox      *voice        // the voice-over: the music is silent while it speaks
 }
 
 // amigaFx maps PlaySound 2..12 to Amiga effects: the Amiga's effect table parallels the
@@ -344,6 +345,7 @@ func (e *Engine) SoundReader() *sound {
 	}
 	s.wait = 100 // soundWait(100) at start-up
 	s.on = true
+	s.vox = &e.vox
 	if img, err := os.ReadFile(filepath.Join(e.data, AmigaDir, "SOUND.BIN")); err == nil && len(img) == amiga.End-amiga.Base {
 		s.am = amiga.New(img)
 	}
@@ -362,11 +364,14 @@ func (s *sound) Read(p []byte) (int, error) {
 			clear(p[:n])
 		} else {
 			s.am.Render(p[:n], sndRate)
-			kind := "sfx"
-			if s.am.Playing() {
-				kind = "music"
+			switch {
+			case !s.am.Playing():
+				scale(p[:n], volume("sfx"))
+			case s.vox.speaking(): // extra: the song plays on unheard
+				clear(p[:n])
+			default:
+				scale(p[:n], volume("music"))
 			}
-			scale(p[:n], volume(kind))
 		}
 		return n, nil
 	}
