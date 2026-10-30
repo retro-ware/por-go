@@ -118,7 +118,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		k := scale(dst)
 		cx, top := dst.Bounds().Dx()/2, int(k)*16
 		if at := p.pickAt; at != (image.Rectangle{}) { // from a card's context menu: in its place at its scale, the edge next to the card kept
-			k = float64(cardScale(dst))
+			k = cardScale(dst)
 			w := 0
 			for _, s := range p.pick {
 				w = max(w, int(k)*8*(len(s.Name)+4)) // as drawMenu's box: a border and a blank column each side
@@ -292,16 +292,24 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	pic, txt := engine.InnerWindow.Framed(), engine.TextPane.Framed()
 	ph, th := float64(pic.Pixels().Dy()), float64(txt.Pixels().Dy())
 	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/pal.W))))
+	// the text box and the menus at their sizes (Esc, Graphics), as far as they fit between the cards
+	bw, bh := float64(b.Dx()), float64(b.Dy())
+	tk := pk * fitStep(blobber.Settings.Text, func(s float64) bool { return pk*s*float64(txt.Pixels().Dx()) <= bw && pk*s*th <= bh/2 })
+	mk := pk * fitStep(blobber.Settings.Menu, func(s float64) bool { return pk*s*28*8 <= bw && pk*s*12*8 <= bh/2 })
 	cx, cy := (b.Min.X+b.Max.X)/2, b.Dy()/2
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
 	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
-		pp, py := pk, int(float64(cy)-pk*th/2)/2
-		if v.Window == engine.WinPicture && blobber.Settings.PicDouble { // the pixel art at twice the pop-ups' scale (Esc, Graphics), as far as the text box and a menu still fit under it; the text box moves down under it
-			pp = max(pk, min(2*pk, float64(int((float64(b.Dy())-pk*(th+7*8))/ph))))
-			py = int(pp*ph/2) + int(pk*4)
-			cy = py + int(pp*ph/2) + int(pk*(4+th/2))
+		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
+		pw, gap := float64(pic.Pixels().Dx()), pk*4
+		pp := pk * fitStep(blobber.Settings.Pic, func(s float64) bool {
+			return pk*s*pw <= bw && 3*gap+pk*s*ph+tk*th+mk*7*8 <= bh
+		})
+		py := int(float64(cy)-tk*th/2) / 2
+		if float64(py)-pp*ph/2 < gap || float64(py)+pp*ph/2+gap > float64(cy)-tk*th/2 {
+			py = int(gap + pp*ph/2)
+			cy = py + int(pp*ph/2+gap+tk*th/2)
 		}
 		drawBox(dst, frame, p.border.tiles, pic, pp, cx, py)
 	}
@@ -311,9 +319,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered))     // back from a question with its text unchanged: the encounter is over
 	if shown && v.Command && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
-		drawBox(dst, frame, p.border.tiles, txt, pk, cx, b.Dy()-int(pk*th/2))
+		drawBox(dst, frame, p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
-		drawBox(dst, frame, p.border.tiles, txt, pk, cx, cy)
+		drawBox(dst, frame, p.border.tiles, txt, tk, cx, cy)
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked && !v.Working { // not the menu just answered, still up while the engine works on the answer
@@ -324,7 +332,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	if v.Choosing && v.Menu != nil { // a member pick: the question alone in the middle, the cards round it take the pick (a click, F1-F8, the arrows and Enter; Esc or a right click give up)
 		p.menu = false
-		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(v.Menu.Prompt)}, nil, -1, pk, cx, b.Dy()/2-int(pk*12))
+		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(v.Menu.Prompt)}, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
 		p.menuRects = p.menuRects[:0]
 	} else if v.Menu == nil { // typed input and "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
@@ -336,12 +344,12 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			lines[i], keys[i] = it.Text, it.Key
 		}
 		p.sel = min(p.sel, len(lines)-1)
-		top := cy + int(pk*th/2) + int(pk*8)
+		top := cy + int(tk*th/2) + int(pk*8)
 		if v.Command || !shown { // no text box above: in the middle
-			top = b.Dy()/2 - int(pk*float64(len(lines)+4)*4)
+			top = b.Dy()/2 - int(mk*float64(len(lines)+4)*4)
 		}
 		p.menuSel = v.Menu.Sel
-		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, pk, cx, top)
+		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, mk, cx, top)
 	}
 	if note.Show { // the toast: pageImage's bottom line (yellow on black) on a black band along the very bottom of the screen, no border
 		h := int(pk * 8)
@@ -622,52 +630,73 @@ func menuID(m *engine.Menu) string {
 }
 
 // cardAt lays the party's cards along the window's edges: the first half
-// of the party down the left, the rest down the right, at the largest
-// whole scale where a column of four fits (eight with two NPCs).
+// of the party down the left, the rest down the right, at cardScale.
 func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
 	b := dst.Bounds()
 	k := cardScale(dst)
+	px := func(n int) int { return int(math.Round(float64(n) * k)) }
 	return func(i, n int) image.Rectangle {
 		left := (n + 1) / 2
 		col, row, per := 0, i, left
 		if i >= left {
 			col, row, per = 1, i-left, n-left
 		}
-		y := b.Dy() - (per-row)*(cardH+cardGap)*k + cardFoot*k // the bars end a gap above the bottom
-		x := cardGap * k
+		y := b.Dy() - px((per-row)*(cardH+cardGap)) + px(cardFoot) // the bars end a gap above the bottom
+		x := px(cardGap)
 		if col == 1 {
-			x = b.Dx() - cardGap*k - cardW*k
+			x = b.Dx() - px(cardGap) - px(cardW)
 		}
-		return image.Rect(x, y, x+cardW*k, y+cardH*k)
+		return image.Rect(x, y, x+px(cardW), y+px(cardH))
 	}
 }
 
-// mapRect is where the map goes: a square right-aligned with the cards'
-// right edge, a card gap below the top, a fifth of the screen's height
-// tall, or less when the right column's top card of a party of six comes
-// closer (n cards in all: fewer members never make it bigger, so it keeps
-// its size when members are lost; two NPCs more make it smaller).
-func mapRect(dst *gpu.Image, n int) image.Rectangle {
+// mapRect is where the map goes: a square in the top right corner, a card
+// gap from the edges, mapPx on a side.
+func mapRect(dst *gpu.Image, _ int) image.Rectangle {
 	b := dst.Bounds()
-	k := cardScale(dst)
-	gap := cardGap * k
-	n = max(n, 6)
-	top := cardAt(dst)(n-1, n) // the right column's last card...
-	per := n - (n+1)/2
-	y := top.Min.Y - (per-1)*(cardH+cardGap)*k // ...up to its first
-	side := min(y-2*gap, b.Dy()/5)
-	if blobber.Settings.MapSmall {
-		side /= 2
-	}
+	gap, side := cardGap*cardBase(dst), mapPx(dst)
 	return image.Rect(b.Dx()-gap-side, gap, b.Dx()-gap, gap+side)
 }
 
 const cardGap, cardRows = 8, 4
 
-// cardScale is the cards' whole scale: the largest where a column of four
-// fits under the map at its smallest.
-func cardScale(dst *gpu.Image) int {
+// cardBase is the cards' size 1 (Esc, Graphics, Portraits): the largest
+// whole scale where a column of four fits under the smallest map.
+func cardBase(dst *gpu.Image) int {
 	return max(1, min(dst.Bounds().Dx()/480, dst.Bounds().Dy()/360, (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(cardH+cardGap))))
+}
+
+// cardScale is the cards' scale: cardBase at the Portraits size, as far as
+// a column of four (eight members with NPCs) still fits under the map at
+// its size and a card takes at most a sixth of the width.
+func cardScale(dst *gpu.Image) float64 {
+	b, base := dst.Bounds(), float64(cardBase(dst))
+	room := float64(b.Dy() - 2*cardGap*cardBase(dst))
+	if !blobber.Settings.MapOff {
+		room -= float64(mapPx(dst))
+	}
+	return base * fitStep(blobber.Settings.Cards, func(s float64) bool {
+		return base*s*cardRows*(cardH+cardGap) <= room && base*s*cardW <= float64(b.Dx())/6
+	})
+}
+
+// mapPx is the map's side: one map pixel to a card pixel at size 1 (Esc,
+// Graphics, Minimap size), at most half the height and a third of the width.
+func mapPx(dst *gpu.Image) int {
+	b, base := dst.Bounds(), float64(cardBase(dst)*mapSide)
+	return int(base * fitStep(blobber.Settings.Map, func(s float64) bool {
+		return base*s <= float64(b.Dy())/2 && base*s <= float64(b.Dx())/3
+	}))
+}
+
+// fitStep is the largest of blobber.UISteps up to s that ok takes, else the smallest.
+func fitStep(s float64, ok func(float64) bool) float64 {
+	for i := len(blobber.UISteps) - 1; i >= 0; i-- {
+		if t := blobber.UISteps[i]; t <= s && ok(t) {
+			return t
+		}
+	}
+	return blobber.UISteps[0]
 }
 
 // mapSide is View.Map's side in pixels.

@@ -1431,6 +1431,33 @@ func step(v, lo, hi, s float64, d int) float64 {
 	return math.Round(math.Max(lo, math.Min(hi, v))/s) * s
 }
 
+// UISteps are the sizes the host's screen elements come in: fractions down, whole multiples up.
+var UISteps = []float64{0.125, 0.25, 0.5, 1, 2, 3, 4}
+
+// uiLine is a Graphics line stepping *v through UISteps (Enter: round to the smallest past the largest).
+func uiLine(label string, v *float64) menuLine {
+	return menuLine{label, func(*Game) string {
+		if *v < 1 {
+			return fmt.Sprintf("1/%.0fx", 1 / *v)
+		}
+		return fmt.Sprintf("%.0fx", *v)
+	}, func(_ *Game, d int) {
+		i := slices.Index(UISteps, *v)
+		if i < 0 {
+			i = 3
+		}
+		switch {
+		case d < 0:
+			i = max(i-1, 0)
+		case d > 0:
+			i = min(i+1, len(UISteps)-1)
+		default:
+			i = (i + 1) % len(UISteps)
+		}
+		*v = UISteps[i]
+	}}
+}
+
 // bar draws v in lo..hi (step s) as a slider.
 func bar(v, lo, hi, s float64) string {
 	i, n := int(math.Round((v-lo)/s)), int(math.Round((hi-lo)/s))
@@ -1452,7 +1479,11 @@ func (g *Game) menuOptions() []menuLine {
 			{"Fullscreen", func(*Game) string { return onOff(gpu.IsFullscreen()) }, func(*Game, int) { gpu.SetFullscreen(!gpu.IsFullscreen()) }},
 			{"Dithered darkness", func(g *Game) string { return onOff(g.dither) }, func(g *Game, _ int) { g.dither = !g.dither }},
 			{"Torch intensity", func(g *Game) string { return fmt.Sprintf("%.1f", g.torch) }, func(g *Game, d int) { g.torch = step(g.torch, 0.5, 1.5, 0.5, d) }},
-			{"Picture box", func(*Game) string { return map[bool]string{false: "Normal", true: "Double"}[Settings.PicDouble] }, flip(&Settings.PicDouble)},
+			uiLine("Portraits", &Settings.Cards),
+			uiLine("Minimap size", &Settings.Map),
+			uiLine("Picture box", &Settings.Pic),
+			uiLine("Menus", &Settings.Menu),
+			uiLine("Text box", &Settings.Text),
 		}
 	case "Audio":
 		return []menuLine{{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }}}
@@ -1464,7 +1495,6 @@ func (g *Game) menuOptions() []menuLine {
 				return bar(Settings.Speed, minSpeed, maxSpeed, 0.25) + fmt.Sprintf(" %.2fx", Settings.Speed)
 			}, func(_ *Game, d int) { Settings.Speed = step(Settings.Speed, minSpeed, maxSpeed, 0.25, d) }},
 			{"Minimap", func(*Game) string { return onOff(!Settings.MapOff) }, flip(&Settings.MapOff)},
-			{"Minimap size", func(*Game) string { return map[bool]string{false: "Normal", true: "Small"}[Settings.MapSmall] }, flip(&Settings.MapSmall)},
 			{"Minimap opacity", func(*Game) string {
 				return bar(Settings.MapAlpha, minAlpha, 1, 0.1) + fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100)
 			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
@@ -1888,9 +1918,9 @@ type Options struct {
 	Smooth, Fluid, Dither, Fullscreen bool // Fluid: a held key walks or turns on without slowing at each cell
 	Torch                             float64
 	Speed                             float64 // walk and turn speed, minSpeed to maxSpeed times the normal
-	MapOff, MapSmall                  bool    // the host's minimap: hidden; half its size
+	MapOff                            bool    // the host's minimap: hidden
 	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
-	PicDouble                         bool    // the host's picture box at twice the pop-up scale
+	Cards, Map, Pic, Menu, Text       float64 // the host's portraits, minimap, picture box, menus and text box: one of UISteps times their normal size (the host shrinks them as far as the screen needs)
 	Deskew                            bool    // the host's combat maps on a square grid (walls straight) instead of the original's perspective
 	Zoom                              float64 // the host's battle camera: how far one wheel step zooms, minZoom to maxZoom times 15 percent
 }
@@ -1904,7 +1934,7 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
 	// the voice first when toggle, then reports whether it is on.
