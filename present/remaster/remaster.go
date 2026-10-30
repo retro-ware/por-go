@@ -382,6 +382,9 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
+	if p.main && p.mainSkip() {
+		return true
+	}
 	if p.pickKey(k) {
 		return true
 	}
@@ -470,6 +473,9 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 // reports whether it was taken.
 func (p *Presenter) Click(x, y int) bool {
 	if p.main {
+		if p.mainSkip() {
+			return true
+		}
 		return p.mainClick(x, y)
 	}
 	if p.pickClick(x, y) {

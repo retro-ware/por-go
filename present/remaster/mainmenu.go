@@ -43,10 +43,7 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-float64(bb.Dx())*k)/2, (float64(b.Dy())-float64(bb.Dy())*k)/2)
 	dst.DrawImage(p.backdrop, op)
-	if p.mainAt.IsZero() {
-		p.mainAt = time.Now()
-	}
-	a := float32(time.Since(p.mainAt)-titleHold) / float32(titleFade)
+	a := p.mainFade()
 	dim := uint8(titleDim * 255 * min(max(a, 0), 1)) // the picture darkens as the menu comes, so the lettering reads
 	vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: dim}, false)
 	if a >= 1 {
@@ -64,6 +61,26 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	lo := &gpu.DrawImageOptions{}
 	lo.ColorScale.ScaleAlpha(max(a, 0))
 	dst.DrawImage(p.layer, lo)
+}
+
+// mainFade is how far the menu has faded in over the title (0 not yet, 1
+// fully); the first call starts the clock.
+func (p *Presenter) mainFade() float32 {
+	if p.mainAt.IsZero() {
+		p.mainAt = time.Now()
+	}
+	return float32(time.Since(p.mainAt)-titleHold) / float32(titleFade)
+}
+
+// mainSkip ends the title's hold and fade on a key or click while they
+// run, so the menu shows at once; it reports whether it did, and that
+// input goes no further: the menu it would have acted on was not yet seen.
+func (p *Presenter) mainSkip() bool {
+	if p.mainFade() >= 1 {
+		return false
+	}
+	p.mainAt = time.Now().Add(-titleHold - titleFade)
+	return true
 }
 
 // drawMainUI draws the main menu's lettering, functions and cards.
