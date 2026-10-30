@@ -493,6 +493,8 @@ func (e *Engine) creationSheet(c *Character) {
 	e.CharacterSheet()
 	e.BuildCharIcon(c, true)
 	for p := 0; p < 2; p++ {
+		r := iconRect(sheetIconCol(p), sheetIconRow)
+		e.fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, colDarkGrey) // a grey ground: the icon's black parts show against the page
 		if c.Icon != nil { // a PNG: over the page at the window's resolution
 			e.pg.overlays = append(e.pg.overlays, Overlay{Img: iconPose(c.Icon, p, false), At: iconRect(sheetIconCol(p), sheetIconRow)})
 		} else if im := e.icons[c.Order][p]; im != nil {
