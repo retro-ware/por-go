@@ -191,7 +191,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	case !left || !in:
 	case spot >= 0:
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActSpot, N: spot, X: cx, Y: cy})
-	case v.Menu == nil && v.Typing == nil:
+	case v.Typing == nil && (v.Menu == nil || len(v.Menu.Items) == 1): // no bar, or one with nothing to choose (the scripts' "PRESS <ENTER> TO CONTINUE")
 		p.send(engine.ActContinue, 0)
 	}
 }

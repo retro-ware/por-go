@@ -38,7 +38,8 @@ var win struct {
 	lw, lh   int  // its size last frame
 	unfocus  bool // keep updating while unfocused (always on here)
 	full     bool
-	toFull   atomic.Int32 // a fullscreen change for the main thread: 1 off, 2 on
+	toFull   atomic.Int32  // a fullscreen change for the main thread: 1 off, 2 on
+	toSize   atomic.Uint64 // a window size for the main thread: w<<32 | h (0: none)
 	fps      float64
 	frames   int
 	fpsStart time.Time
@@ -56,8 +57,8 @@ func init() { win.ww, win.wh, win.tps, win.title = 640, 480, 60, "" }
 
 func SetWindowSize(w, h int) {
 	win.ww, win.wh = w, h
-	if win.app != nil {
-		win.app.RequestSize(w, h)
+	if win.app != nil { // AppKit wants it on the main thread: OnUpdate applies it
+		win.toSize.Store(uint64(w)<<32 | uint64(h))
 	}
 }
 
@@ -135,6 +136,9 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 			app.SetFullscreen(f == 2)
 			setComposition(f != 2)
 		}
+		if s := win.toSize.Swap(0); s != 0 {
+			app.RequestSize(int(s>>32), int(s&0xFFFFFFFF))
+		}
 	})
 	var (
 		screen *Image
@@ -190,7 +194,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 			if ww == win.lw && wh != win.lh {
 				nw, nh = wh*win.aw/win.ah, wh
 			}
-			app.RequestSize(nw, nh)
+			win.toSize.Store(uint64(nw)<<32 | uint64(nh)) // from the main thread: here is the render thread, and setContentSize there traps during a live resize
 		}
 		win.lw, win.lh = ww, wh
 		sw, sh := g.Layout(ww, wh)
