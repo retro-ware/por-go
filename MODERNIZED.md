@@ -883,6 +883,23 @@ cut from their combat icons.
   the inventory atlas, buttons 64 px apart with their words on translucent
   black; 1..9 and 0 pick buttons, Enter attacks the aimed one, Backspace
   ends the turn; the arrows stay with the game (manual aim, keypad steps).
+  **Weapon tooltips:** the pointer on Attack or Ranged opens the game's menu
+  box above the button (`remaster/fight.go` `drawTipOver`, the box shared
+  with the card tip as `tipMenu` in `cards.go`) with the readied weapon's
+  name, its Look lines and its combat rules, which the engine derives from
+  the base item table so they match what the aim code refuses
+  (`engine/combat.go` `weaponRules`, published as `InvItem.Rules` on
+  `Turn.Weapon` and `Turn.Missile`): "Melee: a foe next to you"; a thrown
+  weapon that is no melee weapon (oil, holy water, darts, javelins:
+  usage flag 0x10 without 0x04) "Thrown up to N squares, not with a foe
+  next to you; one is used up each throw"; a hand axe or spear (0x14)
+  "Melee, or thrown up to N squares; a thrown one lands on the ground"; a
+  bow or crossbow (0x08 with 0x01/0x80) "Shoots up to N squares with its
+  ammunition readied, not with a foe next to you"; a sling (0x0A) the same
+  without the ammunition line. N is the base item's range minus one, the
+  original's `+C` field. The bar's hover comes from the host's pointer
+  (`battle.Presenter.Pointer`), not the window's cursor, so `POR_POINTER`
+  captures can script it.
   Mark colours: reach blue, path `{0.1,0.35,0.8}`, free-attack squares,
   targets and a blocked aim red, spell areas orange; pedestals blue
   `{0.22,0.42,0.95}` for the party, red `{0.88,0.2,0.14}` for enemies,
@@ -1095,6 +1112,13 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
   highlights, click picks (a list line twice = Enter), party cards, combat
   squares, the wheel scrolls, the right button is Esc; pickers with no menu
   words (race, class ...) pick on one click; a click ends a typed line.
+- One key answers one menu (`remaster.go` `menuFor`): the vertical popup
+  remembers the menu it opened for and closes when another arrives, so the
+  Enter that picked Bash on a locked door never opens the command bar's
+  popup; and `gpu` releases every key and button when the window loses the
+  focus (`OnFocus` in `gpu/input.go`), because the releases never arrive
+  then and a stuck Shift turned the next click into a head change (`ActHead`
+  and `ActPortrait` now act on the sheet alone, `ext.viewing`).
 - Gamepad: d-pad walks and moves selections, Y minimap, X overview.
 - F1–F8 open member n's inventory anywhere, switch members on the inventory,
   View page, camp, memorize, loot and shop bars; P toggles inventory/View.
@@ -1149,14 +1173,40 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
   (`~/Projects/remapper`) through `./remap_items.sh` at the repo root
   (`remapper 20 20 atlas.png items.rec`, `s` saves, then rebuild: the files
   are embedded)), tooltips with the Look text and the damage / AC difference
-  to what is readied (green/red, one decimal), a scroll bar, click or drag
-  to ready/remove, right click looks, items the class cannot ready in red,
-  All / Weapons / Armor / Misc tabs, the pool sorted by kind and strength;
+  to what is readied (green/red, one decimal), a scroll bar, items the
+  class cannot ready in red, All / Weapons / Armor / Misc tabs, the pool
+  sorted by kind and strength;
   everything drawn 1:1 on one canvas of at least 400x250 and scaled by a
   whole factor; the original's menu row and Look/Drop boxes over it. Shop Browse is the same screen in two panes (goods left,
   party items right with sell prices, gold and copper on the border; a second
   click or a drag buys/sells). The loot after a fight is the same screen with
   the treasure as wares (Take, All, Exit).
+- **Stacks on the cursor** (`inventory.go` `carried`, `pickUp`, `put`): the
+  mouse model of the default inventory screen is a cursor stack, as in
+  Eye of the Beholder or Minecraft. A left click on a stack (doll or party
+  inventory) picks the whole of it up; its icon and count follow the
+  pointer; the next left click drops it where the pointer is: onto the
+  doll it is readied, into the party inventory it is unreadied, back on
+  its own side it is put back. A right click picks up one piece,
+  Shift-right-click half; with a stack on the cursor a right click drops
+  one, Shift-right-click half. Shift-left-click readies or unreadies the
+  whole stack at once with no pickup; a drag onto or off the doll moves the
+  whole stack; Esc puts a carried stack back; a right click on empty space
+  closes the screen as before. The carried stack is identified by item type
+  and name words, not by `Index`, because the pool is re-sorted and the
+  count in the name changes after every drop. The engine side is one
+  field: `ActReady.X` is the count (0: the whole stack) and
+  `engine/view.go` `readySome` splits that many off into an item of its
+  own (a copy of the `Item` with `Count` = n) and readies or unreadies it
+  through `swapReady`; a part readied beside a like readied stack joins it
+  (`sameStack`: arrows, flasks), an unreadied part joins its like in the
+  pool (`addToPool`), and a refused move puts the split back. Shop and
+  loot screens keep their own clicks (a second click or a drag buys or
+  sells, Shift-click trades without the question). Scripted captures reach
+  this screen: `POR_KEYS` `\C` and `\M` are a left and a right click at
+  `POR_POINTER`, `\P` moves the pointer on to its next position, e.g.
+  `POR_POINTER='900,135;140,820' POR_KEYS='\rL\r\r\r\1iéé\Mé\Pé\Mé'`
+  picks one flask of oil off a stack and readies it (1920x1440 window).
 - Item names end in Angband-style base stats ("(1d8)", "[7]"); shop Look
   (`engine/itemlook.go`) explains what an item does; goods a buyer cannot
   ready are grey and skipped.
