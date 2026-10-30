@@ -91,6 +91,7 @@ func SetFlats(floor, ceiling string) {
 	}
 	flatNames = [2]string{floor, ceiling}
 	openSky = strings.HasPrefix(ceiling, "sky")
+	worldChanged()
 	if defFloor != nil {
 		texFloor, texCeil = FlatTexture("floor", floor), FlatTexture("ceiling", ceiling)
 	}

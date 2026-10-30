@@ -104,9 +104,10 @@ func RunGame(g Game) error { return RunGameWithOptions(g, nil) }
 // Update returns an error.
 func RunGameWithOptions(g Game, o *RunGameOptions) error {
 	cfg := gogpu.DefaultConfig().WithTitle(win.title).WithSize(win.ww, win.wh).
-		WithResizable(win.resize).WithContinuousRender(true)
+		WithResizable(win.resize).WithContinuousRender(true).WithVSync(os.Getenv("POR_NOVSYNC") == "") // POR_NOVSYNC=1: frames as fast as they come, for measuring
 	if win.full {
 		cfg = cfg.WithFullscreen()
+		setComposition(false)
 	}
 	app := gogpu.NewApp(cfg)
 	win.app = app
@@ -114,6 +115,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 	app.OnUpdate(func(float64) { // the main thread
 		if f := win.toFull.Swap(0); f != 0 {
 			app.SetFullscreen(f == 2)
+			setComposition(f != 2)
 		}
 	})
 	var (
@@ -184,7 +186,9 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		if d := now.Sub(win.fpsStart).Seconds(); d >= 1 {
 			if os.Getenv("POR_FPS") != "" { // POR_FPS=1: a line a second with the frame rate and where a frame's time goes
 				n := time.Duration(max(win.frames, 1))
-				fmt.Fprintf(os.Stderr, "fps %.1f  frame %v  draw %v  present %v\n", float64(win.frames)/d, time.Duration(d*float64(time.Second))/n, win.drawT/n, win.presentT/n)
+				fr := max(win.frames, 1)
+				fmt.Fprintf(os.Stderr, "fps %.1f  frame %v  draw %v  present %v  per frame: draws %d (3D %d) passes %d clears %d writes %d uploads %d\n", float64(win.frames)/d, time.Duration(d*float64(time.Second))/n, win.drawT/n, win.presentT/n, Stats.Draws/fr, Stats.Draws3D/fr, Stats.Passes/fr, Stats.Clears/fr, Stats.Writes/fr, Stats.Uploads/fr)
+				Stats = struct{ Draws, Draws3D, Passes, Clears, Writes, Uploads int }{}
 			}
 			win.fps, win.frames, win.fpsStart = float64(win.frames)/d, 0, now
 			win.drawT, win.presentT = 0, 0
@@ -195,3 +199,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 	}
 	return runErr
 }
+
+// Stats counts the GPU work issued since the last POR_FPS line: draw calls,
+// render passes, buffer writes and texture uploads.
+var Stats struct{ Draws, Draws3D, Passes, Clears, Writes, Uploads int }

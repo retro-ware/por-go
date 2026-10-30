@@ -160,6 +160,7 @@ func passOn(t *texture, depth bool) *wgpu.RenderPassEncoder {
 	t.ensure()
 	color := wgpu.RenderPassColorAttachment{View: t.view, LoadOp: gputypes.LoadOpLoad, StoreOp: gputypes.StoreOpStore}
 	if t.clear {
+		Stats.Clears++
 		color.LoadOp, color.ClearValue, t.clear = gputypes.LoadOpClear, gputypes.Color{}, false
 	}
 	desc := &wgpu.RenderPassDescriptor{Label: "draw", ColorAttachments: []wgpu.RenderPassColorAttachment{color}}
@@ -170,6 +171,7 @@ func passOn(t *texture, depth bool) *wgpu.RenderPassEncoder {
 			desc.DepthStencilAttachment.DepthLoadOp, desc.DepthStencilAttachment.DepthClearValue, t.clearDepth = gputypes.LoadOpClear, 1, false
 		}
 	}
+	Stats.Passes++
 	p, err := encoder().BeginRenderPass(desc)
 	if err != nil {
 		panic(err)
@@ -212,12 +214,15 @@ func submit() {
 // allocations are copied to a CPU shadow and written with one
 // Queue.WriteBuffer per chunk before submit.
 type stream struct {
-	usage  gputypes.BufferUsage
-	chunk  int
-	align  int
-	label  string
-	chunks []*streamChunk
-	cur    int
+	usage gputypes.BufferUsage
+	chunk int
+	align int
+	label string
+	// a frame's chunks; gens rotate per submit so the GPU can still read the last
+	// ones (Metal keeps two submissions in flight, its buffers are shared memory)
+	gens [3][]*streamChunk
+	gen  int
+	cur  int
 }
 
 type streamChunk struct {
@@ -233,7 +238,8 @@ type streamChunk struct {
 func (s *stream) alloc(data []byte, reserve int) (*streamChunk, uint32) {
 	need := max(len(data), reserve)
 	for {
-		if s.cur >= len(s.chunks) {
+		chunks := &s.gens[s.gen]
+		if s.cur >= len(*chunks) {
 			size := max(s.chunk, need)
 			b, err := dev.device.CreateBuffer(&wgpu.BufferDescriptor{Label: s.label, Size: uint64(size), Usage: s.usage})
 			if err != nil {
@@ -246,9 +252,9 @@ func (s *stream) alloc(data []byte, reserve int) (*streamChunk, uint32) {
 					panic(err)
 				}
 			}
-			s.chunks = append(s.chunks, c)
+			*chunks = append(*chunks, c)
 		}
-		c := s.chunks[s.cur]
+		c := (*chunks)[s.cur]
 		off := (c.used + s.align - 1) &^ (s.align - 1)
 		if off+need <= len(c.shadow) {
 			copy(c.shadow[off:], data)
@@ -261,9 +267,11 @@ func (s *stream) alloc(data []byte, reserve int) (*streamChunk, uint32) {
 }
 
 func (s *stream) flush() {
-	for _, c := range s.chunks[:min(s.cur+1, len(s.chunks))] {
+	chunks := s.gens[s.gen]
+	for _, c := range chunks[:min(s.cur+1, len(chunks))] {
 		if c.used > c.flushed {
 			lo, hi := c.flushed&^3, (c.used+3)&^3
+			Stats.Writes++
 			if err := dev.queue.WriteBuffer(c.buf, uint64(lo), c.shadow[lo:hi]); err != nil {
 				panic(err)
 			}
@@ -272,8 +280,10 @@ func (s *stream) flush() {
 	}
 }
 
+// reset moves to the next generation of chunks, for the next submission.
 func (s *stream) reset() {
-	for _, c := range s.chunks {
+	s.gen = (s.gen + 1) % len(s.gens)
+	for _, c := range s.gens[s.gen] {
 		c.used, c.flushed = 0, 0
 	}
 	s.cur = 0

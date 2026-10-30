@@ -15,8 +15,8 @@ func TestCore(t *testing.T) {
 	if _, err := gpu.NewShader([]byte(ditherSrc)); err != nil {
 		t.Fatal("dither shader:", err)
 	}
-	if _, err := gpu.NewShader([]byte(texSrc)); err != nil {
-		t.Fatal("texture shader:", err)
+	if _, err := gpu.NewMeshShader(meshSrc); err != nil {
+		t.Fatal("mesh shader:", err)
 	}
 	g := &Game{x: 1, y: 1, dir: 0, smooth: true, t: 1, tx: 1.5, tz: 1.5}
 	g.act(gpu.KeyW) // wall to the north: no move

@@ -142,7 +142,7 @@ How the original was read, so another game can be read the same way:
   the window and exit), `POR_KEYS` (scripted keys one every quarter second:
   `\r` Enter, `\e` Esc, `\U \D \L \R` arrows, `\1..\8` F-keys, `\t` Tab,
   `\M \C` right/left click at `POR_POINTER=x,y;x,y`, `\P` next pointer
-  position), `POR_PNG` (a dropped portrait), `POR_SCRIPTS_OUT`, `POR_FPS=1` (a frame-rate line a second: where a frame's time goes), `POR_CPUPROFILE=file` (a CPU profile of the first 20 seconds), `POR_STACKS=n` (every goroutine to stderr every n seconds). Shot
+  position), `POR_PNG` (a dropped portrait), `POR_SCRIPTS_OUT`, `POR_FPS=1` (a frame-rate line a second: where a frame's time goes, and the frame's draws, passes, clears and buffer writes), `POR_NOVSYNC=1` (frames as fast as they come, for measuring), `POR_CPUPROFILE=file` (a CPU profile of the first 20 seconds), `POR_STACKS=n` (every goroutine to stderr every n seconds). Shot
   windows open unfocused and ignore the user's input while they run (a
   global rule: captures must not take stray keys).
 
@@ -706,7 +706,7 @@ All in `phlan-poc/blobber/blobber.go`, `scene.go`, `view.go` and
   | `MapOff`, `MapSmall`, `MapAlpha` | false, false, 1 | Minimap, size Normal/Small, opacity 0.2–1 |
   | `Deskew` | true | Deskew combat maps |
   | `Zoom` | 0.5 | Zoom speed 0.25–2.0 |
-  | `Fullscreen`, `Dither` | false, true | Graphics: Fullscreen, Dithered darkness |
+  | `Fullscreen`, `Dither` | true, true | Graphics: Fullscreen (the screen at its own resolution; `-window` overrides it for a run, `-scale` the window's size), Dithered darkness |
   | `Torch` | 1 | Torch intensity 0.5–1.5 |
   | `PicDouble` | false | Picture box Normal/Double |
 

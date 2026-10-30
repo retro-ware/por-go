@@ -193,6 +193,7 @@ func (i *Image) WritePixels(px []byte) {
 	}
 	submit() // draws recorded earlier still see the old pixels
 	w, h := i.r.Dx(), i.r.Dy()
+	Stats.Uploads++
 	if err := dev.queue.WriteTexture(&wgpu.ImageCopyTexture{Texture: i.t.tex, Origin: wgpu.Origin3D{X: uint32(i.r.Min.X), Y: uint32(i.r.Min.Y)}},
 		px[:w*h*4], &wgpu.ImageDataLayout{BytesPerRow: uint32(w * 4), RowsPerImage: uint32(h)},
 		&wgpu.Extent3D{Width: uint32(w), Height: uint32(h), DepthOrArrayLayers: 1}); err != nil {
@@ -431,6 +432,7 @@ func flushBatch() {
 		}
 		c, off := dev.vertices.alloc(bytesOf(batch.verts), 0)
 		p.SetVertexBuffer(0, c.buf, uint64(off))
+		Stats.Draws++
 		p.Draw(gputypes.DrawArgs{VertexCount: uint32(len(batch.verts)), InstanceCount: 1})
 	}
 	batch.verts = batch.verts[:0]

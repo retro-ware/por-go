@@ -32,6 +32,8 @@ type page struct {
 	seq   uint64
 	noted bool
 	drawn bool
+	page  []engine.Sprite      // what img shows: the View's page...
+	text  [25][40]engine.Cell  // ...and text
 	scans map[image.Image]scan // the overlays on the GPU
 }
 
@@ -50,10 +52,12 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 	if pg.img == nil {
 		pg.img, pg.px = gpu.NewImage(pal.W, pal.H), image.NewRGBA(image.Rect(0, 0, pal.W, pal.H))
 	}
-	if pg.drawn && v.Seq == pg.seq && !note.Show && !pg.noted {
+	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
+		pg.seq = v.Seq
 		return pg.img
 	}
 	pg.drawn, pg.seq, pg.noted = true, v.Seq, note.Show
+	pg.page, pg.text = append(pg.page[:0], v.Page...), v.Text
 	m := pg.px
 	draw.Draw(m, m.Bounds(), image.Black, image.Point{}, draw.Src)
 	for _, s := range v.Page {
@@ -172,4 +176,31 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
 		op.GeoM.Translate(x, y)
 		dst.DrawImage(im, op)
 	}
+}
+
+// samePage reports whether v's page and text are what pg.img shows. The
+// engine publishes a View every tick, most of them with the page unchanged;
+// a layer's picture is the same when it is the same pixels.
+func samePage(v engine.View, pg *page) bool {
+	if len(v.Page) != len(pg.page) || v.Text != pg.text {
+		return false
+	}
+	for i, s := range v.Page {
+		if s.At != pg.page[i].At || !sameImage(s.Img, pg.page[i].Img) {
+			return false
+		}
+	}
+	return true
+}
+
+func sameImage(a, b image.Image) bool {
+	switch a := a.(type) {
+	case *image.RGBA:
+		b, ok := b.(*image.RGBA)
+		return ok && a.Rect == b.Rect && a.Stride == b.Stride && len(a.Pix) == len(b.Pix) && (len(a.Pix) == 0 || &a.Pix[0] == &b.Pix[0])
+	case *image.Uniform:
+		b, ok := b.(*image.Uniform)
+		return ok && a.C == b.C
+	}
+	return false
 }

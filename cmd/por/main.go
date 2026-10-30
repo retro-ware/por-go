@@ -61,6 +61,7 @@ type game struct {
 	wheel     float64       // wheel movement not yet sent as a step
 	sent      bool          // input went to the engine this tick
 	ticks     int           // Update calls, counted only for POR_SHOT
+	frames    int           // frames saved, POR_SHOT with %d
 	rightOnce bool          // POR_KEYS \M: the right button pressed this tick
 	leftOnce  bool          // POR_KEYS \C: the left button
 }
@@ -306,14 +307,26 @@ func (g *game) Draw(dst *gpu.Image) {
 	} else {
 		g.pic = g.remaster.Draw(dst, note, g.eng.View())
 	}
-	if shot != "" && g.ticks > 30*(len(shotKeys)+4) {
-		saveShot(dst)
+	if shot == "" {
+		return
+	}
+	if strings.Contains(shot, "%d") { // every frame while the keys play, numbered (to catch a glitch of one frame)
+		if g.ticks > 30 && g.ticks <= 30*(len(shotKeys)+1) {
+			saveShot(dst, fmt.Sprintf(shot, g.frames))
+			g.frames++
+		}
+	} else if g.ticks > 30*(len(shotKeys)+4) {
+		saveShot(dst, shot)
+	}
+	if g.ticks > 30*(len(shotKeys)+4) {
+		os.Exit(0)
 	}
 }
 
 // POR_SHOT=FILE.png writes the window to FILE after the keys in POR_KEYS,
 // one every quarter second, and exits; for full size checks of the
-// presenters. The window opens unfocused and ignores the user's input
+// presenters. A FILE with %d in it is written for every frame while the
+// keys play, numbered from 0 (a glitch of one frame). The window opens unfocused and ignores the user's input
 // meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
 // first adventuring prompt. POR_POINTER=x,y puts the pointer there. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
 // arrows, \1..\8 F1..F8, \M and \C a right and a left click at the
@@ -342,19 +355,18 @@ func scriptKeys(s string) []uint16 {
 	return out
 }
 
-func saveShot(dst *gpu.Image) {
+func saveShot(dst *gpu.Image, name string) {
 	b := dst.Bounds()
 	img := image.NewRGBA(b)
 	dst.ReadPixels(img.Pix)
-	f, err := os.Create(shot)
+	f, err := os.Create(name)
 	if err == nil {
-		err = png.Encode(f, img)
+		err = (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(f, img)
 		f.Close()
 	}
 	if err != nil {
 		log.Fatal(err)
 	}
-	os.Exit(0)
 }
 
 // Layout works in device pixels, so the picture fills the window exactly.
@@ -405,7 +417,8 @@ var speaker, voice *oto.Player // kept from the garbage collector
 
 func main() {
 	dir := flag.String("data", "", "where -import and -import-disk2 write (goplay)")
-	scale := flag.Int("scale", 3, "window scale")
+	scale := flag.Int("scale", 3, "window scale (with -window)")
+	window := flag.Bool("window", false, "a window instead of the full screen (the Esc menu's setting is left as it is)")
 	imp := flag.String("import", "", "copy the game found under this directory into -data, then exit (goplay)")
 	imp2 := flag.String("import-disk2", "", "convert the Amiga graphics from the .adf disks under this directory into -data/amiga, then exit (goplay)")
 	explore := flag.Bool("explore", false, "debug: skip the intro, Quick Start a party if there is none and begin adventuring at once")
@@ -504,7 +517,7 @@ func main() {
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
 	gpu.SetTPS(tps)
-	gpu.SetFullscreen(os.Getenv("GOPLAY_FULLSCREEN") == "1" || blobber.Settings.Fullscreen) // goplay starts games fullscreen
+	gpu.SetFullscreen((os.Getenv("GOPLAY_FULLSCREEN") == "1" || blobber.Settings.Fullscreen) && !*window) // the screen at its own resolution, unless the Esc menu or -window says a window
 	if shot != "" {
 		gpu.SetRunnableOnUnfocused(true)
 	}

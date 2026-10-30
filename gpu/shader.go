@@ -85,19 +85,25 @@ func NewShader(src []byte) (*Shader, error) {
 	return s, nil
 }
 
+// imagesGroupLayout is the layout of a shader's four images and sampler (group 1).
+func imagesGroupLayout() *wgpu.BindGroupLayout {
+	if imagesLayout == nil {
+		var err error
+		if imagesLayout, err = dev.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{Label: "shader images",
+			Entries: []gputypes.BindGroupLayoutEntry{texEntry(0), texEntry(1), texEntry(2), texEntry(3), samplerEntry(4)}}); err != nil {
+			panic(err)
+		}
+	}
+	return imagesLayout
+}
+
 // pipe is the shader's pipeline for blend b, made on first use.
 func (s *Shader) pipe(b Blend) *wgpu.RenderPipeline {
 	if s.pipes[b] != nil {
 		return s.pipes[b]
 	}
 	var err error
-	if imagesLayout == nil {
-		if imagesLayout, err = dev.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{Label: "shader images",
-			Entries: []gputypes.BindGroupLayoutEntry{texEntry(0), texEntry(1), texEntry(2), texEntry(3), samplerEntry(4)}}); err != nil {
-			panic(err)
-		}
-	}
-	if s.pipes[b], err = newPipeline(pipeSpec{"shader", s.src, []*wgpu.BindGroupLayout{dev.uniLayout, imagesLayout},
+	if s.pipes[b], err = newPipeline(pipeSpec{"shader", s.src, []*wgpu.BindGroupLayout{dev.uniLayout, imagesGroupLayout()},
 		vertexLayout, blends[b], gputypes.TextureFormatRGBA8Unorm, false, "", false}); err != nil {
 		panic(err)
 	}

@@ -118,6 +118,7 @@ func (s *Scene) line(l string) (bool, error) {
 // among its props. It does not move the party: SetMap does.
 func (s *Scene) Show(objs ...*Object) {
 	Faces, Edges, Water, NoMap, Pond, Sea = s.Faces, s.Edges, s.Water, s.NoMap, s.Pond, s.Sea
+	worldChanged()
 	SetFlats(s.Floor, s.Ceiling)
 	Objects = append(append(Objects[:0], s.Props...), objs...)
 }

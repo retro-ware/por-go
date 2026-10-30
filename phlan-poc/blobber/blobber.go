@@ -9,7 +9,6 @@ import (
 	"image/color"
 	"image/png"
 	"io"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -18,7 +17,6 @@ import (
 	"slices"
 	"sort"
 	"strings"
-	"time"
 
 	"gpu"
 	"gpu/vector"
@@ -529,6 +527,7 @@ func GenTextures() { genTextures() }
 
 func genTextures() {
 	rng.Seed(7)
+	worldChanged()
 	atlas = nil
 	stoneMat := func(bw, bh int, offset bool, c [2][3]float64) *mat {
 		return &mat{
@@ -1120,14 +1119,15 @@ type Game struct {
 	torch                                       float64
 	sel                                         int
 	scene                                       *gpu.Image
-	shader, texShader                           *gpu.Shader
-	lights                                      []*ent       // the entities giving light this frame (lightsOn)
-	vs                                          []gpu.Vertex // drawQuad's scratch
-	idx                                         []uint16
-	lat                                         []vert // drawQuad's corner lattice
-	latOK                                       []bool
-	lowDetail                                   bool // slowFrame: coarser planes on a slow machine
-	slowN, slowHits                             int
+	shader                                      *gpu.Shader      // the dither pass
+	meshShader                                  *gpu.MeshShader  // the 3D faces (mesh.go)
+	world                                       *world           // the map's standing geometry
+	dyn                                         []gpu.MeshVertex // the frame's moving faces, and their buffer
+	dyn2                                        *gpu.Mesh
+	bills                                       []bill
+	glows                                       []glowSrc
+	uni                                         []float32 // the frame's uniforms
+	lights                                      []*ent    // the entities giving light
 }
 
 var dirs = [4][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
@@ -1547,30 +1547,6 @@ func (g *Game) menuItems() []string {
 
 // ---------- rendering ----------
 
-type vert struct{ x, y, z, u, v, r, g, b float64 } // world pos, uv, light
-
-type face struct {
-	v     [4]vert
-	tex   *gpu.Image
-	dist  float64
-	raw   float64 // dist without the monsters' bias
-	sub   int
-	front bool    // a wall face turned toward us: monsters don't paint over it when it is nearer
-	m     *mat    // wall material, for its light map
-	inc   float64 // constant extra fade toward the fog (look.go)
-	mode  int     // modeShaded, modeUnlit or modeGlow
-	tint  [3]float64
-	grid  [2]int          // a plane over several cells: their count across and deep (sub pieces each)
-	org   [2]int          // its first cell
-	only  map[[2]int]bool // the cells of it to draw
-	pass  int             // 0 floor and ceiling, 1 light circles and mud on them, 2 pond water, 3 the rest, sorted far to near
-}
-
-func lerp(a, b vert, t float64) vert {
-	return vert{a.x + (b.x-a.x)*t, a.y + (b.y-a.y)*t, a.z + (b.z-a.z)*t, a.u + (b.u-a.u)*t, a.v + (b.v-a.v)*t,
-		a.r + (b.r-a.r)*t, a.g + (b.g-a.g)*t, a.b + (b.b-a.b)*t}
-}
-
 // camera for this frame
 type cam struct{ x, z, ang, roll, fwx, fwz, rtx, rtz float64 }
 
@@ -1636,155 +1612,6 @@ func visibleCells(c cam) map[[2]int]bool {
 	}
 	visCache.c, visCache.cells = c, cells
 	return cells
-}
-
-// light adds the moving lights' colour at v; distance darkness is the shader's (look.go).
-func (g *Game) light(v *vert) {
-	v.r, v.g, v.b = 0, 0, 0
-	for _, e := range g.lights {
-		d := (v.x-e.x)*(v.x-e.x) + (v.y-e.y)*(v.y-e.y) + (v.z-e.z)*(v.z-e.z)
-		a := e.light / (1 + 0.5*d*d/e.light)
-		v.r, v.g, v.b = v.r+a*e.lr, v.g+a*e.lg, v.b+a*e.lb
-	}
-	v.r, v.g, v.b = math.Min(1, v.r), math.Min(1, v.g), math.Min(1, v.b)
-}
-
-// slowFrame watches how long the frames take: a machine that needs over
-// 50 ms for most of a second's frames gets low detail (planeSub) for the
-// rest of the run. ponytail: sticky; a quality option in the Esc menu if
-// anyone wants it back.
-func (g *Game) slowFrame(d time.Duration) {
-	if g.lowDetail {
-		return
-	}
-	g.slowN++
-	if d > 50*time.Millisecond {
-		g.slowHits++
-	}
-	if g.slowN >= 20 {
-		if g.slowHits*4 >= g.slowN*3 {
-			g.lowDetail = true
-			log.Println("blobber: slow frames, low detail from now on")
-		}
-		g.slowN, g.slowHits = 0, 0
-	}
-}
-
-// planeSub is how finely the floor and ceiling are cut per cell for the
-// lighting: 3x3, or 1 on a slow machine.
-func (g *Game) planeSub() int {
-	if g.lowDetail {
-		return 1
-	}
-	return 3
-}
-
-// lightsOn collects the entities that give light, once a frame for light.
-func (g *Game) lightsOn() {
-	g.lights = g.lights[:0]
-	for _, e := range ents {
-		if e.light > 0 {
-			g.lights = append(g.lights, e)
-		}
-	}
-}
-
-// drawQuad subdivides, lights, transforms, near-clips and projects one textured quad.
-// The pieces go to the GPU in one draw call with one set of options: a frame has
-// thousands of them (the floor and ceiling are cut 3x3 per visible cell), and a slow
-// CPU spent most of a frame on per-piece options, uniform packing and garbage.
-func (g *Game) drawQuad(dst *gpu.Image, c cam, f *face) {
-	ni, nj := f.sub, f.sub
-	if f.only != nil {
-		ni, nj = f.grid[0]*f.sub, f.grid[1]*f.sub
-	}
-	cr, sr := math.Cos(c.roll), math.Sin(c.roll)
-	alpha := float32(1)
-	if f.mode == modeGlow {
-		alpha = 0
-	}
-	g.vs, g.idx = g.vs[:0], g.idx[:0]
-	var op *gpu.DrawTrianglesShaderOptions
-	flush := func() {
-		if len(g.idx) > 0 {
-			if op == nil {
-				op = g.faceOptions(c, f)
-			}
-			dst.DrawTrianglesShader(g.vs, g.idx, g.texShader, op)
-		}
-		g.vs, g.idx = g.vs[:0], g.idx[:0]
-	}
-	bil := func(s, t float64) vert {
-		a, b := lerp(f.v[0], f.v[1], s), lerp(f.v[3], f.v[2], s)
-		v := lerp(a, b, t)
-		switch f.mode {
-		case modeShaded:
-			g.light(&v)
-		case modeGlow:
-			v.r, v.g, v.b = f.tint[0], f.tint[1], f.tint[2]
-		}
-		// to camera space (x right, y down, z forward)
-		dx, dz := v.x-c.x, v.z-c.z
-		v.x, v.z = dx*c.rtx+dz*c.rtz, dx*c.fwx+dz*c.fwz
-		return v
-	}
-	// the pieces' corners, each lit and transformed once (a corner is shared by up to four pieces)
-	nw := nj + 1
-	if need := (ni + 1) * nw; cap(g.lat) < need {
-		g.lat, g.latOK = make([]vert, need), make([]bool, need)
-	} else {
-		g.lat, g.latOK = g.lat[:need], g.latOK[:need]
-		clear(g.latOK)
-	}
-	at := func(i, j int) vert {
-		k := i*nw + j
-		if !g.latOK[k] {
-			g.lat[k], g.latOK[k] = bil(float64(i)/float64(ni), float64(j)/float64(nj)), true
-		}
-		return g.lat[k]
-	}
-	var poly [4]vert
-	var out [8]vert
-	for i := 0; i < ni; i++ {
-		for j := 0; j < nj; j++ {
-			if f.only != nil && !f.only[[2]int{f.org[0] + i/f.sub, f.org[1] + j/f.sub}] {
-				continue
-			}
-			poly = [4]vert{at(i, j), at(i+1, j), at(i+1, j+1), at(i, j+1)}
-			// clip against near plane
-			n := 0
-			for k := range poly {
-				a, b := poly[k], poly[(k+1)%4]
-				if a.z >= near {
-					out[n] = a
-					n++
-				}
-				if (a.z >= near) != (b.z >= near) {
-					out[n] = lerp(a, b, (near-a.z)/(b.z-a.z))
-					n++
-				}
-			}
-			if n < 3 {
-				continue
-			}
-			if len(g.vs)+n > 0xFFFF { // uint16 indices
-				flush()
-			}
-			base := uint16(len(g.vs))
-			for _, v := range out[:n] {
-				iz := 1 / v.z
-				px, py := v.x*focal*iz, v.y*focal*iz
-				// perspective-correct: u/z, v/z, 1/z in Custom0..2 (SrcX/Y get the atlas origin added, so they can't carry it)
-				g.vs = append(g.vs, gpu.Vertex{DstX: float32(float64(W)/2 + px*cr - py*sr), DstY: float32(float64(H)/2 + px*sr + py*cr),
-					ColorR: float32(v.r), ColorG: float32(v.g), ColorB: float32(v.b), ColorA: alpha,
-					Custom0: float32(v.u * iz), Custom1: float32(v.v * iz), Custom2: float32(iz), Custom3: float32(v.y * iz)})
-			}
-			for k := 1; k+1 < n; k++ {
-				g.idx = append(g.idx, base, base+uint16(k), base+uint16(k+1))
-			}
-		}
-	}
-	flush()
 }
 
 // drawSky fills the upper half with the ceiling texture as a panorama: the picture and its mirror
@@ -1884,332 +1711,6 @@ func (g *Game) Draw(screen *gpu.Image) {
 		for i, l := range lines {
 			Print(screen, l, 6, 24+i*16)
 		}
-	}
-}
-
-// draw3D draws the scene from camera c: the 3D view alone, at the size W, H.
-func (g *Game) draw3D(screen *gpu.Image, c cam) {
-	dst := screen
-	if g.dither {
-		dst = g.scene
-	}
-	dst.Fill(fogCol)
-	if openSky {
-		g.drawSky(dst, c)
-		if texWater != nil && (len(Water) > 0 || Sea) { // phlan-poc: the sea runs on to the horizon past the last cells drawn
-			vector.DrawFilledRect(dst, 0, float32(H)/2, float32(W), float32(H)/2, color.RGBA{40, 98, 160, 255}, false)
-		}
-	}
-
-	var faces []*face
-	var bias float64 // sorts faces this much nearer than their centre
-	q := func(a, b, cc, d vert, t *gpu.Image, sub int) *face {
-		f := &face{v: [4]vert{a, b, cc, d}, tex: t, sub: sub, pass: 3}
-		mx, mz := (a.x+cc.x)/2-c.x, (a.z+cc.z)/2-c.z
-		f.raw = mx*c.fwx + mz*c.fwz
-		f.dist = f.raw - bias
-		if f.dist > -1 {
-			faces = append(faces, f)
-		}
-		return f
-	}
-	// glow adds an additive light billboard w wide centred at (x, y, z), tinted col at alpha and
-	// darkened by distance times dm; flat lays it on the floor or ceiling instead (en_LightGlow).
-	glow := func(x, y, z, w float64, col [3]float64, alpha, dm float64, flat bool) {
-		dx, dz := x-c.x, z-c.z
-		lat, dep := dx*c.rtx+dz*c.rtz, dx*c.fwx+dz*c.fwz
-		k := alpha * (1 - (1-g.torchLight(math.Sqrt(lat*lat+y*y+dep*dep)))*dm)
-		tint := [3]float64{col[0] * k, col[1] * k, col[2] * k}
-		r := w / 2
-		var f *face
-		if flat {
-			f = q(vert{x - r, y, z - r, 0, 0, 0, 0, 0}, vert{x + r, y, z - r, 1, 0, 0, 0, 0}, vert{x + r, y, z + r, 1, 1, 0, 0, 0}, vert{x - r, y, z + r, 0, 1, 0, 0, 0}, texGlow, 1)
-			f.pass = 1
-		} else {
-			hx, hz := c.rtx*r, c.rtz*r
-			f = q(vert{x - hx, y - r, z - hz, 0, 0, 0, 0, 0}, vert{x + hx, y - r, z + hz, 1, 0, 0, 0, 0}, vert{x + hx, y + r, z + hz, 1, 1, 0, 0, 0}, vert{x - hx, y + r, z - hz, 0, 1, 0, 0, 0}, texGlow, 1)
-		}
-		f.mode, f.tint = modeGlow, tint
-	}
-	if texWater == nil {
-		texWater, texClouds = FlatTexture("floor", "phlan_water"), FlatTexture("ceiling", "phlan_clouds")
-		texNightSky, texStars = FlatTexture("ceiling", "sky_night"), FlatTexture("ceiling", "night_stars")
-	}
-	clouds := texClouds
-	if Night {
-		clouds = texStars
-	}
-	if openSky { // phlan-poc: a cloud layer high above, so the sky moves with every step and turn
-		const hgt, span, size = -6.0, 90.0, 14.0 // height, half width and cloud tile size in cells
-		wind := g.time * 0.03
-		x0, z0, x1, z1 := c.x-span, c.z-span, c.x+span, c.z+span
-		u := func(x float64) float64 { return x/size + wind }
-		f := q(vert{x0, hgt, z0, u(x0), z0 / size, 0, 0, 0}, vert{x1, hgt, z0, u(x1), z0 / size, 0, 0, 0},
-			vert{x1, hgt, z1, u(x1), z1 / size, 0, 0, 0}, vert{x0, hgt, z1, u(x0), z1 / size, 0, 0, 0}, clouds, 8*g.planeSub())
-		f.pass, f.mode = -1, modeUnlit
-	}
-	cells := make([][2]int, 0, len(visibleCells(c)))
-	for cell := range visibleCells(c) {
-		cells = append(cells, cell)
-	}
-	sort.Slice(cells, func(i, j int) bool { // phlan-poc: a fixed order, so equal depths sort the same every frame
-		return cells[i][1] < cells[j][1] || cells[i][1] == cells[j][1] && cells[i][0] < cells[j][0]
-	})
-	// One floor quad (and one ceiling quad) over the visible cells, cut into pieces per cell for the
-	// lighting: neighbouring pieces share their edges exactly, so nothing shows between them.
-	// Water and ponds are laid over it.
-	if len(cells) > 0 {
-		vis := visibleCells(c)
-		lo, hi := cells[0], cells[0]
-		for _, cl := range cells {
-			lo = [2]int{min(lo[0], cl[0]), min(lo[1], cl[1])}
-			hi = [2]int{max(hi[0], cl[0]), max(hi[1], cl[1])}
-		}
-		x0, z0, x1, z1 := float64(lo[0]), float64(lo[1]), float64(hi[0]+1), float64(hi[1]+1)
-		w, h := x1-x0, z1-z0
-		plane := func(y float64, t *gpu.Image) {
-			f := q(vert{x0, y, z0, 0, 0, 0, 0, 0}, vert{x1, y, z0, w, 0, 0, 0, 0}, vert{x1, y, z1, w, h, 0, 0, 0}, vert{x0, y, z1, 0, h, 0, 0, 0}, t, g.planeSub())
-			f.pass, f.dist, f.grid, f.org, f.only = 0, 1e9, [2]int{int(w), int(h)}, lo, vis
-		}
-		if openSky { // under it, ground out to the horizon (the sea on a coast), so no sky shows below it
-			const span = 4000.0 // the plane's far edge sits under a pixel below the horizon
-			gx0, gz0, gx1, gz1 := math.Floor(c.x)-span, math.Floor(c.z)-span, math.Floor(c.x)+span, math.Floor(c.z)+span
-			t, k, wind := texFloor, 1.0, 0.0
-			if len(Water) > 0 || Sea {
-				t, k, wind = texWater, 0.5, g.time*0.02
-			}
-			f := q(vert{gx0, 0.5, gz0, gx0*k + wind, gz0 * k, 0, 0, 0}, vert{gx1, 0.5, gz0, gx1*k + wind, gz0 * k, 0, 0, 0},
-				vert{gx1, 0.5, gz1, gx1*k + wind, gz1 * k, 0, 0, 0}, vert{gx0, 0.5, gz1, gx0*k + wind, gz1 * k, 0, 0, 0}, t, 8)
-			f.pass, f.dist = 0, math.Inf(1)
-		}
-		plane(0.5, texFloor)
-		if !openSky {
-			plane(-0.5, texCeil)
-		}
-	}
-	for _, cell := range cells {
-		cx, cy := cell[0], cell[1]
-		x0, z0, x1, z1 := float64(cx), float64(cy), float64(cx+1), float64(cy+1)
-		wx, wy := cx, cy
-		if Water[cell] || !inMap(cx, cy) && (len(Water) > 0 || Sea) { // phlan-poc: water, its ripples drifting, laid over the floor
-			w := g.time * 0.02
-			f := q(vert{x0, 0.5, z0, x0/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z0, x1/2 + w, z0 / 2, 0, 0, 0}, vert{x1, 0.5, z1, x1/2 + w, z1 / 2, 0, 0, 0}, vert{x0, 0.5, z1, x0/2 + w, z1 / 2, 0, 0, 0}, texWater, 3)
-			f.pass = 1
-		}
-		if m := pondMud(cell); m != nil { // phlan-poc: the muddy bank around a pond, fading into the floor
-			f := q(vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z0, 1, 0, 0, 0, 0}, vert{x1, 0.5, z1, 1, 1, 0, 0, 0}, vert{x0, 0.5, z1, 0, 1, 0, 0, 0}, m, 3)
-			f.pass = 1
-		}
-		if Pond[cell] { // phlan-poc: a pool on the floor (pondH), joined to a neighbouring pond cell by a neck
-			const n = 48
-			w := g.time * 0.02
-			wv := func(x, z float64) vert { return vert{x, 0.5, z, x/2 + w, z / 2, 0, 0, 0} }
-			mx, mz := x0+0.5, z0+0.5
-			if texPondWater == nil {
-				b := texWater.Bounds()
-				texPondWater = gpu.NewImage(b.Dx(), b.Dy())
-				op := &gpu.DrawImageOptions{}
-				op.ColorScale.Scale(1.25, 1.35, 1.7, 1)
-				texPondWater.DrawImage(texWater, op)
-			}
-			for i := 0; i < n; i++ {
-				ax, az := pondEdge(2 * math.Pi * float64(i) / n)
-				bx, bz := pondEdge(2 * math.Pi * float64(i+1) / n)
-				f := q(wv(mx, mz), wv(mx+ax, mz+az), wv(mx+bx, mz+bz), wv(mx, mz), texPondWater, 1)
-				f.pass = 2
-			}
-			for _, d := range [][2]int{{1, 0}, {0, 1}} { // each join once, from the west / north cell
-				if Pond[[2]int{cx + d[0], cy + d[1]}] {
-					ex, ez := float64(d[0]), float64(d[1])
-					px, pz := ez*pondNeck, ex*pondNeck
-					f := q(wv(mx-px, mz-pz), wv(mx+px, mz+pz), wv(mx+px+ex, mz+pz+ez), wv(mx-px+ex, mz-pz+ez), texPondWater, 1)
-					f.pass = 2
-				}
-			}
-		}
-		// wall faces on the four sides of this floor cell, textured by how they face the camera
-		type side struct{ ax, az, bx, bz, nx, nz float64 }
-		for i, s := range []side{{x0, z0, x1, z0, 0, 1}, {x1, z0, x1, z1, -1, 0}, {x1, z1, x0, z1, 0, -1}, {x0, z1, x0, z0, 1, 0}} {
-			parts := Faces[[3]int{wx, wy, i}] // phlan-poc: a face of its own, also in front of a passable cell
-			if parts == nil {
-				if !wall(cx+dirs[i][0], cy+dirs[i][1]) || !inMap(cx+dirs[i][0], cy+dirs[i][1]) { // phlan-poc: no wall around the map
-					continue
-				}
-				parts = []FacePart{{Mat: 0, T1: 1, U1: 1}}
-			}
-			if parts != nil && (c.x-s.ax)*s.nx+(c.z-s.az)*s.nz <= 0 {
-				continue // a thin wall seen from behind: one-sided, the cell beyond draws its own
-			}
-			var m *mat
-			for _, p := range parts {
-				m = mats[p.Mat]
-				if p.Tex != "" {
-					m = texMat(p.Tex)
-				}
-				if m == nil {
-					m = material(cx+dirs[i][0], cy+dirs[i][1])
-				}
-				m = m.load()
-				ax, az := s.ax+(s.bx-s.ax)*p.T0, s.az+(s.bz-s.az)*p.T0
-				bx, bz := s.ax+(s.bx-s.ax)*p.T1, s.az+(s.bz-s.az)*p.T1
-				f := q(vert{ax, wallTop, az, p.U0, 0, 0, 0, 0}, vert{bx, wallTop, bz, p.U1, 0, 0, 0, 0}, vert{bx, 0.5, bz, p.U1, 1, 0, 0, 0}, vert{ax, 0.5, az, p.U0, 1, 0, 0, 0}, m.face(s.nx*c.rtx+s.nz*c.rtz), 3)
-				f.m, f.front = m, math.Abs(s.nx*c.rtx+s.nz*c.rtz) <= 0.5
-			}
-			if m.lightPow > 0 { // a flickering glow in front of a light-mapped face
-				d := dirs[i]
-				k := 0.5 + 0.1*m.lightPow
-				wx, wz := float64(cx+d[0])+0.5, float64(cy+d[1])+0.5
-				fl := 0.8 + 0.2*math.Sin(float64(cx*7+cy*13+i)+g.time*2.4)
-				glow(wx-float64(d[0])*k, 0.5-m.lightHei, wz-float64(d[1])*k, 1.5*m.lightPow, m.lightCol, 0.6*fl, 0.75, false)
-			}
-		}
-	}
-	for _, e := range ents { // billboards, only in cells a ray reached
-		if _, ok := visibleCells(c)[[2]int{int(math.Floor(e.x)), int(math.Floor(e.z))}]; !ok {
-			continue
-		}
-		if e.light > 0 { // a moving light (en_FloatingLight): its glow and light circles below and above
-			col := [3]float64{e.lr, e.lg, e.lb}
-			if e.kind == Fireball {
-				col = [3]float64{1, 0.45, 0.15}
-			}
-			glow(e.x, e.y, e.z, 0.2+e.size*3, col, 1, 0.85, false)
-			r := math.Min(1.5, 0.6*e.light+0.3)
-			glow(e.x, 0.499, e.z, r, col, 0.30, 0.85, true)
-			if !openSky {
-				glow(e.x, -0.499, e.z, r, col, 0.25, 0.85, true)
-			}
-			continue
-		}
-		hx, hz := c.rtx*e.size/2, c.rtz*e.size/2
-		q(vert{e.x - hx, e.y - e.size/2, e.z - hz, 0, 0, 0, 0, 0}, vert{e.x + hx, e.y - e.size/2, e.z + hz, 1, 0, 0, 0, 0},
-			vert{e.x + hx, e.y + e.size/2, e.z + hz, 1, 1, 0, 0, 0}, vert{e.x - hx, e.y + e.size/2, e.z - hz, 0, 1, 0, 0, 0}, e.tex, 1)
-	}
-	for _, o := range Objects { // props and floor items: static floor-standing billboards
-		if o.Img == nil {
-			continue
-		}
-		ox, oz := float64(o.X)+0.5+c.fwx*eyeBack, float64(o.Y)+0.5+c.fwz*eyeBack
-		if o.At != nil { // phlan-poc: stands where it stands, seen like a wall (no culling by cell)
-			ox, oz = o.At[0], o.At[1]
-		} else if _, ok := visibleCells(c)[[2]int{o.X, o.Y}]; !ok {
-			continue
-		}
-		b := o.Img.Bounds()
-		rx, rz, fx, fz := 1.0, 0.0, 0.0, 1.0 // a ring: axis-aligned, unless it turns with us on our square
-		if o.Front > 0 && o.At != nil {
-			px, pz := math.Floor(c.x+c.fwx*eyeBack), math.Floor(c.z+c.fwz*eyeBack) // the party's cell
-			if ox == px+0.5 && oz == pz+0.5 {
-				ox, oz, rx, rz, fx, fz = ox+c.fwx*o.Front, oz+c.fwz*o.Front, c.rtx, c.rtz, c.fwx, c.fwz
-			}
-		}
-		if r := o.Ring; r != nil { // an oval hole: black inside, the rim's stones laid around it (tiled, not stretched)
-			if texBlack == nil {
-				texBlack = gpu.NewImage(4, 4)
-				texBlack.Fill(color.Black)
-			}
-			const n = 36
-			at := func(i int, ext float64) (float64, float64) {
-				t := 2 * math.Pi * float64(i) / n
-				a, d := (r[0]-r[2]+ext)*math.Cos(t), (r[1]-r[2]+ext)*math.Sin(t)
-				return ox + rx*a + fx*d, oz + rz*a + fz*d
-			}
-			tile := r[2] * float64(b.Dx()) / float64(b.Dy()) // one strip's length along the rim at its aspect
-			u := 0.0
-			for i := 0; i < n; i++ {
-				x0, z0 := at(i, 0)
-				x1, z1 := at(i+1, 0)
-				X0, Z0 := at(i, r[2])
-				X1, Z1 := at(i+1, r[2])
-				f := q(vert{ox, 0.5, oz, 0, 0, 0, 0, 0}, vert{x0, 0.5, z0, 0, 0, 0, 0, 0}, vert{x1, 0.5, z1, 0, 0, 0, 0, 0},
-					vert{ox, 0.5, oz, 0, 0, 0, 0, 0}, texBlack, 1)
-				f.pass, f.mode = 1, modeUnlit
-				du := math.Hypot((X1+x1-X0-x0)/2, (Z1+z1-Z0-z0)/2) / tile
-				f = q(vert{x0, 0.5, z0, u, 0, 0, 0, 0}, vert{x1, 0.5, z1, u + du, 0, 0, 0, 0},
-					vert{X1, 0.5, Z1, u + du, 1, 0, 0, 0}, vert{X0, 0.5, Z0, u, 1, 0, 0, 0}, o.Img, 1)
-				f.pass = 1
-				u += du
-			}
-			continue
-		}
-		k := o.Size / math.Max(float64(b.Dx()), float64(b.Dy()))
-		wid, hgt := k*float64(b.Dx()), k*float64(b.Dy())
-		hx, hz := c.rtx*wid/2, c.rtz*wid/2
-		y := 0.5 + o.Sink
-		q(vert{ox - hx, y - hgt, oz - hz, 0, 0, 0, 0, 0}, vert{ox + hx, y - hgt, oz + hz, 1, 0, 0, 0, 0},
-			vert{ox + hx, y, oz + hz, 1, 1, 0, 0, 0}, vert{ox - hx, y, oz - hz, 0, 1, 0, 0, 0}, o.Img, 1)
-	}
-	// monsters paint over the side walls of their own cell (a wide one would vanish into them); against
-	// walls facing us they sort by true depth, so a corner in front of them hides them
-	bias = 0.5
-	crowd := map[[2]int]int{} // monsters per cell, so a group stands side by side
-	for _, a := range actors {
-		crowd[[2]int{a.x, a.y}]++
-	}
-	placed := map[[2]int]int{}
-	for _, a := range actors { // monsters: floor-standing billboards
-		cell := [2]int{a.x, a.y}
-		slot := formation(crowd[cell], placed[cell])
-		placed[cell]++
-		ax, az := a.pos()
-		if _, ok := visibleCells(c)[[2]int{int(math.Floor(ax)), int(math.Floor(az))}]; !ok {
-			continue
-		}
-		if a.x == g.x && a.y == g.y { // in melee: as far in front of our centre as we stand behind it, whichever way we face
-			ax, az = g.tx+c.fwx*2*eyeBack, g.tz+c.fwz*2*eyeBack
-		}
-		ax, az = ax-c.fwx*eyeBack, az-c.fwz*eyeBack // mirror the eye: we stand at the back of our cell, the monster at the front of its, facing us
-		ax, az = ax+c.rtx*slot[0]+c.fwx*slot[1], az+c.rtz*slot[0]+c.fwz*slot[1]
-		img := a.img()
-		b := img.Bounds()
-		size := a.sheet.Size
-		if size == 0 {
-			size = 0.6
-		}
-		k := math.Min(size/float64(b.Dy()), math.Max(1, size)/float64(b.Dx()))
-		if a.sheet.density { // one pixel density for every painted monster; poses keep their own extent
-			k = 1.0 / PxPerTile
-		}
-		wid, hgt := k*float64(b.Dx()), k*float64(b.Dy())
-		hx, hz := c.rtx*wid/2, c.rtz*wid/2
-		q(vert{ax - hx, 0.5 - hgt, az - hz, 0, 0, 0, 0, 0}, vert{ax + hx, 0.5 - hgt, az + hz, 1, 0, 0, 0, 0},
-			vert{ax + hx, 0.5, az + hz, 1, 1, 0, 0, 0}, vert{ax - hx, 0.5, az - hz, 0, 1, 0, 0, 0}, img, 1)
-	}
-	bias = 0
-
-	if sign.tex != nil {
-		d := dirs[sign.dir]
-		fwd, y0 := eyeBack, 0.0 // mid-cell, centred at eye height
-		b := sign.tex.Bounds()
-		wid, hgt := float64(b.Dx())/400, float64(b.Dy())/400 // 400 texture px per tile
-		if sign.top {
-			fwd, y0 = 0.48, -0.5+0.04+hgt/2 // just off the wall ahead, hanging from the top
-		}
-		sx, sz := float64(sign.x)+0.5+float64(d[0])*fwd, float64(sign.y)+0.5+float64(d[1])*fwd
-		hx, hz := c.rtx*wid/2, c.rtz*wid/2
-		q(vert{sx - hx, y0 - hgt/2, sz - hz, 0, 0, 0, 0, 0}, vert{sx + hx, y0 - hgt/2, sz + hz, 1, 0, 0, 0, 0},
-			vert{sx + hx, y0 + hgt/2, sz + hz, 1, 1, 0, 0, 0}, vert{sx - hx, y0 + hgt/2, sz - hz, 0, 1, 0, 0, 0}, sign.tex, 1).mode = modeUnlit
-	}
-	// ponytail: painter's sort by face-center depth; z-buffer if overlap artifacts show up.
-	// Floor/ceiling first: at eye height they can't occlude walls or billboards, but their centers can sort nearer.
-	// The light circles on them next, so walls still cover them.
-	sort.SliceStable(faces, func(i, j int) bool {
-		if faces[i].pass != faces[j].pass {
-			return faces[i].pass < faces[j].pass
-		}
-		if faces[i].front || faces[j].front {
-			return faces[i].raw > faces[j].raw
-		}
-		return faces[i].dist > faces[j].dist
-	})
-	g.lightsOn()
-	for _, f := range faces {
-		g.drawQuad(dst, c, f)
-	}
-	if g.dither {
-		op := &gpu.DrawRectShaderOptions{}
-		op.Images[0] = g.scene
-		screen.DrawRectShader(W, H, g.shader, op)
 	}
 }
 
@@ -2330,6 +1831,7 @@ var game *Game
 func SetMap(lvl []string, x, y int) {
 	level = lvl
 	visCache.cells = nil
+	worldChanged()
 	if game == nil {
 		game = &Game{t: 1}
 	}
@@ -2350,6 +1852,7 @@ func SetCell(x, y int, ch byte) {
 	row[x] = ch
 	level[y] = string(row)
 	visCache.cells = nil
+	worldChanged()
 }
 
 // Cell returns the map character at x,y, or 0 outside the map.
@@ -2400,7 +1903,7 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
 	// the voice first when toggle, then reports whether it is on.
@@ -2438,7 +1941,7 @@ func newGame(dir int) (*Game, error) {
 			e.tex = texFirefly
 		}
 	}
-	tsh, err := gpu.NewShader([]byte(texSrc))
+	tsh, err := gpu.NewMeshShader(meshSrc)
 	if err != nil {
 		return nil, err
 	}
@@ -2446,7 +1949,7 @@ func newGame(dir int) (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	g := &Game{dither: Settings.Dither, smooth: Settings.Smooth, torch: Settings.Torch, scene: gpu.NewImage(W, H), shader: sh, texShader: tsh}
+	g := &Game{dither: Settings.Dither, smooth: Settings.Smooth, torch: Settings.Torch, scene: gpu.NewImage(W, H), shader: sh, meshShader: tsh}
 	game = g
 	g.ta = float64(dir) * math.Pi / 2
 	g.dir = dir
