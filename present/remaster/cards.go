@@ -104,15 +104,14 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 		op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
 		dst.DrawImage(d, op)
 		if m.Portrait != nil { // the PNG at the window's resolution (the card's 48 pixels lose its detail), the status over it
-			ki := int(k)
 			op := &gpu.DrawImageOptions{}
-			op.GeoM.Translate(float64(r.Min.X+cardFace*ki), float64(r.Min.Y+cardFace*ki))
+			op.GeoM.Translate(float64(r.Min.X)+cardFace*k, float64(r.Min.Y)+cardFace*k)
 			if m.HP <= 0 {
 				op.ColorScale.Scale(0.35, 0.35, 0.35, 1)
 			}
-			dst.DrawImage(p.hiFace(m.Portrait, portraitSize*ki), op)
+			dst.DrawImage(p.hiFace(m.Portrait, max(1, int(portraitSize*k))), op)
 			if s := cardLabels[m.Status]; s != "" {
-				p.label(dst, s, r.Min.X+(cardFace+1)*ki, r.Min.Y+(cardFace+portraitSize-9)*ki, float64(ki))
+				p.label(dst, s, r.Min.X+int((cardFace+1)*k), r.Min.Y+int((cardFace+portraitSize-9)*k), k)
 			}
 		}
 	}
@@ -151,13 +150,14 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	}
 	w := 0
 	for _, l := range lines {
-		w = max(w, k*8*(len(l)+4)) // the box: a border and a blank column each side
+		w = max(w, int(k*8*float64(len(l)+4))) // the box: a border and a blank column each side
 	}
-	cx := r.Max.X + cardGap*k + w/2
+	gap := int(cardGap * k)
+	cx := r.Max.X + gap + w/2
 	if r.Min.X > dst.Bounds().Dx()/2 { // the right column: to the left of it
-		cx = r.Min.X - cardGap*k - w/2
+		cx = r.Min.X - gap - w/2
 	}
-	rs := p.tipMenu(dst, "", lines, keys, sel, float64(k), cx, r.Min.Y)
+	rs := p.tipMenu(dst, "", lines, keys, sel, k, cx, r.Min.Y)
 	if p.ctx > 0 {
 		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], rs...), image.Rect(cx-w/2, r.Min.Y, cx+w/2, r.Min.Y)
 	}
@@ -223,18 +223,22 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 		w = max(w, len(l))
 	}
 	b := screen.Bounds()
-	k := max(1, min(int(scale(screen)), b.Dx()/((w+4)*8)))
-	h := (len(lines) + 2) * 8 * k
+	k0 := float64(max(1, min(int(scale(screen)), b.Dx()/((w+4)*8))))
+	rows := len(lines) + 2
 	if title != "" {
-		h += 16 * k
+		rows += 2
 	}
+	k := k0 * fitStep(blobber.Settings.Menu, func(s float64) bool { // the Menus size (Esc, Graphics), as far as the box fits
+		return k0*s*float64((w+4)*8) <= float64(b.Dx()) && k0*s*float64((rows+1)*8) <= float64(b.Dy())
+	})
+	h := int(float64(rows*8) * k)
 	top := (b.Dy() - h) / 2
 	if bottom {
-		top = b.Dy() - h - 8*k
+		top = b.Dy() - h - int(8*k)
 	}
 	rects := slices.Clone(p.menuRects) // not the game's menu: its clicks stay
 	defer func() { p.menuRects = rects }()
-	p.drawMenu(screen, p.glyph, title, lines, keys, sel, float64(k), b.Dx()/2, top)
+	p.drawMenu(screen, p.glyph, title, lines, keys, sel, k, b.Dx()/2, top)
 	p.winRects = slices.Clone(p.menuRects) // its lines, for the Esc menu's mouse
 }
 

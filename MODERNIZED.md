@@ -708,12 +708,12 @@ All in `phlan-poc/blobber/blobber.go`, `scene.go`, `view.go` and
   |---|---|---|
   | `Smooth`, `Fluid` | true, true | Gameplay: Smooth / Fluid movement |
   | `Speed` | 1 | Walk speed 0.5–2.0, step 0.25 |
-  | `MapOff`, `MapSmall`, `MapAlpha` | false, false, 1 | Minimap, size Normal/Small, opacity 0.2–1 |
+  | `MapOff`, `MapAlpha` | false, 1 | Minimap, opacity 0.2–1 |
   | `Deskew` | true | Deskew combat maps |
   | `Zoom` | 0.5 | Zoom speed 0.25–2.0 |
   | `Fullscreen`, `Dither` | true, true | Graphics: Fullscreen (the screen at its own resolution; `-window` overrides it for a run, `-scale` the window's size), Dithered darkness |
   | `Torch` | 1 | Torch intensity 0.5–1.5 |
-  | `PicDouble` | false | Picture box Normal/Double |
+  | `Cards`, `Map`, `Pic`, `Menu`, `Text` | 1 | Graphics: Portraits, Minimap size, Picture box, Menus, Text box: 1/8x, 1/4x, 1/2x, 1x, 2x, 3x, 4x; each shrinks to the next smaller size where the screen needs it (eight cards always fit under the map, picture, text box and menu stack without overlapping) |
 
   Removed from BlobberRPG's page: Smooth monsters, Distance fog (always on),
   normal mapping, light maps. Hotkeys are the first free letters
