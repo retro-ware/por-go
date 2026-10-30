@@ -390,6 +390,13 @@ func (e *Engine) ItemsMenu() bool {
 					return true
 				}
 			}
+		case a.Kind == ActTakeAll && e.snap.loot: // the Loot screen's All: each piece in turn, until one does not fit
+			for len(e.run.treasure) > 0 && !e.buyItem(e.run.treasure[0]) {
+				e.run.treasure = e.run.treasure[1:]
+			}
+			if len(e.run.treasure) == 0 {
+				return false
+			}
 		case a.Kind == ActBuy && e.snap.shop: // N is a ware, not one of items
 			if a.N >= 0 && a.N < len(e.run.treasure) {
 				w := e.run.treasure[a.N]

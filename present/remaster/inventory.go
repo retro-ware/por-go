@@ -383,7 +383,7 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 		return nil
 	}
 	if in.Loot { // the loot: take a piece of treasure
-		return []word{{text: "Take", act: engine.ActBuy, on: wareAt(in, inv.ware) != nil}, {text: "Exit", act: engine.ActClose, on: true}}
+		return []word{{text: "Take", act: engine.ActBuy, on: wareAt(in, inv.ware) != nil}, {text: "All", act: engine.ActTakeAll, on: len(in.Wares) > 0}, {text: "Exit", act: engine.ActClose, on: true}}
 	}
 	if in.Wares != nil { // the shop: buy a ware, sell an item
 		return []word{{text: "Buy", act: engine.ActBuy, on: wareAt(in, inv.ware) != nil}, {text: "Sell", act: engine.ActSell, on: it != nil && in.Sell},
@@ -768,7 +768,7 @@ func (inv *inventory) do(k engine.ActKind) {
 	it := itemAt(inv.view, inv.sel)
 	switch {
 	case k == engine.ActNone:
-	case k == engine.ActClose, k >= engine.ActSpells && k <= engine.ActCure:
+	case k == engine.ActClose, k == engine.ActTakeAll, k >= engine.ActSpells && k <= engine.ActCure:
 		inv.acts = append(inv.acts, engine.Action{Kind: k})
 	case k == engine.ActBuy:
 		if w := wareAt(inv.view, inv.ware); w != nil {
