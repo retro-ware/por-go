@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"slices"
+	"strconv"
 
 	"gpu"
 
@@ -15,16 +16,17 @@ import (
 
 // The party's portrait cards: each member's face in the game's window
 // border (in colour for the selected member: whose turn, whose screen; grey for the others), the hit
-// point bar under it, and the sheet's status over the face.
+// point bar under it, the experience bar (the way to the next level) under that, and the sheet's status over the face.
 
 // Card layout at scale 1.
 const (
-	cardW        = 64          // the border round a 6 cell inside
-	portraitSize = cardW - 16  // a card's face fills the inside of the border, a paper-doll head's lit part
-	frameH       = cardW       // the border holds only the face
-	barY         = frameH + 1  // the hit point bar
-	cardH        = barY + 2*11 // and room for a second bar's row
-	cardFoot     = 11          // the empty strip under the bar
+	cardW        = 64         // the border round a 6 cell inside
+	portraitSize = cardW - 16 // a card's face fills the inside of the border, a paper-doll head's lit part
+	frameH       = cardW      // the border holds only the face
+	barY         = frameH + 1 // the hit point bar
+	expY         = barY + 11  // the experience bar
+	cardH        = barY + 2*11
+	cardFoot     = 0 // no strip under the bars
 	cardFace     = (cardW - portraitSize) / 2
 )
 
@@ -33,8 +35,8 @@ var barsPNG []byte
 
 // The bar art (bars.png): the groove's caps and middle, then the fills.
 var (
-	barLeft, barMid, barRight = image.Rect(0, 0, 10, 11), image.Rect(10, 0, 22, 11), image.Rect(22, 0, 32, 11)
-	greenFill, redFill        = image.Rect(0, 11, 82, 15), image.Rect(0, 15, 82, 19)
+	barLeft, barMid, barRight    = image.Rect(0, 0, 10, 11), image.Rect(10, 0, 22, 11), image.Rect(22, 0, 32, 11)
+	greenFill, redFill, blueFill = image.Rect(0, 11, 82, 15), image.Rect(0, 15, 82, 19), image.Rect(0, 19, 82, 23)
 )
 
 // borders are the window border's tiles (View.Border) on the GPU, in
@@ -114,6 +116,9 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 			fill = redFill
 		}
 		p.bar(d, -5, barY, cardW+10, m.HP, m.MaxHP, fill) // the caps' art is inset 5 px: this lines it up with the border
+		if m.NextExp > 0 {                                // the way to the next level, full once the experience is there
+			p.bar(d, -5, expY, cardW+10, m.Exp-m.LevelExp, m.NextExp-m.LevelExp, blueFill)
+		}
 		r := at(i, len(ms))
 		op := &gpu.DrawImageOptions{}
 		k := float64(r.Dx()) / cardW
@@ -149,6 +154,11 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	}
 	m, r, k := v.Party[i], p.cards[i], cardScale(dst)
 	lines, sel := []string{m.Name, m.Class}, -1
+	if m.NextExp > 0 { // the experience and what the next level takes
+		lines = append(lines, "Exp "+strconv.Itoa(m.Exp)+" / "+strconv.Itoa(m.NextExp))
+	} else {
+		lines = append(lines, "Exp "+strconv.Itoa(m.Exp))
+	}
 	var keys []byte
 	if p.ctx > 0 {
 		lines, sel, p.ctxActs, p.ctxKeys = nil, p.ctxSel, p.ctxActs[:0], p.ctxKeys[:0]

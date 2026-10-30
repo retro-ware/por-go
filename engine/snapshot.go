@@ -70,6 +70,9 @@ type Member struct {
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
 	Portrait image.Image // extra: the PNG the player dropped on the sheet, in place of Head (nil: none)
 	Powers   []Power     // extra: what the member can do now out of combat (a card's context menu): View, Items, then powers'; Kind with the member's index acts
+	Exp      int         // extra: experience, what the level took (LevelExp) and what the next takes (NextExp; 0: it can rise no further)
+	LevelExp int
+	NextExp  int
 }
 
 // View is one published snapshot.
@@ -239,6 +242,9 @@ func (e *Engine) publish() {
 			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,
 			Class: className(c.Class), Head: e.charHead(c), Portrait: c.Portrait, Powers: e.memberPowers(c),
 		})
+		m := &v.Party[len(v.Party)-1]
+		from, to := levelSpan(c)
+		m.Exp, m.LevelExp, m.NextExp = int(int32(c.Exp)), int(from), int(to)
 	}
 	v.Border = e.borderTiles()
 	v.Battle = e.battle()
