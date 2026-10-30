@@ -1,14 +1,19 @@
-# por-go
+# Opinionated Pool
 
-A Go port of *Pool of Radiance* (SSI, 1988), with a modernized interface.
+A Go port of *Pool of Radiance* (SSI, 1988) with a modernized interface
+and a few opinions of its own about the rules (repository `por-go`).
 `MODERNIZED.md` describes everything the port changes from the original
 (the 3D views, the voice-over, the interface) and how to do it again for
 another Gold Box game; `PORT_CHECKLIST.md` lists each change with its code.
 
 ## What's new for players
 
-The game plays as the 1988 original, with the same rules, areas, scripts
-and story. What changed is how it looks and how it feels to play:
+The areas, scripts and story are the 1988 original's, and so are most of
+the rules. Some we changed on purpose where the original got in the way:
+encumbrance is gone (only armour slows you), the party shares one pack and
+one purse, Search and Look take three minutes instead of ten, and paladins
+and rangers come from the sequel. The rest is how it looks and how it
+feels to play:
 
 - **A real 3D dungeon view.** Phlan's streets, sewers, castles and caves
   are rendered in first person with new wall art, water, sky, day and
