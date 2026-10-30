@@ -1,6 +1,11 @@
 package engine
 
-import "image"
+import (
+	"image"
+	"slices"
+
+	"por/pal"
+)
 
 // The combat icon designer (extra), in place of the original's icon
 // editor states (ovr17:382D: Parts/color-1/color-2/Size, then Next/Prev
@@ -44,8 +49,34 @@ func (e *Engine) iconEditor() {
 		e.fill(x*8, y*8, x*8+16, y*8+8, byte(frame))
 		e.fill(x*8+1, y*8+1, x*8+15, y*8+7, colour)
 	}
+	// The swatches show what a click gives: on Amiga art that is the
+	// terrain palette's slot the part's pixels take for the colour number
+	// (amigaIconColour: another hue and shade than the EGA colour of that
+	// number, magenta is black there), not the EGA colour. The palette's
+	// columns put the darker of each pair on top.
+	look := func(i byte) byte {
+		if im := e.icons[0xC][0]; im != nil && slices.ContainsFunc(im.Data, func(v byte) bool { return v >= pal.AmigaBase }) {
+			return pal.AmigaBase + 16*pal.AmigaTerrain + amigaIconColour[i]
+		}
+		return i
+	}
+	var cells [16]byte // the colour number in each palette cell, row-major
+	layout := func() {
+		lum := func(i byte) int {
+			c := pal.Identity.RGBA(look(i))
+			return int(c.R) + int(c.G) + int(c.B)
+		}
+		for k := 0; k < 8; k++ {
+			a, b := byte(k), byte(k+8)
+			if lum(a) > lum(b) {
+				a, b = b, a
+			}
+			cells[k], cells[k+8] = a, b
+		}
+	}
 	show := func() {
 		build()
+		layout()
 		e.ClearCells(1, 1, winRight, winBottom)
 		var o []Overlay
 		for p := 0; p < 2; p++ {
@@ -76,11 +107,11 @@ func (e *Engine) iconEditor() {
 				if i == part && s == shade {
 					frame = colWhite
 				}
-				swatch(idSwatchCol+3*s, idPartRow+i, c.IconColour[i]>>(4*s)&0xF, frame)
+				swatch(idSwatchCol+3*s, idPartRow+i, look(c.IconColour[i]>>(4*s)&0xF), frame)
 			}
 		}
 		for i := 0; i < 16; i++ {
-			swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, byte(i), colDarkGrey)
+			swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, look(cells[i]), colDarkGrey)
 		}
 	}
 	e.snap.iconDrop = func(im image.Image) {
@@ -133,7 +164,7 @@ func (e *Engine) iconEditor() {
 			return Action{Kind: actRedraw}
 		}})
 		e.addRegion(region{x0: idPaletteCol, y0: idPaletteRow, x1: idPaletteCol + 15, y1: idPaletteRow + 1, click: func(cx, cy int) Action {
-			v := byte((cy-idPaletteRow)*8 + (cx-idPaletteCol)/2)
+			v := cells[(cy-idPaletteRow)*8+(cx-idPaletteCol)/2]
 			c.IconColour[part] = c.IconColour[part]&^(0xF<<(4*shade)) | v<<(4*shade)
 			return Action{Kind: actRedraw}
 		}})
