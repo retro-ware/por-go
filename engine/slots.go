@@ -40,6 +40,7 @@ func (e *Engine) adventure() {
 			// extra: the original exits to DOS when the party is lost
 			// (start:013D-0142); the port goes back to the party menu
 			e.unwindReset()
+			e.resetAdventure() // the next party starts afresh, not where this one died
 			e.loadedGame = false
 			start = party
 			continue

@@ -10,19 +10,10 @@ import (
 // load the always-resident assets. Everything the DOS code zeroed with
 // FillChar is zero-valued here.
 func (e *Engine) Init() {
-	e.game, e.area, e.aux = gameVars{}, areaVars{}, auxVars{} // DS:49D6, 49D2, 49DA
-	e.ecl = make([]byte, 0x1E00)                              // DS:49DE, ECL code at pc-0x9900
-	e.posX, e.posY, e.facing = 0xF, 1, 6                      // DS:6AAD/6AAE/6AAF
-	e.eclPC = 0                                               // DS:49ED
-	e.msgDelay = 1                                            // DS:49E2
-	e.set = 1                                                 // DS:5376 = 1
-	e.viewMode, e.prevViewMode = 1, 1
-	e.viewBit0, e.viewBit1 = 1, 1                // DS:49F5/49F6
-	e.listTop = 1                                // DS:6B29
-	e.mapPairA[1], e.mapPairA[2] = -1, -1        // DS:6AAE+4i, i = 2..3
-	e.mapPairB[1], e.mapPairB[2] = -1, -1        // DS:6AB0+4i
-	e.es.skyShade, e.es.groundShade = 0xE8, 0xDB // DS:6F69/6F68
-
+	e.ecl = make([]byte, 0x1E00) // DS:49DE, ECL code at pc-0x9900
+	e.set = 1                    // DS:5376 = 1
+	e.listTop = 1                // DS:6B29
+	e.resetAdventure()
 	e.font = e.L.Block(e.set.file("8X8D"), 201) // 0709:017C
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colLightGreen, "Loading...Please Wait")
@@ -39,6 +30,27 @@ func (e *Engine) Init() {
 	e.Randomize()           // 0AF8:1247
 	e.spellTableInit()      // ovr23:3413
 	e.setupAffectHandlers() // fills the affect handler table
+}
+
+// resetAdventure puts the adventure's state back to a new game's: the
+// game, area and aux records, New Phlan as the area, the start square.
+// Init's part of it, and (extra) what the party menu needs again after the
+// party was lost, where the original exited to DOS: the area and position
+// the party died at would otherwise carry over to the next party's Begin
+// (a wipe on the first square after an area change loaded the old area,
+// whose block still named it, at the new one's square: inside the water).
+func (e *Engine) resetAdventure() {
+	e.game, e.area, e.aux = gameVars{}, areaVars{}, auxVars{} // DS:49D6, 49D2, 49DA
+	e.gs.areaKind = 0
+	e.posX, e.posY, e.facing = 0xF, 1, 6 // DS:6AAD/6AAE/6AAF
+	e.pos3, e.pos4 = 0, 0
+	e.eclPC = 0    // DS:49ED
+	e.msgDelay = 1 // DS:49E2
+	e.viewMode, e.prevViewMode = 1, 1
+	e.viewBit0, e.viewBit1 = 1, 1                                 // DS:49F5/49F6
+	e.mapPairA, e.mapPairB = [3]int{0, -1, -1}, [3]int{0, -1, -1} // DS:6AAE+4i / 6AB0+4i, i = 2..3
+	e.es.skyShade, e.es.groundShade = 0xE8, 0xDB                  // DS:6F69/6F68
+	e.purse, e.loot, e.pool = purse{}, purse{}, nil
 }
 
 // readItems reads the base item table: skips the 2-byte count and takes up
