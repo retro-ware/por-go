@@ -5,6 +5,44 @@ A Go port of *Pool of Radiance* (SSI, 1988), with a modernized interface.
 (the 3D views, the voice-over, the interface) and how to do it again for
 another Gold Box game; `PORT_CHECKLIST.md` lists each change with its code.
 
+## What's new for players
+
+The game plays as the 1988 original, with the same rules, areas, scripts
+and story. What changed is how it looks and how it feels to play:
+
+- **A real 3D dungeon view.** Phlan's streets, sewers, castles and caves
+  are rendered in first person with new wall art, water, sky, day and
+  night, smooth steps and turns. The minimap sits in the corner, a full
+  map is a key away, and you can click a square on it to walk there.
+- **Tabletop battles.** Fights happen on a 3D board with figures on
+  pedestals: click a square to walk, click a foe to attack, hover to see
+  your chance to hit, and the action bar shows what you can do, with a
+  tooltip on each weapon telling its range and rules.
+- **Full voice-over.** Every line of the story, from the Council's
+  proclamations to the tavern tales, is spoken.
+- **Mouse and gamepad everywhere.** Every menu takes a click, the wheel
+  scrolls, the right button backs out, a held key walks on.
+- **A party inventory with icons.** One shared pack for the whole party,
+  no weight or encumbrance; each member has a paper doll to equip. Pick a
+  stack up with a click and drop it where it goes, split stacks with the
+  right button, drag and drop works too. Tooltips compare an item with
+  what you have readied.
+- **One purse.** Gold, gems and jewelry belong to the party; shops,
+  temples and training just take their price.
+- **Named save slots** anywhere outside combat, and a note when the save
+  is done.
+- **Camp made simple.** Memorize is one screen that remembers your
+  plan for every rest; the rest menu heals, waits an hour or until night
+  or day.
+- **The journal built in.** When the text points you at a journal entry
+  or a tale, it opens on the spot, with the printed maps and sketches.
+- **Your own portraits.** Drop a PNG on the character sheet and that face
+  follows the character everywhere.
+- **Quickstart party.** Six ready-made characters get you into Phlan in
+  a minute; paladins and rangers are playable.
+- **Amiga art and music** from the Amiga disks, if you have them, and a
+  choice of fonts and a resizable, fullscreen-capable window.
+
 No game data is included. The engine reads the original game files (the
 `.DAX` files, `ITEMS`) from your own copy of the game at run time. The rule
 tables of `START.EXE` (races, classes, experience, spells ...) live in
