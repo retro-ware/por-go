@@ -150,7 +150,7 @@ func (e *Engine) iconEditor() {
 	// pickPart: a grid of every head (or weapon) on the icon as it is.
 	pickPart := func(pic *byte, name string, n int) {
 		was := *pic
-		if i := e.pickGrid(name+": ", n, 12, 3, 3, int(was), func(i, x, y int) {
+		if i := e.pickGrid(name+": ", n, 3, 3, int(was), func(i, x, y int) {
 			*pic = byte(i)
 			build()
 			if im := e.icons[0xC][0]; im != nil {
@@ -163,6 +163,7 @@ func (e *Engine) iconEditor() {
 		}
 		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
 	}
+	defer e.redrawWith(e.relist)()
 	for {
 		show()
 		mark := e.regionMark()

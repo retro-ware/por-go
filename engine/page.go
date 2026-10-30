@@ -68,7 +68,7 @@ type pageState struct {
 // touches with them.
 func (e *Engine) draw(l layer) {
 	pg := &e.pg
-	r := l.at.Intersect(image.Rect(0, 0, pal.W, pal.H))
+	r := l.at.Intersect(image.Rect(0, 0, textCols*8, textRows*8))
 	if r.Empty() {
 		return
 	}
@@ -87,7 +87,7 @@ func (e *Engine) draw(l layer) {
 	pg.layers = append(pg.layers, l)
 	for y := r.Min.Y / 8; y <= (r.Max.Y-1)/8; y++ {
 		for x := r.Min.X / 8; x <= (r.Max.X-1)/8; x++ {
-			e.ext.cells[y][x].set = false
+			e.cells()[y][x].set = false
 		}
 	}
 	if pg.frameUp {
@@ -131,14 +131,53 @@ func (e *Engine) clearPage() {
 	e.pg.layers = e.pg.layers[:0]
 	e.pg.frameUp = false
 	e.newPage()
-	e.ext.cells = [25][40]textCell{}
+	e.ext.cells = newCells()
 }
 
 // newPage ends what belongs to the page being replaced: the sheet's
-// portrait overlay and box, and the tall layout.
+// portrait overlay and box.
 func (e *Engine) newPage() {
 	e.pg.overlays = nil
-	e.snap.portrait, e.snap.tallRow = CellRect{}, 0
+	e.snap.portrait = CellRect{}
+}
+
+// resizePage gives the page cols by rows cells (40x25 at least): what is
+// drawn stays where it is, then the screen draws itself up again at the
+// new size (ext.redraw) with the menu bar waited on (ext.bar).
+func (e *Engine) resizePage(cols, rows int) {
+	cols, rows = max(cols, minCols), max(rows, minRows)
+	if cols == textCols && rows == textRows {
+		return
+	}
+	old, oldPrompt := e.cells(), promptRow
+	setPageSize(cols, rows)
+	e.ext.cells = newCells()
+	for y := range min(len(old), textRows) {
+		copy(e.ext.cells[y], old[y])
+	}
+	e.glowOn(nil)
+	if e.ext.redraw != nil {
+		e.ext.redraw()
+	}
+	if oldPrompt < textRows && !e.ext.relist { // the bar's old row would stay inside the page
+		e.DisplaySpaces(0, oldPrompt, colBlack, len(old[0]))
+	}
+	if e.ext.bar != nil {
+		e.ext.bar()
+	}
+}
+
+// relist is the redraw of a screen whose loop draws it again on a
+// PickRedraw from its bar (the pickers, the sheets): the resize comes back
+// from the wait as one, so the bar is made again too (the pager's Next).
+func (e *Engine) relist() { e.ext.relist = true }
+
+// redrawWith sets f as the screen's redraw (resizePage) until the func
+// returned puts the one before back.
+func (e *Engine) redrawWith(f func()) func() {
+	was := e.ext.redraw
+	e.ext.redraw = f
+	return func() { e.ext.redraw = was }
 }
 
 // pageView fills v's page from the layers and cells.
@@ -159,8 +198,11 @@ func (e *Engine) pageView(v *View) {
 		}
 		v.Page = append(v.Page, s)
 	}
-	for y := range e.ext.cells {
-		for x, c := range e.ext.cells[y] {
+	all := make([]Cell, textRows*textCols)
+	v.Text = make([][]Cell, textRows)
+	for y, row := range e.cells() {
+		v.Text[y] = all[y*textCols : (y+1)*textCols]
+		for x, c := range row {
 			if c.set {
 				v.Text[y][x] = Cell{Glyph: c.glyph, Fg: e.pal.RGBA(c.colour), Bg: e.pal.RGBA(c.bg), Set: true}
 				v.TextShown = v.TextShown || image.Pt(x, y).In(TextPane.rect())

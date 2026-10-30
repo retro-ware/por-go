@@ -56,7 +56,7 @@ func (e *Engine) buyItem(it *Item) (overloaded bool) {
 
 // Shop = ovr07:053E.
 func (e *Engine) Shop() {
-	greeting := e.ext.cells // extra: the merchant's greeting comes back after each redraw (the original cleared it)
+	greeting := e.cellsCopy() // extra: the merchant's greeting comes back after each redraw (the original cleared it)
 	e.beginFlag = 1
 	e.DrawMainScreen()
 	e.keepPane(greeting)
@@ -102,9 +102,12 @@ func (e *Engine) Shop() {
 }
 
 // keepPane (extra) puts the text pane's cells back as they were in cells.
-func (e *Engine) keepPane(cells [25][40]textCell) {
+func (e *Engine) keepPane(cells [][]textCell) {
 	for y := msgTop; y <= winBottom; y++ {
 		for x := 1; x <= winRight; x++ {
+			if y >= len(cells) || x >= len(cells[y]) {
+				continue
+			}
 			if c := cells[y][x]; c.set {
 				e.drawChar(x, y, int(c.colour), int(c.bg), c.c, c.upcase)
 			}

@@ -95,8 +95,8 @@ type inventory struct {
 	view    *engine.Inventory
 	acts    []engine.Action // to send (Presenter.Actions)
 	words   []word          // the menu row's words, or the question's Yes and No
-	k       int             // canvas scale
-	at      image.Point     // canvas top left on screen
+	k       int             // canvas scale, whole: what the pixel art is drawn at
+	kx, ky  float64         // the canvas on screen: k and the stretch to the window's edges (fit)
 	w, h    int             // canvas size
 	list    pane            // the party inventory
 	wares   pane            // the shop's goods (Browse)
@@ -625,16 +625,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		inv.tooltip(t, in)
 	}
 
-	// onto the screen at the whole scale
-	inv.at = image.Pt((b.Dx()-inv.k*inv.w)/2, (b.Dy()-inv.k*inv.h)/2)
-	dst.Fill(color.Black)
-	op := &gpu.DrawImageOptions{}
-	op.GeoM.Scale(float64(inv.k), float64(inv.k))
-	op.GeoM.Translate(float64(inv.at.X), float64(inv.at.Y))
-	dst.DrawImage(inv.img, op)
+	// onto the whole screen
+	inv.kx, inv.ky = p.fit(dst, inv.img, inv.w, inv.h)
 	if inv.facePNG != nil { // the PNG portrait at the window's resolution, as the cards
 		op := &gpu.DrawImageOptions{}
-		op.GeoM.Translate(float64(inv.at.X+inv.face.Min.X*inv.k), float64(inv.at.Y+inv.face.Min.Y*inv.k))
+		op.GeoM.Translate(float64(inv.face.Min.X)*inv.kx, float64(inv.face.Min.Y)*inv.ky)
 		dst.DrawImage(p.hiFace(inv.facePNG, portraitSize*inv.k), op)
 	}
 	return true
@@ -970,7 +965,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 	if inv.k == 0 || inv.view == nil {
 		return
 	}
-	inv.hover = image.Pt((x-inv.at.X)/inv.k, (y-inv.at.Y)/inv.k)
+	inv.hover = image.Pt(int(float64(x)/inv.kx), int(float64(y)/inv.ky))
 	pressed, released := down && !inv.held, !down && inv.held
 	inv.held = down
 

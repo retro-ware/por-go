@@ -484,24 +484,19 @@ const (
 // Where the sheet shows the combat icon's poses: under the portrait box.
 const sheetIconRow = 13
 
-// sheetTallRow is the creation sheet's blank row the 4:3 window repeats:
-// under the combat stats, so the drop-downs' boxes (bottom border at
-// sheetTallRow-1 at most) never cross it.
-const sheetTallRow = 20
-
-var sheetIconCol = [2]int{29, 34}
+// sheetIconCol is the column of pose p's icon under the portrait box.
+func sheetIconCol(p int) int { return winRight - 9 + 5*p }
 
 // creationSheet draws the sheet for the creation: without level, experience,
 // party items and status, with the combat icon under the portrait.
 func (e *Engine) creationSheet(c *Character) {
 	e.CharacterSheet()
-	e.snap.tallRow = sheetTallRow
 	e.BuildCharIcon(c, true)
 	for p := 0; p < 2; p++ {
 		if c.Icon != nil { // a PNG: over the page at the window's resolution
-			e.pg.overlays = append(e.pg.overlays, Overlay{Img: iconPose(c.Icon, p, false), At: iconRect(sheetIconCol[p], sheetIconRow)})
+			e.pg.overlays = append(e.pg.overlays, Overlay{Img: iconPose(c.Icon, p, false), At: iconRect(sheetIconCol(p), sheetIconRow)})
 		} else if im := e.icons[c.Order][p]; im != nil {
-			e.picture(sheetIconCol[p]*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
+			e.picture(sheetIconCol(p)*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
 		}
 	}
 }
@@ -531,7 +526,7 @@ func (e *Engine) sheetRegions(c *Character, want *int) {
 	}
 	at(28, 1, winRight, 5, wantHead, false)
 	at(28, 6, winRight, 11, wantBody, false)
-	at(sheetIconCol[0], sheetIconRow, sheetIconCol[1]+2, sheetIconRow+2, wantIcon, false)
+	at(sheetIconCol(0), sheetIconRow, sheetIconCol(1)+2, sheetIconRow+2, wantIcon, false)
 }
 
 // dropDown (extra) opens a sheet field's menu: a framed box from column
@@ -547,7 +542,7 @@ func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) b
 			order = append(order, i)
 		}
 	}
-	rows := min(len(order), sheetTallRow-1-y) // the bottom border above the repeated row
+	rows := min(len(order), winBottom-y) // the bottom border inside the sheet's
 	cols, w := (len(order)+rows-1)/rows, 0
 	for _, s := range items {
 		w = max(w, len(s))
@@ -673,7 +668,9 @@ func (e *Engine) CreateCharacter() {
 		want := wantNone
 		mark := e.regionMark()
 		e.sheetRegions(c, &want)
+		off := e.redrawWith(e.relist)
 		p := e.DisplayInput("", Bar{{"Roll", roll}, {"Minimal", minimal}, {"Keep", keep}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		off()
 		e.regionCut(mark)
 		switch {
 		case p.ID == keep:

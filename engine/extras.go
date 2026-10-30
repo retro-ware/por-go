@@ -86,10 +86,13 @@ type extras struct {
 	back    bool                     // Down stepped backwards: Move turns the party round again
 
 	// fonts.go
-	font   int              // 0: the game's font, else fonts[font-1]
-	fonts  []pcFont         // the fonts in data/assets/fonts (*.f8), then the PC fonts
-	cells  [25][40]textCell // the text drawn into each cell
-	note   string           // shown over the picture for a moment
+	font   int          // 0: the game's font, else fonts[font-1]
+	fonts  []pcFont     // the fonts in data/assets/fonts (*.f8), then the PC fonts
+	cells  [][]textCell // the text drawn into each cell, textRows by textCols
+	redraw func()       // draws the screen up again at the page's size (resizePage); nil: it stays as drawn until its next draw
+	relist bool         // the resize hands the waiting screen an actRedraw (relist)
+	bar    func()       // draws the menu bar waited on again (displayInput)
+	note   string       // shown over the picture for a moment
 	noteAt time.Time
 
 	// journal.go
@@ -312,9 +315,9 @@ func (e *Engine) Help() {
 	defer func() { off(); e.ext.paging = false }()
 	restore := e.saveScreen()
 	pages := helpPages()
-	for p := 0; p < len(pages); {
-		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Help")
-		e.ClearCells(2, 2, 37, 23)
+	p := 0
+	show := func() {
+		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Help")
 		for i, l := range pages[p] {
 			if l[1] == "" {
 				e.DisplayString(2, 2+i, colWhite, l[0])
@@ -327,6 +330,10 @@ func (e *Engine) Help() {
 			more := "page " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
 			e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		}
+	}
+	defer e.redrawWith(show)()
+	for p < len(pages) {
+		show()
 		switch a := e.anyKey(); {
 		case a.Kind == ActClose:
 			p = len(pages)

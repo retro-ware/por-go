@@ -107,7 +107,7 @@ func journalLines(titles []string) []string {
 				if im := journalPicture(p[1 : len(p)-1]); im != nil {
 					lines = append(lines, "\x01"+p[1:len(p)-1])
 					_, h := pictureSize(im)
-					for range min((h+7)/8, jrRows) - 1 {
+					for range min((h+7)/8, jrRows()) - 1 {
 						lines = append(lines, "\x02") // rows the picture covers
 					}
 				}
@@ -122,14 +122,14 @@ func journalLines(titles []string) []string {
 }
 
 // The pager: the text inside a full-screen box, jrRows lines a page from
-// row jrTop (under the journal's title and a blank row) to row 21; row 22
-// stays blank (the remaster repeats it to fill a 4:3 window), row 23 is
-// the "press a key" line.
+// row jrTop (under the journal's title and a blank row) to two rows above
+// the "press a key" line (messageRow); a taller page holds more lines.
 const (
 	jrWidth = 0x24
-	jrRows  = 19
 	jrTop   = 3
 )
+
+func jrRows() int { return messageRow - 1 - jrTop }
 
 // wrapText breaks s into lines of at most w characters at spaces.
 func wrapText(s string, w int) []string {
@@ -155,19 +155,24 @@ func wrapText(s string, w int) []string {
 
 // showJournal pages through lines ("\x00" marks a title) until the last
 // page or Esc, then puts the screen back. On a page with a tall picture,
-// Up and Down (and the wheel) scroll it. The box is the whole page, and the
-// remaster's 4:3 window too: the blank row 22 repeats (tallRow), so the
-// text and its pictures keep their rows.
+// Up and Down (and the wheel) scroll it. The box is the whole page; a
+// resize pages the text again for the new height.
 func (e *Engine) showJournal(lines []string) {
 	off := e.modalOn()
 	e.ext.paging = true
 	defer func() { off(); e.ext.paging = false }()
 	restore := e.saveScreen()
 	pages := journalPages(lines)
-	draw := func(p, off int) (maxOff int) {
+	p, pageOff := 0, 0
+	var draw func(p, off int) (maxOff int)
+	defer e.redrawWith(func() {
+		pages = journalPages(lines)
+		p = min(p, len(pages)-1)
+		draw(p, pageOff)
+	})()
+	draw = func(p, off int) (maxOff int) {
 		e.setOverlays(nil)
-		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Adventurer's Journal") // the border runs round the page
-		e.snap.tallRow = 22
+		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Adventurer's Journal") // the border runs round the page
 		page := pages[p]
 		for i, l := range page {
 			switch {
@@ -190,9 +195,9 @@ func (e *Engine) showJournal(lines []string) {
 		e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		return maxOff
 	}
-	for p := 0; p < len(pages); p++ {
-		for off := 0; ; {
-			maxOff := draw(p, off)
+	for ; p < len(pages); p++ {
+		for pageOff = 0; ; {
+			maxOff := draw(p, pageOff)
 			a := e.input()
 			if !e.pressed(a) {
 				continue
@@ -203,18 +208,17 @@ func (e *Engine) showJournal(lines []string) {
 				break
 			}
 			if maxOff > 0 && up {
-				off = max(off-16, 0)
+				pageOff = max(pageOff-16, 0)
 				continue
 			}
-			if maxOff > 0 && down && off < maxOff { // at the bottom, Down pages on
-				off = min(off+16, maxOff)
+			if maxOff > 0 && down && pageOff < maxOff { // at the bottom, Down pages on
+				pageOff = min(pageOff+16, maxOff)
 				continue
 			}
 			break
 		}
 	}
 	e.setOverlays(nil)
-	e.snap.tallRow = 0
 	restore()
 }
 
@@ -232,16 +236,16 @@ func journalPages(lines []string) [][]string {
 		for len(lines) > 0 && lines[0] == "" {
 			lines = lines[1:]
 		}
-		for i := 0; i < min(jrRows, len(lines)); i++ {
+		for i := 0; i < min(jrRows(), len(lines)); i++ {
 			if !strings.HasPrefix(lines[i], "\x01") {
 				continue
 			}
 			rows := pictureRows(lines[i:])
-			if left := jrRows - i; rows > left && left*2 >= rows {
+			if left := jrRows() - i; rows > left && left*2 >= rows {
 				lines = append(lines[:i+left], lines[i+rows:]...) // drop the rows it no longer covers
 			}
 		}
-		n := min(jrRows, len(lines))
+		n := min(jrRows(), len(lines))
 		for n < len(lines) && n > 1 && lines[n] == "\x02" { // back to the picture's first row
 			n--
 		}

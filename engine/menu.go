@@ -227,11 +227,11 @@ func (e *Engine) displayInput(prompt, menu string, ids []Choice, promptColour, n
 	saved := e.animInput // [bp+0xA], read by the wait loop (animateWhileWaiting)
 	e.animInput = anim
 	defer func() { e.animInput = saved }()
-	if len(prompt) > 40 {
-		prompt = prompt[:40]
+	if len(prompt) > textCols {
+		prompt = prompt[:textCols]
 	}
-	if len(menu) > 40 {
-		menu = menu[:40]
+	if len(menu) > textCols {
+		menu = menu[:textCols]
 	}
 	e.ext.menu++
 	nav, mark := e.ext.nav, e.regionMark()
@@ -257,6 +257,14 @@ func (e *Engine) displayInput(prompt, menu string, ids []Choice, promptColour, n
 	e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) // 048B; redrawn only on a move
 	e.menuRegions(prompt, menu, start, end, normal, highlight, allowExtra)
 	redraw := func() { e.drawMenu(prompt, menu, start, end, e.menuSel, normal, highlight) }
+	outerBar := e.ext.bar
+	e.ext.bar = func() {
+		if len(prompt) > 0 {
+			e.DisplayString(0, promptRow, promptColour, prompt)
+		}
+		redraw()
+	}
+	defer func() { e.ext.bar = outerBar }()
 	m := &menuBar{e: e, menu: menu, start: start, ids: ids, count: count, allowExtra: allowExtra, allowEnter: allowEnter, redraw: redraw}
 	for {
 		// The input timeout DS:6B2E..6B32 is never set by the game.

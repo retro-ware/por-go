@@ -8,19 +8,28 @@ import (
 	"os"
 	"path/filepath"
 
+	"por/dax"
 	"por/pal"
 )
+
+// fullPicture draws a whole-screen picture (320x200) in the middle of the
+// page: on a page of another shape (a full screen) it gets black bars,
+// never a crop or a stretch.
+func (e *Engine) fullPicture(pic *dax.Image) {
+	e.ClearScreen()
+	e.DrawPicture((textCols-minCols)/2, (textRows-minRows)/2, pic, 0)
+}
 
 // Title = ovr02:0626 title_screen.
 func (e *Engine) Title() {
 	e.Music(1) // the Amiga intro, 0x2B580
 	defer e.Music(0)
-	e.DrawPicture(0, 0, e.LoadPic("TITLE", 1), 0)
+	e.fullPicture(e.LoadPic("TITLE", 1))
 	e.WaitSeconds(5)
 	if !e.Cfg.FullIntro {
 		return
 	}
-	e.DrawPicture(0, 0, e.LoadPic("TITLE", 2), 0)
+	e.fullPicture(e.LoadPic("TITLE", 2))
 	end := e.Ticks() + 500
 	var acc int
 	for {
@@ -49,18 +58,25 @@ func (e *Engine) Title() {
 
 // Credits = ovr02:0206.
 func (e *Engine) Credits() {
-	e.DrawBoxTitled(1, 1, winRight, 3, 0, colBlack, "")
-	e.DrawBoxTitled(1, 5, winRight, 23, 0, colBlack, "")
-	for _, t := range creditLines {
-		e.DisplayString(t.x, t.y, t.c, t.s)
+	draw := func() {
+		e.DrawBoxTitled(1, 1, winRight, 3, 0, colBlack, "")
+		e.DrawBoxTitled(1, 5, winRight, promptRow-1, 0, colBlack, "")
+		for _, t := range creditLines {
+			e.DisplayString(t.x, t.y, t.c, t.s)
+		}
+		if promptRow-2 >= creditLines[len(creditLines)-1].y+2 { // extra: the remaster's own lines, on a page tall enough for them
+			for i, s := range RemasterCredit {
+				e.DisplayString((textCols-len(s))/2, promptRow-3+i, colYellow, s)
+			}
+		}
 	}
-	e.snap.credits = true // extra: the remaster spreads them over the screen
+	defer e.redrawWith(draw)()
+	draw()
 	e.WaitSeconds(10)
-	e.snap.credits = false
 }
 
-// RemasterCredit is the remaster's own line under the credits (View.Credits).
-const RemasterCredit = "Opionionated Remaster directed by Felix Ruzzoli using Claude"
+// RemasterCredit is the remaster's own lines at the bottom of the credits.
+var RemasterCredit = [2]string{"Opinionated Remaster", "directed by Felix Ruzzoli using Claude"}
 
 var creditLines = []struct {
 	x, y, c int

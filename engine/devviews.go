@@ -18,7 +18,7 @@ func (e *Engine) DevViews() []DevView {
 	for _, d := range []int{0, 2, 4, 6} {
 		d := d
 		v = append(v, DevView{"nesw"[d/2 : d/2+1], func() {
-			e.ClearCells(0, 0, 39, 24)
+			e.ClearCells(0, 0, lastCol, promptRow)
 			e.Draw3DView(e.posX, e.posY, d)
 		}})
 	}

@@ -57,8 +57,8 @@ type Presenter struct {
 	backdropSrc image.Image                 // ... uploaded from this
 	mainAt      time.Time                   // when the main menu first showed the backdrop
 	layer       *gpu.Image                  // the main menu drawn for its fade in
-	tallImg     *gpu.Image                  // the credits or saved games, spread (credits.go)
-	tallKey     tallKey                     // what tallImg shows
+	grid        [2]int                      // the text cells the window holds, as last told to the engine (ActResize)
+	gridAge     int                         // frames since
 	cards       []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
 	faces       map[image.Image]image.Image // card art cropped from each paper-doll head
 	inside      bool                        // the view has the inside ceiling
@@ -74,7 +74,6 @@ type Presenter struct {
 	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	menuSel     int                         // the game's own choice in it
 	noMenu      bool                        // nothing to pick: any click answers
-	rows        []shownRows                 // the original's rows on screen, as last drawn
 	pointer     image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
 	menuImg     *gpu.Image                  // the vertical menu, drawn at scale 1
 	menuBuf     []byte                      // its pixels
@@ -213,7 +212,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.ctx = 0
 	}
 	p.fight = v.Battle != nil // the battle view is the only one: the engine has no combat page
-	p.rows, p.noMenu = p.rows[:0], v.Menu == nil
+	p.noMenu = v.Menu == nil
+	p.resize(dst, v)
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false
 		p.fightView = v.Battle
@@ -228,17 +228,6 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.shown, p.active, p.menu = "", false, false
 		p.drawMain(dst, v)
 		return Rect{}
-	}
-	if v.Credits {
-		p.shown, p.active, p.menu, p.cards = "", false, false, nil
-		return p.drawCredits(dst, v, note)
-	}
-	if v.Slots || v.TallRow > 0 {
-		p.shown, p.active, p.menu, p.cards = "", false, false, nil
-		if v.TallRow > 0 {
-			return p.drawTallPage(dst, v, note)
-		}
-		return p.drawSlots(dst, v, note)
 	}
 	sc := p.scene(v)
 	if sc == nil || !v.Choosing && (!v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
@@ -354,7 +343,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(pk, pk)
 		op.GeoM.Translate(float64(cx)-pk*float64(pal.W)/2, float64(b.Max.Y-h))
-		dst.DrawImage(frame.SubImage(image.Rect(0, pal.H-8, pal.W, pal.H)).(*gpu.Image), op)
+		pw, ph := pageSize(v)
+		dst.DrawImage(frame.SubImage(image.Rect(0, ph-8, pw, ph)).(*gpu.Image), op)
 	}
 	return Rect{}
 }
@@ -803,22 +793,23 @@ func drawBorder(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int) {
 	}
 }
 
-// shownRows is a strip of the original's screen (pix) where it shows (at).
-type shownRows struct{ at, pix image.Rectangle }
-
-// Cell is the original's text cell under screen pixel (x, y), on the rows
-// of its screen shown as they are (menu lines, prompts, the combat panel),
-// so its own mouse handling picks from them.
-func (p *Presenter) Cell(x, y int) (int, int, bool) {
-	for _, s := range p.rows {
-		if image.Pt(x, y).In(s.at) {
-			px := s.pix.Min.X + (x-s.at.Min.X)*s.pix.Dx()/s.at.Dx()
-			py := s.pix.Min.Y + (y-s.at.Min.Y)*s.pix.Dy()/s.at.Dy()
-			return px / 8, py / 8, true
-		}
+// resize tells the engine the text cells the window holds (grid) when
+// they change, and again now and then while the page is not yet of that
+// size (the action was dropped): the engine lays its screens out to them.
+func (p *Presenter) resize(dst *gpu.Image, v engine.View) {
+	cols, rows := grid(dst)
+	pw, ph := pageSize(v)
+	p.gridAge++
+	if g := [2]int{cols, rows}; g != p.grid || p.gridAge > 30 && (pw != cols*8 || ph != rows*8) {
+		p.grid, p.gridAge = g, 0
+		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActResize, X: cols, Y: rows})
 	}
-	return 0, 0, p.noMenu // "press a key": a click anywhere, as on the original's screen
 }
+
+// Cell is the original's text cell under screen pixel (x, y) on a
+// remastered screen, which shows none of its rows: "press a key" takes a
+// click anywhere, as on the original's screen.
+func (p *Presenter) Cell(x, y int) (int, int, bool) { return 0, 0, p.noMenu }
 
 // cardLabels: the sheet's status as the card spells it over the portrait,
 // short enough to fit there (a member at 0 hit points is not always dead).

@@ -20,14 +20,59 @@ const (
 	colWhite
 )
 
-// The 40x25 text screen.
+// The text screen: the original's 40x25, the floor; a larger window gives
+// more cells (resizePage), and every screen lays out to them (textCols,
+// textRows and the rows and columns derived from them). The 3D view's own
+// boxes (ViewWindow, TextPane) keep their places: the remaster draws that
+// screen itself.
 const (
-	textCols   = 40 // characters per line
-	noteCols   = 36 // a note (say) fits the bottom line's box with a blank each side
-	lastCol    = 39
-	winRight   = 38 // inner right edge of the framed text window
-	winBottom  = 22 // its inner bottom row
-	msgTop     = 17 // first row of the message pane under the portrait
-	messageRow = 23 // the bottom message line
-	promptRow  = 24 // the menu and prompt line
+	minCols  = 40
+	minRows  = 25
+	noteCols = 36 // a note (say) fits the bottom line's box with a blank each side
+	msgTop   = 17 // first row of the message pane under the portrait
 )
+
+// ponytail: package-level page size, one Engine per process; move onto
+// Engine if two of different sizes ever share one.
+var (
+	textCols   = minCols // characters per line
+	textRows   = minRows
+	lastCol    = textCols - 1
+	winRight   = textCols - 2 // inner right edge of the framed text window
+	winBottom  = textRows - 3 // its inner bottom row
+	messageRow = textRows - 2 // the bottom message line
+	promptRow  = textRows - 1 // the menu and prompt line
+)
+
+// setPageSize sets the text screen's size in cells (never under 40x25).
+func setPageSize(cols, rows int) {
+	textCols, textRows = max(cols, minCols), max(rows, minRows)
+	lastCol, winRight, winBottom, messageRow, promptRow = textCols-1, textCols-2, textRows-3, textRows-2, textRows-1
+}
+
+// newCells is an empty text cell grid of the page's size.
+func newCells() [][]textCell {
+	all := make([]textCell, textRows*textCols)
+	cells := make([][]textCell, textRows)
+	for y := range cells {
+		cells[y] = all[y*textCols : (y+1)*textCols]
+	}
+	return cells
+}
+
+// cells is the text cell grid, made at the page's size on first use.
+func (e *Engine) cells() [][]textCell {
+	if len(e.ext.cells) != textRows || len(e.ext.cells[0]) != textCols {
+		e.ext.cells = newCells()
+	}
+	return e.ext.cells
+}
+
+// cellsCopy is a copy of the text cells (saveScreen, the shops' greeting).
+func (e *Engine) cellsCopy() [][]textCell {
+	c := newCells()
+	for y, row := range e.cells() {
+		copy(c[y], row)
+	}
+	return c
+}

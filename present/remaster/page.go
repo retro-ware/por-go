@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"slices"
 
 	xdraw "golang.org/x/image/draw"
 
@@ -25,7 +26,8 @@ type Note struct {
 	Glyph func(byte) [8]byte
 }
 
-// page is the original's 320x200 screen drawn from the View's Page and Text.
+// page is the engine's screen (pageSize: 320x200 at least) drawn from the
+// View's Page and Text.
 type page struct {
 	img   *gpu.Image
 	px    *image.RGBA
@@ -33,8 +35,57 @@ type page struct {
 	noted bool
 	drawn bool
 	page  []engine.Sprite      // what img shows: the View's page...
-	text  [25][40]engine.Cell  // ...and text
+	text  [][]engine.Cell      // ...and text
 	scans map[image.Image]scan // the overlays on the GPU
+	fit   *gpu.Image           // fit's whole-scale copy
+}
+
+// pageSize is v's page in pixels: its text cells, 8 by 8 (the original's
+// 320x200 for a View without any).
+func pageSize(v engine.View) (w, h int) {
+	if len(v.Text) == 0 || len(v.Text[0]) == 0 {
+		return pal.W, pal.H
+	}
+	return len(v.Text[0]) * 8, len(v.Text) * 8
+}
+
+// grid is the text cells the window holds: 40x25 at least, more at the
+// largest whole scale the original's screen fits (scale), so a larger
+// window shows more rather than bigger cells; the engine lays its screens
+// out to it (ActResize).
+func grid(dst *gpu.Image) (cols, rows int) {
+	b, k := dst.Bounds(), int(scale(dst))
+	return max(40, b.Dx()/(8*k)), max(25, b.Dy()/(8*k))
+}
+
+// fit draws img, w by h unscaled pixels, over the whole of dst: nearest
+// neighbour at the largest whole scale that fits (sharp pixels), then
+// stretched the rest of the way to the window's edges, under a cell on
+// each axis when the page is the window's grid. No black bars, ever:
+// every screen fills the window. It returns the scale on each axis.
+func (p *Presenter) fit(dst, img *gpu.Image, w, h int) (kx, ky float64) {
+	b := dst.Bounds()
+	k := max(1, min(b.Dx()/w, b.Dy()/h))
+	kx, ky = float64(b.Dx())/float64(w), float64(b.Dy())/float64(h)
+	op := &gpu.DrawImageOptions{}
+	if kx == float64(k) && ky == float64(k) {
+		op.GeoM.Scale(kx, ky)
+		dst.DrawImage(img, op)
+		return
+	}
+	pg := &p.pg
+	if pg.fit == nil || pg.fit.Bounds().Dx() != w*k || pg.fit.Bounds().Dy() != h*k {
+		if pg.fit != nil {
+			pg.fit.Deallocate()
+		}
+		pg.fit = gpu.NewImage(w*k, h*k)
+	}
+	op.GeoM.Scale(float64(k), float64(k))
+	pg.fit.DrawImage(img, op)
+	op = &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
+	op.GeoM.Scale(kx/float64(k), ky/float64(k))
+	dst.DrawImage(pg.fit, op)
+	return
 }
 
 // scan is an overlay on the GPU: the picture itself (w, h 0), or a copy
@@ -49,8 +100,12 @@ type scan struct {
 // returns it.
 func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 	pg := &p.pg
-	if pg.img == nil {
-		pg.img, pg.px = gpu.NewImage(pal.W, pal.H), image.NewRGBA(image.Rect(0, 0, pal.W, pal.H))
+	w, h := pageSize(v)
+	if pg.img == nil || pg.px.Rect.Dx() != w || pg.px.Rect.Dy() != h {
+		if pg.img != nil {
+			pg.img.Deallocate()
+		}
+		pg.img, pg.px, pg.drawn = gpu.NewImage(w, h), image.NewRGBA(image.Rect(0, 0, w, h)), false
 	}
 	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
 		pg.seq = v.Seq
@@ -75,10 +130,10 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 		}
 	}
 	if note.Show { // yellow, centred on the bottom line in place of the prompt (as the inventory's menu row)
-		draw.Draw(m, image.Rect(0, pal.H-8, pal.W, pal.H), image.Black, image.Point{}, draw.Src)
-		x0 := (pal.W - 8*len(note.Text)) / 2
+		draw.Draw(m, image.Rect(0, h-8, w, h), image.Black, image.Point{}, draw.Src)
+		x0 := (w - 8*len(note.Text)) / 2
 		for i := 0; i < len(note.Text); i++ {
-			glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, pal.H-8, pal.EGA(14), color.RGBA{A: 255})
+			glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, h-8, pal.EGA(14), color.RGBA{A: 255})
 		}
 	}
 	pg.img.WritePixels(m.Pix)
@@ -98,24 +153,34 @@ func glyphAt(m *image.RGBA, g [8]byte, x, y int, fg, bg color.RGBA) {
 	}
 }
 
-// drawPage shows the whole page on dst, as large as fits at a whole
-// scale, with the overlays at the window's own resolution; it returns where.
+// drawPage shows the whole page over the whole window (fit), with the
+// overlays at the window's own resolution; it returns where. A page not yet
+// of the window's grid (the engine has the resize still to do) is shown
+// at a whole scale in the middle meanwhile, so nothing stretches.
 func (p *Presenter) drawPage(dst *gpu.Image, v engine.View, note Note) Rect {
 	img := p.pageImage(v, note)
 	dst.Fill(color.Black)
 	b := dst.Bounds()
-	k := math.Max(1, math.Floor(math.Min(float64(b.Dx())/pal.W, float64(b.Dy())/pal.H)))
-	r := Rect{(float64(b.Dx()) - k*pal.W) / 2, (float64(b.Dy()) - k*pal.H) / 2, k * pal.W, k * pal.H}
-	op := &gpu.DrawImageOptions{}
-	op.GeoM.Scale(k, k)
-	op.GeoM.Translate(r.X, r.Y)
-	dst.DrawImage(img, op)
-	p.drawOverlays(dst, v.Overlays, r)
+	w, h := pageSize(v)
+	var r Rect
+	if cols, rows := grid(dst); cols*8 == w && rows*8 == h {
+		kx, ky := p.fit(dst, img, w, h)
+		r = Rect{0, 0, kx * float64(w), ky * float64(h)}
+	} else {
+		k := math.Max(1, math.Floor(math.Min(float64(b.Dx())/float64(w), float64(b.Dy())/float64(h))))
+		r = Rect{(float64(b.Dx()) - k*float64(w)) / 2, (float64(b.Dy()) - k*float64(h)) / 2, k * float64(w), k * float64(h)}
+		op := &gpu.DrawImageOptions{}
+		op.GeoM.Scale(k, k)
+		op.GeoM.Translate(r.X, r.Y)
+		dst.DrawImage(img, op)
+	}
+	p.drawOverlays(dst, v.Overlays, r, w, h)
 	return r
 }
 
-// drawOverlays draws the overlays (journal scans) over the page at r.
-func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
+// drawOverlays draws the overlays (journal scans) over the page of w by h
+// pixels at r.
+func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect, w, h int) {
 	pg := &p.pg
 	for img, im := range pg.scans { // drop the copies of scans no longer shown
 		keep := false
@@ -127,11 +192,11 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
 			delete(pg.scans, img)
 		}
 	}
-	k := r.W / pal.W
+	kx, ky := r.W/float64(w), r.H/float64(h)
 	for _, o := range os {
 		b := o.Part()
-		tw, th := o.At.Dx()*int(k), o.At.Dy()*int(k) // its place in window pixels
-		x, y := r.X+float64(o.At.Min.X)*k, r.Y+float64(o.At.Min.Y)*k
+		tw, th := int(float64(o.At.Dx())*kx), int(float64(o.At.Dy())*ky) // its place in window pixels
+		x, y := r.X+float64(o.At.Min.X)*kx, r.Y+float64(o.At.Min.Y)*ky
 		// a picture smaller than its place (a portrait) is scaled up by whole
 		// pixels when that nearly fills the place (crisp pixel art, on its
 		// foot), else by Catmull-Rom to the exact size; a larger one (a journal
@@ -182,8 +247,13 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect) {
 // engine publishes a View every tick, most of them with the page unchanged;
 // a layer's picture is the same when it is the same pixels.
 func samePage(v engine.View, pg *page) bool {
-	if len(v.Page) != len(pg.page) || v.Text != pg.text {
+	if len(v.Page) != len(pg.page) || len(v.Text) != len(pg.text) {
 		return false
+	}
+	for y := range v.Text {
+		if !slices.Equal(v.Text[y], pg.text[y]) {
+			return false
+		}
 	}
 	for i, s := range v.Page {
 		if s.At != pg.page[i].At || !sameImage(s.Img, pg.page[i].Img) {

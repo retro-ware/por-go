@@ -93,7 +93,7 @@ type View struct {
 	Inventory *Inventory     // the inventory screen is up (nil otherwise)
 	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 	Page      []Sprite       // the screen's pictures, symbols and fills, bottom first (page.go)
-	Text      [25][40]Cell   // the text cells, over Page
+	Text      [][]Cell       // the text cells, over Page: the page's rows of columns (40x25 at least; a larger window gives more, ActResize)
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
@@ -104,9 +104,6 @@ type View struct {
 	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
-	Credits   bool           // the page is Credits (the remaster adds RemasterCredit)
-	Slots     bool           // the page is the saved games (SlotMenu): the remaster stretches its box
-	TallRow   int            // the page fills a 4:3 window (30 rows) with this blank row repeated (0: the page is 25 rows); the sheet and the loot list
 	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
@@ -154,8 +151,6 @@ type snapState struct {
 	loot         bool        // ... as the Loot screen: the treasure is the Wares, free
 	main         []string    // PartyMenu waits: View.MainMenu
 	mainAsk      bool        // ... and asks View.Menu over it
-	credits      bool        // Credits waits: View.Credits
-	slots        bool        // SlotMenu is up: View.Slots
 	logo         image.Image // titleLogo, once cut
 	backdrop     image.Image // titleBackdrop, once read
 	backdropRead bool
@@ -173,7 +168,6 @@ type snapState struct {
 	sheetOn      bool                   // a character sheet is up over the combat map
 	portrait     CellRect               // the sheet's portrait box while a sheet is up
 	iconDrop     func(image.Image)      // the icon editor takes a dropped PNG while it is up (nil elsewhere)
-	tallRow      int                    // View.TallRow
 	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
 	effects      []effect               // sprites on the combat page
 	marks        []image.Point          // squares markReach framed
@@ -231,7 +225,7 @@ func (e *Engine) publish() {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
 	}
-	v.Typing, v.Spots, v.Portrait, v.Credits, v.Slots, v.TallRow, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, s.credits, s.slots, s.tallRow, e.ext.choosing, s.spellPick
+	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.Ordering = s.iconDrop != nil, e.ext.ordering
 	e.pageView(v)
 	sel := e.rosterSel() // a member pick shows its candidate

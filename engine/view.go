@@ -29,7 +29,6 @@ func (e *Engine) CharacterSheet() {
 	e.view.char = c
 	e.ClearScreen()
 	e.DrawBorder(1, 1, winRight, winBottom, 0)
-	e.snap.tallRow = 13 // the remaster fills a 4:3 window: the blank row under the ability scores repeats
 	e.displayName(c, 1, 1, false)
 	if c.Control > 0x7F {
 		e.DisplayString(len(c.Name())+3, 1, colLightGreen, "(NPC)")
@@ -239,7 +238,9 @@ func (e *Engine) ViewCharacter() bool {
 		}
 		menu = append(menu, Entry{"Exit", exit})
 		e.ext.viewing = true // F1..F8 switch members (extras.go)
+		off := e.redrawWith(e.CharacterSheet)
 		key = e.DisplayInput("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID
+		off()
 		e.ext.viewing = false
 		switch key {
 		case items:
@@ -350,7 +351,7 @@ func (e *Engine) SheetPortrait() {
 	if c.Portrait == nil && (c.PortHead == 0 || c.PortBody == 0) {
 		return
 	}
-	box := CellRect{28, 1, winRight, 11}
+	box := CellRect{winRight - 10, 1, winRight, 11} // against the right border, whatever the page's width
 	e.DrawBoxTitled(box.X1, box.Y1, box.X2, box.Y2, 0, colBlack, "")
 	e.snap.portrait = box  // Shift-click and a dropped PNG land here
 	if c.Portrait != nil { // extra: the dropped PNG, fitted into the box at the window's resolution
@@ -359,7 +360,7 @@ func (e *Engine) SheetPortrait() {
 	}
 	e.pg.overlays = nil
 	e.LoadPortrait(charArt, int(portraitHead[c.PortHead]), int(portraitBody[c.PortBody]))
-	e.DrawPortrait(0x1C, 1, true)
+	e.DrawPortrait(box.X1, 1, true)
 }
 
 // fit is the largest rectangle of b's shape inside r, centred across and

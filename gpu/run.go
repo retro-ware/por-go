@@ -34,6 +34,8 @@ var win struct {
 	title    string
 	tps      int
 	resize   bool
+	aw, ah   int  // the window's aspect while not full screen (SetWindowAspect; 0: free)
+	lw, lh   int  // its size last frame
 	unfocus  bool // keep updating while unfocused (always on here)
 	full     bool
 	toFull   atomic.Int32 // a fullscreen change for the main thread: 1 off, 2 on
@@ -58,6 +60,11 @@ func SetWindowSize(w, h int) {
 		win.app.RequestSize(w, h)
 	}
 }
+
+// SetWindowAspect keeps the window at w:h while it is not full screen (0:
+// any shape): a resize by the player is corrected along the side that
+// changed.
+func SetWindowAspect(w, h int) { win.aw, win.ah = w, h }
 
 func SetWindowTitle(t string) {
 	win.title = t
@@ -178,6 +185,14 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		if ww == 0 || wh == 0 || fw == 0 || fh == 0 { // minimised
 			return
 		}
+		if win.aw > 0 && !win.full && ww*win.ah != wh*win.aw { // off the aspect: the side the player left alone follows the other
+			nw, nh := ww, ww*win.ah/win.aw
+			if ww == win.lw && wh != win.lh {
+				nw, nh = wh*win.aw/win.ah, wh
+			}
+			app.RequestSize(nw, nh)
+		}
+		win.lw, win.lh = ww, wh
 		sw, sh := g.Layout(ww, wh)
 		sw, sh = max(sw, 1), max(sh, 1)
 		direct := sw == fw && sh == fh && !offscreen // the game draws straight into the frame: no copy of the whole screen per frame

@@ -72,7 +72,7 @@ func (e *Engine) glowOn(r *region) {
 func (e *Engine) glowCells(g [4]int, on bool) {
 	for y := max(g[1], 0); y <= min(g[3], promptRow); y++ {
 		for x := max(g[0], 0); x <= min(g[2], lastCol); x++ {
-			c := &e.ext.cells[y][x]
+			c := &e.cells()[y][x]
 			switch {
 			case on && !c.set:
 				e.paintChar(x, y, colWhite, selBg(colWhite, 0), ' ', true)

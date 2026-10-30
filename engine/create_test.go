@@ -75,8 +75,8 @@ func TestCreateSheet(t *testing.T) {
 	// Class: the drop-down's box from the class row, the fighter first and
 	// the other classes below in their order, the sheet still there.
 	v = act(spot(v, 1, 5))
-	if v.Menu == nil || v.Menu.Items[0].Text != "Exit" || v.TallRow != sheetTallRow {
-		t.Fatalf("class list: menu %+v tall row %d", v.Menu, v.TallRow)
+	if v.Menu == nil || v.Menu.Items[0].Text != "Exit" {
+		t.Fatalf("class list: menu %+v", v.Menu)
 	}
 	classes := pickClasses()
 	row := 5 + 1 + slices.Index(slices.DeleteFunc(classes, func(cl byte) bool { return cl == clsFighter }), clsMage)
@@ -91,8 +91,8 @@ func TestCreateSheet(t *testing.T) {
 	if c = e.selected(); c.Race != raceDwarf || c.Class != clsFighter || c.IconSize != 1 {
 		t.Fatalf("race %d class %d size %d, want a dwarf fighter", c.Race, c.Class, c.IconSize)
 	}
-	if v.TallRow != sheetTallRow || len(v.Overlays) != 0 {
-		t.Errorf("tall row %d overlays %d", v.TallRow, len(v.Overlays))
+	if len(v.Overlays) != 0 {
+		t.Errorf("overlays %d", len(v.Overlays))
 	}
 	// Charisma: typed where it stands.
 	v = act(spot(v, 3, 12))
@@ -104,12 +104,31 @@ func TestCreateSheet(t *testing.T) {
 	if c.Stats[statCha] != 9 || v.Typing != nil {
 		t.Errorf("charisma %d, want 9; typing %+v", c.Stats[statCha], v.Typing)
 	}
-	// The head picker: a grid; the second head is at column 13.
+	// The head picker: a grid centred in the box (three columns of 11 with
+	// a blank between, from column 2); the second head is at column 14.
 	v = act(spot(v, 30, 2))
-	if v.Menu == nil || v.Menu.Prompt != "Head:" {
+	if v.Menu == nil || v.Menu.Prompt != "Head:" || v.Menu.Items[1].Text != "Next" {
 		t.Fatalf("head picker: menu %+v", v.Menu)
 	}
-	v = act(spot(v, 13, 2))
+	// 14 heads, 12 a page on 25 rows: the pager's ">" on row 22 turns the
+	// page, "<" turns it back; a window of 30 rows holds them all.
+	v = act(spot(v, 25, 22))
+	if v.Menu.Items[1].Text != "Prev" {
+		t.Fatalf("page 2: menu %+v", v.Menu)
+	}
+	v = act(spot(v, 14, 22))
+	if v.Menu.Items[1].Text != "Next" {
+		t.Fatalf("page 1 again: menu %+v", v.Menu)
+	}
+	v = act(Action{Kind: ActResize, X: 40, Y: 30})
+	if len(v.Text) != 30 || len(v.Text[0]) != 40 || v.Menu == nil || v.Menu.Items[1].Text != "Exit" {
+		t.Fatalf("30 rows: %dx%d, menu %+v", len(v.Text[0]), len(v.Text), v.Menu)
+	}
+	v = act(Action{Kind: ActResize, X: 40, Y: 25})
+	if len(v.Text) != 25 || v.Menu == nil || v.Menu.Items[1].Text != "Next" {
+		t.Fatalf("25 rows again: %d, menu %+v", len(v.Text), v.Menu)
+	}
+	v = act(spot(v, 14, 2))
 	if c.PortHead != 2 {
 		t.Errorf("head %d, want 2", c.PortHead)
 	}

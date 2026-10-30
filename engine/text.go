@@ -43,7 +43,7 @@ func (e *Engine) paintChar(x, y, colour, bg int, ch byte, upcase bool) {
 	if !ok {
 		return
 	}
-	e.ext.cells[y][x] = textCell{set: true, upcase: upcase, c: ch, colour: byte(colour), bg: byte(bg), glyph: g}
+	e.cells()[y][x] = textCell{set: true, upcase: upcase, c: ch, colour: byte(colour), bg: byte(bg), glyph: g}
 }
 
 // DisplayString = 0709:0626 displayString(x, y, colour, str): characters

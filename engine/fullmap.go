@@ -177,9 +177,14 @@ const (
 
 // saveScreen keeps the picture and its text cells; the func puts them back.
 func (e *Engine) saveScreen() func() {
-	cells, pg := e.ext.cells, e.pg
+	cells, pg := e.cellsCopy(), e.pg
 	pg.layers = append([]layer(nil), pg.layers...)
-	return func() { e.ext.cells, e.pg = cells, pg }
+	return func() {
+		if len(cells) != textRows || len(cells[0]) != textCols { // resized meanwhile: the page is drawn again anyway
+			return
+		}
+		e.ext.cells, e.pg = cells, pg
+	}
 }
 
 // FullMap shows the full-screen map until Exit. It runs from the command

@@ -213,7 +213,8 @@ func (e *Engine) saveTo(name string) {
 	e.say("Game saved successfully") // extra: the note, on the slot page and the page under it
 }
 
-const slotRows = 0x11
+// slotRows is how many lines the list shows: rows 3 up to two above the footer.
+func slotRows() int { return promptRow - 6 }
 
 // SlotMenu is the F9 screen: "New Slot", then the saves, newest first. The
 // cursor starts on the newest save, the one saved last. Enter saves (on New
@@ -224,15 +225,13 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 	defer e.modalOn()()
 	restore := e.saveScreen()
 	defer restore()
-	outerSlots := e.snap.slots
-	e.snap.slots = true // extra: the remaster stretches the box over the screen
-	defer func() { e.snap.slots = outerSlots }()
 	canSave := !loadOnly && e.ext.inGame && len(e.party) > 0 && e.beginFlag != 5
 	first := 0 // the row of the first save
 	if canSave {
 		first = 1
 	}
 	sel, top := first, 0
+	defer e.redrawWith(e.relist)() // the loop draws the list again at the new size
 	type word struct {
 		label string
 		key   byte   // the letter that picks it (shown; 0: not a menu item)
@@ -254,13 +253,12 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		list := e.slots()
 		rows := len(list) + first
 		sel = min(max(sel, 0), max(rows-1, 0))
-		top = min(max(top, sel-slotRows+1), sel)
-		e.DrawBoxTitled(1, 1, winRight, 23, 0, colWhite, "Saved Games")
-		e.ClearCells(2, 2, 37, 23)
+		top = min(max(top, sel-slotRows()+1), sel)
+		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Saved Games")
 		if rows == 0 {
 			e.DisplayString(3, 3, colLightGreen, "No saved games yet")
 		}
-		for i := top; i < rows && i < top+slotRows; i++ {
+		for i := top; i < rows && i < top+slotRows(); i++ {
 			col := colLightGreen
 			if i == sel {
 				col = colWhite
@@ -274,12 +272,12 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			e.DisplayString(25, 3+i-top, colLightGrey, list[i-first].at.Format("Jan 02 15:04"))
 		}
 		if !canSave && !loadOnly {
-			e.DisplayString(2, 21, colYellow, "No saving now")
+			e.DisplayString(2, promptRow-3, colYellow, "No saving now")
 		}
 		// extra (nav.go): a click selects a line, a second one is Enter; the
 		// keys in the footer are clicked by their words
 		mark := e.regionMark()
-		e.addRegion(region{x0: 2, y0: 3, x1: 0x25, y1: 3 + slotRows - 1, click: func(_, cy int) Action {
+		e.addRegion(region{x0: 2, y0: 3, x1: 0x25, y1: 3 + slotRows() - 1, click: func(_, cy int) Action {
 			i := top + cy - 3
 			if i >= rows {
 				return Action{}
@@ -296,8 +294,8 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 		}
 		gap /= len(footer) - 1 // spread over the row inside the frame
 		for _, f := range footer {
-			e.DisplayString(x, 22, colYellow, f.label)
-			e.addRegion(region{x0: x, y0: 0x16, x1: x + len(f.label) - 1, y1: 0x16, click: func(int, int) Action { return f.a }})
+			e.DisplayString(x, promptRow-2, colYellow, f.label)
+			e.addRegion(region{x0: x, y0: promptRow - 2, x1: x + len(f.label) - 1, y1: promptRow - 2, click: func(int, int) Action { return f.a }})
 			x += len(f.label) + gap
 		}
 		outer := e.snap.menu // extra: the footer's letters as a menu (ActPick)

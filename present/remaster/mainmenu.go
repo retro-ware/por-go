@@ -38,7 +38,7 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 		p.backdrop, p.backdropSrc = gpu.NewImageFromImage(v.Backdrop), v.Backdrop
 	}
 	bb := v.Backdrop.Bounds()
-	k := min(float64(b.Dx())/float64(bb.Dx()), float64(b.Dy())/float64(bb.Dy())) // fit, keeping the aspect
+	k := min(float64(b.Dx())/float64(bb.Dx()), float64(b.Dy())/float64(bb.Dy())) // fit, keeping the aspect: the window has its shape (SetWindowAspect); the full screen gets black bars rather than a cropped or stretched picture
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-float64(bb.Dx())*k)/2, (float64(b.Dy())-float64(bb.Dy())*k)/2)

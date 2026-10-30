@@ -51,6 +51,7 @@ const (
 	ActSound             // sound on or off (Ctrl-S)
 	ActSpot              // a click on View.Spots[N] at cell X, Y
 	ActHover             // the pointer came onto View.Spots[N] at cell X, Y (N -1: it left them)
+	ActResize            // the window shows X by Y text cells (40x25 at least): the page takes that size and the screen draws itself again
 	ActSpells            // inventory: the member's memorised spells
 	ActMagic             // inventory: the spell effects on the member
 	ActHeal              // inventory: a paladin lays on hands
@@ -128,10 +129,20 @@ func (e *Engine) nextAct() Action {
 		a := <-e.acts.ch
 		e.pace(working)
 		e.acts.taken++
-		if a.Kind != ActMainMenu {
+		switch a.Kind {
+		case ActMainMenu:
+			e.mainMenu()
+		case ActResize:
+			e.resizePage(a.X, a.Y)
+			e.publish()
+			if e.ext.relist {
+				e.ext.relist = false
+				return Action{Kind: actRedraw}
+			}
+			return Action{} // ActNone: a drain (inputReady) is not kept waiting
+		default:
 			return a
 		}
-		e.mainMenu()
 	}
 }
 

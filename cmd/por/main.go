@@ -249,9 +249,12 @@ func (g *game) cell(x, y float64) (int, int, bool) {
 	if p.W <= 0 || x < p.X || y < p.Y || x >= p.X+p.W || y >= p.Y+p.H {
 		return 0, 0, false
 	}
-	px := int((x - p.X) * pal.W / p.W)
-	py := int((y - p.Y) * pal.H / p.H)
-	return px / 8, py / 8, true
+	v := g.eng.View()
+	cols, rows := 40, 25
+	if len(v.Text) > 0 {
+		cols, rows = len(v.Text[0]), len(v.Text)
+	}
+	return int((x - p.X) * float64(cols) / p.W), int((y - p.Y) * float64(rows) / p.H), true
 }
 
 // padButtons maps standard-layout gamepad buttons to BIOS key codes (and
@@ -346,6 +349,12 @@ func (g *game) Draw(dst *gpu.Image) {
 	if g.ticks > scriptTicks*(len(shotKeys)+4) {
 		os.Exit(0)
 	}
+}
+
+// parseSize reads "WxH".
+func parseSize(s string) (w, h int, err error) {
+	_, err = fmt.Sscanf(s, "%dx%d", &w, &h)
+	return
 }
 
 // POR_SHOT=FILE.png writes the window to FILE after the keys in POR_KEYS,
@@ -546,7 +555,12 @@ func main() {
 
 	g := &game{eng: eng, dsf: 1}
 	remaster.Scripted = scripted
-	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale)*6/5) // 4:3 like a CRT
+	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale))                // the title pictures' shape (16:10): they fill the window whole, uncropped
+	gpu.SetWindowAspect(pal.W, pal.H)                                // and a resize keeps it so; the full screen has its own shape, the UI pages lay out to it (ActResize) and the pictures get black bars
+	if w, h, err := parseSize(os.Getenv("POR_WINDOW")); err == nil { // POR_WINDOW=WxH (points): a window of that size and shape, for captures of other shapes
+		gpu.SetWindowSize(w, h)
+		gpu.SetWindowAspect(0, 0)
+	}
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
 	gpu.SetTPS(tps)

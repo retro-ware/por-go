@@ -216,14 +216,14 @@ func (e *Engine) templeHeal() {
 			done = true
 		}
 	}
-	e.ClearBox(0, 0, lastCol, 24) // ovr05:0C18
+	e.ClearBox(0, 0, lastCol, promptRow) // ovr05:0C18
 	e.DrawMainScreen()
 	e.DisplayPartyList()
 }
 
 // Temple = ovr05:0D09.
 func (e *Engine) Temple() {
-	greeting := e.ext.cells // extra: the priests' greeting stays, no "Party money" line over it (the inventory shows the purse), as the shop
+	greeting := e.cellsCopy() // extra: the priests' greeting stays, no "Party money" line over it (the inventory shows the purse), as the shop
 	e.beginFlag = 1
 	e.DrawMainScreen()
 	e.keepPane(greeting)

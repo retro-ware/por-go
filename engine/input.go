@@ -11,7 +11,7 @@ func (e *Engine) DisplaySpaces(x, y, colour, count int) {
 }
 
 // ClearRow24 = ovr26:06FB: blank the message/menu row.
-func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, 40) }
+func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, textCols) }
 
 // InputString = 0709:09E3 (prompt, colour, maxlen): line editor on row 24.
 // Characters 0x20..0x7A are accepted while len < maxlen and echoed in white

@@ -379,10 +379,6 @@ func (e *Engine) sortSpells(c *Character) {
 	}
 }
 
-// planBottom is the last row of the memorize list: its border is on the
-// prompt row, nothing is left below it.
-const planBottom = promptRow - 1
-
 // memorizeMenu = ovr16:090A, remade (extra): one list of the spell book
 // with how often each spell is memorized on every rest (c.Plan). Enter,
 // Space, Right and a click add one, Backspace and Left take one away;
@@ -396,13 +392,13 @@ func (e *Engine) memorizeMenu() {
 	e.DrawBoxTitled(1, 1, winRight, 1, 0, colBlack, "")
 	e.displayName(c, 1, 1, true)
 	e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells to memorize")
-	e.DrawBoxTitled(1, 3, winRight, planBottom, 0, colBlack, "")
+	e.DrawBoxTitled(1, 3, winRight, promptRow-1, 0, colBlack, "") // the list's border on the prompt row, nothing left below it
 	redraw, index := true, 0
 	for {
 		e.buildSpellList(1)
 		var sel *ListNode
 		e.ext.campBar = true // F1-F8 and the cards switch the member, as the camp bar
-		p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, planBottom, e.spellList, false, &redraw, &index, &sel)
+		p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 5, winRight, promptRow-1, e.spellList, false, &redraw, &index, &sel)
 		e.ext.campBar = false
 		if p.ID == PickRelist { // another member: their plan, once this one is set
 			e.planSpells(c)
