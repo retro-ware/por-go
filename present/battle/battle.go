@@ -174,8 +174,11 @@ func targetAt(b *engine.Battle, sq image.Point) bool {
 	return false
 }
 
-// pan moves the camera's centre by the held W A S D or arrows, relative to its heading.
-func (p *Presenter) pan(dt float64) {
+// pan moves the camera's centre by the held W A S D or arrows, relative to
+// its heading, and reports whether any is held. A pan starts from where
+// the camera is (not from the focus it was easing toward), so the first
+// frames never swing the other way.
+func (p *Presenter) pan(dt float64, focus vec) bool {
 	var f, r float64
 	for _, h := range [8]struct {
 		k    gpu.Key
@@ -186,20 +189,27 @@ func (p *Presenter) pan(dt float64) {
 			f, r = f+h.f, r+h.r
 		}
 	}
+	if f == 0 && r == 0 {
+		return false
+	}
+	if p.offset == (vec{}) {
+		p.offset = p.at.sub(focus)
+	}
 	v := dt * p.dist * 1.2 // squares a second, faster zoomed out
 	sin, cos := math.Sin(p.yaw), math.Cos(p.yaw)
 	p.offset = p.offset.add(vec{-sin*f + cos*r, 0, -cos*f - sin*r}.mul(v))
+	return true
 }
 
 // chase is how much of the easing toward focus this frame takes (0..1):
-// all of it when the player pans or the focus is out of sight, none while
+// all of it when the focus is out of sight, none while
 // it sits inside the view's comfort box (the eye does not follow what is
 // in plain sight: less motion the player did not ask for), and rising
 // smoothly as it leaves the box for the edge.
-func (p *Presenter) chase(focus vec, panned bool) float64 {
+func (p *Presenter) chase(focus vec) float64 {
 	const side, top, bottom = 0.6, 0.65, -0.3 // the box in -1..1 (the bar covers the bottom)
 	nx, ny, ok := p.cam.ndc(focus)
-	if panned || !ok {
+	if !ok {
 		return 1
 	}
 	out := max(0, math.Abs(nx)-side, ny-top, bottom-ny)
@@ -262,13 +272,16 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	if focus != p.focus { // a new thing to watch: let go of the pan
 		p.focus, p.offset = focus, vec{}
 	}
-	o := p.offset
-	p.pan(dt)
+	panned := p.pan(dt, focus)
 	focus = focus.add(p.offset)
 	k := 1 - math.Exp(-dt*8)
 	p.yaw += (p.yawTo - p.yaw) * k
 	p.dist += (p.distTo - p.dist) * k
-	p.at = p.at.add(focus.sub(p.at).mul(k * p.chase(focus, p.offset != o)))
+	if panned { // the camera is in the player's hand: it goes where the keys say, at once
+		p.at = focus
+	} else {
+		p.at = p.at.add(focus.sub(p.at).mul(k * p.chase(focus)))
+	}
 
 	r := dst.Bounds()
 	h := p.dist * math.Cos(pitch)
