@@ -56,10 +56,3 @@ func iconPose(im image.Image, pose int, flip bool) image.Image {
 	}
 	return out
 }
-
-// iconBox is where the icon editor shows pose p of the pane at row y
-// (iconPane(1, y)), in page pixels: the 24-pixel square the page's icon
-// takes.
-func iconBox(y, p int) image.Rectangle {
-	return image.Rect(32+72*p, 8+24*y, 56+72*p, 32+24*y)
-}

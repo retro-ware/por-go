@@ -13,6 +13,7 @@ type ListNode struct {
 	Text string
 	Flag byte
 	Dim  bool // (extra) greyed out and passed over by the cursor, as headers
+	Grey bool // (extra) greyed out but picked like any line (a creation drop-down's entry that forces changes)
 	// Without (extra): menu words left off the bar while this line is selected
 	Without []string
 }
@@ -63,7 +64,7 @@ func (e *Engine) lmDrawRows(c *listMenuCtx, first int) {
 		if p.Flag != 0 {
 			col = c.promptColour
 		}
-		if p.Dim {
+		if p.Dim || p.Grey {
 			col = dimColour
 		}
 		e.DisplayString(c.x1, y, col, p.Text)
@@ -104,7 +105,7 @@ func (e *Engine) lmDrawRow(c *listMenuCtx, i int, highlighted bool) {
 		if p.Flag != 0 {
 			col = c.promptColour
 		}
-		if p.Dim {
+		if p.Dim || p.Grey {
 			col = dimColour
 		}
 	}
@@ -120,7 +121,7 @@ func (e *Engine) lmDrawRow(c *listMenuCtx, i int, highlighted bool) {
 	if p.Flag != 0 {
 		col = c.promptColour
 	}
-	if p.Dim {
+	if p.Dim || p.Grey {
 		col = dimColour
 	}
 	for j := a; j <= b; j++ {

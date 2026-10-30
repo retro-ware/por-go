@@ -1,16 +1,15 @@
 package engine
 
-import "strings"
+import "slices"
 
 // Quickstart (not in the original): the empty party menu offers a ready-made
-// party of six. Each member goes through the ported CreateCharacter with its
-// menus answered from a template, rerolled until its prime abilities are
-// high, saved to the roster and then added like the Add command does.
+// party of six. Each member goes through CreateCharacter with its kind
+// from a template, rerolled until its prime abilities are high, saved to
+// the roster and then added like the Add command does.
 
-// quickPick answers CreateCharacter's menus for one character.
+// quickPick is CreateCharacter's template for one character.
 type quickPick struct {
-	answers []string // race, gender, class, alignment (menu text)
-	step    int
+	answers []string     // race, gender, class, alignment (as the sheet names them)
 	need    map[int]byte // ability index (0 str, 1 int, 2 wis, 3 dex, 4 con) -> minimum
 	tries   int
 	name    string
@@ -18,16 +17,14 @@ type quickPick struct {
 	body    byte
 }
 
-// choose returns the menu line that matches the next answer.
-func (q *quickPick) choose(list []*ListNode) (int, bool) {
-	want := q.answers[q.step]
-	q.step++
-	for i, n := range list {
-		if i > 0 && strings.TrimSpace(n.Text) == want {
-			return i, true
-		}
+// kind is the template's race, gender, class and alignment.
+func (q *quickPick) kind() kind {
+	return kind{
+		race:  byte(slices.Index(raceNames[:], q.answers[0])),
+		sex:   byte(slices.Index(genderNames[:], q.answers[1])),
+		class: byte(slices.Index(classNames[:], q.answers[2])),
+		align: byte(slices.Index(alignmentNames[:], q.answers[3])),
 	}
-	return 0, false
 }
 
 // good keeps the roll when every wanted ability is reached; after 2000

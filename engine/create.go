@@ -1,11 +1,20 @@
 package engine
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 )
 
 // Character creation and dropping, ported from ovr17.
+//
+// extra: the creation is one screen, the character sheet of a sample
+// character: its name, gender, race, alignment and class are drop-down
+// lists (a grey entry forces the dependants to their first valid value),
+// the portrait's head and body and the combat icon open pickers, the
+// ability scores can be typed, and the bar rolls, rolls to minimums,
+// sets or keeps. The original's four menus, name prompt, Head/Body
+// stepping and icon editor states are gone.
 
 // freeCharacter = ovr17:0000 (var c): disposes the combat block, the item
 // and affect lists and the record, then nils the pointer. Go's collector
@@ -31,10 +40,73 @@ func (e *Engine) selectTemp(c *Character) func() {
 	}
 }
 
-// CreateCharacter = ovr17:056C: pick race, gender, class and alignment, roll
-// the abilities (best of six 3d6 each, then the race/class/age limits), hit
-// points and starting spells; keep it, name it, pick the pictures, save it.
-func (e *Engine) CreateCharacter() {
+// kind is what the player chooses; the rest of the record follows from it.
+type kind struct{ race, sex, class, align byte }
+
+// The fields of a kind, for enforce.
+const (
+	fRace = iota
+	fSex
+	fClass
+	fAlign
+)
+
+// pickRaces are the races offered, in list order (no half-orcs, as the original).
+var pickRaces = []byte{raceDwarf, raceElf, raceGnome, raceHalfElf, raceHalfling, raceHuman}
+
+// classFor: the race may be the class (DS:3E17).
+func classFor(race, class byte) bool {
+	rc := raceClasses[race]
+	return slices.Contains(rc[1:1+rc[0]], class)
+}
+
+// alignFor: the class may be of the alignment (DS:3FE7).
+func alignFor(class, align byte) bool {
+	ca := classAlignments[class]
+	return slices.Contains(ca[1:1+ca[0]], align)
+}
+
+// pickClasses are the classes any offered race may be, in class order.
+func pickClasses() []byte {
+	var out []byte
+	for cl := byte(0); cl < byte(len(classNames)); cl++ {
+		if slices.ContainsFunc(pickRaces, func(r byte) bool { return classFor(r, cl) }) {
+			out = append(out, cl)
+		}
+	}
+	return out
+}
+
+// enforce applies the rules after field f changed: a dependant that
+// became invalid takes its first valid value. A class picked for a race
+// that may not be it changes the race; an alignment the class may not be
+// changes the class (every race has the fighter, who may be anything).
+func (k kind) enforce(f int) kind {
+	switch f {
+	case fClass:
+		if !classFor(k.race, k.class) {
+			k.race = pickRaces[slices.IndexFunc(pickRaces, func(r byte) bool { return classFor(r, k.class) })]
+		}
+	case fAlign:
+		if rc := raceClasses[k.race]; !alignFor(k.class, k.align) {
+			k.class = rc[1+slices.IndexFunc(rc[1:1+rc[0]], func(cl byte) bool { return alignFor(cl, k.align) })]
+		}
+		return k
+	}
+	if !classFor(k.race, k.class) {
+		k.class = raceClasses[k.race][1]
+	}
+	if !alignFor(k.class, k.align) {
+		k.align = classAlignments[k.class][1]
+	}
+	return k
+}
+
+// fresh builds a new character of kind k: the record the original filled
+// in as its menus were answered. keep carries the name, portrait and icon
+// over from the character it replaces (the abilities are rolled again:
+// their limits are the race's and class's).
+func (e *Engine) fresh(k kind, keep *Character) *Character {
 	c := &Character{}
 	for i := 1; i <= 6; i++ {
 		t := defaultIconColours[i]
@@ -48,45 +120,12 @@ func (e *Engine) CreateCharacter() {
 	c.PortBody = 1
 	c.Size = 1
 	c.RandomID = byte(e.Random(0x100))
-
-	// pick runs one of the four selection menus; false = left with Esc/Exit,
-	// which abandons the whole creation.
-	pick := func(list []*ListNode) (int, bool) {
-		if q := e.ext.quick; q != nil {
-			return q.choose(list)
-		}
-		index, redraw := 1, true
-		var sel *ListNode
-		for {
-			switch e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, true, &redraw, &index, &sel).ID {
-			case NoPick:
-				return 0, false
-			case PickEnter:
-				return index, true
-			}
-		}
+	c.SetName("No-One")
+	if keep != nil {
+		c.PName, c.PortHead, c.PortBody, c.Portrait = keep.PName, keep.PortHead, keep.PortBody, keep.Portrait
+		c.IconHead, c.IconBody, c.IconColour, c.Icon = keep.IconHead, keep.IconBody, keep.IconColour, keep.Icon
 	}
-
-	// Race.
-	list := newList(7)
-	list[0].Flag, list[0].Text = 1, "Pick Race"
-	raceLoop := 0 // the loop variable, left at 7 and used below (quirk)
-	for raceLoop = 1; raceLoop <= 7; raceLoop++ {
-		if raceLoop >= 1 && raceLoop <= 5 {
-			list[raceLoop].Text = "  " + raceNames[raceLoop]
-		} else if raceLoop == 7 {
-			list[raceLoop-1].Text = "  " + raceNames[raceLoop]
-		}
-	}
-	raceLoop = 7 // for-loop exit value
-	idx, ok := pick(list)
-	if !ok {
-		return
-	}
-	if idx == 6 {
-		idx++
-	}
-	c.Race = byte(idx)
+	c.Race, c.Sex, c.Class, c.Alignment = k.race, k.sex, k.class, k.align
 	switch c.Race {
 	case raceHalfling:
 		c.IconSize = 1
@@ -111,30 +150,6 @@ func (e *Engine) CreateCharacter() {
 	default:
 		c.IconSize = 2
 	}
-
-	// Gender.
-	list = newList(3)
-	list[0].Flag, list[0].Text = 1, "Pick Gender"
-	for i := 0; i <= 1; i++ {
-		list[i+1].Text = "  " + genderNames[i]
-	}
-	if idx, ok = pick(list); !ok {
-		return
-	}
-	c.Sex = byte(idx - 1)
-
-	// Class.
-	race := int(int8(c.Race))
-	cnt := int(raceClasses[race][0])
-	list = newList(cnt + 1)
-	list[0].Flag, list[0].Text = 1, "Pick Class"
-	for k := 1; k <= cnt; k++ {
-		list[k].Text = "  " + className(raceClasses[race][k])
-	}
-	if idx, ok = pick(list); !ok {
-		return
-	}
-	c.Class = raceClasses[race][idx]
 	c.MaxLevel = 1
 	class := int(int8(c.Class))
 	switch {
@@ -144,19 +159,19 @@ func (e *Engine) CreateCharacter() {
 		c.Levels[clsCleric], c.Levels[clsFighter] = 1, 1
 	case class == clsClericFighterMage:
 		c.Levels[clsCleric], c.Levels[clsFighter], c.Levels[clsMage] = 1, 1, 1
-	case class == 10:
+	case class == clsClericRanger:
 		c.Levels[clsCleric], c.Levels[clsRanger] = 1, 1
-	case class == 11:
+	case class == clsClericMage:
 		c.Levels[clsCleric], c.Levels[clsMage] = 1, 1
-	case class == 12:
+	case class == clsClericThief:
 		c.Levels[clsCleric], c.Levels[clsThief] = 1, 1
-	case class == 13:
+	case class == clsFighterMage:
 		c.Levels[clsFighter], c.Levels[clsMage] = 1, 1
-	case class == 14:
+	case class == clsFighterThief:
 		c.Levels[clsFighter], c.Levels[clsThief] = 1, 1
-	case class == 15:
+	case class == clsFighterMageThief:
 		c.Levels[clsFighter], c.Levels[clsMage], c.Levels[clsThief] = 1, 1, 1
-	case class == 16:
+	case class == clsMageThief:
 		c.Levels[clsMage], c.Levels[clsThief] = 1, 1
 	}
 	if class == clsPaladin {
@@ -177,22 +192,10 @@ func (e *Engine) CreateCharacter() {
 	}
 	e.savingThrows(c) // ovr24:0255
 
-	// Alignment.
-	cnt = int(classAlignments[class][0])
-	list = newList(cnt + 1)
-	list[0].Flag, list[0].Text = 1, "Pick Alignment"
-	for k := 1; k <= cnt; k++ {
-		list[k].Text = "  " + alignmentNames[int8(classAlignments[class][k])]
-	}
-	if idx, ok = pick(list); !ok {
-		return
-	}
-	c.Alignment = classAlignments[class][idx]
-
 	// Starting age: single classes roll the dice, multi-classes use the
 	// maximum.
 	age := 0
-	ages := &startAge[race]
+	ages := &startAge[c.Race]
 	if class <= clsMonk {
 		a := ages[class]
 		age = int(a.Base) + int(byte(e.Dice(int(a.Count), int(a.Sides))))
@@ -211,274 +214,458 @@ func (e *Engine) CreateCharacter() {
 		}
 	}
 	c.Age = uint16(age)
+	return c
+}
 
-	// adjust: age, race limits and class minimums on a rolled stat.
-	adjust := func(i int, v byte) byte {
-		// Age steps DS:3F31 + race*10 (4 words) against the age word.
-		older := func(j int) bool { return int(ageSteps[race][j]) < int(c.Age) }
-		switch i {
-		case 0:
-			if v != 0 && older(0) {
-				v++
-			}
-			if v != 0 && older(1) {
-				v--
-			}
-			if v != 0 && older(2) {
-				v -= 2
-			}
-			if v != 0 && older(3) {
-				v--
-			}
-		case 1:
-			if older(1) {
-				v++
-			}
-			if older(3) {
-				v++
-			}
-		case 2:
-			if !older(0) {
-				v--
-			}
-			if older(1) {
-				v++
-			}
-			if older(2) {
-				v++
-			}
-			if older(3) {
-				v++
-			}
-		case 3:
-			if older(2) {
-				v -= 2
-			}
-			if older(3) {
-				v--
-			}
-		case 4:
-			if older(1) {
-				v--
-			}
-			if older(2) {
-				v--
-			}
-			if older(3) {
-				v--
-			}
-		}
-		// Race limits.
-		lo, hi := raceLimits[race].limits(i)
-		if v < lo {
-			v = lo
-		}
-		if v > hi {
-			v = hi
-		}
-		// Class minimum (DS:3F81 + class*6).
-		if m := int(classMinStats[class][i]); int(v) < m {
-			v = byte(m)
-		}
-		return v
+// limitStat keeps v within the race limits and the class minimum
+// (DS:3DA3.., DS:3F81..); a cleric multi-class has wisdom 13 at least.
+func limitStat(c *Character, i int, v byte) byte {
+	lo, hi := raceLimits[c.Race].limits(i)
+	if v < lo {
+		v = lo
 	}
-	// best (extra: Minimal stats): the most each stat can reach, from a
-	// roll of 18, in the units of minStats (STR as strScore).
+	if v > hi {
+		v = hi
+	}
+	if m := int(classMinStats[c.Class][i]); int(v) < m {
+		v = byte(m)
+	}
+	if i == statWis && v < 0xD && c.Class >= clsClericFighter && c.Class <= clsClericThief { // set [8..12] at cs:0525
+		v = 0xD
+	}
+	return v
+}
+
+// adjustStat: age, race limits and class minimums on a rolled stat.
+func adjustStat(c *Character, i int, v byte) byte {
+	// Age steps DS:3F31 + race*10 (4 words) against the age word.
+	older := func(j int) bool { return int(ageSteps[c.Race][j]) < int(c.Age) }
+	switch i {
+	case 0:
+		if v != 0 && older(0) {
+			v++
+		}
+		if v != 0 && older(1) {
+			v--
+		}
+		if v != 0 && older(2) {
+			v -= 2
+		}
+		if v != 0 && older(3) {
+			v--
+		}
+	case 1:
+		if older(1) {
+			v++
+		}
+		if older(3) {
+			v++
+		}
+	case 2:
+		if !older(0) {
+			v--
+		}
+		if older(1) {
+			v++
+		}
+		if older(2) {
+			v++
+		}
+		if older(3) {
+			v++
+		}
+	case 3:
+		if older(2) {
+			v -= 2
+		}
+		if older(3) {
+			v--
+		}
+	case 4:
+		if older(1) {
+			v--
+		}
+		if older(2) {
+			v--
+		}
+		if older(3) {
+			v--
+		}
+	}
+	return limitStat(c, i, v)
+}
+
+// bestStats (extra: Minimal stats): the most each stat can reach, from a
+// roll of 18, in the units of minStats (STR as strScore).
+func bestStats(c *Character) [6]int {
 	var best [6]int
 	for i := range best {
-		v := adjust(i, 18)
-		if i == statWis && v < 0xD && class >= clsClericFighter && class <= clsClericThief {
-			v = 0xD
-		}
+		v := adjustStat(c, i, 18)
 		best[i] = int(v)
 		if i == 0 {
 			best[0] = strScore(v, 0)
 			if v == 0x12 && fighterKind(c) {
-				best[0] = strScore(v, min(100, raceLimits[race].Str00Max))
+				best[0] = strScore(v, min(100, raceLimits[c.Race].Str00Max))
 			}
 		}
 	}
-	undo := e.selectTemp(c)
-	e.CharacterSheet() // ovr20:004A
-	tries := 0         // Minimal stats: rolls so far, 0 when not rolling
-	for {
-		c.Str00 = 0
-		for i := 0; i <= 5; i++ {
-			st := &c.Stats[i]
-			*st = 0
-			for n := 1; n <= 6; n++ {
-				roll := byte(e.Dice(3, 6))
-				// raceLoop is 7 here, so none of these ever applies.
-				switch raceLoop {
-				case 1:
-					if i == 4 {
-						roll++
-					} else if i == 5 {
-						roll--
-					}
-				case 2:
-					if i == 3 {
-						roll++
-					} else if i == 4 {
-						roll--
-					}
-				case 5:
-					if i == 0 {
-						roll--
-					} else if i == 3 {
-						roll++
-					}
-				case 6:
-					if i == 0 || i == 4 {
-						roll++
-					} else if i == 5 {
-						roll -= 2
-					}
-				}
-				if *st < roll {
-					*st = roll
-				}
-			}
-			*st = adjust(i, *st)
-			if i == 0 {
-				if *st == 0x12 && fighterKind(c) {
-					c.Str00 = byte(e.Random(100) + 1)
-					if m := raceLimits[race].Str00Max; m < c.Str00 {
-						c.Str00 = m
-					}
-				}
-			}
-			if i == statWis && *st < 0xD && class >= clsClericFighter && class <= clsClericThief { // set [8..12] at cs:0525
-				*st = 0xD
-			}
-			if tries == 0 || tries%100 == 0 {
-				e.showStat(i, false) // ovr20:0901
-			}
-		}
+	return best
+}
 
-		// Hit points: one die per class, averaged, with the constitution
-		// adjustment.
-		c.HP = c.MaxHP
-		c.BaseAttack[0], c.BaseDice[0], c.BaseSides[0], c.StrBonus, c.BaseMove = 2, 1, 2, 1, 0xC
-		var sum, count byte
-		for k := 0; k <= 7; k++ {
-			if int8(c.Levels[k]) <= 0 {
-				continue
-			}
-			if k == 0 {
-				c.SpellSlots[0] = 1
-			} else if k == 5 {
-				c.SpellSlots[3] = 1
-			}
-			sum += byte(e.Dice(int(startHPDice[k][0]), int(startHPDice[k][1])))
-			count++
-			if k == 0 {
-				e.wisdomSlots(c) // ovr24:01AF
-				for s := 1; s <= lastSpell; s++ {
-					if rec := spellTable[s][:2]; rec[0] == 0 && rec[1] == 1 {
-						c.SpellBook[s-1] = 1
-					}
-				}
-			} else if k == 5 {
-				c.SpellBook[10], c.SpellBook[17], c.SpellBook[18], c.SpellBook[20] = 1, 1, 1, 1
+// rollStats rolls the abilities: the best of six 3d6 each, then the age,
+// race and class limits. (The original's race adjustments on the dice
+// never applied: their switch read the race menu's loop variable, left at
+// 7, so they are not here.)
+func (e *Engine) rollStats(c *Character) {
+	c.Str00 = 0
+	for i := 0; i <= 5; i++ {
+		st := &c.Stats[i]
+		*st = 0
+		for n := 1; n <= 6; n++ {
+			if roll := byte(e.Dice(3, 6)); *st < roll {
+				*st = roll
 			}
 		}
-		c.Coins[3] = uint16(int16(int(sum) * 10 / int(count)))
-		c.HPRoll = byte(e.rollHitDice(c, 0xFF))
-		c.MaxHP = c.HPRoll
-		adj := int(int8(e.conHPBonus(c)))
-		if adj < 0 {
-			if int(c.MaxHP) > -adj+int(count) {
-				c.MaxHP = byte((int(c.MaxHP) + adj) / int(count))
-			} else {
-				c.MaxHP = 1
+		*st = adjustStat(c, i, *st)
+		if i == 0 && *st == 0x12 && fighterKind(c) {
+			c.Str00 = byte(e.Random(100) + 1)
+			if m := raceLimits[c.Race].Str00Max; m < c.Str00 {
+				c.Str00 = m
 			}
-		} else {
+		}
+	}
+}
+
+// rollHP rolls the hit points (one die per class, averaged, with the
+// constitution adjustment), the starting money and the first spells.
+func (e *Engine) rollHP(c *Character) {
+	c.HP = c.MaxHP
+	c.BaseAttack[0], c.BaseDice[0], c.BaseSides[0], c.StrBonus, c.BaseMove = 2, 1, 2, 1, 0xC
+	var sum, count byte
+	for k := 0; k <= 7; k++ {
+		if int8(c.Levels[k]) <= 0 {
+			continue
+		}
+		if k == 0 {
+			c.SpellSlots[0] = 1
+		} else if k == 5 {
+			c.SpellSlots[3] = 1
+		}
+		sum += byte(e.Dice(int(startHPDice[k][0]), int(startHPDice[k][1])))
+		count++
+		if k == 0 {
+			e.wisdomSlots(c) // ovr24:01AF
+			for s := 1; s <= lastSpell; s++ {
+				if rec := spellTable[s][:2]; rec[0] == 0 && rec[1] == 1 {
+					c.SpellBook[s-1] = 1
+				}
+			}
+		} else if k == 5 {
+			c.SpellBook[10], c.SpellBook[17], c.SpellBook[18], c.SpellBook[20] = 1, 1, 1, 1
+		}
+	}
+	c.Coins[3] = uint16(int16(int(sum) * 10 / int(count)))
+	c.HPRoll = byte(e.rollHitDice(c, 0xFF))
+	c.MaxHP = c.HPRoll
+	adj := int(int8(e.conHPBonus(c)))
+	if adj < 0 {
+		if int(c.MaxHP) > -adj+int(count) {
 			c.MaxHP = byte((int(c.MaxHP) + adj) / int(count))
+		} else {
+			c.MaxHP = 1
 		}
-		c.HP = c.MaxHP
-		c.HPRoll = byte(int(c.HPRoll) / int(count))
-		if tries > 0 { // Minimal stats: roll on until met or a key stops it
-			stop := e.meetsMinStats(c)
-			if !stop && tries%100 == 0 {
-				e.ClearRow24()
-				e.DisplayString(0, promptRow, colYellow, "Rolling "+strconv.Itoa(tries)+"... any key stops")
-				e.Delay(16) // let the window draw and see keys
-				if e.keyHit() {
-					stop = true
-				}
+	} else {
+		c.MaxHP = byte((int(c.MaxHP) + adj) / int(count))
+	}
+	c.HP = c.MaxHP
+	c.HPRoll = byte(int(c.HPRoll) / int(count))
+}
+
+// rollCharacter is one roll: abilities, then hit points.
+func (e *Engine) rollCharacter(c *Character) {
+	e.rollStats(c)
+	e.rollHP(c)
+}
+
+// rollMinimal (extra: Minimal stats): asks the minimums, then rolls on
+// until they are met or a key stops it; impossible minimums are refused.
+func (e *Engine) rollMinimal(c *Character) {
+	best := bestStats(c)
+	e.askMinStats()
+	for i, name := range statNames {
+		if e.ext.minStats[i] > best[i] {
+			max := strconv.Itoa(best[i])
+			if i == 0 {
+				max = fmtStr(best[0])
 			}
-			if !stop {
-				tries++
-				continue
+			msg := name + " " + fmtMin(i, e.ext.minStats[i]) + " impossible here, max " + max
+			if i == 0 && best[0] == 1800 {
+				msg = "STR 18/xx is for fighters only, max 18"
 			}
-			tries = 0
+			e.PromptRow24(colYellow, cut(msg, textCols))
 			e.ClearRow24()
+			return
+		}
+	}
+	for tries := 1; ; tries++ {
+		e.rollCharacter(c)
+		if e.meetsMinStats(c) {
+			break
+		}
+		if tries%100 == 0 {
 			for i := 0; i <= 5; i++ {
 				e.showStat(i, false)
 			}
-		}
-		e.showCombatStats() // ovr20:0608
-		if q := e.ext.quick; q != nil {
-			if q.good(c) {
+			e.ClearRow24()
+			e.DisplayString(0, promptRow, colYellow, "Rolling "+strconv.Itoa(tries)+"... any key stops")
+			e.Delay(16) // let the window draw and see keys
+			if e.keyHit() {
 				break
 			}
-			continue
-		}
-		e.menuSel = 2
-		e.ext.selSet = true
-		const (
-			yes Choice = iota
-			no
-			minimal
-		)
-		k := e.DisplayInput("Keep this character? ", Bar{{"Yes", yes}, {"No", no}, {"Minimal", minimal}}, colLightMagenta, colLightGreen, colWhite, false, false).ID
-		if k == yes {
-			break
-		}
-		if k == minimal { // extra: reroll until the minimums are met or a key stops it
-			e.askMinStats()
-			tries = 1
-			for i, name := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
-				if e.ext.minStats[i] > best[i] {
-					max := strconv.Itoa(best[i])
-					if i == 0 {
-						max = fmtStr(best[0])
-					}
-					msg := name + " " + fmtMin(i, e.ext.minStats[i]) + " impossible here, max " + max
-					if i == 0 && best[0] == 1800 {
-						msg = "STR 18/xx is for fighters only, max 18"
-					}
-					e.PromptRow24(colYellow, cut(msg, textCols))
-					tries = 0
-				}
-			}
-			if tries == 0 {
-				e.ClearRow24()
-			}
 		}
 	}
-	e.CharacterSheet()
-	undo()
+	e.ClearRow24()
+}
 
-	for q := e.ext.quick; q != nil; q = nil {
+var statNames = [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}
+
+// setStat (extra: Set) types ability i (STR as 18/xx), kept within the
+// race and class limits; blank keeps it. Wisdom and constitution carry
+// their spell slots and hit points along, as Modify does.
+func (e *Engine) setStat(c *Character, i int) {
+	cur := strconv.Itoa(int(c.Stats[i]))
+	if i == 0 {
+		cur = fmtStr(strScore(c.Stats[0], c.Str00))
+	}
+	s := strings.TrimSpace(e.InputString(statNames[i]+" ("+cur+"): ", colLightMagenta, 6))
+	v, ok := parseMinStat(s, i == 0)
+	if s == "" || !ok {
+		return
+	}
+	st, x := byte(v), byte(0)
+	if i == 0 {
+		st = byte(v / 100)
+		if v > 1800 && v <= 1900 {
+			st, x = 18, byte(v-1800)
+		}
+	}
+	c.Stats[i] = limitStat(c, i, st)
+	if i == 0 {
+		if c.Stats[0] != 18 || !fighterKind(c) {
+			x = 0
+		}
+		c.Str00 = min(x, raceLimits[c.Race].Str00Max)
+	}
+	switch i {
+	case statWis:
+		if c.SpellSlots[0] > 0 {
+			c.SpellSlots[0] = 1
+		}
+		e.wisdomSlots(c)
+	case statCon:
+		c.MaxHP = min(max(c.MaxHP, e.minHitPoints(c)), e.maxHitPoints(c))
+		c.HP = c.MaxHP
+	}
+}
+
+// The sheet's clickable parts (what a click wants, besides the bar).
+const (
+	wantNone = iota
+	wantName
+	wantSex
+	wantRace
+	wantAlign
+	wantClass
+	wantHead
+	wantBody
+	wantIcon
+	wantStat // + the ability's index
+)
+
+// Where the sheet shows the combat icon's poses: under the portrait box.
+const sheetIconRow = 13
+
+var sheetIconCol = [2]int{29, 34}
+
+// creationSheet draws the sheet for the creation: without level, experience,
+// party items and status, with the combat icon under the portrait.
+func (e *Engine) creationSheet(c *Character) {
+	e.CharacterSheet()
+	e.snap.tallRow = 16 // the blank row the 4:3 window repeats: under the icon
+	e.BuildCharIcon(c, true)
+	for p := 0; p < 2; p++ {
+		if c.Icon != nil { // a PNG: over the page at the window's resolution
+			e.pg.overlays = append(e.pg.overlays, Overlay{Img: iconPose(c.Icon, p, false), At: iconRect(sheetIconCol[p], sheetIconRow)})
+		} else if im := e.icons[c.Order][p]; im != nil {
+			e.picture(sheetIconCol[p]*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
+		}
+	}
+}
+
+// sheetRegions makes the sheet's parts clickable: each click records what
+// it wants and ends the bar's wait (PickRedraw).
+func (e *Engine) sheetRegions(c *Character, want *int) {
+	at := func(x0, y0, x1, y1, w int) {
+		e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, click: func(_, cy int) Action {
+			*want = w
+			if w == wantStat {
+				*want += cy - y0
+			}
+			return Action{Kind: actRedraw}
+		}})
+	}
+	at(1, 1, len(c.Name()), 1, wantName)
+	g := len(genderNames[c.Sex])
+	at(1, 3, g, 3, wantSex)
+	at(g+2, 3, g+1+len(raceNames[int8(c.Race)]), 3, wantRace)
+	at(1, 4, len(alignmentNames[int8(c.Alignment)]), 4, wantAlign)
+	at(1, 5, len(className(c.Class)), 5, wantClass)
+	at(1, 7, 11, 12, wantStat)
+	at(28, 1, winRight, 5, wantHead)
+	at(28, 6, winRight, 11, wantBody)
+	at(sheetIconCol[0], sheetIconRow, sheetIconCol[1]+2, sheetIconRow+2, wantIcon)
+}
+
+// dropDown (extra) lists items over the sheet from row y: green where
+// green says so, grey otherwise (a grey item still picks). The index picked,
+// or -1.
+func (e *Engine) dropDown(y int, items []string, cur int, green func(i int) bool) int {
+	list := make([]*ListNode, len(items))
+	for i, s := range items {
+		list[i] = &ListNode{Text: s, Grey: !green(i)}
+	}
+	y = min(y, e.snap.tallRow-len(items)) // above the repeated row, or its rows would be too
+	y2 := y + len(items) - 1
+	e.ClearCells(1, y, 26, y2)
+	e.listTop = 0
+	index, redraw := cur, true
+	var sel *ListNode
+	p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, y, 26, y2, list, true, &redraw, &index, &sel)
+	if p.ID != PickEnter || sel == nil {
+		return -1
+	}
+	return slices.Index(list, sel)
+}
+
+// CreateCharacter = ovr17:056C, redone as one screen (see the top of the
+// file): the sheet of a sample character whose parts are picked in place;
+// Roll, Minimal and Set make the abilities, Keep saves it. Esc asks, then
+// abandons it.
+func (e *Engine) CreateCharacter() {
+	k := kind{race: raceHuman, sex: 0, class: clsFighter, align: 0}
+	q := e.ext.quick
+	if q != nil {
+		k = q.kind()
+	}
+	c := e.fresh(k, nil)
+	e.rollCharacter(c)
+	undo := e.selectTemp(c)
+	if q != nil { // quickstart: rolled until its prime abilities are high, named and pictured from the template
+		for !q.good(c) {
+			e.rollCharacter(c)
+		}
 		c.SetName(q.name)
 		c.PortHead, c.PortBody = q.head, q.body
+		e.SaveCharacter(c, "") // ovr18:069E
+		undo()
+		e.freeCharacter(&c)
+		return
 	}
-	for c.PName[0] == 0 {
-		c.SetName(e.inputLine("Character name: ", 0xD, 0xF)) // 0709:09E3 (extra: case kept)
-		if c.PName[0] != 0 {
-			break
+	e.ext.creating = true
+	defer func() { e.ext.creating = false }()
+	// rekind replaces c by a fresh character of kind k, rolled.
+	rekind := func() {
+		undo()
+		c = e.fresh(k, c)
+		e.rollCharacter(c)
+		undo = e.selectTemp(c)
+	}
+	const (
+		roll Choice = iota
+		minimal
+		set
+		keep
+	)
+	for {
+		e.creationSheet(c)
+		want := wantNone
+		mark := e.regionMark()
+		e.sheetRegions(c, &want)
+		p := e.DisplayInput("", Bar{{"Roll", roll}, {"Minimal", minimal}, {"Set", set}, {"Keep", keep}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		e.regionCut(mark)
+		switch {
+		case p.ID == keep:
+			e.SaveCharacter(c, "") // ovr18:069E
+			undo()
+			e.freeCharacter(&c)
+			return
+		case p.ID == NoPick:
+			if e.YesNo(colYellow, colLightGreen, colWhite, "Abandon this character? ") {
+				undo()
+				e.freeCharacter(&c)
+				return
+			}
+		case p.ID == roll:
+			e.rollCharacter(c)
+		case p.ID == minimal:
+			e.rollMinimal(c)
+		case p.ID == set:
+			for i := range statNames {
+				e.setStat(c, i)
+			}
+		case p.ID != PickRedraw:
+		case want == wantName:
+			if s := e.inputLine("Character name: ", colLightMagenta, 0xF); s != "" { // 0709:09E3 (extra: case kept)
+				c.SetName(s)
+			}
+		case want == wantSex:
+			if i := e.dropDown(3, genderNames[:], int(c.Sex), func(int) bool { return true }); i >= 0 {
+				c.Sex = byte(i)
+			}
+		case want == wantRace:
+			names := make([]string, len(pickRaces))
+			for i, r := range pickRaces {
+				names[i] = raceNames[r]
+			}
+			if i := e.dropDown(3, names, slices.Index(pickRaces, c.Race), func(i int) bool { return classFor(pickRaces[i], c.Class) }); i >= 0 && pickRaces[i] != c.Race {
+				k.race = pickRaces[i]
+				k = k.enforce(fRace)
+				rekind()
+			}
+		case want == wantClass:
+			classes := pickClasses()
+			names := make([]string, len(classes))
+			for i, cl := range classes {
+				names[i] = classNames[cl]
+			}
+			if i := e.dropDown(5, names, slices.Index(classes, c.Class), func(i int) bool { return classFor(c.Race, classes[i]) && alignFor(classes[i], c.Alignment) }); i >= 0 && classes[i] != c.Class {
+				k.class = classes[i]
+				k = k.enforce(fClass)
+				rekind()
+			}
+		case want == wantAlign:
+			if i := e.dropDown(4, alignmentNames[:], int(c.Alignment), func(i int) bool { return alignFor(c.Class, byte(i)) }); i >= 0 && byte(i) != c.Alignment {
+				k.align = byte(i)
+				if k = k.enforce(fAlign); k.class != c.Class {
+					rekind()
+				} else {
+					c.Alignment = k.align
+				}
+			}
+		case want == wantHead:
+			if i := e.pickHead(int(c.PortHead)); i > 0 {
+				c.PortHead, c.Portrait = byte(i), nil
+			}
+		case want == wantBody:
+			if i := e.pickBody(int(c.PortBody)); i > 0 {
+				c.PortBody = byte(i)
+			}
+		case want == wantIcon:
+			e.iconEditor()
+		case want >= wantStat:
+			e.setStat(c, want-wantStat)
 		}
 	}
-	undo = e.selectTemp(c)
-	if e.ext.quick == nil {
-		e.choosePortrait()
-		e.iconEditor()
-	}
-	e.SaveCharacter(c, "") // ovr18:069E
-	undo()
-	e.freeCharacter(&c)
 }
 
 // DropCharacter = ovr17:1F37: asks twice, then the selected member leaves
@@ -524,7 +711,7 @@ func (e *Engine) meetsMinStats(c *Character) bool {
 
 // askMinStats (extra): one prompt per stat; blank keeps the last value.
 func (e *Engine) askMinStats() {
-	for i, name := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
+	for i, name := range statNames {
 		for {
 			cur := strconv.Itoa(e.ext.minStats[i])
 			if i == 0 {

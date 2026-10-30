@@ -49,6 +49,13 @@ func (e *Engine) CharacterSheet() {
 		e.showStat(i, false)
 	}
 	e.showMoney()
+	if e.ext.creating { // extra: the creation's sheet: no level, experience or status yet (create.go)
+		e.showCombatStats()
+		if e.viewBit0 != 0 {
+			e.SheetPortrait()
+		}
+		return
+	}
 	e.DisplayString(1, 15, colWhite, "Level")
 	s = ""
 	for i := 0; i <= 7; i++ {
@@ -139,8 +146,10 @@ func (e *Engine) showCombatStats() {
 	e.DisplayString(x, y+1, colWhite, "Damage        ")
 	e.DisplayString(x+7, y+1, colLightGreen, d)
 	x = 0x16
-	e.DisplayString(x, y, colWhite, "Party items      ") // extra: the party inventory's slots for Encumbrance
-	e.DisplayString(x+0xC, y, colLightGreen, e.poolText())
+	if !e.ext.creating {
+		e.DisplayString(x, y, colWhite, "Party items      ") // extra: the party inventory's slots for Encumbrance
+		e.DisplayString(x+0xC, y, colLightGreen, e.poolText())
+	}
 	m := c.Move
 	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
 	if e.FindAffect(c, affHaste) != nil {

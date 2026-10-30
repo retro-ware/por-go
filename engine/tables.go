@@ -1210,38 +1210,6 @@ func (r raceLimit) limits(i int) (lo, hi byte) {
 	return r.Min[i-1], r.Max[i-1]
 }
 
-// The items of the combat icon editor's menus.
-const (
-	icParts Choice = iota
-	icColour1
-	icColour2
-	icSize
-	icExit
-	icHead
-	icWeapon
-	icBody
-	icHairFace // the part word: xxxx, then Hair or Face
-	icShield
-	icArm
-	icLeg
-	icLarge
-	icSmall
-	icKeep
-	icNext
-	icPrev
-	icStay // (no item) the editor carries on
-)
-
-// iconMenus are the combat icon editor's menus by state (DS:07BF+0x29*state);
-// state 4 starts with the size word, Large or Small.
-var iconMenus = [6]Bar{
-	1: {{"Parts", icParts}, {"color-1", icColour1}, {"color-2", icColour2}, {"Size", icSize}, {"Exit", icExit}},
-	2: {{"Head", icHead}, {"Weapon", icWeapon}, {"Exit", icExit}},
-	3: {{"Weapon", icWeapon}, {"Body", icBody}, {"xxxx", icHairFace}, {"Shield", icShield}, {"Arm", icArm}, {"Leg", icLeg}, {"Exit", icExit}},
-	4: {{"", icLarge}, {"Keep", icKeep}, {"Exit", icExit}},
-	5: {{"Next", icNext}, {"Prev", icPrev}, {"Keep", icKeep}, {"Exit", icExit}},
-}
-
 // partyMenu is the party menu (DS:0619, 0x2A bytes each: name, enabled).
 var partyMenu = [10]struct { // (extra) without "Save Current Game": F9 saves (slots.go)
 	name    string
