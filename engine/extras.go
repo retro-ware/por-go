@@ -63,7 +63,6 @@ type extras struct {
 	menuFloor     int                     // menu bars open under the modal screen
 	viewing       bool                    // the View page's own menu is waiting
 	toItems       bool                    // the next View opens on the inventory (F1-F8)
-	buying        bool                    // the shop's Buy list is waiting: F1-F8 change the buyer
 	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
 	ordering      bool                    // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
 	sels          map[string]int          // the highlighted item each menu was left with

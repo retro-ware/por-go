@@ -382,6 +382,9 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 	if inv.ask != nil { // the question has its Yes and No
 		return nil
 	}
+	if in.Loot { // the loot: take a piece of treasure
+		return []word{{text: "Take", act: engine.ActBuy, on: wareAt(in, inv.ware) != nil}, {text: "Exit", act: engine.ActClose, on: true}}
+	}
 	if in.Wares != nil { // the shop: buy a ware, sell an item
 		return []word{{text: "Buy", act: engine.ActBuy, on: wareAt(in, inv.ware) != nil}, {text: "Sell", act: engine.ActSell, on: it != nil && in.Sell},
 			{text: "Exit", act: engine.ActClose, on: true}}
@@ -470,7 +473,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		fillc = red
 	}
 	fill := strconv.Itoa(len(in.Pool)) + "/" + strconv.Itoa(in.Cap)
-	inv.drawPane(&inv.list, inv.list.shown(in.Pool), inv.sel, false, shop, busy, rx, rr, bottom)
+	inv.drawPane(&inv.list, inv.list.shown(in.Pool), inv.sel, false, shop && !in.Loot, busy, rx, rr, bottom) // the shop prices the party's items (it buys them); the loot does not
 
 	// an item dragged under the pointer
 	if inv.dragging && inv.press != nil {
@@ -530,7 +533,10 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	var g gpu.GeoM
 	g.Translate(float64(split-1)*8, 0) // the boxes share the divider
 	drawBorder(inv.img, t, g, cw-split+1, ch-1)
-	if shop { // the headings on the top border, the party's money on the bottom one
+	switch { // the headings on the top border, the party's money on the shop's bottom one
+	case in.Loot:
+		inv.onBorder(lx, 0, true, []string{"Loot"}, []color.RGBA{white})
+	case shop:
 		inv.onBorder(lx, 0, true, []string{"Shop"}, []color.RGBA{white})
 		inv.onBorder(rr, (ch-1)*8-8, false, []string{strconv.Itoa(in.Gold) + "g", strconv.Itoa(in.Copper) + "c"}, []color.RGBA{col(14), col(6)})
 	}
@@ -661,6 +667,8 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 			continue
 		}
 		switch {
+		case l.ware && in.Loot:
+			describe(&l.item, "")
 		case l.ware:
 			describe(&l.item, "Costs "+l.item.Price)
 		case in.Sell:
@@ -928,7 +936,9 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 			for _, l := range inv.lines {
 				if inv.hover.In(l.r) && !l.doll {
 					inv.choose(l.ware, l.item.Index)
-					if l.ware {
+					if l.ware && inv.view.Loot {
+						inv.do(engine.ActBuy)
+					} else if l.ware {
 						inv.ask = &engine.Action{Kind: engine.ActBuy, N: l.item.Index}
 					} else if inv.view.Sell {
 						inv.do(engine.ActSell)
@@ -996,9 +1006,9 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		was := inv.ware
 		inv.choose(true, h.item.Index)
 		switch {
-		case drag && partySide:
-			inv.ask = &engine.Action{Kind: engine.ActBuy, N: h.item.Index} // a drag asks first
-		case !drag && was == h.item.Index:
+		case drag && partySide && !inv.view.Loot:
+			inv.ask = &engine.Action{Kind: engine.ActBuy, N: h.item.Index} // a drag asks first (loot is free: no question)
+		case drag && partySide, !drag && was == h.item.Index:
 			inv.do(engine.ActBuy)
 		}
 		return

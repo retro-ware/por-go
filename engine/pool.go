@@ -169,6 +169,7 @@ type Inventory struct {
 	Switch bool                // ActMember shows another member (not in combat)
 	Powers []Power             // what the member can do besides items (the View menu's)
 	Wares  []InvItem           // the shop's goods (Browse; nil elsewhere): Index is ActBuy's N, Price what it costs
+	Loot   bool                // Wares are a fight's treasure (the Loot screen): ActBuy takes one for nothing
 	Gold   int                 // the party's money, with Wares
 	Copper int
 }

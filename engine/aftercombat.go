@@ -313,62 +313,14 @@ func (e *Engine) showResult(exp int32) {
 	e.DisplayInput("", pressEnter, colWhite, colWhite, colWhite, true, false)
 }
 
-// lootTakeItem is the Take of the loot list.
-const lootTakeItem Choice = 0
-
-// lootList = ovr06:0B14 (var index, var item): the treasure in a "Loot" box.
-func (e *Engine) lootList(index *int, item **Item) Pick {
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Loot")
-	e.snap.tallRow = 22 // the remaster fills a 4:3 window: the list's last row repeats while it is blank, else the row under the name
-	if len(e.run.treasure) >= 19 {
-		e.snap.tallRow = 3
-	}
-	if c := e.selected(); c != nil { // extra: who takes (F1-F8, a portrait change it)
-		e.displayName(c, 2, 2, false)
-		w := e.poolText() // extra: the party inventory's slots, against the window's right edge
-		e.DisplayString(winRight-len("Items "+w)+1, 2, colWhite, "Items ")
-		e.DisplayString(winRight-len(w)+1, 2, colLightGreen, w)
-	}
-	list := make([]*ListNode, len(e.run.treasure))
-	for i, it := range e.run.treasure {
-		e.ItemName(nil, it, 0, 0, false, false)
-		list[i] = &ListNode{Text: it.Name()}
-	}
-	redraw := true
-	var sel *ListNode
-	e.ext.buying = true
-	key := e.ListMenu("Items: ", Bar{{"Take", lootTakeItem}}, colLightMagenta, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, index, &sel)
-	e.ext.buying = false
-	*item = nil
-	for i, n := range list {
-		if n == sel {
-			*item = e.run.treasure[i]
-		}
-	}
-	return key
-}
-
-// lootTake = ovr06:0C06: take items until Exit or nothing is left.
+// lootTake = ovr06:0C06 (the loot list, ovr06:0B14, with it): take items
+// until Exit or nothing is left. extra: the inventory screen shows the
+// treasure as the shop's Browse shows its goods, with icons and tooltips;
+// ActBuy takes (ItemsMenu), F1-F8 or the screen's arrows change the taker.
 func (e *Engine) lootTake() {
-	index := 0
-	for len(e.run.treasure) > 0 {
-		var it *Item
-		key := e.lootList(&index, &it)
-		if key.ID == PickRelist {
-			continue // F1-F8 picked another taker
-		}
-		if key.ID != lootTakeItem && key.ID != PickEnter || it == nil {
-			break
-		}
-		if !e.buyItem(it) {
-			for i, t := range e.run.treasure {
-				if t == it {
-					e.run.treasure = append(e.run.treasure[:i], e.run.treasure[i+1:]...)
-					break
-				}
-			}
-		}
-	}
+	e.snap.shop, e.snap.loot = true, true
+	defer func() { e.snap.shop, e.snap.loot = false, false }()
+	e.ItemsMenu()
 	e.DrawMainScreen()
 }
 

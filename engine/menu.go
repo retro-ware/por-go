@@ -314,7 +314,7 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 	case ActMember: // a portrait: that member's View page, or the member a list or bar is for
 		switch n := a.N; {
 		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
-		case e.ext.choosing || e.ext.viewing || e.ext.campBar || e.ext.buying:
+		case e.ext.choosing || e.ext.viewing || e.ext.campBar:
 			return m.member(n)
 		case e.ext.inCommand:
 			e.selectMember(n)
@@ -515,7 +515,7 @@ func (m *menuBar) member(n int) (Pick, bool) {
 		e.selectMember(n) // the View page for member n
 		e.ext.held = Action{Kind: actHotkey, N: 'V'}
 		return m.hotkey('E')
-	case e.ext.campBar || e.ext.buying: // camp: F1-F8 pick the member the menu is for; the shop's Buy list: the buyer
+	case e.ext.campBar: // camp: F1-F8 pick the member the menu is for
 		if n == e.partySel {
 			return Pick{}, false
 		}

@@ -147,6 +147,7 @@ type snapState struct {
 	seq          uint64      // Views published
 	invOn        bool        // ItemsMenu waits: View.Inventory is up
 	shop         bool        // ... as the shop's Browse: View.Inventory.Wares
+	loot         bool        // ... as the Loot screen: the treasure is the Wares, free
 	main         []string    // PartyMenu waits: View.MainMenu
 	mainAsk      bool        // ... and asks View.Menu over it
 	credits      bool        // Credits waits: View.Credits
@@ -214,6 +215,7 @@ func (e *Engine) publish() {
 		v.Inventory = e.inventoryView(c, e.carried(c))
 		if s.shop {
 			e.shopWares(v.Inventory, c)
+			v.Inventory.Loot = s.loot
 		}
 	}
 	if m := s.menu; m != nil && (e.ext.modal == 0 || e.ext.menu > e.ext.menuFloor || s.own) { // not the menu under help or the overview

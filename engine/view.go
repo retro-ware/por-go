@@ -387,6 +387,13 @@ func (e *Engine) ItemsMenu() bool {
 			if a.N >= 0 && a.N < len(e.run.treasure) {
 				w := e.run.treasure[a.N]
 				switch {
+				case e.snap.loot: // the Loot screen's Take (lootTake)
+					if !e.buyItem(w) {
+						e.run.treasure = slices.Delete(e.run.treasure, a.N, a.N+1)
+						if len(e.run.treasure) == 0 {
+							return false
+						}
+					}
 				case uint32(w.Price) > e.purse.gold:
 					e.refuse("Not enough Money.")
 				case !e.buyItem(w):

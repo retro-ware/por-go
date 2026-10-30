@@ -142,7 +142,7 @@ func (e *Engine) DevScene(name string) func() {
 		return func() {
 			e.selected().Portrait = readPNG(os.Getenv("POR_PNG"))
 			e.ViewCharacter()
-			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot list: no portrait on it
+			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot screen
 			e.lootTake()
 			e.DrawMainScreen()
 		}

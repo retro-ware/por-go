@@ -28,6 +28,9 @@ func (e *Engine) shopWares(v *Inventory, c *Character) {
 		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
 			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it, e.readiedLike(c, it)), Price: strconv.Itoa(int(it.Price)) + " gold",
 			Kind: itemKind(e, c, it)}
+		if e.snap.loot {
+			x.Price = ""
+		}
 		for _, w := range it.Words {
 			if w != 0 {
 				x.Words = append(x.Words, itemWords[w])
