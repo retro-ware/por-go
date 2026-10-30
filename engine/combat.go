@@ -203,10 +203,15 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 	can(ActAttack)
 	if w := c.Slots[slotWeapon]; w != nil {
 		t.Weapon = e.invItem(c, w)
+		t.Weapon.Rules = e.weaponRules(w)
 	}
 	if m := e.missile(c); m != nil { // extra: a thrown weapon in the Missiles slot, or a launcher with its ammunition
 		can(ActRanged)
 		t.Missile = e.invItem(c, m)
+		if m.Readied != 2 && e.base(m.Type).Range <= 1 { // ammunition: the launcher's rules
+			m = c.Slots[slotWeapon]
+		}
+		t.Missile.Rules = e.weaponRules(m)
 	}
 	if !e.rangedWeapon(c) || e.throwable(c) {
 		can(ActGuard) // Done's
@@ -522,6 +527,28 @@ func (e *Engine) rangedWeapon(c *Character) bool {
 // (base item flags 0x14).
 func (e *Engine) throwable(c *Character) bool {
 	return e.rangedWeapon(c) && e.base(c.Slots[slotWeapon].Type).Usage&0x14 == 0x14
+}
+
+// weaponRules (extra) tell how it attacks in combat (the bar's tooltip):
+// its reach, and what stops a throw or a shot (targetWhy's refusals), what
+// a throw costs (fullAttack: a melee-too weapon lands on the ground, the
+// others are used up).
+func (e *Engine) weaponRules(it *Item) []string {
+	b := e.base(it.Type)
+	rng := strconv.Itoa(int(b.Range) - 1)
+	switch {
+	case b.Range <= 1:
+		return []string{"Melee: a foe next to you"}
+	case b.Usage&0x14 == 0x14: // thrown, in melee too
+		return []string{"Melee, or thrown up to " + rng + " squares;", "a thrown one lands on the ground"}
+	case b.Usage&0x10 != 0:
+		return []string{"Thrown up to " + rng + " squares,", "not with a foe next to you;", "one is used up each throw"}
+	case b.Usage&8 != 0 && b.Usage&0x81 != 0: // fires arrows or bolts
+		return []string{"Shoots up to " + rng + " squares", "with its ammunition readied,", "not with a foe next to you"}
+	case b.Usage&8 != 0: // a sling
+		return []string{"Shoots up to " + rng + " squares,", "not with a foe next to you"}
+	}
+	return []string{"Reach: " + rng + " squares"}
 }
 
 // throwableItem (extra): the item would be a throwable weapon if readied.

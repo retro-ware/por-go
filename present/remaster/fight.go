@@ -2,6 +2,7 @@ package remaster
 
 import (
 	"image"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -51,7 +52,13 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 			}
 		}
 	}
+	p.battle.Pointer = p.pointer
 	p.battle.DrawBar(dst, glyph, b, max(1, int(k)/2), p.mapBottom)
+	if kind, r, ok := p.battle.Hovered(); ok && b.Turn != nil { // the readied weapon over Attack and Ranged: what it does, its rules
+		if it := map[engine.ActKind]*engine.InvItem{engine.ActAttack: b.Turn.Weapon, engine.ActRanged: b.Turn.Missile}[kind]; it != nil {
+			p.drawTipOver(dst, it.Name, append(slices.Clone(it.Look), it.Rules...), max(1, int(k)/2), r)
+		}
+	}
 	p.drawFightRows(dst, note, b, k)
 	cx := dst.Bounds().Dx() / 2
 	switch {
@@ -69,6 +76,19 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 		p.drawMenu(dst, glyph, "Battle Log", lines, make([]byte, len(lines)), -1, k, cx, int(k)*16)
 		p.menuRects = p.menuRects[:0]
 	}
+}
+
+// drawTipOver draws a tooltip (title, lines) at scale k above r, kept on screen.
+func (p *Presenter) drawTipOver(dst *gpu.Image, title string, lines []string, k int, r image.Rectangle) {
+	rows := append(wrap(title, 24), "")
+	rows = append(rows, lines...)
+	w := 0
+	for _, l := range rows {
+		w = max(w, len(l))
+	}
+	w, h := (w+4)*8*k, (len(rows)+2)*8*k
+	cx := min(max(r.Min.X+r.Dx()/2, w/2), dst.Bounds().Dx()-w/2)
+	p.tipMenu(dst, title, lines, make([]byte, len(lines)), -1, float64(k), cx, r.Min.Y-h-4*k)
 }
 
 // drawFightRows draws the status line along the bottom: the question

@@ -94,6 +94,9 @@ func (e *Engine) extraAct(a Action) bool {
 		}
 		e.SlotMenu(false)
 	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training)
+		if !e.ext.viewing { // only on the sheet: a stray Shift-click elsewhere must never change a face
+			return false
+		}
 		c := e.selected()
 		if a.N >= 0 && a.N < len(e.party) {
 			c = e.party[a.N]

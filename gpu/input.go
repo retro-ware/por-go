@@ -203,6 +203,11 @@ func initInput(app *gogpu.App) {
 	ev.OnMouseMove(func(x, y float64) { in.cursor = [2]float64{x, y} })
 	ev.OnScroll(func(dx, dy float64) { in.wheel[0] += dx; in.wheel[1] += dy })
 	app.OnDragDrop(func(paths []string, _, _ float64) { in.drops = append(in.drops, paths...) })
+	app.OnFocus(func(focused bool) { // the releases while another window has the focus never arrive: nothing stays held (a stuck Shift)
+		if !focused {
+			in.down, in.mdown = [keyAll]bool{}, [mouseCount]bool{}
+		}
+	})
 }
 
 // tickInput advances the held counts; called before each Update.

@@ -32,6 +32,7 @@ type bar struct {
 	id    string            // what img shows
 	rects []image.Rectangle // the buttons on screen, as last drawn
 	items []barItem
+	hover int // the button the pointer is on, -1 none
 }
 
 // barItem is one button: its letter, its word, the action it takes.
@@ -106,7 +107,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 		return
 	}
 	hover := -1
-	cx, cy := gpu.CursorPosition()
+	cx, cy := p.Pointer.X, p.Pointer.Y
 	for i, r := range br.rects {
 		if i < len(items) && image.Pt(cx, cy).In(r) {
 			hover = i
@@ -132,7 +133,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(float64(x0), float64(y0))
 	dst.DrawImage(br.img, op)
-	br.rects, br.items = br.rects[:0], items
+	br.rects, br.items, br.hover = br.rects[:0], items, hover
 	for i := range items {
 		r := buttonRect(w, n, i, k)
 		br.rects = append(br.rects, r.Add(image.Pt(x0, y0)))
@@ -212,7 +213,17 @@ func (p *Presenter) Actions() []engine.Action {
 }
 
 // HideBar forgets the buttons (no bar on screen: clicks hit nothing).
-func (p *Presenter) HideBar() { p.bar.rects = p.bar.rects[:0] }
+func (p *Presenter) HideBar() { p.bar.rects, p.bar.hover = p.bar.rects[:0], -1 }
+
+// Hovered is the action of the button the pointer is on and the button's
+// rectangle on screen (ok: there is one), for a tooltip over it.
+func (p *Presenter) Hovered() (kind engine.ActKind, r image.Rectangle, ok bool) {
+	br := &p.bar
+	if br.hover < 0 || br.hover >= len(br.rects) || br.hover >= len(br.items) {
+		return 0, image.Rectangle{}, false
+	}
+	return br.items[br.hover].Kind, br.rects[br.hover], true
+}
 
 // barPixels is the bar's picture at scale k (hover: the button whose word shows, -1 none).
 func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, icons map[engine.ActKind]image.Image) *image.RGBA {

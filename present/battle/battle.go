@@ -38,6 +38,7 @@ type Presenter struct {
 	b             *engine.Battle  // the last frame's
 	out           []engine.Action // queued for Actions
 	Picking       bool            // the spell list is up (Cast): the bar is off
+	Pointer       image.Point     // the mouse on the screen, as the host last saw it (the bar's hover; captures script it)
 	pointed       image.Point     // the square the aim was last pointed at
 	cursor        image.Point     // the aim cursor's square in the last frame
 	tabFrom       *image.Point    // Tab was pressed with the aim here: the camera jumps to where it goes

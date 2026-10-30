@@ -193,6 +193,7 @@ type InvItem struct {
 	Look  []string // what it does (the shop's Look text)
 	Price string   // what selling it pays
 	Kind  ItemKind // its party inventory tab
+	Rules []string // extra: how it attacks in combat (the bar's tooltip), set on the Turn's Weapon and Missile
 }
 
 // ItemKind sorts the party inventory into tabs (extra).

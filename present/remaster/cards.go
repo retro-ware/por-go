@@ -179,14 +179,23 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	if r.Min.X > dst.Bounds().Dx()/2 { // the right column: to the left of it
 		cx = r.Min.X - cardGap*k - w/2
 	}
+	rs := p.tipMenu(dst, "", lines, keys, sel, float64(k), cx, r.Min.Y)
+	if p.ctx > 0 {
+		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], rs...), image.Rect(cx-w/2, r.Min.Y, cx+w/2, r.Min.Y)
+	}
+}
+
+// tipMenu draws a menu box that is not the game's menu (a tooltip, a
+// context menu): on its own image, the menu's click rectangles kept; it
+// returns the box's own line rectangles.
+func (p *Presenter) tipMenu(dst *gpu.Image, title string, lines []string, keys []byte, sel int, k float64, cx, top int) []image.Rectangle {
 	rects := slices.Clone(p.menuRects)                                                  // not a menu: the question's clicks stay
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf // its own image: the menu's keeps its size
-	p.drawMenu(dst, p.glyph, "", lines, keys, sel, float64(k), cx, r.Min.Y)
+	p.drawMenu(dst, p.glyph, title, lines, keys, sel, k, cx, top)
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf
-	if p.ctx > 0 {
-		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], p.menuRects...), image.Rect(cx-w/2, r.Min.Y, cx+w/2, r.Min.Y)
-	}
+	rs := slices.Clone(p.menuRects)
 	p.menuRects = rects
+	return rs
 }
 
 // bar draws a bar w wide: the groove, filled v of maxV with the fill's art.

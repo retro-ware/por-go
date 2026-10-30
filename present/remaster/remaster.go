@@ -62,6 +62,7 @@ type Presenter struct {
 	inside      bool                        // the view has the inside ceiling
 	active      bool                        // the last frame was drawn remastered
 	menu        bool                        // the vertical menu is open
+	menuFor     string                      // the menu it opened for (menuID): another menu arriving closes it, so one key never answers two menus
 	sel         int                         // its highlighted item
 	asked       string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
 	answered    [][8]byte                   // the text pane under the last question: once it is answered, that text is done
@@ -318,7 +319,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	if v.Menu != nil && !v.Command && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked && !v.Working { // not the menu just answered, still up while the engine works on the answer
-			p.asked, p.menu, p.sel = id, true, v.Menu.Sel
+			p.asked, p.menu, p.menuFor, p.sel = id, true, id, v.Menu.Sel
 		}
 	} else {
 		p.asked = ""
@@ -328,6 +329,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(v.Menu.Prompt)}, nil, -1, pk, cx, b.Dy()/2-int(pk*12))
 		p.menuRects = p.menuRects[:0]
 	} else if v.Menu == nil { // typed input and "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
+		p.menu = false
+	} else if p.menu && menuID(v.Menu) != p.menuFor { // the menu the popup was opened for is gone (answered): the next one opens on its own key
 		p.menu = false
 	} else if p.menu {
 		lines, keys := make([]string, len(v.Menu.Items)), make([]byte, len(v.Menu.Items))
@@ -418,7 +421,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		case k == 13 && noChoice(v): // "press enter to continue": nothing to pick
 			return false
 		case k == 13 && m != nil:
-			p.menu, p.sel = true, m.Sel
+			p.menu, p.menuFor, p.sel = true, menuID(m), m.Sel
 		case k == 27 && v.Command:
 			p.view.OpenOptions()
 		default:

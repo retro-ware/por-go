@@ -17,7 +17,9 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 	if title != "" { // a long question on two lines, so the box stays narrow
 		t := append(wrap(title, 24), "")
 		rows, hot = append(t, items...), append(make([]byte, len(t)), keys...)
-		sel += len(t)
+		if sel >= 0 {
+			sel += len(t)
+		}
 	}
 	w := 0
 	for _, r := range rows {
