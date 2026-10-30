@@ -201,10 +201,15 @@ func (e *Engine) saveTo(name string) {
 		f.Close()
 	}
 	if _, err := os.Stat(filepath.Join(e.slotRoot(), tmp, "SAVGAMA.DAT")); err != nil {
+		e.refuse("Save failed")
 		return
 	}
 	os.RemoveAll(filepath.Join(e.slotRoot(), name))
-	os.Rename(filepath.Join(e.slotRoot(), tmp), filepath.Join(e.slotRoot(), name))
+	if err := os.Rename(filepath.Join(e.slotRoot(), tmp), filepath.Join(e.slotRoot(), name)); err != nil {
+		e.refuse("Save failed")
+		return
+	}
+	e.say("Game saved successfully") // extra: the note, on the slot page and the page under it
 }
 
 const slotRows = 0x11
