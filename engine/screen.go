@@ -29,7 +29,7 @@ func (e *Engine) Redraw() {
 // frames, plus the inner picture frame when inner is set.
 func (e *Engine) DrawMainFrame(inner bool) {
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
-	e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colWhite, "")
+	e.DrawBoxTitled(1, msgTop, paneRight, paneBottom, 0, colWhite, "")
 	e.DrawBoxTitled(1, 1, 15, 15, 0, colWhite, "")
 	if inner {
 		e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
@@ -110,7 +110,7 @@ func (e *Engine) StatusLine() {
 	if len(s) > 0x28 {
 		s = s[:0x28]
 	}
-	e.ClearCells(17, 15, winRight, 15)
+	e.ClearCells(17, 15, paneRight, 15)
 	e.DisplayString(17, 15, colLightGreen, s)
 }
 

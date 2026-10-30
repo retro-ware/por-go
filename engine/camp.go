@@ -781,7 +781,7 @@ func (e *Engine) CampMenu() bool {
 	e.camp.heal = 0
 	e.camp.rest = [7]int{}
 	e.DrawMainScreen()
-	e.ClearCells(1, msgTop, winRight, winBottom)
+	e.ClearCells(1, msgTop, paneRight, paneBottom)
 	e.DisplayString(1, 18, colLightGreen, "The party makes camp...")
 	e.clearStudy()
 	interrupted := false
@@ -1037,7 +1037,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 		e.run.effTick[i] = 1
 	}
 	hours, shown := 0, 0
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	e.showRest(0)
 	e.resting = 1
 	done := false
@@ -1082,7 +1082,7 @@ func (e *Engine) Rest(stop func() bool) bool {
 		}
 		e.idle() // let the window breathe; the DOS loop ran flat out
 	}
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	e.resting = 0
 	return interrupted
 }

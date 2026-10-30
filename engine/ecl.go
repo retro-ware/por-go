@@ -701,8 +701,8 @@ func (e *Engine) HitMessage(c *Character, dmg int) {
 		e.PromptRow24(colWhite, "press <enter>/<return> to continue")
 	}
 	e.msgCol = 0x26
-	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colWhite, clear, msg)
+	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colWhite, clear, msg)
 	e.ApplyDamage(c, dmg&0xFF) // 00BA:2228
-	e.ClearBox(17, 1, winRight, 15)
+	e.ClearBox(17, 1, paneRight, 15)
 	e.DisplayPartyList()
 }

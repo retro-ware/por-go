@@ -344,7 +344,7 @@ func (e *Engine) scriptText(clear bool, s string) {
 	if clear {
 		e.msgRow, e.msgCol = 0x11, 1
 	}
-	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, clear, s)
+	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, clear, s)
 	e.speak(voiceKey(s))
 	e.journalPrinted(s, clear)
 }
@@ -386,7 +386,7 @@ func (e *Engine) opVMenu() {
 	e.FetchArgs(n)
 	list := newList(n)
 	e.msgCol, e.msgRow = 1, 0x11
-	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, prompt)
+	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, prompt)
 	for i, p := range list {
 		s := e.es.strAt(i + 1)
 		if len(s) > 0x28 {
@@ -397,7 +397,7 @@ func (e *Engine) opVMenu() {
 	var sel *ListNode
 	e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel) // ovr08:1788
 	e.WriteVar(dst, uint16(index))
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 }
 
 // opIf = ovr04:0B52 (IF= IF<> IF< IF> IF<= IF>=): skip the next

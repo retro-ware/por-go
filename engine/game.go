@@ -230,7 +230,7 @@ func (e *Engine) CommandInput() (encamp bool) {
 	}
 	e.prevViewMode = e.viewMode
 	if e.run.textCleared == 0 {
-		e.ClearCells(1, msgTop, winRight, winBottom)
+		e.ClearCells(1, msgTop, paneRight, paneBottom)
 		e.run.textCleared = 1
 	}
 	return encamp

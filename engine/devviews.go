@@ -114,9 +114,9 @@ func (e *Engine) DevScene(name string) func() {
 			e.es.inEncounterMenu, e.game.Portrait = 1, 0xFF
 			e.ShowEncounter(sprite, pic, 0, &e.es.encounterShown)
 			e.msgCol, e.msgRow = 1, 0x11
-			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "A band of kobolds blocks the way.")
+			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "A band of kobolds blocks the way.")
 			for e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "") == 1 { // WAIT: a message, then the menu again
-				e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
+				e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
 			}
 			e.ClearBox(0, promptRow, lastCol, promptRow)
 			e.es.inEncounterMenu = 0
@@ -184,9 +184,9 @@ func (e *Engine) DevScene(name string) func() {
 		}
 	case "journal": // a text window naming journal entries, as ECL3 block 0 prints them
 		return func() {
-			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "YOU OVERHEAR TAVERN TALE ")
+			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "YOU OVERHEAR TAVERN TALE ")
 			e.journalPrinted("YOU OVERHEAR TAVERN TALE ", true)
-			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, false, "3")
+			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, false, "3")
 			e.journalPrinted("3", false)
 			e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true)
 		}

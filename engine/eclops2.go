@@ -195,12 +195,12 @@ func (e *Engine) opEncounterMenu() {
 		return true
 	}
 	waitMsg := func() {
-		e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "Both sides wait.")
+		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "Both sides wait.")
 	}
 	flee := func() {
 		e.WriteVar(dst, 0)
 		e.msgCol, e.msgRow = 1, 0x11
-		e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "The monsters flee.")
+		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "The monsters flee.")
 	}
 	txt := ""
 	for again := true; again; {
@@ -237,7 +237,7 @@ func (e *Engine) opEncounterMenu() {
 		if txt == "" {
 			clear = false
 		}
-		e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, clear, txt)
+		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, clear, txt)
 		parlay := dist() == 0 || e.area.In3D == 0
 		menu := "~COMBAT ~WAIT ~FLEE ~ADVANCE"
 		if parlay {
@@ -531,7 +531,7 @@ func (e *Engine) opProgram() {
 // opWho = ovr04:2B33 (prompt): choose a party member.
 func (e *Engine) opWho() {
 	e.FetchArgs(1)
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	start := e.selected()
 	// extra: one party purse, so the first non-NPC pays (inn, ECL3 A1B4) or
 	// gambles (tavern, A501), an okay one if there is one

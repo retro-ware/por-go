@@ -372,12 +372,12 @@ func (e *Engine) lootMenu() {
 			if len(e.run.treasure) == 0 {
 				return
 			}
-			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true, "There is still treasure left.  ")
-			e.DisplayTextBlock(1, msgTop, winRight, winBottom, colWhite, false, "Do you want to go back and claim your treasure?")
+			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "There is still treasure left.  ")
+			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colWhite, false, "Do you want to go back and claim your treasure?")
 			if e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~Yes ~No", "") == 1 {
 				return
 			}
-			e.ClearBox(1, msgTop, winRight, winBottom)
+			e.ClearBox(1, msgTop, paneRight, paneBottom)
 		}
 	}
 }

@@ -165,7 +165,7 @@ const (
 // DrawMinimap draws the current map with the party. Like the game's Area
 // view it shows every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
-	e.ClearCells(17, 1, winRight, 14)
+	e.ClearCells(17, 1, paneRight, 14)
 	e.mapPage(mmX, mmY, mmCell, e.labels(), nil)
 }
 
@@ -175,7 +175,7 @@ func (e *Engine) rosterPanel() {
 		e.DrawMinimap()
 		return
 	}
-	e.ClearCells(17, 1, winRight, 14)
+	e.ClearCells(17, 1, paneRight, 14)
 	e.drawPartyList()
 }
 

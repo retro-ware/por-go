@@ -18,7 +18,7 @@ func (e *Engine) templeNotNeeded(msg string) bool {
 // templePay = ovr05:00BF (cure, price): the price from the party's gold.
 // True when paid.
 func (e *Engine) templePay(cure string, price uint16) bool {
-	e.DisplayTextBlock(1, msgTop, winRight, winBottom, colLightGreen, true,
+	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true,
 		cut(cure+" will only cost "+strconv.Itoa(int(price))+" gold pieces.", 0xFF))
 
 	k := e.YesNo(colLightMagenta, colWhite, colLightGreen, "pay for cure ") && e.pay(uint32(price))
@@ -186,7 +186,7 @@ func (e *Engine) templeHeal() {
 	index := 0
 	for done := false; !done; {
 		e.DisplayString(1, 1, colWhite, cut(e.selected().Name()+", how can we help you?", textCols))
-		e.DrawBoxTitled(1, msgTop, winRight, winBottom, 0, colWhite, "")
+		e.DrawBoxTitled(1, msgTop, paneRight, paneBottom, 0, colWhite, "")
 		var sel *ListNode
 		const heal Choice = 0
 		e.ext.campBar = true // (extra) F1-F8 and the cards switch the member healed, as camp's bars

@@ -22,13 +22,20 @@ const (
 
 // The text screen: the original's 40x25, the floor; a larger window gives
 // more cells (resizePage), and every screen lays out to them (textCols,
-// textRows and the rows and columns derived from them). The view window
-// (ViewWindow) keeps its place; the remaster draws that screen itself.
+// textRows and the rows and columns derived from them). The 3D screen's
+// boxes (ViewWindow, TextPane) keep their places: the remaster draws that
+// screen itself.
 const (
 	minCols  = 40
 	minRows  = 25
 	noteCols = 36 // a note (say) fits the bottom line's box with a blank each side
 	msgTop   = 17 // first row of the message pane under the portrait
+	// The 3D screen's text pane and party panel keep the original's edges
+	// whatever the page's size: the remaster shows them as a pop-up and
+	// cards, and a clear past the fixed pane would tear the main frame
+	// (page.go draw) and bring the page up in its place.
+	paneRight  = 0x26
+	paneBottom = 0x16
 )
 
 // ponytail: package-level page size, one Engine per process; move onto
@@ -47,7 +54,6 @@ var (
 func setPageSize(cols, rows int) {
 	textCols, textRows = max(cols, minCols), max(rows, minRows)
 	lastCol, winRight, winBottom, messageRow, promptRow = textCols-1, textCols-2, textRows-3, textRows-2, textRows-1
-	OuterBox.X2, OuterBox.Y2, TextPane.X2, TextPane.Y2 = winRight, winBottom, winRight, winBottom
 }
 
 // newCells is an empty text cell grid of the page's size.

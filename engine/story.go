@@ -65,7 +65,7 @@ func (e *Engine) ProgramEight() {
 		e.speak(voiceKey(strings.Join(lines, " ")))
 	}
 
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	speakAll("Mortally wounded, the dragon roars!", "The spirit of Tyranthraxus flares up", "from the dragon's body.")
 	e.DrawMainScreen()
 	page(1, 0, 0)
@@ -80,10 +80,10 @@ func (e *Engine) ProgramEight() {
 	if e.game.PartyCount > 3 {
 		page(6, 0, 9)
 	}
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	speakAll("\"Fools, you have but slain the body", "I possessed.  I cannot be defeated!\"", "With the power of the pool of radiance", "which I moved here, to my lair,", "I will still rule, by possessing one", "of you!\"")
 	finalAnim(3, 1, 7, slow())
-	e.ClearBox(1, msgTop, winRight, winBottom)
+	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	speakAll("\"No Lord Bane!  I can still rule here!", "I have not failed.  Do not call me back", "through the pool!\"", "Noooo...")
 	finalAnim(3, 1, 8, 1)
 	e.MsgDelay()
