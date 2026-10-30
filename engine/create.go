@@ -11,13 +11,13 @@ import (
 // extra: the creation is one screen, the character sheet of a sample
 // character: its name, gender, race, alignment and class are drop-down
 // lists (a grey entry forces the dependants to their first valid value),
-// so are the ability scores (the values the race and class allow), the
-// portrait's head and body and the combat icon open pickers, and the bar
-// rolls, rolls to minimums or keeps. A drop-down shows the current value
-// where it was with the others below it and nothing else; the pointer on
-// a drop-down shows the selection background (region.glow). The
-// original's four menus, name prompt, Head/Body stepping and icon editor
-// states are gone.
+// the name and the ability scores are typed where they stand (inlineInput:
+// the value gives way to the cursor), the portrait's head and body and the
+// combat icon open pickers, and the bar rolls, rolls to minimums or keeps.
+// A drop-down is a framed menu over the sheet with the current value
+// first, on the field's text, and the others below; the pointer on any of
+// them shows the selection background (region.glow). The original's four
+// menus, name prompt, Head/Body stepping and icon editor states are gone.
 
 // freeCharacter = ovr17:0000 (var c): disposes the combat block, the item
 // and affect lists and the record, then nils the pointer. Go's collector
@@ -432,17 +432,28 @@ func (e *Engine) rollMinimal(c *Character) {
 
 var statNames = [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}
 
-// setStatTo (extra) gives ability i the value picked, within the race and
-// class limits; strength 18 for a fighter kind rolls its exceptional part
-// anew (as a roll does). Wisdom and constitution carry their spell slots
-// and hit points along, as Modify does.
-func (e *Engine) setStatTo(c *Character, i int, v byte) {
-	c.Stats[i] = limitStat(c, i, v)
+// setStatTyped (extra) gives ability i the value typed on the sheet (STR as
+// 18/xx), kept within the race and class limits; what is not a value keeps
+// it. Wisdom and constitution carry their spell slots and hit points
+// along, as Modify does.
+func (e *Engine) setStatTyped(c *Character, i int, s string) {
+	v, ok := parseMinStat(s, i == 0)
+	if !ok {
+		return
+	}
+	st, x := byte(v), byte(0)
 	if i == 0 {
-		c.Str00 = 0
-		if c.Stats[0] == 18 && fighterKind(c) {
-			c.Str00 = min(byte(e.Random(100)+1), raceLimits[c.Race].Str00Max)
+		st = byte(v / 100)
+		if v > 1800 && v <= 1900 {
+			st, x = 18, byte(v-1800)
 		}
+	}
+	c.Stats[i] = limitStat(c, i, st)
+	if i == 0 {
+		if c.Stats[0] != 18 || !fighterKind(c) {
+			x = 0
+		}
+		c.Str00 = min(x, raceLimits[c.Race].Str00Max)
 	}
 	switch i {
 	case statWis:
@@ -473,13 +484,18 @@ const (
 // Where the sheet shows the combat icon's poses: under the portrait box.
 const sheetIconRow = 13
 
+// sheetTallRow is the creation sheet's blank row the 4:3 window repeats:
+// under the combat stats, so the drop-downs' boxes (bottom border at
+// sheetTallRow-1 at most) never cross it.
+const sheetTallRow = 20
+
 var sheetIconCol = [2]int{29, 34}
 
 // creationSheet draws the sheet for the creation: without level, experience,
 // party items and status, with the combat icon under the portrait.
 func (e *Engine) creationSheet(c *Character) {
 	e.CharacterSheet()
-	e.snap.tallRow = 16 // the blank row the 4:3 window repeats: under the icon
+	e.snap.tallRow = sheetTallRow
 	e.BuildCharIcon(c, true)
 	for p := 0; p < 2; p++ {
 		if c.Icon != nil { // a PNG: over the page at the window's resolution
@@ -518,10 +534,12 @@ func (e *Engine) sheetRegions(c *Character, want *int) {
 	at(sheetIconCol[0], sheetIconRow, sheetIconCol[1]+2, sheetIconRow+2, wantIcon, false)
 }
 
-// dropDown (extra) opens the list of a sheet field at column x, row y: the
-// sheet goes, the current item stays where it was with the others below it
-// in their order (more than fit page), green where green says so, grey
-// otherwise (a grey item still picks). The index picked, or -1.
+// dropDown (extra) opens a sheet field's menu: a framed box from column
+// x, row y holding every item, the current one first, over the field's
+// text, the rest below it in their order, going on into further columns
+// where they would reach the repeated row; green where green says so, grey
+// otherwise (a grey item still picks). The arrows, Enter and Esc, the
+// pointer and a click work as in a list. The index picked, or -1.
 func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) bool) int {
 	order := []int{max(cur, 0)}
 	for i := range items {
@@ -529,42 +547,87 @@ func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) b
 			order = append(order, i)
 		}
 	}
-	list := make([]*ListNode, len(order))
-	for k, i := range order {
-		list[k] = &ListNode{Text: items[i], Grey: !green(i)}
+	rows := min(len(order), sheetTallRow-1-y) // the bottom border above the repeated row
+	cols, w := (len(order)+rows-1)/rows, 0
+	for _, s := range items {
+		w = max(w, len(s))
 	}
-	e.ClearCells(1, 1, winRight, winBottom)
-	e.pg.overlays = nil
-	y2 := min(y+len(list)-1, winBottom-1) // a blank row stays under the list for the window to repeat
-	e.snap.tallRow = y2 + 1
-	e.listTop = 0
-	index, redraw := 0, true
-	var sel *ListNode
-	p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, x, y, winRight, y2, list, true, &redraw, &index, &sel)
-	if p.ID != PickEnter || sel == nil {
+	x2, y2 := x+cols*(w+1)-2, y+rows-1
+	e.DrawBoxTitled(x, y, x2, y2, 0, colBlack, "")
+	at := func(k int) (int, int) { return x + k/rows*(w+1), y + k%rows }
+	draw := func(k int, hi bool) {
+		cx, cy := at(k)
+		col, bg := colLightGreen, colBlack
+		if !green(order[k]) {
+			col = dimColour
+		}
+		if hi {
+			bg = selBg(col, colWhite)
+		}
+		for j, ch := range []byte(items[order[k]]) {
+			e.displayCharBg(cx+j, cy, col, bg, ch, true)
+		}
+	}
+	for k := range order {
+		draw(k, false)
+	}
+	index := 0
+	hit := func(cx, cy int) int { // the item at a cell, or -1
+		for k := range order {
+			if ix, iy := at(k); cy == iy && cx >= ix && cx <= ix+w {
+				return k
+			}
+		}
 		return -1
 	}
-	return order[slices.Index(list, sel)]
-}
-
-// statChoices (extra): the values ability i may take for c's race and class,
-// as the sheet shows them (the current one with its exceptional strength).
-func statChoices(c *Character, i int) (vals []byte, names []string) {
-	lo, hi := raceLimits[c.Race].limits(i)
-	for v := lo; v <= hi; v++ {
-		if limitStat(c, i, v) != v {
-			continue
-		}
-		s := strconv.Itoa(int(v))
-		if v < 10 {
-			s = " " + s
-		}
-		if v == c.Stats[i] && i == 0 {
-			s += str00Text(c)
-		}
-		vals, names = append(vals, v), append(names, s)
+	move := func(k int) {
+		draw(index, false)
+		index = k
+		draw(index, true)
 	}
-	return
+	mark := e.regionMark()
+	defer e.regionCut(mark)
+	e.addRegion(region{x0: x, y0: y, x1: x2, y1: y2, click: func(cx, cy int) Action {
+		k := hit(cx, cy)
+		if k < 0 {
+			return Action{}
+		}
+		move(k) // a click picks at once, as in a list without words
+		return Action{Kind: ActContinue}
+	}, hover: func(cx, cy int) {
+		if k := hit(cx, cy); k >= 0 && k != index {
+			move(k)
+		}
+	}})
+	for {
+		draw(index, true)
+		e.ext.list, e.ext.picker = true, true
+		p := e.DisplayInput("", Bar{{"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		e.ext.list, e.ext.picker = false, false
+		n := len(order)
+		switch p.ID {
+		case PickEnter:
+			return order[index]
+		case PickMove:
+			switch p.Dir {
+			case DirUp, DirWheelUp:
+				move((index + n - 1) % n)
+			case DirDown, DirWheelDown:
+				move((index + 1) % n)
+			case DirHome:
+				move(0)
+			case DirEnd:
+				move(n - 1)
+			case DirLeft:
+				move(max(index-rows, 0))
+			case DirRight:
+				move(min(index+rows, n-1))
+			}
+		case PickRedraw: // a click moved the highlight
+		default:
+			return -1
+		}
+	}
 }
 
 // CreateCharacter = ovr17:056C, redone as one screen (see the top of the
@@ -630,7 +693,7 @@ func (e *Engine) CreateCharacter() {
 			e.rollMinimal(c)
 		case p.ID != PickRedraw:
 		case want == wantName:
-			if s := e.inputLine("Character name: ", colLightMagenta, 0xF); s != "" { // 0709:09E3 (extra: case kept)
+			if s, ok := e.inlineInput(1, 1, 0xF, colLightCyan, func(c byte) bool { return c >= 0x20 && c <= 0x7A }); ok && s != "" { // 0709:09E3 (extra: case kept)
 				c.SetName(s)
 			}
 		case want == wantSex:
@@ -679,9 +742,8 @@ func (e *Engine) CreateCharacter() {
 			e.iconEditor()
 		case want >= wantStat:
 			i := want - wantStat
-			vals, names := statChoices(c, i)
-			if j := e.dropDown(5, 7+i, names, slices.Index(vals, c.Stats[i]), func(int) bool { return true }); j >= 0 {
-				e.setStatTo(c, i, vals[j])
+			if s, ok := e.inlineInput(5, 7+i, 5, colLightGreen, func(c byte) bool { return c >= '0' && c <= '9' || c == '/' }); ok {
+				e.setStatTyped(c, i, s)
 			}
 		}
 	}

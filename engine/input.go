@@ -38,6 +38,18 @@ func (e *Engine) inputLine(prompt string, colour, maxlen int) string {
 	return s
 }
 
+// inlineInput (extra) edits a field where it stands: the cells from x, y
+// hold the text typed (maxlen at most, the characters ok takes) with the
+// cursor, a block in the selection colour, after it; Enter ends it (true),
+// Esc too (false). The caller redraws the field.
+func (e *Engine) inlineInput(x, y, maxlen, colour int, ok func(byte) bool) (string, bool) {
+	return e.typed("", maxlen, ok, func(t string) {
+		e.DisplaySpaces(x, y, colBlack, maxlen+1)
+		e.DisplayString(x, y, colour, t)
+		e.displayCharBg(x+len(t), y, colWhite, selBg(colour, colWhite), ' ', true)
+	})
+}
+
 // typed (extra) waits for the line the presenter edits, starting as s:
 // ActText sets it (only the characters ok takes, at most maxlen), show
 // draws it; Enter ends it, Esc too (false).
