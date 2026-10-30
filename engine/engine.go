@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"por/dax"
@@ -35,9 +36,10 @@ type Engine struct {
 	data      string   // New's data directory
 	pal       pal.Regs // EGA palette registers (SetPaletteColor)
 	Cfg       Config
-	tempSel   *Character // selectTemp: selected but not in the party
-	RandSeed  uint32     // DS:4428, Turbo Pascal RandSeed
-	FixedSeed *uint32    // if set, Randomize uses it instead of the clock (POR_SEED)
+	tempSel   *Character  // selectTemp: selected but not in the party
+	RandSeed  uint32      // DS:4428, Turbo Pascal RandSeed
+	FixedSeed *uint32     // if set, Randomize uses it instead of the clock (POR_SEED)
+	Deskew    atomic.Bool // extra: dungeon combat maps on a square grid instead of the original's skewed perspective (combatsetup.go); read at each fight's setup
 
 	font  []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph
 	sym   [5]*dax.Image // DS:5E3A symbol sets

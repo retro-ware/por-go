@@ -62,7 +62,7 @@ func (e *Engine) combatBlocks() {
 		if i+1 > int(e.game.PartyCount) {
 			c.Combat.Extra = 1
 		}
-		c.Combat.Facing = facingDir[e.facing/2]
+		c.Combat.Facing = e.facingDir(e.facing / 2)
 		if c.Side == sideMonsters {
 			c.Combat.Facing = (c.Combat.Facing + 4) % 8
 		}
@@ -102,6 +102,10 @@ func (e *Engine) cellEdge(x, y, dir int) byte {
 // dungeonMap = ovr11:0810: every cell within 6 east-west and 2 north-south
 // of the party becomes a 6x5 block of tiles, rows skewed 5 squares.
 func (e *Engine) dungeonMap() {
+	if e.Deskew.Load() {
+		e.dungeonMapFlat()
+		return
+	}
 	for r := -2; r <= 2; r++ {
 		for c := -6; c <= 6; c++ {
 			x, y := e.posX+c, e.posY+r
@@ -257,6 +261,65 @@ func (e *Engine) floorClutter() {
 	}
 }
 
+// --- the deskewed dungeon map (extra) ----------------------------------
+
+// The original's dungeon map is a perspective: each block row is shifted 5
+// squares east of the one above, so north-south walls run diagonally.
+// With Engine.Deskew the cells lie on a square grid, a 6x5 block each with
+// its west wall a column and its north wall a row, both one square thick,
+// a door a 2-square gap in the middle of its wall; the formation and the
+// party's facing follow (placeAt, facingDir, placeRows).
+
+// dungeonMapFlat is dungeonMap without the skew.
+func (e *Engine) dungeonMapFlat() {
+	for r := -2; r <= 2; r++ {
+		for c := -4; c <= 4; c++ {
+			x, y := e.posX+c, e.posY+r
+			w, n := e.cellEdge(x, y, 6), e.cellEdge(x, y, 0)
+			put := func(col, row int, t byte) {
+				px, py := col+c*6+0x15, row+r*5+0xA
+				if px >= 0 && px <= 0x31 && py >= 0 && py <= 0x18 {
+					e.cmap.ground[py][px] = t + 1
+				}
+			}
+			for row := 0; row <= 4; row++ {
+				for col := 0; col <= 5; col++ {
+					put(col, row, 0x16)
+				}
+			}
+			for row := 1; row <= 4; row++ {
+				switch {
+				case w == 1 || w == 3 && (row == 1 || row == 4):
+					put(0, row, 3)
+				case w == 3:
+					put(0, row, 8)
+				}
+			}
+			for col := 1; col <= 5; col++ {
+				switch {
+				case n == 1 || n == 3 && col != 2 && col != 3:
+					put(col, 0, 5)
+				case n == 3:
+					put(col, 0, 8)
+				}
+			}
+			if w != 0 || n != 0 || e.cellEdge(x, y-1, 6) != 0 || e.cellEdge(x-1, y, 0) != 0 { // a corner post wherever a wall or door ends
+				put(0, 0, 2)
+			}
+		}
+	}
+	e.floorClutter()
+}
+
+// facingDir is the eight-way direction of facing f (0..3): the original's
+// table leans north-south moves into its perspective; deskewed, north is north.
+func (e *Engine) facingDir(f int) byte {
+	if e.Deskew.Load() {
+		return byte(f * 2)
+	}
+	return facingDir[f]
+}
+
 // --- the wilderness map (ovr11:11B4) ----------------------------------
 
 // wildMap = ovr11:11B4.
@@ -358,7 +421,9 @@ func (e *Engine) wildRoad() {
 		if e.Dice(1, 20) == 1 || stones&1 != 0 {
 			stone(row, col)
 		}
-		col++
+		if !e.Deskew.Load() { // the road leans with the perspective
+			col++
+		}
 	}
 	if stones == 0 {
 		row := 0xC - e.Dice(1, 9) + 4
@@ -505,6 +570,9 @@ func (e *Engine) placeCombatants() {
 			}
 			for y := 0; y <= 5; y++ {
 				lr := placeRows[d][y]
+				if e.Deskew.Load() {
+					lr = placeRowsFlat[d][y]
+				}
 				for x := 0; x <= 0xA; x++ {
 					v := byte(0)
 					if int(int8(lr[0])) <= x && int(int8(lr[1])) >= x {
@@ -567,6 +635,9 @@ func (e *Engine) placeAt(idx, x, y, ox, oy, team int) bool {
 		return false
 	}
 	e.cpos[idx].x = byte(x + ox*6 + oy*5 + 0x16)
+	if e.Deskew.Load() {
+		e.cpos[idx].x -= byte(oy * 5)
+	}
 	e.cpos[idx].y = byte(oy*5 + y + 0xA)
 	who, g := e.groundAt(e.combatants[idx-1], 8)
 	if who == 0 && g > 0 && e.groundInfo(g)[0] < 0xFF {
@@ -590,7 +661,7 @@ func (e *Engine) placeOne(idx int) bool {
 	for {
 		dir := int(placeTeamDirs[p.dir[s]][team] >> 1)
 		turn := func(q int) {
-			d := int(facingDir[(dir+q)%4])
+			d := int(e.facingDir((dir + q) % 4))
 			dx, dy = dirDX[d], dirDY[d]
 		}
 		switch state {

@@ -1458,6 +1458,7 @@ func (g *Game) menuOptions() []menuLine {
 			{"Minimap opacity", func(*Game) string {
 				return bar(Settings.MapAlpha, minAlpha, 1, 0.1) + fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100)
 			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
+			{"Deskew combat maps", onOffOf(&Settings.Deskew), flip(&Settings.Deskew)},
 		}
 	}
 	page := func(p string) menuLine {
@@ -2301,6 +2302,7 @@ type Options struct {
 	MapOff, MapSmall                  bool    // the host's minimap: hidden; half its size
 	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
 	PicDouble                         bool    // the host's picture box at twice the pop-up scale
+	Deskew                            bool    // the host's combat maps on a square grid (walls straight) instead of the original's perspective
 }
 
 const minAlpha = 0.2
@@ -2310,7 +2312,7 @@ const minSpeed, maxSpeed = 0.5, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Torch: 1, Speed: 1, MapAlpha: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
 	// the voice first when toggle, then reports whether it is on.

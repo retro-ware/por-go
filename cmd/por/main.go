@@ -444,7 +444,9 @@ func main() {
 	if b, err := os.ReadFile(settingsFile); err == nil {
 		json.Unmarshal(b, &blobber.Settings)
 	}
+	eng.Deskew.Store(blobber.Settings.Deskew)
 	blobber.OnSettings = func(o blobber.Options) {
+		eng.Deskew.Store(o.Deskew)
 		b, _ := json.MarshalIndent(o, "", " ")
 		os.MkdirAll(eng.Cfg.SaveDir, 0o755)
 		os.WriteFile(settingsFile, b, 0o644)

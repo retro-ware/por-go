@@ -53,6 +53,17 @@ var placeRows = [5][6][2]int8{
 	{{0, 6}, {0, 7}, {1, 8}, {2, 9}, {3, 10}, {4, 10}},
 }
 
+// placeRowsFlat (extra): placeRows with the perspective's lean taken out,
+// for deskewed maps (each row shifted back a square per row from the
+// placement's start row, the clipped edges restored).
+var placeRowsFlat = [5][6][2]int8{
+	{{1, 0}, {1, 0}, {1, 0}, {2, 9}, {2, 9}, {2, 9}},
+	{{1, 4}, {1, 4}, {1, 4}, {1, 4}, {1, 4}, {1, 4}},
+	{{1, 8}, {1, 8}, {1, 8}, {1, 0}, {1, 0}, {1, 0}},
+	{{6, 9}, {6, 9}, {6, 9}, {6, 9}, {6, 9}, {6, 9}},
+	{{0, 8}, {0, 8}, {0, 8}, {0, 8}, {0, 8}, {0, 8}},
+}
+
 // monster names for hitBonusVsNames's +1 to hit (DS:0332, 16-byte Pascal strings; [i] is the original's i+1).
 var hitNames1 = [4][16]byte{
 	{0x06, 0x4B, 0x4F, 0x42, 0x4F, 0x4C, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // "KOBOLD"
