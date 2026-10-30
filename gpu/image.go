@@ -192,10 +192,8 @@ func (i *Image) WritePixels(px []byte) {
 		return
 	}
 	i.t.ensure()
-	if i.t.clear {
-		passOn(i.t, false) // the pending Clear comes first
-	}
-	submit() // draws recorded earlier still see the old pixels
+	settle(i.t) // the pending clear comes first
+	submit()    // draws recorded earlier still see the old pixels
 	w, h := i.r.Dx(), i.r.Dy()
 	Stats.Uploads++
 	if err := dev.queue.WriteTexture(&wgpu.ImageCopyTexture{Texture: i.t.tex, Origin: wgpu.Origin3D{X: uint32(i.r.Min.X), Y: uint32(i.r.Min.Y)}},
@@ -212,7 +210,17 @@ func (i *Image) ReadPixels(px []byte) {
 		return
 	}
 	if !i.r.Empty() {
+		settle(i.t)
 		readTexture(i.t, i.r.Min.X, i.r.Min.Y, i.r.Dx(), i.r.Dy(), px)
+	}
+}
+
+// settle applies t's pending clear (a Fill of the whole image waits for the
+// next pass into it) before t is read: sampled by a draw, read back or
+// written in part. A pass that only clears, once per such Fill.
+func settle(t *texture) {
+	if t.clear {
+		passOn(t, false)
 	}
 }
 
@@ -375,6 +383,7 @@ func (i *Image) DrawTriangles(vs []Vertex, is []uint16, img *Image, op *DrawTria
 	if op.Filter == FilterLinear {
 		s = dev.linear
 	}
+	settle(img.t)
 	queue(batchKey{dst: i.t, clip: i.r, pipe: pipes.std[op.Blend], group: img.t.group(s)}, i, vs, is, img.t)
 }
 

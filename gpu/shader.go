@@ -182,6 +182,7 @@ func (i *Image) DrawTrianglesShader(vs []Vertex, is []uint16, s *Shader, op *Dra
 			im = white()
 		}
 		ts[j] = im.t
+		settle(im.t)
 		if j == 0 && op.Images[0] != nil {
 			src = im.r
 		}
