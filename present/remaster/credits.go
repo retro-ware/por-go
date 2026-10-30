@@ -31,6 +31,14 @@ func creditRow(y int) int {
 	return y
 }
 
+// tallKey is what a spread page was made from.
+type tallKey struct {
+	seq  uint64
+	note bool
+	text string
+	from [tallRows]int
+}
+
 const creditBlank = 0xc // a blank row inside the big box, for the new rows
 
 func (p *Presenter) drawCredits(dst *gpu.Image, v engine.View, note Note) Rect {
@@ -101,23 +109,28 @@ const tallRows = 30
 // page's.
 func (p *Presenter) drawTall(dst *gpu.Image, v engine.View, note Note, from [tallRows]int, extra func(*image.RGBA)) Rect {
 	p.pageImage(v, note)
-	src := p.pg.px
 	const w, h = 2 * pal.W, 2 * tallRows * 8
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	for to, y := range from {
-		for dy := 0; dy < 16; dy++ {
-			for x := 0; x < w; x++ {
-				m.SetRGBA(x, to*16+dy, src.RGBAAt(x/2, y*8+dy/2))
+	if key := (tallKey{v.Seq, note.Show, note.Text, from}); p.tallImg == nil || key != p.tallKey { // spread the page again only when it changed: this is per pixel, every frame was most of a slow machine's time
+		p.tallKey = key
+		src := p.pg.px
+		m := image.NewRGBA(image.Rect(0, 0, w, h))
+		for to, y := range from {
+			for dy := 0; dy < 16; dy++ {
+				row := m.Pix[(to*16+dy)*m.Stride:]
+				srow := src.Pix[(y*8+dy/2)*src.Stride:]
+				for x := 0; x < w; x++ {
+					copy(row[x*4:x*4+4], srow[x/2*4:x/2*4+4])
+				}
 			}
 		}
+		if extra != nil {
+			extra(m)
+		}
+		if p.tallImg == nil {
+			p.tallImg = gpu.NewImage(w, h)
+		}
+		p.tallImg.WritePixels(m.Pix)
 	}
-	if extra != nil {
-		extra(m)
-	}
-	if p.tallImg == nil {
-		p.tallImg = gpu.NewImage(w, h)
-	}
-	p.tallImg.WritePixels(m.Pix)
 	dst.Fill(color.Black)
 	b := dst.Bounds()
 	k := math.Max(1, math.Floor(math.Min(float64(b.Dx())/pal.W, float64(b.Dy())/(h/2)))) / 2 // whole page pixels

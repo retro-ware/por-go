@@ -3,6 +3,7 @@ package blobber
 import (
 	"gpu"
 	"os"
+	"time"
 )
 
 // View is the renderer for a host that owns the game loop and the rules
@@ -179,7 +180,9 @@ func (v *View) Update() {
 func (v *View) Draw(dst *gpu.Image) {
 	b := dst.Bounds()
 	v.g.resize(b.Dx(), b.Dy())
+	t := time.Now()
 	v.g.draw3D(dst, v.g.camera())
+	v.g.slowFrame(time.Since(t))
 }
 
 // DrawMenu draws the Esc menu, when it is open, over what the host drew on the view.

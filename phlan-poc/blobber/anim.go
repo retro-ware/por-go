@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"path"
 
-	"gpu"
 	"golang.org/x/image/draw"
+	"gpu"
 )
 
 // PxPerTile is every painted monster's pixel density: Scaled resamples to it, so a small monster

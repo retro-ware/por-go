@@ -108,8 +108,17 @@ func memberPick(p Pick) bool {
 // PartyMenu = ovr17:0161. Returns when the player begins adventuring or
 // loads a game that starts play (beginFlag != 0).
 func (e *Engine) PartyMenu() {
-	e.Music(3) // Amiga 0x2D35C
-	e.set = 3  // DS:5376 = 3
+	e.Music(3)     // Amiga 0x2D35C
+	e.set = 3      // DS:5376 = 3
+	if e.Explore { // -explore: straight into the 3D view (debugging the renderer); GameLoop clears it
+		if len(e.party) == 0 {
+			e.QuickStart()
+		}
+		if len(e.party) > 0 {
+			e.beginFlag = 4
+			return
+		}
+	}
 	var names []string
 	var enabled []bool
 	for i, m := range partyMenu {

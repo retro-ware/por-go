@@ -3,6 +3,9 @@ package engine
 // The adventuring loop: ovr04:31B4/32F8 (game loop and area change),
 // ovr15 (command input, movement, doors) and ovr21 (clock).
 
+// tourDone is area 0's TourDone (names/area0.txt): Rolf's tour runs while it is 0.
+const tourDone = 0x4AC5
+
 // GameLoop = ovr04:32F8: load the current area, run its start events, then
 // take commands until the script quits.
 func (e *Engine) GameLoop() {
@@ -23,6 +26,12 @@ func (e *Engine) GameLoop() {
 	// the byte code)
 	e.LoadArea(int(e.gs.areaKind))
 	e.InitAreaScript()
+	if e.Explore { // -explore: no guided tour of Phlan either
+		e.Explore = false
+		if fresh && e.gs.areaKind == 0 {
+			e.setAreaVar(tourDone, 1)
+		}
+	}
 	e.RunECL(e.es.events[4])
 	if e.beginFlag != 3 {
 		if r.needFrame == 1 {

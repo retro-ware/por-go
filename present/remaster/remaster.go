@@ -57,6 +57,7 @@ type Presenter struct {
 	mainAt      time.Time                   // when the main menu first showed the backdrop
 	layer       *gpu.Image                  // the main menu drawn for its fade in
 	tallImg     *gpu.Image                  // the credits or saved games, spread (credits.go)
+	tallKey     tallKey                     // what tallImg shows
 	cards       []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
 	faces       map[image.Image]image.Image // card art cropped from each paper-doll head
 	inside      bool                        // the view has the inside ceiling

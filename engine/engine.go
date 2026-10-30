@@ -157,6 +157,7 @@ type Engine struct {
 	vox          voice // voice.go: the voice-over
 
 	DevAction func() // run once at the next adventuring command prompt (POR_DEV)
+	Explore   bool   // -explore: no intro, a Quick Start party when there is none, begin adventuring at once
 }
 
 // Dice = ovr25:0DE3 Dice(n, sides): sum of n rolls of 1..sides, kept in a

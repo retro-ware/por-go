@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"por"
 	"por/adf"
 	"por/amiga"
 	"por/dax"
@@ -81,6 +82,30 @@ func importGame(src, dst string) error {
 		if err := os.WriteFile(filepath.Join(out, strings.ToUpper(base)), b, 0o644); err != nil {
 			return err
 		}
+	}
+	return writeCover(dst)
+}
+
+// setupData makes an installation whole once the game's files are in dst:
+// the port's own assets (the text scripts) and the cover picture.
+func setupData(dst string) error {
+	const scripts = "data/assets/scripts"
+	err := fs.WalkDir(por.Assets, scripts, func(p string, d fs.DirEntry, err error) error { // not os.CopyFS: a rerun overwrites
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := por.Assets.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		out := filepath.Join(dst, engine.AssetsDir, "scripts", filepath.FromSlash(strings.TrimPrefix(p, scripts+"/")))
+		if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(out, b, 0o644)
+	})
+	if err != nil {
+		return err
 	}
 	return writeCover(dst)
 }

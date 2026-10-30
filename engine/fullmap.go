@@ -2,6 +2,7 @@ package engine
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"image"
 	"os"
@@ -407,14 +408,26 @@ func (e *Engine) mapImage(cell int) image.Image {
 		return nil
 	}
 	n := 16 * cell
-	p := &pixels{n, n, make([]uint8, n*n)}
+	mc := &e.ext.mapCache
+	if len(mc.pix) != n*n {
+		mc.pix = make([]uint8, n*n)
+	}
+	p := &pixels{n, n, mc.scratch[:0]}
+	p.pix = append(p.pix, make([]uint8, n*n)...)
+	mc.scratch = p.pix
 	m := e.labels()
 	_, letter, _ := legend(m)
 	e.drawMap(p, 0, 0, cell, m, letter)
+	if mc.img != nil && mc.pal == e.pal && bytes.Equal(p.pix, mc.pix) { // the same picture: the presenters keep their upload
+		return mc.img
+	}
+	mc.pal = e.pal
+	copy(mc.pix, p.pix)
 	out := image.NewRGBA(image.Rect(0, 0, n, n))
 	for i, c := range p.pix {
 		out.SetRGBA(i%n, i/n, e.pal.RGBA(c))
 	}
+	mc.img = out
 	return out
 }
 

@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"gpu"
 	"gpu/vector"
@@ -1119,6 +1121,13 @@ type Game struct {
 	sel                                         int
 	scene                                       *gpu.Image
 	shader, texShader                           *gpu.Shader
+	lights                                      []*ent       // the entities giving light this frame (lightsOn)
+	vs                                          []gpu.Vertex // drawQuad's scratch
+	idx                                         []uint16
+	lat                                         []vert // drawQuad's corner lattice
+	latOK                                       []bool
+	lowDetail                                   bool // slowFrame: coarser planes on a slow machine
+	slowN, slowHits                             int
 }
 
 var dirs = [4][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
@@ -1632,78 +1641,150 @@ func visibleCells(c cam) map[[2]int]bool {
 // light adds the moving lights' colour at v; distance darkness is the shader's (look.go).
 func (g *Game) light(v *vert) {
 	v.r, v.g, v.b = 0, 0, 0
-	for _, e := range ents {
-		if e.light > 0 {
-			d := (v.x-e.x)*(v.x-e.x) + (v.y-e.y)*(v.y-e.y) + (v.z-e.z)*(v.z-e.z)
-			a := e.light / (1 + 0.5*d*d/e.light)
-			v.r, v.g, v.b = v.r+a*e.lr, v.g+a*e.lg, v.b+a*e.lb
-		}
+	for _, e := range g.lights {
+		d := (v.x-e.x)*(v.x-e.x) + (v.y-e.y)*(v.y-e.y) + (v.z-e.z)*(v.z-e.z)
+		a := e.light / (1 + 0.5*d*d/e.light)
+		v.r, v.g, v.b = v.r+a*e.lr, v.g+a*e.lg, v.b+a*e.lb
 	}
 	v.r, v.g, v.b = math.Min(1, v.r), math.Min(1, v.g), math.Min(1, v.b)
 }
 
+// slowFrame watches how long the frames take: a machine that needs over
+// 50 ms for most of a second's frames gets low detail (planeSub) for the
+// rest of the run. ponytail: sticky; a quality option in the Esc menu if
+// anyone wants it back.
+func (g *Game) slowFrame(d time.Duration) {
+	if g.lowDetail {
+		return
+	}
+	g.slowN++
+	if d > 50*time.Millisecond {
+		g.slowHits++
+	}
+	if g.slowN >= 20 {
+		if g.slowHits*4 >= g.slowN*3 {
+			g.lowDetail = true
+			log.Println("blobber: slow frames, low detail from now on")
+		}
+		g.slowN, g.slowHits = 0, 0
+	}
+}
+
+// planeSub is how finely the floor and ceiling are cut per cell for the
+// lighting: 3x3, or 1 on a slow machine.
+func (g *Game) planeSub() int {
+	if g.lowDetail {
+		return 1
+	}
+	return 3
+}
+
+// lightsOn collects the entities that give light, once a frame for light.
+func (g *Game) lightsOn() {
+	g.lights = g.lights[:0]
+	for _, e := range ents {
+		if e.light > 0 {
+			g.lights = append(g.lights, e)
+		}
+	}
+}
+
 // drawQuad subdivides, lights, transforms, near-clips and projects one textured quad.
+// The pieces go to the GPU in one draw call with one set of options: a frame has
+// thousands of them (the floor and ceiling are cut 3x3 per visible cell), and a slow
+// CPU spent most of a frame on per-piece options, uniform packing and garbage.
 func (g *Game) drawQuad(dst *gpu.Image, c cam, f *face) {
 	ni, nj := f.sub, f.sub
 	if f.only != nil {
 		ni, nj = f.grid[0]*f.sub, f.grid[1]*f.sub
 	}
+	cr, sr := math.Cos(c.roll), math.Sin(c.roll)
+	alpha := float32(1)
+	if f.mode == modeGlow {
+		alpha = 0
+	}
+	g.vs, g.idx = g.vs[:0], g.idx[:0]
+	var op *gpu.DrawTrianglesShaderOptions
+	flush := func() {
+		if len(g.idx) > 0 {
+			if op == nil {
+				op = g.faceOptions(c, f)
+			}
+			dst.DrawTrianglesShader(g.vs, g.idx, g.texShader, op)
+		}
+		g.vs, g.idx = g.vs[:0], g.idx[:0]
+	}
+	bil := func(s, t float64) vert {
+		a, b := lerp(f.v[0], f.v[1], s), lerp(f.v[3], f.v[2], s)
+		v := lerp(a, b, t)
+		switch f.mode {
+		case modeShaded:
+			g.light(&v)
+		case modeGlow:
+			v.r, v.g, v.b = f.tint[0], f.tint[1], f.tint[2]
+		}
+		// to camera space (x right, y down, z forward)
+		dx, dz := v.x-c.x, v.z-c.z
+		v.x, v.z = dx*c.rtx+dz*c.rtz, dx*c.fwx+dz*c.fwz
+		return v
+	}
+	// the pieces' corners, each lit and transformed once (a corner is shared by up to four pieces)
+	nw := nj + 1
+	if need := (ni + 1) * nw; cap(g.lat) < need {
+		g.lat, g.latOK = make([]vert, need), make([]bool, need)
+	} else {
+		g.lat, g.latOK = g.lat[:need], g.latOK[:need]
+		clear(g.latOK)
+	}
+	at := func(i, j int) vert {
+		k := i*nw + j
+		if !g.latOK[k] {
+			g.lat[k], g.latOK[k] = bil(float64(i)/float64(ni), float64(j)/float64(nj)), true
+		}
+		return g.lat[k]
+	}
+	var poly [4]vert
+	var out [8]vert
 	for i := 0; i < ni; i++ {
 		for j := 0; j < nj; j++ {
 			if f.only != nil && !f.only[[2]int{f.org[0] + i/f.sub, f.org[1] + j/f.sub}] {
 				continue
 			}
-			s0, s1, t0, t1 := float64(i)/float64(ni), float64(i+1)/float64(ni), float64(j)/float64(nj), float64(j+1)/float64(nj)
-			bil := func(s, t float64) vert {
-				a, b := lerp(f.v[0], f.v[1], s), lerp(f.v[3], f.v[2], s)
-				v := lerp(a, b, t)
-				switch f.mode {
-				case modeShaded:
-					g.light(&v)
-				case modeGlow:
-					v.r, v.g, v.b = f.tint[0], f.tint[1], f.tint[2]
-				}
-				// to camera space (x right, y down, z forward)
-				dx, dz := v.x-c.x, v.z-c.z
-				v.x, v.z = dx*c.rtx+dz*c.rtz, dx*c.fwx+dz*c.fwz
-				return v
-			}
-			poly := []vert{bil(s0, t0), bil(s1, t0), bil(s1, t1), bil(s0, t1)}
+			poly = [4]vert{at(i, j), at(i+1, j), at(i+1, j+1), at(i, j+1)}
 			// clip against near plane
-			var out []vert
+			n := 0
 			for k := range poly {
 				a, b := poly[k], poly[(k+1)%4]
 				if a.z >= near {
-					out = append(out, a)
+					out[n] = a
+					n++
 				}
 				if (a.z >= near) != (b.z >= near) {
-					out = append(out, lerp(a, b, (near-a.z)/(b.z-a.z)))
+					out[n] = lerp(a, b, (near-a.z)/(b.z-a.z))
+					n++
 				}
 			}
-			if len(out) < 3 {
+			if n < 3 {
 				continue
 			}
-			cr, sr := math.Cos(c.roll), math.Sin(c.roll)
-			vs := make([]gpu.Vertex, len(out))
-			for k, v := range out {
+			if len(g.vs)+n > 0xFFFF { // uint16 indices
+				flush()
+			}
+			base := uint16(len(g.vs))
+			for _, v := range out[:n] {
 				iz := 1 / v.z
 				px, py := v.x*focal*iz, v.y*focal*iz
 				// perspective-correct: u/z, v/z, 1/z in Custom0..2 (SrcX/Y get the atlas origin added, so they can't carry it)
-				a := float32(1)
-				if f.mode == modeGlow {
-					a = 0
-				}
-				vs[k] = gpu.Vertex{DstX: float32(float64(W)/2 + px*cr - py*sr), DstY: float32(float64(H)/2 + px*sr + py*cr),
-					ColorR: float32(v.r), ColorG: float32(v.g), ColorB: float32(v.b), ColorA: a,
-					Custom0: float32(v.u * iz), Custom1: float32(v.v * iz), Custom2: float32(iz), Custom3: float32(v.y * iz)}
+				g.vs = append(g.vs, gpu.Vertex{DstX: float32(float64(W)/2 + px*cr - py*sr), DstY: float32(float64(H)/2 + px*sr + py*cr),
+					ColorR: float32(v.r), ColorG: float32(v.g), ColorB: float32(v.b), ColorA: alpha,
+					Custom0: float32(v.u * iz), Custom1: float32(v.v * iz), Custom2: float32(iz), Custom3: float32(v.y * iz)})
 			}
-			var idx []uint16
-			for k := 1; k+1 < len(out); k++ {
-				idx = append(idx, 0, uint16(k), uint16(k+1))
+			for k := 1; k+1 < n; k++ {
+				g.idx = append(g.idx, base, base+uint16(k), base+uint16(k+1))
 			}
-			dst.DrawTrianglesShader(vs, idx, g.texShader, g.faceOptions(c, f))
 		}
 	}
+	flush()
 }
 
 // drawSky fills the upper half with the ceiling texture as a panorama: the picture and its mirror
@@ -1864,7 +1945,7 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		x0, z0, x1, z1 := c.x-span, c.z-span, c.x+span, c.z+span
 		u := func(x float64) float64 { return x/size + wind }
 		f := q(vert{x0, hgt, z0, u(x0), z0 / size, 0, 0, 0}, vert{x1, hgt, z0, u(x1), z0 / size, 0, 0, 0},
-			vert{x1, hgt, z1, u(x1), z1 / size, 0, 0, 0}, vert{x0, hgt, z1, u(x0), z1 / size, 0, 0, 0}, clouds, 24)
+			vert{x1, hgt, z1, u(x1), z1 / size, 0, 0, 0}, vert{x0, hgt, z1, u(x0), z1 / size, 0, 0, 0}, clouds, 8*g.planeSub())
 		f.pass, f.mode = -1, modeUnlit
 	}
 	cells := make([][2]int, 0, len(visibleCells(c)))
@@ -1887,7 +1968,7 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		x0, z0, x1, z1 := float64(lo[0]), float64(lo[1]), float64(hi[0]+1), float64(hi[1]+1)
 		w, h := x1-x0, z1-z0
 		plane := func(y float64, t *gpu.Image) {
-			f := q(vert{x0, y, z0, 0, 0, 0, 0, 0}, vert{x1, y, z0, w, 0, 0, 0, 0}, vert{x1, y, z1, w, h, 0, 0, 0}, vert{x0, y, z1, 0, h, 0, 0, 0}, t, 3)
+			f := q(vert{x0, y, z0, 0, 0, 0, 0, 0}, vert{x1, y, z0, w, 0, 0, 0, 0}, vert{x1, y, z1, w, h, 0, 0, 0}, vert{x0, y, z1, 0, h, 0, 0, 0}, t, g.planeSub())
 			f.pass, f.dist, f.grid, f.org, f.only = 0, 1e9, [2]int{int(w), int(h)}, lo, vis
 		}
 		if openSky { // under it, ground out to the horizon (the sea on a coast), so no sky shows below it
@@ -2121,6 +2202,7 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		}
 		return faces[i].dist > faces[j].dist
 	})
+	g.lightsOn()
 	for _, f := range faces {
 		g.drawQuad(dst, c, f)
 	}

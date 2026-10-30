@@ -23,7 +23,7 @@ import (
 // opening a window that A then confirms in) must not fire again.
 var (
 	padHeld, padJust = map[gpu.Key]bool{}, map[gpu.Key]bool{}
-	padWas           = map[[2]int]bool{}    // gamepad id, button (or stick direction 100+) held last frame
+	padWas           = map[[2]int]bool{} // gamepad id, button (or stick direction 100+) held last frame
 	padDur           = map[gpu.Key]int{} // frames each pad key has been held
 )
 

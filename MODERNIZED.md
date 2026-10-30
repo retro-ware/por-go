@@ -129,7 +129,7 @@ How the original was read, so another game can be read the same way:
 - `cmd/por` is the game. Its flags: `-data DIR`, `-scale N` (default 3:
   a 960x720 4:3 window, `pal.W*scale` by `pal.H*scale*6/5`, resizable,
   laid out in device pixels so Retina renders at native resolution),
-  `-import DIR`, `-import-disk2 DIR`, `-cover`. Keys are converted to
+  `-import DIR`, `-import-disk2 DIR`, `-setup`, `-explore` (debug: no intro, a Quick Start party, no tour, straight into the 3D view). Keys are converted to
   BIOS-style codes (`biosKey`) and then to actions by the presenter; Ctrl-S
   toggles sound, Ctrl-F / Ctrl-Shift-F cycle the font, Ctrl-C quits. The
   gamepad (standard layout): d-pad and left stick walk, A selects, B is
@@ -142,7 +142,7 @@ How the original was read, so another game can be read the same way:
   the window and exit), `POR_KEYS` (scripted keys one every quarter second:
   `\r` Enter, `\e` Esc, `\U \D \L \R` arrows, `\1..\8` F-keys, `\t` Tab,
   `\M \C` right/left click at `POR_POINTER=x,y;x,y`, `\P` next pointer
-  position), `POR_PNG` (a dropped portrait), `POR_SCRIPTS_OUT`. Shot
+  position), `POR_PNG` (a dropped portrait), `POR_SCRIPTS_OUT`, `POR_FPS=1` (a frame-rate line a second: where a frame's time goes), `POR_CPUPROFILE=file` (a CPU profile of the first 20 seconds), `POR_STACKS=n` (every goroutine to stderr every n seconds). Shot
   windows open unfocused and ignore the user's input while they run (a
   global rule: captures must not take stray keys).
 
@@ -235,7 +235,7 @@ DOS install for the decompilation tools only.
   every goplay engine's `-import`. It ships beside `por` and is driven by
   `import.toml` at the repo root: the DOS source is marked by `TITLE.DAX`
   and `8X8D1.DAX` (excluding `SKY.DAX`/`BIGPIC1.DAX`), `*.DAX`, `POOL.CFG`
-  and `ITEMS` are copied to `data/dos` upper-cased, then `./por -cover`
+  and `ITEMS` are copied to `data/dos` upper-cased, then `./por -setup`
   runs; an optional Amiga source copies `*.ADF` to `data/ADF` and runs
   `./por -import-disk2 data/ADF -data data`. Releases come from
   `.github/workflows/release.yml` on `v*` tags (`CGO_ENABLED=0`, macOS
@@ -1356,7 +1356,7 @@ art for the same blocks. The port can play with the Amiga art and music:
 
 | Tool | Where | What |
 |---|---|---|
-| `cmd/por` | repo | the game; `-import`, `-import-disk2`, `-cover`; `POR_*` env for headless shots and dev scenes (`engine/devviews.go`) |
+| `cmd/por` | repo | the game; `-import`, `-import-disk2`, `-setup` (writes the embedded text scripts and the cover); `POR_*` env for headless shots and dev scenes (`engine/devviews.go`) |
 | `build_n_run.sh` | repo root | build and play |
 | `cmd/eclscript` | repo | ECL → text scripts (`data/assets/scripts`) |
 | `cmd/ecl` | repo | list one ECL block as opcodes |

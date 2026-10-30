@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"image"
+	"por/pal"
 	"strconv"
 	"time"
 )
@@ -40,34 +42,39 @@ type extras struct {
 	list      bool                // the menu belongs to a scrolling list
 	choosing  bool                // SelectCharacter is waiting: highlight the roster entry
 	seen      map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
-	voiced    map[string]bool     // voice.go: the recordings this save has heard
-	quick     *quickPick          // CreateCharacter answers its own menus (quickstart)
-	minStats  [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
-	guarded   bool                // slots.go: a load can unwind to adventure
-	inGame    bool                // slots.go: GameLoop has started: saving allowed
-	aoe       int                 // aoe.go: radius+1 of the spell being aimed, 0 none
-	bolt      [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
-	aoeSpell  int                 // aoe.go: the spell being aimed
+	mapCache  struct {            // mapImage's last picture, so an unchanged map is not converted and uploaded again
+		pix, scratch []uint8
+		pal          pal.Regs
+		img          image.Image
+	}
+	voiced   map[string]bool // voice.go: the recordings this save has heard
+	quick    *quickPick      // CreateCharacter answers its own menus (quickstart)
+	minStats [6]int          // "Minimal stats": per-stat floor, STR as st*100+str00
+	guarded  bool            // slots.go: a load can unwind to adventure
+	inGame   bool            // slots.go: GameLoop has started: saving allowed
+	aoe      int             // aoe.go: radius+1 of the spell being aimed, 0 none
+	bolt     [2]int          // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
+	aoeSpell int             // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
-	held          Action                  // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
-	nav           navCtx                  // the waiting menu
-	regions       []region                // clickable parts of the screen
-	castCancelled bool                    // CastSpell: the player cancelled the aim (the turn goes on)
-	raw           bool                    // the screen reads the arrows itself
-	typing        bool                    // InputString is waiting
-	modal         int                     // help or overview shown: any key closes
-	enemiesOnly   bool                    // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
-	picker        bool                    // the list has no menu words: a click picks (listmenu.go)
-	floor         int                     // regions below belong to the screen under the modal one
-	menuFloor     int                     // menu bars open under the modal screen
-	viewing       bool                    // the View page's own menu is waiting
-	toItems       bool                    // the next View opens on the inventory (F1-F8)
-	campBar       bool                    // a camp menu bar is waiting: F1-F8 change the member
-	ordering      bool                    // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
-	sels          map[string]int          // the highlighted item each menu was left with
-	listWord      map[string]Choice       // a list menu's highlighted word, kept across pages
-	selSet        bool                    // the caller set the highlight (YesNo): keep it
+	held          Action            // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
+	nav           navCtx            // the waiting menu
+	regions       []region          // clickable parts of the screen
+	castCancelled bool              // CastSpell: the player cancelled the aim (the turn goes on)
+	raw           bool              // the screen reads the arrows itself
+	typing        bool              // InputString is waiting
+	modal         int               // help or overview shown: any key closes
+	enemiesOnly   bool              // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
+	picker        bool              // the list has no menu words: a click picks (listmenu.go)
+	floor         int               // regions below belong to the screen under the modal one
+	menuFloor     int               // menu bars open under the modal screen
+	viewing       bool              // the View page's own menu is waiting
+	toItems       bool              // the next View opens on the inventory (F1-F8)
+	campBar       bool              // a camp menu bar is waiting: F1-F8 change the member
+	ordering      bool              // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
+	sels          map[string]int    // the highlighted item each menu was left with
+	listWord      map[string]Choice // a list menu's highlighted word, kept across pages
+	selSet        bool              // the caller set the highlight (YesNo): keep it
 
 	// fullmap.go
 	labels  map[int]map[int]mapLabel // per area: square -> label

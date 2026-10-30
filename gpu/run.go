@@ -2,6 +2,8 @@ package gpu
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -33,6 +35,8 @@ var win struct {
 	fps      float64
 	frames   int
 	fpsStart time.Time
+	drawT    time.Duration // in Draw and in present since fpsStart (POR_FPS)
+	presentT time.Duration
 
 	// the screen's place in the framebuffer (for the cursor)
 	ox, oy, k float64
@@ -168,13 +172,22 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 			screen = NewImage(sw, sh)
 		}
 		screen.Clear()
+		t0 := time.Now()
 		g.Draw(screen)
+		win.drawT += time.Since(t0)
 		win.k = min(float64(fw)/float64(sw), float64(fh)/float64(sh))
 		win.ox, win.oy = (float64(fw)-float64(sw)*win.k)/2, (float64(fh)-float64(sh)*win.k)/2
+		t1 := time.Now()
 		present(screen, view, fw, fh)
+		win.presentT += time.Since(t1)
 		win.frames++
 		if d := now.Sub(win.fpsStart).Seconds(); d >= 1 {
+			if os.Getenv("POR_FPS") != "" { // POR_FPS=1: a line a second with the frame rate and where a frame's time goes
+				n := time.Duration(max(win.frames, 1))
+				fmt.Fprintf(os.Stderr, "fps %.1f  frame %v  draw %v  present %v\n", float64(win.frames)/d, time.Duration(d*float64(time.Second))/n, win.drawT/n, win.presentT/n)
+			}
 			win.fps, win.frames, win.fpsStart = float64(win.frames)/d, 0, now
+			win.drawT, win.presentT = 0, 0
 		}
 	})
 	if err := app.Run(); err != nil {

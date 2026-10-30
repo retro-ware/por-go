@@ -1,4 +1,4 @@
-# Read by gameimport (shipped beside por): it asks for the game and copies it into data/.
+# Read by gameimport (shipped beside por): it asks for the game, copies it into data/ and runs the setup steps.
 game = "Pool of Radiance"
 
 [[source]]
@@ -9,7 +9,7 @@ exclude  = ["SKY.DAX", "BIGPIC1.DAX"] # Curse of the Azure Bonds
 files    = ["*.DAX", "POOL.CFG", "ITEMS"]
 dest     = "data/dos"
 upper    = true
-run      = ["./por", "-cover"]
+run      = ["./por", "-setup"] # the port's own files (the area scripts) and the cover picture
 
 [[source]]
 name     = "the Amiga disks"

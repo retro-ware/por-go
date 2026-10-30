@@ -31,6 +31,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"time"
@@ -78,6 +79,7 @@ func (g *game) Update() error {
 				g.rightOnce, g.leftOnce = c == shotRight, c == shotLeft
 			case shotNext: // \P: the pointer moves on to the next of POR_POINTER's x,y;x,y...
 				shotPointer++
+			case shotWait: // \w
 			default:
 				g.push(shotKeys[k-1])
 				g.act()
@@ -315,15 +317,16 @@ func (g *game) Draw(dst *gpu.Image) {
 // meanwhile. POR_DEV names a dev scene (engine.DevScene) to start at the
 // first adventuring prompt. POR_POINTER=x,y puts the pointer there. POR_KEYS escapes: \r Enter, \e Escape, \U \D \L \R the
 // arrows, \1..\8 F1..F8, \M and \C a right and a left click at the
-// pointer, \P the pointer on to the next of POR_POINTER's x,y;x,y... positions.
+// pointer, \P the pointer on to the next of POR_POINTER's x,y;x,y... positions, \w a quarter second of nothing (a
+// long capture: the FPS of a view).
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
 
-const shotRight, shotLeft, shotNext = 0xFF01, 0xFF02, 0xFF03 // scriptKeys' codes for \M, \C, \P
+const shotRight, shotLeft, shotNext, shotWait = 0xFF01, 0xFF02, 0xFF03, 0xFF04 // scriptKeys' codes for \M, \C, \P, \w
 
 var shotPointer int // the position of POR_POINTER in use
 
 func scriptKeys(s string) []uint16 {
-	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00, 'M': shotRight, 'C': shotLeft, 'P': shotNext}
+	esc := map[byte]uint16{'r': 13, 'e': 27, 'U': 0x4800, 'D': 0x5000, 'L': 0x4B00, 'R': 0x4D00, 'M': shotRight, 'C': shotLeft, 'P': shotNext, 'w': shotWait}
 	for n := range 8 { // \1..\8: F1..F8
 		esc['1'+byte(n)] = remaster.KeyF1 + uint16(n)<<8
 	}
@@ -405,10 +408,26 @@ func main() {
 	scale := flag.Int("scale", 3, "window scale")
 	imp := flag.String("import", "", "copy the game found under this directory into -data, then exit (goplay)")
 	imp2 := flag.String("import-disk2", "", "convert the Amiga graphics from the .adf disks under this directory into -data/amiga, then exit (goplay)")
-	cover := flag.Bool("cover", false, "write data/COVER.PNG from data/dos/TITLE.DAX, then exit (gameimport)")
+	explore := flag.Bool("explore", false, "debug: skip the intro, Quick Start a party if there is none and begin adventuring at once")
+	setup := flag.Bool("setup", false, "one-time setup after the game was imported: write the area scripts into data/assets/scripts and data/COVER.PNG from data/dos/TITLE.DAX, then exit (gameimport)")
 	flag.Parse()
-	if *cover {
-		if err := writeCover("data"); err != nil {
+	if p := os.Getenv("POR_CPUPROFILE"); p != "" { // slowness: a CPU profile of the first 20 seconds, for go tool pprof
+		if f, err := os.Create(p); err == nil {
+			pprof.StartCPUProfile(f)
+			time.AfterFunc(20*time.Second, func() { pprof.StopCPUProfile(); f.Close() })
+		}
+	}
+	if n, err := strconv.Atoi(os.Getenv("POR_STACKS")); err == nil { // a hang: every goroutine to stderr every n seconds
+		go func() {
+			for range time.Tick(time.Duration(n) * time.Second) {
+				buf := make([]byte, 1<<20)
+				fmt.Fprintf(os.Stderr, "--- stacks %s\n", time.Now().Format(time.TimeOnly))
+				os.Stderr.Write(buf[:runtime.Stack(buf, true)])
+			}
+		}()
+	}
+	if *setup {
+		if err := setupData("data"); err != nil {
 			log.Fatal(err)
 		}
 		return
@@ -468,6 +487,9 @@ func main() {
 		}()
 	}
 	eng.Cfg.Param = flag.Arg(0)
+	if *explore {
+		eng.Explore, eng.Cfg.FullIntro = true, false
+	}
 	if d := os.Getenv("POR_DEV"); d != "" { // POR_DEV=combat: a dev scene at the first prompt, for captures
 		eng.DevAction = eng.DevScene(d)
 	}
