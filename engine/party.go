@@ -181,7 +181,13 @@ func (e *Engine) PartyMenu() {
 			mBack
 		)
 		enabled[mQuick] = len(e.party) == 0
-		order := []int{mBegin, mParty, mLoad, mQuick, mExit} // extra: the remaster's main menu
+		// extra: the remaster's main menu; Load Game leads when there are
+		// saved games and is hidden without them, Quick Start leading then
+		order := []int{mBegin, mLoad, mParty, mQuick, mExit}
+		if len(e.slots()) == 0 {
+			enabled[mLoad] = false
+			order = []int{mBegin, mQuick, mParty, mExit}
+		}
 		if sub {
 			order = []int{mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mBack}
 		}
