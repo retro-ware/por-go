@@ -1,6 +1,9 @@
 # por-go
 
 A Go port of *Pool of Radiance* (SSI, 1988), with a modernized interface.
+`MODERNIZED.md` describes everything the port changes from the original
+(the 3D views, the voice-over, the interface) and how to do it again for
+another Gold Box game; `PORT_CHECKLIST.md` lists each change with its code.
 
 No game data is included. The engine reads the original game files (the
 `.DAX` files, `ITEMS`) from your own copy of the game at run time. The rule
