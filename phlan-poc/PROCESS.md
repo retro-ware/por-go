@@ -102,7 +102,7 @@ the slums p-z and B D I L M),
 
 ## 3. Engine features in the copy (already in place, reuse)
 
-All in `blobber/blobber.go` and `cmd/blobber/host.go`:
+All in `blobber/blobber.go` (the game's presenter, present/remaster, hosts it):
 
 - **PoR projection**: eye 0.75 squares from the wall ahead, focal 42/88 of
   the view, walls 64/56 tall, eye 0.5 above the floor (`focalW`, `wallTop`,
@@ -190,20 +190,24 @@ the harbour blues, tile with a half-shift blend; `tile` regrades from raw/).
 
 assets/walls holds only the textures some PoR map uses. A texture a new map needs is generated again by make_textures.py or make_sky.py. There are no painted monster sprites: PoR fights in the classic engine.
 
-```bash
-cd blobber && go build -o $SCRATCH/blobber-poc ./cmd/blobber
-```
+The blobber is a library of the game (present/remaster draws it): `go build
+-o por ./cmd/por` in the repo root; `POR_OPEN=map:NAME:X:Y:D` opens it on a
+map's square without a save.
 
 ## 6. Compare (`compare/compare.py AREA`)
 
 - `views` in `areas.py` = list of `(x, y, facing)` in PoR squares. For a
   first pass take 15-20 random reachable squares and facings
   (`random.Random(seed).sample(land, n)`), then add targeted views.
-- The test loads the area's GEO, wall sets and area kind from `areas.py`.
-  Each PoC shot has a 60 s timeout, so a hung window can't pile up.
-- Renders the original through a temporary engine test (written, run,
-  deleted), shoots the PoC, crops symmetrically, writes
-  `compare/comparison.jpg` with numbered labels.
+- The original's views come from the test-only copy of its renderer
+  (`engine/classic3d_test.go`, `POR_CLASSIC="SET GEO KIND WALLS VIEWS OUT"
+  go test ./engine -run TestClassicViews`), fed the area's GEO, wall sets
+  and area kind from `areas.py`; the remaster's from the game itself
+  (`POR_OPEN=map:NAME:X:Y:D POR_SHOT=... POR_KEYS='\w\w\w\w' ./por -window
+  -scale 3`, built as `./por` in the repo root, one instance at a time, 60 s
+  timeout each), the middle square of the frame cropped. Both side by side in
+  `compare/AREA.jpg` with numbered labels (`AREA-check.jpg` for views given
+  on the command line).
 - Pick views that cover: every wall value, wall-to-wall joins, doors,
   corridors seen from the side, map edges, water/harbour.
 - **Only reachable squares.** Views from squares no party can stand on

@@ -29,8 +29,12 @@ and compared (PROCESS.md).
 | [x] | Yarash's Pyramid (two levels) | 8/16 | 8/16, 8/30 | 8: 9, 20, 23 / 9, 17, 23 |
 | [x] | Ruined castle in the quagmire (kobolds) | 8/27 | 8/27 | 8: 17 |
 | [x] | Kuto's Well (surface and below) | 8/29 | 8/29, 8/32 | 8: 3, 20, 1 / 18, 17, 1 |
+| [x] | Mountains (wilderness 3D part; the Dragon Cave keeps it) | 6/25 | 6/25 | 6: 17, 17, 17 |
+| [x] | Wilderness by the city (3D part) | 7/26 | 7/26 | 7: 7, 8, 23 |
 
-Not counted: the wilderness scripts (6/25, 7/26, 8/27's outer part) load
-GEO 4/5/6 with `4 4 0`, the overland travel map, and 6/19 (a cave) is text
-only. Names marked by a description instead of a proper name could not be
-pinned from the script text alone.
+The wilderness scripts (6/25, 7/26) travel the overland maps GEO 6/4 and 7/5
+(`4 4 0`, icons) but switch to the 3D view with `LoadMap(Mountains)` /
+`LoadMap(Wilderness)` for their 3D parts, listed above. Not counted: 8/27's
+outer part (overland only) and 6/19 (a cave), which is text only. Names
+marked by a description instead of a proper name could not be pinned from
+the script text alone.

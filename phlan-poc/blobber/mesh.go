@@ -155,10 +155,13 @@ const (
 	layerCircle = -5 // light circles
 )
 
-// Painter's biases: a face sorts this much nearer than its centre. Side walls none; front walls,
-// billboards and glows alike, so they keep their true order; monsters a little more, so they
-// stand over the side walls of their own cell and win a tie against the wall ahead.
-const biasFront, biasMonster = 0.49, 0.51
+// Painter's biases: a face sorts this much nearer than its centre. Billboards and glows alike, so
+// they keep their true order; monsters a little more, so they stand over the side walls of their
+// own cell and win a tie against the wall ahead. Walls all the same, a hair less than the
+// billboards of their cell: the walls then keep their centres' order at any angle (a bias for
+// the walls facing the camera only pulled a face behind a nearer one in front of it mid-turn,
+// a wall seen through another), and a side wall still sorts under the billboards of its cell.
+const biasFront, biasMonster, biasWall = 0.49, 0.51, 0.48
 
 const far = 5000.0 // cells; the projection's depth = projA + projB / z runs 0 at near to 1 at far
 
@@ -772,12 +775,8 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		}
 		wg := w.walls[wr.g]
 		s := sides(0, 0, 1, 1)[wg.side]
-		nx := s.nx*c.rtx + s.nz*c.rtz // the normal's lateral component in camera space: the lit variant, and front faces' bias
-		bias := 0.0
-		if math.Abs(nx) <= 0.5 {
-			bias = biasFront
-		}
-		draw(g.dyn2, [2]int{wr.first, wr.n}, wg.m.face(nx), wg.m.lit, modeShaded, s.nx, s.nz, bias, 0, gpu.BlendSourceOver)
+		nx := s.nx*c.rtx + s.nz*c.rtz // the normal's lateral component in camera space: the lit variant
+		draw(g.dyn2, [2]int{wr.first, wr.n}, wg.m.face(nx), wg.m.lit, modeShaded, s.nx, s.nz, biasWall, 0, gpu.BlendSourceOver)
 	}
 	draw(g.dyn2, circles, texGlow, nil, modeGlow, 0, 0, 0, 0, gpu.BlendLighter)
 	clampUV = 2 // a picture

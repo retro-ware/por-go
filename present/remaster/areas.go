@@ -26,6 +26,8 @@ var areaMaps = map[engine.AreaID]string{
 	22: "swamp",
 	23: "lizvillage",
 	24: "temple",
+	25: "mountains",
+	26: "wilderness",
 	27: "ruined",
 	28: "zhentil",
 	29: "kuto",

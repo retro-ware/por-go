@@ -17,6 +17,7 @@ Keys:
   tile        walls crossfaded at the edges instead of seamed
   noseam      walls a seam would cut through (objects, posts, gaps)
   arch        see-through openings: cut to the original's shape, a dark rim around the cutout
+  shape       low walls with an uneven top (a reed bank): the texture cut to the original's silhouette
   clear       wall value -> boxes (x0, y0, x1, y1 in dump pixels) painted over with the wall colour in the
               reference: things the PoC draws elsewhere (Kuto's well hole and ladder: a prop, see cellprops)
   beds        wall value -> plant textures: a garden bed's wall, not drawn; plants stand over the bed's squares
@@ -445,6 +446,27 @@ AREAS["kuto2"] = dict(  # Kuto's Well, below: ECL8 block 29
     walls={},
 )
 
+AREAS["mountains"] = dict(  # the Mountains wilderness, 3D part (the dragon's cave keeps it): ECL6 block 25
+    geo=(6, 25), walldefs=[(17, 1), (17, 2), (17, 3)], area_kind=25,
+    chunks=['WALLDEF6-017-1', 'WALLDEF6-017-1', 'WALLDEF6-017-1'],
+    start=None, water_walls=set(), free_walls=set(),
+    floor="phlan_dirt", ceiling="sky_phlan",
+    notrim=set(), water=set(), tile=set(), noseam=set(),
+    views=[(9, 3, 'W'), (13, 4, 'N'), (15, 2, 'N'), (14, 2, 'E'), (15, 1, 'S'), (4, 1, 'E'), (7, 3, 'S'), (8, 4, 'W'), (12, 1, 'N'), (10, 5, 'N'), (4, 3, 'S'), (13, 3, 'W'), (8, 0, 'S'), (13, 6, 'E'), (14, 3, 'E'), (11, 4, 'W')],  # random.Random(25), reachable squares
+    walls={},
+)
+
+AREAS["wilderness"] = dict(  # the Wilderness by the city, 3D part: ECL7 block 26
+    geo=(7, 26), walldefs=[(7, 1), (8, 2), (23, 3)], area_kind=26,
+    chunks=['WALLDEF7-007-1', 'WALLDEF7-008-1', 'WALLDEF7-023-1'],
+    start=None, water_walls=set(), free_walls=set(),
+    floor="phlan_dirt", ceiling="sky_phlan",
+    notrim=set(), water=set(), tile=set(), noseam=set(),
+    views=[(13, 13, 'E'), (3, 13, 'W'), (12, 9, 'E'), (3, 14, 'W'), (7, 15, 'E'), (10, 15, 'N'), (9, 15, 'E'), (1, 9, 'E'), (2, 11, 'E'), (14, 10, 'E'), (13, 15, 'W'), (8, 14, 'W'), (0, 14, 'S'), (13, 11, 'E'), (12, 12, 'N'), (11, 11, 'N'),
+           (3, 4, 'E'), (1, 2, 'S'), (10, 5, 'N'), (12, 3, 'W')],  # random.Random(26), reachable squares; then the two thickets the scripts put the party in (trees, pond)
+    walls={},
+)
+
 # The walls first drawn in the areas above (every other value repeats an earlier area's art, areas.origin).
 GATE = ("a crenellated grey stone town wall: a dark blue and black checkered parapet band along the top edge, "
         "below it ")
@@ -579,6 +601,14 @@ NEW = {
         10: "a natural cave wall of dark red rock with a heavy iron-banded door of dark red vertical planks "
             "in the lower middle.",
     },
+    "wilderness": {
+        5: "a low bank of dry marsh reeds along the bottom quarter only: tall yellow-brown reed stalks with "
+           "dark seed heads and a few green blades, standing highest at the left and right edges and sagging "
+           "lower towards the middle; above the reeds nothing is drawn.",
+        9: "a dense thicket of wild green bushes and leafy undergrowth filling the lower two thirds, its top a "
+           "ragged leafy line, a strip of bare brown earth along the bottom; above the thicket nothing is "
+           "drawn.",
+    },
 }
 FLAGS = dict(  # texture flags of the new walls (by area)
     stojanow=dict(noseam={12}, water_walls={12}, cut={12: [(0, 0, 224, 192)]}), library=dict(noseam={8, 9, 11, 13}, pond={11}, water_walls={12},
@@ -589,6 +619,7 @@ FLAGS = dict(  # texture flags of the new walls (by area)
     pyramid=dict(noseam={14}), kuto=dict(arch={8}, clear={8: [(72, 128, 150, 256), (30, 232, 194, 256)]},
                      cellprops={(7, 7): [("well", "floor_kuto_rim", 0.3, 0.12, 0.07, 0.37),
                                          ("prop", "prop_kuto_ladder", 0.65, 0.42, 0.08)]}), kuto2=dict(noseam={2, 10}),
+    wilderness=dict(noseam={5, 9}, shape={5}, props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}),
 )
 
 

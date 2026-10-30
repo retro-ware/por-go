@@ -1,0 +1,396 @@
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+floor phlan_dirt
+ceiling sky_phlan
+face 0 0 2 wall_wilderness_v09
+edge 0 0 2
+face 1 0 2 wall_wilderness_v09
+edge 1 0 2
+face 2 0 2 wall_wilderness_v09
+edge 2 0 2
+face 3 0 2 wall_wilderness_v09
+edge 3 0 2
+face 4 0 2 wall_wilderness_v09
+edge 4 0 2
+face 5 0 2 wall_wilderness_v09
+edge 5 0 2
+face 6 0 2 wall_wilderness_v09
+edge 6 0 2
+face 7 0 2 wall_wilderness_v09
+edge 7 0 2
+face 8 0 2 wall_wilderness_v09
+edge 8 0 2
+face 9 0 2 wall_wilderness_v09
+edge 9 0 2
+face 10 0 2 wall_wilderness_v09
+edge 10 0 2
+face 11 0 2 wall_wilderness_v09
+edge 11 0 2
+face 12 0 2 wall_wilderness_v09
+edge 12 0 2
+face 13 0 2 wall_wilderness_v09
+edge 13 0 2
+face 14 0 2 wall_wilderness_v09
+edge 14 0 2
+face 15 0 2 wall_wilderness_v09
+edge 15 0 2
+face 0 1 0 wall_wilderness_v09
+edge 0 1 0
+face 0 1 3 wall_wilderness_v09
+edge 0 1 3
+face 1 1 0 wall_wilderness_v09
+edge 1 1 0
+face 2 1 0 wall_wilderness_v09
+edge 2 1 0
+face 3 1 0 wall_wilderness_v09
+edge 3 1 0
+face 4 1 0 wall_wilderness_v09
+edge 4 1 0
+face 5 1 0 wall_wilderness_v09
+edge 5 1 0
+face 6 1 0 wall_wilderness_v09
+edge 6 1 0
+face 7 1 0 wall_wilderness_v09
+edge 7 1 0
+face 7 1 1 wall_wilderness_v09
+edge 7 1 1
+face 8 1 0 wall_wilderness_v09
+edge 8 1 0
+face 8 1 3 wall_wilderness_v09
+edge 8 1 3
+face 9 1 0 wall_wilderness_v09
+edge 9 1 0
+face 10 1 0 wall_wilderness_v09
+edge 10 1 0
+face 11 1 0 wall_wilderness_v09
+edge 11 1 0
+face 12 1 0 wall_wilderness_v09
+edge 12 1 0
+face 13 1 0 wall_wilderness_v09
+edge 13 1 0
+face 14 1 0 wall_wilderness_v09
+edge 14 1 0
+face 15 1 0 wall_wilderness_v09
+edge 15 1 0
+face 15 1 1 wall_wilderness_v09
+edge 15 1 1
+face 0 2 3 wall_wilderness_v09
+edge 0 2 3
+face 7 2 1 wall_wilderness_v09
+edge 7 2 1
+face 8 2 3 wall_wilderness_v09
+edge 8 2 3
+face 15 2 1 wall_wilderness_v09
+edge 15 2 1
+face 0 3 3 wall_wilderness_v09
+edge 0 3 3
+edge 2 3 3
+edge 3 3 3
+edge 4 3 2
+edge 4 3 3
+edge 5 3 3
+edge 6 3 3
+face 7 3 1 wall_wilderness_v09
+edge 7 3 1
+face 8 3 3 wall_wilderness_v09
+edge 8 3 3
+face 15 3 1 wall_wilderness_v09
+edge 15 3 1
+face 0 4 3 wall_wilderness_v09
+edge 0 4 3
+edge 1 4 1
+edge 2 4 1
+edge 3 4 1
+edge 5 4 1
+edge 5 4 3
+face 7 4 1 wall_wilderness_v09
+edge 7 4 1
+face 8 4 3 wall_wilderness_v09
+edge 8 4 3
+face 15 4 1 wall_wilderness_v09
+edge 15 4 1
+face 0 5 3 wall_wilderness_v09
+edge 0 5 3
+edge 4 5 0
+face 7 5 1 wall_wilderness_v09
+edge 7 5 1
+face 8 5 3 wall_wilderness_v09
+edge 8 5 3
+face 15 5 1 wall_wilderness_v09
+edge 15 5 1
+face 0 6 3 wall_wilderness_v09
+edge 0 6 3
+face 7 6 1 wall_wilderness_v09
+edge 7 6 1
+face 8 6 3 wall_wilderness_v09
+edge 8 6 3
+face 15 6 1 wall_wilderness_v09
+edge 15 6 1
+face 0 7 3 wall_wilderness_v09
+edge 0 7 3
+face 7 7 1 wall_wilderness_v09
+edge 7 7 1
+face 8 7 3 wall_wilderness_v09
+edge 8 7 3
+face 15 7 1 wall_wilderness_v09
+edge 15 7 1
+face 0 8 2 wall_wilderness_v09
+edge 0 8 2
+face 0 8 3 wall_wilderness_v09
+edge 0 8 3
+face 1 8 2 wall_wilderness_v09
+edge 1 8 2
+face 2 8 2 wall_wilderness_v09
+edge 2 8 2
+face 3 8 2 wall_wilderness_v09
+edge 3 8 2
+face 4 8 2 wall_wilderness_v09
+edge 4 8 2
+face 5 8 2 wall_wilderness_v09
+edge 5 8 2
+face 6 8 2 wall_wilderness_v09
+edge 6 8 2
+face 7 8 1 wall_wilderness_v09
+edge 7 8 1
+face 7 8 2 wall_wilderness_v09
+edge 7 8 2
+face 8 8 2 wall_wilderness_v09
+edge 8 8 2
+face 8 8 3 wall_wilderness_v09
+edge 8 8 3
+face 9 8 2 wall_wilderness_v09
+edge 9 8 2
+face 10 8 2 wall_wilderness_v09
+edge 10 8 2
+face 11 8 2 wall_wilderness_v09
+edge 11 8 2
+face 12 8 2 wall_wilderness_v09
+edge 12 8 2
+face 13 8 2 wall_wilderness_v09
+edge 13 8 2
+face 14 8 2 wall_wilderness_v09
+edge 14 8 2
+face 15 8 1 wall_wilderness_v09
+edge 15 8 1
+face 15 8 2 wall_wilderness_v09
+edge 15 8 2
+face 0 9 0 wall_wilderness_v09
+edge 0 9 0
+face 1 9 0 wall_wilderness_v09
+edge 1 9 0
+face 2 9 0 wall_wilderness_v09
+edge 2 9 0
+face 3 9 0 wall_wilderness_v09
+edge 3 9 0
+face 4 9 0 wall_wilderness_v09
+edge 4 9 0
+face 5 9 0 wall_wilderness_v09
+edge 5 9 0
+face 6 9 0 wall_wilderness_v09
+edge 6 9 0
+face 7 9 0 wall_wilderness_v09
+edge 7 9 0
+face 8 9 0 wall_wilderness_v09
+edge 8 9 0
+face 9 9 0 wall_wilderness_v09
+edge 9 9 0
+face 10 9 0 wall_wilderness_v09
+edge 10 9 0
+face 11 9 0 wall_wilderness_v09
+edge 11 9 0
+face 12 9 0 wall_wilderness_v09
+edge 12 9 0
+face 13 9 0 wall_wilderness_v09
+edge 13 9 0
+face 14 9 0 wall_wilderness_v09
+edge 14 9 0
+face 15 9 0 wall_wilderness_v09
+edge 15 9 0
+face 2 11 0 wall_nomad_v01
+edge 2 11 0
+face 2 11 2 wall_nomad_v02
+face 2 11 3 wall_nomad_v01
+edge 2 11 3
+face 3 11 0 wall_nomad_v01
+edge 3 11 0
+face 3 11 1 wall_nomad_v01
+edge 3 11 1
+face 3 11 2 wall_nomad_v01
+edge 3 11 2
+face 4 11 0 wall_wilderness_v05
+face 4 11 3 wall_nomad_v01
+edge 4 11 3
+face 5 11 0 wall_wilderness_v05
+face 6 11 0 wall_wilderness_v05
+face 6 11 1 wall_nomad_v01
+edge 6 11 1
+face 7 11 0 wall_nomad_v01
+edge 7 11 0
+face 7 11 2 wall_nomad_v02
+face 7 11 3 wall_nomad_v01
+edge 7 11 3
+face 8 11 0 wall_nomad_v01
+edge 8 11 0
+face 8 11 1 wall_nomad_v02
+face 8 11 2 wall_nomad_v01
+edge 8 11 2
+face 9 11 0 wall_nomad_v01
+edge 9 11 0
+face 9 11 3 wall_nomad_v02
+face 10 11 0 wall_nomad_v01
+edge 10 11 0
+face 10 11 1 wall_nomad_v01
+edge 10 11 1
+face 2 12 0 wall_nomad_v02
+face 2 12 3 wall_wilderness_v05
+face 3 12 0 wall_nomad_v01
+edge 3 12 0
+face 7 12 0 wall_nomad_v02
+face 8 12 0 wall_nomad_v01
+edge 8 12 0
+face 8 12 1 wall_nomad_v01
+edge 8 12 1
+face 9 12 2 wall_nomad_v01
+edge 9 12 2
+face 9 12 3 wall_nomad_v01
+edge 9 12 3
+face 10 12 1 wall_nomad_v01
+edge 10 12 1
+face 10 12 2 wall_nomad_v01
+edge 10 12 2
+face 2 13 3 wall_wilderness_v05
+face 7 13 2 wall_nomad_v01
+edge 7 13 2
+face 8 13 2 wall_nomad_v02
+face 9 13 0 wall_nomad_v01
+edge 9 13 0
+face 9 13 2 wall_nomad_v01
+edge 9 13 2
+face 10 13 0 wall_nomad_v01
+edge 10 13 0
+face 10 13 1 wall_wilderness_v05
+face 2 14 2 wall_nomad_v01
+edge 2 14 2
+face 2 14 3 wall_nomad_v01
+edge 2 14 3
+face 3 14 2 wall_nomad_v02
+face 6 14 1 wall_nomad_v01
+edge 6 14 1
+face 7 14 0 wall_nomad_v01
+edge 7 14 0
+face 7 14 3 wall_nomad_v01
+edge 7 14 3
+face 8 14 0 wall_nomad_v02
+face 9 14 0 wall_nomad_v01
+edge 9 14 0
+face 9 14 1 wall_nomad_v01
+edge 9 14 1
+face 10 14 1 wall_wilderness_v05
+face 10 14 3 wall_nomad_v01
+edge 10 14 3
+face 2 15 0 wall_nomad_v01
+edge 2 15 0
+face 2 15 2 wall_nomad_v01
+edge 2 15 2
+face 2 15 3 wall_nomad_v01
+edge 2 15 3
+face 3 15 0 wall_nomad_v02
+face 3 15 1 wall_nomad_v01
+edge 3 15 1
+face 3 15 2 wall_nomad_v01
+edge 3 15 2
+face 4 15 2 wall_wilderness_v05
+face 4 15 3 wall_nomad_v01
+edge 4 15 3
+face 5 15 2 wall_wilderness_v05
+face 6 15 1 wall_nomad_v01
+edge 6 15 1
+face 6 15 2 wall_wilderness_v05
+face 7 15 2 wall_nomad_v01
+edge 7 15 2
+face 7 15 3 wall_nomad_v01
+edge 7 15 3
+face 8 15 2 wall_nomad_v01
+edge 8 15 2
+face 9 15 1 wall_nomad_v01
+edge 9 15 1
+face 9 15 2 wall_nomad_v01
+edge 9 15 2
+face 10 15 1 wall_wilderness_v05
+face 10 15 2 wall_wilderness_v05
+edge 10 15 2
+face 10 15 3 wall_nomad_v01
+edge 10 15 3
+pond 4 4
+prop prop_nomad_tree 2.0 4.0 1.089
+prop prop_nomad_tree 2.0 5.0 1.089
+prop prop_nomad_tree 2.0 6.0 1.089
+prop prop_nomad_tree 2.0 7.0 1.089
+prop prop_nomad_tree 3.0 3.0 1.089
+prop prop_nomad_tree 3.0 4.0 1.089
+prop prop_nomad_tree 3.0 6.0 1.089
+prop prop_nomad_tree 3.0 7.0 1.089
+prop prop_nomad_tree 4.0 3.0 1.089
+prop prop_grass2 4.0 4.417 0.184
+prop prop_nomad_tree 4.0 7.0 1.089
+prop prop_nomad_tree 4.0 14.0 1.089
+prop prop_grass2 4.014 4.213 0.168
+prop prop_grass1 4.024 4.826 0.183
+prop prop_grass1 4.089 4.071 0.164
+prop prop_grass1 4.132 4.959 0.162
+prop prop_grass2 4.232 4.011 0.152
+prop prop_grass1 4.287 4.996 0.158
+prop prop_grass2 4.718 4.995 0.145
+prop prop_grass2 4.786 4.014 0.199
+prop prop_grass1 4.863 4.961 0.156
+prop prop_grass2 4.916 4.075 0.185
+prop prop_grass2 4.969 4.844 0.184
+prop prop_grass2 4.976 4.175 0.171
+prop prop_nomad_tree 5.0 3.0 1.089
+prop prop_grass1 5.0 4.427 0.166
+prop prop_nomad_tree 5.0 7.0 1.089
+prop prop_nomad_tree 6.0 3.0 1.089
+prop prop_nomad_tree 6.0 4.0 1.089
+prop prop_nomad_tree 6.0 5.0 1.089
+prop prop_nomad_tree 6.0 6.0 1.089
+prop prop_nomad_tree 6.0 7.0 1.089
+prop prop_nomad_tree 6.0 12.0 1.089
+prop prop_nomad_tree 10.0 3.0 1.089
+prop prop_nomad_tree 10.0 4.0 1.089
+prop prop_nomad_tree 10.0 5.0 1.089
+prop prop_nomad_tree 10.0 6.0 1.089
+prop prop_nomad_tree 10.0 7.0 1.089
+prop prop_nomad_tree 11.0 3.0 1.089
+prop prop_nomad_tree 11.0 4.0 1.089
+prop prop_nomad_tree 11.0 5.0 1.089
+prop prop_nomad_tree 11.0 6.0 1.089
+prop prop_nomad_tree 11.0 7.0 1.089
+prop prop_nomad_tree 12.0 3.0 1.089
+prop prop_nomad_tree 12.0 4.0 1.089
+prop prop_nomad_tree 12.0 5.0 1.089
+prop prop_nomad_tree 12.0 6.0 1.089
+prop prop_nomad_tree 12.0 7.0 1.089
+prop prop_nomad_tree 13.0 3.0 1.089
+prop prop_nomad_tree 13.0 4.0 1.089
+prop prop_nomad_tree 13.0 5.0 1.089
+prop prop_nomad_tree 13.0 6.0 1.089
+prop prop_nomad_tree 13.0 7.0 1.089
+prop prop_nomad_tree 14.0 3.0 1.089
+prop prop_nomad_tree 14.0 4.0 1.089
+prop prop_nomad_tree 14.0 5.0 1.089
+prop prop_nomad_tree 14.0 6.0 1.089
+prop prop_nomad_tree 14.0 7.0 1.089

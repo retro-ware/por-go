@@ -12,7 +12,9 @@ import (
 	"image/draw"
 	"log"
 	"math"
+	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -222,6 +224,10 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if p.view != nil {
 			p.view.DrawMenu(dst) // the Esc menu over the battle
 		}
+		return Rect{}
+	}
+	if openAt != "" {
+		p.drawOpen(dst)
 		return Rect{}
 	}
 	if p.main = v.MainMenu != nil; p.main {
@@ -698,6 +704,38 @@ func (p *Presenter) scene(v engine.View) *blobber.Scene {
 	if !ok {
 		name = fmt.Sprintf("area%d", v.Area)
 	}
+	return p.sceneNamed(name)
+}
+
+// openAt (POR_OPEN=map:NAME:X:Y:D, D 0..3 for N E S W) shows the remastered
+// map NAME from square X, Y alone, whatever the engine shows: the
+// comparison sheets (phlan-poc/compare/compare.py) shoot it with POR_SHOT.
+var openAt = os.Getenv("POR_OPEN")
+
+// drawOpen draws the view openAt names.
+func (p *Presenter) drawOpen(dst *gpu.Image) {
+	f := strings.Split(openAt, ":")
+	if len(f) != 5 || f[0] != "map" {
+		log.Fatalf("POR_OPEN=%q: want map:NAME:X:Y:D", openAt)
+	}
+	x, _ := strconv.Atoi(f[2])
+	y, _ := strconv.Atoi(f[3])
+	d, _ := strconv.Atoi(f[4])
+	sc := p.sceneNamed(f[1])
+	if sc == nil {
+		log.Fatalf("POR_OPEN=%q: no map %s", openAt, f[1])
+	}
+	if p.shown != f[1] {
+		p.view.Show(sc, blobber.Camera{X: x, Y: y, Dir: d})
+		p.shown = f[1]
+		blobber.SetFlats(sc.Floor, sc.Ceiling)
+	}
+	p.animate()
+	p.view.Draw(dst)
+}
+
+// sceneNamed is the remastered map NAME, or nil (logged once).
+func (p *Presenter) sceneNamed(name string) *blobber.Scene {
 	if p.view == nil {
 		var err error
 		if p.view, err = blobber.NewView(); err != nil {

@@ -156,6 +156,21 @@ def arch(im, src):
     return Image.fromarray(a, "RGBA")
 
 
+SHAPE = A.get("shape", set())  # low walls with an uneven top (reeds): cut to the original's silhouette, not only its top row
+
+
+def shape(im, src):
+    """Nothing above the original's top line: per column, the texture is cleared above the original's first
+    painted pixel (the model paints the dip of a reed bank higher than the original, and outline() cuts
+    rows, not shapes). Gaps inside the original (sky between the stalks) stay as the model painted them."""
+    d = np.asarray(Image.open(HERE / "viewdump" / f"{src}.png").convert("RGBA"))[..., 3] > 0
+    below = np.cumsum(d, axis=0) > 0  # from the column's top pixel down
+    m = Image.fromarray(below.astype(np.uint8) * 255).resize(im.size, Image.BILINEAR)
+    a = np.asarray(im).copy()
+    a[np.asarray(m) < 128, 3] = 0
+    return Image.fromarray(a, "RGBA")
+
+
 def finish(v):
     """raw/vNN_openai.png -> the engine texture (no API call)."""
     ref = np.asarray(Image.open(RAW / f"v{v:02}_reference.png").convert("RGB"))
@@ -163,6 +178,8 @@ def finish(v):
     im = rw.key_out((RAW / f"v{v:02}_openai.png").read_bytes(), k)
     im = seamless(im) if v in TILE else im.resize((SIZE, SIZE), Image.LANCZOS)
     im = outline(im, WALLS[v][0])
+    if v in SHAPE:
+        im = shape(im, WALLS[v][0])
     if v in ARCH:  # before the seams, so the stone it copies has no seam in it
         im = arch(im, WALLS[v][0])
     if v not in NOSEAM:
