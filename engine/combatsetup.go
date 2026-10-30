@@ -570,12 +570,15 @@ func (e *Engine) placeCombatants() {
 			}
 			for y := 0; y <= 5; y++ {
 				lr := placeRows[d][y]
-				if e.Deskew.Load() {
-					lr = placeRowsFlat[d][y]
+				if e.Deskew.Load() { // the cell's floor, whatever the formation
+					lr = [2]int8{1, 0}
+					if y >= 1 {
+						lr = [2]int8{0, 4}
+					}
 				}
 				for x := 0; x <= 0xA; x++ {
 					v := byte(0)
-					if int(int8(lr[0])) <= x && int(int8(lr[1])) >= x {
+					if int(lr[0]) <= x && int(lr[1]) >= x {
 						v = 1
 					}
 					p.slots[s][team][y][x] = v
@@ -673,6 +676,10 @@ func (e *Engine) placeOne(idx int) bool {
 			}
 			bx = int(placeStartX[t][dir]) + dx*row
 			by = int(placeStartY[t][dir]) + dy*row
+			if e.Deskew.Load() {
+				bx = int(placeStartXFlat[t][dir]) + dx*row
+				by = int(placeStartYFlat[t][dir]) + dy*row
+			}
 			x, y = bx, by
 			k, state, n = 1, 2, 1
 		case 2:

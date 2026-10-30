@@ -53,16 +53,13 @@ var placeRows = [5][6][2]int8{
 	{{0, 6}, {0, 7}, {1, 8}, {2, 9}, {3, 10}, {4, 10}},
 }
 
-// placeRowsFlat (extra): placeRows with the perspective's lean taken out,
-// for deskewed maps (each row shifted back a square per row from the
-// placement's start row, the clipped edges restored).
-var placeRowsFlat = [5][6][2]int8{
-	{{1, 0}, {1, 0}, {1, 0}, {2, 9}, {2, 9}, {2, 9}},
-	{{1, 4}, {1, 4}, {1, 4}, {1, 4}, {1, 4}, {1, 4}},
-	{{1, 8}, {1, 8}, {1, 8}, {1, 0}, {1, 0}, {1, 0}},
-	{{6, 9}, {6, 9}, {6, 9}, {6, 9}, {6, 9}, {6, 9}},
-	{{0, 8}, {0, 8}, {0, 8}, {0, 8}, {0, 8}, {0, 8}},
-}
+// placeStartFlat (extra): placeStartX/Y for deskewed maps, where a side's
+// formation is its own cell's floor, slots x 0..4 and y 1..4 (column 0 and
+// row 0 of a block are its west and north wall): the first square is the
+// middle of the floor's edge towards the other side, the rows fall back
+// from it.
+var placeStartXFlat = [2][4]int8{{2, 4, 2, 0}, {2, 0, 2, 4}}
+var placeStartYFlat = [2][4]int8{{1, 2, 4, 2}, {4, 2, 1, 2}}
 
 // monster names for hitBonusVsNames's +1 to hit (DS:0332, 16-byte Pascal strings; [i] is the original's i+1).
 var hitNames1 = [4][16]byte{
