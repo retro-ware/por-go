@@ -626,7 +626,8 @@ func (e *Engine) iconCopy(src, dst byte, recolour bool) {
 // recolourIcon = 0464:1E5C (identity, to, 0, 0, icon): colour i becomes
 // to[i] for i = 0..15 in turn, so a pixel already moved to a later colour
 // moves again (3 -> 15 -> to[15]). Mask pixels are left alone. Amiga
-// pixels (extra) take the same end result through amigaIconColour.
+// pixels (extra) go through amigaIconColour, and once only: the Amiga's
+// routine (0x63240) looks each pixel's colour up a single time.
 func recolourIcon(im *dax.Image, to [16]byte) {
 	if im == nil {
 		return
@@ -640,7 +641,7 @@ func recolourIcon(im *dax.Image, to [16]byte) {
 			}
 		}
 		f[c] = x
-		am[amigaIconColour[c]] = amigaIconColour[x]
+		am[amigaIconColour[c]] = amigaIconColour[to[c]]
 	}
 	for k, v := range im.Data {
 		switch {
@@ -657,5 +658,7 @@ func recolourIcon(im *dax.Image, to [16]byte) {
 // table at 0x8B10E, against DS:3CF5) colours the parts in slots 9/1,
 // 10/2, 11/3, 6/7, 5/8 and 15/14 where DOS uses 1/9 .. 7/15; the four
 // left over pair by shade. So the DOS default colours give the Amiga
-// default icon and each step shows another Amiga colour.
+// default icon. The Amiga editor (0x1F11A) steps a part's colour through
+// slots 1..15 only, never slot 0 (a second black): the designer offers
+// those 15 in slot order on Amiga art.
 var amigaIconColour = [16]byte{0, 9, 10, 11, 6, 4, 5, 15, 12, 1, 2, 3, 7, 13, 8, 14}

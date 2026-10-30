@@ -92,14 +92,14 @@ func TestRecolourAmigaIcon(t *testing.T) {
 	if !bytes.Equal(im.Data, []byte{48 + 6, 48 + 7, 48 + 6, 3}) {
 		t.Fatalf("got %v", im.Data)
 	}
-	// a chained change (1 -> 3 -> 5) ends the same on both
+	// a chained change (1 -> 3 -> 5) chains on DOS pixels only
 	im = &dax.Image{Data: []byte{1, 48 + 9}, Mask: 16}
 	for i := range to {
 		to[i] = byte(i)
 	}
 	to[1], to[3] = 3, 5
 	recolourIcon(im, to)
-	if !bytes.Equal(im.Data, []byte{5, 48 + amigaIconColour[5]}) {
+	if !bytes.Equal(im.Data, []byte{5, 48 + amigaIconColour[3]}) {
 		t.Fatalf("chain: got %v", im.Data)
 	}
 }

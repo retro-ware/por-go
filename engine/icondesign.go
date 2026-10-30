@@ -11,8 +11,10 @@ import (
 // editor states (ovr17:382D: Parts/color-1/color-2/Size, then Next/Prev
 // stepping): one page with both poses large and live, Head and Weapon
 // opening grids of all the parts, Size toggling, and the six parts' two
-// colours each as swatches that a palette of the 16 colours sets. Keep
-// takes it, Exit (Esc) puts the old icon back.
+// colours each as swatches that a palette sets: the 16 EGA colours the DOS
+// editor stepped through, or on Amiga art the 15 terrain palette slots the
+// Amiga's stepped through (1..15, in its order). Keep takes it, Exit (Esc)
+// puts the old icon back.
 
 // Layout, in cells.
 const (
@@ -52,18 +54,32 @@ func (e *Engine) iconEditor() {
 	// The swatches show what a click gives: on Amiga art that is the
 	// terrain palette's slot the part's pixels take for the colour number
 	// (amigaIconColour: another hue and shade than the EGA colour of that
-	// number, magenta is black there), not the EGA colour. The palette's
-	// columns put the darker of each pair on top.
+	// number, magenta is black there), not the EGA colour. The DOS palette's
+	// columns put the darker of each pair on top; the Amiga's is its 15
+	// slots in slot order, as its Next stepped them (slot 0 is left out).
+	amiga := false
 	look := func(i byte) byte {
-		if im := e.icons[0xC][0]; im != nil && slices.ContainsFunc(im.Data, func(v byte) bool { return v >= pal.AmigaBase }) {
+		if amiga {
 			return pal.AmigaBase + 16*pal.AmigaTerrain + amigaIconColour[i]
 		}
 		return i
 	}
-	var cells [16]byte // the colour number in each palette cell, row-major
+	const noCell = 0xFF
+	var cells [16]byte // the colour number in each palette cell, row-major (noCell: empty)
 	layout := func() {
+		im := e.icons[0xC][0]
+		amiga = im != nil && slices.ContainsFunc(im.Data, func(v byte) bool { return v >= pal.AmigaBase })
+		if amiga {
+			for n, s := range amigaIconColour {
+				if s > 0 {
+					cells[s-1] = byte(n)
+				}
+			}
+			cells[15] = noCell
+			return
+		}
 		lum := func(i byte) int {
-			c := pal.Identity.RGBA(look(i))
+			c := pal.Identity.RGBA(i)
 			return int(c.R) + int(c.G) + int(c.B)
 		}
 		for k := 0; k < 8; k++ {
@@ -110,8 +126,10 @@ func (e *Engine) iconEditor() {
 				swatch(idSwatchCol+3*s, idPartRow+i, look(c.IconColour[i]>>(4*s)&0xF), frame)
 			}
 		}
-		for i := 0; i < 16; i++ {
-			swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, look(cells[i]), colDarkGrey)
+		for i, v := range cells {
+			if v != noCell {
+				swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, look(v), colDarkGrey)
+			}
 		}
 	}
 	e.snap.iconDrop = func(im image.Image) {
@@ -165,6 +183,9 @@ func (e *Engine) iconEditor() {
 		}})
 		e.addRegion(region{x0: idPaletteCol, y0: idPaletteRow, x1: idPaletteCol + 15, y1: idPaletteRow + 1, click: func(cx, cy int) Action {
 			v := cells[(cy-idPaletteRow)*8+(cx-idPaletteCol)/2]
+			if v == noCell {
+				return Action{}
+			}
 			c.IconColour[part] = c.IconColour[part]&^(0xF<<(4*shade)) | v<<(4*shade)
 			return Action{Kind: actRedraw}
 		}})
