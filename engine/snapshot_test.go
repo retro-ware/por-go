@@ -10,9 +10,11 @@ import (
 	"por/engine"
 )
 
-// TestView loads saved game A headless (needs the game files in the repo
-// root) and checks the published View as the party turns and opens a sheet.
-func TestView(t *testing.T) {
+// explore: a headless engine (needs the game files in the repo root) that
+// begins adventuring with the Quick Start party once Init and Play run, as
+// -explore does; its roster goes to a temp dir, never the game's saves.
+func explore(t *testing.T) *engine.Engine {
+	t.Helper()
 	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
 		t.Skip("no game files")
 	}
@@ -20,12 +22,17 @@ func TestView(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	e.Cfg.SaveDir = t.TempDir()
+	e.Explore = true
+	return e
+}
+
+// TestView starts a game headless and checks the published View as the
+// party turns and opens a sheet.
+func TestView(t *testing.T) {
+	e := explore(t)
 	e.Init()
 	go e.Play()
-	i := e.SlotIndex("GAME A")
-	if i < 0 {
-		t.Skip("no GAME A save")
-	}
 	keys := func(as ...engine.Action) engine.View {
 		for _, a := range as {
 			for !e.Idle() {
@@ -40,11 +47,7 @@ func TestView(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		return e.View()
 	}
-	load := []engine.Action{hot('L')}
-	for ; i > 0; i-- {
-		load = append(load, down)
-	}
-	v := keys(append(load, cont)...)
+	v := keys()
 	if !v.MainFrame || v.Window != engine.WinThreeD {
 		t.Fatalf("after loading: MainFrame %v Window %v, want the 3D view in the main frame", v.MainFrame, v.Window)
 	}
@@ -133,27 +136,16 @@ func keyWait(e *engine.Engine, a engine.Action) engine.View {
 	return e.View()
 }
 
-// battleView loads GAME A and starts the dev combat scene.
+// battleView starts a game and the dev combat scene.
 func battleView(t *testing.T) (*engine.Engine, engine.View) {
-	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
-		t.Skip("no game files")
-	}
-	e, err := engine.New("../data")
-	if err != nil {
-		t.Fatal(err)
-	}
+	e := explore(t)
 	e.DevAction = e.DevScene("combat")
-	seed := uint32(7) // the same fight every run
+	seed := uint32(1) // the same fight every run (and one whose first unit can walk and reach a foe)
 	e.FixedSeed = &seed
 	e.Init()
 	go e.Play()
-	i := max(e.SlotIndex("GAME A"), 0) // else the newest save
-	ks := []engine.Action{hot('L')}
-	for ; i > 0; i-- {
-		ks = append(ks, down)
-	}
 	var v engine.View
-	for _, k := range append(ks, cont, cont, cont, cont, cont, cont, cont) {
+	for _, k := range []engine.Action{cont, cont, cont, cont, cont, cont, cont} {
 		for !e.Idle() {
 			time.Sleep(10 * time.Millisecond)
 		}
@@ -164,7 +156,7 @@ func battleView(t *testing.T) (*engine.Engine, engine.View) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	if v.Battle == nil {
-		t.Skip("no fight: no saved game?")
+		t.Fatal("no fight")
 	}
 	return e, v
 }
@@ -379,26 +371,15 @@ func TestAimOutOfReach(t *testing.T) {
 // TestViewMember: a portrait click (KeyViewMember) on the command bar opens
 // that member's View page.
 func TestViewMember(t *testing.T) {
-	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
-		t.Skip("no game files")
-	}
-	e, err := engine.New("../data")
-	if err != nil {
-		t.Fatal(err)
-	}
+	e := explore(t)
 	e.Init()
 	go e.Play()
-	i := e.SlotIndex("GAME A")
-	if i < 0 {
-		t.Skip("no GAME A save")
+	for !e.Idle() {
+		time.Sleep(10 * time.Millisecond)
 	}
-	keyWait(e, hot('L'))
-	for ; i > 0; i-- {
-		keyWait(e, down)
-	}
-	v := keyWait(e, cont)
+	v := e.View()
 	if len(v.Party) < 2 {
-		t.Skip("party of one")
+		t.Fatal("party of one")
 	}
 	if v = keyWait(e, engine.Action{Kind: engine.ActMember, N: 1}); v.MainFrame {
 		t.Fatal("portrait click: still on the main screen")

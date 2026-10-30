@@ -113,6 +113,9 @@ func (e *Engine) DevScene(name string) func() {
 				}
 			}
 			e.addMonsters(idx, count, 1)
+			// as opSetupMonster with max distance 1: the monsters stand off
+			// a block (a fresh game's distance is 0, right among the party)
+			e.game.MonsterDist = min(uint16(e.FreeSteps(e.posX, e.posY, e.facing)), 1)
 			e.Combat()
 			e.AfterCombat()
 			e.DrawMainScreen()

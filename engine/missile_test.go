@@ -5,23 +5,36 @@ import (
 	"testing"
 )
 
-// A thrown weapon readied beside the weapon in hand goes into the Missiles
-// slot (Readied 2), out of the hands, and comes back out of it; without a
-// weapon in hand it is readied in hand as the original does.
-func TestMissileSlot(t *testing.T) {
+// quickStarted: an engine with the Quick Start party, its roster written
+// under a temp dir: tests never read or write the game's own saves.
+func quickStarted(t *testing.T) *Engine {
+	t.Helper()
 	e, err := New("../data")
 	if err != nil {
 		t.Skip(err)
 	}
-	e.items = e.readItems()
-	if !e.LoadSlotNamed("in-Slums") {
-		t.Skip("no in-Slums save")
+	e.Cfg.SaveDir = t.TempDir()
+	seed := uint32(7) // the same party every run
+	e.FixedSeed = &seed
+	e.Init()
+	e.QuickStart()
+	if len(e.party) == 0 {
+		t.Fatal("no Quick Start party")
 	}
-	e.selectMember(1)
+	return e
+}
+
+// A thrown weapon readied beside the weapon in hand goes into the Missiles
+// slot (Readied 2), out of the hands, and comes back out of it; without a
+// weapon in hand it is readied in hand as the original does.
+func TestMissileSlot(t *testing.T) {
+	e := quickStarted(t)
+	e.selectMember(0) // the fighter
 	c := e.selected()
+	w := e.AddItemCopy(c, e.RandomItem(itemLongSword))
+	e.readyItem(w)
 	e.ApplyItems(c)
-	w := c.Slots[slotWeapon]
-	if w == nil {
+	if c.Slots[slotWeapon] != w {
 		t.Fatal("no weapon in hand")
 	}
 	j := e.AddItemCopy(c, e.RandomItem(itemJavelin))
