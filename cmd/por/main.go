@@ -18,6 +18,11 @@
 // import.toml) puts them there. With -import SRC -data DIR (goplay setup) the
 // install found under SRC is copied into DIR with a COVER.PNG, and the
 // program exits.
+// The Windows exe's icon: icon.ico (the Amiga title picture's hero and
+// dragon, columns 70..270 of data/amiga/TITLE.PNG scaled to 256, 48, 32 and
+// 16) linked in through rsrc_windows_amd64.syso, which tools/winicon writes:
+//
+//go:generate go run ../../tools/winicon -ico icon.ico -o rsrc_windows_amd64.syso
 package main
 
 import (

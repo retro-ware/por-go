@@ -240,7 +240,11 @@ DOS install for the decompilation tools only.
   runs; an optional Amiga source copies `*.ADF` to `data/ADF` and runs
   `./por -import-disk2 data/ADF -data data`. Releases come from
   `.github/workflows/release.yml` on `v*` tags (`CGO_ENABLED=0`, macOS
-  arm64 and amd64, a Windows 7 build with go-legacy-win7).
+  arm64 and amd64, a Windows 7 build with go-legacy-win7). The Windows exe
+  carries the Amiga title picture as its icon: `cmd/por/icon.ico` linked in
+  through `cmd/por/rsrc_windows_amd64.syso`, a COFF resource object that
+  `tools/winicon` writes from the .ico (`go generate ./cmd/por`); no
+  third-party resource tool.
 - **No disks**: the DOS game spread one set of DAX blocks over eight disks
   (GEO1..8, ECL1..8, HEAD1..8 ...). `dax.Loader.Block` looks a missing block
   up in the same archive on the other disks, so every block is always
