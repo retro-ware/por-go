@@ -28,9 +28,10 @@ func TestKindEnforce(t *testing.T) {
 	}
 }
 
-// The creation sheet: Roll, Minimal, Set and Keep on the bar, the race a
+// The creation sheet: Roll, Minimal and Keep on the bar, the race a
 // drop-down whose grey entry (a dwarf for a magic-user) forces the class,
-// Keep saving the character under its default name.
+// a stat a drop-down of the values allowed, Keep saving the character
+// under its default name.
 func TestCreateSheet(t *testing.T) {
 	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
 		t.Skip("no game files")
@@ -64,31 +65,51 @@ func TestCreateSheet(t *testing.T) {
 		return Action{}
 	}
 	v := wait()
-	if v.Menu == nil || v.Menu.Items[0].Text != "Roll" || len(v.Menu.Items) != 4 || v.Menu.Items[3].Text != "Keep" {
+	if v.Menu == nil || v.Menu.Items[0].Text != "Roll" || len(v.Menu.Items) != 3 || v.Menu.Items[2].Text != "Keep" {
 		t.Fatalf("menu %+v", v.Menu)
 	}
 	c := e.selected()
 	if c.Name() != "No-One" || c.Race != raceHuman || c.Class != clsFighter || c.Stats[0] == 0 || c.MaxHP == 0 {
 		t.Fatalf("sample: %s %d %d stats %v hp %d", c.Name(), c.Race, c.Class, c.Stats, c.MaxHP)
 	}
-	// Class: the drop-down (14 entries, opened from row 2 to fit above the
-	// repeated row 16); Magic-User is the fifth entry (row 6).
+	// Class: the drop-down from the class row, the fighter first and the
+	// other classes below in their order, the sheet gone.
 	v = act(spot(v, 1, 5))
-	if v.Menu == nil || v.Menu.Items[0].Text != "Exit" {
-		t.Fatalf("class list: menu %+v", v.Menu)
+	if v.Menu == nil || v.Menu.Items[0].Text != "Exit" || v.Text[1][1].Set || v.TallRow != 19 {
+		t.Fatalf("class list: menu %+v name cell %+v tall row %d", v.Menu, v.Text[1][1], v.TallRow)
 	}
-	v = act(spot(v, 1, 6))
+	classes := pickClasses()
+	row := 5 + 1 + slices.Index(slices.DeleteFunc(classes, func(cl byte) bool { return cl == clsFighter }), clsMage)
+	v = act(spot(v, 1, row))
 	if c = e.selected(); c.Class != clsMage {
 		t.Fatalf("class %d, want a magic-user", c.Class)
 	}
-	// Race: Dwarf (row 3, grey for a magic-user) forces the class to fighter.
+	// Race: the drop-down at the race's column, Dwarf (grey for a magic-user)
+	// the first below Human; it forces the class to fighter.
 	v = act(spot(v, 6, 3))
-	v = act(spot(v, 1, 3))
+	v = act(spot(v, 6, 4))
 	if c = e.selected(); c.Race != raceDwarf || c.Class != clsFighter || c.IconSize != 1 {
 		t.Fatalf("race %d class %d size %d, want a dwarf fighter", c.Race, c.Class, c.IconSize)
 	}
 	if v.TallRow != 16 || len(v.Overlays) != 0 {
 		t.Errorf("tall row %d overlays %d", v.TallRow, len(v.Overlays))
+	}
+	// Charisma: the drop-down from its row, the current value first, 3..18
+	// below it (the pointer on the row glows); the last fitting row picks.
+	h := spot(v, 3, 12)
+	h.Kind = ActHover
+	if v = act(h); v.Text[12][1].Bg == v.Text[7][1].Bg {
+		t.Errorf("the charisma row does not glow under the pointer: %v", v.Text[12][1].Bg)
+	}
+	v = act(spot(v, 3, 12))
+	vals, _ := statChoices(c, statCha)
+	if v.Menu == nil || v.Menu.Items[len(v.Menu.Items)-1].Text != "Exit" || v.TallRow != 22 { // Next pages the rest
+		t.Fatalf("charisma list: menu %+v tall row %d", v.Menu, v.TallRow)
+	}
+	want := slices.DeleteFunc(vals, func(b byte) bool { return b == c.Stats[statCha] })[21-12-1]
+	v = act(spot(v, 5, 21))
+	if c.Stats[statCha] != want {
+		t.Errorf("charisma %d, want %d", c.Stats[statCha], want)
 	}
 	// The head picker: a grid; the second head is at column 13.
 	v = act(spot(v, 30, 2))
@@ -99,7 +120,7 @@ func TestCreateSheet(t *testing.T) {
 	if c.PortHead != 2 {
 		t.Errorf("head %d, want 2", c.PortHead)
 	}
-	e.Act(Action{Kind: ActPick, N: 3}) // Keep
+	e.Act(Action{Kind: ActPick, N: 2}) // Keep
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):

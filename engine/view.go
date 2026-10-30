@@ -164,6 +164,21 @@ func (e *Engine) showCombatStats() {
 
 // showStat = ovr20:0901 (stat, highlight): one ability score, with the
 // exceptional strength in brackets.
+// str00Text is the exceptional strength shown after an 18: "(57)", "(00)".
+func str00Text(c *Character) string {
+	if c.Stats[0] != 0x12 || c.Str00 == 0 {
+		return ""
+	}
+	s := strconv.Itoa(int(c.Str00))
+	if c.Str00 < 10 {
+		s = "0" + s
+	}
+	if c.Str00 == 100 {
+		s = "00"
+	}
+	return "(" + s + ")"
+}
+
 func (e *Engine) showStat(stat int, hi bool) {
 	col := colLightGreen
 	if hi {
@@ -177,15 +192,8 @@ func (e *Engine) showStat(stat int, hi bool) {
 		x++
 	}
 	e.DisplayString(x, stat+7, col, strconv.Itoa(int(v)))
-	if stat == 0 && v == 0x12 && c.Str00 > 0 {
-		s := strconv.Itoa(int(c.Str00))
-		if c.Str00 < 10 {
-			s = "0" + s
-		}
-		if c.Str00 == 100 {
-			s = "00"
-		}
-		e.DisplayString(7, 7, col, "("+s+")")
+	if stat == 0 {
+		e.DisplayString(7, 7, col, str00Text(c))
 	}
 }
 

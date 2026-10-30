@@ -50,7 +50,7 @@ const (
 	ActFont              // the next text font (N -1: the one before)
 	ActSound             // sound on or off (Ctrl-S)
 	ActSpot              // a click on View.Spots[N] at cell X, Y
-	ActHover             // the pointer came onto View.Spots[N] at cell X, Y
+	ActHover             // the pointer came onto View.Spots[N] at cell X, Y (N -1: it left them)
 	ActSpells            // inventory: the member's memorised spells
 	ActMagic             // inventory: the spell effects on the member
 	ActHeal              // inventory: a paladin lays on hands

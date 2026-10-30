@@ -11,10 +11,13 @@ import (
 // extra: the creation is one screen, the character sheet of a sample
 // character: its name, gender, race, alignment and class are drop-down
 // lists (a grey entry forces the dependants to their first valid value),
-// the portrait's head and body and the combat icon open pickers, the
-// ability scores can be typed, and the bar rolls, rolls to minimums,
-// sets or keeps. The original's four menus, name prompt, Head/Body
-// stepping and icon editor states are gone.
+// so are the ability scores (the values the race and class allow), the
+// portrait's head and body and the combat icon open pickers, and the bar
+// rolls, rolls to minimums or keeps. A drop-down shows the current value
+// where it was with the others below it and nothing else; the pointer on
+// a drop-down shows the selection background (region.glow). The
+// original's four menus, name prompt, Head/Body stepping and icon editor
+// states are gone.
 
 // freeCharacter = ovr17:0000 (var c): disposes the combat block, the item
 // and affect lists and the record, then nils the pointer. Go's collector
@@ -429,32 +432,17 @@ func (e *Engine) rollMinimal(c *Character) {
 
 var statNames = [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}
 
-// setStat (extra: Set) types ability i (STR as 18/xx), kept within the
-// race and class limits; blank keeps it. Wisdom and constitution carry
-// their spell slots and hit points along, as Modify does.
-func (e *Engine) setStat(c *Character, i int) {
-	cur := strconv.Itoa(int(c.Stats[i]))
+// setStatTo (extra) gives ability i the value picked, within the race and
+// class limits; strength 18 for a fighter kind rolls its exceptional part
+// anew (as a roll does). Wisdom and constitution carry their spell slots
+// and hit points along, as Modify does.
+func (e *Engine) setStatTo(c *Character, i int, v byte) {
+	c.Stats[i] = limitStat(c, i, v)
 	if i == 0 {
-		cur = fmtStr(strScore(c.Stats[0], c.Str00))
-	}
-	s := strings.TrimSpace(e.InputString(statNames[i]+" ("+cur+"): ", colLightMagenta, 6))
-	v, ok := parseMinStat(s, i == 0)
-	if s == "" || !ok {
-		return
-	}
-	st, x := byte(v), byte(0)
-	if i == 0 {
-		st = byte(v / 100)
-		if v > 1800 && v <= 1900 {
-			st, x = 18, byte(v-1800)
+		c.Str00 = 0
+		if c.Stats[0] == 18 && fighterKind(c) {
+			c.Str00 = min(byte(e.Random(100)+1), raceLimits[c.Race].Str00Max)
 		}
-	}
-	c.Stats[i] = limitStat(c, i, st)
-	if i == 0 {
-		if c.Stats[0] != 18 || !fighterKind(c) {
-			x = 0
-		}
-		c.Str00 = min(x, raceLimits[c.Race].Str00Max)
 	}
 	switch i {
 	case statWis:
@@ -479,7 +467,7 @@ const (
 	wantHead
 	wantBody
 	wantIcon
-	wantStat // + the ability's index
+	wantStat // + the ability's index (six regions)
 )
 
 // Where the sheet shows the combat icon's poses: under the portrait box.
@@ -503,53 +491,85 @@ func (e *Engine) creationSheet(c *Character) {
 }
 
 // sheetRegions makes the sheet's parts clickable: each click records what
-// it wants and ends the bar's wait (PickRedraw).
+// it wants and ends the bar's wait (PickRedraw). The texts that are
+// drop-downs glow under the pointer.
 func (e *Engine) sheetRegions(c *Character, want *int) {
-	at := func(x0, y0, x1, y1, w int) {
-		e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, click: func(_, cy int) Action {
+	at := func(x0, y0, x1, y1, w int, glow bool) {
+		e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, glow: glow, click: func(int, int) Action {
 			*want = w
-			if w == wantStat {
-				*want += cy - y0
-			}
 			return Action{Kind: actRedraw}
 		}})
 	}
-	at(1, 1, len(c.Name()), 1, wantName)
+	at(1, 1, len(c.Name()), 1, wantName, true)
 	g := len(genderNames[c.Sex])
-	at(1, 3, g, 3, wantSex)
-	at(g+2, 3, g+1+len(raceNames[int8(c.Race)]), 3, wantRace)
-	at(1, 4, len(alignmentNames[int8(c.Alignment)]), 4, wantAlign)
-	at(1, 5, len(className(c.Class)), 5, wantClass)
-	at(1, 7, 11, 12, wantStat)
-	at(28, 1, winRight, 5, wantHead)
-	at(28, 6, winRight, 11, wantBody)
-	at(sheetIconCol[0], sheetIconRow, sheetIconCol[1]+2, sheetIconRow+2, wantIcon)
+	at(1, 3, g, 3, wantSex, true)
+	at(g+2, 3, g+1+len(raceNames[int8(c.Race)]), 3, wantRace, true)
+	at(1, 4, len(alignmentNames[int8(c.Alignment)]), 4, wantAlign, true)
+	at(1, 5, len(className(c.Class)), 5, wantClass, true)
+	for i := range statNames {
+		x1 := 6 // "STR 18", "(00)" after the strength
+		if i == 0 {
+			x1 += len(str00Text(c))
+		}
+		at(1, 7+i, x1, 7+i, wantStat+i, true)
+	}
+	at(28, 1, winRight, 5, wantHead, false)
+	at(28, 6, winRight, 11, wantBody, false)
+	at(sheetIconCol[0], sheetIconRow, sheetIconCol[1]+2, sheetIconRow+2, wantIcon, false)
 }
 
-// dropDown (extra) lists items over the sheet from row y: green where
-// green says so, grey otherwise (a grey item still picks). The index picked,
-// or -1.
-func (e *Engine) dropDown(y int, items []string, cur int, green func(i int) bool) int {
-	list := make([]*ListNode, len(items))
-	for i, s := range items {
-		list[i] = &ListNode{Text: s, Grey: !green(i)}
+// dropDown (extra) opens the list of a sheet field at column x, row y: the
+// sheet goes, the current item stays where it was with the others below it
+// in their order (more than fit page), green where green says so, grey
+// otherwise (a grey item still picks). The index picked, or -1.
+func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) bool) int {
+	order := []int{max(cur, 0)}
+	for i := range items {
+		if i != order[0] {
+			order = append(order, i)
+		}
 	}
-	y = min(y, e.snap.tallRow-len(items)) // above the repeated row, or its rows would be too
-	y2 := y + len(items) - 1
-	e.ClearCells(1, y, 26, y2)
+	list := make([]*ListNode, len(order))
+	for k, i := range order {
+		list[k] = &ListNode{Text: items[i], Grey: !green(i)}
+	}
+	e.ClearCells(1, 1, winRight, winBottom)
+	e.pg.overlays = nil
+	y2 := min(y+len(list)-1, winBottom-1) // a blank row stays under the list for the window to repeat
+	e.snap.tallRow = y2 + 1
 	e.listTop = 0
-	index, redraw := cur, true
+	index, redraw := 0, true
 	var sel *ListNode
-	p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, y, 26, y2, list, true, &redraw, &index, &sel)
+	p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, x, y, winRight, y2, list, true, &redraw, &index, &sel)
 	if p.ID != PickEnter || sel == nil {
 		return -1
 	}
-	return slices.Index(list, sel)
+	return order[slices.Index(list, sel)]
+}
+
+// statChoices (extra): the values ability i may take for c's race and class,
+// as the sheet shows them (the current one with its exceptional strength).
+func statChoices(c *Character, i int) (vals []byte, names []string) {
+	lo, hi := raceLimits[c.Race].limits(i)
+	for v := lo; v <= hi; v++ {
+		if limitStat(c, i, v) != v {
+			continue
+		}
+		s := strconv.Itoa(int(v))
+		if v < 10 {
+			s = " " + s
+		}
+		if v == c.Stats[i] && i == 0 {
+			s += str00Text(c)
+		}
+		vals, names = append(vals, v), append(names, s)
+	}
+	return
 }
 
 // CreateCharacter = ovr17:056C, redone as one screen (see the top of the
 // file): the sheet of a sample character whose parts are picked in place;
-// Roll, Minimal and Set make the abilities, Keep saves it. Esc asks, then
+// Roll and Minimal make the abilities, Keep saves it. Esc asks, then
 // abandons it.
 func (e *Engine) CreateCharacter() {
 	k := kind{race: raceHuman, sex: 0, class: clsFighter, align: 0}
@@ -583,7 +603,6 @@ func (e *Engine) CreateCharacter() {
 	const (
 		roll Choice = iota
 		minimal
-		set
 		keep
 	)
 	for {
@@ -591,7 +610,7 @@ func (e *Engine) CreateCharacter() {
 		want := wantNone
 		mark := e.regionMark()
 		e.sheetRegions(c, &want)
-		p := e.DisplayInput("", Bar{{"Roll", roll}, {"Minimal", minimal}, {"Set", set}, {"Keep", keep}}, colLightMagenta, colLightGreen, colWhite, true, false)
+		p := e.DisplayInput("", Bar{{"Roll", roll}, {"Minimal", minimal}, {"Keep", keep}}, colLightMagenta, colLightGreen, colWhite, true, false)
 		e.regionCut(mark)
 		switch {
 		case p.ID == keep:
@@ -609,17 +628,13 @@ func (e *Engine) CreateCharacter() {
 			e.rollCharacter(c)
 		case p.ID == minimal:
 			e.rollMinimal(c)
-		case p.ID == set:
-			for i := range statNames {
-				e.setStat(c, i)
-			}
 		case p.ID != PickRedraw:
 		case want == wantName:
 			if s := e.inputLine("Character name: ", colLightMagenta, 0xF); s != "" { // 0709:09E3 (extra: case kept)
 				c.SetName(s)
 			}
 		case want == wantSex:
-			if i := e.dropDown(3, genderNames[:], int(c.Sex), func(int) bool { return true }); i >= 0 {
+			if i := e.dropDown(1, 3, genderNames[:], int(c.Sex), func(int) bool { return true }); i >= 0 {
 				c.Sex = byte(i)
 			}
 		case want == wantRace:
@@ -627,7 +642,7 @@ func (e *Engine) CreateCharacter() {
 			for i, r := range pickRaces {
 				names[i] = raceNames[r]
 			}
-			if i := e.dropDown(3, names, slices.Index(pickRaces, c.Race), func(i int) bool { return classFor(pickRaces[i], c.Class) }); i >= 0 && pickRaces[i] != c.Race {
+			if i := e.dropDown(len(genderNames[c.Sex])+2, 3, names, slices.Index(pickRaces, c.Race), func(i int) bool { return classFor(pickRaces[i], c.Class) }); i >= 0 && pickRaces[i] != c.Race {
 				k.race = pickRaces[i]
 				k = k.enforce(fRace)
 				rekind()
@@ -638,13 +653,13 @@ func (e *Engine) CreateCharacter() {
 			for i, cl := range classes {
 				names[i] = classNames[cl]
 			}
-			if i := e.dropDown(5, names, slices.Index(classes, c.Class), func(i int) bool { return classFor(c.Race, classes[i]) && alignFor(classes[i], c.Alignment) }); i >= 0 && classes[i] != c.Class {
+			if i := e.dropDown(1, 5, names, slices.Index(classes, c.Class), func(i int) bool { return classFor(c.Race, classes[i]) && alignFor(classes[i], c.Alignment) }); i >= 0 && classes[i] != c.Class {
 				k.class = classes[i]
 				k = k.enforce(fClass)
 				rekind()
 			}
 		case want == wantAlign:
-			if i := e.dropDown(4, alignmentNames[:], int(c.Alignment), func(i int) bool { return alignFor(c.Class, byte(i)) }); i >= 0 && byte(i) != c.Alignment {
+			if i := e.dropDown(1, 4, alignmentNames[:], int(c.Alignment), func(i int) bool { return alignFor(c.Class, byte(i)) }); i >= 0 && byte(i) != c.Alignment {
 				k.align = byte(i)
 				if k = k.enforce(fAlign); k.class != c.Class {
 					rekind()
@@ -663,7 +678,11 @@ func (e *Engine) CreateCharacter() {
 		case want == wantIcon:
 			e.iconEditor()
 		case want >= wantStat:
-			e.setStat(c, want-wantStat)
+			i := want - wantStat
+			vals, names := statChoices(c, i)
+			if j := e.dropDown(5, 7+i, names, slices.Index(vals, c.Stats[i]), func(int) bool { return true }); j >= 0 {
+				e.setStatTo(c, i, vals[j])
+			}
 		}
 	}
 }

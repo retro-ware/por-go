@@ -58,9 +58,11 @@ type extras struct {
 	aoeSpell int             // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
-	held          Action            // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
-	nav           navCtx            // the waiting menu
-	regions       []region          // clickable parts of the screen
+	held          Action   // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
+	nav           navCtx   // the waiting menu
+	regions       []region // clickable parts of the screen
+	glow          [4]int   // the region the selection background shows under (glowOn), while glowing
+	glowing       bool
 	castCancelled bool              // CastSpell: the player cancelled the aim (the turn goes on)
 	raw           bool              // the screen reads the arrows itself
 	typing        bool              // InputString is waiting

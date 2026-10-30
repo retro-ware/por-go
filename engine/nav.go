@@ -41,6 +41,50 @@ type region struct {
 	x0, y0, x1, y1 int
 	click          func(cx, cy int) Action // what the click stands for (ActNone: nothing)
 	hover          func(cx, cy int)        // optional: the pointer came onto it
+	glow           bool                    // the pointer on it shows the selection background over its cells (a drop-down)
+}
+
+// glowOn shows the selection background over r's cells while the pointer
+// is on it (nil, or a region without glow: none), as a menu's highlight.
+func (e *Engine) glowOn(r *region) {
+	if r != nil && !r.glow {
+		r = nil
+	}
+	var want [4]int
+	if r != nil {
+		want = [4]int{r.x0, r.y0, r.x1, r.y1}
+	}
+	if e.ext.glowing && want == e.ext.glow {
+		return
+	}
+	if e.ext.glowing {
+		e.glowCells(e.ext.glow, false)
+	}
+	e.ext.glowing = r != nil
+	if r != nil {
+		e.ext.glow = want
+		e.glowCells(want, true)
+	}
+}
+
+// glowCells puts the selection background under the cells of g (blank ones
+// become spaces on it), or takes it away again.
+func (e *Engine) glowCells(g [4]int, on bool) {
+	for y := max(g[1], 0); y <= min(g[3], promptRow); y++ {
+		for x := max(g[0], 0); x <= min(g[2], lastCol); x++ {
+			c := &e.ext.cells[y][x]
+			switch {
+			case on && !c.set:
+				e.paintChar(x, y, colWhite, selBg(colWhite, 0), ' ', true)
+			case on:
+				c.bg = byte(selBg(int(c.colour), 0))
+			case c.c == ' ':
+				*c = textCell{}
+			default:
+				c.bg = colBlack
+			}
+		}
+	}
 }
 
 // modalOn opens a modal screen (help, overview, the F9 slots): any action
@@ -56,7 +100,7 @@ func (e *Engine) modalOn() func() {
 // before (regionMark, regionCut). Later regions lie on top.
 func (e *Engine) addRegion(r region) { e.ext.regions = append(e.ext.regions, r) }
 func (e *Engine) regionMark() int    { return len(e.ext.regions) }
-func (e *Engine) regionCut(n int)    { e.ext.regions = e.ext.regions[:n] }
+func (e *Engine) regionCut(n int)    { e.glowOn(nil); e.ext.regions = e.ext.regions[:n] }
 
 // spots are the regions above the floor of the open modal screen, as View.Spots.
 func (e *Engine) spots() []CellRect {
@@ -164,7 +208,8 @@ func (e *Engine) take(a Action) Action {
 	switch a.Kind {
 	case ActSpot, ActHover:
 		i := e.ext.floor + a.N
-		if i < e.ext.floor || i >= len(e.ext.regions) {
+		if i < e.ext.floor || i >= len(e.ext.regions) { // ActHover -1: the pointer left the spots
+			e.glowOn(nil)
 			return Action{}
 		}
 		r := e.ext.regions[i]
@@ -174,6 +219,7 @@ func (e *Engine) take(a Action) Action {
 		if a.Kind == ActSpot {
 			return r.click(a.X, a.Y)
 		}
+		e.glowOn(&r)
 		if r.hover != nil {
 			r.hover(a.X, a.Y)
 		}

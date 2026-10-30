@@ -183,7 +183,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		}
 	}
 	at := [3]int{spot, cx, cy}
-	if spot >= 0 && at != p.hovered {
+	if at != p.hovered && (spot >= 0 || p.hovered[0] >= 0) { // onto a spot, or off them
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActHover, N: spot, X: cx, Y: cy})
 	}
 	p.hovered = at
