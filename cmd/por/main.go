@@ -98,7 +98,8 @@ func (g *game) Update() error {
 	}
 	g.mouse()
 	for _, f := range gpu.AppendDroppedFiles(nil) {
-		g.remaster.Drop(f, g.eng.View())
+		cx, cy, in := g.cell(float64(f.X), float64(f.Y))
+		g.remaster.Drop(f.Path, cx, cy, in, g.eng.View())
 	}
 	g.act()
 	if g.sent {

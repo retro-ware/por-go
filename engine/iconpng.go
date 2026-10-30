@@ -8,6 +8,16 @@ import "image"
 // ready pose, the right the action pose. The battle draws it in place of
 // the built icon; the page's icons (the overview) stay as built.
 
+// takeIconPNG makes im c's combat icon, or says why not (the icon editor,
+// a PNG dropped on the creation sheet's icon).
+func (e *Engine) takeIconPNG(c *Character, im image.Image) bool {
+	if im == nil || !c.setIconPNG(im) {
+		e.say("Not a PNG, square or twice as wide as high")
+		return false
+	}
+	return true
+}
+
 // setIconPNG takes im as c's combat icon; false when it is neither square
 // nor twice as wide as high (c keeps what it had).
 func (c *Character) setIconPNG(im image.Image) bool {

@@ -3,6 +3,7 @@ package engine
 import (
 	"image"
 	"strconv"
+	"strings"
 )
 
 // Grid pickers (extra): the creation's heads, bodies and combat icon parts
@@ -14,9 +15,9 @@ import (
 // and the wheel) turn the page.
 
 // pickGrid shows n pictures, each cw by ch cells, drawn by draw(i, x, y)
-// with its top left at cell (x, y), starting with cur framed. The index
-// picked, or -1 (Exit, Esc).
-func (e *Engine) pickGrid(prompt string, n, cw, ch, cur int, draw func(i, x, y int)) int {
+// with its top left at cell (x, y), starting with cur framed; word is the
+// bar's word that takes one (Keep). The index picked, or -1 (Exit, Esc).
+func (e *Engine) pickGrid(prompt, word string, n, cw, ch, cur int, draw func(i, x, y int)) int {
 	if cur < 0 || cur >= n {
 		cur = 0
 	}
@@ -118,7 +119,7 @@ func (e *Engine) pickGrid(prompt string, n, cw, ch, cur int, draw func(i, x, y i
 					show()
 				}
 			}})
-		bar := Bar{{"Keep", keep}}
+		bar := Bar{{word, keep}}
 		if page() < pages()-1 {
 			bar = append(bar, Entry{"Next", next})
 		}
@@ -169,16 +170,56 @@ func (e *Engine) pickGrid(prompt string, n, cw, ch, cur int, draw func(i, x, y i
 // pickHead picks a portrait head from the 14: the number picked (1..14),
 // or 0.
 func (e *Engine) pickHead(cur int) int {
-	return 1 + e.pickGrid("Head: ", len(portraitHead)-1, 11, 5, cur-1, func(i, x, y int) {
+	return 1 + e.pickGrid("Head: ", "Keep", len(portraitHead)-1, 11, 5, cur-1, func(i, x, y int) {
 		e.DrawPicture(x, y, e.LoadPic(charArt.file("HEAD"), int(portraitHead[i+1])), 0)
 	})
 }
 
 // pickBody picks a portrait body from the 12 (1..12), or 0.
 func (e *Engine) pickBody(cur int) int {
-	return 1 + e.pickGrid("Body: ", 12, 11, 6, cur-1, func(i, x, y int) {
+	return 1 + e.pickGrid("Body: ", "Keep", 12, 11, 6, cur-1, func(i, x, y int) {
 		e.DrawPicture(x, y, e.LoadPic(charArt.file("BODY"), int(portraitBody[i+1])), 0)
 	})
+}
+
+// pickSaved (extra): the Add and Forget lists are cards, the head of the
+// character's portrait (a dropped PNG fitted into its place) with the name
+// and class beside it, laid out and paged by pickGrid; a character whose
+// files are gone (nil) is its name alone. The index picked, or -1.
+func (e *Engine) pickSaved(prompt, word string, chars []*Character, names []string, cur int) int {
+	w := 0
+	for i, c := range chars {
+		w = max(w, len(names[i]))
+		if c != nil {
+			w = max(w, len(className(c.Class)))
+		}
+	}
+	return e.pickGrid(prompt, word, len(chars), 12+w, 5, cur, func(i, x, y int) {
+		c := chars[i]
+		switch {
+		case c == nil:
+		case c.Portrait != nil:
+			e.pg.overlays = append(e.pg.overlays, Overlay{Img: c.Portrait, At: fit(c.Portrait.Bounds(), CellRect{x, y, x + 10, y + 4}.Pixels())})
+		case c.PortHead > 0 && int(c.PortHead) < len(portraitHead):
+			e.DrawPicture(x, y, e.LoadPic(charArt.file("HEAD"), int(portraitHead[c.PortHead])), 0)
+		}
+		e.DisplayString(x+12, y+1, colWhite, names[i])
+		if c != nil {
+			e.DisplayString(x+12, y+3, colLightGreen, className(c.Class))
+		}
+	})
+}
+
+// loadSaved loads the saved characters named (nil where the files are gone).
+func (e *Engine) loadSaved(names []string) []*Character {
+	chars := make([]*Character, len(names))
+	for i, n := range names {
+		c := &Character{}
+		if e.LoadCharacter(strings.TrimPrefix(n, "* "), c, false) { // ovr18:0AEC
+			chars[i] = c
+		}
+	}
+	return chars
 }
 
 // iconRect is the page rectangle of a combat icon pose drawn at cell (x, y).

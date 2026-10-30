@@ -135,10 +135,10 @@ func (e *Engine) clearPage() {
 }
 
 // newPage ends what belongs to the page being replaced: the sheet's
-// portrait overlay and box.
+// portrait overlay and box, the icon's drop.
 func (e *Engine) newPage() {
 	e.pg.overlays = nil
-	e.snap.portrait = CellRect{}
+	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox = CellRect{}, nil, CellRect{}
 }
 
 // resizePage gives the page cols by rows cells (40x25 at least): what is

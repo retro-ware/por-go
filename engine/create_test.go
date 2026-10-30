@@ -1,7 +1,10 @@
 package engine
 
 import (
+	"image"
+	"image/png"
 	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 	"time"
@@ -41,6 +44,7 @@ func TestCreateSheet(t *testing.T) {
 		t.Fatal(err)
 	}
 	e.Cfg.SaveDir = t.TempDir()
+	e.viewBit0 = 1 // the sheet's portrait, as init sets it
 	done := make(chan bool, 1)
 	go func() { e.CreateCharacter(); done <- true }()
 	wait := func() View {
@@ -132,14 +136,66 @@ func TestCreateSheet(t *testing.T) {
 	if c.PortHead != 2 {
 		t.Errorf("head %d, want 2", c.PortHead)
 	}
-	e.Act(Action{Kind: ActPick, N: 2}) // Keep
-	select {
-	case <-done:
-	case <-time.After(2 * time.Second):
-		t.Fatal("Keep did not end the creation")
+	// Dropped PNGs: one on the icon's cells (IconBox) is the combat icon,
+	// one on the portrait box the portrait, as in the editor and on the
+	// sheet in play; the sheet shows both at once.
+	dir := t.TempDir()
+	write := func(name string, w, h int) string {
+		p := filepath.Join(dir, name)
+		f, err := os.Create(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		png.Encode(f, image.NewRGBA(image.Rect(0, 0, w, h)))
+		f.Close()
+		return p
 	}
+	if v.IconBox == (CellRect{}) || v.Portrait == (CellRect{}) || v.IconDrop {
+		t.Fatalf("drop targets: icon %+v portrait %+v whole screen %v", v.IconBox, v.Portrait, v.IconDrop)
+	}
+	act(Action{Kind: ActIcon, Text: write("icon.png", 24, 24)})
+	v = act(Action{Kind: ActPortrait, N: -1, Text: write("face.png", 64, 64)})
+	if c.Icon == nil || c.Portrait == nil || len(v.Overlays) != 3 {
+		t.Errorf("dropped: icon %v portrait %v overlays %d, want both and 3", c.Icon != nil, c.Portrait != nil, len(v.Overlays))
+	}
+	e.Act(Action{Kind: ActPick, N: 2}) // Keep
+	ended := func(what string) {
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatal(what + " did not end")
+		}
+	}
+	ended("Keep")
 	var d Character
-	if !e.LoadCharacter("No-One", &d, false) || d.Race != raceDwarf || d.PortHead != 2 {
-		t.Errorf("saved: %v race %d head %d", d.Name(), d.Race, d.PortHead)
+	if !e.LoadCharacter("No-One", &d, false) || d.Race != raceDwarf || d.PortHead != 2 || d.Icon == nil || d.Portrait == nil {
+		t.Errorf("saved: %v race %d head %d icon %v portrait %v", d.Name(), d.Race, d.PortHead, d.Icon != nil, d.Portrait != nil)
+	}
+	// Add: the saved characters as cards (the portrait PNG an overlay),
+	// Add takes the one framed; Esc leaves.
+	go func() { e.AddCharacter(); done <- true }()
+	v = wait()
+	if v.Menu == nil || v.Menu.Prompt != "Add a character:" || v.Menu.Items[0].Text != "Add" || len(v.Overlays) != 1 {
+		t.Fatalf("add: menu %+v overlays %d", v.Menu, len(v.Overlays))
+	}
+	act(Action{Kind: ActPick, N: 0})
+	if len(e.party) != 1 || e.party[0].Name() != "No-One" {
+		t.Fatalf("added: party %d", len(e.party))
+	}
+	e.Act(Action{Kind: ActClose})
+	ended("Add")
+	// Modify: the creation sheet on the member, Keep keeps the changes.
+	go func() { e.ModifyCharacter(); done <- true }()
+	v = wait()
+	if v.Menu == nil || v.Menu.Items[0].Text != "Roll" || v.IconBox == (CellRect{}) {
+		t.Fatalf("modify: menu %+v icon %+v", v.Menu, v.IconBox)
+	}
+	v = act(spot(v, 3, 12)) // charisma typed
+	act(Action{Kind: ActText, Text: "7"})
+	act(Action{Kind: ActContinue})
+	e.Act(Action{Kind: ActPick, N: 2}) // Keep
+	ended("Modify")
+	if m := e.party[0]; m.Stats[statCha] != 7 || m.Share != 1 {
+		t.Errorf("modified: charisma %d share %d", m.Stats[statCha], m.Share)
 	}
 }

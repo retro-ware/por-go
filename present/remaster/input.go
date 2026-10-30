@@ -117,13 +117,15 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 }
 
 // Drop takes a file dropped on the window: a PNG while the sheet is up
-// becomes the member's portrait, on the icon editor the combat icon.
-func (p *Presenter) Drop(path string, v engine.View) {
+// becomes the member's portrait, on the icon editor (or dropped on the
+// creation sheet's icon, cell cx, cy) the combat icon.
+func (p *Presenter) Drop(path string, cx, cy int, in bool, v engine.View) {
 	if !strings.EqualFold(filepath.Ext(path), ".png") {
 		return
 	}
+	r := v.IconBox
 	switch {
-	case v.IconDrop:
+	case v.IconDrop || in && r != (engine.CellRect{}) && image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)):
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActIcon, Text: path})
 	case v.Portrait != (engine.CellRect{}):
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPortrait, N: -1, Text: path})

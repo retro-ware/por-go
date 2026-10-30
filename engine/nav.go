@@ -137,8 +137,8 @@ func (e *Engine) extraAct(a Action) bool {
 			return false
 		}
 		e.SlotMenu(false)
-	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training)
-		if !e.ext.viewing { // only on the sheet: a stray Shift-click elsewhere must never change a face
+	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training), and at the creation
+		if !e.ext.viewing && !e.ext.creating { // only on the sheet: a stray Shift-click elsewhere must never change a face
 			return false
 		}
 		c := e.selected()
@@ -154,6 +154,8 @@ func (e *Engine) extraAct(a Action) bool {
 		}
 		if e.ext.viewing {
 			e.SheetPortrait()
+		} else {
+			e.Act(Action{Kind: actRedraw}) // the creation sheet draws itself anew
 		}
 	case ActOrder: // extra: the Party Order bar takes a dragged card
 		n := len(e.party)

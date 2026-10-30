@@ -90,7 +90,8 @@ func (e *Engine) iconEditor() {
 			cells[k], cells[k+8] = a, b
 		}
 	}
-	show := func() {
+	var show func()
+	show = func() {
 		build()
 		layout()
 		e.ClearCells(1, 1, winRight, winBottom)
@@ -131,13 +132,11 @@ func (e *Engine) iconEditor() {
 				swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, look(v), colDarkGrey)
 			}
 		}
-	}
-	e.snap.iconDrop = func(im image.Image) {
-		if im == nil || !c.setIconPNG(im) {
-			e.say("Not a PNG, square or twice as wide as high")
-			return
+		e.snap.iconDrop = func(im image.Image) { // the whole screen takes the PNG (a new page ends it: set with each)
+			if e.takeIconPNG(c, im) {
+				show()
+			}
 		}
-		show()
 	}
 	defer func() { e.snap.iconDrop, e.pg.overlays = nil, nil }()
 	const (
@@ -150,7 +149,7 @@ func (e *Engine) iconEditor() {
 	// pickPart: a grid of every head (or weapon) on the icon as it is.
 	pickPart := func(pic *byte, name string, n int) {
 		was := *pic
-		if i := e.pickGrid(name+": ", n, 3, 3, int(was), func(i, x, y int) {
+		if i := e.pickGrid(name+": ", "Keep", n, 3, 3, int(was), func(i, x, y int) {
 			*pic = byte(i)
 			build()
 			if im := e.icons[0xC][0]; im != nil {

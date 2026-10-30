@@ -170,9 +170,9 @@ var in struct {
 	mdown     [mouseCount]bool
 	mhit      [mouseCount]bool
 	mdur      [mouseCount]int
-	chars     []rune   // typed since the last tick
-	drops     []string // files dropped on the window since the last tick
-	tickDrops []string
+	chars     []rune // typed since the last tick
+	drops     []Drop // files dropped on the window since the last tick
+	tickDrops []Drop
 	tickChars []rune
 	wheel     [2]float64
 	tickWheel [2]float64
@@ -202,7 +202,12 @@ func initInput(app *gogpu.App) {
 	ev.OnMouseRelease(func(b gpucontext.MouseButton, x, y float64) { button(b, false, x, y) })
 	ev.OnMouseMove(func(x, y float64) { in.cursor = [2]float64{x, y} })
 	ev.OnScroll(func(dx, dy float64) { in.wheel[0] += dx; in.wheel[1] += dy })
-	app.OnDragDrop(func(paths []string, _, _ float64) { in.drops = append(in.drops, paths...) })
+	app.OnDragDrop(func(paths []string, x, y float64) { // window units, as the pointer
+		px, py := screenPos(x, y)
+		for _, p := range paths {
+			in.drops = append(in.drops, Drop{p, px, py})
+		}
+	})
 	app.OnFocus(func(focused bool) { // the releases while another window has the focus never arrive: nothing stays held (a stuck Shift)
 		if !focused {
 			in.down, in.mdown = [keyAll]bool{}, [mouseCount]bool{}
@@ -238,8 +243,14 @@ func tickInput() {
 	in.tickDrops, in.drops = append(in.tickDrops[:0], in.drops...), in.drops[:0]
 }
 
-// AppendDroppedFiles appends the paths of the files dropped on the window this tick.
-func AppendDroppedFiles(ps []string) []string { return append(ps, in.tickDrops...) }
+// Drop is a file dropped on the window, at a screen pixel (as CursorPosition).
+type Drop struct {
+	Path string
+	X, Y int
+}
+
+// AppendDroppedFiles appends the files dropped on the window this tick.
+func AppendDroppedFiles(ps []Drop) []Drop { return append(ps, in.tickDrops...) }
 
 func IsKeyPressed(k Key) bool     { return k >= 0 && k < keyAll && in.dur[k] > 0 }
 func IsKeyJustPressed(k Key) bool { return KeyPressDuration(k) == 1 }
@@ -273,7 +284,11 @@ func CursorPosition() (int, int) {
 	if win.app == nil || win.k == 0 {
 		return 0, 0
 	}
-	x, y := in.cursor[0], in.cursor[1]
+	return screenPos(in.cursor[0], in.cursor[1])
+}
+
+// screenPos is the screen pixel under window point (x, y).
+func screenPos(x, y float64) (int, int) {
 	s := Monitor().DeviceScaleFactor()
 	return int((x*s - win.ox) / win.k), int((y*s - win.oy) / win.k)
 }

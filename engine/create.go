@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"image"
 	"slices"
 	"strconv"
 	"strings"
@@ -106,8 +107,8 @@ func (k kind) enforce(f int) kind {
 }
 
 // fresh builds a new character of kind k: the record the original filled
-// in as its menus were answered. keep carries the name, portrait and icon
-// over from the character it replaces (the abilities are rolled again:
+// in as its menus were answered. keep carries the name, portrait, icon and
+// items over from the character it replaces (the abilities are rolled again:
 // their limits are the race's and class's).
 func (e *Engine) fresh(k kind, keep *Character) *Character {
 	c := &Character{}
@@ -127,6 +128,7 @@ func (e *Engine) fresh(k kind, keep *Character) *Character {
 	if keep != nil {
 		c.PName, c.PortHead, c.PortBody, c.Portrait = keep.PName, keep.PortHead, keep.PortBody, keep.Portrait
 		c.IconHead, c.IconBody, c.IconColour, c.Icon = keep.IconHead, keep.IconBody, keep.IconColour, keep.Icon
+		c.Items = keep.Items // Modify: the gear stays with the character
 	}
 	c.Race, c.Sex, c.Class, c.Alignment = k.race, k.sex, k.class, k.align
 	switch c.Race {
@@ -488,14 +490,22 @@ const sheetIconRow = 13
 func sheetIconCol(p int) int { return winRight - 9 + 5*p }
 
 // creationSheet draws the sheet for the creation: without level, experience,
-// party items and status, with the combat icon under the portrait.
+// party items and status, with the combat icon under the portrait. A PNG
+// dropped on the icon becomes the icon, as in the icon editor (one dropped
+// on the portrait the portrait, as on the sheet in play: ActPortrait).
 func (e *Engine) creationSheet(c *Character) {
 	e.CharacterSheet()
 	e.BuildCharIcon(c, true)
+	e.snap.iconBox = CellRect{sheetIconCol(0), sheetIconRow, sheetIconCol(1) + 2, sheetIconRow + 2}
+	e.snap.iconDrop = func(im image.Image) {
+		if e.takeIconPNG(c, im) {
+			e.Act(Action{Kind: actRedraw}) // the sheet draws itself anew
+		}
+	}
 	for p := 0; p < 2; p++ {
 		r := iconRect(sheetIconCol(p), sheetIconRow)
 		e.fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, colDarkGrey) // a grey ground: the icon's black parts show against the page
-		if c.Icon != nil { // a PNG: over the page at the window's resolution
+		if c.Icon != nil {                                      // a PNG: over the page at the window's resolution
 			e.pg.overlays = append(e.pg.overlays, Overlay{Img: iconPose(c.Icon, p, false), At: iconRect(sheetIconCol(p), sheetIconRow)})
 		} else if im := e.icons[c.Order][p]; im != nil {
 			e.picture(sheetIconCol(p)*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
@@ -651,14 +661,28 @@ func (e *Engine) CreateCharacter() {
 		e.freeCharacter(&c)
 		return
 	}
+	c, kept := e.editSheet(c, k, func(old, new *Character) { undo(); undo = e.selectTemp(new) }, "Abandon this character? ")
+	if kept {
+		e.SaveCharacter(c, "") // ovr18:069E
+	}
+	undo()
+	e.freeCharacter(&c)
+}
+
+// editSheet (extra) is the creation sheet's loop on c, a character of kind
+// k: Roll, Minimal, the fields and the pictures change it until Keep (true)
+// or an Esc answered with abandon (false). A new race, class or alignment
+// makes a fresh character of the new kind (fresh keeps the name, pictures
+// and items): replace puts it where c was. The character as it ends up.
+func (e *Engine) editSheet(c *Character, k kind, replace func(old, new *Character), abandon string) (*Character, bool) {
 	e.ext.creating = true
 	defer func() { e.ext.creating = false }()
 	// rekind replaces c by a fresh character of kind k, rolled.
 	rekind := func() {
-		undo()
+		old := c
 		c = e.fresh(k, c)
 		e.rollCharacter(c)
-		undo = e.selectTemp(c)
+		replace(old, c)
 	}
 	const (
 		roll Choice = iota
@@ -676,15 +700,10 @@ func (e *Engine) CreateCharacter() {
 		e.regionCut(mark)
 		switch {
 		case p.ID == keep:
-			e.SaveCharacter(c, "") // ovr18:069E
-			undo()
-			e.freeCharacter(&c)
-			return
+			return c, true
 		case p.ID == NoPick:
-			if e.YesNo(colYellow, colLightGreen, colWhite, "Abandon this character? ") {
-				undo()
-				e.freeCharacter(&c)
-				return
+			if e.YesNo(colYellow, colLightGreen, colWhite, abandon) {
+				return c, false
 			}
 		case p.ID == roll:
 			e.rollCharacter(c)

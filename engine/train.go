@@ -18,160 +18,29 @@ import (
 // when it is set).
 func (e *Engine) partyExp() int { return int(e.game.PartyExp) }
 
-// modifyDraw = ovr17:2033 (idx, highlight): the ability line idx of the
-// selected character, or its hit points for idx 6.
-func (e *Engine) modifyDraw(idx int, hi bool) {
-	if idx < 6 {
-		e.showStat(idx, hi) // ovr20:0901
-	} else {
-		e.displayHP(e.selected(), 4, 0x12, hi) // 00BA:0973
-	}
-}
-
-// ModifyCharacter = ovr17:209E: change the abilities and hit points of a
-// character that has no experience yet, within the race and class limits
-// (DS:3DA3.., DS:3F81..). Left/right change the line, up/down move,
-// Keep (K) accepts, Exit (E) puts the old values back.
+// ModifyCharacter = ovr17:209E, redone (extra) as the creation sheet on
+// the selected character, who has no experience yet: Roll, Minimal, the
+// fields and the pictures change it as at the creation; Keep keeps it,
+// Esc puts the old character back. (The original raised and lowered the
+// abilities and hit points within the race and class limits.)
 func (e *Engine) ModifyCharacter() {
 	c := e.selected()
 	if int32(c.Exp) > 0 {
 		e.DisplayMessageWait(colYellow, c.Name()+" can't be modified.")
 		return
 	}
-	e.CharacterSheet() // ovr20:004A
-	var saved [6]byte
-	copy(saved[:], c.Stats[:])
-	savedStr00, savedHP := c.Str00, c.MaxHP
-	race, class := int(c.Race), int(c.Class)
-	idx := 6
-	e.modifyDraw(idx, false)
-	idx = 0
-	e.modifyDraw(idx, true)
-	// hpToDraw redraws the hit point line, leaving the cursor on idx.
-	hpToDraw := func() {
-		c.HP = c.MaxHP
-		save := idx
-		idx = 6
-		e.modifyDraw(idx, false)
-		idx = save
+	i, was := e.partySel, *c
+	k := kind{race: c.Race, sex: c.Sex, class: c.Class, align: c.Alignment}
+	n, kept := e.editSheet(c, k, func(_, new *Character) { e.party[i] = new }, "Discard the changes? ")
+	if kept {
+		n.Share = 1
+	} else {
+		*c = was
+		e.party[i] = c
+		n = c
 	}
-	// slots: when wisdom changes, a first level cleric slot is capped at 1.
-	wisdom := func() {
-		if c.SpellSlots[0] > 0 {
-			c.SpellSlots[0] = 1
-		}
-		e.wisdomSlots(c) // ovr24:01AF
-	}
-	lower := func(i int) {
-		c.Stats[i]--
-		if i == 0 && c.Str00 > 0 {
-			c.Str00--
-			c.Stats[statStr]++
-		} else if lo, _ := raceLimits[race].limits(i); c.Stats[i] < lo || c.Stats[i] < classMinStats[class][i] {
-			// Quirk: below the class minimum the race minimum is stored.
-			c.Stats[i] = lo
-		}
-		switch i {
-		case 2:
-			wisdom()
-		case 4:
-			if m := e.maxHitPoints(c); m < c.MaxHP {
-				c.MaxHP = m
-			}
-			hpToDraw()
-		}
-	}
-	raise := func(i int) {
-		c.Stats[i]++
-		if _, hi := raceLimits[race].limits(i); c.Stats[i] > hi {
-			if i == 0 && c.Stats[statStr] > 0x12 && fighterKind(c) && raceLimits[race].Str00Max > c.Str00 {
-				c.Str00++ // exceptional strength for fighters
-			}
-			c.Stats[i] = hi
-		}
-		switch i {
-		case 2:
-			wisdom()
-		case 4:
-			if m := e.minHitPoints(c); m > c.MaxHP {
-				c.MaxHP = m
-			}
-			hpToDraw()
-		}
-	}
-	defer e.rawArrows()()
-	for {
-		// extra (nav.go): a click on a score or the hit points selects it;
-		// Raise and Lower on the menu bar change it
-		mark := e.regionMark()
-		pick := func(i int) {
-			e.modifyDraw(idx, false)
-			idx = i
-		}
-		e.addRegion(region{x0: 0, y0: 7, x1: 0xB, y1: 12, click: func(_, cy int) Action { pick(cy - 7); return Action{Kind: actRedraw} }})
-		e.addRegion(region{x0: 0, y0: 0x12, x1: 0xB, y1: 0x12, click: func(int, int) Action { pick(6); return Action{Kind: actRedraw} }})
-		const (
-			keep Choice = iota
-			raiseIt
-			lowerIt
-			exit
-		)
-		p := e.DisplayInput("Modify character: ", Bar{{"Keep", keep}, {"Raise", raiseIt}, {"Lower", lowerIt}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		e.regionCut(mark)
-		switch p.ID {
-		case raiseIt:
-			p = Pick{ID: PickMove, Dir: DirRight}
-		case lowerIt:
-			p = Pick{ID: PickMove, Dir: DirLeft}
-		}
-		e.modifyDraw(idx, false)
-		if p.ID == exit || p.ID == NoPick {
-			copy(c.Stats[:], saved[:])
-			c.Str00, c.MaxHP = savedStr00, savedHP
-			c.HP = c.MaxHP
-			e.ApplyItems(c) // 00BA:0BB8
-			return
-		}
-		if p.ID == PickMove {
-			switch p.Dir {
-			case DirDown:
-				if idx++; idx > 6 {
-					idx = 0
-				}
-			case DirUp:
-				if idx--; idx < 0 {
-					idx = 6
-				}
-			case DirLeft:
-				if idx < 6 {
-					lower(idx)
-				} else {
-					c.MaxHP--
-					if m := e.minHitPoints(c); m > c.MaxHP {
-						c.MaxHP = m
-					}
-					c.HP = c.MaxHP
-				}
-			case DirRight:
-				if idx < 6 {
-					raise(idx)
-				} else {
-					c.MaxHP++
-					if m := e.maxHitPoints(c); m < c.MaxHP {
-						c.MaxHP = m
-					}
-					c.HP = c.MaxHP
-				}
-			}
-		}
-		e.ApplyItems(c)
-		e.showCombatStats() // ovr20:0608
-		e.modifyDraw(idx, true)
-		if p.ID == keep {
-			c.Share = 1
-			return
-		}
-	}
+	e.ApplyItems(n) // 00BA:0BB8
+	e.BuildCharIcon(n, true)
 }
 
 // conHPBonus = ovr17:3F31 (char): hit point bonus per class from
@@ -465,66 +334,58 @@ func (e *Engine) TrainCharacter() {
 
 // AddCharacter = ovr17:306D: pick saved characters from the roster list
 // and add them to the party (at most 6 characters and 8 with hired NPCs).
-// Chosen entries get a "* " in the list.
+// Chosen entries get a "* " in the list (extra: the list is pickSaved's
+// cards).
 func (e *Engine) AddCharacter() {
 	e.ClearCells(1, 1, winRight, winBottom)
 	names := e.BuildCharList() // ovr18:0010
 	if len(names) == 0 {
 		return
 	}
-	list := make([]*ListNode, len(names))
-	for i, n := range names {
-		list[i] = &ListNode{Text: n}
-	}
-	index := 0
-	redraw := true
-	var sel *ListNode
+	chars := e.loadSaved(names)
+	cur := 0
 	count := 0 // uninitialised until the first add in the original
 	for {
-		// The show-exit argument is an uninitialised local; false here.
-		const add Choice = 0
-		key := e.ListMenu("Add a character: ", Bar{{"Add", add}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel).ID
-		if (key == PickEnter || key == add) && sel != nil && (sel.Text == "" || sel.Text[0] != '*') {
-			c := &Character{}
-			if e.LoadCharacter(sel.Text, c, false) { // ovr18:0AEC
-				sel.Text = cut("* "+sel.Text, textCols)
-				count = 0
-				if len(e.party) == 0 {
-					e.game.PartyCount = 0
-					e.AddToParty(c) // ovr18:1446
+		i := e.pickSaved("Add a character: ", "Add", chars, names, cur)
+		if i < 0 {
+			break
+		}
+		cur = i
+		if c := chars[i]; c != nil && (names[i] == "" || names[i][0] != '*') {
+			names[i] = cut("* "+names[i], textCols)
+			count = 0
+			if len(e.party) == 0 {
+				e.game.PartyCount = 0
+				e.AddToParty(c) // ovr18:1446
+				e.BuildCharIcon(c, true)
+			} else {
+				var dup *Character
+				for _, m := range e.party {
+					if m.Name() == c.Name() && m.RandomID == c.RandomID {
+						dup = m
+						break
+					}
+					if m.Control < 0x80 {
+						count++
+					}
+				}
+				npc := c.Control >= 0x80
+				refused := dup == nil && e.joinRefused(c)
+				if refused {
+					names[i] = names[i][2:] // unmarked again, as in CotAB
+				}
+				if dup == nil && !refused && (!npc && count < 6 || npc && e.game.PartyCount < 8) {
+					e.AddToParty(c)
 					e.BuildCharIcon(c, true)
-				} else {
-					var dup *Character
-					for _, m := range e.party {
-						if m.Name() == c.Name() && m.RandomID == c.RandomID {
-							dup = m
-							break
-						}
-						if m.Control < 0x80 {
-							count++
-						}
-					}
-					npc := c.Control >= 0x80
-					refused := dup == nil && e.joinRefused(c)
-					if refused {
-						sel.Text = sel.Text[2:] // unmarked again, as in CotAB
-					}
-					if dup == nil && !refused && (!npc && count < 6 || npc && e.game.PartyCount < 8) {
-						e.AddToParty(c)
-						e.BuildCharIcon(c, true)
-						if !npc {
-							count++
-						}
+					if !npc {
+						count++
 					}
 				}
 			}
 		}
-		if key == NoPick || count > 5 || e.game.PartyCount > 7 {
+		if count > 5 || e.game.PartyCount > 7 {
 			break
 		}
-	}
-	for i, n := range list {
-		names[i] = n.Text
 	}
 	e.WriteCharList(names) // ovr18:01B8
 }
@@ -554,40 +415,29 @@ func (e *Engine) joinRefused(c *Character) bool {
 	return msg != ""
 }
 
-// ForgetCharacter (extra): pick a saved character and delete its files and
-// its line in charlist.txt. Party members keep their copy in the party.
+// ForgetCharacter (extra): pick a saved character (pickSaved's cards) and
+// delete its files and its line in charlist.txt. Party members keep their
+// copy in the party.
 func (e *Engine) ForgetCharacter() {
 	e.ClearCells(1, 1, winRight, winBottom)
 	names := e.BuildCharList()
-	list := make([]*ListNode, len(names))
-	for i, n := range names {
-		list[i] = &ListNode{Text: n}
-	}
-	index, redraw := 0, true
-	var sel *ListNode
-	for len(list) > 0 {
-		const forget Choice = 0
-		key := e.ListMenu("Forget a character: ", Bar{{"Forget", forget}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 1, 2, 38, 22, list, false, &redraw, &index, &sel).ID
-		if key == NoPick {
+	chars := e.loadSaved(names)
+	cur := 0
+	for len(names) > 0 {
+		i := e.pickSaved("Forget a character: ", "Forget", chars, names, cur)
+		if i < 0 {
 			break
 		}
-		if (key != PickEnter && key != forget) || sel == nil {
+		cur = i
+		if !e.YesNo(colYellow, colLightGreen, colWhite, cut("Forget "+names[i]+" forever? ", textCols)) {
 			continue
 		}
-		redraw = true
-		if !e.YesNo(colYellow, colLightGreen, colWhite, cut("Forget "+sel.Text+" forever? ", textCols)) {
-			continue
-		}
-		base := makeFileName(removeSubstr(sel.Text, "."))
-		for _, ext := range []string{".cha", ".itm", ".spc"} {
+		base := makeFileName(removeSubstr(names[i], "."))
+		for _, ext := range []string{".cha", ".itm", ".spc", ".mem", ".png", ".icon.png"} {
 			os.Remove(e.savePath(base + ext))
 		}
-		list = slices.DeleteFunc(list, func(n *ListNode) bool { return n == sel })
-		sel, index = nil, min(index, max(len(list)-1, 0))
-		names = names[:0]
-		for _, n := range list {
-			names = append(names, n.Text)
-		}
+		names, chars = slices.Delete(names, i, i+1), slices.Delete(chars, i, i+1)
+		cur = min(cur, max(len(names)-1, 0))
 		e.WriteCharList(names)
 	}
 	e.ClearCells(1, 1, winRight, winBottom)
