@@ -633,13 +633,16 @@ func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
 
 // mapRect is where the map goes: a square right-aligned with the cards'
 // right edge, a card gap below the top and above the right column's top
-// card (n cards in all).
+// card of a party of six (n cards in all: fewer members never make it
+// bigger, so it keeps its size when members are lost; two NPCs more make
+// it smaller).
 func mapRect(dst *gpu.Image, n int) image.Rectangle {
 	b := dst.Bounds()
 	k := cardScale(dst)
 	gap := cardGap * k
-	top := cardAt(dst)(n-1, max(n, 2)) // the right column's last card...
-	per := max(n, 2) - (max(n, 2)+1)/2
+	n = max(n, 6)
+	top := cardAt(dst)(n-1, n) // the right column's last card...
+	per := n - (n+1)/2
 	y := top.Min.Y - (per-1)*(cardH+cardGap)*k // ...up to its first
 	side := min(y-2*gap, b.Dx()/2)
 	if blobber.Settings.MapSmall {
