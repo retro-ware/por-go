@@ -96,3 +96,19 @@ func TestSeenFollowsSlot(t *testing.T) {
 		t.Errorf("seen after reload = %v", e.ext.seen)
 	}
 }
+
+// A slot saved with the explored squares by script area loads them by map:
+// New Phlan's district (area 0) and Training Hall (11) pool on set 3's map 0.
+func TestSeenByMap(t *testing.T) {
+	e := &Engine{set: 1, data: "../data"}
+	seen := e.seenByMap(map[int]*[256]uint8{0: {5: seenVisited, 6: seenSeen}, 11 << 16: {6: seenVisited, 7: seenSeen}, 20<<16 | 20: {1: seenVisited}})
+	want := map[int]*[256]uint8{3 << 16: {5: seenVisited, 6: seenVisited, 7: seenSeen}, 2<<16 | 20: {1: seenVisited}}
+	if len(seen) != len(want) {
+		t.Fatalf("%d maps, want %d", len(seen), len(want))
+	}
+	for k, m := range want {
+		if got := seen[k]; got == nil || *got != *m {
+			t.Errorf("map %#x = %v, want %v", k, got, m)
+		}
+	}
+}

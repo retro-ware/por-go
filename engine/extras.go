@@ -39,7 +39,7 @@ type extras struct {
 	menu      int                 // DisplayInput calls in progress
 	list      bool                // the menu belongs to a scrolling list
 	choosing  bool                // SelectCharacter is waiting: highlight the roster entry
-	seen      map[int]*[256]uint8 // per area: 1 seen, 2 visited
+	seen      map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
 	voiced    map[string]bool     // voice.go: the recordings this save has heard
 	quick     *quickPick          // CreateCharacter answers its own menus (quickstart)
 	minStats  [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
@@ -95,9 +95,10 @@ const (
 	seenVisited = 2
 )
 
-// areaKey identifies the current map: script area plus GEO block.
+// areaKey identifies the current map: data set and GEO block (New Phlan's
+// three scripts share one map).
 func (e *Engine) areaKey() int {
-	return int(e.gs.areaKind)<<16 | int(e.area.Geo)
+	return int(e.set)<<16 | int(e.area.Geo)
 }
 
 // markSeen records the party's cell as visited and the cells in view

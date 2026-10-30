@@ -129,8 +129,10 @@ func (e *Engine) LoadSlotNamed(name string) bool {
 	return e.loadFrom(name)
 }
 
-// seenFile holds a slot's explored squares (extra: the original keeps none).
-const seenFile = "SEEN.GOB"
+// seenFile holds a slot's explored squares by map (extra: the original
+// keeps none); oldSeenFile is what slots saved before 30 Oct 2026 hold
+// them in, by script area (areaKey was script area and GEO block then).
+const seenFile, oldSeenFile = "MAPS.GOB", "SEEN.GOB"
 
 // voicedFile holds the voice-over recordings a slot has heard (voice.go).
 const voicedFile = "VOICED.GOB"
@@ -146,12 +148,42 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
 		f.Close()
+	} else if f, err := os.Open(filepath.Join(e.slotRoot(), name, oldSeenFile)); err == nil {
+		var old map[int]*[256]uint8
+		gob.NewDecoder(f).Decode(&old)
+		f.Close()
+		e.ext.seen = e.seenByMap(old)
 	}
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, voicedFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.voiced)
 		f.Close()
 	}
 	return true
+}
+
+// seenByMap turns explored squares keyed by script area and GEO block
+// (oldSeenFile) into ones keyed by data set and GEO block: the scripts of
+// one map (names/areas.txt) pool what they saw.
+func (e *Engine) seenByMap(old map[int]*[256]uint8) map[int]*[256]uint8 {
+	areas, _ := ReadScriptAreas(filepath.Join(e.scriptDir(), "names", "areas.txt"))
+	seen := map[int]*[256]uint8{}
+	for k, m := range old {
+		set := k >> 16 // unknown: the area number stands (nothing pools)
+		for _, a := range areas {
+			if a.ID == k>>16 {
+				set = a.Set
+			}
+		}
+		nm := seen[set<<16|k&0xFFFF]
+		if nm == nil {
+			nm = &[256]uint8{}
+			seen[set<<16|k&0xFFFF] = nm
+		}
+		for i, v := range m {
+			nm[i] = max(nm[i], v)
+		}
+	}
+	return seen
 }
 
 func (e *Engine) saveTo(name string) {
