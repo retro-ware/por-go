@@ -323,6 +323,20 @@ func levelReady(c *Character) bool {
 	return false
 }
 
+// nextLevelExp (extra): the experience c's next level takes, the nearest
+// of its classes; 0 when it can rise no further.
+func nextLevelExp(c *Character) int32 {
+	var need int32
+	for i := 0; i <= 7; i++ {
+		if lv := int8(c.Levels[i]); lv > 0 && lv < 9 { // columns 2..9 hold levels 2..9; the rest overlap other tables
+			if n := xpTable[i][lv+1]; n > 0 && (need == 0 || n < need) {
+				need = n
+			}
+		}
+	}
+	return need
+}
+
 func (e *Engine) TrainCharacter() {
 	c := e.selected()
 	if c.Status != statusOkay && !e.debug {

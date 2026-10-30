@@ -18,9 +18,7 @@ func (e *Engine) RandomItem(typ itemType) *Item {
 		bonus := it.Plus + 0xA1
 		switch {
 		case typ == itemJavelin:
-			if e.Dice(1, 5) == 5 {
-				k = 0x90 // (sic: one word before the 0x91 record)
-			}
+			e.Dice(1, 5) // the original's one-in-five roll for a magic javelin read DS:0970 record 0x90, one word before the Cloak of Elvenkind's: a javelin named "of" (sic); extra: a plain javelin, the roll kept for the dice stream
 			it.Words[2], it.Words[1] = byte(itemJavelin), bonus
 		case typ == itemQuarrel:
 			it.Words[2], it.Words[1] = byte(itemQuarrel), bonus

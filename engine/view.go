@@ -61,6 +61,13 @@ func (e *Engine) CharacterSheet() {
 	}
 	e.DisplayString(7, 15, colWhite, s)
 	e.DisplayString(17, 15, colWhite, "Exp "+strconv.Itoa(int(int32(c.Exp))))
+	if need := nextLevelExp(c); need > 0 { // extra: the experience the next level takes, green once it is there
+		col := colWhite
+		if int32(c.Exp) >= need {
+			col = colLightGreen
+		}
+		e.DisplayString(17, 16, col, "Next "+strconv.Itoa(int(need)))
+	}
 	e.showCombatStats()
 	y := 0x14
 	if w := c.Slots[slotWeapon]; w != nil {
