@@ -214,7 +214,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.ctx = 0
 	}
 	p.fight = v.Battle != nil // the battle view is the only one: the engine has no combat page
-	p.noMenu = v.Menu == nil
+	p.noMenu = v.Menu == nil || len(v.Menu.Items) == 1 // a one-item bar (PRESS <ENTER> TO CONTINUE) has nothing to pick either
 	p.resize(dst, v)
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false

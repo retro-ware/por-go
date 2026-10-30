@@ -169,6 +169,9 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.send(engine.ActMember, 0)
 	case p.ctx > 0:
 		p.ctx = 0
+	case v.Menu != nil && len(v.Menu.Items) == 1 && v.Typing == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
+		p.menu = false
+		p.send(engine.ActContinue, 0)
 	case p.menu && v.Command: // the command bar's popup: it alone closes (key)
 		p.menu = false
 	default:
