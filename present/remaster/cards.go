@@ -85,39 +85,17 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 	}
 	for len(p.cardImgs) < len(ms) {
 		p.cardImgs = append(p.cardImgs, gpu.NewImage(cardW, cardH))
+		p.cardKeys = append(p.cardKeys, cardKey{})
 	}
 	for i, m := range ms {
 		d := p.cardImgs[i]
-		d.Clear()
-		d.SubImage(image.Rect(8, 8, cardW-8, frameH-8)).(*gpu.Image).Fill(color.Black)
-		t := p.border.tiles
-		if !m.Selected {
-			t = p.border.grey
+		key := cardKey{m.Selected, m.HP, m.MaxHP, m.Status, p.portrait(m), m.Portrait != nil, 0, 0, p.border.tiles[0]}
+		if m.NextExp > 0 && gpu.IsKeyPressed(gpu.KeyShift) {
+			key.exp, key.nextExp = m.Exp-m.LevelExp, m.NextExp-m.LevelExp
 		}
-		drawBorder(d, t, gpu.GeoM{}, cardW/8, frameH/8)
-		if f := p.portrait(m); f != nil && m.Portrait == nil { // a PNG is drawn at the window's resolution below
-			g, ok := p.faceImgs[f]
-			if !ok {
-				g = gpu.NewImageFromImage(f)
-				p.faceImgs[f] = g
-			}
-			op := &gpu.DrawImageOptions{}
-			op.GeoM.Translate(cardFace, cardFace)
-			if m.HP <= 0 {
-				op.ColorScale.Scale(0.35, 0.35, 0.35, 1)
-			}
-			d.DrawImage(g, op)
-		}
-		if s := cardLabels[m.Status]; s != "" && m.Portrait == nil {
-			p.label(d, s, cardFace+1, cardFace+portraitSize-9, 1)
-		}
-		fill := greenFill
-		if m.HP*4 < m.MaxHP {
-			fill = redFill
-		}
-		p.bar(d, -5, barY, cardW+10, m.HP, m.MaxHP, fill)    // the caps' art is inset 5 px: this lines it up with the border
-		if m.NextExp > 0 && gpu.IsKeyPressed(gpu.KeyShift) { // Shift: the way to the next level, full once the experience is there
-			p.bar(d, -5, expY, cardW+10, m.Exp-m.LevelExp, m.NextExp-m.LevelExp, goldFill)
+		if key != p.cardKeys[i] { // the card's picture changed: redraw it (a card is a render target of its own, a pass each)
+			p.cardKeys[i] = key
+			p.drawCard(d, m, key)
 		}
 		r := at(i, len(ms))
 		op := &gpu.DrawImageOptions{}
@@ -258,4 +236,51 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 	defer func() { p.menuRects = rects }()
 	p.drawMenu(screen, p.glyph, title, lines, keys, sel, float64(k), b.Dx()/2, top)
 	p.winRects = slices.Clone(p.menuRects) // its lines, for the Esc menu's mouse
+}
+
+// cardKey is what a card's picture (cardImgs) shows; drawParty redraws a card
+// when it changes.
+type cardKey struct {
+	selected     bool
+	hp, maxHP    int
+	status       string
+	face         image.Image // the face drawn on the card (nil: a PNG portrait goes over it at the window's resolution)
+	png          bool
+	exp, nextExp int // the experience bar while Shift is held (0: no bar)
+	tiles        *gpu.Image
+}
+
+// drawCard draws m's card into d (scale 1): border, face, status, bars.
+func (p *Presenter) drawCard(d *gpu.Image, m engine.Member, key cardKey) {
+	d.Clear()
+	d.SubImage(image.Rect(8, 8, cardW-8, frameH-8)).(*gpu.Image).Fill(color.Black)
+	t := p.border.tiles
+	if !m.Selected {
+		t = p.border.grey
+	}
+	drawBorder(d, t, gpu.GeoM{}, cardW/8, frameH/8)
+	if f := p.portrait(m); f != nil && m.Portrait == nil { // a PNG is drawn at the window's resolution below
+		g, ok := p.faceImgs[f]
+		if !ok {
+			g = gpu.NewImageFromImage(f)
+			p.faceImgs[f] = g
+		}
+		op := &gpu.DrawImageOptions{}
+		op.GeoM.Translate(cardFace, cardFace)
+		if m.HP <= 0 {
+			op.ColorScale.Scale(0.35, 0.35, 0.35, 1)
+		}
+		d.DrawImage(g, op)
+	}
+	if s := cardLabels[m.Status]; s != "" && m.Portrait == nil {
+		p.label(d, s, cardFace+1, cardFace+portraitSize-9, 1)
+	}
+	fill := greenFill
+	if m.HP*4 < m.MaxHP {
+		fill = redFill
+	}
+	p.bar(d, -5, barY, cardW+10, m.HP, m.MaxHP, fill) // the caps' art is inset 5 px: this lines it up with the border
+	if key.nextExp > 0 {                              // Shift: the way to the next level, full once the experience is there
+		p.bar(d, -5, expY, cardW+10, key.exp, key.nextExp, goldFill)
+	}
 }

@@ -3,7 +3,12 @@ package gpu
 import (
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -37,6 +42,9 @@ var win struct {
 	fpsStart time.Time
 	drawT    time.Duration // in Draw and in present since fpsStart (POR_FPS)
 	presentT time.Duration
+	updT     time.Duration // in Update
+	outT     time.Duration // outside Draw: the window's own work
+	lastOut  time.Time
 
 	// the screen's place in the framebuffer (for the cursor)
 	ox, oy, k float64
@@ -111,6 +119,9 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 	}
 	app := gogpu.NewApp(cfg)
 	win.app = app
+	if win.full { // the Windows platform ignores the config's fullscreen: apply it as the Esc menu would (a no-op where the config did it)
+		win.toFull.Store(2)
+	}
 	initInput(app)
 	app.OnUpdate(func(float64) { // the main thread
 		if f := win.toFull.Swap(0); f != 0 {
@@ -150,6 +161,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		if screen == nil {
 			n = max(n, 1) // Update comes before the first Draw
 		}
+		tu := time.Now()
 		for range n {
 			tickInput()
 			if err := g.Update(); err != nil {
@@ -160,6 +172,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 				return
 			}
 		}
+		win.updT += time.Since(tu)
 		ww, wh := app.Size()
 		fw, fh := dc.FramebufferSize()
 		if ww == 0 || wh == 0 || fw == 0 || fh == 0 { // minimised
@@ -167,31 +180,65 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 		}
 		sw, sh := g.Layout(ww, wh)
 		sw, sh = max(sw, 1), max(sh, 1)
-		if screen == nil || screen.r.Dx() != sw || screen.r.Dy() != sh {
-			if screen != nil {
+		direct := sw == fw && sh == fh && !offscreen // the game draws straight into the frame: no copy of the whole screen per frame
+		if screen == nil || screen.r.Dx() != sw || screen.r.Dy() != sh || (screen.t == surf) != direct {
+			if screen != nil && screen.t != surf {
 				screen.Deallocate()
 			}
-			screen = NewImage(sw, sh)
+			if direct {
+				if surf.depth != nil {
+					surf.dview.Release()
+					surf.depth.Release()
+					surf.depth, surf.dview = nil, nil
+				}
+				surf.w, surf.h = sw, sh
+				screen = &Image{surf, image.Rect(0, 0, sw, sh)}
+			} else {
+				screen = NewImage(sw, sh)
+			}
+			fmt.Fprintf(os.Stderr, "screen %dx%d for a %dx%d window, %dx%d framebuffer, direct=%v\n", sw, sh, ww, wh, fw, fh, direct) // rare: a flash of one frame could be a stray size
 		}
+		surf.view = view
 		screen.Clear()
+		var passes []string
+		if win.frames == 0 && os.Getenv("POR_PASSES") != "" { // POR_PASSES=1: one frame's render passes with each fps line
+			passLog = &passes
+		}
 		t0 := time.Now()
 		g.Draw(screen)
 		win.drawT += time.Since(t0)
 		win.k = min(float64(fw)/float64(sw), float64(fh)/float64(sh))
 		win.ox, win.oy = (float64(fw)-float64(sw)*win.k)/2, (float64(fh)-float64(sh)*win.k)/2
 		t1 := time.Now()
-		present(screen, view, fw, fh)
+		if direct { // the frame's passes end here (a cleared frame when nothing was drawn, as before)
+			flushBatch()
+			if surf.clear {
+				passOn(surf, false)
+			}
+			submit()
+		} else if !Skip("present") {
+			present(screen, view, fw, fh)
+		}
 		win.presentT += time.Since(t1)
+		if glitchDir != "" {
+			glitchCheck(screen)
+		}
+		if passLog != nil {
+			passLog = nil
+			fmt.Fprintln(os.Stderr, strings.Join(passes, "\n"))
+		}
 		win.frames++
+		win.outT += now.Sub(win.lastOut) // since the last Draw returned: the window's own work (events, the swap chain)
+		win.lastOut = time.Now()
 		if d := now.Sub(win.fpsStart).Seconds(); d >= 1 {
 			if os.Getenv("POR_FPS") != "" { // POR_FPS=1: a line a second with the frame rate and where a frame's time goes
 				n := time.Duration(max(win.frames, 1))
 				fr := max(win.frames, 1)
-				fmt.Fprintf(os.Stderr, "fps %.1f  frame %v  draw %v  present %v  per frame: draws %d (3D %d) passes %d clears %d writes %d uploads %d\n", float64(win.frames)/d, time.Duration(d*float64(time.Second))/n, win.drawT/n, win.presentT/n, Stats.Draws/fr, Stats.Draws3D/fr, Stats.Passes/fr, Stats.Clears/fr, Stats.Writes/fr, Stats.Uploads/fr)
+				fmt.Fprintf(os.Stderr, "fps %.1f  frame %v  update %v  draw %v  present %v  outside %v  per frame: draws %d (3D %d) passes %d clears %d writes %d uploads %d\n", float64(win.frames)/d, time.Duration(d*float64(time.Second))/n, win.updT/n, win.drawT/n, win.presentT/n, win.outT/n, Stats.Draws/fr, Stats.Draws3D/fr, Stats.Passes/fr, Stats.Clears/fr, Stats.Writes/fr, Stats.Uploads/fr)
 				Stats = struct{ Draws, Draws3D, Passes, Clears, Writes, Uploads int }{}
 			}
 			win.fps, win.frames, win.fpsStart = float64(win.frames)/d, 0, now
-			win.drawT, win.presentT = 0, 0
+			win.drawT, win.presentT, win.updT, win.outT = 0, 0, 0, 0
 		}
 	})
 	if err := app.Run(); err != nil {
@@ -203,3 +250,57 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 // Stats counts the GPU work issued since the last POR_FPS line: draw calls,
 // render passes, buffer writes and texture uploads.
 var Stats struct{ Draws, Draws3D, Passes, Clears, Writes, Uploads int }
+
+// POR_GLITCH=DIR: after each frame is presented the screen is read back and
+// compared to the frame before; when more than half of its pixels changed,
+// both frames go to DIR as PNGs (a glitch of one frame that a capture of
+// every frame would be too slow to catch, and that reading the screen before
+// the present could hide).
+var glitchDir = os.Getenv("POR_GLITCH")
+
+var glitch struct {
+	prev, cur []byte
+	n, saved  int
+}
+
+func glitchCheck(screen *Image) {
+	w, h := screen.Size()
+	if len(glitch.cur) != w*h*4 {
+		glitch.prev, glitch.cur, glitch.n = make([]byte, w*h*4), make([]byte, w*h*4), 0
+	}
+	screen.ReadPixels(glitch.cur)
+	d := 0
+	for i := 0; i < len(glitch.cur); i += 16 {
+		if glitch.cur[i] != glitch.prev[i] || glitch.cur[i+1] != glitch.prev[i+1] || glitch.cur[i+2] != glitch.prev[i+2] {
+			d++
+		}
+	}
+	if glitch.n > 0 && d*32 > len(glitch.cur) && glitch.saved < 40 {
+		for k, px := range [][]byte{glitch.prev, glitch.cur} {
+			f, err := os.Create(filepath.Join(glitchDir, fmt.Sprintf("glitch%d_%c.png", glitch.saved, 'a'+k)))
+			if err == nil {
+				err = (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(f, &image.RGBA{Pix: px, Stride: w * 4, Rect: image.Rect(0, 0, w, h)})
+				f.Close()
+			}
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "glitch:", err)
+			}
+		}
+		fmt.Fprintf(os.Stderr, "glitch %d at frame %d: %.0f%% of the pixels changed\n", glitch.saved, glitch.n, 100*float64(d*16)/float64(len(glitch.cur)))
+		glitch.saved++
+	}
+	glitch.prev, glitch.cur = glitch.cur, glitch.prev
+	glitch.n++
+}
+
+// Skip reports whether name is in POR_SKIP, a comma list of the frame's parts left out
+// (fill, sky, planes, floors, walls, bills, dither, hud; in a battle table, board, shadows, frames,
+// figures, sparks) to time the rest, or of its savings (clear: a whole-image Fill drawn, not cleared;
+// back: the planes write depth) to check the picture is the same without them.
+func Skip(name string) bool { return slices.Contains(strings.Split(os.Getenv("POR_SKIP"), ","), name) }
+
+// surf stands for the window's frame, drawn into directly when the screen is the frame's
+// size; its view is the one gogpu lends each frame. offscreen keeps the screen an image of
+// its own (and a present pass copying it) when something reads it back.
+var surf = &texture{external: true}
+var offscreen = os.Getenv("POR_SHOT") != "" || os.Getenv("BLOBBER_SHOT") != "" || os.Getenv("POR_GLITCH") != "" || os.Getenv("POR_OFFSCREEN") != ""

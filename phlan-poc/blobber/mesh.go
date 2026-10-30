@@ -210,10 +210,13 @@ type world struct {
 }
 
 type wallGroup struct {
-	m        *mat
-	side     int
-	first, n int
+	m     *mat
+	side  int
+	faces [][4]pt // every face of the map with this material on this side; those in view go into the frame's mesh
 }
+
+// wallRange is one group's faces in view this frame: a slice of the frame's mesh.
+type wallRange struct{ g, first, n int }
 
 type texRange struct {
 	tex      *gpu.Image
@@ -380,12 +383,8 @@ func buildWorld() *world {
 			}
 		}
 	}
-	for _, k := range order {
-		first := len(vs)
-		for _, q := range faces[k] {
-			vs = quad(vs, q[0], q[1], q[2], q[3], centre((q[0].x+q[2].x)/2, (q[0].z+q[2].z)/2), white4)
-		}
-		w.walls = append(w.walls, wallGroup{k.m, k.side, first, len(vs) - first})
+	for _, k := range order { // the walls go into the frame's mesh, those in view only (draw3D)
+		w.walls = append(w.walls, wallGroup{k.m, k.side, faces[k]})
 	}
 	w.mesh = gpu.NewMesh(vs)
 	return w
@@ -494,12 +493,14 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 	if g.dither {
 		dst = g.scene
 	}
-	dst.Fill(fogCol)
+	if !gpu.Skip("fill") {
+		dst.Fill(fogCol)
+	}
 	if texWater == nil {
 		texWater, texClouds = FlatTexture("floor", "phlan_water"), FlatTexture("ceiling", "phlan_clouds")
 		texNightSky, texStars = FlatTexture("ceiling", "sky_night"), FlatTexture("ceiling", "night_stars")
 	}
-	if openSky {
+	if openSky && !gpu.Skip("sky") {
 		g.drawSky(dst, c)
 		if texWater != nil && (len(Water) > 0 || Sea) { // phlan-poc: the sea runs on to the horizon past the last cells drawn
 			vector.DrawFilledRect(dst, 0, float32(H)/2, float32(W), float32(H)/2, color.RGBA{40, 98, 160, 255}, false)
@@ -520,7 +521,8 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 	}
 	w := g.world
 	vis := visibleCells(c)
-	g.frameUniforms(c, viewProj(c))
+	vp := viewProj(c)
+	g.frameUniforms(c, vp)
 
 	// ---- what moves, into the frame's buffer ----
 	dyn, bills := g.dyn[:0], g.bills[:0]
@@ -693,6 +695,25 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		}
 		board(float64(sign.x)+0.5+float64(d[0])*fwd, y0+hgt/2, float64(sign.y)+0.5+float64(d[1])*fwd, wid, hgt, sign.tex, biasFront, modeUnlit)
 	}
+	// the walls in view: the faces that face the eye (the shader discards the others, after sampling
+	// them) and reach into the view, in the order they were built: their textures' soft edges blend
+	// over what was drawn before them, so the order shows
+	walls := g.wallRanges[:0]
+	for gi, wg := range w.walls {
+		s := sides(0, 0, 1, 1)[wg.side]
+		first := len(dyn)
+		for _, q := range wg.faces {
+			mx, mz := (q[0].x+q[2].x)/2, (q[0].z+q[2].z)/2
+			if s.nx*(mx-c.x)+s.nz*(mz-c.z) >= 0 || !inView(vp, q) {
+				continue
+			}
+			dyn = quad(dyn, q[0], q[1], q[2], q[3], centre(mx, mz), white4)
+		}
+		if n := len(dyn) - first; n > 0 {
+			walls = append(walls, wallRange{gi, first, n})
+		}
+	}
+	g.wallRanges = walls
 	g.dyn, g.bills = dyn, bills
 	if g.dyn2 == nil {
 		g.dyn2 = &gpu.Mesh{}
@@ -714,44 +735,97 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		dst.DrawMeshShader(m.Sub(r[0], r[1]), g.meshShader, [4]*gpu.Image{tex, nil, lit, nil}, u, blend)
 	}
 	wind := g.time * 0.02
-	if openSky {
+	// the floors before the planes beyond them: the depth test spares the shader the ground under
+	// them (the planes share a depth, so the clouds keep coming before the ground); the walls after
+	// both, as their textures' soft edges blend over what is behind. The planes lie beyond every
+	// face's depth (0.9999 at most), so writing theirs would hide nothing: tested only, which lets
+	// the GPU test before it shades (a shader that discards puts the test after a write)
+	if !gpu.Skip("floors") {
+		draw(w.mesh, w.floor, texFloor, nil, modeShaded, 0, 0, 0, 0, gpu.BlendSourceOver)
+		draw(w.mesh, w.ceil, texCeil, nil, modeShaded, 0, 0, 0, 0, gpu.BlendSourceOver)
+		draw(w.mesh, w.water, texWater, nil, modeShaded, 0, 0, 0, wind, gpu.BlendSourceOver)
+		for _, r := range w.mud {
+			draw(w.mesh, [2]int{r.first, r.n}, r.tex, nil, modeShaded, 0, 0, 0, 0, gpu.BlendSourceOver)
+		}
+		draw(w.mesh, w.pond, texPondWater, nil, modeShaded, 0, 0, 0, wind, gpu.BlendSourceOver)
+	}
+	if openSky && !gpu.Skip("planes") {
 		ct := texClouds
 		if Night {
 			ct = texStars
 		}
-		draw(g.dyn2, clouds, ct, nil, modeUnlit, 0, 0, 0, g.time*0.03, gpu.BlendSourceOver)
+		back := gpu.BlendSourceOverBack
+		if gpu.Skip("back") {
+			back = gpu.BlendSourceOver
+		}
+		draw(g.dyn2, clouds, ct, nil, modeUnlit, 0, 0, 0, g.time*0.03, back)
 		gt, gw := texFloor, 0.0
 		if groundK < 1 {
 			gt, gw = texWater, wind
 		}
-		draw(g.dyn2, ground, gt, nil, modeShaded, 0, 0, 0, gw, gpu.BlendSourceOver)
+		draw(g.dyn2, ground, gt, nil, modeShaded, 0, 0, 0, gw, back)
 	}
-	draw(w.mesh, w.floor, texFloor, nil, modeShaded, 0, 0, 0, 0, gpu.BlendSourceOver)
-	draw(w.mesh, w.ceil, texCeil, nil, modeShaded, 0, 0, 0, 0, gpu.BlendSourceOver)
-	draw(w.mesh, w.water, texWater, nil, modeShaded, 0, 0, 0, wind, gpu.BlendSourceOver)
-	for _, r := range w.mud {
-		draw(w.mesh, [2]int{r.first, r.n}, r.tex, nil, modeShaded, 0, 0, 0, 0, gpu.BlendSourceOver)
-	}
-	draw(w.mesh, w.pond, texPondWater, nil, modeShaded, 0, 0, 0, wind, gpu.BlendSourceOver)
-	draw(g.dyn2, circles, texGlow, nil, modeGlow, 0, 0, 0, 0, gpu.BlendLighter)
 	clampUV = 1 // tiled along, not up
-	for _, wg := range w.walls {
+	for _, wr := range g.wallRanges {
+		if gpu.Skip("walls") {
+			break
+		}
+		wg := w.walls[wr.g]
 		s := sides(0, 0, 1, 1)[wg.side]
 		nx := s.nx*c.rtx + s.nz*c.rtz // the normal's lateral component in camera space: the lit variant, and front faces' bias
 		bias := 0.0
 		if math.Abs(nx) <= 0.5 {
 			bias = biasFront
 		}
-		draw(w.mesh, [2]int{wg.first, wg.n}, wg.m.face(nx), wg.m.lit, modeShaded, s.nx, s.nz, bias, 0, gpu.BlendSourceOver)
+		draw(g.dyn2, [2]int{wr.first, wr.n}, wg.m.face(nx), wg.m.lit, modeShaded, s.nx, s.nz, bias, 0, gpu.BlendSourceOver)
 	}
+	draw(g.dyn2, circles, texGlow, nil, modeGlow, 0, 0, 0, 0, gpu.BlendLighter)
 	clampUV = 2 // a picture
+	if gpu.Skip("bills") {
+		bills = nil
+	}
 	for _, b := range bills {
 		draw(g.dyn2, [2]int{b.first, b.n}, b.tex, nil, b.mode, 0, 0, b.bias, 0, gpu.BlendSourceOver)
 	}
 	draw(g.dyn2, halos, texGlow, nil, modeGlow, 0, 0, biasFront, 0, gpu.BlendLighter)
-	if g.dither {
+	if g.dither && !gpu.Skip("dither") {
 		op := &gpu.DrawRectShaderOptions{}
 		op.Images[0] = g.scene
 		screen.DrawRectShader(W, H, g.shader, op)
 	}
+}
+
+// inView reports whether a face can reach the view: a quad with all four corners beyond the same
+// clip plane draws nothing. The painter's depth never clips at the near plane, but behind the eye
+// w < 0 turns it negative and the z >= 0 plane clips; a hair of slack keeps rounding from culling
+// a face on the edge.
+func inView(vp gpu.Mat4, q [4]pt) bool {
+	var out [5]int
+	for _, p := range q {
+		x := float64(vp[0])*p.x + float64(vp[4])*p.y + float64(vp[8])*p.z + float64(vp[12])
+		y := float64(vp[1])*p.x + float64(vp[5])*p.y + float64(vp[9])*p.z + float64(vp[13])
+		w := float64(vp[3])*p.x + float64(vp[7])*p.y + float64(vp[11])*p.z + float64(vp[15])
+		m := math.Abs(w)*1e-5 + 1e-9
+		if w < -m {
+			out[4]++
+		}
+		if x < -w-m {
+			out[0]++
+		}
+		if x > w+m {
+			out[1]++
+		}
+		if y < -w-m {
+			out[2]++
+		}
+		if y > w+m {
+			out[3]++
+		}
+	}
+	for _, n := range out {
+		if n == 4 {
+			return false
+		}
+	}
+	return true
 }

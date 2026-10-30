@@ -59,7 +59,7 @@ func (e *Engine) DevScene(name string) func() {
 			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
-	case "combat", "wildcombat", "castfight", "missile": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: the Ranged button for everyone (a sling, a bow and arrows, javelins in the Missiles slot)
+	case "combat", "wildcombat", "castfight", "missile", "autocombat": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: the Ranged button for everyone (a sling, a bow and arrows, javelins in the Missiles slot); autocombat: the computer fights for the party against eight (measuring the battle view)
 		return func() {
 			if name == "missile" {
 				launchers := []itemType{itemSling, itemShortBow} // the first two who may: a sling, a bow with arrows (hands freed)
@@ -105,7 +105,14 @@ func (e *Engine) DevScene(name string) func() {
 			if f := e.L.File(e.set.file("MON") + "CHA"); f != nil && len(f.Entries) > 0 {
 				idx = f.Entries[0].ID
 			}
-			e.addMonsters(idx, 3, 1)
+			count := 3
+			if name == "autocombat" {
+				count = 8
+				for _, c := range e.party {
+					c.Auto = 1 // as Quick for everyone
+				}
+			}
+			e.addMonsters(idx, count, 1)
 			e.Combat()
 			e.AfterCombat()
 			e.DrawMainScreen()

@@ -1,6 +1,7 @@
 package remaster
 
 import (
+	"fmt"
 	"image"
 	"slices"
 	"strconv"
@@ -101,15 +102,17 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 	if p.rowsImg == nil {
 		p.rowsImg = gpu.NewImage(w, h)
 	}
-	im := image.NewRGBA(image.Rect(0, 0, w, h))
-	for i := 3; i < len(im.Pix); i += 4 {
-		im.Pix[i] = 255
+	var puts []struct { // the line's pieces: drawn only when they change (a texture upload a frame otherwise)
+		s string
+		c int
 	}
-	rgb := pal.EGA
 	x := 0
 	put := func(s string, c int, y int) {
 		s = s[:min(len(s), max(0, (w-x)/8))]
-		drawText(im, glyph, s, x, y, rgb(c))
+		puts = append(puts, struct {
+			s string
+			c int
+		}{s, c})
 		x += len(s)*8 + 8
 	}
 	panel := b.Panel
@@ -168,7 +171,19 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 			}
 		}
 	}
-	p.rowsImg.WritePixels(im.Pix)
+	if key := fmt.Sprint(puts); key != p.rowsKey {
+		p.rowsKey = key
+		im := image.NewRGBA(image.Rect(0, 0, w, h))
+		for i := 3; i < len(im.Pix); i += 4 {
+			im.Pix[i] = 255
+		}
+		x = 0
+		for _, t := range puts {
+			drawText(im, glyph, t.s, x, 0, pal.EGA(t.c))
+			x += len(t.s)*8 + 8
+		}
+		p.rowsImg.WritePixels(im.Pix)
+	}
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(dst.Bounds().Dx())-k*w)/2, float64(p.mapBottom))

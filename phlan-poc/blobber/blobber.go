@@ -1123,6 +1123,7 @@ type Game struct {
 	meshShader                                  *gpu.MeshShader  // the 3D faces (mesh.go)
 	world                                       *world           // the map's standing geometry
 	dyn                                         []gpu.MeshVertex // the frame's moving faces, and their buffer
+	wallRanges                                  []wallRange      // the walls in view, by group
 	dyn2                                        *gpu.Mesh
 	bills                                       []bill
 	glows                                       []glowSrc
@@ -1685,7 +1686,7 @@ func (g *Game) Draw(screen *gpu.Image) {
 		return
 	}
 	Print(screen, fmt.Sprintf("%.0f fps  pos %d,%d facing %c   ? help", gpu.ActualFPS(), g.x, g.y, "NESW"[g.dir]), 4, 0)
-	if HUD != nil {
+	if HUD != nil && !gpu.Skip("hud") {
 		HUD(screen)
 	}
 	if g.time < msgUntil {

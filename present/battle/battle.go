@@ -313,15 +313,21 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 
 	dst.Fill(color.RGBA{0x0C, 0x0B, 0x0A, 0xFF})
 	dst.ClearDepth()
-	dst.DrawMesh(p.table, p.wood, vp, opts(gpu.Ident, [4]float32{1, 1, 1, 1}, 0.1))
-	dst.DrawMesh(p.board, p.atlas, vp, opts(gpu.Ident, [4]float32{1, 1, 1, 1}, 0.04))
+	if !gpu.Skip("table") {
+		dst.DrawMesh(p.table, p.wood, vp, opts(gpu.Ident, [4]float32{1, 1, 1, 1}, 0.1))
+	}
+	if !gpu.Skip("board") {
+		dst.DrawMesh(p.board, p.atlas, vp, opts(gpu.Ident, [4]float32{1, 1, 1, 1}, 0.04))
+	}
 
 	// shadows under what stands: the map's things, then the figurines
 	shade := gpu.MeshOptions{Blend: gpu.MeshAlpha, Tint: [4]float32{0, 0, 0, 0.7}}
-	dst.DrawMesh(p.shadows, p.shadow, vp, &shade)
+	if !gpu.Skip("shadows") {
+		dst.DrawMesh(p.shadows, p.shadow, vp, &shade)
+	}
 	shown := map[int]bool{}
 	for _, u := range b.Units {
-		if u.Icon == nil {
+		if u.Icon == nil || gpu.Skip("shadows") {
 			continue
 		}
 		shown[u.ID] = true
@@ -338,6 +344,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 
 	// frames on the board: choices, the cursor, the square under the mouse
 	frame := func(x, z int, tint [4]float32, lift float32) {
+		if gpu.Skip("frames") {
+			return
+		}
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: tint}
 		fx, fz := float32(x), float32(z)
 		for _, bar := range [4][4]float32{{fx + .5, fz + .06, .9, .06}, {fx + .5, fz + .94, .9, .06}, {fx + .06, fz + .5, .06, .9}, {fx + .94, fz + .5, .06, .9}} {
@@ -402,7 +411,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	// the figurines
 	var heads []head // where each one's health bar goes (Shift)
 	for _, u := range b.Units {
-		if u.Icon == nil {
+		if u.Icon == nil || gpu.Skip("figures") {
 			continue
 		}
 		x, z, sq := p.unitAt(u, dt)
@@ -472,7 +481,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 			})
 		}
 	}
-	p.drawSparks(dst, vp, dt)
+	if !gpu.Skip("sparks") {
+		p.drawSparks(dst, vp, dt)
+	}
 	if gpu.IsKeyPressed(gpu.KeyShift) {
 		p.drawHealth(dst, vp, heads)
 	}

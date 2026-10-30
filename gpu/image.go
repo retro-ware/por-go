@@ -1,9 +1,11 @@
 package gpu
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
+	"os"
 
 	"github.com/gogpu/gputypes"
 	"github.com/gogpu/wgpu"
@@ -18,9 +20,11 @@ type texture struct {
 	groups     map[*wgpu.Sampler]*wgpu.BindGroup
 	depth      *wgpu.Texture
 	dview      *wgpu.TextureView
-	clear      bool // the next pass into it clears it first (Clear)
+	clear      bool           // the next pass into it clears it first (Fill of the whole image)
+	clearCol   gputypes.Color // to this
 	clearDepth bool
 	px         []byte // its pixels until there is a device (images made before RunGame)
+	external   bool   // the window's frame: a view gogpu lends for one frame, no texture of our own
 	gone       bool   // deallocated
 }
 
@@ -35,7 +39,7 @@ func newTexture(w, h int) *texture {
 // ensure gives t its GPU texture, uploading the pixels it kept until then. A texture
 // used before RunGame adopts the window's device makes a headless device of its own.
 func (t *texture) ensure() {
-	if t.tex != nil || t.gone {
+	if t.tex != nil || t.gone || t.external {
 		return
 	}
 	t.make()
@@ -203,6 +207,10 @@ func (i *Image) WritePixels(px []byte) {
 
 // ReadPixels copies the image's pixels into px (premultiplied RGBA).
 func (i *Image) ReadPixels(px []byte) {
+	if i.t.external { // the frame is not readable: POR_SHOT, BLOBBER_SHOT and POR_GLITCH make the screen an image of its own
+		fmt.Fprintln(os.Stderr, "gpu: ReadPixels of the window's frame: nothing read")
+		return
+	}
 	if !i.r.Empty() {
 		readTexture(i.t, i.r.Min.X, i.r.Min.Y, i.r.Dx(), i.r.Dy(), px)
 	}
@@ -222,8 +230,8 @@ func (i *Image) Fill(c color.Color) {
 		i.WritePixels(px)
 		return
 	}
-	if i.r == image.Rect(0, 0, i.t.w, i.t.h) && a == 0 && dev.on != i.t && !pending(i.t) {
-		i.t.clear = true // the next pass clears it
+	if i.r == image.Rect(0, 0, i.t.w, i.t.h) && dev.on != i.t && !pending(i.t) && !Skip("clear") {
+		i.t.clear, i.t.clearCol = true, gputypes.Color{R: float64(r) / 0xffff, G: float64(g) / 0xffff, B: float64(b) / 0xffff, A: float64(a) / 0xffff} // the next pass clears it
 		return
 	}
 	var op DrawTrianglesOptions
@@ -303,9 +311,10 @@ const (
 type Blend int
 
 const (
-	BlendSourceOver Blend = iota
-	BlendLighter          // additive
-	blendCopy             // replaces (Fill)
+	BlendSourceOver     Blend = iota
+	BlendLighter              // additive
+	BlendSourceOverBack       // source over, for meshes nothing is ever drawn behind: the depth buffer is tested, not written
+	blendCopy                 // replaces (Fill)
 	blendCount
 )
 

@@ -43,7 +43,8 @@ type Presenter struct {
 	ticks       float64                     // animation time not yet run, in 1/60 s ticks
 	border      borders                     // the game's window border
 	bars        *gpu.Image                  // bars.png
-	cardImgs    []*gpu.Image                // the cards, drawn at scale 1
+	cardImgs    []*gpu.Image                // the cards, drawn at scale 1...
+	cardKeys    []cardKey                   // ...and what each shows
 	faceImgs    map[image.Image]*gpu.Image  // the faces on the GPU
 	hiFaces     map[image.Image]*gpu.Image  // the PNG portraits at the cards' window resolution
 	labels      map[string]*gpu.Image       // card labels in the game's font
@@ -85,6 +86,7 @@ type Presenter struct {
 	fightLog    bool                        // the battle Log is up (fight.go)
 	fightCard   image.Rectangle             // the active member's card (fight.go): left click the inventory, right click the sheet
 	rowsImg     *gpu.Image                  // the combat rows, drawn at scale 1
+	rowsKey     string                      // what they show
 	typing      bool                        // a line is being typed (input.go) ...
 	typed       string                      // ... and reads this
 	hovered     [3]int                      // the spot and cell the pointer was last on (Mouse)
@@ -727,8 +729,22 @@ func (p *Presenter) scene(v engine.View) *blobber.Scene {
 	return sc
 }
 
+// Scripted stops animate's clock: a capture script ticks the renderer itself (Tick), so
+// every frame of a scripted run is the same run to run.
+var Scripted bool
+
+// Tick advances the renderer's animation one tick (1/60 s) under a script.
+func (p *Presenter) Tick() {
+	if p.view != nil {
+		p.view.Update()
+	}
+}
+
 // animate runs the renderer's 60 ticks a second, whatever the frame rate.
 func (p *Presenter) animate() {
+	if Scripted {
+		return
+	}
 	now := time.Now()
 	if !p.last.IsZero() {
 		p.ticks = min(p.ticks+now.Sub(p.last).Seconds()*60, 6) // after a pause, no long catch-up

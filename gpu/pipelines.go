@@ -121,16 +121,19 @@ fn fsBlend(i: VOut) -> @location(0) vec4f {
 }
 `
 
+var sourceOver = &gputypes.BlendState{
+	Color: gputypes.BlendComponent{SrcFactor: gputypes.BlendFactorOne, DstFactor: gputypes.BlendFactorOneMinusSrcAlpha, Operation: gputypes.BlendOperationAdd},
+	Alpha: gputypes.BlendComponent{SrcFactor: gputypes.BlendFactorOne, DstFactor: gputypes.BlendFactorOneMinusSrcAlpha, Operation: gputypes.BlendOperationAdd},
+}
+
 var blends = [blendCount]*gputypes.BlendState{
-	BlendSourceOver: {
-		Color: gputypes.BlendComponent{SrcFactor: gputypes.BlendFactorOne, DstFactor: gputypes.BlendFactorOneMinusSrcAlpha, Operation: gputypes.BlendOperationAdd},
-		Alpha: gputypes.BlendComponent{SrcFactor: gputypes.BlendFactorOne, DstFactor: gputypes.BlendFactorOneMinusSrcAlpha, Operation: gputypes.BlendOperationAdd},
-	},
+	BlendSourceOver: sourceOver,
 	BlendLighter: {
 		Color: gputypes.BlendComponent{SrcFactor: gputypes.BlendFactorOne, DstFactor: gputypes.BlendFactorOne, Operation: gputypes.BlendOperationAdd},
 		Alpha: gputypes.BlendComponent{SrcFactor: gputypes.BlendFactorOne, DstFactor: gputypes.BlendFactorOne, Operation: gputypes.BlendOperationAdd},
 	},
-	blendCopy: nil,
+	BlendSourceOverBack: sourceOver,
+	blendCopy:           nil,
 }
 
 func attr(loc uint32, f gputypes.VertexFormat, off uint64) gputypes.VertexAttribute {

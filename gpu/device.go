@@ -161,7 +161,7 @@ func passOn(t *texture, depth bool) *wgpu.RenderPassEncoder {
 	color := wgpu.RenderPassColorAttachment{View: t.view, LoadOp: gputypes.LoadOpLoad, StoreOp: gputypes.StoreOpStore}
 	if t.clear {
 		Stats.Clears++
-		color.LoadOp, color.ClearValue, t.clear = gputypes.LoadOpClear, gputypes.Color{}, false
+		color.LoadOp, color.ClearValue, t.clear = gputypes.LoadOpClear, t.clearCol, false
 	}
 	desc := &wgpu.RenderPassDescriptor{Label: "draw", ColorAttachments: []wgpu.RenderPassColorAttachment{color}}
 	if depth {
@@ -172,6 +172,9 @@ func passOn(t *texture, depth bool) *wgpu.RenderPassEncoder {
 		}
 	}
 	Stats.Passes++
+	if passLog != nil {
+		*passLog = append(*passLog, fmt.Sprintf("pass %dx%d depth=%v clear=%v/%v", t.w, t.h, depth, color.LoadOp == gputypes.LoadOpClear, depth && desc.DepthStencilAttachment.DepthLoadOp == gputypes.LoadOpClear))
+	}
 	p, err := encoder().BeginRenderPass(desc)
 	if err != nil {
 		panic(err)
@@ -179,6 +182,9 @@ func passOn(t *texture, depth bool) *wgpu.RenderPassEncoder {
 	dev.pass, dev.on, dev.pdep = p, t, depth
 	return p
 }
+
+// passLog, when set, collects a line per render pass (POR_PASSES=1: one frame's passes, printed with the fps line).
+var passLog *[]string
 
 func endPass() {
 	if dev.pass != nil {

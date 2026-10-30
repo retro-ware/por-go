@@ -136,13 +136,14 @@ How the original was read, so another game can be read the same way:
   Esc, X the party overview, Y the minimap, LB/RB move the highlight,
   LT/RT previous/next member, Start Enter. Its env vars for headless work:
   `POR_DEV` (a dev scene from `engine/devviews.go`: shop, temple, appraise,
-  combat, wildcombat, castfight, missile, parlay, cure, portrait,
+  combat, wildcombat, castfight, missile, autocombat (the `-battle` flag:
+  the computer fights both sides, for measuring the battle view), parlay, cure, portrait,
   sheetcast, cast, castko, who, effects, journal, runes, inventory,
   lockeddoor, loot), `POR_SEED` (fixed dice), `POR_SHOT=file.png` (write
   the window and exit), `POR_KEYS` (scripted keys one every quarter second:
   `\r` Enter, `\e` Esc, `\U \D \L \R` arrows, `\1..\8` F-keys, `\t` Tab,
   `\M \C` right/left click at `POR_POINTER=x,y;x,y`, `\P` next pointer
-  position), `POR_PNG` (a dropped portrait), `POR_SCRIPTS_OUT`, `POR_FPS=1` (a frame-rate line a second: where a frame's time goes, and the frame's draws, passes, clears and buffer writes), `POR_NOVSYNC=1` (frames as fast as they come, for measuring), `POR_CPUPROFILE=file` (a CPU profile of the first 20 seconds), `POR_STACKS=n` (every goroutine to stderr every n seconds). Shot
+  position), `POR_PNG` (a dropped portrait), `POR_SCRIPTS_OUT`, `POR_FPS=1` (a frame-rate line a second: where a frame's time goes, and the frame's draws, passes, clears and buffer writes), `POR_NOVSYNC=1` (frames as fast as they come, for measuring), `POR_QUIT=1` (the run ends after the keys: measuring without a shot), `POR_PASSES=1` (one frame's render passes with each fps line), `POR_SKIP=a,b` (parts of the 3D frame left out to time the rest: fill, sky, planes, floors, walls, bills, dither, hud, in a battle table, board, shadows, frames, figures, sparks; clear and back undo two savings for a comparison), `POR_OFFSCREEN=1` (the frame drawn into a texture and copied to the window, as a shot does, instead of straight into the window), `POR_FREEZE=1` (after the keys time stands still, for a grab of the window from outside), `POR_GLITCH=dir` (every frame is read back after its present and the pair is saved as PNGs when more than half of the pixels changed: a glitch of one frame), `POR_CPUPROFILE=file` (a CPU profile of the first 20 seconds), `POR_STACKS=n` (every goroutine to stderr every n seconds). Shot
   windows open unfocused and ignore the user's input while they run (a
   global rule: captures must not take stray keys).
 

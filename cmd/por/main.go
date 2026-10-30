@@ -72,21 +72,7 @@ const tps = 120
 
 func (g *game) Update() error {
 	g.sent = false
-	if shot != "" { // the user's input never reaches a capture, only the scripted keys
-		g.ticks++
-		if k := g.ticks / 30; g.ticks%30 == 0 && k <= len(shotKeys) {
-			switch c := shotKeys[k-1]; c {
-			case shotRight, shotLeft: // \M, \C: a click at the pointer
-				g.rightOnce, g.leftOnce = c == shotRight, c == shotLeft
-			case shotNext: // \P: the pointer moves on to the next of POR_POINTER's x,y;x,y...
-				shotPointer++
-			case shotWait: // \w
-			default:
-				g.push(shotKeys[k-1])
-				g.act()
-				g.settle()
-			}
-		}
+	if scripted { // the user's input never reaches a capture or a measurement, only the scripted keys (script, from Draw)
 		if os.Getenv("POR_POINTER") != "" {
 			g.mouse()
 		}
@@ -115,6 +101,34 @@ func (g *game) Update() error {
 	}
 	return nil
 }
+
+// script is a scripted run's clock, run by Draw once a frame, so a capture is
+// the same frame for frame run to run (ticks and frames interleave differently
+// each run): the renderer ticks once a frame, a key of POR_KEYS goes in every
+// scriptTicks frames, and with POR_FREEZE time stands still after the keys (an
+// outside capture of the frame).
+func (g *game) script() {
+	if freeze != "" && g.ticks > scriptTicks*(len(shotKeys)+4) {
+		return
+	}
+	g.ticks++
+	g.remaster.Tick()
+	if k := g.ticks / scriptTicks; g.ticks%scriptTicks == 0 && k <= len(shotKeys) {
+		switch c := shotKeys[k-1]; c {
+		case shotRight, shotLeft: // \M, \C: a click at the pointer
+			g.rightOnce, g.leftOnce = c == shotRight, c == shotLeft
+		case shotNext: // \P: the pointer moves on to the next of POR_POINTER's x,y;x,y...
+			shotPointer++
+		case shotWait: // \w
+		default:
+			g.push(shotKeys[k-1])
+			g.act()
+			g.settle()
+		}
+	}
+}
+
+const scriptTicks = 15 // frames between a script's keys: a quarter second at 60 Hz
 
 // push hands a window key to the presenter, which makes the actions.
 func (g *game) push(k uint16) { g.remaster.Key(k, g.eng.View()) }
@@ -300,6 +314,9 @@ func (g *game) gamepad(id gpu.GamepadID) {
 }
 
 func (g *game) Draw(dst *gpu.Image) {
+	if scripted {
+		g.script()
+	}
 	text, at := g.eng.Note()
 	note := remaster.Note{Text: text, Show: time.Since(at) < time.Second+time.Duration(len(text))*80*time.Millisecond, Glyph: g.eng.Glyph}
 	if g.remaster.Inventory(dst, note, g.eng.View()) { // the inventory screen
@@ -308,17 +325,20 @@ func (g *game) Draw(dst *gpu.Image) {
 		g.pic = g.remaster.Draw(dst, note, g.eng.View())
 	}
 	if shot == "" {
+		if quit != "" && g.ticks > scriptTicks*(len(shotKeys)+4) { // POR_QUIT=1: the run ends after the keys (measuring)
+			os.Exit(0)
+		}
 		return
 	}
 	if strings.Contains(shot, "%d") { // every frame while the keys play, numbered (to catch a glitch of one frame)
-		if g.ticks > 30 && g.ticks <= 30*(len(shotKeys)+1) {
+		if g.ticks > scriptTicks && g.ticks <= scriptTicks*(len(shotKeys)+1) {
 			saveShot(dst, fmt.Sprintf(shot, g.frames))
 			g.frames++
 		}
-	} else if g.ticks > 30*(len(shotKeys)+4) {
+	} else if g.ticks > scriptTicks*(len(shotKeys)+4) {
 		saveShot(dst, shot)
 	}
-	if g.ticks > 30*(len(shotKeys)+4) {
+	if g.ticks > scriptTicks*(len(shotKeys)+4) {
 		os.Exit(0)
 	}
 }
@@ -333,6 +353,9 @@ func (g *game) Draw(dst *gpu.Image) {
 // pointer, \P the pointer on to the next of POR_POINTER's x,y;x,y... positions, \w a quarter second of nothing (a
 // long capture: the FPS of a view).
 var shot, shotKeys = os.Getenv("POR_SHOT"), scriptKeys(os.Getenv("POR_KEYS"))
+var freeze = os.Getenv("POR_FREEZE")
+var quit = os.Getenv("POR_QUIT")
+var scripted = shot != "" || freeze != "" || quit != ""
 
 const shotRight, shotLeft, shotNext, shotWait = 0xFF01, 0xFF02, 0xFF03, 0xFF04 // scriptKeys' codes for \M, \C, \P, \w
 
@@ -422,6 +445,7 @@ func main() {
 	imp := flag.String("import", "", "copy the game found under this directory into -data, then exit (goplay)")
 	imp2 := flag.String("import-disk2", "", "convert the Amiga graphics from the .adf disks under this directory into -data/amiga, then exit (goplay)")
 	explore := flag.Bool("explore", false, "debug: skip the intro, Quick Start a party if there is none and begin adventuring at once")
+	battle := flag.Bool("battle", false, "debug: a fight the computer plays out for both sides at the first prompt (with -explore: at once), for measuring the battle view")
 	setup := flag.Bool("setup", false, "one-time setup after the game was imported: write the area scripts into data/assets/scripts and data/COVER.PNG from data/dos/TITLE.DAX, then exit (gameimport)")
 	flag.Parse()
 	if p := os.Getenv("POR_CPUPROFILE"); p != "" { // slowness: a CPU profile of the first 20 seconds, for go tool pprof
@@ -506,6 +530,9 @@ func main() {
 	if d := os.Getenv("POR_DEV"); d != "" { // POR_DEV=combat: a dev scene at the first prompt, for captures
 		eng.DevAction = eng.DevScene(d)
 	}
+	if *battle {
+		eng.DevAction = eng.DevScene("autocombat")
+	}
 	if n, err := strconv.ParseUint(os.Getenv("POR_SEED"), 10, 32); err == nil { // POR_SEED=1: the same dice every run, for comparing captures
 		seed := uint32(n)
 		eng.FixedSeed = &seed
@@ -513,6 +540,7 @@ func main() {
 	go eng.Run()
 
 	g := &game{eng: eng, dsf: 1}
+	remaster.Scripted = scripted
 	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale)*6/5) // 4:3 like a CRT
 	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
