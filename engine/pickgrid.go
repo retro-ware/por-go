@@ -8,33 +8,35 @@ import (
 
 // Grid pickers (extra): the creation's heads, bodies and combat icon parts
 // are picked from a grid of all of them, as many columns and rows as the
-// page holds (a larger window shows more), centred in the box; a click
-// takes one, the arrows move a frame and Keep or Enter take it. What does
-// not fit is on further pages: a pager line "< page 1/2 >" at the bottom
-// of the box says so, its arrows (clicked, or Next and Prev, PgUp, PgDn
-// and the wheel) turn the page.
+// whole page holds (a larger window shows more; no bar: the box takes the
+// prompt row too), centred in the box; a click takes one, the arrows move
+// a frame and Enter takes it, Esc or the right button leave. What does not
+// fit is on further pages: a pager line "< page 1/2 >" at the bottom of
+// the box says so, its arrows (clicked, or PgUp, PgDn and the wheel) turn
+// the page.
 
 // pickGrid shows n pictures, each cw by ch cells, drawn by draw(i, x, y)
-// with its top left at cell (x, y), starting with cur framed; word is the
-// bar's word that takes one (Keep). The index picked, or -1 (Exit, Esc).
-func (e *Engine) pickGrid(prompt, word string, n, cw, ch, cur int, draw func(i, x, y int)) int {
+// with its top left at cell (x, y), starting with cur framed. The index
+// picked, or -1 (Esc).
+func (e *Engine) pickGrid(n, cw, ch, cur int, draw func(i, x, y int)) int {
 	if cur < 0 || cur >= n {
 		cur = 0
 	}
-	var cols, rows, gap, x0, y0, pager int // the layout, from the page's size (layout)
+	var cols, rows, gap, x0, y0, bot, pager int // the layout, from the page's size (layout)
 	layout := func() {
+		bot = promptRow - 1 // the box's inner bottom: the page's last row holds its border
 		gap, cols = 1, winRight/(cw+1)
 		if winRight/cw > cols { // a blank between the columns only when it costs none
 			gap, cols = 0, winRight/cw
 		}
 		cols = max(1, min(cols, n))
-		rows, pager = max(1, winBottom/ch), 0
+		rows, pager = max(1, bot/ch), 0
 		if (n+cols-1)/cols > rows { // paged: the pager line takes the box's last row
-			rows, pager = max(1, (winBottom-1)/ch), winBottom
+			rows, pager = max(1, (bot-1)/ch), bot
 		}
 		rows = min(rows, (n+cols-1)/cols)
 		x0 = 1 + (winRight-(cols*(cw+gap)-gap))/2
-		y0 = 1 + (winBottom-pager/winBottom-rows*ch)/2
+		y0 = 1 + (bot-pager/bot-rows*ch)/2
 	}
 	page := func() int { return cur / (cols * rows) }
 	pages := func() int { return (n + cols*rows - 1) / (cols * rows) }
@@ -48,23 +50,25 @@ func (e *Engine) pickGrid(prompt, word string, n, cw, ch, cur int, draw func(i, 
 		return -1
 	}
 	pagerText := func() string { return "< page " + strconv.Itoa(page()+1) + "/" + strconv.Itoa(pages()) + " >" }
-	pagerAt := func(cx, cy int) byte { // the pager's arrow at a cell: the bar's key, or 0
+	pagerAt := func(cx, cy int) bool { // the pager's arrow at a cell turns the page
 		if pager == 0 || cy != pager {
-			return 0
+			return false
 		}
 		w := len(pagerText())
 		switch x := (textCols - w) / 2; {
 		case cx == x && page() > 0:
-			return 'P'
+			cur = max(cur-cols*rows, 0)
 		case cx == x+w-1 && page() < pages()-1:
-			return 'N'
+			cur = min(cur+cols*rows, n-1)
+		default:
+			return false
 		}
-		return 0
+		return true
 	}
 	show := func() {
 		layout()
 		e.ClearScreen()
-		e.DrawBorder(1, 1, winRight, winBottom, 0)
+		e.DrawBorder(1, 1, winRight, bot, 0)
 		first := page() * cols * rows
 		for i := first; i < n && i < first+cols*rows; i++ {
 			x, y := cell(i)
@@ -90,22 +94,17 @@ func (e *Engine) pickGrid(prompt, word string, n, cw, ch, cur int, draw func(i, 
 			e.displayCharBg(x+len(s)-1, pager, next, colBlack, '>', true)
 		}
 	}
-	const (
-		keep Choice = iota
-		next
-		prev
-		exit
-	)
 	defer e.rawArrows()()
 	defer e.redrawWith(e.relist)()
+	defer e.fillCells(0, promptRow, lastCol, promptRow) // the border's bottom row, where the caller's bar goes
 	for {
 		show()
 		picked := false
 		mark := e.regionMark()
 		e.addRegion(region{x0: 0, y0: 0, x1: 999, y1: 999, // the whole page: the layout may change under it (a resize)
 			click: func(cx, cy int) Action {
-				if k := pagerAt(cx, cy); k != 0 {
-					return Action{Kind: actHotkey, N: int(k)}
+				if pagerAt(cx, cy) {
+					return Action{Kind: actRedraw}
 				}
 				if i := at(cx, cy); i >= 0 {
 					cur, picked = i, true
@@ -119,29 +118,17 @@ func (e *Engine) pickGrid(prompt, word string, n, cw, ch, cur int, draw func(i, 
 					show()
 				}
 			}})
-		bar := Bar{{word, keep}}
-		if page() < pages()-1 {
-			bar = append(bar, Entry{"Next", next})
-		}
-		if page() > 0 {
-			bar = append(bar, Entry{"Prev", prev})
-		}
-		bar = append(bar, Entry{"Exit", exit})
-		p := e.DisplayInput(prompt, bar, colLightMagenta, colLightGreen, colWhite, true, false)
+		p := e.DisplayInput("", nil, colLightMagenta, colLightGreen, colWhite, true, false) // no bar: the wait alone
 		e.regionCut(mark)
 		switch p.ID {
-		case keep, PickEnter:
+		case PickEnter:
 			return cur
 		case PickRedraw:
 			if picked {
 				return cur
 			}
-		case exit, NoPick:
+		case NoPick:
 			return -1
-		case next:
-			cur = min(cur+cols*rows, n-1)
-		case prev:
-			cur = max(cur-cols*rows, 0)
 		case PickMove:
 			switch p.Dir {
 			case DirUp:
@@ -170,14 +157,14 @@ func (e *Engine) pickGrid(prompt, word string, n, cw, ch, cur int, draw func(i, 
 // pickHead picks a portrait head from the 14: the number picked (1..14),
 // or 0.
 func (e *Engine) pickHead(cur int) int {
-	return 1 + e.pickGrid("Head: ", "Keep", len(portraitHead)-1, 11, 5, cur-1, func(i, x, y int) {
+	return 1 + e.pickGrid(len(portraitHead)-1, 11, 5, cur-1, func(i, x, y int) {
 		e.DrawPicture(x, y, e.LoadPic(charArt.file("HEAD"), int(portraitHead[i+1])), 0)
 	})
 }
 
 // pickBody picks a portrait body from the 12 (1..12), or 0.
 func (e *Engine) pickBody(cur int) int {
-	return 1 + e.pickGrid("Body: ", "Keep", 12, 11, 6, cur-1, func(i, x, y int) {
+	return 1 + e.pickGrid(12, 11, 6, cur-1, func(i, x, y int) {
 		e.DrawPicture(x, y, e.LoadPic(charArt.file("BODY"), int(portraitBody[i+1])), 0)
 	})
 }
@@ -186,7 +173,7 @@ func (e *Engine) pickBody(cur int) int {
 // character's portrait (a dropped PNG fitted into its place) with the name
 // and class beside it, laid out and paged by pickGrid; a character whose
 // files are gone (nil) is its name alone. The index picked, or -1.
-func (e *Engine) pickSaved(prompt, word string, chars []*Character, names []string, cur int) int {
+func (e *Engine) pickSaved(chars []*Character, names []string, cur int) int {
 	w := 0
 	for i, c := range chars {
 		w = max(w, len(names[i]))
@@ -194,7 +181,7 @@ func (e *Engine) pickSaved(prompt, word string, chars []*Character, names []stri
 			w = max(w, len(className(c.Class)))
 		}
 	}
-	return e.pickGrid(prompt, word, len(chars), 12+w, 5, cur, func(i, x, y int) {
+	return e.pickGrid(len(chars), 12+w, 5, cur, func(i, x, y int) {
 		c := chars[i]
 		switch {
 		case c == nil:

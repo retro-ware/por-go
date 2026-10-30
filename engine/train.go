@@ -346,7 +346,7 @@ func (e *Engine) AddCharacter() {
 	cur := 0
 	count := 0 // uninitialised until the first add in the original
 	for {
-		i := e.pickSaved("Add a character: ", "Add", chars, names, cur)
+		i := e.pickSaved(chars, names, cur)
 		if i < 0 {
 			break
 		}
@@ -424,7 +424,7 @@ func (e *Engine) ForgetCharacter() {
 	chars := e.loadSaved(names)
 	cur := 0
 	for len(names) > 0 {
-		i := e.pickSaved("Forget a character: ", "Forget", chars, names, cur)
+		i := e.pickSaved(chars, names, cur)
 		if i < 0 {
 			break
 		}

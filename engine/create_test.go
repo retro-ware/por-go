@@ -108,30 +108,39 @@ func TestCreateSheet(t *testing.T) {
 	if c.Stats[statCha] != 9 || v.Typing != nil {
 		t.Errorf("charisma %d, want 9; typing %+v", c.Stats[statCha], v.Typing)
 	}
-	// The head picker: a grid centred in the box (three columns of 11 with
-	// a blank between, from column 2); the second head is at column 14.
+	// The head picker: no bar, a grid centred in the whole page (three
+	// columns of 11 with a blank between, from column 2); the second head
+	// is at column 14. 14 heads, 12 a page on 25 rows: the pager line on
+	// row 23 (the box's last row, over the border on the prompt row), its
+	// ">" turns the page and a click on the second card there takes head
+	// 14; "<" turns it back. A window of 30 rows holds them all: the cell
+	// of the "<" is the second card of the fifth row there.
 	v = act(spot(v, 30, 2))
-	if v.Menu == nil || v.Menu.Prompt != "Head:" || v.Menu.Items[1].Text != "Next" {
+	if v.Menu != nil {
 		t.Fatalf("head picker: menu %+v", v.Menu)
 	}
-	// 14 heads, 12 a page on 25 rows: the pager's ">" on row 22 turns the
-	// page, "<" turns it back; a window of 30 rows holds them all.
-	v = act(spot(v, 25, 22))
-	if v.Menu.Items[1].Text != "Prev" {
-		t.Fatalf("page 2: menu %+v", v.Menu)
+	v = act(spot(v, 25, 23))
+	v = act(spot(v, 14, 2))
+	if c.PortHead != 14 || v.Menu == nil {
+		t.Fatalf("head %d, want 14 (page 2); menu %+v", c.PortHead, v.Menu)
 	}
-	v = act(spot(v, 14, 22))
-	if v.Menu.Items[1].Text != "Next" {
-		t.Fatalf("page 1 again: menu %+v", v.Menu)
-	}
+	v = act(spot(v, 30, 2))
+	v = act(spot(v, 14, 23))
 	v = act(Action{Kind: ActResize, X: 40, Y: 30})
-	if len(v.Text) != 30 || len(v.Text[0]) != 40 || v.Menu == nil || v.Menu.Items[1].Text != "Exit" {
+	if len(v.Text) != 30 || len(v.Text[0]) != 40 || v.Menu != nil {
 		t.Fatalf("30 rows: %dx%d, menu %+v", len(v.Text[0]), len(v.Text), v.Menu)
 	}
+	c.PortHead = 0
+	v = act(spot(v, 14, 23))
+	if c.PortHead != 14 || v.Menu == nil {
+		t.Fatalf("30 rows: head %d, want 14 (no pager); menu %+v", c.PortHead, v.Menu)
+	}
+	v = act(spot(v, 30, 2))
 	v = act(Action{Kind: ActResize, X: 40, Y: 25})
-	if len(v.Text) != 25 || v.Menu == nil || v.Menu.Items[1].Text != "Next" {
+	if len(v.Text) != 25 || v.Menu != nil {
 		t.Fatalf("25 rows again: %d, menu %+v", len(v.Text), v.Menu)
 	}
+	v = act(spot(v, 14, 23)) // page 2 (head 14 framed): back to page 1
 	v = act(spot(v, 14, 2))
 	if c.PortHead != 2 {
 		t.Errorf("head %d, want 2", c.PortHead)
@@ -171,14 +180,14 @@ func TestCreateSheet(t *testing.T) {
 	if !e.LoadCharacter("No-One", &d, false) || d.Race != raceDwarf || d.PortHead != 2 || d.Icon == nil || d.Portrait == nil {
 		t.Errorf("saved: %v race %d head %d icon %v portrait %v", d.Name(), d.Race, d.PortHead, d.Icon != nil, d.Portrait != nil)
 	}
-	// Add: the saved characters as cards (the portrait PNG an overlay),
-	// Add takes the one framed; Esc leaves.
+	// Add: the saved characters as cards (the portrait PNG an overlay), no
+	// bar: Enter takes the one framed; Esc leaves.
 	go func() { e.AddCharacter(); done <- true }()
 	v = wait()
-	if v.Menu == nil || v.Menu.Prompt != "Add a character:" || v.Menu.Items[0].Text != "Add" || len(v.Overlays) != 1 {
+	if v.Menu != nil || len(v.Overlays) != 1 {
 		t.Fatalf("add: menu %+v overlays %d", v.Menu, len(v.Overlays))
 	}
-	act(Action{Kind: ActPick, N: 0})
+	act(Action{Kind: ActContinue})
 	if len(e.party) != 1 || e.party[0].Name() != "No-One" {
 		t.Fatalf("added: party %d", len(e.party))
 	}
