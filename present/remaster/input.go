@@ -7,6 +7,8 @@ import (
 
 	"gpu"
 
+	"blobber"
+
 	"por/engine"
 )
 
@@ -147,7 +149,7 @@ func menuIndex(m *engine.Menu, c byte) int {
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
 	for ; wheel != 0; wheel -= sign(wheel) {
 		if p.fight {
-			p.battle.Zoom(wheel > 0)
+			p.battle.Zoom(wheel > 0, blobber.Settings.Zoom)
 			continue
 		}
 		d := engine.DirWheelDown

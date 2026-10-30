@@ -98,13 +98,15 @@ var (
 	sunDir      = [3]float32{0.45, 1, 0.6}
 )
 
-// Zoom moves the camera in (wheel up) or out.
-func (p *Presenter) Zoom(in bool) {
+// Zoom moves the camera in (wheel up) or out by one wheel step: 15 percent
+// of its distance at speed 1 (the Zoom speed option).
+func (p *Presenter) Zoom(in bool, speed float64) {
 	p.initCamera()
+	f := 1 + 0.15*speed
 	if in {
-		p.distTo = max(minDist, p.distTo/1.15)
+		p.distTo = max(minDist, p.distTo/f)
 	} else {
-		p.distTo = min(maxDist, p.distTo*1.15)
+		p.distTo = min(maxDist, p.distTo*f)
 	}
 }
 

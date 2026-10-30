@@ -215,6 +215,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.fightView = v.Battle
 		p.battle.Draw(dst, v.Battle)
 		p.drawFight(dst, note, v)
+		if p.view != nil {
+			p.view.DrawMenu(dst) // the Esc menu over the battle
+		}
 		return Rect{}
 	}
 	if p.main = v.MainMenu != nil; p.main {

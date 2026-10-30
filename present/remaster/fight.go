@@ -165,7 +165,14 @@ func (p *Presenter) fightKey(k uint16) bool {
 		p.fightLog = !p.fightLog && k != 27
 		return true
 	}
-	return p.battle.Key(k)
+	if p.battle.Key(k) {
+		return true
+	}
+	if k == 27 && p.view != nil { // Esc with nothing to give up: the options
+		p.view.OpenOptions()
+		return true
+	}
+	return false
 }
 
 // fightClick takes a click at (x, y) on the combat screen.

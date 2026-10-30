@@ -1459,6 +1459,9 @@ func (g *Game) menuOptions() []menuLine {
 				return bar(Settings.MapAlpha, minAlpha, 1, 0.1) + fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100)
 			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
 			{"Deskew combat maps", onOffOf(&Settings.Deskew), flip(&Settings.Deskew)},
+			{"Zoom speed", func(*Game) string {
+				return bar(Settings.Zoom, minZoom, maxZoom, 0.25) + fmt.Sprintf(" %.2fx", Settings.Zoom)
+			}, func(_ *Game, d int) { Settings.Zoom = step(Settings.Zoom, minZoom, maxZoom, 0.25, d) }},
 		}
 	}
 	page := func(p string) menuLine {
@@ -2303,16 +2306,19 @@ type Options struct {
 	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
 	PicDouble                         bool    // the host's picture box at twice the pop-up scale
 	Deskew                            bool    // the host's combat maps on a square grid (walls straight) instead of the original's perspective
+	Zoom                              float64 // the host's battle camera: how far one wheel step zooms, minZoom to maxZoom times 15 percent
 }
 
 const minAlpha = 0.2
 
 const minSpeed, maxSpeed = 0.5, 2.0
 
+const minZoom, maxZoom = 0.25, 2.0
+
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line: it toggles
 	// the voice first when toggle, then reports whether it is on.
