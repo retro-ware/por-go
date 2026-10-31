@@ -1142,7 +1142,7 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
 - Minimap over the roster (Tab), top right on the 3D view, with every wall
   and unseen squares dim; doors light brown (Amiga 0xA84) instead of cyan.
 - Full-screen map (M, or a click on the minimap, `engine/fullmap.go`):
-  cursor, legend, Label / Remove per square kept with the save slot (`LABELS.TXT`); New
+  titled with the map's name (the scripts' `Map` names), cursor, legend, Label / Remove per square kept with the save slot (`LABELS.TXT`); New
   Phlan's shops, temples, inns, taverns and offices are always labelled
   (from the block's step-event ONGOTO; the player's labels go over them,
   Remove shows them again); labelled squares are dots on the minimap.

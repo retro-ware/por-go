@@ -7,6 +7,7 @@ import (
 	"image"
 	"maps"
 	"os"
+	"path/filepath"
 	"por/pal"
 	"sort"
 	"strings"
@@ -312,11 +313,29 @@ func (e *Engine) labelInput(s string) (string, bool) {
 	return strings.TrimSpace(t), true
 }
 
+// mapName is the current map's name in words, from the scripts' names of
+// the GEO blocks (names/pictures.txt), or "Map".
+func (e *Engine) mapName() string {
+	vals, _ := ReadScriptValues(filepath.Join(e.scriptDir(), "names", "pictures.txt"), nil)
+	n := valueName(vals, "Map", int(e.set), int(e.area.Geo))
+	if n == "" {
+		return "Map"
+	}
+	var b strings.Builder
+	for i, c := range n { // "ValjevoCastle3" -> "Valjevo Castle 3"
+		if i > 0 && (c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' && !(n[i-1] >= '0' && n[i-1] <= '9')) {
+			b.WriteByte(' ')
+		}
+		b.WriteRune(c)
+	}
+	return b.String()
+}
+
 // drawFullMap draws the map, the cursor at (cx, cy) and the legend; it
 // returns the legend's texts and the first square of each.
 func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[string]int) {
 	e.ClearScreen()
-	e.DisplayString(1, 0, colWhite, "Map")
+	e.DisplayString(0, 0, colWhite, cut(e.mapName(), fmLegend-1)) // the longest, Cadorna Textile House, fits
 	e.DisplayString(fmLegend, 0, colWhite, "Labels")
 	texts, letter, kind := legend(m)
 	first := map[string]int{}

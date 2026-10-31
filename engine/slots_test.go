@@ -142,3 +142,23 @@ func TestPhlanLabels(t *testing.T) {
 		t.Errorf("removed 15,1 = %q, want Boats", l.text)
 	}
 }
+
+// The full map is titled with its map's name from names/pictures.txt.
+func TestMapName(t *testing.T) {
+	e := &Engine{set: 3, data: "../data"}
+	if n := e.mapName(); n != "New Phlan" {
+		t.Errorf("set 3 GEO 0 = %q, want New Phlan", n)
+	}
+	e.set, e.area.Geo = 5, 3
+	if n := e.mapName(); n != "Valjevo Castle 3" {
+		t.Errorf("set 5 GEO 3 = %q, want Valjevo Castle 3", n)
+	}
+	e.set, e.area.Geo = 8, 32
+	if n := e.mapName(); n != "Well Bottom" {
+		t.Errorf("set 8 GEO 32 = %q, want Well Bottom", n)
+	}
+	e.area.Geo = 99
+	if n := e.mapName(); n != "Map" {
+		t.Errorf("unnamed map = %q, want Map", n)
+	}
+}

@@ -60,7 +60,7 @@ original. Ticked items are ported and checked in a headless run
 ## Extras (not in the original)
 - [x] Minimap over the roster (Tab / gamepad Y)
 - [x] Area dropped from the command bar; the minimap shows every wall as Area did (unseen squares dim)
-- [x] Full-screen map (M, or a click on the minimap): cursor, legend, Label / Remove per square, kept with the save slot (LABELS.TXT); New Phlan's shops, temples, inns, taverns and offices are always labelled in every game (from the block's step-event ONGOTO; the player's labels go over them, Remove shows them again), labelled squares are dots on the minimap (engine/fullmap.go)
+- [x] Full-screen map (M, or a click on the minimap): titled with the map's name (names/pictures.txt), cursor, legend, Label / Remove per square, kept with the save slot (LABELS.TXT); New Phlan's shops, temples, inns, taverns and offices are always labelled in every game (from the block's step-event ONGOTO; the player's labels go over them, Remove shows them again), labelled squares are dots on the minimap (engine/fullmap.go)
 - [x] Party overview (P / gamepad X)
 - [x] Gamepad controls (d-pad walks in the 3D view, moves the selection in menus)
 - [x] Selection indicator on every menu (blue background; the item keeps its colours, white hotkey and green rest, list lines their own colour)
