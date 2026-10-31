@@ -695,8 +695,12 @@ func (e *Engine) placeOne(idx int) bool {
 			n++
 		}
 		out := x < 0 || y < 0 || x > 0xA || y > 5
+		// A row that starts off the block ends the team too (extra: the original only
+		// stopped at a corner of it, off both ways, and when every slot of the team was
+		// taken the rows ran on off one side for ever: a hang).
+		edge := out && (formationEdge(x, y) || x == bx && y == by)
 		if state > 1 {
-			full := out && !formationEdge(x, y)
+			full := out && !edge
 			if !full {
 				if first {
 					full = n >= int(p.rows[s])
@@ -723,7 +727,7 @@ func (e *Engine) placeOne(idx int) bool {
 			}
 		}
 		ok := false
-		if out && formationEdge(x, y) {
+		if edge {
 			state = 0
 			for team < 3 && state != 1 {
 				team++
