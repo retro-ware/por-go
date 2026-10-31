@@ -48,6 +48,10 @@ feels to play:
 - **Amiga art and music** from the Amiga disks, if you have them, and a
   choice of fonts and a resizable, fullscreen-capable window.
 
+## Video
+
+[![Watch the video on YouTube](https://img.youtube.com/vi/iKzySEruALw/maxresdefault.jpg)](https://youtu.be/iKzySEruALw)
+
 ## Screenshots
 
 [![The title screen](docs/screenshots/small/title.jpg)](docs/screenshots/title.png)
