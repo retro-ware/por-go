@@ -104,6 +104,7 @@ type inventory struct {
 	dollAt  image.Rectangle
 	face    image.Rectangle // the portrait on the canvas, when facePNG is drawn over it at the window's resolution
 	facePNG image.Image
+	panelAt image.Rectangle // the last panel on the canvas, drawn again over facePNG
 	arrows  [2]image.Rectangle
 	hover   image.Point // the pointer (canvas)
 	member  int         // View.Inventory.Member
@@ -602,6 +603,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		box = []string{"I'll give you " + it.Price, "for your " + strings.TrimSpace(it.Name) + ".", "", "Is it a deal?"}
 	}
 
+	inv.panelAt = image.Rectangle{}
 	// onto the GPU: the boxes' borders, then the box's
 	inv.img.WritePixels(inv.px.Pix)
 	drawBorder(inv.img, t, gpu.GeoM{}, split, ch-1)
@@ -630,6 +632,12 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(inv.face.Min.X)*inv.kx, float64(inv.face.Min.Y)*inv.ky)
 		dst.DrawImage(p.hiFace(inv.facePNG, portraitSize*inv.k), op)
+		if r := inv.panelAt; r.Overlaps(inv.face) { // the tooltip or question stays on top
+			op := &gpu.DrawImageOptions{}
+			op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
+			op.GeoM.Scale(inv.kx, inv.ky)
+			dst.DrawImage(inv.img.SubImage(r).(*gpu.Image), op)
+		}
 	}
 	return true
 }
@@ -820,6 +828,7 @@ func (inv *inventory) panel(t [3]*gpu.Image, lines []string, words []word, at fu
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(float64(p.X), float64(p.Y))
 	inv.img.DrawImage(inv.tip, op)
+	inv.panelAt = image.Rectangle{Min: p, Max: p.Add(image.Pt(w, h))}
 }
 
 // InventoryShown: the last frame was the inventory screen (its mouse
