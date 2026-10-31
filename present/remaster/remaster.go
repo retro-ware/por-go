@@ -213,7 +213,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if !p.active {
 		p.ctx = 0
 	}
-	p.fight = v.Battle != nil // the battle view is the only one: the engine has no combat page
+	p.fight = v.Battle != nil                          // the battle view is the only one: the engine has no combat page
 	p.noMenu = v.Menu == nil || len(v.Menu.Items) == 1 // a one-item bar (PRESS <ENTER> TO CONTINUE) has nothing to pick either
 	p.resize(dst, v)
 	if p.fight {
@@ -302,7 +302,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
-	picBottom := 0 // the bottom of the picture box, when one is up
+	picBottom := 0                                                                    // the bottom of the picture box, when one is up
 	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
@@ -321,7 +321,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if asking {
 		p.answered = pane
 	}
-	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered))     // back from a question with its text unchanged: the encounter is over
+	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
+	ask := v.Typing != nil && v.Typing.Prompt != ""                                    // a script's input: its question and the line in one pop-up, no text box
+	shown = shown && !ask
 	if shown && v.Command && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, frame, p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
@@ -338,7 +340,23 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.menu = false
 		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(v.Menu.Prompt)}, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
 		p.menuRects = p.menuRects[:0]
-	} else if v.Menu == nil { // typed input and "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
+	} else if ask { // the question over the line being typed, a cursor after it
+		p.menu = false
+		t, w := v.Typing.Text, min(v.Typing.Max, 24)
+		if p.typing {
+			t = p.typed
+		}
+		t = t[max(0, len(t)-w):]
+		if time.Now().UnixMilli()/400%2 == 0 {
+			t += "_"
+		}
+		top := b.Dy()/2 - int(mk*float64(len(wrap(v.Typing.Prompt, 24))+5)*4)
+		if picBottom > 0 { // never over the picture: right under it
+			top = max(top, picBottom+int(pk*4))
+		}
+		p.drawMenu(dst, note.Glyph, v.Typing.Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
+		p.menuRects = p.menuRects[:0]
+	} else if v.Menu == nil { // "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
 	} else if p.menu && menuID(v.Menu) != p.menuFor { // the menu the popup was opened for is gone (answered): the next one opens on its own key
 		p.menu = false

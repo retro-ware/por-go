@@ -128,8 +128,9 @@ type MenuItem struct {
 
 // Typing is the line being typed and how long it may get.
 type Typing struct {
-	Text string
-	Max  int
+	Text   string
+	Max    int
+	Prompt string // a script's question (the text window's text): the remaster asks it in a pop-up
 }
 
 // MapCell is the size of a square in View.Map, in pixels.

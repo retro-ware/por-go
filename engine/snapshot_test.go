@@ -437,3 +437,31 @@ func TestFightSheet(t *testing.T) {
 		t.Errorf("menu %v, selected %q, want the sheet of %q", v.Menu != nil, selected, active)
 	}
 }
+
+// TestScriptInputPrompt: a script's InputString publishes the text it
+// printed as the line's question (the remaster's pop-up); a typed line ends it.
+func TestScriptInputPrompt(t *testing.T) {
+	e := explore(t)
+	e.DevAction = e.DevScene("password")
+	e.Init()
+	go e.Play()
+	var v engine.View
+	for t0 := time.Now(); time.Since(t0) < 5*time.Second; time.Sleep(20 * time.Millisecond) {
+		if v = e.View(); v.Typing != nil {
+			break
+		}
+		if e.Idle() {
+			e.Act(resolve(e, cont))
+		}
+	}
+	if v.Typing == nil || v.Typing.Prompt != "WHAT DO YOU SAY? (TYPE A SINGLE WORD)" {
+		t.Fatalf("typing %+v, want the script's question", v.Typing)
+	}
+	e.Act(engine.Action{Kind: engine.ActText, Text: "ohlo"})
+	e.Act(engine.Action{Kind: engine.ActContinue})
+	for t0 := time.Now(); e.View().Typing != nil; time.Sleep(20 * time.Millisecond) {
+		if time.Since(t0) > 2*time.Second {
+			t.Fatal("the line did not end")
+		}
+	}
+}

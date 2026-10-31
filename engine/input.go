@@ -30,6 +30,10 @@ func (e *Engine) inputLine(prompt string, colour, maxlen int) string {
 	}
 	e.ClearRow24()
 	e.DisplayString(0, promptRow, colour, prompt)
+	if prompt == "" { // a script's input (opInputString, opInputNumber): the question is the text it printed
+		e.ext.asked = strings.TrimSpace(e.ext.printed)
+		defer func() { e.ext.asked = "" }()
+	}
 	s, _ := e.typed("", maxlen, func(c byte) bool { return c >= 0x20 && c <= 0x7A }, func(s string) {
 		e.DisplaySpaces(len(prompt)+1, promptRow, colBlack, max(0, 40-len(prompt)-1))
 		e.DisplayString(len(prompt)+1, promptRow, colWhite, s)
@@ -57,7 +61,7 @@ func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(strin
 	e.ext.typing = true
 	defer func() { e.ext.typing, e.snap.typing = false, nil }()
 	for {
-		e.snap.typing = &Typing{Text: s, Max: maxlen}
+		e.snap.typing = &Typing{Text: s, Max: maxlen, Prompt: e.ext.asked}
 		show(s)
 		e.actsDone()
 		a := e.nextAct()

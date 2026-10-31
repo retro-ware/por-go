@@ -123,6 +123,13 @@ func (e *Engine) DevScene(name string) func() {
 			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
 			e.DrawMainScreen()
 		}
+	case "password": // a script's InputString: the question in the text window, then the line typed (the remaster's pop-up)
+		return func() {
+			e.scriptText(true, "WHAT DO YOU SAY? (TYPE A SINGLE WORD)")
+			e.scriptText(true, "YOU SAY '"+e.InputString("", colLightGreen, 0x28)+"'.")
+			e.pressReturn()
+			e.DrawMainScreen()
+		}
 	case "cure": // the paladin's Cure: the member pick, then the 'not diseased, cure anyway' question
 		return func() {
 			e.paladinCure(e.selected())

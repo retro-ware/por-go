@@ -97,6 +97,7 @@ type extras struct {
 
 	// journal.go
 	printed   string     // the text window's text since it was cleared
+	asked     string     // a script's input is waiting: its question (inputLine)
 	refsShown int        // journal references in it already shown
 	paging    bool       // a journal text is shown
 	battleLog []string   // the combat messages of this battle (Log)
