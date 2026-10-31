@@ -50,26 +50,14 @@ func (e *Engine) startWalk(tx, ty int) bool {
 	return true
 }
 
-// walkFeed hands the command bar the walk's next key when it is time.
-func (e *Engine) walkFeed() {
+// walkStep (a frame) hands the command bar the walk's next key when it
+// is time.
+func (e *Engine) walkStep() {
 	w := e.ext.walk
-	if w == nil || e.ext.held.Kind != ActNone { // the last step is still being read
+	if w == nil {
 		return
 	}
 	stop := func() { e.ext.walk = nil }
-	for len(e.acts.q) > 0 { // a key or a click stops the walk and is used up
-		switch a := e.nextAct(); a.Kind {
-		case ActNone: // a resize (nextAct): the window changing does not stop it
-		case ActHover: // nor does the pointer moving, the map closing under it
-			e.take(a)
-		case actRedraw: // a resize the bar draws itself again for
-			e.ext.held = a
-			return
-		default:
-			stop()
-			return
-		}
-	}
 	if !e.ext.inCommand || e.ext.fullMap || w.event || e.viewMode != 1 || e.areaKey() != w.area ||
 		e.posX != w.ex || e.posY != w.ey || e.facing != w.ef ||
 		e.posX == w.tx && e.posY == w.ty {

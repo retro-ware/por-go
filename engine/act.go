@@ -1,13 +1,10 @@
 package engine
 
-import (
-	"iter"
-	"time"
-)
+import "time"
 
 // Actions (extra): the remastered screens act on the game through typed
 // actions instead of keys. A screen ported to them (ItemsMenu ...) publishes
-// what it shows in the View and waits in act; the front end hands decisions to Apply.
+// what it shows in the View; the front end hands decisions to Apply.
 
 // ActKind is what an Action does.
 type ActKind int
@@ -145,86 +142,106 @@ type Action struct {
 	Text string // ActText
 }
 
-// acts holds the decisions the front end handed Apply and the engine's
-// coroutine (iter.Pull): the engine runs only inside Apply, never on its own.
-type acts struct {
-	q       []Action                // handed in and not yet taken
-	resume  func() (struct{}, bool) // runs the engine on to its next wait (iter.Pull's next)
-	yield   func(struct{}) bool     // the engine's side: hands control back to Apply
-	running bool                    // inside resume (an Apply from the engine only queues)
-	ticking bool                    // parked in idle: it goes on at the next ActTick
-}
-
-// Start makes body (Run, or Play after Init) the engine's coroutine and runs
-// it to its first wait.
+// Start runs body (Run, or Play after Init), which puts the first screen
+// up, and returns the View.
 func (e *Engine) Start(body func()) View {
-	e.acts.resume, _ = iter.Pull(func(yield func(struct{}) bool) {
-		e.acts.yield = yield
-		body()
-	})
+	e.catch(body)
 	return e.Apply()
 }
 
-// Apply hands the engine the decisions as and runs it until it waits again
-// (for a decision, or for the next ActTick in a timed loop: View.Ticks), then
-// returns the View it published. ActTick is not queued: it only lets the
-// engine go on.
+// Apply hands each decision to the screen on top (ActTick: a frame went
+// by, for a timed screen, the auto-walk or the picture's animation) and
+// returns the View it leaves, with the events since the last Apply. With
+// no screen up, the party menu starts a game.
 func (e *Engine) Apply(as ...Action) View {
 	for _, a := range as {
-		if a.Kind != ActTick {
-			e.acts.q = append(e.acts.q, a)
+		e.catch(func() { e.apply(a) })
+	}
+	e.catch(func() {
+		if e.over && e.mode == modeExplore { // a script's quit, from a continuation
+			e.feed(Action{Kind: actRedraw}, 0)
 		}
-	}
-	if e.acts.resume != nil && !e.acts.running {
-		e.acts.running = true
-		e.acts.resume()
-		e.acts.running = false
-	}
+		if len(e.screens) == 0 {
+			e.PartyMenu(e.GameLoop) // ovr17:0161, then ovr04:32F8
+		}
+	})
+	e.publish()
 	v := e.View()
-	if !e.acts.running {
-		v.Events, e.events = e.events, nil
-	}
+	v.Events, e.events = e.events, nil
 	return v
 }
 
-// wait hands control back to Apply: the engine goes on at the next one.
-func (e *Engine) wait() { e.acts.yield(struct{}{}) }
-
-// nextAct publishes the View and takes the next decision, waiting for one.
-func (e *Engine) nextAct() Action {
-	e.publish()
-	for {
-		for len(e.acts.q) == 0 {
-			e.wait()
+// apply gives one decision to the top screen.
+func (e *Engine) apply(a Action) {
+	e.ext.guarded = e.mode != modeTitle
+	switch a.Kind {
+	case ActMainMenu:
+		e.mainMenu()
+		return
+	case ActResize:
+		e.resizePage(a.X, a.Y)
+		if e.ext.relist {
+			e.ext.relist = false
+			e.feed(Action{Kind: actRedraw}, 0)
 		}
-		a := e.acts.q[0]
-		e.acts.q = e.acts.q[1:]
-		switch a.Kind {
-		case ActMainMenu:
-			e.mainMenu()
-		case ActResize:
-			e.resizePage(a.X, a.Y)
-			e.publish()
-			if e.ext.relist {
-				e.ext.relist = false
-				return Action{Kind: actRedraw}
-			}
-			return Action{} // ActNone: a drain (inputReady) is not kept waiting
+		return
+	case ActTick:
+		e.walkStep()
+		switch {
+		case e.ext.held.Kind != ActNone: // the walk's step
+		case e.timed():
+			e.feed(a, 0)
 		default:
-			return a
+			e.animateWhileWaiting()
+		}
+	default:
+		if e.ext.walk != nil && a.Kind != ActHover { // a key or a click stops the walk and is used up
+			e.ext.walk = nil
+			if e.ext.inCommand {
+				return
+			}
+		}
+		if a = e.take(a); a.Kind != ActNone {
+			e.feed(a, 0)
+		}
+	}
+	for e.ext.held.Kind != ActNone { // the walk's step, a pick's follow-up
+		h := e.ext.held
+		e.ext.held = Action{}
+		if h = e.take(h); h.Kind != ActNone {
+			e.feed(h, 0)
 		}
 	}
 }
 
-// act publishes the View and waits for the next action. The extras (F9,
-// font, help) still act; the screen sees every other action.
-func (e *Engine) act() Action {
-	for {
-		a := e.nextAct()
-		if !e.extraAct(a) {
-			return a
+// catch runs f; a slot load or Back to Main Menu unwinds whatever runs
+// (a panic) and goes on with the game loaded or the party menu.
+func (e *Engine) catch(f func()) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
 		}
-	}
+		e.ext.guarded = false
+		var next func()
+		switch r.(type) {
+		case toMainMenu:
+			next = e.endGame // the party menu, as when the party is lost
+		case slotLoaded:
+			e.unwindReset()
+			next = e.GameLoop
+			if e.beginFlag == 0 { // a save from the party menu: no area yet, so back there
+				next = func() { e.PartyMenu(e.GameLoop) }
+			}
+		default:
+			panic(r)
+		}
+		e.catch(func() {
+			e.ext.guarded = true
+			next()
+		})
+	}()
+	f()
 }
 
 // say shows s as the window's note: what a direct action reports instead

@@ -61,7 +61,9 @@ type extras struct {
 	regions       []region // clickable parts of the screen
 	glow          [4]int   // the region the selection background shows under (glowOn), while glowing
 	glowing       bool
-	castCancelled bool // CastSpell: the player cancelled the aim (the turn goes on)
+	castCancelled bool       // CastSpell: the player cancelled the aim (the turn goes on)
+	castYes       bool       // castAsks: yes to "Lose it?" / "Use it?"
+	castOn        *Character // castAsks: the member the spell goes on (nil: none)
 	raw           bool // the screen reads the arrows itself
 	typing        bool // InputString is waiting
 	modal         int  // help or overview shown: any key closes
@@ -307,7 +309,6 @@ var helpLines = [][2]string{
 func (e *Engine) Help() {
 	off := e.modalOn()
 	e.ext.paging = true
-	defer func() { off(); e.ext.paging = false }()
 	restore := e.saveScreen()
 	pages := helpPages()
 	p := 0
@@ -326,19 +327,30 @@ func (e *Engine) Help() {
 			e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		}
 	}
-	defer e.redrawWith(show)()
-	for p < len(pages) {
-		show()
-		switch a := e.anyKey(); {
-		case a.Kind == ActClose:
-			p = len(pages)
-		case a.Kind == ActMove && (a.N == DirUp || a.N == DirPgUp || a.N == DirLeft):
-			p = max(p-1, 0)
-		default:
-			p++
+	undo := e.redrawWith(show)
+	var page func()
+	page = func() {
+		if p >= len(pages) {
+			restore()
+			undo()
+			off()
+			e.ext.paging = false
+			return
 		}
+		show()
+		e.keyThen(func(a Action) {
+			switch {
+			case a.Kind == ActClose:
+				p = len(pages)
+			case a.Kind == ActMove && (a.N == DirUp || a.N == DirPgUp || a.N == DirLeft):
+				p = max(p-1, 0)
+			default:
+				p++
+			}
+			page()
+		})
 	}
-	restore()
+	page()
 }
 
 // helpCol is where the descriptions start; they end before the border.

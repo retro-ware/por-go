@@ -32,46 +32,54 @@ func newList(n int) []*ListNode {
 }
 
 // ListMenu = ovr26:0D9A: the list and its options (menu, and Exit with
-// showExit) until a decision. Returns the option chosen (PickEnter: the
-// line itself; NoPick on exit) and sets *index and *selected to the line
+// showExit) until a decision; then gets the option chosen (PickEnter: the
+// line itself; NoPick on exit) with *index and *selected set to the line
 // chosen (nil on exit). The colours, box and redraw are the original's
 // and unused.
 func (e *Engine) ListMenu(title string, menu Bar, _, _, _, _, _, _, _ int,
-	list []*ListNode, showExit bool, _ *bool, index *int, selected **ListNode) Pick {
+	list []*ListNode, showExit bool, _ *bool, index *int, selected **ListNode, then func(Pick)) {
 	if len(list) == 0 {
 		*index = 0
 		*selected = nil
-		return Pick{ID: NoPick}
+		then(Pick{ID: NoPick})
+		return
 	}
 	if showExit {
 		menu = append(menu[:len(menu):len(menu)], Entry{"Exit", PickExit})
 	}
 	outer := e.snap.list
 	e.snap.list = list
-	defer func() { e.snap.list = outer }()
-	for {
-		e.ext.chosen = -1
-		p := e.DisplayInput(title, menu, colLightMagenta, colLightGreen, colWhite, true, false)
-		i := e.ext.chosen
-		switch {
-		case p.ID == PickExit || p.ID == NoPick:
-			*selected = nil
-			return Pick{ID: NoPick}
-		case p.ID == PickRelist: // (extra) another member (F1-F8): the caller rebuilds the list
-			*selected = nil
-			return p
-		case p.ID == PickMove: // the pickers stepping their value (creation)
-			if len(menu) == 0 {
-				*selected = list[min(max(*index, 0), len(list)-1)]
-				return p
-			}
-		case p.ID == PickRedraw || p.ID == PickSlots:
-		case i >= 0 && i < len(list) && !list[i].skipped():
-			*index, *selected = i, list[i]
-			return p
-		case p.ID != PickEnter: // an option without a line
-			*selected = nil
-			return p
-		}
+	done := func(p Pick) {
+		e.snap.list = outer
+		then(p)
 	}
+	var ask func()
+	ask = func() {
+		e.ext.chosen = -1
+		e.displayThen(title, menu, colLightMagenta, colLightGreen, colWhite, true, false, func(p Pick) {
+			i := e.ext.chosen
+			switch {
+			case p.ID == PickExit || p.ID == NoPick:
+				*selected = nil
+				done(Pick{ID: NoPick})
+			case p.ID == PickRelist: // (extra) another member (F1-F8): the caller rebuilds the list
+				*selected = nil
+				done(p)
+			case p.ID == PickMove && len(menu) == 0: // the pickers stepping their value (creation)
+				*selected = list[min(max(*index, 0), len(list)-1)]
+				done(p)
+			case p.ID == PickMove || p.ID == PickRedraw || p.ID == PickSlots:
+				ask()
+			case i >= 0 && i < len(list) && !list[i].skipped():
+				*index, *selected = i, list[i]
+				done(p)
+			case p.ID != PickEnter: // an option without a line
+				*selected = nil
+				done(p)
+			default:
+				ask()
+			}
+		})
+	}
+	ask()
 }

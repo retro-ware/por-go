@@ -68,7 +68,7 @@ type game struct {
 	frames    int           // frames saved, POR_SHOT with %d
 	rightOnce bool          // POR_KEYS \M: the right button pressed this tick
 	leftOnce  bool          // POR_KEYS \C: the left button
-	started   bool          // the engine's coroutine runs (act)
+	started   bool          // the engine has put its first screen up (act)
 }
 
 // tps: Update runs 120 times a second, so a key waits at most ~8 ms before
@@ -137,7 +137,7 @@ func (g *game) push(k uint16) { g.remaster.Key(k, g.eng.View()) }
 // act runs the engine on the screens' decisions (Apply returns once it
 // waits again), and gives it the frame (ActTick) while it is in a timed loop.
 func (g *game) act() {
-	if !g.started { // the coroutine is made on the thread that resumes it (the render loop's, locked)
+	if !g.started { // the title, on the render loop's (locked) thread that runs the engine
 		g.started = true
 		g.remaster.Play(g.eng.Start(g.eng.Run).Events)
 	}
@@ -174,7 +174,7 @@ func (g *game) keys() {
 		}
 	}
 	var send bool
-	send, paced = g.remaster.Flow(held, !g.eng.View().Working)
+	send, paced = g.remaster.Flow(held, true)
 	if send {
 		g.push(held)
 	}
@@ -182,7 +182,7 @@ func (g *game) keys() {
 		if i < 8 && paced {
 			continue
 		}
-		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) && !g.eng.View().Working {
+		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) {
 			code, _ := biosKey(k)
 			g.push(code)
 		}

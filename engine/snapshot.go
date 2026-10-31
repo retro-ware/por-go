@@ -119,7 +119,6 @@ type View struct {
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
 	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
-	Working   bool           // a decision handed in is not taken yet: what the View shows is on its way out (a menu still up is not asked again)
 	Ticks     bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
 }
 
@@ -296,7 +295,7 @@ func (e *Engine) View() View {
 	if e.snap.view != nil {
 		v = *e.snap.view
 	}
-	v.Working, v.Ticks = len(e.acts.q) > 0, e.acts.ticking || len(e.acts.q) > 0
+	v.Ticks = e.timed() || e.ext.walk != nil || e.animating()
 	return v
 }
 

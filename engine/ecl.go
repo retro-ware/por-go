@@ -659,24 +659,6 @@ func extractHotkeys(menu string) (hot, out string) {
 	return hot, string(res)
 }
 
-// MenuInput = ovr08:1684 (anim, allowEnter, c3, c2, c1, menu, prompt): index
-// of the chosen hotkey, 0 for Enter, 0xFF for unknown.
-func (e *Engine) MenuInput(allowEnter bool, c3, c2, c1 int, menu, prompt string) int {
-	bar := hotBar(menu)
-	for {
-		p := e.DisplayInput(prompt, bar, c1, c2, c3, true, e.animInput) // ovr08:16DC: the anim parameter
-		switch {
-		case p.extra():
-			e.partyKeypad(p)
-			e.DisplayPartyList()
-		case p.ID >= 0:
-			return int(p.ID)
-		case p.ID == PickEnter && allowEnter:
-			return 0
-		}
-	}
-}
-
 // hotBar is MenuInput's bar for menu: each word is the choice of its
 // hotkey's place in the menu.
 func hotBar(menu string) Bar {

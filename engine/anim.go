@@ -172,6 +172,12 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 	}
 }
 
+// animating: the picture animates while the engine waits.
+func (e *Engine) animating() bool {
+	a := &e.pic
+	return (e.viewAnim != 0 || e.animInput) && a.cur != 0 && a.cur <= len(a.frames) && !e.ext.fullMap
+}
+
 // animateWhileWaiting = the wait loop of ovr26:03BD: until a key arrives,
 // cycle the view picture's frames at (3,3), each shown for its delay in
 // tenths of a second (area+0x3FE forces a change every pass). Runs when
@@ -179,7 +185,7 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 func (e *Engine) animateWhileWaiting() bool {
 	a := &e.pic
 	force := e.viewAnim != 0
-	if !force && !e.animInput || a.cur == 0 || a.cur > len(a.frames) || e.ext.fullMap {
+	if !e.animating() {
 		return false
 	}
 	// ovr26:04CC: the current frame is redrawn on every poll

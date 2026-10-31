@@ -41,16 +41,34 @@ type CombatEvent struct {
 	From, To     image.Point
 	Text         string
 	Ms           int
+	Key          bool // held until a key ("press any key"), not for Ms
 	Battle       *Battle
 	Party        []Member
+	Scene        *View // outside a fight: the whole page as it stood, shown while the event plays
 }
 
 // event records ev; one held for a time gets the scene to show.
 func (e *Engine) event(ev CombatEvent) {
-	if ev.Ms > 0 {
+	if ev.Ms > 0 || ev.Key {
 		ev.Battle, ev.Party = e.battle(), e.members()
 	}
 	e.events = append(e.events, ev)
+}
+
+// pause is a moment for the presenter to show the page as it stands: ms
+// long, or until a key (key). The engine goes on at once (EvFrame).
+func (e *Engine) pause(ms int, key bool) {
+	if ms <= 0 && !key {
+		return
+	}
+	if e.cs.on {
+		e.event(CombatEvent{Kind: EvFrame, Ms: ms, Key: key})
+		return
+	}
+	e.publish()
+	v := e.View()
+	v.Events, v.Script, v.Menu, v.List, v.Typing, v.SpellPick, v.Ticks = nil, nil, nil, nil, nil, nil, false
+	e.events = append(e.events, CombatEvent{Kind: EvFrame, Ms: ms, Key: key, Scene: &v})
 }
 
 // unitEvent records an instant event about c (and t).
@@ -90,12 +108,8 @@ type aimAnswer struct {
 	t     aimTarget
 }
 
-// Combat = ovr09:007A: set up the battle, then rounds until one side is
-// down (or the party stops fighting). inline until M6d (opCombat runs
-// inside the script VM).
-func (e *Engine) Combat() { e.inline(e.pushCombat) }
-
-// pushCombat sets the battle up and puts its rounds up as a timed screen.
+// pushCombat = Combat (ovr09:007A): set up the battle, then rounds until
+// one side is down (or the party stops fighting), a timed screen.
 func (e *Engine) pushCombat() {
 	e.beginFlag = 5
 	e.ext.battleLog, e.ext.panel = nil, nil
@@ -133,7 +147,7 @@ func (e *Engine) applyCombat(a Action) bool {
 			e.game.Surprise = 0
 			e.cs.phase = fightTurn
 		case fightTurn:
-			c := e.nextActor()
+			c := e.nextCombatant()
 			if c == nil {
 				e.cs.phase = fightEnd
 				continue
@@ -252,17 +266,14 @@ func (e *Engine) aimSpell(c *Character, spell int, cast func()) {
 	}
 }
 
-// aimNow is chooseSpellTarget's aim: the next one aimSpell took, else (a
-// cast from the inventory's Use, still inline until M6d) the aim itself.
+// aimNow is chooseSpellTarget's aim: the next one aimSpell took (none
+// left: not found, as a cancelled aim).
 func (e *Engine) aimNow(c *Character, rng, allowGround int) (found bool, t aimTarget) {
 	if len(e.cs.aims) > 0 {
 		a := e.cs.aims[0]
 		e.cs.aims = e.cs.aims[1:]
 		return a.found, a.t
 	}
-	e.inline(func() {
-		e.playerAim(c, rng, 0, allowGround, func(f bool, at aimTarget) { found, t = f, at })
-	})
 	return
 }
 

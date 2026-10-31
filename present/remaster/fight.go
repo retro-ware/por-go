@@ -244,8 +244,8 @@ func wrap(s string, n int) (out []string) {
 	return append(out, l)
 }
 
-// replay is the fight's events still to play (Play): one held for Ms
-// shows the scene it carries; the engine waits until all are played (no
+// replay is the events still to play (Play): one held for Ms (or until a
+// key: Key) shows the fight or the page (Scene) it carries; the engine waits until all are played (no
 // ActTick, no decisions: Playing), then the live View is drawn again.
 type replay struct {
 	q    []engine.CombatEvent
@@ -263,11 +263,11 @@ func (p *Presenter) Playing() bool { return len(p.replay.q) > 0 }
 func (p *Presenter) playing() *engine.CombatEvent {
 	r := &p.replay
 	for len(r.q) > 0 {
-		if ev := &r.q[0]; ev.Ms > 0 && ev.Battle != nil && !r.skip {
+		if ev := &r.q[0]; (ev.Ms > 0 || ev.Key) && (ev.Battle != nil || ev.Scene != nil) && !r.skip {
 			if r.from.IsZero() {
 				r.from = time.Now()
 			}
-			if time.Since(r.from) < time.Duration(ev.Ms)*time.Millisecond {
+			if ev.Key || time.Since(r.from) < time.Duration(ev.Ms)*time.Millisecond {
 				return ev
 			}
 		}

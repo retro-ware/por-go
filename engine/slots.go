@@ -27,50 +27,6 @@ type slot struct {
 	at   time.Time
 }
 
-// top is the engine's top level: it dispatches each decision to the
-// screen on top of the stack (the title, the party menu, the adventuring
-// commands ...); with none up, the party menu starts a game. A slot load
-// or Back to Main Menu unwinds whatever runs back to here.
-func (e *Engine) top() {
-	var start func()
-	for {
-		start = e.dispatch(start)
-	}
-}
-
-// dispatch runs start, then dispatches decisions until a panic unwinds;
-// it returns how to go on.
-func (e *Engine) dispatch(start func()) (next func()) {
-	defer func() {
-		if r := recover(); r != nil {
-			e.ext.guarded = false
-			switch r.(type) {
-			case toMainMenu:
-				next = e.endGame // the party menu, as when the party is lost
-			case slotLoaded:
-				e.unwindReset()
-				next = e.GameLoop
-				if e.beginFlag == 0 { // a save from the party menu: no area yet, so back there
-					next = func() { e.PartyMenu(e.GameLoop) }
-				}
-			default:
-				panic(r)
-			}
-		}
-	}()
-	if start != nil {
-		e.ext.guarded = true
-		start()
-	}
-	for {
-		if len(e.screens) == 0 {
-			e.PartyMenu(e.GameLoop) // ovr17:0161, then ovr04:32F8
-		}
-		e.ext.guarded = e.mode != modeTitle
-		e.feed(e.decision(), 0)
-	}
-}
-
 // endGame: the game in play is over (a script quit, the party lost, Back
 // to Main Menu). extra: the original exits to DOS when the party is lost
 // (start:013D-0142); the port goes back to the party menu, and the next

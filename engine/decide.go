@@ -6,9 +6,8 @@ package engine
 // input or time. A handler opens another screen by pushing it: the
 // pushed screen takes the decisions until it is done, then the one under
 // it gets actRedraw. The engine's top level (top) only dispatches each
-// decision to the top screen; until M6c/M6d flatten combat and the script
-// VM, inline, await and until feed screens from inside a blocking caller
-// in the engine's coroutine (Apply).
+// decision to the top screen (Apply); work that follows a screen goes in
+// its leave or a continuation (after, whenDown).
 
 type screenMode int
 
@@ -63,21 +62,18 @@ func (e *Engine) pushTimed(m screenMode, apply func(Action) bool, leave func()) 
 // timed: the top screen takes the frames.
 func (e *Engine) timed() bool { return len(e.screens) > 0 && e.screens[len(e.screens)-1].timed }
 
-// inline runs push, which puts screens up, and feeds them until they are
-// all done: the blocking adapter of the callers still inside the script
-// VM or combat (opShop, opProgram, the combat sheet: M6c, M6d).
-func (e *Engine) inline(push func()) {
-	base := len(e.screens)
-	push()
-	e.until(base)
-}
-
-// after runs push, which may put screens up, and f once they are gone
-// (at once when it put none up): f runs in the leave of the first one.
+// after runs push, which may put screens up, and f once they are all
+// gone again (at once when it put none up).
 func (e *Engine) after(push func(), f func()) {
 	base := len(e.screens)
 	push()
-	if len(e.screens) == base {
+	e.whenDown(base, f)
+}
+
+// whenDown runs f once the stack is down to base screens: in the leave
+// of the screen at base, or of the one that leave put up in its place.
+func (e *Engine) whenDown(base int, f func()) {
+	if len(e.screens) <= base {
 		f()
 		return
 	}
@@ -87,23 +83,7 @@ func (e *Engine) after(push func(), f func()) {
 		if leave != nil {
 			leave()
 		}
-		f()
-	}
-}
-
-// await puts screen m up and feeds it decisions until it is done (the
-// blocking adapter of combat's turn and the script asks, until M6c/M6d).
-func (e *Engine) await(m screenMode, apply func(Action) (done bool)) {
-	base := len(e.screens)
-	e.push(m, apply, nil)
-	e.until(base)
-}
-
-// until feeds decisions to the screens pushed over the first base until
-// they are all done.
-func (e *Engine) until(base int) {
-	for len(e.screens) > base {
-		e.feed(e.decision(), base)
+		e.whenDown(base, f)
 	}
 }
 
@@ -118,6 +98,9 @@ func (e *Engine) feed(a Action, base int) {
 		e.screens, e.mode = e.screens[:n-1], s.under
 		if s.leave != nil {
 			s.leave()
+		}
+		if len(e.screens) >= n { // the leave put a screen up: it has drawn itself
+			return
 		}
 		a = Action{Kind: actRedraw}
 	}

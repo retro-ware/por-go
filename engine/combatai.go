@@ -146,7 +146,8 @@ func (e *Engine) aiCastFromItem(c *Character) bool {
 		lvl--
 	}
 	if found != nil {
-		e.useItem(found)
+		e.usingItem = true // useThen without its questions: the computer's item is no scroll
+		e.useItem(found, found.Spells[1])
 		r = true
 	}
 	return r

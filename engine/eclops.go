@@ -59,10 +59,18 @@ func init() {
 }
 
 // RunECL = ovr04:3171 (addr): run the script from instruction addr until
-// it stops.
-func (e *Engine) RunECL(addr int) {
+// it stops, then then (nil: nothing). The VM's state is the engine's
+// (eclPC, es): an instruction that needs the player (an ask) or opens a
+// screen (a fight, a shop, the party menu) leaves it suspended and RunECL
+// returns; it goes on once that is answered or the screens are gone.
+func (e *Engine) RunECL(addr int, then func()) {
 	e.eclPC = addr
 	e.es.stop = false
+	e.eclRun(then)
+}
+
+// eclRun runs the script on from eclPC (RunECL's loop).
+func (e *Engine) eclRun(then func()) {
 	for !e.es.stop && !e.run.quit {
 		if e.script == nil || e.eclPC < 0 || e.eclPC >= len(e.script.Code) {
 			fmt.Fprintf(os.Stderr, "script: no instruction %d\n", e.eclPC)
@@ -71,23 +79,29 @@ func (e *Engine) RunECL(addr int) {
 		e.es.prevOp = e.es.op
 		e.cur, e.argPos = e.eclPC, 0
 		e.es.op = e.script.Code[e.eclPC].Op
+		base := len(e.screens)
 		if f := e.nativeScript(); f != nil {
 			f(e)
-			e.waitScript()
-			continue
-		}
-		e.walkOp(e.es.op)
-		if int(e.es.op) < len(eclOps) && eclOps[e.es.op] != nil {
+		} else if e.walkOp(e.es.op); int(e.es.op) < len(eclOps) && eclOps[e.es.op] != nil {
 			eclOps[e.es.op](e)
-			e.waitScript() // an instruction asking the player completes on the answer
 		} else {
 			// Not ported yet: report it and end this script run.
 			fmt.Fprintf(os.Stderr, "ecl: opcode %02X on line %d not ported\n", e.es.op, e.script.Code[e.eclPC].Line)
 			e.FetchOpcodeArgs()
 			e.es.stop = true
 		}
+		if len(e.screens) == base && e.eclWait != nil { // an instruction asking the player completes on the answer
+			e.pushWait(func() {})
+		}
+		if len(e.screens) > base {
+			e.whenDown(base, func() { e.eclRun(then) })
+			return
+		}
 	}
 	e.es.stop = false // DS:442E is cleared on the way out
+	if then != nil {
+		then()
+	}
 }
 
 // opExit = ovr04:0001 (EXIT).
@@ -678,38 +692,43 @@ func (e *Engine) opSurprise() {
 }
 
 // opCombat = ovr04:179B: run the fight (or the shop/temple/after-combat
-// screen when no fight is pending).
-// ponytail: the shop, temple and combat it opens still run as blocking calls
-// from inside the VM (Shop and Temple await their screens); M5 enters combat
-// through the screen stack and M6 lets RunECL return and resume when they pop.
+// screen when no fight is pending). The screens it puts up suspend the VM
+// (eclRun) until they are gone.
 func (e *Engine) opCombat() {
 	e.eclPC++
 	if e.run.monstersLoaded == 0 && e.run.duelMode == 0 {
 		switch {
 		case e.game.Shop == 1:
 			e.game.Shop = 0
-			e.inline(e.Shop) // ovr07:053E; inline until M6d
+			e.after(e.Shop, e.opCombatEnd) // ovr07:053E
 		case e.game.Temple == 1:
 			e.game.Temple = 0
-			e.inline(e.Temple) // ovr05:0D09; inline until M6d
+			e.after(e.Temple, e.opCombatEnd) // ovr05:0D09
 		default:
-			e.AfterCombat() // ovr06:1527
+			e.after(e.pushAfterCombat, e.opCombatEnd) // ovr06:1527
 		}
-	} else {
-		d := uint16(e.FreeSteps(e.posX, e.posY, e.facing))
-		if d < e.game.MonsterDist {
-			e.game.MonsterDist = d
-		}
-		e.Combat()      // ovr09:007A
-		e.AfterCombat() // ovr06:1527
-		if e.area.In3D == 0 {
-			e.LoadBackpacIcons("BACPAC", 0, 0x28)
-			e.LoadIconPic("ICON", 0, 9)
-			e.LoadIconPic("ICON", 1, 0xA)
-			e.LoadIconPic("ICON", 2, 0xB)
-		}
-		e.run.duelMode = 0
+		return
 	}
+	d := uint16(e.FreeSteps(e.posX, e.posY, e.facing))
+	if d < e.game.MonsterDist {
+		e.game.MonsterDist = d
+	}
+	e.after(e.pushCombat, func() { // ovr09:007A
+		e.after(e.pushAfterCombat, func() { // ovr06:1527
+			if e.area.In3D == 0 {
+				e.LoadBackpacIcons("BACPAC", 0, 0x28)
+				e.LoadIconPic("ICON", 0, 9)
+				e.LoadIconPic("ICON", 1, 0xA)
+				e.LoadIconPic("ICON", 2, 0xB)
+			}
+			e.run.duelMode = 0
+			e.opCombatEnd()
+		})
+	})
+}
+
+// opCombatEnd is opCombat's end, after its screens.
+func (e *Engine) opCombatEnd() {
 	if e.viewMode == 1 {
 		e.beginFlag = 4
 	} else {

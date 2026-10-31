@@ -176,16 +176,15 @@ func wrapText(s string, w int) []string {
 func (e *Engine) showJournal(box string, lines []string) {
 	off := e.modalOn()
 	e.ext.paging = true
-	defer func() { off(); e.ext.paging = false }()
 	restore := e.saveScreen()
 	pages := journalPages(lines)
 	p, pageOff := 0, 0
 	var draw func(p, off int) (maxOff int)
-	defer e.redrawWith(func() {
+	undo := e.redrawWith(func() {
 		pages = journalPages(lines)
 		p = min(p, len(pages)-1)
 		draw(p, pageOff)
-	})()
+	})
 	draw = func(p, off int) (maxOff int) {
 		e.setOverlays(nil)
 		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, box) // the border runs round the page
@@ -215,31 +214,33 @@ func (e *Engine) showJournal(box string, lines []string) {
 		e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
 		return maxOff
 	}
-	for ; p < len(pages); p++ {
-		for pageOff = 0; ; {
-			maxOff := draw(p, pageOff)
-			a := e.input()
-			if !e.pressed(a) {
-				continue
-			}
-			up, down := a.Kind == ActMove && a.N == DirUp, a.Kind == ActMove && a.N == DirDown
-			if a.Kind == ActClose {
-				p = len(pages)
-				break
-			}
-			if maxOff > 0 && up {
-				pageOff = max(pageOff-16, 0)
-				continue
-			}
-			if maxOff > 0 && down && pageOff < maxOff { // at the bottom, Down pages on
-				pageOff = min(pageOff+16, maxOff)
-				continue
-			}
-			break
+	var show func() // the page p at pageOff, until a key turns it
+	show = func() {
+		if p >= len(pages) {
+			e.setOverlays(nil)
+			restore()
+			undo()
+			off()
+			e.ext.paging = false
+			return
 		}
+		maxOff := draw(p, pageOff)
+		e.keyThen(func(a Action) {
+			up, down := a.Kind == ActMove && a.N == DirUp, a.Kind == ActMove && a.N == DirDown
+			switch {
+			case a.Kind == ActClose:
+				p = len(pages)
+			case maxOff > 0 && up:
+				pageOff = max(pageOff-16, 0)
+			case maxOff > 0 && down && pageOff < maxOff: // at the bottom, Down pages on
+				pageOff = min(pageOff+16, maxOff)
+			default:
+				p, pageOff = p+1, 0
+			}
+			show()
+		})
 	}
-	e.setOverlays(nil)
-	restore()
+	show()
 }
 
 func (e *Engine) setOverlays(o []Overlay) { e.pg.overlays = o }

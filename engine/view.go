@@ -260,9 +260,16 @@ func (e *Engine) applySheet(a Action) (done bool) {
 		if !slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
 			return false
 		}
-		if e.power(c, a.Kind) { // ponytail: the powers still block (casting, the member pick): M4/M5
-			e.view.quit = true
+		e.power(c, a.Kind, func(quit bool) {
+			if quit {
+				e.view.quit = true // the sheet goes on its actRedraw (or at once)
+			}
+		})
+		if e.view.quit {
 			return true
+		}
+		if e.mode != modeSheet { // the power's screens are up: the sheet draws itself again on their actRedraw
+			return false
 		}
 	default:
 		return false
@@ -291,40 +298,54 @@ func (e *Engine) paladinCan(c *Character, used affectType) bool {
 	return int8(c.Levels[clsPaladin]) > 0 && e.beginFlag != 5 && c.Status == statusOkay && e.FindAffect(c, used) == nil
 }
 
-// paladinHeal = CotAB PaladinHeal: lay on hands for 2 hp per level.
-func (e *Engine) paladinHeal(c *Character) {
-	t := e.SelectCharacter("Heal whom? ", true, c)
-	if t == nil {
-		return
-	}
-	if e.Heal(t, 2*int(c.Levels[clsPaladin]), true) {
-		e.DisplayMessageWait(colLightGreen, t.Name()+" feels better")
-	} else {
-		e.DisplayMessageWait(colLightGreen, t.Name()+" is unaffected")
-	}
-	e.AddAffect(c, affLaidOnHands, 1440, 0, 0)
+// paladinHeal = CotAB PaladinHeal: lay on hands for 2 hp per level; then.
+func (e *Engine) paladinHeal(c *Character, then func()) {
+	e.SelectCharacter("Heal whom? ", true, c, func(t *Character) {
+		if t == nil {
+			then()
+			return
+		}
+		if e.Heal(t, 2*int(c.Levels[clsPaladin]), true) {
+			e.DisplayMessageWait(colLightGreen, t.Name()+" feels better")
+		} else {
+			e.DisplayMessageWait(colLightGreen, t.Name()+" is unaffected")
+		}
+		e.AddAffect(c, affLaidOnHands, 1440, 0, 0)
+		then()
+	})
 }
 
-// paladinCure = CotAB PaladinCureDisease: the temple's diseases go.
-func (e *Engine) paladinCure(c *Character) {
-	t := e.SelectCharacter("Cure whom? ", true, c)
-	if t == nil {
-		return
-	}
-	ill := false
-	for _, d := range diseases {
-		ill = ill || e.FindAffect(t, d) != nil
-	}
-	if !ill && !e.YesNo(colLightMagenta, colLightGreen, colWhite, t.Name()+" is not diseased, cure anyway: ") {
-		return
-	}
-	e.rv.cure = 1
-	for _, d := range diseases {
-		e.RemoveAffect(t, d, nil)
-	}
-	e.rv.cure = 0
-	e.AddAffect(c, affCuredDisease, 0x2760, 0, 0)
-	e.DisplayMessageWait(colLightGreen, t.Name()+" is cured")
+// paladinCure = CotAB PaladinCureDisease: the temple's diseases go; then.
+func (e *Engine) paladinCure(c *Character, then func()) {
+	e.SelectCharacter("Cure whom? ", true, c, func(t *Character) {
+		if t == nil {
+			then()
+			return
+		}
+		ill := false
+		for _, d := range diseases {
+			ill = ill || e.FindAffect(t, d) != nil
+		}
+		cure := func(yes bool) {
+			if !yes {
+				then()
+				return
+			}
+			e.rv.cure = 1
+			for _, d := range diseases {
+				e.RemoveAffect(t, d, nil)
+			}
+			e.rv.cure = 0
+			e.AddAffect(c, affCuredDisease, 0x2760, 0, 0)
+			e.DisplayMessageWait(colLightGreen, t.Name()+" is cured")
+			then()
+		}
+		if ill {
+			cure(true)
+			return
+		}
+		e.YesNo(colLightMagenta, colLightGreen, colWhite, t.Name()+" is not diseased, cure anyway: ", cure)
+	})
 }
 
 // canLoseItem = ovr20:0D70 (item): readied items must be unreadied first.
@@ -386,6 +407,15 @@ func (e *Engine) pushItems() {
 	e.push(modeItems, e.applyItems, func() { e.snap.invOn = false })
 }
 
+// itemsUsed: a power or an item used from the inventory is done (quit:
+// in combat it took the turn, and the inventory goes: view.quit).
+func (e *Engine) itemsUsed(quit bool) {
+	e.snap.invOn = true
+	if quit && e.beginFlag == 5 {
+		e.view.quit = true
+	}
+}
+
 // applyItems applies a decision in the inventory; done when it is left
 // (or an item used in combat took the turn: view.quit).
 func (e *Engine) applyItems(a Action) (done bool) {
@@ -399,6 +429,8 @@ func (e *Engine) applyItems(a Action) (done bool) {
 	switch inv := e.inventoryView(c, items); {
 	case a.Kind == ActClose:
 		return true
+	case a.Kind == actRedraw: // back from a power or a use: in combat one that took the turn ends it
+		return e.view.quit
 	case a.Kind == ActMember:
 		if e.beginFlag != 5 { // in combat the inventory is the fighter's
 			e.selectMember(a.N)
@@ -406,13 +438,9 @@ func (e *Engine) applyItems(a Action) (done bool) {
 		}
 	case a.Kind >= ActSpells && a.Kind <= ActCure:
 		if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {
-			e.snap.invOn = false       // they show on the game's own screens
-			quit := e.power(c, a.Kind) // ponytail: the powers still block (casting, the member pick): M4/M5
-			e.snap.invOn = true
-			if quit && e.beginFlag == 5 {
-				e.view.quit = true
-				return true
-			}
+			e.snap.invOn = false // they show on the game's own screens
+			e.power(c, a.Kind, e.itemsUsed)
+			return e.view.quit
 		}
 	case a.Kind == ActTakeAll && e.snap.loot: // the Loot screen's All: each piece in turn, until one does not fit
 		for len(e.run.treasure) > 0 && !e.buyItem(e.run.treasure[0]) {
@@ -444,13 +472,9 @@ func (e *Engine) applyItems(a Action) (done bool) {
 			e.refuse("Must be Readied")
 			break
 		}
-		e.snap.invOn = false  // its targets and spells show on the game's own screens
-		quit := e.useItem(it) // ponytail: using still blocks (the scroll's spell list, aiming): M5
-		e.snap.invOn = true
-		if quit && e.beginFlag == 5 {
-			e.view.quit = true
-			return true
-		}
+		e.snap.invOn = false // its targets and spells show on the game's own screens
+		e.useThen(it, e.itemsUsed)
+		return e.view.quit
 	case a.Kind == ActDrop:
 		if e.canLoseItem(it) {
 			e.dasp("drop")
@@ -683,24 +707,44 @@ func (e *Engine) joinItems(c *Character, it *Item) {
 	it.Count = byte(total)
 }
 
-// useItem = ovr20:1A8A (item): cast the scroll's spell or the item's own
-// (+0x3D, charges +0x3C). Returns the spell's "turn used" result.
-func (e *Engine) useItem(it *Item) bool {
-	idx := -1
+// useThen = ovr20:1A8A (item): cast the scroll's spell or the item's own
+// (+0x3D, charges +0x3C), the spell picked and the cast's questions asked
+// first (castAsks); then gets the spell's "turn used" result.
+func (e *Engine) useThen(it *Item, then func(quit bool)) {
 	e.usingItem = false
-	var spell byte
-	quit := false
-	if e.isScroll(it) {
+	use := func(spell byte) {
+		if spell == 0 {
+			then(false)
+			return
+		}
+		s := spell
+		if e.usingItem && s > 0x38 {
+			s -= 0x17
+		}
+		item := e.usingItem
+		e.castAsks(s, e.selected().Auto, true, func() {
+			e.usingItem = item
+			then(e.useItem(it, spell))
+		})
+	}
+	switch {
+	case e.isScroll(it):
 		e.usedScroll = it
+		idx := -1
 		var flag bool
-		spell = e.SpellList(2, 1, &idx, &flag)
-	} else if it.Spells[1] > 0 && it.Spells[2] < 0x80 {
+		e.SpellList(2, 1, &idx, &flag, use)
+	case it.Spells[1] > 0 && it.Spells[2] < 0x80:
 		e.usingItem = true
-		spell = it.Spells[1]
+		use(it.Spells[1])
+	default:
+		use(0)
 	}
-	if spell == 0 {
-		return false
-	}
+}
+
+// useItem is ovr20:1A8A once spell is picked (usingItem: the item's own):
+// it casts it; true when the turn is used.
+func (e *Engine) useItem(it *Item, spell byte) bool {
+	quit := false
 	c := e.selected()
 	if e.beginFlag == 5 && c.Auto == 0 {
 		e.combatUseHook() // 00BA:2B88
@@ -722,6 +766,7 @@ func (e *Engine) useItem(it *Item) bool {
 	e.usingItem = true
 	e.CastSpell(spell, c.Auto, 0, &quit)
 	e.usingItem = false
+	e.ext.castCancelled = false // a cancelled aim: nothing used, the inventory stays
 	if e.beginFlag == 5 && e.spellRec(spell, 0xB) != 0 {
 		quit = e.clearCombatInfo(c)
 	}
@@ -789,8 +834,8 @@ func (e *Engine) overloaded(it *Item, c *Character) bool {
 
 // SpellList = ovr20:299C (kind, mode, index, any): the list of spells of
 // one kind (0 memory, 1 book, 2 scroll, 3 scrolls, 4 choose, 5 to be
-// memorised, 6 to be scribed); returns the chosen spell or 0.
-func (e *Engine) SpellList(kind, mode int, index *int, any *bool) byte {
+// memorised, 6 to be scribed); then gets the chosen spell or 0.
+func (e *Engine) SpellList(kind, mode int, index *int, any *bool, then func(byte)) {
 	titles := []string{"in Memory", "in Spell Book", "on Scroll", "on Scrolls", "to choose from", "to be memorized", "to be scribed"}
 	title := ""
 	if kind >= 0 && kind < len(titles) {
@@ -798,7 +843,8 @@ func (e *Engine) SpellList(kind, mode int, index *int, any *bool) byte {
 	}
 	*any = e.buildSpellList(kind)
 	if !*any {
-		return 0
+		then(0)
+		return
 	}
 	if *index < 0 {
 		e.DrawBoxTitled(1, 1, winRight, 1, 0, colBlack, "")
@@ -806,7 +852,7 @@ func (e *Engine) SpellList(kind, mode int, index *int, any *bool) byte {
 		e.displayName(c, 1, 1, true)
 		e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells "+title)
 	}
-	return e.spellMenu(mode, index)
+	e.spellMenu(mode, index, then)
 }
 
 // powers is what c can do besides items: the View menu's Spells, Magic,
@@ -841,41 +887,57 @@ func (e *Engine) memberPowers(c *Character) []Power {
 	return append(ps, e.powers(c)...)
 }
 
-// power carries out one of c's powers; quit is true when a cast in combat
-// used the turn.
-func (e *Engine) power(c *Character, k ActKind) (quit bool) {
+// power carries out one of c's powers; then gets true when a cast in
+// combat used the turn.
+func (e *Engine) power(c *Character, k ActKind, then func(quit bool)) {
+	done := func() { then(false) }
 	switch k {
 	case ActSpells: // extra: the list casts (the original's View only shows it; its Cast commands cast for the selected member)
 		if e.beginFlag != 5 {
 			e.selectMember(slices.Index(e.party, c))
-			e.CastMenu()
-			return false
+			e.after(e.CastMenu, done)
+			return
 		}
 		if c.Combat == nil || c.Combat.CanCast == 0 || e.area.NoMagic != 0 { // the bar offers no Cast either
 			e.refuse("Cannot cast now")
-			return false
+			done()
+			return
 		}
-		if spell := e.pickSpell(); spell != 0 { // as the bar's Cast: aim, then the turn is over
-			e.castSpell(int(spell), 0, &quit)
-		}
+		e.pickSpell(func(spell byte) {
+			if spell == 0 {
+				done()
+				return
+			}
+			cast := func() { // as the bar's Cast: aim, then the turn is over
+				var quit bool
+				e.castSpell(int(spell), 0, &quit)
+				then(quit)
+			}
+			if e.spellData(int(spell), 6)/3 == 0 { // cast now: aimed first (castSpell only begins a longer one)
+				e.aimSpell(c, int(spell), cast)
+			} else {
+				cast()
+			}
+		})
 	case ActMagic:
-		e.displayAffects("Magic", []*Character{c})
+		e.displayAffects("Magic", []*Character{c}, done)
 	case ActHeal:
-		e.paladinHeal(c)
+		e.paladinHeal(c, done)
 	case ActCure:
-		e.paladinCure(c)
+		e.paladinCure(c, done)
+	default:
+		done()
 	}
-	return quit
 }
 
 // pickSpell (extra) offers the selected member's memorized spells as
-// View.SpellPick (the combat's Cast list, on any screen) and waits for the
+// View.SpellPick (the combat's Cast list, on any screen); then gets the
 // pick: the spell, or 0 for ActClose. The spell page (SpellList) is left to
 // memorizing and scribing.
-func (e *Engine) pickSpell() byte {
-	defer func() { e.snap.spellPick = nil }()
+func (e *Engine) pickSpell(then func(byte)) {
 	if !e.buildSpellList(0) {
-		return 0
+		then(0)
+		return
 	}
 	for _, id := range e.spellIDs {
 		if !slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == int(id) }) { // memorized twice: once in the list
@@ -883,7 +945,7 @@ func (e *Engine) pickSpell() byte {
 		}
 	}
 	var id byte
-	e.block(func() { // an ask (AskSpell): the presenter shows the pick
+	e.asking(func() { // an ask (AskSpell): the presenter shows the pick
 		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskSpell}, apply: func(a Action) bool {
 			switch {
 			case a.Kind == ActCast && slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == a.N }):
@@ -894,6 +956,8 @@ func (e *Engine) pickSpell() byte {
 			}
 			return false
 		}}
+	}, func() {
+		e.snap.spellPick = nil
+		then(id)
 	})
-	return id
 }

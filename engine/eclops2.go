@@ -524,17 +524,17 @@ func (e *Engine) opProgram() {
 		e.selectChar(e.run.savedSel)
 		e.run.restoreSel = false
 	}
-	switch v {
+	switch v { // the screens put up suspend the VM until they are gone
 	case 0:
-		e.inline(func() { e.PartyMenu(nil) })
-		e.DrawMainScreen()
+		e.after(func() { e.PartyMenu(nil) }, e.DrawMainScreen)
 	case 8:
-		e.inline(e.ProgramEight) // ovr19:02A4; inline until M6d
+		e.ProgramEight() // ovr19:02A4
 	case 9:
 		pc := e.eclPC
-		e.inline(func() { e.Encamp(nil) })
-		e.eclPC = pc
-		e.opExit()
+		e.Encamp(func() {
+			e.eclPC = pc
+			e.opExit()
+		})
 	}
 }
 

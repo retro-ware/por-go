@@ -48,15 +48,6 @@ type eclWait struct {
 	done   func()            // nil, or what ending the ask puts back
 }
 
-// waitScript puts modeScript up while an instruction is pending (the
-// blocking adapter until M6, as await).
-func (e *Engine) waitScript() {
-	if e.eclWait == nil {
-		return
-	}
-	e.inline(func() { e.pushWait(func() {}) })
-}
-
 // pushWait puts the pending ask up as a screen (modeScript); then runs
 // once it is answered and gone.
 func (e *Engine) pushWait(then func()) {
@@ -73,15 +64,23 @@ func (e *Engine) pushWait(then func()) {
 	})
 }
 
-// block runs ask, which records an ask, and waits for its answer (the
-// engine's prompts outside scripts: the pager, MsgDelay, PromptRow24 ...);
-// a pending script ask is kept under it. The blocking adapter until M6.
-func (e *Engine) block(ask func()) {
+// asking runs ask, which records an ask (the engine's own prompts: the
+// pager, a yes/no, a typed line ...), and puts it up as a screen; a
+// pending script ask is kept under it. then runs once it is answered and
+// gone (at once when ask asked nothing).
+func (e *Engine) asking(ask func(), then func()) {
 	prev := e.eclWait
 	e.eclWait = nil
 	ask()
-	e.waitScript()
-	e.eclWait = prev
+	if e.eclWait == nil {
+		e.eclWait = prev
+		then()
+		return
+	}
+	e.pushWait(func() {
+		e.eclWait = prev
+		then()
+	})
 }
 
 // applyScript is modeScript's handler: a completes the pending

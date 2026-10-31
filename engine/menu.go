@@ -105,17 +105,10 @@ func textBar(menu string) Bar {
 	return b
 }
 
-// DisplayInput = ovr26:03BD (prompt, menu, colours, allowExtra, anim): the
-// option chosen or what else ended the wait. The colours are the
-// original's and unused.
-func (e *Engine) DisplayInput(prompt string, bar Bar, c, normal, highlight int, allowExtra, anim bool) (p Pick) {
-	e.inline(func() { e.displayThen(prompt, bar, c, normal, highlight, allowExtra, anim, func(q Pick) { p = q }) })
-	return p
-}
-
-// displayThen is DisplayInput as a screen (modeScript): the question is an
-// ask (View.Script, View.Menu) the presenter answers; then gets the pick
-// once the screen is gone.
+// displayThen = DisplayInput (ovr26:03BD: prompt, menu, colours,
+// allowExtra, anim) as a screen (modeScript): the question is an ask
+// (View.Script, View.Menu) the presenter answers; then gets the pick once
+// the screen is gone. The colours are the original's and unused.
 func (e *Engine) displayThen(prompt string, bar Bar, _, normal, highlight int, allowExtra, anim bool, then func(Pick)) {
 	m, q := e.newQuestion(prompt, bar, allowExtra, normal != 0 || highlight != 0)
 	if m.Prompt == "" && len(m.Items) == 0 { // nothing to ask: no menu
@@ -287,21 +280,21 @@ func (q *question) member(n int) (Pick, bool) {
 }
 
 // YesNo = ovr26:10D1 (c1, c2, c3, prompt): "Yes No" on row 24, No
-// preselected; true for Yes.
-func (e *Engine) YesNo(c1, c2, c3 int, prompt string) bool {
+// preselected; then gets true for Yes.
+func (e *Engine) YesNo(c1, c2, c3 int, prompt string, then func(bool)) {
 	const (
 		yes Choice = iota
 		no
 	)
-	for {
-		switch e.DisplayInput(prompt, Bar{{"Yes", yes}, {"No", no}}, c1, c2, c3, false, false).ID {
+	e.displayThen(prompt, Bar{{"Yes", yes}, {"No", no}}, c1, c2, c3, false, false, func(p Pick) {
+		switch p.ID {
 		case yes:
-			return true
+			then(true)
 		case no:
-			return false
+			then(false)
+		default:
+			e.YesNo(c1, c2, c3, prompt, then)
 		}
-	}
+	})
 }
 
-// pressEnter is the bar with no item that waits for Enter.
-var pressEnter = Bar{{Word: "press <enter>/<return> to continue"}}

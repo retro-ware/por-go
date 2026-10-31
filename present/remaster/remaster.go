@@ -122,7 +122,9 @@ type Presenter struct {
 // Draw shows the game on dst and returns where the whole page went
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
-	if ev := p.playing(); ev != nil { // the fight as it stood at the event played
+	if ev := p.playing(); ev != nil && ev.Scene != nil { // the page as it stood at the pause played
+		v = *ev.Scene
+	} else if ev != nil { // the fight as it stood at the event played
 		v.Battle, v.Party = ev.Battle, ev.Party
 		v.Menu, v.List, v.Script, v.SpellPick = nil, nil, nil, nil
 	}
@@ -359,7 +361,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		drawBox(dst, frame, p.border.tiles, txt, tk, cx, cy)
 	}
 	if v.Menu != nil && !v.Exploring && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
-		if id := menuID(v.Menu); id != p.asked && !v.Working { // not the menu just answered, still up while the engine works on the answer
+		if id := menuID(v.Menu); id != p.asked { // not the menu just answered
 			p.asked, p.menu, p.menuFor, p.sel = id, true, id, 0
 		}
 	} else {
@@ -1178,7 +1180,7 @@ func (p *Presenter) pace(v engine.View) {
 	switch {
 	case p.pauseFrom.IsZero():
 		p.pauseFrom = time.Now()
-	case !v.Working && time.Since(p.pauseFrom) >= time.Duration(v.Script.Ms)*time.Millisecond:
+	case time.Since(p.pauseFrom) >= time.Duration(v.Script.Ms)*time.Millisecond:
 		p.send(engine.ActContinue, 0)
 		p.pauseFrom = time.Time{}
 	}

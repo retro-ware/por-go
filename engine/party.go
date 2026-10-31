@@ -222,7 +222,7 @@ func (e *Engine) applyParty(a Action) (done bool) {
 // SelectCharacter = 00BA:2C48 (prompt, exit, var who): pick a party member
 // with Next/Prev (keypad) and Select; Exit (offered when exit is set)
 // gives nil. The roster highlights the current choice.
-func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Character {
+func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then func(*Character)) {
 	prompt = cut(prompt, textCols)
 	const (
 		selectIt Choice = iota
@@ -236,55 +236,63 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 		who = e.party[0]
 	}
 	e.ext.choosing = true
-	defer func() {
+	done := func(c *Character) {
 		e.ext.choosing = false
 		e.DisplayPartyList() // (the original leaves the roster as drawn)
-	}()
-	for {
+		then(c)
+	}
+	var ask func()
+	ask = func() {
 		// who stays highlighted while the menu waits (the view animation
 		// redraws the roster).
 		e.rosterHi, e.rosterNone = who, who == nil
 		e.DisplayPartyList() // 00BA:0767 (who)
 		mark := e.regionMark()
-		e.rosterRegion()                                                                                                            // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
-		p := e.DisplayInput(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6) // 00BA:2C48 at 3844
-		e.regionCut(mark)
-		who = e.rosterHi // a member picked directly (menuBar.member)
-		e.rosterHi, e.rosterNone = nil, false
-		// The exit set (DS 00BA:2C1F) is checked before the extra flag.
-		switch p.ID {
-		case PickEnter, selectIt:
-			return who
-		case exitIt:
-			return nil
-		}
-		if p.extra() {
-			i := e.partyIndex(who)
-			switch p.Dir {
-			case DirEnd, DirDown, DirRight: // next, wrapping to the first (Down and Right are extras)
-				if who == nil {
-					// nil^.next reads 0000:0104 (the INT 41h vector, garbage in
-					// the original); the harness pins it to nil, and nil wraps to
-					// the first member (00BA:2D40)
-					who = e.party[0]
-				} else if i+1 < len(e.party) {
-					who = e.party[i+1]
-				} else {
-					who = e.party[0]
-				}
-			case DirHome, DirUp, DirLeft: // previous, wrapping to the last (Up and Left are extras)
-				if i > 0 {
-					who = e.party[i-1]
-				} else {
-					who = e.party[len(e.party)-1]
-				}
+		e.rosterRegion()                                                                                                                                 // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
+		e.displayThen(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6, func(p Pick) { // 00BA:2C48 at 3844
+			e.regionCut(mark)
+			who = e.rosterHi // a member picked directly (menuBar.member)
+			e.rosterHi, e.rosterNone = nil, false
+			// The exit set (DS 00BA:2C1F) is checked before the extra flag.
+			switch p.ID {
+			case PickEnter, selectIt:
+				done(who)
+				return
+			case exitIt:
+				done(nil)
+				return
 			}
-			continue
-		}
-		if p.ID == NoPick { // (Esc) the original stores nil and keeps asking
-			who = nil
-		}
+			if p.extra() {
+				i := e.partyIndex(who)
+				switch p.Dir {
+				case DirEnd, DirDown, DirRight: // next, wrapping to the first (Down and Right are extras)
+					if who == nil {
+						// nil^.next reads 0000:0104 (the INT 41h vector, garbage in
+						// the original); the harness pins it to nil, and nil wraps to
+						// the first member (00BA:2D40)
+						who = e.party[0]
+					} else if i+1 < len(e.party) {
+						who = e.party[i+1]
+					} else {
+						who = e.party[0]
+					}
+				case DirHome, DirUp, DirLeft: // previous, wrapping to the last (Up and Left are extras)
+					if i > 0 {
+						who = e.party[i-1]
+					} else {
+						who = e.party[len(e.party)-1]
+					}
+				}
+				ask()
+				return
+			}
+			if p.ID == NoPick { // (Esc) the original stores nil and keeps asking
+				who = nil
+			}
+			ask()
+		})
 	}
+	ask()
 }
 
 // RemoveSelected = ovr17:3291 (keepCount, freeIcon): the selected member

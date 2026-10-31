@@ -213,18 +213,12 @@ func (e *Engine) FullMap() {
 	off := e.modalOn() // the command bar's regions under it take no hover or click
 	inCommand := e.ext.inCommand
 	e.ext.inCommand, e.ext.fullMap = false, true
-	defer func() {
-		off()
-		restore()
-		e.ext.inCommand, e.ext.fullMap = inCommand, false
-	}()
 	cx, cy := e.posX, e.posY
 	if !onMap(cx, cy) {
 		cx, cy = 0, 0
 	}
 	m := e.labels()
 	mark := e.regionMark()
-	defer e.regionCut(mark)
 	e.addRegion(region{x0: fmX / 8, y0: fmY / 8, x1: (fmX + 16*fmCell - 1) / 8, y1: (fmY + 16*fmCell - 1) / 8, click: func(tx, ty int) Action {
 		x, y := (tx*8+4-fmX)/fmCell, (ty*8+4-fmY)/fmCell
 		if !onMap(x, y) {
@@ -246,8 +240,16 @@ func (e *Engine) FullMap() {
 		}
 		return Action{}
 	}})
-	defer e.rawArrows()()
-	for {
+	raw := e.rawArrows()
+	done := func() {
+		raw()
+		e.regionCut(mark)
+		off()
+		restore()
+		e.ext.inCommand, e.ext.fullMap = inCommand, false
+	}
+	var ask func()
+	ask = func() {
 		texts, firstSq = e.drawFullMap(m, cx, cy)
 		const (
 			walk Choice = iota
@@ -255,62 +257,74 @@ func (e *Engine) FullMap() {
 			remove
 			exit
 		)
-		p := e.DisplayInput("", Bar{{"Walk", walk}, {"Label", label}, {"Remove", remove}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		switch p.ID {
-		case PickMove:
-			switch p.Dir {
-			case DirUp:
-				cy = max(cy-1, 0)
-			case DirDown:
-				cy = min(cy+1, 15)
-			case DirLeft:
-				cx = max(cx-1, 0)
-			case DirRight:
-				cx = min(cx+1, 15)
-			}
-		case walk:
-			if e.startWalk(cx, cy) {
+		e.displayThen("", Bar{{"Walk", walk}, {"Label", label}, {"Remove", remove}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false, func(p Pick) {
+			switch p.ID {
+			case PickMove:
+				switch p.Dir {
+				case DirUp:
+					cy = max(cy-1, 0)
+				case DirDown:
+					cy = min(cy+1, 15)
+				case DirLeft:
+					cx = max(cx-1, 0)
+				case DirRight:
+					cx = min(cx+1, 15)
+				}
+			case walk:
+				if e.startWalk(cx, cy) {
+					done()
+					return
+				}
+				e.DisplayMessageWait(colYellow, "No known way there")
+			case label:
+				old := m[cy<<4|cx]
+				e.labelInput(old.text, func(s string, ok bool) {
+					if ok {
+						if s == "" {
+							delete(e.userLabels(), cy<<4|cx)
+						} else {
+							kind := byte(poiUser)
+							if s == old.text {
+								kind = old.kind
+							}
+							e.userLabels()[cy<<4|cx] = mapLabel{s, kind}
+						}
+						m = e.labels()
+					}
+					ask()
+				})
+				return
+			case remove: // a built-in label stays
+				if _, ok := e.userLabels()[cy<<4|cx]; ok {
+					delete(e.userLabels(), cy<<4|cx)
+					m = e.labels()
+				}
+			case exit, NoPick:
+				done()
 				return
 			}
-			e.DisplayMessageWait(colYellow, "No known way there")
-		case label:
-			old := m[cy<<4|cx]
-			if s, ok := e.labelInput(old.text); ok {
-				if s == "" {
-					delete(e.userLabels(), cy<<4|cx)
-				} else {
-					kind := byte(poiUser)
-					if s == old.text {
-						kind = old.kind
-					}
-					e.userLabels()[cy<<4|cx] = mapLabel{s, kind}
-				}
-				m = e.labels()
-			}
-		case remove: // a built-in label stays
-			if _, ok := e.userLabels()[cy<<4|cx]; ok {
-				delete(e.userLabels(), cy<<4|cx)
-				m = e.labels()
-			}
-		case exit, NoPick:
-			return
-		}
+			ask()
+		})
 	}
+	ask()
 }
 
-// labelInput reads a label on row 24 in upper and lower case; Esc gives up.
-func (e *Engine) labelInput(s string) (string, bool) {
+// labelInput reads a label on row 24 in upper and lower case; Esc gives
+// up (false); then gets it.
+func (e *Engine) labelInput(s string, then func(string, bool)) {
 	const prompt, max = "Label: ", 0x20
-	t, ok := e.typed(s, max, func(c byte) bool { return c >= 0x20 && c < 0x7F }, func(t string) {
+	e.typed(s, max, func(c byte) bool { return c >= 0x20 && c < 0x7F }, func(t string) {
 		e.ClearRow24()
 		e.DisplayString(0, promptRow, colLightMagenta, prompt)
 		e.DisplayString(len(prompt), promptRow, colWhite, t+"_")
+	}, func(t string, ok bool) {
+		e.ClearRow24()
+		if !ok {
+			then(s, false)
+			return
+		}
+		then(strings.TrimSpace(t), true)
 	})
-	e.ClearRow24()
-	if !ok {
-		return s, false
-	}
-	return strings.TrimSpace(t), true
 }
 
 // mapName is the current map's name in words, from the scripts' names of

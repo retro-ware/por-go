@@ -11,14 +11,14 @@ func (e *Engine) DisplaySpaces(x, y, colour, count int) {
 // ClearRow24 = ovr26:06FB: blank the message/menu row.
 func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, textCols) }
 
-// typed (extra) waits for the line the presenter edits, starting as s:
+// typed (extra) asks for the line the presenter edits, starting as s:
 // ActText sets it (only the characters ok takes, at most maxlen), show
-// draws it; Enter ends it, Esc too (false).
-func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(string)) (string, bool) {
+// draws it; Enter ends it, Esc too (false); then gets the line.
+func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(string), then func(string, bool)) {
 	t := &Typing{Text: s, Max: maxlen}
 	var done bool
 	show(s)
-	e.block(func() { // an ask (AskText): the presenter edits the line
+	e.asking(func() { // an ask (AskText): the presenter edits the line
 		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskText, Max: maxlen}, typing: t,
 			apply: func(a Action) bool {
 				switch a.Kind {
@@ -39,8 +39,7 @@ func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(strin
 				}
 				return false
 			}}
-	})
-	return t.Text, done
+	}, func() { then(t.Text, done) })
 }
 
 // DisplayMessageWait = 0709:0D68 (str, colour): message on row 24 for

@@ -5,8 +5,9 @@ import (
 )
 
 // Navigation that works the same way on every screen (not in the DOS
-// game). The presenter sends typed actions; the ported routines read them
-// (Engine.input) and decide on their meaning (DisplayInput for menu bars):
+// game). The presenter sends typed actions; Apply hands them to the screen
+// up (take does the screen-wide ones), which decides on their meaning
+// (displayThen's question for menu bars):
 //
 //   - in menus ActMove moves the highlight (Left/Up back, Right/Down on);
 //     in menus that take the keypad, Up/Down step the selected member
@@ -162,31 +163,6 @@ func (e *Engine) extraAct(a Action) bool {
 	return true
 }
 
-// input waits for the next action a ported routine reads. The extras
-// (extraAct), the pointer and clicks are handled here: a click comes back
-// as what it stands for.
-func (e *Engine) input() Action {
-	for {
-		if a := e.ext.held; a.Kind != ActNone {
-			e.ext.held = Action{}
-			return a
-		}
-		if a := e.take(e.nextAct()); a.Kind != ActNone {
-			return a
-		}
-	}
-}
-
-// inputReady reports, without waiting, whether input has an action.
-func (e *Engine) inputReady() bool {
-	e.walkFeed()
-	e.publish()
-	for e.ext.held.Kind == ActNone && len(e.acts.q) > 0 {
-		e.ext.held = e.take(e.nextAct())
-	}
-	return e.ext.held.Kind != ActNone
-}
-
 // take does what a does on every screen; ActNone when it is used up.
 func (e *Engine) take(a Action) Action {
 	if a.Kind == ActContinue || a.Kind == ActClose { // Enter or Esc silences the voice-over
@@ -232,10 +208,11 @@ func (e *Engine) pressed(a Action) bool {
 	return false
 }
 
-// anyKey asks "press a key" (AskKey) and returns the action that answered.
-func (e *Engine) anyKey() (a Action) {
-	e.block(func() { e.askKey(func(k Action) { a = k }) })
-	return a
+// keyThen asks "press a key" (AskKey) over whatever is up; then gets the
+// action that answered.
+func (e *Engine) keyThen(then func(Action)) {
+	var a Action
+	e.asking(func() { e.askKey(func(k Action) { a = k }) }, func() { then(a) })
 }
 
 // rosterRow is the party member listed at cell (cx, cy), or -1.

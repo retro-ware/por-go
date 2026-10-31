@@ -5,8 +5,8 @@ import (
 	"slices"
 )
 
-// DevScene returns a routine that sets up and runs one screen for a
-// headless check (snap ... game SLOT KEYS SCENE), or nil.
+// DevScene returns a routine that sets up one screen for a headless check
+// (snap ... game SLOT KEYS SCENE) and puts it up, or nil.
 func (e *Engine) DevScene(name string) func() {
 	switch name {
 	case "shop":
@@ -19,25 +19,19 @@ func (e *Engine) DevScene(name string) func() {
 				e.party[0].Items = append(e.party[0].Items, e.RandomItem(0x15))
 				e.party[2].Items = append(e.party[2].Items, e.RandomItem(0x32), e.RandomItem(0x05))
 			}
-			e.inline(e.Shop)
-			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
-			e.DrawMainScreen()
+			e.after(e.Shop, e.devBack)
 		}
 	case "temple":
 		return func() {
 			c := e.selected()
 			e.purse.gold = 10000
 			c.HP = 1
-			e.inline(e.Temple)
-			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
-			e.DrawMainScreen()
+			e.after(e.Temple, e.devBack)
 		}
 	case "appraise":
 		return func() {
 			e.purse.gems, e.purse.jewelry = 3, 2
-			e.inline(e.Shop)
-			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
-			e.DrawMainScreen()
+			e.after(e.Shop, e.devBack)
 		}
 	case "combat", "wildcombat", "castfight", "missile", "autocombat": // castfight: every member has Cure Light Wounds memorized (the inventory's Spells in a fight); missile: the Ranged button for everyone (a sling, a bow and arrows, javelins in the Missiles slot); autocombat: the computer fights for the party against eight (measuring the battle view)
 		return func() {
@@ -96,16 +90,14 @@ func (e *Engine) DevScene(name string) func() {
 			// as opSetupMonster with max distance 1: the monsters stand off
 			// a block (a fresh game's distance is 0, right among the party)
 			e.game.MonsterDist = min(uint16(e.FreeSteps(e.posX, e.posY, e.facing)), 1)
-			e.Combat()
-			e.AfterCombat()
-			e.DrawMainScreen()
+			e.after(e.pushCombat, func() { e.after(e.pushAfterCombat, e.DrawMainScreen) })
 		}
 	case "bestiary": // camp with a few kinds met for its Bestiary (CPIC blocks 1..5)
 		return func() {
 			for i, n := range []string{"KOBOLD", "ORC", "TROLL", "GOBLIN GUARD", "WYVERN"} {
 				e.meetMonster(n, e.set.file("CPIC"), i+1)
 			}
-			e.inline(func() { e.CampMenu(nil) })
+			e.CampMenu(nil)
 		}
 	case "parlay": // an encounter's menu, then the talk-style menu a script's Parlay shows after PARLAY
 		return func() { // as opEncounterMenu at distance 0 with a close-up, then the script's Parlay
@@ -135,9 +127,7 @@ func (e *Engine) DevScene(name string) func() {
 					e.askChoice(" ", "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", false, false, func(int) {})
 				})
 			}
-			round()
-			e.waitScript()
-			e.DrawMainScreen()
+			e.after(func() { round(); e.pushWait(func() {}) }, e.DrawMainScreen)
 		}
 	case "password": // a script's InputString: the question in the text window, then the line typed (the remaster's pop-up)
 		return func() {
@@ -146,21 +136,19 @@ func (e *Engine) DevScene(name string) func() {
 				e.scriptText(true, "YOU SAY '"+s+"'.")
 				e.askContinue(func() {})
 			})
-			e.waitScript()
-			e.DrawMainScreen()
+			e.after(func() { e.pushWait(func() {}) }, e.DrawMainScreen)
 		}
 	case "cure": // the paladin's Cure: the member pick, then the 'not diseased, cure anyway' question
 		return func() {
-			e.paladinCure(e.selected())
-			e.DrawMainScreen()
+			e.paladinCure(e.selected(), e.DrawMainScreen)
 		}
 	case "portrait": // the PNG at POR_PNG as the selected member's portrait: the sheet, then the view with the cards
 		return func() {
 			e.selected().Portrait = readPNG(os.Getenv("POR_PNG"))
-			e.inline(e.pushSheet)
-			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot screen
-			e.inline(func() { e.lootTake(func() {}) })
-			e.DrawMainScreen()
+			e.after(e.pushSheet, func() {
+				e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot screen
+				e.lootTake(e.DrawMainScreen)
+			})
 		}
 	case "sheetcast": // the sheet's Spells with the PNG at POR_PNG as the portrait: the list is a page of its own (no portrait overlay, no tall row)
 		return func() {
@@ -168,8 +156,7 @@ func (e *Engine) DevScene(name string) func() {
 			c := e.selected()
 			c.Portrait = readPNG(os.Getenv("POR_PNG"))
 			c.Memorized[0] = spCureLightWounds
-			e.inline(e.pushSheet)
-			e.DrawMainScreen()
+			e.after(e.pushSheet, e.DrawMainScreen)
 		}
 	case "cast", "castko": // Cast on the command bar with Cure Light Wounds memorized; castko with the selected member unconscious
 		return func() {
@@ -191,11 +178,10 @@ func (e *Engine) DevScene(name string) func() {
 				}
 			}
 			c.Memorized[0] = spCureLightWounds
-			e.CastMenu()
-			e.DrawMainScreen()
+			e.after(e.CastMenu, e.DrawMainScreen)
 		}
 	case "who": // a member pick on the view, as a script's "Who will search?"
-		return func() { e.askMember("Who will search?", nil, e.selectChar); e.waitScript() }
+		return func() { e.askMember("Who will search?", nil, e.selectChar); e.pushWait(func() {}) }
 	case "effects":
 		return func() { // spell effects for the View page: many on member 1, one on member 2
 			for _, t := range []affectType{affBless, affCurse, affMonsterInvisible, affPoisoned, affRegenerating, affFireResistance} {
@@ -213,8 +199,7 @@ func (e *Engine) DevScene(name string) func() {
 			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "YOU OVERHEAR TAVERN TALE ")
 			e.journalPrinted("YOU OVERHEAR TAVERN TALE ", true)
 			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, false, "3")
-			e.journalPrinted("3", false)
-			e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true)
+			e.after(func() { e.journalPrinted("3", false) }, func() { e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true) })
 		}
 	case "runes": // the Sokal Keep elf's scroll (ECL1 block 21, 9BD7): opClearBox, three opProtection lines
 		return func() {
@@ -228,7 +213,7 @@ func (e *Engine) DevScene(name string) func() {
 				}
 				e.msgRow++
 			}
-			e.anyKey()
+			e.pause(0, true)
 		}
 	case "inventory": // member 1 fully equipped, a party inventory to scroll
 		return func() {
@@ -269,9 +254,14 @@ func (e *Engine) DevScene(name string) func() {
 				e.run.treasure = append(e.run.treasure, e.RandomItem(t))
 			}
 			e.loot = purse{gold: 156, gems: 7}
-			e.AfterCombat()
-			e.DrawMainScreen()
+			e.after(e.pushAfterCombat, e.DrawMainScreen)
 		}
 	}
 	return nil
+}
+
+// devBack: as opCombat after a shop or temple, the 3D view comes back.
+func (e *Engine) devBack() {
+	e.beginFlag = 4
+	e.DrawMainScreen()
 }

@@ -121,11 +121,16 @@ func (e *Engine) CastMenu() {
 	}
 	// extra: the pick list (View.SpellPick, as the combat's Cast) instead of the
 	// spell page, and one cast: the original lists again until Exit
-	if spell := e.pickSpell(); spell != 0 { // the main screen is still up: no message box to redraw (the original's spell page had replaced it)
-		var quit bool
-		e.CastSpell(spell, 0, 1, &quit)
-		e.DrawMainScreen()
-	}
+	e.pickSpell(func(spell byte) {
+		if spell == 0 { // the main screen is still up: no message box to redraw (the original's spell page had replaced it)
+			return
+		}
+		e.castAsks(spell, 0, false, func() {
+			var quit bool
+			e.CastSpell(spell, 0, 1, &quit)
+			e.DrawMainScreen()
+		})
+	})
 }
 
 // partyStudy: the longest study time of the party in minutes (studyTime
@@ -440,8 +445,8 @@ func (e *Engine) affectList(c *Character) []string {
 
 // displayAffects = ovr16:0FBC: the members with the spell effects on them,
 // under a box titled title. The list appends are the nested ovr16:0E37
-// (text, flag). The caller redraws the screen.
-func (e *Engine) displayAffects(title string, members []*Character) {
+// (text, flag). The caller redraws the screen in then.
+func (e *Engine) displayAffects(title string, members []*Character, then func()) {
 	list := []*ListNode{{Text: " "}}
 	for _, c := range members {
 		list = append(list, &ListNode{Text: c.Name(), Flag: 1})
@@ -458,7 +463,7 @@ func (e *Engine) displayAffects(title string, members []*Character) {
 	index := 0
 	var sel *ListNode
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, title)
-	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel)
+	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel, func(Pick) { then() })
 }
 
 // dropMember = ovr16:18E5 (the player confirmed): member n leaves the
@@ -559,8 +564,7 @@ func (e *Engine) campDecision(a Action) (left bool) {
 	case ActHeal, ActCure, ActSpells, ActMagic:
 		c := member()
 		if slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
-			e.power(c, a.Kind)
-			e.DrawMainScreen()
+			e.power(c, a.Kind, func(bool) { e.DrawMainScreen() })
 		}
 	case ActPlan:
 		e.planSpell(member(), byte(a.X), a.Y)
@@ -901,22 +905,23 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 	for i := 1; i < len(e.run.effTick); i++ {
 		e.run.effTick[i] = 1
 	}
-	hours, shown := 0, 0
+	hours, shown, stopped := 0, 0, false
 	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	e.showRest(0)
 	e.resting = 1
 	r := &e.camp.rest
 	e.pushTimed(modeRest, func(a Action) bool {
-		if r[4] == 0 && r[3] == 0 && r[2] == 0 && r[1] == 0 || stop() {
+		if r[4] == 0 && r[3] == 0 && r[2] == 0 && r[1] == 0 || stop() || stopped {
 			return true
 		}
 		if a.Kind != ActTick { // keyHit: the step waits for the next frame
 			if e.pressed(a) {
 				e.showRest(0)
-				if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ") {
-					return true
-				}
-				e.ClearRow24()
+				e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ", func(yes bool) {
+					if stopped = yes; !yes { // the rest ends on the actRedraw that follows
+						e.ClearRow24()
+					}
+				})
 			}
 			return false
 		}

@@ -36,21 +36,22 @@ func (e *Engine) GameLoop() {
 			e.setAreaVar(tourDone, 1)
 		}
 	}
-	e.RunECL(e.es.events[4])
-	if e.beginFlag != 3 {
-		if r.needFrame == 1 {
-			e.DrawMainScreen()
-			r.needFrame = 0
+	e.RunECL(e.es.events[4], func() {
+		if e.beginFlag != 3 {
+			if r.needFrame == 1 {
+				e.DrawMainScreen()
+				r.needFrame = 0
+			}
+			e.Redraw()
 		}
-		e.Redraw()
-	}
-	if fresh {
-		e.Music(4) // extra: the party first enters Phlan (the Amiga never plays song 4)
-	}
-	e.area.AreaKind = uint16(e.gs.areaKind)
-	e.looking, e.over = false, false
-	e.push(modeExplore, e.applyExplore, e.endGame)
-	e.commandBegin()
+		if fresh {
+			e.Music(4) // extra: the party first enters Phlan (the Amiga never plays song 4)
+		}
+		e.area.AreaKind = uint16(e.gs.areaKind)
+		e.looking, e.over = false, false
+		e.push(modeExplore, e.applyExplore, e.endGame)
+		e.commandBegin()
+	})
 }
 
 // afterCommand is GameLoop's loop after a command ended input (encamp:
@@ -72,12 +73,12 @@ func (e *Engine) afterCommand(encamp bool) {
 		r.searchSave = byte(e.game.Search & 1)
 		e.game.Search = 1
 		e.Redraw()
-		e.RunECL(e.es.events[1])
-		if r.areaChanged {
-			e.AreaChange()
-		}
-		e.game.Search = uint16(r.searchSave)
-		e.lookDone()
+		e.RunECL(e.es.events[1], func() {
+			e.areaChanged(func() {
+				e.game.Search = uint16(r.searchSave)
+				e.lookDone()
+			})
+		})
 		return
 	}
 	e.looking = false
@@ -97,26 +98,38 @@ func (e *Engine) lookDone() {
 // stepDone is the step part of GameLoop's loop, then the next command.
 func (e *Engine) stepDone() {
 	r := &e.run
-	if !r.quit {
-		e.RunECL(e.es.events[0])
-	}
-	if r.areaChanged {
-		e.unback() // a backward step the scripts sent elsewhere
-		e.AreaChange()
-	} else if !r.quit {
-		e.area.PrevX = uint16(int16(int8(e.posX)))
-		e.area.PrevY = uint16(int16(int8(e.posY)))
-		e.Move()
-		e.Redraw()
-		if int(e.area.PrevX) != e.posX || int(e.area.PrevY) != e.posY {
-			e.PlaySound(sndStep)
+	run := func(addr int, then func()) {
+		if r.quit {
+			then()
+			return
 		}
-		e.es.picShown, e.es.picAnimating = 0, 1
-		e.RunECL(e.es.events[1])
-		if r.areaChanged {
-			e.AreaChange()
-		}
+		e.RunECL(addr, then)
 	}
+	run(e.es.events[0], func() {
+		switch {
+		case r.areaChanged:
+			e.unback() // a backward step the scripts sent elsewhere
+			e.AreaChange(e.stepEnd)
+		case r.quit:
+			e.stepEnd()
+		default:
+			e.area.PrevX = uint16(int16(int8(e.posX)))
+			e.area.PrevY = uint16(int16(int8(e.posY)))
+			e.Move(func() {
+				e.Redraw()
+				if int(e.area.PrevX) != e.posX || int(e.area.PrevY) != e.posY {
+					e.PlaySound(sndStep)
+				}
+				e.es.picShown, e.es.picAnimating = 0, 1
+				e.RunECL(e.es.events[1], func() { e.areaChanged(e.stepEnd) })
+			})
+		}
+	})
+}
+
+// stepEnd ends a step: the next command, or the game is over.
+func (e *Engine) stepEnd() {
+	r := &e.run
 	if r.quit {
 		r.quit = false
 		e.over = true // the explore screen goes: endGame
@@ -125,17 +138,25 @@ func (e *Engine) stepDone() {
 	e.commandBegin() // ovr04:34FC jumps back to 3395: the write follows the input
 }
 
+// areaChanged runs AreaChange when a script switched areas, then then.
+func (e *Engine) areaChanged(then func()) {
+	if e.run.areaChanged {
+		e.AreaChange(then)
+		return
+	}
+	then()
+}
+
 // AreaChange = ovr04:31B4: after a script switched areas, run the new
-// area's start events and settle the view mode.
-func (e *Engine) AreaChange() {
+// area's start events and settle the view mode; then then.
+func (e *Engine) AreaChange(then func()) {
 	r := &e.run
-	for {
-		e.es.cell = e.MapCell(e.posX, e.posY)
-		e.game.LeftMap = 0
-		sel := e.selected() // DS:5D92 kept at bp-4 (ovr04:31D5)
-		e.prevViewMode = e.viewMode
-		e.viewMode = 1
-		e.RunECL(e.es.events[4])
+	e.es.cell = e.MapCell(e.posX, e.posY)
+	e.game.LeftMap = 0
+	sel := e.selected() // DS:5D92 kept at bp-4 (ovr04:31D5)
+	e.prevViewMode = e.viewMode
+	e.viewMode = 1
+	e.RunECL(e.es.events[4], func() {
 		e.beginFlag = 4
 		if e.area.In3D == 0 {
 			switch e.gs.areaKind {
@@ -158,31 +179,42 @@ func (e *Engine) AreaChange() {
 			e.Redraw()
 		}
 		r.areaChanged = false
-		e.RunECL(e.es.events[0])
-		if !r.areaChanged {
-			e.RunECL(e.es.events[1])
-			e.selectChar(sel)
-			e.DisplayPartyList()
-		}
-		if !r.areaChanged {
-			return
-		}
-	}
+		e.RunECL(e.es.events[0], func() {
+			if r.areaChanged {
+				e.AreaChange(then)
+				return
+			}
+			e.RunECL(e.es.events[1], func() {
+				e.selectChar(sel)
+				e.DisplayPartyList()
+				if r.areaChanged {
+					e.AreaChange(then)
+					return
+				}
+				then()
+			})
+		})
+	})
 }
 
 // Encamp = ovr04:2DD3: the camp event, the camp menu, then the area's
 // after-camp event; then (nil: nothing).
 func (e *Engine) Encamp(then func()) {
-	e.RunECL(e.es.events[2])
-	e.CampMenu(func(interrupted bool) {
-		if interrupted {
+	e.RunECL(e.es.events[2], func() {
+		e.CampMenu(func(interrupted bool) {
+			end := func() {
+				e.Redraw()
+				if then != nil {
+					then()
+				}
+			}
+			if !interrupted {
+				end()
+				return
+			}
 			e.DrawMainScreen()
-			e.RunECL(e.es.events[3])
-		}
-		e.Redraw()
-		if then != nil {
-			then()
-		}
+			e.RunECL(e.es.events[3], end)
+		})
 	})
 }
 
@@ -228,6 +260,9 @@ func (e *Engine) commandEnd() {
 // applyExplore is modeExplore's handler: one adventuring decision; done
 // when the game is over (a script quit).
 func (e *Engine) applyExplore(a Action) bool {
+	if e.over { // a script quit after its screens (Apply)
+		return true
+	}
 	e.ext.inCommand = false
 	done, encamp := e.explore(a)
 	e.StatusLine()
@@ -240,22 +275,6 @@ func (e *Engine) applyExplore(a Action) bool {
 	return e.over
 }
 
-// decision waits for the next decision, the auto-walk's steps included;
-// it takes frames (idle) only while the picture animates or the party
-// walks, or for a timed screen, which gets them as ActTick.
-func (e *Engine) decision() Action {
-	for !e.inputReady() {
-		timed := e.timed()
-		if !timed && !e.animateWhileWaiting() && e.ext.walk == nil {
-			break
-		}
-		e.idle()
-		if timed && !e.inputReady() {
-			return Action{Kind: ActTick}
-		}
-	}
-	return e.input()
-}
 
 // explore carries out an adventuring decision; done when it ends input
 // (the step or search is then made by GameLoop).
@@ -326,8 +345,7 @@ func (e *Engine) explore(a Action) (done, encamp bool) {
 		member()
 	case ActSpells, ActMagic, ActHeal, ActCure: // a card's context menu: member N's power
 		if member() && slices.ContainsFunc(e.powers(e.selected()), func(p Power) bool { return p.Kind == a.Kind }) {
-			e.power(e.selected(), a.Kind)
-			e.DrawMainScreen()
+			e.power(e.selected(), a.Kind, func(bool) { e.DrawMainScreen() })
 		}
 	case ActOverview:
 		e.PartyOverview()
@@ -398,34 +416,44 @@ func (e *Engine) unback() {
 }
 
 // Move = ovr15:0D6D: step forward in the 3D view (through a door if it can
-// be opened) or across the area map.
-func (e *Engine) Move() {
-	defer e.unback()
+// be opened) or across the area map; then then.
+func (e *Engine) Move(then func()) {
+	end := func() {
+		e.FreeAnimPic()
+		e.port = portrait{headID: 0xFF, bodyID: 0xFF} // 0464:2595 x2
+		e.unback()
+		then()
+	}
 	switch {
 	case e.viewMode == 1:
 		if e.game.HoldMove >= 0xFF {
 			e.game.HoldMove = 0
 			break
 		}
-		moved := false
+		step := func(moved bool) {
+			if moved {
+				e.stepAhead()
+			} else {
+				e.PlaySound(sndBump)
+			}
+			e.unback()
+			e.StatusLine()
+			end()
+		}
 		switch e.DoorAt(e.posX, e.posY, e.facing) {
 		case 1:
-			moved = true
 			if e.WallAt(e.posX, e.posY, e.facing) != 0 {
 				e.dasp("opendoor")
 			}
+			step(true)
 		case 2:
-			moved = e.lockedDoor(false)
+			e.lockedDoor(false, step)
 		case 3:
-			moved = e.lockedDoor(true)
+			e.lockedDoor(true, step)
+		default:
+			step(false)
 		}
-		if moved {
-			e.stepAhead()
-		} else {
-			e.PlaySound(sndBump)
-		}
-		e.unback()
-		e.StatusLine()
+		return
 	case e.viewMode >= 2 && e.viewMode <= 4:
 		if e.game.HoldMove < 0xFF {
 			e.mapMove()
@@ -434,13 +462,13 @@ func (e *Engine) Move() {
 			e.game.HoldMove = 0
 		}
 	}
-	e.FreeAnimPic()
-	e.port = portrait{headID: 0xFF, bodyID: 0xFF} // 0464:2595 x2
+	end()
 }
 
 // lockedDoor = the door menu of ovr15:0D6D. A plain locked door (state 2)
-// offers Bash, Pick and Knock; a wizard-locked one (3) only lets Bash work.
-func (e *Engine) lockedDoor(wizard bool) bool {
+// offers Bash, Pick and Knock; a wizard-locked one (3) only lets Bash
+// work. then gets whether the party goes through.
+func (e *Engine) lockedDoor(wizard bool, then func(bool)) {
 	const (
 		bash Choice = iota
 		pick
@@ -466,33 +494,40 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 	menu = append(menu, Entry{"Exit", exit})
 	if menu.String() == " Exit" {
 		e.setDoor(e.posX, e.posY, e.facing, 0)
-		return false
+		then(false)
+		return
 	}
-	switch e.DisplayInput("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID {
-	case bash:
-		if !e.bashDoor() {
-			e.dasp("hitwall")
-			e.DisplayMessageWait(colYellow, "The door holds.") // extra: the original only bumped
-			return false
+	e.displayThen("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false, func(p Pick) {
+		switch p.ID {
+		case bash:
+			if !e.bashDoor() {
+				e.dasp("hitwall")
+				e.DisplayMessageWait(colYellow, "The door holds.") // extra: the original only bumped
+				then(false)
+				return
+			}
+			e.dasp("shutdoor") // a slam
+			then(true)
+		case pick:
+			if wizard {
+				e.run.doorTry[1] = 0
+				then(false)
+				return
+			}
+			if !e.pickLock() {
+				e.dasp("lockpick_fail")
+				e.DisplayMessageWait(colYellow, "The lock holds.") // extra: the original only bumped
+				then(false)
+				return
+			}
+			e.dasp("lockpick")
+			then(true)
+		case knockIt:
+			then(e.knock())
+		default:
+			then(false)
 		}
-		e.dasp("shutdoor") // a slam
-		return true
-	case pick:
-		if wizard {
-			e.run.doorTry[1] = 0
-			return false
-		}
-		if !e.pickLock() {
-			e.dasp("lockpick_fail")
-			e.DisplayMessageWait(colYellow, "The lock holds.") // extra: the original only bumped
-			return false
-		}
-		e.dasp("lockpick")
-		return true
-	case knockIt:
-		return e.knock()
-	}
-	return false
+	})
 }
 
 // setDoor = ovr15:0000 (state 0) and ovr15:0109 (state 1): set the door

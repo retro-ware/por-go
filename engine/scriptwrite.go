@@ -539,7 +539,7 @@ func (w *scriptWriter) loop(idx []int, k int) ([]string, int, error) {
 	} else {
 		head += fmt.Sprintf("while %s < %s", w.arg(x, "", Arg{}, ""), w.arg(cmp.Args[1], "", x, "<"))
 	}
-	return w.block(head, body, nil), m - k + 1, nil
+	return w.blockLines(head, body, nil), m - k + 1, nil
 }
 
 // elseBlock is an else if / else of a block.
@@ -548,8 +548,8 @@ type elseBlock struct {
 	body []string
 }
 
-// block lays out head { body } [else ... { other }].
-func (w *scriptWriter) block(head string, body []string, elses []elseBlock) []string {
+// blockLines lays out head { body } [else ... { other }].
+func (w *scriptWriter) blockLines(head string, body []string, elses []elseBlock) []string {
 	if len(body) == 1 && elses == nil && len(head)+len(body[0]) < 90 && !strings.HasPrefix(head, "for") {
 		return []string{head + " { " + body[0] + " }"}
 	}
@@ -666,7 +666,7 @@ func (w *scriptWriter) ifStmt(idx []int, k int) ([]string, int, error) {
 		}
 		elses = append(elses, elseBlock{h, b})
 	}
-	out := w.block("if "+test, body, elses)
+	out := w.blockLines("if "+test, body, elses)
 	if comment != "" {
 		out[0] += " # " + comment
 	}

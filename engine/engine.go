@@ -91,7 +91,6 @@ type Engine struct {
 	port                 portrait                     // DS:6B00.. HEAD/BODY portrait
 	eclFile              string                       // DS:547C
 	ext                  extras                       // convenience features (extras.go)
-	acts                 acts                         // the remastered screens' actions (act.go)
 	snap                 snapState                    // the View published for other presenters (snapshot.go)
 	pg                   pageState                    // what is on the screen (page.go)
 	ac                   afterCombat                  // ovr06 globals
@@ -235,21 +234,21 @@ func upper(c byte) byte {
 	return c
 }
 
-// Run is the program body (START.EXE main), the engine's coroutine
-// (Start(e.Run)): it waits for decisions where the DOS code read keys.
+// Run is the program body (START.EXE main), Start(e.Run): it puts the
+// title up; the screens then take the decisions (Apply).
 func (e *Engine) Run() {
 	e.Init()  // ovr12:002D
 	e.Title() // ovr02: title pictures, lightning, credits
 	// Copy protection (ovr03:00FD code wheel) deliberately skipped.
-	e.top()
+	// With the title gone, Apply puts the party menu up.
 }
 
-// Play is the rest of main after the title: party menu, then adventure.
+// Play is the rest of main after the title (Start(e.Play) after Init):
+// Apply puts the party menu up, then the adventure.
 func (e *Engine) Play() {
 	if !slices.ContainsFunc(e.items, func(b itemBase) bool { return b != itemBase{} }) {
-		e.PromptRow24(colYellow, "ITEMS missing: import the game again") // extra (readItems): waits for a key
+		e.PromptRow24(colYellow, "ITEMS missing: import the game again") // extra (readItems): shown until a key
 	}
-	e.top()
 }
 
 // Exit = 0899:0000: back to DOS.
@@ -284,27 +283,12 @@ func (e *Engine) Ticks() int64 {
 }
 
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
-// In a fight it is a moment for the presenter to show (EvFrame): the rules go on.
+// A moment for the presenter to show (pause, EvFrame): the rules go on.
 func (e *Engine) Delay(ms int) {
-	if e.cs.on {
-		e.event(CombatEvent{Kind: EvFrame, Ms: ms})
-		return
-	}
-	e.block(func() { e.askPause(ms, func() {}) }) // an ask the presenter paces (AskPause): the engine never sleeps
+	e.pause(ms, false)
 }
 
 // ClearKeyboard does nothing: the original's drain loop is dead code (0899:0104 jumps straight to its exit).
 func (e *Engine) ClearKeyboard() {}
 
-// WaitSeconds = ovr02:0000 — wait n seconds or until a key is pressed, then
-// flush the keyboard.
-func (e *Engine) WaitSeconds(n int) {
-	e.Delay(n * 1000) // AskPause: any key cuts it short
-}
 
-// idle waits for the next frame (ActTick) inside the original's busy-wait loops.
-func (e *Engine) idle() {
-	e.acts.ticking = true
-	e.wait()
-	e.acts.ticking = false
-}

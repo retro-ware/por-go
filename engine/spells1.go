@@ -34,8 +34,8 @@ func (e *Engine) spellName(spell int) string { return spellNames[spell] }
 
 // spellMenu = ovr23:008A (mode, var index): shows the list built by
 // buildSpellList (mode 1 cast, 2 memorize, 3 scribe, 4 learn) and returns
-// the chosen spell, 0 for none. For mode 3 DS:6B80 is the scroll chosen.
-func (e *Engine) spellMenu(mode int, index *int) byte {
+// the chosen spell, 0 for none, to then. For mode 3 DS:6B80 is the scroll chosen.
+func (e *Engine) spellMenu(mode int, index *int, then func(byte)) {
 	const do Choice = iota // the mode's word
 	var menu Bar
 	switch mode {
@@ -62,23 +62,27 @@ func (e *Engine) spellMenu(mode int, index *int) byte {
 		redraw = true
 	}
 	var sel *ListNode
-	var key Choice
-	for {
-		key = e.ListMenu(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel).ID
-		// set {0, 13, 'C', 'E', 'L', 'M', 'S'} at cs:004A: none, Enter, the words
-		if key != PickRelist {
-			break
-		}
+	var ask func()
+	ask = func() {
+		e.ListMenu(title, menu, colLightMagenta, colLightGreen, colWhite, 1, 5, 38, y2, e.spellList, showExit, &redraw, index, &sel, func(p Pick) {
+			key := p.ID
+			// set {0, 13, 'C', 'E', 'L', 'M', 'S'} at cs:004A: none, Enter, the words
+			if key == PickRelist {
+				ask()
+				return
+			}
+			var res byte
+			if key != NoPick { // set {0, 'E'} at cs:006A
+				res = e.listedSpell(sel)
+			}
+			if idx := e.listedIndex(sel); mode == 3 && idx < len(e.spellItems) {
+				e.usedScroll = e.spellItems[idx]
+			}
+			e.spellList = nil // ovr26:11F3 frees the list
+			then(res)
+		})
 	}
-	var res byte
-	if key != NoPick { // set {0, 'E'} at cs:006A
-		res = e.listedSpell(sel)
-	}
-	if idx := e.listedIndex(sel); mode == 3 && idx < len(e.spellItems) {
-		e.usedScroll = e.spellItems[idx]
-	}
-	e.spellList = nil // ovr26:11F3 frees the list
-	return res
+	ask()
 }
 
 // listedIndex: the number of entries (not headers) of the list before sel.
@@ -330,7 +334,8 @@ func (e *Engine) spellTargetSetup(spell, mode int) (ok bool) {
 	case 1:
 	case 2:
 		e.DrawMainScreen()
-		e.spellCaster = e.SelectCharacter("Cast Spell on whom", true, e.spellCaster)
+		e.spellCaster = e.ext.castOn // SelectCharacter("Cast Spell on whom"), asked before the cast (castAsks)
+		e.ext.castOn = nil
 		if e.spellCaster == nil {
 			e.spellTarget = nil
 			e.nSpellTargets = 0
@@ -367,6 +372,47 @@ func (e *Engine) applySpellToSide(side int, msg string) {
 	e.applySpell(int(e.curSpell), 0, 0, 0, 0, msg)
 }
 
+// castAsks asks what CastSpell (spell, mode, by an item: usingItem) will
+// need of the player before it runs, then run casts: the aims in a fight
+// (aimSpell), the yes/no of a combat-only spell or item and the member a
+// spell goes on outside. CastSpell then runs straight through, in the same
+// order and with the same dice as when it asked in the middle.
+func (e *Engine) castAsks(spell, mode byte, usingItem bool, run func()) {
+	switch {
+	case e.beginFlag == 5:
+		if mode == 0 {
+			e.aimSpell(e.selected(), int(spell), run)
+			return
+		}
+	case e.spellRec(spell, 7) == 0:
+		prompt := "Lose it? "
+		if !usingItem {
+			e.DisplayString(1, 19, colLightGreen, e.spellName(int(spell)))
+			e.DisplayString(1, 20, colLightGreen, "is a combat-only spell...")
+		} else {
+			e.DisplayString(1, 19, colLightGreen, "That Item")
+			e.DisplayString(1, 20, colLightGreen, "is a combat-only item...")
+			prompt = "Use it? "
+		}
+		e.YesNo(colLightMagenta, colWhite, colLightGreen, prompt, func(yes bool) {
+			e.ext.castYes = yes
+			run()
+		})
+		return
+	case !e.combatTargets && e.spellRec(spell, 7) == 2:
+		if e.spellCaster == nil {
+			e.spellCaster = e.selected()
+		}
+		e.DrawMainScreen()
+		e.SelectCharacter("Cast Spell on whom", true, e.spellCaster, func(c *Character) {
+			e.ext.castOn = c
+			run()
+		})
+		return
+	}
+	run()
+}
+
 // CastSpell = ovr23:0C20 (spell, mode, b, var quit): casts the spell of
 // the selected character. b non-zero announces it ("casts"); quit is set
 // when a combat-only item was used up. A combat-only spell or item outside
@@ -374,19 +420,15 @@ func (e *Engine) applySpellToSide(side int, msg string) {
 func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 	caster := e.selected()
 	ok := true
-	if e.beginFlag != 5 && e.spellRec(spell, 7) == 0 {
+	if e.beginFlag != 5 && e.spellRec(spell, 7) == 0 { // the yes/no was asked before (castAsks)
+		yes := e.ext.castYes
+		e.ext.castYes = false
 		if !e.usingItem {
-			e.DisplayString(1, 19, colLightGreen, e.spellName(int(spell)))
-			e.DisplayString(1, 20, colLightGreen, "is a combat-only spell...")
-			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Lose it? ") {
+			if yes {
 				e.forgetSpell(spell)
 			}
-		} else {
-			e.DisplayString(1, 19, colLightGreen, "That Item")
-			e.DisplayString(1, 20, colLightGreen, "is a combat-only item...")
-			if e.YesNo(colLightMagenta, colWhite, colLightGreen, "Use it? ") {
-				*quit = true
-			}
+		} else if yes {
+			*quit = true
 		}
 		b = 0
 		ok = false

@@ -249,7 +249,7 @@ func (e *Engine) hiredShare() {
 			k++
 		}
 	}
-	e.DisplayInput("", pressEnter, colWhite, colWhite, colWhite, true, false)
+	e.pause(0, true) // press <enter>/<return> to continue: the page waits for a key while the rules go on
 }
 
 // showResult = ovr06:0916 (exp).
@@ -310,7 +310,7 @@ func (e *Engine) showResult(exp int32) {
 			y++
 		}
 	}
-	e.DisplayInput("", pressEnter, colWhite, colWhite, colWhite, true, false)
+	e.pause(0, true) // press <enter>/<return> to continue: the page waits for a key while the rules go on
 }
 
 // lootTake = ovr06:0C06 (the loot list, ovr06:0B14, with it): take items
@@ -418,11 +418,7 @@ func (e *Engine) lootAsk(done func()) {
 	})
 }
 
-// AfterCombat = ovr06:1527. inline until M6d (opCombat runs inside the
-// script VM).
-func (e *Engine) AfterCombat() { e.inline(e.pushAfterCombat) }
-
-// pushAfterCombat: the results, then the treasure screen, which ends it.
+// pushAfterCombat = AfterCombat (ovr06:1527): the results, then the treasure screen, which ends it.
 func (e *Engine) pushAfterCombat() {
 	e.game.CombatEnd = 0
 	e.ac.monsters = false

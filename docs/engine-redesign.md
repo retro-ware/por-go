@@ -64,9 +64,10 @@ replaces await with `Apply` dispatching on `e.mode`. A handler opens
 another screen with `e.push(mode, handler, leave)`: the pushed screen takes
 the decisions until it is done, then `leave` runs and the screen under it
 gets `actRedraw` (the temple's View pushes the sheet, the sheet its
-inventory). Since M6b the engine's top level (`top`) only dispatches each
-decision to the top screen; `e.inline(push)`/`e.until(base)` is the
-blocking adapter left for callers inside combat and the script VM.
+inventory). Since M6d `Apply` dispatches each decision to the top screen and
+returns; work after a screen goes in its leave or a continuation
+(`after`, `whenDown`), and the engine's own prompts are asks put up by
+`asking`/`displayThen`. There is no coroutine and no blocking adapter.
 
 ## Milestones
 
@@ -254,3 +255,26 @@ is deleted subsystem by subsystem, not kept alongside.
   item's Use in combat aims inline (aimNow without aimSpell); `await` in
   waitScript; `block` (Delay outside combat, typed, DisplayInput, anyKey,
   pickSpell) in rules and timed handlers; showJournal's input loop.
+- [x] M6d: the coroutine is gone. `Apply` hands each decision to the top
+  screen (act.go: ActTick to a timed screen, the auto-walk's step or the
+  picture's animation; a slot load or Back to Main Menu unwinds by panic
+  to `catch`) and returns; `Start` runs the body that puts the first
+  screen up. The script VM is resumable (eclRun): its state is the
+  engine's (eclPC, es); an instruction that asks or puts screens up
+  (opCombat's fight and AfterCombat, shop, temple, opProgram's party
+  menu, camp and finale, the tavern tale's journal) suspends it and
+  `whenDown` resumes it once they are gone; GameLoop, stepDone, Move
+  (the locked door), AreaChange and Encamp chain by continuations.
+  Pauses and "press a key" outside a fight (Delay, MsgDelay,
+  DisplayMessageWait, PromptRow24, HitMessage, the results' press Enter)
+  are events (EvFrame with Scene, the whole page; Key: until a key) the
+  presenter plays like the fight's. Every question is a continuation:
+  YesNo, SelectCharacter, ListMenu, typed, pickSpell, keyThen (Help, the
+  journal), rest's Stop Resting?, the full map, the paladin's powers;
+  casting asks first (castAsks: the yes/no of a combat-only spell, the
+  member, the aims through aimSpell, also for an item's Use in combat)
+  and CastSpell runs straight through. The dev scenes push. Fixed: the
+  cast-cancelled flag stayed set after a cancelled aim of a spell going
+  off at the start of the turn.
+
+The redesign is done: decisions in (Apply), state and events out.

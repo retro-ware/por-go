@@ -26,9 +26,9 @@ func (e *Engine) combatEnd() {
 	e.combatViewEnter()
 }
 
-// nextActor = ovr09:0131 (var char): the highest initiative left (combat
+// nextCombatant = ovr09:0131 (var char): the highest initiative left (combat
 // block +3); ties go to the higher d100. nil when nobody is left.
-func (e *Engine) nextActor() *Character {
+func (e *Engine) nextCombatant() *Character {
 	var best, bestRoll byte
 	var who *Character
 	for _, c := range e.party {
@@ -100,6 +100,7 @@ func (e *Engine) playerTurn(c *Character) {
 		e.aimSpell(c, int(s), func() {
 			var quit bool
 			e.CastSpell(s, 0, 1, &quit)
+			e.ext.castCancelled = false // a cancelled aim: the turn is gone all the same
 			e.clearCombatInfo(c)
 		})
 		return
