@@ -396,14 +396,9 @@ func (e *Engine) opVMenu() {
 		p.Text, p.Flag = s, 0
 	}
 	var sel *ListNode
-	// extra: a last item LEAVE goes on the bar, where Esc picks it too
-	var menu Bar
-	if len(list) > 1 && list[len(list)-1].Text == "LEAVE" {
-		list = list[:len(list)-1]
-		menu = Bar{{"Select", PickEnter}, {"Leave", PickExit}}
-	}
-	if e.ListMenu("", menu, colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel).ID == NoPick && menu != nil { // ovr08:1788
-		index = len(list)
+	// extra: Esc closes a menu whose last item is LEAVE by picking it
+	if e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel).ID == NoPick && list[n-1].Text == "LEAVE" { // ovr08:1788
+		index = n - 1
 	}
 	e.WriteVar(dst, uint16(index))
 	e.ClearBox(1, msgTop, paneRight, paneBottom)
