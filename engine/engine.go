@@ -176,7 +176,7 @@ const (
 	DOSDir    = "dos"    // the DOS game files the engine reads (*.DAX, ITEMS, POOL.CFG)
 	AmigaDir  = "amiga"  // the Amiga graphics and sound, converted from its disks
 	AssetsDir = "assets" // generic assets: fonts/, speech/, dasp/
-	SaveDir   = "save"   // what the game writes: the saves, FONT.CFG, MAPNOTES.TXT
+	SaveDir   = "save"   // what the game writes: the saves, FONT.CFG
 )
 
 // New opens the data directory and reads POOL.CFG.
@@ -216,7 +216,6 @@ func New(dir string) (*Engine, error) {
 	e.pic.block = -1
 	e.port = portrait{headID: 0xFF, bodyID: 0xFF}
 	e.loadFont()
-	e.loadNotes()
 	e.ext.minimap = e.marked(minimapFile)
 	return e, nil
 }

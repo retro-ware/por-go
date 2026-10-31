@@ -7,7 +7,6 @@ import (
 	"image"
 	"maps"
 	"os"
-	"path/filepath"
 	"por/pal"
 	"sort"
 	"strings"
@@ -19,7 +18,7 @@ import (
 // cursor (arrows, click) picks a square; Walk goes there (walk.go), Label
 // names it, Remove clears it.
 // New Phlan's buildings are always labelled (phlanLabels, in every game);
-// the player's labels go over them and are kept in data/save/MAPNOTES.TXT.
+// the player's labels go over them and are kept with the save (labelsFile).
 
 // Label kinds, each with its colour on the maps.
 const (
@@ -72,7 +71,8 @@ var phlanLabels = func() map[int]mapLabel {
 
 const phlanKey = 3 << 16 // areaKey of New Phlan: data set 3, GEO block 0
 
-const notesFile = "MAPNOTES.TXT"
+// labelsFile holds a slot's map labels (the player's, by map).
+const labelsFile = "LABELS.TXT"
 
 // builtinLabels are map k's fixed labels: New Phlan's buildings.
 func builtinLabels(k int) map[int]mapLabel {
@@ -103,37 +103,24 @@ func (e *Engine) labels() map[int]mapLabel {
 	return m
 }
 
-// loadNotes reads MAPNOTES.TXT: "map KEY" (areaKey) starts a map, then
-// "X Y KIND TEXT" per label. "area KEY" is the old key (script area and GEO
-// block, written before 31 Oct 2026), converted to its map.
-func (e *Engine) loadNotes() {
-	f, err := os.Open(filepath.Join(e.Cfg.SaveDir, notesFile))
+// readLabels reads a slot's labelsFile: "map KEY" (areaKey) starts a map,
+// then "X Y KIND TEXT" per label.
+func (e *Engine) readLabels(path string) {
+	e.ext.labels = nil
+	f, err := os.Open(path)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 	e.ext.labels = map[int]map[int]mapLabel{}
 	var cur map[int]mapLabel
-	start := func(k int) {
-		if cur = e.ext.labels[k]; cur == nil {
-			cur = map[int]mapLabel{}
-			e.ext.labels[k] = cur
-		}
-	}
-	var areas []ScriptArea
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		var k, x, y, kind int
 		line := sc.Text()
 		if _, err := fmt.Sscanf(line, "map %d", &k); err == nil {
-			start(k)
-			continue
-		}
-		if _, err := fmt.Sscanf(line, "area %d", &k); err == nil {
-			if areas == nil {
-				areas = e.scriptAreas()
-			}
-			start(mapOfArea(areas, k))
+			cur = map[int]mapLabel{}
+			e.ext.labels[k] = cur
 			continue
 		}
 		var text string
@@ -146,8 +133,8 @@ func (e *Engine) loadNotes() {
 	}
 }
 
-// saveNotes writes the player's labels, but those that are built in.
-func (e *Engine) saveNotes() {
+// writeLabels writes the player's labels to path, but those that are built in.
+func (e *Engine) writeLabels(path string) {
 	var b strings.Builder
 	keys := make([]int, 0, len(e.ext.labels))
 	for k := range e.ext.labels {
@@ -168,7 +155,7 @@ func (e *Engine) saveNotes() {
 			fmt.Fprintf(&b, "%d %d %d %s\n", s&15, s>>4, m[s].kind, m[s].text)
 		}
 	}
-	os.WriteFile(filepath.Join(e.Cfg.SaveDir, notesFile), []byte(b.String()), 0o644)
+	os.WriteFile(path, []byte(b.String()), 0o644)
 }
 
 // legend gives every label text a letter (in order of the texts).
@@ -297,13 +284,11 @@ func (e *Engine) FullMap() {
 					}
 					e.userLabels()[cy<<4|cx] = mapLabel{s, kind}
 				}
-				e.saveNotes()
 				m = e.labels()
 			}
 		case remove: // a built-in label stays
 			if _, ok := e.userLabels()[cy<<4|cx]; ok {
 				delete(e.userLabels(), cy<<4|cx)
-				e.saveNotes()
 				m = e.labels()
 			}
 		case exit, NoPick:

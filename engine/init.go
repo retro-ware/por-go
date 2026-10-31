@@ -51,6 +51,7 @@ func (e *Engine) resetAdventure() {
 	e.mapPairA, e.mapPairB = [3]int{0, -1, -1}, [3]int{0, -1, -1} // DS:6AAE+4i / 6AB0+4i, i = 2..3
 	e.es.skyShade, e.es.groundShade = 0xE8, 0xDB                  // DS:6F69/6F68
 	e.purse, e.loot, e.pool = purse{}, purse{}, nil
+	e.ext.seen, e.ext.voiced, e.ext.labels = nil, nil, nil // extra: kept with the save, not the party menu
 }
 
 // readItems reads the base item table: skips the 2-byte count and takes up

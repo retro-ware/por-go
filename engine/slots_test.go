@@ -113,24 +113,29 @@ func TestSeenByMap(t *testing.T) {
 	}
 }
 
-// New Phlan (set 3, GEO 0) always has its built-in labels: MAPNOTES.TXT's
-// old "area 0" (script area 0) loads as its map and goes over them, built-in
-// copies are not written back, and removing the player's label shows the
-// built-in one again.
+// New Phlan (set 3, GEO 0) always has its built-in labels; the player's go
+// over them and with the slot (built-in copies are not written), a new
+// adventure starts without them, and removing one shows the built-in again.
 func TestPhlanLabels(t *testing.T) {
-	e := &Engine{set: 3, data: "../data"}
+	e := &Engine{set: 3}
 	e.Cfg.SaveDir = t.TempDir()
 	if m := e.labels(); m[1<<4|15].text != "Boats" || len(m) != len(phlanLabels) {
 		t.Fatalf("fresh New Phlan: %d labels, 15,1 = %q", len(m), m[1<<4|15].text)
 	}
-	os.WriteFile(filepath.Join(e.Cfg.SaveDir, notesFile), []byte("area 0\n15 1 4 My boat\n11 1 4 Harbor master\n"), 0o644)
-	e.loadNotes()
-	if m := e.labels(); m[1<<4|15].text != "My boat" || m[4<<4|0].text != "Gate to slums" {
-		t.Fatalf("old notes' New Phlan 15,1 = %q, 0,4 = %q", m[1<<4|15].text, m[4<<4|0].text)
+	e.userLabels()[1<<4|15] = mapLabel{"My boat", poiUser}
+	e.userLabels()[1<<4|11] = phlanLabels[1<<4|11]
+	e.saveTo("X")
+	path := filepath.Join(e.slotRoot(), "X", labelsFile)
+	if b, _ := os.ReadFile(path); string(b) != "map 196608\n15 1 0 My boat\n" {
+		t.Errorf("saved labels = %q", b)
 	}
-	e.saveNotes()
-	if b, _ := os.ReadFile(filepath.Join(e.Cfg.SaveDir, notesFile)); string(b) != "map 196608\n15 1 4 My boat\n" {
-		t.Errorf("saved notes = %q", b)
+	e.resetAdventure()
+	if l := e.labels()[1<<4|15]; l.text != "Boats" {
+		t.Errorf("new adventure's 15,1 = %q, want Boats", l.text)
+	}
+	e.readLabels(path)
+	if m := e.labels(); m[1<<4|15].text != "My boat" || m[4<<4|0].text != "Gate to slums" {
+		t.Fatalf("loaded 15,1 = %q, 0,4 = %q", m[1<<4|15].text, m[4<<4|0].text)
 	}
 	delete(e.userLabels(), 1<<4|15)
 	if l := e.labels()[1<<4|15]; l.text != "Boats" {

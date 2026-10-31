@@ -137,8 +137,8 @@ const seenFile, oldSeenFile = "MAPS.GOB", "SEEN.GOB"
 // voicedFile holds the voice-over recordings a slot has heard (voice.go).
 const voicedFile = "VOICED.GOB"
 
-// loadFrom loads the slot and its explored squares (none for a slot saved
-// before they were kept).
+// loadFrom loads the slot, its explored squares and its map labels (none
+// for a slot saved before they were kept).
 func (e *Engine) loadFrom(name string) (ok bool) {
 	e.inSlot(name, func() { ok = e.loadSlot() })
 	if !ok {
@@ -158,6 +158,7 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 		gob.NewDecoder(f).Decode(&e.ext.voiced)
 		f.Close()
 	}
+	e.readLabels(filepath.Join(e.slotRoot(), name, labelsFile))
 	return true
 }
 
@@ -212,6 +213,7 @@ func (e *Engine) saveTo(name string) {
 		gob.NewEncoder(f).Encode(e.ext.voiced)
 		f.Close()
 	}
+	e.writeLabels(filepath.Join(e.slotRoot(), tmp, labelsFile))
 	if _, err := os.Stat(filepath.Join(e.slotRoot(), tmp, "SAVGAMA.DAT")); err != nil {
 		e.refuse("Save failed")
 		return

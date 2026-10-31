@@ -215,7 +215,7 @@ and the Amiga palettes).
 `data/dos` (the DOS files the engine reads), `data/amiga` (converted Amiga
 graphics and sound), `data/assets/scripts` (the area scripts as text, in
 git), `data/assets/fonts` (`*.f8`), `data/assets/speech` (`*.mp3`),
-`data/save` (the named save slots, `FONT.CFG`, `MAPNOTES.TXT`,
+`data/save` (the named save slots, `FONT.CFG`,
 `SETTINGS.JSON` and the marker files). `original/` keeps the rest of the
 DOS install for the decompilation tools only.
 
@@ -1142,7 +1142,7 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
 - Minimap over the roster (Tab), top right on the 3D view, with every wall
   and unseen squares dim; doors light brown (Amiga 0xA84) instead of cyan.
 - Full-screen map (M, or a click on the minimap, `engine/fullmap.go`):
-  cursor, legend, Label / Remove per square kept in `MAPNOTES.TXT`; New
+  cursor, legend, Label / Remove per square kept with the save slot (`LABELS.TXT`); New
   Phlan's shops, temples, inns, taverns and offices are always labelled
   (from the block's step-event ONGOTO; the player's labels go over them,
   Remove shows them again); labelled squares are dots on the minimap.
@@ -1264,7 +1264,7 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
 - **Named save slots** (`engine/slots.go`, F9 at any prompt): save new /
   overwrite / load / delete, newest first; each slot is a folder
   `data/save/saves/NAME/` in the original file format (`SAVGAMA.DAT`,
-  `CHRDATA1..6.*`, plus `MAPS.GOB`, `VOICED.GOB`, the portraits and icons);
+  `CHRDATA1..6.*`, plus `MAPS.GOB`, `VOICED.GOB`, `LABELS.TXT`, the portraits and icons);
   a load unwinds whatever runs (a menu, a script, a battle) back into the
   game loop with `panic(slotLoaded{})`; saves are atomic (written to
   `.NAME.saving`, renamed once `SAVGAMA.DAT` exists); names are filtered to

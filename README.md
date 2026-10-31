@@ -68,7 +68,7 @@ To build and play from the repo: put your game files in `data/dos` and run
 | `data/amiga` | the Amiga graphics and sound, converted from its disks (`por -import-disk2`) | no |
 | `data/assets/scripts` | the area event scripts as text, with their names files | yes |
 | `data/assets/fonts`, `data/assets/speech` | extra fonts (`*.f8`), the voice-over (`*.mp3`) | no |
-| `data/save` | the saves, `FONT.CFG`, `MAPNOTES.TXT` (written by the game) | no |
+| `data/save` | the saves, `FONT.CFG` (written by the game) | no |
 
 `original/` (not in git) keeps the rest of the DOS install, which the
 engine never reads: `START.EXE`, `GAME.OVR`, the DOS graphics the Amiga
