@@ -284,9 +284,11 @@ func (e *Engine) Ticks() int64 {
 
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
 func (e *Engine) Delay(ms int) {
-	if e.beginFlag == 5 || e.snap.win == WinThreeD { // the remastered 3D views animate with the page: combat's moves and hits, a script walking the party (the intro's tour)
-		e.publish()
+	if e.beginFlag != 5 { // outside combat the pause is an ask the presenter paces (AskPause); combat sleeps until M5
+		e.block(func() { e.askPause(ms, func() {}) })
+		return
 	}
+	e.publish() // the remastered 3D views animate with the page: combat's moves and hits
 	e.pace(pausing)
 	sleep(ms)
 	e.pace(working)
@@ -298,11 +300,7 @@ func (e *Engine) ClearKeyboard() {}
 // WaitSeconds = ovr02:0000 — wait n seconds or until a key is pressed, then
 // flush the keyboard.
 func (e *Engine) WaitSeconds(n int) {
-	end := e.Ticks() + int64(n)*100
-	for e.Ticks() < end && !e.keyHit() {
-		e.idle()
-	}
-	e.ClearKeyboard()
+	e.Delay(n * 1000) // AskPause: any key cuts it short
 }
 
 // idle yields the CPU inside the original's busy-wait loops.

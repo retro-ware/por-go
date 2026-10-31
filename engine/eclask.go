@@ -21,7 +21,9 @@ const (
 	AskList                      // a vertical menu (VMENU): View.List; ActChoose with X the line; ActClose takes a last LEAVE
 	AskText                      // a typed line (INPUT string or number): View.Typing; ActText, then ActContinue
 	AskMember                    // a member pick (WHO): View.Choosing; ActMember N, the arrows step, ActContinue takes the candidate
-	AskPause                     // a pause (DELAY): the presenter waits Ms, then sends ActContinue (Enter cuts it short)
+	AskPause                     // a pause (DELAY, MsgDelay, the title's waits): the presenter waits Ms, then sends ActContinue (Enter cuts it short)
+	AskKey                       // "press any key" (the text pager, PromptRow24): any key answers
+	AskSpell                     // a memorized spell (View.SpellPick): ActCast N, ActClose backs out
 )
 
 // ScriptAsk is the pending script instruction's question.
@@ -61,6 +63,17 @@ func (e *Engine) waitScript() {
 	e.ext.menu--
 	e.ext.typing, e.ext.choosing = false, false
 	e.viewAnim = 0
+}
+
+// block runs ask, which records an ask, and waits for its answer (the
+// engine's prompts outside scripts: the pager, MsgDelay, PromptRow24 ...);
+// a pending script ask is kept under it. The blocking adapter until M6.
+func (e *Engine) block(ask func()) {
+	prev := e.eclWait
+	e.eclWait = nil
+	ask()
+	e.waitScript()
+	e.eclWait = prev
 }
 
 // applyScript is modeScript's handler: a completes the pending
@@ -258,6 +271,18 @@ func (e *Engine) askPause(ms int, then func()) {
 				return false
 			}
 			then()
+			return true
+		}}
+}
+
+// askKey is "press any key": then gets the action that answered.
+func (e *Engine) askKey(then func(Action)) {
+	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskKey},
+		apply: func(a Action) bool {
+			if !e.pressed(a) {
+				return false
+			}
+			then(a)
 			return true
 		}}
 }

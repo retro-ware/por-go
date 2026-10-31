@@ -150,3 +150,19 @@ is deleted subsystem by subsystem, not kept alongside.
   script opens (opCombat, until M5/M6 lets RunECL return), the journal
   pager (tavern tales), the story and title animations, the paladin's
   Heal and Cure, out-of-combat casting (spells1) and items' Use.
+- [x] M4b: every question outside combat is an ask. DisplayInput (so
+  YesNo, ListMenu, MenuInput, SelectCharacter), the typed line (typed),
+  "press any key" (anyKey: the text pager, PromptRow24, HitMessage, the
+  journal, history, help), the spell pick (AskSpell) and every pause
+  outside combat (Delay, MsgDelay, DisplayMessageWait, WaitSeconds: the
+  story, the title) record an eclWait and wait for it under modeScript
+  through `e.block` (eclask.go): View.Script publishes it (new AskKey,
+  AskSpell), the presenter answers or paces it; the engine sleeps only in
+  combat (Delay with beginFlag 5). InputString and InputNumber are gone.
+  The callers (paladin Heal/Cure, casting, Use, loot, Locked, the map,
+  camp) are still straight-line code over `block`, the blocking adapter
+  until M6, as await. Still blocking otherwise: combat's act() and ask
+  (Flee?, Attack Ally?) and its sleeps (M5); F9 from a prompt runs the
+  slot screen through `until`; the icon editor's swatch; opCombat and the
+  shop, temple and training a script opens run inside RunECL (it cannot
+  return mid-script until M5/M6 keeps the VM's state across them).

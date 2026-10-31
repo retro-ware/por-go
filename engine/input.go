@@ -1,7 +1,5 @@
 package engine
 
-import "strings"
-
 // DisplaySpaces = 0709:05EB (x, y, colour, count): count blank cells.
 func (e *Engine) DisplaySpaces(x, y, colour, count int) {
 	if x > lastCol || y > promptRow {
@@ -13,63 +11,36 @@ func (e *Engine) DisplaySpaces(x, y, colour, count int) {
 // ClearRow24 = ovr26:06FB: blank the message/menu row.
 func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, textCols) }
 
-// InputString = 0709:09E3 (prompt, colour, maxlen): line editor on row 24.
-// Characters 0x20..0x7A are accepted while len < maxlen and echoed in white
-// one cell right of the last; backspace erases; Enter or Esc ends; the
-// result is upcased.
-func (e *Engine) InputString(prompt string, colour, maxlen int) string {
-	return strings.ToUpper(e.inputLine(prompt, colour, maxlen))
-}
-
-// inputLine is InputString keeping the case as typed (extra: character names).
-// extra: the presenter edits the line (View.Typing); it is echoed in white
-// one cell right of the prompt.
-func (e *Engine) inputLine(prompt string, colour, maxlen int) string {
-	if len(prompt) > 40 {
-		prompt = prompt[:40]
-	}
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colour, prompt)
-	if prompt == "" { // a script's input (opInputString, opInputNumber): the question is the text it printed
-		e.ext.asked = strings.TrimSpace(e.ext.printed)
-		defer func() { e.ext.asked = "" }()
-	}
-	s, _ := e.typed("", maxlen, func(c byte) bool { return c >= 0x20 && c <= 0x7A }, func(s string) {
-		e.DisplaySpaces(len(prompt)+1, promptRow, colBlack, max(0, 40-len(prompt)-1))
-		e.DisplayString(len(prompt)+1, promptRow, colWhite, s)
-	})
-	e.ClearRow24()
-	return s
-}
-
 // typed (extra) waits for the line the presenter edits, starting as s:
 // ActText sets it (only the characters ok takes, at most maxlen), show
 // draws it; Enter ends it, Esc too (false).
 func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(string)) (string, bool) {
-	e.ext.typing = true
-	defer func() { e.ext.typing, e.snap.typing = false, nil }()
-	for {
-		e.snap.typing = &Typing{Text: s, Max: maxlen, Prompt: e.ext.asked}
-		show(s)
-		e.actsDone()
-		a := e.nextAct()
-		switch a.Kind {
-		case ActText:
-			b := make([]byte, 0, maxlen)
-			for i := 0; i < len(a.Text) && len(b) < maxlen; i++ {
-				if ok(a.Text[i]) {
-					b = append(b, a.Text[i])
+	t := &Typing{Text: s, Max: maxlen}
+	var done bool
+	show(s)
+	e.block(func() { // an ask (AskText): the presenter edits the line
+		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskText, Max: maxlen}, typing: t,
+			apply: func(a Action) bool {
+				switch a.Kind {
+				case ActText:
+					b := make([]byte, 0, maxlen)
+					for i := 0; i < len(a.Text) && len(b) < maxlen; i++ {
+						if ok(a.Text[i]) {
+							b = append(b, a.Text[i])
+						}
+					}
+					t.Text = string(b)
+					show(t.Text)
+				case ActContinue:
+					done = true
+					return true
+				case ActClose:
+					return true
 				}
-			}
-			s = string(b)
-		case ActContinue:
-			return s, true
-		case ActClose:
-			return s, false
-		default:
-			e.extraAct(a)
-		}
-	}
+				return false
+			}}
+	})
+	return t.Text, done
 }
 
 // DisplayMessageWait = 0709:0D68 (str, colour): message on row 24 for

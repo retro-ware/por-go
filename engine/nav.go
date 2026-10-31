@@ -235,13 +235,10 @@ func (e *Engine) pressed(a Action) bool {
 	return false
 }
 
-// anyKey waits for "press a key" and returns the action that answered.
-func (e *Engine) anyKey() Action {
-	for {
-		if a := e.input(); e.pressed(a) {
-			return a
-		}
-	}
+// anyKey asks "press a key" (AskKey) and returns the action that answered.
+func (e *Engine) anyKey() (a Action) {
+	e.block(func() { e.askKey(func(k Action) { a = k }) })
+	return a
 }
 
 // keyHit uses up the actions waiting and reports whether one was a key

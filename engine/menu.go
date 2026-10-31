@@ -108,36 +108,22 @@ func textBar(menu string) Bar {
 // DisplayInput = ovr26:03BD (prompt, menu, colours, allowExtra, anim): the
 // option chosen or what else ended the wait. The colours are the
 // original's and unused.
-func (e *Engine) DisplayInput(prompt string, bar Bar, _, normal, highlight int, allowExtra, anim bool) Pick {
-	last := e.pic.last   // [bp-57] is per call: an outer DisplayInput keeps its own
-	saved := e.animInput // [bp+0xA], read by the wait loop (animateWhileWaiting)
-	e.animInput = anim
+func (e *Engine) DisplayInput(prompt string, bar Bar, _, normal, highlight int, allowExtra, anim bool) (p Pick) {
 	m, q := e.newQuestion(prompt, bar, allowExtra, normal != 0 || highlight != 0)
-	outer := e.snap.menu
-	if m.Prompt != "" || len(m.Items) > 0 { // nothing to ask: no menu
-		e.snap.menu = m
-	} else {
-		e.snap.menu = nil
+	if m.Prompt == "" && len(m.Items) == 0 { // nothing to ask: no menu
+		m = nil
 	}
-	e.ext.menu++
-	defer func() {
-		e.snap.menu = outer
-		e.ext.menu--
-		e.animInput = saved
-		e.pic.last = last
-		e.viewAnim = 0 // 06D8
-	}()
-	e.pic.last = e.Ticks() // 0432: [bp-57], the animation timer starts over in every call
-	for {
-		e.animateWhileWaiting()
-		if !e.inputReady() { // 0566
-			e.idle()
-			continue
+	e.block(func() { // the question is an ask (View.Script, View.Menu); the presenter answers it
+		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskMenu}, menu: m, anim: anim,
+			apply: func(a Action) (ok bool) {
+				p, ok = q.decide(a)
+				return ok
+			}}
+		if m != nil {
+			e.eclWait.ask.Prompt, e.eclWait.ask.Options = m.Prompt, menuTexts(m)
 		}
-		if p, ok := q.decide(e.input()); ok {
-			return p
-		}
-	}
+	})
+	return p
 }
 
 // newQuestion is the menu DisplayInput (or a script's ask) publishes for

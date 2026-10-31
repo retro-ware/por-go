@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"strconv"
 	"strings"
 )
 
@@ -180,15 +179,4 @@ func (e *Engine) DisplayTextBlock(x1, y1, x2, y2, colour int, clear bool, s stri
 // ClearBox = 0709:0DD3 (x1, y1, x2, y2): blank the cell rectangle.
 func (e *Engine) ClearBox(x1, y1, x2, y2 int) {
 	e.fillCells(x1, y1, x2, y2)
-}
-
-// InputNumber = 0709:0B66 (prompt, colour): a 6-character line read until
-// it parses as 0..65536; the low word is returned.
-func (e *Engine) InputNumber(prompt string, colour int) uint16 {
-	for {
-		s := e.InputString(prompt, colour, 6)
-		if n, err := strconv.ParseInt(strings.TrimLeft(s, " "), 10, 32); err == nil && n >= 0 && n <= 0x10000 {
-			return uint16(n)
-		}
-	}
 }

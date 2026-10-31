@@ -899,12 +899,18 @@ func (e *Engine) pickSpell() byte {
 			e.snap.spellPick = append(e.snap.spellPick, Spell{int(id), e.spellName(int(id))})
 		}
 	}
-	for {
-		switch a := e.act(); {
-		case a.Kind == ActCast && slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == a.N }):
-			return byte(a.N)
-		case a.Kind == ActClose:
-			return 0
-		}
-	}
+	var id byte
+	e.block(func() { // an ask (AskSpell): the presenter shows the pick
+		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskSpell}, apply: func(a Action) bool {
+			switch {
+			case a.Kind == ActCast && slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == a.N }):
+				id = byte(a.N)
+				return true
+			case a.Kind == ActClose:
+				return true
+			}
+			return false
+		}}
+	})
+	return id
 }
