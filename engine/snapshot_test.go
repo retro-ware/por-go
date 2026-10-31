@@ -137,9 +137,12 @@ func settle(e *engine.Engine, d ...time.Duration) engine.View {
 }
 
 // battleView starts a game and the dev combat scene.
-func battleView(t *testing.T) (*engine.Engine, engine.View) {
+func battleView(t *testing.T) (*engine.Engine, engine.View) { return battleScene(t, "combat") }
+
+// battleScene starts a game and the dev fight scene name.
+func battleScene(t *testing.T, name string) (*engine.Engine, engine.View) {
 	e := explore(t)
-	e.DevAction = e.DevScene("combat")
+	e.DevAction = e.DevScene(name)
 	seed := uint32(1) // the same fight every run (and one whose first unit can walk and reach a foe)
 	e.FixedSeed = &seed
 	e.Init()
@@ -211,50 +214,47 @@ func active(t *testing.T, v engine.View) engine.Unit {
 	return engine.Unit{}
 }
 
-// TestBattleFight plays the dev fight out on Quick and watches the view:
-// blows show effects, the fallen leave the units.
+// TestBattleFight plays the dev fight out on Quick and watches its events
+// (Apply hands them out): blows show effects, the fallen leave the units.
 func TestBattleFight(t *testing.T) {
 	e, v := battleView(t)
 	if v.Battle == nil {
 		t.Fatal("no Battle in combat")
 	}
 	units := len(v.Battle.Units)
-	effects, fewer := false, false
-	done := make(chan bool)
-	go func() { // sample the view as the fight runs (Delay publishes)
-		for {
-			select {
-			case <-done:
-				return
-			default:
-			}
-			if b := e.View().Battle; b != nil {
+	effects, fewer, died := false, false, false
+	apply := func(a engine.Action) engine.View {
+		v := e.Apply(a)
+		for _, ev := range v.Events {
+			died = died || ev.Kind == engine.EvDied
+			if b := ev.Battle; b != nil {
 				effects = effects || len(b.Effects) > 0
 				fewer = fewer || len(b.Units) < units
 			}
-			time.Sleep(time.Millisecond)
 		}
-	}()
-	for range 400 {
-		v := e.View()
+		return v
+	}
+	for range 2000 { // the fight's turns, one a tick
+		v = e.View()
 		if v.Battle == nil && v.MainFrame {
 			break // back to the main screen: the fight is over
 		}
 		switch {
+		case v.Ticks:
+			apply(engine.Action{Kind: engine.ActTick})
 		case v.Battle != nil && v.Battle.Ask != "":
-			actWait(e, engine.Action{Kind: engine.ActClose})
+			apply(engine.Action{Kind: engine.ActClose})
 		case v.Battle != nil && v.Battle.Turn != nil:
-			actWait(e, engine.Action{Kind: engine.ActQuick})
+			apply(engine.Action{Kind: engine.ActQuick})
 		default:
-			keyWait(e, cont)
+			apply(cont)
 		}
 	}
-	close(done)
 	if !effects {
 		t.Errorf("no effects seen in the whole fight")
 	}
-	if !fewer {
-		t.Errorf("nobody fell in the whole fight")
+	if !fewer || !died {
+		t.Errorf("nobody fell in the whole fight (units fewer %v, EvDied %v)", fewer, died)
 	}
 }
 
@@ -335,6 +335,70 @@ func TestAimHover(t *testing.T) {
 		return
 	}
 	t.Skip("one foe")
+}
+
+// events applies a and settles, gathering the fight's events.
+func events(e *engine.Engine, a engine.Action) (engine.View, map[engine.EventKind]int) {
+	n := map[engine.EventKind]int{}
+	v := e.Apply(a)
+	for range 1000 { // a picture may animate for ever
+		for _, ev := range v.Events {
+			n[ev.Kind]++
+		}
+		if !v.Ticks {
+			break
+		}
+		v = e.Apply(engine.Action{Kind: engine.ActTick})
+	}
+	return v, n
+}
+
+// TestAimStrike: an aim taken on a foe strikes it (EvAttack) and ends the turn.
+func TestAimStrike(t *testing.T) {
+	e, v := battleView(t)
+	v = nextToFoe(t, e, v)
+	me := active(t, v)
+	v = actWait(e, engine.Action{Kind: engine.ActAttack})
+	if v.Battle == nil || v.Battle.Turn == nil || !v.Battle.Turn.Aim {
+		t.Fatal("not aiming")
+	}
+	c := v.Battle.Cursor
+	v, n := events(e, engine.Action{Kind: engine.ActAim, X: c.X, Y: c.Y})
+	if n[engine.EvAttack] == 0 {
+		t.Errorf("aim taken at %v: no EvAttack (events %v)", c, n)
+	}
+	if v.Battle != nil && v.Battle.Turn != nil && (v.Battle.Turn.Aim || v.Battle.Turn.Unit == me.ID) {
+		t.Errorf("after the strike: still aiming or %s's turn", me.Name)
+	}
+}
+
+// TestCastAimed: Cure Light Wounds begins casting; on the caster's next
+// turn the player aims it first (aimSpell), then it is cast (EvSpell) and
+// the turn ends.
+func TestCastAimed(t *testing.T) {
+	e, v := battleScene(t, "castfight")
+	if v.Battle == nil || v.Battle.Turn == nil || len(v.Battle.Turn.Spells) == 0 {
+		t.Skip("no caster's turn")
+	}
+	me := active(t, v)
+	v, _ = events(e, engine.Action{Kind: engine.ActCast, N: v.Battle.Turn.Spells[0].ID})
+	for range 20 { // the others' turns go by until the caster's spell goes off
+		if v.Battle == nil || v.Battle.Turn == nil || v.Battle.Turn.Aim {
+			break
+		}
+		v, _ = events(e, engine.Action{Kind: engine.ActEnd})
+	}
+	if v.Battle == nil || v.Battle.Turn == nil || !v.Battle.Turn.Aim || v.Battle.Turn.Unit != me.ID {
+		t.Fatal("the spell begun: no aim on the caster's next turn")
+	}
+	at := active(t, v)
+	v, n := events(e, engine.Action{Kind: engine.ActAim, X: at.X, Y: at.Y})
+	if n[engine.EvSpell] != 1 {
+		t.Errorf("aim taken on the caster: events %v, want one EvSpell", n)
+	}
+	if v.Battle != nil && v.Battle.Turn != nil && v.Battle.Turn.Unit == me.ID {
+		t.Errorf("after the cast: still %s's turn", me.Name)
+	}
 }
 
 // nextToFoe walks the active unit to a square next to a foe (Aim takes

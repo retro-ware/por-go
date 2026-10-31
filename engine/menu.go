@@ -108,22 +108,36 @@ func textBar(menu string) Bar {
 // DisplayInput = ovr26:03BD (prompt, menu, colours, allowExtra, anim): the
 // option chosen or what else ended the wait. The colours are the
 // original's and unused.
-func (e *Engine) DisplayInput(prompt string, bar Bar, _, normal, highlight int, allowExtra, anim bool) (p Pick) {
+func (e *Engine) DisplayInput(prompt string, bar Bar, c, normal, highlight int, allowExtra, anim bool) (p Pick) {
+	e.inline(func() { e.displayThen(prompt, bar, c, normal, highlight, allowExtra, anim, func(q Pick) { p = q }) })
+	return p
+}
+
+// displayThen is DisplayInput as a screen (modeScript): the question is an
+// ask (View.Script, View.Menu) the presenter answers; then gets the pick
+// once the screen is gone.
+func (e *Engine) displayThen(prompt string, bar Bar, _, normal, highlight int, allowExtra, anim bool, then func(Pick)) {
 	m, q := e.newQuestion(prompt, bar, allowExtra, normal != 0 || highlight != 0)
 	if m.Prompt == "" && len(m.Items) == 0 { // nothing to ask: no menu
 		m = nil
 	}
-	e.block(func() { // the question is an ask (View.Script, View.Menu); the presenter answers it
-		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskMenu}, menu: m, anim: anim,
-			apply: func(a Action) (ok bool) {
-				p, ok = q.decide(a)
-				return ok
-			}}
-		if m != nil {
-			e.eclWait.ask.Prompt, e.eclWait.ask.Options = m.Prompt, menuTexts(m)
-		}
+	var p Pick
+	prev := e.eclWait // a pending script ask is kept under it
+	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskMenu}, menu: m, anim: anim,
+		apply: func(a Action) (ok bool) {
+			if a.Kind == actRedraw { // the screen a continuation left (feed's actRedraw): no answer
+				return false
+			}
+			p, ok = q.decide(a)
+			return ok
+		}}
+	if m != nil {
+		e.eclWait.ask.Prompt, e.eclWait.ask.Options = m.Prompt, menuTexts(m)
+	}
+	e.pushWait(func() {
+		e.eclWait = prev
+		then(p)
 	})
-	return p
 }
 
 // newQuestion is the menu DisplayInput (or a script's ask) publishes for

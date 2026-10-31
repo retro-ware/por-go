@@ -231,3 +231,26 @@ is deleted subsystem by subsystem, not kept alongside.
   runs inside the coroutine (Apply resumes it): any of them may reach a
   `block` (RunECL, YesNo), so calling them directly from Apply waits for
   M6c/M6d.
+- [x] M6c: combat. The fight is a timed screen (modeCombat, combatflow.go):
+  a frame (ActTick) plays the rounds on to the next turn taken (the AI's
+  and auto-combat's one a frame), a player's turn is modeTurn pushed over
+  it; its end (endTurn) waits until the turn's screens are gone. Aiming
+  (modeAim), the yes/no (modeConfirm: Flee?, Attack Ally?), the turn's
+  inventory and sheet are pushed screens whose results come back by
+  continuation (later, then); a spell's aims are taken before it is cast
+  (aimSpell) and its rules take them in order (aimNow), so they run
+  straight through with the same dice. In a fight Delay and MsgDelay are
+  CombatEvents (EvFrame, EvMessage, carrying the map and party as they
+  stood) beside the typed ones (EvMoved, EvAttack, EvHit, EvMiss,
+  EvDamage, EvSpell, EvMissile, EvDied, EvFled); Apply hands them out
+  (View.Events) and the presenter plays them at its pace (replay in
+  present/remaster/fight.go), holding ActTick and decisions until done; a
+  key cuts a moment short. The loot screen is displayThen questions and
+  pushed inventory and sheet (after); AfterCombat and Combat are `inline`
+  at opCombat and the dev scenes until M6d. Still blocking (M6d): `inline`
+  at opCombat (Combat, AfterCombat), the script VM's opShop, opTemple,
+  opProgram and the dev scenes; inside them showResult's and hiredShare's
+  press Enter and the loot's Detect (DisplayInput, CastSpell's asks); an
+  item's Use in combat aims inline (aimNow without aimSpell); `await` in
+  waitScript; `block` (Delay outside combat, typed, DisplayInput, anyKey,
+  pickSpell) in rules and timed handlers; showJournal's input loop.

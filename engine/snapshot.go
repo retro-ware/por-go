@@ -101,6 +101,7 @@ type View struct {
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
+	Events    []CombatEvent  // what happened in the fight since the last Apply, in order (Apply's View only)
 	Inventory *Inventory     // the inventory screen is up (nil otherwise)
 	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 	Page      []Sprite       // the screen's pictures, symbols and fills, bottom first (page.go)
@@ -422,20 +423,7 @@ func (e *Engine) publish() {
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering
 	e.pageView(v)
-	sel := e.rosterSel() // a member pick shows its candidate
-	for i, c := range e.party {
-		if !isParty(c) { // the monsters loaded for a fight sit on the same list: no cards for them
-			continue
-		}
-		v.Party = append(v.Party, Member{
-			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
-			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,
-			Class: className(c.Class), Head: e.charHead(c), Portrait: c.Portrait, Powers: e.memberPowers(c),
-		})
-		m := &v.Party[len(v.Party)-1]
-		from, to := levelSpan(c)
-		m.Exp, m.LevelExp, m.NextExp = int(int32(c.Exp)), int(from), int(to)
-	}
+	v.Party = e.members()
 	v.Border = e.borderTiles()
 	v.Battle = e.battle()
 	s.view = v

@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"gpu"
 
@@ -241,4 +242,36 @@ func wrap(s string, n int) (out []string) {
 		l += w
 	}
 	return append(out, l)
+}
+
+// replay is the fight's events still to play (Play): one held for Ms
+// shows the scene it carries; the engine waits until all are played (no
+// ActTick, no decisions: Playing), then the live View is drawn again.
+type replay struct {
+	q    []engine.CombatEvent
+	from time.Time // the shown event began
+	skip bool      // a key cut the shown event short
+}
+
+// Play queues the fight's events Apply handed out.
+func (p *Presenter) Play(evs []engine.CombatEvent) { p.replay.q = append(p.replay.q, evs...) }
+
+// Playing: the fight's events are still being played.
+func (p *Presenter) Playing() bool { return len(p.replay.q) > 0 }
+
+// playing is the event to show now (nil: none), the ones played dropped.
+func (p *Presenter) playing() *engine.CombatEvent {
+	r := &p.replay
+	for len(r.q) > 0 {
+		if ev := &r.q[0]; ev.Ms > 0 && ev.Battle != nil && !r.skip {
+			if r.from.IsZero() {
+				r.from = time.Now()
+			}
+			if time.Since(r.from) < time.Duration(ev.Ms)*time.Millisecond {
+				return ev
+			}
+		}
+		r.q, r.from, r.skip = r.q[1:], time.Time{}, false
+	}
+	return nil
 }

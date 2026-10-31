@@ -98,6 +98,8 @@ type Engine struct {
 	camp                 campState                    // ovr16/ovr21 globals
 	mode                 screenMode                   // the screen taking decisions (decide.go)
 	screens              []screen                     // the screens pushed, the top one taking the decisions
+	cs                   combatState                  // the fight's rounds and turn (combatflow.go)
+	events               []CombatEvent                // the fight's events not yet handed out (View.Events)
 	looking, over        bool                         // GameLoop: in its look and camp loop; a script quit the game
 	picker               *picker                      // the grid picker up (View.Picker)
 	creation             *creation                    // the creation sheet up (View.Creation)
@@ -282,7 +284,12 @@ func (e *Engine) Ticks() int64 {
 }
 
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
+// In a fight it is a moment for the presenter to show (EvFrame): the rules go on.
 func (e *Engine) Delay(ms int) {
+	if e.cs.on {
+		e.event(CombatEvent{Kind: EvFrame, Ms: ms})
+		return
+	}
 	e.block(func() { e.askPause(ms, func() {}) }) // an ask the presenter paces (AskPause): the engine never sleeps
 }
 

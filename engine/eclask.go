@@ -54,15 +54,23 @@ func (e *Engine) waitScript() {
 	if e.eclWait == nil {
 		return
 	}
+	e.inline(func() { e.pushWait(func() {}) })
+}
+
+// pushWait puts the pending ask up as a screen (modeScript); then runs
+// once it is answered and gone.
+func (e *Engine) pushWait(then func()) {
 	menu, list, typing, anim, last := e.snap.menu, e.snap.list, e.snap.typing, e.animInput, e.pic.last
 	e.ext.menu++
 	e.pic.last = e.Ticks() // the animation timer starts over, as in DisplayInput
 	e.showAsk()
-	e.await(modeScript, e.applyScript)
-	e.snap.menu, e.snap.list, e.snap.typing, e.animInput, e.pic.last = menu, list, typing, anim, last
-	e.ext.menu--
-	e.ext.typing, e.ext.choosing = false, false
-	e.viewAnim = 0
+	e.push(modeScript, e.applyScript, func() {
+		e.snap.menu, e.snap.list, e.snap.typing, e.animInput, e.pic.last = menu, list, typing, anim, last
+		e.ext.menu--
+		e.ext.typing, e.ext.choosing = false, false
+		e.viewAnim = 0
+		then()
+	})
 }
 
 // block runs ask, which records an ask, and waits for its answer (the

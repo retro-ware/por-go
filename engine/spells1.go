@@ -427,6 +427,9 @@ func (e *Engine) CastSpell(spell, mode, b byte, quit *bool) {
 				e.forgetSpell(spell)
 			}
 			e.curSpell = spell
+			if e.cs.on {
+				e.event(CombatEvent{Kind: EvSpell, Unit: e.combatIndex(caster), Amount: int(spell), Text: e.spellName(int(spell))})
+			}
 			e.spellFx[spell]()
 			e.curSpell = 0
 			e.spellOwnTargets = 0

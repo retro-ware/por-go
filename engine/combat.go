@@ -10,33 +10,9 @@ import (
 	"strings"
 )
 
-// Combat = ovr09:007A: set up the battle, then rounds until one side is
-// down (or the party stops fighting).
-func (e *Engine) Combat() {
-	e.beginFlag = 5
-	e.ext.battleLog, e.ext.panel = nil, nil
-	e.combatTargets = true // DS:6B84 = 0068:0066 (ovr14:20C3)
-	e.combatSetup()
-	done := e.rv.side[0] == 0 || e.rv.side[1] == 0
-	for !done {
-		e.countSides()
-		for _, c := range e.party {
-			e.turnSetup(c)
-		}
-		e.game.Surprise = 0
-		for c := e.nextActor(); c != nil; c = e.nextActor() {
-			e.takeTurn(c)
-			if e.countSides(); e.rv.side[0] == 0 || e.rv.side[1] == 0 { // extra: the last one down ends the battle at once
-				break
-			}
-		}
-		done = e.endRound()
-	}
-	e.combatEnd()
-}
-
 // combatEnd = ovr09:0000: free the clouds, the map and the sprite.
 func (e *Engine) combatEnd() {
+	e.cs = combatState{}
 	e.combatTargets = false // DS:6B84 = 0096:0034 (ovr23:0A91)
 	e.snap.cmapOn = false
 	e.clouds = nil
@@ -71,13 +47,15 @@ func (e *Engine) nextActor() *Character {
 	return who
 }
 
-// takeTurn = ovr09:01F6 (char).
-func (e *Engine) takeTurn(c *Character) {
+// takeTurn = ovr09:01F6 (char): false when the turn is skipped; the
+// player's turn may leave screens up, the cursor's erase (endTurn) waits
+// for them.
+func (e *Engine) takeTurn(c *Character) bool {
 	ci := c.Combat
 	ci.Attackers, ci.Flank, ci.Guarding = 0, 0, 0
 	e.affectGroup(c, 7)
 	if int8(ci.Delay) <= 0 {
-		return // no cursor erase when the turn is skipped
+		return false // no cursor erase when the turn is skipped
 	}
 	if ci.Delay == 0x14 {
 		ci.Delay = 0x13
@@ -94,7 +72,7 @@ func (e *Engine) takeTurn(c *Character) {
 			e.playerTurn(c)
 		}
 	}
-	e.eraseCursor(e.combatX(c), e.combatY(c))
+	return true
 }
 
 // selectChar makes c the selected member (DS:5D92).
@@ -107,9 +85,9 @@ func b2i(b bool) int {
 	return 0
 }
 
-// playerTurn = ovr09:031A (char): a spell being cast goes off, otherwise
-// the combat menu until the turn is used. extra: the menu is the View's
-// Turn; the player acts through Apply.
+// playerTurn = ovr09:031A (char): a spell being cast goes off (aimed
+// first), otherwise the combat menu until the turn is used. extra: the
+// menu is the View's Turn (modeTurn); the player acts through Apply.
 func (e *Engine) playerTurn(c *Character) {
 	if c.Okay == 0 {
 		e.clearCombatInfo(c)
@@ -119,25 +97,50 @@ func (e *Engine) playerTurn(c *Character) {
 	if ci.Spell > 0 {
 		s := ci.Spell
 		ci.Spell = 0
-		var quit bool
-		e.CastSpell(s, 0, 1, &quit)
-		e.clearCombatInfo(c)
+		e.aimSpell(c, int(s), func() {
+			var quit bool
+			e.CastSpell(s, 0, 1, &quit)
+			e.clearCombatInfo(c)
+		})
 		return
 	}
-	defer func() { e.snap.turn, e.snap.reach, e.snap.paths, e.snap.targets, e.snap.hits = nil, nil, nil, nil, nil }()
 	reach := e.turnChoices(c)
-	e.await(modeTurn, func(a Action) bool {
+	e.push(modeTurn, func(a Action) bool {
 		done := e.applyTurn(c, a, reach)
-		if !done {
+		if !done && e.mode == modeTurn { // not under a screen it opened (aiming ...)
 			reach = e.turnChoices(c)
 		}
 		return done
-	})
+	}, func() { e.snap.turn, e.snap.reach, e.snap.paths, e.snap.targets, e.snap.hits = nil, nil, nil, nil, nil })
 }
 
 // applyTurn is modeTurn's handler: one decision of c's turn (combatMenu's
-// choices); done when the turn is used.
+// choices); done when the turn is used. A choice that opens a screen
+// (aiming, a question, the inventory) hands its result on with later: it
+// comes once that screen is gone (actRedraw).
 func (e *Engine) applyTurn(c *Character, a Action, reach map[[2]int][]int) (done bool) {
+	if a.Kind == actRedraw {
+		return e.resumed()
+	}
+	done = e.turnChoice(c, a, reach)
+	if e.mode != modeTurn {
+		return false
+	}
+	if e.cs.resume != nil {
+		return e.resumed()
+	}
+	return done
+}
+
+// resumed runs the result a choice left (later), if any.
+func (e *Engine) resumed() bool {
+	r := e.cs.resume
+	e.cs.resume = nil
+	return r != nil && r()
+}
+
+// turnChoice carries out decision a of c's turn.
+func (e *Engine) turnChoice(c *Character, a Action, reach map[[2]int][]int) (done bool) {
 	turn := e.snap.turn
 	e.snap.turn = nil
 	if !slices.Contains(turn.Can, a.Kind) && a.Kind != ActWalk && a.Kind != ActMember { // the card's clicks are no bar buttons
@@ -152,20 +155,26 @@ func (e *Engine) applyTurn(c *Character, a Action, reach map[[2]int][]int) (done
 		done = e.attackUnit(c, a.N, reach)
 	case ActItems:
 		e.view.quit = false
-		e.inline(e.pushItems) // ovr20:0EF8 (var done); inline until M6c
-		done = e.view.quit
-		e.setSpeed(c)
+		e.pushItems() // ovr20:0EF8 (var done)
+		e.later(func() bool { e.setSpeed(c); return e.view.quit })
 	case ActMember: // extra: the card's right click: the sheet
-		e.inline(e.pushSheet) // ovr20:0AB3; inline until M6c
-		done = e.view.quit
-		e.setSpeed(c)
+		e.view.quit = false
+		e.pushSheet() // ovr20:0AB3
+		e.later(func() bool { e.setSpeed(c); return e.view.quit })
 	case ActRanged:
 		done = e.rangedAttack(c)
 	case ActCast:
 		if slices.ContainsFunc(turn.Spells, func(s Spell) bool { return s.ID == a.N }) {
-			var ok bool
-			e.castSpell(a.N, 0, &ok)
-			done = ok
+			cast := func() {
+				var ok bool
+				e.castSpell(a.N, 0, &ok)
+				e.later(func() bool { return ok })
+			}
+			if e.spellData(a.N, 6)/3 == 0 { // cast now: aimed first (castSpell only begins a longer one)
+				e.aimSpell(c, a.N, cast)
+			} else {
+				cast()
+			}
 		}
 	case ActTurn:
 		e.clericTurnUndead(c)
@@ -186,24 +195,18 @@ func (e *Engine) applyTurn(c *Character, a Action, reach map[[2]int][]int) (done
 	case ActEnd: // Done's Quit
 		done = e.clearCombatInfo(c)
 	case ActFlee: // moveAttack (ovr09:09DF): a step off the map, "Flee:" answered Yes
-		if d := e.fleeDir(c); d >= 0 && e.ask("Flee?") {
-			e.combatTurn(c, byte(d), 0, false)
-			done = e.tryFlee(c)
+		if d := e.fleeDir(c); d >= 0 {
+			e.confirm("Flee?", func(yes bool) {
+				if yes {
+					e.later(func() bool {
+						e.combatTurn(c, byte(d), 0, false)
+						return e.tryFlee(c)
+					})
+				}
+			})
 		}
 	}
 	return done
-}
-
-// ask (extra) puts the yes/no question q to the player as the View's
-// Battle.Ask (modeConfirm): ActYes or ActClose answers it.
-func (e *Engine) ask(q string) (yes bool) {
-	defer func() { e.snap.ask = "" }()
-	e.snap.ask = q
-	e.await(modeConfirm, func(a Action) bool {
-		yes = a.Kind == ActYes
-		return yes || a.Kind == ActClose
-	})
-	return yes
 }
 
 // fleeDir is a direction in which c's next step leaves the map (moveAttack
@@ -315,17 +318,17 @@ func (e *Engine) weaponRange(c *Character) int {
 // a foe of the turn's targets is attacked, a melee fighter walking up to
 // it first (pathNextTo) when it stands out of reach.
 func (e *Engine) attackUnit(c *Character, n int, reach map[[2]int][]int) bool {
-	var aim aimTarget
-	var ok bool
 	if n == 0 {
 		if !e.foeInReach(c) { // extra: no aiming with nothing to attack
 			e.refuse("No foe in reach")
 			return false
 		}
 		e.ext.enemiesOnly = true
-		e.playerAim(c, 0xFF, 1, 0, &ok, &aim)
-		e.ext.enemiesOnly = false
-		return ok
+		e.playerAim(c, 0xFF, 1, 0, func(found bool, _ aimTarget) {
+			e.ext.enemiesOnly = false
+			e.later(func() bool { return found })
+		})
+		return false
 	}
 	t := e.combatant(byte(n))
 	if !slices.Contains(e.snap.targets, n) { // extra: the status row says why not
@@ -344,8 +347,8 @@ func (e *Engine) attackUnit(c *Character, n int, reach map[[2]int][]int) bool {
 			return false
 		}
 	}
-	e.aimConfirm(c, t, 1, &ok, &aim)
-	return ok
+	e.aimConfirm(c, t, 1, func(found bool, _ aimTarget) { e.later(func() bool { return found }) })
+	return false
 }
 
 // walk (extra) takes c along path as moveAttack's keypad steps would, one
@@ -597,17 +600,17 @@ func (e *Engine) rangedAttack(c *Character) (done bool) {
 		e.refuse("No target in range")
 		return false
 	}
+	saved := e.partySel
 	if thrown {
-		saved := e.partySel
 		for i, p := range e.party {
 			if p == c {
 				e.partySel = i // readyItem works on the selected member
 			}
 		}
-		defer func() { e.partySel = saved }()
 		if w != nil {
 			e.readyItem(w)
 			if w.Readied != 0 { // cursed
+				e.partySel = saved
 				return false
 			}
 			e.ApplyItems(c) // free the weapon's hands: readyItem counts c.Hands
@@ -615,21 +618,22 @@ func (e *Engine) rangedAttack(c *Character) (done bool) {
 		it.Readied = 1 // in hand (the weapon's hands are free)
 		e.ApplyItems(c)
 	}
-	var aim aimTarget
 	e.ext.enemiesOnly = true
-	e.playerAim(c, 0xFF, 1, 0, &done, &aim)
-	e.ext.enemiesOnly = false
-	if !thrown {
-		return done
-	}
-	if slices.Contains(c.Items, it) { // not the last one thrown
-		it.Readied = 2
-	}
-	if w != nil && slices.Contains(c.Items, w) && w.Readied == 0 {
-		e.readyItem(w)
-	}
-	e.ApplyItems(c)
-	return done
+	e.playerAim(c, 0xFF, 1, 0, func(done bool, _ aimTarget) {
+		e.ext.enemiesOnly = false
+		if thrown {
+			if slices.Contains(c.Items, it) { // not the last one thrown
+				it.Readied = 2
+			}
+			if w != nil && slices.Contains(c.Items, w) && w.Readied == 0 {
+				e.readyItem(w)
+			}
+			e.ApplyItems(c)
+			e.partySel = saved
+		}
+		e.later(func() bool { return done })
+	})
+	return false
 }
 
 // ammoFor = 00BA:2E8B (char, var item): the item a ranged attack uses up

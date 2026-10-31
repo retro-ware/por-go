@@ -6,7 +6,10 @@ package engine
 
 // ds2 reads the word at DS:ofs of the exe image.
 
-import "strconv"
+import (
+	"image"
+	"strconv"
+)
 
 // turnSetup = ovr14:0000 (char): fill the combat block for a new round.
 func (e *Engine) turnSetup(c *Character) {
@@ -85,6 +88,11 @@ func (e *Engine) attackText(a, b *Character, kind, damage, shown, hit int) {
 	}
 	e.CharMessage(a, s, false)
 	e.struck(a, b, hit != 0, damage&0xFF)
+	if hit == 0 {
+		e.unitEvent(EvMiss, a, b, 0)
+	} else {
+		e.unitEvent(EvHit, a, b, shown&0xFF)
+	}
 	s = ""
 	if kind == 1 {
 		s = "(from behind) "
@@ -181,6 +189,9 @@ func (e *Engine) stepSquare(c *Character, dir int) {
 		}
 	}
 	e.cpos[idx].x, e.cpos[idx].y = nx, ny
+	if e.cs.on {
+		e.event(CombatEvent{Kind: EvMoved, Unit: idx, From: image.Pt(int(ox), int(oy)), To: image.Pt(int(nx), int(ny))})
+	}
 	e.combatRedrawMap()
 	e.combatCentre(int(nx), int(ny), margin, 8)
 	cb.Attackers, cb.Flank = 0, 0
@@ -281,6 +292,7 @@ func (e *Engine) tryFlee(c *Character) bool {
 		}
 	}
 	if away {
+		e.unitEvent(EvFled, c, nil, 0)
 		e.KillCharacter(c, statusRunning, "Got Away")
 	} else {
 		e.refuse("Escape is blocked")
@@ -597,6 +609,7 @@ func (e *Engine) fullAttack(a, b *Character, flag int, it *Item) (done bool) {
 	e.ext.panel = a
 	e.combatTurn(a, dir, 1, false)
 	a.Combat.Target = b
+	e.unitEvent(EvAttack, a, b, 0)
 	e.Delay(0x64)
 	if it != nil {
 		e.attackAnimation(a, b, it)

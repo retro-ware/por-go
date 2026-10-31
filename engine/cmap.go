@@ -425,6 +425,7 @@ func (e *Engine) combatRemoveFromMap(c *Character) {
 	}
 	idx := e.combatIndex(c)
 	x, y := e.combatX(c), e.combatY(c)
+	e.unitEvent(EvDied, c, nil, 0)
 	if !e.combatOnScreen(c, true) {
 		e.combatCentre(x, y, 3, 8)
 	}

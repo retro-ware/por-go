@@ -180,7 +180,11 @@ func (e *Engine) Apply(as ...Action) View {
 		e.acts.resume()
 		e.acts.running = false
 	}
-	return e.View()
+	v := e.View()
+	if !e.acts.running {
+		v.Events, e.events = e.events, nil
+	}
+	return v
 }
 
 // wait hands control back to Apply: the engine goes on at the next one.

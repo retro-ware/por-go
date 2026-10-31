@@ -159,7 +159,7 @@ func (e *Engine) DevScene(name string) func() {
 			e.selected().Portrait = readPNG(os.Getenv("POR_PNG"))
 			e.inline(e.pushSheet)
 			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot screen
-			e.lootTake()
+			e.inline(func() { e.lootTake(func() {}) })
 			e.DrawMainScreen()
 		}
 	case "sheetcast": // the sheet's Spells with the PNG at POR_PNG as the portrait: the list is a page of its own (no portrait overlay, no tall row)

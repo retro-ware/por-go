@@ -63,7 +63,7 @@ func (e *Engine) chooseSpellTarget(spell, silent, allowGround int, t *aimTarget)
 	found := false
 	if silent == 0 {
 		e.ext.enemiesOnly = spellTable[spell&0xFF][7] == 0 // extra: a hostile spell cycles through foes only
-		e.playerAim(sel, e.spellDuration(spell), 0, allowGround, &found, t)
+		found, *t = e.aimNow(sel, e.spellDuration(spell), allowGround)
 		e.ext.enemiesOnly = false
 		sel.Combat.Target = t.c
 	} else if e.spellData(spell, 8) == 0 {
@@ -319,14 +319,14 @@ func (e *Engine) fastestFoeMove(c *Character) int {
 }
 
 // mayAttack = ovr14:2998 (c, target): may c attack the target? Attacking
-// a friend asks first; yes turns every sane character of the party hostile.
-func (e *Engine) mayAttack(c, target *Character) bool {
-	if b2i(isParty(target)) == int(c.Side) || c.Auto != 0 {
-		return true
-	}
-	if !e.ask("Attack Ally?") {
-		return false
-	}
+// a friend asks first (asksAlly; the question is aimConfirm's); yes turns
+// every sane character of the party hostile (allyAttacked).
+func (e *Engine) asksAlly(c, target *Character) bool {
+	return b2i(isParty(target)) != int(c.Side) && c.Auto == 0
+}
+
+// allyAttacked: mayAttack's yes.
+func (e *Engine) allyAttacked() {
 	e.attackedAlly = 1
 	e.game.AttackedAlly = 1
 	for _, m := range e.party {
@@ -338,7 +338,6 @@ func (e *Engine) mayAttack(c, target *Character) bool {
 		}
 	}
 	e.countSides()
-	return true
 }
 
 // canTarget (aimPrompt's test, ovr14:2AA0): is Target offered for cand?
@@ -380,32 +379,46 @@ func outOfRange(rng int) string {
 }
 
 // aimConfirm = ovr14:2C3D (c, cand, mode, var found, var t): take cand as
-// the target. With mode 1 (a missile attack) the attack is made at once.
-func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTarget) {
-	var res *Item
-	*found = true
-	if mode == 1 && !e.mayAttack(c, cand) {
-		*found = false
-	}
-	if !*found {
-		*t = aimTarget{}
+// the target. With mode 1 (a missile attack) the attack is made at once,
+// after "Attack Ally?" (mayAttack) for a friend; then gets the results.
+func (e *Engine) aimConfirm(c, cand *Character, mode int, then func(found bool, t aimTarget)) {
+	if mode == 1 && e.asksAlly(c, cand) {
+		e.confirm("Attack Ally?", func(yes bool) {
+			if !yes {
+				then(false, aimTarget{})
+				return
+			}
+			e.allyAttacked()
+			then(e.aimTake(c, cand, mode))
+		})
 		return
 	}
+	then(e.aimTake(c, cand, mode))
+}
+
+// aimTake is aimConfirm once the target may be attacked.
+func (e *Engine) aimTake(c, cand *Character, mode int) (found bool, t aimTarget) {
+	var res *Item
+	found = true
 	t.c = cand
 	t.x, t.y = byte(e.combatX(cand)), byte(e.combatY(cand))
 	e.cmap.cursor = 0
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 3, 8)
 	if mode == 1 {
 		if e.sweep(c, cand) {
-			*found = e.clearCombatInfo(c)
+			found = e.clearCombatInfo(c)
 		} else {
 			e.countAttackTurn(c, cand)
 			if e.rangedWeapon(c) && e.ammoFor(c, &res) && e.throwable(c) && e.rangeTo(c, cand) == 1 {
 				res = nil
 			}
-			*found = e.fullAttack(c, cand, 0, res)
+			found = e.fullAttack(c, cand, 0, res)
 		}
 	}
+	if !found {
+		t = aimTarget{}
+	}
+	return
 }
 
 // playerAim = ovr14:3558 (c, rng, showRange, allowGround, var found, var t):
@@ -413,10 +426,11 @@ func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTar
 // View shows why it cannot be taken, a spell's area), ActAim takes a
 // square, ActClose gives up. Battle.Targets are the foes to cycle through
 // (with a weapon: the ones it can hit, while there are any). rng 0xFF
-// takes the range of the readied weapon.
-func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, found *bool, t *aimTarget) {
-	*t = aimTarget{}
-	*found = false
+// takes the range of the readied weapon. The aim is a screen (modeAim):
+// then gets the results once it is gone.
+func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, then func(found bool, t aimTarget)) {
+	var t aimTarget
+	found, finished := false, false
 	rng := byte(rangeArg)
 	if rng == 0xFF {
 		if w := c.Slots[slotWeapon]; w != nil {
@@ -431,6 +445,7 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 	e.buildNear(e.combatX(c), e.combatY(c), 0x7F, 0xFF, e.combatSize(c)) // ovr14:32E6
 	list := slices.Clone(e.near)
 	if len(list) == 0 { // extra: nobody to aim at
+		then(false, t)
 		return
 	}
 	hitOnly := false // with a weapon, the foes it can hit, while one can be
@@ -441,7 +456,6 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		}
 	}
 	turn, targets, hits := e.snap.turn, e.snap.targets, e.snap.hits
-	defer func() { e.snap.turn, e.snap.targets, e.snap.hits, e.snap.aimWhy = turn, targets, hits, "" }()
 	e.snap.targets, e.snap.hits = nil, map[int]int{}
 	for _, n := range list {
 		f := e.combatant(n.index)
@@ -454,7 +468,6 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 	}
 	e.snap.turn = &Turn{Unit: e.combatIndex(c), Aim: true}
 	undo := func() {}
-	defer func() { undo(); e.cmap.cursor = 0; e.snap.cursorOn = false }()
 	point := func(x, y int) (*Character, string) {
 		undo()
 		cand, why := e.aimCheck(c, list, x, y, int(rng), showRange, allowGround)
@@ -468,8 +481,8 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		at = e.combatant(byte(e.snap.targets[0]))
 	}
 	point(e.combatX(at), e.combatY(at))
-	e.await(modeAim, func(a Action) bool { // aiming's handler: a square pointed at, taken, or Close
-		if a.Kind == ActClose {
+	e.push(modeAim, func(a Action) bool { // aiming's handler: a square pointed at, taken, or Close
+		if finished || a.Kind == ActClose { // finished: the target taken after the question over the aim
 			return true
 		}
 		if a.Kind != ActPoint && a.Kind != ActAim || a.X < 0 || a.Y < 0 || a.X > 0x31 || a.Y > 0x18 {
@@ -485,11 +498,24 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		}
 		t.x, t.y, t.c = byte(a.X), byte(a.Y), cand
 		if showRange == 1 || cand != nil && e.occ[a.Y][a.X] > 0 {
-			e.aimConfirm(c, cand, showRange, found, t) // ovr14:2C3D: the target's own square; a weapon strikes
-		} else {
-			*found = true
+			e.aimConfirm(c, cand, showRange, func(f bool, at aimTarget) { // ovr14:2C3D: the target's own square; a weapon strikes
+				found, finished = f, f
+				if f {
+					t = at
+				} else {
+					t = aimTarget{}
+				}
+			})
+			return finished
 		}
-		return *found
+		found = true
+		return true
+	}, func() {
+		undo()
+		e.cmap.cursor = 0
+		e.snap.cursorOn = false
+		e.snap.turn, e.snap.targets, e.snap.hits, e.snap.aimWhy = turn, targets, hits, ""
+		then(found, t)
 	})
 }
 

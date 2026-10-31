@@ -283,6 +283,9 @@ func (e *Engine) KillCharacter(c *Character, status byte, msg string) {
 	if c.Status != statusRunning {
 		c.HP = 0
 	}
+	if status != statusRunning { // a flight is EvFled (tryFlee)
+		e.unitEvent(EvDied, c, nil, 0)
+	}
 	e.cpos[idx].size = 0 // DS:5F2A + 4*idx
 	e.combatRedrawMap()
 	if e.clearCombatInfo(c) {
@@ -607,6 +610,7 @@ func (e *Engine) hitMessage(c *Character, magical bool, msg string) {
 // ApplyDamage = 00BA:2228 (char, damage): hit points down to 0, then
 // unconscious / dying (bleeding rounds) / dead at 10 below.
 func (e *Engine) ApplyDamage(c *Character, dmg int) {
+	e.unitEvent(EvDamage, c, nil, dmg)
 	hp := int(c.HP)
 	over, left := 0, 0
 	if hp >= dmg {

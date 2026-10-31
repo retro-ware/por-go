@@ -88,6 +88,7 @@ type Presenter struct {
 	fight       bool                        // the last frame was the 3D combat map
 	inv         inventory                   // the inventory screen (inventory.go)
 	fightView   *engine.Battle              // the combat map last drawn
+	replay      replay                      // the fight's events still to play
 	fightLog    bool                        // the battle Log is up (fight.go)
 	fightCard   image.Rectangle             // the active member's card (fight.go): left click the inventory, right click the sheet
 	rowsImg     *gpu.Image                  // the combat rows, drawn at scale 1
@@ -121,6 +122,10 @@ type Presenter struct {
 // Draw shows the game on dst and returns where the whole page went
 // (zero when it is not on screen: the mouse then points at nothing).
 func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
+	if ev := p.playing(); ev != nil { // the fight as it stood at the event played
+		v.Battle, v.Party = ev.Battle, ev.Party
+		v.Menu, v.List, v.Script, v.SpellPick = nil, nil, nil, nil
+	}
 	r := p.draw(dst, note, v)
 	if p.pick = v.SpellPick; p.pick == nil {
 		p.pickAt = image.Rectangle{}
@@ -445,6 +450,10 @@ func textPane(v engine.View) [][8]byte {
 // remastered view is up, Enter opens the vertical menu in place of the
 // menu bar and Esc on the command bar the renderer's options.
 func (p *Presenter) Key(k uint16, v engine.View) {
+	if p.Playing() { // a key cuts the fight's moment short
+		p.replay.skip = true
+		return
+	}
 	if !p.key(k, v) {
 		p.keyAct(k, v)
 	}
@@ -572,6 +581,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 // portrait, an action bar button, or an item of the vertical menu. It
 // reports whether it was taken.
 func (p *Presenter) Click(x, y int) bool {
+	if p.Playing() { // the fight plays on: the click only cuts its moment short
+		p.replay.skip = true
+		return true
+	}
 	if v := p.shownView; v.List != nil && v.Menu != nil && !v.Choosing && p.listClick(x, y, v) {
 		return true
 	}

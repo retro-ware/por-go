@@ -1,6 +1,9 @@
 package engine
 
-import "slices"
+import (
+	"image"
+	"slices"
+)
 
 // Combat map services (ovr31/ovr32 and the START sprite blitter) that the
 // rules call: the near list and the helpers over the combat map.
@@ -8,8 +11,20 @@ import "slices"
 // nearEntry is one 3-byte record of the DS:6718 list built by ovr31:0909.
 type nearEntry struct{ index, dist, dir byte }
 
-// MsgDelay = 0709:0DBE: wait msgDelay*225 ms.
-func (e *Engine) MsgDelay() { e.Delay(int(e.msgDelay) * 225) }
+// MsgDelay = 0709:0DBE: wait msgDelay*225 ms. In a fight: the last
+// message to read for that long (EvMessage).
+func (e *Engine) MsgDelay() {
+	ms := int(e.msgDelay) * 225
+	if !e.cs.on {
+		e.Delay(ms)
+		return
+	}
+	ev := CombatEvent{Kind: EvMessage, Ms: ms}
+	if n := len(e.ext.battleLog); n > 0 {
+		ev.Text = e.ext.battleLog[n-1]
+	}
+	e.event(ev)
+}
 
 // combatant = DS:65B9[i]: the combatant behind a near list index.
 func (e *Engine) combatant(i byte) *Character {
@@ -112,6 +127,9 @@ func (e *Engine) flyMissile(x1, y1, x2, y2, frames, delay int) {
 		cx, cy = e.cmap.viewX+viewW/2, e.cmap.viewY+3
 	}
 	e.combatCentre(cx, cy, 0xFF, 8)
+	if e.cs.on {
+		e.event(CombatEvent{Kind: EvMissile, From: image.Pt(x1, y1), To: image.Pt(x2, y2)})
+	}
 	i, f, ox, oy := 0, 0, 0, 0
 	for {
 		px := (x1-e.cmap.viewX)*3 + ox

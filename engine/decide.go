@@ -33,6 +33,7 @@ const (
 	modeTitle               // the title pictures and credits (timed)
 	modeRest                // camp's rest, five minutes a frame (timed; View.Camp)
 	modeStory               // the finale's pictures (timed)
+	modeCombat              // the fight's rounds, a turn a frame (timed; View.Battle)
 )
 
 // screen is a screen taking decisions: its handler, what leaving it
@@ -69,6 +70,25 @@ func (e *Engine) inline(push func()) {
 	base := len(e.screens)
 	push()
 	e.until(base)
+}
+
+// after runs push, which may put screens up, and f once they are gone
+// (at once when it put none up): f runs in the leave of the first one.
+func (e *Engine) after(push func(), f func()) {
+	base := len(e.screens)
+	push()
+	if len(e.screens) == base {
+		f()
+		return
+	}
+	s := &e.screens[base]
+	leave := s.leave
+	s.leave = func() {
+		if leave != nil {
+			leave()
+		}
+		f()
+	}
 }
 
 // await puts screen m up and feeds it decisions until it is done (the

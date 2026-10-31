@@ -139,14 +139,17 @@ func (g *game) push(k uint16) { g.remaster.Key(k, g.eng.View()) }
 func (g *game) act() {
 	if !g.started { // the coroutine is made on the thread that resumes it (the render loop's, locked)
 		g.started = true
-		g.eng.Start(g.eng.Run)
+		g.remaster.Play(g.eng.Start(g.eng.Run).Events)
+	}
+	if g.remaster.Playing() { // the fight's events play first: the engine waits, decisions are held
+		return
 	}
 	as := g.remaster.Actions()
 	if g.eng.View().Ticks {
 		as = append(as, engine.Action{Kind: engine.ActTick})
 	}
 	if len(as) > 0 {
-		g.eng.Apply(as...)
+		g.remaster.Play(g.eng.Apply(as...).Events)
 	}
 }
 

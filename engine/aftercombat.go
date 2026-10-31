@@ -317,104 +317,141 @@ func (e *Engine) showResult(exp int32) {
 // until Exit or nothing is left. extra: the inventory screen shows the
 // treasure as the shop's Browse shows its goods, with icons and tooltips;
 // ActBuy takes (ItemsMenu), F1-F8 or the screen's arrows change the taker.
-func (e *Engine) lootTake() {
+// then runs once it is closed.
+func (e *Engine) lootTake(then func()) {
 	e.snap.shop, e.snap.loot = true, true
-	defer func() { e.snap.shop, e.snap.loot = false, false }()
 	e.view.quit = false
-	e.inline(e.pushItems) // inline until M6c (the loot runs in combat's and the scripts' flow)
-	e.DrawMainScreen()
+	e.after(e.pushItems, func() {
+		e.snap.shop, e.snap.loot = false, false
+		e.DrawMainScreen()
+		then()
+	})
 }
 
-// lootMenu = ovr06:0ECD: the treasure screen.
-func (e *Engine) lootMenu() {
+// lootMenu = ovr06:0ECD: the treasure screen, a question at a time
+// (displayThen); done runs once the party leaves it.
+func (e *Engine) lootMenu(done func()) {
 	e.DrawMainScreen()
-	for {
-		items := len(e.run.treasure) > 0
-		const (
-			view Choice = iota
-			take
-			detectIt
-			exit
-		)
-		withDetect := false
-		detect := byte(0)
-		if items {
-			if c := e.selected(); c != nil {
-				for i := 0; i <= 0x14; i++ {
-					if s := c.Memorized[i]; s == spDetectMagicCl || s == spDetectMagicMU {
-						detect = s
-						withDetect = true
-						break
-					}
+	e.lootAsk(done)
+}
+
+// lootAsk is lootMenu's loop: its menu, and what the pick does.
+func (e *Engine) lootAsk(done func()) {
+	again := func() { e.lootAsk(done) }
+	items := len(e.run.treasure) > 0
+	const (
+		view Choice = iota
+		take
+		detectIt
+		exit
+	)
+	withDetect := false
+	detect := byte(0)
+	if items {
+		if c := e.selected(); c != nil {
+			for i := 0; i <= 0x14; i++ {
+				if s := c.Memorized[i]; s == spDetectMagicCl || s == spDetectMagicMU {
+					detect = s
+					withDetect = true
+					break
 				}
 			}
 		}
-		menu := Bar{{"View", view}}
-		if items {
-			menu = append(menu, Entry{"Take", take})
-			if withDetect {
-				menu = append(menu, Entry{"Detect", detectIt})
-			}
+	}
+	menu := Bar{{"View", view}}
+	if items {
+		menu = append(menu, Entry{"Take", take})
+		if withDetect {
+			menu = append(menu, Entry{"Detect", detectIt})
 		}
-		menu = append(menu, Entry{"Exit", exit})
-		e.ext.campBar = true // ovr06:101F: anim; extra: F1-F8 pick the member too
-		p := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, true)
+	}
+	menu = append(menu, Entry{"Exit", exit})
+	e.ext.campBar = true // ovr06:101F: anim; extra: F1-F8 pick the member too
+	e.displayThen("", menu, colLightMagenta, colLightGreen, colWhite, true, true, func(p Pick) {
 		e.ext.campBar = false
 		if p.extra() {
 			if p.ID != PickRelist {
 				e.partyKeypad(p)
 			}
 			e.DisplayPartyList()
-			continue
+			again()
+			return
 		}
-		key := p.ID
-		switch key {
+		switch p.ID {
 		case view:
-			e.inline(e.pushSheet)
+			e.after(e.pushSheet, again)
 		case take:
-			e.lootTake()
+			e.lootTake(again)
 		case detectIt:
 			quit := false
 			e.CastSpell(detect, 0, 0, &quit)
+			again()
 		case exit, NoPick:
 			if len(e.run.treasure) == 0 {
+				done()
 				return
 			}
 			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "There is still treasure left.  ")
 			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colWhite, false, "Do you want to go back and claim your treasure?")
-			if e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~Yes ~No", "") == 1 {
-				return
+			var ask func()
+			ask = func() { // MenuInput
+				e.displayThen("", hotBar("~Yes ~No"), colLightMagenta, colLightGreen, colWhite, true, e.animInput, func(p Pick) {
+					switch {
+					case p.extra():
+						e.partyKeypad(p)
+						e.DisplayPartyList()
+						ask()
+					case p.ID == 1:
+						done()
+					case p.ID >= 0:
+						e.ClearBox(1, msgTop, paneRight, paneBottom)
+						again()
+					default:
+						ask()
+					}
+				})
 			}
-			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			ask()
+		default:
+			again()
 		}
-	}
+	})
 }
 
-// AfterCombat = ovr06:1527.
-func (e *Engine) AfterCombat() {
+// AfterCombat = ovr06:1527. inline until M6d (opCombat runs inside the
+// script VM).
+func (e *Engine) AfterCombat() { e.inline(e.pushAfterCombat) }
+
+// pushAfterCombat: the results, then the treasure screen, which ends it.
+func (e *Engine) pushAfterCombat() {
 	e.game.CombatEnd = 0
 	e.ac.monsters = false
 	e.beginFlag = 6
 	e.combatResult()
 	e.cleanupCombatants()
+	end := func() {
+		g := &e.game
+		g.MonsterHit, g.PartyHit, g.PartyMove, g.NoLoot, g.Duel = 0, 0, 0, 0, 0
+	}
 	if !e.run.quit || e.duel() {
 		e.hiredShare()
 		e.showResult(e.ac.exp)
 		e.moneySound(e.loot)
 		e.purse.add(e.loot)
 		e.loot = purse{}
-		e.lootMenu()
-		e.run.treasure = nil
-	} else {
-		e.game.CombatEnd = 0x80
-		e.Music(5) // Amiga 0x4602E
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
-		e.msgCol, e.msgRow = 2, 6
-		e.DisplayTextBlock(2, 5, 37, winBottom, colLightGreen, true, "The monsters rejoice for the party has been destroyed")
-		e.PromptRow24(colLightMagenta, "Press any key to continue")
+		e.lootMenu(func() {
+			e.run.treasure = nil
+			end()
+		})
+		return
 	}
-	g := &e.game
-	g.MonsterHit, g.PartyHit, g.PartyMove, g.NoLoot, g.Duel = 0, 0, 0, 0, 0
+	e.game.CombatEnd = 0x80
+	e.Music(5) // Amiga 0x4602E
+	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
+	e.msgCol, e.msgRow = 2, 6
+	e.DisplayTextBlock(2, 5, 37, winBottom, colLightGreen, true, "The monsters rejoice for the party has been destroyed")
+	e.PromptRow24(colLightMagenta, "Press any key to continue")
+	end()
 }
 
 // harmfulAffect (extra) names affect t when it hurts its bearer: one a
