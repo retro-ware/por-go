@@ -230,7 +230,7 @@ func (e *Engine) rangedFacing(c, target *Character) bool {
 	if w != nil {
 		wt = w.Type
 	}
-	if int8(c.Levels[clsThief]) > 0 && (armor == nil || armor.Type == itemLeatherArmor) {
+	if int8(c.Levels[clsThief]) > 0 && (armor == nil || armor.Type == itemLeatherArmor || armor.Type == itemBracers) { // bracers: in the armour's slot (extra, readySlot), not armour
 		if w == nil || wt == itemClub || wt == itemDagger || (wt >= itemBroadSword && wt <= itemShortSword) {
 			flag = true
 		}

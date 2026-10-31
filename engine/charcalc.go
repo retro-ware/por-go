@@ -157,6 +157,16 @@ func (e *Engine) base(typ itemType) *itemBase {
 	return &itemBase{}
 }
 
+// readySlot is the slot (Character.Slots) a readied item of type typ
+// fills: its base record's, but bracers (extra) wear in the armour's, which
+// they stand in for (itemAC: only the better of the two counts).
+func (e *Engine) readySlot(typ itemType) int {
+	if typ == itemBracers {
+		return slotArmor
+	}
+	return int(e.base(typ).Slot)
+}
+
 // ApplyItems = 00BA:0BB8: everything that follows from the items carried
 // and readied: slots, weight, hands, attack and damage, armour class,
 // movement and saving throw bonus.
@@ -178,7 +188,14 @@ func (e *Engine) ApplyItems(c *Character) {
 			c.Slots[slotArrows] = it
 			continue
 		}
-		switch s := e.base(typ).Slot; {
+		switch s := e.readySlot(typ); {
+		case s == slotArmor && c.Slots[s] != nil: // extra: armour and bracers both readied (an older save): the bracers come off
+			b := it
+			if b.Type != itemBracers {
+				b, c.Slots[s] = c.Slots[s], it
+			}
+			b.Readied = 0
+			continue
 		case s <= 8:
 			c.Slots[s] = it
 		case s == 9:

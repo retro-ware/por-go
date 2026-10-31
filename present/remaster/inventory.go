@@ -75,11 +75,10 @@ var dollBoxes = [engine.DollSlots]image.Rectangle{
 	engine.DollRing1:     image.Rect(11, 83, 21, 93),
 	engine.DollRing2:     image.Rect(23, 83, 33, 93),
 	engine.DollArrows:    image.Rect(8, 3, 26, 21),
-	engine.DollBracers:   image.Rect(4, 95, 22, 113),
 }
 
 var slotNames = [engine.DollSlots]string{"Weapon", "Shield", "Armour", "Gauntlets", "Helm", "Belt", "Robe", "Cloak",
-	"Boots", "Ring", "Ring", "Missiles", "Bracers"}
+	"Boots", "Ring", "Ring", "Missiles"}
 
 // inventory is the screen's state between frames.
 type inventory struct {

@@ -552,19 +552,12 @@ func (e *Engine) inTheWay(c *Character, it *Item) *Item {
 	if it.Readied != 0 {
 		return nil
 	}
-	slot := int(e.base(it.Type).Slot)
+	slot := e.readySlot(it.Type)
 	switch {
 	case it.Type == itemArrow || e.missileSlot(c, it):
 		slot = slotArrows
 	case it.Type == itemQuarrel:
 		slot = slotBolts
-	case it.Type == itemBracers:
-		for _, o := range c.Items {
-			if o != it && o.Type == itemBracers && o.Readied != 0 {
-				return o
-			}
-		}
-		return nil
 	case slot == 9:
 		slot = slotRing2
 	case slot > 8:
@@ -604,7 +597,7 @@ func (e *Engine) readyItem(it *Item) {
 	if int(e.base(typ).Hands)+int(c.Hands) > 2 && !missile {
 		why = 3
 	}
-	slot := int(e.base(typ).Slot)
+	slot := e.readySlot(typ)
 	if missile {
 		slot = slotArrows
 	}
@@ -622,15 +615,6 @@ func (e *Engine) readyItem(it *Item) {
 		for _, s := range []int{slotArrows, slotBolts} {
 			if c.Slots[s] != nil {
 				why, slot = 2, s
-			}
-		}
-	}
-	if typ == itemBracers { // extra: the bracers have a doll slot of their own
-		for _, o := range c.Items {
-			if o != it && o.Type == itemBracers && o.Readied != 0 {
-				e.ItemName(c, o, 0, 0, false, false)
-				e.refuse("already using " + o.Name())
-				return
 			}
 		}
 	}

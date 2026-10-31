@@ -115,7 +115,7 @@ func (e *Engine) takeFromPool(c *Character, it *Item) {
 }
 
 // Doll slots: where a readied item shows on the paper doll. 0..12 are the
-// game's own slots (Character.Slots); the bracers have none of their own.
+// game's own slots (Character.Slots); bracers take the armour's (readySlot).
 const (
 	DollWeapon = iota
 	DollShield
@@ -129,18 +129,15 @@ const (
 	DollRing1
 	DollRing2
 	DollArrows // the Missiles slot: arrows, quarrels or a thrown weapon beside the weapon in hand
-	DollBracers
 	DollSlots
 )
 
 // dollSlot is the doll slot a readied item of c fills, -1 for an item
 // that cannot be readied (no slot: it is used straight from the pool).
 func dollSlot(e *Engine, c *Character, it *Item) int {
-	switch s := int(e.base(it.Type).Slot); {
+	switch s := e.readySlot(it.Type); {
 	case it.Type == itemArrow || it.Type == itemQuarrel || it.Readied == 2 || e.missileSlot(c, it): // the Missiles slot (extra)
 		return DollArrows
-	case it.Type == itemBracers:
-		return DollBracers
 	case s <= 8:
 		return s
 	case s == 9:
@@ -264,7 +261,7 @@ func itemKind(e *Engine, c *Character, it *Item) ItemKind {
 func (e *Engine) sortItems(list []InvItem, items []*Item) {
 	slices.SortStableFunc(list, func(a, b InvItem) int {
 		ia, ib := items[a.Index], items[b.Index]
-		if d := int(e.base(ia.Type).Slot) - int(e.base(ib.Type).Slot); d != 0 {
+		if d := e.readySlot(ia.Type) - e.readySlot(ib.Type); d != 0 {
 			return d
 		}
 		if d := e.strength(ib) - e.strength(ia); d != 0 {

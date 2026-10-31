@@ -98,7 +98,7 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 			add("Shield, AC " + strconv.Itoa(v) + " better" + delta(e.protection(it), e.protection(vs)))
 		case v > 0: // bracers: on the armour's scale (50 is AC 10) and in its place, the better one counts (itemAC's ac[4])
 			add("AC " + strconv.Itoa(10-(v-50)-int(e.knownPlus(it))) + ", as armor" + delta(e.protection(it), e.protection(vs)))
-			add("Armor or this: the best counts")
+			add("Worn in place of armor")
 		}
 	}
 	switch {

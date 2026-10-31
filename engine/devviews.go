@@ -217,12 +217,12 @@ func (e *Engine) DevScene(name string) func() {
 			for _, it := range c.Items { // the save's own gear joins the party inventory
 				it.Readied = 0
 			}
-			for _, t := range []itemType{itemLongSword, itemShield, itemPlateMail, itemGauntlets, 0x40, 0x41, 0x42, itemCloak, 0x44, itemRing, itemProtectionRing, itemArrow, itemBracers} {
+			for _, t := range []itemType{itemLongSword, itemShield, itemPlateMail, itemGauntlets, 0x40, 0x41, 0x42, itemCloak, 0x44, itemRing, itemProtectionRing, itemArrow} {
 				it := e.RandomItem(t)
 				it.Readied = 1
 				c.Items = append(c.Items, it)
 			}
-			for _, t := range []itemType{itemDagger, itemShortBow, itemPotion, itemMageScroll, itemWand, itemValuable, itemHolyWater, itemOil, itemJavelin, itemQuarrel, itemChainMail, itemDart, itemHammer, 0x48, itemClericScroll, itemStrengthPotion, 0x4B} {
+			for _, t := range []itemType{itemDagger, itemShortBow, itemPotion, itemMageScroll, itemWand, itemValuable, itemHolyWater, itemOil, itemJavelin, itemQuarrel, itemChainMail, itemDart, itemHammer, 0x48, itemClericScroll, itemStrengthPotion, 0x4B, itemBracers} {
 				e.AddItemCopy(c, e.RandomItem(t))
 			}
 			e.ApplyItems(c)
