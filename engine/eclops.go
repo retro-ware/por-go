@@ -688,10 +688,10 @@ func (e *Engine) opCombat() {
 		switch {
 		case e.game.Shop == 1:
 			e.game.Shop = 0
-			e.Shop() // ovr07:053E
+			e.inline(e.Shop) // ovr07:053E; inline until M6d
 		case e.game.Temple == 1:
 			e.game.Temple = 0
-			e.Temple() // ovr05:0D09
+			e.inline(e.Temple) // ovr05:0D09; inline until M6d
 		default:
 			e.AfterCombat() // ovr06:1527
 		}

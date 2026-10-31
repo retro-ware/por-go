@@ -11,45 +11,14 @@ import (
 
 // ProgramEight = ovr19:02A4: the Tyranthraxus finale. The FINAL pictures
 // are drawn on the page, then animated; the dragon dies, Tyranthraxus
-// speaks, and the screen is rebuilt.
+// speaks, and the screen is rebuilt. It puts a timed screen up
+// (modeStory) that plays the animations a frame at a time.
 func (e *Engine) ProgramEight() {
 	final := e.set.file("FINAL") // Str(DS:5376) -> DS:4713
 	savedFlag := e.beginFlag
 	e.beginFlag = 7
 	var im *dax.Image // DS:470E, never freed
 
-	// finalAnim = the nested routine at ovr19:0006 (x, y, block, loops):
-	// cycle the frames of FINAL<block> at (x,y) until `loops` passes are done.
-	finalAnim := func(x, y, block, loops int) {
-		pass := 0
-		last := e.Ticks()
-		e.LoadAnimPic("FINAL", block, false)
-		cur, count := e.pic.cur, len(e.pic.frames) // rec[1] and rec[0]
-		if count > 0 {                             // ovr19:004C: frame 1, unmasked, then 1B52
-			e.drawPage(x-1, y-1, e.pic.frames[0].Image, 0, false)
-		}
-		for {
-			var delay int64
-			if cur >= 1 && cur <= count {
-				e.drawPicAt(x, y, true, e.pic.frames[cur-1].Image) // ovr29:0000 flips
-				delay = int64(e.pic.frames[cur-1].Delay)
-			}
-			now := e.Ticks()
-			if now-last > int64(e.msgDelay+3)*delay {
-				cur++
-				if cur > count {
-					cur = 1
-					pass++
-				}
-				last = now
-			}
-			if pass == loops {
-				break
-			}
-			e.idle() // the original spins; this keeps the host responsive
-		}
-		e.FreeAnimPic()
-	}
 	slow := func() int { return (10 - int(e.msgDelay)) * 5 >> 1 }
 	// page draws FINAL<set> block at page cell (x,y) (0464:0111, 0464:0D71 mode 0).
 	page := func(block, x, y int) {
@@ -64,33 +33,93 @@ func (e *Engine) ProgramEight() {
 		}
 		e.speak(voiceKey(strings.Join(lines, " ")))
 	}
-
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
-	speakAll("Mortally wounded, the dragon roars!", "The spirit of Tyranthraxus flares up", "from the dragon's body.")
-	e.DrawMainScreen()
-	page(1, 0, 0)
-	finalAnim(3, 5, 2, slow())
-	page(3, 0, 0)
-	if e.game.PartyCount > 1 {
-		page(4, 0, 0xB)
+	// the animations (finalAnim = the nested routine at ovr19:0006: cycle
+	// the frames of FINAL<block> at (x,y) until loops passes are done),
+	// each after what comes before it
+	type anim struct {
+		before      func()
+		x, y, block int
+		loops       func() int
 	}
-	if e.game.PartyCount > 2 {
-		page(5, 0xD, 9)
+	anims := []anim{
+		{func() {
+			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			speakAll("Mortally wounded, the dragon roars!", "The spirit of Tyranthraxus flares up", "from the dragon's body.")
+			e.DrawMainScreen()
+			page(1, 0, 0)
+		}, 3, 5, 2, slow},
+		{func() {
+			page(3, 0, 0)
+			if e.game.PartyCount > 1 {
+				page(4, 0, 0xB)
+			}
+			if e.game.PartyCount > 2 {
+				page(5, 0xD, 9)
+			}
+			if e.game.PartyCount > 3 {
+				page(6, 0, 9)
+			}
+			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			speakAll("\"Fools, you have but slain the body", "I possessed.  I cannot be defeated!\"", "With the power of the pool of radiance", "which I moved here, to my lair,", "I will still rule, by possessing one", "of you!\"")
+		}, 3, 1, 7, slow},
+		{func() {
+			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			speakAll("\"No Lord Bane!  I can still rule here!", "I have not failed.  Do not call me back", "through the pool!\"", "Noooo...")
+		}, 3, 1, 8, func() int { return 1 }},
 	}
-	if e.game.PartyCount > 3 {
-		page(6, 0, 9)
+	var a anim
+	var pass, loops, cur, count int
+	var last int64
+	start := func() { // finalAnim's set-up
+		a, anims = anims[0], anims[1:]
+		a.before()
+		pass, loops, last = 0, a.loops(), e.Ticks()
+		e.LoadAnimPic("FINAL", a.block, false)
+		cur, count = e.pic.cur, len(e.pic.frames) // rec[1] and rec[0]
+		if count > 0 {                            // ovr19:004C: frame 1, unmasked, then 1B52
+			e.drawPage(a.x-1, a.y-1, e.pic.frames[0].Image, 0, false)
+		}
 	}
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
-	speakAll("\"Fools, you have but slain the body", "I possessed.  I cannot be defeated!\"", "With the power of the pool of radiance", "which I moved here, to my lair,", "I will still rule, by possessing one", "of you!\"")
-	finalAnim(3, 1, 7, slow())
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
-	speakAll("\"No Lord Bane!  I can still rule here!", "I have not failed.  Do not call me back", "through the pool!\"", "Noooo...")
-	finalAnim(3, 1, 8, 1)
-	e.MsgDelay()
-	e.MsgDelay()
-	e.MsgDelay()
-	e.beginFlag = savedFlag
-	e.DrawMainScreen()
+	step := func() bool { // one pass of finalAnim's loop; true when it ends
+		var delay int64
+		if cur >= 1 && cur <= count {
+			e.drawPicAt(a.x, a.y, true, e.pic.frames[cur-1].Image) // ovr29:0000 flips
+			delay = int64(e.pic.frames[cur-1].Delay)
+		}
+		now := e.Ticks()
+		if now-last > int64(e.msgDelay+3)*delay {
+			cur++
+			if cur > count {
+				cur = 1
+				pass++
+			}
+			last = now
+		}
+		return pass == loops
+	}
+	// run goes on until the next frame is needed; true when the finale is over.
+	run := func() bool {
+		for step() {
+			e.FreeAnimPic()
+			if len(anims) == 0 {
+				e.MsgDelay()
+				e.MsgDelay()
+				e.MsgDelay()
+				e.beginFlag = savedFlag
+				e.DrawMainScreen()
+				return true
+			}
+			start()
+		}
+		return false
+	}
+	start()
+	if run() {
+		return
+	}
+	e.pushTimed(modeStory, func(act Action) bool {
+		return act.Kind == ActTick && run() // the original spins; one pass a frame
+	}, nil)
 }
 
 // recolourFrame = 0464:1E5C (from, to, frame, random, image), the EGA

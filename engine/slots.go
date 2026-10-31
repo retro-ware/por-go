@@ -27,48 +27,58 @@ type slot struct {
 	at   time.Time
 }
 
-// adventure is the party menu, then the game loop; a slot load starts
-// the game loop again on the loaded game.
-func (e *Engine) adventure() {
-	start := func() {
-		e.PartyMenu() // ovr17:0161
-	}
-	party := start
+// top is the engine's top level: it dispatches each decision to the
+// screen on top of the stack (the title, the party menu, the adventuring
+// commands ...); with none up, the party menu starts a game. A slot load
+// or Back to Main Menu unwinds whatever runs back to here.
+func (e *Engine) top() {
+	var start func()
 	for {
-		if !e.guardedRun(start) {
-			// extra: the original exits to DOS when the party is lost
-			// (start:013D-0142); the port goes back to the party menu
-			e.unwindReset()
-			e.resetAdventure() // the next party starts afresh, not where this one died
-			e.loadedGame = false
-			start = party
-			continue
-		}
-		start = func() {}
-		if e.beginFlag == 0 { // a save from the party menu: no area yet, so back there
-			start = party
-		}
+		start = e.dispatch(start)
 	}
 }
 
-func (e *Engine) guardedRun(start func()) (reload bool) {
+// dispatch runs start, then dispatches decisions until a panic unwinds;
+// it returns how to go on.
+func (e *Engine) dispatch(start func()) (next func()) {
 	defer func() {
 		if r := recover(); r != nil {
-			if _, ok := r.(toMainMenu); ok {
-				return // reload false: the party menu, as when the party is lost
-			}
-			if _, ok := r.(slotLoaded); !ok {
+			e.ext.guarded = false
+			switch r.(type) {
+			case toMainMenu:
+				next = e.endGame // the party menu, as when the party is lost
+			case slotLoaded:
+				e.unwindReset()
+				next = e.GameLoop
+				if e.beginFlag == 0 { // a save from the party menu: no area yet, so back there
+					next = func() { e.PartyMenu(e.GameLoop) }
+				}
+			default:
 				panic(r)
 			}
-			e.unwindReset()
-			reload = true
 		}
 	}()
-	e.ext.guarded = true
-	defer func() { e.ext.guarded = false }()
-	start()
-	e.GameLoop() // ovr04:32F8
-	return false
+	if start != nil {
+		e.ext.guarded = true
+		start()
+	}
+	for {
+		if len(e.screens) == 0 {
+			e.PartyMenu(e.GameLoop) // ovr17:0161, then ovr04:32F8
+		}
+		e.ext.guarded = e.mode != modeTitle
+		e.feed(e.decision(), 0)
+	}
+}
+
+// endGame: the game in play is over (a script quit, the party lost, Back
+// to Main Menu). extra: the original exits to DOS when the party is lost
+// (start:013D-0142); the port goes back to the party menu, and the next
+// party starts afresh, not where this one died.
+func (e *Engine) endGame() {
+	e.unwindReset()
+	e.resetAdventure()
+	e.loadedGame = false
 }
 
 // unwindReset drops the input state of the screens the load left.

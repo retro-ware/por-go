@@ -19,7 +19,7 @@ func (e *Engine) DevScene(name string) func() {
 				e.party[0].Items = append(e.party[0].Items, e.RandomItem(0x15))
 				e.party[2].Items = append(e.party[2].Items, e.RandomItem(0x32), e.RandomItem(0x05))
 			}
-			e.Shop()
+			e.inline(e.Shop)
 			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
@@ -28,14 +28,14 @@ func (e *Engine) DevScene(name string) func() {
 			c := e.selected()
 			e.purse.gold = 10000
 			c.HP = 1
-			e.Temple()
+			e.inline(e.Temple)
 			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
 	case "appraise":
 		return func() {
 			e.purse.gems, e.purse.jewelry = 3, 2
-			e.Shop()
+			e.inline(e.Shop)
 			e.beginFlag = 4 // as opCombat after it: the 3D view comes back
 			e.DrawMainScreen()
 		}
@@ -105,7 +105,7 @@ func (e *Engine) DevScene(name string) func() {
 			for i, n := range []string{"KOBOLD", "ORC", "TROLL", "GOBLIN GUARD", "WYVERN"} {
 				e.meetMonster(n, e.set.file("CPIC"), i+1)
 			}
-			e.CampMenu()
+			e.inline(func() { e.CampMenu(nil) })
 		}
 	case "parlay": // an encounter's menu, then the talk-style menu a script's Parlay shows after PARLAY
 		return func() { // as opEncounterMenu at distance 0 with a close-up, then the script's Parlay
@@ -157,7 +157,7 @@ func (e *Engine) DevScene(name string) func() {
 	case "portrait": // the PNG at POR_PNG as the selected member's portrait: the sheet, then the view with the cards
 		return func() {
 			e.selected().Portrait = readPNG(os.Getenv("POR_PNG"))
-			e.ViewCharacter()
+			e.inline(e.pushSheet)
 			e.run.treasure = []*Item{e.RandomItem(itemGauntlets)} // then the loot screen
 			e.lootTake()
 			e.DrawMainScreen()
@@ -168,7 +168,7 @@ func (e *Engine) DevScene(name string) func() {
 			c := e.selected()
 			c.Portrait = readPNG(os.Getenv("POR_PNG"))
 			c.Memorized[0] = spCureLightWounds
-			e.ViewCharacter()
+			e.inline(e.pushSheet)
 			e.DrawMainScreen()
 		}
 	case "cast", "castko": // Cast on the command bar with Cure Light Wounds memorized; castko with the selected member unconscious

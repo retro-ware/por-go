@@ -64,7 +64,9 @@ replaces await with `Apply` dispatching on `e.mode`. A handler opens
 another screen with `e.push(mode, handler, leave)`: the pushed screen takes
 the decisions until it is done, then `leave` runs and the screen under it
 gets `actRedraw` (the temple's View pushes the sheet, the sheet its
-inventory). `e.until(base)` is the blocking adapter for pushed screens.
+inventory). Since M6b the engine's top level (`top`) only dispatches each
+decision to the top screen; `e.inline(push)`/`e.until(base)` is the
+blocking adapter left for callers inside combat and the script VM.
 
 ## Milestones
 
@@ -206,3 +208,26 @@ is deleted subsystem by subsystem, not kept alongside.
   (the title, rest interruptions); idle: camp rest, the story, the title
   and the adventuring prompt's decision loop; and combatLoop as a whole
   (the AI's and auto-combat's turns run straight through).
+- [x] M6b: the top level and the screens. The engine's coroutine body is
+  `top`: it dispatches each decision to the screen on top of the stack
+  (with none up, the party menu starts a game); a slot load or Back to
+  Main Menu unwinds to it (adventure and guardedRun are gone). The
+  adventuring loop is modeExplore (applyExplore: GameLoop puts it up,
+  afterCommand/lookDone/stepDone are its loop, commandBegin/End
+  CommandInput's ends; a script's quit ends the game in its leave). The
+  title (modeTitle), camp's rest (modeRest, Rest/restFor/healParty with
+  continuations) and the finale (modeStory) are timed screens
+  (pushTimed): a frame with no decision gives their handler ActTick.
+  PartyMenu, CampMenu, Encamp, Shop and Temple push and return, the work
+  after them in `leave`/a continuation; ViewCharacter, ItemsMenu and
+  TrainCharacter are gone (pushSheet, pushItems, pushTraining); F9 only
+  pushes the slot screen; keyHit is gone. Still blocking (M6c/M6d):
+  `inline` at the callers in combat (the turn's items and sheet), loot,
+  the script VM (opShop, opTemple, opProgram's party menu, encamp and
+  finale) and the dev scenes; `await` in combat's turn, aim, confirm and
+  waitScript; `block` (Delay, typed, DisplayInput, anyKey, pickSpell)
+  inside rules and timed handlers (rest's Stop Resting?, MsgDelay);
+  showJournal's input loop; combatLoop as a whole. Every handler still
+  runs inside the coroutine (Apply resumes it): any of them may reach a
+  `block` (RunECL, YesNo), so calling them directly from Apply waits for
+  M6c/M6d.

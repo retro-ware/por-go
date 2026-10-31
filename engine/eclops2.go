@@ -526,13 +526,13 @@ func (e *Engine) opProgram() {
 	}
 	switch v {
 	case 0:
-		e.PartyMenu()
+		e.inline(func() { e.PartyMenu(nil) })
 		e.DrawMainScreen()
 	case 8:
-		e.ProgramEight() // ovr19:02A4
+		e.inline(e.ProgramEight) // ovr19:02A4; inline until M6d
 	case 9:
 		pc := e.eclPC
-		e.Encamp()
+		e.inline(func() { e.Encamp(nil) })
 		e.eclPC = pc
 		e.opExit()
 	}

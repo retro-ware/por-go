@@ -20,59 +20,102 @@ func (e *Engine) fullPicture(pic *dax.Image) {
 	e.DrawPicture((textCols-minCols)/2, (textRows-minRows)/2, pic, 0)
 }
 
-// Title = ovr02:0626 title_screen.
+// Title = ovr02:0626 title_screen: a timed screen (modeTitle) through the
+// title pictures, the lightning and the credits; a key cuts each short.
 func (e *Engine) Title() {
 	e.Music(1) // the Amiga intro, 0x2B580
-	defer e.Music(0)
 	e.fullPicture(e.LoadPic("TITLE", 1))
-	e.WaitSeconds(5)
-	if !e.Cfg.FullIntro {
-		return
-	}
-	e.fullPicture(e.LoadPic("TITLE", 2))
-	end := e.Ticks() + 500
+	const (
+		first   = iota // TITLE 1, five seconds (WaitSeconds)
+		second         // TITLE 2 with the lightning, five seconds
+		credits        // ten seconds (WaitSeconds)
+	)
+	phase, end := first, e.Ticks()+500
 	var acc int
-	for {
-		if e.Cfg.Graphics == 'E' { // [4A1E] == 1: lightning on palette entry 1
+	var flash []struct{ c, ms int } // the lightning's steps left (Delay each)
+	var flashEnd int64
+	off := func() {}
+	next := func() bool { // the phase after this one; true when the title is done
+		switch phase {
+		case first:
+			if !e.Cfg.FullIntro {
+				return true
+			}
+			phase, end = second, e.Ticks()+500
+			e.fullPicture(e.LoadPic("TITLE", 2))
+		case second:
+			e.ClearKeyboard()
+			phase, end = credits, e.Ticks()+1000 // Credits = ovr02:0206
+			off = e.redrawWith(e.drawCredits)
+			e.drawCredits()
+		default:
+			return true
+		}
+		return false
+	}
+	e.pushTimed(modeTitle, func(a Action) bool {
+		if len(flash) > 0 { // Delay: the step goes on until its time is up or a key
+			if a.Kind == ActTick && e.Ticks() < flashEnd {
+				return false
+			}
+			if a.Kind != ActTick && !e.pressed(a) {
+				return false
+			}
+			flash = flash[1:]
+			if len(flash) == 0 || len(flash)%5 == 0 {
+				e.SetPaletteColor(1, 1)
+			}
+			if len(flash) > 0 {
+				e.SetPaletteColor(flash[0].c, 1)
+				flashEnd = e.Ticks() + int64(flash[0].ms/10)
+			}
+			return false
+		}
+		key := a.Kind != ActTick && e.pressed(a)
+		if phase != second {
+			if key || a.Kind == ActTick && e.Ticks() >= end {
+				return next()
+			}
+			return false
+		}
+		if a.Kind != ActTick && !key {
+			return false
+		}
+		if a.Kind == ActTick && e.Cfg.Graphics == 'E' { // [4A1E] == 1: lightning on palette entry 1
 			acc += e.Random(4)
 			if acc > 50000 {
 				acc = 0
 				n := e.Random(3) + 1
 				for i := 0; i < n; i++ {
-					for _, f := range [...]struct{ c, ms int }{{9, 150}, {11, 100}, {15, 50}, {11, 100}, {9, 150}} {
-						e.SetPaletteColor(f.c, 1)
-						e.Delay(f.ms)
-					}
-					e.SetPaletteColor(1, 1)
+					flash = append(flash, []struct{ c, ms int }{{9, 150}, {11, 100}, {15, 50}, {11, 100}, {9, 150}}...)
 				}
+				e.SetPaletteColor(flash[0].c, 1)
+				flashEnd = e.Ticks() + int64(flash[0].ms/10)
+				return false
 			}
 		}
-		if e.keyHit() || e.Ticks() >= end {
-			break
+		if key || e.Ticks() >= end {
+			return next()
 		}
-		e.idle()
-	}
-	e.ClearKeyboard()
-	e.Credits()
+		return false
+	}, func() {
+		off()
+		e.Music(0)
+	})
 }
 
-// Credits = ovr02:0206.
-func (e *Engine) Credits() {
-	draw := func() {
-		e.DrawBoxTitled(1, 1, winRight, 3, 0, colBlack, "")
-		e.DrawBoxTitled(1, 5, winRight, promptRow-1, 0, colBlack, "")
-		for _, t := range creditLines {
-			e.DisplayString(t.x, t.y, t.c, t.s)
-		}
-		if promptRow-2 >= creditLines[len(creditLines)-1].y+2 { // extra: the remaster's own lines, on a page tall enough for them
-			for i, s := range RemasterCredit {
-				e.DisplayString((textCols-len(s))/2, promptRow-3+i, colYellow, s)
-			}
+// drawCredits = ovr02:0206's page.
+func (e *Engine) drawCredits() {
+	e.DrawBoxTitled(1, 1, winRight, 3, 0, colBlack, "")
+	e.DrawBoxTitled(1, 5, winRight, promptRow-1, 0, colBlack, "")
+	for _, t := range creditLines {
+		e.DisplayString(t.x, t.y, t.c, t.s)
+	}
+	if promptRow-2 >= creditLines[len(creditLines)-1].y+2 { // extra: the remaster's own lines, on a page tall enough for them
+		for i, s := range RemasterCredit {
+			e.DisplayString((textCols-len(s))/2, promptRow-3+i, colYellow, s)
 		}
 	}
-	defer e.redrawWith(draw)()
-	draw()
-	e.WaitSeconds(10)
 }
 
 // RemasterCredit is the remaster's own lines at the bottom of the credits.

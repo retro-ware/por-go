@@ -98,6 +98,7 @@ type Engine struct {
 	camp                 campState                    // ovr16/ovr21 globals
 	mode                 screenMode                   // the screen taking decisions (decide.go)
 	screens              []screen                     // the screens pushed, the top one taking the decisions
+	looking, over        bool                         // GameLoop: in its look and camp loop; a script quit the game
 	picker               *picker                      // the grid picker up (View.Picker)
 	creation             *creation                    // the creation sheet up (View.Creation)
 	slotsUp              *slotScreen                  // the slot screen up (View.Slots)
@@ -238,8 +239,7 @@ func (e *Engine) Run() {
 	e.Init()  // ovr12:002D
 	e.Title() // ovr02: title pictures, lightning, credits
 	// Copy protection (ovr03:00FD code wheel) deliberately skipped.
-	e.adventure()
-	e.Exit()
+	e.top()
 }
 
 // Play is the rest of main after the title: party menu, then adventure.
@@ -247,7 +247,7 @@ func (e *Engine) Play() {
 	if !slices.ContainsFunc(e.items, func(b itemBase) bool { return b != itemBase{} }) {
 		e.PromptRow24(colYellow, "ITEMS missing: import the game again") // extra (readItems): waits for a key
 	}
-	e.adventure()
+	e.top()
 }
 
 // Exit = 0899:0000: back to DOS.

@@ -109,9 +109,10 @@ func memberPick(p Pick) bool {
 
 // PartyMenu = ovr17:0161: the party menu takes decisions (View.MainMenu)
 // until the player begins adventuring or loads a game that starts play
-// (beginFlag != 0). extra: the front end lists the functions in its own
-// order and asks its questions (Quit, Drop); there is no Save (F9 saves).
-func (e *Engine) PartyMenu() {
+// (beginFlag != 0), then then (nil: nothing) runs. extra: the front end
+// lists the functions in its own order and asks its questions (Quit,
+// Drop); there is no Save (F9 saves).
+func (e *Engine) PartyMenu(then func()) {
 	e.Music(3)     // Amiga 0x2D35C
 	e.set = 3      // DS:5376 = 3
 	if e.Explore { // -explore: straight into the 3D view (debugging the renderer); GameLoop clears it
@@ -120,6 +121,9 @@ func (e *Engine) PartyMenu() {
 		}
 		if len(e.party) > 0 {
 			e.beginFlag = 4
+			if then != nil {
+				then()
+			}
 			return
 		}
 	}
@@ -133,13 +137,13 @@ func (e *Engine) PartyMenu() {
 		}
 	}
 	redraw()
-	e.await(modeParty, func(a Action) bool {
+	e.push(modeParty, func(a Action) bool {
 		done := e.applyParty(a)
 		if !done && e.mode == modeParty {
 			redraw()
 		}
 		return done
-	})
+	}, then)
 }
 
 // partyFunctions are the party menu's decisions open now (ovr17:0161's

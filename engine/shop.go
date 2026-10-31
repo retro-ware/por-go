@@ -56,7 +56,8 @@ func (e *Engine) buyItem(it *Item) (overloaded bool) {
 	return false
 }
 
-// Shop = ovr07:053E: the shop takes decisions until the party leaves.
+// Shop = ovr07:053E: the shop takes decisions until the party leaves
+// (it puts the shop up and returns).
 func (e *Engine) Shop() {
 	greeting := e.cellsCopy() // extra: the merchant's greeting comes back after each redraw (the original cleared it)
 	e.beginFlag = 1
@@ -67,8 +68,7 @@ func (e *Engine) Shop() {
 		e.ItemName(nil, it, 0, 0, false, false)
 	}
 	e.dasp("store_enter")
-	defer e.dasp("store_leave")
-	e.await(modeShop, func(a Action) bool {
+	e.push(modeShop, func(a Action) bool {
 		done, redraw := e.applyShop(a)
 		if redraw {
 			e.DrawMainScreen()
@@ -76,7 +76,7 @@ func (e *Engine) Shop() {
 		}
 		e.DisplayPartyList()
 		return done
-	})
+	}, func() { e.dasp("store_leave") })
 }
 
 // applyShop applies a decision in the shop (extra: Buy is Browse, the

@@ -151,10 +151,13 @@ func (e *Engine) applyTurn(c *Character, a Action, reach map[[2]int][]int) (done
 	case ActAttack:
 		done = e.attackUnit(c, a.N, reach)
 	case ActItems:
-		done = e.ItemsMenu() // ovr20:0EF8 (var done)
+		e.view.quit = false
+		e.inline(e.pushItems) // ovr20:0EF8 (var done); inline until M6c
+		done = e.view.quit
 		e.setSpeed(c)
 	case ActMember: // extra: the card's right click: the sheet
-		done = e.ViewCharacter()
+		e.inline(e.pushSheet) // ovr20:0AB3; inline until M6c
+		done = e.view.quit
 		e.setSpeed(c)
 	case ActRanged:
 		done = e.rangedAttack(c)

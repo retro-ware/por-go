@@ -320,7 +320,8 @@ func (e *Engine) showResult(exp int32) {
 func (e *Engine) lootTake() {
 	e.snap.shop, e.snap.loot = true, true
 	defer func() { e.snap.shop, e.snap.loot = false, false }()
-	e.ItemsMenu()
+	e.view.quit = false
+	e.inline(e.pushItems) // inline until M6c (the loot runs in combat's and the scripts' flow)
 	e.DrawMainScreen()
 }
 
@@ -369,7 +370,7 @@ func (e *Engine) lootMenu() {
 		key := p.ID
 		switch key {
 		case view:
-			e.ViewCharacter()
+			e.inline(e.pushSheet)
 		case take:
 			e.lootTake()
 		case detectIt:

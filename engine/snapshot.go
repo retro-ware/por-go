@@ -387,7 +387,7 @@ func (e *Engine) publish() {
 	if v.Exploring {
 		v.CanCast = e.canCastNow()
 	}
-	if e.ext.camping && e.ext.menu == 0 && e.mode == modeCamp {
+	if e.ext.camping && e.ext.menu == 0 && (e.mode == modeCamp || e.mode == modeRest) {
 		v.Camp = e.campView()
 	}
 	if e.ext.menu == 0 && !s.invOn {

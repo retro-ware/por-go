@@ -9,7 +9,9 @@ import "slices"
 const tourDone = 0x4AC5
 
 // GameLoop = ovr04:32F8: load the current area, run its start events, then
-// take commands until the script quits.
+// put the adventuring commands up (modeExplore) until a script quits. The
+// original's loop is the explore screen's handler: each command that ends
+// input goes on in afterCommand.
 func (e *Engine) GameLoop() {
 	r := &e.run
 	e.ext.inGame = true
@@ -46,56 +48,81 @@ func (e *Engine) GameLoop() {
 		e.Music(4) // extra: the party first enters Phlan (the Amiga never plays song 4)
 	}
 	e.area.AreaKind = uint16(e.gs.areaKind)
-	encamp := e.CommandInput()
+	e.looking, e.over = false, false
+	e.push(modeExplore, e.applyExplore, e.endGame)
+	e.commandBegin()
+}
+
+// afterCommand is GameLoop's loop after a command ended input (encamp:
+// it was camp): the look and camp loop, else the step and its scripts;
+// then the next command, or the game is over.
+func (e *Engine) afterCommand(encamp bool) {
+	r := &e.run
 	r.savedSel = e.selected()
-	for {
+	if !e.looking {
 		e.area.AreaKind = uint16(e.gs.areaKind)
-		// Look / encamp: repeat while the last command was one of them.
-		for (e.game.Search > 1 || encamp) && !r.quit {
-			if encamp {
-				e.Encamp()
-			} else {
-				r.searchSave = byte(e.game.Search & 1)
-				e.game.Search = 1
-				e.Redraw()
-				e.RunECL(e.es.events[1])
-				if r.areaChanged {
-					e.AreaChange()
-				}
-				e.game.Search = uint16(r.searchSave)
-			}
-			if !r.quit {
-				encamp = e.CommandInput()
-				r.savedSel = e.selected()
-			}
-		}
-		if !r.quit {
-			e.RunECL(e.es.events[0])
-		}
-		if r.areaChanged {
-			e.unback() // a backward step the scripts sent elsewhere
-			e.AreaChange()
-		} else if !r.quit {
-			e.area.PrevX = uint16(int16(int8(e.posX)))
-			e.area.PrevY = uint16(int16(int8(e.posY)))
-			e.Move()
-			e.Redraw()
-			if int(e.area.PrevX) != e.posX || int(e.area.PrevY) != e.posY {
-				e.PlaySound(sndStep)
-			}
-			e.es.picShown, e.es.picAnimating = 0, 1
-			e.RunECL(e.es.events[1])
-			if r.areaChanged {
-				e.AreaChange()
-			}
-		}
-		if r.quit {
-			break
-		}
-		encamp = e.CommandInput() // ovr04:34FC jumps back to 3395: the write follows the input
-		r.savedSel = e.selected()
 	}
-	r.quit = false
+	// Look / encamp: repeat while the last command was one of them.
+	if (e.game.Search > 1 || encamp) && !r.quit {
+		e.looking = true
+		if encamp {
+			e.Encamp(e.lookDone)
+			return
+		}
+		r.searchSave = byte(e.game.Search & 1)
+		e.game.Search = 1
+		e.Redraw()
+		e.RunECL(e.es.events[1])
+		if r.areaChanged {
+			e.AreaChange()
+		}
+		e.game.Search = uint16(r.searchSave)
+		e.lookDone()
+		return
+	}
+	e.looking = false
+	e.stepDone()
+}
+
+// lookDone ends one pass of the look and camp loop.
+func (e *Engine) lookDone() {
+	if !e.run.quit {
+		e.commandBegin()
+		return
+	}
+	e.looking = false
+	e.stepDone()
+}
+
+// stepDone is the step part of GameLoop's loop, then the next command.
+func (e *Engine) stepDone() {
+	r := &e.run
+	if !r.quit {
+		e.RunECL(e.es.events[0])
+	}
+	if r.areaChanged {
+		e.unback() // a backward step the scripts sent elsewhere
+		e.AreaChange()
+	} else if !r.quit {
+		e.area.PrevX = uint16(int16(int8(e.posX)))
+		e.area.PrevY = uint16(int16(int8(e.posY)))
+		e.Move()
+		e.Redraw()
+		if int(e.area.PrevX) != e.posX || int(e.area.PrevY) != e.posY {
+			e.PlaySound(sndStep)
+		}
+		e.es.picShown, e.es.picAnimating = 0, 1
+		e.RunECL(e.es.events[1])
+		if r.areaChanged {
+			e.AreaChange()
+		}
+	}
+	if r.quit {
+		r.quit = false
+		e.over = true // the explore screen goes: endGame
+		return
+	}
+	e.commandBegin() // ovr04:34FC jumps back to 3395: the write follows the input
 }
 
 // AreaChange = ovr04:31B4: after a script switched areas, run the new
@@ -144,19 +171,25 @@ func (e *Engine) AreaChange() {
 }
 
 // Encamp = ovr04:2DD3: the camp event, the camp menu, then the area's
-// after-camp event.
-func (e *Engine) Encamp() {
+// after-camp event; then (nil: nothing).
+func (e *Engine) Encamp(then func()) {
 	e.RunECL(e.es.events[2])
-	if e.CampMenu() {
-		e.DrawMainScreen()
-		e.RunECL(e.es.events[3])
-	}
-	e.Redraw()
+	e.CampMenu(func(interrupted bool) {
+		if interrupted {
+			e.DrawMainScreen()
+			e.RunECL(e.es.events[3])
+		}
+		e.Redraw()
+		if then != nil {
+			then()
+		}
+	})
 }
 
-// CommandInput (ovr15:0989) waits for the adventuring decisions until one
-// ends input (camp, search here, a step). True for camp.
-func (e *Engine) CommandInput() (encamp bool) {
+// commandBegin = the start of CommandInput (ovr15:0989): the explore
+// screen then waits for the adventuring decisions until one ends input
+// (camp, search here, a step: commandEnd).
+func (e *Engine) commandBegin() {
 	e.game.HoldMove = 0
 	e.areaMusic()
 	e.unback() // a backward step the scripts ended
@@ -167,34 +200,59 @@ func (e *Engine) CommandInput() (encamp bool) {
 		e.areaMapIcons() // 00BA:2B5E
 	}
 	if e.viewMode >= 1 && e.viewMode <= 4 {
-		for done := false; !done; {
-			if f := e.DevAction; f != nil { // headless checks (POR_DEV)
-				e.DevAction = nil
-				f()
-			}
-			e.ext.inCommand = true
-			a := e.decision()
-			e.ext.inCommand = false
-			done, encamp = e.explore(a)
-			e.StatusLine()
-		}
+		e.awaitCommand()
+		return
 	}
+	e.commandEnd()
+	e.afterCommand(false)
+}
+
+// awaitCommand: the explore screen waits for the next command.
+func (e *Engine) awaitCommand() {
+	if f := e.DevAction; f != nil { // headless checks (POR_DEV)
+		e.DevAction = nil
+		f()
+	}
+	e.ext.inCommand = e.mode == modeExplore
+}
+
+// commandEnd = the end of CommandInput.
+func (e *Engine) commandEnd() {
 	e.prevViewMode = e.viewMode
 	if e.run.textCleared == 0 {
 		e.ClearCells(1, msgTop, paneRight, paneBottom)
 		e.run.textCleared = 1
 	}
-	return encamp
+}
+
+// applyExplore is modeExplore's handler: one adventuring decision; done
+// when the game is over (a script quit).
+func (e *Engine) applyExplore(a Action) bool {
+	e.ext.inCommand = false
+	done, encamp := e.explore(a)
+	e.StatusLine()
+	if done {
+		e.commandEnd()
+		e.afterCommand(encamp)
+	} else {
+		e.awaitCommand()
+	}
+	return e.over
 }
 
 // decision waits for the next decision, the auto-walk's steps included;
-// it takes frames (idle) only while the picture animates or the party walks.
+// it takes frames (idle) only while the picture animates or the party
+// walks, or for a timed screen, which gets them as ActTick.
 func (e *Engine) decision() Action {
 	for !e.inputReady() {
-		if !e.animateWhileWaiting() && e.ext.walk == nil {
+		timed := e.timed()
+		if !timed && !e.animateWhileWaiting() && e.ext.walk == nil {
 			break
 		}
 		e.idle()
+		if timed && !e.inputReady() {
+			return Action{Kind: ActTick}
+		}
 	}
 	return e.input()
 }
@@ -258,11 +316,11 @@ func (e *Engine) explore(a Action) (done, encamp bool) {
 			e.say("No items")
 		} else {
 			e.ext.toItems = true
-			e.ViewCharacter()
+			e.pushSheet()
 		}
 	case ActMember:
 		if member() {
-			e.ViewCharacter() // ovr20:0AB3
+			e.pushSheet() // ovr20:0AB3
 		}
 	case ActLead:
 		member()

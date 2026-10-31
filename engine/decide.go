@@ -5,8 +5,10 @@ package engine
 // applies one decision and returns, done or not; it never waits for
 // input or time. A handler opens another screen by pushing it: the
 // pushed screen takes the decisions until it is done, then the one under
-// it gets actRedraw. Until M6b+ flattens their callers, await and until
-// feed them from inside the engine's coroutine (Apply).
+// it gets actRedraw. The engine's top level (top) only dispatches each
+// decision to the top screen; until M6c/M6d flatten combat and the script
+// VM, inline, await and until feed screens from inside a blocking caller
+// in the engine's coroutine (Apply).
 
 type screenMode int
 
@@ -27,6 +29,10 @@ const (
 	modeTurn                // View.Battle.Turn: a member's combat turn (applyTurn)
 	modeAim                 // View.Battle.Turn.Aim: aiming (playerAim's handler)
 	modeConfirm             // View.Battle.Ask: a combat yes/no (Flee?, Attack Ally?)
+	modeExplore             // View.Exploring: the adventuring commands (applyExplore)
+	modeTitle               // the title pictures and credits (timed)
+	modeRest                // camp's rest, five minutes a frame (timed; View.Camp)
+	modeStory               // the finale's pictures (timed)
 )
 
 // screen is a screen taking decisions: its handler, what leaving it
@@ -35,17 +41,38 @@ type screen struct {
 	mode, under screenMode
 	apply       func(Action) (done bool)
 	leave       func()
+	timed       bool // it takes ActTick every frame no decision comes
 }
 
 // push puts screen m up; it takes the decisions until apply is done,
 // then leave runs (nil: nothing to do).
 func (e *Engine) push(m screenMode, apply func(Action) bool, leave func()) {
-	e.screens = append(e.screens, screen{m, e.mode, apply, leave})
+	e.screens = append(e.screens, screen{m, e.mode, apply, leave, false})
 	e.mode = m
 }
 
+// pushTimed puts up a timed screen: a frame going by with no decision
+// gives its handler ActTick (decision), so a timed loop keeps its state
+// in the handler instead of waiting in place.
+func (e *Engine) pushTimed(m screenMode, apply func(Action) bool, leave func()) {
+	e.push(m, apply, leave)
+	e.screens[len(e.screens)-1].timed = true
+}
+
+// timed: the top screen takes the frames.
+func (e *Engine) timed() bool { return len(e.screens) > 0 && e.screens[len(e.screens)-1].timed }
+
+// inline runs push, which puts screens up, and feeds them until they are
+// all done: the blocking adapter of the callers still inside the script
+// VM or combat (opShop, opProgram, the combat sheet: M6c, M6d).
+func (e *Engine) inline(push func()) {
+	base := len(e.screens)
+	push()
+	e.until(base)
+}
+
 // await puts screen m up and feeds it decisions until it is done (the
-// blocking adapter of the legacy callers, until M6).
+// blocking adapter of combat's turn and the script asks, until M6c/M6d).
 func (e *Engine) await(m screenMode, apply func(Action) (done bool)) {
 	base := len(e.screens)
 	e.push(m, apply, nil)

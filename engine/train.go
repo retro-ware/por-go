@@ -256,15 +256,8 @@ func (e *Engine) trainCheck(c *Character) (mask byte, why string, best int32) {
 	return byte(int(can) & hall), "", best
 }
 
-// TrainCharacter = ovr17:29AC: the training hall takes decisions for the
+// pushTraining = ovr17:29AC: the training hall takes decisions for the
 // selected member until it leaves (or has trained).
-func (e *Engine) TrainCharacter() {
-	base := len(e.screens)
-	e.pushTraining()
-	e.until(base)
-}
-
-// pushTraining puts the training hall up for the selected member.
 func (e *Engine) pushTraining() {
 	c := e.selected()
 	if _, _, best := e.trainCheck(c); best > 0 {

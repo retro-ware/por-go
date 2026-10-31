@@ -198,17 +198,8 @@ func (e *Engine) showStat(stat int, hi bool) {
 	}
 }
 
-// ViewCharacter = ovr20:0AB3 (var quit): the View command. Returns quit,
-// set when an item or spell used in combat took the turn.
-func (e *Engine) ViewCharacter() bool {
-	base := len(e.screens)
-	e.pushSheet()
-	e.until(base)
-	return e.view.quit
-}
-
-// pushSheet puts the sheet of the selected member up (View.Sheet); F1-F8
-// (ext.toItems) open it on the inventory, and leaving that leaves it.
+// pushSheet = ovr20:0AB3 (var quit), the View command: it puts the sheet
+// of the selected member up (View.Sheet); F1-F8 (ext.toItems) open it on the inventory, and leaving that leaves it.
 func (e *Engine) pushSheet() {
 	if e.beginFlag == 5 {
 		e.combatViewEnter() // ovr31 (seg 03E0) +2F
@@ -381,22 +372,14 @@ func fit(b, r image.Rectangle) image.Rectangle {
 	return image.Rect(0, 0, w, h).Add(r.Min.Add(image.Pt((r.Dx()-w)/2, r.Dy()-h)))
 }
 
-// ItemsMenu = ovr20:0EF8: the character's items with Ready, Use, Trade,
-// Drop, Halve, Join, Sell and Id. Returns true when the View should end
+// ItemsMenu (ovr20:0EF8, pushItems): the character's items with Ready, Use, Trade,
+// Drop, Halve, Join, Sell and Id. view.quit is set when the View should end
 // (an item was used in combat). extra: the remastered inventory screen
 // draws it (View.Inventory) and takes decisions (applyItems): no Halve,
 // Join, Trade or Id (unreadied items are the party's), Throw in combat,
 // F1-F8 or the screen's arrows show another member outside combat; Drop
-// and Sell come already confirmed.
-func (e *Engine) ItemsMenu() bool {
-	base := len(e.screens)
-	e.view.quit = false
-	e.pushItems()
-	e.until(base)
-	return e.view.quit
-}
-
-// pushItems puts the selected member's inventory up.
+// and Sell come already confirmed. pushItems puts the selected member's
+// inventory up.
 func (e *Engine) pushItems() {
 	e.snap.invOn = true
 	e.ApplyItems(e.selected()) // port: ItemCount may be stale (shop Inv for a buyer never viewed)

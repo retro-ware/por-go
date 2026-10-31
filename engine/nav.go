@@ -122,9 +122,7 @@ func (e *Engine) extraAct(a Action) bool {
 		if !e.ext.guarded || e.ext.modal > 0 {
 			return false
 		}
-		base := len(e.screens) // ponytail: F9 from a blocking prompt runs the slot screen here (until M6)
-		e.pushSlots(false)
-		e.until(base)
+		e.pushSlots(false) // the next decisions go to it, wherever the engine waits (until feeds the top screen)
 	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training), and at the creation
 		if !e.ext.viewing && !e.ext.creating { // only on the sheet: a stray Shift-click elsewhere must never change a face
 			return false
@@ -238,17 +236,6 @@ func (e *Engine) pressed(a Action) bool {
 func (e *Engine) anyKey() (a Action) {
 	e.block(func() { e.askKey(func(k Action) { a = k }) })
 	return a
-}
-
-// keyHit uses up the actions waiting and reports whether one was a key
-// (the original's KeyPressed polls).
-func (e *Engine) keyHit() bool {
-	for e.inputReady() {
-		if e.pressed(e.input()) {
-			return true
-		}
-	}
-	return false
 }
 
 // rosterRow is the party member listed at cell (cx, cy), or -1.

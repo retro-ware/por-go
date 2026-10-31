@@ -16,6 +16,8 @@ type campState struct {
 	heal     int                     // DS:6DD8: five-minute steps toward the daily healing
 	study    [maxCombatants + 1]byte // DS:6DCF: five-minute steps until member i's next spell is learned
 	interval int                     // DS:49FB: steps since the last encounter roll
+
+	interrupted, rested bool // extra: a rest was interrupted (camp closes); one just ended (camp's actRedraw draws nothing)
 }
 
 func (e *Engine) spellLevel(sp byte) byte { return spellTable[sp&0x7F][1] }
@@ -136,8 +138,9 @@ func (e *Engine) partyStudy() int {
 	return most
 }
 
-// restFor (extra) rests mins minutes or until stop says so (nil: never).
-func (e *Engine) restFor(mins int, stop func() bool) (interrupted bool) {
+// restFor (extra) rests mins minutes or until stop says so (nil: never);
+// then then gets whether a monster interrupted.
+func (e *Engine) restFor(mins int, stop func() bool, then func(interrupted bool)) {
 	if stop == nil {
 		stop = func() bool { return false }
 	}
@@ -145,10 +148,11 @@ func (e *Engine) restFor(mins int, stop func() bool) (interrupted bool) {
 	*r = [7]int{}
 	r[1] = mins
 	e.normalizeRest()
-	interrupted = e.Rest(stop)
-	e.camp.rest = [7]int{}
-	e.StatusLine()
-	return interrupted
+	e.Rest(stop, func(interrupted bool) {
+		e.camp.rest = [7]int{}
+		e.StatusLine()
+		then(interrupted)
+	})
 }
 
 const spellCureLight = 3
@@ -158,27 +162,27 @@ const spellCureLight = 3
 // Light Wounds in every first-level slot, rest to learn it and cast again.
 // Then they rest to learn their planned spells (Plan) again, and natural
 // healing (1 HP a day) does the rest.
-func (e *Engine) healParty() (interrupted bool) {
+// The rests follow one another (restFor's then); then gets whether one
+// was interrupted.
+func (e *Engine) healParty(then func(interrupted bool)) {
 	var clerics []*Character
 	for _, c := range e.party {
 		if c.spellSlot(clsCleric, 1) > 0 && c.SpellBook[spellCureLight-1] != 0 {
 			clerics = append(clerics, c)
 		}
 	}
-	e.castCures()
-	for len(clerics) > 0 && e.healMinutes() > 0 && !interrupted && e.spellsAllowed() {
-		for _, c := range clerics {
-			e.memorizeCures(c)
+	natural := func() {
+		if e.healMinutes() > 0 {
+			e.restFor(e.healMinutes(), func() bool { return e.healMinutes() == 0 }, then)
+			return
 		}
-		before := e.healMinutes()
-		if interrupted = e.restFor(e.partyStudy(), nil); !interrupted {
-			e.castCures()
-		}
-		if e.healMinutes() >= before {
-			break // the cures do not help (nobody could cast)
-		}
+		then(false)
 	}
-	if len(clerics) > 0 && !interrupted {
+	planned := func() {
+		if len(clerics) == 0 {
+			natural()
+			return
+		}
 		for _, c := range clerics { // the cures left make way for the planned spells
 			for i, v := range c.Memorized {
 				if v == spellCureLight {
@@ -188,13 +192,42 @@ func (e *Engine) healParty() (interrupted bool) {
 			e.planSpells(c)
 		}
 		if most := e.partyStudy(); most > 0 {
-			interrupted = e.restFor(most, nil)
+			e.restFor(most, nil, func(interrupted bool) {
+				if interrupted {
+					then(true)
+					return
+				}
+				natural()
+			})
+			return
 		}
+		natural()
 	}
-	if !interrupted && e.healMinutes() > 0 {
-		interrupted = e.restFor(e.healMinutes(), func() bool { return e.healMinutes() == 0 })
+	var cures func()
+	cures = func() {
+		if !(len(clerics) > 0 && e.healMinutes() > 0 && e.spellsAllowed()) {
+			planned()
+			return
+		}
+		for _, c := range clerics {
+			e.memorizeCures(c)
+		}
+		before := e.healMinutes()
+		e.restFor(e.partyStudy(), nil, func(interrupted bool) {
+			if interrupted {
+				then(true)
+				return
+			}
+			e.castCures()
+			if e.healMinutes() >= before {
+				planned() // the cures do not help (nobody could cast)
+				return
+			}
+			cures()
+		})
 	}
-	return interrupted
+	e.castCures()
+	cures()
 }
 
 // planSpells (extra): the spells of c.Plan that c does not hold are set to
@@ -458,11 +491,10 @@ const (
 )
 
 // CampMenu = ovr16:1E6F, remade: camp takes decisions until the party
-// leaves (ActClose); true when resting was interrupted (the caller then
-// runs the encounter).
-func (e *Engine) CampMenu() bool {
+// leaves (ActClose) or a rest is interrupted; then then (nil: nothing)
+// gets whether it was (the caller then runs the encounter).
+func (e *Engine) CampMenu(then func(interrupted bool)) {
 	e.Music(1) // Amiga 0x17FBC .. 0x1813C
-	defer e.Music(0)
 	saved := e.beginFlag
 	e.beginFlag = 2
 	e.camp.heal = 0
@@ -470,27 +502,36 @@ func (e *Engine) CampMenu() bool {
 	e.DrawMainScreen()
 	e.clearStudy()
 	e.ext.camping, e.ext.ordering = true, true // a card dragged onto another's place moves the member there (ActOrder)
-	interrupted := false
-	e.await(modeCamp, func(a Action) bool {
-		left, i := e.campDecision(a)
-		interrupted = i
+	e.camp.interrupted, e.camp.rested = false, false
+	e.push(modeCamp, func(a Action) bool {
+		left := e.campDecision(a)
 		e.DisplayPartyList()
-		return left || i
+		return left || e.camp.interrupted
+	}, func() {
+		e.ext.camping, e.ext.ordering = false, false
+		for _, c := range e.party { // the plans hold: the next rest learns them
+			e.planSpells(c)
+		}
+		e.spellCaster = nil
+		e.beginFlag = saved
+		e.StatusLine()
+		e.ClearMessageArea()
+		e.ClearRow24()
+		e.Music(0)
+		if then != nil {
+			then(e.camp.interrupted)
+		}
 	})
-	e.ext.camping, e.ext.ordering = false, false
-	for _, c := range e.party { // the plans hold: the next rest learns them
-		e.planSpells(c)
-	}
-	e.spellCaster = nil
-	e.beginFlag = saved
-	e.StatusLine()
-	e.ClearMessageArea()
-	e.ClearRow24()
-	return interrupted
 }
 
-// campDecision carries out a decision in camp.
-func (e *Engine) campDecision(a Action) (left, interrupted bool) {
+// rested ends a rest in camp: an interruption closes camp.
+func (e *Engine) rested(interrupted bool) {
+	e.camp.interrupted, e.camp.rested = interrupted, true
+}
+
+// campDecision carries out a decision in camp; true when the party leaves.
+// A rest is a screen of its own (modeRest), which ends in rested.
+func (e *Engine) campDecision(a Action) (left bool) {
 	member := func() *Character { // member N (< 0: the selected one) acts and becomes the selected one
 		if a.N >= 0 && a.N < len(e.party) {
 			e.selectMember(a.N)
@@ -499,7 +540,7 @@ func (e *Engine) campDecision(a Action) (left, interrupted bool) {
 	}
 	switch a.Kind {
 	case ActClose:
-		return true, false
+		return true
 	case ActLead:
 		member()
 	case ActMember:
@@ -530,8 +571,10 @@ func (e *Engine) campDecision(a Action) (left, interrupted bool) {
 	case ActIconEdit:
 		member()
 		e.pushIcon()
-	case actRedraw: // back from the icon editor
-		if e.mode == modeCamp {
+	case actRedraw: // back from the icon editor (a rest draws nothing again)
+		if e.camp.rested {
+			e.camp.rested = false
+		} else if e.mode == modeCamp {
 			e.DrawMainScreen()
 		}
 	case ActRest:
@@ -542,27 +585,27 @@ func (e *Engine) campDecision(a Action) (left, interrupted bool) {
 		case RestHeal:
 			if e.healMinutes() == 0 {
 				e.say("No one needs healing")
-				return false, false
+				return false
 			}
-			return false, e.healParty()
+			e.healParty(e.rested)
 		case RestMemorize:
 			most := e.partyStudy()
 			if most == 0 {
 				e.say("No spells to memorize")
-				return false, false
+				return false
 			}
-			return false, e.restFor(most, nil)
+			e.restFor(most, nil, e.rested)
 		case RestWait:
-			return false, e.restFor(60, nil)
+			e.restFor(60, nil, e.rested)
 		case RestUntil:
 			until := 20 * 60
 			if !e.isDay() {
 				until = 6 * 60
 			}
-			return false, e.restFor(((until-e.clockMinutes())%(24*60)+24*60)%(24*60), nil)
+			e.restFor(((until-e.clockMinutes())%(24*60)+24*60)%(24*60), nil, e.rested)
 		}
 	}
-	return false, false
+	return false
 }
 
 // campView is camp's state for the View.
@@ -847,8 +890,10 @@ func (e *Engine) hourTick(count *int) {
 
 // Rest = ovr21:0C9A: rest in five-minute steps until the time is up, a key
 // stops it, or a monster interrupts (game +0x5A4 steps between rolls,
-// +0x5A6 percent chance). Returns true when interrupted.
-func (e *Engine) Rest(stop func() bool) bool {
+// +0x5A6 percent chance); then then gets whether it was interrupted. The
+// loop is a timed screen (modeRest): one step a frame, as the DOS loop
+// ran flat out.
+func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 	interrupted := false
 	for i := range e.camp.study {
 		e.camp.study[i] = 0
@@ -860,22 +905,20 @@ func (e *Engine) Rest(stop func() bool) bool {
 	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	e.showRest(0)
 	e.resting = 1
-	done := false
 	r := &e.camp.rest
-	for !done {
+	e.pushTimed(modeRest, func(a Action) bool {
 		if r[4] == 0 && r[3] == 0 && r[2] == 0 && r[1] == 0 || stop() {
-			break
+			return true
 		}
-		if e.keyHit() {
-			e.showRest(0)
-			if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ") {
-				done = true
-			} else {
+		if a.Kind != ActTick { // keyHit: the step waits for the next frame
+			if e.pressed(a) {
+				e.showRest(0)
+				if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ") {
+					return true
+				}
 				e.ClearRow24()
 			}
-		}
-		if done {
-			continue
+			return false
 		}
 		e.subRest(5, 1)
 		if shown++; shown >= 5 {
@@ -894,15 +937,16 @@ func (e *Engine) Rest(stop func() bool) bool {
 					e.ClearMessageArea()
 					e.showRest(0)
 					e.DisplayString(1, 19, colWhite, "The Party is rudely interrupted!")
-					done = true
 					interrupted = true
 					e.MsgDelay()
+					return true
 				}
 			}
 		}
-		e.idle() // let the window breathe; the DOS loop ran flat out
-	}
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
-	e.resting = 0
-	return interrupted
+		return false
+	}, func() {
+		e.ClearBox(1, msgTop, paneRight, paneBottom)
+		e.resting = 0
+		then(interrupted)
+	})
 }
