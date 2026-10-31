@@ -22,7 +22,7 @@ type beast struct {
 
 var bestiary = []beast{
 	{"Anhkheg", 6, "Large burrowing insects with great mandibles. These creatures have been known to spit a powerful acid.", []string{"AHNKHEG"}},
-	{"Basilisk", 7, "A giant eight-legged lizard. One of the most dangerous creatures in the realms because their gaze can turncreatures to stone!", nil},
+	{"Basilisk", 7, "A giant eight-legged lizard. One of the most dangerous creatures in the realms because their gaze can turn creatures to stone!", nil},
 	{"Bugbear", 4, "Hideous giant sized goblins who stand over seven feet in height. Bugbears look clumsy but are strong, quick fighters with great stealth.", nil},
 	{"Centaur", 4, "These good creatures are half men and half horse. They are capable fighters and can be valuable allies.", nil},
 	{"Displacer Beast", 6, "These creatures are large, black puma-like creatures with two tentacles sprouting from their backs. These creatures can appear several feet from their actual location.", nil},
