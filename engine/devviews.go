@@ -122,19 +122,31 @@ func (e *Engine) DevScene(name string) func() {
 			e.ShowEncounter(sprite, pic, 0, &e.es.encounterShown)
 			e.msgCol, e.msgRow = 1, 0x11
 			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "A band of kobolds blocks the way.")
-			for e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~COMBAT ~WAIT ~FLEE ~PARLAY", "") == 1 { // WAIT: a message, then the menu again
-				e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
+			var round func() // as the script's asks: WAIT a message, then the menu again
+			round = func() {
+				e.askChoice("", "~COMBAT ~WAIT ~FLEE ~PARLAY", false, false, func(c int) {
+					if c == 1 {
+						e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
+						round()
+						return
+					}
+					e.ClearBox(0, promptRow, lastCol, promptRow)
+					e.es.inEncounterMenu = 0
+					e.askChoice(" ", "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", false, false, func(int) {})
+				})
 			}
-			e.ClearBox(0, promptRow, lastCol, promptRow)
-			e.es.inEncounterMenu = 0
-			e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
+			round()
+			e.waitScript()
 			e.DrawMainScreen()
 		}
 	case "password": // a script's InputString: the question in the text window, then the line typed (the remaster's pop-up)
 		return func() {
 			e.scriptText(true, "WHAT DO YOU SAY? (TYPE A SINGLE WORD)")
-			e.scriptText(true, "YOU SAY '"+e.InputString("", colLightGreen, 0x28)+"'.")
-			e.pressReturn()
+			e.askLine(0x28, false, func(s string) {
+				e.scriptText(true, "YOU SAY '"+s+"'.")
+				e.askContinue(func() {})
+			})
+			e.waitScript()
 			e.DrawMainScreen()
 		}
 	case "cure": // the paladin's Cure: the member pick, then the 'not diseased, cure anyway' question
@@ -183,7 +195,7 @@ func (e *Engine) DevScene(name string) func() {
 			e.DrawMainScreen()
 		}
 	case "who": // a member pick on the view, as a script's "Who will search?"
-		return func() { e.SelectCharacter("Who will search?", false, nil) }
+		return func() { e.askMember("Who will search?", nil, e.selectChar); e.waitScript() }
 	case "effects":
 		return func() { // spell effects for the View page: many on member 1, one on member 2
 			for _, t := range []affectType{affBless, affCurse, affMonsterInvisible, affPoisoned, affRegenerating, affFireResistance} {

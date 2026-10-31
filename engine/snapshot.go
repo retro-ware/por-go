@@ -98,6 +98,7 @@ type View struct {
 	Creation  *Creation  // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
 	Picker    *Picker    // a grid picker (the page): ActPicked, ActPage; ActClose leaves
 	Slots     *Slots     // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
+	Script    *ScriptAsk // a script instruction waits for its answer (eclask.go): Menu, List, Typing or Choosing show it; AskPause is the presenter's to pace
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -411,6 +412,11 @@ func (e *Engine) publish() {
 		v.Picker = e.pickerView()
 	case modeSlots:
 		v.Slots = e.slotsView()
+	case modeScript:
+		if w := e.eclWait; w != nil {
+			a := w.ask
+			v.Script = &a
+		}
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering

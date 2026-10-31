@@ -275,9 +275,6 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character) *Char
 					who = e.party[len(e.party)-1]
 				}
 			}
-			if e.whoVar && who != nil { // opWho's var is DS:5D92 itself
-				e.selectChar(who)
-			}
 			continue
 		}
 		if p.ID == NoPick { // (Esc) the original stores nil and keeps asking

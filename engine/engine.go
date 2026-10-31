@@ -147,7 +147,7 @@ type Engine struct {
 	spellOwnTargets                 byte                          // DS:6820
 	tgtX, tgtY                      int                           // DS:6DB9/6DBA target square
 	combatTargets                   bool                          // DS:6B84 points at ovr14:20C3 (set by Combat), else ovr23:0A91
-	whoVar                          bool                          // SelectCharacter's who is DS:5D92 itself (opWho)
+	eclWait                         *eclWait                      // the script instruction waiting for its answer (eclask.go)
 	spellFx                         [len(spellTable)]func()       // DS:6B84 spell effect table (slot 0 unused)
 	spellValue, spellValue2         byte                          // DS:4844/4845 spell scratch; DS:4845
 	turnValue, modMoves, affectVeto byte                          // DS:681A speed value, 681D, 681E affect scratch; DS:681D/681E

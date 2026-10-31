@@ -137,3 +137,16 @@ is deleted subsystem by subsystem, not kept alongside.
   F9 from a blocking prompt runs the slot screen through `until`; the icon
   editor keeps the swatch the palette sets; Minimal gives up after 200000
   rolls instead of stopping on a key.
+- [x] M4a: the script VM suspends. An instruction needing the player
+  (HMENU, VMENU, INPUT string and number, WHO, the encounter menu, Parlay,
+  DELAY, the DAMAGE "press Enter", the tavern's native gamble) records a
+  ScriptAsk (eclask.go: AskMenu, AskList, AskText, AskMember, AskPause)
+  with its completion and returns; RunECL puts modeScript up
+  (applyScript) and goes on once the answer completed it; a completion
+  may ask again (WAIT, the next gamble question). View.Script publishes
+  the ask; View.Menu, List, Typing and Choosing still draw it. The
+  engine no longer sleeps in DELAY: the presenter paces AskPause and
+  sends ActContinue. Still blocking: Combat, the shop and temple a
+  script opens (opCombat, until M5/M6 lets RunECL return), the journal
+  pager (tavern tales), the story and title animations, the paladin's
+  Heal and Cure, out-of-combat casting (spells1) and items' Use.

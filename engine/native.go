@@ -47,38 +47,39 @@ func (e *Engine) tavernGamble() {
 		e.eclPC = e.scriptLabel("TavernEvent")
 		return
 	}
-	for again := true; again; {
-		e.scriptText(true, "YOU HAVE ")
-		e.scriptText(false, strconv.Itoa(int(e.purse.gold)))
-		e.scriptText(false, " GP.")
-		e.pressReturn()
+	e.tavernRound()
+}
+
+// tavernRound is one spin, each question asked of the player in turn
+// (the asks complete on the answers; RunECL waits for the last).
+func (e *Engine) tavernRound() {
+	e.scriptText(true, "YOU HAVE ")
+	e.scriptText(false, strconv.Itoa(int(e.purse.gold)))
+	e.scriptText(false, " GP.")
+	e.askContinue(func() {
 		e.scriptText(true, "HOW MANY GOLD PIECES WILL YOU WAGER? (HOUSE LIMIT IS "+strconv.Itoa(tavernHouseLimit)+")")
-		wager := uint32(e.InputNumber("", colLightGreen))
-		r := 0
-		if tavernWagerOK(e.purse.gold, wager) {
-			r = e.Random(10)
-		}
-		var text string
-		e.purse.gold, text = tavernSpin(e.purse.gold, wager, r)
-		e.scriptText(true, text)
-		e.pressReturn()
-		e.scriptText(true, "WILL YOU GO AGAIN?")
-		again = e.scriptMenu("~YES ~NO") == 0
-	}
-	e.eclPC = e.scriptLabel("ResetVisits")
-}
-
-// pressReturn is the scripts' one-item "PRESS <RETURN>" menu (opHMenu).
-func (e *Engine) pressReturn() {
-	e.MenuInput(true, colWhite, colWhite, colLightMagenta, "~PRESS <ENTER>/<RETURN> TO CONTINUE", "")
-	e.ClearBox(0, promptRow, lastCol, promptRow)
-}
-
-// scriptMenu is opHMenu's menu: the index of the choice.
-func (e *Engine) scriptMenu(menu string) int {
-	r := e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, menu, "")
-	e.ClearBox(0, promptRow, lastCol, promptRow)
-	return int(byte(r))
+		e.askNumber(func(n uint16) {
+			wager := uint32(n)
+			r := 0
+			if tavernWagerOK(e.purse.gold, wager) {
+				r = e.Random(10)
+			}
+			var text string
+			e.purse.gold, text = tavernSpin(e.purse.gold, wager, r)
+			e.scriptText(true, text)
+			e.askContinue(func() {
+				e.scriptText(true, "WILL YOU GO AGAIN?")
+				e.askChoice("", "~YES ~NO", false, false, func(c int) {
+					e.ClearBox(0, promptRow, lastCol, promptRow)
+					if c == 0 {
+						e.tavernRound()
+						return
+					}
+					e.eclPC = e.scriptLabel("ResetVisits")
+				})
+			})
+		})
+	})
 }
 
 func tavernWagerOK(gold, wager uint32) bool {

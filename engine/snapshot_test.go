@@ -457,6 +457,9 @@ func TestScriptInputPrompt(t *testing.T) {
 	if v.Typing == nil || v.Typing.Prompt != "WHAT DO YOU SAY? (TYPE A SINGLE WORD)" {
 		t.Fatalf("typing %+v, want the script's question", v.Typing)
 	}
+	if v.Script == nil || v.Script.Kind != engine.AskText || v.Script.Prompt != v.Typing.Prompt {
+		t.Fatalf("script ask %+v, want the typed line", v.Script)
+	}
 	e.Act(engine.Action{Kind: engine.ActText, Text: "ohlo"})
 	e.Act(engine.Action{Kind: engine.ActContinue})
 	for t0 := time.Now(); e.View().Typing != nil; time.Sleep(20 * time.Millisecond) {

@@ -73,11 +73,13 @@ func (e *Engine) RunECL(addr int) {
 		e.es.op = e.script.Code[e.eclPC].Op
 		if f := e.nativeScript(); f != nil {
 			f(e)
+			e.waitScript()
 			continue
 		}
 		e.walkOp(e.es.op)
 		if int(e.es.op) < len(eclOps) && eclOps[e.es.op] != nil {
 			eclOps[e.es.op](e)
+			e.waitScript() // an instruction asking the player completes on the answer
 		} else {
 			// Not ported yet: report it and end this script run.
 			fmt.Fprintf(os.Stderr, "ecl: opcode %02X on line %d not ported\n", e.es.op, e.script.Code[e.eclPC].Line)
@@ -305,18 +307,19 @@ func (e *Engine) opPicture() {
 func (e *Engine) opInputNumber() {
 	e.FetchArgs(2)
 	dst := e.ArgAddr(2)
-	e.WriteVar(dst, e.InputNumber("", colLightGreen))
+	e.askNumber(func(n uint16) { e.WriteVar(dst, n) })
 }
 
 // opInputString = ovr04:0994.
 func (e *Engine) opInputString() {
 	e.FetchArgs(2)
 	dst := e.ArgAddr(2)
-	s := e.InputString("", colLightGreen, 0x28)
-	if s == "" {
-		s = " "
-	}
-	e.WriteStringVar(dst, s)
+	e.askLine(0x28, false, func(s string) {
+		if s == "" {
+			s = " "
+		}
+		e.WriteStringVar(dst, s)
+	})
 }
 
 // platinumPrices (extra) reprices the scripts' platinum in gold: the purse
@@ -377,7 +380,6 @@ func (e *Engine) opCompareAnd() {
 // opVMenu = ovr04:0F08 (result, prompt, count, items...): a vertical list.
 func (e *Engine) opVMenu() {
 	e.run.textCleared = 0
-	redraw := true
 	index := 0
 	e.FetchArgs(3)
 	dst := e.ArgAddr(1)
@@ -395,13 +397,16 @@ func (e *Engine) opVMenu() {
 		}
 		p.Text, p.Flag = s, 0
 	}
-	var sel *ListNode
-	// extra: Esc closes a menu whose last item is LEAVE by picking it
-	if e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, e.msgRow+1, 38, 22, list, false, &redraw, &index, &sel).ID == NoPick && list[n-1].Text == "LEAVE" { // ovr08:1788
-		index = n - 1
-	}
-	e.WriteVar(dst, uint16(index))
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
+	e.askList(list, func(i int) {
+		switch {
+		case i >= 0:
+			index = i
+		case list[n-1].Text == "LEAVE": // extra: Esc closes a menu whose last item is LEAVE by picking it
+			index = n - 1
+		}
+		e.WriteVar(dst, uint16(index))
+		e.ClearBox(1, msgTop, paneRight, paneBottom)
+	})
 }
 
 // opIf = ovr04:0B52 (IF= IF<> IF< IF> IF<= IF>=): skip the next
@@ -513,10 +518,8 @@ func (e *Engine) opHMenu() {
 	n := int(byte(e.ArgValue(2)))
 	e.eclPC--
 	e.FetchArgs(n)
-	allowEnter := false
-	hi, normal := colWhite, colLightGreen
+	allowEnter := n == 1
 	if n == 1 {
-		allowEnter, normal = true, 0xF
 		if e.es.str[1] == "PRESS <RETURN> OR BUTTON TO CONTINUE" {
 			e.es.str[1] = "PRESS <ENTER>/<RETURN> TO CONTINUE"
 		}
@@ -527,11 +530,10 @@ func (e *Engine) opHMenu() {
 		menu = cut(menu+"~"+e.es.strAt(i)+" ", 0x32)
 	}
 	menu = cut(menu+"~"+e.es.strAt(n), 0x32)
-	e.animInput = anim
-	r := e.MenuInput(allowEnter, hi, normal, colLightMagenta, menu, "")
-	e.animInput = false
-	e.WriteVar(dst, uint16(byte(r)))
-	e.ClearBox(0, promptRow, lastCol, promptRow)
+	e.askChoice("", menu, allowEnter, anim, func(r int) {
+		e.WriteVar(dst, uint16(byte(r)))
+		e.ClearBox(0, promptRow, lastCol, promptRow)
+	})
 }
 
 func cut(s string, n int) string {
@@ -677,6 +679,9 @@ func (e *Engine) opSurprise() {
 
 // opCombat = ovr04:179B: run the fight (or the shop/temple/after-combat
 // screen when no fight is pending).
+// ponytail: the shop, temple and combat it opens still run as blocking calls
+// from inside the VM (Shop and Temple await their screens); M5 enters combat
+// through the screen stack and M6 lets RunECL return and resume when they pop.
 func (e *Engine) opCombat() {
 	e.eclPC++
 	if e.run.monstersLoaded == 0 && e.run.duelMode == 0 {

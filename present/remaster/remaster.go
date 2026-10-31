@@ -38,6 +38,8 @@ import (
 type Presenter struct {
 	pg page // the original's screen, drawn from the View
 
+	pauseFrom time.Time // a script's pause (AskPause) began; zero: none up
+
 	view        *blobber.View
 	scenes      map[string]*blobber.Scene   // parsed maps by name
 	shown       string                      // the scene the view shows
@@ -225,6 +227,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.list = listUI{sel: max(0, slices.IndexFunc(v.List, func(l engine.ListLine) bool { return !l.Off }))}
 	}
 	p.shownView = v
+	p.pace(v)
 	p.pageMenu = false
 	p.cmds = commands(v)
 	if !p.active {
@@ -1150,4 +1153,20 @@ func (p *Presenter) selectCard(i int) {
 		return
 	}
 	p.send(engine.ActMember, i)
+}
+
+// pace ends a script's pause (AskPause) once its time is up: the engine
+// never sleeps, the presenter keeps the time.
+func (p *Presenter) pace(v engine.View) {
+	if v.Script == nil || v.Script.Kind != engine.AskPause {
+		p.pauseFrom = time.Time{}
+		return
+	}
+	switch {
+	case p.pauseFrom.IsZero():
+		p.pauseFrom = time.Now()
+	case !v.Working && time.Since(p.pauseFrom) >= time.Duration(v.Script.Ms)*time.Millisecond:
+		p.send(engine.ActContinue, 0)
+		p.pauseFrom = time.Time{}
+	}
 }

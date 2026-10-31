@@ -112,14 +112,7 @@ func (e *Engine) DisplayInput(prompt string, bar Bar, _, normal, highlight int, 
 	last := e.pic.last   // [bp-57] is per call: an outer DisplayInput keeps its own
 	saved := e.animInput // [bp+0xA], read by the wait loop (animateWhileWaiting)
 	e.animInput = anim
-	m := &Menu{Prompt: strings.TrimSpace(prompt), Arrows: allowExtra}
-	var ids []Choice
-	for _, it := range bar {
-		if i := strings.IndexFunc(it.Word, func(r rune) bool { return r < 0x80 && isHotkey(byte(r)) }); i >= 0 {
-			m.Items = append(m.Items, MenuItem{Text: optionText(it.Word), Key: it.Word[i]})
-			ids = append(ids, it.ID)
-		}
-	}
+	m, q := e.newQuestion(prompt, bar, allowExtra, normal != 0 || highlight != 0)
 	outer := e.snap.menu
 	if m.Prompt != "" || len(m.Items) > 0 { // nothing to ask: no menu
 		e.snap.menu = m
@@ -134,7 +127,6 @@ func (e *Engine) DisplayInput(prompt string, bar Bar, _, normal, highlight int, 
 		e.pic.last = last
 		e.viewAnim = 0 // 06D8
 	}()
-	q := &question{e: e, items: m.Items, ids: ids, allowExtra: allowExtra, allowEnter: normal != 0 || highlight != 0}
 	e.pic.last = e.Ticks() // 0432: [bp-57], the animation timer starts over in every call
 	for {
 		e.animateWhileWaiting()
@@ -146,6 +138,20 @@ func (e *Engine) DisplayInput(prompt string, bar Bar, _, normal, highlight int, 
 			return p
 		}
 	}
+}
+
+// newQuestion is the menu DisplayInput (or a script's ask) publishes for
+// prompt and bar and the question deciding its answers.
+func (e *Engine) newQuestion(prompt string, bar Bar, allowExtra, allowEnter bool) (*Menu, *question) {
+	m := &Menu{Prompt: strings.TrimSpace(prompt), Arrows: allowExtra}
+	var ids []Choice
+	for _, it := range bar {
+		if i := strings.IndexFunc(it.Word, func(r rune) bool { return r < 0x80 && isHotkey(byte(r)) }); i >= 0 {
+			m.Items = append(m.Items, MenuItem{Text: optionText(it.Word), Key: it.Word[i]})
+			ids = append(ids, it.ID)
+		}
+	}
+	return m, &question{e: e, items: m.Items, ids: ids, allowExtra: allowExtra, allowEnter: allowEnter}
 }
 
 // question is the question DisplayInput waits on.

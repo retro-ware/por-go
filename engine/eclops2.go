@@ -203,10 +203,11 @@ func (e *Engine) opEncounterMenu() {
 		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "The monsters flee.")
 	}
 	txt := ""
-	for again := true; again; {
+	var round func() // the menu, asked again after WAIT or a step closer
+	round = func() {
 		anim := e.es.picShown != 0 && e.es.picAnimating != 0
 		clear := true
-		again = false
+		again := false
 		e.msgCol, e.msgRow = 1, 0x11
 		pick := func(k, stop int) {
 			for {
@@ -243,85 +244,90 @@ func (e *Engine) opEncounterMenu() {
 		if parlay {
 			menu = "~COMBAT ~WAIT ~FLEE ~PARLAY"
 		}
-		e.animInput = anim
-		choice := e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, menu, "")
-		e.animInput = false
-		if parlay && choice == 3 {
-			choice = 4
-		}
-		if choice < 0 || choice > 4 {
-			continue
-		}
-		// advance: PARLAY at distance 0, else one step closer.
-		advance := func() {
-			if dist() == 0 {
-				e.WriteVar(dst, 3)
+		e.askChoice("", menu, false, anim, func(choice int) {
+			if parlay && choice == 3 {
+				choice = 4
+			}
+			if choice < 0 || choice > 4 {
+				round()
 				return
 			}
-			approach()
-			again = true
-		}
-		switch react[choice] {
-		case 0:
-			if choice == 2 && lo >= fleeAt {
-				e.WriteVar(dst, 2)
-			} else {
-				e.WriteVar(dst, 1)
-			}
-		case 1:
-			switch choice {
-			case 0:
-				e.WriteVar(dst, 1)
-			case 1:
-				again = true
-				waitMsg()
-			case 2:
-				e.WriteVar(dst, 2)
-			case 3:
-				if !approach() {
-					waitMsg()
+			// advance: PARLAY at distance 0, else one step closer.
+			advance := func() {
+				if dist() == 0 {
+					e.WriteVar(dst, 3)
+					return
 				}
+				approach()
 				again = true
-			case 4:
-				advance()
 			}
-		case 2:
-			if choice == 0 {
-				if strength > hi {
-					flee()
+			switch react[choice] {
+			case 0:
+				if choice == 2 && lo >= fleeAt {
+					e.WriteVar(dst, 2)
 				} else {
 					e.WriteVar(dst, 1)
 				}
-			} else {
-				flee()
-			}
-		case 3:
-			switch choice {
-			case 0:
-				e.WriteVar(dst, 1)
-			case 1, 3:
-				if !approach() {
+			case 1:
+				switch choice {
+				case 0:
+					e.WriteVar(dst, 1)
+				case 1:
+					again = true
 					waitMsg()
+				case 2:
+					e.WriteVar(dst, 2)
+				case 3:
+					if !approach() {
+						waitMsg()
+					}
+					again = true
+				case 4:
+					advance()
 				}
-				again = true
 			case 2:
-				e.WriteVar(dst, 2)
+				if choice == 0 {
+					if strength > hi {
+						flee()
+					} else {
+						e.WriteVar(dst, 1)
+					}
+				} else {
+					flee()
+				}
+			case 3:
+				switch choice {
+				case 0:
+					e.WriteVar(dst, 1)
+				case 1, 3:
+					if !approach() {
+						waitMsg()
+					}
+					again = true
+				case 2:
+					e.WriteVar(dst, 2)
+				case 4:
+					advance()
+				}
 			case 4:
-				advance()
+				switch choice {
+				case 0:
+					e.WriteVar(dst, 1)
+				case 1, 3, 4:
+					advance()
+				case 2:
+					e.WriteVar(dst, 2)
+				}
 			}
-		case 4:
-			switch choice {
-			case 0:
-				e.WriteVar(dst, 1)
-			case 1, 3, 4:
-				advance()
-			case 2:
-				e.WriteVar(dst, 2)
+			if again {
+				round()
+				return
 			}
-		}
+			e.ClearBox(0, promptRow, lastCol, promptRow)
+			e.es.inEncounterMenu = 0
+		})
 	}
-	e.ClearBox(0, promptRow, lastCol, promptRow)
-	e.es.inEncounterMenu = 0
+	round()
 }
 
 // opParlay = ovr04:25CB (5 results, dst): the talk-style menu.
@@ -332,10 +338,11 @@ func (e *Engine) opParlay() {
 		r[i] = byte(e.ArgValue(i + 1))
 	}
 	dst := e.ArgAddr(6)
-	choice := e.MenuInput(false, colWhite, colLightGreen, colLightMagenta, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", " ")
-	if choice >= 0 && choice < 5 {
-		e.WriteVar(dst, uint16(r[choice]))
-	}
+	e.askChoice(" ", "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", false, false, func(choice int) {
+		if choice >= 0 && choice < 5 {
+			e.WriteVar(dst, uint16(r[choice]))
+		}
+	})
 }
 
 // opCall = ovr04:2CCF (addr): calls into engine routines by their old
@@ -440,10 +447,13 @@ func (e *Engine) opDamage() {
 		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
 		e.msgCol, e.msgRow = 2, 2
 		e.DisplayTextBlock(1, 1, winRight, winBottom, colLightGreen, true, "The entire party is killed!")
-		e.Delay(3000)
 	}
 	e.partySel = sel
-	e.PromptRow24(colWhite, "press <enter>/<return> to continue")
+	ms := 0
+	if e.run.quit {
+		ms = 3000
+	}
+	e.askPause(ms, func() { e.askContinue(func() {}) }) // was PromptRow24's any key
 }
 
 // opRedrawView = ovr04:2AA2.
@@ -547,19 +557,18 @@ func (e *Engine) opWho() {
 			return
 		}
 	}
-	e.whoVar = true
-	who := e.SelectCharacter(e.es.strAt(1), false, start) // 00BA:2C48 (var DS:5D92)
-	e.whoVar = false
-	if who == nil { // Esc then Enter stores nil; the harness pins it to the op's start
-		who = start
-	}
-	e.selectChar(who)
+	e.askMember(e.es.strAt(1), start, func(who *Character) { // 00BA:2C48 (var DS:5D92)
+		if who == nil { // Esc then Enter stores nil; the harness pins it to the op's start
+			who = start
+		}
+		e.selectChar(who)
+	})
 }
 
 // opDelay = ovr04:271F.
 func (e *Engine) opDelay() {
 	e.eclPC++
-	e.Delay(int(e.msgDelay) * 0xE1)
+	e.askPause(int(e.msgDelay)*0xE1, func() {})
 }
 
 // opSpell = ovr04:2C03 (spell, dst slot, dst count): look for the spell

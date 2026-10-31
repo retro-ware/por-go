@@ -23,6 +23,7 @@ const (
 	modePicker              // View.Picker
 	modeIcon                // the icon editor (View.IconDrop)
 	modeSlots               // View.Slots
+	modeScript              // View.Script: a script instruction waits for its answer (eclask.go)
 )
 
 // screen is a screen taking decisions: its handler, what leaving it
