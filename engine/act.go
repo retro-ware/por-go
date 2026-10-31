@@ -101,6 +101,20 @@ const (
 	ActQuickStart // a ready-made party
 	ActBegin      // begin adventuring
 	ActQuit       // quit the game (the player confirmed)
+
+	// Creation and Modify decisions (View.Creation), the pickers (View.Picker),
+	// the icon editor (View.IconDrop) and the save slots (View.Slots)
+	ActRoll       // roll the abilities (N 1: until the minimums Text, "STR INT WIS DEX CON CHA", met)
+	ActSetField   // creation field N (FieldSex ..) takes its option X (Creation.Fields[N].Options)
+	ActName       // the character's name is Text
+	ActStat       // ability N is Text (STR as 18/xx)
+	ActPicker     // open picker N (PickHead, PickBody: the sheet; PickIconHead, PickWeapon: the icon editor)
+	ActPicked     // the picker takes picture N (the player agreed to Picker.Ask)
+	ActPage       // the picker shows page N
+	ActIconSize   // icon editor: small or large
+	ActIconColour // icon editor: part N's colour X (0, 1) becomes Y (Y < 0: only selects that swatch)
+	ActSave       // save the game in slot Text (the player agreed to an overwrite)
+	ActDelete     // delete the save Text (the player agreed)
 )
 
 // Directions of ActMove.

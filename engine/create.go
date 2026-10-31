@@ -9,15 +9,14 @@ import (
 
 // Character creation and dropping, ported from ovr17.
 //
-// extra: the creation is one screen, the character sheet of a sample
-// character: its name, gender, race, alignment and class are drop-down
-// lists (a grey entry forces the dependants to their first valid value),
-// the name and the ability scores are typed where they stand (inlineInput:
-// the value gives way to the cursor), the portrait's head and body and the
-// combat icon open pickers, and the bar rolls, rolls to minimums or keeps.
-// A drop-down is a framed menu over the sheet with the current value
-// first, on the field's text, and the others below; the pointer on any of
-// them shows the selection background (region.glow). The original's four
+// extra: the creation is one screen taking decisions, the character sheet
+// of a sample character (View.Creation): its gender, race, alignment and
+// class are drop-downs (an option that does not fit forces the dependants
+// to their first valid value: ActSetField), the name and the ability
+// scores are typed (ActName, ActStat), the portrait's head and body and
+// the combat icon open pickers (ActPicker, ActIconEdit), and Roll rolls,
+// to minimums too (ActRoll), Keep keeps (ActKeep). The drop-downs, the
+// typed lines and the questions are the presenter's. The original's four
 // menus, name prompt, Head/Body stepping and icon editor states are gone.
 
 // freeCharacter = ovr17:0000 (var c): disposes the combat block, the item
@@ -392,11 +391,16 @@ func (e *Engine) rollCharacter(c *Character) {
 	e.rollHP(c)
 }
 
-// rollMinimal (extra: Minimal stats): asks the minimums, then rolls on
-// until they are met or a key stops it; impossible minimums are refused.
-func (e *Engine) rollMinimal(c *Character) {
+// rollMinimal (extra: Minimal stats): takes the minimums (Text, as
+// minimumsText; a field that is not a value keeps the last one), then rolls
+// on until they are met; impossible minimums are refused.
+func (e *Engine) rollMinimal(c *Character, text string) {
+	for i, f := range strings.Fields(text) {
+		if v, ok := parseMinStat(f, i == 0); ok && i < 6 {
+			e.ext.minStats[i] = v
+		}
+	}
 	best := bestStats(c)
-	e.askMinStats()
 	for i, name := range statNames {
 		if e.ext.minStats[i] > best[i] {
 			max := strconv.Itoa(best[i])
@@ -407,29 +411,30 @@ func (e *Engine) rollMinimal(c *Character) {
 			if i == 0 && best[0] == 1800 {
 				msg = "STR 18/xx is for fighters only, max 18"
 			}
-			e.PromptRow24(colYellow, cut(msg, textCols))
-			e.ClearRow24()
+			e.say(msg)
 			return
 		}
 	}
+	const most = 200000 // ponytail: a cap in place of "any key stops"; minimums this rare are given up
 	for tries := 1; ; tries++ {
 		e.rollCharacter(c)
 		if e.meetsMinStats(c) {
-			break
+			return
 		}
-		if tries%100 == 0 {
-			for i := 0; i <= 5; i++ {
-				e.showStat(i, false)
-			}
-			e.ClearRow24()
-			e.DisplayString(0, promptRow, colYellow, "Rolling "+strconv.Itoa(tries)+"... any key stops")
-			e.Delay(16) // let the window draw and see keys
-			if e.keyHit() {
-				break
-			}
+		if tries == most {
+			e.say("Not met in " + strconv.Itoa(most) + " rolls")
+			return
 		}
 	}
-	e.ClearRow24()
+}
+
+// minimumsText is the minimums as rollMinimal reads them.
+func (e *Engine) minimumsText() string {
+	var f []string
+	for i, v := range e.ext.minStats {
+		f = append(f, fmtMin(i, v))
+	}
+	return strings.Join(f, " ")
 }
 
 var statNames = [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}
@@ -469,20 +474,6 @@ func (e *Engine) setStatTyped(c *Character, i int, s string) {
 	}
 }
 
-// The sheet's clickable parts (what a click wants, besides the bar).
-const (
-	wantNone = iota
-	wantName
-	wantSex
-	wantRace
-	wantAlign
-	wantClass
-	wantHead
-	wantBody
-	wantIcon
-	wantStat // + the ability's index (six regions)
-)
-
 // Where the sheet shows the combat icon's poses: under the portrait box.
 const sheetIconRow = 13
 
@@ -499,7 +490,7 @@ func (e *Engine) creationSheet(c *Character) {
 	e.snap.iconBox = CellRect{sheetIconCol(0), sheetIconRow, sheetIconCol(1) + 2, sheetIconRow + 2}
 	e.snap.iconDrop = func(im image.Image) {
 		if e.takeIconPNG(c, im) {
-			e.Act(Action{Kind: actRedraw}) // the sheet draws itself anew
+			e.creationSheet(c) // the sheet draws itself anew
 		}
 	}
 	for p := 0; p < 2; p++ {
@@ -513,258 +504,207 @@ func (e *Engine) creationSheet(c *Character) {
 	}
 }
 
-// sheetRegions makes the sheet's parts clickable: each click records what
-// it wants and ends the bar's wait (PickRedraw). The texts that are
-// drop-downs glow under the pointer.
-func (e *Engine) sheetRegions(c *Character, want *int) {
-	at := func(x0, y0, x1, y1, w int, glow bool) {
-		e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, glow: glow, click: func(int, int) Action {
-			*want = w
-			return Action{Kind: actRedraw}
-		}})
+// creation is the creation sheet up: c, a character of kind k.
+type creation struct {
+	c       *Character
+	k       kind
+	replace func(old, new *Character) // puts a fresh character where c was
+	abandon string
+	done    func(c *Character, kept bool)
+}
+
+// creationView is the sheet's parts for the View.
+func (e *Engine) creationView() *Creation {
+	cr := e.creation
+	if cr == nil {
+		return nil
 	}
-	at(1, 1, len(c.Name()), 1, wantName, true)
+	c := cr.c
+	v := &Creation{Abandon: cr.abandon, Minimums: e.minimumsText()}
+	v.Name = CellRect{1, 1, max(1, len(c.Name())), 1}
 	g := len(genderNames[c.Sex])
-	at(1, 3, g, 3, wantSex, true)
-	at(g+2, 3, g+1+len(raceNames[int8(c.Race)]), 3, wantRace, true)
-	at(1, 4, len(alignmentNames[int8(c.Alignment)]), 4, wantAlign, true)
-	at(1, 5, len(className(c.Class)), 5, wantClass, true)
+	for f := range v.Fields {
+		names, cur, fits := cr.options(f)
+		fl := &v.Fields[f]
+		fl.Name, fl.Cur = [4]string{"Gender", "Race", "Alignment", "Class"}[f], cur
+		for i, n := range names {
+			fl.Options = append(fl.Options, Option{n, fits(i)})
+		}
+	}
+	v.Fields[FieldSex].At = CellRect{1, 3, g, 3}
+	v.Fields[FieldRace].At = CellRect{g + 2, 3, g + 1 + len(raceNames[int8(c.Race)]), 3}
+	v.Fields[FieldAlign].At = CellRect{1, 4, len(alignmentNames[int8(c.Alignment)]), 4}
+	v.Fields[FieldClass].At = CellRect{1, 5, len(className(c.Class)), 5}
 	for i := range statNames {
 		x1 := 6 // "STR 18", "(00)" after the strength
 		if i == 0 {
 			x1 += len(str00Text(c))
 		}
-		at(1, 7+i, x1, 7+i, wantStat+i, true)
+		v.Stats[i] = CellRect{1, 7 + i, x1, 7 + i}
 	}
-	at(28, 1, winRight, 5, wantHead, false)
-	at(28, 6, winRight, 11, wantBody, false)
-	at(sheetIconCol(0), sheetIconRow, sheetIconCol(1)+2, sheetIconRow+2, wantIcon, false)
+	v.Head, v.Body = CellRect{28, 1, winRight, 5}, CellRect{28, 6, winRight, 11}
+	v.Icon = CellRect{sheetIconCol(0), sheetIconRow, sheetIconCol(1) + 2, sheetIconRow + 2}
+	return v
 }
 
-// dropDown (extra) opens a sheet field's menu: a framed box from column
-// x, row y holding every item, the current one first, over the field's
-// text, the rest below it in their order, going on into further columns
-// where they would reach the repeated row; green where green says so, grey
-// otherwise (a grey item still picks). The arrows, Enter and Esc, the
-// pointer and a click work as in a list. The index picked, or -1.
-func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) bool) int {
-	order := []int{max(cur, 0)}
-	for i := range items {
-		if i != order[0] {
-			order = append(order, i)
+// options are field f's option names, the one c holds and which fit.
+func (cr *creation) options(f int) ([]string, int, func(int) bool) {
+	c := cr.c
+	switch f {
+	case FieldSex:
+		return genderNames[:], int(c.Sex), func(int) bool { return true }
+	case FieldRace:
+		names := make([]string, len(pickRaces))
+		for i, r := range pickRaces {
+			names[i] = raceNames[r]
 		}
+		return names, slices.Index(pickRaces, c.Race), func(i int) bool { return classFor(pickRaces[i], c.Class) }
+	case FieldAlign:
+		return alignmentNames[:], int(c.Alignment), func(i int) bool { return alignFor(c.Class, byte(i)) }
 	}
-	rows := min(len(order), winBottom-y) // the bottom border inside the sheet's
-	cols, w := (len(order)+rows-1)/rows, 0
-	for _, s := range items {
-		w = max(w, len(s))
+	classes := pickClasses()
+	names := make([]string, len(classes))
+	for i, cl := range classes {
+		names[i] = classNames[cl]
 	}
-	x2, y2 := x+cols*(w+1)-2, y+rows-1
-	e.DrawBoxTitled(x, y, x2, y2, 0, colBlack, "")
-	at := func(k int) (int, int) { return x + k/rows*(w+1), y + k%rows }
-	draw := func(k int, hi bool) {
-		cx, cy := at(k)
-		col, bg := colLightGreen, colBlack
-		if !green(order[k]) {
-			col = colDarkGrey
-		}
-		if hi {
-			bg = selBg(col, colWhite)
-		}
-		for j, ch := range []byte(items[order[k]]) {
-			e.displayCharBg(cx+j, cy, col, bg, ch, true)
-		}
-	}
-	for k := range order {
-		draw(k, false)
-	}
-	index := 0
-	hit := func(cx, cy int) int { // the item at a cell, or -1
-		for k := range order {
-			if ix, iy := at(k); cy == iy && cx >= ix && cx <= ix+w {
-				return k
-			}
-		}
-		return -1
-	}
-	move := func(k int) {
-		draw(index, false)
-		index = k
-		draw(index, true)
-	}
-	mark := e.regionMark()
-	defer e.regionCut(mark)
-	e.addRegion(region{x0: x, y0: y, x1: x2, y1: y2, click: func(cx, cy int) Action {
-		k := hit(cx, cy)
-		if k < 0 {
-			return Action{}
-		}
-		move(k) // a click picks at once, as in a list without words
-		return Action{Kind: ActContinue}
-	}, hover: func(cx, cy int) {
-		if k := hit(cx, cy); k >= 0 && k != index {
-			move(k)
-		}
-	}})
-	for {
-		draw(index, true)
-		e.ext.list = true
-		p := e.DisplayInput("", Bar{{"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		e.ext.list = false
-		n := len(order)
-		switch p.ID {
-		case PickEnter:
-			return order[index]
-		case PickMove:
-			switch p.Dir {
-			case DirUp, DirWheelUp:
-				move((index + n - 1) % n)
-			case DirDown, DirWheelDown:
-				move((index + 1) % n)
-			case DirHome:
-				move(0)
-			case DirEnd:
-				move(n - 1)
-			case DirLeft:
-				move(max(index-rows, 0))
-			case DirRight:
-				move(min(index+rows, n-1))
-			}
-		case PickRedraw: // a click moved the highlight
-		default:
-			return -1
-		}
-	}
+	return names, slices.Index(classes, c.Class), func(i int) bool { return classFor(c.Race, classes[i]) && alignFor(classes[i], c.Alignment) }
 }
 
 // CreateCharacter = ovr17:056C, redone as one screen (see the top of the
 // file): the sheet of a sample character whose parts are picked in place;
-// Roll and Minimal make the abilities, Keep saves it. Esc asks, then
-// abandons it.
+// Keep saves it, ActClose abandons it.
 func (e *Engine) CreateCharacter() {
 	k := kind{race: raceHuman, sex: 0, class: clsFighter, align: 0}
-	q := e.ext.quick
-	if q != nil {
-		k = q.kind()
-	}
 	c := e.fresh(k, nil)
 	e.rollCharacter(c)
 	undo := e.selectTemp(c)
-	if q != nil { // quickstart: rolled until its prime abilities are high, named and pictured from the template
-		for !q.good(c) {
-			e.rollCharacter(c)
+	e.pushCreation(c, k, func(old, new *Character) { undo(); undo = e.selectTemp(new) }, "Abandon this character?", func(c *Character, kept bool) {
+		if kept {
+			e.SaveCharacter(c, "") // ovr18:069E
 		}
-		c.SetName(q.name)
-		c.PortHead, c.PortBody = q.head, q.body
-		e.SaveCharacter(c, "") // ovr18:069E
 		undo()
 		e.freeCharacter(&c)
-		return
+	})
+}
+
+// quickCreate makes and saves the quickstart character q: rolled until its
+// prime abilities are high, named and pictured from the template.
+func (e *Engine) quickCreate(q *quickPick) {
+	c := e.fresh(q.kind(), nil)
+	e.rollCharacter(c)
+	undo := e.selectTemp(c)
+	for !q.good(c) {
+		e.rollCharacter(c)
 	}
-	c, kept := e.editSheet(c, k, func(old, new *Character) { undo(); undo = e.selectTemp(new) }, "Abandon this character? ")
-	if kept {
-		e.SaveCharacter(c, "") // ovr18:069E
-	}
+	c.SetName(q.name)
+	c.PortHead, c.PortBody = q.head, q.body
+	e.SaveCharacter(c, "") // ovr18:069E
 	undo()
 	e.freeCharacter(&c)
 }
 
-// editSheet (extra) is the creation sheet's loop on c, a character of kind
-// k: Roll, Minimal, the fields and the pictures change it until Keep (true)
-// or an Esc answered with abandon (false). A new race, class or alignment
-// makes a fresh character of the new kind (fresh keeps the name, pictures
-// and items): replace puts it where c was. The character as it ends up.
-func (e *Engine) editSheet(c *Character, k kind, replace func(old, new *Character), abandon string) (*Character, bool) {
+// pushCreation (extra) puts the creation sheet up on c, a character of
+// kind k (applyCreation); done gets the character as it ends up, kept by
+// Keep or abandoned.
+func (e *Engine) pushCreation(c *Character, k kind, replace func(old, new *Character), abandon string, done func(c *Character, kept bool)) {
+	cr := &creation{c: c, k: k, replace: replace, abandon: abandon}
+	kept := false
+	e.creation = cr
 	e.ext.creating = true
-	defer func() { e.ext.creating = false }()
+	off := e.redrawWith(func() { e.creationSheet(cr.c) })
+	e.push(modeCreate, func(a Action) bool {
+		d, k := e.applyCreation(cr, a)
+		kept = k
+		return d
+	}, func() {
+		off()
+		e.creation, e.ext.creating = nil, false
+		e.snap.iconDrop, e.snap.iconBox = nil, CellRect{}
+		done(cr.c, kept)
+	})
+	e.creationSheet(c)
+}
+
+// applyCreation applies a decision on the creation sheet: done by Keep
+// (kept) or ActClose.
+func (e *Engine) applyCreation(cr *creation, a Action) (done, kept bool) {
+	c := cr.c
 	// rekind replaces c by a fresh character of kind k, rolled.
 	rekind := func() {
 		old := c
-		c = e.fresh(k, c)
+		c = e.fresh(cr.k, c)
 		e.rollCharacter(c)
-		replace(old, c)
+		cr.c = c
+		cr.replace(old, c)
 	}
-	const (
-		roll Choice = iota
-		minimal
-		keep
-	)
-	for {
-		e.creationSheet(c)
-		want := wantNone
-		mark := e.regionMark()
-		e.sheetRegions(c, &want)
-		off := e.redrawWith(e.relist)
-		p := e.DisplayInput("", Bar{{"Roll", roll}, {"Minimal", minimal}, {"Keep", keep}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		off()
-		e.regionCut(mark)
-		switch {
-		case p.ID == keep:
-			return c, true
-		case p.ID == NoPick:
-			if e.YesNo(colYellow, colLightGreen, colWhite, abandon) {
-				return c, false
-			}
-		case p.ID == roll:
+	switch a.Kind {
+	case ActKeep:
+		return true, true
+	case ActClose:
+		return true, false
+	case ActRoll:
+		if a.N == 1 {
+			e.rollMinimal(c, a.Text)
+		} else {
 			e.rollCharacter(c)
-		case p.ID == minimal:
-			e.rollMinimal(c)
-		case p.ID != PickRedraw:
-		case want == wantName:
-			if s, ok := e.inlineInput(1, 1, 0xF, colLightCyan, func(c byte) bool { return c >= 0x20 && c <= 0x7A }); ok && s != "" { // 0709:09E3 (extra: case kept)
-				c.SetName(s)
+		}
+	case ActName:
+		if s := strings.Map(func(r rune) rune { // 0709:09E3 (extra: case kept)
+			if r >= 0x20 && r <= 0x7A {
+				return r
 			}
-		case want == wantSex:
-			if i := e.dropDown(1, 3, genderNames[:], int(c.Sex), func(int) bool { return true }); i >= 0 {
-				c.Sex = byte(i)
-			}
-		case want == wantRace:
-			names := make([]string, len(pickRaces))
-			for i, r := range pickRaces {
-				names[i] = raceNames[r]
-			}
-			if i := e.dropDown(len(genderNames[c.Sex])+2, 3, names, slices.Index(pickRaces, c.Race), func(i int) bool { return classFor(pickRaces[i], c.Class) }); i >= 0 && pickRaces[i] != c.Race {
-				k.race = pickRaces[i]
-				k = k.enforce(fRace)
+			return -1
+		}, a.Text); s != "" {
+			c.SetName(cut(s, 0xF))
+		}
+	case ActStat:
+		if a.N >= 0 && a.N < 6 {
+			e.setStatTyped(c, a.N, a.Text)
+		}
+	case ActSetField:
+		if a.N < 0 || a.N > FieldClass {
+			return false, false
+		}
+		names, cur, _ := cr.options(a.N)
+		if a.X < 0 || a.X >= len(names) || a.X == cur {
+			return false, false
+		}
+		switch a.N {
+		case FieldSex:
+			c.Sex = byte(a.X)
+		case FieldRace:
+			cr.k.race = pickRaces[a.X]
+			cr.k = cr.k.enforce(fRace)
+			rekind()
+		case FieldClass:
+			cr.k.class = pickClasses()[a.X]
+			cr.k = cr.k.enforce(fClass)
+			rekind()
+		case FieldAlign:
+			cr.k.align = byte(a.X)
+			if cr.k = cr.k.enforce(fAlign); cr.k.class != c.Class {
 				rekind()
-			}
-		case want == wantClass:
-			classes := pickClasses()
-			names := make([]string, len(classes))
-			for i, cl := range classes {
-				names[i] = classNames[cl]
-			}
-			if i := e.dropDown(1, 5, names, slices.Index(classes, c.Class), func(i int) bool { return classFor(c.Race, classes[i]) && alignFor(classes[i], c.Alignment) }); i >= 0 && classes[i] != c.Class {
-				k.class = classes[i]
-				k = k.enforce(fClass)
-				rekind()
-			}
-		case want == wantAlign:
-			if i := e.dropDown(1, 4, alignmentNames[:], int(c.Alignment), func(i int) bool { return alignFor(c.Class, byte(i)) }); i >= 0 && byte(i) != c.Alignment {
-				k.align = byte(i)
-				if k = k.enforce(fAlign); k.class != c.Class {
-					rekind()
-				} else {
-					c.Alignment = k.align
-				}
-			}
-		case want == wantHead:
-			if i := e.pickHead(int(c.PortHead)); i > 0 {
-				c.PortHead, c.Portrait = byte(i), nil
-			}
-		case want == wantBody:
-			if i := e.pickBody(int(c.PortBody)); i > 0 {
-				c.PortBody = byte(i)
-			}
-		case want == wantIcon:
-			e.iconEditor()
-		case want >= wantStat:
-			i := want - wantStat
-			if s, ok := e.inlineInput(5, 7+i, 5, colLightGreen, func(c byte) bool { return c >= '0' && c <= '9' || c == '/' }); ok {
-				e.setStatTyped(c, i, s)
+			} else {
+				c.Alignment = cr.k.align
 			}
 		}
+	case ActPicker:
+		switch a.N {
+		case PickHead:
+			e.pickHead(int(c.PortHead), func(i int) { c.PortHead, c.Portrait = byte(i), nil })
+		case PickBody:
+			e.pickBody(int(c.PortBody), func(i int) { c.PortBody = byte(i) })
+		}
+		return false, false
+	case ActIconEdit:
+		e.pushIcon()
+		return false, false
+	case actRedraw:
+	default:
+		return false, false
 	}
+	e.creationSheet(c)
+	return false, false
 }
 
 // strScore folds 18/xx into one number: 18/01 = 1801, 18/00 = 1900.
@@ -786,26 +726,6 @@ func (e *Engine) meetsMinStats(c *Character) bool {
 		}
 	}
 	return true
-}
-
-// askMinStats (extra): one prompt per stat; blank keeps the last value.
-func (e *Engine) askMinStats() {
-	for i, name := range statNames {
-		for {
-			cur := strconv.Itoa(e.ext.minStats[i])
-			if i == 0 {
-				cur = fmtStr(e.ext.minStats[0])
-			}
-			s := strings.TrimSpace(e.InputString("Minimum "+name+" ("+cur+"): ", colLightMagenta, 6))
-			if s == "" {
-				break
-			}
-			if v, ok := parseMinStat(s, i == 0); ok {
-				e.ext.minStats[i] = v
-				break
-			}
-		}
-	}
 }
 
 func fmtMin(i, v int) string {

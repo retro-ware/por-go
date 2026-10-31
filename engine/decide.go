@@ -19,6 +19,10 @@ const (
 	modeItems               // View.Inventory
 	modeSheet               // View.Sheet
 	modeParty               // View.MainMenu
+	modeCreate              // View.Creation
+	modePicker              // View.Picker
+	modeIcon                // the icon editor (View.IconDrop)
+	modeSlots               // View.Slots
 )
 
 // screen is a screen taking decisions: its handler, what leaving it

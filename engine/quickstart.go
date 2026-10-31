@@ -58,9 +58,7 @@ func (e *Engine) QuickStart() {
 	e.game.PartyCount = 0
 	for i := range quickParty {
 		q := quickParty[i] // a fresh copy each time
-		e.ext.quick = &q
-		e.CreateCharacter()
-		e.ext.quick = nil
+		e.quickCreate(&q)
 		c := &Character{}
 		if e.LoadCharacter(q.name, c, false) { // ovr18:0AEC
 			e.AddToParty(c)          // ovr18:1446

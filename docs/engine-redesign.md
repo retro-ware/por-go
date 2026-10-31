@@ -123,3 +123,17 @@ is deleted subsystem by subsystem, not kept alongside.
   Modify (the creation sheet, its drop-downs, pickers, typed fields, the
   icon editor), Add and Forget (pickSaved), Load (the slot screen), Quick
   Start, and the powers and Use (casting, the member pick: M4/M5).
+- [x] M3c2: creation and Modify (applyCreation), the grid pickers (heads,
+  bodies, icon parts, the saved characters of Add and Forget), the icon
+  editor and the save slots (F9, Load) take decisions on the screen stack;
+  the legacy() path is gone and Quick Start no longer waits. New ActRoll,
+  ActSetField, ActName, ActStat, ActPicker, ActPicked, ActPage,
+  ActIconSize, ActIconColour, ActSave, ActDelete (ActKeep keeps, ActLoad
+  with Text loads a slot); View.Creation (the fields and their options,
+  the sheet's clickable cells), View.Picker (the page's cells, the pager),
+  View.Slots. The presenter owns the drop-downs, the typed lines, the
+  picker's cursor and frame, the slot list and every question (Abandon,
+  Forget, Overwrite, Delete): present/remaster/screens.go. Still blocking:
+  F9 from a blocking prompt runs the slot screen through `until`; the icon
+  editor keeps the swatch the palette sets; Minimal gives up after 200000
+  rolls instead of stopping on a key.

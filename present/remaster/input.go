@@ -170,6 +170,18 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		}
 		p.send(engine.ActMove, d)
 	}
+	if pageScreen(v) && p.pageMenu { // the page screens' own pointer (screens.go): the right button is Esc
+		if right {
+			p.screenKey(27, v)
+			right = false
+		}
+		if v.Picker != nil || v.Creation != nil { // the icon editor keeps its spots
+			if in {
+				p.screenMouse(cx, cy, left, v)
+			}
+			return
+		}
+	}
 	switch { // the right button: on a card that member's inventory, else it closes the context menu, else Esc
 	case !right:
 	case p.cardHover > 0 && p.active && v.Exploring:

@@ -19,7 +19,6 @@ import (
 const (
 	actHotkey ActKind = -1 // pick the item of the waiting menu bar whose hotkey is N
 	actRedraw ActKind = -2 // the click moved a cursor itself: the waiting menu hands back PickRedraw to be drawn again
-	actChoice ActKind = -3 // a word of the slot screen's footer: the one whose Choice is N
 )
 
 // region is a clickable part of the screen in text cells (inclusive),
@@ -123,7 +122,9 @@ func (e *Engine) extraAct(a Action) bool {
 		if !e.ext.guarded || e.ext.modal > 0 {
 			return false
 		}
-		e.SlotMenu(false)
+		base := len(e.screens) // ponytail: F9 from a blocking prompt runs the slot screen here (until M6)
+		e.pushSlots(false)
+		e.until(base)
 	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training), and at the creation
 		if !e.ext.viewing && !e.ext.creating { // only on the sheet: a stray Shift-click elsewhere must never change a face
 			return false
@@ -141,8 +142,8 @@ func (e *Engine) extraAct(a Action) bool {
 		}
 		if e.ext.viewing {
 			e.SheetPortrait()
-		} else {
-			e.Act(Action{Kind: actRedraw}) // the creation sheet draws itself anew
+		} else if e.creation != nil {
+			e.creationSheet(e.creation.c) // the creation sheet draws itself anew
 		}
 	case ActOrder: // extra: the Party Order bar takes a dragged card
 		n := len(e.party)

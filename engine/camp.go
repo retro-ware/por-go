@@ -529,8 +529,11 @@ func (e *Engine) campDecision(a Action) (left, interrupted bool) {
 		e.dropMember(a.N)
 	case ActIconEdit:
 		member()
-		e.iconEditor()
-		e.DrawMainScreen()
+		e.pushIcon()
+	case actRedraw: // back from the icon editor
+		if e.mode == modeCamp {
+			e.DrawMainScreen()
+		}
 	case ActRest:
 		for _, c := range e.party { // extra: the planned spells are learned on any rest
 			e.planSpells(c)

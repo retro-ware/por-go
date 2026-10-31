@@ -13,8 +13,10 @@ import (
 // opening grids of all the parts, Size toggling, and the six parts' two
 // colours each as swatches that a palette sets: the 16 EGA colours the DOS
 // editor stepped through, or on Amiga art the 15 terrain palette slots the
-// Amiga's stepped through (1..15, in its order). Keep takes it, Exit (Esc)
-// puts the old icon back.
+// Amiga's stepped through (1..15, in its order). It takes decisions: the
+// page's parts click as ActPicker (PickIconHead, PickWeapon), ActIconSize
+// and ActIconColour; ActKeep takes it, ActClose puts the old icon back. The
+// bar is the presenter's.
 
 // Layout, in cells.
 const (
@@ -32,9 +34,9 @@ const (
 // where they are not shades (the hair and the face share a part).
 var iconParts = [6]string{"Body", "Arm", "Leg", "Hair/Face", "Shield", "Weapon"}
 
-// iconEditor is the designer, on the selected character (the creation,
-// the camp's Alter).
-func (e *Engine) iconEditor() {
+// pushIcon puts the designer up on the selected character (the creation,
+// camp's Icon).
+func (e *Engine) pushIcon() {
 	c := e.selected()
 	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
 	e.combatViewLeave() // ovr32:00E3: the combat palette, black shown dark grey so the icon's black shows
@@ -138,87 +140,97 @@ func (e *Engine) iconEditor() {
 			}
 		}
 	}
-	defer func() { e.snap.iconDrop, e.pg.overlays = nil, nil }()
-	const (
-		headIt Choice = iota
-		weaponIt
-		sizeIt
-		keep
-		exit
-	)
 	// pickPart: a grid of every head (or weapon) on the icon as it is.
 	pickPart := func(pic *byte, n int) {
 		was := *pic
-		if i := e.pickGrid(n, 3, 3, int(was), func(i, x, y int) {
+		e.pushPicker(n, 3, 3, int(was), func(i, x, y int) {
 			*pic = byte(i)
 			build()
 			if im := e.icons[0xC][0]; im != nil {
 				e.picture(x*8, y*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
 			}
-		}); i >= 0 {
-			*pic = byte(i)
-		} else {
 			*pic = was
-		}
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
+		}, func(i int) bool { *pic = byte(i); return true })
 	}
-	defer e.redrawWith(e.relist)()
-	for {
+	mark := e.regionMark()
+	draw := func() {
+		e.regionCut(mark)
+		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
 		show()
-		mark := e.regionMark()
-		hot := func(x0, y0, x1, y1 int, h byte) {
-			e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, click: func(int, int) Action { return Action{Kind: actHotkey, N: int(h)} }})
+		hot := func(x0, y0, x1, y1 int, a Action) {
+			e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, click: func(int, int) Action { return a }})
 		}
-		hot(idWordsCol, idPreviewRow, idWordsCol+5, idPreviewRow, 'H')
-		hot(idWordsCol, idPreviewRow+1, idWordsCol+5, idPreviewRow+1, 'W')
-		hot(idWordsCol, idPreviewRow+2, idWordsCol+9, idPreviewRow+2, 'S')
+		head, weapon := Action{Kind: ActPicker, N: PickIconHead}, Action{Kind: ActPicker, N: PickWeapon}
+		hot(idWordsCol, idPreviewRow, idWordsCol+5, idPreviewRow, head)
+		hot(idWordsCol, idPreviewRow+1, idWordsCol+5, idPreviewRow+1, weapon)
+		hot(idWordsCol, idPreviewRow+2, idWordsCol+9, idPreviewRow+2, Action{Kind: ActIconSize})
 		for p := 0; p < 2; p++ { // the poses: the head on their upper part, the weapon below
 			x := idPreviewCols + 11*p
-			hot(x, idPreviewRow, x+8, idPreviewRow+3, 'H')
-			hot(x, idPreviewRow+4, x+8, idPreviewRow+8, 'W')
+			hot(x, idPreviewRow, x+8, idPreviewRow+3, head)
+			hot(x, idPreviewRow+4, x+8, idPreviewRow+8, weapon)
 		}
 		e.addRegion(region{x0: idSwatchCol, y0: idPartRow, x1: idSwatchCol + 4, y1: idPartRow + 5, click: func(cx, cy int) Action {
-			part, shade = cy-idPartRow, (cx-idSwatchCol)/3
-			return Action{Kind: actRedraw}
+			return Action{Kind: ActIconColour, N: cy - idPartRow, X: (cx - idSwatchCol) / 3, Y: -1}
 		}})
 		e.addRegion(region{x0: idPaletteCol, y0: idPaletteRow, x1: idPaletteCol + 15, y1: idPaletteRow + 1, click: func(cx, cy int) Action {
 			v := cells[(cy-idPaletteRow)*8+(cx-idPaletteCol)/2]
 			if v == noCell {
 				return Action{}
 			}
-			c.IconColour[part] = c.IconColour[part]&^(0xF<<(4*shade)) | v<<(4*shade)
-			return Action{Kind: actRedraw}
+			return Action{Kind: ActIconColour, N: part, X: shade, Y: int(v)}
 		}})
-		p := e.DisplayInput("", Bar{{"Head", headIt}, {"Weapon", weaponIt}, {"Size", sizeIt}, {"Keep", keep}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		e.regionCut(mark)
-		switch p.ID {
-		case headIt:
-			pickPart(&c.IconHead, 14)
-		case weaponIt:
-			pickPart(&c.IconBody, 32)
-		case sizeIt:
+	}
+	off := e.redrawWith(draw)
+	e.push(modeIcon, func(a Action) bool {
+		switch a.Kind {
+		case ActPicker:
+			switch a.N {
+			case PickIconHead:
+				pickPart(&c.IconHead, 14)
+			case PickWeapon:
+				pickPart(&c.IconBody, 32)
+			}
+			return false
+		case ActIconSize:
 			if c.IconSize == 2 {
 				c.IconSize = 1
 			} else {
 				c.IconSize = 2
 			}
-		case exit, NoPick:
+		case ActIconColour:
+			if a.N < 0 || a.N > 5 || a.X < 0 || a.X > 1 {
+				return false
+			}
+			part, shade = a.N, a.X // ponytail: the swatch the palette sets is the engine's (the page shows it framed)
+			if a.Y >= 0 && a.Y < 16 {
+				c.IconColour[part] = c.IconColour[part]&^(0xF<<(4*shade)) | byte(a.Y)<<(4*shade)
+			}
+		case ActClose:
 			c.IconHead, c.IconBody, c.IconSize, c.Icon = head, weapon, size, icon
 			copy(c.IconColour[:], colours[:])
-		case keep:
+			return true
+		case ActKeep:
 			e.Music(3) // Amiga 0x2F33E
+			return true
+		case actRedraw:
+		default:
+			return false
 		}
-		if p.ID == keep || p.ID == exit || p.ID == NoPick {
-			break
+		draw()
+		return false
+	}, func() {
+		off()
+		e.regionCut(mark)
+		e.snap.iconDrop, e.pg.overlays = nil, nil
+		build()
+		e.iconCopy(0xC, order, false)
+		e.ClearRow24()
+		e.freeIcon(0xC) // ovr33:014E
+		if e.viewMode > 1 {
+			e.LoadIconPic("ICON", 0, 0xB)
+			e.LoadIconPic("ICON", 1, 0xC)
 		}
-	}
-	build()
-	e.iconCopy(0xC, order, false)
-	e.ClearRow24()
-	e.freeIcon(0xC) // ovr33:014E
-	if e.viewMode > 1 {
-		e.LoadIconPic("ICON", 0, 0xB)
-		e.LoadIconPic("ICON", 1, 0xC)
-	}
-	e.combatViewEnter() // ovr32:0105
+		e.combatViewEnter() // ovr32:0105
+	})
+	draw()
 }

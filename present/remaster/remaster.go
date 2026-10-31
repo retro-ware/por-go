@@ -113,6 +113,7 @@ type Presenter struct {
 	pageMenu    bool                        // a page's question is up (list.go)
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
+	scr         screenUI                    // the page screens' questions (screens.go)
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -256,6 +257,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		r := p.drawPage(dst, v, note)
+		p.scr.at = r
+		p.scr.pw, p.scr.ph = pageSize(v)
 		p.drawPageMenu(dst, note, v)
 		return r
 	}
@@ -568,6 +571,14 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 func (p *Presenter) Click(x, y int) bool {
 	if v := p.shownView; v.List != nil && v.Menu != nil && !v.Choosing && p.listClick(x, y, v) {
 		return true
+	}
+	if v := p.shownView; p.pageMenu && pageScreen(v) {
+		for i, r := range p.winRects {
+			if image.Pt(x, y).In(r) {
+				p.screenPick(v, i)
+				return true
+			}
+		}
 	}
 	if p.pageMenu {
 		for i, r := range p.winRects {

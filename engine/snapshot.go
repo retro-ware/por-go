@@ -95,6 +95,9 @@ type View struct {
 	Shop      *Shop      // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
 	Training  *Training  // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
 	Sheet     *Sheet     // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
+	Creation  *Creation  // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
+	Picker    *Picker    // a grid picker (the page): ActPicked, ActPage; ActClose leaves
+	Slots     *Slots     // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -116,6 +119,59 @@ type View struct {
 	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 	Working   bool           // an action sent is still being carried out: what the View shows is on its way out (a menu still up is not asked again)
+}
+
+// Creation is the creation sheet's parts: the drop-down fields, and the
+// cells a click on the name, an ability, the portrait or the icon takes.
+type Creation struct {
+	Fields   [4]Field // FieldSex, FieldRace, FieldAlign, FieldClass
+	Name     CellRect
+	Stats    [6]CellRect // STR .. CHA
+	Head     CellRect    // the portrait's head (PickHead) ...
+	Body     CellRect    // ... and body (PickBody)
+	Icon     CellRect    // the combat icon (ActIconEdit)
+	Abandon  string      // what Esc asks before ActClose
+	Minimums string      // the minimums Minimal last rolled to (ActRoll N 1)
+}
+
+// The creation's fields (ActSetField N).
+const (
+	FieldSex = iota
+	FieldRace
+	FieldAlign
+	FieldClass
+)
+
+// Field is a drop-down of the creation sheet.
+type Field struct {
+	Name    string
+	At      CellRect // its text on the sheet
+	Options []Option
+	Cur     int // the option it holds
+}
+
+// Option is one of a Field's values; one that does not Fit changes the
+// fields depending on it.
+type Option struct {
+	Text string
+	Fits bool
+}
+
+// Picker is a grid picker's page as the engine drew it.
+type Picker struct {
+	N, Page, Pages, PerPage, Cols int
+	Cur                           int        // the picture it opened on
+	Cells                         []CellRect // the pictures on this page: Page*PerPage on
+	Prev, Next                    CellRect   // the pager's arrows (zero: one page)
+	Labels                        []string   // the pictures' names (the saved characters)
+	Ask                           string     // the question before a pick (%s: the label), "" none
+}
+
+// Slots is the save slot screen: the saves, newest first.
+type Slots struct {
+	Names, Times []string
+	CanSave      bool // ActSave is taken (else loading only, or not now)
+	LoadOnly     bool // the party menu's Load
 }
 
 // Menu is a question waiting for the player: a prompt and its options.
@@ -347,6 +403,14 @@ func (e *Engine) publish() {
 				v.MainMenu, v.Logo, v.Backdrop = e.partyFunctions(), e.titleLogo(), e.titleBackdrop()
 			}
 		}
+	}
+	switch e.mode {
+	case modeCreate:
+		v.Creation = e.creationView()
+	case modePicker:
+		v.Picker = e.pickerView()
+	case modeSlots:
+		v.Slots = e.slotsView()
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering

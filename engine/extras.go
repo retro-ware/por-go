@@ -48,7 +48,6 @@ type extras struct {
 	voiced   map[string]bool    // voice.go: the recordings this save has heard
 	met      map[string]metIcon // bestiary.go: the monster kinds this save has met
 	beasts   []Beast            // bestiary.go: their entries, as last published
-	quick    *quickPick         // CreateCharacter answers its own menus (quickstart)
 	creating bool               // CreateCharacter's sheet is up: no level, experience, party items or status on it
 	minStats [6]int             // "Minimal stats": per-stat floor, STR as st*100+str00
 	guarded  bool               // slots.go: a load can unwind to adventure

@@ -163,6 +163,10 @@ func (e *Engine) partyFunctions() []ActKind {
 // applyParty applies a decision on the party menu; done when play starts.
 // N is the member a member's function is for (< 0: the selected one).
 func (e *Engine) applyParty(a Action) (done bool) {
+	if a.Kind == actRedraw && e.beginFlag != 0 { // back from Load with a game
+		e.loadedGame = true // DS:49F8
+		return true
+	}
 	if a.Kind == ActLead {
 		e.actor(a.N)
 		return false
@@ -170,30 +174,20 @@ func (e *Engine) applyParty(a Action) (done bool) {
 	if !slices.Contains(e.partyFunctions(), a.Kind) {
 		return false
 	}
-	legacy := func(f func()) { // ponytail: these still block; the main menu is not theirs meanwhile
-		m := e.mode
-		e.mode = modeNone
-		f()
-		e.mode = m
-	}
 	switch a.Kind {
 	case ActCreate:
-		legacy(e.CreateCharacter) // ponytail: creation, its pickers and the icon editor still block: M3c2
+		e.CreateCharacter()
 	case ActModify:
 		e.actor(a.N)
-		legacy(e.ModifyCharacter) // ponytail: as creation
+		e.ModifyCharacter()
 	case ActAdd:
-		legacy(e.AddCharacter) // ponytail: the saved characters' cards (pickSaved) still block
+		e.AddCharacter()
 	case ActForget:
-		legacy(e.ForgetCharacter) // ponytail: as Add
-	case ActLoad:
-		legacy(func() { e.SlotMenu(true) }) // (extra) the F9 screen, loading only; ponytail: it blocks
-		if e.beginFlag != 0 {
-			e.loadedGame = true // DS:49F8
-			return true
-		}
+		e.ForgetCharacter()
+	case ActLoad: // (extra) the F9 screen, loading only
+		e.pushSlots(true)
 	case ActQuickStart:
-		legacy(e.QuickStart)
+		e.QuickStart()
 	case ActDropMember: // ovr17:1F37, the player asked twice
 		c := e.actor(a.N)
 		if c.Okay == 0 {

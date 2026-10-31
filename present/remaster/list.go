@@ -158,6 +158,11 @@ func (p *Presenter) listClick(x, y int, v engine.View) bool {
 // drawPageMenu pops a page's question (its options or its list) up over
 // the bottom of the page.
 func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
+	if pageScreen(v) {
+		p.pageMenu = true
+		p.drawScreen(dst, v)
+		return
+	}
 	if sheetUp(v) {
 		p.pageMenu = true
 		items := p.sheetItems(v)
@@ -197,6 +202,9 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 // pageMenuKey moves the page question's highlight (unless the page takes
 // the arrows) and picks it.
 func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
+	if pageScreen(v) {
+		return p.screenKey(k, v)
+	}
 	if sheetUp(v) {
 		return p.sheetKey(k, v)
 	}

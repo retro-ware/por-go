@@ -75,12 +75,13 @@ func (e *Engine) guardedRun(start func()) (reload bool) {
 func (e *Engine) unwindReset() {
 	x := &e.ext
 	x.inCommand, x.menu, x.list, x.choosing = false, 0, false, false
-	x.quick, x.held, x.regions, x.raw = nil, Action{}, nil, false
+	x.held, x.regions, x.raw = Action{}, nil, false
 	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
 	x.campBar, x.paging = false, false
 	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = false, nil, false, 0, false
 	x.menuFloor, x.panel, e.snap.typing = 0, nil, nil
 	e.screens, e.mode = nil, modeNone // the screens pushed are gone with their callers
+	e.picker, e.creation, e.slotsUp, x.creating = nil, nil, nil, false
 	e.snap.invOn, e.snap.shop, e.snap.loot, e.snap.sheetOn = false, false, false, false
 	e.partySel = 0                  // a defer on the way out may have put back the old party's index
 	e.loadedGame = e.beginFlag != 0 // DS:49F8, as the party menu's Load
@@ -239,153 +240,88 @@ func (e *Engine) saveTo(name string) {
 	e.say("Game saved successfully") // extra: the note, on the slot page and the page under it
 }
 
-// slotRows is how many lines the list shows: rows 3 up to two above the footer.
-func slotRows() int { return promptRow - 6 }
+// slotScreen is the slot screen up.
+type slotScreen struct{ loadOnly bool }
 
-// SlotMenu is the F9 screen: "New Slot", then the saves, newest first. The
-// cursor starts on the newest save, the one saved last. Enter saves (on New
-// Slot under a new name, on a save as an overwrite after a Yes); L loads.
-// loadOnly (the party menu's Load) offers no saving, Enter loads there, and
-// it returns true after a load instead of unwinding to adventure.
-func (e *Engine) SlotMenu(loadOnly bool) bool {
-	defer e.modalOn()()
+func (e *Engine) canSave(ss *slotScreen) bool {
+	return !ss.loadOnly && e.ext.inGame && len(e.party) > 0 && e.beginFlag != 5
+}
+
+// slotsView is the slot screen for the View.
+func (e *Engine) slotsView() *Slots {
+	ss := e.slotsUp
+	if ss == nil {
+		return nil
+	}
+	v := &Slots{CanSave: e.canSave(ss), LoadOnly: ss.loadOnly}
+	for _, sl := range e.slots() {
+		v.Names, v.Times = append(v.Names, sl.name), append(v.Times, sl.at.Format("Jan 02 15:04"))
+	}
+	return v
+}
+
+// pushSlots puts the F9 screen up (View.Slots): the saves, newest first;
+// the list, its cursor and the questions (the name, Overwrite, Delete)
+// are the presenter's. loadOnly (the party menu's Load) offers no saving
+// and leaves after a load; elsewhere a load unwinds to adventure.
+func (e *Engine) pushSlots(loadOnly bool) {
+	ss := &slotScreen{loadOnly}
+	under := e.slotsUp
+	e.slotsUp = ss
+	modal := e.modalOn()
 	restore := e.saveScreen()
-	defer restore()
-	canSave := !loadOnly && e.ext.inGame && len(e.party) > 0 && e.beginFlag != 5
-	first := 0 // the row of the first save
-	if canSave {
-		first = 1
-	}
-	sel, top := first, 0
-	defer e.redrawWith(e.relist)() // the loop draws the list again at the new size
-	type word struct {
-		label string
-		key   byte   // the letter that picks it (shown; 0: not a menu item)
-		a     Action // what a click on it does
-	}
-	const (
-		loadIt Choice = iota
-		deleteIt
-	)
-	load, del := Action{Kind: actChoice, N: int(loadIt)}, Action{Kind: actChoice, N: int(deleteIt)}
-	footer := []word{{"L=load", 'L', load}, {"D=delete", 'D', del}, {"Esc=back", 0, Action{Kind: ActClose}}}
-	switch {
-	case canSave:
-		footer = append([]word{{"Enter=save", 0, Action{Kind: ActContinue}}}, footer...)
-	case loadOnly:
-		footer = append([]word{{"Enter=load", 0, Action{Kind: ActContinue}}}, footer[1:]...)
-	}
-	for {
-		list := e.slots()
-		rows := len(list) + first
-		sel = min(max(sel, 0), max(rows-1, 0))
-		top = min(max(top, sel-slotRows()+1), sel)
+	draw := func() {
 		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Saved Games")
-		if rows == 0 {
-			e.DisplayString(3, 3, colLightGreen, "No saved games yet")
-		}
-		for i := top; i < rows && i < top+slotRows(); i++ {
-			col := colLightGreen
-			if i == sel {
-				col = colWhite
-				e.DisplayString(2, 3+i-top, colYellow, ">")
-			}
-			if i < first {
-				e.DisplayString(3, 3+i-top, col, "New Slot")
-				continue
-			}
-			e.DisplayString(3, 3+i-top, col, cut(list[i-first].name, 0x15))
-			e.DisplayString(25, 3+i-top, colLightGrey, list[i-first].at.Format("Jan 02 15:04"))
-		}
-		if !canSave && !loadOnly {
+		if !e.canSave(ss) && !loadOnly {
 			e.DisplayString(2, promptRow-3, colYellow, "No saving now")
 		}
-		// extra (nav.go): a click selects a line, a second one is Enter; the
-		// keys in the footer are clicked by their words
-		mark := e.regionMark()
-		e.addRegion(region{x0: 2, y0: 3, x1: 0x25, y1: 3 + slotRows() - 1, click: func(_, cy int) Action {
-			i := top + cy - 3
-			if i >= rows {
-				return Action{}
-			}
-			if i == sel {
-				return Action{Kind: ActContinue}
-			}
-			sel = i
-			return Action{Kind: actRedraw}
-		}})
-		x, gap := 2, 0x24
-		for _, f := range footer {
-			gap -= len(f.label)
-		}
-		gap /= len(footer) - 1 // spread over the row inside the frame
-		for _, f := range footer {
-			e.DisplayString(x, promptRow-2, colYellow, f.label)
-			e.addRegion(region{x0: x, y0: promptRow - 2, x1: x + len(f.label) - 1, y1: promptRow - 2, click: func(int, int) Action { return f.a }})
-			x += len(f.label) + gap
-		}
-		outer := e.snap.menu // extra: the footer's letters as a menu (ActChoose)
-		e.snap.menu, e.snap.own = &Menu{}, true
-		var picks []Action
-		for _, f := range footer {
-			if f.key != 0 {
-				e.snap.menu.Items = append(e.snap.menu.Items, MenuItem{Text: f.label, Key: f.key})
-				picks = append(picks, f.a)
-			}
-		}
-		a := e.input()
-		if a.Kind == ActChoose && a.N >= 0 && a.N < len(picks) {
-			a = picks[a.N]
-		}
-		e.snap.menu, e.snap.own = outer, false
-		e.regionCut(mark)
-		cur := ""
-		if sel >= first && sel < rows {
-			cur = list[sel-first].name
-		}
-		enter := a.Kind == ActContinue
-		switch {
-		case a.Kind == ActClose || a.Kind == ActSlots:
-			return false
-		case a.Kind == ActMove && a.N == DirUp:
-			sel--
-		case a.Kind == ActMove && a.N == DirDown:
-			sel++
-		case enter && canSave && cur == "": // New Slot
-			name := slotName(e.inputLine("Save as: ", 0xA, 0x14)) // extra: the case as typed
-			if name == "" {
-				continue
-			}
-			// one slot per name in any case (the folders may not tell case apart)
-			if i := slices.IndexFunc(list, func(s slot) bool { return strings.EqualFold(s.name, name) }); i >= 0 {
-				if !e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+list[i].name+"? ", textCols)) {
-					continue
-				}
-				os.RemoveAll(filepath.Join(e.slotRoot(), list[i].name))
-			}
-			e.saveTo(name)
-			sel = first
-		case enter && canSave:
-			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Overwrite "+cur+"? ", textCols)) {
-				e.saveTo(cur)
-				sel = first
-			}
-		case a == del && cur != "":
-			if e.YesNo(colYellow, colLightGreen, colWhite, cut("Delete "+cur+"? ", textCols)) {
-				os.RemoveAll(filepath.Join(e.slotRoot(), cur))
-			}
-		case (a == load || enter && loadOnly) && cur != "":
-			if e.beginFlag == 5 {
-				e.combatViewLeave()
-			}
-			ok := false
-			ok = e.loadFrom(cur)
-			if ok && loadOnly {
-				return true
-			}
-			if ok {
-				panic(slotLoaded{})
-			}
-		}
 	}
+	off := e.redrawWith(draw)
+	e.push(modeSlots, func(a Action) bool {
+		return e.applySlots(ss, a)
+	}, func() {
+		off()
+		restore()
+		modal()
+		e.slotsUp = under
+	})
+	draw()
+}
+
+// applySlots applies a decision on the slot screen; done when it is left
+// or a load from the party menu is made.
+func (e *Engine) applySlots(ss *slotScreen, a Action) (done bool) {
+	switch a.Kind {
+	case ActClose, ActSlots:
+		return true
+	case ActSave:
+		name := slotName(a.Text)
+		if !e.canSave(ss) || name == "" {
+			return false
+		}
+		// one slot per name in any case (the folders may not tell case apart)
+		if i := slices.IndexFunc(e.slots(), func(s slot) bool { return strings.EqualFold(s.name, name) }); i >= 0 {
+			os.RemoveAll(filepath.Join(e.slotRoot(), e.slots()[i].name))
+		}
+		e.saveTo(name)
+	case ActDelete:
+		if e.SlotIndex(a.Text) >= 0 {
+			os.RemoveAll(filepath.Join(e.slotRoot(), a.Text))
+		}
+	case ActLoad:
+		if e.SlotIndex(a.Text) < 0 {
+			return false
+		}
+		if e.beginFlag == 5 {
+			e.combatViewLeave()
+		}
+		if !e.loadFrom(a.Text) {
+			return false
+		}
+		if ss.loadOnly {
+			return true
+		}
+		panic(slotLoaded{})
+	}
+	return false
 }

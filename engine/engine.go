@@ -98,6 +98,9 @@ type Engine struct {
 	camp                 campState                    // ovr16/ovr21 globals
 	mode                 screenMode                   // the screen taking decisions (decide.go)
 	screens              []screen                     // the screens pushed, the top one taking the decisions
+	picker               *picker                      // the grid picker up (View.Picker)
+	creation             *creation                    // the creation sheet up (View.Creation)
+	slotsUp              *slotScreen                  // the slot screen up (View.Slots)
 	valued               *Item                        // an appraised gem or jewel, sold or kept next (ActKeep)
 	learning             bool                         // training gained a mage level: the new spell is chosen next (ActLearn)
 	purse                purse                        // the party's money

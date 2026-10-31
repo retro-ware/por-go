@@ -28,16 +28,17 @@ func (e *Engine) ModifyCharacter() {
 	c := e.selected()
 	i, was := e.partySel, *c
 	k := kind{race: c.Race, sex: c.Sex, class: c.Class, align: c.Alignment}
-	n, kept := e.editSheet(c, k, func(_, new *Character) { e.party[i] = new }, "Discard the changes? ")
-	if kept {
-		n.Share = 1
-	} else {
-		*c = was
-		e.party[i] = c
-		n = c
-	}
-	e.ApplyItems(n) // 00BA:0BB8
-	e.BuildCharIcon(n, true)
+	e.pushCreation(c, k, func(_, new *Character) { e.party[i] = new }, "Discard the changes?", func(n *Character, kept bool) {
+		if kept {
+			n.Share = 1
+		} else {
+			*c = was
+			e.party[i] = c
+			n = c
+		}
+		e.ApplyItems(n) // 00BA:0BB8
+		e.BuildCharIcon(n, true)
+	})
 }
 
 // conHPBonus = ovr17:3F31 (char): hit point bonus per class from
@@ -391,14 +392,9 @@ func (e *Engine) AddCharacter() {
 		return
 	}
 	chars := e.loadSaved(names)
-	cur := 0
 	count := 0 // uninitialised until the first add in the original
-	for {
-		i := e.pickSaved(chars, names, cur)
-		if i < 0 {
-			break
-		}
-		cur = i
+	e.pickSaved(&chars, &names, func(i int) bool {
+		defer e.WriteCharList(names) // ovr18:01B8 (extra: on each pick)
 		if c := chars[i]; c != nil && (names[i] == "" || names[i][0] != '*') {
 			names[i] = cut("* "+names[i], textCols)
 			count = 0
@@ -431,11 +427,8 @@ func (e *Engine) AddCharacter() {
 				}
 			}
 		}
-		if count > 5 || e.game.PartyCount > 7 {
-			break
-		}
-	}
-	e.WriteCharList(names) // ovr18:01B8
+		return count > 5 || e.game.PartyCount > 7
+	})
 }
 
 // joinRefused (CotAB ovr018): paladins do not join the evil, the evil do not
@@ -458,7 +451,7 @@ func (e *Engine) joinRefused(c *Character) bool {
 		msg = "too many rangers in party"
 	}
 	if msg != "" {
-		e.DisplayMessageWait(colYellow, msg)
+		e.say(msg)
 	}
 	return msg != ""
 }
@@ -469,26 +462,20 @@ func (e *Engine) joinRefused(c *Character) bool {
 func (e *Engine) ForgetCharacter() {
 	e.ClearCells(1, 1, winRight, winBottom)
 	names := e.BuildCharList()
+	if len(names) == 0 {
+		return
+	}
 	chars := e.loadSaved(names)
-	cur := 0
-	for len(names) > 0 {
-		i := e.pickSaved(chars, names, cur)
-		if i < 0 {
-			break
-		}
-		cur = i
-		if !e.YesNo(colYellow, colLightGreen, colWhite, cut("Forget "+names[i]+" forever? ", textCols)) {
-			continue
-		}
+	p := e.pickSaved(&chars, &names, func(i int) bool {
 		base := makeFileName(removeSubstr(names[i], "."))
 		for _, ext := range []string{".cha", ".itm", ".spc", ".mem", ".png", ".icon.png"} {
 			os.Remove(e.savePath(base + ext))
 		}
 		names, chars = slices.Delete(names, i, i+1), slices.Delete(chars, i, i+1)
-		cur = min(cur, max(len(names)-1, 0))
 		e.WriteCharList(names)
-	}
-	e.ClearCells(1, 1, winRight, winBottom)
+		return len(names) == 0
+	})
+	p.ask = "Forget %s forever?"
 }
 
 // iconCopy = ovr17:35BE (src, dst, recolour) nested in the icon editor (now the designer):
