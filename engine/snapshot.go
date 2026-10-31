@@ -88,8 +88,9 @@ type View struct {
 	Day       bool // 6:00 to 20:00, when the scripts show the day sky
 	Inside    bool // the party stands on an inside square (the original's inside sky colour)
 	Menu      *Menu
-	Exploring bool // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
-	CanCast   bool // ... and the selected member has a spell to cast (ActCastPick)
+	Exploring bool  // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	CanCast   bool  // ... and the selected member has a spell to cast (ActCastPick)
+	Camp      *Camp // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -125,6 +126,33 @@ type Menu struct {
 type MenuItem struct {
 	Text string
 	Key  byte
+}
+
+// Camp is what camp shows of the selected member and the party.
+type Camp struct {
+	CanCast  bool        // the selected member has a spell to cast (ActCastPick)
+	Book     []BookSpell // the selected member's spell book: how often each is memorized on a rest (ActPlan)
+	Scrolls  []BookSpell // the spells on their scrolls: Count 1 while being scribed (ActScribe)
+	Healing  bool        // someone resting can heal (RestHeal)
+	Bestiary []Beast     // the monster kinds met
+}
+
+// BookSpell is a spell with a count, and the slots of its level.
+type BookSpell struct {
+	ID      int // the spell (ActPlan, ActScribe X)
+	Name    string
+	Level   string // its group, as "Cleric Level 1"
+	Count   int
+	Planned int // spells planned of its level
+	Slots   int // slots of its level
+}
+
+// Beast is a bestiary entry.
+type Beast struct {
+	Name   string
+	Danger int // I..VIII
+	Text   string
+	Icon   image.Image // the combat icon (nil: none)
 }
 
 // Typing is the line being typed and how long it may get.
@@ -233,6 +261,9 @@ func (e *Engine) publish() {
 	}
 	if v.Exploring {
 		v.CanCast = e.canCastNow()
+	}
+	if e.ext.camping && e.ext.menu == 0 {
+		v.Camp = e.campView()
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering

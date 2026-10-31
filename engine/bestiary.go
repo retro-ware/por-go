@@ -1,14 +1,12 @@
 package engine
 
 import (
-	"cmp"
 	"slices"
 	"strings"
 )
 
-// Bestiary (extra): the camp menu's list of the monster kinds the party has
-// met (e.ext.met, kept with the save), sorted by name or danger; a pick
-// shows the kind's combat icon and description.
+// Bestiary (extra): the monster kinds the party has met (e.ext.met, kept
+// with the save), published in camp (View.Camp.Bestiary).
 
 // beast is a bestiary entry: name, danger level (I..VIII) and description
 // (por-bestiary.tsv); also are the other MON*CHA names of the kind (the
@@ -95,85 +93,24 @@ func (e *Engine) meetMonster(name, file string, block int) {
 	e.ext.met[b.Name] = metIcon{file, block}
 }
 
-// bestiaryMenu shows the met kinds, by name or by danger.
-func (e *Engine) bestiaryMenu() {
-	const (
-		view Choice = iota
-		byName
-		byDanger
-	)
-	var met []beast
+// beasts are the bestiary entries of the kinds met, with their icons.
+func (e *Engine) beasts() []Beast {
+	if b := e.ext.beasts; b != nil && len(b) == len(e.ext.met) { // kinds are only ever added
+		return b
+	}
+	var out []Beast
 	for _, b := range bestiary {
-		if _, ok := e.ext.met[b.Name]; ok {
-			met = append(met, b)
+		ic, ok := e.ext.met[b.Name]
+		if !ok {
+			continue
 		}
-	}
-	sortBy := byName
-	redraw, index := true, 0
-	var shown string
-	for {
-		if sortBy == byDanger {
-			slices.SortStableFunc(met, func(a, b beast) int { return cmp.Compare(a.Danger, b.Danger) })
-		} else {
-			slices.SortStableFunc(met, func(a, b beast) int { return cmp.Compare(a.Name, b.Name) })
-		}
-		list := make([]*ListNode, len(met))
-		for i, b := range met {
-			list[i] = &ListNode{Text: b.Name}
-		}
-		if redraw {
-			e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Bestiary")
-			if shown != "" {
-				e.drawBeast(shown)
-			}
-		}
-		var sel *ListNode
-		p := e.ListMenu("", Bar{{"View", view}, {"Name", byName}, {"Danger", byDanger}}, colLightCyan, colLightGreen, colWhite,
-			2, 3, bestiaryCol-2, winBottom-1, list, true, &redraw, &index, &sel)
-		switch p.ID {
-		case NoPick:
-			return
-		case byName, byDanger:
-			sortBy, redraw, index = p.ID, true, 0
-		default: // View, or a click on the line
-			if sel != nil {
-				shown = sel.Text
-				e.drawBeast(shown)
-			}
-		}
-	}
-}
-
-// bestiaryCol is the first column of the picked kind's icon and description.
-const bestiaryCol = 19
-
-// drawBeast shows a kind's combat icon, doubled, and its description.
-func (e *Engine) drawBeast(name string) {
-	e.ClearCells(bestiaryCol, 3, winRight-1, winBottom-1)
-	b := beastOf(name)
-	if ic, ok := e.ext.met[name]; ok {
+		bt := Beast{Name: b.Name, Danger: b.Danger, Text: b.Desc}
 		if im := e.LoadPicMasked(ic.File, ic.Block, 0); im != nil && im.Count > 0 {
 			e.recolour(im, &iconPaletteCE2)
-			w, h := im.Width*8, im.Height
-			d := im.Frame(0)
-			big := make([]byte, 4*w*h)
-			for y := range 2 * h {
-				for x := range 2 * w {
-					big[y*2*w+x] = d[y/2*w+x/2]
-				}
-			}
-			e.fill(bestiaryCol*8, 3*8, bestiaryCol*8+2*w, 3*8+2*h, colDarkGrey) // as the sheet's icon: black parts show
-			e.picture(bestiaryCol*8, 3*8, 2*w, 2*h, big, im.Mask)
+			bt.Icon = e.picRGBA(im, 0, false, -1)
 		}
+		out = append(out, bt)
 	}
-	y := 3 + 7
-	e.DisplayString(bestiaryCol, y, colLightCyan, "Danger "+roman[b.Danger])
-	for _, l := range wrapText(b.Desc, winRight-bestiaryCol) {
-		if y++; y >= winBottom {
-			break
-		}
-		e.DisplayString(bestiaryCol, y, colLightGreen, l)
-	}
+	e.ext.beasts = out
+	return out
 }
-
-var roman = [...]string{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"}

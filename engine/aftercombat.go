@@ -356,10 +356,17 @@ func (e *Engine) lootMenu() {
 			}
 		}
 		menu = append(menu, Entry{"Exit", exit})
-		key, again := e.campInput("", menu) // ovr06:101F: anim; extra: F1-F8 pick the member too
-		if again {
+		e.ext.campBar = true // ovr06:101F: anim; extra: F1-F8 pick the member too
+		p := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, true)
+		e.ext.campBar = false
+		if p.extra() {
+			if p.ID != PickRelist {
+				e.partyKeypad(p)
+			}
+			e.DisplayPartyList()
 			continue
 		}
+		key := p.ID
 		switch key {
 		case view:
 			e.ViewCharacter()

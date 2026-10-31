@@ -49,6 +49,7 @@ type extras struct {
 	}
 	voiced   map[string]bool    // voice.go: the recordings this save has heard
 	met      map[string]metIcon // bestiary.go: the monster kinds this save has met
+	beasts   []Beast            // bestiary.go: their entries, as last published
 	quick    *quickPick         // CreateCharacter answers its own menus (quickstart)
 	creating bool               // CreateCharacter's sheet is up: no level, experience, party items or status on it
 	minStats [6]int             // "Minimal stats": per-stat floor, STR as st*100+str00
@@ -75,6 +76,7 @@ type extras struct {
 	viewing       bool              // the View page's own menu is waiting
 	toItems       bool              // the next View opens on the inventory (F1-F8)
 	campBar       bool              // a camp menu bar is waiting: F1-F8 change the member
+	camping       bool              // camp takes decisions (View.Camp)
 	ordering      bool              // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
 	sels          map[string]int    // the highlighted item each menu was left with
 	listWord      map[string]Choice // a list menu's highlighted word, kept across pages

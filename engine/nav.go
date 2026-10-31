@@ -307,4 +307,3 @@ func (e *Engine) rosterRegion() {
 	}
 	e.addRegion(region{x0: x, y0: 4, x1: 0x26, y1: 4 + len(e.party) - 1, click: e.rosterClick})
 }
-

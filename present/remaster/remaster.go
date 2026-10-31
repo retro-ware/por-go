@@ -105,6 +105,8 @@ type Presenter struct {
 	pickAt      image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
 	command     bool                        // the party explores (View.Exploring), as last drawn
 	cmds        []command                   // the command menu's commands (explore.go), as last drawn
+	camp        campUI                      // the camp screens (camp.go)
+	shownView   engine.View                 // the View last drawn
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 }
@@ -211,6 +213,10 @@ func (p *Presenter) cast(i int) {
 func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
 	p.command = v.Exploring
+	if v.Camp != nil && p.shownView.Camp == nil { // camp starts on its main screen
+		p.camp.screen, p.camp.sel = campMain, 0
+	}
+	p.shownView = v
 	p.cmds = commands(v)
 	if !p.active {
 		p.ctx = 0
@@ -358,6 +364,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.drawMenu(dst, note.Glyph, v.Typing.Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
 		p.menuRects = p.menuRects[:0]
+	} else if v.Camp != nil && v.Menu == nil && v.SpellPick == nil { // camp (camp.go)
+		p.menu = false
+		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)))
 	} else if v.Exploring && p.menu { // the command menu (explore.go)
 		cmds := commands(v)
 		lines, keys := make([]string, len(cmds)), make([]byte, len(cmds))
@@ -463,6 +472,9 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.view.OptionsOpen() {
 		return true
 	}
+	if v.Camp != nil && v.Menu == nil {
+		return p.campKey(k, v)
+	}
 	if v.Exploring {
 		n := len(commands(v))
 		switch {
@@ -566,6 +578,14 @@ func (p *Presenter) Click(x, y int) bool {
 				}
 				p.selectCard(i)
 				return true
+			}
+		}
+		if v := p.shownView; v.Camp != nil && v.Menu == nil && p.active && !p.view.OptionsOpen() {
+			for i, r := range p.menuRects {
+				if image.Pt(x, y).In(r) {
+					p.campPick(v, i)
+					return true
+				}
 			}
 		}
 		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {

@@ -100,13 +100,12 @@ func (e *Engine) DevScene(name string) func() {
 			e.AfterCombat()
 			e.DrawMainScreen()
 		}
-	case "bestiary": // the camp's Bestiary with a few kinds met (CPIC blocks 1..5)
+	case "bestiary": // camp with a few kinds met for its Bestiary (CPIC blocks 1..5)
 		return func() {
 			for i, n := range []string{"KOBOLD", "ORC", "TROLL", "GOBLIN GUARD", "WYVERN"} {
 				e.meetMonster(n, e.set.file("CPIC"), i+1)
 			}
-			e.bestiaryMenu()
-			e.DrawMainScreen()
+			e.CampMenu()
 		}
 	case "parlay": // an encounter's menu, then the talk-style menu a script's Parlay shows after PARLAY
 		return func() { // as opEncounterMenu at distance 0 with a close-up, then the script's Parlay

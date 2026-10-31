@@ -147,7 +147,7 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if !ok {
 		return false
 	}
-	e.ext.seen, e.ext.voiced, e.ext.met = nil, nil, nil
+	e.ext.seen, e.ext.voiced, e.ext.met, e.ext.beasts = nil, nil, nil, nil
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
 		f.Close()

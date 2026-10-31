@@ -74,3 +74,8 @@ is deleted subsystem by subsystem, not kept alongside.
   ActTurnRight, ActGo, ActCamp, ActSearch, ActSweep, ActCastPick, the
   member acts); the command bar is gone, the presenter owns the command
   menu (present/remaster/explore.go); View.Exploring, View.CanCast.
+- [x] M2: camp takes decisions (ActRest, ActPlan, ActScribe, ActDropMember,
+  ActIconEdit, the member acts, ActClose leaves); View.Camp publishes the
+  spell book plan, the scrolls, healing and the bestiary; the presenter
+  owns the camp screens (present/remaster/camp.go). The camp bars, Alter,
+  Party Order (cards are dragged) and the bestiary page are gone.

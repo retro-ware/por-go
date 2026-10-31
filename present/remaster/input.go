@@ -63,6 +63,10 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		return
 	}
 	p.typing = false
+	if v.Camp != nil && v.Menu == nil {
+		p.campKey(k, v)
+		return
+	}
 	if v.Exploring && p.exploreKey(k, v) {
 		return
 	}

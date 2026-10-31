@@ -126,48 +126,6 @@ func (e *Engine) CastMenu() {
 	}
 }
 
-// restMenu = ovr16:077A (var interrupted): the longest study time of the
-// party becomes the proposed rest time, then rest (ovr21:0C9A).
-func (e *Engine) restMenu() (interrupted bool) {
-	for {
-		for _, c := range e.party { // extra: the planned spells are learned on any rest
-			e.planSpells(c)
-		}
-		// extra: rest for a purpose instead of setting days, hours and minutes
-		dayNight, until := "Night", 20*60
-		if !e.isDay() {
-			dayNight, until = "Day", 6*60
-		}
-		const (
-			heal Choice = iota
-			memorize
-			wait
-			untilIt
-			exit
-		)
-		switch e.DisplayInput("Rest: ", Bar{{"Heal", heal}, {"Memorize", memorize}, {"Wait", wait}, {dayNight, untilIt}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, false, true).ID {
-		case heal:
-			if e.healMinutes() == 0 {
-				e.BottomMessage("No one needs healing")
-				continue
-			}
-			return e.healParty()
-		case memorize:
-			most := e.partyStudy()
-			if most == 0 {
-				e.BottomMessage("No spells to memorize")
-				continue
-			}
-			return e.restFor(most, nil)
-		case wait:
-			return e.restFor(60, nil)
-		case untilIt:
-			return e.restFor(((until-e.clockMinutes())%(24*60)+24*60)%(24*60), nil)
-		}
-		return false
-	}
-}
-
 // partyStudy: the longest study time of the party in minutes (studyTime
 // also sets each member's study hours, which Rest counts down).
 func (e *Engine) partyStudy() int {
@@ -379,54 +337,6 @@ func (e *Engine) sortSpells(c *Character) {
 	}
 }
 
-// memorizeMenu = ovr16:090A, remade (extra): one list of the spell book
-// with how often each spell is memorized on every rest (c.Plan). Enter,
-// Space, Right and a click add one, Backspace and Left take one away;
-// Esc closes. The plan stays until the player changes it: each rest fills
-// up the same spells (planSpells).
-func (e *Engine) memorizeMenu() {
-	if !e.canStudy(2) {
-		return
-	}
-	c := e.selected()
-	e.DrawBoxTitled(1, 1, winRight, 1, 0, colBlack, "")
-	e.displayName(c, 1, 1, true)
-	e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells to memorize")
-	e.DrawBoxTitled(1, 3, winRight, promptRow-1, 0, colBlack, "") // the list's border on the prompt row, nothing left below it
-	redraw, index := true, 0
-	for {
-		e.buildSpellList(1)
-		var sel *ListNode
-		e.ext.campBar = true // F1-F8 and the cards switch the member, as the camp bar
-		p := e.ListMenu("", nil, colLightMagenta, colLightGreen, colWhite, 1, 5, winRight, promptRow-1, e.spellList, false, &redraw, &index, &sel)
-		e.ext.campBar = false
-		if p.ID == PickRelist { // another member: their plan, once this one is set
-			e.planSpells(c)
-			e.DisplayPartyList()
-			e.spellList = nil
-			e.memorizeMenu()
-			return
-		}
-		if sel == nil {
-			break
-		}
-		s := e.listedSpell(sel)
-		if p.ID == PickMove && p.Dir == DirLeft {
-			if i := bytes.LastIndexByte(c.Plan[:], s); i >= 0 {
-				c.Plan[i] = 0
-			}
-		} else if e.planned(c, e.spellLevel(s), e.spellClass(s)) < int(c.spellSlot(int(e.spellClass(s)), int(e.spellLevel(s)))) {
-			if i := slices.Index(c.Plan[:], 0); i >= 0 {
-				c.Plan[i] = s
-			}
-		}
-		redraw = true
-	}
-	e.spellList = nil
-	e.planSpells(c)
-	e.DrawMainScreen()
-}
-
 // planned: how many spells of the level and class c's plan holds.
 func (e *Engine) planned(c *Character, lvl, cls byte) int {
 	n := 0
@@ -436,90 +346,6 @@ func (e *Engine) planned(c *Character, lvl, cls byte) int {
 		}
 	}
 	return n
-}
-
-// scribeMenu = ovr16:0B5B.
-func (e *Engine) scribeMenu() {
-	if !e.canStudy(3) {
-		return
-	}
-	done := false
-	index := -1
-	var any bool
-	e.SpellList(6, 0, &index, &any)
-	drew := true
-	if any {
-		if !e.YesNo(colYellow, colLightGreen, colWhite, "Scribe These Spells? ") {
-			e.clearScribe(e.selected())
-		} else {
-			done = true
-		}
-	} else {
-		drew = false
-	}
-	index = -1
-	for !done {
-		spell := e.SpellList(3, 3, &index, &any)
-		c := e.selected()
-		if spell == 0 {
-			done = true
-			if !any {
-				e.CharMessage(c, "has no copyable scrolls", true)
-			} else {
-				drew = true
-			}
-			continue
-		}
-		drew = true
-		if c.SpellBook[int(spell)-1] != 0 {
-			e.BottomMessage("You already know that spell")
-			continue
-		}
-		found := false
-		for _, it := range e.carried(c) {
-			if found {
-				break
-			}
-			if !e.isScroll(it) {
-				continue
-			}
-			for k := 1; k <= 3; k++ {
-				if s := it.Spells[k-1]; s > 0x7F && s&0x7F == spell {
-					e.BottomMessage("You are already scibing that spell")
-					found = true
-				}
-			}
-		}
-		if found {
-			continue
-		}
-		if c.spellSlot(int(e.spellClass(spell)), int(e.spellLevel(spell))) == 0 {
-			e.BottomMessage("You can not scribe that spell.")
-			continue
-		}
-		// (any item's spell bytes count here, not only scrolls)
-		for _, it := range e.carried(c) {
-			if found {
-				break
-			}
-			for k := 1; k <= 3 && !found; k++ {
-				if it.Spells[k-1] == spell {
-					it.Spells[k-1] |= 0x80
-					found = true
-				}
-			}
-		}
-	}
-	if index != -1 {
-		index = -1
-		e.SpellList(6, 0, &index, &any)
-		if any && !e.YesNo(colYellow, colLightGreen, colWhite, "Scribe these spells? ") {
-			e.clearScribe(e.selected())
-		}
-	}
-	if drew {
-		e.DrawMainScreen()
-	}
 }
 
 // listedAffect = the affect types ovr16:0FBC names after the spell that
@@ -602,177 +428,38 @@ func (e *Engine) displayAffects(title string, members []*Character) {
 	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel)
 }
 
-// campInput (extra) waits on a camp menu bar. The keypad and F1-F8 pick
-// the member the menu is for; again is set when the menu is to be rebuilt.
-func (e *Engine) campInput(prompt string, menu Bar) (key Choice, again bool) {
-	e.ext.campBar = true
-	p := e.DisplayInput(prompt, menu, colLightMagenta, colLightGreen, colWhite, true, true)
-	e.ext.campBar = false
-	if !p.extra() {
-		return p.ID, false
-	}
-	if p.ID != PickRelist {
-		e.partyKeypad(p)
-	}
-	e.DisplayPartyList()
-	return p.ID, true // not an item: the menu loops go on
-}
-
-// The spell items of the camp menu.
-const (
-	magicCast Choice = iota
-	magicMemorize
-	magicScribe
-	campHeal // extra: a paladin's powers (view.go)
-	campCure
-)
-
-// magicCommands (extra): the Magic menu items the selected member can use.
-func (e *Engine) magicCommands() Bar {
-	c := e.selected()
-	if c.Status == statusAnimated || c.Okay == 0 {
-		return nil
-	}
-	var m Bar
-	if e.area.NoMagic == 0 && slices.ContainsFunc(c.Memorized[:], func(v byte) bool { return v > 0 && v < 0x80 }) {
-		m = append(m, Entry{"Cast", magicCast})
-	}
-	caster, mu := false, false
-	for lvl := 1; lvl <= 3; lvl++ {
-		caster = caster || c.spellSlot(0, lvl) > 0 || c.spellSlot(1, lvl) > 0
-		mu = mu || c.spellSlot(1, lvl) > 0
-	}
-	if caster {
-		m = append(m, Entry{"Memorize", magicMemorize})
-	}
-	if mu && slices.ContainsFunc(e.carried(c), e.isScroll) {
-		m = append(m, Entry{"Scribe", magicScribe})
-	}
-	return m
-}
-
-// movePrev = ovr16:14A9: the selected member swaps places with the one
-// before; the first goes to the end.
-func (e *Engine) movePrev() {
-	i := e.partySel
-	if i == 0 {
-		c := e.party[0]
-		e.party = append(e.party[1:], c)
-		e.partySel = len(e.party) - 1
+// dropMember = ovr16:18E5 (the player confirmed): member n leaves the
+// party; the last one ends the game.
+func (e *Engine) dropMember(n int) {
+	if n < 0 || n >= len(e.party) {
 		return
 	}
-	e.party[i-1], e.party[i] = e.party[i], e.party[i-1]
-	e.partySel = i - 1
-}
-
-// moveNext = ovr16:1601: swaps with the one after; the last goes first.
-func (e *Engine) moveNext() {
-	i := e.partySel
-	if i == len(e.party)-1 {
-		c := e.party[i]
-		e.party = append([]*Character{c}, e.party[:i]...)
-		e.partySel = 0
-		return
-	}
-	e.party[i+1], e.party[i] = e.party[i], e.party[i+1]
-	e.partySel = i + 1
-}
-
-// orderMenu = ovr16:1780: Select a member, then Place it with Home/End.
-func (e *Engine) orderMenu() {
-	const (
-		selectIt Choice = iota // Select, or Place while placing
-		exit
-	)
-	placing := false
-	e.ext.ordering = true // extra: a card dragged onto another's place moves the member there (ActOrder)
-	defer func() { e.ext.ordering = false }()
-	for key := selectIt; key != NoPick && key != exit; {
-		menu := Bar{{"Select", selectIt}, {"Exit", exit}}
-		if placing {
-			menu[0].Word = "Place"
-		}
-		p := e.DisplayInput("Party Order: ", menu, colLightMagenta, colLightGreen, colWhite, true, true)
-		key = p.ID
-		if p.extra() {
-			switch {
-			case !placing:
-				e.partyKeypad(p)
-			case p.ID == PickMove && p.Dir == DirHome:
-				e.movePrev()
-			case p.ID == PickMove && p.Dir == DirEnd:
-				e.moveNext()
-			}
-			e.DisplayPartyList()
-			continue
-		}
-		if key == PickEnter || key == selectIt {
-			placing = !placing
-			if placing {
-				c := e.selected()
-				e.CharMessage(c, "has been selected", false)
-			} else {
-				e.ClearMessageArea()
-			}
-		}
-	}
-}
-
-// dropMenu = ovr16:18E5: drop the selected member (the last one quits).
-func (e *Engine) dropMenu() {
+	e.selectMember(n)
 	c := e.selected()
 	if len(e.party) == 1 {
-		if e.YesNo(colYellow, colLightGreen, colWhite, "quit TO DOS: ") {
-			e.RemoveSelected(false, true)
-			e.Exit()
-		}
-		return
-	}
-	e.CharMessage(c, "will be gone", false)
-	if !e.YesNo(colYellow, colLightGreen, colWhite, "Drop from party? ") {
-		e.CharMessage(c, "Breathes A sigh of relief", true)
-		return
+		e.RemoveSelected(false, true)
+		e.Exit()
 	}
 	if c.Okay != 0 {
-		e.CharMessage(c, "bids you farewell", true)
+		e.say(c.Name() + " bids you farewell")
 	} else {
-		e.CharMessage(c, "is dumped in a ditch", true)
+		e.say(c.Name() + " is dumped in a ditch")
 	}
 	e.RemoveSelected(false, true)
-	e.ClearCells(17, 1, winRight, 11)
 	e.DisplayPartyList()
 }
 
-// alterMenu = ovr16:1C59.
-func (e *Engine) alterMenu() {
-	const ( // extra: no Speed (the message delay) and no Pics (monsters and portraits off)
-		order Choice = iota
-		drop
-		icon
-		exit
-	)
-	for key := order; key != NoPick && key != exit; {
-		p := e.DisplayInput("Alter: ", Bar{{"Order", order}, {"Drop", drop}, {"Icon", icon}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, true)
-		key = p.ID
-		if p.extra() {
-			e.partyKeypad(p)
-			e.DisplayPartyList()
-			continue
-		}
-		switch key {
-		case order:
-			e.orderMenu()
-		case drop:
-			e.dropMenu()
-		case icon:
-			e.iconEditor()
-			e.DrawMainScreen()
-		}
-	}
-}
+// Rest choices (ActRest N).
+const (
+	RestHeal     = iota // until everyone is healed (healParty)
+	RestMemorize        // until the planned spells are learned
+	RestWait            // an hour
+	RestUntil           // until day (at night) or night (by day)
+)
 
-// CampMenu = ovr16:1E6F: true when resting was interrupted (the caller
-// then runs the encounter).
+// CampMenu = ovr16:1E6F, remade: camp takes decisions until the party
+// leaves (ActClose); true when resting was interrupted (the caller then
+// runs the encounter).
 func (e *Engine) CampMenu() bool {
 	e.Music(1) // Amiga 0x17FBC .. 0x1813C
 	defer e.Music(0)
@@ -781,64 +468,186 @@ func (e *Engine) CampMenu() bool {
 	e.camp.heal = 0
 	e.camp.rest = [7]int{}
 	e.DrawMainScreen()
-	e.ClearCells(1, msgTop, paneRight, paneBottom)
-	e.DisplayString(1, 18, colLightGreen, "The party makes camp...")
 	e.clearStudy()
+	e.ext.camping, e.ext.ordering = true, true // a card dragged onto another's place moves the member there (ActOrder)
 	interrupted := false
-	const (
-		view Choice = campCure + 1 + iota
-		rest
-		alter
-		bestiary
-		exit
-	)
-	for key := view; !interrupted && key != NoPick && key != exit; {
-		// extra: no Magic sub-menu, its commands and a paladin's powers are
-		// on the camp bar; no Save: F9 saves (slots.go)
-		menu := append(Bar{{"View", view}}, e.magicCommands()...)
-		if c := e.selected(); e.paladinCan(c, affLaidOnHands) {
-			menu = append(menu, Entry{"Heal", campHeal})
-		} else if e.paladinCan(c, affCuredDisease) {
-			menu = append(menu, Entry{"Cure", campCure}) // never beside Cast: a paladin casts no spells
-		}
-		menu = append(menu, Entry{"Rest", rest}, Entry{"Alter", alter})
-		if len(e.ext.met) > 0 {
-			menu = append(menu, Entry{"Bestiary", bestiary})
-		}
-		menu = append(menu, Entry{"Exit", exit})
-		var again bool
-		if key, again = e.campInput("Camp: ", menu); again {
-			continue
-		}
-		switch key {
-		case view:
-			e.ViewCharacter()
-		case magicCast:
-			e.CastMenu()
-		case magicMemorize:
-			e.memorizeMenu()
-		case magicScribe:
-			e.scribeMenu()
-		case campHeal:
-			e.paladinHeal(e.selected())
-		case campCure:
-			e.paladinCure(e.selected())
-		case rest:
-			interrupted = e.restMenu()
-		case alter:
-			e.alterMenu()
-		case bestiary:
-			e.bestiaryMenu()
-			e.DrawMainScreen()
-		}
+	for left := false; !left && !interrupted; {
+		left, interrupted = e.campDecision(e.decision())
+		e.DisplayPartyList()
 	}
-	e.clearStudy()
+	e.ext.camping, e.ext.ordering = false, false
+	for _, c := range e.party { // the plans hold: the next rest learns them
+		e.planSpells(c)
+	}
 	e.spellCaster = nil
 	e.beginFlag = saved
 	e.StatusLine()
 	e.ClearMessageArea()
 	e.ClearRow24()
 	return interrupted
+}
+
+// campDecision carries out a decision in camp.
+func (e *Engine) campDecision(a Action) (left, interrupted bool) {
+	member := func() *Character { // member N (< 0: the selected one) acts and becomes the selected one
+		if a.N >= 0 && a.N < len(e.party) {
+			e.selectMember(a.N)
+		}
+		return e.selected()
+	}
+	switch a.Kind {
+	case ActClose:
+		return true, false
+	case ActLead:
+		member()
+	case ActMember:
+		member()
+		e.ViewCharacter()
+		e.DrawMainScreen()
+	case ActInventory:
+		if c := member(); len(e.carried(c)) == 0 {
+			e.say("No items")
+		} else {
+			e.ext.toItems = true
+			e.ViewCharacter()
+			e.DrawMainScreen()
+		}
+	case ActCastPick:
+		member()
+		e.CastMenu()
+	case ActHeal, ActCure, ActSpells, ActMagic:
+		c := member()
+		if slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
+			e.power(c, a.Kind)
+			e.DrawMainScreen()
+		}
+	case ActPlan:
+		e.planSpell(member(), byte(a.X), a.Y)
+	case ActScribe:
+		e.scribe(member(), byte(a.X))
+	case ActDropMember:
+		e.dropMember(a.N)
+	case ActIconEdit:
+		member()
+		e.iconEditor()
+		e.DrawMainScreen()
+	case ActRest:
+		for _, c := range e.party { // extra: the planned spells are learned on any rest
+			e.planSpells(c)
+		}
+		switch a.N {
+		case RestHeal:
+			if e.healMinutes() == 0 {
+				e.say("No one needs healing")
+				return false, false
+			}
+			return false, e.healParty()
+		case RestMemorize:
+			most := e.partyStudy()
+			if most == 0 {
+				e.say("No spells to memorize")
+				return false, false
+			}
+			return false, e.restFor(most, nil)
+		case RestWait:
+			return false, e.restFor(60, nil)
+		case RestUntil:
+			until := 20 * 60
+			if !e.isDay() {
+				until = 6 * 60
+			}
+			return false, e.restFor(((until-e.clockMinutes())%(24*60)+24*60)%(24*60), nil)
+		}
+	}
+	return false, false
+}
+
+// campView is camp's state for the View.
+func (e *Engine) campView() *Camp {
+	c := e.selected()
+	v := &Camp{CanCast: e.canCastNow(), Healing: e.healMinutes() > 0, Bestiary: e.beasts()}
+	if c == nil {
+		return v
+	}
+	spell := func(s byte, n int) BookSpell {
+		lvl, cls := e.spellLevel(s), e.spellClass(s)
+		return BookSpell{ID: int(s), Name: e.spellName(int(s)), Level: spellGroups[e.spellRec(s, 1)], Count: n,
+			Planned: e.planned(c, lvl, cls), Slots: int(c.spellSlot(int(cls), int(lvl)))}
+	}
+	for i := 1; i <= 0x37 && i <= len(c.SpellBook); i++ {
+		if c.SpellBook[i-1] != 0 {
+			v.Book = append(v.Book, spell(byte(i), bytes.Count(c.Plan[:], []byte{byte(i)})))
+		}
+	}
+	for _, it := range e.carried(c) {
+		if !e.isScroll(it) {
+			continue
+		}
+		for _, s := range it.Spells {
+			if k := int(s & 0x7F); k != 0 && k <= len(c.SpellBook) && c.SpellBook[k-1] == 0 {
+				n := 0
+				if s > 0x7F {
+					n = 1
+				}
+				v.Scrolls = append(v.Scrolls, spell(s&0x7F, n))
+			}
+		}
+	}
+	return v
+}
+
+// planSpell (extra) memorizes spell s on every rest once more (delta > 0)
+// or once less, as far as c's slots for its level go.
+func (e *Engine) planSpell(c *Character, s byte, delta int) {
+	if s == 0 || int(s) > len(c.SpellBook) || c.SpellBook[s-1] == 0 || !e.canStudy(2) {
+		return
+	}
+	if delta < 0 {
+		if i := bytes.LastIndexByte(c.Plan[:], s); i >= 0 {
+			c.Plan[i] = 0
+		}
+		return
+	}
+	if e.planned(c, e.spellLevel(s), e.spellClass(s)) < int(c.spellSlot(int(e.spellClass(s)), int(e.spellLevel(s)))) {
+		if i := slices.Index(c.Plan[:], 0); i >= 0 {
+			c.Plan[i] = s
+		}
+	}
+}
+
+// scribe = the pick of ovr16:0B5B: c scribes spell s from a scroll on
+// the next rest, or no longer when it is being scribed.
+func (e *Engine) scribe(c *Character, s byte) {
+	if s == 0 || int(s) > len(c.SpellBook) || !e.canStudy(3) {
+		return
+	}
+	for _, it := range e.carried(c) {
+		if !e.isScroll(it) {
+			continue
+		}
+		for k := range it.Spells {
+			if it.Spells[k] == s|0x80 {
+				it.Spells[k] = s
+				return
+			}
+		}
+	}
+	switch {
+	case c.SpellBook[s-1] != 0:
+		e.say("You already know that spell")
+		return
+	case c.spellSlot(int(e.spellClass(s)), int(e.spellLevel(s))) == 0:
+		e.say("You can not scribe that spell")
+		return
+	}
+	for _, it := range e.carried(c) { // (any item's spell bytes count here, not only scrolls)
+		for k := range it.Spells {
+			if it.Spells[k] == s {
+				it.Spells[k] |= 0x80
+				return
+			}
+		}
+	}
 }
 
 // ---- ovr21: resting ----

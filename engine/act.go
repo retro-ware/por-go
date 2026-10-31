@@ -74,6 +74,13 @@ const (
 	ActSearch    // search this square once
 	ActSweep     // the slow, searching pace on or off
 	ActCastPick  // member N (< 0: the selected one) picks a memorised spell to cast (View.SpellPick)
+
+	// Camp decisions (View.Camp); N is the member (< 0: the selected one)
+	ActRest       // rest: N is RestHeal .. RestUntil
+	ActPlan       // member N memorizes spell X on every rest Y (+1 or -1) times more
+	ActScribe     // member N scribes spell X from a scroll on the next rest, or no longer
+	ActDropMember // member N leaves the party (the player confirmed)
+	ActIconEdit   // member N's combat icon editor
 )
 
 // Directions of ActMove.
