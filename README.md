@@ -6,6 +6,10 @@ and a few opinions of its own about the rules (repository `por-go`).
 (the 3D views, the voice-over, the interface) and how to do it again for
 another Gold Box game; `PORT_CHECKLIST.md` lists each change with its code.
 
+> [!IMPORTANT]
+> ## 🔊 [Download the voice-over audio (por-voice.zip)](https://drive.google.com/file/d/1hvAi80-SdBD6MrfMdytEsGEQBbWfeBMs/view?usp=sharing)
+> Every story line, spoken. Run `gameimport`, press **the voice-over…** and pick the zip.
+
 ## What's new for players
 
 The areas, scripts and story are the 1988 original's, and so are most of
