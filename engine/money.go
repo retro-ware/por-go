@@ -64,6 +64,7 @@ func (e *Engine) takeRecordCoins(c *Character) {
 		coins[i] = c.Coins[i]
 		c.Coins[i] = 0
 	}
+	e.moneySound(coinsToPurse(coins))
 	e.purse.add(coinsToPurse(coins))
 }
 

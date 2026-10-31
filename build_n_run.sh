@@ -3,7 +3,9 @@
 #   data/dos     the DOS Pool of Radiance files it reads (*.DAX, ITEMS, POOL.CFG; not in git)
 #   data/amiga   the Amiga graphics and sound, converted on the first run from
 #                the Amiga .adf disks under $ADF_DIR (default ~/Downloads)
-#   data/assets  fonts, speech and the event scripts (scripts/ is in git)
+#   data/assets  fonts, speech and the event scripts (scripts/ is in git); dasp/,
+#                the Dubtrain Angband Sound Pack, copied on the first run from
+#                $DASP_DIR (default ~/Downloads/Dubtrain Angband Sound Pack v3.1.0)
 #   data/save    the saves and what the game writes
 #
 #   ./build_n_run.sh            play in a window (scale 3)
@@ -17,4 +19,6 @@ if [ ! -f data/dos/TITLE.DAX ]; then
 fi
 go build -o por ./cmd/por
 [ -d data/amiga ] || ./por -data data -import-disk2 "${ADF_DIR:-$HOME/Downloads}"
+dasp="${DASP_DIR:-$HOME/Downloads/Dubtrain Angband Sound Pack v3.1.0}"
+[ -d data/assets/dasp ] || [ ! -f "$dasp/sound.cfg" ] || { mkdir -p data/assets/dasp && cp "$dasp"/* data/assets/dasp/; }
 exec ./por "$@" # por reads ./data

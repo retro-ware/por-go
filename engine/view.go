@@ -430,6 +430,7 @@ func (e *Engine) ItemsMenu() bool {
 					e.refuse("Not enough Money.")
 				case !e.buyItem(w):
 					e.purse.gold -= uint32(w.Price)
+					e.dasp("store5")
 					e.say("Bought!")
 				}
 			}
@@ -449,12 +450,14 @@ func (e *Engine) ItemsMenu() bool {
 			}
 		case a.Kind == ActDrop:
 			if e.canLoseItem(it) {
+				e.dasp("drop")
 				e.RemoveItem(c, it)
 			}
 		case a.Kind == ActSell && inv.Sell:
 			if e.canLoseItem(it) {
 				e.RemoveItem(c, it)
 				e.purse.addCopper(sellValue(it))
+				e.dasp("store5")
 				e.say("Sold!")
 			}
 		}
@@ -585,6 +588,7 @@ func (e *Engine) readyItem(it *Item) {
 			return
 		}
 		it.Readied = 0
+		e.dasp("wield")
 		if effect {
 			e.itemAffect(it, c, 1)
 		}
@@ -636,6 +640,7 @@ func (e *Engine) readyItem(it *Item) {
 	switch why {
 	case 0:
 		e.takeFromPool(c, it) // extra: out of the party inventory
+		e.dasp("wield")
 		it.Readied = 1
 		if missile {
 			it.Readied = 2
@@ -772,6 +777,7 @@ func sellValue(it *Item) uint32 {
 func (e *Engine) identifyItem(c *Character, it *Item) (redraw bool) {
 	e.ItemName(c, it, 0, 0, false, false)
 	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") && e.pay(200) {
+		e.dasp("pseudo_id")
 		if it.Hidden == 0 {
 			e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "I can't tell anything new about your "+it.Name())
 		} else {

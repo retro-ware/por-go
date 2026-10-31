@@ -25,6 +25,7 @@ func (e *Engine) templePay(cure string, price uint16) bool {
 	if k {
 		e.ClearMessageArea()
 		c := e.selected()
+		e.dasp("recover")
 		e.CharMessage(c, "is cured.", true)
 	}
 	return k

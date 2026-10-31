@@ -75,6 +75,8 @@ func (e *Engine) Shop() {
 		e.ext.sels = map[string]int{}
 	}
 	e.ext.sels[menu.String()] = 1 // extra: a new visit starts on Browse, not where the last one left
+	e.dasp("store_enter")
+	defer e.dasp("store_leave")
 	for leave := false; !leave; { // extra: no "Party money" line: it wrote over the merchant's greeting (the inventory shows the purse)
 		p := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
 		redraw := false

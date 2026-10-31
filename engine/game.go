@@ -357,6 +357,9 @@ func (e *Engine) Move() {
 		switch e.DoorAt(e.posX, e.posY, e.facing) {
 		case 1:
 			moved = true
+			if e.WallAt(e.posX, e.posY, e.facing) != 0 {
+				e.dasp("opendoor")
+			}
 		case 2:
 			moved = e.lockedDoor(false)
 		case 3:
@@ -414,9 +417,11 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 	switch e.DisplayInput("Locked. ", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID {
 	case bash:
 		if !e.bashDoor() {
+			e.dasp("hitwall")
 			e.DisplayMessageWait(colYellow, "The door holds.") // extra: the original only bumped
 			return false
 		}
+		e.dasp("shutdoor") // a slam
 		return true
 	case pick:
 		if wizard {
@@ -424,9 +429,11 @@ func (e *Engine) lockedDoor(wizard bool) bool {
 			return false
 		}
 		if !e.pickLock() {
+			e.dasp("lockpick_fail")
 			e.DisplayMessageWait(colYellow, "The lock holds.") // extra: the original only bumped
 			return false
 		}
+		e.dasp("lockpick")
 		return true
 	case knockIt:
 		return e.knock()

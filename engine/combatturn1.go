@@ -487,7 +487,7 @@ func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 	e.rv.damage = 0
 	acb.Attacked = 1
 	if e.isHelpless(b) {
-		e.PlaySound(sndBump)
+		e.playSound(sndBump, "hit_superb")
 		for acb.AttackSlot > 0 && a.Attacks[acb.AttackSlot-1] == 0 {
 			acb.AttackSlot--
 		}
@@ -538,7 +538,7 @@ func (e *Engine) attackSlots(a, b *Character, w int) (done bool) {
 				e.slotShots[s]++
 				if e.AttackHits(a, b, int(need)) || e.isHelpless(b) {
 					e.slotHits[s]++
-					e.PlaySound(sndHit) // extra: the weapon-hit sound (the original's bump is barely audible)
+					e.playSound(sndHit, e.hitEvent(b, "hit")) // extra: the weapon-hit sound (the original's bump is barely audible)
 					any = true
 					e.damageRoll(a, b, s)
 					e.attackText(a, b, mode, int(e.rv.damage), int(e.rv.damage), 1)

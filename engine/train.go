@@ -280,6 +280,7 @@ func (e *Engine) TrainCharacter() {
 	if !e.YesNo(colLightMagenta, colLightGreen, colWhite, "Do you wish to train? ") {
 		return
 	}
+	e.dasp("level")
 	e.BottomMessage("Congratulations...")
 	if !e.debug {
 		e.purse.gold -= 1000

@@ -26,6 +26,7 @@ func (e *Engine) computerTurn(c *Character) {
 		done = e.aiFleeCheck(c)
 	}
 	if ci.Fleeing != 0 && ci.Turned == 0 {
+		e.dasp("flee")
 		e.CharMessage(c, "flees in panic", true)
 	}
 	if done {

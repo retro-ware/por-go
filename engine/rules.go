@@ -91,6 +91,7 @@ func (e *Engine) RemoveAffect(c *Character, typ affectType, a *Affect) {
 func (e *Engine) AddAffect(c *Character, typ affectType, time int, data, call byte) {
 	a := &Affect{affectRecord: affectRecord{Type: typ, Time: uint16(time), Data: data, Call: call}}
 	c.Affects = append(c.Affects, a)
+	e.dasp(daspAffects[typ])
 }
 
 // auraAffects = ovr25 cs:0140: affects that also work on everyone near the
@@ -579,9 +580,9 @@ func (e *Engine) hitMessage(c *Character, magical bool, msg string) {
 		e.combatCentre(e.combatX(c), e.combatY(c), 3, 8)
 	}
 	if magical {
-		e.PlaySound(sndMagicHit)
+		e.playSound(sndMagicHit, e.hitEvent(c, "hit_good"))
 	} else {
-		e.PlaySound(sndHit)
+		e.playSound(sndHit, e.hitEvent(c, "hit"))
 	}
 	e.CharMessage(c, msg, false)
 	n := 0

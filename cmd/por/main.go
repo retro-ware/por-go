@@ -517,9 +517,11 @@ func main() {
 		json.Unmarshal(b, &blobber.Settings)
 	}
 	eng.Deskew.Store(blobber.Settings.Deskew)
+	eng.Dasp.Store(blobber.Settings.Dasp)
 	engine.SetVolumes(blobber.Settings.Music, blobber.Settings.Effects, blobber.Settings.Voice)
 	blobber.OnSettings = func(o blobber.Options) {
 		eng.Deskew.Store(o.Deskew)
+		eng.Dasp.Store(o.Dasp)
 		engine.SetVolumes(o.Music, o.Effects, o.Voice)
 		b, _ := json.MarshalIndent(o, "", " ")
 		os.MkdirAll(eng.Cfg.SaveDir, 0o755)

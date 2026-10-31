@@ -754,6 +754,7 @@ func (e *Engine) breathWeapon(c *Character, a *Affect, flag int) {
 		return
 	}
 	cx, cy := e.combatX(c), e.combatY(c)
+	e.dasp("breathe_fire")
 	e.CharMessage(c, "Breathes!", true)
 	e.spellTargetHook(spLightningBolt, 1) // aimed like a bolt; the result (DS:70C6) is not used
 	e.tgtX = cx + sign(e.tgtX-cx)
@@ -809,6 +810,12 @@ func (e *Engine) scrollUsed(c *Character, it *Item, spell byte) {
 // announceCast = ovr23:331A (char, msg, spell): announces the cast, in the
 // side panel in combat, else in the message box.
 func (e *Engine) announceCast(c *Character, msg string, spell int) {
+	switch {
+	case msg != "casts":
+		e.dasp("study") // memorized, scribed
+	case e.beginFlag != 5:
+		e.dasp("cast_spell") // in combat the spell's flight has the sound
+	}
 	msg = cut(msg, textCols)
 	if e.beginFlag == 5 {
 		e.CharMessage(c, "Casts a Spell", true)

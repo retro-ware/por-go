@@ -1355,6 +1355,20 @@ art for the same blocks. The port can play with the Amiga art and music:
   driver (START segment 08AE, a 236.7 Hz tick), its data extracted by
   `cmd/sounddata original/START.EXE > engine/sounddata.go`. Ctrl-S toggles
   sound (`SOUND.OFF`).
+- **DASP Sfx:** `engine/dasp.go` plays the Dubtrain Angband Sound Pack
+  (`data/assets/dasp`: its WAVs and `sound.cfg`, event = files, one picked
+  at random) over the DOS or Amiga output while Esc > Audio > DASP Sfx is on
+  (`Settings.Dasp`, default on; `Engine.Dasp`). `daspFx` maps PlaySound's
+  numbers to events (hit, kill, shoot, miss, cast_spell; Fireball
+  breathe_fire, Lightning Bolt res_elec); call sites with context use
+  `playSound(n, event)` (mon_hit and death for the party, hit_superb on the
+  helpless). Extra events: affects as they are added (`daspAffects`),
+  shops, training, the temple, treasure money, ready/drop, memorize, doors
+  and locks, breath, panic. A step keeps the original's sound; the pack's
+  sounds keep the original's pacing and leave the Amiga music playing.
+  `build_n_run.sh` copies the pack from `$DASP_DIR` (default
+  `~/Downloads/Dubtrain Angband Sound Pack v3.1.0`). The pack is CC BY-NC
+  by Dubtrain Records (www.Dubtrain.com).
 
 ---
 

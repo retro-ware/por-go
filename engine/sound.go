@@ -183,6 +183,7 @@ type sound struct {
 	am       *amiga.Player // data/amiga/SOUND.BIN imported: the Amiga players instead
 	music    int           // the Amiga song Music started last
 	vox      *voice        // the voice-over: the music is silent while it speaks
+	dasp     *dasp         // dasp.go: the Dubtrain sound pack, nil without data/assets/dasp
 }
 
 // amigaFx maps PlaySound 2..12 to Amiga effects: the Amiga's effect table parallels the
@@ -349,13 +350,26 @@ func (e *Engine) SoundReader() *sound {
 	if img, err := os.ReadFile(filepath.Join(e.data, AmigaDir, "SOUND.BIN")); err == nil && len(img) == amiga.End-amiga.Base {
 		s.am = amiga.New(img)
 	}
+	s.dasp = loadDasp(filepath.Join(e.data, AssetsDir, daspDir))
 	return s
 }
 
-// Read renders the speaker as a square wave (plus the SN76489 when the
+// Read renders the speaker, the Tandy or the Amiga, then mixes in the
+// sound pack's clips.
+func (s *sound) Read(p []byte) (int, error) {
+	n, _ := s.render(p)
+	s.mu.Lock()
+	if s.dasp != nil && s.typ != sndNone {
+		s.dasp.mix(p[:n])
+	}
+	s.mu.Unlock()
+	return n, nil
+}
+
+// render renders the speaker as a square wave (plus the SN76489 when the
 // Tandy chip is present), running the sequencer once per timer tick while
 // the interrupt is hooked.
-func (s *sound) Read(p []byte) (int, error) {
+func (s *sound) render(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	n := len(p) / 4 * 4
@@ -564,11 +578,16 @@ func (s *sound) stop() {
 // sndStop stops, anything else starts song n-1. While DS:5374 is non-zero the sound
 // is played for 0.1 s and cut; after soundWait(0) it plays on until
 // soundWait(n) unhooks the interrupt.
-func (e *Engine) PlaySound(n int) {
+func (e *Engine) PlaySound(n int) { e.playSound(n, daspFx[n]) }
+
+// playSound is PlaySound with the sound pack's event (extra) in place of
+// sound n: the pack plays it, and the pacing stays the original's.
+func (e *Engine) playSound(n int, event string) {
 	s := &e.snd
 	if !s.on || s.typ == sndNone {
 		return
 	}
+	dasp := n > sndUnmute && n != sndStop && e.dasp(event)
 	s.mu.Lock()
 	if s.wait > 0 {
 		s.isr = true
@@ -582,7 +601,9 @@ func (e *Engine) PlaySound(n int) {
 	case sndStop:
 		s.stop()
 	default:
-		if s.am != nil && n == sndStep && s.am.Sounding() {
+		if dasp {
+			// extra: the sound pack's instead
+		} else if s.am != nil && n == sndStep && s.am.Sounding() {
 			// extra: a step does not take the channels from a song
 		} else if s.am != nil && n >= 2 && n-2 < len(amigaFx) {
 			s.am.Effect(amigaFx[n-2])

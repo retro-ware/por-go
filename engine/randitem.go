@@ -345,5 +345,6 @@ func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
 		e.AddItemCopy(c, it)
 		return
 	}
+	e.dasp("store5")
 	e.purse.gold += uint32(v)
 }

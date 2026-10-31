@@ -392,6 +392,7 @@ func (e *Engine) AfterCombat() {
 	if !e.run.quit || e.duel() {
 		e.hiredShare()
 		e.showResult(e.ac.exp)
+		e.moneySound(e.loot)
 		e.purse.add(e.loot)
 		e.loot = purse{}
 		e.lootMenu()

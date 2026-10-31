@@ -39,6 +39,7 @@ type Engine struct {
 	tempSel   *Character  // selectTemp: selected but not in the party
 	RandSeed  uint32      // DS:4428, Turbo Pascal RandSeed
 	FixedSeed *uint32     // if set, Randomize uses it instead of the clock (POR_SEED)
+	Dasp      atomic.Bool // extra: the Dubtrain sound pack's effects (dasp.go), the Esc menu's "DASP Sfx"
 	Deskew    atomic.Bool // extra: dungeon combat maps on a square grid instead of the original's skewed perspective (combatsetup.go); read at each fight's setup
 
 	font  []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph
@@ -174,7 +175,7 @@ func (e *Engine) Dice(n, sides int) int {
 const (
 	DOSDir    = "dos"    // the DOS game files the engine reads (*.DAX, ITEMS, POOL.CFG)
 	AmigaDir  = "amiga"  // the Amiga graphics and sound, converted from its disks
-	AssetsDir = "assets" // generic assets: fonts/, speech/
+	AssetsDir = "assets" // generic assets: fonts/, speech/, dasp/
 	SaveDir   = "save"   // what the game writes: the saves, FONT.CFG, MAPNOTES.TXT
 )
 
