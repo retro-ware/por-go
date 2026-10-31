@@ -695,9 +695,11 @@ func (e *Engine) placeOne(idx int) bool {
 			n++
 		}
 		out := x < 0 || y < 0 || x > 0xA || y > 5
-		// A row that starts off the block ends the team too (extra: the original only
-		// stopped at a corner of it, off both ways, and when every slot of the team was
-		// taken the rows ran on off one side for ever: a hang).
+		// A row that starts off the block ends the team too (extra): a row whose first
+		// square is off is skipped, and the rows only move further off along the same
+		// line, so no slot is left. The original only stopped at a corner, off both
+		// ways, which its slanted rows always reach; Deskew's rows run straight along
+		// one axis and never do: with every slot taken they ran off for ever (a hang).
 		edge := out && (formationEdge(x, y) || x == bx && y == by)
 		if state > 1 {
 			full := out && !edge
