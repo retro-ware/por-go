@@ -46,10 +46,11 @@ func journalRefs(s string) []string {
 	return t
 }
 
-// loadJournal reads JOURNAL.TXT: "[Title]" starts a text, a blank line a
-// paragraph, "<FILE.PNG>" a picture, "#" lines are comments.
-func loadJournal() map[string][]string {
-	b, _ := journalFS.ReadFile("journal/JOURNAL.TXT")
+// loadJournal reads journal/name (JOURNAL.TXT, HISTORY.TXT): "[Title]"
+// starts a text, a blank line a paragraph, "<FILE.PNG>" a picture, "#"
+// lines are comments.
+func loadJournal(name string) map[string][]string {
+	b, _ := journalFS.ReadFile("journal/" + name)
 	j := map[string][]string{}
 	var title string
 	for _, l := range strings.Split(strings.ReplaceAll(string(b), "\r", ""), "\n") {
@@ -80,7 +81,7 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 	newRefs := refs[e.ext.refsShown:]
 	e.ext.refsShown = len(refs)
 	if lines := journalLines(newRefs); len(lines) > 0 {
-		e.showJournal(lines)
+		e.showJournal(journalBox, lines)
 	}
 }
 
@@ -88,7 +89,13 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 // a title (a blank line under it), "\x01" a picture and "\x02" the rows it
 // covers.
 func journalLines(titles []string) []string {
-	j := loadJournal()
+	return journalLayout(loadJournal("JOURNAL.TXT"), titles, false)
+}
+
+// journalLayout is journalLines for the texts of j; voiced marks each
+// paragraph's first line "\x03key\x03" with its own recording's key (the
+// pager speaks it on the page where it starts, and keeps it on one page).
+func journalLayout(j map[string][]string, titles []string, voiced bool) []string {
 	var lines []string
 	for _, t := range titles {
 		paras, ok := j[t]
@@ -116,6 +123,13 @@ func journalLines(titles []string) []string {
 			default:
 				lines = append(lines, wrapText(p, jrWidth)...)
 			}
+			if voiced && p != "" {
+				for i := len(lines) - 1; i >= 0 && lines[i] != ""; i-- {
+					if i == 0 || lines[i-1] == "" {
+						lines[i] = "\x03" + voiceKey(p) + "\x03" + lines[i]
+					}
+				}
+			}
 		}
 	}
 	return lines
@@ -125,8 +139,9 @@ func journalLines(titles []string) []string {
 // row jrTop (under the journal's title and a blank row) to two rows above
 // the "press a key" line (messageRow); a taller page holds more lines.
 const (
-	jrWidth = 0x24
-	jrTop   = 3
+	journalBox = "Adventurer's Journal"
+	jrWidth    = 0x24
+	jrTop      = 3
 )
 
 func jrRows() int { return messageRow - 1 - jrTop }
@@ -156,8 +171,9 @@ func wrapText(s string, w int) []string {
 // showJournal pages through lines ("\x00" marks a title) until the last
 // page or Esc, then puts the screen back. On a page with a tall picture,
 // Up and Down (and the wheel) scroll it. The box is the whole page; a
-// resize pages the text again for the new height.
-func (e *Engine) showJournal(lines []string) {
+// resize pages the text again for the new height. box is the border's
+// title.
+func (e *Engine) showJournal(box string, lines []string) {
 	off := e.modalOn()
 	e.ext.paging = true
 	defer func() { off(); e.ext.paging = false }()
@@ -172,13 +188,17 @@ func (e *Engine) showJournal(lines []string) {
 	})()
 	draw = func(p, off int) (maxOff int) {
 		e.setOverlays(nil)
-		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Adventurer's Journal") // the border runs round the page
+		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, box) // the border runs round the page
 		page := pages[p]
 		for i, l := range page {
 			switch {
 			case strings.HasPrefix(l, "\x00"):
 				e.DisplayString(2, jrTop+i, colYellow, l[1:])
 				e.speak(strings.ReplaceAll(l[1:], " ", "_")) // per page: the Enter that turns it silences the last one
+			case strings.HasPrefix(l, "\x03"):
+				key, text, _ := strings.Cut(l[1:], "\x03")
+				e.DisplayString(2, jrTop+i, colWhite, text)
+				e.speak(key) // the paragraphs that start on this page, in order
 			case strings.HasPrefix(l, "\x01"):
 				maxOff = max(maxOff, e.drawPicture(journalPicture(l[1:]), 2*8+jrWidth*4, (jrTop+i)*8, pictureRows(page[i:])*8, off))
 			case l != "\x02":
@@ -246,6 +266,15 @@ func journalPages(lines []string) [][]string {
 			}
 		}
 		n := min(jrRows(), len(lines))
+		if n < len(lines) && lines[n] != "" { // a voiced paragraph is not split, unless it fills the page
+			k := n - 1
+			for k > 0 && lines[k] != "" && !strings.HasPrefix(lines[k], "\x03") {
+				k--
+			}
+			if k > 0 && strings.HasPrefix(lines[k], "\x03") {
+				n = k
+			}
+		}
 		for n < len(lines) && n > 1 && lines[n] == "\x02" { // back to the picture's first row
 			n--
 		}

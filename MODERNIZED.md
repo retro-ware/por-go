@@ -990,6 +990,11 @@ is offline, free and reproducible.
   `<FILE.PNG>` is a picture, `#` a comment); what is spoken is
   `title + ".\n" + the paragraphs`. 99 texts (58 entries, the proclamations,
   23 tales).
+- **Rolf's history** (`engine/journal/HISTORY.TXT`): each chapter title is
+  keyed by name as the journal's, each paragraph by the hash of its text
+  (`journalLayout` with voiced on); the pager speaks the paragraphs that
+  start on a page and never splits one across pages, so a page turn (which
+  silences) never cuts one off.
 - **Text normalisation for speech** (`render.py spoken()`, script texts
   only): an all-capitals text is lower-cased, then a capital restored at the
   start, after `. ! ?` plus whitespace and after an opening quote, and a
@@ -1099,7 +1104,11 @@ when `eclPC` reaches that label the Go function runs instead and sets
 "TavernGamble"}` (a gold wager on the party purse, house limit 5000 gold in
 place of 1000 platinum; a d10: 8–9 green wins, 3–7 blue returns the wager,
 0–2 red loses it) and `{0, "TavernTale"}` (the tale is shown and voiced at
-once, the "YOU OVERHEAR TAVERN TALE n" line and its wait are gone).
+once, the "YOU OVERHEAR TAVERN TALE n" line and its wait are gone). `{0,
+"PhlanHistory1"}`..`6` show a chapter of Rolf's history of Phlan
+(`engine/history.go`, the text in `engine/journal/HISTORY.TXT`) and go
+back to his menu; Rolf's `RolfEvent` at 2,2 in `area0.txt` is the one
+event added to a script.
 
 ---
 

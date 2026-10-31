@@ -16,8 +16,14 @@ type scriptAt struct {
 }
 
 var nativeScripts = map[scriptAt]func(*Engine){
-	{0, "TavernGamble"}: (*Engine).tavernGamble,
-	{0, "TavernTale"}:   (*Engine).tavernTale,
+	{0, "TavernGamble"}:  (*Engine).tavernGamble,
+	{0, "TavernTale"}:    (*Engine).tavernTale,
+	{0, "PhlanHistory1"}: func(e *Engine) { e.phlanHistory(0) },
+	{0, "PhlanHistory2"}: func(e *Engine) { e.phlanHistory(1) },
+	{0, "PhlanHistory3"}: func(e *Engine) { e.phlanHistory(2) },
+	{0, "PhlanHistory4"}: func(e *Engine) { e.phlanHistory(3) },
+	{0, "PhlanHistory5"}: func(e *Engine) { e.phlanHistory(4) },
+	{0, "PhlanHistory6"}: func(e *Engine) { e.phlanHistory(5) },
 }
 
 func (e *Engine) nativeScript() func(*Engine) { return e.native[e.eclPC] }
@@ -99,7 +105,7 @@ func tavernSpin(gold, wager uint32, r int) (uint32, string) {
 func (e *Engine) tavernTale() {
 	n := e.Random(22) + 1
 	e.scriptText(true, "")
-	e.showJournal(journalLines([]string{"Tavern Tale " + strconv.Itoa(n)}))
+	e.showJournal(journalBox, journalLines([]string{"Tavern Tale " + strconv.Itoa(n)}))
 	if e.Random(3) == 1 {
 		e.eclPC = e.scriptLabel("DrunkenBrawl")
 		return

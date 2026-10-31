@@ -1,0 +1,137 @@
+# A History of Phlan and the Moonsea Reaches, by Jeff Grubb (the
+# Adventurer's Journal), told by Rolf in New Phlan (area 0, RolfEvent;
+# engine/history.go). Same format as JOURNAL.TXT; each paragraph is voiced
+# on its own (voice/render.py), so a paragraph must fit one page of the
+# 40x25 pager (19 lines of 36 characters).
+
+[The Moonsea Reaches]
+A discourse on this area and its problems, by Jeff Grubb.
+
+To most inhabitants of the lands of the Inner Sea, the Moonsea and its cities represent the border between civilization and barbarism. The Moonsea sits like a great plug straddling the territory between the Mountains of Vaasa and the Nomad Steppes, protecting the southern territories from the incursions of savage Northerners.
+
+To the south of the Moonsea lie the civilized lands of Cormyr and Sembia. To the north lie hundreds of square miles of cold and unforgiving waste. Even when the southern kingdoms are themselves besieged by orcish hordes, dragons, and fell monsters, they take comfort in the fact that "It's worse around the Moonsea."
+
+The Moonsea Reaches are defined by sages as being those lands bordering on the Moonsea and its major contributing rivers. These major rivers are the Tesh, flowing past the shadowed battlements of Zhentil Keep; the Wyrmflow, a cold stream flowing from the east; the Duathamper, also called the Evenflow, beginning deep in the heart of the Elven Court and flowing north; and the Barren River, which flows out of the Dragonspine Mountains and into Phlan. The River Lis carries the waters from the Moonsea south to the Inner Sea.
+
+The Moonsea itself is an odd combination of abyssal deep spots, ship-ripping shoals, and rich fresh-water reefs. Despite this, travel across the Moonsea is generally safer than making the journey on land, so most of the major merchant activity is by water.
+
+This is not to say that the Moonsea is without dangers. While monsters are less frequent along the Moonsea, those that exist are generally more powerful than their landed cousins. Regions of the Moonsea are recorded as being haunted, and there have been numerous sightings of ghost ships.
+
+[The Ancient City of Phlan]
+Phlan was the first great city of the Moonsea, reaching its peak some thousand years ago. In those days, the Moonsea was better known as the Dragon Sea, named for the large numbers of great wyrms that inhabited that area and the regions to the north. The Barren River was then called the Stojanow, a dwarvish word meaning "Trade Route," for it was down this passage that the ore-laden barges floated, bound for the south.
+
+Early Phlan was a trading outpost on the north shore of the Moonsea, set up to facilitate trade between the elves of Myth Drannor (the most powerful elven capital of the time) and the tribes of Thar, Vaasa, and the Ride, as well as the Dragonspine dwarves.
+
+Trade between the powerful elves, the wild humans, and the merchant-dwarves was a great success for all sides. Soon Phlan was the most powerful city on the Moonsea, outshining its only rival, the Elven Docks of Hillsfar, on the south coast.
+
+At this time, the elves planted the Quivering Forest north of the city. This copse was mildly enchanted, hastening the growing season to produce a great wood in the span of a human generation. Though the wood has been felled on a number of occasions, it has always returned to its original form, becoming a light wood within two years, and a deep, shadow-filled forest by the end of a man's life.
+
+The elves, the legend says, first discovered the Pool of Radiance. Its description has varied through the passage of the years. Many wise sages have declared it a myth and a con-man's gambit. The location of the Pool changes from tale to tale. Sometimes it is deep in the heart of an eternal wood, sometimes on an island circled by great wyrms, and sometimes in the heart of a huge solitary peak that rises above all others in the Dragonspine Mountains.
+
+It is said that the Pool glows with its own energy. Those who approach it feel new power within their bones, while an unreal melody holds them in a rapture. Legends say that the Pool's power created the Quivering Forest and caused the Sorcerer's Isle to appear.
+
+The Pool is said to bring great power to the worthy, and death most horrible to the unworthy. Some tales say that one should drink it, bathe in it, or throw coins into it and wish. There are numerous folk tales of the wise fool stumbling upon the Pool, and gaining wondrous power or meeting a gory end.
+
+The abilities of the Pool change according to the needs of the tale-spinner. In any event, a trader or adventurer who encounters a sudden windfall or great riches is said to have "visited the Pool."
+
+Whether the Pool is real or some literary invention, the First City of Phlan (also called Archaic Phlan) survived in peace for many generations of men. In the end, outside influences brought about its downfall. Settlers began to intrude from the lands of Cormyr and Sembia into the south of the Elven Court. At the same time, the beast-men of Thar, which today are called ogres, began gathering into large hordes, ravaging the countryside.
+
+Phlan built mighty walls and withstood a decade of constant invasion. In the end, its fate was sealed by the elves withdrawing within the Court and the dwarves pulling back into the western reaches of the Dragonspine Mountains.
+
+With its trading lifeline cut, Phlan fell into disrepair. When the Black Horde finally demolished the city walls in the Year of the Tusk (112 Dale Reckoning), they found little but an empty husk. The greatness that was Ancient Phlan had passed.
+
+[Greathammer & the First Rebirth]
+Phlan remained relatively uninhabited for the next 500 years. The city's position at the mouth of the Stojanow did make it a useful meeting place for traders. Twice during this period a pirate community grew on the ruins of Phlan. The first time they were burned out by a navy sailing from Mulmaster. The second time a group known as the Red Horde, led by a red dragon of incredible age, leveled the community. Following this attack, buccaneers never regained their power in the Moonsea (though small bands still persist).
+
+With time, the civilizations of man moved further north, the greater beasts retreated, and many cities were founded on the shores of the Moonsea. Yet the beasts did not retreat far. Dragons nested in the Dragonspine Mountains, ogres raided from the Great Grey Land of Thar, and horrible undead things lingered in the swamps and in the passes through to Vaasa.
+
+Hillsfar retained its elven ties and flourished even as Phlan's power was deteriorating, growing from a small town into a large, prosperous city. The foundations of Zhentil Keep and Mulmaster were laid while Phlan lay in ruins. Small towns such as Melvaunt, Thentia, and Elmwood were started during this period. The inland city of Yulash, situated atop a great mount that dominates the southwestern corner of the lake, rose to the zenith of its power during this time.
+
+In 712 DR, the Year of the Moon's Tears, Milsor the Valjevo, founder of the Valjevo Dynasty, journeyed to Phlan to re-establish the city as a trading outpost. He was aided in his task by the wizard Rimon and the priestess Alonius of Tyr.
+
+Milsor, Rimon, and Alonius gathered together interested adventurers and cleansed the city of the evil orcs and goblins that had made it their lair. They cleared the banks of the Stojanow and drove the arch-lich Zanakar from the Sorcerer's Island in the center of Lake Kuto. In return for his efforts, Rimon was given the Sorcerer's Island as his home. Alonius, in turn, was given a wide area in the recovered regions of Phlan as a temple to Tyr, the god of justice.
+
+By 750 DR the temple complex had been finished. In its day, it was said to be the largest temple of good in the entire North. The city as well had recovered, and large numbers of immigrants arrived. Some were natives of other Moonsea cities seeking to make or expand their fortunes in the new lands. But others arrived as well, including men of the Dalelands and Sembians, as well as farmers and lumbermen, intent on making the region their home.
+
+The newcomers built on the ruins of the old city, often not checking what lay beneath their foundations. Some curious souls reported great, twisting passages leading far beneath the earth. Exploring such areas was first discouraged. It was later outlawed after a party of adventurers freed an extremely large beholder. The newcomers, led by Valjevo and his heirs, closed off the passages, choosing to ignore the past and seeking only the future for their city.
+
+The dalesmen spread up the Stojanow River. They diverted the river's flow and turned the rocky terrain into a rich landscape of fields and orchards. The reach of the farmlands extended from Lake Kuto to the city of Phlan at the mouth of the river.
+
+Some say the land was so rich because of the proximity of the enchanted Quivering Forest. Others ascribe the bounty to the wizardries of Rimon. Still others credit the series of dikes and levees that the farmers, aided by magical spells, used to harness the river itself.
+
+Whatever the cause, the healthy harvests of the Stojanow River Valley provided Phlan with a solid trading base. For the next 200 years Phlan was the center of trade around the Moonsea. Its grains, fruits, and tubers filled vaults from Mulmaster to Zhentil Keep. It appeared that civilization, after a false start, had finally gained a major foothold in the lands north of the Moonsea.
+
+Such was not to be the case, for the forces of good and evil ebb and flow like the shores of the Moonsea itself. In the 195th year of Phlan (907 DR), the golden age ended in rust. A plant rust, which affected most of the farmlands around Phlan, destroyed the harvests for the next three years. Suddenly the Moonsea Reaches were in the grip of a powerful famine, relieved at great cost with shipments from the south. There was great suffering, and other cities, once so enamored of Phlan's gentle power, were resentful that it had failed.
+
+The native Phlanars were resentful as well. Their once-good rulers had fallen into sloth and ease in the centuries since the reestablishment of the city. The Valjevo blood was said to run thin in the Princes and Princesses of Phlan.
+
+They reacted to the plague infesting the grain by first ignoring it, then setting up committees, and finally legislating it out of existence. Only when the magnitude of the problem became clear did they act. Even then they failed their people, overreacting to the point of placing a ban on all shipments out of the city, seeking to keep what supplies were left for the native population.
+
+The other cities, already angry with Phlan for its rising prices in the face of the plague, rebelled against this new measure. Fleets from Mulmaster and Hillsfar began to raid cargoes destined for the city. Smugglers operated out of the Twilight Marsh and Stormy Bay despite official attempts to enforce the ban on shipments.
+
+A large land force equipped with siege machinery set out from Zhentil Keep toward Phlan. The force encamped at Stormy Bay while the ruling heads of Phlan negotiated to spare the city. In the end, the Keeper force was turned back through a massive payment to its leaders. These leaders were the first appearance in Phlan's records of the Zhentarim, who would increase in power over the next 300 years.
+
+During this activity, Rimon, now old in the ways that only wizards can be old, disappeared from his rocky abode. What became of Rimon is unknown, for the rulers of Phlan had not sought his counsel for a generation. Some say he became a lich himself, using the methods discovered by Zanakar. Others say that he sacrificed himself in battle on a far-distant plane in order to save the lands of Phlan.
+
+Still others state that he had found the Pool of Radiance and became a great and powerful being in some other part of the Realms. Most likely Rimon merely fell prey to the effects of old age, as all mortals do. Whatever the cause, Rimon was never seen again in the Realms, and his citadel became a haunted, abandoned ruin within a decade.
+
+The Famine of the Red Plants passed after three seasons, and an abundant harvest returned to Phlan. But the harvests were never to be as great as before, nor the fruit from the orchards as sweet. Whatever magic, true or imagined, had reestablished Phlan passed. The city began to become gray and ordinary, losing power to the Keepers and the men of Mulmaster. The golden age was over.
+
+The Valjevo Princes, their blood thin indeed, continued for another century. The century was filled with petty wars between the various city-states. No longer the leading city of the Moonsea, Phlan battled with its rivals more often. Piracy, or rather privateering, was on the rise, a situation that continues to this day among the city-states.
+
+Phlan was wracked by internal torments as well. The people of the city were well aware of their loss of power and prestige. Farms north of Phlan were now being abandoned. Dark shadows lurked between the massive trunks of the trees in the Quivering Forest. An attempt to clear a path through that growth in 1023 DR resulted in the death of the last surviving Great Prince of the Valjevo family.
+
+The death of the Great Prince resulted in a three-year civil war within the city, as various factions supported different candidates to take the mantle of the Great Prince. All the candidates' claims upon the royal blood were questionable, and every faction sought to control Phlan's future by placing its choice on the throne. During this time, the great temple of Tyr was looted and burned, leaving only a great blackened shell. Many of the leading merchant families fled to other climes.
+
+In the end, the last survivor was a young noble supported by a group of powerful merchants. They created the first Council of Phlan to act as regents for the youth. The Council spoiled the child, who grew into a spoiled man who was unable and unwilling to take the reins of power. He died without issue forty years later, and the Council has ruled ever since.
+
+[The Fall of Phlan]
+The last 300 years of Phlan have been a continual retreat from the greatness that once was. Smaller rural towns were abandoned in the face of increasing evil to the north. Sorcerer's Isle was said to be inhabited again by fell powers.
+
+The city fell back upon that which it did so well so long ago: trading. It began to serve again as the middleman between the new, powerful Northern tribes and the established nations of the South. For a short time, about a hundred years ago, the awful tide of retreat seemed to be halted, and the city was on its way to becoming a prosperous trading town once more.
+
+Yet dark things continued to lurk on the borders of Phlan. Sorcerer's Island was said to be inhabited by Yarash, an evil mage who was said to be seeking Rimon's power, the arch-lich's magic, the Pool of Radiance, or all three. The greatly diminished Dwarven Nations of the Dragonspine reported great hordes of orcs and ogres attacking their citadels, and their barge trade came to a complete halt. Small towns and hamlets were raided and burned with increasing regularity, sending refugees to Phlan seeking passage to safer lands.
+
+Then disaster struck. Raiders from the north, aided by dragons and other dangerous creatures, poured down out of the northlands. The Quivering Forest was burned in a massive fire that dominated the sky for a month. Monstrous hordes containing every imaginable creature marched with horrifying precision toward the city.
+
+The Council debated, argued, and debated again while the hordes drew nearer, much as the last Valjevo Princes did in their long-ago folly. Finally they chose to fight, but were overwhelmed by the forces of orc and dragon. Phlan burned and fell to the forces of evil, who looted and pillaged that which remained.
+
+The last remnants of the Council stood their ground, trying to evacuate as many citizens as possible. Of the council members, the Last Priest of Tyr, Ferran Martinez, held the last garrison, Sokal Keep, which stood at the mouth of the Barren River. It is said that Ferran placed a terrible curse upon the Keep to prevent anyone from taking it.
+
+In the end, even the waters of the Stojanow turned poisonous and murky, and the river took its present name, the Barren. The rich farmlands of the Stojanow River Valley were laid waste and became known as the Scoured Lands.
+
+[The Reemergence of Phlan]
+That should have been the end of Phlan's story, but it is not so. Men remember the tales of Valjevo, who brought the first city of Phlan back from its ruins. Adventurers, smugglers, and small traders visited the region and brought back tales of Phlan under the control of its evil masters.
+
+Many of the buildings were burned, but many others were spared. The shell of the temple of Tyr had been rebuilt, dedicated to some darker, more evil god. Zhentarim spies and agents of dark Vaasan nobles met and planned in Phlan, and the riches of the ages still survived for those who sought to look.
+
+In time, more modest men returned to Phlan to rebuild her. A stockaded community rose from among the rubble of the past glories. These men intended to engage in the same profession as those before them, for Phlan still occupied a prime position for trading on the Moonsea. However, until the city was cleared, the Barren River made clean, and the competing city-states pacified, Phlan was likely to stay in impoverished ruins.
+
+Two years ago, in the Year of the Worm, two things happened that would change Phlan's future. First was the Flight of the Dragons that surged through the northern regions of the lands of the Inner Sea. Due to a cause unknown, great wyrms came down from the far north, destroying all in their path. These are not the rare, opportunistic dragons seeking alliance with humanoid tribes, but rather huge waves of angry scaled monsters, bringing destruction wherever they travel.
+
+Many of the Moonsea towns and Daletowns suffered great destruction in the battles that followed. Yulash was utterly ruined by the attack, and Hillsfar was greatly damaged. The most telling blow was delivered by the body of a great dragon that fell into the Hillsfar harbor, blocking that entrance for a month.
+
+Much of Phlan was also smashed into a smoking ruin by these beasts. Strangely, this worked in the favor of the men who lived there. Most of the damage was taken in the already-ruined section of the city, where various evil warlords vied for control and riches. The attack of the dragons broke their power, creating a vacuum in the control of the city and giving the men of Phlan a chance to re-establish themselves and their homes.
+
+Yet this would not occur without leaders, and the reappearance of the Council of Phlan was the second great thing to occur in the city. Descendants of the last Council had survived all the turmoil, and many families wished to return to the land. These leaders were no great mages or wondrous fighters, but traders, merchants, and clerics.
+
+Their leaders, who remain to this day, were the shrewd and powerful trader Ulrich Eberhard, the retired mercenary captain Werner von Urslingen, and Bishop Braccio of Tyr. They have been joined by their junior member, Porphyrys of the ancient House Cadorna.
+
+Together the Council has proposed exactly what Valjevo accomplished so long ago: clearing the city by means of recruited adventurers. The promise of great treasure and the myth of the Pool of Radiance provided adventurers with an irresistible draw. The Council published notices and paid traveling bards to make sure that the story of Phlan's waiting riches was spread all around the Moonsea and beyond.
+
+[Phlan Today]
+The city of Phlan, built on ruins upon ruins, is a city at war. It is divided between the human forces of the Council and those evil forces that hold a great deal of the city under their sway.
+
+The human territories of Phlan are nestled behind a strong stockade of stone quarried from the ruins and trees lumbered from the Quivering Forest. A substantial city guard patrols the openings in the walls at all hours, always ready to repel any attacks by the old city's evil inhabitants.
+
+The buildings of rebuilt Phlan are sturdy and utilitarian, with little of the splendor of the ancient past. The glories of the past shine through in an ancient column now used to support a stable's wooden roof, or a faded fresco overlooking an adventurers' taproom. The past is always with the inhabitants of Phlan, reminding them of what once was and could yet be again.
+
+The natives of Phlan are a mixed group, including descendants of the families of Valjevo's day and returnees who seek to reclaim lands and treasure lost to the dragon horde fifty years ago. The city is also filled with adventurers seeking new fortunes and traders hoping to reestablish the old trading lines.
+
+Orcs and other generally evil humanoids are viewed with alarm within the city, though evil humans come and go unmolested with the ships. It is said that spies from the other cities of the Moonsea make regular calls with the ships, overseeing the progress of the Council in re-establishing the city. If the Council is too successful, some say, then sabotage may be in order to prevent Phlan from returning to its former power.
+
+The lands beyond the civilized stockade are wild ruins controlled by whatever local faction or tribe holds that piece of land. Control lasts only as long as the reach of claw or sword. Petty bands of orcs, goblins, and men vie for power, some led by more sinister monsters.
+
+Much of Phlan's ruined greatness can be found in the Old City. The main sights include the forgotten riches of the wealthy old nobles' houses; Podol Plaza, the center of the old trading district; and the Old Temple, now dedicated to the dark god Bane. Valjevo Castle has been refortified and is being used as a headquarters by one faction leader or another.
+
+Phlan remains now, as it has ever been, a city with the greatest of potential. In the cycles of its rise and fall, legends have arisen before. In engineering New Phlan's renaissance, new legends are sure to emerge.

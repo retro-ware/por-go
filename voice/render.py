@@ -4,7 +4,8 @@
 
 Kokoro-82M (mlx-community/Kokoro-82M-bf16), voice am_michael. Keys: the
 script texts of voice/lines.txt by FNV-64a hash (as voiceKey), the journal
-texts by title ("Journal_Entry_26"). Files already rendered are kept: delete
+texts by title ("Journal_Entry_26"), Rolf's history (HISTORY.TXT) by chapter
+title and paragraph hash. Files already rendered are kept: delete
 one to render it again. Needs ffmpeg with libmp3lame.
 """
 import re, subprocess, sys, tempfile, wave
@@ -49,10 +50,23 @@ def texts():
             paras.append(l)
 
 
+def history():
+    """engine/journal/HISTORY.TXT (Rolf's history of Phlan): each chapter's
+    title by name, as the journal's, each paragraph by its hash."""
+    for l in (ROOT / 'engine/journal/HISTORY.TXT').read_text().splitlines():
+        l = l.strip()
+        if not l or l.startswith('#'):
+            continue
+        if l.startswith('[') and l.endswith(']'):
+            yield l[1:-1].replace(' ', '_'), l[1:-1].replace('&', 'and') + '.'
+        else:
+            yield key(l), l
+
+
 def main():
     out = Path(sys.argv[1]) / 'SPEECH'
     out.mkdir(parents=True, exist_ok=True)
-    todo = [(k, t) for k, t in texts() if not (out / (k + '.mp3')).exists()]
+    todo = [(k, t) for k, t in [*texts(), *history()] if not (out / (k + '.mp3')).exists()]
     model = load_model('mlx-community/Kokoro-82M-bf16')
     for i, (k, t) in enumerate(todo, 1):
         audio = np.concatenate([np.array(r.audio) for r in model.generate(t, voice='am_michael', lang_code='a', speed=1.0)])

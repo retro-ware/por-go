@@ -37,6 +37,7 @@ on step {
     Portrait = None
     Scratch10 = ~Inside & Cell
     if TourDone < 1 { exit }
+    if PartyX == 2 and PartyY == 2 { goto RolfEvent } # (extra) Rolf tells the history of Phlan
     PartyMemberFound = 0
     Scratch1 = Random(19)
     if Scratch1 == 19 {
@@ -609,6 +610,48 @@ def YesNoMenu() {
     Scratch1 = Menu("YES", "NO")
     return
 }
+
+# (extra) Rolf, the tour guide, after the tour: the Adventurer's Journal's
+# history of Phlan, a chapter at a time (engine/history.go).
+RolfEvent:
+    ShowPortrait(GrinningBlond, ShopkeeperApron)
+    Text("ROLF, THE COUNCIL'S GUIDE, SMILES AS YOU APPROACH. 'WELL MET AGAIN, FRIENDS. WHAT CAN I DO FOR YOU?'")
+    Scratch1 = Menu("ASK ABOUT PHLAN", "LEAVE")
+    goto [RolfHistory, RolfLeave][Scratch1]
+    goto RolfLeave
+
+RolfHistory:
+    Text("'PHLAN HAS RISEN AND FALLEN MORE THAN ONCE. WHAT WOULD YOU HEAR ABOUT?'")
+    Scratch1 = VMenu("ASK ABOUT", "THE MOONSEA REACHES", "THE ANCIENT CITY OF PHLAN",
+        "GREATHAMMER AND THE FIRST REBIRTH", "THE FALL OF PHLAN", "THE REEMERGENCE OF PHLAN",
+        "PHLAN TODAY", "NOTHING MORE")
+    goto [PhlanHistory1, PhlanHistory2, PhlanHistory3, PhlanHistory4, PhlanHistory5,
+        PhlanHistory6, RolfLeave][Scratch1]
+    goto RolfLeave
+
+PhlanHistory1:
+    # engine/history.go phlanHistory runs here (and at PhlanHistory2..6): the chapter in the pager, then back to RolfHistory
+    exit
+
+PhlanHistory2:
+    exit
+
+PhlanHistory3:
+    exit
+
+PhlanHistory4:
+    exit
+
+PhlanHistory5:
+    exit
+
+PhlanHistory6:
+    exit
+
+RolfLeave:
+    Text("'FAREWELL, AND MAY TYMORA SMILE ON YOU.'")
+    Portrait = None
+    goto ResetVisits
 
 ResetVisits:
     TrainerVisited = 0
