@@ -640,7 +640,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bottom int, busy bool) {
 	inv := &p.inv
 
-	oy := max(0, (bottom-84-inv.doll.Bounds().Dy())/3) // the portrait and doll down the box, a little above its middle
+	oy := max(0, bottom-84-inv.doll.Bounds().Dy()-4) // the portrait and doll on the box's bottom, away from the name and up to three classes
 	if in.Member >= 0 && in.Member < len(v.Party) {
 		m := v.Party[in.Member]
 		inv.text(m.Name, lx+(lw-8*len(m.Name))/2, 8, white)
