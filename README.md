@@ -48,6 +48,16 @@ feels to play:
 - **Amiga art and music** from the Amiga disks, if you have them, and a
   choice of fonts and a resizable, fullscreen-capable window.
 
+## Screenshots
+
+![The title screen](docs/screenshots/title.png)
+
+![Walking Phlan's streets in the 3D view, with the minimap and the party's portraits](docs/screenshots/3d-view.png)
+
+![A battle on the 3D board, with the action bar](docs/screenshots/battle.png)
+
+![The party inventory, with the paper doll and an item's tooltip](docs/screenshots/inventory.png)
+
 No game data is included. The engine reads the original game files (the
 `.DAX` files, `ITEMS`) from your own copy of the game at run time. The rule
 tables of `START.EXE` (races, classes, experience, spells ...) live in
