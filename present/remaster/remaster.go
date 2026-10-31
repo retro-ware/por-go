@@ -215,7 +215,7 @@ func (p *Presenter) cast(i int) {
 func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
 	p.command = v.Exploring
-	if v.Camp != nil && p.shownView.Camp == nil { // camp starts on its main screen
+	if screenUp(v) && !screenUp(p.shownView) { // camp, the temple, the shop, training start on their main screen
 		p.camp.screen, p.camp.sel = campMain, 0
 	}
 	if v.List != nil && p.shownView.List == nil { // a list opens at its first line
@@ -375,7 +375,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	} else if v.List != nil && v.Menu != nil { // a list and its question (list.go)
 		p.menu = false
 		p.drawList(dst, note.Glyph, v, mk, cx, max(b.Dy()/2-int(mk*float64(min(len(v.List), listRows)+len(v.Menu.Items)+6)*4), picBottom+int(pk*4)))
-	} else if v.Camp != nil && v.Menu == nil && v.SpellPick == nil { // camp (camp.go)
+	} else if screenUp(v) && v.SpellPick == nil { // camp (camp.go), the temple, the shop, training
 		p.menu = false
 		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)))
 	} else if v.Exploring && p.menu { // the command menu (explore.go)
@@ -487,7 +487,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.view.OptionsOpen() {
 		return true
 	}
-	if v.Camp != nil && v.Menu == nil {
+	if screenUp(v) {
 		return p.campKey(k, v)
 	}
 	if v.Exploring {
@@ -603,7 +603,7 @@ func (p *Presenter) Click(x, y int) bool {
 				return true
 			}
 		}
-		if v := p.shownView; v.Camp != nil && v.Menu == nil && p.active && !p.view.OptionsOpen() {
+		if v := p.shownView; screenUp(v) && p.active && !p.view.OptionsOpen() {
 			for i, r := range p.menuRects {
 				if image.Pt(x, y).In(r) {
 					p.campPick(v, i)

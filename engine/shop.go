@@ -54,7 +54,7 @@ func (e *Engine) buyItem(it *Item) (overloaded bool) {
 	return false
 }
 
-// Shop = ovr07:053E.
+// Shop = ovr07:053E: the shop takes decisions until the party leaves.
 func (e *Engine) Shop() {
 	greeting := e.cellsCopy() // extra: the merchant's greeting comes back after each redraw (the original cleared it)
 	e.beginFlag = 1
@@ -64,39 +64,68 @@ func (e *Engine) Shop() {
 	for _, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
 	}
-	const (
-		browse Choice = iota
-		appraise
-		identify
-		exit
-	)
-	menu := Bar{{"Browse", browse}, {"Appraise", appraise}, {"Identify", identify}, {"Exit", exit}} // extra: Buy renamed Browse, no View, Id spelled out
 	e.dasp("store_enter")
 	defer e.dasp("store_leave")
-	for leave := false; !leave; { // extra: no "Party money" line: it wrote over the merchant's greeting (the inventory shows the purse)
-		p := e.DisplayInput("", menu, colLightMagenta, colLightGreen, colWhite, true, false)
-		redraw := false
-		switch p.ID {
-		case browse:
-			e.shopBrowse()
-			redraw = true
-		case appraise:
-			redraw = e.Appraise()
-		case identify:
-			redraw = e.identifyMenu()
-		case exit:
-			leave = true
-		case PickMove, PickRelist:
-			if memberPick(p) {
-				e.partyKeypad(p)
-			}
-		}
+	e.await(modeShop, func(a Action) bool {
+		done, redraw := e.applyShop(a)
 		if redraw {
 			e.DrawMainScreen()
 			e.keepPane(greeting)
 		}
-		e.DisplayPartyList()
+		return done
+	})
+}
+
+// applyShop applies a decision in the shop (extra: Buy is Browse, the
+// goods beside the inventory; Id is the shop's, not the item menu's);
+// done when the party leaves.
+func (e *Engine) applyShop(a Action) (done, redraw bool) {
+	switch a.Kind {
+	case ActClose:
+		e.sellValued()
+		return true, false
+	case ActLead:
+		e.actor(a.N)
+	case ActInventory:
+		e.actor(a.N)
+		e.shopBrowse() // ponytail: the legacy inventory screen blocks; it goes with the inventory's conversion
+		return false, true
+	case ActAppraise, ActKeep:
+		e.applyAppraise(a)
+	case ActIdentify:
+		if a.N < 0 || a.N >= len(e.party) {
+			break
+		}
+		c := e.party[a.N]
+		if own := e.identifiable(a.N); a.X >= 0 && a.X < len(own) && unknown(own[a.X]) {
+			e.identifyItem(c, own[a.X])
+		}
 	}
+	return false, false
+}
+
+// identifiable is member i's items Id looks at (extra: the party
+// inventory with the first member).
+func (e *Engine) identifiable(i int) []*Item {
+	if i == 0 {
+		return e.carried(e.party[0])
+	}
+	return e.party[i].Items
+}
+
+// shopView is the shop's state for the View: the party's unknown items
+// under their owners' names, only those Id tells something about.
+func (e *Engine) shopView() *Shop {
+	v := &Shop{IDPrice: 200, Gold: int(e.purse.gold), Appraise: e.appraiseView()}
+	for i, c := range e.party {
+		for k, it := range e.identifiable(i) {
+			if unknown(it) {
+				e.ItemName(c, it, 0, 0, false, false)
+				v.Unknown = append(v.Unknown, Unknown{Member: i, Item: k, Owner: c.Name(), Name: it.Name()})
+			}
+		}
+	}
+	return v
 }
 
 // keepPane (extra) puts the text pane's cells back as they were in cells.
@@ -127,59 +156,4 @@ func unknown(it *Item) bool {
 		}
 	}
 	return false
-}
-
-// identifyMenu (extra): the shop's Id, moved out of the item menu. The
-// party's unknown items under their owners' names; only those Id tells
-// something about. Returns true when the screen needs redrawing.
-func (e *Engine) identifyMenu() bool {
-	index := 0
-	for {
-		var list []*ListNode
-		var owner []*Character
-		var item []*Item
-		for i, c := range e.party {
-			head := false
-			own := c.Items
-			if i == 0 { // extra: the party inventory, listed with the first member
-				own = e.carried(c)
-			}
-			for _, it := range own {
-				if !unknown(it) {
-					continue
-				}
-				if !head {
-					list, owner, item = append(list, &ListNode{Text: c.Name(), Flag: 1}), append(owner, nil), append(item, nil)
-					head = true
-				}
-				e.ItemName(c, it, 0, 0, false, false)
-				list, owner, item = append(list, &ListNode{Text: cut(" "+it.Name(), 0x24)}), append(owner, c), append(item, it)
-			}
-		}
-		if len(list) == 0 {
-			if index == 0 {
-				e.BottomMessage("Nothing to identify")
-				return false
-			}
-			return true
-		}
-		if index == 0 || index >= len(list) || list[index].Flag != 0 {
-			index = 1
-		}
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Identify for 200g")
-		gold := strconv.Itoa(int(e.purse.gold)) + "g" // as in the buy screen
-		e.DisplayString(winRight-len(gold), messageRow, colYellow, gold)
-		redraw := true
-		var sel *ListNode
-		const id Choice = 0
-		key := e.ListMenu("", Bar{{"Id", id}}, colLightCyan, colLightGreen, colWhite, 2, 3, 38, 22, list, true, &redraw, &index, &sel).ID
-		if key != id && key != PickEnter || sel == nil {
-			return true
-		}
-		for i, n := range list {
-			if n == sel && item[i] != nil {
-				e.identifyItem(owner[i], item[i])
-			}
-		}
-	}
 }

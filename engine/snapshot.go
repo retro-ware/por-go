@@ -91,6 +91,9 @@ type View struct {
 	Exploring bool       // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
 	CanCast   bool       // ... and the selected member has a spell to cast (ActCastPick)
 	Camp      *Camp      // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
+	Temple    *Temple    // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
+	Shop      *Shop      // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
+	Training  *Training  // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -135,6 +138,53 @@ type ListLine struct {
 type MenuItem struct {
 	Text string
 	Key  byte
+}
+
+// Temple is a temple's services for the selected member.
+type Temple struct {
+	Cures    []Cure // ActTempleCure X is the index
+	Gold     int    // the party's gold
+	Appraise Appraise
+}
+
+// Cure is a temple service.
+type Cure struct {
+	Name   string
+	Price  int    // gold
+	Needed bool   // false: Not says why, and the player is asked to pay anyway
+	Not    string // "is not blind."
+}
+
+// Appraise is the gems and jewelry to appraise (ActAppraise N 0 a gem,
+// 1 a jewel).
+type Appraise struct {
+	Gems, Jewelry int
+	Valued        int  // the gold piece value of the one appraised, to sell or keep (ActKeep N 0 sells, 1 keeps); 0: none
+	Jewel         bool // ... it is a jewel
+	CanKeep       bool // ... there is room to keep it
+}
+
+// Shop is a shop's services besides its goods (Inventory.Wares).
+type Shop struct {
+	Unknown  []Unknown // the party's items Id tells something about
+	IDPrice  int       // gold an Id costs
+	Gold     int
+	Appraise Appraise
+}
+
+// Unknown is an item to identify: ActIdentify N Member, X Item.
+type Unknown struct {
+	Member, Item int // the member and the index in its items (member 0: with the party inventory)
+	Owner, Name  string
+}
+
+// Training is the training hall's offer to the selected member.
+type Training struct {
+	Name    string
+	Why     string      // the hall refuses: why
+	Becomes []string    // "a level 3 Fighter" (ActTrain trains)
+	Price   int         // gold
+	Learn   []BookSpell // a mage level was gained: the spell for the book (ActLearn X), chosen before leaving
 }
 
 // Camp is what camp shows of the selected member and the party.
@@ -279,6 +329,16 @@ func (e *Engine) publish() {
 	}
 	if e.ext.camping && e.ext.menu == 0 {
 		v.Camp = e.campView()
+	}
+	if e.ext.menu == 0 && !s.invOn {
+		switch e.mode {
+		case modeTemple:
+			v.Temple = e.templeView()
+		case modeShop:
+			v.Shop = e.shopView()
+		case modeTraining:
+			v.Training = e.trainingView()
+		}
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering

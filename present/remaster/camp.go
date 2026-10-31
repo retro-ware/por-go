@@ -25,6 +25,13 @@ const (
 	campBestiary
 	campBeast // one bestiary entry
 	campDrop  // the drop's confirmation
+
+	templeHeal // the temple's services (temple.go)
+	templeNot  // "is not blind": cure anyway?
+	templePay  // pay for the cure?
+	appraise   // the gems and jewelry (temple and shop)
+	shopID     // the items to identify (shop.go)
+	shopDeal   // identify this one?
 )
 
 type campUI struct {
@@ -32,6 +39,7 @@ type campUI struct {
 	sel      int
 	byDanger bool   // the bestiary's order
 	beast    string // the entry shown
+	pick     int    // the temple's cure or the shop's item asked about
 	icon     *gpu.Image
 	iconSrc  image.Image
 }
@@ -43,7 +51,16 @@ type campItem struct {
 }
 
 // campItems are the lines of the camp screen up, and its title.
+// The temple, the shop and training share the camp's screens.
 func (p *Presenter) campItems(v engine.View) (string, []campItem) {
+	switch {
+	case v.Temple != nil:
+		return p.templeItems(v)
+	case v.Shop != nil:
+		return p.shopItems(v)
+	case v.Training != nil:
+		return p.trainItems(v)
+	}
 	c := &p.camp
 	cp := v.Camp
 	act := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
@@ -201,7 +218,7 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	c := &p.camp
 	_, items := p.campItems(v)
 	n := len(items)
-	spells := c.screen == campMemorize || c.screen == campScribe
+	spells := v.Camp != nil && (c.screen == campMemorize || c.screen == campScribe)
 	switch {
 	case k == 0x4800:
 		c.sel = (c.sel + n - 1) % n
@@ -209,12 +226,8 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 		c.sel = (c.sel + 1) % n
 	case k == 13 || k == ' ':
 		p.campPick(v, c.sel)
-	case k == 27 && c.screen == campMain:
-		p.send(engine.ActClose, 0)
-	case k == 27 && c.screen == campBeast:
-		c.screen = campBestiary
-	case k == 27:
-		c.screen, c.sel = campMain, 0
+	case k == 27: // the last line: Leave, Back, No
+		p.campPick(v, n-1)
 	case spells && (k == 0x4B00 || k == 8) && c.sel < n-1: // Left, Backspace: one less
 		p.campSpellAt(v, c.sel, -1)
 	case spells && k == 0x4D00 && c.sel < n-1: // Right: one more
@@ -252,4 +265,41 @@ func (p *Presenter) campPick(v engine.View, i int) {
 		p.camp.sel = i
 		items[i].do()
 	}
+}
+
+// screenUp: one of the camp-style screens is up (camp, temple, shop, training).
+func screenUp(v engine.View) bool {
+	return (v.Camp != nil || v.Temple != nil || v.Shop != nil || v.Training != nil) && v.Menu == nil
+}
+
+// sendX sends a decision with an X.
+func (p *Presenter) sendX(k engine.ActKind, n, x int) {
+	p.inv.acts = append(p.inv.acts, engine.Action{Kind: k, N: n, X: x})
+}
+
+// appraiseItems is the appraise screen; back goes to the screen before.
+func (p *Presenter) appraiseItems(a engine.Appraise, back func()) (string, []campItem) {
+	if a.Valued > 0 {
+		what := "Gem"
+		if a.Jewel {
+			what = "Jewel"
+		}
+		var it []campItem
+		if a.CanKeep {
+			it = append(it, campItem{"Keep", 'K', func() { p.send(engine.ActKeep, 1) }})
+		}
+		return fmt.Sprintf("The %s is Valued at %d gp.", what, a.Valued), append(it, campItem{"Sell", 'S', func() { p.send(engine.ActKeep, 0) }})
+	}
+	var it []campItem
+	if a.Gems > 0 {
+		it = append(it, campItem{fmt.Sprintf("Gems (%d)", a.Gems), 'G', func() { p.send(engine.ActAppraise, 0) }})
+	}
+	if a.Jewelry > 0 {
+		it = append(it, campItem{fmt.Sprintf("Jewelry (%d)", a.Jewelry), 'J', func() { p.send(engine.ActAppraise, 1) }})
+	}
+	title := "You have a fine collection of:"
+	if len(it) == 0 {
+		title = "Nothing to appraise"
+	}
+	return title, append(it, campItem{"Back", 'B', back})
 }

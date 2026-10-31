@@ -1,107 +1,128 @@
 package engine
 
 // The temple, ported from ovr05. ECL COMBAT with the temple flag (game
-// +0x5C4) set runs Temple instead of a fight.
+// +0x5C4) set runs Temple instead of a fight. The questions (not needed,
+// pay?) are the front end's: ActTempleCure comes agreed.
 
-import "strconv"
-
-// templeNotNeeded = ovr05:0013 (message): "<name> is not ..." and the
-// question whether to pay anyway.
-func (e *Engine) templeNotNeeded(msg string) bool {
-	c := e.selected()
-	e.CharMessage(c, msg, false)
-	k := e.YesNo(colLightMagenta, colLightGreen, colWhite, "cast cure anyway: ")
-	e.ClearMessageArea()
-	return k
-}
-
-// templePay = ovr05:00BF (cure, price): the price from the party's gold.
-// True when paid.
-func (e *Engine) templePay(cure string, price uint16) bool {
-	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true,
-		cut(cure+" will only cost "+strconv.Itoa(int(price))+" gold pieces.", 0xFF))
-
-	k := e.YesNo(colLightMagenta, colWhite, colLightGreen, "pay for cure ") && e.pay(uint32(price))
-	if k {
-		e.ClearMessageArea()
-		c := e.selected()
-		e.dasp("recover")
-		e.CharMessage(c, "is cured.", true)
-	}
-	return k
-}
-
-// templeCure asks "not needed" when needed is false, then for the price.
-func (e *Engine) templeCure(needed bool, notMsg, cure string, price uint16) bool {
-	return (needed || e.templeNotNeeded(notMsg)) && e.templePay(cure, price)
-}
-
-// cureBlindness = ovr05:0249.
-func (e *Engine) cureBlindness() {
-	c := e.selected()
-	if e.templeCure(e.FindAffect(c, affBlind) != nil, "is not blind.", "Cure Blindness", 1000) {
-		e.RemoveAffect(c, affBlind, nil)
-	}
+// templeCures = the services of DS:011A, their prices and the "is not"
+// messages of ovr05:0013 (none: always needed).
+var templeCures = [9]struct {
+	price uint16
+	not   string
+}{
+	{1000, "is not blind."}, {1000, "is not Diseased."}, {100, ""}, {350, ""}, {600, ""},
+	{1000, "is not poisoned."}, {5500, "is not dead."}, {3500, "is not cursed."}, {2000, "is not stoned."},
 }
 
 // diseases = DS:0114: the affects Cure Disease removes.
 var diseases = [6]affectType{affHelpless, affCauseDisease, affWeakened, affSick, affMummyDisease, affRotting}
 
-// cureDisease = ovr05:02ED.
-func (e *Engine) cureDisease() {
-	c := e.selected()
-	ill := false
-	for _, d := range diseases {
-		if e.FindAffect(c, d) != nil {
-			ill = true
+// cureNeeded: c has what cure i cures (the tests of ovr05:0249 .. 0928).
+func (e *Engine) cureNeeded(c *Character, i int) bool {
+	switch i {
+	case 0:
+		return e.FindAffect(c, affBlind) != nil
+	case 1:
+		for _, d := range diseases {
+			if e.FindAffect(c, d) != nil {
+				return true
+			}
 		}
+		return false
+	case 5:
+		return e.FindAffect(c, affPoisoned) != nil
+	case 6:
+		return c.Status == statusDead || c.Status == statusAnimated
+	case 7:
+		for _, it := range c.Items {
+			if it.Magic != 0 {
+				return true
+			}
+		}
+		return e.FindAffect(c, affBestowCurse) != nil
+	case 8:
+		return c.Status == statusStoned
 	}
-	if e.templeCure(ill, "is not Diseased.", "Cure Disease", 1000) {
+	return true
+}
+
+// templeView is the temple's state for the View.
+func (e *Engine) templeView() *Temple {
+	v := &Temple{Gold: int(e.purse.gold), Appraise: e.appraiseView()}
+	c := e.selected()
+	for i, t := range templeCures {
+		v.Cures = append(v.Cures, Cure{Name: templeServices[i+1], Price: int(t.price), Needed: c == nil || e.cureNeeded(c, i), Not: t.not})
+	}
+	return v
+}
+
+// applyTemple applies a decision in the temple; done when the party leaves.
+func (e *Engine) applyTemple(a Action) (done bool) {
+	switch a.Kind {
+	case ActClose:
+		e.sellValued()
+		return true
+	case ActLead:
+		e.actor(a.N)
+	case ActMember:
+		e.actor(a.N)
+		e.ViewCharacter() // ponytail: the legacy View screen blocks; it goes with the inventory's conversion
+		e.DrawMainScreen()
+	case ActAppraise, ActKeep:
+		e.applyAppraise(a)
+	case ActTempleCure:
+		c := e.actor(a.N)
+		if a.X < 0 || a.X >= len(templeCures) || !e.pay(uint32(templeCures[a.X].price)) { // ovr05:00BF
+			break
+		}
+		e.dasp("recover")
+		e.say(c.Name() + " is cured.")
+		e.templeCure(c, a.X)
+	}
+	return false
+}
+
+// templeCure is the work of cure i on c, paid for.
+func (e *Engine) templeCure(c *Character, i int) {
+	switch i {
+	case 0: // ovr05:0249
+		e.RemoveAffect(c, affBlind, nil)
+	case 1: // ovr05:02ED
 		e.rv.cure = 1
 		for _, d := range diseases {
 			e.RemoveAffect(c, d, nil)
 		}
 		e.rv.cure = 0
-	}
-}
-
-// cureWounds = ovr05:0401 (kind): light, serious or critical.
-func (e *Engine) cureWounds(kind int) {
-	c := e.selected()
-	switch kind {
-	case 1:
-		if e.templePay("Cure Light Wounds", 100) {
-			e.Heal(c, e.Dice(1, 8), false)
-		}
-	case 2:
-		if e.templePay("Cure Serious Wounds", 350) {
-			e.Heal(c, e.Dice(2, 8)+1, false)
-		}
+	case 2: // ovr05:0401: light, serious, critical
+		e.Heal(c, e.Dice(1, 8), false)
 	case 3:
-		if e.templePay("Cure Critical Wounds", 600) {
-			e.Heal(c, e.Dice(3, 8)+3, false)
-		}
-	}
-}
-
-// neutralizePoison = ovr05:0751.
-func (e *Engine) neutralizePoison() {
-	c := e.selected()
-	if e.templeCure(e.FindAffect(c, affPoisoned) != nil, "is not poisoned.", "Neutralize Poison", 1000) {
+		e.Heal(c, e.Dice(2, 8)+1, false)
+	case 4:
+		e.Heal(c, e.Dice(3, 8)+3, false)
+	case 5: // ovr05:0751
 		e.rv.cure = 1
 		e.RemoveAffect(c, affPoisoned, nil)
 		e.RemoveAffect(c, affSlowPoison, nil)
 		e.RemoveAffect(c, affPoisonDamage, nil)
 		e.rv.cure = 0
+	case 6:
+		e.raiseDead(c)
+	case 7: // ovr05:083A: the Remove Curse spell (ovr23:2540)
+		e.spellTarget = c
+		e.spellRemoveCurse()
+	case 8: // ovr05:0928
+		if c.Status == statusStoned {
+			c.Status = statusOkay
+			c.Okay = 1
+			c.HP = 1
+		}
 	}
 }
 
 // raiseDead = ovr05:0510: back with 1 hp and a point of constitution
 // less; the constitution bonus to the maximum hit points shrinks with it.
-func (e *Engine) raiseDead() {
-	c := e.selected()
-	dead := c.Status == statusDead || c.Status == statusAnimated
-	if !e.templeCure(dead, "is not dead.", "Raise Dead", 5500) || !dead {
+func (e *Engine) raiseDead(c *Character) {
+	if c.Status != statusDead && c.Status != statusAnimated {
 		return
 	}
 	e.rv.cure = 1
@@ -144,118 +165,19 @@ func (e *Engine) raiseDead() {
 	}
 }
 
-// removeCurse = ovr05:083A: cursed items or the curse affect; the work is
-// the Remove Curse spell (ovr23:2540) on the selected character.
-func (e *Engine) removeCurse() {
-	c := e.selected()
-	cursed := false
-	for _, it := range c.Items {
-		if it.Magic != 0 {
-			cursed = true
-			break
-		}
-	}
-	if !cursed && e.FindAffect(c, affBestowCurse) != nil {
-		cursed = true
-	}
-	if e.templeCure(cursed, "is not cursed.", "Remove Curse", 3500) {
-		e.spellTarget = c
-		e.spellRemoveCurse()
-	}
-}
-
-// stoneToFlesh = ovr05:0928.
-func (e *Engine) stoneToFlesh() {
-	c := e.selected()
-	if e.templeCure(c.Status == statusStoned, "is not stoned.", "Stone to Flesh", 2000) && c.Status == statusStoned {
-		c.Status = statusOkay
-		c.Okay = 1
-		c.HP = 1
-	}
-}
-
-// templeHeal = ovr05:09D7: the list of services (DS:011A).
-func (e *Engine) templeHeal() {
-	list := make([]*ListNode, 10)
-	for i := range list {
-		list[i] = &ListNode{Text: cut(templeServices[i+1], textCols)}
-	}
-	e.ClearBox(0, promptRow, lastCol, promptRow)
-	redraw := true
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
-	e.DrawBoxTitled(1, 1, winRight, 1, 0, colWhite, "")
-	index := 0
-	for done := false; !done; {
-		e.DisplayString(1, 1, colWhite, cut(e.selected().Name()+", how can we help you?", textCols))
-		e.DrawBoxTitled(1, msgTop, paneRight, paneBottom, 0, colWhite, "")
-		var sel *ListNode
-		const heal Choice = 0
-		e.ext.campBar = true // (extra) F1-F8 and the cards switch the member healed, as camp's bars
-		p := e.ListMenu("", Bar{{"Heal", heal}, {"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, 2, 4, 38, 15, list, false, &redraw, &index, &sel)
-		e.ext.campBar = false
-		switch p.ID {
-		case heal, PickEnter:
-			switch index {
-			case 0:
-				e.cureBlindness()
-			case 1:
-				e.cureDisease()
-			case 2, 3, 4:
-				e.cureWounds(index - 1)
-			case 5:
-				e.neutralizePoison()
-			case 6:
-				e.raiseDead()
-			case 7:
-				e.removeCurse()
-			case 8:
-				e.stoneToFlesh()
-			case 9:
-				done = true
-			}
-		case NoPick:
-			done = true
-		}
-	}
-	e.ClearBox(0, 0, lastCol, promptRow) // ovr05:0C18
-	e.DrawMainScreen()
-	e.DisplayPartyList()
-}
-
-// Temple = ovr05:0D09.
+// Temple = ovr05:0D09: the temple takes decisions until the party leaves.
 func (e *Engine) Temple() {
-	greeting := e.cellsCopy() // extra: the priests' greeting stays, no "Party money" line over it (the inventory shows the purse), as the shop
+	greeting := e.cellsCopy() // extra: the priests' greeting stays, as the shop
 	e.beginFlag = 1
 	e.DrawMainScreen()
 	e.keepPane(greeting)
 	e.DisplayPartyList()
-	for leave := false; !leave; {
-		const (
-			heal Choice = iota
-			view
-			appraise
-			exit
-		)
-		e.ext.campBar = true // (extra) F1-F8 and the cards switch the member, as camp's bars
-		p := e.DisplayInput("", Bar{{"Heal", heal}, {"View", view}, {"Appraise", appraise}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		e.ext.campBar = false
-		switch p.ID {
-		case heal:
-			e.templeHeal()
-		case view:
-			e.ViewCharacter()
-		case appraise:
-			if e.Appraise() {
-				e.DrawMainScreen()
-			}
-		case exit:
-			leave = true
-		case PickMove, PickRelist:
-			if memberPick(p) {
-				e.partyKeypad(p)
-			}
-		}
+	e.await(modeTemple, func(a Action) bool {
+		done := e.applyTemple(a)
 		e.keepPane(greeting)
-		e.DisplayPartyList()
-	}
+		return done
+	})
+	e.ClearBox(0, 0, lastCol, promptRow) // ovr05:0C18
+	e.DrawMainScreen()
+	e.DisplayPartyList()
 }

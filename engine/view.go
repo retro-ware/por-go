@@ -757,23 +757,21 @@ func sellValue(it *Item) uint32 {
 	return v
 }
 
-// identifyItem = ovr20:1F52 (item, redraw): 200 gp shows the hidden words.
-func (e *Engine) identifyItem(c *Character, it *Item) (redraw bool) {
-	e.ItemName(c, it, 0, 0, false, false)
-	if e.YesNo(colLightMagenta, colLightGreen, colWhite, "Is It a Deal? ") && e.pay(200) {
-		e.dasp("pseudo_id")
-		if it.Hidden == 0 {
-			e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "I can't tell anything new about your "+it.Name())
-		} else {
-			it.Hidden = 0
-			e.ItemName(c, it, 0, 0, false, false)
-			e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, true, "It looks like some sort of "+it.Name())
-			redraw = true
-		}
-		e.MsgDelay()
+// identifyItem = ovr20:1F52 (item): 200 gp shows the hidden words (the
+// player took the deal).
+func (e *Engine) identifyItem(c *Character, it *Item) {
+	if !e.pay(200) {
+		return
 	}
-	e.ClearCells(1, 21, winRight, winBottom)
-	return
+	e.dasp("pseudo_id")
+	e.ItemName(c, it, 0, 0, false, false)
+	if it.Hidden == 0 {
+		e.say("I can't tell anything new about your " + it.Name())
+		return
+	}
+	it.Hidden = 0
+	e.ItemName(c, it, 0, 0, false, false)
+	e.say("It looks like some sort of " + it.Name())
 }
 
 // overloaded = ovr20:275B (item, char): no room for one more item.

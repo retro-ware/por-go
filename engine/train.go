@@ -147,10 +147,6 @@ func (e *Engine) rollHitDice(c *Character, mask int) int {
 	return int(total)
 }
 
-// TrainCharacter = ovr17:29AC: raise the classes whose experience
-// (DS:409B table) allows it and which this hall teaches (game +0x550),
-// for 1000 gp. Race level limits apply; a mage level gained offers a
-// new spell for the book.
 // levelBlocked: the race's level limit stops class i at level lv.
 func levelBlocked(race, str byte, i int, lv byte) bool {
 	// Level limits of the races.
@@ -206,28 +202,29 @@ func levelSpan(c *Character) (from, to int32) {
 	return from, to
 }
 
-func (e *Engine) TrainCharacter() {
-	c := e.selected()
+// trainPrice = ovr17:29AC's fee in gold.
+const trainPrice = 1000
+
+// trainCheck = the tests of ovr17:29AC on c: the classes it would rise
+// in (DS:5DE bits, the hall's game +0x550 among them), why not when the
+// hall refuses, and the experience to hold it at below a second level
+// (0: none).
+func (e *Engine) trainCheck(c *Character) (mask byte, why string, best int32) {
 	if c.Status != statusOkay && !e.debug {
-		e.DisplayMessageWait(colYellow, "we only train conscious people")
-		return
+		return 0, "we only train conscious people", 0
 	}
-	if e.purse.gold < 1000 && !e.debug {
-		e.DisplayMessageWait(colYellow, "Training costs 1000 gp.")
-		return
+	if e.purse.gold < trainPrice && !e.debug {
+		return 0, "Training costs 1000 gp.", 0
 	}
-	classMask := func(i int) byte { return hpClassMask[i] }
 	var have, can byte
-	var best int32
 	race, str := c.Race, c.Stats[statStr]
 	for i := 0; i <= 7; i++ {
 		lv := c.Levels[i]
 		if int8(lv) <= 0 {
 			continue
 		}
-		have += classMask(i)
-		skip := levelBlocked(race, str, i, lv)
-		if skip {
+		have += hpClassMask[i]
+		if levelBlocked(race, str, i, lv) {
 			continue
 		}
 		exp := int32(c.Exp)
@@ -235,7 +232,7 @@ func (e *Engine) TrainCharacter() {
 		if need > exp && !e.debug || need <= 0 {
 			continue
 		}
-		can += classMask(i)
+		can += hpClassMask[i]
 		next := xpTable[i][int8(lv+2)]
 		if next <= 0 || exp < next {
 			continue
@@ -245,45 +242,77 @@ func (e *Engine) TrainCharacter() {
 			best = next - 1
 		}
 	}
-	if best > 0 {
-		c.Exp = uint32(best)
+	if e.debug {
+		return can, "", best
 	}
 	hall := e.partyExp()
-	if !e.debug {
-		if byte(int(have)&hall) == 0 {
-			e.DisplayMessageWait(colYellow, "We don't train that class here")
-			return
+	switch {
+	case byte(int(have)&hall) == 0:
+		return 0, "We don't train that class here", best
+	case byte(int(can)&hall) == 0:
+		return 0, "Not Enough Experience", best
+	}
+	return byte(int(can) & hall), "", best
+}
+
+// TrainCharacter = ovr17:29AC: the training hall takes decisions for the
+// selected member until it leaves (or has trained).
+func (e *Engine) TrainCharacter() {
+	c := e.selected()
+	if _, _, best := e.trainCheck(c); best > 0 {
+		c.Exp = uint32(best) // as the original, before its question and refusals
+	}
+	e.learning = false
+	e.await(modeTraining, e.applyTraining)
+}
+
+// applyTraining applies a decision in the training hall; done when it is
+// left or the training is over.
+func (e *Engine) applyTraining(a Action) (done bool) {
+	c := e.selected()
+	switch a.Kind {
+	case ActClose:
+		return !e.learning
+	case ActTrain:
+		mask, why, _ := e.trainCheck(c)
+		if e.learning || why != "" {
+			e.say(why)
+			return false
 		}
-		if byte(int(can)&hall) == 0 {
-			e.DisplayMessageWait(colYellow, "Not Enough Experience")
-			return
+		e.trainLevels(c, mask)
+		e.learning = len(e.learnable(c)) > 0 && e.learning
+		return !e.learning
+	case ActLearn:
+		if e.learning && slices.Contains(e.learnable(c), byte(a.X)) {
+			c.SpellBook[a.X-1] = 1
+			e.learning = false
+			return true
 		}
 	}
-	mask := can
-	if !e.debug {
-		mask = byte(int(can) & hall)
-	}
-	e.ClearCells(1, 1, winRight, winBottom)
-	y := 4
-	e.displayName(c, 4, y, false) // 00BA:1816
-	e.DisplayString(len(c.Name())+4, y, colLightGreen, " will become:")
-	for i := 0; i <= 7; i++ {
-		if int8(c.Levels[i]) > 0 && classMask(i)&mask > 0 {
-			y++
-			pre := "and a level "
-			if y == 5 {
-				pre = "    a level "
-			}
-			e.DisplayString(6, y, colLightGreen, pre+strconv.Itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
+	return false
+}
+
+// learnable = SpellList kind 4 (ovr20:299C): the spells c has slots for
+// and not in the book.
+func (e *Engine) learnable(c *Character) []byte {
+	var s []byte
+	for i := 1; i <= lastSpell; i++ {
+		if c.spellSlot(int(e.spellRec(byte(i), 0)), int(e.spellRec(byte(i), 1))) > 0 && c.SpellBook[i-1] == 0 {
+			s = append(s, byte(i))
 		}
 	}
-	if !e.YesNo(colLightMagenta, colLightGreen, colWhite, "Do you wish to train? ") {
-		return
-	}
+	return s
+}
+
+// trainLevels = the training of ovr17:29AC: a level in each class of
+// mask for the fee, and the hit points; a mage level gained sets
+// learning (the original's spell pick, ovr20:299C, came before the hit
+// points; it rolls no dice).
+func (e *Engine) trainLevels(c *Character, mask byte) {
 	e.dasp("level")
-	e.BottomMessage("Congratulations...")
+	e.say("Congratulations...")
 	if !e.debug {
-		e.purse.gold -= 1000
+		e.purse.gold -= trainPrice
 	}
 	count := 0
 	mage := int8(c.Levels[clsMage])
@@ -292,7 +321,7 @@ func (e *Engine) TrainCharacter() {
 			continue
 		}
 		count++
-		if classMask(i)&mask > 0 {
+		if hpClassMask[i]&mask > 0 {
 			c.Levels[i]++
 			if c.Drained > 0 {
 				c.DrainedHP -= c.DrainedHP / c.Drained
@@ -300,21 +329,8 @@ func (e *Engine) TrainCharacter() {
 			}
 		}
 	}
-	e.RecomputeCharacter(c) // ovr24:0000
-	if int8(c.Levels[clsMage]) > mage {
-		idx := -1
-		var spell byte
-		any := true
-		for {
-			spell = e.SpellList(4, 4, &idx, &any) // ovr20:299C
-			if spell > 0 || !any {
-				break
-			}
-		}
-		if spell > 0 { // (the original, with nothing to choose, set +0x32, the max HP, to 1)
-			c.SpellBook[spell-1] = 1
-		}
-	}
+	e.RecomputeCharacter(c)                     // ovr24:0000
+	e.learning = int8(c.Levels[clsMage]) > mage // (the original, with nothing to choose, set +0x32, the max HP, to 1)
 	roll := e.rollHitDice(c, int(mask))
 	per := roll / count
 	if per == 0 {
@@ -328,6 +344,29 @@ func (e *Engine) TrainCharacter() {
 	damage := c.MaxHP - c.HP
 	c.MaxHP += byte(per)
 	c.HP = c.MaxHP - damage
+}
+
+// trainingView is the hall's offer for the View.
+func (e *Engine) trainingView() *Training {
+	c := e.selected()
+	if c == nil {
+		return &Training{Why: "No one to train"}
+	}
+	v := &Training{Name: c.Name(), Price: trainPrice}
+	if e.learning {
+		for _, s := range e.learnable(c) {
+			v.Learn = append(v.Learn, BookSpell{ID: int(s), Name: e.spellName(int(s)), Level: spellGroups[e.spellRec(s, 1)]})
+		}
+		return v
+	}
+	mask, why, _ := e.trainCheck(c)
+	v.Why = why
+	for i := 0; i <= 7; i++ {
+		if int8(c.Levels[i]) > 0 && hpClassMask[i]&mask > 0 {
+			v.Becomes = append(v.Becomes, "a level "+strconv.Itoa(int(int8(c.Levels[i]))+1)+" "+classNames[i])
+		}
+	}
+	return v
 }
 
 // AddCharacter = ovr17:306D: pick saved characters from the roster list

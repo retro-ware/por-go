@@ -66,7 +66,7 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	if v.List != nil && v.Menu != nil && !v.Choosing && p.listKey(k, v) {
 		return
 	}
-	if v.Camp != nil && v.Menu == nil {
+	if screenUp(v) {
 		p.campKey(k, v)
 		return
 	}

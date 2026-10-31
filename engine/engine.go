@@ -96,6 +96,9 @@ type Engine struct {
 	pg                   pageState                    // what is on the screen (page.go)
 	ac                   afterCombat                  // ovr06 globals
 	camp                 campState                    // ovr16/ovr21 globals
+	mode                 screenMode                   // the screen taking decisions (screen.go)
+	valued               *Item                        // an appraised gem or jewel, sold or kept next (ActKeep)
+	learning             bool                         // training gained a mage level: the new spell is chosen next (ActLearn)
 	purse                purse                        // the party's money
 	loot                 purse                        // DS:67F4 money found, taken after the fight
 	animInput            bool                         // animate the view picture while waiting for a key

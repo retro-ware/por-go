@@ -80,6 +80,14 @@ const (
 	ActScribe     // member N scribes spell X from a scroll on the next rest, or no longer
 	ActDropMember // member N leaves the party (the player confirmed)
 	ActIconEdit   // member N's combat icon editor
+
+	// Temple, shop and training decisions (View.Temple, View.Shop, View.Training)
+	ActTempleCure // member N gets temple service X (View.Temple.Cures), paid (the player agreed)
+	ActAppraise   // appraise a gem (N 0) or a jewel (N 1)
+	ActKeep       // keep (N 1) or sell (N 0) the one appraised
+	ActIdentify   // identify member N's item X (View.Shop.Unknown), paid (the player agreed)
+	ActTrain      // train the selected member (the player agreed)
+	ActLearn      // spell X goes into the book of the member trained (View.Training.Learn)
 )
 
 // Directions of ActMove.

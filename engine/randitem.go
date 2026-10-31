@@ -221,130 +221,100 @@ func randomItemWeight(typ itemType, it *Item) uint16 {
 	return 0x28
 }
 
-// Appraise = ovr22:19B2 (var any): the shop and temple "Appraise" command.
-// Each of the party's gems and pieces of jewelry is valued and sold or kept
-// as an item. any is false when there is nothing to show.
-func (e *Engine) Appraise() (any bool) {
-	any = true
-	c := e.selected()
+// appraiseValue = the Gems and Jewelry picks of ovr22:19B2: a gem or a
+// jewel of the party's is valued (gold pieces), and its item made (the
+// shared tail of the branches); the player sells or keeps it (ActKeep).
+func (e *Engine) appraiseValue(jewel bool) {
 	p := &e.purse
-	if p.gems == 0 && p.jewelry == 0 {
-		e.BottomMessage("Nothing to appraise")
-		return false
-	}
-	for done := false; !done; {
-		if p.gems == 0 && p.jewelry == 0 {
-			done = true
-			continue
-		}
-		count := func(n int, one, many string) string {
-			switch n {
-			case 0:
-				return ""
-			case 1:
-				return cut(strconv.Itoa(n)+one, textCols)
-			}
-			return cut(strconv.Itoa(n)+many, textCols)
-		}
-		gems := count(int(p.gems), " Gem", " Gems")
-		jewels := count(int(p.jewelry), " piece of Jewelry", " pieces of Jewelry")
-		e.ClearBox(1, 1, winRight, winBottom)
-		e.displayName(c, 1, 1, false) // 00BA:1816
-		e.DisplayString(1, 7, colWhite, "You have a fine collection of:")
-		e.DisplayString(1, 9, colWhite, gems)
-		e.DisplayString(1, 10, colWhite, jewels)
-		const (
-			gem Choice = iota
-			jewel
-			exit
-		)
-		menu := Bar{{}} // the original's spacing: "  Gems  Jewelry Exit"
-		if p.gems != 0 {
-			menu = append(menu, Entry{" Gems", gem})
-		}
-		if p.jewelry != 0 {
-			menu = append(menu, Entry{" Jewelry", jewel})
-		}
-		menu = append(menu, Entry{"Exit", exit})
-		switch e.DisplayInput("Appraise : ", menu, colLightMagenta, colLightGreen, colWhite, true, false).ID {
-		case gem:
-			if p.gems == 0 {
-				break
-			}
-			p.gems--
-			var v uint16
-			switch d := e.Dice(1, 100); {
-			case d <= 25:
-				v = 10
-			case d <= 50:
-				v = 50
-			case d <= 70:
-				v = 100
-			case d <= 90:
-				v = 500
-			case d <= 99:
-				v = 1000
-			default:
-				v = 5000
-			}
-			e.DisplayString(1, 12, colWhite, cut("The Gem is Valued at "+strconv.Itoa(int(v))+" gp.", textCols))
-			e.sellOrKeep(c, v, 0x65)
-		case jewel:
-			if p.jewelry == 0 {
-				break
-			}
-			p.jewelry--
-			var v uint16
-			switch d := e.Dice(1, 100); {
-			case d <= 10:
-				v = uint16(e.Random(900) + 100)
-			case d <= 20:
-				v = uint16(e.Random(1000) + 200)
-			case d <= 40:
-				v = uint16(e.Random(1500) + 300)
-			case d <= 50:
-				v = uint16(e.Random(2500) + 500)
-			case d <= 70:
-				v = uint16(e.Random(5000) + 1000)
-			case d <= 90:
-				v = uint16(e.Random(6000) + 2000)
-			default:
-				v = uint16(e.Random(10000) + 2000)
-			}
-			e.DisplayString(1, 12, colWhite, cut("The Jewel is Valued at "+strconv.Itoa(int(v))+" gp.", textCols))
-			e.sellOrKeep(c, v, 0xD6)
-		case exit, NoPick:
-			done = true
-		}
-		e.ApplyItems(c)
-	}
-	return any
-}
-
-// sellOrKeep is the shared tail of the gem and jewel branches of 19B2:
-// "Sell Keep" when the character can carry one more item, else only Sell.
-func (e *Engine) sellOrKeep(c *Character, v uint16, word byte) {
-	it := &Item{}
-	it.Words[2] = word
-	it.Type = itemValuable
-	it.Price = v
-	it.Weight = 1
-	it.Hidden = 0
-	sellOnly := e.overloaded(it, c) // extra: room in the party inventory
-	const (
-		sell Choice = iota
-		keep
-	)
-	menu := Bar{{"Sell", sell}, {"Keep", keep}}
-	if sellOnly {
-		menu = menu[:1]
-	}
-	if e.DisplayInput("You can : ", menu, colLightMagenta, colLightGreen, colWhite, true, false).ID == keep {
-		// extra: the original loses the gem when the item list is empty
-		// (it appends only to its local copy); the port always keeps it.
-		e.AddItemCopy(c, it)
+	if e.valued != nil {
 		return
 	}
-	e.dasp("store5")
-	e.purse.gold += uint32(v)
+	var v uint16
+	word, what := byte(0x65), "Gem"
+	switch {
+	case !jewel && p.gems > 0:
+		p.gems--
+		switch d := e.Dice(1, 100); {
+		case d <= 25:
+			v = 10
+		case d <= 50:
+			v = 50
+		case d <= 70:
+			v = 100
+		case d <= 90:
+			v = 500
+		case d <= 99:
+			v = 1000
+		default:
+			v = 5000
+		}
+	case jewel && p.jewelry > 0:
+		p.jewelry--
+		word, what = 0xD6, "Jewel"
+		switch d := e.Dice(1, 100); {
+		case d <= 10:
+			v = uint16(e.Random(900) + 100)
+		case d <= 20:
+			v = uint16(e.Random(1000) + 200)
+		case d <= 40:
+			v = uint16(e.Random(1500) + 300)
+		case d <= 50:
+			v = uint16(e.Random(2500) + 500)
+		case d <= 70:
+			v = uint16(e.Random(5000) + 1000)
+		case d <= 90:
+			v = uint16(e.Random(6000) + 2000)
+		default:
+			v = uint16(e.Random(10000) + 2000)
+		}
+	default:
+		e.say("Nothing to appraise")
+		return
+	}
+	it := &Item{Type: itemValuable, Price: v, Weight: 1}
+	it.Words[2] = word
+	e.valued = it
+	e.say("The " + what + " is Valued at " + strconv.Itoa(int(v)) + " gp.")
+}
+
+// keepValued: the one appraised is kept as an item when there is room
+// (extra: the party inventory; the original lost it with an empty item
+// list), else sold.
+func (e *Engine) keepValued(keep bool) {
+	it, c := e.valued, e.selected()
+	if it == nil {
+		return
+	}
+	e.valued = nil
+	if keep && !e.overloaded(it, c) {
+		e.AddItemCopy(c, it)
+	} else {
+		e.dasp("store5")
+		e.purse.gold += uint32(it.Price)
+	}
+	e.ApplyItems(c)
+}
+
+// sellValued: leaving sells the one appraised (Esc on "Sell Keep").
+func (e *Engine) sellValued() { e.keepValued(false) }
+
+// applyAppraise applies ActAppraise and ActKeep.
+func (e *Engine) applyAppraise(a Action) {
+	if a.Kind == ActKeep {
+		e.keepValued(a.N == 1)
+		return
+	}
+	e.appraiseValue(a.N == 1)
+}
+
+// appraiseView is the gems and jewelry for the View.
+func (e *Engine) appraiseView() Appraise {
+	v := Appraise{Gems: int(e.purse.gems), Jewelry: int(e.purse.jewelry)}
+	if it := e.valued; it != nil {
+		v.Valued, v.Jewel = int(it.Price), it.Words[2] == 0xD6
+		if c := e.selected(); c != nil {
+			v.CanKeep = !e.overloaded(it, c)
+		}
+	}
+	return v
 }

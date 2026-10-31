@@ -50,6 +50,17 @@ a chance for errors.
 - The engine's page drawing for UI (text cells, boxes, menus); sleeps for
   animation timing.
 
+## Screens taking decisions
+
+A subsystem converted to decisions keeps an explicit mode, `e.mode`
+(engine/decide.go: modeTemple, modeShop, modeTraining), with its state in
+typed fields, and a handler `func (e *Engine) applyX(a Action) (done bool)`
+that applies one decision and returns: it never blocks, sleeps or calls
+DisplayInput, ListMenu, YesNo, act or decision. Refusals go to the note
+(`e.say`). Until M6 removes the goroutine, the legacy callers run it with
+`e.await(mode, handler)`, which feeds it `e.decision()` until done; M6
+replaces await with `Apply` dispatching on `e.mode`.
+
 ## Milestones
 
 Each leaves the game playable and `go test ./engine` green; the old flow
@@ -85,3 +96,11 @@ is deleted subsystem by subsystem, not kept alongside.
   line itself). The engine keeps no highlight, list scroll, menu bar or
   hover; the presenter owns them all (present/remaster/list.go, the main
   menu's highlight, page questions as a popup). ActPick/ActSelect are gone.
+- [x] M3b: the temple, the shop and training take decisions through
+  handlers (applyTemple, applyShop, applyTraining) on `e.mode`, run by
+  `e.await` until M6. ActTempleCure, ActAppraise, ActKeep, ActIdentify,
+  ActTrain, ActLearn; View.Temple, View.Shop, View.Training. The
+  questions (not needed, pay, deal, train, sell or keep) are the
+  presenter's (present/remaster/temple.go, shop.go, train.go over camp's
+  screens). The View and Browse screens they open are still the legacy
+  inventory and character screens.
