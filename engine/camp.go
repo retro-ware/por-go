@@ -789,6 +789,7 @@ func (e *Engine) CampMenu() bool {
 		view Choice = campCure + 1 + iota
 		rest
 		alter
+		bestiary
 		exit
 	)
 	for key := view; !interrupted && key != NoPick && key != exit; {
@@ -800,7 +801,11 @@ func (e *Engine) CampMenu() bool {
 		} else if e.paladinCan(c, affCuredDisease) {
 			menu = append(menu, Entry{"Cure", campCure}) // never beside Cast: a paladin casts no spells
 		}
-		menu = append(menu, Entry{"Rest", rest}, Entry{"Alter", alter}, Entry{"Exit", exit})
+		menu = append(menu, Entry{"Rest", rest}, Entry{"Alter", alter})
+		if len(e.ext.met) > 0 {
+			menu = append(menu, Entry{"Bestiary", bestiary})
+		}
+		menu = append(menu, Entry{"Exit", exit})
 		var again bool
 		if key, again = e.campInput("Camp: ", menu); again {
 			continue
@@ -822,6 +827,9 @@ func (e *Engine) CampMenu() bool {
 			interrupted = e.restMenu()
 		case alter:
 			e.alterMenu()
+		case bestiary:
+			e.bestiaryMenu()
+			e.DrawMainScreen()
 		}
 	}
 	e.clearStudy()

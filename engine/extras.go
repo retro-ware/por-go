@@ -47,15 +47,16 @@ type extras struct {
 		pal          pal.Regs
 		img          image.Image
 	}
-	voiced   map[string]bool // voice.go: the recordings this save has heard
-	quick    *quickPick      // CreateCharacter answers its own menus (quickstart)
-	creating bool            // CreateCharacter's sheet is up: no level, experience, party items or status on it
-	minStats [6]int          // "Minimal stats": per-stat floor, STR as st*100+str00
-	guarded  bool            // slots.go: a load can unwind to adventure
-	inGame   bool            // slots.go: GameLoop has started: saving allowed
-	aoe      int             // aoe.go: radius+1 of the spell being aimed, 0 none
-	bolt     [2]int          // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
-	aoeSpell int             // aoe.go: the spell being aimed
+	voiced   map[string]bool    // voice.go: the recordings this save has heard
+	met      map[string]metIcon // bestiary.go: the monster kinds this save has met
+	quick    *quickPick         // CreateCharacter answers its own menus (quickstart)
+	creating bool               // CreateCharacter's sheet is up: no level, experience, party items or status on it
+	minStats [6]int             // "Minimal stats": per-stat floor, STR as st*100+str00
+	guarded  bool               // slots.go: a load can unwind to adventure
+	inGame   bool               // slots.go: GameLoop has started: saving allowed
+	aoe      int                // aoe.go: radius+1 of the spell being aimed, 0 none
+	bolt     [2]int             // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
+	aoeSpell int                // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
 	held          Action   // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it

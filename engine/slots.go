@@ -137,6 +137,9 @@ const seenFile, oldSeenFile = "MAPS.GOB", "SEEN.GOB"
 // voicedFile holds the voice-over recordings a slot has heard (voice.go).
 const voicedFile = "VOICED.GOB"
 
+// metFile holds the monster kinds a slot has met (bestiary.go).
+const metFile = "BESTIARY.GOB"
+
 // loadFrom loads the slot, its explored squares and its map labels (none
 // for a slot saved before they were kept).
 func (e *Engine) loadFrom(name string) (ok bool) {
@@ -144,7 +147,7 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if !ok {
 		return false
 	}
-	e.ext.seen, e.ext.voiced = nil, nil
+	e.ext.seen, e.ext.voiced, e.ext.met = nil, nil, nil
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
 		f.Close()
@@ -156,6 +159,10 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	}
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, voicedFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.voiced)
+		f.Close()
+	}
+	if f, err := os.Open(filepath.Join(e.slotRoot(), name, metFile)); err == nil {
+		gob.NewDecoder(f).Decode(&e.ext.met)
 		f.Close()
 	}
 	e.readLabels(filepath.Join(e.slotRoot(), name, labelsFile))
@@ -211,6 +218,10 @@ func (e *Engine) saveTo(name string) {
 	}
 	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, voicedFile)); err == nil {
 		gob.NewEncoder(f).Encode(e.ext.voiced)
+		f.Close()
+	}
+	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, metFile)); err == nil {
+		gob.NewEncoder(f).Encode(e.ext.met)
 		f.Close()
 	}
 	e.writeLabels(filepath.Join(e.slotRoot(), tmp, labelsFile))

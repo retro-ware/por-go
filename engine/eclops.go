@@ -221,6 +221,7 @@ func (e *Engine) addMonsters(idx, count, icon int) {
 		count = 1
 	}
 	e.LoadIconPic("CPIC", icon, int(e.es.cloneIcon)) // ovr33:01C8
+	e.meetMonster(tmpl.Name(), e.set.file("CPIC"), icon)
 	// The template itself is the first monster (ovr04:055B); each clone is
 	// a byte copy of it, so its Slots still point at the template's items
 	// until ApplyItems, and its item and affect lists are copied in reverse
