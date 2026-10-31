@@ -19,3 +19,11 @@ markers  = ["*.ADF"]
 files    = ["*.ADF"]
 dest     = "data/ADF"
 run      = ["./por", "-import-disk2", "data/ADF", "-data", "data"]
+
+[[source]]
+name     = "the voice-over"
+optional = true
+describe = "por-voice.zip, the spoken story lines (.mp3)."
+markers  = ["1a83648acff21ee4.mp3", "1ae1390bbc88f267.mp3"]
+files    = ["*.mp3"]
+dest     = "data/assets/speech"

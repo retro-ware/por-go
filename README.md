@@ -71,7 +71,7 @@ To set up a release: run `gameimport` in the folder beside `por` and pick
 your copy of the game (its folder, a zip, a CD image or the GOG installer).
 It copies the files `por` reads into `data/`, runs `por -setup` (which
 writes the port's own files, the area scripts, into `data/assets/scripts`
-and the cover picture), and optionally converts the Amiga disks' graphics. `por` plays from `data/` in its working directory.
+and the cover picture), and optionally converts the Amiga disks' graphics and unpacks the voice-over (`por-voice.zip`) into `data/assets/speech`. `por` plays from `data/` in its working directory.
 
 To build and play from the repo: put your game files in `data/dos` and run
 `./build_n_run.sh` (it builds `./por`). The data folder:
