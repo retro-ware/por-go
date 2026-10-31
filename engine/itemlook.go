@@ -96,8 +96,9 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 			}
 		case slot == 1:
 			add("Shield, AC " + strconv.Itoa(v) + " better" + delta(e.protection(it), e.protection(vs)))
-		case v > 0:
-			add("AC " + strconv.Itoa(v) + " better" + delta(e.protection(it), e.protection(vs)))
+		case v > 0: // bracers: on the armour's scale (50 is AC 10) and in its place, the better one counts (itemAC's ac[4])
+			add("AC " + strconv.Itoa(10-(v-50)-int(e.knownPlus(it))) + ", as armor" + delta(e.protection(it), e.protection(vs)))
+			add("Armor or this: the best counts")
 		}
 	}
 	switch {
@@ -181,14 +182,14 @@ func (e *Engine) damageAvg(it *Item) float64 {
 }
 
 // protection is the armour class points the item is worth with its known
-// magic plus (an armour's over AC 10), for the Look's comparison; 0 for nil.
+// magic plus (armour's and bracers' over AC 10), for the Look's comparison; 0 for nil.
 func (e *Engine) protection(it *Item) float64 {
 	if it == nil {
 		return 0
 	}
 	b := e.base(it.Type)
 	v := float64(b.Protection & 0x7F)
-	if b.Slot == 2 {
+	if b.Slot != 1 && v > 0 { // armour and bracers: 50 is AC 10
 		v -= 50
 	}
 	return v + e.knownPlus(it)
