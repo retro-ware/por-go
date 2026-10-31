@@ -167,7 +167,7 @@ func TestCreateSheet(t *testing.T) {
 	if c.Icon == nil || c.Portrait == nil || len(v.Overlays) != 3 {
 		t.Errorf("dropped: icon %v portrait %v overlays %d, want both and 3", c.Icon != nil, c.Portrait != nil, len(v.Overlays))
 	}
-	e.Act(Action{Kind: ActPick, N: 2}) // Keep
+	e.Act(Action{Kind: ActChoose, N: 2}) // Keep
 	ended := func(what string) {
 		select {
 		case <-done:
@@ -204,7 +204,7 @@ func TestCreateSheet(t *testing.T) {
 	v = act(spot(v, 3, 12)) // charisma typed
 	act(Action{Kind: ActText, Text: "7"})
 	act(Action{Kind: ActContinue})
-	e.Act(Action{Kind: ActPick, N: 2}) // Keep
+	e.Act(Action{Kind: ActChoose, N: 2}) // Keep
 	ended("Modify")
 	if m := e.party[0]; m.Stats[statCha] != 7 || m.Share != 1 {
 		t.Errorf("modified: charisma %d share %d", m.Stats[statCha], m.Share)

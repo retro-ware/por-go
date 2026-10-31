@@ -12,7 +12,6 @@ import (
 func (e *Engine) Init() {
 	e.ecl = make([]byte, 0x1E00) // DS:49DE, ECL code at pc-0x9900
 	e.set = 1                    // DS:5376 = 1
-	e.listTop = 1                // DS:6B29
 	e.resetAdventure()
 	e.font = e.L.Block(e.set.file("8X8D"), 201) // 0709:017C
 	e.ClearRow24()

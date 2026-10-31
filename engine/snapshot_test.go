@@ -103,13 +103,13 @@ func TestBattleView(t *testing.T) {
 }
 
 // hot stands for the menu item with hotkey c (resolve finds its index).
-func hot(c byte) engine.Action { return engine.Action{Kind: engine.ActPick, N: -int(c)} }
+func hot(c byte) engine.Action { return engine.Action{Kind: engine.ActChoose, N: -int(c)} }
 
 var down, cont = engine.Action{Kind: engine.ActMove, N: engine.DirDown}, engine.Action{Kind: engine.ActContinue}
 
 // resolve turns hot(c) into the pick of that item on the menu shown.
 func resolve(e *engine.Engine, a engine.Action) engine.Action {
-	if a.Kind != engine.ActPick || a.N >= 0 {
+	if a.Kind != engine.ActChoose || a.N >= 0 {
 		return a
 	}
 	if m := e.View().Menu; m != nil {

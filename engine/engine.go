@@ -49,7 +49,6 @@ type Engine struct {
 	start time.Time
 
 	msgDelay byte // DS:49E2, message delay factor (ovr12 sets 1)
-	menuSel  int  // DS:6B2B, DisplayInput selection
 
 	party      []*Character // DS:5D96 list head ...
 	pool       []*Item      // extra: the party inventory (pool.go)
@@ -85,7 +84,6 @@ type Engine struct {
 
 	es                   eclState                     // ovr08/ovr04 interpreter state
 	msgRow, msgCol       int                          // DS:5E25 / 5E24 text-block cursor
-	listTop              int                          // DS:6B29 ovr26 list menu: first visible row
 	gs                   geoState                     // ovr30 map, wall sets and view
 	run                  eclRun                       // ovr04 globals
 	pic                  animPic                      // DS:6ABE view-window picture

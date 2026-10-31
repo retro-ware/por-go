@@ -31,7 +31,7 @@ var scanDir = map[uint16]int{0x4800: engine.DirUp, 0x5000: engine.DirDown, 0x4B0
 var keypadDir = [...]int{engine.DirEnd, engine.DirDown, engine.DirPgDn, engine.DirLeft, engine.DirCentre, engine.DirRight, engine.DirHome, engine.DirUp, engine.DirPgUp}
 
 func (p *Presenter) send(kind engine.ActKind, n int) {
-	if kind == engine.ActPick || kind == engine.ActContinue { // a question answered: the next menu pops up, the same one again too
+	if kind == engine.ActChoose || kind == engine.ActContinue { // a question answered: the next menu pops up, the same one again too
 		p.asked = ""
 	}
 	p.inv.acts = append(p.inv.acts, engine.Action{Kind: kind, N: n})
@@ -63,6 +63,9 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		return
 	}
 	p.typing = false
+	if v.List != nil && v.Menu != nil && !v.Choosing && p.listKey(k, v) {
+		return
+	}
 	if v.Camp != nil && v.Menu == nil {
 		p.campKey(k, v)
 		return
@@ -111,7 +114,7 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		p.send(engine.ActMove, engine.DirOn)
 	case k >= 128 || c < ' ':
 	case menuIndex(v.Menu, c) >= 0:
-		p.send(engine.ActPick, menuIndex(v.Menu, c))
+		p.send(engine.ActChoose, menuIndex(v.Menu, c))
 	case c == 'M':
 		p.send(engine.ActMap, 0)
 	case c == 'P':

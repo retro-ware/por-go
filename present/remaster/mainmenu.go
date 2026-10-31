@@ -112,11 +112,8 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 		op.GeoM.Translate(float64((b.Dx()-v.Logo.Bounds().Dx()*lk)/2), float64(top))
 		dst.DrawImage(p.logo, op)
 	}
-	sel := -1
-	if v.Menu != nil && !v.MainAsk {
-		sel = v.Menu.Sel
-	}
-	p.drawMenu(dst, p.glyph, "", v.MainMenu, keys, sel, mk, b.Dx()/2, top+lh+gap)
+	p.mainSel = min(max(p.mainSel, 0), len(v.MainMenu)-1)
+	p.drawMenu(dst, p.glyph, "", v.MainMenu, keys, p.mainSel, mk, b.Dx()/2, top+lh+gap)
 	p.drawParty(dst, v.Party, cardAt(dst))
 	p.cards = p.cards[:0]
 	for i := range v.Party {
@@ -130,7 +127,7 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 			lines, keys = append(lines, it.Text), append(keys, it.Key)
 		}
 		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false) // the menu dims under it
-		p.keyWindow(dst, strings.TrimSpace(v.Menu.Prompt)+"?", lines, keys, v.Menu.Sel, false)
+		p.keyWindow(dst, strings.TrimSpace(v.Menu.Prompt)+"?", lines, keys, p.sel, false)
 	}
 	p.ask = v.MainAsk
 }
@@ -140,7 +137,7 @@ func (p *Presenter) mainClick(x, y int) bool {
 	if p.ask {
 		for i, r := range p.winRects {
 			if image.Pt(x, y).In(r) {
-				p.send(engine.ActPick, i)
+				p.send(engine.ActChoose, i)
 			}
 		}
 		return true
@@ -153,7 +150,7 @@ func (p *Presenter) mainClick(x, y int) bool {
 	}
 	for i, r := range p.menuRects {
 		if image.Pt(x, y).In(r) {
-			p.send(engine.ActPick, i)
+			p.send(engine.ActChoose, i)
 			return true
 		}
 	}
@@ -173,7 +170,34 @@ func (p *Presenter) mainHover(x, y int) {
 	}
 	for i, r := range rects {
 		if p.pointer.In(r) {
-			p.send(engine.ActSelect, i)
+			if p.ask {
+				p.sel = i
+			} else {
+				p.mainSel = i
+			}
 		}
 	}
+}
+
+// mainKey moves the main menu's highlight (Up, Down) and picks it (Enter);
+// the question over it likewise.
+func (p *Presenter) mainKey(k uint16, v engine.View) bool {
+	sel, n := &p.mainSel, len(v.MainMenu)
+	if p.ask && v.Menu != nil {
+		sel, n = &p.sel, len(v.Menu.Items)
+	}
+	if n == 0 {
+		return false
+	}
+	switch k {
+	case 0x4800:
+		*sel = (*sel + n - 1) % n
+	case 0x5000:
+		*sel = (*sel + 1) % n
+	case 13:
+		p.send(engine.ActChoose, *sel)
+	default:
+		return false
+	}
+	return true
 }

@@ -566,7 +566,7 @@ func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) b
 		cx, cy := at(k)
 		col, bg := colLightGreen, colBlack
 		if !green(order[k]) {
-			col = dimColour
+			col = colDarkGrey
 		}
 		if hi {
 			bg = selBg(col, colWhite)
@@ -608,9 +608,9 @@ func (e *Engine) dropDown(x, y int, items []string, cur int, green func(i int) b
 	}})
 	for {
 		draw(index, true)
-		e.ext.list, e.ext.picker = true, true
+		e.ext.list = true
 		p := e.DisplayInput("", Bar{{"Exit", PickExit}}, colLightMagenta, colLightGreen, colWhite, true, false)
-		e.ext.list, e.ext.picker = false, false
+		e.ext.list = false
 		n := len(order)
 		switch p.ID {
 		case PickEnter:

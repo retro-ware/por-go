@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 	"por/pal"
-	"strings"
 	"sync/atomic"
 )
 
@@ -88,9 +87,10 @@ type View struct {
 	Day       bool // 6:00 to 20:00, when the scripts show the day sky
 	Inside    bool // the party stands on an inside square (the original's inside sky colour)
 	Menu      *Menu
-	Exploring bool  // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
-	CanCast   bool  // ... and the selected member has a spell to cast (ActCastPick)
-	Camp      *Camp // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
+	List      []ListLine // Menu's question is about a line of this list: ActChoose N (-1: the line itself) with X the line
+	Exploring bool       // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	CanCast   bool       // ... and the selected member has a spell to cast (ActCastPick)
+	Camp      *Camp      // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -115,14 +115,23 @@ type View struct {
 	Working   bool           // an action sent is still being carried out: what the View shows is on its way out (a menu still up is not asked again)
 }
 
-// Menu is the menu bar waiting for a choice on the prompt line.
+// Menu is a question waiting for the player: a prompt and its options.
 type Menu struct {
 	Prompt string
-	Items  []MenuItem
-	Sel    int // index into Items of the highlighted item
+	Items  []MenuItem // the options (ActChoose N); none: a message to acknowledge (ActContinue)
+	Arrows bool       // the screen takes the arrows itself (ActMove): a cursor, a picker
 }
 
-// MenuItem is one choice: its word as the bar shows it and the key that picks it.
+// ListLine is a line of View.List.
+type ListLine struct {
+	Text    string
+	Header  bool     // a heading
+	Dim     bool     // greyed out
+	Off     bool     // not chosen (headings, some greyed lines)
+	Without []string // options (MenuItem.Text) left out while this line is chosen
+}
+
+// MenuItem is one option: its text and its hotkey.
 type MenuItem struct {
 	Text string
 	Key  byte
@@ -192,7 +201,8 @@ type snapState struct {
 	tiles        [3]image.Image         // View.Border, once decoded
 	typing       *Typing                // the line being typed (typed)
 	own          bool                   // menu is a modal screen's own (slots), not the one under it
-	menu         *Menu                  // the innermost DisplayInput's menu (Sel unset)
+	menu         *Menu                  // the innermost DisplayInput's question
+	list         []*ListNode            // the innermost ListMenu's lines
 	cursor       image.Point            // drawCursor's last square
 	cursorOn     bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
 	pics         map[picKey]image.Image // picRGBA cache; ponytail: keyed by image, so frames patched in place (LoadBackpacIcons) stay stale until the palette changes
@@ -253,8 +263,13 @@ func (e *Engine) publish() {
 	}
 	if m := s.menu; m != nil && (e.ext.modal == 0 || e.ext.menu > e.ext.menuFloor || s.own) { // not the menu under help or the overview
 		c := *m
-		c.Sel = min(max(e.menuSel-1, 0), len(c.Items)-1)
 		v.Menu = &c
+		if s.list != nil {
+			v.List = make([]ListLine, len(s.list))
+			for i, l := range s.list {
+				v.List[i] = ListLine{Text: l.Text, Header: l.Flag != 0, Dim: l.Dim || l.Grey, Off: l.skipped(), Without: l.Without}
+			}
+		}
 		if e.ext.modal == 0 && s.main != nil {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
@@ -332,25 +347,6 @@ func (e *Engine) toRGBA(d []byte, w, h int, dst *image.RGBA, x, y int) *image.RG
 }
 
 // menuShown records the menu DisplayInput waits on, and returns the one
-// it replaces (an outer DisplayInput's) for restoring.
-func (e *Engine) menuShown(prompt, menu string, start, end []int) *Menu {
-	old := e.snap.menu
-	m := &Menu{Prompt: strings.TrimSpace(prompt)}
-	for j := 1; j < len(start); j++ {
-		if a, b := itemSpan(menu, start, end, j); a > 0 {
-			text := make([]byte, 0, b-a+1)
-			for i := a; i <= b; i++ {
-				text = append(text, menuGlyph(menu, i)) // "aiM" reads "Aim"
-			}
-			m.Items = append(m.Items, MenuItem{Text: string(text), Key: menu[start[j]-1]})
-		}
-	}
-	if len(m.Items) == 0 {
-		m = nil
-	}
-	e.snap.menu = m
-	return old
-}
 
 // borderTiles decodes DrawBorder's style 0 cells (0x114 corner, 0x115
 // side, 0x116 top) once the symbols are loaded.

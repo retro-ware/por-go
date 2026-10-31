@@ -79,3 +79,9 @@ is deleted subsystem by subsystem, not kept alongside.
   spell book plan, the scrolls, healing and the bestiary; the presenter
   owns the camp screens (present/remaster/camp.go). The camp bars, Alter,
   Party Order (cards are dragged) and the bestiary page are gone.
+- [x] M3a: questions and lists are data. DisplayInput publishes View.Menu
+  (prompt, options, Arrows when the screen takes the arrows itself) and
+  ListMenu View.List; the answer is ActChoose N (X: the line, N -1: the
+  line itself). The engine keeps no highlight, list scroll, menu bar or
+  hover; the presenter owns them all (present/remaster/list.go, the main
+  menu's highlight, page questions as a popup). ActPick/ActSelect are gone.

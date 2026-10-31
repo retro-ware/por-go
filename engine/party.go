@@ -204,26 +204,16 @@ func (e *Engine) PartyMenu() {
 			e.snap.main = append(e.snap.main, names[i])
 		}
 		shown = append(shown, Entry{}) // the original's trailing space
-		drawList := func(hot byte) {
-			for row, i := range vis {
-				bg := colBlack
-				if names[i][0] == hot {
-					bg = selBg(0xA, 0xF)
-				}
-				e.displayCharBg(2, 12+row, colWhite, bg, names[i][0], true)
-				for j := 1; j < len(names[i]); j++ {
-					e.displayCharBg(2+j, 12+row, colLightGreen, bg, names[i][j], true)
-				}
-			}
+		for row, i := range vis {
+			e.DisplayChar(2, 12+row, colWhite, names[i][0], true)
+			e.DisplayString(3, 12+row, colLightGreen, names[i][1:])
 		}
-		e.ext.onSelect = drawList
 		mark := e.regionMark()
 		{ // extra (nav.go): the function list and the roster take clicks
 			for row, i := range vis {
 				hot := names[i][0]
 				e.addRegion(region{x0: 2, y0: 12 + row, x1: 1 + len(names[i]), y1: 12 + row,
-					click: func(int, int) Action { return Action{Kind: actHotkey, N: int(hot)} },
-					hover: func(int, int) { e.ext.nav.hot(hot) }})
+					click: func(int, int) Action { return Action{Kind: actHotkey, N: int(hot)} }})
 			}
 			if len(e.party) > 0 {
 				e.rosterRegion()
@@ -233,7 +223,6 @@ func (e *Engine) PartyMenu() {
 		list := e.snap.main
 		e.snap.main = nil
 		e.regionCut(mark)
-		e.ext.onSelect = nil
 		e.ClearRow24()
 		if p.extra() {
 			if memberPick(p) {

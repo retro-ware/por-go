@@ -2,7 +2,6 @@ package engine
 
 import (
 	"slices"
-	"strings"
 )
 
 // Navigation that works the same way on every screen (not in the DOS
@@ -22,18 +21,6 @@ const (
 	actRedraw ActKind = -2 // the click moved a cursor itself: the waiting menu hands back PickRedraw to be drawn again
 	actChoice ActKind = -3 // a word of the slot screen's footer: the one whose Choice is N
 )
-
-// navCtx describes the menu that is waiting (displayInput keeps one per call).
-type navCtx struct {
-	menu    string     // the menu's items
-	extraOK bool       // the menu takes keypad keys
-	exit    bool       // the menu has an Exit item (and no other E hotkey)
-	hot     func(byte) // highlight the item with this hotkey
-}
-
-func menuHasExit(menu string) bool {
-	return strings.Contains(menu, "Exit") && strings.Count(menu, "E") == 1
-}
 
 // region is a clickable part of the screen in text cells (inclusive),
 // published as a View spot.
@@ -237,7 +224,7 @@ func (e *Engine) take(a Action) Action {
 // the screen-wide actions close it too.
 func (e *Engine) pressed(a Action) bool {
 	switch a.Kind {
-	case ActContinue, ActClose, ActPick, actHotkey, ActOverview, ActMap, ActMinimap:
+	case ActContinue, ActClose, ActChoose, actHotkey, ActOverview, ActMap, ActMinimap:
 		return true
 	case ActMove:
 		return a.N < DirWheelUp
@@ -265,14 +252,6 @@ func (e *Engine) keyHit() bool {
 		}
 	}
 	return false
-}
-
-// enterPicks: Enter confirms the highlighted item of a menu bar. Lists,
-// member selection and screens reading the arrows themselves (aiming,
-// resting) keep the game's own meaning of Enter.
-func (e *Engine) enterPicks() bool {
-	x := e.ext
-	return x.menu > 0 && x.padHot != 0 && !x.list && !x.choosing && !x.typing && !x.raw
 }
 
 // rosterRow is the party member listed at cell (cx, cy), or -1.

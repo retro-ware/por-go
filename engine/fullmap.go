@@ -211,12 +211,12 @@ func (e *Engine) FullMap() {
 	}
 	restore := e.saveScreen()
 	off := e.modalOn() // the command bar's regions under it take no hover or click
-	inCommand, sel := e.ext.inCommand, e.menuSel
+	inCommand := e.ext.inCommand
 	e.ext.inCommand, e.ext.fullMap = false, true
 	defer func() {
 		off()
 		restore()
-		e.ext.inCommand, e.menuSel, e.ext.fullMap = inCommand, sel, false
+		e.ext.inCommand, e.ext.fullMap = inCommand, false
 	}()
 	cx, cy := e.posX, e.posY
 	if !onMap(cx, cy) {

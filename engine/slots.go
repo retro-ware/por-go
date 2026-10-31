@@ -74,11 +74,11 @@ func (e *Engine) guardedRun(start func()) (reload bool) {
 // unwindReset drops the input state of the screens the load left.
 func (e *Engine) unwindReset() {
 	x := &e.ext
-	x.inCommand, x.padHot, x.onSelect, x.menu, x.list, x.choosing = false, 0, nil, 0, false, false
+	x.inCommand, x.menu, x.list, x.choosing = false, 0, false, false
 	x.quick, x.held, x.regions, x.raw = nil, Action{}, nil, false
 	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
-	x.campBar, x.selSet, x.paging = false, false, false
-	x.fullMap, x.walk, x.back, x.aoe, x.picker, x.enemiesOnly = false, nil, false, 0, false, false
+	x.campBar, x.paging = false, false
+	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = false, nil, false, 0, false
 	x.menuFloor, x.panel, e.snap.typing = 0, nil, nil
 	e.partySel = 0                  // a defer on the way out may have put back the old party's index
 	e.loadedGame = e.beginFlag != 0 // DS:49F8, as the party menu's Load
@@ -322,7 +322,7 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			e.addRegion(region{x0: x, y0: promptRow - 2, x1: x + len(f.label) - 1, y1: promptRow - 2, click: func(int, int) Action { return f.a }})
 			x += len(f.label) + gap
 		}
-		outer := e.snap.menu // extra: the footer's letters as a menu (ActPick)
+		outer := e.snap.menu // extra: the footer's letters as a menu (ActChoose)
 		e.snap.menu, e.snap.own = &Menu{}, true
 		var picks []Action
 		for _, f := range footer {
@@ -332,7 +332,7 @@ func (e *Engine) SlotMenu(loadOnly bool) bool {
 			}
 		}
 		a := e.input()
-		if a.Kind == ActPick && a.N >= 0 && a.N < len(picks) {
+		if a.Kind == ActChoose && a.N >= 0 && a.N < len(picks) {
 			a = picks[a.N]
 		}
 		e.snap.menu, e.snap.own = outer, false

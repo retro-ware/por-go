@@ -74,7 +74,7 @@ type Presenter struct {
 	mapSrc      image.Image                 // the View.Map it holds
 	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
 	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
-	menuSel     int                         // the game's own choice in it
+	mainSel     int                         // the main menu's highlight
 	noMenu      bool                        // nothing to pick: any click answers
 	pointer     image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
 	menuImg     *gpu.Image                  // the vertical menu, drawn at scale 1
@@ -107,6 +107,8 @@ type Presenter struct {
 	cmds        []command                   // the command menu's commands (explore.go), as last drawn
 	camp        campUI                      // the camp screens (camp.go)
 	shownView   engine.View                 // the View last drawn
+	list        listUI                      // View.List's highlight (list.go)
+	pageMenu    bool                        // a page's question is up (list.go)
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 }
@@ -216,7 +218,11 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Camp != nil && p.shownView.Camp == nil { // camp starts on its main screen
 		p.camp.screen, p.camp.sel = campMain, 0
 	}
+	if v.List != nil && p.shownView.List == nil { // a list opens at its first line
+		p.list = listUI{sel: max(0, slices.IndexFunc(v.List, func(l engine.ListLine) bool { return !l.Off }))}
+	}
 	p.shownView = v
+	p.pageMenu = false
 	p.cmds = commands(v)
 	if !p.active {
 		p.ctx = 0
@@ -247,7 +253,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if sc == nil || !v.Choosing && (!v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
-		return p.drawPage(dst, v, note)
+		r := p.drawPage(dst, v, note)
+		p.drawPageMenu(dst, note, v)
+		return r
 	}
 	p.active = true
 	frame := p.pageImage(v, note)
@@ -339,7 +347,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	if v.Menu != nil && !v.Exploring && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked && !v.Working { // not the menu just answered, still up while the engine works on the answer
-			p.asked, p.menu, p.menuFor, p.sel = id, true, id, v.Menu.Sel
+			p.asked, p.menu, p.menuFor, p.sel = id, true, id, 0
 		}
 	} else {
 		p.asked = ""
@@ -364,6 +372,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.drawMenu(dst, note.Glyph, v.Typing.Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
 		p.menuRects = p.menuRects[:0]
+	} else if v.List != nil && v.Menu != nil { // a list and its question (list.go)
+		p.menu = false
+		p.drawList(dst, note.Glyph, v, mk, cx, max(b.Dy()/2-int(mk*float64(min(len(v.List), listRows)+len(v.Menu.Items)+6)*4), picBottom+int(pk*4)))
 	} else if v.Camp != nil && v.Menu == nil && v.SpellPick == nil { // camp (camp.go)
 		p.menu = false
 		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)))
@@ -378,7 +389,6 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if picBottom > 0 {
 			top = max(top, picBottom+int(pk*4))
 		}
-		p.menuSel = -1
 		p.drawMenu(dst, note.Glyph, "", lines, keys, p.sel, mk, cx, top)
 	} else if v.Menu == nil { // "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
@@ -397,7 +407,6 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 				top = max(top, picBottom+int(pk*4))
 			}
 		}
-		p.menuSel = v.Menu.Sel
 		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, mk, cx, top)
 	}
 	if note.Show { // the toast: pageImage's bottom line (yellow on black) on a black band along the very bottom of the screen, no border
@@ -435,10 +444,16 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
-	if p.main && p.mainSkip() {
+	if p.main && (p.mainSkip() || p.mainKey(k, v)) {
 		return true
 	}
 	if p.pickKey(k) {
+		return true
+	}
+	if v.List != nil && v.Menu != nil && !v.Choosing {
+		return p.listKey(k, v)
+	}
+	if p.pageMenu && p.pageMenuKey(k, v) {
 		return true
 	}
 	if v.Inventory != nil && p.inv.view != nil && !v.Choosing {
@@ -507,7 +522,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		case k == 13 && noChoice(v): // "press enter to continue": nothing to pick
 			return false
 		case k == 13 && m != nil:
-			p.menu, p.menuFor, p.sel = true, menuID(m), m.Sel
+			p.menu, p.menuFor, p.sel = true, menuID(m), 0
 		case k == 27 && v.Exploring:
 			p.view.OpenOptions()
 		default:
@@ -527,10 +542,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		p.sel = (p.sel + 1) % n
 	case k == 13:
 		p.menu = false
-		if p.sel == m.Sel { // the game's own choice: Enter picks it (some prompts take nothing else)
-			return false
-		}
-		p.send(engine.ActPick, p.sel)
+		p.send(engine.ActChoose, p.sel)
 	case k == 27 && v.Exploring: // the command bar has no Exit item: the popup alone closes
 		p.menu = false
 	case k == 27: // the game leaves the menu (its Exit item): hiding the popup alone left the game waiting in it
@@ -552,6 +564,17 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 // portrait, an action bar button, or an item of the vertical menu. It
 // reports whether it was taken.
 func (p *Presenter) Click(x, y int) bool {
+	if v := p.shownView; v.List != nil && v.Menu != nil && !v.Choosing && p.listClick(x, y, v) {
+		return true
+	}
+	if p.pageMenu {
+		for i, r := range p.winRects {
+			if image.Pt(x, y).In(r) {
+				p.send(engine.ActChoose, i)
+				return true
+			}
+		}
+	}
 	if p.main {
 		if p.mainSkip() {
 			return true
@@ -598,11 +621,7 @@ func (p *Presenter) Click(x, y int) bool {
 					p.runCommand(i)
 					return true
 				}
-				if i == p.menuSel { // the game's own choice: Enter picks it (some prompts take nothing else)
-					p.send(engine.ActContinue, 0)
-				} else {
-					p.send(engine.ActPick, i)
-				}
+				p.send(engine.ActChoose, i)
 				return true
 			}
 		}

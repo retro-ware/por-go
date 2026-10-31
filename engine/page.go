@@ -162,9 +162,6 @@ func (e *Engine) resizePage(cols, rows int) {
 	if oldPrompt < textRows && !e.ext.relist { // the bar's old row would stay inside the page
 		e.DisplaySpaces(0, oldPrompt, colBlack, len(old[0]))
 	}
-	if e.ext.bar != nil {
-		e.ext.bar()
-	}
 }
 
 // relist is the redraw of a screen whose loop draws it again on a

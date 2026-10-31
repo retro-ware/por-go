@@ -35,9 +35,7 @@ import (
 // extras holds the convenience-feature state.
 type extras struct {
 	inCommand bool                // the adventuring command bar is waiting
-	padHot    byte                // hotkey of the highlighted menu-bar item
 	minimap   bool                // roster panel shows the minimap
-	onSelect  func(hot byte)      // menus drawn elsewhere (party menu) show the selection
 	menu      int                 // DisplayInput calls in progress
 	list      bool                // the menu belongs to a scrolling list
 	choosing  bool                // SelectCharacter is waiting: highlight the roster entry
@@ -61,26 +59,22 @@ type extras struct {
 
 	// nav.go: keys and mouse
 	held          Action   // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
-	nav           navCtx   // the waiting menu
 	regions       []region // clickable parts of the screen
 	glow          [4]int   // the region the selection background shows under (glowOn), while glowing
 	glowing       bool
-	castCancelled bool              // CastSpell: the player cancelled the aim (the turn goes on)
-	raw           bool              // the screen reads the arrows itself
-	typing        bool              // InputString is waiting
-	modal         int               // help or overview shown: any key closes
-	enemiesOnly   bool              // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
-	picker        bool              // the list has no menu words: a click picks (listmenu.go)
-	floor         int               // regions below belong to the screen under the modal one
-	menuFloor     int               // menu bars open under the modal screen
-	viewing       bool              // the View page's own menu is waiting
-	toItems       bool              // the next View opens on the inventory (F1-F8)
-	campBar       bool              // a camp menu bar is waiting: F1-F8 change the member
-	camping       bool              // camp takes decisions (View.Camp)
-	ordering      bool              // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
-	sels          map[string]int    // the highlighted item each menu was left with
-	listWord      map[string]Choice // a list menu's highlighted word, kept across pages
-	selSet        bool              // the caller set the highlight (YesNo): keep it
+	castCancelled bool // CastSpell: the player cancelled the aim (the turn goes on)
+	raw           bool // the screen reads the arrows itself
+	typing        bool // InputString is waiting
+	modal         int  // help or overview shown: any key closes
+	enemiesOnly   bool // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
+	floor         int  // regions below belong to the screen under the modal one
+	menuFloor     int  // menu bars open under the modal screen
+	viewing       bool // the View page's own menu is waiting
+	toItems       bool // the next View opens on the inventory (F1-F8)
+	campBar       bool // a camp menu bar is waiting: F1-F8 change the member
+	camping       bool // camp takes decisions (View.Camp)
+	chosen        int  // the list line ActChoose came with (ListMenu)
+	ordering      bool // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
 
 	// fullmap.go
 	labels  map[int]map[int]mapLabel // per area: square -> label
@@ -94,7 +88,6 @@ type extras struct {
 	cells  [][]textCell // the text drawn into each cell, textRows by textCols
 	redraw func()       // draws the screen up again at the page's size (resizePage); nil: it stays as drawn until its next draw
 	relist bool         // the resize hands the waiting screen an actRedraw (relist)
-	bar    func()       // draws the menu bar waited on again (displayInput)
 	note   string       // shown over the picture for a moment
 	noteAt time.Time
 

@@ -71,10 +71,6 @@ func (e *Engine) Shop() {
 		exit
 	)
 	menu := Bar{{"Browse", browse}, {"Appraise", appraise}, {"Identify", identify}, {"Exit", exit}} // extra: Buy renamed Browse, no View, Id spelled out
-	if e.ext.sels == nil {
-		e.ext.sels = map[string]int{}
-	}
-	e.ext.sels[menu.String()] = 1 // extra: a new visit starts on Browse, not where the last one left
 	e.dasp("store_enter")
 	defer e.dasp("store_leave")
 	for leave := false; !leave; { // extra: no "Party money" line: it wrote over the merchant's greeting (the inventory shows the purse)
@@ -138,7 +134,6 @@ func unknown(it *Item) bool {
 // something about. Returns true when the screen needs redrawing.
 func (e *Engine) identifyMenu() bool {
 	index := 0
-	e.listTop = 0
 	for {
 		var list []*ListNode
 		var owner []*Character

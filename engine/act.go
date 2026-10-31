@@ -36,8 +36,7 @@ const (
 	ActPoint             // combat, aiming: the pointer is on square X, Y (the preview follows)
 	ActYes               // combat: yes to Battle.Ask (ActClose: no)
 	ActFlee              // combat: step off the map's edge and try to run away (Turn offers it at the edge)
-	ActPick              // pick item N of View.Menu
-	ActSelect            // highlight item N of View.Menu
+	ActChoose            // choose option N of View.Menu (X: the line of View.List)
 	ActContinue          // Enter: the highlighted choice, or "press a key"
 	ActText              // the line being typed (View.Typing) now reads Text
 	ActMove              // a step or cursor move in direction N (Dir...)
