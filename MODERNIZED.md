@@ -1143,8 +1143,9 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
   and unseen squares dim; doors light brown (Amiga 0xA84) instead of cyan.
 - Full-screen map (M, or a click on the minimap, `engine/fullmap.go`):
   cursor, legend, Label / Remove per square kept in `MAPNOTES.TXT`; New
-  Phlan's shops, temples, inns, taverns and offices come labelled from the
-  block's step-event ONGOTO; labelled squares are dots on the minimap.
+  Phlan's shops, temples, inns, taverns and offices are always labelled
+  (from the block's step-event ONGOTO; the player's labels go over them,
+  Remove shows them again); labelled squares are dots on the minimap.
 - Walk on the full map (`engine/walk.go`): the party walks to the cursor
   square, stopping at text, pictures, menus, monsters, a blocked step or any
   key.

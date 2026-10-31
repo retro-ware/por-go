@@ -113,21 +113,27 @@ func TestSeenByMap(t *testing.T) {
 	}
 }
 
-// New Phlan (set 3, GEO 0) comes labelled, and MAPNOTES.TXT's old "area 0"
-// (script area 0) loads as its map and is written back as "map".
+// New Phlan (set 3, GEO 0) always has its built-in labels: MAPNOTES.TXT's
+// old "area 0" (script area 0) loads as its map and goes over them, built-in
+// copies are not written back, and removing the player's label shows the
+// built-in one again.
 func TestPhlanLabels(t *testing.T) {
 	e := &Engine{set: 3, data: "../data"}
 	e.Cfg.SaveDir = t.TempDir()
-	if l := e.labels()[1<<4|15]; l.text != "Boats" {
-		t.Fatalf("fresh New Phlan 15,1 = %q, want Boats", l.text)
+	if m := e.labels(); m[1<<4|15].text != "Boats" || len(m) != len(phlanLabels) {
+		t.Fatalf("fresh New Phlan: %d labels, 15,1 = %q", len(m), m[1<<4|15].text)
 	}
-	os.WriteFile(filepath.Join(e.Cfg.SaveDir, notesFile), []byte("area 0\n15 1 4 My boat\n"), 0o644)
+	os.WriteFile(filepath.Join(e.Cfg.SaveDir, notesFile), []byte("area 0\n15 1 4 My boat\n11 1 4 Harbor master\n"), 0o644)
 	e.loadNotes()
-	if l := e.labels()[1<<4|15]; l.text != "My boat" {
-		t.Fatalf("old notes' New Phlan 15,1 = %q, want My boat", l.text)
+	if m := e.labels(); m[1<<4|15].text != "My boat" || m[4<<4|0].text != "Gate to slums" {
+		t.Fatalf("old notes' New Phlan 15,1 = %q, 0,4 = %q", m[1<<4|15].text, m[4<<4|0].text)
 	}
 	e.saveNotes()
 	if b, _ := os.ReadFile(filepath.Join(e.Cfg.SaveDir, notesFile)); string(b) != "map 196608\n15 1 4 My boat\n" {
 		t.Errorf("saved notes = %q", b)
+	}
+	delete(e.userLabels(), 1<<4|15)
+	if l := e.labels()[1<<4|15]; l.text != "Boats" {
+		t.Errorf("removed 15,1 = %q, want Boats", l.text)
 	}
 }

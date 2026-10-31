@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"maps"
 	"os"
 	"path/filepath"
 	"por/pal"
@@ -17,8 +18,8 @@ import (
 // square with a letter on every labelled square and a legend beside it. A
 // cursor (arrows, click) picks a square; Walk goes there (walk.go), Label
 // names it, Remove clears it.
-// New Phlan starts with its buildings labelled (phlanLabels); the labels of
-// every area the player changed are kept in data/save/MAPNOTES.TXT.
+// New Phlan's buildings are always labelled (phlanLabels, in every game);
+// the player's labels go over them and are kept in data/save/MAPNOTES.TXT.
 
 // Label kinds, each with its colour on the maps.
 const (
@@ -73,22 +74,32 @@ const phlanKey = 3 << 16 // areaKey of New Phlan: data set 3, GEO block 0
 
 const notesFile = "MAPNOTES.TXT"
 
-// labels are the current area's labels (square y<<4|x -> label).
-func (e *Engine) labels() map[int]mapLabel {
-	k := e.areaKey()
-	if m, ok := e.ext.labels[k]; ok {
-		return m
+// builtinLabels are map k's fixed labels: New Phlan's buildings.
+func builtinLabels(k int) map[int]mapLabel {
+	if k == phlanKey {
+		return phlanLabels
 	}
+	return nil
+}
+
+// userLabels are the player's labels of the current map (ext.labels).
+func (e *Engine) userLabels() map[int]mapLabel {
+	k := e.areaKey()
 	if e.ext.labels == nil {
 		e.ext.labels = map[int]map[int]mapLabel{}
 	}
-	m := map[int]mapLabel{}
-	if k == phlanKey {
-		for s, l := range phlanLabels {
-			m[s] = l
-		}
+	if e.ext.labels[k] == nil {
+		e.ext.labels[k] = map[int]mapLabel{}
 	}
-	e.ext.labels[k] = m
+	return e.ext.labels[k]
+}
+
+// labels are the current map's labels (square y<<4|x -> label): the
+// built-in ones with the player's over them.
+func (e *Engine) labels() map[int]mapLabel {
+	m := map[int]mapLabel{}
+	maps.Copy(m, builtinLabels(e.areaKey()))
+	maps.Copy(m, e.ext.labels[e.areaKey()])
 	return m
 }
 
@@ -135,7 +146,7 @@ func (e *Engine) loadNotes() {
 	}
 }
 
-// saveNotes writes the labels of every area that was looked at.
+// saveNotes writes the player's labels, but those that are built in.
 func (e *Engine) saveNotes() {
 	var b strings.Builder
 	keys := make([]int, 0, len(e.ext.labels))
@@ -147,8 +158,10 @@ func (e *Engine) saveNotes() {
 		fmt.Fprintf(&b, "map %d\n", k)
 		m := e.ext.labels[k]
 		sq := make([]int, 0, len(m))
-		for s := range m {
-			sq = append(sq, s)
+		for s, l := range m {
+			if b, ok := builtinLabels(k)[s]; !ok || b != l {
+				sq = append(sq, s)
+			}
 		}
 		sort.Ints(sq)
 		for _, s := range sq {
@@ -276,20 +289,22 @@ func (e *Engine) FullMap() {
 			old := m[cy<<4|cx]
 			if s, ok := e.labelInput(old.text); ok {
 				if s == "" {
-					delete(m, cy<<4|cx)
+					delete(e.userLabels(), cy<<4|cx)
 				} else {
 					kind := byte(poiUser)
 					if s == old.text {
 						kind = old.kind
 					}
-					m[cy<<4|cx] = mapLabel{s, kind}
+					e.userLabels()[cy<<4|cx] = mapLabel{s, kind}
 				}
 				e.saveNotes()
+				m = e.labels()
 			}
-		case remove:
-			if _, ok := m[cy<<4|cx]; ok {
-				delete(m, cy<<4|cx)
+		case remove: // a built-in label stays
+			if _, ok := e.userLabels()[cy<<4|cx]; ok {
+				delete(e.userLabels(), cy<<4|cx)
 				e.saveNotes()
+				m = e.labels()
 			}
 		case exit, NoPick:
 			return
