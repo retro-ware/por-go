@@ -294,8 +294,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/pal.W))))
 	// the text box and the menus at their sizes (Esc, Graphics), as far as they fit between the cards
 	bw, bh := float64(b.Dx()), float64(b.Dy())
-	tk := pk * fitStep(blobber.Settings.Text, func(s float64) bool { return pk*s*float64(txt.Pixels().Dx()) <= bw && pk*s*th <= bh/2 })
-	mk := pk * fitStep(blobber.Settings.Menu, func(s float64) bool { return pk*s*28*8 <= bw && pk*s*12*8 <= bh/2 })
+	tk := fitScale(pk, blobber.Settings.Text, func(k float64) bool { return k*float64(txt.Pixels().Dx()) <= bw && k*th <= bh/2 })
+	mk := fitScale(pk, blobber.Settings.Menu, func(k float64) bool { return k*28*8 <= bw && k*12*8 <= bh/2 })
 	cx, cy := (b.Min.X+b.Max.X)/2, b.Dy()/2
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
@@ -303,8 +303,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
-		pp := pk * fitStep(blobber.Settings.Pic, func(s float64) bool {
-			return pk*s*pw <= bw && 3*gap+pk*s*ph+tk*th+mk*7*8 <= bh
+		pp := fitScale(pk, blobber.Settings.Pic, func(k float64) bool {
+			return k*pw <= bw && 3*gap+k*ph+tk*th+mk*7*8 <= bh
 		})
 		py := int(float64(cy)-tk*th/2) / 2
 		if float64(py)-pp*ph/2 < gap || float64(py)+pp*ph/2+gap > float64(cy)-tk*th/2 {
@@ -666,37 +666,52 @@ func cardBase(dst *gpu.Image) int {
 	return max(1, min(dst.Bounds().Dx()/480, dst.Bounds().Dy()/360, (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(cardH+cardGap))))
 }
 
-// cardScale is the cards' scale: cardBase at the Portraits size, as far as
-// a column of four (eight members with NPCs) still fits under the map at
-// its size and a card takes at most a sixth of the width.
+// cardScale is the cards' scale: cardBase times the Portraits size, as far
+// as a column of four (eight members with NPCs) still fits under the map at
+// its size and a card takes at most a sixth of the width (fitScale).
 func cardScale(dst *gpu.Image) float64 {
-	b, base := dst.Bounds(), float64(cardBase(dst))
+	b := dst.Bounds()
 	room := float64(b.Dy() - 2*cardGap*cardBase(dst))
 	if !blobber.Settings.MapOff {
 		room -= float64(mapPx(dst))
 	}
-	return base * fitStep(blobber.Settings.Cards, func(s float64) bool {
-		return base*s*cardRows*(cardH+cardGap) <= room && base*s*cardW <= float64(b.Dx())/6
+	return fitScale(float64(cardBase(dst)), blobber.Settings.Cards, func(k float64) bool {
+		return k*cardRows*(cardH+cardGap) <= room && k*cardW <= float64(b.Dx())/6
 	})
 }
 
 // mapPx is the map's side: one map pixel to a card pixel at size 1 (Esc,
-// Graphics, Minimap size), at most half the height and a third of the width.
+// Graphics, Minimap size), at most 60 percent of the height and a third of
+// the width; the cards make way for it.
 func mapPx(dst *gpu.Image) int {
-	b, base := dst.Bounds(), float64(cardBase(dst)*mapSide)
-	return int(base * fitStep(blobber.Settings.Map, func(s float64) bool {
-		return base*s <= float64(b.Dy())/2 && base*s <= float64(b.Dx())/3
+	b := dst.Bounds()
+	return int(mapSide * fitScale(float64(cardBase(dst)), blobber.Settings.Map, func(k float64) bool {
+		return k*mapSide <= float64(b.Dy())*0.6 && k*mapSide <= float64(b.Dx())/3
 	}))
 }
 
-// fitStep is the largest of blobber.UISteps up to s that ok takes, else the smallest.
-func fitStep(s float64, ok func(float64) bool) float64 {
-	for i := len(blobber.UISteps) - 1; i >= 0; i-- {
-		if t := blobber.UISteps[i]; t <= s && ok(t) {
-			return t
+// fitScale is unit times size s (one of blobber.UISteps) when ok takes it,
+// else the largest whole scale under it that ok takes (so a size too big
+// for the screen still grows as far as it fits, its pixels square), else
+// the largest smaller step, else the smallest.
+func fitScale(unit, s float64, ok func(k float64) bool) float64 {
+	if s <= 0 {
+		s = 1
+	}
+	if k := unit * s; ok(k) {
+		return k
+	}
+	for k := math.Ceil(unit*s) - 1; k >= 1; k-- {
+		if ok(k) {
+			return k
 		}
 	}
-	return blobber.UISteps[0]
+	for i := len(blobber.UISteps) - 1; i >= 0; i-- {
+		if t := blobber.UISteps[i]; t < s && ok(unit*t) {
+			return unit * t
+		}
+	}
+	return unit * blobber.UISteps[0]
 }
 
 // mapSide is View.Map's side in pixels.

@@ -228,8 +228,8 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 	if title != "" {
 		rows += 2
 	}
-	k := k0 * fitStep(blobber.Settings.Menu, func(s float64) bool { // the Menus size (Esc, Graphics), as far as the box fits
-		return k0*s*float64((w+4)*8) <= float64(b.Dx()) && k0*s*float64((rows+1)*8) <= float64(b.Dy())
+	k := fitScale(k0, blobber.Settings.Menu, func(k float64) bool { // the Menus size (Esc, Graphics), as far as the box fits
+		return k*float64((w+4)*8) <= float64(b.Dx()) && k*float64((rows+1)*8) <= float64(b.Dy())
 	})
 	h := int(float64(rows*8) * k)
 	top := (b.Dy() - h) / 2
