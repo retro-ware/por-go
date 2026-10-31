@@ -50,13 +50,13 @@ feels to play:
 
 ## Screenshots
 
-![The title screen](docs/screenshots/title.png)
+[![The title screen](docs/screenshots/small/title.jpg)](docs/screenshots/title.png)
 
-![Walking Phlan's streets in the 3D view, with the minimap and the party's portraits](docs/screenshots/3d-view.png)
+[![Walking Phlan's streets in the 3D view, with the minimap and the party's portraits](docs/screenshots/small/3d-view.jpg)](docs/screenshots/3d-view.png)
 
-![A battle on the 3D board, with the action bar](docs/screenshots/battle.png)
+[![A battle on the 3D board, with the action bar](docs/screenshots/small/battle.jpg)](docs/screenshots/battle.png)
 
-![The party inventory, with the paper doll and an item's tooltip](docs/screenshots/inventory.png)
+[![The party inventory, with the paper doll and an item's tooltip](docs/screenshots/small/inventory.png)](docs/screenshots/inventory.png)
 
 No game data is included. The engine reads the original game files (the
 `.DAX` files, `ITEMS`) from your own copy of the game at run time. The rule
