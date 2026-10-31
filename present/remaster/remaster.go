@@ -75,6 +75,8 @@ type Presenter struct {
 	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
 	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	mainSel     int                         // the main menu's highlight
+	mainSub     bool                        // the main menu shows the Party submenu (the character functions)
+	mainAsk     int                         // the main menu's question up (askQuit ..)
 	noMenu      bool                        // nothing to pick: any click answers
 	pointer     image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
 	menuImg     *gpu.Image                  // the vertical menu, drawn at scale 1
@@ -377,7 +379,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.drawList(dst, note.Glyph, v, mk, cx, max(b.Dy()/2-int(mk*float64(min(len(v.List), listRows)+len(v.Menu.Items)+6)*4), picBottom+int(pk*4)))
 	} else if screenUp(v) && v.SpellPick == nil { // camp (camp.go), the temple, the shop, training
 		p.menu = false
-		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)))
+		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)), b.Max.Y)
 	} else if v.Exploring && p.menu { // the command menu (explore.go)
 		cmds := commands(v)
 		lines, keys := make([]string, len(cmds)), make([]byte, len(cmds))
@@ -569,6 +571,10 @@ func (p *Presenter) Click(x, y int) bool {
 	}
 	if p.pageMenu {
 		for i, r := range p.winRects {
+			if image.Pt(x, y).In(r) && sheetUp(p.shownView) {
+				p.sheetItems(p.shownView)[i].do()
+				return true
+			}
 			if image.Pt(x, y).In(r) {
 				p.send(engine.ActChoose, i)
 				return true

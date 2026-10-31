@@ -94,6 +94,7 @@ type View struct {
 	Temple    *Temple    // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
 	Shop      *Shop      // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
 	Training  *Training  // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
+	Sheet     *Sheet     // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -109,10 +110,9 @@ type View struct {
 	Ordering  bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
 	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActMove Up/Down steps, Enter takes the candidate
-	MainMenu  []string       // the party menu's functions, as Menu.Items (nil when it is not up)
+	MainMenu  []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
-	MainAsk   bool           // Menu is a question over the main menu (Quit to DOS)
 	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 	Working   bool           // an action sent is still being carried out: what the View shows is on its way out (a menu still up is not asked again)
@@ -138,6 +138,12 @@ type ListLine struct {
 type MenuItem struct {
 	Text string
 	Key  byte
+}
+
+// Sheet is what the character sheet offers besides the page.
+type Sheet struct {
+	Items  bool    // the member carries items (ActInventory)
+	Powers []Power // Spells, Magic, Heal, Cure
 }
 
 // Temple is a temple's services for the selected member.
@@ -241,8 +247,7 @@ type snapState struct {
 	invOn        bool        // ItemsMenu waits: View.Inventory is up
 	shop         bool        // ... as the shop's Browse: View.Inventory.Wares
 	loot         bool        // ... as the Loot screen: the treasure is the Wares, free
-	main         []string    // PartyMenu waits: View.MainMenu
-	mainAsk      bool        // ... and asks View.Menu over it
+	saves        bool        // there are saved games (the party menu's Load)
 	logo         image.Image // titleLogo, once cut
 	backdrop     image.Image // titleBackdrop, once read
 	backdropRead bool
@@ -320,14 +325,11 @@ func (e *Engine) publish() {
 				v.List[i] = ListLine{Text: l.Text, Header: l.Flag != 0, Dim: l.Dim || l.Grey, Off: l.skipped(), Without: l.Without}
 			}
 		}
-		if e.ext.modal == 0 && s.main != nil {
-			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
-		}
 	}
 	if v.Exploring {
 		v.CanCast = e.canCastNow()
 	}
-	if e.ext.camping && e.ext.menu == 0 {
+	if e.ext.camping && e.ext.menu == 0 && e.mode == modeCamp {
 		v.Camp = e.campView()
 	}
 	if e.ext.menu == 0 && !s.invOn {
@@ -338,6 +340,12 @@ func (e *Engine) publish() {
 			v.Shop = e.shopView()
 		case modeTraining:
 			v.Training = e.trainingView()
+		case modeSheet:
+			v.Sheet = e.sheetView()
+		case modeParty:
+			if e.ext.modal == 0 {
+				v.MainMenu, v.Logo, v.Backdrop = e.partyFunctions(), e.titleLogo(), e.titleBackdrop()
+			}
 		}
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick

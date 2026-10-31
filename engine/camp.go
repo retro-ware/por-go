@@ -471,10 +471,12 @@ func (e *Engine) CampMenu() bool {
 	e.clearStudy()
 	e.ext.camping, e.ext.ordering = true, true // a card dragged onto another's place moves the member there (ActOrder)
 	interrupted := false
-	for left := false; !left && !interrupted; {
-		left, interrupted = e.campDecision(e.decision())
+	e.await(modeCamp, func(a Action) bool {
+		left, i := e.campDecision(a)
+		interrupted = i
 		e.DisplayPartyList()
-	}
+		return left || i
+	})
 	e.ext.camping, e.ext.ordering = false, false
 	for _, c := range e.party { // the plans hold: the next rest learns them
 		e.planSpells(c)
@@ -502,15 +504,13 @@ func (e *Engine) campDecision(a Action) (left, interrupted bool) {
 		member()
 	case ActMember:
 		member()
-		e.ViewCharacter()
-		e.DrawMainScreen()
+		e.pushSheet()
 	case ActInventory:
 		if c := member(); len(e.carried(c)) == 0 {
 			e.say("No items")
 		} else {
 			e.ext.toItems = true
-			e.ViewCharacter()
-			e.DrawMainScreen()
+			e.pushSheet()
 		}
 	case ActCastPick:
 		member()

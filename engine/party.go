@@ -1,6 +1,6 @@
 package engine
 
-import "strings"
+import "slices"
 
 // Party menu, ported from ovr17:0161 and the list display 00BA:0767.
 
@@ -107,8 +107,10 @@ func memberPick(p Pick) bool {
 	return p.ID == PickRelist || p.ID == PickMove && (p.Dir == DirHome || p.Dir == DirEnd)
 }
 
-// PartyMenu = ovr17:0161. Returns when the player begins adventuring or
-// loads a game that starts play (beginFlag != 0).
+// PartyMenu = ovr17:0161: the party menu takes decisions (View.MainMenu)
+// until the player begins adventuring or loads a game that starts play
+// (beginFlag != 0). extra: the front end lists the functions in its own
+// order and asks its questions (Quit, Drop); there is no Save (F9 saves).
 func (e *Engine) PartyMenu() {
 	e.Music(3)     // Amiga 0x2D35C
 	e.set = 3      // DS:5376 = 3
@@ -121,184 +123,102 @@ func (e *Engine) PartyMenu() {
 			return
 		}
 	}
-	var names []string
-	var enabled []bool
-	for i, m := range partyMenu {
-		name := strings.TrimSuffix(m.name, " Character") // extra: the Party submenu needs no "Character"
-		if i == 6 {
-			name = "Remove"
-		}
-		names, enabled = append(names, name), append(enabled, m.enabled)
-		if i == 5 { // extra: deletes a saved character, listed after Add
-			names, enabled = append(names, "Forget"), append(enabled, true)
-		}
-	}
-	// extra: mQuick while there is no party, mParty (the character
-	// functions' submenu) and mBack (its way back to the main menu)
-	names = append(names, "Quick Start", "Party", "Back")
-	enabled = append(enabled, false, true, true)
-	const (
-		mCreate = iota
-		mDrop
-		mModify
-		mTrain
-		mView
-		mAdd
-		mForget
-		mRemove
-		mLoad
-		mBegin
-		mExit
-	)
-	redraw, sub := true, false // sub: the Party submenu is shown
 	e.debug = false
 	e.beginFlag = 0
-	for {
-		if redraw {
-			e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
-			if len(e.party) > 0 {
-				e.DisplayPartyList()
-				enabled[mDrop], enabled[mModify] = true, true
-				if e.partyExp() > 0 || e.debug {
-					enabled[mTrain] = true // never cleared here, only without a party
-				}
-				enabled[mView], enabled[mRemove] = true, true
-				enabled[mLoad], enabled[mForget] = false, false // (extra) the list fills the box
-				enabled[mBegin] = true                          // (extra) no Save: F9 saves (slots.go)
-			} else {
-				for _, m := range []int{mDrop, mModify, mTrain, mView, mRemove, mBegin} {
-					enabled[m] = false
-				}
-				enabled[mLoad], enabled[mForget] = true, true
-			}
-			redraw = false
+	redraw := func() {
+		e.snap.saves = len(e.slots()) > 0
+		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
+		if len(e.party) > 0 {
+			e.DisplayPartyList()
 		}
-		// The menu bar is hidden here (colours 0); the selection indicator
-		// goes on the list instead, which only offers the enabled entries.
-		const (
-			mQuick = mExit + 1 + iota
-			mParty
-			mBack
-		)
-		enabled[mQuick] = len(e.party) == 0
-		// extra: the remaster's main menu; Load Game leads when there are
-		// saved games and is hidden without them, Quick Start leading then
-		order := []int{mBegin, mLoad, mParty, mQuick, mExit}
-		if len(e.slots()) == 0 {
-			enabled[mLoad] = false
-			order = []int{mBegin, mQuick, mParty, mExit}
-		}
-		if sub {
-			order = []int{mAdd, mCreate, mForget, mDrop, mModify, mTrain, mView, mRemove, mBack}
-		}
-		var vis []int // extra: the enabled functions in the remaster's order
-		for _, i := range order {
-			if enabled[i] {
-				vis = append(vis, i)
-			}
-		}
-		var shown Bar
-		e.snap.main = nil // the remaster's main menu: the functions in list order
-		for _, i := range vis {
-			shown = append(shown, Entry{names[i][:1], Choice(i)}) // in list order, so the arrows step down the list
-			e.snap.main = append(e.snap.main, names[i])
-		}
-		shown = append(shown, Entry{}) // the original's trailing space
-		for row, i := range vis {
-			e.DisplayChar(2, 12+row, colWhite, names[i][0], true)
-			e.DisplayString(3, 12+row, colLightGreen, names[i][1:])
-		}
-		mark := e.regionMark()
-		{ // extra (nav.go): the function list and the roster take clicks
-			for row, i := range vis {
-				hot := names[i][0]
-				e.addRegion(region{x0: 2, y0: 12 + row, x1: 1 + len(names[i]), y1: 12 + row,
-					click: func(int, int) Action { return Action{Kind: actHotkey, N: int(hot)} }})
-			}
-			if len(e.party) > 0 {
-				e.rosterRegion()
-			}
-		}
-		p := e.DisplayInput("", shown, colLightMagenta, colBlack, colBlack, true, false) // extra: no "Choose a function"
-		list := e.snap.main
-		e.snap.main = nil
-		e.regionCut(mark)
-		e.ClearRow24()
-		if p.extra() {
-			if memberPick(p) {
-				e.partyKeypad(p)
-				e.DisplayPartyList()
-			}
-			continue
-		}
-		switch p.ID {
-		case mCreate:
-			if enabled[mCreate] {
-				e.CreateCharacter()
-			}
-		case mDrop:
-			if enabled[mDrop] {
-				e.DropCharacter()
-			}
-		case mModify:
-			if enabled[mModify] {
-				e.ModifyCharacter()
-			}
-		case mTrain:
-			if enabled[mTrain] {
-				e.TrainCharacter()
-			}
-		case mView:
-			if enabled[mView] {
-				e.ViewCharacter()
-			}
-		case mAdd:
-			if enabled[mAdd] {
-				e.AddCharacter()
-			}
-		case mForget:
-			if enabled[mForget] {
-				e.ForgetCharacter()
-			}
-		case mRemove:
-			if enabled[mRemove] && len(e.party) > 0 {
-				e.SaveCharacter(e.selected(), "")
-				e.RemoveSelected(false, true)
-			}
-		case mLoad:
-			if enabled[mLoad] {
-				e.SlotMenu(true) // (extra) the F9 screen, loading only
-				if e.beginFlag != 0 {
-					e.loadedGame = true // DS:49F8
-					return
-				}
-			}
-		case mBegin:
-			if enabled[mBegin] && len(e.party) > 0 {
-				e.beginFlag = 4
-				e.ClearRow24()
-				return
-			}
-		case mExit:
-			if enabled[mExit] {
-				e.snap.main, e.snap.mainAsk = list, true // extra: the question pops up over the main menu
-				quit := e.YesNo(colYellow, colLightGreen, colWhite, "Quit to DOS ")
-				e.snap.main, e.snap.mainAsk = nil, false
-				if quit {
-					e.Exit()
-				}
-			}
-		case mQuick:
-			if len(e.party) == 0 {
-				e.QuickStart()
-			}
-		case mParty:
-			sub = true
-		case mBack:
-			sub = false
-		}
-		redraw = true
 	}
+	redraw()
+	e.await(modeParty, func(a Action) bool {
+		done := e.applyParty(a)
+		if !done && e.mode == modeParty {
+			redraw()
+		}
+		return done
+	})
+}
+
+// partyFunctions are the party menu's decisions open now (ovr17:0161's
+// enabled entries). extra: Quick Start and Forget (a saved character)
+// without a party, Load only then and with saved games.
+func (e *Engine) partyFunctions() []ActKind {
+	if len(e.party) == 0 {
+		fs := []ActKind{ActQuickStart, ActAdd, ActCreate, ActForget, ActQuit}
+		if e.snap.saves {
+			fs = append([]ActKind{ActLoad}, fs...)
+		}
+		return fs
+	}
+	fs := []ActKind{ActBegin, ActAdd, ActCreate, ActDropMember, ActModify}
+	if e.partyExp() > 0 || e.debug {
+		fs = append(fs, ActTraining)
+	}
+	return append(fs, ActMember, ActRemove, ActQuit)
+}
+
+// applyParty applies a decision on the party menu; done when play starts.
+// N is the member a member's function is for (< 0: the selected one).
+func (e *Engine) applyParty(a Action) (done bool) {
+	if a.Kind == ActLead {
+		e.actor(a.N)
+		return false
+	}
+	if !slices.Contains(e.partyFunctions(), a.Kind) {
+		return false
+	}
+	legacy := func(f func()) { // ponytail: these still block; the main menu is not theirs meanwhile
+		m := e.mode
+		e.mode = modeNone
+		f()
+		e.mode = m
+	}
+	switch a.Kind {
+	case ActCreate:
+		legacy(e.CreateCharacter) // ponytail: creation, its pickers and the icon editor still block: M3c2
+	case ActModify:
+		e.actor(a.N)
+		legacy(e.ModifyCharacter) // ponytail: as creation
+	case ActAdd:
+		legacy(e.AddCharacter) // ponytail: the saved characters' cards (pickSaved) still block
+	case ActForget:
+		legacy(e.ForgetCharacter) // ponytail: as Add
+	case ActLoad:
+		legacy(func() { e.SlotMenu(true) }) // (extra) the F9 screen, loading only; ponytail: it blocks
+		if e.beginFlag != 0 {
+			e.loadedGame = true // DS:49F8
+			return true
+		}
+	case ActQuickStart:
+		legacy(e.QuickStart)
+	case ActDropMember: // ovr17:1F37, the player asked twice
+		c := e.actor(a.N)
+		if c.Okay == 0 {
+			e.say("You dump " + c.Name() + " out back.")
+		} else {
+			e.say(c.Name() + " bids you farewell.")
+		}
+		e.RemoveSelected(false, true) // ovr17:3291
+	case ActTraining:
+		e.actor(a.N)
+		e.pushTraining()
+	case ActMember:
+		e.actor(a.N)
+		e.pushSheet()
+	case ActRemove:
+		e.SaveCharacter(e.actor(a.N), "")
+		e.RemoveSelected(false, true)
+	case ActBegin:
+		e.beginFlag = 4
+		e.ClearRow24()
+		return true
+	case ActQuit:
+		e.Exit()
+	}
+	return false
 }
 
 // SelectCharacter = 00BA:2C48 (prompt, exit, var who): pick a party member

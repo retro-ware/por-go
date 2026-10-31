@@ -88,6 +88,19 @@ const (
 	ActIdentify   // identify member N's item X (View.Shop.Unknown), paid (the player agreed)
 	ActTrain      // train the selected member (the player agreed)
 	ActLearn      // spell X goes into the book of the member trained (View.Training.Learn)
+
+	// Party menu decisions (View.MainMenu); N is the member (< 0: the
+	// selected one) where one is meant; ActMember views, ActDropMember drops
+	ActCreate     // create a character
+	ActModify     // member N's sheet to change
+	ActAdd        // add saved characters to the party
+	ActForget     // forget a saved character
+	ActRemove     // member N goes back to the saved characters
+	ActTraining   // the training hall for member N
+	ActLoad       // load a saved game
+	ActQuickStart // a ready-made party
+	ActBegin      // begin adventuring
+	ActQuit       // quit the game (the player confirmed)
 )
 
 // Directions of ActMove.

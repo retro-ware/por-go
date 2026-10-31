@@ -179,7 +179,7 @@ func selectedName(v engine.View) string {
 
 // drawCamp draws the camp screen up at scale k, centred on cx, its top at
 // top; a bestiary entry's icon goes over its box.
-func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View, k float64, cx, top int) {
+func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View, k float64, cx, top, bottom int) {
 	title, items := p.campItems(v)
 	lines, keys := make([]string, len(items)), make([]byte, len(items))
 	for i, it := range items {
@@ -210,6 +210,12 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 			top += int(s*float64(icon.Bounds().Dy())) + int(k*4)
 		}
 	}
+	rows := len(lines) + 2 // the menu fits above bottom: moved up, else smaller
+	if title != "" {
+		rows += len(wrap(title, 24)) + 1
+	}
+	k = min(k, float64(bottom)/float64(rows*8))
+	top = max(0, min(top, bottom-int(k*float64(rows*8))))
 	p.drawMenu(dst, glyph, title, lines, keys, p.camp.sel, k, cx, top)
 }
 

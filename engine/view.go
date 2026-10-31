@@ -21,6 +21,8 @@ func (e *Engine) viewChar() *Character { return e.view.char }
 type viewState struct {
 	char  *Character // DS:4716
 	start *Character // DS:471A
+	quit  bool       // an item or spell used in combat took the turn: the sheet and inventory close
+	leave bool       // the sheet was opened on the inventory (F1-F8): leaving that leaves it
 }
 
 // CharacterSheet = ovr20:004A.
@@ -197,76 +199,95 @@ func (e *Engine) showStat(stat int, hi bool) {
 }
 
 // ViewCharacter = ovr20:0AB3 (var quit): the View command. Returns quit,
-// which ItemsMenu sets when an item was used in combat.
+// set when an item or spell used in combat took the turn.
 func (e *Engine) ViewCharacter() bool {
+	base := len(e.screens)
+	e.pushSheet()
+	e.until(base)
+	return e.view.quit
+}
+
+// pushSheet puts the sheet of the selected member up (View.Sheet); F1-F8
+// (ext.toItems) open it on the inventory, and leaving that leaves it.
+func (e *Engine) pushSheet() {
 	if e.beginFlag == 5 {
 		e.combatViewEnter() // ovr31 (seg 03E0) +2F
 		e.snap.sheetOn = true
-		defer func() { e.snap.sheetOn = false }()
 	}
-	const (
-		items Choice = iota
-		spellsIt
-		magic
-		heal
-		cure
-		exit
-		sheet // (no item) the sheet is up
-	)
-	key := sheet
-	quit := false
-	e.view.start = e.selected()
-	direct := e.ext.toItems // F1-F8: start on the inventory (extras.go)
+	e.view.start, e.view.quit, e.view.leave = e.selected(), false, false
+	direct := e.ext.toItems
 	e.ext.toItems = false
-	if direct && len(e.carried(e.selected())) > 0 {
-		var leave bool
-		if quit, leave = e.inventory(direct); leave {
-			key = exit
-		}
-	}
-	if key != exit && !quit {
-		e.CharacterSheet()
-	}
-	for key != NoPick && key != exit && !quit {
-		c := e.viewChar()
-		var menu Bar
-		if len(e.carried(c)) > 0 {
-			menu = append(menu, Entry{"Items", items})
-		}
-		for _, p := range e.powers(c) {
-			menu = append(menu, Entry{p.Name, map[ActKind]Choice{ActSpells: spellsIt, ActMagic: magic, ActHeal: heal, ActCure: cure}[p.Kind]})
-		}
-		menu = append(menu, Entry{"Exit", exit})
-		e.ext.viewing = true // F1..F8 switch members (extras.go)
-		off := e.redrawWith(e.CharacterSheet)
-		key = e.DisplayInput("View:", menu, colLightMagenta, colLightGreen, colWhite, false, false).ID
+	off := e.redrawWith(e.CharacterSheet)
+	e.push(modeSheet, e.applySheet, func() {
 		off()
 		e.ext.viewing = false
-		switch key {
-		case items:
-			var leave bool
-			if quit, leave = e.inventory(direct); leave {
-				key = exit
-			}
-		case spellsIt:
-			quit = e.power(c, ActSpells)
-		case magic:
-			e.power(c, ActMagic)
-		case heal:
-			e.power(c, ActHeal)
-		case cure:
-			e.power(c, ActCure)
+		e.snap.sheetOn = false
+		if e.beginFlag == 5 {
+			e.combatViewLeave() // ovr31 (seg 03E0) +2A
 		}
-		if !quit && key >= items && key <= cure {
-			e.CharacterSheet()
+		e.snap.portrait = CellRect{} // extra: Shift-click and dropped PNGs go with the sheet (DrawMainScreen keeps the page)
+		e.DrawMainScreen()
+	})
+	if direct && len(e.carried(e.selected())) > 0 {
+		e.view.leave = true
+		e.pushItems()
+		return
+	}
+	e.CharacterSheet()
+	e.ext.viewing = true // Shift-click and dropped PNGs change the portrait
+}
+
+// applySheet applies a decision on the sheet; done when it is left.
+func (e *Engine) applySheet(a Action) (done bool) {
+	c := e.viewChar()
+	if c == nil {
+		c = e.selected()
+	}
+	switch a.Kind {
+	case ActClose:
+		return true
+	case actRedraw: // back from the inventory or a power
+		if e.view.quit || e.view.leave {
+			return true
 		}
+	case ActMember:
+		if e.beginFlag == 5 || a.N < 0 || a.N >= len(e.party) { // in combat the sheet is the fighter's
+			return false
+		}
+		e.selectMember(a.N)
+	case ActInventory, ActOverview:
+		if a.Kind == ActInventory && a.N >= 0 && a.N < len(e.party) && e.beginFlag != 5 {
+			e.selectMember(a.N)
+			c = e.selected()
+		}
+		if len(e.carried(c)) > 0 {
+			e.ext.viewing = false
+			e.pushItems()
+			return false
+		}
+	case ActSpells, ActMagic, ActHeal, ActCure:
+		if !slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
+			return false
+		}
+		if e.power(c, a.Kind) { // ponytail: the powers still block (casting, the member pick): M4/M5
+			e.view.quit = true
+			return true
+		}
+	default:
+		return false
 	}
-	if e.beginFlag == 5 {
-		e.combatViewLeave() // ovr31 (seg 03E0) +2A
+	e.CharacterSheet()
+	e.ext.viewing = true
+	return false
+}
+
+// sheetView is the sheet's decisions for the View.
+func (e *Engine) sheetView() *Sheet {
+	c := e.selected()
+	if c == nil {
+		return nil
 	}
-	e.snap.portrait = CellRect{} // extra: Shift-click and dropped PNGs go with the sheet (DrawMainScreen keeps the page)
-	e.DrawMainScreen()
-	return quit
+	return &Sheet{Items: len(e.carried(c)) > 0, Powers: e.powers(c)}
 }
 
 // Paladin powers from CotAB (ovr020). Two port-only affect types time them
@@ -315,33 +336,20 @@ func (e *Engine) paladinCure(c *Character) {
 	e.DisplayMessageWait(colLightGreen, t.Name()+" is cured")
 }
 
-// inventory runs ItemsMenu for ViewCharacter (extra: leave reports that
-// the View page should close too: the inventory was opened straight (F1-F8, I)).
-func (e *Engine) inventory(direct bool) (quit, leave bool) {
-	quit = e.ItemsMenu()
-	return quit, !quit && direct
+// canLoseItem = ovr20:0D70 (item): readied items must be unreadied first.
+// (Its question for a scroll someone was going to scribe from is the
+// front end's: InvItem.Scribe.)
+func (e *Engine) canLoseItem(it *Item) bool {
+	if it.Readied != 0 {
+		e.refuse("Must be unreadied")
+		return false
+	}
+	return true
 }
 
-// canLoseItem = ovr20:0D70 (item): readied items must be unreadied first;
-// a scroll someone is about to scribe from asks before it goes.
-func (e *Engine) canLoseItem(it *Item) bool {
-	ok := false
-	switch {
-	case it.Readied != 0:
-		e.refuse("Must be unreadied")
-	case !e.isScroll(it):
-		ok = true
-	case it.Spells[0] > 0x7F || it.Spells[1] > 0x7F || it.Spells[2] > 0x7F:
-		c := e.selected()
-		e.displayName(c, 1, 21, false)
-		e.msgCol, e.msgRow = len(c.Name())+2, 0x15
-		e.DisplayTextBlock(1, 21, winRight, winBottom, colYellow, false, " was going to scribe from that scroll")
-		ok = e.YesNo(colLightMagenta, colLightGreen, colWhite, "is it Okay to lose it? ")
-	default:
-		ok = true
-	}
-	e.ClearCells(1, 21, winRight, winBottom)
-	return ok
+// scribing: someone was going to scribe from the scroll (ovr20:0D70).
+func (e *Engine) scribing(it *Item) bool {
+	return e.isScroll(it) && (it.Spells[0] > 0x7F || it.Spells[1] > 0x7F || it.Spells[2] > 0x7F)
 }
 
 // SheetPortrait = ovr29:04F9: the character's head and body in a box at
@@ -376,93 +384,104 @@ func fit(b, r image.Rectangle) image.Rectangle {
 // ItemsMenu = ovr20:0EF8: the character's items with Ready, Use, Trade,
 // Drop, Halve, Join, Sell and Id. Returns true when the View should end
 // (an item was used in combat). extra: the remastered inventory screen
-// draws it (View.Inventory) and acts through Act: no Halve, Join, Trade
-// or Id (unreadied items are the party's), Throw in combat, F1-F8 or the
-// screen's arrows show another member outside combat; Drop and Sell come
-// already confirmed.
+// draws it (View.Inventory) and takes decisions (applyItems): no Halve,
+// Join, Trade or Id (unreadied items are the party's), Throw in combat,
+// F1-F8 or the screen's arrows show another member outside combat; Drop
+// and Sell come already confirmed.
 func (e *Engine) ItemsMenu() bool {
+	base := len(e.screens)
+	e.view.quit = false
+	e.pushItems()
+	e.until(base)
+	return e.view.quit
+}
+
+// pushItems puts the selected member's inventory up.
+func (e *Engine) pushItems() {
 	e.snap.invOn = true
-	defer func() { e.snap.invOn = false }()
-	for {
-		c := e.selected()
-		e.ApplyItems(c) // port: ItemCount may be stale (shop Inv for a buyer never viewed)
-		items := e.carried(c)
-		a := e.act()
-		var it *Item
-		if a.N >= 0 && a.N < len(items) {
-			it = items[a.N]
+	e.ApplyItems(e.selected()) // port: ItemCount may be stale (shop Inv for a buyer never viewed)
+	e.push(modeItems, e.applyItems, func() { e.snap.invOn = false })
+}
+
+// applyItems applies a decision in the inventory; done when it is left
+// (or an item used in combat took the turn: view.quit).
+func (e *Engine) applyItems(a Action) (done bool) {
+	c := e.selected()
+	items := e.carried(c)
+	var it *Item
+	if a.N >= 0 && a.N < len(items) {
+		it = items[a.N]
+	}
+	defer e.ApplyItems(c) // 146F: also reached with nothing selected
+	switch inv := e.inventoryView(c, items); {
+	case a.Kind == ActClose:
+		return true
+	case a.Kind == ActMember:
+		if e.beginFlag != 5 { // in combat the inventory is the fighter's
+			e.selectMember(a.N)
+			e.ApplyItems(e.selected())
 		}
-		switch inv := e.inventoryView(c, items); {
-		case a.Kind == ActClose:
-			return false
-		case a.Kind == ActMember:
-			if e.beginFlag != 5 { // in combat the inventory is the fighter's
-				e.selectMember(a.N)
-			}
-		case a.Kind >= ActSpells && a.Kind <= ActCure:
-			if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {
-				e.snap.invOn = false // they show on the game's own screens
-				quit := e.power(c, a.Kind)
-				e.snap.invOn = true
-				if quit && e.beginFlag == 5 {
-					return true
-				}
-			}
-		case a.Kind == ActTakeAll && e.snap.loot: // the Loot screen's All: each piece in turn, until one does not fit
-			for len(e.run.treasure) > 0 && !e.buyItem(e.run.treasure[0]) {
-				e.run.treasure = e.run.treasure[1:]
-			}
-			if len(e.run.treasure) == 0 {
-				return false
-			}
-		case a.Kind == ActBuy && e.snap.shop: // N is a ware, not one of items
-			if a.N >= 0 && a.N < len(e.run.treasure) {
-				w := e.run.treasure[a.N]
-				switch {
-				case e.snap.loot: // the Loot screen's Take (lootTake)
-					if !e.buyItem(w) {
-						e.run.treasure = slices.Delete(e.run.treasure, a.N, a.N+1)
-						if len(e.run.treasure) == 0 {
-							return false
-						}
-					}
-				case uint32(w.Price) > e.purse.gold:
-					e.refuse("Not enough Money.")
-				case !e.buyItem(w):
-					e.purse.gold -= uint32(w.Price)
-					e.dasp("store5")
-					e.say("Bought!")
-				}
-			}
-		case it == nil:
-		case a.Kind == ActReady:
-			e.readySome(c, it, a.X) // X: that many of the stack (0: all)
-		case a.Kind == ActUse && inv.Use && e.usable(it):
-			if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
-				e.refuse("Must be Readied")
-				break
-			}
-			e.snap.invOn = false // its targets and spells show on the game's own screens
-			quit := e.useItem(it)
+	case a.Kind >= ActSpells && a.Kind <= ActCure:
+		if slices.ContainsFunc(inv.Powers, func(p Power) bool { return p.Kind == a.Kind }) {
+			e.snap.invOn = false       // they show on the game's own screens
+			quit := e.power(c, a.Kind) // ponytail: the powers still block (casting, the member pick): M4/M5
 			e.snap.invOn = true
 			if quit && e.beginFlag == 5 {
+				e.view.quit = true
 				return true
 			}
-		case a.Kind == ActDrop:
-			if e.canLoseItem(it) {
-				e.dasp("drop")
-				e.RemoveItem(c, it)
-			}
-		case a.Kind == ActSell && inv.Sell:
-			if e.canLoseItem(it) {
-				e.RemoveItem(c, it)
-				e.purse.addCopper(sellValue(it))
+		}
+	case a.Kind == ActTakeAll && e.snap.loot: // the Loot screen's All: each piece in turn, until one does not fit
+		for len(e.run.treasure) > 0 && !e.buyItem(e.run.treasure[0]) {
+			e.run.treasure = e.run.treasure[1:]
+		}
+		return len(e.run.treasure) == 0
+	case a.Kind == ActBuy && e.snap.shop: // N is a ware, not one of items
+		if a.N >= 0 && a.N < len(e.run.treasure) {
+			w := e.run.treasure[a.N]
+			switch {
+			case e.snap.loot: // the Loot screen's Take (lootTake)
+				if !e.buyItem(w) {
+					e.run.treasure = slices.Delete(e.run.treasure, a.N, a.N+1)
+					return len(e.run.treasure) == 0
+				}
+			case uint32(w.Price) > e.purse.gold:
+				e.refuse("Not enough Money.")
+			case !e.buyItem(w):
+				e.purse.gold -= uint32(w.Price)
 				e.dasp("store5")
-				e.say("Sold!")
+				e.say("Bought!")
 			}
 		}
-		e.ApplyItems(c) // 146F: also reached with nothing selected
+	case it == nil:
+	case a.Kind == ActReady:
+		e.readySome(c, it, a.X) // X: that many of the stack (0: all)
+	case a.Kind == ActUse && inv.Use && e.usable(it):
+		if it.Readied == 0 && dollSlot(e, c, it) >= 0 { // extra: items with no slot are used from the party inventory
+			e.refuse("Must be Readied")
+			break
+		}
+		e.snap.invOn = false  // its targets and spells show on the game's own screens
+		quit := e.useItem(it) // ponytail: using still blocks (the scroll's spell list, aiming): M5
+		e.snap.invOn = true
+		if quit && e.beginFlag == 5 {
+			e.view.quit = true
+			return true
+		}
+	case a.Kind == ActDrop:
+		if e.canLoseItem(it) {
+			e.dasp("drop")
+			e.RemoveItem(c, it)
+		}
+	case a.Kind == ActSell && inv.Sell:
+		if e.canLoseItem(it) {
+			e.RemoveItem(c, it)
+			e.purse.addCopper(sellValue(it))
+			e.dasp("store5")
+			e.say("Sold!")
+		}
 	}
+	return false
 }
 
 // usable: the item has a Use (a scroll, or a spell of its own).

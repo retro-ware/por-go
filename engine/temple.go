@@ -66,8 +66,7 @@ func (e *Engine) applyTemple(a Action) (done bool) {
 		e.actor(a.N)
 	case ActMember:
 		e.actor(a.N)
-		e.ViewCharacter() // ponytail: the legacy View screen blocks; it goes with the inventory's conversion
-		e.DrawMainScreen()
+		e.pushSheet()
 	case ActAppraise, ActKeep:
 		e.applyAppraise(a)
 	case ActTempleCure:
@@ -175,6 +174,7 @@ func (e *Engine) Temple() {
 	e.await(modeTemple, func(a Action) bool {
 		done := e.applyTemple(a)
 		e.keepPane(greeting)
+		e.DisplayPartyList()
 		return done
 	})
 	e.ClearBox(0, 0, lastCol, promptRow) // ovr05:0C18

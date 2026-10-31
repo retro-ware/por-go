@@ -433,8 +433,8 @@ func TestFightSheet(t *testing.T) {
 			selected = m.Name
 		}
 	}
-	if v.Menu == nil || selected != active {
-		t.Errorf("menu %v, selected %q, want the sheet of %q", v.Menu != nil, selected, active)
+	if v.Sheet == nil || selected != active {
+		t.Errorf("sheet %v, selected %q, want the sheet of %q", v.Sheet != nil, selected, active)
 	}
 }
 

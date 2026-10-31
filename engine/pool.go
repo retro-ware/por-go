@@ -179,18 +179,19 @@ type Power struct {
 
 // InvItem is one item of the inventory.
 type InvItem struct {
-	Index int      // its place in the member's items (Action.N)
-	Name  string   // as the list shows it
-	Type  byte     // base item type
-	Words []string // the item's name words, known or not (for its icon)
-	Count int
-	Slot  bool     // it has a doll slot (it can be readied)
-	Wrong bool     // the member's class cannot ready it
-	Use   bool     // it has a use (a scroll, a spell of its own)
-	Look  []string // what it does (the shop's Look text)
-	Price string   // what selling it pays
-	Kind  ItemKind // its party inventory tab
-	Rules []string // extra: how it attacks in combat (the bar's tooltip), set on the Turn's Weapon and Missile
+	Index  int      // its place in the member's items (Action.N)
+	Name   string   // as the list shows it
+	Type   byte     // base item type
+	Words  []string // the item's name words, known or not (for its icon)
+	Count  int
+	Slot   bool     // it has a doll slot (it can be readied)
+	Wrong  bool     // the member's class cannot ready it
+	Use    bool     // it has a use (a scroll, a spell of its own)
+	Look   []string // what it does (the shop's Look text)
+	Price  string   // what selling it pays
+	Scribe bool     // a scroll someone was going to scribe from (the front end asks before it goes)
+	Kind   ItemKind // its party inventory tab
+	Rules  []string // extra: how it attacks in combat (the bar's tooltip), set on the Turn's Weapon and Missile
 }
 
 // ItemKind sorts the party inventory into tabs (extra).
@@ -232,6 +233,7 @@ func (e *Engine) inventoryView(c *Character, items []*Item) *Inventory {
 		v2 := sellValue(it)
 		x := *e.invItem(c, it)
 		x.Index, x.Slot, x.Wrong, x.Use, x.Look, x.Price = i, dollSlot(e, c, it) >= 0, dollSlot(e, c, it) >= 0 && e.base(it.Type).Classes&c.ClassMask == 0, e.usable(it), e.itemLines(it, e.readiedLike(c, it)), moneyText(v2/200, v2%200)
+		x.Scribe = e.scribing(it)
 		if it.Readied != 0 {
 			if s := dollSlot(e, c, it); s >= 0 && v.Doll[s] == nil {
 				v.Doll[s] = &x

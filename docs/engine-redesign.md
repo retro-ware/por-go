@@ -53,13 +53,18 @@ a chance for errors.
 ## Screens taking decisions
 
 A subsystem converted to decisions keeps an explicit mode, `e.mode`
-(engine/decide.go: modeTemple, modeShop, modeTraining), with its state in
+(engine/decide.go: modeTemple, modeShop, modeTraining, modeCamp, modeItems,
+modeSheet, modeParty), with its state in
 typed fields, and a handler `func (e *Engine) applyX(a Action) (done bool)`
 that applies one decision and returns: it never blocks, sleeps or calls
 DisplayInput, ListMenu, YesNo, act or decision. Refusals go to the note
 (`e.say`). Until M6 removes the goroutine, the legacy callers run it with
 `e.await(mode, handler)`, which feeds it `e.decision()` until done; M6
-replaces await with `Apply` dispatching on `e.mode`.
+replaces await with `Apply` dispatching on `e.mode`. A handler opens
+another screen with `e.push(mode, handler, leave)`: the pushed screen takes
+the decisions until it is done, then `leave` runs and the screen under it
+gets `actRedraw` (the temple's View pushes the sheet, the sheet its
+inventory). `e.until(base)` is the blocking adapter for pushed screens.
 
 ## Milestones
 
@@ -104,3 +109,17 @@ is deleted subsystem by subsystem, not kept alongside.
   presenter's (present/remaster/temple.go, shop.go, train.go over camp's
   screens). The View and Browse screens they open are still the legacy
   inventory and character screens.
+- [x] M3c1: the party menu, the character sheet and the inventory take
+  decisions (applyParty, applySheet, applyItems) on a screen stack
+  (`e.push`); the temple's View and the shop's Browse push them, so do
+  camp's View and Items. New ActCreate, ActModify, ActAdd, ActForget,
+  ActRemove, ActTraining, ActLoad, ActQuickStart, ActBegin, ActQuit;
+  View.MainMenu is the functions open ([]ActKind), View.Sheet the sheet's
+  Items and powers, InvItem.Scribe. The presenter orders the main menu,
+  owns its Party submenu and asks Quit and Drop (twice); it draws the
+  sheet's View menu (present/remaster/sheet.go) and asks before a scroll
+  someone would scribe from goes. Camp-style menus fit the window (moved
+  up, else smaller). Still blocking, called from the handlers: Create,
+  Modify (the creation sheet, its drop-downs, pickers, typed fields, the
+  icon editor), Add and Forget (pickSaved), Load (the slot screen), Quick
+  Start, and the powers and Use (casting, the member pick: M4/M5).

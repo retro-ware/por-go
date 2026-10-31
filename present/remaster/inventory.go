@@ -602,6 +602,9 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	case inv.ask != nil && it != nil:
 		box = []string{"I'll give you " + it.Price, "for your " + strings.TrimSpace(it.Name) + ".", "", "Is it a deal?"}
 	}
+	if it := itemAt(in, inv.sel); box != nil && it != nil && it.Scribe && inv.ask.Kind != engine.ActBuy { // ovr20:0D70's question
+		box = append([]string{"Someone was going to", "scribe from it.", ""}, box...)
+	}
 
 	inv.panelAt = image.Rectangle{}
 	// onto the GPU: the boxes' borders, then the box's

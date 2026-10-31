@@ -767,26 +767,6 @@ func (e *Engine) editSheet(c *Character, k kind, replace func(old, new *Characte
 	}
 }
 
-// DropCharacter = ovr17:1F37: asks twice, then the selected member leaves
-// the party (a hired NPC bids farewell, anyone else is dumped).
-func (e *Engine) DropCharacter() {
-	if len(e.party) == 0 {
-		return
-	}
-	c := e.selected()
-	if e.YesNo(colYellow, colLightGreen, colWhite, "Drop "+c.Name()+" forever? ") &&
-		e.YesNo(colYellow, colLightGreen, colWhite, "Are you sure? ") {
-		if c.Okay == 0 {
-			e.BottomMessage("You dump " + c.Name() + " out back.")
-		} else {
-			e.BottomMessage(c.Name() + " bids you farewell.")
-		}
-		e.RemoveSelected(false, true) // ovr17:3291
-		return
-	}
-	e.BottomMessage(c.Name() + " breathes a sigh of relief.")
-}
-
 // strScore folds 18/xx into one number: 18/01 = 1801, 18/00 = 1900.
 func strScore(st, x byte) int {
 	if st == 18 && x > 0 {

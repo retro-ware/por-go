@@ -15,8 +15,10 @@ func (e *Engine) shopBrowse() {
 		}
 	}
 	e.snap.shop = true
-	defer func() { e.snap.shop = false }()
-	e.ItemsMenu()
+	e.pushItems()
+	items := &e.screens[len(e.screens)-1]
+	leave := items.leave
+	items.leave = func() { leave(); e.snap.shop = false }
 }
 
 // shopWares adds the goods and the party's money to the inventory view.
@@ -72,6 +74,7 @@ func (e *Engine) Shop() {
 			e.DrawMainScreen()
 			e.keepPane(greeting)
 		}
+		e.DisplayPartyList()
 		return done
 	})
 }
@@ -88,7 +91,8 @@ func (e *Engine) applyShop(a Action) (done, redraw bool) {
 		e.actor(a.N)
 	case ActInventory:
 		e.actor(a.N)
-		e.shopBrowse() // ponytail: the legacy inventory screen blocks; it goes with the inventory's conversion
+		e.shopBrowse()
+	case actRedraw: // back from the goods
 		return false, true
 	case ActAppraise, ActKeep:
 		e.applyAppraise(a)

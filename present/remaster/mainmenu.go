@@ -3,7 +3,7 @@ package remaster
 import (
 	"image"
 	"image/color"
-	"strings"
+	"slices"
 	"time"
 
 	"gpu"
@@ -83,15 +83,82 @@ func (p *Presenter) mainSkip() bool {
 	return true
 }
 
+// mainNames are the party menu's functions as the menu names them.
+var mainNames = map[engine.ActKind]string{
+	engine.ActBegin: "BEGIN Adventuring", engine.ActLoad: "Load Game", engine.ActQuickStart: "Quick Start", engine.ActQuit: "Exit to DOS",
+	engine.ActAdd: "Add", engine.ActCreate: "Create", engine.ActForget: "Forget", engine.ActDropMember: "Drop",
+	engine.ActModify: "Modify", engine.ActTraining: "Train", engine.ActMember: "View", engine.ActRemove: "Remove",
+}
+
+// Main menu questions (mainUI.ask).
+const (
+	askNone = iota
+	askQuit
+	askDrop
+	askSure // the drop's second question
+)
+
+// mainItems are the main menu's lines (the Party submenu with the
+// character functions) or, with a question up, its answers and the
+// question.
+func (p *Presenter) mainItems(v engine.View) (string, []campItem) {
+	ask := func(q int) func() { return func() { p.mainAsk, p.sel = q, 1 } }
+	no := campItem{"No", 'N', ask(askNone)}
+	switch p.mainAsk {
+	case askQuit:
+		return "Quit to DOS?", []campItem{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActQuit, 0) }}, no}
+	case askDrop:
+		return "Drop " + selectedName(v) + " forever?", []campItem{{"Yes", 'Y', ask(askSure)}, no}
+	case askSure:
+		return "Are you sure?", []campItem{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActDropMember, -1) }}, no}
+	}
+	open := func(k engine.ActKind) bool { return slices.Contains(v.MainMenu, k) }
+	var it []campItem
+	add := func(k engine.ActKind) {
+		if !open(k) {
+			return
+		}
+		do := func() { p.send(k, -1) }
+		switch k {
+		case engine.ActQuit:
+			do = ask(askQuit)
+		case engine.ActDropMember:
+			do = ask(askDrop)
+		}
+		it = append(it, campItem{mainNames[k], mainNames[k][0], do})
+	}
+	if p.mainSub {
+		for _, k := range []engine.ActKind{engine.ActAdd, engine.ActCreate, engine.ActForget, engine.ActDropMember, engine.ActModify, engine.ActTraining, engine.ActMember, engine.ActRemove} {
+			add(k)
+		}
+		return "", append(it, campItem{"Back", 'B', func() { p.mainSub, p.mainSel = false, 0 }})
+	}
+	add(engine.ActBegin)
+	add(engine.ActLoad) // Load Game leads when there are saved games, Quick Start without them
+	if !open(engine.ActLoad) {
+		add(engine.ActQuickStart)
+	}
+	it = append(it, campItem{"Party", 'P', func() { p.mainSub, p.mainSel = true, 0 }})
+	if open(engine.ActLoad) {
+		add(engine.ActQuickStart)
+	}
+	add(engine.ActQuit)
+	return "", it
+}
+
 // drawMainUI draws the main menu's lettering, functions and cards.
 func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 	b := dst.Bounds()
 	mk := scale(dst)
-	keys := make([]byte, len(v.MainMenu))
-	for i, s := range v.MainMenu {
-		keys[i] = s[0]
+	asking := p.mainAsk
+	p.mainAsk = askNone
+	_, items := p.mainItems(v)
+	p.mainAsk = asking
+	lines, keys := make([]string, len(items)), make([]byte, len(items))
+	for i, it := range items {
+		lines[i], keys[i] = it.text, it.key
 	}
-	menuH := float64(len(v.MainMenu)+2) * 8 * mk
+	menuH := float64(len(lines)+2) * 8 * mk
 	var lh, lk int
 	if v.Logo != nil {
 		lb := v.Logo.Bounds()
@@ -112,45 +179,54 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 		op.GeoM.Translate(float64((b.Dx()-v.Logo.Bounds().Dx()*lk)/2), float64(top))
 		dst.DrawImage(p.logo, op)
 	}
-	p.mainSel = min(max(p.mainSel, 0), len(v.MainMenu)-1)
-	p.drawMenu(dst, p.glyph, "", v.MainMenu, keys, p.mainSel, mk, b.Dx()/2, top+lh+gap)
+	p.mainSel = min(max(p.mainSel, 0), len(lines)-1)
+	p.drawMenu(dst, p.glyph, "", lines, keys, p.mainSel, mk, b.Dx()/2, top+lh+gap)
 	p.drawParty(dst, v.Party, cardAt(dst))
 	p.cards = p.cards[:0]
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
 	p.drawCardTip(dst, v)
-	if v.MainAsk && v.Menu != nil { // a question pops up over it (Quit to DOS)
+	if p.mainAsk != askNone { // a question pops up over it
+		q, items := p.mainItems(v)
 		var lines []string
 		var keys []byte
-		for _, it := range v.Menu.Items {
-			lines, keys = append(lines, it.Text), append(keys, it.Key)
+		for _, it := range items {
+			lines, keys = append(lines, it.text), append(keys, it.key)
 		}
 		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false) // the menu dims under it
-		p.keyWindow(dst, strings.TrimSpace(v.Menu.Prompt)+"?", lines, keys, p.sel, false)
+		p.keyWindow(dst, q, lines, keys, p.sel, false)
 	}
-	p.ask = v.MainAsk
+	p.ask = p.mainAsk != askNone
+}
+
+// mainPick picks line i of the main menu or its question.
+func (p *Presenter) mainPick(v engine.View, i int) {
+	if _, items := p.mainItems(v); i >= 0 && i < len(items) {
+		items[i].do()
+	}
 }
 
 // mainClick takes a click on the main menu: a function or a portrait.
 func (p *Presenter) mainClick(x, y int) bool {
+	v := p.shownView
 	if p.ask {
 		for i, r := range p.winRects {
 			if image.Pt(x, y).In(r) {
-				p.send(engine.ActChoose, i)
+				p.mainPick(v, i)
 			}
 		}
 		return true
 	}
 	for i, r := range p.cards {
 		if image.Pt(x, y).In(r) {
-			p.send(engine.ActMember, i)
+			p.send(engine.ActLead, i)
 			return true
 		}
 	}
 	for i, r := range p.menuRects {
 		if image.Pt(x, y).In(r) {
-			p.send(engine.ActChoose, i)
+			p.mainPick(v, i)
 			return true
 		}
 	}
@@ -179,23 +255,38 @@ func (p *Presenter) mainHover(x, y int) {
 	}
 }
 
-// mainKey moves the main menu's highlight (Up, Down) and picks it (Enter);
-// the question over it likewise.
+// mainKey moves the main menu's highlight (Up, Down), picks it (Enter, a
+// hotkey); Esc answers No or goes Back; F1-F8 select a member.
 func (p *Presenter) mainKey(k uint16, v engine.View) bool {
-	sel, n := &p.mainSel, len(v.MainMenu)
-	if p.ask && v.Menu != nil {
-		sel, n = &p.sel, len(v.Menu.Items)
+	_, items := p.mainItems(v)
+	sel, n := &p.mainSel, len(items)
+	if p.ask {
+		sel = &p.sel
 	}
 	if n == 0 {
 		return false
 	}
-	switch k {
-	case 0x4800:
+	switch {
+	case k == 0x4800:
 		*sel = (*sel + n - 1) % n
-	case 0x5000:
+	case k == 0x5000:
 		*sel = (*sel + 1) % n
-	case 13:
-		p.send(engine.ActChoose, *sel)
+	case k == 13 || k == KeyPadSelect:
+		p.mainPick(v, *sel)
+	case k == 27 && (p.ask || p.mainSub):
+		p.mainPick(v, n-1)
+	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
+		p.send(engine.ActLead, int(k-KeyF1)>>8)
+	case k < 128 && k >= ' ':
+		h := byte(k) &^ 0x20
+		for i, it := range items {
+			if it.key == h {
+				*sel = i
+				p.mainPick(v, i)
+				return true
+			}
+		}
+		return false
 	default:
 		return false
 	}

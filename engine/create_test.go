@@ -209,4 +209,30 @@ func TestCreateSheet(t *testing.T) {
 	if m := e.party[0]; m.Stats[statCha] != 7 || m.Share != 1 {
 		t.Errorf("modified: charisma %d share %d", m.Stats[statCha], m.Share)
 	}
+	// The party menu takes decisions: View opens the sheet (View.Sheet)
+	// over it, the sheet's Exit brings the menu back, Begin starts play.
+	go func() { e.PartyMenu(); done <- true }()
+	v = wait()
+	if !slices.Contains(v.MainMenu, ActMember) || !slices.Contains(v.MainMenu, ActBegin) {
+		t.Fatalf("party menu %v", v.MainMenu)
+	}
+	if v = act(Action{Kind: ActMember, N: -1}); v.Sheet == nil || v.MainMenu != nil {
+		t.Fatalf("view: sheet %+v menu %v", v.Sheet, v.MainMenu)
+	}
+	if v.Sheet.Items {
+		if v = act(Action{Kind: ActInventory, N: -1}); v.Inventory == nil || v.Sheet != nil {
+			t.Fatalf("items: inventory %v sheet %v", v.Inventory != nil, v.Sheet != nil)
+		}
+		if v = act(Action{Kind: ActClose}); v.Sheet == nil {
+			t.Fatal("back from the items: no sheet")
+		}
+	}
+	if v = act(Action{Kind: ActClose}); v.MainMenu == nil {
+		t.Fatal("back from the sheet: no party menu")
+	}
+	e.Act(Action{Kind: ActBegin})
+	ended("Begin")
+	if e.beginFlag != 4 {
+		t.Errorf("begin flag %d, want 4", e.beginFlag)
+	}
 }

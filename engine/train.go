@@ -258,12 +258,23 @@ func (e *Engine) trainCheck(c *Character) (mask byte, why string, best int32) {
 // TrainCharacter = ovr17:29AC: the training hall takes decisions for the
 // selected member until it leaves (or has trained).
 func (e *Engine) TrainCharacter() {
+	base := len(e.screens)
+	e.pushTraining()
+	e.until(base)
+}
+
+// pushTraining puts the training hall up for the selected member.
+func (e *Engine) pushTraining() {
 	c := e.selected()
 	if _, _, best := e.trainCheck(c); best > 0 {
 		c.Exp = uint32(best) // as the original, before its question and refusals
 	}
 	e.learning = false
-	e.await(modeTraining, e.applyTraining)
+	e.push(modeTraining, func(a Action) bool {
+		done := e.applyTraining(a)
+		e.DisplayPartyList()
+		return done
+	}, nil)
 }
 
 // applyTraining applies a decision in the training hall; done when it is
