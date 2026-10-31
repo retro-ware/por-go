@@ -13,7 +13,7 @@ func TestBracersLook(t *testing.T) {
 		t.Skip("no game files")
 	}
 	e.items = e.readItems()
-	if e.base(itemBracers).Protection != 0x80|50 {
+	if e.base(itemBracers).Protection != acGiven|acTen {
 		t.Skip("bracers not in the item table")
 	}
 	l := e.itemLines(&Item{Type: itemBracers, Plus: 4}, nil)

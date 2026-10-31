@@ -101,13 +101,8 @@ func (e *Engine) itemStats(it *Item) string {
 		}
 		s += ") "
 	}
-	if v := int(e.base(typ).Protection); v > 0x80 {
-		if v &= 0x7F; v >= 50 {
-			v -= 50 // body armour and bracers count up from AC 10 = 50
-		}
-		if v += int(e.knownPlus(it)); v != 0 || int(e.base(typ).Protection&0x7F) >= 50 { // unidentified bracers: [0]
-			s += "[" + strconv.Itoa(v) + "] "
-		}
+	if b := e.base(typ); b.acPoints() > 0 {
+		s += "[" + strconv.Itoa(b.acBetter()+int(e.knownPlus(it))) + "] "
 	}
 	return s
 }

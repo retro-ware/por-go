@@ -116,7 +116,7 @@ func (e *Engine) fresh(k kind, keep *Character) *Character {
 		t := defaultIconColours[i]
 		c.IconColour[i-1] = byte((t+8)<<4 + t)
 	}
-	c.BaseAC = 0x32
+	c.BaseAC = acTen
 	c.HitDice = 0x28
 	c.Status = statusOkay
 	c.Okay = 1

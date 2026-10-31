@@ -276,8 +276,8 @@ func (e *Engine) sortItems(list []InvItem, items []*Item) {
 func (e *Engine) strength(it *Item) int {
 	b := e.base(it.Type)
 	plus := int(int8(it.Plus))
-	if b.Protection != 0 {
-		return 2 * (int(b.Protection) - 0x80 + plus)
+	if b.givesAC() {
+		return 2 * (b.acBetter() + plus)
 	}
 	return int(b.Dice)*(int(b.Sides)+1) + 2*(int(int8(b.Bonus))+plus)
 }

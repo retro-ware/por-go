@@ -83,21 +83,20 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 			add("Dexterity adds to hit")
 		}
 	}
-	if v := int(b.Protection); v > 0x80 {
-		v &= 0x7F
+	if v := b.acBetter(); b.acPoints() > 0 {
 		switch {
-		case slot == 2:
-			add("Armor, AC " + strconv.Itoa(10-(v-50)) + delta(e.protection(it), e.protection(vs)))
+		case slot == slotArmor:
+			add("Armor, AC " + strconv.Itoa(10-v) + delta(e.protection(it), e.protection(vs)))
 			switch w := it.Weight; {
 			case w > 0x18F:
 				add("Movement 6")
 			case w > 0x96:
 				add("Movement 9")
 			}
-		case slot == 1:
+		case slot == slotShield:
 			add("Shield, AC " + strconv.Itoa(v) + " better" + delta(e.protection(it), e.protection(vs)))
-		case v > 0: // bracers: on the armour's scale (50 is AC 10) and in its place, the better one counts (itemAC's ac[4])
-			add("AC " + strconv.Itoa(10-(v-50)-int(e.knownPlus(it))) + ", as armor" + delta(e.protection(it), e.protection(vs)))
+		default: // bracers: on the armour's scale and in its place, the better one counts (itemAC's ac[4])
+			add("AC " + strconv.Itoa(10-v-int(e.knownPlus(it))) + ", as armor" + delta(e.protection(it), e.protection(vs)))
 			add("Worn in place of armor")
 		}
 	}
@@ -121,7 +120,7 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 		add("Silver: hurts monsters that")
 		add("ignore plain weapons")
 	}
-	if it.Hidden == 0 && int8(it.Plus) > 0 && (b.Dice > 0 || b.Protection > 0x80) {
+	if it.Hidden == 0 && int8(it.Plus) > 0 && (b.Dice > 0 || b.acPoints() > 0) {
 		add("Magic +" + strconv.Itoa(int(int8(it.Plus))))
 	}
 	add("Price " + strconv.Itoa(int(it.Price))) // extra: no weight (the party inventory counts slots)
@@ -187,12 +186,7 @@ func (e *Engine) protection(it *Item) float64 {
 	if it == nil {
 		return 0
 	}
-	b := e.base(it.Type)
-	v := float64(b.Protection & 0x7F)
-	if b.Slot != 1 && v > 0 { // armour and bracers: 50 is AC 10
-		v -= 50
-	}
-	return v + e.knownPlus(it)
+	return float64(e.base(it.Type).acBetter()) + e.knownPlus(it)
 }
 
 // knownPlus is the item's magic plus when identified, else 0.

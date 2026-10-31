@@ -26,8 +26,8 @@ func TestSwapReady(t *testing.T) {
 // an older save with both readied keeps the armour.
 func TestBracersSwapArmor(t *testing.T) {
 	e := &Engine{items: make([]itemBase, itemTypes)}
-	e.items[itemPlateMail] = itemBase{Slot: slotArmor, Protection: 0x80 | 57, Classes: 0xFF}
-	e.items[itemBracers] = itemBase{Slot: byte(itemBracers), Protection: 0x80 | 50, Classes: 0xFF}
+	e.items[itemPlateMail] = itemBase{Slot: slotArmor, Protection: acGiven | (acTen + 7), Classes: 0xFF}
+	e.items[itemBracers] = itemBase{Slot: byte(itemBracers), Protection: acGiven | acTen, Classes: 0xFF}
 	c := &Character{}
 	c.ClassMask = 1
 	e.party = []*Character{c}

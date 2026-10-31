@@ -134,7 +134,7 @@ type itemBase struct {
 	LargeSides byte // +3
 	LargeBonus byte // +4 signed
 	Speed      byte // +5 rate of fire / weapon speed
-	Protection byte // +6 0x80 + AC given
+	Protection byte // +6 the armour class it gives: acGiven, then its points (acPoints)
 	Material   byte // +7 flags the resistance handlers test (0x81, bit 0)
 	_          byte // +8
 	Dice       byte // +9
@@ -148,6 +148,37 @@ type itemBase struct {
 
 // itemTypes is the size of the base item table (0x810 bytes).
 const itemTypes = 0x81
+
+// Armour class is counted up, as 60 minus AC (Character.AC): acTen is
+// AC 10, nothing worn. An item's Protection has acGiven set when it counts
+// towards armour class at all, the low bits its points: body armour and
+// bracers on that same scale (acTen + how much better than AC 10), a
+// shield the points it adds; rings and cloaks of protection have none,
+// they give only their magic plus (itemAC).
+const (
+	acGiven = 0x80
+	acTen   = 50
+)
+
+// givesAC: the item counts towards armour class.
+func (b *itemBase) givesAC() bool { return b.Protection&acGiven != 0 }
+
+// acPoints is Protection's points, 0 for an item that gives none.
+func (b *itemBase) acPoints() int {
+	if !b.givesAC() {
+		return 0
+	}
+	return int(b.Protection &^ acGiven)
+}
+
+// acBetter is how much better than AC 10 the item makes its wearer, magic
+// aside: armour's and bracers' points less acTen, a shield's as they are.
+func (b *itemBase) acBetter() int {
+	if v := b.acPoints(); v < acTen {
+		return v
+	}
+	return b.acPoints() - acTen
+}
 
 // base is the base record of an item type (a blank one past the table).
 func (e *Engine) base(typ itemType) *itemBase {
@@ -309,17 +340,14 @@ func (e *Engine) armourMove(it *Item, c *Character) {
 // protective items, ac[3] best ring, ac[4] best armour; magical body
 // armour cancels rings.
 func (e *Engine) itemAC(c *Character, it *Item, ac *[5]int8) (ringOnly bool) {
-	typ := it.Type
-	v := e.base(typ).Protection
-	if v <= 0x7F {
+	b := e.base(it.Type)
+	if !b.givesAC() {
 		return
 	}
-	v &= 0x7F
-	slot := e.base(typ).Slot
-	plus := int8(it.Plus)
+	v, slot, plus := int8(b.acPoints()), b.Slot, int8(it.Plus)
 	switch {
-	case slot == 1:
-		ac[1] = int8(v) + plus
+	case slot == slotShield:
+		ac[1] = v + plus
 	case v == 0:
 		if slot == 9 {
 			if plus > ac[3] {
@@ -329,8 +357,8 @@ func (e *Engine) itemAC(c *Character, it *Item, ac *[5]int8) (ringOnly bool) {
 			ac[2] += plus
 		}
 		c.SaveBonus += it.Plus2
-	case int(v)+int(plus) > int(ac[4]):
-		ac[4] = int8(v) + plus
+	case int(v)+int(plus) > int(ac[4]): // armour's scale: the best of armour and bracers
+		ac[4] = v + plus
 		if plus > 0 && slot == slotArmor {
 			ringOnly = true
 		}

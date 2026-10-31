@@ -21,9 +21,9 @@ func TestItemSpan(t *testing.T) {
 func TestItemStats(t *testing.T) {
 	e := &Engine{items: make([]itemBase, 5)}
 	e.items[1].Dice, e.items[1].Sides, e.items[1].Bonus = 2, 4, 1 // type 1: 2d4+1
-	e.items[2].Protection = 0x80 + 1                              // type 2: shield 1
-	e.items[3].Protection = 0x80 + 57                             // type 3: plate mail 7
-	e.items[4].Protection = 0x80 + 50                             // type 4: bracers 0
+	e.items[2].Protection = acGiven | 1                           // type 2: shield 1
+	e.items[3].Protection = acGiven | (acTen + 7)                 // type 3: plate mail 7
+	e.items[4].Protection = acGiven | acTen                       // type 4: bracers 0
 	for typ, want := range []string{"", "(2d4+1) ", "[1] ", "[7] ", "[0] "} {
 		if s := e.itemStats(&Item{Type: itemType(typ)}); s != want {
 			t.Errorf("type %d: %q, want %q", typ, s, want)
