@@ -43,7 +43,9 @@ fn vs(v: VIn) -> VOut {
 	o.pos = u.viewProj * vec4f(v.pos, 1.0);
 	var d = 1.0 + v.ctr.y * 0.0001;
 	if (v.ctr.y >= 0.0) {
-		let z = max(dot(v.ctr.xz - u.eye.xz, u.fw.xy) - u.face.w, 0.02);
+		let rel = v.ctr.xz - u.eye.xz;
+		let side = abs(dot(rel, vec2f(-u.fw.y, u.fw.x))) * 0.005; // a tie goes to the face nearer the view's axis
+		let z = max(dot(rel, u.fw.xy) - u.face.w + side, 0.02);
 		d = clamp(u.fw.z + u.fw.w / z, 0.0, 0.9999);
 	}
 	o.pos.z = d * o.pos.w;
@@ -161,6 +163,11 @@ const (
 // billboards of their cell: the walls then keep their centres' order at any angle (a bias for
 // the walls facing the camera only pulled a face behind a nearer one in front of it mid-turn,
 // a wall seen through another), and a side wall still sorts under the billboards of its cell.
+// Side walls of one row tie (their centres lie as far along the view), and the outer one, a wall
+// further aside behind the inner, won by being drawn later, in teeth where the tie's depths
+// rounded apart: a sliver of the wall behind showed for a frame of a step. A face sorts 0.005 of
+// its distance aside further back, which settles such ties and stays under the 0.01 between a
+// side wall and the billboards of its cell.
 const biasFront, biasMonster, biasWall = 0.49, 0.51, 0.48
 
 const far = 5000.0 // cells; the projection's depth = projA + projB / z runs 0 at near to 1 at far
