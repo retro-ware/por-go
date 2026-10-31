@@ -1370,6 +1370,9 @@ art for the same blocks. The port can play with the Amiga art and music:
   `build_n_run.sh` copies the pack from `$DASP_DIR` (default
   `~/Downloads/Dubtrain Angband Sound Pack v3.1.0`). The pack is CC BY-NC
   by Dubtrain Records (www.Dubtrain.com).
+- **Step sounds:** Esc > Audio > Step sounds (`Settings.Steps`, default
+  on; `Engine.NoSteps`) off silences the step and turn sound (`sndStep`:
+  walking and turning in the 3D view, a move in combat, the scripts').
 
 ---
 

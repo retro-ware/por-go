@@ -40,6 +40,7 @@ type Engine struct {
 	RandSeed  uint32      // DS:4428, Turbo Pascal RandSeed
 	FixedSeed *uint32     // if set, Randomize uses it instead of the clock (POR_SEED)
 	Dasp      atomic.Bool // extra: the Dubtrain sound pack's effects (dasp.go), the Esc menu's "DASP Sfx"
+	NoSteps   atomic.Bool // extra: no step and turn sound (sndStep), the Esc menu's "Step sounds" off
 	Deskew    atomic.Bool // extra: dungeon combat maps on a square grid instead of the original's skewed perspective (combatsetup.go); read at each fight's setup
 
 	font  []byte        // DS:5E20 -> 8X8D1 block 201, 8 bytes per glyph

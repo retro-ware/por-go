@@ -1500,6 +1500,7 @@ func (g *Game) menuOptions() []menuLine {
 		return []menuLine{
 			{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }},
 			{"DASP Sfx", onOffOf(&Settings.Dasp), flip(&Settings.Dasp)},
+			{"Step sounds", onOffOf(&Settings.Steps), flip(&Settings.Steps)},
 			volumeLine("Music volume", &Settings.Music),
 			volumeLine("Effects volume", &Settings.Effects),
 			volumeLine("Voice volume", &Settings.Voice),
@@ -1939,6 +1940,7 @@ type Options struct {
 	Zoom                              float64 // the host's battle camera: how far one wheel step zooms, minZoom to maxZoom times 15 percent
 	Music, Effects, Voice             float64 // the host's volumes, 0 to 1
 	Dasp                              bool    // the host's Dubtrain sound pack effects in place of the original's
+	Steps                             bool    // the host's step and turn sound
 }
 
 const minAlpha = 0.2
@@ -1950,11 +1952,11 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true, Steps: true}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line (it toggles
 	// the voice first when toggle, then reports whether it is on), the
-	// DASP Sfx switch and the Music, Effects and Voice volume sliders.
+	// DASP Sfx and Step sounds switches and the Music, Effects and Voice volume sliders.
 	Voice func(toggle bool) bool
 )
 

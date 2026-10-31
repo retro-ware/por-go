@@ -61,6 +61,26 @@ func TestEverySoundAudible(t *testing.T) {
 	}
 }
 
+// With "Step sounds" off a step or a turn is silent.
+func TestNoSteps(t *testing.T) {
+	l, err := dax.NewLoader(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := &Engine{L: l, Cfg: Config{Sound: 'P'}}
+	e.NoSteps.Store(true)
+	r := e.SoundReader()
+	e.soundWait(0)
+	e.PlaySound(sndStep)
+	buf := make([]byte, 4*sndRate)
+	r.Read(buf)
+	for i := 0; i < len(buf); i++ {
+		if buf[i] != 0 {
+			t.Fatal("a step sounds with Step sounds off")
+		}
+	}
+}
+
 // The program's jumps stay inside it.
 func TestSoundProgram(t *testing.T) {
 	for i, op := range sndProgram {

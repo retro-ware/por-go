@@ -584,7 +584,7 @@ func (e *Engine) PlaySound(n int) { e.playSound(n, daspFx[n]) }
 // sound n: the pack plays it, and the pacing stays the original's.
 func (e *Engine) playSound(n int, event string) {
 	s := &e.snd
-	if !s.on || s.typ == sndNone {
+	if !s.on || s.typ == sndNone || n == sndStep && e.NoSteps.Load() {
 		return
 	}
 	dasp := n > sndUnmute && n != sndStop && e.dasp(event)
