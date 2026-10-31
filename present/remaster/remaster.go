@@ -285,7 +285,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.drawCardTip(dst, v)
 	k := scale(dst)
 	b := dst.Bounds()
-	if n := len(v.Party); n > 0 { // pop-ups go between the card columns
+	if n := len(v.Party); n > 0 && blobber.Settings.PartyRow { // pop-ups go over the card row
+		b.Max.Y = cardAt(dst)(0, n).Min.Y
+	} else if n > 0 { // pop-ups go between the card columns
 		b.Min.X, b.Max.X = cardAt(dst)(0, n).Max.X, cardAt(dst)(n-1, n).Min.X
 	}
 	// the picture at the top, the text in the middle, an answer's menu right under it
@@ -636,6 +638,12 @@ func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
 	k := cardScale(dst)
 	px := func(n int) int { return int(math.Round(float64(n) * k)) }
 	return func(i, n int) image.Rectangle {
+		if blobber.Settings.PartyRow { // one row along the bottom, centred
+			step := px(cardW + cardGap)
+			x := (b.Dx()-n*step+px(cardGap))/2 + i*step
+			y := b.Dy() - px(cardH+cardGap) + px(cardFoot)
+			return image.Rect(x, y, x+px(cardW), y+px(cardH))
+		}
 		left := (n + 1) / 2
 		col, row, per := 0, i, left
 		if i >= left {
@@ -674,6 +682,11 @@ func cardScale(dst *gpu.Image) float64 {
 	room := float64(b.Dy() - 2*cardGap*cardBase(dst))
 	if !blobber.Settings.MapOff {
 		room -= float64(mapPx(dst))
+	}
+	if blobber.Settings.PartyRow { // eight across the bottom, under the map, at most a third of the height
+		return fitScale(float64(cardBase(dst)), blobber.Settings.Cards, func(k float64) bool {
+			return k*8*(cardW+cardGap)+k*cardGap <= float64(b.Dx()) && k*(cardH+cardGap) <= min(room, float64(b.Dy())/3)
+		})
 	}
 	return fitScale(float64(cardBase(dst)), blobber.Settings.Cards, func(k float64) bool {
 		return k*cardRows*(cardH+cardGap) <= room && k*cardW <= float64(b.Dx())/6
