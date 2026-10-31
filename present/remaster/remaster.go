@@ -302,6 +302,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
+	picBottom := 0 // the bottom of the picture box, when one is up
 	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
@@ -314,6 +315,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			cy = py + int(pp*ph/2+gap+tk*th/2)
 		}
 		drawBox(dst, frame, p.border.tiles, pic, pp, cx, py)
+		picBottom = py + int(pp*ph/2)
 	}
 	pane, asking := textPane(v), v.Menu != nil && !v.Command && !noChoice(v)
 	if asking {
@@ -349,6 +351,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		top := cy + int(tk*th/2) + int(pk*8)
 		if v.Command || !shown { // no text box above: in the middle
 			top = b.Dy()/2 - int(mk*float64(len(lines)+4)*4)
+			if picBottom > 0 { // never over the picture: right under it
+				top = max(top, picBottom+int(pk*4))
+			}
 		}
 		p.menuSel = v.Menu.Sel
 		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, mk, cx, top)
