@@ -57,7 +57,7 @@ func (e *Engine) walkFeed() {
 		return
 	}
 	stop := func() { e.ext.walk = nil }
-	for len(e.acts.ch) > 0 { // a key or a click stops the walk and is used up
+	for len(e.acts.q) > 0 { // a key or a click stops the walk and is used up
 		switch a := e.nextAct(); a.Kind {
 		case ActNone: // a resize (nextAct): the window changing does not stop it
 		case ActHover: // nor does the pointer moving, the map closing under it

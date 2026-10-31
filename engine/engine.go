@@ -193,7 +193,6 @@ func New(dir string) (*Engine, error) {
 	}
 	l.UseAmiga(filepath.Join(dir, AmigaDir))
 	e := &Engine{L: l, data: dir, pal: pal.Identity, set: 1, start: time.Now()}
-	e.acts.ch = make(chan Action, 64)
 	e.Cfg = Config{Graphics: 'E', Sound: 'P', GameDir: l.Dir, SaveDir: filepath.Join(dir, SaveDir), FullIntro: true}
 	if p := l.Path("POOL.CFG"); p != "" {
 		f, err := os.Open(p)
@@ -233,8 +232,8 @@ func upper(c byte) byte {
 	return c
 }
 
-// Run is the program body (START.EXE main). It runs on its own goroutine and
-// blocks on keyboard reads like the DOS code did.
+// Run is the program body (START.EXE main), the engine's coroutine
+// (Start(e.Run)): it waits for decisions where the DOS code read keys.
 func (e *Engine) Run() {
 	e.Init()  // ovr12:002D
 	e.Title() // ovr02: title pictures, lightning, credits
@@ -296,9 +295,9 @@ func (e *Engine) WaitSeconds(n int) {
 	e.Delay(n * 1000) // AskPause: any key cuts it short
 }
 
-// idle yields the CPU inside the original's busy-wait loops.
+// idle waits for the next frame (ActTick) inside the original's busy-wait loops.
 func (e *Engine) idle() {
-	e.actsDone() // an action taken last is done too
-	e.pace(waiting)
-	sleep(1)
+	e.acts.ticking = true
+	e.wait()
+	e.acts.ticking = false
 }

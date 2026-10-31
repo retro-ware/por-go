@@ -187,10 +187,13 @@ func (e *Engine) CommandInput() (encamp bool) {
 	return encamp
 }
 
-// decision waits for the next decision, the auto-walk's steps included.
+// decision waits for the next decision, the auto-walk's steps included;
+// it takes frames (idle) only while the picture animates or the party walks.
 func (e *Engine) decision() Action {
 	for !e.inputReady() {
-		e.animateWhileWaiting()
+		if !e.animateWhileWaiting() && e.ext.walk == nil {
+			break
+		}
 		e.idle()
 	}
 	return e.input()

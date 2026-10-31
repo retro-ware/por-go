@@ -13,46 +13,29 @@ import (
 func TestAutoWalk(t *testing.T) {
 	e := explore(t)
 	e.Init()
-	go e.Play()
+	e.Start(e.Play)
 	keys := func(as ...engine.Action) engine.View {
 		for _, a := range as {
-			for !e.Idle() {
-				time.Sleep(10 * time.Millisecond)
-			}
-			e.Act(resolve(e, a))
-			time.Sleep(50 * time.Millisecond)
-		}
-		for !e.Idle() {
-			time.Sleep(10 * time.Millisecond)
+			keyWait(e, a)
 		}
 		return e.View()
 	}
-	at := func(x, y int) bool {
-		for t0 := time.Now(); time.Since(t0) < 3*time.Second; time.Sleep(20 * time.Millisecond) {
-			if v := e.View(); v.X == x && v.Y == y {
-				return true
-			}
-		}
-		return false
-	}
-	v := keys()
+	v := settle(e)
 	x, y := v.X, v.Y // the start of Phlan: a corridor running west
 	left := engine.Action{Kind: engine.ActMove, N: engine.DirLeft}
-	keys(engine.Action{Kind: engine.ActMap}, left, left, left, hot('W'))
+	keys(engine.Action{Kind: engine.ActMap}, left, left, left)
+	e.Apply(resolve(e, hot('W')))
 	for range 3 {
-		e.Act(engine.Action{Kind: engine.ActHover, N: -1, X: 5, Y: 5})
 		time.Sleep(30 * time.Millisecond)
+		e.Apply(engine.Action{Kind: engine.ActHover, N: -1, X: 5, Y: 5})
 	}
-	if !at(x-3, y) {
-		v = e.View()
+	if v = settle(e, 3*time.Second); v.X != x-3 || v.Y != y {
 		t.Fatalf("walk from %d,%d to %d,%d ended at %d,%d", x, y, x-3, y, v.X, v.Y)
 	}
 	right := engine.Action{Kind: engine.ActMove, N: engine.DirRight}
 	keys(engine.Action{Kind: engine.ActMap}, right, right, right)
-	e.Act(resolve(e, hot('W')))
-	e.Act(engine.Action{Kind: engine.ActContinue}) // a key stops the walk back at once
-	time.Sleep(time.Second)
-	if v = e.View(); v.X != x-3 || v.Y != y {
+	e.Apply(resolve(e, hot('W')), engine.Action{Kind: engine.ActContinue}) // a key stops the walk back at once
+	if v = settle(e); v.X != x-3 || v.Y != y {
 		t.Fatalf("a key did not stop the walk back: at %d,%d, want %d,%d", v.X, v.Y, x-3, y)
 	}
 }

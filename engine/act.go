@@ -1,13 +1,13 @@
 package engine
 
 import (
-	"sync/atomic"
+	"iter"
 	"time"
 )
 
 // Actions (extra): the remastered screens act on the game through typed
 // actions instead of keys. A screen ported to them (ItemsMenu ...) publishes
-// what it shows in the View and waits in act; the presenter sends Act.
+// what it shows in the View and waits in act; the front end hands decisions to Apply.
 
 // ActKind is what an Action does.
 type ActKind int
@@ -115,6 +115,8 @@ const (
 	ActIconColour // icon editor: part N's colour X (0, 1) becomes Y (Y < 0: only selects that swatch)
 	ActSave       // save the game in slot Text (the player agreed to an overwrite)
 	ActDelete     // delete the save Text (the player agreed)
+
+	ActTick // a frame went by: the engine goes on in a timed loop (View.Ticks); never queued
 )
 
 // Directions of ActMove.
@@ -143,43 +145,56 @@ type Action struct {
 	Text string // ActText
 }
 
-// acts carries the presenter's actions to the engine goroutine.
+// acts holds the decisions the front end handed Apply and the engine's
+// coroutine (iter.Pull): the engine runs only inside Apply, never on its own.
 type acts struct {
-	ch      chan Action
-	pending atomic.Int32 // sent and not yet done
-	taken   int32        // received by the engine goroutine, done once it waits again
-	state   atomic.Int32 // what the engine goroutine does (pace)
+	q       []Action                // handed in and not yet taken
+	resume  func() (struct{}, bool) // runs the engine on to its next wait (iter.Pull's next)
+	yield   func(struct{}) bool     // the engine's side: hands control back to Apply
+	running bool                    // inside resume (an Apply from the engine only queues)
+	ticking bool                    // parked in idle: it goes on at the next ActTick
 }
 
-// Engine states (pace): the window draws a key's result once the engine
-// is done with it (Settled).
-const (
-	working = iota // handling input
-	waiting        // waiting for input
-)
-
-// pace records what the engine goroutine does now.
-func (e *Engine) pace(st int32) { e.acts.state.Store(st) }
-
-// Settled reports whether the engine has taken the keys and actions sent
-// and finished with them; the picture is worth drawing.
-func (e *Engine) Settled() bool {
-	st := e.acts.state.Load()
-	return st == waiting && len(e.acts.ch) == 0 && !e.Busy()
+// Start makes body (Run, or Play after Init) the engine's coroutine and runs
+// it to its first wait.
+func (e *Engine) Start(body func()) View {
+	e.acts.resume, _ = iter.Pull(func(yield func(struct{}) bool) {
+		e.acts.yield = yield
+		body()
+	})
+	return e.Apply()
 }
 
-// Idle reports whether the engine waits for input and none is queued (held
-// keys repeat only then, so they never pile up).
-func (e *Engine) Idle() bool { return e.acts.state.Load() == waiting && len(e.acts.ch) == 0 }
+// Apply hands the engine the decisions as and runs it until it waits again
+// (for a decision, or for the next ActTick in a timed loop: View.Ticks), then
+// returns the View it published. ActTick is not queued: it only lets the
+// engine go on.
+func (e *Engine) Apply(as ...Action) View {
+	for _, a := range as {
+		if a.Kind != ActTick {
+			e.acts.q = append(e.acts.q, a)
+		}
+	}
+	if e.acts.resume != nil && !e.acts.running {
+		e.acts.running = true
+		e.acts.resume()
+		e.acts.running = false
+	}
+	return e.View()
+}
 
-// nextAct publishes the View and blocks for the next action.
+// wait hands control back to Apply: the engine goes on at the next one.
+func (e *Engine) wait() { e.acts.yield(struct{}{}) }
+
+// nextAct publishes the View and takes the next decision, waiting for one.
 func (e *Engine) nextAct() Action {
 	e.publish()
 	for {
-		e.pace(waiting)
-		a := <-e.acts.ch
-		e.pace(working)
-		e.acts.taken++
+		for len(e.acts.q) == 0 {
+			e.wait()
+		}
+		a := e.acts.q[0]
+		e.acts.q = e.acts.q[1:]
 		switch a.Kind {
 		case ActMainMenu:
 			e.mainMenu()
@@ -197,37 +212,9 @@ func (e *Engine) nextAct() Action {
 	}
 }
 
-// sleep pauses the engine goroutine for ms milliseconds.
-func sleep(ms int) {
-	if ms > 0 {
-		time.Sleep(time.Duration(ms) * time.Millisecond)
-	}
-}
-
-// done counts the actions taken as finished: the engine waits again.
-func (e *Engine) actsDone() {
-	e.acts.pending.Add(-e.acts.taken)
-	e.acts.taken = 0
-}
-
-// Act sends a to the screen waiting for it; safe from any goroutine.
-func (e *Engine) Act(a Action) {
-	e.acts.pending.Add(1)
-	select {
-	case e.acts.ch <- a:
-	default:
-		e.acts.pending.Add(-1) // a burst nobody reads: dropped like a typed-ahead key
-	}
-}
-
-// Busy reports whether an action is not done yet (the window waits for its
-// result before drawing, as for a key).
-func (e *Engine) Busy() bool { return e.acts.pending.Load() > 0 }
-
 // act publishes the View and waits for the next action. The extras (F9,
 // font, help) still act; the screen sees every other action.
 func (e *Engine) act() Action {
-	e.actsDone()
 	for {
 		a := e.nextAct()
 		if !e.extraAct(a) {

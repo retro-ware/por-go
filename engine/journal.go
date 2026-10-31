@@ -303,7 +303,7 @@ func journalPicture(name string) image.Image {
 	return im
 }
 
-var pictures = map[string]image.Image{} // the engine goroutine's alone
+var pictures = map[string]image.Image{} // the engine's alone
 
 // pictureSize is the screen area a picture covers: the scans are 300 dpi,
 // shown at about 90 screen pixels an inch, at most the text width wide

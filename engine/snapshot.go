@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 	"por/pal"
-	"sync/atomic"
 )
 
 // The read-only seam for presenters other than the classic screen: a View
@@ -119,7 +118,8 @@ type View struct {
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
 	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
-	Working   bool           // an action sent is still being carried out: what the View shows is on its way out (a menu still up is not asked again)
+	Working   bool           // a decision handed in is not taken yet: what the View shows is on its way out (a menu still up is not asked again)
+	Ticks     bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
 }
 
 // Creation is the creation sheet's parts: the drop-down fields, and the
@@ -291,15 +291,17 @@ const mapCell = 10
 
 // View returns the last published snapshot; safe from any goroutine.
 func (e *Engine) View() View {
-	if v := e.snap.view.Load(); v != nil {
-		return *v
+	var v View
+	if e.snap.view != nil {
+		v = *e.snap.view
 	}
-	return View{}
+	v.Working, v.Ticks = len(e.acts.q) > 0, e.acts.ticking || len(e.acts.q) > 0
+	return v
 }
 
 // snapState is the engine's side of the seam.
 type snapState struct {
-	view         atomic.Pointer[View]
+	view         *View
 	seq          uint64      // Views published
 	invOn        bool        // ItemsMenu waits: View.Inventory is up
 	shop         bool        // ... as the shop's Browse: View.Inventory.Wares
@@ -343,7 +345,7 @@ type snapState struct {
 	striker      [2]*Character          // its attacker and target
 }
 
-// publish builds a View from the engine's state (on the engine goroutine)
+// publish builds a View from the engine's state (inside Apply)
 // and makes it the current one.
 func (e *Engine) publish() {
 	if e.pg.held > 0 { // the 3D view is half drawn
@@ -352,11 +354,10 @@ func (e *Engine) publish() {
 	s := &e.snap
 	s.seq++
 	v := &View{
-		Seq:     s.seq,
-		Working: e.Busy(),
-		Window:  s.win,
-		Area:    AreaID(e.area.Geo),
-		X:       e.posX, Y: e.posY,
+		Seq:    s.seq,
+		Window: s.win,
+		Area:   AreaID(e.area.Geo),
+		X:      e.posX, Y: e.posY,
 		Facing:    Dir(e.viewFacing() / 2 & 3),
 		Day:       e.isDay(),
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
@@ -437,7 +438,7 @@ func (e *Engine) publish() {
 	}
 	v.Border = e.borderTiles()
 	v.Battle = e.battle()
-	s.view.Store(v)
+	s.view = v
 }
 
 // charHead is the head the player chose for c, as the sheet shows it

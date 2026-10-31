@@ -109,7 +109,7 @@ func b2i(b bool) int {
 
 // playerTurn = ovr09:031A (char): a spell being cast goes off, otherwise
 // the combat menu until the turn is used. extra: the menu is the View's
-// Turn; the player acts through Act.
+// Turn; the player acts through Apply.
 func (e *Engine) playerTurn(c *Character) {
 	if c.Okay == 0 {
 		e.clearCombatInfo(c)

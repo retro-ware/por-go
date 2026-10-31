@@ -177,3 +177,32 @@ is deleted subsystem by subsystem, not kept alongside.
   straight through combatLoop between player turns), and the calls under
   applyTurn that still block (walk, casting, aiming, the inventory and
   sheet through `await`/`block`).
+- [x] M6a: no engine goroutine. The action channel, Act, Settled, Busy,
+  Idle, pace, actsDone and the idle sleep are gone; the front end calls
+  `e.Start(body) View` once (body: Run, or Play after Init; cmd/por starts
+  it from the render loop, whose locked thread must resume it) and then
+  `e.Apply(as ...Action) View`: the decisions are queued, the engine runs
+  until it waits again and the View comes back. The hand-off is a strict
+  coroutine (iter.Pull, act.go): every wait funnels through nextAct
+  (decision, await, until, block, waitScript, input, act), which yields
+  only with the queue empty. Timed loops (the view picture's animation,
+  the auto-walk, the title's lightning, the story's frames, camp rest)
+  park in `idle`, which yields with View.Ticks set; the front end sends
+  ActTick (never queued) once a frame while Ticks is up, so the engine
+  never runs on its own. decision() takes frames only while the picture
+  animates or the party walks, else it waits for a decision.
+  View.Working and View.Ticks are filled live by View() (a decision still
+  queued; a timed loop). The tests drive Apply directly (settle ticks
+  while Ticks, bounded) and run in about a second. The coroutine stays
+  until the straight-line flows are flattened (M6b+). Callers still
+  waiting in place (grep of await/until/block/waitScript/input/idle):
+  await: CampMenu, playerTurn, combat's ask, playerAim, PartyMenu, Shop,
+  Temple, waitScript; until: extraAct (F9's slot screen), TrainCharacter,
+  ViewCharacter, ItemsMenu; block: Delay (so MsgDelay, WaitSeconds and
+  every combat pause), typed, DisplayInput (YesNo, ListMenu, MenuInput,
+  SelectCharacter), anyKey (pager, PromptRow24, HitMessage, help),
+  pickSpell; waitScript: RunECL (the VM inside the script's opCombat,
+  shop, temple, training) and the dev scenes; input: showJournal, keyHit
+  (the title, rest interruptions); idle: camp rest, the story, the title
+  and the adventuring prompt's decision loop; and combatLoop as a whole
+  (the AI's and auto-combat's turns run straight through).

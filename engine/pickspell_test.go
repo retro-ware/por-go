@@ -9,7 +9,7 @@ func TestPickSpell(t *testing.T) {
 	c := e.selected()
 	c.Memorized[0], c.Memorized[1] = spCureLightWounds, spCureLightWounds
 	for _, a := range []Action{{Kind: ActCast, N: 99}, {Kind: ActCast, N: spCureLightWounds}, {Kind: ActClose}} {
-		e.Act(a)
+		e.Apply(a) // no coroutine: only queued
 	}
 	if got := e.pickSpell(); got != spCureLightWounds {
 		t.Errorf("picked %d, want %d", got, spCureLightWounds)

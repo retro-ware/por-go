@@ -5,8 +5,8 @@ package engine
 // applies one decision and returns, done or not; it never waits for
 // input or time. A handler opens another screen by pushing it: the
 // pushed screen takes the decisions until it is done, then the one under
-// it gets actRedraw. Until M6 removes the engine goroutine, await and
-// until feed them.
+// it gets actRedraw. Until M6b+ flattens their callers, await and until
+// feed them from inside the engine's coroutine (Apply).
 
 type screenMode int
 

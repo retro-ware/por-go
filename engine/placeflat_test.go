@@ -2,9 +2,6 @@ package engine_test
 
 import (
 	"testing"
-	"time"
-
-	"por/engine"
 )
 
 // TestDeskewPlacement: on a deskewed map each side stands on its own
@@ -18,17 +15,13 @@ func TestDeskewPlacement(t *testing.T) {
 	seed := uint32(1)
 	e.FixedSeed = &seed
 	e.Init()
-	go e.Play()
-	var v engine.View
+	e.Start(e.Play)
+	v := settle(e)
 	for range 7 {
-		for !e.Idle() {
-			time.Sleep(10 * time.Millisecond)
-		}
-		if v = e.View(); v.Battle != nil {
+		if v.Battle != nil {
 			break
 		}
-		e.Act(cont)
-		time.Sleep(50 * time.Millisecond)
+		v = keyWait(e, cont)
 	}
 	if v.Battle == nil {
 		t.Fatal("no fight")

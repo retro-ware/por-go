@@ -64,11 +64,11 @@ type game struct {
 	dsf       float64       // device scale factor of the last Layout
 	pic       remaster.Rect // where the picture is drawn, in device pixels
 	wheel     float64       // wheel movement not yet sent as a step
-	sent      bool          // input went to the engine this tick
 	ticks     int           // Update calls, counted only for POR_SHOT
 	frames    int           // frames saved, POR_SHOT with %d
 	rightOnce bool          // POR_KEYS \M: the right button pressed this tick
 	leftOnce  bool          // POR_KEYS \C: the left button
+	started   bool          // the engine's coroutine runs (act)
 }
 
 // tps: Update runs 120 times a second, so a key waits at most ~8 ms before
@@ -76,7 +76,6 @@ type game struct {
 const tps = 120
 
 func (g *game) Update() error {
-	g.sent = false
 	if scripted { // the user's input never reaches a capture or a measurement, only the scripted keys (script, from Draw)
 		if os.Getenv("POR_POINTER") != "" {
 			g.mouse()
@@ -102,9 +101,6 @@ func (g *game) Update() error {
 		g.remaster.Drop(f.Path, cx, cy, in, g.eng.View())
 	}
 	g.act()
-	if g.sent {
-		g.settle()
-	}
 	return nil
 }
 
@@ -131,10 +127,6 @@ func (g *game) script() {
 		}
 	}
 	g.act() // the presenter's own decisions too: a paced pause ends (AskPause)
-	if g.sent {
-		g.settle()
-		g.sent = false
-	}
 }
 
 const scriptTicks = 15 // frames between a script's keys: a quarter second at 60 Hz
@@ -142,24 +134,19 @@ const scriptTicks = 15 // frames between a script's keys: a quarter second at 60
 // push hands a window key to the presenter, which makes the actions.
 func (g *game) push(k uint16) { g.remaster.Key(k, g.eng.View()) }
 
-// act sends the screens' actions to the game.
+// act runs the engine on the screens' decisions (Apply returns once it
+// waits again), and gives it the frame (ActTick) while it is in a timed loop.
 func (g *game) act() {
-	for _, a := range g.remaster.Actions() {
-		g.eng.Act(a)
-		g.sent = true
+	if !g.started { // the coroutine is made on the thread that resumes it (the render loop's, locked)
+		g.started = true
+		g.eng.Start(g.eng.Run)
 	}
-}
-
-// settle gives the engine a moment to take the actions sent, so the frame
-// shows their result.
-func (g *game) settle() {
-	t0 := time.Now()
-	for n := 0; !g.eng.Settled() && time.Since(t0) < 8*time.Millisecond; n++ {
-		if n < 50 {
-			runtime.Gosched()
-		} else {
-			time.Sleep(100 * time.Microsecond) // a long job: stop burning the CPU
-		}
+	as := g.remaster.Actions()
+	if g.eng.View().Ticks {
+		as = append(as, engine.Action{Kind: engine.ActTick})
+	}
+	if len(as) > 0 {
+		g.eng.Apply(as...)
 	}
 }
 
@@ -184,7 +171,7 @@ func (g *game) keys() {
 		}
 	}
 	var send bool
-	send, paced = g.remaster.Flow(held, g.eng.Idle())
+	send, paced = g.remaster.Flow(held, !g.eng.View().Working)
 	if send {
 		g.push(held)
 	}
@@ -192,7 +179,7 @@ func (g *game) keys() {
 		if i < 8 && paced {
 			continue
 		}
-		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) && g.eng.Idle() {
+		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) && !g.eng.View().Working {
 			code, _ := biosKey(k)
 			g.push(code)
 		}
@@ -532,7 +519,7 @@ func main() {
 		os.MkdirAll(eng.Cfg.SaveDir, 0o755)
 		os.WriteFile(settingsFile, b, 0o644)
 	}
-	blobber.OnSaveLoad = func() { eng.Act(engine.Action{Kind: engine.ActSlots}) } // as F9
+	blobber.OnSaveLoad = func() { eng.Apply(engine.Action{Kind: engine.ActSlots}) } // as F9
 	blobber.OnMainMenu = eng.MainMenu
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {
 		go func() {
@@ -561,7 +548,6 @@ func main() {
 		seed := uint32(n)
 		eng.FixedSeed = &seed
 	}
-	go eng.Run()
 
 	g := &game{eng: eng, dsf: 1}
 	remaster.Scripted = scripted

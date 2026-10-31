@@ -409,7 +409,7 @@ func (e *Engine) aimConfirm(c, cand *Character, mode int, found *bool, t *aimTar
 }
 
 // playerAim = ovr14:3558 (c, rng, showRange, allowGround, var found, var t):
-// the player aims for c. extra: through Act: ActPoint moves the aim (the
+// the player aims for c. extra: through Apply: ActPoint moves the aim (the
 // View shows why it cannot be taken, a spell's area), ActAim takes a
 // square, ActClose gives up. Battle.Targets are the foes to cycle through
 // (with a weapon: the ones it can hit, while there are any). rng 0xFF

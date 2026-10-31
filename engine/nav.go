@@ -168,7 +168,6 @@ func (e *Engine) extraAct(a Action) bool {
 // (extraAct), the pointer and clicks are handled here: a click comes back
 // as what it stands for.
 func (e *Engine) input() Action {
-	e.actsDone()
 	for {
 		if a := e.ext.held; a.Kind != ActNone {
 			e.ext.held = Action{}
@@ -184,7 +183,7 @@ func (e *Engine) input() Action {
 func (e *Engine) inputReady() bool {
 	e.walkFeed()
 	e.publish()
-	for e.ext.held.Kind == ActNone && len(e.acts.ch) > 0 {
+	for e.ext.held.Kind == ActNone && len(e.acts.q) > 0 {
 		e.ext.held = e.take(e.nextAct())
 	}
 	return e.ext.held.Kind != ActNone

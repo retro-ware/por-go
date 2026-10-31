@@ -32,20 +32,12 @@ func explore(t *testing.T) *engine.Engine {
 func TestView(t *testing.T) {
 	e := explore(t)
 	e.Init()
-	go e.Play()
+	e.Start(e.Play)
 	keys := func(as ...engine.Action) engine.View {
 		for _, a := range as {
-			for !e.Idle() {
-				time.Sleep(10 * time.Millisecond)
-			}
-			e.Act(resolve(e, a))
-			time.Sleep(50 * time.Millisecond)
+			keyWait(e, a)
 		}
-		for !e.Idle() {
-			time.Sleep(10 * time.Millisecond)
-		}
-		time.Sleep(100 * time.Millisecond)
-		return e.View()
+		return settle(e)
 	}
 	v := keys()
 	if !v.MainFrame || v.Window != engine.WinThreeD {
@@ -123,17 +115,25 @@ func resolve(e *engine.Engine, a engine.Action) engine.Action {
 	return a
 }
 
+// keyWait applies a (hot resolved) and lets the engine settle.
 func keyWait(e *engine.Engine, a engine.Action) engine.View {
-	for !e.Idle() {
-		time.Sleep(10 * time.Millisecond)
+	e.Apply(resolve(e, a))
+	return settle(e)
+}
+
+// settle ticks the engine, as the window does once a frame, while it is in
+// a timed loop (View.Ticks), for d at most (default 300 ms: a picture may
+// animate for ever).
+func settle(e *engine.Engine, d ...time.Duration) engine.View {
+	v, max := e.View(), 300*time.Millisecond
+	if len(d) > 0 {
+		max = d[0]
 	}
-	e.Act(resolve(e, a))
-	time.Sleep(50 * time.Millisecond)
-	for !e.Idle() {
-		time.Sleep(10 * time.Millisecond)
+	for t0 := time.Now(); v.Ticks && time.Since(t0) < max; {
+		time.Sleep(time.Millisecond)
+		v = e.Apply(engine.Action{Kind: engine.ActTick})
 	}
-	time.Sleep(100 * time.Millisecond)
-	return e.View()
+	return v
 }
 
 // battleView starts a game and the dev combat scene.
@@ -143,17 +143,13 @@ func battleView(t *testing.T) (*engine.Engine, engine.View) {
 	seed := uint32(1) // the same fight every run (and one whose first unit can walk and reach a foe)
 	e.FixedSeed = &seed
 	e.Init()
-	go e.Play()
-	var v engine.View
-	for _, k := range []engine.Action{cont, cont, cont, cont, cont, cont, cont} {
-		for !e.Idle() {
-			time.Sleep(10 * time.Millisecond)
-		}
-		if v = e.View(); v.Battle != nil {
+	e.Start(e.Play)
+	v := settle(e)
+	for range 7 {
+		if v.Battle != nil {
 			break
 		}
-		e.Act(resolve(e, k))
-		time.Sleep(50 * time.Millisecond)
+		v = keyWait(e, cont)
 	}
 	if v.Battle == nil {
 		t.Fatal("no fight")
@@ -373,11 +369,8 @@ func TestAimOutOfReach(t *testing.T) {
 func TestViewMember(t *testing.T) {
 	e := explore(t)
 	e.Init()
-	go e.Play()
-	for !e.Idle() {
-		time.Sleep(10 * time.Millisecond)
-	}
-	v := e.View()
+	e.Start(e.Play)
+	v := settle(e)
 	if len(v.Party) < 2 {
 		t.Fatal("party of one")
 	}
@@ -391,18 +384,11 @@ func TestViewMember(t *testing.T) {
 
 // actWait sends a and waits for the engine to take it.
 func actWait(e *engine.Engine, a engine.Action) engine.View {
-	e.Act(a)
-	time.Sleep(50 * time.Millisecond)
-	for {
-		for e.Busy() {
-			time.Sleep(10 * time.Millisecond)
-		}
-		time.Sleep(20 * time.Millisecond)
-		if s := e.View().Script; s == nil || s.Kind != engine.AskPause {
-			return e.View()
-		}
-		e.Act(cont) // the presenter's part: a pause is over at once
+	v := settle(e)
+	for v = keyWait(e, a); v.Script != nil && v.Script.Kind == engine.AskPause; {
+		v = keyWait(e, cont) // the presenter's part: a pause is over at once
 	}
+	return v
 }
 
 // TestAttackRefusal: a foe that is no target (here: a party member) is
@@ -449,15 +435,13 @@ func TestScriptInputPrompt(t *testing.T) {
 	e := explore(t)
 	e.DevAction = e.DevScene("password")
 	e.Init()
-	go e.Play()
-	var v engine.View
-	for t0 := time.Now(); time.Since(t0) < 5*time.Second; time.Sleep(20 * time.Millisecond) {
-		if v = e.View(); v.Typing != nil {
+	e.Start(e.Play)
+	v := settle(e)
+	for range 20 {
+		if v.Typing != nil {
 			break
 		}
-		if e.Idle() {
-			e.Act(resolve(e, cont))
-		}
+		v = keyWait(e, cont)
 	}
 	if v.Typing == nil || v.Typing.Prompt != "WHAT DO YOU SAY? (TYPE A SINGLE WORD)" {
 		t.Fatalf("typing %+v, want the script's question", v.Typing)
@@ -465,11 +449,8 @@ func TestScriptInputPrompt(t *testing.T) {
 	if v.Script == nil || v.Script.Kind != engine.AskText || v.Script.Prompt != v.Typing.Prompt {
 		t.Fatalf("script ask %+v, want the typed line", v.Script)
 	}
-	e.Act(engine.Action{Kind: engine.ActText, Text: "ohlo"})
-	e.Act(engine.Action{Kind: engine.ActContinue})
-	for t0 := time.Now(); e.View().Typing != nil; time.Sleep(20 * time.Millisecond) {
-		if time.Since(t0) > 2*time.Second {
-			t.Fatal("the line did not end")
-		}
+	e.Apply(engine.Action{Kind: engine.ActText, Text: "ohlo"}, engine.Action{Kind: engine.ActContinue})
+	if settle(e).Typing != nil {
+		t.Fatal("the line did not end")
 	}
 }
