@@ -7,11 +7,10 @@ import (
 	"por/engine"
 )
 
-// Esc closes the command bar's popup menu (Enter opened it) without asking
-// the game to leave it: the bar has no Exit item.
+// Esc closes the command menu (Enter opened it).
 func TestEscClosesCommandMenu(t *testing.T) {
 	p := &Presenter{active: true, view: &blobber.View{}}
-	v := engine.View{Command: true, Menu: &engine.Menu{Items: []engine.MenuItem{{Text: "Move", Key: 'M'}}}}
+	v := engine.View{Exploring: true}
 	if !p.key(13, v) || !p.menu {
 		t.Fatal("Enter did not open the menu")
 	}

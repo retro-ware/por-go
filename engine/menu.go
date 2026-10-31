@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"slices"
 	"strings"
 )
 
@@ -324,9 +323,6 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
 		case e.ext.choosing || e.ext.viewing || e.ext.campBar:
 			return m.member(n)
-		case e.ext.inCommand:
-			e.selectMember(n)
-			return m.hotkey('V')
 		case m.allowExtra && !e.ext.list && e.beginFlag != 5: // a menu stepping the member with Home/End
 			e.selectMember(n)
 			return m.outcome(Pick{ID: PickRelist, Dir: DirNone})
@@ -342,24 +338,12 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 		switch a.Kind {
 		case ActInventory:
 			return m.member(a.N)
-		case ActLead: // a card's left click, F1-F8 (extra): the member the command bar acts for
-			if n := a.N; e.ext.inCommand && n >= 0 && n < len(e.party) {
-				e.selectMember(n)
-				return m.outcome(Pick{ID: PickRelist, Dir: DirNone})
-			}
-		case ActSpells, ActMagic, ActHeal, ActCure: // a card's context menu (extra): member N's power, as a command
-			if n := a.N; e.ext.inCommand && n >= 0 && n < len(e.party) && slices.ContainsFunc(e.powers(e.party[n]), func(p Power) bool { return p.Kind == a.Kind }) {
-				e.selectMember(n)
-				return m.outcome(Pick{ID: cmdSpells + Choice(a.Kind-ActSpells)})
-			}
 		case ActOverview: // P: the overview, on the View page the items
 			switch {
 			case e.ext.viewing:
 				if len(e.carried(e.selected())) > 0 {
 					return m.hotkey('I')
 				}
-			case e.ext.inCommand:
-				e.PartyOverview()
 			default:
 				return m.hotkey('P')
 			}
@@ -367,14 +351,8 @@ func (m *menuBar) decide(a Action) (p Pick, ok bool) {
 			switch {
 			case e.ext.fullMap && !e.ext.typing: // M closes the map it opened
 				return m.hotkey('E')
-			case e.ext.inCommand:
-				e.FullMap()
 			default:
 				return m.hotkey('M')
-			}
-		case ActMinimap:
-			if e.ext.inCommand {
-				e.toggleMinimap()
 			}
 		}
 	}
@@ -485,7 +463,7 @@ func (m *menuBar) move(d int) (Pick, bool) {
 			return key(line)
 		}
 		return m.step(up)
-	case x.inCommand || x.raw:
+	case x.raw:
 		return key(d)
 	case d == DirUp || d == DirDown:
 		if x.list || x.choosing {
@@ -529,7 +507,7 @@ func (m *menuBar) member(n int) (Pick, bool) {
 		}
 		e.selectMember(n)
 		return m.outcome(Pick{ID: PickRelist, Dir: DirNone})
-	case e.ext.inCommand || strings.Contains(m.menu, "View"):
+	case strings.Contains(m.menu, "View"):
 		e.selectMember(n)
 		e.ext.toItems = true
 		return m.hotkey('V')
@@ -554,9 +532,6 @@ func (e *Engine) menuRegions(prompt, menu string, start, end []int, normal, high
 			}
 		}
 	}}
-	if e.ext.inCommand {
-		e.commandRegions()
-	}
 	for j := 1; j < len(start); j++ {
 		if start[j] < 1 {
 			continue

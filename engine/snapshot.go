@@ -88,7 +88,8 @@ type View struct {
 	Day       bool // 6:00 to 20:00, when the scripts show the day sky
 	Inside    bool // the party stands on an inside square (the original's inside sky colour)
 	Menu      *Menu
-	Command   bool // Menu is the adventuring command bar
+	Exploring bool // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	CanCast   bool // ... and the selected member has a spell to cast (ActCastPick)
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -206,10 +207,10 @@ func (e *Engine) publish() {
 		Window:  s.win,
 		Area:    AreaID(e.area.Geo),
 		X:       e.posX, Y: e.posY,
-		Facing:  Dir(e.viewFacing() / 2 & 3),
-		Day:     e.isDay(),
-		Inside:  e.MapCell(e.posX, e.posY) > 0x7F,
-		Command: e.ext.inCommand,
+		Facing:    Dir(e.viewFacing() / 2 & 3),
+		Day:       e.isDay(),
+		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
+		Exploring: e.ext.inCommand,
 	}
 	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.ext.choosing {
 		v.Map = e.mapImage(mapCell)
@@ -229,6 +230,9 @@ func (e *Engine) publish() {
 		if e.ext.modal == 0 && s.main != nil {
 			v.MainMenu, v.Logo, v.Backdrop, v.MainAsk = s.main, e.titleLogo(), e.titleBackdrop(), s.mainAsk
 		}
+	}
+	if v.Exploring {
+		v.CanCast = e.canCastNow()
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering

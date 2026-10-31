@@ -63,6 +63,17 @@ const (
 	ActPortrait          // the PNG at Text is member N's portrait (N < 0: the selected member); a file dropped on the sheet
 	ActIcon              // the PNG at Text is the member's combat icon; a file dropped on the icon editor (View.IconDrop)
 	ActOrder             // member N takes place X in the party (View.Ordering): a card dragged onto another's
+
+	// Adventuring decisions (View.Exploring)
+	ActForward   // a step ahead (3D view)
+	ActBackward  // a step back, facing kept (3D view)
+	ActTurnLeft  // face left (3D view)
+	ActTurnRight // face right (3D view)
+	ActGo        // a step towards Dir N (North..West) on the area map
+	ActCamp      // make camp
+	ActSearch    // search this square once
+	ActSweep     // the slow, searching pace on or off
+	ActCastPick  // member N (< 0: the selected one) picks a memorised spell to cast (View.SpellPick)
 )
 
 // Directions of ActMove.

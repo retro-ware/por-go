@@ -63,6 +63,9 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		return
 	}
 	p.typing = false
+	if v.Exploring && p.exploreKey(k, v) {
+		return
+	}
 	c := byte(k)
 	if c >= 'a' && c <= 'z' {
 		c -= 'a' - 'A'
@@ -162,7 +165,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	}
 	switch { // the right button: on a card that member's inventory, else it closes the context menu, else Esc
 	case !right:
-	case p.cardHover > 0 && p.active && v.Command:
+	case p.cardHover > 0 && p.active && v.Exploring:
 		p.ctx = 0
 		p.send(engine.ActInventory, p.cardHover-1)
 	case p.fight && p.pointer.In(p.fightCard): // the active member's sheet
@@ -172,7 +175,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	case v.Menu != nil && len(v.Menu.Items) == 1 && v.Typing == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
 		p.menu = false
 		p.send(engine.ActContinue, 0)
-	case p.menu && v.Command: // the command bar's popup: it alone closes (key)
+	case p.menu && v.Exploring: // the command bar's popup: it alone closes (key)
 		p.menu = false
 	default:
 		p.send(engine.ActClose, 0)

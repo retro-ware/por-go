@@ -85,16 +85,16 @@ func (e *Engine) walkFeed() {
 		return
 	}
 	w.last = time.Now()
-	step := DirUp // a step ahead
+	step := ActForward
 	switch (d - e.facing + 8) % 8 {
 	case 0:
 		w.ex, w.ey = e.posX+dirDX[d], e.posY+dirDY[d]
 	case 6:
-		step, w.ef = DirLeft, (e.facing+6)%8
+		step, w.ef = ActTurnLeft, (e.facing+6)%8
 	default:
-		step, w.ef = DirRight, (e.facing+2)%8 // twice to turn round
+		step, w.ef = ActTurnRight, (e.facing+2)%8 // twice to turn round
 	}
-	e.ext.held = Action{Kind: ActMove, N: step}
+	e.ext.held = Action{Kind: step}
 }
 
 // walkDir is the direction (0 2 4 6) of the first step on the shortest

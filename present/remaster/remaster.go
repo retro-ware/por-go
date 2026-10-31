@@ -103,7 +103,8 @@ type Presenter struct {
 	ctxBox      image.Rectangle             // where its box went: the spell pick opens there
 	pick        []engine.Spell              // View.SpellPick as last drawn: a spell to cast is being picked on this screen
 	pickAt      image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
-	command     bool                        // the command bar is up (View.Command), as last drawn
+	command     bool                        // the party explores (View.Exploring), as last drawn
+	cmds        []command                   // the command menu's commands (explore.go), as last drawn
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 }
@@ -209,7 +210,8 @@ func (p *Presenter) cast(i int) {
 // draw shows the screen the View is: the page, the main menu, a tall page or the 3D view.
 func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
-	p.command = v.Command
+	p.command = v.Exploring
+	p.cmds = commands(v)
 	if !p.active {
 		p.ctx = 0
 	}
@@ -317,19 +319,19 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		drawBox(dst, frame, p.border.tiles, pic, pp, cx, py)
 		picBottom = py + int(pp*ph/2)
 	}
-	pane, asking := textPane(v), v.Menu != nil && !v.Command && !noChoice(v)
+	pane, asking := textPane(v), v.Menu != nil && !v.Exploring && !noChoice(v)
 	if asking {
 		p.answered = pane
 	}
 	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
 	ask := v.Typing != nil && v.Typing.Prompt != ""                                    // a script's input: its question and the line in one pop-up, no text box
 	shown = shown && !ask
-	if shown && v.Command && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
+	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, frame, p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
 		drawBox(dst, frame, p.border.tiles, txt, tk, cx, cy)
 	}
-	if v.Menu != nil && !v.Command && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
+	if v.Menu != nil && !v.Exploring && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
 		if id := menuID(v.Menu); id != p.asked && !v.Working { // not the menu just answered, still up while the engine works on the answer
 			p.asked, p.menu, p.menuFor, p.sel = id, true, id, v.Menu.Sel
 		}
@@ -356,6 +358,19 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.drawMenu(dst, note.Glyph, v.Typing.Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
 		p.menuRects = p.menuRects[:0]
+	} else if v.Exploring && p.menu { // the command menu (explore.go)
+		cmds := commands(v)
+		lines, keys := make([]string, len(cmds)), make([]byte, len(cmds))
+		for i, c := range cmds {
+			lines[i], keys[i] = c.text, c.key
+		}
+		p.sel = min(p.sel, len(lines)-1)
+		top := b.Dy()/2 - int(mk*float64(len(lines)+4)*4)
+		if picBottom > 0 {
+			top = max(top, picBottom+int(pk*4))
+		}
+		p.menuSel = -1
+		p.drawMenu(dst, note.Glyph, "", lines, keys, p.sel, mk, cx, top)
 	} else if v.Menu == nil { // "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
 	} else if p.menu && menuID(v.Menu) != p.menuFor { // the menu the popup was opened for is gone (answered): the next one opens on its own key
@@ -367,7 +382,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.sel = min(p.sel, len(lines)-1)
 		top := cy + int(tk*th/2) + int(pk*8)
-		if v.Command || !shown { // no text box above: in the middle
+		if v.Exploring || !shown { // no text box above: in the middle
 			top = b.Dy()/2 - int(mk*float64(len(lines)+4)*4)
 			if picBottom > 0 { // never over the picture: right under it
 				top = max(top, picBottom+int(pk*4))
@@ -448,6 +463,30 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.view.OptionsOpen() {
 		return true
 	}
+	if v.Exploring {
+		n := len(commands(v))
+		switch {
+		case !p.menu && k == 13:
+			p.menu, p.sel = true, 0
+		case !p.menu && k == 27:
+			p.view.OpenOptions()
+		case !p.menu:
+			return p.exploreKey(k, v)
+		case k == 0x4800:
+			p.sel = (p.sel + n - 1) % n
+		case k == 0x5000:
+			p.sel = (p.sel + 1) % n
+		case k == 13:
+			p.menu = false
+			p.runCommand(p.sel)
+		case k == 27:
+			p.menu = false
+		default:
+			p.menu = false
+			return p.exploreKey(k, v)
+		}
+		return true
+	}
 	m := v.Menu
 	if !p.menu {
 		switch {
@@ -457,7 +496,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 			return false
 		case k == 13 && m != nil:
 			p.menu, p.menuFor, p.sel = true, menuID(m), m.Sel
-		case k == 27 && v.Command:
+		case k == 27 && v.Exploring:
 			p.view.OpenOptions()
 		default:
 			return false
@@ -480,7 +519,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 			return false
 		}
 		p.send(engine.ActPick, p.sel)
-	case k == 27 && v.Command: // the command bar has no Exit item: the popup alone closes
+	case k == 27 && v.Exploring: // the command bar has no Exit item: the popup alone closes
 		p.menu = false
 	case k == 27: // the game leaves the menu (its Exit item): hiding the popup alone left the game waiting in it
 		p.send(engine.ActClose, 0)
@@ -535,6 +574,10 @@ func (p *Presenter) Click(x, y int) bool {
 		for i, r := range p.menuRects {
 			if image.Pt(x, y).In(r) {
 				p.menu = false
+				if p.command {
+					p.runCommand(i)
+					return true
+				}
 				if i == p.menuSel { // the game's own choice: Enter picks it (some prompts take nothing else)
 					p.send(engine.ActContinue, 0)
 				} else {
@@ -632,7 +675,7 @@ func (p *Presenter) OptionsMouse(x, y int, left, right bool, wheel float64) {
 // noChoice reports a question with one answer ("press enter to continue"):
 // a message, not a choice.
 func noChoice(v engine.View) bool {
-	return v.Menu != nil && !v.Command && len(v.Menu.Items) == 1 && !v.Choosing // a member pick's lone Select is still a choice: whom
+	return v.Menu != nil && !v.Exploring && len(v.Menu.Items) == 1 && !v.Choosing // a member pick's lone Select is still a choice: whom
 }
 
 // cardUnder is the card at screen pixel (x, y), -1 for none.

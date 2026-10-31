@@ -67,3 +67,10 @@ is deleted subsystem by subsystem, not kept alongside.
 5. **Combat.** Explicit combat state (turn order, whose turn, pending
    target); player and AI turns as decisions; animations from events.
 6. **Removal.** Goroutine, channel, page drawing, old screens and Acts gone.
+
+## Progress
+
+- [x] M1a: adventuring is decisions (ActForward, ActBackward, ActTurnLeft,
+  ActTurnRight, ActGo, ActCamp, ActSearch, ActSweep, ActCastPick, the
+  member acts); the command bar is gone, the presenter owns the command
+  menu (present/remaster/explore.go); View.Exploring, View.CanCast.

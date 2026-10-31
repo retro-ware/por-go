@@ -308,14 +308,3 @@ func (e *Engine) rosterRegion() {
 	e.addRegion(region{x0: x, y0: 4, x1: 0x26, y1: 4 + len(e.party) - 1, click: e.rosterClick})
 }
 
-// commandRegions: on the command bar the minimap opens the full map and
-// the roster selects.
-func (e *Engine) commandRegions() {
-	if e.ext.minimap && e.minimapAllowed() && e.beginFlag != 0 {
-		e.addRegion(region{x0: 0x11, y0: 1, x1: 0x26, y1: 0xE, click: func(int, int) Action { e.FullMap(); return Action{} }})
-		return
-	}
-	if len(e.party) > 0 {
-		e.rosterRegion()
-	}
-}

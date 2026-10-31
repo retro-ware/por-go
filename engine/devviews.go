@@ -180,7 +180,7 @@ func (e *Engine) DevScene(name string) func() {
 				}
 			}
 			c.Memorized[0] = spCureLightWounds
-			e.command(cmdCast, true)
+			e.CastMenu()
 			e.DrawMainScreen()
 		}
 	case "who": // a member pick on the view, as a script's "Who will search?"

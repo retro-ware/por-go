@@ -1,5 +1,7 @@
 package engine
 
+import "slices"
+
 // The adventuring loop: ovr04:31B4/32F8 (game loop and area change),
 // ovr15 (command input, movement, doors) and ovr21 (clock).
 
@@ -152,79 +154,28 @@ func (e *Engine) Encamp() {
 	e.Redraw()
 }
 
-// CommandInput = ovr15:0989: the adventuring command bar, until a command
-// ends input (Encamp, Search here, a step). True for Encamp.
+// CommandInput (ovr15:0989) waits for the adventuring decisions until one
+// ends input (camp, search here, a step). True for camp.
 func (e *Engine) CommandInput() (encamp bool) {
 	e.game.HoldMove = 0
 	e.areaMusic()
 	e.unback() // a backward step the scripts ended
-	switch {
-	case e.viewMode == 1:
+	if e.viewMode >= 2 && e.viewMode <= 4 && e.prevViewMode < 2 {
+		e.LoadIconPic("ICON", 0, 9)
+		e.LoadIconPic("ICON", 1, 0xA)
+		e.LoadIconPic("ICON", 2, 0xB)
+		e.areaMapIcons() // 00BA:2B5E
+	}
+	if e.viewMode >= 1 && e.viewMode <= 4 {
 		for done := false; !done; {
 			if f := e.DevAction; f != nil { // headless checks (POR_DEV)
 				e.DevAction = nil
 				f()
 			}
 			e.ext.inCommand = true
-			p := e.DisplayInput("", e.commandBar(commandBar3D), colLightMagenta, colLightGreen, colWhite, true, false)
+			a := e.decision()
 			e.ext.inCommand = false
-			encamp = p.ID == cmdEncamp
-			if !p.extra() {
-				done = e.command(p.ID, true)
-			} else {
-				switch p.Dir {
-				case DirUp:
-					e.checkEdge()
-					done = true
-				case DirDown:
-					// (extra) Down steps backwards, facing kept (the original turns round): Move and the step scripts go the way back, the screen never shows it (viewFacing)
-					e.facing = (e.facing + 4) % 8
-					e.ext.back = true
-					e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing) // the step scripts read it (City Hall: 0xC04E 11 is the locked door)
-					e.checkEdge()
-					done = true
-				case DirLeft:
-					e.turn(6, true)
-				case DirRight:
-					e.turn(2, true)
-				default:
-					e.partyKeypad(p)
-					e.DisplayPartyList()
-				}
-			}
-			e.StatusLine()
-		}
-	case e.viewMode >= 2 && e.viewMode <= 4:
-		if e.prevViewMode < 2 {
-			e.LoadIconPic("ICON", 0, 9)
-			e.LoadIconPic("ICON", 1, 0xA)
-			e.LoadIconPic("ICON", 2, 0xB)
-			e.areaMapIcons() // 00BA:2B5E
-		}
-		for done := false; !done; {
-			e.ext.inCommand = true
-			p := e.DisplayInput("", e.commandBar(commandBar3D), colLightMagenta, colLightGreen, colWhite, true, false)
-			e.ext.inCommand = false
-			encamp = p.ID == cmdEncamp
-			if !p.extra() {
-				done = e.command(p.ID, false)
-			} else {
-				done = true
-				switch p.Dir {
-				case DirUp:
-					e.facing = 0
-				case DirRight:
-					e.facing = 2
-				case DirDown:
-					e.facing = 4
-				case DirLeft:
-					e.facing = 6
-				default:
-					e.partyKeypad(p)
-					e.DisplayPartyList()
-					done = false
-				}
-			}
+			done, encamp = e.explore(a)
 			e.StatusLine()
 		}
 	}
@@ -236,53 +187,95 @@ func (e *Engine) CommandInput() (encamp bool) {
 	return encamp
 }
 
-// commandBar3D = the 3D view's command bar (DS:04B6) without Area: the
-// minimap (Tab, extras.go) shows all Area showed.
-var commandBar3D = Bar{{"Cast", cmdCast}, {"Inv", cmdInv}, {"View", cmdView}, {"Encamp", cmdEncamp}, {"sWeep", cmdSweep}, {"Search", cmdSearch}}
+// decision waits for the next decision, the auto-walk's steps included.
+func (e *Engine) decision() Action {
+	for !e.inputReady() {
+		e.animateWhileWaiting()
+		e.idle()
+	}
+	return e.input()
+}
 
-// The commands of the command bar.
-const (
-	cmdCast Choice = iota
-	cmdInv
-	cmdView
-	cmdEncamp
-	cmdSweep
-	cmdSearch
-	cmdSpells // extra: a card's context menu: the member's powers (ActSpells..ActCure, in that order)
-	cmdMagic
-	cmdHeal
-	cmdCure
-)
-
-// command carries out a command of the command bar (the original's Area is
-// replaced by the minimap, Tab). Returns true when input is over.
-func (e *Engine) command(k Choice, view3D bool) bool {
-	switch k {
-	case cmdCast:
-		e.CastMenu() // ovr16:04A1; canStudy says why a member in no condition cannot (the original ignores the key on the 3D view)
-	case cmdInv: // extra: straight to the inventory
+// explore carries out an adventuring decision; done when it ends input
+// (the step or search is then made by GameLoop).
+func (e *Engine) explore(a Action) (done, encamp bool) {
+	view3D := e.viewMode == 1
+	member := func() bool { // member N acts: they become the selected one
+		if a.N >= 0 && a.N < len(e.party) {
+			e.selectMember(a.N)
+		}
+		return len(e.party) > 0
+	}
+	switch a.Kind {
+	case ActForward:
+		if view3D {
+			e.checkEdge()
+			return true, false
+		}
+	case ActBackward:
+		if view3D {
+			// (extra) a step backwards, facing kept (the original turns round): Move and the step scripts go the way back, the screen never shows it (viewFacing)
+			e.facing = (e.facing + 4) % 8
+			e.ext.back = true
+			e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing) // the step scripts read it (City Hall: 0xC04E 11 is the locked door)
+			e.checkEdge()
+			return true, false
+		}
+	case ActTurnLeft:
+		if view3D {
+			e.turn(6, true)
+		}
+	case ActTurnRight:
+		if view3D {
+			e.turn(2, true)
+		}
+	case ActGo:
+		if !view3D && a.N >= 0 && a.N < 4 {
+			e.facing = a.N * 2
+			return true, false
+		}
+	case ActCamp:
+		return true, true
+	case ActSearch: // the original's Look: search this square once
+		e.game.Search = e.game.Search | 2
+		e.AdvanceClock(3, 1) // extra: 3 minutes (the original took 10)
+		e.eclPC = e.es.events[1]
+		return true, false
+	case ActSweep: // the original's Search: the slow, searching pace on or off
+		e.game.Search = e.game.Search ^ 1
+	case ActCastPick:
+		if member() {
+			e.CastMenu() // ovr16:04A1; canStudy says why a member in no condition cannot
+		}
+	case ActInventory:
+		if !member() {
+			break
+		}
 		if len(e.carried(e.selected())) == 0 {
-			e.BottomMessage("No items")
+			e.say("No items")
 		} else {
 			e.ext.toItems = true
 			e.ViewCharacter()
 		}
-	case cmdView:
-		e.ViewCharacter() // ovr20:0AB3
-	case cmdSpells, cmdMagic, cmdHeal, cmdCure: // extra: a card's context menu
-		e.power(e.selected(), ActSpells+ActKind(k-cmdSpells))
-		e.DrawMainScreen()
-	case cmdEncamp:
-		return true
-	case cmdSweep: // Sweep (the original's Search): the slow, searching pace on or off
-		e.game.Search = e.game.Search ^ 1
-	case cmdSearch: // Search (the original's Look): search this square once
-		e.game.Search = e.game.Search | 2
-		e.AdvanceClock(3, 1) // extra: 3 minutes (the original took 10)
-		e.eclPC = e.es.events[1]
-		return true
+	case ActMember:
+		if member() {
+			e.ViewCharacter() // ovr20:0AB3
+		}
+	case ActLead:
+		member()
+	case ActSpells, ActMagic, ActHeal, ActCure: // a card's context menu: member N's power
+		if member() && slices.ContainsFunc(e.powers(e.selected()), func(p Power) bool { return p.Kind == a.Kind }) {
+			e.power(e.selected(), a.Kind)
+			e.DrawMainScreen()
+		}
+	case ActOverview:
+		e.PartyOverview()
+	case ActMap:
+		e.FullMap()
+	case ActMinimap:
+		e.toggleMinimap()
 	}
-	return false
+	return false, false
 }
 
 // turn = the turn keys of ovr15:0989: face dir+d, look again.

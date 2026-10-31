@@ -55,11 +55,11 @@ func TestView(t *testing.T) {
 		t.Fatalf("party %+v: want named members with heads", v.Party)
 	}
 	f := v.Facing
-	v = keys(engine.Action{Kind: engine.ActMove, N: engine.DirRight}) // turn right
+	v = keys(engine.Action{Kind: engine.ActTurnRight})
 	if v.Facing != (f+1)%4 || !v.MainFrame || v.Window != engine.WinThreeD {
 		t.Errorf("after turning right from %v: %+v", f, v)
 	}
-	v = keys(hot('V')) // the character sheet covers the frame
+	v = keys(engine.Action{Kind: engine.ActMember, N: -1}) // the character sheet covers the frame
 	if v.MainFrame {
 		t.Errorf("character sheet: MainFrame still set")
 	}
