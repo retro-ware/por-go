@@ -1486,6 +1486,11 @@ func (g *Game) menuOptions() []menuLine {
 			{"Dithered darkness", func(g *Game) string { return onOff(g.dither) }, func(g *Game, _ int) { g.dither = !g.dither }},
 			{"Torch intensity", func(g *Game) string { return fmt.Sprintf("%.1f", g.torch) }, func(g *Game, d int) { g.torch = step(g.torch, 0.5, 1.5, 0.5, d) }},
 			uiLine("Portraits", &Settings.Cards),
+			{"Party layout", func(*Game) string { return map[bool]string{false: "Sides", true: "Row"}[Settings.PartyRow] }, flip(&Settings.PartyRow)},
+			{"Minimap", func(*Game) string { return onOff(!Settings.MapOff) }, flip(&Settings.MapOff)},
+			{"Minimap opacity", func(*Game) string {
+				return bar(Settings.MapAlpha, minAlpha, 1, 0.1) + fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100)
+			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
 			uiLine("Minimap size", &Settings.Map),
 			uiLine("Picture box", &Settings.Pic),
 			uiLine("Menus", &Settings.Menu),
@@ -1494,6 +1499,7 @@ func (g *Game) menuOptions() []menuLine {
 	case "Audio":
 		return []menuLine{
 			{"Voice-over", func(*Game) string { return onOff(Voice(false)) }, func(*Game, int) { Voice(true) }},
+			{"DASP Sfx", onOffOf(&Settings.Dasp), flip(&Settings.Dasp)},
 			volumeLine("Music volume", &Settings.Music),
 			volumeLine("Effects volume", &Settings.Effects),
 			volumeLine("Voice volume", &Settings.Voice),
@@ -1505,10 +1511,6 @@ func (g *Game) menuOptions() []menuLine {
 			{"Walk speed", func(*Game) string {
 				return bar(Settings.Speed, minSpeed, maxSpeed, 0.25) + fmt.Sprintf(" %.2fx", Settings.Speed)
 			}, func(_ *Game, d int) { Settings.Speed = step(Settings.Speed, minSpeed, maxSpeed, 0.25, d) }},
-			{"Minimap", func(*Game) string { return onOff(!Settings.MapOff) }, flip(&Settings.MapOff)},
-			{"Minimap opacity", func(*Game) string {
-				return bar(Settings.MapAlpha, minAlpha, 1, 0.1) + fmt.Sprintf(" %3.0f%%", Settings.MapAlpha*100)
-			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
 			{"Deskew combat maps", onOffOf(&Settings.Deskew), flip(&Settings.Deskew)},
 			{"Zoom speed", func(*Game) string {
 				return bar(Settings.Zoom, minZoom, maxZoom, 0.25) + fmt.Sprintf(" %.2fx", Settings.Zoom)
@@ -1930,11 +1932,13 @@ type Options struct {
 	Torch                             float64
 	Speed                             float64 // walk and turn speed, minSpeed to maxSpeed times the normal
 	MapOff                            bool    // the host's minimap: hidden
+	PartyRow                          bool    // the host's portraits in one row along the bottom instead of down the sides
 	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
 	Cards, Map, Pic, Menu, Text       float64 // the host's portraits, minimap, picture box, menus and text box: one of UISteps times their normal size (the host shrinks them as far as the screen needs)
 	Deskew                            bool    // the host's combat maps on a square grid (walls straight) instead of the original's perspective
 	Zoom                              float64 // the host's battle camera: how far one wheel step zooms, minZoom to maxZoom times 15 percent
 	Music, Effects, Voice             float64 // the host's volumes, 0 to 1
+	Dasp                              bool    // the host's Dubtrain sound pack effects in place of the original's
 }
 
 const minAlpha = 0.2
@@ -1946,11 +1950,11 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options Run starts with; set them before Run (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1, Music: 1, Effects: 1, Voice: 1}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line (it toggles
-	// the voice first when toggle, then reports whether it is on) and the
-	// Music, Effects and Voice volume sliders.
+	// the voice first when toggle, then reports whether it is on), the
+	// DASP Sfx switch and the Music, Effects and Voice volume sliders.
 	Voice func(toggle bool) bool
 )
 

@@ -157,9 +157,13 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	if r.Min.X > dst.Bounds().Dx()/2 { // the right column: to the left of it
 		cx = r.Min.X - gap - w/2
 	}
-	rs := p.tipMenu(dst, "", lines, keys, sel, k, cx, r.Min.Y)
+	top := r.Min.Y
+	if blobber.Settings.PartyRow { // the row: above the card, beside it
+		top = max(0, r.Max.Y-int(k*8*float64(len(lines)+2)))
+	}
+	rs := p.tipMenu(dst, "", lines, keys, sel, k, cx, top)
 	if p.ctx > 0 {
-		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], rs...), image.Rect(cx-w/2, r.Min.Y, cx+w/2, r.Min.Y)
+		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], rs...), image.Rect(cx-w/2, top, cx+w/2, top)
 	}
 }
 
