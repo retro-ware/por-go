@@ -25,8 +25,18 @@ func TestItemStats(t *testing.T) {
 	e.items[3].Protection = 0x80 + 57                             // type 3: plate mail 7
 	e.items[4].Protection = 0x80 + 50                             // type 4: bracers 0
 	for typ, want := range []string{"", "(2d4+1) ", "[1] ", "[7] ", "[0] "} {
-		if s := e.itemStats(itemType(typ)); s != want {
+		if s := e.itemStats(&Item{Type: itemType(typ)}); s != want {
 			t.Errorf("type %d: %q, want %q", typ, s, want)
+		}
+	}
+	for _, c := range []struct { // the known plus counts in; a hidden one does not
+		typ    itemType
+		plus   int8
+		hidden byte
+		want   string
+	}{{4, 4, 0, "[4] "}, {4, 4, 1, "[0] "}, {3, 2, 0, "[9] "}, {2, 1, 0, "[2] "}, {1, 3, 0, "(2d4+1) "}} {
+		if s := e.itemStats(&Item{Type: c.typ, Plus: byte(c.plus), Hidden: c.hidden}); s != c.want {
+			t.Errorf("type %d %+d hidden %d: %q, want %q", c.typ, c.plus, c.hidden, s, c.want)
 		}
 	}
 }

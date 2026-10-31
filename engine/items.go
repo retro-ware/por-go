@@ -79,16 +79,18 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 		}
 		name = cut(name+s, textCols)
 	}
-	it.setName(name + e.itemStats(it.Type))
+	it.setName(name + e.itemStats(it))
 	if display {
 		e.DisplayString(x, y, colLightGreen, it.Name())
 	}
 }
 
-// itemStats (extra): Angband-style base stats after the name, "(1d8) "
-// for weapon damage, "<6> " for the armour class it gives (the font has
-// no square brackets); magic pluses stay in the name.
-func (e *Engine) itemStats(typ itemType) string {
+// itemStats (extra): Angband-style stats after the name, "(1d8) " for a
+// weapon's base damage (its magic plus stays in the name), "[6] " for the
+// armour class points armour, a shield or bracers give, the known plus
+// counted in (Bracers +4 are [4]).
+func (e *Engine) itemStats(it *Item) string {
+	typ := it.Type
 	s := ""
 	if n, d := e.base(typ).Dice, e.base(typ).Sides; n > 0 && d > 0 {
 		s = "(" + strconv.Itoa(int(n)) + "d" + strconv.Itoa(int(d))
@@ -101,9 +103,9 @@ func (e *Engine) itemStats(typ itemType) string {
 	}
 	if v := int(e.base(typ).Protection); v > 0x80 {
 		if v &= 0x7F; v >= 50 {
-			v -= 50 // body armour and bracers count up from AC 10 = 50: plain bracers are [0], their plus in the name
+			v -= 50 // body armour and bracers count up from AC 10 = 50
 		}
-		if v > 0 || int(e.base(typ).Protection&0x7F) >= 50 {
+		if v += int(e.knownPlus(it)); v != 0 || int(e.base(typ).Protection&0x7F) >= 50 { // unidentified bracers: [0]
 			s += "[" + strconv.Itoa(v) + "] "
 		}
 	}
