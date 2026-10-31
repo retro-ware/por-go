@@ -284,14 +284,7 @@ func (e *Engine) Ticks() int64 {
 
 // Delay = 0A40:029C (Turbo Pascal Delay, milliseconds).
 func (e *Engine) Delay(ms int) {
-	if e.beginFlag != 5 { // outside combat the pause is an ask the presenter paces (AskPause); combat sleeps until M5
-		e.block(func() { e.askPause(ms, func() {}) })
-		return
-	}
-	e.publish() // the remastered 3D views animate with the page: combat's moves and hits
-	e.pace(pausing)
-	sleep(ms)
-	e.pace(working)
+	e.block(func() { e.askPause(ms, func() {}) }) // an ask the presenter paces (AskPause): the engine never sleeps
 }
 
 // ClearKeyboard does nothing: the original's drain loop is dead code (0899:0104 jumps straight to its exit).

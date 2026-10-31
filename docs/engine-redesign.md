@@ -166,3 +166,14 @@ is deleted subsystem by subsystem, not kept alongside.
   slot screen through `until`; the icon editor's swatch; opCombat and the
   shop, temple and training a script opens run inside RunECL (it cannot
   return mid-script until M5/M6 keeps the VM's state across them).
+- [x] M5a: combat no longer sleeps or loops on act. Delay is always an
+  AskPause the presenter paces (combat's moves, hits and messages too);
+  the player's turn is modeTurn (applyTurn), aiming modeAim, and the
+  combat yes/no (Flee?, Attack Ally?) modeConfirm (Battle.Ask, ActYes or
+  ActClose), all run by `await` until M6. Scripted captures flush the
+  presenter's own decisions every frame. Still to do (M5b): typed combat
+  events (moved, hit, damage, missile, died) instead of pacing by pauses,
+  the AI's and auto-combat's turns as presenter-requested steps (they run
+  straight through combatLoop between player turns), and the calls under
+  applyTurn that still block (walk, casting, aiming, the inventory and
+  sheet through `await`/`block`).

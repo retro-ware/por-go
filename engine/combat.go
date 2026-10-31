@@ -125,60 +125,82 @@ func (e *Engine) playerTurn(c *Character) {
 		return
 	}
 	defer func() { e.snap.turn, e.snap.reach, e.snap.paths, e.snap.targets, e.snap.hits = nil, nil, nil, nil, nil }()
-	for done := false; !done; {
-		reach := e.turnChoices(c)
-		a := e.act()
-		turn := e.snap.turn
-		e.snap.turn = nil
-		if !slices.Contains(turn.Can, a.Kind) && a.Kind != ActWalk && a.Kind != ActMember { // the card's clicks are no bar buttons
-			continue
+	reach := e.turnChoices(c)
+	e.await(modeTurn, func(a Action) bool {
+		done := e.applyTurn(c, a, reach)
+		if !done {
+			reach = e.turnChoices(c)
 		}
-		switch a.Kind {
-		case ActWalk:
-			if p, ok := reach[[2]int{a.X, a.Y}]; ok {
-				done = e.walk(c, p)
-			}
-		case ActAttack:
-			done = e.attackUnit(c, a.N, reach)
-		case ActItems:
-			done = e.ItemsMenu() // ovr20:0EF8 (var done)
-			e.setSpeed(c)
-		case ActMember: // extra: the card's right click: the sheet
-			done = e.ViewCharacter()
-			e.setSpeed(c)
-		case ActRanged:
-			done = e.rangedAttack(c)
-		case ActCast:
-			if slices.ContainsFunc(turn.Spells, func(s Spell) bool { return s.ID == a.N }) {
-				var ok bool
-				e.castSpell(a.N, 0, &ok)
-				done = ok
-			}
-		case ActTurn:
-			e.clericTurnUndead(c)
-			done = e.clearCombatInfo(c)
-		case ActQuick:
-			e.quickOne(c)
-			e.Delay(200)
-			done = true
-			e.computerTurn(c)
-		case ActGuard:
-			done = e.guard(c)
-		case ActBandage:
-			e.bandage(true)
-			done = e.clearCombatInfo(c)
-		case ActWait: // Done's Delay
-			c.Combat.Delay = 1
-			done = true
-		case ActEnd: // Done's Quit
-			done = e.clearCombatInfo(c)
-		case ActFlee: // moveAttack (ovr09:09DF): a step off the map, "Flee:" answered Yes
-			if d := e.fleeDir(c); d >= 0 && e.ask("Flee?") {
-				e.combatTurn(c, byte(d), 0, false)
-				done = e.tryFlee(c)
-			}
+		return done
+	})
+}
+
+// applyTurn is modeTurn's handler: one decision of c's turn (combatMenu's
+// choices); done when the turn is used.
+func (e *Engine) applyTurn(c *Character, a Action, reach map[[2]int][]int) (done bool) {
+	turn := e.snap.turn
+	e.snap.turn = nil
+	if !slices.Contains(turn.Can, a.Kind) && a.Kind != ActWalk && a.Kind != ActMember { // the card's clicks are no bar buttons
+		return false
+	}
+	switch a.Kind {
+	case ActWalk:
+		if p, ok := reach[[2]int{a.X, a.Y}]; ok {
+			done = e.walk(c, p)
+		}
+	case ActAttack:
+		done = e.attackUnit(c, a.N, reach)
+	case ActItems:
+		done = e.ItemsMenu() // ovr20:0EF8 (var done)
+		e.setSpeed(c)
+	case ActMember: // extra: the card's right click: the sheet
+		done = e.ViewCharacter()
+		e.setSpeed(c)
+	case ActRanged:
+		done = e.rangedAttack(c)
+	case ActCast:
+		if slices.ContainsFunc(turn.Spells, func(s Spell) bool { return s.ID == a.N }) {
+			var ok bool
+			e.castSpell(a.N, 0, &ok)
+			done = ok
+		}
+	case ActTurn:
+		e.clericTurnUndead(c)
+		done = e.clearCombatInfo(c)
+	case ActQuick:
+		e.quickOne(c)
+		e.Delay(200)
+		done = true
+		e.computerTurn(c)
+	case ActGuard:
+		done = e.guard(c)
+	case ActBandage:
+		e.bandage(true)
+		done = e.clearCombatInfo(c)
+	case ActWait: // Done's Delay
+		c.Combat.Delay = 1
+		done = true
+	case ActEnd: // Done's Quit
+		done = e.clearCombatInfo(c)
+	case ActFlee: // moveAttack (ovr09:09DF): a step off the map, "Flee:" answered Yes
+		if d := e.fleeDir(c); d >= 0 && e.ask("Flee?") {
+			e.combatTurn(c, byte(d), 0, false)
+			done = e.tryFlee(c)
 		}
 	}
+	return done
+}
+
+// ask (extra) puts the yes/no question q to the player as the View's
+// Battle.Ask (modeConfirm): ActYes or ActClose answers it.
+func (e *Engine) ask(q string) (yes bool) {
+	defer func() { e.snap.ask = "" }()
+	e.snap.ask = q
+	e.await(modeConfirm, func(a Action) bool {
+		yes = a.Kind == ActYes
+		return yes || a.Kind == ActClose
+	})
+	return yes
 }
 
 // fleeDir is a direction in which c's next step leaves the map (moveAttack

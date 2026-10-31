@@ -156,17 +156,16 @@ type acts struct {
 const (
 	working = iota // handling input
 	waiting        // waiting for input
-	pausing        // a deliberate delay (Delay)
 )
 
 // pace records what the engine goroutine does now.
 func (e *Engine) pace(st int32) { e.acts.state.Store(st) }
 
 // Settled reports whether the engine has taken the keys and actions sent
-// and finished with them, or pauses on purpose; the picture is worth drawing.
+// and finished with them; the picture is worth drawing.
 func (e *Engine) Settled() bool {
 	st := e.acts.state.Load()
-	return (st == pausing || st == waiting && len(e.acts.ch) == 0) && !e.Busy()
+	return st == waiting && len(e.acts.ch) == 0 && !e.Busy()
 }
 
 // Idle reports whether the engine waits for input and none is queued (held
@@ -240,18 +239,3 @@ func (e *Engine) act() Action {
 // say shows s as the window's note: what a direct action reports instead
 // of the original's message line. It is cut to the bottom line (noteCols).
 func (e *Engine) say(s string) { e.ext.note, e.ext.noteAt = cut(s, noteCols), time.Now() }
-
-// ask (extra) puts the yes/no question q to the player as the View's
-// Battle.Ask and waits for ActYes or ActClose.
-func (e *Engine) ask(q string) bool {
-	defer func() { e.snap.ask = "" }()
-	for {
-		e.snap.ask = q
-		switch e.act().Kind {
-		case ActYes:
-			return true
-		case ActClose:
-			return false
-		}
-	}
-}

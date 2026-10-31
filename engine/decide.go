@@ -24,6 +24,9 @@ const (
 	modeIcon                // the icon editor (View.IconDrop)
 	modeSlots               // View.Slots
 	modeScript              // View.Script: a script instruction waits for its answer (eclask.go)
+	modeTurn                // View.Battle.Turn: a member's combat turn (applyTurn)
+	modeAim                 // View.Battle.Turn.Aim: aiming (playerAim's handler)
+	modeConfirm             // View.Battle.Ask: a combat yes/no (Flee?, Attack Ally?)
 )
 
 // screen is a screen taking decisions: its handler, what leaving it

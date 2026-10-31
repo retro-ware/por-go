@@ -468,21 +468,20 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		at = e.combatant(byte(e.snap.targets[0]))
 	}
 	point(e.combatX(at), e.combatY(at))
-	for {
-		a := e.act()
+	e.await(modeAim, func(a Action) bool { // aiming's handler: a square pointed at, taken, or Close
 		if a.Kind == ActClose {
-			return
+			return true
 		}
 		if a.Kind != ActPoint && a.Kind != ActAim || a.X < 0 || a.Y < 0 || a.X > 0x31 || a.Y > 0x18 {
-			continue
+			return false
 		}
 		cand, why := point(a.X, a.Y)
 		if a.Kind == ActPoint {
-			continue
+			return false
 		}
 		if why != "" {
 			e.refuse(why)
-			continue
+			return false
 		}
 		t.x, t.y, t.c = byte(a.X), byte(a.Y), cand
 		if showRange == 1 || cand != nil && e.occ[a.Y][a.X] > 0 {
@@ -490,10 +489,8 @@ func (e *Engine) playerAim(c *Character, rangeArg, showRange, allowGround int, f
 		} else {
 			*found = true
 		}
-		if *found {
-			return
-		}
-	}
+		return *found
+	})
 }
 
 // aimCheck (extra) is aimPrompt's and aimManual's test of the square

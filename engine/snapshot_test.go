@@ -393,11 +393,16 @@ func TestViewMember(t *testing.T) {
 func actWait(e *engine.Engine, a engine.Action) engine.View {
 	e.Act(a)
 	time.Sleep(50 * time.Millisecond)
-	for e.Busy() {
-		time.Sleep(10 * time.Millisecond)
+	for {
+		for e.Busy() {
+			time.Sleep(10 * time.Millisecond)
+		}
+		time.Sleep(20 * time.Millisecond)
+		if s := e.View().Script; s == nil || s.Kind != engine.AskPause {
+			return e.View()
+		}
+		e.Act(cont) // the presenter's part: a pause is over at once
 	}
-	time.Sleep(100 * time.Millisecond)
-	return e.View()
 }
 
 // TestAttackRefusal: a foe that is no target (here: a party member) is

@@ -128,9 +128,12 @@ func (g *game) script() {
 		case shotWait: // \w
 		default:
 			g.push(shotKeys[k-1])
-			g.act()
-			g.settle()
 		}
+	}
+	g.act() // the presenter's own decisions too: a paced pause ends (AskPause)
+	if g.sent {
+		g.settle()
+		g.sent = false
 	}
 }
 
