@@ -5,7 +5,7 @@ import "time"
 // Auto-walk (extra): Walk on the full map sends the
 // party to the cursor square along the shortest way through open sides,
 // one step at a time, as if the arrows were pressed. It
-// stops at the square, at any key, or when something happens: a script
+// stops at the square, at any key or click, or when something happens: a script
 // that does more than compute (text, a picture, a menu, monsters), a menu
 // other than the command bar, or a step that did not land where expected.
 
@@ -57,10 +57,18 @@ func (e *Engine) walkFeed() {
 		return
 	}
 	stop := func() { e.ext.walk = nil }
-	if len(e.acts.ch) > 0 { // any action stops the walk and is used up
-		e.nextAct()
-		stop()
-		return
+	for len(e.acts.ch) > 0 { // a key or a click stops the walk and is used up
+		switch a := e.nextAct(); a.Kind {
+		case ActNone: // a resize (nextAct): the window changing does not stop it
+		case ActHover: // nor does the pointer moving, the map closing under it
+			e.take(a)
+		case actRedraw: // a resize the bar draws itself again for
+			e.ext.held = a
+			return
+		default:
+			stop()
+			return
+		}
 	}
 	if !e.ext.inCommand || e.ext.fullMap || w.event || e.viewMode != 1 || e.areaKey() != w.area ||
 		e.posX != w.ex || e.posY != w.ey || e.facing != w.ef ||
