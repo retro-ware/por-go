@@ -101,9 +101,9 @@ func (e *Engine) itemStats(typ itemType) string {
 	}
 	if v := int(e.base(typ).Protection); v > 0x80 {
 		if v &= 0x7F; v >= 50 {
-			v -= 50 // body armour counts up from AC 10 = 50
+			v -= 50 // body armour and bracers count up from AC 10 = 50: plain bracers are [0], their plus in the name
 		}
-		if v > 0 {
+		if v > 0 || int(e.base(typ).Protection&0x7F) >= 50 {
 			s += "[" + strconv.Itoa(v) + "] "
 		}
 	}
