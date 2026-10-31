@@ -69,7 +69,7 @@ var phlanLabels = func() map[int]mapLabel {
 	return m
 }()
 
-const phlanKey = 0 // areaKey of New Phlan: ECL block 0, GEO block 0
+const phlanKey = 3 << 16 // areaKey of New Phlan: data set 3, GEO block 0
 
 const notesFile = "MAPNOTES.TXT"
 
@@ -83,7 +83,7 @@ func (e *Engine) labels() map[int]mapLabel {
 		e.ext.labels = map[int]map[int]mapLabel{}
 	}
 	m := map[int]mapLabel{}
-	if k == phlanKey && e.set == 3 {
+	if k == phlanKey {
 		for s, l := range phlanLabels {
 			m[s] = l
 		}
@@ -92,8 +92,9 @@ func (e *Engine) labels() map[int]mapLabel {
 	return m
 }
 
-// loadNotes reads MAPNOTES.TXT: "area KEY" starts an area, then
-// "X Y KIND TEXT" per label.
+// loadNotes reads MAPNOTES.TXT: "map KEY" (areaKey) starts a map, then
+// "X Y KIND TEXT" per label. "area KEY" is the old key (script area and GEO
+// block, written before 31 Oct 2026), converted to its map.
 func (e *Engine) loadNotes() {
 	f, err := os.Open(filepath.Join(e.Cfg.SaveDir, notesFile))
 	if err != nil {
@@ -102,13 +103,26 @@ func (e *Engine) loadNotes() {
 	defer f.Close()
 	e.ext.labels = map[int]map[int]mapLabel{}
 	var cur map[int]mapLabel
+	start := func(k int) {
+		if cur = e.ext.labels[k]; cur == nil {
+			cur = map[int]mapLabel{}
+			e.ext.labels[k] = cur
+		}
+	}
+	var areas []ScriptArea
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		var k, x, y, kind int
 		line := sc.Text()
+		if _, err := fmt.Sscanf(line, "map %d", &k); err == nil {
+			start(k)
+			continue
+		}
 		if _, err := fmt.Sscanf(line, "area %d", &k); err == nil {
-			cur = map[int]mapLabel{}
-			e.ext.labels[k] = cur
+			if areas == nil {
+				areas = e.scriptAreas()
+			}
+			start(mapOfArea(areas, k))
 			continue
 		}
 		var text string
@@ -130,7 +144,7 @@ func (e *Engine) saveNotes() {
 	}
 	sort.Ints(keys)
 	for _, k := range keys {
-		fmt.Fprintf(&b, "area %d\n", k)
+		fmt.Fprintf(&b, "map %d\n", k)
 		m := e.ext.labels[k]
 		sq := make([]int, 0, len(m))
 		for s := range m {

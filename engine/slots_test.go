@@ -112,3 +112,22 @@ func TestSeenByMap(t *testing.T) {
 		}
 	}
 }
+
+// New Phlan (set 3, GEO 0) comes labelled, and MAPNOTES.TXT's old "area 0"
+// (script area 0) loads as its map and is written back as "map".
+func TestPhlanLabels(t *testing.T) {
+	e := &Engine{set: 3, data: "../data"}
+	e.Cfg.SaveDir = t.TempDir()
+	if l := e.labels()[1<<4|15]; l.text != "Boats" {
+		t.Fatalf("fresh New Phlan 15,1 = %q, want Boats", l.text)
+	}
+	os.WriteFile(filepath.Join(e.Cfg.SaveDir, notesFile), []byte("area 0\n15 1 4 My boat\n"), 0o644)
+	e.loadNotes()
+	if l := e.labels()[1<<4|15]; l.text != "My boat" {
+		t.Fatalf("old notes' New Phlan 15,1 = %q, want My boat", l.text)
+	}
+	e.saveNotes()
+	if b, _ := os.ReadFile(filepath.Join(e.Cfg.SaveDir, notesFile)); string(b) != "map 196608\n15 1 4 My boat\n" {
+		t.Errorf("saved notes = %q", b)
+	}
+}

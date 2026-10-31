@@ -165,25 +165,37 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 // (oldSeenFile) into ones keyed by data set and GEO block: the scripts of
 // one map (names/areas.txt) pool what they saw.
 func (e *Engine) seenByMap(old map[int]*[256]uint8) map[int]*[256]uint8 {
-	areas, _ := ReadScriptAreas(filepath.Join(e.scriptDir(), "names", "areas.txt"))
+	areas := e.scriptAreas()
 	seen := map[int]*[256]uint8{}
 	for k, m := range old {
-		set := k >> 16 // unknown: the area number stands (nothing pools)
-		for _, a := range areas {
-			if a.ID == k>>16 {
-				set = a.Set
-			}
-		}
-		nm := seen[set<<16|k&0xFFFF]
+		k = mapOfArea(areas, k)
+		nm := seen[k]
 		if nm == nil {
 			nm = &[256]uint8{}
-			seen[set<<16|k&0xFFFF] = nm
+			seen[k] = nm
 		}
 		for i, v := range m {
 			nm[i] = max(nm[i], v)
 		}
 	}
 	return seen
+}
+
+func (e *Engine) scriptAreas() []ScriptArea {
+	areas, _ := ReadScriptAreas(filepath.Join(e.scriptDir(), "names", "areas.txt"))
+	return areas
+}
+
+// mapOfArea turns an old key (script area and GEO block) into areaKey's
+// (data set and GEO block) by the scripts' areas (names/areas.txt).
+func mapOfArea(areas []ScriptArea, k int) int {
+	set := k >> 16 // unknown: the area number stands (nothing pools)
+	for _, a := range areas {
+		if a.ID == k>>16 {
+			set = a.Set
+		}
+	}
+	return set<<16 | k&0xFFFF
 }
 
 func (e *Engine) saveTo(name string) {
