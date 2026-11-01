@@ -147,6 +147,15 @@ func screenPage(v engine.View) *cellPage {
 	if s := v.SheetPage; s != nil {
 		c.sheet(s, v)
 	}
+	if pk := v.Picker; pk != nil {
+		c.picker(pk)
+	}
+	if sl := v.Slots; sl != nil { // over the page under (DrawBoxTitled)
+		c.box(1, 1, c.cols-2, c.rows-2, inkWhite, "Saved Games")
+		if !sl.CanSave && !sl.LoadOnly {
+			c.str(2, c.rows-4, inkYellow, "No saving now") // promptRow-3
+		}
+	}
 	return c
 }
 
@@ -293,5 +302,26 @@ func (c *cellPage) sheet(s *engine.SheetPage, v engine.View) {
 		c.box(1, 1, right, 1, inkBlack, "")
 		c.str(1, 1, s.NameColour, s.Name+"'s")
 		c.str(len(s.Name)+4, 1, inkGreen, s.Spells)
+	}
+}
+
+// picker lays a grid picker's page out (showPicker): the box, the pager,
+// the saved characters' names, classes and PNG portraits.
+func (c *cellPage) picker(pk *engine.Picker) {
+	c.border(1, 1, c.cols-2, pk.Bottom)
+	if pk.Pages > 1 {
+		c.str(pk.Prev.X1, pk.Prev.Y1, inkWhite, "< page "+strconv.Itoa(pk.Page+1)+"/"+strconv.Itoa(pk.Pages)+" >")
+	}
+	for k, r := range pk.Cells {
+		i := pk.Page*pk.PerPage + k
+		if i < len(pk.Portraits) && pk.Portraits[i] != nil {
+			c.overs = append(c.overs, overlay{Img: pk.Portraits[i], At: fit(pk.Portraits[i].Bounds(), engine.CellRect{X1: r.X1, Y1: r.Y1, X2: r.X1 + 10, Y2: r.Y1 + 4}.Pixels())})
+		}
+		if i < len(pk.Labels) {
+			c.str(r.X1+12, r.Y1+1, inkWhite, pk.Labels[i])
+		}
+		if i < len(pk.Classes) && pk.Classes[i] != "" {
+			c.str(r.X1+12, r.Y1+3, inkGreen, pk.Classes[i])
+		}
 	}
 }

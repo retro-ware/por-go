@@ -134,7 +134,7 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 
 // ownPage: v shows a screen the presenter lays out from its data
 // (screenPage), drawn anew with each View.
-func ownPage(v engine.View) bool { return v.SheetPage != nil }
+func ownPage(v engine.View) bool { return v.SheetPage != nil || v.Picker != nil || v.Slots != nil }
 
 // modal: v shows a screen over the whole page (help, the journal, the
 // full map, the overview), drawn from its data over the page under it.

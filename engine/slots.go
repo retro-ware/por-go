@@ -223,18 +223,6 @@ func (e *Engine) slotsView() *Slots {
 	return v
 }
 
-// saveScreen keeps the picture and its text cells; the func puts them back.
-func (e *Engine) saveScreen() func() {
-	cells, pg := e.cellsCopy(), e.pg
-	pg.layers = append([]layer(nil), pg.layers...)
-	return func() {
-		if len(cells) != textRows || len(cells[0]) != textCols { // resized meanwhile: the page is drawn again anyway
-			return
-		}
-		e.ext.cells, e.pg = cells, pg
-	}
-}
-
 // pushSlots puts the F9 screen up (View.Slots): the saves, newest first;
 // the list, its cursor and the questions (the name, Overwrite, Delete)
 // are the presenter's. loadOnly (the party menu's Load) offers no saving
@@ -243,22 +231,11 @@ func (e *Engine) pushSlots(loadOnly bool) {
 	ss := &slotScreen{loadOnly}
 	under := e.slotsUp
 	e.slotsUp = ss
-	restore := e.saveScreen()
-	draw := func() {
-		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Saved Games")
-		if !e.canSave(ss) && !loadOnly {
-			e.DisplayString(2, promptRow-3, colYellow, "No saving now")
-		}
-	}
-	off := e.redrawWith(draw)
-	e.push(modeSlots, func(a Action) bool {
+	e.push(modeSlots, func(a Action) bool { // the page is the presenter's (View.Slots), over the one under
 		return e.applySlots(ss, a)
 	}, func() {
-		off()
-		restore()
 		e.slotsUp = under
 	})
-	draw()
 }
 
 // applySlots applies a decision on the slot screen; done when it is left

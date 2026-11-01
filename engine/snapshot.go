@@ -273,11 +273,14 @@ type Option struct {
 // Picker is a grid picker's page as the engine drew it.
 type Picker struct {
 	N, Page, Pages, PerPage, Cols int
-	Cur                           int        // the picture it opened on
-	Cells                         []CellRect // the pictures on this page: Page*PerPage on
-	Prev, Next                    CellRect   // the pager's arrows (zero: one page)
-	Labels                        []string   // the pictures' names (the saved characters)
-	Ask                           string     // the question before a pick (%s: the label), "" none
+	Cur                           int           // the picture it opened on
+	Cells                         []CellRect    // the pictures on this page: Page*PerPage on
+	Prev, Next                    CellRect      // the pager's arrows (zero: one page)
+	Bottom                        int           // the box's inner bottom row (the box: from cell 1, 1 to the page's right)
+	Labels                        []string      // the pictures' names (the saved characters)
+	Classes                       []string      // ... their classes ("": the files are gone)
+	Portraits                     []image.Image // ... their PNG portraits, fitted into the head's place (nil: none; the DAX head is among the pictures)
+	Ask                           string        // the question before a pick (%s: the label), "" none
 }
 
 // Slots is the save slot screen: the saves, newest first.

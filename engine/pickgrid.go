@@ -30,6 +30,7 @@ type picker struct {
 	draw                 func(i, x, y int) // draws picture i, its top left at cell (x, y)
 	pick                 func(i int) bool  // takes picture i; done when the picker goes
 	labels               []string          // the pictures' names (saved characters)
+	chars                *[]*Character     // ... the characters (nil where the files are gone)
 	ask                  string            // asked before a pick (%s: the label)
 
 	cols, rows, gap, x0, y0, bot, pager int // the layout, from the page's size
@@ -103,16 +104,11 @@ func (e *Engine) pushPicker(n, cw, ch, cur int, draw func(i, x, y int), pick fun
 // showPicker draws the page of the picker up.
 func (e *Engine) showPicker(p *picker) {
 	p.layout()
-	e.ClearScreen()
-	e.DrawBorder(1, 1, winRight, p.bot, 0)
+	e.ClearScreen() // the box, the pager and the cards' text are the presenter's (View.Picker)
 	first := p.page * p.perPage()
 	for i := first; i < p.n && i < first+p.perPage(); i++ {
 		x, y := p.cell(i)
 		p.draw(i, x, y)
-	}
-	if p.pager > 0 {
-		s := p.pagerText()
-		e.DisplayString((textCols-len(s))/2, p.pager, colWhite, s)
 	}
 }
 
@@ -122,7 +118,16 @@ func (e *Engine) pickerView() *Picker {
 	if p == nil {
 		return nil
 	}
-	v := &Picker{N: p.n, Page: p.page, Pages: p.pages(), PerPage: p.perPage(), Cols: p.cols, Cur: p.cur, Labels: p.labels, Ask: p.ask}
+	v := &Picker{N: p.n, Page: p.page, Pages: p.pages(), PerPage: p.perPage(), Cols: p.cols, Cur: p.cur, Bottom: p.bot, Labels: p.labels, Ask: p.ask}
+	if p.chars != nil {
+		for _, c := range *p.chars {
+			cl, im := "", image.Image(nil)
+			if c != nil {
+				cl, im = className(c.Class), c.Portrait
+			}
+			v.Classes, v.Portraits = append(v.Classes, cl), append(v.Portraits, im)
+		}
+	}
 	first := p.page * p.perPage()
 	for i := first; i < p.n && i < first+p.perPage(); i++ {
 		x, y := p.cell(i)
@@ -164,24 +169,15 @@ func (e *Engine) pickSaved(chars *[]*Character, names *[]string, pick func(i int
 	}
 	var p *picker
 	p = e.pushPicker(len(*chars), 12+w, 5, 0, func(i, x, y int) {
-		c := (*chars)[i]
-		switch {
-		case c == nil:
-		case c.Portrait != nil:
-			e.pg.overlays = append(e.pg.overlays, Overlay{Img: c.Portrait, At: fit(c.Portrait.Bounds(), CellRect{x, y, x + 10, y + 4}.Pixels())})
-		case c.PortHead > 0 && int(c.PortHead) < len(portraitHead):
+		if c := (*chars)[i]; c != nil && c.Portrait == nil && c.PortHead > 0 && int(c.PortHead) < len(portraitHead) { // a PNG, the name and class are the presenter's
 			e.DrawPicture(x, y, e.LoadPic(charArt.file("HEAD"), int(portraitHead[c.PortHead])), 0)
-		}
-		e.DisplayString(x+12, y+1, colWhite, (*names)[i])
-		if c != nil {
-			e.DisplayString(x+12, y+3, colLightGreen, className(c.Class))
 		}
 	}, func(i int) bool {
 		done := pick(i)
 		p.n, p.labels = len(*chars), *names
 		return done
 	})
-	p.labels = *names
+	p.labels, p.chars = *names, chars
 	return p
 }
 

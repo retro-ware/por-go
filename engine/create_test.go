@@ -147,11 +147,11 @@ func TestCreateSheet(t *testing.T) {
 	if !e.LoadCharacter("Brok", &d, false) || d.Race != raceDwarf || d.PortHead != 2 || d.Icon == nil || d.Portrait == nil {
 		t.Errorf("saved: %v race %d head %d icon %v portrait %v", d.Name(), d.Race, d.PortHead, d.Icon != nil, d.Portrait != nil)
 	}
-	// Add: the saved characters as cards (the portrait PNG an overlay);
+	// Add: the saved characters as cards (the portrait PNG the presenter's);
 	// a pick adds one, the picker stays until ActClose.
 	e.AddCharacter()
-	if v = view(); v.Picker == nil || v.Picker.N != 1 || len(v.Overlays) != 1 {
-		t.Fatalf("add: picker %+v overlays %d", v.Picker, len(v.Overlays))
+	if v = view(); v.Picker == nil || v.Picker.N != 1 || len(v.Picker.Portraits) != 1 || v.Picker.Portraits[0] == nil || v.Picker.Classes[0] != "Fighter" {
+		t.Fatalf("add: picker %+v", v.Picker)
 	}
 	act(Action{Kind: ActPicked, N: 0})
 	if len(e.party) != 1 || e.party[0].Name() != "Brok" || e.View().Picker.Labels[0] != "* Brok" {

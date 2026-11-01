@@ -388,3 +388,9 @@ presenter's layout of the new data must give the same.
 - The creation sheet: the sheet above (SheetPage.Creating) and its
   combat icon from a PNG (SheetPage.Icons, at View.IconBox); the grey
   ground and the DAX icon stay pictures.
+- The grid pickers: View.Picker gains Bottom (the box), Classes and
+  Portraits (the saved characters' cards; Labels their names); the
+  presenter draws the box, the pager, the names, classes and PNG heads,
+  the engine only the DAX pictures. The save slots draw nothing on the
+  engine's page any more (no saveScreen): the presenter's box, title and
+  "No saving now" from View.Slots.
