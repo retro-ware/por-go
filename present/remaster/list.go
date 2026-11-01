@@ -217,9 +217,7 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 // drawMapMenu draws the full map's question m as the cursor cell's
 // context menu, beside the cell (winRects its lines).
 func (p *Presenter) drawMapMenu(dst *gpu.Image, v engine.View, m *engine.Menu) {
-	if id := menuID(m); id != p.asked {
-		p.asked, p.sel = id, 0
-	}
+	// p.sel starts at Walk where the menu opens (pageMenuKey, Mouse); not here: the page clears p.asked every frame, which undid every hover
 	rows := itemRows(m)
 	lines, keys := make([]string, len(rows)), rowKeys(rows)
 	w := 0
