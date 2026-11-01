@@ -65,6 +65,7 @@ const mapSide = 16 * engine.MapCell
 
 // drawMap shows the map as the full map draws it (View.Map) in mapRect.
 func (p *Presenter) drawMap(dst *gpu.Image, v engine.View, font func(byte, bool) [8]byte) {
+	p.mapAt = image.Rectangle{}
 	if v.Map == nil || blobber.Settings.MapOff {
 		return
 	}
@@ -76,6 +77,7 @@ func (p *Presenter) drawMap(dst *gpu.Image, v engine.View, font func(byte, bool)
 		p.mapSrc = v.Map
 	}
 	r := mapRect(dst, len(v.Party))
+	p.mapAt = r
 	a := float32(blobber.Settings.MapAlpha) // the opacity slider (Esc, Options)
 	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.NRGBA{0x80, 0x80, 0x80, uint8(255 * a)})
 	vector.DrawFilledRect(dst, float32(r.Min.X+1), float32(r.Min.Y+1), float32(r.Dx()-2), float32(r.Dy()-2), color.NRGBA{A: uint8(255 * a)})

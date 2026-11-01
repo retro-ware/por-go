@@ -63,6 +63,7 @@ type Presenter struct {
 	asked      string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
 	answered   string                      // the text pane under the last question: once it is answered, that text is done
 	mapImg     *gpu.Image                  // View.Map on the GPU
+	mapAt      image.Rectangle             // where drawMap last put the minimap (a click there opens the full map)
 	mapSrc     *engine.MapSquares          // the View.Map it holds
 	menuRects  []image.Rectangle           // the vertical menu's items on screen, as last drawn
 	scrollBars []barHit                    // the scroll bars drawn this frame (scrollbar.go)

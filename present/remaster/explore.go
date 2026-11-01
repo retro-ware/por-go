@@ -1,6 +1,8 @@
 package remaster
 
 import (
+	"image"
+
 	"por/engine"
 	"por/present/input"
 )
@@ -71,22 +73,12 @@ func (p *Presenter) exploreKey(k uint16, v engine.View) bool {
 }
 
 // exploreClick takes a left click at (x, y) on the 3D view while the party
-// explores (no menu up): the left and right thirds turn, the top third of
-// the middle walks on, the bottom third steps back, the middle opens the
-// command menu.
+// explores (no menu up): the minimap opens the full map, anywhere else
+// opens the command menu. The mouse never walks or turns.
 func (p *Presenter) exploreClick(x, y int, v engine.View) {
-	r := p.screen
-	cx, cy := (x-r.Min.X)*3/max(1, r.Dx()), (y-r.Min.Y)*3/max(1, r.Dy())
-	switch {
-	case cx == 0:
-		p.exploreKey(keyOf(input.Left), v)
-	case cx == 2:
-		p.exploreKey(keyOf(input.Right), v)
-	case cy == 0:
-		p.exploreKey(keyOf(input.Up), v)
-	case cy == 2:
-		p.exploreKey(keyOf(input.Down), v)
-	default:
-		p.menu, p.sel = true, 0
+	if v.Map != nil && p.mapAt.Min.X < p.mapAt.Max.X && image.Pt(x, y).In(p.mapAt) {
+		p.send(engine.ActMap, -1)
+		return
 	}
+	p.menu, p.sel = true, 0
 }
