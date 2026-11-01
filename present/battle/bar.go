@@ -33,6 +33,23 @@ type bar struct {
 	rects []image.Rectangle // the buttons on screen, as last drawn
 	items []barItem
 	hover int // the button the pointer is on, -1 none
+	focus int // 1+ the button the keys are on (Tab, the pad's shoulders), 0 none
+}
+
+// moveFocus moves the keys' focus d buttons on, wrapping; from none it
+// goes to the first (d > 0) or last button.
+func (b *bar) moveFocus(d int) {
+	n := len(b.items)
+	switch {
+	case n == 0:
+		b.focus = 0
+	case b.focus == 0 && d > 0:
+		b.focus = 1
+	case b.focus == 0:
+		b.focus = n
+	default:
+		b.focus = (b.focus-1+d%n+n)%n + 1
+	}
 }
 
 // barItem is one button: its letter, its word, the action it takes.
@@ -44,11 +61,13 @@ type barItem struct {
 
 // hotkeys are the remaster's letters for the bar's buttons, by word, and
 // what the button shows for them (the number keys work too, unshown).
+// Tab, Shift-Tab and the pad's shoulders move a focus over the buttons
+// (drawn as the hover), Enter and pad A press it.
 var hotkeys = map[string]struct {
 	key   uint16
 	label string
 }{"Attack": {'f', "F"}, "Ranged": {'m', "M"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
-	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Flee": {'r', "R"}, "Yes": {'y', "Y"}, "No": {'n', "N"}} // Cancel: Esc, unshown
+	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Flee": {'r', "R"}, "Yes": {'y', "Y"}, "No": {'n', "N"}, "Cancel": {27, "Esc"}}
 
 // leftArrow is the glyph drawn for "\x1b" (Backspace): the game's font has none.
 var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
@@ -113,9 +132,16 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 			hover = i
 		}
 	}
+	if !slices.Equal(items, br.items) { // other buttons: the focus starts afresh
+		br.focus = 0
+	}
+	lit := hover // the button drawn lit: the pointer's, else the keys'
+	if lit < 0 && br.focus > 0 {
+		lit = br.focus - 1
+	}
 	n, bw := len(items), face*k/2+4*k
 	w, h := max(n*(bw+4*k), 7*8*k+bw), (promptH+labelH)*k+bw
-	id := strconv.Itoa(k) + "|" + strconv.Itoa(hover) + "|" + p.IconKey
+	id := strconv.Itoa(k) + "|" + strconv.Itoa(lit) + "|" + p.IconKey
 	for _, it := range items {
 		id += "|" + it.Text
 	}
@@ -127,7 +153,7 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	}
 	if id != br.id {
 		br.id = id
-		br.img.WritePixels(barPixels(glyph, items, hover, w, h, k, p.Icons).Pix)
+		br.img.WritePixels(barPixels(glyph, items, lit, w, h, k, p.Icons).Pix)
 	}
 	x0, y0 := dst.Bounds().Dx()/2-w/2, bottom-h
 	op := &gpu.DrawImageOptions{}
@@ -213,7 +239,7 @@ func (p *Presenter) Actions() []engine.Action {
 }
 
 // HideBar forgets the buttons (no bar on screen: clicks hit nothing).
-func (p *Presenter) HideBar() { p.bar.rects, p.bar.hover = p.bar.rects[:0], -1 }
+func (p *Presenter) HideBar() { p.bar.rects, p.bar.hover, p.bar.focus = p.bar.rects[:0], -1, 0 }
 
 // Hovered is the action of the button the pointer is on and the button's
 // rectangle on screen (ok: there is one), for a tooltip over it.

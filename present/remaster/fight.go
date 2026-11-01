@@ -212,6 +212,9 @@ func (p *Presenter) fightKey(k uint16) bool {
 		p.logTop = max(0, min(p.logTop, math.MaxInt32-logRows)+d) // clamped when drawn
 		return true
 	}
+	if k == KeyPadSelect { // pad A: as Enter
+		k = 13
+	}
 	if p.battle.Key(k) {
 		return true
 	}

@@ -3,6 +3,7 @@ package battle
 import (
 	"image"
 	"image/color"
+	"slices"
 	"testing"
 
 	"por/engine"
@@ -103,5 +104,40 @@ func TestNDC(t *testing.T) {
 	}
 	if _, _, ok := (camera{}).ndc(vec{1, 0, 1}); ok {
 		t.Error("the zero camera sees")
+	}
+}
+
+func TestBarFocus(t *testing.T) {
+	p := &Presenter{}
+	b := &engine.Battle{Turn: &engine.Turn{Can: []engine.ActKind{engine.ActAttack, engine.ActWait, engine.ActEnd}}}
+	p.b = b
+	p.bar.items = shownItems(b)
+	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
+	if p.Key(13); len(p.Actions()) != 0 {
+		t.Error("Enter with no focus pressed a button")
+	}
+	for _, c := range []struct {
+		k     uint16
+		focus int
+	}{{9, 1}, {0x5100, 2}, {9, 3}, {9, 1}, {0x4900, 3}, {0x4900, 2}} {
+		p.Key(c.k)
+		if p.bar.focus != c.focus {
+			t.Fatalf("key %#x: focus %d, want %d", c.k, p.bar.focus, c.focus)
+		}
+	}
+	if p.Key(13); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActWait}}) {
+		t.Error("Enter did not press the focused Wait")
+	}
+	p.bar.focus = 0
+	p.bar.moveFocus(-1)
+	if p.bar.focus != 3 {
+		t.Errorf("back from none: focus %d, want the last", p.bar.focus)
+	}
+	b.Turn, b.Ask = nil, "Flee?"
+	p.bar.items = shownItems(b)
+	for k, want := range map[uint16]engine.ActKind{'y': engine.ActYes, 'n': engine.ActClose, 27: engine.ActClose} {
+		if p.Key(k); !slices.Equal(p.Actions(), []engine.Action{{Kind: want}}) {
+			t.Errorf("question key %#x: want kind %d", k, want)
+		}
 	}
 }

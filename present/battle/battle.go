@@ -114,7 +114,8 @@ func (p *Presenter) Zoom(in bool, speed float64) {
 // Key is the XCOM 2 scheme: W A S D and the arrows pan (held: see pan), Q and E turn,
 // Home brings the camera back, 1..9 and 0 pick the bar's
 // buttons, the bar's letters (hotkeys) theirs, Tab and Shift-Tab cycle the
-// targets while aiming, Enter takes the aimed one, Esc gives up and
+// targets while aiming (else they and PgUp/PgDn move the bar's focus,
+// which Enter presses), Enter takes the aimed one, Esc gives up (No) and
 // Backspace ends the turn. It reports whether k was taken.
 func (p *Presenter) Key(k uint16) bool {
 	p.initCamera()
@@ -159,6 +160,14 @@ func (p *Presenter) Key(k uint16) bool {
 		}
 	case k == 13 && aiming:
 		p.act(engine.Action{Kind: engine.ActAim, X: b.Cursor.X, Y: b.Cursor.Y})
+	case (k == 9 || k == 0x4900 || k == 0x5100) && len(p.bar.rects) > 0: // Tab, Shift-Tab, the pad's shoulders (PgUp, PgDn): the focus
+		d := 1
+		if k == 0x4900 || k == 9 && gpu.IsKeyPressed(gpu.KeyShift) {
+			d = -1
+		}
+		p.bar.moveFocus(d)
+	case k == 13 && p.bar.focus > 0 && p.bar.focus <= len(p.bar.rects):
+		p.press(p.bar.items[p.bar.focus-1])
 	case k == 27 && (aiming || b != nil && b.Ask != ""):
 		p.act(engine.Action{Kind: engine.ActClose})
 	default:
