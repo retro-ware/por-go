@@ -189,6 +189,9 @@ func screenPage(v engine.View) *cellPage {
 	if v.IconEditor != nil && v.Picker == nil {
 		v.Ink[inkBlack] = color.RGBA{A: 255} // the combat palette shows black dark grey (for the icon's black): the page black as every screen
 	}
+	if cr := v.Creation; cr != nil && v.Picker == nil && v.Slots == nil { // the combat icon on grey, as in the icon editor: its black parts show
+		v.Pictures = append([]engine.Picture{{At: cr.Icon.Pixels(), Fill: true, Colour: pal.EGA(8)}}, v.Pictures...)
+	}
 	c := newCellPage(v)
 	c.texts(v)
 	if s := v.SheetPage; s != nil {
