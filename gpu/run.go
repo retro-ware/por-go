@@ -33,15 +33,12 @@ var win struct {
 	ww, wh   int // requested size
 	title    string
 	tps      int
-	resize   bool
-	aw, ah   int  // the window's aspect while not full screen (SetWindowAspect; 0: free)
-	lw, lh   int  // its size last frame
-	unfocus  bool // keep updating while unfocused (always on here)
+	aw, ah   int // the window's aspect while not full screen (SetWindowAspect; 0: free)
+	lw, lh   int // its size last frame
 	full     bool
 	fullAt   time.Time     // when the last fullscreen change was applied (the main thread)
 	toFull   atomic.Int32  // a fullscreen change for the main thread: 1 off, 2 on
 	toSize   atomic.Uint64 // a window size for the main thread: w<<32 | h (0: none)
-	fps      float64
 	frames   int
 	fpsStart time.Time
 	drawT    time.Duration // in Draw and in present since fpsStart (POR_FPS)
@@ -75,19 +72,8 @@ func SetWindowTitle(t string) {
 	}
 }
 
-// WindowResizingMode says whether the player may resize the window.
-type WindowResizingMode int
-
-const (
-	WindowResizingModeDisabled WindowResizingMode = iota
-	WindowResizingModeEnabled
-)
-
-func SetWindowResizingMode(m WindowResizingMode) { win.resize = m == WindowResizingModeEnabled }
-func SetTPS(n int)                               { win.tps = n }
-func SetRunnableOnUnfocused(b bool)              { win.unfocus = b }
-func ActualFPS() float64                         { return win.fps }
-func IsFullscreen() bool                         { return win.full }
+func SetTPS(n int)       { win.tps = n }
+func IsFullscreen() bool { return win.full }
 
 func SetFullscreen(on bool) {
 	win.full = on
@@ -96,32 +82,19 @@ func SetFullscreen(on bool) {
 	}
 }
 
-// MonitorType is the window's monitor.
-type MonitorType struct{}
-
-// Monitor returns the window's monitor.
-func Monitor() *MonitorType { return &MonitorType{} }
-
 // DeviceScaleFactor is framebuffer pixels per window unit.
-func (*MonitorType) DeviceScaleFactor() float64 {
+func DeviceScaleFactor() float64 {
 	if win.app == nil || win.app.ScaleFactor() == 0 {
 		return 1
 	}
 	return win.app.ScaleFactor()
 }
 
-// RunGameOptions are RunGameWithOptions' options.
-type RunGameOptions struct {
-	InitUnfocused bool // ponytail: gogpu has no unfocused start; the window opens focused
-}
-
-func RunGame(g Game) error { return RunGameWithOptions(g, nil) }
-
-// RunGameWithOptions opens the window and runs g until the window closes or
+// RunGame opens the window (resizable) and runs g until the window closes or
 // Update returns an error.
-func RunGameWithOptions(g Game, o *RunGameOptions) error {
+func RunGame(g Game) error {
 	cfg := gogpu.DefaultConfig().WithTitle(win.title).WithSize(win.ww, win.wh).
-		WithResizable(win.resize).WithContinuousRender(true).WithVSync(os.Getenv("POR_NOVSYNC") == "") // POR_NOVSYNC=1: frames as fast as they come, for measuring
+		WithResizable(true).WithContinuousRender(true).WithVSync(os.Getenv("POR_NOVSYNC") == "") // POR_NOVSYNC=1: frames as fast as they come, for measuring
 	if win.full {
 		cfg = cfg.WithFullscreen()
 		setComposition(false)
@@ -261,7 +234,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 				fmt.Fprintf(os.Stderr, "fps %.1f  frame %v  update %v  draw %v  present %v  outside %v  per frame: draws %d (3D %d) passes %d clears %d writes %d uploads %d\n", float64(win.frames)/d, time.Duration(d*float64(time.Second))/n, win.updT/n, win.drawT/n, win.presentT/n, win.outT/n, Stats.Draws/fr, Stats.Draws3D/fr, Stats.Passes/fr, Stats.Clears/fr, Stats.Writes/fr, Stats.Uploads/fr)
 				Stats = struct{ Draws, Draws3D, Passes, Clears, Writes, Uploads int }{}
 			}
-			win.fps, win.frames, win.fpsStart = float64(win.frames)/d, 0, now
+			win.frames, win.fpsStart = 0, now
 			win.drawT, win.presentT, win.updT, win.outT = 0, 0, 0, 0
 		}
 	})

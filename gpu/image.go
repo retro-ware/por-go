@@ -284,8 +284,6 @@ type GeoM struct {
 	a_1, b, c, d_1, tx, ty float64 // a and d stored minus one, so the zero value is the identity
 }
 
-func (g *GeoM) Reset() { *g = GeoM{} }
-
 // Apply transforms x, y.
 func (g *GeoM) Apply(x, y float64) (float64, float64) {
 	return (g.a_1+1)*x + g.b*y + g.tx, g.c*x + (g.d_1+1)*y + g.ty
@@ -312,10 +310,6 @@ func (c *ColorScale) Scale(r, g, b, a float32) {
 	c.r_1, c.g_1, c.b_1, c.a_1 = (c.r_1+1)*r-1, (c.g_1+1)*g-1, (c.b_1+1)*b-1, (c.a_1+1)*a-1
 }
 func (c *ColorScale) ScaleAlpha(a float32) { c.Scale(a, a, a, a) }
-func (c *ColorScale) ScaleWithColor(clr color.Color) {
-	r, g, b, a := clr.RGBA()
-	c.Scale(float32(r)/0xffff, float32(g)/0xffff, float32(b)/0xffff, float32(a)/0xffff)
-}
 func (c *ColorScale) rgba() (float32, float32, float32, float32) {
 	return c.r_1 + 1, c.g_1 + 1, c.b_1 + 1, c.a_1 + 1
 }

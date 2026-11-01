@@ -396,7 +396,7 @@ func saveShot(dst *gpu.Image, name string) {
 
 // Layout works in device pixels, so the picture fills the window exactly.
 func (g *game) Layout(w, h int) (int, int) {
-	g.dsf = gpu.Monitor().DeviceScaleFactor()
+	g.dsf = gpu.DeviceScaleFactor()
 	return int(float64(w) * g.dsf), int(float64(h) * g.dsf)
 }
 
@@ -558,14 +558,10 @@ func main() {
 		gpu.SetWindowSize(w, h)
 		gpu.SetWindowAspect(0, 0)
 	}
-	gpu.SetWindowResizingMode(gpu.WindowResizingModeEnabled)
 	gpu.SetWindowTitle("Pool of Radiance")
 	gpu.SetTPS(tps)
 	gpu.SetFullscreen((os.Getenv("GOPLAY_FULLSCREEN") == "1" || blobber.Settings.Fullscreen) && !*window) // the screen at its own resolution, unless the Esc menu or -window says a window
-	if shot != "" {
-		gpu.SetRunnableOnUnfocused(true)
-	}
-	if err := gpu.RunGameWithOptions(g, &gpu.RunGameOptions{InitUnfocused: shot != ""}); err != nil {
+	if err := gpu.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
 }

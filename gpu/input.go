@@ -160,9 +160,6 @@ const (
 	StandardGamepadAxisRightStickVertical
 )
 
-// TouchID is a touch; there are none on the desktop.
-type TouchID int
-
 // in is the input as Update sees it: per key and button, the ticks it has
 // been held (counted at each tick, so a press shorter than a tick still
 // counts once).
@@ -292,7 +289,7 @@ func CursorPosition() (int, int) {
 
 // screenPos is the screen pixel under window point (x, y).
 func screenPos(x, y float64) (int, int) {
-	s := Monitor().DeviceScaleFactor()
+	s := DeviceScaleFactor()
 	return int((x*s - win.ox) / win.k), int((y*s - win.oy) / win.k)
 }
 
@@ -378,7 +375,3 @@ func StandardGamepadAxisValue(id GamepadID, a StandardGamepadAxis) float64 {
 	}
 	return pad(id).axis[a]
 }
-
-// AppendJustPressedTouchIDs: no touches on the desktop.
-func AppendJustPressedTouchIDs(ids []TouchID) []TouchID { return ids }
-func TouchPosition(TouchID) (int, int)                  { return 0, 0 }
