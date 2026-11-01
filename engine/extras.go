@@ -148,7 +148,6 @@ const MinimapCell = mmCell
 // every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
 	e.blank(17, 1, paneRight, 14)
-	e.pg.tx.minimap = true
 }
 
 // rosterPanel redraws the panel the minimap shares with the roster.

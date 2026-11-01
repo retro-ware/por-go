@@ -111,5 +111,4 @@ func (e *Engine) StatusLine() {
 		s = s[:0x28]
 	}
 	e.blank(statusLine.X1, statusLine.Y1, statusLine.X2, statusLine.Y2)
-	e.pg.tx.status = s // light green (the presenter's)
 }

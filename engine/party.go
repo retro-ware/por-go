@@ -22,7 +22,6 @@ func (e *Engine) drawPartyList() {
 		return
 	}
 	e.blank(rosterPanel.X1, 4, winRight, 4+len(e.party))
-	e.pg.tx.roster = true
 }
 
 // rosterSel is the member the roster highlights: SelectCharacter's

@@ -203,7 +203,6 @@ func (e *Engine) pageView(v *View) {
 			v.ViewText[y] = l
 		}
 	}
-	v.Status, v.Roster = t.status, t.roster
 }
 
 // pane is the text pane's text as runs.

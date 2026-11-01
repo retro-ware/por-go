@@ -218,13 +218,10 @@ type View struct {
 	Events     []CombatEvent  // what happened in the fight since the last Apply, in order (Apply's View only)
 	Inventory  *Inventory     // the inventory screen is up (nil otherwise)
 	Map        *MapSquares    // the current map, drawn by the presenter at MapCell pixels a square (nil where the game has no map)
-	Minimap    bool           // the minimap is up in the party panel (Tab): Map at MinimapCell pixels a square at MinimapAt, labels as dots
 	Pictures   []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
 	Frame      bool           // the main frame is up (its boxes are among Pictures): the 3D view's screen
 	Prompt     []PaneRun      // the prompt row's text (the last row), X the page's column
 	ViewText   [][]PaneRun    // text over the view window (WinText: opProtection's runes), rows from 1, X the page's column
-	Status     string         // the status line under the party panel (StatusLine; "" none), at StatusAt
-	Roster     bool           // the roster is up in the party panel (drawPartyList while adventuring): View.Party, a click on a row picks the member in a member pick (ActMember)
 	Results    *Results       // the after-combat page (in a box round the window)
 	Credits    bool           // the title's credits page (Credits, RemasterCredit)
 	Cells      image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
@@ -547,12 +544,11 @@ func (e *Engine) publish() {
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
 		Exploring: e.exploring(),
 		Sweeping:  e.exploring() && e.game.Search&1 != 0,
-		Minimap:   e.pg.tx.minimap,
 	}
 	if s.win == WinAreaMap {
 		v.AreaMap = e.areaMapView()
 	}
-	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() || v.Minimap {
+	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() {
 		v.Map = e.mapSquares(e.labels())
 	}
 	if s.invOn {

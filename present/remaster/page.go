@@ -477,16 +477,7 @@ func pageText(v engine.View) string {
 	if v.Pane != nil {
 		fmt.Fprint(&b, v.Pane.Lines)
 	}
-	fmt.Fprint(&b, v.Prompt, v.ViewText, v.Status, v.Roster, v.Credits, v.Ink)
-	if v.Minimap && v.Map != nil {
-		fmt.Fprint(&b, *v.Map)
-	}
-	if v.Roster {
-		fmt.Fprint(&b, choosing(v))
-		for _, m := range v.Party {
-			fmt.Fprint(&b, m.Name, m.AC, m.HP, m.MaxHP, m.Selected, m.Colour)
-		}
-	}
+	fmt.Fprint(&b, v.Prompt, v.ViewText, v.Credits, v.Ink)
 	if v.Results != nil {
 		fmt.Fprintf(&b, "%+v", *v.Results)
 	}
