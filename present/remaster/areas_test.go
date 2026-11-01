@@ -43,4 +43,3 @@ func TestEveryAreaHasMap(t *testing.T) {
 		}
 	}
 }
-
