@@ -217,7 +217,7 @@ func (p *Presenter) mainClick(x, y int) bool {
 		}
 		return true
 	}
-	for i, r := range p.cards {
+	for i, r := range p.cards { // the party menu has no inventory: a left click selects (a right one: the sheet, Mouse)
 		if image.Pt(x, y).In(r) {
 			p.send(engine.ActLead, i)
 			return true
@@ -255,7 +255,7 @@ func (p *Presenter) mainHover(x, y int) {
 }
 
 // mainKey moves the main menu's highlight (Up, Down), picks it (Enter, a
-// hotkey); Esc answers No or goes Back; F1-F8 select a member.
+// hotkey); Esc answers No or goes Back; the member keys select a member.
 func (p *Presenter) mainKey(k uint16, v engine.View) bool {
 	_, items := p.mainItems(v)
 	sel, n := &p.mainSel, len(items)
@@ -265,8 +265,8 @@ func (p *Presenter) mainKey(k uint16, v engine.View) bool {
 	if n == 0 {
 		return false
 	}
-	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 {
-		p.send(engine.ActLead, int(k-KeyF1)>>8)
+	if m, ok := memberKey(k, selectedIndex(v), len(v.Party), true); ok && !p.ask { // not under a question about the member
+		p.send(engine.ActLead, m)
 		return true
 	}
 	i, back, ok := menuNav(k, sel, rowKeys(items))

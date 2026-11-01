@@ -13,7 +13,7 @@ const (
 	ActNone      ActKind = iota
 	ActClose             // leave the screen
 	ActMember            // show party member N
-	ActLead              // make party member N the selected one (the command bar's member): a card's left click, F1-F8, Home/End; in a member pick the candidate
+	ActLead              // make party member N the selected one (the command bar's member): F1-F8, the member keys; in a member pick the candidate
 	ActReady             // inventory: ready or unready item N
 	ActUse               // inventory: use item N
 	ActRanged            // combat: throw the Missiles slot's weapon (aims as Attack)
@@ -36,7 +36,7 @@ const (
 	ActChoose            // choose option N of View.Ask (X: the line of its List)
 	ActOK                // Enter: the highlighted choice, or "press a key"
 	ActText              // the line being typed (View.Ask) now reads Text
-	ActInventory         // member N's items (F1-F8)
+	ActInventory         // member N's items (a card's left click)
 	ActMinimap           // the minimap over the roster (Tab)
 	ActMap               // the full map (M)
 	ActOverview          // the party overview, on the View page the items (P)

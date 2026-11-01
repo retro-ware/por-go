@@ -489,7 +489,8 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.fightKey(k)
 	}
 	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
-		if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 { // F1-F8: another member's menu (keyAct)
+		if _, ok := memberKey(k, 0, len(v.Party), false); ok { // another member: selected (keyAct), the menu closes
+			p.ctx = 0
 			return false
 		}
 		switch i, back, _ := menuNav(k, &p.ctxSel, p.ctxKeys); {
@@ -559,8 +560,9 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		p.menu = false
 		return false
 	}
-	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 { // F1-F8: the member the bar is for (camp, the temple)
-		return false
+	if n, ok := memberKey(k, selectedIndex(v), len(v.Party), true); ok { // the member the bar is for (camp, the temple)
+		p.send(engine.ActLead, n)
+		return true
 	}
 	keys := make([]byte, len(m.Items))
 	for i, it := range m.Items {
@@ -633,12 +635,12 @@ func (p *Presenter) Click(x, y int) bool {
 			}
 			p.ctx = 0
 		}
-		for i, r := range p.cards { // a portrait: on the command bar the member is selected and its context menu opens, else it is the member a bar is for
+		for i, r := range p.cards { // a portrait: the member's inventory (a right click: the sheet, Mouse)
 			if image.Pt(x, y).In(r) && p.active {
-				if p.ordering { // and while the party is ordered the card is picked up (Hover drops it)
+				p.cardClick(i)
+				if p.ordering { // while the party is ordered the card is picked up instead (Hover drops it)
 					p.dragFrom, p.dragAt = 1+i, image.Pt(x, y)
 				}
-				p.selectCard(i)
 				return true
 			}
 		}
@@ -1188,16 +1190,19 @@ func (p *Presenter) ctxSend(j int) {
 	p.ctx = 0
 }
 
-// selectCard makes member i the selected one (ActLead: the command bar's
-// member) and opens its context menu, when the command bar is up; on other
-// screens it is the member the bar is for (ActMember).
-func (p *Presenter) selectCard(i int) {
-	if p.command {
+// cardClick is a left click on member i's card: its inventory; while the
+// party is ordered it only selects (ActLead), and on the command bar a
+// Shift-click selects it and opens its context menu.
+func (p *Presenter) cardClick(i int) {
+	switch {
+	case p.ordering:
+		p.send(engine.ActLead, i)
+	case p.command && gpu.IsKeyPressed(gpu.KeyShift):
 		p.send(engine.ActLead, i)
 		p.ctx, p.ctxSel = 1+i, 0 // the first line highlighted: Enter acts at once
-		return
+	default:
+		p.send(engine.ActInventory, i)
 	}
-	p.send(engine.ActMember, i)
 }
 
 // pace ends a script's pause (AskPause) once its time is up: the engine

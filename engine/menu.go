@@ -200,7 +200,7 @@ func (q *question) pick(a Action) (p Pick, ok bool) {
 			c.X, c.Y = a.X, a.Y
 			return q.outcome(Pick{ID: PickRedraw})
 		}
-	case ActLead: // Home/End: another member; in a member pick the candidate
+	case ActLead: // the member keys: another member; in a member pick the candidate
 		switch n := a.N; {
 		case n < 0 || n >= len(e.party) || e.modal():
 		case e.choosing():

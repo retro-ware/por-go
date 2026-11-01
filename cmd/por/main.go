@@ -3,15 +3,17 @@
 //	por [-scale N]
 //
 // Gamepad (standard layout): D-pad or left stick move and turn, A picks the
-// highlighted menu item, B is Escape, LB/RB move the menu highlight, LT/RT
-// select the previous/next party member, X shows the party overview, Y
-// toggles the minimap, Start is Enter.
+// highlighted menu item, B is Escape, LB/RB page (PgUp/PgDn), LT/RT are
+// Home/End, the left and right stick buttons select the previous/next party
+// member, X shows the party overview, Y toggles the minimap (the
+// inventory's next tab), Start is Enter.
 //
 // Mouse: pointing at a menu item highlights it, a click picks it (and list
 // lines, party members, combat squares); the wheel moves the highlight and
-// the right button is Escape. "?" lists the keys; F1-F8 and a card's left
-// click select party member 1-8 and open their context menu, a right click
-// on a card opens their inventory.
+// the right button is Escape. "?" lists the keys; F1-F8 select party member
+// 1-8 (Left/Right the previous/next on the menu screens); a card's left
+// click opens that member's inventory, a right click their sheet
+// (Shift-click while exploring: their context menu).
 //
 // The DOS game files (TITLE.DAX, 8X8D1.DAX, GAME data ...) are read from
 // data/ in the working directory; gameimport (shipped beside por, driven by
@@ -272,6 +274,8 @@ var padButtons = []struct {
 	{gpu.StandardGamepadButtonFrontBottomRight, 0x4F00, true},
 	{gpu.StandardGamepadButtonCenterRight, 13, false},
 	{gpu.StandardGamepadButtonCenterLeft, 27, false},
+	{gpu.StandardGamepadButtonLeftStick, remaster.KeyPadPrev, false}, // the stick buttons: the previous and next member
+	{gpu.StandardGamepadButtonRightStick, remaster.KeyPadNext, false},
 }
 
 // Held buttons repeat after padDelay ticks (1/tps s), every padRate ticks;

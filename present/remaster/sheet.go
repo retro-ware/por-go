@@ -18,11 +18,11 @@ func (p *Presenter) sheetItems(v engine.View) []menuRow {
 // sheetUp: the sheet's menu is the page's question.
 func sheetUp(v engine.View) bool { return v.Sheet != nil && askMenu(v) == nil && v.Inventory == nil }
 
-// sheetKey takes key k on the sheet: the menu's keys, F1-F8 another member.
+// sheetKey takes key k on the sheet: the menu's keys, the member keys another member.
 func (p *Presenter) sheetKey(k uint16, v engine.View) bool {
 	items := p.sheetItems(v)
-	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 {
-		p.send(engine.ActMember, int(k-KeyF1)>>8)
+	if m, ok := memberKey(k, selectedIndex(v), len(v.Party), true); ok {
+		p.send(engine.ActMember, m)
 		return true
 	}
 	i, back, ok := menuNav(k, &p.sel, rowKeys(items))

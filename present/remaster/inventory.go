@@ -912,6 +912,7 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		}
 		inv.choose(order[(i+d+len(order))%len(order)].ware, order[(i+d+len(order))%len(order)].i)
 	}
+	m, member := memberKey(k, inv.member, inv.count, true)
 	switch {
 	case k == 27 && inv.carry != nil: // the stack goes back where it was
 		inv.carry = nil
@@ -927,17 +928,17 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		step(-1)
 	case k == 0x5000:
 		step(1)
-	case k == 0x4B00:
-		inv.step(-1)
-	case k == 0x4D00:
-		inv.step(1)
+	case k == 0x4700 && len(order) > 0: // Home, End: the first and last item
+		inv.choose(order[0].ware, order[0].i)
+	case k == 0x4F00 && len(order) > 0:
+		inv.choose(order[len(order)-1].ware, order[len(order)-1].i)
 	case k == 13 && inv.ware >= 0:
 		inv.do(engine.ActBuy)
 	case k == 13:
 		inv.do(engine.ActReady)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
-		if n := int(k-KeyF1) >> 8; n < inv.count && inv.view.Switch {
-			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActMember, N: n})
+	case member:
+		if inv.view.Switch {
+			inv.acts = append(inv.acts, engine.Action{Kind: engine.ActMember, N: m})
 		}
 	case k > ' ' && k < 128:
 		for _, w := range inv.menu(inv.view) {

@@ -18,8 +18,8 @@ import (
 //	Down a step backwards (the original turns round)
 //	P    party overview: hit points, armour class and status of everyone
 //	?      keyboard help, at any prompt
-//	F1-F8  the inventory of party member 1-8 (command bar, camp, View);
-//	       P switches between it and the View page
+//	F1-F8  select party member 1-8 (Left/Right the previous/next on the
+//	       menu screens); P switches between items and the View page
 //	Ctrl-F next text font (Ctrl-Shift-F the one before; fonts.go)
 //	Q    quickstart on the empty party menu: a ready-made party of six
 //	F9   named save slots: save and load at any time (slots.go)
@@ -208,12 +208,11 @@ var helpLines = [][2]string{
 	{"Letter", "choose that item"},
 	{"Arrows , .", "move the highlight"},
 	{"Enter", "pick the highlighted"},
-	{"Home End", "prev. / next member"},
+	{"Left Right", "prev. / next member"},
 	{"Esc", "back"},
 	{"Adventuring", ""},
 	{"Arrows", "walk, turn; Down=back"},
-	{"Home End", "prev. / next member"},
-	{"F1 - F8", "items of member 1 - 8; in camp: pick member"},
+	{"F1 - F8", "select member 1 - 8"},
 	{"P", "items  <->  character"},
 	{"W", "sweep ahead: search as you walk"},
 	{"S", "search here: this square, once"},
@@ -225,6 +224,7 @@ var helpLines = [][2]string{
 	{"Q   D", "quick   done"},
 	{"Mouse", ""},
 	{"Point  Click", "highlight  choose"},
+	{"Click a card", "items (right: character)"},
 	{"Wheel", "move the highlight"},
 	{"Right button", "back"},
 	{"", ""},

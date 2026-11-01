@@ -256,13 +256,14 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	_, items := p.campItems(v)
 	n := len(items)
 	spells := v.Camp != nil && (c.screen == campMemorize || c.screen == campScribe)
+	m, member := memberKey(k, selectedIndex(v), len(v.Party), true)
 	switch {
-	case spells && (k == 0x4B00 || k == 8) && c.sel < n-1: // Left, Backspace: one less
+	case spells && (k == '-' || k == 8) && c.sel < n-1: // -, Backspace: one less
 		p.campSpellAt(v, c.sel, -1)
-	case spells && k == 0x4D00 && c.sel < n-1: // Right: one more
+	case spells && (k == '+' || k == '=') && c.sel < n-1: // +: one more
 		p.campSpellAt(v, c.sel, 1)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: the member camp acts for
-		p.send(engine.ActLead, int(k-KeyF1)>>8)
+	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
+		p.send(engine.ActLead, m)
 	default:
 		switch i, back, _ := menuNav(k, &c.sel, rowKeys(items)); {
 		case back:

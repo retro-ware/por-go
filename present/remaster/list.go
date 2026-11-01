@@ -110,7 +110,7 @@ func (p *Presenter) listPick(v engine.View, sel int) {
 func (p *Presenter) listKey(k uint16, v engine.View) bool {
 	l := &p.list
 	n := len(askList(v))
-	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 {
+	if _, ok := memberKey(k, 0, len(v.Party), false); ok { // the member the list is for (keyAct)
 		return false
 	}
 	keys := p.listKeys(v)

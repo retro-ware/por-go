@@ -10,7 +10,7 @@ import (
 // (displayThen's question for menu bars):
 //
 //   - the highlight is the presenter's; in menus that take the keypad
-//     ActLead selects another member (Home/End)
+//     ActLead selects another member (F1-F8, Left/Right)
 //   - ActClose picks a menu's Exit item, so it always backs out
 //   - the presenter lays the screens out and takes their clicks: it
 //     sends the decisions they stand for

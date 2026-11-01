@@ -22,14 +22,37 @@ const (
 	KeyPadSelect   = 0xE000 // gamepad: choose the highlighted (as Enter)
 	KeyPadMinimap  = 0xE100 // as Tab
 	KeyPadOverview = 0xE200 // as P
+	KeyPadPrev     = 0xE300 // gamepad: the previous party member (the left stick's button)
+	KeyPadNext     = 0xE400 // ... the next (the right stick's)
 )
+
+// memberKey is the member key k picks where a member applies: F1-F8 that
+// member, the pad's stick buttons the previous and next of n after cur
+// (none selected: the first), and with lr Left and Right too (where the
+// screen has no other use for them). ok: k is a member key.
+func memberKey(k uint16, cur, n int, lr bool) (int, bool) {
+	switch {
+	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
+		i := int(k-KeyF1) >> 8
+		return i, i < n
+	case n == 0:
+	case k == KeyPadPrev || lr && k == 0x4B00:
+		if cur <= 0 {
+			return n - 1, true
+		}
+		return cur - 1, true
+	case k == KeyPadNext || lr && k == 0x4D00:
+		return (cur + 1) % n, true
+	}
+	return -1, false
+}
 
 // keypadScan: digits a menu does not offer are the keypad's keys (1 End .. 9 PgUp).
 var keypadScan = [...]uint16{0x4F00, 0x5000, 0x5100, 0x4B00, 0x4C00, 0x4D00, 0x4700, 0x4800, 0x4900}
 
 // arrow turns a cursor key (scan code k) into its decision on v: the full
-// map's cursor (ActPoint), the member pick's candidate or another member
-// (Home/End: ActLead), else a pager's page (ActPage -1 or +1).
+// map's cursor (ActPoint), the member pick's candidate (ActLead), else a
+// pager's page (ActPage -1 or +1).
 func (p *Presenter) arrow(k uint16, v engine.View) {
 	back := k == 0x4800 || k == 0x4B00 || k == 0x4900 || k == 0x4700
 	on := k == 0x5000 || k == 0x4D00 || k == 0x5100 || k == 0x4F00
@@ -42,7 +65,7 @@ func (p *Presenter) arrow(k uint16, v engine.View) {
 		}
 		return
 	}
-	if n := len(v.Party); n > 0 && (choosing(v) || k == 0x4700 || k == 0x4F00) && (back || on) {
+	if n := len(v.Party); n > 0 && choosing(v) && (back || on) {
 		i := slices.IndexFunc(v.Party, func(m engine.Member) bool { return m.Selected })
 		switch {
 		case on:
@@ -102,6 +125,10 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	if v.Exploring && p.exploreKey(k, v) {
 		return
 	}
+	if n, ok := memberKey(k, selectedIndex(v), len(v.Party), false); ok { // F1-F8, the stick buttons: select the member
+		p.send(engine.ActLead, n)
+		return
+	}
 	c := byte(k)
 	if c >= 'a' && c <= 'z' {
 		c -= 'a' - 'A'
@@ -121,12 +148,6 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		p.send(engine.ActFont, -1)
 	case k == 0x13:
 		p.send(engine.ActSound, 0)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: as a click on the card (the command bar: select, the context menu), else the member's items
-		if n := int(k-KeyF1) >> 8; p.active && p.command && n < len(p.cards) {
-			p.selectCard(n)
-		} else {
-			p.send(engine.ActInventory, n)
-		}
 	case k == KeyF9:
 		p.send(engine.ActSlots, 0)
 	case k&0xFF == 0:
@@ -213,11 +234,11 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			return
 		}
 	}
-	switch { // the right button: on a card that member's inventory, else it closes the context menu, else Esc
+	switch { // the right button: on a card that member's sheet, else it closes the context menu, else Esc
 	case !right:
-	case p.cardHover > 0 && p.active && v.Exploring:
+	case p.cardHover > 0 && (p.active || p.main):
 		p.ctx = 0
-		p.send(engine.ActInventory, p.cardHover-1)
+		p.send(engine.ActMember, p.cardHover-1)
 	case p.fight && p.pointer.In(p.fightCard): // the active member's sheet
 		p.send(engine.ActMember, 0)
 	case p.ctx > 0:

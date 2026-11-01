@@ -84,3 +84,28 @@ func TestPrice(t *testing.T) {
 		t.Errorf("withGold = %q", got)
 	}
 }
+
+func TestMemberKey(t *testing.T) {
+	for _, c := range []struct {
+		k      uint16
+		cur, n int
+		lr     bool
+		want   int
+		wantOK bool
+	}{
+		{KeyF1, 2, 4, false, 0, true},
+		{KeyF1 + 3<<8, 0, 4, false, 3, true},
+		{KeyF1 + 5<<8, 0, 4, false, 5, false}, // no sixth member
+		{0x4B00, 0, 4, true, 3, true},         // Left wraps
+		{0x4D00, 3, 4, true, 0, true},         // Right wraps
+		{0x4D00, -1, 4, true, 0, true},        // none selected: the first
+		{0x4B00, 1, 4, false, -1, false},      // Left elsewhere is no member key
+		{KeyPadPrev, 1, 4, false, 0, true},    // the stick buttons always are
+		{KeyPadNext, 1, 4, false, 2, true},
+		{9, 1, 4, true, -1, false}, // Tab is never one (minimap, tabs, targets)
+	} {
+		if got, ok := memberKey(c.k, c.cur, c.n, c.lr); got != c.want || ok != c.wantOK {
+			t.Errorf("memberKey(%#x, %d, %d, %v) = %d, %v; want %d, %v", c.k, c.cur, c.n, c.lr, got, ok, c.want, c.wantOK)
+		}
+	}
+}
