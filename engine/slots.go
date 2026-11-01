@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/binary"
 	"encoding/gob"
 	"os"
 	"path/filepath"
@@ -64,6 +65,32 @@ func (e *Engine) slots() []slot {
 	}
 	slices.SortFunc(out, func(a, b slot) int { return b.at.Compare(a.at) })
 	return out
+}
+
+// slotLevel is the highest class level of a member of the slot's party
+// (0: none read).
+func (e *Engine) slotLevel(name string) (lv int) {
+	e.inSlot(name, func() {
+		b, err := os.ReadFile(e.savePath("savgama.dat"))
+		var f saveFile
+		if err == nil {
+			_, err = binary.Decode(b, binary.LittleEndian, &f)
+		}
+		if err != nil {
+			return
+		}
+		for i := 0; i < int(f.Count) && i < len(f.Names); i++ {
+			nm := makeFileName(removeSubstr(f.Names[i].String(), "."))
+			if b, err := os.ReadFile(e.savePath(nm + ".sav")); err == nil {
+				var c Character
+				c.setRecord(b)
+				for _, l := range c.Levels {
+					lv = max(lv, int(int8(l)))
+				}
+			}
+		}
+	})
+	return lv
 }
 
 // slotName keeps what a folder name may hold.
@@ -214,6 +241,7 @@ func (e *Engine) slotsView() *Slots {
 	v := &Slots{CanSave: e.canSave(ss), LoadOnly: ss.loadOnly}
 	for _, sl := range e.slots() {
 		v.Names, v.Times = append(v.Names, sl.name), append(v.Times, sl.at.Format("Jan 02 15:04"))
+		v.Levels = append(v.Levels, e.slotLevel(sl.name))
 	}
 	if len(v.Names) > 0 {
 		v.Current = v.Names[0] // the last save (newest first), also after a restart
