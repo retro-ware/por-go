@@ -81,12 +81,7 @@ func (p *Presenter) fit(dst, img *gpu.Image, w, h int) (kx, ky float64) {
 		return
 	}
 	pg := &p.pg
-	if pg.fit == nil || pg.fit.Bounds().Dx() != w*k || pg.fit.Bounds().Dy() != h*k {
-		if pg.fit != nil {
-			pg.fit.Deallocate()
-		}
-		pg.fit = gpu.NewImage(w*k, h*k)
-	}
+	gpu.Sized(&pg.fit, w*k, h*k)
 	op.GeoM.Scale(float64(k), float64(k))
 	pg.fit.DrawImage(img, op)
 	op = &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
@@ -108,11 +103,8 @@ type scan struct {
 func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 	pg := &p.pg
 	w, h := pageSize(v)
-	if pg.img == nil || pg.px.Rect.Dx() != w || pg.px.Rect.Dy() != h {
-		if pg.img != nil {
-			pg.img.Deallocate()
-		}
-		pg.img, pg.px, pg.drawn = gpu.NewImage(w, h), image.NewRGBA(image.Rect(0, 0, w, h)), false
+	if gpu.Sized(&pg.img, w, h) {
+		pg.px, pg.drawn = image.NewRGBA(image.Rect(0, 0, w, h)), false
 	}
 	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || !modal(v) && !ownPage(v) && samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
 		pg.seq = v.Seq
@@ -318,12 +310,7 @@ func paneImage(img **gpu.Image, pn *engine.Pane, note Note) *gpu.Image {
 
 // upload writes m to *img, made or remade at m's size.
 func upload(img **gpu.Image, m *image.RGBA) *gpu.Image {
-	if *img == nil || (*img).Bounds().Size() != m.Rect.Size() {
-		if *img != nil {
-			(*img).Deallocate()
-		}
-		*img = gpu.NewImage(m.Rect.Dx(), m.Rect.Dy())
-	}
+	gpu.Sized(img, m.Rect.Dx(), m.Rect.Dy())
 	(*img).WritePixels(m.Pix)
 	return *img
 }

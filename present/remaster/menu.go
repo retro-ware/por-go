@@ -170,11 +170,8 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		w, at[r], ch = max(w, x), ch-2, ch+rh(r)
 	}
 	cw := w + 4
-	if p.menuImg == nil || p.menuImg.Bounds().Dx() != cw*8 || p.menuImg.Bounds().Dy() != ch*8 {
-		if p.menuImg != nil {
-			p.menuImg.Deallocate()
-		}
-		p.menuImg, p.menuBuf = gpu.NewImage(cw*8, ch*8), make([]byte, cw*8*ch*8*4)
+	if gpu.Sized(&p.menuImg, cw*8, ch*8) {
+		p.menuBuf = make([]byte, cw*8*ch*8*4)
 	}
 	rgb := pal.EGA
 	green, white, dim := rgb(10), rgb(15), rgb(8)

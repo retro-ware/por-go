@@ -104,11 +104,8 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	if shop { // the goods and the party inventory share the screen
 		split = (cw + 1) / 2
 	}
-	if w, h := cw*8, ch*8; w != inv.w || h != inv.h {
-		if inv.img != nil {
-			inv.img.Deallocate()
-		}
-		inv.w, inv.h, inv.px, inv.img = w, h, image.NewRGBA(image.Rect(0, 0, w, h)), gpu.NewImage(w, h)
+	if w, h := cw*8, ch*8; gpu.Sized(&inv.img, w, h) {
+		inv.w, inv.h, inv.px = w, h, image.NewRGBA(image.Rect(0, 0, w, h))
 	}
 	inv.fill(inv.px.Rect, color.RGBA{A: 255})
 	inv.lines = inv.lines[:0]
@@ -375,12 +372,7 @@ func (inv *inventory) panel(t [3]*gpu.Image, lines []string, at func(w, h int) i
 	rows := len(lines) + 2
 	w, h := cw*8, rows*8
 	p := at(w, h)
-	if inv.tip == nil || inv.tip.Bounds() != image.Rect(0, 0, w, h) {
-		if inv.tip != nil {
-			inv.tip.Deallocate()
-		}
-		inv.tip = gpu.NewImage(w, h)
-	}
+	gpu.Sized(&inv.tip, w, h)
 	px := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(px, px.Rect, image.Black, image.Point{}, draw.Src)
 	for i, l := range lines {

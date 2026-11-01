@@ -137,6 +137,19 @@ func NewImage(w, h int) *Image {
 	return &Image{newTexture(max(w, 1), max(h, 1)), image.Rect(0, 0, w, h)}
 }
 
+// Sized makes *img a w x h image: it reports true when it had to make a new
+// one (none yet, or another size; the old one is deallocated).
+func Sized(img **Image, w, h int) bool {
+	if *img != nil && (*img).r == image.Rect(0, 0, w, h) {
+		return false
+	}
+	if *img != nil {
+		(*img).Deallocate()
+	}
+	*img = NewImage(w, h)
+	return true
+}
+
 // NewImageFromImage copies img to the GPU.
 func NewImageFromImage(img image.Image) *Image {
 	b := img.Bounds()

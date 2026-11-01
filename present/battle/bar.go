@@ -148,11 +148,8 @@ func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.
 	for _, it := range items {
 		id += "|" + it.Text
 	}
-	if br.img == nil || br.img.Bounds() != image.Rect(0, 0, w, h) {
-		if br.img != nil {
-			br.img.Deallocate()
-		}
-		br.img, br.id = gpu.NewImage(w, h), ""
+	if gpu.Sized(&br.img, w, h) {
+		br.id = ""
 	}
 	if id != br.id {
 		br.id = id

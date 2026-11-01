@@ -52,12 +52,7 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 		p.drawMainUI(dst, v)
 		return
 	}
-	if p.layer == nil || p.layer.Bounds() != b {
-		if p.layer != nil {
-			p.layer.Deallocate()
-		}
-		p.layer = gpu.NewImage(b.Dx(), b.Dy())
-	}
+	gpu.Sized(&p.layer, b.Dx(), b.Dy())
 	p.layer.Clear()
 	p.drawMainUI(p.layer, v)
 	lo := &gpu.DrawImageOptions{}
