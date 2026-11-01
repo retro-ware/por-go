@@ -29,7 +29,7 @@ const (
 	modeScript              // View.Ask: a question waits for its answer (eclask.go)
 	modeTurn                // View.Battle.Turn: a member's combat turn (applyTurn)
 	modeAim                 // View.Battle.Turn.Aim: aiming (playerAim's handler)
-	modeConfirm             // View.Battle.Ask: a combat yes/no (Flee?, Attack Ally?)
+	modeConfirm             // View.Ask (AskConfirm): a combat yes/no (Flee?, Attack Ally?)
 	modeExplore             // View.Exploring: the adventuring commands (applyExplore)
 	modeTitle               // the title pictures and credits (timed)
 	modeRest                // camp's rest, five minutes a frame (timed; View.Camp)

@@ -914,7 +914,7 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 		if a.Kind != ActTick { // keyHit: the step waits for the next frame
 			if e.pressed(a) {
 				e.showRest(0)
-				e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ", func(yes bool) {
+				e.YesNo("Stop resting?", func(yes bool) {
 					if stopped = yes; !yes { // the rest ends on the actRedraw that follows
 						e.clearPrompt()
 					}

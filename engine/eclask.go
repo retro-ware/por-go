@@ -25,6 +25,7 @@ const (
 	AskPause                     // a pause (DELAY, MsgDelay, the title's waits): the presenter waits Ms, then sends ActOK (Enter cuts it short)
 	AskKey                       // "press any key" (the pagers, PromptRow24): any key answers (ActOK, ActPage ...)
 	AskSpell                     // a memorized spell (Spells): ActCast N, ActClose backs out
+	AskConfirm                   // a yes/no question (Menu.Prompt, no Items): ActYes, or ActNo / ActClose; the presenter asks it, starting on No
 )
 
 // Ask is the question waiting for the player (View.Ask): every one is

@@ -274,7 +274,7 @@ func (e *Engine) paladinCure(c *Character, then func()) {
 			cure(true)
 			return
 		}
-		e.YesNo(colLightMagenta, colLightGreen, colWhite, t.Name()+" is not diseased, cure anyway: ", cure)
+		e.YesNo(t.Name()+" is not diseased. Cure anyway?", cure)
 	})
 }
 

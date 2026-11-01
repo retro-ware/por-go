@@ -584,6 +584,9 @@ func (e *Engine) publish() {
 		v.Picker = e.pickerView()
 	case modeSlots:
 		v.Slots = e.slotsView()
+	case modeConfirm:
+		a := confirmAsk(e.snap.ask)
+		v.Ask = &a
 	case modeScript:
 		if w := e.eclWait; w != nil {
 			a := w.ask

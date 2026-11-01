@@ -241,6 +241,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	}
 	switch { // the right button: on a card that member's sheet, else it closes the context menu, else Esc
 	case !right:
+	case confirm(v) != "": // a yes/no question: No
+		p.confirmPick(1)
 	case p.cardHover > 0 && (p.active || p.main):
 		p.ctx = 0
 		p.send(engine.ActMember, p.cardHover-1)
@@ -389,4 +391,39 @@ func spellPick(v engine.View) []engine.Spell {
 		return a.Spells
 	}
 	return nil
+}
+
+// confirm is v's yes/no question (AskConfirm), "" for none.
+func confirm(v engine.View) string {
+	if a := v.Ask; a != nil && a.Kind == engine.AskConfirm {
+		return a.Prompt
+	}
+	return ""
+}
+
+// yesNoKeys are every yes/no question's hotkeys.
+var yesNoKeys = []byte{'Y', 'N'}
+
+// confirmKey takes k on the engine's yes/no question as on every Yes/No:
+// the arrows, Enter, Space, pad A, Y and N; Esc (pad B) is No. Only the
+// global keys go on.
+func (p *Presenter) confirmKey(k uint16) bool {
+	switch i, back, ok := menuNav(k, &p.confirmSel, yesNoKeys); {
+	case back:
+		p.confirmPick(1)
+	case i >= 0:
+		p.confirmPick(i)
+	case !ok:
+		return !globalKey(k)
+	}
+	return true
+}
+
+// confirmPick answers the yes/no question: row 0 is Yes, anything else No.
+func (p *Presenter) confirmPick(i int) {
+	if i == 0 {
+		p.send(engine.ActYes, 0)
+		return
+	}
+	p.send(engine.ActNo, 0)
 }

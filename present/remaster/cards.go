@@ -254,7 +254,7 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 }
 
 // yesNo: a menu's rows are a Yes/No question's.
-func yesNo(keys []byte) bool { return slices.Equal(keys, []byte{'Y', 'N'}) }
+func yesNo(keys []byte) bool { return slices.Equal(keys, yesNoKeys) }
 
 // cardKey is what a card's picture (cardImgs) shows; drawParty redraws a card
 // when it changes.

@@ -109,3 +109,22 @@ func TestMemberKey(t *testing.T) {
 		}
 	}
 }
+
+// The engine's yes/no question: Y, N, Esc, Enter (on No first) answer it
+// with ActYes or ActNo; the arrows move to Yes.
+func TestConfirmKeys(t *testing.T) {
+	v := engine.View{Ask: &engine.Ask{Kind: engine.AskConfirm, Menu: engine.Menu{Prompt: "Flee?"}}}
+	for _, c := range []struct {
+		keys []uint16
+		want engine.ActKind
+	}{{[]uint16{'y'}, engine.ActYes}, {[]uint16{'n'}, engine.ActNo}, {[]uint16{27}, engine.ActNo},
+		{[]uint16{13}, engine.ActNo}, {[]uint16{0x4800, KeyPadSelect}, engine.ActYes}} {
+		p := &Presenter{confirmSel: 1}
+		for _, k := range c.keys {
+			p.key(k, v)
+		}
+		if a := p.Actions(); len(a) != 1 || a[0].Kind != c.want {
+			t.Errorf("keys %x: %v", c.keys, a)
+		}
+	}
+}

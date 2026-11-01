@@ -242,7 +242,7 @@ func TestBattleFight(t *testing.T) {
 		switch {
 		case v.Ticks:
 			apply(engine.Action{Kind: engine.ActTick})
-		case v.Battle != nil && v.Battle.Ask != "":
+		case v.Ask != nil && v.Ask.Kind == engine.AskConfirm:
 			apply(engine.Action{Kind: engine.ActClose})
 		case v.Battle != nil && v.Battle.Turn != nil:
 			apply(engine.Action{Kind: engine.ActQuick})

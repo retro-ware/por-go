@@ -23,7 +23,6 @@ type Battle struct {
 	Paths    map[image.Point][]Step // the walk to each Reach square, from the unit's own square
 	Targets  []int                  // units (by ID) ActAttack takes on the turn; aiming: the foes Tab cycles through
 	Turn     *Turn                  // the player's turn waits for an action (nil: no one to act for)
-	Ask      string                 // a yes/no question waits: ActYes or ActClose
 	Panel    int                    // the unit the status row shows (who acts, or is being hit)
 	Log      []string               // this battle's messages, oldest first
 	Area     bool                   // Marks are a spell's area (else a move's reach or a choice)
@@ -116,7 +115,7 @@ func (e *Engine) battle() *Battle {
 	}
 	b := &Battle{
 		Cursor: s.cursor, CursorOn: s.cursorOn,
-		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Turn: s.turn, Ask: s.ask, Area: e.ext.aoe != 0, AreaAt: s.area, Skipped: s.skipped, AimWhy: s.aimWhy, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
+		Marks: s.marks, Reach: s.reach, Paths: s.paths, Targets: s.targets, Turn: s.turn, Area: e.ext.aoe != 0, AreaAt: s.area, Skipped: s.skipped, AimWhy: s.aimWhy, Dungeon: s.dungeon, View: image.Pt(e.cmap.viewX, e.cmap.viewY),
 		Strike: s.strike, Log: slices.Clone(e.ext.battleLog[max(0, len(e.ext.battleLog)-100):]),
 	}
 	for part := 0; part <= 3; part++ {

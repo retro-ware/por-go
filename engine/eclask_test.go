@@ -54,3 +54,27 @@ func TestScriptAsks(t *testing.T) {
 		t.Fatal("the member pick did not take member 2")
 	}
 }
+
+// YesNo publishes a typed question (AskConfirm, no rows) and takes ActYes,
+// ActNo or ActClose; any other decision leaves it waiting.
+func TestYesNoConfirm(t *testing.T) {
+	e := quickStarted(t)
+	for _, c := range []struct {
+		k    ActKind
+		want bool
+	}{{ActYes, true}, {ActNo, false}, {ActClose, false}} {
+		got := !c.want
+		e.YesNo("Stop resting?", func(y bool) { got = y })
+		if w := e.eclWait; w == nil || w.ask.Kind != AskConfirm || w.ask.Prompt != "Stop resting?" || len(w.ask.Items) != 0 {
+			t.Fatalf("ask %+v", e.eclWait)
+		}
+		e.Apply(Action{Kind: ActOK})
+		e.Apply(Action{Kind: ActChoose})
+		if v := e.View(); v.Ask == nil || v.Ask.Kind != AskConfirm {
+			t.Fatal("Enter or a choice answered a yes/no")
+		}
+		if e.Apply(Action{Kind: c.k}); got != c.want {
+			t.Errorf("kind %d: got %v", c.k, got)
+		}
+	}
+}

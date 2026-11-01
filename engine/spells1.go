@@ -385,16 +385,16 @@ func (e *Engine) castAsks(spell, mode byte, usingItem bool, run func()) {
 			return
 		}
 	case e.spellRec(spell, 7) == 0:
-		prompt := "Lose it? "
+		prompt := "Lose it?"
 		if !usingItem {
 			e.text(1, 19, colLightGreen, e.spellName(int(spell)))
 			e.text(1, 20, colLightGreen, "is a combat-only spell...")
 		} else {
 			e.text(1, 19, colLightGreen, "That Item")
 			e.text(1, 20, colLightGreen, "is a combat-only item...")
-			prompt = "Use it? "
+			prompt = "Use it?"
 		}
-		e.YesNo(colLightMagenta, colWhite, colLightGreen, prompt, func(yes bool) {
+		e.YesNo(prompt, func(yes bool) {
 			e.ext.castYes = yes
 			run()
 		})

@@ -305,21 +305,22 @@ func (q *question) member(n int) (Pick, bool) {
 	return Pick{}, false
 }
 
-// YesNo = ovr26:10D1 (c1, c2, c3, prompt): "Yes No" on row 24, No
-// preselected; then gets true for Yes.
-func (e *Engine) YesNo(c1, c2, c3 int, prompt string, then func(bool)) {
-	const (
-		yes Choice = iota
-		no
-	)
-	e.displayThen(prompt, Bar{{"Yes", yes}, {"No", no}}, c1, c2, c3, false, false, func(p Pick) {
-		switch p.ID {
-		case yes:
-			then(true)
-		case no:
-			then(false)
-		default:
-			e.YesNo(c1, c2, c3, prompt, then)
-		}
+// YesNo = ovr26:10D1 (prompt): a yes/no question (View.Ask, AskConfirm;
+// the presenter shows it and its No first); then gets true for ActYes,
+// false for ActNo or ActClose.
+func (e *Engine) YesNo(prompt string, then func(bool)) {
+	yes, prev := false, e.eclWait // a pending script ask is kept under it
+	e.eclWait = &eclWait{ask: confirmAsk(prompt), apply: func(a Action) bool {
+		yes = a.Kind == ActYes
+		return yes || a.Kind == ActNo || a.Kind == ActClose
+	}}
+	e.pushWait(func() {
+		e.eclWait = prev
+		then(yes)
 	})
+}
+
+// confirmAsk is the yes/no question q as View.Ask publishes it.
+func confirmAsk(q string) Ask {
+	return Ask{Kind: AskConfirm, Menu: Menu{Prompt: strings.TrimSpace(q)}}
 }

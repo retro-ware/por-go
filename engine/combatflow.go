@@ -190,14 +190,14 @@ func (e *Engine) sidesCheck() {
 // are gone (applyTurn), or at once when it pushed none.
 func (e *Engine) later(f func() bool) { e.cs.resume = f }
 
-// confirm (extra) puts the yes/no question q to the player as the View's
-// Battle.Ask (modeConfirm): ActYes or ActClose answers it, then gets it.
+// confirm (extra) asks combat's yes/no question q (modeConfirm, View.Ask
+// AskConfirm): ActYes, or ActNo / ActClose answers it, then gets it.
 func (e *Engine) confirm(q string, then func(yes bool)) {
 	yes := false
 	e.snap.ask = q
 	e.push(modeConfirm, func(a Action) bool {
 		yes = a.Kind == ActYes
-		return yes || a.Kind == ActClose
+		return yes || a.Kind == ActNo || a.Kind == ActClose
 	}, func() {
 		e.snap.ask = ""
 		then(yes)

@@ -137,8 +137,6 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 		}
 	}
 	switch {
-	case b.Ask != "":
-		put(b.Ask, 13, 0)
 	case note.Show: // a refusal (why the attack is not possible ...)
 		put(note.Text, 12, 0)
 	case b.Turn != nil && b.Turn.Aim && b.AimWhy != "":

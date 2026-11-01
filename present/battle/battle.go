@@ -38,6 +38,7 @@ type Presenter struct {
 	b             *engine.Battle  // the last frame's
 	out           []engine.Action // queued for Actions
 	Picking       bool            // the spell list is up (Cast): the bar is off
+	Asking        bool            // a yes/no question (View.Ask, AskConfirm) waits: the bar shows Yes and No
 	Pointer       image.Point     // the mouse on the screen, as the host last saw it (the bar's hover; captures script it)
 	pointed       image.Point     // the square the aim was last pointed at
 	cursor        image.Point     // the aim cursor's square in the last frame
@@ -168,7 +169,7 @@ func (p *Presenter) Key(k uint16) bool {
 		p.bar.moveFocus(d)
 	case k == 13 && p.bar.focus > 0 && p.bar.focus <= len(p.bar.rects):
 		p.press(p.bar.items[p.bar.focus-1])
-	case k == 27 && (aiming || b != nil && b.Ask != ""):
+	case k == 27 && aiming:
 		p.act(engine.Action{Kind: engine.ActClose})
 	default:
 		return false

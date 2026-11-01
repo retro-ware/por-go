@@ -31,7 +31,8 @@ const (
 	ActItems             // combat: the inventory
 	ActAim               // combat, aiming: take square X, Y
 	ActPoint             // the cursor is on square X, Y: combat's aim (the preview follows), the full map's (View.MapCursor)
-	ActYes               // combat: yes to Battle.Ask (ActClose: no)
+	ActYes               // yes to View.Ask (AskConfirm)
+	ActNo                // no to View.Ask (AskConfirm); ActClose too
 	ActFlee              // combat: step off the map's edge and try to run away (Turn offers it at the edge)
 	ActChoose            // choose option N of View.Ask (X: the line of its List)
 	ActOK                // Enter: the highlighted choice, or "press a key"

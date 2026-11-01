@@ -120,6 +120,9 @@ type Presenter struct {
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 	scr         screenUI                    // the page screens' questions (screens.go)
+	confirmFor  string                      // the yes/no question (View.Ask, AskConfirm) up, as last drawn ...
+	confirmSel  int                         // ... its highlight (Yes 0, No 1) ...
+	confirmAt   []image.Rectangle           // ... and its rows on screen
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -132,7 +135,17 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		v.Ask = nil
 	}
 	p.scrollBars = p.scrollBars[:0]
+	p.battle.Asking = confirm(v) != ""
 	r := p.draw(dst, note, v)
+	if q := confirm(v); q != "" { // the engine's yes/no question: over everything, starting on No
+		if q != p.confirmFor {
+			p.confirmFor, p.confirmSel = q, 1
+		}
+		p.keyWindow(dst, q, []string{"Yes", "No"}, yesNoKeys, nil, p.confirmSel, false)
+		p.confirmAt = slices.Clone(p.winRects)
+	} else {
+		p.confirmFor, p.confirmAt = "", nil
+	}
 	p.pick = spellPick(v)
 	if up := p.pickList() != nil; up != p.picking { // a pick list opens on its first spell
 		p.picking, p.pickSel = up, 0
@@ -476,6 +489,9 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
+	if confirm(v) != "" {
+		return p.confirmKey(k)
+	}
 	if p.main && (p.mainSkip() || p.mainKey(k, v)) {
 		return true
 	}
@@ -602,6 +618,13 @@ func (p *Presenter) Click(x, y int) bool {
 	if p.barClick(x, y) {
 		return true
 	}
+	if confirm(p.shownView) != "" { // the yes/no question: its rows (or the battle bar's Yes, No); a click outside is No
+		if p.fight && p.battle.Click(x, y) {
+			return true
+		}
+		p.confirmPick(slices.IndexFunc(p.confirmAt, image.Pt(x, y).In))
+		return true
+	}
 	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) && cardUnder(p.cards, x, y) < 0 { // a card is the member the list is for (below)
 		p.listClick(x, y, v)
 		return true
@@ -699,6 +722,17 @@ func (p *Presenter) Click(x, y int) bool {
 func (p *Presenter) Hover(x, y int, down bool) {
 	if p.barHover(y, down) {
 		return
+	}
+	if confirm(p.shownView) != "" { // the yes/no question takes a moved pointer (in combat the bar's hover goes on below)
+		if pt := image.Pt(x, y); pt != p.pointer {
+			p.pointer = pt
+			if i := slices.IndexFunc(p.confirmAt, pt.In); i >= 0 {
+				p.confirmSel = i
+			}
+		}
+		if !p.fight {
+			return
+		}
 	}
 	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) {
 		p.listHover(x, y, v)

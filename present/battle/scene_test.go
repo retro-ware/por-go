@@ -48,7 +48,7 @@ func TestKeys(t *testing.T) {
 	p := &Presenter{}
 	b := &engine.Battle{Turn: &engine.Turn{Can: []engine.ActKind{engine.ActAttack, engine.ActWait, engine.ActEnd, engine.ActQuick}}}
 	p.b = b
-	p.bar.items = shownItems(b)
+	p.bar.items = shownItems(b, false)
 	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
 	took := func(k uint16) []engine.Action { p.Key(k); return p.Actions() }
 	for k, want := range map[uint16]engine.ActKind{'1': engine.ActAttack, '2': engine.ActWait, 8: engine.ActEnd, 'u': engine.ActQuick, 'p': engine.ActWait} {
@@ -66,7 +66,7 @@ func TestKeys(t *testing.T) {
 	}
 	b.Turn = &engine.Turn{Aim: true}
 	b.Targets, b.Units, b.Cursor = []int{3, 5}, []engine.Unit{{ID: 3, X: 1, Y: 1}, {ID: 5, X: 4, Y: 2}}, image.Pt(1, 1)
-	p.bar.items = shownItems(b)
+	p.bar.items = shownItems(b, false)
 	if len(p.bar.items) != 1 || p.bar.items[0].Text != "Cancel" {
 		t.Errorf("aim bar: %+v", p.bar.items)
 	}
@@ -111,7 +111,7 @@ func TestBarFocus(t *testing.T) {
 	p := &Presenter{}
 	b := &engine.Battle{Turn: &engine.Turn{Can: []engine.ActKind{engine.ActAttack, engine.ActWait, engine.ActEnd}}}
 	p.b = b
-	p.bar.items = shownItems(b)
+	p.bar.items = shownItems(b, false)
 	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
 	if p.Key(13); len(p.Actions()) != 0 {
 		t.Error("Enter with no focus pressed a button")
@@ -133,9 +133,9 @@ func TestBarFocus(t *testing.T) {
 	if p.bar.focus != 3 {
 		t.Errorf("back from none: focus %d, want the last", p.bar.focus)
 	}
-	b.Turn, b.Ask = nil, "Flee?"
-	p.bar.items = shownItems(b)
-	for k, want := range map[uint16]engine.ActKind{'y': engine.ActYes, 'n': engine.ActClose, 27: engine.ActClose} {
+	b.Turn = nil
+	p.bar.items = shownItems(b, true)
+	for k, want := range map[uint16]engine.ActKind{'y': engine.ActYes, 'n': engine.ActNo} {
 		if p.Key(k); !slices.Equal(p.Actions(), []engine.Action{{Kind: want}}) {
 			t.Errorf("question key %#x: want kind %d", k, want)
 		}

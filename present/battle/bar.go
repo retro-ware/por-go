@@ -100,10 +100,10 @@ func (p *Presenter) overBar(x, y int) bool {
 // No; aiming only Cancel (Tab cycles the targets, a click or Enter takes
 // one); else the turn's actions in the menu's order (a click on the map
 // walks or attacks, Attack aims first).
-func shownItems(b *engine.Battle) (items []barItem) {
+func shownItems(b *engine.Battle, asking bool) (items []barItem) {
 	switch t := b.Turn; {
-	case b.Ask != "":
-		return []barItem{{'Y', "Yes", engine.ActYes}, {'N', "No", engine.ActClose}}
+	case asking:
+		return []barItem{{'Y', "Yes", engine.ActYes}, {'N', "No", engine.ActNo}}
 	case t == nil:
 	case t.Aim:
 		return []barItem{{'E', "Cancel", engine.ActClose}}
@@ -120,7 +120,7 @@ func shownItems(b *engine.Battle) (items []barItem) {
 // in the game's font (glyph).
 func (p *Presenter) DrawBar(dst *gpu.Image, glyph func(byte) [8]byte, b *engine.Battle, k, bottom int) {
 	br := &p.bar
-	items := shownItems(b)
+	items := shownItems(b, p.Asking)
 	if len(items) == 0 || p.Picking {
 		p.HideBar()
 		return
@@ -185,7 +185,7 @@ func (p *Presenter) Click(x, y int) bool {
 	}
 	b := p.b
 	sx, sy, ok := p.Pick(x, y)
-	if b == nil || b.Turn == nil || b.Ask != "" || p.Picking || !ok {
+	if b == nil || b.Turn == nil || p.Asking || p.Picking || !ok {
 		return false
 	}
 	sq := image.Pt(sx, sy)
