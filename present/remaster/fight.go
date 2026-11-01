@@ -3,6 +3,7 @@ package remaster
 import (
 	"fmt"
 	"image"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -19,6 +20,8 @@ import (
 // colours and border; the spell list Cast opens and the battle Log.
 
 const fightRows = 1 // cells: the status line
+
+const logRows = 20 // the battle Log's lines shown at a time
 
 // drawFight draws the rows, the bar, whose turn it is, the spell list and the Log over the 3D map.
 func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
@@ -74,8 +77,11 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 		if len(lines) == 0 {
 			lines = []string{"Nothing has happened yet."}
 		}
-		lines = lines[max(0, len(lines)-20):] // ponytail: the last 20 lines, no scrolling
+		n := len(lines)
+		p.logTop = min(max(p.logTop, 0), max(0, n-logRows))
+		lines = lines[p.logTop:min(n, p.logTop+logRows)]
 		p.drawMenu(dst, glyph, "Battle Log", lines, make([]byte, len(lines)), -1, k, cx, int(k)*16)
+		p.menuBar(dst, p.menuRects, n, len(lines), &p.logTop, nil, k)
 		p.menuRects = p.menuRects[:0]
 	}
 }
@@ -199,6 +205,11 @@ func (p *Presenter) fightKey(k uint16) bool {
 	}
 	if k == 'l' || k == 'L' || p.fightLog && k == 27 {
 		p.fightLog = !p.fightLog && k != 27
+		p.logTop = math.MaxInt32 // it opens on the latest lines
+		return true
+	}
+	if d, ok := map[uint16]int{0x4800: -1, 0x5000: 1, 0x4900: -logRows, 0x5100: logRows, 0x4700: -math.MaxInt32, 0x4F00: math.MaxInt32}[k]; ok && p.fightLog { // Up/Down, PgUp/PgDn, Home/End scroll the Log
+		p.logTop = max(0, min(p.logTop, math.MaxInt32-logRows)+d) // clamped when drawn
 		return true
 	}
 	if p.battle.Key(k) {

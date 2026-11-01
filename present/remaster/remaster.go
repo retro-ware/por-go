@@ -73,6 +73,9 @@ type Presenter struct {
 	mapImg      *gpu.Image                  // View.Map on the GPU
 	mapSrc      *engine.MapSquares          // the View.Map it holds
 	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
+	scrollBars  []barHit                    // the scroll bars drawn this frame (scrollbar.go)
+	barDrag     *barHit                     // the bar whose thumb the pointer holds
+	logTop      int                         // the battle Log's first line shown
 	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	mainSel     int                         // the main menu's highlight
 	mainSub     bool                        // the main menu shows the Party submenu (the character functions)
@@ -125,6 +128,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		v.Battle, v.Party = ev.Battle, ev.Party
 		v.Ask = nil
 	}
+	p.scrollBars = p.scrollBars[:0]
 	r := p.draw(dst, note, v)
 	if p.pick = spellPick(v); p.pick == nil {
 		p.pickAt = image.Rectangle{}
@@ -586,6 +590,9 @@ func (p *Presenter) Click(x, y int) bool {
 		p.replay.skip = true
 		return true
 	}
+	if p.barClick(x, y) {
+		return true
+	}
 	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) && p.listClick(x, y, v) {
 		return true
 	}
@@ -668,6 +675,9 @@ func (p *Presenter) Click(x, y int) bool {
 // down: the left button is held; a card pressed while the party is being
 // ordered (Click took it) follows the pointer and goes where it is let go.
 func (p *Presenter) Hover(x, y int, down bool) {
+	if p.barHover(y, down) {
+		return
+	}
 	if p.main {
 		p.mainHover(x, y)
 		return
@@ -946,7 +956,7 @@ func (p *Presenter) sceneNamed(name string) *blobber.Scene {
 		if p.view, err = blobber.NewView(); err != nil {
 			log.Fatalln("remaster:", err)
 		}
-		blobber.Window = p.keyWindow // its menu and options in the game's box
+		blobber.Window = func(d *gpu.Image, t string, l []string, k []byte, sel int, b bool) { p.keyWindow(d, t, l, k, sel, b) } // its menu and options in the game's box
 	}
 	if sc, ok := p.scenes[name]; ok {
 		return sc

@@ -294,14 +294,9 @@ func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, 
 		inv.text("Nothing", x0+rowH+4, listTop+(rowH-8)/2, dark)
 	}
 	pn.scroll = image.Rectangle{}
-	if pn.n > pn.rows { // a groove with a bevelled thumb
+	if pn.n > pn.rows {
 		pn.scroll = image.Rect(x1-6, listTop, x1, listTop+pn.rows*rowH)
-		inv.fill(image.Rect(x1-4, listTop, x1-2, pn.scroll.Max.Y), dark)
-		h := pn.scroll.Dy()
-		t := image.Rect(x1-6, listTop+h*pn.top/pn.n, x1, listTop+h*(pn.top+pn.rows)/pn.n)
-		inv.fill(t, gray)
-		inv.fill(image.Rect(t.Min.X, t.Min.Y, t.Max.X, t.Min.Y+1), white)
-		inv.fill(image.Rect(t.Min.X, t.Max.Y-1, t.Max.X, t.Max.Y), dark)
+		scrollBar{pn.scroll, pn.n, pn.rows, pn.top}.draw(inv.fill)
 	}
 }
 
@@ -1024,8 +1019,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		return
 	}
 	if sc := inv.scrolling; sc != nil && down && sc.scroll.Dy() > 0 {
-		sc.top = (inv.hover.Y-sc.scroll.Min.Y)*sc.n/sc.scroll.Dy() - sc.rows/2
-		sc.clamp()
+		sc.top = scrollBar{sc.scroll, sc.n, sc.rows, sc.top}.to(inv.hover.Y)
 	}
 	if inv.press != nil && down && !inv.dragging {
 		d := inv.hover.Sub(inv.pressAt)

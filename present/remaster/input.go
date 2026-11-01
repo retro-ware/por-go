@@ -181,6 +181,10 @@ func menuIndex(m *engine.Menu, c byte) int {
 // wheel; a click elsewhere answers "press a key".
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
 	for ; wheel != 0; wheel -= sign(wheel) {
+		if p.fight && p.fightLog {
+			p.logTop = max(0, p.logTop-sign(wheel)*3)
+			continue
+		}
 		if p.fight {
 			p.battle.Zoom(wheel > 0, blobber.Settings.Zoom)
 			continue

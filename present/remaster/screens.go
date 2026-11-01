@@ -236,9 +236,11 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		rects := slices.Clone(p.menuRects)
 		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], sel, k, cx, r.Max.Y) // under the field
 		p.winRects, p.menuRects = slices.Clone(p.menuRects), rects
+		p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 		return
 	}
-	p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
+	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
+	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 }
 
 // cellRect is a cell rectangle of the page on the window.

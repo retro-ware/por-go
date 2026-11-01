@@ -62,6 +62,11 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 		lines, keys = append(lines, askMenu(v).Items[o].Text), append(keys, askMenu(v).Items[o].Key)
 	}
 	p.drawMenu(dst, glyph, askMenu(v).Prompt, lines, keys, p.listRow(n), k, cx, top)
+	var sel *int
+	if l.sel < n {
+		sel = &l.sel
+	}
+	p.menuBar(dst, p.menuRects, n, min(n, listRows), &l.top, sel, k)
 }
 
 // listRow is the drawn row of the highlight.
