@@ -758,8 +758,8 @@ func (e *Engine) SpellList(kind, mode int, index *int, any *bool, then func(byte
 // Heal and Cure (the inventory offers them too).
 func (e *Engine) powers(c *Character) []Power {
 	var ps []Power
-	if slices.ContainsFunc(c.Memorized[:0x15], func(s byte) bool { return s > 0 }) {
-		ps = append(ps, Power{"Spells", ActSpells})
+	if slices.ContainsFunc(c.Memorized[:0x15], func(s byte) bool { return s > 0 && s < 0x80 }) { // memorized, not still to be learned
+		ps = append(ps, Power{"Cast", ActSpells})
 	}
 	if !e.effectsFit(c) {
 		ps = append(ps, Power{"Magic", ActMagic}) // extra: all of the spell effects
