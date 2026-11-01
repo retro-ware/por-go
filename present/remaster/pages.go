@@ -176,6 +176,14 @@ func screenPage(v engine.View) *cellPage {
 		if !sl.CanSave && !sl.LoadOnly {
 			c.str(2, c.rows-4, inkYellow, "No saving now") // promptRow-3
 		}
+		help := "Enter=save, load or delete   Esc=back"
+		switch {
+		case sl.LoadOnly:
+			help = "Enter=load   Esc=back"
+		case !sl.CanSave:
+			help = "Enter=load or delete   Esc=back"
+		}
+		c.str(2, c.rows-3, inkYellow, help) // promptRow-2, as the F9 page's footer
 	}
 	return c
 }

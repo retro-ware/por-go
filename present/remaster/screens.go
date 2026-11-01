@@ -1,12 +1,10 @@
 package remaster
 
 import (
-	"bytes"
 	"fmt"
 	"image"
 	"image/color"
 	"slices"
-	"strings"
 	"time"
 
 	"gpu"
@@ -151,18 +149,8 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		if sl.CanSave {
 			it = append(it, menuRow{"New Slot", 'N', func() { p.typeLine("Save as", "", 20, engine.ActSave, 0) }})
 		}
-		taken := []byte{'E', 'N'}
 		for i, name := range sl.Names {
-			// the slot's hotkey is the first letter of its name no other row has,
-			// so it never lands on the time or shifts the columns
-			var key byte
-			for _, c := range []byte(strings.ToUpper(upTo(name, 21))) {
-				if c >= 'A' && c <= 'Z' && bytes.IndexByte(taken, c) < 0 {
-					key, taken = c, append(taken, c)
-					break
-				}
-			}
-			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), key, func() {
+			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
 				if sl.LoadOnly {
 					named(engine.ActLoad, name)()
 					return
@@ -229,7 +217,7 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		}
 	}
 	title, items := p.screenItems(v)
-	lines, keys, off := make([]string, len(items)), rowKeys(items), rowsOff(items)
+	lines, keys, off := make([]string, len(items)), p.screenKeys(v, items), rowsOff(items)
 	for i, it := range items {
 		lines[i] = it.text
 	}
@@ -263,6 +251,19 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 	}
 	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], off[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
 	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
+}
+
+// screenKeys are the hotkeys of the page screen's rows: the saves on the
+// slot list have none (no digits either), the rest as every menu.
+func (p *Presenter) screenKeys(v engine.View, items []menuRow) []byte {
+	if screenName(v) != "slots" || p.scr.sub != scrMain {
+		return rowKeys(items)
+	}
+	k := make([]byte, len(items))
+	for i, r := range items {
+		k[i] = r.key
+	}
+	return k
 }
 
 // slotList draws the save slots' list on the page itself, inside the
@@ -357,7 +358,7 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	}
 	_, items := p.screenItems(v)
 	n := len(items)
-	keys := rowKeys(items)
+	keys := p.screenKeys(v, items)
 	i, back, ok := menuNav(k, &s.sel, keys)
 	switch {
 	case back && s.sub == scrAsk:

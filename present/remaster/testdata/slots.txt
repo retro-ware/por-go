@@ -1,2 +1,3 @@
 text 1,14 ffffff/000000 true "Saved Games"
 text 21,2 ffff52/000000 true "No saving now"
+text 22,2 ffff52/000000 true "Enter=load or delete   Esc=back"
