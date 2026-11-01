@@ -16,10 +16,10 @@ func (e *Engine) DisplayPartyList() {
 }
 
 func (e *Engine) drawPartyList() {
-	x := 1
-	if e.beginFlag != 0 {
-		x = 0x11
+	if e.beginFlag == 0 { // the party menu's roster is the presenter's (View.Party)
+		return
 	}
+	x := 0x11
 	y := 2
 	e.DisplayString(x, y, colWhite, "Name")
 	e.DisplayString(33, y, colWhite, "AC  HP")
@@ -118,10 +118,7 @@ func (e *Engine) PartyMenu(then func()) {
 	e.beginFlag = 0
 	redraw := func() {
 		e.snap.saves = len(e.slots()) > 0
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
-		if len(e.party) > 0 {
-			e.DisplayPartyList()
-		}
+		e.ClearScreen() // the menu and the roster are the presenter's (View.MainMenu, View.Party)
 	}
 	redraw()
 	e.push(modeParty, func(a Action) bool {

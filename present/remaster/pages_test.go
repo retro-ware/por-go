@@ -202,7 +202,30 @@ func TestCreationPage(t *testing.T) {
 func TestPartyPages(t *testing.T) {
 	e, _ := partyMenu(t)
 	v := settled(e, engine.Action{Kind: engine.ActQuickStart})
-	golden(t, "party", v)
+	// The party menu's roster (drawPartyList, recorded in party.txt) is the
+	// presenter's from View.Party: the names, AC and HP.
+	want, err := os.ReadFile("testdata/party.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rows []string
+	for _, l := range strings.Split(string(want), "\n") {
+		var y, x int
+		var fg, q string
+		if n, _ := fmt.Sscanf(l, "text %d,%d %s true %q", &y, &x, &fg, &q); n == 4 && y >= 4 {
+			for len(rows) <= y-4 {
+				rows = append(rows, "")
+			}
+			rows[y-4] += " " + q
+		}
+	}
+	var got []string
+	for _, m := range v.Party {
+		got = append(got, fmt.Sprintf(" %s %d %d", m.Name, m.AC, m.HP))
+	}
+	if !slices.Equal(got, rows) {
+		t.Errorf("party %q, the roster showed %q", got, rows)
+	}
 	v = settled(e, engine.Action{Kind: engine.ActRemove, N: 0}, engine.Action{Kind: engine.ActAdd})
 	if v.Picker == nil {
 		t.Fatal("no saved characters")

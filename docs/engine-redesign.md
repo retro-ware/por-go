@@ -402,3 +402,10 @@ presenter's layout of the new data must give the same.
   (View.Spots) took them. The swatches stay engine fills. Its frame is
   View.Border's EGA cells, no longer the symbols in the combat palette.
   View.Overlays had no users left and is gone (and engine.Overlay, fit).
+- The party menu's roster: the engine no longer draws it (nor the box) on
+  the party menu's page; the presenter's main menu shows View.Party
+  (the test checks the names, AC and HP recorded from drawPartyList).
+Still laid out by the engine in its cells (part 3): after-combat, rest,
+casting, money, the script ops' text, WinText, the area map, the main
+frame's roster panel (drawPartyList while adventuring) and the minimap
+over it; View.Spots still takes their clicks.
