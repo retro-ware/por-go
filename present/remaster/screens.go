@@ -214,6 +214,7 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 			s.cur = v.Picker.Cur
 		}
 		if sl := v.Slots; sl != nil { // on the game last loaded or saved
+			p.pointer = p.camp.pointer // the resting pointer does not take it; only a moved one does
 			if i := slices.Index(sl.Names, sl.Current); i >= 0 && sl.Current != "" {
 				s.sel = i
 				if sl.CanSave {
