@@ -517,7 +517,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 	inv.fill(inv.px.Rect, color.RGBA{A: 255})
 	inv.lines = inv.lines[:0]
-	bottom := (ch - 2) * 8 // the boxes' inner bottom
+	bottom := (ch - 3) * 8 // the boxes' inner bottom: under them the menu row, then the toast's row
 
 	// the member: name, portrait between the arrows, hit points (the shop: its goods)
 	lx, lw := 8, (leftCells-2)*8
@@ -555,12 +555,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		}
 	}
 
-	// the menu row under the boxes: a note, else the choices
-	rowY := (ch-1)*8 + 0
+	// the menu row under the boxes, the toast (noteLine) on the bottom row under it
+	rowY := (ch - 2) * 8
 	inv.words = inv.menu(in)
 	if note.Show && note.Text != "" {
-		inv.words = nil
-		inv.text(upTo(note.Text, cw), (inv.w-8*min(len(note.Text), cw))/2, rowY, col(14))
+		noteLine(inv.px, note, (ch-1)*8)
 	}
 	x := 0
 	for _, w := range inv.words {
@@ -608,16 +607,16 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.panelAt = image.Rectangle{}
 	// onto the GPU: the boxes' borders, then the box's
 	inv.img.WritePixels(inv.px.Pix)
-	window(inv.img, t, gpu.GeoM{}, split, ch-1, nil)
+	window(inv.img, t, gpu.GeoM{}, split, ch-2, nil)
 	var g gpu.GeoM
 	g.Translate(float64(split-1)*8, 0) // the boxes share the divider
-	window(inv.img, t, g, cw-split+1, ch-1, nil)
+	window(inv.img, t, g, cw-split+1, ch-2, nil)
 	switch { // the headings on the top border, the party's money on the shop's bottom one
 	case in.Loot:
 		inv.onBorder(lx, 0, true, []string{"Loot"}, []color.RGBA{white})
 	case shop:
 		inv.onBorder(lx, 0, true, []string{"Shop"}, []color.RGBA{white})
-		inv.onBorder(rr, (ch-1)*8-8, false, []string{strconv.Itoa(in.Gold) + "g", strconv.Itoa(in.Copper) + "c"}, []color.RGBA{col(14), col(6)})
+		inv.onBorder(rr, (ch-2)*8-8, false, []string{strconv.Itoa(in.Gold) + "g", strconv.Itoa(in.Copper) + "c"}, []color.RGBA{col(14), col(6)})
 	}
 	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
 	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})

@@ -420,7 +420,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		p.drawMenu(dst, note.Glyph, askMenu(v).Prompt, lines, keys, nil, p.sel, mk, cx, top)
 	}
-	if note.Show { // the toast: pageImage's bottom line (yellow on black) on a black band along the very bottom of the screen, no border
+	if note.Show { // the toast: pageImage's bottom line (noteLine) on a black band along the very bottom of the screen, no border
 		h := int(pk * 8)
 		dst.SubImage(image.Rect(b.Min.X, b.Max.Y-h, b.Max.X, b.Max.Y)).(*gpu.Image).Fill(color.Black)
 		op := &gpu.DrawImageOptions{}

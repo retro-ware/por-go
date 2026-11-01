@@ -288,14 +288,15 @@ func pictureBox(img **gpu.Image, pics []engine.Picture, r image.Rectangle) *gpu.
 	return upload(img, m)
 }
 
-// noteLine draws the note yellow, centred on a black line at y of m (the
-// bottom line in place of the prompt, as the inventory's menu row).
+// noteLine is the one toast: the note in red (EGA 12), centred on a black
+// line at y of m, the bottom row of every view (the page's prompt line, the
+// 3D view's band, the inventory's row under its menu row, combat's status line).
 func noteLine(m *image.RGBA, note Note, y int) {
 	w := m.Rect.Dx()
 	draw.Draw(m, image.Rect(0, y, w, y+8), image.Black, image.Point{}, draw.Src)
 	x0 := (w - 8*len(note.Text)) / 2
 	for i := 0; i < len(note.Text); i++ {
-		glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, y, pal.EGA(14), color.RGBA{A: 255})
+		glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, y, pal.EGA(12), color.RGBA{A: 255})
 	}
 }
 
