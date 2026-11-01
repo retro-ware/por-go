@@ -261,12 +261,11 @@ type cardKey struct {
 // drawCard draws m's card into d (scale 1): border, face, status, bars.
 func (p *Presenter) drawCard(d *gpu.Image, m engine.Member, key cardKey) {
 	d.Clear()
-	d.SubImage(image.Rect(8, 8, cardW-8, frameH-8)).(*gpu.Image).Fill(color.Black)
 	t := p.border.tiles
 	if !m.Selected {
 		t = p.border.grey
 	}
-	drawBorder(d, t, gpu.GeoM{}, cardW/8, frameH/8)
+	window(d, t, gpu.GeoM{}, cardW/8, frameH/8, color.Black)
 	if f := p.portrait(m); f != nil && m.Portrait == nil { // a PNG is drawn at the window's resolution below
 		g, ok := p.faceImgs[f]
 		if !ok {

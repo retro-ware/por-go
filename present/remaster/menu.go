@@ -194,7 +194,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	}
 	p.menuImg.WritePixels(p.menuBuf)
 
-	drawBorder(p.menuImg, p.border.tiles, gpu.GeoM{}, cw, ch)
+	window(p.menuImg, p.border.tiles, gpu.GeoM{}, cw, ch, nil)
 
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)

@@ -610,10 +610,10 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.panelAt = image.Rectangle{}
 	// onto the GPU: the boxes' borders, then the box's
 	inv.img.WritePixels(inv.px.Pix)
-	drawBorder(inv.img, t, gpu.GeoM{}, split, ch-1)
+	window(inv.img, t, gpu.GeoM{}, split, ch-1, nil)
 	var g gpu.GeoM
 	g.Translate(float64(split-1)*8, 0) // the boxes share the divider
-	drawBorder(inv.img, t, g, cw-split+1, ch-1)
+	window(inv.img, t, g, cw-split+1, ch-1, nil)
 	switch { // the headings on the top border, the party's money on the shop's bottom one
 	case in.Loot:
 		inv.onBorder(lx, 0, true, []string{"Loot"}, []color.RGBA{white})
@@ -831,7 +831,7 @@ func (inv *inventory) panel(t [3]*gpu.Image, lines []string, words []word, at fu
 		x += 8 * (len(wd.text) + 1)
 	}
 	inv.tip.WritePixels(px.Pix)
-	drawBorder(inv.tip, t, gpu.GeoM{}, cw, rows)
+	window(inv.tip, t, gpu.GeoM{}, cw, rows, nil)
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(float64(p.X), float64(p.Y))
 	inv.img.DrawImage(inv.tip, op)

@@ -1001,21 +1001,29 @@ func scale(dst *gpu.Image) float64 {
 }
 
 // drawBox copies box r of the classic frame onto dst at scale k, centred
-// on cx, cy: its inside, in a plain border (drawBorder) of tiles' cells.
+// on cx, cy: its inside, in a plain window of tiles' cells.
 func drawBox(dst, inside *gpu.Image, tiles [3]*gpu.Image, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
 	var g gpu.GeoM
 	g.Scale(k, k)
 	g.Translate(float64(cx)-k*float64(px.Dx())/2, float64(cy)-k*float64(px.Dy())/2)
-	op := &gpu.DrawImageOptions{GeoM: g}
-	op.GeoM.Translate(8*k, 8*k)
+	in := window(dst, tiles, g, r.X2-r.X1+1, r.Y2-r.Y1+1, nil)
+	op := &gpu.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate(float64(in.Min.X), float64(in.Min.Y))
 	dst.DrawImage(inside, op)
-	drawBorder(dst, tiles, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
 }
 
-// drawBorder draws a cw by ch cell box's border at g in tiles t (the
-// game's corner, side and top cells: borders), as DrawBorder does.
-func drawBorder(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int) {
+// window is every window's frame: a cw by ch cell box at g on dst, bg
+// inside (nil: the inside stays as drawn), then the ribbon border in tiles
+// t (the game's corner, side and top cells: borders), as DrawBorder does.
+// It returns the inside, in dst's pixels.
+func window(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int, bg color.Color) image.Rectangle {
+	x0, y0 := g.Apply(8, 8)
+	x1, y1 := g.Apply(float64(cw*8-8), float64(ch*8-8))
+	if bg != nil {
+		vector.DrawFilledRect(dst, float32(x0), float32(y0), float32(x1-x0), float32(y1-y0), bg, false)
+	}
 	cell := func(i, x, y int) {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(x*8), float64(y*8))
@@ -1033,6 +1041,7 @@ func drawBorder(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int) {
 	for _, c := range [][2]int{{0, 0}, {cw - 1, 0}, {0, ch - 1}, {cw - 1, ch - 1}} {
 		cell(0, c[0], c[1])
 	}
+	return image.Rect(int(x0), int(y0), int(x1), int(y1))
 }
 
 // resize tells the engine the text cells the window holds (grid) when
