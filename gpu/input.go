@@ -276,6 +276,16 @@ func AppendJustPressedKeys(ks []Key) []Key {
 	return ks
 }
 
+// AppendPressedKeys appends the keys held now.
+func AppendPressedKeys(ks []Key) []Key {
+	for k := range Key(keyCount) {
+		if in.dur[k] > 0 {
+			ks = append(ks, k)
+		}
+	}
+	return ks
+}
+
 // AppendInputChars appends the characters typed since the last tick.
 func AppendInputChars(rs []rune) []rune { return append(rs, in.tickChars...) }
 

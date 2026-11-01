@@ -74,6 +74,7 @@ type game struct {
 	rightOnce bool          // POR_KEYS \M: the right button pressed this tick
 	leftOnce  bool          // POR_KEYS \C: the left button
 	started   bool          // the engine has put its first screen up (act)
+	latch     latch         // the inputs held through a screen change: ignored until let go (latch.go)
 }
 
 // tps: Update runs 120 times a second, so a key waits at most ~8 ms before
@@ -99,6 +100,7 @@ func (g *game) Update() error {
 		}
 		return nil
 	}
+	g.latch.see(screenOf(g.eng.View(), g.remaster.InventoryShown()), g.held())
 	g.keys()
 	for _, id := range gpu.AppendGamepadIDs(g.pads[:0]) {
 		g.gamepad(id, g.push)
@@ -178,7 +180,7 @@ func (g *game) keys() {
 	// longer than half a turn) is one move, never two
 	var held uint16
 	for _, k := range repeatKeys[:8] {
-		if gpu.KeyPressDuration(k) >= holdTicks {
+		if d := gpu.KeyPressDuration(k); g.latch.down(k, d > 0) && d >= holdTicks {
 			held, _ = biosKey(k)
 		}
 	}
@@ -191,7 +193,7 @@ func (g *game) keys() {
 		if i < 8 && paced {
 			continue
 		}
-		if d := gpu.KeyPressDuration(k); d > 1 && repeats(d) {
+		if d := gpu.KeyPressDuration(k); g.latch.down(k, d > 1) && repeats(d) {
 			code, _ := biosKey(k)
 			g.push(code)
 		}
@@ -224,11 +226,11 @@ func (g *game) mouse() {
 	}
 	if g.remaster.InventoryShown() { // its own clicks and wheel; keys still go to the game (a capture's \C is down for one tick: a click)
 		_, dy := gpu.Wheel()
-		g.remaster.InventoryMouse(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft) || g.leftOnce, gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) || g.rightOnce, dy)
+		g.remaster.InventoryMouse(mx, my, g.latch.down(gpu.MouseButtonLeft, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft)) || g.leftOnce, gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) || g.rightOnce, dy)
 		g.leftOnce, g.rightOnce = false, false
 		return
 	}
-	g.remaster.Hover(mx, my, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft))
+	g.remaster.Hover(mx, my, g.latch.down(gpu.MouseButtonLeft, gpu.IsMouseButtonPressed(gpu.MouseButtonLeft)))
 	left := gpu.IsMouseButtonJustPressed(gpu.MouseButtonLeft) || g.leftOnce
 	g.leftOnce = false
 	if left && g.remaster.Click(mx, my) { // an action bar button, a menu item, the combat map
@@ -274,6 +276,9 @@ func (g *game) gamepad(id gpu.GamepadID, send func(uint16)) {
 	pad := remaster.PadKeys(g.remaster.CombatPad()) // the binding table's buttons (bindings.go)
 	for _, p := range pad {
 		d := gpu.StandardGamepadButtonPressDuration(id, p.B)
+		if !g.latch.down(padButton{id, p.B}, d > 0) {
+			continue
+		}
 		if d == 1 || p.Repeat && d > 1 && repeats(d) {
 			send(p.Key)
 		}
@@ -301,7 +306,7 @@ func (g *game) gamepad(id gpu.GamepadID, send func(uint16)) {
 	if dir != g.stickDir {
 		g.stickDir, g.stickHeld = dir, 0
 	}
-	if dir != 0 {
+	if dir != 0 && g.latch.down(padStick{id, dir}, true) {
 		g.stickHeld++
 		if repeats(g.stickHeld) {
 			send(dir)
@@ -567,4 +572,44 @@ func main() {
 	if err := gpu.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// padButton and padStick are a pad's held button and stick direction, as
+// the latch knows them.
+type (
+	padButton struct {
+		id gpu.GamepadID
+		b  gpu.StandardGamepadButton
+	}
+	padStick struct {
+		id  gpu.GamepadID
+		dir uint16
+	}
+)
+
+// held is every input held now: keys, mouse buttons, pad buttons and stick
+// directions (the latch's: latch.go).
+func (g *game) held() []any {
+	var h []any
+	for _, k := range gpu.AppendPressedKeys(nil) {
+		h = append(h, k)
+	}
+	for _, b := range []gpu.MouseButton{gpu.MouseButtonLeft, gpu.MouseButtonRight, gpu.MouseButtonMiddle} {
+		if gpu.IsMouseButtonPressed(b) {
+			h = append(h, b)
+		}
+	}
+	for _, id := range gpu.AppendGamepadIDs(nil) {
+		for b := gpu.StandardGamepadButton(0); b <= gpu.StandardGamepadButtonCenterCenter; b++ {
+			if gpu.IsStandardGamepadButtonPressed(id, b) {
+				h = append(h, padButton{id, b})
+			}
+		}
+	}
+	if g.stickDir != 0 {
+		for _, id := range gpu.AppendGamepadIDs(nil) {
+			h = append(h, padStick{id, g.stickDir})
+		}
+	}
+	return h
 }
