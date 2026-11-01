@@ -144,7 +144,7 @@ func (e *Engine) pushIcon() {
 		}
 		e.snap.icon = ed
 		if ed.Custom { // a dropped PNG takes no parts or colours: it can only go
-			ed.Remove = CellRect{idWordsCol, idPreviewRow, idWordsCol + 17, idPreviewRow}
+			ed.Remove = CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow} // "Remove", where Head stands otherwise
 			ed.Head, ed.Weapon, ed.Size, ed.Names, ed.Parts, ed.Palette = CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}
 		}
 		for i := range IconParts {

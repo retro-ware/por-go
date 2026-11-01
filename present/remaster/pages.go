@@ -165,6 +165,15 @@ func screenPage(v engine.View) *cellPage {
 		v.Pictures, v.Pane, v.SheetPage, v.Picker, v.IconEditor = nil, nil, nil, nil, nil
 		v.ViewText = nil
 	}
+	if v.IconEditor != nil && v.Picker == nil { // the editor alone, as at the creation: nothing of the page under it (camp's roster, frames, minimap); its swatches stay
+		var pics []engine.Picture
+		for _, pc := range v.Pictures {
+			if !pc.Border {
+				pics = append(pics, pc)
+			}
+		}
+		v.Pictures, v.Pane, v.SheetPage, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, nil, false, false
+	}
 	c := newCellPage(v)
 	c.texts(v)
 	if s := v.SheetPage; s != nil {
@@ -508,7 +517,7 @@ func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 	c.str(ed.PoseAt[0].X1+2, ed.PoseAt[0].Y1-1, inkWhite, "ready")
 	c.str(ed.PoseAt[1].X1+2, ed.PoseAt[1].Y1-1, inkWhite, "action")
 	if ed.Custom { // a dropped PNG: it can only go
-		c.str(ed.Remove.X1, ed.Remove.Y1, inkGreen, "Remove custom icon")
+		c.str(ed.Remove.X1, ed.Remove.Y1, inkGreen, "Remove")
 		return
 	}
 	c.str(ed.Head.X1, ed.Head.Y1, inkGreen, "Head")
