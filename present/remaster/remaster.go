@@ -78,6 +78,7 @@ type Presenter struct {
 	logTop      int                         // the battle Log's first line shown
 	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	mainSel     int                         // the main menu's highlight
+	mainBack    int                         // the main menu's row that opened the Party submenu: Exit goes back to it
 	mainSub     bool                        // the main menu shows the Party submenu (the character functions)
 	mainAsk     int                         // the main menu's question up (askQuit ..)
 	noMenu      bool                        // nothing to pick: any click answers
@@ -242,7 +243,10 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.setup(note, v)
 	p.command = v.Exploring
 	if screenUp(v) && !screenUp(p.shownView) { // camp, the temple, the shop, training start on their main screen
-		p.camp.screen, p.camp.sel = campMain, 0
+		p.camp.screen, p.camp.sel, p.camp.rows = campMain, 0, nil
+		if t := v.Training; t != nil && len(t.Learn) == 0 && t.Why == "" { // the training question starts on No
+			p.camp.sel = 1
+		}
 	}
 	if askList(v) != nil && askList(p.shownView) == nil { // a list opens at its first line
 		p.list = listUI{sel: max(0, slices.IndexFunc(askList(v), func(l engine.ListLine) bool { return !l.Off }))}

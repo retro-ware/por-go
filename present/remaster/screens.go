@@ -32,26 +32,28 @@ const (
 const scrRows = 14 // the lines a page screen's menu shows at a time
 
 type screenUI struct {
-	ptr    image.Point // the pointer's cell, as last seen: only a moved one takes the picker's cursor
-	up     string      // the screen up (screenName): another one starts on its main menu
-	sub    int
-	sel    int
-	top    int
-	field  int
-	prompt string         // scrType: the question ...
-	text   string         // ... the line typed ...
-	caret  int            // ... its cursor ...
-	max    int            // ... how long it may get ...
-	act    engine.ActKind // ... and what it sends
-	n      int
-	ask    string // scrAsk: the question; yes on Yes, back to sub on No
-	yes    func()
-	back   int
-	slot   string           // scrSlot: the save
-	cur    int              // the picker's cursor
-	at     Rect             // where the page went on the window ...
-	pw, ph int              // ... and its size in pixels
-	anchor *engine.CellRect // the drop-down's field: the menu opens on it
+	ptr     image.Point // the pointer's cell, as last seen: only a moved one takes the picker's cursor
+	up      string      // the screen up (screenName): another one starts on its main menu
+	sub     int
+	sel     int
+	top     int
+	field   int
+	prompt  string         // scrType: the question ...
+	text    string         // ... the line typed ...
+	caret   int            // ... its cursor ...
+	max     int            // ... how long it may get ...
+	act     engine.ActKind // ... and what it sends
+	n       int
+	ask     string // scrAsk: the question; yes on Yes, back to sub on No
+	yes     func()
+	back    int
+	backSel int              // the row the question was asked from
+	mainSel int              // the main menu's row that opened the submenu up: back restores it
+	slot    string           // scrSlot: the save
+	cur     int              // the picker's cursor
+	at      Rect             // where the page went on the window ...
+	pw, ph  int              // ... and its size in pixels
+	anchor  *engine.CellRect // the drop-down's field: the menu opens on it
 }
 
 func screenName(v engine.View) string {
@@ -77,10 +79,10 @@ func (p *Presenter) sendA(a engine.Action) { p.inv.acts = append(p.inv.acts, a) 
 func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 	s := &p.scr
 	act := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
-	to := func(sub int) func() { return func() { s.sub, s.sel, s.top = sub, 0, 0 } }
+	to := func(sub int) func() { return func() { s.open(sub) } }
 	switch s.sub {
 	case scrAsk:
-		return s.ask, []menuRow{{"Yes", 'Y', func() { s.sub, s.sel = scrMain, 0; s.yes() }}, {"No", 'N', to(s.back)}}
+		return s.ask, []menuRow{{"Yes", 'Y', func() { s.open(scrMain); s.yes() }}, {"No", 'N', func() { s.sub, s.sel = s.back, s.backSel }}}
 	case scrType:
 		return s.prompt, []menuRow{{caretLine(s.text, s.caret, s.max, p.blink()), 0, nil}}
 	}
@@ -97,9 +99,9 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 				it = append(it, menuRow{name, 0, func() { p.typeLine(name+":", "", 5, engine.ActStat, i) }})
 			}
 			return "Change", append(it,
-				menuRow{"Head", 'H', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickHead) }},
-				menuRow{"Body", 'B', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickBody) }},
-				menuRow{"Icon", 'I', func() { s.sub = scrMain; p.send(engine.ActIconEdit, -1) }},
+				menuRow{"Head", 'H', func() { s.open(scrMain); p.send(engine.ActPicker, engine.PickHead) }},
+				menuRow{"Body", 'B', func() { s.open(scrMain); p.send(engine.ActPicker, engine.PickBody) }},
+				menuRow{"Icon", 'I', func() { s.open(scrMain); p.send(engine.ActIconEdit, -1) }},
 				menuRow{"Exit", 'E', to(scrMain)})
 		case scrField:
 			fl := cr.Fields[s.field]
@@ -109,7 +111,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 				if !o.Fits { // picking it changes what depends on it
 					t = "(" + t + ")"
 				}
-				it = append(it, menuRow{t, 0, func() { s.sub, s.anchor = scrMain, nil; p.sendX(engine.ActSetField, s.field, i) }})
+				it = append(it, menuRow{t, 0, func() { s.open(scrMain); s.anchor = nil; p.sendX(engine.ActSetField, s.field, i) }})
 			}
 			return "", it
 		}
@@ -131,7 +133,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 	case "slots":
 		sl := v.Slots
 		named := func(k engine.ActKind, name string) func() {
-			return func() { s.sub, s.sel = scrMain, 0; p.sendA(engine.Action{Kind: k, Text: name}) }
+			return func() { s.open(scrMain); p.sendA(engine.Action{Kind: k, Text: name}) }
 		}
 		if s.sub == scrSlot {
 			it := []menuRow{{"Load", 'L', named(engine.ActLoad, s.slot)}}
@@ -152,7 +154,8 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 					named(engine.ActLoad, name)()
 					return
 				}
-				s.sub, s.sel, s.slot = scrSlot, 0, name
+				s.slot = name
+				s.open(scrSlot)
 			}})
 		}
 		if len(it) == 0 {
@@ -169,19 +172,24 @@ func (p *Presenter) blink() bool { return time.Now().UnixMilli()/400%2 == 0 }
 // with the line on Enter.
 func (p *Presenter) typeLine(prompt, text string, n int, act engine.ActKind, an int) {
 	s := &p.scr
+	s.open(scrType)
 	s.back, s.sub, s.prompt, s.text, s.caret, s.max, s.act, s.n = scrMain, scrType, prompt, text, len(text), n, act, an
 }
 
 // askThen asks q; yes runs on Yes.
 func (p *Presenter) askThen(q string, yes func()) {
 	s := &p.scr
-	s.back, s.sub, s.ask, s.yes, s.sel = s.sub, scrAsk, q, yes, 1
+	if s.sub == scrMain {
+		s.mainSel = s.sel
+	}
+	s.back, s.backSel, s.sub, s.ask, s.yes, s.sel = s.sub, s.sel, scrAsk, q, yes, 1
 }
 
 // openField opens field f's drop-down on its text, the value it holds highlighted.
 func (p *Presenter) openField(cr *engine.Creation, f int) {
 	s := &p.scr
-	s.sub, s.field, s.sel, s.top = scrField, f, cr.Fields[f].Cur, 0
+	s.open(scrField)
+	s.field, s.sel = f, cr.Fields[f].Cur
 	at := cr.Fields[f].At
 	s.anchor = &at
 }
@@ -262,10 +270,10 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	if s.sub == scrType {
 		switch done, cancel, _ := editKey(k, &s.text, &s.caret, s.max, false); {
 		case done:
-			s.sub = s.back
+			s.open(s.back)
 			p.sendA(engine.Action{Kind: s.act, N: s.n, Text: s.text})
 		case cancel:
-			s.sub = s.back
+			s.open(s.back)
 		}
 		return true
 	}
@@ -278,9 +286,10 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	i, back, ok := menuNav(k, &s.sel, keys)
 	switch {
 	case back && s.sub == scrAsk:
-		s.sub = s.back
+		s.sub, s.sel = s.back, s.backSel
 	case back && s.sub != scrMain:
-		s.sub, s.sel, s.anchor = scrMain, 0, nil
+		s.open(scrMain)
+		s.anchor = nil
 	case back:
 		p.screenPick(v, n-1-s.top) // Exit
 	case i >= 0:
@@ -414,4 +423,19 @@ func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 		return false
 	}
 	return true
+}
+
+// open goes to submenu sub: back on the main menu, the row that opened the
+// submenu comes back; leaving the main menu keeps that row; a submenu
+// starts on its first row.
+func (s *screenUI) open(sub int) {
+	switch {
+	case sub == scrMain:
+		s.sel = s.mainSel
+	case s.sub == scrMain:
+		s.mainSel, s.sel = s.sel, 0
+	default:
+		s.sel = 0
+	}
+	s.sub, s.top = sub, 0
 }

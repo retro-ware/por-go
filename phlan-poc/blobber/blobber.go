@@ -1113,6 +1113,7 @@ type Game struct {
 	dither, smooth, menu, atlasView, help, quit bool
 	page                                        string    // the Esc menu's settings page shown, "" the root
 	confirm                                     *question // the yes/no the Esc menu asks, or nil
+	pageSel, askSel                             int       // the root's row that opened the page, the question: back restores it
 	lastPoint                                   int       // the Esc menu line the mouse was last on (-1 none)
 	debug                                       bool
 	follow                                      bool // driven by a View: moves come from the host, never the keyboard
@@ -1412,7 +1413,12 @@ func (g *Game) back() bool {
 	if g.page == "" && g.confirm == nil {
 		return false
 	}
-	g.page, g.confirm, g.sel = "", nil, 0
+	if g.confirm != nil { // back to the row the question or the page was opened from
+		g.sel = g.askSel
+	} else {
+		g.sel = g.pageSel
+	}
+	g.page, g.confirm = "", nil
 	return true
 }
 
@@ -1529,10 +1535,10 @@ func (g *Game) menuOptions() []menuLine {
 		}
 	}
 	page := func(p string) menuLine {
-		return menuLine{label: p, change: func(g *Game, _ int) { g.page, g.sel = p, 0 }}
+		return menuLine{label: p, change: func(g *Game, _ int) { g.pageSel, g.page, g.sel = g.sel, p, 0 }}
 	}
 	ask := func(label, q string, do func()) menuLine {
-		return menuLine{label: label, change: func(g *Game, _ int) { g.confirm, g.sel = &question{q, do}, 1 }}
+		return menuLine{label: label, change: func(g *Game, _ int) { g.askSel, g.confirm, g.sel = g.sel, &question{q, do}, 1 }}
 	}
 	o := []menuLine{{label: "Resume", change: func(g *Game, _ int) { g.menu = false }}}
 	if OnSaveLoad != nil {

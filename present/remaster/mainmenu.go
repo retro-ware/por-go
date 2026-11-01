@@ -131,14 +131,14 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 		for _, k := range []engine.ActKind{engine.ActAdd, engine.ActCreate, engine.ActForget, engine.ActDropMember, engine.ActModify, engine.ActTraining, engine.ActMember, engine.ActRemove} {
 			add(k)
 		}
-		return "", append(it, menuRow{"Exit", 'E', func() { p.mainSub, p.mainSel = false, 0 }})
+		return "", append(it, menuRow{"Exit", 'E', func() { p.mainSub, p.mainSel = false, p.mainBack }})
 	}
 	add(engine.ActBegin)
 	add(engine.ActLoad) // Load Game leads when there are saved games, Quick Start without them
 	if !open(engine.ActLoad) {
 		add(engine.ActQuickStart)
 	}
-	it = append(it, menuRow{"Party", 'P', func() { p.mainSub, p.mainSel = true, 0 }})
+	it = append(it, menuRow{"Party", 'P', func() { p.mainBack, p.mainSub, p.mainSel = p.mainSel, true, 0 }})
 	if open(engine.ActLoad) {
 		add(engine.ActQuickStart)
 	}
@@ -202,6 +202,9 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 // mainPick picks line i of the main menu or its question.
 func (p *Presenter) mainPick(v engine.View, i int) {
 	if _, items := p.mainItems(v); i >= 0 && i < len(items) {
+		if !p.ask {
+			p.mainSel = i
+		}
 		items[i].do()
 	}
 }

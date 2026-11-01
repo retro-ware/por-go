@@ -70,7 +70,7 @@ type editor struct {
 	focus    bool // keyboard goes to the script
 	status   string
 	swatch   map[byte]*gpu.Image
-	extra    []string                 // object/item/monster/deco lines of the .map file, kept verbatim
+	extra    []string              // object/item/monster/deco lines of the .map file, kept verbatim
 	mons     map[string]*gpu.Image // monster thumbnails by name
 	monList  []string
 	mon      string      // monster brush; "" paints walls

@@ -10,7 +10,6 @@ import (
 // presenter asks before an Id.
 func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 	c, s := &p.camp, v.Shop
-	to := func(n int) func() { return func() { c.screen, c.sel = n, 0 } }
 	switch c.screen {
 	case shopID:
 		if len(s.Unknown) == 0 {
@@ -18,9 +17,9 @@ func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 		}
 		var it []menuRow
 		for i, u := range s.Unknown {
-			it = append(it, menuRow{u.Owner + ": " + u.Name, 0, func() { c.pick, c.screen, c.sel = i, shopDeal, 0 }})
+			it = append(it, menuRow{u.Owner + ": " + u.Name, 0, func() { c.pick = i; c.to(shopDeal, 1)() }})
 		}
-		return withGold("Identify for "+price(engine.Money{Gold: s.IDPrice}), s.Gold), append(it, menuRow{"Exit", 'E', to(campMain)})
+		return withGold("Identify for "+price(engine.Money{Gold: s.IDPrice}), s.Gold), append(it, menuRow{"Exit", 'E', c.back(campMain)})
 	case shopDeal:
 		if c.pick >= len(s.Unknown) {
 			c.screen = shopID
@@ -28,14 +27,14 @@ func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 		}
 		u := s.Unknown[c.pick]
 		return withGold(fmt.Sprintf("Identify %s for %s. Is it a deal?", u.Name, price(engine.Money{Gold: s.IDPrice})), s.Gold), []menuRow{
-			{"Yes", 'Y', func() { p.sendX(engine.ActIdentify, u.Member, u.Item); c.screen = shopID }},
-			{"No", 'N', to(shopID)}}
+			{"Yes", 'Y', func() { p.sendX(engine.ActIdentify, u.Member, u.Item); c.back(shopID)() }},
+			{"No", 'N', c.back(shopID)}}
 	case appraise:
-		return p.appraiseItems(s.Appraise, to(campMain))
+		return p.appraiseItems(s.Appraise, c.back(campMain))
 	}
-	it := []menuRow{{"Browse", 'B', func() { p.send(engine.ActInventory, -1) }}, {"Appraise", 'A', to(appraise)}}
+	it := []menuRow{{"Browse", 'B', func() { p.send(engine.ActInventory, -1) }}, {"Appraise", 'A', c.to(appraise, 0)}}
 	if len(s.Unknown) > 0 {
-		it = append(it, menuRow{"Identify", 'I', to(shopID)})
+		it = append(it, menuRow{"Identify", 'I', c.to(shopID, 0)})
 	}
 	return "Shop", append(it, menuRow{"Exit", 'E', func() { p.send(engine.ActClose, 0) }})
 }
