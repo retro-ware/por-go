@@ -179,6 +179,21 @@ func screenPage(v engine.View) *cellPage {
 		v.Ink[inkBlack] = color.RGBA{A: 255}
 		v.Pictures, v.Pane, v.SheetPage, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, nil, false, false
 	}
+	if v.Results != nil { // the after-combat page alone in its box: not the 3D screen's frames and text under it
+		var pics []engine.Picture
+		last := -1
+		for i, pc := range v.Pictures {
+			if pc.Border {
+				last = i
+			}
+		}
+		for i, pc := range v.Pictures {
+			if !pc.Border || i == last { // its own box: the last frame drawn
+				pics = append(pics, pc)
+			}
+		}
+		v.Pictures, v.Pane, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, false, false
+	}
 	c := newCellPage(v)
 	c.texts(v)
 	if s := v.SheetPage; s != nil {
