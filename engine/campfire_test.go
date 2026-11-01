@@ -70,3 +70,14 @@ func TestAreaMapView(t *testing.T) {
 		t.Fatalf("overland map: party %v, %v wide (tile %d), marker %v", m.Party, m.Img.Bounds().Dx(), m.Tile, m.Marker != nil)
 	}
 }
+
+// Icon in a member's camp menu opens the icon editor as a page of its
+// own, not under the 3D view.
+func TestCampIconEditor(t *testing.T) {
+	e := quickStarted(t)
+	e.CampMenu(nil)
+	e.Apply(Action{Kind: ActIconEdit, N: 0})
+	if v := e.View(); v.IconEditor == nil || v.Adventure {
+		t.Fatalf("editor %v, adventure %v", v.IconEditor != nil, v.Adventure)
+	}
+}
