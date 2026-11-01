@@ -264,10 +264,21 @@ func (c *cellPage) texts(v engine.View) {
 	if v.Credits { // drawCredits' two boxes: the title's, the lines'
 		c.border(1, 1, c.cols-2, 3)
 		c.border(1, 5, c.cols-2, c.rows-2)
-		for _, l := range engine.Credits {
-			c.str(l.X, l.Y, l.Colour, l.Text)
+		// Centred on wider pages; on pages tall enough, a blank row before
+		// "game created by", after it and after the version.
+		dx, gaps := max(0, (c.cols-40)/2), 0
+		last := engine.Credits[len(engine.Credits)-1]
+		if c.rows-2 > last.Y+3 {
+			gaps = 3
 		}
-		if last := engine.Credits[len(engine.Credits)-1]; c.rows-3 >= last.Y+2 { // the remaster's own lines, on a page tall enough
+		for _, l := range engine.Credits {
+			y := l.Y
+			if gaps > 0 {
+				y += min(max(0, l.Y-4), 3)
+			}
+			c.str(l.X+dx, y, l.Colour, l.Text)
+		}
+		if c.rows-3 >= last.Y+gaps+2 { // the remaster's own lines, on a page tall enough
 			for i, s := range engine.RemasterCredit {
 				c.str((c.cols-len(s))/2, c.rows-4+i, inkYellow, s)
 			}
