@@ -62,7 +62,11 @@ func (e *Engine) classicWallPart(x, y int, wall byte, part int) {
 		for xx := x; xx <= x+partW[part]-1; xx++ {
 			if yy >= 0 && yy <= 10 && xx >= 0 && xx <= 10 {
 				if id := classicWalldef[(int(wall)-1)*walldefSize+s]; id > 0 {
-					e.Put8x8SymbolMasked(xx+viewX, yy+viewY, int(id))
+					set := 0 // ovr35:015D Put8x8Symbol, masked: the symbol's set, its frame there
+					for set < 4 && int(id) >= symFix[set+1] {
+						set++
+					}
+					e.DrawPictureMasked(xx+viewX, yy+viewY, e.sym[set], int(id)-symFix[set], 1)
 				}
 			}
 			s++

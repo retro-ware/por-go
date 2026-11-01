@@ -727,7 +727,7 @@ Status so far:
 
 ## ovr35
 - [ ] ovr35:003B `LoadSymbolSet` (pic.go)
-- [ ] ovr35:015D `Put8x8Symbol` (pic.go)
+- [ ] ovr35:015D `Put8x8Symbol` (classic3d_test.go classicWallPart)
 
 ## START 00BA
 - [ ] 00BA:0000 `weaponStats` (charcalc.go)

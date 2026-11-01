@@ -57,42 +57,6 @@ func (e *Engine) DrawPicture(x, y int, im *dax.Image, frame int) {
 	e.picture(x*8, y*8, w, im.Height, d, -1, im, frame)
 }
 
-// Put8x8Symbol = ovr35:015D Put8x8Symbol(x, y, id) without overlay: copy
-// the symbol's frame from its set and draw it at cell (x,y).
-func (e *Engine) Put8x8Symbol(x, y, id int) { e.put8x8(x, y, id, false, 0) }
-
-// Put8x8SymbolMasked = ovr35:015D with the overlay flag (0464:08D4): the
-// set's mask colour is left transparent.
-func (e *Engine) Put8x8SymbolMasked(x, y, id int) { e.put8x8(x, y, id, true, 1) }
-
-// Put8x8SymbolPage = ovr35:015D with the page flag and mode 0: drawn
-// opaque into the drawing page (the area map).
-func (e *Engine) Put8x8SymbolPage(x, y, id int) { e.put8x8(x, y, id, true, 0) }
-
-func (e *Engine) put8x8(x, y, id int, masked bool, mode int) {
-	set := -1
-	switch {
-	case id >= 0x001 && id <= 0x02D:
-		set = 0
-	case id >= 0x02E && id <= 0x073:
-		set = 1
-	case id >= 0x074 && id <= 0x0B9:
-		set = 2
-	case id >= 0x0BA && id <= 0x0FF:
-		set = 3
-	case id >= 0x100 && id <= 0x11E:
-		set = 4
-	}
-	if set < 0 || e.sym[set] == nil {
-		return
-	}
-	if masked {
-		e.DrawPictureMasked(x, y, e.sym[set], id-symFix[set], mode)
-	} else {
-		e.DrawPicture(x, y, e.sym[set], id-symFix[set])
-	}
-}
-
 // DrawPictureMasked = 0464:08D4 (x, y, frame, mode): like DrawPicture;
 // with mode bit 0 and a masked picture the mask pixels are not drawn.
 func (e *Engine) DrawPictureMasked(x, y int, im *dax.Image, frame, mode int) {
