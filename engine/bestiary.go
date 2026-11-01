@@ -122,4 +122,3 @@ func (e *Engine) beasts() []Beast {
 	e.ext.beasts = out
 	return out
 }
-

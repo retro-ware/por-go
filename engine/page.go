@@ -85,14 +85,7 @@ func (e *Engine) draw(l layer) {
 	} else {
 		e.unwrite(r)
 	}
-	if pg.frameUp {
-		for _, b := range []CellRect{ViewWindow, TextPane} {
-			f := b.Framed().Pixels()
-			if r.Overlaps(f) && !r.In(b.Pixels()) {
-				pg.frameUp = false
-			}
-		}
-	}
+
 }
 
 // fill paints a rectangle [x0,x1) x [y0,y1) in colour c (16 is black,

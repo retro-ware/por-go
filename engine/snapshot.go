@@ -28,8 +28,7 @@ type AreaID int
 type Window int
 
 const (
-	WinEmpty   Window = iota
-	WinThreeD         // the 3D view of Area at X, Y, Facing
+	WinThreeD  Window = iota // the 3D view of Area at X, Y, Facing
 	WinAreaMap        // the wilderness or city map
 	WinPicture        // a picture, portrait or approaching sprite
 	WinText           // text in the whole view window (opClearBox: the Sokal Keep scroll's runes)
@@ -193,6 +192,7 @@ func (p *Pane) Shown() bool {
 type View struct {
 	Pane       *Pane // the text pane under the 3D view: the main frame is up (Frame), or it holds text (nil otherwise)
 	Window     Window
+	AreaMap    *AreaMap // with WinAreaMap: the whole map, for a screen of its own
 	Area       AreaID
 	X, Y       int
 	Facing     Dir
@@ -491,7 +491,10 @@ type snapState struct {
 	logo         image.Image // titleLogo, once cut
 	backdrop     image.Image // titleBackdrop, once read
 	backdropRead bool
-	win          Window                 // set by whatever drew into the view window last
+	win          Window      // set by whatever drew into the view window last
+	areaImg      image.Image // View.AreaMap's picture, for areaTiles in areaPal
+	areaTiles    [36][44]byte
+	areaPal      pal.Regs
 	heads        map[int]image.Image    // decoded HEAD blocks by id
 	tiles        [3]image.Image         // View.Border, once decoded
 	list         []*ListNode            // the innermost ListMenu's lines
@@ -545,6 +548,9 @@ func (e *Engine) publish() {
 		Exploring: e.exploring(),
 		Sweeping:  e.exploring() && e.game.Search&1 != 0,
 		Minimap:   e.pg.tx.minimap,
+	}
+	if s.win == WinAreaMap {
+		v.AreaMap = e.areaMapView()
 	}
 	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() || v.Minimap {
 		v.Map = e.mapSquares(e.labels())

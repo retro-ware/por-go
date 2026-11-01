@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"image"
 	"slices"
 	"testing"
 )
@@ -60,5 +61,23 @@ func TestExploreKeepsFrame(t *testing.T) {
 	e.publish()
 	if !e.View().Frame {
 		t.Fatal("exploring without the main frame: the classic page shows")
+	}
+}
+
+// The overland publishes its whole map with the party on it, on the
+// adventure screen (no classic page).
+func TestAreaMapView(t *testing.T) {
+	e := quickStarted(t)
+	e.push(modeExplore, func(Action) bool { return false }, nil)
+	e.area.In3D, e.viewMode, e.area.MapX, e.area.MapY = 0, 2, 7, 29
+	e.LoadIconPic("ICON", 0, 9)
+	e.areaMapIcons()
+	e.publish()
+	v := e.View()
+	if v.Window != WinAreaMap || v.AreaMap == nil || !v.Frame {
+		t.Fatalf("overland: window %v, map %v, frame %v", v.Window, v.AreaMap != nil, v.Frame)
+	}
+	if m := v.AreaMap; m.Party != image.Pt(7, 29) || m.Img.Bounds().Dx() != 44*m.Tile || m.Marker == nil {
+		t.Fatalf("overland map: party %v, %v wide (tile %d), marker %v", m.Party, m.Img.Bounds().Dx(), m.Tile, m.Marker != nil)
 	}
 }
