@@ -35,7 +35,7 @@ func (p *Presenter) identDone(v engine.View) bool {
 
 // drawIdentified draws the reveal's pop-up over dst.
 func (p *Presenter) drawIdentified(dst *gpu.Image, glyph func(byte) [8]byte, it *engine.InvItem) {
-	const title, hint, iconH = "* Identified! *", "Splendid!", 48
+	const title, hint, iconH = "* Identified! *", "Splendid!", 2 * atlasCell // the icon at a whole 2x, so every atlas pixel stays square and even
 	w := max(len(title), len(it.Name), len(hint))
 	for _, l := range it.Look {
 		w = max(w, len(l)+2)
@@ -51,12 +51,11 @@ func (p *Presenter) drawIdentified(dst *gpu.Image, glyph func(byte) [8]byte, it 
 		drawText(m, glyph, title[i:i+1], x0+8*i, 8, pal.EGA(sparkle[i%len(sparkle)]))
 	}
 	y := 24
-	if ic := p.inv.iconImage(it); ic != nil { // the icon, on a glow of dark magenta, its aspect kept
+	if ic := p.inv.iconImage(it); ic != nil { // the icon on the pop-up's black, a whole multiple of its cell
 		b := ic.Bounds()
-		f := min(float64(iconH)/float64(b.Dx()), float64(iconH)/float64(b.Dy()))
-		iw, ih := int(f*float64(b.Dx())), int(f*float64(b.Dy()))
+		f := max(1, iconH/max(b.Dx(), b.Dy()))
+		iw, ih := f*b.Dx(), f*b.Dy()
 		at := image.Rect((cw*8-iw)/2, y, (cw*8+iw)/2, y+ih)
-		draw.Draw(m, at.Inset(-4), image.NewUniform(pal.EGA(5)), image.Point{}, draw.Src)
 		for py := range ih {
 			for px := range iw {
 				if c := ic.At(b.Min.X+px*b.Dx()/iw, b.Min.Y+py*b.Dy()/ih); alpha(c) {
