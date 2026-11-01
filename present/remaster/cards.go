@@ -4,8 +4,12 @@ import (
 	_ "embed"
 	"image"
 	"image/color"
+	"image/draw"
+	"math"
 	"slices"
 	"strconv"
+
+	xdraw "golang.org/x/image/draw"
 
 	"gpu"
 	"gpu/vector"
@@ -300,4 +304,161 @@ func (p *Presenter) drawCard(d *gpu.Image, m engine.Member, key cardKey) {
 	if key.nextExp > 0 {                              // Shift: the way to the next level, full once the experience is there
 		p.bar(d, -5, expY, cardW+10, key.exp, key.nextExp, goldFill)
 	}
+}
+
+// cardAt lays the party's cards along the window's edges: the first half
+// of the party down the left, the rest down the right, at cardScale.
+func cardAt(dst *gpu.Image) func(i, n int) image.Rectangle {
+	b := dst.Bounds()
+	k := cardScale(dst)
+	px := func(n int) int { return int(math.Round(float64(n) * k)) }
+	return func(i, n int) image.Rectangle {
+		if blobber.Settings.PartyRow { // one row along the bottom, centred
+			step := px(cardW + cardGap)
+			x := (b.Dx()-n*step+px(cardGap))/2 + i*step
+			y := b.Dy() - px(cardH+cardGap) + px(cardFoot)
+			return image.Rect(x, y, x+px(cardW), y+px(cardH))
+		}
+		left := (n + 1) / 2
+		col, row, per := 0, i, left
+		if i >= left {
+			col, row, per = 1, i-left, n-left
+		}
+		y := b.Dy() - px((per-row)*(cardH+cardGap)) + px(cardFoot) // the bars end a gap above the bottom
+		x := px(cardGap)
+		if col == 1 {
+			x = b.Dx() - px(cardGap) - px(cardW)
+		}
+		return image.Rect(x, y, x+px(cardW), y+px(cardH))
+	}
+}
+
+const cardGap, cardRows = 8, 4
+
+// cardBase is the cards' size 1 (Esc, Graphics, Portraits): the largest
+// whole scale where a column of four fits under the smallest map.
+func cardBase(dst *gpu.Image) int {
+	return max(1, min(dst.Bounds().Dx()/480, dst.Bounds().Dy()/360, (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(cardH+cardGap))))
+}
+
+// cardScale is the cards' scale: cardBase times the Portraits size, as far
+// as a column of four (eight members with NPCs) still fits under the map at
+// its size and a card takes at most a sixth of the width (fitScale).
+func cardScale(dst *gpu.Image) float64 {
+	b := dst.Bounds()
+	room := float64(b.Dy() - 2*cardGap*cardBase(dst))
+	if !blobber.Settings.MapOff {
+		room -= float64(mapPx(dst))
+	}
+	if blobber.Settings.PartyRow { // eight across the bottom, under the map, at most a third of the height
+		return fitScale(float64(cardBase(dst)), blobber.Settings.Cards, func(k float64) bool {
+			return k*8*(cardW+cardGap)+k*cardGap <= float64(b.Dx()) && k*(cardH+cardGap) <= min(room, float64(b.Dy())/3)
+		})
+	}
+	return fitScale(float64(cardBase(dst)), blobber.Settings.Cards, func(k float64) bool {
+		return k*cardRows*(cardH+cardGap) <= room && k*cardW <= float64(b.Dx())/6
+	})
+}
+
+// cardLabels: the sheet's status as the card spells it over the portrait,
+// short enough to fit there (a member at 0 hit points is not always dead).
+var cardLabels = map[string]string{
+	"Animated":    "undead",
+	"Running":     "fled",
+	"Unconscious": "KO",
+	"Dying":       "dying",
+	"Dead":        "dead",
+	"Poisoned":    "poisoned", // dead of poison, as the sheet puts it
+	"Stoned":      "stone",
+	"Gone":        "gone",
+}
+
+// portrait is m's card art: the PNG the player dropped on the sheet, fitted
+// into the PortraitSize square, on its bottom edge (cached), else the paper-doll head's face.
+func (p *Presenter) portrait(m engine.Member) image.Image {
+	if m.Portrait == nil {
+		return p.face(m.Head)
+	}
+	if f, ok := p.faces[m.Portrait]; ok {
+		return f
+	}
+	f := fitSquare(m.Portrait, portraitSize)
+	if p.faces == nil {
+		p.faces = map[image.Image]image.Image{}
+	}
+	p.faces[m.Portrait] = f
+	return f
+}
+
+// hiFace is a PNG portrait at n pixels square for a card at the window's
+// resolution (cached per size): more detail than the card's own face.
+func (p *Presenter) hiFace(src image.Image, n int) *gpu.Image {
+	if g, ok := p.hiFaces[src]; ok && g.Bounds().Dx() == n {
+		return g
+	}
+	g := gpu.NewImageFromImage(fitSquare(src, n))
+	if old, ok := p.hiFaces[src]; ok {
+		old.Deallocate()
+	}
+	p.hiFaces[src] = g
+	return g
+}
+
+// fitSquare is src fitted into an n pixel square, its shape kept, on the
+// square's foot: by whole pixels when those nearly fill it (crisp pixel
+// art), else by Catmull-Rom.
+func fitSquare(src image.Image, n int) *image.RGBA {
+	b := src.Bounds()
+	f := image.NewRGBA(image.Rect(0, 0, n, n))
+	w, h := n, b.Dy()*n/max(b.Dx(), 1)
+	if h > n {
+		w, h = b.Dx()*n/max(b.Dy(), 1), n
+	}
+	var sc xdraw.Scaler = xdraw.CatmullRom
+	if s := wholeScale(b.Dx(), b.Dy(), n, n); s > 0 {
+		w, h, sc = s*b.Dx(), s*b.Dy(), xdraw.NearestNeighbor
+	}
+	sc.Scale(f, image.Rect((n-w)/2, n-h, (n-w)/2+w, n), src, b, draw.Src, nil)
+	return f
+}
+
+// wholeScale is the whole number of pixels per source pixel that scales a
+// sw by sh picture up to nearly fill tw by th (at least 90%), 0 when none
+// does (a smaller picture is drawn smoothly to the exact size instead).
+func wholeScale(sw, sh, tw, th int) int {
+	s := min(tw/max(sw, 1), th/max(sh, 1))
+	if s >= 1 && s*sw >= tw*9/10 && s*sh >= th*9/10 {
+		return s
+	}
+	return 0
+}
+
+// face is the card art for a head: its lit pixels (the face, hair and
+// shoulders) centred in a PortraitSize square, unscaled (nil without a head).
+func (p *Presenter) face(head image.Image) image.Image {
+	if head == nil {
+		return nil
+	}
+	if f, ok := p.faces[head]; ok {
+		return f
+	}
+	const n = portraitSize
+	lit := image.Rectangle{}
+	b := head.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if r, g, bl, a := head.At(x, y).RGBA(); a > 0 && r|g|bl != 0 {
+				lit = lit.Union(image.Rect(x, y, x+1, y+1))
+			}
+		}
+	}
+	f := image.NewRGBA(image.Rect(0, 0, n, n))
+	draw.Draw(f, f.Bounds(), image.Black, image.Point{}, draw.Src)
+	c := lit.Min.Add(lit.Max).Div(2) // centre on centre; a part wider than the square is cut evenly
+	draw.Draw(f, f.Bounds(), head, c.Sub(image.Pt(n/2, n/2)), draw.Over)
+	if p.faces == nil {
+		p.faces = map[image.Image]image.Image{}
+	}
+	p.faces[head] = f
+	return f
 }

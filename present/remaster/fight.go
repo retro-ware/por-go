@@ -311,3 +311,66 @@ func (p *Presenter) PadStick(x, y float64) {
 	}
 	p.battle.Stick = [2]float64{dead(x), dead(y)}
 }
+
+// pickList is the spell list up for a choice: View.Ask (AskSpell) anywhere, else
+// the bar's Cast in combat (Picking); nil when none.
+func (p *Presenter) pickList() []engine.Spell {
+	switch {
+	case p.pick != nil:
+		return p.pick
+	case p.fight && p.battle.Picking && p.fightView != nil && p.fightView.Turn != nil:
+		return p.fightView.Turn.Spells
+	}
+	return nil
+}
+
+// drawPickList draws the spell list (pickList) as a menu with hotkeys, its
+// box centred on cx with its top at top.
+func (p *Presenter) drawPickList(dst *gpu.Image, glyph func(byte) [8]byte, k float64, cx, top int) {
+	lines := make([]string, len(p.pickList()))
+	for i, s := range p.pickList() {
+		lines[i] = s.Name
+	}
+	p.pickSel = min(max(p.pickSel, 0), len(lines)-1)
+	p.drawMenu(dst, glyph, "Cast", lines, spellKeys(len(lines)), nil, p.pickSel, k, cx, top)
+}
+
+// spellKeys are a spell list's hotkeys, as every spell list's (camp,
+// training): the digits 1-9 (digitKeys).
+func spellKeys(n int) []byte { return digitKeys(make([]byte, n), func(int) bool { return true }) }
+
+// pickKey takes key k while a spell is picked: the arrows, Enter, a hotkey, Esc.
+func (p *Presenter) pickKey(k uint16) bool {
+	spells := p.pickList()
+	if spells == nil || globalKey(k) {
+		return false
+	}
+	switch i, back, _ := menuNav(k, &p.pickSel, spellKeys(len(spells))); {
+	case back:
+		p.cast(-1)
+	case i >= 0:
+		p.cast(i)
+	}
+	return true
+}
+
+// pickClick takes a click while a spell is picked: a line casts, elsewhere gives up.
+func (p *Presenter) pickClick(x, y int) bool {
+	if p.pickList() == nil {
+		return false
+	}
+	p.cast(slices.IndexFunc(p.menuRects, func(r image.Rectangle) bool { return image.Pt(x, y).In(r) }))
+	return true
+}
+
+// cast casts spell i of the list (-1: none, giving up).
+func (p *Presenter) cast(i int) {
+	spells, fromBar := p.pickList(), p.pick == nil
+	p.battle.Picking = false
+	switch {
+	case i >= 0 && i < len(spells):
+		p.send(engine.ActCast, spells[i].ID)
+	case !fromBar: // the game waits for the pick: give it up
+		p.send(engine.ActClose, 0)
+	}
+}
