@@ -257,7 +257,9 @@ func (c *cellPage) texts(v engine.View) {
 	for _, r := range v.Prompt {
 		c.run(r, c.rows-1)
 	}
-	if v.Credits {
+	if v.Credits { // drawCredits' two boxes: the title's, the lines'
+		c.border(1, 1, c.cols-2, 3)
+		c.border(1, 5, c.cols-2, c.rows-2)
 		for _, l := range engine.Credits {
 			c.str(l.X, l.Y, l.Colour, l.Text)
 		}
