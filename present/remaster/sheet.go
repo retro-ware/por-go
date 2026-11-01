@@ -97,20 +97,22 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 		}
 		text(e, lx+lw-8*len(e), y+26, green)
 	}
+	ly := y + 52 // under the bars: a key left, its value right
+	if !sp.Creating {
+		text("Level", lx, ly, white)
+		text(sp.Levels, lx+lw-8*len(sp.Levels), ly, green)
+		ly += 10
+	}
+	if sp.Status != "" {
+		text("Status", lx, ly, white)
+		text(sp.Status, lx+lw-8*len(sp.Status), ly, green)
+	}
 
-	// the figures: who, then the abilities beside the combat figures
+	// the figures: who, two blank lines, the abilities, the combat figures under them
 	rx := leftCells * 8
 	row := func(r int) int { return 12 + 12*r }
 	text(sp.Sex+" "+sp.Race+", age "+strconv.Itoa(sp.Age), rx, row(0), white)
 	text(sp.Alignment, rx, row(1), white)
-	if sp.Status != "" {
-		text("Status", rx, row(2), white)
-		text(sp.Status, rx+8*8, row(2), green)
-	}
-	if !sp.Creating {
-		text("Level", rx, row(3), white)
-		text(sp.Levels, rx+8*8, row(3), green)
-	}
 	for j, l := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
 		text(l, rx, row(4+j), white)
 		v := strconv.Itoa(sp.Stats[j])
@@ -119,15 +121,14 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 		}
 		text(v, rx+5*8, row(4+j), green)
 	}
-	cx := rx + 16*8
-	for j, f := range [][2]string{{"AC", strconv.Itoa(sp.AC)}, {"THAC0", strconv.Itoa(sp.THAC0)}, {"Damage", sp.Damage}, {"Move", strconv.Itoa(sp.Move)}} {
-		text(f[0], cx, row(4+j), white)
-		text(f[1], cx+8*8, row(4+j), green)
+	for j, f := range [][2]string{{"AC", strconv.Itoa(sp.AC)}, {"THAC0", strconv.Itoa(sp.THAC0)}, {"Damage", sp.Damage}, {"Move", strconv.Itoa(sp.Move)}} { // under the abilities
+		text(f[0], rx, row(10+j), white)
+		text(f[1], rx+8*8, row(10+j), green)
 	}
 	if sp.Effects != "" {
-		text("Effects", rx, row(11), white)
+		text("Effects", rx, row(15), white)
 		for j, l := range engine.WrapWords(sp.Effects, cw-leftCells-2) {
-			text(l, rx, row(12+j), green)
+			text(l, rx, row(16+j), green)
 		}
 	}
 
