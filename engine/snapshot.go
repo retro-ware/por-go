@@ -387,11 +387,11 @@ func (e *Engine) publish() {
 	if v.Exploring {
 		v.CanCast = e.canCastNow()
 	}
-	if e.ext.camping && e.ext.menu == 0 && (e.mode == modeCamp || e.mode == modeRest) {
+	if e.ext.camping && e.ext.menu == 0 && (e.mode() == modeCamp || e.mode() == modeRest) {
 		v.Camp = e.campView()
 	}
 	if e.ext.menu == 0 && !s.invOn {
-		switch e.mode {
+		switch e.mode() {
 		case modeTemple:
 			v.Temple = e.templeView()
 		case modeShop:
@@ -406,7 +406,7 @@ func (e *Engine) publish() {
 			}
 		}
 	}
-	switch e.mode {
+	switch e.mode() {
 	case modeCreate:
 		v.Creation = e.creationView()
 	case modePicker:

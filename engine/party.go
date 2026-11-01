@@ -133,7 +133,7 @@ func (e *Engine) PartyMenu(then func()) {
 	redraw()
 	e.push(modeParty, func(a Action) bool {
 		done := e.applyParty(a)
-		if !done && e.mode == modeParty {
+		if !done && e.mode() == modeParty {
 			redraw()
 		}
 		return done

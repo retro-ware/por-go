@@ -95,7 +95,6 @@ type Engine struct {
 	pg                   pageState                    // what is on the screen (page.go)
 	ac                   afterCombat                  // ovr06 globals
 	camp                 campState                    // ovr16/ovr21 globals
-	mode                 screenMode                   // the screen taking decisions (decide.go)
 	screens              []screen                     // the screens pushed, the top one taking the decisions
 	cs                   combatState                  // the fight's rounds and turn (combatflow.go)
 	events               []CombatEvent                // the fight's events not yet handed out (View.Events)

@@ -46,7 +46,7 @@ func (e *Engine) unwindReset() {
 	x.campBar, x.paging = false, false
 	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = false, nil, false, 0, false
 	x.menuFloor, x.panel, e.snap.typing = 0, nil, nil
-	e.screens, e.mode = nil, modeNone // the screens pushed are gone with their callers
+	e.screens = nil // the screens pushed are gone with their callers
 	e.picker, e.creation, e.slotsUp, x.creating = nil, nil, nil, false
 	e.snap.invOn, e.snap.shop, e.snap.loot, e.snap.sheetOn = false, false, false, false
 	e.partySel = 0                  // a defer on the way out may have put back the old party's index

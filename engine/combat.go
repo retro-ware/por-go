@@ -108,7 +108,7 @@ func (e *Engine) playerTurn(c *Character) {
 	reach := e.turnChoices(c)
 	e.push(modeTurn, func(a Action) bool {
 		done := e.applyTurn(c, a, reach)
-		if !done && e.mode == modeTurn { // not under a screen it opened (aiming ...)
+		if !done && e.mode() == modeTurn { // not under a screen it opened (aiming ...)
 			reach = e.turnChoices(c)
 		}
 		return done
@@ -124,7 +124,7 @@ func (e *Engine) applyTurn(c *Character, a Action, reach map[[2]int][]int) (done
 		return e.resumed()
 	}
 	done = e.turnChoice(c, a, reach)
-	if e.mode != modeTurn {
+	if e.mode() != modeTurn {
 		return false
 	}
 	if e.cs.resume != nil {

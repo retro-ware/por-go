@@ -578,7 +578,7 @@ func (e *Engine) campDecision(a Action) (left bool) {
 	case actRedraw: // back from the icon editor (a rest draws nothing again)
 		if e.camp.rested {
 			e.camp.rested = false
-		} else if e.mode == modeCamp {
+		} else if e.mode() == modeCamp {
 			e.DrawMainScreen()
 		}
 	case ActRest:

@@ -158,7 +158,7 @@ func (e *Engine) Apply(as ...Action) View {
 		e.catch(func() { e.apply(a) })
 	}
 	e.catch(func() {
-		if e.over && e.mode == modeExplore { // a script's quit, from a continuation
+		if e.over && e.mode() == modeExplore { // a script's quit, from a continuation
 			e.feed(Action{Kind: actRedraw}, 0)
 		}
 		if len(e.screens) == 0 {
@@ -173,7 +173,7 @@ func (e *Engine) Apply(as ...Action) View {
 
 // apply gives one decision to the top screen.
 func (e *Engine) apply(a Action) {
-	e.ext.guarded = e.mode != modeTitle
+	e.ext.guarded = e.mode() != modeTitle
 	switch a.Kind {
 	case ActMainMenu:
 		e.mainMenu()

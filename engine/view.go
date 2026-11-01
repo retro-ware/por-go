@@ -268,7 +268,7 @@ func (e *Engine) applySheet(a Action) (done bool) {
 		if e.view.quit {
 			return true
 		}
-		if e.mode != modeSheet { // the power's screens are up: the sheet draws itself again on their actRedraw
+		if e.mode() != modeSheet { // the power's screens are up: the sheet draws itself again on their actRedraw
 			return false
 		}
 	default:

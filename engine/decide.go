@@ -1,6 +1,6 @@
 package engine
 
-// Screens taking decisions (docs/engine-redesign.md): e.mode names the
+// Screens taking decisions (docs/engine-redesign.md): e.mode() names the
 // screen up and its handler (applyTemple, applyShop, applyItems ...)
 // applies one decision and returns, done or not; it never waits for
 // input or time. A handler opens another screen by pushing it: the
@@ -35,20 +35,27 @@ const (
 	modeCombat              // the fight's rounds, a turn a frame (timed; View.Battle)
 )
 
-// screen is a screen taking decisions: its handler, what leaving it
-// does, and the mode under it.
+// screen is a screen taking decisions: its handler and what leaving it
+// does.
 type screen struct {
-	mode, under screenMode
-	apply       func(Action) (done bool)
-	leave       func()
-	timed       bool // it takes ActTick every frame no decision comes
+	mode  screenMode
+	apply func(Action) (done bool)
+	leave func()
+	timed bool // it takes ActTick every frame no decision comes
+}
+
+// mode is the top screen's (modeNone: none up).
+func (e *Engine) mode() screenMode {
+	if len(e.screens) == 0 {
+		return modeNone
+	}
+	return e.screens[len(e.screens)-1].mode
 }
 
 // push puts screen m up; it takes the decisions until apply is done,
 // then leave runs (nil: nothing to do).
 func (e *Engine) push(m screenMode, apply func(Action) bool, leave func()) {
-	e.screens = append(e.screens, screen{m, e.mode, apply, leave, false})
-	e.mode = m
+	e.screens = append(e.screens, screen{m, apply, leave, false})
 }
 
 // pushTimed puts up a timed screen: a frame going by with no decision
@@ -95,7 +102,7 @@ func (e *Engine) feed(a Action, base int) {
 		if !s.apply(a) {
 			return
 		}
-		e.screens, e.mode = e.screens[:n-1], s.under
+		e.screens = e.screens[:n-1]
 		if s.leave != nil {
 			s.leave()
 		}

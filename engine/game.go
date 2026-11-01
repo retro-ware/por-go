@@ -245,7 +245,7 @@ func (e *Engine) awaitCommand() {
 		e.DevAction = nil
 		f()
 	}
-	e.ext.inCommand = e.mode == modeExplore
+	e.ext.inCommand = e.mode() == modeExplore
 }
 
 // commandEnd = the end of CommandInput.
