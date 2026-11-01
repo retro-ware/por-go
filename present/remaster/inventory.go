@@ -96,6 +96,7 @@ type inventory struct {
 	view    *engine.Inventory
 	acts    []engine.Action // to send (Presenter.Actions)
 	words   []word          // the menu row's words
+	focus   int             // 1+ the word the keys are on (PgUp/PgDn, the pad's shoulders), 0 none
 	k       int             // canvas scale, whole: what the pixel art is drawn at
 	kx, ky  float64         // the canvas on screen: k and the stretch to the window's edges (fit)
 	w, h    int             // canvas size
@@ -583,6 +584,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		inv.text(m.Name, inv.w-8-8*len(s), rowY, white)
 		inv.text(m.Class, inv.w-8-8*len(m.Class), rowY, gray)
 	}
+	inv.focus = min(inv.focus, len(inv.words))
 	for i := range inv.words {
 		w := &inv.words[i]
 		w.r = image.Rect(x-4, rowY-2, x+8*len(w.text)+4, rowY+10)
@@ -590,7 +592,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		switch {
 		case !w.on:
 			c, hc = dark, dark
-		case inv.hover.In(w.r):
+		case inv.hover.In(w.r) || inv.focus == i+1:
 			pal.SelectText(w.r, inv.fill)
 		}
 		inv.text(w.text[:1], x, rowY, hc)
@@ -873,8 +875,10 @@ func (inv *inventory) step(d int) {
 	}
 }
 
-// inventoryKey handles a key on the inventory screen; false leaves it to
-// the game (F9, ?, Ctrl-F).
+// inventoryKey handles a key on the inventory screen: Up/Down, Home/End the
+// items, the member keys the member, Tab (pad Y) the tab, PgUp/PgDn (the
+// shoulders) the menu row's focus, Enter (pad A) the focused word or the
+// item; false leaves it to the game (F9, ?, Ctrl-F).
 func (p *Presenter) inventoryKey(k uint16) bool {
 	inv := &p.inv
 	if inv.ask != nil {
@@ -912,6 +916,12 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		}
 		inv.choose(order[(i+d+len(order))%len(order)].ware, order[(i+d+len(order))%len(order)].i)
 	}
+	switch k {
+	case KeyPadSelect: // pad A: as Enter
+		k = 13
+	case KeyPadMinimap: // pad Y: as Tab, the next tab
+		k = 9
+	}
 	m, member := memberKey(k, inv.member, inv.count, true)
 	switch {
 	case k == 27 && inv.carry != nil: // the stack goes back where it was
@@ -932,6 +942,20 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		inv.choose(order[0].ware, order[0].i)
 	case k == 0x4F00 && len(order) > 0:
 		inv.choose(order[len(order)-1].ware, order[len(order)-1].i)
+	case (k == 0x4900 || k == 0x5100) && len(inv.words) > 0: // PgUp/PgDn, the pad's shoulders: the menu row's focus, as the battle bar's
+		d, n := 1, len(inv.words)
+		if k == 0x4900 {
+			d = -1
+		}
+		if inv.focus == 0 && d < 0 {
+			inv.focus = n
+		} else {
+			inv.focus = (inv.focus-1+d+n)%n + 1
+		}
+	case k == 13 && inv.focus > 0:
+		if w := inv.words[inv.focus-1]; w.on {
+			inv.do(w.act)
+		}
 	case k == 13 && inv.ware >= 0:
 		inv.do(engine.ActBuy)
 	case k == 13:
