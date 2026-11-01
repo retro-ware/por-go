@@ -225,7 +225,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return Rect{}
 	}
 	sc := p.scene(v)
-	if sc == nil || !choosing(v) && (!v.Frame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
+	if sc == nil || v.Results != nil || !choosing(v) && (!v.Frame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil        // back from elsewhere: no tween from where the view was
 		p.asked = ""                                                      // and a question still waiting on return (View from the loot menu) pops up again
 		if sheetUp(v) && v.SheetPage != nil && v.SheetPage.Spells == "" { // the sheet: the presenter's, at the inventory's scale
