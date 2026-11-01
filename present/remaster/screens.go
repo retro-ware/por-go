@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"slices"
 	"strings"
 	"time"
@@ -92,19 +93,8 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		case scrField:
 			fl := cr.Fields[s.field]
 			var it []menuRow
-			order := []int{fl.Cur} // the value it holds first, over the field's text, the rest below in their order
-			for i := range fl.Options {
-				if i != fl.Cur {
-					order = append(order, i)
-				}
-			}
-			for _, i := range order {
-				o := fl.Options[i]
-				t := o.Text
-				if !o.Fits { // picking it changes what depends on it
-					t = "(" + t + ")"
-				}
-				it = append(it, menuRow{t, 0, func() { s.open(scrMain); s.anchor = nil; p.sendX(engine.ActSetField, s.field, i) }})
+			for _, i := range fieldOrder(fl) {
+				it = append(it, menuRow{fl.Options[i].Text, 0, func() { s.open(scrMain); s.anchor = nil; p.sendX(engine.ActSetField, s.field, i) }})
 			}
 			return "", it
 		}
@@ -170,6 +160,18 @@ func (p *Presenter) minimal(cr *engine.Creation) {
 		}
 	}
 	ask()
+}
+
+// fieldOrder is the drop-down's rows: the value the field holds first,
+// over the field's text, the rest below in their order.
+func fieldOrder(fl engine.Field) []int {
+	order := []int{fl.Cur}
+	for i := range fl.Options {
+		if i != fl.Cur {
+			order = append(order, i)
+		}
+	}
+	return order
 }
 
 // typeAt starts a typed line in place of the sheet's text at r.
@@ -238,6 +240,12 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 	if s.sub == scrType { // the line being typed is no row to pick
 		off[0] = false
 	}
+	if s.sub == scrField && v.Creation != nil { // grey: picking it changes what depends on it
+		fl := v.Creation.Fields[s.field]
+		for r, i := range fieldOrder(fl) {
+			off[r] = !fl.Options[i].Fits
+		}
+	}
 	s.sel = min(max(s.sel, 0), len(lines)-1)
 	if screenName(v) == "slots" && s.sub == scrMain {
 		p.slotList(dst, lines, keys, off)
@@ -256,9 +264,10 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 			w = max(w, len(l))
 		}
 		r := p.cellRect(*a)
-		cx := r.Min.X - int(k*16) + int(k*float64((w+4)*8))/2 // the first row's text over the field's
+		ky := s.at.H / float64(s.ph)
+		cx := int(math.Round(float64(r.Min.X) - k*16 + k*float64((w+4)*8)/2)) // the first row's text on the field's, to the pixel: the box's border and blank column left of it
 		rects := slices.Clone(p.menuRects)
-		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], off[s.top:end], sel, k, cx, r.Min.Y-int(k*8))
+		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], off[s.top:end], sel, k, cx, int(math.Round(float64(r.Min.Y)-ky*8)))
 		p.winRects, p.menuRects = slices.Clone(p.menuRects), rects
 		p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 		return
@@ -312,7 +321,7 @@ func (p *Presenter) slotFootAt(v engine.View, x, y int) byte {
 // screenKeys are the hotkeys of the page screen's rows: the saves on the
 // slot list have none (no digits either), the rest as every menu.
 func (p *Presenter) screenKeys(v engine.View, items []menuRow) []byte {
-	if screenName(v) != "slots" || p.scr.sub != scrMain {
+	if (screenName(v) != "slots" || p.scr.sub != scrMain) && p.scr.sub != scrField { // the drop-downs: no hotkeys, no digits
 		return rowKeys(items)
 	}
 	k := make([]byte, len(items))
