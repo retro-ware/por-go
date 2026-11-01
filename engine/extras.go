@@ -32,18 +32,19 @@ import (
 
 // extras holds the convenience-feature state.
 type extras struct {
-	minimap  bool                // roster panel shows the minimap
-	hall     bool                // the party menu is the training hall's (opProgram 0), not the title's
-	seen     map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
-	voiced   map[string]bool     // voice.go: the recordings this save has heard
-	met      map[string]metIcon  // bestiary.go: the monster kinds this save has met
-	beasts   []Beast             // bestiary.go: their entries, as last published
-	creating bool                // CreateCharacter's sheet is up: no level, experience, party items or status on it
-	minStats [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
-	inGame   bool                // slots.go: GameLoop has started: saving allowed
-	aoe      int                 // aoe.go: radius+1 of the spell being aimed, 0 none
-	bolt     [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
-	aoeSpell int                 // aoe.go: the spell being aimed
+	minimap  bool                    // roster panel shows the minimap
+	loadouts map[*Character]*loadout // weapons to give back after the battle (restoreLoadouts)
+	hall     bool                    // the party menu is the training hall's (opProgram 0), not the title's
+	seen     map[int]*[256]uint8     // per map (areaKey): 1 seen, 2 visited
+	voiced   map[string]bool         // voice.go: the recordings this save has heard
+	met      map[string]metIcon      // bestiary.go: the monster kinds this save has met
+	beasts   []Beast                 // bestiary.go: their entries, as last published
+	creating bool                    // CreateCharacter's sheet is up: no level, experience, party items or status on it
+	minStats [6]int                  // "Minimal stats": per-stat floor, STR as st*100+str00
+	inGame   bool                    // slots.go: GameLoop has started: saving allowed
+	aoe      int                     // aoe.go: radius+1 of the spell being aimed, 0 none
+	bolt     [2]int                  // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
+	aoeSpell int                     // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
 	held          Action      // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it

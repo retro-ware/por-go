@@ -38,7 +38,7 @@ func quickStarted(t *testing.T) *Engine {
 
 // A thrown weapon readied beside the weapon in hand goes into the Missiles
 // slot (Readied 2), out of the hands, and comes back out of it; without a
-// weapon in hand it is readied in hand as the original does.
+// weapon in hand it goes there too: a thrown weapon is never readied in hand.
 func TestMissileSlot(t *testing.T) {
 	e := quickStarted(t)
 	e.selectMember(0) // the fighter
@@ -63,12 +63,22 @@ func TestMissileSlot(t *testing.T) {
 	if j.Readied != 0 || e.missile(c) != nil {
 		t.Errorf("unready: readied %d", j.Readied)
 	}
-	e.readyItem(w) // no weapon in hand: the javelin is the weapon
+	e.readyItem(w) // no weapon in hand: still the Missiles slot
 	e.ApplyItems(c)
 	e.readyItem(j)
 	e.ApplyItems(c)
-	if j.Readied != 1 || c.Slots[slotWeapon] != j {
-		t.Errorf("in hand: readied %d, weapon %v", j.Readied, c.Slots[slotWeapon] == j)
+	if j.Readied != 2 || c.Slots[slotWeapon] != nil {
+		t.Errorf("no weapon: readied %d, weapon %v", j.Readied, c.Slots[slotWeapon])
+	}
+	// The computer's picks are undone after the battle (restoreLoadouts).
+	e.saveLoadout(c)
+	e.readyItem(j)
+	e.ApplyItems(c)
+	e.readyItem(w)
+	e.ApplyItems(c)
+	e.restoreLoadouts()
+	if j.Readied != 2 || c.Slots[slotWeapon] != nil || w.Readied != 0 {
+		t.Errorf("restored: javelin %d, sword %d", j.Readied, w.Readied)
 	}
 	// A launcher shoots the Missiles slot's matching ammunition: a bow the
 	// arrows (not quarrels), a sling nothing; one kind of ammunition at a time.

@@ -339,7 +339,7 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 		if slices.Contains(c.Items, thrown) { // not the last one thrown
 			thrown.Readied = 2
 		}
-		if slices.Contains(c.Items, held) {
+		if held != nil && slices.Contains(c.Items, held) {
 			held.Readied = 1
 		}
 		thrown, held = nil, nil
@@ -348,9 +348,12 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 	defer putBack()
 	for !stop && cont {
 		putBack()
-		if m := c.Slots[slotArrows]; m != nil && m.Readied == 2 && c.Slots[slotWeapon] != nil && c.Slots[slotWeapon].Magic == 0 && e.nearEnemies(c, 1) == 0 {
-			thrown, held = m, c.Slots[slotWeapon]
-			held.Readied, thrown.Readied = 0, 1
+		if m, w := c.Slots[slotArrows], c.Slots[slotWeapon]; m != nil && m.Readied == 2 && (w == nil || w.Magic == 0) && (e.nearEnemies(c, 1) == 0 || w == nil && e.base(m.Type).Usage&4 != 0) { // empty hands: one thrown in melee too (an axe, not a dart) fights next to a foe
+			thrown, held = m, w
+			if held != nil {
+				held.Readied = 0
+			}
+			thrown.Readied = 1
 			e.ApplyItems(c)
 		}
 		for ci.Fleeing != 0 && ci.Moves > 0 && int8(ci.Delay) > 0 && int8(ci.Delay) < 0x14 {
@@ -538,6 +541,7 @@ func (e *Engine) weaponScore(c *Character, it *Item) int {
 // aiPickWeapon = ovr10:13CA (char): choose the best melee or missile
 // weapon, and the best second item, and ready them.
 func (e *Engine) aiPickWeapon(c *Character) {
+	e.saveLoadout(c)
 	b := func(it *Item) *itemBase { return e.base(it.Type) }
 	if w := c.Slots[slotWeapon]; w != nil {
 		c.Hands -= b(w).Hands
@@ -642,7 +646,7 @@ func (e *Engine) aiPickWeapon(c *Character) {
 		done = true
 	}
 	e.ApplyItems(c)
-	if best1 != nil && best1.Readied == 0 && e.throwableItem(best1) && c.Slots[slotWeapon] != nil && c.Slots[slotArrows] == nil && c.Slots[slotBolts] == nil {
+	if best1 != nil && best1.Readied == 0 && e.throwableItem(best1) && c.Slots[slotArrows] == nil && c.Slots[slotBolts] == nil {
 		e.readyItem(best1) // extra: the Missiles slot (missileSlot), thrown from there by aiAttackLoop
 		e.ApplyItems(c)
 		done = true
