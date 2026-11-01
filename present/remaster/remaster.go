@@ -369,8 +369,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	shown := v.Adventure && v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
 	ask := typing(v) != nil && typing(v).Prompt != ""                                         // a script's input: its question and the line in one pop-up, no text box
-	shown = shown && !ask && !(askList(v) != nil && askMenu(v).Prompt != "") // a vertical menu's prompt is the list's own title
-	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
+	shown = shown && !ask && !(askList(v) != nil && askMenu(v).Prompt != "")                  // a vertical menu's prompt is the list's own title
+	shown = shown && !(v.Shop != nil && p.camp.screen != campMain)                            // the shop's submenus (identify, appraise) stand alone, the greeting gone
+	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText {  // the text under the command bar: along the bottom edge
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, cy)
