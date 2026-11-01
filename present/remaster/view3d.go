@@ -3,8 +3,6 @@
 package remaster
 
 import (
-	"blobber"
-	"blobber/maps"
 	"fmt"
 	"gpu"
 	"gpu/vector"
@@ -14,6 +12,8 @@ import (
 	"math"
 	"os"
 	"por/engine"
+	"por/phlan-poc/blobber"
+	"por/phlan-poc/blobber/maps"
 	"strconv"
 	"strings"
 )

@@ -171,7 +171,7 @@ Checks:
 
 ## 13. Milestone 4 (done)
 
-- **Module wiring:** the por module requires `blobber` with `replace blobber => ./phlan-poc/blobber`. `blobber/maps.Levels` embeds the .map files.
+- **Module wiring:** blobber is a package of the por module, `por/phlan-poc/blobber`; it does not build on its own. `blobber/maps.Levels` embeds the .map files.
 - **Area table:** `present/remaster/areas.go` maps a GEO disk and block to a map name. `make_map.py` generates it from areas.py on every run, and runs gofmt on it.
 - **`present/remaster.Presenter`:**
   - It draws the Blobber view full-window when the main frame is up, the view window shows the 3D view, and the area has a remastered map.

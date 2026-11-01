@@ -290,12 +290,11 @@ milestone 3):
 - `blobber.Settings` / `OnSettings` / `Voice` hooks for the Esc menu.
 - Package state stays behind the View API (one 3D view per process, marked
   `ponytail:` in `view.go` with the upgrade path).
-- The module is `blobber v0.0.0`, wired by `replace blobber =>
-  ./phlan-poc/blobber` in `go.mod`; `blobber/maps.Levels` embeds the maps
+- It is a package of the main module, `por/phlan-poc/blobber` (it does not
+  build or run on its own); `blobber/maps.Levels` embeds the maps
   (`maps/embed.go`), `walls.go` embeds `assets/walls/*.png` and `walls.txt`
   (`FlatTexture(kind, name)` loads `<kind>_<name>.png`, `WallTexture(name)`
-  by name). It is a separate module: vet and test the main module and it
-  separately.
+  by name). `go vet ./...` and `go test ./...` cover it with the rest.
 - **What is no longer in the tree:** the tuning host `cmd/blobber`
   (`host.go` with `BLOBBER_OPEN`, the `T` night key, `main.go`, `game.go`)
   was deleted in commit 187d27f (2026-10-29) with the foreign UI skin.

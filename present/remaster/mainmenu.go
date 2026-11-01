@@ -9,7 +9,7 @@ import (
 	"gpu"
 	"gpu/vector"
 
-	"blobber"
+	"por/phlan-poc/blobber"
 
 	"por/engine"
 )

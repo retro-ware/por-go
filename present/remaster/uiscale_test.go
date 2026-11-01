@@ -3,8 +3,8 @@ package remaster
 import (
 	"testing"
 
-	"blobber"
 	"gpu"
+	"por/phlan-poc/blobber"
 )
 
 // TestUIScaleFits: whatever the Portraits and Minimap sizes, the eight cards

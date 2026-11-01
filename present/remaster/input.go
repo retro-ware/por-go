@@ -8,7 +8,7 @@ import (
 
 	"gpu"
 
-	"blobber"
+	"por/phlan-poc/blobber"
 
 	"por/engine"
 	"por/present/input"
