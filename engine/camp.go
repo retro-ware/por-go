@@ -640,7 +640,7 @@ func (e *Engine) spellLists(c *Character) (book, scrolls []BookSpell) {
 			continue
 		}
 		for _, s := range it.Spells {
-			if k := int(s & 0x7F); k != 0 && k <= len(c.SpellBook) && c.SpellBook[k-1] == 0 {
+			if k := int(s & 0x7F); k != 0 && k <= len(c.SpellBook) && c.SpellBook[k-1] == 0 && c.spellSlot(int(e.spellClass(byte(k))), int(e.spellLevel(byte(k)))) > 0 { // only what c can scribe (scribe refuses the rest)
 				n := 0
 				if s > 0x7F {
 					n = 1
