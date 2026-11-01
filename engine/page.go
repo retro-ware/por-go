@@ -128,7 +128,8 @@ func (e *Engine) resizePage(cols, rows int) {
 	setPageSize(cols, rows)
 	e.pg.tx.prompt = nil
 	if len(prompt) > 0 {
-		e.pg.tx.prompt = append(prompt, make([]textCell, textCols-len(prompt))...)[:textCols]
+		e.pg.tx.prompt = make([]textCell, textCols)
+		copy(e.pg.tx.prompt, prompt) // a narrower page cuts the row
 	}
 	if e.ext.redraw != nil {
 		e.ext.redraw()
