@@ -3,6 +3,7 @@ package remaster
 import (
 	"image"
 	"math"
+	"slices"
 
 	"gpu"
 
@@ -16,9 +17,10 @@ import (
 const listRows = 12 // the lines shown at a time
 
 type listUI struct {
-	sel  int   // the row highlighted: a line, then the options
-	top  int   // the first line shown
-	opts []int // the options shown (Menu.Items indices), as last laid out
+	sel  int         // the row highlighted: a line, then the options
+	top  int         // the first line shown
+	opts []int       // the options shown (Menu.Items indices), as last laid out
+	at   image.Point // the pointer, as last seen: only a moved one takes the highlight
 }
 
 // listOpts are the options offered with line i: those it does not leave out.
@@ -91,73 +93,75 @@ func (p *Presenter) listPick(v engine.View, sel int) {
 	p.asked = ""
 }
 
-// listKey takes key k on a list.
+// listKey takes key k on a list: the standard menu's keys (menuNav) over
+// the lines and the options; a move passes over the lines left out (Off).
 func (p *Presenter) listKey(k uint16, v engine.View) bool {
 	l := &p.list
 	n := len(askList(v))
-	rows := n + len(l.opts)
-	step := func(d int) {
-		for range rows {
-			l.sel = (l.sel + d + rows) % rows
-			if l.sel >= n || !askList(v)[l.sel].Off {
-				return
-			}
+	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 {
+		return false
+	}
+	keys := make([]byte, n, n+len(l.opts))
+	for _, o := range l.opts {
+		keys = append(keys, askMenu(v).Items[o].Key)
+	}
+	i, back, ok := menuNav(k, &l.sel, keys)
+	d := 1
+	if k == 0x4800 || k == 0x4900 || k == 0x4F00 {
+		d = -1
+	}
+	for range len(keys) {
+		if l.sel >= n || !askList(v)[l.sel].Off {
+			break
 		}
+		l.sel = (l.sel + d + len(keys)) % len(keys)
 	}
 	switch {
-	case k == 0x4800:
-		step(-1)
-	case k == 0x5000:
-		step(1)
-	case k == 0x4900 && l.sel < n: // PgUp, PgDn
-		l.sel = max(0, l.sel-listRows)
-		step(1)
-		step(-1)
-	case k == 0x5100 && l.sel < n:
-		l.sel = min(n-1, l.sel+listRows)
-		step(-1)
-		step(1)
-	case k == 13 || k == ' ' || k == KeyPadSelect:
-		p.listPick(v, l.sel)
-	case k == 27:
+	case back:
 		p.send(engine.ActClose, 0)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
-		return false
-	case k < 128:
-		c := byte(k)
-		if c >= 'a' && c <= 'z' {
-			c -= 'a' - 'A'
-		}
-		for i, o := range l.opts {
-			if askMenu(v).Items[o].Key == c {
-				p.listPick(v, n+i)
-				return true
-			}
-		}
-		return false
-	default:
-		return false
+	case i >= 0:
+		p.listPick(v, i)
 	}
-	return true
+	return ok
+}
+
+// listAt is the row (a line, then the options) drawn as menu row r, -1 the
+// blank between them.
+func (p *Presenter) listAt(v engine.View, r int) int {
+	n := len(askList(v))
+	shown := min(n, listRows)
+	switch {
+	case r < shown:
+		return p.list.top + r
+	case r > shown:
+		return n + r - shown - 1
+	}
+	return -1
 }
 
 // listClick takes a click on a drawn row.
 func (p *Presenter) listClick(x, y int, v engine.View) bool {
-	n := len(askList(v))
-	shown := min(n, listRows)
-	for r, rc := range p.menuRects {
-		if !image.Pt(x, y).In(rc) {
-			continue
-		}
-		switch {
-		case r < shown:
-			p.listPick(v, p.list.top+r)
-		case r > shown:
-			p.listPick(v, n+r-shown-1)
-		}
-		return true
+	r := slices.IndexFunc(p.menuRects, image.Pt(x, y).In)
+	if r < 0 {
+		return false
 	}
-	return false
+	if i := p.listAt(v, r); i >= 0 {
+		p.listPick(v, i)
+	}
+	return true
+}
+
+// listHover highlights the row under (x, y) when the pointer moved.
+func (p *Presenter) listHover(x, y int, v engine.View) {
+	if image.Pt(x, y) == p.list.at {
+		return
+	}
+	p.list.at = image.Pt(x, y)
+	if r := slices.IndexFunc(p.menuRects, image.Pt(x, y).In); r >= 0 {
+		if i := p.listAt(v, r); i >= 0 && (i >= len(askList(v)) || !askList(v)[i].Off) {
+			p.list.sel = i
+		}
+	}
 }
 
 // drawPageMenu pops a page's question (its options or its list) up over

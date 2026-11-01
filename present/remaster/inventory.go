@@ -88,13 +88,14 @@ type inventory struct {
 	img, tip    *gpu.Image     // the canvas and the tooltip on the GPU
 	glyph       func(byte) [8]byte
 
-	shown   bool           // the last frame was the inventory
-	sel     int            // the highlighted item (InvItem.Index), -1 for none
-	ask     *engine.Action // a Drop or Sell waits for Yes
-	askSel  int            // the question's highlighted answer: 0 Yes, 1 No
+	shown   bool              // the last frame was the inventory
+	sel     int               // the highlighted item (InvItem.Index), -1 for none
+	ask     *engine.Action    // a Drop or Sell waits for Yes
+	askSel  int               // the question's highlighted answer: 0 Yes, 1 No
+	askAt   []image.Rectangle // the question's Yes and No on the screen, as last drawn
 	view    *engine.Inventory
 	acts    []engine.Action // to send (Presenter.Actions)
-	words   []word          // the menu row's words, or the question's Yes and No
+	words   []word          // the menu row's words
 	k       int             // canvas scale, whole: what the pixel art is drawn at
 	kx, ky  float64         // the canvas on screen: k and the stretch to the window's edges (fit)
 	w, h    int             // canvas size
@@ -618,10 +619,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
 	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})
-	if box != nil { // over the borders, in the middle
-		inv.words = []word{{text: "Yes", act: inv.ask.Kind, on: true}, {text: "No", act: engine.ActNone, on: true}}
-		inv.panel(t, box, inv.words, func(w, h int) image.Point { return image.Pt((inv.w-w)/2/8*8, (inv.h-h)/2/8*8) })
-	} else if !inv.dragging {
+	if box == nil && !inv.dragging {
 		inv.tooltip(t, in)
 	}
 
@@ -637,6 +635,11 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 			op.GeoM.Scale(inv.kx, inv.ky)
 			dst.DrawImage(inv.img.SubImage(r).(*gpu.Image), op)
 		}
+	}
+	inv.askAt = nil
+	if box != nil { // the question: the standard menu, over everything
+		p.keyWindow(dst, strings.Join(box, " "), []string{"Yes", "No"}, []byte{'Y', 'N'}, inv.askSel, false)
+		inv.askAt = slices.Clone(p.winRects)
 	}
 	return true
 }
@@ -757,7 +760,7 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 	if len(lines) == 0 {
 		return
 	}
-	inv.panel(t, lines, nil, func(w, h int) image.Point { // beside the pointer, inside the screen
+	inv.panel(t, lines, func(w, h int) image.Point { // beside the pointer, inside the screen
 		x := max(0, min(inv.hover.X+8, inv.w-w))
 		y := inv.hover.Y + 12
 		if y+h > inv.h {
@@ -768,22 +771,14 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 }
 
 // panel draws lines in a box of the game's border over the canvas (over
-// the boxes' borders), the first line cyan, at(w, h) its top left; words
-// (a question's answers) go in a row of their own under the lines, their
-// rectangles set for the clicks.
-func (inv *inventory) panel(t [3]*gpu.Image, lines []string, words []word, at func(w, h int) image.Point) {
-	cw, ww := 0, -1
+// the boxes' borders), the first line cyan, at(w, h) its top left.
+func (inv *inventory) panel(t [3]*gpu.Image, lines []string, at func(w, h int) image.Point) {
+	cw := 0
 	for _, l := range lines {
 		cw = max(cw, len(l))
 	}
-	for _, wd := range words {
-		ww += len(wd.text) + 1
-	}
-	cw = min(max(cw, ww), inv.w/8-2) + 2
+	cw = min(cw, inv.w/8-2) + 2
 	rows := len(lines) + 2
-	if words != nil {
-		rows += 2
-	}
 	w, h := cw*8, rows*8
 	p := at(w, h)
 	if inv.tip == nil || inv.tip.Bounds() != image.Rect(0, 0, w, h) {
@@ -809,21 +804,6 @@ func (inv *inventory) panel(t [3]*gpu.Image, lines []string, words []word, at fu
 			l = l[:j]
 		}
 		drawText(px, inv.glyph, l, 8, 8+8*i, c)
-	}
-	x, y := (w-8*ww)/2, 8*(len(lines)+2)
-	for i := range words {
-		wd := &words[i]
-		r := image.Rect(x-4, y-2, x+8*len(wd.text)+4, y+10)
-		wd.r = r.Add(p)
-		if inv.hover.In(wd.r) && inv.ask != nil {
-			inv.askSel = i
-		}
-		if inv.hover.In(wd.r) || inv.ask != nil && i == inv.askSel {
-			draw.Draw(px, r, image.NewUniform(blue), image.Point{}, draw.Src)
-		}
-		drawText(px, inv.glyph, wd.text[:1], x, y, white)
-		drawText(px, inv.glyph, wd.text[1:], x+8, y, green)
-		x += 8 * (len(wd.text) + 1)
 	}
 	inv.tip.WritePixels(px.Pix)
 	window(inv.tip, t, gpu.GeoM{}, cw, rows, nil)
@@ -890,16 +870,10 @@ func (inv *inventory) step(d int) {
 func (p *Presenter) inventoryKey(k uint16) bool {
 	inv := &p.inv
 	if inv.ask != nil {
-		if k == 0x4B00 || k == 0x4D00 { // Left, Right: the other answer
-			inv.askSel ^= 1
-			return true
-		}
-		switch i, back, ok := menuNav(k, &inv.askSel, []byte{'Y', 'N'}); {
+		switch i, back, _ := menuNav(k, &inv.askSel, []byte{'Y', 'N'}); {
 		case i == 0:
 			inv.do(inv.ask.Kind)
 		case i == 1 || back:
-			inv.ask = nil
-		case !ok: // another key: No
 			inv.ask = nil
 		}
 		return true
@@ -1005,15 +979,16 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		inv.wheel = 0
 	}
 
-	if inv.ask != nil { // the question: its Yes and No, else any click closes it
+	if inv.ask != nil { // the question: its Yes and No (hover highlights), else any click is No
 		inv.press, inv.dragging, inv.scrolling = nil, false, nil
-		if pressed || right {
-			for _, w := range inv.words {
-				if inv.hover.In(w.r) && pressed {
-					inv.do(w.act)
-					return
-				}
-			}
+		i := slices.IndexFunc(inv.askAt, image.Pt(x, y).In)
+		if i >= 0 {
+			inv.askSel = i
+		}
+		switch {
+		case pressed && i == 0:
+			inv.do(inv.ask.Kind)
+		case pressed || right:
 			inv.ask = nil
 		}
 		return

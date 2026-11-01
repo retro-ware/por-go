@@ -678,6 +678,9 @@ func (p *Presenter) Hover(x, y int, down bool) {
 	if p.barHover(y, down) {
 		return
 	}
+	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) {
+		p.listHover(x, y, v)
+	}
 	if p.main {
 		p.mainHover(x, y)
 		return
