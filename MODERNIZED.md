@@ -204,8 +204,8 @@ backend. `go.mod` replaces `github.com/gogpu/wgpu` with the local fork
 `../gogpu-wgpu` (github.com/memmaker/wgpu) and `github.com/gogpu/gogpu` with
 `../goplay/third_party/gogpu` (macOS fullscreen fixes). The window is glfw.
 Audio is `github.com/ebitengine/oto/v3` (two players at 44100 Hz s16
-stereo: the game's sound and the voice-over); MP3 decoding is
-`github.com/hajimehoshi/go-mp3`. The browser build runs on goplay
+stereo: the game's sound and the voice-over); Ogg Vorbis decoding is
+`github.com/jfreymuth/oggvorbis`. The browser build runs on goplay
 (https://ruzzoli.de/goplay/); `GOPLAY_DATA` names its data dir and
 `GOPLAY_FULLSCREEN=1` starts fullscreen. The palette is `pal/` (the EGA set
 and the Amiga palettes).
@@ -214,7 +214,7 @@ and the Amiga palettes).
 
 `data/dos` (the DOS files the engine reads), `data/amiga` (converted Amiga
 graphics and sound), `data/assets/scripts` (the area scripts as text, in
-git), `data/assets/fonts` (`*.f8`), `data/assets/speech` (`*.mp3`),
+git), `data/assets/fonts` (`*.f8`), `data/assets/speech` (`*.ogg`),
 `data/save` (the named save slots, `FONT.CFG`,
 `SETTINGS.JSON` and the marker files). `original/` keeps the rest of the
 DOS install for the decompilation tools only.
@@ -984,7 +984,7 @@ is offline, free and reproducible.
   one-purse change), so `lines.txt` must hold the rewritten text; editing a
   script string silently orphans its recording.
 - **Journal texts** are keyed by title with spaces replaced by `_`
-  (`Journal_Entry_26.mp3`, `Proclamation_LIX.mp3`, `Tavern_Tale_5.mp3`),
+  (`Journal_Entry_26.ogg`, `Proclamation_LIX.ogg`, `Tavern_Tale_5.ogg`),
   not hashed. The source is `engine/journal/JOURNAL.TXT` (embedded in the
   binary: `[Title]` starts a text, a blank line separates paragraphs,
   `<FILE.PNG>` is a picture, `#` a comment); what is spoken is
@@ -1007,8 +1007,8 @@ is offline, free and reproducible.
 ```bash
 python3.12 -m venv ~/.mlx-audio-env
 ~/.mlx-audio-env/bin/pip install mlx-audio     # mlx 0.32, mlx-audio 0.4.7, misaki 0.9.4 ...
-brew install ffmpeg                              # needs libmp3lame
-~/.mlx-audio-env/bin/python voice/render.py data/assets   # writes data/assets/SPEECH/*.mp3
+brew install vorbis-tools                        # oggenc
+~/.mlx-audio-env/bin/python voice/render.py data/assets   # writes data/assets/SPEECH/*.ogg
 ```
 
 - **Model:** Kokoro-82M through MLX on Apple Silicon
@@ -1017,10 +1017,10 @@ brew install ffmpeg                              # needs libmp3lame
 - **Voice:** `am_michael` (American male) for every text; `lang_code='a'`,
   `speed=1.0`; Kokoro takes no style prompt. There is no per-speaker
   casting.
-- **Output:** the 24 kHz float audio goes through a temp WAV to ffmpeg:
-  `-ar 44100 -ac 1 -b:a 48k`, so `<key>.mp3` is 44.1 kHz mono 48 kbps.
+- **Output:** the 24 kHz float audio goes as raw s16 PCM to oggenc:
+  `-r -R 24000 -C 1 --resample 44100 -q 4`, so `<key>.ogg` is 44.1 kHz mono Ogg Vorbis.
   **44100 matters:** the engine does not resample; `oto` runs at 44100 Hz
-  and go-mp3 decodes at the file's rate (mono duplicated to stereo).
+  and `vorbisPCM` rejects any other rate (mono duplicated to stereo).
 - **Incremental:** a file that exists is skipped; delete one to re-render it.
   866 files, about 50 MB, roughly 2.4 hours of speech. Not in git
   (`/data/assets/*` is ignored); render on each machine.
@@ -1038,8 +1038,8 @@ brew install ffmpeg                              # needs libmp3lame
   (`engine/story.go speakAll`). A text with no file is silently not voiced:
   `lines.txt` alone decides what is spoken.
 - `speak` returns if the save has heard the key (`e.ext.voiced[key]`) or the
-  voice is off; else it reads `data/assets/speech/<key>.mp3`, decodes it with
-  go-mp3 to s16 stereo PCM and appends it to a queue; texts play back to
+  voice is off; else it reads `data/assets/speech/<key>.ogg`, decodes it with
+  oggvorbis (`vorbisPCM`) to s16 stereo PCM and appends it to a queue; texts play back to
   back. `VoiceReader()` is the audio source, mixed by oto with the game's
   sound player (`cmd/por/main.go`: two players, 50 ms buffers; no ducking;
   Ctrl-S sound off does not touch the voice).
