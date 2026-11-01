@@ -16,17 +16,14 @@ import (
 // block Block of the DAX file File (a picture, an animation's frame, a
 // symbol, a tile) decoded in the page's palette with its mask pixels
 // transparent, its top left at At.Min and cut to At; or, Fill set, a fill
-// of Colour over At; or, Border set, the window border's cells (View.Border)
-// round the inside of At, Title (if any) centred on its top row in Colour.
+// of Colour over At.
 type Picture struct {
-	File         string // "" for a fill or a border (the presenter adds its own pictures, the minimap, so)
+	File         string // "" for a fill (the presenter adds its own pictures, the minimap, so)
 	Block, Frame int
-	Img          image.Image // nil for a fill or a border
+	Img          image.Image // nil for a fill
 	At           image.Rectangle
 	Fill         bool
 	Colour       color.RGBA
-	Border       bool
-	Title        string
 }
 
 // layer is one drawing call: w by h pixels d at at (mask: the value left
@@ -164,8 +161,7 @@ func (e *Engine) pageView(v *View) {
 	v.Pictures = make([]Picture, 0, len(pg.layers))
 	for i := range pg.layers {
 		l := &pg.layers[i]
-		if l.border {
-			v.Pictures = append(v.Pictures, Picture{At: l.at, Border: true, Title: l.title, Colour: e.pal.RGBA(l.fill)})
+		if l.border { // the classic frames: not the presenter's
 			continue
 		}
 		if l.d == nil {

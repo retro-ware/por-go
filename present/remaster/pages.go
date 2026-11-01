@@ -64,18 +64,7 @@ func newCellPage(v engine.View) *cellPage {
 	for y := range c.cells {
 		c.cells[y] = make([]cell, c.cols)
 	}
-	for _, p := range v.Pictures { // the borders round the boxes: View.Border's cells, the title on the top row
-		if !p.Border {
-			c.pics = append(c.pics, p)
-			continue
-		}
-		f := p.At
-		r := engine.CellRect{X1: f.Min.X/8 + 1, Y1: f.Min.Y/8 + 1, X2: f.Max.X/8 - 2, Y2: f.Max.Y/8 - 2}
-		c.border(r.X1, r.Y1, r.X2, r.Y2)
-		if t := p.Title; t != "" {
-			c.run(engine.PaneRun{X: (r.X1 + r.X2 - len(t)) / 2, Text: t, Fg: p.Colour, Bg: c.ink[inkBlack], Upcase: true}, r.Y1)
-		}
-	}
+	c.pics = append(c.pics, v.Pictures...)
 	return c
 }
 

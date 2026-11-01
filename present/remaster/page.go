@@ -463,7 +463,7 @@ func samePage(v engine.View, pg *page) bool {
 		return false
 	}
 	for i, s := range v.Pictures {
-		if o := pg.page[i]; s.At != o.At || s.Fill != o.Fill || s.Colour != o.Colour || s.Border != o.Border || s.Title != o.Title || !sameImage(s.Img, o.Img) {
+		if o := pg.page[i]; s.At != o.At || s.Fill != o.Fill || s.Colour != o.Colour || !sameImage(s.Img, o.Img) {
 			return false
 		}
 	}
