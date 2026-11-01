@@ -113,9 +113,14 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 	pg.drawn, pg.seq, pg.noted = true, v.Seq, note.Show
 	pg.page, pg.text = append(pg.page[:0], v.Pictures...), pageText(v)
 	m := pg.px
-	c := screenPage(v)
-	c.draw(m, v, note)
-	pg.overs = c.overs
+	if modal(v) { // help, the journal, the maps, the overview: from their data alone, nothing of the page under them
+		draw.Draw(m, m.Rect, image.Black, image.Point{}, draw.Src)
+		pg.overs = nil
+	} else {
+		c := screenPage(v)
+		c.draw(m, v, note)
+		pg.overs = c.overs
+	}
 	drawModal(m, v, note)
 	if note.Show {
 		noteLine(m, note, h-8)
@@ -215,7 +220,7 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 			str(7, rows-1, 15, *fm.Label+"_")
 		}
 	case v.Overview:
-		box(cols-2, rows-3)
+		box(cols-2, rows-2)
 		const title = "Party"
 		str((cols-1-len(title))/2, 1, 15, title)
 		y := 3
