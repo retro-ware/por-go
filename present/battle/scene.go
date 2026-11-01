@@ -34,8 +34,9 @@ const (
 // kindOf decides from the square and its tile set: dungeon walls are
 // blocks (their pieces only draw the block in the original's perspective,
 // so other dungeon squares are floor); outdoors, what blocks sight stands
-// up and the rest lies flat.
-func kindOf(s engine.Square, dungeon bool, empty func(int) bool) kind {
+// up, so does a sprite that blocks movement (a log: a tile with see-through
+// texels, unlike water), and the rest lies flat.
+func kindOf(s engine.Square, dungeon bool, empty, cut func(int) bool) kind {
 	switch {
 	case dungeon && s.Tile < engine.DungeonTiles:
 		if s.Wall {
@@ -44,20 +45,40 @@ func kindOf(s engine.Square, dungeon bool, empty func(int) bool) kind {
 		return plain
 	case empty(s.Tile):
 		return plain
-	case s.Wall && s.Height > 0:
+	case s.Wall && (s.Height > 0 || cut(s.Tile)):
 		return stand
 	}
 	return flat
 }
 
 // mapMesh builds the whole map as one mesh over the atlas: the floor with
-// corner occlusion, the blocks, and the outdoor things.
-func mapMesh(g *[25][50]engine.Square, dungeon bool, empty func(int) bool, tiles []image.Image) []gpu.MeshVertex {
+// corner occlusion, the blocks, and the outdoor things. A thing two tiles
+// tall in the original's perspective (a tree: crown over trunk) stands as
+// one on the blocked square, the crown on top of the trunk.
+func mapMesh(g *[25][50]engine.Square, dungeon bool, empty, cut func(int) bool, tiles []image.Image) []gpu.MeshVertex {
 	kinds := [25][50]kind{}
 	for z := range g {
 		for x := range g[z] {
-			kinds[z][x] = kindOf(g[z][x], dungeon, empty)
+			kinds[z][x] = kindOf(g[z][x], dungeon, empty, cut)
 		}
+	}
+	foot := [25][50]int{} // the trunk tile under a standing crown, +1 (0: none)
+	for z := range 24 {
+		for x := range 50 {
+			if t := g[z+1][x].Tile; kinds[z][x] == stand && g[z][x].Height > 0 && kinds[z+1][x] == flat && cut(t) {
+				foot[z][x], kinds[z+1][x] = t+1, plain
+			}
+		}
+	}
+	upright := func(vs []gpu.MeshVertex, t int, fx, fy, fz float32) []gpu.MeshVertex {
+		uv := tileUV(t)
+		u0, v0, du, dv := uv[3][0], uv[3][1], uv[1][0]-uv[3][0], uv[1][1]-uv[3][1]
+		for _, v := range extrude(tiles[t], tilePx) {
+			v.X, v.Y, v.Z = v.X+fx+.5, v.Y+fy+.5, v.Z+fz+.5
+			v.U, v.V = u0+v.U*du, v0+v.V*dv
+			vs = append(vs, v)
+		}
+		return vs
 	}
 	solid := func(x, z int) bool { return x >= 0 && z >= 0 && x < 50 && z < 25 && kinds[z][x] == block }
 	// occlusion of the floor corner at grid point (x, z): blocks among its four squares
@@ -85,12 +106,10 @@ func mapMesh(g *[25][50]engine.Square, dungeon bool, empty func(int) bool, tiles
 				const y = 0.005 // just over the floor
 				vs = quad(vs, [4][3]float32{{fx, y, fz + 1}, {fx + 1, y, fz + 1}, {fx + 1, y, fz}, {fx, y, fz}}, tileUV(g[z][x].Tile), up)
 			case stand:
-				uv := tileUV(g[z][x].Tile)
-				u0, v0, du, dv := uv[3][0], uv[3][1], uv[1][0]-uv[3][0], uv[1][1]-uv[3][1]
-				for _, v := range extrude(tiles[g[z][x].Tile], tilePx) {
-					v.X, v.Y, v.Z = v.X+fx+.5, v.Y+.5, v.Z+fz+.5
-					v.U, v.V = u0+v.U*du, v0+v.V*dv
-					vs = append(vs, v)
+				if f := foot[z][x]; f > 0 {
+					vs = upright(upright(vs, f-1, fx, 0, fz), g[z][x].Tile, fx, 1, fz)
+				} else {
+					vs = upright(vs, g[z][x].Tile, fx, 0, fz)
 				}
 			case block:
 				side := tileUV(wallSlot)

@@ -27,6 +27,7 @@ type Presenter struct {
 	white, atlas, shadow, wood *gpu.Image
 	tiles                      [256]image.Image // the tiles the atlas holds
 	empty                      [256]bool        // tiles with nothing on the ground
+	cut                        [256]bool        // tiles with see-through texels: sprites, not ground cover
 	floor                      color.RGBA
 	ground                     [25][50]engine.Square // the squares the meshes show
 	dungeon                    bool
@@ -418,7 +419,7 @@ func (p *Presenter) sync(b *engine.Battle) {
 		}
 		if t != p.tiles[i] {
 			p.tiles[i], changed = t, true
-			p.empty[i] = isEmpty(t)
+			p.empty[i], p.cut[i] = isEmpty(t), hasHoles(t)
 		}
 	}
 	if changed {
@@ -445,8 +446,9 @@ func (p *Presenter) sync(b *engine.Battle) {
 			}
 		}
 		empty := func(t int) bool { return t < 0 || t >= len(p.empty) || p.empty[t] }
-		p.board = gpu.NewMesh(append(mapMesh(&p.ground, p.dungeon, empty, p.tiles[:]), boardSides()...))
-		p.shadows = gpu.NewMesh(standShadows(&p.ground, p.dungeon, empty))
+		cut := func(t int) bool { return t >= 0 && t < len(p.cut) && p.cut[t] }
+		p.board = gpu.NewMesh(append(mapMesh(&p.ground, p.dungeon, empty, cut, p.tiles[:]), boardSides()...))
+		p.shadows = gpu.NewMesh(standShadows(&p.ground, p.dungeon, empty, cut))
 	}
 }
 
@@ -483,6 +485,22 @@ func isEmpty(t image.Image) bool {
 		}
 	}
 	return true
+}
+
+// hasHoles is whether a tile has see-through texels (alphaCut).
+func hasHoles(t image.Image) bool {
+	if t == nil {
+		return false
+	}
+	b := t.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if _, _, _, a := t.At(x, y).RGBA(); a>>8 < alphaCut {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // averageColour is a picture's mean opaque colour, brightened to a light's.
