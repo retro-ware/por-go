@@ -644,10 +644,10 @@ func (e *Engine) aiPathDir(c, t *Character) int {
 	var cost [25][50]int   // moves to get there, +1 (0: not reached)
 	var first [25][50]int8 // the first step on the way there
 	cost[sy][sx] = 1
-	open := e.aiOpen[:0]
-	defer func() { e.aiOpen = open }()
+	open := &e.aiOpen
+	open.reset(h(sx, sy))
 	open.push(aiNode{int32(sx), int32(sy), int32(h(sx, sy)), int32(h(sx, sy))})
-	for len(open) > 0 {
+	for open.n > 0 {
 		n := open.pop()
 		at := struct{ x, y, f, h int }{int(n.x), int(n.y), int(n.f), int(n.h)}
 		if next(at.x, at.y) {
@@ -689,47 +689,37 @@ func (e *Engine) aiPathDir(c, t *Character) int {
 // the least it can still take, h that least.
 type aiNode struct{ x, y, f, h int32 }
 
-// aiOpen is aiPathDir's open list: a binary heap, cheapest f first, ties
-// the nearer first.
-type aiOpen []aiNode
+// aiOpen is aiPathDir's open list: a ring of buckets by f (Dial). A step
+// raises f by at most twice its cost, 6 on the ground costs there are (1,
+// or 0xFF for walls), so the ring holds every f still open.
+type aiOpen struct {
+	b [32][]aiNode
+	f int // the lowest bucket that may hold a node
+	n int // nodes held
+}
 
-func (o aiOpen) less(i, j int) bool {
-	return o[i].f < o[j].f || o[i].f == o[j].f && o[i].h < o[j].h
+func (o *aiOpen) reset(f int) {
+	for i := range o.b {
+		o.b[i] = o.b[i][:0]
+	}
+	o.f, o.n = f, 0
 }
 
 func (o *aiOpen) push(n aiNode) {
-	*o = append(*o, n)
-	h := *o
-	for i := len(h) - 1; i > 0; {
-		p := (i - 1) / 2
-		if !h.less(i, p) {
-			break
-		}
-		h[i], h[p] = h[p], h[i]
-		i = p
-	}
+	b := &o.b[int(n.f)%len(o.b)]
+	*b = append(*b, n)
+	o.n++
 }
 
+// pop takes a node of the lowest f, the latest pushed of them first (the
+// one furthest along, as a rule).
 func (o *aiOpen) pop() aiNode {
-	h := *o
-	top := h[0]
-	last := len(h) - 1
-	h[0] = h[last]
-	h = h[:last]
-	for i := 0; ; {
-		m, l, r := i, 2*i+1, 2*i+2
-		if l < last && h.less(l, m) {
-			m = l
-		}
-		if r < last && h.less(r, m) {
-			m = r
-		}
-		if m == i {
-			break
-		}
-		h[i], h[m] = h[m], h[i]
-		i = m
+	for len(o.b[o.f%len(o.b)]) == 0 {
+		o.f++
 	}
-	*o = h
-	return top
+	b := &o.b[o.f%len(o.b)]
+	n := (*b)[len(*b)-1]
+	*b = (*b)[:len(*b)-1]
+	o.n--
+	return n
 }
