@@ -284,13 +284,7 @@ func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, ic
 		}
 	}
 	text := func(s string, x, y, scale int, c color.RGBA) { textOn(im, s, x, y, scale, c) }
-	fill := func(r image.Rectangle, c color.RGBA) {
-		for y := r.Min.Y; y < r.Max.Y; y++ {
-			for x := r.Min.X; x < r.Max.X; x++ {
-				im.SetRGBA(x, y, c)
-			}
-		}
-	}
+	fill := func(r image.Rectangle, c color.RGBA) { draw.Draw(im, r, image.NewUniform(c), image.Point{}, draw.Src) }
 	for i, it := range items {
 		r := buttonRect(w, len(items), i, k)
 		fill(r, rgb(8))
