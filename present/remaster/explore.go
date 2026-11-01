@@ -27,9 +27,8 @@ func commands(v engine.View) []command {
 		command{"Sweep", 'W', engine.ActSweep},
 		command{"Search", 'S', engine.ActSearch},
 		command{"Map", 'M', engine.ActMap}, // the keys' own commands, for the mouse and the pad
-		command{"Minimap", 0, engine.ActMinimap},
-		command{"Overview", 'P', engine.ActOverview},
-		command{"Help", '?', engine.ActHelp})
+		command{"Overview", 'O', engine.ActOverview},
+		command{"Help?", '?', engine.ActHelp})
 }
 
 // runCommand sends command i of the command menu.

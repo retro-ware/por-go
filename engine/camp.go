@@ -507,6 +507,8 @@ func (e *Engine) CampMenu(then func(interrupted bool)) {
 	e.DrawMainScreen()
 	e.clearStudy()
 	e.camp.interrupted, e.camp.rested = false, false
+	anim := e.animInput
+	e.animInput = true // the camp picture's fire burns while camp is up (the camp bar's anim, ovr06:101F)
 	e.push(modeCamp, func(a Action) bool {
 		left := e.campDecision(a)
 		e.DisplayPartyList()
@@ -517,6 +519,7 @@ func (e *Engine) CampMenu(then func(interrupted bool)) {
 		}
 		e.spellCaster = nil
 		e.beginFlag = saved
+		e.animInput = anim
 		e.StatusLine()
 		e.ClearMessageArea()
 		e.clearPrompt()

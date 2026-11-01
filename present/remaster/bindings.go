@@ -47,7 +47,7 @@ const (
 	KeyFontPrev    = 0xFD00 // Ctrl-Shift-F (Ctrl-F is ASCII 6)
 	KeyPadSelect   = 0xE000 // gamepad: choose the highlighted (as Enter)
 	KeyPadMinimap  = 0xE100 // as Tab
-	KeyPadOverview = 0xE200 // as P
+	KeyPadOverview = 0xE200 // as O
 	KeyPadPrev     = 0xE300 // gamepad: the previous party member (the left stick's button)
 	KeyPadNext     = 0xE400 // ... the next (the right stick's)
 	KeyPadStart    = 0xE500 // gamepad Start in combat: the options, even while aiming (where Esc cancels)
@@ -125,8 +125,8 @@ var bindings = []binding{
 	{ctx: ctxAdv, keys: "Tab", desc: "minimap", mouse: "command menu", pad: "Y",
 		codes:   []code{{keyTab, input.Minimap}, {KeyPadMinimap, input.Minimap}},
 		padKeys: []padKey{{padY, KeyPadMinimap, false}}},
-	{ctx: ctxAdv, keys: "P", desc: "party overview", mouse: "command menu", pad: "X",
-		codes:   []code{{'p', input.Party}, {KeyPadOverview, input.Overview}},
+	{ctx: ctxAdv, keys: "O", desc: "party overview", mouse: "command menu", pad: "X",
+		codes:   []code{{'o', input.Party}, {KeyPadOverview, input.Overview}},
 		padKeys: []padKey{{padX, KeyPadOverview, false}}},
 	{ctx: ctxAdv, keys: "Esc", desc: "options", mouse: "right click", pad: "B, Back"}, // the Menus row's Esc
 
