@@ -142,6 +142,16 @@ func ownPage(v engine.View) bool {
 // full map, the overview), drawn from its data over the page under it.
 func modal(v engine.View) bool { return v.Pages != nil || v.FullMap != nil || v.Overview }
 
+// pagerMark is the column of pager pg's mark for the page before (d -1)
+// or after (d +1) on a page cols cells wide, on its hint row; ok: there is
+// such a page.
+func pagerMark(pg *engine.Pages, cols, d int) (x int, ok bool) {
+	if d < 0 {
+		return 1, pg.Page > 0
+	}
+	return cols - 2, pg.Page < pg.Pages-1
+}
+
 // drawModal draws v's screen over the whole page (modal) into m as the
 // game draws such a page: a box round it, text in the game's font.
 func drawModal(m *image.RGBA, v engine.View, note Note) {
@@ -195,6 +205,17 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 			}
 		}
 		run(pg.Hint, rows-2)
+		for _, d := range []int{-1, 1} { // the clickable marks (pagerMark): ◀ while there is a page before, ▶ while one after
+			if x, ok := pagerMark(pg, cols, d); ok {
+				for i := range 4 { // a triangle 4 pixels deep, 7 tall, pointing d
+					c := x*8 + 2 + i
+					if d < 0 {
+						c = x*8 + 5 - i
+					}
+					fill(image.Rect(c, (rows-2)*8+1+i, c+1, (rows-2)*8+8-i), col(10))
+				}
+			}
+		}
 	case v.FullMap != nil:
 		fm := v.FullMap
 		lx := fm.LegendAt.X

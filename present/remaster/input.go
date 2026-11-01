@@ -189,6 +189,10 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			p.battle.Zoom(wheel > 0, blobber.Settings.Zoom)
 			continue
 		}
+		if v.Pages != nil { // a pager: the wheel pages
+			p.send(engine.ActPage, -sign(wheel))
+			continue
+		}
 		if screenUp(v) { // a camp-style list: the wheel moves the highlight
 			if wheel > 0 {
 				p.campKey(0x4800, v)
@@ -231,6 +235,15 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	if r := v.Portrait; left && in && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) { // Shift-click on the sheet's portrait: the next head
 		p.send(engine.ActHead, -1)
 		return
+	}
+	if pg := v.Pages; pg != nil && left && in { // a pager's ◀ ▶ marks page
+		w, h := pageSize(v)
+		for _, d := range []int{-1, 1} {
+			if x, ok := pagerMark(pg, w/8, d); ok && cx == x && cy == h/8-2 {
+				p.send(engine.ActPage, d)
+				return
+			}
+		}
 	}
 	if fm := v.FullMap; fm != nil && left && in && typing(v) == nil { // the full map: a square takes the cursor, a second click names it; a legend line goes to its first square
 		px, py := cx*8+4-fm.At.X, cy*8+4-fm.At.Y
