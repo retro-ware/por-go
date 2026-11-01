@@ -205,11 +205,20 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 			top += int(s*float64(icon.Bounds().Dy())) + int(k*4)
 		}
 	}
-	var icons []*engine.InvItem // the items' icons (the shop's Identify)
-	if v.Shop != nil && p.camp.screen == shopID {
+	var icons []image.Image // the rows' icons: the items' (the shop's Identify), the creatures' (the bestiary)
+	switch {
+	case v.Shop != nil && p.camp.screen == shopID:
 		for _, u := range v.Shop.Unknown {
-			icons = append(icons, u.Icon)
+			icons = append(icons, p.inv.iconImage(u.Icon))
 		}
+	case p.camp.screen == campBestiary && v.Camp != nil:
+		icons = []image.Image{nil} // the sort row
+		for _, b := range p.beasts(v) {
+			icons = append(icons, b.Icon)
+		}
+	}
+	if icons != nil {
+		icons = append(icons, make([]image.Image, max(0, len(lines)-len(icons)))...)[:len(lines)]
 	}
 	c := &p.camp
 	lh := 1 // a line's cells

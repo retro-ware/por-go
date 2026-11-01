@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"image"
 	"image/color"
-	"por/engine"
 	"por/pal"
 	"slices"
 	"strings"
@@ -117,9 +116,10 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 // tall as wide, the text in the middle line, after the icon.
 const iconRow = 3
 
-// drawMenuIcons is drawMenu with an item's atlas icon before each row of
-// icons that is not nil (the inventory's row: the icon, then the text).
-func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, icons []*engine.InvItem, sel int, k float64, cx, top int) {
+// drawMenuIcons is drawMenu with an icon before each row of icons that is
+// not nil (the inventory's row: the icon, then the text): unscaled, or
+// shrunk with its aspect kept to the row's height.
+func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, icons []image.Image, sel int, k float64, cx, top int) {
 	items = slices.Clone(items)
 	hk := make([]int, len(items)) // each row's white letter
 	for i := range items {
@@ -129,17 +129,11 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		}
 		items[i], hk[i] = hotText(items[i], key)
 	}
-	rows, hot, icon := items, hk, make([]int, len(items)) // icon: the atlas cell, -1 none
-	for i := range icon {
-		icon[i] = -1
-		if i < len(icons) && icons[i] != nil {
-			p.inv.load()
-			icon[i] = p.inv.icon(icons[i])
-		}
-	}
+	rows, hot, icon := items, hk, make([]image.Image, len(items))
+	copy(icon, icons)
 	if title != "" { // a long question on two lines, so the box stays narrow
 		t := append(wrap(title, 24), "")
-		rows, hot, icon = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...), append(slices.Repeat([]int{-1}, len(t)), icon...)
+		rows, hot, icon = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...), append(make([]image.Image, len(t)), icon...)
 		if sel >= 0 {
 			sel += len(t)
 		}
@@ -147,14 +141,14 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	w, ch := 0, 2                // cells: a border and a blank column each side
 	at := make([]int, len(rows)) // each row's first line, in cells
 	rh := func(r int) int {
-		if icon[r] >= 0 {
+		if icon[r] != nil {
 			return iconRow
 		}
 		return 1
 	}
 	for r, s := range rows {
 		x := len(s)
-		if icon[r] >= 0 {
+		if icon[r] != nil {
 			x += iconRow
 		}
 		w, at[r], ch = max(w, x), ch-2, ch+rh(r)
@@ -185,12 +179,14 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 				}
 			}
 		}
-		if n := icon[r]; n >= 0 { // the icon, then the text in the middle line
-			src := image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell)
-			for y := range atlasCell {
-				for x := range atlasCell {
-					if c := color.RGBAModel.Convert(p.inv.atlas.At(src.X+x, src.Y+y)).(color.RGBA); c.A > 0x80 {
-						set(16+(iconRow*8-atlasCell)/2+x, y0+(iconRow*8-atlasCell)/2+y, c)
+		if ic := icon[r]; ic != nil { // the icon, then the text in the middle line
+			b, h := ic.Bounds(), iconRow*8
+			f := min(1, float64(h)/float64(b.Dx()), float64(h)/float64(b.Dy()))
+			w, ih := int(f*float64(b.Dx())), int(f*float64(b.Dy()))
+			for y := range ih {
+				for x := range w {
+					if c := color.RGBAModel.Convert(ic.At(b.Min.X+x*b.Dx()/w, b.Min.Y+y*b.Dy()/ih)).(color.RGBA); c.A > 0x80 {
+						set(16+(h-w)/2+x, y0+(h-ih)/2+y, c)
 					}
 				}
 			}

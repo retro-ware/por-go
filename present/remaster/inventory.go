@@ -374,6 +374,19 @@ func (inv *inventory) icon(it *engine.InvItem) int {
 	return -1
 }
 
+// iconImage is the item's atlas cell (nil: none).
+func (inv *inventory) iconImage(it *engine.InvItem) image.Image {
+	inv.load()
+	n := inv.icon(it)
+	if n < 0 {
+		return nil
+	}
+	at := image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell)
+	return inv.atlas.(interface {
+		SubImage(image.Rectangle) image.Image
+	}).SubImage(image.Rectangle{at, at.Add(image.Pt(atlasCell, atlasCell))})
+}
+
 // drawIcon draws the item's atlas cell, unscaled, in the middle of r (cut to r).
 func (inv *inventory) drawIcon(it *engine.InvItem, r image.Rectangle) {
 	n := inv.icon(it)
