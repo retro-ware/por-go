@@ -12,6 +12,7 @@ import (
 
 // combatEnd = ovr09:0000: free the clouds, the map and the sprite.
 func (e *Engine) combatEnd() {
+	e.restoreLoadouts()
 	e.cs = combatState{}
 	e.combatTargets = false // DS:6B84 = 0096:0034 (ovr23:0A91)
 	e.snap.cmapOn = false
@@ -793,4 +794,70 @@ func (e *Engine) foeInReach(c *Character) bool {
 func (e *Engine) combatUseHook() {
 	e.combatViewLeave() // ovr32:00E3: the combat palette
 	e.combatCentre(e.cmap.viewX+viewW/2, e.cmap.viewY+3, 0xFF, 8)
+}
+
+// loadout (extra): a party member's weapon, shield and Missiles slot items
+// and how they were readied, as they were when the computer took over.
+type loadout [4]struct {
+	it *Item
+	r  byte
+}
+
+var loadoutSlots = [4]int{slotWeapon, slotShield, slotArrows, slotBolts}
+
+// saveLoadout (extra) keeps c's loadout the first time the computer picks
+// a weapon for it this battle (Quick, charmed ...), for restoreLoadouts.
+func (e *Engine) saveLoadout(c *Character) {
+	if !e.partyMember(c) {
+		return
+	}
+	if e.ext.loadouts == nil {
+		e.ext.loadouts = map[*Character]*loadout{}
+	}
+	if e.ext.loadouts[c] != nil {
+		return
+	}
+	var l loadout
+	for i, s := range loadoutSlots {
+		if it := c.Slots[s]; it != nil {
+			l[i].it, l[i].r = it, it.Readied
+		}
+	}
+	e.ext.loadouts[c] = &l
+}
+
+// restoreLoadouts (extra): after the battle everyone the computer fought
+// for gets the weapons it had back (those not used up); cursed ones stay.
+func (e *Engine) restoreLoadouts() {
+	for c, l := range e.ext.loadouts {
+		keep := func(it *Item) bool {
+			for _, x := range l {
+				if x.it == it {
+					return true
+				}
+			}
+			return false
+		}
+		for _, s := range loadoutSlots {
+			if it := c.Slots[s]; it != nil && it.Magic == 0 && !keep(it) {
+				it.Readied = 0
+				if it.Spells[2] > 0x7F {
+					e.itemAffect(it, c, 1)
+				}
+			}
+		}
+		e.ApplyItems(c)
+		for i, x := range l {
+			if x.it == nil || x.it.Readied != 0 || c.Slots[loadoutSlots[i]] != nil || !slices.Contains(e.carried(c), x.it) {
+				continue
+			}
+			e.takeFromPool(c, x.it)
+			x.it.Readied = x.r
+			if x.it.Spells[2] > 0x7F {
+				e.itemAffect(x.it, c, 0)
+			}
+		}
+		e.ApplyItems(c)
+	}
+	e.ext.loadouts = nil
 }

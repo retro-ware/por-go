@@ -468,9 +468,10 @@ func (e *Engine) readySome(c *Character, it *Item, n int) {
 }
 
 // missileSlot (extra): readied now, the unreadied thrown weapon it would
-// go into the Missiles slot (the arrows', Readied 2), as a weapon is in hand.
+// go into the Missiles slot (the arrows', Readied 2); a thrown weapon is
+// never readied in hand.
 func (e *Engine) missileSlot(c *Character, it *Item) bool {
-	return it.Readied == 0 && e.throwableItem(it) && c.Slots[slotWeapon] != nil && c.Slots[slotWeapon] != it
+	return it.Readied == 0 && e.throwableItem(it)
 }
 
 // missile (extra) is what c's Ranged action shoots: the thrown weapon in the
@@ -538,7 +539,7 @@ func (e *Engine) readyItem(it *Item) {
 	}
 	why := 0
 	typ := it.Type
-	missile := e.missileSlot(c, it) // extra: a thrown weapon beside the weapon in hand: the Missiles slot, no hands
+	missile := e.missileSlot(c, it) // extra: a thrown weapon: the Missiles slot, no hands
 	if int(e.base(typ).Hands)+int(c.Hands) > 2 && !missile {
 		why = 3
 	}
