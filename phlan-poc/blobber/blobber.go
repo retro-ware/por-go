@@ -1495,6 +1495,7 @@ func (g *Game) menuOptions() []menuLine {
 		return []menuLine{{label: "Yes", change: func(g *Game, _ int) { g.back(); do() }},
 			{label: "No", change: func(g *Game, _ int) { g.back() }}}
 	}
+	exit := menuLine{label: "Exit", change: func(g *Game, _ int) { g.back() }} // a settings page's way back, as Esc
 	switch g.page {
 	case "Graphics":
 		return []menuLine{
@@ -1511,6 +1512,7 @@ func (g *Game) menuOptions() []menuLine {
 			uiLine("Picture box", &Settings.Pic),
 			uiLine("Menus", &Settings.Menu),
 			uiLine("Text box", &Settings.Text),
+			exit,
 		}
 	case "Audio":
 		return []menuLine{
@@ -1520,6 +1522,7 @@ func (g *Game) menuOptions() []menuLine {
 			volumeLine("Music volume", &Settings.Music),
 			volumeLine("Effects volume", &Settings.Effects),
 			volumeLine("Voice volume", &Settings.Voice),
+			exit,
 		}
 	case "Gameplay":
 		return []menuLine{
@@ -1532,6 +1535,7 @@ func (g *Game) menuOptions() []menuLine {
 			{"Zoom speed", func(*Game) string {
 				return bar(Settings.Zoom, minZoom, maxZoom, 0.25) + fmt.Sprintf(" %.2fx", Settings.Zoom)
 			}, func(_ *Game, d int) { Settings.Zoom = step(Settings.Zoom, minZoom, maxZoom, 0.25, d) }},
+			exit,
 		}
 	}
 	page := func(p string) menuLine {
@@ -1554,7 +1558,7 @@ func (g *Game) menuOptions() []menuLine {
 	if OnMainMenu != nil {
 		o = append(o, ask("Back to Main Menu", "Back to the main menu? Unsaved progress is lost.", func() { g.menu = false; OnMainMenu() }))
 	}
-	return append(o, ask("Quit to DOS", "Quit the game? Unsaved progress is lost.", func() { g.quit = true }))
+	return append(o, ask(QuitRow, QuitQuestion, func() { g.quit = true }))
 }
 
 // question is a yes/no the menu asks before do.
@@ -1588,9 +1592,13 @@ func menuKeys(items []menuLine) []byte {
 // Hotkeys gives each label its first letter not taken by a label above (0: none left).
 func Hotkeys(labels []string) []byte {
 	var keys []byte
-	taken := map[byte]bool{}
+	taken := map[byte]bool{'E': slices.Contains(labels, "Exit")} // Exit is E on every screen
 	for _, l := range labels {
 		var k byte
+		if l == "Exit" {
+			keys = append(keys, 'E')
+			continue
+		}
 		for _, c := range []byte(strings.ToUpper(l)) {
 			if c >= 'A' && c <= 'Z' && !taken[c] {
 				k, taken[c] = c, true
@@ -2038,3 +2046,7 @@ func inputChars() []rune { // phlan-poc: none while shooting
 	}
 	return gpu.AppendInputChars(nil)
 }
+
+// QuitRow and QuitQuestion are the one quit row and question, on the Esc
+// menu and por's main menu.
+const QuitRow, QuitQuestion = "Quit to DOS", "Quit to DOS? Unsaved progress is lost."

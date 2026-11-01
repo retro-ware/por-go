@@ -9,6 +9,8 @@ import (
 	"gpu"
 	"gpu/vector"
 
+	"blobber"
+
 	"por/engine"
 )
 
@@ -85,7 +87,7 @@ func (p *Presenter) mainSkip() bool {
 
 // mainNames are the party menu's functions as the menu names them.
 var mainNames = map[engine.ActKind]string{
-	engine.ActBegin: "BEGIN Adventuring", engine.ActLoad: "Load Game", engine.ActQuickStart: "Quick Start", engine.ActQuit: "Exit to DOS",
+	engine.ActBegin: "BEGIN Adventuring", engine.ActLoad: "Load Game", engine.ActQuickStart: "Quick Start", engine.ActQuit: blobber.QuitRow,
 	engine.ActAdd: "Add", engine.ActCreate: "Create", engine.ActForget: "Forget", engine.ActDropMember: "Drop",
 	engine.ActModify: "Modify", engine.ActTraining: "Train", engine.ActMember: "View", engine.ActRemove: "Remove",
 }
@@ -106,7 +108,7 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 	no := menuRow{"No", 'N', ask(askNone)}
 	switch p.mainAsk {
 	case askQuit:
-		return "Quit to DOS?", []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActQuit, 0) }}, no}
+		return blobber.QuitQuestion, []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActQuit, 0) }}, no}
 	case askDrop:
 		return "Drop " + selectedName(v) + " forever?", []menuRow{{"Yes", 'Y', ask(askSure)}, no}
 	case askSure:
@@ -125,7 +127,11 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 		case engine.ActDropMember:
 			do = ask(askDrop)
 		}
-		it = append(it, menuRow{mainNames[k], mainNames[k][0], do})
+		key := mainNames[k][0]
+		if k == engine.ActQuit { // Q is Quick Start's
+			key = 'D'
+		}
+		it = append(it, menuRow{mainNames[k], key, do})
 	}
 	if p.mainSub {
 		for _, k := range []engine.ActKind{engine.ActAdd, engine.ActCreate, engine.ActForget, engine.ActDropMember, engine.ActModify, engine.ActTraining, engine.ActMember, engine.ActRemove} {
