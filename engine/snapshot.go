@@ -115,8 +115,8 @@ type Scan struct {
 	Paper   color.RGBA
 }
 
-// FullMap is the full-screen map (View.FullMap) under its menu bar (Walk,
-// Label, Remove, Exit): ActPoint X, Y moves the cursor.
+// FullMap is the full-screen map (View.FullMap), the cursor's cell's
+// context menu its question (Walk, Mark, Remove): ActPoint X, Y moves the cursor.
 type FullMap struct {
 	Name     string      // the map's name, top left
 	Map      *MapSquares // the squares, the legend's letter on each labelled square

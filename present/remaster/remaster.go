@@ -111,6 +111,7 @@ type Presenter struct {
 	shownView  engine.View                 // the View last drawn
 	list       listUI                      // View.Ask (AskList)'s highlight (list.go)
 	pageMenu   bool                        // a page's question is up (list.go)
+	mapMenu    bool                        // the full map's cursor cell has its context menu open (drawMapMenu)
 	tipImg     *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf     []byte                      // its pixels
 	scr        screenUI                    // the page screens' questions (screens.go)
@@ -184,6 +185,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.shownView = v
 	p.pace(v)
 	p.pageMenu = false
+	p.mapMenu = p.mapMenu && v.FullMap != nil
 	p.cmds = commands(v)
 	if !p.active {
 		p.ctx = 0

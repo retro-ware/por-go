@@ -182,6 +182,13 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 		return
 	}
 	m := askMenu(v)
+	if v.FullMap != nil { // no bar: the cursor cell's context menu, once opened
+		p.pageMenu, p.winRects = true, p.winRects[:0]
+		if p.mapMenu = p.mapMenu && m != nil && typing(v) == nil; p.mapMenu {
+			p.drawMapMenu(dst, v, m)
+		}
+		return
+	}
 	if m == nil || typing(v) != nil || choosing(v) {
 		return
 	}
@@ -207,6 +214,32 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 	p.keyWindow(dst, m.Prompt, lines, keys, nil, p.sel, true)
 }
 
+// drawMapMenu draws the full map's question m as the cursor cell's
+// context menu, beside the cell (winRects its lines).
+func (p *Presenter) drawMapMenu(dst *gpu.Image, v engine.View, m *engine.Menu) {
+	if id := menuID(m); id != p.asked {
+		p.asked, p.sel = id, 0
+	}
+	rows := itemRows(m)
+	lines, keys := make([]string, len(rows)), rowKeys(rows)
+	w := 0
+	for i, r := range rows {
+		lines[i] = r.text
+		w = max(w, len(r.text)+4)
+	}
+	p.sel = min(max(p.sel, 0), len(lines)-1)
+	fm, s, b := v.FullMap, &p.scr, dst.Bounds()
+	kx, ky := s.at.W/float64(s.pw), s.at.H/float64(s.ph)
+	c := fm.At.Add(fm.Cursor.Add(image.Pt(1, 0)).Mul(fm.Cell)) // the cell's top right, on the page
+	k := math.Max(1, math.Floor(scale(dst)))
+	bw, bh := int(k*float64(w*8)), int(k*float64((len(lines)+2)*8))
+	x, top := int(s.at.X+float64(c.X)*kx), int(s.at.Y+float64(c.Y)*ky)
+	x, top = min(x, b.Dx()-bw), min(top, b.Dy()-bh)
+	rects := slices.Clone(p.menuRects) // not the game's menu: its clicks stay
+	p.drawMenu(dst, p.glyph, "", lines, keys, nil, p.sel, k, x+bw/2, top)
+	p.winRects, p.menuRects = slices.Clone(p.menuRects), rects
+}
+
 // pageMenuKey takes key k on a page's question: the standard menu's keys
 // (menuNav), unless the page takes the arrows (the full map).
 func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
@@ -216,13 +249,26 @@ func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 	if sheetUp(v) {
 		return p.sheetKey(k, v)
 	}
-	if v.FullMap != nil && input.Cursor(actOf(k)) { // the full map's arrows move its cursor
-		return false
+	if v.FullMap != nil && !p.mapMenu { // the full map: the arrows move its cursor, Enter opens its cell's menu, Esc leaves
+		switch a := actOf(k); {
+		case input.Cursor(a), a == input.Esc:
+			return false
+		case a == input.Enter || a == input.Space || a == input.PadA:
+			p.mapMenu, p.sel = true, 0
+			return true
+		}
+	}
+	if v.FullMap != nil && input.Cursor(actOf(k)) && actOf(k) != input.Up && actOf(k) != input.Down { // the menu open: Left/Right do nothing
+		return true
 	}
 	switch i, back, ok := menuNav(k, &p.sel, rowKeys(itemRows(askMenu(v)))); {
+	case back && p.mapMenu: // only the menu closes
+		p.mapMenu = false
+		return true
 	case back:
 		return false // ActClose (keyAct)
 	case i >= 0:
+		p.mapMenu = false
 		p.send(engine.ActChoose, i)
 	default:
 		return ok

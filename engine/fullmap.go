@@ -196,8 +196,8 @@ type mapScreen struct {
 	label  *string          // the label being typed (nil: none)
 }
 
-// FullMap puts up the full-screen map (View.FullMap) until Exit; its
-// menu bar asks what to do at the cursor.
+// FullMap puts up the full-screen map (View.FullMap) until Esc; the
+// cursor's cell has a context menu (Walk, Mark, Remove).
 func (e *Engine) FullMap() {
 	if !e.minimapAllowed() {
 		e.DisplayMessageWait(colYellow, "Not Here")
@@ -215,11 +215,17 @@ func (e *Engine) FullMap() {
 	ask = func() {
 		const (
 			walk Choice = iota
-			label
+			mark
 			remove
-			exit
 		)
-		e.displayThen("", Bar{{"Walk", walk}, {"Label", label}, {"Remove", remove}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false, func(p Pick) {
+		at := c.Y<<4 | c.X
+		bar := Bar{{"Walk", walk}} // the cell's context menu: Walk, Mark on an unlabelled one, Remove on the player's marker
+		if _, ok := ms.labels[at]; !ok {
+			bar = append(bar, Entry{"Mark", mark})
+		} else if _, ok := e.userLabels()[at]; ok {
+			bar = append(bar, Entry{"Remove", remove})
+		}
+		e.displayThen("", bar, colLightMagenta, colLightGreen, colWhite, true, false, func(p Pick) {
 			switch p.ID {
 			case walk:
 				if e.startWalk(c.X, c.Y) {
@@ -227,30 +233,19 @@ func (e *Engine) FullMap() {
 					return
 				}
 				e.DisplayMessageWait(colYellow, "No known way there")
-			case label:
-				old := ms.labels[c.Y<<4|c.X]
-				e.labelInput(ms, old.text, func(s string, ok bool) {
-					if ok {
-						if s == "" {
-							delete(e.userLabels(), c.Y<<4|c.X)
-						} else {
-							kind := byte(poiUser)
-							if s == old.text {
-								kind = old.kind
-							}
-							e.userLabels()[c.Y<<4|c.X] = mapLabel{s, kind}
-						}
+			case mark:
+				e.labelInput(ms, "", func(s string, ok bool) {
+					if ok && s != "" {
+						e.userLabels()[at] = mapLabel{s, poiUser}
 						ms.labels = e.labels()
 					}
 					ask()
 				})
 				return
-			case remove: // a built-in label stays
-				if _, ok := e.userLabels()[c.Y<<4|c.X]; ok {
-					delete(e.userLabels(), c.Y<<4|c.X)
-					ms.labels = e.labels()
-				}
-			case exit, NoPick:
+			case remove:
+				delete(e.userLabels(), at)
+				ms.labels = e.labels()
+			case NoPick:
 				open = false
 				return
 			}

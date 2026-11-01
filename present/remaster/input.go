@@ -270,19 +270,21 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			}
 		}
 	}
-	if fm := v.FullMap; fm != nil && left && in && typing(v) == nil { // the full map: a square takes the cursor, a second click names it; a legend line goes to its first square
+	if fm := v.FullMap; fm != nil && left && in && typing(v) == nil { // the full map: a square takes the cursor and opens its context menu; a legend line goes to its first square; elsewhere: back
 		px, py := cx*8+4-fm.At.X, cy*8+4-fm.At.Y
 		sq := image.Pt(px/fm.Cell, py/fm.Cell)
 		switch i := cy - fm.LegendAt.Y; {
 		case px >= 0 && py >= 0 && sq.In(image.Rect(0, 0, 16, 16)) && cx*8 < fm.At.X+16*fm.Cell && cy*8 < fm.At.Y+16*fm.Cell:
-			if sq == fm.Cursor {
-				p.send(engine.ActChoose, menuIndex(askMenu(v), 'L'))
-			} else {
-				p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: sq.X, Y: sq.Y})
-			}
+			p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: sq.X, Y: sq.Y})
+			p.mapMenu, p.sel = true, 0
 		case cx >= fm.LegendAt.X && i >= 0 && i < len(fm.Legend):
 			s := fm.Legend[i].First
 			p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: s.X, Y: s.Y})
+			p.mapMenu = false
+		case p.mapMenu: // off the cell's menu: it closes
+			p.mapMenu = false
+		default:
+			p.send(engine.ActClose, 0)
 		}
 		return
 	}

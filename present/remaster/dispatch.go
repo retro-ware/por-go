@@ -192,6 +192,7 @@ func (p *Presenter) Click(x, y int) bool {
 				return true
 			}
 			if image.Pt(x, y).In(r) {
+				p.mapMenu = false
 				p.send(engine.ActChoose, i)
 				return true
 			}
