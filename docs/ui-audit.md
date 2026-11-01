@@ -225,12 +225,41 @@ Help, the journal and history take Left/Right/PgUp/PgDn, the wheel, a click on t
 - Start = Esc menu.
 - One repeat rate, including blobber's Esc menu.
 
-## 4. Suggested order
+## 4. Decisions since the audit
 
-1. Introduce the `Menu` model, drawer and handler. Port the camp-style screens, the main menu, the sheet, creation, slots and the engine popup. This removes most of the duplication and fixes hover, A/Space, Esc and hotkey rendering in one go.
-2. Context menus and drop-downs on the same widget. On top, dimmed, with a starting selection.
-3. Yes/No unified, including the inventory panel and the battle confirmation.
-4. Item rows with icons in every item list.
-5. Lists: scroll bar, paging, wheel. Battle log scrolling.
-6. One text editor.
-7. Gamepad bindings, and combat arrows to a cursor.
+- **Placement and size:** each screen may place and size its menus to fit its own layout. Screens that share a layout share one rule, and so do Yes/No questions.
+- **Own widgets:** the inventory's item panes and the battle bar stay their own widgets, because they aren't menus. The inventory's bottom action row is a toolbar and keeps its own model too.
+- **Combat:** the arrows keep panning the camera and Backspace keeps End, since nothing else uses them in combat. Several mappings for the same thing are fine, as long as each one is obvious.
+- **Windows:** one central function draws every bordered window.
+- **Scroll bars:** everything that scrolls uses the same scroll bar.
+
+## 5. Status (2026-11-01)
+
+### Done
+
+| Commit | What changed |
+|---|---|
+| 45c0d34 | **One menu row and key handler** (`menuRow`, `menuNav` in present/remaster/menu.go) for these screens: camp, temple, shop, training, the main menu, the sheet, page screens, the command and engine popups, the spell pick and the context menu.<br>• Up/Down wrap; PgUp/PgDn and Home/End move the highlight.<br>• Enter, Space, pad A and the hotkey (either case) pick.<br>• Esc and right click go back and never pick a row.<br>• A hotkey letter missing from the text shows as `[E] Camp`.<br>• Camp screens highlight under the pointer. |
+| fb60548 | **Context menu:** drawn on top of everything with the view dimmed. It opens on its first row. |
+| 227e4d3 | **Questions start on the safe answer:** No for Drop. Temple and shop questions reset to Yes instead of keeping the last highlighted row. |
+| e6459c8 | **Item icons in menus:** menu rows can carry the 20×20 atlas icon (`drawMenuIcons`); shop Identify uses it. |
+| 2c62973 | **Camp lists scroll** instead of shrinking their scale. |
+| 45d854a | **One line editor** (`editKey`) for engine and page text entry. Number prompts accept digits only. |
+| 8aa1ace | **Gamepad shoulders** send PgUp/PgDn. |
+| 4fe37a4 | **One window function:** `window()` draws every frame (fill and ribbon border, returning the inside rectangle): menus, the inventory halves and panel, cards and `drawBox`. `drawBorder` is gone. |
+| 16026db | **One scroll bar** (present/remaster/scrollbar.go): the bevelled one, which can be clicked and dragged. Used by the inventory, camp lists, the list popup, page lists, save slots and drop-downs.<br>• The battle log scrolls with the wheel, arrows, PgUp/PgDn, Home/End and dragging. |
+| a64418e | **Standard menus:**<br>• The inventory question is a standard menu.<br>• The list popup uses `menuNav`, and Esc closes it.<br>• The list popup highlights the row under the pointer. |
+| 7ecdf0a | **One place for Yes/No:** every question is centred over the dimmed view at the Menus scale. |
+| 6309d63 | **Battle bar focus:**<br>• Tab/Shift-Tab and the shoulders move a focus; Enter and pad A press the focused button.<br>• Every button shows its key, including Esc on Cancel.<br>• Yes/No show Y and N; Esc means No. |
+
+Tests: `TestMenuNav`, `TestScrollBar` and `TestBarFocus`. Checks are headless only.
+
+### Open
+
+- Not every list row has a hotkey yet. The standard asks for digits on list rows.
+- The text editor has no movable or blinking cursor.
+- Pagers (help, journal, history) don't take the wheel or clicks on ◀ ▶. The gamepad shoulders page them already.
+- Spell lists and the bestiary show no icons in their rows. Temple cures and appraise list no items, so they stay text only.
+- The page screens' text boxes (`cellPage.box`) draw their own borders as text-grid data.
+- The Esc-menu confirmations list No before Yes. They are centred and dimmed already.
+- Gamepad X and Start keep their current bindings (Overview and Enter). Blobber's Esc menu still has its own key-repeat rate.
