@@ -232,6 +232,6 @@ func (e *Engine) layerRGBA(l layer) image.Image {
 // adventure: the party is out in the world (not the party menu, the
 // finale's pictures, or help, the journal, the maps over it).
 func (e *Engine) adventure() bool {
-	sheet := slices.ContainsFunc(e.screens, func(s screen) bool { return s.mode == modeSheet }) // the sheet (and its pickers, the icon editor) is a page of its own over the world
+	sheet := slices.ContainsFunc(e.screens, func(s screen) bool { return s.mode == modeSheet || s.mode == modeIcon }) // the sheet (and its pickers) and the icon editor (also opened from camp's menus) are pages of their own over the world
 	return e.beginFlag != 0 && e.beginFlag != 7 && !e.modal() && !sheet
 }
