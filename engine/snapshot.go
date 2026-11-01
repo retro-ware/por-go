@@ -462,6 +462,7 @@ type Beast struct {
 	Danger int // I..VIII
 	Text   string
 	Icon   image.Image // the combat icon (nil: none)
+	Pic    image.Image // the picture window's when first met (nil: none)
 }
 
 // MapCell is the size of a square in View.Map, in pixels.

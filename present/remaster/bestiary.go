@@ -13,7 +13,9 @@ import (
 // drawBestiary draws camp's bestiary over the whole window, at the
 // inventory's scale and cells: the list on the left (the sort row, the
 // creatures, Exit), the creature under the highlight on the right (its
-// combat icon, crisp, on grey; its name, danger and description).
+// combat icon, crisp, on grey, every kind at the scale that makes the
+// widest fill the pane; the picture window's when first met; its name,
+// danger and description).
 func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 	sc, c := &p.beastPage, &p.camp
 	b := dst.Bounds()
@@ -64,20 +66,36 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 		d := "Danger " + roman[bt.Danger]
 		text(d, rx+(rw-8*len(d))/2, 22, inkYellow)
 		y := 36
-		if im := bt.Icon; im != nil { // whole times its pixels, as large as fits half the page
+		blit := func(im image.Image, s float64, ground bool) { // nearest neighbour, centred, at y
 			ib := im.Bounds()
-			s := max(1, min((rw-16)/ib.Dx(), (ch*8/2)/ib.Dy()))
-			w, h := ib.Dx()*s, ib.Dy()*s
+			w, h := int(float64(ib.Dx())*s), int(float64(ib.Dy())*s)
 			at := image.Rect(rx+(rw-w)/2, y, rx+(rw+w)/2, y+h)
-			draw.Draw(sc.px, at, image.NewUniform(pal.EGA(8)), image.Point{}, draw.Src) // on grey: its black parts show
+			if ground {
+				draw.Draw(sc.px, at, image.NewUniform(pal.EGA(8)), image.Point{}, draw.Src) // on grey: its black parts show
+			}
 			for py := range h {
 				for px := range w {
-					if col := im.At(ib.Min.X+px/s, ib.Min.Y+py/s); alpha(col) {
+					if col := im.At(ib.Min.X+int(float64(px)/s), ib.Min.Y+int(float64(py)/s)); alpha(col) {
 						sc.px.Set(at.Min.X+px, at.Min.Y+py, col)
 					}
 				}
 			}
 			y += h + 10
+		}
+		if im := bt.Icon; im != nil { // every kind at one scale: the widest icon met fills the pane's width
+			wide := 1
+			for _, b := range beasts {
+				if b.Icon != nil {
+					wide = max(wide, b.Icon.Bounds().Dx())
+				}
+			}
+			blit(im, float64(rw-16)/float64(wide), true)
+		}
+		if im := bt.Pic; im != nil { // the picture window's, as wide as fits over four rows of text
+			ib := im.Bounds()
+			if s := min(float64(rw-16)/float64(ib.Dx()), float64((ch-1)*8-y-40)/float64(ib.Dy())); s > 0 {
+				blit(im, s, false)
+			}
 		}
 		for _, l := range engine.WrapWords(bt.Text, rw/8-1) {
 			if y+8 < (ch-1)*8 {
