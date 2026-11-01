@@ -59,11 +59,10 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 	if in.Sell {
 		w = append(w, word{text: "Sell", act: engine.ActSell, on: it != nil})
 	}
-	w = append(w, word{text: "View", act: engine.ActSheet, on: true}) // the sheet (Tab)
 	for _, pw := range in.Powers {
 		w = append(w, word{text: pw.Name, act: pw.Kind, on: true})
 	}
-	return append(w, word{text: "Exit", act: engine.ActClose, on: true})
+	return w // Tab is the sheet, Esc leaves
 }
 
 // Inventory draws the inventory screen when the game shows it, and

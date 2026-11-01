@@ -68,6 +68,7 @@ type Presenter struct {
 	scrollBars []barHit                    // the scroll bars drawn this frame (scrollbar.go)
 	barDrag    *barHit                     // the bar whose thumb the pointer holds
 	logTop     int                         // the battle Log's first line shown
+	sheet      sheetCanvas                 // the character sheet
 	winRects   []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	mainSel    int                         // the main menu's highlight
 	mainBack   int                         // the main menu's row that opened the Party submenu: Exit goes back to it
@@ -211,8 +212,13 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	sc := p.scene(v)
 	if sc == nil || !choosing(v) && (!v.Frame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
-		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
-		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
+		p.shown, p.active, p.menu, p.cards = "", false, false, nil        // back from elsewhere: no tween from where the view was
+		p.asked = ""                                                      // and a question still waiting on return (View from the loot menu) pops up again
+		if sheetUp(v) && v.SheetPage != nil && v.SheetPage.Spells == "" { // the sheet: the presenter's, at the inventory's scale
+			dst.Fill(color.Black)
+			p.drawSheet(dst, note, v)
+			return Rect{}
+		}
 		r := p.drawPage(dst, v, note)
 		p.scr.at = r
 		p.scr.pw, p.scr.ph = pageSize(v)

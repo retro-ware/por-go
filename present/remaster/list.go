@@ -181,20 +181,6 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 		p.drawScreen(dst, v)
 		return
 	}
-	if sheetUp(v) {
-		p.pageMenu = true
-		items := p.sheetItems(v)
-		lines, keys := make([]string, len(items)), rowKeys(items)
-		for i, it := range items {
-			lines[i] = it.text
-		}
-		p.sel = min(max(p.sel, 0), len(lines)-1)
-		p.winRects = p.winRects[:0]
-		if !note.Show || note.Text == "" { // the toast takes the row while it shows
-			p.menuRow(dst, lines, keys, p.sel)
-		}
-		return
-	}
 	m := askMenu(v)
 	if m == nil || typing(v) != nil || choosing(v) {
 		return
