@@ -154,6 +154,9 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	p.scrollBars = p.scrollBars[:0]
 	p.battle.Asking = confirm(v) != ""
+	if !pageScreen(v) { // none up: the next one opens fresh (F10 on the last save)
+		p.scr.up = ""
+	}
 	r := p.draw(dst, note, v)
 	if q := confirm(v); q != "" { // the engine's yes/no question: over everything, starting on No
 		if q != p.confirmFor {
