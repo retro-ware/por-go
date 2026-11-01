@@ -290,5 +290,3 @@ func (e *Engine) Delay(ms int) {
 
 // ClearKeyboard does nothing: the original's drain loop is dead code (0899:0104 jumps straight to its exit).
 func (e *Engine) ClearKeyboard() {}
-
-

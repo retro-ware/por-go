@@ -1206,17 +1206,6 @@ func (r raceLimit) limits(i int) (lo, hi byte) {
 	return r.Min[i-1], r.Max[i-1]
 }
 
-// partyMenu is the party menu (DS:0619, 0x2A bytes each: name, enabled).
-var partyMenu = [10]struct { // (extra) without "Save Current Game": F9 saves (slots.go)
-	name    string
-	enabled bool
-}{
-	{"Create Character", true}, {"Drop Character", false}, {"Modify Character", false},
-	{"Train Character", false}, {"View Character", false}, {"Add Character", true},
-	{"Remove Character from Party", false}, {"Load Game", true},
-	{"BEGIN Adventuring", false}, {"Exit to DOS", true},
-}
-
 // className (extra) is classNames[b], "" for a class byte past the table
 // (a damaged save).
 func className(b byte) string {

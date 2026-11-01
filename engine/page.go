@@ -164,11 +164,6 @@ func (e *Engine) resizePage(cols, rows int) {
 	}
 }
 
-// relist is the redraw of a screen whose loop draws it again on a
-// PickRedraw from its bar (the pickers, the sheets): the resize comes back
-// from the wait as one, so the bar is made again too (the pager's Next).
-func (e *Engine) relist() { e.ext.relist = true }
-
 // redrawWith sets f as the screen's redraw (resizePage) until the func
 // returned puts the one before back.
 func (e *Engine) redrawWith(f func()) func() {

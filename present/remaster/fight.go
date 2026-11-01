@@ -227,8 +227,6 @@ func (p *Presenter) fightClick(x, y int) bool {
 	return p.battle.Click(x, y)
 }
 
-func (p *Presenter) lastBattle() *engine.Battle { return p.fightView }
-
 // wrap breaks s into lines of at most n characters at spaces.
 func wrap(s string, n int) (out []string) {
 	l := ""

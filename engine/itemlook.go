@@ -151,25 +151,6 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 	return l
 }
 
-// lookItem (extra) shows the item's Look text in a box until a key.
-func (e *Engine) lookItem(it *Item) {
-	if it == nil {
-		return
-	}
-	e.ItemName(nil, it, 0, 0, false, false)
-	l := e.itemLines(it, nil)
-	y1 := 4
-	y2 := min(y1+len(l)+3, 0x16)
-	e.DrawBoxTitled(1, y1, winRight, y2, 0, colWhite, "")
-	e.DisplayString(3, y1+1, colLightCyan, cut(it.Name(), 0x22))
-	for i, s := range l {
-		if y1+3+i < y2 {
-			e.DisplayString(3, y1+3+i, colLightGreen, s)
-		}
-	}
-	e.PromptRow24(colLightMagenta, "Press any key")
-}
-
 // damageAvg is the item's average damage (against small foes) with its
 // known magic plus, for the Look's comparison; 0 for nil.
 func (e *Engine) damageAvg(it *Item) float64 {

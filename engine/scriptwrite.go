@@ -214,20 +214,6 @@ func (w *scriptWriter) textOp(c int) byte {
 	return opIfEq
 }
 
-// sectionEnd is where the section at label l ends for its returns: a
-// def's or event's block, else the next label.
-func (w *scriptWriter) sectionEnd(l int) int {
-	if _, ok := w.events[l]; ok || w.defs[l] {
-		return w.blockEnd(l)
-	}
-	for j := l + 1; j < len(w.s.Code); j++ {
-		if len(w.labelsAt[j]) > 0 {
-			return j
-		}
-	}
-	return len(w.s.Code)
-}
-
 // sectionOf is the label command c's returns belong to: the def's or
 // event's whose block holds c, else the nearest label above.
 func (w *scriptWriter) sectionOf(c int) int {

@@ -297,4 +297,3 @@ func (e *Engine) YesNo(c1, c2, c3 int, prompt string, then func(bool)) {
 		}
 	})
 }
-

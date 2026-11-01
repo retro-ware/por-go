@@ -510,7 +510,6 @@ type creation struct {
 	k       kind
 	replace func(old, new *Character) // puts a fresh character where c was
 	abandon string
-	done    func(c *Character, kept bool)
 }
 
 // creationView is the sheet's parts for the View.

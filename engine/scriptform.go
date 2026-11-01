@@ -184,17 +184,6 @@ func (f flagState) same(g flagState) bool {
 	return f.kind == g.kind && f.kind != 0 && slices.Equal(f.args, g.args)
 }
 
-// holds: the flags hold the comparison of kind on args; flipped when they
-// hold it the other way round (0 op D for D op 0).
-func (f flagState) holds(kind byte, args []Arg) (ok, flipped bool) {
-	if f.kind == opAnd && kind == opCompare && len(args) == 2 {
-		if args[0] == f.args[1] && args[1] == f.args[0] {
-			return true, true
-		}
-	}
-	return f.same(flagState{kind, args, 0}), false
-}
-
 // scriptFlags is the flag state before each command of s, by the text.
 func scriptFlags(s *Script) []flagState {
 	before := make([]flagState, len(s.Code))

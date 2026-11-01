@@ -97,7 +97,7 @@ func TestBattleView(t *testing.T) {
 // hot stands for the menu item with hotkey c (resolve finds its index).
 func hot(c byte) engine.Action { return engine.Action{Kind: engine.ActChoose, N: -int(c)} }
 
-var down, cont = engine.Action{Kind: engine.ActMove, N: engine.DirDown}, engine.Action{Kind: engine.ActContinue}
+var cont = engine.Action{Kind: engine.ActContinue}
 
 // resolve turns hot(c) into the pick of that item on the menu shown.
 func resolve(e *engine.Engine, a engine.Action) engine.Action {
@@ -302,7 +302,7 @@ func TestCombatActions(t *testing.T) {
 // TestAimCycle: aiming a weapon cycles foes only, never the aimer.
 func TestAimCycle(t *testing.T) {
 	e, v := battleView(t)
-	v = nextToFoe(t, e, v)
+	nextToFoe(t, e, v)
 	v = actWait(e, engine.Action{Kind: engine.ActAttack})
 	if v.Battle == nil || v.Battle.Turn == nil || !v.Battle.Turn.Aim {
 		t.Fatal("not aiming")
@@ -320,7 +320,7 @@ func TestAimCycle(t *testing.T) {
 // TestAimHover: pointing at another square while aiming moves the aim there.
 func TestAimHover(t *testing.T) {
 	e, v := battleView(t)
-	v = nextToFoe(t, e, v)
+	nextToFoe(t, e, v)
 	v = actWait(e, engine.Action{Kind: engine.ActAttack})
 	if v.Battle == nil || !v.Battle.CursorOn {
 		t.Fatal("aiming: no cursor")

@@ -101,12 +101,6 @@ func (e *Engine) selectMember(n int) {
 	}
 }
 
-// memberPick: the pick changes the selected member (Home, End, or a
-// member chosen directly: PickRelist).
-func memberPick(p Pick) bool {
-	return p.ID == PickRelist || p.ID == PickMove && (p.Dir == DirHome || p.Dir == DirEnd)
-}
-
 // PartyMenu = ovr17:0161: the party menu takes decisions (View.MainMenu)
 // until the player begins adventuring or loads a game that starts play
 // (beginFlag != 0), then then (nil: nothing) runs. extra: the front end
@@ -248,7 +242,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then 
 		e.rosterHi, e.rosterNone = who, who == nil
 		e.DisplayPartyList() // 00BA:0767 (who)
 		mark := e.regionMark()
-		e.rosterRegion()                                                                                                                                 // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
+		e.rosterRegion()                                                                                                                     // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
 		e.displayThen(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6, func(p Pick) { // 00BA:2C48 at 3844
 			e.regionCut(mark)
 			who = e.rosterHi // a member picked directly (menuBar.member)

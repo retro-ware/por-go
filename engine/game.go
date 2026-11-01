@@ -275,7 +275,6 @@ func (e *Engine) applyExplore(a Action) bool {
 	return e.over
 }
 
-
 // explore carries out an adventuring decision; done when it ends input
 // (the step or search is then made by GameLoop).
 func (e *Engine) explore(a Action) (done, encamp bool) {
