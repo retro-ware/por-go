@@ -204,13 +204,19 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 			top += int(s*float64(icon.Bounds().Dy())) + int(k*4)
 		}
 	}
-	rows := len(lines) + 2 // the menu fits above bottom: moved up, else smaller
+	var icons []*engine.InvItem // the items' icons (the shop's Identify)
+	if v.Shop != nil && p.camp.screen == shopID {
+		for _, u := range v.Shop.Unknown {
+			icons = append(icons, u.Icon)
+		}
+	}
+	rows := len(lines) + 2 + (iconRow-1)*len(icons) // the menu fits above bottom: moved up, else smaller
 	if title != "" {
 		rows += len(wrap(title, 24)) + 1
 	}
 	k = min(k, float64(bottom)/float64(rows*8))
 	top = max(0, min(top, bottom-int(k*float64(rows*8))))
-	p.drawMenu(dst, glyph, title, lines, keys, p.camp.sel, k, cx, top)
+	p.drawMenuIcons(dst, glyph, title, lines, keys, icons, p.camp.sel, k, cx, top)
 }
 
 // campKey takes key k on a camp screen.

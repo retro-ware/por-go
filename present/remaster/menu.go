@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"image/color"
+	"por/engine"
 	"por/pal"
 	"slices"
 	"strings"
@@ -89,6 +90,16 @@ func hotText(s string, key byte) (string, int) {
 // text pane's red border, the items in the game's font, green on black with
 // their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
 func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
+	p.drawMenuIcons(dst, glyph, title, items, keys, nil, sel, k, cx, top)
+}
+
+// iconRow is the cells an item row with its 20x20 atlas icon takes: as
+// tall as wide, the text in the middle line, after the icon.
+const iconRow = 3
+
+// drawMenuIcons is drawMenu with an item's atlas icon before each row of
+// icons that is not nil (the inventory's row: the icon, then the text).
+func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, icons []*engine.InvItem, sel int, k float64, cx, top int) {
 	items = slices.Clone(items)
 	hk := make([]int, len(items)) // each row's white letter
 	for i := range items {
@@ -98,19 +109,37 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 		}
 		items[i], hk[i] = hotText(items[i], key)
 	}
-	rows, hot := items, hk
+	rows, hot, icon := items, hk, make([]int, len(items)) // icon: the atlas cell, -1 none
+	for i := range icon {
+		icon[i] = -1
+		if i < len(icons) && icons[i] != nil {
+			p.inv.load()
+			icon[i] = p.inv.icon(icons[i])
+		}
+	}
 	if title != "" { // a long question on two lines, so the box stays narrow
 		t := append(wrap(title, 24), "")
-		rows, hot = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...)
+		rows, hot, icon = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...), append(slices.Repeat([]int{-1}, len(t)), icon...)
 		if sel >= 0 {
 			sel += len(t)
 		}
 	}
-	w := 0
-	for _, r := range rows {
-		w = max(w, len(r))
+	w, ch := 0, 2                // cells: a border and a blank column each side
+	at := make([]int, len(rows)) // each row's first line, in cells
+	rh := func(r int) int {
+		if icon[r] >= 0 {
+			return iconRow
+		}
+		return 1
 	}
-	cw, ch := w+4, len(rows)+2 // cells: a border and a blank column each side
+	for r, s := range rows {
+		x := len(s)
+		if icon[r] >= 0 {
+			x += iconRow
+		}
+		w, at[r], ch = max(w, x), ch-2, ch+rh(r)
+	}
+	cw := w + 4
 	if p.menuImg == nil || p.menuImg.Bounds().Dx() != cw*8 || p.menuImg.Bounds().Dy() != ch*8 {
 		if p.menuImg != nil {
 			p.menuImg.Deallocate()
@@ -128,13 +157,24 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 		p.menuBuf[o], p.menuBuf[o+1], p.menuBuf[o+2] = c.R, c.G, c.B
 	}
 	for r, s := range rows {
-		y0 := (r + 1) * 8
+		y0, x0 := at[r]*8+8, 2
 		if r == sel {
-			for y := 0; y < 8; y++ {
+			for y := 0; y < rh(r)*8; y++ {
 				for x := 8; x < (cw-1)*8; x++ {
 					set(x, y0+y, blue)
 				}
 			}
+		}
+		if n := icon[r]; n >= 0 { // the icon, then the text in the middle line
+			src := image.Pt(n%atlasCols*atlasCell, n/atlasCols*atlasCell)
+			for y := range atlasCell {
+				for x := range atlasCell {
+					if c := color.RGBAModel.Convert(p.inv.atlas.At(src.X+x, src.Y+y)).(color.RGBA); c.A > 0x80 {
+						set(16+(iconRow*8-atlasCell)/2+x, y0+(iconRow*8-atlasCell)/2+y, c)
+					}
+				}
+			}
+			y0, x0 = y0+8, 2+iconRow
 		}
 		hk := hot[r] // the hotkey: white, as on the original's bar
 		for i := 0; i < len(s); i++ {
@@ -146,7 +186,7 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 			for y := 0; y < 8; y++ {
 				for b := 0; b < 8; b++ {
 					if g[y]&(0x80>>b) != 0 {
-						set((i+2)*8+b, y0+y, c)
+						set((i+x0)*8+b, y0+y, c)
 					}
 				}
 			}
@@ -162,7 +202,7 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 	dst.DrawImage(p.menuImg, op)
 	p.menuRects = p.menuRects[:0]
 	for r := len(rows) - len(items); r < len(rows); r++ {
-		x0, y0 := float64(cx)-k*float64(cw*8)/2, float64(top)+k*float64((r+1)*8)
-		p.menuRects = append(p.menuRects, image.Rect(int(x0+k*8), int(y0), int(x0+k*float64((cw-1)*8)), int(y0+k*8)))
+		x0, y0 := float64(cx)-k*float64(cw*8)/2, float64(top)+k*float64((at[r]+1)*8)
+		p.menuRects = append(p.menuRects, image.Rect(int(x0+k*8), int(y0), int(x0+k*float64((cw-1)*8)), int(y0+k*float64(rh(r)*8))))
 	}
 }

@@ -125,7 +125,7 @@ func (e *Engine) shopView() *Shop {
 		for k, it := range e.identifiable(i) {
 			if unknown(it) {
 				e.ItemName(c, it, 0, 0, false, false)
-				v.Unknown = append(v.Unknown, Unknown{Member: i, Item: k, Owner: c.Name(), Name: it.Name()})
+				v.Unknown = append(v.Unknown, Unknown{Member: i, Item: k, Owner: c.Name(), Name: it.Name(), Icon: e.invItem(c, it)})
 			}
 		}
 	}

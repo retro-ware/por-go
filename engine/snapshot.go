@@ -424,6 +424,7 @@ type Shop struct {
 type Unknown struct {
 	Member, Item int // the member and the index in its items (member 0: with the party inventory)
 	Owner, Name  string
+	Icon         *InvItem // its type and words: the icon
 }
 
 // Training is the training hall's offer to the selected member.
