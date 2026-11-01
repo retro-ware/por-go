@@ -235,6 +235,7 @@ type View struct {
 	Pages      *Pages         // help or the journal is up (a box round the whole page)
 	FullMap    *FullMap       // the full-screen map is up
 	Overview   bool           // the party overview is up (from Party): any key closes it
+	Purse      *Purse         // with Overview: the party's money and party items
 	Ordering   bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
 	MainMenu   []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
 	Logo       image.Image    // the title's lettering on transparent black, with MainMenu
@@ -373,6 +374,12 @@ type ListLine struct {
 type MenuItem struct {
 	Text string
 	Key  byte
+}
+
+// Purse is the party's money and party inventory, on the overview.
+type Purse struct {
+	Gold, Copper, Jewelry int
+	Items, Slots          int // the party items held and their room ("12/60")
 }
 
 // Sheet is what the character sheet offers besides the page.
@@ -596,6 +603,7 @@ func (e *Engine) publish() {
 		v.FullMap = e.fullMapView(e.ext.fullMap)
 	case e.mode() == modeOverview:
 		v.Overview = true
+		v.Purse = &Purse{Gold: int(e.purse.gold), Copper: int(e.purse.copper), Jewelry: int(e.purse.jewelry), Items: len(e.pool), Slots: e.poolCap()}
 	}
 	if e.modal() { // the screens under take no drop
 		v.Portrait, v.IconDrop, v.IconBox = CellRect{}, false, CellRect{}

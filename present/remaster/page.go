@@ -252,6 +252,10 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 			fill(image.Rect(px, py, px+w*4, py+3), col(hpc))
 			y += 2
 		}
+		if p := v.Purse; p != nil {
+			str(2, rows-4, 14, fmt.Sprintf("%d gold  %d copper  %d jewelry", p.Gold, p.Copper, p.Jewelry))
+			str(2, rows-3, 11, fmt.Sprintf("Party items %d/%d", p.Items, p.Slots))
+		}
 		prompt("press any key to continue", 15)
 	}
 }

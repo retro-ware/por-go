@@ -45,11 +45,11 @@ type IconEditor struct {
 	PoseAt             [2]CellRect
 	Large              bool // Size: large (else small)
 	Head, Weapon, Size CellRect
-	Names              CellRect // the parts' names, a row each
-	Parts              CellRect // their two swatches, 2 cells wide and 3 apart
-	Palette            CellRect // the colours, 8 a row, 2 cells each
-	Colours            [16]int  // the colour number in each palette cell, row-major (-1: empty)
-	Part, Shade        int      // the swatch the palette sets
+	Names              CellRect  // the parts' names, a row each
+	Parts              CellRect  // their two swatches, 2 cells wide and 3 apart
+	Palette            CellRect  // the colours, 8 a row, 2 cells each
+	Colours            [16]int   // the colour number in each palette cell, row-major (-1: empty)
+	Part, Shade        int       // the swatch the palette sets
 	Colour             [6][2]int // each part's two colour numbers (the swatches)
 	Custom             bool      // the poses are a dropped PNG: no parts or colours, only Remove (ActIconRemove)
 	Remove             CellRect  // the Remove word, when Custom
