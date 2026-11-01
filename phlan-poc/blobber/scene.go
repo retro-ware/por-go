@@ -71,7 +71,7 @@ func (s *Scene) line(l string) (bool, error) {
 		var at [2]float64
 		var size, front, sink float64
 		fmt.Sscan(strings.Join(f[2:], " "), &at[0], &at[1], &size, &front, &sink)
-		img := WallTexture(f[1])
+		img := wallTexture(f[1])
 		if img == nil {
 			return true, fmt.Errorf("no texture %q", f[1])
 		}
@@ -81,7 +81,7 @@ func (s *Scene) line(l string) (bool, error) {
 		var ring [3]float64
 		var front float64
 		fmt.Sscan(strings.Join(f[2:], " "), &at[0], &at[1], &ring[0], &ring[1], &ring[2], &front)
-		img := WallTexture(f[1])
+		img := wallTexture(f[1])
 		if img == nil {
 			return true, fmt.Errorf("no texture %q", f[1])
 		}

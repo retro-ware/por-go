@@ -111,7 +111,7 @@ func hotText(s string, key byte) (string, int) {
 // drawMenu draws a vertical menu in the original's look: a box with the
 // text pane's red border, the items in the game's font, green on black with
 // their hotkeys white, the rows off[i] (nothing to pick) grey (EGA 8), the
-// selected one on the text selection (pal.SelectText). It goes at scale k,
+// selected one on the text selection (a blue EGA 1 ground). It goes at scale k,
 // centred on cx, its top at top.
 func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, off []bool, sel int, k float64, cx, top int) {
 	p.drawMenuIcons(dst, glyph, title, items, keys, off, nil, sel, k, cx, top)
@@ -187,13 +187,11 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	for r, s := range rows {
 		y0, x0 := at[r]*8+8, 2
 		if r == sel {
-			pal.SelectText(image.Rect(8, y0, (cw-1)*8, y0+rh(r)*8), func(r image.Rectangle, c color.RGBA) {
-				for y := r.Min.Y; y < r.Max.Y; y++ {
-					for x := r.Min.X; x < r.Max.X; x++ {
-						set(x, y, c)
-					}
+			for y := y0; y < y0+rh(r)*8; y++ { // the text selection: a blue ground
+				for x := 8; x < (cw-1)*8; x++ {
+					set(x, y, pal.EGA(1))
 				}
-			})
+			}
 		}
 		if ic := icon[r]; ic != nil { // the icon, then the text in the middle line
 			b, h := ic.Bounds(), iconRow*8

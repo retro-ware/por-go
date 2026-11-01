@@ -195,9 +195,9 @@ func menuIndex(m *engine.Menu, c byte) int {
 // clicks the screens take, Esc on the right button, the highlight on the
 // wheel; a click elsewhere answers "press a key".
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
-	for ; wheel != 0; wheel -= sign(wheel) {
+	for ; wheel != 0; wheel -= unit(wheel) {
 		if p.fight && p.fightLog { // wheel up: up, a line a step, as every list
-			p.logTop = max(0, p.logTop-sign(wheel))
+			p.logTop = max(0, p.logTop-unit(wheel))
 			continue
 		}
 		if p.fight {
@@ -205,7 +205,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			continue
 		}
 		if v.Pages != nil { // a pager: the wheel pages
-			p.send(engine.ActPage, -sign(wheel))
+			p.send(engine.ActPage, -unit(wheel))
 			continue
 		}
 		if screenUp(v) || askList(v) != nil || p.pageMenu { // a list or menu (camp-style, the list popup, the page's: save slots, drop-downs, the sheet): the wheel moves the highlight, a line a step, up for up
@@ -291,7 +291,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	}
 }
 
-func sign(n int) int {
+// unit is -1 for a negative n, else 1.
+func unit(n int) int {
 	if n < 0 {
 		return -1
 	}

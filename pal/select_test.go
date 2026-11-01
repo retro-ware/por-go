@@ -19,8 +19,4 @@ func TestSelect(t *testing.T) {
 	if m.RGBAAt(1, 1) != EGA(10) || m.RGBAAt(4, 4) != EGA(10) || m.RGBAAt(2, 2) != (color.RGBA{}) || m.RGBAAt(0, 0) != (color.RGBA{}) {
 		t.Error("outline: a green frame inside r only")
 	}
-	SelectText(image.Rect(2, 2, 4, 4), fill)
-	if m.RGBAAt(2, 3) != EGA(1) || m.RGBAAt(1, 3) != EGA(10) {
-		t.Error("text: r filled blue")
-	}
 }

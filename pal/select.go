@@ -10,9 +10,6 @@ import (
 // row; the outline selection a green (EGA 10) frame round anything with a
 // picture (an item box, a picker cell, a battle-bar button).
 
-// SelectText marks text row r: fill paints it blue.
-func SelectText(r image.Rectangle, fill func(image.Rectangle, color.RGBA)) { fill(r, EGA(1)) }
-
 // SelectOutline marks picture r: fill paints a green frame t pixels thick
 // along the inside of r.
 func SelectOutline(r image.Rectangle, t int, fill func(image.Rectangle, color.RGBA)) {
