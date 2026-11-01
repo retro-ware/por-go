@@ -190,7 +190,7 @@ func (e *Engine) stepSquare(c *Character, dir int) {
 	}
 	e.cpos[idx].x, e.cpos[idx].y = nx, ny
 	if e.cs.on {
-		e.event(CombatEvent{Kind: EvMoved, Unit: idx, From: image.Pt(int(ox), int(oy)), To: image.Pt(int(nx), int(ny))})
+		e.event(CombatEvent{Kind: EvMoved, Unit: idx, From: image.Pt(int(ox), int(oy)), To: image.Pt(int(nx), int(ny)), Ms: stepMs}) // extra: each step held, so a walk (the computer's too: Quick, monsters) plays square by square
 	}
 	e.combatRedrawMap()
 	e.combatCentre(int(nx), int(ny), margin, 8)

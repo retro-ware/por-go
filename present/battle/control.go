@@ -215,6 +215,18 @@ func unitCentre(u engine.Unit) [2]float64 {
 	return [2]float64{c[0] / float64(len(u.Squares)), c[1] / float64(len(u.Squares))}
 }
 
+// footprint is how many squares u's footprint spans across (x) and deep (z).
+func footprint(u engine.Unit) (w, d float32) {
+	if len(u.Squares) == 0 {
+		return 1, 1
+	}
+	r := image.Rectangle{u.Squares[0], u.Squares[0].Add(image.Pt(1, 1))}
+	for _, s := range u.Squares {
+		r = r.Union(image.Rectangle{s, s.Add(image.Pt(1, 1))})
+	}
+	return float32(r.Dx()), float32(r.Dy())
+}
+
 // unitAt is where u is shown (sliding to its square) and the squares its icon spans.
 func (p *Presenter) unitAt(u engine.Unit, dt float64) (x, z, sq float32) {
 	c := unitCentre(u)

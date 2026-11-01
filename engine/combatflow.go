@@ -296,3 +296,6 @@ func (e *Engine) members() []Member {
 	}
 	return out
 }
+
+// stepMs is how long the presenter shows each combat step (EvMoved).
+const stepMs = 160

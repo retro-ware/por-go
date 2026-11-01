@@ -206,9 +206,10 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 			continue
 		}
 		shown[u.ID] = true
-		x, z, sq := p.unitAt(u, dt)
+		x, z, _ := p.unitAt(u, dt)
+		fw, fd := footprint(u)
 		o := shade
-		o.Model = place(x+.12, 0.004, z+.1, 0, sq*1.05, 1, sq*1.05)
+		o.Model = place(x+.12, 0.004, z+.1, 0, fw+.05, 1, fd+.05)
 		dst.DrawMesh(p.flatQuad, p.shadow, vp, &o)
 	}
 	for id := range p.units {
@@ -294,9 +295,10 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		if u.Party {
 			tint = partyColour
 		}
-		dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.78, pedestal, sq*.78), tint, 0.25))
+		fw, fd := footprint(u) // the base covers the squares it stands on, not the icon's size
+		dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, fw-.22, pedestal, fd-.22), tint, 0.25))
 		if u.Active { // whose turn: a gold ring round the base
-			dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, sq*.86, pedestal*.5, sq*.86),
+			dst.DrawMesh(p.base, p.white, vp, opts(place(x, 0, z, 0, fw-.14, pedestal*.5, fd-.14),
 				[4]float32{0.95 * pulse, 0.72 * pulse, 0.2 * pulse, 1}, 0.9))
 		}
 		ib := iconSize(u)
