@@ -74,6 +74,7 @@ type Member struct {
 	Exp      int         // extra: experience, what the level took (LevelExp) and what the next takes (NextExp; 0: it can rise no further)
 	LevelExp int
 	NextExp  int
+	Memo     string // extra: in camp a spellcaster's spells ready over its slots ("0/3"); "" otherwise
 }
 
 // Pane is the text under the 3D view (TextPane): what DisplayTextBlock,

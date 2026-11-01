@@ -3,6 +3,7 @@ package engine
 import (
 	"image"
 	"slices"
+	"strconv"
 )
 
 // The fight as a screen (docs/engine-redesign.md, M6c): Combat's rounds
@@ -294,6 +295,20 @@ func (e *Engine) members() []Member {
 		m := &out[len(out)-1]
 		from, to := levelSpan(c)
 		m.Exp, m.LevelExp, m.NextExp = int(int32(c.Exp)), int(from), int(to)
+		if e.mode() == modeCamp {
+			ready, slots := 0, 0
+			for _, s := range c.Memorized {
+				if s > 0 && s < 0x80 {
+					ready++
+				}
+			}
+			for _, n := range c.SpellSlots[:6] {
+				slots += int(n)
+			}
+			if slots > 0 {
+				m.Memo = strconv.Itoa(ready) + "/" + strconv.Itoa(slots)
+			}
+		}
 	}
 	return out
 }

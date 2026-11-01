@@ -96,7 +96,7 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 	}
 	for i, m := range ms {
 		d := p.cardImgs[i]
-		key := cardKey{m.Selected, m.HP, m.MaxHP, m.Status, p.portrait(m), m.Portrait != nil, 0, 0, p.border.tiles[0]}
+		key := cardKey{m.Selected, m.HP, m.MaxHP, m.Status, p.portrait(m), m.Portrait != nil, 0, 0, p.border.tiles[0], m.Memo}
 		if m.NextExp > 0 && gpu.IsKeyPressed(gpu.KeyShift) {
 			key.exp, key.nextExp = m.Exp-m.LevelExp, m.NextExp-m.LevelExp
 		}
@@ -294,6 +294,7 @@ type cardKey struct {
 	png          bool
 	exp, nextExp int // the experience bar while Shift is held (0: no bar)
 	tiles        *gpu.Image
+	memo         string // camp: the spells ready over the slots, on the bottom border
 }
 
 // drawCard draws m's card into d (scale 1): border, face, status, bars.
@@ -319,6 +320,9 @@ func (p *Presenter) drawCard(d *gpu.Image, m engine.Member, key cardKey) {
 	}
 	if s := cardLabels[m.Status]; s != "" && m.Portrait == nil {
 		p.label(d, s, cardFace+1, cardFace+portraitSize-9, 1)
+	}
+	if m.Memo != "" { // on the portrait's bottom border, centred
+		onBorder(d, p.glyph, (cardW-8*(len(m.Memo)+2))/2, frameH-8, true, []string{m.Memo}, []color.RGBA{green})
 	}
 	fill := greenFill
 	if m.HP*4 < m.MaxHP {
