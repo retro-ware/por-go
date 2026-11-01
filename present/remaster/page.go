@@ -170,22 +170,7 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 	fill := func(r image.Rectangle, c color.RGBA) { draw.Draw(m, r, image.NewUniform(c), image.Point{}, draw.Src) }
 	box := func(x2, y2 int) { // DrawBoxTitled(1, 1, x2, y2): the inside cleared, the border's cells round it
 		fill(image.Rect(8, 8, x2*8+8, y2*8+8), col(0))
-		tile := func(i, x, y int) {
-			if t := v.Border[i]; t != nil {
-				draw.Draw(m, image.Rect(x*8, y*8, x*8+8, y*8+8), t, t.Bounds().Min, draw.Over)
-			}
-		}
-		for _, c := range [][2]int{{0, 0}, {x2 + 1, 0}, {0, y2 + 1}, {x2 + 1, y2 + 1}} {
-			tile(0, c[0], c[1])
-		}
-		for x := 1; x <= x2; x++ {
-			tile(2, x, 0)
-			tile(2, x, y2+1)
-		}
-		for y := 1; y <= y2; y++ {
-			tile(1, 0, y)
-			tile(1, x2+1, y)
-		}
+		cellBorder(m, v, engine.CellRect{X1: 1, Y1: 1, X2: x2, Y2: y2})
 	}
 	prompt := func(s string, c int) { // the prompt row cleared, s on it
 		str(0, rows-1, 0, strings.Repeat(" ", cols))

@@ -294,28 +294,35 @@ func (c *cellPage) results(r *engine.Results) {
 	}
 }
 
+// cellBorder draws View.Border's cells into m round the cells of r. The
+// page boxes are text-grid cells drawn into the page's CPU image (uploaded
+// once per View, cropped by the adventure frame), not window()'s GPU pass.
+func cellBorder(m *image.RGBA, v engine.View, r engine.CellRect) {
+	f := r.Framed()
+	tile := func(i, x, y int) {
+		if t := v.Border[i]; t != nil {
+			draw.Draw(m, image.Rect(x*8, y*8, x*8+8, y*8+8), t, t.Bounds().Min, draw.Over)
+		}
+	}
+	for _, p := range [][2]int{{f.X1, f.Y1}, {f.X2, f.Y1}, {f.X1, f.Y2}, {f.X2, f.Y2}} {
+		tile(0, p[0], p[1])
+	}
+	for x := f.X1 + 1; x < f.X2; x++ {
+		tile(2, x, f.Y1)
+		tile(2, x, f.Y2)
+	}
+	for y := f.Y1 + 1; y < f.Y2; y++ {
+		tile(1, f.X1, y)
+		tile(1, f.X2, y)
+	}
+}
+
 // draw draws the page into m (its pictures, the borders' cells, the text
 // in the game's font).
 func (c *cellPage) draw(m *image.RGBA, v engine.View, note Note) {
 	drawPictures(m, c.pics, image.Point{})
 	for _, r := range c.boxes {
-		f := r.Framed()
-		tile := func(i, x, y int) {
-			if t := v.Border[i]; t != nil {
-				draw.Draw(m, image.Rect(x*8, y*8, x*8+8, y*8+8), t, t.Bounds().Min, draw.Over)
-			}
-		}
-		for _, p := range [][2]int{{f.X1, f.Y1}, {f.X2, f.Y1}, {f.X1, f.Y2}, {f.X2, f.Y2}} {
-			tile(0, p[0], p[1])
-		}
-		for x := f.X1 + 1; x < f.X2; x++ {
-			tile(2, x, f.Y1)
-			tile(2, x, f.Y2)
-		}
-		for y := f.Y1 + 1; y < f.Y2; y++ {
-			tile(1, f.X1, y)
-			tile(1, f.X2, y)
-		}
+		cellBorder(m, v, r)
 	}
 	for y, row := range c.cells {
 		for x, k := range row {
