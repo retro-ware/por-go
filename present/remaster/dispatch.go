@@ -418,6 +418,8 @@ func (p *Presenter) ctxSend(j int) {
 // it is the member's inventory; while the party is ordered it only selects.
 func (p *Presenter) cardClick(i int) {
 	switch {
+	case noChoice(p.shownView): // a script's unseen "press Enter" wait (PressToContinue before its text): the card continues, as a click elsewhere
+		p.send(engine.ActOK, 0)
 	case p.ordering:
 		p.send(engine.ActLead, i)
 	case p.command, p.campHome(p.shownView): // camp: the keys go to its menu

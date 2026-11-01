@@ -231,3 +231,14 @@ func TestKeyDispatch(t *testing.T) {
 		}
 	}
 }
+
+// A script's unseen "press Enter" wait (area 18's PressToContinue before
+// "YOUR COVER IS BLOWN."): a card's click continues it, as a click elsewhere,
+// instead of asking for the inventory the engine refuses.
+func TestCardClickContinues(t *testing.T) {
+	p := &Presenter{shownView: engine.View{Ask: &engine.Ask{Kind: engine.AskMenu, Menu: engine.Menu{Items: []engine.MenuItem{{Text: "PRESS <ENTER>"}}}}}}
+	p.cardClick(2)
+	if a := p.Actions(); len(a) != 1 || a[0].Kind != engine.ActOK {
+		t.Errorf("card click on a press-Enter wait: %v", a)
+	}
+}
