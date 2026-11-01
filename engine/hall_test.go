@@ -82,3 +82,23 @@ func TestCreditsClearTitle(t *testing.T) {
 		t.Errorf("credits: %d pictures, full %v, credits %v", len(v.Pictures), v.Full, v.Credits)
 	}
 }
+
+// The sheet opened while exploring is a page of its own: the world's 3D
+// view (View.Adventure) does not show over it.
+func TestSheetOverWorld(t *testing.T) {
+	e := testEngine(t)
+	seed := uint32(7)
+	e.FixedSeed = &seed
+	e.Explore = true
+	e.Init()
+	e.Start(e.Play)
+	if v := e.Apply(); !v.Adventure {
+		t.Fatal("not out in the world")
+	}
+	if v := e.Apply(Action{Kind: ActMember, N: -1}); v.Sheet == nil || v.Adventure {
+		t.Fatalf("View: sheet %v, adventure %v", v.Sheet != nil, v.Adventure)
+	}
+	if v := e.Apply(Action{Kind: ActClose}); !v.Adventure {
+		t.Error("back from the sheet: not out in the world")
+	}
+}

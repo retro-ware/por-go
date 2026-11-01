@@ -3,6 +3,7 @@ package engine
 import (
 	"image"
 	"image/color"
+	"slices"
 
 	"por/dax"
 	"por/pal"
@@ -231,5 +232,6 @@ func (e *Engine) layerRGBA(l layer) image.Image {
 // adventure: the party is out in the world (not the party menu, the
 // finale's pictures, or help, the journal, the maps over it).
 func (e *Engine) adventure() bool {
-	return e.beginFlag != 0 && e.beginFlag != 7 && !e.modal()
+	sheet := slices.ContainsFunc(e.screens, func(s screen) bool { return s.mode == modeSheet }) // the sheet (and its pickers, the icon editor) is a page of its own over the world
+	return e.beginFlag != 0 && e.beginFlag != 7 && !e.modal() && !sheet
 }
