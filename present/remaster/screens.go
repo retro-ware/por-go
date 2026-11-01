@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"slices"
+	"strings"
 	"time"
 
 	"gpu"
@@ -42,6 +43,7 @@ type screenUI struct {
 	caret   int            // ... its cursor ...
 	max     int            // ... how long it may get ...
 	act     engine.ActKind // ... and what it sends
+	then    func(string)   // ... or what takes the line instead (Minimal's next ability)
 	n       int
 	ask     string // scrAsk: the question; yes on Yes, back to sub on No
 	yes     func()
@@ -140,7 +142,34 @@ func (p *Presenter) typeLine(prompt, text string, n int, act engine.ActKind, an 
 	s := &p.scr
 	s.open(scrType)
 	s.back, s.sub, s.prompt, s.text, s.caret, s.max, s.act, s.n = scrMain, scrType, prompt, text, len(text), n, act, an
-	s.anchor = nil
+	s.anchor, s.then = nil, nil
+}
+
+// minimal asks the minimums one ability after another, STR first, each
+// showing the last one (a blank line keeps it), then rolls to them.
+func (p *Presenter) minimal(cr *engine.Creation) {
+	cur := strings.Fields(cr.Minimums)
+	got := make([]string, 0, 6)
+	var ask func()
+	ask = func() {
+		i := len(got)
+		old := ""
+		if i < len(cur) {
+			old = cur[i]
+		}
+		p.typeLine("Minimum "+statNames[i]+" ("+old+")", "", 6, engine.ActRoll, 1)
+		p.scr.then = func(t string) {
+			if t = strings.TrimSpace(t); t == "" {
+				t = "-" // not a value: the last one stays
+			}
+			if got = append(got, t); len(got) < 6 {
+				ask()
+				return
+			}
+			p.sendA(engine.Action{Kind: engine.ActRoll, N: 1, Text: strings.Join(got, " ")})
+		}
+	}
+	ask()
 }
 
 // typeAt starts a typed line in place of the sheet's text at r.
@@ -372,6 +401,9 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	s := &p.scr
 	if s.sub == scrType {
 		switch done, cancel, _ := editKey(k, &s.text, &s.caret, s.max, false); {
+		case done && s.then != nil:
+			s.open(s.back)
+			s.then(s.text)
 		case done:
 			s.open(s.back)
 			p.sendA(engine.Action{Kind: s.act, N: s.n, Text: s.text})
@@ -647,7 +679,7 @@ func (p *Presenter) barDo(v engine.View, h byte) func() {
 		case h == 'R':
 			p.send(engine.ActRoll, 0)
 		case h == 'M':
-			p.typeLine("Minimums (STR INT WIS DEX CON CHA)", cr.Minimums, 30, engine.ActRoll, 1)
+			p.minimal(cr)
 		}
 	}
 }
