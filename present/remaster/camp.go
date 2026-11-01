@@ -19,7 +19,8 @@ import (
 // Camp screens.
 const (
 	campMain = iota
-	campMemorize
+	campMemorize // the spell levels
+	campLevel    // one level's spells to memorize
 	campScribe
 	campBestiary
 	campDrop // the drop's confirmation
@@ -45,7 +46,9 @@ type campUI struct {
 	pointer   image.Point     // the pointer on the window (Hover), for the wheel
 	wheeled   time.Time       // the last line the wheel moved the bestiary's list
 	pick      int             // the temple's cure or the shop's item asked about
-	ids       []int           // the spell lists' lines: each one's spell (0: a level's heading, Exit)
+	ids       []int           // the spell lists' lines: each one's spell (0: a level, Exit)
+	unset     []bool          // the spell lists' lines with none memorized (grey)
+	level     string          // the level campLevel lists
 	rows      map[int][2]int  // each screen left for a submenu: its highlighted row and first line shown, for back
 }
 
@@ -81,26 +84,42 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 	cp := v.Camp
 	act := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
 	switch c.screen {
-	case campMemorize, campScribe:
-		list, title := cp.Book, "Spells to memorize"
-		if c.screen == campScribe {
-			list, title = cp.Scrolls, "Spells to scribe"
+	case campMemorize: // the levels, each its own submenu
+		var it []menuRow
+		c.ids, c.unset = c.ids[:0], c.unset[:0]
+		for i, s := range cp.Book {
+			if i == 0 || cp.Book[i-1].Level != s.Level {
+				it, c.ids = append(it, menuRow{fmt.Sprintf("%-26s %d/%d", s.Level, s.Planned, s.Slots), 0, func() { c.level = s.Level; c.to(campLevel, 0)() }}), append(c.ids, 0)
+			}
+		}
+		return "Spells to memorize", append(it, menuRow{"Exit", 0, c.back(campMain)})
+	case campLevel, campScribe:
+		list, title := cp.Scrolls, "Spells to scribe"
+		if c.screen == campLevel {
+			list, title = nil, c.level
+			for _, s := range cp.Book {
+				if s.Level == c.level {
+					list, title = append(list, s), fmt.Sprintf("%c%s%c %d/%d", inkHead, s.Level, inkHead, s.Planned, s.Slots)
+				}
+			}
 		}
 		var it []menuRow
-		c.ids = c.ids[:0]
-		for i, s := range list {
+		c.ids, c.unset = c.ids[:0], c.unset[:0]
+		for _, s := range list {
 			text := fmt.Sprintf("%-26s x%d", s.Name, s.Count)
 			if c.screen == campScribe {
 				text = s.Name
 				if s.Count > 0 {
 					text += " *"
 				}
-			} else if i == 0 || list[i-1].Level != s.Level { // the level's slots once, over its spells
-				it, c.ids = append(it, menuRow{fmt.Sprintf("%-26s %d/%d", s.Level, s.Planned, s.Slots), 0, nil}), append(c.ids, 0)
 			}
-			it, c.ids = append(it, menuRow{text, 0, func() { p.campSpell(s.ID, 1) }}), append(c.ids, s.ID)
+			it, c.ids, c.unset = append(it, menuRow{text, 0, func() { p.campSpell(s.ID, 1) }}), append(c.ids, s.ID), append(c.unset, c.screen == campLevel && s.Count == 0)
 		}
-		return title, append(it, menuRow{"Exit", 0, c.back(campMain)}) // no hotkeys: the lines are spells
+		back := c.back(campMain)
+		if c.screen == campLevel {
+			back = c.back(campMemorize)
+		}
+		return title, append(it, menuRow{"Exit", 0, back}) // no hotkeys: the lines are spells
 	case campBestiary:
 		sort := "Sort by danger"
 		if c.byDanger {
@@ -227,7 +246,7 @@ func (p *Presenter) memberAct(k engine.ActKind, n int) {
 	screen := map[engine.ActKind]int{engine.ActPlan: campMemorize, engine.ActScribe: campScribe, engine.ActDropMember: campDrop}
 	if s, ok := screen[k]; ok {
 		p.send(engine.ActLead, n)
-		p.camp.to(s, map[bool]int{true: 1}[s != campScribe])() // the drop's question on No, the memorize list under its first heading
+		p.camp.to(s, map[bool]int{true: 1}[s == campDrop])() // the drop's question on No
 		return
 	}
 	p.send(k, n)
@@ -279,6 +298,9 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	lines, keys, off := make([]string, len(items)), p.campKeys(items), rowsOff(items)
 	for i, it := range items {
 		lines[i] = it.text
+		if i < len(p.camp.unset) && p.camp.unset[i] && p.camp.screen == campLevel { // none memorized: grey, still picked
+			off[i] = true
+		}
 	}
 	p.camp.sel = min(max(p.camp.sel, 0), len(items)-1)
 	var icons []image.Image // the rows' icons: the items' (the shop's Identify), the creatures' (the bestiary)
@@ -329,7 +351,7 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, sel, k, cx, top)
 	p.menuGrey = false
 	p.menuBar(dst, p.menuRects, n, len(lines), &c.top, &c.sel, k)
-	if (c.screen == campMemorize || c.screen == campScribe) && v.Camp != nil && c.sel < len(c.ids) && len(p.menuRects) > 0 {
+	if p.spellList(v) && c.sel < len(c.ids) && len(p.menuRects) > 0 {
 		p.drawSpellTip(dst, c.ids[c.sel], k, cx)
 	}
 }
@@ -355,12 +377,19 @@ func (p *Presenter) drawSpellTip(dst *gpu.Image, id int, k float64, cx int) {
 	p.tipImg, p.tipBuf, p.spellTipImg, p.spellTipBuf = p.spellTipImg, p.spellTipBuf, p.tipImg, p.tipBuf
 }
 
+// spellList: a camp spell list is up (its rules drawn by it, the picture
+// hidden under them).
+func (p *Presenter) spellList(v engine.View) bool {
+	s := p.camp.screen
+	return v.Camp != nil && (s == campMemorize || s == campLevel || s == campScribe)
+}
+
 // campKey takes key k on a camp screen.
 func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	c := &p.camp
 	_, items := p.campItems(v)
 	n := len(items)
-	spells := v.Camp != nil && (c.screen == campMemorize || c.screen == campScribe)
+	spells := p.spellList(v)
 	m, member := memberKey(k, selectedIndex(v), len(v.Party), true)
 	switch a := actOf(k); {
 	case c.screen == campBestiary && (a == input.PgUp || a == input.PgDn): // the entry, eight lines a step
@@ -405,7 +434,7 @@ func (p *Presenter) campBack(v engine.View) {
 // campKeys are the camp screen's hotkeys: none on the spell lists (the
 // digits would land in the counts), the rest as every menu.
 func (p *Presenter) campKeys(items []menuRow) []byte {
-	if s := p.camp.screen; s == campMemorize || s == campScribe {
+	if s := p.camp.screen; s == campMemorize || s == campLevel || s == campScribe {
 		return make([]byte, len(items))
 	}
 	return rowKeys(items)

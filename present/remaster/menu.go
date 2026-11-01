@@ -216,12 +216,14 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		hk := hot[r] // the hotkey: white, as on the original's bar
 		col := 0
 		for i := 0; i < len(s); i++ {
-			if s[i] == inkGold || s[i] == inkRed { // a span in colour, to the next mark
+			if s[i] == inkGold || s[i] == inkRed || s[i] == inkHead { // a span in colour, to the next mark
 				switch {
 				case ink != green:
 					ink = green
 				case s[i] == inkGold:
 					ink = rgb(14)
+				case s[i] == inkHead:
+					ink = rgb(11)
 				default:
 					ink = rgb(12)
 				}
@@ -295,11 +297,12 @@ const (
 	inkGold = '\x01'
 	inkRed  = '\x02'
 	inkFoot = '\x03' // the rest of the title goes on the bottom border, in gold
+	inkHead = '\x04' // cyan: a submenu's heading
 )
 
 // visLen is s's length in cells, its colour marks left out.
 func visLen(s string) int {
-	return len(s) - strings.Count(s, string(rune(inkGold))) - strings.Count(s, string(rune(inkRed)))
+	return len(s) - strings.Count(s, string(rune(inkGold))) - strings.Count(s, string(rune(inkRed))) - strings.Count(s, string(rune(inkHead)))
 }
 
 // titleLines are a menu title's lines: its own (\n) and blank ones kept,

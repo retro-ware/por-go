@@ -351,7 +351,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		pic = engine.ViewWindow.Framed()
 	}
 	picBottom := 0                                                                    // the bottom of the picture box, when one is up
-	if v.Adventure && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
+	if v.Adventure && (v.Window == engine.WinPicture || v.Window == engine.WinText) && !p.spellList(v) { // the spell lists' rules go there; not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
 		pp := fitScale(pk, blobber.Settings.Pic, func(k float64) bool {
