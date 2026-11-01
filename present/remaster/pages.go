@@ -160,6 +160,10 @@ func (c *cellPage) lines() [][]engine.PaneRun {
 // screenPage is v's page as the presenter draws it: the page's pictures
 // and boxes and the screens' text over them.
 func screenPage(v engine.View) *cellPage {
+	if v.Slots != nil { // the slot screen alone: nothing of the page under it, from the main menu and in play alike
+		v.Pictures, v.Pane, v.SheetPage, v.Picker, v.IconEditor = nil, nil, nil, nil, nil
+		v.ViewText = nil
+	}
 	c := newCellPage(v)
 	c.texts(v)
 	if s := v.SheetPage; s != nil {
@@ -171,7 +175,7 @@ func screenPage(v engine.View) *cellPage {
 	if ed := v.IconEditor; ed != nil {
 		c.iconEditor(ed)
 	}
-	if sl := v.Slots; sl != nil { // over the page under (DrawBoxTitled)
+	if sl := v.Slots; sl != nil {
 		c.box(1, 1, c.cols-2, c.rows-2, inkWhite, "Saved Games")
 		if !sl.CanSave && !sl.LoadOnly {
 			c.str(2, c.rows-4, inkYellow, "No saving now") // promptRow-3
