@@ -387,7 +387,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	if p.ctx > 0 { // the context menu: on top, what is under it dimmed
 		b := dst.Bounds()
-		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
+		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0})
 		p.drawCardTip(dst, v)
 	}
 	return Rect{}
@@ -498,7 +498,7 @@ func window(dst *gpu.Image, t [3]*gpu.Image, g gpu.GeoM, cw, ch int, bg color.Co
 	x0, y0 := g.Apply(8, 8)
 	x1, y1 := g.Apply(float64(cw*8-8), float64(ch*8-8))
 	if bg != nil {
-		vector.DrawFilledRect(dst, float32(x0), float32(y0), float32(x1-x0), float32(y1-y0), bg, false)
+		vector.DrawFilledRect(dst, float32(x0), float32(y0), float32(x1-x0), float32(y1-y0), bg)
 	}
 	cell := func(i, x, y int) {
 		op := &gpu.DrawImageOptions{}

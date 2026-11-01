@@ -41,7 +41,7 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 	dst.DrawImage(p.backdrop.of(v.Backdrop), op)
 	a := p.mainFade()
 	dim := uint8(titleDim * 255 * min(max(a, 0), 1)) // the picture darkens as the menu comes, so the lettering reads
-	vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: dim}, false)
+	vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: dim})
 	if a >= 1 {
 		p.drawMainUI(dst, v)
 		return

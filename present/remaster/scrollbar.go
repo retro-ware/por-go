@@ -54,7 +54,7 @@ func (p *Presenter) menuBar(dst *gpu.Image, rs []image.Rectangle, n, rows int, t
 	r0, r1 := rs[0], rs[rows-1]
 	b := scrollBar{image.Rect(r0.Max.X-int(7*k), r0.Min.Y, r0.Max.X-int(k), r1.Max.Y), n, rows, *top}
 	b.draw(func(r image.Rectangle, c color.RGBA) {
-		vector.DrawFilledRect(dst, float32(r.Min.X), float32(r.Min.Y), float32(r.Dx()), float32(r.Dy()), c, false)
+		vector.DrawFilledRect(dst, float32(r.Min.X), float32(r.Min.Y), float32(r.Dx()), float32(r.Dy()), c)
 	})
 	p.scrollBars = append(p.scrollBars, barHit{b, func(t int) {
 		*top = t

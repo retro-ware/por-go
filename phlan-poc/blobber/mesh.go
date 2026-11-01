@@ -495,7 +495,7 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 	if openSky && !gpu.Skip("sky") {
 		g.drawSky(dst, c)
 		if texWater != nil && (len(Water) > 0 || Sea) { // phlan-poc: the sea runs on to the horizon past the last cells drawn
-			vector.DrawFilledRect(dst, 0, float32(H)/2, float32(W), float32(H)/2, color.RGBA{40, 98, 160, 255}, false)
+			vector.DrawFilledRect(dst, 0, float32(H)/2, float32(W), float32(H)/2, color.RGBA{40, 98, 160, 255})
 		}
 	}
 	if g.world == nil || g.world.gen != worldGen {

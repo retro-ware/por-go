@@ -824,14 +824,14 @@ func (g *Game) drawMenu(screen *gpu.Image) {
 	}
 	if Window == nil || g.confirm == nil { // the game dims under the menu; Window dims under a question itself
 		b := screen.Bounds()
-		vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
+		vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0})
 	}
 	if Window != nil {
 		keys := menuKeys(g.menuOptions())
 		Window(screen, title, items, keys, g.sel, false)
 		return
 	}
-	vector.DrawFilledRect(screen, float32(W/2-130), float32(H/2-60), 260, 152, color.RGBA{0, 0, 0, 200}, false)
+	vector.DrawFilledRect(screen, float32(W/2-130), float32(H/2-60), 260, 152, color.RGBA{0, 0, 0, 200})
 	Print(screen, title, W/2-120, H/2-50)
 	for i, s := range items {
 		cur := "  "

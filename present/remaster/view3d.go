@@ -77,8 +77,8 @@ func (p *Presenter) drawMap(dst *gpu.Image, v engine.View, font func(byte, bool)
 	}
 	r := mapRect(dst, len(v.Party))
 	a := float32(blobber.Settings.MapAlpha) // the opacity slider (Esc, Options)
-	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.NRGBA{0x80, 0x80, 0x80, uint8(255 * a)}, false)
-	vector.DrawFilledRect(dst, float32(r.Min.X+1), float32(r.Min.Y+1), float32(r.Dx()-2), float32(r.Dy()-2), color.NRGBA{A: uint8(255 * a)}, false)
+	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.NRGBA{0x80, 0x80, 0x80, uint8(255 * a)})
+	vector.DrawFilledRect(dst, float32(r.Min.X+1), float32(r.Min.Y+1), float32(r.Dx()-2), float32(r.Dy()-2), color.NRGBA{A: uint8(255 * a)})
 	k := float64(r.Dx()-2) / mapSide // any scale: the square keeps the aspect
 	op := &gpu.DrawImageOptions{}
 	op.ColorScale.ScaleAlpha(a)
