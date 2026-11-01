@@ -77,6 +77,7 @@ func (e *Engine) PartyMenu(then func()) {
 		}
 	}
 	e.debug = false
+	e.ext.hall = then == nil && e.beginFlag != 0 // a script's (the training hall): the game goes on under it
 	e.beginFlag = 0
 	redraw := func() {
 		e.snap.saves = len(e.slots()) > 0
@@ -156,7 +157,7 @@ func (e *Engine) applyParty(a Action) (done bool) {
 		e.SaveCharacter(e.actor(a.N), "")
 		e.RemoveSelected(false, true)
 	case ActBegin:
-		e.beginFlag = 4
+		e.beginFlag, e.ext.hall = 4, false
 		e.clearPrompt()
 		return true
 	case ActQuit:

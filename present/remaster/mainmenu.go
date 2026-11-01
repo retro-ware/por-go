@@ -122,6 +122,12 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 		}
 		it = append(it, menuRow{mainNames[k], key, do})
 	}
+	if v.Hall { // the training hall's: the party's functions and the way out, no title, no submenu
+		for _, k := range []engine.ActKind{engine.ActTraining, engine.ActMember, engine.ActModify, engine.ActAdd, engine.ActCreate, engine.ActRemove, engine.ActDropMember} {
+			add(k)
+		}
+		return "", append(it, menuRow{"Leave the Hall", 'L', func() { p.send(engine.ActBegin, -1) }})
+	}
 	if p.mainSub {
 		for _, k := range []engine.ActKind{engine.ActAdd, engine.ActCreate, engine.ActForget, engine.ActDropMember, engine.ActModify, engine.ActTraining, engine.ActMember, engine.ActRemove} {
 			add(k)

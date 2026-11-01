@@ -237,6 +237,7 @@ type View struct {
 	MainMenu   []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
 	Logo       image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop   image.Image    // the Amiga painted title under MainMenu (nil: black)
+	Hall       bool           // MainMenu is the training hall's: over the 3D view, Begin leaves the hall
 	Seq        uint64         // counts the Views published: a presenter redraws the page on a new one
 	Ticks      bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
 }
@@ -577,7 +578,10 @@ func (e *Engine) publish() {
 			v.Sheet = e.sheetView()
 		case modeParty:
 			if !e.modal() {
-				v.MainMenu, v.Logo, v.Backdrop = e.partyFunctions(), e.titleLogo(), e.titleBackdrop()
+				v.MainMenu, v.Hall = e.partyFunctions(), e.ext.hall
+				if !v.Hall {
+					v.Logo, v.Backdrop = e.titleLogo(), e.titleBackdrop()
+				}
 			}
 		}
 	}

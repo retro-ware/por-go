@@ -227,7 +227,17 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.drawOpen(dst)
 		return Rect{}
 	}
-	if p.main = v.MainMenu != nil; p.main {
+	if p.main = v.MainMenu != nil; p.main && v.Hall { // the training hall: its menu over the 3D view
+		p.active, p.menu = false, false
+		if sc := p.scene(v); sc != nil {
+			p.draw3D(dst, v, sc, note)
+		} else {
+			dst.Fill(color.Black)
+		}
+		p.drawMainUI(dst, v)
+		return Rect{}
+	}
+	if p.main {
 		p.shown, p.active, p.menu = "", false, false
 		p.drawMain(dst, v)
 		return Rect{}
@@ -241,6 +251,16 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	sc := p.scene(v)
 	area := v.Window == engine.WinAreaMap && v.AreaMap != nil                   // the overland: its map over the whole window, the 3D view's cards and boxes over it
 	if sc == nil && !area || v.Results != nil || !choosing(v) && !v.Adventure { // a member pick (Choosing) shows the view and the cards whatever page asked
+		if screenUp(v) { // training from the hall's party menu: over the 3D view
+			if sc != nil {
+				p.draw3D(dst, v, sc, note)
+			} else {
+				dst.Fill(color.Black)
+			}
+			b := dst.Bounds()
+			p.drawCamp(dst, note.Glyph, v, scale(dst), b.Dx()/2, b.Dy()/4, b.Max.Y)
+			return Rect{}
+		}
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil        // back from elsewhere: no tween from where the view was
 		p.asked = ""                                                      // and a question still waiting on return (View from the loot menu) pops up again
 		if sheetUp(v) && v.SheetPage != nil && v.SheetPage.Spells == "" { // the sheet: the presenter's, at the inventory's scale
@@ -250,12 +270,6 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		if v.Results != nil {
 			return p.drawResults(dst, v, note)
-		}
-		if screenUp(v) { // the temple, the shop, training away from the 3D view (the training hall's party menu): on black
-			dst.Fill(color.Black)
-			b := dst.Bounds()
-			p.drawCamp(dst, note.Glyph, v, scale(dst), b.Dx()/2, b.Dy()/4, b.Max.Y)
-			return Rect{}
 		}
 		if !ownLayout(v) { // nothing of the engine's page: the page's pictures and text in the remaster's layout
 			return p.drawGeneric(dst, v, note)

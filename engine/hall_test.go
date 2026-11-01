@@ -14,14 +14,17 @@ func TestHallTrain(t *testing.T) {
 	x, y, n := e.posX, e.posY, len(e.screens)
 	e.game.PartyExp = 0xFF
 	e.after(func() { e.PartyMenu(nil) }, e.DrawMainScreen)
-	if v := e.Apply(); v.MainMenu == nil {
-		t.Fatal("no party menu in the hall")
+	if v := e.Apply(); v.MainMenu == nil || !v.Hall || v.Logo != nil || v.Backdrop != nil {
+		t.Fatalf("hall's menu: menu %v hall %v, title art %v", v.MainMenu != nil, v.Hall, v.Logo != nil || v.Backdrop != nil)
 	}
 	if v := e.Apply(Action{Kind: ActTraining, N: 0}); v.Training == nil || v.Adventure {
 		t.Fatalf("Train: training %v, adventure %v", v.Training != nil, v.Adventure)
 	}
 	e.Apply(Action{Kind: ActClose})
 	v := e.Apply(Action{Kind: ActBegin})
+	if v.Hall || e.ext.hall {
+		t.Error("still the hall's menu after Begin")
+	}
 	if len(e.screens) != n || e.posX != x || e.posY != y || !v.Adventure || !v.Exploring {
 		t.Errorf("after Begin: %d screens (was %d), at %d,%d (was %d,%d), adventure %v", len(e.screens), n, e.posX, e.posY, x, y, v.Adventure)
 	}
