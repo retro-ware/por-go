@@ -107,6 +107,7 @@ type Presenter struct {
 	ctxRects   []image.Rectangle           // its lines on screen, as last drawn
 	ctxBox     image.Rectangle             // where its box went: the spell pick opens there
 	pick       []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
+	picBottom  int                         // the bottom of the picture box drawn this frame (0: none): menus go under it
 	pickAt     image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
 	pickSel    int                         // the pick list's highlight ...
 	picking    bool                        // ... reset when it opens
@@ -157,6 +158,10 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	} else { // the spell pick (the combat's Cast list) over whatever screen is up
 		k := scale(dst)
 		cx, top := dst.Bounds().Dx()/2, int(k)*16
+		if p.picBottom > 0 { // a picture up: under it, not over it, as far as the list fits
+			h := int(k) * 8 * (len(p.pick) + 4) // drawMenu's box: the border, the title and a blank line
+			top = max(top, min(p.picBottom+int(k)*4, dst.Bounds().Dy()-h))
+		}
 		if at := p.pickAt; at != (image.Rectangle{}) { // from a card's context menu: in its place at its scale, the edge next to the card kept
 			k = cardScale(dst)
 			w := 0
@@ -177,6 +182,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 // draw shows the screen the View is: the page, the main menu, a tall page or the 3D view.
 func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.screen = dst.Bounds()
+	p.picBottom = 0
 	p.setup(note, v)
 	p.command = v.Exploring
 	if screenUp(v) && !screenUp(p.shownView) { // camp, the temple, the shop, training start on their main screen
@@ -324,6 +330,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		drawBox(dst, inside, p.border.tiles, pic, pp, cx, py)
 		picBottom = py + int(pp*ph/2)
+		p.picBottom = picBottom
 	}
 	pane, asking := textPane(v), askMenu(v) != nil && !v.Exploring && !noChoice(v)
 	if asking {
