@@ -97,15 +97,15 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 		}
 		text(e, lx+lw-8*len(e), y+26, green)
 	}
-	ly := y + 52 // under the bars: a key left, its value right, a blank line between
+	ly := y + 52 // under the bars: a key left, its value right
 	if !sp.Creating {
 		text("Level", lx, ly, white)
 		text(sp.Levels, lx+lw-8*len(sp.Levels), ly, green)
-		ly += 20
 	}
-	if sp.Status != "" {
-		text("Status", lx, ly, white)
-		text(sp.Status, lx+lw-8*len(sp.Status), ly, green)
+	if sp.Status != "" { // the pane's last line, level with the AC/THAC0/Damage values
+		sy := (ch-2)*8 - 10
+		text("Status", lx, sy, white)
+		text(sp.Status, lx+lw-8*len(sp.Status), sy, green)
 	}
 
 	// the figures: who, two blank lines, the abilities, a blank line, Move;

@@ -411,9 +411,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		noteLine(m, note, 0)
 		dst.DrawImage(upload(&p.pg.toast, m), op)
 	}
-	if p.ctx > 0 && !p.campHome(v) { // the context menu: on top, what is under it dimmed
-		b := dst.Bounds()
-		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0})
+	if p.ctx > 0 && !p.campHome(v) { // the context menu: on top, nothing dimmed
 		p.drawCardTip(dst, v)
 	}
 	return Rect{}
