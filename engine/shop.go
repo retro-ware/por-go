@@ -116,7 +116,7 @@ func (e *Engine) identifiable(i int) []*Item {
 // shopView is the shop's state for the View: the party's unknown items
 // under their owners' names, only those Id tells something about.
 func (e *Engine) shopView() *Shop {
-	v := &Shop{IDPrice: 200, Gold: int(e.purse.gold), Appraise: e.appraiseView()}
+	v := &Shop{IDPrice: 200, Gold: int(e.purse.gold), Appraise: e.appraiseView(), Identified: e.snap.identified, IdentifiedN: e.snap.identN}
 	for i, c := range e.party {
 		for k, it := range e.identifiable(i) {
 			if unknown(it) {

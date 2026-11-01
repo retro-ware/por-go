@@ -405,10 +405,12 @@ type Appraise struct {
 
 // Shop is a shop's services besides its goods (Inventory.Wares).
 type Shop struct {
-	Unknown  []Unknown // the party's items Id tells something about
-	IDPrice  int       // gold an Id costs
-	Gold     int
-	Appraise Appraise
+	Unknown     []Unknown // the party's items Id tells something about
+	IDPrice     int       // gold an Id costs
+	Gold        int
+	Appraise    Appraise
+	Identified  *InvItem // (extra) the item Id last revealed, its Look lines what it does
+	IdentifiedN int      // counts the reveals: the presenter shows a new number once
 }
 
 // Unknown is an item to identify: ActIdentify N Member, X Item.
@@ -478,6 +480,8 @@ type snapState struct {
 	seq          uint64      // Views published
 	invOn        bool        // ItemsMenu waits: View.Inventory is up
 	shop         bool        // ... as the shop's Browse: View.Inventory.Wares
+	identified   *InvItem    // the item the shop's Id last revealed (View.Shop.Identified)
+	identN       int         // ... counted: a new reveal is a new number
 	loot         bool        // ... as the Loot screen: the treasure is the Wares, free
 	saves        bool        // there are saved games (the party menu's Load)
 	logo         image.Image // titleLogo, once cut

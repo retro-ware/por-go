@@ -39,6 +39,8 @@ type Presenter struct {
 	ticks                float64                     // animation time not yet run, in 1/60 s ticks
 	border               borders                     // the game's window border
 	bars                 *gpu.Image                  // bars.png
+	idSeen               int                         // the shop's last Id reveal shown and closed (identify.go)
+	idImg                *gpu.Image                  // its pop-up
 	expShown             bool                        // drawParty: every card's experience bar, Shift or not (the training hall)
 	cardImgs             []*gpu.Image                // the cards, drawn at scale 1...
 	cardKeys             []cardKey                   // ...and what each shows
@@ -159,6 +161,9 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.confirmAt = slices.Clone(p.winRects)
 	} else {
 		p.confirmFor, p.confirmAt = "", nil
+	}
+	if it := p.identified(v); it != nil { // the shop's Id: what it revealed, over everything
+		p.drawIdentified(dst, note.Glyph, it)
 	}
 	p.pick = spellPick(v)
 	if up := p.pickList() != nil; up != p.picking { // a pick list opens on its first spell

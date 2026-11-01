@@ -26,6 +26,9 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
+	if p.identDone(v) { // the Id's pop-up: any key closes it
+		return true
+	}
 	if confirm(v) != "" {
 		return p.confirmKey(k)
 	}
@@ -158,6 +161,9 @@ func (p *Presenter) Click(x, y int) bool {
 	}
 	if sheetUp(p.shownView) && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(x, y).In(p.sheet.faceAt) { // Shift-click on the sheet's portrait: the next head
 		p.send(engine.ActHead, -1)
+		return true
+	}
+	if p.identDone(p.shownView) { // the Id's pop-up: any click closes it
 		return true
 	}
 	if p.barClick(x, y) {

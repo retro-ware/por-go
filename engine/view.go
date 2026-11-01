@@ -719,6 +719,9 @@ func (e *Engine) identifyItem(c *Character, it *Item) {
 	}
 	it.Hidden = 0
 	e.ItemName(c, it, 0, 0, false, false)
+	x := e.invItem(c, it) // (extra) the reveal in a pop-up of its own (View.Shop.Identified)
+	x.Look = e.itemLines(it, nil)
+	e.snap.identified, e.snap.identN = x, e.snap.identN+1
 	e.say("It looks like some sort of " + it.Name())
 }
 
