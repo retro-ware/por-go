@@ -478,21 +478,22 @@ func (e *Engine) setStatTyped(c *Character, i int, s string) {
 // sheetScale is the creation sheet's portrait and combat icon scale: the
 // 40x25 page's sizes times what the right of the page leaves room for (the
 // combat stats reach column 37, the prompt row stays free).
-func sheetScale() int { return max(1, min((winRight-38)/10, (winBottom-3)/13)) }
+func sheetScale() int { return max(1, min((winRight-37)/11, (winBottom-3)/14)) }
 
-// sheetPortraitBox is the creation sheet's portrait box, against the right border.
+// sheetPortraitBox is the creation sheet's portrait box, against the right
+// border: 11x11 cells at 1x (the head 5 rows, the body 6), times sheetScale.
 func sheetPortraitBox() CellRect {
 	s := sheetScale()
-	return CellRect{winRight - 10*s, 1, winRight, 1 + 10*s}
+	return CellRect{winRight - 11*s + 1, 1, winRight, 11 * s}
 }
 
 // Where the sheet shows the combat icon's poses: under the portrait box.
-func sheetIconRow() int { return 3 + 10*sheetScale() }
+func sheetIconRow() int { return 2 + 11*sheetScale() }
 
 // sheetIconCol is the column of pose p's icon under the portrait box, as
 // the engine draws it (at 1x: the presenter scales it by sheetScale from
 // the icon box's corner).
-func sheetIconCol(p int) int { return winRight - 9*sheetScale() + 5*p }
+func sheetIconCol(p int) int { return winRight - 10*sheetScale() + 1 + 5*p }
 
 // sheetIconBox is the icons' cells at sheetScale.
 func sheetIconBox() CellRect {
@@ -565,7 +566,7 @@ func (e *Engine) creationView() *Creation {
 		v.Stats[i] = CellRect{1, 7 + i, x1, 7 + i}
 	}
 	b, s := sheetPortraitBox(), sheetScale()
-	v.Head, v.Body = CellRect{b.X1, 1, winRight, 1 + 4*s}, CellRect{b.X1, 1 + 5*s, winRight, b.Y2}
+	v.Head, v.Body = CellRect{b.X1, 1, winRight, 5 * s}, CellRect{b.X1, 5*s + 1, winRight, b.Y2}
 	v.Icon, v.Scale = sheetIconBox(), s
 	return v
 }
