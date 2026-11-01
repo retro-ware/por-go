@@ -1,13 +1,21 @@
 package remaster
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"regexp"
 	"slices"
+	"strings"
 	"testing"
 
 	"gpu"
 
 	"blobber"
 	"por/engine"
+	"por/present/input"
 )
 
 // Esc closes the command menu (Enter opened it).
@@ -169,6 +177,56 @@ func TestBindings(t *testing.T) {
 		for _, s := range []string{b.keys, b.mouse, b.pad} {
 			if len(s) > helpKeyW || len(b.desc) > helpDescW {
 				t.Errorf("%q / %q too wide for the help", s, b.desc)
+			}
+		}
+	}
+}
+
+// The keyboard dispatch is the table's: every key code a row binds
+// resolves to that row's Act in its context (no row shadows another), each
+// such Act is one a screen switches on, and no screen names a key code.
+func TestKeyDispatch(t *testing.T) {
+	names := map[input.Act]string{} // the Acts by name, from the package's source
+	f, err := parser.ParseFile(token.NewFileSet(), "../input/input.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range f.Decls {
+		if g, ok := d.(*ast.GenDecl); ok && g.Tok == token.CONST && len(g.Specs) > 1 {
+			for i, sp := range g.Specs {
+				names[input.Act(i)] = sp.(*ast.ValueSpec).Names[0].Name
+			}
+		}
+	}
+	var src strings.Builder
+	files, _ := filepath.Glob("*.go")
+	battle, _ := filepath.Glob("../battle/*.go")
+	scan := regexp.MustCompile(`0x(3[B-F]|4[0-9A-F]|5[0-3]|E[0-5]|FD)00\b|KeyPad|KeyF[19]|KeyFontPrev|\bk ?[=!]= ?(8|9|13|27)\b|case (8|9|13|27)\b`)
+	for _, name := range append(files, battle...) {
+		if strings.HasSuffix(name, "_test.go") || name == "bindings.go" {
+			continue
+		}
+		b, _ := os.ReadFile(name)
+		for i, l := range strings.Split(string(b), "\n") {
+			if scan.MatchString(l) {
+				t.Errorf("%s:%d names a key code; dispatch through the table (actOf, combatAct): %s", name, i+1, strings.TrimSpace(l))
+			}
+		}
+		src.Write(b)
+	}
+	for _, b := range bindings {
+		for _, c := range b.codes {
+			look := actOf
+			if b.ctx == ctxCombat {
+				look = combatAct
+			}
+			if a := look(c.K); a != c.A {
+				t.Errorf("%s %q: key %#x resolves to %s, not %s", b.ctx, b.desc, c.K, names[a], names[c.A])
+			}
+			if n := names[c.A]; c.A < input.Member1 || c.A >= input.Member1+input.Members {
+				if !strings.Contains(src.String(), "input."+n) {
+					t.Errorf("%s %q: no screen handles input.%s", b.ctx, b.desc, n)
+				}
 			}
 		}
 	}
