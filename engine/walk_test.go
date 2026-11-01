@@ -22,8 +22,7 @@ func TestAutoWalk(t *testing.T) {
 	}
 	v := settle(e)
 	x, y := v.X, v.Y // the start of Phlan: a corridor running west
-	left := engine.Action{Kind: engine.ActMove, N: engine.DirLeft}
-	keys(engine.Action{Kind: engine.ActMap}, left, left, left)
+	keys(engine.Action{Kind: engine.ActMap}, engine.Action{Kind: engine.ActPoint, X: x - 3, Y: y})
 	e.Apply(resolve(e, hot('W')))
 	for range 3 {
 		time.Sleep(30 * time.Millisecond)
@@ -32,9 +31,8 @@ func TestAutoWalk(t *testing.T) {
 	if v = settle(e, 3*time.Second); v.X != x-3 || v.Y != y {
 		t.Fatalf("walk from %d,%d to %d,%d ended at %d,%d", x, y, x-3, y, v.X, v.Y)
 	}
-	right := engine.Action{Kind: engine.ActMove, N: engine.DirRight}
-	keys(engine.Action{Kind: engine.ActMap}, right, right, right)
-	e.Apply(resolve(e, hot('W')), engine.Action{Kind: engine.ActContinue}) // a key stops the walk back at once
+	keys(engine.Action{Kind: engine.ActMap}, engine.Action{Kind: engine.ActPoint, X: x, Y: y})
+	e.Apply(resolve(e, hot('W')), engine.Action{Kind: engine.ActOK}) // a key stops the walk back at once
 	if v = settle(e); v.X != x-3 || v.Y != y {
 		t.Fatalf("a key did not stop the walk back: at %d,%d, want %d,%d", v.X, v.Y, x-3, y)
 	}

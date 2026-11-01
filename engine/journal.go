@@ -226,7 +226,7 @@ func (e *Engine) showJournal(box string, lines []string) {
 		}
 		maxOff := draw(p, pageOff)
 		e.keyThen(func(a Action) {
-			up, down := a.Kind == ActMove && a.N == DirUp, a.Kind == ActMove && a.N == DirDown
+			up, down := a.Kind == ActPage && a.N < 0, a.Kind == ActPage && a.N > 0
 			switch {
 			case a.Kind == ActClose:
 				p = len(pages)

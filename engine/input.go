@@ -31,7 +31,7 @@ func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(strin
 					}
 					t.Text = string(b)
 					show(t.Text)
-				case ActContinue:
+				case ActOK:
 					done = true
 					return true
 				case ActClose:

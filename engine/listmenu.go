@@ -65,10 +65,7 @@ func (e *Engine) ListMenu(title string, menu Bar, _, _, _, _, _, _, _ int,
 			case p.ID == PickRelist: // (extra) another member (F1-F8): the caller rebuilds the list
 				*selected = nil
 				done(p)
-			case p.ID == PickMove && len(menu) == 0: // the pickers stepping their value (creation)
-				*selected = list[min(max(*index, 0), len(list)-1)]
-				done(p)
-			case p.ID == PickMove || p.ID == PickRedraw || p.ID == PickSlots:
+			case p.ID == PickRedraw || p.ID == PickSlots:
 				ask()
 			case i >= 0 && i < len(list) && !list[i].skipped():
 				*index, *selected = i, list[i]

@@ -1181,7 +1181,7 @@ func (p *Presenter) pace(v engine.View) {
 	case p.pauseFrom.IsZero():
 		p.pauseFrom = time.Now()
 	case time.Since(p.pauseFrom) >= time.Duration(v.Script.Ms)*time.Millisecond:
-		p.send(engine.ActContinue, 0)
+		p.send(engine.ActOK, 0)
 		p.pauseFrom = time.Time{}
 	}
 }

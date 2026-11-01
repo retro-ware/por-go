@@ -97,7 +97,7 @@ func TestBattleView(t *testing.T) {
 // hot stands for the menu item with hotkey c (resolve finds its index).
 func hot(c byte) engine.Action { return engine.Action{Kind: engine.ActChoose, N: -int(c)} }
 
-var cont = engine.Action{Kind: engine.ActContinue}
+var cont = engine.Action{Kind: engine.ActOK}
 
 // resolve turns hot(c) into the pick of that item on the menu shown.
 func resolve(e *engine.Engine, a engine.Action) engine.Action {
@@ -513,7 +513,7 @@ func TestScriptInputPrompt(t *testing.T) {
 	if v.Script == nil || v.Script.Kind != engine.AskText || v.Script.Prompt != v.Typing.Prompt {
 		t.Fatalf("script ask %+v, want the typed line", v.Script)
 	}
-	e.Apply(engine.Action{Kind: engine.ActText, Text: "ohlo"}, engine.Action{Kind: engine.ActContinue})
+	e.Apply(engine.Action{Kind: engine.ActText, Text: "ohlo"}, engine.Action{Kind: engine.ActOK})
 	if settle(e).Typing != nil {
 		t.Fatal("the line did not end")
 	}

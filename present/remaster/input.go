@@ -3,6 +3,7 @@ package remaster
 import (
 	"image"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"gpu"
@@ -23,15 +24,46 @@ const (
 	KeyPadOverview = 0xE200 // as P
 )
 
-// scanDir is the ActMove direction of each scan code.
-var scanDir = map[uint16]int{0x4800: engine.DirUp, 0x5000: engine.DirDown, 0x4B00: engine.DirLeft, 0x4D00: engine.DirRight,
-	0x4700: engine.DirHome, 0x4F00: engine.DirEnd, 0x4900: engine.DirPgUp, 0x5100: engine.DirPgDn, 0x4C00: engine.DirCentre}
+// keypadScan: digits a menu does not offer are the keypad's keys (1 End .. 9 PgUp).
+var keypadScan = [...]uint16{0x4F00, 0x5000, 0x5100, 0x4B00, 0x4C00, 0x4D00, 0x4700, 0x4800, 0x4900}
 
-// keypadDir: digits a menu does not offer step as the keypad's keys.
-var keypadDir = [...]int{engine.DirEnd, engine.DirDown, engine.DirPgDn, engine.DirLeft, engine.DirCentre, engine.DirRight, engine.DirHome, engine.DirUp, engine.DirPgUp}
+// arrow turns a cursor key (scan code k) into its decision on v: the full
+// map's cursor (ActPoint), the member pick's candidate or another member
+// (Home/End: ActLead), else a pager's page (ActPage -1 or +1).
+func (p *Presenter) arrow(k uint16, v engine.View) {
+	back := k == 0x4800 || k == 0x4B00 || k == 0x4900 || k == 0x4700
+	on := k == 0x5000 || k == 0x4D00 || k == 0x5100 || k == 0x4F00
+	if c := v.MapCursor; c != nil {
+		d := map[uint16]image.Point{0x4800: {0, -1}, 0x5000: {0, 1}, 0x4B00: {-1, 0}, 0x4D00: {1, 0}}[k]
+		if d != (image.Point{}) {
+			c := c.Add(d)
+			p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: min(max(c.X, 0), 15), Y: min(max(c.Y, 0), 15)})
+		}
+		return
+	}
+	if n := len(v.Party); n > 0 && (v.Choosing || k == 0x4700 || k == 0x4F00) && (back || on) {
+		i := slices.IndexFunc(v.Party, func(m engine.Member) bool { return m.Selected })
+		switch {
+		case on:
+			i = (i + 1) % n // none: the first
+		case i <= 0:
+			i = n - 1
+		default:
+			i--
+		}
+		p.send(engine.ActLead, i)
+		return
+	}
+	switch {
+	case back:
+		p.send(engine.ActPage, -1)
+	case on:
+		p.send(engine.ActPage, 1)
+	}
+}
 
 func (p *Presenter) send(kind engine.ActKind, n int) {
-	if kind == engine.ActChoose || kind == engine.ActContinue { // a question answered: the next menu pops up, the same one again too
+	if kind == engine.ActChoose || kind == engine.ActOK { // a question answered: the next menu pops up, the same one again too
 		p.asked = ""
 	}
 	p.inv.acts = append(p.inv.acts, engine.Action{Kind: kind, N: n})
@@ -45,7 +77,7 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		}
 		switch {
 		case k == 13:
-			p.send(engine.ActContinue, 0)
+			p.send(engine.ActOK, 0)
 			p.typing = false
 		case k == 27:
 			p.send(engine.ActClose, 0)
@@ -79,7 +111,7 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	}
 	switch {
 	case k == 13 || k == KeyPadSelect:
-		p.send(engine.ActContinue, 0)
+		p.send(engine.ActOK, 0)
 	case k == 27:
 		p.send(engine.ActClose, 0)
 	case k == 9 || k == KeyPadMinimap:
@@ -100,18 +132,10 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		}
 	case k == KeyF9:
 		p.send(engine.ActSlots, 0)
-	case k == 8: // Backspace: as Left (memorizing: one less)
-		p.send(engine.ActMove, engine.DirLeft)
 	case k&0xFF == 0:
-		if d, ok := scanDir[k]; ok {
-			p.send(engine.ActMove, d)
-		}
+		p.arrow(k, v)
 	case k == '?':
 		p.send(engine.ActHelp, 0)
-	case k == ',':
-		p.send(engine.ActMove, engine.DirBack)
-	case k == '.':
-		p.send(engine.ActMove, engine.DirOn)
 	case k >= 128 || c < ' ':
 	case menuIndex(v.Menu, c) >= 0:
 		p.send(engine.ActChoose, menuIndex(v.Menu, c))
@@ -120,9 +144,9 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	case c == 'P':
 		p.send(engine.ActOverview, 0)
 	case c >= '1' && c <= '9':
-		p.send(engine.ActMove, keypadDir[c-'1'])
+		p.arrow(keypadScan[c-'1'], v)
 	case c == ' ' || v.Menu == nil: // "press any key"
-		p.send(engine.ActContinue, 0)
+		p.send(engine.ActOK, 0)
 	}
 }
 
@@ -164,11 +188,6 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			p.battle.Zoom(wheel > 0, blobber.Settings.Zoom)
 			continue
 		}
-		d := engine.DirWheelDown
-		if wheel > 0 {
-			d = engine.DirWheelUp
-		}
-		p.send(engine.ActMove, d)
 	}
 	if pageScreen(v) && p.pageMenu { // the page screens' own pointer (screens.go): the right button is Esc
 		if right {
@@ -193,7 +212,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.ctx = 0
 	case v.Menu != nil && len(v.Menu.Items) == 1 && v.Typing == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
 		p.menu = false
-		p.send(engine.ActContinue, 0)
+		p.send(engine.ActOK, 0)
 	case p.menu && v.Exploring: // the command bar's popup: it alone closes (key)
 		p.menu = false
 	default:
@@ -219,7 +238,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	case spot >= 0:
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActSpot, N: spot, X: cx, Y: cy})
 	case v.Typing == nil && (v.Menu == nil || len(v.Menu.Items) == 1): // no bar, or one with nothing to choose (the scripts' "PRESS <ENTER> TO CONTINUE")
-		p.send(engine.ActContinue, 0)
+		p.send(engine.ActOK, 0)
 	}
 }
 

@@ -17,11 +17,11 @@ import (
 type AskKind int
 
 const (
-	AskMenu   AskKind = iota + 1 // a one-line menu (HMENU, the encounter's, Parlay's, "press Enter"): View.Menu; ActChoose N, ActContinue where Enter takes the first
+	AskMenu   AskKind = iota + 1 // a one-line menu (HMENU, the encounter's, Parlay's, "press Enter"): View.Menu; ActChoose N, ActOK where Enter takes the first
 	AskList                      // a vertical menu (VMENU): View.List; ActChoose with X the line; ActClose takes a last LEAVE
-	AskText                      // a typed line (INPUT string or number): View.Typing; ActText, then ActContinue
-	AskMember                    // a member pick (WHO): View.Choosing; ActMember N, the arrows step, ActContinue takes the candidate
-	AskPause                     // a pause (DELAY, MsgDelay, the title's waits): the presenter waits Ms, then sends ActContinue (Enter cuts it short)
+	AskText                      // a typed line (INPUT string or number): View.Typing; ActText, then ActOK
+	AskMember                    // a member pick (WHO): View.Choosing; ActMember N, ActLead N steps, ActOK takes the candidate
+	AskPause                     // a pause (DELAY, MsgDelay, the title's waits): the presenter waits Ms, then sends ActOK (Enter cuts it short)
 	AskKey                       // "press any key" (the text pager, PromptRow24): any key answers
 	AskSpell                     // a memorized spell (View.SpellPick): ActCast N, ActClose backs out
 )
@@ -197,7 +197,7 @@ func (e *Engine) askLine(maxlen int, number bool, then func(string)) {
 				t.Text = string(b)
 				e.DisplaySpaces(1, promptRow, colBlack, 39)
 				e.DisplayString(1, promptRow, colWhite, t.Text)
-			case ActContinue, ActClose:
+			case ActOK, ActClose:
 				s := strings.ToUpper(t.Text)
 				if n, err := strconv.ParseInt(strings.TrimLeft(s, " "), 10, 32); number && (err != nil || n < 0 || n > 0x10000) {
 					t.Text = ""
@@ -250,16 +250,8 @@ func (e *Engine) askMember(prompt string, who *Character, then func(*Character))
 			case p.ID == PickEnter || p.ID == 0:
 				then(who)
 				return true
-			case p.extra():
-				i := e.partyIndex(who)
-				switch p.Dir {
-				case DirEnd, DirDown, DirRight: // next, wrapping to the first
-					who = e.party[(i+1)%len(e.party)]
-				case DirHome, DirUp, DirLeft: // previous, wrapping to the last
-					who = e.party[(i+len(e.party)-1)%len(e.party)]
-				}
+			case p.extra(): // ActLead stepped the candidate
 				e.selectChar(who)
-				e.rosterHi, e.rosterNone = who, false
 				e.DisplayPartyList()
 			}
 			return false
@@ -274,7 +266,7 @@ func (e *Engine) askPause(ms int, then func()) {
 	}
 	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskPause, Ms: ms},
 		apply: func(a Action) bool {
-			if a.Kind != ActContinue && a.Kind != ActClose {
+			if a.Kind != ActOK && a.Kind != ActClose {
 				return false
 			}
 			then()

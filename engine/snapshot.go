@@ -111,9 +111,10 @@ type View struct {
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
 	IconDrop  bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
 	IconBox   CellRect       // the creation sheet's combat icon (zero elsewhere): a PNG dropped on it becomes the icon (ActIcon)
+	MapCursor *image.Point   // the full map is up: its cursor square; ActPoint X, Y moves it
 	Ordering  bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
 	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
-	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActMove Up/Down steps, Enter takes the candidate
+	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActLead N makes N the candidate, ActOK takes the candidate
 	MainMenu  []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
@@ -178,8 +179,7 @@ type Slots struct {
 // Menu is a question waiting for the player: a prompt and its options.
 type Menu struct {
 	Prompt string
-	Items  []MenuItem // the options (ActChoose N); none: a message to acknowledge (ActContinue)
-	Arrows bool       // the screen takes the arrows itself (ActMove): a cursor, a picker
+	Items  []MenuItem // the options (ActChoose N); none: a message to acknowledge (ActOK)
 }
 
 // ListLine is a line of View.List.
@@ -421,6 +421,10 @@ func (e *Engine) publish() {
 	}
 	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering
+	if e.ext.fullMap {
+		c := e.ext.mapCursor
+		v.MapCursor = &c
+	}
 	e.pageView(v)
 	v.Party = e.members()
 	v.Border = e.borderTiles()

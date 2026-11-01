@@ -9,9 +9,8 @@ import (
 // up (take does the screen-wide ones), which decides on their meaning
 // (displayThen's question for menu bars):
 //
-//   - in menus ActMove moves the highlight (Left/Up back, Right/Down on);
-//     in menus that take the keypad, Up/Down step the selected member
-//     (Home/End) and Left/Right move the highlight
+//   - the highlight is the presenter's; in menus that take the keypad
+//     ActLead selects another member (Home/End)
 //   - ActClose picks a menu's Exit item, so it always backs out
 //   - the clickable parts of the screen are published as View.Spots: the
 //     presenter sends ActHover and ActSpot for them
@@ -165,7 +164,7 @@ func (e *Engine) extraAct(a Action) bool {
 
 // take does what a does on every screen; ActNone when it is used up.
 func (e *Engine) take(a Action) Action {
-	if a.Kind == ActContinue || a.Kind == ActClose { // Enter or Esc silences the voice-over
+	if a.Kind == ActOK || a.Kind == ActClose { // Enter or Esc silences the voice-over
 		e.stopVoice()
 	}
 	switch a.Kind {
@@ -198,10 +197,8 @@ func (e *Engine) take(a Action) Action {
 // the screen-wide actions close it too.
 func (e *Engine) pressed(a Action) bool {
 	switch a.Kind {
-	case ActContinue, ActClose, ActChoose, actHotkey, ActOverview, ActMap, ActMinimap:
+	case ActOK, ActClose, ActChoose, actHotkey, ActOverview, ActMap, ActMinimap, ActPage, ActLead:
 		return true
-	case ActMove:
-		return a.N < DirWheelUp
 	case ActInventory, ActHelp, ActSlots:
 		return e.ext.modal > 0
 	}

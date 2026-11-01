@@ -4,7 +4,7 @@ import "strings"
 
 // Questions to the player (ovr26's menu bars, remade): DisplayInput
 // publishes the prompt and its options as View.Menu and waits for the
-// player's decision (ActChoose N, ActClose, ActContinue); how the options
+// player's decision (ActChoose N, ActClose, ActOK); how the options
 // are shown and picked is the presenter's.
 
 func isHotkey(c byte) bool { return c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' } // set [0-9A-Z]
@@ -34,7 +34,6 @@ type Choice int
 const (
 	NoPick     Choice = -1 - iota // the wait ended with nothing (Esc on a menu without Exit)
 	PickEnter                     // Enter, where it does not pick the highlighted item
-	PickMove                      // a keypad key the bar does not use itself: Pick.Dir
 	PickRedraw                    // a click moved a cursor itself: draw again (actRedraw)
 	PickRelist                    // another member (F1-F8): the caller rebuilds the list
 	PickSlots                     // F9 on a menu bar of the slot screen
@@ -45,15 +44,14 @@ const (
 
 // Pick is what a menu bar hands back: the item's Choice or an outcome.
 type Pick struct {
-	ID  Choice
-	Dir int // PickMove: Dir...
+	ID Choice
 }
 
 // extra: the pick is one of the original's extended keys (the keypad, or
 // an outcome of the remaster's own), not an item, Enter or nothing.
 func (p Pick) extra() bool {
 	switch p.ID {
-	case PickMove, PickRedraw, PickRelist, PickSlots:
+	case PickRedraw, PickRelist, PickSlots:
 		return true
 	}
 	return false
@@ -136,7 +134,7 @@ func (e *Engine) displayThen(prompt string, bar Bar, _, normal, highlight int, a
 // newQuestion is the menu DisplayInput (or a script's ask) publishes for
 // prompt and bar and the question deciding its answers.
 func (e *Engine) newQuestion(prompt string, bar Bar, allowExtra, allowEnter bool) (*Menu, *question) {
-	m := &Menu{Prompt: strings.TrimSpace(prompt), Arrows: allowExtra}
+	m := &Menu{Prompt: strings.TrimSpace(prompt)}
 	var ids []Choice
 	for _, it := range bar {
 		if i := strings.IndexFunc(it.Word, func(r rune) bool { return r < 0x80 && isHotkey(byte(r)) }); i >= 0 {
@@ -171,15 +169,28 @@ func (q *question) decide(a Action) (p Pick, ok bool) {
 		return q.key(byte(a.N))
 	case actRedraw:
 		return q.outcome(Pick{ID: PickRedraw})
-	case ActContinue:
+	case ActOK:
 		return Pick{ID: PickEnter}, q.allowEnter || len(q.items) == 0
 	case ActClose: // the Exit option, so it always backs out
 		if e.ext.modal == 0 && q.has('E', "Exit") {
 			return q.key('E')
 		}
 		return Pick{ID: NoPick}, true
-	case ActMove: // the screens still reading the arrows themselves (to go)
-		return q.outcome(Pick{ID: PickMove, Dir: a.N})
+	case ActPoint: // the full map's cursor
+		if c := &e.ext.mapCursor; e.ext.fullMap && onMap(a.X, a.Y) {
+			c.X, c.Y = a.X, a.Y
+			return q.outcome(Pick{ID: PickRedraw})
+		}
+	case ActLead: // Home/End: another member; in a member pick the candidate
+		switch n := a.N; {
+		case n < 0 || n >= len(e.party) || e.ext.modal > 0:
+		case e.ext.choosing:
+			e.rosterHi, e.rosterNone = e.party[n], false
+			return q.outcome(Pick{ID: PickRedraw})
+		case q.allowExtra && e.beginFlag != 5:
+			e.selectMember(n)
+			return q.outcome(Pick{ID: PickRelist})
+		}
 	case ActMember: // a portrait: that member's View page, or the member a list or question is for
 		switch n := a.N; {
 		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
@@ -187,7 +198,7 @@ func (q *question) decide(a Action) (p Pick, ok bool) {
 			return q.member(n)
 		case q.allowExtra && e.beginFlag != 5:
 			e.selectMember(n)
-			return q.outcome(Pick{ID: PickRelist, Dir: DirNone})
+			return q.outcome(Pick{ID: PickRelist})
 		}
 	case ActText:
 	default:
@@ -270,7 +281,7 @@ func (q *question) member(n int) (Pick, bool) {
 			return Pick{}, false
 		}
 		e.selectMember(n)
-		return q.outcome(Pick{ID: PickRelist, Dir: DirNone})
+		return q.outcome(Pick{ID: PickRelist})
 	case q.has('V', "View"):
 		e.selectMember(n)
 		e.ext.toItems = true

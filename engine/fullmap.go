@@ -213,9 +213,10 @@ func (e *Engine) FullMap() {
 	off := e.modalOn() // the command bar's regions under it take no hover or click
 	inCommand := e.ext.inCommand
 	e.ext.inCommand, e.ext.fullMap = false, true
-	cx, cy := e.posX, e.posY
-	if !onMap(cx, cy) {
-		cx, cy = 0, 0
+	c := &e.ext.mapCursor // the cursor (View.MapCursor, ActPoint)
+	*c = image.Pt(e.posX, e.posY)
+	if !onMap(c.X, c.Y) {
+		*c = image.Point{}
 	}
 	m := e.labels()
 	mark := e.regionMark()
@@ -224,10 +225,10 @@ func (e *Engine) FullMap() {
 		if !onMap(x, y) {
 			return Action{}
 		}
-		if x == cx && y == cy {
+		if image.Pt(x, y) == *c {
 			return Action{Kind: actHotkey, N: 'L'} // a second click names the square
 		}
-		cx, cy = x, y
+		*c = image.Pt(x, y)
 		return Action{Kind: actRedraw}
 	}})
 	texts := []string(nil)
@@ -235,7 +236,7 @@ func (e *Engine) FullMap() {
 	e.addRegion(region{x0: fmLegend, y0: 2, x1: 0x27, y1: 2 + fmRows - 1, click: func(_, y int) Action {
 		if i := y - 2; i < len(texts) {
 			s := firstSq[texts[i]]
-			cx, cy = s&15, s>>4
+			*c = image.Pt(s&15, s>>4)
 			return Action{Kind: actRedraw}
 		}
 		return Action{}
@@ -250,7 +251,7 @@ func (e *Engine) FullMap() {
 	}
 	var ask func()
 	ask = func() {
-		texts, firstSq = e.drawFullMap(m, cx, cy)
+		texts, firstSq = e.drawFullMap(m, c.X, c.Y)
 		const (
 			walk Choice = iota
 			label
@@ -259,35 +260,24 @@ func (e *Engine) FullMap() {
 		)
 		e.displayThen("", Bar{{"Walk", walk}, {"Label", label}, {"Remove", remove}, {"Exit", exit}}, colLightMagenta, colLightGreen, colWhite, true, false, func(p Pick) {
 			switch p.ID {
-			case PickMove:
-				switch p.Dir {
-				case DirUp:
-					cy = max(cy-1, 0)
-				case DirDown:
-					cy = min(cy+1, 15)
-				case DirLeft:
-					cx = max(cx-1, 0)
-				case DirRight:
-					cx = min(cx+1, 15)
-				}
 			case walk:
-				if e.startWalk(cx, cy) {
+				if e.startWalk(c.X, c.Y) {
 					done()
 					return
 				}
 				e.DisplayMessageWait(colYellow, "No known way there")
 			case label:
-				old := m[cy<<4|cx]
+				old := m[c.Y<<4|c.X]
 				e.labelInput(old.text, func(s string, ok bool) {
 					if ok {
 						if s == "" {
-							delete(e.userLabels(), cy<<4|cx)
+							delete(e.userLabels(), c.Y<<4|c.X)
 						} else {
 							kind := byte(poiUser)
 							if s == old.text {
 								kind = old.kind
 							}
-							e.userLabels()[cy<<4|cx] = mapLabel{s, kind}
+							e.userLabels()[c.Y<<4|c.X] = mapLabel{s, kind}
 						}
 						m = e.labels()
 					}
@@ -295,8 +285,8 @@ func (e *Engine) FullMap() {
 				})
 				return
 			case remove: // a built-in label stays
-				if _, ok := e.userLabels()[cy<<4|cx]; ok {
-					delete(e.userLabels(), cy<<4|cx)
+				if _, ok := e.userLabels()[c.Y<<4|c.X]; ok {
+					delete(e.userLabels(), c.Y<<4|c.X)
 					m = e.labels()
 				}
 			case exit, NoPick:

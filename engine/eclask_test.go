@@ -13,7 +13,7 @@ func TestScriptAsks(t *testing.T) {
 	if w := e.eclWait; w == nil || w.ask.Kind != AskMenu || len(w.ask.Options) != 2 {
 		t.Fatalf("ask %+v", e.eclWait)
 	}
-	if e.applyScript(Action{Kind: ActContinue}) {
+	if e.applyScript(Action{Kind: ActOK}) {
 		t.Fatal("Enter answered a menu without it")
 	}
 	if !e.applyScript(Action{Kind: ActChoose, N: 1}) || got != 1 || e.eclWait != nil {
@@ -40,11 +40,11 @@ func TestScriptAsks(t *testing.T) {
 	var n uint16
 	e.askNumber(func(v uint16) { n = v })
 	e.applyScript(Action{Kind: ActText, Text: "99999"})
-	if e.applyScript(Action{Kind: ActContinue}) {
+	if e.applyScript(Action{Kind: ActOK}) {
 		t.Fatal("99999 taken")
 	}
 	e.applyScript(Action{Kind: ActText, Text: "42"})
-	if !e.applyScript(Action{Kind: ActContinue}) || n != 42 {
+	if !e.applyScript(Action{Kind: ActOK}) || n != 42 {
 		t.Fatalf("number %d", n)
 	}
 

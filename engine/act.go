@@ -13,7 +13,7 @@ const (
 	ActNone      ActKind = iota
 	ActClose             // leave the screen
 	ActMember            // show party member N
-	ActLead              // make party member N the selected one (the command bar's member): a card's left click, F1-F8
+	ActLead              // make party member N the selected one (the command bar's member): a card's left click, F1-F8, Home/End; in a member pick the candidate
 	ActReady             // inventory: ready or unready item N
 	ActUse               // inventory: use item N
 	ActRanged            // combat: throw the Missiles slot's weapon (aims as Attack)
@@ -30,13 +30,12 @@ const (
 	ActCast              // cast spell N (one of Turn.Spells in combat, of View.SpellPick elsewhere)
 	ActItems             // combat: the inventory
 	ActAim               // combat, aiming: take square X, Y
-	ActPoint             // combat, aiming: the pointer is on square X, Y (the preview follows)
+	ActPoint             // the cursor is on square X, Y: combat's aim (the preview follows), the full map's (View.MapCursor)
 	ActYes               // combat: yes to Battle.Ask (ActClose: no)
 	ActFlee              // combat: step off the map's edge and try to run away (Turn offers it at the edge)
 	ActChoose            // choose option N of View.Menu (X: the line of View.List)
-	ActContinue          // Enter: the highlighted choice, or "press a key"
+	ActOK                // Enter: the highlighted choice, or "press a key"
 	ActText              // the line being typed (View.Typing) now reads Text
-	ActMove              // a step or cursor move in direction N (Dir...)
 	ActInventory         // member N's items (F1-F8)
 	ActMinimap           // the minimap over the roster (Tab)
 	ActMap               // the full map (M)
@@ -107,31 +106,13 @@ const (
 	ActStat       // ability N is Text (STR as 18/xx)
 	ActPicker     // open picker N (PickHead, PickBody: the sheet; PickIconHead, PickWeapon: the icon editor)
 	ActPicked     // the picker takes picture N (the player agreed to Picker.Ask)
-	ActPage       // the picker shows page N
+	ActPage       // the picker shows page N; a pager (help, the journal) goes N (+1 or -1) on: a picture page scrolls first
 	ActIconSize   // icon editor: small or large
 	ActIconColour // icon editor: part N's colour X (0, 1) becomes Y (Y < 0: only selects that swatch)
 	ActSave       // save the game in slot Text (the player agreed to an overwrite)
 	ActDelete     // delete the save Text (the player agreed)
 
 	ActTick // a frame went by: the engine goes on in a timed loop (View.Ticks); never queued
-)
-
-// Directions of ActMove.
-const (
-	DirNone    = iota - 1 // no direction: a pick that is not a move (PickRelist), which Dir switches must not read as DirUp
-	DirUp                 // walk on, the line or item before
-	DirDown               // a step back, the next line or item
-	DirLeft               // turn left, the item before
-	DirRight              // turn right, the next item
-	DirHome               // the member or line before
-	DirEnd                // the next member or line
-	DirPgUp               // the page before
-	DirPgDn               // the next page
-	DirCentre             // keypad 5
-	DirBack               // the item before (,)
-	DirOn                 // the next item (.)
-	DirWheelUp            // the wheel: the highlight, line or page before
-	DirWheelDown
 )
 
 // Action is one thing the player did on a remastered screen.

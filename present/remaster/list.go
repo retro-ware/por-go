@@ -210,9 +210,9 @@ func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 	}
 	n := len(v.Menu.Items)
 	switch {
-	case k == 0x4800 && !v.Menu.Arrows:
+	case k == 0x4800 && v.MapCursor == nil: // the full map's arrows move its cursor
 		p.sel = (p.sel + n - 1) % n
-	case k == 0x5000 && !v.Menu.Arrows:
+	case k == 0x5000 && v.MapCursor == nil:
 		p.sel = (p.sel + 1) % n
 	case k == 13 || k == KeyPadSelect:
 		p.send(engine.ActChoose, p.sel)

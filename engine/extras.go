@@ -77,10 +77,11 @@ type extras struct {
 	ordering      bool       // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
 
 	// fullmap.go
-	labels  map[int]map[int]mapLabel // per area: square -> label
-	fullMap bool                     // the full-screen map is up
-	walk    *walkState               // walk.go: the party walks to a square
-	back    bool                     // Down stepped backwards: Move turns the party round again
+	labels    map[int]map[int]mapLabel // per area: square -> label
+	fullMap   bool                     // the full-screen map is up
+	mapCursor image.Point              // its cursor square
+	walk      *walkState               // walk.go: the party walks to a square
+	back      bool                     // Down stepped backwards: Move turns the party round again
 
 	// fonts.go
 	font   int          // 0: the game's font, else fonts[font-1]
@@ -304,7 +305,7 @@ var helpLines = [][2]string{
 
 // Help shows the keyboard reference over whatever is on screen and puts
 // the screen back when closed: headings in white, keys in yellow. It runs
-// over pages: a key shows the next, Up/PgUp/Left the one before, Esc closes.
+// over pages: a key shows the next, ActPage -1 the one before, Esc closes.
 func (e *Engine) Help() {
 	off := e.modalOn()
 	e.ext.paging = true
@@ -341,7 +342,7 @@ func (e *Engine) Help() {
 			switch {
 			case a.Kind == ActClose:
 				p = len(pages)
-			case a.Kind == ActMove && (a.N == DirUp || a.N == DirPgUp || a.N == DirLeft):
+			case a.Kind == ActPage && a.N < 0:
 				p = max(p-1, 0)
 			default:
 				p++

@@ -74,20 +74,13 @@ func (e *Engine) rosterSel() int {
 	return e.partySel
 }
 
-// partyKeypad = ovr20:27DF (key): Home selects the previous character
-// (wrapping to the last), End the next (wrapping to the first: the original
-// leaves its walker on the head when there is no next), any other outcome
-// of the menu the first.
-// PickRelist (extra: a portrait, roster click or F1-F8 already chose the
-// member through selectMember) keeps the selection.
+// partyKeypad = ovr20:27DF (key): any outcome of the menu but another
+// member selects the first. PickRelist (extra: Home/End, a portrait,
+// roster click or F1-F8 already chose the member through selectMember)
+// keeps the selection.
 func (e *Engine) partyKeypad(p Pick) {
-	n := len(e.party)
 	switch {
-	case n == 0 || p.ID == PickRelist:
-	case p.ID == PickMove && p.Dir == DirHome:
-		e.selectMember((e.partySel + n - 1) % n)
-	case p.ID == PickMove && p.Dir == DirEnd:
-		e.selectMember((e.partySel + 1) % n)
+	case len(e.party) == 0 || p.ID == PickRelist:
 	default:
 		e.selectMember(0)
 	}
@@ -214,7 +207,7 @@ func (e *Engine) applyParty(a Action) (done bool) {
 }
 
 // SelectCharacter = 00BA:2C48 (prompt, exit, var who): pick a party member
-// with Next/Prev (keypad) and Select; Exit (offered when exit is set)
+// with Next/Prev (keypad: the presenter's ActLead) and Select; Exit (offered when exit is set)
 // gives nil. The roster highlights the current choice.
 func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then func(*Character)) {
 	prompt = cut(prompt, textCols)
@@ -256,27 +249,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then 
 				done(nil)
 				return
 			}
-			if p.extra() {
-				i := e.partyIndex(who)
-				switch p.Dir {
-				case DirEnd, DirDown, DirRight: // next, wrapping to the first (Down and Right are extras)
-					if who == nil {
-						// nil^.next reads 0000:0104 (the INT 41h vector, garbage in
-						// the original); the harness pins it to nil, and nil wraps to
-						// the first member (00BA:2D40)
-						who = e.party[0]
-					} else if i+1 < len(e.party) {
-						who = e.party[i+1]
-					} else {
-						who = e.party[0]
-					}
-				case DirHome, DirUp, DirLeft: // previous, wrapping to the last (Up and Left are extras)
-					if i > 0 {
-						who = e.party[i-1]
-					} else {
-						who = e.party[len(e.party)-1]
-					}
-				}
+			if p.extra() { // ActLead stepped the candidate (who), or a click redrew
 				ask()
 				return
 			}
