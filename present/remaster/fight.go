@@ -104,9 +104,10 @@ func (p *Presenter) drawTipOver(dst *gpu.Image, title string, lines []string, k 
 // the one the game names); between the player's turns the last message.
 // All of them are in the Log (L).
 func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k float64) {
-	const w, h = 40 * 8, fightRows * 8
+	w, h := max(40, int(float64(dst.Bounds().Dx())/k)/8)*8, fightRows*8 // as many cells as the window has
 	glyph := note.Glyph
-	if p.rowsImg == nil {
+	if p.rowsImg == nil || p.rowsImg.Bounds().Dx() != w {
+		p.rowsKey = ""
 		p.rowsImg = gpu.NewImage(w, h)
 	}
 	var puts []struct { // the line's pieces: drawn only when they change (a texture upload a frame otherwise)
@@ -193,7 +194,7 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 	}
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
-	op.GeoM.Translate((float64(dst.Bounds().Dx())-k*w)/2, float64(p.mapBottom))
+	op.GeoM.Translate((float64(dst.Bounds().Dx())-k*float64(w))/2, float64(p.mapBottom))
 	dst.DrawImage(p.rowsImg, op)
 }
 
