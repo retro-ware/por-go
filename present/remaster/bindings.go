@@ -134,9 +134,9 @@ var bindings = []binding{
 		padKeys: []padKey{{padX, KeyPadOverview, false}}},
 	{ctx: ctxAdv, keys: "Esc", desc: "options", mouse: "right click", pad: "B, Back"}, // the Menus row's Esc
 
-	{ctx: ctxCombat, keys: "W A S D", desc: "move the cursor", mouse: "point", pad: "D-pad, stick",
-		codes:   []code{{'w', input.CursorUp}, {'s', input.CursorDown}, {'a', input.CursorLeft}, {'d', input.CursorRight}},
-		padKeys: []padKey{{dUp, 'w', true}, {dDown, 's', true}, {dLeft, 'a', true}, {dRight, 'd', true}}},
+	{ctx: ctxCombat, keys: "Arrows", desc: "move the cursor", mouse: "point", pad: "D-pad, stick",
+		codes:   []code{{keyUp, input.CursorUp}, {keyDown, input.CursorDown}, {keyLeft, input.CursorLeft}, {keyRight, input.CursorRight}},
+		padKeys: []padKey{{dUp, keyUp, true}, {dDown, keyDown, true}, {dLeft, keyLeft, true}, {dRight, keyRight, true}}},
 	{ctx: ctxCombat, keys: "Enter", desc: "go, attack, press", mouse: "click", pad: "A",
 		codes:   []code{{keyEnter, input.Enter}, {' ', input.Space}, {KeyPadSelect, input.PadA}},
 		padKeys: []padKey{{padA, KeyPadSelect, false}}},
@@ -155,8 +155,8 @@ var bindings = []binding{
 	{ctx: ctxCombat, keys: "Q E", desc: "turn the camera", pad: "LT RT", gap: "no mouse way to turn the camera",
 		codes:   []code{{'q', input.TurnLeft}, {'e', input.TurnRight}},
 		padKeys: []padKey{{padLT, 'q', false}, {padRT, 'e', false}}},
-	{ctx: ctxCombat, keys: "Arrows", desc: "pan the camera", pad: "right stick", gap: "no mouse way to pan the camera",
-		codes: []code{{keyUp, input.Up}, {keyDown, input.Down}, {keyLeft, input.Left}, {keyRight, input.Right}}},
+	{ctx: ctxCombat, keys: "W A S D", desc: "pan the camera", pad: "right stick", gap: "no mouse way to pan the camera",
+		codes: []code{{'w', input.Up}, {'s', input.Down}, {'a', input.Left}, {'d', input.Right}}},
 	{ctx: ctxCombat, keys: "Home", desc: "camera on the active", pad: "R3", gap: "no mouse way to recentre the camera",
 		codes:   []code{{keyHome, input.Home}},
 		padKeys: []padKey{{padR3, keyHome, false}}},

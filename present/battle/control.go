@@ -23,7 +23,7 @@ func (p *Presenter) Zoom(in bool, speed float64) {
 	}
 }
 
-// Key is the XCOM 2 scheme: W A S D and the arrows pan (held: see pan), Q and E turn,
+// Key is the XCOM 2 scheme: W A S D pan (held: see pan), the arrows move the cursor, Q and E turn,
 // Home brings the camera back, 1..9 and 0 pick the bar's
 // buttons, the bar's letters (hotkeys) theirs, Tab and Shift-Tab cycle the
 // targets while aiming (else they and PgUp/PgDn move the bar's focus,
@@ -48,7 +48,7 @@ func (p *Presenter) Key(a input.Act, k uint16) bool {
 		p.yawTo += math.Pi / 4
 	case a >= input.CursorUp && a <= input.CursorRight: // the square cursor (the pad's d-pad and left stick send these too)
 		p.moveCursor(map[input.Act][2]float64{input.CursorUp: {1, 0}, input.CursorDown: {-1, 0}, input.CursorRight: {0, 1}, input.CursorLeft: {0, -1}}[a])
-	case a == input.Up || a == input.Down || a == input.Left || a == input.Right: // the arrows pan
+	case a == input.Up || a == input.Down || a == input.Left || a == input.Right: // W A S D pan
 	case a == input.Home:
 		p.offset = vec{}
 	case k >= '0' && k <= '9':
@@ -146,7 +146,7 @@ func targetAt(b *engine.Battle, sq image.Point) bool {
 	return false
 }
 
-// pan moves the camera's centre by the held arrows or the right stick, relative to
+// pan moves the camera's centre by the held W A S D or the right stick, relative to
 // its heading, and reports whether any is held. A pan starts from where
 // the camera is (not from the focus it was easing toward), so the first
 // frames never swing the other way.
@@ -155,8 +155,8 @@ func (p *Presenter) pan(dt float64, focus vec) bool {
 	for _, h := range [4]struct {
 		k    gpu.Key
 		f, r float64
-	}{{gpu.KeyUp, 1, 0}, {gpu.KeyDown, -1, 0}, {gpu.KeyRight, 0, 1}, {gpu.KeyLeft, 0, -1}} {
-		if gpu.IsKeyPressed(h.k) && len(p.bar.rects) > 0 { // the arrows step in Move (no bar)
+	}{{gpu.KeyW, 1, 0}, {gpu.KeyS, -1, 0}, {gpu.KeyD, 0, 1}, {gpu.KeyA, 0, -1}} {
+		if gpu.IsKeyPressed(h.k) {
 			f, r = f+h.f, r+h.r
 		}
 	}
