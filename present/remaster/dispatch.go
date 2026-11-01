@@ -41,7 +41,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if askList(v) != nil && askMenu(v) != nil && !choosing(v) {
 		return p.listKey(k, v)
 	}
-	if p.pageMenu && p.pageMenuKey(k, v) {
+	if p.pageMenu && typing(v) == nil && p.pageMenuKey(k, v) { // a line being typed (a map label) takes its keys in keyAct
 		return true
 	}
 	if v.Inventory != nil && p.inv.view != nil && !choosing(v) {
