@@ -29,9 +29,9 @@ type Window int
 
 const (
 	WinThreeD  Window = iota // the 3D view of Area at X, Y, Facing
-	WinAreaMap        // the wilderness or city map
-	WinPicture        // a picture, portrait or approaching sprite
-	WinText           // text in the whole view window (opClearBox: the Sokal Keep scroll's runes)
+	WinAreaMap               // the wilderness or city map
+	WinPicture               // a picture, portrait or approaching sprite
+	WinText                  // text in the whole view window (opClearBox: the Sokal Keep scroll's runes)
 )
 
 // CellRect is a rectangle of 8x8 text cells, both corners included. For a
