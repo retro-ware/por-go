@@ -410,6 +410,21 @@ func (e *Engine) swapReady(c *Character, it *Item) {
 		}
 		e.ApplyItems(c) // the slot and hands free
 	}
+	// and whatever else holds the hands it needs: a two-handed weapon takes
+	// both the weapon and the shield off
+	if it.Readied == 0 && e.base(it.Type).Classes&c.ClassMask != 0 && !e.missileSlot(c, it) {
+		for _, s := range []int{slotWeapon, slotShield} {
+			o := c.Slots[s]
+			if o == nil || o == it || int(e.base(it.Type).Hands)+int(c.Hands) <= 2 {
+				continue
+			}
+			e.readyItem(o)
+			if o.Readied != 0 {
+				return
+			}
+			e.ApplyItems(c)
+		}
+	}
 	e.readyItem(it)
 }
 

@@ -51,3 +51,25 @@ func TestBracersSwapArmor(t *testing.T) {
 		t.Fatalf("both readied: slot holds %v, bracers readied %d", c.Slots[slotArmor], b.Readied)
 	}
 }
+
+// Readying a two-handed weapon takes the weapon and the shield off.
+func TestSwapReadyTwoHanded(t *testing.T) {
+	e := &Engine{items: make([]itemBase, itemTypes)}
+	e.items[itemLongSword] = itemBase{Hands: 1, Classes: 0xFF}
+	e.items[itemShield] = itemBase{Slot: slotShield, Hands: 1, Classes: 0xFF}
+	e.items[itemTwoHandedSword] = itemBase{Hands: 2, Classes: 0xFF}
+	c := &Character{}
+	c.ClassMask = 1
+	e.party = []*Character{c}
+	sword := &Item{Type: itemLongSword, Readied: 1}
+	shield := &Item{Type: itemShield, Readied: 1}
+	c.Items = []*Item{sword, shield}
+	e.ApplyItems(c)
+	e.AddItemCopy(c, &Item{Type: itemTwoHandedSword})
+	th := e.pool[0]
+	e.swapReady(c, th)
+	e.ApplyItems(c)
+	if th.Readied == 0 || sword.Readied != 0 || shield.Readied != 0 {
+		t.Fatalf("two-handed %d sword %d shield %d", th.Readied, sword.Readied, shield.Readied)
+	}
+}
