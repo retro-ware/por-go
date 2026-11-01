@@ -162,3 +162,14 @@ func TestMapName(t *testing.T) {
 		t.Errorf("unnamed map = %q, want Map", n)
 	}
 }
+
+// A loaded game may Bash, Pick and Knock again: with none allowed the door
+// menu is only Exit, which walls the door up.
+func TestLoadAllowsDoorTries(t *testing.T) {
+	e := quickStarted(t)
+	e.saveTo("X")
+	e.run.doorTry = [3]byte{}
+	if !e.loadFrom("X") || e.run.doorTry != [3]byte{1, 1, 1} {
+		t.Fatalf("doorTry %v after a load, want all allowed", e.run.doorTry)
+	}
+}

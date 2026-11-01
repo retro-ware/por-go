@@ -442,6 +442,7 @@ func (e *Engine) loadSlot() bool {
 	e.area.WallsA, e.area.WallsB = [3]uint16{}, [3]uint16{}
 	e.game, e.aux = f.Game, f.Aux
 	e.posX, e.posY, e.facing = int(f.X), int(f.Y), int(f.Facing)
+	e.run.doorTry = [3]byte{1, 1, 1} // extra: else a game loaded at a locked door offers only Exit, which walls it up
 	e.pos3, e.pos4 = f.Pos3, f.Pos4
 	e.viewMode = int(f.ViewMode)
 	e.beginFlag = f.BeginFlag
