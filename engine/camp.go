@@ -135,6 +135,21 @@ func (e *Engine) CastMenu() {
 
 // partyStudy: the longest study time of the party in minutes (studyTime
 // also sets each member's study hours, which Rest counts down).
+// willStudy (extra): a rest would have someone memorize or scribe a
+// spell, the planned spells taken up first as ActRest does (on copies).
+func (e *Engine) willStudy() bool {
+	for _, c := range e.party {
+		mem, study := c.Memorized, c.Study
+		e.planSpells(c)
+		t := e.studyTime(c)
+		c.Memorized, c.Study = mem, study
+		if t > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *Engine) partyStudy() int {
 	most := 0
 	for _, c := range e.party {
@@ -615,7 +630,7 @@ func (e *Engine) campDecision(a Action) (left bool) {
 // campView is camp's state for the View.
 func (e *Engine) campView() *Camp {
 	c := e.selected()
-	v := &Camp{CanCast: e.canCastNow(), Healing: e.healMinutes() > 0, Bestiary: e.beasts()}
+	v := &Camp{CanCast: e.canCastNow(), Healing: e.healMinutes() > 0, Studying: e.willStudy(), Bestiary: e.beasts()}
 	if c != nil {
 		v.Book, v.Scrolls = e.spellLists(c)
 	}

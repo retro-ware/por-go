@@ -117,8 +117,10 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 	if !v.Day {
 		until = menuRow{"Until day", 'D', act(engine.ActRest, engine.RestUntil)}
 	}
-	it = append(it, menuRow{"Until memorized", 'M', act(engine.ActRest, engine.RestMemorize)},
-		menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)}, until)
+	if cp.Studying {
+		it = append(it, menuRow{"Until memorized", 'M', act(engine.ActRest, engine.RestMemorize)})
+	}
+	it = append(it, menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)}, until)
 	if len(cp.Bestiary) > 0 {
 		it = append(it, menuRow{"Bestiary", 'B', c.to(campBestiary, 0)})
 	}
