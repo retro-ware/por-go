@@ -96,6 +96,8 @@ type Presenter struct {
 	cardHover  int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
 	dragFrom   int                         // 1 + the card pressed while the party is being ordered (View.Ordering), it follows the pointer to the card it is dropped on (0 none)
 	dragAt     image.Point                 // where the pointer is while a card is dragged
+	dragStart  image.Point                 // where it was pressed
+	dragged    bool                        // it has moved far enough from dragStart to be a drag
 	ordering   bool                        // View.Ordering
 	ctx        int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
 	ctxSel     int                         // its highlighted line
@@ -283,7 +285,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.dragFrom = 0
 	}
 	at := cardAt(dst)
-	if p.dragFrom > 0 { // the dragged card hangs under the pointer
+	if p.dragFrom > 0 && p.dragged { // the dragged card hangs under the pointer
 		at = func(i, n int) image.Rectangle {
 			r := cardAt(dst)(i, n)
 			if i == p.dragFrom-1 {

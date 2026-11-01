@@ -5,6 +5,7 @@ package remaster
 import (
 	"gpu"
 	"image"
+	"math"
 	"por/engine"
 	"por/present/input"
 	"slices"
@@ -242,7 +243,7 @@ func (p *Presenter) Click(x, y int) bool {
 			if image.Pt(x, y).In(r) && p.active {
 				p.cardClick(i)
 				if p.ordering { // while the party is ordered the card is picked up instead (Hover drops it)
-					p.dragFrom, p.dragAt = 1+i, image.Pt(x, y)
+					p.dragFrom, p.dragAt, p.dragStart, p.dragged = 1+i, image.Pt(x, y), image.Pt(x, y), false
 				}
 				return true
 			}
@@ -336,8 +337,11 @@ func (p *Presenter) Hover(x, y int, down bool) {
 	p.cardHover = 1 + cardUnder(p.cards, x, y)
 	if p.dragFrom > 0 {
 		p.dragAt = image.Pt(x, y)
+		if d := p.dragAt.Sub(p.dragStart); float64(d.X*d.X+d.Y*d.Y) >= math.Pow(8*gpu.DeviceScaleFactor(), 2) { // about 8 points before it is a drag: a click only selects
+			p.dragged = true
+		}
 		if !down {
-			if to := p.cardHover; to > 0 && to != p.dragFrom {
+			if to := p.cardHover; p.dragged && to > 0 && to != p.dragFrom {
 				p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActOrder, N: p.dragFrom - 1, X: to - 1})
 			}
 			p.dragFrom = 0
