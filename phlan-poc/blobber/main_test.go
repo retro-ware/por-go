@@ -2,10 +2,16 @@ package blobber
 
 import (
 	"math"
+	"os"
 	"testing"
 
 	"gpu"
 )
+
+func TestMain(m *testing.M) {
+	Glyph = func(byte) [8]byte { return [8]byte{0xFF} } // a stub font: a bar atop each cell
+	os.Exit(m.Run())
+}
 
 func TestCore(t *testing.T) {
 	level = testLevel

@@ -2,19 +2,13 @@ package blobber
 
 import (
 	"image"
-	"image/color"
 	"image/draw"
-
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
 
 	"gpu"
 )
 
-// Glyph, if set, is the host's 8x8 font (a row a byte, bit 7 leftmost);
-// the engine's text then draws in it twice its size. Without it, the plain
-// built-in 7x13 face.
+// Glyph is the host's 8x8 font (a row a byte, bit 7 leftmost), set before
+// any text is drawn; the text draws in it twice its size.
 var Glyph func(byte) [8]byte
 
 // LineH is the height of a line of text.
@@ -23,12 +17,7 @@ const LineH = 16
 var texts = map[string]*gpu.Image{}
 
 // Width is s's width in pixels.
-func Width(s string) int {
-	if Glyph != nil {
-		return 16 * len(s)
-	}
-	return font.MeasureString(basicfont.Face7x13, s).Ceil()
-}
+func Width(s string) int { return 16 * len(s) }
 
 // Print draws s in white with its top left at (x, y).
 func Print(dst *gpu.Image, s string, x, y int) {
@@ -53,11 +42,6 @@ func Print(dst *gpu.Image, s string, x, y int) {
 
 func render(s string) *image.RGBA {
 	m := image.NewRGBA(image.Rect(0, 0, max(1, Width(s)), LineH))
-	if Glyph == nil {
-		d := font.Drawer{Dst: m, Src: image.NewUniform(color.White), Face: basicfont.Face7x13, Dot: fixed.P(0, 12)}
-		d.DrawString(s)
-		return m
-	}
 	for i := 0; i < len(s); i++ {
 		g := Glyph(s[i])
 		for y := range 8 {
