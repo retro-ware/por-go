@@ -1,22 +1,107 @@
 package remaster
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"por/pal"
+	"slices"
 	"strings"
 
 	"gpu"
 )
 
+// menuRow is one line of every menu: its text, its hotkey (0 none) and what
+// picking it does.
+type menuRow struct {
+	text string
+	key  byte
+	do   func()
+}
+
+// rowKeys are the rows' hotkeys.
+func rowKeys(rows []menuRow) []byte {
+	k := make([]byte, len(rows))
+	for i, r := range rows {
+		k[i] = r.key
+	}
+	return k
+}
+
+// menuNav is the one key handler of every menu over rows with hotkeys keys:
+// Up/Down (wrapping), PgUp/PgDn, Home/End move *sel; Enter, Space and pad A
+// pick it, a hotkey (either case) picks its row; Esc is back and never
+// picks. It returns the row picked (-1 none), back, and whether k was taken.
+func menuNav(k uint16, sel *int, keys []byte) (pick int, back, ok bool) {
+	n := len(keys)
+	if n == 0 {
+		return -1, k == 27, k == 27
+	}
+	s := min(max(*sel, 0), n-1)
+	switch {
+	case k == 0x4800:
+		s = (s + n - 1) % n
+	case k == 0x5000:
+		s = (s + 1) % n
+	case k == 0x4900:
+		s = max(0, s-10)
+	case k == 0x5100:
+		s = min(n-1, s+10)
+	case k == 0x4700:
+		s = 0
+	case k == 0x4F00:
+		s = n - 1
+	case k == 13 || k == ' ' || k == KeyPadSelect:
+		*sel = s
+		return s, false, true
+	case k == 27:
+		return -1, true, true
+	case k > ' ' && k < 128:
+		h := byte(k)
+		if h >= 'a' && h <= 'z' {
+			h -= 'a' - 'A'
+		}
+		if i := bytes.IndexByte(keys, h); i >= 0 {
+			*sel = i
+			return i, false, true
+		}
+		return -1, false, false
+	default:
+		return -1, false, false
+	}
+	*sel = s
+	return -1, false, true
+}
+
+// hotText is row s as drawn with hotkey key: the column of its white letter
+// (-1 none); a key not in the text is shown in front, as "[E] Camp".
+func hotText(s string, key byte) (string, int) {
+	if key == 0 {
+		return s, -1
+	}
+	if i := strings.IndexByte(strings.ToUpper(s), key); i >= 0 {
+		return s, i
+	}
+	return "[" + string(key) + "] " + s, 1
+}
+
 // drawMenu draws a vertical menu in the original's look: a box with the
 // text pane's red border, the items in the game's font, green on black with
 // their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
 func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
-	rows, hot := items, keys
+	items = slices.Clone(items)
+	hk := make([]int, len(items)) // each row's white letter
+	for i := range items {
+		var key byte
+		if i < len(keys) {
+			key = keys[i]
+		}
+		items[i], hk[i] = hotText(items[i], key)
+	}
+	rows, hot := items, hk
 	if title != "" { // a long question on two lines, so the box stays narrow
 		t := append(wrap(title, 24), "")
-		rows, hot = append(t, items...), append(make([]byte, len(t)), keys...)
+		rows, hot = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...)
 		if sel >= 0 {
 			sel += len(t)
 		}
@@ -51,10 +136,7 @@ func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title str
 				}
 			}
 		}
-		hk := -1 // the hotkey: white, as on the original's bar
-		if r < len(hot) && hot[r] != 0 {
-			hk = strings.IndexByte(strings.ToUpper(s), hot[r])
-		}
+		hk := hot[r] // the hotkey: white, as on the original's bar
 		for i := 0; i < len(s); i++ {
 			g := glyph(s[i])
 			c := green

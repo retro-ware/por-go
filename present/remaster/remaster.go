@@ -5,7 +5,6 @@
 package remaster
 
 import (
-	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -17,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"gpu"
 	"gpu/vector"
@@ -179,24 +177,15 @@ func (p *Presenter) pickKey(k uint16) bool {
 	if spells == nil {
 		return false
 	}
-	n := len(spells)
-	switch k {
-	case 0x4800:
-		p.sel = (p.sel + n - 1) % n
-	case 0x5000:
-		p.sel = (p.sel + 1) % n
-	case 13:
-		p.cast(p.sel)
-	case 27:
+	names := make([]string, len(spells))
+	for i, s := range spells {
+		names[i] = s.Name
+	}
+	switch i, back, _ := menuNav(k, &p.sel, blobber.Hotkeys(names)); {
+	case back:
 		p.cast(-1)
-	default: // a spell's hotkey
-		var names []string
-		for _, s := range spells {
-			names = append(names, s.Name)
-		}
-		if i := bytes.IndexByte(blobber.Hotkeys(names), byte(unicode.ToUpper(rune(k)))); k < 128 && i >= 0 {
-			p.cast(i)
-		}
+	case i >= 0:
+		p.cast(i)
 	}
 	return true
 }
@@ -491,20 +480,14 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.fightKey(k)
 	}
 	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
-		n := len(p.ctxActs)
-		switch c := byte(k); {
-		case k == 0x4800:
-			p.ctxSel = (max(p.ctxSel, 0) + n - 1) % n
-		case k == 0x5000:
-			p.ctxSel = (p.ctxSel + 1) % n
-		case k == 13 && p.ctxSel >= 0:
-			p.ctxSend(p.ctxSel)
-		case k == 27:
-			p.ctx = 0
-		case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: another member's menu (keyAct)
+		if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 { // F1-F8: another member's menu (keyAct)
 			return false
-		case k < 128 && slices.Contains(p.ctxKeys, c&^0x20): // a letter's hotkey, either case
-			p.ctxSend(slices.Index(p.ctxKeys, c&^0x20))
+		}
+		switch i, back, _ := menuNav(k, &p.ctxSel, p.ctxKeys); {
+		case back:
+			p.ctx = 0
+		case i >= 0:
+			p.ctxSend(i)
 		}
 		return true
 	}
@@ -519,24 +502,29 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.campKey(k, v)
 	}
 	if v.Exploring {
-		n := len(commands(v))
-		switch {
-		case !p.menu && k == 13:
-			p.menu, p.sel = true, 0
-		case !p.menu && k == 27:
-			p.view.OpenOptions()
-		case !p.menu:
-			return p.exploreKey(k, v)
-		case k == 0x4800:
-			p.sel = (p.sel + n - 1) % n
-		case k == 0x5000:
-			p.sel = (p.sel + 1) % n
-		case k == 13:
+		if !p.menu {
+			switch k {
+			case 13, KeyPadSelect:
+				p.menu, p.sel = true, 0
+			case 27:
+				p.view.OpenOptions()
+			default:
+				return p.exploreKey(k, v)
+			}
+			return true
+		}
+		cmds := commands(v)
+		keys := make([]byte, len(cmds))
+		for i, c := range cmds {
+			keys[i] = c.key
+		}
+		switch i, back, ok := menuNav(k, &p.sel, keys); {
+		case back:
 			p.menu = false
-			p.runCommand(p.sel)
-		case k == 27:
+		case i >= 0:
 			p.menu = false
-		default:
+			p.runCommand(i)
+		case !ok:
 			p.menu = false
 			return p.exploreKey(k, v)
 		}
@@ -562,28 +550,23 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		p.menu = false
 		return false
 	}
-	n := len(m.Items)
-	switch {
-	case k == 0x4800:
-		p.sel = (p.sel + n - 1) % n
-	case k == 0x5000:
-		p.sel = (p.sel + 1) % n
-	case k == 13:
-		p.menu = false
-		p.send(engine.ActChoose, p.sel)
-	case k == 27 && v.Exploring: // the command bar has no Exit item: the popup alone closes
-		p.menu = false
-	case k == 27: // the game leaves the menu (its Exit item): hiding the popup alone left the game waiting in it
-		p.send(engine.ActClose, 0)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: the member the bar is for (camp, the temple)
+	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 { // F1-F8: the member the bar is for (camp, the temple)
 		return false
-	default:
-		for _, it := range m.Items { // a hotkey still picks its item
-			if c := byte(k); k < 128 && (c == it.Key || c-'a'+'A' == it.Key) {
-				p.menu = false
-				return false
-			}
-		}
+	}
+	keys := make([]byte, len(m.Items))
+	for i, it := range m.Items {
+		keys[i] = it.Key
+	}
+	switch i, back, ok := menuNav(k, &p.sel, keys); {
+	case back && v.Exploring: // the command bar has no Exit item: the popup alone closes
+		p.menu = false
+	case back: // the game leaves the menu (its Exit item): hiding the popup alone left the game waiting in it
+		p.send(engine.ActClose, 0)
+	case i >= 0:
+		p.menu = false
+		p.send(engine.ActChoose, i)
+	case !ok:
+		return true
 	}
 	return true
 }
@@ -706,6 +689,13 @@ func (p *Presenter) Hover(x, y int, down bool) {
 			}
 			p.dragFrom = 0
 		}
+	}
+	if screenUp(p.shownView) && p.ctx == 0 && image.Pt(x, y) != p.pointer { // camp-style screens highlight under the pointer too
+		p.pointer = image.Pt(x, y)
+		if i := slices.IndexFunc(p.menuRects, p.pointer.In); i >= 0 {
+			p.camp.sel = i
+		}
+		return
 	}
 	if !(p.menu || p.ctx > 0) || image.Pt(x, y) == p.pointer {
 		return

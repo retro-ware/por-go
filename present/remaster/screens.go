@@ -72,50 +72,50 @@ func pageScreen(v engine.View) bool { return screenName(v) != "" }
 func (p *Presenter) sendA(a engine.Action) { p.inv.acts = append(p.inv.acts, a) }
 
 // screenItems are the lines of the page screen up and its title.
-func (p *Presenter) screenItems(v engine.View) (string, []campItem) {
+func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 	s := &p.scr
 	act := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
 	to := func(sub int) func() { return func() { s.sub, s.sel, s.top = sub, 0, 0 } }
 	switch s.sub {
 	case scrAsk:
-		return s.ask, []campItem{{"Yes", 'Y', func() { s.sub, s.sel = scrMain, 0; s.yes() }}, {"No", 'N', to(s.back)}}
+		return s.ask, []menuRow{{"Yes", 'Y', func() { s.sub, s.sel = scrMain, 0; s.yes() }}, {"No", 'N', to(s.back)}}
 	case scrType:
 		t := s.text
 		if p.blink() {
 			t += "_"
 		}
-		return s.prompt, []campItem{{t + strings.Repeat(" ", max(0, s.max+1-len(t))), 0, nil}}
+		return s.prompt, []menuRow{{t + strings.Repeat(" ", max(0, s.max+1-len(t))), 0, nil}}
 	}
 	switch screenName(v) {
 	case "creation":
 		cr := v.Creation
 		switch s.sub {
 		case scrChange:
-			it := []campItem{{"Name", 'N', func() { p.typeLine("Name:", "", 15, engine.ActName, 0) }}}
+			it := []menuRow{{"Name", 'N', func() { p.typeLine("Name:", "", 15, engine.ActName, 0) }}}
 			for f, fl := range cr.Fields {
-				it = append(it, campItem{fl.Name, 0, func() { p.openField(cr, f) }})
+				it = append(it, menuRow{fl.Name, 0, func() { p.openField(cr, f) }})
 			}
 			for i, name := range [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
-				it = append(it, campItem{name, 0, func() { p.typeLine(name+":", "", 5, engine.ActStat, i) }})
+				it = append(it, menuRow{name, 0, func() { p.typeLine(name+":", "", 5, engine.ActStat, i) }})
 			}
 			return "Change", append(it,
-				campItem{"Head", 'H', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickHead) }},
-				campItem{"Body", 'B', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickBody) }},
-				campItem{"Icon", 'I', func() { s.sub = scrMain; p.send(engine.ActIconEdit, -1) }},
-				campItem{"Back", 0, to(scrMain)})
+				menuRow{"Head", 'H', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickHead) }},
+				menuRow{"Body", 'B', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickBody) }},
+				menuRow{"Icon", 'I', func() { s.sub = scrMain; p.send(engine.ActIconEdit, -1) }},
+				menuRow{"Back", 0, to(scrMain)})
 		case scrField:
 			fl := cr.Fields[s.field]
-			var it []campItem
+			var it []menuRow
 			for i, o := range fl.Options {
 				t := o.Text
 				if !o.Fits { // picking it changes what depends on it
 					t = "(" + t + ")"
 				}
-				it = append(it, campItem{t, 0, func() { s.sub, s.anchor = scrMain, nil; p.sendX(engine.ActSetField, s.field, i) }})
+				it = append(it, menuRow{t, 0, func() { s.sub, s.anchor = scrMain, nil; p.sendX(engine.ActSetField, s.field, i) }})
 			}
 			return "", it
 		}
-		return "", []campItem{
+		return "", []menuRow{
 			{"Roll", 'R', act(engine.ActRoll, 0)},
 			{"Minimal", 'M', func() {
 				p.typeLine("Minimums (STR INT WIS DEX CON CHA):", cr.Minimums, 30, engine.ActRoll, 1)
@@ -124,7 +124,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []campItem) {
 			{"Keep", 'K', act(engine.ActKeep, 0)},
 			{"Exit", 'E', func() { p.askThen(cr.Abandon, func() { p.send(engine.ActClose, 0) }) }}}
 	case "icon":
-		return "", []campItem{
+		return "", []menuRow{
 			{"Head", 'H', act(engine.ActPicker, engine.PickIconHead)},
 			{"Weapon", 'W', act(engine.ActPicker, engine.PickWeapon)},
 			{"Size", 'S', act(engine.ActIconSize, 0)},
@@ -136,20 +136,20 @@ func (p *Presenter) screenItems(v engine.View) (string, []campItem) {
 			return func() { s.sub, s.sel = scrMain, 0; p.sendA(engine.Action{Kind: k, Text: name}) }
 		}
 		if s.sub == scrSlot {
-			it := []campItem{{"Load", 'L', named(engine.ActLoad, s.slot)}}
+			it := []menuRow{{"Load", 'L', named(engine.ActLoad, s.slot)}}
 			if sl.CanSave {
-				it = append(it, campItem{"Overwrite", 'O', func() { p.askThen("Overwrite "+s.slot+"?", named(engine.ActSave, s.slot)) }})
+				it = append(it, menuRow{"Overwrite", 'O', func() { p.askThen("Overwrite "+s.slot+"?", named(engine.ActSave, s.slot)) }})
 			}
 			return s.slot, append(it,
-				campItem{"Delete", 'D', func() { p.askThen("Delete "+s.slot+"?", named(engine.ActDelete, s.slot)) }},
-				campItem{"Back", 'B', to(scrMain)})
+				menuRow{"Delete", 'D', func() { p.askThen("Delete "+s.slot+"?", named(engine.ActDelete, s.slot)) }},
+				menuRow{"Back", 'B', to(scrMain)})
 		}
-		var it []campItem
+		var it []menuRow
 		if sl.CanSave {
-			it = append(it, campItem{"New Slot", 0, func() { p.typeLine("Save as:", "", 20, engine.ActSave, 0) }})
+			it = append(it, menuRow{"New Slot", 0, func() { p.typeLine("Save as:", "", 20, engine.ActSave, 0) }})
 		}
 		for i, name := range sl.Names {
-			it = append(it, campItem{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
+			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
 				if sl.LoadOnly {
 					named(engine.ActLoad, name)()
 					return
@@ -158,9 +158,9 @@ func (p *Presenter) screenItems(v engine.View) (string, []campItem) {
 			}})
 		}
 		if len(it) == 0 {
-			it = append(it, campItem{"No saved games yet", 0, nil})
+			it = append(it, menuRow{"No saved games yet", 0, nil})
 		}
-		return "Saved Games", append(it, campItem{"Back", 0, act(engine.ActClose, 0)})
+		return "Saved Games", append(it, menuRow{"Back", 0, act(engine.ActClose, 0)})
 	}
 	return "", nil
 }
@@ -279,40 +279,24 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	}
 	_, items := p.screenItems(v)
 	n := len(items)
-	switch {
-	case k == 0x4800:
-		s.sel = (s.sel + n - 1) % n
-	case k == 0x5000:
-		s.sel = (s.sel + 1) % n
-	case k == 0x4900:
-		s.sel = max(0, s.sel-scrRows)
-	case k == 0x5100:
-		s.sel = min(n-1, s.sel+scrRows)
-	case k == 13 || k == ' ' || k == KeyPadSelect:
-		p.screenPick(v, s.sel-s.top)
-	case k == 27:
-		switch {
-		case s.sub == scrAsk:
-			s.sub = s.back
-		case s.sub != scrMain:
-			s.sub, s.sel, s.anchor = scrMain, 0, nil
-		default:
-			p.screenPick(v, n-1-s.top) // Exit, Back
+	keys := rowKeys(items)
+	for i, it := range items {
+		if it.do == nil {
+			keys[i] = 0
 		}
-	case k < 128 && k > ' ':
-		h := byte(k) &^ 0x20
-		for i, it := range items {
-			if it.key == h && it.do != nil {
-				s.sel = i
-				it.do()
-				return true
-			}
-		}
-		return false
-	default:
-		return false
 	}
-	return true
+	i, back, ok := menuNav(k, &s.sel, keys)
+	switch {
+	case back && s.sub == scrAsk:
+		s.sub = s.back
+	case back && s.sub != scrMain:
+		s.sub, s.sel, s.anchor = scrMain, 0, nil
+	case back:
+		p.screenPick(v, n-1-s.top) // Exit, Back
+	case i >= 0:
+		p.screenPick(v, i-s.top)
+	}
+	return ok
 }
 
 // pickerKey moves the picker's cursor (turning the page under it), Enter

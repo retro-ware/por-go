@@ -44,15 +44,9 @@ type campUI struct {
 	iconSrc  image.Image
 }
 
-type campItem struct {
-	text string
-	key  byte
-	do   func()
-}
-
 // campItems are the lines of the camp screen up, and its title.
 // The temple, the shop and training share the camp's screens.
-func (p *Presenter) campItems(v engine.View) (string, []campItem) {
+func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 	switch {
 	case v.Temple != nil:
 		return p.templeItems(v)
@@ -71,21 +65,21 @@ func (p *Presenter) campItems(v engine.View) (string, []campItem) {
 		if !v.Day {
 			until = "Until day"
 		}
-		var it []campItem
+		var it []menuRow
 		if cp.Healing {
-			it = append(it, campItem{"Heal", 'H', act(engine.ActRest, engine.RestHeal)})
+			it = append(it, menuRow{"Heal", 'H', act(engine.ActRest, engine.RestHeal)})
 		}
 		return "Rest", append(it,
-			campItem{"Memorize", 'M', act(engine.ActRest, engine.RestMemorize)},
-			campItem{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)},
-			campItem{until, 'U', act(engine.ActRest, engine.RestUntil)},
-			campItem{"Back", 'B', to(campMain)})
+			menuRow{"Memorize", 'M', act(engine.ActRest, engine.RestMemorize)},
+			menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)},
+			menuRow{until, 'U', act(engine.ActRest, engine.RestUntil)},
+			menuRow{"Back", 'B', to(campMain)})
 	case campMemorize, campScribe:
 		list, title := cp.Book, "Spells to memorize"
 		if c.screen == campScribe {
 			list, title = cp.Scrolls, "Spells to scribe"
 		}
-		var it []campItem
+		var it []menuRow
 		for _, s := range list {
 			text := fmt.Sprintf("%-18s x%d %d/%d", s.Name, s.Count, s.Planned, s.Slots)
 			if c.screen == campScribe {
@@ -94,48 +88,48 @@ func (p *Presenter) campItems(v engine.View) (string, []campItem) {
 					text += " *"
 				}
 			}
-			it = append(it, campItem{text, 0, func() { p.campSpell(s.ID, 1) }})
+			it = append(it, menuRow{text, 0, func() { p.campSpell(s.ID, 1) }})
 		}
-		return title, append(it, campItem{"Back", 0, to(campMain)})
+		return title, append(it, menuRow{"Back", 0, to(campMain)})
 	case campBestiary:
 		sort := "Sort by danger"
 		if c.byDanger {
 			sort = "Sort by name"
 		}
-		it := []campItem{{sort, 0, func() { c.byDanger = !c.byDanger }}}
+		it := []menuRow{{sort, 0, func() { c.byDanger = !c.byDanger }}}
 		for _, b := range p.beasts(v) {
-			it = append(it, campItem{b.Name, 0, func() { c.beast, c.screen = b.Name, campBeast }})
+			it = append(it, menuRow{b.Name, 0, func() { c.beast, c.screen = b.Name, campBeast }})
 		}
-		return "Bestiary", append(it, campItem{"Back", 0, to(campMain)})
+		return "Bestiary", append(it, menuRow{"Back", 0, to(campMain)})
 	case campBeast:
 		for _, b := range cp.Bestiary {
 			if b.Name == c.beast {
-				return fmt.Sprintf("%s, danger %s: %s", b.Name, roman[b.Danger], b.Text), []campItem{{"Back", 0, to(campBestiary)}}
+				return fmt.Sprintf("%s, danger %s: %s", b.Name, roman[b.Danger], b.Text), []menuRow{{"Back", 0, to(campBestiary)}}
 			}
 		}
 		c.screen = campBestiary
 		return p.campItems(v)
 	case campDrop:
-		return "Drop " + selectedName(v) + " from the party?", []campItem{
+		return "Drop " + selectedName(v) + " from the party?", []menuRow{
 			{"Yes", 'Y', func() { p.send(engine.ActDropMember, selectedIndex(v)); c.screen = campMain }},
 			{"No", 'N', to(campMain)}}
 	}
-	var it []campItem
+	var it []menuRow
 	if cp.CanCast {
-		it = append(it, campItem{"Cast", 'C', act(engine.ActCastPick, -1)})
+		it = append(it, menuRow{"Cast", 'C', act(engine.ActCastPick, -1)})
 	}
-	it = append(it, campItem{"View", 'V', act(engine.ActMember, -1)}, campItem{"Items", 'I', act(engine.ActInventory, -1)})
+	it = append(it, menuRow{"View", 'V', act(engine.ActMember, -1)}, menuRow{"Items", 'I', act(engine.ActInventory, -1)})
 	if len(cp.Book) > 0 {
-		it = append(it, campItem{"Memorize", 'M', to(campMemorize)})
+		it = append(it, menuRow{"Memorize", 'M', to(campMemorize)})
 	}
 	if len(cp.Scrolls) > 0 {
-		it = append(it, campItem{"Scribe", 'S', to(campScribe)})
+		it = append(it, menuRow{"Scribe", 'S', to(campScribe)})
 	}
-	it = append(it, campItem{"Rest", 'R', to(campRest)}, campItem{"Icon", 'O', act(engine.ActIconEdit, -1)}, campItem{"Drop", 'D', to(campDrop)})
+	it = append(it, menuRow{"Rest", 'R', to(campRest)}, menuRow{"Icon", 'O', act(engine.ActIconEdit, -1)}, menuRow{"Drop", 'D', to(campDrop)})
 	if len(cp.Bestiary) > 0 {
-		it = append(it, campItem{"Bestiary", 'B', to(campBestiary)})
+		it = append(it, menuRow{"Bestiary", 'B', to(campBestiary)})
 	}
-	return "Camp", append(it, campItem{"Leave", 'L', act(engine.ActClose, 0)})
+	return "Camp", append(it, menuRow{"Leave", 'L', act(engine.ActClose, 0)})
 }
 
 // campSpell plans one more (n > 0) or one less of spell id, or toggles
@@ -181,9 +175,9 @@ func selectedName(v engine.View) string {
 // top; a bestiary entry's icon goes over its box.
 func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View, k float64, cx, top, bottom int) {
 	title, items := p.campItems(v)
-	lines, keys := make([]string, len(items)), make([]byte, len(items))
+	lines, keys := make([]string, len(items)), rowKeys(items)
 	for i, it := range items {
-		lines[i], keys[i] = it.text, it.key
+		lines[i] = it.text
 	}
 	p.camp.sel = min(max(p.camp.sel, 0), len(items)-1)
 	if p.camp.screen == campBeast {
@@ -226,32 +220,32 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	n := len(items)
 	spells := v.Camp != nil && (c.screen == campMemorize || c.screen == campScribe)
 	switch {
-	case k == 0x4800:
-		c.sel = (c.sel + n - 1) % n
-	case k == 0x5000:
-		c.sel = (c.sel + 1) % n
-	case k == 13 || k == ' ':
-		p.campPick(v, c.sel)
-	case k == 27: // the last line: Leave, Back, No
-		p.campPick(v, n-1)
 	case spells && (k == 0x4B00 || k == 8) && c.sel < n-1: // Left, Backspace: one less
 		p.campSpellAt(v, c.sel, -1)
 	case spells && k == 0x4D00 && c.sel < n-1: // Right: one more
 		p.campSpellAt(v, c.sel, 1)
 	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0: // F1-F8: the member camp acts for
 		p.send(engine.ActLead, int(k-KeyF1)>>8)
-	case k < 128:
-		h := byte(k)
-		if h >= 'a' && h <= 'z' {
-			h -= 'a' - 'A'
-		}
-		for i, it := range items {
-			if it.key != 0 && it.key == h {
-				p.campPick(v, i)
-			}
+	default:
+		switch i, back, _ := menuNav(k, &c.sel, rowKeys(items)); {
+		case back:
+			p.campBack(v)
+		case i >= 0:
+			p.campPick(v, i)
 		}
 	}
 	return true
+}
+
+// campBack goes back one level: the screen's Back, Leave, Exit or No row,
+// else the screen closes. It never picks a list's line.
+func (p *Presenter) campBack(v engine.View) {
+	_, items := p.campItems(v)
+	if n := len(items); n > 0 && slices.Contains([]string{"Back", "Leave", "Exit", "No"}, items[n-1].text) {
+		p.campPick(v, n-1)
+		return
+	}
+	p.send(engine.ActClose, 0)
 }
 
 // campSpellAt changes the plan of the spell on line i.
@@ -284,28 +278,28 @@ func (p *Presenter) sendX(k engine.ActKind, n, x int) {
 }
 
 // appraiseItems is the appraise screen; back goes to the screen before.
-func (p *Presenter) appraiseItems(a engine.Appraise, back func()) (string, []campItem) {
+func (p *Presenter) appraiseItems(a engine.Appraise, back func()) (string, []menuRow) {
 	if a.Valued > 0 {
 		what := "Gem"
 		if a.Jewel {
 			what = "Jewel"
 		}
-		var it []campItem
+		var it []menuRow
 		if a.CanKeep {
-			it = append(it, campItem{"Keep", 'K', func() { p.send(engine.ActKeep, 1) }})
+			it = append(it, menuRow{"Keep", 'K', func() { p.send(engine.ActKeep, 1) }})
 		}
-		return fmt.Sprintf("The %s is Valued at %d gp.", what, a.Valued), append(it, campItem{"Sell", 'S', func() { p.send(engine.ActKeep, 0) }})
+		return fmt.Sprintf("The %s is Valued at %d gp.", what, a.Valued), append(it, menuRow{"Sell", 'S', func() { p.send(engine.ActKeep, 0) }})
 	}
-	var it []campItem
+	var it []menuRow
 	if a.Gems > 0 {
-		it = append(it, campItem{fmt.Sprintf("Gems (%d)", a.Gems), 'G', func() { p.send(engine.ActAppraise, 0) }})
+		it = append(it, menuRow{fmt.Sprintf("Gems (%d)", a.Gems), 'G', func() { p.send(engine.ActAppraise, 0) }})
 	}
 	if a.Jewelry > 0 {
-		it = append(it, campItem{fmt.Sprintf("Jewelry (%d)", a.Jewelry), 'J', func() { p.send(engine.ActAppraise, 1) }})
+		it = append(it, menuRow{fmt.Sprintf("Jewelry (%d)", a.Jewelry), 'J', func() { p.send(engine.ActAppraise, 1) }})
 	}
 	title := "You have a fine collection of:"
 	if len(it) == 0 {
 		title = "Nothing to appraise"
 	}
-	return title, append(it, campItem{"Back", 'B', back})
+	return title, append(it, menuRow{"Back", 'B', back})
 }

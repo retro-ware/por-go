@@ -216,6 +216,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.send(engine.ActOK, 0)
 	case p.menu && v.Exploring: // the command bar's popup: it alone closes (key)
 		p.menu = false
+	case screenUp(v): // back one level, as Esc
+		p.campBack(v)
 	default:
 		p.send(engine.ActClose, 0)
 	}

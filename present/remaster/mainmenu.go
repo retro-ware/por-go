@@ -101,19 +101,19 @@ const (
 // mainItems are the main menu's lines (the Party submenu with the
 // character functions) or, with a question up, its answers and the
 // question.
-func (p *Presenter) mainItems(v engine.View) (string, []campItem) {
+func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 	ask := func(q int) func() { return func() { p.mainAsk, p.sel = q, 1 } }
-	no := campItem{"No", 'N', ask(askNone)}
+	no := menuRow{"No", 'N', ask(askNone)}
 	switch p.mainAsk {
 	case askQuit:
-		return "Quit to DOS?", []campItem{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActQuit, 0) }}, no}
+		return "Quit to DOS?", []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActQuit, 0) }}, no}
 	case askDrop:
-		return "Drop " + selectedName(v) + " forever?", []campItem{{"Yes", 'Y', ask(askSure)}, no}
+		return "Drop " + selectedName(v) + " forever?", []menuRow{{"Yes", 'Y', ask(askSure)}, no}
 	case askSure:
-		return "Are you sure?", []campItem{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActDropMember, -1) }}, no}
+		return "Are you sure?", []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActDropMember, -1) }}, no}
 	}
 	open := func(k engine.ActKind) bool { return slices.Contains(v.MainMenu, k) }
-	var it []campItem
+	var it []menuRow
 	add := func(k engine.ActKind) {
 		if !open(k) {
 			return
@@ -125,20 +125,20 @@ func (p *Presenter) mainItems(v engine.View) (string, []campItem) {
 		case engine.ActDropMember:
 			do = ask(askDrop)
 		}
-		it = append(it, campItem{mainNames[k], mainNames[k][0], do})
+		it = append(it, menuRow{mainNames[k], mainNames[k][0], do})
 	}
 	if p.mainSub {
 		for _, k := range []engine.ActKind{engine.ActAdd, engine.ActCreate, engine.ActForget, engine.ActDropMember, engine.ActModify, engine.ActTraining, engine.ActMember, engine.ActRemove} {
 			add(k)
 		}
-		return "", append(it, campItem{"Back", 'B', func() { p.mainSub, p.mainSel = false, 0 }})
+		return "", append(it, menuRow{"Back", 'B', func() { p.mainSub, p.mainSel = false, 0 }})
 	}
 	add(engine.ActBegin)
 	add(engine.ActLoad) // Load Game leads when there are saved games, Quick Start without them
 	if !open(engine.ActLoad) {
 		add(engine.ActQuickStart)
 	}
-	it = append(it, campItem{"Party", 'P', func() { p.mainSub, p.mainSel = true, 0 }})
+	it = append(it, menuRow{"Party", 'P', func() { p.mainSub, p.mainSel = true, 0 }})
 	if open(engine.ActLoad) {
 		add(engine.ActQuickStart)
 	}
@@ -266,29 +266,18 @@ func (p *Presenter) mainKey(k uint16, v engine.View) bool {
 	if n == 0 {
 		return false
 	}
-	switch {
-	case k == 0x4800:
-		*sel = (*sel + n - 1) % n
-	case k == 0x5000:
-		*sel = (*sel + 1) % n
-	case k == 13 || k == KeyPadSelect:
-		p.mainPick(v, *sel)
-	case k == 27 && (p.ask || p.mainSub):
-		p.mainPick(v, n-1)
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
+	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 {
 		p.send(engine.ActLead, int(k-KeyF1)>>8)
-	case k < 128 && k >= ' ':
-		h := byte(k) &^ 0x20
-		for i, it := range items {
-			if it.key == h {
-				*sel = i
-				p.mainPick(v, i)
-				return true
-			}
-		}
-		return false
-	default:
-		return false
+		return true
 	}
-	return true
+	i, back, ok := menuNav(k, sel, rowKeys(items))
+	switch {
+	case back && (p.ask || p.mainSub):
+		p.mainPick(v, n-1) // No, Back
+	case back:
+		return false
+	case i >= 0:
+		p.mainPick(v, i)
+	}
+	return ok
 }

@@ -8,7 +8,7 @@ import (
 
 // The shop (View.Shop): Browse is the inventory with the goods; the
 // presenter asks before an Id.
-func (p *Presenter) shopItems(v engine.View) (string, []campItem) {
+func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 	c, s := &p.camp, v.Shop
 	to := func(n int) func() { return func() { c.screen, c.sel = n, 0 } }
 	switch c.screen {
@@ -16,26 +16,26 @@ func (p *Presenter) shopItems(v engine.View) (string, []campItem) {
 		if len(s.Unknown) == 0 {
 			break
 		}
-		var it []campItem
+		var it []menuRow
 		for i, u := range s.Unknown {
-			it = append(it, campItem{u.Owner + ": " + u.Name, 0, func() { c.pick, c.screen = i, shopDeal }})
+			it = append(it, menuRow{u.Owner + ": " + u.Name, 0, func() { c.pick, c.screen = i, shopDeal }})
 		}
-		return fmt.Sprintf("Identify for %dg (%d gold)", s.IDPrice, s.Gold), append(it, campItem{"Back", 'B', to(campMain)})
+		return fmt.Sprintf("Identify for %dg (%d gold)", s.IDPrice, s.Gold), append(it, menuRow{"Back", 'B', to(campMain)})
 	case shopDeal:
 		if c.pick >= len(s.Unknown) {
 			c.screen = shopID
 			return p.shopItems(v)
 		}
 		u := s.Unknown[c.pick]
-		return fmt.Sprintf("Identify %s for %d gold. Is it a deal?", u.Name, s.IDPrice), []campItem{
+		return fmt.Sprintf("Identify %s for %d gold. Is it a deal?", u.Name, s.IDPrice), []menuRow{
 			{"Yes", 'Y', func() { p.sendX(engine.ActIdentify, u.Member, u.Item); c.screen = shopID }},
 			{"No", 'N', to(shopID)}}
 	case appraise:
 		return p.appraiseItems(s.Appraise, to(campMain))
 	}
-	it := []campItem{{"Browse", 'B', func() { p.send(engine.ActInventory, -1) }}, {"Appraise", 'A', to(appraise)}}
+	it := []menuRow{{"Browse", 'B', func() { p.send(engine.ActInventory, -1) }}, {"Appraise", 'A', to(appraise)}}
 	if len(s.Unknown) > 0 {
-		it = append(it, campItem{"Identify", 'I', to(shopID)})
+		it = append(it, menuRow{"Identify", 'I', to(shopID)})
 	}
-	return "Shop", append(it, campItem{"Exit", 'E', func() { p.send(engine.ActClose, 0) }})
+	return "Shop", append(it, menuRow{"Exit", 'E', func() { p.send(engine.ActClose, 0) }})
 }
