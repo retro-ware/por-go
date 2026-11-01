@@ -192,6 +192,14 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		if v.Picker != nil {
 			s.cur = v.Picker.Cur
 		}
+		if sl := v.Slots; sl != nil { // on the game last loaded or saved
+			if i := slices.Index(sl.Names, sl.Current); i >= 0 && sl.Current != "" {
+				s.sel = i
+				if sl.CanSave {
+					s.sel++ // under New Slot
+				}
+			}
+		}
 	}
 	p.winRects = p.winRects[:0]
 	if pk := v.Picker; pk != nil {

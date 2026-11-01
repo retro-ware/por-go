@@ -348,8 +348,9 @@ type Picker struct {
 // Slots is the save slot screen: the saves, newest first.
 type Slots struct {
 	Names, Times []string
-	CanSave      bool // ActSave is taken (else loading only, or not now)
-	LoadOnly     bool // the party menu's Load
+	CanSave      bool   // ActSave is taken (else loading only, or not now)
+	LoadOnly     bool   // the party menu's Load
+	Current      string // the slot last loaded or saved ("" none): the list starts on it
 }
 
 // Menu is a question waiting for the player: a prompt and its options.
