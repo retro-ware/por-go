@@ -210,7 +210,7 @@ func (inv *inventory) do(k engine.ActKind) {
 	it := itemAt(inv.view, inv.sel)
 	switch {
 	case k == engine.ActNone:
-	case k == engine.ActClose, k == engine.ActTakeAll, k >= engine.ActSpells && k <= engine.ActCure:
+	case k == engine.ActClose, k == engine.ActSheet, k == engine.ActTakeAll, k >= engine.ActSpells && k <= engine.ActCure:
 		inv.acts = append(inv.acts, engine.Action{Kind: k})
 	case k == engine.ActBuy:
 		if w := wareAt(inv.view, inv.ware); w != nil {

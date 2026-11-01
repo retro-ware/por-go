@@ -38,6 +38,7 @@ const (
 	ActOK                // Enter: the highlighted choice, or "press a key"
 	ActText              // the line being typed (View.Ask) now reads Text
 	ActInventory         // member N's items (a card's left click)
+	ActSheet             // the inventory: back to the sheet under it
 	ActMinimap           // the minimap over the roster (Tab)
 	ActMap               // the full map (M)
 	ActOverview          // the party overview, on the View page the items (P)

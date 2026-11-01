@@ -279,7 +279,6 @@ type SheetPage struct {
 	Class      string
 	Stats      [6]int // STR .. CHA
 	Str00      string // the exceptional strength after STR: "(78)", ""
-	Money      []Coin // the party's money that is not 0, as the sheet lists it
 	Creating   bool   // the creation's sheet: no level, experience, party items, items or status
 	Levels     string // "1/2"
 	Exp        int
@@ -288,21 +287,12 @@ type SheetPage struct {
 	MaxHP      int // HP below it shows yellow
 	THAC0      int
 	Damage     string
-	PartyItems string // the party inventory's slots used and in all
 	Move       int
-	Weapon     string // the readied weapon's and armour's names ("" none)
-	Armor      string
 	Status     string
 	Effects    string         // the spell effects, as many as fit the row
 	PortraitAt CellRect       // the portrait's box (zero: no portrait)
 	Portrait   image.Image    // a dropped PNG in the box, in place of the DAX portrait (nil: none)
 	Icons      [2]image.Image // the creation's combat icon from a PNG, ready and action poses, in View.IconBox (nil: the DAX icon among the pictures)
-}
-
-// Coin is a line of the sheet's money: its name and how much.
-type Coin struct {
-	Name string
-	N    int
 }
 
 // Creation is the creation sheet's parts: the drop-down fields, and the
@@ -384,7 +374,6 @@ type MenuItem struct {
 
 // Sheet is what the character sheet offers besides the page.
 type Sheet struct {
-	Items  bool    // the member carries items (ActInventory)
 	Powers []Power // Spells, Magic, Heal, Cure
 }
 

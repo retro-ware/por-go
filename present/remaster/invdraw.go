@@ -59,6 +59,7 @@ func (inv *inventory) menu(in *engine.Inventory) []word {
 	if in.Sell {
 		w = append(w, word{text: "Sell", act: engine.ActSell, on: it != nil})
 	}
+	w = append(w, word{text: "View", act: engine.ActSheet, on: true}) // the sheet (Tab)
 	for _, pw := range in.Powers {
 		w = append(w, word{text: pw.Name, act: pw.Kind, on: true})
 	}
@@ -109,7 +110,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 	inv.fill(inv.px.Rect, color.RGBA{A: 255})
 	inv.lines = inv.lines[:0]
-	bottom := (ch - 3) * 8 // the boxes' inner bottom: under them the menu row, then the toast's row
+	bottom := (ch - 2) * 8 // the boxes' inner bottom: under them the menu row, the toast in its place while it shows
 
 	// the member: name, portrait between the arrows, hit points (the shop: its goods)
 	lx, lw := 8, (leftCells-2)*8
@@ -147,18 +148,19 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		}
 	}
 
-	// the menu row under the boxes, the toast (noteLine) on the bottom row under it
-	rowY := (ch - 2) * 8
+	// the menu row under the boxes; the toast (noteLine) takes its place while it shows
+	rowY := (ch - 1) * 8
 	inv.words = inv.menu(in)
-	if note.Show && note.Text != "" {
-		noteLine(inv.px, note, (ch-1)*8)
+	toast := note.Show && note.Text != ""
+	if toast {
+		noteLine(inv.px, note, rowY)
 	}
 	x := 0
 	for _, w := range inv.words {
 		x += 8 * (len(w.text) + 1)
 	}
 	x = (inv.w - x + 8) / 2
-	if shop && in.Member >= 0 && in.Member < len(v.Party) { // the shop: the choices left, the buyer right
+	if shop && !toast && in.Member >= 0 && in.Member < len(v.Party) { // the shop: the choices left, the buyer right
 		x = 8
 		m := v.Party[in.Member]
 		s := m.Name + " " + m.Class
@@ -168,6 +170,10 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.focus = min(inv.focus, len(inv.words))
 	for i := range inv.words {
 		w := &inv.words[i]
+		if toast { // no words to see, none to click
+			w.r = image.Rectangle{}
+			continue
+		}
 		w.r = image.Rect(x-4, rowY-2, x+8*len(w.text)+4, rowY+10)
 		c, hc := green, white
 		switch {
@@ -200,16 +206,16 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv.panelAt = image.Rectangle{}
 	// onto the GPU: the boxes' borders, then the box's
 	inv.img.WritePixels(inv.px.Pix)
-	window(inv.img, t, gpu.GeoM{}, split, ch-2, nil)
+	window(inv.img, t, gpu.GeoM{}, split, ch-1, nil)
 	var g gpu.GeoM
 	g.Translate(float64(split-1)*8, 0) // the boxes share the divider
-	window(inv.img, t, g, cw-split+1, ch-2, nil)
+	window(inv.img, t, g, cw-split+1, ch-1, nil)
 	switch { // the headings on the top border, the party's money on the shop's bottom one
 	case in.Loot:
 		inv.onBorder(lx, 0, true, []string{"Loot"}, []color.RGBA{white})
 	case shop:
 		inv.onBorder(lx, 0, true, []string{"Shop"}, []color.RGBA{white})
-		inv.onBorder(rr, (ch-2)*8-8, false, []string{"party " + price(engine.Money{Gold: in.Gold, Copper: in.Copper})}, []color.RGBA{col(14)})
+		inv.onBorder(rr, (ch-1)*8-8, false, []string{"party " + price(engine.Money{Gold: in.Gold, Copper: in.Copper})}, []color.RGBA{col(14)})
 	}
 	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
 	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})

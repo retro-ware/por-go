@@ -2,7 +2,6 @@ package engine
 
 import (
 	"slices"
-	"strconv"
 	"strings"
 )
 
@@ -147,11 +146,6 @@ func dollSlot(e *Engine, c *Character, it *Item) int {
 		return DollRing2
 	}
 	return -1
-}
-
-// poolText is the party inventory's fill, "12/60".
-func (e *Engine) poolText() string {
-	return strconv.Itoa(len(e.pool)) + "/" + strconv.Itoa(e.poolCap())
 }
 
 // Inventory is the inventory screen (ItemsMenu) as the remastered one

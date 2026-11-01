@@ -64,7 +64,9 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		inv.carry = nil
 	case a == input.Esc:
 		inv.do(engine.ActClose)
-	case a == input.Minimap: // Tab, pad Y: the next tab of the highlighted item's list
+	case a == input.Minimap && inv.view.Wares == nil: // Tab, pad Y: the sheet (they toggle)
+		inv.do(engine.ActSheet)
+	case a == input.Minimap: // the shop and the loot: the next tab of the highlighted item's list
 		pn := &inv.list
 		if inv.ware >= 0 {
 			pn = &inv.wares

@@ -36,11 +36,6 @@ func (e *Engine) CharacterSheet() {
 	for i, v := range c.Stats {
 		sp.Stats[i] = int(v)
 	}
-	for _, l := range []Coin{{"Gold", int(e.purse.gold)}, {"Copper", int(e.purse.copper)}, {"Gems", int(e.purse.gems)}, {"Jewelry", int(e.purse.jewelry)}} { // showMoney
-		if l.N != 0 {
-			sp.Money = append(sp.Money, l)
-		}
-	}
 	e.snap.sheet = sp
 	e.combatStats(c, sp)
 	if !e.ext.creating { // extra: the creation's sheet: no level, experience or status yet (create.go)
@@ -55,14 +50,6 @@ func (e *Engine) CharacterSheet() {
 		sp.Exp = int(int32(c.Exp))
 		if _, need := levelSpan(c); need > 0 { // extra: the experience the next level takes, green once it is there
 			sp.Next = int(need)
-		}
-		if w := c.Slots[slotWeapon]; w != nil {
-			e.ItemName(c, w, 0, 0, false, false)
-			sp.Weapon = w.Name()
-		}
-		if a := c.Slots[slotArmor]; a != nil {
-			e.ItemName(c, a, 0, 0, false, false)
-			sp.Armor = a.Name()
 		}
 		sp.Status = e.statusName(c)
 		sp.Effects, _ = e.effectsLine(c)
@@ -102,9 +89,6 @@ func (e *Engine) combatStats(c *Character, sp *SheetPage) {
 	e.ApplyItems(c)
 	sp.AC, sp.HP, sp.MaxHP = 60-int(c.AC[0]), int(c.HP), int(c.MaxHP)
 	sp.THAC0, sp.Damage = int(byte(0x3C-c.THAC0)), cut(damageText(c), textCols)
-	if !e.ext.creating {
-		sp.PartyItems = e.poolText() // extra: the party inventory's slots for Encumbrance
-	}
 	m := c.Move
 	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
 	if e.FindAffect(c, affHaste) != nil {
@@ -177,10 +161,8 @@ func (e *Engine) applySheet(a Action) (done bool) {
 			e.selectMember(a.N)
 			c = e.selected()
 		}
-		if len(e.carried(c)) > 0 {
-			e.pushItems()
-			return false
-		}
+		e.pushItems() // extra: also with nothing carried (Tab toggles the two)
+		return false
 	case ActSpells, ActMagic, ActHeal, ActCure:
 		if !slices.ContainsFunc(e.powers(c), func(p Power) bool { return p.Kind == a.Kind }) {
 			return false
@@ -209,7 +191,7 @@ func (e *Engine) sheetView() *Sheet {
 	if c == nil {
 		return nil
 	}
-	return &Sheet{Items: len(e.carried(c)) > 0, Powers: e.powers(c)}
+	return &Sheet{Powers: e.powers(c)}
 }
 
 // Paladin powers from CotAB (ovr020). Two port-only affect types time them
@@ -343,6 +325,9 @@ func (e *Engine) applyItems(a Action) (done bool) {
 	defer e.ApplyItems(c) // 146F: also reached with nothing selected
 	switch inv := e.inventoryView(c, items); {
 	case a.Kind == ActClose:
+		return true
+	case a.Kind == ActSheet: // extra: back to the sheet under it, also when opened on the inventory (F1-F8)
+		e.view.leave = false
 		return true
 	case a.Kind == actRedraw: // back from a power or a use: in combat one that took the turn ends it
 		return e.view.quit

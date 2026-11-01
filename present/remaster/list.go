@@ -189,7 +189,10 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 			lines[i] = it.text
 		}
 		p.sel = min(max(p.sel, 0), len(lines)-1)
-		p.keyWindow(dst, "View", lines, keys, nil, p.sel, true)
+		p.winRects = p.winRects[:0]
+		if !note.Show || note.Text == "" { // the toast takes the row while it shows
+			p.menuRow(dst, lines, keys, p.sel)
+		}
 		return
 	}
 	m := askMenu(v)

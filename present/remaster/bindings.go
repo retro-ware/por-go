@@ -108,6 +108,7 @@ var bindings = []binding{
 		padKeys: []padKey{{padB, keyEsc, false}, {padBack, keyEsc, false}}},
 	{ctx: ctxMenus, keys: "F1-F8", desc: "member 1-8", mouse: "click a card", pad: "L3 R3",
 		codes: memberCodes()},
+	{ctx: ctxMenus, keys: "Tab", desc: "sheet, items: switch", mouse: "View, Items", pad: "Y"},
 	{ctx: ctxMenus, keys: "Left Right", desc: "prev., next member", mouse: "click a card", pad: "L3 R3",
 		codes:   []code{{keyLeft, input.Left}, {keyRight, input.Right}, {KeyPadPrev, input.PrevMember}, {KeyPadNext, input.NextMember}},
 		padKeys: []padKey{{dLeft, keyLeft, true}, {dRight, keyRight, true}, {padL3, KeyPadPrev, false}, {padR3, KeyPadNext, false}}},

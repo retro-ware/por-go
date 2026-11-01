@@ -299,7 +299,7 @@ func rosterRow(v engine.View, cx, cy int) int {
 // results lays the after-combat page out (ovr06: hiredShare, showResult,
 // the party destroyed) in the window's box.
 func (c *cellPage) results(r *engine.Results) {
-	right, bottom := c.cols-2, c.rows-3
+	right, bottom := c.cols-2, c.rows-2 // the last row: the menu, or the toast in its place
 	wrap := func(s string, x1, y1, x2 int) {
 		c.clear(x1, y1, x2, bottom)
 		for i, l := range engine.Wrap(s, x1, x2) {
@@ -409,11 +409,6 @@ func (c *cellPage) sheet(s *engine.SheetPage, v engine.View) {
 			c.str(7, 7, inkGreen, s.Str00)
 		}
 	}
-	c.clear(12, 7, 26, 14) // showMoney
-	for i, m := range s.Money {
-		c.str(0x14-len(m.Name), 7+i, inkGreen, m.Name)
-		c.str(21, 7+i, inkGreen, strconv.Itoa(m.N))
-	}
 	if !s.Creating {
 		c.str(1, 15, inkWhite, "Level")
 		c.str(7, 15, inkWhite, s.Levels)
@@ -439,24 +434,10 @@ func (c *cellPage) sheet(s *engine.SheetPage, v engine.View) {
 	c.str(15, y, inkGreen, strconv.Itoa(s.THAC0))
 	c.str(8, y+1, inkWhite, "Damage        ")
 	c.str(15, y+1, inkGreen, s.Damage)
-	if !s.Creating {
-		c.str(0x16, y, inkWhite, "Party items      ")
-		c.str(0x16+0xC, y, inkGreen, s.PartyItems)
-	}
 	c.str(0x16+3, y+1, inkWhite, "Movement   ")
 	c.str(0x16+0xC, y+1, inkGreen, strconv.Itoa(s.Move))
 	if !s.Creating {
 		y = 0x14
-		if s.Weapon != "" {
-			c.str(1, y, inkWhite, "Weapon")
-			c.str(8, y, inkGreen, s.Weapon)
-		}
-		y++
-		if s.Armor != "" {
-			c.str(2, y, inkWhite, "Armor")
-			c.str(8, y, inkGreen, s.Armor)
-		}
-		y++
 		c.str(1, y, inkWhite, "Status")
 		c.str(8, y, inkGreen, s.Status)
 		if s.Effects != "" {
