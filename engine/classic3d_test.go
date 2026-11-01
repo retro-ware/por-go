@@ -230,10 +230,7 @@ func TestClassicViews(t *testing.T) {
 	if len(f) != 6 {
 		t.Fatalf("POR_CLASSIC wants 6 fields: %q", spec)
 	}
-	e, err := New("../data")
-	if err != nil {
-		t.Fatal(err)
-	}
+	e := testEngine(t)
 	num := func(s string) int {
 		n, err := strconv.Atoi(s)
 		if err != nil {

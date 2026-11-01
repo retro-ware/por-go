@@ -35,14 +35,7 @@ func TestKindEnforce(t *testing.T) {
 // saving the character under its default name; then Add, Modify, Forget,
 // the icon editor and the party menu.
 func TestCreateSheet(t *testing.T) {
-	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
-		t.Skip("no game files")
-	}
-	e, err := New("../data")
-	if err != nil {
-		t.Fatal(err)
-	}
-	e.Cfg.SaveDir = t.TempDir()
+	e := testEngine(t)
 	e.viewBit0 = 1 // the sheet's portrait, as init sets it
 	act := func(a Action) View {
 		if a = e.take(a); a.Kind != ActNone {

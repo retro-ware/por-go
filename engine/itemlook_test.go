@@ -8,10 +8,7 @@ import (
 // TestBracersLook: bracers are on the armour's scale (50 is AC 10), so
 // Bracers +4 read AC 6, not "AC 50 better".
 func TestBracersLook(t *testing.T) {
-	e, err := New("../data")
-	if err != nil {
-		t.Skip("no game files")
-	}
+	e := testEngine(t)
 	e.items = e.readItems()
 	if e.base(itemBracers).Protection != acGiven|acTen {
 		t.Skip("bracers not in the item table")

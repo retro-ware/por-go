@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"os"
 	"testing"
 )
 
@@ -9,13 +8,7 @@ import (
 // than 40x25: its clear must not read as the main frame torn down (the
 // remastered view stays up, its pop-up the pane's size).
 func TestTextPaneFollowsPage(t *testing.T) {
-	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
-		t.Skip("no game files")
-	}
-	e, err := New("../data")
-	if err != nil {
-		t.Fatal(err)
-	}
+	e := testEngine(t)
 	defer setPageSize(minCols, minRows)
 	setPageSize(43, 27)
 	e.DrawMainFrame(true)

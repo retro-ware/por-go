@@ -1,19 +1,31 @@
 package engine
 
 import (
+	"os"
 	"slices"
 	"testing"
 )
+
+// testEngine is an engine on the game files (the test skips without them),
+// its saves under a temp dir: tests never read or write the game's own.
+func testEngine(t *testing.T) *Engine {
+	t.Helper()
+	if _, err := os.Stat("../data/dos/TITLE.DAX"); err != nil {
+		t.Skip("no game files")
+	}
+	e, err := New("../data")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.Cfg.SaveDir = t.TempDir()
+	return e
+}
 
 // quickStarted: an engine with the Quick Start party, its roster written
 // under a temp dir: tests never read or write the game's own saves.
 func quickStarted(t *testing.T) *Engine {
 	t.Helper()
-	e, err := New("../data")
-	if err != nil {
-		t.Skip(err)
-	}
-	e.Cfg.SaveDir = t.TempDir()
+	e := testEngine(t)
 	seed := uint32(7) // the same party every run
 	e.FixedSeed = &seed
 	e.Init()
