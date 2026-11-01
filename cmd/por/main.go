@@ -266,8 +266,8 @@ var padButtons = []struct {
 	{gpu.StandardGamepadButtonRightRight, 27, false},
 	{gpu.StandardGamepadButtonRightLeft, remaster.KeyPadOverview, false},
 	{gpu.StandardGamepadButtonRightTop, remaster.KeyPadMinimap, false},
-	{gpu.StandardGamepadButtonFrontTopLeft, ',', true},
-	{gpu.StandardGamepadButtonFrontTopRight, '.', true},
+	{gpu.StandardGamepadButtonFrontTopLeft, 0x4900, true}, // the shoulders page (PgUp, PgDn)
+	{gpu.StandardGamepadButtonFrontTopRight, 0x5100, true},
 	{gpu.StandardGamepadButtonFrontBottomLeft, 0x4700, true},
 	{gpu.StandardGamepadButtonFrontBottomRight, 0x4F00, true},
 	{gpu.StandardGamepadButtonCenterRight, 13, false},
