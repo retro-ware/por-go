@@ -13,6 +13,7 @@ import (
 
 	"por/engine"
 	"por/pal"
+	"por/present/input"
 )
 
 // The action bar, XCOM style: one button per menu item along the bottom
@@ -63,11 +64,13 @@ type barItem struct {
 // what the button shows for them (the number keys work too, unshown).
 // Tab, Shift-Tab and the pad's shoulders move a focus over the buttons
 // (drawn as the hover), Enter and pad A press it.
+// End and Cancel are the table's keys (Backspace, Esc), not letters.
 var hotkeys = map[string]struct {
-	key   uint16
+	key   uint16    // a letter, raw input
+	act   input.Act // or the binding table's key
 	label string
-}{"Attack": {'f', "F"}, "Ranged": {'m', "M"}, "Guard": {'g', "G"}, "End": {8, "\x1b"}, "Wait": {'p', "P"}, "Cast": {'c', "C"},
-	"Quick": {'u', "U"}, "Items": {'i', "I"}, "Turn": {'t', "T"}, "Bandage": {'b', "B"}, "Flee": {'r', "R"}, "Yes": {'y', "Y"}, "No": {'n', "N"}, "Cancel": {27, "Esc"}}
+}{"Attack": {'f', 0, "F"}, "Ranged": {'m', 0, "M"}, "Guard": {'g', 0, "G"}, "End": {0, input.EndTurn, "\x1b"}, "Wait": {'p', 0, "P"}, "Cast": {'c', 0, "C"},
+	"Quick": {'u', 0, "U"}, "Items": {'i', 0, "I"}, "Turn": {'t', 0, "T"}, "Bandage": {'b', 0, "B"}, "Flee": {'r', 0, "R"}, "Yes": {'y', 0, "Y"}, "No": {'n', 0, "N"}, "Cancel": {0, input.Esc, "Esc"}}
 
 // leftArrow is the glyph drawn for "\x1b" (Backspace): the game's font has none.
 var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
@@ -76,10 +79,10 @@ var leftArrow = [8]byte{0x00, 0x10, 0x30, 0x7E, 0x30, 0x10, 0x00, 0x00}
 var actWords = map[engine.ActKind]string{engine.ActAttack: "Attack", engine.ActRanged: "Ranged", engine.ActGuard: "Guard", engine.ActItems: "Items",
 	engine.ActCast: "Cast", engine.ActTurn: "Turn", engine.ActBandage: "Bandage", engine.ActWait: "Wait", engine.ActEnd: "End", engine.ActQuick: "Quick", engine.ActFlee: "Flee"}
 
-// hotkey is the button whose hotkey is k (nil: none).
-func (b *bar) hotkey(k uint16) *barItem {
+// hotkey is the button whose hotkey is letter k or the table's key a (nil: none).
+func (b *bar) hotkey(a input.Act, k uint16) *barItem {
 	for i, it := range b.items {
-		if h, ok := hotkeys[it.Text]; ok && h.key == k && i < len(b.rects) {
+		if h, ok := hotkeys[it.Text]; ok && (h.key != 0 && h.key == k || h.act != input.None && h.act == a) && i < len(b.rects) {
 			return &b.items[i]
 		}
 	}

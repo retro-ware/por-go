@@ -8,6 +8,7 @@ import (
 	"gpu"
 
 	"por/engine"
+	"por/present/input"
 )
 
 // Lists (View.Ask (AskList)): the presenter scrolls and highlights the lines; the
@@ -116,7 +117,7 @@ func (p *Presenter) listKey(k uint16, v engine.View) bool {
 	keys := p.listKeys(v)
 	i, back, ok := menuNav(k, &l.sel, keys)
 	d := 1
-	if k == 0x4800 || k == 0x4900 || k == 0x4F00 {
+	if a := actOf(k); a == input.Up || a == input.PgUp || a == input.End {
 		d = -1
 	}
 	for range len(keys) {
@@ -226,7 +227,7 @@ func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 	if sheetUp(v) {
 		return p.sheetKey(k, v)
 	}
-	if v.FullMap != nil && k&0xFF == 0 { // the full map's arrows move its cursor
+	if v.FullMap != nil && input.Cursor(actOf(k)) { // the full map's arrows move its cursor
 		return false
 	}
 	switch i, back, ok := menuNav(k, &p.sel, rowKeys(itemRows(askMenu(v)))); {

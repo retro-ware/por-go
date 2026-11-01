@@ -13,6 +13,7 @@ import (
 
 	"por/engine"
 	"por/pal"
+	"por/present/input"
 )
 
 // The combat screen's own rows (extra): the original's two rows under the
@@ -203,26 +204,27 @@ func (p *Presenter) fightKey(k uint16) bool {
 	if p.pickKey(k) {
 		return true
 	}
-	if k == 'l' || k == 'L' || p.fightLog && k == 27 {
-		p.fightLog = !p.fightLog && k != 27
+	a := combatAct(k)
+	if a == input.Log || p.fightLog && a == input.Esc {
+		p.fightLog = !p.fightLog && a != input.Esc
 		p.logTop = math.MaxInt32 // it opens on the latest lines
 		return true
 	}
-	if d, ok := map[uint16]int{0x4800: -1, 0x5000: 1, 0x4900: -logRows, 0x5100: logRows, 0x4700: -math.MaxInt32, 0x4F00: math.MaxInt32}[k]; ok && p.fightLog { // Up/Down, PgUp/PgDn, Home/End scroll the Log
+	if d, ok := map[input.Act]int{input.Up: -1, input.Down: 1, input.PgUp: -logRows, input.PgDn: logRows, input.Home: -math.MaxInt32, input.End: math.MaxInt32}[actOf(k)]; ok && p.fightLog { // Up/Down, PgUp/PgDn, Home/End scroll the Log, as every list
 		p.logTop = max(0, min(p.logTop, math.MaxInt32-logRows)+d) // clamped when drawn
 		return true
 	}
-	if k == KeyPadStart && p.view != nil {
+	if a == input.Options && p.view != nil {
 		p.view.OpenOptions()
 		return true
 	}
-	if k == KeyPadSelect { // pad A: as Enter
-		k = 13
+	if a == input.PadA { // pad A: as Enter
+		a = input.Enter
 	}
-	if p.battle.Key(k) {
+	if p.battle.Key(a, k) {
 		return true
 	}
-	if k == 27 && p.view != nil { // Esc with nothing to give up: the options
+	if a == input.Esc && p.view != nil { // Esc with nothing to give up: the options
 		p.view.OpenOptions()
 		return true
 	}

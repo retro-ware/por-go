@@ -28,6 +28,7 @@ import (
 	"por/engine"
 	"por/pal"
 	"por/present/battle"
+	"por/present/input"
 )
 
 // Presenter draws the remastered screen. Screens it has no remaster for
@@ -544,10 +545,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	}
 	if v.Exploring {
 		if !p.menu {
-			switch k {
-			case 13, KeyPadSelect:
+			switch actOf(k) {
+			case input.Enter, input.PadA:
 				p.menu, p.sel = true, 0
-			case 27:
+			case input.Esc:
 				p.view.OpenOptions()
 			default:
 				return p.exploreKey(k, v)
@@ -576,11 +577,11 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		switch {
 		case choosing(v): // a member pick has no menu: every key goes to the portraits (keyAct)
 			return false
-		case k == 13 && noChoice(v): // "press enter to continue": nothing to pick
+		case actOf(k) == input.Enter && noChoice(v): // "press enter to continue": nothing to pick
 			return false
-		case k == 13 && m != nil:
+		case actOf(k) == input.Enter && m != nil:
 			p.menu, p.menuFor, p.sel = true, menuID(m), 0
-		case k == 27 && v.Exploring:
+		case actOf(k) == input.Esc && v.Exploring:
 			p.view.OpenOptions()
 		default:
 			return false
@@ -720,7 +721,7 @@ func (p *Presenter) Click(x, y int) bool {
 				return true
 			}
 		}
-		p.key(27, p.shownView) // a click outside: back, as Esc
+		p.key(keyOf(input.Esc), p.shownView) // a click outside: back, as Esc
 		return true
 	}
 	return p.fightClick(x, y)

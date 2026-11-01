@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"por/engine"
+	"por/present/input"
 )
 
 func TestMapMesh(t *testing.T) {
@@ -50,15 +51,19 @@ func TestKeys(t *testing.T) {
 	p.b = b
 	p.bar.items = shownItems(b, false)
 	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
-	took := func(k uint16) []engine.Action { p.Key(k); return p.Actions() }
-	for k, want := range map[uint16]engine.ActKind{'1': engine.ActAttack, '2': engine.ActWait, 8: engine.ActEnd, 'u': engine.ActQuick, 'p': engine.ActWait} {
+	type key struct {
+		a input.Act
+		k uint16
+	}
+	took := func(k key) []engine.Action { p.Key(k.a, k.k); return p.Actions() }
+	for k, want := range map[key]engine.ActKind{{0, '1'}: engine.ActAttack, {0, '2'}: engine.ActWait, {input.EndTurn, 8}: engine.ActEnd, {0, 'u'}: engine.ActQuick, {0, 'p'}: engine.ActWait} {
 		if got := took(k); len(got) != 1 || got[0].Kind != want {
-			t.Errorf("key %#x: %+v, want kind %d", k, got, want)
+			t.Errorf("key %v: %+v, want kind %d", k, got, want)
 		}
 	}
-	for _, k := range []uint16{'5', 'g', 'w', 'Q', 0x4800} {
+	for _, k := range []key{{0, '5'}, {0, 'g'}, {input.CursorUp, 'w'}, {input.TurnLeft, 'Q'}, {input.Up, 0}} {
 		if got := took(k); len(got) != 0 {
-			t.Errorf("key %#x: %+v, want nothing", k, got)
+			t.Errorf("key %v: %+v, want nothing", k, got)
 		}
 	}
 	if p.yawTo == 0 {
@@ -70,13 +75,13 @@ func TestKeys(t *testing.T) {
 	if len(p.bar.items) != 1 || p.bar.items[0].Text != "Cancel" {
 		t.Errorf("aim bar: %+v", p.bar.items)
 	}
-	if got := took(9); len(got) != 1 || got[0] != (engine.Action{Kind: engine.ActPoint, X: 4, Y: 2}) {
+	if got := took(key{input.Tab, 9}); len(got) != 1 || got[0] != (engine.Action{Kind: engine.ActPoint, X: 4, Y: 2}) {
 		t.Errorf("Tab aiming: %+v, want the next target", got)
 	}
-	if got := took(13); len(got) != 1 || got[0] != (engine.Action{Kind: engine.ActAim, X: 1, Y: 1}) {
+	if got := took(key{input.Enter, 13}); len(got) != 1 || got[0] != (engine.Action{Kind: engine.ActAim, X: 1, Y: 1}) {
 		t.Errorf("Enter aiming: %+v", got)
 	}
-	if got := took(27); len(got) != 1 || got[0].Kind != engine.ActClose {
+	if got := took(key{input.Esc, 27}); len(got) != 1 || got[0].Kind != engine.ActClose {
 		t.Errorf("Esc aiming: %+v", got)
 	}
 }
@@ -113,19 +118,19 @@ func TestBarFocus(t *testing.T) {
 	p.b = b
 	p.bar.items = shownItems(b, false)
 	p.bar.rects = make([]image.Rectangle, len(p.bar.items))
-	if p.Key(13); len(p.Actions()) != 0 {
+	if p.Key(input.Enter, 13); len(p.Actions()) != 0 {
 		t.Error("Enter with no focus pressed a button")
 	}
 	for _, c := range []struct {
-		k     uint16
+		a     input.Act
 		focus int
-	}{{9, 1}, {0x5100, 2}, {9, 3}, {9, 1}, {0x4900, 3}, {0x4900, 2}} {
-		p.Key(c.k)
+	}{{input.Tab, 1}, {input.PgDn, 2}, {input.Tab, 3}, {input.Tab, 1}, {input.PgUp, 3}, {input.PgUp, 2}} {
+		p.Key(c.a, 0)
 		if p.bar.focus != c.focus {
-			t.Fatalf("key %#x: focus %d, want %d", c.k, p.bar.focus, c.focus)
+			t.Fatalf("key %v: focus %d, want %d", c.a, p.bar.focus, c.focus)
 		}
 	}
-	if p.Key(13); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActWait}}) {
+	if p.Key(input.Enter, 13); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActWait}}) {
 		t.Error("Enter did not press the focused Wait")
 	}
 	p.bar.focus = 0
@@ -136,7 +141,7 @@ func TestBarFocus(t *testing.T) {
 	b.Turn = nil
 	p.bar.items = shownItems(b, true)
 	for k, want := range map[uint16]engine.ActKind{'y': engine.ActYes, 'n': engine.ActNo} {
-		if p.Key(k); !slices.Equal(p.Actions(), []engine.Action{{Kind: want}}) {
+		if p.Key(0, k); !slices.Equal(p.Actions(), []engine.Action{{Kind: want}}) {
 			t.Errorf("question key %#x: want kind %d", k, want)
 		}
 	}
@@ -150,10 +155,10 @@ func TestCursor(t *testing.T) {
 	b := &engine.Battle{Turn: &engine.Turn{}, Units: []engine.Unit{{ID: 1, X: 5, Y: 5, Active: true, Party: true}, {ID: 2, X: 9, Y: 9}, {ID: 3, X: 2, Y: 2}},
 		Reach: []image.Point{{5, 4}}}
 	p.b = b
-	if p.Key('w'); p.free == nil || *p.free != image.Pt(5, 4) {
+	if p.Key(input.CursorUp, 'w'); p.free == nil || *p.free != image.Pt(5, 4) {
 		t.Fatalf("W: cursor %v, want 5,4 (north of the active unit)", p.free)
 	}
-	if p.Key(13); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActWalk, X: 5, Y: 4}}) {
+	if p.Key(input.Enter, 13); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActWalk, X: 5, Y: 4}}) {
 		t.Error("Enter on a reach square did not walk there")
 	}
 	p.Point(100, 100) // a moved mouse takes over
@@ -161,10 +166,10 @@ func TestCursor(t *testing.T) {
 		t.Error("the mouse did not take over from the cursor")
 	}
 	b.Turn.Aim, b.Cursor, b.Targets = true, image.Pt(9, 9), []int{2, 3}
-	if p.Key('d'); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActPoint, X: 10, Y: 9}}) {
+	if p.Key(input.CursorRight, 'd'); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActPoint, X: 10, Y: 9}}) {
 		t.Error("D did not move the aim east")
 	}
-	if p.Key(0x5100); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActPoint, X: 2, Y: 2}}) {
+	if p.Key(input.PgDn, 0); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActPoint, X: 2, Y: 2}}) {
 		t.Error("RB did not aim at the next target")
 	}
 }

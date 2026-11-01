@@ -11,6 +11,7 @@ import (
 	"por/pal"
 
 	"por/engine"
+	"por/present/input"
 )
 
 // Camp (View.Camp): the presenter's own screens over camp's state, each
@@ -274,10 +275,10 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	n := len(items)
 	spells := v.Camp != nil && (c.screen == campMemorize || c.screen == campScribe)
 	m, member := memberKey(k, selectedIndex(v), len(v.Party), true)
-	switch {
-	case spells && (k == '-' || k == 8) && c.sel < n-1: // -, Backspace: one less
+	switch a := actOf(k); {
+	case spells && (a == input.Less || a == input.Backspace) && c.sel < n-1: // -, Backspace: one less
 		p.campSpellAt(v, c.sel, -1)
-	case spells && (k == '+' || k == '=') && c.sel < n-1: // +: one more
+	case spells && a == input.More && c.sel < n-1: // +: one more
 		p.campSpellAt(v, c.sel, 1)
 	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
 		p.send(engine.ActLead, m)

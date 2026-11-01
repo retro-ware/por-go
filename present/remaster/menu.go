@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"por/pal"
+	"por/present/input"
 	"slices"
 	"strings"
 
@@ -54,27 +55,28 @@ func digitKeys(keys []byte, on func(int) bool) []byte {
 // picks. It returns the row picked (-1 none), back, and whether k was taken.
 func menuNav(k uint16, sel *int, keys []byte) (pick int, back, ok bool) {
 	n := len(keys)
+	a := actOf(k)
 	if n == 0 {
-		return -1, k == 27, k == 27
+		return -1, a == input.Esc, a == input.Esc
 	}
 	s := min(max(*sel, 0), n-1)
 	switch {
-	case k == 0x4800:
+	case a == input.Up:
 		s = (s + n - 1) % n
-	case k == 0x5000:
+	case a == input.Down:
 		s = (s + 1) % n
-	case k == 0x4900:
+	case a == input.PgUp:
 		s = max(0, s-10)
-	case k == 0x5100:
+	case a == input.PgDn:
 		s = min(n-1, s+10)
-	case k == 0x4700:
+	case a == input.Home:
 		s = 0
-	case k == 0x4F00:
+	case a == input.End:
 		s = n - 1
-	case k == 13 || k == ' ' || k == KeyPadSelect:
+	case a == input.Enter || a == input.Space || a == input.PadA:
 		*sel = s
 		return s, false, true
-	case k == 27:
+	case a == input.Esc:
 		return -1, true, true
 	case k > ' ' && k < 128:
 		h := byte(k)

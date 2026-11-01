@@ -18,6 +18,7 @@ import (
 
 	"por/engine"
 	"por/pal"
+	"por/present/input"
 )
 
 // The inventory screen (F1-F8, Items): the member's Eye of the Beholder
@@ -914,35 +915,34 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		}
 		inv.choose(order[(i+d+len(order))%len(order)].ware, order[(i+d+len(order))%len(order)].i)
 	}
-	switch k {
-	case KeyPadSelect, ' ': // pad A, Space: as Enter
-		k = 13
-	case KeyPadMinimap: // pad Y: as Tab, the next tab
-		k = 9
+	a := actOf(k)
+	switch a {
+	case input.PadA, input.Space: // pad A, Space: as Enter
+		a = input.Enter
 	}
 	m, member := memberKey(k, inv.member, inv.count, true)
 	switch {
-	case k == 27 && inv.carry != nil: // the stack goes back where it was
+	case a == input.Esc && inv.carry != nil: // the stack goes back where it was
 		inv.carry = nil
-	case k == 27:
+	case a == input.Esc:
 		inv.do(engine.ActClose)
-	case k == 9: // Tab: the next tab of the highlighted item's list
+	case a == input.Minimap: // Tab, pad Y: the next tab of the highlighted item's list
 		pn := &inv.list
 		if inv.ware >= 0 {
 			pn = &inv.wares
 		}
 		pn.tab, pn.top = (pn.tab+1)%len(tabNames), 0
-	case k == 0x4800:
+	case a == input.Up:
 		step(-1)
-	case k == 0x5000:
+	case a == input.Down:
 		step(1)
-	case k == 0x4700 && len(order) > 0: // Home, End: the first and last item
+	case a == input.Home && len(order) > 0: // Home, End: the first and last item
 		inv.choose(order[0].ware, order[0].i)
-	case k == 0x4F00 && len(order) > 0:
+	case a == input.End && len(order) > 0:
 		inv.choose(order[len(order)-1].ware, order[len(order)-1].i)
-	case (k == 0x4900 || k == 0x5100) && len(inv.words) > 0: // PgUp/PgDn, the pad's shoulders: the menu row's focus, as the battle bar's
+	case (a == input.PgUp || a == input.PgDn) && len(inv.words) > 0: // PgUp/PgDn, the pad's shoulders: the menu row's focus, as the battle bar's
 		d, n := 1, len(inv.words)
-		if k == 0x4900 {
+		if a == input.PgUp {
 			d = -1
 		}
 		if inv.focus == 0 && d < 0 {
@@ -950,13 +950,13 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		} else {
 			inv.focus = (inv.focus-1+d+n)%n + 1
 		}
-	case k == 13 && inv.focus > 0:
+	case a == input.Enter && inv.focus > 0:
 		if w := inv.words[inv.focus-1]; w.on {
 			inv.do(w.act)
 		}
-	case k == 13 && inv.ware >= 0:
+	case a == input.Enter && inv.ware >= 0:
 		inv.do(engine.ActBuy)
-	case k == 13:
+	case a == input.Enter:
 		inv.do(engine.ActReady)
 	case member:
 		if inv.view.Switch {

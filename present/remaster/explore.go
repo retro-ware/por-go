@@ -1,6 +1,9 @@
 package remaster
 
-import "por/engine"
+import (
+	"por/engine"
+	"por/present/input"
+)
 
 // The adventuring commands: the presenter's own list, each a decision
 // sent for the selected member (View.Exploring).
@@ -43,14 +46,17 @@ func (p *Presenter) exploreKey(k uint16, v engine.View) bool {
 	if c >= 'a' && c <= 'z' {
 		c -= 'a' - 'A'
 	}
+	a := actOf(k)
+	if kp := keypad(k); kp != input.None { // the digits: the keypad's arrows
+		a = kp
+	}
 	if v.Window == engine.WinAreaMap { // the area map: a step each way
-		if d, ok := map[uint16]int{0x4800: 0, 0x4D00: 1, 0x5000: 2, 0x4B00: 3, '8': 0, '6': 1, '2': 2, '4': 3}[k]; ok {
+		if d, ok := map[input.Act]int{input.Up: 0, input.Right: 1, input.Down: 2, input.Left: 3}[a]; ok {
 			p.send(engine.ActGo, d)
 			return true
 		}
-	} else if a, ok := map[uint16]engine.ActKind{0x4800: engine.ActForward, 0x5000: engine.ActBackward, 0x4B00: engine.ActTurnLeft, 0x4D00: engine.ActTurnRight,
-		'8': engine.ActForward, '2': engine.ActBackward, '4': engine.ActTurnLeft, '6': engine.ActTurnRight}[k]; ok {
-		p.send(a, 0)
+	} else if act, ok := map[input.Act]engine.ActKind{input.Up: engine.ActForward, input.Down: engine.ActBackward, input.Left: engine.ActTurnLeft, input.Right: engine.ActTurnRight}[a]; ok {
+		p.send(act, 0)
 		return true
 	}
 	if k >= 128 {
@@ -74,13 +80,13 @@ func (p *Presenter) exploreClick(x, y int, v engine.View) {
 	cx, cy := (x-r.Min.X)*3/max(1, r.Dx()), (y-r.Min.Y)*3/max(1, r.Dy())
 	switch {
 	case cx == 0:
-		p.exploreKey(0x4B00, v)
+		p.exploreKey(keyOf(input.Left), v)
 	case cx == 2:
-		p.exploreKey(0x4D00, v)
+		p.exploreKey(keyOf(input.Right), v)
 	case cy == 0:
-		p.exploreKey(0x4800, v)
+		p.exploreKey(keyOf(input.Up), v)
 	case cy == 2:
-		p.exploreKey(0x5000, v)
+		p.exploreKey(keyOf(input.Down), v)
 	default:
 		p.menu, p.sel = true, 0
 	}

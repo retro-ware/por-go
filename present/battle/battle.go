@@ -18,6 +18,7 @@ import (
 	"gpu"
 
 	"por/engine"
+	"por/present/input"
 )
 
 // Presenter keeps the GPU side of one combat map.
@@ -121,46 +122,51 @@ func (p *Presenter) Zoom(in bool, speed float64) {
 // targets while aiming (else they and PgUp/PgDn move the bar's focus,
 // which Enter presses), Enter takes the aimed one, Esc gives up (No) and
 // Backspace ends the turn. It reports whether k was taken.
-func (p *Presenter) Key(k uint16) bool {
+//
+// a is what the binding table (present/remaster/bindings.go) makes of the
+// key, k the key itself: the digits and the bar's letters are raw input.
+func (p *Presenter) Key(a input.Act, k uint16) bool {
 	p.initCamera()
 	if k < 128 && k >= 'A' && k <= 'Z' {
 		k += 'a' - 'A'
 	}
 	b := p.b
 	aiming := b != nil && b.Turn != nil && b.Turn.Aim
+	cycle := a == input.Tab || a == input.PgUp || a == input.PgDn
+	back := a == input.PgUp || a == input.Tab && gpu.IsKeyPressed(gpu.KeyShift)
 	switch {
-	case k == 'q':
+	case a == input.TurnLeft:
 		p.yawTo -= math.Pi / 4
-	case k == 'e':
+	case a == input.TurnRight:
 		p.yawTo += math.Pi / 4
-	case k == 'w' || k == 'a' || k == 's' || k == 'd': // the square cursor (the pad's d-pad and left stick send these too)
-		p.moveCursor(map[uint16][2]float64{'w': {1, 0}, 's': {-1, 0}, 'd': {0, 1}, 'a': {0, -1}}[k])
-	case k == 0x4800 || k == 0x5000 || k == 0x4B00 || k == 0x4D00: // the arrows pan
-	case k == 0x4700:
+	case a >= input.CursorUp && a <= input.CursorRight: // the square cursor (the pad's d-pad and left stick send these too)
+		p.moveCursor(map[input.Act][2]float64{input.CursorUp: {1, 0}, input.CursorDown: {-1, 0}, input.CursorRight: {0, 1}, input.CursorLeft: {0, -1}}[a])
+	case a == input.Up || a == input.Down || a == input.Left || a == input.Right: // the arrows pan
+	case a == input.Home:
 		p.offset = vec{}
 	case k >= '0' && k <= '9':
 		if i := (int(k) - '0' + 9) % 10; i < len(p.bar.rects) { // 1 is the first button, 0 the tenth
 			p.press(p.bar.items[i])
 		}
-	case p.bar.hotkey(k) != nil:
-		p.press(*p.bar.hotkey(k))
-	case (k == 9 || k == 0x4900 || k == 0x5100) && aiming && len(b.Targets) > 0: // Tab, Shift-Tab, the pad's shoulders: the next, previous target
-		p.cycleTarget(k == 0x4900 || k == 9 && gpu.IsKeyPressed(gpu.KeyShift))
-	case k == ' ':
-		return p.Key(13) // Space picks, as Enter
-	case k == 13 && aiming:
+	case p.bar.hotkey(a, k) != nil:
+		p.press(*p.bar.hotkey(a, k))
+	case cycle && aiming && len(b.Targets) > 0: // Tab, Shift-Tab, the pad's shoulders: the next, previous target
+		p.cycleTarget(back)
+	case a == input.Space:
+		return p.Key(input.Enter, k) // Space picks, as Enter
+	case a == input.Enter && aiming:
 		p.act(engine.Action{Kind: engine.ActAim, X: b.Cursor.X, Y: b.Cursor.Y})
-	case (k == 9 || k == 0x4900 || k == 0x5100) && len(p.bar.rects) > 0: // Tab, Shift-Tab, the pad's shoulders (PgUp, PgDn): the focus
+	case cycle && len(p.bar.rects) > 0: // Tab, Shift-Tab, the pad's shoulders (PgUp, PgDn): the focus
 		d := 1
-		if k == 0x4900 || k == 9 && gpu.IsKeyPressed(gpu.KeyShift) {
+		if back {
 			d = -1
 		}
 		p.bar.moveFocus(d)
-	case k == 13 && p.bar.focus > 0 && p.bar.focus <= len(p.bar.rects):
+	case a == input.Enter && p.bar.focus > 0 && p.bar.focus <= len(p.bar.rects):
 		p.press(p.bar.items[p.bar.focus-1])
-	case k == 13 && p.free != nil: // the square cursor: as a click there
+	case a == input.Enter && p.free != nil: // the square cursor: as a click there
 		return p.clickSquare(*p.free)
-	case k == 27 && aiming:
+	case a == input.Esc && aiming:
 		p.act(engine.Action{Kind: engine.ActClose})
 	default:
 		return false

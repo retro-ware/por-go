@@ -11,6 +11,7 @@ import (
 
 	"por/engine"
 	"por/pal"
+	"por/present/input"
 )
 
 // The page screens taking decisions whose questions are the presenter's:
@@ -303,29 +304,29 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 func (p *Presenter) pickerKey(k uint16, pk *engine.Picker) bool {
 	s := &p.scr
 	c, n, cols, per := s.cur, pk.N, pk.Cols, pk.PerPage
-	switch k {
-	case 0x4800:
+	switch actOf(k) {
+	case input.Up:
 		c = max(c-cols, c%cols)
-	case 0x5000:
+	case input.Down:
 		if c+cols < n {
 			c += cols
 		}
-	case 0x4B00:
+	case input.Left:
 		c = max(c-1, 0)
-	case 0x4D00:
+	case input.Right:
 		c = min(c+1, n-1)
-	case 0x4700:
+	case input.Home:
 		c = 0
-	case 0x4F00:
+	case input.End:
 		c = n - 1
-	case 0x4900:
+	case input.PgUp:
 		c = max(c-per, 0)
-	case 0x5100:
+	case input.PgDn:
 		c = min(c+per, n-1)
-	case 13, ' ', KeyPadSelect:
+	case input.Enter, input.Space, input.PadA:
 		p.pickerTake(pk, c)
 		return true
-	case 27:
+	case input.Esc:
 		p.send(engine.ActClose, 0)
 		return true
 	default:
