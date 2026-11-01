@@ -616,9 +616,15 @@ func (e *Engine) campDecision(a Action) (left bool) {
 func (e *Engine) campView() *Camp {
 	c := e.selected()
 	v := &Camp{CanCast: e.canCastNow(), Healing: e.healMinutes() > 0, Bestiary: e.beasts()}
-	if c == nil {
-		return v
+	if c != nil {
+		v.Book, v.Scrolls = e.spellLists(c)
 	}
+	return v
+}
+
+// spellLists are c's spell book (how often each is memorized on a rest)
+// and the spells on c's scrolls not in it (Count 1 while being scribed).
+func (e *Engine) spellLists(c *Character) (book, scrolls []BookSpell) {
 	spell := func(s byte, n int) BookSpell {
 		lvl, cls := e.spellLevel(s), e.spellClass(s)
 		return BookSpell{ID: int(s), Name: e.spellName(int(s)), Level: spellGroups[e.spellRec(s, 1)], Count: n,
@@ -626,7 +632,7 @@ func (e *Engine) campView() *Camp {
 	}
 	for i := 1; i <= 0x37 && i <= len(c.SpellBook); i++ {
 		if c.SpellBook[i-1] != 0 {
-			v.Book = append(v.Book, spell(byte(i), bytes.Count(c.Plan[:], []byte{byte(i)})))
+			book = append(book, spell(byte(i), bytes.Count(c.Plan[:], []byte{byte(i)})))
 		}
 	}
 	for _, it := range e.carried(c) {
@@ -639,11 +645,11 @@ func (e *Engine) campView() *Camp {
 				if s > 0x7F {
 					n = 1
 				}
-				v.Scrolls = append(v.Scrolls, spell(s&0x7F, n))
+				scrolls = append(scrolls, spell(s&0x7F, n))
 			}
 		}
 	}
-	return v
+	return book, scrolls
 }
 
 // planSpell (extra) memorizes spell s on every rest once more (delta > 0)

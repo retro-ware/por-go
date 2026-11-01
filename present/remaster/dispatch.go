@@ -47,6 +47,11 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.fightKey(k)
 	}
 	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
+		if m, ok := memberKey(k, p.ctx-1, len(v.Party), p.campHome(v)); ok && p.campHome(v) { // camp: another member's menu (Left/Right too)
+			p.send(engine.ActLead, m)
+			p.ctx, p.ctxSel = 1+m, 0
+			return true
+		}
 		if _, ok := memberKey(k, 0, len(v.Party), false); ok { // another member: selected (keyAct), their menu opens instead
 			p.ctx = 0
 			return false
@@ -210,6 +215,16 @@ func (p *Presenter) Click(x, y int) bool {
 	}
 	if p.pickClick(x, y) {
 		return true
+	}
+	if v := p.shownView; p.campHome(v) && p.active { // camp: a line of any member's menu
+		for i, rs := range p.campCtx {
+			if j := slices.IndexFunc(rs, image.Pt(x, y).In); j >= 0 && i < len(v.Party) && j < len(v.Party[i].Powers) {
+				p.ctx = 0
+				p.memberAct(v.Party[i].Powers[j].Kind, i)
+				return true
+			}
+		}
+		p.ctx = 0 // elsewhere: the keys go back to the party's menu
 	}
 	if !p.fight {
 		if p.ctx > 0 { // the context menu: a line acts for its member; a click elsewhere closes it (on another card: that one's)
@@ -378,8 +393,9 @@ func (p *Presenter) ctxSend(j int) {
 	if p.ctxActs[j] == engine.ActSpells {
 		p.pickAt = p.ctxBox
 	}
-	p.send(p.ctxActs[j], p.ctx-1)
+	n := p.ctx - 1
 	p.ctx = 0
+	p.memberAct(p.ctxActs[j], n)
 }
 
 // cardClick is a left click on member i's card: while exploring (the
@@ -389,7 +405,7 @@ func (p *Presenter) cardClick(i int) {
 	switch {
 	case p.ordering:
 		p.send(engine.ActLead, i)
-	case p.command:
+	case p.command, p.campHome(p.shownView): // camp: the keys go to its menu
 		p.send(engine.ActLead, i)
 		p.ctx, p.ctxSel = 1+i, 0 // the first line highlighted: Enter acts at once
 	default:

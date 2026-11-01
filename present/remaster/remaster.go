@@ -99,6 +99,7 @@ type Presenter struct {
 	ctxSel     int                         // its highlighted line
 	ctxActs    []engine.ActKind            // its lines' actions, for the member
 	ctxKeys    []byte                      // its lines' hotkeys (the first letters)
+	campCtx    [][]image.Rectangle         // in camp every member's context menu lines (drawCampMenus)
 	ctxRects   []image.Rectangle           // its lines on screen, as last drawn
 	ctxBox     image.Rectangle             // where its box went: the spell pick opens there
 	pick       []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
@@ -268,7 +269,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
-	if p.ctx == 0 { // the tooltip; a context menu goes over everything (below)
+	if p.ctx == 0 && !p.campHome(v) { // the tooltip (camp shows the members' menus); a context menu goes over everything (below)
 		p.drawCardTip(dst, v)
 	}
 	k := scale(dst)
@@ -351,6 +352,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	} else if screenUp(v) && spellPick(v) == nil { // camp (camp.go), the temple, the shop, training
 		p.menu = false
 		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)), b.Max.Y)
+		if p.campHome(v) {
+			p.drawCampMenus(dst, v)
+		}
 	} else if v.Exploring && p.menu { // the command menu (explore.go)
 		cmds := commands(v)
 		lines, keys := make([]string, len(cmds)), make([]byte, len(cmds))
@@ -393,7 +397,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		noteLine(m, note, 0)
 		dst.DrawImage(upload(&p.pg.toast, m), op)
 	}
-	if p.ctx > 0 { // the context menu: on top, what is under it dimmed
+	if p.ctx > 0 && !p.campHome(v) { // the context menu: on top, what is under it dimmed
 		b := dst.Bounds()
 		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0})
 		p.drawCardTip(dst, v)

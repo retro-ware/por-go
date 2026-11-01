@@ -1,6 +1,9 @@
 package engine
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // Camp shows the camp picture (PIC 0x1D) in the view window and its fire
 // burns: frames go by on the ticks while camp is up, and stop once it is gone.
@@ -24,5 +27,26 @@ func TestCampfireAnimates(t *testing.T) {
 	e.Apply(Action{Kind: ActClose})
 	if e.animInput {
 		t.Fatal("the picture still animates after camp")
+	}
+}
+
+// In camp every member's context menu carries their camp actions (Icon,
+// Drop, Memorize for a caster); outside camp it does not.
+func TestCampMemberPowers(t *testing.T) {
+	e := quickStarted(t)
+	has := func(c *Character, k ActKind) bool {
+		return slices.ContainsFunc(e.memberPowers(c), func(p Power) bool { return p.Kind == k })
+	}
+	if has(e.party[0], ActDropMember) {
+		t.Fatal("Drop outside camp")
+	}
+	e.CampMenu(nil)
+	for _, c := range e.party {
+		if !has(c, ActIconEdit) || !has(c, ActDropMember) {
+			t.Fatalf("%s: no camp actions", c.Name())
+		}
+		if book, _ := e.spellLists(c); len(book) > 0 != has(c, ActPlan) {
+			t.Fatalf("%s: Memorize %v with %d spells", c.Name(), has(c, ActPlan), len(book))
+		}
 	}
 }

@@ -132,22 +132,47 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 			{"Yes", 'Y', func() { p.send(engine.ActDropMember, selectedIndex(v)); c.back(campMain)() }},
 			{"No", 'N', c.back(campMain)}}
 	}
-	var it []menuRow
-	if cp.CanCast {
-		it = append(it, menuRow{"Cast", 'C', act(engine.ActCastPick, -1)})
-	}
-	it = append(it, menuRow{"View", 'V', act(engine.ActMember, -1)}, menuRow{"Items", 'I', act(engine.ActInventory, -1)})
-	if len(cp.Book) > 0 {
-		it = append(it, menuRow{"Memorize", 'M', c.to(campMemorize, 0)})
-	}
-	if len(cp.Scrolls) > 0 {
-		it = append(it, menuRow{"Scribe", 'S', c.to(campScribe, 0)})
-	}
-	it = append(it, menuRow{"Rest", 'R', c.to(campRest, 0)}, menuRow{"Icon", 'O', act(engine.ActIconEdit, -1)}, menuRow{"Drop", 'D', c.to(campDrop, 1)})
+	it := []menuRow{{"Rest", 'R', c.to(campRest, 0)}} // the party's: each member's own are on their card's menu (drawCampMenus)
 	if len(cp.Bestiary) > 0 {
 		it = append(it, menuRow{"Bestiary", 'B', c.to(campBestiary, 0)})
 	}
 	return "Camp", append(it, menuRow{"Exit", 'E', act(engine.ActClose, 0)})
+}
+
+// campHome: camp's own screen is up, the members' menus beside their
+// cards (drawCampMenus).
+func (p *Presenter) campHome(v engine.View) bool {
+	return v.Camp != nil && p.camp.screen == campMain && screenUp(v)
+}
+
+// drawCampMenus draws every member's context menu at once beside their
+// card; the one with the keys (ctx) shows its highlight.
+func (p *Presenter) drawCampMenus(dst *gpu.Image, v engine.View) {
+	p.campCtx = p.campCtx[:0]
+	for i := range min(len(v.Party), len(p.cards)) {
+		lines, acts, keys := powerLines(v.Party[i].Powers)
+		sel := -1
+		if p.ctx == 1+i {
+			sel = p.ctxSel
+		}
+		rs, box := p.cardMenu(dst, i, lines, keys, sel)
+		p.campCtx = append(p.campCtx, rs)
+		if p.ctx == 1+i {
+			p.ctxActs, p.ctxKeys, p.ctxRects, p.ctxBox = acts, keys, append(p.ctxRects[:0], rs...), box
+		}
+	}
+}
+
+// memberAct carries out power k of member n's context menu: camp's
+// Memorize, Scribe and Drop open the presenter's screens for them.
+func (p *Presenter) memberAct(k engine.ActKind, n int) {
+	screen := map[engine.ActKind]int{engine.ActPlan: campMemorize, engine.ActScribe: campScribe, engine.ActDropMember: campDrop}
+	if s, ok := screen[k]; ok {
+		p.send(engine.ActLead, n)
+		p.camp.to(s, map[bool]int{true: 1}[s == campDrop])() // the drop's question on No
+		return
+	}
+	p.send(k, n)
 }
 
 // campSpell plans one more (n > 0) or one less of spell id, or toggles
@@ -273,6 +298,9 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 		p.campSpellAt(v, c.sel, -1)
 	case spells && a == input.More && c.sel < n-1: // +: one more
 		p.campSpellAt(v, c.sel, 1)
+	case member && p.campHome(v): // the member's menu takes the keys
+		p.send(engine.ActLead, m)
+		p.ctx, p.ctxSel = 1+m, 0
 	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
 		p.send(engine.ActLead, m)
 	default:

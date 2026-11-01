@@ -774,7 +774,8 @@ func (e *Engine) powers(c *Character) []Power {
 }
 
 // memberPowers (extra) is a card's context menu out of combat: View, Items
-// when c carries any, then powers.
+// when c carries any, then powers; in camp also what c does there
+// (Memorize and Scribe open the presenter's lists, Drop its question).
 func (e *Engine) memberPowers(c *Character) []Power {
 	if e.beginFlag == 5 {
 		return nil
@@ -783,7 +784,18 @@ func (e *Engine) memberPowers(c *Character) []Power {
 	if len(e.carried(c)) > 0 {
 		ps = append(ps, Power{"Items", ActInventory})
 	}
-	return append(ps, e.powers(c)...)
+	ps = append(ps, e.powers(c)...)
+	if e.mode() != modeCamp {
+		return ps
+	}
+	book, scrolls := e.spellLists(c)
+	if len(book) > 0 {
+		ps = append(ps, Power{"Memorize", ActPlan})
+	}
+	if len(scrolls) > 0 {
+		ps = append(ps, Power{"Scribe", ActScribe})
+	}
+	return append(ps, Power{"Icon", ActIconEdit}, Power{"Drop", ActDropMember})
 }
 
 // power carries out one of c's powers; then gets true when a cast in

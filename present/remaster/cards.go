@@ -8,6 +8,7 @@ import (
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 
 	xdraw "golang.org/x/image/draw"
 
@@ -135,7 +136,7 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	if i < 0 || i >= len(p.cards) || i >= len(v.Party) {
 		return
 	}
-	m, r, k := v.Party[i], p.cards[i], cardScale(dst)
+	m := v.Party[i]
 	lines, sel := []string{m.Name, m.Class}, -1
 	if m.NextExp > 0 { // the experience and what the next level takes
 		lines = append(lines, "Exp "+strconv.Itoa(m.Exp)+" / "+strconv.Itoa(m.NextExp))
@@ -144,16 +145,41 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	}
 	var keys []byte
 	if p.ctx > 0 {
-		lines, sel, p.ctxActs, p.ctxKeys = nil, p.ctxSel, p.ctxActs[:0], p.ctxKeys[:0]
-		for _, pw := range m.Powers {
-			lines, p.ctxActs, p.ctxKeys = append(lines, pw.Name), append(p.ctxActs, pw.Kind), append(p.ctxKeys, pw.Name[0]) // the first letter: the hotkey (all differ)
-		}
-		keys = p.ctxKeys
+		lines, p.ctxActs, keys = powerLines(m.Powers)
+		sel, p.ctxKeys = p.ctxSel, keys
 		if len(lines) == 0 { // nothing to do (a fight began)
 			p.ctx = 0
 			return
 		}
 	}
+	rs, box := p.cardMenu(dst, i, lines, keys, sel)
+	if p.ctx > 0 {
+		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], rs...), box
+	}
+}
+
+// powerLines are a member's powers as a context menu's lines, decisions
+// and hotkeys: each line's first letter not taken by a line above, else
+// its next free one.
+func powerLines(ps []engine.Power) (lines []string, acts []engine.ActKind, keys []byte) {
+	for _, pw := range ps {
+		var key byte
+		for _, c := range []byte(strings.ToUpper(pw.Name)) {
+			if c >= 'A' && c <= 'Z' && !slices.Contains(keys, c) {
+				key = c
+				break
+			}
+		}
+		lines, acts, keys = append(lines, pw.Name), append(acts, pw.Kind), append(keys, key)
+	}
+	return lines, acts, keys
+}
+
+// cardMenu draws lines (with hotkeys keys, line sel highlighted) in a
+// box beside member i's card, on the side away from the edge; it returns
+// the lines' rectangles and the box's top edge.
+func (p *Presenter) cardMenu(dst *gpu.Image, i int, lines []string, keys []byte, sel int) ([]image.Rectangle, image.Rectangle) {
+	r, k := p.cards[i], cardScale(dst)
 	w := 0
 	for _, l := range lines {
 		w = max(w, int(k*8*float64(len(l)+4))) // the box: a border and a blank column each side
@@ -167,10 +193,7 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 	if blobber.Settings.PartyRow { // the row: above the card, beside it
 		top = max(0, r.Max.Y-int(k*8*float64(len(lines)+2)))
 	}
-	rs := p.tipMenu(dst, "", lines, keys, sel, k, cx, top)
-	if p.ctx > 0 {
-		p.ctxRects, p.ctxBox = append(p.ctxRects[:0], rs...), image.Rect(cx-w/2, top, cx+w/2, top)
-	}
+	return p.tipMenu(dst, "", lines, keys, sel, k, cx, top), image.Rect(cx-w/2, top, cx+w/2, top)
 }
 
 // tipMenu draws a menu box that is not the game's menu (a tooltip, a
