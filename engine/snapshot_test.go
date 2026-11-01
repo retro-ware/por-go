@@ -40,23 +40,23 @@ func TestView(t *testing.T) {
 		return settle(e)
 	}
 	v := keys()
-	if !v.MainFrame || v.Window != engine.WinThreeD {
-		t.Fatalf("after loading: MainFrame %v Window %v, want the 3D view in the main frame", v.MainFrame, v.Window)
+	if v.Pane == nil || v.Window != engine.WinThreeD {
+		t.Fatalf("after loading: Pane %v Window %v, want the 3D view in the main frame", v.Pane != nil, v.Window)
 	}
 	if len(v.Party) == 0 || v.Party[0].Name == "" || v.Party[0].Head == nil || v.Party[0].MaxHP <= 0 {
 		t.Fatalf("party %+v: want named members with heads", v.Party)
 	}
 	f := v.Facing
 	v = keys(engine.Action{Kind: engine.ActTurnRight})
-	if v.Facing != (f+1)%4 || !v.MainFrame || v.Window != engine.WinThreeD {
+	if v.Facing != (f+1)%4 || v.Pane == nil || v.Window != engine.WinThreeD {
 		t.Errorf("after turning right from %v: %+v", f, v)
 	}
 	v = keys(engine.Action{Kind: engine.ActMember, N: -1}) // the character sheet covers the frame
-	if v.MainFrame {
+	if v.Pane != nil {
 		t.Errorf("character sheet: MainFrame still set")
 	}
 	v = keys(engine.Action{Kind: engine.ActClose})
-	if !v.MainFrame {
+	if v.Pane == nil {
 		t.Errorf("back from the sheet: MainFrame not set")
 	}
 }
@@ -236,7 +236,7 @@ func TestBattleFight(t *testing.T) {
 	}
 	for range 2000 { // the fight's turns, one a tick
 		v = e.View()
-		if v.Battle == nil && v.MainFrame {
+		if v.Battle == nil && v.Pane != nil {
 			break // back to the main screen: the fight is over
 		}
 		switch {
@@ -438,7 +438,7 @@ func TestViewMember(t *testing.T) {
 	if len(v.Party) < 2 {
 		t.Fatal("party of one")
 	}
-	if v = keyWait(e, engine.Action{Kind: engine.ActMember, N: 1}); v.MainFrame {
+	if v = keyWait(e, engine.Action{Kind: engine.ActMember, N: 1}); v.Pane != nil {
 		t.Fatal("portrait click: still on the main screen")
 	}
 	if !v.Party[1].Selected {

@@ -132,6 +132,13 @@ func (e *Engine) glyph(ch byte, upcase bool) ([8]byte, bool) {
 	return g, true
 }
 
+// FontGlyph is the pattern of ch as drawChar draws it (the text pane's
+// runs, PaneRun.Upcase), blank when there is none.
+func (e *Engine) FontGlyph(ch byte, upcase bool) [8]byte {
+	g, _ := e.glyph(ch, upcase)
+	return g
+}
+
 // Glyph is the pattern of ch as text in the current font (the window's
 // note uses it).
 func (e *Engine) Glyph(ch byte) [8]byte {

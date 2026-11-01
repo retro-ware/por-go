@@ -320,7 +320,7 @@ func (g *game) Draw(dst *gpu.Image) {
 		g.script()
 	}
 	text, at := g.eng.Note()
-	note := remaster.Note{Text: text, Show: time.Since(at) < time.Second+time.Duration(len(text))*80*time.Millisecond, Glyph: g.eng.Glyph}
+	note := remaster.Note{Text: text, Show: time.Since(at) < time.Second+time.Duration(len(text))*80*time.Millisecond, Glyph: g.eng.Glyph, Font: g.eng.FontGlyph}
 	if g.remaster.Inventory(dst, note, g.eng.View()) { // the inventory screen
 		g.pic = remaster.Rect{}
 	} else {

@@ -24,6 +24,7 @@ type Note struct {
 	Text  string
 	Show  bool
 	Glyph func(byte) [8]byte
+	Font  func(ch byte, upcase bool) [8]byte // a pane run's glyphs (engine.PaneRun)
 }
 
 // page is the engine's screen (pageSize: 320x200 at least) drawn from the
@@ -38,6 +39,8 @@ type page struct {
 	text  [][]engine.Cell      // ...and text
 	scans map[image.Image]scan // the overlays on the GPU
 	fit   *gpu.Image           // fit's whole-scale copy
+	pane  *gpu.Image           // the text pane (paneImage)
+	toast *gpu.Image           // the note's line over the 3D view
 }
 
 // pageSize is v's page in pixels: its text cells, 8 by 8 (the original's
@@ -129,15 +132,50 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 			}
 		}
 	}
-	if note.Show { // yellow, centred on the bottom line in place of the prompt (as the inventory's menu row)
-		draw.Draw(m, image.Rect(0, h-8, w, h), image.Black, image.Point{}, draw.Src)
-		x0 := (w - 8*len(note.Text)) / 2
-		for i := 0; i < len(note.Text); i++ {
-			glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, h-8, pal.EGA(14), color.RGBA{A: 255})
-		}
+	if note.Show {
+		noteLine(m, note, h-8)
 	}
 	pg.img.WritePixels(m.Pix)
 	return pg.img
+}
+
+// noteLine draws the note yellow, centred on a black line at y of m (the
+// bottom line in place of the prompt, as the inventory's menu row).
+func noteLine(m *image.RGBA, note Note, y int) {
+	w := m.Rect.Dx()
+	draw.Draw(m, image.Rect(0, y, w, y+8), image.Black, image.Point{}, draw.Src)
+	x0 := (w - 8*len(note.Text)) / 2
+	for i := 0; i < len(note.Text); i++ {
+		glyphAt(m, note.Glyph(note.Text[i]), x0+i*8, y, pal.EGA(14), color.RGBA{A: 255})
+	}
+}
+
+// paneImage draws the text pane's runs on black in *img (made or remade
+// at the pane's size): what drawBox shows inside the pane's border.
+func paneImage(img **gpu.Image, pn *engine.Pane, note Note) *gpu.Image {
+	r := engine.TextPane.Pixels()
+	m := image.NewRGBA(image.Rect(0, 0, r.Dx(), r.Dy()))
+	draw.Draw(m, m.Rect, image.Black, image.Point{}, draw.Src)
+	for y, l := range pn.Lines {
+		for _, run := range l {
+			for i := 0; i < len(run.Text); i++ {
+				glyphAt(m, note.Font(run.Text[i], run.Upcase), (run.X+i)*8, y*8, run.Fg, run.Bg)
+			}
+		}
+	}
+	return upload(img, m)
+}
+
+// upload writes m to *img, made or remade at m's size.
+func upload(img **gpu.Image, m *image.RGBA) *gpu.Image {
+	if *img == nil || (*img).Bounds().Size() != m.Rect.Size() {
+		if *img != nil {
+			(*img).Deallocate()
+		}
+		*img = gpu.NewImage(m.Rect.Dx(), m.Rect.Dy())
+	}
+	(*img).WritePixels(m.Pix)
+	return *img
 }
 
 // glyphAt draws glyph g at x, y: set bits fg, the rest bg.

@@ -21,7 +21,7 @@ func TestTextPaneFollowsPage(t *testing.T) {
 	e.DrawMainFrame(true)
 	e.ClearBox(1, msgTop, paneRight, paneBottom)
 	e.publish()
-	if v := e.View(); !v.MainFrame || TextPane != (CellRect{1, msgTop, 0x26, 0x16}) {
-		t.Fatalf("frame %v pane %v", v.MainFrame, TextPane)
+	if v := e.View(); v.Pane == nil || TextPane != (CellRect{1, msgTop, 0x26, 0x16}) {
+		t.Fatalf("frame %v pane %v", v.Pane != nil, TextPane)
 	}
 }

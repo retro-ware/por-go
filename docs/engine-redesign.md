@@ -301,3 +301,16 @@ gone; `ext.redraw` stays for the engine-drawn pages; actRedraw means only
 again. Changed: in the journal Left/PgUp scroll a tall picture up (they
 paged on before); the wheel no longer reaches the engine; Up/Down on menus
 that took the keypad move the presenter's highlight.
+
+Page drawing (2026-11-01): the engine stops drawing pages; it publishes
+typed state and the presenter draws it, in five steps (1 the text pane
+and messages, 2 pictures, 3 help/journal/full map/overview as screens,
+4 the data-heavy pages, 5 delete the page machinery: View.Text, Page,
+Spots, layers). Step 1 done: `View.Pane` (nil unless the main frame is
+up) holds the text pane under the 3D view as lines of `PaneRun` (column,
+text, colours, Upcase), whatever DisplayTextBlock, CharMessage,
+HitMessage and debugValues put there; the remaster draws its box from it
+(paneImage, glyphs by `Engine.FontGlyph`) and the toast straight from its
+Note. View.MainFrame and TextShown are gone (`Pane != nil`,
+`Pane.Shown()`). StatusLine's row is not in the pane (the remaster never
+showed it). The picture box still crops the page (step 2).

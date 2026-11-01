@@ -197,16 +197,36 @@ func (e *Engine) pageView(v *View) {
 		for x, c := range row {
 			if c.set {
 				v.Text[y][x] = Cell{Glyph: c.glyph, Fg: e.pal.RGBA(c.colour), Bg: e.pal.RGBA(c.bg), Set: true}
-				v.TextShown = v.TextShown || image.Pt(x, y).In(TextPane.rect())
 			}
 		}
 	}
 	v.Overlays = pg.overlays
-	v.MainFrame = pg.frameUp
+	if pg.frameUp {
+		v.Pane = e.pane()
+	}
 }
 
-// rect is r as an image.Rectangle of cells.
-func (r CellRect) rect() image.Rectangle { return image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1) }
+// pane is the text pane's cells as runs of one colour.
+func (e *Engine) pane() *Pane {
+	p := &Pane{}
+	cells := e.cells()
+	for i := range p.Lines {
+		row := cells[TextPane.Y1+i][TextPane.X1 : TextPane.X2+1]
+		for x, c := range row {
+			if !c.set {
+				continue
+			}
+			fg, bg := e.pal.RGBA(c.colour), e.pal.RGBA(c.bg)
+			l := p.Lines[i]
+			if n := len(l) - 1; n >= 0 && l[n].X+len(l[n].Text) == x && l[n].Fg == fg && l[n].Bg == bg && l[n].Upcase == c.upcase {
+				l[n].Text += string(c.c)
+				continue
+			}
+			p.Lines[i] = append(l, PaneRun{X: x, Text: string(c.c), Fg: fg, Bg: bg, Upcase: c.upcase})
+		}
+	}
+	return p
+}
 
 // layerRGBA converts l's pixels in the current palette, as blit draws them.
 func (e *Engine) layerRGBA(l layer) image.Image {

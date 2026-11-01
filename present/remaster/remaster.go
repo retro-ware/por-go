@@ -71,7 +71,7 @@ type Presenter struct {
 	menuFor     string                      // the menu it opened for (menuID): another menu arriving closes it, so one key never answers two menus
 	sel         int                         // its highlighted item
 	asked       string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
-	answered    [][8]byte                   // the text pane under the last question: once it is answered, that text is done
+	answered    string                      // the text pane under the last question: once it is answered, that text is done
 	mapImg      *gpu.Image                  // View.Map on the GPU
 	mapSrc      image.Image                 // the View.Map it holds
 	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
@@ -263,7 +263,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return Rect{}
 	}
 	sc := p.scene(v)
-	if sc == nil || !choosing(v) && (!v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
+	if sc == nil || !choosing(v) && (v.Pane == nil || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		r := p.drawPage(dst, v, note)
@@ -333,8 +333,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
-	picBottom := 0                                                                    // the bottom of the picture box, when one is up
-	if v.MainFrame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
+	picBottom := 0                                                                      // the bottom of the picture box, when one is up
+	if v.Pane != nil && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
 		pp := fitScale(pk, blobber.Settings.Pic, func(k float64) bool {
@@ -345,20 +345,20 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			py = int(gap + pp*ph/2)
 			cy = py + int(pp*ph/2+gap+tk*th/2)
 		}
-		drawBox(dst, frame, p.border.tiles, pic, pp, cx, py)
+		drawBox(dst, frame.SubImage(pic.Pixels().Inset(8)).(*gpu.Image), p.border.tiles, pic, pp, cx, py)
 		picBottom = py + int(pp*ph/2)
 	}
 	pane, asking := textPane(v), askMenu(v) != nil && !v.Exploring && !noChoice(v)
 	if asking {
 		p.answered = pane
 	}
-	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
-	ask := typing(v) != nil && typing(v).Prompt != ""                                  // a script's input: its question and the line in one pop-up, no text box
+	shown := v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
+	ask := typing(v) != nil && typing(v).Prompt != ""                          // a script's input: its question and the line in one pop-up, no text box
 	shown = shown && !ask
 	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
-		drawBox(dst, frame, p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
+		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
-		drawBox(dst, frame, p.border.tiles, txt, tk, cx, cy)
+		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, cy)
 	}
 	if askMenu(v) != nil && !v.Exploring && !noChoice(v) && !choosing(v) { // a question: its choices pop up at once
 		if id := menuID(askMenu(v)); id != p.asked { // not the menu just answered
@@ -430,22 +430,28 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(pk, pk)
 		op.GeoM.Translate(float64(cx)-pk*float64(pal.W)/2, float64(b.Max.Y-h))
-		pw, ph := pageSize(v)
-		dst.DrawImage(frame.SubImage(image.Rect(0, ph-8, pw, ph)).(*gpu.Image), op)
+		pw, _ := pageSize(v)
+		m := image.NewRGBA(image.Rect(0, 0, pw, 8))
+		noteLine(m, note, 0)
+		dst.DrawImage(upload(&p.pg.toast, m), op)
 	}
 	return Rect{}
 }
 
-// textPane is the text pane's glyphs.
-func textPane(v engine.View) [][8]byte {
-	r := engine.TextPane
-	var g [][8]byte
-	for y := r.Y1; y <= r.Y2; y++ {
-		for x := r.X1; x <= r.X2; x++ {
-			g = append(g, v.Text[y][x].Glyph)
-		}
+// textPane is the text pane's text, to tell a pane apart from the one
+// answered.
+func textPane(v engine.View) string {
+	if v.Pane == nil {
+		return ""
 	}
-	return g
+	var s strings.Builder
+	for _, l := range v.Pane.Lines {
+		for _, r := range l {
+			fmt.Fprintf(&s, "%d:%s|", r.X, r.Text)
+		}
+		s.WriteByte('\n')
+	}
+	return s.String()
 }
 
 // Key turns window key k into actions (Actions hands them over). When the
@@ -994,14 +1000,14 @@ func scale(dst *gpu.Image) float64 {
 
 // drawBox copies box r of the classic frame onto dst at scale k, centred
 // on cx, cy: its inside, in a plain border (drawBorder) of tiles' cells.
-func drawBox(dst, frame *gpu.Image, tiles [3]*gpu.Image, r engine.CellRect, k float64, cx, cy int) {
+func drawBox(dst, inside *gpu.Image, tiles [3]*gpu.Image, r engine.CellRect, k float64, cx, cy int) {
 	px := r.Pixels()
 	var g gpu.GeoM
 	g.Scale(k, k)
 	g.Translate(float64(cx)-k*float64(px.Dx())/2, float64(cy)-k*float64(px.Dy())/2)
 	op := &gpu.DrawImageOptions{GeoM: g}
 	op.GeoM.Translate(8*k, 8*k)
-	dst.DrawImage(frame.SubImage(px.Inset(8)).(*gpu.Image), op)
+	dst.DrawImage(inside, op)
 	drawBorder(dst, tiles, g, r.X2-r.X1+1, r.Y2-r.Y1+1)
 }
 

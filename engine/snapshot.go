@@ -75,14 +75,41 @@ type Member struct {
 	NextExp  int
 }
 
+// Pane is the text under the 3D view (TextPane): what DisplayTextBlock,
+// the messages and the debug values put there, a line per row.
+type Pane struct {
+	Lines [TextPaneRows][]PaneRun
+}
+
+// TextPaneRows is the text pane's rows.
+const TextPaneRows = paneBottom - msgTop + 1
+
+// PaneRun is text in one colour on a pane line from column X of the pane
+// (0: its left edge); Upcase picks the glyphs as DisplayChar does.
+type PaneRun struct {
+	X      int
+	Text   string
+	Fg, Bg color.RGBA
+	Upcase bool
+}
+
+// Shown reports whether the pane holds text.
+func (p *Pane) Shown() bool {
+	for _, l := range p.Lines {
+		if len(l) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // View is one published snapshot.
 type View struct {
-	MainFrame bool // the main screen's frame is up (not combat, a sheet, a shop, the title)
+	Pane      *Pane // the main screen's frame is up (not combat, a sheet, a shop, the title): its text pane (nil otherwise)
 	Window    Window
 	Area      AreaID
 	X, Y      int
 	Facing    Dir
-	TextShown bool      // the bottom text pane holds text
 	Day       bool      // 6:00 to 20:00, when the scripts show the day sky
 	Inside    bool      // the party stands on an inside square (the original's inside sky colour)
 	Exploring bool      // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
