@@ -11,6 +11,10 @@ text 15,2 52ff52/525252 true "Leg"
 text 16,2 52ff52/525252 true "Hair/Face"
 text 17,2 52ff52/525252 true "Shield"
 text 18,2 52ff52/525252 true "Weapon"
+text 24,0 ffffff/525252 true "K"
+text 24,1 52ff52/525252 true "eep"
+text 24,5 ffffff/525252 true "E"
+text 24,6 52ff52/525252 true "xit"
 fill (8,8)-(312,184) 525252
 fill (96,104)-(112,112) ffffff
 fill (97,105)-(111,111) 3d9cff

@@ -22,11 +22,10 @@ import (
 
 // Sub-screens of a page screen.
 const (
-	scrMain   = iota
-	scrChange // the creation's parts, by name
-	scrField  // a drop-down (scr.field)
-	scrType   // a line being typed
-	scrAsk    // a yes/no question
+	scrMain  = iota
+	scrField // a drop-down (scr.field)
+	scrType  // a line being typed
+	scrAsk   // a yes/no question
 )
 
 const scrRows = 14 // the lines a page screen's menu shows at a time
@@ -78,7 +77,6 @@ func (p *Presenter) sendA(a engine.Action) { p.inv.acts = append(p.inv.acts, a) 
 func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 	s := &p.scr
 	act := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
-	to := func(sub int) func() { return func() { s.open(sub) } }
 	switch s.sub {
 	case scrAsk:
 		return s.ask, []menuRow{{"Yes", 'Y', func() { s.open(scrMain); s.yes() }}, {"No", 'N', func() { s.sub, s.sel = s.back, s.backSel }}}
@@ -89,23 +87,17 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 	case "creation":
 		cr := v.Creation
 		switch s.sub {
-		case scrChange:
-			it := []menuRow{{"Name", 'N', func() { p.typeLine("Name", "", 15, engine.ActName, 0) }}}
-			for f, fl := range cr.Fields {
-				it = append(it, menuRow{fl.Name, 0, func() { p.openField(cr, f) }})
-			}
-			for i, name := range [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
-				it = append(it, menuRow{name, 0, func() { p.typeLine(name, "", 5, engine.ActStat, i) }})
-			}
-			return "Change", append(it,
-				menuRow{"Head", 'H', func() { s.open(scrMain); p.send(engine.ActPicker, engine.PickHead) }},
-				menuRow{"Body", 'B', func() { s.open(scrMain); p.send(engine.ActPicker, engine.PickBody) }},
-				menuRow{"Icon", 'I', func() { s.open(scrMain); p.send(engine.ActIconEdit, -1) }},
-				menuRow{"Exit", 'E', to(scrMain)})
 		case scrField:
 			fl := cr.Fields[s.field]
 			var it []menuRow
-			for i, o := range fl.Options {
+			order := []int{fl.Cur} // the value it holds first, over the field's text, the rest below in their order
+			for i := range fl.Options {
+				if i != fl.Cur {
+					order = append(order, i)
+				}
+			}
+			for _, i := range order {
+				o := fl.Options[i]
 				t := o.Text
 				if !o.Fits { // picking it changes what depends on it
 					t = "(" + t + ")"
@@ -114,21 +106,6 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 			}
 			return "", it
 		}
-		return "", []menuRow{
-			{"Roll", 'R', act(engine.ActRoll, 0)},
-			{"Minimal", 'M', func() {
-				p.typeLine("Minimums (STR INT WIS DEX CON CHA)", cr.Minimums, 30, engine.ActRoll, 1)
-			}},
-			{"Change", 'C', to(scrChange)},
-			{"Keep", 'K', act(engine.ActKeep, 0)},
-			{"Exit", 'E', func() { p.askThen(cr.Abandon, func() { p.send(engine.ActClose, 0) }) }}}
-	case "icon":
-		return "", []menuRow{
-			{"Head", 'H', act(engine.ActPicker, engine.PickIconHead)},
-			{"Weapon", 'W', act(engine.ActPicker, engine.PickWeapon)},
-			{"Size", 'S', act(engine.ActIconSize, 0)},
-			{"Keep", 'K', act(engine.ActKeep, 0)},
-			{"Exit", 'E', act(engine.ActClose, 0)}}
 	case "slots":
 		sl := v.Slots
 		named := func(k engine.ActKind, name string) func() {
@@ -163,6 +140,13 @@ func (p *Presenter) typeLine(prompt, text string, n int, act engine.ActKind, an 
 	s := &p.scr
 	s.open(scrType)
 	s.back, s.sub, s.prompt, s.text, s.caret, s.max, s.act, s.n = scrMain, scrType, prompt, text, len(text), n, act, an
+	s.anchor = nil
+}
+
+// typeAt starts a typed line in place of the sheet's text at r.
+func (p *Presenter) typeAt(r engine.CellRect, prompt string, n int, act engine.ActKind, an int) {
+	p.typeLine(prompt, "", n, act, an)
+	p.scr.anchor = &r
 }
 
 // askThen asks q; yes runs on Yes.
@@ -178,7 +162,7 @@ func (p *Presenter) askThen(q string, yes func()) {
 func (p *Presenter) openField(cr *engine.Creation, f int) {
 	s := &p.scr
 	s.open(scrField)
-	s.field, s.sel = f, cr.Fields[f].Cur
+	s.field, s.sel = f, 0 // the value it holds: the first row
 	at := cr.Fields[f].At
 	s.anchor = &at
 }
@@ -212,6 +196,11 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 			return
 		}
 	}
+	if sp := p.spots(v); sp != nil && s.sub == scrMain { // the sheet's parts and the bar: the focus framed
+		s.sel = min(max(s.sel, 0), len(sp)-1)
+		pal.SelectOutline(p.cellRect(sp[s.sel].r), max(1, int(s.at.W/float64(s.pw))), func(e image.Rectangle, c color.RGBA) { dst.SubImage(e).(*gpu.Image).Fill(c) })
+		return
+	}
 	title, items := p.screenItems(v)
 	lines, keys, off := make([]string, len(items)), p.screenKeys(v, items), rowsOff(items)
 	for i, it := range items {
@@ -231,21 +220,21 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 	if s.sub == scrType {
 		sel = -1
 	}
-	if a := s.anchor; a != nil && s.sub == scrField { // the drop-down on its field
+	if a := s.anchor; a != nil && (s.sub == scrField || s.sub == scrType) { // the drop-down or the typed line on its field
 		k := s.at.W / float64(s.pw)
 		w := 0
 		for _, l := range lines {
 			w = max(w, len(l))
 		}
 		r := p.cellRect(*a)
-		cx := r.Min.X - int(k*8) + int(k*float64((w+4)*8))/2 // the text over the field's
+		cx := r.Min.X - int(k*16) + int(k*float64((w+4)*8))/2 // the first row's text over the field's
 		rects := slices.Clone(p.menuRects)
-		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], off[s.top:end], sel, k, cx, r.Max.Y) // under the field
+		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], off[s.top:end], sel, k, cx, r.Min.Y-int(k*8))
 		p.winRects, p.menuRects = slices.Clone(p.menuRects), rects
 		p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 		return
 	}
-	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], off[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
+	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], off[s.top:end], sel, false)
 	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 }
 
@@ -394,6 +383,9 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	if pk := v.Picker; pk != nil && s.sub != scrAsk {
 		return p.pickerKey(k, pk)
 	}
+	if sp := p.spots(v); sp != nil && s.sub == scrMain {
+		return p.spotKey(k, v, sp)
+	}
 	if sl := v.Slots; sl != nil && s.sub == scrMain {
 		h := byte(k)
 		if h >= 'a' && h <= 'z' {
@@ -517,42 +509,28 @@ func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 		}
 		return true
 	}
-	if ed := v.IconEditor; ed != nil && left && s.sub == scrMain {
-		a, ok := iconClick(ed, cx, cy)
-		if ok {
+	sp := p.spots(v)
+	if sp == nil || s.sub != scrMain {
+		return false
+	}
+	for i, t := range sp {
+		if in(t.r) {
+			if moved || left {
+				s.sel = i
+			}
+			if left {
+				t.do()
+			}
+			return true
+		}
+	}
+	if ed := v.IconEditor; ed != nil && left { // the poses: the head above, the weapon below
+		if a, ok := iconClick(ed, cx, cy); ok {
 			p.sendA(a)
+			return true
 		}
-		return ok
 	}
-	cr := v.Creation
-	if cr == nil || !left || v.Picker != nil || s.sub != scrMain {
-		return false
-	}
-	switch {
-	case in(cr.Name):
-		p.typeLine("Name", "", 15, engine.ActName, 0)
-	case in(cr.Head):
-		p.send(engine.ActPicker, engine.PickHead)
-	case in(cr.Body):
-		p.send(engine.ActPicker, engine.PickBody)
-	case in(cr.Icon):
-		p.send(engine.ActIconEdit, -1)
-	default:
-		for f, fl := range cr.Fields {
-			if in(fl.At) {
-				p.openField(cr, f)
-				return true
-			}
-		}
-		for i, r := range cr.Stats {
-			if in(r) {
-				p.typeLine([6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}[i], "", 5, engine.ActStat, i)
-				return true
-			}
-		}
-		return false
-	}
-	return true
+	return false
 }
 
 // open goes to submenu sub: back on the main menu, the row that opened the
@@ -568,4 +546,161 @@ func (s *screenUI) open(sub int) {
 		s.sel = 0
 	}
 	s.sub, s.top = sub, 0
+}
+
+// spot is a part of a special screen's page (the creation sheet, the icon
+// editor) the focus goes to: its cells, its hotkey and what it does. The
+// bar's words on the prompt row are spots too.
+type spot struct {
+	r   engine.CellRect
+	key byte
+	do  func()
+}
+
+var statNames = [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}
+
+// spots are the special screen's parts, in reading order, the bar's words
+// last; nil on other screens.
+func (p *Presenter) spots(v engine.View) []spot {
+	var sp []spot
+	at := func(r engine.CellRect, key byte, do func()) { sp = append(sp, spot{r, key, do}) }
+	send := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
+	switch ed, cr := v.IconEditor, v.Creation; {
+	case v.Picker != nil:
+		return nil
+	case ed != nil:
+		click := func(x, y int) func() {
+			return func() {
+				if a, ok := iconClick(ed, x, y); ok {
+					p.sendA(a)
+				}
+			}
+		}
+		if ed.Custom {
+			at(ed.Remove, 'R', send(engine.ActIconRemove, 0))
+		} else {
+			at(ed.Head, 'H', click(ed.Head.X1, ed.Head.Y1))
+			at(ed.Weapon, 'W', click(ed.Weapon.X1, ed.Weapon.Y1))
+			at(ed.Size, 'S', click(ed.Size.X1, ed.Size.Y1))
+			for i := range engine.IconParts {
+				for sh := range 2 {
+					x, y := ed.Parts.X1+3*sh, ed.Parts.Y1+i
+					at(engine.CellRect{X1: x, Y1: y, X2: x + 1, Y2: y}, 0, click(x, y))
+				}
+			}
+			for j, c := range ed.Colours {
+				if c >= 0 && ed.Palette != (engine.CellRect{}) {
+					x, y := ed.Palette.X1+2*(j%8), ed.Palette.Y1+j/8
+					at(engine.CellRect{X1: x, Y1: y, X2: x + 1, Y2: y}, 0, click(x, y))
+				}
+			}
+		}
+	case cr != nil:
+		at(cr.Name, 0, func() { p.typeAt(cr.Name, "Name", 15, engine.ActName, 0) })
+		for _, f := range []int{engine.FieldSex, engine.FieldRace, engine.FieldAlign, engine.FieldClass} {
+			at(cr.Fields[f].At, 0, func() { p.openField(cr, f) })
+		}
+		for i, r := range cr.Stats {
+			at(r, 0, func() { p.typeAt(r, statNames[i], 5, engine.ActStat, i) })
+		}
+		at(cr.Head, 0, send(engine.ActPicker, engine.PickHead))
+		at(cr.Body, 0, send(engine.ActPicker, engine.PickBody))
+		at(cr.Icon, 'I', send(engine.ActIconEdit, -1))
+	default:
+		return nil
+	}
+	row := p.scr.ph/8 - 1 // the prompt row
+	for _, w := range barWords(v) {
+		at(engine.CellRect{X1: w.x, Y1: row, X2: w.x + len(w.label) - 1, Y2: row}, w.key, p.barDo(v, w.key))
+	}
+	return sp
+}
+
+// barWords are the special screen's bar on the prompt row, as the
+// original's: the creation's Roll, Minimal, Keep, Exit; the icon
+// editor's Keep, Exit.
+func barWords(v engine.View) []footWord {
+	ws := []string{"Keep", "Exit"}
+	if v.IconEditor == nil {
+		ws = []string{"Roll", "Minimal", "Keep", "Exit"}
+	}
+	var out []footWord
+	x := 0
+	for _, w := range ws {
+		out = append(out, footWord{w, w[0], x})
+		x += len(w) + 1
+	}
+	return out
+}
+
+// barDo is what the bar's word with hotkey h does.
+func (p *Presenter) barDo(v engine.View, h byte) func() {
+	return func() {
+		cr := v.Creation
+		switch {
+		case h == 'K':
+			p.send(engine.ActKeep, 0)
+		case h == 'E' && (v.IconEditor != nil || cr == nil):
+			p.send(engine.ActClose, 0)
+		case h == 'E':
+			p.askThen(cr.Abandon, func() { p.send(engine.ActClose, 0) })
+		case h == 'R':
+			p.send(engine.ActRoll, 0)
+		case h == 'M':
+			p.typeLine("Minimums (STR INT WIS DEX CON CHA)", cr.Minimums, 30, engine.ActRoll, 1)
+		}
+	}
+}
+
+// spotKey takes key k on a special screen: the arrows move the focus to
+// the nearest part that way, Tab to the next, Enter does the focused part,
+// a hotkey its part, Esc is the bar's Exit.
+func (p *Presenter) spotKey(k uint16, v engine.View, sp []spot) bool {
+	s := &p.scr
+	dir := map[input.Act]image.Point{input.Up: {0, -1}, input.Down: {0, 1}, input.Left: {-1, 0}, input.Right: {1, 0}}
+	switch a := actOf(k); {
+	case dir[a] != image.Point{}:
+		s.sel = nearest(sp, s.sel, dir[a])
+	case a == input.Minimap: // Tab, pad Y
+		s.sel = (s.sel + 1) % len(sp)
+	case a == input.Enter || a == input.Space || a == input.PadA:
+		sp[s.sel].do()
+	case a == input.Esc:
+		p.barDo(v, 'E')()
+	case k < 128:
+		h := byte(k) &^ 0x20
+		for i, t := range sp {
+			if t.key == h && h != 0 {
+				s.sel = i
+				t.do()
+				return true
+			}
+		}
+		return false
+	default:
+		return false
+	}
+	return true
+}
+
+// nearest is the spot from cur the direction d reaches first: ahead of
+// it, the least distance with the sideways part counting double; cur when
+// none is that way.
+func nearest(sp []spot, cur int, d image.Point) int {
+	mid := func(r engine.CellRect) image.Point { return image.Pt(r.X1+r.X2, r.Y1+r.Y2) } // doubled
+	c, best, bd := mid(sp[cur].r), cur, 1<<30
+	for i, t := range sp {
+		o := mid(t.r).Sub(c)
+		ahead, side := o.X*d.X+o.Y*d.Y, o.X*d.Y-o.Y*d.X
+		if ahead <= 0 {
+			continue
+		}
+		if side < 0 {
+			side = -side
+		}
+		if n := ahead + 2*side; n < bd {
+			best, bd = i, n
+		}
+	}
+	return best
 }

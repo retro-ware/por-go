@@ -29,6 +29,7 @@ const (
 type overlay struct {
 	Img     image.Image
 	Src, At image.Rectangle
+	Crisp   bool // pixel art: nearest neighbour, its aspect kept, centred in At
 }
 
 // Part is the rectangle of Img the overlay shows.
@@ -174,6 +175,12 @@ func screenPage(v engine.View) *cellPage {
 	}
 	if ed := v.IconEditor; ed != nil {
 		c.iconEditor(ed)
+	}
+	if (v.Creation != nil || v.IconEditor != nil) && v.Picker == nil && v.Slots == nil { // the bar on the prompt row
+		for _, w := range barWords(v) {
+			c.str(w.x, c.rows-1, inkWhite, w.label[:1])
+			c.str(w.x+1, c.rows-1, inkGreen, w.label[1:])
+		}
 	}
 	if sl := v.Slots; sl != nil {
 		c.box(1, 1, c.cols-2, c.rows-2, inkWhite, "Saved Games")
@@ -492,14 +499,18 @@ func (c *cellPage) picker(pk *engine.Picker) {
 // iconEditor lays the combat icon editor's page out (the engine's
 // icondesign.go draws the swatches): the frame, the poses, the words.
 func (c *cellPage) iconEditor(ed *engine.IconEditor) {
-	c.border(1, 1, c.cols-2, c.rows-3)
+	c.border(1, 1, c.cols-2, c.rows-3) // the bar under it
 	for p, r := range ed.PoseAt {
 		if ed.Poses[p] != nil {
-			c.overs = append(c.overs, overlay{Img: ed.Poses[p], At: r.Pixels()})
+			c.overs = append(c.overs, overlay{Img: ed.Poses[p], At: r.Pixels(), Crisp: true})
 		}
 	}
 	c.str(ed.PoseAt[0].X1+2, ed.PoseAt[0].Y1-1, inkWhite, "ready")
 	c.str(ed.PoseAt[1].X1+2, ed.PoseAt[1].Y1-1, inkWhite, "action")
+	if ed.Custom { // a dropped PNG: it can only go
+		c.str(ed.Remove.X1, ed.Remove.Y1, inkGreen, "Remove custom icon")
+		return
+	}
 	c.str(ed.Head.X1, ed.Head.Y1, inkGreen, "Head")
 	c.str(ed.Weapon.X1, ed.Weapon.Y1, inkGreen, "Weapon")
 	size := "small"
@@ -517,6 +528,12 @@ func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 // iconClick is what a click on cell (cx, cy) of the icon editor does.
 func iconClick(ed *engine.IconEditor, cx, cy int) (engine.Action, bool) {
 	in := func(r engine.CellRect) bool { return cx >= r.X1 && cx <= r.X2 && cy >= r.Y1 && cy <= r.Y2 }
+	if ed.Custom {
+		if in(ed.Remove) {
+			return engine.Action{Kind: engine.ActIconRemove}, true
+		}
+		return engine.Action{}, false
+	}
 	head, weapon := engine.Action{Kind: engine.ActPicker, N: engine.PickIconHead}, engine.Action{Kind: engine.ActPicker, N: engine.PickWeapon}
 	switch {
 	case in(ed.Head):

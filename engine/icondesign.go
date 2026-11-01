@@ -50,6 +50,9 @@ type IconEditor struct {
 	Palette            CellRect // the colours, 8 a row, 2 cells each
 	Colours            [16]int  // the colour number in each palette cell, row-major (-1: empty)
 	Part, Shade        int      // the swatch the palette sets
+	Colour             [6][2]int // each part's two colour numbers (the swatches)
+	Custom             bool      // the poses are a dropped PNG: no parts or colours, only Remove (ActIconRemove)
+	Remove             CellRect  // the Remove word, when Custom
 }
 
 // pushIcon puts the designer up on the selected character (the creation,
@@ -116,7 +119,7 @@ func (e *Engine) pushIcon() {
 		build()
 		layout()
 		e.blank(1, 1, winRight, winBottom) // the text, the frame, the poses and the clicks are the presenter's (View.IconEditor)
-		ed := &IconEditor{Large: c.IconSize == 2, Part: part, Shade: shade,
+		ed := &IconEditor{Large: c.IconSize == 2, Part: part, Shade: shade, Custom: c.Icon != nil,
 			Head: CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow}, Weapon: CellRect{idWordsCol, idPreviewRow + 1, idWordsCol + 5, idPreviewRow + 1},
 			Size:  CellRect{idWordsCol, idPreviewRow + 2, idWordsCol + 9, idPreviewRow + 2},
 			Names: CellRect{idPartCol, idPartRow, idSwatchCol - 1, idPartRow + 5}, Parts: CellRect{idSwatchCol, idPartRow, idSwatchCol + 4, idPartRow + 5},
@@ -136,8 +139,18 @@ func (e *Engine) pushIcon() {
 				ed.Colours[i] = int(v)
 			}
 		}
-		e.snap.icon = ed
 		for i := range IconParts {
+			ed.Colour[i] = [2]int{int(c.IconColour[i] & 0xF), int(c.IconColour[i] >> 4)}
+		}
+		e.snap.icon = ed
+		if ed.Custom { // a dropped PNG takes no parts or colours: it can only go
+			ed.Remove = CellRect{idWordsCol, idPreviewRow, idWordsCol + 17, idPreviewRow}
+			ed.Head, ed.Weapon, ed.Size, ed.Names, ed.Parts, ed.Palette = CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}
+		}
+		for i := range IconParts {
+			if ed.Custom {
+				break
+			}
 			for s := 0; s < 2; s++ {
 				frame := colDarkGrey
 				if i == part && s == shade {
@@ -147,7 +160,7 @@ func (e *Engine) pushIcon() {
 			}
 		}
 		for i, v := range cells {
-			if v != noCell {
+			if v != noCell && !ed.Custom {
 				swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, look(v), colDarkGrey)
 			}
 		}
@@ -170,8 +183,12 @@ func (e *Engine) pushIcon() {
 		}, func(i int) bool { *pic = byte(i); return true })
 	}
 	off := e.redrawWith(show)
+	anim := e.animInput
+	e.animInput = false // camp's fire stays off the page while the editor is up
 	e.push(modeIcon, func(a Action) bool {
 		switch a.Kind {
+		case ActIconRemove: // the game's own icon again (the save drops NAME.icon.png)
+			c.Icon, c.iconPoses = nil, [2][2]image.Image{}
 		case ActPicker:
 			switch a.N {
 			case PickIconHead:
@@ -209,6 +226,7 @@ func (e *Engine) pushIcon() {
 		return false
 	}, func() {
 		off()
+		e.animInput = anim
 		e.snap.iconDrop, e.snap.icon = nil, nil
 		build()
 		e.iconCopy(0xC, order, false)

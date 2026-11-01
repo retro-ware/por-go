@@ -109,6 +109,7 @@ const (
 	ActPage       // the picker shows page N; a pager (help, the journal) goes N (+1 or -1) on: a picture page scrolls first
 	ActIconSize   // icon editor: small or large
 	ActIconColour // icon editor: part N's colour X (0, 1) becomes Y (Y < 0: only selects that swatch)
+	ActIconRemove // icon editor: the dropped PNG goes, the game's own icon is back
 	ActSave       // save the game in slot Text (the player agreed to an overwrite)
 	ActDelete     // delete the save Text (the player agreed)
 

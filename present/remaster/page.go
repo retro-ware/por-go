@@ -384,7 +384,7 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []overlay, r Rect, w, h int)
 		// scan) shrinks bilinear on the GPU
 		s := wholeScale(b.Dx(), b.Dy(), tw, th)
 		sw, sh := 0, 0
-		if s == 0 && tw >= b.Dx() && th >= b.Dy() {
+		if s == 0 && tw >= b.Dx() && th >= b.Dy() && !o.Crisp {
 			sw, sh = tw, th
 		}
 		sc, ok := pg.scans[o.Img]
@@ -407,6 +407,13 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []overlay, r Rect, w, h int)
 		im := sc.im
 		op := &gpu.DrawImageOptions{Filter: gpu.FilterLinear}
 		switch {
+		case o.Crisp: // sharp pixels at any scale, the aspect kept
+			f := min(float64(tw)/float64(b.Dx()), float64(th)/float64(b.Dy()))
+			im = im.SubImage(b).(*gpu.Image)
+			op.Filter = gpu.FilterNearest
+			op.GeoM.Scale(f, f)
+			x += (float64(tw) - f*float64(b.Dx())) / 2
+			y += (float64(th) - f*float64(b.Dy())) / 2
 		case s > 0:
 			im = im.SubImage(b).(*gpu.Image)
 			op.Filter = gpu.FilterNearest

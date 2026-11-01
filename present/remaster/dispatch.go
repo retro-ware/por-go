@@ -184,7 +184,7 @@ func (p *Presenter) Click(x, y int) bool {
 				return true
 			}
 		}
-		if s := p.scr.sub; screenName(v) == "slots" || s == scrAsk || s == scrField || s == scrChange { // outside a popup: back (the creation sheet, the pickers and the icon editor take their page's clicks: Mouse)
+		if s := p.scr.sub; screenName(v) == "slots" || s == scrAsk || s == scrField { // outside a popup: back (the creation sheet, the pickers and the icon editor take their page's clicks: Mouse)
 			p.screenKey(27, v)
 			return true
 		}

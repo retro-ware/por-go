@@ -175,6 +175,12 @@ func TestCreationPage(t *testing.T) {
 	if !v.IconDrop {
 		t.Fatal("no icon editor")
 	}
+	if !v.IconEditor.Custom { // the PNG dropped on the sheet: it can only go
+		t.Fatal("a dropped icon is not custom")
+	}
+	if v = settled(e, engine.Action{Kind: engine.ActIconRemove}); v.IconEditor == nil || v.IconEditor.Custom {
+		t.Fatal("Remove left the dropped icon")
+	}
 	golden(t, "icon", v)
 	ed := v.IconEditor
 	for _, k := range []struct {
@@ -349,5 +355,20 @@ func TestResultsRoster(t *testing.T) {
 	}
 	if i := rosterRow(v, 20, 5); i != 1 {
 		t.Errorf("roster click: %d", i)
+	}
+}
+
+// The focus goes to the nearest part the arrow points at.
+func TestNearestSpot(t *testing.T) {
+	r := func(x, y int) spot { return spot{r: engine.CellRect{X1: x, Y1: y, X2: x + 3, Y2: y}} }
+	sp := []spot{r(1, 1), r(1, 3), r(8, 3), r(30, 2), r(0, 24)}
+	for _, c := range []struct {
+		from int
+		d    image.Point
+		want int
+	}{{0, image.Pt(0, 1), 1}, {1, image.Pt(1, 0), 2}, {2, image.Pt(1, 0), 3}, {1, image.Pt(0, 1), 4}, {0, image.Pt(0, -1), 0}} {
+		if got := nearest(sp, c.from, c.d); got != c.want {
+			t.Errorf("from %d by %v: %d, want %d", c.from, c.d, got, c.want)
+		}
 	}
 }
