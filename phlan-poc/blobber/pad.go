@@ -10,8 +10,8 @@ package blobber
 //	B                    Esc
 //	X                    Space: wait a turn
 //	Y                    I: inventory
-//	LT / RT              C: spellbook, J: journal
-//	Back / Start         M: map, Esc: menu
+//	LT / RT              C: spellbook, J: journal; Home / End in menus and windows
+//	Back / Start         M: map, Esc: menu; Esc, Enter in menus and windows (as por's)
 
 import (
 	"gpu"
@@ -65,9 +65,9 @@ func pollPads(context byte) {
 		hold(101, y > 0.5, gpu.KeyDown)
 		hold(102, x < -0.5, gpu.KeyLeft)
 		hold(103, x > 0.5, gpu.KeyRight)
-		b(gpu.StandardGamepadButtonCenterRight, gpu.KeyEscape)
 		switch context {
 		case 'w':
+			b(gpu.StandardGamepadButtonCenterRight, gpu.KeyEscape)
 			b(gpu.StandardGamepadButtonFrontTopLeft, gpu.KeyA)
 			b(gpu.StandardGamepadButtonFrontTopRight, gpu.KeyD)
 			b(gpu.StandardGamepadButtonRightBottom, gpu.KeyF)
@@ -78,10 +78,13 @@ func pollPads(context byte) {
 			b(gpu.StandardGamepadButtonCenterLeft, gpu.KeyM)
 		default:
 			b(gpu.StandardGamepadButtonRightBottom, gpu.KeyEnter, gpu.KeySpace)
-			b(gpu.StandardGamepadButtonRightRight, gpu.KeyEscape)
-			b(gpu.StandardGamepadButtonCenterLeft, gpu.KeyM) // closes the map
+			b(gpu.StandardGamepadButtonRightRight, gpu.KeyEscape) // as por's menus (remaster bindings.go): B and Back are Esc, Start Enter, the shoulders page, the triggers Home/End
+			b(gpu.StandardGamepadButtonCenterLeft, gpu.KeyEscape)
+			b(gpu.StandardGamepadButtonCenterRight, gpu.KeyEnter)
 			b(gpu.StandardGamepadButtonFrontTopLeft, gpu.KeyPageUp)
 			b(gpu.StandardGamepadButtonFrontTopRight, gpu.KeyPageDown)
+			b(gpu.StandardGamepadButtonFrontBottomLeft, gpu.KeyHome)
+			b(gpu.StandardGamepadButtonFrontBottomRight, gpu.KeyEnd)
 		}
 	}
 	for k := range padDur {
