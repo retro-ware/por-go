@@ -86,9 +86,7 @@ the slums p-z and B D I L M),
 - **Water**: flood fill from beyond harbour walls (here values 14, 15) into
   squares no party can reach. Emits `water X Y`. Off the map is water too.
 - Faces name their texture (`face X Y SIDE wall_<area>_vNN`; map characters
-  ran out after four areas); a reused wall names its origin's texture. Phlan
-  also sets the `start` line in `world.txt` (other areas are opened with
-  `BLOBBER_OPEN`).
+  ran out after four areas); a reused wall names its origin's texture.
 - `start=None`: the entry square isn't pinned; a square of the largest
   walkable region is used (for the land flood fill and the random views).
 - Walls of a new area: `NEW` (descriptions of new art only) and `FLAGS` at the

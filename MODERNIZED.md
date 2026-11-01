@@ -195,7 +195,7 @@ The whole modernization hangs on one read-only seam out of the engine
 
 ### 2.3 Rendering: `gpu/` on wgpu, no Ebiten
 
-The game, the Blobber copy and the editor all draw through `gpu/`, a package
+The game and the Blobber copy both draw through `gpu/`, a package
 with the slice of Ebiten's API they use (images, `DrawImage`,
 `DrawTriangles`, WGSL shaders in the role of Kage, input, the game loop) plus
 `DrawMesh` for depth-tested 3D triangles. It is pure Go on **gogpu/wgpu**

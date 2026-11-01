@@ -162,12 +162,6 @@ def main():
     (HERE / f"blobber/maps/{NAME}.map").write_text("\n".join(lines) + "\n")
 
     write_area_table()
-    if NAME != "phlan":  # the campaign starts in Phlan; other areas are reached with BLOBBER_OPEN
-        return
-    world = HERE / "blobber/maps/world.txt"
-    x, y, f = START
-    world.write_text("".join(f"start phlan {x} {y} {f}\n" if l.startswith("start ") else l + "\n"
-                             for l in world.read_text().splitlines()))
 
 
 def write_area_table():

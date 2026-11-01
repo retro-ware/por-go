@@ -6,7 +6,6 @@ require golang.org/x/image v0.45.0
 
 require (
 	github.com/ebitengine/purego v0.11.0 // indirect
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20250301202403-da16c1255728 // indirect
 	github.com/go-webgpu/goffi v0.6.3 // indirect
 	github.com/go-webgpu/webgpu v0.5.5 // indirect
 	github.com/gogpu/gpucontext v0.31.3 // indirect
@@ -18,7 +17,6 @@ require (
 )
 
 require (
-	github.com/ebitengine/oto/v3 v3.5.0
 	gpu v0.0.0
 )
 
