@@ -113,6 +113,13 @@ var sides = map[Key][2]gpucontext.Key{
 	KeyMeta:    {gpucontext.KeyLeftSuper, gpucontext.KeyRightSuper},
 }
 
+var modFlags = map[Key]gpucontext.Modifiers{
+	KeyShift:   gpucontext.ModShift,
+	KeyControl: gpucontext.ModControl,
+	KeyAlt:     gpucontext.ModAlt,
+	KeyMeta:    gpucontext.ModSuper,
+}
+
 // MouseButton is a mouse button.
 type MouseButton int
 
@@ -180,15 +187,20 @@ var in struct {
 
 func initInput(app *gogpu.App) {
 	ev := app.EventSource()
-	key := func(k gpucontext.Key, down bool) {
+	key := func(k gpucontext.Key, mods gpucontext.Modifiers, down bool) {
 		if int(k) >= keyCount {
 			return
 		}
 		in.down[k] = down
 		in.hit[k] = in.hit[k] || down
+		for mk, m := range modFlags { // a modifier's lost release (a stuck Shift): every key event carries the modifiers really held
+			if s := sides[mk]; mods&m == 0 && k != s[0] && k != s[1] {
+				in.down[s[0]], in.down[s[1]] = false, false
+			}
+		}
 	}
-	ev.OnKeyPress(func(k gpucontext.Key, _ gpucontext.Modifiers) { key(k, true) })
-	ev.OnKeyRelease(func(k gpucontext.Key, _ gpucontext.Modifiers) { key(k, false) })
+	ev.OnKeyPress(func(k gpucontext.Key, mods gpucontext.Modifiers) { key(k, mods, true) })
+	ev.OnKeyRelease(func(k gpucontext.Key, mods gpucontext.Modifiers) { key(k, mods, false) })
 	ev.OnTextInput(func(t string) { in.chars = append(in.chars, []rune(t)...) })
 	button := func(b gpucontext.MouseButton, down bool, x, y float64) {
 		in.cursor = [2]float64{x, y}
