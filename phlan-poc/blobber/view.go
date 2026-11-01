@@ -104,8 +104,11 @@ func (v *View) Fluid() bool { return Settings.Fluid && v.g.smooth }
 // UpdateOptions reads the keyboard and the gamepads for it.
 func (v *View) OpenOptions() {
 	v.g.menu, v.g.page, v.g.confirm, v.g.sel, v.g.lastPoint = true, "", nil, 0, -1
-	pollPads(0) // a pad button held from opening it counts as pressed only once it goes down again
 }
+
+// PadKey hands the Esc menu a key from the host's gamepad, for the next
+// UpdateOptions: Enter, Esc, the arrows, Page Up / Down, Home, End.
+func (v *View) PadKey(k gpu.Key) { padKeys[k] = true }
 
 // OptionsOpen reports whether the Esc menu is up.
 func (v *View) OptionsOpen() bool { return v.g != nil && v.g.menu }
@@ -113,7 +116,7 @@ func (v *View) OptionsOpen() bool { return v.g != nil && v.g.menu }
 // UpdateOptions runs the Esc menu for one frame: arrows and Enter pick and
 // change, Esc goes back to the root or closes it. Quit exits the program.
 func (v *View) UpdateOptions() {
-	pollPads(0)
+	defer clear(padKeys)
 	if KeyJustPressed(gpu.KeyEscape) {
 		if !v.g.back() {
 			v.g.menu = false

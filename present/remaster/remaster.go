@@ -15,6 +15,7 @@ import (
 
 	"gpu"
 	"gpu/vector"
+	"por/present/input"
 
 	"por/phlan-poc/blobber"
 
@@ -427,6 +428,19 @@ func (p *Presenter) Options() bool { return p.view != nil && p.view.OptionsOpen(
 
 // UpdateOptions runs the options page for one frame.
 func (p *Presenter) UpdateOptions() { p.view.UpdateOptions() }
+
+// optionsKeys: the pad's acts as the options page reads them.
+var optionsKeys = map[input.Act]gpu.Key{input.Up: gpu.KeyUp, input.Down: gpu.KeyDown, input.Left: gpu.KeyLeft, input.Right: gpu.KeyRight,
+	input.PgUp: gpu.KeyPageUp, input.PgDn: gpu.KeyPageDown, input.Home: gpu.KeyHome, input.End: gpu.KeyEnd,
+	input.PadA: gpu.KeyEnter, input.Enter: gpu.KeyEnter, input.Esc: gpu.KeyEscape}
+
+// OptionsPad hands a gamepad key (as PadKeys sends it) to the options page,
+// for the next UpdateOptions.
+func (p *Presenter) OptionsPad(k uint16) {
+	if gk, ok := optionsKeys[actOf(k)]; ok && p.view != nil {
+		p.view.PadKey(gk)
+	}
+}
 
 // OptionsMouse hands the pointer to the Esc menu: the line under (x, y)
 // highlights, a left click picks or steps it, a right click goes back,

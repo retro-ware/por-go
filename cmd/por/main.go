@@ -87,7 +87,10 @@ func (g *game) Update() error {
 		}
 		return nil
 	}
-	if g.remaster.Options() { // the renderer's options page has the keyboard
+	if g.remaster.Options() { // the renderer's options page has the keyboard and the pads
+		for _, id := range gpu.AppendGamepadIDs(g.pads[:0]) {
+			g.gamepad(id, g.remaster.OptionsPad)
+		}
 		g.remaster.UpdateOptions()
 		if g.remaster.Options() {
 			mx, my := gpu.CursorPosition()
@@ -98,7 +101,8 @@ func (g *game) Update() error {
 	}
 	g.keys()
 	for _, id := range gpu.AppendGamepadIDs(g.pads[:0]) {
-		g.gamepad(id)
+		g.gamepad(id, g.push)
+		g.remaster.PadStick(gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisRightStickHorizontal), gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisRightStickVertical))
 	}
 	g.mouse()
 	for _, f := range gpu.AppendDroppedFiles(nil) {
@@ -262,7 +266,8 @@ const padDelay, padRate, holdTicks = tps / 3, tps * 3 / 20, tps / 5
 
 func repeats(d int) bool { return d == 1 || d >= padDelay && (d-padDelay)%padRate == 0 }
 
-func (g *game) gamepad(id gpu.GamepadID) {
+// gamepad sends the pad's keys (the binding table's, with repeat) to send.
+func (g *game) gamepad(id gpu.GamepadID, send func(uint16)) {
 	if !gpu.IsStandardGamepadLayoutAvailable(id) {
 		return
 	}
@@ -270,7 +275,7 @@ func (g *game) gamepad(id gpu.GamepadID) {
 	for _, p := range pad {
 		d := gpu.StandardGamepadButtonPressDuration(id, p.B)
 		if d == 1 || p.Repeat && d > 1 && repeats(d) {
-			g.push(p.Key)
+			send(p.Key)
 		}
 	}
 	// Left stick as a D-pad.
@@ -299,10 +304,9 @@ func (g *game) gamepad(id gpu.GamepadID) {
 	if dir != 0 {
 		g.stickHeld++
 		if repeats(g.stickHeld) {
-			g.push(dir)
+			send(dir)
 		}
 	}
-	g.remaster.PadStick(gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisRightStickHorizontal), gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisRightStickVertical))
 }
 
 func (g *game) Draw(dst *gpu.Image) {
