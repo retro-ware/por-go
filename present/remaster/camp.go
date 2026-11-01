@@ -154,7 +154,11 @@ func (p *Presenter) drawCampMenus(dst *gpu.Image, v engine.View) {
 			p.campImg, p.campBuf = append(p.campImg, nil), append(p.campBuf, nil)
 		}
 		p.tipImg, p.tipBuf, p.campImg[i], p.campBuf[i] = p.campImg[i], p.campBuf[i], p.tipImg, p.tipBuf // each menu its own image: one image redrawn in a frame shows its last pixels everywhere
-		rs, box := p.cardMenu(dst, i, lines, keys, sel)
+		shown := keys // the white hotkeys only on the focus's menu
+		if p.ctx != 1+i {
+			shown = nil
+		}
+		rs, box := p.cardMenu(dst, i, lines, shown, sel)
 		p.tipImg, p.tipBuf, p.campImg[i], p.campBuf[i] = p.campImg[i], p.campBuf[i], p.tipImg, p.tipBuf
 		p.menuGrey = false
 		p.campCtx = append(p.campCtx, rs)
@@ -336,8 +340,8 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 		return
 	}
 	sel := c.sel - c.top
-	if p.campHome(v) && p.ctx > 0 { // a member's menu has the focus
-		sel, p.menuGrey = -1, true
+	if p.campHome(v) && p.ctx > 0 { // a member's menu has the focus: no highlight, no white hotkeys here
+		sel, p.menuGrey, keys = -1, true, nil
 	}
 	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, sel, k, cx, top)
 	p.menuGrey = false
