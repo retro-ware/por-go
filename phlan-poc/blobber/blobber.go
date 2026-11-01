@@ -1361,8 +1361,8 @@ func (g *Game) tween() {
 func (g *Game) updateMenu() bool {
 	items := g.menuOptions()
 	n := len(items)
-	for i, k := range menuKeys(items) { // a hotkey picks its line
-		if k != 0 && KeyJustPressed(gpu.KeyA+gpu.Key(k-'A')) {
+	for i, k := range menuKeys(items) { // a hotkey (a letter, else a digit) picks its line
+		if k >= '1' && k <= '9' && KeyJustPressed(gpu.Key1+gpu.Key(k-'1')) || k >= 'A' && k <= 'Z' && KeyJustPressed(gpu.KeyA+gpu.Key(k-'A')) {
 			g.sel = i
 			items[i].change(g, 0)
 			return g.quit
@@ -1374,13 +1374,23 @@ func (g *Game) updateMenu() bool {
 	if KeyRepeated(gpu.KeyDown) {
 		g.sel = (g.sel + 1) % n
 	}
+	switch { // as the host's menus (remaster menuNav): PgUp/PgDn ten lines, Home/End the ends
+	case KeyRepeated(gpu.KeyPageUp):
+		g.sel = max(0, g.sel-10)
+	case KeyRepeated(gpu.KeyPageDown):
+		g.sel = min(n-1, g.sel+10)
+	case KeyJustPressed(gpu.KeyHome):
+		g.sel = 0
+	case KeyJustPressed(gpu.KeyEnd):
+		g.sel = n - 1
+	}
 	g.sel %= n
 	d, ok := 0, KeyJustPressed(gpu.KeyEnter) || KeyJustPressed(gpu.KeySpace)
 	if g.page != "" && g.confirm == nil { // Left and Right step a page's settings
 		switch {
-		case KeyJustPressed(gpu.KeyLeft):
+		case KeyRepeated(gpu.KeyLeft):
 			d, ok = -1, true
-		case KeyJustPressed(gpu.KeyRight):
+		case KeyRepeated(gpu.KeyRight):
 			d, ok = 1, true
 		}
 	}
@@ -1552,13 +1562,21 @@ type question struct {
 var OnSaveLoad, OnMainMenu func()
 
 // menuItems are the lines of the menu page shown.
-// menuKeys are the Esc menu lines' hotkeys (Hotkeys).
+// menuKeys are the Esc menu lines' hotkeys (Hotkeys), the digits 1-9 on
+// lines left without a letter (as the host's digitKeys; blobber cannot
+// import it: the host imports blobber).
 func menuKeys(items []menuLine) []byte {
 	var labels []string
 	for _, o := range items {
 		labels = append(labels, o.label)
 	}
-	return Hotkeys(labels)
+	keys, d := Hotkeys(labels), byte('1')
+	for i := range keys {
+		if keys[i] == 0 && d <= '9' {
+			keys[i], d = d, d+1
+		}
+	}
+	return keys
 }
 
 // Hotkeys gives each label its first letter not taken by a label above (0: none left).
