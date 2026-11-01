@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"por/pal"
+	"strings"
 )
 
 // The read-only seam for presenters other than the classic screen: a View
@@ -179,11 +180,14 @@ type MapLabel struct {
 	First  image.Point
 }
 
-// Shown reports whether the pane holds text.
+// Shown reports whether the pane holds visible text (runs of blanks, as a
+// cleared pane leaves, show nothing).
 func (p *Pane) Shown() bool {
 	for _, l := range p.Lines {
-		if len(l) > 0 {
-			return true
+		for _, r := range l {
+			if strings.TrimSpace(r.Text) != "" {
+				return true
+			}
 		}
 	}
 	return false
