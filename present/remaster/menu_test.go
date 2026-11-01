@@ -91,7 +91,7 @@ func TestPrice(t *testing.T) {
 			t.Errorf("price(%v) = %q, want %q", m, got, want)
 		}
 	}
-	if got := withGold("Heal", 7); got != "Heal (party 7g)" {
+	if got := withGold("Heal", 7); got != "Heal\x03 Party 7g " {
 		t.Errorf("withGold = %q", got)
 	}
 }

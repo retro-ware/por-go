@@ -31,7 +31,7 @@ func (p *Presenter) templeItems(v engine.View) (string, []menuRow) {
 	case templeNot:
 		return name + " " + cure.Not + " Cast cure anyway?", []menuRow{{"Yes", 'Y', c.to(templePay, 1)}, {"No", 'N', c.back(templeHeal)}}
 	case templePay:
-		return withGold(fmt.Sprintf("%s will only cost %s. Pay for cure?", cure.Name, price(engine.Money{Gold: cure.Price})), t.Gold), []menuRow{
+		return withGold(fmt.Sprintf("%s will only cost %s. Pay for cure?", cure.Name, gold(cure.Price)), t.Gold), []menuRow{
 			{"Yes", 'Y', func() { p.sendX(engine.ActTempleCure, -1, c.pick); c.back(templeHeal)() }},
 			{"No", 'N', c.back(templeHeal)}}
 	case appraise:
