@@ -603,7 +603,7 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	}
 	done := false
 	ok = true
-	if w := c.Slots[slotWeapon]; w != nil && (w == chosen || w.Magic != 0) {
+	if w := c.Slots[slotWeapon]; w != nil && (w == chosen || w.Magic != 0 || chosen != nil && e.throwableItem(chosen)) { // extra: never unready the hand weapon for a thrown one, it has the Missiles slot
 		ok = false
 	}
 	if ok {
