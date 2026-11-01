@@ -53,7 +53,7 @@ func (e *Engine) extraAct(a Action) bool {
 		}
 		e.pushSlots(false) // the next decisions go to it, wherever the engine waits (until feeds the top screen)
 	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training), and at the creation
-		if e.mode() != modeSheet && !e.ext.creating { // only on the sheet: a stray Shift-click elsewhere must never change a face
+		if e.mode() != modeSheet && e.mode() != modeItems && !e.ext.creating { // only on the sheet and the inventory: a stray Shift-click elsewhere must never change a face
 			return false
 		}
 		c := e.selected()

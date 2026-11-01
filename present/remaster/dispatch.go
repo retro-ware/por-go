@@ -3,6 +3,7 @@
 package remaster
 
 import (
+	"gpu"
 	"image"
 	"por/engine"
 	"por/present/input"
@@ -148,6 +149,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 func (p *Presenter) Click(x, y int) bool {
 	if p.Playing() { // the fight plays on: the click only cuts its moment short
 		p.replay.skip = true
+		return true
+	}
+	if sheetUp(p.shownView) && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(x, y).In(p.sheet.faceAt) { // Shift-click on the sheet's portrait: the next head
+		p.send(engine.ActHead, -1)
 		return true
 	}
 	if p.barClick(x, y) {

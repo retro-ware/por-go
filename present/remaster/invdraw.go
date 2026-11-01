@@ -74,6 +74,9 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	if choosing(v) { // a member pick (Heal whom?): the view and the cards instead (Draw)
 		return false
 	}
+	if p.playing() != nil { // an event to show (Draw plays it); this also drops the played ones, else Playing holds every key
+		return false
+	}
 	if in == nil {
 		inv.ask, inv.view = nil, nil
 		return false

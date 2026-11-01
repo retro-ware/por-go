@@ -53,9 +53,10 @@ func (p *Presenter) sheetKey(k uint16, v engine.View) bool {
 // HP and experience bars), the sheet's figures on the right, the powers
 // on the bottom row (the toast in their place while it shows).
 type sheetCanvas struct {
-	img  *gpu.Image
-	px   *image.RGBA
-	w, h int
+	img    *gpu.Image
+	px     *image.RGBA
+	w, h   int
+	faceAt image.Rectangle // the portrait on the window (Shift-click)
 }
 
 // drawSheet draws the sheet (sheetUp) over the whole window.
@@ -172,7 +173,8 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 		p.bar(sc.img, lx-5, expY, lw+10, m.Exp-m.LevelExp, m.NextExp-m.LevelExp, goldFill)
 	}
 	kx, ky := p.fit(dst, sc.img, sc.w, sc.h)
-	if png != nil { // the PNG portrait at the window's resolution, as the cards
+	sc.faceAt = image.Rect(int(float64(face.Min.X)*kx), int(float64(face.Min.Y)*ky), int(float64(face.Max.X)*kx), int(float64(face.Max.Y)*ky))
+	if png != nil { // the portrait at the window's resolution, nearest neighbour (hiFace)
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(face.Min.X)*kx, float64(face.Min.Y)*ky)
 		dst.DrawImage(p.hiFace(png, int(float64(face.Dx())*kx)), op)
@@ -186,8 +188,9 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 // the inventory so it stays put when Tab switches them: the classes under
 // the top border (the name is on it: paneName), then the portrait as wide
 // as the pane, or as tall as the room above the doll allows (bottom: the
-// pane's inner bottom), aspect kept. A PNG portrait is returned to be
-// drawn at the window's resolution; the paper-doll head is drawn here.
+// pane's inner bottom), aspect kept. The portrait (the PNG or the
+// paper-doll head) is returned to be drawn at the window's resolution
+// with hiFace: crisp pixels, never the canvas's stretch.
 func (p *Presenter) memberPane(px *image.RGBA, glyph func(byte) [8]byte, m engine.Member, bottom int) (face image.Rectangle, png image.Image) {
 	p.inv.load()
 	lx, lw := 8, (leftCells-2)*8
@@ -198,18 +201,9 @@ func (p *Presenter) memberPane(px *image.RGBA, glyph func(byte) [8]byte, m engin
 	}
 	n := max(0, min(lw, bottom-y-4-p.inv.doll.Bounds().Dy()-8))
 	face = image.Rect(lx+(lw-n)/2, y+4, lx+(lw+n)/2, y+4+n)
-	f := p.portrait(m)
-	switch {
-	case f == nil:
-	case m.Portrait != nil:
-		png = m.Portrait
-	default: // nearest neighbour: the head's pixels stay sharp
-		b := f.Bounds()
-		for yy := range n {
-			for xx := range n {
-				px.Set(face.Min.X+xx, face.Min.Y+yy, f.At(b.Min.X+xx*b.Dx()/n, b.Min.Y+yy*b.Dy()/n))
-			}
-		}
+	png = m.Portrait
+	if png == nil {
+		png = p.portrait(m) // the paper-doll head
 	}
 	return face, png
 }

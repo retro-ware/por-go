@@ -409,12 +409,11 @@ func fitSquare(src image.Image, n int) *image.RGBA {
 	b := src.Bounds()
 	f := image.NewRGBA(image.Rect(0, 0, n, n))
 	at := fit(b, f.Rect)
-	var sc xdraw.Scaler = xdraw.CatmullRom
 	if s := wholeScale(b.Dx(), b.Dy(), n, n); s > 0 {
 		w, h := s*b.Dx(), s*b.Dy()
-		at, sc = image.Rect((n-w)/2, n-h, (n-w)/2+w, n), xdraw.NearestNeighbor
+		at = image.Rect((n-w)/2, n-h, (n-w)/2+w, n)
 	}
-	sc.Scale(f, at, src, b, draw.Src, nil)
+	xdraw.NearestNeighbor.Scale(f, at, src, b, draw.Src, nil) // crisp pixels, no filtering, at any size
 	return f
 }
 

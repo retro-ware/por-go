@@ -174,6 +174,10 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		inv.dragging = d.X*d.X+d.Y*d.Y > 9
 	}
 	shift := gpu.IsKeyPressed(gpu.KeyShift)
+	if pressed && shift && inv.view.Wares == nil && inv.hover.In(inv.face) { // Shift-click on the portrait: the next head
+		inv.acts = append(inv.acts, engine.Action{Kind: engine.ActHead, N: -1})
+		return
+	}
 	if right && inv.view.Wares == nil { // a stack on the cursor: one of it (Shift: half) is dropped where the pointer is; else one of the stack under the pointer (Shift: half) is picked up; elsewhere the screen closes
 		switch c := inv.carry; {
 		case c != nil && shift:
