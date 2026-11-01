@@ -188,7 +188,7 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 			lines[i] = it.text
 		}
 		p.sel = min(max(p.sel, 0), len(lines)-1)
-		p.keyWindow(dst, "View:", lines, keys, nil, p.sel, true)
+		p.keyWindow(dst, "View", lines, keys, nil, p.sel, true)
 		return
 	}
 	m := askMenu(v)

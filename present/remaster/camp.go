@@ -356,7 +356,7 @@ func (p *Presenter) appraiseItems(a engine.Appraise, back func()) (string, []men
 	if a.Jewelry > 0 {
 		it = append(it, menuRow{fmt.Sprintf("Jewelry (%d)", a.Jewelry), 'J', func() { p.send(engine.ActAppraise, 1) }})
 	}
-	title := "You have a fine collection of:"
+	title := "You have a fine collection"
 	if len(it) == 0 {
 		title = "Nothing to appraise"
 	}

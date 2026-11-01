@@ -17,7 +17,7 @@ func (p *Presenter) trainItems(v engine.View) (string, []menuRow) {
 		for _, s := range t.Learn {
 			it = append(it, menuRow{s.Name, 0, func() { p.sendX(engine.ActLearn, -1, s.ID) }})
 		}
-		return t.Name + " may add a spell to the book:", it
+		return t.Name + " may add a spell to the book", it
 	case t.Why != "":
 		return t.Why, []menuRow{leave}
 	}

@@ -91,12 +91,12 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		cr := v.Creation
 		switch s.sub {
 		case scrChange:
-			it := []menuRow{{"Name", 'N', func() { p.typeLine("Name:", "", 15, engine.ActName, 0) }}}
+			it := []menuRow{{"Name", 'N', func() { p.typeLine("Name", "", 15, engine.ActName, 0) }}}
 			for f, fl := range cr.Fields {
 				it = append(it, menuRow{fl.Name, 0, func() { p.openField(cr, f) }})
 			}
 			for i, name := range [6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
-				it = append(it, menuRow{name, 0, func() { p.typeLine(name+":", "", 5, engine.ActStat, i) }})
+				it = append(it, menuRow{name, 0, func() { p.typeLine(name, "", 5, engine.ActStat, i) }})
 			}
 			return "Change", append(it,
 				menuRow{"Head", 'H', func() { s.open(scrMain); p.send(engine.ActPicker, engine.PickHead) }},
@@ -118,7 +118,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		return "", []menuRow{
 			{"Roll", 'R', act(engine.ActRoll, 0)},
 			{"Minimal", 'M', func() {
-				p.typeLine("Minimums (STR INT WIS DEX CON CHA):", cr.Minimums, 30, engine.ActRoll, 1)
+				p.typeLine("Minimums (STR INT WIS DEX CON CHA)", cr.Minimums, 30, engine.ActRoll, 1)
 			}},
 			{"Change", 'C', to(scrChange)},
 			{"Keep", 'K', act(engine.ActKeep, 0)},
@@ -146,7 +146,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		}
 		var it []menuRow
 		if sl.CanSave {
-			it = append(it, menuRow{"New Slot", 0, func() { p.typeLine("Save as:", "", 20, engine.ActSave, 0) }})
+			it = append(it, menuRow{"New Slot", 0, func() { p.typeLine("Save as", "", 20, engine.ActSave, 0) }})
 		}
 		for i, name := range sl.Names {
 			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
@@ -400,7 +400,7 @@ func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 	}
 	switch {
 	case in(cr.Name):
-		p.typeLine("Name:", "", 15, engine.ActName, 0)
+		p.typeLine("Name", "", 15, engine.ActName, 0)
 	case in(cr.Head):
 		p.send(engine.ActPicker, engine.PickHead)
 	case in(cr.Body):
@@ -416,7 +416,7 @@ func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 		}
 		for i, r := range cr.Stats {
 			if in(r) {
-				p.typeLine([6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}[i]+":", "", 5, engine.ActStat, i)
+				p.typeLine([6]string{"STR", "INT", "WIS", "DEX", "CON", "CHA"}[i], "", 5, engine.ActStat, i)
 				return true
 			}
 		}

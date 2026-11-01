@@ -194,7 +194,7 @@ func (p *Presenter) drawPickList(dst *gpu.Image, glyph func(byte) [8]byte, k flo
 		lines[i] = s.Name
 	}
 	p.pickSel = min(max(p.pickSel, 0), len(lines)-1)
-	p.drawMenu(dst, glyph, "Cast:", lines, spellKeys(len(lines)), nil, p.pickSel, k, cx, top)
+	p.drawMenu(dst, glyph, "Cast", lines, spellKeys(len(lines)), nil, p.pickSel, k, cx, top)
 }
 
 // spellKeys are a spell list's hotkeys, as every spell list's (camp,

@@ -48,7 +48,7 @@ func (e *Engine) spellMenu(mode int, index *int, then func(byte)) {
 	}
 	title := ""
 	if mode >= 1 && mode <= 4 { // set {1,2,3,4} at cs:001B
-		title = "Choose Spell: "
+		title = "Choose spell"
 	}
 	y2 := 0x16
 	showExit := mode != 4

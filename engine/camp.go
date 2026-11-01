@@ -752,7 +752,7 @@ func twoDigits(n int) string {
 	return s[:2]
 }
 
-// showRest = ovr21:05F0 (unit): "Rest Time: dd:hh:mm", the unit being
+// showRest = ovr21:05F0 (unit): "Rest time dd:hh:mm" (the original: "Rest Time:"), the unit being
 // changed in white.
 func (e *Engine) showRest(unit int) {
 	var col [7]int
@@ -761,7 +761,7 @@ func (e *Engine) showRest(unit int) {
 	}
 	col[unit] = 0xF
 	r := &e.camp.rest
-	e.text(1, 17, colLightGreen, "Rest Time:")
+	e.text(1, 17, colLightGreen, "Rest time")
 	x := 0xB
 	for i := 4; i >= 3; i-- {
 		e.text(x+1, 17, col[i], twoDigits(r[i]))
