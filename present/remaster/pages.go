@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"por/engine"
+	"por/pal"
 )
 
 // The screens the engine publishes as data (the character sheet, the
@@ -431,7 +432,7 @@ func (c *cellPage) picker(pk *engine.Picker) {
 func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 	c.border(1, 1, c.cols-2, c.rows-3) // the bar under it
 	for p, r := range ed.PoseAt {
-		c.pics = append(c.pics, engine.Picture{At: r.Pixels(), Fill: true, Colour: c.ink[8]}) // the pose on grey: its black parts show
+		c.pics = append(c.pics, engine.Picture{At: r.Pixels(), Fill: true, Colour: pal.EGA(8)}) // the pose on grey (the page's, not the combat palette's dark): its black parts show
 		if ed.Poses[p] != nil {
 			c.overs = append(c.overs, overlay{Img: ed.Poses[p], At: r.Pixels(), Crisp: true})
 		}

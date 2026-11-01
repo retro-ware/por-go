@@ -67,7 +67,7 @@ func (p *Presenter) mainFade() float32 {
 // run, so the menu shows at once; it reports whether it did, and that
 // input goes no further: the menu it would have acted on was not yet seen.
 func (p *Presenter) mainSkip() bool {
-	if p.mainFade() >= 1 {
+	if p.shownView.Hall || p.mainFade() >= 1 { // the hall's menu has no title to wait for
 		return false
 	}
 	p.mainAt = time.Now().Add(-titleHold - titleFade)
