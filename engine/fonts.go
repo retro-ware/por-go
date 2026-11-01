@@ -88,7 +88,13 @@ func (e *Engine) FontName() string {
 
 // Note is a short message for the window to show over the picture (the
 // font name after Ctrl-F) and when it was set.
-func (e *Engine) Note() (string, time.Time) { return e.ext.note, e.ext.noteAt }
+func (e *Engine) Note() (string, time.Time) {
+	if e.resting != 0 && time.Since(e.ext.noteAt) > 2*time.Second { // extra: the rest's time left, live in the flash's place
+		r := &e.camp.rest
+		return "Rest time " + twoDigits(r[4]) + ":" + twoDigits(r[3]) + ":" + twoDigits(10*r[2]+r[1]), time.Now()
+	}
+	return e.ext.note, e.ext.noteAt
+}
 
 // glyph is the 8x8 pattern drawChar draws for ch, or false when there is
 // none.

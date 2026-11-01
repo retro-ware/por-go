@@ -809,6 +809,7 @@ func (e *Engine) healTick() {
 	}
 	e.showRest(0)
 	e.text(1, 19, colLightGreen, "The Whole Party Is Healed")
+	e.say("The Whole Party Is Healed")
 	if healed {
 		e.DisplayPartyList()
 	}
@@ -963,6 +964,7 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 					e.ClearMessageArea()
 					e.showRest(0)
 					e.text(1, 19, colWhite, "The Party is rudely interrupted!")
+					e.say("The Party is rudely interrupted!")
 					interrupted = true
 					e.MsgDelay()
 					return true
