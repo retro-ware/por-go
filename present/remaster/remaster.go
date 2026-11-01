@@ -101,6 +101,7 @@ type Presenter struct {
 	ctxActs    []engine.ActKind            // its lines' actions, for the member
 	ctxKeys    []byte                      // its lines' hotkeys (the first letters)
 	campCtx    [][]image.Rectangle         // in camp every member's context menu lines (drawCampMenus)
+	menuGrey   bool                        // drawMenu's border grey: a menu without the focus
 	ctxRects   []image.Rectangle           // its lines on screen, as last drawn
 	ctxBox     image.Rectangle             // where its box went: the spell pick opens there
 	pick       []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen

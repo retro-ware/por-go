@@ -43,7 +43,8 @@ type binding struct {
 // high byte scan code. The table below is the only place that names them.
 const (
 	KeyF1          = 0x3B00 // F1; F2..F8 follow at +0x100
-	KeyF9          = 0x4300 // save / load
+	KeyF9          = 0x4300 // camp: the party's menu
+	KeyF10         = 0x4400 // save / load
 	KeyFontPrev    = 0xFD00 // Ctrl-Shift-F (Ctrl-F is ASCII 6)
 	KeyPadSelect   = 0xE000 // gamepad: choose the highlighted (as Enter)
 	KeyPadMinimap  = 0xE100 // as Tab
@@ -108,6 +109,8 @@ var bindings = []binding{
 		padKeys: []padKey{{padB, keyEsc, false}, {padBack, keyEsc, false}}},
 	{ctx: ctxMenus, keys: "F1-F8", desc: "member 1-8", mouse: "click a card", pad: "L3 R3",
 		codes: memberCodes()},
+	{ctx: ctxMenus, keys: "F9", desc: "camp: party menu", mouse: "point", pad: "Left Right",
+		codes: []code{{KeyF9, input.PartyMenu}}},
 	{ctx: ctxMenus, keys: "Tab", desc: "sheet, items: switch", mouse: "View, Items", pad: "Y"},
 	{ctx: ctxMenus, keys: "Left Right", desc: "prev., next member", mouse: "click a card", pad: "L3 R3",
 		codes:   []code{{keyLeft, input.Left}, {keyRight, input.Right}, {KeyPadPrev, input.PrevMember}, {KeyPadNext, input.NextMember}},
@@ -116,7 +119,7 @@ var bindings = []binding{
 		codes: []code{{'+', input.More}, {'=', input.More}, {'-', input.Less}}}, // Backspace: the Letters row's
 
 	{ctx: ctxAdv, keys: "Arrows", desc: "walk, turn", mouse: "map: Walk", pad: "D-pad, stick"}, // the Menus rows' arrows; the digits are the keypad (keypadActs)
-	{ctx: ctxAdv, keys: "Enter", desc: "command menu", mouse: "click middle", pad: "A, Start"},   // the Menus row's Enter
+	{ctx: ctxAdv, keys: "Enter", desc: "command menu", mouse: "click middle", pad: "A, Start"}, // the Menus row's Enter
 	{ctx: ctxAdv, keys: "C I V A", desc: "cast items view camp", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "W", desc: "sweep: search walking", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "S", desc: "search this square", mouse: "command menu", pad: "A, then pick"},
@@ -163,8 +166,8 @@ var bindings = []binding{
 
 	{ctx: ctxAnytime, keys: "?", desc: "this help", mouse: "command menu", pad: "A, then pick",
 		codes: []code{{'?', input.Help}}},
-	{ctx: ctxAnytime, keys: "F9", desc: "save, load", mouse: "Esc menu", pad: "B, then pick",
-		codes: []code{{KeyF9, input.SaveLoad}}},
+	{ctx: ctxAnytime, keys: "F10", desc: "save, load", mouse: "Esc menu", pad: "B, then pick",
+		codes: []code{{KeyF10, input.SaveLoad}}},
 	{ctx: ctxAnytime, keys: "L D", desc: "saves: load, delete", mouse: "click footer", pad: "X Y"},
 	{ctx: ctxAnytime, keys: "Ctrl-S", desc: "sound on, off", mouse: "Esc > Audio", pad: "B, then pick",
 		codes: []code{{keyCtrlS, input.Sound}}},

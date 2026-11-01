@@ -15,7 +15,7 @@ import (
 // inventoryKey handles a key on the inventory screen: Up/Down, Home/End the
 // items, the member keys the member, Tab (pad Y) the tab, PgUp/PgDn (the
 // shoulders) the menu row's focus, Enter (pad A) the focused word or the
-// item; false leaves it to the game (F9, ?, Ctrl-F).
+// item; false leaves it to the game (F10, ?, Ctrl-F).
 func (p *Presenter) inventoryKey(k uint16) bool {
 	inv := &p.inv
 	if inv.ask != nil {

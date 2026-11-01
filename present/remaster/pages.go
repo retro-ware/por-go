@@ -199,7 +199,7 @@ type footWord struct {
 const footPick, footBack byte = 1, 2
 
 // slotFooter is the slot page's footer on a page cols wide, as the
-// original-style F9 page's: spread over the row inside the frame.
+// original-style F10 page's: spread over the row inside the frame.
 func slotFooter(sl *engine.Slots, cols int) []footWord {
 	ws := []footWord{{"Enter=save", footPick, 0}, {"L=load", 'L', 0}, {"D=delete", 'D', 0}, {"Esc=back", footBack, 0}}
 	switch {

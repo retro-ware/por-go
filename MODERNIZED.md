@@ -725,7 +725,7 @@ All in `phlan-poc/blobber/blobber.go`, `scene.go`, `view.go` and
   (`blobber.Hotkeys`); Left/Right step a value, Enter steps up and wraps;
   the game is dimmed under the menu; it takes the mouse and the gamepad.
   Other hooks the host sets: `blobber.Voice`, `blobber.OnSaveLoad` (acts
-  like F9), `blobber.OnMainMenu`.
+  like F10), `blobber.OnMainMenu`.
 
 ### 3.8 The compare loop: `compare/compare.py AREA`
 
@@ -793,7 +793,7 @@ the 3D view:
   Resume, Graphics (Fullscreen, Dithered darkness, Light maps, Torch
   intensity, Picture box), Audio (Voice-over), Gameplay (Smooth / Fluid
   movement, Walk speed, Minimap size/opacity, Deskew combat maps, Zoom speed),
-  Save / Load (the F9 slots), Back to Main Menu, Quit; kept in
+  Save / Load (the F10 slots), Back to Main Menu, Quit; kept in
   `data/save/SETTINGS.JSON` (`blobber.OnSettings`).
 - **Mode switching:** F10 swapped the classic and remastered presenters in
   the early milestones; the classic frame was removed later, so the remaster
@@ -1274,7 +1274,7 @@ Everything below is listed with its code pointer in `PORT_CHECKLIST.md`
 
 ### 7.5 Saves and options
 
-- **Named save slots** (`engine/slots.go`, F9 at any prompt): save new /
+- **Named save slots** (`engine/slots.go`, F10 at any prompt): save new /
   overwrite / load / delete, newest first; each slot is a folder
   `data/save/saves/NAME/` in the original file format (`SAVGAMA.DAT`,
   `CHRDATA1..6.*`, plus `MAPS.GOB`, `VOICED.GOB`, `LABELS.TXT`, the portraits and icons);

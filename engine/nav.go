@@ -22,7 +22,7 @@ const (
 )
 
 // modal: a screen over the whole page is up (help, the journal, the full
-// map, the overview, the F9 slots): the screens under it take no click,
+// map, the overview, the F10 slots): the screens under it take no click,
 // and any action closes it.
 func (e *Engine) modal() bool {
 	return slices.ContainsFunc(e.screens, func(s screen) bool {

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Named save slots (extra), F9 at any prompt once a game is under way, and
+// Named save slots (extra), F10 at any prompt once a game is under way, and
 // the party menu's Load (loading only). They replace the original's lettered
 // saves A-J: Save is gone from camp and the party menu, and lettered saves
 // in the save directory (an imported game's) become slots "GAME A".."GAME J".
@@ -218,7 +218,7 @@ func (e *Engine) slotsView() *Slots {
 	return v
 }
 
-// pushSlots puts the F9 screen up (View.Slots): the saves, newest first;
+// pushSlots puts the F10 screen up (View.Slots): the saves, newest first;
 // the list, its cursor and the questions (the name, Overwrite, Delete)
 // are the presenter's. loadOnly (the party menu's Load) offers no saving
 // and leaves after a load; elsewhere a load unwinds to adventure.

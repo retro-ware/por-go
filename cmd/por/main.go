@@ -416,6 +416,8 @@ func biosKey(k gpu.Key) (uint16, bool) {
 		return remaster.KeyF1 + uint16(k-gpu.KeyF1)<<8, true
 	case gpu.KeyF9:
 		return remaster.KeyF9, true
+	case gpu.KeyF10:
+		return remaster.KeyF10, true
 	case gpu.KeyArrowUp, gpu.KeyKP8:
 		return 0x4800, true
 	case gpu.KeyArrowDown, gpu.KeyKP2:
@@ -520,7 +522,7 @@ func main() {
 		os.WriteFile(settingsFile, b, 0o644)
 	}
 	blobber.Repeats = repeats                                                       // the Esc menu repeats held keys and buttons at the game's one rate
-	blobber.OnSaveLoad = func() { eng.Apply(engine.Action{Kind: engine.ActSlots}) } // as F9
+	blobber.OnSaveLoad = func() { eng.Apply(engine.Action{Kind: engine.ActSlots}) } // as F10
 	blobber.OnMainMenu = eng.MainMenu
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {
 		go func() {

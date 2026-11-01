@@ -47,9 +47,8 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.fightKey(k)
 	}
 	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
-		if m, ok := memberKey(k, p.ctx-1, len(v.Party), p.campHome(v)); ok && p.campHome(v) { // camp: another member's menu (Left/Right too)
-			p.send(engine.ActLead, m)
-			p.ctx, p.ctxSel = 1+m, 0
+		if m, ok := memberKey(k, p.ctx-1, len(v.Party), true); p.campHome(v) && (ok || actOf(k) == input.PartyMenu) { // camp: another member's menu, or the party's (F9, Left/Right past the ends)
+			p.campFocus(v, k, m)
 			return true
 		}
 		if _, ok := memberKey(k, 0, len(v.Party), false); ok { // another member: selected (keyAct), their menu opens instead
@@ -343,6 +342,11 @@ func (p *Presenter) Hover(x, y int, down bool) {
 			}
 			p.dragFrom = 0
 		}
+	}
+	if p.campHome(p.shownView) && image.Pt(x, y) != p.pointer { // camp: the window under the pointer takes the focus
+		p.pointer = image.Pt(x, y)
+		p.campHover(p.shownView, x, y)
+		return
 	}
 	if screenUp(p.shownView) && p.ctx == 0 && image.Pt(x, y) != p.pointer { // camp-style screens highlight under the pointer too
 		p.pointer = image.Pt(x, y)

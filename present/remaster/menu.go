@@ -227,7 +227,11 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	}
 	p.menuImg.WritePixels(p.menuBuf)
 
-	window(p.menuImg, p.border.tiles, gpu.GeoM{}, cw, ch, nil)
+	tiles := p.border.tiles
+	if p.menuGrey {
+		tiles = p.border.grey
+	}
+	window(p.menuImg, tiles, gpu.GeoM{}, cw, ch, nil)
 
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)

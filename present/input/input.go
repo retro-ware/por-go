@@ -44,6 +44,7 @@ const (
 	// Any time
 	Help
 	SaveLoad
+	PartyMenu // camp: the party's menu takes the keys (F9)
 	Sound
 	Font
 	FontPrev

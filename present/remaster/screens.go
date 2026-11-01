@@ -299,7 +299,7 @@ func (p *Presenter) screenKeys(v engine.View, items []menuRow) []byte {
 // slotList draws the save slots' list on the page itself, inside the
 // Saved Games box (screenPage): a row a line from row 3 down to above
 // "No saving now", the name at column 3 and the time at 25, as the
-// original-style F9 page; the rows scroll with the selection.
+// original-style F10 page; the rows scroll with the selection.
 func (p *Presenter) slotList(dst *gpu.Image, lines []string, keys []byte, off []bool) {
 	s := &p.scr
 	cols, n := s.pw/8, max(1, s.ph/8-8)

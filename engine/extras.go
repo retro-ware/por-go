@@ -22,7 +22,7 @@ import (
 //	       menu screens); P switches between items and the View page
 //	Ctrl-F next text font (Ctrl-Shift-F the one before; fonts.go)
 //	Q    quickstart on the empty party menu: a ready-made party of six
-//	F9   named save slots: save and load at any time (slots.go)
+//	F10  named save slots: save and load at any time (slots.go)
 //
 // One set of navigation keys for every menu, the mouse and the hint line
 // below the picture are in nav.go.

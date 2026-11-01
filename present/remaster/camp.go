@@ -20,7 +20,6 @@ import (
 // Camp screens.
 const (
 	campMain = iota
-	campRest
 	campMemorize
 	campScribe
 	campBestiary
@@ -78,20 +77,6 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 	cp := v.Camp
 	act := func(k engine.ActKind, n int) func() { return func() { p.send(k, n) } }
 	switch c.screen {
-	case campRest:
-		until := "Until night"
-		if !v.Day {
-			until = "Until day"
-		}
-		var it []menuRow
-		if cp.Healing {
-			it = append(it, menuRow{"Heal", 'H', act(engine.ActRest, engine.RestHeal)})
-		}
-		return "Rest", append(it,
-			menuRow{"Memorize", 'M', act(engine.ActRest, engine.RestMemorize)},
-			menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)},
-			menuRow{until, 'U', act(engine.ActRest, engine.RestUntil)},
-			menuRow{"Exit", 'E', c.back(campMain)})
 	case campMemorize, campScribe:
 		list, title := cp.Book, "Spells to memorize"
 		if c.screen == campScribe {
@@ -132,7 +117,16 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 			{"Yes", 'Y', func() { p.send(engine.ActDropMember, selectedIndex(v)); c.back(campMain)() }},
 			{"No", 'N', c.back(campMain)}}
 	}
-	it := []menuRow{{"Rest", 'R', c.to(campRest, 0)}} // the party's: each member's own are on their card's menu (drawCampMenus)
+	var it []menuRow // the party's, the rests first: each member's own are on their card's menu (drawCampMenus)
+	if cp.Healing {
+		it = append(it, menuRow{"Until healed", 'H', act(engine.ActRest, engine.RestHeal)})
+	}
+	until := menuRow{"Until night", 'N', act(engine.ActRest, engine.RestUntil)}
+	if !v.Day {
+		until = menuRow{"Until day", 'D', act(engine.ActRest, engine.RestUntil)}
+	}
+	it = append(it, menuRow{"Until memorized", 'M', act(engine.ActRest, engine.RestMemorize)},
+		menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)}, until)
 	if len(cp.Bestiary) > 0 {
 		it = append(it, menuRow{"Bestiary", 'B', c.to(campBestiary, 0)})
 	}
@@ -155,10 +149,53 @@ func (p *Presenter) drawCampMenus(dst *gpu.Image, v engine.View) {
 		if p.ctx == 1+i {
 			sel = p.ctxSel
 		}
+		p.menuGrey = p.ctx != 1+i // the focus's border red, the others' grey
 		rs, box := p.cardMenu(dst, i, lines, keys, sel)
+		p.menuGrey = false
 		p.campCtx = append(p.campCtx, rs)
 		if p.ctx == 1+i {
 			p.ctxActs, p.ctxKeys, p.ctxRects, p.ctxBox = acts, keys, append(p.ctxRects[:0], rs...), box
+		}
+	}
+}
+
+// campFocus moves camp's one focus for key k: F1-F8 to member m's menu,
+// Left/Right (the pad's d-pad) round the party's menu (ctx 0) and the
+// members' (ctx 1+i), F9 to the party's menu.
+func (p *Presenter) campFocus(v engine.View, k uint16, m int) {
+	n := len(v.Party) + 1
+	switch a := actOf(k); a {
+	case input.PartyMenu:
+		p.ctx = 0
+		return
+	case input.Left, input.PrevMember:
+		p.ctx = (p.ctx + n - 1) % n
+	case input.Right, input.NextMember:
+		p.ctx = (p.ctx + 1) % n
+	default:
+		p.ctx = 1 + m
+	}
+	p.ctxSel = 0
+	if p.ctx > 0 {
+		p.send(engine.ActLead, p.ctx-1)
+	}
+}
+
+// campHover gives the focus to the camp window under the pointer (x, y)
+// and its line the highlight: the party's menu, or a member's (who is
+// then selected).
+func (p *Presenter) campHover(v engine.View, x, y int) {
+	if i := slices.IndexFunc(p.menuRects, image.Pt(x, y).In); i >= 0 {
+		p.ctx, p.camp.sel = 0, p.camp.top+i
+		return
+	}
+	for i, rs := range p.campCtx {
+		if j := slices.IndexFunc(rs, image.Pt(x, y).In); j >= 0 {
+			if p.ctx != 1+i {
+				p.send(engine.ActLead, i)
+			}
+			p.ctx, p.ctxSel = 1+i, j
+			return
 		}
 	}
 }
@@ -282,7 +319,12 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 		p.menuRects = slices.Clone(p.winRects)
 		return
 	}
-	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, c.sel-c.top, k, cx, top)
+	sel := c.sel - c.top
+	if p.campHome(v) && p.ctx > 0 { // a member's menu has the focus
+		sel, p.menuGrey = -1, true
+	}
+	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, sel, k, cx, top)
+	p.menuGrey = false
 	p.menuBar(dst, p.menuRects, n, len(lines), &c.top, &c.sel, k)
 }
 
@@ -298,9 +340,9 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 		p.campSpellAt(v, c.sel, -1)
 	case spells && a == input.More && c.sel < n-1: // +: one more
 		p.campSpellAt(v, c.sel, 1)
+	case actOf(k) == input.PartyMenu:
 	case member && p.campHome(v): // the member's menu takes the keys
-		p.send(engine.ActLead, m)
-		p.ctx, p.ctxSel = 1+m, 0
+		p.campFocus(v, k, m)
 	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
 		p.send(engine.ActLead, m)
 	default:

@@ -43,7 +43,7 @@ const (
 	ActMap               // the full map (M)
 	ActOverview          // the party overview, on the View page the items (P)
 	ActHelp              // the help pages (?)
-	ActSlots             // the save slots (F9)
+	ActSlots             // the save slots (F10)
 	ActFont              // the next text font (N -1: the one before)
 	ActSound             // sound on or off (Ctrl-S)
 	ActResize            // the window shows X by Y text cells (40x25 at least): the page takes that size and the screen draws itself again
