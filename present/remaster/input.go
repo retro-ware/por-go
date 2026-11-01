@@ -195,7 +195,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			p.screenKey(27, v)
 			right = false
 		}
-		if v.Picker != nil || v.Creation != nil { // the icon editor keeps its spots
+		if v.Picker != nil || v.Creation != nil || v.IconEditor != nil {
 			if in {
 				p.screenMouse(cx, cy, left, v)
 			}

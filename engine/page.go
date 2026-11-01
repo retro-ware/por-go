@@ -26,22 +26,6 @@ type Picture struct {
 	Colour       color.RGBA
 }
 
-// Overlay is a picture the window draws over the page at its own
-// resolution: the part Src of Img (empty: all of it) scaled into the
-// page rectangle At (a portrait).
-type Overlay struct {
-	Img     image.Image
-	Src, At image.Rectangle
-}
-
-// Part is the rectangle of Img the overlay shows.
-func (o Overlay) Part() image.Rectangle {
-	if o.Src.Empty() {
-		return o.Img.Bounds()
-	}
-	return o.Src
-}
-
 // layer is one drawing call: w by h pixels d at at (mask: the value left
 // out, -1 none), or a fill of colour fill (d nil).
 type layer struct {
@@ -59,12 +43,11 @@ type layer struct {
 }
 
 type pageState struct {
-	layers   []layer
-	overlays []Overlay
-	held     int      // Hold depth: the page is not published meanwhile
-	frameUp  bool     // DrawMainFrame's boxes are still whole
-	pal      pal.Regs // the palette the layers' images are in
-	ids      uint64   // layers drawn
+	layers  []layer
+	held    int      // Hold depth: the page is not published meanwhile
+	frameUp bool     // DrawMainFrame's boxes are still whole
+	pal     pal.Regs // the palette the layers' images are in
+	ids     uint64   // layers drawn
 }
 
 // draw records l over the page: layers it hides go, and text cells it
@@ -139,9 +122,8 @@ func (e *Engine) clearPage() {
 }
 
 // newPage ends what belongs to the page being replaced: the sheet's
-// portrait overlay and box, the icon's drop.
+// page (its portrait box), the icon's drop.
 func (e *Engine) newPage() {
-	e.pg.overlays = nil
 	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox, e.snap.sheet = CellRect{}, nil, CellRect{}, nil
 }
 
@@ -205,9 +187,6 @@ func (e *Engine) pageView(v *View) {
 	v.Lines = make([][]PaneRun, textRows)
 	for y, row := range e.cells() {
 		v.Lines[y] = e.runs(row)
-	}
-	if !e.modal() { // a screen over the whole page hides the portraits and the pane
-		v.Overlays = pg.overlays
 	}
 	if pg.frameUp && !e.modal() {
 		v.Pane = e.pane()

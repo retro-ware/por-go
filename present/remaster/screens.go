@@ -374,7 +374,8 @@ func (p *Presenter) pickerTake(pk *engine.Picker, i int) {
 }
 
 // screenMouse takes the pointer on a page screen's page at cell (cx, cy):
-// the picker's pictures and pager, the creation sheet's parts.
+// the picker's pictures and pager, the creation sheet's parts, the icon
+// editor's.
 func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 	s := &p.scr
 	in := func(r engine.CellRect) bool { return image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) }
@@ -398,6 +399,13 @@ func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 			return false
 		}
 		return true
+	}
+	if ed := v.IconEditor; ed != nil && left && s.sub == scrMain {
+		a, ok := iconClick(ed, cx, cy)
+		if ok {
+			p.sendA(a)
+		}
+		return ok
 	}
 	cr := v.Creation
 	if cr == nil || !left || v.Picker != nil || s.sub != scrMain {

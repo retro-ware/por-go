@@ -134,7 +134,9 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 
 // ownPage: v shows a screen the presenter lays out from its data
 // (screenPage), drawn anew with each View.
-func ownPage(v engine.View) bool { return v.SheetPage != nil || v.Picker != nil || v.Slots != nil }
+func ownPage(v engine.View) bool {
+	return v.SheetPage != nil || v.Picker != nil || v.Slots != nil || v.IconEditor != nil
+}
 
 // modal: v shows a screen over the whole page (help, the journal, the
 // full map, the overview), drawn from its data over the page under it.
@@ -351,9 +353,6 @@ func (p *Presenter) drawPage(dst *gpu.Image, v engine.View, note Note) Rect {
 		dst.DrawImage(img, op)
 	}
 	os := append([]overlay(nil), p.pg.overs...)
-	for _, o := range v.Overlays {
-		os = append(os, overlay{Img: o.Img, Src: o.Src, At: o.At})
-	}
 	if v.Pages != nil {
 		for _, s := range v.Pages.Scans {
 			os = append(os, overlay{Img: s.Img, Src: s.Src, At: s.At})

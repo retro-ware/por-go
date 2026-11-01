@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"image"
 	"slices"
 	"strconv"
 	"strings"
@@ -321,16 +320,6 @@ func (e *Engine) SheetPortrait() {
 	}
 	e.LoadPortrait(charArt, int(portraitHead[c.PortHead]), int(portraitBody[c.PortBody]))
 	e.DrawPortrait(box.X1, 1, true)
-}
-
-// fit is the largest rectangle of b's shape inside r, centred across and
-// on r's bottom edge (a portrait stands on its frame's foot).
-func fit(b, r image.Rectangle) image.Rectangle {
-	w, h := r.Dx(), b.Dy()*r.Dx()/max(b.Dx(), 1)
-	if h > r.Dy() {
-		w, h = b.Dx()*r.Dy()/max(b.Dy(), 1), r.Dy()
-	}
-	return image.Rect(0, 0, w, h).Add(r.Min.Add(image.Pt((r.Dx()-w)/2, r.Dy()-h)))
 }
 
 // ItemsMenu (ovr20:0EF8, pushItems): the character's items with Ready, Use, Trade,

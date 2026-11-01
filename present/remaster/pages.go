@@ -150,6 +150,9 @@ func screenPage(v engine.View) *cellPage {
 	if pk := v.Picker; pk != nil {
 		c.picker(pk)
 	}
+	if ed := v.IconEditor; ed != nil {
+		c.iconEditor(ed)
+	}
 	if sl := v.Slots; sl != nil { // over the page under (DrawBoxTitled)
 		c.box(1, 1, c.cols-2, c.rows-2, inkWhite, "Saved Games")
 		if !sl.CanSave && !sl.LoadOnly {
@@ -324,4 +327,59 @@ func (c *cellPage) picker(pk *engine.Picker) {
 			c.str(r.X1+12, r.Y1+3, inkGreen, pk.Classes[i])
 		}
 	}
+}
+
+// iconEditor lays the combat icon editor's page out (the engine's
+// icondesign.go draws the swatches): the frame, the poses, the words.
+func (c *cellPage) iconEditor(ed *engine.IconEditor) {
+	c.border(1, 1, c.cols-2, c.rows-3)
+	for p, r := range ed.PoseAt {
+		if ed.Poses[p] != nil {
+			c.overs = append(c.overs, overlay{Img: ed.Poses[p], At: r.Pixels()})
+		}
+	}
+	c.str(ed.PoseAt[0].X1+2, ed.PoseAt[0].Y1-1, inkWhite, "ready")
+	c.str(ed.PoseAt[1].X1+2, ed.PoseAt[1].Y1-1, inkWhite, "action")
+	c.str(ed.Head.X1, ed.Head.Y1, inkGreen, "Head")
+	c.str(ed.Weapon.X1, ed.Weapon.Y1, inkGreen, "Weapon")
+	size := "small"
+	if ed.Large {
+		size = "large"
+	}
+	c.str(ed.Size.X1, ed.Size.Y1, inkGreen, "Size "+size)
+	c.str(ed.Names.X1, ed.Names.Y1-1, inkWhite, "Colours")
+	c.str(ed.Parts.X1, ed.Parts.Y1-1, inkWhite, "1  2")
+	for i, name := range engine.IconParts {
+		c.str(ed.Names.X1, ed.Names.Y1+i, inkGreen, name)
+	}
+}
+
+// iconClick is what a click on cell (cx, cy) of the icon editor does.
+func iconClick(ed *engine.IconEditor, cx, cy int) (engine.Action, bool) {
+	in := func(r engine.CellRect) bool { return cx >= r.X1 && cx <= r.X2 && cy >= r.Y1 && cy <= r.Y2 }
+	head, weapon := engine.Action{Kind: engine.ActPicker, N: engine.PickIconHead}, engine.Action{Kind: engine.ActPicker, N: engine.PickWeapon}
+	switch {
+	case in(ed.Head):
+		return head, true
+	case in(ed.Weapon):
+		return weapon, true
+	case in(ed.Size):
+		return engine.Action{Kind: engine.ActIconSize}, true
+	case in(ed.Parts):
+		return engine.Action{Kind: engine.ActIconColour, N: cy - ed.Parts.Y1, X: (cx - ed.Parts.X1) / 3, Y: -1}, true
+	case in(ed.Palette):
+		if v := ed.Colours[(cy-ed.Palette.Y1)*8+(cx-ed.Palette.X1)/2]; v >= 0 {
+			return engine.Action{Kind: engine.ActIconColour, N: ed.Part, X: ed.Shade, Y: v}, true
+		}
+		return engine.Action{}, false
+	}
+	for _, r := range ed.PoseAt { // the head on the poses' upper part, the weapon below
+		if in(engine.CellRect{X1: r.X1, Y1: r.Y1, X2: r.X2, Y2: r.Y1 + 3}) {
+			return head, true
+		}
+		if in(engine.CellRect{X1: r.X1, Y1: r.Y1 + 4, X2: r.X2, Y2: r.Y2}) {
+			return weapon, true
+		}
+	}
+	return engine.Action{}, false
 }

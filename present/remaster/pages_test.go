@@ -176,6 +176,25 @@ func TestCreationPage(t *testing.T) {
 		t.Fatal("no icon editor")
 	}
 	golden(t, "icon", v)
+	ed := v.IconEditor
+	for _, k := range []struct {
+		x, y int
+		want engine.Action
+	}{
+		{ed.Head.X1, ed.Head.Y1, engine.Action{Kind: engine.ActPicker, N: engine.PickIconHead}},
+		{ed.PoseAt[1].X1, ed.PoseAt[1].Y1 + 5, engine.Action{Kind: engine.ActPicker, N: engine.PickWeapon}},
+		{ed.Size.X2, ed.Size.Y1, engine.Action{Kind: engine.ActIconSize}},
+		{ed.Parts.X1 + 3, ed.Parts.Y1 + 2, engine.Action{Kind: engine.ActIconColour, N: 2, X: 1, Y: -1}},
+		{ed.Palette.X1 + 3, ed.Palette.Y1 + 1, engine.Action{Kind: engine.ActIconColour, N: ed.Part, X: ed.Shade, Y: ed.Colours[9]}},
+	} {
+		if a, ok := iconClick(ed, k.x, k.y); !ok || a != k.want {
+			t.Errorf("click %d,%d: %+v, want %+v", k.x, k.y, a, k.want)
+		}
+	}
+	if v = settled(e, engine.Action{Kind: engine.ActIconSize}); v.IconEditor == nil || v.IconEditor.Large == ed.Large {
+		t.Error("Size not taken")
+	}
+	settled(e, engine.Action{Kind: engine.ActIconSize})
 	v = settled(e, engine.Action{Kind: engine.ActPicker, N: engine.PickWeapon})
 	golden(t, "pickweapon", v)
 }
@@ -198,11 +217,7 @@ func TestPartyPages(t *testing.T) {
 
 func screenDump(v engine.View) string {
 	c := screenPage(v)
-	overs := c.overs
-	for _, o := range v.Overlays {
-		overs = append(overs, overlay{Img: o.Img, Src: o.Src, At: o.At})
-	}
-	return dump(c.lines(), c.pics, overs)
+	return dump(c.lines(), c.pics, c.overs)
 }
 
 // The spell lists' title replaces the sheet's name row (SpellList: a box

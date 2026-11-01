@@ -149,49 +149,49 @@ func (p *Pane) Shown() bool {
 
 // View is one published snapshot.
 type View struct {
-	Pane      *Pane // the main screen's frame is up (not combat, a sheet, a shop, the title): its text pane (nil otherwise)
-	Window    Window
-	Area      AreaID
-	X, Y      int
-	Facing    Dir
-	Day       bool       // 6:00 to 20:00, when the scripts show the day sky
-	Inside    bool       // the party stands on an inside square (the original's inside sky colour)
-	Exploring bool       // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
-	CanCast   bool       // ... and the selected member has a spell to cast (ActCastPick)
-	Camp      *Camp      // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
-	Temple    *Temple    // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
-	Shop      *Shop      // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
-	Training  *Training  // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
-	Sheet     *Sheet     // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
-	SheetPage *SheetPage // the character sheet's page is up (the sheet, the creation's, the spell lists over it): the presenter draws it
-	Creation  *Creation  // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
-	Picker    *Picker    // a grid picker (the page): ActPicked, ActPage; ActClose leaves
-	Slots     *Slots     // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
-	Ask       *Ask       // a question waits for its answer (eclask.go): menu, list, typed line, member, key, pause (the presenter's to pace) or spell
-	Party     []Member
-	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
-	Battle    *Battle        // the combat map (nil outside combat)
-	Events    []CombatEvent  // what happened in the fight since the last Apply, in order (Apply's View only)
-	Inventory *Inventory     // the inventory screen is up (nil otherwise)
-	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
-	Pictures  []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
-	Lines     [][]PaneRun    // the page's text over Pictures, a row each as runs (Pane's way; the screens' layout is still the engine's, step 4)
-	Cells     image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
-	Overlays  []Overlay      // pictures over everything at the window's resolution (the portraits of the sheets and pickers)
-	Ink       [16]color.RGBA // the text colours (EGA 0..15) in the page's palette now
-	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
-	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
-	IconDrop  bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
-	IconBox   CellRect       // the creation sheet's combat icon (zero elsewhere): a PNG dropped on it becomes the icon (ActIcon)
-	Pages     *Pages         // help or the journal is up (a box round the whole page)
-	FullMap   *FullMap       // the full-screen map is up
-	Overview  bool           // the party overview is up (from Party): any key closes it
-	Ordering  bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
-	MainMenu  []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
-	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
-	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
-	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
-	Ticks     bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
+	Pane       *Pane // the main screen's frame is up (not combat, a sheet, a shop, the title): its text pane (nil otherwise)
+	Window     Window
+	Area       AreaID
+	X, Y       int
+	Facing     Dir
+	Day        bool        // 6:00 to 20:00, when the scripts show the day sky
+	Inside     bool        // the party stands on an inside square (the original's inside sky colour)
+	Exploring  bool        // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	CanCast    bool        // ... and the selected member has a spell to cast (ActCastPick)
+	Camp       *Camp       // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
+	Temple     *Temple     // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
+	Shop       *Shop       // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
+	Training   *Training   // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
+	Sheet      *Sheet      // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
+	IconEditor *IconEditor // the combat icon editor is up (the page; IconDrop): the presenter lays it out and takes its clicks
+	SheetPage  *SheetPage  // the character sheet's page is up (the sheet, the creation's, the spell lists over it): the presenter draws it
+	Creation   *Creation   // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
+	Picker     *Picker     // a grid picker (the page): ActPicked, ActPage; ActClose leaves
+	Slots      *Slots      // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
+	Ask        *Ask        // a question waits for its answer (eclask.go): menu, list, typed line, member, key, pause (the presenter's to pace) or spell
+	Party      []Member
+	Border     [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
+	Battle     *Battle        // the combat map (nil outside combat)
+	Events     []CombatEvent  // what happened in the fight since the last Apply, in order (Apply's View only)
+	Inventory  *Inventory     // the inventory screen is up (nil otherwise)
+	Map        image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
+	Pictures   []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
+	Lines      [][]PaneRun    // the page's text over Pictures, a row each as runs (Pane's way; the screens' layout is still the engine's, step 4)
+	Cells      image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
+	Ink        [16]color.RGBA // the text colours (EGA 0..15) in the page's palette now
+	Spots      []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
+	Portrait   CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
+	IconDrop   bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
+	IconBox    CellRect       // the creation sheet's combat icon (zero elsewhere): a PNG dropped on it becomes the icon (ActIcon)
+	Pages      *Pages         // help or the journal is up (a box round the whole page)
+	FullMap    *FullMap       // the full-screen map is up
+	Overview   bool           // the party overview is up (from Party): any key closes it
+	Ordering   bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
+	MainMenu   []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
+	Logo       image.Image    // the title's lettering on transparent black, with MainMenu
+	Backdrop   image.Image    // the Amiga painted title under MainMenu (nil: black)
+	Seq        uint64         // counts the Views published: a presenter redraws the page on a new one
+	Ticks      bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
 }
 
 // SheetPage is what the character sheet's page shows (CharacterSheet),
@@ -429,6 +429,7 @@ type snapState struct {
 	sheetOn      bool                   // a character sheet is up over the combat map
 	portrait     CellRect               // the sheet's portrait box while a sheet is up
 	sheet        *SheetPage             // the character sheet's page while it is up (View.SheetPage)
+	icon         *IconEditor            // the icon editor's page while it is up (View.IconEditor)
 	iconDrop     func(image.Image)      // the icon editor, or the creation sheet, takes a dropped PNG while it is up (nil elsewhere)
 	iconBox      CellRect               // the creation sheet's icon: the cells that take the drop (zero: the whole screen)
 	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
@@ -530,6 +531,10 @@ func (e *Engine) publish() {
 	} else if s.sheet != nil {
 		sp := *s.sheet
 		v.SheetPage = &sp
+	}
+	if s.icon != nil && e.mode() == modeIcon {
+		ed := *s.icon
+		v.IconEditor = &ed
 	}
 	for i := range v.Ink {
 		v.Ink[i] = e.pal.RGBA(byte(i))

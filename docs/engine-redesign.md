@@ -394,3 +394,11 @@ presenter's layout of the new data must give the same.
   the engine only the DAX pictures. The save slots draw nothing on the
   engine's page any more (no saveScreen): the presenter's box, title and
   "No saving now" from View.Slots.
+- The combat icon editor: `View.IconEditor` (the poses as pictures over
+  their boxes, Size, the words', the parts' and the palette's cells, the
+  palette's colour numbers, the swatch selected); the presenter draws the
+  frame, the poses and the words and maps the clicks to ActPicker,
+  ActIconSize and ActIconColour (iconClick) where the engine's regions
+  (View.Spots) took them. The swatches stay engine fills. Its frame is
+  View.Border's EGA cells, no longer the symbols in the combat palette.
+  View.Overlays had no users left and is gone (and engine.Overlay, fit).

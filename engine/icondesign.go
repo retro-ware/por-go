@@ -30,15 +30,34 @@ const (
 	idPaletteCol  = 2
 )
 
-// iconParts are the parts in IconColour order, with their colours' names
-// where they are not shades (the hair and the face share a part).
-var iconParts = [6]string{"Body", "Arm", "Leg", "Hair/Face", "Shield", "Weapon"}
+// IconParts are the parts in IconColour order (the hair and the face
+// share a part).
+var IconParts = [6]string{"Body", "Arm", "Leg", "Hair/Face", "Shield", "Weapon"}
+
+// IconEditor is the combat icon editor's page (View.IconEditor), in cells:
+// the presenter lays it out and takes its clicks. A click on Head or the
+// poses' upper half opens ActPicker PickIconHead, on Weapon or their lower
+// half PickWeapon, on Size ActIconSize; on Parts' row N, colour (X-X1)/3
+// selects that swatch (ActIconColour N, X, -1); on the palette's cell the
+// selected swatch (Part, Shade) takes its colour.
+type IconEditor struct {
+	Poses              [2]image.Image // ready and action, drawn over PoseAt at the window's resolution
+	PoseAt             [2]CellRect
+	Large              bool // Size: large (else small)
+	Head, Weapon, Size CellRect
+	Names              CellRect // the parts' names, a row each
+	Parts              CellRect // their two swatches, 2 cells wide and 3 apart
+	Palette            CellRect // the colours, 8 a row, 2 cells each
+	Colours            [16]int  // the colour number in each palette cell, row-major (-1: empty)
+	Part, Shade        int      // the swatch the palette sets
+}
 
 // pushIcon puts the designer up on the selected character (the creation,
 // camp's Icon).
 func (e *Engine) pushIcon() {
 	c := e.selected()
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
+	e.ClearCells(1, 1, winRight, winBottom) // DrawBoxTitled (its frame is the presenter's)
+	e.newPage()
 	e.combatViewLeave() // ovr32:00E3: the combat palette, black shown dark grey so the icon's black shows
 	head, weapon, size, icon := c.IconHead, c.IconBody, c.IconSize, c.Icon
 	var colours [6]byte
@@ -96,31 +115,29 @@ func (e *Engine) pushIcon() {
 	show = func() {
 		build()
 		layout()
-		e.ClearCells(1, 1, winRight, winBottom)
-		var o []Overlay
+		e.ClearCells(1, 1, winRight, winBottom) // the text, the frame, the poses and the clicks are the presenter's (View.IconEditor)
+		ed := &IconEditor{Large: c.IconSize == 2, Part: part, Shade: shade,
+			Head: CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow}, Weapon: CellRect{idWordsCol, idPreviewRow + 1, idWordsCol + 5, idPreviewRow + 1},
+			Size:  CellRect{idWordsCol, idPreviewRow + 2, idWordsCol + 9, idPreviewRow + 2},
+			Names: CellRect{idPartCol, idPartRow, idSwatchCol - 1, idPartRow + 5}, Parts: CellRect{idSwatchCol, idPartRow, idSwatchCol + 4, idPartRow + 5},
+			Palette: CellRect{idPaletteCol, idPaletteRow, idPaletteCol + 15, idPaletteRow + 1}}
 		for p := 0; p < 2; p++ {
 			x := idPreviewCols + 11*p
-			at := image.Rect(x*8, idPreviewRow*8, x*8+72, idPreviewRow*8+72)
+			ed.PoseAt[p] = CellRect{x, idPreviewRow, x + 8, idPreviewRow + 8}
 			if c.Icon != nil {
-				o = append(o, Overlay{Img: iconPose(c.Icon, p, false), At: at})
+				ed.Poses[p] = iconPose(c.Icon, p, false)
 			} else if im := e.icons[0xC][p]; im != nil {
-				o = append(o, Overlay{Img: e.layerRGBA(layer{d: im.Frame(0), w: im.Width * 8, mask: im.Mask}), At: at})
+				ed.Poses[p] = e.layerRGBA(layer{d: im.Frame(0), w: im.Width * 8, mask: im.Mask})
 			}
 		}
-		e.pg.overlays = o
-		e.DisplayString(idPreviewCols+2, idPreviewRow-1, colWhite, "ready")
-		e.DisplayString(idPreviewCols+11+2, idPreviewRow-1, colWhite, "action")
-		e.DisplayString(idWordsCol, idPreviewRow, colLightGreen, "Head")
-		e.DisplayString(idWordsCol, idPreviewRow+1, colLightGreen, "Weapon")
-		sizeName := "small"
-		if c.IconSize == 2 {
-			sizeName = "large"
+		for i, v := range cells {
+			ed.Colours[i] = -1
+			if v != noCell {
+				ed.Colours[i] = int(v)
+			}
 		}
-		e.DisplayString(idWordsCol, idPreviewRow+2, colLightGreen, "Size "+sizeName)
-		e.DisplayString(idPartCol, idPartRow-1, colWhite, "Colours")
-		e.DisplayString(idSwatchCol, idPartRow-1, colWhite, "1  2")
-		for i, name := range iconParts {
-			e.DisplayString(idPartCol, idPartRow+i, colLightGreen, name)
+		e.snap.icon = ed
+		for i := range IconParts {
 			for s := 0; s < 2; s++ {
 				frame := colDarkGrey
 				if i == part && s == shade {
@@ -152,35 +169,7 @@ func (e *Engine) pushIcon() {
 			*pic = was
 		}, func(i int) bool { *pic = byte(i); return true })
 	}
-	mark := e.regionMark()
-	draw := func() {
-		e.regionCut(mark)
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colBlack, "")
-		show()
-		hot := func(x0, y0, x1, y1 int, a Action) {
-			e.addRegion(region{x0: x0, y0: y0, x1: x1, y1: y1, click: func(int, int) Action { return a }})
-		}
-		head, weapon := Action{Kind: ActPicker, N: PickIconHead}, Action{Kind: ActPicker, N: PickWeapon}
-		hot(idWordsCol, idPreviewRow, idWordsCol+5, idPreviewRow, head)
-		hot(idWordsCol, idPreviewRow+1, idWordsCol+5, idPreviewRow+1, weapon)
-		hot(idWordsCol, idPreviewRow+2, idWordsCol+9, idPreviewRow+2, Action{Kind: ActIconSize})
-		for p := 0; p < 2; p++ { // the poses: the head on their upper part, the weapon below
-			x := idPreviewCols + 11*p
-			hot(x, idPreviewRow, x+8, idPreviewRow+3, head)
-			hot(x, idPreviewRow+4, x+8, idPreviewRow+8, weapon)
-		}
-		e.addRegion(region{x0: idSwatchCol, y0: idPartRow, x1: idSwatchCol + 4, y1: idPartRow + 5, click: func(cx, cy int) Action {
-			return Action{Kind: ActIconColour, N: cy - idPartRow, X: (cx - idSwatchCol) / 3, Y: -1}
-		}})
-		e.addRegion(region{x0: idPaletteCol, y0: idPaletteRow, x1: idPaletteCol + 15, y1: idPaletteRow + 1, click: func(cx, cy int) Action {
-			v := cells[(cy-idPaletteRow)*8+(cx-idPaletteCol)/2]
-			if v == noCell {
-				return Action{}
-			}
-			return Action{Kind: ActIconColour, N: part, X: shade, Y: int(v)}
-		}})
-	}
-	off := e.redrawWith(draw)
+	off := e.redrawWith(show)
 	e.push(modeIcon, func(a Action) bool {
 		switch a.Kind {
 		case ActPicker:
@@ -216,12 +205,11 @@ func (e *Engine) pushIcon() {
 		default:
 			return false
 		}
-		draw()
+		show()
 		return false
 	}, func() {
 		off()
-		e.regionCut(mark)
-		e.snap.iconDrop, e.pg.overlays = nil, nil
+		e.snap.iconDrop, e.snap.icon = nil, nil
 		build()
 		e.iconCopy(0xC, order, false)
 		e.ClearRow24()
@@ -232,5 +220,5 @@ func (e *Engine) pushIcon() {
 		}
 		e.combatViewEnter() // ovr32:0105
 	})
-	draw()
+	show()
 }
