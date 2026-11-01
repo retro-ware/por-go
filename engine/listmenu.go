@@ -8,10 +8,11 @@ package engine
 // ListNode is a line of a list: header lines (Flag non-zero) and Dim ones
 // are not picked.
 type ListNode struct {
-	Text string
-	Flag byte
-	Dim  bool // (extra) greyed out and not picked, as headers
-	Grey bool // (extra) greyed out but picked like any line (a creation drop-down's entry that forces changes)
+	Text  string
+	Flag  byte
+	Dim   bool // (extra) greyed out and not picked, as headers
+	Grey  bool // (extra) greyed out but picked like any line (a creation drop-down's entry that forces changes)
+	Spell int  // (extra) the line's spell, 0 for none: the presenter shows its rules
 	// Without (extra): options left out while this line is the one chosen
 	Without []string
 }

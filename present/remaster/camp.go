@@ -348,7 +348,7 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, sel, k, cx, top)
 	p.menuGrey = false
 	p.menuBar(dst, p.menuRects, n, len(lines), &c.top, &c.sel, k)
-	if p.spellList(v) && c.sel < len(c.ids) && len(p.menuRects) > 0 {
+	if (p.spellList(v) || v.Training != nil && len(v.Training.Learn) > 0) && c.sel < len(c.ids) && len(p.menuRects) > 0 {
 		p.drawSpellTip(dst, c.ids[c.sel], k, cx)
 	}
 }

@@ -14,8 +14,10 @@ func (p *Presenter) trainItems(v engine.View) (string, []menuRow) {
 	switch {
 	case len(t.Learn) > 0:
 		var it []menuRow
+		p.camp.ids = p.camp.ids[:0]
 		for _, s := range t.Learn {
 			it = append(it, menuRow{s.Name, 0, func() { p.sendX(engine.ActLearn, -1, s.ID) }})
+			p.camp.ids = append(p.camp.ids, s.ID)
 		}
 		return t.Name + " may add a spell to the book", it
 	case t.Why != "":

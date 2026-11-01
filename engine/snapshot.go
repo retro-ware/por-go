@@ -363,6 +363,7 @@ type ListLine struct {
 	Dim     bool     // greyed out
 	Off     bool     // not chosen (headings, some greyed lines)
 	Without []string // options (MenuItem.Text) left out while this line is chosen
+	Spell   int      // the line's spell (its rules shown beside), 0 for none
 }
 
 // MenuItem is one option: its text and its hotkey.

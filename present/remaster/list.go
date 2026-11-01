@@ -71,6 +71,9 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 		sel = &l.sel
 	}
 	p.menuBar(dst, p.menuRects, n, min(n, listRows), &l.top, sel, k)
+	if i := p.listLine(v); i >= 0 && askList(v)[i].Spell != 0 && len(p.menuRects) > 0 {
+		p.drawSpellTip(dst, askList(v)[i].Spell, k, cx)
+	}
 }
 
 // listKeys are the hotkeys of the list's lines then its options: the

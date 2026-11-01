@@ -123,7 +123,7 @@ func (e *Engine) addSpellLine(spell byte) {
 	if spell > 0x7F {
 		prefix = " *"
 	}
-	e.spellList = append(e.spellList, &ListNode{Text: cut(prefix+e.spellName(int(spell&0x7F)), textCols)})
+	e.spellList = append(e.spellList, &ListNode{Text: cut(prefix+e.spellName(int(spell&0x7F)), textCols), Spell: int(spell & 0x7F)})
 	e.spellIDs = append(e.spellIDs, spell&0x7F)
 }
 

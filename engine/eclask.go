@@ -140,7 +140,7 @@ func (e *Engine) showAsk() {
 func listLines(list []*ListNode) []ListLine {
 	l := make([]ListLine, len(list))
 	for i, n := range list {
-		l[i] = ListLine{Text: n.Text, Header: n.Flag != 0, Dim: n.Dim || n.Grey, Off: n.skipped(), Without: n.Without}
+		l[i] = ListLine{Text: n.Text, Header: n.Flag != 0, Dim: n.Dim || n.Grey, Off: n.skipped(), Without: n.Without, Spell: n.Spell}
 	}
 	return l
 }
