@@ -182,6 +182,9 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	}
 	rgb := pal.EGA
 	green, white, dim := rgb(10), rgb(15), rgb(8)
+	if p.logGrey {
+		green = rgb(7) // the battle Log's light grey
+	}
 	clear(p.menuBuf)
 	for i := 3; i < len(p.menuBuf); i += 4 {
 		p.menuBuf[i] = 255

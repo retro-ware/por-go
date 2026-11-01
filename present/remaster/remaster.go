@@ -94,6 +94,7 @@ type Presenter struct {
 	inv                  inventory                // the inventory screen (inventory.go)
 	fightView            *engine.Battle           // the combat map last drawn
 	replay               replay                   // the fight's events still to play
+	logGrey              bool                     // drawMenu's plain text light grey, not green (the battle Log)
 	fightLog             bool                     // the battle Log is up (fight.go)
 	fightCard            image.Rectangle          // the active member's card (fight.go): left click the inventory, right click the sheet
 	rowsImg              *gpu.Image               // the combat rows, drawn at scale 1

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"gpu"
@@ -82,7 +84,9 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 	case p.fightLog:
 		var lines []string
 		for _, m := range b.Log {
-			lines = append(lines, engine.WrapWords(m, 36)...)
+			for _, l := range engine.WrapWords(m, 36) {
+				lines = append(lines, logInk(l))
+			}
 		}
 		if len(lines) == 0 {
 			lines = []string{"Nothing has happened yet."}
@@ -90,7 +94,9 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 		n := len(lines)
 		p.logTop = min(max(p.logTop, 0), max(0, n-logRows))
 		lines = lines[p.logTop:min(n, p.logTop+logRows)]
+		p.logGrey = true
 		p.drawMenu(dst, glyph, "Battle Log", lines, make([]byte, len(lines)), nil, -1, k, cx, int(k)*16)
+		p.logGrey = false
 		p.menuBar(dst, p.menuRects, n, len(lines), &p.logTop, nil, k)
 		p.menuRects = p.menuRects[:0]
 	}
@@ -374,4 +380,38 @@ func (p *Presenter) cast(i int) {
 	case !fromBar: // the game waits for the pick: give it up
 		p.send(engine.ActClose, 0)
 	}
+}
+
+// logSpecial are the battle Log's events drawn in gold: spells, backstabs, the fallen.
+var logSpecial = regexp.MustCompile(`(?i)backstab|spell|casting|goes down|dying|killed|dies|slain`)
+
+// logInk marks a battle Log line: its numbers (the damage) red, a special
+// event's line gold, the rest in the log's grey.
+func logInk(l string) string {
+	gold := logSpecial.MatchString(l)
+	var b strings.Builder
+	mark := func() { // opens or closes the gold span
+		if gold {
+			b.WriteByte(inkGold)
+		}
+	}
+	mark()
+	for i := 0; i < len(l); i++ {
+		if l[i] >= '0' && l[i] <= '9' {
+			j := i
+			for j < len(l) && l[j] >= '0' && l[j] <= '9' {
+				j++
+			}
+			mark()
+			b.WriteByte(inkRed)
+			b.WriteString(l[i:j])
+			b.WriteByte(inkRed)
+			mark()
+			i = j - 1
+			continue
+		}
+		b.WriteByte(l[i])
+	}
+	mark()
+	return b.String()
 }
