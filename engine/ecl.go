@@ -564,7 +564,7 @@ func (e *Engine) Gosub(i int) {
 // at the edge the party stays put. A step out through an open side
 // (checkEdge set LeftMap) lands on the far edge as in the original, since
 // that is the entry square the next area keeps (west out of Phlan, in at
-// the east edge).
+// the east edge): an area change, not a wrap within the map.
 func (e *Engine) StepForward() {
 	x, y := e.posX+dirDX[e.facing], e.posY+dirDY[e.facing]
 	if e.game.LeftMap != 0 {

@@ -47,8 +47,13 @@ game should keep them:
 - **Never scale an asset against its aspect ratio.** Pop-ups, pictures,
   portraits, journal scans and textures are scaled by whole factors or fitted
   with the ratio kept.
-- **Game maps never wrap.** The original repeats a town map past its edge for
-  most area kinds; the port treats that as a bug and cuts it everywhere.
+- **Game maps never wrap.** The original wraps every step off the map to
+  the far edge (ovr15:0765) and wraps map reads outside areas 0 and 0xA
+  (ovr30:037B); where no script catches the edge (Kobold Caves, Valjevo
+  Castle) the party walked through to the other side. A deliberate
+  departure: off-map reads are 0 everywhere and an uncaught step off the map
+  bumps. Scripted exits still work (LeftMap, the on-move script, and
+  StepForward's far-edge entry square for the next area).
 - **Verify against the reference, not by eye.** Textures, colours, blocks,
   models and animations are checked against the original data (the compare
   sheets of section 3.8, the engine's own tile decoders), not by visual

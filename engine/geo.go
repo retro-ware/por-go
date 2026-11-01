@@ -31,29 +31,18 @@ var (
 // onMap = ovr30:031F.
 func onMap(x, y int) bool { return x >= 0 && x <= 15 && y >= 0 && y <= 15 }
 
-// wrap brings an off-map coordinate back in like ovr30 does (>15 → 0, <0 → 15).
-func wrap(v int) int {
-	if v > 15 {
-		return 0
-	}
-	if v < 0 {
-		return 15
-	}
-	return v
-}
-
 // offMapSolid is the guard shared by the ovr30 accessors: off the map the
-// answer is 0 when DS:84DC is 0 or 0xA, otherwise the coordinates wrap.
-func (e *Engine) offMapSolid(x, y int) bool {
-	return !onMap(x, y) && (e.gs.areaKind == 0 || e.gs.areaKind == 0xA)
-}
+// answer is 0 (no wall, no way through). extra: in every area; the original
+// did so only when DS:84DC was 0 or 0xA and wrapped the coordinates
+// elsewhere (ovr30:037B), an oversight the port does not keep.
+func (e *Engine) offMapSolid(x, y int) bool { return !onMap(x, y) }
 
 // WallAt = ovr30:047B (x, y, dir): wall value 0..15 on that side of the cell.
 func (e *Engine) WallAt(x, y, dir int) byte {
 	if e.offMapSolid(x, y) {
 		return 0
 	}
-	i := wrap(y)<<4 + wrap(x)
+	i := y<<4 + x
 	switch dir {
 	case 0:
 		return e.gs.geo[i] >> 4
@@ -74,7 +63,6 @@ func (e *Engine) DoorAt(x, y, dir int) byte {
 	if e.offMapSolid(x, y) {
 		return 0
 	}
-	x, y = wrap(x), wrap(y)
 	if e.WallAt(x, y, dir) == 0 {
 		return 1
 	}
@@ -97,7 +85,7 @@ func (e *Engine) MapCell(x, y int) byte {
 	if e.offMapSolid(x, y) {
 		return 0
 	}
-	return e.gs.geo[0x200+wrap(y)<<4+wrap(x)]
+	return e.gs.geo[0x200+y<<4+x]
 }
 
 // Draw3DView = ovr30:05FD (x, y, dir): the first-person view from cell

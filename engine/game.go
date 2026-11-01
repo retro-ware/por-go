@@ -427,7 +427,8 @@ func (e *Engine) Move(then func()) {
 			break
 		}
 		step := func(moved bool) {
-			if moved {
+			// extra: a way off the map no script caught bumps (the original wrapped)
+			if moved && onMap(e.posX+dirDX[e.facing], e.posY+dirDY[e.facing]) {
 				e.stepAhead()
 			} else {
 				e.PlaySound(sndBump)
@@ -662,11 +663,12 @@ func (e *Engine) knock() bool {
 	return true
 }
 
-// stepAhead = ovr15:073B: walk one cell (wrapping), look, and let time pass.
+// stepAhead = ovr15:073B: walk one cell, look, and let time pass. extra:
+// the original wrapped an off-map step to the far edge; Move blocks it.
 func (e *Engine) stepAhead() {
 	// the step sound plays once the loop sees the square change (ovr04:3395)
-	e.posX = wrap(e.posX + dirDX[e.facing])
-	e.posY = wrap(e.posY + dirDY[e.facing])
+	e.posX += dirDX[e.facing]
+	e.posY += dirDY[e.facing]
 	e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing)
 	e.run.doorTry = [3]byte{1, 1, 1}
 	e.es.cell = e.MapCell(e.posX, e.posY)
