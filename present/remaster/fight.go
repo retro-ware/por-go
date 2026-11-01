@@ -6,7 +6,6 @@ import (
 	"math"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"gpu"
@@ -73,7 +72,7 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 	case p.fightLog:
 		var lines []string
 		for _, m := range b.Log {
-			lines = append(lines, wrap(m, 36)...)
+			lines = append(lines, engine.WrapWords(m, 36)...)
 		}
 		if len(lines) == 0 {
 			lines = []string{"Nothing has happened yet."}
@@ -89,7 +88,7 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 
 // drawTipOver draws a tooltip (title, lines) at scale k above r, kept on screen.
 func (p *Presenter) drawTipOver(dst *gpu.Image, title string, lines []string, k int, r image.Rectangle) {
-	rows := append(wrap(title, 24), "")
+	rows := append(engine.WrapWords(title, 24), "")
 	rows = append(rows, lines...)
 	w := 0
 	for _, l := range rows {
@@ -245,21 +244,6 @@ func (p *Presenter) fightClick(x, y int) bool {
 		return true
 	}
 	return p.battle.Click(x, y)
-}
-
-// wrap breaks s into lines of at most n characters at spaces.
-func wrap(s string, n int) (out []string) {
-	l := ""
-	for _, w := range strings.Fields(s) {
-		if l != "" && len(l)+1+len(w) > n {
-			out, l = append(out, l), ""
-		}
-		if l != "" {
-			l += " "
-		}
-		l += w
-	}
-	return append(out, l)
 }
 
 // replay is the events still to play (Play): one held for Ms (or until a

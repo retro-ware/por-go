@@ -121,7 +121,7 @@ func journalLayout(j map[string][]string, titles []string, voiced bool) []string
 			case len(p) <= jrWidth: // as written: keeps the spacing of tables (entry 53)
 				lines = append(lines, p)
 			default:
-				lines = append(lines, wrapText(p, jrWidth)...)
+				lines = append(lines, WrapWords(p, jrWidth)...)
 			}
 			if voiced && p != "" {
 				for i := len(lines) - 1; i >= 0 && lines[i] != ""; i-- {
@@ -146,8 +146,8 @@ const (
 
 func jrRows() int { return messageRow - 1 - jrTop }
 
-// wrapText breaks s into lines of at most w characters at spaces.
-func wrapText(s string, w int) []string {
+// WrapWords breaks s into lines of at most w characters at spaces.
+func WrapWords(s string, w int) []string {
 	var out []string
 	line := ""
 	for _, word := range strings.Fields(s) {

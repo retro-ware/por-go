@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"image/color"
+	"por/engine"
 	"por/pal"
 	"por/present/input"
 	"slices"
@@ -147,7 +148,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	rows, hot, icon := items, hk, make([]image.Image, len(items))
 	copy(icon, icons)
 	if title != "" { // a long question on two lines, so the box stays narrow
-		t := append(wrap(title, 24), "")
+		t := append(engine.WrapWords(title, 24), "")
 		rows, hot, icon = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...), append(make([]image.Image, len(t)), icon...)
 		grey = append(make([]bool, len(t)), grey...)
 		if sel >= 0 {

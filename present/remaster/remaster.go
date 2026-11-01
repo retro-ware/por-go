@@ -330,7 +330,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if p.typing {
 			t, c = p.typed, p.typedCur
 		}
-		top := b.Dy()/2 - int(mk*float64(len(wrap(typing(v).Prompt, 24))+5)*4)
+		top := b.Dy()/2 - int(mk*float64(len(engine.WrapWords(typing(v).Prompt, 24))+5)*4)
 		if picBottom > 0 { // never over the picture: right under it
 			top = max(top, picBottom+int(pk*4))
 		}
