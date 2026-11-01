@@ -65,7 +65,6 @@ type extras struct {
 	fonts  []pcFont // the fonts in data/assets/fonts (*.f8), then the PC fonts
 	redraw func()   // draws the screen up again at the page's size (resizePage); nil: it stays as drawn until its next draw
 	note   string   // shown over the picture for a moment
-	slot   string   // the slot last loaded or saved (View.Slots.Current)
 	pushed int      // screens put up so far (push): a search that put none up found nothing
 	noteAt time.Time
 

@@ -108,7 +108,6 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if !ok {
 		return false
 	}
-	e.ext.slot = name
 	e.ext.seen, e.ext.voiced, e.ext.met, e.ext.beasts = nil, nil, nil, nil
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
@@ -196,7 +195,6 @@ func (e *Engine) saveTo(name string) {
 		e.refuse("Save failed")
 		return
 	}
-	e.ext.slot = name
 	e.say("Game saved successfully") // extra: the note, on the slot page and the page under it
 }
 
@@ -213,9 +211,12 @@ func (e *Engine) slotsView() *Slots {
 	if ss == nil {
 		return nil
 	}
-	v := &Slots{CanSave: e.canSave(ss), LoadOnly: ss.loadOnly, Current: e.ext.slot}
+	v := &Slots{CanSave: e.canSave(ss), LoadOnly: ss.loadOnly}
 	for _, sl := range e.slots() {
 		v.Names, v.Times = append(v.Names, sl.name), append(v.Times, sl.at.Format("Jan 02 15:04"))
+	}
+	if len(v.Names) > 0 {
+		v.Current = v.Names[0] // the last save (newest first), also after a restart
 	}
 	return v
 }

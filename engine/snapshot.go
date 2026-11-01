@@ -352,7 +352,7 @@ type Slots struct {
 	Names, Times []string
 	CanSave      bool   // ActSave is taken (else loading only, or not now)
 	LoadOnly     bool   // the party menu's Load
-	Current      string // the slot last loaded or saved ("" none): the list starts on it
+	Current      string // the last save ("" none): the list starts on it
 }
 
 // Menu is a question waiting for the player: a prompt and its options.
