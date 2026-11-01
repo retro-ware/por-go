@@ -7,7 +7,7 @@ func (e *Engine) MainMenu() { e.Apply(Action{Kind: ActMainMenu}) }
 
 // mainMenu runs ActMainMenu (Apply).
 func (e *Engine) mainMenu() {
-	if e.mode() == modeTitle || e.ext.modal > 0 {
+	if e.mode() == modeTitle || e.modal() {
 		return
 	}
 	e.stopVoice()

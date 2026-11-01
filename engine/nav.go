@@ -73,13 +73,17 @@ func (e *Engine) glowCells(g [4]int, on bool) {
 	}
 }
 
-// modalOn opens a modal screen (help, overview, the F9 slots): any action
-// closes it, but spots it adds itself (its own menus) take clicks.
-func (e *Engine) modalOn() func() {
-	floor := e.ext.floor
-	e.ext.modal++
-	e.ext.floor = e.regionMark()
-	return func() { e.ext.modal--; e.ext.floor = floor }
+// modal: a screen over the whole page is up (help, the journal, the full
+// map, the overview, the F9 slots): the spots of the screens under it take
+// no hover or click, and any action closes it.
+func (e *Engine) modal() bool {
+	return slices.ContainsFunc(e.screens, func(s screen) bool {
+		switch s.mode {
+		case modeSlots, modeHelp, modeJournal, modeMap, modeOverview:
+			return true
+		}
+		return false
+	})
 }
 
 // addRegion makes r clickable until the list is cut back to a mark taken
@@ -88,10 +92,13 @@ func (e *Engine) addRegion(r region) { e.ext.regions = append(e.ext.regions, r) 
 func (e *Engine) regionMark() int    { return len(e.ext.regions) }
 func (e *Engine) regionCut(n int)    { e.glowOn(nil); e.ext.regions = e.ext.regions[:n] }
 
-// spots are the regions above the floor of the open modal screen, as View.Spots.
+// spots are the regions, as View.Spots (none under a modal screen).
 func (e *Engine) spots() []CellRect {
+	if e.modal() {
+		return nil
+	}
 	var s []CellRect
-	for _, r := range e.ext.regions[e.ext.floor:] {
+	for _, r := range e.ext.regions {
 		s = append(s, CellRect{r.x0, r.y0, r.x1, r.y1})
 	}
 	return s
@@ -106,12 +113,12 @@ func (e *Engine) extraAct(a Action) bool {
 	case ActSound:
 		e.soundToggle()
 	case ActHelp:
-		if e.typing() || e.ext.modal > 0 {
+		if e.typing() || e.modal() {
 			return false
 		}
 		e.Help()
 	case ActSlots:
-		if e.mode() == modeTitle || e.ext.modal > 0 {
+		if e.mode() == modeTitle || e.modal() {
 			return false
 		}
 		e.pushSlots(false) // the next decisions go to it, wherever the engine waits (until feeds the top screen)
@@ -161,8 +168,8 @@ func (e *Engine) take(a Action) Action {
 	}
 	switch a.Kind {
 	case ActSpot, ActHover:
-		i := e.ext.floor + a.N
-		if i < e.ext.floor || i >= len(e.ext.regions) { // ActHover -1: the pointer left the spots
+		i := a.N
+		if e.modal() || i < 0 || i >= len(e.ext.regions) { // ActHover -1: the pointer left the spots
 			e.glowOn(nil)
 			return Action{}
 		}
@@ -192,16 +199,9 @@ func (e *Engine) pressed(a Action) bool {
 	case ActOK, ActClose, ActChoose, actHotkey, ActOverview, ActMap, ActMinimap, ActPage, ActLead:
 		return true
 	case ActInventory, ActHelp, ActSlots:
-		return e.ext.modal > 0
+		return e.modal()
 	}
 	return false
-}
-
-// keyThen asks "press a key" (AskKey) over whatever is up; then gets the
-// action that answered.
-func (e *Engine) keyThen(then func(Action)) {
-	var a Action
-	e.asking(func() { e.askKey(func(k Action) { a = k }) }, func() { then(a) })
 }
 
 // rosterRow is the party member listed at cell (cx, cy), or -1.

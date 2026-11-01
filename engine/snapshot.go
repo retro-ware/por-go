@@ -93,6 +93,50 @@ type PaneRun struct {
 	Upcase bool
 }
 
+// Pages is help's or the journal's page (View.Pages), in a box round the
+// whole page: ActPage -1 and +1 page back and on (the journal: scroll a
+// tall picture first), ActClose closes, any other key the next page.
+type Pages struct {
+	Title       PaneRun     // the box's title, on row 1
+	Top         int         // the row of Lines[0]
+	Lines       [][]PaneRun // the page's text, a line a row, X the page's column
+	Scans       []Scan      // the journal's pictures on the page
+	Hint        PaneRun     // on the message row: the page count or the keys
+	Page, Pages int
+}
+
+// Scan is a journal picture (the file Name in journal/): the part Src of
+// Img scaled into the page rectangle At, on paper of colour Paper.
+type Scan struct {
+	Name    string
+	Img     image.Image
+	Src, At image.Rectangle
+	Paper   color.RGBA
+}
+
+// FullMap is the full-screen map (View.FullMap) under its menu bar (Walk,
+// Label, Remove, Exit): ActPoint X, Y moves the cursor.
+type FullMap struct {
+	Name     string      // the map's name, top left
+	Map      image.Image // the squares as the minimap draws them, the legend's letter on each labelled square
+	At       image.Point // the map's top left on the page, in pixels
+	Cell     int         // pixels a square
+	Cursor   image.Point // the cursor's square
+	Legend   []MapLabel  // the legend's lines, from cell LegendAt down
+	LegendAt image.Point
+	Info     string  // the cursor's square and its label, on the message row
+	Label    *string // the label being typed (nil: none), on the prompt row
+}
+
+// MapLabel is a line of the full map's legend: the letter on its squares
+// (in EGA colour Colour, by kind), its text and its first square.
+type MapLabel struct {
+	Letter byte
+	Text   string
+	Colour int
+	First  image.Point
+}
+
 // Shown reports whether the pane holds text.
 func (p *Pane) Shown() bool {
 	for _, l := range p.Lines {
@@ -131,12 +175,14 @@ type View struct {
 	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 	Pictures  []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
 	Text      [][]Cell       // the text cells, over Page: the page's rows of columns (40x25 at least; a larger window gives more, ActResize)
-	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
+	Overlays  []Overlay      // pictures over everything at the window's resolution (the portraits of the sheets and pickers)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
 	IconDrop  bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
 	IconBox   CellRect       // the creation sheet's combat icon (zero elsewhere): a PNG dropped on it becomes the icon (ActIcon)
-	MapCursor *image.Point   // the full map is up: its cursor square; ActPoint X, Y moves it
+	Pages     *Pages         // help or the journal is up (a box round the whole page)
+	FullMap   *FullMap       // the full-screen map is up
+	Overview  bool           // the party overview is up (from Party): any key closes it
 	Ordering  bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
 	MainMenu  []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
@@ -374,8 +420,10 @@ func (e *Engine) publish() {
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
 		Exploring: e.exploring(),
 	}
-	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing() {
-		v.Map = e.mapImage(mapCell)
+	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() {
+		m := e.labels()
+		_, letter, _ := legend(m)
+		v.Map = e.mapImage(&e.ext.mapCache, mapCell, m, letter)
 	}
 	if s.invOn {
 		c := e.selected()
@@ -402,7 +450,7 @@ func (e *Engine) publish() {
 		case modeSheet:
 			v.Sheet = e.sheetView()
 		case modeParty:
-			if e.ext.modal == 0 {
+			if !e.modal() {
 				v.MainMenu, v.Logo, v.Backdrop = e.partyFunctions(), e.titleLogo(), e.titleBackdrop()
 			}
 		}
@@ -422,9 +470,16 @@ func (e *Engine) publish() {
 	}
 	v.Spots, v.Portrait = e.spots(), s.portrait
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.up(modeCamp)
-	if e.ext.fullMap {
-		c := e.ext.mapCursor
-		v.MapCursor = &c
+	switch {
+	case e.ext.pager != nil:
+		v.Pages, _ = e.pagerPage(e.ext.pager)
+	case e.ext.fullMap != nil:
+		v.FullMap = e.fullMapView(e.ext.fullMap)
+	case e.mode() == modeOverview:
+		v.Overview = true
+	}
+	if e.modal() { // the screens under take no drop
+		v.Portrait, v.IconDrop, v.IconBox = CellRect{}, false, CellRect{}
 	}
 	e.pageView(v)
 	v.Party = e.members()

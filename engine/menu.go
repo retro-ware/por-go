@@ -190,18 +190,19 @@ func (q *question) pick(a Action) (p Pick, ok bool) {
 	case ActOK:
 		return Pick{ID: PickEnter}, q.allowEnter || len(q.items) == 0
 	case ActClose: // the Exit option, so it always backs out
-		if e.ext.modal == 0 && q.has('E', "Exit") {
+		if !e.modal() && q.has('E', "Exit") {
 			return q.key('E')
 		}
 		return Pick{ID: NoPick}, true
 	case ActPoint: // the full map's cursor
-		if c := &e.ext.mapCursor; e.ext.fullMap && onMap(a.X, a.Y) {
+		if ms := e.ext.fullMap; ms != nil && onMap(a.X, a.Y) {
+			c := &ms.cursor
 			c.X, c.Y = a.X, a.Y
 			return q.outcome(Pick{ID: PickRedraw})
 		}
 	case ActLead: // Home/End: another member; in a member pick the candidate
 		switch n := a.N; {
-		case n < 0 || n >= len(e.party) || e.ext.modal > 0:
+		case n < 0 || n >= len(e.party) || e.modal():
 		case e.choosing():
 			e.rosterHi, e.rosterNone = e.party[n], false
 			return q.outcome(Pick{ID: PickRedraw})
@@ -211,7 +212,7 @@ func (q *question) pick(a Action) (p Pick, ok bool) {
 		}
 	case ActMember: // a portrait: that member's View page, or the member a list or question is for
 		switch n := a.N; {
-		case e.ext.modal > 0 || n < 0 || n >= len(e.party):
+		case e.modal() || n < 0 || n >= len(e.party):
 		case e.choosing() || e.viewing() || e.eclWait.members:
 			return q.member(n)
 		case q.allowExtra && e.beginFlag != 5:
@@ -220,7 +221,7 @@ func (q *question) pick(a Action) (p Pick, ok bool) {
 		}
 	case ActText:
 	default:
-		if e.ext.modal > 0 { // the slot screen's: any other action is Enter
+		if e.modal() { // the slot screen's: any other action is Enter
 			if a.Kind == ActSlots {
 				return q.outcome(Pick{ID: PickSlots})
 			}
@@ -238,7 +239,7 @@ func (q *question) pick(a Action) (p Pick, ok bool) {
 				return q.key('P')
 			}
 		case ActMap:
-			if e.ext.fullMap && !e.typing() { // M closes the map it opened
+			if e.ext.fullMap != nil && !e.typing() { // M closes the map it opened
 				return q.key('E')
 			}
 			return q.key('M')

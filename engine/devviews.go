@@ -201,6 +201,11 @@ func (e *Engine) DevScene(name string) func() {
 			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, false, "3")
 			e.after(func() { e.journalPrinted("3", false) }, func() { e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true) })
 		}
+	case "talljournal": // a journal entry with a picture taller than wide (entry 37): Up and Down scroll it
+		return func() {
+			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "SEE JOURNAL ENTRY 37.")
+			e.journalPrinted("SEE JOURNAL ENTRY 37.", true)
+		}
 	case "runes": // the Sokal Keep elf's scroll (ECL1 block 21, 9BD7): opClearBox, three opProtection lines
 		return func() {
 			e.snap.win = WinText // as opClearBox

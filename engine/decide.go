@@ -35,6 +35,10 @@ const (
 	modeRest                // camp's rest, five minutes a frame (timed; View.Camp)
 	modeStory               // the finale's pictures (timed)
 	modeCombat              // the fight's rounds, a turn a frame (timed; View.Battle)
+	modeHelp                // View.Pages: the keyboard help
+	modeJournal             // View.Pages: the journal's pager
+	modeMap                 // View.FullMap: the full-screen map
+	modeOverview            // View.Overview: the party overview
 )
 
 // screen is a screen taking decisions: its handler and what leaving it

@@ -25,18 +25,17 @@ func TestItemStats(t *testing.T) {
 	}
 }
 
-func TestModalFloor(t *testing.T) {
+func TestModalSpots(t *testing.T) {
 	e := &Engine{}
 	e.addRegion(region{x0: 0, y0: 0, x1: 39, y1: 24, click: func(int, int) Action { return Action{Kind: actHotkey, N: 'A'} }})
-	off := e.modalOn()
+	e.push(modeHelp, func(Action) bool { return true }, nil)
 	if s := e.spots(); len(s) != 0 {
 		t.Errorf("spots through the modal: %v", s)
 	}
-	e.addRegion(region{x0: 5, y0: 5, x1: 5, y1: 5, click: func(int, int) Action { return Action{Kind: actHotkey, N: 'Y'} }})
-	if k := e.take(Action{Kind: ActSpot, N: 0, X: 5, Y: 5}); k.N != 'Y' {
-		t.Errorf("modal's own spot: %v", k)
+	if k := e.take(Action{Kind: ActSpot, N: 0, X: 1, Y: 1}); k.Kind != ActNone {
+		t.Errorf("a spot under the modal: %v", k)
 	}
-	off()
+	e.screens = nil
 	if k := e.take(Action{Kind: ActSpot, N: 0, X: 1, Y: 1}); k.N != 'A' {
 		t.Errorf("after the modal: %v", k)
 	}

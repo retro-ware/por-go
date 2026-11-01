@@ -32,24 +32,28 @@ import (
 // coloured background (the original only recolours its text, which is the
 // colour the hotkey letters already have).
 
+// mapCache is mapImage's last picture.
+type mapCache struct {
+	pix, scratch []uint8
+	pal          pal.Regs
+	img          image.Image
+}
+
 // extras holds the convenience-feature state.
 type extras struct {
-	minimap  bool                // roster panel shows the minimap
-	seen     map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
-	mapCache struct {            // mapImage's last picture, so an unchanged map is not converted and uploaded again
-		pix, scratch []uint8
-		pal          pal.Regs
-		img          image.Image
-	}
-	voiced   map[string]bool    // voice.go: the recordings this save has heard
-	met      map[string]metIcon // bestiary.go: the monster kinds this save has met
-	beasts   []Beast            // bestiary.go: their entries, as last published
-	creating bool               // CreateCharacter's sheet is up: no level, experience, party items or status on it
-	minStats [6]int             // "Minimal stats": per-stat floor, STR as st*100+str00
-	inGame   bool               // slots.go: GameLoop has started: saving allowed
-	aoe      int                // aoe.go: radius+1 of the spell being aimed, 0 none
-	bolt     [2]int             // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
-	aoeSpell int                // aoe.go: the spell being aimed
+	minimap   bool                // roster panel shows the minimap
+	seen      map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
+	mapCache  mapCache            // View.Map's last picture (mapImage)
+	fullCache mapCache            // View.FullMap's
+	voiced    map[string]bool     // voice.go: the recordings this save has heard
+	met       map[string]metIcon  // bestiary.go: the monster kinds this save has met
+	beasts    []Beast             // bestiary.go: their entries, as last published
+	creating  bool                // CreateCharacter's sheet is up: no level, experience, party items or status on it
+	minStats  [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
+	inGame    bool                // slots.go: GameLoop has started: saving allowed
+	aoe       int                 // aoe.go: radius+1 of the spell being aimed, 0 none
+	bolt      [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
+	aoeSpell  int                 // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
 	held          Action   // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
@@ -59,16 +63,14 @@ type extras struct {
 	castCancelled bool       // CastSpell: the player cancelled the aim (the turn goes on)
 	castYes       bool       // castAsks: yes to "Lose it?" / "Use it?"
 	castOn        *Character // castAsks: the member the spell goes on (nil: none)
-	modal         int        // help or overview shown: any key closes
 	enemiesOnly   bool       // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
-	floor         int        // regions below belong to the screen under the modal one
 
 	// fullmap.go
-	labels    map[int]map[int]mapLabel // per area: square -> label
-	fullMap   bool                     // the full-screen map is up
-	mapCursor image.Point              // its cursor square
-	walk      *walkState               // walk.go: the party walks to a square
-	back      bool                     // Down stepped backwards: Move turns the party round again
+	labels  map[int]map[int]mapLabel // per area: square -> label
+	fullMap *mapScreen               // the full-screen map, while up (modeMap)
+	pager   *pager                   // help's or the journal's pager, while up
+	walk    *walkState               // walk.go: the party walks to a square
+	back    bool                     // Down stepped backwards: Move turns the party round again
 
 	// fonts.go
 	font   int          // 0: the game's font, else fonts[font-1]
@@ -188,53 +190,11 @@ func (e *Engine) statusName(c *Character) string {
 	return statusNames[c.Status]
 }
 
-// PartyOverview shows every member's state on one screen until a key is
-// pressed, then puts the adventuring screen back.
+// PartyOverview puts up the party overview (View.Overview: every member's
+// state from View.Party) until a key is pressed, then the adventuring
+// screen again.
 func (e *Engine) PartyOverview() {
-	defer e.modalOn()()
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "Party")
-	y := 3
-	e.DisplayString(2, y, colWhite, "Name")
-	e.DisplayString(18, y, colWhite, "HP")
-	e.DisplayString(26, y, colWhite, "AC")
-	e.DisplayString(30, y, colWhite, "Status")
-	y += 2
-	for i, c := range e.party {
-		if y > 0x14 {
-			break
-		}
-		colour := colLightCyan
-		if i == e.partySel {
-			colour = colWhite
-		}
-		e.DisplayString(2, y, colour, cut(c.Name(), 15))
-		hp, max := int(c.HP), int(c.MaxHP)
-		hpc := 0xA
-		switch {
-		case hp <= 0:
-			hpc = 0xC
-		case hp*2 < max:
-			hpc = 0xE
-		}
-		e.DisplayString(18, y, hpc, strconv.Itoa(hp)+"/"+strconv.Itoa(max))
-		e.displayAC(c, 0x1A, y)
-		e.DisplayString(30, y, colLightGreen, e.statusName(c))
-		// Hit point bar, 32 pixels wide, under the name.
-		px, py := 2*8, (y+1)*8+2
-		w := 0
-		if max > 0 && hp > 0 {
-			w = (hp*0x20 + max - 1) / max
-			if w > 0x20 {
-				w = 0x20
-			}
-		}
-		e.fill(px, py, px+0x20*4, py+3, 8)
-		e.fill(px, py, px+w*4, py+3, uint8(hpc))
-		y += 2
-	}
-	e.PromptRow24(colWhite, "press any key to continue")
-	e.ClearRow24()
-	e.DrawMainScreen()
+	e.push(modeOverview, e.pressed, e.DrawMainScreen)
 }
 
 // viewDrawn runs after the 3D view is drawn: remember what the party saw
@@ -288,52 +248,26 @@ var helpLines = [][2]string{
 	{"?", "this help, any time"},
 }
 
-// Help shows the keyboard reference over whatever is on screen and puts
-// the screen back when closed: headings in white, keys in yellow. It runs
-// over pages: a key shows the next, ActPage -1 the one before, Esc closes.
-func (e *Engine) Help() {
-	off := e.modalOn()
-	restore := e.saveScreen()
+// Help puts up the keyboard reference (View.Pages) over whatever is on
+// screen: a key shows the next page, ActPage -1 the one before, Esc closes.
+func (e *Engine) Help() { e.pushPager(modeHelp, &pager{title: "Help"}) }
+
+// helpPage is page p of the help: headings in white, keys in yellow.
+func (e *Engine) helpPage(p int) *Pages {
 	pages := helpPages()
-	p := 0
-	show := func() {
-		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Help")
-		for i, l := range pages[p] {
-			if l[1] == "" {
-				e.DisplayString(2, 2+i, colWhite, l[0])
-				continue
-			}
-			e.DisplayString(3, 2+i, colYellow, l[0])
-			e.DisplayString(helpCol, 2+i, colLightGreen, l[1])
+	pg := &Pages{Title: e.boxTitle("Help"), Top: 2, Page: p, Pages: len(pages)}
+	for _, l := range pages[p] {
+		if l[1] == "" {
+			pg.Lines = append(pg.Lines, []PaneRun{e.textRun(2, colWhite, l[0])})
+			continue
 		}
-		if len(pages) > 1 {
-			more := "page " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
-			e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
-		}
+		pg.Lines = append(pg.Lines, []PaneRun{e.textRun(3, colYellow, l[0]), e.textRun(helpCol, colLightGreen, l[1])})
 	}
-	undo := e.redrawWith(show)
-	var page func()
-	page = func() {
-		if p >= len(pages) {
-			restore()
-			undo()
-			off()
-			return
-		}
-		show()
-		e.keyThen(func(a Action) {
-			switch {
-			case a.Kind == ActClose:
-				p = len(pages)
-			case a.Kind == ActPage && a.N < 0:
-				p = max(p-1, 0)
-			default:
-				p++
-			}
-			page()
-		})
+	if len(pages) > 1 {
+		more := "page " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
+		pg.Hint = e.textRun(winRight-1-len(more), colLightGreen, more)
 	}
-	page()
+	return pg
 }
 
 // helpCol is where the descriptions start; they end before the border.

@@ -297,15 +297,3 @@ func (e *Engine) askPause(ms int, then func()) {
 			return true
 		}}
 }
-
-// askKey is "press any key": then gets the action that answered.
-func (e *Engine) askKey(then func(Action)) {
-	e.eclWait = &eclWait{ask: Ask{Kind: AskKey},
-		apply: func(a Action) bool {
-			if !e.pressed(a) {
-				return false
-			}
-			then(a)
-			return true
-		}}
-}

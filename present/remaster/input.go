@@ -33,7 +33,8 @@ var keypadScan = [...]uint16{0x4F00, 0x5000, 0x5100, 0x4B00, 0x4C00, 0x4D00, 0x4
 func (p *Presenter) arrow(k uint16, v engine.View) {
 	back := k == 0x4800 || k == 0x4B00 || k == 0x4900 || k == 0x4700
 	on := k == 0x5000 || k == 0x4D00 || k == 0x5100 || k == 0x4F00
-	if c := v.MapCursor; c != nil {
+	if fm := v.FullMap; fm != nil {
+		c := fm.Cursor
 		d := map[uint16]image.Point{0x4800: {0, -1}, 0x5000: {0, 1}, 0x4B00: {-1, 0}, 0x4D00: {1, 0}}[k]
 		if d != (image.Point{}) {
 			c := c.Add(d)
@@ -220,6 +221,22 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	}
 	if r := v.Portrait; left && in && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) { // Shift-click on the sheet's portrait: the next head
 		p.send(engine.ActHead, -1)
+		return
+	}
+	if fm := v.FullMap; fm != nil && left && in && typing(v) == nil { // the full map: a square takes the cursor, a second click names it; a legend line goes to its first square
+		px, py := cx*8+4-fm.At.X, cy*8+4-fm.At.Y
+		sq := image.Pt(px/fm.Cell, py/fm.Cell)
+		switch i := cy - fm.LegendAt.Y; {
+		case px >= 0 && py >= 0 && sq.In(image.Rect(0, 0, 16, 16)) && cx*8 < fm.At.X+16*fm.Cell && cy*8 < fm.At.Y+16*fm.Cell:
+			if sq == fm.Cursor {
+				p.send(engine.ActChoose, menuIndex(askMenu(v), 'L'))
+			} else {
+				p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: sq.X, Y: sq.Y})
+			}
+		case cx >= fm.LegendAt.X && i >= 0 && i < len(fm.Legend):
+			s := fm.Legend[i].First
+			p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: s.X, Y: s.Y})
+		}
 		return
 	}
 	spot := -1

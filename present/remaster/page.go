@@ -6,6 +6,8 @@ import (
 	"image/draw"
 	"math"
 	"slices"
+	"strconv"
+	"strings"
 
 	xdraw "golang.org/x/image/draw"
 
@@ -111,7 +113,7 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 		}
 		pg.img, pg.px, pg.drawn = gpu.NewImage(w, h), image.NewRGBA(image.Rect(0, 0, w, h)), false
 	}
-	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
+	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || !modal(v) && samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
 		pg.seq = v.Seq
 		return pg.img
 	}
@@ -126,11 +128,131 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 			}
 		}
 	}
+	drawModal(m, v, note)
 	if note.Show {
 		noteLine(m, note, h-8)
 	}
 	pg.img.WritePixels(m.Pix)
 	return pg.img
+}
+
+// modal: v shows a screen over the whole page (help, the journal, the
+// full map, the overview), drawn from its data over the page under it.
+func modal(v engine.View) bool { return v.Pages != nil || v.FullMap != nil || v.Overview }
+
+// drawModal draws v's screen over the whole page (modal) into m as the
+// game draws such a page: a box round it, text in the game's font.
+func drawModal(m *image.RGBA, v engine.View, note Note) {
+	if !modal(v) {
+		return
+	}
+	cols, rows := m.Rect.Dx()/8, m.Rect.Dy()/8
+	run := func(r engine.PaneRun, y int) {
+		for i := 0; i < len(r.Text); i++ {
+			glyphAt(m, note.Font(r.Text[i], r.Upcase), (r.X+i)*8, y*8, r.Fg, r.Bg)
+		}
+	}
+	str := func(x, y, c int, s string) { // DisplayString
+		run(engine.PaneRun{X: x, Text: s[:max(0, min(len(s), cols-x))], Fg: col(c), Bg: col(0), Upcase: true}, y)
+	}
+	fill := func(r image.Rectangle, c color.RGBA) { draw.Draw(m, r, image.NewUniform(c), image.Point{}, draw.Src) }
+	box := func(x2, y2 int) { // DrawBoxTitled(1, 1, x2, y2): the inside cleared, the border's cells round it
+		fill(image.Rect(8, 8, x2*8+8, y2*8+8), col(0))
+		tile := func(i, x, y int) {
+			if t := v.Border[i]; t != nil {
+				draw.Draw(m, image.Rect(x*8, y*8, x*8+8, y*8+8), t, t.Bounds().Min, draw.Over)
+			}
+		}
+		for _, c := range [][2]int{{0, 0}, {x2 + 1, 0}, {0, y2 + 1}, {x2 + 1, y2 + 1}} {
+			tile(0, c[0], c[1])
+		}
+		for x := 1; x <= x2; x++ {
+			tile(2, x, 0)
+			tile(2, x, y2+1)
+		}
+		for y := 1; y <= y2; y++ {
+			tile(1, 0, y)
+			tile(1, x2+1, y)
+		}
+	}
+	prompt := func(s string, c int) { // the prompt row cleared, s on it
+		str(0, rows-1, 0, strings.Repeat(" ", cols))
+		str(0, rows-1, c, s)
+	}
+	switch {
+	case v.Pages != nil:
+		pg := v.Pages
+		box(cols-2, rows-2)
+		run(pg.Title, 1)
+		for _, s := range pg.Scans { // the paper; the scan goes over the window (drawOverlays)
+			fill(s.At, s.Paper)
+		}
+		for i, l := range pg.Lines {
+			for _, r := range l {
+				run(r, pg.Top+i)
+			}
+		}
+		run(pg.Hint, rows-2)
+	case v.FullMap != nil:
+		fm := v.FullMap
+		lx := fm.LegendAt.X
+		fill(m.Rect, col(0))
+		str(0, 0, 15, fm.Name[:min(len(fm.Name), lx-1)])
+		str(lx, 0, 15, "Labels")
+		for i, l := range fm.Legend {
+			str(lx, fm.LegendAt.Y+i, l.Colour, string(l.Letter))
+			str(lx+2, fm.LegendAt.Y+i, 10, l.Text[:min(len(l.Text), 0x28-lx-2)])
+		}
+		str(1, rows-2, 11, fm.Info[:min(len(fm.Info), 0x26)])
+		draw.Draw(m, fm.Map.Bounds().Add(fm.At), fm.Map, fm.Map.Bounds().Min, draw.Over)
+		n, c := fm.Cell, fm.At.Add(fm.Cursor.Mul(fm.Cell))
+		for _, r := range []image.Rectangle{image.Rect(0, 0, n, 1), image.Rect(0, n-1, n, n), image.Rect(0, 0, 1, n), image.Rect(n-1, 0, n, n)} {
+			fill(r.Add(c), col(14))
+		}
+		if fm.Label != nil {
+			prompt("Label: ", 13)
+			str(7, rows-1, 15, *fm.Label+"_")
+		}
+	case v.Overview:
+		box(cols-2, rows-3)
+		const title = "Party"
+		str((cols-1-len(title))/2, 1, 15, title)
+		y := 3
+		str(2, y, 15, "Name")
+		str(18, y, 15, "HP")
+		str(26, y, 15, "AC")
+		str(30, y, 15, "Status")
+		y += 2
+		for _, c := range v.Party {
+			if y > 0x14 {
+				break
+			}
+			colour := 11
+			if c.Selected {
+				colour = 15
+			}
+			str(2, y, colour, c.Name[:min(len(c.Name), 15)])
+			hpc := 10
+			switch {
+			case c.HP <= 0:
+				hpc = 12
+			case c.HP*2 < c.MaxHP:
+				hpc = 14
+			}
+			str(18, y, hpc, strconv.Itoa(c.HP)+"/"+strconv.Itoa(c.MaxHP))
+			str(26, y, 10, strconv.Itoa(c.AC))
+			str(30, y, 10, c.Status)
+			w := 0 // the hit point bar under the name, 32 steps
+			if c.MaxHP > 0 && c.HP > 0 {
+				w = min((c.HP*0x20+c.MaxHP-1)/c.MaxHP, 0x20)
+			}
+			px, py := 2*8, (y+1)*8+2
+			fill(image.Rect(px, py, px+0x20*4, py+3), col(8))
+			fill(image.Rect(px, py, px+w*4, py+3), col(hpc))
+			y += 2
+		}
+		prompt("press any key to continue", 15)
+	}
 }
 
 // drawPictures draws pics on black into m, whose top left is page pixel
@@ -228,7 +350,13 @@ func (p *Presenter) drawPage(dst *gpu.Image, v engine.View, note Note) Rect {
 		op.GeoM.Translate(r.X, r.Y)
 		dst.DrawImage(img, op)
 	}
-	p.drawOverlays(dst, v.Overlays, r, w, h)
+	os := v.Overlays
+	if v.Pages != nil {
+		for _, s := range v.Pages.Scans {
+			os = append(os, engine.Overlay{Img: s.Img, Src: s.Src, At: s.At})
+		}
+	}
+	p.drawOverlays(dst, os, r, w, h)
 	return r
 }
 

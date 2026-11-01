@@ -168,80 +168,133 @@ func wrapText(s string, w int) []string {
 	return append(out, line)
 }
 
-// showJournal pages through lines ("\x00" marks a title) until the last
-// page or Esc, then puts the screen back. On a page with a tall picture,
-// Up and Down (and the wheel) scroll it. The box is the whole page; a
-// resize pages the text again for the new height. box is the border's
-// title.
-func (e *Engine) showJournal(box string, lines []string) {
-	off := e.modalOn()
-	restore := e.saveScreen()
-	pages := journalPages(lines)
-	p, pageOff := 0, 0
-	var draw func(p, off int) (maxOff int)
-	undo := e.redrawWith(func() {
-		pages = journalPages(lines)
-		p = min(p, len(pages)-1)
-		draw(p, pageOff)
-	})
-	draw = func(p, off int) (maxOff int) {
-		e.setOverlays(nil)
-		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, box) // the border runs round the page
-		page := pages[p]
-		for i, l := range page {
-			switch {
-			case strings.HasPrefix(l, "\x00"):
-				e.DisplayString(2, jrTop+i, colYellow, l[1:])
-				e.speak(strings.ReplaceAll(l[1:], " ", "_")) // per page: the Enter that turns it silences the last one
-			case strings.HasPrefix(l, "\x03"):
-				key, text, _ := strings.Cut(l[1:], "\x03")
-				e.DisplayString(2, jrTop+i, colWhite, text)
-				e.speak(key) // the paragraphs that start on this page, in order
-			case strings.HasPrefix(l, "\x01"):
-				maxOff = max(maxOff, e.drawPicture(journalPicture(l[1:]), 2*8+jrWidth*4, (jrTop+i)*8, pictureRows(page[i:])*8, off))
-			case l != "\x02":
-				e.DisplayString(2, jrTop+i, colWhite, l)
-			}
-		}
-		more := "press a key"
-		if p < len(pages)-1 {
-			more = "more: " + strconv.Itoa(p+1) + "/" + strconv.Itoa(len(pages))
-		}
-		if maxOff > 0 {
-			more = "up/down: scroll, " + more
-		}
-		e.DisplayString(winRight-1-len(more), messageRow, colLightGreen, more)
-		return maxOff
-	}
-	var show func() // the page p at pageOff, until a key turns it
-	show = func() {
-		if p >= len(pages) {
-			e.setOverlays(nil)
-			restore()
-			undo()
-			off()
-			return
-		}
-		maxOff := draw(p, pageOff)
-		e.keyThen(func(a Action) {
-			up, down := a.Kind == ActPage && a.N < 0, a.Kind == ActPage && a.N > 0
-			switch {
-			case a.Kind == ActClose:
-				p = len(pages)
-			case maxOff > 0 && up:
-				pageOff = max(pageOff-16, 0)
-			case maxOff > 0 && down && pageOff < maxOff: // at the bottom, Down pages on
-				pageOff = min(pageOff+16, maxOff)
-			default:
-				p, pageOff = p+1, 0
-			}
-			show()
-		})
-	}
-	show()
+// pager is help's or the journal's state (modeHelp, modeJournal): the
+// page shown and how far a tall picture on it is scrolled.
+type pager struct {
+	title   string
+	lines   []string // the journal's (journalLayout); none: the help
+	p, off  int
+	journal bool
 }
 
-func (e *Engine) setOverlays(o []Overlay) { e.pg.overlays = o }
+// showJournal pages through lines ("\x00" marks a title) until the last
+// page or Esc (View.Pages). On a page with a tall picture, ActPage -1 and
+// +1 scroll it. The box is the whole page; a resize pages the text again
+// for the new height. box is the border's title.
+func (e *Engine) showJournal(box string, lines []string) {
+	e.pushPager(modeJournal, &pager{title: box, lines: lines, journal: true})
+}
+
+// pushPager puts the pager pg up as screen m.
+func (e *Engine) pushPager(m screenMode, pg *pager) {
+	under := e.ext.pager
+	e.ext.pager = pg
+	e.push(m, func(a Action) bool { return e.applyPager(pg, a) }, func() { e.ext.pager = under })
+	e.speakPage(pg)
+}
+
+// applyPager turns the page (or scrolls its picture) on a key; done after
+// the last page or on Esc.
+func (e *Engine) applyPager(pg *pager, a Action) (done bool) {
+	if !e.pressed(a) {
+		return false
+	}
+	page, maxOff := e.pagerPage(pg)
+	up, down := a.Kind == ActPage && a.N < 0, a.Kind == ActPage && a.N > 0
+	switch {
+	case a.Kind == ActClose:
+		return true
+	case !pg.journal && up:
+		pg.p = max(pg.p-1, 0)
+	case maxOff > 0 && up:
+		pg.off = max(pg.off-16, 0)
+	case maxOff > 0 && down && pg.off < maxOff: // at the bottom, Down pages on
+		pg.off = min(pg.off+16, maxOff)
+	default:
+		pg.p, pg.off = pg.p+1, 0
+	}
+	if pg.p >= page.Pages {
+		return true
+	}
+	e.speakPage(pg)
+	return false
+}
+
+// pagerPage is pg's page as View.Pages shows it, and how far its tall
+// picture scrolls (0: none).
+func (e *Engine) pagerPage(pg *pager) (*Pages, int) {
+	if !pg.journal {
+		pages := helpPages()
+		pg.p = min(pg.p, len(pages)-1)
+		return e.helpPage(pg.p), 0
+	}
+	pages := journalPages(pg.lines)
+	pg.p = min(pg.p, len(pages)-1) // a resize may have left fewer
+	page := pages[pg.p]
+	v := &Pages{Title: e.boxTitle(pg.title), Top: jrTop, Page: pg.p, Pages: len(pages)}
+	maxOff := 0
+	for i, l := range page {
+		var line []PaneRun
+		switch {
+		case strings.HasPrefix(l, "\x00"):
+			line = []PaneRun{e.textRun(2, colYellow, l[1:])}
+		case strings.HasPrefix(l, "\x03"):
+			_, text, _ := strings.Cut(l[1:], "\x03")
+			line = []PaneRun{e.textRun(2, colWhite, text)}
+		case strings.HasPrefix(l, "\x01"):
+			name := l[1:]
+			if sc, off := e.journalScan(name, 2*8+jrWidth*4, (jrTop+i)*8, pictureRows(page[i:])*8, pg.off); sc != nil {
+				v.Scans = append(v.Scans, *sc)
+				maxOff = max(maxOff, off)
+			}
+		case l != "\x02":
+			line = []PaneRun{e.textRun(2, colWhite, l)}
+		}
+		v.Lines = append(v.Lines, line)
+	}
+	more := "press a key"
+	if pg.p < len(pages)-1 {
+		more = "more: " + strconv.Itoa(pg.p+1) + "/" + strconv.Itoa(len(pages))
+	}
+	if maxOff > 0 {
+		more = "up/down: scroll, " + more
+	}
+	v.Hint = e.textRun(winRight-1-len(more), colLightGreen, more)
+	return v, maxOff
+}
+
+// speakPage speaks the journal page's title and the paragraphs that start
+// on it, in order (once each: the Enter that turns the page silences the
+// last).
+func (e *Engine) speakPage(pg *pager) {
+	if !pg.journal {
+		return
+	}
+	pages := journalPages(pg.lines)
+	for _, l := range pages[min(pg.p, len(pages)-1)] {
+		switch {
+		case strings.HasPrefix(l, "\x00"):
+			e.speak(strings.ReplaceAll(l[1:], " ", "_"))
+		case strings.HasPrefix(l, "\x03"):
+			key, _, _ := strings.Cut(l[1:], "\x03")
+			e.speak(key)
+		}
+	}
+}
+
+// textRun is s as DisplayString draws it at column x in colour: on black,
+// upcased, cut at the page's edge.
+func (e *Engine) textRun(x, colour int, s string) PaneRun {
+	s = s[:max(0, min(len(s), 255, textCols-x))]
+	return PaneRun{X: x, Text: s, Fg: e.pal.RGBA(uint8(colour)), Bg: e.pal.RGBA(colBlack), Upcase: true}
+}
+
+// boxTitle is the title DrawBoxTitled centres on the top row of a box
+// round the whole page.
+func (e *Engine) boxTitle(t string) PaneRun {
+	t = t[:min(len(t), 0x28)]
+	return e.textRun((1+winRight-len(t))/2, colWhite, t)
+}
 
 // journalPages cuts lines into pages of at most jrRows; a page does not
 // start or end with a blank line or end with a title, and a picture is not split:
@@ -328,15 +381,17 @@ func pictureRows(lines []string) int {
 	return n
 }
 
-// drawPicture puts a journal picture centred on x, top at y, at most maxH
-// high: paper white on the screen, the scan itself over it at the window's
-// resolution. One taller than that shrinks to fit, or, if taller than
-// wide, shows maxH of it from off pixels down; it returns how far it
-// scrolls (0: not at all).
-func (e *Engine) drawPicture(im image.Image, x, y, maxH, off int) (maxOff int) {
+// journalScan places the journal picture name centred on x, top at y, at
+// most maxH high (View.Pages' Scan): the scan on paper white, at the
+// window's resolution. One taller than that shrinks to fit, or, if taller
+// than wide, shows maxH of it from off pixels down; it returns how far it
+// scrolls (0: not at all). nil: no such picture.
+func (e *Engine) journalScan(name string, x, y, maxH, off int) (*Scan, int) {
+	im := journalPicture(name)
 	if im == nil {
-		return 0
+		return nil, 0
 	}
+	maxOff := 0
 	w, h := pictureSize(im)
 	src := im.Bounds()
 	switch {
@@ -348,8 +403,5 @@ func (e *Engine) drawPicture(im image.Image, x, y, maxH, off int) (maxOff int) {
 	case h > maxH:
 		w, h = w*maxH/h, maxH
 	}
-	r := image.Rect(x-w/2, y, x-w/2+w, y+h)
-	e.fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, 15)
-	e.pg.overlays = append(e.pg.overlays, Overlay{Img: im, Src: src, At: r})
-	return maxOff
+	return &Scan{Name: name, Img: im, Src: src, At: image.Rect(x-w/2, y, x-w/2+w, y+h), Paper: e.pal.RGBA(15)}, maxOff
 }

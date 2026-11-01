@@ -40,8 +40,8 @@ func (e *Engine) endGame() {
 func (e *Engine) unwindReset() {
 	e.resets++
 	x := &e.ext
-	x.held, x.regions, x.modal, x.floor = Action{}, nil, 0, 0
-	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = false, nil, false, 0, false
+	x.held, x.regions, x.pager = Action{}, nil, nil
+	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = nil, nil, false, 0, false
 	x.panel = nil
 	e.screens = nil // the screens pushed are gone with their callers
 	e.picker, e.creation, e.slotsUp, x.creating = nil, nil, nil, false
@@ -223,6 +223,18 @@ func (e *Engine) slotsView() *Slots {
 	return v
 }
 
+// saveScreen keeps the picture and its text cells; the func puts them back.
+func (e *Engine) saveScreen() func() {
+	cells, pg := e.cellsCopy(), e.pg
+	pg.layers = append([]layer(nil), pg.layers...)
+	return func() {
+		if len(cells) != textRows || len(cells[0]) != textCols { // resized meanwhile: the page is drawn again anyway
+			return
+		}
+		e.ext.cells, e.pg = cells, pg
+	}
+}
+
 // pushSlots puts the F9 screen up (View.Slots): the saves, newest first;
 // the list, its cursor and the questions (the name, Overwrite, Delete)
 // are the presenter's. loadOnly (the party menu's Load) offers no saving
@@ -231,7 +243,6 @@ func (e *Engine) pushSlots(loadOnly bool) {
 	ss := &slotScreen{loadOnly}
 	under := e.slotsUp
 	e.slotsUp = ss
-	modal := e.modalOn()
 	restore := e.saveScreen()
 	draw := func() {
 		e.DrawBoxTitled(1, 1, winRight, promptRow-1, 0, colWhite, "Saved Games")
@@ -245,7 +256,6 @@ func (e *Engine) pushSlots(loadOnly bool) {
 	}, func() {
 		off()
 		restore()
-		modal()
 		e.slotsUp = under
 	})
 	draw()

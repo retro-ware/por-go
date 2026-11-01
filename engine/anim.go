@@ -178,7 +178,7 @@ func (e *Engine) ShowEncounter(sprite, pic, dist int, flags *[2]byte) {
 // animating: the picture animates while the engine waits.
 func (e *Engine) animating() bool {
 	a := &e.pic
-	return (e.viewAnim != 0 || e.animInput) && a.cur != 0 && a.cur <= len(a.frames) && !e.ext.fullMap
+	return (e.viewAnim != 0 || e.animInput) && a.cur != 0 && a.cur <= len(a.frames) && e.ext.fullMap == nil
 }
 
 // animateWhileWaiting = the wait loop of ovr26:03BD: until a key arrives,

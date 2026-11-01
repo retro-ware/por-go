@@ -326,3 +326,27 @@ crops it (its text is step 3/4). Captures against HEAD (title, both title
 pictures, credits, load and walk, the parlay picture) match frame for
 frame except the main menu's wall-clock fade-in, which differs between
 two runs of the old binary too. No finale dev scene exists to capture.
+Step 3 done: help, the journal (and Rolf's history), the full map and
+the party overview are screens on the stack (modeHelp, modeJournal,
+modeMap, modeOverview) that draw nothing on the page; they publish
+`View.Pages` (the box's title, the page's lines as `PaneRun`s from row
+Top, the journal's pictures as `Scan`s: file, image, part, place and
+paper colour, the hint, page and page count), `View.FullMap` (the map's
+name, its squares as drawMap draws them at Cell pixels, the cursor, the
+legend's lines with letter, colour and first square, the info line, the
+label being typed) and `View.Overview` (the rows are View.Party's). The
+remaster draws them over the page under (drawModal: box, glyphs, fills,
+the scans over the window as before) and takes the full map's clicks
+itself (ActPoint, a second click Label). `ext.modal`, `ext.floor`,
+`modalOn`, `keyThen`/`askKey` and View.MapCursor are gone: `modal()`
+asks the stack (the F9 slots count too); under a modal screen no spots
+are published or taken, and the pane, the portraits and the drops are
+not published. View.Overlays stays for the sheets' and pickers'
+portraits (step 4). The overview was a pause scene and is now a screen
+(any key closes it).
+Captures against HEAD (help both pages and back, the journal dev scene,
+POR_DEV=talljournal scrolled, the full map with cursor moves and a
+label, the overview, walking) match frame for frame except the main
+menu's wall-clock fade-in and, on the full map before its first key, the
+3D view's status line ("4,0 S 14:23") the old engine wrote into the map
+page: the map no longer shares the page, so it is gone.

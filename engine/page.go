@@ -35,7 +35,7 @@ type Cell struct {
 
 // Overlay is a picture the window draws over the page at its own
 // resolution: the part Src of Img (empty: all of it) scaled into the
-// page rectangle At (the journal's scans).
+// page rectangle At (a portrait).
 type Overlay struct {
 	Img     image.Image
 	Src, At image.Rectangle
@@ -218,8 +218,10 @@ func (e *Engine) pageView(v *View) {
 			}
 		}
 	}
-	v.Overlays = pg.overlays
-	if pg.frameUp {
+	if !e.modal() { // a screen over the whole page hides the portraits and the pane
+		v.Overlays = pg.overlays
+	}
+	if pg.frameUp && !e.modal() {
 		v.Pane = e.pane()
 	}
 }

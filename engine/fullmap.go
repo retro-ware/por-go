@@ -190,63 +190,30 @@ const (
 	fmRows   = 0x15 // legend lines: rows 2..0x16
 )
 
-// saveScreen keeps the picture and its text cells; the func puts them back.
-func (e *Engine) saveScreen() func() {
-	cells, pg := e.cellsCopy(), e.pg
-	pg.layers = append([]layer(nil), pg.layers...)
-	return func() {
-		if len(cells) != textRows || len(cells[0]) != textCols { // resized meanwhile: the page is drawn again anyway
-			return
-		}
-		e.ext.cells, e.pg = cells, pg
-	}
+// mapScreen is the full map's state while it is up (modeMap).
+type mapScreen struct {
+	cursor image.Point      // View.FullMap.Cursor (ActPoint)
+	labels map[int]mapLabel // the map's labels (labels)
+	label  *string          // the label being typed (nil: none)
 }
 
-// FullMap shows the full-screen map until Exit. It runs from the command
-// bar's key handling and puts the screen back as it was.
+// FullMap puts up the full-screen map (View.FullMap) until Exit; its
+// menu bar asks what to do at the cursor.
 func (e *Engine) FullMap() {
 	if !e.minimapAllowed() {
 		e.DisplayMessageWait(colYellow, "Not Here")
 		return
 	}
-	restore := e.saveScreen()
-	off := e.modalOn() // the command bar's regions under it take no hover or click
-	e.ext.fullMap = true
-	c := &e.ext.mapCursor // the cursor (View.MapCursor, ActPoint)
-	*c = image.Pt(e.posX, e.posY)
-	if !onMap(c.X, c.Y) {
-		*c = image.Point{}
+	ms := &mapScreen{cursor: image.Pt(e.posX, e.posY), labels: e.labels()}
+	if !onMap(ms.cursor.X, ms.cursor.Y) {
+		ms.cursor = image.Point{}
 	}
-	m := e.labels()
-	mark := e.regionMark()
-	e.addRegion(region{x0: fmX / 8, y0: fmY / 8, x1: (fmX + 16*fmCell - 1) / 8, y1: (fmY + 16*fmCell - 1) / 8, click: func(tx, ty int) Action {
-		x, y := (tx*8+4-fmX)/fmCell, (ty*8+4-fmY)/fmCell
-		if !onMap(x, y) {
-			return Action{}
-		}
-		if image.Pt(x, y) == *c {
-			return Action{Kind: actHotkey, N: 'L'} // a second click names the square
-		}
-		return Action{Kind: ActPoint, X: x, Y: y} // the cursor goes there
-	}})
-	texts := []string(nil)
-	var firstSq map[string]int
-	e.addRegion(region{x0: fmLegend, y0: 2, x1: 0x27, y1: 2 + fmRows - 1, click: func(_, y int) Action {
-		if i := y - 2; i < len(texts) {
-			s := firstSq[texts[i]]
-			return Action{Kind: ActPoint, X: s & 15, Y: s >> 4}
-		}
-		return Action{}
-	}})
-	done := func() {
-		e.regionCut(mark)
-		off()
-		restore()
-		e.ext.fullMap = false
-	}
+	e.ext.fullMap = ms
+	open := true
+	e.push(modeMap, func(Action) bool { return !open }, func() { e.ext.fullMap = nil })
+	c := &ms.cursor
 	var ask func()
 	ask = func() {
-		texts, firstSq = e.drawFullMap(m, c.X, c.Y)
 		const (
 			walk Choice = iota
 			label
@@ -257,13 +224,13 @@ func (e *Engine) FullMap() {
 			switch p.ID {
 			case walk:
 				if e.startWalk(c.X, c.Y) {
-					done()
+					open = false
 					return
 				}
 				e.DisplayMessageWait(colYellow, "No known way there")
 			case label:
-				old := m[c.Y<<4|c.X]
-				e.labelInput(old.text, func(s string, ok bool) {
+				old := ms.labels[c.Y<<4|c.X]
+				e.labelInput(ms, old.text, func(s string, ok bool) {
 					if ok {
 						if s == "" {
 							delete(e.userLabels(), c.Y<<4|c.X)
@@ -274,7 +241,7 @@ func (e *Engine) FullMap() {
 							}
 							e.userLabels()[c.Y<<4|c.X] = mapLabel{s, kind}
 						}
-						m = e.labels()
+						ms.labels = e.labels()
 					}
 					ask()
 				})
@@ -282,10 +249,10 @@ func (e *Engine) FullMap() {
 			case remove: // a built-in label stays
 				if _, ok := e.userLabels()[c.Y<<4|c.X]; ok {
 					delete(e.userLabels(), c.Y<<4|c.X)
-					m = e.labels()
+					ms.labels = e.labels()
 				}
 			case exit, NoPick:
-				done()
+				open = false
 				return
 			}
 			ask()
@@ -294,16 +261,14 @@ func (e *Engine) FullMap() {
 	ask()
 }
 
-// labelInput reads a label on row 24 in upper and lower case; Esc gives
+// labelInput reads a label (View.FullMap.Label) in upper and lower case; Esc gives
 // up (false); then gets it.
-func (e *Engine) labelInput(s string, then func(string, bool)) {
-	const prompt, max = "Label: ", 0x20
+func (e *Engine) labelInput(ms *mapScreen, s string, then func(string, bool)) {
+	const max = 0x20
 	e.typed(s, max, func(c byte) bool { return c >= 0x20 && c < 0x7F }, func(t string) {
-		e.ClearRow24()
-		e.DisplayString(0, promptRow, colLightMagenta, prompt)
-		e.DisplayString(len(prompt), promptRow, colWhite, t+"_")
+		ms.label = &t
 	}, func(t string, ok bool) {
-		e.ClearRow24()
+		ms.label = nil
 		if !ok {
 			then(s, false)
 			return
@@ -330,12 +295,10 @@ func (e *Engine) mapName() string {
 	return b.String()
 }
 
-// drawFullMap draws the map, the cursor at (cx, cy) and the legend; it
-// returns the legend's texts and the first square of each.
-func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[string]int) {
-	e.ClearScreen()
-	e.DisplayString(0, 0, colWhite, cut(e.mapName(), fmLegend-1)) // the longest, Cadorna Textile House, fits
-	e.DisplayString(fmLegend, 0, colWhite, "Labels")
+// fullMapView is the full map as View.FullMap shows it: the map at
+// fmCell pixels a square, the cursor, the legend's lines that fit.
+func (e *Engine) fullMapView(ms *mapScreen) *FullMap {
+	m := ms.labels
 	texts, letter, kind := legend(m)
 	first := map[string]int{}
 	for s := 0; s < 256; s++ {
@@ -345,25 +308,18 @@ func (e *Engine) drawFullMap(m map[int]mapLabel, cx, cy int) ([]string, map[stri
 			}
 		}
 	}
-	for i, t := range texts {
-		if i >= fmRows {
-			break
-		}
-		e.DisplayString(fmLegend, 2+i, int(poiColour[kind[t]]), string(letter[t]))
-		e.DisplayString(fmLegend+2, 2+i, colLightGreen, cut(t, 0x28-fmLegend-2))
-	}
+	cx, cy := ms.cursor.X, ms.cursor.Y
 	info := fmt.Sprintf("%d,%d", cx, cy)
 	if l, ok := m[cy<<4|cx]; ok {
 		info += " " + l.text
 	}
-	e.DisplayString(1, messageRow, colLightCyan, cut(info, 0x26))
-	e.mapPage(fmX, fmY, fmCell, m, letter)
-	px, py := fmX+cx*fmCell, fmY+cy*fmCell
-	e.fill(px, py, px+fmCell, py+1, 14)
-	e.fill(px, py+fmCell-1, px+fmCell, py+fmCell, 14)
-	e.fill(px, py, px+1, py+fmCell, 14)
-	e.fill(px+fmCell-1, py, px+fmCell, py+fmCell, 14)
-	return texts, first
+	v := &FullMap{Name: e.mapName(), Map: e.mapImage(&e.ext.fullCache, fmCell, m, letter), At: image.Pt(fmX, fmY), Cell: fmCell,
+		Cursor: ms.cursor, LegendAt: image.Pt(fmLegend, 2), Info: info, Label: ms.label}
+	for _, t := range texts[:min(len(texts), fmRows)] {
+		s := first[t]
+		v.Legend = append(v.Legend, MapLabel{Letter: letter[t], Text: t, Colour: int(poiColour[kind[t]]), First: image.Pt(s&15, s>>4)})
+	}
+	return v
 }
 
 // doorColour is a light brown (Amiga palette 0xA84): it stands out
@@ -438,22 +394,17 @@ func (e *Engine) mapPage(ox, oy, cell int, labels map[int]mapLabel, letter map[s
 	e.picture(ox, oy, n, n, p.pix, -1, nil, 0)
 }
 
-// mapImage is drawMap off screen, cell pixels a square, in the screen's
-// colours (nil where there is no map).
-func (e *Engine) mapImage(cell int) image.Image {
-	if !e.minimapAllowed() {
-		return nil
-	}
+// mapImage is drawMap off screen with labels m (letters: letter), cell
+// pixels a square, in the screen's colours; mc keeps the last picture, so
+// an unchanged map is not converted and uploaded again.
+func (e *Engine) mapImage(mc *mapCache, cell int, m map[int]mapLabel, letter map[string]byte) image.Image {
 	n := 16 * cell
-	mc := &e.ext.mapCache
 	if len(mc.pix) != n*n {
 		mc.pix = make([]uint8, n*n)
 	}
 	p := &pixels{n, n, mc.scratch[:0]}
 	p.pix = append(p.pix, make([]uint8, n*n)...)
 	mc.scratch = p.pix
-	m := e.labels()
-	_, letter, _ := legend(m)
 	e.drawMap(p, 0, 0, cell, m, letter)
 	if mc.img != nil && mc.pal == e.pal && bytes.Equal(p.pix, mc.pix) { // the same picture: the presenters keep their upload
 		return mc.img
