@@ -2,7 +2,6 @@ package engine
 
 import (
 	"image"
-	"por/pal"
 	"strconv"
 	"time"
 )
@@ -32,28 +31,19 @@ import (
 // coloured background (the original only recolours its text, which is the
 // colour the hotkey letters already have).
 
-// mapCache is mapImage's last picture.
-type mapCache struct {
-	pix, scratch []uint8
-	pal          pal.Regs
-	img          image.Image
-}
-
 // extras holds the convenience-feature state.
 type extras struct {
-	minimap   bool                // roster panel shows the minimap
-	seen      map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
-	mapCache  mapCache            // View.Map's last picture (mapImage)
-	fullCache mapCache            // View.FullMap's
-	voiced    map[string]bool     // voice.go: the recordings this save has heard
-	met       map[string]metIcon  // bestiary.go: the monster kinds this save has met
-	beasts    []Beast             // bestiary.go: their entries, as last published
-	creating  bool                // CreateCharacter's sheet is up: no level, experience, party items or status on it
-	minStats  [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
-	inGame    bool                // slots.go: GameLoop has started: saving allowed
-	aoe       int                 // aoe.go: radius+1 of the spell being aimed, 0 none
-	bolt      [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
-	aoeSpell  int                 // aoe.go: the spell being aimed
+	minimap  bool                // roster panel shows the minimap
+	seen     map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
+	voiced   map[string]bool     // voice.go: the recordings this save has heard
+	met      map[string]metIcon  // bestiary.go: the monster kinds this save has met
+	beasts   []Beast             // bestiary.go: their entries, as last published
+	creating bool                // CreateCharacter's sheet is up: no level, experience, party items or status on it
+	minStats [6]int              // "Minimal stats": per-stat floor, STR as st*100+str00
+	inGame   bool                // slots.go: GameLoop has started: saving allowed
+	aoe      int                 // aoe.go: radius+1 of the spell being aimed, 0 none
+	bolt     [2]int              // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)
+	aoeSpell int                 // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
 	held          Action     // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
@@ -142,11 +132,21 @@ const (
 	mmY    = 8
 )
 
-// DrawMinimap draws the current map with the party. Like the game's Area
-// view it shows every wall; walls of squares not yet seen are dim.
+// MinimapAt is the minimap's top left on the page, MinimapCell its
+// square's side in pixels.
+var (
+	MinimapAt   = image.Pt(mmX, mmY)
+	minimapRect = image.Rect(mmX, mmY, mmX+16*mmCell, mmY+16*mmCell)
+)
+
+const MinimapCell = mmCell
+
+// DrawMinimap puts the minimap up in the party panel (View.Minimap: the
+// presenter draws View.Map there). Like the game's Area view it shows
+// every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
 	e.blank(17, 1, paneRight, 14)
-	e.mapPage(mmX, mmY, mmCell, e.labels(), nil)
+	e.pg.tx.minimap = true
 }
 
 // rosterPanel redraws the panel the minimap shares with the roster.

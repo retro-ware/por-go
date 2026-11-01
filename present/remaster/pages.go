@@ -206,6 +206,10 @@ func (c *cellPage) texts(v engine.View) {
 	if v.Roster {
 		c.roster(v)
 	}
+	if v.Minimap && v.Map != nil {
+		n := 16 * engine.MinimapCell
+		c.pics = append(c.pics, engine.Picture{Img: mapImage(v.Map, engine.MinimapCell, c.ink, nil), At: image.Rectangle{Min: engine.MinimapAt, Max: engine.MinimapAt.Add(image.Pt(n, n))}})
+	}
 	if r := v.Results; r != nil {
 		c.results(r)
 	}

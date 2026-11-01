@@ -19,7 +19,7 @@ import (
 // of Colour over At; or, Border set, the window border's cells (View.Border)
 // round the inside of At, Title (if any) centred on its top row in Colour.
 type Picture struct {
-	File         string // "" for pixels the engine made itself (the full map)
+	File         string // "" for a fill or a border (the presenter adds its own pictures, the minimap, so)
 	Block, Frame int
 	Img          image.Image // nil for a fill or a border
 	At           image.Rectangle

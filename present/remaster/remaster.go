@@ -73,7 +73,7 @@ type Presenter struct {
 	asked       string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
 	answered    string                      // the text pane under the last question: once it is answered, that text is done
 	mapImg      *gpu.Image                  // View.Map on the GPU
-	mapSrc      image.Image                 // the View.Map it holds
+	mapSrc      *engine.MapSquares          // the View.Map it holds
 	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
 	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	mainSel     int                         // the main menu's highlight
@@ -291,7 +291,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	blobber.Night = !v.Day
 	p.animate()
 	p.view.Draw(dst)
-	p.drawMap(dst, v.Map, len(v.Party))
+	p.drawMap(dst, v, note.Font)
 	p.ordering = v.Ordering
 	if !p.ordering {
 		p.dragFrom = 0
@@ -880,18 +880,18 @@ func fitScale(unit, s float64, ok func(k float64) bool) float64 {
 const mapSide = 16 * engine.MapCell
 
 // drawMap shows the map as the full map draws it (View.Map) in mapRect.
-func (p *Presenter) drawMap(dst *gpu.Image, m image.Image, n int) {
-	if m == nil || blobber.Settings.MapOff {
+func (p *Presenter) drawMap(dst *gpu.Image, v engine.View, font func(byte, bool) [8]byte) {
+	if v.Map == nil || blobber.Settings.MapOff {
 		return
 	}
 	if p.mapImg == nil {
 		p.mapImg = gpu.NewImage(mapSide, mapSide)
 	}
-	if m != p.mapSrc { // a new View: upload it once
-		p.mapImg.WritePixels(m.(*image.RGBA).Pix)
-		p.mapSrc = m
+	if v.Map != p.mapSrc { // a new View: upload it once
+		p.mapImg.WritePixels(mapImage(v.Map, engine.MapCell, v.Ink, font).Pix)
+		p.mapSrc = v.Map
 	}
-	r := mapRect(dst, n)
+	r := mapRect(dst, len(v.Party))
 	a := float32(blobber.Settings.MapAlpha) // the opacity slider (Esc, Options)
 	vector.StrokeRect(dst, float32(r.Min.X)+.5, float32(r.Min.Y)+.5, float32(r.Dx())-1, float32(r.Dy())-1, 1, color.NRGBA{0x80, 0x80, 0x80, uint8(255 * a)}, false)
 	vector.DrawFilledRect(dst, float32(r.Min.X+1), float32(r.Min.Y+1), float32(r.Dx()-2), float32(r.Dy()-2), color.NRGBA{A: uint8(255 * a)}, false)

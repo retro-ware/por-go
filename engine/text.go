@@ -20,11 +20,12 @@ type textCell struct {
 
 // texts is the text the game wrote, by where it goes.
 type texts struct {
-	pane   [TextPaneRows][]textCell // the text pane's rows, from column 0 of the page
-	prompt []textCell               // the prompt row
-	view   [0xF][]textCell          // the view window's rows 1..15, from column 0
-	status string                   // the status line under the roster (StatusLine; "" none)
-	roster bool                     // the roster is up in the party panel (drawPartyList)
+	pane    [TextPaneRows][]textCell // the text pane's rows, from column 0 of the page
+	prompt  []textCell               // the prompt row
+	view    [0xF][]textCell          // the view window's rows 1..15, from column 0
+	status  string                   // the status line under the roster (StatusLine; "" none)
+	roster  bool                     // the roster is up in the party panel (drawPartyList)
+	minimap bool                     // the minimap is up in the party panel (DrawMinimap)
 }
 
 // row is the text row of the page's row y (nil: text written there is not kept).
@@ -80,6 +81,9 @@ func (e *Engine) unwrite(r image.Rectangle) {
 	}
 	if r.Overlaps(rosterPanel.Pixels()) {
 		t.roster = false
+	}
+	if r.Overlaps(minimapRect) {
+		t.minimap = false
 	}
 }
 

@@ -206,7 +206,8 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 			str(lx+2, fm.LegendAt.Y+i, 10, l.Text[:min(len(l.Text), 0x28-lx-2)])
 		}
 		str(1, rows-2, 11, fm.Info[:min(len(fm.Info), 0x26)])
-		draw.Draw(m, fm.Map.Bounds().Add(fm.At), fm.Map, fm.Map.Bounds().Min, draw.Over)
+		mi := mapImage(fm.Map, fm.Cell, v.Ink, note.Font)
+		draw.Draw(m, mi.Bounds().Add(fm.At), mi, image.Point{}, draw.Over)
 		n, c := fm.Cell, fm.At.Add(fm.Cursor.Mul(fm.Cell))
 		for _, r := range []image.Rectangle{image.Rect(0, 0, n, 1), image.Rect(0, n-1, n, n), image.Rect(0, 0, 1, n), image.Rect(n-1, 0, n, n)} {
 			fill(r.Add(c), col(14))
@@ -452,6 +453,9 @@ func pageText(v engine.View) string {
 		fmt.Fprint(&b, v.Pane.Lines)
 	}
 	fmt.Fprint(&b, v.Prompt, v.ViewText, v.Status, v.Roster, v.Credits, v.Ink)
+	if v.Minimap && v.Map != nil {
+		fmt.Fprint(&b, *v.Map)
+	}
 	if v.Roster {
 		fmt.Fprint(&b, choosing(v))
 		for _, m := range v.Party {

@@ -446,3 +446,18 @@ and the presenter's layout of the typed data gives the same.
 - Not seen headless: the results page (the loot menu redraws over it at
   once), the credits and the END; TestResultsRoster checks their layout
   from data.
+The maps drawn by the presenter (headless checks only): the engine made
+pixels of its own only for the maps (drawMap: the minimap's picture,
+View.Map's and View.FullMap.Map's images). It now publishes the map as
+typed data, `MapSquares` (per square Seen, the walls N E S W as MapWall
+NoWall/Wall/Door/LockedDoor, the label's ink and legend letter; the
+party's square and the step towards its facing), in View.Map and
+FullMap.Map; View.Minimap says the minimap is up in the party panel
+(text.go's minimap flag, set by DrawMinimap, taken away as the roster's
+is). The presenter's mapImage draws all three (MinimapCell at MinimapAt,
+dots for labels; MapCell and fmCell with the letters in the current
+font). TestMapImage compares it with the engine's pictures recorded
+before the drawing went (testdata/map_*.png with map_*.json, at the
+start, the west and north edges, a corner and next to a label). Gone:
+drawMap, mapPage, mapImage, mapWalls, mapParty, the map caches. The area
+map (ovr28) was already DAX tiles and icons, pictures by file and frame.

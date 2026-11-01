@@ -119,7 +119,7 @@ type Scan struct {
 // Label, Remove, Exit): ActPoint X, Y moves the cursor.
 type FullMap struct {
 	Name     string      // the map's name, top left
-	Map      image.Image // the squares as the minimap draws them, the legend's letter on each labelled square
+	Map      *MapSquares // the squares, the legend's letter on each labelled square
 	At       image.Point // the map's top left on the page, in pixels
 	Cell     int         // pixels a square
 	Cursor   image.Point // the cursor's square
@@ -128,6 +128,46 @@ type FullMap struct {
 	Info     string  // the cursor's square and its label, on the message row
 	Label    *string // the label being typed (nil: none), on the prompt row
 }
+
+// MapSquares is a map as the maps show it (minimap, View.Map, the full
+// map): squares [y][x], the party's square (off the map: not shown) and
+// the step towards its facing.
+type MapSquares struct {
+	Squares [16][16]MapSquare
+	Party   image.Point
+	Ahead   image.Point
+}
+
+// MapSquare is a square of a map: how far the party has seen it, its
+// walls (N E S W) and its label (Ink 0: none).
+type MapSquare struct {
+	Seen   Seen
+	Walls  [4]MapWall
+	Ink    int  // the label's EGA colour, by kind
+	Letter byte // the label's legend letter
+}
+
+// Seen is how much of a square the party has seen.
+type Seen uint8
+
+const (
+	Unseen  Seen = iota
+	SeenFar      // seen from afar
+	Visited      // walked on
+)
+
+// MapWall is a wall on a map.
+type MapWall uint8
+
+const (
+	NoWall MapWall = iota
+	Wall
+	Door
+	LockedDoor
+)
+
+// DoorColour is a door's colour on the maps (an index for pal.Regs.RGBA).
+const DoorColour = doorColour
 
 // MapLabel is a line of the full map's legend: the letter on its squares
 // (in EGA colour Colour, by kind), its text and its first square.
@@ -175,7 +215,8 @@ type View struct {
 	Battle     *Battle        // the combat map (nil outside combat)
 	Events     []CombatEvent  // what happened in the fight since the last Apply, in order (Apply's View only)
 	Inventory  *Inventory     // the inventory screen is up (nil otherwise)
-	Map        image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
+	Map        *MapSquares    // the current map, drawn by the presenter at MapCell pixels a square (nil where the game has no map)
+	Minimap    bool           // the minimap is up in the party panel (Tab): Map at MinimapCell pixels a square at MinimapAt, labels as dots
 	Pictures   []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
 	Frame      bool           // the main frame is up (its boxes are among Pictures): the 3D view's screen
 	Prompt     []PaneRun      // the prompt row's text (the last row), X the page's column
@@ -499,11 +540,10 @@ func (e *Engine) publish() {
 		Day:       e.isDay(),
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
 		Exploring: e.exploring(),
+		Minimap:   e.pg.tx.minimap,
 	}
-	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() {
-		m := e.labels()
-		_, letter, _ := legend(m)
-		v.Map = e.mapImage(&e.ext.mapCache, mapCell, m, letter)
+	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() || v.Minimap {
+		v.Map = e.mapSquares(e.labels())
 	}
 	if s.invOn {
 		c := e.selected()
