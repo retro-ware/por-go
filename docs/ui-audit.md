@@ -265,3 +265,61 @@ Tests: `TestMenuNav`, `TestScrollBar`, `TestBarFocus`, `TestDigitKeys` and `Test
 
 - Temple cures and appraise list no items, so they stay text only.
 - Spell lists have no icons: there is no spell-school art.
+
+## 6. Second pass (2026-11-01)
+
+### The user's decisions
+
+- **Members:** F1–F8 select that member on every screen where a member applies. Left/Right are the previous/next member where they are free; Tab/Shift-Tab only if always free (they are not, see below). The inventory's Home/End no longer change the member. The pad gets a member switch only on free buttons.
+- **Portrait clicks:** a right click is the member's sheet everywhere. A left click is the inventory where there is no context menu (combat, camp-style screens). While exploring, a plain left click opens the card's context menu, which lists View and Items. A later correction removed a Shift-click path for it.
+- **Selection markers:** exactly two. The *text selection* is a blue ground, for text lines, menus and list rows. The *outline selection* is a green (EGA 10) frame, for anything with pictures. Hover uses the same marker as selection.
+- **Toasts:** one style, a red flash on the bottom row, in every view. The inventory's toast must not hide the toolbar.
+- **Leaving:** the row that leaves a screen is "Exit", hotkey E, and Esc does it.
+- **Prices:** "Ng", plus " Nc" only when copper is needed, from one function. Price lists show the party's gold the same way.
+
+### Done
+
+| Commit | What changed |
+|---|---|
+| fbfd75c | **Selection markers:** `pal.SelectText` and `pal.SelectOutline` are used for menus, inventory rows, doll boxes, the toolbar, picker cells and battle-bar buttons. The yellow, cyan, dark and gold variants are gone. Rows with nothing to pick (`do` nil, a list's Off lines) are drawn in EGA 8 by drawMenu, drawMenuIcons and keyWindow. |
+| dc6eae4 | **One toast:** `noteLine` draws the toast red. The inventory keeps its bottom row for the toast, under the toolbar. |
+| 5dda978 | **Prices:** `price(engine.Money)` and `withGold`. `engine.InvItem.Price` is typed `Money`, and `Training.Gold` was added. |
+| 32b2ade | **Members:** `memberKey` handles F1–F8, Left/Right on the menu screens and the pad's stick buttons. Camp memorize/scribe counts move to -/+ (Backspace still one less). Home/End are no longer a member key. Cards: left click is the inventory, right click the sheet. |
+| 6dbfe5e | **Inventory on the gamepad:** A is Enter, Y is the next tab (as Tab), and the shoulders (PgUp/PgDn) move a toolbar focus. |
+| 6cbcb0d | **Menus:**<br>• Hover only follows a moved pointer, and highlights every keyWindow menu.<br>• The wheel is up-for-up, one line a step, on every list.<br>• Page questions use menuNav.<br>• The spell pick has its own selection, reset on open, and digit hotkeys (`spellKeys`) like every spell list.<br>• A click outside a modal menu means back.<br>• `globalKey` passes help, minimap, F9, Ctrl-S and the font keys on.<br>• Exit/E rows replace Leave and Back; the command popup's Camp moves to **A**. |
+| 8d7744f | **Correction:** a plain left click on a card opens the context menu again while exploring; there is no Shift-click. |
+| 7f4302f | **Blobber's Esc menu:** mirrors menuNav, with PgUp/PgDn, Home/End, digit hotkeys, and Left/Right repeating. It can't import present/remaster without a cycle. |
+
+### Conflicts and limits
+
+**Tab** is never a member key, because Tab is already used:
+- the minimap while exploring (pad Y too);
+- the inventory's tabs;
+- combat targets and the battle bar's focus.
+
+**Left/Right** are not member keys in these places, because they already do something there:
+- exploring, where they turn (no clean alternative);
+- combat, where they pan the camera;
+- text entry, where they move the cursor;
+- the full map, where they move its cursor;
+- pagers, where they page.
+
+The camp's memorize/scribe count used Left/Right; it moved to -/+.
+
+Member keys are also off under a Yes/No question about the member (camp Drop, temple Pay, the party menu's questions), so the question's subject can't change while it's open.
+
+**Gamepad:** the stick buttons (L3/R3) were the only free buttons, so they switch the member.
+
+**The command popup's Camp** couldn't take C, which Cast uses, so it uses A.
+
+**Clicks outside a menu** don't mean back on these screens, because their own page takes clicks:
+- the sheet (Shift-click on the portrait);
+- the full map;
+- pagers;
+- the creation sheet, pickers and the icon editor (their main screens).
+
+**Keys passed on:** the engine popup, the context menu and camp pass on only the global keys. Any other key would act on the screen hidden underneath them.
+
+**Not changed:**
+- The full map's yellow cursor is the original's page drawing, so it stays.
+- The party menu has no inventory, so a left click on a card there only selects the member.
