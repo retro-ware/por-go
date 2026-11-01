@@ -37,6 +37,13 @@ func (p *Presenter) templeItems(v engine.View) (string, []menuRow) {
 	case appraise:
 		return p.appraiseItems(t.Appraise, c.back(campMain))
 	}
-	return "Temple", []menuRow{{"Heal", 'H', c.to(templeHeal, 0)}, {"View", 'V', func() { p.send(engine.ActMember, -1) }},
-		{"Appraise", 'A', c.to(appraise, 0)}, {"Exit", 'E', func() { p.send(engine.ActClose, 0) }}}
+	it := []menuRow{{"Heal", 'H', c.to(templeHeal, 0)}, {"View", 'V', func() { p.send(engine.ActMember, -1) }}}
+	if appraisable(t.Appraise) {
+		it = append(it, menuRow{"Appraise", 'A', c.to(appraise, 0)})
+	}
+	return "Temple", append(it, menuRow{"Exit", 'E', func() { p.send(engine.ActClose, 0) }})
 }
+
+// appraisable: the party has gems or jewelry to appraise (or one is being
+// valued): else Appraise is not offered.
+func appraisable(a engine.Appraise) bool { return a.Gems+a.Jewelry > 0 || a.Valued > 0 }

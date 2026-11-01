@@ -32,7 +32,10 @@ func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 	case appraise:
 		return p.appraiseItems(s.Appraise, c.back(campMain))
 	}
-	it := []menuRow{{"Browse", 'B', func() { p.send(engine.ActInventory, -1) }}, {"Appraise", 'A', c.to(appraise, 0)}}
+	it := []menuRow{{"Browse", 'B', func() { p.send(engine.ActInventory, -1) }}}
+	if appraisable(s.Appraise) {
+		it = append(it, menuRow{"Appraise", 'A', c.to(appraise, 0)})
+	}
 	if len(s.Unknown) > 0 {
 		it = append(it, menuRow{"Identify", 'I', c.to(shopID, 0)})
 	}
