@@ -193,6 +193,9 @@ func screenPage(v engine.View) *cellPage {
 		v.Pictures = append([]engine.Picture{{At: cr.Icon.Pixels(), Fill: true, Colour: pal.EGA(8)}}, v.Pictures...)
 	}
 	c := newCellPage(v)
+	if cr := v.Creation; cr != nil && cr.Scale > 1 && v.Picker == nil && v.Slots == nil {
+		c.pics = c.scaled(cr)
+	}
 	c.texts(v)
 	if s := v.SheetPage; s != nil {
 		c.sheet(s, v)
@@ -413,10 +416,14 @@ func (c *cellPage) sheet(s *engine.SheetPage, v engine.View) {
 			c.overs = append(c.overs, overlay{Img: s.Portrait, At: fit(s.Portrait.Bounds(), b.Pixels())}) // the whole box: the rope runs outside its cells
 		}
 	}
+	k := 1
+	if cr := v.Creation; cr != nil {
+		k = max(1, cr.Scale)
+	}
 	for p, im := range s.Icons {
 		if im != nil {
-			x, y := v.IconBox.X1+5*p, v.IconBox.Y1
-			c.overs = append(c.overs, overlay{Img: im, At: image.Rect(x*8, y*8, x*8+24, y*8+24)})
+			x, y := v.IconBox.X1+5*k*p, v.IconBox.Y1
+			c.overs = append(c.overs, overlay{Img: im, At: image.Rect(x*8, y*8, x*8+24*k, y*8+24*k)})
 		}
 	}
 	if s.Spells != "" { // SpellList's title over the name row
@@ -424,6 +431,32 @@ func (c *cellPage) sheet(s *engine.SheetPage, v engine.View) {
 		c.str(1, 1, s.NameColour, s.Name+"'s")
 		c.str(len(s.Name)+4, 1, inkGreen, s.Spells)
 	}
+}
+
+// scaled takes the creation sheet's portrait and icon pictures, which the
+// engine draws at 1x from the portrait box's and the icon box's corners,
+// off the page as crisp overlays cr.Scale times their size; the rest stay.
+func (c *cellPage) scaled(cr *engine.Creation) []engine.Picture {
+	port := cr.Head.Pixels().Union(cr.Body.Pixels())
+	var keep []engine.Picture
+	for _, pc := range c.pics {
+		var from image.Point
+		switch {
+		case pc.Fill || pc.Img == nil:
+			keep = append(keep, pc)
+			continue
+		case pc.At.Overlaps(port):
+			from = port.Min
+		case pc.At.Overlaps(cr.Icon.Pixels()):
+			from = cr.Icon.Pixels().Min
+		default:
+			keep = append(keep, pc)
+			continue
+		}
+		min := from.Add(pc.At.Min.Sub(from).Mul(cr.Scale))
+		c.overs = append(c.overs, overlay{Img: pc.Img, At: image.Rectangle{min, min.Add(pc.At.Size().Mul(cr.Scale))}, Crisp: true})
+	}
+	return keep
 }
 
 // picker lays a grid picker's page out (showPicker): the box, the pager,
@@ -521,10 +554,11 @@ func iconClick(ed *engine.IconEditor, cx, cy int) (engine.Action, bool) {
 		return engine.Action{}, false
 	}
 	for _, r := range ed.PoseAt { // the head on the poses' upper part, the weapon below
-		if in(engine.CellRect{X1: r.X1, Y1: r.Y1, X2: r.X2, Y2: r.Y1 + 3}) {
+		mid := r.Y1 + (r.Y2-r.Y1+1)*4/9
+		if in(engine.CellRect{X1: r.X1, Y1: r.Y1, X2: r.X2, Y2: mid - 1}) {
 			return head, true
 		}
-		if in(engine.CellRect{X1: r.X1, Y1: r.Y1 + 4, X2: r.X2, Y2: r.Y2}) {
+		if in(engine.CellRect{X1: r.X1, Y1: mid, X2: r.X2, Y2: r.Y2}) {
 			return weapon, true
 		}
 	}

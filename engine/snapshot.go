@@ -300,6 +300,7 @@ type Creation struct {
 	Head     CellRect    // the portrait's head (PickHead) ...
 	Body     CellRect    // ... and body (PickBody)
 	Icon     CellRect    // the combat icon (ActIconEdit)
+	Scale    int         // the portrait's and the icon's whole scale: the engine draws them at 1x from Head's and Icon's corners
 	Abandon  string      // what Esc asks before ActClose
 	Minimums string      // the minimums Minimal last rolled to (ActRoll N 1)
 }

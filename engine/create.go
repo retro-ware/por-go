@@ -475,11 +475,31 @@ func (e *Engine) setStatTyped(c *Character, i int, s string) {
 	}
 }
 
-// Where the sheet shows the combat icon's poses: under the portrait box.
-const sheetIconRow = 13
+// sheetScale is the creation sheet's portrait and combat icon scale: the
+// 40x25 page's sizes times what the right of the page leaves room for (the
+// combat stats reach column 37, the prompt row stays free).
+func sheetScale() int { return max(1, min((winRight-38)/10, (winBottom-3)/13)) }
 
-// sheetIconCol is the column of pose p's icon under the portrait box.
-func sheetIconCol(p int) int { return winRight - 9 + 5*p }
+// sheetPortraitBox is the creation sheet's portrait box, against the right border.
+func sheetPortraitBox() CellRect {
+	s := sheetScale()
+	return CellRect{winRight - 10*s, 1, winRight, 1 + 10*s}
+}
+
+// Where the sheet shows the combat icon's poses: under the portrait box.
+func sheetIconRow() int { return 3 + 10*sheetScale() }
+
+// sheetIconCol is the column of pose p's icon under the portrait box, as
+// the engine draws it (at 1x: the presenter scales it by sheetScale from
+// the icon box's corner).
+func sheetIconCol(p int) int { return winRight - 9*sheetScale() + 5*p }
+
+// sheetIconBox is the icons' cells at sheetScale.
+func sheetIconBox() CellRect {
+	s := sheetScale()
+	x, y := sheetIconCol(0), sheetIconRow()
+	return CellRect{x, y, x + 8*s - 1, y + 3*s - 1}
+}
 
 // creationSheet draws the sheet for the creation: without level, experience,
 // party items and status, with the combat icon under the portrait. A PNG
@@ -488,21 +508,21 @@ func sheetIconCol(p int) int { return winRight - 9 + 5*p }
 func (e *Engine) creationSheet(c *Character) {
 	e.CharacterSheet()
 	e.BuildCharIcon(c, true)
-	e.snap.iconBox = CellRect{sheetIconCol(0), sheetIconRow, sheetIconCol(1) + 2, sheetIconRow + 2}
+	e.snap.iconBox = sheetIconBox()
 	e.snap.iconDrop = func(im image.Image) {
 		if e.takeIconPNG(c, im) {
 			e.creationSheet(c) // the sheet draws itself anew
 		}
 	}
 	for p := 0; p < 2; p++ {
-		r := iconRect(sheetIconCol(p), sheetIconRow)
+		r := iconRect(sheetIconCol(p), sheetIconRow())
 		e.erase(r)
 		if c.Icon != nil { // a PNG: the presenter's, over the page at the window's resolution
 			if sp := e.snap.sheet; sp != nil {
 				sp.Icons[p] = iconPose(c.Icon, p, false)
 			}
 		} else if im := e.icons[c.Order][p]; im != nil {
-			e.picture(sheetIconCol(p)*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask, im, 0)
+			e.picture(sheetIconCol(p)*8, sheetIconRow()*8, im.Width*8, im.Height, im.Frame(0), im.Mask, im, 0)
 		}
 	}
 }
@@ -544,8 +564,9 @@ func (e *Engine) creationView() *Creation {
 		}
 		v.Stats[i] = CellRect{1, 7 + i, x1, 7 + i}
 	}
-	v.Head, v.Body = CellRect{winRight - 10, 1, winRight, 5}, CellRect{winRight - 10, 6, winRight, 11} // the portrait box, against the right border
-	v.Icon = CellRect{sheetIconCol(0), sheetIconRow, sheetIconCol(1) + 2, sheetIconRow + 2}
+	b, s := sheetPortraitBox(), sheetScale()
+	v.Head, v.Body = CellRect{b.X1, 1, winRight, 1 + 4*s}, CellRect{b.X1, 1 + 5*s, winRight, b.Y2}
+	v.Icon, v.Scale = sheetIconBox(), s
 	return v
 }
 

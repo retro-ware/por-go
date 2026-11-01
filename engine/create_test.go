@@ -104,6 +104,16 @@ func TestCreateSheet(t *testing.T) {
 	if c.PortHead != 2 {
 		t.Errorf("head %d, want 2", c.PortHead)
 	}
+	// A 60x37 page: the portrait, the icon and the icon editor's poses at 2x, inside the frame.
+	e.resizePage(60, 37)
+	if cr := view().Creation; cr.Scale != 2 || cr.Body.Y2 != 21 || cr.Head.X1 != 38 || cr.Icon != (CellRect{40, 23, 55, 28}) {
+		t.Errorf("60x37 creation: scale %d head %v body %v icon %v", cr.Scale, cr.Head, cr.Body, cr.Icon)
+	}
+	if v = act(Action{Kind: ActIconEdit, N: -1}); v.IconEditor == nil || v.IconEditor.PoseAt[1] != (CellRect{22, 2, 39, 19}) || v.IconEditor.Head.X1 != 42 || v.IconEditor.Palette.Y2 != 30 {
+		t.Errorf("60x37 icon editor: %+v", v.IconEditor)
+	}
+	act(Action{Kind: ActClose})
+	e.resizePage(40, 25)
 	// The icon editor: Size, then Exit puts the old icon back.
 	if v = act(Action{Kind: ActIconEdit, N: -1}); !v.IconDrop {
 		t.Fatal("no icon editor")

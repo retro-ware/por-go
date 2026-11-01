@@ -19,17 +19,23 @@ import (
 // and ActIconColour; ActKeep takes it, ActClose puts the old icon back. The
 // bar is the presenter's.
 
-// Layout, in cells.
+// Layout, in cells: the poses 9 cells square at the 40x25 page, a whole
+// multiple of that as far as the grid has room (iconScale); the rest
+// moves along with them.
 const (
-	idPreviewRow  = 2  // the poses, 9 cells square
-	idPreviewCols = 2  // ready; action 11 to the right
-	idWordsCol    = 24 // Head, Weapon, Size
-	idPartRow     = 13 // the six parts, a row each
-	idPartCol     = 2
+	idPreviewRow  = 2 // the poses; ready, action 9s+2 to the right
+	idPreviewCols = 2
+	idPartCol     = 2  // the six parts, a row each, under the poses
 	idSwatchCol   = 12 // colour 1; colour 2 three to the right
-	idPaletteRow  = 20 // the 16 colours, 8 a row, 2 cells each
-	idPaletteCol  = 2
+	idPaletteCol  = 2  // the 16 colours, 8 a row, 2 cells each, under the parts
 )
+
+// iconScale is the poses' whole scale: what the page's cells leave room for.
+func iconScale() int { return max(1, min((winRight-16)/18, (winBottom-13)/9)) }
+
+func idWordsCol() int   { return idPreviewCols + 2*(9*iconScale()+2) } // Head, Weapon, Size
+func idPartRow() int    { return idPreviewRow + 9*iconScale() + 2 }
+func idPaletteRow() int { return idPartRow() + 7 }
 
 // IconParts are the parts in IconColour order (the hair and the face
 // share a part).
@@ -118,14 +124,15 @@ func (e *Engine) pushIcon() {
 		build()
 		layout()
 		e.blank(1, 1, winRight, winBottom) // the text, the frame, the poses and the clicks are the presenter's (View.IconEditor)
+		sc, wc, pr := iconScale(), idWordsCol(), idPartRow()
 		ed := &IconEditor{Large: c.IconSize == 2, Part: part, Shade: shade, Custom: c.Icon != nil,
-			Head: CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow}, Weapon: CellRect{idWordsCol, idPreviewRow + 1, idWordsCol + 5, idPreviewRow + 1},
-			Size:  CellRect{idWordsCol, idPreviewRow + 2, idWordsCol + 9, idPreviewRow + 2},
-			Names: CellRect{idPartCol, idPartRow, idSwatchCol - 1, idPartRow + 5}, Parts: CellRect{idSwatchCol, idPartRow, idSwatchCol + 4, idPartRow + 5},
-			Palette: CellRect{idPaletteCol, idPaletteRow, idPaletteCol + 15, idPaletteRow + 1}}
+			Head: CellRect{wc, idPreviewRow, wc + 5, idPreviewRow}, Weapon: CellRect{wc, idPreviewRow + 1, wc + 5, idPreviewRow + 1},
+			Size:  CellRect{wc, idPreviewRow + 2, wc + 9, idPreviewRow + 2},
+			Names: CellRect{idPartCol, pr, idSwatchCol - 1, pr + 5}, Parts: CellRect{idSwatchCol, pr, idSwatchCol + 4, pr + 5},
+			Palette: CellRect{idPaletteCol, idPaletteRow(), idPaletteCol + 15, idPaletteRow() + 1}}
 		for p := 0; p < 2; p++ {
-			x := idPreviewCols + 11*p
-			ed.PoseAt[p] = CellRect{x, idPreviewRow, x + 8, idPreviewRow + 8}
+			x := idPreviewCols + (9*sc+2)*p
+			ed.PoseAt[p] = CellRect{x, idPreviewRow, x + 9*sc - 1, idPreviewRow + 9*sc - 1}
 			if c.Icon != nil {
 				ed.Poses[p] = iconPose(c.Icon, p, false)
 			} else if im := e.icons[0xC][p]; im != nil {
@@ -143,7 +150,7 @@ func (e *Engine) pushIcon() {
 		}
 		e.snap.icon = ed
 		if ed.Custom { // a dropped PNG takes no parts or colours: it can only go
-			ed.Remove = CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow} // "Remove", where Head stands otherwise
+			ed.Remove = CellRect{wc, idPreviewRow, wc + 5, idPreviewRow} // "Remove", where Head stands otherwise
 			ed.Head, ed.Weapon, ed.Size, ed.Names, ed.Parts, ed.Palette = CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}
 		}
 		for i := range IconParts { // the swatches show what a click gives (the presenter draws them)

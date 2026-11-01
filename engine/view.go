@@ -278,6 +278,9 @@ func (e *Engine) SheetPortrait() {
 		return
 	}
 	box := CellRect{winRight - 10, 1, winRight, 11} // against the right border, whatever the page's width
+	if e.creation != nil {
+		box = sheetPortraitBox() // larger as the page has room (the presenter scales the pictures)
+	}
 	e.blank(box.X1, box.Y1, box.X2, box.Y2)
 	e.snap.portrait = box // Shift-click and a dropped PNG land here
 	if sp := e.snap.sheet; sp != nil {
