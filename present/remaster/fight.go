@@ -137,8 +137,7 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 		}
 	}
 	switch {
-	case note.Show: // a refusal (why the attack is not possible ...)
-		put(note.Text, 12, 0)
+	case note.Show: // a refusal (why the attack is not possible ...): the toast, as every view's (noteLine)
 	case b.Turn != nil && b.Turn.Aim && b.AimWhy != "":
 		put(b.AimWhy, 12, 0)
 	case b.Turn != nil && b.Turn.Aim:
@@ -176,13 +175,16 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 			}
 		}
 	}
-	if key := fmt.Sprint(puts); key != p.rowsKey {
+	if key := fmt.Sprint(note.Show, note.Text, puts); key != p.rowsKey {
 		p.rowsKey = key
 		im := image.NewRGBA(image.Rect(0, 0, w, h))
 		for i := 3; i < len(im.Pix); i += 4 {
 			im.Pix[i] = 255
 		}
 		x = 0
+		if note.Show {
+			noteLine(im, note, 0)
+		}
 		for _, t := range puts {
 			drawText(im, glyph, t.s, x, 0, pal.EGA(t.c))
 			x += len(t.s)*8 + 8

@@ -146,6 +146,8 @@ func (p *Presenter) Key(k uint16) bool {
 		p.press(*p.bar.hotkey(k))
 	case (k == 9 || k == 0x4900 || k == 0x5100) && aiming && len(b.Targets) > 0: // Tab, Shift-Tab, the pad's shoulders: the next, previous target
 		p.cycleTarget(k == 0x4900 || k == 9 && gpu.IsKeyPressed(gpu.KeyShift))
+	case k == ' ':
+		return p.Key(13) // Space picks, as Enter
 	case k == 13 && aiming:
 		p.act(engine.Action{Kind: engine.ActAim, X: b.Cursor.X, Y: b.Cursor.Y})
 	case (k == 9 || k == 0x4900 || k == 0x5100) && len(p.bar.rects) > 0: // Tab, Shift-Tab, the pad's shoulders (PgUp, PgDn): the focus

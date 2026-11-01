@@ -110,6 +110,7 @@ type inventory struct {
 	panelAt image.Rectangle // the last panel on the canvas, drawn again over facePNG
 	arrows  [2]image.Rectangle
 	hover   image.Point // the pointer (canvas)
+	mouseAt image.Point // the pointer (screen), as last seen
 	member  int         // View.Inventory.Member
 	count   int         // party members
 
@@ -847,10 +848,7 @@ func (inv *inventory) do(k engine.ActKind) {
 		}
 	case it == nil:
 	case inv.ask == nil && (k == engine.ActDrop || k == engine.ActSell):
-		inv.ask, inv.askSel = &engine.Action{Kind: k, N: it.Index}, 0
-		if k == engine.ActDrop { // gone forever: No first
-			inv.askSel = 1
-		}
+		inv.ask, inv.askSel = &engine.Action{Kind: k, N: it.Index}, 1 // No first, as every question
 		return
 	default:
 		inv.acts = append(inv.acts, engine.Action{Kind: k, N: it.Index})
@@ -917,7 +915,7 @@ func (p *Presenter) inventoryKey(k uint16) bool {
 		inv.choose(order[(i+d+len(order))%len(order)].ware, order[(i+d+len(order))%len(order)].i)
 	}
 	switch k {
-	case KeyPadSelect: // pad A: as Enter
+	case KeyPadSelect, ' ': // pad A, Space: as Enter
 		k = 13
 	case KeyPadMinimap: // pad Y: as Tab, the next tab
 		k = 9
@@ -991,6 +989,8 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 	if inv.k == 0 || inv.view == nil {
 		return
 	}
+	moved := image.Pt(x, y) != inv.mouseAt // only a moved pointer takes the question's highlight
+	inv.mouseAt = image.Pt(x, y)
 	inv.hover = image.Pt(int(float64(x)/inv.kx), int(float64(y)/inv.ky))
 	pressed, released := down && !inv.held, !down && inv.held
 	inv.held = down
@@ -1015,7 +1015,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 	if inv.ask != nil { // the question: its Yes and No (hover highlights), else any click is No
 		inv.press, inv.dragging, inv.scrolling = nil, false, nil
 		i := slices.IndexFunc(inv.askAt, image.Pt(x, y).In)
-		if i >= 0 {
+		if i >= 0 && moved {
 			inv.askSel = i
 		}
 		switch {
@@ -1063,7 +1063,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 					if l.ware && inv.view.Loot {
 						inv.do(engine.ActBuy)
 					} else if l.ware {
-						inv.ask, inv.askSel = &engine.Action{Kind: engine.ActBuy, N: l.item.Index}, 0
+						inv.ask, inv.askSel = &engine.Action{Kind: engine.ActBuy, N: l.item.Index}, 1
 					} else if inv.view.Sell {
 						inv.do(engine.ActSell)
 					}
@@ -1140,7 +1140,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		inv.choose(true, h.item.Index)
 		switch {
 		case drag && partySide && !inv.view.Loot:
-			inv.ask, inv.askSel = &engine.Action{Kind: engine.ActBuy, N: h.item.Index}, 0 // a drag asks first (loot is free: no question)
+			inv.ask, inv.askSel = &engine.Action{Kind: engine.ActBuy, N: h.item.Index}, 1 // a drag asks first (loot is free: no question)
 		case drag && partySide, !drag && was == h.item.Index:
 			inv.do(engine.ActBuy)
 		}
