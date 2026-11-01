@@ -2,6 +2,7 @@ package engine
 
 import (
 	"image"
+	"image/color"
 	"slices"
 
 	"por/pal"
@@ -45,14 +46,16 @@ type IconEditor struct {
 	PoseAt             [2]CellRect
 	Large              bool // Size: large (else small)
 	Head, Weapon, Size CellRect
-	Names              CellRect  // the parts' names, a row each
-	Parts              CellRect  // their two swatches, 2 cells wide and 3 apart
-	Palette            CellRect  // the colours, 8 a row, 2 cells each
-	Colours            [16]int   // the colour number in each palette cell, row-major (-1: empty)
-	Part, Shade        int       // the swatch the palette sets
-	Colour             [6][2]int // each part's two colour numbers (the swatches)
-	Custom             bool      // the poses are a dropped PNG: no parts or colours, only Remove (ActIconRemove)
-	Remove             CellRect  // the Remove word, when Custom
+	Names              CellRect         // the parts' names, a row each
+	Parts              CellRect         // their two swatches, 2 cells wide and 3 apart
+	Palette            CellRect         // the colours, 8 a row, 2 cells each
+	Colours            [16]int          // the colour number in each palette cell, row-major (-1: empty)
+	Part, Shade        int              // the swatch the palette sets
+	Colour             [6][2]int        // each part's two colour numbers (the swatches)
+	Custom             bool             // the poses are a dropped PNG: no parts or colours, only Remove (ActIconRemove)
+	Remove             CellRect         // the Remove word, when Custom
+	Swatch             [6][2]color.RGBA // each part's two colours as they show
+	PaletteInk         [16]color.RGBA   // each palette cell's colour as it shows
 }
 
 // pushIcon puts the designer up on the selected character (the creation,
@@ -70,10 +73,6 @@ func (e *Engine) pushIcon() {
 	build := func() { // the working copy, recoloured, in slot 0xC
 		e.BuildCharIcon(c, false) // ovr18:0482
 		e.iconCopy(order, 0xC, true)
-	}
-	swatch := func(x, y int, colour byte, frame int) { // 2 cells wide, framed
-		e.fill(x*8, y*8, x*8+16, y*8+8, byte(frame))
-		e.fill(x*8+1, y*8+1, x*8+15, y*8+7, colour)
 	}
 	// The swatches show what a click gives: on Amiga art that is the
 	// terrain palette's slot the part's pixels take for the colour number
@@ -147,21 +146,14 @@ func (e *Engine) pushIcon() {
 			ed.Remove = CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow} // "Remove", where Head stands otherwise
 			ed.Head, ed.Weapon, ed.Size, ed.Names, ed.Parts, ed.Palette = CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}, CellRect{}
 		}
-		for i := range IconParts {
-			if ed.Custom {
-				break
-			}
+		for i := range IconParts { // the swatches show what a click gives (the presenter draws them)
 			for s := 0; s < 2; s++ {
-				frame := colDarkGrey
-				if i == part && s == shade {
-					frame = colWhite
-				}
-				swatch(idSwatchCol+3*s, idPartRow+i, look(c.IconColour[i]>>(4*s)&0xF), frame)
+				ed.Swatch[i][s] = e.pal.RGBA(look(c.IconColour[i] >> (4 * s) & 0xF))
 			}
 		}
 		for i, v := range cells {
-			if v != noCell && !ed.Custom {
-				swatch(idPaletteCol+2*(i%8), idPaletteRow+i/8, look(v), colDarkGrey)
+			if v != noCell {
+				ed.PaletteInk[i] = e.pal.RGBA(look(v))
 			}
 		}
 		e.snap.iconDrop = func(im image.Image) { // the whole screen takes the PNG (a new page ends it: set with each)

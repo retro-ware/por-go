@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"slices"
 	"strconv"
 
 	"por/engine"
@@ -160,24 +161,43 @@ func (c *cellPage) lines() [][]engine.PaneRun {
 
 // screenPage is v's page as the presenter draws it: the page's pictures
 // and boxes and the screens' text over them.
-func screenPage(v engine.View) *cellPage {
-	if v.Slots != nil { // the slot screen alone: nothing of the page under it, from the main menu and in play alike
-		v.Pictures, v.Pane, v.SheetPage, v.Picker, v.IconEditor = nil, nil, nil, nil, nil
-		v.ViewText = nil
-	}
-	if v.IconEditor != nil && v.Picker == nil { // the editor alone, as at the creation: nothing of the page under it (camp's roster, frames, minimap); its swatches stay
-		var pics []engine.Picture
-		grey := v.Ink[inkBlack] // the combat palette shows black dark grey (for the icon's black): the page black as every screen, the poses' ground grey (iconEditor)
-		for _, pc := range v.Pictures {
-			if pc.Fill && pc.Colour == grey {
-				pc.Colour = color.RGBA{A: 255}
-			}
-			if !pc.Border {
-				pics = append(pics, pc)
-			}
+// contentPictures are the original art a screen of its own shows from the
+// engine's page: the picker's pictures in their cells, the portrait and
+// combat icon on the sheets, the credits' art; never a frame or a fill.
+func contentPictures(v engine.View) []engine.Picture {
+	var in []image.Rectangle
+	all := v.Credits
+	switch {
+	case v.Slots != nil, v.IconEditor != nil && v.Picker == nil:
+	case v.Picker != nil:
+		for _, r := range v.Picker.Cells {
+			in = append(in, r.Pixels())
 		}
-		v.Ink[inkBlack] = color.RGBA{A: 255}
-		v.Pictures, v.Pane, v.SheetPage, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, nil, false, false
+	default:
+		in = append(in, v.Portrait.Pixels(), v.IconBox.Pixels())
+		if cr := v.Creation; cr != nil {
+			in = append(in, cr.Head.Pixels(), cr.Body.Pixels(), cr.Icon.Pixels())
+		}
+	}
+	var out []engine.Picture
+	for _, pc := range v.Pictures {
+		if pc.Img == nil || pc.File == "" {
+			continue
+		}
+		if all || slices.ContainsFunc(in, func(r image.Rectangle) bool { return !r.Empty() && pc.At.Overlaps(r) }) {
+			out = append(out, pc)
+		}
+	}
+	return out
+}
+
+func screenPage(v engine.View) *cellPage {
+	v.Pictures = contentPictures(v) // nothing of the engine's page: only the art in the screen's own places
+	if v.Slots != nil {
+		v.SheetPage, v.Picker, v.IconEditor = nil, nil, nil
+	}
+	if v.IconEditor != nil && v.Picker == nil {
+		v.Ink[inkBlack] = color.RGBA{A: 255} // the combat palette shows black dark grey (for the icon's black): the page black as every screen
 	}
 	c := newCellPage(v)
 	c.texts(v)
@@ -245,31 +265,8 @@ func slotFooter(sl *engine.Slots, cols int) []footWord {
 // window's text, the party panel (roster, status line), after-combat and
 // the credits.
 func (c *cellPage) texts(v engine.View) {
-	if pn := v.Pane; pn != nil {
-		for i, l := range pn.Lines {
-			for _, r := range l {
-				r.X += engine.TextPane.X1
-				c.run(r, engine.TextPane.Y1+i)
-			}
-		}
-	}
 	for _, r := range v.Prompt {
 		c.run(r, c.rows-1)
-	}
-	for y, l := range v.ViewText {
-		for _, r := range l {
-			c.run(r, y+1)
-		}
-	}
-	if v.Status != "" {
-		c.str(engine.StatusAt.X, engine.StatusAt.Y, inkGreen, v.Status)
-	}
-	if v.Roster {
-		c.roster(v)
-	}
-	if v.Minimap && v.Map != nil {
-		n := 16 * engine.MinimapCell
-		c.pics = append(c.pics, engine.Picture{Img: mapImage(v.Map, engine.MinimapCell, c.ink, nil), At: image.Rectangle{Min: engine.MinimapAt, Max: engine.MinimapAt.Add(image.Pt(n, n))}})
 	}
 	if v.Credits {
 		for _, l := range engine.Credits {
@@ -281,41 +278,6 @@ func (c *cellPage) texts(v engine.View) {
 			}
 		}
 	}
-}
-
-// roster = 00BA:0767 drawPartyList while adventuring: the names (the one
-// highlighted white, on blue in a member pick), AC and HP right-aligned.
-func (c *cellPage) roster(v engine.View) {
-	x, y := engine.RosterAt.X, engine.RosterAt.Y
-	c.str(x, y, inkWhite, "Name")
-	c.str(33, y, inkWhite, "AC  HP")
-	for i, m := range v.Party {
-		y := y + 2 + i
-		switch {
-		case m.Selected && choosing(v):
-			c.run(engine.PaneRun{X: x, Text: m.Name, Fg: c.ink[inkWhite], Bg: c.ink[1], Upcase: true}, y)
-		case m.Selected:
-			c.str(x, y, inkWhite, m.Name)
-		default:
-			c.str(x, y, m.Colour, m.Name)
-		}
-		ac := strconv.Itoa(m.AC) // 00BA:08EF
-		c.str(0x23-len(ac), y, inkGreen, ac)
-		hp, hpc := strconv.Itoa(m.HP), inkGreen // 00BA:0973
-		if m.HP < m.MaxHP {
-			hpc = inkYellow
-		}
-		c.str(0x27-len(hp), y, hpc, hp)
-	}
-}
-
-// rosterRow is the member whose roster row is at cell (cx, cy) (-1: none).
-func rosterRow(v engine.View, cx, cy int) int {
-	i := cy - engine.RosterAt.Y - 2
-	if !v.Roster || cx < engine.RosterAt.X || cx > 0x26 || i < 0 || i >= len(v.Party) {
-		return -1
-	}
-	return i
 }
 
 // cellBorder draws View.Border's cells into m round the cells of r. The
@@ -473,8 +435,8 @@ func (c *cellPage) picker(pk *engine.Picker) {
 	}
 }
 
-// iconEditor lays the combat icon editor's page out (the engine's
-// icondesign.go draws the swatches): the frame, the poses, the words.
+// iconEditor lays the combat icon editor's page out: the frame, the poses,
+// the words, the swatches and the palette (their colours the engine's).
 func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 	c.border(1, 1, c.cols-2, c.rows-3) // the bar under it
 	for p, r := range ed.PoseAt {
@@ -500,6 +462,24 @@ func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 	c.str(ed.Parts.X1, ed.Parts.Y1-1, inkWhite, "1  2")
 	for i, name := range engine.IconParts {
 		c.str(ed.Names.X1, ed.Names.Y1+i, inkGreen, name)
+	}
+	swatch := func(x, y int, colour, frame color.RGBA) { // 2 cells wide, framed
+		r := image.Rect(x*8, y*8, x*8+16, y*8+8)
+		c.pics = append(c.pics, engine.Picture{At: r, Fill: true, Colour: frame}, engine.Picture{At: r.Inset(1), Fill: true, Colour: colour})
+	}
+	for i := range engine.IconParts {
+		for sh := range 2 {
+			frame := c.ink[8]
+			if i == ed.Part && sh == ed.Shade {
+				frame = c.ink[15]
+			}
+			swatch(ed.Parts.X1+3*sh, ed.Parts.Y1+i, ed.Swatch[i][sh], frame)
+		}
+	}
+	for i, n := range ed.Colours {
+		if n >= 0 {
+			swatch(ed.Palette.X1+2*(i%8), ed.Palette.Y1+i/8, ed.PaletteInk[i], c.ink[8])
+		}
 	}
 }
 

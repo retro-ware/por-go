@@ -299,10 +299,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		}
 		return
 	}
-	switch i := rosterRow(v, cx, cy); {
+	switch {
 	case !left || !in:
-	case i >= 0 && choosing(v): // a click on a member in the roster picks it, as its portrait
-		p.send(engine.ActMember, i)
 	case typing(v) == nil && (askMenu(v) == nil || len(askMenu(v).Items) == 1): // no bar, or one with nothing to choose (the scripts' "PRESS <ENTER> TO CONTINUE")
 		p.send(engine.ActOK, 0)
 	}
