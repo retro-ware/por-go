@@ -595,8 +595,20 @@ func (e *Engine) opSpell() {
 	e.WriteVar(e.ArgAddr(3)&0xFF, uint16(count))
 }
 
-// opProtection = ovr04:2E7D (base): draw the glyph string stored in the
+// runeLetter is the letter an Espruar rune stands for: each rune is two
+// glyphs, its first glyph id g. A..O start at 0x41, the later letters
+// three glyphs further on (the Sokal Keep scroll: LUX, SAMOSUD, SHESTNI).
+func runeLetter(g byte) byte {
+	if g >= 0x60 {
+		return 'A' + (g-0x44)/2
+	}
+	return 'A' + (g-0x41)/2
+}
+
+// opProtection = ovr04:2E7D (base): the glyph string stored in the
 // variables from base on, each value+1 a symbol id, until one is <= 1.
+// Extra: the original draws the runes; the letters they spell are shown
+// instead, one per rune.
 func (e *Engine) opProtection() {
 	e.FetchArgs(1)
 	e.es.encounterShown = [2]byte{}
@@ -607,12 +619,12 @@ func (e *Engine) opProtection() {
 	}
 	e.run.lineHasText = 1
 	base := e.ArgAddr(1)
-	for i := 0; ; i++ {
+	for i := 0; ; i += 2 {
 		v := byte(e.ReadVar(base+i) + 1)
 		if v <= 1 {
 			break
 		}
-		e.char(e.msgCol, e.msgRow, colWhite, v, false)
+		e.char(e.msgCol, e.msgRow, colWhite, runeLetter(v), true)
 		e.msgCol++
 	}
 	e.msgRow++
