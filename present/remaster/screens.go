@@ -391,6 +391,12 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 		if h >= 'a' && h <= 'z' {
 			h -= 'a' - 'A'
 		}
+		switch actOf(k) { // the pad's X and Y: L and D
+		case input.Overview:
+			h, k = 'L', 'L'
+		case input.Minimap:
+			h, k = 'D', 'D'
+		}
 		if (h == 'L' && !sl.LoadOnly || h == 'D') && k < 128 {
 			p.slotKey(v, h)
 			return true

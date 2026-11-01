@@ -46,7 +46,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.fightKey(k)
 	}
 	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
-		if _, ok := memberKey(k, 0, len(v.Party), false); ok { // another member: selected (keyAct), the menu closes
+		if _, ok := memberKey(k, 0, len(v.Party), false); ok { // another member: selected (keyAct), their menu opens instead
 			p.ctx = 0
 			return false
 		}
@@ -213,8 +213,10 @@ func (p *Presenter) Click(x, y int) bool {
 					return true
 				}
 			}
-			p.ctx = 0 // a click outside: back
-			return true
+			p.ctx = 0 // a click outside: back; on a card, that one's menu (below)
+			if !slices.ContainsFunc(p.cards, image.Pt(x, y).In) {
+				return true
+			}
 		}
 		for i, r := range p.cards { // a portrait: its context menu while exploring, else its inventory (a right click: the sheet, Mouse)
 			if image.Pt(x, y).In(r) && p.active {

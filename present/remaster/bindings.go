@@ -164,6 +164,7 @@ var bindings = []binding{
 		codes: []code{{'?', input.Help}}},
 	{ctx: ctxAnytime, keys: "F9", desc: "save, load", mouse: "Esc menu", pad: "B, then pick",
 		codes: []code{{KeyF9, input.SaveLoad}}},
+	{ctx: ctxAnytime, keys: "L D", desc: "saves: load, delete", mouse: "click footer", pad: "X Y"},
 	{ctx: ctxAnytime, keys: "Ctrl-S", desc: "sound on, off", mouse: "Esc > Audio", pad: "B, then pick",
 		codes: []code{{keyCtrlS, input.Sound}}},
 	{ctx: ctxAnytime, keys: "Ctrl-F", desc: "font (+Shift: back)", gap: "the font has no mouse or pad way",

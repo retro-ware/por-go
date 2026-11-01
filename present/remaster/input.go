@@ -119,7 +119,11 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	if v.Exploring && p.exploreKey(k, v) {
 		return
 	}
-	if n, ok := memberKey(k, selectedIndex(v), len(v.Party), false); ok { // F1-F8, the stick buttons: select the member
+	if n, ok := memberKey(k, selectedIndex(v), len(v.Party), false); ok { // F1-F8, the stick buttons: select the member (exploring: and open their context menu, as a card's click)
+		if p.command {
+			p.cardClick(n)
+			return
+		}
 		p.send(engine.ActLead, n)
 		return
 	}
