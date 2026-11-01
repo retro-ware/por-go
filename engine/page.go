@@ -74,12 +74,14 @@ func (e *Engine) draw(l layer) {
 
 }
 
-// erase takes what is drawn wholly inside r off the page, and its text.
+// erase takes what is drawn inside r off the page, and its text. A
+// picture reaching into the cell round r goes too: the original cleared
+// boxes inside their frames, and the frame's cells covered the rest.
 func (e *Engine) erase(r image.Rectangle) {
 	pg := &e.pg
 	keep := pg.layers[:0]
 	for _, o := range pg.layers {
-		if !o.at.In(r) {
+		if !o.at.In(r.Inset(-8)) {
 			keep = append(keep, o)
 		}
 	}

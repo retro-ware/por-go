@@ -69,3 +69,15 @@ func TestTitleFull(t *testing.T) {
 		t.Errorf("title picture %v, want 320x200", box)
 	}
 }
+
+// The credits come up on their own: the title picture before them is gone.
+func TestCreditsClearTitle(t *testing.T) {
+	e := testEngine(t)
+	e.Init()
+	e.fullPicture(e.LoadPic("TITLE", 2))
+	e.drawCredits()
+	e.publish()
+	if v := e.View(); len(v.Pictures) != 0 || v.Full || !v.Credits {
+		t.Errorf("credits: %d pictures, full %v, credits %v", len(v.Pictures), v.Full, v.Credits)
+	}
+}

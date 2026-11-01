@@ -105,9 +105,7 @@ func (e *Engine) Title() {
 
 // drawCredits = ovr02:0206's page.
 func (e *Engine) drawCredits() {
-	e.newPage()
-	e.blank(1, 1, winRight, 3)
-	e.blank(1, 5, winRight, promptRow-1)
+	e.ClearScreen()
 	e.snap.credits = true // the lines are the presenter's (View.Credits)
 }
 
