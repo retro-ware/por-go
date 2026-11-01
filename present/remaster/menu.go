@@ -188,6 +188,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		o := (y*cw*8 + x) * 4
 		p.menuBuf[o], p.menuBuf[o+1], p.menuBuf[o+2] = c.R, c.G, c.B
 	}
+	ink := green // a colour span goes on over a wrapped line
 	for r, s := range rows {
 		y0, x0 := at[r]*8+8, pad
 		if r == sel {
@@ -211,7 +212,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 			y0, x0 = y0+8, 2+iconRow
 		}
 		hk := hot[r] // the hotkey: white, as on the original's bar
-		ink, col := green, 0
+		col := 0
 		for i := 0; i < len(s); i++ {
 			if s[i] == inkGold || s[i] == inkRed { // a span in colour, to the next mark
 				switch {
