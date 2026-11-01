@@ -165,18 +165,29 @@ func (p *Presenter) drawCampMenus(dst *gpu.Image, v engine.View) {
 }
 
 // campFocus moves camp's one focus for key k: F1-F8 to member m's menu,
-// Left/Right (the pad's d-pad) round the party's menu (ctx 0) and the
-// members' (ctx 1+i), F9 to the party's menu.
+// F9 to the party's menu, Left/Right (the pad's d-pad) and Tab round them
+// in the screen's order: the first half of the members (the left column,
+// or the row's left half), the party's menu, the rest.
 func (p *Presenter) campFocus(v engine.View, k uint16, m int) {
-	n := len(v.Party) + 1
+	order := []int{} // ctx values: 0 the party's menu, 1+i member i's
+	for i := range v.Party {
+		if i == (len(v.Party)+1)/2 {
+			order = append(order, 0)
+		}
+		order = append(order, 1+i)
+	}
+	if len(v.Party) < 2 {
+		order = append(order, 0)
+	}
+	n, at := len(order), slices.Index(order, p.ctx)
 	switch a := actOf(k); a {
 	case input.PartyMenu:
 		p.ctx = 0
 		return
 	case input.Left, input.PrevMember:
-		p.ctx = (p.ctx + n - 1) % n
-	case input.Right, input.NextMember:
-		p.ctx = (p.ctx + 1) % n
+		p.ctx = order[(at+n-1)%n]
+	case input.Right, input.NextMember, input.Minimap: // Minimap: Tab
+		p.ctx = order[(at+1)%n]
 	default:
 		p.ctx = 1 + m
 	}
@@ -346,7 +357,7 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	case spells && a == input.More && c.sel < n-1: // +: one more
 		p.campSpellAt(v, c.sel, 1)
 	case actOf(k) == input.PartyMenu:
-	case member && p.campHome(v): // the member's menu takes the keys
+	case (member || actOf(k) == input.Minimap) && p.campHome(v): // another menu takes the keys
 		p.campFocus(v, k, m)
 	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
 		p.send(engine.ActLead, m)

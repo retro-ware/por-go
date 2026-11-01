@@ -72,6 +72,7 @@ func (e *Engine) mode() screenMode {
 // push puts screen m up; it takes the decisions until apply is done,
 // then leave runs (nil: nothing to do).
 func (e *Engine) push(m screenMode, apply func(Action) bool, leave func()) {
+	e.ext.pushed++
 	e.screens = append(e.screens, screen{m, apply, leave, false})
 }
 

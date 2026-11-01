@@ -47,7 +47,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		return p.fightKey(k)
 	}
 	if p.ctx > 0 { // the card's context menu: the arrows, Enter, a hotkey or Esc, as the game's menus
-		if m, ok := memberKey(k, p.ctx-1, len(v.Party), true); p.campHome(v) && (ok || actOf(k) == input.PartyMenu) { // camp: another member's menu, or the party's (F9, Left/Right past the ends)
+		if m, ok := memberKey(k, p.ctx-1, len(v.Party), true); p.campHome(v) && (ok || actOf(k) == input.PartyMenu || actOf(k) == input.Minimap) { // camp: another member's menu, or the party's (F9, Left/Right past the ends)
 			p.campFocus(v, k, m)
 			return true
 		}

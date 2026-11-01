@@ -198,6 +198,7 @@ type View struct {
 	Day        bool        // 6:00 to 20:00, when the scripts show the day sky
 	Inside     bool        // the party stands on an inside square (the original's inside sky colour)
 	Exploring  bool        // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	Sweeping   bool        // ... at the slow, searching pace (ActSweep): the HUD says so
 	CanCast    bool        // ... and the selected member has a spell to cast (ActCastPick)
 	Camp       *Camp       // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
 	Temple     *Temple     // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
@@ -531,6 +532,7 @@ func (e *Engine) publish() {
 		Day:       e.isDay(),
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
 		Exploring: e.exploring(),
+		Sweeping:  e.exploring() && e.game.Search&1 != 0,
 		Minimap:   e.pg.tx.minimap,
 	}
 	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() || v.Minimap {

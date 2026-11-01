@@ -73,7 +73,11 @@ func (e *Engine) afterCommand(encamp bool) {
 		r.searchSave = byte(e.game.Search & 1)
 		e.game.Search = 1
 		e.Redraw()
+		pushed, x, y := e.ext.pushed, e.posX, e.posY
 		e.RunECL(e.es.events[1], func() {
+			if e.ext.pushed == pushed && e.posX == x && e.posY == y && !r.quit { // extra: say that the search happened
+				e.say("Nothing found")
+			}
 			e.areaChanged(func() {
 				e.game.Search = uint16(r.searchSave)
 				e.lookDone()
@@ -320,6 +324,7 @@ func (e *Engine) explore(a Action) (done, encamp bool) {
 		return true, false
 	case ActSweep: // the original's Search: the slow, searching pace on or off
 		e.game.Search = e.game.Search ^ 1
+		e.say(map[bool]string{true: "Sweeping", false: "Sweeping off"}[e.game.Search&1 != 0]) // extra: the toggle shows
 	case ActCastPick:
 		if member() {
 			e.CastMenu() // ovr16:04A1; canStudy says why a member in no condition cannot

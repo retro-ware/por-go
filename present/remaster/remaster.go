@@ -253,6 +253,16 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	p.animate()
 	p.view.Draw(dst)
 	p.drawMap(dst, v, note.Font)
+	if v.Sweeping { // the reminder: under the minimap, else in its corner
+		k := cardScale(dst)
+		const s = "Sweeping"
+		w, gap := int(k*float64(8*len(s)+2)), int(k*cardGap)
+		y := gap
+		if p.mapAt.Max.Y > 0 {
+			y = p.mapAt.Max.Y + gap/2
+		}
+		p.label(dst, s, dst.Bounds().Dx()-gap-w, y, k)
+	}
 	p.ordering = v.Ordering
 	if !p.ordering {
 		p.dragFrom = 0
