@@ -27,7 +27,6 @@ const (
 	scrField  // a drop-down (scr.field)
 	scrType   // a line being typed
 	scrAsk    // a yes/no question
-	scrSlot   // what to do with a save
 )
 
 const scrRows = 14 // the lines a page screen's menu shows at a time
@@ -50,7 +49,6 @@ type screenUI struct {
 	back    int
 	backSel int              // the row the question was asked from
 	mainSel int              // the main menu's row that opened the submenu up: back restores it
-	slot    string           // scrSlot: the save
 	cur     int              // the picker's cursor
 	at      Rect             // where the page went on the window ...
 	pw, ph  int              // ... and its size in pixels
@@ -136,27 +134,17 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		named := func(k engine.ActKind, name string) func() {
 			return func() { s.open(scrMain); p.sendA(engine.Action{Kind: k, Text: name}) }
 		}
-		if s.sub == scrSlot {
-			it := []menuRow{{"Load", 'L', named(engine.ActLoad, s.slot)}}
-			if sl.CanSave {
-				it = append(it, menuRow{"Overwrite", 'O', func() { p.askThen("Overwrite "+s.slot+"?", named(engine.ActSave, s.slot)) }})
-			}
-			return s.slot, append(it,
-				menuRow{"Delete", 'D', func() { p.askThen("Delete "+s.slot+"?", named(engine.ActDelete, s.slot)) }},
-				menuRow{"Exit", 'E', to(scrMain)})
-		}
 		var it []menuRow
 		if sl.CanSave {
 			it = append(it, menuRow{"New Slot", 'N', func() { p.typeLine("Save as", "", 20, engine.ActSave, 0) }})
 		}
 		for i, name := range sl.Names {
 			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
-				if sl.LoadOnly {
+				if !sl.CanSave {
 					named(engine.ActLoad, name)()
 					return
 				}
-				s.slot = name
-				s.open(scrSlot)
+				p.askThen("Overwrite "+name+"?", named(engine.ActSave, name))
 			}})
 		}
 		if len(it) == 0 {
@@ -251,6 +239,48 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 	}
 	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], off[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
 	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
+}
+
+// slotKey does the slot page's footer key h on the selected save: Enter
+// picks the row, L loads, D deletes after a Yes, Esc leaves.
+func (p *Presenter) slotKey(v engine.View, h byte) {
+	s, sl := &p.scr, v.Slots
+	switch h {
+	case footPick:
+		p.screenPick(v, s.sel-s.top)
+		return
+	case footBack:
+		p.send(engine.ActClose, 0)
+		return
+	}
+	i := s.sel
+	if sl.CanSave {
+		i-- // New Slot
+	}
+	if i < 0 || i >= len(sl.Names) {
+		return
+	}
+	name := sl.Names[i]
+	switch h {
+	case 'L':
+		p.sendA(engine.Action{Kind: engine.ActLoad, Text: name})
+	case 'D':
+		p.askThen("Delete "+name+"?", func() { s.open(scrMain); p.sendA(engine.Action{Kind: engine.ActDelete, Text: name}) })
+	}
+}
+
+// slotFootAt is the footer word of the slot page under (x, y), or 0.
+func (p *Presenter) slotFootAt(v engine.View, x, y int) byte {
+	s := &p.scr
+	if v.Slots == nil || s.sub != scrMain || s.pw == 0 {
+		return 0
+	}
+	for _, w := range slotFooter(v.Slots, s.pw/8) {
+		if image.Pt(x, y).In(p.cellRect(engine.CellRect{X1: w.x, Y1: s.ph/8 - 3, X2: w.x + len(w.label) - 1, Y2: s.ph/8 - 3})) {
+			return w.key
+		}
+	}
+	return 0
 }
 
 // screenKeys are the hotkeys of the page screen's rows: the saves on the
@@ -355,6 +385,16 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	}
 	if pk := v.Picker; pk != nil && s.sub != scrAsk {
 		return p.pickerKey(k, pk)
+	}
+	if sl := v.Slots; sl != nil && s.sub == scrMain {
+		h := byte(k)
+		if h >= 'a' && h <= 'z' {
+			h -= 'a' - 'A'
+		}
+		if (h == 'L' && !sl.LoadOnly || h == 'D') && k < 128 {
+			p.slotKey(v, h)
+			return true
+		}
 	}
 	_, items := p.screenItems(v)
 	n := len(items)

@@ -176,16 +176,44 @@ func screenPage(v engine.View) *cellPage {
 		if !sl.CanSave && !sl.LoadOnly {
 			c.str(2, c.rows-4, inkYellow, "No saving now") // promptRow-3
 		}
-		help := "Enter=save, load or delete   Esc=back"
-		switch {
-		case sl.LoadOnly:
-			help = "Enter=load   Esc=back"
-		case !sl.CanSave:
-			help = "Enter=load or delete   Esc=back"
+		for _, w := range slotFooter(sl, c.cols) {
+			c.str(w.x, c.rows-3, inkYellow, w.label) // promptRow-2
 		}
-		c.str(2, c.rows-3, inkYellow, help) // promptRow-2, as the F9 page's footer
 	}
 	return c
+}
+
+// footWord is a word of the slot page's footer: its text, the key it
+// stands for (footPick, L, D, footBack) and its column.
+type footWord struct {
+	label string
+	key   byte
+	x     int
+}
+
+// The footer words that are no letter: Enter (pick the row) and Esc (back).
+const footPick, footBack byte = 1, 2
+
+// slotFooter is the slot page's footer on a page cols wide, as the
+// original-style F9 page's: spread over the row inside the frame.
+func slotFooter(sl *engine.Slots, cols int) []footWord {
+	ws := []footWord{{"Enter=save", footPick, 0}, {"L=load", 'L', 0}, {"D=delete", 'D', 0}, {"Esc=back", footBack, 0}}
+	switch {
+	case sl.LoadOnly:
+		ws = append([]footWord{{"Enter=load", footPick, 0}}, ws[2:]...)
+	case !sl.CanSave:
+		ws = ws[1:]
+	}
+	gap := cols - 4
+	for _, w := range ws {
+		gap -= len(w.label)
+	}
+	gap /= len(ws) - 1
+	x := 2
+	for i := range ws {
+		ws[i].x, x = x, x+len(ws[i].label)+gap
+	}
+	return ws
 }
 
 // texts lays out the game's text: the text pane, the prompt row, the view

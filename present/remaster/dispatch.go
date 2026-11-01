@@ -165,13 +165,17 @@ func (p *Presenter) Click(x, y int) bool {
 		return true
 	}
 	if v := p.shownView; p.pageMenu && pageScreen(v) {
+		if h := p.slotFootAt(v, x, y); h != 0 {
+			p.slotKey(v, h)
+			return true
+		}
 		for i, r := range p.winRects {
 			if image.Pt(x, y).In(r) {
 				p.screenPick(v, i)
 				return true
 			}
 		}
-		if s := p.scr.sub; screenName(v) == "slots" || s == scrAsk || s == scrSlot || s == scrField || s == scrChange { // outside a popup: back (the creation sheet, the pickers and the icon editor take their page's clicks: Mouse)
+		if s := p.scr.sub; screenName(v) == "slots" || s == scrAsk || s == scrField || s == scrChange { // outside a popup: back (the creation sheet, the pickers and the icon editor take their page's clicks: Mouse)
 			p.screenKey(27, v)
 			return true
 		}
