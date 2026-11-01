@@ -141,7 +141,7 @@ func (p *Presenter) drawFightRows(dst *gpu.Image, note Note, b *engine.Battle, k
 	case b.Turn != nil && b.Turn.Aim && b.AimWhy != "":
 		put(b.AimWhy, 12, 0)
 	case b.Turn != nil && b.Turn.Aim:
-		put("Aim: Tab, click=target  Esc=cancel", 10, 0)
+		put("Aim: W A S D, Tab; Enter, click; Esc", 10, 0)
 	case b.Turn == nil && b.Panel == 0 && !hover && len(b.Log) > 0: // between the player's turns: what happens
 		put(b.Log[len(b.Log)-1], 10, 0)
 	default:

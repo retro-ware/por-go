@@ -323,3 +323,60 @@ Member keys are also off under a Yes/No question about the member (camp Drop, te
 **Not changed:**
 - The full map's yellow cursor is the original's page drawing, so it stays.
 - The party menu has no inventory, so a left click on a card there only selects the member.
+
+## 7. Third pass (2026-11-01)
+
+### Decisions
+
+- **Yes/No in the front end.** The engine publishes a typed question, `View.Ask` of kind `AskConfirm` (the prompt only: no rows, no preselection), and takes `ActYes`, or `ActNo`/`ActClose`. `YesNo` (Stop resting?, Lose it?/Use it?, cure anyway?) and combat's `confirm` (Flee?, Attack Ally?) both publish it; `Battle.Ask` is gone. The presenter draws every one with `keyWindow`: centred, dimmed, Y/N, starting on No; Esc, B, a right click and a click outside are No. The battle bar's Yes/No stay as a shortcut and send the same decisions. Abandon and Discard (creation, Modify) were already front-end questions (`askThen`, the engine only publishes the prompt), so they stay. The engine never asks "Abort Spell?" (an extra keeps the spell), so there is nothing to move. Outcomes are unchanged.
+- **One binding table** (present/remaster/bindings.go): context, keys, mouse way, pad way, the pad's buttons, and a `gap` naming a missing device. The help is made from it (`HelpLines`, given to the engine with `SetHelp`: the engine only pages it, and its own text is gone), and cmd/por's gamepad reads its buttons (`PadKeys`), so neither can drift. The keyboard dispatch is still the screens' own code; the test checks the table, not each key.
+- **Combat, XCOM 2 style** (only in combat with no menu over the map; exploring keeps its pad):
+
+| Action | Keyboard | Mouse | Gamepad |
+|---|---|---|---|
+| Move the square cursor (free: from the active unit; aiming: the aim) | W A S D | point | D-pad, left stick |
+| Confirm: walk or attack at the cursor, fire, press the focused button | Enter, Space | click | A |
+| Cancel aiming, else the options | Esc | right click | B |
+| Next/previous target (aiming), else the bar's focus | Tab / Shift-Tab, PgUp/PgDn | point | RB / LB |
+| Press a bar button | its letter, 1-0 | click | LB/RB then A |
+| Turn the camera | Q E | — | LT RT |
+| Pan the camera | arrows | — | right stick |
+| Recentre on the active unit | Home | — | R3 |
+| End the turn | Backspace | click End | Y |
+| Guard (the overwatch) | G | click Guard | X |
+| Options | Esc | right click | Start |
+| Battle log | L | — | Back |
+| Zoom | — | wheel | — |
+
+  W A S D no longer pan (the arrows still do); Q and E still turn the camera, and D is no longer "done". The cursor moves as the camera looks. A moved mouse takes over from the keys' cursor.
+- **Mouse while adventuring:** a click on the view's left or right third turns, its top third walks on, its bottom third steps back, the middle opens the command menu. The command menu gains Map, Minimap, Overview and Help, so the mouse and the pad reach them. A right click is the options.
+- **Back targets:** going back restores the row that opened the submenu (camp/temple/shop `campUI.to`/`back`, the Party submenu, the page screens' `open`, blobber's pages and questions). The temple, shop and training questions and the inventory's start on No.
+- **Appraise:** Keep/Sell gets Exit (E). The original's leaving sells, so Exit and Esc sell and go back to the gem list; they no longer leave the shop or temple.
+- **Quit:** one row "Quit to DOS" (hotkey D on the main menu: Q is Quick Start's) and one question, "Quit to DOS? Unsaved progress is lost." (`blobber.QuitRow`, `QuitQuestion`).
+
+### Done
+
+| Commit | What changed |
+|---|---|
+| 32d3a4f, 26f7725 | Yes/No moves to the front end (`AskConfirm`, `ActNo`). Tests: `TestYesNoConfirm` (engine), `TestConfirmKeys`; `TestFightRuns` answers combat's question through `View.Ask`, `TestBarFocus` sends `ActNo` for No. |
+| c3a9f32 | The binding table, the help from it, the combat pad and keyboard cursor, adventuring by mouse. The aiming hint names the cursor keys (in the section's own commit). Tests: `TestPadKeys`, `TestBindings`, `TestCursor`. |
+| a0fa82b | Blobber's Esc menu pad as cmd/por's menus: B and Back are Esc, Start is Enter, LB/RB PgUp/PgDn, LT/RT Home/End. The host does not feed it keys: blobber still polls, with identical buttons. |
+| c223edc | The inventory question's hover follows only a moved pointer; Space picks in the inventory and on the battle bar; the combat toast is `noteLine`'s, and a question no longer replaces it. |
+| 3156bd3 | Rows restored on back; Appraise's Exit. |
+| 4276087 | Quit; the Esc menu's settings pages end in Exit (E), as Esc. |
+| 8707714 | View, Cast, Name, the stats, Save as, Choose spell, Rest time, Stop resting?, Lose it?, Use it?, "... is not diseased. Cure anyway?". |
+
+### Gaps and limits
+
+The ground rule asks for keyboard, mouse and gamepad ways to every action. These are missing, and the table names them (`gap`):
+- **Typing** (names, numbers, save names, map labels) has no mouse or pad way: there is no on-screen keyboard.
+- **Combat camera:** the mouse cannot turn, pan or recentre it, and only the mouse zooms.
+- **The battle log** has no mouse way to open it (L, pad Back).
+- **The font** (Ctrl-F) has no mouse or pad way.
+- **Help** is reached by mouse and pad only from the command menu while adventuring.
+
+Other limits:
+- **Training's new spell:** the list has no Exit. The engine requires a pick there (as the original), so Esc does nothing rather than leave.
+- **Start** opens the options in combat but, as Enter, picks inside them; it does not close them as XCOM's does.
+- **XCOM deviations:** Back is the battle log, not an overview. L3 has no combat use (it stays the previous member). The cursor steps a square a press, as the keys do, not analog. Guard stands in for overwatch.
+- **The full map's label prompt** ("Label: ") stays inline on the page's prompt row, with its colon.
