@@ -71,6 +71,7 @@ type Presenter struct {
 	logTop               int                         // the battle Log's first line shown
 	sheet                sheetCanvas                 // the character sheet
 	beastPage            sheetCanvas                 // camp's bestiary (drawBestiary)
+	resultsPage          sheetCanvas                 // the after-combat page (drawResults)
 	areaSrc, areaMarkSrc image.Image                 // the overland's map and marker last uploaded (drawAreaMap)
 	areaImg, areaMark    *gpu.Image
 	winRects             []image.Rectangle        // the Esc menu's lines on screen, as last drawn
@@ -246,6 +247,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			dst.Fill(color.Black)
 			p.drawSheet(dst, note, v)
 			return Rect{}
+		}
+		if v.Results != nil {
+			return p.drawResults(dst, v, note)
 		}
 		if !ownLayout(v) { // nothing of the engine's page: the page's pictures and text in the remaster's layout
 			return p.drawGeneric(dst, v, note)
@@ -634,5 +638,5 @@ func (p *Presenter) draw3D(dst *gpu.Image, v engine.View, sc *blobber.Scene, not
 // (the special screens, the pagers and maps, the after-combat page, the
 // credits); every other page is drawGeneric's.
 func ownLayout(v engine.View) bool {
-	return pageScreen(v) || modal(v) || v.Results != nil || v.SheetPage != nil || v.Creation != nil || v.Credits
+	return pageScreen(v) || modal(v) || v.SheetPage != nil || v.Creation != nil || v.Credits
 }

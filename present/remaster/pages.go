@@ -179,21 +179,6 @@ func screenPage(v engine.View) *cellPage {
 		v.Ink[inkBlack] = color.RGBA{A: 255}
 		v.Pictures, v.Pane, v.SheetPage, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, nil, false, false
 	}
-	if v.Results != nil { // the after-combat page alone in its box: not the 3D screen's frames and text under it
-		var pics []engine.Picture
-		last := -1
-		for i, pc := range v.Pictures {
-			if pc.Border {
-				last = i
-			}
-		}
-		for i, pc := range v.Pictures {
-			if !pc.Border || i == last { // its own box: the last frame drawn
-				pics = append(pics, pc)
-			}
-		}
-		v.Pictures, v.Pane, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, false, false
-	}
 	c := newCellPage(v)
 	c.texts(v)
 	if s := v.SheetPage; s != nil {
@@ -286,9 +271,6 @@ func (c *cellPage) texts(v engine.View) {
 		n := 16 * engine.MinimapCell
 		c.pics = append(c.pics, engine.Picture{Img: mapImage(v.Map, engine.MinimapCell, c.ink, nil), At: image.Rectangle{Min: engine.MinimapAt, Max: engine.MinimapAt.Add(image.Pt(n, n))}})
 	}
-	if r := v.Results; r != nil {
-		c.results(r)
-	}
 	if v.Credits {
 		for _, l := range engine.Credits {
 			c.str(l.X, l.Y, l.Colour, l.Text)
@@ -334,40 +316,6 @@ func rosterRow(v engine.View, cx, cy int) int {
 		return -1
 	}
 	return i
-}
-
-// results lays the after-combat page out (ovr06: hiredShare, showResult,
-// the party destroyed) in the window's box.
-func (c *cellPage) results(r *engine.Results) {
-	right, bottom := c.cols-2, c.rows-2 // the last row: the menu, or the toast in its place
-	wrap := func(s string, x1, y1, x2 int) {
-		c.clear(x1, y1, x2, bottom)
-		for i, l := range engine.Wrap(s, x1, x2) {
-			if y1+i <= bottom {
-				c.str(x1, y1+i, inkGreen, l)
-			}
-		}
-	}
-	for k, s := range r.Shares {
-		wrap(s, 5, 5+2*k, 34)
-	}
-	if r.Outcome != "" {
-		c.str(1, 3, inkGreen, r.Outcome)
-		c.str(1, 5, inkGreen, r.Exp)
-		c.str(1, 7, inkGreen, "experience points.")
-	}
-	if r.Taken != "" {
-		wrap(r.Taken, 1, 9, right)
-	}
-	for i, h := range r.Harmed {
-		if y := 0xC + i; y <= 0x15 {
-			c.str(1, y, inkCyan, h.Name[:min(len(h.Name), 15)])
-			c.str(18, y, 12, h.What[:min(len(h.What), max(0, right-18))])
-		}
-	}
-	if r.End != "" {
-		wrap(r.End, r.EndAt.X1, r.EndAt.Y1, r.EndAt.X2)
-	}
 }
 
 // cellBorder draws View.Border's cells into m round the cells of r. The

@@ -317,7 +317,7 @@ func TestAdventurePages(t *testing.T) {
 
 // The after-combat page and the roster laid out from their data
 // (showResult, the party destroyed, drawPartyList's colours).
-func TestResultsRoster(t *testing.T) {
+func TestRoster(t *testing.T) {
 	var ink [16]color.RGBA
 	for i := range ink {
 		ink[i] = col(i)
@@ -329,22 +329,9 @@ func TestResultsRoster(t *testing.T) {
 		}
 		return strings.Join(s, " ")
 	}
-	v := engine.View{Cells: image.Pt(40, 25), Ink: ink, Results: &engine.Results{Outcome: "The party has won.", Exp: "Each character receives 120",
-		Taken: "The party takes 156 gold pieces, 7 gems and a great many other things besides.", Harmed: []engine.Harm{{Name: "Pip", What: "Dead"}}}}
-	c := screenPage(v)
-	for y, want := range map[int]string{3: "1:The party has won.", 5: "1:Each character receives 120", 7: "1:experience points.",
-		9: "1:The party takes 156 gold pieces, 7 ", 10: "1:gems and a great many other things ", 11: "1:besides.", 12: "1:Pip 18:Dead"} {
-		if got := row(c, y); got != want {
-			t.Errorf("row %d: %q, want %q", y, got, want)
-		}
-	}
-	v.Results = &engine.Results{End: "The entire party is killed!", EndAt: engine.CellRect{X1: 1, Y1: 1, X2: 38, Y2: 22}}
-	if got := row(screenPage(v), 1); got != "1:The entire party is killed!" {
-		t.Errorf("end: %q", got)
-	}
-	v = engine.View{Cells: image.Pt(40, 25), Ink: ink, Roster: true, Status: "15,1 W 00:00",
+	v := engine.View{Cells: image.Pt(40, 25), Ink: ink, Roster: true, Status: "15,1 W 00:00",
 		Party: []engine.Member{{Name: "Pip", AC: -2, HP: 3, MaxHP: 8, Colour: inkMagenta}, {Name: "Thorgrim", AC: 10, HP: 9, MaxHP: 9, Selected: true}}}
-	c = screenPage(v)
+	c := screenPage(v)
 	for y, want := range map[int]string{2: "17:Name 33:AC  HP", 4: "17:Pip 33:-2 38:3", 5: "17:Thorgrim 33:10 38:9", 15: "17:15,1 W 00:00"} {
 		if got := row(c, y); got != want {
 			t.Errorf("row %d: %q, want %q", y, got, want)
@@ -370,5 +357,14 @@ func TestNearestSpot(t *testing.T) {
 		if got := nearest(sp, c.from, c.d); got != c.want {
 			t.Errorf("from %d by %v: %d, want %d", c.from, c.d, got, c.want)
 		}
+	}
+}
+
+// The after-combat page is a screen of its own: drawn with no page under
+// it (no classic page, no engine pictures).
+func TestResultsOwnScreen(t *testing.T) {
+	v := engine.View{Cells: image.Pt(40, 25), Results: &engine.Results{Outcome: "The party has won."}}
+	if ownLayout(v) {
+		t.Fatal("the after-combat page still lays out on the classic page")
 	}
 }
