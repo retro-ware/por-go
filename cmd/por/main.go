@@ -524,6 +524,7 @@ func main() {
 		os.MkdirAll(eng.Cfg.SaveDir, 0o755)
 		os.WriteFile(settingsFile, b, 0o644)
 	}
+	blobber.Repeats = repeats                                                       // the Esc menu repeats held keys and buttons at the game's one rate
 	blobber.OnSaveLoad = func() { eng.Apply(engine.Action{Kind: engine.ActSlots}) } // as F9
 	blobber.OnMainMenu = eng.MainMenu
 	if actx, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: 44100, ChannelCount: 2, Format: oto.FormatSignedInt16LE}); err == nil {

@@ -101,10 +101,13 @@ func KeyJustPressed(k gpu.Key) bool {
 	return !shooting && gpu.IsKeyJustPressed(k) || padJust[k]
 }
 
-// KeyRepeated is KeyJustPressed with auto-repeat while held, for moving through lists.
+// Repeats reports whether a key or button held d ticks repeats this tick; a host with its own
+// key repeat sets it, so the Esc menu repeats at the same rate as the rest of the game.
+var Repeats = func(d int) bool { return d > 20 && d%4 == 0 }
+
+// KeyRepeated is KeyJustPressed with auto-repeat while held (Repeats), for moving through lists.
 func KeyRepeated(k gpu.Key) bool {
-	rep := func(d int) bool { return d > 20 && d%4 == 0 }
-	return KeyJustPressed(k) || rep(gpu.KeyPressDuration(k)) || rep(padDur[k])
+	return KeyJustPressed(k) || Repeats(gpu.KeyPressDuration(k)) || Repeats(padDur[k])
 }
 
 // KeyPressed reports a key held on the keyboard or a gamepad.
