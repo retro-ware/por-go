@@ -120,7 +120,7 @@ func (e *Engine) extraAct(a Action) bool {
 		}
 		e.Help()
 	case ActSlots:
-		if !e.ext.guarded || e.ext.modal > 0 {
+		if e.mode() == modeTitle || e.ext.modal > 0 {
 			return false
 		}
 		e.pushSlots(false) // the next decisions go to it, wherever the engine waits (until feeds the top screen)

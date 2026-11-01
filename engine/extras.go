@@ -50,7 +50,6 @@ type extras struct {
 	beasts   []Beast            // bestiary.go: their entries, as last published
 	creating bool               // CreateCharacter's sheet is up: no level, experience, party items or status on it
 	minStats [6]int             // "Minimal stats": per-stat floor, STR as st*100+str00
-	guarded  bool               // slots.go: a load can unwind to adventure
 	inGame   bool               // slots.go: GameLoop has started: saving allowed
 	aoe      int                // aoe.go: radius+1 of the spell being aimed, 0 none
 	bolt     [2]int             // aoe.go: the reach and bounce of the bolt being aimed (reach 0: not a bolt)

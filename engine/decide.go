@@ -98,8 +98,8 @@ func (e *Engine) whenDown(base int, f func()) {
 // one under it (down to base) gets actRedraw.
 func (e *Engine) feed(a Action, base int) {
 	for n := len(e.screens); n > base; n = len(e.screens) {
-		s := e.screens[n-1]
-		if !s.apply(a) {
+		s, r := e.screens[n-1], e.resets
+		if !s.apply(a) || e.resets != r { // not done, or it dropped the stack (unwindReset)
 			return
 		}
 		e.screens = e.screens[:n-1]

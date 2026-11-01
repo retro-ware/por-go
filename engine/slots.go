@@ -19,9 +19,6 @@ import (
 // adventure, which resumes from the loaded game like the party menu's Load.
 // Saving during combat is refused: the battle is not part of the format.
 
-// slotLoaded is the panic that carries a load out to adventure.
-type slotLoaded struct{}
-
 type slot struct {
 	name string
 	at   time.Time
@@ -37,8 +34,11 @@ func (e *Engine) endGame() {
 	e.loadedGame = false
 }
 
-// unwindReset drops the input state of the screens the load left.
+// unwindReset drops every screen up (without their leaves) and their
+// input state: a load or Back to Main Menu; the handler that did it finds
+// the stack gone (feed).
 func (e *Engine) unwindReset() {
+	e.resets++
 	x := &e.ext
 	x.inCommand, x.menu, x.list, x.choosing = false, 0, false, false
 	x.held, x.regions, x.raw = Action{}, nil, false
@@ -287,7 +287,12 @@ func (e *Engine) applySlots(ss *slotScreen, a Action) (done bool) {
 		if ss.loadOnly {
 			return true
 		}
-		panic(slotLoaded{})
+		e.unwindReset()       // the screens up are dropped: adventure resumes from the loaded game
+		if e.beginFlag == 0 { // a save from the party menu: no area yet, so back there
+			e.PartyMenu(e.GameLoop)
+		} else {
+			e.GameLoop()
+		}
 	}
 	return false
 }

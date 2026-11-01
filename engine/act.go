@@ -145,7 +145,7 @@ type Action struct {
 // Start runs body (Run, or Play after Init), which puts the first screen
 // up, and returns the View.
 func (e *Engine) Start(body func()) View {
-	e.catch(body)
+	body()
 	return e.Apply()
 }
 
@@ -155,16 +155,14 @@ func (e *Engine) Start(body func()) View {
 // no screen up, the party menu starts a game.
 func (e *Engine) Apply(as ...Action) View {
 	for _, a := range as {
-		e.catch(func() { e.apply(a) })
+		e.apply(a)
 	}
-	e.catch(func() {
-		if e.over && e.mode() == modeExplore { // a script's quit, from a continuation
-			e.feed(Action{Kind: actRedraw}, 0)
-		}
-		if len(e.screens) == 0 {
-			e.PartyMenu(e.GameLoop) // ovr17:0161, then ovr04:32F8
-		}
-	})
+	if e.over && e.mode() == modeExplore { // a script's quit, from a continuation
+		e.feed(Action{Kind: actRedraw}, 0)
+	}
+	if len(e.screens) == 0 {
+		e.PartyMenu(e.GameLoop) // ovr17:0161, then ovr04:32F8
+	}
 	e.publish()
 	v := e.View()
 	v.Events, e.events = e.events, nil
@@ -173,7 +171,6 @@ func (e *Engine) Apply(as ...Action) View {
 
 // apply gives one decision to the top screen.
 func (e *Engine) apply(a Action) {
-	e.ext.guarded = e.mode() != modeTitle
 	switch a.Kind {
 	case ActMainMenu:
 		e.mainMenu()
@@ -212,36 +209,6 @@ func (e *Engine) apply(a Action) {
 			e.feed(h, 0)
 		}
 	}
-}
-
-// catch runs f; a slot load or Back to Main Menu unwinds whatever runs
-// (a panic) and goes on with the game loaded or the party menu.
-func (e *Engine) catch(f func()) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-		e.ext.guarded = false
-		var next func()
-		switch r.(type) {
-		case toMainMenu:
-			next = e.endGame // the party menu, as when the party is lost
-		case slotLoaded:
-			e.unwindReset()
-			next = e.GameLoop
-			if e.beginFlag == 0 { // a save from the party menu: no area yet, so back there
-				next = func() { e.PartyMenu(e.GameLoop) }
-			}
-		default:
-			panic(r)
-		}
-		e.catch(func() {
-			e.ext.guarded = true
-			next()
-		})
-	}()
-	f()
 }
 
 // say shows s as the window's note: what a direct action reports instead
