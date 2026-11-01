@@ -115,12 +115,12 @@ var bindings = []binding{
 	{ctx: ctxMenus, keys: "+ - Bksp", desc: "spells: one more, less", mouse: "click (more)", pad: "A (more)", gap: "one less is keyboard only",
 		codes: []code{{'+', input.More}, {'=', input.More}, {'-', input.Less}}}, // Backspace: the Letters row's
 
-	{ctx: ctxAdv, keys: "Arrows", desc: "walk, turn", mouse: "minimap, then Walk", pad: "D-pad, stick"}, // the Menus rows' arrows; the digits are the keypad (keypadActs)
+	{ctx: ctxAdv, keys: "Arrows", desc: "walk, turn", mouse: "map: Walk", pad: "D-pad, stick"}, // the Menus rows' arrows; the digits are the keypad (keypadActs)
 	{ctx: ctxAdv, keys: "Enter", desc: "command menu", mouse: "click middle", pad: "A, Start"},   // the Menus row's Enter
 	{ctx: ctxAdv, keys: "C I V A", desc: "cast items view camp", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "W", desc: "sweep: search walking", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "S", desc: "search this square", mouse: "command menu", pad: "A, then pick"},
-	{ctx: ctxAdv, keys: "M", desc: "map: walk, labels", mouse: "command menu", pad: "A, then pick",
+	{ctx: ctxAdv, keys: "M", desc: "map: walk, labels", mouse: "minimap", pad: "A, then pick",
 		codes: []code{{'m', input.Map}}},
 	{ctx: ctxAdv, keys: "Tab", desc: "minimap", mouse: "command menu", pad: "Y",
 		codes:   []code{{keyTab, input.Minimap}, {KeyPadMinimap, input.Minimap}},
