@@ -164,19 +164,6 @@ func box() []gpu.MeshVertex {
 	return vs
 }
 
-// mul is a*b (column-major: b applies first).
-func mul(a, b gpu.Mat4) gpu.Mat4 {
-	var r gpu.Mat4
-	for c := range 4 {
-		for row := range 4 {
-			for k := range 4 {
-				r[c*4+row] += a[k*4+row] * b[c*4+k]
-			}
-		}
-	}
-	return r
-}
-
 // place is translate(x, y, z) * rotateY(yaw) * scale(sx, sy, sz).
 func place(x, y, z, yaw, sx, sy, sz float32) gpu.Mat4 {
 	c, s := float32(math.Cos(float64(yaw))), float32(math.Sin(float64(yaw)))
@@ -220,7 +207,7 @@ func (c camera) viewProj() gpu.Mat4 {
 	e := c.eye
 	view := gpu.Mat4{float32(r[0]), float32(u[0]), float32(z[0]), 0, float32(r[1]), float32(u[1]), float32(z[1]), 0,
 		float32(r[2]), float32(u[2]), float32(z[2]), 0, float32(-r.dot(e)), float32(-u.dot(e)), float32(-z.dot(e)), 1}
-	return mul(perspective(float32(c.fovy), float32(c.aspect), 0.1, 200), view)
+	return perspective(float32(c.fovy), float32(c.aspect), 0.1, 200).Mul(view)
 }
 
 // ndc is where world point w lands on the screen, in -1..1 (y up); ok is

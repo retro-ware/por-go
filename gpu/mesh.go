@@ -53,6 +53,19 @@ type Mat4 [16]float32
 // Ident is the identity matrix.
 var Ident = Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
 
+// Mul is a*b (b applies first).
+func (a Mat4) Mul(b Mat4) Mat4 {
+	var r Mat4
+	for c := range 4 {
+		for row := range 4 {
+			for k := range 4 {
+				r[c*4+row] += a[k*4+row] * b[c*4+k]
+			}
+		}
+	}
+	return r
+}
+
 // MeshBlend is how a mesh meets what is drawn: opaque (alpha-tested,
 // lit), or blended unlit and without writing depth.
 type MeshBlend int

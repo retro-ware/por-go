@@ -402,30 +402,13 @@ func buildWorld() *world {
 // viewProj is the camera's matrix: world to camera space (x right, y down, z forward), the roll,
 // then the projection (focal, W, H), to WebGPU clip space.
 func viewProj(c cam) gpu.Mat4 {
-	cr, sr := math.Cos(c.roll), math.Sin(c.roll)
-	sx, sy := 2*focal/float64(W), 2*focal/float64(H)
-	v := [4][4]float64{{c.rtx, 0, c.rtz, -(c.rtx*c.x + c.rtz*c.z)}, {0, 1, 0, 0}, {c.fwx, 0, c.fwz, -(c.fwx*c.x + c.fwz*c.z)}, {0, 0, 0, 1}}
-	r := [4][4]float64{{cr, -sr, 0, 0}, {sr, cr, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}
-	p := [4][4]float64{{sx, 0, 0, 0}, {0, -sy, 0, 0}, {0, 0, float64(projA), float64(projB)}, {0, 0, 1, 0}}
-	m := mul(p, mul(r, v))
-	var out gpu.Mat4
-	for col := 0; col < 4; col++ {
-		for row := 0; row < 4; row++ {
-			out[col*4+row] = float32(m[row][col])
-		}
-	}
-	return out
-}
-
-func mul(a, b [4][4]float64) (c [4][4]float64) {
-	for i := range 4 {
-		for j := range 4 {
-			for k := range 4 {
-				c[i][j] += a[i][k] * b[k][j]
-			}
-		}
-	}
-	return c
+	cr, sr := float32(math.Cos(c.roll)), float32(math.Sin(c.roll))
+	sx, sy := float32(2*focal/float64(W)), float32(2*focal/float64(H))
+	v := gpu.Mat4{float32(c.rtx), 0, float32(c.fwx), 0, 0, 1, 0, 0, float32(c.rtz), 0, float32(c.fwz), 0,
+		float32(-(c.rtx*c.x + c.rtz*c.z)), 0, float32(-(c.fwx*c.x + c.fwz*c.z)), 1}
+	r := gpu.Mat4{cr, sr, 0, 0, -sr, cr, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+	p := gpu.Mat4{sx, 0, 0, 0, 0, -sy, 0, 0, 0, 0, projA, 1, 0, 0, projB, 0}
+	return p.Mul(r.Mul(v))
 }
 
 // Offsets into the frame's uniforms (meshSrc's U after rect) of what changes per draw.
