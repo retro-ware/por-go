@@ -136,15 +136,12 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 			{"No", 'N', c.back(campMain)}}
 	}
 	var it []menuRow // the party's, the rests first: each member's own are on their card's menu (drawCampMenus)
-	if cp.Healing {
-		it = append(it, menuRow{"Until healed", 'H', act(engine.ActRest, engine.RestHeal)})
+	if cp.Healing || cp.Studying {
+		it = append(it, menuRow{"Until fixed", 'F', act(engine.ActRest, engine.RestFix)})
 	}
 	until := menuRow{"Until night", 'N', act(engine.ActRest, engine.RestUntil)}
 	if !v.Day {
 		until = menuRow{"Until day", 'D', act(engine.ActRest, engine.RestUntil)}
-	}
-	if cp.Studying {
-		it = append(it, menuRow{"Until memorized", 'M', act(engine.ActRest, engine.RestMemorize)})
 	}
 	it = append(it, menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)}, until)
 	if len(cp.Bestiary) > 0 {

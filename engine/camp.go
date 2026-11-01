@@ -503,10 +503,9 @@ func (e *Engine) dropMember(n int) {
 
 // Rest choices (ActRest N).
 const (
-	RestHeal     = iota // until everyone is healed (healParty)
-	RestMemorize        // until the planned spells are learned
-	RestWait            // an hour
-	RestUntil           // until day (at night) or night (by day)
+	RestFix   = iota // until everyone is healed (healParty) and the planned spells are learned
+	RestWait         // an hour
+	RestUntil        // until day (at night) or night (by day)
 )
 
 // CampMenu = ovr16:1E6F, remade: camp takes decisions until the party
@@ -598,19 +597,23 @@ func (e *Engine) campDecision(a Action) (left bool) {
 			e.planSpells(c)
 		}
 		switch a.N {
-		case RestHeal:
+		case RestFix:
+			if e.healMinutes() == 0 && e.partyStudy() == 0 {
+				e.say("Nothing to fix")
+				return false
+			}
+			study := func(interrupted bool) { // healing ends with the planned spells only when there are clerics
+				if most := e.partyStudy(); !interrupted && most > 0 {
+					e.restFor(most, nil, e.rested)
+					return
+				}
+				e.rested(interrupted)
+			}
 			if e.healMinutes() == 0 {
-				e.say("No one needs healing")
-				return false
+				study(false)
+			} else {
+				e.healParty(study)
 			}
-			e.healParty(e.rested)
-		case RestMemorize:
-			most := e.partyStudy()
-			if most == 0 {
-				e.say("No spells to memorize")
-				return false
-			}
-			e.restFor(most, nil, e.rested)
 		case RestWait:
 			e.restFor(60, nil, e.rested)
 		case RestUntil:

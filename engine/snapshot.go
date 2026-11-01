@@ -438,8 +438,8 @@ type Camp struct {
 	CanCast  bool        // the selected member has a spell to cast (ActCastPick)
 	Book     []BookSpell // the selected member's spell book: how often each is memorized on a rest (ActPlan)
 	Scrolls  []BookSpell // the spells on their scrolls: Count 1 while being scribed (ActScribe)
-	Healing  bool        // someone resting can heal (RestHeal)
-	Studying bool        // someone resting would memorize or scribe a spell (RestMemorize)
+	Healing  bool        // someone resting can heal (RestFix)
+	Studying bool        // someone resting would memorize or scribe a spell (RestFix)
 	Bestiary []Beast     // the monster kinds met
 }
 
