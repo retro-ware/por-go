@@ -368,9 +368,13 @@ Member keys are also off under a Yes/No question about the member (camp Drop, te
 
 ### Gaps and limits
 
-The ground rule asks for keyboard, mouse and gamepad ways to every action. These are missing, and the table names them (`gap`):
-- **Typing** (names, numbers, save names, map labels) has no mouse or pad way: there is no on-screen keyboard.
+The ground rule asks for keyboard, mouse and gamepad ways to every action.
+
+Accepted exceptions (user decision, 2026-11-01; they change only with a port to a platform without a keyboard):
+- **Typing** (names, numbers, save names, map labels) requires the keyboard; there is no on-screen keyboard.
 - **Combat camera:** the mouse cannot turn, pan or recentre it, and only the mouse zooms.
+
+Still missing, and the table names them (`gap`):
 - **The battle log** has no mouse way to open it (L, pad Back).
 - **The font** (Ctrl-F) has no mouse or pad way.
 - **Help** is reached by mouse and pad only from the command menu while adventuring.
