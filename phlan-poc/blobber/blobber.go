@@ -1476,8 +1476,8 @@ func onOffOf(p *bool) func(*Game) string { return func(*Game) string { return on
 func (g *Game) menuOptions() []menuLine {
 	if g.confirm != nil {
 		do := g.confirm.do
-		return []menuLine{{label: "No", change: func(g *Game, _ int) { g.back() }},
-			{label: "Yes", change: func(g *Game, _ int) { g.back(); do() }}}
+		return []menuLine{{label: "Yes", change: func(g *Game, _ int) { g.back(); do() }},
+			{label: "No", change: func(g *Game, _ int) { g.back() }}}
 	}
 	switch g.page {
 	case "Graphics":
@@ -1522,7 +1522,7 @@ func (g *Game) menuOptions() []menuLine {
 		return menuLine{label: p, change: func(g *Game, _ int) { g.page, g.sel = p, 0 }}
 	}
 	ask := func(label, q string, do func()) menuLine {
-		return menuLine{label: label, change: func(g *Game, _ int) { g.confirm, g.sel = &question{q, do}, 0 }}
+		return menuLine{label: label, change: func(g *Game, _ int) { g.confirm, g.sel = &question{q, do}, 1 }}
 	}
 	o := []menuLine{{label: "Resume", change: func(g *Game, _ int) { g.menu = false }}}
 	if OnSaveLoad != nil {
@@ -1795,8 +1795,10 @@ func (g *Game) drawMenu(screen *gpu.Image) {
 	case g.page != "":
 		title = strings.ToUpper(g.page)
 	}
-	b := screen.Bounds() // the game dims under the menu
-	vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
+	if Window == nil || g.confirm == nil { // the game dims under the menu; Window dims under a question itself
+		b := screen.Bounds()
+		vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
+	}
 	if Window != nil {
 		keys := menuKeys(g.menuOptions())
 		Window(screen, title, items, keys, g.sel, false)
