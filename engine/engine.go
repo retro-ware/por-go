@@ -157,6 +157,7 @@ type Engine struct {
 	fleeRoll                        byte                          // DS:6825 flee/surrender roll
 	slotHits, slotShots             [3]byte                       // DS:6822+i / 6E2C+i, i = 1..2 attack slots; DS:6E2C
 	aiLastDir, aiBlocked, aiState3  byte                          // DS:443C..443E computer-turn movement state; DS:443D/443E
+	aiOpen                          aiOpen                        // extra: aiPathDir's open list, kept to reuse its storage
 	attackedAlly                    byte                          // DS:6DE2
 	tiedTarget                      *Character                    // DS:6826 scratch target
 	foesHealth                      byte                          // DS:6E2F

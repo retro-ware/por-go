@@ -1,7 +1,5 @@
 package engine
 
-import "container/heap"
-
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
@@ -646,9 +644,12 @@ func (e *Engine) aiPathDir(c, t *Character) int {
 	var cost [25][50]int   // moves to get there, +1 (0: not reached)
 	var first [25][50]int8 // the first step on the way there
 	cost[sy][sx] = 1
-	open := &aiOpen{{x: sx, y: sy, f: h(sx, sy), h: h(sx, sy)}}
-	for open.Len() > 0 {
-		at := heap.Pop(open).(aiNode)
+	open := e.aiOpen[:0]
+	defer func() { e.aiOpen = open }()
+	open.push(aiNode{int32(sx), int32(sy), int32(h(sx, sy)), int32(h(sx, sy))})
+	for len(open) > 0 {
+		n := open.pop()
+		at := struct{ x, y, f, h int }{int(n.x), int(n.y), int(n.f), int(n.h)}
 		if next(at.x, at.y) {
 			return int(first[at.y][at.x])
 		}
@@ -678,30 +679,57 @@ func (e *Engine) aiPathDir(c, t *Character) int {
 				first[y][x] = first[at.y][at.x]
 			}
 			hx := h(x, y)
-			heap.Push(open, aiNode{x, y, ng - 1 + hx, hx})
+			open.push(aiNode{int32(x), int32(y), int32(ng - 1 + hx), int32(hx)})
 		}
 	}
 	return -1
 }
 
 // aiNode is a square on aiPathDir's open list, f its moves so far plus
-// the least it can still take.
-type aiNode struct{ x, y, f, h int }
+// the least it can still take, h that least.
+type aiNode struct{ x, y, f, h int32 }
 
-// aiOpen is aiPathDir's open list, cheapest f first (container/heap).
-// ponytail: heap.Push boxes each node (an allocation per push); a typed
-// heap removes that if a profile ever shows it.
+// aiOpen is aiPathDir's open list: a binary heap, cheapest f first, ties
+// the nearer first.
 type aiOpen []aiNode
 
-func (o aiOpen) Len() int { return len(o) }
-func (o aiOpen) Less(i, j int) bool {
-	return o[i].f < o[j].f || o[i].f == o[j].f && o[i].h < o[j].h // ties: the nearer first
+func (o aiOpen) less(i, j int) bool {
+	return o[i].f < o[j].f || o[i].f == o[j].f && o[i].h < o[j].h
 }
-func (o aiOpen) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-func (o *aiOpen) Push(x any)   { *o = append(*o, x.(aiNode)) }
-func (o *aiOpen) Pop() any {
-	old := *o
-	n := old[len(old)-1]
-	*o = old[:len(old)-1]
-	return n
+
+func (o *aiOpen) push(n aiNode) {
+	*o = append(*o, n)
+	h := *o
+	for i := len(h) - 1; i > 0; {
+		p := (i - 1) / 2
+		if !h.less(i, p) {
+			break
+		}
+		h[i], h[p] = h[p], h[i]
+		i = p
+	}
+}
+
+func (o *aiOpen) pop() aiNode {
+	h := *o
+	top := h[0]
+	last := len(h) - 1
+	h[0] = h[last]
+	h = h[:last]
+	for i := 0; ; {
+		m, l, r := i, 2*i+1, 2*i+2
+		if l < last && h.less(l, m) {
+			m = l
+		}
+		if r < last && h.less(r, m) {
+			m = r
+		}
+		if m == i {
+			break
+		}
+		h[i], h[m] = h[m], h[i]
+		i = m
+	}
+	*o = h
+	return top
 }
