@@ -70,6 +70,7 @@ type Presenter struct {
 	barDrag    *barHit                     // the bar whose thumb the pointer holds
 	logTop     int                         // the battle Log's first line shown
 	sheet      sheetCanvas                 // the character sheet
+	beastPage  sheetCanvas                 // camp's bestiary (drawBestiary)
 	winRects   []image.Rectangle           // the Esc menu's lines on screen, as last drawn
 	mainSel    int                         // the main menu's highlight
 	mainBack   int                         // the main menu's row that opened the Party submenu: Exit goes back to it
@@ -222,6 +223,12 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if p.main = v.MainMenu != nil; p.main {
 		p.shown, p.active, p.menu = "", false, false
 		p.drawMain(dst, v)
+		return Rect{}
+	}
+	if screenUp(v) && v.Camp != nil && p.camp.screen == campBestiary { // the bestiary: a page of its own over the whole window
+		p.shown, p.active, p.menu = "", true, false
+		dst.Fill(color.Black)
+		p.drawBestiary(dst, note, v)
 		return Rect{}
 	}
 	sc := p.scene(v)

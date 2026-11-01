@@ -8,8 +8,6 @@ import (
 
 	"gpu"
 
-	"por/pal"
-
 	"por/engine"
 	"por/present/input"
 )
@@ -23,8 +21,7 @@ const (
 	campMemorize
 	campScribe
 	campBestiary
-	campBeast // one bestiary entry
-	campDrop  // the drop's confirmation
+	campDrop // the drop's confirmation
 
 	templeHeal // the temple's services (temple.go)
 	templeNot  // "is not blind": cure anyway?
@@ -37,11 +34,10 @@ const (
 type campUI struct {
 	screen   int
 	sel      int
-	top      int    // the first line shown of a list too long for the screen
-	byDanger bool   // the bestiary's order
-	beast    string // the entry shown
-	pick     int    // the temple's cure or the shop's item asked about
-	icon     srcImage
+	top      int            // the first line shown of a list too long for the screen
+	byDanger bool           // the bestiary's order
+	beast    string         // the entry shown
+	pick     int            // the temple's cure or the shop's item asked about
 	ids      []int          // the spell lists' lines: each one's spell (0: a level's heading, Exit)
 	rows     map[int][2]int // each screen left for a submenu: its highlighted row and first line shown, for back
 }
@@ -105,17 +101,9 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 		}
 		it := []menuRow{{sort, 0, func() { c.byDanger = !c.byDanger }}}
 		for _, b := range p.beasts(v) {
-			it = append(it, menuRow{b.Name, 0, func() { c.beast = b.Name; c.to(campBeast, 0)() }})
+			it = append(it, menuRow{b.Name, 0, func() { c.beast = b.Name }}) // shown beside the list (drawBestiary)
 		}
 		return "Bestiary", append(it, menuRow{"Exit", 'E', c.back(campMain)})
-	case campBeast:
-		for _, b := range cp.Bestiary {
-			if b.Name == c.beast {
-				return fmt.Sprintf("%s, danger %s: %s", b.Name, roman[b.Danger], b.Text), []menuRow{{"Exit", 'E', c.back(campBestiary)}}
-			}
-		}
-		c.screen = campBestiary
-		return p.campItems(v)
 	case campDrop:
 		return "Drop " + selectedName(v) + " from the party?", []menuRow{
 			{"Yes", 'Y', func() { p.send(engine.ActDropMember, selectedIndex(v)); c.back(campMain)() }},
@@ -158,7 +146,7 @@ func (p *Presenter) drawCampMenus(dst *gpu.Image, v engine.View) {
 			p.campImg, p.campBuf = append(p.campImg, nil), append(p.campBuf, nil)
 		}
 		p.tipImg, p.tipBuf, p.campImg[i], p.campBuf[i] = p.campImg[i], p.campBuf[i], p.tipImg, p.tipBuf // each menu its own image: one image redrawn in a frame shows its last pixels everywhere
-		shown := keys // the white hotkeys only on the focus's menu
+		shown := keys                                                                                   // the white hotkeys only on the focus's menu
 		if p.ctx != 1+i {
 			shown = nil
 		}
@@ -284,24 +272,6 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 		lines[i] = it.text
 	}
 	p.camp.sel = min(max(p.camp.sel, 0), len(items)-1)
-	if p.camp.screen == campBeast {
-		var icon image.Image
-		for _, b := range v.Camp.Bestiary {
-			if b.Name == p.camp.beast {
-				icon = b.Icon
-			}
-		}
-		if icon != nil {
-			s := k * 3 // the icon's pixels at three times the text's: its aspect kept
-			w, h := int(s*float64(icon.Bounds().Dx())), int(s*float64(icon.Bounds().Dy()))
-			dst.SubImage(image.Rect(cx-w/2, top, cx-w/2+w, top+h)).(*gpu.Image).Fill(pal.EGA(8)) // on grey: its black parts show
-			op := &gpu.DrawImageOptions{}
-			op.GeoM.Scale(s, s)
-			op.GeoM.Translate(float64(cx-w/2), float64(top))
-			dst.DrawImage(p.camp.icon.of(icon), op)
-			top += int(s*float64(icon.Bounds().Dy())) + int(k*4)
-		}
-	}
 	var icons []image.Image // the rows' icons: the items' (the shop's Identify), the creatures' (the bestiary)
 	switch {
 	case v.Shop != nil && p.camp.screen == shopID:
