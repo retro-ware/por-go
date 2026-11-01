@@ -194,6 +194,9 @@ func (e *Engine) pageView(v *View) {
 	}
 	v.Cells = image.Pt(textCols, textRows)
 	t := &pg.tx
+	if e.mode() == modeExplore { // exploring always stands on the main frame: a stray write over an edge (camp's leaving) must never bring the classic page up
+		pg.frameUp = true
+	}
 	v.Frame = pg.frameUp && !e.modal() // under help, the journal, the maps: the page, not the 3D view
 	if p := e.pane(); pg.frameUp || p.Shown() {
 		v.Pane = p

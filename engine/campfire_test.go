@@ -50,3 +50,15 @@ func TestCampMemberPowers(t *testing.T) {
 		}
 	}
 }
+
+// Exploring always shows the 3D view: a write that tore the main frame
+// (as camp's leaving once did) never brings the classic page up.
+func TestExploreKeepsFrame(t *testing.T) {
+	e := quickStarted(t)
+	e.push(modeExplore, func(Action) bool { return false }, nil)
+	e.pg.frameUp = false
+	e.publish()
+	if !e.View().Frame {
+		t.Fatal("exploring without the main frame: the classic page shows")
+	}
+}
