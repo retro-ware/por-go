@@ -1,6 +1,8 @@
 package gpu
 
 import (
+	"sync"
+
 	"github.com/gogpu/gogpu"
 	"github.com/gogpu/gpucontext"
 )
@@ -241,6 +243,7 @@ func tickInput() {
 	in.tickChars, in.chars = append(in.tickChars[:0], in.chars...), in.chars[:0]
 	in.tickWheel, in.wheel = in.wheel, [2]float64{}
 	in.tickDrops, in.drops = append(in.tickDrops[:0], in.drops...), in.drops[:0]
+	tickPads()
 }
 
 // Drop is a file dropped on the window, at a screen pixel (as CursorPosition).
@@ -296,13 +299,85 @@ func screenPos(x, y float64) (int, int) {
 // Wheel is the wheel movement since the last tick.
 func Wheel() (float64, float64) { return in.tickWheel[0], in.tickWheel[1] }
 
-// Gamepads: gogpu reads none yet, so there are none.
-// ponytail: wire them up when gogpu gets gamepad input
-func AppendGamepadIDs(ids []GamepadID) []GamepadID                            { return ids }
-func IsStandardGamepadLayoutAvailable(GamepadID) bool                         { return false }
-func IsStandardGamepadButtonPressed(GamepadID, StandardGamepadButton) bool    { return false }
-func StandardGamepadButtonPressDuration(GamepadID, StandardGamepadButton) int { return 0 }
-func StandardGamepadAxisValue(GamepadID, StandardGamepadAxis) float64         { return 0 }
+// maxPads is how many gamepads are read.
+const maxPads = 4
+
+// padState is one gamepad as its platform reads it.
+type padState struct {
+	ok   bool // connected, with the standard layout
+	btn  [padButtons]bool
+	axis [4]float64 // StandardGamepadAxis order, -1..1, down positive
+}
+
+// triggerDown is how far an analogue trigger goes to count as pressed.
+const triggerDown = 0.5
+
+// pads: the main thread reads the platform into polled (pollPads); each tick
+// takes it into cur and counts the held ticks as for keys.
+var pads struct {
+	sync.Mutex
+	polled [maxPads]padState
+	cur    [maxPads]padState
+	dur    [maxPads][padButtons]int
+}
+
+// pollPads reads the gamepads; on the main thread, as the window's events.
+func pollPads() {
+	var p [maxPads]padState
+	readPads(&p)
+	pads.Lock()
+	pads.polled = p
+	pads.Unlock()
+}
+
+func tickPads() {
+	pads.Lock()
+	pads.cur = pads.polled
+	pads.Unlock()
+	for i, p := range pads.cur {
+		for b, down := range p.btn {
+			if down && p.ok {
+				pads.dur[i][b]++
+			} else {
+				pads.dur[i][b] = 0
+			}
+		}
+	}
+}
+
+func pad(id GamepadID) *padState {
+	if id < 0 || id >= maxPads {
+		return &padState{}
+	}
+	return &pads.cur[id]
+}
+
+// AppendGamepadIDs appends the connected gamepads.
+func AppendGamepadIDs(ids []GamepadID) []GamepadID {
+	for i, p := range pads.cur {
+		if p.ok {
+			ids = append(ids, GamepadID(i))
+		}
+	}
+	return ids
+}
+
+func IsStandardGamepadLayoutAvailable(id GamepadID) bool { return pad(id).ok }
+func IsStandardGamepadButtonPressed(id GamepadID, b StandardGamepadButton) bool {
+	return StandardGamepadButtonPressDuration(id, b) > 0
+}
+func StandardGamepadButtonPressDuration(id GamepadID, b StandardGamepadButton) int {
+	if id < 0 || id >= maxPads || b < 0 || b >= padButtons {
+		return 0
+	}
+	return pads.dur[id][b]
+}
+func StandardGamepadAxisValue(id GamepadID, a StandardGamepadAxis) float64 {
+	if a < 0 || int(a) >= len(pad(id).axis) {
+		return 0
+	}
+	return pad(id).axis[a]
+}
 
 // AppendJustPressedTouchIDs: no touches on the desktop.
 func AppendJustPressedTouchIDs(ids []TouchID) []TouchID { return ids }

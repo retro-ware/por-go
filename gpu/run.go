@@ -38,7 +38,7 @@ var win struct {
 	lw, lh   int  // its size last frame
 	unfocus  bool // keep updating while unfocused (always on here)
 	full     bool
-	fullAt   time.Time    // when the last fullscreen change was applied (the main thread)
+	fullAt   time.Time     // when the last fullscreen change was applied (the main thread)
 	toFull   atomic.Int32  // a fullscreen change for the main thread: 1 off, 2 on
 	toSize   atomic.Uint64 // a window size for the main thread: w<<32 | h (0: none)
 	fps      float64
@@ -133,6 +133,7 @@ func RunGameWithOptions(g Game, o *RunGameOptions) error {
 	}
 	initInput(app)
 	app.OnUpdate(func(float64) { // the main thread
+		pollPads()
 		if f := win.toFull.Swap(0); f != 0 {
 			app.SetFullscreen(f == 2)
 			setComposition(f != 2)
