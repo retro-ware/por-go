@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"gpu"
+	"gpu/vector"
 
 	"blobber"
 
@@ -222,6 +223,11 @@ func (p *Presenter) label(dst *gpu.Image, s string, x, y int, k float64) {
 // keyWindow is Blobber's text window (its Esc menu, the options, prompts) as
 // the game's own menu box, the lines' hotkeys (keys[i] in lines[i]) in white.
 func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, keys []byte, sel int, bottom bool) float64 {
+	if yesNo(keys) { // every Yes/No question: centred over the dimmed view
+		b := screen.Bounds()
+		vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
+		bottom = false
+	}
 	w := len(title)
 	for _, l := range lines {
 		w = max(w, len(l))
@@ -246,6 +252,9 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 	p.winRects = slices.Clone(p.menuRects) // its lines, for the Esc menu's mouse
 	return k
 }
+
+// yesNo: a menu's rows are a Yes/No question's.
+func yesNo(keys []byte) bool { return slices.Equal(keys, []byte{'Y', 'N'}) }
 
 // cardKey is what a card's picture (cardImgs) shows; drawParty redraws a card
 // when it changes.

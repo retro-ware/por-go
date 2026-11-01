@@ -194,7 +194,6 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 		for _, it := range items {
 			lines, keys = append(lines, it.text), append(keys, it.key)
 		}
-		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false) // the menu dims under it
 		p.keyWindow(dst, q, lines, keys, p.sel, false)
 	}
 	p.ask = p.mainAsk != askNone
