@@ -113,7 +113,7 @@ func (e *Engine) clearPage() {
 // newPage ends what belongs to the page being replaced: the sheet's
 // page (its portrait box), the icon's drop.
 func (e *Engine) newPage() {
-	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox, e.snap.sheet, e.snap.results, e.snap.credits = CellRect{}, nil, CellRect{}, nil, nil, false
+	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox, e.snap.sheet, e.snap.results, e.snap.credits, e.snap.full = CellRect{}, nil, CellRect{}, nil, nil, false, false
 }
 
 // resizePage gives the page cols by rows cells (40x25 at least): what is

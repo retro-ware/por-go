@@ -16,6 +16,7 @@ import (
 func (e *Engine) fullPicture(pic *dax.Image) {
 	e.ClearScreen()
 	e.DrawPicture((textCols-minCols)/2, (textRows-minRows)/2, pic, 0)
+	e.snap.full = true
 }
 
 // Title = ovr02:0626 title_screen: a timed screen (modeTitle) through the

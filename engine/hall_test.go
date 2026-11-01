@@ -1,6 +1,9 @@
 package engine
 
-import "testing"
+import (
+	"image"
+	"testing"
+)
 
 // The training hall (opProgram 0) puts the party menu up; Train shows the
 // hall's offer, and Begin goes back out where the party stood.
@@ -46,5 +49,23 @@ func TestPicturesAreArt(t *testing.T) {
 				t.Fatalf("after %v: a fill or empty picture at %v", a.Kind, p.At)
 			}
 		}
+	}
+}
+
+// The title's pictures are whole-screen pictures (View.Full), 320x200.
+func TestTitleFull(t *testing.T) {
+	e := testEngine(t)
+	e.Init()
+	e.Title()
+	v := e.Apply()
+	if !v.Full || len(v.Pictures) == 0 {
+		t.Fatalf("title: full %v, %d pictures", v.Full, len(v.Pictures))
+	}
+	var box image.Rectangle
+	for _, p := range v.Pictures {
+		box = box.Union(p.At)
+	}
+	if box.Dx() != 320 || box.Dy() != 200 {
+		t.Errorf("title picture %v, want 320x200", box)
 	}
 }

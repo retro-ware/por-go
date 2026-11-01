@@ -224,6 +224,7 @@ type View struct {
 	ViewText   [][]PaneRun    // text over the view window (WinText: opProtection's runes), rows from 1, X the page's column
 	Results    *Results       // the after-combat page (in a box round the window)
 	Credits    bool           // the title's credits page (Credits, RemasterCredit)
+	Full       bool           // Pictures are one whole-screen picture (the title's): fitted to the window
 	Cells      image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
 	Ink        [16]color.RGBA // the text colours (EGA 0..15) in the page's palette now
 	Portrait   CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
@@ -499,6 +500,7 @@ type snapState struct {
 	sheet        *SheetPage             // the character sheet's page while it is up (View.SheetPage)
 	results      *Results               // the after-combat page while it is up (View.Results)
 	credits      bool                   // the credits page is up (View.Credits)
+	full         bool                   // a whole-screen picture is up (View.Full)
 	icon         *IconEditor            // the icon editor's page while it is up (View.IconEditor)
 	iconDrop     func(image.Image)      // the icon editor, or the creation sheet, takes a dropped PNG while it is up (nil elsewhere)
 	iconBox      CellRect               // the creation sheet's icon: the cells that take the drop (zero: the whole screen)
@@ -611,7 +613,7 @@ func (e *Engine) publish() {
 		sp := *s.sheet
 		v.SheetPage = &sp
 	}
-	v.Results, v.Credits = s.results, s.credits
+	v.Results, v.Credits, v.Full = s.results, s.credits, s.full
 	if s.icon != nil && e.mode() == modeIcon {
 		ed := *s.icon
 		v.IconEditor = &ed

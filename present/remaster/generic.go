@@ -28,6 +28,15 @@ func (p *Presenter) drawGeneric(dst *gpu.Image, v engine.View, note Note) Rect {
 			art, box = append(art, pc), box.Union(pc.At)
 		}
 	}
+	if v.Full && len(art) > 0 { // a whole-screen picture: fitted, its aspect kept (bars only on a screen of another shape)
+		s := math.Min(float64(b.Dx())/float64(box.Dx()), float64(b.Dy())/float64(box.Dy()))
+		op := &gpu.DrawImageOptions{}
+		op.GeoM.Scale(s, s)
+		op.GeoM.Translate((float64(b.Dx())-s*float64(box.Dx()))/2, (float64(b.Dy())-s*float64(box.Dy()))/2)
+		dst.DrawImage(pictureBox(&p.pg.pic, art, box), op)
+		p.drawPageMenu(dst, note, v)
+		return Rect{0, 0, float64(b.Dx()), float64(b.Dy())}
+	}
 	txt := engine.TextPane.Framed()
 	th := 0.0
 	if v.Pane != nil && v.Pane.Shown() {
