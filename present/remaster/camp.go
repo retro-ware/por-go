@@ -150,7 +150,12 @@ func (p *Presenter) drawCampMenus(dst *gpu.Image, v engine.View) {
 			sel = p.ctxSel
 		}
 		p.menuGrey = p.ctx != 1+i // the focus's border red, the others' grey
+		for len(p.campImg) <= i {
+			p.campImg, p.campBuf = append(p.campImg, nil), append(p.campBuf, nil)
+		}
+		p.tipImg, p.tipBuf, p.campImg[i], p.campBuf[i] = p.campImg[i], p.campBuf[i], p.tipImg, p.tipBuf // each menu its own image: one image redrawn in a frame shows its last pixels everywhere
 		rs, box := p.cardMenu(dst, i, lines, keys, sel)
+		p.tipImg, p.tipBuf, p.campImg[i], p.campBuf[i] = p.campImg[i], p.campBuf[i], p.tipImg, p.tipBuf
 		p.menuGrey = false
 		p.campCtx = append(p.campCtx, rs)
 		if p.ctx == 1+i {
