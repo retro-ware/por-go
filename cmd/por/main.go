@@ -553,6 +553,7 @@ func main() {
 	}
 
 	g := &game{eng: eng, dsf: 1}
+	g.remaster.Sound = eng.PlayEventSound // a fight's sounds with what they belong to
 	remaster.Scripted = scripted
 	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale))                // the title pictures' shape (16:10): they fill the window whole, uncropped
 	gpu.SetWindowAspect(pal.W, pal.H)                                // and a resize keeps it so; the full screen has its own shape, the UI pages lay out to it (ActResize) and the pictures get black bars

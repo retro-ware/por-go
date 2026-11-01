@@ -28,6 +28,7 @@ const (
 	EvMissile                  // a missile flies From -> To
 	EvDied                     // Unit fell (off the map)
 	EvFled                     // Unit got away
+	EvSound                    // sound Amount (Text: the sound pack's event) goes off here (extra: with what it belongs to, PlayEventSound)
 )
 
 // CombatEvent is one thing that happened in a fight, in order (View.Events,
@@ -299,3 +300,12 @@ func (e *Engine) members() []Member {
 
 // stepMs is how long the presenter shows each combat step (EvMoved).
 const stepMs = 160
+
+// PlayEventSound plays an EvSound when the presenter reaches it, so a
+// fight's sounds go with what they belong to (a blow with its lunge),
+// not all at once when the rules ran.
+func (e *Engine) PlayEventSound(ev CombatEvent) {
+	e.soundNow = true
+	e.playSound(ev.Amount, ev.Text)
+	e.soundNow = false
+}

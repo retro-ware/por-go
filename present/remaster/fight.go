@@ -265,6 +265,9 @@ func (p *Presenter) Playing() bool { return len(p.replay.q) > 0 }
 func (p *Presenter) playing() *engine.CombatEvent {
 	r := &p.replay
 	for len(r.q) > 0 {
+		if ev := &r.q[0]; ev.Kind == engine.EvSound && p.Sound != nil && r.from.IsZero() {
+			p.Sound(*ev)
+		}
 		if ev := &r.q[0]; (ev.Ms > 0 || ev.Key) && (ev.Battle != nil || ev.Scene != nil) && !r.skip {
 			if r.from.IsZero() {
 				r.from = time.Now()

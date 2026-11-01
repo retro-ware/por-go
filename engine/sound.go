@@ -583,6 +583,10 @@ func (e *Engine) PlaySound(n int) { e.playSound(n, daspFx[n]) }
 // playSound is PlaySound with the sound pack's event (extra) in place of
 // sound n: the pack plays it, and the pacing stays the original's.
 func (e *Engine) playSound(n int, event string) {
+	if e.cs.on && !e.soundNow && n > sndUnmute && n != sndStop { // in a fight: when the presenter plays the events up to here
+		e.events = append(e.events, CombatEvent{Kind: EvSound, Amount: n, Text: event})
+		return
+	}
 	s := &e.snd
 	if !s.on || s.typ == sndNone || n == sndStep && e.NoSteps.Load() {
 		return

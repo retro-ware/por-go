@@ -48,6 +48,7 @@ type Engine struct {
 	set   Set           // DS:5376: the data set the current area reads
 	start time.Time
 
+	soundNow bool // PlayEventSound: the sound plays now, not as an event
 	msgDelay byte // DS:49E2, message delay factor (ovr12 sets 1)
 
 	party      []*Character // DS:5D96 list head ...
