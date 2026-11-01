@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"gpu"
+	"gpu/vector"
 
 	"por/pal"
 
@@ -37,6 +38,7 @@ const (
 type campUI struct {
 	screen   int
 	sel      int
+	top      int // the first line shown of a list too long for the screen
 	byDanger bool   // the bestiary's order
 	beast    string // the entry shown
 	pick     int    // the temple's cure or the shop's item asked about
@@ -210,13 +212,35 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 			icons = append(icons, u.Icon)
 		}
 	}
-	rows := len(lines) + 2 + (iconRow-1)*len(icons) // the menu fits above bottom: moved up, else smaller
-	if title != "" {
-		rows += len(wrap(title, 24)) + 1
+	c := &p.camp
+	lh := 1 // a line's cells
+	if len(icons) > 0 {
+		lh = iconRow
 	}
-	k = min(k, float64(bottom)/float64(rows*8))
-	top = max(0, min(top, bottom-int(k*float64(rows*8))))
-	p.drawMenuIcons(dst, glyph, title, lines, keys, icons, p.camp.sel, k, cx, top)
+	extra := 2 // the border; the title and a blank line under it
+	if title != "" {
+		extra += len(wrap(title, 24)) + 1
+	}
+	fit := max(3, (int(float64(bottom)/(k*8))-extra)/lh) // the lines that fit: more scroll, the scale stays
+	c.top = 0
+	if n := len(lines); n > fit {
+		c.top = min(max(0, c.sel-fit/2), n-fit)
+		end := c.top + fit
+		lines, keys = lines[c.top:end], keys[c.top:end]
+		if icons != nil {
+			icons = icons[c.top:end]
+		}
+	}
+	rows := extra + lh*len(lines)
+	top = max(0, min(top, bottom-int(k*float64(rows*8)))) // moved up to fit above bottom
+	p.drawMenuIcons(dst, glyph, title, lines, keys, icons, c.sel-c.top, k, cx, top)
+	if n := len(items); len(lines) < n && len(p.menuRects) > 0 { // the scroll bar: the shown part of the list, along the box's right edge
+		r0, r1 := p.menuRects[0], p.menuRects[len(p.menuRects)-1]
+		h := float32(r1.Max.Y - r0.Min.Y)
+		x := float32(r0.Max.X) - float32(k*3)
+		vector.DrawFilledRect(dst, x, float32(r0.Min.Y), float32(k*2), h, pal.EGA(8), false)
+		vector.DrawFilledRect(dst, x, float32(r0.Min.Y)+h*float32(c.top)/float32(n), float32(k*2), h*float32(len(lines))/float32(n), pal.EGA(15), false)
+	}
 }
 
 // campKey takes key k on a camp screen.

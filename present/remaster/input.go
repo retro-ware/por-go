@@ -189,6 +189,13 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			p.battle.Zoom(wheel > 0, blobber.Settings.Zoom)
 			continue
 		}
+		if screenUp(v) { // a camp-style list: the wheel moves the highlight
+			if wheel > 0 {
+				p.campKey(0x4800, v)
+			} else {
+				p.campKey(0x5000, v)
+			}
+		}
 	}
 	if pageScreen(v) && p.pageMenu { // the page screens' own pointer (screens.go): the right button is Esc
 		if right {

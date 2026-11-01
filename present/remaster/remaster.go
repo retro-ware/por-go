@@ -640,7 +640,7 @@ func (p *Presenter) Click(x, y int) bool {
 		if v := p.shownView; screenUp(v) && p.active && !p.view.OptionsOpen() {
 			for i, r := range p.menuRects {
 				if image.Pt(x, y).In(r) {
-					p.campPick(v, i)
+					p.campPick(v, p.camp.top+i)
 					return true
 				}
 			}
@@ -700,7 +700,7 @@ func (p *Presenter) Hover(x, y int, down bool) {
 	if screenUp(p.shownView) && p.ctx == 0 && image.Pt(x, y) != p.pointer { // camp-style screens highlight under the pointer too
 		p.pointer = image.Pt(x, y)
 		if i := slices.IndexFunc(p.menuRects, p.pointer.In); i >= 0 {
-			p.camp.sel = i
+			p.camp.sel = p.camp.top + i
 		}
 		return
 	}
