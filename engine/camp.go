@@ -17,6 +17,8 @@ type campState struct {
 	study    [maxCombatants + 1]byte // DS:6DCF: five-minute steps until member i's next spell is learned
 	interval int                     // DS:49FB: steps since the last encounter roll
 
+	scriber map[*Item][3]*Character // extra: who chose to scribe each scroll spell (the party inventory is shared)
+
 	interrupted, rested bool // extra: a rest was interrupted (camp closes); one just ended (camp's actRedraw draws nothing)
 }
 
@@ -42,7 +44,7 @@ func (e *Engine) studyTime(c *Character) int {
 			continue
 		}
 		for k := 1; k <= 3; k++ {
-			if s := it.Spells[k-1]; s > 0x7F {
+			if s := it.Spells[k-1]; s > 0x7F && e.scribesIt(c, it, k-1) {
 				l := e.spellLevel(s)
 				if l > maxScr {
 					maxScr = l
@@ -85,6 +87,7 @@ func (e *Engine) clearScribe(c *Character) {
 
 // clearStudy = ovr16:0214: nobody studies any more.
 func (e *Engine) clearStudy() {
+	e.camp.scriber = nil
 	for _, c := range e.party {
 		clearMemorize(c)
 		e.clearScribe(c)
@@ -135,6 +138,23 @@ func (e *Engine) CastMenu() {
 
 // partyStudy: the longest study time of the party in minutes (studyTime
 // also sets each member's study hours, which Rest counts down).
+// scribesIt (extra): spell k of scroll it is being scribed by c, not by
+// another member sharing the scroll.
+func (e *Engine) scribesIt(c *Character, it *Item, k int) bool {
+	by := e.camp.scriber[it][k]
+	return it.Spells[k] > 0x80 && (by == nil || by == c)
+}
+
+// markScribe (extra): c scribes spell k of scroll it (c nil: nobody).
+func (e *Engine) markScribe(c *Character, it *Item, k int) {
+	if e.camp.scriber == nil {
+		e.camp.scriber = map[*Item][3]*Character{}
+	}
+	by := e.camp.scriber[it]
+	by[k] = c
+	e.camp.scriber[it] = by
+}
+
 // willStudy (extra): a rest would have someone memorize or scribe a
 // spell, the planned spells taken up first as ActRest does (on copies).
 func (e *Engine) willStudy() bool {
@@ -654,7 +674,10 @@ func (e *Engine) spellLists(c *Character) (book, scrolls []BookSpell) {
 		if !e.isScroll(it) {
 			continue
 		}
-		for _, s := range it.Spells {
+		for j, s := range it.Spells {
+			if s > 0x80 && !e.scribesIt(c, it, j) {
+				continue // another member scribes it
+			}
 			if k := int(s & 0x7F); k != 0 && k <= len(c.SpellBook) && c.SpellBook[k-1] == 0 && c.spellSlot(int(e.spellClass(byte(k))), int(e.spellLevel(byte(k)))) > 0 { // only what c can scribe (scribe refuses the rest)
 				n := 0
 				if s > 0x7F {
@@ -697,8 +720,9 @@ func (e *Engine) scribe(c *Character, s byte) {
 			continue
 		}
 		for k := range it.Spells {
-			if it.Spells[k] == s|0x80 {
+			if it.Spells[k] == s|0x80 && e.scribesIt(c, it, k) {
 				it.Spells[k] = s
+				e.markScribe(nil, it, k)
 				return
 			}
 		}
@@ -715,6 +739,7 @@ func (e *Engine) scribe(c *Character, s byte) {
 		for k := range it.Spells {
 			if it.Spells[k] == s {
 				it.Spells[k] |= 0x80
+				e.markScribe(c, it, k)
 				return
 			}
 		}
@@ -847,7 +872,7 @@ func (e *Engine) scribeOne(c *Character, check *bool) int {
 		}
 		for k := 1; k <= 3 && found == 0; k++ {
 			s := it.Spells[k-1]
-			if s <= 0x80 {
+			if s <= 0x80 || !e.scribesIt(c, it, k-1) {
 				continue
 			}
 			if *check {

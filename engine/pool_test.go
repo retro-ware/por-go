@@ -39,3 +39,22 @@ func TestPartyPool(t *testing.T) {
 		t.Error("remove from pool")
 	}
 }
+
+// A scroll in the party inventory is scribed by the member who chose to
+// scribe it, not by whoever comes first in the party.
+func TestPoolScribe(t *testing.T) {
+	e := &Engine{items: make([]itemBase, itemMageScroll+1)}
+	e.items[itemMageScroll].Slot = 0xB
+	fighter, mage := &Character{}, &Character{}
+	e.party = []*Character{fighter, mage}
+	scroll := &Item{Type: itemMageScroll, Spells: [3]byte{15 | 0x80}} // Magic Missile
+	e.pool = []*Item{scroll}
+	e.markScribe(mage, scroll, 0)
+	if e.studyTime(fighter) != 0 || e.studyTime(mage) == 0 {
+		t.Error("study time goes to the scriber only")
+	}
+	check := true
+	if e.scribeOne(fighter, &check) != 0 || e.scribeOne(mage, &check) == 0 {
+		t.Error("only the scriber scribes")
+	}
+}
