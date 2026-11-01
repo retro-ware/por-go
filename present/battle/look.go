@@ -115,12 +115,12 @@ func boardSides() []gpu.MeshVertex {
 }
 
 // standShadows are soft spots under what stands up and round the blocks' feet.
-func standShadows(g *[25][50]engine.Square, dungeon bool, empty func(int) bool) []gpu.MeshVertex {
+func standShadows(g *[25][50]engine.Square, dungeon bool, empty, cut func(int) bool) []gpu.MeshVertex {
 	full := [4][2]float32{{0, 1}, {1, 1}, {1, 0}, {0, 0}}
 	var vs []gpu.MeshVertex
 	for z := range g {
 		for x := range g[z] {
-			if k := kindOf(g[z][x], dungeon, empty); k == stand || k == block {
+			if k := kindOf(g[z][x], dungeon, empty, cut); k == stand || k == block {
 				const y, r = 0.003, 0.75
 				cx, cz := float32(x)+.62, float32(z)+.6 // a little away from the sun
 				vs = quad(vs, [4][3]float32{{cx - r, y, cz + r}, {cx + r, y, cz + r}, {cx + r, y, cz - r}, {cx - r, y, cz - r}}, full, [3]float32{0, 1, 0})

@@ -15,16 +15,35 @@ func TestMapMesh(t *testing.T) {
 	g[5][5], g[5][6] = engine.Square{Tile: 1, Wall: true}, engine.Square{Tile: 2, Wall: true}
 	g[9][9].Tile = 4 // a dungeon piece on a walkable square: floor
 	none := func(int) bool { return false }
-	vs := mapMesh(&g, true, none, nil)
+	vs := mapMesh(&g, true, none, none, nil)
 	// 1248 floors + two blocks: 2 tops, 6 outer sides (the shared side is gone)
 	if got, want := len(vs), (1248+2+6)*6; got != want {
 		t.Fatalf("%d vertices, want %d", got, want)
 	}
-	if k := kindOf(engine.Square{Tile: 30, Wall: true, Height: 2}, false, none); k != stand {
+	if k := kindOf(engine.Square{Tile: 30, Wall: true, Height: 2}, false, none, none); k != stand {
 		t.Errorf("outdoor sight blocker is %v, want stand", k)
 	}
-	if k := kindOf(engine.Square{Tile: 30, Wall: true}, false, none); k != flat {
+	if k := kindOf(engine.Square{Tile: 30, Wall: true}, false, none, none); k != flat {
 		t.Errorf("water is %v, want flat", k)
+	}
+	all := func(int) bool { return true }
+	if k := kindOf(engine.Square{Tile: 30, Wall: true}, false, none, all); k != stand {
+		t.Errorf("a log is %v, want stand", k)
+	}
+	// a tree: the crown stands on the blocked square, the trunk below it joins it
+	var o [25][50]engine.Square
+	o[3][4], o[4][4] = engine.Square{Tile: 1, Wall: true, Height: 2}, engine.Square{Tile: 2}
+	tiles := make([]image.Image, 3)
+	for i := range tiles {
+		tiles[i] = image.NewRGBA(image.Rect(0, 0, tilePx, tilePx))
+	}
+	tiles[1].(*image.RGBA).Pix[3], tiles[2].(*image.RGBA).Pix[3] = 255, 255 // one opaque texel each
+	top := float32(0)
+	for _, v := range mapMesh(&o, false, none, all, tiles) {
+		top = max(top, v.Y)
+	}
+	if top < 1.5 {
+		t.Errorf("tree top at %v, want the crown over the trunk", top)
 	}
 }
 
