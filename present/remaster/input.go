@@ -11,20 +11,7 @@ import (
 	"blobber"
 
 	"por/engine"
-)
-
-// The window's keys as cmd/por sends them, BIOS style: low byte ASCII,
-// high byte scan code; the presenter turns them into actions (Key).
-const (
-	KeyF1          = 0x3B00 // F1; F2..F8 follow at +0x100
-	KeyF9          = 0x4300 // save / load
-	KeyFontPrev    = 0xFD00 // Ctrl-Shift-F (Ctrl-F is ASCII 6)
-	KeyPadSelect   = 0xE000 // gamepad: choose the highlighted (as Enter)
-	KeyPadMinimap  = 0xE100 // as Tab
-	KeyPadOverview = 0xE200 // as P
-	KeyPadPrev     = 0xE300 // gamepad: the previous party member (the left stick's button)
-	KeyPadNext     = 0xE400 // ... the next (the right stick's)
-	KeyPadStart    = 0xE500 // gamepad Start in combat: the options, even while aiming (where Esc cancels)
+	"por/present/input"
 )
 
 // memberKey is the member key k picks where a member applies: F1-F8 that
@@ -32,17 +19,17 @@ const (
 // (none selected: the first), and with lr Left and Right too (where the
 // screen has no other use for them). ok: k is a member key.
 func memberKey(k uint16, cur, n int, lr bool) (int, bool) {
-	switch {
-	case k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0:
-		i := int(k-KeyF1) >> 8
+	switch a := actOf(k); {
+	case a >= input.Member1 && a < input.Member1+input.Members:
+		i := int(a - input.Member1)
 		return i, i < n
 	case n == 0:
-	case k == KeyPadPrev || lr && k == 0x4B00:
+	case a == input.PrevMember || lr && a == input.Left:
 		if cur <= 0 {
 			return n - 1, true
 		}
 		return cur - 1, true
-	case k == KeyPadNext || lr && k == 0x4D00:
+	case a == input.NextMember || lr && a == input.Right:
 		return (cur + 1) % n, true
 	}
 	return -1, false
@@ -51,21 +38,22 @@ func memberKey(k uint16, cur, n int, lr bool) (int, bool) {
 // globalKey: k works on every screen (keyAct): help, the minimap, save and
 // load, the sound, the font. A screen passes it on rather than swallowing it.
 func globalKey(k uint16) bool {
-	return k == '?' || k == 9 || k == KeyPadMinimap || k == KeyF9 || k == 0x13 || k == 6 || k == KeyFontPrev
+	switch actOf(k) {
+	case input.Help, input.Minimap, input.SaveLoad, input.Sound, input.Font, input.FontPrev:
+		return true
+	}
+	return false
 }
 
-// keypadScan: digits a menu does not offer are the keypad's keys (1 End .. 9 PgUp).
-var keypadScan = [...]uint16{0x4F00, 0x5000, 0x5100, 0x4B00, 0x4C00, 0x4D00, 0x4700, 0x4800, 0x4900}
-
-// arrow turns a cursor key (scan code k) into its decision on v: the full
-// map's cursor (ActPoint), the member pick's candidate (ActLead), else a
-// pager's page (ActPage -1 or +1).
-func (p *Presenter) arrow(k uint16, v engine.View) {
-	back := k == 0x4800 || k == 0x4B00 || k == 0x4900 || k == 0x4700
-	on := k == 0x5000 || k == 0x4D00 || k == 0x5100 || k == 0x4F00
+// arrow turns a cursor key a into its decision on v: the full map's cursor
+// (ActPoint), the member pick's candidate (ActLead), else a pager's page
+// (ActPage -1 or +1).
+func (p *Presenter) arrow(a input.Act, v engine.View) {
+	back := a == input.Up || a == input.Left || a == input.PgUp || a == input.Home
+	on := a == input.Down || a == input.Right || a == input.PgDn || a == input.End
 	if fm := v.FullMap; fm != nil {
 		c := fm.Cursor
-		d := map[uint16]image.Point{0x4800: {0, -1}, 0x5000: {0, 1}, 0x4B00: {-1, 0}, 0x4D00: {1, 0}}[k]
+		d := map[input.Act]image.Point{input.Up: {0, -1}, input.Down: {0, 1}, input.Left: {-1, 0}, input.Right: {1, 0}}[a]
 		if d != (image.Point{}) {
 			c := c.Add(d)
 			p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: min(max(c.X, 0), 15), Y: min(max(c.Y, 0), 15)})
@@ -139,36 +127,36 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	if c >= 'a' && c <= 'z' {
 		c -= 'a' - 'A'
 	}
-	switch {
-	case k == 13 || k == KeyPadSelect:
+	switch a := actOf(k); {
+	case a == input.Enter || a == input.PadA:
 		p.send(engine.ActOK, 0)
-	case k == 27:
+	case a == input.Esc:
 		p.send(engine.ActClose, 0)
-	case k == 9 || k == KeyPadMinimap:
+	case a == input.Minimap:
 		p.send(engine.ActMinimap, 0)
-	case k == KeyPadOverview:
+	case a == input.Overview:
 		p.send(engine.ActOverview, 0)
-	case k == 6:
+	case a == input.Font:
 		p.send(engine.ActFont, 1)
-	case k == KeyFontPrev:
+	case a == input.FontPrev:
 		p.send(engine.ActFont, -1)
-	case k == 0x13:
+	case a == input.Sound:
 		p.send(engine.ActSound, 0)
-	case k == KeyF9:
+	case a == input.SaveLoad:
 		p.send(engine.ActSlots, 0)
-	case k&0xFF == 0:
-		p.arrow(k, v)
-	case k == '?':
+	case input.Cursor(a):
+		p.arrow(a, v)
+	case a == input.Help:
 		p.send(engine.ActHelp, 0)
-	case k >= 128 || c < ' ':
+	case k >= 128 || c < ' ': // another key the table binds (or none): nothing here
 	case menuIndex(askMenu(v), c) >= 0:
 		p.send(engine.ActChoose, menuIndex(askMenu(v), c))
-	case c == 'M':
+	case a == input.Map:
 		p.send(engine.ActMap, 0)
-	case c == 'P':
+	case a == input.Party:
 		p.send(engine.ActOverview, 0)
-	case c >= '1' && c <= '9':
-		p.arrow(keypadScan[c-'1'], v)
+	case keypad(k) != input.None:
+		p.arrow(keypad(k), v)
 	case c == ' ' || askMenu(v) == nil: // "press any key"
 		p.send(engine.ActOK, 0)
 	}
@@ -221,16 +209,16 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			continue
 		}
 		if screenUp(v) || askList(v) != nil || p.pageMenu { // a list or menu (camp-style, the list popup, the page's: save slots, drop-downs, the sheet): the wheel moves the highlight, a line a step, up for up
-			k := uint16(0x5000)
+			k := keyOf(input.Down)
 			if wheel > 0 {
-				k = 0x4800
+				k = keyOf(input.Up)
 			}
 			p.key(k, v)
 		}
 	}
 	if pageScreen(v) && p.pageMenu { // the page screens' own pointer (screens.go): the right button is Esc
 		if right {
-			p.screenKey(27, v)
+			p.screenKey(keyOf(input.Esc), v)
 			right = false
 		}
 		if v.Picker != nil || v.Creation != nil || v.IconEditor != nil {
@@ -250,7 +238,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	case p.fight && p.pointer.In(p.fightCard): // the active member's sheet
 		p.send(engine.ActMember, 0)
 	case p.fight: // as Esc: cancel, else the options
-		p.fightKey(27)
+		p.fightKey(keyOf(input.Esc))
 	case p.ctx > 0:
 		p.ctx = 0
 	case askMenu(v) != nil && len(askMenu(v).Items) == 1 && typing(v) == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
@@ -327,34 +315,37 @@ func askList(v engine.View) []engine.ListLine {
 	return nil
 }
 
-// editKey is the one line editor over *text with its cursor *cur: Enter
-// is done, Esc cancels, Left/Right/Home/End move the cursor, Backspace
-// takes the character before it and Delete the one under it, a printable
-// one (a digit only, for a number) goes in at it, up to max. ok: k was
-// taken.
+// editKey is the one line editor over *text with its cursor *cur: a
+// printable character (a digit only, for a number) is raw input and goes
+// in at the cursor, up to max; the other keys are the table's: Enter is
+// done, Esc cancels, Left/Right/Home/End move the cursor, Backspace takes
+// the character before it and Delete the one under it. ok: k was taken.
 func editKey(k uint16, text *string, cur *int, max int, digits bool) (done, cancel, ok bool) {
 	t, c := *text, min(len(*text), *cur)
-	switch {
-	case k == 13:
+	if k >= 0x20 && k < 0x7F { // a character
+		if digits && (k < '0' || k > '9') || len(t) >= max {
+			return false, false, false
+		}
+		*text, *cur = t[:c]+string(rune(k))+t[c:], c+1
+		return false, false, true
+	}
+	switch a := actOf(k); {
+	case a == input.Enter:
 		return true, false, true
-	case k == 27:
+	case a == input.Esc:
 		return false, true, true
-	case k == 0x4B00:
+	case a == input.Left:
 		c = c - min(c, 1)
-	case k == 0x4D00:
+	case a == input.Right:
 		c = min(len(t), c+1)
-	case k == 0x4700:
+	case a == input.Home:
 		c = 0
-	case k == 0x4F00:
+	case a == input.End:
 		c = len(t)
-	case k == 8 && c > 0:
+	case a == input.Backspace && c > 0:
 		t, c = t[:c-1]+t[c:], c-1
-	case k == 0x5300 && c < len(t):
+	case a == input.Delete && c < len(t):
 		t = t[:c] + t[c+1:]
-	case digits && (k < '0' || k > '9'):
-		return false, false, false
-	case k >= 0x20 && k < 0x7F && len(t) < max:
-		t, c = t[:c]+string(rune(k))+t[c:], c+1
 	default:
 		return false, false, false
 	}
