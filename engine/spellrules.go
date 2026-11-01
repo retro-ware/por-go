@@ -23,6 +23,7 @@ var spellRules = [57]string{
 	"Protection From Good: the target gets +2 on saves and good attackers -2 to hit it. Lasts 2 rounds per level.",
 	"Read Magic: reads magic scrolls so their spells can be scribed or cast.",
 	"Shield: the caster gets AC 4 against missiles, AC 2 against other attacks and is immune to Magic Missile. Lasts 5 rounds per level.",
+	"Shocking Grasp: touch attack dealing 1d8 + 1 per level.",
 	"Sleep: puts 2-16 hit dice of creatures to sleep, the weakest first; creatures of 5 hit dice or more are immune. No save.",
 	"Find Traps: reveals traps ahead. Lasts 3 turns.",
 	"Hold Person: up to 3 humanoids are paralysed unless they save. Lasts 4 rounds + 1 per level.",
