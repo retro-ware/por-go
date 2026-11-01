@@ -97,39 +97,50 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 		}
 		text(e, lx+lw-8*len(e), y+26, green)
 	}
-	ly := y + 52 // under the bars: a key left, its value right
+	ly := y + 52 // under the bars: a key left, its value right, a blank line between
 	if !sp.Creating {
 		text("Level", lx, ly, white)
 		text(sp.Levels, lx+lw-8*len(sp.Levels), ly, green)
-		ly += 10
+		ly += 20
 	}
 	if sp.Status != "" {
 		text("Status", lx, ly, white)
 		text(sp.Status, lx+lw-8*len(sp.Status), ly, green)
 	}
 
-	// the figures: who, two blank lines, the abilities, the combat figures under them
-	rx := leftCells * 8
+	// the figures: who, two blank lines, the abilities, a blank line, Move;
+	// the numbers right-aligned on one column (ones under ones), the
+	// exceptional strength after it
+	rx, rr := leftCells*8, (cw-1)*8
 	row := func(r int) int { return 12 + 12*r }
+	num := rx + 9*8 // the numbers' right edge
+	value := func(v string, y int) { text(v, num-8*len(v), y, green) }
 	text(sp.Sex+" "+sp.Race+", age "+strconv.Itoa(sp.Age), rx, row(0), white)
 	text(sp.Alignment, rx, row(1), white)
 	for j, l := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
 		text(l, rx, row(4+j), white)
-		v := strconv.Itoa(sp.Stats[j])
+		value(strconv.Itoa(sp.Stats[j]), row(4+j))
 		if j == 0 {
-			v += sp.Str00
+			text(sp.Str00, num, row(4), green)
 		}
-		text(v, rx+5*8, row(4+j), green)
 	}
-	for j, f := range [][2]string{{"AC", strconv.Itoa(sp.AC)}, {"THAC0", strconv.Itoa(sp.THAC0)}, {"Damage", sp.Damage}, {"Move", strconv.Itoa(sp.Move)}} { // under the abilities
-		text(f[0], rx, row(10+j), white)
-		text(f[1], rx+8*8, row(10+j), green)
-	}
+	text("Move", rx, row(11), white)
+	value(strconv.Itoa(sp.Move), row(11))
 	if sp.Effects != "" {
-		text("Effects", rx, row(15), white)
+		text("Effects", rx, row(13), white)
 		for j, l := range engine.WrapWords(sp.Effects, cw-leftCells-2) {
-			text(l, rx, row(16+j), green)
+			text(l, rx, row(14+j), green)
 		}
+	}
+
+	// AC, THAC0 and Damage on the pane's bottom: three columns, each label
+	// over its value, centred in its column
+	vy := (ch-2)*8 - 10 // the last row inside the border
+	colW := (rr - rx) / 3
+	for j, f := range [][2]string{{"AC", strconv.Itoa(sp.AC)}, {"THAC0", strconv.Itoa(sp.THAC0)}, {"Damage", sp.Damage}} {
+		mid := rx + colW*j + colW/2
+		text(f[0], mid-4*len(f[0]), vy-12, white)
+		text(f[1], mid-4*len(f[1]), vy, green)
 	}
 
 	// the powers on the bottom row; the toast takes it while it shows
