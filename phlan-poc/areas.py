@@ -336,6 +336,16 @@ AREAS["valjevo7"] = dict(  # Valjevo Castle (ECL5 7): ECL5 block 7
     walls={},
 )
 
+AREAS["valjevo5"] = dict(  # Valjevo Castle (ECL5 5): ECL5 block 5
+    geo=(5, 5), walldefs=[(24, 1), (1, 3)], area_kind=5,
+    chunks=['WALLDEF5-024-1', 'WALLDEF5-024-2', 'WALLDEF5-001-1'],
+    start=None, water_walls=set(), free_walls=set(),
+    floor="phlan_dirt", ceiling="sky_phlan",
+    notrim=set(), water=set(), tile=set(), noseam=set(),
+    views=[],
+    walls={},
+)
+
 AREAS["buccaneer"] = dict(  # Buccaneer Base: ECL6 block 1
     geo=(6, 1), walldefs=[(2, 1), (6, 2), (6, 3)], area_kind=1,
     chunks=['WALLDEF6-002-1', 'WALLDEF6-006-1', 'WALLDEF6-006-1'],
@@ -614,7 +624,7 @@ FLAGS = dict(  # texture flags of the new walls (by area)
     stojanow=dict(noseam={12}, water_walls={12}, cut={12: [(0, 0, 224, 192)]}), library=dict(noseam={8, 9, 11, 13}, pond={11}, water_walls={12},
                                                           beds={13: ["prop_grass1", "prop_grass2"]}),
     hobgoblin=dict(arch={12}), sokal=dict(noseam={2}), valjevo3=dict(noseam={1, 7, 8, 9}),
-    valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
+    valjevo4=dict(), valjevo7=dict(noseam={6, 10}, pond={10}), valjevo5=dict(noseam={10}, pond={10}), buccaneer=dict(noseam={6, 7, 8, 9, 10}),
     nomad=dict(props={6: "prop_nomad_tree", 7: "prop_nomad_tree", 8: "prop_nomad_tree"}, water_walls={12}), kobold=dict(tile={1, 2, 6}, noseam={3, 4, 9}),
     pyramid=dict(noseam={14}), kuto=dict(arch={8}, clear={8: [(72, 128, 150, 256), (30, 232, 194, 256)]},
                      cellprops={(7, 7): [("well", "floor_kuto_rim", 0.3, 0.12, 0.07, 0.37),

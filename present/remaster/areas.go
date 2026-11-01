@@ -11,6 +11,7 @@ var areaMaps = map[engine.AreaID]string{
 	2:  "hobgoblin",
 	3:  "valjevo3",
 	4:  "valjevo4",
+	5:  "valjevo5",
 	6:  "valjevo6",
 	7:  "valjevo7",
 	9:  "stojanow",
