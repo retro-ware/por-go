@@ -103,7 +103,7 @@ func TestCreateSheet(t *testing.T) {
 		t.Fatalf("head %d, want 14; creation %v", c.PortHead, v.Creation != nil)
 	}
 	e.resizePage(40, 30) // a window of 30 rows holds them all
-	if v = act(Action{Kind: ActPicker, N: PickHead}); v.Picker.Pages != 1 || len(v.Text) != 30 {
+	if v = act(Action{Kind: ActPicker, N: PickHead}); v.Picker.Pages != 1 || v.Cells.Y != 30 {
 		t.Fatalf("30 rows: %+v", v.Picker)
 	}
 	act(Action{Kind: ActPicked, N: 1})

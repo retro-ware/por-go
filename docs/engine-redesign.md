@@ -350,3 +350,20 @@ label, the overview, walking) match frame for frame except the main
 menu's wall-clock fade-in and, on the full map before its first key, the
 3D view's status line ("4,0 S 14:23") the old engine wrote into the map
 page: the map no longer shares the page, so it is gone.
+Step 4 begun: the presenter no longer reads the page's text cells.
+`View.Text []Cell` (glyph bitmaps) is `View.Lines [][]PaneRun`, the
+page's rows as runs (column, text, colours, Upcase: the pane's way, one
+helper `runs` for both) and `View.Cells` the page's size; the remaster
+draws them in the current font (Engine.FontGlyph). This is the
+publication only: the remaining pages (the sheets, after-combat, the
+icon editor, the party list, rest, casting, money, pickers, slots, the
+script ops, WinText, the area map) are still laid out by the engine in
+its cells, View.Overlays still carries the PNG portraits and icons, and
+View.Spots the clicks; each still has to publish its own typed data
+before step 5 deletes the cells.
+Captures against HEAD before captures were stopped (walk, the sheet with
+effects and a PNG portrait, the sheet's spells, the inventory, loot
+with POR_SEED, cast, the runes' WinText, parlay, the area map key, rest,
+autocombat, the title menu, the creation sheet with its icons) matched
+frame for frame but for the main menu's wall-clock fade-in and, without
+POR_SEED, the clock-seeded dice. Further checks are headless only.

@@ -26,13 +26,6 @@ type Picture struct {
 	Colour       color.RGBA
 }
 
-// Cell is a text cell: the glyph's set bits in Fg, the rest in Bg.
-type Cell struct {
-	Glyph  [8]byte
-	Fg, Bg color.RGBA
-	Set    bool // the cell holds text
-}
-
 // Overlay is a picture the window draws over the page at its own
 // resolution: the part Src of Img (empty: all of it) scaled into the
 // page rectangle At (a portrait).
@@ -208,15 +201,10 @@ func (e *Engine) pageView(v *View) {
 		}
 		v.Pictures = append(v.Pictures, s)
 	}
-	all := make([]Cell, textRows*textCols)
-	v.Text = make([][]Cell, textRows)
+	v.Cells = image.Pt(textCols, textRows)
+	v.Lines = make([][]PaneRun, textRows)
 	for y, row := range e.cells() {
-		v.Text[y] = all[y*textCols : (y+1)*textCols]
-		for x, c := range row {
-			if c.set {
-				v.Text[y][x] = Cell{Glyph: c.glyph, Fg: e.pal.RGBA(c.colour), Bg: e.pal.RGBA(c.bg), Set: true}
-			}
-		}
+		v.Lines[y] = e.runs(row)
 	}
 	if !e.modal() { // a screen over the whole page hides the portraits and the pane
 		v.Overlays = pg.overlays
@@ -226,26 +214,31 @@ func (e *Engine) pageView(v *View) {
 	}
 }
 
-// pane is the text pane's cells as runs of one colour.
+// pane is the text pane's cells as runs.
 func (e *Engine) pane() *Pane {
 	p := &Pane{}
 	cells := e.cells()
 	for i := range p.Lines {
-		row := cells[TextPane.Y1+i][TextPane.X1 : TextPane.X2+1]
-		for x, c := range row {
-			if !c.set {
-				continue
-			}
-			fg, bg := e.pal.RGBA(c.colour), e.pal.RGBA(c.bg)
-			l := p.Lines[i]
-			if n := len(l) - 1; n >= 0 && l[n].X+len(l[n].Text) == x && l[n].Fg == fg && l[n].Bg == bg && l[n].Upcase == c.upcase {
-				l[n].Text += string(c.c)
-				continue
-			}
-			p.Lines[i] = append(l, PaneRun{X: x, Text: string(c.c), Fg: fg, Bg: bg, Upcase: c.upcase})
-		}
+		p.Lines[i] = e.runs(cells[TextPane.Y1+i][TextPane.X1 : TextPane.X2+1])
 	}
 	return p
+}
+
+// runs is a row of text cells as runs of one colour, X from the row's start.
+func (e *Engine) runs(row []textCell) []PaneRun {
+	var l []PaneRun
+	for x, c := range row {
+		if !c.set {
+			continue
+		}
+		fg, bg := e.pal.RGBA(c.colour), e.pal.RGBA(c.bg)
+		if n := len(l) - 1; n >= 0 && l[n].X+len(l[n].Text) == x && l[n].Fg == fg && l[n].Bg == bg && l[n].Upcase == c.upcase {
+			l[n].Text += string(c.c)
+			continue
+		}
+		l = append(l, PaneRun{X: x, Text: string(c.c), Fg: fg, Bg: bg, Upcase: c.upcase})
+	}
+	return l
 }
 
 // layerRGBA converts l's pixels in the current palette, as blit draws them.

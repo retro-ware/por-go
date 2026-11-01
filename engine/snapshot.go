@@ -174,7 +174,8 @@ type View struct {
 	Inventory *Inventory     // the inventory screen is up (nil otherwise)
 	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 	Pictures  []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
-	Text      [][]Cell       // the text cells, over Page: the page's rows of columns (40x25 at least; a larger window gives more, ActResize)
+	Lines     [][]PaneRun    // the page's text over Pictures, a row each as runs (Pane's way; the screens' layout is still the engine's, step 4)
+	Cells     image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the portraits of the sheets and pickers)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)

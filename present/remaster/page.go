@@ -38,7 +38,7 @@ type page struct {
 	noted bool
 	drawn bool
 	page  []engine.Picture     // what img shows: the View's page...
-	text  [][]engine.Cell      // ...and text
+	text  [][]engine.PaneRun   // ...and text
 	scans map[image.Image]scan // the overlays on the GPU
 	fit   *gpu.Image           // fit's whole-scale copy
 	pane  *gpu.Image           // the text pane (paneImage)
@@ -49,10 +49,10 @@ type page struct {
 // pageSize is v's page in pixels: its text cells, 8 by 8 (the original's
 // 320x200 for a View without any).
 func pageSize(v engine.View) (w, h int) {
-	if len(v.Text) == 0 || len(v.Text[0]) == 0 {
+	if v.Cells.X == 0 || v.Cells.Y == 0 {
 		return pal.W, pal.H
 	}
-	return len(v.Text[0]) * 8, len(v.Text) * 8
+	return v.Cells.X * 8, v.Cells.Y * 8
 }
 
 // grid is the text cells the window holds: 40x25 at least, more at the
@@ -118,13 +118,13 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 		return pg.img
 	}
 	pg.drawn, pg.seq, pg.noted = true, v.Seq, note.Show
-	pg.page, pg.text = append(pg.page[:0], v.Pictures...), v.Text
+	pg.page, pg.text = append(pg.page[:0], v.Pictures...), v.Lines
 	m := pg.px
 	drawPictures(m, v.Pictures, image.Point{})
-	for y, row := range v.Text {
-		for x, c := range row {
-			if c.Set {
-				glyphAt(m, c.Glyph, x*8, y*8, c.Fg, c.Bg)
+	for y, row := range v.Lines {
+		for _, r := range row {
+			for i := 0; i < len(r.Text); i++ {
+				glyphAt(m, note.Font(r.Text[i], r.Upcase), (r.X+i)*8, y*8, r.Fg, r.Bg)
 			}
 		}
 	}
@@ -429,11 +429,11 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect, w,
 // engine publishes a View every tick, most of them with the page unchanged;
 // a layer's picture is the same when it is the same pixels.
 func samePage(v engine.View, pg *page) bool {
-	if len(v.Pictures) != len(pg.page) || len(v.Text) != len(pg.text) {
+	if len(v.Pictures) != len(pg.page) || len(v.Lines) != len(pg.text) {
 		return false
 	}
-	for y := range v.Text {
-		if !slices.Equal(v.Text[y], pg.text[y]) {
+	for y := range v.Lines {
+		if !slices.Equal(v.Lines[y], pg.text[y]) {
 			return false
 		}
 	}

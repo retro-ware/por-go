@@ -212,15 +212,17 @@ func (e *Engine) pageRGBA() *image.RGBA {
 		}
 		draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, draw.Over)
 	}
-	for y, row := range v.Text {
-		for x, c := range row {
-			if c.Set {
+	for y, row := range v.Lines {
+		for _, run := range row {
+			for i := 0; i < len(run.Text); i++ {
+				g, _ := e.glyph(run.Text[i], run.Upcase)
+				x := run.X + i
 				for r := 0; r < 8; r++ {
 					for b := 0; b < 8; b++ {
-						if c.Glyph[r]&(0x80>>b) != 0 {
-							m.SetRGBA(x*8+b, y*8+r, c.Fg)
+						if g[r]&(0x80>>b) != 0 {
+							m.SetRGBA(x*8+b, y*8+r, run.Fg)
 						} else {
-							m.SetRGBA(x*8+b, y*8+r, c.Bg)
+							m.SetRGBA(x*8+b, y*8+r, run.Bg)
 						}
 					}
 				}

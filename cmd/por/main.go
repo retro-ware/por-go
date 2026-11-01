@@ -245,8 +245,8 @@ func (g *game) cell(x, y float64) (int, int, bool) {
 	}
 	v := g.eng.View()
 	cols, rows := 40, 25
-	if len(v.Text) > 0 {
-		cols, rows = len(v.Text[0]), len(v.Text)
+	if v.Cells.X > 0 {
+		cols, rows = v.Cells.X, v.Cells.Y
 	}
 	return int((x - p.X) * float64(cols) / p.W), int((y - p.Y) * float64(rows) / p.H), true
 }
