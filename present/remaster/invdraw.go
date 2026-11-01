@@ -83,12 +83,19 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 	inv.load()
 	if inv.view == nil || in.Member != inv.member {
-		inv.sel, inv.list.top, inv.carry = -1, 0, nil // a new member: nothing highlighted or on the cursor
+		inv.sel, inv.list.top, inv.carry, inv.keep.row = -1, 0, nil, -1 // a new member: nothing highlighted or on the cursor
 	}
 	if inv.view == nil || (inv.view.Wares == nil) != (in.Wares == nil) {
 		inv.ware, inv.wares.top = -1, 0
 	}
 	inv.shown, inv.member, inv.count, inv.glyph, inv.view = true, in.Member, len(v.Party), note.Glyph, in
+	if shown := inv.list.shown(in.Pool); inv.keep.row >= 0 && len(shown) < inv.keep.n { // the sold or dropped item is gone
+		inv.sel = -1
+		if len(shown) > 0 {
+			inv.sel = shown[min(inv.keep.row, len(shown)-1)].Index
+		}
+		inv.keep.row = -1
+	}
 	if itemAt(in, inv.sel) == nil {
 		inv.sel = -1
 	}

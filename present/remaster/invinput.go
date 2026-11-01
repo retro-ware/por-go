@@ -251,7 +251,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 				if l.ware {
 					inv.do(engine.ActBuy)
 				} else if inv.view.Sell {
-					inv.acts = append(inv.acts, engine.Action{Kind: engine.ActSell, N: l.item.Index})
+					inv.remove(engine.ActSell, l.item.Index)
 				}
 				return
 			}

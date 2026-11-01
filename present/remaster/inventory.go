@@ -83,11 +83,12 @@ type inventory struct {
 	img, tip    *gpu.Image     // the canvas and the tooltip on the GPU
 	glyph       func(byte) [8]byte
 
-	shown   bool              // the last frame was the inventory
-	sel     int               // the highlighted item (InvItem.Index), -1 for none
-	ask     *engine.Action    // a Drop or Sell waits for Yes
-	askSel  int               // the question's highlighted answer: 0 Yes, 1 No
-	askAt   []image.Rectangle // the question's Yes and No on the screen, as last drawn
+	shown   bool                 // the last frame was the inventory
+	sel     int                  // the highlighted item (InvItem.Index), -1 for none
+	keep    struct{ row, n int } // a sold or dropped item's line and the list's length then: the line after it is highlighted once it is gone (row -1 none)
+	ask     *engine.Action       // a Drop or Sell waits for Yes
+	askSel  int                  // the question's highlighted answer: 0 Yes, 1 No
+	askAt   []image.Rectangle    // the question's Yes and No on the screen, as last drawn
 	view    *engine.Inventory
 	acts    []engine.Action // to send (Presenter.Actions)
 	words   []word          // the menu row's words
@@ -220,14 +221,26 @@ func (inv *inventory) do(k engine.ActKind) {
 		inv.ask, inv.askSel = &engine.Action{Kind: k, N: it.Index}, 1 // No first, as every question
 		return
 	default:
-		inv.acts = append(inv.acts, engine.Action{Kind: k, N: it.Index})
+		inv.remove(k, it.Index)
 	}
 	inv.ask = nil
 }
 
+// remove sends a Sell or Drop (or any other action) on item i. The engine's
+// Index of every later item shifts and the list is sorted, so the highlight
+// is kept on the line, not the Index: selling down a list stays in place.
+func (inv *inventory) remove(k engine.ActKind, i int) {
+	inv.acts = append(inv.acts, engine.Action{Kind: k, N: i})
+	if k != engine.ActSell && k != engine.ActDrop {
+		return
+	}
+	shown := inv.list.shown(inv.view.Pool)
+	inv.keep.row, inv.keep.n = slices.IndexFunc(shown, func(it engine.InvItem) bool { return it.Index == i }), len(shown)
+}
+
 // choose highlights ware i of the shop or item i of the member's.
 func (inv *inventory) choose(ware bool, i int) {
-	inv.sel, inv.ware = -1, -1
+	inv.sel, inv.ware, inv.keep.row = -1, -1, -1
 	if ware {
 		inv.ware = i
 	} else {
