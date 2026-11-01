@@ -154,20 +154,20 @@ type View struct {
 	Area      AreaID
 	X, Y      int
 	Facing    Dir
-	Day       bool      // 6:00 to 20:00, when the scripts show the day sky
-	Inside    bool      // the party stands on an inside square (the original's inside sky colour)
-	Exploring bool      // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
-	CanCast   bool      // ... and the selected member has a spell to cast (ActCastPick)
-	Camp      *Camp     // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
-	Temple    *Temple   // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
-	Shop      *Shop     // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
-	Training  *Training // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
-	Sheet     *Sheet    // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
+	Day       bool       // 6:00 to 20:00, when the scripts show the day sky
+	Inside    bool       // the party stands on an inside square (the original's inside sky colour)
+	Exploring bool       // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	CanCast   bool       // ... and the selected member has a spell to cast (ActCastPick)
+	Camp      *Camp      // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
+	Temple    *Temple    // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
+	Shop      *Shop      // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
+	Training  *Training  // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
+	Sheet     *Sheet     // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
 	SheetPage *SheetPage // the character sheet's page is up (the sheet, the creation's, the spell lists over it): the presenter draws it
-	Creation  *Creation // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
-	Picker    *Picker   // a grid picker (the page): ActPicked, ActPage; ActClose leaves
-	Slots     *Slots    // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
-	Ask       *Ask      // a question waits for its answer (eclask.go): menu, list, typed line, member, key, pause (the presenter's to pace) or spell
+	Creation  *Creation  // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
+	Picker    *Picker    // a grid picker (the page): ActPicked, ActPage; ActClose leaves
+	Slots     *Slots     // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
+	Ask       *Ask       // a question waits for its answer (eclask.go): menu, list, typed line, member, key, pause (the presenter's to pace) or spell
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -222,9 +222,9 @@ type SheetPage struct {
 	Weapon     string // the readied weapon's and armour's names ("" none)
 	Armor      string
 	Status     string
-	Effects    string     // the spell effects, as many as fit the row
-	PortraitAt CellRect   // the portrait's box (zero: no portrait)
-	Portrait   image.Image // a dropped PNG in the box, in place of the DAX portrait (nil: none)
+	Effects    string         // the spell effects, as many as fit the row
+	PortraitAt CellRect       // the portrait's box (zero: no portrait)
+	Portrait   image.Image    // a dropped PNG in the box, in place of the DAX portrait (nil: none)
 	Icons      [2]image.Image // the creation's combat icon from a PNG, ready and action poses, in View.IconBox (nil: the DAX icon among the pictures)
 }
 

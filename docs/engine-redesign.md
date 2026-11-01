@@ -385,3 +385,6 @@ presenter's layout of the new data must give the same.
   View.Overlays. The sheet ignores page text under it: the 3D view's
   status line, written over "Exp" on the first sheet after a start, is
   gone.
+- The creation sheet: the sheet above (SheetPage.Creating) and its
+  combat icon from a PNG (SheetPage.Icons, at View.IconBox); the grey
+  ground and the DAX icon stay pictures.
