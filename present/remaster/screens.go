@@ -237,6 +237,10 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		off[0] = false
 	}
 	s.sel = min(max(s.sel, 0), len(lines)-1)
+	if screenName(v) == "slots" && s.sub == scrMain {
+		p.slotList(dst, lines, keys, off)
+		return
+	}
 	s.top = min(max(s.top, s.sel-scrRows+1), s.sel, max(0, len(lines)-scrRows))
 	end := min(len(lines), s.top+scrRows)
 	sel := s.sel - s.top
@@ -259,6 +263,64 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 	}
 	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], off[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
 	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
+}
+
+// slotList draws the save slots' list on the page itself, inside the
+// Saved Games box (screenPage): a row a line from row 3 down to above
+// "No saving now", the name at column 3 and the time at 25, as the
+// original-style F9 page; the rows scroll with the selection.
+func (p *Presenter) slotList(dst *gpu.Image, lines []string, keys []byte, off []bool) {
+	s := &p.scr
+	cols, n := s.pw/8, max(1, s.ph/8-8)
+	s.top = min(max(s.top, s.sel-n+1), s.sel, max(0, len(lines)-n))
+	end := min(len(lines), s.top+n)
+	w := cols - 4 // columns 2 to cols-3, inside the border
+	if gpu.Sized(&p.menuImg, w*8, (end-s.top)*8) {
+		p.menuBuf = make([]byte, w*8*(end-s.top)*8*4)
+	}
+	clear(p.menuBuf)
+	set := func(x, y int, c color.RGBA) {
+		o := (y*w*8 + x) * 4
+		p.menuBuf[o], p.menuBuf[o+1], p.menuBuf[o+2], p.menuBuf[o+3] = c.R, c.G, c.B, 255
+	}
+	for r := s.top; r < end; r++ {
+		y0 := (r - s.top) * 8
+		if r == s.sel {
+			for y := y0; y < y0+8; y++ {
+				for x := range w * 8 {
+					set(x, y, pal.EGA(1))
+				}
+			}
+		}
+		t, hk := hotText(lines[r], keys[r])
+		for i := 0; i < len(t) && i+1 < w; i++ {
+			c := pal.EGA(10)
+			switch {
+			case off[r]:
+				c = pal.EGA(8)
+			case i == hk:
+				c = pal.EGA(15)
+			}
+			g := p.glyph(t[i])
+			for y := range 8 {
+				for b := range 8 {
+					if g[y]&(0x80>>b) != 0 {
+						set((i+1)*8+b, y0+y, c)
+					}
+				}
+			}
+		}
+	}
+	p.menuImg.WritePixels(p.menuBuf)
+	at := p.cellRect(engine.CellRect{X1: 2, Y1: 3, X2: cols - 3, Y2: 3 + end - s.top - 1})
+	op := &gpu.DrawImageOptions{}
+	op.GeoM.Scale(float64(at.Dx())/float64(w*8), float64(at.Dy())/float64((end-s.top)*8))
+	op.GeoM.Translate(float64(at.Min.X), float64(at.Min.Y))
+	dst.DrawImage(p.menuImg, op)
+	for r := s.top; r < end; r++ {
+		p.winRects = append(p.winRects, p.cellRect(engine.CellRect{X1: 2, Y1: 3 + r - s.top, X2: cols - 3, Y2: 3 + r - s.top}))
+	}
+	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, float64(at.Dy())/float64((end-s.top)*8))
 }
 
 // cellRect is a cell rectangle of the page on the window.
