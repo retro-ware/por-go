@@ -67,11 +67,3 @@ func (e *Engine) readItems() []itemBase {
 	binary.Decode(b, binary.LittleEndian, items)
 	return items
 }
-
-// InitGraphics loads the font and symbol sets 4 and 0 the way Init does
-// (for tools that skip Init).
-func (e *Engine) InitGraphics() {
-	e.font = e.L.Block(e.set.file("8X8D"), 201)
-	e.LoadSymbolSet(4, 202)
-	e.LoadSymbolSet(0, 203)
-}

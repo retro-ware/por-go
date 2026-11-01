@@ -779,7 +779,7 @@ Status so far:
 - [ ] 00BA:2E46 `throwable` (combat.go)
 - [ ] 00BA:2E8B `ammoFor` (combat.go)
 - [ ] 00BA:2F57 `atRaceLimit` (charcalc.go)
-- [ ] 00BA:36FE `AreaMapScreen` (screen.go)
+- [ ] 00BA:36FE `AreaMapScreen` (the port was unused and went)
 
 ## START 03F1
 - [ ] 03F1:0000 `DrawBorder` (text.go)

@@ -113,13 +113,3 @@ func (e *Engine) StatusLine() {
 	e.blank(statusLine.X1, statusLine.Y1, statusLine.X2, statusLine.Y2)
 	e.pg.tx.status = s // light green (the presenter's)
 }
-
-// AreaMapScreen = 00BA:2B5E: switch to the area map.
-func (e *Engine) AreaMapScreen() {
-	e.beginFlag = 3
-	e.areaMapInit()
-	e.Redraw()
-	e.drawAreaMapParty()
-	e.StatusLine()
-	e.DisplayPartyList()
-}

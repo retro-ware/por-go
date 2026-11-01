@@ -90,11 +90,6 @@ func (e *Engine) SlotIndex(name string) int {
 	return slices.IndexFunc(e.slots(), func(s slot) bool { return s.name == name })
 }
 
-// LoadSlotNamed loads the slot without the screen (tests).
-func (e *Engine) LoadSlotNamed(name string) bool {
-	return e.loadFrom(name)
-}
-
 // seenFile holds a slot's explored squares by map (extra: the original
 // keeps none); oldSeenFile is what slots saved before 30 Oct 2026 hold
 // them in, by script area (areaKey was script area and GEO block then).
