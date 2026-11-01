@@ -4,8 +4,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
-	"os"
 	"path/filepath"
 
 	"por/dax"
@@ -180,10 +178,7 @@ func (e *Engine) titleBackdrop() image.Image {
 		return e.snap.backdrop
 	}
 	e.snap.backdropRead = true
-	if f, err := os.Open(filepath.Join(e.data, AmigaDir, "TITLE.PNG")); err == nil {
-		e.snap.backdrop, _ = png.Decode(f)
-		f.Close()
-	}
+	e.snap.backdrop = readPNG(filepath.Join(e.data, AmigaDir, "TITLE.PNG"))
 	return e.snap.backdrop
 }
 
