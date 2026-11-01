@@ -12,6 +12,7 @@ import (
 
 // combatEnd = ovr09:0000: free the clouds, the map and the sprite.
 func (e *Engine) combatEnd() {
+	e.ext.throwing = nil // extra: guard, as endTurn
 	e.restoreLoadouts()
 	e.cs = combatState{}
 	e.combatTargets = false // DS:6B84 = 0096:0034 (ovr23:0A91)

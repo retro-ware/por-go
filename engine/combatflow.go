@@ -178,6 +178,10 @@ func (e *Engine) applyCombat(a Action) bool {
 // endTurn = takeTurn's end: the cursor off; the last one down ends the round.
 func (e *Engine) endTurn(c *Character) {
 	e.eraseCursor(e.combatX(c), e.combatY(c))
+	if e.ext.throwing != nil { // extra: guard: a throw never outlasts its turn
+		e.ext.throwing = nil
+		e.ApplyItems(c)
+	}
 	e.sidesCheck()
 }
 
