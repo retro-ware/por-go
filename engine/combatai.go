@@ -637,28 +637,30 @@ func (e *Engine) aiPathDir(c, t *Character) int {
 	if next(start) {
 		return -1
 	}
-	first := map[[2]int]int{start: -1}
-	queue := [][2]int{start}
+	var first [25][50]int8 // the first step there, +1 (0: not reached)
+	first[start[1]][start[0]] = -1
+	queue := make([][2]int, 1, 25*50)
+	queue[0] = start
 	for len(queue) > 0 {
 		at := queue[0]
 		queue = queue[1:]
 		e.cpos[idx].x, e.cpos[idx].y = byte(at[0]), byte(at[1])
 		for d := 0; d < 8; d++ {
 			to := [2]int{at[0] + dirDX[d], at[1] + dirDY[d]}
-			if _, seen := first[to]; seen {
+			if to[0] < 0 || to[0] >= 50 || to[1] < 0 || to[1] >= 25 || first[to[1]][to[0]] != 0 {
 				continue
 			}
 			if who, g := e.groundAt(c, d); who > 0 || g == 0 || e.groundInfo(g)[0] == 0xFF {
 				continue
 			}
-			f := first[at]
+			f := first[at[1]][at[0]]
 			if f < 0 {
-				f = d
+				f = int8(d + 1)
 			}
 			if next(to) {
-				return f
+				return int(f) - 1
 			}
-			first[to] = f
+			first[to[1]][to[0]] = f
 			queue = append(queue, to)
 		}
 	}
