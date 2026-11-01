@@ -254,7 +254,6 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return r
 	}
 	p.active = true
-	frame := p.pageImage(v, note)
 	if area {
 		p.shown = ""
 		p.drawAreaMap(dst, v.AreaMap)
@@ -325,7 +324,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			py = int(gap + pp*ph/2)
 			cy = py + int(pp*ph/2+gap+tk*th/2)
 		}
-		inside := frame.SubImage(pic.Pixels().Inset(8)).(*gpu.Image) // text over the whole view window (WinText): still the page's (step 3)
+		inside := viewTextImage(&p.pg.pic, v.ViewText, pic.Pixels().Inset(8), note) // text over the whole view window (WinText)
 		if v.Window == engine.WinPicture {
 			inside = pictureBox(&p.pg.pic, v.Pictures, pic.Pixels().Inset(8))
 		}
