@@ -120,7 +120,8 @@ var bindings = []binding{
 
 	{ctx: ctxAdv, keys: "Arrows", desc: "walk, turn", mouse: "map: Walk", pad: "D-pad, stick"}, // the Menus rows' arrows; the digits are the keypad (keypadActs)
 	{ctx: ctxAdv, keys: "Enter", desc: "command menu", mouse: "click middle", pad: "A, Start"}, // the Menus row's Enter
-	{ctx: ctxAdv, keys: "C I V A", desc: "cast items view camp", mouse: "command menu", pad: "A, then pick"},
+	{ctx: ctxAdv, keys: "C I V", desc: "cast items view", mouse: "card menu", pad: "L3 R3, pick"},
+	{ctx: ctxAdv, keys: "A", desc: "camp", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "W", desc: "sweep: search walking", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "S", desc: "search this square", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "M", desc: "map: walk, labels", mouse: "minimap", pad: "A, then pick",

@@ -18,19 +18,24 @@ type command struct {
 
 // commands are the decisions the command menu offers on v.
 func commands(v engine.View) []command {
-	var c []command
+	return []command{
+		{"Camp", 'A', engine.ActCamp}, // not C (Cast) nor E (every screen's Exit)
+		{"Sweep", 'W', engine.ActSweep},
+		{"Search", 'S', engine.ActSearch},
+		{"Map", 'M', engine.ActMap}, // the keys' own commands, for the mouse and the pad
+		{"Overview", 'O', engine.ActOverview},
+		{"Help?", '?', engine.ActHelp}}
+}
+
+// memberCommands are the selected member's keys while exploring, kept
+// off the command menu (a card's context menu has them for the mouse and
+// the pad).
+func memberCommands(v engine.View) []command {
+	c := []command{{"Items", 'I', engine.ActInventory}, {"View", 'V', engine.ActMember}}
 	if v.CanCast {
 		c = append(c, command{"Cast", 'C', engine.ActCastPick})
 	}
-	return append(c,
-		command{"Items", 'I', engine.ActInventory},
-		command{"View", 'V', engine.ActMember},
-		command{"Camp", 'A', engine.ActCamp}, // not C (Cast) nor E (every screen's Exit)
-		command{"Sweep", 'W', engine.ActSweep},
-		command{"Search", 'S', engine.ActSearch},
-		command{"Map", 'M', engine.ActMap}, // the keys' own commands, for the mouse and the pad
-		command{"Overview", 'O', engine.ActOverview},
-		command{"Help?", '?', engine.ActHelp})
+	return c
 }
 
 // runCommand sends command i of the command menu.
@@ -63,7 +68,7 @@ func (p *Presenter) exploreKey(k uint16, v engine.View) bool {
 	if k >= 128 {
 		return false
 	}
-	for _, cm := range commands(v) {
+	for _, cm := range append(commands(v), memberCommands(v)...) {
 		if cm.key == c {
 			p.send(cm.act, -1)
 			return true
