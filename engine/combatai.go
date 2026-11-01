@@ -1,5 +1,7 @@
 package engine
 
+import "slices"
+
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
@@ -327,7 +329,30 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 	if ci.Delay == 0 {
 		cont = false
 	}
+	// extra: a thrown weapon in the Missiles slot is taken in hand for an
+	// iteration with no foe next to c (as rangedAttack), and put back after
+	var thrown, held *Item
+	putBack := func() {
+		if thrown == nil {
+			return
+		}
+		if slices.Contains(c.Items, thrown) { // not the last one thrown
+			thrown.Readied = 2
+		}
+		if slices.Contains(c.Items, held) {
+			held.Readied = 1
+		}
+		thrown, held = nil, nil
+		e.ApplyItems(c)
+	}
+	defer putBack()
 	for !stop && cont {
+		putBack()
+		if m := c.Slots[slotArrows]; m != nil && m.Readied == 2 && c.Slots[slotWeapon] != nil && c.Slots[slotWeapon].Magic == 0 && e.nearEnemies(c, 1) == 0 {
+			thrown, held = m, c.Slots[slotWeapon]
+			held.Readied, thrown.Readied = 0, 1
+			e.ApplyItems(c)
+		}
 		for ci.Fleeing != 0 && ci.Moves > 0 && int8(ci.Delay) > 0 && int8(ci.Delay) < 0x14 {
 			e.aiMoveStep(c)
 		}
@@ -375,6 +400,7 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 				r := e.Dice(1, n)
 				tgt = e.combatant(e.targets[r])
 				if e.rangedWeapon(c) && !e.throwable(c) && e.nearEnemies(c, 1) > 0 {
+					putBack()
 					e.aiPickWeapon(c)
 					stop = true
 					if e.rangedWeapon(c) && !e.throwable(c) { // extra: the swap was refused: the turn ends instead of trying forever (a soft lock)
@@ -568,6 +594,9 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	if best1 != nil && int(bs1) > int(bs2)>>1 && ok && (ranged || e.nearEnemies(c, 1) == 0) {
 		chosen = best1
 	}
+	if chosen == best1 && best1 != nil && best2 != nil && e.throwableItem(best1) {
+		chosen = best2 // extra: a thrown weapon goes into the Missiles slot, the melee one in hand
+	}
 	done := false
 	ok = true
 	if w := c.Slots[slotWeapon]; w != nil && (w == chosen || w.Magic != 0) {
@@ -613,6 +642,11 @@ func (e *Engine) aiPickWeapon(c *Character) {
 		done = true
 	}
 	e.ApplyItems(c)
+	if best1 != nil && best1.Readied == 0 && e.throwableItem(best1) && c.Slots[slotWeapon] != nil && c.Slots[slotArrows] == nil && c.Slots[slotBolts] == nil {
+		e.readyItem(best1) // extra: the Missiles slot (missileSlot), thrown from there by aiAttackLoop
+		e.ApplyItems(c)
+		done = true
+	}
 	if done {
 		e.ext.panel = c
 	}
