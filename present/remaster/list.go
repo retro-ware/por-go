@@ -246,6 +246,9 @@ func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 
 // itemRows are an engine menu's items as menu rows (picking is ActChoose).
 func itemRows(m *engine.Menu) []menuRow {
+	if m == nil { // the question went since the last frame (a key between them)
+		return nil
+	}
 	rows := make([]menuRow, len(m.Items))
 	for i, it := range m.Items {
 		rows[i] = menuRow{it.Text, it.Key, func() {}}
