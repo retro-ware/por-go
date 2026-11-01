@@ -18,7 +18,7 @@ func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 		}
 		var it []menuRow
 		for i, u := range s.Unknown {
-			it = append(it, menuRow{u.Owner + ": " + u.Name, 0, func() { c.pick, c.screen = i, shopDeal }})
+			it = append(it, menuRow{u.Owner + ": " + u.Name, 0, func() { c.pick, c.screen, c.sel = i, shopDeal, 0 }})
 		}
 		return fmt.Sprintf("Identify for %dg (%d gold)", s.IDPrice, s.Gold), append(it, menuRow{"Back", 'B', to(campMain)})
 	case shopDeal:

@@ -125,7 +125,7 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 	if len(cp.Scrolls) > 0 {
 		it = append(it, menuRow{"Scribe", 'S', to(campScribe)})
 	}
-	it = append(it, menuRow{"Rest", 'R', to(campRest)}, menuRow{"Icon", 'O', act(engine.ActIconEdit, -1)}, menuRow{"Drop", 'D', to(campDrop)})
+	it = append(it, menuRow{"Rest", 'R', to(campRest)}, menuRow{"Icon", 'O', act(engine.ActIconEdit, -1)}, menuRow{"Drop", 'D', func() { c.screen, c.sel = campDrop, 1 }})
 	if len(cp.Bestiary) > 0 {
 		it = append(it, menuRow{"Bestiary", 'B', to(campBestiary)})
 	}
