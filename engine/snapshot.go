@@ -67,6 +67,7 @@ type Member struct {
 	Status   string      // as the sheet names it ("Okay", "Unconscious" ...)
 	Class    string      // as the sheet names it ("Fighter/Thief" ...)
 	Selected bool        // the selected member, or the candidate while a member is picked (SelectCharacter)
+	Colour   int         // the roster's EGA colour for the name when not Selected: red not okay, yellow a monster, magenta ready for a level, else cyan
 	Head     image.Image // the paper-doll head the player chose, in EGA colours (nil if missing)
 	Portrait image.Image // extra: the PNG the player dropped on the sheet, in place of Head (nil: none)
 	Powers   []Power     // extra: what the member can do now out of combat (a card's context menu): View, Items, then powers'; Kind with the member's index acts
@@ -149,7 +150,7 @@ func (p *Pane) Shown() bool {
 
 // View is one published snapshot.
 type View struct {
-	Pane       *Pane // the main screen's frame is up (not combat, a sheet, a shop, the title): its text pane (nil otherwise)
+	Pane       *Pane // the text pane under the 3D view: the main frame is up (Frame), or it holds text (nil otherwise)
 	Window     Window
 	Area       AreaID
 	X, Y       int
@@ -176,10 +177,15 @@ type View struct {
 	Inventory  *Inventory     // the inventory screen is up (nil otherwise)
 	Map        image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
 	Pictures   []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
-	Lines      [][]PaneRun    // the page's text over Pictures, a row each as runs (Pane's way; the screens' layout is still the engine's, step 4)
+	Frame      bool           // the main frame is up (its boxes are among Pictures): the 3D view's screen
+	Prompt     []PaneRun      // the prompt row's text (the last row), X the page's column
+	ViewText   [][]PaneRun    // text over the view window (WinText: opProtection's runes), rows from 1, X the page's column
+	Status     string         // the status line under the party panel (StatusLine; "" none), at StatusAt
+	Roster     bool           // the roster is up in the party panel (drawPartyList while adventuring): View.Party, a click on a row picks the member in a member pick (ActMember)
+	Results    *Results       // the after-combat page (in a box round the window)
+	Credits    bool           // the title's credits page (Credits, RemasterCredit)
 	Cells      image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
 	Ink        [16]color.RGBA // the text colours (EGA 0..15) in the page's palette now
-	Spots      []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait   CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
 	IconDrop   bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
 	IconBox    CellRect       // the creation sheet's combat icon (zero elsewhere): a PNG dropped on it becomes the icon (ActIcon)
@@ -193,6 +199,30 @@ type View struct {
 	Seq        uint64         // counts the Views published: a presenter redraws the page on a new one
 	Ticks      bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
 }
+
+// Results is the after-combat page (ovr06): the hired NPCs hiding their
+// shares (hiredShare), else the outcome (showResult), or the party
+// destroyed; the presenter lays it out in the window's box.
+type Results struct {
+	Shares  []string // hiredShare: "X takes and hides his share.", each wrapped from column 5 to 34 on rows 5, 7 ...
+	Outcome string   // "The party has won." ... on row 3
+	Exp     string   // "Each character receives 120" on row 5, "experience points." on row 7
+	Taken   string   // "The party takes ...", wrapped from row 9 ("" none)
+	Harmed  []Harm   // the members out of the fight dead or worse, or with harmful effects (extra), from row 12
+	End     string   // the party is destroyed: the text under "The END!" (the box's title), wrapped in EndAt
+	EndAt   CellRect
+}
+
+// Harm is a member's line on the after-combat page: its name and what
+// harms it.
+type Harm struct{ Name, What string }
+
+// StatusAt is the status line's first cell (StatusLine).
+var StatusAt = image.Pt(statusLine.X1, statusLine.Y1)
+
+// RosterAt is the roster's first cell (drawPartyList): the heading, the
+// members from two rows down.
+var RosterAt = image.Pt(rosterPanel.X1, rosterPanel.Y1)
 
 // SheetPage is what the character sheet's page shows (CharacterSheet),
 // laid out by the presenter as the original's ovr20 did, in the colours of
@@ -429,6 +459,8 @@ type snapState struct {
 	sheetOn      bool                   // a character sheet is up over the combat map
 	portrait     CellRect               // the sheet's portrait box while a sheet is up
 	sheet        *SheetPage             // the character sheet's page while it is up (View.SheetPage)
+	results      *Results               // the after-combat page while it is up (View.Results)
+	credits      bool                   // the credits page is up (View.Credits)
 	icon         *IconEditor            // the icon editor's page while it is up (View.IconEditor)
 	iconDrop     func(image.Image)      // the icon editor, or the creation sheet, takes a dropped PNG while it is up (nil elsewhere)
 	iconBox      CellRect               // the creation sheet's icon: the cells that take the drop (zero: the whole screen)
@@ -516,7 +548,7 @@ func (e *Engine) publish() {
 			v.Ask = &a
 		}
 	}
-	v.Spots, v.Portrait = e.spots(), s.portrait
+	v.Portrait = s.portrait
 	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.up(modeCamp)
 	switch {
 	case e.ext.pager != nil:
@@ -532,6 +564,7 @@ func (e *Engine) publish() {
 		sp := *s.sheet
 		v.SheetPage = &sp
 	}
+	v.Results, v.Credits = s.results, s.credits
 	if s.icon != nil && e.mode() == modeIcon {
 		ed := *s.icon
 		v.IconEditor = &ed

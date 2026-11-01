@@ -56,7 +56,7 @@ type IconEditor struct {
 // camp's Icon).
 func (e *Engine) pushIcon() {
 	c := e.selected()
-	e.ClearCells(1, 1, winRight, winBottom) // DrawBoxTitled (its frame is the presenter's)
+	e.blank(1, 1, winRight, winBottom) // DrawBoxTitled (its frame is the presenter's)
 	e.newPage()
 	e.combatViewLeave() // ovr32:00E3: the combat palette, black shown dark grey so the icon's black shows
 	head, weapon, size, icon := c.IconHead, c.IconBody, c.IconSize, c.Icon
@@ -115,7 +115,7 @@ func (e *Engine) pushIcon() {
 	show = func() {
 		build()
 		layout()
-		e.ClearCells(1, 1, winRight, winBottom) // the text, the frame, the poses and the clicks are the presenter's (View.IconEditor)
+		e.blank(1, 1, winRight, winBottom) // the text, the frame, the poses and the clicks are the presenter's (View.IconEditor)
 		ed := &IconEditor{Large: c.IconSize == 2, Part: part, Shade: shade,
 			Head: CellRect{idWordsCol, idPreviewRow, idWordsCol + 5, idPreviewRow}, Weapon: CellRect{idWordsCol, idPreviewRow + 1, idWordsCol + 5, idPreviewRow + 1},
 			Size:  CellRect{idWordsCol, idPreviewRow + 2, idWordsCol + 9, idPreviewRow + 2},
@@ -212,7 +212,7 @@ func (e *Engine) pushIcon() {
 		e.snap.iconDrop, e.snap.icon = nil, nil
 		build()
 		e.iconCopy(0xC, order, false)
-		e.ClearRow24()
+		e.clearPrompt()
 		e.freeIcon(0xC) // ovr33:014E
 		if e.viewMode > 1 {
 			e.LoadIconPic("ICON", 0, 0xB)

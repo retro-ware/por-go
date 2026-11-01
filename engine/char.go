@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"image"
-	"strconv"
 )
 
 // Character is a party member or a monster: its record (the DOS file
@@ -204,32 +203,10 @@ func (c *Character) SetName(s string) {
 	copy(c.PName[1:], s)
 }
 
-// displayAC = 00BA:08EF (char, x, y): |ac60-60|, with "-" when ac60 > 60, colour 0xA.
-func (e *Engine) displayAC(c *Character, x, y int) {
-	v := int(c.AC[0])
-	s := strconv.Itoa(abs(v - 60))
-	if v > 60 {
-		s = "-" + s
-	}
-	e.DisplayString(x, y, colLightGreen, s)
-}
-
-// displayHP = 00BA:0973 (char, x, y, flag): yellow when below max, white
-// otherwise, magenta when flag set.
-func (e *Engine) displayHP(c *Character, x, y int, flag bool) {
-	col := colLightGreen
-	if c.HP < c.MaxHP {
-		col = colYellow
-	}
-	if flag {
-		col = colLightMagenta
-	}
-	e.DisplayString(x, y, col, strconv.Itoa(int(c.HP)))
-}
-
-// displayName = 00BA:1816 (char, x, y, possessive): red when not okay,
-// yellow for NPCs, cyan otherwise; optional "'s" suffix.
-func (e *Engine) displayName(c *Character, x, y int, possessive bool) {
+// nameColour = 00BA:1816 displayName's colour: red when not okay,
+// yellow for monsters, cyan otherwise. (00BA:08EF displayAC and 00BA:0973
+// displayHP are the presenter's: the roster, View.Party.)
+func nameColour(c *Character) int {
 	col := colLightRed
 	if c.Okay != 0 {
 		col = colLightCyan
@@ -237,10 +214,17 @@ func (e *Engine) displayName(c *Character, x, y int, possessive bool) {
 			col = colYellow
 		}
 	}
-	e.DisplayString(x, y, col, c.Name())
-	if possessive {
-		e.DisplayString(x+len(c.Name()), y, col, "'s")
+	return col
+}
+
+// rosterColour is the roster's colour for c's name (drawPartyList) when c
+// is not the one highlighted: magenta ready for a level (extra), else
+// nameColour.
+func rosterColour(c *Character) int {
+	if c.Okay != 0 && c.Side == sideParty && levelReady(c) {
+		return colLightMagenta
 	}
+	return nameColour(c)
 }
 
 func abs(n int) int {

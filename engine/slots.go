@@ -40,7 +40,7 @@ func (e *Engine) endGame() {
 func (e *Engine) unwindReset() {
 	e.resets++
 	x := &e.ext
-	x.held, x.regions, x.pager = Action{}, nil, nil
+	x.held, x.pager = Action{}, nil
 	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = nil, nil, false, 0, false
 	x.panel = nil
 	e.screens = nil // the screens pushed are gone with their callers

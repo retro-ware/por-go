@@ -180,9 +180,9 @@ func menuIndex(m *engine.Menu, c byte) int {
 }
 
 // Mouse takes the pointer on text cell (cx, cy) of the page (in: on the
-// page at all), a left or right click and wheel steps (up positive): a
-// spot of the page hovered or clicked, Esc on the right button, the
-// highlight on the wheel; a click elsewhere answers "press a key".
+// page at all), a left or right click and wheel steps (up positive): the
+// clicks the screens take, Esc on the right button, the highlight on the
+// wheel; a click elsewhere answers "press a key".
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
 	for ; wheel != 0; wheel -= sign(wheel) {
 		if p.fight {
@@ -239,21 +239,10 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		}
 		return
 	}
-	spot := -1
-	for i, r := range v.Spots { // the topmost: the last
-		if in && image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) {
-			spot = i
-		}
-	}
-	at := [3]int{spot, cx, cy}
-	if at != p.hovered && (spot >= 0 || p.hovered[0] >= 0) { // onto a spot, or off them
-		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActHover, N: spot, X: cx, Y: cy})
-	}
-	p.hovered = at
-	switch {
+	switch i := rosterRow(v, cx, cy); {
 	case !left || !in:
-	case spot >= 0:
-		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActSpot, N: spot, X: cx, Y: cy})
+	case i >= 0 && choosing(v): // a click on a member in the roster picks it, as its portrait
+		p.send(engine.ActMember, i)
 	case typing(v) == nil && (askMenu(v) == nil || len(askMenu(v).Items) == 1): // no bar, or one with nothing to choose (the scripts' "PRESS <ENTER> TO CONTINUE")
 		p.send(engine.ActOK, 0)
 	}

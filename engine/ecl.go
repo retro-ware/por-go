@@ -514,10 +514,10 @@ func (e *Engine) InitAreaScript() {
 // LoadArea = ovr08:0341: ECL<n>.DAX block areaId → ECL image (first word skipped).
 func (e *Engine) LoadArea(areaID int) {
 	e.loadingMonster = false
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colWhite, "Loading...Please Wait")
+	e.clearPrompt()
+	e.prompt(colWhite, "Loading...Please Wait")
 	e.loadScript(areaID)
-	e.ClearRow24()
+	e.clearPrompt()
 }
 
 // FreeSteps = ovr08:0482.
@@ -682,8 +682,8 @@ func (e *Engine) HitMessage(c *Character, dmg int) {
 		e.PromptRow24(colWhite, "press <enter>/<return> to continue")
 	}
 	e.msgCol = 0x26
-	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colWhite, clear, msg)
+	e.paneText(colWhite, clear, msg)
 	e.ApplyDamage(c, dmg&0xFF) // 00BA:2228
-	e.ClearBox(17, 1, paneRight, 15)
+	e.blank(17, 1, paneRight, 15)
 	e.DisplayPartyList()
 }

@@ -36,14 +36,6 @@ var pcFonts = func() []pcFont {
 	return fs
 }()
 
-// textCell is what drawChar last put into a cell, so a font change can
-// redraw the text still showing there.
-type textCell struct {
-	set, upcase   bool
-	c, colour, bg byte
-	glyph         [8]byte
-}
-
 const fontFile = "FONT.CFG"
 
 // loadFont reads the fonts in data/assets/fonts and picks the one named in
@@ -79,15 +71,6 @@ func (e *Engine) cycleFont(step int) {
 	n := len(e.ext.fonts) + 1
 	e.ext.font = (e.ext.font + step + n) % n
 	e.say(e.FontName())
-	for y, row := range e.cells() {
-		for x := range row {
-			c := &row[x]
-			if !c.set {
-				continue
-			}
-			e.paintChar(x, y, int(c.colour), int(c.bg), c.c, c.upcase)
-		}
-	}
 	name := ""
 	if e.ext.font > 0 {
 		name = e.ext.fonts[e.ext.font-1].name

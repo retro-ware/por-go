@@ -113,16 +113,16 @@ func (e *Engine) DevScene(name string) func() {
 			e.es.inEncounterMenu, e.game.Portrait = 1, 0xFF
 			e.ShowEncounter(sprite, pic, 0, &e.es.encounterShown)
 			e.msgCol, e.msgRow = 1, 0x11
-			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "A band of kobolds blocks the way.")
+			e.paneText(colLightGreen, true, "A band of kobolds blocks the way.")
 			var round func() // as the script's asks: WAIT a message, then the menu again
 			round = func() {
 				e.askChoice("", "~COMBAT ~WAIT ~FLEE ~PARLAY", false, false, func(c int) {
 					if c == 1 {
-						e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
+						e.paneText(colLightGreen, true, "Both sides wait. The kobolds eye the party with suspicion.")
 						round()
 						return
 					}
-					e.ClearBox(0, promptRow, lastCol, promptRow)
+					e.clearPrompt()
 					e.es.inEncounterMenu = 0
 					e.askChoice(" ", "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", false, false, func(int) {})
 				})
@@ -196,25 +196,25 @@ func (e *Engine) DevScene(name string) func() {
 		}
 	case "journal": // a text window naming journal entries, as ECL3 block 0 prints them
 		return func() {
-			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "YOU OVERHEAR TAVERN TALE ")
+			e.paneText(colLightGreen, true, "YOU OVERHEAR TAVERN TALE ")
 			e.journalPrinted("YOU OVERHEAR TAVERN TALE ", true)
-			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, false, "3")
+			e.paneText(colLightGreen, false, "3")
 			e.after(func() { e.journalPrinted("3", false) }, func() { e.journalPrinted("READ JOURNAL ENTRIES 26 AND 4.", true) })
 		}
 	case "talljournal": // a journal entry with a picture taller than wide (entry 37): Up and Down scroll it
 		return func() {
-			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "SEE JOURNAL ENTRY 37.")
+			e.paneText(colLightGreen, true, "SEE JOURNAL ENTRY 37.")
 			e.journalPrinted("SEE JOURNAL ENTRY 37.", true)
 		}
 	case "runes": // the Sokal Keep elf's scroll (ECL1 block 21, 9BD7): opClearBox, three opProtection lines
 		return func() {
 			e.snap.win = WinText // as opClearBox
-			e.ClearBox(1, 1, 15, 15)
+			e.blank(1, 1, 15, 15)
 			e.run.textInBox = 1
 			e.msgCol, e.msgRow = 2, 5
 			for _, l := range [][]byte{{0x56, 0x57, 0x6b, 0x6c, 0x71, 0x72}, {0x67, 0x68, 0x40, 0x41, 0x58, 0x59, 0x5c, 0x5d, 0x67, 0x68, 0x6b, 0x6c, 0x46, 0x47}, {0x67, 0x68, 0x4e, 0x4f, 0x48, 0x49, 0x67, 0x68, 0x69, 0x6a, 0x5a, 0x5b, 0x50, 0x51}} {
 				for i, c := range l {
-					e.DisplayChar(e.msgCol+i, e.msgRow, colWhite, c+1, false)
+					e.char(e.msgCol+i, e.msgRow, colWhite, c+1, false)
 				}
 				e.msgRow++
 			}

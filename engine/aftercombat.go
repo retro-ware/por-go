@@ -241,43 +241,43 @@ func (e *Engine) hiredShare() {
 	for _, n := range []*uint32{&e.loot.gold, &e.loot.copper, &e.loot.gems, &e.loot.jewelry} {
 		*n -= *n / uint32(parts) * uint32(shares)
 	}
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
-	k := 0
+	e.frame(1, 1, winRight, winBottom, colWhite, "")
+	r := &Results{}
 	for _, c := range e.party {
 		if c.Control > 0x7F && c.Status == statusOkay && c.Share > 0 {
-			e.DisplayTextBlock(5, 5+2*k, 34, winBottom, colLightGreen, true, c.Name()+" takes and hides his share.")
-			k++
+			r.Shares = append(r.Shares, c.Name()+" takes and hides his share.")
 		}
 	}
+	e.snap.results = r
 	e.pause(0, true) // press <enter>/<return> to continue: the page waits for a key while the rules go on
 }
 
-// showResult = ovr06:0916 (exp).
+// showResult = ovr06:0916 (exp): the page (View.Results).
 func (e *Engine) showResult(exp int32) {
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
+	e.frame(1, 1, winRight, winBottom, colWhite, "")
+	r := &Results{}
 	switch {
 	case e.ac.monsters || e.duel():
 		switch {
 		case e.duel() && !e.ac.won:
-			e.DisplayString(1, 3, colLightGreen, "You have lost the duel.")
+			r.Outcome = "You have lost the duel."
 			exp = 0
 		case e.duel():
-			e.DisplayString(1, 3, colLightGreen, "You have won the duel.")
+			r.Outcome = "You have won the duel."
 		default:
-			e.DisplayString(1, 3, colLightGreen, "The party has won.")
+			r.Outcome = "The party has won."
 		}
 	case e.ac.fled:
-		e.DisplayString(1, 3, colLightGreen, "The party has fled.")
+		r.Outcome = "The party has fled."
 		exp = 0
 	default:
-		e.DisplayString(1, 3, colLightGreen, "The party has found Treasure!")
+		r.Outcome = "The party has found Treasure!"
 	}
 	s := "Each character receives "
 	if e.duel() {
 		s = "The duelist receives "
 	}
-	e.DisplayString(1, 5, colLightGreen, cut(s+strconv.Itoa(int(exp)), 0xFF))
-	e.DisplayString(1, 7, colLightGreen, "experience points.")
+	r.Exp = cut(s+strconv.Itoa(int(exp)), 0xFF)
 	if l := e.loot; !l.empty() {
 		var got []string
 		if l.gold > 0 || l.copper > 0 {
@@ -291,10 +291,9 @@ func (e *Engine) showResult(exp int32) {
 				got = append(got, strconv.Itoa(int(p.n))+p.name)
 			}
 		}
-		e.DisplayTextBlock(1, 9, winRight, winBottom, colLightGreen, true, "The party takes "+strings.Join(got, ", ")+".")
+		r.Taken = "The party takes " + strings.Join(got, ", ") + "."
 	}
-	y := 0xC // extra: who came out of the fight dead or worse, or with harmful effects on them
-	for _, c := range e.party {
+	for _, c := range e.party { // extra: who came out of the fight dead or worse, or with harmful effects on them
 		var what []string
 		if st := e.statusName(c); c.Status != statusOkay && c.Status != statusRunning && st != "" {
 			what = append(what, st)
@@ -304,12 +303,11 @@ func (e *Engine) showResult(exp int32) {
 				what = append(what, name)
 			}
 		}
-		if len(what) > 0 && y <= 0x15 {
-			e.DisplayString(1, y, colLightCyan, cut(c.Name(), 15))
-			e.DisplayString(18, y, colLightRed, cut(strings.Join(what, ", "), winRight-18))
-			y++
+		if len(what) > 0 {
+			r.Harmed = append(r.Harmed, Harm{c.Name(), strings.Join(what, ", ")})
 		}
 	}
+	e.snap.results = r
 	e.pause(0, true) // press <enter>/<return> to continue: the page waits for a key while the rules go on
 }
 
@@ -389,8 +387,8 @@ func (e *Engine) lootAsk(done func()) {
 				done()
 				return
 			}
-			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "There is still treasure left.  ")
-			e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colWhite, false, "Do you want to go back and claim your treasure?")
+			e.paneText(colLightGreen, true, "There is still treasure left.  ")
+			e.paneText(colWhite, false, "Do you want to go back and claim your treasure?")
 			var ask func()
 			ask = func() { // MenuInput
 				e.displayThen("", hotBar("~Yes ~No"), colLightMagenta, colLightGreen, colWhite, true, e.animInput, func(p Pick) {
@@ -402,7 +400,7 @@ func (e *Engine) lootAsk(done func()) {
 					case p.ID == 1:
 						done()
 					case p.ID >= 0:
-						e.ClearBox(1, msgTop, paneRight, paneBottom)
+						e.clearPane()
 						again()
 					default:
 						ask()
@@ -442,11 +440,18 @@ func (e *Engine) pushAfterCombat() {
 	}
 	e.game.CombatEnd = 0x80
 	e.Music(5) // Amiga 0x4602E
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
-	e.msgCol, e.msgRow = 2, 6
-	e.DisplayTextBlock(2, 5, 37, winBottom, colLightGreen, true, "The monsters rejoice for the party has been destroyed")
+	e.frame(1, 1, winRight, winBottom, colWhite, "The END!")
+	e.endPage("The monsters rejoice for the party has been destroyed", CellRect{2, 5, 37, winBottom})
 	e.PromptRow24(colLightMagenta, "Press any key to continue")
 	end()
+}
+
+// endPage is the text under "The END!" (textBlock into box r, cleared):
+// View.Results.End, the text cursor after it.
+func (e *Engine) endPage(text string, r CellRect) {
+	e.snap.results = &Results{End: text, EndAt: r}
+	e.msgCol, e.msgRow = r.X1, r.Y1
+	flow(text, r.X1, r.Y1, r.X2, r.Y2, &e.msgCol, &e.msgRow, func(int, int, byte) {}, func() {})
 }
 
 // harmfulAffect (extra) names affect t when it hurts its bearer: one a

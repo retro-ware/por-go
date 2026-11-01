@@ -546,11 +546,11 @@ func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 		if e.resting != 0 {
 			r = 0x12
 		} else if !e.pg.frameUp { // extra: with the main frame up the border is there (redrawing it read as the frame torn down: the classic page came up)
-			e.DrawBorder(1, r, paneRight, paneBottom, 0)
+			e.border(1, r, paneRight, paneBottom, "", 0)
 		}
-		e.ClearCells(1, r, paneRight, paneBottom)
-		e.displayName(c, 1, r+1, false)
-		e.DisplayTextBlock(1, r+2, winRight, winBottom, colLightGreen, true, msg)
+		e.blank(1, r, paneRight, paneBottom)
+		e.text(1, r+1, nameColour(c), c.Name())
+		e.textBlock(1, r+2, paneRight, paneBottom, colLightGreen, true, msg)
 	}
 	if wait {
 		e.MsgDelay()
@@ -561,7 +561,7 @@ func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 // ClearMessageArea = 00BA:17E3.
 func (e *Engine) ClearMessageArea() {
 	if e.beginFlag != 5 {
-		e.ClearCells(1, 18, winRight, winBottom)
+		e.blank(1, 18, winRight, winBottom)
 	}
 }
 

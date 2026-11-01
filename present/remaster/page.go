@@ -1,11 +1,11 @@
 package remaster
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"math"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -37,8 +37,8 @@ type page struct {
 	seq   uint64
 	noted bool
 	drawn bool
-	page  []engine.Picture     // what img shows: the View's page...
-	text  [][]engine.PaneRun   // ...and text
+	page  []engine.Picture     // what img shows: the View's pictures...
+	text  string               // ...and text (pageText)
 	overs []overlay            // the screens' portraits over the page
 	scans map[image.Image]scan // the overlays on the GPU
 	fit   *gpu.Image           // fit's whole-scale copy
@@ -119,7 +119,7 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 		return pg.img
 	}
 	pg.drawn, pg.seq, pg.noted = true, v.Seq, note.Show
-	pg.page, pg.text = append(pg.page[:0], v.Pictures...), v.Lines
+	pg.page, pg.text = append(pg.page[:0], v.Pictures...), pageText(v)
 	m := pg.px
 	c := screenPage(v)
 	c.draw(m, v, note)
@@ -258,16 +258,18 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 }
 
 // drawPictures draws pics on black into m, whose top left is page pixel
-// at: a fill as its colour, a picture over what is under it.
+// at: a fill as its colour, a picture over what is under it (the borders
+// are the page's: cellPage).
 func drawPictures(m *image.RGBA, pics []engine.Picture, at image.Point) {
 	draw.Draw(m, m.Bounds(), image.Black, image.Point{}, draw.Src)
 	for _, s := range pics {
 		r := s.At.Sub(at).Add(m.Rect.Min)
-		if s.Fill {
+		switch {
+		case s.Fill:
 			draw.Draw(m, r, image.NewUniform(s.Colour), image.Point{}, draw.Src)
-			continue
+		case s.Img != nil:
+			draw.Draw(m, r, s.Img, s.Img.Bounds().Min, draw.Over)
 		}
-		draw.Draw(m, r, s.Img, s.Img.Bounds().Min, draw.Over)
 	}
 }
 
@@ -431,20 +433,35 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []overlay, r Rect, w, h int)
 // engine publishes a View every tick, most of them with the page unchanged;
 // a layer's picture is the same when it is the same pixels.
 func samePage(v engine.View, pg *page) bool {
-	if len(v.Pictures) != len(pg.page) || len(v.Lines) != len(pg.text) {
+	if len(v.Pictures) != len(pg.page) || pageText(v) != pg.text {
 		return false
 	}
-	for y := range v.Lines {
-		if !slices.Equal(v.Lines[y], pg.text[y]) {
-			return false
-		}
-	}
 	for i, s := range v.Pictures {
-		if o := pg.page[i]; s.At != o.At || s.Fill != o.Fill || s.Colour != o.Colour || !sameImage(s.Img, o.Img) {
+		if o := pg.page[i]; s.At != o.At || s.Fill != o.Fill || s.Colour != o.Colour || s.Border != o.Border || s.Title != o.Title || !sameImage(s.Img, o.Img) {
 			return false
 		}
 	}
 	return true
+}
+
+// pageText is the text v's page shows (screenPage's texts), to tell pages
+// apart.
+func pageText(v engine.View) string {
+	var b strings.Builder
+	if v.Pane != nil {
+		fmt.Fprint(&b, v.Pane.Lines)
+	}
+	fmt.Fprint(&b, v.Prompt, v.ViewText, v.Status, v.Roster, v.Credits, v.Ink)
+	if v.Roster {
+		fmt.Fprint(&b, choosing(v))
+		for _, m := range v.Party {
+			fmt.Fprint(&b, m.Name, m.AC, m.HP, m.MaxHP, m.Selected, m.Colour)
+		}
+	}
+	if v.Results != nil {
+		fmt.Fprintf(&b, "%+v", *v.Results)
+	}
+	return b.String()
 }
 
 func sameImage(a, b image.Image) bool {

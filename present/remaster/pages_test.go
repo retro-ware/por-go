@@ -261,3 +261,93 @@ func TestSheetSpellsTitle(t *testing.T) {
 		t.Errorf("no box round the title: %v", c.boxes)
 	}
 }
+
+// devScene: adventuring with dev scene name (engine.DevScene) put up.
+func devScene(t *testing.T, name string) (*engine.Engine, engine.View) {
+	t.Helper()
+	if _, err := os.Stat("../../data/dos/TITLE.DAX"); err != nil {
+		t.Skip("no game files")
+	}
+	e, err := engine.New("../../data")
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed := uint32(7)
+	e.FixedSeed = &seed
+	e.Cfg.SaveDir = t.TempDir()
+	e.Explore = true
+	if name != "" {
+		e.DevAction = e.DevScene(name)
+	}
+	e.Init()
+	e.Start(e.Play)
+	return e, settled(e)
+}
+
+// The adventuring screens (the main frame, the roster, the status line,
+// the text pane, after-combat, rest, casting, the runes' window text),
+// recorded from the engine's drawing (step 4 part 3).
+func TestAdventurePages(t *testing.T) {
+	for _, sc := range []struct {
+		file, name string
+		acts       []engine.Action
+	}{
+		{"adv_", "", nil},
+		{"adv_loot", "loot", nil},
+		{"adv_cast", "cast", nil},
+		{"adv_runes", "runes", nil},
+		{"adv_journal", "journal", nil},
+		{"adv_parlay", "parlay", nil},
+		{"adv_password", "password", nil},
+		{"adv_who", "who", nil},
+		{"adv_minimap", "", []engine.Action{{Kind: engine.ActMinimap}}},
+		{"adv_rest", "", []engine.Action{{Kind: engine.ActCamp}, {Kind: engine.ActRest, N: engine.RestWait}}},
+	} {
+		e, _ := devScene(t, sc.name)
+		v := settled(e, sc.acts...)
+		golden(t, sc.file, v)
+	}
+}
+
+// The after-combat page and the roster laid out from their data
+// (showResult, the party destroyed, drawPartyList's colours).
+func TestResultsRoster(t *testing.T) {
+	var ink [16]color.RGBA
+	for i := range ink {
+		ink[i] = col(i)
+	}
+	row := func(c *cellPage, y int) string {
+		var s []string
+		for _, r := range c.lines()[y] {
+			s = append(s, fmt.Sprintf("%d:%s", r.X, r.Text))
+		}
+		return strings.Join(s, " ")
+	}
+	v := engine.View{Cells: image.Pt(40, 25), Ink: ink, Results: &engine.Results{Outcome: "The party has won.", Exp: "Each character receives 120",
+		Taken: "The party takes 156 gold pieces, 7 gems and a great many other things besides.", Harmed: []engine.Harm{{Name: "Pip", What: "Dead"}}}}
+	c := screenPage(v)
+	for y, want := range map[int]string{3: "1:The party has won.", 5: "1:Each character receives 120", 7: "1:experience points.",
+		9: "1:The party takes 156 gold pieces, 7 ", 10: "1:gems and a great many other things ", 11: "1:besides.", 12: "1:Pip 18:Dead"} {
+		if got := row(c, y); got != want {
+			t.Errorf("row %d: %q, want %q", y, got, want)
+		}
+	}
+	v.Results = &engine.Results{End: "The entire party is killed!", EndAt: engine.CellRect{X1: 1, Y1: 1, X2: 38, Y2: 22}}
+	if got := row(screenPage(v), 1); got != "1:The entire party is killed!" {
+		t.Errorf("end: %q", got)
+	}
+	v = engine.View{Cells: image.Pt(40, 25), Ink: ink, Roster: true, Status: "15,1 W 00:00",
+		Party: []engine.Member{{Name: "Pip", AC: -2, HP: 3, MaxHP: 8, Colour: inkMagenta}, {Name: "Thorgrim", AC: 10, HP: 9, MaxHP: 9, Selected: true}}}
+	c = screenPage(v)
+	for y, want := range map[int]string{2: "17:Name 33:AC  HP", 4: "17:Pip 33:-2 38:3", 5: "17:Thorgrim 33:10 38:9", 15: "17:15,1 W 00:00"} {
+		if got := row(c, y); got != want {
+			t.Errorf("row %d: %q, want %q", y, got, want)
+		}
+	}
+	if r := c.lines()[4][0]; r.Fg != ink[inkMagenta] {
+		t.Errorf("Pip in %v", r.Fg)
+	}
+	if i := rosterRow(v, 20, 5); i != 1 {
+		t.Errorf("roster click: %d", i)
+	}
+}

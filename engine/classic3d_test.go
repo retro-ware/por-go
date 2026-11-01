@@ -198,8 +198,7 @@ func (e *Engine) classicWalldefLoad(block, slot int) error {
 	return nil
 }
 
-// pageRGBA rasterises the page as the presenter does: the layers, then the
-// text cells over them.
+// pageRGBA rasterises the page's pictures as the presenter does.
 func (e *Engine) pageRGBA() *image.RGBA {
 	e.publish()
 	v := e.View()
@@ -210,23 +209,8 @@ func (e *Engine) pageRGBA() *image.RGBA {
 			draw.Draw(m, s.At, image.NewUniform(s.Colour), image.Point{}, draw.Src)
 			continue
 		}
-		draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, draw.Over)
-	}
-	for y, row := range v.Lines {
-		for _, run := range row {
-			for i := 0; i < len(run.Text); i++ {
-				g, _ := e.glyph(run.Text[i], run.Upcase)
-				x := run.X + i
-				for r := 0; r < 8; r++ {
-					for b := 0; b < 8; b++ {
-						if g[r]&(0x80>>b) != 0 {
-							m.SetRGBA(x*8+b, y*8+r, run.Fg)
-						} else {
-							m.SetRGBA(x*8+b, y*8+r, run.Bg)
-						}
-					}
-				}
-			}
+		if s.Img != nil {
+			draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, draw.Over)
 		}
 	}
 	return m

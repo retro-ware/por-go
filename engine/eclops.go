@@ -107,9 +107,9 @@ func (e *Engine) eclRun(then func()) {
 // opExit = ovr04:0001 (EXIT).
 func (e *Engine) opExit() {
 	if e.es.textInView != 0 {
-		e.DrawBoxTitled(1, 1, 15, 15, 0, colWhite, "")
+		e.frame(1, 1, 15, 15, colWhite, "")
 		if e.area.In3D != 0 {
-			e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
+			e.frame(3, 3, 13, 13, colWhite, "")
 		}
 	}
 	if e.run.restoreSel {
@@ -291,7 +291,7 @@ func (e *Engine) opPicture() {
 	e.FetchArgs(1)
 	v := int(byte(e.ArgValue(1)))
 	if e.area.In3D == 0 && v != 0xFF {
-		e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
+		e.frame(3, 3, 13, 13, colWhite, "")
 	}
 	if v != 0xFF {
 		if w := e.ext.walk; w != nil {
@@ -362,7 +362,7 @@ func (e *Engine) scriptText(clear bool, s string) {
 	if clear {
 		e.msgRow, e.msgCol = 0x11, 1
 	}
-	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, clear, s)
+	e.paneText(colLightGreen, clear, s)
 	e.speak(voiceKey(s))
 	e.journalPrinted(s, clear)
 }
@@ -403,7 +403,7 @@ func (e *Engine) opVMenu() {
 	e.FetchArgs(n)
 	list := newList(n)
 	e.msgCol, e.msgRow = 1, 0x11
-	e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, prompt)
+	e.paneText(colLightGreen, true, prompt)
 	for i, p := range list {
 		s := e.es.strAt(i + 1)
 		if len(s) > 0x28 {
@@ -419,7 +419,7 @@ func (e *Engine) opVMenu() {
 			index = n - 1
 		}
 		e.WriteVar(dst, uint16(index))
-		e.ClearBox(1, msgTop, paneRight, paneBottom)
+		e.clearPane()
 	})
 }
 
@@ -546,7 +546,7 @@ func (e *Engine) opHMenu() {
 	menu = cut(menu+"~"+e.es.strAt(n), 0x32)
 	e.askChoice("", menu, allowEnter, anim, func(r int) {
 		e.WriteVar(dst, uint16(byte(r)))
-		e.ClearBox(0, promptRow, lastCol, promptRow)
+		e.clearPrompt()
 	})
 }
 

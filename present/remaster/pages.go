@@ -57,19 +57,36 @@ type cellPage struct {
 }
 
 func newCellPage(v engine.View) *cellPage {
-	c := &cellPage{cols: max(v.Cells.X, 40), rows: max(v.Cells.Y, 25), ink: v.Ink, pics: v.Pictures}
+	c := &cellPage{cols: max(v.Cells.X, 40), rows: max(v.Cells.Y, 25), ink: v.Ink}
 	c.cells = make([][]cell, c.rows)
 	for y := range c.cells {
 		c.cells[y] = make([]cell, c.cols)
-		if y < len(v.Lines) {
-			for _, r := range v.Lines[y] {
-				for i := 0; i < len(r.Text) && r.X+i < c.cols; i++ {
-					c.cells[y][r.X+i] = cell{true, r.Upcase, r.Text[i], r.Fg, r.Bg}
-				}
-			}
+	}
+	for _, p := range v.Pictures { // the borders round the boxes: View.Border's cells, the title on the top row
+		if !p.Border {
+			c.pics = append(c.pics, p)
+			continue
+		}
+		f := p.At
+		r := engine.CellRect{X1: f.Min.X/8 + 1, Y1: f.Min.Y/8 + 1, X2: f.Max.X/8 - 2, Y2: f.Max.Y/8 - 2}
+		c.border(r.X1, r.Y1, r.X2, r.Y2)
+		if t := p.Title; t != "" {
+			c.run(engine.PaneRun{X: (r.X1 + r.X2 - len(t)) / 2, Text: t, Fg: p.Colour, Bg: c.ink[inkBlack], Upcase: true}, r.Y1)
 		}
 	}
 	return c
+}
+
+// run puts r's text on row y.
+func (c *cellPage) run(r engine.PaneRun, y int) {
+	if y < 0 || y >= c.rows {
+		return
+	}
+	for i := 0; i < len(r.Text) && r.X+i < c.cols; i++ {
+		if r.X+i >= 0 {
+			c.cells[y][r.X+i] = cell{true, r.Upcase, r.Text[i], r.Fg, r.Bg}
+		}
+	}
 }
 
 // str = DisplayString: s from cell (x, y) in colour on black, upcased.
@@ -140,10 +157,11 @@ func (c *cellPage) lines() [][]engine.PaneRun {
 	return ls
 }
 
-// screenPage is v's page as the presenter draws it: the page's text and
-// pictures and the screens' own over them.
+// screenPage is v's page as the presenter draws it: the page's pictures
+// and boxes and the screens' text over them.
 func screenPage(v engine.View) *cellPage {
 	c := newCellPage(v)
+	c.texts(v)
 	if s := v.SheetPage; s != nil {
 		c.sheet(s, v)
 	}
@@ -160,6 +178,116 @@ func screenPage(v engine.View) *cellPage {
 		}
 	}
 	return c
+}
+
+// texts lays out the game's text: the text pane, the prompt row, the view
+// window's text, the party panel (roster, status line), after-combat and
+// the credits.
+func (c *cellPage) texts(v engine.View) {
+	if pn := v.Pane; pn != nil {
+		for i, l := range pn.Lines {
+			for _, r := range l {
+				r.X += engine.TextPane.X1
+				c.run(r, engine.TextPane.Y1+i)
+			}
+		}
+	}
+	for _, r := range v.Prompt {
+		c.run(r, c.rows-1)
+	}
+	for y, l := range v.ViewText {
+		for _, r := range l {
+			c.run(r, y+1)
+		}
+	}
+	if v.Status != "" {
+		c.str(engine.StatusAt.X, engine.StatusAt.Y, inkGreen, v.Status)
+	}
+	if v.Roster {
+		c.roster(v)
+	}
+	if r := v.Results; r != nil {
+		c.results(r)
+	}
+	if v.Credits {
+		for _, l := range engine.Credits {
+			c.str(l.X, l.Y, l.Colour, l.Text)
+		}
+		if last := engine.Credits[len(engine.Credits)-1]; c.rows-3 >= last.Y+2 { // the remaster's own lines, on a page tall enough
+			for i, s := range engine.RemasterCredit {
+				c.str((c.cols-len(s))/2, c.rows-4+i, inkYellow, s)
+			}
+		}
+	}
+}
+
+// roster = 00BA:0767 drawPartyList while adventuring: the names (the one
+// highlighted white, on blue in a member pick), AC and HP right-aligned.
+func (c *cellPage) roster(v engine.View) {
+	x, y := engine.RosterAt.X, engine.RosterAt.Y
+	c.str(x, y, inkWhite, "Name")
+	c.str(33, y, inkWhite, "AC  HP")
+	for i, m := range v.Party {
+		y := y + 2 + i
+		switch {
+		case m.Selected && choosing(v):
+			c.run(engine.PaneRun{X: x, Text: m.Name, Fg: c.ink[inkWhite], Bg: c.ink[1], Upcase: true}, y)
+		case m.Selected:
+			c.str(x, y, inkWhite, m.Name)
+		default:
+			c.str(x, y, m.Colour, m.Name)
+		}
+		ac := strconv.Itoa(m.AC) // 00BA:08EF
+		c.str(0x23-len(ac), y, inkGreen, ac)
+		hp, hpc := strconv.Itoa(m.HP), inkGreen // 00BA:0973
+		if m.HP < m.MaxHP {
+			hpc = inkYellow
+		}
+		c.str(0x27-len(hp), y, hpc, hp)
+	}
+}
+
+// rosterRow is the member whose roster row is at cell (cx, cy) (-1: none).
+func rosterRow(v engine.View, cx, cy int) int {
+	i := cy - engine.RosterAt.Y - 2
+	if !v.Roster || cx < engine.RosterAt.X || cx > 0x26 || i < 0 || i >= len(v.Party) {
+		return -1
+	}
+	return i
+}
+
+// results lays the after-combat page out (ovr06: hiredShare, showResult,
+// the party destroyed) in the window's box.
+func (c *cellPage) results(r *engine.Results) {
+	right, bottom := c.cols-2, c.rows-3
+	wrap := func(s string, x1, y1, x2 int) {
+		c.clear(x1, y1, x2, bottom)
+		for i, l := range engine.Wrap(s, x1, x2) {
+			if y1+i <= bottom {
+				c.str(x1, y1+i, inkGreen, l)
+			}
+		}
+	}
+	for k, s := range r.Shares {
+		wrap(s, 5, 5+2*k, 34)
+	}
+	if r.Outcome != "" {
+		c.str(1, 3, inkGreen, r.Outcome)
+		c.str(1, 5, inkGreen, r.Exp)
+		c.str(1, 7, inkGreen, "experience points.")
+	}
+	if r.Taken != "" {
+		wrap(r.Taken, 1, 9, right)
+	}
+	for i, h := range r.Harmed {
+		if y := 0xC + i; y <= 0x15 {
+			c.str(1, y, inkCyan, h.Name[:min(len(h.Name), 15)])
+			c.str(18, y, 12, h.What[:min(len(h.What), max(0, right-18))])
+		}
+	}
+	if r.End != "" {
+		wrap(r.End, r.EndAt.X1, r.EndAt.Y1, r.EndAt.X2)
+	}
 }
 
 // draw draws the page into m (its pictures, the borders' cells, the text

@@ -167,7 +167,7 @@ func (e *Engine) raiseDead(c *Character) {
 // Temple = ovr05:0D09: the temple takes decisions until the party leaves
 // (it puts the temple up and returns).
 func (e *Engine) Temple() {
-	greeting := e.cellsCopy() // extra: the priests' greeting stays, as the shop
+	greeting := e.paneCopy() // extra: the priests' greeting stays, as the shop
 	e.beginFlag = 1
 	e.DrawMainScreen()
 	e.keepPane(greeting)
@@ -178,7 +178,7 @@ func (e *Engine) Temple() {
 		e.DisplayPartyList()
 		return done
 	}, func() {
-		e.ClearBox(0, 0, lastCol, promptRow) // ovr05:0C18
+		e.blank(0, 0, lastCol, promptRow) // ovr05:0C18
 		e.DrawMainScreen()
 		e.DisplayPartyList()
 	})

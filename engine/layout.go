@@ -55,30 +55,3 @@ func setPageSize(cols, rows int) {
 	textCols, textRows = max(cols, minCols), max(rows, minRows)
 	lastCol, winRight, winBottom, messageRow, promptRow = textCols-1, textCols-2, textRows-3, textRows-2, textRows-1
 }
-
-// newCells is an empty text cell grid of the page's size.
-func newCells() [][]textCell {
-	all := make([]textCell, textRows*textCols)
-	cells := make([][]textCell, textRows)
-	for y := range cells {
-		cells[y] = all[y*textCols : (y+1)*textCols]
-	}
-	return cells
-}
-
-// cells is the text cell grid, made at the page's size on first use.
-func (e *Engine) cells() [][]textCell {
-	if len(e.ext.cells) != textRows || len(e.ext.cells[0]) != textCols {
-		e.ext.cells = newCells()
-	}
-	return e.ext.cells
-}
-
-// cellsCopy is a copy of the text cells (saveScreen, the shops' greeting).
-func (e *Engine) cellsCopy() [][]textCell {
-	c := newCells()
-	for y, row := range e.cells() {
-		copy(c[y], row)
-	}
-	return c
-}

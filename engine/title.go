@@ -106,25 +106,25 @@ func (e *Engine) Title() {
 
 // drawCredits = ovr02:0206's page.
 func (e *Engine) drawCredits() {
-	e.DrawBoxTitled(1, 1, winRight, 3, 0, colBlack, "")
-	e.DrawBoxTitled(1, 5, winRight, promptRow-1, 0, colBlack, "")
-	for _, t := range creditLines {
-		e.DisplayString(t.x, t.y, t.c, t.s)
-	}
-	if promptRow-2 >= creditLines[len(creditLines)-1].y+2 { // extra: the remaster's own lines, on a page tall enough for them
-		for i, s := range RemasterCredit {
-			e.DisplayString((textCols-len(s))/2, promptRow-3+i, colYellow, s)
-		}
-	}
+	e.frame(1, 1, winRight, 3, colBlack, "")
+	e.frame(1, 5, winRight, promptRow-1, colBlack, "")
+	e.snap.credits = true // the lines are the presenter's (View.Credits)
 }
 
-// RemasterCredit is the remaster's own lines at the bottom of the credits.
+// RemasterCredit is the remaster's own lines at the bottom of the credits
+// (extra: centred, yellow, from three rows over the prompt row, on a page
+// tall enough for them: two rows under the last of Credits).
 var RemasterCredit = [2]string{"Opinionated Remaster", "directed by Felix Ruzzoli using Claude"}
 
-var creditLines = []struct {
-	x, y, c int
-	s       string
-}{
+// Credit is a line of the credits page: Text at cell X, Y in EGA colour
+// Colour (DisplayString's way, upcased).
+type Credit struct {
+	X, Y, Colour int
+	Text         string
+}
+
+// Credits is ovr02:0206's page.
+var Credits = []Credit{
 	{5, 1, 0xa, "scenario created by:"},
 	{0x1a, 1, 0xe, "tsr, inc."},
 	{0xf, 2, 0xa, "jim ward"},

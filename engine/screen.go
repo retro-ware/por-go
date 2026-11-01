@@ -28,11 +28,11 @@ func (e *Engine) Redraw() {
 // DrawMainFrame = 00BA:272A (inner): the screen, text and view-window
 // frames, plus the inner picture frame when inner is set.
 func (e *Engine) DrawMainFrame(inner bool) {
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
-	e.DrawBoxTitled(1, msgTop, paneRight, paneBottom, 0, colWhite, "")
-	e.DrawBoxTitled(1, 1, 15, 15, 0, colWhite, "")
+	e.frame(1, 1, winRight, winBottom, colWhite, "")
+	e.frame(1, msgTop, paneRight, paneBottom, colWhite, "")
+	e.frame(1, 1, 15, 15, colWhite, "")
 	if inner {
-		e.DrawBoxTitled(3, 3, 13, 13, 0, colWhite, "")
+		e.frame(3, 3, 13, 13, colWhite, "")
 	}
 	e.pg.frameUp = true
 }
@@ -41,7 +41,7 @@ func (e *Engine) DrawMainFrame(inner bool) {
 func (e *Engine) DrawMainScreen() {
 	switch e.beginFlag {
 	case 0:
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "")
+		e.frame(1, 1, winRight, winBottom, colWhite, "")
 	case 1:
 		e.DrawMainFrame(true)
 		e.LoadPortrait(e.set, int(e.es.picHead), int(e.es.picBody))
@@ -110,8 +110,8 @@ func (e *Engine) StatusLine() {
 	if len(s) > 0x28 {
 		s = s[:0x28]
 	}
-	e.ClearCells(17, 15, paneRight, 15)
-	e.DisplayString(17, 15, colLightGreen, s)
+	e.blank(statusLine.X1, statusLine.Y1, statusLine.X2, statusLine.Y2)
+	e.pg.tx.status = s // light green (the presenter's)
 }
 
 // AreaMapScreen = 00BA:2B5E: switch to the area map.

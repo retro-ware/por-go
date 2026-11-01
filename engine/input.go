@@ -1,16 +1,5 @@
 package engine
 
-// DisplaySpaces = 0709:05EB (x, y, colour, count): count blank cells.
-func (e *Engine) DisplaySpaces(x, y, colour, count int) {
-	if x > lastCol || y > promptRow {
-		return
-	}
-	e.displayCharN(x, y, colour, count, ' ', true)
-}
-
-// ClearRow24 = ovr26:06FB: blank the message/menu row.
-func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, textCols) }
-
 // typed (extra) asks for the line the presenter edits, starting as s:
 // ActText sets it (only the characters ok takes, at most maxlen), show
 // draws it; Enter ends it, Esc too (false); then gets the line.

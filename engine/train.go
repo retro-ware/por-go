@@ -379,7 +379,7 @@ func (e *Engine) trainingView() *Training {
 // Chosen entries get a "* " in the list (extra: the list is pickSaved's
 // cards).
 func (e *Engine) AddCharacter() {
-	e.ClearCells(1, 1, winRight, winBottom)
+	e.blank(1, 1, winRight, winBottom)
 	names := e.BuildCharList() // ovr18:0010
 	if len(names) == 0 {
 		return
@@ -453,7 +453,7 @@ func (e *Engine) joinRefused(c *Character) bool {
 // delete its files and its line in charlist.txt. Party members keep their
 // copy in the party.
 func (e *Engine) ForgetCharacter() {
-	e.ClearCells(1, 1, winRight, winBottom)
+	e.blank(1, 1, winRight, winBottom)
 	names := e.BuildCharList()
 	if len(names) == 0 {
 		return

@@ -25,7 +25,7 @@ func (e *Engine) ProgramEight() {
 		im = e.LoadPic(final, block)
 		e.drawPage(x, y, im, 0, false)
 	}
-	say := func(y int, s string) { e.DisplayString(1, y, colLightGreen, s) }
+	say := func(y int, s string) { e.text(1, y, colLightGreen, s) }
 	// speakAll (extra, voice.go) reads the lines just said aloud as one text.
 	speakAll := func(lines ...string) {
 		for i, l := range lines {
@@ -43,7 +43,7 @@ func (e *Engine) ProgramEight() {
 	}
 	anims := []anim{
 		{func() {
-			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			e.clearPane()
 			speakAll("Mortally wounded, the dragon roars!", "The spirit of Tyranthraxus flares up", "from the dragon's body.")
 			e.DrawMainScreen()
 			page(1, 0, 0)
@@ -59,11 +59,11 @@ func (e *Engine) ProgramEight() {
 			if e.game.PartyCount > 3 {
 				page(6, 0, 9)
 			}
-			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			e.clearPane()
 			speakAll("\"Fools, you have but slain the body", "I possessed.  I cannot be defeated!\"", "With the power of the pool of radiance", "which I moved here, to my lair,", "I will still rule, by possessing one", "of you!\"")
 		}, 3, 1, 7, slow},
 		{func() {
-			e.ClearBox(1, msgTop, paneRight, paneBottom)
+			e.clearPane()
 			speakAll("\"No Lord Bane!  I can still rule here!", "I have not failed.  Do not call me back", "through the pool!\"", "Noooo...")
 		}, 3, 1, 8, func() int { return 1 }},
 	}

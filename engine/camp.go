@@ -462,7 +462,7 @@ func (e *Engine) displayAffects(title string, members []*Character, then func())
 	redraw := true
 	index := 0
 	var sel *ListNode
-	e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, title)
+	e.frame(1, 1, winRight, winBottom, colWhite, title)
 	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel, func(Pick) { then() })
 }
 
@@ -519,7 +519,7 @@ func (e *Engine) CampMenu(then func(interrupted bool)) {
 		e.beginFlag = saved
 		e.StatusLine()
 		e.ClearMessageArea()
-		e.ClearRow24()
+		e.clearPrompt()
 		e.Music(0)
 		if then != nil {
 			then(e.camp.interrupted)
@@ -761,14 +761,14 @@ func (e *Engine) showRest(unit int) {
 	}
 	col[unit] = 0xF
 	r := &e.camp.rest
-	e.DisplayString(1, 17, colLightGreen, "Rest Time:")
+	e.text(1, 17, colLightGreen, "Rest Time:")
 	x := 0xB
 	for i := 4; i >= 3; i-- {
-		e.DisplayString(x+1, 17, col[i], twoDigits(r[i]))
-		e.DisplayString(x+3, 17, colLightGreen, ":")
+		e.text(x+1, 17, col[i], twoDigits(r[i]))
+		e.text(x+3, 17, colLightGreen, ":")
 		x += 3
 	}
-	e.DisplayString(x+1, 17, col[2], twoDigits(10*r[2]+r[1]))
+	e.text(x+1, 17, col[2], twoDigits(10*r[2]+r[1]))
 }
 
 // healTick = ovr21:0871: every 24 hours of rest everyone heals 1 HP.
@@ -784,7 +784,7 @@ func (e *Engine) healTick() {
 		}
 	}
 	e.showRest(0)
-	e.DisplayString(1, 19, colLightGreen, "The Whole Party Is Healed")
+	e.text(1, 19, colLightGreen, "The Whole Party Is Healed")
 	if healed {
 		e.DisplayPartyList()
 	}
@@ -903,7 +903,7 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 		e.run.effTick[i] = 1
 	}
 	hours, shown, stopped := 0, 0, false
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
+	e.clearPane()
 	e.showRest(0)
 	e.resting = 1
 	r := &e.camp.rest
@@ -916,7 +916,7 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 				e.showRest(0)
 				e.YesNo(colLightMagenta, colLightGreen, colWhite, "Stop Resting? ", func(yes bool) {
 					if stopped = yes; !yes { // the rest ends on the actRedraw that follows
-						e.ClearRow24()
+						e.clearPrompt()
 					}
 				})
 			}
@@ -938,7 +938,7 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 				if e.Dice(1, 100) <= int(e.game.RestChance) {
 					e.ClearMessageArea()
 					e.showRest(0)
-					e.DisplayString(1, 19, colWhite, "The Party is rudely interrupted!")
+					e.text(1, 19, colWhite, "The Party is rudely interrupted!")
 					interrupted = true
 					e.MsgDelay()
 					return true
@@ -947,7 +947,7 @@ func (e *Engine) Rest(stop func() bool, then func(interrupted bool)) {
 		}
 		return false
 	}, func() {
-		e.ClearBox(1, msgTop, paneRight, paneBottom)
+		e.clearPane()
 		e.resting = 0
 		then(interrupted)
 	})

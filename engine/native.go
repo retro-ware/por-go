@@ -70,7 +70,7 @@ func (e *Engine) tavernRound() {
 			e.askContinue(func() {
 				e.scriptText(true, "WILL YOU GO AGAIN?")
 				e.askChoice("", "~YES ~NO", false, false, func(c int) {
-					e.ClearBox(0, promptRow, lastCol, promptRow)
+					e.clearPrompt()
 					if c == 0 {
 						e.tavernRound()
 						return

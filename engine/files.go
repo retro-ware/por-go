@@ -140,13 +140,6 @@ func (e *Engine) fileError(verb, path string) {
 	e.PromptRow24(colYellow, s)
 }
 
-// PromptRow24 = 0709:0BF5: clear row 24, show, wait for a key.
-func (e *Engine) PromptRow24(colour int, s string) {
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colour, s)
-	e.pause(0, true)
-}
-
 // BuildCharList = ovr18:0010: names from charlist.txt, "* " for party members.
 func (e *Engine) BuildCharList() []string {
 	p := e.savePath("charlist.txt")
@@ -441,8 +434,8 @@ func (e *Engine) loadSlot() bool {
 		e.fileError("read", path)
 		return false
 	}
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colLightGreen, "Loading...Please Wait")
+	e.clearPrompt()
+	e.prompt(colLightGreen, "Loading...Please Wait")
 	e.set = Set(f.Set)
 	e.area = f.Area
 	wallsA, wallsB := e.area.WallsA, e.area.WallsB
@@ -493,15 +486,15 @@ func (e *Engine) loadSlot() bool {
 		e.EndgameHook(0) // ovr19:06B3
 	}
 	e.ClearKeyboard()
-	e.ClearRow24()
+	e.clearPrompt()
 	return true
 }
 
 // saveSlot is the original's SaveGame (ovr18:1D58) after the prompt, into
 // the slot folder (saveTo).
 func (e *Engine) saveSlot() {
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colLightGreen, "Saving...Please Wait")
+	e.clearPrompt()
+	e.prompt(colLightGreen, "Saving...Please Wait")
 	e.area.MsgDelay = uint16(e.msgDelay)
 	e.area.ViewFlags = uint16(e.viewBit1)*2 + uint16(e.viewBit0)
 	e.game.SymbolSet = uint16(e.set)
@@ -539,5 +532,5 @@ func (e *Engine) saveSlot() {
 		e.SaveCharacter(c, "CHRDATA"+strconv.Itoa(i+1))
 		e.eraseRosterCopies(c, false)
 	}
-	e.ClearRow24()
+	e.clearPrompt()
 }

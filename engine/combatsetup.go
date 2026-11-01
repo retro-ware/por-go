@@ -7,9 +7,9 @@ package engine
 func (e *Engine) combatSetup() {
 	e.FreeAnimPic()
 	e.port = portrait{headID: 0xFF, bodyID: 0xFF} // 0464:2595 x2
-	e.ClearRow24()
+	e.clearPrompt()
 	e.MsgDelay()
-	e.DisplayString(0, promptRow, colLightGreen, "A battle begins...")
+	e.prompt(colLightGreen, "A battle begins...")
 	e.Music(2) // Amiga 0x364E2
 	e.magicOn, e.combatRound, e.rv.hitRoll = 0, 0, 0
 	e.nbodies = 0

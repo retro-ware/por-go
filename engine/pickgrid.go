@@ -95,7 +95,7 @@ func (e *Engine) pushPicker(n, cw, ch, cur int, draw func(i, x, y int), pick fun
 	}, func() {
 		off()
 		e.picker = under
-		e.fillCells(0, promptRow, lastCol, promptRow) // the border's bottom row, where the caller's bar goes
+		e.blank(0, promptRow, lastCol, promptRow) // the border's bottom row, where the caller's bar goes
 	})
 	show()
 	return p

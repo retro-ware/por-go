@@ -405,7 +405,44 @@ presenter's layout of the new data must give the same.
 - The party menu's roster: the engine no longer draws it (nor the box) on
   the party menu's page; the presenter's main menu shows View.Party
   (the test checks the names, AC and HP recorded from drawPartyList).
-Still laid out by the engine in its cells (part 3): after-combat, rest,
-casting, money, the script ops' text, WinText, the area map, the main
-frame's roster panel (drawPartyList while adventuring) and the minimap
-over it; View.Spots still takes their clicks.
+Step 4 part 3 and step 5 done (headless checks only; one commit, the two
+were one change): the engine draws no text and no boxes. The adventuring
+screens were recorded first from the engine's drawing (pages_test.go
+TestAdventurePages: the 3D view's frame with the roster and status line,
+loot, cast, the runes' WinText, a journal reference in the pane under the
+journal, parlay, a script's typed line, a member pick, the minimap, rest)
+and the presenter's layout of the typed data gives the same.
+- Boxes: DrawBoxTitled/DrawBorder are `frame`/`border`, a layer
+  published as `Picture{Border, Title, Colour}` in the drawing order; the
+  presenter draws View.Border's cells round it and the title.
+- Text the game writes is kept typed where it goes (text.go `texts`):
+  the text pane's rows (View.Pane, now also when the frame is down but the
+  pane holds text: the rest time, "combat-only spell", the story's lines,
+  hit messages over a sheet), the prompt row (View.Prompt: PromptRow24,
+  Loading..., A battle begins..., a typed line, fileError), the view
+  window's text (View.ViewText: opProtection's runes). `text`, `char`,
+  `textBlock` (DisplayTextBlock's wrapping, `flow`, also exported as
+  engine.Wrap), `blank` (ClearCells/ClearBox) write and clear it;
+  pictures over it take it away, as they did the cells.
+- View.Frame (the main frame is up, not under a modal screen) replaces
+  `Pane != nil` in the remaster's choice of the 3D view.
+- The party panel: View.Roster (drawPartyList while adventuring) with
+  Member.Colour (red, yellow, magenta ready for a level, cyan); the
+  presenter lays names, AC and HP out (displayAC/displayHP) and a click on
+  a row in a member pick sends ActMember (was the roster's region).
+  View.Status is the status line. The minimap stays pictures.
+- After-combat: View.Results (hired shares, outcome, experience, what the
+  party takes, the harmed members, the END text and its box), laid out by
+  the presenter with engine.Wrap. The credits: View.Credits with the lines
+  exported as engine.Credits.
+- Gone: View.Lines, View.Spots, ActSpot/ActHover, regions and the glow,
+  the cell buffer (ext.cells, newCells, cellsCopy: the shops' greeting is
+  a copy of the pane), DisplayChar/DisplayString/DisplaySpaces/
+  DisplayTextBlock/ClearCells/ClearBox/DrawBox*/displayName/AC/HP, the
+  font change's repaint. The presenter's pageImage/drawPage stay as its
+  own page (screenPage over the typed data), no longer a copy of the
+  engine's. The debug values (debugValues) went from the top row to the
+  prompt line; hit messages wrap in the pane's width on a wider page.
+- Not seen headless: the results page (the loot menu redraws over it at
+  once), the credits and the END; TestResultsRoster checks their layout
+  from data.

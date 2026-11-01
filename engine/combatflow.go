@@ -287,7 +287,7 @@ func (e *Engine) members() []Member {
 		}
 		out = append(out, Member{
 			Name: c.Name(), HP: int(c.HP), MaxHP: int(c.MaxHP),
-			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel,
+			AC: 60 - int(c.AC[0]), Status: e.statusName(c), Selected: i == sel, Colour: rosterColour(c),
 			Class: className(c.Class), Head: e.charHead(c), Portrait: c.Portrait, Powers: e.memberPowers(c),
 		})
 		m := &out[len(out)-1]

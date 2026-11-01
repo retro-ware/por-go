@@ -15,51 +15,14 @@ func (e *Engine) DisplayPartyList() {
 	e.drawPartyList()
 }
 
+// drawPartyList = 00BA:0767's page: the rows it clears; the heading, the
+// names, AC and HP are the presenter's (View.Roster, View.Party).
 func (e *Engine) drawPartyList() {
 	if e.beginFlag == 0 { // the party menu's roster is the presenter's (View.Party)
 		return
 	}
-	x := 0x11
-	y := 2
-	e.DisplayString(x, y, colWhite, "Name")
-	e.DisplayString(33, y, colWhite, "AC  HP")
-	y += 2
-	hi := e.rosterSel()
-	for i, c := range e.party {
-		e.ClearCells(x, y, winRight, y)
-		if i == hi && e.choosing() {
-			// extra: the member being chosen gets the menu selection background
-			for j := 0; j < len(c.Name()); j++ {
-				e.displayCharBg(x+j, y, colWhite, selBg(0xB, 0xF), c.Name()[j], true)
-			}
-		} else if i == hi {
-			e.DisplayString(x, y, colWhite, c.Name())
-		} else if c.Okay != 0 && c.Side == sideParty && levelReady(c) {
-			e.DisplayString(x, y, colLightMagenta, c.Name()) // extra: ready for a level
-		} else {
-			e.displayName(c, x, y, false)
-		}
-		ac := c.AC[0]
-		dx := 0
-		switch {
-		case ac <= 0x32, ac >= 0x3D && ac <= 0x45:
-			dx = 1
-		case ac >= 0x33 && ac <= 0x3C:
-			dx = 2
-		}
-		e.displayAC(c, 0x20+dx, y)
-		hp := c.HP
-		dx = 0
-		switch {
-		case hp <= 9:
-			dx = 2
-		case hp <= 0x63:
-			dx = 1
-		}
-		e.displayHP(c, 0x24+dx, y, false)
-		y++
-	}
-	e.ClearCells(x, y, winRight, y)
+	e.blank(rosterPanel.X1, 4, winRight, 4+len(e.party))
+	e.pg.tx.roster = true
 }
 
 // rosterSel is the member the roster highlights: SelectCharacter's
@@ -195,7 +158,7 @@ func (e *Engine) applyParty(a Action) (done bool) {
 		e.RemoveSelected(false, true)
 	case ActBegin:
 		e.beginFlag = 4
-		e.ClearRow24()
+		e.clearPrompt()
 		return true
 	case ActQuit:
 		e.Exit()
@@ -227,11 +190,8 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then 
 	ask = func() {
 		// who stays highlighted while the menu waits (the view animation
 		// redraws the roster).
-		e.rosterHi, e.rosterNone = who, who == nil // the roster shows who (00BA:0767) once the question is up
-		mark := e.regionMark()
-		e.rosterRegion()                                                                                         // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
+		e.rosterHi, e.rosterNone = who, who == nil                                                               // the roster shows who (00BA:0767) once the question is up
 		e.question(AskMember, prompt+" ", menu, true, true, e.beginFlag == 2 || e.beginFlag == 6, func(p Pick) { // 00BA:2C48 at 3844
-			e.regionCut(mark)
 			who = e.rosterHi // a member picked directly (menuBar.member)
 			e.rosterHi, e.rosterNone = nil, false
 			// The exit set (DS 00BA:2C1F) is checked before the extra flag.

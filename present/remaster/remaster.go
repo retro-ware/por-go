@@ -95,7 +95,6 @@ type Presenter struct {
 	rowsKey     string                      // what they show
 	typing      bool                        // a line is being typed (input.go) ...
 	typed       string                      // ... and reads this
-	hovered     [3]int                      // the spot and cell the pointer was last on (Mouse)
 	cardHover   int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
 	dragFrom    int                         // 1 + the card pressed while the party is being ordered (View.Ordering), it follows the pointer to the card it is dropped on (0 none)
 	dragAt      image.Point                 // where the pointer is while a card is dragged
@@ -263,7 +262,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return Rect{}
 	}
 	sc := p.scene(v)
-	if sc == nil || !choosing(v) && (v.Pane == nil || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
+	if sc == nil || !choosing(v) && (!v.Frame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		r := p.drawPage(dst, v, note)
@@ -333,8 +332,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
-	picBottom := 0                                                                      // the bottom of the picture box, when one is up
-	if v.Pane != nil && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
+	picBottom := 0                                                                // the bottom of the picture box, when one is up
+	if v.Frame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
 		pp := fitScale(pk, blobber.Settings.Pic, func(k float64) bool {
@@ -356,8 +355,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if asking {
 		p.answered = pane
 	}
-	shown := v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
-	ask := typing(v) != nil && typing(v).Prompt != ""                          // a script's input: its question and the line in one pop-up, no text box
+	shown := v.Frame && v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
+	ask := typing(v) != nil && typing(v).Prompt != ""                                     // a script's input: its question and the line in one pop-up, no text box
 	shown = shown && !ask
 	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))

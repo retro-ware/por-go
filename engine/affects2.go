@@ -756,8 +756,5 @@ func (e *Engine) debugValues(msg string, a, b, c int) {
 	if e.debugShow == 0 {
 		return
 	}
-	e.ClearBox(0, 0, lastCol, 0)
-	e.DisplayString(0, 0, colYellow, fmt.Sprintf("%d , %d , %d", a, b, c))
-	e.PromptRow24(colYellow, msg)
-	e.ClearBox(0, 0, lastCol, 0)
+	e.PromptRow24(colYellow, fmt.Sprintf("%d , %d , %d ", a, b, c)+msg) // (the numbers were on the top row)
 }

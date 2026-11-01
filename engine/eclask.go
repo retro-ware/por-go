@@ -174,7 +174,7 @@ func (e *Engine) askChoice(prompt, menu string, allowEnter, anim bool, then func
 // askContinue is the scripts' one-item "PRESS <RETURN>" menu.
 func (e *Engine) askContinue(then func()) {
 	e.askChoice("", "~PRESS <ENTER>/<RETURN> TO CONTINUE", true, false, func(int) {
-		e.ClearBox(0, promptRow, lastCol, promptRow)
+		e.clearPrompt()
 		then()
 	})
 }
@@ -204,7 +204,7 @@ func (e *Engine) askList(list []*ListNode, then func(int)) {
 // askLine asks for a typed line of at most maxlen (InputString's, upcased;
 // with number, InputNumber's: asked again until it is 0..65536).
 func (e *Engine) askLine(maxlen int, number bool, then func(string)) {
-	e.ClearRow24()
+	e.clearPrompt()
 	kind := AskText
 	if number {
 		kind = AskNumber
@@ -222,15 +222,15 @@ func (e *Engine) askLine(maxlen int, number bool, then func(string)) {
 				}
 			}
 			t.Text = string(b)
-			e.DisplaySpaces(1, promptRow, colBlack, 39)
-			e.DisplayString(1, promptRow, colWhite, t.Text)
+			e.clearPrompt()
+			e.text(1, promptRow, colWhite, t.Text)
 		case ActOK, ActClose:
 			s := strings.ToUpper(t.Text)
 			if n, err := strconv.ParseInt(strings.TrimLeft(s, " "), 10, 32); number && (err != nil || n < 0 || n > 0x10000) {
 				t.Text = ""
 				return false
 			}
-			e.ClearRow24()
+			e.clearPrompt()
 			then(s)
 			return true
 		}
@@ -258,12 +258,9 @@ func (e *Engine) askMember(prompt string, who *Character, then func(*Character))
 		who = e.party[0]
 	}
 	e.rosterHi, e.rosterNone = who, false
-	mark := e.regionMark()
-	e.rosterRegion() // a click on a member picks it
 	m, q := e.newQuestion(cut(prompt, textCols)+" ", Bar{{"Select", 0}}, true, true)
 	e.eclWait = &eclWait{ask: Ask{Kind: AskMember, Menu: *m}, anim: e.beginFlag == 2 || e.beginFlag == 6,
 		done: func() {
-			e.regionCut(mark)
 			e.rosterHi, e.rosterNone = nil, false
 		},
 		apply: func(a Action) bool {

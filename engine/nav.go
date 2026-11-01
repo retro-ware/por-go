@@ -12,8 +12,8 @@ import (
 //   - the highlight is the presenter's; in menus that take the keypad
 //     ActLead selects another member (Home/End)
 //   - ActClose picks a menu's Exit item, so it always backs out
-//   - the clickable parts of the screen are published as View.Spots: the
-//     presenter sends ActHover and ActSpot for them
+//   - the presenter lays the screens out and takes their clicks: it
+//     sends the decisions they stand for
 
 // Outcomes of a click (region.click) besides the presenter's actions.
 const (
@@ -21,61 +21,9 @@ const (
 	actRedraw ActKind = -2 // a screen pushed over this one is gone (feed): it draws itself again
 )
 
-// region is a clickable part of the screen in text cells (inclusive),
-// published as a View spot.
-type region struct {
-	x0, y0, x1, y1 int
-	click          func(cx, cy int) Action // what the click stands for (ActNone: nothing)
-	hover          func(cx, cy int)        // optional: the pointer came onto it
-	glow           bool                    // the pointer on it shows the selection background over its cells (a drop-down)
-}
-
-// glowOn shows the selection background over r's cells while the pointer
-// is on it (nil, or a region without glow: none), as a menu's highlight.
-func (e *Engine) glowOn(r *region) {
-	if r != nil && !r.glow {
-		r = nil
-	}
-	var want [4]int
-	if r != nil {
-		want = [4]int{r.x0, r.y0, r.x1, r.y1}
-	}
-	if e.ext.glowing && want == e.ext.glow {
-		return
-	}
-	if e.ext.glowing {
-		e.glowCells(e.ext.glow, false)
-	}
-	e.ext.glowing = r != nil
-	if r != nil {
-		e.ext.glow = want
-		e.glowCells(want, true)
-	}
-}
-
-// glowCells puts the selection background under the cells of g (blank ones
-// become spaces on it), or takes it away again.
-func (e *Engine) glowCells(g [4]int, on bool) {
-	for y := max(g[1], 0); y <= min(g[3], promptRow); y++ {
-		for x := max(g[0], 0); x <= min(g[2], lastCol); x++ {
-			c := &e.cells()[y][x]
-			switch {
-			case on && !c.set:
-				e.paintChar(x, y, colWhite, selBg(colWhite, 0), ' ', true)
-			case on:
-				c.bg = byte(selBg(int(c.colour), 0))
-			case c.c == ' ':
-				*c = textCell{}
-			default:
-				c.bg = colBlack
-			}
-		}
-	}
-}
-
 // modal: a screen over the whole page is up (help, the journal, the full
-// map, the overview, the F9 slots): the spots of the screens under it take
-// no hover or click, and any action closes it.
+// map, the overview, the F9 slots): the screens under it take no click,
+// and any action closes it.
 func (e *Engine) modal() bool {
 	return slices.ContainsFunc(e.screens, func(s screen) bool {
 		switch s.mode {
@@ -84,24 +32,6 @@ func (e *Engine) modal() bool {
 		}
 		return false
 	})
-}
-
-// addRegion makes r clickable until the list is cut back to a mark taken
-// before (regionMark, regionCut). Later regions lie on top.
-func (e *Engine) addRegion(r region) { e.ext.regions = append(e.ext.regions, r) }
-func (e *Engine) regionMark() int    { return len(e.ext.regions) }
-func (e *Engine) regionCut(n int)    { e.glowOn(nil); e.ext.regions = e.ext.regions[:n] }
-
-// spots are the regions, as View.Spots (none under a modal screen).
-func (e *Engine) spots() []CellRect {
-	if e.modal() {
-		return nil
-	}
-	var s []CellRect
-	for _, r := range e.ext.regions {
-		s = append(s, CellRect{r.x0, r.y0, r.x1, r.y1})
-	}
-	return s
 }
 
 // extraAct runs the actions that work on every screen, and reports
@@ -166,26 +96,6 @@ func (e *Engine) take(a Action) Action {
 	if a.Kind == ActOK || a.Kind == ActClose { // Enter or Esc silences the voice-over
 		e.stopVoice()
 	}
-	switch a.Kind {
-	case ActSpot, ActHover:
-		i := a.N
-		if e.modal() || i < 0 || i >= len(e.ext.regions) { // ActHover -1: the pointer left the spots
-			e.glowOn(nil)
-			return Action{}
-		}
-		r := e.ext.regions[i]
-		if a.X < r.x0 || a.X > r.x1 || a.Y < r.y0 || a.Y > r.y1 { // made on a screen since gone
-			return Action{}
-		}
-		if a.Kind == ActSpot {
-			return r.click(a.X, a.Y)
-		}
-		e.glowOn(&r)
-		if r.hover != nil {
-			r.hover(a.X, a.Y)
-		}
-		return Action{}
-	}
 	if e.extraAct(a) {
 		return Action{}
 	}
@@ -202,37 +112,4 @@ func (e *Engine) pressed(a Action) bool {
 		return e.modal()
 	}
 	return false
-}
-
-// rosterRow is the party member listed at cell (cx, cy), or -1.
-func (e *Engine) rosterRow(cx, cy int) int {
-	x := 1
-	if e.beginFlag != 0 {
-		x = 0x11
-		if e.ext.minimap && e.minimapAllowed() {
-			return -1
-		}
-	}
-	i := cy - 4
-	if cx < x || cx > 0x26 || i < 0 || i >= len(e.party) {
-		return -1
-	}
-	return i
-}
-
-// rosterClick: a click on a member in the roster is that member's portrait.
-func (e *Engine) rosterClick(cx, cy int) Action {
-	if i := e.rosterRow(cx, cy); i >= 0 {
-		return Action{Kind: ActMember, N: i}
-	}
-	return Action{}
-}
-
-// rosterRegion makes the roster clickable for a menu that takes the keypad.
-func (e *Engine) rosterRegion() {
-	x := 1
-	if e.beginFlag != 0 {
-		x = 0x11
-	}
-	e.addRegion(region{x0: x, y0: 4, x1: 0x26, y1: 4 + len(e.party) - 1, click: e.rosterClick})
 }

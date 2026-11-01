@@ -172,7 +172,7 @@ func (e *Engine) AreaChange(then func()) {
 			}
 		}
 		if e.prevViewMode > 1 && e.viewMode == 1 {
-			e.DrawBoxTitled(3, 3, 13, 13, 0, colLightGreen, "")
+			e.frame(3, 3, 13, 13, colLightGreen, "")
 		}
 		if (e.prevViewMode > 1 || e.viewMode == 1) && r.scriptLoad != 0 ||
 			e.prevViewMode == 1 && e.viewMode == 1 {
@@ -251,7 +251,7 @@ func (e *Engine) awaitCommand() {
 func (e *Engine) commandEnd() {
 	e.prevViewMode = e.viewMode
 	if e.run.textCleared == 0 {
-		e.ClearCells(1, msgTop, paneRight, paneBottom)
+		e.clearPane()
 		e.run.textCleared = 1
 	}
 }

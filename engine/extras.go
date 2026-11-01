@@ -56,10 +56,7 @@ type extras struct {
 	aoeSpell  int                 // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
-	held          Action   // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
-	regions       []region // clickable parts of the screen
-	glow          [4]int   // the region the selection background shows under (glowOn), while glowing
-	glowing       bool
+	held          Action     // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
 	castCancelled bool       // CastSpell: the player cancelled the aim (the turn goes on)
 	castYes       bool       // castAsks: yes to "Lose it?" / "Use it?"
 	castOn        *Character // castAsks: the member the spell goes on (nil: none)
@@ -73,11 +70,10 @@ type extras struct {
 	back    bool                     // Down stepped backwards: Move turns the party round again
 
 	// fonts.go
-	font   int          // 0: the game's font, else fonts[font-1]
-	fonts  []pcFont     // the fonts in data/assets/fonts (*.f8), then the PC fonts
-	cells  [][]textCell // the text drawn into each cell, textRows by textCols
-	redraw func()       // draws the screen up again at the page's size (resizePage); nil: it stays as drawn until its next draw
-	note   string       // shown over the picture for a moment
+	font   int      // 0: the game's font, else fonts[font-1]
+	fonts  []pcFont // the fonts in data/assets/fonts (*.f8), then the PC fonts
+	redraw func()   // draws the screen up again at the page's size (resizePage); nil: it stays as drawn until its next draw
+	note   string   // shown over the picture for a moment
 	noteAt time.Time
 
 	// journal.go
@@ -149,7 +145,7 @@ const (
 // DrawMinimap draws the current map with the party. Like the game's Area
 // view it shows every wall; walls of squares not yet seen are dim.
 func (e *Engine) DrawMinimap() {
-	e.ClearCells(17, 1, paneRight, 14)
+	e.blank(17, 1, paneRight, 14)
 	e.mapPage(mmX, mmY, mmCell, e.labels(), nil)
 }
 
@@ -159,7 +155,7 @@ func (e *Engine) rosterPanel() {
 		e.DrawMinimap()
 		return
 	}
-	e.ClearCells(17, 1, paneRight, 14)
+	e.blank(17, 1, paneRight, 14)
 	e.drawPartyList()
 }
 
@@ -204,17 +200,6 @@ func (e *Engine) viewDrawn() {
 	if e.ext.minimap && e.minimapAllowed() && e.beginFlag != 0 {
 		e.DrawMinimap()
 	}
-}
-
-// selBg picks the selection background: blue, or the next colour that is
-// neither the text nor the hotkey colour.
-func selBg(normal, highlight int) int {
-	for _, c := range []int{1, 5, 4, 2} {
-		if c != normal && c != highlight {
-			return c
-		}
-	}
-	return 1
 }
 
 // helpLines is the keyboard reference ("?"): a heading has no key.

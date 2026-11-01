@@ -195,12 +195,12 @@ func (e *Engine) opEncounterMenu() {
 		return true
 	}
 	waitMsg := func() {
-		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "Both sides wait.")
+		e.paneText(colLightGreen, true, "Both sides wait.")
 	}
 	flee := func() {
 		e.WriteVar(dst, 0)
 		e.msgCol, e.msgRow = 1, 0x11
-		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, true, "The monsters flee.")
+		e.paneText(colLightGreen, true, "The monsters flee.")
 	}
 	txt := ""
 	var round func() // the menu, asked again after WAIT or a step closer
@@ -238,7 +238,7 @@ func (e *Engine) opEncounterMenu() {
 		if txt == "" {
 			clear = false
 		}
-		e.DisplayTextBlock(1, msgTop, paneRight, paneBottom, colLightGreen, clear, txt)
+		e.paneText(colLightGreen, clear, txt)
 		parlay := dist() == 0 || e.area.In3D == 0
 		menu := "~COMBAT ~WAIT ~FLEE ~ADVANCE"
 		if parlay {
@@ -323,7 +323,7 @@ func (e *Engine) opEncounterMenu() {
 				round()
 				return
 			}
-			e.ClearBox(0, promptRow, lastCol, promptRow)
+			e.clearPrompt()
 			e.es.inEncounterMenu = 0
 		})
 	}
@@ -444,9 +444,8 @@ func (e *Engine) opDamage() {
 	}
 	if e.run.quit {
 		e.Music(5) // Amiga 0x416C2
-		e.DrawBoxTitled(1, 1, winRight, winBottom, 0, colWhite, "The END!")
-		e.msgCol, e.msgRow = 2, 2
-		e.DisplayTextBlock(1, 1, winRight, winBottom, colLightGreen, true, "The entire party is killed!")
+		e.frame(1, 1, winRight, winBottom, colWhite, "The END!")
+		e.endPage("The entire party is killed!", CellRect{1, 1, winRight, winBottom})
 	}
 	e.partySel = sel
 	ms := 0
@@ -541,7 +540,7 @@ func (e *Engine) opProgram() {
 // opWho = ovr04:2B33 (prompt): choose a party member.
 func (e *Engine) opWho() {
 	e.FetchArgs(1)
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
+	e.clearPane()
 	start := e.selected()
 	// extra: one party purse, so the first non-NPC pays (inn, ECL3 A1B4) or
 	// gambles (tavern, A501), an okay one if there is one
@@ -614,7 +613,7 @@ func (e *Engine) opProtection() {
 		if v <= 1 {
 			break
 		}
-		e.DisplayChar(e.msgCol, e.msgRow, colWhite, v, false)
+		e.char(e.msgCol, e.msgRow, colWhite, v, false)
 		e.msgCol++
 	}
 	e.msgRow++
@@ -624,6 +623,6 @@ func (e *Engine) opProtection() {
 func (e *Engine) opClearBox() {
 	e.eclPC++
 	e.snap.win = WinText
-	e.ClearBox(1, 1, 15, 15)
+	e.blank(1, 1, 15, 15)
 	e.run.textInBox = 1
 }

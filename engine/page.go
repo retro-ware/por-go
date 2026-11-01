@@ -16,14 +16,17 @@ import (
 // block Block of the DAX file File (a picture, an animation's frame, a
 // symbol, a tile) decoded in the page's palette with its mask pixels
 // transparent, its top left at At.Min and cut to At; or, Fill set, a fill
-// of Colour over At.
+// of Colour over At; or, Border set, the window border's cells (View.Border)
+// round the inside of At, Title (if any) centred on its top row in Colour.
 type Picture struct {
 	File         string // "" for pixels the engine made itself (the full map)
 	Block, Frame int
-	Img          image.Image // nil for a fill
+	Img          image.Image // nil for a fill or a border
 	At           image.Rectangle
 	Fill         bool
 	Colour       color.RGBA
+	Border       bool
+	Title        string
 }
 
 // layer is one drawing call: w by h pixels d at at (mask: the value left
@@ -40,6 +43,8 @@ type layer struct {
 	id     uint64
 	src    *dax.Image // what d is a frame of (nil: the engine's own pixels)
 	frame  int        // its frame
+	border bool       // a border round at's inside (d nil), title on its top row in colour fill
+	title  string
 }
 
 type pageState struct {
@@ -48,10 +53,11 @@ type pageState struct {
 	frameUp bool     // DrawMainFrame's boxes are still whole
 	pal     pal.Regs // the palette the layers' images are in
 	ids     uint64   // layers drawn
+	tx      texts    // the text the game wrote (text.go)
 }
 
-// draw records l over the page: layers it hides go, and text cells it
-// touches with them.
+// draw records l over the page: layers it hides go, and the text it
+// covers (a border: its cells).
 func (e *Engine) draw(l layer) {
 	pg := &e.pg
 	r := l.at.Intersect(image.Rect(0, 0, textCols*8, textRows*8))
@@ -71,10 +77,13 @@ func (e *Engine) draw(l layer) {
 	pg.ids++
 	l.id = pg.ids
 	pg.layers = append(pg.layers, l)
-	for y := r.Min.Y / 8; y <= (r.Max.Y-1)/8; y++ {
-		for x := r.Min.X / 8; x <= (r.Max.X-1)/8; x++ {
-			e.cells()[y][x].set = false
+	if l.border {
+		f := l.at
+		for _, edge := range []image.Rectangle{{f.Min, image.Pt(f.Max.X, f.Min.Y+8)}, {image.Pt(f.Min.X, f.Max.Y-8), f.Max}, {f.Min, image.Pt(f.Min.X+8, f.Max.Y)}, {image.Pt(f.Max.X-8, f.Min.Y), f.Max}} {
+			e.unwrite(edge)
 		}
+	} else {
+		e.unwrite(r)
 	}
 	if pg.frameUp {
 		for _, b := range []CellRect{ViewWindow, TextPane} {
@@ -118,13 +127,13 @@ func (e *Engine) clearPage() {
 	e.pg.layers = e.pg.layers[:0]
 	e.pg.frameUp = false
 	e.newPage()
-	e.ext.cells = newCells()
+	e.pg.tx = texts{}
 }
 
 // newPage ends what belongs to the page being replaced: the sheet's
 // page (its portrait box), the icon's drop.
 func (e *Engine) newPage() {
-	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox, e.snap.sheet = CellRect{}, nil, CellRect{}, nil
+	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox, e.snap.sheet, e.snap.results, e.snap.credits = CellRect{}, nil, CellRect{}, nil, nil, false
 }
 
 // resizePage gives the page cols by rows cells (40x25 at least): what is
@@ -135,18 +144,14 @@ func (e *Engine) resizePage(cols, rows int) {
 	if cols == textCols && rows == textRows {
 		return
 	}
-	old, oldPrompt := e.cells(), promptRow
+	prompt := e.pg.tx.prompt // the prompt row moves with the page's bottom
 	setPageSize(cols, rows)
-	e.ext.cells = newCells()
-	for y := range min(len(old), textRows) {
-		copy(e.ext.cells[y], old[y])
+	e.pg.tx.prompt = nil
+	if len(prompt) > 0 {
+		e.pg.tx.prompt = append(prompt, make([]textCell, textCols-len(prompt))...)[:textCols]
 	}
-	e.glowOn(nil)
 	if e.ext.redraw != nil {
 		e.ext.redraw()
-	}
-	if oldPrompt < textRows { // the bar's old row would stay inside the page
-		e.DisplaySpaces(0, oldPrompt, colBlack, len(old[0]))
 	}
 }
 
@@ -166,6 +171,10 @@ func (e *Engine) pageView(v *View) {
 	v.Pictures = make([]Picture, 0, len(pg.layers))
 	for i := range pg.layers {
 		l := &pg.layers[i]
+		if l.border {
+			v.Pictures = append(v.Pictures, Picture{At: l.at, Border: true, Title: l.title, Colour: e.pal.RGBA(l.fill)})
+			continue
+		}
 		if l.d == nil {
 			v.Pictures = append(v.Pictures, Picture{At: l.at, Fill: true, Colour: e.pal.RGBA(l.fill)})
 			continue
@@ -184,26 +193,35 @@ func (e *Engine) pageView(v *View) {
 		v.Pictures = append(v.Pictures, s)
 	}
 	v.Cells = image.Pt(textCols, textRows)
-	v.Lines = make([][]PaneRun, textRows)
-	for y, row := range e.cells() {
-		v.Lines[y] = e.runs(row)
+	t := &pg.tx
+	v.Frame = pg.frameUp && !e.modal() // under help, the journal, the maps: the page, not the 3D view
+	if p := e.pane(); pg.frameUp || p.Shown() {
+		v.Pane = p
 	}
-	if pg.frameUp && !e.modal() {
-		v.Pane = e.pane()
+	v.Prompt = e.runs(t.prompt)
+	for y, row := range t.view {
+		if l := e.runs(row); len(l) > 0 {
+			for len(v.ViewText) <= y {
+				v.ViewText = append(v.ViewText, nil)
+			}
+			v.ViewText[y] = l
+		}
 	}
+	v.Status, v.Roster = t.status, t.roster
 }
 
-// pane is the text pane's cells as runs.
+// pane is the text pane's text as runs.
 func (e *Engine) pane() *Pane {
 	p := &Pane{}
-	cells := e.cells()
-	for i := range p.Lines {
-		p.Lines[i] = e.runs(cells[TextPane.Y1+i][TextPane.X1 : TextPane.X2+1])
+	for i, row := range e.pg.tx.pane {
+		if len(row) > TextPane.X1 {
+			p.Lines[i] = e.runs(row[TextPane.X1:])
+		}
 	}
 	return p
 }
 
-// runs is a row of text cells as runs of one colour, X from the row's start.
+// runs is a row of text as runs of one colour, X from the row's start.
 func (e *Engine) runs(row []textCell) []PaneRun {
 	var l []PaneRun
 	for x, c := range row {

@@ -14,8 +14,8 @@ func (e *Engine) Init() {
 	e.set = 1                    // DS:5376 = 1
 	e.resetAdventure()
 	e.font = e.L.Block(e.set.file("8X8D"), 201) // 0709:017C
-	e.ClearRow24()
-	e.DisplayString(0, promptRow, colLightGreen, "Loading...Please Wait")
+	e.clearPrompt()
+	e.prompt(colLightGreen, "Loading...Please Wait")
 	e.LoadSymbolSet(4, 202) // ovr35:003B
 	e.LoadSymbolSet(0, 203)
 	e.sqrpaci[0] = e.LoadPic("SQRPACI", 1) // 0464:0111 → DS:5E52
@@ -25,7 +25,7 @@ func (e *Engine) Init() {
 	}
 	e.LoadIconPic("COMSPR", 0x19, 0x19)
 	e.items = e.readItems() // ITEMS file, 2-byte header then the records → DS:5582
-	e.ClearRow24()
+	e.clearPrompt()
 	e.Randomize()           // 0AF8:1247
 	e.spellTableInit()      // ovr23:3413
 	e.setupAffectHandlers() // fills the affect handler table

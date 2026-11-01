@@ -54,7 +54,7 @@ func (e *Engine) spellMenu(mode int, index *int, then func(byte)) {
 	showExit := mode != 4
 	redraw := false
 	if *index < 0 {
-		e.DrawBoxTitled(1, 3, winRight, y2, 0, colBlack, "")
+		e.frame(1, 3, winRight, y2, colBlack, "")
 		redraw = true
 		*index = 0
 	}
@@ -387,11 +387,11 @@ func (e *Engine) castAsks(spell, mode byte, usingItem bool, run func()) {
 	case e.spellRec(spell, 7) == 0:
 		prompt := "Lose it? "
 		if !usingItem {
-			e.DisplayString(1, 19, colLightGreen, e.spellName(int(spell)))
-			e.DisplayString(1, 20, colLightGreen, "is a combat-only spell...")
+			e.text(1, 19, colLightGreen, e.spellName(int(spell)))
+			e.text(1, 20, colLightGreen, "is a combat-only spell...")
 		} else {
-			e.DisplayString(1, 19, colLightGreen, "That Item")
-			e.DisplayString(1, 20, colLightGreen, "is a combat-only item...")
+			e.text(1, 19, colLightGreen, "That Item")
+			e.text(1, 20, colLightGreen, "is a combat-only item...")
 			prompt = "Use it? "
 		}
 		e.YesNo(colLightMagenta, colWhite, colLightGreen, prompt, func(yes bool) {

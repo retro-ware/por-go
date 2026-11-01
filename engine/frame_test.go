@@ -19,7 +19,7 @@ func TestTextPaneFollowsPage(t *testing.T) {
 	defer setPageSize(minCols, minRows)
 	setPageSize(43, 27)
 	e.DrawMainFrame(true)
-	e.ClearBox(1, msgTop, paneRight, paneBottom)
+	e.clearPane()
 	e.publish()
 	if v := e.View(); v.Pane == nil || TextPane != (CellRect{1, msgTop, 0x26, 0x16}) {
 		t.Fatalf("frame %v pane %v", v.Pane != nil, TextPane)

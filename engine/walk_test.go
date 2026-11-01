@@ -24,10 +24,6 @@ func TestAutoWalk(t *testing.T) {
 	x, y := v.X, v.Y // the start of Phlan: a corridor running west
 	keys(engine.Action{Kind: engine.ActMap}, engine.Action{Kind: engine.ActPoint, X: x - 3, Y: y})
 	e.Apply(resolve(e, hot('W')))
-	for range 3 {
-		time.Sleep(30 * time.Millisecond)
-		e.Apply(engine.Action{Kind: engine.ActHover, N: -1, X: 5, Y: 5})
-	}
 	if v = settle(e, 3*time.Second); v.X != x-3 || v.Y != y {
 		t.Fatalf("walk from %d,%d to %d,%d ended at %d,%d", x, y, x-3, y, v.X, v.Y)
 	}

@@ -81,7 +81,7 @@ func (e *Engine) ItemName(c *Character, it *Item, x, y int, readied, display boo
 	}
 	it.setName(name + e.itemStats(it))
 	if display {
-		e.DisplayString(x, y, colLightGreen, it.Name())
+		e.text(x, y, colLightGreen, it.Name())
 	}
 }
 

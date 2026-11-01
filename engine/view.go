@@ -10,7 +10,6 @@ import (
 
 // ClearScreen = 0709:0CAB.
 func (e *Engine) ClearScreen() {
-	e.fillCells(0, 0, 0x27, 0x18)
 	e.clearPage()
 }
 
@@ -30,14 +29,7 @@ func (e *Engine) CharacterSheet() {
 	c := e.selected()
 	e.view.char = c
 	e.ClearScreen()
-	col := colLightRed // displayName
-	if c.Okay != 0 {
-		col = colLightCyan
-		if c.Side == sideMonsters {
-			col = colYellow
-		}
-	}
-	sp := &SheetPage{Name: c.Name(), NameColour: col, NPC: c.Control > 0x7F,
+	sp := &SheetPage{Name: c.Name(), NameColour: nameColour(c), NPC: c.Control > 0x7F,
 		Sex: genderNames[c.Sex], Race: raceNames[int8(c.Race)], Age: int(c.Age),
 		Alignment: alignmentNames[int8(c.Alignment)], Class: className(c.Class), Str00: str00Text(c), Creating: e.ext.creating}
 	for i, v := range c.Stats {
@@ -310,7 +302,7 @@ func (e *Engine) SheetPortrait() {
 		return
 	}
 	box := CellRect{winRight - 10, 1, winRight, 11} // against the right border, whatever the page's width
-	e.ClearCells(box.X1, box.Y1, box.X2, box.Y2)
+	e.blank(box.X1, box.Y1, box.X2, box.Y2)
 	e.snap.portrait = box // Shift-click and a dropped PNG land here
 	if sp := e.snap.sheet; sp != nil {
 		sp.PortraitAt, sp.Portrait = box, c.Portrait // extra: the dropped PNG, fitted into the box at the window's resolution
