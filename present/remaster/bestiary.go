@@ -74,9 +74,10 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 			}
 		}
 		scale := func(im image.Image) float64 { return float64(rw-16) / float64(im.Bounds().Dx()) }
+		iconS := float64(rw-16) / float64(wide) / 2 // every kind at one scale: the widest icon met fills half the pane, its pixels still readable
 		tall := 36 + 10*len(lines) + 8
 		if bt.Icon != nil {
-			tall += int(float64(bt.Icon.Bounds().Dy())*float64(rw-16)/float64(wide)) + 10
+			tall += int(float64(bt.Icon.Bounds().Dy())*iconS) + 10
 		}
 		if bt.Pic != nil {
 			tall += int(float64(bt.Pic.Bounds().Dy())*scale(bt.Pic)) + 10
@@ -104,8 +105,8 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 			}
 			y += h + 10
 		}
-		if im := bt.Icon; im != nil { // every kind at one scale: the widest icon met fills the pane's width
-			blit(im, float64(rw-16)/float64(wide), true)
+		if im := bt.Icon; im != nil {
+			blit(im, iconS, true)
 		}
 		if im := bt.Pic; im != nil { // the picture window's, the pane's width
 			blit(im, scale(im), false)
