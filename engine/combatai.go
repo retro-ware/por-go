@@ -248,6 +248,9 @@ func (e *Engine) aiMoveStep(c *Character) {
 	var dir int
 	if ci.Fleeing == 0 {
 		dir = e.directionTo(c, ci.Target)
+		if pd := e.aiPathDir(c, ci.Target); pd >= 0 {
+			dir, ci.Pattern = pd, 1 // extra: pattern 1 tries straight on first
+		}
 	} else {
 		ci.Pattern = byte(e.Dice(1, 2))
 		f := int(e.facing)
@@ -613,4 +616,51 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	if done {
 		e.ext.panel = c
 	}
+}
+
+// aiPathDir (extra) is the first step of the shortest walk (in squares)
+// that brings c next to t around walls and other combatants, or -1 when
+// there is none or c is next to t already. The move budget is not
+// counted: the walk may take more than one round.
+func (e *Engine) aiPathDir(c, t *Character) int {
+	if t == nil {
+		return -1
+	}
+	tx, ty, n := e.combatX(t), e.combatY(t), e.combatSize(t)
+	next := func(sq [2]int) bool {
+		return sq[0] >= tx-1 && sq[0] <= tx+n && sq[1] >= ty-1 && sq[1] <= ty+n
+	}
+	idx := e.combatIndex(c)
+	ox, oy := e.cpos[idx].x, e.cpos[idx].y
+	defer func() { e.cpos[idx].x, e.cpos[idx].y = ox, oy }()
+	start := [2]int{int(ox), int(oy)}
+	if next(start) {
+		return -1
+	}
+	first := map[[2]int]int{start: -1}
+	queue := [][2]int{start}
+	for len(queue) > 0 {
+		at := queue[0]
+		queue = queue[1:]
+		e.cpos[idx].x, e.cpos[idx].y = byte(at[0]), byte(at[1])
+		for d := 0; d < 8; d++ {
+			to := [2]int{at[0] + dirDX[d], at[1] + dirDY[d]}
+			if _, seen := first[to]; seen {
+				continue
+			}
+			if who, g := e.groundAt(c, d); who > 0 || g == 0 || e.groundInfo(g)[0] == 0xFF {
+				continue
+			}
+			f := first[at]
+			if f < 0 {
+				f = d
+			}
+			if next(to) {
+				return f
+			}
+			first[to] = f
+			queue = append(queue, to)
+		}
+	}
+	return -1
 }
