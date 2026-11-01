@@ -10,7 +10,7 @@ import (
 // Training (View.Training): the hall's offer, the question, the new spell.
 func (p *Presenter) trainItems(v engine.View) (string, []menuRow) {
 	t := v.Training
-	leave := menuRow{"Back", 'B', func() { p.send(engine.ActClose, 0) }}
+	leave := menuRow{"Exit", 'E', func() { p.send(engine.ActClose, 0) }}
 	switch {
 	case len(t.Learn) > 0:
 		var it []menuRow

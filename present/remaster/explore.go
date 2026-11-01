@@ -20,7 +20,7 @@ func commands(v engine.View) []command {
 	return append(c,
 		command{"Items", 'I', engine.ActInventory},
 		command{"View", 'V', engine.ActMember},
-		command{"Camp", 'E', engine.ActCamp},
+		command{"Camp", 'A', engine.ActCamp}, // not C (Cast) nor E (every screen's Exit)
 		command{"Sweep", 'W', engine.ActSweep},
 		command{"Search", 'S', engine.ActSearch})
 }

@@ -109,6 +109,8 @@ type Presenter struct {
 	ctxBox      image.Rectangle             // where its box went: the spell pick opens there
 	pick        []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
 	pickAt      image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
+	pickSel     int                         // the pick list's highlight ...
+	picking     bool                        // ... reset when it opens
 	command     bool                        // the party explores (View.Exploring), as last drawn
 	cmds        []command                   // the command menu's commands (explore.go), as last drawn
 	camp        campUI                      // the camp screens (camp.go)
@@ -131,7 +133,11 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	p.scrollBars = p.scrollBars[:0]
 	r := p.draw(dst, note, v)
-	if p.pick = spellPick(v); p.pick == nil {
+	p.pick = spellPick(v)
+	if up := p.pickList() != nil; up != p.picking { // a pick list opens on its first spell
+		p.picking, p.pickSel = up, 0
+	}
+	if p.pick == nil {
 		p.pickAt = image.Rectangle{}
 	} else { // the spell pick (the combat's Cast list) over whatever screen is up
 		k := scale(dst)
@@ -172,21 +178,21 @@ func (p *Presenter) drawPickList(dst *gpu.Image, glyph func(byte) [8]byte, k flo
 	for i, s := range p.pickList() {
 		lines[i] = s.Name
 	}
-	p.sel = min(max(p.sel, 0), len(lines)-1)
-	p.drawMenu(dst, glyph, "Cast:", lines, blobber.Hotkeys(lines), nil, p.sel, k, cx, top)
+	p.pickSel = min(max(p.pickSel, 0), len(lines)-1)
+	p.drawMenu(dst, glyph, "Cast:", lines, spellKeys(len(lines)), nil, p.pickSel, k, cx, top)
 }
+
+// spellKeys are a spell list's hotkeys, as every spell list's (camp,
+// training): the digits 1-9 (digitKeys).
+func spellKeys(n int) []byte { return digitKeys(make([]byte, n), func(int) bool { return true }) }
 
 // pickKey takes key k while a spell is picked: the arrows, Enter, a hotkey, Esc.
 func (p *Presenter) pickKey(k uint16) bool {
 	spells := p.pickList()
-	if spells == nil {
+	if spells == nil || globalKey(k) {
 		return false
 	}
-	names := make([]string, len(spells))
-	for i, s := range spells {
-		names[i] = s.Name
-	}
-	switch i, back, _ := menuNav(k, &p.sel, blobber.Hotkeys(names)); {
+	switch i, back, _ := menuNav(k, &p.pickSel, spellKeys(len(spells))); {
 	case back:
 		p.cast(-1)
 	case i >= 0:
@@ -493,6 +499,9 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 			p.ctx = 0
 			return false
 		}
+		if globalKey(k) { // help, the minimap, save/load ...: keyAct; other keys stay here (they would act on the view under it)
+			return false
+		}
 		switch i, back, _ := menuNav(k, &p.ctxSel, p.ctxKeys); {
 		case back:
 			p.ctx = 0
@@ -577,7 +586,7 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		p.menu = false
 		p.send(engine.ActChoose, i)
 	case !ok:
-		return true
+		return !globalKey(k) // help, the minimap, save/load ... go on (keyAct); other keys would act on the screen under the popup
 	}
 	return true
 }
@@ -593,7 +602,8 @@ func (p *Presenter) Click(x, y int) bool {
 	if p.barClick(x, y) {
 		return true
 	}
-	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) && p.listClick(x, y, v) {
+	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) && cardUnder(p.cards, x, y) < 0 { // a card is the member the list is for (below)
+		p.listClick(x, y, v)
 		return true
 	}
 	if v := p.shownView; p.pageMenu && pageScreen(v) {
@@ -602,6 +612,10 @@ func (p *Presenter) Click(x, y int) bool {
 				p.screenPick(v, i)
 				return true
 			}
+		}
+		if s := p.scr.sub; screenName(v) == "slots" || s == scrAsk || s == scrSlot || s == scrField || s == scrChange { // outside a popup: back (the creation sheet, the pickers and the icon editor take their page's clicks: Mouse)
+			p.screenKey(27, v)
+			return true
 		}
 	}
 	if p.pageMenu {
@@ -614,6 +628,10 @@ func (p *Presenter) Click(x, y int) bool {
 				p.send(engine.ActChoose, i)
 				return true
 			}
+		}
+		if v := p.shownView; !pageScreen(v) && !sheetUp(v) && v.FullMap == nil && v.Pages == nil { // outside a page's question: back (the sheet's portrait, the full map and the pagers take their page's clicks: Mouse)
+			p.send(engine.ActClose, 0)
+			return true
 		}
 	}
 	if p.main {
@@ -633,7 +651,8 @@ func (p *Presenter) Click(x, y int) bool {
 					return true
 				}
 			}
-			p.ctx = 0
+			p.ctx = 0 // a click outside: back
+			return true
 		}
 		for i, r := range p.cards { // a portrait: the member's inventory (a right click: the sheet, Mouse)
 			if image.Pt(x, y).In(r) && p.active {
@@ -651,6 +670,8 @@ func (p *Presenter) Click(x, y int) bool {
 					return true
 				}
 			}
+			p.campBack(v) // a click outside: back
+			return true
 		}
 		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {
 			return false
@@ -666,7 +687,8 @@ func (p *Presenter) Click(x, y int) bool {
 				return true
 			}
 		}
-		return false
+		p.key(27, p.shownView) // a click outside: back, as Esc
+		return true
 	}
 	return p.fightClick(x, y)
 }
@@ -686,12 +708,24 @@ func (p *Presenter) Hover(x, y int, down bool) {
 		return
 	}
 	if p.pickList() != nil {
-		for i, r := range p.menuRects {
-			if image.Pt(x, y).In(r) {
-				p.sel = i
+		if image.Pt(x, y) != p.pointer { // only a moved pointer takes the highlight
+			p.pointer = image.Pt(x, y)
+			if i := slices.IndexFunc(p.menuRects, p.pointer.In); i >= 0 {
+				p.pickSel = i
 			}
 		}
 		return
+	}
+	if p.pageMenu && image.Pt(x, y) != p.pointer { // the page's menus (keyWindow): the sheet's, a question's, the page screens'
+		p.pointer = image.Pt(x, y)
+		if i := slices.IndexFunc(p.winRects, p.pointer.In); i >= 0 {
+			switch {
+			case !pageScreen(p.shownView):
+				p.sel = i
+			case p.scr.sub != scrType:
+				p.scr.sel = p.scr.top + i
+			}
+		}
 	}
 	if p.fight {
 		p.pointer = image.Pt(x, y)

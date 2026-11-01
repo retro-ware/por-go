@@ -29,7 +29,7 @@ func (p *Presenter) templeItems(v engine.View) (string, []menuRow) {
 				c.sel = 0
 			}})
 		}
-		return withGold(name+", how can we help you?", t.Gold), append(it, menuRow{"Back", 'B', to(campMain)})
+		return withGold(name+", how can we help you?", t.Gold), append(it, menuRow{"Exit", 'E', to(campMain)})
 	case templeNot:
 		return name + " " + cure.Not + " Cast cure anyway?", []menuRow{{"Yes", 'Y', func() { c.screen, c.sel = templePay, 0 }}, {"No", 'N', to(templeHeal)}}
 	case templePay:

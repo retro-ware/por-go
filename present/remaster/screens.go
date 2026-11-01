@@ -32,7 +32,8 @@ const (
 const scrRows = 14 // the lines a page screen's menu shows at a time
 
 type screenUI struct {
-	up     string // the screen up (screenName): another one starts on its main menu
+	ptr    image.Point // the pointer's cell, as last seen: only a moved one takes the picker's cursor
+	up     string      // the screen up (screenName): another one starts on its main menu
 	sub    int
 	sel    int
 	top    int
@@ -99,7 +100,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 				menuRow{"Head", 'H', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickHead) }},
 				menuRow{"Body", 'B', func() { s.sub = scrMain; p.send(engine.ActPicker, engine.PickBody) }},
 				menuRow{"Icon", 'I', func() { s.sub = scrMain; p.send(engine.ActIconEdit, -1) }},
-				menuRow{"Back", 0, to(scrMain)})
+				menuRow{"Exit", 'E', to(scrMain)})
 		case scrField:
 			fl := cr.Fields[s.field]
 			var it []menuRow
@@ -139,7 +140,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 			}
 			return s.slot, append(it,
 				menuRow{"Delete", 'D', func() { p.askThen("Delete "+s.slot+"?", named(engine.ActDelete, s.slot)) }},
-				menuRow{"Back", 'B', to(scrMain)})
+				menuRow{"Exit", 'E', to(scrMain)})
 		}
 		var it []menuRow
 		if sl.CanSave {
@@ -157,7 +158,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		if len(it) == 0 {
 			it = append(it, menuRow{"No saved games yet", 0, nil})
 		}
-		return "Saved Games", append(it, menuRow{"Back", 0, act(engine.ActClose, 0)})
+		return "Saved Games", append(it, menuRow{"Exit", 'E', act(engine.ActClose, 0)})
 	}
 	return "", nil
 }
@@ -281,7 +282,7 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	case back && s.sub != scrMain:
 		s.sub, s.sel, s.anchor = scrMain, 0, nil
 	case back:
-		p.screenPick(v, n-1-s.top) // Exit, Back
+		p.screenPick(v, n-1-s.top) // Exit
 	case i >= 0:
 		p.screenPick(v, i-s.top)
 	}
@@ -352,10 +353,14 @@ func (p *Presenter) pickerTake(pk *engine.Picker, i int) {
 func (p *Presenter) screenMouse(cx, cy int, left bool, v engine.View) bool {
 	s := &p.scr
 	in := func(r engine.CellRect) bool { return image.Pt(cx, cy).In(image.Rect(r.X1, r.Y1, r.X2+1, r.Y2+1)) }
+	moved := image.Pt(cx, cy) != s.ptr
+	s.ptr = image.Pt(cx, cy)
 	if pk := v.Picker; pk != nil && s.sub == scrMain {
 		for i, r := range pk.Cells {
 			if in(r) {
-				s.cur = pk.Page*pk.PerPage + i
+				if moved || left {
+					s.cur = pk.Page*pk.PerPage + i
+				}
 				if left {
 					p.pickerTake(pk, s.cur)
 				}

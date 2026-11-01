@@ -74,7 +74,7 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 			menuRow{"Memorize", 'M', act(engine.ActRest, engine.RestMemorize)},
 			menuRow{"Wait an hour", 'W', act(engine.ActRest, engine.RestWait)},
 			menuRow{until, 'U', act(engine.ActRest, engine.RestUntil)},
-			menuRow{"Back", 'B', to(campMain)})
+			menuRow{"Exit", 'E', to(campMain)})
 	case campMemorize, campScribe:
 		list, title := cp.Book, "Spells to memorize"
 		if c.screen == campScribe {
@@ -91,7 +91,7 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 			}
 			it = append(it, menuRow{text, 0, func() { p.campSpell(s.ID, 1) }})
 		}
-		return title, append(it, menuRow{"Back", 0, to(campMain)})
+		return title, append(it, menuRow{"Exit", 'E', to(campMain)})
 	case campBestiary:
 		sort := "Sort by danger"
 		if c.byDanger {
@@ -101,11 +101,11 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 		for _, b := range p.beasts(v) {
 			it = append(it, menuRow{b.Name, 0, func() { c.beast, c.screen = b.Name, campBeast }})
 		}
-		return "Bestiary", append(it, menuRow{"Back", 0, to(campMain)})
+		return "Bestiary", append(it, menuRow{"Exit", 'E', to(campMain)})
 	case campBeast:
 		for _, b := range cp.Bestiary {
 			if b.Name == c.beast {
-				return fmt.Sprintf("%s, danger %s: %s", b.Name, roman[b.Danger], b.Text), []menuRow{{"Back", 0, to(campBestiary)}}
+				return fmt.Sprintf("%s, danger %s: %s", b.Name, roman[b.Danger], b.Text), []menuRow{{"Exit", 'E', to(campBestiary)}}
 			}
 		}
 		c.screen = campBestiary
@@ -130,7 +130,7 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 	if len(cp.Bestiary) > 0 {
 		it = append(it, menuRow{"Bestiary", 'B', to(campBestiary)})
 	}
-	return "Camp", append(it, menuRow{"Leave", 'L', act(engine.ActClose, 0)})
+	return "Camp", append(it, menuRow{"Exit", 'E', act(engine.ActClose, 0)})
 }
 
 // campSpell plans one more (n > 0) or one less of spell id, or toggles
@@ -265,21 +265,23 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
 		p.send(engine.ActLead, m)
 	default:
-		switch i, back, _ := menuNav(k, &c.sel, rowKeys(items)); {
+		switch i, back, ok := menuNav(k, &c.sel, rowKeys(items)); {
 		case back:
 			p.campBack(v)
 		case i >= 0:
 			p.campPick(v, i)
+		case !ok:
+			return !globalKey(k) // help, the minimap, save/load ... go on (keyAct); other keys would act on the view under the screen
 		}
 	}
 	return true
 }
 
-// campBack goes back one level: the screen's Back, Leave, Exit or No row,
-// else the screen closes. It never picks a list's line.
+// campBack goes back one level: the screen's Exit or No row, else the
+// screen closes. It never picks a list's line.
 func (p *Presenter) campBack(v engine.View) {
 	_, items := p.campItems(v)
-	if n := len(items); n > 0 && slices.Contains([]string{"Back", "Leave", "Exit", "No"}, items[n-1].text) {
+	if n := len(items); n > 0 && slices.Contains([]string{"Exit", "No"}, items[n-1].text) {
 		p.campPick(v, n-1)
 		return
 	}
@@ -339,5 +341,5 @@ func (p *Presenter) appraiseItems(a engine.Appraise, back func()) (string, []men
 	if len(it) == 0 {
 		title = "Nothing to appraise"
 	}
-	return title, append(it, menuRow{"Back", 'B', back})
+	return title, append(it, menuRow{"Exit", 'E', back})
 }

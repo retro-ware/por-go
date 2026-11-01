@@ -131,7 +131,7 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 		for _, k := range []engine.ActKind{engine.ActAdd, engine.ActCreate, engine.ActForget, engine.ActDropMember, engine.ActModify, engine.ActTraining, engine.ActMember, engine.ActRemove} {
 			add(k)
 		}
-		return "", append(it, menuRow{"Back", 'B', func() { p.mainSub, p.mainSel = false, 0 }})
+		return "", append(it, menuRow{"Exit", 'E', func() { p.mainSub, p.mainSel = false, 0 }})
 	}
 	add(engine.ActBegin)
 	add(engine.ActLoad) // Load Game leads when there are saved games, Quick Start without them
@@ -210,11 +210,12 @@ func (p *Presenter) mainPick(v engine.View, i int) {
 func (p *Presenter) mainClick(x, y int) bool {
 	v := p.shownView
 	if p.ask {
-		for i, r := range p.winRects {
-			if image.Pt(x, y).In(r) {
-				p.mainPick(v, i)
-			}
+		i := slices.IndexFunc(p.winRects, image.Pt(x, y).In)
+		if i < 0 { // a click outside: back (No)
+			_, items := p.mainItems(v)
+			i = len(items) - 1
 		}
+		p.mainPick(v, i)
 		return true
 	}
 	for i, r := range p.cards { // the party menu has no inventory: a left click selects (a right one: the sheet, Mouse)

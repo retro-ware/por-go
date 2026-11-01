@@ -1001,7 +1001,7 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 		pn = &inv.wares
 	}
 	if inv.wheel += wheel; (inv.wheel >= 1 || inv.wheel <= -1) && time.Since(inv.wheeled) >= wheelPause {
-		if inv.wheel < 0 { // the touchpad's natural direction
+		if inv.wheel > 0 { // wheel up: up, as every list
 			pn.top--
 		} else {
 			pn.top++

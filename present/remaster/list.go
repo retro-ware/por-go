@@ -148,16 +148,15 @@ func (p *Presenter) listAt(v engine.View, r int) int {
 	return -1
 }
 
-// listClick takes a click on a drawn row.
-func (p *Presenter) listClick(x, y int, v engine.View) bool {
+// listClick takes a click on a drawn row; outside the popup it is back.
+func (p *Presenter) listClick(x, y int, v engine.View) {
 	r := slices.IndexFunc(p.menuRects, image.Pt(x, y).In)
-	if r < 0 {
-		return false
+	switch {
+	case r < 0:
+		p.send(engine.ActClose, 0)
+	case p.listAt(v, r) >= 0:
+		p.listPick(v, p.listAt(v, r))
 	}
-	if i := p.listAt(v, r); i >= 0 {
-		p.listPick(v, i)
-	}
-	return true
 }
 
 // listHover highlights the row under (x, y) when the pointer moved.
@@ -209,16 +208,17 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 		p.asked, p.sel = id, 0
 	}
 	p.pageMenu = true
-	lines, keys := make([]string, len(m.Items)), make([]byte, len(m.Items))
-	for i, it := range m.Items {
-		lines[i], keys[i] = it.Text, it.Key
+	rows := itemRows(m)
+	lines, keys := make([]string, len(rows)), rowKeys(rows)
+	for i, r := range rows {
+		lines[i] = r.text
 	}
 	p.sel = min(max(p.sel, 0), len(lines)-1)
 	p.keyWindow(dst, m.Prompt, lines, keys, nil, p.sel, true)
 }
 
-// pageMenuKey moves the page question's highlight (unless the page takes
-// the arrows) and picks it.
+// pageMenuKey takes key k on a page's question: the standard menu's keys
+// (menuNav), unless the page takes the arrows (the full map).
 func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 	if pageScreen(v) {
 		return p.screenKey(k, v)
@@ -226,16 +226,25 @@ func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 	if sheetUp(v) {
 		return p.sheetKey(k, v)
 	}
-	n := len(askMenu(v).Items)
-	switch {
-	case k == 0x4800 && v.FullMap == nil: // the full map's arrows move its cursor
-		p.sel = (p.sel + n - 1) % n
-	case k == 0x5000 && v.FullMap == nil:
-		p.sel = (p.sel + 1) % n
-	case k == 13 || k == KeyPadSelect:
-		p.send(engine.ActChoose, p.sel)
-	default:
+	if v.FullMap != nil && k&0xFF == 0 { // the full map's arrows move its cursor
 		return false
 	}
+	switch i, back, ok := menuNav(k, &p.sel, rowKeys(itemRows(askMenu(v)))); {
+	case back:
+		return false // ActClose (keyAct)
+	case i >= 0:
+		p.send(engine.ActChoose, i)
+	default:
+		return ok
+	}
 	return true
+}
+
+// itemRows are an engine menu's items as menu rows (picking is ActChoose).
+func itemRows(m *engine.Menu) []menuRow {
+	rows := make([]menuRow, len(m.Items))
+	for i, it := range m.Items {
+		rows[i] = menuRow{it.Text, it.Key, func() {}}
+	}
+	return rows
 }

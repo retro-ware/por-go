@@ -47,6 +47,12 @@ func memberKey(k uint16, cur, n int, lr bool) (int, bool) {
 	return -1, false
 }
 
+// globalKey: k works on every screen (keyAct): help, the minimap, save and
+// load, the sound, the font. A screen passes it on rather than swallowing it.
+func globalKey(k uint16) bool {
+	return k == '?' || k == 9 || k == KeyPadMinimap || k == KeyF9 || k == 0x13 || k == 6 || k == KeyFontPrev
+}
+
 // keypadScan: digits a menu does not offer are the keypad's keys (1 End .. 9 PgUp).
 var keypadScan = [...]uint16{0x4F00, 0x5000, 0x5100, 0x4B00, 0x4C00, 0x4D00, 0x4700, 0x4800, 0x4900}
 
@@ -118,8 +124,7 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	if askList(v) != nil && askMenu(v) != nil && !choosing(v) && p.listKey(k, v) {
 		return
 	}
-	if screenUp(v) {
-		p.campKey(k, v)
+	if screenUp(v) && p.campKey(k, v) {
 		return
 	}
 	if v.Exploring && p.exploreKey(k, v) {
@@ -202,8 +207,8 @@ func menuIndex(m *engine.Menu, c byte) int {
 // wheel; a click elsewhere answers "press a key".
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
 	for ; wheel != 0; wheel -= sign(wheel) {
-		if p.fight && p.fightLog {
-			p.logTop = max(0, p.logTop-sign(wheel)*3)
+		if p.fight && p.fightLog { // wheel up: up, a line a step, as every list
+			p.logTop = max(0, p.logTop-sign(wheel))
 			continue
 		}
 		if p.fight {
@@ -214,12 +219,12 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			p.send(engine.ActPage, -sign(wheel))
 			continue
 		}
-		if screenUp(v) { // a camp-style list: the wheel moves the highlight
+		if screenUp(v) || askList(v) != nil || p.pageMenu { // a list or menu (camp-style, the list popup, the page's: save slots, drop-downs, the sheet): the wheel moves the highlight, a line a step, up for up
+			k := uint16(0x5000)
 			if wheel > 0 {
-				p.campKey(0x4800, v)
-			} else {
-				p.campKey(0x5000, v)
+				k = 0x4800
 			}
+			p.key(k, v)
 		}
 	}
 	if pageScreen(v) && p.pageMenu { // the page screens' own pointer (screens.go): the right button is Esc
