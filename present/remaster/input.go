@@ -270,6 +270,13 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			}
 		}
 	}
+	if fm := v.FullMap; fm != nil && in && !left && typing(v) == nil && !p.mapMenu && image.Pt(cx, cy) != p.mapPointer { // the pointer moved over a square: the cursor follows (the arrows keep it while it rests)
+		p.mapPointer = image.Pt(cx, cy)
+		px, py := cx*8+4-fm.At.X, cy*8+4-fm.At.Y
+		if sq := image.Pt(px/fm.Cell, py/fm.Cell); px >= 0 && py >= 0 && sq.In(image.Rect(0, 0, 16, 16)) && sq != fm.Cursor {
+			p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActPoint, X: sq.X, Y: sq.Y})
+		}
+	}
 	if fm := v.FullMap; fm != nil && left && in && typing(v) == nil { // the full map: a square takes the cursor and opens its context menu; a legend line goes to its first square; elsewhere: back
 		px, py := cx*8+4-fm.At.X, cy*8+4-fm.At.Y
 		sq := image.Pt(px/fm.Cell, py/fm.Cell)

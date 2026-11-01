@@ -116,6 +116,7 @@ type Presenter struct {
 	shownView  engine.View                 // the View last drawn
 	list       listUI                      // View.Ask (AskList)'s highlight (list.go)
 	pageMenu   bool                        // a page's question is up (list.go)
+	mapPointer image.Point                 // the full map: the pointer's last cell (a move there moves the cursor)
 	mapMenu    bool                        // the full map's cursor cell has its context menu open (drawMapMenu)
 	tipImg     *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf     []byte                      // its pixels
