@@ -63,6 +63,16 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 		if it := map[engine.ActKind]*engine.InvItem{engine.ActAttack: b.Turn.Weapon, engine.ActRanged: b.Turn.Missile}[kind]; it != nil {
 			p.drawTipOver(dst, it.Name, append(slices.Clone(it.Look), it.Rules...), max(1, int(k)/2), r)
 		}
+		if kind == engine.ActBandage {
+			p.drawTipOver(dst, "Bandage", []string{
+				"Binds the wounds of the first",
+				"party member who is Dying.",
+				"They become Unconscious and",
+				"stop bleeding; the Dying die",
+				"after 10 rounds unbandaged.",
+				"Uses this character's turn.",
+			}, max(1, int(k)/2), r)
+		}
 	}
 	p.drawFightRows(dst, note, b, k)
 	cx := dst.Bounds().Dx() / 2
