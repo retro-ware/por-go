@@ -42,6 +42,7 @@ type campUI struct {
 	beast    string // the entry shown
 	pick     int    // the temple's cure or the shop's item asked about
 	icon     srcImage
+	ids      []int          // the spell lists' lines: each one's spell (0: a level's heading, Exit)
 	rows     map[int][2]int // each screen left for a submenu: its highlighted row and first line shown, for back
 }
 
@@ -83,17 +84,20 @@ func (p *Presenter) campItems(v engine.View) (string, []menuRow) {
 			list, title = cp.Scrolls, "Spells to scribe"
 		}
 		var it []menuRow
-		for _, s := range list {
-			text := fmt.Sprintf("%-18s x%d %d/%d", s.Name, s.Count, s.Planned, s.Slots)
+		c.ids = c.ids[:0]
+		for i, s := range list {
+			text := fmt.Sprintf("%-26s x%d", s.Name, s.Count)
 			if c.screen == campScribe {
 				text = s.Name
 				if s.Count > 0 {
 					text += " *"
 				}
+			} else if i == 0 || list[i-1].Level != s.Level { // the level's slots once, over its spells
+				it, c.ids = append(it, menuRow{fmt.Sprintf("%-26s %d/%d", s.Level, s.Planned, s.Slots), 0, nil}), append(c.ids, 0)
 			}
-			it = append(it, menuRow{text, 0, func() { p.campSpell(s.ID, 1) }})
+			it, c.ids = append(it, menuRow{text, 0, func() { p.campSpell(s.ID, 1) }}), append(c.ids, s.ID)
 		}
-		return title, append(it, menuRow{"Exit", 'E', c.back(campMain)})
+		return title, append(it, menuRow{"Exit", 0, c.back(campMain)}) // no hotkeys: the lines are spells
 	case campBestiary:
 		sort := "Sort by danger"
 		if c.byDanger {
@@ -226,7 +230,7 @@ func (p *Presenter) memberAct(k engine.ActKind, n int) {
 	screen := map[engine.ActKind]int{engine.ActPlan: campMemorize, engine.ActScribe: campScribe, engine.ActDropMember: campDrop}
 	if s, ok := screen[k]; ok {
 		p.send(engine.ActLead, n)
-		p.camp.to(s, map[bool]int{true: 1}[s == campDrop])() // the drop's question on No
+		p.camp.to(s, map[bool]int{true: 1}[s != campScribe])() // the drop's question on No, the memorize list under its first heading
 		return
 	}
 	p.send(k, n)
@@ -275,7 +279,7 @@ func selectedName(v engine.View) string {
 // top; a bestiary entry's icon goes over its box.
 func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View, k float64, cx, top, bottom int) {
 	title, items := p.campItems(v)
-	lines, keys, off := make([]string, len(items)), rowKeys(items), rowsOff(items)
+	lines, keys, off := make([]string, len(items)), p.campKeys(items), rowsOff(items)
 	for i, it := range items {
 		lines[i] = it.text
 	}
@@ -363,10 +367,10 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	case actOf(k) == input.PartyMenu:
 	case (member || actOf(k) == input.Minimap) && p.campHome(v): // another menu takes the keys
 		p.campFocus(v, k, m)
-	case member && !yesNo(rowKeys(items)): // the member camp acts for (not under a question about one)
+	case member && !yesNo(p.campKeys(items)): // the member camp acts for (not under a question about one)
 		p.send(engine.ActLead, m)
 	default:
-		switch i, back, ok := menuNav(k, &c.sel, rowKeys(items)); {
+		switch i, back, ok := menuNav(k, &c.sel, p.campKeys(items)); {
 		case back:
 			p.campBack(v)
 		case i >= 0:
@@ -389,20 +393,25 @@ func (p *Presenter) campBack(v engine.View) {
 	p.send(engine.ActClose, 0)
 }
 
+// campKeys are the camp screen's hotkeys: none on the spell lists (the
+// digits would land in the counts), the rest as every menu.
+func (p *Presenter) campKeys(items []menuRow) []byte {
+	if s := p.camp.screen; s == campMemorize || s == campScribe {
+		return make([]byte, len(items))
+	}
+	return rowKeys(items)
+}
+
 // campSpellAt changes the plan of the spell on line i.
 func (p *Presenter) campSpellAt(v engine.View, i, n int) {
-	list := v.Camp.Book
-	if p.camp.screen == campScribe {
-		list = v.Camp.Scrolls
-	}
-	if i < len(list) {
-		p.campSpell(list[i].ID, n)
+	if c := &p.camp; i < len(c.ids) && c.ids[i] != 0 {
+		p.campSpell(c.ids[i], n)
 	}
 }
 
 // campPick picks line i of the camp screen up.
 func (p *Presenter) campPick(v engine.View, i int) {
-	if _, items := p.campItems(v); i >= 0 && i < len(items) {
+	if _, items := p.campItems(v); i >= 0 && i < len(items) && items[i].do != nil { // a heading picks nothing
 		p.camp.sel = i
 		items[i].do()
 	}
