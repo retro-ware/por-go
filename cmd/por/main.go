@@ -12,8 +12,8 @@
 // lines, party members, combat squares); the wheel moves the highlight and
 // the right button is Escape. "?" lists the keys; F1-F8 select party member
 // 1-8 (Left/Right the previous/next on the menu screens); a card's left
-// click opens that member's inventory, a right click their sheet
-// (Shift-click while exploring: their context menu).
+// click opens that member's context menu while exploring, their inventory
+// elsewhere, a right click their sheet.
 //
 // The DOS game files (TITLE.DAX, 8X8D1.DAX, GAME data ...) are read from
 // data/ in the working directory; gameimport (shipped beside por, driven by

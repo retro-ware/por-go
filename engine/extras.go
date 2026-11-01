@@ -224,7 +224,7 @@ var helpLines = [][2]string{
 	{"Q   D", "quick   done"},
 	{"Mouse", ""},
 	{"Point  Click", "highlight  choose"},
-	{"Click a card", "items (right: character)"},
+	{"Click a card", "menu / items (right: character)"},
 	{"Wheel", "move the highlight"},
 	{"Right button", "back"},
 	{"", ""},

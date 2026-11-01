@@ -654,7 +654,7 @@ func (p *Presenter) Click(x, y int) bool {
 			p.ctx = 0 // a click outside: back
 			return true
 		}
-		for i, r := range p.cards { // a portrait: the member's inventory (a right click: the sheet, Mouse)
+		for i, r := range p.cards { // a portrait: its context menu while exploring, else its inventory (a right click: the sheet, Mouse)
 			if image.Pt(x, y).In(r) && p.active {
 				p.cardClick(i)
 				if p.ordering { // while the party is ordered the card is picked up instead (Hover drops it)
@@ -1224,14 +1224,14 @@ func (p *Presenter) ctxSend(j int) {
 	p.ctx = 0
 }
 
-// cardClick is a left click on member i's card: its inventory; while the
-// party is ordered it only selects (ActLead), and on the command bar a
-// Shift-click selects it and opens its context menu.
+// cardClick is a left click on member i's card: while exploring (the
+// command bar) it selects the member and opens its context menu, elsewhere
+// it is the member's inventory; while the party is ordered it only selects.
 func (p *Presenter) cardClick(i int) {
 	switch {
 	case p.ordering:
 		p.send(engine.ActLead, i)
-	case p.command && gpu.IsKeyPressed(gpu.KeyShift):
+	case p.command:
 		p.send(engine.ActLead, i)
 		p.ctx, p.ctxSel = 1+i, 0 // the first line highlighted: Enter acts at once
 	default:
