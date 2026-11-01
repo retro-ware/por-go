@@ -77,14 +77,9 @@ func beastOf(monster string) *beast {
 }
 
 // metIcon is where a met kind's combat icon is: CPIC file and block.
-// Pic and PicBlock are the picture window's (PIC or SPRIT) when the
-// kind was first met ("": none was up).
 type metIcon struct {
-	File      string
-	Block     int
-	Pic       string
-	PicBlock  int
-	PicMasked bool
+	File  string
+	Block int
 }
 
 // meetMonster records the kind of a monster loaded for a fight (addMonsters).
@@ -96,13 +91,7 @@ func (e *Engine) meetMonster(name, file string, block int) {
 	if e.ext.met == nil {
 		e.ext.met = map[string]metIcon{}
 	}
-	m := metIcon{File: file, Block: block}
-	if old, ok := e.ext.met[b.Name]; ok && old.Pic != "" {
-		m.Pic, m.PicBlock, m.PicMasked = old.Pic, old.PicBlock, old.PicMasked
-	} else if a := &e.pic; len(a.frames) > 0 && (a.name == "PIC" || a.name == "SPRIT") {
-		m.Pic, m.PicBlock, m.PicMasked = e.set.file(a.name), a.block, a.name == "SPRIT"
-	}
-	e.ext.met[b.Name] = m
+	e.ext.met[b.Name] = metIcon{file, block}
 }
 
 // beasts are the bestiary entries of the kinds met, with their icons.
@@ -121,18 +110,11 @@ func (e *Engine) beasts() []Beast {
 			e.recolour(im, &iconPaletteCE2)
 			bt.Icon = e.picRGBA(im, 0, false, -1)
 		}
-		if b := e.L.Block(ic.Pic, ic.PicBlock); ic.Pic != "" && b != nil { // the largest frame: a sprite's nearest
-			var big *dax.Image
-			for _, f := range dax.ParseSprite(b, ic.PicMasked, 0, !ic.PicMasked) {
-				if big == nil || f.Image.Width*f.Image.Height > big.Width*big.Height {
-					big = f.Image
+		if bp, ok := beastPics[b.Name]; ok { // the scripts' picture of its fights (beastpics.go)
+			if b := e.L.Block(e.set.file("PIC"), bp); b != nil {
+				if fr := dax.ParseSprite(b, false, 0, true); len(fr) > 0 {
+					bt.Pic = e.picRGBA(fr[0].Image, 0, false, -1)
 				}
-			}
-			if big != nil {
-				if ic.PicMasked && (e.Cfg.Graphics == 'E' || e.Cfg.Graphics == 'T') {
-					e.recolourFrame(maskFrom[:], maskTo[:], 0, false, big)
-				}
-				bt.Pic = e.picRGBA(big, 0, false, -1)
 			}
 		}
 		out = append(out, bt)
@@ -140,3 +122,4 @@ func (e *Engine) beasts() []Beast {
 	e.ext.beasts = out
 	return out
 }
+

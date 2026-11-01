@@ -61,48 +61,63 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 			bt = &beasts[i]
 		}
 	}
-	if bt != nil {
-		text(bt.Name, rx+(rw-8*len(bt.Name))/2, 10, inkWhite)
+	c.beastPane = image.Rectangle{}
+	if bt != nil { // the entry on a page of its own, shown from c.beastY down (PgUp/PgDn, the pad's shoulders, the wheel over it)
+		if c.beastAt != bt.Name {
+			c.beastAt, c.beastY = bt.Name, 0
+		}
+		lines := engine.WrapWords(bt.Text, rw/8-1)
+		wide := 1
+		for _, b := range beasts {
+			if b.Icon != nil {
+				wide = max(wide, b.Icon.Bounds().Dx())
+			}
+		}
+		scale := func(im image.Image) float64 { return float64(rw-16) / float64(im.Bounds().Dx()) }
+		tall := 36 + 10*len(lines) + 8
+		if bt.Icon != nil {
+			tall += int(float64(bt.Icon.Bounds().Dy())*float64(rw-16)/float64(wide)) + 10
+		}
+		if bt.Pic != nil {
+			tall += int(float64(bt.Pic.Bounds().Dy())*scale(bt.Pic)) + 10
+		}
+		ent := image.NewRGBA(image.Rect(0, 0, rw, tall))
+		etext := func(s string, x, y int, col int) { drawText(ent, note.Glyph, s, x, y, pal.EGA(col)) }
+		etext(bt.Name, (rw-8*len(bt.Name))/2, 10, inkWhite)
 		d := "Danger " + roman[bt.Danger]
-		text(d, rx+(rw-8*len(d))/2, 22, inkYellow)
+		etext(d, (rw-8*len(d))/2, 22, inkYellow)
 		y := 36
 		blit := func(im image.Image, s float64, ground bool) { // nearest neighbour, centred, at y
 			ib := im.Bounds()
 			w, h := int(float64(ib.Dx())*s), int(float64(ib.Dy())*s)
-			at := image.Rect(rx+(rw-w)/2, y, rx+(rw+w)/2, y+h)
+			at := image.Rect((rw-w)/2, y, (rw+w)/2, y+h)
 			if ground {
-				draw.Draw(sc.px, at, image.NewUniform(pal.EGA(8)), image.Point{}, draw.Src) // on grey: its black parts show
+				draw.Draw(ent, at, image.NewUniform(pal.EGA(8)), image.Point{}, draw.Src) // on grey: its black parts show
 			}
 			for py := range h {
 				for px := range w {
 					if col := im.At(ib.Min.X+int(float64(px)/s), ib.Min.Y+int(float64(py)/s)); alpha(col) {
-						sc.px.Set(at.Min.X+px, at.Min.Y+py, col)
+						ent.Set(at.Min.X+px, at.Min.Y+py, col)
 					}
 				}
 			}
 			y += h + 10
 		}
 		if im := bt.Icon; im != nil { // every kind at one scale: the widest icon met fills the pane's width
-			wide := 1
-			for _, b := range beasts {
-				if b.Icon != nil {
-					wide = max(wide, b.Icon.Bounds().Dx())
-				}
-			}
 			blit(im, float64(rw-16)/float64(wide), true)
 		}
-		if im := bt.Pic; im != nil { // the picture window's, as wide as fits over four rows of text
-			ib := im.Bounds()
-			if s := min(float64(rw-16)/float64(ib.Dx()), float64((ch-1)*8-y-40)/float64(ib.Dy())); s > 0 {
-				blit(im, s, false)
-			}
+		if im := bt.Pic; im != nil { // the picture window's, the pane's width
+			blit(im, scale(im), false)
 		}
-		for _, l := range engine.WrapWords(bt.Text, rw/8-1) {
-			if y+8 < (ch-1)*8 {
-				text(l, rx+4, y, inkGreen)
-			}
+		for _, l := range lines {
+			etext(l, 4, y, inkGreen)
 			y += 10
 		}
+		view := (ch - 1) * 8
+		c.beastMax = max(0, tall-view)
+		c.beastY = min(max(c.beastY, 0), c.beastMax)
+		draw.Draw(sc.px, image.Rect(rx, 0, rx+rw, view), ent, image.Pt(0, c.beastY), draw.Src)
+		c.beastPane = image.Rect(rx, 0, rx+rw, view)
 	}
 	if note.Show && note.Text != "" {
 		noteLine(sc.px, note, (ch-1)*8)
@@ -117,6 +132,7 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 	paneName(sc.img, note.Glyph, "Bestiary")
 	kx, ky := p.fit(dst, sc.img, sc.w, sc.h)
 	p.menuRects = p.menuRects[:0] // the rows on the window: hover and clicks as on every camp list
+	c.beastPane = image.Rect(int(float64(c.beastPane.Min.X)*kx), int(float64(c.beastPane.Min.Y)*ky), int(float64(c.beastPane.Max.X)*kx), int(float64(c.beastPane.Max.Y)*ky))
 	for _, r := range rows {
 		p.menuRects = append(p.menuRects, image.Rect(int(float64(r.Min.X)*kx), int(float64(r.Min.Y)*ky), int(float64(r.Max.X)*kx), int(float64(r.Max.Y)*ky)))
 	}

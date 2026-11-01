@@ -32,14 +32,18 @@ const (
 )
 
 type campUI struct {
-	screen   int
-	sel      int
-	top      int            // the first line shown of a list too long for the screen
-	byDanger bool           // the bestiary's order
-	beast    string         // the entry shown
-	pick     int            // the temple's cure or the shop's item asked about
-	ids      []int          // the spell lists' lines: each one's spell (0: a level's heading, Exit)
-	rows     map[int][2]int // each screen left for a submenu: its highlighted row and first line shown, for back
+	screen    int
+	sel       int
+	top       int             // the first line shown of a list too long for the screen
+	byDanger  bool            // the bestiary's order
+	beast     string          // the entry shown
+	beastAt   string          // the entry beastY scrolls
+	beastY    int             // the entry's first pixel row shown
+	beastMax  int             // its last beastY
+	beastPane image.Rectangle // the entry on the window (the wheel scrolls it there)
+	pick      int             // the temple's cure or the shop's item asked about
+	ids       []int           // the spell lists' lines: each one's spell (0: a level's heading, Exit)
+	rows      map[int][2]int  // each screen left for a submenu: its highlighted row and first line shown, for back
 }
 
 // to opens screen n (a submenu, or a question on row sel), keeping the
@@ -332,6 +336,12 @@ func (p *Presenter) campKey(k uint16, v engine.View) bool {
 	spells := v.Camp != nil && (c.screen == campMemorize || c.screen == campScribe)
 	m, member := memberKey(k, selectedIndex(v), len(v.Party), true)
 	switch a := actOf(k); {
+	case c.screen == campBestiary && (a == input.PgUp || a == input.PgDn): // the entry, eight lines a step
+		step := 80
+		if a == input.PgUp {
+			step = -step
+		}
+		c.beastY = min(max(c.beastY+step, 0), c.beastMax)
 	case spells && (a == input.Less || a == input.Backspace) && c.sel < n-1: // -, Backspace: one less
 		p.campSpellAt(v, c.sel, -1)
 	case spells && a == input.More && c.sel < n-1: // +: one more
