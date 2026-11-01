@@ -295,7 +295,7 @@ func (e *Engine) members() []Member {
 		m := &out[len(out)-1]
 		from, to := levelSpan(c)
 		m.Exp, m.LevelExp, m.NextExp = int(int32(c.Exp)), int(from), int(to)
-		if e.mode() == modeCamp {
+		{
 			ready, slots := 0, 0
 			for _, s := range c.Memorized {
 				if s > 0 && s < 0x80 {
@@ -306,7 +306,10 @@ func (e *Engine) members() []Member {
 				slots += int(n)
 			}
 			if slots > 0 {
-				m.Memo = strconv.Itoa(ready) + "/" + strconv.Itoa(slots)
+				m.Spells = strconv.Itoa(ready) + "/" + strconv.Itoa(slots)
+				if e.mode() == modeCamp {
+					m.Memo = m.Spells
+				}
 			}
 		}
 	}
