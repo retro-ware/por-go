@@ -51,7 +51,7 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 		add("Weapon, " + hands)
 		add("Damage " + dice(b.Dice, b.Sides, int8(b.Bonus)) + delta(e.damageAvg(it), e.damageAvg(vs)))
 		if b.LargeDice > 0 && (b.LargeDice != b.Dice || b.LargeSides != b.Sides || b.LargeBonus != b.Bonus) {
-			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)))
+			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)) + delta(e.largeAvg(it), e.largeAvg(vs)))
 		}
 		if r := int(b.Range); r > 1 {
 			add("Range " + strconv.Itoa(r-1) + ", worse past " + strconv.Itoa((r-1)/3))
@@ -159,6 +159,19 @@ func (e *Engine) damageAvg(it *Item) float64 {
 	}
 	b := e.base(it.Type)
 	return float64(b.Dice)*float64(b.Sides+1)/2 + float64(int8(b.Bonus)) + e.knownPlus(it)
+}
+
+// largeAvg is damageAvg against large foes: the large dice, or the normal
+// ones when the base record has none.
+func (e *Engine) largeAvg(it *Item) float64 {
+	if it == nil {
+		return 0
+	}
+	b := e.base(it.Type)
+	if b.LargeDice == 0 {
+		return e.damageAvg(it)
+	}
+	return float64(b.LargeDice)*float64(b.LargeSides+1)/2 + float64(int8(b.LargeBonus)) + e.knownPlus(it)
 }
 
 // protection is the armour class points the item is worth with its known
