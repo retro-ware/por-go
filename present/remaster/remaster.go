@@ -98,7 +98,7 @@ type Presenter struct {
 	dragAt      image.Point                 // where the pointer is while a card is dragged
 	ordering    bool                        // View.Ordering
 	ctx         int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
-	ctxSel      int                         // its highlighted line (-1 none)
+	ctxSel      int                         // its highlighted line
 	ctxActs     []engine.ActKind            // its lines' actions, for the member
 	ctxKeys     []byte                      // its lines' hotkeys (the first letters)
 	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
@@ -301,7 +301,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))
 	}
-	p.drawCardTip(dst, v)
+	if p.ctx == 0 { // the tooltip; a context menu goes over everything (below)
+		p.drawCardTip(dst, v)
+	}
 	k := scale(dst)
 	b := dst.Bounds()
 	if n := len(v.Party); n > 0 && blobber.Settings.PartyRow { // pop-ups go over the card row
@@ -426,6 +428,11 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		m := image.NewRGBA(image.Rect(0, 0, pw, 8))
 		noteLine(m, note, 0)
 		dst.DrawImage(upload(&p.pg.toast, m), op)
+	}
+	if p.ctx > 0 { // the context menu: on top, what is under it dimmed
+		b := dst.Bounds()
+		vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
+		p.drawCardTip(dst, v)
 	}
 	return Rect{}
 }
@@ -702,7 +709,9 @@ func (p *Presenter) Hover(x, y int, down bool) {
 	}
 	p.pointer = image.Pt(x, y)
 	if p.ctx > 0 { // a moved pointer takes the context menu's highlight (keys keep it while it rests)
-		p.ctxSel = slices.IndexFunc(p.ctxRects, func(r image.Rectangle) bool { return p.pointer.In(r) })
+		if i := slices.IndexFunc(p.ctxRects, p.pointer.In); i >= 0 { // off the lines the highlight stays
+			p.ctxSel = i
+		}
 		return
 	}
 	for i, r := range p.menuRects {
@@ -1163,7 +1172,7 @@ func (p *Presenter) ctxSend(j int) {
 func (p *Presenter) selectCard(i int) {
 	if p.command {
 		p.send(engine.ActLead, i)
-		p.ctx, p.ctxSel = 1+i, -1
+		p.ctx, p.ctxSel = 1+i, 0 // the first line highlighted: Enter acts at once
 		return
 	}
 	p.send(engine.ActMember, i)
