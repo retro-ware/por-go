@@ -88,6 +88,7 @@ func (g *game) Update() error {
 		}
 		return nil
 	}
+	g.latch.see(screenOf(g.eng.View(), g.remaster.InventoryShown(), g.remaster.Options()), g.held())
 	if g.remaster.Options() { // the renderer's options page has the keyboard and the pads
 		for _, id := range gpu.AppendGamepadIDs(g.pads[:0]) {
 			g.gamepad(id, g.remaster.OptionsPad)
@@ -100,7 +101,6 @@ func (g *game) Update() error {
 		}
 		return nil
 	}
-	g.latch.see(screenOf(g.eng.View(), g.remaster.InventoryShown()), g.held())
 	g.keys()
 	for _, id := range gpu.AppendGamepadIDs(g.pads[:0]) {
 		g.gamepad(id, g.push)
@@ -558,7 +558,8 @@ func main() {
 	}
 
 	g := &game{eng: eng, dsf: 1}
-	g.remaster.Sound = eng.PlayEventSound // a fight's sounds with what they belong to
+	blobber.Held = func(k gpu.Key) bool { return g.latch.down(k, true) } // the Esc menu: no key held through a screen change repeats (latch.go)
+	g.remaster.Sound = eng.PlayEventSound                                // a fight's sounds with what they belong to
 	remaster.Scripted = scripted
 	gpu.SetWindowSize(pal.W*(*scale), pal.H*(*scale))                // the title pictures' shape (16:10): they fill the window whole, uncropped
 	gpu.SetWindowAspect(pal.W, pal.H)                                // and a resize keeps it so; the full screen has its own shape, the UI pages lay out to it (ActResize) and the pictures get black bars

@@ -43,14 +43,14 @@ func (l *latch) see(screen string, held []any) {
 func (l *latch) down(in any, pressed bool) bool { return pressed && !l.stale[in] }
 
 // screenOf names the screen v shows (and whether the presenter's own
-// inventory is up): it changes whenever a screen opens or closes, or a
+// inventory or the options page is up): it changes whenever a screen opens or closes, or a
 // question pops up.
-func screenOf(v engine.View, inventory bool) string {
+func screenOf(v engine.View, inventory, options bool) string {
 	ask := -1
 	if v.Ask != nil {
 		ask = int(v.Ask.Kind)
 	}
-	return fmt.Sprint(inventory, v.Inventory != nil, v.Sheet != nil, v.SheetPage != nil, v.Camp != nil, v.Temple != nil,
+	return fmt.Sprint(inventory, options, v.Inventory != nil, v.Sheet != nil, v.SheetPage != nil, v.Camp != nil, v.Temple != nil,
 		v.Shop != nil, v.Training != nil, v.Creation != nil, v.Picker != nil, v.Slots != nil, v.IconEditor != nil,
 		v.Pages != nil, v.FullMap != nil, v.Overview, v.MainMenu != nil, v.Results != nil, v.Battle != nil, v.Credits, ask)
 }

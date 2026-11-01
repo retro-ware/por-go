@@ -22,5 +22,9 @@ var Repeats = func(d int) bool { return d > 20 && d%4 == 0 }
 
 // KeyRepeated is KeyJustPressed with auto-repeat while held (Repeats), for moving through lists.
 func KeyRepeated(k gpu.Key) bool {
-	return KeyJustPressed(k) || Repeats(gpu.KeyPressDuration(k))
+	return KeyJustPressed(k) || Held(k) && Repeats(gpu.KeyPressDuration(k))
 }
+
+// Held reports whether a held key may repeat; a host that ignores keys held
+// through a screen change (por's latch) sets it.
+var Held = func(gpu.Key) bool { return true }
