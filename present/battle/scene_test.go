@@ -141,3 +141,30 @@ func TestBarFocus(t *testing.T) {
 		}
 	}
 }
+
+// The square cursor (W A S D, the pad's d-pad): free, it starts on the
+// active unit and Enter walks or attacks there as a click; aiming, it
+// moves the aim and the shoulders cycle the targets.
+func TestCursor(t *testing.T) {
+	p := &Presenter{}
+	b := &engine.Battle{Turn: &engine.Turn{}, Units: []engine.Unit{{ID: 1, X: 5, Y: 5, Active: true, Party: true}, {ID: 2, X: 9, Y: 9}, {ID: 3, X: 2, Y: 2}},
+		Reach: []image.Point{{5, 4}}}
+	p.b = b
+	if p.Key('w'); p.free == nil || *p.free != image.Pt(5, 4) {
+		t.Fatalf("W: cursor %v, want 5,4 (north of the active unit)", p.free)
+	}
+	if p.Key(13); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActWalk, X: 5, Y: 4}}) {
+		t.Error("Enter on a reach square did not walk there")
+	}
+	p.Point(100, 100) // a moved mouse takes over
+	if p.free != nil {
+		t.Error("the mouse did not take over from the cursor")
+	}
+	b.Turn.Aim, b.Cursor, b.Targets = true, image.Pt(9, 9), []int{2, 3}
+	if p.Key('d'); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActPoint, X: 10, Y: 9}}) {
+		t.Error("D did not move the aim east")
+	}
+	if p.Key(0x5100); !slices.Equal(p.Actions(), []engine.Action{{Kind: engine.ActPoint, X: 2, Y: 2}}) {
+		t.Error("RB did not aim at the next target")
+	}
+}

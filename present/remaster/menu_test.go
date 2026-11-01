@@ -1,7 +1,10 @@
 package remaster
 
 import (
+	"slices"
 	"testing"
+
+	"gpu"
 
 	"blobber"
 	"por/engine"
@@ -125,6 +128,48 @@ func TestConfirmKeys(t *testing.T) {
 		}
 		if a := p.Actions(); len(a) != 1 || a[0].Kind != c.want {
 			t.Errorf("keys %x: %v", c.keys, a)
+		}
+	}
+}
+
+// The pad reads the binding table: XCOM 2's combat buttons in combat, the
+// adventuring ones elsewhere.
+func TestPadKeys(t *testing.T) {
+	keys := func(combat bool) map[gpu.StandardGamepadButton]uint16 {
+		m := map[gpu.StandardGamepadButton]uint16{}
+		for _, k := range PadKeys(combat) {
+			m[k.B] = k.Key
+		}
+		return m
+	}
+	for b, want := range map[gpu.StandardGamepadButton]uint16{dUp: 'w', dLeft: 'a', padA: KeyPadSelect, padB: 27, padLB: 0x4900, padRB: 0x5100,
+		padLT: 'q', padRT: 'e', padR3: 0x4700, padY: 8, padX: 'g', padStart: KeyPadStart, padBack: 'l'} {
+		if got := keys(true)[b]; got != want {
+			t.Errorf("combat button %d sends %#x, want %#x", b, got, want)
+		}
+	}
+	for b, want := range map[gpu.StandardGamepadButton]uint16{dUp: 0x4800, padA: KeyPadSelect, padY: KeyPadMinimap, padX: KeyPadOverview, padStart: 13, padBack: 27, padLT: 0x4700, padR3: KeyPadNext} {
+		if got := keys(false)[b]; got != want {
+			t.Errorf("button %d sends %#x, want %#x", b, got, want)
+		}
+	}
+}
+
+// Every binding has a keyboard, a mouse and a gamepad way, or says which
+// is missing (gap); the help is made from the table, one line each.
+func TestBindings(t *testing.T) {
+	help := HelpLines()
+	for _, b := range bindings {
+		if (b.keys == "" || b.mouse == "" || b.pad == "") && b.gap == "" {
+			t.Errorf("%s %q: keyboard %q, mouse %q, pad %q and no gap", b.ctx, b.desc, b.keys, b.mouse, b.pad)
+		}
+		if !slices.Contains(help, [2]string{b.keys, b.desc}) {
+			t.Errorf("%s %q has no help line", b.ctx, b.desc)
+		}
+		for _, s := range []string{b.keys, b.mouse, b.pad} {
+			if len(s) > helpKeyW || len(b.desc) > helpDescW {
+				t.Errorf("%q / %q too wide for the help", s, b.desc)
+			}
 		}
 	}
 }

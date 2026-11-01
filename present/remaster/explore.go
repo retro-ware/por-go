@@ -22,7 +22,11 @@ func commands(v engine.View) []command {
 		command{"View", 'V', engine.ActMember},
 		command{"Camp", 'A', engine.ActCamp}, // not C (Cast) nor E (every screen's Exit)
 		command{"Sweep", 'W', engine.ActSweep},
-		command{"Search", 'S', engine.ActSearch})
+		command{"Search", 'S', engine.ActSearch},
+		command{"Map", 'M', engine.ActMap}, // the keys' own commands, for the mouse and the pad
+		command{"Minimap", 0, engine.ActMinimap},
+		command{"Overview", 'P', engine.ActOverview},
+		command{"Help", '?', engine.ActHelp})
 }
 
 // runCommand sends command i of the command menu.
@@ -59,4 +63,25 @@ func (p *Presenter) exploreKey(k uint16, v engine.View) bool {
 		}
 	}
 	return false
+}
+
+// exploreClick takes a left click at (x, y) on the 3D view while the party
+// explores (no menu up): the left and right thirds turn, the top third of
+// the middle walks on, the bottom third steps back, the middle opens the
+// command menu.
+func (p *Presenter) exploreClick(x, y int, v engine.View) {
+	r := p.screen
+	cx, cy := (x-r.Min.X)*3/max(1, r.Dx()), (y-r.Min.Y)*3/max(1, r.Dy())
+	switch {
+	case cx == 0:
+		p.exploreKey(0x4B00, v)
+	case cx == 2:
+		p.exploreKey(0x4D00, v)
+	case cy == 0:
+		p.exploreKey(0x4800, v)
+	case cy == 2:
+		p.exploreKey(0x5000, v)
+	default:
+		p.menu, p.sel = true, 0
+	}
 }

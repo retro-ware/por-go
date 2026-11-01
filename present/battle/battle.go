@@ -41,10 +41,13 @@ type Presenter struct {
 	Asking        bool            // a yes/no question (View.Ask, AskConfirm) waits: the bar shows Yes and No
 	Pointer       image.Point     // the mouse on the screen, as the host last saw it (the bar's hover; captures script it)
 	pointed       image.Point     // the square the aim was last pointed at
+	free          *image.Point    // the keys' and pad's square cursor while not aiming (nil: the mouse points)
+	mouseAt       image.Point     // the pointer as Point last saw it: a moved mouse takes over from free
+	Stick         [2]float64      // the pad's right stick (x right, y down, -1..1): pans the camera
 	cursor        image.Point     // the aim cursor's square in the last frame
 	tabFrom       *image.Point    // Tab was pressed with the aim here: the camera jumps to where it goes
 	tabTo         *vec            // the target Tab went to: watched while aiming
-	focus, offset vec             // what the camera watches; the W A S D pan from it
+	focus, offset vec             // what the camera watches; the arrows' and right stick's pan from it
 	yaw, yawTo    float64         // camera heading: 0 looks north, as the original's screen
 	dist, distTo  float64         // camera distance in squares
 	at            vec             // what the camera looks at (eased)
@@ -130,7 +133,8 @@ func (p *Presenter) Key(k uint16) bool {
 		p.yawTo -= math.Pi / 4
 	case k == 'e':
 		p.yawTo += math.Pi / 4
-	case k == 'w' || k == 'a' || k == 's' || k == 'd':
+	case k == 'w' || k == 'a' || k == 's' || k == 'd': // the square cursor (the pad's d-pad and left stick send these too)
+		p.moveCursor(map[uint16][2]float64{'w': {1, 0}, 's': {-1, 0}, 'd': {0, 1}, 'a': {0, -1}}[k])
 	case k == 0x4800 || k == 0x5000 || k == 0x4B00 || k == 0x4D00: // the arrows pan
 	case k == 0x4700:
 		p.offset = vec{}
@@ -140,25 +144,8 @@ func (p *Presenter) Key(k uint16) bool {
 		}
 	case p.bar.hotkey(k) != nil:
 		p.press(*p.bar.hotkey(k))
-	case k == 9 && aiming && len(b.Targets) > 0:
-		i := 0
-		for j, id := range b.Targets {
-			for _, u := range b.Units {
-				if u.ID == id && u.X == b.Cursor.X && u.Y == b.Cursor.Y {
-					i = j + 1
-					if gpu.IsKeyPressed(gpu.KeyShift) {
-						i = j - 1 + len(b.Targets)
-					}
-				}
-			}
-		}
-		for _, u := range b.Units {
-			if u.ID == b.Targets[i%len(b.Targets)] {
-				c := p.cursor
-				p.tabFrom = &c
-				p.act(engine.Action{Kind: engine.ActPoint, X: u.X, Y: u.Y})
-			}
-		}
+	case (k == 9 || k == 0x4900 || k == 0x5100) && aiming && len(b.Targets) > 0: // Tab, Shift-Tab, the pad's shoulders: the next, previous target
+		p.cycleTarget(k == 0x4900 || k == 9 && gpu.IsKeyPressed(gpu.KeyShift))
 	case k == 13 && aiming:
 		p.act(engine.Action{Kind: engine.ActAim, X: b.Cursor.X, Y: b.Cursor.Y})
 	case (k == 9 || k == 0x4900 || k == 0x5100) && len(p.bar.rects) > 0: // Tab, Shift-Tab, the pad's shoulders (PgUp, PgDn): the focus
@@ -169,12 +156,69 @@ func (p *Presenter) Key(k uint16) bool {
 		p.bar.moveFocus(d)
 	case k == 13 && p.bar.focus > 0 && p.bar.focus <= len(p.bar.rects):
 		p.press(p.bar.items[p.bar.focus-1])
+	case k == 13 && p.free != nil: // the square cursor: as a click there
+		return p.clickSquare(*p.free)
 	case k == 27 && aiming:
 		p.act(engine.Action{Kind: engine.ActClose})
 	default:
 		return false
 	}
 	return true
+}
+
+// cycleTarget moves the aim to the next of the turn's targets (back: the
+// previous), the camera along.
+func (p *Presenter) cycleTarget(back bool) {
+	b := p.b
+	i := 0
+	for j, id := range b.Targets {
+		for _, u := range b.Units {
+			if u.ID == id && u.X == b.Cursor.X && u.Y == b.Cursor.Y {
+				i = j + 1
+				if back {
+					i = j - 1 + len(b.Targets)
+				}
+			}
+		}
+	}
+	for _, u := range b.Units {
+		if u.ID == b.Targets[i%len(b.Targets)] {
+			c := p.cursor
+			p.tabFrom = &c
+			p.act(engine.Action{Kind: engine.ActPoint, X: u.X, Y: u.Y})
+		}
+	}
+}
+
+// moveCursor moves the square cursor a square forward (d[0]) or right
+// (d[1]) as the camera looks: aiming, the aim (ActPoint); else the free
+// cursor, from the active unit's square, kept on the map.
+func (p *Presenter) moveCursor(d [2]float64) {
+	b := p.b
+	if b == nil || b.Turn == nil {
+		return
+	}
+	sin, cos := math.Sin(p.yaw), math.Cos(p.yaw)
+	step := image.Pt(int(math.Round(-sin*d[0]+cos*d[1])), int(math.Round(-cos*d[0]-sin*d[1])))
+	at := b.Cursor
+	if !b.Turn.Aim {
+		if p.free == nil {
+			p.free = &image.Point{}
+			for _, u := range b.Units {
+				if u.Active {
+					*p.free = image.Pt(u.X, u.Y)
+				}
+			}
+		}
+		at = *p.free
+	}
+	at = at.Add(step)
+	at = image.Pt(min(max(at.X, 0), len(p.ground[0])-1), min(max(at.Y, 0), len(p.ground)-1))
+	if b.Turn.Aim {
+		p.act(engine.Action{Kind: engine.ActPoint, X: at.X, Y: at.Y})
+		return
+	}
+	*p.free = at
 }
 
 // targetAt: a foe a click attacks stands on sq.
@@ -187,18 +231,17 @@ func targetAt(b *engine.Battle, sq image.Point) bool {
 	return false
 }
 
-// pan moves the camera's centre by the held W A S D or arrows, relative to
+// pan moves the camera's centre by the held arrows or the right stick, relative to
 // its heading, and reports whether any is held. A pan starts from where
 // the camera is (not from the focus it was easing toward), so the first
 // frames never swing the other way.
 func (p *Presenter) pan(dt float64, focus vec) bool {
-	var f, r float64
-	for _, h := range [8]struct {
+	f, r := -p.Stick[1], p.Stick[0] // the pad's right stick
+	for _, h := range [4]struct {
 		k    gpu.Key
 		f, r float64
-	}{{gpu.KeyW, 1, 0}, {gpu.KeyS, -1, 0}, {gpu.KeyD, 0, 1}, {gpu.KeyA, 0, -1},
-		{gpu.KeyUp, 1, 0}, {gpu.KeyDown, -1, 0}, {gpu.KeyRight, 0, 1}, {gpu.KeyLeft, 0, -1}} {
-		if gpu.IsKeyPressed(h.k) && (h.k == gpu.KeyW || h.k == gpu.KeyS || h.k == gpu.KeyD || h.k == gpu.KeyA || len(p.bar.rects) > 0) { // the arrows step in Move (no bar)
+	}{{gpu.KeyUp, 1, 0}, {gpu.KeyDown, -1, 0}, {gpu.KeyRight, 0, 1}, {gpu.KeyLeft, 0, -1}} {
+		if gpu.IsKeyPressed(h.k) && len(p.bar.rects) > 0 { // the arrows step in Move (no bar)
 			f, r = f+h.f, r+h.r
 		}
 	}
@@ -268,6 +311,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		p.tabFrom, p.tabTo, p.at = nil, &t, t
 	}
 	p.cursor = b.Cursor
+	if b.Turn == nil || b.Turn.Aim { // the free cursor lives for one turn's choice
+		p.free = nil
+	}
 	focus := vec{float64(b.View.X) + 6, 0, float64(b.View.Y) + 3.5}
 	for _, u := range b.Units {
 		if u.Active {
@@ -277,6 +323,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	}
 	if p.tabTo != nil {
 		focus = *p.tabTo
+	}
+	if c := p.free; c != nil { // the keys' cursor: the eye follows it out of the comfort box
+		focus = vec{float64(c.X) + .5, 0, float64(c.Y) + .5}
 	}
 	if n := len(b.Effects); n > 0 {
 		f := b.Effects[n-1]
@@ -397,7 +446,7 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		o := gpu.MeshOptions{Blend: gpu.MeshAdd, Tint: reachGlow, Model: place(float32(r.X)+.5, 0.003, float32(r.Y)+.5, 0, .96, .005, .96)}
 		dst.DrawMesh(p.box, p.white, vp, &o)
 	}
-	if mx, my, ok := p.Pick(gpu.CursorPosition()); ok && !p.overBar(gpu.CursorPosition()) {
+	if mx, my, ok := p.hoverSquare(); ok {
 		frame(mx, my, hoverGlow, 0)
 		for i, s := range b.Paths[image.Pt(mx, my)] { // the walk a click takes; red where leaving lets a foe strike
 			if i == 0 { // the mover's own square

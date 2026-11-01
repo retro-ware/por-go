@@ -120,6 +120,7 @@ type Presenter struct {
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
 	scr         screenUI                    // the page screens' questions (screens.go)
+	screen      image.Rectangle             // the window, as last drawn
 	confirmFor  string                      // the yes/no question (View.Ask, AskConfirm) up, as last drawn ...
 	confirmSel  int                         // ... its highlight (Yes 0, No 1) ...
 	confirmAt   []image.Rectangle           // ... and its rows on screen
@@ -237,6 +238,7 @@ func (p *Presenter) cast(i int) {
 
 // draw shows the screen the View is: the page, the main menu, a tall page or the 3D view.
 func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
+	p.screen = dst.Bounds()
 	p.setup(note, v)
 	p.command = v.Exploring
 	if screenUp(v) && !screenUp(p.shownView) { // camp, the temple, the shop, training start on their main screen
@@ -694,6 +696,10 @@ func (p *Presenter) Click(x, y int) bool {
 				}
 			}
 			p.campBack(v) // a click outside: back
+			return true
+		}
+		if v := p.shownView; v.Exploring && !p.menu && p.active && p.view != nil && !p.view.OptionsOpen() { // the view: walk, turn, the command menu
+			p.exploreClick(x, y, v)
 			return true
 		}
 		if !p.menu || !p.active || p.view == nil || p.view.OptionsOpen() {

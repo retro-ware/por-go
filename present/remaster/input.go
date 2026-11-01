@@ -24,6 +24,7 @@ const (
 	KeyPadOverview = 0xE200 // as P
 	KeyPadPrev     = 0xE300 // gamepad: the previous party member (the left stick's button)
 	KeyPadNext     = 0xE400 // ... the next (the right stick's)
+	KeyPadStart    = 0xE500 // gamepad Start in combat: the options, even while aiming (where Esc cancels)
 )
 
 // memberKey is the member key k picks where a member applies: F1-F8 that
@@ -248,6 +249,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.send(engine.ActMember, p.cardHover-1)
 	case p.fight && p.pointer.In(p.fightCard): // the active member's sheet
 		p.send(engine.ActMember, 0)
+	case p.fight: // as Esc: cancel, else the options
+		p.fightKey(27)
 	case p.ctx > 0:
 		p.ctx = 0
 	case askMenu(v) != nil && len(askMenu(v).Items) == 1 && typing(v) == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
@@ -257,6 +260,8 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.menu = false
 	case screenUp(v): // back one level, as Esc
 		p.campBack(v)
+	case v.Exploring && !p.menu && p.active && p.view != nil: // as Esc: the options
+		p.view.OpenOptions()
 	default:
 		p.send(engine.ActClose, 0)
 	}

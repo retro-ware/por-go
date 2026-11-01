@@ -183,12 +183,18 @@ func (p *Presenter) Click(x, y int) bool {
 			return true
 		}
 	}
-	b := p.b
 	sx, sy, ok := p.Pick(x, y)
-	if b == nil || b.Turn == nil || p.Asking || p.Picking || !ok {
+	return ok && p.clickSquare(image.Pt(sx, sy))
+}
+
+// clickSquare takes a click (or the keys' cursor's Enter) on square sq:
+// aiming, the aim; a foe, the attack; a square in reach, the walk.
+func (p *Presenter) clickSquare(sq image.Point) bool {
+	b := p.b
+	if b == nil || b.Turn == nil || p.Asking || p.Picking {
 		return false
 	}
-	sq := image.Pt(sx, sy)
+	sx, sy := sq.X, sq.Y
 	if b.Turn.Aim {
 		p.act(engine.Action{Kind: engine.ActAim, X: sx, Y: sy})
 		return true
@@ -206,9 +212,13 @@ func (p *Presenter) Click(x, y int) bool {
 	return false
 }
 
-// Point follows the pointer at screen pixel (x, y): aiming, the aim goes
-// to the square under it.
+// Point follows the pointer at screen pixel (x, y): once it moves it takes
+// over from the keys' cursor; aiming, the aim goes to the square under it.
 func (p *Presenter) Point(x, y int) {
+	if image.Pt(x, y) == p.mouseAt {
+		return
+	}
+	p.mouseAt, p.free = image.Pt(x, y), nil
 	b := p.b
 	if b == nil || b.Turn == nil || !b.Turn.Aim || p.overBar(x, y) {
 		return
@@ -322,4 +332,16 @@ func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, ic
 		text(word, wx, r.Max.Y+4*k, k, rgb(10))
 	}
 	return im
+}
+
+// hoverSquare is the square the hover frame and the walk preview show: the
+// keys' cursor, else the one under the mouse (not over the bar).
+func (p *Presenter) hoverSquare() (int, int, bool) {
+	if c := p.free; c != nil {
+		return c.X, c.Y, true
+	}
+	if x, y := gpu.CursorPosition(); !p.overBar(x, y) {
+		return p.Pick(x, y)
+	}
+	return 0, 0, false
 }

@@ -210,6 +210,10 @@ func (p *Presenter) fightKey(k uint16) bool {
 		p.logTop = max(0, min(p.logTop, math.MaxInt32-logRows)+d) // clamped when drawn
 		return true
 	}
+	if k == KeyPadStart && p.view != nil {
+		p.view.OpenOptions()
+		return true
+	}
 	if k == KeyPadSelect { // pad A: as Enter
 		k = 13
 	}
@@ -284,4 +288,22 @@ func (p *Presenter) playing() *engine.CombatEvent {
 		r.q, r.from, r.skip = r.q[1:], time.Time{}, false
 	}
 	return nil
+}
+
+// CombatPad: the combat map is up with no menu over it (no question, Log
+// or spell list): the gamepad takes the combat bindings (PadKeys).
+func (p *Presenter) CombatPad() bool {
+	return p.fight && confirm(p.shownView) == "" && !p.fightLog && p.pickList() == nil && !p.Options()
+}
+
+// PadStick hands over the pad's right stick (x right, y down, -1..1): in
+// combat it pans the camera.
+func (p *Presenter) PadStick(x, y float64) {
+	dead := func(v float64) float64 { // a resting stick drifts a little
+		if math.Abs(v) < 0.25 {
+			return 0
+		}
+		return v
+	}
+	p.battle.Stick = [2]float64{dead(x), dead(y)}
 }

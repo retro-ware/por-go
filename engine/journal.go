@@ -224,7 +224,7 @@ func (e *Engine) applyPager(pg *pager, a Action) (done bool) {
 // picture scrolls (0: none).
 func (e *Engine) pagerPage(pg *pager) (*Pages, int) {
 	if !pg.journal {
-		pages := helpPages()
+		pages := helpPages(e.ext.help)
 		pg.p = min(pg.p, len(pages)-1)
 		return e.helpPage(pg.p), 0
 	}

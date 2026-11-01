@@ -2,11 +2,14 @@
 //
 //	por [-scale N]
 //
-// Gamepad (standard layout): D-pad or left stick move and turn, A picks the
-// highlighted menu item, B is Escape, LB/RB page (PgUp/PgDn), LT/RT are
-// Home/End, the left and right stick buttons select the previous/next party
-// member, X shows the party overview, Y toggles the minimap (the
-// inventory's next tab), Start is Enter.
+// Gamepad (standard layout): the buttons are the binding table's
+// (present/remaster/bindings.go, which the help shows): D-pad or left stick
+// move and turn, A picks, B is Escape, LB/RB page, LT/RT are Home/End, the
+// stick buttons select the previous/next member, X the party overview, Y
+// the minimap, Start is Enter. In combat (XCOM 2 style) the d-pad moves the
+// square cursor, A confirms, LB/RB cycle targets or the bar, LT/RT turn
+// the camera, the right stick pans it and its button recentres, Y ends
+// the turn, X guards, Start opens the options and Back the battle log.
 //
 // Mouse: pointing at a menu item highlights it, a click picks it (and list
 // lines, party members, combat squares); the wheel moves the highlight and
@@ -253,31 +256,6 @@ func (g *game) cell(x, y float64) (int, int, bool) {
 	return int((x - p.X) * float64(cols) / p.W), int((y - p.Y) * float64(rows) / p.H), true
 }
 
-// padButtons maps standard-layout gamepad buttons to BIOS key codes (and
-// the engine's virtual gamepad keys).
-var padButtons = []struct {
-	b      gpu.StandardGamepadButton
-	key    uint16
-	repeat bool
-}{
-	{gpu.StandardGamepadButtonLeftTop, 0x4800, true},
-	{gpu.StandardGamepadButtonLeftBottom, 0x5000, true},
-	{gpu.StandardGamepadButtonLeftLeft, 0x4B00, true},
-	{gpu.StandardGamepadButtonLeftRight, 0x4D00, true},
-	{gpu.StandardGamepadButtonRightBottom, remaster.KeyPadSelect, false},
-	{gpu.StandardGamepadButtonRightRight, 27, false},
-	{gpu.StandardGamepadButtonRightLeft, remaster.KeyPadOverview, false},
-	{gpu.StandardGamepadButtonRightTop, remaster.KeyPadMinimap, false},
-	{gpu.StandardGamepadButtonFrontTopLeft, 0x4900, true}, // the shoulders page (PgUp, PgDn)
-	{gpu.StandardGamepadButtonFrontTopRight, 0x5100, true},
-	{gpu.StandardGamepadButtonFrontBottomLeft, 0x4700, true},
-	{gpu.StandardGamepadButtonFrontBottomRight, 0x4F00, true},
-	{gpu.StandardGamepadButtonCenterRight, 13, false},
-	{gpu.StandardGamepadButtonCenterLeft, 27, false},
-	{gpu.StandardGamepadButtonLeftStick, remaster.KeyPadPrev, false}, // the stick buttons: the previous and next member
-	{gpu.StandardGamepadButtonRightStick, remaster.KeyPadNext, false},
-}
-
 // Held buttons repeat after padDelay ticks (1/tps s), every padRate ticks;
 // a move key held holdTicks (200 ms) flows on, a shorter press is a tap.
 const padDelay, padRate, holdTicks = tps / 3, tps * 3 / 20, tps / 5
@@ -288,25 +266,32 @@ func (g *game) gamepad(id gpu.GamepadID) {
 	if !gpu.IsStandardGamepadLayoutAvailable(id) {
 		return
 	}
-	for _, p := range padButtons {
-		d := gpu.StandardGamepadButtonPressDuration(id, p.b)
-		if d == 1 || p.repeat && d > 1 && repeats(d) {
-			g.push(p.key)
+	pad := remaster.PadKeys(g.remaster.CombatPad()) // the binding table's buttons (bindings.go)
+	for _, p := range pad {
+		d := gpu.StandardGamepadButtonPressDuration(id, p.B)
+		if d == 1 || p.Repeat && d > 1 && repeats(d) {
+			g.push(p.Key)
 		}
 	}
 	// Left stick as a D-pad.
 	x := gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisLeftStickHorizontal)
 	y := gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisLeftStickVertical)
-	dir := uint16(0)
+	var b gpu.StandardGamepadButton = -1
 	switch {
 	case y < -0.6:
-		dir = 0x4800
+		b = gpu.StandardGamepadButtonLeftTop
 	case y > 0.6:
-		dir = 0x5000
+		b = gpu.StandardGamepadButtonLeftBottom
 	case x < -0.6:
-		dir = 0x4B00
+		b = gpu.StandardGamepadButtonLeftLeft
 	case x > 0.6:
-		dir = 0x4D00
+		b = gpu.StandardGamepadButtonLeftRight
+	}
+	dir := uint16(0) // the stick sends what the d-pad's button does
+	for _, p := range pad {
+		if p.B == b {
+			dir = p.Key
+		}
 	}
 	if dir != g.stickDir {
 		g.stickDir, g.stickHeld = dir, 0
@@ -317,6 +302,7 @@ func (g *game) gamepad(id gpu.GamepadID) {
 			g.push(dir)
 		}
 	}
+	g.remaster.PadStick(gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisRightStickHorizontal), gpu.StandardGamepadAxisValue(id, gpu.StandardGamepadAxisRightStickVertical))
 }
 
 func (g *game) Draw(dst *gpu.Image) {
@@ -510,6 +496,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	eng.SetHelp(remaster.HelpLines())                               // the help is the binding table's (bindings.go)
 	blobber.Voice = eng.ToggleVoice                                 // the voice-over switch on the Esc menu's Audio page
 	settingsFile := filepath.Join(eng.Cfg.SaveDir, "SETTINGS.JSON") // the Esc menu's options (minimap, picture box, speed, fullscreen ...) kept across runs
 	if b, err := os.ReadFile(settingsFile); err == nil {

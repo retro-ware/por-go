@@ -46,11 +46,12 @@ type extras struct {
 	aoeSpell int                 // aoe.go: the spell being aimed
 
 	// nav.go: keys and mouse
-	held          Action     // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
-	castCancelled bool       // CastSpell: the player cancelled the aim (the turn goes on)
-	castYes       bool       // castAsks: yes to "Lose it?" / "Use it?"
-	castOn        *Character // castAsks: the member the spell goes on (nil: none)
-	enemiesOnly   bool       // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
+	held          Action      // the action read next (Engine.input): seen by a poll, or one a choice leaves to follow it
+	castCancelled bool        // CastSpell: the player cancelled the aim (the turn goes on)
+	castYes       bool        // castAsks: yes to "Lose it?" / "Use it?"
+	help          [][2]string // the help's lines (SetHelp)
+	castOn        *Character  // castAsks: the member the spell goes on (nil: none)
+	enemiesOnly   bool        // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
 
 	// fullmap.go
 	labels  map[int]map[int]mapLabel // per area: square -> label
@@ -202,36 +203,9 @@ func (e *Engine) viewDrawn() {
 	}
 }
 
-// helpLines is the keyboard reference ("?"): a heading has no key.
-var helpLines = [][2]string{
-	{"Menus", ""},
-	{"Letter", "choose that item"},
-	{"Arrows , .", "move the highlight"},
-	{"Enter", "pick the highlighted"},
-	{"Left Right", "prev. / next member"},
-	{"Esc", "back"},
-	{"Adventuring", ""},
-	{"Arrows", "walk, turn; Down=back"},
-	{"F1 - F8", "select member 1 - 8"},
-	{"P", "items  <->  character"},
-	{"W", "sweep ahead: search as you walk"},
-	{"S", "search here: this square, once"},
-	{"Tab", "minimap"},
-	{"M", "map: walk, labels"},
-	{"P", "party overview"},
-	{"Combat", ""},
-	{"Keypad 1-9", "move and aim"},
-	{"Q   D", "quick   done"},
-	{"Mouse", ""},
-	{"Point  Click", "highlight  choose"},
-	{"Click a card", "menu / items (right: character)"},
-	{"Wheel", "move the highlight"},
-	{"Right button", "back"},
-	{"", ""},
-	{"F9", "save / load game"},
-	{"Ctrl F", "font (+Shift: back)"},
-	{"?", "this help, any time"},
-}
+// SetHelp gives the help ("?") its lines, the front end's binding table
+// (a heading has no description): the engine only pages them.
+func (e *Engine) SetHelp(lines [][2]string) { e.ext.help = lines }
 
 // Help puts up the keyboard reference (View.Pages) over whatever is on
 // screen: a key shows the next page, ActPage -1 the one before, Esc closes.
@@ -239,7 +213,7 @@ func (e *Engine) Help() { e.pushPager(modeHelp, &pager{title: "Help"}) }
 
 // helpPage is page p of the help: headings in white, keys in yellow.
 func (e *Engine) helpPage(p int) *Pages {
-	pages := helpPages()
+	pages := helpPages(e.ext.help)
 	pg := &Pages{Title: e.boxTitle("Help"), Top: 2, Page: p, Pages: len(pages)}
 	for _, l := range pages[p] {
 		if l[1] == "" {
@@ -261,11 +235,10 @@ const helpCol = 0x10
 // helpRows lines fit above the page number.
 const helpRows = 0x14
 
-// helpPages cuts helpLines into pages, between sections where it can; a
-// page does not start with a blank line.
-func helpPages() [][][2]string {
-	var pages [][][2]string
-	lines := helpLines
+// helpPages cuts lines into pages, between sections where it can; a page
+// does not start with a blank line. There is always a page.
+func helpPages(lines [][2]string) [][][2]string {
+	pages := [][][2]string{}
 	for len(lines) > 0 {
 		for len(lines) > 0 && lines[0][0] == "" {
 			lines = lines[1:]
@@ -283,6 +256,9 @@ func helpPages() [][][2]string {
 			pages = append(pages, lines[:n])
 		}
 		lines = lines[n:]
+	}
+	if len(pages) == 0 {
+		pages = append(pages, nil)
 	}
 	return pages
 }
