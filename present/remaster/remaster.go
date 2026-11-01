@@ -350,6 +350,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, cy)
+		picBottom = max(picBottom, cy+int(tk*th/2)) // the menus go under the text too
 	}
 	if askMenu(v) != nil && !v.Exploring && !noChoice(v) && !choosing(v) { // a question: its choices pop up at once
 		if id := menuID(askMenu(v)); id != p.asked { // not the menu just answered
