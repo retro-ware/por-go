@@ -432,6 +432,10 @@ func (e *Engine) pushAfterCombat() {
 		e.moneySound(e.loot)
 		e.purse.add(e.loot)
 		e.loot = purse{}
+		if len(e.run.treasure) == 0 { // extra: no treasure screen (its picture, View/Exit) when there is nothing to take: the money is the party's already
+			end()
+			return
+		}
 		e.lootMenu(func() {
 			e.run.treasure = nil
 			end()
