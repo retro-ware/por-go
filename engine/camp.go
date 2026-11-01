@@ -170,7 +170,6 @@ func (e *Engine) restFor(mins int, stop func() bool, then func(interrupted bool)
 	e.normalizeRest()
 	e.Rest(stop, func(interrupted bool) {
 		e.camp.rest = [7]int{}
-		e.StatusLine()
 		then(interrupted)
 	})
 }
@@ -477,7 +476,8 @@ func (e *Engine) displayAffects(title string, members []*Character, then func())
 	redraw := true
 	index := 0
 	var sel *ListNode
-	e.frame(1, 1, winRight, winBottom, colWhite, title)
+	e.newPage()
+	e.blank(1, 1, winRight, winBottom)
 	e.ListMenu("", nil, colLightCyan, colLightGreen, colWhite, 1, 4, 38, 22, list, true, &redraw, &index, &sel, func(Pick) { then() })
 }
 
@@ -499,7 +499,6 @@ func (e *Engine) dropMember(n int) {
 		e.say(c.Name() + " is dumped in a ditch")
 	}
 	e.RemoveSelected(false, true)
-	e.DisplayPartyList()
 }
 
 // Rest choices (ActRest N).
@@ -526,7 +525,6 @@ func (e *Engine) CampMenu(then func(interrupted bool)) {
 	e.animInput = true // the camp picture's fire burns while camp is up (the camp bar's anim, ovr06:101F)
 	e.push(modeCamp, func(a Action) bool {
 		left := e.campDecision(a)
-		e.DisplayPartyList()
 		return left || e.camp.interrupted
 	}, func() {
 		for _, c := range e.party { // the plans hold: the next rest learns them
@@ -535,7 +533,6 @@ func (e *Engine) CampMenu(then func(interrupted bool)) {
 		e.spellCaster = nil
 		e.beginFlag = saved
 		e.animInput = anim
-		e.StatusLine()
 		e.ClearMessageArea()
 		e.clearPrompt()
 		e.Music(0)
@@ -801,18 +798,12 @@ func (e *Engine) healTick() {
 	if e.camp.heal < 0x120 {
 		return
 	}
-	healed := false
 	for _, c := range e.party {
-		if e.Heal(c, 1, false) {
-			healed = true
-		}
+		e.Heal(c, 1, false)
 	}
 	e.showRest(0)
 	e.text(1, 19, colLightGreen, "The Whole Party Is Healed")
 	e.say("The Whole Party Is Healed")
-	if healed {
-		e.DisplayPartyList()
-	}
 	e.MsgDelay()
 	e.ClearMessageArea()
 	e.camp.heal = 0

@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"por/pal"
 )
 
 // The original's 3D view renderer (ovr30), kept for the tests only: the
@@ -44,7 +46,17 @@ var (
 
 // classicFillRect = 0464:2632 (x cells, y rows, w cells, h rows, colour), in page coordinates.
 func (e *Engine) classicFillRect(x, y, w, h int, colour byte) {
-	e.fill(x*8+8, y+8, (x+w)*8+8, y+h+8, colour)
+	if colour == 16 { // fill's: 16 black, 17 up to the Amiga colours nothing
+		colour = 0
+	}
+	if colour >= 16 && colour < pal.AmigaBase {
+		return
+	}
+	d := make([]byte, w*8*h)
+	for i := range d {
+		d[i] = colour
+	}
+	e.picture(x*8+8, y+8, w*8, h, d, -1, nil, 0)
 }
 
 // classicSkyBands = ovr30:0174: the four colour bands behind the walls.
@@ -209,10 +221,6 @@ func (e *Engine) pageRGBA() *image.RGBA {
 	m := image.NewRGBA(image.Rect(0, 0, textCols*8, textRows*8))
 	draw.Draw(m, m.Bounds(), image.Black, image.Point{}, draw.Src)
 	for _, s := range v.Pictures {
-		if s.Fill {
-			draw.Draw(m, s.At, image.NewUniform(s.Colour), image.Point{}, draw.Src)
-			continue
-		}
 		if s.Img != nil {
 			draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, draw.Over)
 		}

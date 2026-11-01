@@ -74,12 +74,6 @@ func (e *Engine) unwrite(r image.Rectangle) {
 	}
 }
 
-// The party panel's cells: the roster (or the minimap) and the status line.
-var (
-	rosterPanel = CellRect{0x11, 2, paneRight, 14}
-	statusLine  = CellRect{0x11, 15, paneRight, 15}
-)
-
 // char = 0709:01DF display_char(upcase, ch, count, colour, y, x):
 // ch at cell (x,y) in colour on black. Glyph index = upcase(ch) mod 0x40
 // into 8X8D1 block 201 (the presenter's: Engine.FontGlyph).
@@ -98,27 +92,7 @@ func (e *Engine) text(x, y, colour int, s string) {
 // blank = ClearCells (03F1:0137), ClearBox (0709:0DD3), 0709:00B7: the
 // cells [x1..x2] x [y1..y2] black, their text gone.
 func (e *Engine) blank(x1, y1, x2, y2 int) {
-	e.fill(x1*8, y1*8, x2*8+8, y2*8+8, 0)
-}
-
-// frame = DrawBoxTitled (03F1:02E8) with DrawBorder (03F1:0000) style 0:
-// the inside cleared, a border round it (View.Border's cells, drawn by the
-// presenter), the title centred on row y1 in colour.
-func (e *Engine) frame(x1, y1, x2, y2, colour int, title string) {
-	if len(title) > 0x28 {
-		title = title[:0x28]
-	}
-	e.blank(x1, y1, x2, y2)
-	e.border(x1, y1, x2, y2, title, colour)
-}
-
-// border = DrawBorder (03F1:0000) style 0: a border round the cells
-// x1..x2, y1..y2, with title (or none) centred on row y1 in colour.
-func (e *Engine) border(x1, y1, x2, y2 int, title string, colour int) {
-	if x1 <= 1 && y1 <= 1 { // a new page: the sheet's extras end with it
-		e.newPage()
-	}
-	e.draw(layer{at: CellRect{x1, y1, x2, y2}.Framed().Pixels(), border: true, title: title, fill: byte(colour)})
+	e.erase(image.Rect(x1*8, y1*8, x2*8+8, y2*8+8))
 }
 
 // punct = DS:0D16 set: characters that end a word for textBlock.

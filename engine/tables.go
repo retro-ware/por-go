@@ -522,18 +522,6 @@ var templeServices = [11]string{
 	"Exit",
 }
 
-// facing names (DS:25A8, 3 bytes each).
-var facingNames = [8]string{
-	"N",
-	"NE",
-	"E",
-	"SE",
-	"S",
-	"SW",
-	"W",
-	"NW",
-}
-
 // direction of a click around the centre (DS:25C0).
 var mouseDir = [3][3]byte{
 	{0x07, 0x00, 0x01},

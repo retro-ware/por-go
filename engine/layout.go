@@ -32,8 +32,7 @@ const (
 	msgTop   = 17 // first row of the message pane under the portrait
 	// The 3D screen's text pane and party panel keep the original's edges
 	// whatever the page's size: the remaster shows them as a pop-up and
-	// cards, and a clear past the fixed pane would tear the main frame
-	// (page.go draw) and bring the page up in its place.
+	// cards.
 	paneRight  = 0x26
 	paneBottom = 0x16
 )

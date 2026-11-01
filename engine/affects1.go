@@ -79,9 +79,6 @@ func (e *Engine) killWithMessage(c *Character, status byte, msg string) {
 	}
 	e.MsgDelay()
 	e.ClearMessageArea()
-	if e.beginFlag != 5 {
-		e.DisplayPartyList()
-	}
 }
 
 // readiedWeapon = ovr13:101D (char): the weapon found by 00BA:2E8B, else
@@ -291,9 +288,6 @@ func (e *Engine) poisonDamage(c *Character, a *Affect, flag byte) {
 	if e.addAffectNow(c, affPoisonDamage, a.Data, 0xA) && c.HP > 1 {
 		e.rv.dmgType = 0
 		e.Damage(c, 1, 0, false)
-		if e.beginFlag != 5 {
-			e.DisplayPartyList()
-		}
 	}
 }
 
@@ -570,9 +564,6 @@ func (e *Engine) sickDamage(c *Character, a *Affect, flag byte) {
 	if c.HP > 1 {
 		e.rv.dmgType = 0
 		e.Damage(c, 1, 0, false)
-		if e.beginFlag != 5 {
-			e.DisplayPartyList()
-		}
 	} else if e.FindAffect(c, affHelpless) == nil {
 		e.AddAffect(c, affHelpless, 0, 0xFF, 0)
 	}

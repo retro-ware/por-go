@@ -54,7 +54,7 @@ func (e *Engine) spellMenu(mode int, index *int, then func(byte)) {
 	showExit := mode != 4
 	redraw := false
 	if *index < 0 {
-		e.frame(1, 3, winRight, y2, colBlack, "")
+		e.blank(1, 3, winRight, y2)
 		redraw = true
 		*index = 0
 	}

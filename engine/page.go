@@ -15,8 +15,8 @@ import (
 // Picture is one thing drawn on the page, bottom first: frame Frame of
 // block Block of the DAX file File (a picture, an animation's frame, a
 // symbol, a tile) decoded in the page's palette with its mask pixels
-// transparent, its top left at At.Min and cut to At; or, Fill set, a fill
-// of Colour over At.
+// transparent, its top left at At.Min and cut to At; or, Fill set (the
+// presenter's own layouts; the engine draws none), a fill of Colour over At.
 type Picture struct {
 	File         string // "" for a fill (the presenter adds its own pictures, the minimap, so)
 	Block, Frame int
@@ -27,21 +27,18 @@ type Picture struct {
 }
 
 // layer is one drawing call: w by h pixels d at at (mask: the value left
-// out, -1 none), or a fill of colour fill (d nil).
+// out, -1 none).
 type layer struct {
 	at     image.Rectangle
 	d      []byte
 	w      int
 	mask   int
-	fill   uint8
 	opaque bool            // it hides everything under it
 	img    image.Image     // d in the colours of pageState.pal (nil: not converted yet)
 	clip   image.Rectangle // drawn only inside (empty: all of it)
 	id     uint64
 	src    *dax.Image // what d is a frame of (nil: the engine's own pixels)
 	frame  int        // its frame
-	border bool       // a border round at's inside (d nil), title on its top row in colour fill
-	title  string
 }
 
 type pageState struct {
@@ -53,7 +50,7 @@ type pageState struct {
 }
 
 // draw records l over the page: layers it hides go, and the text it
-// covers (a border: its cells).
+// covers.
 func (e *Engine) draw(l layer) {
 	pg := &e.pg
 	r := l.at.Intersect(image.Rect(0, 0, textCols*8, textRows*8))
@@ -73,27 +70,22 @@ func (e *Engine) draw(l layer) {
 	pg.ids++
 	l.id = pg.ids
 	pg.layers = append(pg.layers, l)
-	if l.border {
-		f := l.at
-		for _, edge := range []image.Rectangle{{f.Min, image.Pt(f.Max.X, f.Min.Y+8)}, {image.Pt(f.Min.X, f.Max.Y-8), f.Max}, {f.Min, image.Pt(f.Min.X+8, f.Max.Y)}, {image.Pt(f.Max.X-8, f.Min.Y), f.Max}} {
-			e.unwrite(edge)
-		}
-	} else {
-		e.unwrite(r)
-	}
+	e.unwrite(r)
 
 }
 
-// fill paints a rectangle [x0,x1) x [y0,y1) in colour c (16 is black,
-// 17..AmigaBase-1 transparent: nothing).
-func (e *Engine) fill(x0, y0, x1, y1 int, c uint8) {
-	if c == 16 {
-		c = 0
+// erase takes what is drawn wholly inside r off the page, and its text.
+func (e *Engine) erase(r image.Rectangle) {
+	pg := &e.pg
+	keep := pg.layers[:0]
+	for _, o := range pg.layers {
+		if !o.at.In(r) {
+			keep = append(keep, o)
+		}
 	}
-	if c >= 16 && c < pal.AmigaBase {
-		return
-	}
-	e.draw(layer{at: image.Rect(x0, y0, x1, y1), fill: c, opaque: true})
+	clear(pg.layers[len(keep):])
+	pg.layers = keep
+	e.unwrite(r)
 }
 
 // picture records a blit of w by h pixels d, frame frame of src, at x0,
@@ -159,13 +151,6 @@ func (e *Engine) pageView(v *View) {
 	v.Pictures = make([]Picture, 0, len(pg.layers))
 	for i := range pg.layers {
 		l := &pg.layers[i]
-		if l.border { // the classic frames: not the presenter's
-			continue
-		}
-		if l.d == nil {
-			v.Pictures = append(v.Pictures, Picture{At: l.at, Fill: true, Colour: e.pal.RGBA(l.fill)})
-			continue
-		}
 		if l.img == nil || stale {
 			l.img = e.layerRGBA(*l)
 		}

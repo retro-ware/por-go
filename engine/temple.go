@@ -171,15 +171,12 @@ func (e *Engine) Temple() {
 	e.beginFlag = 1
 	e.DrawMainScreen()
 	e.keepPane(greeting)
-	e.DisplayPartyList()
 	e.push(modeTemple, func(a Action) bool {
 		done := e.applyTemple(a)
 		e.keepPane(greeting)
-		e.DisplayPartyList()
 		return done
 	}, func() {
 		e.blank(0, 0, lastCol, promptRow) // ovr05:0C18
 		e.DrawMainScreen()
-		e.DisplayPartyList()
 	})
 }

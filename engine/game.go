@@ -176,7 +176,7 @@ func (e *Engine) AreaChange(then func()) {
 			}
 		}
 		if e.prevViewMode > 1 && e.viewMode == 1 {
-			e.frame(3, 3, 13, 13, colLightGreen, "")
+			e.blank(3, 3, 13, 13)
 		}
 		if (e.prevViewMode > 1 || e.viewMode == 1) && r.scriptLoad != 0 ||
 			e.prevViewMode == 1 && e.viewMode == 1 {
@@ -190,7 +190,6 @@ func (e *Engine) AreaChange(then func()) {
 			}
 			e.RunECL(e.es.events[1], func() {
 				e.selectChar(sel)
-				e.DisplayPartyList()
 				if r.areaChanged {
 					e.AreaChange(then)
 					return
@@ -267,7 +266,6 @@ func (e *Engine) applyExplore(a Action) bool {
 		return true
 	}
 	done, encamp := e.explore(a)
-	e.StatusLine()
 	if done {
 		e.commandEnd()
 		e.afterCommand(encamp)
@@ -439,7 +437,6 @@ func (e *Engine) Move(then func()) {
 				e.PlaySound(sndBump)
 			}
 			e.unback()
-			e.StatusLine()
 			end()
 		}
 		switch e.DoorAt(e.posX, e.posY, e.facing) {
@@ -459,7 +456,6 @@ func (e *Engine) Move(then func()) {
 	case e.viewMode >= 2 && e.viewMode <= 4:
 		if e.game.HoldMove < 0xFF {
 			e.mapMove()
-			e.StatusLine()
 		} else {
 			e.game.HoldMove = 0
 		}

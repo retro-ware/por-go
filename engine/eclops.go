@@ -107,9 +107,10 @@ func (e *Engine) eclRun(then func()) {
 // opExit = ovr04:0001 (EXIT).
 func (e *Engine) opExit() {
 	if e.es.textInView != 0 {
-		e.frame(1, 1, 15, 15, colWhite, "")
+		e.newPage()
+		e.blank(1, 1, 15, 15)
 		if e.area.In3D != 0 {
-			e.frame(3, 3, 13, 13, colWhite, "")
+			e.blank(3, 3, 13, 13)
 		}
 	}
 	if e.run.restoreSel {
@@ -214,7 +215,6 @@ func (e *Engine) opLoadCharacter() {
 			e.run.restoreSel = false
 		}
 		e.RemoveSelected(false, true) // ovr17:3291
-		e.DisplayPartyList()
 		e.es.memberDied, e.es.memberGone = 0, 0
 	}
 }
@@ -291,7 +291,7 @@ func (e *Engine) opPicture() {
 	e.FetchArgs(1)
 	v := int(byte(e.ArgValue(1)))
 	if e.area.In3D == 0 && v != 0xFF {
-		e.frame(3, 3, 13, 13, colWhite, "")
+		e.blank(3, 3, 13, 13)
 	}
 	if v != 0xFF {
 		if w := e.ext.walk; w != nil {
@@ -486,7 +486,6 @@ func (e *Engine) opLoadFiles() {
 	}
 	if e.run.needFrame != 0 && e.run.walldefSet != 0 && e.run.geoSet != 0 {
 		e.DrawMainScreen()
-		e.DisplayPartyList()
 		e.run.needFrame = 0
 	}
 }

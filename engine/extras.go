@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"image"
 	"strconv"
 	"time"
 )
@@ -127,40 +126,6 @@ func (e *Engine) minimapAllowed() bool {
 	return e.viewMode == 1 && e.area.NoCoords == 0 && e.beginFlag != 2
 }
 
-// Minimap geometry: 16x16 cells of 7 pixels inside the roster panel
-// (cells 0x11..0x26 x rows 1..0xE).
-const (
-	mmCell = 7
-	mmX    = 0x11*8 + (22*8-16*mmCell)/2
-	mmY    = 8
-)
-
-// MinimapAt is the minimap's top left on the page, MinimapCell its
-// square's side in pixels.
-var (
-	MinimapAt   = image.Pt(mmX, mmY)
-	minimapRect = image.Rect(mmX, mmY, mmX+16*mmCell, mmY+16*mmCell)
-)
-
-const MinimapCell = mmCell
-
-// DrawMinimap puts the minimap up in the party panel (View.Minimap: the
-// presenter draws View.Map there). Like the game's Area view it shows
-// every wall; walls of squares not yet seen are dim.
-func (e *Engine) DrawMinimap() {
-	e.blank(17, 1, paneRight, 14)
-}
-
-// rosterPanel redraws the panel the minimap shares with the roster.
-func (e *Engine) rosterPanel() {
-	if e.ext.minimap && e.minimapAllowed() {
-		e.DrawMinimap()
-		return
-	}
-	e.blank(17, 1, paneRight, 14)
-	e.drawPartyList()
-}
-
 // minimapFile in the save folder marks the minimap as switched on (Tab).
 const minimapFile = "MINIMAP.ON"
 
@@ -173,7 +138,6 @@ func (e *Engine) toggleMinimap() {
 	}
 	e.ext.minimap = !e.ext.minimap
 	e.mark(minimapFile, e.ext.minimap)
-	e.rosterPanel()
 }
 
 // statusName = DS:1047 + 0xD*n, the status words. extra: dead with the
@@ -199,9 +163,6 @@ func (e *Engine) PartyOverview() {
 // and keep the minimap current.
 func (e *Engine) viewDrawn() {
 	e.markSeen()
-	if e.ext.minimap && e.minimapAllowed() && e.beginFlag != 0 {
-		e.DrawMinimap()
-	}
 }
 
 // SetHelp gives the help ("?") its lines, the front end's binding table

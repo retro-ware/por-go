@@ -130,9 +130,10 @@ func (e *Engine) drawAreaMapParty() {
 
 // areaMapInit = ovr28:0207: the three frames of the area map screen.
 func (e *Engine) areaMapInit() {
-	e.frame(1, 1, 15, 15, colBlack, "")
-	e.frame(17, 1, winRight, 15, colBlack, "")
-	e.frame(1, msgTop, winRight, winBottom, colBlack, "")
+	e.newPage()
+	e.blank(1, 1, 15, 15)
+	e.blank(17, 1, winRight, 15)
+	e.blank(1, msgTop, winRight, winBottom)
 }
 
 // areaMapIcons = 00BA:2B5E: switch to the area map view and draw it.
@@ -141,6 +142,4 @@ func (e *Engine) areaMapIcons() {
 	e.areaMapInit()
 	e.Redraw()
 	e.drawAreaMapParty()
-	e.StatusLine()
-	e.DisplayPartyList()
 }

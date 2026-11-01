@@ -80,7 +80,6 @@ func (e *Engine) pushWait(then func()) {
 		e.animInput, e.pic.last = anim, last
 		e.viewAnim = 0
 		if member { // the roster without the candidate's highlight
-			e.DisplayPartyList()
 		}
 		then()
 	})
@@ -135,9 +134,6 @@ func (e *Engine) applyScript(a Action) bool {
 func (e *Engine) showAsk() {
 	w := e.eclWait
 	e.animInput = w.anim
-	if w.ask.Kind == AskMember {
-		e.DisplayPartyList()
-	}
 }
 
 // listLines are the lines of list as View.Ask shows them.
@@ -160,7 +156,6 @@ func (e *Engine) askChoice(prompt, menu string, allowEnter, anim bool, then func
 			case !ok:
 			case p.extra():
 				e.partyKeypad(p)
-				e.DisplayPartyList()
 			case p.ID >= 0:
 				then(int(p.ID))
 				return true
@@ -274,7 +269,6 @@ func (e *Engine) askMember(prompt string, who *Character, then func(*Character))
 				return true
 			case p.extra(): // ActLead stepped the candidate
 				e.selectChar(who)
-				e.DisplayPartyList()
 			}
 			return false
 		}}

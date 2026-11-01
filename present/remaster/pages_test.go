@@ -268,28 +268,6 @@ func TestSheetSpellsTitle(t *testing.T) {
 	}
 }
 
-// devScene: adventuring with dev scene name (engine.DevScene) put up.
-func devScene(t *testing.T, name string) (*engine.Engine, engine.View) {
-	t.Helper()
-	if _, err := os.Stat("../../data/dos/TITLE.DAX"); err != nil {
-		t.Skip("no game files")
-	}
-	e, err := engine.New("../../data")
-	if err != nil {
-		t.Fatal(err)
-	}
-	seed := uint32(7)
-	e.FixedSeed = &seed
-	e.Cfg.SaveDir = t.TempDir()
-	e.Explore = true
-	if name != "" {
-		e.DevAction = e.DevScene(name)
-	}
-	e.Init()
-	e.Start(e.Play)
-	return e, settled(e)
-}
-
 // The focus goes to the nearest part the arrow points at.
 func TestNearestSpot(t *testing.T) {
 	r := func(x, y int) spot { return spot{r: engine.CellRect{X1: x, Y1: y, X2: x + 3, Y2: y}} }

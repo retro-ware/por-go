@@ -62,7 +62,7 @@ type IconEditor struct {
 // camp's Icon).
 func (e *Engine) pushIcon() {
 	c := e.selected()
-	e.blank(1, 1, winRight, winBottom) // DrawBoxTitled (its frame is the presenter's)
+	e.blank(1, 1, winRight, winBottom)
 	e.newPage()
 	e.combatViewLeave() // ovr32:00E3: the combat palette, black shown dark grey so the icon's black shows
 	head, weapon, size, icon := c.IconHead, c.IconBody, c.IconSize, c.Icon

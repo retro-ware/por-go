@@ -5,8 +5,7 @@ import (
 )
 
 // The 3D screen's text pane keeps the original's place on a page larger
-// than 40x25: its clear must not read as the main frame torn down (the
-// remastered view stays up, its pop-up the pane's size).
+// than 40x25 (its pop-up the pane's size).
 func TestTextPaneFollowsPage(t *testing.T) {
 	e := testEngine(t)
 	defer setPageSize(minCols, minRows)

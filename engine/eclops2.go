@@ -355,7 +355,6 @@ func (e *Engine) opCall() {
 		s := &e.es
 		if e.run.scriptLoad != 0 && (s.picShown != 0 || s.spriteLoaded != 0 || s.skyChanged != 0 || s.posChanged != 0 || s.portraitChanged != 0) {
 			e.Redraw()
-			e.StatusLine()
 			s.portraitChanged, s.skyChanged, s.posChanged, s.picShown, s.spriteLoaded = 0, 0, 0, 0, 0
 		}
 	case 1:
@@ -444,7 +443,8 @@ func (e *Engine) opDamage() {
 	}
 	if e.run.quit {
 		e.Music(5) // Amiga 0x416C2
-		e.frame(1, 1, winRight, winBottom, colWhite, "The END!")
+		e.newPage()
+		e.blank(1, 1, winRight, winBottom)
 		e.endPage("The entire party is killed!", CellRect{1, 1, winRight, winBottom})
 	}
 	e.partySel = sel
@@ -512,7 +512,6 @@ func (e *Engine) opAddNPC() {
 		c.Side = sideParty
 	}
 	e.ApplyItems(c) // 00BA:0BB8
-	e.DisplayPartyList()
 }
 
 // opProgram = ovr04:2E10 (n): 0 party menu, 8 ovr19:02A4, 9 encamp.

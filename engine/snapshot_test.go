@@ -41,7 +41,7 @@ func TestView(t *testing.T) {
 	}
 	v := keys()
 	if v.Pane == nil || v.Window != engine.WinThreeD {
-		t.Fatalf("after loading: Pane %v Window %v, want the 3D view in the main frame", v.Pane != nil, v.Window)
+		t.Fatalf("after loading: Pane %v Window %v, want the 3D view", v.Pane != nil, v.Window)
 	}
 	if len(v.Party) == 0 || v.Party[0].Name == "" || v.Party[0].Head == nil || v.Party[0].MaxHP <= 0 {
 		t.Fatalf("party %+v: want named members with heads", v.Party)

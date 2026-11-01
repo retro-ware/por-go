@@ -80,7 +80,6 @@ func (e *Engine) extraAct(a Action) bool {
 		c := e.party[a.N]
 		e.party = slices.Insert(slices.Delete(e.party, a.N, a.N+1), a.X, c)
 		e.selectMember(a.X)
-		e.DisplayPartyList()
 	case ActIcon: // extra: the icon editor takes the PNG while it is up
 		if f := e.snap.iconDrop; f != nil {
 			f(readPNG(a.Text))

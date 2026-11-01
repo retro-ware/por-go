@@ -29,3 +29,22 @@ func TestHallTrain(t *testing.T) {
 		t.Errorf("after Begin: %d screens (was %d), at %d,%d (was %d,%d), adventure %v", len(e.screens), n, e.posX, e.posY, x, y, v.Adventure)
 	}
 }
+
+// The engine draws nothing of the original's screens: what it publishes
+// as pictures is art, never a fill or a frame.
+func TestPicturesAreArt(t *testing.T) {
+	e := testEngine(t)
+	seed := uint32(7)
+	e.FixedSeed = &seed
+	e.Explore = true
+	e.Init()
+	e.Start(e.Play)
+	for _, a := range []Action{{}, {Kind: ActCamp}, {Kind: ActClose}, {Kind: ActMember, N: 0}, {Kind: ActClose}} {
+		v := e.Apply(a)
+		for _, p := range v.Pictures {
+			if p.Fill || p.Img == nil {
+				t.Fatalf("after %v: a fill or empty picture at %v", a.Kind, p.At)
+			}
+		}
+	}
+}

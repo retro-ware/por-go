@@ -93,8 +93,7 @@ func (e *Engine) MapCell(x, y int) byte {
 // it); here the window is set to it.
 func (e *Engine) Draw3DView(x, y, dir int) {
 	e.snap.win = WinThreeD
-	r := InnerWindow.Pixels()
-	e.fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, colBlack)
+	e.erase(InnerWindow.Pixels())
 }
 
 // validWallSlot = ovr30:0DE8 set {1,2,3}.

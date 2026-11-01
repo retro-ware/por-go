@@ -217,7 +217,7 @@ func nameColour(c *Character) int {
 	return col
 }
 
-// rosterColour is the roster's colour for c's name (drawPartyList) when c
+// rosterColour is the roster's colour for c's name when c
 // is not the one highlighted: magenta ready for a level (extra), else
 // nameColour.
 func rosterColour(c *Character) int {

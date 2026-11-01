@@ -685,5 +685,4 @@ func (e *Engine) HitMessage(c *Character, dmg int) {
 	e.paneText(colWhite, clear, msg)
 	e.ApplyDamage(c, dmg&0xFF) // 00BA:2228
 	e.blank(17, 1, paneRight, 15)
-	e.DisplayPartyList()
 }

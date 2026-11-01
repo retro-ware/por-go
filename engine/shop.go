@@ -61,7 +61,6 @@ func (e *Engine) Shop() {
 	e.beginFlag = 1
 	e.DrawMainScreen()
 	e.keepPane(greeting)
-	e.DisplayPartyList()
 	for _, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
 	}
@@ -72,7 +71,6 @@ func (e *Engine) Shop() {
 			e.DrawMainScreen()
 			e.keepPane(greeting)
 		}
-		e.DisplayPartyList()
 		return done
 	}, func() { e.dasp("store_leave") })
 }

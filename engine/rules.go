@@ -664,9 +664,6 @@ func (e *Engine) healedMessage(c *Character) {
 		msg = "is fully healed"
 	}
 	e.CharMessage(c, msg, true)
-	if e.beginFlag != 5 {
-		e.DisplayPartyList()
-	}
 }
 
 // countSides = 00BA:23DB: standing members of each side (DS:6814/6815).

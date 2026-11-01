@@ -241,7 +241,8 @@ func (e *Engine) hiredShare() {
 	for _, n := range []*uint32{&e.loot.gold, &e.loot.copper, &e.loot.gems, &e.loot.jewelry} {
 		*n -= *n / uint32(parts) * uint32(shares)
 	}
-	e.frame(1, 1, winRight, winBottom, colWhite, "")
+	e.newPage()
+	e.blank(1, 1, winRight, winBottom)
 	r := &Results{}
 	for _, c := range e.party {
 		if c.Control > 0x7F && c.Status == statusOkay && c.Share > 0 {
@@ -254,7 +255,8 @@ func (e *Engine) hiredShare() {
 
 // showResult = ovr06:0916 (exp): the page (View.Results).
 func (e *Engine) showResult(exp int32) {
-	e.frame(1, 1, winRight, winBottom, colWhite, "")
+	e.newPage()
+	e.blank(1, 1, winRight, winBottom)
 	r := &Results{}
 	switch {
 	case e.ac.monsters || e.duel():
@@ -369,7 +371,6 @@ func (e *Engine) lootAsk(done func()) {
 			if p.ID != PickRelist {
 				e.partyKeypad(p)
 			}
-			e.DisplayPartyList()
 			again()
 			return
 		}
@@ -395,7 +396,6 @@ func (e *Engine) lootAsk(done func()) {
 					switch {
 					case p.extra():
 						e.partyKeypad(p)
-						e.DisplayPartyList()
 						ask()
 					case p.ID == 1:
 						done()
@@ -444,7 +444,8 @@ func (e *Engine) pushAfterCombat() {
 	}
 	e.game.CombatEnd = 0x80
 	e.Music(5) // Amiga 0x4602E
-	e.frame(1, 1, winRight, winBottom, colWhite, "The END!")
+	e.newPage()
+	e.blank(1, 1, winRight, winBottom)
 	e.endPage("The monsters rejoice for the party has been destroyed", CellRect{2, 5, 37, winBottom})
 	e.PromptRow24(colLightMagenta, "Press any key to continue")
 	end()

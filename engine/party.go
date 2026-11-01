@@ -4,26 +4,6 @@ import "slices"
 
 // Party menu, ported from ovr17:0161 and the list display 00BA:0767.
 
-// DisplayPartyList = 00BA:0767 (selected): the roster with AC and HP.
-// While adventuring with the minimap on (extras.go) the panel shows the
-// map instead.
-func (e *Engine) DisplayPartyList() {
-	if e.beginFlag != 0 && e.ext.minimap && e.minimapAllowed() {
-		e.DrawMinimap()
-		return
-	}
-	e.drawPartyList()
-}
-
-// drawPartyList = 00BA:0767's page: the rows it clears; the heading, the
-// names, AC and HP are the presenter's (View.Roster, View.Party).
-func (e *Engine) drawPartyList() {
-	if e.beginFlag == 0 { // the party menu's roster is the presenter's (View.Party)
-		return
-	}
-	e.blank(rosterPanel.X1, 4, winRight, 4+len(e.party))
-}
-
 // rosterSel is the member the roster highlights: SelectCharacter's
 // candidate while it waits (-1: none), else the selected one.
 func (e *Engine) rosterSel() int {
@@ -183,7 +163,6 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then 
 		who = e.party[0]
 	}
 	done := func(c *Character) {
-		e.DisplayPartyList() // (the original leaves the roster as drawn)
 		then(c)
 	}
 	var ask func()

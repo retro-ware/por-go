@@ -496,8 +496,8 @@ func (e *Engine) creationSheet(c *Character) {
 	}
 	for p := 0; p < 2; p++ {
 		r := iconRect(sheetIconCol(p), sheetIconRow)
-		e.fill(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, colDarkGrey) // a grey ground: the icon's black parts show against the page
-		if c.Icon != nil {                                      // a PNG: the presenter's, over the page at the window's resolution
+		e.erase(r)
+		if c.Icon != nil { // a PNG: the presenter's, over the page at the window's resolution
 			if sp := e.snap.sheet; sp != nil {
 				sp.Icons[p] = iconPose(c.Icon, p, false)
 			}

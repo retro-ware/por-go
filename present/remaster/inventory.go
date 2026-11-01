@@ -234,10 +234,3 @@ func (inv *inventory) choose(ware bool, i int) {
 		inv.sel = i
 	}
 }
-
-// step shows the member d places on (the arrows, Left and Right).
-func (inv *inventory) step(d int) {
-	if inv.count > 1 && inv.view.Switch {
-		inv.acts = append(inv.acts, engine.Action{Kind: engine.ActMember, N: (inv.member + inv.count + d) % inv.count})
-	}
-}

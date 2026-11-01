@@ -47,7 +47,7 @@ func (r CellRect) Pixels() image.Rectangle {
 // Framed is the box with its border.
 func (r CellRect) Framed() CellRect { return CellRect{r.X1 - 1, r.Y1 - 1, r.X2 + 1, r.Y2 + 1} }
 
-// The insides of the main screen's boxes (DrawMainFrame), the original's
+// The insides of the original's main screen boxes, at their
 // 40x25 places whatever the page's size: the remaster lays that screen
 // out itself (the text pane as a pop-up, the party as cards).
 var (
@@ -190,7 +190,7 @@ func (p *Pane) Shown() bool {
 
 // View is one published snapshot.
 type View struct {
-	Pane       *Pane // the text pane under the 3D view: the main frame is up (Frame), or it holds text (nil otherwise)
+	Pane       *Pane // the text pane under the 3D view: out adventuring (Adventure), or it holds text (nil otherwise)
 	Window     Window
 	AreaMap    *AreaMap // with WinAreaMap: the whole map, for a screen of its own
 	Area       AreaID
@@ -258,13 +258,6 @@ type Results struct {
 // Harm is a member's line on the after-combat page: its name and what
 // harms it.
 type Harm struct{ Name, What string }
-
-// StatusAt is the status line's first cell (StatusLine).
-var StatusAt = image.Pt(statusLine.X1, statusLine.Y1)
-
-// RosterAt is the roster's first cell (drawPartyList): the heading, the
-// members from two rows down.
-var RosterAt = image.Pt(rosterPanel.X1, rosterPanel.Y1)
 
 // SheetPage is what the character sheet's page shows (CharacterSheet),
 // laid out by the presenter as the original's ovr20 did, in the colours of

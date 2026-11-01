@@ -266,7 +266,6 @@ func (e *Engine) pushTraining() {
 	e.learning = false
 	e.push(modeTraining, func(a Action) bool {
 		done := e.applyTraining(a)
-		e.DisplayPartyList()
 		return done
 	}, nil)
 }
