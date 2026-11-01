@@ -36,7 +36,7 @@ var (
 // takes what the window gives beyond that.
 const (
 	invW, invH = 400, 250
-	leftCells  = 17 // the doll box's width in cells, with its border
+	leftCells  = 22 // the doll box's width in cells, with its border
 	rowH       = 20 // a party inventory line: a whole icon high
 	listTop    = 24 // the first line, under the box's title
 	atlasCell  = 20
@@ -58,18 +58,18 @@ var (
 // dollBoxes are the doll's slot boxes (EOB's frames, 18x18 with the frame;
 // the rings' 10x10) in doll pixels, by engine doll slot.
 var dollBoxes = [engine.DollSlots]image.Rectangle{
-	engine.DollWeapon:    image.Rect(13, 63, 31, 81),
-	engine.DollShield:    image.Rect(61, 63, 79, 81),
-	engine.DollArmor:     image.Rect(7, 23, 25, 41),
-	engine.DollGauntlets: image.Rect(8, 43, 26, 61),
-	engine.DollHelm:      image.Rect(81, 2, 99, 20),
-	engine.DollBelt:      image.Rect(83, 41, 101, 59),
-	engine.DollRobe:      image.Rect(83, 59, 101, 77),
-	engine.DollCloak:     image.Rect(70, 22, 88, 40),
-	engine.DollBoots:     image.Rect(60, 84, 78, 102),
-	engine.DollRing1:     image.Rect(11, 83, 21, 93),
-	engine.DollRing2:     image.Rect(23, 83, 33, 93),
-	engine.DollArrows:    image.Rect(8, 3, 26, 21),
+	engine.DollWeapon:    image.Rect(7, 62, 25, 80),
+	engine.DollShield:    image.Rect(55, 62, 73, 80),
+	engine.DollArmor:     image.Rect(1, 22, 19, 40),
+	engine.DollGauntlets: image.Rect(2, 42, 20, 60),
+	engine.DollHelm:      image.Rect(75, 1, 93, 19),
+	engine.DollBelt:      image.Rect(77, 40, 95, 58),
+	engine.DollRobe:      image.Rect(77, 58, 95, 76),
+	engine.DollCloak:     image.Rect(64, 21, 82, 39),
+	engine.DollBoots:     image.Rect(54, 83, 72, 101),
+	engine.DollRing1:     image.Rect(5, 82, 15, 92),
+	engine.DollRing2:     image.Rect(17, 82, 27, 92),
+	engine.DollArrows:    image.Rect(2, 2, 20, 20),
 }
 
 var slotNames = [engine.DollSlots]string{"Weapon", "Shield", "Armour", "Gauntlets", "Helm", "Belt", "Robe", "Cloak",
@@ -103,11 +103,10 @@ type inventory struct {
 	face    image.Rectangle // the portrait on the canvas, when facePNG is drawn over it at the window's resolution
 	facePNG image.Image
 	panelAt image.Rectangle // the last panel on the canvas, drawn again over facePNG
-	arrows  [2]image.Rectangle
-	hover   image.Point // the pointer (canvas)
-	mouseAt image.Point // the pointer (screen), as last seen
-	member  int         // View.Inventory.Member
-	count   int         // party members
+	hover   image.Point     // the pointer (canvas)
+	mouseAt image.Point     // the pointer (screen), as last seen
+	member  int             // View.Inventory.Member
+	count   int             // party members
 
 	carry     *carried    // the stack on the cursor (a click picked it up), nil for none
 	held      bool        // the left button was down last frame

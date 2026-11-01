@@ -113,7 +113,6 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 
 	// the member: name, portrait between the arrows, hit points (the shop: its goods)
 	lx, lw := 8, (leftCells-2)*8
-	inv.arrows = [2]image.Rectangle{}
 	inv.dollAt = image.Rectangle{}
 	inv.facePNG = nil
 	if shop {
@@ -211,13 +210,16 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	window(inv.img, t, g, cw-split+1, ch-1, nil)
 	switch { // the headings on the top border, the party's money on the shop's bottom one
 	case in.Loot:
-		inv.onBorder(lx, 0, true, []string{"Loot"}, []color.RGBA{white})
+		onBorder(inv.img, inv.glyph, lx, 0, true, []string{"Loot"}, []color.RGBA{white})
 	case shop:
-		inv.onBorder(lx, 0, true, []string{"Shop"}, []color.RGBA{white})
-		inv.onBorder(rr, (ch-1)*8-8, false, []string{"party " + price(engine.Money{Gold: in.Gold, Copper: in.Copper})}, []color.RGBA{col(14)})
+		onBorder(inv.img, inv.glyph, lx, 0, true, []string{"Shop"}, []color.RGBA{white})
+		onBorder(inv.img, inv.glyph, rr, (ch-1)*8-8, false, []string{"party " + price(engine.Money{Gold: in.Gold, Copper: in.Copper})}, []color.RGBA{col(14)})
 	}
-	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
-	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})
+	if !shop && in.Member >= 0 && in.Member < len(v.Party) {
+		paneName(inv.img, inv.glyph, v.Party[in.Member].Name)
+	}
+	onBorder(inv.img, inv.glyph, rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
+	onBorder(inv.img, inv.glyph, rr, 0, false, []string{fill}, []color.RGBA{fillc})
 	if box == nil && !inv.dragging {
 		inv.tooltip(t, in)
 	}
@@ -227,7 +229,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	if inv.facePNG != nil { // the PNG portrait at the window's resolution, as the cards
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(inv.face.Min.X)*inv.kx, float64(inv.face.Min.Y)*inv.ky)
-		dst.DrawImage(p.hiFace(inv.facePNG, portraitSize*inv.k), op)
+		dst.DrawImage(p.hiFace(inv.facePNG, int(float64(inv.face.Dx())*inv.kx)), op)
 		if r := inv.panelAt; r.Overlaps(inv.face) { // the tooltip or question stays on top
 			op := &gpu.DrawImageOptions{}
 			op.GeoM.Translate(float64(r.Min.X), float64(r.Min.Y))
@@ -247,35 +249,14 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 // with the readied items in the left box.
 func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bottom int, busy bool) {
 	inv := &p.inv
-
-	oy := max(0, bottom-84-inv.doll.Bounds().Dy()-4) // the portrait and doll on the box's bottom, away from the name and up to three classes
+	inv.face, inv.facePNG = image.Rectangle{}, nil
 	if in.Member >= 0 && in.Member < len(v.Party) {
-		m := v.Party[in.Member]
-		inv.text(m.Name, lx+(lw-8*len(m.Name))/2, 8, white)
-		for i, cl := range strings.Split(m.Class, "/") { // a class a line: three don't fit one
-			inv.text(cl, lx+(lw-8*len(cl))/2, 18+10*i, green)
-		}
-		if f := p.portrait(m); f != nil {
-			r := image.Rect(lx+(lw-portraitSize)/2, 20+oy, lx+(lw+portraitSize)/2, 20+oy+portraitSize)
-			if m.Portrait != nil { // drawn at the window's resolution over the canvas (Draw)
-				inv.face, inv.facePNG = r, m.Portrait
-			} else {
-				draw.Draw(inv.px, r, f, f.Bounds().Min, draw.Src)
-			}
-		}
-		hp := "HP " + strconv.Itoa(m.HP) + "/" + strconv.Itoa(m.MaxHP)
-		inv.text(hp, lx+(lw-8*len(hp))/2, 70+oy, green)
-	}
-	ab := image.Rect(-8, -8, 24, 16) // "<-" and "->" with room round them for the pointer
-	inv.arrows = [2]image.Rectangle{ab.Add(image.Pt(lx+4, 38+oy)), ab.Add(image.Pt(lx+lw-20, 38+oy))}
-	if inv.count > 1 && in.Switch {
-		inv.text("<-", lx+4, 38+oy, green)
-		inv.text("->", lx+lw-20, 38+oy, green)
+		inv.face, inv.facePNG = p.memberPane(inv.px, inv.glyph, v.Party[in.Member], bottom)
 	}
 
 	// the doll and the readied items
 	db := inv.doll.Bounds()
-	inv.dollAt = db.Add(image.Pt(lx+(lw-db.Dx())/2, 84+oy))
+	inv.dollAt = db.Add(image.Pt(lx+(lw-db.Dx())/2, bottom-db.Dy()-4)) // on the box's bottom, under the portrait
 	draw.Draw(inv.px, inv.dollAt, inv.doll, db.Min, draw.Src)
 	for s, it := range in.Doll {
 		box := dollBoxes[s].Add(inv.dollAt.Min)
@@ -291,7 +272,7 @@ func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bott
 
 // onBorder draws texts in their colours, a space apart on black, over
 // the borders with the right end at x (left end when left), at row y.
-func (inv *inventory) onBorder(x, y int, left bool, texts []string, cols []color.RGBA) {
+func onBorder(dst *gpu.Image, glyph func(byte) [8]byte, x, y int, left bool, texts []string, cols []color.RGBA) {
 	n := len(texts) + 1
 	for _, t := range texts {
 		n += len(t)
@@ -301,7 +282,7 @@ func (inv *inventory) onBorder(x, y int, left bool, texts []string, cols []color
 	draw.Draw(px, px.Rect, image.Black, image.Point{}, draw.Src)
 	at := 8
 	for i, t := range texts {
-		drawText(px, inv.glyph, t, at, 0, cols[i])
+		drawText(px, glyph, t, at, 0, cols[i])
 		at += 8 * (len(t) + 1)
 	}
 	m := gpu.NewImage(w, 8)
@@ -312,7 +293,7 @@ func (inv *inventory) onBorder(x, y int, left bool, texts []string, cols []color
 	}
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Translate(float64(x), float64(y))
-	inv.img.DrawImage(m, op)
+	dst.DrawImage(m, op)
 }
 
 // tooltip tells what the pointer is on: a doll slot's item (or what goes

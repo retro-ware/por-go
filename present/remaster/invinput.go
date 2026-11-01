@@ -226,12 +226,6 @@ func (p *Presenter) InventoryMouse(x, y int, down, right bool, wheel float64) {
 				inv.scrolling = sc
 			}
 		}
-		for i, r := range inv.arrows {
-			if inv.hover.In(r) {
-				inv.step(2*i - 1)
-				return
-			}
-		}
 		for _, pn := range []*pane{&inv.list, &inv.wares} {
 			for i, r := range pn.tabs {
 				if inv.hover.In(r) {

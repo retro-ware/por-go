@@ -324,7 +324,8 @@ func (e *Engine) applyItems(a Action) (done bool) {
 	}
 	defer e.ApplyItems(c) // 146F: also reached with nothing selected
 	switch inv := e.inventoryView(c, items); {
-	case a.Kind == ActClose:
+	case a.Kind == ActClose: // extra: the sheet under it goes too (they never stack)
+		e.view.leave = true
 		return true
 	case a.Kind == ActSheet: // extra: back to the sheet under it, also when opened on the inventory (F1-F8)
 		e.view.leave = false

@@ -75,27 +75,11 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 	}
 	draw.Draw(sc.px, sc.px.Rect, image.Black, image.Point{}, draw.Src)
 	text := func(s string, x, y int, c color.RGBA) { drawText(sc.px, note.Glyph, s, x, y, c) }
-	ink := func(i int) color.RGBA { return col(i) }
 
-	// the member: name, classes, portrait, then the bars under it
+	// the member: the pane the inventory shares, then HP and experience under the portrait
 	lx, lw := 8, (leftCells-2)*8
-	centre := func(s string, y int, c color.RGBA) { text(s, lx+(lw-8*len(s))/2, y, c) }
-	centre(m.Name, 12, ink(sp.NameColour))
-	y := 24
-	for _, cl := range strings.Split(m.Class, "/") {
-		centre(cl, y, green)
-		y += 10
-	}
-	face := image.Rect(lx+(lw-portraitSize)/2, y+4, lx+(lw+portraitSize)/2, y+4+portraitSize)
-	var png image.Image
-	if f := p.portrait(m); f != nil {
-		if m.Portrait != nil {
-			png = m.Portrait
-		} else {
-			draw.Draw(sc.px, face, f, f.Bounds().Min, draw.Src)
-		}
-	}
-	y = face.Max.Y + 8
+	face, png := p.memberPane(sc.px, note.Glyph, m, (ch-2)*8)
+	y := face.Max.Y + 6
 	hpY, expY := y+10, y+36
 	hpc := green
 	if m.HP < m.MaxHP {
@@ -111,7 +95,6 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 			e += "/" + strconv.Itoa(sp.Next)
 		}
 		text(e, lx+lw-8*len(e), y+26, green)
-		text("Level "+sp.Levels, lx, y+52, white)
 	}
 
 	// the figures: who, then the abilities beside the combat figures
@@ -122,6 +105,10 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 	if sp.Status != "" {
 		text("Status", rx, row(2), white)
 		text(sp.Status, rx+8*8, row(2), green)
+	}
+	if !sp.Creating {
+		text("Level", rx, row(3), white)
+		text(sp.Levels, rx+8*8, row(3), green)
 	}
 	for j, l := range []string{"STR", "INT", "WIS", "DEX", "CON", "CHA"} {
 		text(l, rx, row(4+j), white)
@@ -175,6 +162,7 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 	var g gpu.GeoM
 	g.Translate(float64(leftCells-1)*8, 0)
 	window(sc.img, t, g, cw-leftCells+1, ch-1, nil)
+	paneName(sc.img, note.Glyph, m.Name)
 	fill := greenFill
 	if m.HP*4 < m.MaxHP {
 		fill = redFill
@@ -187,9 +175,47 @@ func (p *Presenter) drawSheet(dst *gpu.Image, note Note, v engine.View) {
 	if png != nil { // the PNG portrait at the window's resolution, as the cards
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Translate(float64(face.Min.X)*kx, float64(face.Min.Y)*ky)
-		dst.DrawImage(p.hiFace(png, int(float64(portraitSize)*kx)), op)
+		dst.DrawImage(p.hiFace(png, int(float64(face.Dx())*kx)), op)
 	}
 	for _, r := range words { // the clicks, on the window
 		p.winRects = append(p.winRects, image.Rect(int(float64(r.Min.X)*kx), int(float64(r.Min.Y)*ky), int(float64(r.Max.X)*kx), int(float64(r.Max.Y)*ky)))
 	}
+}
+
+// memberPane draws the left pane's member part, the same on the sheet and
+// the inventory so it stays put when Tab switches them: the classes under
+// the top border (the name is on it: paneName), then the portrait as wide
+// as the pane, or as tall as the room above the doll allows (bottom: the
+// pane's inner bottom), aspect kept. A PNG portrait is returned to be
+// drawn at the window's resolution; the paper-doll head is drawn here.
+func (p *Presenter) memberPane(px *image.RGBA, glyph func(byte) [8]byte, m engine.Member, bottom int) (face image.Rectangle, png image.Image) {
+	p.inv.load()
+	lx, lw := 8, (leftCells-2)*8
+	y := 10
+	for _, cl := range strings.Split(m.Class, "/") { // a class a line: three don't fit one
+		drawText(px, glyph, cl, lx+(lw-8*len(cl))/2, y, green)
+		y += 10
+	}
+	n := max(0, min(lw, bottom-y-4-p.inv.doll.Bounds().Dy()-8))
+	face = image.Rect(lx+(lw-n)/2, y+4, lx+(lw+n)/2, y+4+n)
+	f := p.portrait(m)
+	switch {
+	case f == nil:
+	case m.Portrait != nil:
+		png = m.Portrait
+	default: // nearest neighbour: the head's pixels stay sharp
+		b := f.Bounds()
+		for yy := range n {
+			for xx := range n {
+				px.Set(face.Min.X+xx, face.Min.Y+yy, f.At(b.Min.X+xx*b.Dx()/n, b.Min.Y+yy*b.Dy()/n))
+			}
+		}
+	}
+	return face, png
+}
+
+// paneName writes the member's name on the left pane's top border, centred.
+func paneName(dst *gpu.Image, glyph func(byte) [8]byte, name string) {
+	lw := leftCells * 8
+	onBorder(dst, glyph, (lw-8*(len(name)+2))/2, 0, true, []string{name}, []color.RGBA{white})
 }
