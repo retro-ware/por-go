@@ -13,6 +13,7 @@ func (e *Engine) Init() {
 	e.ecl = make([]byte, 0x1E00) // DS:49DE, ECL code at pc-0x9900
 	e.set = 1                    // DS:5376 = 1
 	e.resetAdventure()
+	e.ext.minimap = e.marked(minimapFile) // here, not in New: Cfg.SaveDir is set by then (a test's temp dir)
 	e.font = e.L.Block(e.set.file("8X8D"), 201) // 0709:017C
 	e.clearPrompt()
 	e.prompt(colLightGreen, "Loading...Please Wait")

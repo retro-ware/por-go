@@ -223,7 +223,6 @@ func New(dir string) (*Engine, error) {
 	e.pic.block = -1
 	e.port = portrait{headID: 0xFF, bodyID: 0xFF}
 	e.loadFont()
-	e.ext.minimap = e.marked(minimapFile)
 	return e, nil
 }
 
