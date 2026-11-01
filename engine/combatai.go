@@ -1,5 +1,7 @@
 package engine
 
+import "container/heap"
+
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
@@ -618,51 +620,88 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	}
 }
 
-// aiPathDir (extra) is the first step of the shortest walk (in squares)
-// that brings c next to t around walls and other combatants, or -1 when
-// there is none or c is next to t already. The move budget is not
-// counted: the walk may take more than one round.
+// aiPathDir (extra) is the first step of the cheapest walk (A*, in
+// moves: 2 a step, 3 diagonally, times the ground's cost) that brings c
+// next to t around walls and other combatants, or -1 when there is none
+// or c is next to t already. The move budget is not counted: the walk may
+// take more than one round.
 func (e *Engine) aiPathDir(c, t *Character) int {
 	if t == nil {
 		return -1
 	}
 	tx, ty, n := e.combatX(t), e.combatY(t), e.combatSize(t)
-	next := func(sq [2]int) bool {
-		return sq[0] >= tx-1 && sq[0] <= tx+n && sq[1] >= ty-1 && sq[1] <= ty+n
+	next := func(x, y int) bool { return x >= tx-1 && x <= tx+n && y >= ty-1 && y <= ty+n }
+	h := func(x, y int) int { // octile distance to the squares next to t
+		dx := max(tx-1-x, x-tx-n, 0)
+		dy := max(ty-1-y, y-ty-n, 0)
+		return 2*max(dx, dy) + min(dx, dy)
 	}
 	idx := e.combatIndex(c)
 	ox, oy := e.cpos[idx].x, e.cpos[idx].y
 	defer func() { e.cpos[idx].x, e.cpos[idx].y = ox, oy }()
-	start := [2]int{int(ox), int(oy)}
-	if next(start) {
+	sx, sy := int(ox), int(oy)
+	if next(sx, sy) {
 		return -1
 	}
-	var first [25][50]int8 // the first step there, +1 (0: not reached)
-	first[start[1]][start[0]] = -1
-	queue := make([][2]int, 1, 25*50)
-	queue[0] = start
-	for len(queue) > 0 {
-		at := queue[0]
-		queue = queue[1:]
-		e.cpos[idx].x, e.cpos[idx].y = byte(at[0]), byte(at[1])
+	var cost [25][50]int   // moves to get there, +1 (0: not reached)
+	var first [25][50]int8 // the first step on the way there
+	cost[sy][sx] = 1
+	open := &aiOpen{{x: sx, y: sy, f: h(sx, sy), h: h(sx, sy)}}
+	for open.Len() > 0 {
+		at := heap.Pop(open).(aiNode)
+		if next(at.x, at.y) {
+			return int(first[at.y][at.x])
+		}
+		g := cost[at.y][at.x]
+		if at.f-at.h != g-1 {
+			continue // a cheaper way here was found after this one was queued
+		}
+		e.cpos[idx].x, e.cpos[idx].y = byte(at.x), byte(at.y)
 		for d := 0; d < 8; d++ {
-			to := [2]int{at[0] + dirDX[d], at[1] + dirDY[d]}
-			if to[0] < 0 || to[0] >= 50 || to[1] < 0 || to[1] >= 25 || first[to[1]][to[0]] != 0 {
+			x, y := at.x+dirDX[d], at.y+dirDY[d]
+			if x < 0 || x >= 50 || y < 0 || y >= 25 {
 				continue
 			}
-			if who, g := e.groundAt(c, d); who > 0 || g == 0 || e.groundInfo(g)[0] == 0xFF {
+			who, gr := e.groundAt(c, d)
+			gc := int(e.groundInfo(gr)[0])
+			if who > 0 || gr == 0 || gc == 0xFF {
 				continue
 			}
-			f := first[at[1]][at[0]]
-			if f < 0 {
-				f = int8(d + 1)
+			ng := g + (2+d&1)*max(gc, 1)
+			if cost[y][x] != 0 && cost[y][x] <= ng {
+				continue
 			}
-			if next(to) {
-				return int(f) - 1
+			cost[y][x] = ng
+			if at.x == sx && at.y == sy {
+				first[y][x] = int8(d)
+			} else {
+				first[y][x] = first[at.y][at.x]
 			}
-			first[to[1]][to[0]] = f
-			queue = append(queue, to)
+			hx := h(x, y)
+			heap.Push(open, aiNode{x, y, ng - 1 + hx, hx})
 		}
 	}
 	return -1
+}
+
+// aiNode is a square on aiPathDir's open list, f its moves so far plus
+// the least it can still take.
+type aiNode struct{ x, y, f, h int }
+
+// aiOpen is aiPathDir's open list, cheapest f first (container/heap).
+// ponytail: heap.Push boxes each node (an allocation per push); a typed
+// heap removes that if a profile ever shows it.
+type aiOpen []aiNode
+
+func (o aiOpen) Len() int { return len(o) }
+func (o aiOpen) Less(i, j int) bool {
+	return o[i].f < o[j].f || o[i].f == o[j].f && o[i].h < o[j].h // ties: the nearer first
+}
+func (o aiOpen) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o *aiOpen) Push(x any)   { *o = append(*o, x.(aiNode)) }
+func (o *aiOpen) Pop() any {
+	old := *o
+	n := old[len(old)-1]
+	*o = old[:len(old)-1]
+	return n
 }
