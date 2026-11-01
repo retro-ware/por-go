@@ -247,6 +247,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			p.drawSheet(dst, note, v)
 			return Rect{}
 		}
+		if !ownLayout(v) { // nothing of the engine's page: the page's pictures and text in the remaster's layout
+			return p.drawGeneric(dst, v, note)
+		}
 		r := p.drawPage(dst, v, note)
 		p.scr.at = r
 		p.scr.pw, p.scr.ph = pageSize(v)
@@ -625,4 +628,11 @@ func (p *Presenter) draw3D(dst *gpu.Image, v engine.View, sc *blobber.Scene, not
 	p.animate()
 	p.view.Draw(dst)
 	p.drawMap(dst, v, note.Font)
+}
+
+// ownLayout: v is a page whose screen lays itself out on the page canvas
+// (the special screens, the pagers and maps, the after-combat page, the
+// credits); every other page is drawGeneric's.
+func ownLayout(v engine.View) bool {
+	return pageScreen(v) || modal(v) || v.Results != nil || v.SheetPage != nil || v.Creation != nil || v.Credits
 }
