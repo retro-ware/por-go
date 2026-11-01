@@ -82,6 +82,7 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 			tall += int(float64(bt.Pic.Bounds().Dy())*scale(bt.Pic)) + 10
 		}
 		ent := image.NewRGBA(image.Rect(0, 0, rw, tall))
+		draw.Draw(ent, ent.Rect, image.Black, image.Point{}, draw.Src) // opaque: what is not drawn stays black, not a hole
 		etext := func(s string, x, y int, col int) { drawText(ent, note.Glyph, s, x, y, pal.EGA(col)) }
 		etext(bt.Name, (rw-8*len(bt.Name))/2, 10, inkWhite)
 		d := "Danger " + roman[bt.Danger]
@@ -113,11 +114,11 @@ func (p *Presenter) drawBestiary(dst *gpu.Image, note Note, v engine.View) {
 			etext(l, 4, y, inkGreen)
 			y += 10
 		}
-		view := (ch - 1) * 8
+		view := (ch - 2) * 8 // inside the frame: the entry never scrolls under it
 		c.beastMax = max(0, tall-view)
 		c.beastY = min(max(c.beastY, 0), c.beastMax)
-		draw.Draw(sc.px, image.Rect(rx, 0, rx+rw, view), ent, image.Pt(0, c.beastY), draw.Src)
-		c.beastPane = image.Rect(rx, 0, rx+rw, view)
+		c.beastPane = image.Rect(rx, 8, rx+rw, 8+view)
+		draw.Draw(sc.px, c.beastPane, ent, image.Pt(0, c.beastY), draw.Src)
 	}
 	if note.Show && note.Text != "" {
 		noteLine(sc.px, note, (ch-1)*8)

@@ -286,6 +286,7 @@ func (p *Presenter) Click(x, y int) bool {
 // down: the left button is held; a card pressed while the party is being
 // ordered (Click took it) follows the pointer and goes where it is let go.
 func (p *Presenter) Hover(x, y int, down bool) {
+	p.camp.pointer = image.Pt(x, y)
 	if p.barHover(y, down) {
 		return
 	}

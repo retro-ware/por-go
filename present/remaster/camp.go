@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"slices"
+	"time"
 
 	"gpu"
 
@@ -41,6 +42,8 @@ type campUI struct {
 	beastY    int             // the entry's first pixel row shown
 	beastMax  int             // its last beastY
 	beastPane image.Rectangle // the entry on the window (the wheel scrolls it there)
+	pointer   image.Point     // the pointer on the window (Hover), for the wheel
+	wheeled   time.Time       // the last line the wheel moved the bestiary's list
 	pick      int             // the temple's cure or the shop's item asked about
 	ids       []int           // the spell lists' lines: each one's spell (0: a level's heading, Exit)
 	rows      map[int][2]int  // each screen left for a submenu: its highlighted row and first line shown, for back
