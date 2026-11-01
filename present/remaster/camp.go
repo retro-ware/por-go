@@ -325,7 +325,7 @@ func (p *Presenter) appraiseItems(a engine.Appraise, back func()) (string, []men
 		if a.CanKeep {
 			it = append(it, menuRow{"Keep", 'K', func() { p.send(engine.ActKeep, 1) }})
 		}
-		return fmt.Sprintf("The %s is Valued at %d gp.", what, a.Valued), append(it, menuRow{"Sell", 'S', func() { p.send(engine.ActKeep, 0) }})
+		return fmt.Sprintf("The %s is Valued at %s.", what, price(engine.Money{Gold: a.Valued})), append(it, menuRow{"Sell", 'S', func() { p.send(engine.ActKeep, 0) }})
 	}
 	var it []menuRow
 	if a.Gems > 0 {

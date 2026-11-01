@@ -247,7 +247,7 @@ func (pn *pane) clamp() { pn.top = max(0, min(pn.top, pn.n-pn.rows)) }
 // drawPane draws items as lines of icon and name (and price) from x0 to x1,
 // listTop to bottom, the highlighted one (sel) in blue, with a scroll bar
 // when they do not fit.
-func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, price, busy bool, x0, x1, bottom int) {
+func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, priced, busy bool, x0, x1, bottom int) {
 	pn.n, pn.rows = len(items), max(1, (bottom-listTop)/rowH)
 	for i, it := range items { // keep a newly highlighted line in sight (the wheel scrolls freely)
 		if it.Index == sel && sel != pn.seen {
@@ -263,9 +263,9 @@ func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, 
 	}
 	pn.at = image.Rect(x0, listTop, tr, listTop+pn.rows*rowH)
 	pw := 0 // the prices' column
-	if price {
+	if priced {
 		for _, it := range items {
-			pw = max(pw, 8*len(shortMoney(it.Price))+8)
+			pw = max(pw, 8*len(price(it.Price))+8)
 		}
 	}
 	chars := (tr - x0 - rowH - 4 - pw) / 8
@@ -282,8 +282,8 @@ func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, 
 			tc = red
 		}
 		inv.text(upTo(it.Name, chars), x0+rowH+4, y+(rowH-8)/2, tc)
-		if price {
-			m := shortMoney(it.Price)
+		if priced {
+			m := price(it.Price)
 			inv.text(m, tr-4-8*len(m), y+(rowH-8)/2, col(14))
 		}
 		inv.lines = append(inv.lines, hit{r: r, item: *it, ware: ware, whole: len(strings.TrimSpace(it.Name)) <= chars})
@@ -298,9 +298,19 @@ func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, 
 	}
 }
 
-// shortMoney is a price as "12g 5c".
-func shortMoney(s string) string {
-	return strings.NewReplacer(" gold and ", "g ", " gold", "g", " copper", "c").Replace(s)
+// price is every price and purse the screens show: "12g", with " 5c" only
+// when there is copper.
+func price(m engine.Money) string {
+	s := strconv.Itoa(m.Gold) + "g"
+	if m.Copper != 0 {
+		s += " " + strconv.Itoa(m.Copper) + "c"
+	}
+	return s
+}
+
+// withGold is a price list's title with the party's gold after it.
+func withGold(title string, gold int) string {
+	return title + " (party " + price(engine.Money{Gold: gold}) + ")"
 }
 
 // wareAt is the shop's ware with Index i, nil if none.
@@ -595,10 +605,10 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		box = []string{"Your " + strings.TrimSpace(it.Name), "will be gone forever.", "", "Drop it?"}
 	case inv.ask != nil && inv.ask.Kind == engine.ActBuy:
 		if w := wareAt(in, inv.ware); w != nil {
-			box = []string{strings.TrimSpace(w.Name), "costs " + w.Price + ".", "", "Buy it?"}
+			box = []string{strings.TrimSpace(w.Name), "costs " + price(w.Price) + ".", "", "Buy it?"}
 		}
 	case inv.ask != nil && it != nil:
-		box = []string{"I'll give you " + it.Price, "for your " + strings.TrimSpace(it.Name) + ".", "", "Is it a deal?"}
+		box = []string{"I'll give you " + price(it.Price), "for your " + strings.TrimSpace(it.Name) + ".", "", "Is it a deal?"}
 	}
 	if it := itemAt(in, inv.sel); box != nil && it != nil && it.Scribe && inv.ask.Kind != engine.ActBuy { // ovr20:0D70's question
 		box = append([]string{"Someone was going to", "scribe from it.", ""}, box...)
@@ -616,7 +626,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		inv.onBorder(lx, 0, true, []string{"Loot"}, []color.RGBA{white})
 	case shop:
 		inv.onBorder(lx, 0, true, []string{"Shop"}, []color.RGBA{white})
-		inv.onBorder(rr, (ch-2)*8-8, false, []string{strconv.Itoa(in.Gold) + "g", strconv.Itoa(in.Copper) + "c"}, []color.RGBA{col(14), col(6)})
+		inv.onBorder(rr, (ch-2)*8-8, false, []string{"party " + price(engine.Money{Gold: in.Gold, Copper: in.Copper})}, []color.RGBA{col(14)})
 	}
 	inv.onBorder(rx, 0, true, []string{"Party Items"}, []color.RGBA{white})
 	inv.onBorder(rr, 0, false, []string{fill}, []color.RGBA{fillc})
@@ -748,9 +758,9 @@ func (inv *inventory) tooltip(t [3]*gpu.Image, in *engine.Inventory) {
 		case l.ware && in.Loot:
 			describe(&l.item, "")
 		case l.ware:
-			describe(&l.item, "Costs "+l.item.Price)
+			describe(&l.item, "Costs "+price(l.item.Price))
 		case in.Sell:
-			describe(&l.item, "Sells for "+l.item.Price)
+			describe(&l.item, "Sells for "+price(l.item.Price))
 		default:
 			describe(&l.item, "")
 		}

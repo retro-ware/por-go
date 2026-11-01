@@ -73,3 +73,14 @@ func TestEditCursor(t *testing.T) {
 		t.Fatalf("%q", l)
 	}
 }
+
+func TestPrice(t *testing.T) {
+	for m, want := range map[engine.Money]string{{}: "0g", {Gold: 12}: "12g", {Gold: 12, Copper: 5}: "12g 5c", {Copper: 50}: "0g 50c"} {
+		if got := price(m); got != want {
+			t.Errorf("price(%v) = %q, want %q", m, got, want)
+		}
+	}
+	if got := withGold("Heal", 7); got != "Heal (party 7g)" {
+		t.Errorf("withGold = %q", got)
+	}
+}

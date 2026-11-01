@@ -357,7 +357,7 @@ func (e *Engine) trainingView() *Training {
 	if c == nil {
 		return &Training{Why: "No one to train"}
 	}
-	v := &Training{Name: c.Name(), Price: trainPrice}
+	v := &Training{Name: c.Name(), Price: trainPrice, Gold: int(e.purse.gold)}
 	if e.learning {
 		for _, s := range e.learnable(c) {
 			v.Learn = append(v.Learn, BookSpell{ID: int(s), Name: e.spellName(int(s)), Level: spellGroups[e.spellRec(s, 1)]})

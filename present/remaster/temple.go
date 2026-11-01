@@ -19,7 +19,7 @@ func (p *Presenter) templeItems(v engine.View) (string, []menuRow) {
 	case templeHeal:
 		var it []menuRow
 		for i, cu := range t.Cures {
-			it = append(it, menuRow{fmt.Sprintf("%-20s %5d", cu.Name, cu.Price), 0, func() {
+			it = append(it, menuRow{fmt.Sprintf("%-20s %6s", cu.Name, price(engine.Money{Gold: cu.Price})), 0, func() {
 				c.pick = i
 				if cu.Needed {
 					c.screen = templePay
@@ -29,11 +29,11 @@ func (p *Presenter) templeItems(v engine.View) (string, []menuRow) {
 				c.sel = 0
 			}})
 		}
-		return name + ", how can we help you?", append(it, menuRow{"Back", 'B', to(campMain)})
+		return withGold(name+", how can we help you?", t.Gold), append(it, menuRow{"Back", 'B', to(campMain)})
 	case templeNot:
 		return name + " " + cure.Not + " Cast cure anyway?", []menuRow{{"Yes", 'Y', func() { c.screen, c.sel = templePay, 0 }}, {"No", 'N', to(templeHeal)}}
 	case templePay:
-		return fmt.Sprintf("%s will only cost %d gold pieces. Pay for cure? (%d gold)", cure.Name, cure.Price, t.Gold), []menuRow{
+		return withGold(fmt.Sprintf("%s will only cost %s. Pay for cure?", cure.Name, price(engine.Money{Gold: cure.Price})), t.Gold), []menuRow{
 			{"Yes", 'Y', func() { p.sendX(engine.ActTempleCure, -1, c.pick); c.screen = templeHeal }},
 			{"No", 'N', to(templeHeal)}}
 	case appraise:

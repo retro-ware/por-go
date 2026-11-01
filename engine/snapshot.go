@@ -433,6 +433,7 @@ type Training struct {
 	Why     string      // the hall refuses: why
 	Becomes []string    // "a level 3 Fighter" (ActTrain trains)
 	Price   int         // gold
+	Gold    int         // the party's gold
 	Learn   []BookSpell // a mage level was gained: the spell for the book (ActLearn X), chosen before leaving
 }
 

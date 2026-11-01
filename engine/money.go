@@ -29,6 +29,9 @@ func (p *purse) addCopper(n uint32) {
 	p.copper %= 200
 }
 
+// Money is an amount the front end shows (as "12g 50c").
+type Money struct{ Gold, Copper int }
+
 // moneyText is gold and copper as "12 gold" / "12 gold and 50 copper".
 func moneyText(gold, copper uint32) string {
 	switch {

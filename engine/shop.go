@@ -1,7 +1,5 @@
 package engine
 
-import "strconv"
-
 // The shop, ported from ovr07. ECL COMBAT with the shop flag (game +0x6D8)
 // set runs Shop instead of a fight; the goods are the treasure list.
 
@@ -28,10 +26,10 @@ func (e *Engine) shopWares(v *Inventory, c *Character) {
 	for i, it := range e.run.treasure {
 		e.ItemName(nil, it, 0, 0, false, false)
 		x := InvItem{Index: i, Name: it.Name(), Type: byte(it.Type), Count: int(it.Count), Slot: dollSlot(e, c, it) >= 0,
-			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it, e.readiedLike(c, it)), Price: strconv.Itoa(int(it.Price)) + " gold",
+			Wrong: !e.canUseItem(c, it), Look: e.itemLines(it, e.readiedLike(c, it)), Price: Money{Gold: int(it.Price)},
 			Kind: itemKind(e, c, it)}
 		if e.snap.loot {
-			x.Price = ""
+			x.Price = Money{}
 		}
 		for _, w := range it.Words {
 			if w != 0 {

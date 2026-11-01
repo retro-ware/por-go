@@ -21,6 +21,6 @@ func (p *Presenter) trainItems(v engine.View) (string, []menuRow) {
 	case t.Why != "":
 		return t.Why, []menuRow{leave}
 	}
-	return fmt.Sprintf("%s will become %s. Training costs %d gold. Do you wish to train?", t.Name, strings.Join(t.Becomes, " and "), t.Price),
+	return withGold(fmt.Sprintf("%s will become %s. Training costs %s. Do you wish to train?", t.Name, strings.Join(t.Becomes, " and "), price(engine.Money{Gold: t.Price})), t.Gold),
 		[]menuRow{{"Yes", 'Y', func() { p.send(engine.ActTrain, -1) }}, {"No", 'N', leave.do}}
 }

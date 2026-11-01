@@ -20,14 +20,14 @@ func (p *Presenter) shopItems(v engine.View) (string, []menuRow) {
 		for i, u := range s.Unknown {
 			it = append(it, menuRow{u.Owner + ": " + u.Name, 0, func() { c.pick, c.screen, c.sel = i, shopDeal, 0 }})
 		}
-		return fmt.Sprintf("Identify for %dg (%d gold)", s.IDPrice, s.Gold), append(it, menuRow{"Back", 'B', to(campMain)})
+		return withGold("Identify for "+price(engine.Money{Gold: s.IDPrice}), s.Gold), append(it, menuRow{"Back", 'B', to(campMain)})
 	case shopDeal:
 		if c.pick >= len(s.Unknown) {
 			c.screen = shopID
 			return p.shopItems(v)
 		}
 		u := s.Unknown[c.pick]
-		return fmt.Sprintf("Identify %s for %d gold. Is it a deal?", u.Name, s.IDPrice), []menuRow{
+		return withGold(fmt.Sprintf("Identify %s for %s. Is it a deal?", u.Name, price(engine.Money{Gold: s.IDPrice})), s.Gold), []menuRow{
 			{"Yes", 'Y', func() { p.sendX(engine.ActIdentify, u.Member, u.Item); c.screen = shopID }},
 			{"No", 'N', to(shopID)}}
 	case appraise:
