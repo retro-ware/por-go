@@ -421,6 +421,7 @@ func (e *Engine) opVMenu() {
 		e.WriteVar(dst, uint16(index))
 		e.clearPane()
 	})
+	e.eclWait.ask.Menu.Prompt = prompt // (extra) the remaster shows it over the list, not in a text box
 }
 
 // opIf = ovr04:0B52 (IF= IF<> IF< IF> IF<= IF>=): skip the next

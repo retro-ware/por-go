@@ -367,7 +367,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	shown := v.Adventure && v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
 	ask := typing(v) != nil && typing(v).Prompt != ""                                         // a script's input: its question and the line in one pop-up, no text box
-	shown = shown && !ask
+	shown = shown && !ask && !(askList(v) != nil && askMenu(v).Prompt != "") // a vertical menu's prompt is the list's own title
 	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
@@ -400,7 +400,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.menuRects = p.menuRects[:0]
 	} else if askList(v) != nil && askMenu(v) != nil { // a list and its question (list.go)
 		p.menu = false
-		p.drawList(dst, note.Glyph, v, mk, cx, max(b.Dy()/2-int(mk*float64(min(len(askList(v)), listRows)+len(askMenu(v).Items)+6)*4), picBottom+int(pk*4)))
+		rows := len(titleLines(askMenu(v).Prompt)) + min(len(askList(v)), listRows) + len(askMenu(v).Items) + 4 // drawMenu's: the title, a blank, the lines, a blank, the options, the border
+		top := max(b.Dy()/2-int(mk*float64(rows)*4), picBottom+int(pk*4))
+		p.drawList(dst, note.Glyph, v, mk, cx, max(0, min(top, b.Max.Y-int(mk*float64(rows)*8)))) // all of it on screen, over the picture's edge if it must
 	} else if screenUp(v) && spellPick(v) == nil { // camp (camp.go), the temple, the shop, training
 		p.menu = false
 		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)), b.Max.Y)
