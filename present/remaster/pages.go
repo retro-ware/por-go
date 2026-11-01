@@ -461,16 +461,16 @@ func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 	}
 	for i := range engine.IconParts {
 		for sh := range 2 {
-			frame := c.ink[8]
+			frame := pal.EGA(8) // the page's greys, not the combat palette's
 			if i == ed.Part && sh == ed.Shade {
-				frame = c.ink[15]
+				frame = pal.EGA(15)
 			}
 			swatch(ed.Parts.X1+3*sh, ed.Parts.Y1+i, ed.Swatch[i][sh], frame)
 		}
 	}
 	for i, n := range ed.Colours {
 		if n >= 0 {
-			swatch(ed.Palette.X1+2*(i%8), ed.Palette.Y1+i/8, ed.PaletteInk[i], c.ink[8])
+			swatch(ed.Palette.X1+2*(i%8), ed.Palette.Y1+i/8, ed.PaletteInk[i], pal.EGA(8))
 		}
 	}
 }

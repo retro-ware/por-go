@@ -277,8 +277,8 @@ func (p *Presenter) mainKey(k uint16, v engine.View) bool {
 	}
 	i, back, ok := menuNav(k, sel, rowKeys(items))
 	switch {
-	case back && (p.ask || p.mainSub):
-		p.mainPick(v, n-1) // No, Back
+	case back && (p.ask || p.mainSub || v.Hall):
+		p.mainPick(v, n-1) // No, Back, Leave the Hall
 	case back:
 		return false
 	case i >= 0:
