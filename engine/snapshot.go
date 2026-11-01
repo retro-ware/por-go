@@ -343,6 +343,7 @@ type Picker struct {
 // Slots is the save slot screen: the saves, newest first.
 type Slots struct {
 	Names, Times []string
+	Levels       []int  // the highest level of a member of each slot's party (0 unknown)
 	CanSave      bool   // ActSave is taken (else loading only, or not now)
 	LoadOnly     bool   // the party menu's Load
 	Current      string // the last save ("" none): the list starts on it

@@ -107,8 +107,14 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		if sl.CanSave {
 			it = append(it, menuRow{"New Slot", 'N', func() { p.typeLine("Save as", "", 20, engine.ActSave, 0) }})
 		}
+		w, lc := slotCols(max(v.Cells.X, 40))
 		for i, name := range sl.Names {
-			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
+			lv := ""
+			if sl.Levels[i] > 0 {
+				lv = fmt.Sprintf("%3d", sl.Levels[i])
+			}
+			row := fmt.Sprintf("%-*s%-*s%*s", lc, upTo(name, lc-1), w-lc-len(sl.Times[i]), lv, len(sl.Times[i]), sl.Times[i])
+			it = append(it, menuRow{row, 0, func() {
 				if !sl.CanSave {
 					named(engine.ActLoad, name)()
 					return
@@ -331,6 +337,13 @@ func (p *Presenter) screenKeys(v engine.View, items []menuRow) []byte {
 		k[i] = r.key
 	}
 	return k
+}
+
+// slotCols is the slot rows' text width on a page cols wide and the
+// level column's start (5 wide, "Level"); the date ends the row.
+func slotCols(cols int) (w, lc int) {
+	w = cols - 6
+	return w, w/2 - 2
 }
 
 // slotList draws the save slots' list on the page itself, inside the
