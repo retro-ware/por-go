@@ -36,28 +36,27 @@ func mapPx(dst *gpu.Image) int {
 	}))
 }
 
-// fitScale is unit times size s (one of blobber.UISteps) when ok takes it,
-// else the largest whole scale under it that ok takes (so a size too big
-// for the screen still grows as far as it fits, its pixels square), else
-// the largest smaller step, else the smallest.
+// fitScale is unit (K) times size s (one of blobber.UISteps, whole) when
+// ok takes it, else the largest smaller whole step of unit ok takes, else
+// (a box too big for the window even at K) the largest whole scale under
+// unit ok takes, its pixels square, else halves of 1 down to an eighth.
 func fitScale(unit, s float64, ok func(k float64) bool) float64 {
-	if s <= 0 {
-		s = 1
+	s = max(1, math.Round(s)) // a size saved before as a fraction: 1
+	for n := s; n >= 1; n-- {
+		if ok(unit * n) {
+			return unit * n
+		}
 	}
-	if k := unit * s; ok(k) {
-		return k
-	}
-	for k := math.Ceil(unit*s) - 1; k >= 1; k-- {
+	for k := math.Ceil(unit) - 1; k >= 1; k-- {
 		if ok(k) {
 			return k
 		}
 	}
-	for i := len(blobber.UISteps) - 1; i >= 0; i-- {
-		if t := blobber.UISteps[i]; t < s && ok(unit*t) {
-			return unit * t
-		}
+	k := 1.0
+	for k > 0.125 && !ok(k) { // a window too small for it even at 1: halves, as far as it fits
+		k /= 2
 	}
-	return unit * blobber.UISteps[0]
+	return k
 }
 
 // mapSide is View.Map's side in pixels.

@@ -342,8 +342,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	pk := min(k, max(1, float64(min(int(float64(b.Dy())/2/(ph+th/2)), b.Dx()/pal.W))))
 	// the text box and the menus at their sizes (Esc, Graphics), as far as they fit between the cards
 	bw, bh := float64(b.Dx()), float64(b.Dy())
-	tk := fitScale(pk, blobber.Settings.Text, func(k float64) bool { return k*float64(txt.Pixels().Dx()) <= bw && k*th <= bh/2 })
-	mk := fitScale(pk, blobber.Settings.Menu, func(k float64) bool { return k*28*8 <= bw && k*12*8 <= bh/2 })
+	tk := fitScale(k, 1, func(k float64) bool { return k*float64(txt.Pixels().Dx()) <= bw && k*th <= bh/2 })
+	mk := fitScale(k, 1, func(k float64) bool { return k*28*8 <= bw && k*12*8 <= bh/2 })
 	cx, cy := (b.Min.X+b.Max.X)/2, b.Dy()/2
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
@@ -449,12 +449,12 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.drawMenu(dst, note.Glyph, askMenu(v).Prompt, lines, keys, nil, p.sel, mk, cx, top)
 	}
 	if note.Show { // the toast: pageImage's bottom line (noteLine) on a black band along the very bottom of the screen, no border
-		h := int(pk * 8)
+		h := int(k * 8) // at K, as every glyph
 		dst.SubImage(image.Rect(b.Min.X, b.Max.Y-h, b.Max.X, b.Max.Y)).(*gpu.Image).Fill(color.Black)
-		op := &gpu.DrawImageOptions{}
-		op.GeoM.Scale(pk, pk)
-		op.GeoM.Translate(float64(cx)-pk*float64(pal.W)/2, float64(b.Max.Y-h))
 		pw, _ := pageSize(v)
+		op := &gpu.DrawImageOptions{}
+		op.GeoM.Scale(k, k)
+		op.GeoM.Translate(float64(cx)-k*float64(pw)/2, float64(b.Max.Y-h))
 		m := image.NewRGBA(image.Rect(0, 0, pw, 8))
 		noteLine(m, note, 0)
 		dst.DrawImage(upload(&p.pg.toast, m), op)
@@ -555,11 +555,13 @@ func (p *Presenter) animate() {
 	}
 }
 
-// scale is the largest whole factor the classic screen fits dst at (at
-// least 1): pixels stay square.
+// scale is K, the UI's one glyph cell size over 8 (CLAUDE.md): the largest
+// whole factor the inventory's invW x invH canvas fits dst at (at least
+// 1). Every glyph and ribbon tile is 8*K window pixels; a larger window
+// gives more cells, not bigger ones.
 func scale(dst *gpu.Image) float64 {
 	b := dst.Bounds()
-	return float64(max(1, min(b.Dx()/pal.W, b.Dy()/pal.H)))
+	return float64(max(1, min(b.Dx()/invW, b.Dy()/invH)))
 }
 
 // window is every window's frame: a cw by ch cell box at g on dst, bg

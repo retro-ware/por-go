@@ -79,7 +79,7 @@ func (p *Presenter) drawIdentified(dst *gpu.Image, glyph func(byte) [8]byte, it 
 	window(img, p.border.tiles, gpu.GeoM{}, cw, ch, nil)
 	b := dst.Bounds()
 	vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0})
-	k := fitScale(scale(dst), 2, func(k float64) bool { // twice the menus' size, as far as it fits
+	k := fitScale(scale(dst), 1, func(k float64) bool { // K, as far as it fits
 		return k*float64(cw*8) <= float64(b.Dx()) && k*float64(ch*8) <= float64(b.Dy())
 	})
 	op := &gpu.DrawImageOptions{}

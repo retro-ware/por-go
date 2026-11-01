@@ -521,20 +521,18 @@ func step(v, lo, hi, s float64, d int) float64 {
 	return math.Round(math.Max(lo, math.Min(hi, v))/s) * s
 }
 
-// UISteps are the sizes the host's screen elements come in: fractions down, whole multiples up.
-var UISteps = []float64{0.125, 0.25, 0.5, 1, 2, 3, 4}
+// UISteps are the sizes the host's screen elements come in: whole steps of
+// the host's one glyph cell size (K), never fractions.
+var UISteps = []float64{1, 2, 3, 4}
 
 // uiLine is a Graphics line stepping *v through UISteps (Enter: round to the smallest past the largest).
 func uiLine(label string, v *float64) menuLine {
 	return menuLine{label, func(*Game) string {
-		if *v < 1 {
-			return fmt.Sprintf("1/%.0fx", 1 / *v)
-		}
 		return fmt.Sprintf("%.0fx", *v)
 	}, func(_ *Game, d int) {
 		i := slices.Index(UISteps, *v)
 		if i < 0 {
-			i = 3
+			i = 0
 		}
 		switch {
 		case d < 0:
@@ -584,8 +582,6 @@ func (g *Game) menuOptions() []menuLine {
 			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
 			uiLine("Minimap size", &Settings.Map),
 			uiLine("Picture box", &Settings.Pic),
-			uiLine("Menus", &Settings.Menu),
-			uiLine("Text box", &Settings.Text),
 			exit,
 		}
 	case "Audio":
@@ -907,7 +903,7 @@ type Options struct {
 	MapOff                            bool    // the host's minimap: hidden
 	PartyRow                          bool    // the host's portraits in one row along the bottom instead of down the sides
 	MapAlpha                          float64 // the minimap's opacity, minAlpha to 1
-	Cards, Map, Pic, Menu, Text       float64 // the host's portraits, minimap, picture box, menus and text box: one of UISteps times their normal size (the host shrinks them as far as the screen needs)
+	Cards, Map, Pic                   float64 // the host's portraits, minimap and picture box: one of UISteps times their normal size (the host shrinks them as far as the screen needs); text boxes and menus have no size of their own
 	Deskew                            bool    // the host's combat maps on a square grid (walls straight) instead of the original's perspective
 	Zoom                              float64 // the host's battle camera: how far one wheel step zooms, minZoom to maxZoom times 15 percent
 	Music, Effects, Voice             float64 // the host's volumes, 0 to 1
@@ -924,7 +920,7 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options the view starts with; set them before NewView (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Menu: 1, Text: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true, Steps: true}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true, Steps: true}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line (it toggles
 	// the voice first when toggle, then reports whether it is on), the

@@ -265,14 +265,11 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 	}
 	b := screen.Bounds()
 	k0 := float64(max(1, min(int(scale(screen)), b.Dx()/((w+4)*8))))
-	if yesNo(keys) {
-		k0 *= 2 // a question: twice the menus' size, as far as it fits
-	}
 	rows := len(lines) + 2
 	if title != "" {
 		rows += len(titleLines(title)) + 1
 	}
-	k := fitScale(k0, blobber.Settings.Menu, func(k float64) bool { // the Menus size (Esc, Graphics), as far as the box fits
+	k := fitScale(k0, 1, func(k float64) bool { // K, as far as the box fits
 		return k*float64((w+4)*8) <= float64(b.Dx()) && k*float64((rows+1)*8) <= float64(b.Dy())
 	})
 	h := int(float64(rows*8) * k)
@@ -372,7 +369,7 @@ const cardGap, cardRows = 8, 4
 // cardBase is the cards' size 1 (Esc, Graphics, Portraits): the largest
 // whole scale where a column of four fits under the smallest map.
 func cardBase(dst *gpu.Image) int {
-	return max(1, min(dst.Bounds().Dx()/480, dst.Bounds().Dy()/360, (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(cardH+cardGap))))
+	return max(1, min(int(scale(dst)), (dst.Bounds().Dy()-mapSide-2-cardGap)/(cardRows*(cardH+cardGap)))) // K, as far as a column of cards fits
 }
 
 // cardScale is the cards' scale: cardBase times the Portraits size, as far
