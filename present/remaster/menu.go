@@ -145,6 +145,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		}
 		items[i], hk[i] = hotText(items[i], key)
 	}
+	title, foot, _ := strings.Cut(title, string(rune(inkFoot)))
 	rows, hot, icon := items, hk, make([]image.Image, len(items))
 	copy(icon, icons)
 	if title != "" { // a long question on two lines, so the box stays narrow
@@ -170,7 +171,8 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		}
 		w, at[r], ch = max(w, x), ch-2, ch+rh(r)
 	}
-	pad := 2 // a border and a blank column each side
+	w = max(w, len(foot)) // the footer sits on the bottom border, inside its corners
+	pad := 2              // a border and a blank column each side
 	if p.menuTight {
 		pad = 1 // the border only (the creation's drop-downs, on the sheet)
 	}
@@ -250,6 +252,31 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		tiles = p.border.grey
 	}
 	window(p.menuImg, tiles, gpu.GeoM{}, cw, ch, nil)
+	if foot != "" { // gold on black, right on the bottom border
+		fw := len(foot) * 8
+		if gpu.Sized(&p.footImg, fw, 8) {
+			p.footBuf = make([]byte, fw*8*4)
+		}
+		for i := 0; i < len(p.footBuf); i += 4 {
+			p.footBuf[i], p.footBuf[i+1], p.footBuf[i+2], p.footBuf[i+3] = 0, 0, 0, 255
+		}
+		gold := rgb(14)
+		for n := 0; n < len(foot); n++ {
+			g := glyph(foot[n])
+			for y := 0; y < 8; y++ {
+				for b := 0; b < 8; b++ {
+					if g[y]&(0x80>>b) != 0 {
+						o := (y*fw + n*8 + b) * 4
+						p.footBuf[o], p.footBuf[o+1], p.footBuf[o+2] = gold.R, gold.G, gold.B
+					}
+				}
+			}
+		}
+		p.footImg.WritePixels(p.footBuf)
+		fo := &gpu.DrawImageOptions{}
+		fo.GeoM.Translate(float64((cw-1)*8-fw), float64((ch-1)*8))
+		p.menuImg.DrawImage(p.footImg, fo)
+	}
 
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
@@ -267,6 +294,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 const (
 	inkGold = '\x01'
 	inkRed  = '\x02'
+	inkFoot = '\x03' // the rest of the title goes on the bottom border, in gold
 )
 
 // visLen is s's length in cells, its colour marks left out.

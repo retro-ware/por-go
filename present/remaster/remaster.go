@@ -86,6 +86,8 @@ type Presenter struct {
 	pointer              image.Point              // the mouse, as Hover last saw it (keys move the highlight while it rests)
 	menuImg              *gpu.Image               // the vertical menu, drawn at scale 1
 	menuBuf              []byte                   // its pixels
+	footImg              *gpu.Image               // the menu's footer on its bottom border
+	footBuf              []byte                   // its pixels
 	battle               battle.Presenter         // the combat map in 3D
 	mapBottom            int                      // screen rows above this are the 3D map
 	fight                bool                     // the last frame was the 3D combat map

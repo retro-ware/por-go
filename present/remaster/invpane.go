@@ -127,9 +127,10 @@ func price(m engine.Money) string {
 	return s
 }
 
-// withGold is a price list's title with the party's gold after it.
+// withGold is a price list's title with the party's gold on the box's
+// bottom border (inkFoot).
 func withGold(title string, gold int) string {
-	return title + " (party " + price(engine.Money{Gold: gold}) + ")"
+	return title + string(rune(inkFoot)) + " Party " + price(engine.Money{Gold: gold}) + " "
 }
 
 // wareAt is the shop's ware with Index i, nil if none.
@@ -247,3 +248,8 @@ func (inv *inventory) fill(r image.Rectangle, c color.RGBA) {
 
 // upTo is s in at most n characters.
 func upTo(s string, n int) string { return s[:min(len(s), max(0, n))] }
+
+// gold is a price in a question's title, in gold (inkGold).
+func gold(n int) string {
+	return string(rune(inkGold)) + price(engine.Money{Gold: n}) + string(rune(inkGold))
+}
