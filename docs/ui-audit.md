@@ -384,3 +384,37 @@ Other limits:
 - **Start** opens the options in combat but, as Enter, picks inside them; it does not close them as XCOM's does.
 - **XCOM deviations:** Back is the battle log, not an overview. L3 has no combat use (it stays the previous member). The cursor steps a square a press, as the keys do, not analog. Guard stands in for overwatch.
 - **The full map's label prompt** ("Label: ") stays inline on the page's prompt row, with its colon.
+
+## 8. Bindings dispatch and file layout (2026-11-01)
+
+### Dispatch from the table
+
+The binding table (present/remaster/bindings.go) is now the keyboard's source too, not only the help's and the pad's. Each row lists the key codes it binds (`codes`), each with a typed action, `input.Act` (package present/input). `actOf(k)` looks a key up in the rows outside combat, `combatAct(k)` in the Combat rows, `keyOf(a)` goes back from an Act to a key (the mouse and the wheel use it). Every handler (keyAct, memberKey, globalKey, menuNav, exploreKey, campKey, listKey, sheetKey, mainKey, pickerKey, screenKey, inventoryKey, fightKey, battle.Key, editKey's control keys) switches on the Act; the BIOS key codes and the `KeyPad*` constants live only in bindings.go. Behaviour is unchanged: no key was added or dropped.
+
+Raw input, on purpose:
+- Typed characters (editKey: printable ASCII, digits only for numbers).
+- Hotkeys, which are row data: a menu's letters and digits (`menuNav`, `digitKeys`), the command bar's letters, the inventory's menu words, the battle bar's letters and digits 1-0. The bar's End and Cancel are the table's Backspace and Esc (`hotkeys.act`).
+- Digits a screen does not offer are the keypad's keys: `keypadActs` in bindings.go.
+
+Help changes: the camp spell lists' `+ - Bksp` (one more, one less) gets its own Menus row; it was a key the help did not show.
+
+`TestKeyDispatch` checks that every key a row binds resolves to that row's Act in its context (no row shadows another), that every bound Act is handled by some screen, and that no presenter file outside bindings.go names a key code. The battle tests pass Acts.
+
+### File layout
+
+The presenter files over ~600 lines were split by concern, moves only (each new file starts with a one-line header):
+
+| File | Lines | Holds |
+|---|---|---|
+| remaster/remaster.go | 543 (was 1300) | Presenter, the frame (Draw, draw), Tick, window and resize, options |
+| remaster/dispatch.go | 386 | Key, key, Click, Hover: input routing to the screens |
+| remaster/view3d.go | 173 | the 3D view's overlays: map pane, scenes, door-open, boxes |
+| remaster/cards.go | 464 (was 303) | the party cards and portraits |
+| remaster/fight.go | 376 (was 311) | combat screen, now with the spell pick |
+| remaster/inventory.go | 244 (was 1163) | inventory state, carried stack, decisions |
+| remaster/invpane.go | 249 | item lists: tabs, panes, prices, icons, text |
+| remaster/invdraw.go | 408 | the screen: menu words, doll, panel, tooltips |
+| remaster/invinput.go | 301 | the inventory's keys and mouse |
+| battle/battle.go | 505 (was 734) | the tabletop: types, Draw, sync, figures |
+| battle/control.go | 246 | keys, cursor, targets, camera, picking |
+| input/input.go | 70 | the Acts |
