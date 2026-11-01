@@ -42,8 +42,7 @@ type campUI struct {
 	byDanger bool   // the bestiary's order
 	beast    string // the entry shown
 	pick     int    // the temple's cure or the shop's item asked about
-	icon     *gpu.Image
-	iconSrc  image.Image
+	icon     srcImage
 	rows     map[int][2]int // each screen left for a submenu: its highlighted row and first line shown, for back
 }
 
@@ -207,19 +206,13 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 			}
 		}
 		if icon != nil {
-			if icon != p.camp.iconSrc {
-				if p.camp.icon != nil {
-					p.camp.icon.Deallocate()
-				}
-				p.camp.icon, p.camp.iconSrc = gpu.NewImageFromImage(icon), icon
-			}
 			s := k * 3 // the icon's pixels at three times the text's: its aspect kept
 			w, h := int(s*float64(icon.Bounds().Dx())), int(s*float64(icon.Bounds().Dy()))
 			dst.SubImage(image.Rect(cx-w/2, top, cx-w/2+w, top+h)).(*gpu.Image).Fill(pal.EGA(8)) // on grey: its black parts show
 			op := &gpu.DrawImageOptions{}
 			op.GeoM.Scale(s, s)
 			op.GeoM.Translate(float64(cx-w/2), float64(top))
-			dst.DrawImage(p.camp.icon, op)
+			dst.DrawImage(p.camp.icon.of(icon), op)
 			top += int(s*float64(icon.Bounds().Dy())) + int(k*4)
 		}
 	}

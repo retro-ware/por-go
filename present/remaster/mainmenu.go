@@ -33,18 +33,12 @@ func (p *Presenter) drawMain(dst *gpu.Image, v engine.View) {
 		p.drawMainUI(dst, v)
 		return
 	}
-	if p.backdropSrc != v.Backdrop {
-		if p.backdrop != nil {
-			p.backdrop.Deallocate()
-		}
-		p.backdrop, p.backdropSrc = gpu.NewImageFromImage(v.Backdrop), v.Backdrop
-	}
 	bb := v.Backdrop.Bounds()
 	k := min(float64(b.Dx())/float64(bb.Dx()), float64(b.Dy())/float64(bb.Dy())) // fit, keeping the aspect: the window has its shape (SetWindowAspect); the full screen gets black bars rather than a cropped or stretched picture
 	op := &gpu.DrawImageOptions{}
 	op.GeoM.Scale(k, k)
 	op.GeoM.Translate((float64(b.Dx())-float64(bb.Dx())*k)/2, (float64(b.Dy())-float64(bb.Dy())*k)/2)
-	dst.DrawImage(p.backdrop, op)
+	dst.DrawImage(p.backdrop.of(v.Backdrop), op)
 	a := p.mainFade()
 	dim := uint8(titleDim * 255 * min(max(a, 0), 1)) // the picture darkens as the menu comes, so the lettering reads
 	vector.DrawFilledRect(dst, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: dim}, false)
@@ -169,16 +163,10 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 	gap := int(16 * mk)
 	top := (b.Dy() - lh - gap - int(menuH)) / 2
 	if v.Logo != nil {
-		if p.logoSrc != v.Logo {
-			if p.logo != nil {
-				p.logo.Deallocate()
-			}
-			p.logo, p.logoSrc = gpu.NewImageFromImage(v.Logo), v.Logo
-		}
 		op := &gpu.DrawImageOptions{}
 		op.GeoM.Scale(float64(lk), float64(lk))
 		op.GeoM.Translate(float64((b.Dx()-v.Logo.Bounds().Dx()*lk)/2), float64(top))
-		dst.DrawImage(p.logo, op)
+		dst.DrawImage(p.logo.of(v.Logo), op)
 	}
 	p.mainSel = min(max(p.mainSel, 0), len(lines)-1)
 	p.drawMenu(dst, p.glyph, "", lines, keys, nil, p.mainSel, mk, b.Dx()/2, top+lh+gap)

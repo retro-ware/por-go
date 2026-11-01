@@ -31,93 +31,91 @@ type Presenter struct {
 
 	pauseFrom time.Time // a script's pause (AskPause) began; zero: none up
 
-	view        *blobber.View
-	scenes      map[string]*blobber.Scene   // parsed maps by name
-	shown       string                      // the scene the view shows
-	last        time.Time                   // when the animation last advanced
-	ticks       float64                     // animation time not yet run, in 1/60 s ticks
-	border      borders                     // the game's window border
-	bars        *gpu.Image                  // bars.png
-	cardImgs    []*gpu.Image                // the cards, drawn at scale 1...
-	cardKeys    []cardKey                   // ...and what each shows
-	faceImgs    map[image.Image]*gpu.Image  // the faces on the GPU
-	hiFaces     map[image.Image]*gpu.Image  // the PNG portraits at the cards' window resolution
-	labels      map[string]*gpu.Image       // card labels in the game's font
-	glyph       func(byte) [8]byte          // the game's font
-	main        bool                        // the main menu is up (mainmenu.go)
-	ask         bool                        // ... with a question over it
-	logo        *gpu.Image                  // View.Logo on the GPU ...
-	logoSrc     image.Image                 // ... uploaded from this
-	backdrop    *gpu.Image                  // View.Backdrop on the GPU ...
-	backdropSrc image.Image                 // ... uploaded from this
-	mainAt      time.Time                   // when the main menu first showed the backdrop
-	layer       *gpu.Image                  // the main menu drawn for its fade in
-	grid        [2]int                      // the text cells the window holds, as last told to the engine (ActResize)
-	gridAge     int                         // frames since
-	cards       []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
-	faces       map[image.Image]image.Image // card art cropped from each paper-doll head
-	inside      bool                        // the view has the inside ceiling
-	active      bool                        // the last frame was drawn remastered
-	menu        bool                        // the vertical menu is open
-	menuFor     string                      // the menu it opened for (menuID): another menu arriving closes it, so one key never answers two menus
-	sel         int                         // its highlighted item
-	asked       string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
-	answered    string                      // the text pane under the last question: once it is answered, that text is done
-	mapImg      *gpu.Image                  // View.Map on the GPU
-	mapSrc      *engine.MapSquares          // the View.Map it holds
-	menuRects   []image.Rectangle           // the vertical menu's items on screen, as last drawn
-	scrollBars  []barHit                    // the scroll bars drawn this frame (scrollbar.go)
-	barDrag     *barHit                     // the bar whose thumb the pointer holds
-	logTop      int                         // the battle Log's first line shown
-	winRects    []image.Rectangle           // the Esc menu's lines on screen, as last drawn
-	mainSel     int                         // the main menu's highlight
-	mainBack    int                         // the main menu's row that opened the Party submenu: Exit goes back to it
-	mainSub     bool                        // the main menu shows the Party submenu (the character functions)
-	mainAsk     int                         // the main menu's question up (askQuit ..)
-	noMenu      bool                        // nothing to pick: any click answers
-	pointer     image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
-	menuImg     *gpu.Image                  // the vertical menu, drawn at scale 1
-	menuBuf     []byte                      // its pixels
-	battle      battle.Presenter            // the combat map in 3D
-	mapBottom   int                         // screen rows above this are the 3D map
-	fight       bool                        // the last frame was the 3D combat map
-	inv         inventory                   // the inventory screen (inventory.go)
-	fightView   *engine.Battle              // the combat map last drawn
-	replay      replay                      // the fight's events still to play
-	fightLog    bool                        // the battle Log is up (fight.go)
-	fightCard   image.Rectangle             // the active member's card (fight.go): left click the inventory, right click the sheet
-	rowsImg     *gpu.Image                  // the combat rows, drawn at scale 1
-	rowsKey     string                      // what they show
-	typing      bool                        // a line is being typed (input.go) ...
-	typed       string                      // ... and reads this ...
-	typedCur    int                         // ... its cursor here
-	cardHover   int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
-	dragFrom    int                         // 1 + the card pressed while the party is being ordered (View.Ordering), it follows the pointer to the card it is dropped on (0 none)
-	dragAt      image.Point                 // where the pointer is while a card is dragged
-	ordering    bool                        // View.Ordering
-	ctx         int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
-	ctxSel      int                         // its highlighted line
-	ctxActs     []engine.ActKind            // its lines' actions, for the member
-	ctxKeys     []byte                      // its lines' hotkeys (the first letters)
-	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
-	ctxBox      image.Rectangle             // where its box went: the spell pick opens there
-	pick        []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
-	pickAt      image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
-	pickSel     int                         // the pick list's highlight ...
-	picking     bool                        // ... reset when it opens
-	command     bool                        // the party explores (View.Exploring), as last drawn
-	cmds        []command                   // the command menu's commands (explore.go), as last drawn
-	camp        campUI                      // the camp screens (camp.go)
-	shownView   engine.View                 // the View last drawn
-	list        listUI                      // View.Ask (AskList)'s highlight (list.go)
-	pageMenu    bool                        // a page's question is up (list.go)
-	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
-	tipBuf      []byte                      // its pixels
-	scr         screenUI                    // the page screens' questions (screens.go)
-	screen      image.Rectangle             // the window, as last drawn
-	confirmFor  string                      // the yes/no question (View.Ask, AskConfirm) up, as last drawn ...
-	confirmSel  int                         // ... its highlight (Yes 0, No 1) ...
-	confirmAt   []image.Rectangle           // ... and its rows on screen
+	view       *blobber.View
+	scenes     map[string]*blobber.Scene   // parsed maps by name
+	shown      string                      // the scene the view shows
+	last       time.Time                   // when the animation last advanced
+	ticks      float64                     // animation time not yet run, in 1/60 s ticks
+	border     borders                     // the game's window border
+	bars       *gpu.Image                  // bars.png
+	cardImgs   []*gpu.Image                // the cards, drawn at scale 1...
+	cardKeys   []cardKey                   // ...and what each shows
+	faceImgs   map[image.Image]*gpu.Image  // the faces on the GPU
+	hiFaces    map[image.Image]*gpu.Image  // the PNG portraits at the cards' window resolution
+	labels     map[string]*gpu.Image       // card labels in the game's font
+	glyph      func(byte) [8]byte          // the game's font
+	main       bool                        // the main menu is up (mainmenu.go)
+	ask        bool                        // ... with a question over it
+	logo       srcImage                    // View.Logo on the GPU
+	backdrop   srcImage                    // View.Backdrop on the GPU
+	mainAt     time.Time                   // when the main menu first showed the backdrop
+	layer      *gpu.Image                  // the main menu drawn for its fade in
+	grid       [2]int                      // the text cells the window holds, as last told to the engine (ActResize)
+	gridAge    int                         // frames since
+	cards      []image.Rectangle           // the party's cards on screen in the 3D view, as last drawn (none elsewhere)
+	faces      map[image.Image]image.Image // card art cropped from each paper-doll head
+	inside     bool                        // the view has the inside ceiling
+	active     bool                        // the last frame was drawn remastered
+	menu       bool                        // the vertical menu is open
+	menuFor    string                      // the menu it opened for (menuID): another menu arriving closes it, so one key never answers two menus
+	sel        int                         // its highlighted item
+	asked      string                      // the question menu last opened by itself (menuID); send clears it on a pick, so the same menu back after one (a refusal, back from Browse) opens again
+	answered   string                      // the text pane under the last question: once it is answered, that text is done
+	mapImg     *gpu.Image                  // View.Map on the GPU
+	mapSrc     *engine.MapSquares          // the View.Map it holds
+	menuRects  []image.Rectangle           // the vertical menu's items on screen, as last drawn
+	scrollBars []barHit                    // the scroll bars drawn this frame (scrollbar.go)
+	barDrag    *barHit                     // the bar whose thumb the pointer holds
+	logTop     int                         // the battle Log's first line shown
+	winRects   []image.Rectangle           // the Esc menu's lines on screen, as last drawn
+	mainSel    int                         // the main menu's highlight
+	mainBack   int                         // the main menu's row that opened the Party submenu: Exit goes back to it
+	mainSub    bool                        // the main menu shows the Party submenu (the character functions)
+	mainAsk    int                         // the main menu's question up (askQuit ..)
+	noMenu     bool                        // nothing to pick: any click answers
+	pointer    image.Point                 // the mouse, as Hover last saw it (keys move the highlight while it rests)
+	menuImg    *gpu.Image                  // the vertical menu, drawn at scale 1
+	menuBuf    []byte                      // its pixels
+	battle     battle.Presenter            // the combat map in 3D
+	mapBottom  int                         // screen rows above this are the 3D map
+	fight      bool                        // the last frame was the 3D combat map
+	inv        inventory                   // the inventory screen (inventory.go)
+	fightView  *engine.Battle              // the combat map last drawn
+	replay     replay                      // the fight's events still to play
+	fightLog   bool                        // the battle Log is up (fight.go)
+	fightCard  image.Rectangle             // the active member's card (fight.go): left click the inventory, right click the sheet
+	rowsImg    *gpu.Image                  // the combat rows, drawn at scale 1
+	rowsKey    string                      // what they show
+	typing     bool                        // a line is being typed (input.go) ...
+	typed      string                      // ... and reads this ...
+	typedCur   int                         // ... its cursor here
+	cardHover  int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
+	dragFrom   int                         // 1 + the card pressed while the party is being ordered (View.Ordering), it follows the pointer to the card it is dropped on (0 none)
+	dragAt     image.Point                 // where the pointer is while a card is dragged
+	ordering   bool                        // View.Ordering
+	ctx        int                         // 1 + the card whose context menu a right click opened (0 none): drawCardTip
+	ctxSel     int                         // its highlighted line
+	ctxActs    []engine.ActKind            // its lines' actions, for the member
+	ctxKeys    []byte                      // its lines' hotkeys (the first letters)
+	ctxRects   []image.Rectangle           // its lines on screen, as last drawn
+	ctxBox     image.Rectangle             // where its box went: the spell pick opens there
+	pick       []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
+	pickAt     image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
+	pickSel    int                         // the pick list's highlight ...
+	picking    bool                        // ... reset when it opens
+	command    bool                        // the party explores (View.Exploring), as last drawn
+	cmds       []command                   // the command menu's commands (explore.go), as last drawn
+	camp       campUI                      // the camp screens (camp.go)
+	shownView  engine.View                 // the View last drawn
+	list       listUI                      // View.Ask (AskList)'s highlight (list.go)
+	pageMenu   bool                        // a page's question is up (list.go)
+	tipImg     *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
+	tipBuf     []byte                      // its pixels
+	scr        screenUI                    // the page screens' questions (screens.go)
+	screen     image.Rectangle             // the window, as last drawn
+	confirmFor string                      // the yes/no question (View.Ask, AskConfirm) up, as last drawn ...
+	confirmSel int                         // ... its highlight (Yes 0, No 1) ...
+	confirmAt  []image.Rectangle           // ... and its rows on screen
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -540,4 +538,21 @@ func (p *Presenter) pace(v engine.View) {
 		p.send(engine.ActOK, 0)
 		p.pauseFrom = time.Time{}
 	}
+}
+
+// srcImage is a picture on the GPU, uploaded again only when its source changes.
+type srcImage struct {
+	img *gpu.Image
+	src image.Image
+}
+
+// of is src on the GPU.
+func (s *srcImage) of(src image.Image) *gpu.Image {
+	if src != s.src {
+		if s.img != nil {
+			s.img.Deallocate()
+		}
+		s.img, s.src = gpu.NewImageFromImage(src), src
+	}
+	return s.img
 }

@@ -77,6 +77,7 @@ func (p *Presenter) setup(note Note, v engine.View) {
 	p.border.update(v.Border)
 	if p.faceImgs == nil {
 		p.faceImgs, p.hiFaces, p.labels = map[image.Image]*gpu.Image{}, map[image.Image]*gpu.Image{}, map[string]*gpu.Image{}
+		p.faces = map[image.Image]image.Image{}
 	}
 }
 
@@ -383,9 +384,6 @@ func (p *Presenter) portrait(m engine.Member) image.Image {
 		return f
 	}
 	f := fitSquare(m.Portrait, portraitSize)
-	if p.faces == nil {
-		p.faces = map[image.Image]image.Image{}
-	}
 	p.faces[m.Portrait] = f
 	return f
 }
@@ -410,15 +408,13 @@ func (p *Presenter) hiFace(src image.Image, n int) *gpu.Image {
 func fitSquare(src image.Image, n int) *image.RGBA {
 	b := src.Bounds()
 	f := image.NewRGBA(image.Rect(0, 0, n, n))
-	w, h := n, b.Dy()*n/max(b.Dx(), 1)
-	if h > n {
-		w, h = b.Dx()*n/max(b.Dy(), 1), n
-	}
+	at := fit(b, f.Rect)
 	var sc xdraw.Scaler = xdraw.CatmullRom
 	if s := wholeScale(b.Dx(), b.Dy(), n, n); s > 0 {
-		w, h, sc = s*b.Dx(), s*b.Dy(), xdraw.NearestNeighbor
+		w, h := s*b.Dx(), s*b.Dy()
+		at, sc = image.Rect((n-w)/2, n-h, (n-w)/2+w, n), xdraw.NearestNeighbor
 	}
-	sc.Scale(f, image.Rect((n-w)/2, n-h, (n-w)/2+w, n), src, b, draw.Src, nil)
+	sc.Scale(f, at, src, b, draw.Src, nil)
 	return f
 }
 
@@ -456,9 +452,6 @@ func (p *Presenter) face(head image.Image) image.Image {
 	draw.Draw(f, f.Bounds(), image.Black, image.Point{}, draw.Src)
 	c := lit.Min.Add(lit.Max).Div(2) // centre on centre; a part wider than the square is cut evenly
 	draw.Draw(f, f.Bounds(), head, c.Sub(image.Pt(n/2, n/2)), draw.Over)
-	if p.faces == nil {
-		p.faces = map[image.Image]image.Image{}
-	}
 	p.faces[head] = f
 	return f
 }
