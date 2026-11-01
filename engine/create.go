@@ -544,7 +544,7 @@ func (e *Engine) creationView() *Creation {
 		}
 		v.Stats[i] = CellRect{1, 7 + i, x1, 7 + i}
 	}
-	v.Head, v.Body = CellRect{28, 1, winRight, 5}, CellRect{28, 6, winRight, 11}
+	v.Head, v.Body = CellRect{winRight - 10, 1, winRight, 5}, CellRect{winRight - 10, 6, winRight, 11} // the portrait box, against the right border
 	v.Icon = CellRect{sheetIconCol(0), sheetIconRow, sheetIconCol(1) + 2, sheetIconRow + 2}
 	return v
 }
