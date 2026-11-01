@@ -167,11 +167,16 @@ func screenPage(v engine.View) *cellPage {
 	}
 	if v.IconEditor != nil && v.Picker == nil { // the editor alone, as at the creation: nothing of the page under it (camp's roster, frames, minimap); its swatches stay
 		var pics []engine.Picture
+		grey := v.Ink[inkBlack] // the combat palette shows black dark grey (for the icon's black): the page black as every screen, the poses' ground grey (iconEditor)
 		for _, pc := range v.Pictures {
+			if pc.Fill && pc.Colour == grey {
+				pc.Colour = color.RGBA{A: 255}
+			}
 			if !pc.Border {
 				pics = append(pics, pc)
 			}
 		}
+		v.Ink[inkBlack] = color.RGBA{A: 255}
 		v.Pictures, v.Pane, v.SheetPage, v.ViewText, v.Roster, v.Minimap = pics, nil, nil, nil, false, false
 	}
 	c := newCellPage(v)
@@ -510,6 +515,7 @@ func (c *cellPage) picker(pk *engine.Picker) {
 func (c *cellPage) iconEditor(ed *engine.IconEditor) {
 	c.border(1, 1, c.cols-2, c.rows-3) // the bar under it
 	for p, r := range ed.PoseAt {
+		c.pics = append(c.pics, engine.Picture{At: r.Pixels(), Fill: true, Colour: c.ink[8]}) // the pose on grey: its black parts show
 		if ed.Poses[p] != nil {
 			c.overs = append(c.overs, overlay{Img: ed.Poses[p], At: r.Pixels(), Crisp: true})
 		}
