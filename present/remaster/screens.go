@@ -265,8 +265,10 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		}
 		r := p.cellRect(*a)
 		ky := s.at.H / float64(s.ph)
-		cx := int(math.Round(float64(r.Min.X) - k*16 + k*float64((w+4)*8)/2)) // the first row's text on the field's, to the pixel: the box's border and blank column left of it
+		cx := int(math.Round(float64(r.Min.X) - k*8 + k*float64((w+2)*8)/2)) // the first row's text on the field's, to the pixel: the box's border left of it, no blank column
 		rects := slices.Clone(p.menuRects)
+		p.menuTight = true
+		defer func() { p.menuTight = false }()
 		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], off[s.top:end], sel, k, cx, int(math.Round(float64(r.Min.Y)-ky*8)))
 		p.winRects, p.menuRects = slices.Clone(p.menuRects), rects
 		p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)

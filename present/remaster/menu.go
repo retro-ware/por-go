@@ -170,7 +170,11 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		}
 		w, at[r], ch = max(w, x), ch-2, ch+rh(r)
 	}
-	cw := w + 4
+	pad := 2 // a border and a blank column each side
+	if p.menuTight {
+		pad = 1 // the border only (the creation's drop-downs, on the sheet)
+	}
+	cw := w + 2*pad
 	if gpu.Sized(&p.menuImg, cw*8, ch*8) {
 		p.menuBuf = make([]byte, cw*8*ch*8*4)
 	}
@@ -185,7 +189,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		p.menuBuf[o], p.menuBuf[o+1], p.menuBuf[o+2] = c.R, c.G, c.B
 	}
 	for r, s := range rows {
-		y0, x0 := at[r]*8+8, 2
+		y0, x0 := at[r]*8+8, pad
 		if r == sel {
 			for y := y0; y < y0+rh(r)*8; y++ { // the text selection: a blue ground
 				for x := 8; x < (cw-1)*8; x++ {

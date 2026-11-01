@@ -105,6 +105,7 @@ type Presenter struct {
 	campImg    []*gpu.Image                // drawCampMenus: each member's menu image
 	campBuf    [][]byte                    // and its pixels
 	menuGrey   bool                        // drawMenu's border grey: a menu without the focus
+	menuTight  bool                        // drawMenu without the blank column inside the border
 	ctxRects   []image.Rectangle           // its lines on screen, as last drawn
 	ctxBox     image.Rectangle             // where its box went: the spell pick opens there
 	pick       []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
