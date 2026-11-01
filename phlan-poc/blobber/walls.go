@@ -7,7 +7,6 @@ import (
 	"image"
 	"image/png"
 	"os"
-	"sort"
 	"strings"
 
 	"gpu"
@@ -60,20 +59,6 @@ func paintedWalls() map[byte]string {
 			out[l[0][0]] = l[1]
 		}
 	}
-	return out
-}
-
-// Flats lists the painted floor or ceiling textures (kind "floor" or "ceiling"): the NAME of every
-// assets/walls/<kind>_NAME.png, which a map picks with a "floor NAME" or "ceiling NAME" line.
-func Flats(kind string) []string {
-	var out []string
-	entries, _ := wallFS.ReadDir("assets/walls")
-	for _, e := range entries {
-		if n, ok := strings.CutPrefix(e.Name(), kind+"_"); ok {
-			out = append(out, strings.TrimSuffix(n, ".png"))
-		}
-	}
-	sort.Strings(out)
 	return out
 }
 

@@ -11,7 +11,7 @@ import (
 // here reads the keyboard but the Esc menu (UpdateOptions).
 //
 // ponytail: one View per process; the scene and camera live in package
-// state shared with Run's Game. Make them per-View when two views must
+// state. Make them per-View when two views must
 // draw at once.
 type View struct{ g *Game }
 
@@ -24,7 +24,6 @@ func NewView() (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	g.follow = true
 	return &View{g}, nil
 }
 
@@ -171,7 +170,6 @@ func (v *View) PointOptions(line int, click, back bool, wheel int) {
 // Update advances the animation by one tick (1/60 s).
 func (v *View) Update() {
 	v.g.time += 1.0 / 60
-	updateEnts(v.g.time)
 	v.g.tween()
 }
 

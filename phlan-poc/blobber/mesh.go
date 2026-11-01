@@ -13,7 +13,6 @@ package blobber
 import (
 	"image/color"
 	"math"
-	"sort"
 
 	"gpu"
 	"gpu/vector"
@@ -458,25 +457,8 @@ func (g *Game) frameUniforms(c cam, vp gpu.Mat4) {
 		}
 	}
 	u = append(u, warm[0], warm[1], warm[2], 0)
-	u = append(u, 0, 0, 0, 0, 0, 0, 0, 0) // face, uvOff: per draw
-	g.lights = g.lights[:0]
-	for _, e := range ents {
-		if e.light > 0 {
-			g.lights = append(g.lights, e)
-		}
-	}
-	if len(g.lights) > 4 {
-		d := func(e *ent) float64 { return (e.x-c.x)*(e.x-c.x) + (e.z-c.z)*(e.z-c.z) }
-		sort.Slice(g.lights, func(i, j int) bool { return d(g.lights[i]) < d(g.lights[j]) })
-	}
-	for i := 0; i < 4; i++ {
-		if i < len(g.lights) {
-			e := g.lights[i]
-			u = append(u, float32(e.x), float32(e.y), float32(e.z), float32(e.light), float32(e.lr), float32(e.lg), float32(e.lb), 0)
-		} else {
-			u = append(u, 0, 0, 0, 0, 0, 0, 0, 0)
-		}
-	}
+	u = append(u, 0, 0, 0, 0, 0, 0, 0, 0)  // face, uvOff: per draw
+	u = append(u, make([]float32, 4*8)...) // the moving lights: none
 	g.uni = u
 }
 
@@ -570,25 +552,6 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 			glows = append(glows, glowSrc{t.x, t.y, t.z, t.w, t.col, 0.6 * fl, 0.75, false})
 		}
 	}
-	for _, e := range ents { // billboards, only in cells a ray reached
-		if !vis[[2]int{int(math.Floor(e.x)), int(math.Floor(e.z))}] {
-			continue
-		}
-		if e.light > 0 { // a moving light (en_FloatingLight): its glow and light circles below and above
-			col := [3]float64{e.lr, e.lg, e.lb}
-			if e.kind == Fireball {
-				col = [3]float64{1, 0.45, 0.15}
-			}
-			glows = append(glows, glowSrc{e.x, e.y, e.z, 0.2 + e.size*3, col, 1, 0.85, false})
-			r := math.Min(1.5, 0.6*e.light+0.3)
-			glows = append(glows, glowSrc{e.x, 0.499, e.z, r, col, 0.30, 0.85, true})
-			if !openSky {
-				glows = append(glows, glowSrc{e.x, -0.499, e.z, r, col, 0.25, 0.85, true})
-			}
-			continue
-		}
-		board(e.x, e.y+e.size/2, e.z, e.size, e.size, e.tex, biasFront, modeShaded)
-	}
 	g.glows = glows
 	glowQuads := func(flat bool) [2]int {
 		first := len(dyn)
@@ -664,46 +627,6 @@ func (g *Game) draw3D(screen *gpu.Image, c cam) {
 		}
 		k := o.Size / math.Max(float64(b.Dx()), float64(b.Dy()))
 		board(ox, 0.5+o.Sink, oz, k*float64(b.Dx()), k*float64(b.Dy()), o.Img, biasFront, modeShaded)
-	}
-	crowd := map[[2]int]int{} // monsters per cell, so a group stands side by side
-	for _, a := range actors {
-		crowd[[2]int{a.x, a.y}]++
-	}
-	placed := map[[2]int]int{}
-	for _, a := range actors { // monsters: floor-standing billboards
-		cell := [2]int{a.x, a.y}
-		slot := formation(crowd[cell], placed[cell])
-		placed[cell]++
-		ax, az := a.pos()
-		if !vis[[2]int{int(math.Floor(ax)), int(math.Floor(az))}] {
-			continue
-		}
-		if a.x == g.x && a.y == g.y { // in melee: as far in front of our centre as we stand behind it, whichever way we face
-			ax, az = g.tx+c.fwx*2*eyeBack, g.tz+c.fwz*2*eyeBack
-		}
-		ax, az = ax-c.fwx*eyeBack, az-c.fwz*eyeBack // mirror the eye: we stand at the back of our cell, the monster at the front of its, facing us
-		ax, az = ax+c.rtx*slot[0]+c.fwx*slot[1], az+c.rtz*slot[0]+c.fwz*slot[1]
-		img := a.img()
-		b := img.Bounds()
-		size := a.sheet.Size
-		if size == 0 {
-			size = 0.6
-		}
-		k := math.Min(size/float64(b.Dy()), math.Max(1, size)/float64(b.Dx()))
-		if a.sheet.density { // one pixel density for every painted monster; poses keep their own extent
-			k = 1.0 / PxPerTile
-		}
-		board(ax, 0.5, az, k*float64(b.Dx()), k*float64(b.Dy()), img, biasMonster, modeShaded)
-	}
-	if sign.tex != nil {
-		d := dirs[sign.dir]
-		fwd, y0 := eyeBack, 0.0 // mid-cell, centred at eye height
-		b := sign.tex.Bounds()
-		wid, hgt := float64(b.Dx())/400, float64(b.Dy())/400 // 400 texture px per tile
-		if sign.top {
-			fwd, y0 = 0.48, -0.5+0.04+hgt/2 // just off the wall ahead, hanging from the top
-		}
-		board(float64(sign.x)+0.5+float64(d[0])*fwd, y0+hgt/2, float64(sign.y)+0.5+float64(d[1])*fwd, wid, hgt, sign.tex, biasFront, modeUnlit)
 	}
 	// the walls in view: the faces that face the eye (the shader discards the others, after sampling
 	// them) and reach into the view, in the order they were built: their textures' soft edges blend

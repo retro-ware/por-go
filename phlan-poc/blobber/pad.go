@@ -112,6 +112,3 @@ var Repeats = func(d int) bool { return d > 20 && d%4 == 0 }
 func KeyRepeated(k gpu.Key) bool {
 	return KeyJustPressed(k) || Repeats(gpu.KeyPressDuration(k)) || Repeats(padDur[k])
 }
-
-// KeyPressed reports a key held on the keyboard or a gamepad.
-func KeyPressed(k gpu.Key) bool { return !shooting && gpu.IsKeyPressed(k) || padHeld[k] }

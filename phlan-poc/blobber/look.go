@@ -77,7 +77,7 @@ func (g *Game) darkMul() float64 {
 	if openSky {
 		return 0
 	}
-	return 1 / (g.torch + math.Min(1.5, lightLeft)*0.5)
+	return 1 / g.torch
 }
 
 // flicker is the torch's brightness factor: a few incommensurate sines, so it never visibly repeats.

@@ -19,19 +19,10 @@ func TestCore(t *testing.T) {
 		t.Fatal("mesh shader:", err)
 	}
 	g := &Game{x: 1, y: 1, dir: 0, smooth: true, t: 1, tx: 1.5, tz: 1.5}
-	g.act(gpu.KeyW) // wall to the north: no move
-	if g.moving {
-		t.Fatal("walked into a wall")
-	}
-	g.act(gpu.KeyQ) // turn N->W wraps angle the short way
+	g.startMove(1, 1, 3, 0) // turn N->W wraps angle the short way
 	if !g.moving || math.Abs(g.ta-g.fa) > math.Pi+1e-9 {
 		t.Fatalf("turn tween wrong: moving=%v fa=%v ta=%v", g.moving, g.fa, g.ta)
 	}
-	g.act(gpu.KeyS)
-	if g.queued != gpu.KeyS {
-		t.Fatal("input not queued while moving")
-	}
-	g.queued = 0
 	for i := 0; i < 30 && g.moving; i++ { // key not held: brakes onto the facing within half a second
 		g.tween()
 	}
