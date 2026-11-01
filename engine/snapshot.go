@@ -73,6 +73,7 @@ type Member struct {
 	Exp      int         // extra: experience, what the level took (LevelExp) and what the next takes (NextExp; 0: it can rise no further)
 	LevelExp int
 	NextExp  int
+	Spells   string // extra: a spellcaster's spells ready over its slots ("0/3", the overview); "" otherwise
 	Memo     string // extra: in camp a spellcaster's spells ready over its slots ("0/3"); "" otherwise
 }
 

@@ -224,13 +224,20 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 		const title = "Party"
 		str((cols-1-len(title))/2, 1, 15, title)
 		y := 3
+		// Spells and XP to the next level only where the window has room for them
 		str(2, y, 15, "Name")
-		str(18, y, 15, "HP")
-		str(26, y, 15, "AC")
-		str(30, y, 15, "Status")
+		str(19, y, 15, "HP")
+		str(27, y, 15, "AC")
+		str(31, y, 15, "Status")
+		if cols >= 50 {
+			str(43, y, 15, "Spells")
+		}
+		if cols >= 61 {
+			str(50, y, 15, "XP to next")
+		}
 		y += 2
 		for _, c := range v.Party {
-			if y > 0x14 {
+			if y > rows-9 { // above the purse
 				break
 			}
 			colour := 11
@@ -245,9 +252,19 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 			case c.HP*2 < c.MaxHP:
 				hpc = 14
 			}
-			str(18, y, hpc, strconv.Itoa(c.HP)+"/"+strconv.Itoa(c.MaxHP))
-			str(26, y, 10, strconv.Itoa(c.AC))
-			str(30, y, 10, c.Status)
+			str(19, y, hpc, strconv.Itoa(c.HP)+"/"+strconv.Itoa(c.MaxHP))
+			str(27, y, 10, strconv.Itoa(c.AC))
+			str(31, y, 10, c.Status)
+			if cols >= 50 {
+				str(43, y, 10, c.Spells)
+			}
+			if cols >= 61 {
+				xp := "-"
+				if c.NextExp > 0 {
+					xp = strconv.Itoa(max(c.NextExp-c.Exp, 0))
+				}
+				str(50, y, 10, xp)
+			}
 			w := 0 // the hit point bar under the name, 32 steps
 			if c.MaxHP > 0 && c.HP > 0 {
 				w = min((c.HP*0x20+c.MaxHP-1)/c.MaxHP, 0x20)
@@ -257,11 +274,12 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 			fill(image.Rect(px, py, px+w*4, py+3), col(hpc))
 			y += 2
 		}
-		if p := v.Purse; p != nil {
-			str(2, rows-4, 14, fmt.Sprintf("%d gold  %d copper  %d gems  %d jewelry", p.Gold, p.Copper, p.Gems, p.Jewelry))
+		if p := v.Purse; p != nil { // a blank row between the pairs and before the items
+			str(2, rows-7, 14, fmt.Sprintf("%d gold  %d copper", p.Gold, p.Copper))
+			str(2, rows-5, 14, fmt.Sprintf("%d gems  %d jewelry", p.Gems, p.Jewelry))
 			str(2, rows-3, 11, fmt.Sprintf("Party items %d/%d", p.Items, p.Slots))
 		}
-		prompt("press any key to continue", 15)
+		// no prompt: the frame runs round the whole page, any key still closes it
 	}
 }
 
