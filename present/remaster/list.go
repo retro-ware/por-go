@@ -55,9 +55,9 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	}
 	l.top = max(0, min(l.top, n-listRows))
 	var lines []string
-	var keys []byte
+	keys := slices.Clone(p.listKeys(v)[l.top:min(n, l.top+listRows)])
 	for _, ln := range askList(v)[l.top:min(n, l.top+listRows)] {
-		lines, keys = append(lines, ln.Text), append(keys, 0)
+		lines = append(lines, ln.Text)
 	}
 	lines, keys = append(lines, ""), append(keys, 0)
 	for _, o := range l.opts {
@@ -69,6 +69,17 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 		sel = &l.sel
 	}
 	p.menuBar(dst, p.menuRects, n, min(n, listRows), &l.top, sel, k)
+}
+
+// listKeys are the hotkeys of the list's lines then its options: the
+// options' letters, digits on the lines that can be picked.
+func (p *Presenter) listKeys(v engine.View) []byte {
+	n := len(askList(v))
+	keys := make([]byte, n, n+len(p.list.opts))
+	for _, o := range p.list.opts {
+		keys = append(keys, askMenu(v).Items[o].Key)
+	}
+	return digitKeys(keys, func(i int) bool { return i < n && !askList(v)[i].Off })
 }
 
 // listRow is the drawn row of the highlight.
@@ -101,10 +112,7 @@ func (p *Presenter) listKey(k uint16, v engine.View) bool {
 	if k >= KeyF1 && k <= KeyF1+7<<8 && k&0xFF == 0 {
 		return false
 	}
-	keys := make([]byte, n, n+len(l.opts))
-	for _, o := range l.opts {
-		keys = append(keys, askMenu(v).Items[o].Key)
-	}
+	keys := p.listKeys(v)
 	i, back, ok := menuNav(k, &l.sel, keys)
 	d := 1
 	if k == 0x4800 || k == 0x4900 || k == 0x4F00 {
@@ -175,9 +183,9 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 	if sheetUp(v) {
 		p.pageMenu = true
 		items := p.sheetItems(v)
-		lines, keys := make([]string, len(items)), make([]byte, len(items))
+		lines, keys := make([]string, len(items)), rowKeys(items)
 		for i, it := range items {
-			lines[i], keys[i] = it.text, it.key
+			lines[i] = it.text
 		}
 		p.sel = min(max(p.sel, 0), len(lines)-1)
 		p.keyWindow(dst, "View:", lines, keys, p.sel, true)

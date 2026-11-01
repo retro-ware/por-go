@@ -20,13 +20,33 @@ type menuRow struct {
 	do   func()
 }
 
-// rowKeys are the rows' hotkeys.
+// rowKeys are the rows' hotkeys: a row that can be picked and has no
+// letter gets a digit (digitKeys).
 func rowKeys(rows []menuRow) []byte {
 	k := make([]byte, len(rows))
 	for i, r := range rows {
 		k[i] = r.key
 	}
-	return k
+	return digitKeys(k, func(i int) bool { return rows[i].do != nil })
+}
+
+// digitKeys gives the rows i of keys with no hotkey and on(i) the digits
+// 1-9 in order (those another row has already left out), then none.
+func digitKeys(keys []byte, on func(int) bool) []byte {
+	d := byte('1')
+	for i := range keys {
+		if keys[i] != 0 || !on(i) {
+			continue
+		}
+		for d <= '9' && bytes.IndexByte(keys, d) >= 0 {
+			d++
+		}
+		if d > '9' {
+			break
+		}
+		keys[i], d = d, d+1
+	}
+	return keys
 }
 
 // menuNav is the one key handler of every menu over rows with hotkeys keys:

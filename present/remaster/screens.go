@@ -214,9 +214,9 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		}
 	}
 	title, items := p.screenItems(v)
-	lines, keys := make([]string, len(items)), make([]byte, len(items))
+	lines, keys := make([]string, len(items)), rowKeys(items)
 	for i, it := range items {
-		lines[i], keys[i] = it.text, it.key
+		lines[i] = it.text
 	}
 	s.sel = min(max(s.sel, 0), len(lines)-1)
 	s.top = min(max(s.top, s.sel-scrRows+1), s.sel, max(0, len(lines)-scrRows))
@@ -278,11 +278,6 @@ func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	_, items := p.screenItems(v)
 	n := len(items)
 	keys := rowKeys(items)
-	for i, it := range items {
-		if it.do == nil {
-			keys[i] = 0
-		}
-	}
 	i, back, ok := menuNav(k, &s.sel, keys)
 	switch {
 	case back && s.sub == scrAsk:

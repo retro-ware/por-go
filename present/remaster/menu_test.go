@@ -42,3 +42,16 @@ func TestMenuNav(t *testing.T) {
 		t.Fatal(s)
 	}
 }
+
+// digitKeys: rows with no letter and that can be picked get 1-9, skipping
+// digits already taken, then none.
+func TestDigitKeys(t *testing.T) {
+	keys := digitKeys([]byte{'B', 0, '2', 0, 0}, func(i int) bool { return i != 3 })
+	if string(keys) != "B12\x003" {
+		t.Fatalf("%q", keys)
+	}
+	many := digitKeys(make([]byte, 12), func(int) bool { return true })
+	if many[8] != '9' || many[9] != 0 {
+		t.Fatalf("%q", many)
+	}
+}
