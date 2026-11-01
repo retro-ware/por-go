@@ -97,7 +97,7 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 	for i, m := range ms {
 		d := p.cardImgs[i]
 		key := cardKey{m.Selected, m.HP, m.MaxHP, m.Status, p.portrait(m), m.Portrait != nil, 0, 0, p.border.tiles[0], m.Memo}
-		if m.NextExp > 0 && gpu.IsKeyPressed(gpu.KeyShift) {
+		if m.NextExp > 0 && (p.expShown || gpu.IsKeyPressed(gpu.KeyShift)) {
 			key.exp, key.nextExp = m.Exp-m.LevelExp, m.NextExp-m.LevelExp
 		}
 		if key != p.cardKeys[i] { // the card's picture changed: redraw it (a card is a render target of its own, a pass each)
@@ -256,15 +256,21 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 		vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0})
 		bottom = false
 	}
-	w := len(title)
+	w := 0
+	for _, l := range titleLines(title) {
+		w = max(w, visLen(l))
+	}
 	for _, l := range lines {
 		w = max(w, len(l))
 	}
 	b := screen.Bounds()
 	k0 := float64(max(1, min(int(scale(screen)), b.Dx()/((w+4)*8))))
+	if yesNo(keys) {
+		k0 *= 2 // a question: twice the menus' size, as far as it fits
+	}
 	rows := len(lines) + 2
 	if title != "" {
-		rows += 2
+		rows += len(titleLines(title)) + 1
 	}
 	k := fitScale(k0, blobber.Settings.Menu, func(k float64) bool { // the Menus size (Esc, Graphics), as far as the box fits
 		return k*float64((w+4)*8) <= float64(b.Dx()) && k*float64((rows+1)*8) <= float64(b.Dy())

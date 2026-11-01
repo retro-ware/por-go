@@ -85,7 +85,7 @@ func (e *Engine) partyFunctions() []ActKind {
 		return fs
 	}
 	fs := []ActKind{ActBegin, ActAdd, ActCreate, ActDropMember, ActModify}
-	if e.partyExp() > 0 || e.debug {
+	if mask, why, _ := e.trainCheck(e.selected()); why == "" && mask != 0 && (e.partyExp() > 0 || e.debug) { // only when the selected member would rise
 		fs = append(fs, ActTraining)
 	}
 	return append(fs, ActMember, ActRemove, ActQuit)

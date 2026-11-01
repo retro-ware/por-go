@@ -39,6 +39,7 @@ type Presenter struct {
 	ticks                float64                     // animation time not yet run, in 1/60 s ticks
 	border               borders                     // the game's window border
 	bars                 *gpu.Image                  // bars.png
+	expShown             bool                        // drawParty: every card's experience bar, Shift or not (the training hall)
 	cardImgs             []*gpu.Image                // the cards, drawn at scale 1...
 	cardKeys             []cardKey                   // ...and what each shows
 	faceImgs             map[image.Image]*gpu.Image  // the faces on the GPU
@@ -252,6 +253,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	area := v.Window == engine.WinAreaMap && v.AreaMap != nil                   // the overland: its map over the whole window, the 3D view's cards and boxes over it
 	if sc == nil && !area || v.Results != nil || !choosing(v) && !v.Adventure { // a member pick (Choosing) shows the view and the cards whatever page asked
 		if screenUp(v) { // training from the hall's party menu: over the 3D view
+			p.active, p.cards = true, nil // its lines take clicks (Click), no card under them
 			if sc != nil {
 				p.draw3D(dst, v, sc, note)
 			} else {

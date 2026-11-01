@@ -16,6 +16,7 @@ func TestHallTrain(t *testing.T) {
 	e.Start(e.Play)
 	x, y, n := e.posX, e.posY, len(e.screens)
 	e.game.PartyExp = 0xFF
+	e.party[0].Exp, e.purse.gold = 1<<20, 1<<20 // Train is offered only to a member who would rise
 	e.after(func() { e.PartyMenu(nil) }, e.DrawMainScreen)
 	if v := e.Apply(); v.MainMenu == nil || !v.Hall || v.Logo != nil || v.Backdrop != nil {
 		t.Fatalf("hall's menu: menu %v hall %v, title art %v", v.MainMenu != nil, v.Hall, v.Logo != nil || v.Backdrop != nil)

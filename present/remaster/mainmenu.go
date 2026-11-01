@@ -86,7 +86,8 @@ const (
 	askNone = iota
 	askQuit
 	askDrop
-	askSure // the drop's second question
+	askSure   // the drop's second question
+	askRemove // back to the saved characters?
 )
 
 // mainItems are the main menu's lines (the Party submenu with the
@@ -100,6 +101,8 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 		return blobber.QuitQuestion, []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActQuit, 0) }}, no}
 	case askDrop:
 		return "Drop " + selectedName(v) + " forever?", []menuRow{{"Yes", 'Y', ask(askSure)}, no}
+	case askRemove:
+		return "Remove " + selectedName(v) + " from the party?", []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActRemove, -1) }}, no}
 	case askSure:
 		return "Are you sure?", []menuRow{{"Yes", 'Y', func() { p.mainAsk = askNone; p.send(engine.ActDropMember, -1) }}, no}
 	}
@@ -115,6 +118,8 @@ func (p *Presenter) mainItems(v engine.View) (string, []menuRow) {
 			do = ask(askQuit)
 		case engine.ActDropMember:
 			do = ask(askDrop)
+		case engine.ActRemove:
+			do = ask(askRemove)
 		}
 		key := mainNames[k][0]
 		if k == engine.ActQuit { // Q is Quick Start's
@@ -176,7 +181,9 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 	}
 	p.mainSel = min(max(p.mainSel, 0), len(lines)-1)
 	p.drawMenu(dst, p.glyph, "", lines, keys, nil, p.mainSel, mk, b.Dx()/2, top+lh+gap)
+	p.expShown = v.Hall // the hall: the way to the next level under every portrait
 	p.drawParty(dst, v.Party, cardAt(dst))
+	p.expShown = false
 	p.cards = p.cards[:0]
 	for i := range v.Party {
 		p.cards = append(p.cards, cardAt(dst)(i, len(v.Party)))

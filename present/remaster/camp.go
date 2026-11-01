@@ -300,7 +300,7 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	}
 	extra := 2 // the border; the title and a blank line under it
 	if title != "" {
-		extra += len(engine.WrapWords(title, 24)) + 1
+		extra += len(titleLines(title)) + 1
 	}
 	fit := max(3, (int(float64(bottom)/(k*8))-extra)/lh) // the lines that fit: more scroll, the scale stays
 	n := len(lines)

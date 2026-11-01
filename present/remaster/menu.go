@@ -148,7 +148,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	rows, hot, icon := items, hk, make([]image.Image, len(items))
 	copy(icon, icons)
 	if title != "" { // a long question on two lines, so the box stays narrow
-		t := append(engine.WrapWords(title, 24), "")
+		t := append(titleLines(title), "")
 		rows, hot, icon = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...), append(make([]image.Image, len(t)), icon...)
 		grey = append(make([]bool, len(t)), grey...)
 		if sel >= 0 {
@@ -164,7 +164,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		return 1
 	}
 	for r, s := range rows {
-		x := len(s)
+		x := visLen(s)
 		if icon[r] != nil {
 			x += iconRow
 		}
@@ -211,9 +211,21 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 			y0, x0 = y0+8, 2+iconRow
 		}
 		hk := hot[r] // the hotkey: white, as on the original's bar
+		ink, col := green, 0
 		for i := 0; i < len(s); i++ {
+			if s[i] == inkGold || s[i] == inkRed { // a span in colour, to the next mark
+				switch {
+				case ink != green:
+					ink = green
+				case s[i] == inkGold:
+					ink = rgb(14)
+				default:
+					ink = rgb(12)
+				}
+				continue
+			}
 			g := glyph(s[i])
-			c := green
+			c := ink
 			switch {
 			case grey[r]:
 				c = dim
@@ -223,10 +235,11 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 			for y := 0; y < 8; y++ {
 				for b := 0; b < 8; b++ {
 					if g[y]&(0x80>>b) != 0 {
-						set((i+x0)*8+b, y0+y, c)
+						set((col+x0)*8+b, y0+y, c)
 					}
 				}
 			}
+			col++
 		}
 	}
 	p.menuImg.WritePixels(p.menuBuf)
@@ -246,4 +259,30 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		x0, y0 := float64(cx)-k*float64(cw*8)/2, float64(top)+k*float64((at[r]+1)*8)
 		p.menuRects = append(p.menuRects, image.Rect(int(x0+k*8), int(y0), int(x0+k*float64((cw-1)*8)), int(y0+k*float64(rh(r)*8))))
 	}
+}
+
+// Colour marks in a question's title: the text from one to the next is
+// gold (inkGold) or red (inkRed).
+const (
+	inkGold = '\x01'
+	inkRed  = '\x02'
+)
+
+// visLen is s's length in cells, its colour marks left out.
+func visLen(s string) int {
+	return len(s) - strings.Count(s, string(rune(inkGold))) - strings.Count(s, string(rune(inkRed)))
+}
+
+// titleLines are a menu title's lines: its own (\n) and blank ones kept,
+// each wrapped at 24 cells, so the box stays narrow.
+func titleLines(title string) []string {
+	var out []string
+	for _, l := range strings.Split(title, "\n") {
+		if w := engine.WrapWords(l, 24); len(w) > 0 {
+			out = append(out, w...)
+		} else {
+			out = append(out, "")
+		}
+	}
+	return out
 }
