@@ -55,3 +55,21 @@ func TestDigitKeys(t *testing.T) {
 		t.Fatalf("%q", many)
 	}
 }
+
+// editKey: the cursor moves, Backspace and Delete edit at it, typing
+// inserts at it; caretLine shows it.
+func TestEditCursor(t *testing.T) {
+	s, c := "abd", 3
+	for _, k := range []uint16{0x4B00, 'c', 0x4700, 0x5300, 'A', 0x4F00, 8} {
+		editKey(k, &s, &c, 10, false)
+	}
+	if s != "Abc" || c != 3 {
+		t.Fatalf("%q %d", s, c)
+	}
+	if editKey(0x4B00, &s, &c, 10, false); c != 2 {
+		t.Fatal(c)
+	}
+	if l := caretLine(s, 1, 4, true); l != "A_c  " {
+		t.Fatalf("%q", l)
+	}
+}

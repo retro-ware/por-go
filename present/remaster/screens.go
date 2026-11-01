@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"slices"
-	"strings"
 	"time"
 
 	"gpu"
@@ -39,6 +38,7 @@ type screenUI struct {
 	field  int
 	prompt string         // scrType: the question ...
 	text   string         // ... the line typed ...
+	caret  int            // ... its cursor ...
 	max    int            // ... how long it may get ...
 	act    engine.ActKind // ... and what it sends
 	n      int
@@ -80,11 +80,7 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 	case scrAsk:
 		return s.ask, []menuRow{{"Yes", 'Y', func() { s.sub, s.sel = scrMain, 0; s.yes() }}, {"No", 'N', to(s.back)}}
 	case scrType:
-		t := s.text
-		if p.blink() {
-			t += "_"
-		}
-		return s.prompt, []menuRow{{t + strings.Repeat(" ", max(0, s.max+1-len(t))), 0, nil}}
+		return s.prompt, []menuRow{{caretLine(s.text, s.caret, s.max, p.blink()), 0, nil}}
 	}
 	switch screenName(v) {
 	case "creation":
@@ -171,7 +167,7 @@ func (p *Presenter) blink() bool { return time.Now().UnixMilli()/400%2 == 0 }
 // with the line on Enter.
 func (p *Presenter) typeLine(prompt, text string, n int, act engine.ActKind, an int) {
 	s := &p.scr
-	s.back, s.sub, s.prompt, s.text, s.max, s.act, s.n = scrMain, scrType, prompt, text, n, act, an
+	s.back, s.sub, s.prompt, s.text, s.caret, s.max, s.act, s.n = scrMain, scrType, prompt, text, len(text), n, act, an
 }
 
 // askThen asks q; yes runs on Yes.
@@ -263,7 +259,7 @@ func (p *Presenter) screenPick(v engine.View, i int) {
 func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	s := &p.scr
 	if s.sub == scrType {
-		switch done, cancel, _ := editKey(k, &s.text, s.max, false); {
+		switch done, cancel, _ := editKey(k, &s.text, &s.caret, s.max, false); {
 		case done:
 			s.sub = s.back
 			p.sendA(engine.Action{Kind: s.act, N: s.n, Text: s.text})

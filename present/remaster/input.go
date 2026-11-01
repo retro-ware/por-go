@@ -74,9 +74,9 @@ func (p *Presenter) send(kind engine.ActKind, n int) {
 func (p *Presenter) keyAct(k uint16, v engine.View) {
 	if t := typing(v); t != nil { // the line being typed is edited here
 		if !p.typing {
-			p.typed, p.typing = t.Text, true
+			p.typed, p.typedCur, p.typing = t.Text, len(t.Text), true
 		}
-		switch done, cancel, ok := editKey(k, &p.typed, t.Max, t.Kind == engine.AskNumber); {
+		switch done, cancel, ok := editKey(k, &p.typed, &p.typedCur, t.Max, t.Kind == engine.AskNumber); {
 		case done:
 			p.send(engine.ActOK, 0)
 			p.typing = false
@@ -281,25 +281,56 @@ func askList(v engine.View) []engine.ListLine {
 	return nil
 }
 
-// editKey is the one line editor: Enter is done, Esc cancels, Backspace
-// takes the last character, a printable one (a digit only, for a number)
-// goes on the end of *text up to max. ok: k was taken.
-func editKey(k uint16, text *string, max int, digits bool) (done, cancel, ok bool) {
+// editKey is the one line editor over *text with its cursor *cur: Enter
+// is done, Esc cancels, Left/Right/Home/End move the cursor, Backspace
+// takes the character before it and Delete the one under it, a printable
+// one (a digit only, for a number) goes in at it, up to max. ok: k was
+// taken.
+func editKey(k uint16, text *string, cur *int, max int, digits bool) (done, cancel, ok bool) {
+	t, c := *text, min(len(*text), *cur)
 	switch {
 	case k == 13:
 		return true, false, true
 	case k == 27:
 		return false, true, true
-	case k == 8 && len(*text) > 0:
-		*text = (*text)[:len(*text)-1]
+	case k == 0x4B00:
+		c = c - min(c, 1)
+	case k == 0x4D00:
+		c = min(len(t), c+1)
+	case k == 0x4700:
+		c = 0
+	case k == 0x4F00:
+		c = len(t)
+	case k == 8 && c > 0:
+		t, c = t[:c-1]+t[c:], c-1
+	case k == 0x5300 && c < len(t):
+		t = t[:c] + t[c+1:]
 	case digits && (k < '0' || k > '9'):
 		return false, false, false
-	case k >= 0x20 && k < 0x7F && len(*text) < max:
-		*text += string(rune(k))
+	case k >= 0x20 && k < 0x7F && len(t) < max:
+		t, c = t[:c]+string(rune(k))+t[c:], c+1
 	default:
 		return false, false, false
 	}
+	*text, *cur = t, c
 	return false, false, true
+}
+
+// caretLine is text with its cursor at cur, in a field w+1 cells wide: a
+// '_' over the character at cur while on (the blink), scrolled to keep
+// the cursor in the field, padded with blanks.
+func caretLine(text string, cur, w int, on bool) string {
+	cur = min(cur, len(text))
+	if on {
+		if cur < len(text) {
+			text = text[:cur] + "_" + text[cur+1:]
+		} else {
+			text += "_"
+		}
+	}
+	off := max(0, cur-w)
+	text = text[min(off, len(text)):min(len(text), off+w+1)]
+	return text + strings.Repeat(" ", w+1-len(text))
 }
 
 // typing is the line v asks to be typed (nil: none).

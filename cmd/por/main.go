@@ -440,6 +440,8 @@ func biosKey(k gpu.Key) (uint16, bool) {
 		return 0x5100, true
 	case gpu.KeyKP5:
 		return 0x4C00, true
+	case gpu.KeyDelete:
+		return 0x5300, true
 	}
 	return 0, false
 }

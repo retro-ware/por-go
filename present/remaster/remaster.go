@@ -95,7 +95,8 @@ type Presenter struct {
 	rowsImg     *gpu.Image                  // the combat rows, drawn at scale 1
 	rowsKey     string                      // what they show
 	typing      bool                        // a line is being typed (input.go) ...
-	typed       string                      // ... and reads this
+	typed       string                      // ... and reads this ...
+	typedCur    int                         // ... its cursor here
 	cardHover   int                         // 1 + the card the pointer is on (0 none): its name and class show beside it
 	dragFrom    int                         // 1 + the card pressed while the party is being ordered (View.Ordering), it follows the pointer to the card it is dropped on (0 none)
 	dragAt      image.Point                 // where the pointer is while a card is dragged
@@ -369,21 +370,18 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.menu = false
 		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(askMenu(v).Prompt)}, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
 		p.menuRects = p.menuRects[:0]
-	} else if ask { // the question over the line being typed, a cursor after it
+	} else if ask { // the question over the line being typed, its cursor blinking
 		p.menu = false
 		t, w := typing(v).Text, min(typing(v).Max, 24)
+		c := len(t)
 		if p.typing {
-			t = p.typed
-		}
-		t = t[max(0, len(t)-w):]
-		if time.Now().UnixMilli()/400%2 == 0 {
-			t += "_"
+			t, c = p.typed, p.typedCur
 		}
 		top := b.Dy()/2 - int(mk*float64(len(wrap(typing(v).Prompt, 24))+5)*4)
 		if picBottom > 0 { // never over the picture: right under it
 			top = max(top, picBottom+int(pk*4))
 		}
-		p.drawMenu(dst, note.Glyph, typing(v).Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
+		p.drawMenu(dst, note.Glyph, typing(v).Prompt, []string{caretLine(t, c, w, p.blink())}, nil, 0, mk, cx, top)
 		p.menuRects = p.menuRects[:0]
 	} else if askList(v) != nil && askMenu(v) != nil { // a list and its question (list.go)
 		p.menu = false
