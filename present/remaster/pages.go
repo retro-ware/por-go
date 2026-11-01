@@ -152,10 +152,10 @@ func (c *cellPage) lines() [][]engine.PaneRun {
 // and boxes and the screens' text over them.
 // contentPictures are the original art a screen of its own shows from the
 // engine's page: the picker's pictures in their cells, the portrait and
-// combat icon on the sheets, the credits' art; never a frame or a fill.
+// combat icon on the sheets; never a frame or a fill (the credits sit on
+// black, not over the title picture).
 func contentPictures(v engine.View) []engine.Picture {
 	var in []image.Rectangle
-	all := v.Credits
 	switch {
 	case v.Slots != nil, v.IconEditor != nil && v.Picker == nil:
 	case v.Picker != nil:
@@ -173,7 +173,7 @@ func contentPictures(v engine.View) []engine.Picture {
 		if pc.Img == nil || pc.File == "" {
 			continue
 		}
-		if all || slices.ContainsFunc(in, func(r image.Rectangle) bool { return !r.Empty() && pc.At.Overlaps(r) }) {
+		if slices.ContainsFunc(in, func(r image.Rectangle) bool { return !r.Empty() && pc.At.Overlaps(r) }) {
 			out = append(out, pc)
 		}
 	}
