@@ -39,6 +39,7 @@ type page struct {
 	drawn bool
 	page  []engine.Picture     // what img shows: the View's page...
 	text  [][]engine.PaneRun   // ...and text
+	overs []overlay            // the screens' portraits over the page
 	scans map[image.Image]scan // the overlays on the GPU
 	fit   *gpu.Image           // fit's whole-scale copy
 	pane  *gpu.Image           // the text pane (paneImage)
@@ -113,21 +114,16 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 		}
 		pg.img, pg.px, pg.drawn = gpu.NewImage(w, h), image.NewRGBA(image.Rect(0, 0, w, h)), false
 	}
-	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || !modal(v) && samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
+	if pg.drawn && !note.Show && !pg.noted && (v.Seq == pg.seq || !modal(v) && !ownPage(v) && samePage(v, pg)) { // the View changed, the page not: no redraw, no upload
 		pg.seq = v.Seq
 		return pg.img
 	}
 	pg.drawn, pg.seq, pg.noted = true, v.Seq, note.Show
 	pg.page, pg.text = append(pg.page[:0], v.Pictures...), v.Lines
 	m := pg.px
-	drawPictures(m, v.Pictures, image.Point{})
-	for y, row := range v.Lines {
-		for _, r := range row {
-			for i := 0; i < len(r.Text); i++ {
-				glyphAt(m, note.Font(r.Text[i], r.Upcase), (r.X+i)*8, y*8, r.Fg, r.Bg)
-			}
-		}
-	}
+	c := screenPage(v)
+	c.draw(m, v, note)
+	pg.overs = c.overs
 	drawModal(m, v, note)
 	if note.Show {
 		noteLine(m, note, h-8)
@@ -135,6 +131,10 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 	pg.img.WritePixels(m.Pix)
 	return pg.img
 }
+
+// ownPage: v shows a screen the presenter lays out from its data
+// (screenPage), drawn anew with each View.
+func ownPage(v engine.View) bool { return v.SheetPage != nil }
 
 // modal: v shows a screen over the whole page (help, the journal, the
 // full map, the overview), drawn from its data over the page under it.
@@ -350,10 +350,13 @@ func (p *Presenter) drawPage(dst *gpu.Image, v engine.View, note Note) Rect {
 		op.GeoM.Translate(r.X, r.Y)
 		dst.DrawImage(img, op)
 	}
-	os := v.Overlays
+	os := append([]overlay(nil), p.pg.overs...)
+	for _, o := range v.Overlays {
+		os = append(os, overlay{Img: o.Img, Src: o.Src, At: o.At})
+	}
 	if v.Pages != nil {
 		for _, s := range v.Pages.Scans {
-			os = append(os, engine.Overlay{Img: s.Img, Src: s.Src, At: s.At})
+			os = append(os, overlay{Img: s.Img, Src: s.Src, At: s.At})
 		}
 	}
 	p.drawOverlays(dst, os, r, w, h)
@@ -362,7 +365,7 @@ func (p *Presenter) drawPage(dst *gpu.Image, v engine.View, note Note) Rect {
 
 // drawOverlays draws the overlays (journal scans) over the page of w by h
 // pixels at r.
-func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect, w, h int) {
+func (p *Presenter) drawOverlays(dst *gpu.Image, os []overlay, r Rect, w, h int) {
 	pg := &p.pg
 	for img, im := range pg.scans { // drop the copies of scans no longer shown
 		keep := false

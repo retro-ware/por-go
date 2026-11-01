@@ -1,0 +1,28 @@
+text 1,1 52ffff/000000 true "No-One"
+text 3,1 ffffff/000000 true "Male"
+text 3,6 ffffff/000000 true "Human"
+text 3,12 ffffff/000000 true "Age 16"
+text 4,1 ffffff/000000 true "Lawful Good"
+text 5,1 ffffff/000000 true "Fighter"
+text 7,1 52ff52/000000 true "STR 12"
+text 8,1 52ff52/000000 true "INT 13"
+text 9,1 52ff52/000000 true "WIS 17"
+text 10,1 52ff52/000000 true "DEX 12"
+text 11,1 52ff52/000000 true "CON 17"
+text 12,1 52ff52/000000 true "CHA 16"
+text 17,1 ffffff/000000 true "AC "
+text 17,4 52ff52/000000 true "10"
+text 17,9 ffffff/000000 true "THAC0 "
+text 17,15 52ff52/000000 true "20"
+text 18,1 ffffff/000000 true "HP "
+text 18,4 52ff52/000000 true "11"
+text 18,8 ffffff/000000 true "Damage "
+text 18,15 52ff52/000000 true "1d2"
+text 18,25 ffffff/000000 true "Movement "
+text 18,34 52ff52/000000 true "12"
+pic HEAD3 0 0 (224,8)-(312,48)
+pic BODY3 1 0 (224,48)-(312,96)
+fill (232,104)-(256,128) 525252
+fill (272,104)-(296,128) 525252
+png (24,24) (232,104)-(256,128)
+png (24,24) (272,104)-(296,128)

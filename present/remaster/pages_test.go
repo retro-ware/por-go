@@ -1,0 +1,225 @@
+package remaster
+
+import (
+	"flag"
+	"fmt"
+	"image"
+	"image/color"
+	"image/png"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+	"time"
+
+	"por/engine"
+)
+
+// The screens the presenter draws from their View data (the sheets, the
+// pickers, the slots, the icon editor): their text and pictures, recorded
+// in testdata/*.txt from the engine's own drawing before the presenter took
+// it over (-update writes them anew), must come out of the presenter's
+// layout (screenPage) cell for cell.
+
+var update = flag.Bool("update", false, "record the screens' goldens")
+
+func headless(t *testing.T, explore bool) *engine.Engine {
+	t.Helper()
+	if _, err := os.Stat("../../data/dos/TITLE.DAX"); err != nil {
+		t.Skip("no game files")
+	}
+	e, err := engine.New("../../data")
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed := uint32(7)
+	e.FixedSeed = &seed
+	e.Cfg.SaveDir = t.TempDir()
+	e.Explore = explore
+	e.Init()
+	e.Start(e.Play)
+	return e
+}
+
+func settled(e *engine.Engine, as ...engine.Action) engine.View {
+	v := e.View()
+	for _, a := range as {
+		v = e.Apply(a)
+		for t0 := time.Now(); v.Ticks && time.Since(t0) < 300*time.Millisecond; {
+			time.Sleep(time.Millisecond)
+			v = e.Apply(engine.Action{Kind: engine.ActTick})
+		}
+	}
+	return v
+}
+
+// partyMenu: past the title to the party menu.
+func partyMenu(t *testing.T) (*engine.Engine, engine.View) {
+	e := headless(t, false)
+	v := settled(e)
+	for i := 0; v.MainMenu == nil && i < 20; i++ {
+		v = settled(e, engine.Action{Kind: engine.ActOK})
+	}
+	if v.MainMenu == nil {
+		t.Fatal("no party menu")
+	}
+	return e, v
+}
+
+// dump is the screen's text and pictures, a line each: the text as runs
+// (row, column, colours, upcase, text), the pictures (DAX file, block,
+// frame, place; fills by colour; the border's 8x8 symbols left out) and the
+// PNGs over the page (size, place).
+func dump(lines [][]engine.PaneRun, pics []engine.Picture, overs []overlay) string {
+	var b strings.Builder
+	hex := func(c color.RGBA) string { return fmt.Sprintf("%02x%02x%02x", c.R, c.G, c.B) }
+	for y, l := range lines {
+		for _, r := range l {
+			if strings.TrimSpace(r.Text) == "" && r.Bg == (color.RGBA{A: 255}) {
+				continue
+			}
+			fmt.Fprintf(&b, "text %d,%d %s/%s %v %q\n", y, r.X, hex(r.Fg), hex(r.Bg), r.Upcase, r.Text)
+		}
+	}
+	for _, p := range pics {
+		switch {
+		case p.Fill && p.Colour == color.RGBA{A: 255}: // the page's black
+		case p.Fill:
+			fmt.Fprintf(&b, "fill %v %s\n", p.At, hex(p.Colour))
+		case p.At.Dx() == 8 && p.At.Dy() == 8:
+		default:
+			fmt.Fprintf(&b, "pic %s %d %d %v\n", p.File, p.Block, p.Frame, p.At)
+		}
+	}
+	for _, o := range overs {
+		fmt.Fprintf(&b, "png %v %v\n", o.Part().Size(), o.At)
+	}
+	return b.String()
+}
+
+// golden compares the screen's dump with testdata/name.txt.
+func golden(t *testing.T, name string, v engine.View) {
+	t.Helper()
+	got := screenDump(v)
+	path := filepath.Join("testdata", name+".txt")
+	if *update {
+		os.MkdirAll("testdata", 0o755)
+		if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != string(want) {
+		gl, wl := strings.Split(got, "\n"), strings.Split(string(want), "\n")
+		for i := 0; i < max(len(gl), len(wl)); i++ {
+			g, w := "", ""
+			if i < len(gl) {
+				g = gl[i]
+			}
+			if i < len(wl) {
+				w = wl[i]
+			}
+			if g != w {
+				t.Errorf("%s line %d:\n got %s\nwant %s", name, i+1, g, w)
+				break
+			}
+		}
+	}
+}
+
+func writePNG(t *testing.T, w, h int) string {
+	m := image.NewRGBA(image.Rect(0, 0, w, h))
+	for i := range m.Pix {
+		m.Pix[i] = byte(i * 7)
+	}
+	path := filepath.Join(t.TempDir(), "p.png")
+	f, _ := os.Create(path)
+	png.Encode(f, m)
+	f.Close()
+	return path
+}
+
+func TestSheetPage(t *testing.T) {
+	e := headless(t, true)
+	v := settled(e, engine.Action{Kind: engine.ActMember, N: -1})
+	if v.Sheet == nil {
+		t.Fatal("no sheet")
+	}
+	golden(t, "sheet", v)
+	v = settled(e, engine.Action{Kind: engine.ActMember, N: 1})
+	golden(t, "sheet2", v)
+	v = settled(e, engine.Action{Kind: engine.ActPortrait, N: -1, Text: writePNG(t, 40, 60)})
+	golden(t, "sheetpng", v)
+}
+
+func TestCreationPage(t *testing.T) {
+	e, _ := partyMenu(t)
+	v := settled(e, engine.Action{Kind: engine.ActCreate})
+	if v.Creation == nil {
+		t.Fatal("no creation")
+	}
+	golden(t, "creation", v)
+	v = settled(e, engine.Action{Kind: engine.ActIcon, Text: writePNG(t, 48, 24)})
+	golden(t, "creationpng", v)
+	v = settled(e, engine.Action{Kind: engine.ActPicker, N: engine.PickHead})
+	if v.Picker == nil {
+		t.Fatal("no picker")
+	}
+	golden(t, "pickhead", v)
+	v = settled(e, engine.Action{Kind: engine.ActClose}, engine.Action{Kind: engine.ActIconEdit, N: -1})
+	if !v.IconDrop {
+		t.Fatal("no icon editor")
+	}
+	golden(t, "icon", v)
+	v = settled(e, engine.Action{Kind: engine.ActPicker, N: engine.PickWeapon})
+	golden(t, "pickweapon", v)
+}
+
+func TestPartyPages(t *testing.T) {
+	e, _ := partyMenu(t)
+	v := settled(e, engine.Action{Kind: engine.ActQuickStart})
+	golden(t, "party", v)
+	v = settled(e, engine.Action{Kind: engine.ActRemove, N: 0}, engine.Action{Kind: engine.ActAdd})
+	if v.Picker == nil {
+		t.Fatal("no saved characters")
+	}
+	golden(t, "picksaved", v)
+	v = settled(e, engine.Action{Kind: engine.ActClose}, engine.Action{Kind: engine.ActSlots})
+	if v.Slots == nil {
+		t.Fatal("no slots")
+	}
+	golden(t, "slots", v)
+}
+
+func screenDump(v engine.View) string {
+	c := screenPage(v)
+	overs := c.overs
+	for _, o := range v.Overlays {
+		overs = append(overs, overlay{Img: o.Img, Src: o.Src, At: o.At})
+	}
+	return dump(c.lines(), c.pics, overs)
+}
+
+// The spell lists' title replaces the sheet's name row (SpellList: a box
+// over row 1, the name's, the title after it), and the PNG portrait goes.
+func TestSheetSpellsTitle(t *testing.T) {
+	var ink [16]color.RGBA
+	for i := range ink {
+		ink[i] = col(i)
+	}
+	v := engine.View{Cells: image.Pt(40, 25), Ink: ink, SheetPage: &engine.SheetPage{Name: "Mirelle", NameColour: inkCyan, Spells: "Spells in Memory"}}
+	c := screenPage(v)
+	got := c.lines()[1]
+	want := []engine.PaneRun{{X: 1, Text: "Mirelle's", Fg: ink[inkCyan], Bg: ink[0], Upcase: true}, {X: 11, Text: "Spells in Memory", Fg: ink[inkGreen], Bg: ink[0], Upcase: true}}
+	if !slices.Equal(got, want) {
+		t.Errorf("row 1: %+v, want %+v", got, want)
+	}
+	if !slices.Contains(c.boxes, engine.CellRect{X1: 1, Y1: 1, X2: 38, Y2: 1}) {
+		t.Errorf("no box round the title: %v", c.boxes)
+	}
+}

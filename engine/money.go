@@ -123,23 +123,6 @@ func readPurse(b []byte) purse {
 	return p
 }
 
-// showMoney = ovr20:050D: the party's purse on the character sheet.
-func (e *Engine) showMoney() {
-	e.ClearCells(12, 7, 26, 14)
-	y := 7
-	for _, l := range []struct {
-		name string
-		n    uint32
-	}{{"Gold", e.purse.gold}, {"Copper", e.purse.copper}, {"Gems", e.purse.gems}, {"Jewelry", e.purse.jewelry}} {
-		if l.n == 0 {
-			continue
-		}
-		e.DisplayString(0x14-len(l.name), y, colLightGreen, l.name)
-		e.DisplayString(21, y, colLightGreen, strconv.Itoa(int(l.n)))
-		y++
-	}
-}
-
 // randomItemClass = ovr22:0FD2: d20 1-14 → 1, 15-19 → 2, 20 → 3.
 func (e *Engine) randomItemClass() int {
 	switch r := e.Dice(1, 20); {

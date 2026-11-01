@@ -142,7 +142,7 @@ func (e *Engine) clearPage() {
 // portrait overlay and box, the icon's drop.
 func (e *Engine) newPage() {
 	e.pg.overlays = nil
-	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox = CellRect{}, nil, CellRect{}
+	e.snap.portrait, e.snap.iconDrop, e.snap.iconBox, e.snap.sheet = CellRect{}, nil, CellRect{}, nil
 }
 
 // resizePage gives the page cols by rows cells (40x25 at least): what is

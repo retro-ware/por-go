@@ -25,72 +25,56 @@ type viewState struct {
 	leave bool       // the sheet was opened on the inventory (F1-F8): leaving that leaves it
 }
 
-// CharacterSheet = ovr20:004A.
+// CharacterSheet = ovr20:004A: the selected member's sheet (View.SheetPage,
+// laid out by the presenter).
 func (e *Engine) CharacterSheet() {
 	c := e.selected()
 	e.view.char = c
 	e.ClearScreen()
-	e.DrawBorder(1, 1, winRight, winBottom, 0)
-	e.displayName(c, 1, 1, false)
-	if c.Control > 0x7F {
-		e.DisplayString(len(c.Name())+3, 1, colLightGreen, "(NPC)")
-	}
-	x := 1
-	s := genderNames[c.Sex]
-	e.DisplayString(x, 3, colWhite, s)
-	x += len(s) + 1
-	s = raceNames[int8(c.Race)]
-	e.DisplayString(x, 3, colWhite, s)
-	x += len(s) + 1
-	e.DisplayString(x, 3, colWhite, "Age "+strconv.Itoa(int(c.Age)))
-	e.DisplayString(1, 4, colWhite, alignmentNames[int8(c.Alignment)])
-	e.DisplayString(1, 5, colWhite, className(c.Class))
-	for i, l := range []string{"STR ", "INT ", "WIS ", "DEX ", "CON ", "CHA "} {
-		e.DisplayString(1, i+7, colLightGreen, l)
-		e.showStat(i, false)
-	}
-	e.showMoney()
-	if e.ext.creating { // extra: the creation's sheet: no level, experience or status yet (create.go)
-		e.showCombatStats()
-		if e.viewBit0 != 0 {
-			e.SheetPortrait()
+	col := colLightRed // displayName
+	if c.Okay != 0 {
+		col = colLightCyan
+		if c.Side == sideMonsters {
+			col = colYellow
 		}
-		return
 	}
-	e.DisplayString(1, 15, colWhite, "Level")
-	s = ""
-	for i := 0; i <= 7; i++ {
-		if l := int8(c.Levels[i]); l > 0 {
-			if s != "" {
-				s += "/"
+	sp := &SheetPage{Name: c.Name(), NameColour: col, NPC: c.Control > 0x7F,
+		Sex: genderNames[c.Sex], Race: raceNames[int8(c.Race)], Age: int(c.Age),
+		Alignment: alignmentNames[int8(c.Alignment)], Class: className(c.Class), Str00: str00Text(c), Creating: e.ext.creating}
+	for i, v := range c.Stats {
+		sp.Stats[i] = int(v)
+	}
+	for _, l := range []Coin{{"Gold", int(e.purse.gold)}, {"Copper", int(e.purse.copper)}, {"Gems", int(e.purse.gems)}, {"Jewelry", int(e.purse.jewelry)}} { // showMoney
+		if l.N != 0 {
+			sp.Money = append(sp.Money, l)
+		}
+	}
+	e.snap.sheet = sp
+	e.combatStats(c, sp)
+	if !e.ext.creating { // extra: the creation's sheet: no level, experience or status yet (create.go)
+		for i := 0; i <= 7; i++ {
+			if l := int8(c.Levels[i]); l > 0 {
+				if sp.Levels != "" {
+					sp.Levels += "/"
+				}
+				sp.Levels += strconv.Itoa(int(l))
 			}
-			s += strconv.Itoa(int(l))
 		}
-	}
-	e.DisplayString(7, 15, colWhite, s)
-	e.DisplayString(17, 15, colWhite, "Exp "+strconv.Itoa(int(int32(c.Exp))))
-	if _, need := levelSpan(c); need > 0 { // extra: the experience the next level takes, green once it is there
-		col := colWhite
-		if int32(c.Exp) >= need {
-			col = colLightGreen
+		sp.Exp = int(int32(c.Exp))
+		if _, need := levelSpan(c); need > 0 { // extra: the experience the next level takes, green once it is there
+			sp.Next = int(need)
 		}
-		e.DisplayString(17, 16, col, "Next "+strconv.Itoa(int(need)))
+		if w := c.Slots[slotWeapon]; w != nil {
+			e.ItemName(c, w, 0, 0, false, false)
+			sp.Weapon = w.Name()
+		}
+		if a := c.Slots[slotArmor]; a != nil {
+			e.ItemName(c, a, 0, 0, false, false)
+			sp.Armor = a.Name()
+		}
+		sp.Status = e.statusName(c)
+		sp.Effects, _ = e.effectsLine(c)
 	}
-	e.showCombatStats()
-	y := 0x14
-	if w := c.Slots[slotWeapon]; w != nil {
-		e.DisplayString(1, y, colWhite, "Weapon")
-		e.ItemName(c, w, 8, y, false, true)
-	}
-	y++
-	if a := c.Slots[slotArmor]; a != nil {
-		e.DisplayString(2, y, colWhite, "Armor")
-		e.ItemName(c, a, 8, y, false, true)
-	}
-	y++
-	e.DisplayString(1, y, colWhite, "Status")
-	e.DisplayString(8, y, colLightGreen, e.statusName(c))
-	e.sheetEffects(c)
 	if e.viewBit0 != 0 { // the original: only while set 3 is loaded (its HEAD/BODY); extra: everywhere, from charArt
 		e.SheetPortrait()
 	}
@@ -99,8 +83,6 @@ func (e *Engine) CharacterSheet() {
 // Extra: the sheet lists the spell effects on the character (the camp
 // menu's Display, which is not offered) on the free row under HP. When they
 // do not all fit, the View menu offers Magic with the whole list.
-const effectsRow = 0x13
-
 func (e *Engine) effectsLine(c *Character) (string, bool) {
 	names := e.affectList(c)
 	if len(names) == 0 {
@@ -122,34 +104,14 @@ func (e *Engine) effectsLine(c *Character) (string, bool) {
 
 func (e *Engine) effectsFit(c *Character) bool { _, ok := e.effectsLine(c); return ok }
 
-func (e *Engine) sheetEffects(c *Character) {
-	s, _ := e.effectsLine(c)
-	if s == "" {
-		return
-	}
-	e.DisplayString(1, effectsRow, colWhite, "Effects")
-	e.DisplayString(9, effectsRow, colLightGreen, s)
-}
-
-// showCombatStats = ovr20:0608: AC, HP, THAC0, damage, weight, movement.
-func (e *Engine) showCombatStats() {
-	c := e.selected()
+// combatStats = showCombatStats (ovr20:0608): AC, HP, THAC0, damage,
+// party items, movement.
+func (e *Engine) combatStats(c *Character, sp *SheetPage) {
 	e.ApplyItems(c)
-	y := 0x11
-	e.DisplayString(1, y, colWhite, "AC    ")
-	e.displayAC(c, 4, y)
-	e.DisplayString(1, y+1, colWhite, "HP    ")
-	e.displayHP(c, 4, y+1, false)
-	x := 8
-	e.DisplayString(x+1, y, colWhite, "THAC0   ")
-	e.DisplayString(x+7, y, colLightGreen, strconv.Itoa(int(byte(0x3C-c.THAC0))))
-	d := cut(damageText(c), textCols)
-	e.DisplayString(x, y+1, colWhite, "Damage        ")
-	e.DisplayString(x+7, y+1, colLightGreen, d)
-	x = 0x16
+	sp.AC, sp.HP, sp.MaxHP = 60-int(c.AC[0]), int(c.HP), int(c.MaxHP)
+	sp.THAC0, sp.Damage = int(byte(0x3C-c.THAC0)), cut(damageText(c), textCols)
 	if !e.ext.creating {
-		e.DisplayString(x, y, colWhite, "Party items      ") // extra: the party inventory's slots for Encumbrance
-		e.DisplayString(x+0xC, y, colLightGreen, e.poolText())
+		sp.PartyItems = e.poolText() // extra: the party inventory's slots for Encumbrance
 	}
 	m := c.Move
 	// extra: the original (ovr20:086A) doubles under Slow and halves under Haste
@@ -159,12 +121,9 @@ func (e *Engine) showCombatStats() {
 	if e.FindAffect(c, affSlow) != nil {
 		m >>= 1
 	}
-	e.DisplayString(x+3, y+1, colWhite, "Movement   ")
-	e.DisplayString(x+0xC, y+1, colLightGreen, strconv.Itoa(int(m)))
+	sp.Move = int(m)
 }
 
-// showStat = ovr20:0901 (stat, highlight): one ability score, with the
-// exceptional strength in brackets.
 // str00Text is the exceptional strength shown after an 18: "(57)", "(00)".
 func str00Text(c *Character) string {
 	if c.Stats[0] != 0x12 || c.Str00 == 0 {
@@ -178,24 +137,6 @@ func str00Text(c *Character) string {
 		s = "00"
 	}
 	return "(" + s + ")"
-}
-
-func (e *Engine) showStat(stat int, hi bool) {
-	col := colLightGreen
-	if hi {
-		col = colLightMagenta
-	}
-	c := e.selected()
-	x := 5
-	e.ClearCells(5, stat+7, 11, stat+7)
-	v := c.Stats[stat]
-	if v < 10 {
-		x++
-	}
-	e.DisplayString(x, stat+7, col, strconv.Itoa(int(v)))
-	if stat == 0 {
-		e.DisplayString(7, 7, col, str00Text(c))
-	}
 }
 
 // pushSheet = ovr20:0AB3 (var quit), the View command: it puts the sheet
@@ -363,20 +304,21 @@ func (e *Engine) scribing(it *Item) bool {
 }
 
 // SheetPortrait = ovr29:04F9: the character's head and body in a box at
-// the top right of the sheet.
+// the top right of the sheet (SheetPage.PortraitAt; the presenter frames it).
 func (e *Engine) SheetPortrait() {
 	c := e.selected()
 	if c.Portrait == nil && (c.PortHead == 0 || c.PortBody == 0) {
 		return
 	}
 	box := CellRect{winRight - 10, 1, winRight, 11} // against the right border, whatever the page's width
-	e.DrawBoxTitled(box.X1, box.Y1, box.X2, box.Y2, 0, colBlack, "")
-	e.snap.portrait = box  // Shift-click and a dropped PNG land here
-	if c.Portrait != nil { // extra: the dropped PNG, fitted into the box at the window's resolution
-		e.pg.overlays = []Overlay{{Img: c.Portrait, At: fit(c.Portrait.Bounds(), box.Pixels())}} // the whole box: the remaster's rope runs outside its cells
+	e.ClearCells(box.X1, box.Y1, box.X2, box.Y2)
+	e.snap.portrait = box // Shift-click and a dropped PNG land here
+	if sp := e.snap.sheet; sp != nil {
+		sp.PortraitAt, sp.Portrait = box, c.Portrait // extra: the dropped PNG, fitted into the box at the window's resolution
+	}
+	if c.Portrait != nil {
 		return
 	}
-	e.pg.overlays = nil
 	e.LoadPortrait(charArt, int(portraitHead[c.PortHead]), int(portraitBody[c.PortBody]))
 	e.DrawPortrait(box.X1, 1, true)
 }
@@ -844,11 +786,9 @@ func (e *Engine) SpellList(kind, mode int, index *int, any *bool, then func(byte
 		then(0)
 		return
 	}
-	if *index < 0 {
-		e.DrawBoxTitled(1, 1, winRight, 1, 0, colBlack, "")
-		c := e.selected()
-		e.displayName(c, 1, 1, true)
-		e.DisplayString(len(c.Name())+4, 1, colLightGreen, "Spells "+title)
+	if sp := e.snap.sheet; *index < 0 && sp != nil { // over the sheet's name row (the presenter's)
+		sp.Spells, sp.Portrait = "Spells "+title, nil
+		e.snap.portrait = CellRect{}
 	}
 	e.spellMenu(mode, index, then)
 }

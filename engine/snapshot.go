@@ -163,6 +163,7 @@ type View struct {
 	Shop      *Shop     // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
 	Training  *Training // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
 	Sheet     *Sheet    // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
+	SheetPage *SheetPage // the character sheet's page is up (the sheet, the creation's, the spell lists over it): the presenter draws it
 	Creation  *Creation // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
 	Picker    *Picker   // a grid picker (the page): ActPicked, ActPage; ActClose leaves
 	Slots     *Slots    // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
@@ -177,6 +178,7 @@ type View struct {
 	Lines     [][]PaneRun    // the page's text over Pictures, a row each as runs (Pane's way; the screens' layout is still the engine's, step 4)
 	Cells     image.Point    // the page's size in text cells (40x25 at least; a larger window gives more, ActResize)
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the portraits of the sheets and pickers)
+	Ink       [16]color.RGBA // the text colours (EGA 0..15) in the page's palette now
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last
 	Portrait  CellRect       // the sheet's portrait box (zero elsewhere): Shift-click takes the next head (ActHead), a dropped PNG becomes the portrait (ActPortrait)
 	IconDrop  bool           // the combat icon editor is up: a dropped PNG becomes the member's icon (ActIcon)
@@ -190,6 +192,46 @@ type View struct {
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 	Ticks     bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
+}
+
+// SheetPage is what the character sheet's page shows (CharacterSheet),
+// laid out by the presenter as the original's ovr20 did, in the colours of
+// View.Ink. The DAX portrait is among View.Pictures.
+type SheetPage struct {
+	Name       string
+	NameColour int    // red when not okay, yellow a monster, else cyan (displayName)
+	NPC        bool   // "(NPC)" after the name
+	Spells     string // a spell list's title over the name row ("Spells in Memory"); "" none
+	Sex, Race  string
+	Age        int
+	Alignment  string
+	Class      string
+	Stats      [6]int // STR .. CHA
+	Str00      string // the exceptional strength after STR: "(78)", ""
+	Money      []Coin // the party's money that is not 0, as the sheet lists it
+	Creating   bool   // the creation's sheet: no level, experience, party items, items or status
+	Levels     string // "1/2"
+	Exp        int
+	Next       int // the experience the next level takes (0: none)
+	AC, HP     int // AC as displayed (10 down to negative)
+	MaxHP      int // HP below it shows yellow
+	THAC0      int
+	Damage     string
+	PartyItems string // the party inventory's slots used and in all
+	Move       int
+	Weapon     string // the readied weapon's and armour's names ("" none)
+	Armor      string
+	Status     string
+	Effects    string     // the spell effects, as many as fit the row
+	PortraitAt CellRect   // the portrait's box (zero: no portrait)
+	Portrait   image.Image // a dropped PNG in the box, in place of the DAX portrait (nil: none)
+	Icons      [2]image.Image // the creation's combat icon from a PNG, ready and action poses, in View.IconBox (nil: the DAX icon among the pictures)
+}
+
+// Coin is a line of the sheet's money: its name and how much.
+type Coin struct {
+	Name string
+	N    int
 }
 
 // Creation is the creation sheet's parts: the drop-down fields, and the
@@ -383,6 +425,7 @@ type snapState struct {
 	cmapOn       bool                   // the combat map is set up (cmapShown) and shown
 	sheetOn      bool                   // a character sheet is up over the combat map
 	portrait     CellRect               // the sheet's portrait box while a sheet is up
+	sheet        *SheetPage             // the character sheet's page while it is up (View.SheetPage)
 	iconDrop     func(image.Image)      // the icon editor, or the creation sheet, takes a dropped PNG while it is up (nil elsewhere)
 	iconBox      CellRect               // the creation sheet's icon: the cells that take the drop (zero: the whole screen)
 	dungeon      bool                   // the combat tiles are DungCom's stone walls (else WildCom's outdoors)
@@ -481,6 +524,12 @@ func (e *Engine) publish() {
 	}
 	if e.modal() { // the screens under take no drop
 		v.Portrait, v.IconDrop, v.IconBox = CellRect{}, false, CellRect{}
+	} else if s.sheet != nil {
+		sp := *s.sheet
+		v.SheetPage = &sp
+	}
+	for i := range v.Ink {
+		v.Ink[i] = e.pal.RGBA(byte(i))
 	}
 	e.pageView(v)
 	v.Party = e.members()

@@ -137,8 +137,8 @@ func TestCreateSheet(t *testing.T) {
 	}
 	act(Action{Kind: ActIcon, Text: write("icon.png", 24, 24)})
 	v = act(Action{Kind: ActPortrait, N: -1, Text: write("face.png", 64, 64)})
-	if c.Icon == nil || c.Portrait == nil || len(v.Overlays) != 3 {
-		t.Errorf("dropped: icon %v portrait %v overlays %d, want both and 3", c.Icon != nil, c.Portrait != nil, len(v.Overlays))
+	if c.Icon == nil || c.Portrait == nil || v.SheetPage == nil || v.SheetPage.Portrait == nil || len(v.Overlays) != 2 {
+		t.Errorf("dropped: icon %v portrait %v overlays %d, want both, the portrait on the sheet", c.Icon != nil, c.Portrait != nil, len(v.Overlays))
 	}
 	if v = act(Action{Kind: ActKeep}); v.Creation != nil || len(e.screens) != 0 {
 		t.Fatalf("after Keep: creation %v screens %d", v.Creation != nil, len(e.screens))

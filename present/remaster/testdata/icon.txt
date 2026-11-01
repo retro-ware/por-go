@@ -1,0 +1,43 @@
+text 1,4 ffffff/525252 true "ready"
+text 1,15 ffffff/525252 true "action"
+text 2,24 52ff52/525252 true "Head"
+text 3,24 52ff52/525252 true "Weapon"
+text 4,24 52ff52/525252 true "Size large"
+text 12,2 ffffff/525252 true "Colours"
+text 12,12 ffffff/525252 true "1  2"
+text 13,2 52ff52/525252 true "Body"
+text 14,2 52ff52/525252 true "Arm"
+text 15,2 52ff52/525252 true "Leg"
+text 16,2 52ff52/525252 true "Hair/Face"
+text 17,2 52ff52/525252 true "Shield"
+text 18,2 52ff52/525252 true "Weapon"
+fill (8,8)-(312,184) 525252
+fill (96,104)-(112,112) ffffff
+fill (97,105)-(111,111) 3d9cff
+fill (121,105)-(135,111) 006ee5
+fill (97,113)-(111,119) 00fb84
+fill (121,113)-(135,119) 00ae66
+fill (97,121)-(111,127) 25ffff
+fill (121,121)-(135,127) 00bebe
+fill (97,129)-(111,135) dc3636
+fill (121,129)-(135,135) ffa0a0
+fill (97,137)-(111,143) b43d00
+fill (121,137)-(135,143) fff079
+fill (97,145)-(111,151) ffffff
+fill (121,145)-(135,151) aaaaaa
+fill (17,161)-(31,167) 006ee5
+fill (33,161)-(47,167) 00ae66
+fill (49,161)-(63,167) 00bebe
+fill (81,161)-(95,167) b43d00
+fill (97,161)-(111,167) dc3636
+fill (113,161)-(127,167) ffa0a0
+fill (129,161)-(143,167) fff079
+fill (17,169)-(31,175) 3d9cff
+fill (33,169)-(47,175) 00fb84
+fill (49,169)-(63,175) 25ffff
+fill (65,169)-(79,175) 555555
+fill (81,169)-(95,175) 777777
+fill (97,169)-(111,175) aaaaaa
+fill (113,169)-(127,175) ffffff
+png (24,24) (16,16)-(88,88)
+png (24,24) (104,16)-(176,88)

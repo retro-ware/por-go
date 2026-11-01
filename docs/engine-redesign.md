@@ -367,3 +367,21 @@ with POR_SEED, cast, the runes' WinText, parlay, the area map key, rest,
 autocombat, the title menu, the creation sheet with its icons) matched
 frame for frame but for the main menu's wall-clock fade-in and, without
 POR_SEED, the clock-seeded dice. Further checks are headless only.
+Step 4 part 2 (headless checks only): the presenter lays the data pages
+out itself on a page of text cells (present/remaster/pages.go
+`cellPage`: DisplayString's, ClearCells', DrawBorder's and
+DrawBoxTitled's ways, the border from View.Border, the colours from
+`View.Ink`, the page's 16 text colours in its palette now). Each screen
+was recorded first (pages_test.go, testdata/*.txt: the text runs, the
+pictures, the PNGs over the page) from the engine's own drawing, and the
+presenter's layout of the new data must give the same.
+- The character sheet: `View.SheetPage` (name and its colour, NPC, the
+  particulars, abilities, money, level, experience and next, AC, HP,
+  THAC0, damage, party items, movement, weapon, armour, status,
+  effects, the portrait's box and PNG, the spell lists' title over the
+  name row). CharacterSheet, showCombatStats, showStat, sheetEffects,
+  showMoney and SheetPortrait no longer write text or borders (the DAX
+  portrait stays among the pictures); the PNG portrait left
+  View.Overlays. The sheet ignores page text under it: the 3D view's
+  status line, written over "Exp" on the first sheet after a start, is
+  gone.
