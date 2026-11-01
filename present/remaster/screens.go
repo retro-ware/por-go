@@ -261,16 +261,12 @@ func (p *Presenter) screenPick(v engine.View, i int) {
 func (p *Presenter) screenKey(k uint16, v engine.View) bool {
 	s := &p.scr
 	if s.sub == scrType {
-		switch {
-		case k == 13:
+		switch done, cancel, _ := editKey(k, &s.text, s.max, false); {
+		case done:
 			s.sub = s.back
 			p.sendA(engine.Action{Kind: s.act, N: s.n, Text: s.text})
-		case k == 27:
+		case cancel:
 			s.sub = s.back
-		case k == 8 && len(s.text) > 0:
-			s.text = s.text[:len(s.text)-1]
-		case k >= 0x20 && k < 0x7F && len(s.text) < s.max:
-			s.text += string(rune(k))
 		}
 		return true
 	}

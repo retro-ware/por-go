@@ -76,18 +76,14 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		if !p.typing {
 			p.typed, p.typing = t.Text, true
 		}
-		switch {
-		case k == 13:
+		switch done, cancel, ok := editKey(k, &p.typed, t.Max, t.Kind == engine.AskNumber); {
+		case done:
 			p.send(engine.ActOK, 0)
 			p.typing = false
-		case k == 27:
+		case cancel:
 			p.send(engine.ActClose, 0)
 			p.typing = false
-		case k == 8 && len(p.typed) > 0:
-			p.typed = p.typed[:len(p.typed)-1]
-		case k >= 0x20 && k < 0x7F && len(p.typed) < t.Max:
-			p.typed += string(rune(k))
-		default:
+		case !ok:
 			return
 		}
 		if p.typing {
@@ -279,6 +275,27 @@ func askList(v engine.View) []engine.ListLine {
 		return a.List
 	}
 	return nil
+}
+
+// editKey is the one line editor: Enter is done, Esc cancels, Backspace
+// takes the last character, a printable one (a digit only, for a number)
+// goes on the end of *text up to max. ok: k was taken.
+func editKey(k uint16, text *string, max int, digits bool) (done, cancel, ok bool) {
+	switch {
+	case k == 13:
+		return true, false, true
+	case k == 27:
+		return false, true, true
+	case k == 8 && len(*text) > 0:
+		*text = (*text)[:len(*text)-1]
+	case digits && (k < '0' || k > '9'):
+		return false, false, false
+	case k >= 0x20 && k < 0x7F && len(*text) < max:
+		*text += string(rune(k))
+	default:
+		return false, false, false
+	}
+	return false, false, true
 }
 
 // typing is the line v asks to be typed (nil: none).
