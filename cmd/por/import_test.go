@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -28,8 +29,11 @@ func writeGame(t *testing.T, files map[string][]byte, zipName string) string {
 }
 
 func TestImportZipAndLoose(t *testing.T) {
-	files := map[string][]byte{"Pool/title.dax": {0, 0}, "Pool/8x8d1.dax": {2}, "Pool/items": {3}}
-	loose := map[string][]byte{"title.dax": {0, 0}, "8x8d1.dax": {2}, "items": {3}}
+	files := map[string][]byte{"Pool/items": {3}}
+	loose := map[string][]byte{"items": {3}}
+	for _, n := range gameArchives() {
+		files["Pool/"+strings.ToLower(n)], loose[strings.ToLower(n)] = []byte{0, 0}, []byte{0, 0}
+	}
 	for name, src := range map[string]string{"zip": writeGame(t, files, "pool.zip"), "loose": writeGame(t, loose, "")} {
 		dst := t.TempDir()
 		// the cover needs a real TITLE.DAX, so only the file copy is checked
@@ -42,5 +46,13 @@ func TestImportZipAndLoose(t *testing.T) {
 	}
 	if err := importGame(writeGame(t, map[string][]byte{"a.txt": {1}}, ""), t.TempDir()); err == nil {
 		t.Error("no game: want an error")
+	}
+	delete(loose, "pic3.dax") // a partial copy (PIC3 missing) imports nothing
+	dst := t.TempDir()
+	if err := importGame(writeGame(t, loose, ""), dst); err == nil || !strings.Contains(err.Error(), "PIC3.DAX") {
+		t.Errorf("partial game: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dst, "dos")); err == nil {
+		t.Error("partial game: files were copied")
 	}
 }

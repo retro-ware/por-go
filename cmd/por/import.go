@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -63,6 +64,15 @@ func importGame(src, dst string) error {
 	if !found {
 		return errors.New("no Pool of Radiance found")
 	}
+	var missing []string // a partial copy of the game is no import: every archive or none
+	for _, n := range gameArchives() {
+		if !has(dir, n) {
+			missing = append(missing, n)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("Pool of Radiance is incomplete, missing %s", strings.Join(missing, ", "))
+	}
 	for k, b := range files {
 		var out string
 		base, d := path.Base(k), path.Dir(k)
@@ -84,6 +94,19 @@ func importGame(src, dst string) error {
 		}
 	}
 	return writeCover(dst)
+}
+
+// gameArchives are the DAX files of the game as it shipped (GOG's 1.3).
+func gameArchives() []string {
+	out := []string{"BACPAC.DAX", "CBODY.DAX", "CHEAD.DAX", "COMSPR.DAX", "DUNGCOM.DAX", "FINAL5.DAX", "ICON.DAX",
+		"RANDCOM.DAX", "SQRPACI.DAX", "TITLE.DAX", "WILDCOM.DAX", "MON2SPC.DAX", "MON4SPC.DAX", "MON5SPC.DAX",
+		"MON6SPC.DAX", "MON7SPC.DAX", "MON8SPC.DAX"}
+	for d := 1; d <= 8; d++ {
+		for _, f := range []string{"8X8D%d", "BODY%d", "CPIC%d", "ECL%d", "GEO%d", "HEAD%d", "ITEM%d", "MON%dCHA", "MON%dITM", "PIC%d", "SPRIT%d", "WALLDEF%d"} {
+			out = append(out, fmt.Sprintf(f, d)+".DAX")
+		}
+	}
+	return out
 }
 
 // setupData makes an installation whole once the game's files are in dst:
