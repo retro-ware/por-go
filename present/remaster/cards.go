@@ -22,7 +22,7 @@ import (
 
 // The party's portrait cards: each member's face in the game's window
 // border (in colour for the selected member: whose turn, whose screen; grey for the others), the hit
-// point bar under it, the experience bar (the way to the next level, gold) under that while Shift is held, and the sheet's status over the face.
+// point bar under it, the experience bar (the way to the next level, gold) under that while Ctrl is held, and the sheet's status over the face.
 
 // Card layout at scale 1.
 const (
@@ -97,7 +97,7 @@ func (p *Presenter) drawParty(dst *gpu.Image, ms []engine.Member, at func(i, n i
 	for i, m := range ms {
 		d := p.cardImgs[i]
 		key := cardKey{m.Selected, m.HP, m.MaxHP, m.Status, p.portrait(m), m.Portrait != nil, 0, 0, p.border.tiles[0], m.Memo}
-		if m.NextExp > 0 && (p.expShown || gpu.IsKeyPressed(gpu.KeyShift)) {
+		if m.NextExp > 0 && (p.expShown || gpu.IsKeyPressed(gpu.KeyControl)) {
 			key.exp, key.nextExp = m.Exp-m.LevelExp, m.NextExp-m.LevelExp
 		}
 		if key != p.cardKeys[i] { // the card's picture changed: redraw it (a card is a render target of its own, a pass each)
@@ -295,7 +295,7 @@ type cardKey struct {
 	status       string
 	face         image.Image // the face drawn on the card (nil: a PNG portrait goes over it at the window's resolution)
 	png          bool
-	exp, nextExp int // the experience bar while Shift is held (0: no bar)
+	exp, nextExp int // the experience bar while Ctrl is held (0: no bar)
 	tiles        *gpu.Image
 	memo         string // camp: the spells ready over the slots, on the bottom border
 }
@@ -332,7 +332,7 @@ func (p *Presenter) drawCard(d *gpu.Image, m engine.Member, key cardKey) {
 		fill = redFill
 	}
 	p.bar(d, -5, barY, cardW+10, m.HP, m.MaxHP, fill) // the caps' art is inset 5 px: this lines it up with the border
-	if key.nextExp > 0 {                              // Shift: the way to the next level, full once the experience is there
+	if key.nextExp > 0 {                              // Ctrl: the way to the next level, full once the experience is there
 		p.bar(d, -5, expY, cardW+10, key.exp, key.nextExp, goldFill)
 	}
 }

@@ -291,11 +291,11 @@ func (e *Engine) explore(a Action) (done, encamp bool) {
 			e.checkEdge()
 			return true, false
 		}
-	case ActBackward:
+	case ActBackward, ActStrafeLeft, ActStrafeRight:
 		if view3D {
-			// (extra) a step backwards, facing kept (the original turns round): Move and the step scripts go the way back, the screen never shows it (viewFacing)
-			e.facing = (e.facing + 4) % 8
-			e.ext.back = true
+			// (extra) a step backwards or aside, facing kept (the original turns round): Move and the step scripts go that way, the screen never shows it (viewFacing)
+			e.ext.back = map[ActKind]int{ActBackward: 4, ActStrafeLeft: 6, ActStrafeRight: 2}[a.Kind]
+			e.facing = (e.facing + e.ext.back) % 8
 			e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing) // the step scripts read it (City Hall: 0xC04E 11 is the locked door)
 			e.checkEdge()
 			return true, false
@@ -395,21 +395,18 @@ func (e *Engine) checkEdge() {
 	}
 }
 
-// viewFacing (extra) is the facing shown: a step backwards (Down) turns the
-// party round only for the move and the step scripts, never on screen.
+// viewFacing (extra) is the facing shown: a step backwards or aside turns
+// the party only for the move and the step scripts, never on screen.
 func (e *Engine) viewFacing() int {
-	if e.ext.back {
-		return (e.facing + 4) % 8
-	}
-	return e.facing
+	return (e.facing + 8 - e.ext.back) % 8
 }
 
-// unback (extra): after a step backwards (Down) the party faces the way it
-// did before.
+// unback (extra): after a step backwards or aside the party faces the way
+// it did before.
 func (e *Engine) unback() {
-	if e.ext.back {
-		e.ext.back = false
-		e.facing = (e.facing + 4) % 8
+	if e.ext.back != 0 {
+		e.facing = (e.facing + 8 - e.ext.back) % 8
+		e.ext.back = 0
 		e.es.wallAhead = e.WallAt(e.posX, e.posY, e.facing)
 	}
 }

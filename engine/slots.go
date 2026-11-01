@@ -42,7 +42,7 @@ func (e *Engine) unwindReset() {
 	e.resets++
 	x := &e.ext
 	x.held, x.pager = Action{}, nil
-	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = nil, nil, false, 0, false
+	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = nil, nil, 0, 0, false
 	x.panel = nil
 	e.screens = nil // the screens pushed are gone with their callers
 	e.picker, e.creation, e.slotsUp, x.creating = nil, nil, nil, false

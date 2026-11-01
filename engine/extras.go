@@ -58,7 +58,7 @@ type extras struct {
 	fullMap *mapScreen               // the full-screen map, while up (modeMap)
 	pager   *pager                   // help's or the journal's pager, while up
 	walk    *walkState               // walk.go: the party walks to a square
-	back    bool                     // Down stepped backwards: Move turns the party round again
+	back    int                      // the turn (0 2 4 6) a step back or aside took: Move turns the party back again
 
 	// fonts.go
 	font   int      // 0: the game's font, else fonts[font-1]

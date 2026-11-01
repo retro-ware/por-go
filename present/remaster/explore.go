@@ -1,6 +1,7 @@
 package remaster
 
 import (
+	"gpu"
 	"image"
 
 	"por/engine"
@@ -62,6 +63,9 @@ func (p *Presenter) exploreKey(k uint16, v engine.View) bool {
 			return true
 		}
 	} else if act, ok := map[input.Act]engine.ActKind{input.Up: engine.ActForward, input.Down: engine.ActBackward, input.Left: engine.ActTurnLeft, input.Right: engine.ActTurnRight}[a]; ok {
+		if gpu.IsKeyPressed(gpu.KeyShift) && (a == input.Left || a == input.Right) { // Shift: a step aside instead of a turn
+			act = map[input.Act]engine.ActKind{input.Left: engine.ActStrafeLeft, input.Right: engine.ActStrafeRight}[a]
+		}
 		p.send(act, 0)
 		return true
 	}
