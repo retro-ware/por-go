@@ -174,7 +174,7 @@ func (p *Presenter) drawCardTip(dst *gpu.Image, v engine.View) {
 func (p *Presenter) tipMenu(dst *gpu.Image, title string, lines []string, keys []byte, sel int, k float64, cx, top int) []image.Rectangle {
 	rects := slices.Clone(p.menuRects)                                                  // not a menu: the question's clicks stay
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf // its own image: the menu's keeps its size
-	p.drawMenu(dst, p.glyph, title, lines, keys, sel, k, cx, top)
+	p.drawMenu(dst, p.glyph, title, lines, keys, nil, sel, k, cx, top)
 	p.menuImg, p.tipImg, p.menuBuf, p.tipBuf = p.tipImg, p.menuImg, p.tipBuf, p.menuBuf
 	rs := slices.Clone(p.menuRects)
 	p.menuRects = rects
@@ -222,7 +222,7 @@ func (p *Presenter) label(dst *gpu.Image, s string, x, y int, k float64) {
 
 // keyWindow is Blobber's text window (its Esc menu, the options, prompts) as
 // the game's own menu box, the lines' hotkeys (keys[i] in lines[i]) in white.
-func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, keys []byte, sel int, bottom bool) float64 {
+func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, keys []byte, off []bool, sel int, bottom bool) float64 {
 	if yesNo(keys) { // every Yes/No question: centred over the dimmed view
 		b := screen.Bounds()
 		vector.DrawFilledRect(screen, 0, 0, float32(b.Dx()), float32(b.Dy()), color.NRGBA{A: 0xA0}, false)
@@ -248,7 +248,7 @@ func (p *Presenter) keyWindow(screen *gpu.Image, title string, lines []string, k
 	}
 	rects := slices.Clone(p.menuRects) // not the game's menu: its clicks stay
 	defer func() { p.menuRects = rects }()
-	p.drawMenu(screen, p.glyph, title, lines, keys, sel, k, b.Dx()/2, top)
+	p.drawMenu(screen, p.glyph, title, lines, keys, off, sel, k, b.Dx()/2, top)
 	p.winRects = slices.Clone(p.menuRects) // its lines, for the Esc menu's mouse
 	return k
 }

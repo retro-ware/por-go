@@ -3,6 +3,7 @@ package remaster
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"slices"
 	"time"
 
@@ -199,20 +200,19 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		s.cur = min(max(s.cur, 0), pk.N-1)
 		if i := s.cur - pk.Page*pk.PerPage; i >= 0 && i < len(pk.Cells) {
 			r := p.cellRect(pk.Cells[i])
-			t := max(1, int(s.at.W/float64(s.pw)))
-			c := pal.EGA(10)
-			for _, e := range []image.Rectangle{{r.Min, image.Pt(r.Max.X, r.Min.Y+t)}, {image.Pt(r.Min.X, r.Max.Y-t), r.Max}, {r.Min, image.Pt(r.Min.X+t, r.Max.Y)}, {image.Pt(r.Max.X-t, r.Min.Y), r.Max}} {
-				dst.SubImage(e).(*gpu.Image).Fill(c)
-			}
+			pal.SelectOutline(r, max(1, int(s.at.W/float64(s.pw))), func(e image.Rectangle, c color.RGBA) { dst.SubImage(e).(*gpu.Image).Fill(c) })
 		}
 		if s.sub != scrAsk {
 			return
 		}
 	}
 	title, items := p.screenItems(v)
-	lines, keys := make([]string, len(items)), rowKeys(items)
+	lines, keys, off := make([]string, len(items)), rowKeys(items), rowsOff(items)
 	for i, it := range items {
 		lines[i] = it.text
+	}
+	if s.sub == scrType { // the line being typed is no row to pick
+		off[0] = false
 	}
 	s.sel = min(max(s.sel, 0), len(lines)-1)
 	s.top = min(max(s.top, s.sel-scrRows+1), s.sel, max(0, len(lines)-scrRows))
@@ -230,12 +230,12 @@ func (p *Presenter) drawScreen(dst *gpu.Image, v engine.View) {
 		r := p.cellRect(*a)
 		cx := r.Min.X - int(k*8) + int(k*float64((w+4)*8))/2 // the text over the field's
 		rects := slices.Clone(p.menuRects)
-		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], sel, k, cx, r.Max.Y) // under the field
+		p.drawMenu(dst, p.glyph, "", lines[s.top:end], keys[s.top:end], off[s.top:end], sel, k, cx, r.Max.Y) // under the field
 		p.winRects, p.menuRects = slices.Clone(p.menuRects), rects
 		p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 		return
 	}
-	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
+	k := p.keyWindow(dst, title, lines[s.top:end], keys[s.top:end], off[s.top:end], sel, screenName(v) == "creation" || screenName(v) == "icon")
 	p.menuBar(dst, p.winRects, len(lines), end-s.top, &s.top, &s.sel, k)
 }
 

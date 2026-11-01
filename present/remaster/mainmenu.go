@@ -180,7 +180,7 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 		dst.DrawImage(p.logo, op)
 	}
 	p.mainSel = min(max(p.mainSel, 0), len(lines)-1)
-	p.drawMenu(dst, p.glyph, "", lines, keys, p.mainSel, mk, b.Dx()/2, top+lh+gap)
+	p.drawMenu(dst, p.glyph, "", lines, keys, nil, p.mainSel, mk, b.Dx()/2, top+lh+gap)
 	p.drawParty(dst, v.Party, cardAt(dst))
 	p.cards = p.cards[:0]
 	for i := range v.Party {
@@ -194,7 +194,7 @@ func (p *Presenter) drawMainUI(dst *gpu.Image, v engine.View) {
 		for _, it := range items {
 			lines, keys = append(lines, it.text), append(keys, it.key)
 		}
-		p.keyWindow(dst, q, lines, keys, p.sel, false)
+		p.keyWindow(dst, q, lines, keys, nil, p.sel, false)
 	}
 	p.ask = p.mainAsk != askNone
 }

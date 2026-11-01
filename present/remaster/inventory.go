@@ -56,7 +56,7 @@ func col(i int) color.RGBA {
 
 var (
 	green, white, cyan = col(10), col(15), col(11)
-	blue, gray, dark   = col(1), col(7), col(8)
+	gray, dark         = col(7), col(8)
 	red                = col(12)
 )
 
@@ -273,11 +273,8 @@ func (inv *inventory) drawPane(pn *pane, items []engine.InvItem, sel int, ware, 
 		it := &items[i]
 		y := listTop + (i-pn.top)*rowH
 		r := image.Rect(x0, y, tr, y+rowH)
-		switch {
-		case it.Index == sel:
-			inv.fill(r, blue)
-		case inv.hover.In(r) && !busy:
-			inv.outline(r, dark)
+		if it.Index == sel || inv.hover.In(r) && !busy {
+			pal.SelectText(r, inv.fill)
 		}
 		inv.drawIcon(it, image.Rect(x0, y, x0+rowH, y+rowH))
 		tc := green
@@ -417,14 +414,6 @@ func drawText(dst *image.RGBA, glyph func(byte) [8]byte, s string, x, y int, c c
 
 func (inv *inventory) fill(r image.Rectangle, c color.RGBA) {
 	draw.Draw(inv.px, r, image.NewUniform(c), image.Point{}, draw.Src)
-}
-
-// outline is a one pixel frame around r.
-func (inv *inventory) outline(r image.Rectangle, c color.RGBA) {
-	inv.fill(image.Rect(r.Min.X, r.Min.Y, r.Max.X, r.Min.Y+1), c)
-	inv.fill(image.Rect(r.Min.X, r.Max.Y-1, r.Max.X, r.Max.Y), c)
-	inv.fill(image.Rect(r.Min.X, r.Min.Y, r.Min.X+1, r.Max.Y), c)
-	inv.fill(image.Rect(r.Max.X-1, r.Min.Y, r.Max.X, r.Max.Y), c)
 }
 
 // upTo is s in at most n characters.
@@ -593,7 +582,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		case !w.on:
 			c, hc = dark, dark
 		case inv.hover.In(w.r):
-			inv.fill(w.r, blue)
+			pal.SelectText(w.r, inv.fill)
 		}
 		inv.text(w.text[:1], x, rowY, hc)
 		inv.text(w.text[1:], x+8, rowY, c)
@@ -651,7 +640,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	}
 	inv.askAt = nil
 	if box != nil { // the question: the standard menu, over everything
-		p.keyWindow(dst, strings.Join(box, " "), []string{"Yes", "No"}, []byte{'Y', 'N'}, inv.askSel, false)
+		p.keyWindow(dst, strings.Join(box, " "), []string{"Yes", "No"}, []byte{'Y', 'N'}, nil, inv.askSel, false)
 		inv.askAt = slices.Clone(p.winRects)
 	}
 	return true
@@ -697,11 +686,8 @@ func (p *Presenter) drawMember(in *engine.Inventory, v engine.View, lx, lw, bott
 			inv.drawIcon(it, box.Inset(1))
 			inv.lines = append(inv.lines, hit{r: box, item: *it, doll: true})
 		}
-		switch {
-		case it != nil && it.Index == inv.sel:
-			inv.outline(box, col(14)) // yellow: the boxes are white-edged
-		case inv.hover.In(box) && !busy:
-			inv.outline(box, cyan)
+		if it != nil && it.Index == inv.sel || inv.hover.In(box) && !busy {
+			pal.SelectOutline(box, 1, inv.fill)
 		}
 	}
 }

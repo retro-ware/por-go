@@ -283,11 +283,10 @@ func barPixels(glyph func(byte) [8]byte, items []barItem, hover, w, h, k int, ic
 	}
 	for i, it := range items {
 		r := buttonRect(w, len(items), i, k)
-		edge := rgb(8)
+		fill(r, rgb(8))
 		if i == hover {
-			edge = color.RGBA{0xFF, 0xCC, 0x33, 0xFF}
+			pal.SelectOutline(r, 2*k, fill)
 		}
-		fill(r, edge)
 		in := r.Inset(2 * k)
 		// the face at the icon's size: the icon 1:1, the letters on it in
 		// proportion; then scaled as one to the button (so their relation holds)

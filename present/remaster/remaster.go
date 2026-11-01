@@ -173,7 +173,7 @@ func (p *Presenter) drawPickList(dst *gpu.Image, glyph func(byte) [8]byte, k flo
 		lines[i] = s.Name
 	}
 	p.sel = min(max(p.sel, 0), len(lines)-1)
-	p.drawMenu(dst, glyph, "Cast:", lines, blobber.Hotkeys(lines), p.sel, k, cx, top)
+	p.drawMenu(dst, glyph, "Cast:", lines, blobber.Hotkeys(lines), nil, p.sel, k, cx, top)
 }
 
 // pickKey takes key k while a spell is picked: the arrows, Enter, a hotkey, Esc.
@@ -368,7 +368,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	}
 	if choosing(v) && askMenu(v) != nil { // a member pick: the question alone in the middle, the cards round it take the pick (a click, F1-F8, the arrows and Enter; Esc or a right click give up)
 		p.menu = false
-		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(askMenu(v).Prompt)}, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
+		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(askMenu(v).Prompt)}, nil, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
 		p.menuRects = p.menuRects[:0]
 	} else if ask { // the question over the line being typed, its cursor blinking
 		p.menu = false
@@ -381,7 +381,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if picBottom > 0 { // never over the picture: right under it
 			top = max(top, picBottom+int(pk*4))
 		}
-		p.drawMenu(dst, note.Glyph, typing(v).Prompt, []string{caretLine(t, c, w, p.blink())}, nil, 0, mk, cx, top)
+		p.drawMenu(dst, note.Glyph, typing(v).Prompt, []string{caretLine(t, c, w, p.blink())}, nil, nil, 0, mk, cx, top)
 		p.menuRects = p.menuRects[:0]
 	} else if askList(v) != nil && askMenu(v) != nil { // a list and its question (list.go)
 		p.menu = false
@@ -400,7 +400,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if picBottom > 0 {
 			top = max(top, picBottom+int(pk*4))
 		}
-		p.drawMenu(dst, note.Glyph, "", lines, keys, p.sel, mk, cx, top)
+		p.drawMenu(dst, note.Glyph, "", lines, keys, nil, p.sel, mk, cx, top)
 	} else if askMenu(v) == nil { // "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
 	} else if p.menu && menuID(askMenu(v)) != p.menuFor { // the menu the popup was opened for is gone (answered): the next one opens on its own key
@@ -418,7 +418,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 				top = max(top, picBottom+int(pk*4))
 			}
 		}
-		p.drawMenu(dst, note.Glyph, askMenu(v).Prompt, lines, keys, p.sel, mk, cx, top)
+		p.drawMenu(dst, note.Glyph, askMenu(v).Prompt, lines, keys, nil, p.sel, mk, cx, top)
 	}
 	if note.Show { // the toast: pageImage's bottom line (yellow on black) on a black band along the very bottom of the screen, no border
 		h := int(pk * 8)
@@ -957,7 +957,9 @@ func (p *Presenter) sceneNamed(name string) *blobber.Scene {
 		if p.view, err = blobber.NewView(); err != nil {
 			log.Fatalln("remaster:", err)
 		}
-		blobber.Window = func(d *gpu.Image, t string, l []string, k []byte, sel int, b bool) { p.keyWindow(d, t, l, k, sel, b) } // its menu and options in the game's box
+		blobber.Window = func(d *gpu.Image, t string, l []string, k []byte, sel int, b bool) { // its menu and options in the game's box
+			p.keyWindow(d, t, l, k, nil, sel, b)
+		}
 	}
 	if sc, ok := p.scenes[name]; ok {
 		return sc

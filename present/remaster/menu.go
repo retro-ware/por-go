@@ -107,9 +107,20 @@ func hotText(s string, key byte) (string, int) {
 
 // drawMenu draws a vertical menu in the original's look: a box with the
 // text pane's red border, the items in the game's font, green on black with
-// their hotkeys white, the selected one on blue. It goes at scale k, centred on cx, its top at top.
-func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, sel int, k float64, cx, top int) {
-	p.drawMenuIcons(dst, glyph, title, items, keys, nil, sel, k, cx, top)
+// their hotkeys white, the rows off[i] (nothing to pick) grey (EGA 8), the
+// selected one on the text selection (pal.SelectText). It goes at scale k,
+// centred on cx, its top at top.
+func (p *Presenter) drawMenu(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, off []bool, sel int, k float64, cx, top int) {
+	p.drawMenuIcons(dst, glyph, title, items, keys, off, nil, sel, k, cx, top)
+}
+
+// rowsOff are the rows with nothing to pick (do nil).
+func rowsOff(rows []menuRow) []bool {
+	off := make([]bool, len(rows))
+	for i, r := range rows {
+		off[i] = r.do == nil
+	}
+	return off
 }
 
 // iconRow is the cells an item row with its 20x20 atlas icon takes: as
@@ -119,8 +130,10 @@ const iconRow = 3
 // drawMenuIcons is drawMenu with an icon before each row of icons that is
 // not nil (the inventory's row: the icon, then the text): unscaled, or
 // shrunk with its aspect kept to the row's height.
-func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, icons []image.Image, sel int, k float64, cx, top int) {
+func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, title string, items []string, keys []byte, off []bool, icons []image.Image, sel int, k float64, cx, top int) {
 	items = slices.Clone(items)
+	grey := make([]bool, len(items))
+	copy(grey, off)
 	hk := make([]int, len(items)) // each row's white letter
 	for i := range items {
 		var key byte
@@ -134,6 +147,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	if title != "" { // a long question on two lines, so the box stays narrow
 		t := append(wrap(title, 24), "")
 		rows, hot, icon = append(t, items...), append(slices.Repeat([]int{-1}, len(t)), hk...), append(make([]image.Image, len(t)), icon...)
+		grey = append(make([]bool, len(t)), grey...)
 		if sel >= 0 {
 			sel += len(t)
 		}
@@ -161,7 +175,7 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		p.menuImg, p.menuBuf = gpu.NewImage(cw*8, ch*8), make([]byte, cw*8*ch*8*4)
 	}
 	rgb := pal.EGA
-	green, blue, white := rgb(10), rgb(1), rgb(15)
+	green, white, dim := rgb(10), rgb(15), rgb(8)
 	clear(p.menuBuf)
 	for i := 3; i < len(p.menuBuf); i += 4 {
 		p.menuBuf[i] = 255
@@ -173,11 +187,13 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 	for r, s := range rows {
 		y0, x0 := at[r]*8+8, 2
 		if r == sel {
-			for y := 0; y < rh(r)*8; y++ {
-				for x := 8; x < (cw-1)*8; x++ {
-					set(x, y0+y, blue)
+			pal.SelectText(image.Rect(8, y0, (cw-1)*8, y0+rh(r)*8), func(r image.Rectangle, c color.RGBA) {
+				for y := r.Min.Y; y < r.Max.Y; y++ {
+					for x := r.Min.X; x < r.Max.X; x++ {
+						set(x, y, c)
+					}
 				}
-			}
+			})
 		}
 		if ic := icon[r]; ic != nil { // the icon, then the text in the middle line
 			b, h := ic.Bounds(), iconRow*8
@@ -196,7 +212,10 @@ func (p *Presenter) drawMenuIcons(dst *gpu.Image, glyph func(byte) [8]byte, titl
 		for i := 0; i < len(s); i++ {
 			g := glyph(s[i])
 			c := green
-			if i == hk {
+			switch {
+			case grey[r]:
+				c = dim
+			case i == hk:
 				c = white
 			}
 			for y := 0; y < 8; y++ {

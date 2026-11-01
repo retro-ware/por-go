@@ -176,7 +176,7 @@ func selectedName(v engine.View) string {
 // top; a bestiary entry's icon goes over its box.
 func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View, k float64, cx, top, bottom int) {
 	title, items := p.campItems(v)
-	lines, keys := make([]string, len(items)), rowKeys(items)
+	lines, keys, off := make([]string, len(items)), rowKeys(items), rowsOff(items)
 	for i, it := range items {
 		lines[i] = it.text
 	}
@@ -234,7 +234,7 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	c.top = min(max(c.top, c.sel-fit+1), c.sel, max(0, n-fit))
 	if n > fit {
 		end := c.top + fit
-		lines, keys = lines[c.top:end], keys[c.top:end]
+		lines, keys, off = lines[c.top:end], keys[c.top:end], off[c.top:end]
 		if icons != nil {
 			icons = icons[c.top:end]
 		}
@@ -242,11 +242,11 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	rows := extra + lh*len(lines)
 	top = max(0, min(top, bottom-int(k*float64(rows*8)))) // moved up to fit above bottom
 	if yesNo(keys) {                                      // a question: where every one goes (keyWindow)
-		p.keyWindow(dst, title, lines, keys, c.sel, false)
+		p.keyWindow(dst, title, lines, keys, off, c.sel, false)
 		p.menuRects = slices.Clone(p.winRects)
 		return
 	}
-	p.drawMenuIcons(dst, glyph, title, lines, keys, icons, c.sel-c.top, k, cx, top)
+	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, c.sel-c.top, k, cx, top)
 	p.menuBar(dst, p.menuRects, n, len(lines), &c.top, &c.sel, k)
 }
 

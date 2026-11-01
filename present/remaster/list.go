@@ -55,15 +55,16 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	}
 	l.top = max(0, min(l.top, n-listRows))
 	var lines []string
+	var off []bool
 	keys := slices.Clone(p.listKeys(v)[l.top:min(n, l.top+listRows)])
 	for _, ln := range askList(v)[l.top:min(n, l.top+listRows)] {
-		lines = append(lines, ln.Text)
+		lines, off = append(lines, ln.Text), append(off, ln.Off)
 	}
 	lines, keys = append(lines, ""), append(keys, 0)
 	for _, o := range l.opts {
 		lines, keys = append(lines, askMenu(v).Items[o].Text), append(keys, askMenu(v).Items[o].Key)
 	}
-	p.drawMenu(dst, glyph, askMenu(v).Prompt, lines, keys, p.listRow(n), k, cx, top)
+	p.drawMenu(dst, glyph, askMenu(v).Prompt, lines, keys, off, p.listRow(n), k, cx, top)
 	var sel *int
 	if l.sel < n {
 		sel = &l.sel
@@ -188,7 +189,7 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 			lines[i] = it.text
 		}
 		p.sel = min(max(p.sel, 0), len(lines)-1)
-		p.keyWindow(dst, "View:", lines, keys, p.sel, true)
+		p.keyWindow(dst, "View:", lines, keys, nil, p.sel, true)
 		return
 	}
 	m := askMenu(v)
@@ -213,7 +214,7 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 		lines[i], keys[i] = it.Text, it.Key
 	}
 	p.sel = min(max(p.sel, 0), len(lines)-1)
-	p.keyWindow(dst, m.Prompt, lines, keys, p.sel, true)
+	p.keyWindow(dst, m.Prompt, lines, keys, nil, p.sel, true)
 }
 
 // pageMenuKey moves the page question's highlight (unless the page takes

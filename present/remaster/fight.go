@@ -80,7 +80,7 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 		n := len(lines)
 		p.logTop = min(max(p.logTop, 0), max(0, n-logRows))
 		lines = lines[p.logTop:min(n, p.logTop+logRows)]
-		p.drawMenu(dst, glyph, "Battle Log", lines, make([]byte, len(lines)), -1, k, cx, int(k)*16)
+		p.drawMenu(dst, glyph, "Battle Log", lines, make([]byte, len(lines)), nil, -1, k, cx, int(k)*16)
 		p.menuBar(dst, p.menuRects, n, len(lines), &p.logTop, nil, k)
 		p.menuRects = p.menuRects[:0]
 	}
