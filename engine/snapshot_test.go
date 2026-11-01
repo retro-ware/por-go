@@ -52,12 +52,12 @@ func TestView(t *testing.T) {
 		t.Errorf("after turning right from %v: %+v", f, v)
 	}
 	v = keys(engine.Action{Kind: engine.ActMember, N: -1}) // the character sheet covers the frame
-	if v.Pane != nil {
-		t.Errorf("character sheet: MainFrame still set")
+	if v.SheetPage == nil {
+		t.Errorf("character sheet: not up")
 	}
 	v = keys(engine.Action{Kind: engine.ActClose})
 	if v.Pane == nil {
-		t.Errorf("back from the sheet: MainFrame not set")
+		t.Errorf("back from the sheet: no text pane")
 	}
 }
 
@@ -438,7 +438,7 @@ func TestViewMember(t *testing.T) {
 	if len(v.Party) < 2 {
 		t.Fatal("party of one")
 	}
-	if v = keyWait(e, engine.Action{Kind: engine.ActMember, N: 1}); v.Pane != nil {
+	if v = keyWait(e, engine.Action{Kind: engine.ActMember, N: 1}); v.SheetPage == nil {
 		t.Fatal("portrait click: still on the main screen")
 	}
 	if !v.Party[1].Selected {

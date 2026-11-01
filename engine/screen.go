@@ -34,7 +34,6 @@ func (e *Engine) DrawMainFrame(inner bool) {
 	if inner {
 		e.frame(3, 3, 13, 13, colWhite, "")
 	}
-	e.pg.frameUp = true
 }
 
 // DrawMainScreen = 00BA:27D9: rebuild the whole screen for DS:49F3.

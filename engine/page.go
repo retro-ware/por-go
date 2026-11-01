@@ -45,12 +45,11 @@ type layer struct {
 }
 
 type pageState struct {
-	layers  []layer
-	held    int      // Hold depth: the page is not published meanwhile
-	frameUp bool     // DrawMainFrame's boxes are still whole
-	pal     pal.Regs // the palette the layers' images are in
-	ids     uint64   // layers drawn
-	tx      texts    // the text the game wrote (text.go)
+	layers []layer
+	held   int      // Hold depth: the page is not published meanwhile
+	pal    pal.Regs // the palette the layers' images are in
+	ids    uint64   // layers drawn
+	tx     texts    // the text the game wrote (text.go)
 }
 
 // draw records l over the page: layers it hides go, and the text it
@@ -115,7 +114,6 @@ func (e *Engine) picture(x0, y0, w, h int, d []byte, mask int, src *dax.Image, f
 func (e *Engine) clearPage() {
 	clear(e.pg.layers)
 	e.pg.layers = e.pg.layers[:0]
-	e.pg.frameUp = false
 	e.newPage()
 	e.pg.tx = texts{}
 }
@@ -183,11 +181,8 @@ func (e *Engine) pageView(v *View) {
 	}
 	v.Cells = image.Pt(textCols, textRows)
 	t := &pg.tx
-	if e.mode() == modeExplore { // exploring always stands on the main frame: a stray write over an edge (camp's leaving) must never bring the classic page up
-		pg.frameUp = true
-	}
-	v.Frame = pg.frameUp && !e.modal() // under help, the journal, the maps: the page, not the 3D view
-	if p := e.pane(); pg.frameUp || p.Shown() {
+	v.Adventure = e.adventure()
+	if p := e.pane(); v.Adventure || p.Shown() {
 		v.Pane = p
 	}
 	v.Prompt = e.runs(t.prompt)
@@ -243,4 +238,10 @@ func (e *Engine) layerRGBA(l layer) image.Image {
 		}
 	}
 	return out
+}
+
+// adventure: the party is out in the world (not the party menu, the
+// finale's pictures, or help, the journal, the maps over it).
+func (e *Engine) adventure() bool {
+	return e.beginFlag != 0 && e.beginFlag != 7 && !e.modal()
 }

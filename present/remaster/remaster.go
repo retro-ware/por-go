@@ -239,8 +239,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return Rect{}
 	}
 	sc := p.scene(v)
-	area := v.Window == engine.WinAreaMap && v.AreaMap != nil               // the overland: its map over the whole window, the 3D view's cards and boxes over it
-	if sc == nil && !area || v.Results != nil || !choosing(v) && !v.Frame { // a member pick (Choosing) shows the view and the cards whatever page asked
+	area := v.Window == engine.WinAreaMap && v.AreaMap != nil                   // the overland: its map over the whole window, the 3D view's cards and boxes over it
+	if sc == nil && !area || v.Results != nil || !choosing(v) && !v.Adventure { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil        // back from elsewhere: no tween from where the view was
 		p.asked = ""                                                      // and a question still waiting on return (View from the loot menu) pops up again
 		if sheetUp(v) && v.SheetPage != nil && v.SheetPage.Spells == "" { // the sheet: the presenter's, at the inventory's scale
@@ -250,6 +250,12 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		}
 		if v.Results != nil {
 			return p.drawResults(dst, v, note)
+		}
+		if screenUp(v) { // the temple, the shop, training away from the 3D view (the training hall's party menu): on black
+			dst.Fill(color.Black)
+			b := dst.Bounds()
+			p.drawCamp(dst, note.Glyph, v, scale(dst), b.Dx()/2, b.Dy()/4, b.Max.Y)
+			return Rect{}
 		}
 		if !ownLayout(v) { // nothing of the engine's page: the page's pictures and text in the remaster's layout
 			return p.drawGeneric(dst, v, note)
@@ -319,8 +325,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
-	picBottom := 0                                                                // the bottom of the picture box, when one is up
-	if v.Frame && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
+	picBottom := 0                                                                    // the bottom of the picture box, when one is up
+	if v.Adventure && (v.Window == engine.WinPicture || v.Window == engine.WinText) { // not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4
 		pp := fitScale(pk, blobber.Settings.Pic, func(k float64) bool {
@@ -343,8 +349,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if asking {
 		p.answered = pane
 	}
-	shown := v.Frame && v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
-	ask := typing(v) != nil && typing(v).Prompt != ""                                     // a script's input: its question and the line in one pop-up, no text box
+	shown := v.Adventure && v.Pane != nil && v.Pane.Shown() && (asking || pane != p.answered) // back from a question with its text unchanged: the encounter is over
+	ask := typing(v) != nil && typing(v).Prompt != ""                                         // a script's input: its question and the line in one pop-up, no text box
 	shown = shown && !ask
 	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))

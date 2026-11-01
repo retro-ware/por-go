@@ -133,7 +133,6 @@ func (e *Engine) areaMapInit() {
 	e.frame(1, 1, 15, 15, colBlack, "")
 	e.frame(17, 1, winRight, 15, colBlack, "")
 	e.frame(1, msgTop, winRight, winBottom, colBlack, "")
-	e.pg.frameUp = true // the adventure screen, over the area map (View.AreaMap)
 }
 
 // areaMapIcons = 00BA:2B5E: switch to the area map view and draw it.

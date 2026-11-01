@@ -545,8 +545,6 @@ func (e *Engine) CharMessage(c *Character, msg string, wait bool) {
 		r := 0x11
 		if e.resting != 0 {
 			r = 0x12
-		} else if !e.pg.frameUp { // extra: with the main frame up the border is there (redrawing it read as the frame torn down: the classic page came up)
-			e.border(1, r, paneRight, paneBottom, "", 0)
 		}
 		e.blank(1, r, paneRight, paneBottom)
 		e.text(1, r+1, nameColour(c), c.Name())

@@ -219,7 +219,7 @@ type View struct {
 	Inventory  *Inventory     // the inventory screen is up (nil otherwise)
 	Map        *MapSquares    // the current map, drawn by the presenter at MapCell pixels a square (nil where the game has no map)
 	Pictures   []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
-	Frame      bool           // the main frame is up (its boxes are among Pictures): the 3D view's screen
+	Adventure  bool           // the party is out in the world: the 3D view (or the overland map) is the screen
 	Prompt     []PaneRun      // the prompt row's text (the last row), X the page's column
 	ViewText   [][]PaneRun    // text over the view window (WinText: opProtection's runes), rows from 1, X the page's column
 	Results    *Results       // the after-combat page (in a box round the window)
