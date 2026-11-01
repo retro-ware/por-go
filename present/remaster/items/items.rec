@@ -182,6 +182,10 @@ internal_name: 2D
 name: Heavy Crossbow
 icon: 1162
 
+internal_name: 2D:Composite
+name: Fine Composite Long Bow (a Heavy Crossbow in the game data)
+icon: 1174
+
 internal_name: 2E
 name: Light Crossbow
 icon: 148
