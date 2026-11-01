@@ -14,8 +14,8 @@ require (
 	github.com/gogpu/gputypes v0.8.0 // indirect
 	github.com/gogpu/naga v0.19.0 // indirect
 	github.com/gogpu/wgpu v0.34.5 // indirect
-	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/klauspost/compress v1.19.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.4.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.27 // indirect
@@ -37,6 +37,7 @@ require (
 replace blobber => ./phlan-poc/blobber
 
 require (
+	github.com/jfreymuth/oggvorbis v1.0.5
 	github.com/retro-ware/gameimport v0.0.0
 	golang.org/x/image v0.45.0
 	gpu v0.0.0

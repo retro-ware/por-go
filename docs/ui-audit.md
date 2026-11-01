@@ -251,15 +251,17 @@ Help, the journal and history take Left/Right/PgUp/PgDn, the wheel, a click on t
 | a64418e | **Standard menus:**<br>• The inventory question is a standard menu.<br>• The list popup uses `menuNav`, and Esc closes it.<br>• The list popup highlights the row under the pointer. |
 | 7ecdf0a | **One place for Yes/No:** every question is centred over the dimmed view at the Menus scale. |
 | 6309d63 | **Battle bar focus:**<br>• Tab/Shift-Tab and the shoulders move a focus; Enter and pad A press the focused button.<br>• Every button shows its key, including Esc on Cancel.<br>• Yes/No show Y and N; Esc means No. |
+| 841a0a0 | **Digit hotkeys:** list rows with no letter hotkey get 1–9, then none (`digitKeys`): camp lists, page screens, the sheet and the list popup. |
+| ab848fe | **Text cursor:** `editKey` keeps a cursor: Left/Right/Home/End move it, Backspace and Delete edit at it, typing inserts. It blinks (`caretLine`) in the engine and page-screen editors. |
+| a737edc | **Pagers:** help, the journal and history page with the wheel and with clicks on the ◀ ▶ marks drawn on the hint row. |
+| 0ee0cfc | **Bestiary icons:** bestiary rows show the creature's icon, shrunk to the row with its aspect kept. Spell lists stay text: the repo has no spell-school art. |
+| 70c6de3 | **Page boxes:** cellPage and the modal pages share `cellBorder`. They stay text-grid cells in the page's CPU image (uploaded once per View, cropped by the adventure frame), so they don't go through `window()`. |
+| 5c3c5b6 | **Esc-menu questions:** Yes, No with Y/N, starting on No; `keyWindow` centres and dims them once. |
+| 297dc0c | **One repeat rate:** blobber's `KeyRepeated` uses cmd/por's `repeats` (`blobber.Repeats`). Pad X (Overview) and Start (Enter) keep their bindings. |
 
-Tests: `TestMenuNav`, `TestScrollBar` and `TestBarFocus`. Checks are headless only.
+Tests: `TestMenuNav`, `TestScrollBar`, `TestBarFocus`, `TestDigitKeys` and `TestEditCursor`. Checks are headless only.
 
 ### Open
 
-- Not every list row has a hotkey yet. The standard asks for digits on list rows.
-- The text editor has no movable or blinking cursor.
-- Pagers (help, journal, history) don't take the wheel or clicks on ◀ ▶. The gamepad shoulders page them already.
-- Spell lists and the bestiary show no icons in their rows. Temple cures and appraise list no items, so they stay text only.
-- The page screens' text boxes (`cellPage.box`) draw their own borders as text-grid data.
-- The Esc-menu confirmations list No before Yes. They are centred and dimmed already.
-- Gamepad X and Start keep their current bindings (Overview and Enter). Blobber's Esc menu still has its own key-repeat rate.
+- Temple cures and appraise list no items, so they stay text only.
+- Spell lists have no icons: there is no spell-school art.

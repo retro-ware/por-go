@@ -1,4 +1,4 @@
-"""Renders the voice-over (engine/voice.go) into GAMEDIR/SPEECH/<key>.mp3.
+"""Renders the voice-over (engine/voice.go) into GAMEDIR/SPEECH/<key>.ogg (Ogg Vorbis).
 
     ~/.mlx-audio-env/bin/python voice/render.py GAMEDIR
 
@@ -6,9 +6,9 @@ Kokoro-82M (mlx-community/Kokoro-82M-bf16), voice am_michael. Keys: the
 script texts of voice/lines.txt by FNV-64a hash (as voiceKey), the journal
 texts by title ("Journal_Entry_26"), Rolf's history (HISTORY.TXT) by chapter
 title and paragraph hash. Files already rendered are kept: delete
-one to render it again. Needs ffmpeg with libmp3lame.
+one to render it again. Needs oggenc (brew install vorbis-tools).
 """
-import re, subprocess, sys, tempfile, wave
+import re, subprocess, sys
 from pathlib import Path
 
 import numpy as np
@@ -66,18 +66,13 @@ def history():
 def main():
     out = Path(sys.argv[1]) / 'SPEECH'
     out.mkdir(parents=True, exist_ok=True)
-    todo = [(k, t) for k, t in [*texts(), *history()] if not (out / (k + '.mp3')).exists()]
+    todo = [(k, t) for k, t in [*texts(), *history()] if not (out / (k + '.ogg')).exists()]
     model = load_model('mlx-community/Kokoro-82M-bf16')
     for i, (k, t) in enumerate(todo, 1):
         audio = np.concatenate([np.array(r.audio) for r in model.generate(t, voice='am_michael', lang_code='a', speed=1.0)])
-        with tempfile.NamedTemporaryFile(suffix='.wav') as w:
-            with wave.open(w.name, 'wb') as f:
-                f.setnchannels(1)
-                f.setsampwidth(2)
-                f.setframerate(model.sample_rate)
-                f.writeframes((np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes())
-            subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', w.name, '-ar', '44100', '-ac', '1',
-                            '-b:a', '48k', str(out / (k + '.mp3'))], check=True)
+        pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes()
+        subprocess.run(['oggenc', '-Q', '-r', '-R', str(model.sample_rate), '-C', '1', '-B', '16',
+                        '--resample', '44100', '-q', '4', '-o', str(out / (k + '.ogg')), '-'], input=pcm, check=True)
         print(f'{i}/{len(todo)} {k} {t[:60]!r}', flush=True)
 
 

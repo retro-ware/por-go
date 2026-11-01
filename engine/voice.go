@@ -2,6 +2,8 @@ package engine
 
 import (
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"hash/fnv"
 	"io"
 	"os"
@@ -10,11 +12,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hajimehoshi/go-mp3"
+	"github.com/jfreymuth/oggvorbis"
 )
 
 // Voice-over (extra): story texts, journal texts and first visits are read
-// aloud from data/assets/speech/<key>.mp3 (rendered by voice/render.py,
+// aloud from data/assets/speech/<key>.ogg (Ogg Vorbis, rendered by voice/render.py,
 // 44100 Hz). On unless switched off in the remastered view's Esc options; each text speaks once per save
 // (VOICED.GOB beside SEEN.GOB); Enter or Esc silences it. The Amiga music is
 // muted while it speaks.
@@ -76,15 +78,11 @@ func (e *Engine) speak(key string) {
 	if e.ext.voiced[key] || !e.voiceOn() {
 		return
 	}
-	b, err := os.ReadFile(filepath.Join(e.data, AssetsDir, "speech", key+".mp3"))
+	b, err := os.ReadFile(filepath.Join(e.data, AssetsDir, "speech", key+".ogg"))
 	if err != nil {
 		return
 	}
-	d, err := mp3.NewDecoder(bytes.NewReader(b))
-	if err != nil {
-		return
-	}
-	pcm, err := io.ReadAll(d)
+	pcm, err := vorbisPCM(b)
 	if err != nil {
 		return
 	}
@@ -128,4 +126,23 @@ func (v *voice) Read(p []byte) (int, error) {
 	clear(p[o:n])
 	scale(p[:n], volume("voice"))
 	return n, nil
+}
+
+// vorbisPCM decodes an Ogg Vorbis file (mono or stereo, 44100 Hz) to s16
+// stereo PCM.
+func vorbisPCM(b []byte) ([]byte, error) {
+	f, format, err := oggvorbis.ReadAll(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	if format.SampleRate != 44100 || format.Channels > 2 {
+		return nil, fmt.Errorf("voice: %d Hz, %d channels, want 44100 Hz mono or stereo", format.SampleRate, format.Channels)
+	}
+	pcm := make([]byte, 0, len(f)/format.Channels*4)
+	for i := 0; i < len(f); i += format.Channels {
+		l, r := f[i], f[i+format.Channels-1]
+		pcm = binary.LittleEndian.AppendUint16(pcm, uint16(int16(max(-1, min(1, l))*32767)))
+		pcm = binary.LittleEndian.AppendUint16(pcm, uint16(int16(max(-1, min(1, r))*32767)))
+	}
+	return pcm, nil
 }

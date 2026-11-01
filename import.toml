@@ -23,7 +23,7 @@ run      = ["./por", "-import-disk2", "data/ADF", "-data", "data"]
 [[source]]
 name     = "the voice-over"
 optional = true
-describe = "por-voice.zip, the spoken story lines (.mp3)."
-markers  = ["1a83648acff21ee4.mp3", "1ae1390bbc88f267.mp3"]
-files    = ["*.mp3"]
+describe = "por-voice.zip, the spoken story lines (.ogg)."
+markers  = ["1a83648acff21ee4.ogg", "1ae1390bbc88f267.ogg"]
+files    = ["*.ogg"]
 dest     = "data/assets/speech"
