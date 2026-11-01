@@ -197,7 +197,12 @@ func initInput(app *gogpu.App) {
 			in.mhit[b] = in.mhit[b] || down
 		}
 	}
-	ev.OnMousePress(func(b gpucontext.MouseButton, x, y float64) { button(b, true, x, y) })
+	ev.OnMousePress(func(b gpucontext.MouseButton, x, y float64) {
+		if x < 0 || y < 0 || win.lw > 0 && (x >= float64(win.lw) || y >= float64(win.lh)) { // on the title bar or the frame: the window's, not the game's
+			return
+		}
+		button(b, true, x, y)
+	})
 	ev.OnMouseRelease(func(b gpucontext.MouseButton, x, y float64) { button(b, false, x, y) })
 	ev.OnMouseMove(func(x, y float64) { in.cursor = [2]float64{x, y} })
 	ev.OnScroll(func(dx, dy float64) { in.wheel[0] += dx; in.wheel[1] += dy })
