@@ -17,7 +17,9 @@ type Image struct {
 	Count         int
 	BPP           int // bytes (pixels) per frame
 	Data          []byte
-	Mask          int // Clear for a masked load, -1 = none
+	Mask          int    // Clear for a masked load, -1 = none
+	File          string // where it came from (the loader sets it): the DAX file...
+	Block, Base   int    // ...its block, and the block's frame that is frame 0 here (an animation's frames)
 }
 
 // Clear marks a masked-out pixel; the page draws it as colour 0.

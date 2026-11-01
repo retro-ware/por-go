@@ -205,12 +205,12 @@ func (e *Engine) pageRGBA() *image.RGBA {
 	v := e.View()
 	m := image.NewRGBA(image.Rect(0, 0, textCols*8, textRows*8))
 	draw.Draw(m, m.Bounds(), image.Black, image.Point{}, draw.Src)
-	for _, s := range v.Page {
-		op := draw.Over
-		if _, ok := s.Img.(*image.Uniform); ok {
-			op = draw.Src
+	for _, s := range v.Pictures {
+		if s.Fill {
+			draw.Draw(m, s.At, image.NewUniform(s.Colour), image.Point{}, draw.Src)
+			continue
 		}
-		draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, op)
+		draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, draw.Over)
 	}
 	for y, row := range v.Text {
 		for x, c := range row {

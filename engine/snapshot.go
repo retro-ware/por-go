@@ -129,7 +129,7 @@ type View struct {
 	Events    []CombatEvent  // what happened in the fight since the last Apply, in order (Apply's View only)
 	Inventory *Inventory     // the inventory screen is up (nil otherwise)
 	Map       image.Image    // the map as the full map draws it (drawMap), 16 squares of MapCell pixels a side (nil where the game has no map)
-	Page      []Sprite       // the screen's pictures, symbols and fills, bottom first (page.go)
+	Pictures  []Picture      // the screen's pictures, symbols and fills, bottom first (page.go)
 	Text      [][]Cell       // the text cells, over Page: the page's rows of columns (40x25 at least; a larger window gives more, ActResize)
 	Overlays  []Overlay      // pictures over everything at the window's resolution (the journal's scans)
 	Spots     []CellRect     // the parts of the page that take clicks (ActSpot, ActHover N), the topmost last

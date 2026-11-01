@@ -314,3 +314,15 @@ HitMessage and debugValues put there; the remaster draws its box from it
 Note. View.MainFrame and TextShown are gone (`Pane != nil`,
 `Pane.Shown()`). StatusLine's row is not in the pane (the remaster never
 showed it). The picture box still crops the page (step 2).
+Step 2 done: `View.Page []Sprite` is `View.Pictures []Picture`, typed:
+each a frame of a DAX file and block (File, Block, Frame: the picture, an
+animation's current frame, a symbol, a tile; dax.Image keeps File, Block
+and Base from its loader), decoded in the palette, at its page box (At);
+or a fill (Fill, Colour). One list keeps the drawing order, so title,
+credits, encounter pictures, the finale and the boxes' symbols draw as
+before. The remaster draws the 3D view's picture window (WinPicture) from
+the pictures (pictureBox) instead of cropping the page; WinText still
+crops it (its text is step 3/4). Captures against HEAD (title, both title
+pictures, credits, load and walk, the parlay picture) match frame for
+frame except the main menu's wall-clock fade-in, which differs between
+two runs of the old binary too. No finale dev scene exists to capture.

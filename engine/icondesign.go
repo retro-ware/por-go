@@ -147,7 +147,7 @@ func (e *Engine) pushIcon() {
 			*pic = byte(i)
 			build()
 			if im := e.icons[0xC][0]; im != nil {
-				e.picture(x*8, y*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
+				e.picture(x*8, y*8, im.Width*8, im.Height, im.Frame(0), im.Mask, im, 0)
 			}
 			*pic = was
 		}, func(i int) bool { *pic = byte(i); return true })

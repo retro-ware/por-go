@@ -35,11 +35,12 @@ type page struct {
 	seq   uint64
 	noted bool
 	drawn bool
-	page  []engine.Sprite      // what img shows: the View's page...
+	page  []engine.Picture     // what img shows: the View's page...
 	text  [][]engine.Cell      // ...and text
 	scans map[image.Image]scan // the overlays on the GPU
 	fit   *gpu.Image           // fit's whole-scale copy
 	pane  *gpu.Image           // the text pane (paneImage)
+	pic   *gpu.Image           // the picture window (pictureBox)
 	toast *gpu.Image           // the note's line over the 3D view
 }
 
@@ -115,16 +116,9 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 		return pg.img
 	}
 	pg.drawn, pg.seq, pg.noted = true, v.Seq, note.Show
-	pg.page, pg.text = append(pg.page[:0], v.Page...), v.Text
+	pg.page, pg.text = append(pg.page[:0], v.Pictures...), v.Text
 	m := pg.px
-	draw.Draw(m, m.Bounds(), image.Black, image.Point{}, draw.Src)
-	for _, s := range v.Page {
-		op := draw.Over
-		if _, ok := s.Img.(*image.Uniform); ok {
-			op = draw.Src
-		}
-		draw.Draw(m, s.At, s.Img, s.Img.Bounds().Min, op)
-	}
+	drawPictures(m, v.Pictures, image.Point{})
 	for y, row := range v.Text {
 		for x, c := range row {
 			if c.Set {
@@ -137,6 +131,28 @@ func (p *Presenter) pageImage(v engine.View, note Note) *gpu.Image {
 	}
 	pg.img.WritePixels(m.Pix)
 	return pg.img
+}
+
+// drawPictures draws pics on black into m, whose top left is page pixel
+// at: a fill as its colour, a picture over what is under it.
+func drawPictures(m *image.RGBA, pics []engine.Picture, at image.Point) {
+	draw.Draw(m, m.Bounds(), image.Black, image.Point{}, draw.Src)
+	for _, s := range pics {
+		r := s.At.Sub(at).Add(m.Rect.Min)
+		if s.Fill {
+			draw.Draw(m, r, image.NewUniform(s.Colour), image.Point{}, draw.Src)
+			continue
+		}
+		draw.Draw(m, r, s.Img, s.Img.Bounds().Min, draw.Over)
+	}
+}
+
+// pictureBox draws the pictures in page rectangle r (the picture window)
+// into *img.
+func pictureBox(img **gpu.Image, pics []engine.Picture, r image.Rectangle) *gpu.Image {
+	m := image.NewRGBA(image.Rect(0, 0, r.Dx(), r.Dy()))
+	drawPictures(m, pics, r.Min)
+	return upload(img, m)
 }
 
 // noteLine draws the note yellow, centred on a black line at y of m (the
@@ -285,7 +301,7 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []engine.Overlay, r Rect, w,
 // engine publishes a View every tick, most of them with the page unchanged;
 // a layer's picture is the same when it is the same pixels.
 func samePage(v engine.View, pg *page) bool {
-	if len(v.Page) != len(pg.page) || len(v.Text) != len(pg.text) {
+	if len(v.Pictures) != len(pg.page) || len(v.Text) != len(pg.text) {
 		return false
 	}
 	for y := range v.Text {
@@ -293,8 +309,8 @@ func samePage(v engine.View, pg *page) bool {
 			return false
 		}
 	}
-	for i, s := range v.Page {
-		if s.At != pg.page[i].At || !sameImage(s.Img, pg.page[i].Img) {
+	for i, s := range v.Pictures {
+		if o := pg.page[i]; s.At != o.At || s.Fill != o.Fill || s.Colour != o.Colour || !sameImage(s.Img, o.Img) {
 			return false
 		}
 	}
@@ -306,9 +322,8 @@ func sameImage(a, b image.Image) bool {
 	case *image.RGBA:
 		b, ok := b.(*image.RGBA)
 		return ok && a.Rect == b.Rect && a.Stride == b.Stride && len(a.Pix) == len(b.Pix) && (len(a.Pix) == 0 || &a.Pix[0] == &b.Pix[0])
-	case *image.Uniform:
-		b, ok := b.(*image.Uniform)
-		return ok && a.C == b.C
+	case nil:
+		return b == nil
 	}
 	return false
 }

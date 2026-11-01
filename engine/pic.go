@@ -27,7 +27,15 @@ func (e *Engine) LoadPicMasked(name string, id int, mask byte) *dax.Image {
 	if b == nil {
 		return nil
 	}
-	return dax.ParseImage(b, true, mask)
+	return named(dax.ParseImage(b, true, mask), name, id)
+}
+
+// named records where im came from (View.Pictures' File and Block).
+func named(im *dax.Image, file string, block int) *dax.Image {
+	if im != nil {
+		im.File, im.Block = file, block
+	}
+	return im
 }
 
 // LoadPic = 0464:0111 (no masking).
@@ -36,7 +44,7 @@ func (e *Engine) LoadPic(name string, id int) *dax.Image {
 	if b == nil {
 		return nil
 	}
-	return dax.ParseImage(b, false, 0)
+	return named(dax.ParseImage(b, false, 0), name, id)
 }
 
 // DrawPicture = 0464:1951 draw_picture(x, y, pic): blit frame at cell (x,y).
@@ -46,7 +54,7 @@ func (e *Engine) DrawPicture(x, y int, im *dax.Image, frame int) {
 	}
 	d := im.Frame(frame)
 	w := im.Width * 8
-	e.picture(x*8, y*8, w, im.Height, d, -1)
+	e.picture(x*8, y*8, w, im.Height, d, -1, im, frame)
 }
 
 // Put8x8Symbol = ovr35:015D Put8x8Symbol(x, y, id) without overlay: copy
@@ -98,5 +106,5 @@ func (e *Engine) DrawPictureMasked(x, y int, im *dax.Image, frame, mode int) {
 	if masked {
 		m = im.Mask
 	}
-	e.picture(x*8, y*8, w, im.Height, d, m)
+	e.picture(x*8, y*8, w, im.Height, d, m, im, frame)
 }

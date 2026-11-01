@@ -77,7 +77,7 @@ func (e *Engine) drawPage(x, y int, im *dax.Image, frame int, masked bool) {
 	if masked {
 		m = im.Mask
 	}
-	e.picture(8+x*8, 8+y*8, im.Width*8, im.Height, im.Frame(frame), m)
+	e.picture(8+x*8, 8+y*8, im.Width*8, im.Height, im.Frame(frame), m, im, frame)
 	e.pg.layers[len(e.pg.layers)-1].clip = image.Rect(8, 8, 8+pageCells*8, 8+pageCells*8)
 }
 

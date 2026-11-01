@@ -435,7 +435,7 @@ func (e *Engine) mapPage(ox, oy, cell int, labels map[int]mapLabel, letter map[s
 	n := 16 * cell
 	p := &pixels{n, n, make([]uint8, n*n)}
 	e.drawMap(p, 0, 0, cell, labels, letter)
-	e.picture(ox, oy, n, n, p.pix, -1)
+	e.picture(ox, oy, n, n, p.pix, -1, nil, 0)
 }
 
 // mapImage is drawMap off screen, cell pixels a square, in the screen's

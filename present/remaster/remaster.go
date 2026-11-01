@@ -345,7 +345,11 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			py = int(gap + pp*ph/2)
 			cy = py + int(pp*ph/2+gap+tk*th/2)
 		}
-		drawBox(dst, frame.SubImage(pic.Pixels().Inset(8)).(*gpu.Image), p.border.tiles, pic, pp, cx, py)
+		inside := frame.SubImage(pic.Pixels().Inset(8)).(*gpu.Image) // text over the whole view window (WinText): still the page's (step 3)
+		if v.Window == engine.WinPicture {
+			inside = pictureBox(&p.pg.pic, v.Pictures, pic.Pixels().Inset(8))
+		}
+		drawBox(dst, inside, p.border.tiles, pic, pp, cx, py)
 		picBottom = py + int(pp*ph/2)
 	}
 	pane, asking := textPane(v), askMenu(v) != nil && !v.Exploring && !noChoice(v)

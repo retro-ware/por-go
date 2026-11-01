@@ -499,7 +499,7 @@ func (e *Engine) creationSheet(c *Character) {
 		if c.Icon != nil {                                      // a PNG: over the page at the window's resolution
 			e.pg.overlays = append(e.pg.overlays, Overlay{Img: iconPose(c.Icon, p, false), At: iconRect(sheetIconCol(p), sheetIconRow)})
 		} else if im := e.icons[c.Order][p]; im != nil {
-			e.picture(sheetIconCol(p)*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask)
+			e.picture(sheetIconCol(p)*8, sheetIconRow*8, im.Width*8, im.Height, im.Frame(0), im.Mask, im, 0)
 		}
 	}
 }

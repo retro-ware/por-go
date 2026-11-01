@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 
+	"por/dax"
 	"por/pal"
 )
 
@@ -11,11 +12,18 @@ import (
 // typed layers (pictures, symbols and fills in drawing order) under the text
 // cells, so a presenter draws the screen from the View.
 
-// Sprite is one thing drawn on the page: Img with its top left at At.Min
-// (a fill: a uniform colour over At).
-type Sprite struct {
-	Img image.Image
-	At  image.Rectangle
+// Picture is one thing drawn on the page, bottom first: frame Frame of
+// block Block of the DAX file File (a picture, an animation's frame, a
+// symbol, a tile) decoded in the page's palette with its mask pixels
+// transparent, its top left at At.Min and cut to At; or, Fill set, a fill
+// of Colour over At.
+type Picture struct {
+	File         string // "" for pixels the engine made itself (the full map)
+	Block, Frame int
+	Img          image.Image // nil for a fill
+	At           image.Rectangle
+	Fill         bool
+	Colour       color.RGBA
 }
 
 // Cell is a text cell: the glyph's set bits in Fg, the rest in Bg.
@@ -53,6 +61,8 @@ type layer struct {
 	img    image.Image     // d in the colours of pageState.pal (nil: not converted yet)
 	clip   image.Rectangle // drawn only inside (empty: all of it)
 	id     uint64
+	src    *dax.Image // what d is a frame of (nil: the engine's own pixels)
+	frame  int        // its frame
 }
 
 type pageState struct {
@@ -112,8 +122,9 @@ func (e *Engine) fill(x0, y0, x1, y1 int, c uint8) {
 	e.draw(layer{at: image.Rect(x0, y0, x1, y1), fill: c, opaque: true})
 }
 
-// picture records a blit of w by h pixels d at x0, y0 (mask as blit's).
-func (e *Engine) picture(x0, y0, w, h int, d []byte, mask int) {
+// picture records a blit of w by h pixels d, frame frame of src, at x0,
+// y0 (mask as blit's).
+func (e *Engine) picture(x0, y0, w, h int, d []byte, mask int, src *dax.Image, frame int) {
 	d = d[:w*h]
 	opaque := true
 	for _, p := range d {
@@ -122,7 +133,7 @@ func (e *Engine) picture(x0, y0, w, h int, d []byte, mask int) {
 			break
 		}
 	}
-	e.draw(layer{at: image.Rect(x0, y0, x0+w, y0+h), d: d, w: w, mask: mask, opaque: opaque})
+	e.draw(layer{at: image.Rect(x0, y0, x0+w, y0+h), d: d, w: w, mask: mask, opaque: opaque, src: src, frame: frame})
 }
 
 // clearPage starts an empty page (ClearScreen).
@@ -177,18 +188,25 @@ func (e *Engine) pageView(v *View) {
 	pg := &e.pg
 	stale := pg.pal != e.pal
 	pg.pal = e.pal
-	v.Page = make([]Sprite, 0, len(pg.layers))
+	v.Pictures = make([]Picture, 0, len(pg.layers))
 	for i := range pg.layers {
 		l := &pg.layers[i]
+		if l.d == nil {
+			v.Pictures = append(v.Pictures, Picture{At: l.at, Fill: true, Colour: e.pal.RGBA(l.fill)})
+			continue
+		}
 		if l.img == nil || stale {
 			l.img = e.layerRGBA(*l)
 		}
-		s := Sprite{l.img, l.at}
+		s := Picture{Img: l.img, At: l.at}
+		if l.src != nil {
+			s.File, s.Block, s.Frame = l.src.File, l.src.Block, l.src.Base+l.frame
+		}
 		if !l.clip.Empty() {
 			s.At = l.at.Intersect(l.clip)
 			s.Img = l.img.(*image.RGBA).SubImage(s.At.Sub(l.at.Min))
 		}
-		v.Page = append(v.Page, s)
+		v.Pictures = append(v.Pictures, s)
 	}
 	all := make([]Cell, textRows*textCols)
 	v.Text = make([][]Cell, textRows)
@@ -230,9 +248,6 @@ func (e *Engine) pane() *Pane {
 
 // layerRGBA converts l's pixels in the current palette, as blit draws them.
 func (e *Engine) layerRGBA(l layer) image.Image {
-	if l.d == nil {
-		return image.NewUniform(e.pal.RGBA(l.fill))
-	}
 	h := len(l.d) / l.w
 	out := image.NewRGBA(image.Rect(0, 0, l.w, h))
 	for i, p := range l.d {

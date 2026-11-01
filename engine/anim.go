@@ -42,6 +42,9 @@ func (e *Engine) LoadAnimPic(name string, block int, masked bool) {
 	if name == "PIC" && block == 1 && len(fr) > 4 {
 		fr = fr[:4]
 	}
+	for i, f := range fr {
+		named(f.Image, e.set.file(name), block).Base = i
+	}
 	if masked && (e.Cfg.Graphics == 'E' || e.Cfg.Graphics == 'T') { // DS:4A1E != 0
 		for _, f := range fr { // 0464:1E5C(DS:0C6C, DS:0C7C, 0, 0): colour 13 -> opaque black
 			e.recolourFrame(maskFrom[:], maskTo[:], 0, false, f.Image)
