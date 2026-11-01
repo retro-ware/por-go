@@ -60,7 +60,7 @@ func screenName(v engine.View) string {
 		return "creation"
 	case v.Slots != nil:
 		return "slots"
-	case v.IconDrop && v.Menu == nil:
+	case v.IconDrop && askMenu(v) == nil:
 		return "icon"
 	}
 	return ""

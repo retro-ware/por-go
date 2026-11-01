@@ -40,12 +40,9 @@ func (e *Engine) endGame() {
 func (e *Engine) unwindReset() {
 	e.resets++
 	x := &e.ext
-	x.inCommand, x.menu, x.list, x.choosing = false, 0, false, false
-	x.held, x.regions, x.raw = Action{}, nil, false
-	x.typing, x.modal, x.floor, x.viewing, x.toItems = false, 0, 0, false, false
-	x.campBar, x.paging = false, false
+	x.held, x.regions, x.modal, x.floor = Action{}, nil, 0, 0
 	x.fullMap, x.walk, x.back, x.aoe, x.enemiesOnly = false, nil, false, 0, false
-	x.menuFloor, x.panel, e.snap.typing = 0, nil, nil
+	x.panel = nil
 	e.screens = nil // the screens pushed are gone with their callers
 	e.picker, e.creation, e.slotsUp, x.creating = nil, nil, nil, false
 	e.snap.invOn, e.snap.shop, e.snap.loot, e.snap.sheetOn = false, false, false, false

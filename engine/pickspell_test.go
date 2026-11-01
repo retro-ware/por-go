@@ -10,7 +10,7 @@ func TestPickSpell(t *testing.T) {
 	c.Memorized[0], c.Memorized[1] = spCureLightWounds, spCureLightWounds
 	got := byte(0xFF)
 	e.pickSpell(func(id byte) { got = id })
-	if n := len(e.snap.spellPick); n != 1 {
+	if n := len(e.eclWait.ask.Spells); n != 1 {
 		t.Errorf("%d spells offered, want 1", n)
 	}
 	e.feed(Action{Kind: ActCast, N: 99}, 0)

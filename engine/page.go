@@ -143,7 +143,7 @@ func (e *Engine) newPage() {
 
 // resizePage gives the page cols by rows cells (40x25 at least): what is
 // drawn stays where it is, then the screen draws itself up again at the
-// new size (ext.redraw) with the menu bar waited on (ext.bar).
+// new size (ext.redraw); a question is the presenter's to lay out.
 func (e *Engine) resizePage(cols, rows int) {
 	cols, rows = max(cols, minCols), max(rows, minRows)
 	if cols == textCols && rows == textRows {
@@ -159,7 +159,7 @@ func (e *Engine) resizePage(cols, rows int) {
 	if e.ext.redraw != nil {
 		e.ext.redraw()
 	}
-	if oldPrompt < textRows && !e.ext.relist { // the bar's old row would stay inside the page
+	if oldPrompt < textRows { // the bar's old row would stay inside the page
 		e.DisplaySpaces(0, oldPrompt, colBlack, len(old[0]))
 	}
 }

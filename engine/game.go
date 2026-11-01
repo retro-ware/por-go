@@ -245,7 +245,6 @@ func (e *Engine) awaitCommand() {
 		e.DevAction = nil
 		f()
 	}
-	e.ext.inCommand = e.mode() == modeExplore
 }
 
 // commandEnd = the end of CommandInput.
@@ -263,7 +262,6 @@ func (e *Engine) applyExplore(a Action) bool {
 	if e.over { // a script quit after its screens (Apply)
 		return true
 	}
-	e.ext.inCommand = false
 	done, encamp := e.explore(a)
 	e.StatusLine()
 	if done {
@@ -333,8 +331,7 @@ func (e *Engine) explore(a Action) (done, encamp bool) {
 		if len(e.carried(e.selected())) == 0 {
 			e.say("No items")
 		} else {
-			e.ext.toItems = true
-			e.pushSheet()
+			e.pushSheetOn(true)
 		}
 	case ActMember:
 		if member() {

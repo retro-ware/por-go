@@ -16,7 +16,7 @@ func (p *Presenter) sheetItems(v engine.View) []campItem {
 }
 
 // sheetUp: the sheet's menu is the page's question.
-func sheetUp(v engine.View) bool { return v.Sheet != nil && v.Menu == nil && v.Inventory == nil }
+func sheetUp(v engine.View) bool { return v.Sheet != nil && askMenu(v) == nil && v.Inventory == nil }
 
 // sheetKey takes key k on the sheet: the menu's keys, F1-F8 another member.
 func (p *Presenter) sheetKey(k uint16, v engine.View) bool {

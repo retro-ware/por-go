@@ -41,7 +41,7 @@ func (p *Presenter) arrow(k uint16, v engine.View) {
 		}
 		return
 	}
-	if n := len(v.Party); n > 0 && (v.Choosing || k == 0x4700 || k == 0x4F00) && (back || on) {
+	if n := len(v.Party); n > 0 && (choosing(v) || k == 0x4700 || k == 0x4F00) && (back || on) {
 		i := slices.IndexFunc(v.Party, func(m engine.Member) bool { return m.Selected })
 		switch {
 		case on:
@@ -71,7 +71,7 @@ func (p *Presenter) send(kind engine.ActKind, n int) {
 
 // keyAct turns key k into the action it stands for on the screen v shows.
 func (p *Presenter) keyAct(k uint16, v engine.View) {
-	if t := v.Typing; t != nil { // the line being typed is edited here
+	if t := typing(v); t != nil { // the line being typed is edited here
 		if !p.typing {
 			p.typed, p.typing = t.Text, true
 		}
@@ -95,7 +95,7 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 		return
 	}
 	p.typing = false
-	if v.List != nil && v.Menu != nil && !v.Choosing && p.listKey(k, v) {
+	if askList(v) != nil && askMenu(v) != nil && !choosing(v) && p.listKey(k, v) {
 		return
 	}
 	if screenUp(v) {
@@ -137,15 +137,15 @@ func (p *Presenter) keyAct(k uint16, v engine.View) {
 	case k == '?':
 		p.send(engine.ActHelp, 0)
 	case k >= 128 || c < ' ':
-	case menuIndex(v.Menu, c) >= 0:
-		p.send(engine.ActChoose, menuIndex(v.Menu, c))
+	case menuIndex(askMenu(v), c) >= 0:
+		p.send(engine.ActChoose, menuIndex(askMenu(v), c))
 	case c == 'M':
 		p.send(engine.ActMap, 0)
 	case c == 'P':
 		p.send(engine.ActOverview, 0)
 	case c >= '1' && c <= '9':
 		p.arrow(keypadScan[c-'1'], v)
-	case c == ' ' || v.Menu == nil: // "press any key"
+	case c == ' ' || askMenu(v) == nil: // "press any key"
 		p.send(engine.ActOK, 0)
 	}
 }
@@ -210,7 +210,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 		p.send(engine.ActMember, 0)
 	case p.ctx > 0:
 		p.ctx = 0
-	case v.Menu != nil && len(v.Menu.Items) == 1 && v.Typing == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
+	case askMenu(v) != nil && len(askMenu(v).Items) == 1 && typing(v) == nil: // "PRESS <ENTER> TO CONTINUE" takes no Esc: the right button continues too
 		p.menu = false
 		p.send(engine.ActOK, 0)
 	case p.menu && v.Exploring: // the command bar's popup: it alone closes (key)
@@ -237,7 +237,7 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 	case !left || !in:
 	case spot >= 0:
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActSpot, N: spot, X: cx, Y: cy})
-	case v.Typing == nil && (v.Menu == nil || len(v.Menu.Items) == 1): // no bar, or one with nothing to choose (the scripts' "PRESS <ENTER> TO CONTINUE")
+	case typing(v) == nil && (askMenu(v) == nil || len(askMenu(v).Items) == 1): // no bar, or one with nothing to choose (the scripts' "PRESS <ENTER> TO CONTINUE")
 		p.send(engine.ActOK, 0)
 	}
 }
@@ -247,4 +247,40 @@ func sign(n int) int {
 		return -1
 	}
 	return 1
+}
+
+// askMenu is the question's prompt and options when v asks for an option,
+// a line of a list or a member (nil otherwise).
+func askMenu(v engine.View) *engine.Menu {
+	if a := v.Ask; a != nil && (a.Kind == engine.AskMenu || a.Kind == engine.AskList || a.Kind == engine.AskMember) {
+		return &a.Menu
+	}
+	return nil
+}
+
+// askList is the list v asks a line of (nil: none).
+func askList(v engine.View) []engine.ListLine {
+	if a := v.Ask; a != nil && a.Kind == engine.AskList {
+		return a.List
+	}
+	return nil
+}
+
+// typing is the line v asks to be typed (nil: none).
+func typing(v engine.View) *engine.Ask {
+	if a := v.Ask; a != nil && (a.Kind == engine.AskText || a.Kind == engine.AskNumber) {
+		return a
+	}
+	return nil
+}
+
+// choosing: v asks for a party member.
+func choosing(v engine.View) bool { return v.Ask != nil && v.Ask.Kind == engine.AskMember }
+
+// spellPick is the spells v asks to pick from (nil: none).
+func spellPick(v engine.View) []engine.Spell {
+	if a := v.Ask; a != nil && a.Kind == engine.AskSpell {
+		return a.Spells
+	}
+	return nil
 }

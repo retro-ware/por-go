@@ -5,63 +5,85 @@ import (
 	"strings"
 )
 
-// Script asks (docs/engine-redesign.md, M4): a script instruction that
-// needs the player does not wait. It records what it asks (View.Script)
+// Questions (docs/engine-redesign.md, M4): an instruction or rule that
+// needs the player does not wait. It records what it asks (View.Ask)
 // and how the answer completes it (eclWait), and returns; RunECL then puts
 // modeScript up, whose handler (applyScript) completes the instruction on
 // the answering decision, and the VM goes on with the next one. A
 // completion may ask again (the encounter's WAIT, a native script's next
 // question): the screen stays up until nothing is pending.
 
-// AskKind is what a pending script instruction waits for.
+// AskKind is what a question waits for.
 type AskKind int
 
 const (
-	AskMenu   AskKind = iota + 1 // a one-line menu (HMENU, the encounter's, Parlay's, "press Enter"): View.Menu; ActChoose N, ActOK where Enter takes the first
-	AskList                      // a vertical menu (VMENU): View.List; ActChoose with X the line; ActClose takes a last LEAVE
-	AskText                      // a typed line (INPUT string or number): View.Typing; ActText, then ActOK
-	AskMember                    // a member pick (WHO): View.Choosing; ActMember N, ActLead N steps, ActOK takes the candidate
+	AskMenu   AskKind = iota + 1 // options (a menu bar, the scripts' HMENU, Parlay, a yes/no): ActChoose N; ActOK where Enter takes the first; no options: a message to acknowledge (ActOK)
+	AskList                      // a list and its options (ListMenu, VMENU): ActChoose N with X the line (N -1: the line itself); ActClose takes a last LEAVE
+	AskText                      // a typed line (Text, at most Max): ActText, then ActOK; ActClose gives up
+	AskNumber                    // AskText for a number 0..65536
+	AskMember                    // a party member (SelectCharacter, WHO): Party's Selected is the candidate; ActMember N takes one, ActLead N makes it the candidate, ActOK takes it
 	AskPause                     // a pause (DELAY, MsgDelay, the title's waits): the presenter waits Ms, then sends ActOK (Enter cuts it short)
-	AskKey                       // "press any key" (the text pager, PromptRow24): any key answers
-	AskSpell                     // a memorized spell (View.SpellPick): ActCast N, ActClose backs out
+	AskKey                       // "press any key" (the pagers, PromptRow24): any key answers (ActOK, ActPage ...)
+	AskSpell                     // a memorized spell (Spells): ActCast N, ActClose backs out
 )
 
-// ScriptAsk is the pending script instruction's question.
-type ScriptAsk struct {
-	Kind    AskKind
-	Prompt  string
-	Options []string // the menu's options or the list's lines
-	Max     int      // AskText: the longest line
-	Number  bool     // AskText: a number 0..65536
-	Ms      int      // AskPause
+// Ask is the question waiting for the player (View.Ask): every one is
+// published the same way, whoever asks (the engine's prompts, a script
+// instruction).
+type Ask struct {
+	Kind   AskKind
+	Menu              // the prompt and the options (ActChoose N)
+	List   []ListLine // AskList: the lines
+	Text   string     // AskText, AskNumber: the line as typed so far
+	Max    int        // AskText, AskNumber: the longest line
+	Ms     int        // AskPause
+	Spells []Spell    // AskSpell: the spells to pick from (ActCast ID)
 }
 
-// eclWait is the pending instruction: what it asks, how it is shown
-// (the menu, list or typed line the presenter draws) and its completion.
+// eclWait is the pending question: what it asks and how the answer
+// completes it.
 type eclWait struct {
-	ask    ScriptAsk
-	menu   *Menu
-	list   []*ListNode
-	typing *Typing
-	anim   bool              // the picture animates while it waits
-	apply  func(Action) bool // completes the instruction (true) or keeps it waiting
-	done   func()            // nil, or what ending the ask puts back
+	ask     Ask
+	anim    bool              // the picture animates while it waits
+	members bool              // F1-F8 and the portraits pick the member the question is for (the loot)
+	apply   func(Action) bool // completes the question (true) or keeps it waiting
+	done    func()            // nil, or what ending the ask puts back
 }
+
+// asked: the question on top is of kind k.
+func (e *Engine) asked(k ...AskKind) bool {
+	if e.eclWait == nil { // (a pending ask under another screen still counts, as it waits)
+		return false
+	}
+	for _, x := range k {
+		if e.eclWait.ask.Kind == x {
+			return true
+		}
+	}
+	return false
+}
+
+// choosing: a member pick waits (the roster highlights its candidate).
+func (e *Engine) choosing() bool { return e.asked(AskMember) }
+
+// typing: a line is being typed.
+func (e *Engine) typing() bool { return e.asked(AskText, AskNumber) }
 
 // pushWait puts the pending ask up as a screen (modeScript); then runs
 // once it is answered and gone.
 func (e *Engine) pushWait(then func()) {
-	menu, list, typing, anim, last := e.snap.menu, e.snap.list, e.snap.typing, e.animInput, e.pic.last
-	e.ext.menu++
+	anim, last := e.animInput, e.pic.last
+	member := e.eclWait.ask.Kind == AskMember
 	e.pic.last = e.Ticks() // the animation timer starts over, as in DisplayInput
-	e.showAsk()
 	e.push(modeScript, e.applyScript, func() {
-		e.snap.menu, e.snap.list, e.snap.typing, e.animInput, e.pic.last = menu, list, typing, anim, last
-		e.ext.menu--
-		e.ext.typing, e.ext.choosing = false, false
+		e.animInput, e.pic.last = anim, last
 		e.viewAnim = 0
+		if member { // the roster without the candidate's highlight
+			e.DisplayPartyList()
+		}
 		then()
 	})
+	e.showAsk()
 }
 
 // asking runs ask, which records an ask (the engine's own prompts: the
@@ -107,26 +129,30 @@ func (e *Engine) applyScript(a Action) bool {
 	return false
 }
 
-// showAsk publishes the pending ask the way the presenter draws it.
+// showAsk shows the pending ask: the picture's animation, a member
+// pick's candidate in the roster.
 func (e *Engine) showAsk() {
 	w := e.eclWait
-	e.snap.menu, e.snap.list, e.snap.typing, e.animInput = w.menu, w.list, w.typing, w.anim
-	e.ext.typing, e.ext.choosing = w.typing != nil, w.ask.Kind == AskMember
+	e.animInput = w.anim
+	if w.ask.Kind == AskMember {
+		e.DisplayPartyList()
+	}
 }
 
-func menuTexts(m *Menu) []string {
-	var t []string
-	for _, it := range m.Items {
-		t = append(t, it.Text)
+// listLines are the lines of list as View.Ask shows them.
+func listLines(list []*ListNode) []ListLine {
+	l := make([]ListLine, len(list))
+	for i, n := range list {
+		l[i] = ListLine{Text: n.Text, Header: n.Flag != 0, Dim: n.Dim || n.Grey, Off: n.skipped(), Without: n.Without}
 	}
-	return t
+	return l
 }
 
 // askChoice asks menu (MenuInput's hotkey text) after prompt: then gets
 // the choice's place in the menu (0 for Enter with allowEnter).
 func (e *Engine) askChoice(prompt, menu string, allowEnter, anim bool, then func(int)) {
 	m, q := e.newQuestion(prompt, hotBar(menu), true, true)
-	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskMenu, Prompt: m.Prompt, Options: menuTexts(m)}, menu: m, anim: anim,
+	e.eclWait = &eclWait{ask: Ask{Kind: AskMenu, Menu: *m}, anim: anim,
 		apply: func(a Action) bool {
 			p, ok := q.decide(a)
 			switch {
@@ -157,15 +183,11 @@ func (e *Engine) askContinue(then func()) {
 // its index, -1 when the player backs out.
 func (e *Engine) askList(list []*ListNode, then func(int)) {
 	m, q := e.newQuestion("", nil, true, true)
-	ask := ScriptAsk{Kind: AskList}
-	for _, l := range list {
-		ask.Options = append(ask.Options, l.Text)
-	}
-	e.eclWait = &eclWait{ask: ask, menu: m, list: list,
+	q.list = true
+	e.eclWait = &eclWait{ask: Ask{Kind: AskList, Menu: *m, List: listLines(list)},
 		apply: func(a Action) bool {
-			e.ext.chosen = -1
 			p, ok := q.decide(a)
-			i := e.ext.chosen
+			i := p.Line
 			switch {
 			case !ok:
 			case p.ID == PickExit || p.ID == NoPick:
@@ -183,32 +205,37 @@ func (e *Engine) askList(list []*ListNode, then func(int)) {
 // with number, InputNumber's: asked again until it is 0..65536).
 func (e *Engine) askLine(maxlen int, number bool, then func(string)) {
 	e.ClearRow24()
-	t := &Typing{Max: maxlen, Prompt: strings.TrimSpace(e.ext.printed)} // the question is the text the script printed
-	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskText, Prompt: t.Prompt, Max: maxlen, Number: number}, typing: t,
-		apply: func(a Action) bool {
-			switch a.Kind {
-			case ActText:
-				b := make([]byte, 0, maxlen)
-				for i := 0; i < len(a.Text) && len(b) < maxlen; i++ {
-					if c := a.Text[i]; c >= 0x20 && c <= 0x7A {
-						b = append(b, c)
-					}
+	kind := AskText
+	if number {
+		kind = AskNumber
+	}
+	w := &eclWait{ask: Ask{Kind: kind, Menu: Menu{Prompt: strings.TrimSpace(e.ext.printed)}, Max: maxlen}} // the question is the text the script printed
+	t := &w.ask
+	e.eclWait = w
+	w.apply = func(a Action) bool {
+		switch a.Kind {
+		case ActText:
+			b := make([]byte, 0, maxlen)
+			for i := 0; i < len(a.Text) && len(b) < maxlen; i++ {
+				if c := a.Text[i]; c >= 0x20 && c <= 0x7A {
+					b = append(b, c)
 				}
-				t.Text = string(b)
-				e.DisplaySpaces(1, promptRow, colBlack, 39)
-				e.DisplayString(1, promptRow, colWhite, t.Text)
-			case ActOK, ActClose:
-				s := strings.ToUpper(t.Text)
-				if n, err := strconv.ParseInt(strings.TrimLeft(s, " "), 10, 32); number && (err != nil || n < 0 || n > 0x10000) {
-					t.Text = ""
-					return false
-				}
-				e.ClearRow24()
-				then(s)
-				return true
 			}
-			return false
-		}}
+			t.Text = string(b)
+			e.DisplaySpaces(1, promptRow, colBlack, 39)
+			e.DisplayString(1, promptRow, colWhite, t.Text)
+		case ActOK, ActClose:
+			s := strings.ToUpper(t.Text)
+			if n, err := strconv.ParseInt(strings.TrimLeft(s, " "), 10, 32); number && (err != nil || n < 0 || n > 0x10000) {
+				t.Text = ""
+				return false
+			}
+			e.ClearRow24()
+			then(s)
+			return true
+		}
+		return false
+	}
 }
 
 // askNumber is askLine for a number (InputNumber): then gets its low word.
@@ -230,17 +257,14 @@ func (e *Engine) askMember(prompt string, who *Character, then func(*Character))
 	if who == nil {
 		who = e.party[0]
 	}
-	e.rosterHi, e.rosterNone, e.ext.choosing = who, false, true
-	e.DisplayPartyList()
+	e.rosterHi, e.rosterNone = who, false
 	mark := e.regionMark()
 	e.rosterRegion() // a click on a member picks it
 	m, q := e.newQuestion(cut(prompt, textCols)+" ", Bar{{"Select", 0}}, true, true)
-	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskMember, Prompt: m.Prompt}, menu: m, anim: e.beginFlag == 2 || e.beginFlag == 6,
+	e.eclWait = &eclWait{ask: Ask{Kind: AskMember, Menu: *m}, anim: e.beginFlag == 2 || e.beginFlag == 6,
 		done: func() {
 			e.regionCut(mark)
 			e.rosterHi, e.rosterNone = nil, false
-			e.ext.choosing = false
-			e.DisplayPartyList()
 		},
 		apply: func(a Action) bool {
 			p, ok := q.decide(a)
@@ -264,7 +288,7 @@ func (e *Engine) askPause(ms int, then func()) {
 		then()
 		return
 	}
-	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskPause, Ms: ms},
+	e.eclWait = &eclWait{ask: Ask{Kind: AskPause, Ms: ms},
 		apply: func(a Action) bool {
 			if a.Kind != ActOK && a.Kind != ActClose {
 				return false
@@ -276,7 +300,7 @@ func (e *Engine) askPause(ms int, then func()) {
 
 // askKey is "press any key": then gets the action that answered.
 func (e *Engine) askKey(then func(Action)) {
-	e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskKey},
+	e.eclWait = &eclWait{ask: Ask{Kind: AskKey},
 		apply: func(a Action) bool {
 			if !e.pressed(a) {
 				return false

@@ -275,7 +275,7 @@ func (p *Presenter) campPick(v engine.View, i int) {
 
 // screenUp: one of the camp-style screens is up (camp, temple, shop, training).
 func screenUp(v engine.View) bool {
-	return (v.Camp != nil || v.Temple != nil || v.Shop != nil || v.Training != nil) && v.Menu == nil
+	return (v.Camp != nil || v.Temple != nil || v.Shop != nil || v.Training != nil) && askMenu(v) == nil
 }
 
 // sendX sends a decision with an X.

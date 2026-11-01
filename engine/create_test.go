@@ -61,8 +61,8 @@ func TestCreateSheet(t *testing.T) {
 	}
 	e.CreateCharacter()
 	v := view()
-	if v.Creation == nil || v.Menu != nil || v.Creation.Fields[FieldClass].At.Y1 != 5 {
-		t.Fatalf("creation %+v menu %+v", v.Creation, v.Menu)
+	if v.Creation == nil || v.Ask != nil || v.Creation.Fields[FieldClass].At.Y1 != 5 {
+		t.Fatalf("creation %+v ask %+v", v.Creation, v.Ask)
 	}
 	c := e.selected()
 	if c.Name() != "No-One" || c.Race != raceHuman || c.Class != clsFighter || c.Stats[0] == 0 || c.MaxHP == 0 {

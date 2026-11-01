@@ -9,7 +9,7 @@ import (
 	"por/engine"
 )
 
-// Lists (View.List): the presenter scrolls and highlights the lines; the
+// Lists (View.Ask (AskList)): the presenter scrolls and highlights the lines; the
 // question's options follow them. A line picked is ActChoose -1, an option
 // ActChoose N, each with the line highlighted as X.
 
@@ -25,9 +25,9 @@ type listUI struct {
 func listOpts(v engine.View, i int) []int {
 	var out []int
 outer:
-	for n, it := range v.Menu.Items {
-		if i >= 0 && i < len(v.List) {
-			for _, w := range v.List[i].Without {
+	for n, it := range askMenu(v).Items {
+		if i >= 0 && i < len(askList(v)) {
+			for _, w := range askList(v)[i].Without {
 				if w == it.Text {
 					continue outer
 				}
@@ -40,12 +40,12 @@ outer:
 
 // listLine is the line the highlight is on or was last on.
 func (p *Presenter) listLine(v engine.View) int {
-	return min(p.list.sel, len(v.List)-1)
+	return min(p.list.sel, len(askList(v))-1)
 }
 
 func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.View, k float64, cx, top int) {
 	l := &p.list
-	n := len(v.List)
+	n := len(askList(v))
 	l.opts = listOpts(v, p.listLine(v))
 	l.sel = min(max(l.sel, 0), n+len(l.opts)-1)
 	if l.sel < n {
@@ -54,14 +54,14 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	l.top = max(0, min(l.top, n-listRows))
 	var lines []string
 	var keys []byte
-	for _, ln := range v.List[l.top:min(n, l.top+listRows)] {
+	for _, ln := range askList(v)[l.top:min(n, l.top+listRows)] {
 		lines, keys = append(lines, ln.Text), append(keys, 0)
 	}
 	lines, keys = append(lines, ""), append(keys, 0)
 	for _, o := range l.opts {
-		lines, keys = append(lines, v.Menu.Items[o].Text), append(keys, v.Menu.Items[o].Key)
+		lines, keys = append(lines, askMenu(v).Items[o].Text), append(keys, askMenu(v).Items[o].Key)
 	}
-	p.drawMenu(dst, glyph, v.Menu.Prompt, lines, keys, p.listRow(n), k, cx, top)
+	p.drawMenu(dst, glyph, askMenu(v).Prompt, lines, keys, p.listRow(n), k, cx, top)
 }
 
 // listRow is the drawn row of the highlight.
@@ -74,9 +74,9 @@ func (p *Presenter) listRow(n int) int {
 
 // listPick takes the row sel: a line or an option.
 func (p *Presenter) listPick(v engine.View, sel int) {
-	n := len(v.List)
+	n := len(askList(v))
 	switch {
-	case sel < n && !v.List[sel].Off:
+	case sel < n && !askList(v)[sel].Off:
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActChoose, N: -1, X: sel})
 	case sel >= n && sel-n < len(p.list.opts):
 		p.inv.acts = append(p.inv.acts, engine.Action{Kind: engine.ActChoose, N: p.list.opts[sel-n], X: p.listLine(v)})
@@ -89,12 +89,12 @@ func (p *Presenter) listPick(v engine.View, sel int) {
 // listKey takes key k on a list.
 func (p *Presenter) listKey(k uint16, v engine.View) bool {
 	l := &p.list
-	n := len(v.List)
+	n := len(askList(v))
 	rows := n + len(l.opts)
 	step := func(d int) {
 		for range rows {
 			l.sel = (l.sel + d + rows) % rows
-			if l.sel >= n || !v.List[l.sel].Off {
+			if l.sel >= n || !askList(v)[l.sel].Off {
 				return
 			}
 		}
@@ -124,7 +124,7 @@ func (p *Presenter) listKey(k uint16, v engine.View) bool {
 			c -= 'a' - 'A'
 		}
 		for i, o := range l.opts {
-			if v.Menu.Items[o].Key == c {
+			if askMenu(v).Items[o].Key == c {
 				p.listPick(v, n+i)
 				return true
 			}
@@ -138,7 +138,7 @@ func (p *Presenter) listKey(k uint16, v engine.View) bool {
 
 // listClick takes a click on a drawn row.
 func (p *Presenter) listClick(x, y int, v engine.View) bool {
-	n := len(v.List)
+	n := len(askList(v))
 	shown := min(n, listRows)
 	for r, rc := range p.menuRects {
 		if !image.Pt(x, y).In(rc) {
@@ -174,14 +174,14 @@ func (p *Presenter) drawPageMenu(dst *gpu.Image, note Note, v engine.View) {
 		p.keyWindow(dst, "View:", lines, keys, p.sel, true)
 		return
 	}
-	m := v.Menu
-	if m == nil || v.Typing != nil || v.Choosing {
+	m := askMenu(v)
+	if m == nil || typing(v) != nil || choosing(v) {
 		return
 	}
-	if v.List != nil {
+	if askList(v) != nil {
 		b := dst.Bounds()
 		k := math.Max(1, math.Floor(scale(dst)))
-		p.drawList(dst, note.Glyph, v, k, b.Dx()/2, b.Dy()/2-int(k*float64(min(len(v.List), listRows)+len(m.Items)+6)*4))
+		p.drawList(dst, note.Glyph, v, k, b.Dx()/2, b.Dy()/2-int(k*float64(min(len(askList(v)), listRows)+len(m.Items)+6)*4))
 		return
 	}
 	if len(m.Items) < 2 { // "press Enter": nothing to pick
@@ -208,7 +208,7 @@ func (p *Presenter) pageMenuKey(k uint16, v engine.View) bool {
 	if sheetUp(v) {
 		return p.sheetKey(k, v)
 	}
-	n := len(v.Menu.Items)
+	n := len(askMenu(v).Items)
 	switch {
 	case k == 0x4800 && v.MapCursor == nil: // the full map's arrows move its cursor
 		p.sel = (p.sel + n - 1) % n

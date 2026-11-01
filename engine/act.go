@@ -27,15 +27,15 @@ const (
 	ActEnd               // combat: Done's Quit: end the turn
 	ActQuick             // combat: the computer fights for the member
 	ActTurn              // combat: turn undead
-	ActCast              // cast spell N (one of Turn.Spells in combat, of View.SpellPick elsewhere)
+	ActCast              // cast spell N (one of Turn.Spells in combat, of View.Ask (AskSpell) elsewhere)
 	ActItems             // combat: the inventory
 	ActAim               // combat, aiming: take square X, Y
 	ActPoint             // the cursor is on square X, Y: combat's aim (the preview follows), the full map's (View.MapCursor)
 	ActYes               // combat: yes to Battle.Ask (ActClose: no)
 	ActFlee              // combat: step off the map's edge and try to run away (Turn offers it at the edge)
-	ActChoose            // choose option N of View.Menu (X: the line of View.List)
+	ActChoose            // choose option N of View.Ask (X: the line of its List)
 	ActOK                // Enter: the highlighted choice, or "press a key"
-	ActText              // the line being typed (View.Typing) now reads Text
+	ActText              // the line being typed (View.Ask) now reads Text
 	ActInventory         // member N's items (F1-F8)
 	ActMinimap           // the minimap over the roster (Tab)
 	ActMap               // the full map (M)
@@ -68,7 +68,7 @@ const (
 	ActCamp      // make camp
 	ActSearch    // search this square once
 	ActSweep     // the slow, searching pace on or off
-	ActCastPick  // member N (< 0: the selected one) picks a memorised spell to cast (View.SpellPick)
+	ActCastPick  // member N (< 0: the selected one) picks a memorised spell to cast (View.Ask (AskSpell))
 
 	// Camp decisions (View.Camp); N is the member (< 0: the selected one)
 	ActRest       // rest: N is RestHeal .. RestUntil
@@ -158,10 +158,6 @@ func (e *Engine) apply(a Action) {
 		return
 	case ActResize:
 		e.resizePage(a.X, a.Y)
-		if e.ext.relist {
-			e.ext.relist = false
-			e.feed(Action{Kind: actRedraw}, 0)
-		}
 		return
 	case ActTick:
 		e.walkStep()
@@ -175,7 +171,7 @@ func (e *Engine) apply(a Action) {
 	default:
 		if e.ext.walk != nil && a.Kind != ActHover { // a key or a click stops the walk and is used up
 			e.ext.walk = nil
-			if e.ext.inCommand {
+			if e.exploring() {
 				return
 			}
 		}

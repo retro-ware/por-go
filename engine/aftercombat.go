@@ -366,9 +366,7 @@ func (e *Engine) lootAsk(done func()) {
 		}
 	}
 	menu = append(menu, Entry{"Exit", exit})
-	e.ext.campBar = true // ovr06:101F: anim; extra: F1-F8 pick the member too
-	e.displayThen("", menu, colLightMagenta, colLightGreen, colWhite, true, true, func(p Pick) {
-		e.ext.campBar = false
+	e.displayThen("", menu, colLightMagenta, colLightGreen, colWhite, true, true, func(p Pick) { // ovr06:101F: anim
 		if p.extra() {
 			if p.ID != PickRelist {
 				e.partyKeypad(p)
@@ -416,6 +414,7 @@ func (e *Engine) lootAsk(done func()) {
 			again()
 		}
 	})
+	e.eclWait.members = true // extra: F1-F8 pick the member too
 }
 
 // pushAfterCombat = AfterCombat (ovr06:1527): the results, then the treasure screen, which ends it.

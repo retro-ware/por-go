@@ -3,14 +3,14 @@ package engine
 import "testing"
 
 // A script's HMENU does not wait: it leaves the VM pending on its menu
-// (View.Script), and the answering decision completes it; an encounter's
+// (View.Ask), and the answering decision completes it; an encounter's
 // WAIT asks again, a typed number not 0..65536 is asked again.
 func TestScriptAsks(t *testing.T) {
 	e := quickStarted(t)
 	e.es.str[1], e.es.str[2] = "YES", "NO"
 	var got int
 	e.askChoice("", "~YES ~NO", false, false, func(c int) { got = c })
-	if w := e.eclWait; w == nil || w.ask.Kind != AskMenu || len(w.ask.Options) != 2 {
+	if w := e.eclWait; w == nil || w.ask.Kind != AskMenu || len(w.ask.Items) != 2 {
 		t.Fatalf("ask %+v", e.eclWait)
 	}
 	if e.applyScript(Action{Kind: ActOK}) {

@@ -15,30 +15,31 @@ func (e *Engine) ClearRow24() { e.DisplaySpaces(0, promptRow, colBlack, textCols
 // ActText sets it (only the characters ok takes, at most maxlen), show
 // draws it; Enter ends it, Esc too (false); then gets the line.
 func (e *Engine) typed(s string, maxlen int, ok func(byte) bool, show func(string), then func(string, bool)) {
-	t := &Typing{Text: s, Max: maxlen}
+	w := &eclWait{ask: Ask{Kind: AskText, Text: s, Max: maxlen}}
+	t := &w.ask
 	var done bool
 	show(s)
 	e.asking(func() { // an ask (AskText): the presenter edits the line
-		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskText, Max: maxlen}, typing: t,
-			apply: func(a Action) bool {
-				switch a.Kind {
-				case ActText:
-					b := make([]byte, 0, maxlen)
-					for i := 0; i < len(a.Text) && len(b) < maxlen; i++ {
-						if ok(a.Text[i]) {
-							b = append(b, a.Text[i])
-						}
+		e.eclWait = w
+		w.apply = func(a Action) bool {
+			switch a.Kind {
+			case ActText:
+				b := make([]byte, 0, maxlen)
+				for i := 0; i < len(a.Text) && len(b) < maxlen; i++ {
+					if ok(a.Text[i]) {
+						b = append(b, a.Text[i])
 					}
-					t.Text = string(b)
-					show(t.Text)
-				case ActOK:
-					done = true
-					return true
-				case ActClose:
-					return true
 				}
-				return false
-			}}
+				t.Text = string(b)
+				show(t.Text)
+			case ActOK:
+				done = true
+				return true
+			case ActClose:
+				return true
+			}
+			return false
+		}
 	}, func() { then(t.Text, done) })
 }
 

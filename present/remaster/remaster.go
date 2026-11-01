@@ -106,13 +106,13 @@ type Presenter struct {
 	ctxKeys     []byte                      // its lines' hotkeys (the first letters)
 	ctxRects    []image.Rectangle           // its lines on screen, as last drawn
 	ctxBox      image.Rectangle             // where its box went: the spell pick opens there
-	pick        []engine.Spell              // View.SpellPick as last drawn: a spell to cast is being picked on this screen
+	pick        []engine.Spell              // View.Ask (AskSpell) as last drawn: a spell to cast is being picked on this screen
 	pickAt      image.Rectangle             // the context menu's box the pick list replaces (zero: the top middle, the bar's scale)
 	command     bool                        // the party explores (View.Exploring), as last drawn
 	cmds        []command                   // the command menu's commands (explore.go), as last drawn
 	camp        campUI                      // the camp screens (camp.go)
 	shownView   engine.View                 // the View last drawn
-	list        listUI                      // View.List's highlight (list.go)
+	list        listUI                      // View.Ask (AskList)'s highlight (list.go)
 	pageMenu    bool                        // a page's question is up (list.go)
 	tipImg      *gpu.Image                  // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf      []byte                      // its pixels
@@ -126,10 +126,10 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		v = *ev.Scene
 	} else if ev != nil { // the fight as it stood at the event played
 		v.Battle, v.Party = ev.Battle, ev.Party
-		v.Menu, v.List, v.Script, v.SpellPick = nil, nil, nil, nil
+		v.Ask = nil
 	}
 	r := p.draw(dst, note, v)
-	if p.pick = v.SpellPick; p.pick == nil {
+	if p.pick = spellPick(v); p.pick == nil {
 		p.pickAt = image.Rectangle{}
 	} else { // the spell pick (the combat's Cast list) over whatever screen is up
 		k := scale(dst)
@@ -151,7 +151,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	return r
 }
 
-// pickList is the spell list up for a choice: View.SpellPick anywhere, else
+// pickList is the spell list up for a choice: View.Ask (AskSpell) anywhere, else
 // the bar's Cast in combat (Picking); nil when none.
 func (p *Presenter) pickList() []engine.Spell {
 	switch {
@@ -230,8 +230,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if screenUp(v) && !screenUp(p.shownView) { // camp, the temple, the shop, training start on their main screen
 		p.camp.screen, p.camp.sel = campMain, 0
 	}
-	if v.List != nil && p.shownView.List == nil { // a list opens at its first line
-		p.list = listUI{sel: max(0, slices.IndexFunc(v.List, func(l engine.ListLine) bool { return !l.Off }))}
+	if askList(v) != nil && askList(p.shownView) == nil { // a list opens at its first line
+		p.list = listUI{sel: max(0, slices.IndexFunc(askList(v), func(l engine.ListLine) bool { return !l.Off }))}
 	}
 	p.shownView = v
 	p.pace(v)
@@ -240,8 +240,8 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if !p.active {
 		p.ctx = 0
 	}
-	p.fight = v.Battle != nil                          // the battle view is the only one: the engine has no combat page
-	p.noMenu = v.Menu == nil || len(v.Menu.Items) == 1 // a one-item bar (PRESS <ENTER> TO CONTINUE) has nothing to pick either
+	p.fight = v.Battle != nil                                  // the battle view is the only one: the engine has no combat page
+	p.noMenu = askMenu(v) == nil || len(askMenu(v).Items) == 1 // a one-item bar (PRESS <ENTER> TO CONTINUE) has nothing to pick either
 	p.resize(dst, v)
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false
@@ -263,7 +263,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return Rect{}
 	}
 	sc := p.scene(v)
-	if sc == nil || !v.Choosing && (!v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
+	if sc == nil || !choosing(v) && (!v.MainFrame || (v.Window != engine.WinThreeD && v.Window != engine.WinPicture && v.Window != engine.WinText)) { // a member pick (Choosing) shows the view and the cards whatever page asked
 		p.shown, p.active, p.menu, p.cards = "", false, false, nil // back from elsewhere: no tween from where the view was
 		p.asked = ""                                               // and a question still waiting on return (View from the loot menu) pops up again
 		r := p.drawPage(dst, v, note)
@@ -348,32 +348,32 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		drawBox(dst, frame, p.border.tiles, pic, pp, cx, py)
 		picBottom = py + int(pp*ph/2)
 	}
-	pane, asking := textPane(v), v.Menu != nil && !v.Exploring && !noChoice(v)
+	pane, asking := textPane(v), askMenu(v) != nil && !v.Exploring && !noChoice(v)
 	if asking {
 		p.answered = pane
 	}
 	shown := v.TextShown && v.MainFrame && (asking || !slices.Equal(pane, p.answered)) // back from a question with its text unchanged: the encounter is over
-	ask := v.Typing != nil && v.Typing.Prompt != ""                                    // a script's input: its question and the line in one pop-up, no text box
+	ask := typing(v) != nil && typing(v).Prompt != ""                                  // a script's input: its question and the line in one pop-up, no text box
 	shown = shown && !ask
 	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText { // the text under the command bar: along the bottom edge
 		drawBox(dst, frame, p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
 		drawBox(dst, frame, p.border.tiles, txt, tk, cx, cy)
 	}
-	if v.Menu != nil && !v.Exploring && !noChoice(v) && !v.Choosing { // a question: its choices pop up at once
-		if id := menuID(v.Menu); id != p.asked { // not the menu just answered
+	if askMenu(v) != nil && !v.Exploring && !noChoice(v) && !choosing(v) { // a question: its choices pop up at once
+		if id := menuID(askMenu(v)); id != p.asked { // not the menu just answered
 			p.asked, p.menu, p.menuFor, p.sel = id, true, id, 0
 		}
 	} else {
 		p.asked = ""
 	}
-	if v.Choosing && v.Menu != nil { // a member pick: the question alone in the middle, the cards round it take the pick (a click, F1-F8, the arrows and Enter; Esc or a right click give up)
+	if choosing(v) && askMenu(v) != nil { // a member pick: the question alone in the middle, the cards round it take the pick (a click, F1-F8, the arrows and Enter; Esc or a right click give up)
 		p.menu = false
-		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(v.Menu.Prompt)}, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
+		p.drawMenu(dst, note.Glyph, "", []string{strings.TrimSpace(askMenu(v).Prompt)}, nil, -1, mk, cx, b.Dy()/2-int(mk*12))
 		p.menuRects = p.menuRects[:0]
 	} else if ask { // the question over the line being typed, a cursor after it
 		p.menu = false
-		t, w := v.Typing.Text, min(v.Typing.Max, 24)
+		t, w := typing(v).Text, min(typing(v).Max, 24)
 		if p.typing {
 			t = p.typed
 		}
@@ -381,16 +381,16 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		if time.Now().UnixMilli()/400%2 == 0 {
 			t += "_"
 		}
-		top := b.Dy()/2 - int(mk*float64(len(wrap(v.Typing.Prompt, 24))+5)*4)
+		top := b.Dy()/2 - int(mk*float64(len(wrap(typing(v).Prompt, 24))+5)*4)
 		if picBottom > 0 { // never over the picture: right under it
 			top = max(top, picBottom+int(pk*4))
 		}
-		p.drawMenu(dst, note.Glyph, v.Typing.Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
+		p.drawMenu(dst, note.Glyph, typing(v).Prompt, []string{t + strings.Repeat(" ", w+1-len(t))}, nil, 0, mk, cx, top)
 		p.menuRects = p.menuRects[:0]
-	} else if v.List != nil && v.Menu != nil { // a list and its question (list.go)
+	} else if askList(v) != nil && askMenu(v) != nil { // a list and its question (list.go)
 		p.menu = false
-		p.drawList(dst, note.Glyph, v, mk, cx, max(b.Dy()/2-int(mk*float64(min(len(v.List), listRows)+len(v.Menu.Items)+6)*4), picBottom+int(pk*4)))
-	} else if screenUp(v) && v.SpellPick == nil { // camp (camp.go), the temple, the shop, training
+		p.drawList(dst, note.Glyph, v, mk, cx, max(b.Dy()/2-int(mk*float64(min(len(askList(v)), listRows)+len(askMenu(v).Items)+6)*4), picBottom+int(pk*4)))
+	} else if screenUp(v) && spellPick(v) == nil { // camp (camp.go), the temple, the shop, training
 		p.menu = false
 		p.drawCamp(dst, note.Glyph, v, mk, cx, max(b.Dy()/4, picBottom+int(pk*4)), b.Max.Y)
 	} else if v.Exploring && p.menu { // the command menu (explore.go)
@@ -405,13 +405,13 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 			top = max(top, picBottom+int(pk*4))
 		}
 		p.drawMenu(dst, note.Glyph, "", lines, keys, p.sel, mk, cx, top)
-	} else if v.Menu == nil { // "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
+	} else if askMenu(v) == nil { // "press a key" prompts: nothing to show (the original's prompt line stays off the remastered screens)
 		p.menu = false
-	} else if p.menu && menuID(v.Menu) != p.menuFor { // the menu the popup was opened for is gone (answered): the next one opens on its own key
+	} else if p.menu && menuID(askMenu(v)) != p.menuFor { // the menu the popup was opened for is gone (answered): the next one opens on its own key
 		p.menu = false
 	} else if p.menu {
-		lines, keys := make([]string, len(v.Menu.Items)), make([]byte, len(v.Menu.Items))
-		for i, it := range v.Menu.Items {
+		lines, keys := make([]string, len(askMenu(v).Items)), make([]byte, len(askMenu(v).Items))
+		for i, it := range askMenu(v).Items {
 			lines[i], keys[i] = it.Text, it.Key
 		}
 		p.sel = min(p.sel, len(lines)-1)
@@ -422,7 +422,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 				top = max(top, picBottom+int(pk*4))
 			}
 		}
-		p.drawMenu(dst, note.Glyph, v.Menu.Prompt, lines, keys, p.sel, mk, cx, top)
+		p.drawMenu(dst, note.Glyph, askMenu(v).Prompt, lines, keys, p.sel, mk, cx, top)
 	}
 	if note.Show { // the toast: pageImage's bottom line (yellow on black) on a black band along the very bottom of the screen, no border
 		h := int(pk * 8)
@@ -469,13 +469,13 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.pickKey(k) {
 		return true
 	}
-	if v.List != nil && v.Menu != nil && !v.Choosing {
+	if askList(v) != nil && askMenu(v) != nil && !choosing(v) {
 		return p.listKey(k, v)
 	}
 	if p.pageMenu && p.pageMenuKey(k, v) {
 		return true
 	}
-	if v.Inventory != nil && p.inv.view != nil && !v.Choosing {
+	if v.Inventory != nil && p.inv.view != nil && !choosing(v) {
 		return p.inventoryKey(k)
 	}
 	if p.fight {
@@ -533,10 +533,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 		}
 		return true
 	}
-	m := v.Menu
+	m := askMenu(v)
 	if !p.menu {
 		switch {
-		case v.Choosing: // a member pick has no menu: every key goes to the portraits (keyAct)
+		case choosing(v): // a member pick has no menu: every key goes to the portraits (keyAct)
 			return false
 		case k == 13 && noChoice(v): // "press enter to continue": nothing to pick
 			return false
@@ -587,7 +587,7 @@ func (p *Presenter) Click(x, y int) bool {
 		p.replay.skip = true
 		return true
 	}
-	if v := p.shownView; v.List != nil && v.Menu != nil && !v.Choosing && p.listClick(x, y, v) {
+	if v := p.shownView; askList(v) != nil && askMenu(v) != nil && !choosing(v) && p.listClick(x, y, v) {
 		return true
 	}
 	if v := p.shownView; p.pageMenu && pageScreen(v) {
@@ -749,7 +749,7 @@ func (p *Presenter) OptionsMouse(x, y int, left, right bool, wheel float64) {
 // noChoice reports a question with one answer ("press enter to continue"):
 // a message, not a choice.
 func noChoice(v engine.View) bool {
-	return v.Menu != nil && !v.Exploring && len(v.Menu.Items) == 1 && !v.Choosing // a member pick's lone Select is still a choice: whom
+	return askMenu(v) != nil && !v.Exploring && len(askMenu(v).Items) == 1 && !choosing(v) // a member pick's lone Select is still a choice: whom
 }
 
 // cardUnder is the card at screen pixel (x, y), -1 for none.
@@ -1173,14 +1173,14 @@ func (p *Presenter) selectCard(i int) {
 // pace ends a script's pause (AskPause) once its time is up: the engine
 // never sleeps, the presenter keeps the time.
 func (p *Presenter) pace(v engine.View) {
-	if v.Script == nil || v.Script.Kind != engine.AskPause {
+	if v.Ask == nil || v.Ask.Kind != engine.AskPause {
 		p.pauseFrom = time.Time{}
 		return
 	}
 	switch {
 	case p.pauseFrom.IsZero():
 		p.pauseFrom = time.Now()
-	case time.Since(p.pauseFrom) >= time.Duration(v.Script.Ms)*time.Millisecond:
+	case time.Since(p.pauseFrom) >= time.Duration(v.Ask.Ms)*time.Millisecond:
 		p.send(engine.ActOK, 0)
 		p.pauseFrom = time.Time{}
 	}

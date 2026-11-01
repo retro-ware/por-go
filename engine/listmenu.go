@@ -1,6 +1,6 @@
 package engine
 
-// Lists (ovr26:0D9A, remade): ListMenu publishes the lines as View.List
+// Lists (ovr26:0D9A, remade): ListMenu publishes the lines as View.Ask (AskList)
 // with the options of its question and waits for a decision: ActChoose N
 // with the line X (N -1: the line itself), ActClose. Scrolling, paging
 // and the highlight are the presenter's.
@@ -55,9 +55,8 @@ func (e *Engine) ListMenu(title string, menu Bar, _, _, _, _, _, _, _ int,
 	}
 	var ask func()
 	ask = func() {
-		e.ext.chosen = -1
-		e.displayThen(title, menu, colLightMagenta, colLightGreen, colWhite, true, false, func(p Pick) {
-			i := e.ext.chosen
+		e.question(AskList, title, menu, true, true, false, func(p Pick) {
+			i := p.Line
 			switch {
 			case p.ID == PickExit || p.ID == NoPick:
 				*selected = nil

@@ -477,7 +477,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 	inv := &p.inv
 	inv.shown = false
 	in := v.Inventory
-	if v.Choosing { // a member pick (Heal whom?): the view and the cards instead (Draw)
+	if choosing(v) { // a member pick (Heal whom?): the view and the cards instead (Draw)
 		return false
 	}
 	if in == nil {

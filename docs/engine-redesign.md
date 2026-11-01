@@ -278,3 +278,26 @@ is deleted subsystem by subsystem, not kept alongside.
   off at the start of the turn.
 
 The redesign is done: decisions in (Apply), state and events out.
+
+Audit (2026-11-01), cuts with behaviour kept: `e.mode` is `mode()`, the
+top screen's (the field and `screen.under` are gone); a slot load and Back
+to Main Menu drop the stack (`unwindReset`, which `feed` notices) and put
+the next screen up where they are raised: no panics, no `catch`, no
+`ext.guarded`. Every question is one `Ask` (eclask.go: AskMenu, AskList,
+AskText, AskNumber, AskMember, AskPause, AskKey, AskSpell) published as
+`View.Ask`; View.Menu, List, Script, Typing, Choosing and SpellPick are
+gone, the presenter reads them through askMenu/askList/typing/choosing/
+spellPick. Arrows are the presenter's: ActMove, the Dir constants and
+Menu.Arrows are gone, ActContinue is ActOK; the full map's cursor is
+ActPoint (View.MapCursor, its clicks too), pagers take ActPage -1/+1,
+Home/End and a member pick's candidate are ActLead. The input flags the
+stack answers are gone (inCommand, menu, list, choosing, typing, raw,
+menuFloor, viewing, toItems, campBar, camping, ordering, chosen, paging:
+`exploring()`, `choosing()`, `typing()`, `up(modeCamp)`, Pick.Line,
+eclWait.members, pushSheetOn); `modal`/`floor` stay (help, the journal, the
+full map and the overview are not screens of their own). `ext.relist` is
+gone; `ext.redraw` stays for the engine-drawn pages; actRedraw means only
+"a screen over you is gone", which a question answers by showing itself
+again. Changed: in the journal Left/PgUp scroll a tall picture up (they
+paged on before); the wheel no longer reaches the engine; Up/Down on menus
+that took the keypad move the presenter's highlight.

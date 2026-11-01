@@ -67,7 +67,7 @@ func (e *Engine) pause(ms int, key bool) {
 	}
 	e.publish()
 	v := e.View()
-	v.Events, v.Script, v.Menu, v.List, v.Typing, v.SpellPick, v.Ticks = nil, nil, nil, nil, nil, nil, false
+	v.Events, v.Ask, v.Ticks = nil, nil, false
 	e.events = append(e.events, CombatEvent{Kind: EvFrame, Ms: ms, Key: key, Scene: &v})
 }
 

@@ -58,7 +58,7 @@ func (e *Engine) walkStep() {
 		return
 	}
 	stop := func() { e.ext.walk = nil }
-	if !e.ext.inCommand || e.ext.fullMap || w.event || e.viewMode != 1 || e.areaKey() != w.area ||
+	if !e.exploring() || e.ext.fullMap || w.event || e.viewMode != 1 || e.areaKey() != w.area ||
 		e.posX != w.ex || e.posY != w.ey || e.facing != w.ef ||
 		e.posX == w.tx && e.posY == w.ty {
 		stop()

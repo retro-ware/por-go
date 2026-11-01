@@ -18,7 +18,7 @@ import (
 // Outcomes of a click (region.click) besides the presenter's actions.
 const (
 	actHotkey ActKind = -1 // pick the item of the waiting menu bar whose hotkey is N
-	actRedraw ActKind = -2 // the click moved a cursor itself: the waiting menu hands back PickRedraw to be drawn again
+	actRedraw ActKind = -2 // a screen pushed over this one is gone (feed): it draws itself again
 )
 
 // region is a clickable part of the screen in text cells (inclusive),
@@ -76,10 +76,10 @@ func (e *Engine) glowCells(g [4]int, on bool) {
 // modalOn opens a modal screen (help, overview, the F9 slots): any action
 // closes it, but spots it adds itself (its own menus) take clicks.
 func (e *Engine) modalOn() func() {
-	floor, menuFloor := e.ext.floor, e.ext.menuFloor
+	floor := e.ext.floor
 	e.ext.modal++
-	e.ext.floor, e.ext.menuFloor = e.regionMark(), e.ext.menu
-	return func() { e.ext.modal--; e.ext.floor, e.ext.menuFloor = floor, menuFloor }
+	e.ext.floor = e.regionMark()
+	return func() { e.ext.modal--; e.ext.floor = floor }
 }
 
 // addRegion makes r clickable until the list is cut back to a mark taken
@@ -97,14 +97,6 @@ func (e *Engine) spots() []CellRect {
 	return s
 }
 
-// rawArrows marks a screen that reads the arrow keys itself until the
-// returned func runs.
-func (e *Engine) rawArrows() func() {
-	old := e.ext.raw
-	e.ext.raw = true
-	return func() { e.ext.raw = old }
-}
-
 // extraAct runs the actions that work on every screen, and reports
 // whether a was one.
 func (e *Engine) extraAct(a Action) bool {
@@ -114,7 +106,7 @@ func (e *Engine) extraAct(a Action) bool {
 	case ActSound:
 		e.soundToggle()
 	case ActHelp:
-		if e.ext.typing || e.ext.modal > 0 {
+		if e.typing() || e.ext.modal > 0 {
 			return false
 		}
 		e.Help()
@@ -124,7 +116,7 @@ func (e *Engine) extraAct(a Action) bool {
 		}
 		e.pushSlots(false) // the next decisions go to it, wherever the engine waits (until feeds the top screen)
 	case ActHead, ActPortrait: // extra: the portrait changes in play (the original only at creation and training), and at the creation
-		if !e.ext.viewing && !e.ext.creating { // only on the sheet: a stray Shift-click elsewhere must never change a face
+		if e.mode() != modeSheet && !e.ext.creating { // only on the sheet: a stray Shift-click elsewhere must never change a face
 			return false
 		}
 		c := e.selected()
@@ -138,14 +130,14 @@ func (e *Engine) extraAct(a Action) bool {
 		} else {
 			e.say("Not a PNG")
 		}
-		if e.ext.viewing {
+		if e.mode() == modeSheet {
 			e.SheetPortrait()
 		} else if e.creation != nil {
 			e.creationSheet(e.creation.c) // the creation sheet draws itself anew
 		}
 	case ActOrder: // extra: the Party Order bar takes a dragged card
 		n := len(e.party)
-		if !e.ext.ordering || a.N < 0 || a.N >= n || a.X < 0 || a.X >= n || a.N == a.X {
+		if !e.up(modeCamp) || a.N < 0 || a.N >= n || a.X < 0 || a.X >= n || a.N == a.X {
 			return false
 		}
 		c := e.party[a.N]

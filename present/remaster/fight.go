@@ -64,7 +64,7 @@ func (p *Presenter) drawFight(dst *gpu.Image, note Note, v engine.View) {
 	p.drawFightRows(dst, note, b, k)
 	cx := dst.Bounds().Dx() / 2
 	switch {
-	case p.battle.Picking && b.Turn != nil && p.pick == nil: // the bar's Cast list (View.SpellPick is drawn by Draw)
+	case p.battle.Picking && b.Turn != nil && p.pick == nil: // the bar's Cast list (View.Ask (AskSpell) is drawn by Draw)
 		p.drawPickList(dst, glyph, k, cx, int(k)*16)
 	case p.fightLog:
 		var lines []string

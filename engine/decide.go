@@ -1,5 +1,7 @@
 package engine
 
+import "slices"
+
 // Screens taking decisions (docs/engine-redesign.md): e.mode() names the
 // screen up and its handler (applyTemple, applyShop, applyItems ...)
 // applies one decision and returns, done or not; it never waits for
@@ -24,7 +26,7 @@ const (
 	modePicker              // View.Picker
 	modeIcon                // the icon editor (View.IconDrop)
 	modeSlots               // View.Slots
-	modeScript              // View.Script: a script instruction waits for its answer (eclask.go)
+	modeScript              // View.Ask: a question waits for its answer (eclask.go)
 	modeTurn                // View.Battle.Turn: a member's combat turn (applyTurn)
 	modeAim                 // View.Battle.Turn.Aim: aiming (playerAim's handler)
 	modeConfirm             // View.Battle.Ask: a combat yes/no (Flee?, Attack Ally?)
@@ -43,6 +45,17 @@ type screen struct {
 	leave func()
 	timed bool // it takes ActTick every frame no decision comes
 }
+
+// up: a screen of mode m is up, on top or under others.
+func (e *Engine) up(m screenMode) bool {
+	return slices.ContainsFunc(e.screens, func(s screen) bool { return s.mode == m })
+}
+
+// exploring: the adventuring command bar waits (modeExplore on top).
+func (e *Engine) exploring() bool { return e.mode() == modeExplore && !e.over }
+
+// viewing: the sheet's own menu waits.
+func (e *Engine) viewing() bool { return e.mode() == modeSheet }
 
 // mode is the top screen's (modeNone: none up).
 func (e *Engine) mode() screenMode {

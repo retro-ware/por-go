@@ -11,7 +11,7 @@ func TestOrderDrag(t *testing.T) {
 	if e.extraAct(Action{Kind: ActOrder, N: 0, X: 2}) || e.party[0] != a {
 		t.Fatal("moved without the bar")
 	}
-	e.ext.ordering = true
+	e.push(modeCamp, func(Action) bool { return false }, nil)
 	if !e.extraAct(Action{Kind: ActOrder, N: 0, X: 2}) || e.party[0] != b || e.party[1] != c || e.party[2] != a || e.partySel != 2 {
 		t.Fatalf("first to last: %v", e.party)
 	}

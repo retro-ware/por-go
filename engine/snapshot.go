@@ -82,22 +82,20 @@ type View struct {
 	Area      AreaID
 	X, Y      int
 	Facing    Dir
-	TextShown bool // the bottom text pane holds text
-	Day       bool // 6:00 to 20:00, when the scripts show the day sky
-	Inside    bool // the party stands on an inside square (the original's inside sky colour)
-	Menu      *Menu
-	List      []ListLine // Menu's question is about a line of this list: ActChoose N (-1: the line itself) with X the line
-	Exploring bool       // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
-	CanCast   bool       // ... and the selected member has a spell to cast (ActCastPick)
-	Camp      *Camp      // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
-	Temple    *Temple    // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
-	Shop      *Shop      // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
-	Training  *Training  // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
-	Sheet     *Sheet     // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
-	Creation  *Creation  // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
-	Picker    *Picker    // a grid picker (the page): ActPicked, ActPage; ActClose leaves
-	Slots     *Slots     // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
-	Script    *ScriptAsk // a script instruction waits for its answer (eclask.go): Menu, List, Typing or Choosing show it; AskPause is the presenter's to pace
+	TextShown bool      // the bottom text pane holds text
+	Day       bool      // 6:00 to 20:00, when the scripts show the day sky
+	Inside    bool      // the party stands on an inside square (the original's inside sky colour)
+	Exploring bool      // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
+	CanCast   bool      // ... and the selected member has a spell to cast (ActCastPick)
+	Camp      *Camp     // the party is in camp: the camp decisions (ActRest .. ActIconEdit) are taken; ActClose leaves
+	Temple    *Temple   // a temple: ActTempleCure, ActAppraise, ActKeep, ActMember, ActLead; ActClose leaves
+	Shop      *Shop     // a shop: ActInventory (the goods, ActBuy, ActSell), ActIdentify, ActAppraise, ActKeep, ActLead; ActClose leaves
+	Training  *Training // the training hall for the selected member: ActTrain, ActLearn; ActClose leaves
+	Sheet     *Sheet    // the selected member's sheet (the page): ActInventory, ActSpells .. ActCure, ActMember (another member); ActClose leaves
+	Creation  *Creation // the creation (or Modify) sheet (the page): ActRoll, ActSetField, ActName, ActStat, ActPicker, ActIconEdit, ActKeep; ActClose abandons (the player agreed to Abandon)
+	Picker    *Picker   // a grid picker (the page): ActPicked, ActPage; ActClose leaves
+	Slots     *Slots    // the save slots: ActSave, ActLoad, ActDelete with the slot's name as Text; ActClose leaves
+	Ask       *Ask      // a question waits for its answer (eclask.go): menu, list, typed line, member, key, pause (the presenter's to pace) or spell
 	Party     []Member
 	Border    [3]image.Image // the window border's corner, side and top cells (DrawBorder style 0) in EGA colours; nil before the symbols load
 	Battle    *Battle        // the combat map (nil outside combat)
@@ -113,12 +111,9 @@ type View struct {
 	IconBox   CellRect       // the creation sheet's combat icon (zero elsewhere): a PNG dropped on it becomes the icon (ActIcon)
 	MapCursor *image.Point   // the full map is up: its cursor square; ActPoint X, Y moves it
 	Ordering  bool           // the camp's Party Order bar is up: a card dragged onto another's place moves the member (ActOrder)
-	Typing    *Typing        // a line is being typed: the presenter edits it (ActText)
-	Choosing  bool           // a party member is being picked (SelectCharacter): Menu asks whom, Party's Selected is the candidate; ActMember or ActInventory N takes one, ActLead N makes N the candidate, ActOK takes the candidate
 	MainMenu  []ActKind      // the party menu is up: the functions open now (ActCreate .. ActQuit, ActMember, ActDropMember); ActLead selects a member
 	Logo      image.Image    // the title's lettering on transparent black, with MainMenu
 	Backdrop  image.Image    // the Amiga painted title under MainMenu (nil: black)
-	SpellPick []Spell        // a spell to cast is being picked (pickSpell): the combat's Cast list on any screen; ActCast with its ID casts, ActClose gives up
 	Seq       uint64         // counts the Views published: a presenter redraws the page on a new one
 	Ticks     bool           // the engine is in a timed loop (an animation, the auto-walk, a pause it times itself): send ActTick every frame
 }
@@ -182,7 +177,7 @@ type Menu struct {
 	Items  []MenuItem // the options (ActChoose N); none: a message to acknowledge (ActOK)
 }
 
-// ListLine is a line of View.List.
+// ListLine is a line of View.Ask (AskList).
 type ListLine struct {
 	Text    string
 	Header  bool     // a heading
@@ -277,13 +272,6 @@ type Beast struct {
 	Icon   image.Image // the combat icon (nil: none)
 }
 
-// Typing is the line being typed and how long it may get.
-type Typing struct {
-	Text   string
-	Max    int
-	Prompt string // a script's question (the text window's text): the remaster asks it in a pop-up
-}
-
 // MapCell is the size of a square in View.Map, in pixels.
 const MapCell = mapCell
 
@@ -313,9 +301,6 @@ type snapState struct {
 	win          Window                 // set by whatever drew into the view window last
 	heads        map[int]image.Image    // decoded HEAD blocks by id
 	tiles        [3]image.Image         // View.Border, once decoded
-	typing       *Typing                // the line being typed (typed)
-	own          bool                   // menu is a modal screen's own (slots), not the one under it
-	menu         *Menu                  // the innermost DisplayInput's question
 	list         []*ListNode            // the innermost ListMenu's lines
 	cursor       image.Point            // drawCursor's last square
 	cursorOn     bool                   // the cursor icon is on the page (drawn, not yet erased or drawn over)
@@ -337,7 +322,6 @@ type snapState struct {
 	aimWhy       string                 // aiming: why the aimed square cannot be taken ("" when it can)
 	turn         *Turn                  // the player's turn waits in act
 	ask          string                 // a yes/no question waits in act (ask)
-	spellPick    []Spell                // a spell to cast waits in act (pickSpell)
 	targets      []int                  // combatants ActAttack takes; aiming: the foes to cycle through
 	hidden       map[int]bool           // combatants whose icon is off the page (falling, hiding)
 	poses        map[int]byte           // the pose each combatant was last drawn in
@@ -361,9 +345,9 @@ func (e *Engine) publish() {
 		Facing:    Dir(e.viewFacing() / 2 & 3),
 		Day:       e.isDay(),
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
-		Exploring: e.ext.inCommand,
+		Exploring: e.exploring(),
 	}
-	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.ext.choosing {
+	if s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing() {
 		v.Map = e.mapImage(mapCell)
 	}
 	if s.invOn {
@@ -374,23 +358,13 @@ func (e *Engine) publish() {
 			v.Inventory.Loot = s.loot
 		}
 	}
-	if m := s.menu; m != nil && (e.ext.modal == 0 || e.ext.menu > e.ext.menuFloor || s.own) { // not the menu under help or the overview
-		c := *m
-		v.Menu = &c
-		if s.list != nil {
-			v.List = make([]ListLine, len(s.list))
-			for i, l := range s.list {
-				v.List[i] = ListLine{Text: l.Text, Header: l.Flag != 0, Dim: l.Dim || l.Grey, Off: l.skipped(), Without: l.Without}
-			}
-		}
-	}
 	if v.Exploring {
 		v.CanCast = e.canCastNow()
 	}
-	if e.ext.camping && e.ext.menu == 0 && (e.mode() == modeCamp || e.mode() == modeRest) {
+	if e.mode() == modeCamp || e.mode() == modeRest {
 		v.Camp = e.campView()
 	}
-	if e.ext.menu == 0 && !s.invOn {
+	if !s.invOn {
 		switch e.mode() {
 		case modeTemple:
 			v.Temple = e.templeView()
@@ -416,11 +390,11 @@ func (e *Engine) publish() {
 	case modeScript:
 		if w := e.eclWait; w != nil {
 			a := w.ask
-			v.Script = &a
+			v.Ask = &a
 		}
 	}
-	v.Typing, v.Spots, v.Portrait, v.Choosing, v.SpellPick = s.typing, e.spots(), s.portrait, e.ext.choosing, s.spellPick
-	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.ext.ordering
+	v.Spots, v.Portrait = e.spots(), s.portrait
+	v.IconDrop, v.IconBox, v.Ordering = s.iconDrop != nil && s.iconBox == (CellRect{}), s.iconBox, e.up(modeCamp)
 	if e.ext.fullMap {
 		c := e.ext.mapCursor
 		v.MapCursor = &c

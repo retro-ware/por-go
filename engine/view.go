@@ -199,19 +199,20 @@ func (e *Engine) showStat(stat int, hi bool) {
 }
 
 // pushSheet = ovr20:0AB3 (var quit), the View command: it puts the sheet
-// of the selected member up (View.Sheet); F1-F8 (ext.toItems) open it on the inventory, and leaving that leaves it.
-func (e *Engine) pushSheet() {
+// of the selected member up (View.Sheet).
+func (e *Engine) pushSheet() { e.pushSheetOn(false) }
+
+// pushSheetOn is pushSheet; direct (F1-F8) opens it on the inventory, and
+// leaving that leaves it.
+func (e *Engine) pushSheetOn(direct bool) {
 	if e.beginFlag == 5 {
 		e.combatViewEnter() // ovr31 (seg 03E0) +2F
 		e.snap.sheetOn = true
 	}
 	e.view.start, e.view.quit, e.view.leave = e.selected(), false, false
-	direct := e.ext.toItems
-	e.ext.toItems = false
 	off := e.redrawWith(e.CharacterSheet)
 	e.push(modeSheet, e.applySheet, func() {
 		off()
-		e.ext.viewing = false
 		e.snap.sheetOn = false
 		if e.beginFlag == 5 {
 			e.combatViewLeave() // ovr31 (seg 03E0) +2A
@@ -224,8 +225,7 @@ func (e *Engine) pushSheet() {
 		e.pushItems()
 		return
 	}
-	e.CharacterSheet()
-	e.ext.viewing = true // Shift-click and dropped PNGs change the portrait
+	e.CharacterSheet() // Shift-click and dropped PNGs change the portrait (viewing)
 }
 
 // applySheet applies a decision on the sheet; done when it is left.
@@ -252,7 +252,6 @@ func (e *Engine) applySheet(a Action) (done bool) {
 			c = e.selected()
 		}
 		if len(e.carried(c)) > 0 {
-			e.ext.viewing = false
 			e.pushItems()
 			return false
 		}
@@ -275,7 +274,6 @@ func (e *Engine) applySheet(a Action) (done bool) {
 		return false
 	}
 	e.CharacterSheet()
-	e.ext.viewing = true
 	return false
 }
 
@@ -931,7 +929,7 @@ func (e *Engine) power(c *Character, k ActKind, then func(quit bool)) {
 }
 
 // pickSpell (extra) offers the selected member's memorized spells as
-// View.SpellPick (the combat's Cast list, on any screen); then gets the
+// View.Ask (AskSpell) (the combat's Cast list, on any screen); then gets the
 // pick: the spell, or 0 for ActClose. The spell page (SpellList) is left to
 // memorizing and scribing.
 func (e *Engine) pickSpell(then func(byte)) {
@@ -939,16 +937,17 @@ func (e *Engine) pickSpell(then func(byte)) {
 		then(0)
 		return
 	}
+	var spells []Spell
 	for _, id := range e.spellIDs {
-		if !slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == int(id) }) { // memorized twice: once in the list
-			e.snap.spellPick = append(e.snap.spellPick, Spell{int(id), e.spellName(int(id))})
+		if !slices.ContainsFunc(spells, func(s Spell) bool { return s.ID == int(id) }) { // memorized twice: once in the list
+			spells = append(spells, Spell{int(id), e.spellName(int(id))})
 		}
 	}
 	var id byte
 	e.asking(func() { // an ask (AskSpell): the presenter shows the pick
-		e.eclWait = &eclWait{ask: ScriptAsk{Kind: AskSpell}, apply: func(a Action) bool {
+		e.eclWait = &eclWait{ask: Ask{Kind: AskSpell, Spells: spells}, apply: func(a Action) bool {
 			switch {
-			case a.Kind == ActCast && slices.ContainsFunc(e.snap.spellPick, func(s Spell) bool { return s.ID == a.N }):
+			case a.Kind == ActCast && slices.ContainsFunc(spells, func(s Spell) bool { return s.ID == a.N }):
 				id = byte(a.N)
 				return true
 			case a.Kind == ActClose:
@@ -956,8 +955,5 @@ func (e *Engine) pickSpell(then func(byte)) {
 			}
 			return false
 		}}
-	}, func() {
-		e.snap.spellPick = nil
-		then(id)
-	})
+	}, func() { then(id) })
 }

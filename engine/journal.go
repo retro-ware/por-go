@@ -175,7 +175,6 @@ func wrapText(s string, w int) []string {
 // title.
 func (e *Engine) showJournal(box string, lines []string) {
 	off := e.modalOn()
-	e.ext.paging = true
 	restore := e.saveScreen()
 	pages := journalPages(lines)
 	p, pageOff := 0, 0
@@ -221,7 +220,6 @@ func (e *Engine) showJournal(box string, lines []string) {
 			restore()
 			undo()
 			off()
-			e.ext.paging = false
 			return
 		}
 		maxOff := draw(p, pageOff)

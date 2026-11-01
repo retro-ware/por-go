@@ -119,7 +119,7 @@ func (e *Engine) CastMenu() {
 		e.CharMessage(e.selected(), "has no spells memorized", true)
 		return
 	}
-	// extra: the pick list (View.SpellPick, as the combat's Cast) instead of the
+	// extra: the pick list (View.Ask (AskSpell), as the combat's Cast) instead of the
 	// spell page, and one cast: the original lists again until Exit
 	e.pickSpell(func(spell byte) {
 		if spell == 0 { // the main screen is still up: no message box to redraw (the original's spell page had replaced it)
@@ -506,14 +506,12 @@ func (e *Engine) CampMenu(then func(interrupted bool)) {
 	e.camp.rest = [7]int{}
 	e.DrawMainScreen()
 	e.clearStudy()
-	e.ext.camping, e.ext.ordering = true, true // a card dragged onto another's place moves the member there (ActOrder)
 	e.camp.interrupted, e.camp.rested = false, false
 	e.push(modeCamp, func(a Action) bool {
 		left := e.campDecision(a)
 		e.DisplayPartyList()
 		return left || e.camp.interrupted
 	}, func() {
-		e.ext.camping, e.ext.ordering = false, false
 		for _, c := range e.party { // the plans hold: the next rest learns them
 			e.planSpells(c)
 		}
@@ -555,8 +553,7 @@ func (e *Engine) campDecision(a Action) (left bool) {
 		if c := member(); len(e.carried(c)) == 0 {
 			e.say("No items")
 		} else {
-			e.ext.toItems = true
-			e.pushSheet()
+			e.pushSheetOn(true)
 		}
 	case ActCastPick:
 		member()

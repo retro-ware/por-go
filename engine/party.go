@@ -27,7 +27,7 @@ func (e *Engine) drawPartyList() {
 	hi := e.rosterSel()
 	for i, c := range e.party {
 		e.ClearCells(x, y, winRight, y)
-		if i == hi && e.ext.choosing {
+		if i == hi && e.choosing() {
 			// extra: the member being chosen gets the menu selection background
 			for j := 0; j < len(c.Name()); j++ {
 				e.displayCharBg(x+j, y, colWhite, selBg(0xB, 0xF), c.Name()[j], true)
@@ -222,9 +222,7 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then 
 	if who == nil && len(e.party) > 0 {
 		who = e.party[0]
 	}
-	e.ext.choosing = true
 	done := func(c *Character) {
-		e.ext.choosing = false
 		e.DisplayPartyList() // (the original leaves the roster as drawn)
 		then(c)
 	}
@@ -232,11 +230,10 @@ func (e *Engine) SelectCharacter(prompt string, exit bool, who *Character, then 
 	ask = func() {
 		// who stays highlighted while the menu waits (the view animation
 		// redraws the roster).
-		e.rosterHi, e.rosterNone = who, who == nil
-		e.DisplayPartyList() // 00BA:0767 (who)
+		e.rosterHi, e.rosterNone = who, who == nil // the roster shows who (00BA:0767) once the question is up
 		mark := e.regionMark()
-		e.rosterRegion()                                                                                                                     // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
-		e.displayThen(prompt+" ", menu, colLightMagenta, colLightGreen, colWhite, true, e.beginFlag == 2 || e.beginFlag == 6, func(p Pick) { // 00BA:2C48 at 3844
+		e.rosterRegion()                                                                                         // extra (nav.go): a click on a member picks it, like a portrait or F1-F8 (menuBar.member)
+		e.question(AskMember, prompt+" ", menu, true, true, e.beginFlag == 2 || e.beginFlag == 6, func(p Pick) { // 00BA:2C48 at 3844
 			e.regionCut(mark)
 			who = e.rosterHi // a member picked directly (menuBar.member)
 			e.rosterHi, e.rosterNone = nil, false

@@ -34,13 +34,9 @@ import (
 
 // extras holds the convenience-feature state.
 type extras struct {
-	inCommand bool                // the adventuring command bar is waiting
-	minimap   bool                // roster panel shows the minimap
-	menu      int                 // DisplayInput calls in progress
-	list      bool                // the menu belongs to a scrolling list
-	choosing  bool                // SelectCharacter is waiting: highlight the roster entry
-	seen      map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
-	mapCache  struct {            // mapImage's last picture, so an unchanged map is not converted and uploaded again
+	minimap  bool                // roster panel shows the minimap
+	seen     map[int]*[256]uint8 // per map (areaKey): 1 seen, 2 visited
+	mapCache struct {            // mapImage's last picture, so an unchanged map is not converted and uploaded again
 		pix, scratch []uint8
 		pal          pal.Regs
 		img          image.Image
@@ -63,18 +59,9 @@ type extras struct {
 	castCancelled bool       // CastSpell: the player cancelled the aim (the turn goes on)
 	castYes       bool       // castAsks: yes to "Lose it?" / "Use it?"
 	castOn        *Character // castAsks: the member the spell goes on (nil: none)
-	raw           bool       // the screen reads the arrows itself
-	typing        bool       // InputString is waiting
 	modal         int        // help or overview shown: any key closes
 	enemiesOnly   bool       // aiming a weapon or hostile spell: Tab cycles through foes only (playerAim)
 	floor         int        // regions below belong to the screen under the modal one
-	menuFloor     int        // menu bars open under the modal screen
-	viewing       bool       // the View page's own menu is waiting
-	toItems       bool       // the next View opens on the inventory (F1-F8)
-	campBar       bool       // a camp menu bar is waiting: F1-F8 change the member
-	camping       bool       // camp takes decisions (View.Camp)
-	chosen        int        // the list line ActChoose came with (ListMenu)
-	ordering      bool       // the camp's Party Order bar is waiting: a card dragged onto another's place moves the member (ActOrder)
 
 	// fullmap.go
 	labels    map[int]map[int]mapLabel // per area: square -> label
@@ -88,14 +75,12 @@ type extras struct {
 	fonts  []pcFont     // the fonts in data/assets/fonts (*.f8), then the PC fonts
 	cells  [][]textCell // the text drawn into each cell, textRows by textCols
 	redraw func()       // draws the screen up again at the page's size (resizePage); nil: it stays as drawn until its next draw
-	relist bool         // the resize hands the waiting screen an actRedraw (relist)
 	note   string       // shown over the picture for a moment
 	noteAt time.Time
 
 	// journal.go
 	printed   string     // the text window's text since it was cleared
 	refsShown int        // journal references in it already shown
-	paging    bool       // a journal text is shown
 	battleLog []string   // the combat messages of this battle (Log)
 	panel     *Character // whose line the combat status row shows
 }
@@ -308,7 +293,6 @@ var helpLines = [][2]string{
 // over pages: a key shows the next, ActPage -1 the one before, Esc closes.
 func (e *Engine) Help() {
 	off := e.modalOn()
-	e.ext.paging = true
 	restore := e.saveScreen()
 	pages := helpPages()
 	p := 0
@@ -334,7 +318,6 @@ func (e *Engine) Help() {
 			restore()
 			undo()
 			off()
-			e.ext.paging = false
 			return
 		}
 		show()

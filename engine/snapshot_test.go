@@ -104,7 +104,7 @@ func resolve(e *engine.Engine, a engine.Action) engine.Action {
 	if a.Kind != engine.ActChoose || a.N >= 0 {
 		return a
 	}
-	if m := e.View().Menu; m != nil {
+	if m := e.View().Ask; m != nil {
 		for i, it := range m.Items {
 			if it.Key == byte(-a.N) {
 				a.N = i
@@ -449,7 +449,7 @@ func TestViewMember(t *testing.T) {
 // actWait sends a and waits for the engine to take it.
 func actWait(e *engine.Engine, a engine.Action) engine.View {
 	v := settle(e)
-	for v = keyWait(e, a); v.Script != nil && v.Script.Kind == engine.AskPause; {
+	for v = keyWait(e, a); v.Ask != nil && v.Ask.Kind == engine.AskPause; {
 		v = keyWait(e, cont) // the presenter's part: a pause is over at once
 	}
 	return v
@@ -502,19 +502,16 @@ func TestScriptInputPrompt(t *testing.T) {
 	e.Start(e.Play)
 	v := settle(e)
 	for range 20 {
-		if v.Typing != nil {
+		if v.Ask != nil && v.Ask.Kind == engine.AskText {
 			break
 		}
 		v = keyWait(e, cont)
 	}
-	if v.Typing == nil || v.Typing.Prompt != "WHAT DO YOU SAY? (TYPE A SINGLE WORD)" {
-		t.Fatalf("typing %+v, want the script's question", v.Typing)
-	}
-	if v.Script == nil || v.Script.Kind != engine.AskText || v.Script.Prompt != v.Typing.Prompt {
-		t.Fatalf("script ask %+v, want the typed line", v.Script)
+	if v.Ask == nil || v.Ask.Kind != engine.AskText || v.Ask.Prompt != "WHAT DO YOU SAY? (TYPE A SINGLE WORD)" {
+		t.Fatalf("ask %+v, want the script's typed line", v.Ask)
 	}
 	e.Apply(engine.Action{Kind: engine.ActText, Text: "ohlo"}, engine.Action{Kind: engine.ActOK})
-	if settle(e).Typing != nil {
+	if a := settle(e).Ask; a != nil && a.Kind == engine.AskText {
 		t.Fatal("the line did not end")
 	}
 }

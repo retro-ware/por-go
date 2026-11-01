@@ -211,8 +211,7 @@ func (e *Engine) FullMap() {
 	}
 	restore := e.saveScreen()
 	off := e.modalOn() // the command bar's regions under it take no hover or click
-	inCommand := e.ext.inCommand
-	e.ext.inCommand, e.ext.fullMap = false, true
+	e.ext.fullMap = true
 	c := &e.ext.mapCursor // the cursor (View.MapCursor, ActPoint)
 	*c = image.Pt(e.posX, e.posY)
 	if !onMap(c.X, c.Y) {
@@ -228,26 +227,22 @@ func (e *Engine) FullMap() {
 		if image.Pt(x, y) == *c {
 			return Action{Kind: actHotkey, N: 'L'} // a second click names the square
 		}
-		*c = image.Pt(x, y)
-		return Action{Kind: actRedraw}
+		return Action{Kind: ActPoint, X: x, Y: y} // the cursor goes there
 	}})
 	texts := []string(nil)
 	var firstSq map[string]int
 	e.addRegion(region{x0: fmLegend, y0: 2, x1: 0x27, y1: 2 + fmRows - 1, click: func(_, y int) Action {
 		if i := y - 2; i < len(texts) {
 			s := firstSq[texts[i]]
-			*c = image.Pt(s&15, s>>4)
-			return Action{Kind: actRedraw}
+			return Action{Kind: ActPoint, X: s & 15, Y: s >> 4}
 		}
 		return Action{}
 	}})
-	raw := e.rawArrows()
 	done := func() {
-		raw()
 		e.regionCut(mark)
 		off()
 		restore()
-		e.ext.inCommand, e.ext.fullMap = inCommand, false
+		e.ext.fullMap = false
 	}
 	var ask func()
 	ask = func() {
