@@ -1,10 +1,12 @@
 package remaster
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
 	"slices"
+	"strings"
 	"time"
 
 	"gpu"
@@ -147,10 +149,20 @@ func (p *Presenter) screenItems(v engine.View) (string, []menuRow) {
 		}
 		var it []menuRow
 		if sl.CanSave {
-			it = append(it, menuRow{"New Slot", 0, func() { p.typeLine("Save as", "", 20, engine.ActSave, 0) }})
+			it = append(it, menuRow{"New Slot", 'N', func() { p.typeLine("Save as", "", 20, engine.ActSave, 0) }})
 		}
+		taken := []byte{'E', 'N'}
 		for i, name := range sl.Names {
-			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), 0, func() {
+			// the slot's hotkey is the first letter of its name no other row has,
+			// so it never lands on the time or shifts the columns
+			var key byte
+			for _, c := range []byte(strings.ToUpper(upTo(name, 21))) {
+				if c >= 'A' && c <= 'Z' && bytes.IndexByte(taken, c) < 0 {
+					key, taken = c, append(taken, c)
+					break
+				}
+			}
+			it = append(it, menuRow{fmt.Sprintf("%-21s %s", upTo(name, 21), sl.Times[i]), key, func() {
 				if sl.LoadOnly {
 					named(engine.ActLoad, name)()
 					return
