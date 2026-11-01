@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -120,14 +121,7 @@ func str00Text(c *Character) string {
 	if c.Stats[0] != 0x12 || c.Str00 == 0 {
 		return ""
 	}
-	s := strconv.Itoa(int(c.Str00))
-	if c.Str00 < 10 {
-		s = "0" + s
-	}
-	if c.Str00 == 100 {
-		s = "00"
-	}
-	return "(" + s + ")"
+	return fmt.Sprintf("(%02d)", c.Str00%100)
 }
 
 // pushSheet = ovr20:0AB3 (var quit), the View command: it puts the sheet

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"image"
 	"slices"
 	"strconv"
@@ -740,14 +741,7 @@ func fmtStr(v int) string {
 	if v <= 1800 || v > 1900 {
 		return strconv.Itoa(v / 100)
 	}
-	x := v - 1800
-	if x == 100 {
-		return "18/00"
-	}
-	if x < 10 {
-		return "18/0" + strconv.Itoa(x)
-	}
-	return "18/" + strconv.Itoa(x)
+	return fmt.Sprintf("18/%02d", (v-1800)%100)
 }
 
 func parseMinStat(s string, str bool) (int, bool) {
