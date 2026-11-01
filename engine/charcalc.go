@@ -1,5 +1,7 @@
 package engine
 
+import "slices"
+
 // Derived character values, ported from ovr24.
 
 // RecomputeCharacter = ovr24:0000: hit dice, highest level, attacks,
@@ -243,6 +245,9 @@ func (e *Engine) ApplyItems(c *Character) {
 			c.Slots[slotBolts] = it
 		}
 		c.Hands += e.base(typ).Hands
+	}
+	if t := e.ext.throwing; t != nil && t.Readied == 2 && slices.Contains(c.Items, t) { // extra: thrown straight from the Missiles slot
+		c.Slots[slotWeapon] = t
 	}
 	c.Dice, c.Sides, c.Bonus = c.BaseDice, c.BaseSides, c.BaseBonus
 	var ac [5]int8

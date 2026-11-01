@@ -602,36 +602,16 @@ func (e *Engine) rangedAttack(c *Character) (done bool) {
 		e.refuse("No target in range")
 		return false
 	}
-	saved := e.partySel
 	if thrown {
-		for i, p := range e.party {
-			if p == c {
-				e.partySel = i // readyItem works on the selected member
-			}
-		}
-		if w != nil {
-			e.readyItem(w)
-			if w.Readied != 0 { // cursed
-				e.partySel = saved
-				return false
-			}
-			e.ApplyItems(c) // free the weapon's hands: readyItem counts c.Hands
-		}
-		it.Readied = 1 // in hand (the weapon's hands are free)
+		e.ext.throwing = it // the hand weapon stays readied
 		e.ApplyItems(c)
 	}
 	e.ext.enemiesOnly = true
 	e.playerAim(c, 0xFF, 1, 0, func(done bool, _ aimTarget) {
 		e.ext.enemiesOnly = false
 		if thrown {
-			if slices.Contains(c.Items, it) { // not the last one thrown
-				it.Readied = 2
-			}
-			if w != nil && slices.Contains(c.Items, w) && w.Readied == 0 {
-				e.readyItem(w)
-			}
+			e.ext.throwing = nil
 			e.ApplyItems(c)
-			e.partySel = saved
 		}
 		e.later(func() bool { return done })
 	})

@@ -58,6 +58,13 @@ func TestMissileSlot(t *testing.T) {
 	if j.Readied != 2 || c.Slots[slotArrows] != j || e.missile(c) != j || c.Slots[slotWeapon] != w {
 		t.Errorf("readied %d, missile %v, weapon kept %v", j.Readied, e.missile(c) == j, c.Slots[slotWeapon] == w)
 	}
+	e.ext.throwing = j // thrown straight from the slot: the sword stays readied
+	e.ApplyItems(c)
+	if c.Slots[slotWeapon] != j || w.Readied != 1 || j.Readied != 2 {
+		t.Errorf("throwing: weapon is javelin %v, sword %d, javelin %d", c.Slots[slotWeapon] == j, w.Readied, j.Readied)
+	}
+	e.ext.throwing = nil
+	e.ApplyItems(c)
 	e.readyItem(j) // out again
 	e.ApplyItems(c)
 	if j.Readied != 0 || e.missile(c) != nil {

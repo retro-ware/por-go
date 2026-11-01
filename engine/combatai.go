@@ -1,7 +1,5 @@
 package engine
 
-import "slices"
-
 // The computer-controlled turn, ported from ovr10: monster AI, and party
 // members under AI control or fleeing. Called from the combat loop (ovr09).
 
@@ -329,31 +327,21 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 	if ci.Delay == 0 {
 		cont = false
 	}
-	// extra: a thrown weapon in the Missiles slot is taken in hand for an
-	// iteration with no foe next to c (as rangedAttack), and put back after
-	var thrown, held *Item
+	// extra: a thrown weapon in the Missiles slot is thrown straight from
+	// there for an iteration with no foe next to c (as rangedAttack); the
+	// hand weapon stays readied
 	putBack := func() {
-		if thrown == nil {
+		if e.ext.throwing == nil {
 			return
 		}
-		if slices.Contains(c.Items, thrown) { // not the last one thrown
-			thrown.Readied = 2
-		}
-		if held != nil && slices.Contains(c.Items, held) {
-			held.Readied = 1
-		}
-		thrown, held = nil, nil
+		e.ext.throwing = nil
 		e.ApplyItems(c)
 	}
 	defer putBack()
 	for !stop && cont {
 		putBack()
-		if m, w := c.Slots[slotArrows], c.Slots[slotWeapon]; m != nil && m.Readied == 2 && (w == nil || w.Magic == 0) && (e.nearEnemies(c, 1) == 0 || w == nil && e.base(m.Type).Usage&4 != 0) { // empty hands: one thrown in melee too (an axe, not a dart) fights next to a foe
-			thrown, held = m, w
-			if held != nil {
-				held.Readied = 0
-			}
-			thrown.Readied = 1
+		if m, w := c.Slots[slotArrows], c.Slots[slotWeapon]; m != nil && m.Readied == 2 && (e.nearEnemies(c, 1) == 0 || w == nil && e.base(m.Type).Usage&4 != 0) { // empty hands: one thrown in melee too (an axe, not a dart) fights next to a foe
+			e.ext.throwing = m
 			e.ApplyItems(c)
 		}
 		for ci.Fleeing != 0 && ci.Moves > 0 && int8(ci.Delay) > 0 && int8(ci.Delay) < 0x14 {
