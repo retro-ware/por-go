@@ -130,6 +130,8 @@ type Presenter struct {
 	mapMenu              bool                     // the full map's cursor cell has its context menu open (drawMapMenu)
 	tipImg               *gpu.Image               // the card tip's box, drawn at scale 1 (drawMenu's image, swapped in)
 	tipBuf               []byte                   // its pixels
+	spellTipImg          *gpu.Image               // the camp spell lists' rules tooltip (drawSpellTip), its own image
+	spellTipBuf          []byte                   // its pixels
 	scr                  screenUI                 // the page screens' questions (screens.go)
 	screen               image.Rectangle          // the window, as last drawn
 	confirmFor           string                   // the yes/no question (View.Ask, AskConfirm) up, as last drawn ...

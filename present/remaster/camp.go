@@ -329,6 +329,30 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	p.drawMenuIcons(dst, glyph, title, lines, keys, off, icons, sel, k, cx, top)
 	p.menuGrey = false
 	p.menuBar(dst, p.menuRects, n, len(lines), &c.top, &c.sel, k)
+	if (c.screen == campMemorize || c.screen == campScribe) && v.Camp != nil && c.sel < len(c.ids) && len(p.menuRects) > 0 {
+		p.drawSpellTip(dst, c.ids[c.sel], k, cx)
+	}
+}
+
+// drawSpellTip draws spell id's rules under the spell list (above it when
+// they do not fit), on its own image: the card tip has the tip's.
+func (p *Presenter) drawSpellTip(dst *gpu.Image, id int, k float64, cx int) {
+	lines := engine.SpellRules(id, 36)
+	if lines == nil {
+		return
+	}
+	box := p.menuRects[0]
+	for _, r := range p.menuRects {
+		box = box.Union(r)
+	}
+	h := int(k) * 8 * (len(lines) + 2)
+	top := box.Max.Y + int(k)*16
+	if top+h > dst.Bounds().Dy() {
+		top = max(0, box.Min.Y-int(k)*32-h)
+	}
+	p.tipImg, p.tipBuf, p.spellTipImg, p.spellTipBuf = p.spellTipImg, p.spellTipBuf, p.tipImg, p.tipBuf
+	p.tipMenu(dst, "", lines, make([]byte, len(lines)), -1, k, cx, top)
+	p.tipImg, p.tipBuf, p.spellTipImg, p.spellTipBuf = p.spellTipImg, p.spellTipBuf, p.tipImg, p.tipBuf
 }
 
 // campKey takes key k on a camp screen.
