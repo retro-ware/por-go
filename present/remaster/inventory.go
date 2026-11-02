@@ -58,22 +58,23 @@ var (
 // dollBoxes are the doll's slot boxes (EOB's frames, 18x18 with the frame;
 // the rings' 10x10) in doll pixels, by engine doll slot.
 var dollBoxes = [engine.DollSlots]image.Rectangle{
-	engine.DollWeapon:    image.Rect(7, 62, 25, 80),
-	engine.DollShield:    image.Rect(55, 62, 73, 80),
-	engine.DollArmor:     image.Rect(1, 22, 19, 40),
-	engine.DollGauntlets: image.Rect(2, 42, 20, 60),
-	engine.DollHelm:      image.Rect(75, 1, 93, 19),
-	engine.DollBelt:      image.Rect(77, 40, 95, 58),
-	engine.DollRobe:      image.Rect(77, 58, 95, 76),
-	engine.DollCloak:     image.Rect(64, 21, 82, 39),
-	engine.DollBoots:     image.Rect(54, 83, 72, 101),
-	engine.DollRing1:     image.Rect(5, 82, 15, 92),
-	engine.DollRing2:     image.Rect(17, 82, 27, 92),
-	engine.DollArrows:    image.Rect(2, 2, 20, 20),
+	engine.DollWeapon:    image.Rect(27, 62, 45, 80),
+	engine.DollShield:    image.Rect(75, 62, 93, 80),
+	engine.DollArmor:     image.Rect(21, 22, 39, 40),
+	engine.DollGauntlets: image.Rect(22, 42, 40, 60),
+	engine.DollHelm:      image.Rect(95, 1, 113, 19),
+	engine.DollBelt:      image.Rect(97, 40, 115, 58),
+	engine.DollRobe:      image.Rect(97, 58, 115, 76),
+	engine.DollCloak:     image.Rect(84, 21, 102, 39),
+	engine.DollBoots:     image.Rect(74, 83, 92, 101),
+	engine.DollRing1:     image.Rect(25, 82, 35, 92),
+	engine.DollRing2:     image.Rect(37, 82, 47, 92),
+	engine.DollArrows:    image.Rect(22, 2, 40, 20),
+	engine.DollLauncher:  image.Rect(5, 62, 23, 80),
 }
 
 var slotNames = [engine.DollSlots]string{"Weapon", "Shield", "Armour", "Gauntlets", "Helm", "Belt", "Robe", "Cloak",
-	"Boots", "Ring", "Ring", "Missiles"}
+	"Boots", "Ring", "Ring", "Missiles", "Launcher"}
 
 // inventory is the screen's state between frames.
 type inventory struct {

@@ -240,7 +240,7 @@ func (e *Engine) turnChoices(c *Character) map[[2]int][]int {
 		can(ActRanged)
 		t.Missile = e.invItem(c, m)
 		if m.Readied != 2 && e.base(m.Type).Range <= 1 { // ammunition: the launcher's rules
-			m = c.Slots[slotWeapon]
+			m = e.launcher(c)
 		}
 		t.Missile.Rules = e.weaponRules(m)
 	}
@@ -591,14 +591,14 @@ func (e *Engine) throwableItem(it *Item) bool {
 // its range, or takes the Missiles slot's thrown weapon in hand, throws it
 // as Attack does (playerAim at a foe in its range) and puts the weapon back.
 func (e *Engine) rangedAttack(c *Character) (done bool) {
-	it, w := e.missile(c), c.Slots[slotWeapon]
+	it := e.missile(c)
 	if it == nil {
 		return false
 	}
-	thrown := it.Readied == 2
-	if !thrown {
-		it = w // the launcher shoots
+	if it.Readied != 2 {
+		it = e.launcher(c) // the launcher shoots
 	}
+	thrown := it.Readied >= 2            // from the Missiles or Launcher slot: in hand for the shot
 	if len(e.throwTargets(c, it)) == 0 { // as Attack's "No foe in reach"
 		e.refuse("No target in range")
 		return false
@@ -623,7 +623,11 @@ func (e *Engine) rangedAttack(c *Character) (done bool) {
 // (the weapon itself, the arrows in slot 11 or the bolts in slot 12); true
 // when there is one or the weapon needs none (flags 0x0A).
 func (e *Engine) ammoFor(c *Character, it **Item) bool {
-	w := c.Slots[slotWeapon]
+	return e.ammoWith(c, c.Slots[slotWeapon], it)
+}
+
+// ammoWith is ammoFor with w as the weapon (extra: the Launcher slot's).
+func (e *Engine) ammoWith(c *Character, w *Item, it **Item) bool {
 	*it = nil
 	var f byte
 	if w != nil {
@@ -779,12 +783,12 @@ func (e *Engine) combatUseHook() {
 
 // loadout (extra): a party member's weapon, shield and Missiles slot items
 // and how they were readied, as they were when the computer took over.
-type loadout [4]struct {
+type loadout [5]struct {
 	it *Item
 	r  byte
 }
 
-var loadoutSlots = [4]int{slotWeapon, slotShield, slotArrows, slotBolts}
+var loadoutSlots = [5]int{slotWeapon, slotShield, slotArrows, slotBolts, slotLauncher}
 
 // saveLoadout (extra) keeps c's loadout the first time the computer picks
 // a weapon for it this battle (Quick, charmed ...), for restoreLoadouts.

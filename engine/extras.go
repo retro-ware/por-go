@@ -34,7 +34,7 @@ import (
 type extras struct {
 	minimap  bool                    // roster panel shows the minimap
 	loadouts map[*Character]*loadout // weapons to give back after the battle (restoreLoadouts)
-	throwing *Item                   // the Missiles slot's thrown weapon being thrown: ApplyItems fights with it, the hand weapon stays readied
+	throwing *Item                   // the Missiles slot's thrown weapon being thrown, or the Launcher slot's launcher shooting: ApplyItems fights with it, the hand weapon stays readied
 	hall     bool                    // the party menu is the training hall's (opProgram 0), not the title's
 	seen     map[int]*[256]uint8     // per map (areaKey): 1 seen, 2 visited
 	voiced   map[string]bool         // voice.go: the recordings this save has heard: the lore found (lore.go)

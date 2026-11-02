@@ -412,7 +412,7 @@ func (e *Engine) swapReady(c *Character, it *Item) {
 	}
 	// and whatever else holds the hands it needs: a two-handed weapon takes
 	// both the weapon and the shield off
-	if it.Readied == 0 && e.base(it.Type).Classes&c.ClassMask != 0 && !e.missileSlot(c, it) {
+	if it.Readied == 0 && e.base(it.Type).Classes&c.ClassMask != 0 && !e.missileSlot(c, it) && !e.launcherSlot(c, it) {
 		for _, s := range []int{slotWeapon, slotShield} {
 			o := c.Slots[s]
 			if o == nil || o == it || int(e.base(it.Type).Hands)+int(c.Hands) <= 2 {
@@ -474,6 +474,25 @@ func (e *Engine) missileSlot(c *Character, it *Item) bool {
 	return it.Readied == 0 && e.throwableItem(it)
 }
 
+// launcherSlot (extra): readied now, the unreadied launcher (bow, crossbow,
+// sling) it would go into the Launcher slot (Readied 3), beside the weapon
+// in hand: a launcher is never readied in hand.
+func (e *Engine) launcherSlot(c *Character, it *Item) bool {
+	return it.Readied == 0 && e.base(it.Type).Usage&8 != 0 && e.base(it.Type).Range > 1 && !e.throwableItem(it) // not its ammunition (range 1)
+}
+
+// launcher (extra) is c's launcher: the Launcher slot's, else one in hand
+// (a monster's, or one readied before the slot); nil for none.
+func (e *Engine) launcher(c *Character) *Item {
+	if l := c.Slots[slotLauncher]; l != nil {
+		return l
+	}
+	if w := c.Slots[slotWeapon]; w != nil && e.base(w.Type).Usage&8 != 0 {
+		return w
+	}
+	return nil
+}
+
 // missile (extra) is what c's Ranged action shoots: the thrown weapon in the
 // Missiles slot, the ammunition the launcher in hand takes, or a launcher
 // that needs none (a sling); nil when there is nothing to shoot.
@@ -481,9 +500,9 @@ func (e *Engine) missile(c *Character) *Item {
 	if m := c.Slots[slotArrows]; m != nil && m.Readied == 2 {
 		return m
 	}
-	w := c.Slots[slotWeapon]
+	w := e.launcher(c)
 	var ammo *Item
-	if w == nil || e.base(w.Type).Usage&8 == 0 || !e.ammoFor(c, &ammo) { // not a launcher, or without its ammunition
+	if w == nil || !e.ammoWith(c, w, &ammo) { // no launcher, or without its ammunition
 		return nil
 	}
 	if ammo == nil {
@@ -500,6 +519,8 @@ func (e *Engine) inTheWay(c *Character, it *Item) *Item {
 	}
 	slot := e.readySlot(it.Type)
 	switch {
+	case e.launcherSlot(c, it):
+		slot = slotLauncher
 	case it.Type == itemArrow || e.missileSlot(c, it):
 		slot = slotArrows
 	case it.Type == itemQuarrel:
@@ -539,13 +560,20 @@ func (e *Engine) readyItem(it *Item) {
 	}
 	why := 0
 	typ := it.Type
-	missile := e.missileSlot(c, it) // extra: a thrown weapon: the Missiles slot, no hands
-	if int(e.base(typ).Hands)+int(c.Hands) > 2 && !missile {
+	missile := e.missileSlot(c, it)   // extra: a thrown weapon: the Missiles slot, no hands
+	launcher := e.launcherSlot(c, it) // extra: a launcher: the Launcher slot, no hands
+	if int(e.base(typ).Hands)+int(c.Hands) > 2 && !missile && !launcher {
 		why = 3
 	}
 	slot := e.readySlot(typ)
 	if missile {
 		slot = slotArrows
+	}
+	if launcher {
+		slot = slotLauncher
+		if c.Slots[slot] != nil {
+			why = 2
+		}
 	}
 	switch {
 	case slot <= 8:
@@ -574,6 +602,9 @@ func (e *Engine) readyItem(it *Item) {
 		it.Readied = 1
 		if missile {
 			it.Readied = 2
+		}
+		if launcher {
+			it.Readied = 3
 		}
 		if effect {
 			e.itemAffect(it, c, 0)
