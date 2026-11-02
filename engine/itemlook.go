@@ -16,6 +16,7 @@ var classBits = [8]byte{0x02, 0x10, 0x08, 0x40, 0x80, 0x01, 0x04, 0x20}
 // itemLines is the Look text for an item, at most 0x1E wide. With vs (the
 // item readied in the slot it would take) the damage and armour class lines
 // end with the difference to it, " (+1)" better, " (-2)" worse.
+// The damage dice count the known magic plus (Mace +2 is 1d6+3).
 func (e *Engine) itemLines(it, vs *Item) []string {
 	typ := it.Type
 	b := e.base(typ)
@@ -49,9 +50,10 @@ func (e *Engine) itemLines(it, vs *Item) []string {
 			hands = "two hands"
 		}
 		add("Weapon, " + hands)
-		add("Damage " + dice(b.Dice, b.Sides, int8(b.Bonus)) + delta(e.damageAvg(it), e.damageAvg(vs)))
+		plus := int8(e.knownPlus(it)) // the Damage lines count the known magic plus, as their comparison does
+		add("Damage " + dice(b.Dice, b.Sides, int8(b.Bonus)+plus) + delta(e.damageAvg(it), e.damageAvg(vs)))
 		if b.LargeDice > 0 && (b.LargeDice != b.Dice || b.LargeSides != b.Sides || b.LargeBonus != b.Bonus) {
-			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)) + delta(e.largeAvg(it), e.largeAvg(vs)))
+			add(" vs large " + dice(b.LargeDice, b.LargeSides, int8(b.LargeBonus)+plus) + delta(e.largeAvg(it), e.largeAvg(vs)))
 		}
 		if r := int(b.Range); r > 1 {
 			add("Range " + strconv.Itoa(r-1) + ", worse past " + strconv.Itoa((r-1)/3))
