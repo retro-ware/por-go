@@ -26,7 +26,7 @@ func TestQuestFromFlags(t *testing.T) {
 		t.Fatalf("a new party's journal: %+v", q)
 	}
 	e.WriteVar(0x4A9B, 254) // BishopSummons
-	if q := e.questsView(); len(q) != 1 || q[0].Name != "Temple of Bane" || q[0].Done {
+	if q := e.questsView(); len(q) != 1 || q[0].Name != "Temple of Bane" || q[0].Done || len(q[0].Text) != 1 {
 		t.Fatalf("summoned by the bishop: %+v", q)
 	}
 	e.WriteVar(0x4ABD, 255) // QuestTempleOfBane rewarded
