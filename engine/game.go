@@ -348,6 +348,8 @@ func (e *Engine) explore(a Action) (done, encamp bool) {
 		}
 	case ActOverview:
 		e.PartyOverview()
+	case ActClueBook:
+		e.ClueBook()
 	case ActMap:
 		e.FullMap()
 	case ActMinimap:

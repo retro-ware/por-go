@@ -49,3 +49,24 @@ func TestJournalPagesShrinkPicture(t *testing.T) {
 		t.Fatalf("next page: %d pages, %q", len(p), p)
 	}
 }
+
+// TestClueBook: the clue book's chapters are unique and its pictures are there.
+func TestClueBook(t *testing.T) {
+	seen := map[string]bool{}
+	for _, c := range clueChapters() {
+		if seen[c] {
+			t.Errorf("chapter %q twice", c)
+		}
+		seen[c] = true
+	}
+	for _, paras := range loadJournal("CLUEBOOK.TXT") {
+		for _, p := range paras {
+			if n := len(p); n > 2 && p[0] == '<' && p[n-1] == '>' && journalPicture(p[1:n-1]) == nil {
+				t.Errorf("picture %s missing", p)
+			}
+		}
+	}
+	if len(seen) < 30 || journalPicture("CLUE04A.PNG") == nil {
+		t.Errorf("%d chapters", len(seen))
+	}
+}

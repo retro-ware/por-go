@@ -59,6 +59,7 @@ const (
 	ActIcon               // the PNG at Text is the member's combat icon; a file dropped on the icon editor (View.IconDrop)
 	ActOrder              // member N takes place X in the party (View.Ordering): a card dragged onto another's
 	ActNote               // the text pane's text goes into the journal's notes (the text box's "> Notes")
+	ActClueBook           // the clue book (B): its chapters, then the pager
 	ActNoteRemove         // the journal's note N (Lore.ID) is removed
 
 	// Adventuring decisions (View.Exploring)

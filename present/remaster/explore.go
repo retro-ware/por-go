@@ -26,6 +26,7 @@ func commands(v engine.View) []command {
 		{"Map", 'M', engine.ActMap}, // the keys' own commands, for the mouse and the pad
 		{"Overview", 'O', engine.ActOverview},
 		{"Journal", 'J', actJournal},
+		{"Clue Book", 'B', engine.ActClueBook},
 		{"Help?", '?', engine.ActHelp}}
 }
 

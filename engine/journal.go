@@ -207,10 +207,10 @@ func (e *Engine) applyPager(pg *pager, a Action) (done bool) {
 	switch {
 	case a.Kind == ActClose:
 		return true
-	case !pg.journal && up:
-		pg.p = max(pg.p-1, 0)
-	case maxOff > 0 && up:
+	case maxOff > 0 && up && pg.off > 0: // at the top, Up pages back
 		pg.off = max(pg.off-16, 0)
+	case up:
+		pg.p, pg.off = max(pg.p-1, 0), 0
 	case maxOff > 0 && down && pg.off < maxOff: // at the bottom, Down pages on
 		pg.off = min(pg.off+16, maxOff)
 	default:
