@@ -34,6 +34,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math"
 	"image"
 	"image/png"
 	"log"
@@ -219,6 +220,9 @@ func (g *game) keys() {
 }
 
 // mouse passes the pointer's text cell, clicks and wheel steps to the engine.
+// wheelDamp is how much wheel movement makes one step after a scroll's first.
+const wheelDamp = 4
+
 func (g *game) mouse() {
 	mx, my := gpu.CursorPosition()
 	if pts := strings.Split(os.Getenv("POR_POINTER"), ";"); shot != "" && pts[0] != "" { // POR_SHOT: the pointer at x,y (screen pixels)
@@ -238,9 +242,19 @@ func (g *game) mouse() {
 	}
 	cx, cy, in := g.cell(float64(mx), float64(my))
 	_, dy := gpu.Wheel()
-	g.wheel += dy
+	switch {
+	case dy == 0:
+		g.wheel = 0 // idle: the next scroll starts afresh
+	case g.wheel == 0: // a scroll's first tick steps at once, so a mouse wheel notch is one step
+		g.wheel = math.Copysign(1, dy) + dy/wheelDamp
+	default: // a trackpad streams many small deltas a gesture: damp them
+		g.wheel += dy / wheelDamp
+	}
 	steps := int(g.wheel)
 	g.wheel -= float64(steps)
+	if g.wheel == 0 && dy != 0 {
+		g.wheel = math.Copysign(1e-9, dy) // still mid-scroll
+	}
 	right := gpu.IsMouseButtonJustPressed(gpu.MouseButtonRight) || g.rightOnce
 	g.rightOnce = false
 	g.remaster.Mouse(cx, cy, in, left, right, steps, g.eng.View())
