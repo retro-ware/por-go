@@ -420,6 +420,8 @@ func (p *Presenter) cardClick(i int) {
 	switch {
 	case noChoice(p.shownView): // a script's unseen "press Enter" wait (PressToContinue before its text): the card continues, as a click elsewhere
 		p.send(engine.ActOK, 0)
+	case choosing(p.shownView): // a member pick (a spell's target): the card is the pick, exploring or not
+		p.send(engine.ActMember, i)
 	case p.ordering:
 		p.send(engine.ActLead, i)
 	case p.command, p.campHome(p.shownView): // camp: the keys go to its menu

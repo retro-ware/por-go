@@ -242,3 +242,13 @@ func TestCardClickContinues(t *testing.T) {
 		t.Errorf("card click on a press-Enter wait: %v", a)
 	}
 }
+
+// A member pick while exploring (a spell's target): a card's click is the
+// pick, not the command bar's select and context menu.
+func TestCardClickPicksMember(t *testing.T) {
+	p := &Presenter{command: true, shownView: engine.View{Exploring: true, Ask: &engine.Ask{Kind: engine.AskMember}}}
+	p.cardClick(6)
+	if a := p.Actions(); len(a) != 1 || a[0].Kind != engine.ActMember || a[0].N != 6 || p.ctx != 0 {
+		t.Errorf("card click on a member pick: %v, ctx %d", a, p.ctx)
+	}
+}
