@@ -42,6 +42,7 @@ type extras struct {
 	met      map[string]metIcon      // bestiary.go: the monster kinds this save has met
 	quests   []questNote             // quests.go: the quests this save was given
 	notes    []noteRec               // lore.go: the journal's notes
+	doors    map[int][]doorSide      // per map (areaKey): the doors opened for good (openDoor)
 	beasts   []Beast                 // bestiary.go: their entries, as last published
 	creating bool                    // CreateCharacter's sheet is up: no level, experience, party items or status on it
 	minStats [6]int                  // "Minimal stats": per-stat floor, STR as st*100+str00

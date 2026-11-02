@@ -122,4 +122,5 @@ func (e *Engine) LoadGeo(n int) {
 		copy(e.gs.geo[:], b[2:geoSize])
 	}
 	e.area.Geo = uint16(n)
+	e.reopenDoors()
 }
