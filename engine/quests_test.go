@@ -16,3 +16,22 @@ func TestQuestPrinted(t *testing.T) {
 		t.Fatalf("got %+v", n)
 	}
 }
+
+// A quest its script flags say was offered, or is done, is in the journal
+// without its text seen (a save from before the journal); done follows the
+// quest table.
+func TestQuestFromFlags(t *testing.T) {
+	e := quickStarted(t)
+	if q := e.questsView(); len(q) != 0 {
+		t.Fatalf("a new party's journal: %+v", q)
+	}
+	e.WriteVar(0x4A9B, 254) // BishopSummons
+	if q := e.questsView(); len(q) != 1 || q[0].Name != "Temple of Bane" || q[0].Done {
+		t.Fatalf("summoned by the bishop: %+v", q)
+	}
+	e.WriteVar(0x4ABD, 255) // QuestTempleOfBane rewarded
+	e.WriteVar(0x4AB3, 254) // Boss: Yarash beaten, the river clean
+	if q := e.questsView(); len(q) != 2 || !q[0].Done || q[1].Name != "The poisoned river" || !q[1].Done {
+		t.Fatalf("both done: %+v", q)
+	}
+}
