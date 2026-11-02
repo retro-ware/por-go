@@ -515,3 +515,17 @@ func TestScriptInputPrompt(t *testing.T) {
 		t.Fatal("the line did not end")
 	}
 }
+
+// TestModalHidesBattle: help (?) over a fight is the screen, the battle
+// under it is not in the view (a presenter showing the battle would take the
+// keys the pager waits for), and closing it brings the battle back.
+func TestModalHidesBattle(t *testing.T) {
+	e, _ := battleView(t)
+	v := e.Apply(engine.Action{Kind: engine.ActHelp})
+	if v.Pages == nil || v.Battle != nil {
+		t.Fatalf("help over the fight: Pages %v, Battle %v", v.Pages != nil, v.Battle != nil)
+	}
+	if v = e.Apply(engine.Action{Kind: engine.ActClose}); v.Pages != nil || v.Battle == nil {
+		t.Fatalf("help closed: Pages %v, Battle %v", v.Pages != nil, v.Battle != nil)
+	}
+}
