@@ -233,7 +233,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if p.fight {
 		p.shown, p.active, p.menu = "", false, false
 		p.fightView = v.Battle
-		p.battle.DamageNumbers, p.battle.Glyph = blobber.Settings.DamageNumbers, note.Glyph
+		p.battle.Glyph = note.Glyph
 		p.battle.Draw(dst, v.Battle)
 		p.drawFight(dst, note, v)
 		if p.view != nil {

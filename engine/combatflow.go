@@ -25,6 +25,7 @@ const (
 	EvHit                      // Unit hits Target for Amount
 	EvMiss                     // Unit misses Target
 	EvDamage                   // Unit takes Amount damage
+	EvHeal                     // Unit regains Amount hit points
 	EvSpell                    // Unit casts spell Amount (Text: its name)
 	EvMissile                  // a missile flies From -> To
 	EvDied                     // Unit fell (off the map)

@@ -396,9 +396,13 @@ func (e *Engine) saveBonusVsType42(c *Character, a *Affect, flag byte) {
 
 // heal3 = ovr13:2700 (c, a, flag): +3 hit points up to the maximum.
 func (e *Engine) heal3(c *Character, a *Affect, flag byte) {
+	was := c.HP
 	c.HP += 3
 	if c.HP > c.MaxHP {
 		c.HP = c.MaxHP
+	}
+	if c.HP > was {
+		e.unitEvent(EvHeal, c, nil, int(c.HP-was))
 	}
 }
 

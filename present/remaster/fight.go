@@ -14,6 +14,7 @@ import (
 
 	"por/engine"
 	"por/pal"
+	"por/phlan-poc/blobber"
 	"por/present/input"
 )
 
@@ -284,6 +285,9 @@ func (p *Presenter) playing() *engine.CombatEvent {
 	for len(r.q) > 0 {
 		if ev := &r.q[0]; ev.Kind == engine.EvSound && p.Sound != nil && r.from.IsZero() {
 			p.Sound(*ev)
+		}
+		if ev := &r.q[0]; (ev.Kind == engine.EvDamage || ev.Kind == engine.EvHeal) && r.from.IsZero() && blobber.Settings.DamageNumbers {
+			p.battle.Float(ev.Unit, ev.Amount, ev.Kind == engine.EvHeal)
 		}
 		if ev := &r.q[0]; (ev.Ms > 0 || ev.Key) && (ev.Battle != nil || ev.Scene != nil) && !r.skip {
 			if r.from.IsZero() {

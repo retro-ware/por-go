@@ -498,9 +498,13 @@ func (e *Engine) Heal(c *Character, amount int, magical bool) bool {
 			return false
 		}
 	}
+	was := c.HP
 	c.HP += byte(amount)
 	if c.HP > c.MaxHP {
 		c.HP = c.MaxHP
+	}
+	if c.HP > was {
+		e.unitEvent(EvHeal, c, nil, int(c.HP-was))
 	}
 	if c.Okay == 0 {
 		if c.Status == statusDying {

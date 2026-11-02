@@ -9,8 +9,8 @@ import (
 	"gpu"
 )
 
-// Floating damage numbers (Graphics, Damage Numbers): a unit whose hit
-// points drop shows the loss over its head, rising and fading.
+// Floating damage numbers (Graphics, Damage Numbers): the engine's EvDamage
+// and EvHeal, as the host plays them, rise and fade over the unit's head.
 
 const floatLife = 1.2 // seconds a number shows
 
@@ -21,24 +21,21 @@ type floater struct {
 	life float64
 }
 
-// noteDamage starts a number for each unit that lost hit points since the last frame.
-func (p *Presenter) noteDamage(heads []head) {
-	if p.hp == nil {
-		p.hp = map[int][2]int{}
+// Float starts number n over unit id's head: hit points lost, green when heal.
+func (p *Presenter) Float(id, n int, heal bool) {
+	at, ok := p.tops[id]
+	if !ok || p.Glyph == nil || n <= 0 {
+		return
 	}
-	for _, hd := range heads {
-		u := hd.u
-		was, ok := p.hp[u.ID]
-		p.hp[u.ID] = [2]int{u.HP, u.MaxHP}
-		if !ok || was[1] != u.MaxHP || u.HP >= was[0] || !p.DamageNumbers || p.Glyph == nil {
-			continue
-		}
-		p.floats = append(p.floats, floater{at: hd.top, img: gpu.NewImageFromImage(textImage(p.Glyph, strconv.Itoa(was[0]-u.HP)))})
+	c := color.RGBA{255, 255, 85, 255}
+	if heal {
+		c = color.RGBA{85, 255, 85, 255}
 	}
+	p.floats = append(p.floats, floater{at: at, img: gpu.NewImageFromImage(textImage(p.Glyph, strconv.Itoa(n), c))})
 }
 
-// textImage is s in the game's font, yellow on a dark outline.
-func textImage(glyph func(byte) [8]byte, s string) *image.RGBA {
+// textImage is s in the game's font, in c on a dark outline.
+func textImage(glyph func(byte) [8]byte, s string, c color.RGBA) *image.RGBA {
 	im := image.NewRGBA(image.Rect(0, 0, len(s)*8+2, 10))
 	set := func(dx, dy int, c color.RGBA) {
 		for i := 0; i < len(s); i++ {
@@ -55,7 +52,7 @@ func textImage(glyph func(byte) [8]byte, s string) *image.RGBA {
 	for _, d := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 		set(d[0], d[1], color.RGBA{0, 0, 0, 255})
 	}
-	set(0, 0, color.RGBA{255, 255, 85, 255})
+	set(0, 0, c)
 	return im
 }
 

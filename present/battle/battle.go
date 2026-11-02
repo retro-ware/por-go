@@ -62,10 +62,9 @@ type Presenter struct {
 	last          time.Time
 	clock         float64 // seconds shown, for pulses
 
-	DamageNumbers bool               // float the hit points lost over the heads (Graphics, Damage Numbers)
-	Glyph         func(byte) [8]byte // the game's font, for them
-	hp            map[int][2]int     // each unit's hit points and maximum, as last drawn
-	floats        []floater
+	Glyph  func(byte) [8]byte // the game's font, for the damage numbers
+	tops   map[int]vec        // over each unit's head, as last drawn (where its numbers start)
+	floats []floater
 }
 
 type figure struct {
@@ -117,9 +116,6 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		p.Picking = false
 	}
 	p.sync(b)
-	if time.Since(p.last) > time.Second { // a fight begins: no numbers for what changed before it
-		p.hp = nil
-	}
 	dt := p.tick()
 	if b.Strike.Seq != p.strike.Seq {
 		p.strike, p.strikeT, p.burst = b.Strike, 0, false
@@ -373,7 +369,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	if gpu.IsKeyPressed(gpu.KeyShift) {
 		p.drawHealth(dst, vp, heads)
 	}
-	p.noteDamage(heads)
+	for _, hd := range heads {
+		p.tops[hd.u.ID] = hd.top
+	}
 	p.drawDamage(dst, vp, dt)
 }
 
@@ -410,7 +408,7 @@ func (p *Presenter) tick() float64 {
 // sync brings the atlas and the board up to b.
 func (p *Presenter) sync(b *engine.Battle) {
 	if p.white == nil {
-		p.white = gpu.NewImage(1, 1)
+		p.white, p.tops = gpu.NewImage(1, 1), map[int]vec{}
 		p.white.Fill(color.White)
 		p.box = gpu.NewMesh(box())
 		p.base = gpu.NewMesh(disc(24))
