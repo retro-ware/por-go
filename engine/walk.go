@@ -6,7 +6,7 @@ import "time"
 // party to the cursor square along the shortest way through open sides,
 // one step at a time, as if the arrows were pressed. It
 // stops at the square, at any key or click, or when something happens: a script
-// that does more than compute (text, a picture, a menu, monsters), a menu
+// that does more than compute (text on a square not yet visited, a picture, a menu, monsters), a menu
 // other than the command bar, or a step that did not land where expected.
 
 type walkState struct {
@@ -14,6 +14,7 @@ type walkState struct {
 	area       int // areaKey the walk belongs to
 	ex, ey, ef int // where the last key should leave the party
 	event      bool
+	revisit    bool // the step lands on a visited square: plain text there does not stop
 	last       time.Time
 }
 
@@ -77,6 +78,7 @@ func (e *Engine) walkStep() {
 	switch (d - e.facing + 8) % 8 {
 	case 0:
 		w.ex, w.ey = e.posX+dirDX[d], e.posY+dirDY[d]
+		w.revisit = onMap(w.ex, w.ey) && e.ext.seen[w.area] != nil && e.ext.seen[w.area][w.ey<<4|w.ex] == seenVisited
 	case 6:
 		step, w.ef = ActTurnLeft, (e.facing+6)%8
 	default:

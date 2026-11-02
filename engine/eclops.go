@@ -356,8 +356,8 @@ func (e *Engine) scriptText(clear bool, s string) {
 	e.run.textCleared = 0
 	s = platinumPrices.Replace(s)
 	e.es.str[1] = s
-	if w := e.ext.walk; w != nil && strings.TrimSpace(s) != "" {
-		w.event = true // (extra, walk.go) blank text only clears the window
+	if w := e.ext.walk; w != nil && !w.revisit && strings.TrimSpace(s) != "" {
+		w.event = true // (extra, walk.go) blank text only clears the window, a visited square's text is flavour
 	}
 	if clear {
 		e.msgRow, e.msgCol = 0x11, 1
