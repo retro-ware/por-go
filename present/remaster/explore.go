@@ -25,6 +25,7 @@ func commands(v engine.View) []command {
 		{"Search", 'S', engine.ActSearch},
 		{"Map", 'M', engine.ActMap}, // the keys' own commands, for the mouse and the pad
 		{"Overview", 'O', engine.ActOverview},
+		{"Journal", 'J', actJournal},
 		{"Help?", '?', engine.ActHelp}}
 }
 
@@ -39,11 +40,23 @@ func memberCommands(v engine.View) []command {
 	return c
 }
 
+// actJournal is the Journal command's: the presenter's own page (journal.go), no decision.
+const actJournal engine.ActKind = -1
+
 // runCommand sends command i of the command menu.
 func (p *Presenter) runCommand(i int) {
 	if i >= 0 && i < len(p.cmds) {
-		p.send(p.cmds[i].act, -1)
+		p.runAct(p.cmds[i].act)
 	}
+}
+
+// runAct sends a command's decision, or opens the journal.
+func (p *Presenter) runAct(a engine.ActKind) {
+	if a == actJournal {
+		p.openJournal(p.shownView)
+		return
+	}
+	p.send(a, -1)
 }
 
 // exploreKey turns key k into an adventuring decision; false when k is
@@ -74,7 +87,7 @@ func (p *Presenter) exploreKey(k uint16, v engine.View) bool {
 	}
 	for _, cm := range append(commands(v), memberCommands(v)...) {
 		if cm.key == c {
-			p.send(cm.act, -1)
+			p.runAct(cm.act)
 			return true
 		}
 	}

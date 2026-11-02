@@ -132,6 +132,7 @@ var bindings = []binding{
 	{ctx: ctxAdv, keys: "O", desc: "party overview", mouse: "command menu", pad: "X",
 		codes:   []code{{'o', input.Party}, {KeyPadOverview, input.Overview}},
 		padKeys: []padKey{{padX, KeyPadOverview, false}}},
+	{ctx: ctxAdv, keys: "J", desc: "quest journal", mouse: "command menu", pad: "A, then pick"},
 	{ctx: ctxAdv, keys: "Esc", desc: "options", mouse: "right click", pad: "B, Back"}, // the Menus row's Esc
 
 	{ctx: ctxCombat, keys: "Arrows", desc: "move the cursor", mouse: "point", pad: "D-pad, stick",

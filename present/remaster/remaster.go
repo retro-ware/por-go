@@ -74,6 +74,7 @@ type Presenter struct {
 	logTop               int                         // the battle Log's first line shown
 	sheet                sheetCanvas                 // the character sheet
 	beastPage            sheetCanvas                 // camp's bestiary (drawBestiary)
+	journal              journalUI                   // the quest journal (journal.go)
 	resultsPage          sheetCanvas                 // the after-combat page (drawResults)
 	areaSrc, areaMarkSrc image.Image                 // the overland's map and marker last uploaded (drawAreaMap)
 	areaImg, areaMark    *gpu.Image
@@ -224,7 +225,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if !p.active {
 		p.ctx = 0
 	}
-	p.fight = v.Battle != nil && v.Slots == nil              // the battle view is the only one (the engine has no combat page), but the save slots (F10) go over it: under the battle they took every key unseen
+	p.fight = v.Battle != nil && v.Slots == nil                // the battle view is the only one (the engine has no combat page), but the save slots (F10) go over it: under the battle they took every key unseen
 	p.noMenu = askMenu(v) == nil || len(askMenu(v).Items) == 1 // a one-item bar (PRESS <ENTER> TO CONTINUE) has nothing to pick either
 	p.resize(dst, v)
 	if p.fight {
@@ -254,6 +255,13 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if p.main {
 		p.shown, p.active, p.menu = "", false, false
 		p.drawMain(dst, v)
+		return Rect{}
+	}
+	p.journal.open = p.journal.open && v.Exploring
+	if p.journal.open { // the quest journal: a page of its own over the whole window
+		p.shown, p.active, p.menu = "", true, false
+		dst.Fill(color.Black)
+		p.drawJournal(dst, note, v)
 		return Rect{}
 	}
 	if screenUp(v) && v.Camp != nil && p.camp.screen == campBestiary { // the bestiary: a page of its own over the whole window
@@ -354,7 +362,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if v.Window == engine.WinText { // text all over the view window, not just the picture frame
 		pic = engine.ViewWindow.Framed()
 	}
-	picBottom := 0                                                                    // the bottom of the picture box, when one is up
+	picBottom := 0                                                                                       // the bottom of the picture box, when one is up
 	if v.Adventure && (v.Window == engine.WinPicture || v.Window == engine.WinText) && !p.spellList(v) { // the spell lists' rules go there; not the page a member pick came from
 		// the picture at its size as far as it, the text box and a menu fit one under the other: in the middle of the space over the text, else from the top with the text moved down under it
 		pw, gap := float64(pic.Pixels().Dx()), pk*4

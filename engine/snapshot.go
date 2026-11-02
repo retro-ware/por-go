@@ -203,6 +203,7 @@ type View struct {
 	Facing     Dir
 	Day        bool        // 6:00 to 20:00, when the scripts show the day sky
 	Inside     bool        // the party stands on an inside square (the original's inside sky colour)
+	Quests     []Quest     // the quest journal (quests.go)
 	Exploring  bool        // the party explores: the adventuring decisions (ActForward .. ActCastPick) are taken
 	Sweeping   bool        // ... at the slow, searching pace (ActSweep): the HUD says so
 	CanCast    bool        // ... and the selected member has a spell to cast (ActCastPick)
@@ -552,6 +553,7 @@ func (e *Engine) publish() {
 		Inside:    e.MapCell(e.posX, e.posY) > 0x7F,
 		Exploring: e.exploring(),
 		Sweeping:  e.exploring() && e.game.Search&1 != 0,
+		Quests:    e.questsView(),
 	}
 	if s.win == WinAreaMap {
 		v.AreaMap = e.areaMapView()
