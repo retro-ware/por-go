@@ -83,12 +83,22 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 }
 
 // listKeys are the hotkeys of the list's lines then its options: the
-// options' letters, digits on the lines that can be picked.
+// options' letters, digits on the lines that can be picked; none at all
+// when more than nine lines can be (the first nine only would be uneven).
 func (p *Presenter) listKeys(v engine.View) []byte {
 	n := len(askList(v))
 	keys := make([]byte, n, n+len(p.list.opts))
 	for _, o := range p.list.opts {
 		keys = append(keys, askMenu(v).Items[o].Key)
+	}
+	on := 0
+	for _, l := range askList(v) {
+		if !l.Off {
+			on++
+		}
+	}
+	if on > 9 {
+		return keys
 	}
 	return digitKeys(keys, func(i int) bool { return i < n && !askList(v)[i].Off })
 }
