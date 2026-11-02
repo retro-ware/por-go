@@ -87,28 +87,34 @@ func TestMissileSlot(t *testing.T) {
 	if j.Readied != 2 || c.Slots[slotWeapon] != nil || w.Readied != 0 {
 		t.Errorf("restored: javelin %d, sword %d", j.Readied, w.Readied)
 	}
-	// A launcher shoots the Missiles slot's matching ammunition: a bow the
-	// arrows (not quarrels), a sling nothing; one kind of ammunition at a time.
+	// A launcher goes into the Launcher slot beside the weapon in hand and
+	// shoots the Missiles slot's matching ammunition: a bow the arrows (not
+	// quarrels), a sling nothing; one kind of ammunition at a time.
 	i := slices.IndexFunc(e.party, func(c *Character) bool {
-		return e.base(itemShortBow).Classes&e.base(itemSling).Classes&c.ClassMask != 0
+		return e.base(itemShortBow).Classes&e.base(itemSling).Classes&e.base(itemLongSword).Classes&c.ClassMask != 0
 	})
 	if i < 0 {
-		t.Fatal("nobody for a bow and a sling")
+		t.Fatal("nobody for a sword, a bow and a sling")
 	}
 	e.selectMember(i)
 	c = e.selected()
 	e.ApplyItems(c)
-	for _, s := range []int{slotWeapon, slotShield, slotArrows, slotBolts} {
+	for _, s := range []int{slotWeapon, slotShield, slotArrows, slotBolts, slotLauncher} {
 		if c.Slots[s] != nil {
 			e.readyItem(c.Slots[s])
 			e.ApplyItems(c)
 		}
 	}
-	bow, arrows, quarrels, sling := e.AddItemCopy(c, e.RandomItem(itemShortBow)), e.AddItemCopy(c, e.RandomItem(itemArrow)), e.AddItemCopy(c, e.RandomItem(itemQuarrel)), e.AddItemCopy(c, e.RandomItem(itemSling))
+	sword, bow, arrows, quarrels, sling := e.AddItemCopy(c, e.RandomItem(itemLongSword)), e.AddItemCopy(c, e.RandomItem(itemShortBow)), e.AddItemCopy(c, e.RandomItem(itemArrow)), e.AddItemCopy(c, e.RandomItem(itemQuarrel)), e.AddItemCopy(c, e.RandomItem(itemSling))
+	e.readyItem(sword)
+	e.ApplyItems(c)
+	if dollSlot(e, c, bow) != DollLauncher {
+		t.Errorf("bow: doll slot %d, want Launcher", dollSlot(e, c, bow))
+	}
 	e.readyItem(bow)
 	e.ApplyItems(c)
-	if c.Slots[slotWeapon] != bow || e.missile(c) != nil {
-		t.Errorf("bow readied %d, missile without arrows %v", bow.Readied, e.missile(c))
+	if bow.Readied != 3 || c.Slots[slotLauncher] != bow || c.Slots[slotWeapon] != sword || e.missile(c) != nil {
+		t.Errorf("bow readied %d, sword kept %v, missile without arrows %v", bow.Readied, c.Slots[slotWeapon] == sword, e.missile(c))
 	}
 	e.readyItem(quarrels)
 	e.ApplyItems(c)
@@ -126,11 +132,15 @@ func TestMissileSlot(t *testing.T) {
 	if e.missile(c) != arrows {
 		t.Errorf("bow and arrows: missile %v (readied %d, %s)", e.missile(c), arrows.Readied, e.ext.note)
 	}
+	e.readyItem(sling) // the Launcher slot holds the bow
+	if sling.Readied != 0 {
+		t.Error("sling readied beside the bow")
+	}
 	e.readyItem(bow)
 	e.ApplyItems(c)
 	e.readyItem(sling)
 	e.ApplyItems(c)
-	if e.missile(c) != sling {
+	if e.missile(c) != sling || c.Slots[slotWeapon] != sword {
 		t.Errorf("sling: missile %v (readied %d, %s)", e.missile(c), sling.Readied, e.ext.note)
 	}
 }

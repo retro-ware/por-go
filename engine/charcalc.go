@@ -118,13 +118,14 @@ func (e *Engine) thiefSkills(c *Character) {
 // from the base item record; 2 is body armour, 9 and 10 the two rings, 11
 // arrows, 12 quarrels.
 const (
-	slotWeapon = 0
-	slotShield = 1
-	slotArmor  = 2
-	slotRing1  = 9
-	slotRing2  = 10
-	slotArrows = 11
-	slotBolts  = 12
+	slotWeapon   = 0
+	slotShield   = 1
+	slotArmor    = 2
+	slotRing1    = 9
+	slotRing2    = 10
+	slotArrows   = 11
+	slotBolts    = 12
+	slotLauncher = 13 // extra: the Launcher slot (Readied 3): a bow, crossbow or sling beside the weapon in hand
 )
 
 // itemBase is the 16-byte base record of an item type (DS:5582 + 16*type,
@@ -207,7 +208,7 @@ func (e *Engine) ApplyItems(c *Character) {
 	if e.partyMember(c) { // extra: unreadied items belong to the party inventory
 		e.stow(c)
 	}
-	c.Slots = [13]*Item{}
+	c.Slots = [14]*Item{}
 	c.ItemCount = 0
 	c.Hands = 0
 	c.Weight = 0 // extra: items weigh nothing
@@ -219,6 +220,10 @@ func (e *Engine) ApplyItems(c *Character) {
 		typ := it.Type
 		if it.Readied == 2 { // extra: a thrown weapon in the Missiles slot (readyItem): not in hand
 			c.Slots[slotArrows] = it
+			continue
+		}
+		if it.Readied == 3 { // extra: a launcher in the Launcher slot: not in hand
+			c.Slots[slotLauncher] = it
 			continue
 		}
 		switch s := e.readySlot(typ); {
@@ -246,7 +251,7 @@ func (e *Engine) ApplyItems(c *Character) {
 		}
 		c.Hands += e.base(typ).Hands
 	}
-	if t := e.ext.throwing; t != nil && t.Readied == 2 && slices.Contains(c.Items, t) { // extra: thrown straight from the Missiles slot
+	if t := e.ext.throwing; t != nil && t.Readied >= 2 && slices.Contains(c.Items, t) { // extra: thrown straight from the Missiles slot, or shot with the Launcher slot's launcher
 		c.Slots[slotWeapon] = t
 	}
 	c.Dice, c.Sides, c.Bonus = c.BaseDice, c.BaseSides, c.BaseBonus

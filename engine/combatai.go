@@ -343,6 +343,12 @@ func (e *Engine) aiAttackLoop(c *Character) bool {
 		if m, w := c.Slots[slotArrows], c.Slots[slotWeapon]; m != nil && m.Readied == 2 && (e.nearEnemies(c, 1) == 0 || w == nil && e.base(m.Type).Usage&4 != 0) { // empty hands: one thrown in melee too (an axe, not a dart) fights next to a foe
 			e.ext.throwing = m
 			e.ApplyItems(c)
+		} else if l := c.Slots[slotLauncher]; l != nil && e.nearEnemies(c, 1) == 0 { // extra: so is the Launcher slot's launcher
+			var ammo *Item
+			if e.ammoWith(c, l, &ammo) {
+				e.ext.throwing = l
+				e.ApplyItems(c)
+			}
 		}
 		for ci.Fleeing != 0 && ci.Moves > 0 && int8(ci.Delay) > 0 && int8(ci.Delay) < 0x14 {
 			e.aiMoveStep(c)
@@ -591,7 +597,7 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	}
 	done := false
 	ok = true
-	if w := c.Slots[slotWeapon]; w != nil && (w == chosen || w.Magic != 0 || chosen != nil && e.throwableItem(chosen)) { // extra: never unready the hand weapon for a thrown one, it has the Missiles slot
+	if w := c.Slots[slotWeapon]; w != nil && (w == chosen || w.Magic != 0 || chosen != nil && (e.throwableItem(chosen) || e.launcherSlot(c, chosen))) { // extra: never unready the hand weapon for a thrown one or a launcher, they have the Missiles and Launcher slots
 		ok = false
 	}
 	if ok {
@@ -636,6 +642,11 @@ func (e *Engine) aiPickWeapon(c *Character) {
 	e.ApplyItems(c)
 	if best1 != nil && best1.Readied == 0 && e.throwableItem(best1) && c.Slots[slotArrows] == nil && c.Slots[slotBolts] == nil {
 		e.readyItem(best1) // extra: the Missiles slot (missileSlot), thrown from there by aiAttackLoop
+		e.ApplyItems(c)
+		done = true
+	}
+	if best1 != nil && e.launcherSlot(c, best1) && c.Slots[slotLauncher] == nil {
+		e.readyItem(best1) // extra: the Launcher slot, shot from there by aiAttackLoop
 		e.ApplyItems(c)
 		done = true
 	}

@@ -17,7 +17,7 @@ type Character struct {
 	Items     []*Item           // list at +0xC8 (0x3F-byte nodes)
 	Affects   []*Affect         // list at +0x7F (9-byte nodes)
 	Combat    *CombatInfo       // block at +0x108 while fighting
-	Slots     [13]*Item         // readied items, +0xCC (set by ApplyItems)
+	Slots     [14]*Item         // readied items, +0xCC (set by ApplyItems)
 }
 
 // charRecord is the 0x11D-byte DOS character record, field for field, so
