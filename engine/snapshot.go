@@ -557,7 +557,7 @@ func (e *Engine) publish() {
 		Quests:    e.questsView(),
 		Lore:      e.loreView(),
 	}
-	if s.win == WinAreaMap {
+	if s.win == WinAreaMap || e.area.In3D == 0 && e.adventure() { // out on the overland its pop-ups (encounters, area texts) show over the map, not a stale 3D view
 		v.AreaMap = e.areaMapView()
 	}
 	if (s.win == WinThreeD || s.win == WinPicture || s.win == WinText || e.choosing()) && e.minimapAllowed() {
