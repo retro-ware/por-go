@@ -1,6 +1,7 @@
-# The Pool of Radiance clue book (TSR, 1988), cleaned from OCR of the
-# scanned book; maps CLUE*.PNG. Same format as JOURNAL.TXT. Opened with
-# B while exploring (engine/cluebook.go).
+# The Pool of Radiance clue book (TSR, 1988): text restored from OCR and
+# proofread against the scanned book; maps CLUE*.PNG cut from the
+# mocagh.org scan (the cover from the EPUB). Same format as JOURNAL.TXT.
+# Opened with B while exploring (engine/cluebook.go).
 
 [Pool of Radiance Clue Book]
 <CLUE00A.PNG>
@@ -22,9 +23,9 @@ Clue Book: George MacDonald
 
 Art, Graphic Design and Desktop Publishing: Louis Saekow Design: David Boudreau, Peter Gascoyne, Kathryn Lee
 
-Strategic Simulations, Inc. reserves the right to make improvements in the product described in this clue book at any time and without notice.
+Strategic Simulations, Inc. reserves the right to make improvements in the product described in this clue book at anytime and without notice.
 
-Strategic Simulations, Inc. makes no warranties, express or implied, with respect to this clue book, its quality, merchantability or fitness for any particular purpose. This clue book is provided "as is."
+Strategic Simulations, Inc. makes no warranties, express or implied, with respect to this cluebook, its quality, merchantability or fitness for any particular purpose. This cluebook is provided "as is."
 
 ADVANCED DUNGEONS & DRAGONS, AD&D, and FORGOTTEN REALMS are trademarks owned by and used under license from TSR, Inc., Lake Geneva, WI, USA. Copyright 1988 TSR, Inc. All Rights Reserved.
 
@@ -36,7 +37,7 @@ Pool of Radiance is Strategic Simulations Inc's first ADVANCED DUNGEONS & DRAGON
 
 Pool of Radiance does not rely on obtuse puzzles or unfathomable word games to create challenge. Instead, Pool of Radiance relies on challenges that arise from within the scope of the adventure. Each adventure centers around solving a mystery, defeating an enemy force, or discovering the true allegiance of the mysterious groups you meet.
 
-You are sure to have questions as you adventure through Pool of Radiance. First, read the rule book and Adventurers Journal that come with the game. These books will answer most of the questions that come up. Second, you can refer to this clue book for answers; it is the definitive source for insight into the adventure in Pool of Radiance. Third, you can look into the many ADVANCED DUNGEONS & DRAGONS books for background on the game. The AD&D Players Handbook and the AD&D Dungeon Masters Guide provided the basis for the rules in Pool of Radiance. The FORGOTTEN REALMS Campaign Set and Ruins of Adventure module provided the background material for the storyline. These sources should tell you all you need to know about Pool of Radiance.
+You are sure to have questions as you adventure through Pool of Radiance. First, read the rule book and Adventurers Journal that come with the game. These books will answer most of the questions that come up. Second, you can refer to this clue book for answers; it is the definitive source for insight into the adventure in Pool of Radiance. Third, you can look into the many ADVANCED DUNGEONS & DRAGONS books for background on the game. The AD&D Players Handbook and the AD&D Dungeon Masters Guide provided the basis for the rules in Pool of Radiance. THE FORGOTTEN REALMS Campaign Set and Ruins of Adventure module provided the background material for the storyline. These sources should tell you all you need to know about Pool of Radiance.
 
 Keep your current objective in mind while you play through each mission in Pool of Radiance. Each mission has a specific goal that is given in the city council proclamation and in the council clerk's description of each mission. In some missions you simply have to hack your way through everything in front of you. In other missions you must sneak and be unobtrusive. In some missions you must be diplomatic, and in others you must simply survive. Stay true to your objective as each mission unfolds.
 
@@ -44,14 +45,14 @@ Finally, remember the overall goal of the quest, the liberation of Phlan from it
 
 [Missions and Adventures]
 
-The quest in Pool of Radiance is divided into missions or adventures. The City Council of New Phlan will direct the characters to most of their missions. Occasionally, the characters will discover an adventure on their own.
-
-It is not necessary to "touch every square" in Pool of Radiance to complete the quest. The party should take the missions that sound interesting, find out all the information they can, and work to complete their overall mission and free Phlan from its evil overlord.
+The quest in Pool of Radiance is divided into missions or adventures. The City Council of New Phlan will direct the characters to most of their missions. Occasionally, the characters will discover an adventure on their own. It is not necessary to "touch every square" in Pool of Radiance to complete the quest. The party should take the missions that sound interesting, find out all the information they can, and work to complete their overall mission and free Phlan from its evil overlord.
 
 Each mission is set in a specific area. The description of each mission includes a map of the area, the background storyline for the area, where the party can rest, a description of the important places in that area, and the aftermath of the mission.
 
 [Civilized Area, New Phlan]
 <CLUE03A.PNG>
+
+Key: Wall, Door or Archway, Water, Docks.
 
 The Storyline: New Phlan is the area that civilization has carved out of the monster-controlled areas of Old Phlan. New Phlan sits precariously on the southeastern corner of Old Phlan as shown in the city map on page 26 of the Adventurers Journal. Monsters control all of the rest of the city, and the monsters are themselves controlled by a mysterious "Boss". Your quest is to liberate the city from monsters, discover the identity of the boss, and defeat the boss to free the city.
 
@@ -73,7 +74,7 @@ MAP LOCATIONS
 
 5. Dueling & Hiring Hall: Here, individual members of the party can duel to gain experience points, or the party can hire NPCs to help the party on their adventures. Hired NPCs receive a cut of the treasure before the players ever get their hands on it.
 
-6. Clerical Training: Characters that are clerics or cleric split classes can train here.
+6. Clerical Training: Characters that are clerics or clerical split classes can train here.
 
 7. Magic User Training: Characters that are magic users or magic user split classes can train here.
 
@@ -116,7 +117,7 @@ Finale: You don't need to "clear" the civilized block. When you have finished yo
 [Slums]
 <CLUE04A.PNG>
 
-Key: Wall, Door, Archway, Illusionary Wall.
+Key: Wall, Door or Archway, Illusionary Wall.
 
 The Storyline: The townspeople have reclaimed the "civilized" section of New Phlan. They have reinforced the walls between the civilized section and the slums which are still controlled by monsters. The heroes must defeat the monsters that wander the slums, along with rooting out the monsters in their lairs. This is a search-and-destroy mission where the heroes must be on the lookout for clues to this and future missions.
 
@@ -156,9 +157,9 @@ MAP LOCATIONS
 
 16. Trolls and Ogres Tossing Things: Very tough. This battle is a coming-of-age test; if your heroes can clear these monsters then you can handle the rest of the ugly things that the world has to throw at you. You may want to go back to the hiring hall and hire a hero for this battle. Equip him with a bow and arrows and ready his arrows so that he will provide ranged fire.
 
-Tactics and firepower are the keys to winning this fight. The Trolls and Ogres are 2 square monsters, and the battle occurs in a narrow room which limits their mobility. Because the two Ogres are up front, the four trolls are trapped behind them. The ogres are less dangerous than the trolls, so do not kill the ogres until you have defeated all the trolls. Take your two characters with the best AC and HP and have them engage the ogres. Everyone else should stand one square back and use ranged weapons and attack spells on the trolls until they all go down. Once the trolls are down, finish off the ogres.
+Tactics and firepower are the keys to winning this fight. The Trolls and Ogres are 2 square monsters, and the battle occurs in a narrow room which limits their mobility. Because the two Ogres are up front, the four trolls are trapped behind them. The ogres are less dangerous than the trolls, so do not kill the ogres until you have defeated all the trolls. Take your two characters with the best AC and HP and have them engage the ogres. Everyone else should stand one square back and use ranged weapons and attack spells on the trolls until they all go down.
 
-Try to bring down all the trolls at about the same time, and then kill the ogres quickly. If you kill a troll early in the battle and take a long time finishing everyone else off, the troll will regenerate and stand back up. Then you'll have to deal with him all over again. If you advance onto the square the troll had occupied, the troll will be unable to stand back up.
+Once the trolls are down, finish off the ogres. Try to bring down all the trolls at about the same time, and then kill the ogres quickly. If you kill a troll early in the battle and take a long time finishing everyone else off, the troll will regenerate and stand back up. Then you'll have to deal with him all over again. If you advance onto the square the troll had occupied, the troll will be unable to stand back up.
 
 Finale: The slums are cleared after you have defeated 15 random encounters and dealt with all the set encounters. When you return to the city council, they will pay you a reward for clearing the block and offer you additional missions.
 [Sokal Keep]
@@ -170,9 +171,9 @@ Where You Can Rest: After you kill four undead patrols, you can rest anywhere in
 
 MAP LOCATIONS
 
-1. Dead Elf: Search the dead elf and find the scroll on his body with three code words in elvish. The code words translate as: LUX, SHESTHI, and SAMOSUD.
+1. Dead Elf: Search the dead elf and find the scroll on his body with three code words in elvish. The code words translate as: LUX, SHESTNI, and SAMOSUD.
 
-2. Undead Patrol Area: The inner Keep is patrolled by small groups of skeletons and zombies. Before you go into the chapel, the patrols will leave you alone if you parlay with them and say SHESTHI. After speaking with Ferran Martinez, you must parlay with them and say SAMOSUD. If you defeat four patrols, the current supply of undead is exhausted. If you leave the Keep and return, the undead patrols return to full strength.
+2. Undead Patrol Area: The inner Keep is patrolled by small groups of skeletons and zombies. Before you go into the chapel, the patrols will leave you alone if you parlay with them and say SHESTNI. After speaking with Ferran Martinez, you must parlay with them and say SAMOSUD. If you defeat four patrols, the current supply of undead is exhausted. If you leave the Keep and return, the undead patrols return to full strength.
 
 3. Scorpions: Here, you meet a mixed group of huge and large scorpions. Have a cleric memorize a slow poison spell before this fight, just in case a character gets hit and misses his saving throw.
 
@@ -196,9 +197,11 @@ Finale: Once Ferran Martinez has been told the truth about the city, his ghostly
 <CLUE06A.PNG>
 <CLUE06B.PNG>
 
-The Storyline: The infamous bandit Norris The Gray, and his bandit horde infest the area near Kuto's Well. The well is the only source of fresh water in the area, and so the area around the well is a neutral zone where many monsters come and drink. So long as creatures don't search the area for Norris' hideout or attempt to enter the well, Norris' troops don't give them any trouble. The city council doesn't have a special commission for dealing with Norris The Gray, but after the players clear the area they will get the standard reward for clearing the block as well as being able to keep Norris' treasure.
+The Storyline: The infamous bandit, Norris The Gray, and his bandit horde infest the area near Kuto's Well. The well is the only source of fresh water in the area, and so the area around the well is a neutral zone where many monsters come and drink. So long as creatures don't search the area for Norris' hideout or attempt to enter the well, Norris' troops don't give them any trouble.
 
-Where You Can Rest: You cannot rest in or under Kuto's Well until you have defeated Norris the Gray. After Norris has been defeated, you can rest in the catacombs beneath Kuto's Well.
+The city council doesn't have a special commission for dealing with Norris The Gray, but after the players clear the area they will get the standard reward for clearing the block, as well as being able to keep Norris' treasure.
+
+Where You Can Rest: You cannot rest in or under Kuto's well until you have defeated Norris the Gray. After Norris has been defeated, you can rest in the catacombs beneath Kuto's Well.
 
 MAP LOCATIONS: AREA NEAR KUTO'S WELL
 
@@ -206,7 +209,7 @@ MAP LOCATIONS: AREA NEAR KUTO'S WELL
 
 2. Norris The Gray's kobolds guard the well from these locations. If you search near any of these buildings, the guards will attack.
 
-3. Kuto's Well: If you search adjacent to the well or attempt to enter the well, the kobold guards and a set of reinforcements from within the well attack the party. If you enter the well, you can climb down the ladder and explore the catacombs below.
+3. Kuto's Well. If you search adjacent to the well or attempt to enter the well, the kobold guards and a set of reinforcements from within the well attack the party. If you enter the well, you can climb down the ladder and explore the catacombs below.
 
 4. A patrol consisting of a lizard man and giant lizards guard the hag behind the door.
 
@@ -214,7 +217,7 @@ MAP LOCATIONS: AREA NEAR KUTO'S WELL
 
 MAP LOCATIONS: KUTO'S WELL CATACOMBS
 
-6. The lower part of Kuto's Well, with a secret door leading into the catacombs.
+6. The lower part of Kuto's Well, with an ajar secret door leading into the catacombs.
 
 7. Kobold archers will ambush the party here until Norris The Gray has been defeated.
 
@@ -227,7 +230,9 @@ Finale: Once Norris The Gray has been defeated, you should return to the city co
 [Mendor's Library]
 <CLUE07A.PNG>
 
-The Storyline: Mendor's Library was one of the great centers of knowledge in all the Moonsea reaches. After the fall of Phlan, most of the monsters didn't know what to do with the library. The Boss, however, recognized it for the treasure trove that it was. He had the library magically sealed until he could send out a team of experts to pillage the library's secrets. Unfortunately for the Boss, the Flight of the Wyrms caused chaos throughout Phlan and diverted his attention away from the library. The city council knows that tomes and books from Phlan's past could hold the secret to their salvation, so they have set a bounty for the recovery of important documents. The party's job: clear the block containing the library, discover some of the background and secrets of the Boss, and gain the bounty for returning some of the important works from Mendor's Library.
+The Storyline: Mendor's Library was one of the great centers of knowledge in all the Moonsea reaches. After the fall of Phlan, most of the monsters didn't know what to do with the library. The Boss, however, recognized it for the treasure trove that it was. He had the library magically sealed until he could send out a team of experts to pillage the library's secrets. Unfortunately for the Boss, the Flight of the Wyrms caused chaos throughout Phlan and diverted his attention away from the library.
+
+The city council knows that tomes and books from Phlan's past could hold the secret to their salvation, so they have set a bounty for the recovery of important documents. The party's job: clear the block containing the library, discover some of the background and secrets of the Boss, and gain the bounty for returning some of the important works from Mendor's Library.
 
 Where You Can Rest: The party can rest anywhere in the library except in the Garden.
 
@@ -235,11 +240,11 @@ Note: Stay in Search Mode as you move through the library to make sure you find 
 
 MAP LOCATIONS
 
-1. History Section: Search this area until you find the books "Lex Geographica," "History of the North," and "Grand Historian's Records of the Arts of War."
+1. History Section: Search this area until you find the books Lex Geographica, History of the North, and Grand Historian's Records of the Arts of War.
 
 2. Rhetoric Section: A basilisk lives in the Rhetoric section. Be prepared with spells to raise your Saving Throws. Kill the basilisk before he gazes and turns any of the heroes to stone.
 
-3. Philosophy Section: Search this area until you find the books "Tyerdeth's Discourses on Power" and "Urgund's Descriptions of Darkness."
+3. Philosophy Section: Search this area until you find the books, "Tyerdeth's Discourses on Power" and "Urgund's Descriptions of Darkness."
 
 4. Mathematics Section: No special books here.
 
@@ -258,7 +263,9 @@ Finale: After you find the books and treasure in Mendor's Library, you should le
 [Podol Plaza]
 <CLUE08A.PNG>
 
-The Storyline: There are two different ways to enter Podol Plaza: when the party is on the secret mission given to them by the city council, or when they wander in without a mission. If the party has received the secret mission, they are there to sneak in, watch the monsters auction off a powerful magic item, try to get as much information as they can concerning the item and its purchaser, and then get back to the city council with the information. The best way to do this is for the party to disguise themselves as monsters when they enter the block.
+The Storyline: There are two different ways to enter Podol Plaza: When the party is on the secret mission given to them by the city council, or when they wander in without a mission.
+
+If the party has received the secret mission, they are there to sneak in, watch the monsters auction off a powerful magic item, try to get as much information as they can concerning the item and its purchaser, and then get back to the city council with the information. The best way to do this is for the party to disguise themselves as monsters when they enter the block.
 
 If you are not on mission, you can avoid most random encounters by hugging the walls and staying out of the plaza. While not on mission, it takes 10 random encounters to clear the block of monsters. You cannot clear the block while on mission.
 
@@ -287,9 +294,9 @@ MAP LOCATIONS
 
 1. Dry Well: This well is the secret entrance to an underground Thieves' Guild. Any character who is not a thief and who tries to climb down will fall, taking a lot of damage. A thief (who has removed any armor heavier than leather) may attempt to descend with his climbing skill. The guild master will throw any intruder out of the well with his ring of telekinesis unless the intruder is a thief and the party is on Cadorna's secret mission. If the party is on Cadorna's mission, the guild master will offer to guide the party into the textile house (at 1a) and past the hobgoblin guards. If the party visits the thieves after it has recovered Cadorna's treasure (and not broken the seal), the guild master will offer (for a cut) to open the treasure and duplicate the seal so that Cadorna won't know it was opened.
 
-2. Hobgoblin Barracks: The hobgoblins' main garrison is quartered here.
+2. Hobgoblin Barracks: The hobgoblin's main garrison is quartered here.
 
-3. High Priestess Grishnak leads the service in this makeshift temple. Here you can get the brass key to free Skullcrusher (#4).
+3. High Priestess Grishnak leads the service in this makeshift temple. Here you can get the brass key to free Skull Crusher (#4).
 
 4. Skullcrusher chained up: Skullcrusher was sent by Cadorna to retrieve the family treasure. If you free him, he will join your band.
 
@@ -309,7 +316,9 @@ Finale: After you have recovered the Cadorna family treasure (and disposed of it
 <CLUE10A.PNG>
 <CLUE10B.PNG>
 
-The Storyline: The great temple of Il-Mater has been converted to the worship of the evil god Bane. Bishop Braccio from the temple of Tyr will give you the help of Dirten, a 6th level gnome cleric, if your party will help clear the temple and find the lost artifacts of Il-Mater. A half-orc cleric, Mace, leads a motley group of cultists and slaves in the remodeled temple. Mace lives in a mansion in the wealthy block adjacent to the temple area. Mace knows that the temple still holds hidden treasures, but he and his followers have been unable to find them. When the heroes penetrate the temple, Mace figures that they too are looking for the treasures. He intends to let the heroes search the temple and then kill them after they have found the treasure or when they try to leave.
+The Storyline: The great temple of Il-Mater has been converted to the worship of the evil god Bane. Bishop Braccio from the temple of Tyr will give you the help of Dirtan, a 6th-level gnome cleric, if your party will help clear the temple and find the lost artifacts of Il-Mater.
+
+A half-orc cleric, Mace, leads a motley group of cultists and slaves in the remodeled temple. Mace lives in a mansion in the wealthy block adjacent to the temple area. Mace knows that the temple still holds hidden treasures, but he and his followers have been unable to find them. When the heroes penetrate the temple, Mace figures that they too are looking for the treasures. He intends to let the heroes search the temple and then kill them after they have found the treasure or when they try to leave.
 
 Where You Can Rest: Mace's followers patrol both the Wealthy Area and the Temple of Bane. Until you clear both blocks it is unsafe to rest anywhere in either block.
 
@@ -335,12 +344,12 @@ MAP LOCATIONS
 
 10. Altar: This is a disgusting altar to the worship of Bane. If you defile the altar, Mace and his followers will become enraged and attack with fanatical morale.
 
-Finale: Both blocks are cleared after you win the fight as you enter the mansion (#1) and defeat Mace's followers at the temple. Dirten the Cleric will remain at the temple to begin the rebuilding.
+Finale: Both blocks are cleared after you win the fight as you enter the mansion (#1) and defeat Mace's followers at the temple. Dirtan the Cleric will remain at the temple to begin the rebuilding.
 [Kovel Mansion]
 <CLUE11A.PNG>
 The Storyline: The main thieves' guild of Phlan has taken over the ancient mansion of the Kovel family. The thieves act as spies and information brokers for many forces in the city. Your mission is to find all of the thieves and clear them from Kovel Mansion.
 
-Where You Can Rest: You cannot rest in Kovel Mansion until all the thieves there have been cleared out.
+Where You Can Rest: You cannot rest in Kovel mansion until all the thieves there have been cleared out.
 
 Note: Kovel Mansion is full of traps and locks set by the thieves' guild. Always move in Search Mode to give the party the maximum chance to spot a trap before it goes off. Once a trap or lock is found, a thief (wearing no armor heavier than leather) has a chance to "deal with" them. As you wander through the mansion, you can be ambushed by pairs of thieves at any time. Until you have dealt with all the thieves, they will continue to perform these nuisance ambushes.
 
@@ -384,7 +393,7 @@ The Buccaneer's Base is at 12,31 but only shows up after the party has received 
 
 The Outpost of Zhentil Keep is at 3,32 but can only be entered after the party has received the commission to deliver the diplomatic papers.
 
-Random encounters in the Western Wilderness include: Quicklings, Wild Boars*, Giant Mantis*, Tigers, Thri-Kreen+, Ankhegs*, Centaurs, Giant Snakes, Zhentarim Patrols+, Thieves, Buccaneers.
+Random encounters in the Western Wilderness include: Quicklings, Wild Boars*, Giant Mantis*, Tigers, Thri-Kreen*+, Anhkegs*, Centaurs, Giant Snakes, Zentarian Patrols+, Thieves, Buccaneers.
 
 * = Monsters that can be found in a lair. + = Intelligent nasty encounters.
 
@@ -435,7 +444,7 @@ The most powerful random encounters in the Eastern Wilderness are the phase spid
 
 [Nomad Camp]
 <CLUE15A.PNG>
-The Storyline: The party is told to "deal with" the possibility that the nomads north of the city might join with the Boss. Once the party finds the Nomad Camp, the party can attack the nomads and deal with the problem by wiping them out. Or if you Parlay with the nomads, you can stay around and help the nomads against the army of kobolds that are about to attack. You will get more experience, treasure, and information if you stay and help the nomads.
+The Storyline: The party is told to "deal with" the possibility that the nomads north of the city might join with the Boss. Once the party finds the Nomad Camp, the party can attack the nomads and deal with the problem by wiping them out. Or if you Parlay with the nomads, you can stay around and help nomads against the army of kobolds that are about to attack. You will get more experience, treasure, and information if you stay and help the nomads.
 
 If it is night when you visit, the nomads take you to a hut. If taken to a hut, rest until they take you to a feast. If you wander into another tent that night the guard will escort you back to your tent. The next day, or the same day if you visit during the day, they take you to a great feast.
 
@@ -463,11 +472,11 @@ When the party gets close to the kobold caves they may be attacked by a kobold p
 
 Note: The small cave is the entrance to the cavern where the kobolds live. The large cave leads to a wyvern lair adjacent to the kobold caves.
 
-Combat in the kobolds' narrow caves with low ceilings reduces characters' Movement, AC, and Damage in combat.
+Combat in the kobold's narrow caves with low ceilings reduces character's Movement, AC, and Damage in combat.
 
-The kobolds have laid traps in several places. You can find the traps by moving in Search Mode. Once the traps are found, a thief (wearing no armor heavier than leather) has a chance to disarm them.
+The kobolds have laid traps in several places. You can find the traps by moving in search mode. Once the traps are found, a thief (wearing no armor heavier than leather) has a chance to disarm them.
 
-Where You Can Rest: If you enter the large cave, you can rest before you fight the wyvern. After fighting the waves of kobolds in the throne room, you can rest long enough to memorize spells.
+Where You Can Rest: If you enter the large cave, you can rest before you fight the wyvern. After fighting the waves of Kobolds in the throne room, you can rest long enough to memorize spells.
 
 MAP LOCATIONS
 
@@ -485,7 +494,7 @@ MAP LOCATIONS
 
 7. You may meet the wyvern while you wander here.
 
-8. The wyvern's nest, with its treasure, is here.
+8. The wyverns nest, with its treasure, is here.
 
 9. If you search, you find a crippled kobold here. Give him water and he will tell you his story.
 
@@ -534,14 +543,10 @@ A4    Forward   A5+
       Reverse   A5-
 A6    Forward   A7+
       Reverse   A7-
-B0    -         NA
-B1    -         B2
-B2    -         NA
-B3    -         B4
-B4    -         NA
-B5    -         B6
-B6    -         NA
-B7    -         NA
+B0    NA        B1
+B2    NA        B3
+B4    NA        B5
+B6    NA        B7
 C0    Copper    C1
       Silver    C2
       Gold      C3
@@ -552,7 +557,7 @@ The fast way through the maze: Move down the main corridor to the first alcove, 
 [Sorcerer's Island: Maze Encounters]
 Encounters in the Maze on Level 1: Many of the creatures that sneak into the pyramid on Sorcerer's Island take teleporter Set B and end up in the maze. These groups quickly run out of food and begin to starve. Those that are left are half crazed with hunger. They prowl the maze in search of anything that moves so that they can slay it and eat it.
 
-The encounters in the west half include: stirges, driders, minotaurs, elf magic-users, kobolds, and fighters. The encounters in the east half include: fighters, displacer beasts, dwarves, lizard men, driders, and thieves.
+The encounters in the west half include: stirges, driders, minotaurs, elf magic users, kobolds, and fighters. The encounters in the east half include: fighters, displacer beasts, dwarves, lizard men, driders, and thieves.
 
 [Sorcerer's Island: Map Locations]
 LEVEL 1
@@ -569,7 +574,7 @@ LEVEL 2
 
 LEVEL 3
 
-1. The password over the door is written in Dethek. It reads NOTNOW (C64 Version 1.0) or NOKHOK (other versions). Say the password and then move on through. If you miss the password a crazed super-mutant lizard man destroys your party.
+1. The password over door is written in Dethek. It reads NOTNOW (C64 Version 1.0) or NOKNOK (other versions). Say the password and then move on through. If you miss the password a crazed super-mutant lizard man destroys your party.
 
 2. This room contains the machinery that pumps the muck into the river. This muck is changing the river so that Yarash's mutant lizard men can thrive in it. Break the machinery once, then get out of the room before it explodes. If you hang around to do more damage you may get caught in the explosion.
 
@@ -583,7 +588,7 @@ Finale: After you destroy the machinery and defeat Yarash, the muck that has bee
 
 <CLUE19B.PNG>
 
-Key: Door or archway, rubble, impassable area, swamp. Catacombs key: wall, impassable area, pools.
+Key: Wall, door or archway, rubbled wall, impassable area, stairs, swamp. Catacombs key: wall, impassable area, pools.
 
 The Storyline: Bands of lizard men in the swamps to the east have been assaulting travelers. Because of this infestation, no overland trade is possible with cities to the east. Rumor has it that the Boss is attempting to recruit these lizard men to reinforce his forces in Phlan. The party has been hired to 'deal with' the lizard men problem.
 
@@ -591,7 +596,7 @@ The lizard men are based out of an old, ruined keep in the center of a small pat
 
 The old leader of the lizard men was content to keep the tribe safe in the keep. His leadership is being usurped by a young warrior who has the support of much of the tribe. The young warrior has led his troops on raids against travelers and is preparing to lead them to Phlan to support the Boss.
 
-Note: If the party freed the lizard men on the second level of Sorcerer's Island and received the friend word SAVIOR they will be met by the old lizard man chieftain. After the party gives the word, the chieftain will explain the situation. The young warrior will then appear and challenge the chieftain, or his representative, to a duel for leadership of the tribe. If one of the heroes will represent the old chieftain and win the duel, the tribe will support the old chieftain. The old chieftain will pledge to stop the raiding and to not support the Boss, so the lizard man problem will have been 'dealt with'.
+Note: If the party freed the lizard men on the second level of Sorcerers Island and received the friend word SAVIOR they will be met by the old lizard man chieftain. After the party gives the word, the chieftain will explain the situation. The young warrior will then appear and challenge the chieftain, or his representative, to a duel for leadership of the tribe. If one of the heroes will represent the old chieftain and win the duel, the tribe will support the old chieftain. The old chieftain will pledge to stop the raiding and to not support the boss so the lizard man problem will have been 'dealt with'.
 
 If your party does not deal with the lizards by way of the duel, they will have to eliminate the lizard men as a threat. They will have to fight the lizard men and their giant lizards on the surface (in the swampy ground) and in the catacombs (with soggy floors and low ceilings). Fighting in these restricted areas reduces a character's ability to hit his target, inflict damage, and move.
 
@@ -607,7 +612,7 @@ MAP LOCATIONS
 
 9. Giant Lizards inhabit this building.
 
-Pools: Lizard men will attempt to ambush the party from the pools until all the lizard men have been eliminated. Until you have eliminated the lizard men that guard a pool it is very dangerous to swim in the pool looking for loot. But once you have eliminated the lizard men, it is safe to swim in the pool to find the treasure remaining from the original owners of the castle.
+Pools. Lizard men will attempt to ambush the party from the pools until all the lizard men have been eliminated. Until you have eliminated the lizard men that guard a pool, it is very dangerous to swim in the pool looking for loot. But once you have eliminated the lizard men, it is safe to swim in the pool to find the treasure remaining from the original owners of the castle.
 
 Finale: After either dueling the young warrior or defeating the entire compound of lizard men, your party will have dealt with the lizard man problem. Return to the city council for your reward.
 
@@ -626,9 +631,9 @@ MAP LOCATIONS
 
 2. Merchant's Camp Area: Your party can camp here as long as it likes.
 
-3. Captain's Guards: The buccaneer captain's guards protect the captain's quarters here.
+3. Captain's Guards: The buccaneer captain's guards protect the captains quarters here.
 
-4. Captain's Quarters: The buccaneer captain resides here.
+4. Captains Quarters: The buccaneer captain resides here.
 
 5. Buccaneer Barracks: If you try to force your way into the barracks, you will start a fight.
 
@@ -647,7 +652,7 @@ Finale: Once you rescue the boy and get out of the camp, return to the city coun
 [Outpost of Zhentil Keep]
 <CLUE21A.PNG>
 
-The Storyline: Zhentil Keep is the major city to the west of Phlan. The Keepers, as they are known, look warily on the resurgence of their ancient rival, Phlan. But, Lord Cadorna, acting for the city council, is attempting to negotiate a treaty with Zhentil Keep so that Phlan can turn its full energies on rebuilding. The party is ordered to deliver a magically sealed diplomatic pouch to the nearest outpost of Zhentil Keep, far to the west.
+The Storyline: Zhentil Keep is the major city to the west of Phlan. The Keepers, as they are known, look wearily on the resurgence of their ancient rival, Phlan. But, Lord Cadorna, acting for the city council, is attempting to negotiate a treaty with Zhentil Keep so that Phlan can turn its full energies on rebuilding. The party is ordered to deliver a magically sealed diplomatic pouch to the nearest outpost of Zhentil Keep, far to the west.
 
 Lord Cadorna is actually trying to cement power in the new city of Phlan for himself. He knows that the heroes would oppose his bid for supreme power in the city so he is sending them on a suicide mission. He also knows the Keepers are tough and nasty so he is going to test them by having them assassinate the heroes.
 
@@ -655,7 +660,7 @@ In the last pages of the diplomatic message, Lord Cadorna proposes an alliance b
 
 The Keepers will not get to the assassination order until they have read all the hundreds of pages of diplomatic double talk. In the beginning they will treat the heroes as honored diplomatic messengers. After they read the message and accept the alliance, their attitude will change. The heroes will have to go into the outpost, keep their wits about them, learn what they can, and try to get out alive when things go wrong.
 
-Note: The party is led through much of the introduction of this mission. Over dinner, try to get as much varied information out of the Commandant as possible. After the dinner, your party should post a watch. After the Keepers attack the party should make a run for the front gate to escape. The longer the party takes to escape, the more it will have to fight. Once the Keepers begin attacking they will start coming in waves.
+Note: The party is led through much of the introduction of this mission. Over dinner, try to get as much varied information out of the Commandant as possible. After the dinner, your party should post a watch. After the Keepers attack, the party should make a run for the front gate to escape. The longer the party takes to escape, the more it will have to fight. Once the Keepers begin attacking they will start coming in waves.
 
 Where You Can Rest: The players will be taken to a room (#4) where they can rest.
 
@@ -678,17 +683,15 @@ Finale: After the party escapes the Outpost of Zhentil Keep, they should return 
 [Valhingen Graveyard]
 <CLUE22A.PNG>
 
-The Storyline: The Valhingen Graveyard is a caldron overflowing with undead. Ever since the Boss' forces stopped patrolling the graveyard after the Flight of the Wyrms, undead in increasing numbers have been seen in and around the graveyard. They have even crossed the river into the city.
+Key: Wall, door or archway, rubbled wall, stairs, tombstones.
 
-The Boss will not send his evil clerics into the graveyard; he is fearful that they will take control of the undead and then turn against him. He has also found his normal troops unsuccessful in stemming the undead tide. So for now, he ignores the problem.
+The Storyline: The Valhingen Graveyard is a caldron overflowing with undead. Ever since the Boss' forces stopped patrolling the graveyard after the Flight of the Wyrms, undead in increasing numbers have been seen in and around the graveyard. They have even crossed the river into the city. The Boss will not send his evil clerics into the graveyard; he is fearful that they will take control of the undead and then turn against him. He has also found his normal troops unsuccessful in stemming the undead tide. So for now, he ignores the problem.
 
-The city council has taken a greater and greater interest in the graveyard as they began to retake the city. When the undead only bothered the monsters it wasn't a problem, but now zombies and wights travel near reclaimed areas of the city. Previous parties sent into the graveyard have not come back. The city council has hired the party to deal with the problem.
-
-Hold off on entering the graveyard until the city council has given the party a two-handed sword +1/+3 vs. undead and several scrolls with restoration spells.
+The city council has taken a greater and greater interest in the graveyard as they began to retake the city. When the undead only bothered the monsters it wasn't a problem, but now zombies and wights travel near reclaimed areas of the city. Previous parties sent into the graveyard have not come back. The city council has hired the party to deal with the problem. Hold off on entering the graveyard until the city council has given the party a two-handed sword +1/+3 vs. undead and several scrolls with restoration spells.
 
 The creatures in the graveyard are restricted to certain areas. Skeletons wander the area near the entrance. Zombies wander around building 11. Wights wander the area around building 18. The area of the skeletons is the least dangerous area, the area of the zombies is more dangerous, and the area of the wights is the most dangerous area in the graveyard.
 
-The graveyard is very tough. The population of the three types of creatures is growing: Skeletons, Zombies, and Wights. Each type of creature is being "built" by a spectre in a tower. Kill all creatures of a type and eliminate the spectre creating that type of creature, and that creature will disappear for a time. But if the graveyard is not cleared, the spectre and his creations will return. The longer your party waits before it clears an area, however, the more skeletons, zombies, and wights will be created.
+The graveyard is very tough. The population of the three types of creatures is growing: Skeletons, Zombies, and Wights. Each type of creatures is being "built" by a spectre in a tower. Kill all creatures of a type and eliminate the spectre creating that type of creature, and that creature will disappear for a time. But if the graveyard is not cleared, the spectre and his creations will return. The longer your party waits before it clears an area, however, the more skeletons, zombies, and wights will be created.
 
 The spectres in the graveyard are controlled by an even more hideous creature, a vampire. Find and destroy the vampire's coffin, defeat the vampire in his lair, trail him back to his destroyed coffin, and finally defeat him utterly.
 
@@ -712,11 +715,11 @@ MAP LOCATIONS
 
 8. A spectre creating skeletons is here.
 
-9. Zombies mill around outside this mausoleum.
+9. Zombies mull around outside this mausoleum.
 
 10. A ju-ju zombie helps guard this mausoleum. Search after the fight to find its treasure.
 
-11. Mummies inhabit this crypt. The mummy's fear aura can paralyze characters. Throw spells that raise your party's saving throws before entering to reduce the number of characters affected by the fear aura.
+11. Mummies inhabit this crypt. The mummy's fear aura can paralyze characters. Throw spells that raise your party's saving throws before entering to reduce number of characters affected by the fear aura.
 
 12. Wights guard this tower.
 
@@ -753,7 +756,7 @@ MAP LOCATIONS
 
 1. Merchant in Wagon: During daylight hours you can meet a merchant here who has a wagon. He will sell you the wagon to use as a disguise so that you can get past the bugbears and attack the guards in the towers by surprise.
 
-2. Bugbear Patrol Area: The bugbear guards patrol this area in front of the gate. If you are disguised and the bugbears don't see through your disguise, you may move through the gate freely. If you are not disguised and try to bull your way through, or if your disguise is penetrated, you will have to fight the bugbears.
+2. Bugbear Patrol Area: The Bugbear guards patrol this area in front of the gate. If you are disguised and the bugbears don't see through your disguise, you may move through the gate freely. If you are not disguised and try to bull your way through, or if your disguise is penetrated, you will have to fight the bugbears.
 
 3. Southern Gate: This is the front entrance to Stojanow Gate. It is locked by massive beams. If the bugbears do not let you through then either massive strength or a knock spell is required to open the gates. If you try to break down the gate, the guards will throw boulders at you.
 
@@ -761,20 +764,18 @@ MAP LOCATIONS
 
 5. If you fought the bugbears and have opened both gates then the ettin guards from both towers will fight you here.
 
-6. West Tower: If you successfully sneak past the bugbear guards, then you can assault the guards in the tower by surprise. If the guards in the tower sound the alarm during the fight you will meet the guards from the other tower as you leave.
+6. West Tower: If you successfully sneak past the bugbear guards, then you can assault the guards in the tower by surprise. If the guards in the tower sound the alarm during the fight, you will meet the guards from the other tower as you leave.
 
 7. East Tower: If you successfully sneaked past the bugbear guards, then you can assault the guards in the tower by surprise. If the guards in the tower give the alarm during the fight, you will meet the guards from the other tower as you leave.
 
 Finale: After you have cleared the gate, the way is open to assault the Boss' stronghold, Valjevo Castle. Guards from the city of Phlan will rush up and make sure the gate is held open. You may want to return to the city, collect your reward, rest, heal, memorize spells, and prepare for the final assault on Valjevo Castle.
 
 [Valjevo Castle: Introduction]
-Valjevo Castle is the stronghold of the Boss, who by now you know is Tyranthraxus the Flamed One, one of the original conquerors of Phlan. He runs his holdings from the tower in the center of Valjevo Castle.
+Valjevo Castle is the stronghold of the Boss, who by now you know is Tyranthraxus the Flamed One, one of the original conquerors of Phlan. He runs his holdings from the tower in the center of Valjevo Castle. The Castle is surrounded on all sides by buildings that contain Tyranthraxus' supporters. Inside of that is a wall with two main gates on the southeast and northwest sides. Inside the wall is a maze of poisonous hedges. The maze is dotted with teleporters and crawls with giant snakes during alerts.
 
-The castle is surrounded on all sides by buildings that contain Tyranthraxus' supporters. Inside of that is a wall with two main gates on the southeast and northwest sides. Inside the wall is a maze of poisonous hedges. The maze is dotted with teleporters and crawls with giant snakes during alerts. In the center of the maze is the two-story inner tower where Tyranthraxus holds court. Here you must sneak past Tyranthraxus' traps and guards, find the evil leader, and defeat him. Only then can Phlan be free.
+In the center of the maze is the two-story inner tower where Tyranthraxus holds court. Here you must sneak past Tyranthraxus' traps and guards, find the evil leader, and defeat him. Only then can Phlan be free.
 
-While in the castle area, one of your fights may set off the alarm. Angry patrols will flood the area. The alarm only lasts for an hour, however. You can hide in many of the buildings and towers and rest out the alarm.
-
-If you encounter a patrol and are in disguise, you can parlay with them. Either choose Meek and give the password HARASH, or choose Haughty or Abusive and give your authority as TYRANTHRAXUS.
+While in the castle area, one of your fights may set off the alarm. Angry patrols will flood the area. The alarm only lasts for an hour, however. You can hide in many of the buildings and towers and rest out the alarm. If you encounter a patrol and are in disguise, you can parlay with them. Either choose Meek and give the password HARASH, or choose Haughty or Abusive and give your authority as TYRANTHRAXUS.
 
 If the alarm is not on, you may rest anywhere in the castle. When the alarm is going, the locations listed in the individual areas are safe.
 
@@ -793,7 +794,7 @@ MAP LOCATIONS
 
 3. A Smokehouse: You can hide and rest safely in here.
 
-4. A Bane Chapel: If you accept Bane's blessing and are not evil, you get blasted. If you do not accept the blessing and leave, you are attacked. After the fight search the altar. Your party will find a few coins and two swords. If they take the coins then Bane will blast them. If they take the coins or the swords then they will automatically be recognized as blasphemers from then on.
+4. A Bane Chapel: If you accept Bane's blessing and are not evil, you get blasted. If you do not accept the blessing and leave, you are attacked. After the fight, search the altar. Your party will find a few coins and two swords. If they take the coins then Bane will blast them. If they take the coins or the swords then they will automatically be recognized as blasphemers from then on.
 
 [Valjevo Castle: North West]
 <CLUE25A.PNG>
@@ -810,7 +811,7 @@ MAP LOCATIONS
 
 4. Latrine: Smells bad.
 
-5. Officer's Quarters: Some giants will catch you as you enter. Parlay to bluff them. Search the officer's quarters for his treasure.
+5. Officers Quarters: Some giants will catch you as you enter. Parlay to bluff them. Search the officers quarters for his treasure.
 
 6. Guard Post: Anyone who walks outside the guard post is challenged. Parlay with the guard and either choose Meek and give the password HARASH, or choose Haughty or Abusive and give your authority as TYRANTHRAXUS.
 
@@ -838,6 +839,8 @@ MAP LOCATIONS
 [Valjevo Castle: South East]
 <CLUE26A.PNG>
 
+Key (both maps): Wall, door or archway, hedge.
+
 Where You Can Rest: You can rest in the Old Building (#7).
 
 MAP LOCATIONS
@@ -846,7 +849,7 @@ MAP LOCATIONS
 
 2, 8. Barracks: This area is unoccupied at night. In daylight you may surprise the giants sleeping inside.
 
-3. Main Gate: The password through the main gate is RHODIA. If you have rescued Cadorna he can give you the password, or you can fight the gate guards. If you do not have the password, you will need massive Strength or a Knock spell to get through the gate.
+3. Main Gate: The password through the main gate is RHODIA. If you have rescued Cadorna he can give you the password, or you can fight the gate guards. If you do not have the password, you will need massive Strength or Knock spell to get through the gate.
 
 4. Cell: If the traitor Cadorna has fled the city, Tyranthraxus' guards have captured him and placed him here. If you free him, he will accompany you (from the rear) and tell you the password to get through the main gate. If you leave him here, he will sound the alarm in an attempt to get in good with Tyranthraxus.
 
@@ -859,7 +862,7 @@ MAP LOCATIONS
 [Valjevo Castle: Maze]
 <CLUE26B.PNG>
 
-Where You Can Rest: You can rest in either Tower (#4, 5) after you deal with the encounter that is there.
+Where You Can Rest: You can rest in either Tower (#4,5) after you deal with the encounter that is there.
 
 Note: When the alarm goes off, giant snakes are released into the maze. One hour later the maze is cleared.
 
@@ -867,7 +870,7 @@ MAP LOCATIONS
 
 1. Teleporters: These spots will randomly teleport you to any other teleporter site.
 
-2. Main Gate: The password through the main gate is RHODIA. If you do not have the password, you will need massive Strength or a Knock spell to get through the gate.
+2. Main Gate: The password through the main gate is RHODIA. If you do not have the password, you will need massive Strength or Knock spell to get through the gate.
 
 3. Giant Hideout: A group of giants is hiding here, arguing, and avoiding work. If you don't choose to leave when you have the chance, you will have to fight them sooner or later.
 
@@ -878,6 +881,8 @@ MAP LOCATIONS
 6. Giant Hideout: A group of giants are here. They act like guards. If you choose Parlay and then choose Haughty or Abusive and give your authority as TYRANTHRAXUS they will leave you alone. Otherwise, they ask you for a non-existent password.
 
 [Valjevo Castle: Inner Tower]
+Key: Wall, door or archway, secret door, illusionary wall, impassable area, Pool of Radiance (upper level, room 5), stairs.
+
 Where You Can Rest: You can rest anywhere in the upper level until you meet Tyranthraxus.
 
 MAP LOCATIONS
@@ -892,7 +897,7 @@ LOWER LEVEL
 
 UPPER LEVEL
 
-1. Stairs to tower level.
+1. Stairs to lower level.
 
 2. Trap Door Room: This room contains a trap door that leads to the Medusa's chamber. If a character glances down the trap door, he may be turned to stone.
 
@@ -902,23 +907,21 @@ UPPER LEVEL
 
 5. Tyranthraxus' Lair: Here you will meet Tyranthraxus' guards, and then confront the evil conqueror himself. Cast as many preparatory spells on your party as you can before you enter the room. If you defeat both Tyranthraxus and his guards, Phlan will be free! Good Luck!
 
-Finale: Once you defeat Tyranthraxus, his remaining minions cower in fear and confusion. You march triumphantly back to the civilized section. Go to city hall. Once in city hall, you receive the recently recovered Crown Jewels of Ancient Phlan and the generous thanks of the city council. Your overall quest is finished.
-
-You may continue to wander through the wilderness and uncleared blocks if you wish to continue to fight monsters and gain additional XP and treasure. Keep your party together, because they can adventure together through the next AD&D, FORGOTTEN REALMS, Fantasy Role-Playing Epic "Curse of the Azure Bonds."
+Finale: Once you defeat Tyranthraxus, his remaining minions cower in fear and confusion. You march triumphantly back to the civilized section. Go to city hall. Once in city hall, you receive the recently recovered Crown Jewels of Ancient Phlan and the generous thanks of the city council. Your overall quest is finished. You may continue to wander through the wilderness and uncleared blocks if you wish to continue to fight monsters and gain additional XP and treasure. Keep your party together, because they can adventure together through the next AD&D, FORGOTTEN REALMS, Fantasy Role-Playing Epic: "The Curse of the Azure Bonds."
 [Selecting Heroes]
-With differing ability scores, classes, class combinations, and races you can create many different kinds of characters in Pool of Radiance. You can win the game with almost any combination of characters, but some will make it easier than others. You will need a party with a balance of fighting ability, clerical spell use, and magic user spell use. You will also want a character with thieving abilities in your party and at least one character with an exceptional strength.
+With differing ability scores, classes, class combinations, and races you can create many different kinds of characters in Pool of Radiance. You can win the game with almost any combination of characters, but some will make it easier than others. You will need a party with a balance of fighting ability, clerical spell use, and magic user spell use. You will also want a character with thieving abilities in your party and at least one character with an extraordinary strength.
 
 You will need to balance each character's race against the class of characters you need. Human characters can excel at any single character class, but non-human characters can be mixed class and have several sets of capabilities at once. But, mixed class characters advance more slowly than single class characters. They will generally be one or two levels behind a single class character after the same amount of adventuring.
 
 Non-human characters have a maximum possible level in each class (except thieves, see the chart on the back of the rulebook). Because of these limits human characters will always achieve higher level than non-human characters after sufficient adventuring. So, non-human characters should play to their strong points and be mixed class and let humans be the single class characters.
 
-Human fighters can be the best fighters in the game because of their high maximum strength and unlimited maximum level. Non-human characters can help with the fighting as mixed class fighter/thief, fighter/magic user, fighter/cleric or fighter/magic user/cleric (as the racial limits allow). Non-humans have lower maximum strengths and have limited max level. Human clerics can also help with the fighting but they cannot have exceptional strength, or use the best weapons, nor is their HP, THAC0, or number of blows as good as a true fighter.
+Human fighters can be the best fighters in the game because of their high maximum strength and unlimited maximum level. Non-human characters can help with the fighting as mixed class fighter/thief, fighter/magic user, fighter/cleric, or fighter/magic user/cleric (as the racial limits allow). Non-humans have lower maximum strengths and have limited max level. Human clerics can also help with the fighting but they cannot have exceptional strength, or use the best weapons, nor is their HP, THAC0, or number of blows as good as a true fighter.
 
 Clerics are especially useful in your party, they have the second fastest advancement and get the most spells of any spell using class. The cleric's bless, cure light wounds, detect magic, hold person, and prayer spells are very useful. Only two races can add clerical abilities to your party, humans and half-elves. Human clerics can reach the maximum 6th level allowed in Pool of Radiance. At 6th level a cleric is much more powerful against undead than at lower levels, he can even destroy skeletons and zombies, rather than just turn them. Half-elf clerics can only reach 5th level, so they are most useful as mixed class cleric/magic users, and fighter/cleric/magic users.
 
 Magic user spells provide much of the offensive punch of your party. Charm person, magic missile, sleep, stinking cloud, fireball, invisibility 10' radius, and lightning bolt are all powerful spells in the magic user's arsenal. But, magic users are very vulnerable in combat; they have few HP and can wear no armor. But, both elves and half-elves can be magic users, both can progress to the maximum 6th level allowed in Pool of Radiance, and both can become mixed class to gain the benefits of more HP and heavier armor. In general, then, your magic using characters should be elven or half-elven fighter/magic users, or half-elven cleric/magic users or fighter/cleric/magic users.
 
-Thieves have the fastest advancement of any class. They also have special abilities that allow them to open locks, find or remove traps, climb walls, and backstab. Unfortunately, thieves are almost as vulnerable as magic users in combat, they have only a few more HP and the heaviest armor they can wear is leather. Luckily, all races have unlimited advancement as thieves, and all the non-human races can be mixed class fighter/thieves. Dwarves and half-elves make the best fighter/thieves because of their high maximum strength and their high maximum fighter level.
+Thieves have the fastest advancement of any class. They also have special abilities that allow them to open locks, find & remove traps, climb walls, and backstab. Unfortunately, thieves are almost as vulnerable as magic users in combat, they have only a few more HP and the heaviest armor they can wear is leather. Luckily, all races have unlimited advancement as thieves, and all the non-human races can be mixed class fighter/thieves. Dwarves and half-elves make the best fighter/thieves because of their high maximum strength and their high maximum fighter level.
 
 Some kinds of characters are at a disadvantage because of their ability score or max level limits. Female characters are at a disadvantage as a fighter or fighter mixed class character because of their reduced maximum strength. But, for most other types of characters, especially pure clerics and mixed class cleric/magic users, they function just as well as male characters. Their lot is actually better than that of halflings and gnomes, neither of which excels at any particular class.
 
@@ -926,22 +929,22 @@ Each character's capabilities are built around his ability scores. Since it only
 
 If you want your characters to have the maximum fighting efficiency they will need impressive ability scores. Fighters need the highest possible strength to get maximum bonuses to THAC0 and damage. Magic users need an intelligence of at least 16 to get their experience bonus. Clerics need a wisdom of 17 or better to get the maximum number of spells. All characters need the highest possible dexterity because dexterity gives you: the best chance to move before your opponent, a +1 AC for each point of dexterity over 14, and a +1 THAC0 with missiles for each point of dexterity over 15. All characters need a constitution of 16 or better, and fighter types need a constitution of 18, to get the maximum bonus to their HP. The party's spokesman needs a charisma of 18 to get the maximum reaction bonus.
 
-The characters in a party do not need such amazing scores to win the game, in fact, any well played party should be able to win. The computer is smart enough to gauge the power of the party and it often modifies the number of monsters in an encounter to give the party a good fight regardless of their power. Beginning characters with very high ability scores look to the computer like high level adventurers. This may put them at a disadvantage because the party does not have the HP, spells or the magic treasure of high level adventurers.
+The characters in a party do not need such amazing scores to win the game. In fact, any well played party should be able to win. The computer is smart enough to gauge the power of the party and it often modifies the number of monsters in an encounter to give the party a good fight regardless of their power. Beginning characters with very high ability scores look to the computer like high level adventurers. This may put them at a disadvantage because the party does not have the HP, spells or the magic treasure of high level adventurers.
 
 A balanced party needs at least four characters with good fighting capabilities, at least two characters that can throw clerical spells, at least two characters that can throw magic user spells, at least two characters who are equipped with bows, and at least one character who has thieving abilities. As this is more than six characters, some of the characters will have to have multiple capabilities. Once you have these bases covered, mix and match the party's capabilities to match your style of play.
 
 [Definitions and Concepts]
 Here are some important concepts that you will need to understand to play Pool of Radiance to the fullest capacity.
 
-Block: A 16 square by 16 square area that is displayed from a 3D point of view. Unless the player is lost or it is impossible to find one's way, the X and Y coordinates are available beneath the list of characters in the party. 0,0 is in the north west corner; 15,15 is in the south east corner.
+Block: A 16 square by 16 square area that is displayed from a 3D point of view. Unless the player is lost, or it is impossible to find one's way, the X and Y coordinates are available beneath the list of characters in the party. 0,0 is in the north west corner; 15,15 is in the south east corner.
 
 Commissions: The city council awards commissions as a way to direct heroes towards awaiting adventures. The party does not have to 'accept' a commission. As soon as the clerk informs the party of a mission, they may freely undertake it. In fact, if the party completes a mission while exploring on their own they may also get the reward, even though they have never formally received word of the commission.
 
 Drain and Restoration: Powerful undead such as wights, wraiths, and vampires can drain levels from a character when they hit in combat. The character loses his level or levels along with the additional HP, improved THAC0, and the other advantages of level. His XP will be reduced to the minimum for his new level. A cleric can cast a restoration spell off of a scroll to restore one drained level. The character will regain his HP, THAC0, and other advantages of his level. But, his XP will be raised only to the minimum for his restored level.
 
-Maps: Pages 25 and 26 of the Adventurer's Journal contain three accurate maps of the City of Phlan, the Area near Phlan, and the Moonsea. The city map shows the locations of the different blocks within the city. The Area Near Phlan map shows the extent of the wilderness in Pool of Radiance. The Moonsea map shows where Pool of Radiance occurs in relation to other areas in the FORGOTTEN REALMS game world. Other AD&D computer products may be set in the area near the Moonsea.
+Maps: Page 25 and 26 of the Adventurers Journal contain three accurate maps of the City of Phlan, the Area Near Phlan, and the Moonsea. The city map shows the locations of the different blocks within the city. The Area Near Phlan map shows the extent of the wilderness in Pool of Radiance. The Moonsea map shows where Pool of Radiance occurs in relation to other areas in the FORGOTTEN REALMS game world. Other AD&D computer products may be set in the area near the Moonsea.
 
-Memorizing Spells: In Pool of Radiance, spell casters must memorize their spells before they can cast them. Each character can only have a small number of spells memorized at any time. The number of spells a character can memorize at one time is based on the character's level and is shown in the Appendices of the Adventurer's Journal.
+Memorizing Spells: In Pool of Radiance, spell casters must memorize their spells before they can cast them. Each character can only have a small number of spells memorized at any time. The number of spells a character can memorize at one time is based on the character's level and is shown in the Appendices of the Adventurers Journal.
 
 To memorize spells, send the party to Camp. Highlight the first character you want to memorize spells. Access the Magic menu and then the Memorize command. The character's list of available spells is shown. Use the Next and Prev commands to find the page with the spell you want to memorize. Choose the Memorize command. Highlight the spell you want to memorize and press Return or the joystick button to pick it. The computer displays the number of remaining spells your character can memorize by level. Choose spells until you have indicated the spells you want your character to memorize, or your character can memorize no more spells. Choose Exit from the spell list and from the Memorize menu. The computer displays the list of spells you have chosen. Confirm that this is the list of spells you want your character to memorize. Repeat this process for all of your spell casters.
 
@@ -971,12 +974,14 @@ Thieving Abilities: Characters who are thieves or mixed class thieves have a num
 
 Translation Wheel: The wheel is used several ways during the game. To begin the game match the symbols on screen and read the password from inside to outside under the indicated line. During the game match the symbol to the appropriate translation tab and read the letter under the path in ring 1.
 
-As an example: If you match the Translate Dethek tab with the Translate Espruar tab a '0' is shown under the path in ring 1. Move the inside ring 1 space clockwise. The ring 1 under the path now shows an 'A'. The Dethek (or Dwarvish) 'A' shows under the Translate Dethek tab. The Espruar (or Elvish) 'A' shows over the Translate Espruar tab.
+As an example: If you match the Translate Dethek tab with the Translate Espruar tab a 0 is shown under the path in ring 1. Move the inside ring 1 space clockwise. The ring 1 under the path now shows an 'A'. The Dethek (or Dwarvish) 'A' shows under the Translate Dethek tab. The Espruar (or Elvish) 'A' shows over the Translate Espruar tab.
 
 In Sokal Keep, a dead elf carries a scroll with Elvish or Espruar writing. Turn the Translate Espruar tab under each symbol one at a time. Read the English letter in ring 1 under the path. The first word translates as:
 
-Espruar runes (on screen): [3 runes]
-English (from wheel):      L U X
+Espruar Runes (Displayed On Screen):
+  [rho-like loop, tilde wave, w-loop]
+English Translation (From Wheel):
+  L U X
 
 [Combat]
 Your characters will be fighting a lot in Pool of Radiance. Monsters and human enemies abound. Learning to fight well, and to fight smart will make the game go faster and make it much more enjoyable. There can be a lot of details to successful combat, but most of them are common sense and will become second nature after a few fights.
@@ -1003,7 +1008,7 @@ Magic has the capability to change defeat into victory, or victory into defeat. 
 
 More often than not, you will have magic and your enemies will not. If you have magic users or magical items guard them with your life. Magic users are very fragile in combat; they wear little armor and don't stand up well to being hit. Keep them behind the lines and safe, even if they have thrown all of their spells for this battle. The magic user you save this battle may save you next battle.
 
-Magic need not kill the enemy to be useful in combat. Sleep, hold person, and stinking cloud can make the enemy 'helpless' and a sitting duck to your fighters' attacks. Remember that you can affect up to three different targets with a clerical hold person spell. An effective way to use these spells is to eliminate the threat of enemy archers and magic users. Another tactic is to make the front ranks of the enemy helpless, thus blocking his melee and making your own shots sure kills. You can even retreat behind the enemy's helpless front line troops and safely engage the others with ranged attacks.
+Magic need not kill the enemy to be useful in combat. Sleep, hold person, and stinking cloud can make the enemy 'helpless' and a sitting duck to your fighters' attacks. Remember that you can affect up to three different targets with a clerical hold person spell. An effective way to use these spells is to eliminate the threat of enemy archers and magic users. Another tactic is to make the front ranks of the enemy helpless, thus blocking his melee attacks and making your own shots sure kills. You can even retreat behind the enemies helpless front line troops and safely engage the others with ranged attacks.
 
 If the enemy has mass attack magic (whether or not your side has it), you may have to modify your tactics. Defensively, try to keep your troops spread out; most mass attack magic operates over a limited radius. Keep some fighters unengaged in reserve, so that they can run up and fill any holes in the front lines caused by an enemy magic attack. Be careful not to concentrate important targets like magic users or archers together behind your own lines; such concentration invites attack.
 
@@ -1011,14 +1016,14 @@ Offensively, you should concentrate magic spells and bow fire on enemy magic use
 
 Some monsters have abilities that might as well be magic. Dragons often have breath weapons that can do great damage over a wide area. Your characters should spread out to avoid several being attacked by a single attack. Phase Spiders cannot be affected by any attack until just as they move. Your characters should choose Guard or Delay and then attack as the Phase Spiders advance or after they move. Driders know spells as powerful as any spell caster in Pool of Radiance. Your characters should spread out, just as if they were fighting an enemy magic user.
 
-One of the most important things to get for your heroes is the best possible Armor Class. A good AC is always useful, but it is especially important against mass attacks by weaker monsters. High dexterity, heavy armor, rings of protection, bracers of defense, magic shields and armor all can contribute to giving your heroes the lowest possible AC. Your front line fighters go in harm's way more often than the archers or magicians, make sure they have the best ACs in the party.
+One of the most important things to get for your heroes is the best possible Armor Class. A good AC is always useful, but it is especially important against mass attacks by weaker monsters. High dexterity, heavy armor, rings of protection, bracers of defense, magic shields and armor all can contribute to giving your heroes the lowest possible AC. Your front line fighters go in harms way more often than the archers or magicians, make sure they have the best ACs in the party.
 [Combat: Armor, Mobility, Backstab]
 
 When fighting a heavily armored foe, flanking, swarming attacks, magic, and the 'backstab' take on increased importance. Tactics that multiply the number and effectiveness of your attacks, and reduce the value of the enemy armor are worthwhile.
 
 Soldiers often forget that mobility is as much a weapon as a sword or spell. If you are more mobile than your opponent you can remain disengaged and fire arrows. You can choose to retreat or stay for battle. You can occupy the best defensive terrain and force the enemy to come to you. Be careful not to get your troops spread out if they have differing movement rates.
 
-If the enemy is equal or superior in mobility, it multiplies their effective numbers. You must worry more about flank security and keeping your front line secure. Fast enemy will also attempt to run away when their morale breaks. Once the enemy's morale has broken, use archers to bring them down. Even a fleeing foe can be dangerous if cornered and forced to fight.
+If the enemy is equal or superior in mobility, it multiplies their effective numbers. You must worry more about flank security and keeping your front line secure. Fast enemy will also attempt to run away when their morale breaks. Once the enemies morale has broken, use archers to bring them down. Even a fleeing foe can be dangerous if cornered and forced to fight.
 
 One of the most potent weapons in the hero's arsenal is the ability of thieves to 'Backstab' their opponents for extra damage. Thieves of level 1-4 do double damage when they hit with a backstab. Level 5-8 thieves do triple damage when they hit with a backstab. Level 9+ thieves do quadruple damage when they hit with a backstab. Mixed class fighter/thieves with exceptional strength and a magic long sword can take out very large monsters with one shot.
 
@@ -1032,7 +1037,7 @@ The backstab is an especially effective attack against large monsters that are o
 
 Histories are written about great victories. But they are written by the survivors of well executed retreats. Every party occasionally gets into a combat where it is overmatched by enemy numbers or power. The earlier you realize that you should retreat, the easier and more successful the retreat will be.
 
-Once you have engaged the enemy, retreat is more difficult. Anytime you turn away from an enemy to disengage, he has a clear shot at your back. This can be devastating if you get surrounded on many sides. You can be attacked half a dozen times by trying to retreat while surrounded.
+Once you have engaged the enemy retreat is more difficult. Anytime you turn away from an enemy to disengage, he has a clear shot at your back. This can be devastating if you get surrounded on many sides. You can be attacked half a dozen times by trying to retreat while surrounded.
 
 The first part of any successful retreat is disengagement. Flankers, archers, spell casters, and reserves can normally disengage from the enemy simply by moving away. But the front line has a more difficult problem.
 
@@ -1080,7 +1085,7 @@ Sleep: The magic user's most powerful low-level spell. Sleep can make a whole ho
 
 Stinking Cloud: A powerful spell that makes targets in a 2 square by 2 square area helpless. Its very short range, but exact area of effect, make it useful only after the enemy has closed to melee your front lines.
 
-Fireball: The classic attack spell. In a closed area (when the combat map includes walls), fireballs have a 5 square radius and affect almost every character on screen. In an open area (without walls), fireballs have a 2 square radius. Try to get as many enemy in the fireball as possible, and be sure to keep your characters out of the radius of effect.
+Fireball: The classic attack spell. In a closed area (when the combat map includes walls), fireballs have a 3 square radius and affects almost every character on screen. In an open area (without walls), fireballs have a 2 square radius. Try to get as many enemy in the fireball as possible, and be sure to keep your characters out of the radius of effect.
 
 Lightning Bolt: This is often considered the poor cousin to the fireball, because it does the same damage but in a more limited area (a line). But lightning bolt is best when you have to fight in a closed area. Properly used, you can throw a lightning bolt into a melee, miss your heroes, and still hurt the enemy. Also, if the enemy is near a wall you can throw the bolt to attack the target, bounce off the wall, and then attack the target a second time. Remember that a lightning bolt always rebounds toward the caster; it does not follow the angle of the wall.
 
@@ -1088,7 +1093,7 @@ Lightning Bolt: This is often considered the poor cousin to the fireball, becaus
 
 Some spells are useful in preparing for combat. If you know your party is in for a tough fight (either because you read the clue book or your party has been there before), you can prepare before combat. Encamp immediately before triggering the combat. Throw as many preparatory spells as you have ready on your characters, then immediately return to the Adventure menu and advance directly into the combat. If you can't prepare before combat many of these spells are just as effective when you throw them in the first round of combat. Many of these spells can be reversed and thrown on the enemy to make him more vulnerable to your attacks. The best preparatory spells are:
 
-Bless: This spell affects all heroes in a 5x5 area that are not adjacent to the enemy. Bless is especially useful later in the game against monsters with very low ACs.
+Bless: this spell affects all heroes in a 5x5 area that are not adjacent to the enemy. Bless is especially useful later in the game against monsters with very low ACs.
 
 Protection From Evil: This spell only affects one person, but it improves your AC and Saving Throws by 2 against attacks from evil monsters.
 
@@ -1110,7 +1115,7 @@ Dispel Magic: Use this spell to remove locking spells on doors. Remember that yo
 
 Knock: Use this spell to open locked doors and chests.
 
-Invisibility 10' Radius: Use this spell while moving through dangerous territory. This keeps the enemy from finding your party until one of your characters attacks in combat. Use your enemies' confusion to get all your characters in position for 'backstabs', bouncing lightning bolt shots, and sweep attacks. Then have all your characters choose delay, let the enemy take his turn and guard, and then have all your characters attack at once.
+Invisibility 10' Radius: Use this spell while moving through dangerous territory. This keeps the enemy from finding your party until one of your characters attacks in combat. Use your enemies' confusion to get all your characters in position for 'backstabs', bouncing lightning bolts shots, and sweep attacks. Then have all your characters choose delay, let the enemy take his turn and guard, and then have all your characters attack at once.
 
 Some spells should only be memorized when your party needs them; these spells include: slow poison, cure disease, remove curse, and read magic.
 
@@ -1210,7 +1215,7 @@ Knock: range 6; E,D
 
 Mirror Image: range 0; 2 rnds/lvl; C
 
-Ray of Enfeeblement: range 1+1/4 lvl; 1 rnd/lvl; C
+Ray of Enfeeblement: range 1+.25/lvl; 1 rnd/lvl; C
 
 Stinking Cloud: range 3; 1 rnd/lvl; C
 
