@@ -52,6 +52,9 @@ func TestMenuNav(t *testing.T) {
 	if s, at := hotText("Camp", 'E'); s != "[E] Camp" || at != 1 {
 		t.Fatal(s)
 	}
+	if s, _ := hotText("Cure Blindness  1000g", '1'); s != "[1] Cure Blindness  1000g" { // a digit in a price is not the key
+		t.Fatal(s)
+	}
 }
 
 // digitKeys: rows with no letter and that can be picked get 1-9, skipping

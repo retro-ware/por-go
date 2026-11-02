@@ -449,6 +449,8 @@ func (p *Presenter) cardClick(i int) {
 	case p.command, p.campHome(p.shownView): // camp: the keys go to its menu
 		p.send(engine.ActLead, i)
 		p.ctx, p.ctxSel = 1+i, 0 // the first line highlighted: Enter acts at once
+	case screenUp(p.shownView) && (p.shownView.Temple != nil || p.shownView.Training != nil): // the temple, the training hall: the member they act for, as F1-F8
+		p.send(engine.ActLead, i)
 	default:
 		p.send(engine.ActInventory, i)
 	}
