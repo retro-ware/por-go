@@ -227,7 +227,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	if !p.active {
 		p.ctx = 0
 	}
-	p.fight = v.Battle != nil && v.Slots == nil                // the battle view is the only one (the engine has no combat page), but the save slots (F10) go over it: under the battle they took every key unseen
+	p.fight = v.Battle != nil && v.Slots == nil && !modal(v)   // the battle view is the only one (the engine has no combat page), but the save slots (F10), help (?) and the other pagers go over it: under the battle they took every key unseen
 	p.noMenu = askMenu(v) == nil || len(askMenu(v).Items) == 1 // a one-item bar (PRESS <ENTER> TO CONTINUE) has nothing to pick either
 	p.resize(dst, v)
 	if p.fight {
