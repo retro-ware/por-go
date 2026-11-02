@@ -27,7 +27,7 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
 	if p.journal.open && v.Exploring {
-		p.journalKey(k)
+		p.journalKey(k, v)
 		return true
 	}
 	if p.identDone(v) { // the Id's pop-up: any key closes it
@@ -168,7 +168,7 @@ func (p *Presenter) Click(x, y int) bool {
 		return true
 	}
 	if p.journal.open { // the journal's own pointer (Mouse)
-		p.journalMouse(image.Pt(x, y), true, false, 0)
+		p.journalMouse(image.Pt(x, y), true, false, 0, p.shownView)
 		return true
 	}
 	if p.identDone(p.shownView) { // the Id's pop-up: any click closes it
@@ -302,7 +302,7 @@ func (p *Presenter) Click(x, y int) bool {
 func (p *Presenter) Hover(x, y int, down bool) {
 	p.camp.pointer = image.Pt(x, y)
 	if p.journal.open {
-		p.journalMouse(image.Pt(x, y), false, false, 0)
+		p.journalMouse(image.Pt(x, y), false, false, 0, p.shownView)
 		return
 	}
 	if p.barHover(y, down) {

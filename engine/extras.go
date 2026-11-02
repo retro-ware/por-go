@@ -37,7 +37,8 @@ type extras struct {
 	throwing *Item                   // the Missiles slot's thrown weapon being thrown: ApplyItems fights with it, the hand weapon stays readied
 	hall     bool                    // the party menu is the training hall's (opProgram 0), not the title's
 	seen     map[int]*[256]uint8     // per map (areaKey): 1 seen, 2 visited
-	voiced   map[string]bool         // voice.go: the recordings this save has heard
+	voiced   map[string]bool         // voice.go: the recordings this save has heard: the lore found (lore.go)
+	again    map[string]bool         // voice.go: heard, to be spoken again (Rolf's history)
 	met      map[string]metIcon      // bestiary.go: the monster kinds this save has met
 	quests   []questNote             // quests.go: the quests this save was given
 	beasts   []Beast                 // bestiary.go: their entries, as last published

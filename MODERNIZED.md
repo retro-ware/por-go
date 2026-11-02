@@ -959,7 +959,7 @@ is offline, free and reproducible.
 
 ### 5.1 What is voiced and how it is keyed
 
-- **Script texts:** `voice/lines.txt` (in git), a `#` header then one text
+- **Script texts:** `engine/journal/LINES.TXT` (in git), a `#` header then one text
   per line, exactly the string the engine prints (trimmed), no quoting. 767
   lines: 764 ECL `Text(...)` / `Print(...)` operands (PRINTCLEAR 0x12 /
   PRINT 0x11), in sorted byte order, plus the three finale texts of
@@ -985,7 +985,7 @@ is offline, free and reproducible.
   `"  YOU ARE IN THE MERCHANTS' CAMP AREA. "` → `5913b4acb1eb5288`). The
   hash is taken on the text **after** the engine's own rewrites
   (`platinumPrices`: "1 PLATINUM PIECE" → "5 GOLD PIECES", because of the
-  one-purse change), so `lines.txt` must hold the rewritten text; editing a
+  one-purse change), so `LINES.TXT` must hold the rewritten text; editing a
   script string silently orphans its recording.
 - **Journal texts** are keyed by title with spaces replaced by `_`
   (`Journal_Entry_26.ogg`, `Proclamation_LIX.ogg`, `Tavern_Tale_5.ogg`),
@@ -1040,7 +1040,7 @@ brew install vorbis-tools                        # oggenc
   Enter that turns a page silences only the last page's text), from the
   native tavern tale (`engine/native.go tavernTale`) and from the finale
   (`engine/story.go speakAll`). A text with no file is silently not voiced:
-  `lines.txt` alone decides what is spoken.
+  `LINES.TXT` alone decides what is spoken.
 - `speak` returns if the save has heard the key (`e.ext.voiced[key]`) or the
   voice is off; else it reads `data/assets/speech/<key>.ogg`, decodes it with
   oggvorbis (`vorbisPCM`) to s16 stereo PCM and appends it to a queue; texts play back to
@@ -1415,7 +1415,7 @@ art for the same blocks. The port can play with the Amiga art and music:
 | `remap_items.sh` | repo root | opens the item atlas in `remapper` |
 | `.github/workflows/release.yml` | repo | the release builds |
 | `decomp/tools/{unexepack,view,xref,pstrings,dqfon2f8,fon2f8}.py`, `disasm.sh` | repo | unpack, disassemble, list, convert fonts |
-| `voice/render.py`, `voice/lines.txt` | repo | the voice-over |
+| `voice/render.py`, `engine/journal/LINES.TXT` | repo | the voice-over |
 | `decomp/tools/view.py`, `decomp/out` | repo (out not in git) | disassembly listings |
 | `decomp/emu` | repo | the original under Unicorn, traces, single-routine calls |
 | Ghidra + GhidraMCP | `~/tools/ghidra-mcp`, `.claude/skills/ghidra/SKILL.md` | decompile overlays to pseudo-C |

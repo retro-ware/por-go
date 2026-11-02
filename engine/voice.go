@@ -73,16 +73,14 @@ func (e *Engine) setVoiceOn(on bool) {
 }
 
 // speak queues the text's recording, unless the voice is off, there is no
-// recording or this save has heard it.
+// recording or this save has heard it (again: Rolf retells it). A recording
+// is marked heard even with the voice off: it is lore found (lore.go).
 func (e *Engine) speak(key string) {
-	if e.ext.voiced[key] || !e.voiceOn() {
+	if e.ext.voiced[key] && !e.ext.again[key] {
 		return
 	}
+	delete(e.ext.again, key)
 	b, err := os.ReadFile(filepath.Join(e.data, AssetsDir, "speech", key+".ogg"))
-	if err != nil {
-		return
-	}
-	pcm, err := vorbisPCM(b)
 	if err != nil {
 		return
 	}
@@ -90,6 +88,13 @@ func (e *Engine) speak(key string) {
 		e.ext.voiced = map[string]bool{}
 	}
 	e.ext.voiced[key] = true
+	if !e.voiceOn() {
+		return
+	}
+	pcm, err := vorbisPCM(b)
+	if err != nil {
+		return
+	}
 	e.vox.mu.Lock()
 	e.vox.queue = append(e.vox.queue, pcm)
 	e.vox.mu.Unlock()

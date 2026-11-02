@@ -3,7 +3,7 @@
     ~/.mlx-audio-env/bin/python voice/render.py GAMEDIR
 
 Kokoro-82M (mlx-community/Kokoro-82M-bf16), voice am_michael. Keys: the
-script texts of voice/lines.txt by FNV-64a hash (as voiceKey), the journal
+script texts of engine/journal/LINES.TXT by FNV-64a hash (as voiceKey), the journal
 texts by title ("Journal_Entry_26"), Rolf's history (HISTORY.TXT) by chapter
 title and paragraph hash. Files already rendered are kept: delete
 one to render it again. Needs oggenc (brew install vorbis-tools).
@@ -34,7 +34,7 @@ def spoken(s):
 
 
 def texts():
-    for l in (ROOT / 'voice/lines.txt').read_text().splitlines():
+    for l in (ROOT / 'engine/journal/LINES.TXT').read_text().splitlines():
         if l.strip() and not l.startswith('#'):
             yield key(l), spoken(l)
     title, paras = None, []

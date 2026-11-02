@@ -201,7 +201,7 @@ func menuIndex(m *engine.Menu, c byte) int {
 // wheel; a click elsewhere answers "press a key".
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
 	if p.journal.open { // its rows on the window's pixels (Hover, Click)
-		p.journalMouse(p.camp.pointer, false, right, wheel)
+		p.journalMouse(p.camp.pointer, false, right, wheel, v)
 		return
 	}
 	for ; wheel != 0; wheel -= unit(wheel) {

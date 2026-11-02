@@ -21,13 +21,14 @@ var phlanChapters = []string{
 // time it is asked for, then goes back to Rolf's menu.
 func (e *Engine) phlanHistory(n int) {
 	lines := journalLayout(loadJournal("HISTORY.TXT"), phlanChapters[n:n+1], true)
+	e.ext.again = map[string]bool{}
 	for _, l := range lines {
 		switch {
 		case strings.HasPrefix(l, "\x00"):
-			delete(e.ext.voiced, strings.ReplaceAll(l[1:], " ", "_"))
+			e.ext.again[strings.ReplaceAll(l[1:], " ", "_")] = true
 		case strings.HasPrefix(l, "\x03"):
 			key, _, _ := strings.Cut(l[1:], "\x03")
-			delete(e.ext.voiced, key)
+			e.ext.again[key] = true
 		}
 	}
 	e.scriptText(true, "")

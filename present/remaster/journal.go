@@ -16,20 +16,24 @@ import (
 // window while exploring, opened by J or the command menu's Journal. On
 // the left a leather-bound list, the open quests first and then the done
 // ones (struck through), Close last; on the right, on parchment, the quest
-// under the highlight: who gave it where, and what they said. Keys: the
-// arrows pick, PgUp/PgDn (the wheel over the page, the pad's shoulders)
-// scroll the page, Esc, J or Close shut it; the pointer picks as it moves,
-// a click on Close or the right button shut it.
+// under the highlight: who gave it where, and what they said. Two tabs over
+// the list: Quests and Notes, the lore found (View.Lore). Keys: the
+// arrows pick, Left/Right or Tab switch tabs, PgUp/PgDn (the wheel over the
+// page, the pad's shoulders) scroll the page, Esc, J or Close shut it; the
+// pointer picks as it moves, a click on a tab switches to it, a click on
+// Close or the right button shut it.
 
 type journalUI struct {
 	open    bool
-	sel     int               // the highlighted row of rows
-	top     int               // the first row shown
-	y, maxY int               // the page's first pixel row shown, its last
-	at      int               // the quest y scrolls (-1 none)
-	rows    []int             // the list: a quest of v.Quests, -1 a heading, -2 Close
-	rects   []image.Rectangle // rows on the window, from top
-	pane    image.Rectangle   // the page on the window
+	tab     int                // 0 Quests, 1 Notes
+	tabs    [2]image.Rectangle // the tabs on the window
+	sel     int                // the highlighted row of rows
+	top     int                // the first row shown
+	y, maxY int                // the page's first pixel row shown, its last
+	at      int                // the quest y scrolls (-1 none)
+	rows    []int              // the list: a quest of v.Quests (a note of v.Lore), -1 a heading, -2 Close
+	rects   []image.Rectangle  // rows on the window, from top
+	pane    image.Rectangle    // the page on the window
 	pointer image.Point
 	page    sheetCanvas
 }
@@ -65,6 +69,28 @@ func journalRows(qs []engine.Quest) []int {
 	return append(rows, -2)
 }
 
+// journalTabRows is the list of tab: the quests or the notes, then Close.
+func journalTabRows(tab int, v engine.View) []int {
+	if tab == 0 {
+		return journalRows(v.Quests)
+	}
+	var rows []int
+	for i := range v.Lore {
+		rows = append(rows, i)
+	}
+	return append(rows, -2)
+}
+
+// setTab shows tab t, the highlight on its first row.
+func (j *journalUI) setTab(t int, v engine.View) {
+	j.tab, j.sel, j.top, j.at = t, 0, 0, -1
+	j.rows = journalTabRows(t, v)
+	j.pick(1)
+	if j.rows[0] != -1 {
+		j.sel = 0
+	}
+}
+
 // pick moves the highlight d selectable rows on (headings skipped).
 func (j *journalUI) pick(d int) {
 	for i := j.sel + d; i >= 0 && i < len(j.rows); i += d {
@@ -76,16 +102,16 @@ func (j *journalUI) pick(d int) {
 }
 
 func (p *Presenter) openJournal(v engine.View) {
-	j := &p.journal
-	j.open, j.sel, j.top, j.at = true, 0, 0, -1
-	j.rows = journalRows(v.Quests)
-	j.pick(1)
+	p.journal.open = true
+	p.journal.setTab(0, v)
 }
 
 // journalKey takes key k while the journal is up.
-func (p *Presenter) journalKey(k uint16) {
+func (p *Presenter) journalKey(k uint16, v engine.View) {
 	j := &p.journal
 	switch a := actOf(k); {
+	case a == input.Left || a == input.Right || a == input.Tab:
+		j.setTab(1-j.tab, v)
 	case a == input.Up:
 		j.pick(-1)
 	case a == input.Down:
@@ -119,8 +145,14 @@ func (j *journalUI) row(pt image.Point) int {
 }
 
 // journalMouse takes the pointer while the journal is up.
-func (p *Presenter) journalMouse(pt image.Point, click, right bool, wheel int) {
+func (p *Presenter) journalMouse(pt image.Point, click, right bool, wheel int, v engine.View) {
 	j := &p.journal
+	for t, r := range j.tabs {
+		if click && pt.In(r) && t != j.tab {
+			j.setTab(t, v)
+			return
+		}
+	}
 	if pt != j.pointer {
 		j.pointer = pt
 		if i := j.row(pt); i >= 0 {
@@ -167,18 +199,30 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 		fill(sc.px, image.Rect(0, y, lw, y+1), color.RGBA{0x34, 0x1e, 0x12, 0xff})
 	}
 
-	// the list: a row every 12 pixels, scrolling with the highlight
-	j.rows = journalRows(v.Quests)
+	// the tabs, then the list: a row every 12 pixels, scrolling with the highlight
+	var tabs [2]image.Rectangle
+	for t, name := range []string{"Quests", "Notes"} {
+		x := 10 + t*(lw-16)/2
+		tabs[t] = image.Rect(x, 8, x+(lw-16)/2, 22)
+		c := jFaded
+		if t == j.tab {
+			fill(sc.px, tabs[t], jLeatherHi)
+			c = jGold
+		}
+		text(sc.px, name, x+((lw-16)/2-8*len(name))/2, 11, c)
+	}
+	fill(sc.px, image.Rect(10, 22, lw-6, 23), jLeatherHi)
+	j.rows = journalTabRows(j.tab, v)
 	j.sel = min(max(j.sel, 0), len(j.rows)-1)
 	if j.rows[j.sel] == -1 {
 		j.pick(1)
 	}
 	const rowH = 12
-	fit := max(1, (ch*8-24)/rowH)
+	fit := max(1, (ch*8-40)/rowH)
 	j.top = min(max(j.top, j.sel-fit+1), j.sel, max(0, len(j.rows)-fit))
 	var rows []image.Rectangle
 	for i := j.top; i < min(len(j.rows), j.top+fit); i++ {
-		y := 12 + (i-j.top)*rowH
+		y := 28 + (i-j.top)*rowH
 		r := image.Rect(10, y-2, lw-6, y+10)
 		rows = append(rows, r)
 		switch q := j.rows[i]; {
@@ -194,6 +238,12 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 				fill(sc.px, r, jLeatherHi)
 			}
 			text(sc.px, "Close", 20, y, jCream)
+		case j.tab == 1:
+			if i == j.sel {
+				fill(sc.px, r, jLeatherHi)
+			}
+			text(sc.px, "\x04", 12, y, jGold)
+			text(sc.px, upTo(v.Lore[q].Title, listCells-5), 24, y, jCream)
 		default:
 			if i == j.sel {
 				fill(sc.px, r, jLeatherHi)
@@ -210,8 +260,11 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 			}
 		}
 	}
-	if len(v.Quests) == 0 {
-		text(sc.px, "No quests yet.", 12, 24, jFaded)
+	if j.tab == 0 && len(v.Quests) == 0 {
+		text(sc.px, "No quests yet.", 12, 40, jFaded)
+	}
+	if j.tab == 1 && len(v.Lore) == 0 {
+		text(sc.px, "No notes yet.", 12, 40, jFaded)
 	}
 
 	// the page: parchment, the quest under the highlight
@@ -224,17 +277,25 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 		q = j.rows[j.sel]
 	}
 	if q >= 0 {
-		qu := v.Quests[q]
+		var qu engine.Quest
 		cols := rw/8 - 3
 		var lines [][2]any // text, ink
 		add := func(s string, c color.RGBA) { lines = append(lines, [2]any{s, c}) }
-		for _, l := range engine.WrapWords("Given by "+qu.Giver, cols) {
-			add(l, jInk)
+		status, stc := "Open", jRed
+		if j.tab == 1 {
+			n := v.Lore[q]
+			qu = engine.Quest{Name: n.Title, Text: n.Text}
+			status, stc = "Note", jFaded
+		} else {
+			qu = v.Quests[q]
+			for _, l := range engine.WrapWords("Given by "+qu.Giver, cols) {
+				add(l, jInk)
+			}
+			for _, l := range engine.WrapWords(qu.Place, cols) {
+				add(l, jFaded)
+			}
+			add("", jInk)
 		}
-		for _, l := range engine.WrapWords(qu.Place, cols) {
-			add(l, jFaded)
-		}
-		add("", jInk)
 		for _, t := range qu.Text {
 			for _, l := range engine.WrapWords(t, cols) {
 				add(l, jInk)
@@ -247,7 +308,6 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 		for y := 0; y < ent.Rect.Dy(); y += 10 { // faint ruled lines
 			fill(ent, image.Rect(8, y+9, rw-8, y+10), jParchDark)
 		}
-		status, stc := "Open", jRed
 		if qu.Done {
 			status, stc = "Completed", jFaded
 		}
@@ -259,8 +319,8 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 			text(ent, l[0].(string), 12, y, l[1].(color.RGBA))
 			y += 10
 		}
-		if j.at != q {
-			j.at, j.y = q, 0
+		if at := j.tab<<16 | q; j.at != at {
+			j.at, j.y = at, 0
 		}
 		j.maxY = max(0, tall-view)
 		j.y = min(max(j.y, 0), j.maxY)
@@ -292,6 +352,9 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 		return image.Rect(int(float64(r.Min.X)*kx), int(float64(r.Min.Y)*ky), int(float64(r.Max.X)*kx), int(float64(r.Max.Y)*ky))
 	}
 	j.pane = on(j.pane)
+	for t := range tabs {
+		j.tabs[t] = on(tabs[t])
+	}
 	j.rects = j.rects[:0]
 	for _, r := range rows {
 		j.rects = append(j.rects, on(r))
