@@ -4,6 +4,7 @@ import (
 	"image"
 	"math"
 	"slices"
+	"strings"
 
 	"gpu"
 
@@ -61,7 +62,12 @@ func (p *Presenter) drawList(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	for _, ln := range askList(v)[l.top:min(n, l.top+listRows)] {
 		lines, off = append(lines, ln.Text), append(off, ln.Off)
 	}
-	lines, keys = append(lines, ""), append(keys, 0)
+	w, all := 0, p.listKeys(v) // the blank row as wide as the widest line of the whole list: the box keeps one width while it scrolls
+	for i, ln := range askList(v) {
+		t, _ := hotText(ln.Text, all[i])
+		w = max(w, visLen(t))
+	}
+	lines, keys = append(lines, strings.Repeat(" ", w)), append(keys, 0)
 	for _, o := range l.opts {
 		lines, keys = append(lines, askMenu(v).Items[o].Text), append(keys, askMenu(v).Items[o].Key)
 	}
