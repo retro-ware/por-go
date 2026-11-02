@@ -712,7 +712,13 @@ func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
 	if e.rangedWeapon(c) || e.rangeTo(c, t) <= 1 {
 		return nil
 	}
-	tx, ty, n := e.combatX(t), e.combatY(t), e.combatSize(t)
+	tx, ty := e.combatX(t), e.combatY(t)
+	w, h := 1, 1 // t's extent: size 2 is two squares tall, 3 two wide, 4 both
+	for part := range 4 {
+		if dx, dy, ok := e.footprint(e.combatSize(t), part); ok {
+			w, h = max(w, dx+1), max(h, dy+1)
+		}
+	}
 	idx := e.combatIndex(c)
 	ox, oy, near, targets := e.cpos[idx].x, e.cpos[idx].y, slices.Clone(e.near), e.targets
 	defer func() { e.cpos[idx].x, e.cpos[idx].y, e.near, e.targets = ox, oy, near, targets }()
@@ -720,7 +726,7 @@ func (e *Engine) pathNextTo(c, t *Character, reach map[[2]int][]int) []int {
 	var bestKey [5]int
 	found := false
 	for sq, p := range reach {
-		if sq[0] < tx-1 || sq[0] > tx+n || sq[1] < ty-1 || sq[1] > ty+n {
+		if sq[0] < tx-1 || sq[0] > tx+w || sq[1] < ty-1 || sq[1] > ty+h {
 			continue
 		}
 		free := 0
