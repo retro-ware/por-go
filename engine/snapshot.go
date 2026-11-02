@@ -640,8 +640,9 @@ func (e *Engine) publish() {
 	e.pageView(v)
 	v.Party = e.members()
 	v.Border = e.borderTiles()
-	if !e.modal() { // a modal over the fight (help, the journal, the maps, F10) is the screen: the battle under it is not shown, so no presenter gives it the keys
-		v.Battle = e.battle()
+	v.Battle = e.battle()
+	if e.modal() { // a modal (help, the journal, the maps, F10) is the screen: the ones its flags keep up under it are not shown, so no presenter gives them the keys (the screens that are modes are under it already)
+		v.Battle, v.Inventory, v.Results, v.Credits = nil, nil, nil, false
 	}
 	s.view = v
 }

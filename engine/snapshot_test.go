@@ -529,3 +529,23 @@ func TestModalHidesBattle(t *testing.T) {
 		t.Fatalf("help closed: Pages %v, Battle %v", v.Pages != nil, v.Battle != nil)
 	}
 }
+
+// TestModalHidesInventory: help (?) over the inventory is the screen, the
+// inventory under it is not in the view, and comes back when help closes.
+func TestModalHidesInventory(t *testing.T) {
+	e := explore(t)
+	e.Init()
+	e.Start(e.Play)
+	settle(e)
+	key := func(a engine.Action) engine.View { keyWait(e, a); return settle(e) }
+	key(engine.Action{Kind: engine.ActMember, N: -1}) // the sheet, then its items
+	if v := key(engine.Action{Kind: engine.ActInventory, N: -1}); v.Inventory == nil {
+		t.Fatal("no inventory")
+	}
+	if v := key(engine.Action{Kind: engine.ActHelp}); v.Pages == nil || v.Inventory != nil {
+		t.Fatalf("help over the inventory: Pages %v, Inventory %v", v.Pages != nil, v.Inventory != nil)
+	}
+	if v := key(engine.Action{Kind: engine.ActClose}); v.Pages != nil || v.Inventory == nil {
+		t.Fatalf("help closed: Pages %v, Inventory %v", v.Pages != nil, v.Inventory != nil)
+	}
+}
