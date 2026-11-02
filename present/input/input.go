@@ -50,6 +50,7 @@ const (
 	FontPrev
 	Backspace
 	Delete
+	Note // the text box's text to the journal's notes
 
 	// Combat
 	CursorUp

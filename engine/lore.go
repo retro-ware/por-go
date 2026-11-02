@@ -2,89 +2,117 @@ package engine
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 )
 
-// Lore found (extra): the journal's Notes. Every voiced text is lore: a
-// recording this save has played (e.ext.voiced, VOICED.GOB) is one the party
-// has found, whether the voice is on or not. Published as View.Lore in the
-// order of the texts: the journal's entries, Rolf's history, then the
-// script texts (journal/LINES.TXT).
+// Notes (extra): the journal's second tab, published as View.Lore, newest
+// first. The game adds the printed journal's texts the text window names
+// (journal entries, proclamations, tavern tales: journalPrinted); the
+// player adds what the text window shows (ActNote, the text box's "> Notes"),
+// kept with the map and square it was read on, and may remove those again
+// (ActNoteRemove). Kept with the save (NOTES.GOB). A save from before the
+// notes lists the journal texts it has heard (VOICED.GOB).
 
-// Lore is a note: its title and paragraphs.
+// noteRec is a note: a journal text by Title, or the player's (User) Text
+// read at Place.
+type noteRec struct {
+	Title, Place string
+	Text         []string
+	User         bool
+}
+
+// Lore is a note in the journal: ID is its number for ActNoteRemove (-1: not
+// removable), Place where the player read it ("" a journal text).
 type Lore struct {
-	Title string
-	Text  []string
+	Title, Place string
+	Text         []string
+	ID           int
 }
 
-type loreText struct {
-	key string
-	Lore
-}
-
-// loreTexts are the voiced texts by key.
-var loreTexts = sync.OnceValue(func() []loreText {
-	var out []loreText
-	for _, name := range []string{"JOURNAL.TXT", "HISTORY.TXT"} {
-		j := loadJournal(name)
-		titles := slices.Sorted(func(yield func(string) bool) {
-			for t := range j {
-				if !yield(t) {
-					return
-				}
+// journalTexts are JOURNAL.TXT's texts by title, paragraphs joined and
+// pictures left out.
+var journalTexts = sync.OnceValue(func() map[string][]string {
+	out := map[string][]string{}
+	for t, ps := range loadJournal("JOURNAL.TXT") {
+		var paras []string
+		for _, p := range ps {
+			switch {
+			case strings.HasPrefix(p, "<") && strings.HasSuffix(p, ">"):
+			case p == "" || len(paras) == 0:
+				paras = append(paras, p)
+			default:
+				paras[len(paras)-1] = strings.TrimSpace(paras[len(paras)-1] + " " + p)
 			}
-		})
-		if name == "HISTORY.TXT" {
-			titles = phlanChapters
 		}
-		for _, t := range titles {
-			var paras []string
-			for _, p := range j[t] {
-				switch {
-				case strings.HasPrefix(p, "<") && strings.HasSuffix(p, ">"):
-				case p == "" || len(paras) == 0:
-					paras = append(paras, p)
-				default:
-					paras[len(paras)-1] = strings.TrimSpace(paras[len(paras)-1] + " " + p)
-				}
-			}
-			paras = slices.DeleteFunc(paras, func(p string) bool { return p == "" })
-			out = append(out, loreText{strings.ReplaceAll(t, " ", "_"), Lore{t, paras}})
-		}
-	}
-	b, _ := journalFS.ReadFile("journal/LINES.TXT")
-	for _, l := range strings.Split(string(b), "\n") {
-		if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
-			out = append(out, loreText{voiceKey(l), Lore{loreTitle(l), []string{l}}})
-		}
+		out[t] = slices.DeleteFunc(paras, func(p string) bool { return p == "" })
 	}
 	return out
 })
 
-// loreTitle names a script text by its first words (at most 19 letters: the
-// journal list's width).
-func loreTitle(s string) string {
-	t := ""
-	for _, w := range strings.Fields(strings.Trim(s, "'\" ")) {
-		if len(t)+len(w)+1 > 19 {
-			break
-		}
-		t = strings.TrimSpace(t + " " + w)
+// noteJournal adds the journal text titled t, once, and says so.
+func (e *Engine) noteJournal(t string) {
+	if _, ok := journalTexts()[t]; !ok || slices.ContainsFunc(e.ext.notes, func(n noteRec) bool { return !n.User && n.Title == t }) {
+		return
 	}
-	if t == "" {
-		t = s[:min(len(s), 19)]
-	}
-	return t
+	e.ext.notes = append(e.ext.notes, noteRec{Title: t})
+	e.say("Note added to journal")
 }
 
-// loreView is the Notes: the lore this save has found.
+// paneNote is the text pane's text as one paragraph ("" none).
+func (e *Engine) paneNote() string {
+	var w []string
+	for _, l := range e.pane().Lines {
+		for _, r := range l {
+			w = append(w, strings.Fields(r.Text)...)
+		}
+	}
+	return strings.Join(w, " ")
+}
+
+// noteUser adds what the text pane shows, with the map and square, once.
+func (e *Engine) noteUser() {
+	s := e.paneNote()
+	if s == "" {
+		return
+	}
+	if slices.ContainsFunc(e.ext.notes, func(n noteRec) bool { return n.User && slices.Equal(n.Text, []string{s}) }) {
+		e.say("Already in the journal")
+		return
+	}
+	m := e.mapName()
+	e.ext.notes = append(e.ext.notes, noteRec{Title: m, Place: m + ", " + strconv.Itoa(int(e.posX)) + "," + strconv.Itoa(int(e.posY)), Text: []string{s}, User: true})
+	e.say("Note added to journal")
+}
+
+// noteRemove removes the player's note id.
+func (e *Engine) noteRemove(id int) {
+	if id >= 0 && id < len(e.ext.notes) && e.ext.notes[id].User {
+		e.ext.notes = slices.Delete(e.ext.notes, id, id+1)
+	}
+}
+
+// loreView is the Notes, newest first, then the journal texts an older save
+// has heard.
 func (e *Engine) loreView() []Lore {
 	var out []Lore
-	for _, t := range loreTexts() {
-		if e.ext.voiced[t.key] {
-			out = append(out, t.Lore)
+	for i, n := range slices.Backward(e.ext.notes) {
+		if n.User {
+			out = append(out, Lore{n.Title, n.Place, n.Text, i})
+		} else {
+			out = append(out, Lore{n.Title, "", journalTexts()[n.Title], -1})
 		}
+	}
+	var old []string
+	for t := range journalTexts() {
+		if e.ext.voiced[strings.ReplaceAll(t, " ", "_")] && !slices.ContainsFunc(e.ext.notes, func(n noteRec) bool { return !n.User && n.Title == t }) {
+			old = append(old, t)
+		}
+	}
+	slices.Sort(old)
+	for _, t := range old {
+		out = append(out, Lore{t, "", journalTexts()[t], -1})
 	}
 	return out
 }

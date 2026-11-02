@@ -41,6 +41,7 @@ type extras struct {
 	again    map[string]bool         // voice.go: heard, to be spoken again (Rolf's history)
 	met      map[string]metIcon      // bestiary.go: the monster kinds this save has met
 	quests   []questNote             // quests.go: the quests this save was given
+	notes    []noteRec               // lore.go: the journal's notes
 	beasts   []Beast                 // bestiary.go: their entries, as last published
 	creating bool                    // CreateCharacter's sheet is up: no level, experience, party items or status on it
 	minStats [6]int                  // "Minimal stats": per-stat floor, STR as st*100+str00

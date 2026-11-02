@@ -45,6 +45,7 @@ type page struct {
 	pane  *gpu.Image           // the text pane (paneImage)
 	pic   *gpu.Image           // the picture window (pictureBox)
 	toast *gpu.Image           // the note's line over the 3D view
+	notes *gpu.Image           // the text box's "> Notes" (paneBox)
 }
 
 // pageSize is v's page in pixels: its text cells, 8 by 8 (the original's
@@ -511,4 +512,23 @@ func sameImage(a, b image.Image) bool {
 		return b == nil
 	}
 	return false
+}
+
+// paneBox draws the text pane in its box at scale k round (cx, cy), and on
+// its bottom border, right, the "> Notes" that puts the text into the
+// journal (ActNote; Ctrl-N, the pad's Back).
+func (p *Presenter) paneBox(dst *gpu.Image, note Note, v engine.View, k float64, cx, cy int) {
+	txt := engine.TextPane.Framed()
+	drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, k, cx, cy)
+	const label = " > Notes "
+	m := image.NewRGBA(image.Rect(0, 0, 8*len(label), 8))
+	draw.Draw(m, m.Rect, image.Black, image.Point{}, draw.Src)
+	drawText(m, note.Glyph, label, 0, 0, col(14))
+	px := txt.Pixels()
+	x, y := float64(cx)+k*float64(px.Dx()/2-16-m.Rect.Dx()), float64(cy)+k*float64(px.Dy()/2-8)
+	op := &gpu.DrawImageOptions{}
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate(x, y)
+	dst.DrawImage(upload(&p.pg.notes, m), op)
+	p.noteBtn = image.Rect(int(x), int(y), int(x+k*float64(m.Rect.Dx())), int(y+k*8))
 }

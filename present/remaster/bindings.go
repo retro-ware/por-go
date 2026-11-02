@@ -57,7 +57,7 @@ const (
 	keyPgUp, keyPgDn, keyHome, keyEnd = 0x4900, 0x5100, 0x4700, 0x4F00
 	keyDel                            = 0x5300
 	keyEnter, keyEsc, keyTab, keyBksp = 13, 27, 9, 8
-	keyCtrlS, keyCtrlF                = 0x13, 6
+	keyCtrlS, keyCtrlF, keyCtrlN      = 0x13, 6, 14
 )
 
 // memberCodes are F1-F8 and the member each picks.
@@ -104,9 +104,9 @@ var bindings = []binding{
 		padKeys: []padKey{{padA, KeyPadSelect, false}, {padStart, keyEnter, false}}},
 	{ctx: ctxMenus, keys: "Letter 1-9", desc: "pick that line", mouse: "click", pad: "A"},
 	{ctx: ctxMenus, keys: "Y N", desc: "answer a question", mouse: "click", pad: "A"},
-	{ctx: ctxMenus, keys: "Esc", desc: "back, No", mouse: "right click", pad: "B, Back",
+	{ctx: ctxMenus, keys: "Esc", desc: "back, No", mouse: "right click", pad: "B",
 		codes:   []code{{keyEsc, input.Esc}},
-		padKeys: []padKey{{padB, keyEsc, false}, {padBack, keyEsc, false}}},
+		padKeys: []padKey{{padB, keyEsc, false}}},
 	{ctx: ctxMenus, keys: "F1-F8", desc: "member 1-8", mouse: "click a card", pad: "L3 R3",
 		codes: memberCodes()},
 	{ctx: ctxMenus, keys: "F9", desc: "camp: party menu", mouse: "point", pad: "Left Right",
@@ -133,7 +133,7 @@ var bindings = []binding{
 		codes:   []code{{'o', input.Party}, {KeyPadOverview, input.Overview}},
 		padKeys: []padKey{{padX, KeyPadOverview, false}}},
 	{ctx: ctxAdv, keys: "J", desc: "quest journal", mouse: "command menu", pad: "A, then pick"},
-	{ctx: ctxAdv, keys: "Esc", desc: "options", mouse: "right click", pad: "B, Back"}, // the Menus row's Esc
+	{ctx: ctxAdv, keys: "Esc", desc: "options", mouse: "right click", pad: "B"}, // the Menus row's Esc
 
 	{ctx: ctxCombat, keys: "Arrows", desc: "move the cursor", mouse: "point", pad: "D-pad, stick",
 		codes:   []code{{keyUp, input.CursorUp}, {keyDown, input.CursorDown}, {keyLeft, input.CursorLeft}, {keyRight, input.CursorRight}},
@@ -173,6 +173,9 @@ var bindings = []binding{
 	{ctx: ctxAnytime, keys: "L D", desc: "saves: load, delete", mouse: "click footer", pad: "X Y"},
 	{ctx: ctxAnytime, keys: "Ctrl-S", desc: "sound on, off", mouse: "Esc > Audio", pad: "B, then pick",
 		codes: []code{{keyCtrlS, input.Sound}}},
+	{ctx: ctxAnytime, keys: "Ctrl-N", desc: "text box to notes", mouse: "> Notes", pad: "Back",
+		codes:   []code{{keyCtrlN, input.Note}},
+		padKeys: []padKey{{padBack, keyCtrlN, false}}},
 	{ctx: ctxAnytime, keys: "Ctrl-F", desc: "font (+Shift: back)", gap: "the font has no mouse or pad way",
 		codes: []code{{keyCtrlF, input.Font}, {KeyFontPrev, input.FontPrev}}},
 	{ctx: ctxAnytime, keys: "Letters", desc: "type a name, number", gap: "typing has no mouse or pad way (no on-screen keyboard)",

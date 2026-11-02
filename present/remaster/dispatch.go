@@ -26,6 +26,12 @@ func (p *Presenter) Key(k uint16, v engine.View) {
 
 // key takes k on the remastered screens; false leaves it to keyAct.
 func (p *Presenter) key(k uint16, v engine.View) bool {
+	if actOf(k) == input.Note { // the text box's "> Notes"
+		if !p.noteBtn.Empty() {
+			p.send(engine.ActNote, 0)
+		}
+		return true
+	}
 	if p.journal.open && v.Exploring {
 		p.journalKey(k, v)
 		return true
@@ -161,6 +167,10 @@ func (p *Presenter) key(k uint16, v engine.View) bool {
 func (p *Presenter) Click(x, y int) bool {
 	if p.Playing() { // the fight plays on: the click only cuts its moment short
 		p.replay.skip = true
+		return true
+	}
+	if image.Pt(x, y).In(p.noteBtn) { // the text box's "> Notes"
+		p.send(engine.ActNote, 0)
 		return true
 	}
 	if sheetUp(p.shownView) && gpu.IsKeyPressed(gpu.KeyShift) && image.Pt(x, y).In(p.sheet.faceAt) { // Shift-click on the sheet's portrait: the next head

@@ -93,6 +93,7 @@ func (e *Engine) questPrinted(s string) {
 		}
 		if !slices.ContainsFunc(e.ext.quests, func(n questNote) bool { return n.ID == id }) {
 			e.ext.quests = append(e.ext.quests, questNote{ID: id})
+			e.say("Quest added to journal")
 		}
 		return
 	}

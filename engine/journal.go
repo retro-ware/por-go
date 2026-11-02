@@ -80,6 +80,9 @@ func (e *Engine) journalPrinted(s string, clear bool) {
 	}
 	newRefs := refs[e.ext.refsShown:]
 	e.ext.refsShown = len(refs)
+	for _, t := range newRefs {
+		e.noteJournal(t)
+	}
 	if lines := journalLines(newRefs); len(lines) > 0 {
 		e.showJournal(journalBox, lines)
 	}

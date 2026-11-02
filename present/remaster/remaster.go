@@ -143,6 +143,7 @@ type Presenter struct {
 	confirmFor           string                   // the yes/no question (View.Ask, AskConfirm) up, as last drawn ...
 	confirmSel           int                      // ... its highlight (Yes 0, No 1) ...
 	confirmAt            []image.Rectangle        // ... and its rows on screen
+	noteBtn              image.Rectangle          // the text box's "> Notes" on the window (empty: no text box)
 }
 
 // Draw shows the game on dst and returns where the whole page went
@@ -155,6 +156,7 @@ func (p *Presenter) Draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		v.Ask = nil
 	}
 	p.scrollBars = p.scrollBars[:0]
+	p.noteBtn = image.Rectangle{}
 	p.battle.Asking = confirm(v) != ""
 	if !pageScreen(v) { // none up: the next one opens fresh (F10 on the last save)
 		p.scr.up = ""
@@ -262,6 +264,10 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		p.shown, p.active, p.menu = "", true, false
 		dst.Fill(color.Black)
 		p.drawJournal(dst, note, v)
+		if j := &p.journal; j.ask {
+			p.keyWindow(dst, "Remove this note?", []string{"Yes", "No"}, yesNoKeys, nil, j.askSel, false)
+			j.askAt = slices.Clone(p.winRects)
+		}
 		return Rect{}
 	}
 	if screenUp(v) && v.Camp != nil && p.camp.screen == campBestiary { // the bestiary: a page of its own over the whole window
@@ -391,9 +397,9 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 	shown = shown && !ask && !(askList(v) != nil && askMenu(v).Prompt != "")                  // a vertical menu's prompt is the list's own title
 	shown = shown && !(v.Shop != nil && p.camp.screen != campMain)                            // the shop's submenus (identify, appraise) stand alone, the greeting gone
 	if shown && v.Exploring && v.Window != engine.WinPicture && v.Window != engine.WinText {  // the text under the command bar: along the bottom edge
-		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, b.Dy()-int(tk*th/2))
+		p.paneBox(dst, note, v, tk, cx, b.Dy()-int(tk*th/2))
 	} else if shown { // a question, or a message to confirm (Enter, a click): a box in the middle, its choices under it
-		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, tk, cx, cy)
+		p.paneBox(dst, note, v, tk, cx, cy)
 		picBottom = max(picBottom, cy+int(tk*th/2)) // the menus go under the text too
 	}
 	if askMenu(v) != nil && !v.Exploring && !noChoice(v) && !choosing(v) { // a question: its choices pop up at once

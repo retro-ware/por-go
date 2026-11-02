@@ -156,7 +156,7 @@ func TestPadKeys(t *testing.T) {
 			t.Errorf("combat button %d sends %#x, want %#x", b, got, want)
 		}
 	}
-	for b, want := range map[gpu.StandardGamepadButton]uint16{dUp: 0x4800, padA: KeyPadSelect, padY: KeyPadMinimap, padX: KeyPadOverview, padStart: 13, padBack: 27, padLT: 0x4700, padR3: KeyPadNext} {
+	for b, want := range map[gpu.StandardGamepadButton]uint16{dUp: 0x4800, padA: KeyPadSelect, padY: KeyPadMinimap, padX: KeyPadOverview, padStart: 13, padBack: 14, padLT: 0x4700, padR3: KeyPadNext} {
 		if got := keys(false)[b]; got != want {
 			t.Errorf("button %d sends %#x, want %#x", b, got, want)
 		}

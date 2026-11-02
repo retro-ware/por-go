@@ -21,12 +21,17 @@ import (
 // arrows pick, Left/Right or Tab switch tabs, PgUp/PgDn (the wheel over the
 // page, the pad's shoulders) scroll the page, Esc, J or Close shut it; the
 // pointer picks as it moves, a click on a tab switches to it, a click on
-// Close or the right button shut it.
+// Close or the right button shut it. A note the player added has an X on
+// its page (X, Del, the pad's X, a click): it asks first, then removes it.
 
 type journalUI struct {
 	open    bool
 	tab     int                // 0 Quests, 1 Notes
 	tabs    [2]image.Rectangle // the tabs on the window
+	x       image.Rectangle    // the note's X on the window (empty: none)
+	ask     bool               // "Remove this note?" is up ...
+	askSel  int                // ... its highlight (Yes 0, No 1) ...
+	askAt   []image.Rectangle  // ... and its rows on the window
 	sel     int                // the highlighted row of rows
 	top     int                // the first row shown
 	y, maxY int                // the page's first pixel row shown, its last
@@ -109,7 +114,14 @@ func (p *Presenter) openJournal(v engine.View) {
 // journalKey takes key k while the journal is up.
 func (p *Presenter) journalKey(k uint16, v engine.View) {
 	j := &p.journal
+	if j.ask {
+		i, back, _ := menuNav(k, &j.askSel, yesNoKeys)
+		p.journalAnswer(i, back, v)
+		return
+	}
 	switch a := actOf(k); {
+	case a == input.Delete || a == input.Overview || k == 'x' || k == 'X':
+		j.askRemove(v)
 	case a == input.Left || a == input.Right || a == input.Tab:
 		j.setTab(1-j.tab, v)
 	case a == input.Up:
@@ -134,6 +146,33 @@ func (p *Presenter) journalKey(k uint16, v engine.View) {
 	}
 }
 
+// removable is the note under the highlight the player may remove (-1 none).
+func (j *journalUI) removable(v engine.View) int {
+	if j.tab != 1 || j.sel >= len(j.rows) || j.rows[j.sel] < 0 || j.rows[j.sel] >= len(v.Lore) {
+		return -1
+	}
+	return v.Lore[j.rows[j.sel]].ID
+}
+
+// askRemove asks whether to remove the note under the highlight, No first.
+func (j *journalUI) askRemove(v engine.View) {
+	if j.removable(v) >= 0 {
+		j.ask, j.askSel = true, 1
+	}
+}
+
+// journalAnswer takes the answer to "Remove this note?": row 0 Yes, back No.
+func (p *Presenter) journalAnswer(i int, back bool, v engine.View) {
+	j := &p.journal
+	if i < 0 && !back {
+		return
+	}
+	j.ask = false
+	if id := j.removable(v); i == 0 && id >= 0 {
+		p.send(engine.ActNoteRemove, id)
+	}
+}
+
 // journalRow is the row under window pixel pt (-1 none).
 func (j *journalUI) row(pt image.Point) int {
 	for i, r := range j.rects {
@@ -147,6 +186,23 @@ func (j *journalUI) row(pt image.Point) int {
 // journalMouse takes the pointer while the journal is up.
 func (p *Presenter) journalMouse(pt image.Point, click, right bool, wheel int, v engine.View) {
 	j := &p.journal
+	if j.ask { // the question takes the pointer; a click outside or the right button is No
+		if i := slices.IndexFunc(j.askAt, pt.In); i >= 0 {
+			j.askSel = i
+		}
+		if click || right {
+			if i := slices.IndexFunc(j.askAt, pt.In); i == 0 && !right {
+				p.journalAnswer(0, false, v)
+			} else {
+				p.journalAnswer(1, false, v)
+			}
+		}
+		return
+	}
+	if click && pt.In(j.x) {
+		j.askRemove(v)
+		return
+	}
 	for t, r := range j.tabs {
 		if click && pt.In(r) && t != j.tab {
 			j.setTab(t, v)
@@ -272,6 +328,7 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 	view := (ch - 2) * 8
 	j.pane = image.Rect(rx, 8, rx+rw, 8+view)
 	pg := image.NewRGBA(image.Rect(0, 0, rw, view))
+	var x image.Rectangle
 	q := -1
 	if j.sel < len(j.rows) {
 		q = j.rows[j.sel]
@@ -286,6 +343,13 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 			n := v.Lore[q]
 			qu = engine.Quest{Name: n.Title, Text: n.Text}
 			status, stc = "Note", jFaded
+			if n.Place != "" {
+				status = "Your note"
+				for _, l := range engine.WrapWords("Read at "+n.Place, cols) {
+					add(l, jFaded)
+				}
+				add("", jInk)
+			}
 		} else {
 			qu = v.Quests[q]
 			for _, l := range engine.WrapWords("Given by "+qu.Giver, cols) {
@@ -324,6 +388,15 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 		}
 		j.maxY = max(0, tall-view)
 		j.y = min(max(j.y, 0), j.maxY)
+		x = image.Rectangle{}
+		if j.tab == 1 && v.Lore[q].ID >= 0 { // the player's note: its X, top right
+			xr := image.Rect(rw-22, 4, rw-6, 20)
+			fill(ent, xr, jRed)
+			text(ent, "X", xr.Min.X+4, xr.Min.Y+4, jCream)
+			if xr.Min.Y >= j.y {
+				x = xr.Sub(image.Pt(0, j.y)).Add(image.Pt(rx, 8))
+			}
+		}
 		draw.Draw(pg, pg.Rect, ent, image.Pt(0, j.y), draw.Src)
 	} else {
 		fill(pg, pg.Rect, jParch)
@@ -354,6 +427,10 @@ func (p *Presenter) drawJournal(dst *gpu.Image, note Note, v engine.View) {
 	j.pane = on(j.pane)
 	for t := range tabs {
 		j.tabs[t] = on(tabs[t])
+	}
+	j.x = image.Rectangle{}
+	if !x.Empty() {
+		j.x = on(x)
 	}
 	j.rects = j.rects[:0]
 	for _, r := range rows {

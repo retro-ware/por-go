@@ -10,54 +10,56 @@ import "time"
 type ActKind int
 
 const (
-	ActNone      ActKind = iota
-	ActClose             // leave the screen
-	ActMember            // show party member N
-	ActLead              // make party member N the selected one (the command bar's member): F1-F8, the member keys; in a member pick the candidate
-	ActReady             // inventory: ready or unready item N
-	ActUse               // inventory: use item N
-	ActRanged            // combat: throw the Missiles slot's weapon (aims as Attack)
-	ActDrop              // inventory: drop item N (the player already confirmed)
-	ActSell              // inventory: sell item N (confirmed)
-	ActWalk              // combat: walk to square X, Y (one of Battle.Reach)
-	ActAttack            // combat: attack unit N (one of Battle.Targets; 0: aim first)
-	ActGuard             // combat: end the turn on guard
-	ActBandage           // combat: bandage the first dying member
-	ActWait              // combat: Done's Delay
-	ActEnd               // combat: Done's Quit: end the turn
-	ActQuick             // combat: the computer fights for the member
-	ActTurn              // combat: turn undead
-	ActCast              // cast spell N (one of Turn.Spells in combat, of View.Ask (AskSpell) elsewhere)
-	ActItems             // combat: the inventory
-	ActAim               // combat, aiming: take square X, Y
-	ActPoint             // the cursor is on square X, Y: combat's aim (the preview follows), the full map's (View.MapCursor)
-	ActYes               // yes to View.Ask (AskConfirm)
-	ActNo                // no to View.Ask (AskConfirm); ActClose too
-	ActFlee              // combat: step off the map's edge and try to run away (Turn offers it at the edge)
-	ActChoose            // choose option N of View.Ask (X: the line of its List)
-	ActOK                // Enter: the highlighted choice, or "press a key"
-	ActText              // the line being typed (View.Ask) now reads Text
-	ActInventory         // member N's items (a card's left click)
-	ActSheet             // the inventory: back to the sheet under it
-	ActMinimap           // the minimap over the roster (Tab)
-	ActMap               // the full map (M)
-	ActOverview          // the party overview, on the View page the items (P)
-	ActHelp              // the help pages (?)
-	ActSlots             // the save slots (F10)
-	ActFont              // the next text font (N -1: the one before)
-	ActSound             // sound on or off (Ctrl-S)
-	ActResize            // the window shows X by Y text cells (40x25 at least): the page takes that size and the screen draws itself again
-	ActSpells            // inventory: the member's memorised spells
-	ActMagic             // inventory: the spell effects on the member
-	ActHeal              // inventory: a paladin lays on hands
-	ActCure              // inventory: a paladin cures disease
-	ActMainMenu          // drop the game in play for the party menu (the pause menu's Back to Main Menu)
-	ActBuy               // shop inventory: buy ware N (Inventory.Wares)
-	ActTakeAll           // loot inventory: take every piece of treasure (Inventory.Loot)
-	ActHead              // member N's next paper-doll head (N < 0: the selected member); Shift-click on the sheet's portrait
-	ActPortrait          // the PNG at Text is member N's portrait (N < 0: the selected member); a file dropped on the sheet
-	ActIcon              // the PNG at Text is the member's combat icon; a file dropped on the icon editor (View.IconDrop)
-	ActOrder             // member N takes place X in the party (View.Ordering): a card dragged onto another's
+	ActNone       ActKind = iota
+	ActClose              // leave the screen
+	ActMember             // show party member N
+	ActLead               // make party member N the selected one (the command bar's member): F1-F8, the member keys; in a member pick the candidate
+	ActReady              // inventory: ready or unready item N
+	ActUse                // inventory: use item N
+	ActRanged             // combat: throw the Missiles slot's weapon (aims as Attack)
+	ActDrop               // inventory: drop item N (the player already confirmed)
+	ActSell               // inventory: sell item N (confirmed)
+	ActWalk               // combat: walk to square X, Y (one of Battle.Reach)
+	ActAttack             // combat: attack unit N (one of Battle.Targets; 0: aim first)
+	ActGuard              // combat: end the turn on guard
+	ActBandage            // combat: bandage the first dying member
+	ActWait               // combat: Done's Delay
+	ActEnd                // combat: Done's Quit: end the turn
+	ActQuick              // combat: the computer fights for the member
+	ActTurn               // combat: turn undead
+	ActCast               // cast spell N (one of Turn.Spells in combat, of View.Ask (AskSpell) elsewhere)
+	ActItems              // combat: the inventory
+	ActAim                // combat, aiming: take square X, Y
+	ActPoint              // the cursor is on square X, Y: combat's aim (the preview follows), the full map's (View.MapCursor)
+	ActYes                // yes to View.Ask (AskConfirm)
+	ActNo                 // no to View.Ask (AskConfirm); ActClose too
+	ActFlee               // combat: step off the map's edge and try to run away (Turn offers it at the edge)
+	ActChoose             // choose option N of View.Ask (X: the line of its List)
+	ActOK                 // Enter: the highlighted choice, or "press a key"
+	ActText               // the line being typed (View.Ask) now reads Text
+	ActInventory          // member N's items (a card's left click)
+	ActSheet              // the inventory: back to the sheet under it
+	ActMinimap            // the minimap over the roster (Tab)
+	ActMap                // the full map (M)
+	ActOverview           // the party overview, on the View page the items (P)
+	ActHelp               // the help pages (?)
+	ActSlots              // the save slots (F10)
+	ActFont               // the next text font (N -1: the one before)
+	ActSound              // sound on or off (Ctrl-S)
+	ActResize             // the window shows X by Y text cells (40x25 at least): the page takes that size and the screen draws itself again
+	ActSpells             // inventory: the member's memorised spells
+	ActMagic              // inventory: the spell effects on the member
+	ActHeal               // inventory: a paladin lays on hands
+	ActCure               // inventory: a paladin cures disease
+	ActMainMenu           // drop the game in play for the party menu (the pause menu's Back to Main Menu)
+	ActBuy                // shop inventory: buy ware N (Inventory.Wares)
+	ActTakeAll            // loot inventory: take every piece of treasure (Inventory.Loot)
+	ActHead               // member N's next paper-doll head (N < 0: the selected member); Shift-click on the sheet's portrait
+	ActPortrait           // the PNG at Text is member N's portrait (N < 0: the selected member); a file dropped on the sheet
+	ActIcon               // the PNG at Text is the member's combat icon; a file dropped on the icon editor (View.IconDrop)
+	ActOrder              // member N takes place X in the party (View.Ordering): a card dragged onto another's
+	ActNote               // the text pane's text goes into the journal's notes (the text box's "> Notes")
+	ActNoteRemove         // the journal's note N (Lore.ID) is removed
 
 	// Adventuring decisions (View.Exploring)
 	ActForward     // a step ahead (3D view)

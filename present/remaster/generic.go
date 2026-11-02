@@ -57,7 +57,7 @@ func (p *Presenter) drawGeneric(dst *gpu.Image, v engine.View, note Note) Rect {
 		dst.DrawImage(img, op)
 	}
 	if th > 0 { // the text along the bottom
-		drawBox(dst, paneImage(&p.pg.pane, v.Pane, note), p.border.tiles, txt, k, cx, b.Dy()-gap-int(th/2))
+		p.paneBox(dst, note, v, k, cx, b.Dy()-gap-int(th/2))
 	}
 	p.drawPageMenu(dst, note, v)
 	return Rect{0, 0, float64(b.Dx()), float64(b.Dy())}

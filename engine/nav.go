@@ -72,6 +72,10 @@ func (e *Engine) extraAct(a Action) bool {
 		} else if e.creation != nil {
 			e.creationSheet(e.creation.c) // the creation sheet draws itself anew
 		}
+	case ActNote:
+		e.noteUser()
+	case ActNoteRemove:
+		e.noteRemove(a.N)
 	case ActOrder: // extra: the Party Order bar takes a dragged card
 		n := len(e.party)
 		if !e.up(modeCamp) || a.N < 0 || a.N >= n || a.X < 0 || a.X >= n || a.N == a.X {
