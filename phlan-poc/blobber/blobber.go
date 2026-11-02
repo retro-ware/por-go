@@ -582,6 +582,7 @@ func (g *Game) menuOptions() []menuLine {
 			}, func(_ *Game, d int) { Settings.MapAlpha = step(Settings.MapAlpha, minAlpha, 1, 0.1, d) }},
 			uiLine("Minimap size", &Settings.Map),
 			uiLine("Picture box", &Settings.Pic),
+			{"Damage Numbers", onOffOf(&Settings.DamageNumbers), flip(&Settings.DamageNumbers)},
 			exit,
 		}
 	case "Audio":
@@ -909,6 +910,7 @@ type Options struct {
 	Music, Effects, Voice             float64 // the host's volumes, 0 to 1
 	Dasp                              bool    // the host's Dubtrain sound pack effects in place of the original's
 	Steps                             bool    // the host's step and turn sound
+	DamageNumbers                     bool    // the host's battle: hit points lost float over the heads
 }
 
 const minAlpha = 0.2
@@ -920,7 +922,7 @@ const minZoom, maxZoom = 0.25, 2.0
 // Settings are the options the view starts with; set them before NewView (from a settings file).
 // OnSettings is called with the new options whenever the player changes one.
 var (
-	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true, Steps: true}
+	Settings   = Options{Smooth: true, Fluid: true, Dither: true, Fullscreen: true, Torch: 1, Speed: 1, MapAlpha: 1, Deskew: true, Zoom: 0.5, Cards: 1, Map: 1, Pic: 1, Music: 1, Effects: 1, Voice: 1, Dasp: true, Steps: true, DamageNumbers: true}
 	OnSettings func(Options)
 	// Voice, when set, adds the Audio page with its "Voice-over" line (it toggles
 	// the voice first when toggle, then reports whether it is on), the

@@ -61,6 +61,11 @@ type Presenter struct {
 	burst         bool          // its sparks are out
 	last          time.Time
 	clock         float64 // seconds shown, for pulses
+
+	DamageNumbers bool               // float the hit points lost over the heads (Graphics, Damage Numbers)
+	Glyph         func(byte) [8]byte // the game's font, for them
+	hp            map[int][2]int     // each unit's hit points and maximum, as last drawn
+	floats        []floater
 }
 
 type figure struct {
@@ -112,6 +117,9 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 		p.Picking = false
 	}
 	p.sync(b)
+	if time.Since(p.last) > time.Second { // a fight begins: no numbers for what changed before it
+		p.hp = nil
+	}
 	dt := p.tick()
 	if b.Strike.Seq != p.strike.Seq {
 		p.strike, p.strikeT, p.burst = b.Strike, 0, false
@@ -365,6 +373,8 @@ func (p *Presenter) Draw(dst *gpu.Image, b *engine.Battle) {
 	if gpu.IsKeyPressed(gpu.KeyShift) {
 		p.drawHealth(dst, vp, heads)
 	}
+	p.noteDamage(heads)
+	p.drawDamage(dst, vp, dt)
 }
 
 // drawSparks moves, fades and draws the particles.
