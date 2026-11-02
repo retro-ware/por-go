@@ -277,7 +277,7 @@ func (p *Presenter) draw(dst *gpu.Image, note Note, v engine.View) Rect {
 		return Rect{}
 	}
 	sc := p.scene(v)
-	area := v.Window == engine.WinAreaMap && v.AreaMap != nil                   // the overland: its map over the whole window, the 3D view's cards and boxes over it
+	area := v.AreaMap != nil                                                     // the overland: its map over the whole window (also under its pop-ups), the 3D view's cards and boxes over it
 	if sc == nil && !area || v.Results != nil || !choosing(v) && !v.Adventure { // a member pick (Choosing) shows the view and the cards whatever page asked
 		if screenUp(v) { // training from the hall's party menu: over the 3D view
 			p.active, p.cards = true, nil // its lines take clicks (Click), no card under them
