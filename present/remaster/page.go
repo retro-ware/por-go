@@ -207,9 +207,9 @@ func drawModal(m *image.RGBA, v engine.View, note Note) {
 		str(lx, 0, 15, "Labels")
 		for i, l := range fm.Legend {
 			str(lx, fm.LegendAt.Y+i, l.Colour, string(l.Letter))
-			str(lx+2, fm.LegendAt.Y+i, 10, l.Text[:min(len(l.Text), 0x28-lx-2)])
+			str(lx+2, fm.LegendAt.Y+i, 10, l.Text[:min(len(l.Text), cols-lx-2)])
 		}
-		str(1, rows-2, 11, fm.Info[:min(len(fm.Info), 0x26)])
+		str(1, rows-2, 11, fm.Info[:min(len(fm.Info), cols-2)])
 		mi := mapImage(fm.Map, fm.Cell, v.Ink, note.Font)
 		draw.Draw(m, mi.Bounds().Add(fm.At), mi, image.Point{}, draw.Over)
 		n, c := fm.Cell, fm.At.Add(fm.Cursor.Mul(fm.Cell))

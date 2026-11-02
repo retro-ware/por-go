@@ -179,15 +179,16 @@ func legend(m map[int]mapLabel) (texts []string, letter map[string]byte, kind ma
 	return texts, letter, kind
 }
 
-// Full map geometry: 16x16 squares of fmCell pixels, the page's height
-// under the title row and above the message row; the legend is to the
-// right, from text column fmLegend.
+// Full map geometry: 16x16 squares as large as the page's height under
+// the title row and above the message row allows, leaving fmLegendW text
+// columns to the right for the legend (11 pixels a square on 40x25).
 const (
-	fmCell   = 11
-	fmX, fmY = 0, 8
-	fmLegend = 0x16
-	fmRows   = 0x15 // legend lines: rows 2..0x16
+	fmX, fmY  = 0, 8
+	fmLegendW = 18
 )
+
+// fmCell is the full map's pixels a square on the current page.
+func fmCell() int { return max(1, min((textRows-3)*8, (textCols-fmLegendW)*8)/16) }
 
 // mapScreen is the full map's state while it is up (modeMap).
 type mapScreen struct {
@@ -307,9 +308,10 @@ func (e *Engine) fullMapView(ms *mapScreen) *FullMap {
 	if l, ok := m[cy<<4|cx]; ok {
 		info += " " + l.text
 	}
-	v := &FullMap{Name: e.mapName(), Map: e.mapSquares(m), At: image.Pt(fmX, fmY), Cell: fmCell,
-		Cursor: ms.cursor, LegendAt: image.Pt(fmLegend, 2), Info: info, Label: ms.label}
-	for _, t := range texts[:min(len(texts), fmRows)] {
+	cell := fmCell()
+	v := &FullMap{Name: e.mapName(), Map: e.mapSquares(m), At: image.Pt(fmX, fmY), Cell: cell,
+		Cursor: ms.cursor, LegendAt: image.Pt((16*cell+7)/8, 2), Info: info, Label: ms.label}
+	for _, t := range texts[:min(len(texts), textRows-4)] { // legend lines: rows 2..winBottom
 		s := first[t]
 		v.Legend = append(v.Legend, MapLabel{Letter: letter[t], Text: t, Colour: int(poiColour[kind[t]]), First: image.Pt(s&15, s>>4)})
 	}
