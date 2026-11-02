@@ -59,7 +59,7 @@ func mapImage(m *engine.MapSquares, cell int, ink [16]color.RGBA, glyph func(byt
 			switch {
 			case q.Ink == 0 || image.Pt(x, y) == m.Party:
 			case glyph != nil && cell >= 10:
-				drawText(img, func(c byte) [8]byte { return glyph(c, true) }, string(q.Letter), px+1, py+1, ink[q.Ink])
+				drawText(img, func(c byte) [8]byte { return glyph(c, true) }, string(q.Letter), px+(cell-8)/2, py+(cell-8)/2, ink[q.Ink]) // centred in the cell
 			default:
 				a, b := cell*2/7, cell*5/7
 				fill(px+a, py+a, px+b, py+b, ink[q.Ink])
