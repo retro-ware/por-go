@@ -399,7 +399,7 @@ var cardLabels = map[string]string{
 	"Unconscious": "KO",
 	"Dying":       "dying",
 	"Dead":        "dead",
-	"Poisoned":    "poisoned", // dead of poison, as the sheet puts it
+	"Poisoned":    "poison", // dead of poison, as the sheet puts it
 	"Stoned":      "stone",
 	"Gone":        "gone",
 }
