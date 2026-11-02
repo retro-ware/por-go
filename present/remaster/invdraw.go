@@ -89,7 +89,7 @@ func (p *Presenter) Inventory(dst *gpu.Image, note Note, v engine.View) bool {
 		inv.ware, inv.wares.top = -1, 0
 	}
 	inv.shown, inv.member, inv.count, inv.glyph, inv.view = true, in.Member, len(v.Party), note.Glyph, in
-	if shown := inv.list.shown(in.Pool); inv.keep.row >= 0 && len(shown) < inv.keep.n { // the sold or dropped item is gone
+	if shown, k := inv.list.shown(in.Pool), inv.keep; k.row >= 0 && (len(shown) != k.n || shown[k.row].Index != k.i) { // the sold, dropped or readied item is gone (a swap puts another in its place)
 		inv.sel = -1
 		if len(shown) > 0 {
 			inv.sel = shown[min(inv.keep.row, len(shown)-1)].Index
