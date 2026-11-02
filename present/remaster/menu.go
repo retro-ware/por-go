@@ -97,12 +97,13 @@ func menuNav(k uint16, sel *int, keys []byte) (pick int, back, ok bool) {
 }
 
 // hotText is row s as drawn with hotkey key: the column of its white letter
-// (-1 none); a key not in the text is shown in front, as "[E] Camp".
+// (-1 none); a key not in the text, and every digit (a row's digit in its
+// text is a price, not the key), is shown in front, as "[E] Camp".
 func hotText(s string, key byte) (string, int) {
 	if key == 0 {
 		return s, -1
 	}
-	if i := strings.IndexByte(strings.ToUpper(s), key); i >= 0 {
+	if i := strings.IndexByte(strings.ToUpper(s), key); i >= 0 && (key < '0' || key > '9') {
 		return s, i
 	}
 	return "[" + string(key) + "] " + s, 1

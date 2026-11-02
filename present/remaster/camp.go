@@ -324,7 +324,7 @@ func (p *Presenter) drawCamp(dst *gpu.Image, glyph func(byte) [8]byte, v engine.
 	if title != "" {
 		extra += len(titleLines(title)) + 1
 	}
-	fit := max(3, (int(float64(bottom)/(k*8))-extra)/lh) // the lines that fit: more scroll, the scale stays
+	fit := max(3, (int(float64(bottom-top)/(k*8))-extra)/lh) // the lines that fit under top (never over the text box above): more scroll, the scale stays
 	n := len(lines)
 	c.top = min(max(c.top, c.sel-fit+1), c.sel, max(0, n-fit))
 	if n > fit {
