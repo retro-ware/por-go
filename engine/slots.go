@@ -128,6 +128,9 @@ const voicedFile = "VOICED.GOB"
 // metFile holds the monster kinds a slot has met (bestiary.go).
 const metFile = "BESTIARY.GOB"
 
+// questsFile holds the quests a slot was given (quests.go).
+const questsFile = "QUESTS.GOB"
+
 // loadFrom loads the slot, its explored squares and its map labels (none
 // for a slot saved before they were kept).
 func (e *Engine) loadFrom(name string) (ok bool) {
@@ -135,7 +138,7 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if !ok {
 		return false
 	}
-	e.ext.seen, e.ext.voiced, e.ext.met, e.ext.beasts = nil, nil, nil, nil
+	e.ext.seen, e.ext.voiced, e.ext.met, e.ext.beasts, e.ext.quests = nil, nil, nil, nil, nil
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
 		f.Close()
@@ -151,6 +154,10 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	}
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, metFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.met)
+		f.Close()
+	}
+	if f, err := os.Open(filepath.Join(e.slotRoot(), name, questsFile)); err == nil {
+		gob.NewDecoder(f).Decode(&e.ext.quests)
 		f.Close()
 	}
 	e.readLabels(filepath.Join(e.slotRoot(), name, labelsFile))
@@ -210,6 +217,10 @@ func (e *Engine) saveTo(name string) {
 	}
 	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, metFile)); err == nil {
 		gob.NewEncoder(f).Encode(e.ext.met)
+		f.Close()
+	}
+	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, questsFile)); err == nil {
+		gob.NewEncoder(f).Encode(e.ext.quests)
 		f.Close()
 	}
 	e.writeLabels(filepath.Join(e.slotRoot(), tmp, labelsFile))

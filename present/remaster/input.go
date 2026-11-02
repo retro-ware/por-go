@@ -200,6 +200,10 @@ func menuIndex(m *engine.Menu, c byte) int {
 // clicks the screens take, Esc on the right button, the highlight on the
 // wheel; a click elsewhere answers "press a key".
 func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.View) {
+	if p.journal.open { // its rows on the window's pixels (Hover, Click)
+		p.journalMouse(p.camp.pointer, false, right, wheel)
+		return
+	}
 	for ; wheel != 0; wheel -= unit(wheel) {
 		if p.fight && p.fightLog { // wheel up: up, a line a step, as every list
 			p.logTop = max(0, p.logTop-unit(wheel))

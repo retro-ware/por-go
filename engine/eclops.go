@@ -365,6 +365,7 @@ func (e *Engine) scriptText(clear bool, s string) {
 	e.paneText(colLightGreen, clear, s)
 	e.speak(voiceKey(s))
 	e.journalPrinted(s, clear)
+	e.questPrinted(s)
 }
 
 // opReturn = ovr04:0A9F.

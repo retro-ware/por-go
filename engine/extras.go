@@ -39,6 +39,7 @@ type extras struct {
 	seen     map[int]*[256]uint8     // per map (areaKey): 1 seen, 2 visited
 	voiced   map[string]bool         // voice.go: the recordings this save has heard
 	met      map[string]metIcon      // bestiary.go: the monster kinds this save has met
+	quests   []questNote             // quests.go: the quests this save was given
 	beasts   []Beast                 // bestiary.go: their entries, as last published
 	creating bool                    // CreateCharacter's sheet is up: no level, experience, party items or status on it
 	minStats [6]int                  // "Minimal stats": per-stat floor, STR as st*100+str00
