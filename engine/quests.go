@@ -5,14 +5,14 @@ import (
 	"strings"
 )
 
-// Quest journal (extra): the commissions the party has been given, each
-// with who gave it where and the very texts the scripts showed when it
-// was handed over (e.ext.quests, kept with the save), published as
+// Quest journal (extra): the commissions the party has been given
+// (e.ext.quests, kept with the save), each with who gave it where and its
+// giver's words from the original dialogue (brief), published as
 // View.Quests. A quest is recorded when the text window shows one of its
 // texts (scriptText): most of the clerk's commissions set no flag when
 // offered (area8 OfferLoop), so the text is the only trace. It is also
-// listed, its texts unknown, once a script flag says it was offered (given)
-// or it is done. Done is the quest table the clerk reads
+// listed once a script flag says it was offered (given) or it is done.
+// Done is the quest table the clerk reads
 // (data/assets/scripts/names/global.txt, QuestTable 4AA6-4ABF: 254 reward
 // due, 255 rewarded) or the word the quest's own scripts test.
 
@@ -21,7 +21,7 @@ import (
 // flag) and its done test.
 type questDef struct {
 	name, giver, place string
-	brief              []string // the giver's own words (the scripts' texts): the entry's text when none was seen
+	brief              []string // the giver's own words: the scripts' texts that hand the quest over
 	texts              []string
 	done               func(e *Engine) bool
 	given              func(e *Engine) bool
@@ -71,20 +71,19 @@ var quests = []questDef{
 		[]string{"THE UNDEAD ARE CROSSING THE RIVER IN HORDES AND KILLING OR CARRYING OFF OUR SETTLERS.  THE COUNCIL DEMANDS THESE ATTACKS BE STOPPED. A GENEROUS REWARD IS OFFERED."}, []string{"CONCERNING VALHINGEN GRAVEYARD", "THE UNDEAD ARE CROSSING THE RIVER", "UNDEAD FROM THE GRAVEYARD HAVE GROWN", "COMMISSION TO END THE GRAVEYARD MENACE"}, questOver(0x4AB1), nil},
 }
 
-// questNote is a quest the party was given (quests[ID]) and the texts shown.
+// questNote is a quest the party was given (quests[ID]).
 type questNote struct {
-	ID    int
-	Texts []string
+	ID int
 }
 
-// Quest is a journal entry: Text is what was said, paragraph by paragraph.
+// Quest is a journal entry: Text is what its giver said, paragraph by paragraph.
 type Quest struct {
 	Name, Giver, Place string
 	Text               []string
 	Done               bool
 }
 
-// questPrinted records text s of the text window when it hands over a quest.
+// questPrinted records the quest text s of the text window hands over.
 func (e *Engine) questPrinted(s string) {
 	s = strings.TrimSpace(s)
 	up := strings.ToUpper(s)
@@ -92,13 +91,8 @@ func (e *Engine) questPrinted(s string) {
 		if !slices.ContainsFunc(q.texts, func(t string) bool { return strings.Contains(up, t) }) {
 			continue
 		}
-		i := slices.IndexFunc(e.ext.quests, func(n questNote) bool { return n.ID == id })
-		if i < 0 {
+		if !slices.ContainsFunc(e.ext.quests, func(n questNote) bool { return n.ID == id }) {
 			e.ext.quests = append(e.ext.quests, questNote{ID: id})
-			i = len(e.ext.quests) - 1
-		}
-		if n := &e.ext.quests[i]; !slices.Contains(n.Texts, s) {
-			n.Texts = append(n.Texts, s)
 		}
 		return
 	}
@@ -111,11 +105,8 @@ func (e *Engine) questsView() []Quest {
 		if n.ID < 0 || n.ID >= len(quests) {
 			continue
 		}
-		q, text := quests[n.ID], n.Texts
-		if len(text) == 0 {
-			text = q.brief
-		}
-		out = append(out, Quest{q.name, q.giver, q.place, text, q.done(e)})
+		q := quests[n.ID]
+		out = append(out, Quest{q.name, q.giver, q.place, q.brief, q.done(e)})
 	}
 	for id, q := range quests { // the flags say so, no text seen (a save from before the journal)
 		noted := slices.ContainsFunc(e.ext.quests, func(n questNote) bool { return n.ID == id })

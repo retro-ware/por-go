@@ -1,9 +1,14 @@
 package engine
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 // TestQuestPrinted: the clerk's offer and Cadorna's briefing make one
-// entry each, their texts in order, once; other texts none.
+// entry each, once; other texts none; an entry shows its giver's words.
 func TestQuestPrinted(t *testing.T) {
 	e := &Engine{}
 	e.questPrinted("THE CLERK SHUFFLES THROUGH HER PAPERS.")
@@ -12,8 +17,11 @@ func TestQuestPrinted(t *testing.T) {
 	e.questPrinted("'WHEN OLD PHLAN WAS OVERRUN, A FAMILY TREASURE WAS HIDDEN IN THE WESTERN BUILDING OF THE TEXTILE COMPLEX.")
 	e.questPrinted("SOKAL KEEP ON THORN ISLAND MUST BE CLEARED.'")
 	n := e.ext.quests
-	if len(n) != 2 || quests[n[0].ID].name != "Cadorna's treasure" || len(n[0].Texts) != 2 || quests[n[1].ID].name != "Sokal Keep" || len(n[1].Texts) != 1 {
+	if len(n) != 2 || quests[n[0].ID].name != "Cadorna's treasure" || quests[n[1].ID].name != "Sokal Keep" {
 		t.Fatalf("got %+v", n)
+	}
+	if q := e.questsView(); len(q) != 2 || len(q[1].Text) != 2 || q[0].Text[0] != "SOKAL KEEP ON THORN ISLAND MUST BE CLEARED." {
+		t.Fatalf("journal %+v", q)
 	}
 }
 
@@ -33,5 +41,32 @@ func TestQuestFromFlags(t *testing.T) {
 	e.WriteVar(0x4AB3, 254) // Boss: Yarash beaten, the river clean
 	if q := e.questsView(); len(q) != 2 || !q[0].Done || q[1].Name != "The poisoned river" || !q[1].Done {
 		t.Fatalf("both done: %+v", q)
+	}
+}
+
+// Each quest's words are the original dialogue's, verbatim: every line is
+// a text of the scripts (data/assets/scripts).
+func TestQuestBriefsVerbatim(t *testing.T) {
+	files, _ := filepath.Glob("../data/assets/scripts/area*.txt")
+	if len(files) == 0 {
+		t.Skip("no scripts")
+	}
+	var all strings.Builder
+	for _, f := range files {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		all.Write(b)
+	}
+	for _, q := range quests {
+		if len(q.brief) == 0 {
+			t.Errorf("%s: no words", q.name)
+		}
+		for _, l := range q.brief {
+			if !strings.Contains(all.String(), l) {
+				t.Errorf("%s: %q is no script text", q.name, l)
+			}
+		}
 	}
 }
