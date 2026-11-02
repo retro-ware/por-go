@@ -19,9 +19,19 @@ func clueChapters() []string {
 	return t
 }
 
-// ClueBook puts up the chapter list; a chapter chosen is read in the
-// pager, then the list comes back; Exit goes back to adventuring.
+// ClueBook opens the book again on the page last read, if it was left
+// before its end; else (and on Esc there) the chapter list.
 func (e *Engine) ClueBook() {
+	if pg := e.ext.clue; pg != nil && pg.p < len(journalPages(pg.lines)) {
+		e.after(func() { e.pushPager(modeJournal, pg) }, e.clueList)
+		return
+	}
+	e.clueList()
+}
+
+// clueList puts up the chapter list; a chapter chosen is read in the
+// pager, then the list comes back; Exit goes back to adventuring.
+func (e *Engine) clueList() {
 	titles := clueChapters()
 	var list []*ListNode
 	for _, t := range titles {
@@ -36,8 +46,7 @@ func (e *Engine) ClueBook() {
 			e.DrawMainScreen()
 			return
 		}
-		e.after(func() {
-			e.showJournal("Clue Book", journalLayout(loadJournal("CLUEBOOK.TXT"), titles[index:], false))
-		}, e.ClueBook)
+		e.ext.clue = &pager{title: "Clue Book", lines: journalLayout(loadJournal("CLUEBOOK.TXT"), titles[index:], false), journal: true}
+		e.after(func() { e.pushPager(modeJournal, e.ext.clue) }, e.clueList)
 	})
 }

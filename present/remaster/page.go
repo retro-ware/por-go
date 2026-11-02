@@ -97,6 +97,7 @@ func (p *Presenter) fit(dst, img *gpu.Image, w, h int) (kx, ky float64) {
 type scan struct {
 	im   *gpu.Image
 	w, h int
+	part image.Rectangle // the part of the scan a scaled copy (w, h) is of
 }
 
 // pageImage draws v's page (only when a new View or the note changed) and
@@ -431,7 +432,7 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []overlay, r Rect, w, h int)
 			sw, sh = tw, th
 		}
 		sc, ok := pg.scans[o.Img]
-		if !ok || sc.w != sw || sc.h != sh {
+		if !ok || sc.w != sw || sc.h != sh || sw > 0 && sc.part != b { // a scaled copy is of one part: a scrolled scan copies its new one
 			if ok {
 				sc.im.Deallocate()
 			}
@@ -444,7 +445,7 @@ func (p *Presenter) drawOverlays(dst *gpu.Image, os []overlay, r Rect, w, h int)
 				xdraw.CatmullRom.Scale(m, m.Bounds(), o.Img, b, draw.Src, nil)
 				src = m
 			}
-			sc = scan{gpu.NewImageFromImage(src), sw, sh}
+			sc = scan{gpu.NewImageFromImage(src), sw, sh, b}
 			pg.scans[o.Img] = sc
 		}
 		im := sc.im

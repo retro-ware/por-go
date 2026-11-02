@@ -63,6 +63,7 @@ type extras struct {
 	labels  map[int]map[int]mapLabel // per area: square -> label
 	fullMap *mapScreen               // the full-screen map, while up (modeMap)
 	pager   *pager                   // help's or the journal's pager, while up
+	clue    *pager                   // cluebook.go: the clue book's pager last read (B opens it again where it was left)
 	walk    *walkState               // walk.go: the party walks to a square
 	back    int                      // the turn (0 2 4 6) a step back or aside took: Move turns the party back again
 
