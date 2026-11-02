@@ -161,7 +161,7 @@ func (e *Engine) aiCastKnown(c *Character) bool {
 	n := 0
 	if c.Combat.CanCast != 0 {
 		for i := 0; i <= 0x14; i++ {
-			if c.Memorized[i] > 0 {
+			if c.Memorized[i] > 0 && c.Memorized[i] < 0x80 { // memorized, not still to be learned (s|0x80)
 				arr[n] = c.Memorized[i]
 				n++
 			}
