@@ -539,10 +539,33 @@ func (e *Engine) setDoor(x, y, dir int, state byte) {
 }
 
 // openDoor opens the side ahead from both cells (ovr15:0109 twice).
+// Extra: the door stays open (forced, picked or knocked), kept with the
+// save (DOORS.GOB) and put back whenever the map is loaded (reopenDoors).
 func (e *Engine) openDoor() {
 	x, y, d := e.posX, e.posY, e.facing
-	e.setDoor(x, y, d, 1)
-	e.setDoor(x+dirDX[d], y+dirDY[d], (d+4)%8, 1)
+	for _, s := range [2][3]int{{x, y, d}, {x + dirDX[d], y + dirDY[d], (d + 4) % 8}} {
+		e.setDoor(s[0], s[1], s[2], 1)
+		if !onMap(s[0], s[1]) {
+			continue
+		}
+		if e.ext.doors == nil {
+			e.ext.doors = map[int][]doorSide{}
+		}
+		k, ds := e.areaKey(), doorSide{X: s[0], Y: s[1], Dir: s[2]}
+		if !slices.Contains(e.ext.doors[k], ds) {
+			e.ext.doors[k] = append(e.ext.doors[k], ds)
+		}
+	}
+}
+
+// doorSide is one side of a cell whose door was opened for good.
+type doorSide struct{ X, Y, Dir int }
+
+// reopenDoors opens again the doors of the map once opened (openDoor).
+func (e *Engine) reopenDoors() {
+	for _, ds := range e.ext.doors[e.areaKey()] {
+		e.setDoor(ds.X, ds.Y, ds.Dir, 1)
+	}
 }
 
 // partyHasSkill = ovr15:0236 (n): someone has a positive thief skill

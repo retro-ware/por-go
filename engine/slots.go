@@ -134,6 +134,9 @@ const questsFile = "QUESTS.GOB"
 // notesFile holds the journal notes of a slot (lore.go).
 const notesFile = "NOTES.GOB"
 
+// doorsFile holds the doors a slot opened for good (openDoor).
+const doorsFile = "DOORS.GOB"
+
 // loadFrom loads the slot, its explored squares and its map labels (none
 // for a slot saved before they were kept).
 func (e *Engine) loadFrom(name string) (ok bool) {
@@ -141,7 +144,7 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 	if !ok {
 		return false
 	}
-	e.ext.seen, e.ext.voiced, e.ext.met, e.ext.beasts, e.ext.quests, e.ext.notes = nil, nil, nil, nil, nil, nil
+	e.ext.seen, e.ext.voiced, e.ext.met, e.ext.beasts, e.ext.quests, e.ext.notes, e.ext.doors = nil, nil, nil, nil, nil, nil, nil
 	if f, err := os.Open(filepath.Join(e.slotRoot(), name, seenFile)); err == nil {
 		gob.NewDecoder(f).Decode(&e.ext.seen)
 		f.Close()
@@ -167,6 +170,11 @@ func (e *Engine) loadFrom(name string) (ok bool) {
 		gob.NewDecoder(f).Decode(&e.ext.notes)
 		f.Close()
 	}
+	if f, err := os.Open(filepath.Join(e.slotRoot(), name, doorsFile)); err == nil {
+		gob.NewDecoder(f).Decode(&e.ext.doors)
+		f.Close()
+	}
+	e.reopenDoors() // the map loadSlot loaded
 	e.readLabels(filepath.Join(e.slotRoot(), name, labelsFile))
 	return true
 }
@@ -232,6 +240,10 @@ func (e *Engine) saveTo(name string) {
 	}
 	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, notesFile)); err == nil {
 		gob.NewEncoder(f).Encode(e.ext.notes)
+		f.Close()
+	}
+	if f, err := os.Create(filepath.Join(e.slotRoot(), tmp, doorsFile)); err == nil {
+		gob.NewEncoder(f).Encode(e.ext.doors)
 		f.Close()
 	}
 	e.writeLabels(filepath.Join(e.slotRoot(), tmp, labelsFile))
