@@ -221,13 +221,11 @@ func (p *Presenter) Mouse(cx, cy int, in, left, right bool, wheel int, v engine.
 			c.beastY = min(max(c.beastY-10*unit(wheel), 0), c.beastMax)
 			continue
 		}
-		if c := &p.camp; screenUp(v) && c.screen == campBestiary { // over the list: a line at most a pause, the rest of a fling dropped
-			if time.Since(c.wheeled) < 2*wheelPause {
+		if screenUp(v) || askList(v) != nil || p.pageMenu { // over a list: a line at most a pause, the rest of a fling dropped
+			if c := &p.camp; time.Since(c.wheeled) < 2*wheelPause {
 				break
 			}
-			c.wheeled = time.Now()
-		}
-		if screenUp(v) || askList(v) != nil || p.pageMenu { // a list or menu (camp-style, the list popup, the page's: save slots, drop-downs, the sheet): the wheel moves the highlight, a line a step, up for up
+			p.camp.wheeled = time.Now() // a list or menu (camp-style, the list popup, the page's: save slots, drop-downs, the sheet): the wheel moves the highlight, a line a step, up for up
 			k := keyOf(input.Down)
 			if wheel > 0 {
 				k = keyOf(input.Up)
